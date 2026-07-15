@@ -1,0 +1,4620 @@
+{
+  "commit": "036dd2fbad",
+  "created": "2026-07-15T23:33:49Z",
+  "figsize": [
+    11.0,
+    7.2
+  ],
+  "points": [
+    {
+      "x": 0.06680250820806716,
+      "\u0394 log P(marker), trained \u2212 base (nats)": 6.053224563598633,
+      "label": "+5.4",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.05119711208360596,
+      "\u0394 log P(marker), trained \u2212 base (nats)": 7.213502883911133,
+      "label": "+5.4",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.10920544799295476,
+      "\u0394 log P(marker), trained \u2212 base (nats)": 4.294334411621094,
+      "label": "+5.4",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.026272553447965336,
+      "\u0394 log P(marker), trained \u2212 base (nats)": 4.031667709350586,
+      "label": "+5.4",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.10471262431094458,
+      "\u0394 log P(marker), trained \u2212 base (nats)": 5.617094039916992,
+      "label": "+5.4",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.09975877479245046,
+      "\u0394 log P(marker), trained \u2212 base (nats)": 4.195268630981445,
+      "label": "+5.4",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.054066719540316416,
+      "\u0394 log P(marker), trained \u2212 base (nats)": 5.826791763305664,
+      "label": "+5.4",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.09157569779621816,
+      "\u0394 log P(marker), trained \u2212 base (nats)": 4.384056091308594,
+      "label": "+5.4",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.002041956442972115,
+      "\u0394 log P(marker), trained \u2212 base (nats)": 3.853242874145508,
+      "label": "+5.4",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.137696853260039,
+      "\u0394 log P(marker), trained \u2212 base (nats)": 6.358781814575195,
+      "label": "+5.4",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.13887787067466495,
+      "\u0394 log P(marker), trained \u2212 base (nats)": 5.965950012207031,
+      "label": "+5.4",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.13535765546868408,
+      "\u0394 log P(marker), trained \u2212 base (nats)": 5.252704620361328,
+      "label": "+5.4",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.13806368294054183,
+      "\u0394 log P(marker), trained \u2212 base (nats)": 5.623823165893555,
+      "label": "+5.4",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.023698873557566336,
+      "\u0394 log P(marker), trained \u2212 base (nats)": 4.863624572753906,
+      "label": "+5.4",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.10446520685481633,
+      "\u0394 log P(marker), trained \u2212 base (nats)": 5.695209503173828,
+      "label": "+5.4",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.1112446159311462,
+      "\u0394 log P(marker), trained \u2212 base (nats)": 4.728473663330078,
+      "label": "+5.4",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.10650648403575383,
+      "\u0394 log P(marker), trained \u2212 base (nats)": 5.840883255004883,
+      "label": "+5.4",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.010136115671185053,
+      "\u0394 log P(marker), trained \u2212 base (nats)": 6.479362487792969,
+      "label": "+5.4",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.034101768361011836,
+      "\u0394 log P(marker), trained \u2212 base (nats)": 5.725208282470703,
+      "label": "+5.4",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.06350758637975464,
+      "\u0394 log P(marker), trained \u2212 base (nats)": 6.349048614501953,
+      "label": "+5.4",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.8741455149841615,
+      "\u0394 log P(marker), trained \u2212 base (nats)": 0.6737728118896484,
+      "label": "+1.0",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 1.026478930489442,
+      "\u0394 log P(marker), trained \u2212 base (nats)": 1.0634994506835938,
+      "label": "+1.0",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.9425314540967736,
+      "\u0394 log P(marker), trained \u2212 base (nats)": 1.0565013885498047,
+      "label": "+1.0",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 1.0458138930648986,
+      "\u0394 log P(marker), trained \u2212 base (nats)": 1.4142627716064453,
+      "label": "+1.0",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 1.0941486495159283,
+      "\u0394 log P(marker), trained \u2212 base (nats)": 1.5468902587890625,
+      "label": "+1.0",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.8650849522960219,
+      "\u0394 log P(marker), trained \u2212 base (nats)": 1.4932613372802734,
+      "label": "+1.0",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 1.0267998569120036,
+      "\u0394 log P(marker), trained \u2212 base (nats)": 0.34214210510253906,
+      "label": "+1.0",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.9247585511123186,
+      "\u0394 log P(marker), trained \u2212 base (nats)": 0.3875751495361328,
+      "label": "+1.0",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 1.1046887794130644,
+      "\u0394 log P(marker), trained \u2212 base (nats)": 0.7562637329101562,
+      "label": "+1.0",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.931026061837312,
+      "\u0394 log P(marker), trained \u2212 base (nats)": 0.48814964294433594,
+      "label": "+1.0",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 1.0310156373059172,
+      "\u0394 log P(marker), trained \u2212 base (nats)": 1.108530044555664,
+      "label": "+1.0",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 1.0149914352250913,
+      "\u0394 log P(marker), trained \u2212 base (nats)": 2.0663509368896484,
+      "label": "+1.0",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.9709266200165897,
+      "\u0394 log P(marker), trained \u2212 base (nats)": 0.8675022125244141,
+      "label": "+1.0",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 1.0497338138079424,
+      "\u0394 log P(marker), trained \u2212 base (nats)": 0.5274085998535156,
+      "label": "+1.0",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 1.0632154977203214,
+      "\u0394 log P(marker), trained \u2212 base (nats)": 1.4062728881835938,
+      "label": "+1.0",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 1.0187425826894283,
+      "\u0394 log P(marker), trained \u2212 base (nats)": 1.320363998413086,
+      "label": "+1.0",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 1.072358226411731,
+      "\u0394 log P(marker), trained \u2212 base (nats)": 0.9534320831298828,
+      "label": "+1.0",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 1.1353567812780225,
+      "\u0394 log P(marker), trained \u2212 base (nats)": 0.6962032318115234,
+      "label": "+1.0",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.9773962686122254,
+      "\u0394 log P(marker), trained \u2212 base (nats)": 0.6069107055664062,
+      "label": "+1.0",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 1.0040832545279486,
+      "\u0394 log P(marker), trained \u2212 base (nats)": 0.405242919921875,
+      "label": "+1.0",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 1.8634915658235398,
+      "\u0394 log P(marker), trained \u2212 base (nats)": 2.2933521270751953,
+      "label": "+1.9",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 2.0828879957669058,
+      "\u0394 log P(marker), trained \u2212 base (nats)": 1.8488655090332031,
+      "label": "+1.9",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 2.005664418772878,
+      "\u0394 log P(marker), trained \u2212 base (nats)": 2.2829933166503906,
+      "label": "+1.9",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.9742292005009583,
+      "\u0394 log P(marker), trained \u2212 base (nats)": 3.3596553802490234,
+      "label": "+1.9",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.8863401496650307,
+      "\u0394 log P(marker), trained \u2212 base (nats)": 3.1531333923339844,
+      "label": "+1.9",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 2.1091037980691114,
+      "\u0394 log P(marker), trained \u2212 base (nats)": 2.674877166748047,
+      "label": "+1.9",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.9706020272113558,
+      "\u0394 log P(marker), trained \u2212 base (nats)": 1.2403373718261719,
+      "label": "+1.9",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 2.051122847498582,
+      "\u0394 log P(marker), trained \u2212 base (nats)": 0.8344058990478516,
+      "label": "+1.9",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.9018247637830823,
+      "\u0394 log P(marker), trained \u2212 base (nats)": 1.090597152709961,
+      "label": "+1.9",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 2.129233896271489,
+      "\u0394 log P(marker), trained \u2212 base (nats)": 1.9356422424316406,
+      "label": "+1.9",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.9099636933101127,
+      "\u0394 log P(marker), trained \u2212 base (nats)": 1.7432289123535156,
+      "label": "+1.9",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.9158717580118574,
+      "\u0394 log P(marker), trained \u2212 base (nats)": 1.4068851470947266,
+      "label": "+1.9",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 2.10051520095616,
+      "\u0394 log P(marker), trained \u2212 base (nats)": 2.164348602294922,
+      "label": "+1.9",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 2.115523168359741,
+      "\u0394 log P(marker), trained \u2212 base (nats)": 2.9609413146972656,
+      "label": "+1.9",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.9194012741065243,
+      "\u0394 log P(marker), trained \u2212 base (nats)": 1.9690608978271484,
+      "label": "+1.9",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.9915442486889519,
+      "\u0394 log P(marker), trained \u2212 base (nats)": 1.1696701049804688,
+      "label": "+1.9",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 2.0653785732775924,
+      "\u0394 log P(marker), trained \u2212 base (nats)": 1.8501033782958984,
+      "label": "+1.9",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 2.1059424054670246,
+      "\u0394 log P(marker), trained \u2212 base (nats)": 2.226583480834961,
+      "label": "+1.9",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.9661347546104455,
+      "\u0394 log P(marker), trained \u2212 base (nats)": 1.502593994140625,
+      "label": "+1.9",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 2.0047654563178403,
+      "\u0394 log P(marker), trained \u2212 base (nats)": 0.6340389251708984,
+      "label": "+1.9",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 3.067680594945526,
+      "\u0394 log P(marker), trained \u2212 base (nats)": 0.7379798889160156,
+      "label": "+0.5",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 3.0647180734627826,
+      "\u0394 log P(marker), trained \u2212 base (nats)": 0.8594188690185547,
+      "label": "+0.5",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 3.079228836407304,
+      "\u0394 log P(marker), trained \u2212 base (nats)": 0.4254570007324219,
+      "label": "+0.5",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 3.0195814692196272,
+      "\u0394 log P(marker), trained \u2212 base (nats)": 0.2631645202636719,
+      "label": "+0.5",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.889292227105337,
+      "\u0394 log P(marker), trained \u2212 base (nats)": 0.6044769287109375,
+      "label": "+0.5",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 3.113112521445851,
+      "\u0394 log P(marker), trained \u2212 base (nats)": 1.5937671661376953,
+      "label": "+0.5",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 3.102360311009888,
+      "\u0394 log P(marker), trained \u2212 base (nats)": 0.5157375335693359,
+      "label": "+0.5",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 3.083467282029133,
+      "\u0394 log P(marker), trained \u2212 base (nats)": -0.3294258117675781,
+      "label": "+0.5",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.887961493605004,
+      "\u0394 log P(marker), trained \u2212 base (nats)": 0.34911346435546875,
+      "label": "+0.5",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.9172312627828,
+      "\u0394 log P(marker), trained \u2212 base (nats)": 0.2963752746582031,
+      "label": "+0.5",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 3.0682081022301424,
+      "\u0394 log P(marker), trained \u2212 base (nats)": 0.37494468688964844,
+      "label": "+0.5",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.866479226482945,
+      "\u0394 log P(marker), trained \u2212 base (nats)": 0.7042045593261719,
+      "label": "+0.5",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 3.134182897438038,
+      "\u0394 log P(marker), trained \u2212 base (nats)": 0.42299842834472656,
+      "label": "+0.5",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.9656005104995904,
+      "\u0394 log P(marker), trained \u2212 base (nats)": 0.8671970367431641,
+      "label": "+0.5",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 3.0614075094334305,
+      "\u0394 log P(marker), trained \u2212 base (nats)": 0.5626201629638672,
+      "label": "+0.5",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 3.108519904776652,
+      "\u0394 log P(marker), trained \u2212 base (nats)": 1.3606243133544922,
+      "label": "+0.5",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.970496368682023,
+      "\u0394 log P(marker), trained \u2212 base (nats)": -0.024141311645507812,
+      "label": "+0.5",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.9493570968079066,
+      "\u0394 log P(marker), trained \u2212 base (nats)": 0.6254539489746094,
+      "label": "+0.5",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 3.030447516091509,
+      "\u0394 log P(marker), trained \u2212 base (nats)": 0.25177955627441406,
+      "label": "+0.5",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 3.0226770246494543,
+      "\u0394 log P(marker), trained \u2212 base (nats)": 0.08264350891113281,
+      "label": "+0.5",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 3.9745591937349434,
+      "\u0394 log P(marker), trained \u2212 base (nats)": 2.6843738555908203,
+      "label": "+2.4",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 4.028496931642958,
+      "\u0394 log P(marker), trained \u2212 base (nats)": 1.9321784973144531,
+      "label": "+2.4",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 4.121906783478619,
+      "\u0394 log P(marker), trained \u2212 base (nats)": 3.698701858520508,
+      "label": "+2.4",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 3.990939271855447,
+      "\u0394 log P(marker), trained \u2212 base (nats)": 2.4890213012695312,
+      "label": "+2.4",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 3.915087810610177,
+      "\u0394 log P(marker), trained \u2212 base (nats)": 2.786012649536133,
+      "label": "+2.4",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 3.965617675207241,
+      "\u0394 log P(marker), trained \u2212 base (nats)": 1.4574623107910156,
+      "label": "+2.4",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 3.970349955126073,
+      "\u0394 log P(marker), trained \u2212 base (nats)": 1.9239616394042969,
+      "label": "+2.4",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 3.8967104340473417,
+      "\u0394 log P(marker), trained \u2212 base (nats)": 1.8171119689941406,
+      "label": "+2.4",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 3.9056040201552755,
+      "\u0394 log P(marker), trained \u2212 base (nats)": 2.0825977325439453,
+      "label": "+2.4",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 4.051677380550229,
+      "\u0394 log P(marker), trained \u2212 base (nats)": 3.143125534057617,
+      "label": "+2.4",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 3.9550537711784925,
+      "\u0394 log P(marker), trained \u2212 base (nats)": 2.162874221801758,
+      "label": "+2.4",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 4.127371549719626,
+      "\u0394 log P(marker), trained \u2212 base (nats)": 3.3217811584472656,
+      "label": "+2.4",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 3.92820708870041,
+      "\u0394 log P(marker), trained \u2212 base (nats)": 2.742116928100586,
+      "label": "+2.4",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 3.8876988614293504,
+      "\u0394 log P(marker), trained \u2212 base (nats)": 1.2763519287109375,
+      "label": "+2.4",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 4.0709812776400724,
+      "\u0394 log P(marker), trained \u2212 base (nats)": 1.8565731048583984,
+      "label": "+2.4",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 4.1066900945370035,
+      "\u0394 log P(marker), trained \u2212 base (nats)": 2.0039749145507812,
+      "label": "+2.4",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 3.9378717399240166,
+      "\u0394 log P(marker), trained \u2212 base (nats)": 2.97210693359375,
+      "label": "+2.4",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 3.9165846684607337,
+      "\u0394 log P(marker), trained \u2212 base (nats)": 1.754800796508789,
+      "label": "+2.4",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 3.9120145177639043,
+      "\u0394 log P(marker), trained \u2212 base (nats)": 1.8887100219726562,
+      "label": "+2.4",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 4.006163444382623,
+      "\u0394 log P(marker), trained \u2212 base (nats)": 3.6501827239990234,
+      "label": "+2.4",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 4.9911566595490955,
+      "\u0394 log P(marker), trained \u2212 base (nats)": 2.7590198516845703,
+      "label": "+3.0",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 4.93264315515927,
+      "\u0394 log P(marker), trained \u2212 base (nats)": 3.2092037200927734,
+      "label": "+3.0",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 4.87264847275704,
+      "\u0394 log P(marker), trained \u2212 base (nats)": 3.6875476837158203,
+      "label": "+3.0",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 4.994817575291359,
+      "\u0394 log P(marker), trained \u2212 base (nats)": 3.0677947998046875,
+      "label": "+3.0",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 5.1286130573379705,
+      "\u0394 log P(marker), trained \u2212 base (nats)": 3.44049072265625,
+      "label": "+3.0",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 5.042705376210746,
+      "\u0394 log P(marker), trained \u2212 base (nats)": 2.8920345306396484,
+      "label": "+3.0",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 4.998741835856013,
+      "\u0394 log P(marker), trained \u2212 base (nats)": 3.5665340423583984,
+      "label": "+3.0",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 4.890993780728293,
+      "\u0394 log P(marker), trained \u2212 base (nats)": 1.2934379577636719,
+      "label": "+3.0",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 4.930682161353884,
+      "\u0394 log P(marker), trained \u2212 base (nats)": 3.449359893798828,
+      "label": "+3.0",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 4.942536705880872,
+      "\u0394 log P(marker), trained \u2212 base (nats)": 2.2792797088623047,
+      "label": "+3.0",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 5.074144994730026,
+      "\u0394 log P(marker), trained \u2212 base (nats)": 1.9845962524414062,
+      "label": "+3.0",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 5.105479023234094,
+      "\u0394 log P(marker), trained \u2212 base (nats)": 3.0860595703125,
+      "label": "+3.0",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 5.112459718998603,
+      "\u0394 log P(marker), trained \u2212 base (nats)": 3.155925750732422,
+      "label": "+3.0",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 5.135679210310212,
+      "\u0394 log P(marker), trained \u2212 base (nats)": 3.2402801513671875,
+      "label": "+3.0",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 5.135062671269269,
+      "\u0394 log P(marker), trained \u2212 base (nats)": 2.664335250854492,
+      "label": "+3.0",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 5.126839757175035,
+      "\u0394 log P(marker), trained \u2212 base (nats)": 3.6504039764404297,
+      "label": "+3.0",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 4.880110199340808,
+      "\u0394 log P(marker), trained \u2212 base (nats)": 3.117839813232422,
+      "label": "+3.0",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 4.898582190059785,
+      "\u0394 log P(marker), trained \u2212 base (nats)": 3.1837234497070312,
+      "label": "+3.0",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 4.945250627413289,
+      "\u0394 log P(marker), trained \u2212 base (nats)": 2.5768585205078125,
+      "label": "+3.0",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 5.014811511138049,
+      "\u0394 log P(marker), trained \u2212 base (nats)": 3.113466262817383,
+      "label": "+3.0",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 5.887153808837534,
+      "\u0394 log P(marker), trained \u2212 base (nats)": 2.709543228149414,
+      "label": "+2.8",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 6.0968231481846,
+      "\u0394 log P(marker), trained \u2212 base (nats)": 2.6080169677734375,
+      "label": "+2.8",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 6.0326917301416465,
+      "\u0394 log P(marker), trained \u2212 base (nats)": 2.7287063598632812,
+      "label": "+2.8",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 6.0118620326446175,
+      "\u0394 log P(marker), trained \u2212 base (nats)": 3.681072235107422,
+      "label": "+2.8",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 5.906287170542842,
+      "\u0394 log P(marker), trained \u2212 base (nats)": 4.005916595458984,
+      "label": "+2.8",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 5.930911532832055,
+      "\u0394 log P(marker), trained \u2212 base (nats)": 3.216571807861328,
+      "label": "+2.8",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 5.904887366995032,
+      "\u0394 log P(marker), trained \u2212 base (nats)": 0.6367912292480469,
+      "label": "+2.8",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 6.098541284182543,
+      "\u0394 log P(marker), trained \u2212 base (nats)": 0.8990821838378906,
+      "label": "+2.8",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 6.023583800817141,
+      "\u0394 log P(marker), trained \u2212 base (nats)": 2.4190120697021484,
+      "label": "+2.8",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 6.065836239705497,
+      "\u0394 log P(marker), trained \u2212 base (nats)": 3.4099254608154297,
+      "label": "+2.8",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 5.942889201614808,
+      "\u0394 log P(marker), trained \u2212 base (nats)": 2.770174026489258,
+      "label": "+2.8",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 5.9639507383847175,
+      "\u0394 log P(marker), trained \u2212 base (nats)": 2.8325939178466797,
+      "label": "+2.8",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 5.9733593900394295,
+      "\u0394 log P(marker), trained \u2212 base (nats)": 3.518941879272461,
+      "label": "+2.8",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 6.07280419208833,
+      "\u0394 log P(marker), trained \u2212 base (nats)": 3.1778221130371094,
+      "label": "+2.8",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 6.076258836548879,
+      "\u0394 log P(marker), trained \u2212 base (nats)": 3.197835922241211,
+      "label": "+2.8",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 5.917907787703929,
+      "\u0394 log P(marker), trained \u2212 base (nats)": 2.644105911254883,
+      "label": "+2.8",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 6.123630879886668,
+      "\u0394 log P(marker), trained \u2212 base (nats)": 3.3684005737304688,
+      "label": "+2.8",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 5.893783494484232,
+      "\u0394 log P(marker), trained \u2212 base (nats)": 2.938365936279297,
+      "label": "+2.8",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 6.1109141830786164,
+      "\u0394 log P(marker), trained \u2212 base (nats)": 2.217378616333008,
+      "label": "+2.8",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 5.888110780781947,
+      "\u0394 log P(marker), trained \u2212 base (nats)": 2.578500747680664,
+      "label": "+2.8",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 6.934071147122367,
+      "\u0394 log P(marker), trained \u2212 base (nats)": 2.0922603607177734,
+      "label": "+1.8",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 7.097013990099028,
+      "\u0394 log P(marker), trained \u2212 base (nats)": 2.3467140197753906,
+      "label": "+1.8",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 6.910257780256904,
+      "\u0394 log P(marker), trained \u2212 base (nats)": 1.746389389038086,
+      "label": "+1.8",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 6.975799020766791,
+      "\u0394 log P(marker), trained \u2212 base (nats)": 1.4558658599853516,
+      "label": "+1.8",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 6.985960603984355,
+      "\u0394 log P(marker), trained \u2212 base (nats)": 1.8593921661376953,
+      "label": "+1.8",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 6.928672512446498,
+      "\u0394 log P(marker), trained \u2212 base (nats)": 1.911041259765625,
+      "label": "+1.8",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 7.058868656374076,
+      "\u0394 log P(marker), trained \u2212 base (nats)": 2.3125038146972656,
+      "label": "+1.8",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 7.098373701832617,
+      "\u0394 log P(marker), trained \u2212 base (nats)": 1.6919631958007812,
+      "label": "+1.8",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 7.10488103915956,
+      "\u0394 log P(marker), trained \u2212 base (nats)": 2.3596553802490234,
+      "label": "+1.8",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 6.955010200806237,
+      "\u0394 log P(marker), trained \u2212 base (nats)": 1.7134456634521484,
+      "label": "+1.8",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 7.008638110400588,
+      "\u0394 log P(marker), trained \u2212 base (nats)": 0.9268741607666016,
+      "label": "+1.8",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 6.929553793082382,
+      "\u0394 log P(marker), trained \u2212 base (nats)": 1.9885826110839844,
+      "label": "+1.8",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 6.928543020434041,
+      "\u0394 log P(marker), trained \u2212 base (nats)": 1.3069190979003906,
+      "label": "+1.8",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 6.905151137598539,
+      "\u0394 log P(marker), trained \u2212 base (nats)": 3.2256011962890625,
+      "label": "+1.8",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 7.123205323026104,
+      "\u0394 log P(marker), trained \u2212 base (nats)": 1.842559814453125,
+      "label": "+1.8",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 7.108636872009562,
+      "\u0394 log P(marker), trained \u2212 base (nats)": 2.896635055541992,
+      "label": "+1.8",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 7.077660439731754,
+      "\u0394 log P(marker), trained \u2212 base (nats)": 1.2612380981445312,
+      "label": "+1.8",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 7.004945225960564,
+      "\u0394 log P(marker), trained \u2212 base (nats)": 1.1380634307861328,
+      "label": "+1.8",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 6.997370216343324,
+      "\u0394 log P(marker), trained \u2212 base (nats)": 1.185647964477539,
+      "label": "+1.8",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 7.0083287865310995,
+      "\u0394 log P(marker), trained \u2212 base (nats)": 1.0060920715332031,
+      "label": "+1.8",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 0.010239043801584996,
+      "y": 5.981327056884766,
+      "label": "+5.5",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": -0.018322336284646704,
+      "y": 6.518520355224609,
+      "label": "+5.5",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": -0.10310864679022112,
+      "y": 4.892528533935547,
+      "label": "+5.5",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": -0.10481412119680994,
+      "y": 5.039455413818359,
+      "label": "+5.5",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 0.12662992043679133,
+      "y": 5.426788330078125,
+      "label": "+5.5",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": -0.005031387315821839,
+      "y": 4.559442520141602,
+      "label": "+5.5",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 0.1268975469734529,
+      "y": 6.115934371948242,
+      "label": "+5.5",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": -0.09419847424116921,
+      "y": 2.652963638305664,
+      "label": "+1.4",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 0.015236634571181407,
+      "y": 5.706886291503906,
+      "label": "+5.5",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": -0.08183916906156902,
+      "y": 4.380962371826172,
+      "label": "+5.5",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": -0.06910831028455157,
+      "y": 4.646074295043945,
+      "label": "+5.5",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": -0.13158471794686996,
+      "y": 5.995206832885742,
+      "label": "+5.5",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": -0.10669307299274083,
+      "y": 4.490978240966797,
+      "label": "+5.5",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 0.1167175541361748,
+      "y": 5.721622467041016,
+      "label": "+5.5",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": -0.04997076238494712,
+      "y": 7.51231575012207,
+      "label": "+5.5",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 0.030276179336085646,
+      "y": 5.327997207641602,
+      "label": "+5.5",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": -0.00979604304300355,
+      "y": 5.905632019042969,
+      "label": "+5.5",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": -0.02787365133132208,
+      "y": 6.428199768066406,
+      "label": "+5.5",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 0.008928105576899076,
+      "y": 5.696205139160156,
+      "label": "+5.5",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": -0.08757309550770438,
+      "y": 6.0872650146484375,
+      "label": "+5.5",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.1368090915854814,
+      "y": 0.7064285278320312,
+      "label": "+1.4",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 1.0891262032370816,
+      "y": 1.4634780883789062,
+      "label": "+1.4",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 1.0676520971648242,
+      "y": 1.6965866088867188,
+      "label": "+1.4",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 0.9912526031639067,
+      "y": 0.8944530487060547,
+      "label": "+1.4",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 0.9028055941953741,
+      "y": 2.5039901733398438,
+      "label": "+1.4",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 1.117786440316599,
+      "y": 2.213054656982422,
+      "label": "+1.4",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 0.9555883788668837,
+      "y": 0.7014942169189453,
+      "label": "+1.4",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 0.8740298731151415,
+      "y": 1.0032482147216797,
+      "label": "+1.4",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 0.9558730295069761,
+      "y": 1.4607295989990234,
+      "label": "+1.4",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 1.0824479685388475,
+      "y": 0.6686668395996094,
+      "label": "+1.4",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 1.0343584485966983,
+      "y": 1.6486091613769531,
+      "label": "+1.4",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 1.0702348037285607,
+      "y": 0.8805828094482422,
+      "label": "+1.4",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 1.0822179074814657,
+      "y": 1.5468864440917969,
+      "label": "+1.4",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 0.919347291102552,
+      "y": 1.568490982055664,
+      "label": "+1.4",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 1.1186593285060904,
+      "y": 1.3839740753173828,
+      "label": "+1.4",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 0.9826370888177043,
+      "y": 1.5392494201660156,
+      "label": "+1.4",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 1.038923821793966,
+      "y": 1.2041587829589844,
+      "label": "+1.4",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 0.8606464563242877,
+      "y": 1.398580551147461,
+      "label": "+1.4",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 1.1381431795551298,
+      "y": 1.0610218048095703,
+      "label": "+1.4",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 0.9386509880699634,
+      "y": 1.770120620727539,
+      "label": "+1.4",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 1.8773776698312434,
+      "y": 1.9245662689208984,
+      "label": "+1.6",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 1.988313371630224,
+      "y": 1.3299694061279297,
+      "label": "+1.6",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 1.8961284160109717,
+      "y": 1.6573925018310547,
+      "label": "+1.6",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 1.9026514788441211,
+      "y": 2.7502994537353516,
+      "label": "+1.6",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 2.037039187648459,
+      "y": 1.8133563995361328,
+      "label": "+1.6",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 1.9700196696396652,
+      "y": 3.0789794921875,
+      "label": "+1.6",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 2.1181186860433985,
+      "y": 0.9394073486328125,
+      "label": "+1.6",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 1.9493638184902595,
+      "y": 0.9193668365478516,
+      "label": "+1.6",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 2.0633304359474924,
+      "y": 1.303354263305664,
+      "label": "+1.6",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 1.9891078404433742,
+      "y": 1.6326828002929688,
+      "label": "+1.6",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 2.044786364316198,
+      "y": 1.9376583099365234,
+      "label": "+1.6",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 2.027914699880477,
+      "y": 0.9088706970214844,
+      "label": "+1.6",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 1.9923795123725194,
+      "y": 1.6329479217529297,
+      "label": "+1.6",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 2.1260171064948423,
+      "y": 1.3774089813232422,
+      "label": "+1.6",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 1.9559598199713877,
+      "y": 1.4199695587158203,
+      "label": "+1.6",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 1.9096259403497964,
+      "y": 0.7221908569335938,
+      "label": "+1.6",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 2.049866337046352,
+      "y": 1.5947647094726562,
+      "label": "+1.6",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 2.0968821171662144,
+      "y": 1.8984928131103516,
+      "label": "+1.6",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 1.8712710471831786,
+      "y": 0.8698062896728516,
+      "label": "+1.6",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 1.9858971527583504,
+      "y": 2.0635318756103516,
+      "label": "+1.6",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 3.1098965531124514,
+      "y": 0.8820953369140625,
+      "label": "+1.3",
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 3.069893213298403,
+      "y": 1.9142303466796875,
+      "label": "+1.3",
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 3.137706160619336,
+      "y": 1.7361183166503906,
+      "label": "+1.3",
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 3.0087958672472284,
+      "y": 1.0843009948730469,
+      "label": "+1.3",
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 3.0447988012643226,
+      "y": 2.859407424926758,
+      "label": "+1.3",
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 2.94469447871862,
+      "y": 2.8905696868896484,
+      "label": "+1.3",
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 3.1253099679064777,
+      "y": 1.3029899597167969,
+      "label": "+1.3",
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 2.96257393679583,
+      "y": 0.7407512664794922,
+      "label": "+1.3",
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 3.066782999552256,
+      "y": 0.9779300689697266,
+      "label": "+1.3",
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 2.972879257153343,
+      "y": 1.1288299560546875,
+      "label": "+1.3",
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 3.0173093004176397,
+      "y": 0.8937950134277344,
+      "label": "+1.3",
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 3.061539109806033,
+      "y": 0.52294921875,
+      "label": "+1.3",
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 3.0025015624903792,
+      "y": 1.6524314880371094,
+      "label": "+1.3",
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 3.1139841715346623,
+      "y": 0.7533855438232422,
+      "label": "+1.3",
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 2.977404276619787,
+      "y": 1.0147705078125,
+      "label": "+1.3",
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 3.041180103480131,
+      "y": 0.5945606231689453,
+      "label": "+1.3",
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 2.955861481324015,
+      "y": 1.8320465087890625,
+      "label": "+1.3",
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 2.974283867104684,
+      "y": 0.8738231658935547,
+      "label": "+1.3",
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 2.983214030305395,
+      "y": 0.3969402313232422,
+      "label": "+1.3",
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 2.8952259651274397,
+      "y": 1.0844402313232422,
+      "label": "+1.3",
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 3.8856826301365217,
+      "y": 0.7782726287841797,
+      "label": "+1.8",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 4.0468971784810925,
+      "y": 1.7406501770019531,
+      "label": "+1.8",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 4.043544966736055,
+      "y": 2.6394577026367188,
+      "label": "+1.8",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 4.045614719978826,
+      "y": 1.4676017761230469,
+      "label": "+1.8",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 3.8655346046959536,
+      "y": 1.5015487670898438,
+      "label": "+1.8",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 3.9514331159480984,
+      "y": 0.8060874938964844,
+      "label": "+1.8",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 3.915386757232575,
+      "y": 1.0985298156738281,
+      "label": "+1.8",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 4.077882398312323,
+      "y": 1.6708946228027344,
+      "label": "+1.8",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 4.1009765123909165,
+      "y": 1.1367340087890625,
+      "label": "+1.8",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 3.9290705056233213,
+      "y": 1.9871711730957031,
+      "label": "+1.8",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 4.046997764477436,
+      "y": 3.0677871704101562,
+      "label": "+1.8",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 3.896221584968317,
+      "y": 1.306793212890625,
+      "label": "+1.8",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 3.9370427071684797,
+      "y": 2.1780834197998047,
+      "label": "+1.8",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 3.8988232589453573,
+      "y": 0.9664173126220703,
+      "label": "+1.8",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 3.939385814647784,
+      "y": 3.1848201751708984,
+      "label": "+1.8",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 4.048926233257798,
+      "y": 3.073396682739258,
+      "label": "+1.8",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 4.11489153485187,
+      "y": 2.264141082763672,
+      "label": "+1.8",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 3.916706274218772,
+      "y": 2.007955551147461,
+      "label": "+1.8",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 4.0117821297862015,
+      "y": 3.0404281616210938,
+      "label": "+1.8",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 4.056389508348161,
+      "y": 0.8487434387207031,
+      "label": "+1.8",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 5.126818291175958,
+      "y": 1.088644027709961,
+      "label": "+1.8",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 5.030816935208408,
+      "y": 0.9208030700683594,
+      "label": "+1.8",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 4.931429940687667,
+      "y": 2.4297542572021484,
+      "label": "+1.8",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 5.035133883935902,
+      "y": 1.6865043640136719,
+      "label": "+1.8",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 4.949737525269844,
+      "y": 1.6666908264160156,
+      "label": "+1.8",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 5.133315949393678,
+      "y": 2.2977294921875,
+      "label": "+1.8",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 4.971909317845818,
+      "y": 2.9927902221679688,
+      "label": "+1.8",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 5.0519197618130836,
+      "y": 0.9190330505371094,
+      "label": "+1.8",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 4.866503723057092,
+      "y": 2.0418663024902344,
+      "label": "+1.8",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 4.972017204917732,
+      "y": 1.1428813934326172,
+      "label": "+1.8",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 5.105030131730303,
+      "y": 1.2258758544921875,
+      "label": "+1.8",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 5.030863684441309,
+      "y": 2.3914661407470703,
+      "label": "+1.8",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 4.984304008190874,
+      "y": 1.8375663757324219,
+      "label": "+1.8",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 5.122062499842003,
+      "y": 2.1328582763671875,
+      "label": "+1.8",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 5.099115625321224,
+      "y": 2.421907424926758,
+      "label": "+1.8",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 4.950220388670423,
+      "y": 1.8738937377929688,
+      "label": "+1.8",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 5.012473552571575,
+      "y": 1.7487354278564453,
+      "label": "+1.8",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 4.99715079170589,
+      "y": 2.1439762115478516,
+      "label": "+1.8",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 5.0370167000321615,
+      "y": 2.3284778594970703,
+      "label": "+1.8",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 4.953551154748451,
+      "y": 1.5616016387939453,
+      "label": "+1.8",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 5.9283774002144485,
+      "y": 1.9891376495361328,
+      "label": "+2.0",
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 6.11554811387155,
+      "y": 1.8359737396240234,
+      "label": "+2.0",
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 6.118684859859582,
+      "y": 2.8771514892578125,
+      "label": "+2.0",
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 6.096130408013354,
+      "y": 2.1301231384277344,
+      "label": "+2.0",
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 6.133897240614077,
+      "y": 1.8161392211914062,
+      "label": "+2.0",
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 6.068597627218312,
+      "y": 1.9860038757324219,
+      "label": "+2.0",
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 6.07410682399736,
+      "y": 1.9870281219482422,
+      "label": "+2.0",
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 6.073525225749539,
+      "y": 0.6889762878417969,
+      "label": "+2.0",
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 5.994570136663846,
+      "y": 2.120197296142578,
+      "label": "+2.0",
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 5.987806614463996,
+      "y": 2.2405128479003906,
+      "label": "+2.0",
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 5.927263357321721,
+      "y": 1.5860614776611328,
+      "label": "+2.0",
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 6.040549374420602,
+      "y": 1.4379024505615234,
+      "label": "+2.0",
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 5.941009638108653,
+      "y": 2.4299983978271484,
+      "label": "+2.0",
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 5.932186354716659,
+      "y": 2.407329559326172,
+      "label": "+2.0",
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 6.024069184746895,
+      "y": 1.8103885650634766,
+      "label": "+2.0",
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 5.9747950687030125,
+      "y": 2.9493236541748047,
+      "label": "+2.0",
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 5.921279850462497,
+      "y": 1.7312088012695312,
+      "label": "+2.0",
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 6.088495684690793,
+      "y": 1.7656402587890625,
+      "label": "+2.0",
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 6.100959577402425,
+      "y": 1.48785400390625,
+      "label": "+2.0",
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 5.9069558655097785,
+      "y": 1.7655754089355469,
+      "label": "+2.0",
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 6.862101969184,
+      "y": 0.5281524658203125,
+      "label": "+1.5",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 6.954116391188225,
+      "y": 3.378347396850586,
+      "label": "+1.5",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 7.083303033990611,
+      "y": 1.2349014282226562,
+      "label": "+1.5",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 7.094968682545611,
+      "y": 1.483469009399414,
+      "label": "+1.5",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 6.898732139632494,
+      "y": 2.1546287536621094,
+      "label": "+1.5",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 7.076814052331255,
+      "y": 1.7219371795654297,
+      "label": "+1.5",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 6.89239716684664,
+      "y": 2.1250133514404297,
+      "label": "+1.5",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 6.969217525243828,
+      "y": 2.2781906127929688,
+      "label": "+1.5",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 7.139610664203336,
+      "y": 2.565387725830078,
+      "label": "+1.5",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 6.913925430504655,
+      "y": 1.9062728881835938,
+      "label": "+1.5",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 6.903109803121735,
+      "y": 0.937744140625,
+      "label": "+1.5",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 6.978384093113102,
+      "y": 0.7606391906738281,
+      "label": "+1.5",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 7.033507187271561,
+      "y": 1.4219017028808594,
+      "label": "+1.5",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 7.121212219075711,
+      "y": 2.3596954345703125,
+      "label": "+1.5",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 7.13462992074925,
+      "y": 0.39104270935058594,
+      "label": "+1.5",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 6.87949937824559,
+      "y": 0.8506526947021484,
+      "label": "+1.5",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 6.898639304857413,
+      "y": 2.878957748413086,
+      "label": "+1.5",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 7.081406632690879,
+      "y": 0.4198646545410156,
+      "label": "+1.5",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 6.935777002635841,
+      "y": 0.47855377197265625,
+      "label": "+1.5",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 7.107757736661781,
+      "y": 1.1068916320800781,
+      "label": "+1.5",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 0.04576691202414429,
+      "\u0394 log P(marker), trained \u2212 base (nats)": 0.6627082824707031,
+      "label": "-2.4",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": -0.1086834553334104,
+      "\u0394 log P(marker), trained \u2212 base (nats)": 2.5283985137939453,
+      "label": "+4.2",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 0.093108199778722,
+      "\u0394 log P(marker), trained \u2212 base (nats)": 5.820455551147461,
+      "label": "+4.2",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": -0.09062021359773878,
+      "\u0394 log P(marker), trained \u2212 base (nats)": 4.352619171142578,
+      "label": "+4.2",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": -0.021421289489696932,
+      "\u0394 log P(marker), trained \u2212 base (nats)": 5.168857574462891,
+      "label": "+4.2",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 0.014611779996612395,
+      "\u0394 log P(marker), trained \u2212 base (nats)": 4.703365325927734,
+      "label": "+4.2",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 0.00021452174247790778,
+      "\u0394 log P(marker), trained \u2212 base (nats)": 2.7656097412109375,
+      "label": "+4.2",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 0.05212561637224211,
+      "\u0394 log P(marker), trained \u2212 base (nats)": 0.09488868713378906,
+      "label": "-2.4",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 0.04275228576339146,
+      "\u0394 log P(marker), trained \u2212 base (nats)": -0.8631916046142578,
+      "label": "-2.4",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 0.13777176154785536,
+      "\u0394 log P(marker), trained \u2212 base (nats)": 3.8325557708740234,
+      "label": "+4.2",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 0.1398381345827726,
+      "\u0394 log P(marker), trained \u2212 base (nats)": 3.789012908935547,
+      "label": "+4.2",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 0.004608632737979457,
+      "\u0394 log P(marker), trained \u2212 base (nats)": 8.321521759033203,
+      "label": "+4.2",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": -0.1133442556509581,
+      "\u0394 log P(marker), trained \u2212 base (nats)": 4.143331527709961,
+      "label": "+4.2",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 0.06379612371124113,
+      "\u0394 log P(marker), trained \u2212 base (nats)": 4.96147346496582,
+      "label": "+4.2",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 0.13346594190064498,
+      "\u0394 log P(marker), trained \u2212 base (nats)": 1.7171134948730469,
+      "label": "+4.2",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": -0.05086861146387431,
+      "\u0394 log P(marker), trained \u2212 base (nats)": 8.89052963256836,
+      "label": "+4.2",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": -0.010861511965479326,
+      "\u0394 log P(marker), trained \u2212 base (nats)": 5.064903259277344,
+      "label": "+4.2",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": -0.021062461051672338,
+      "\u0394 log P(marker), trained \u2212 base (nats)": 6.3654022216796875,
+      "label": "+4.2",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": -0.1256026367240598,
+      "\u0394 log P(marker), trained \u2212 base (nats)": 7.091037750244141,
+      "label": "+4.2",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 0.04823404074256454,
+      "\u0394 log P(marker), trained \u2212 base (nats)": 4.216480255126953,
+      "label": "+4.2",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 0.958934554619171,
+      "\u0394 log P(marker), trained \u2212 base (nats)": -3.0302658081054688,
+      "label": "-2.4",
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 1.0804898848968207,
+      "\u0394 log P(marker), trained \u2212 base (nats)": -2.722301483154297,
+      "label": "-2.4",
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 1.0929936210789561,
+      "\u0394 log P(marker), trained \u2212 base (nats)": -2.842000961303711,
+      "label": "-2.4",
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 1.0899446202473968,
+      "\u0394 log P(marker), trained \u2212 base (nats)": -4.129213333129883,
+      "label": "-2.4",
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 0.9766664794511665,
+      "\u0394 log P(marker), trained \u2212 base (nats)": -1.1478271484375,
+      "label": "-2.4",
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 0.9500327910274519,
+      "\u0394 log P(marker), trained \u2212 base (nats)": -0.6097278594970703,
+      "label": "-2.4",
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 1.0696698183067754,
+      "\u0394 log P(marker), trained \u2212 base (nats)": -2.287996292114258,
+      "label": "-2.4",
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 1.0843890414759625,
+      "\u0394 log P(marker), trained \u2212 base (nats)": -2.531496047973633,
+      "label": "-2.4",
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 0.9975520849895825,
+      "\u0394 log P(marker), trained \u2212 base (nats)": -3.063638687133789,
+      "label": "-2.4",
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 1.110048685470165,
+      "\u0394 log P(marker), trained \u2212 base (nats)": -3.3433799743652344,
+      "label": "-2.4",
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 0.9002944349019963,
+      "\u0394 log P(marker), trained \u2212 base (nats)": 0.0027332305908203125,
+      "label": "-2.4",
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 1.1061392583045089,
+      "\u0394 log P(marker), trained \u2212 base (nats)": -2.025848388671875,
+      "label": "-2.4",
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 0.8869066652321267,
+      "\u0394 log P(marker), trained \u2212 base (nats)": -2.9920578002929688,
+      "label": "-2.4",
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 0.9029871461752919,
+      "\u0394 log P(marker), trained \u2212 base (nats)": -3.8154125213623047,
+      "label": "-2.4",
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 1.009475203716709,
+      "\u0394 log P(marker), trained \u2212 base (nats)": -1.8593673706054688,
+      "label": "-2.4",
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 0.8789051744524762,
+      "\u0394 log P(marker), trained \u2212 base (nats)": -1.6750431060791016,
+      "label": "-2.4",
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 0.8747859883920309,
+      "\u0394 log P(marker), trained \u2212 base (nats)": -2.3548526763916016,
+      "label": "-2.4",
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 0.8601452483663975,
+      "\u0394 log P(marker), trained \u2212 base (nats)": -3.594369888305664,
+      "label": "-2.4",
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 0.9821686647143937,
+      "\u0394 log P(marker), trained \u2212 base (nats)": -3.8800697326660156,
+      "label": "-2.4",
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 1.0768946867618243,
+      "\u0394 log P(marker), trained \u2212 base (nats)": 0.13379287719726562,
+      "label": "-2.4",
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 1.8697547380783763,
+      "\u0394 log P(marker), trained \u2212 base (nats)": -3.3973350524902344,
+      "label": "-2.0",
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 2.0426321298104395,
+      "\u0394 log P(marker), trained \u2212 base (nats)": -3.0970516204833984,
+      "label": "-2.0",
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 2.090475648876532,
+      "\u0394 log P(marker), trained \u2212 base (nats)": -2.7336578369140625,
+      "label": "-2.0",
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 1.9070402376018039,
+      "\u0394 log P(marker), trained \u2212 base (nats)": -2.492338180541992,
+      "label": "-2.0",
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 1.9011218457499932,
+      "\u0394 log P(marker), trained \u2212 base (nats)": -2.3376083374023438,
+      "label": "-2.0",
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 2.10102427261375,
+      "\u0394 log P(marker), trained \u2212 base (nats)": -0.3806629180908203,
+      "label": "-2.0",
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 2.0904748907860267,
+      "\u0394 log P(marker), trained \u2212 base (nats)": -2.4210777282714844,
+      "label": "-2.0",
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 2.0109036945539724,
+      "\u0394 log P(marker), trained \u2212 base (nats)": 1.0461006164550781,
+      "label": "-2.0",
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 2.0893759662023146,
+      "\u0394 log P(marker), trained \u2212 base (nats)": -0.4143714904785156,
+      "label": "-2.0",
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 1.8859717016788586,
+      "\u0394 log P(marker), trained \u2212 base (nats)": 1.1966552734375,
+      "label": "-2.0",
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 1.9704548250228513,
+      "\u0394 log P(marker), trained \u2212 base (nats)": -3.2321929931640625,
+      "label": "-2.0",
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 2.0665833157097846,
+      "\u0394 log P(marker), trained \u2212 base (nats)": -3.4087982177734375,
+      "label": "-2.0",
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 1.9320865486107097,
+      "\u0394 log P(marker), trained \u2212 base (nats)": -2.7185897827148438,
+      "label": "-2.0",
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 2.0706520960413948,
+      "\u0394 log P(marker), trained \u2212 base (nats)": -2.832775115966797,
+      "label": "-2.0",
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 2.001170009229428,
+      "\u0394 log P(marker), trained \u2212 base (nats)": -2.7859458923339844,
+      "label": "-2.0",
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 2.0700744766255053,
+      "\u0394 log P(marker), trained \u2212 base (nats)": -1.2906227111816406,
+      "label": "-2.0",
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 1.9901102986000523,
+      "\u0394 log P(marker), trained \u2212 base (nats)": -3.072998046875,
+      "label": "-2.0",
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 1.963013215262109,
+      "\u0394 log P(marker), trained \u2212 base (nats)": -2.637094497680664,
+      "label": "-2.0",
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 1.921372980614017,
+      "\u0394 log P(marker), trained \u2212 base (nats)": 0.1997241973876953,
+      "label": "-2.0",
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 1.9183462156018043,
+      "\u0394 log P(marker), trained \u2212 base (nats)": -2.3478450775146484,
+      "label": "-2.0",
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 3.070417426959991,
+      "\u0394 log P(marker), trained \u2212 base (nats)": -4.1971282958984375,
+      "label": "-2.8",
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "x": 2.893294897449509,
+      "\u0394 log P(marker), trained \u2212 base (nats)": -0.46456146240234375,
+      "label": "-2.8",
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "x": 2.8840750580310646,
+      "\u0394 log P(marker), trained \u2212 base (nats)": -3.29388427734375,
+      "label": "-2.8",
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "x": 2.9093615822061962,
+      "\u0394 log P(marker), trained \u2212 base (nats)": -3.743471145629883,
+      "label": "-2.8",
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "x": 2.909097023207098,
+      "\u0394 log P(marker), trained \u2212 base (nats)": -2.3480148315429688,
+      "label": "-2.8",
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "x": 3.090470134385932,
+      "\u0394 log P(marker), trained \u2212 base (nats)": -0.16675376892089844,
+      "label": "-2.8",
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "x": 2.9715818545727797,
+      "\u0394 log P(marker), trained \u2212 base (nats)": -1.4880695343017578,
+      "label": "-2.8",
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "x": 3.1373087680609353,
+      "\u0394 log P(marker), trained \u2212 base (nats)": -4.030384063720703,
+      "label": "-2.8",
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "x": 2.8984191521813716,
+      "\u0394 log P(marker), trained \u2212 base (nats)": -3.1160507202148438,
+      "label": "-2.8",
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "x": 3.04299115119422,
+      "\u0394 log P(marker), trained \u2212 base (nats)": -3.653169631958008,
+      "label": "-2.8",
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "x": 2.98564426201635,
+      "\u0394 log P(marker), trained \u2212 base (nats)": -3.696012496948242,
+      "label": "-2.8",
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "x": 2.9700170894751805,
+      "\u0394 log P(marker), trained \u2212 base (nats)": -3.994731903076172,
+      "label": "-2.8",
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "x": 3.105023575735143,
+      "\u0394 log P(marker), trained \u2212 base (nats)": -3.780416488647461,
+      "label": "-2.8",
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "x": 3.133166780831952,
+      "\u0394 log P(marker), trained \u2212 base (nats)": -4.1737823486328125,
+      "label": "-2.8",
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "x": 3.10440050845677,
+      "\u0394 log P(marker), trained \u2212 base (nats)": -2.9053401947021484,
+      "label": "-2.8",
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "x": 2.9138441901298373,
+      "\u0394 log P(marker), trained \u2212 base (nats)": 0.5930500030517578,
+      "label": "-2.0",
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "x": 2.9218234179385014,
+      "\u0394 log P(marker), trained \u2212 base (nats)": -1.992177963256836,
+      "label": "-2.8",
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "x": 3.0437006861466176,
+      "\u0394 log P(marker), trained \u2212 base (nats)": -3.1869430541992188,
+      "label": "-2.8",
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "x": 2.940943402858694,
+      "\u0394 log P(marker), trained \u2212 base (nats)": -3.899761199951172,
+      "label": "-2.8",
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "x": 3.0657230366185626,
+      "\u0394 log P(marker), trained \u2212 base (nats)": -3.1210460662841797,
+      "label": "-2.8",
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "x": 4.018597782226701,
+      "\u0394 log P(marker), trained \u2212 base (nats)": -3.223226547241211,
+      "label": "-2.3",
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 4.014254455177313,
+      "\u0394 log P(marker), trained \u2212 base (nats)": -3.3190765380859375,
+      "label": "-2.3",
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 4.09199313895486,
+      "\u0394 log P(marker), trained \u2212 base (nats)": -5.1662139892578125,
+      "label": "-2.3",
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 4.05894917608795,
+      "\u0394 log P(marker), trained \u2212 base (nats)": -0.43604087829589844,
+      "label": "-2.3",
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 3.8674417741992415,
+      "\u0394 log P(marker), trained \u2212 base (nats)": -3.0875205993652344,
+      "label": "-2.3",
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 3.8738485584008844,
+      "\u0394 log P(marker), trained \u2212 base (nats)": 0.20641326904296875,
+      "label": "-2.3",
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 4.028436366687685,
+      "\u0394 log P(marker), trained \u2212 base (nats)": -5.31915283203125,
+      "label": "-2.3",
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 3.9961337811742372,
+      "\u0394 log P(marker), trained \u2212 base (nats)": -1.0912761688232422,
+      "label": "-2.3",
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 3.9328517034960377,
+      "\u0394 log P(marker), trained \u2212 base (nats)": -1.595724105834961,
+      "label": "-2.3",
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 3.9772237044481447,
+      "\u0394 log P(marker), trained \u2212 base (nats)": -1.4696159362792969,
+      "label": "-2.3",
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 4.072214889245201,
+      "\u0394 log P(marker), trained \u2212 base (nats)": -4.842903137207031,
+      "label": "-2.3",
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 4.09145121570422,
+      "\u0394 log P(marker), trained \u2212 base (nats)": -2.7319259643554688,
+      "label": "-2.3",
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 4.017142459009213,
+      "\u0394 log P(marker), trained \u2212 base (nats)": -0.6983871459960938,
+      "label": "-2.3",
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 3.967903454639989,
+      "\u0394 log P(marker), trained \u2212 base (nats)": 0.9804210662841797,
+      "label": "-2.3",
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 3.93579509321863,
+      "\u0394 log P(marker), trained \u2212 base (nats)": -1.7607498168945312,
+      "label": "-2.3",
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 4.006137171815391,
+      "\u0394 log P(marker), trained \u2212 base (nats)": -2.9330406188964844,
+      "label": "-2.3",
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 3.948129893198027,
+      "\u0394 log P(marker), trained \u2212 base (nats)": 0.6260147094726562,
+      "label": "-2.3",
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 4.017946638373222,
+      "\u0394 log P(marker), trained \u2212 base (nats)": -3.896259307861328,
+      "label": "-2.3",
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 4.0494626671026985,
+      "\u0394 log P(marker), trained \u2212 base (nats)": -1.8274211883544922,
+      "label": "-2.3",
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 3.8785021790574303,
+      "\u0394 log P(marker), trained \u2212 base (nats)": -5.040445327758789,
+      "label": "-2.3",
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 4.860298890206369,
+      "\u0394 log P(marker), trained \u2212 base (nats)": -2.9188270568847656,
+      "label": "-2.6",
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "x": 4.919437598875408,
+      "\u0394 log P(marker), trained \u2212 base (nats)": -1.6024894714355469,
+      "label": "-2.6",
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "x": 5.110463219361259,
+      "\u0394 log P(marker), trained \u2212 base (nats)": -3.1001052856445312,
+      "label": "-2.6",
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "x": 5.040961413703997,
+      "\u0394 log P(marker), trained \u2212 base (nats)": -2.7538394927978516,
+      "label": "-2.6",
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "x": 4.9081488985423665,
+      "\u0394 log P(marker), trained \u2212 base (nats)": -2.8473052978515625,
+      "label": "-2.6",
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "x": 5.109273909310613,
+      "\u0394 log P(marker), trained \u2212 base (nats)": -0.6814117431640625,
+      "label": "-2.6",
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "x": 4.9915876632804554,
+      "\u0394 log P(marker), trained \u2212 base (nats)": -3.101451873779297,
+      "label": "-2.6",
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "x": 4.993305691870025,
+      "\u0394 log P(marker), trained \u2212 base (nats)": -3.597078323364258,
+      "label": "-2.6",
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "x": 5.121951744275943,
+      "\u0394 log P(marker), trained \u2212 base (nats)": -3.0936050415039062,
+      "label": "-2.6",
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "x": 4.876656273811335,
+      "\u0394 log P(marker), trained \u2212 base (nats)": -0.6076011657714844,
+      "label": "-2.6",
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "x": 4.920249916896041,
+      "\u0394 log P(marker), trained \u2212 base (nats)": -2.4582901000976562,
+      "label": "-2.6",
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "x": 5.0240159710433225,
+      "\u0394 log P(marker), trained \u2212 base (nats)": -2.964082717895508,
+      "label": "-2.6",
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "x": 4.914736222682961,
+      "\u0394 log P(marker), trained \u2212 base (nats)": -2.1703948974609375,
+      "label": "-2.6",
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "x": 5.050267562578508,
+      "\u0394 log P(marker), trained \u2212 base (nats)": -2.609334945678711,
+      "label": "-2.6",
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "x": 4.919945841014282,
+      "\u0394 log P(marker), trained \u2212 base (nats)": -3.055227279663086,
+      "label": "-2.6",
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "x": 4.887763951767668,
+      "\u0394 log P(marker), trained \u2212 base (nats)": -3.9839916229248047,
+      "label": "-2.6",
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "x": 4.917955844699435,
+      "\u0394 log P(marker), trained \u2212 base (nats)": -3.0644588470458984,
+      "label": "-2.6",
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "x": 4.978365529596178,
+      "\u0394 log P(marker), trained \u2212 base (nats)": -2.1180248260498047,
+      "label": "-2.6",
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "x": 4.909318723768463,
+      "\u0394 log P(marker), trained \u2212 base (nats)": -3.3957080841064453,
+      "label": "-2.6",
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "x": 4.897713766978537,
+      "\u0394 log P(marker), trained \u2212 base (nats)": -2.2917003631591797,
+      "label": "-2.6",
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "x": 6.100878928141303,
+      "\u0394 log P(marker), trained \u2212 base (nats)": -3.100461959838867,
+      "label": "-2.6",
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 5.949711217007247,
+      "\u0394 log P(marker), trained \u2212 base (nats)": -1.1253414154052734,
+      "label": "-2.6",
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 5.961012432225111,
+      "\u0394 log P(marker), trained \u2212 base (nats)": -3.2964420318603516,
+      "label": "-2.6",
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 5.875475714660344,
+      "\u0394 log P(marker), trained \u2212 base (nats)": -2.8056793212890625,
+      "label": "-2.6",
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 5.9600634945805755,
+      "\u0394 log P(marker), trained \u2212 base (nats)": -2.3473777770996094,
+      "label": "-2.6",
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 5.934146009650043,
+      "\u0394 log P(marker), trained \u2212 base (nats)": -2.9511280059814453,
+      "label": "-2.6",
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 6.030935818855701,
+      "\u0394 log P(marker), trained \u2212 base (nats)": -4.010797500610352,
+      "label": "-2.6",
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 5.917509283348274,
+      "\u0394 log P(marker), trained \u2212 base (nats)": -3.9760494232177734,
+      "label": "-2.6",
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 6.1087423268575956,
+      "\u0394 log P(marker), trained \u2212 base (nats)": -1.0480232238769531,
+      "label": "-2.6",
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 6.120306653857475,
+      "\u0394 log P(marker), trained \u2212 base (nats)": -2.9673385620117188,
+      "label": "-2.6",
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 5.887952696009501,
+      "\u0394 log P(marker), trained \u2212 base (nats)": 0.8081474304199219,
+      "label": "-2.6",
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 5.890072827760801,
+      "\u0394 log P(marker), trained \u2212 base (nats)": -3.4947509765625,
+      "label": "-2.6",
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 5.892291402671076,
+      "\u0394 log P(marker), trained \u2212 base (nats)": -3.333272933959961,
+      "label": "-2.6",
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 6.033479391766887,
+      "\u0394 log P(marker), trained \u2212 base (nats)": -3.5639381408691406,
+      "label": "-2.6",
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 5.894151309978694,
+      "\u0394 log P(marker), trained \u2212 base (nats)": -3.7146034240722656,
+      "label": "-2.6",
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 6.098667049020475,
+      "\u0394 log P(marker), trained \u2212 base (nats)": 2.8101024627685547,
+      "label": "-2.6",
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 6.07119602418261,
+      "\u0394 log P(marker), trained \u2212 base (nats)": -2.4700698852539062,
+      "label": "-2.6",
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 6.089546480306646,
+      "\u0394 log P(marker), trained \u2212 base (nats)": -3.654825210571289,
+      "label": "-2.6",
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 6.0072969475280855,
+      "\u0394 log P(marker), trained \u2212 base (nats)": -3.3172874450683594,
+      "label": "-2.6",
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 6.139069619225363,
+      "\u0394 log P(marker), trained \u2212 base (nats)": -3.5532703399658203,
+      "label": "-2.6",
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 6.872369028824365,
+      "\u0394 log P(marker), trained \u2212 base (nats)": -1.8642959594726562,
+      "label": "-2.3",
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "x": 6.972354189972112,
+      "\u0394 log P(marker), trained \u2212 base (nats)": -3.117206573486328,
+      "label": "-2.3",
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "x": 6.950702267302538,
+      "\u0394 log P(marker), trained \u2212 base (nats)": -3.2247562408447266,
+      "label": "-2.3",
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "x": 7.1256207396395395,
+      "\u0394 log P(marker), trained \u2212 base (nats)": -2.691537857055664,
+      "label": "-2.3",
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "x": 7.021521068379326,
+      "\u0394 log P(marker), trained \u2212 base (nats)": -2.2845897674560547,
+      "label": "-2.3",
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "x": 7.085733470324523,
+      "\u0394 log P(marker), trained \u2212 base (nats)": -3.0652103424072266,
+      "label": "-2.3",
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "x": 6.907695534224385,
+      "\u0394 log P(marker), trained \u2212 base (nats)": -2.5251216888427734,
+      "label": "-2.3",
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "x": 7.134017560292123,
+      "\u0394 log P(marker), trained \u2212 base (nats)": -2.2626399993896484,
+      "label": "-2.3",
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "x": 6.999619073125368,
+      "\u0394 log P(marker), trained \u2212 base (nats)": -2.5974884033203125,
+      "label": "-2.3",
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "x": 6.998228181355781,
+      "\u0394 log P(marker), trained \u2212 base (nats)": -2.195272445678711,
+      "label": "-2.3",
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "x": 7.131847723992807,
+      "\u0394 log P(marker), trained \u2212 base (nats)": -3.7051525115966797,
+      "label": "-2.3",
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "x": 6.9666050611408,
+      "\u0394 log P(marker), trained \u2212 base (nats)": -4.008893966674805,
+      "label": "-2.3",
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "x": 6.971307006875398,
+      "\u0394 log P(marker), trained \u2212 base (nats)": -4.083911895751953,
+      "label": "-2.3",
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "x": 7.023730756785382,
+      "\u0394 log P(marker), trained \u2212 base (nats)": -2.2208099365234375,
+      "label": "-2.3",
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "x": 6.89585473095338,
+      "\u0394 log P(marker), trained \u2212 base (nats)": -3.1552886962890625,
+      "label": "-2.3",
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "x": 6.949903975395319,
+      "\u0394 log P(marker), trained \u2212 base (nats)": -2.1039886474609375,
+      "label": "-2.3",
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "x": 6.914098330284636,
+      "\u0394 log P(marker), trained \u2212 base (nats)": -1.293050765991211,
+      "label": "-2.3",
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "x": 6.888919374149974,
+      "\u0394 log P(marker), trained \u2212 base (nats)": -1.089385986328125,
+      "label": "-2.3",
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "x": 7.102520489772686,
+      "\u0394 log P(marker), trained \u2212 base (nats)": -1.6435585021972656,
+      "label": "-2.3",
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "x": 7.025012726515693,
+      "\u0394 log P(marker), trained \u2212 base (nats)": 2.908039093017578,
+      "label": "-2.3",
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "x": -0.03957161837218487,
+      "y": 7.190242767333984,
+      "label": "+7.3",
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": -0.02557257433732041,
+      "y": 5.921588897705078,
+      "label": "+7.3",
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": -0.0191746789675407,
+      "y": 9.1580810546875,
+      "label": "+7.3",
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 0.03728177100051863,
+      "y": 5.517457962036133,
+      "label": "+7.3",
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 0.11949542961691811,
+      "y": 10.969066619873047,
+      "label": "+7.3",
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 0.12117829350395509,
+      "y": 7.495388031005859,
+      "label": "+7.3",
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": -0.03038224573141425,
+      "y": 7.542291641235352,
+      "label": "+7.3",
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": -0.04780651131262453,
+      "y": 10.342569351196289,
+      "label": "+7.3",
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": -0.013706979948128584,
+      "y": 5.383716583251953,
+      "label": "+7.3",
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 0.01902158451997793,
+      "y": 6.686283111572266,
+      "label": "+7.3",
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": -0.01069098479407049,
+      "y": 6.301342010498047,
+      "label": "+7.3",
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 0.044450954748676275,
+      "y": 6.051740646362305,
+      "label": "+7.3",
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 0.015231726546333813,
+      "y": 7.628767013549805,
+      "label": "+7.3",
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": -0.0501996469256587,
+      "y": 5.979564666748047,
+      "label": "+7.3",
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": -0.04319537438646287,
+      "y": 6.434562683105469,
+      "label": "+7.3",
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": -0.03399401948327535,
+      "y": 6.102388381958008,
+      "label": "+7.3",
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": -0.11350086489017118,
+      "y": 6.531097412109375,
+      "label": "+7.3",
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": -0.09350246292408754,
+      "y": 8.3907470703125,
+      "label": "+7.3",
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 0.06247186460070811,
+      "y": 9.173049926757812,
+      "label": "+7.3",
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": -0.03105292077381759,
+      "y": 7.20094108581543,
+      "label": "+7.3",
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 0.9200709123168402,
+      "y": 4.317890167236328,
+      "label": "+5.8",
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 1.0175482749609601,
+      "y": 5.292407989501953,
+      "label": "+5.8",
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 1.0715510718925596,
+      "y": 6.470556259155273,
+      "label": "+5.8",
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 0.932078261456704,
+      "y": 7.399360656738281,
+      "label": "+5.8",
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 1.0915011669386485,
+      "y": 6.768392562866211,
+      "label": "+5.8",
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 1.119701360695014,
+      "y": 6.019033432006836,
+      "label": "+5.8",
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 1.0272704681406755,
+      "y": 5.325578689575195,
+      "label": "+5.8",
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 1.0473053445176423,
+      "y": 9.164348602294922,
+      "label": "+7.3",
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 0.8747212772904555,
+      "y": 6.207086563110352,
+      "label": "+5.8",
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 1.1247455694861337,
+      "y": 4.049467086791992,
+      "label": "+5.8",
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 0.9698957255941842,
+      "y": 6.854522705078125,
+      "label": "+5.8",
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 1.1186921121527202,
+      "y": 3.724538803100586,
+      "label": "+5.8",
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 1.0221137069300679,
+      "y": 4.556636810302734,
+      "label": "+5.8",
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 0.8612932636761317,
+      "y": 4.323347091674805,
+      "label": "+5.8",
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 0.870791759810562,
+      "y": 5.547718048095703,
+      "label": "+5.8",
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 1.050517265587578,
+      "y": 4.714326858520508,
+      "label": "+5.8",
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 1.0175470438729413,
+      "y": 6.519582748413086,
+      "label": "+5.8",
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 0.8674290824177008,
+      "y": 8.643966674804688,
+      "label": "+7.3",
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 1.068168789142268,
+      "y": 5.941884994506836,
+      "label": "+5.8",
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 1.098600694379371,
+      "y": 4.050144195556641,
+      "label": "+5.8",
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 1.9989968950830064,
+      "y": 5.238773345947266,
+      "label": "+5.1",
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": 1.9904120833000314,
+      "y": 4.184574127197266,
+      "label": "+5.1",
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": 1.8615324704736957,
+      "y": 4.698741912841797,
+      "label": "+5.1",
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": 2.080261919498208,
+      "y": 4.472606658935547,
+      "label": "+5.1",
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": 1.9526004986889096,
+      "y": 6.570474624633789,
+      "label": "+5.1",
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": 2.106053813539111,
+      "y": 6.493066787719727,
+      "label": "+5.1",
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": 1.9644569645162548,
+      "y": 5.123666763305664,
+      "label": "+5.1",
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": 2.0182218149765974,
+      "y": 9.054893493652344,
+      "label": "+5.1",
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": 1.9356957006958118,
+      "y": 4.907651901245117,
+      "label": "+5.1",
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": 1.9049647275237773,
+      "y": 7.283697128295898,
+      "label": "+5.1",
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": 2.0769742129467716,
+      "y": 4.452798843383789,
+      "label": "+5.1",
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": 1.9990453340769587,
+      "y": 4.223819732666016,
+      "label": "+5.1",
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": 2.01021661865063,
+      "y": 4.057737350463867,
+      "label": "+5.1",
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": 2.130316466974886,
+      "y": 4.8058929443359375,
+      "label": "+5.1",
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": 2.129802375422203,
+      "y": 4.750478744506836,
+      "label": "+5.1",
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": 2.099579794076673,
+      "y": 3.8865203857421875,
+      "label": "+5.1",
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": 1.9125306019742094,
+      "y": 4.746309280395508,
+      "label": "+5.1",
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": 2.0263963544044423,
+      "y": 5.679620742797852,
+      "label": "+5.1",
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": 2.1058812789035506,
+      "y": 4.315210342407227,
+      "label": "+5.1",
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": 1.9648499022057027,
+      "y": 4.010927200317383,
+      "label": "+5.1",
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": 2.888309726461964,
+      "y": 3.2010574340820312,
+      "label": "+3.6",
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "x": 3.087069612627178,
+      "y": 4.853618621826172,
+      "label": "+3.6",
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "x": 2.994893794381408,
+      "y": 4.299320220947266,
+      "label": "+3.6",
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "x": 3.01802995050057,
+      "y": 3.3079395294189453,
+      "label": "+3.6",
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "x": 3.1350004029689966,
+      "y": 3.4918861389160156,
+      "label": "+3.6",
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "x": 3.0300192005383404,
+      "y": 2.54534912109375,
+      "label": "+3.6",
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "x": 2.9789942279865085,
+      "y": 4.437124252319336,
+      "label": "+3.6",
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "x": 2.9635956229972154,
+      "y": 3.8099708557128906,
+      "label": "+3.6",
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "x": 2.976933401943133,
+      "y": 2.809083938598633,
+      "label": "+3.6",
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "x": 2.8931517432900273,
+      "y": 2.385446548461914,
+      "label": "+3.6",
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "x": 3.08253015635692,
+      "y": 3.2650146484375,
+      "label": "+3.6",
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "x": 3.0945607202923715,
+      "y": 6.347400665283203,
+      "label": "+3.6",
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "x": 2.9396311976805545,
+      "y": 2.9007110595703125,
+      "label": "+3.6",
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "x": 2.9450630531547843,
+      "y": 2.2323989868164062,
+      "label": "+3.6",
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "x": 3.104813591773748,
+      "y": 5.05357551574707,
+      "label": "+3.6",
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "x": 2.8667116995478277,
+      "y": 2.3987178802490234,
+      "label": "+3.6",
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "x": 3.005728084254824,
+      "y": 1.909210205078125,
+      "label": "+3.6",
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "x": 2.98982920011082,
+      "y": 5.889717102050781,
+      "label": "+3.6",
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "x": 3.0532354954819687,
+      "y": 3.9282302856445312,
+      "label": "+3.6",
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "x": 2.905749676041847,
+      "y": 3.8903961181640625,
+      "label": "+3.6",
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "x": 4.047132607422643,
+      "y": 2.2581558227539062,
+      "label": "+3.9",
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 3.965485522204965,
+      "y": 2.043722152709961,
+      "label": "+3.9",
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 4.0332401378875,
+      "y": 4.6129150390625,
+      "label": "+3.9",
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 3.871226602764377,
+      "y": 2.3783531188964844,
+      "label": "+3.9",
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 3.9892836152116624,
+      "y": 3.4622764587402344,
+      "label": "+3.9",
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 4.006230250315064,
+      "y": 2.6287193298339844,
+      "label": "+3.9",
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 3.9200113927993963,
+      "y": 2.6120948791503906,
+      "label": "+3.9",
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 3.899094623170154,
+      "y": 6.659870147705078,
+      "label": "+3.9",
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 3.9127728048434443,
+      "y": 3.9129886627197266,
+      "label": "+3.9",
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 3.9563595018577375,
+      "y": 4.623020172119141,
+      "label": "+3.9",
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 3.887106841805392,
+      "y": 2.9259872436523438,
+      "label": "+3.9",
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 4.125249542804289,
+      "y": 2.7405014038085938,
+      "label": "+3.9",
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 3.973398337218829,
+      "y": 6.706384658813477,
+      "label": "+5.6",
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 4.086511488701889,
+      "y": 5.735694885253906,
+      "label": "+3.9",
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 4.132836794470477,
+      "y": 3.064584732055664,
+      "label": "+3.9",
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 3.882605878400767,
+      "y": 2.874326705932617,
+      "label": "+3.9",
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 4.042467451021798,
+      "y": 3.4088096618652344,
+      "label": "+3.9",
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 4.10399454428754,
+      "y": 3.752971649169922,
+      "label": "+3.9",
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 4.037585641510684,
+      "y": 5.211126327514648,
+      "label": "+3.9",
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 3.9801273139800757,
+      "y": 6.512388229370117,
+      "label": "+3.9",
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 4.980701380138623,
+      "y": 4.447553634643555,
+      "label": "+5.6",
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "x": 4.870051688082061,
+      "y": 5.041633605957031,
+      "label": "+5.6",
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "x": 5.009688210360997,
+      "y": 5.969339370727539,
+      "label": "+5.6",
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "x": 5.138192039100318,
+      "y": 5.060331344604492,
+      "label": "+5.6",
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "x": 5.128438107272141,
+      "y": 6.201343536376953,
+      "label": "+5.6",
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "x": 4.871311784075806,
+      "y": 6.2163238525390625,
+      "label": "+5.6",
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "x": 5.057623161016257,
+      "y": 5.121940612792969,
+      "label": "+5.6",
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "x": 4.944494162675141,
+      "y": 9.293561935424805,
+      "label": "+5.6",
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "x": 5.112836962953718,
+      "y": 4.260431289672852,
+      "label": "+5.6",
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "x": 4.872632128798598,
+      "y": 5.327919006347656,
+      "label": "+5.6",
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "x": 5.122044748563103,
+      "y": 4.086219787597656,
+      "label": "+5.6",
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "x": 5.094493208260578,
+      "y": 5.059297561645508,
+      "label": "+5.6",
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "x": 4.892901227030729,
+      "y": 5.261266708374023,
+      "label": "+5.6",
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "x": 4.876750814448844,
+      "y": 7.035165786743164,
+      "label": "+5.6",
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "x": 5.093718146011542,
+      "y": 5.902597427368164,
+      "label": "+5.6",
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "x": 4.903612147872882,
+      "y": 6.0548095703125,
+      "label": "+5.6",
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "x": 5.009771482833243,
+      "y": 5.445674896240234,
+      "label": "+5.6",
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "x": 5.116408560206039,
+      "y": 6.295543670654297,
+      "label": "+5.6",
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "x": 5.01888547179381,
+      "y": 4.720256805419922,
+      "label": "+5.6",
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "x": 4.971225324412391,
+      "y": 4.486989974975586,
+      "label": "+5.6",
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "x": 5.984604495359118,
+      "y": 4.548490524291992,
+      "label": "+5.7",
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "x": 5.877672807797084,
+      "y": 5.596675872802734,
+      "label": "+5.7",
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "x": 6.131250649981248,
+      "y": 5.2559051513671875,
+      "label": "+5.7",
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "x": 5.946983171822703,
+      "y": 6.381961822509766,
+      "label": "+5.7",
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "x": 5.913021777668399,
+      "y": 6.582300186157227,
+      "label": "+5.7",
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "x": 5.94009324451531,
+      "y": 5.519168853759766,
+      "label": "+5.7",
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "x": 6.130024494569614,
+      "y": 7.235544204711914,
+      "label": "+5.7",
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "x": 5.886400094976642,
+      "y": 8.964950561523438,
+      "label": "+5.7",
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "x": 6.102844851340331,
+      "y": 9.146848678588867,
+      "label": "+5.7",
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "x": 6.058196290432406,
+      "y": 5.458158493041992,
+      "label": "+5.7",
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "x": 6.092405370164528,
+      "y": 5.097076416015625,
+      "label": "+5.7",
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "x": 6.133251311303011,
+      "y": 4.248601913452148,
+      "label": "+5.7",
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "x": 6.0958033035447245,
+      "y": 5.570730209350586,
+      "label": "+5.7",
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "x": 6.124147058357799,
+      "y": 5.508655548095703,
+      "label": "+5.7",
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "x": 5.895541871901457,
+      "y": 4.70985221862793,
+      "label": "+5.7",
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "x": 6.082820798246751,
+      "y": 4.49793815612793,
+      "label": "+5.7",
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "x": 6.012789194342694,
+      "y": 6.74028205871582,
+      "label": "+5.7",
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "x": 6.012178766622361,
+      "y": 5.01093864440918,
+      "label": "+5.7",
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "x": 6.111698041369744,
+      "y": 3.865854263305664,
+      "label": "+5.7",
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "x": 6.132105069221079,
+      "y": 3.898630142211914,
+      "label": "+5.7",
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "x": 7.057354730452091,
+      "y": 5.141031265258789,
+      "label": "+4.8",
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "x": 6.9952227490520995,
+      "y": 4.431848526000977,
+      "label": "+4.8",
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "x": 6.9877930802125165,
+      "y": 3.741250991821289,
+      "label": "+4.8",
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "x": 6.968175608022491,
+      "y": 5.158454895019531,
+      "label": "+4.8",
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "x": 6.9612477282803455,
+      "y": 4.784402847290039,
+      "label": "+4.8",
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "x": 6.969621915671641,
+      "y": 4.668735504150391,
+      "label": "+4.8",
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "x": 6.8851309058703345,
+      "y": 5.844654083251953,
+      "label": "+4.8",
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "x": 6.881682103872922,
+      "y": 4.413539886474609,
+      "label": "+4.8",
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "x": 7.0783635562842475,
+      "y": 7.731010437011719,
+      "label": "+4.8",
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "x": 6.984900410017663,
+      "y": 8.220378875732422,
+      "label": "+5.7",
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "x": 7.120591656792493,
+      "y": 2.9663925170898438,
+      "label": "+4.8",
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "x": 7.031421882406307,
+      "y": 3.785238265991211,
+      "label": "+4.8",
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "x": 6.869849275011638,
+      "y": 3.629537582397461,
+      "label": "+4.8",
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "x": 6.904106535568895,
+      "y": 2.6456565856933594,
+      "label": "+4.8",
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "x": 6.917629542043642,
+      "y": 4.168544769287109,
+      "label": "+4.8",
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "x": 7.133206086829105,
+      "y": 4.289052963256836,
+      "label": "+4.8",
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "x": 6.921237183322458,
+      "y": 4.53094482421875,
+      "label": "+4.8",
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "x": 7.004411589360655,
+      "y": 5.598726272583008,
+      "label": "+4.8",
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "x": 7.122129540859255,
+      "y": 5.795007705688477,
+      "label": "+4.8",
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "x": 7.13361396437602,
+      "y": 4.590776443481445,
+      "label": "+4.8",
+      "_kind": "scatter",
+      "_group": 31
+    }
+  ],
+  "n_series": 32,
+  "total_points": 640,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [
+      "Per-probe leakage dots behind the per-context means (20 probes per context)"
+    ],
+    "axes": [
+      {
+        "title_left": "villain persona-trained (\u0394G source +5.4)",
+        "ylabel": "\u0394 log P(marker), trained \u2212 base (nats)",
+        "annotations": [
+          "+5.4",
+          "+1.0",
+          "+1.9",
+          "+0.5",
+          "+2.4",
+          "+3.0",
+          "+2.8",
+          "+1.8"
+        ],
+        "xticklabels": [
+          "source",
+          "medical doctor",
+          "police officer",
+          "qwen default",
+          "comedian",
+          "chef",
+          "hero",
+          "philosopher"
+        ],
+        "yticklabels": [
+          "\u22128",
+          "\u22126",
+          "\u22124",
+          "\u22122",
+          "0",
+          "2",
+          "4",
+          "6",
+          "8",
+          "10",
+          "12"
+        ]
+      },
+      {
+        "title_left": "WildChat-prefix-trained (+5.5)",
+        "annotations": [
+          "+5.5",
+          "+1.4",
+          "+1.6",
+          "+1.3",
+          "+1.8",
+          "+1.8",
+          "+2.0",
+          "+1.5"
+        ],
+        "xticklabels": [
+          "source",
+          "medical doctor",
+          "police officer",
+          "qwen default",
+          "comedian",
+          "chef",
+          "hero",
+          "philosopher"
+        ]
+      },
+      {
+        "title_left": "demonstration-trained (+4.2)",
+        "ylabel": "\u0394 log P(marker), trained \u2212 base (nats)",
+        "annotations": [
+          "+4.2",
+          "-2.4",
+          "-2.0",
+          "-2.8",
+          "-2.3",
+          "-2.6",
+          "-2.6",
+          "-2.3"
+        ],
+        "xticklabels": [
+          "source",
+          "medical doctor",
+          "police officer",
+          "qwen default",
+          "comedian",
+          "chef",
+          "hero",
+          "philosopher"
+        ],
+        "yticklabels": [
+          "\u22128",
+          "\u22126",
+          "\u22124",
+          "\u22122",
+          "0",
+          "2",
+          "4",
+          "6",
+          "8",
+          "10",
+          "12"
+        ]
+      },
+      {
+        "title_left": "bare default-context-trained (+7.3)",
+        "annotations": [
+          "+7.3",
+          "+5.8",
+          "+5.1",
+          "+3.6",
+          "+3.9",
+          "+5.6",
+          "+5.7",
+          "+4.8"
+        ],
+        "xticklabels": [
+          "source",
+          "medical doctor",
+          "police officer",
+          "french person",
+          "comedian",
+          "chef",
+          "hero",
+          "philosopher"
+        ]
+      }
+    ]
+  }
+}
