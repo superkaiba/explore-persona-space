@@ -391,8 +391,17 @@ such corpora or banks:
    (AST-walk and import each symbol, the `--verify-imports` pattern from
    `scripts/issue_606/i606_dispatch.py`; hand-maintained symbol lists
    re-create the drift) or hoist cheap cross-script helper imports to
-   module top. Full trap + incident #606: `.claude/rules/gotchas.md`
-   "Lazy imports inside smoke-skipped branches".
+   module top — AND, either way, SIGNATURE-BIND every smoke-fenced call
+   to an imported helper (import resolution and hoisting both green-light
+   a call-arity/keyword mismatch — #1332 r1: two fenced
+   `verify_repo_paths_uploaded` calls → deterministic TypeError at the
+   terminal upload stage): dry-run `inspect.signature(fn).bind(...)` with
+   each call site's statically-known shape (positional count + keyword
+   names as placeholder values; `bind_partial` when the call forwards
+   `*args`/`**kwargs`; skip-with-note a callee whose `signature()` raises
+   ValueError). Full recipe + worked example + incidents #606/#1332:
+   `.claude/rules/gotchas.md` "Lazy imports inside smoke-skipped
+   branches".
 2b. **Changed-literal pin-sweep + mapped-scan run (#1288/#1144).** Grep
    `tests/` for each changed literal (old+new); run every hit, plus the
    Step 10d mapped tests (`select_step9c_tests.py --map-files
