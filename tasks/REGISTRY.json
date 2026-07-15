@@ -2606,8 +2606,8 @@
     "1334": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/1334",
-      "status": "approved",
+      "path": "tasks/running/1334",
+      "status": "running",
       "title": "workflow-fix: multi-pod-per-issue naming (--name-suffix) so suffixed pods map to their owning task"
     },
     "1335": {
