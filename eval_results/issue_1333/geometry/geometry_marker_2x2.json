@@ -5371,24 +5371,1279 @@
         "source_record": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-1333/data/issue_1333/run/mk4_fullft_pos/ladder/rung_4/slot_read.json"
       },
       "mk3_fullft_con": {
-        "skipped": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-1333/data/issue_1333/run/gates/reused_apply/apply_gate.json missing"
+        "train_overlap_mean": 6.505513763427734,
+        "held_out_mean": 6.899979209899902,
+        "n_train_overlap": 10,
+        "n_held_out": 10,
+        "delta_train_minus_heldout": -0.39446544647216797,
+        "material": false,
+        "source_record": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-1333/data/issue_1333/run/gates/reused_apply/apply_gate.json"
       }
     },
     "cross_surface_gap": {
       "mk1_lora_con": {
-        "skipped": "missing ['/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-1333/data/issue_1333/run/mk1_lora_con/ladder.json']"
+        "points": [
+          {
+            "step": 10,
+            "in_loop_delta": 0.6467378735542297,
+            "off_line_delta": null,
+            "gap": null
+          },
+          {
+            "step": 20,
+            "in_loop_delta": 2.559640407562256,
+            "off_line_delta": 0.9215973854064942,
+            "gap": 1.6380430221557618
+          },
+          {
+            "step": 30,
+            "in_loop_delta": 5.390415191650391,
+            "off_line_delta": null,
+            "gap": null
+          },
+          {
+            "step": 40,
+            "in_loop_delta": 10.693798065185547,
+            "off_line_delta": 3.1262704849243166,
+            "gap": 7.56752758026123
+          },
+          {
+            "step": 50,
+            "in_loop_delta": 14.931467056274414,
+            "off_line_delta": 5.514121723175049,
+            "gap": 9.417345333099366
+          },
+          {
+            "step": 60,
+            "in_loop_delta": 18.79963493347168,
+            "off_line_delta": 7.632991075515747,
+            "gap": 11.166643857955933
+          },
+          {
+            "step": 70,
+            "in_loop_delta": 21.24473762512207,
+            "off_line_delta": null,
+            "gap": null
+          },
+          {
+            "step": 80,
+            "in_loop_delta": 21.415695190429688,
+            "off_line_delta": 11.399768352508545,
+            "gap": 10.015926837921143
+          },
+          {
+            "step": 90,
+            "in_loop_delta": 21.418991088867188,
+            "off_line_delta": null,
+            "gap": null
+          },
+          {
+            "step": 100,
+            "in_loop_delta": 21.419269561767578,
+            "off_line_delta": 10.747392845153808,
+            "gap": 10.67187671661377
+          },
+          {
+            "step": 110,
+            "in_loop_delta": 21.419349670410156,
+            "off_line_delta": null,
+            "gap": null
+          },
+          {
+            "step": 120,
+            "in_loop_delta": 21.419389724731445,
+            "off_line_delta": 10.8378511428833,
+            "gap": 10.581538581848145
+          },
+          {
+            "step": 130,
+            "in_loop_delta": 21.41937255859375,
+            "off_line_delta": null,
+            "gap": null
+          },
+          {
+            "step": 140,
+            "in_loop_delta": 21.41939926147461,
+            "off_line_delta": 10.78426914215088,
+            "gap": 10.63513011932373
+          },
+          {
+            "step": 150,
+            "in_loop_delta": 21.419408798217773,
+            "off_line_delta": null,
+            "gap": null
+          },
+          {
+            "step": 160,
+            "in_loop_delta": 21.419416427612305,
+            "off_line_delta": 10.531727027893066,
+            "gap": 10.887689399719239
+          },
+          {
+            "step": 170,
+            "in_loop_delta": 21.41942596435547,
+            "off_line_delta": null,
+            "gap": null
+          },
+          {
+            "step": 180,
+            "in_loop_delta": 21.41942024230957,
+            "off_line_delta": 10.881976795196532,
+            "gap": 10.537443447113038
+          },
+          {
+            "step": 190,
+            "in_loop_delta": 21.41942024230957,
+            "off_line_delta": null,
+            "gap": null
+          },
+          {
+            "step": 200,
+            "in_loop_delta": 21.419437408447266,
+            "off_line_delta": 10.577949523925781,
+            "gap": 10.841487884521484
+          },
+          {
+            "step": 210,
+            "in_loop_delta": 21.41943359375,
+            "off_line_delta": null,
+            "gap": null
+          },
+          {
+            "step": 220,
+            "in_loop_delta": 21.419445037841797,
+            "off_line_delta": 10.423254203796386,
+            "gap": 10.99619083404541
+          },
+          {
+            "step": 230,
+            "in_loop_delta": 21.419445037841797,
+            "off_line_delta": null,
+            "gap": null
+          },
+          {
+            "step": 240,
+            "in_loop_delta": 21.41946029663086,
+            "off_line_delta": 11.112318420410157,
+            "gap": 10.307141876220703
+          },
+          {
+            "step": 250,
+            "in_loop_delta": 21.4194393157959,
+            "off_line_delta": null,
+            "gap": null
+          },
+          {
+            "step": 260,
+            "in_loop_delta": 21.41944694519043,
+            "off_line_delta": 10.709314441680908,
+            "gap": 10.710132503509522
+          },
+          {
+            "step": 270,
+            "in_loop_delta": 21.419452667236328,
+            "off_line_delta": null,
+            "gap": null
+          },
+          {
+            "step": 280,
+            "in_loop_delta": 21.419450759887695,
+            "off_line_delta": 10.256571865081787,
+            "gap": 11.162878894805909
+          },
+          {
+            "step": 290,
+            "in_loop_delta": 21.419448852539062,
+            "off_line_delta": null,
+            "gap": null
+          },
+          {
+            "step": 300,
+            "in_loop_delta": 21.41945457458496,
+            "off_line_delta": 11.107178783416748,
+            "gap": 10.312275791168213
+          },
+          {
+            "step": 310,
+            "in_loop_delta": 21.419452667236328,
+            "off_line_delta": null,
+            "gap": null
+          },
+          {
+            "step": 320,
+            "in_loop_delta": 21.419458389282227,
+            "off_line_delta": 10.804940509796143,
+            "gap": 10.614517879486083
+          },
+          {
+            "step": 330,
+            "in_loop_delta": 21.419462203979492,
+            "off_line_delta": null,
+            "gap": null
+          },
+          {
+            "step": 340,
+            "in_loop_delta": 21.419458389282227,
+            "off_line_delta": 10.680121612548827,
+            "gap": 10.7393367767334
+          },
+          {
+            "step": 350,
+            "in_loop_delta": 21.41946792602539,
+            "off_line_delta": null,
+            "gap": null
+          },
+          {
+            "step": 360,
+            "in_loop_delta": 21.419466018676758,
+            "off_line_delta": 10.795876598358154,
+            "gap": 10.623589420318604
+          },
+          {
+            "step": 370,
+            "in_loop_delta": 21.419464111328125,
+            "off_line_delta": null,
+            "gap": null
+          },
+          {
+            "step": 380,
+            "in_loop_delta": 21.419458389282227,
+            "off_line_delta": 10.357226467132568,
+            "gap": 11.062231922149659
+          },
+          {
+            "step": 390,
+            "in_loop_delta": 21.41945457458496,
+            "off_line_delta": null,
+            "gap": null
+          },
+          {
+            "step": 400,
+            "in_loop_delta": 21.41946029663086,
+            "off_line_delta": 11.241812705993652,
+            "gap": 10.177647590637207
+          }
+        ],
+        "n_offline_rungs": 21,
+        "n_aligned_steps": 21,
+        "max_abs_gap": 11.166643857955933,
+        "max_abs_gap_step": 60
       },
       "mk2_lora_pos": {
-        "skipped": "missing ['/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-1333/data/issue_1333/run/mk2_lora_pos/ladder.json']"
+        "points": [
+          {
+            "step": 5,
+            "in_loop_delta": null,
+            "off_line_delta": 0.0690652847290039,
+            "gap": null
+          },
+          {
+            "step": 10,
+            "in_loop_delta": 0.7973790764808655,
+            "off_line_delta": 0.3681288719177246,
+            "gap": 0.4292502045631409
+          },
+          {
+            "step": 15,
+            "in_loop_delta": null,
+            "off_line_delta": 0.7980669021606446,
+            "gap": null
+          },
+          {
+            "step": 20,
+            "in_loop_delta": 3.086798667907715,
+            "off_line_delta": 1.1458077430725098,
+            "gap": 1.940990924835205
+          },
+          {
+            "step": 25,
+            "in_loop_delta": null,
+            "off_line_delta": 1.5442702293395996,
+            "gap": null
+          },
+          {
+            "step": 30,
+            "in_loop_delta": 6.799342155456543,
+            "off_line_delta": 2.198346996307373,
+            "gap": 4.60099515914917
+          },
+          {
+            "step": 35,
+            "in_loop_delta": null,
+            "off_line_delta": 3.2244081497192383,
+            "gap": null
+          },
+          {
+            "step": 40,
+            "in_loop_delta": 12.509716033935547,
+            "off_line_delta": 4.30230827331543,
+            "gap": 8.207407760620118
+          },
+          {
+            "step": 50,
+            "in_loop_delta": 16.811006546020508,
+            "off_line_delta": null,
+            "gap": null
+          },
+          {
+            "step": 60,
+            "in_loop_delta": 20.61643409729004,
+            "off_line_delta": 9.301063823699952,
+            "gap": 11.315370273590087
+          },
+          {
+            "step": 70,
+            "in_loop_delta": 21.412837982177734,
+            "off_line_delta": null,
+            "gap": null
+          },
+          {
+            "step": 80,
+            "in_loop_delta": 21.419384002685547,
+            "off_line_delta": 12.685911083221436,
+            "gap": 8.733472919464111
+          },
+          {
+            "step": 90,
+            "in_loop_delta": 21.419557571411133,
+            "off_line_delta": null,
+            "gap": null
+          },
+          {
+            "step": 100,
+            "in_loop_delta": 21.419586181640625,
+            "off_line_delta": 12.485744380950928,
+            "gap": 8.933841800689697
+          },
+          {
+            "step": 110,
+            "in_loop_delta": 21.41958999633789,
+            "off_line_delta": null,
+            "gap": null
+          },
+          {
+            "step": 120,
+            "in_loop_delta": 21.419591903686523,
+            "off_line_delta": 12.533161544799805,
+            "gap": 8.886430358886718
+          },
+          {
+            "step": 130,
+            "in_loop_delta": 21.419599533081055,
+            "off_line_delta": null,
+            "gap": null
+          },
+          {
+            "step": 140,
+            "in_loop_delta": 21.419597625732422,
+            "off_line_delta": 12.48344964981079,
+            "gap": 8.936147975921632
+          },
+          {
+            "step": 150,
+            "in_loop_delta": 21.419601440429688,
+            "off_line_delta": null,
+            "gap": null
+          },
+          {
+            "step": 160,
+            "in_loop_delta": 21.419601440429688,
+            "off_line_delta": 12.235366439819336,
+            "gap": 9.184235000610352
+          },
+          {
+            "step": 170,
+            "in_loop_delta": 21.419597625732422,
+            "off_line_delta": null,
+            "gap": null
+          },
+          {
+            "step": 180,
+            "in_loop_delta": 21.419601440429688,
+            "off_line_delta": 13.035391235351563,
+            "gap": 8.384210205078125
+          },
+          {
+            "step": 190,
+            "in_loop_delta": 21.419601440429688,
+            "off_line_delta": null,
+            "gap": null
+          },
+          {
+            "step": 200,
+            "in_loop_delta": 21.419601440429688,
+            "off_line_delta": 12.376569747924805,
+            "gap": 9.043031692504883
+          },
+          {
+            "step": 210,
+            "in_loop_delta": 21.41960334777832,
+            "off_line_delta": null,
+            "gap": null
+          },
+          {
+            "step": 220,
+            "in_loop_delta": 21.419601440429688,
+            "off_line_delta": 12.419795322418214,
+            "gap": 8.999806118011474
+          },
+          {
+            "step": 230,
+            "in_loop_delta": 21.419601440429688,
+            "off_line_delta": null,
+            "gap": null
+          },
+          {
+            "step": 240,
+            "in_loop_delta": 21.419601440429688,
+            "off_line_delta": 12.263092231750488,
+            "gap": 9.1565092086792
+          },
+          {
+            "step": 250,
+            "in_loop_delta": 21.419601440429688,
+            "off_line_delta": null,
+            "gap": null
+          },
+          {
+            "step": 260,
+            "in_loop_delta": 21.41960334777832,
+            "off_line_delta": 12.540629196166993,
+            "gap": 8.878974151611327
+          },
+          {
+            "step": 270,
+            "in_loop_delta": 21.419601440429688,
+            "off_line_delta": null,
+            "gap": null
+          },
+          {
+            "step": 280,
+            "in_loop_delta": 21.419599533081055,
+            "off_line_delta": 12.301944828033447,
+            "gap": 9.117654705047608
+          },
+          {
+            "step": 290,
+            "in_loop_delta": 21.41960334777832,
+            "off_line_delta": null,
+            "gap": null
+          },
+          {
+            "step": 300,
+            "in_loop_delta": 21.41960334777832,
+            "off_line_delta": 12.158132743835449,
+            "gap": 9.261470603942872
+          },
+          {
+            "step": 310,
+            "in_loop_delta": 21.41960334777832,
+            "off_line_delta": null,
+            "gap": null
+          },
+          {
+            "step": 320,
+            "in_loop_delta": 21.419605255126953,
+            "off_line_delta": 12.45034351348877,
+            "gap": 8.969261741638183
+          },
+          {
+            "step": 330,
+            "in_loop_delta": 21.419601440429688,
+            "off_line_delta": null,
+            "gap": null
+          },
+          {
+            "step": 340,
+            "in_loop_delta": 21.41960334777832,
+            "off_line_delta": 12.2296537399292,
+            "gap": 9.18994960784912
+          },
+          {
+            "step": 350,
+            "in_loop_delta": 21.419605255126953,
+            "off_line_delta": null,
+            "gap": null
+          },
+          {
+            "step": 360,
+            "in_loop_delta": 21.419601440429688,
+            "off_line_delta": 12.432628059387207,
+            "gap": 8.98697338104248
+          },
+          {
+            "step": 370,
+            "in_loop_delta": 21.419605255126953,
+            "off_line_delta": null,
+            "gap": null
+          },
+          {
+            "step": 380,
+            "in_loop_delta": 21.41960334777832,
+            "off_line_delta": 12.128680324554443,
+            "gap": 9.290923023223877
+          },
+          {
+            "step": 390,
+            "in_loop_delta": 21.419605255126953,
+            "off_line_delta": null,
+            "gap": null
+          },
+          {
+            "step": 400,
+            "in_loop_delta": 21.419605255126953,
+            "off_line_delta": 12.224668598175048,
+            "gap": 9.194936656951905
+          }
+        ],
+        "n_offline_rungs": 26,
+        "n_aligned_steps": 22,
+        "max_abs_gap": 11.315370273590087,
+        "max_abs_gap_step": 60
       },
       "ext_wildchat": {
-        "skipped": "missing ['/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-1333/data/issue_1333/run/ext_wildchat/ladder.json']"
+        "points": [
+          {
+            "step": 10,
+            "in_loop_delta": 0.7211288809776306,
+            "off_line_delta": null,
+            "gap": null
+          },
+          {
+            "step": 20,
+            "in_loop_delta": 3.141476631164551,
+            "off_line_delta": 0.22010297775268556,
+            "gap": 2.921373653411865
+          },
+          {
+            "step": 30,
+            "in_loop_delta": 6.4250030517578125,
+            "off_line_delta": null,
+            "gap": null
+          },
+          {
+            "step": 40,
+            "in_loop_delta": 10.899595260620117,
+            "off_line_delta": 1.7911787033081055,
+            "gap": 9.108416557312012
+          },
+          {
+            "step": 50,
+            "in_loop_delta": 14.645306587219238,
+            "off_line_delta": 3.610218715667725,
+            "gap": 11.035087871551514
+          },
+          {
+            "step": 60,
+            "in_loop_delta": 18.27383804321289,
+            "off_line_delta": 6.2360631942749025,
+            "gap": 12.037774848937989
+          },
+          {
+            "step": 70,
+            "in_loop_delta": 21.801532745361328,
+            "off_line_delta": null,
+            "gap": null
+          },
+          {
+            "step": 80,
+            "in_loop_delta": 22.56619644165039,
+            "off_line_delta": 9.495081901550293,
+            "gap": 13.071114540100098
+          },
+          {
+            "step": 90,
+            "in_loop_delta": 22.57670783996582,
+            "off_line_delta": null,
+            "gap": null
+          },
+          {
+            "step": 100,
+            "in_loop_delta": 22.577150344848633,
+            "off_line_delta": 10.340245246887207,
+            "gap": 12.236905097961426
+          },
+          {
+            "step": 110,
+            "in_loop_delta": 22.57721710205078,
+            "off_line_delta": null,
+            "gap": null
+          },
+          {
+            "step": 120,
+            "in_loop_delta": 22.577234268188477,
+            "off_line_delta": 10.01139268875122,
+            "gap": 12.565841579437256
+          },
+          {
+            "step": 130,
+            "in_loop_delta": 22.577238082885742,
+            "off_line_delta": null,
+            "gap": null
+          },
+          {
+            "step": 140,
+            "in_loop_delta": 22.577247619628906,
+            "off_line_delta": 9.680605411529541,
+            "gap": 12.896642208099365
+          },
+          {
+            "step": 150,
+            "in_loop_delta": 22.57724952697754,
+            "off_line_delta": null,
+            "gap": null
+          },
+          {
+            "step": 160,
+            "in_loop_delta": 22.577245712280273,
+            "off_line_delta": 10.32199010848999,
+            "gap": 12.255255603790284
+          },
+          {
+            "step": 170,
+            "in_loop_delta": 22.57724952697754,
+            "off_line_delta": null,
+            "gap": null
+          },
+          {
+            "step": 180,
+            "in_loop_delta": 22.577245712280273,
+            "off_line_delta": 9.658578586578368,
+            "gap": 12.918667125701905
+          },
+          {
+            "step": 190,
+            "in_loop_delta": 22.577247619628906,
+            "off_line_delta": null,
+            "gap": null
+          },
+          {
+            "step": 200,
+            "in_loop_delta": 22.577253341674805,
+            "off_line_delta": 9.771319770812989,
+            "gap": 12.805933570861816
+          },
+          {
+            "step": 210,
+            "in_loop_delta": 22.577255249023438,
+            "off_line_delta": null,
+            "gap": null
+          },
+          {
+            "step": 220,
+            "in_loop_delta": 22.577253341674805,
+            "off_line_delta": 9.856583499908448,
+            "gap": 12.720669841766357
+          },
+          {
+            "step": 230,
+            "in_loop_delta": 22.57725715637207,
+            "off_line_delta": null,
+            "gap": null
+          },
+          {
+            "step": 240,
+            "in_loop_delta": 22.57727813720703,
+            "off_line_delta": 9.609547138214111,
+            "gap": 12.96773099899292
+          },
+          {
+            "step": 250,
+            "in_loop_delta": 22.57726287841797,
+            "off_line_delta": null,
+            "gap": null
+          },
+          {
+            "step": 260,
+            "in_loop_delta": 22.5772705078125,
+            "off_line_delta": 10.129222297668457,
+            "gap": 12.448048210144043
+          },
+          {
+            "step": 270,
+            "in_loop_delta": 22.577259063720703,
+            "off_line_delta": null,
+            "gap": null
+          },
+          {
+            "step": 280,
+            "in_loop_delta": 22.577266693115234,
+            "off_line_delta": 9.475593090057373,
+            "gap": 13.101673603057861
+          },
+          {
+            "step": 290,
+            "in_loop_delta": 22.5772705078125,
+            "off_line_delta": null,
+            "gap": null
+          },
+          {
+            "step": 300,
+            "in_loop_delta": 22.577268600463867,
+            "off_line_delta": 9.933201503753661,
+            "gap": 12.644067096710206
+          },
+          {
+            "step": 310,
+            "in_loop_delta": 22.577274322509766,
+            "off_line_delta": null,
+            "gap": null
+          },
+          {
+            "step": 320,
+            "in_loop_delta": 22.5772762298584,
+            "off_line_delta": 10.095131778717041,
+            "gap": 12.482144451141357
+          },
+          {
+            "step": 330,
+            "in_loop_delta": 22.5772705078125,
+            "off_line_delta": null,
+            "gap": null
+          },
+          {
+            "step": 340,
+            "in_loop_delta": 22.577272415161133,
+            "off_line_delta": 9.301998329162597,
+            "gap": 13.275274085998536
+          },
+          {
+            "step": 350,
+            "in_loop_delta": 22.57726287841797,
+            "off_line_delta": null,
+            "gap": null
+          },
+          {
+            "step": 360,
+            "in_loop_delta": 22.57727813720703,
+            "off_line_delta": 9.174022197723389,
+            "gap": 13.403255939483643
+          },
+          {
+            "step": 370,
+            "in_loop_delta": 22.577272415161133,
+            "off_line_delta": null,
+            "gap": null
+          },
+          {
+            "step": 380,
+            "in_loop_delta": 22.5772705078125,
+            "off_line_delta": 9.628884983062743,
+            "gap": 12.948385524749757
+          },
+          {
+            "step": 390,
+            "in_loop_delta": 22.57727813720703,
+            "off_line_delta": null,
+            "gap": null
+          },
+          {
+            "step": 400,
+            "in_loop_delta": 22.577281951904297,
+            "off_line_delta": 9.624233627319336,
+            "gap": 12.95304832458496
+          }
+        ],
+        "n_offline_rungs": 21,
+        "n_aligned_steps": 21,
+        "max_abs_gap": 13.403255939483643,
+        "max_abs_gap_step": 360
       },
       "ext_icl": {
-        "skipped": "missing ['/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-1333/data/issue_1333/run/ext_icl/ladder.json']"
+        "points": [
+          {
+            "step": 10,
+            "in_loop_delta": -0.006359100341796875,
+            "off_line_delta": 0.9298501968383789,
+            "gap": -0.9362092971801758
+          },
+          {
+            "step": 20,
+            "in_loop_delta": 0.09480857849121094,
+            "off_line_delta": 4.642874145507813,
+            "gap": -4.548065567016602
+          },
+          {
+            "step": 30,
+            "in_loop_delta": 0.16284561157226562,
+            "off_line_delta": null,
+            "gap": null
+          },
+          {
+            "step": 40,
+            "in_loop_delta": 0.22287940979003906,
+            "off_line_delta": 4.7554608345031735,
+            "gap": -4.532581424713134
+          },
+          {
+            "step": 50,
+            "in_loop_delta": 0.18752288818359375,
+            "off_line_delta": null,
+            "gap": null
+          },
+          {
+            "step": 60,
+            "in_loop_delta": 0.1561107635498047,
+            "off_line_delta": 5.1379773139953615,
+            "gap": -4.981866550445557
+          },
+          {
+            "step": 70,
+            "in_loop_delta": 0.1807384490966797,
+            "off_line_delta": null,
+            "gap": null
+          },
+          {
+            "step": 80,
+            "in_loop_delta": 0.23775863647460938,
+            "off_line_delta": 4.8698655128479,
+            "gap": -4.632106876373291
+          },
+          {
+            "step": 90,
+            "in_loop_delta": 0.11656379699707031,
+            "off_line_delta": null,
+            "gap": null
+          },
+          {
+            "step": 100,
+            "in_loop_delta": 0.1754474639892578,
+            "off_line_delta": 4.705050373077393,
+            "gap": -4.529602909088135
+          },
+          {
+            "step": 110,
+            "in_loop_delta": 0.28316307067871094,
+            "off_line_delta": null,
+            "gap": null
+          },
+          {
+            "step": 120,
+            "in_loop_delta": 0.24168014526367188,
+            "off_line_delta": 4.617670249938965,
+            "gap": -4.375990104675293
+          },
+          {
+            "step": 130,
+            "in_loop_delta": 0.2676048278808594,
+            "off_line_delta": null,
+            "gap": null
+          },
+          {
+            "step": 140,
+            "in_loop_delta": 0.24054336547851562,
+            "off_line_delta": 4.990209579467773,
+            "gap": -4.749666213989258
+          },
+          {
+            "step": 150,
+            "in_loop_delta": 0.3538169860839844,
+            "off_line_delta": null,
+            "gap": null
+          },
+          {
+            "step": 160,
+            "in_loop_delta": 0.21578407287597656,
+            "off_line_delta": 4.6449309349060055,
+            "gap": -4.429146862030029
+          },
+          {
+            "step": 170,
+            "in_loop_delta": 0.32202911376953125,
+            "off_line_delta": null,
+            "gap": null
+          },
+          {
+            "step": 180,
+            "in_loop_delta": 0.18212127685546875,
+            "off_line_delta": 4.993618679046631,
+            "gap": -4.811497402191162
+          },
+          {
+            "step": 190,
+            "in_loop_delta": 0.22982406616210938,
+            "off_line_delta": null,
+            "gap": null
+          },
+          {
+            "step": 200,
+            "in_loop_delta": 0.25921630859375,
+            "off_line_delta": 4.256994438171387,
+            "gap": -3.997778129577637
+          },
+          {
+            "step": 210,
+            "in_loop_delta": 0.2986183166503906,
+            "off_line_delta": null,
+            "gap": null
+          },
+          {
+            "step": 220,
+            "in_loop_delta": 0.2117137908935547,
+            "off_line_delta": 4.52680549621582,
+            "gap": -4.315091705322265
+          },
+          {
+            "step": 230,
+            "in_loop_delta": 0.24755477905273438,
+            "off_line_delta": null,
+            "gap": null
+          },
+          {
+            "step": 240,
+            "in_loop_delta": 0.3176727294921875,
+            "off_line_delta": 4.747640895843506,
+            "gap": -4.429968166351318
+          },
+          {
+            "step": 250,
+            "in_loop_delta": 0.3523273468017578,
+            "off_line_delta": null,
+            "gap": null
+          },
+          {
+            "step": 260,
+            "in_loop_delta": 0.21309471130371094,
+            "off_line_delta": 4.052846240997314,
+            "gap": -3.8397515296936033
+          },
+          {
+            "step": 270,
+            "in_loop_delta": 0.3674602508544922,
+            "off_line_delta": null,
+            "gap": null
+          },
+          {
+            "step": 280,
+            "in_loop_delta": 0.1814403533935547,
+            "off_line_delta": 5.1866124153137205,
+            "gap": -5.005172061920166
+          },
+          {
+            "step": 290,
+            "in_loop_delta": 0.22874832153320312,
+            "off_line_delta": null,
+            "gap": null
+          },
+          {
+            "step": 300,
+            "in_loop_delta": 0.18456649780273438,
+            "off_line_delta": 4.414598083496093,
+            "gap": -4.230031585693359
+          },
+          {
+            "step": 310,
+            "in_loop_delta": 0.3401165008544922,
+            "off_line_delta": null,
+            "gap": null
+          },
+          {
+            "step": 320,
+            "in_loop_delta": 0.1287403106689453,
+            "off_line_delta": 4.618554496765137,
+            "gap": -4.489814186096192
+          },
+          {
+            "step": 330,
+            "in_loop_delta": 0.3119926452636719,
+            "off_line_delta": null,
+            "gap": null
+          },
+          {
+            "step": 340,
+            "in_loop_delta": 0.3096485137939453,
+            "off_line_delta": 5.454999542236328,
+            "gap": -5.1453510284423825
+          },
+          {
+            "step": 350,
+            "in_loop_delta": 0.21966171264648438,
+            "off_line_delta": null,
+            "gap": null
+          },
+          {
+            "step": 360,
+            "in_loop_delta": 0.2263774871826172,
+            "off_line_delta": 5.029420852661133,
+            "gap": -4.803043365478516
+          },
+          {
+            "step": 370,
+            "in_loop_delta": 0.12267112731933594,
+            "off_line_delta": null,
+            "gap": null
+          },
+          {
+            "step": 380,
+            "in_loop_delta": 0.33712005615234375,
+            "off_line_delta": 4.260264682769775,
+            "gap": -3.9231446266174315
+          },
+          {
+            "step": 390,
+            "in_loop_delta": 0.3161945343017578,
+            "off_line_delta": null,
+            "gap": null
+          },
+          {
+            "step": 400,
+            "in_loop_delta": 0.2992534637451172,
+            "off_line_delta": 4.451350307464599,
+            "gap": -4.152096843719482
+          }
+        ],
+        "n_offline_rungs": 21,
+        "n_aligned_steps": 21,
+        "max_abs_gap": 5.1453510284423825,
+        "max_abs_gap_step": 340
       },
       "ext_bare": {
-        "skipped": "missing ['/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-1333/data/issue_1333/run/ext_bare/ladder.json']"
+        "points": [
+          {
+            "step": 10,
+            "in_loop_delta": 0.40958523750305176,
+            "off_line_delta": null,
+            "gap": null
+          },
+          {
+            "step": 20,
+            "in_loop_delta": 1.6404340267181396,
+            "off_line_delta": -0.3602341651916504,
+            "gap": 2.00066819190979
+          },
+          {
+            "step": 30,
+            "in_loop_delta": 2.866302013397217,
+            "off_line_delta": null,
+            "gap": null
+          },
+          {
+            "step": 40,
+            "in_loop_delta": 5.232359409332275,
+            "off_line_delta": -0.6000052452087402,
+            "gap": 5.832364654541015
+          },
+          {
+            "step": 50,
+            "in_loop_delta": 9.435276985168457,
+            "off_line_delta": null,
+            "gap": null
+          },
+          {
+            "step": 60,
+            "in_loop_delta": 12.955862045288086,
+            "off_line_delta": 0.7668557167053223,
+            "gap": 12.189006328582764
+          },
+          {
+            "step": 70,
+            "in_loop_delta": 16.691608428955078,
+            "off_line_delta": 2.3964712142944338,
+            "gap": 14.295137214660645
+          },
+          {
+            "step": 80,
+            "in_loop_delta": 20.515653610229492,
+            "off_line_delta": 4.406832027435303,
+            "gap": 16.10882158279419
+          },
+          {
+            "step": 90,
+            "in_loop_delta": 21.577932357788086,
+            "off_line_delta": null,
+            "gap": null
+          },
+          {
+            "step": 100,
+            "in_loop_delta": 21.599157333374023,
+            "off_line_delta": 7.115933895111084,
+            "gap": 14.48322343826294
+          },
+          {
+            "step": 110,
+            "in_loop_delta": 21.59984588623047,
+            "off_line_delta": null,
+            "gap": null
+          },
+          {
+            "step": 120,
+            "in_loop_delta": 21.600006103515625,
+            "off_line_delta": 7.643815040588379,
+            "gap": 13.956191062927246
+          },
+          {
+            "step": 130,
+            "in_loop_delta": 21.60002899169922,
+            "off_line_delta": null,
+            "gap": null
+          },
+          {
+            "step": 140,
+            "in_loop_delta": 21.600053787231445,
+            "off_line_delta": 7.546325302124023,
+            "gap": 14.053728485107422
+          },
+          {
+            "step": 150,
+            "in_loop_delta": 21.600053787231445,
+            "off_line_delta": null,
+            "gap": null
+          },
+          {
+            "step": 160,
+            "in_loop_delta": 21.60006332397461,
+            "off_line_delta": 7.716917514801025,
+            "gap": 13.883145809173584
+          },
+          {
+            "step": 170,
+            "in_loop_delta": 21.60006332397461,
+            "off_line_delta": null,
+            "gap": null
+          },
+          {
+            "step": 180,
+            "in_loop_delta": 21.60006332397461,
+            "off_line_delta": 7.003862380981445,
+            "gap": 14.596200942993164
+          },
+          {
+            "step": 190,
+            "in_loop_delta": 21.60007095336914,
+            "off_line_delta": null,
+            "gap": null
+          },
+          {
+            "step": 200,
+            "in_loop_delta": 21.600074768066406,
+            "off_line_delta": 7.518940734863281,
+            "gap": 14.081134033203124
+          },
+          {
+            "step": 210,
+            "in_loop_delta": 21.6000919342041,
+            "off_line_delta": null,
+            "gap": null
+          },
+          {
+            "step": 220,
+            "in_loop_delta": 21.60008430480957,
+            "off_line_delta": 7.226097488403321,
+            "gap": 14.37398681640625
+          },
+          {
+            "step": 230,
+            "in_loop_delta": 21.600088119506836,
+            "off_line_delta": null,
+            "gap": null
+          },
+          {
+            "step": 240,
+            "in_loop_delta": 21.600086212158203,
+            "off_line_delta": 7.440798664093018,
+            "gap": 14.159287548065185
+          },
+          {
+            "step": 250,
+            "in_loop_delta": 21.6000919342041,
+            "off_line_delta": null,
+            "gap": null
+          },
+          {
+            "step": 260,
+            "in_loop_delta": 21.60009002685547,
+            "off_line_delta": 7.184930896759033,
+            "gap": 14.415159130096436
+          },
+          {
+            "step": 270,
+            "in_loop_delta": 21.6000919342041,
+            "off_line_delta": null,
+            "gap": null
+          },
+          {
+            "step": 280,
+            "in_loop_delta": 21.6001033782959,
+            "off_line_delta": 7.071814918518067,
+            "gap": 14.528288459777832
+          },
+          {
+            "step": 290,
+            "in_loop_delta": 21.600099563598633,
+            "off_line_delta": null,
+            "gap": null
+          },
+          {
+            "step": 300,
+            "in_loop_delta": 21.600107192993164,
+            "off_line_delta": 7.115957736968994,
+            "gap": 14.48414945602417
+          },
+          {
+            "step": 310,
+            "in_loop_delta": 21.600093841552734,
+            "off_line_delta": null,
+            "gap": null
+          },
+          {
+            "step": 320,
+            "in_loop_delta": 21.600101470947266,
+            "off_line_delta": 7.131532955169678,
+            "gap": 14.468568515777587
+          },
+          {
+            "step": 330,
+            "in_loop_delta": 21.6001033782959,
+            "off_line_delta": null,
+            "gap": null
+          },
+          {
+            "step": 340,
+            "in_loop_delta": 21.60009765625,
+            "off_line_delta": 7.1443602561950685,
+            "gap": 14.455737400054932
+          },
+          {
+            "step": 350,
+            "in_loop_delta": 21.60010528564453,
+            "off_line_delta": null,
+            "gap": null
+          },
+          {
+            "step": 360,
+            "in_loop_delta": 21.600107192993164,
+            "off_line_delta": 7.619248867034912,
+            "gap": 13.980858325958252
+          },
+          {
+            "step": 370,
+            "in_loop_delta": 21.6001033782959,
+            "off_line_delta": null,
+            "gap": null
+          },
+          {
+            "step": 380,
+            "in_loop_delta": 21.600101470947266,
+            "off_line_delta": 7.42994499206543,
+            "gap": 14.170156478881836
+          },
+          {
+            "step": 390,
+            "in_loop_delta": 21.6001033782959,
+            "off_line_delta": null,
+            "gap": null
+          },
+          {
+            "step": 400,
+            "in_loop_delta": 21.600099563598633,
+            "off_line_delta": 7.396419048309326,
+            "gap": 14.203680515289307
+          }
+        ],
+        "n_offline_rungs": 21,
+        "n_aligned_steps": 21,
+        "max_abs_gap": 16.10882158279419,
+        "max_abs_gap_step": 80
       }
     },
     "eos_margin_transfer": {
