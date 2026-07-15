@@ -46,8 +46,6 @@ def main() -> None:
         ("Instruct\nown map\n(ceiling)", ceil_i, "own"),
         ("Base\nown map", ceil_b, "own"),
         ("Base reparam.\n(general linear)", lin, "reparam"),
-        ("Base reparam.\n(scaled rotation)", scaled, "reparam"),
-        ("Base reparam.\n(rotation)", orth, "reparam"),
     ]
 
     import matplotlib
@@ -85,11 +83,11 @@ def main() -> None:
     ax.set_xticklabels([b[0] for b in bars], fontsize=8.5)
     ax.set_ylabel("held-out $R^2$ (predict instruct answers), layer 19")
     ax.set_title(
-        "Post-training reparameterizes the map: a general LINEAR change of\n"
-        "coordinates reconstructs the instruct map; a rotation does not"
+        "Post-training reparameterizes the map: a general linear change of\n"
+        "coordinates reconstructs the instruct map to its own ceiling"
     )
     ax.legend(fontsize=8, loc="lower left")
-    ax.set_ylim(min(-0.5, min(vals) - 0.1), 0.8)
+    ax.set_ylim(0.0, 0.8)
     # blue = model's own map; orange = base map wrapped in a base->instruct
     # change-of-coordinates, scored on predicting INSTRUCT answers.
     from matplotlib.patches import Patch
@@ -122,11 +120,11 @@ def main() -> None:
         "caption": (
             "Held-out R² at layer 19 for predicting instruct answers. Blue: each model's "
             "own context->answer map (instruct ceiling 0.673, base 0.588). Orange: the base "
-            "map run through a fitted base->instruct change-of-coordinates "
-            "(A_ans o M_base o A_ctx^-1), under three classes. A general LINEAR "
-            "reparameterization reaches the instruct ceiling (0.673); a scaled rotation "
-            "reaches 0.559; a pure rotation (orthogonal) fails (-0.364). So post-training "
-            "re-expresses the same map in stretched/sheared coordinates, not a rigid rotation."
+            "map run through a fitted general-linear base->instruct change-of-coordinates "
+            "(A_ans o M_base o A_ctx^-1), scored on instruct answers — it reaches the "
+            "instruct ceiling (0.673), i.e. post-training re-expresses the same map in "
+            "different coordinates. (Rotation-restricted variants recorded in `values` but "
+            "not plotted: scaled rotation 0.559, pure rotation -0.364.)"
         ),
     }
     (FIG_DIR / "reparam_vs_instruct.meta.json").write_text(json.dumps(meta, indent=2))

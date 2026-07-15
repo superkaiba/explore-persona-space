@@ -1,5 +1,5 @@
 {
-  "commit": "cfa446661d30406171864249c1974ab160667a19",
+  "commit": "94f318e7fc9e971fe953393d8e1bb387fc537ab0",
   "source": "eval_results/issue_825/map_alignment/results.json",
   "layer": 19,
   "values": {
@@ -9,5 +9,5 @@
     "base_reparam_scaled_rotation": 0.558965775267934,
     "base_reparam_rotation": -0.36373419828996445
   },
-  "caption": "Held-out R\u00b2 at layer 19 for predicting instruct answers. Blue: each model's own context->answer map (instruct ceiling 0.673, base 0.588). Orange: the base map run through a fitted base->instruct change-of-coordinates (A_ans o M_base o A_ctx^-1), under three classes. A general LINEAR reparameterization reaches the instruct ceiling (0.673); a scaled rotation reaches 0.559; a pure rotation (orthogonal) fails (-0.364). So post-training re-expresses the same map in stretched/sheared coordinates, not a rigid rotation."
+  "caption": "Held-out R\u00b2 at layer 19 for predicting instruct answers. Blue: each model's own context->answer map (instruct ceiling 0.673, base 0.588). Orange: the base map run through a fitted general-linear base->instruct change-of-coordinates (A_ans o M_base o A_ctx^-1), scored on instruct answers \u2014 it reaches the instruct ceiling (0.673), i.e. post-training re-expresses the same map in different coordinates. (Rotation-restricted variants recorded in `values` but not plotted: scaled rotation 0.559, pure rotation -0.364.)"
 }
