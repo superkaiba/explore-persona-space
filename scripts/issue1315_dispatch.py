@@ -1043,6 +1043,19 @@ def phase_parity(cfg: Cfg) -> dict:
         return {"skipped": "no reused cells in this run"}
     pending = [c for c in cells if not (cfg.out_root / c / "parity.json").exists()]
     if pending:
+        # r5 crash-fix: stage the SHARED fixed margin pools ONCE in the parent
+        # BEFORE any fanout — the r4 run's 4 concurrent units each raced
+        # _stage_hf_prefix into the same margin_pools/impolite dest and the
+        # gpu-3 unit crashed at os.replace (FileNotFoundError; epm:failure v4).
+        # Units re-call _margin_pools idempotently: the strengthened
+        # fu3w._margin_pool_source_staged guard sees the complete dest and
+        # skips staging, so no unit ever writes the shared dest. This also
+        # fails the pool-sha reuse gate BEFORE burning GPU unit launches.
+        _margin_pools(cfg)
+        logger.info(
+            "[margin-pools] pre-staged once in the parent for %d parity unit(s) (r5 fix)",
+            len(pending),
+        )
         if len(pending) == 1 or _n_gpus() == 1:
             for c in pending:
                 run_parity_unit(cfg, c)
