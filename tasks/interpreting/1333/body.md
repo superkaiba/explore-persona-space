@@ -138,7 +138,7 @@ What is plotted: cumulative eigenvalue share vs number of modes (1–100) of the
 
 The own-text rank difference of the first result appears as curve separation, the shared-text equalization as complete overlap; participation ratio orders the same way (LoRA 25.2 / 19.9 vs full fine-tune 16.8 / 15.8 — exploratory). Per-cell values are tabulated in [geometry_layer25_summary.csv](https://github.com/superkaiba/explore-persona-space/blob/1cec0689a9/figures/issue_1333/geometry_layer25_summary.csv).
 
-The registered read-out alignment read (descriptive; meaningful mainly near final layers): own-text |cos(μ, base marker unembedding row)| is 0.002–0.008 at layer 25, below the norm-matched random band (about 0.038); the shared-text means read 0.045–0.051, just above their bands (0.037–0.040).
+The registered read-out alignment read (descriptive; meaningful mainly near final layers): own-text |cos(μ, base marker unembedding row)| is 0.002–0.008 at layer 25, below the norm-matched random band (0.038–0.040); the shared-text means read 0.045–0.051, just above their bands (0.037–0.038).
 
 Per-cell bootstrap rank intervals sit below their points: with-replacement resampling duplicates rows and mechanically deflates rank. Inference lives in the paired differences, where deflation approximately cancels — an assumption, since differently-shaped spectra deflate differently.
 
