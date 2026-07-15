@@ -83,17 +83,22 @@ def main() -> None:
                 r2, n, _ = cell
                 ax.bar(x, r2, w, color=color, edgecolor="black")
                 ax.text(x, r2 + 0.012, f"{r2:.2f}", ha="center", va="bottom", fontsize=8.3)
-            else:  # missing or stale-v2 => incomplete
-                ax.bar(x, 0.0, w, color="none", edgecolor="grey", linewidth=1.2, hatch="xx")
+            elif cell is not None:  # exists but stale v2 (low power, n<<d) — draw, marked
+                r2, n, _ = cell
+                ax.bar(x, r2, w, color=color, alpha=0.4, edgecolor=color, linewidth=1.4, hatch="//")
+                va, off = ("top", -0.012) if r2 < 0 else ("bottom", 0.012)
                 ax.text(
                     x,
-                    0.02,
-                    "incomplete\n(crashed)",
+                    r2 + off,
+                    f"{r2:.2f}\n(v2, n={n})",
                     ha="center",
-                    va="bottom",
+                    va=va,
                     fontsize=6.8,
-                    color="grey",
+                    color="#8a5a00",
                 )
+            else:  # genuinely missing
+                ax.bar(x, 0.0, w, color="none", edgecolor="grey", linewidth=1.2, hatch="xx")
+                ax.text(x, 0.02, "no data", ha="center", va="bottom", fontsize=6.8, color="grey")
 
     ax.axhline(0.0, color="black", lw=0.8)
     ax.axhline(CEIL_INST, color=C_INST, ls="--", lw=1.0, alpha=0.7)
@@ -101,7 +106,7 @@ def main() -> None:
     ax.set_xticks(xs)
     ax.set_xticklabels(ORDER, fontsize=10)
     ax.set_ylabel("held-out $R^2$ (layer 19)")
-    ax.set_ylim(0, 0.78)
+    ax.set_ylim(-0.38, 0.78)
     ax.set_title(
         "Per-character context→dialogue map in stories (v3 prefill)\n"
         "positive and character-specific in both models — v2 null was a power artifact (n≪p)"
@@ -110,10 +115,11 @@ def main() -> None:
         Patch(color=C_BASE, label="base (prefill, v3)"),
         Patch(color=C_INST, label="instruct (prefill, v3)"),
         Patch(
-            facecolor="none",
-            edgecolor="grey",
-            hatch="xx",
-            label="incomplete (instruct arm crashed)",
+            facecolor=C_INST,
+            alpha=0.4,
+            edgecolor=C_INST,
+            hatch="//",
+            label="instruct Vex: STALE v2 only (n=149, low power; v3 crashed)",
         ),
         Line2D(
             [0],
@@ -137,9 +143,9 @@ def main() -> None:
         0.5,
         -0.15,
         "Base COMPLETE & character-specific (correct-pairing 0.23 vs cross-character swap −0.00). "
-        "Instruct 3/4 positive (0.19–0.25, stronger than base); instruct Vex + instruct swap "
-        "incomplete (v3 crashed on the instruct arm). Story map is well below the chat assistant "
-        "ceiling but clearly non-zero.",
+        "Instruct 3/4 positive (0.19–0.25, stronger than base). instruct Vex shown is the STALE "
+        "v2 value (−0.29, n=149) — the v3 run crashed before re-fitting it; its true v3 value is "
+        "expected positive like the others. Story map is well below the chat ceiling but non-zero.",
         ha="center",
         va="top",
         fontsize=7.0,
