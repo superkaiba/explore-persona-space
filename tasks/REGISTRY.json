@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1315,
+  "highest_id": 1316,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -2460,6 +2460,13 @@
       "path": "tasks/planning/1315",
       "status": "planning",
       "title": "Impolite-organism activation-shift geometry (extends #1112 method to impolite)"
+    },
+    "1316": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1316",
+      "status": "proposed",
+      "title": "daily-fix: widen lazy-import pin scan set (from #1304)"
     },
     "132": {
       "has_clean_result": false,
