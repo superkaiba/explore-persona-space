@@ -62,6 +62,7 @@ import dataclasses  # noqa: E402
 import json  # noqa: E402
 import logging  # noqa: E402
 import os  # noqa: E402
+import random  # noqa: E402
 import shutil  # noqa: E402
 import sys  # noqa: E402
 import time  # noqa: E402
@@ -1682,6 +1683,58 @@ def phase_geometry_smoke(cfg: Cfg) -> dict:
 
 # ── p11: upload + sentinel ───────────────────────────────────────────────────
 
+# Transport-class retry for the p11 data-repo uploads (crash-fix r8,
+# epm:failure v7/v8): HF Hub 429 / Xet queue-saturation killed p11 twice.
+_UPLOAD_TRANSPORT_RETRIES = 3
+_UPLOAD_BACKOFF_BASE_S = (30.0, 60.0, 120.0)
+
+
+def _upload_with_transport_retry(
+    local: Path,
+    path_in_repo: str,
+    *,
+    upload_fn=None,
+    retries: int = _UPLOAD_TRANSPORT_RETRIES,
+    backoffs: Sequence[float] = _UPLOAD_BACKOFF_BASE_S,
+    sleep_fn=time.sleep,
+    **kw,
+) -> str:
+    """Bounded transport-class retry around the p11 hub upload (crash-fix r8).
+
+    ``hub._upload`` catches upload failures internally, logs them
+    ("Upload failed: 429 ..."), and returns ``""`` — so a no-path return here
+    is the transport-class signal (HF 429 rate limits, Xet "maximum queue size
+    reached"). Content-class errors inside the wrapper RAISE (file-without-
+    ``upload_as_file`` ValueError, the #1190 dir-filecount guard) and propagate
+    immediately, un-retried. Retries the no-path return up to ``retries``
+    times with exponential backoff + jitter, then raises the SAME fail-loud
+    RuntimeError as before — the retry absorbs transient limits, never hides a
+    persistent failure. Safe to retry: uploads are idempotent (already-landed
+    files verify + skip Hub-side; attempt 2 of the production run got further
+    than attempt 1 for exactly this reason).
+
+    Returns the verified "{repo}/{path_in_repo}" URL string on success.
+    """
+    fn = upload_fn if upload_fn is not None else hub._upload
+    for attempt in range(retries + 1):
+        url = str(fn(local, C.HF_DATA_REPO, "dataset", path_in_repo, **kw))
+        if url:
+            return url
+        if attempt == retries:
+            break
+        backoff = backoffs[min(attempt, len(backoffs) - 1)] * (1.0 + random.uniform(0.0, 0.25))
+        # Fix-engaged signal (crash-fix r8): this line in the p11 log proves
+        # the retry branch is reached when a 429 hits.
+        logger.info(
+            "[upload] transport retry %d/%d for %s (backoff %.0fs)",
+            attempt + 1,
+            retries,
+            path_in_repo,
+            backoff,
+        )
+        sleep_fn(backoff)
+    raise RuntimeError(f"upload returned no path for {path_in_repo}")
+
 
 def phase_upload(cfg: Cfg, selections: dict) -> dict:
     # NOTE (#664 risk class, round-1 review Minor): a full run issues ~60
@@ -1697,10 +1750,10 @@ def phase_upload(cfg: Cfg, selections: dict) -> dict:
     def _up(local: Path, path_in_repo: str, **kw) -> None:
         if not Path(local).exists():
             return
-        url = hub._upload(local, C.HF_DATA_REPO, "dataset", path_in_repo, **kw)
-        if not str(url):
-            raise RuntimeError(f"upload returned no path for {path_in_repo}")
-        uploaded[path_in_repo] = str(url)
+        # Transport-retried (crash-fix r8): raises the same fail-loud
+        # RuntimeError after exhaustion; see _upload_with_transport_retry.
+        url = _upload_with_transport_retry(local, path_in_repo, **kw)
+        uploaded[path_in_repo] = url
         _atomic_json(cfg.out_root / "upload_manifest.json", uploaded)
 
     inputs = cfg.out_root / "inputs"

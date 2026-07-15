@@ -932,3 +932,100 @@ def test_issue779_trait_gate_accepts_seeded_impolite(tmp_path, monkeypatch):
     assert c779.load_extraction_artifacts("evil") == c779.EVIL_ARTIFACTS
     with pytest.raises(FileNotFoundError):
         c779.load_extraction_artifacts("sycophancy")  # member, cache absent
+
+
+# ── crash-fix r8: p11 upload transport retry (epm:failure v7/v8, HF 429) ─────
+
+
+def test_upload_transport_retry_recovers_after_transient_no_path(tmp_path, caplog):
+    """Two transient no-path returns (the hub wrapper's 429 signature), then
+    success: the helper retries with the fix-engaged log line, sleeps the
+    jittered exponential backoffs, and returns the verified URL."""
+    import logging
+    from unittest.mock import create_autospec
+
+    import issue1315_dispatch as d
+
+    from explore_persona_space.orchestrate import hub
+
+    local = tmp_path / "x.json"
+    local.write_text("{}")
+    # Boundary fake, signature-conformant BY CONSTRUCTION (autospec of the
+    # real hub._upload): "" twice (transport-class), then the verified URL.
+    fake = create_autospec(hub._upload, side_effect=["", "", "repo/pfx/x.json"])
+    sleeps: list[float] = []
+
+    with caplog.at_level(logging.INFO, logger="issue1315"):
+        url = d._upload_with_transport_retry(
+            local,
+            "pfx/x.json",
+            upload_fn=fake,
+            sleep_fn=sleeps.append,
+            upload_as_file=True,
+        )
+
+    assert url == "repo/pfx/x.json"
+    assert fake.call_count == 3
+    # kwargs thread through to the real-signature callee on every attempt.
+    for call in fake.call_args_list:
+        assert call.args == (local, d.C.HF_DATA_REPO, "dataset", "pfx/x.json")
+        assert call.kwargs == {"upload_as_file": True}
+    # Exponential backoff + bounded jitter: base 30s then 60s, x[1.0, 1.25).
+    assert len(sleeps) == 2
+    assert 30.0 <= sleeps[0] <= 37.5 and 60.0 <= sleeps[1] <= 75.0
+    # Fix-engaged signal: the literal retry log line, once per retry.
+    retry_lines = [
+        r.getMessage() for r in caplog.records if "[upload] transport retry" in r.getMessage()
+    ]
+    assert len(retry_lines) == 2
+    assert retry_lines[0].startswith("[upload] transport retry 1/3 for pfx/x.json (backoff ")
+    assert retry_lines[1].startswith("[upload] transport retry 2/3 for pfx/x.json (backoff ")
+
+
+def test_upload_transport_retry_exhaustion_raises_fail_loud(tmp_path):
+    """Persistent no-path: after 3 retries (4 attempts, 3 backoffs) the helper
+    raises the SAME fail-loud RuntimeError the pre-fix `_up` raised."""
+    from unittest.mock import create_autospec
+
+    import issue1315_dispatch as d
+
+    from explore_persona_space.orchestrate import hub
+
+    local = tmp_path / "y.json"
+    local.write_text("{}")
+    fake = create_autospec(hub._upload, return_value="")
+    sleeps: list[float] = []
+
+    with pytest.raises(RuntimeError, match=r"upload returned no path for pfx/y\.json"):
+        d._upload_with_transport_retry(
+            local, "pfx/y.json", upload_fn=fake, sleep_fn=sleeps.append, upload_as_file=True
+        )
+
+    assert fake.call_count == 4  # 1 initial + 3 retries
+    assert len(sleeps) == 3
+    assert 120.0 <= sleeps[2] <= 150.0  # third backoff rides the 120s base
+
+
+def test_upload_transport_retry_default_binds_hub_upload(tmp_path, monkeypatch):
+    """Production default path (`upload_fn=None`): the helper reaches the real
+    `hub._upload` binding on the dispatcher's hub module — first-call success
+    performs zero sleeps and zero retries."""
+    from unittest.mock import create_autospec
+
+    import issue1315_dispatch as d
+
+    from explore_persona_space.orchestrate import hub
+
+    local = tmp_path / "z.json"
+    local.write_text("{}")
+    fake = create_autospec(hub._upload, return_value="repo/pfx/z.json")
+    monkeypatch.setattr(d.hub, "_upload", fake)
+
+    def _no_sleep(_s):  # a default-path success must never sleep
+        raise AssertionError("sleep_fn called on first-attempt success")
+
+    url = d._upload_with_transport_retry(
+        local, "pfx/z.json", sleep_fn=_no_sleep, upload_as_file=True
+    )
+    assert url == "repo/pfx/z.json"
+    assert fake.call_count == 1
