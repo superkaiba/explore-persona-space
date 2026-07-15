@@ -55,10 +55,45 @@ import issue1345_common as c  # noqa: E402
 import numpy as np  # noqa: E402
 import torch  # noqa: E402
 from issue1345_cross_regime_transfer import load_arm_xy, subset_rows  # noqa: E402
-from issue1345_fit_cells import load_matched, load_regime_bundle  # noqa: E402
+from issue1345_fit_cells import (  # noqa: E402
+    degenerate_fold_reason,
+    load_matched,
+    load_regime_bundle,
+)
 
 FROZEN_LAYERS = cm.FROZEN_LAYERS
 L19 = 19
+
+
+def pair_smoke_skip_reason(
+    xa: dict | None, xb: dict | None, *, smoke: bool, seed: int
+) -> str | None:
+    """Smoke-only Leg A pair skip reason; always None in production.
+
+    v3 sweep class: at story-shortfall grains (kept=1-3) the pair's rows are
+    too few for a meaningful full-data ridge fit (n=1 even NaNs the
+    standardization); reuse the shared fold-degeneracy floor on EACH side.
+    """
+    if xa is None or xb is None:
+        return "empty matched subset at smoke n"  # smoke-only (see subset_rows)
+    if smoke:
+        return degenerate_fold_reason(
+            xa["conv_ids"], n_folds=ma.N_FOLDS, seed=seed
+        ) or degenerate_fold_reason(xb["conv_ids"], n_folds=ma.N_FOLDS, seed=seed)
+    return None
+
+
+def leg_b_smoke_skip_reason(n_common: int, paired_conv_ids, *, seed: int) -> str | None:
+    """Smoke-only: reason to skip the reparam Leg B on a degenerate paired set.
+
+    At smoke n the paired chat<->no-template intersection can be < 2 rows, or
+    small enough that the alignment fold machinery (ma.N_FOLDS grouped CV)
+    fits nothing (v3 sweep item 4). Production never consults this — the
+    ``assert al["n_common"] > 0`` at the call site is byte-untouched.
+    """
+    if n_common < 2:
+        return f"paired chat<->no-template intersection has n_common={n_common} < 2"
+    return degenerate_fold_reason(paired_conv_ids, n_folds=ma.N_FOLDS, seed=seed)
 
 
 def _dev() -> torch.device:
@@ -264,24 +299,36 @@ def run_model_arm(
     n_rot_draws: int,
     n_reparam_null_draws: int,
     include_r3: bool,
+    smoke: bool = False,
 ) -> None:
     regimes = [r for r in c.REGIMES if include_r3 or r != "r3"]
     full = {r: load_arm_xy(bundles[r], r, arm) for r in regimes}
     shared = matched["shared_r1r2_convs"]
     r3cfg = matched["per_model_r3_pair"].get(model) if include_r3 else None
 
-    def _subset(regime: str, pair_kind: str) -> dict:
+    def _subset(regime: str, pair_kind: str) -> dict | None:
+        label = f"{model}/{arm} {regime}@{pair_kind}"
         if regime in ("r1", "r2"):
             ids = shared if pair_kind == "headline" else r3cfg["r12_convs"]
-            return subset_rows(full[regime], ids)
-        return subset_rows(full[regime], r3cfg["r3_story_ids"])
+            return subset_rows(full[regime], ids, smoke=smoke, label=label)
+        return subset_rows(full[regime], r3cfg["r3_story_ids"], smoke=smoke, label=label)
 
     pairs_out: dict = {}
+    skipped: dict[str, str] = {}
     for a, b in c.UNORDERED_PAIRS:
         if not include_r3 and "r3" in (a, b):
             continue
         pair_kind = "headline" if {a, b} == {"r1", "r2"} else "r3pair"
         xa, xb_ = _subset(a, pair_kind), _subset(b, pair_kind)
+        reason = pair_smoke_skip_reason(xa, xb_, smoke=smoke, seed=seed)
+        if reason is not None:
+            print(
+                f"[opcomp][smoke] SKIP pair {a}~{b}@{pair_kind} ({model}/{arm}): {reason} "
+                "— informational (production semantics unchanged)",
+                flush=True,
+            )
+            skipped[f"{a}~{b}"] = reason
+            continue
         per_layer: dict = {}
         for layer in FROZEN_LAYERS:
             beta_a, lam_a = cm.fit_primal_beta(xa["X"][:, layer, :], xa["Y"][:, layer, :])
@@ -312,58 +359,79 @@ def run_model_arm(
 
     # ---- Paired pair: activation-Procrustes + Result-2.5 reparam (Leg B) ----
     xa, xb_ = _subset("r1", "headline"), _subset("r2", "headline")
-    al = cm.align_pair({"conv_ids": xa["conv_ids"]}, {"conv_ids": xb_["conv_ids"]})
-    assert al["n_common"] > 0, (
-        "align_pair n_common == 0 on the chat<->no-template pair — the reparam "
-        "leg requires conv_id-paired rows (plan §4 Leg B mechanized assert)"
-    )
-    # Row alignment: both subsets are conv-sorted over the SAME conv set.
-    assert np.array_equal(xa["conv_ids"], xb_["conv_ids"]), "paired rows misaligned"
-    data = {
-        "Xi": {layer: _t(xa["X"][:, layer, :]) for layer in FROZEN_LAYERS},
-        "Yi": {layer: _t(xa["Y"][:, layer, :]) for layer in FROZEN_LAYERS},
-        "Xb": {layer: _t(xb_["X"][:, layer, :]) for layer in FROZEN_LAYERS},
-        "Yb": {layer: _t(xb_["Y"][:, layer, :]) for layer in FROZEN_LAYERS},
-        "conv": xa["conv_ids"],
-    }
-    folds = fc._cv_folds(xa["conv_ids"], ma.N_FOLDS, seed)
-    reparam: dict = {}
-    for layer in FROZEN_LAYERS:
-        battery = ma._layer_battery(data, folds, layer, do_orth=True)
-        proc = ma._procrustes_cosine_null(
-            data["Xb"][layer],
-            data["Xi"][layer],
-            data["Yb"][layer],
-            data["Yi"][layer],
-            n_draws=(n_rot_draws if layer == L19 else max(5, n_rot_draws // 10)),
-            seed=seed + 7 + layer,
-        )
-        cap = {
-            "A_ctx (r2->r1)": alignment_capacity(data["Xb"][layer], data["Xi"][layer]),
-            "A_ans (r2->r1)": alignment_capacity(data["Yb"][layer], data["Yi"][layer]),
-        }
-        reparam[str(layer)] = {
-            "battery": battery,
-            "activation_procrustes": proc,
-            "alignment_capacity": cap,
-        }
-        if layer == L19:
-            reparam[str(layer)]["matched_capacity_nulls"] = reparam_null_battery(
-                data, folds, layer, n_draws=n_reparam_null_draws, seed=seed + 13
+    leg_b_reason: str | None = None
+    if xa is None or xb_ is None:
+        leg_b_reason = "empty headline matched subset at smoke n"  # smoke-only
+    else:
+        al = cm.align_pair({"conv_ids": xa["conv_ids"]}, {"conv_ids": xb_["conv_ids"]})
+        if smoke:
+            # Smoke-informational skip BEFORE the binding assert fires (v3
+            # sweep item 4); production reaches the assert byte-untouched.
+            leg_b_reason = leg_b_smoke_skip_reason(al["n_common"], xa["conv_ids"], seed=seed)
+        if leg_b_reason is None:
+            assert al["n_common"] > 0, (
+                "align_pair n_common == 0 on the chat<->no-template pair — the reparam "
+                "leg requires conv_id-paired rows (plan §4 Leg B mechanized assert)"
             )
-    # Δ_reparam (plan §3): min over directions of recovered - max(within-0.05, null)
-    b19 = reparam[str(L19)]["battery"]
-    nulls19 = reparam[str(L19)]["matched_capacity_nulls"]
-    recov = {
-        "b2i": b19["composition"]["linear"]["comp_samefn_b2i"],
-        "i2b": b19["composition"]["linear"]["comp_samefn_i2b"],
-    }
-    within = {"b2i": b19["ceilings"]["within_instruct"], "i2b": b19["ceilings"]["within_base"]}
-    delta_reparam_terms = {
-        d: recov[d] - max(within[d] - c.DELTA_SAME_MARGIN, nulls19[d]["null_recovery_r2"])
-        for d in ("b2i", "i2b")
-    }
-    delta_reparam = float(min(delta_reparam_terms.values()))
+    if leg_b_reason is not None:
+        print(
+            f"[opcomp][smoke] SKIP Leg B (reparam) for {model}/{arm}: {leg_b_reason} "
+            "— informational (production assert unchanged)",
+            flush=True,
+        )
+        reparam: dict = {}
+        recov: dict = {}
+        within: dict = {}
+        delta_reparam_terms: dict = {}
+        delta_reparam = float("nan")
+    else:
+        # Row alignment: both subsets are conv-sorted over the SAME conv set.
+        assert np.array_equal(xa["conv_ids"], xb_["conv_ids"]), "paired rows misaligned"
+        data = {
+            "Xi": {layer: _t(xa["X"][:, layer, :]) for layer in FROZEN_LAYERS},
+            "Yi": {layer: _t(xa["Y"][:, layer, :]) for layer in FROZEN_LAYERS},
+            "Xb": {layer: _t(xb_["X"][:, layer, :]) for layer in FROZEN_LAYERS},
+            "Yb": {layer: _t(xb_["Y"][:, layer, :]) for layer in FROZEN_LAYERS},
+            "conv": xa["conv_ids"],
+        }
+        folds = fc._cv_folds(xa["conv_ids"], ma.N_FOLDS, seed)
+        reparam = {}
+        for layer in FROZEN_LAYERS:
+            battery = ma._layer_battery(data, folds, layer, do_orth=True)
+            proc = ma._procrustes_cosine_null(
+                data["Xb"][layer],
+                data["Xi"][layer],
+                data["Yb"][layer],
+                data["Yi"][layer],
+                n_draws=(n_rot_draws if layer == L19 else max(5, n_rot_draws // 10)),
+                seed=seed + 7 + layer,
+            )
+            cap = {
+                "A_ctx (r2->r1)": alignment_capacity(data["Xb"][layer], data["Xi"][layer]),
+                "A_ans (r2->r1)": alignment_capacity(data["Yb"][layer], data["Yi"][layer]),
+            }
+            reparam[str(layer)] = {
+                "battery": battery,
+                "activation_procrustes": proc,
+                "alignment_capacity": cap,
+            }
+            if layer == L19:
+                reparam[str(layer)]["matched_capacity_nulls"] = reparam_null_battery(
+                    data, folds, layer, n_draws=n_reparam_null_draws, seed=seed + 13
+                )
+        # Δ_reparam (plan §3): min over directions of recovered - max(within-0.05, null)
+        b19 = reparam[str(L19)]["battery"]
+        nulls19 = reparam[str(L19)]["matched_capacity_nulls"]
+        recov = {
+            "b2i": b19["composition"]["linear"]["comp_samefn_b2i"],
+            "i2b": b19["composition"]["linear"]["comp_samefn_i2b"],
+        }
+        within = {"b2i": b19["ceilings"]["within_instruct"], "i2b": b19["ceilings"]["within_base"]}
+        delta_reparam_terms = {
+            d: recov[d] - max(within[d] - c.DELTA_SAME_MARGIN, nulls19[d]["null_recovery_r2"])
+            for d in ("b2i", "i2b")
+        }
+        delta_reparam = float(min(delta_reparam_terms.values()))
 
     slug = c.MODEL_SLUG[model]
     payload = {
@@ -378,6 +446,8 @@ def run_model_arm(
             "i2b": "reparam r1(chat) operator recovered in r2(no-template)",
         },
         "pairs": pairs_out,
+        # Smoke-informational skips (empty in production; additive key)
+        "skipped_pairs": skipped,
         "reparam_r1r2": reparam,
         "delta_reparam_l19": {
             "per_direction": {k: float(v) for k, v in delta_reparam_terms.items()},
@@ -385,6 +455,7 @@ def run_model_arm(
             "recovered_r2": recov,
             "within_r2": within,
             "margin": c.DELTA_SAME_MARGIN,
+            **({"skipped": leg_b_reason} if leg_b_reason else {}),
         },
         "calibration_anchor": {
             "base_instruct_aligned_cosine_825": 0.6864,
@@ -405,6 +476,12 @@ def main() -> None:
     ap.add_argument("--seed", type=int, default=cm.FIT_SEED)
     ap.add_argument("--rot-draws", type=int, default=50)
     ap.add_argument("--reparam-null-draws", type=int, default=c.N_REPARAM_NULL_DRAWS)
+    ap.add_argument(
+        "--smoke",
+        action="store_true",
+        help="smoke leg: pairs / the reparam Leg B whose matched rows are too few "
+        "for the fit machinery at smoke n are skipped with a logged reason",
+    )
     args = ap.parse_args()
 
     args.out_dir.mkdir(parents=True, exist_ok=True)
@@ -425,6 +502,7 @@ def main() -> None:
                 n_rot_draws=args.rot_draws,
                 n_reparam_null_draws=args.reparam_null_draws,
                 include_r3=not args.no_r3,
+                smoke=args.smoke,
             )
     print("[done] operator comparison complete", flush=True)
 

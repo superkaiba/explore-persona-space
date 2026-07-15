@@ -111,6 +111,22 @@ run_per_model() {
   return 0
 }
 
+# gen_stories rc routing (v3 code-review Minor, rc-masking fix): the rc=21
+# yield-halt branch fires ONLY when BOTH models exited in {0, 21}; a real
+# crash rc (1/134/137/...) in EITHER model routes to fatal instead of riding
+# the halt branch. Echoes: halt | ok | fatal.
+gen_rc_route() {
+  local rc_i="$1" rc_p="$2"
+  local ok_i=0 ok_p=0
+  [[ "$rc_i" -eq 0 || "$rc_i" -eq 21 ]] && ok_i=1
+  [[ "$rc_p" -eq 0 || "$rc_p" -eq 21 ]] && ok_p=1
+  if [[ "$ok_i" -eq 1 && "$ok_p" -eq 1 ]]; then
+    if [[ "$rc_i" -eq 21 || "$rc_p" -eq 21 ]]; then echo halt; else echo ok; fi
+  else
+    echo fatal
+  fi
+}
+
 if should_run prefetch; then
   echo "[phase=prefetch]"
   run_cmd uv run python -c "import sys; sys.path.insert(0, 'scripts'); import issue1345_common as c; [c.list_parent_shards(s) for s in c.PARENT_STEMS]; print('prefetch OK: all four pinned stems resolve @', c.PIN_REV)"
@@ -126,13 +142,16 @@ if should_run gen_stories; then
   echo "[phase=gen_stories]"
   run_per_model gen "uv run python scripts/issue1345_gen_stories.py --model %MODEL% --out-dir '$STORIES_DIR' --dl-dir '$DL_DIR' $SMOKE_FLAG"
   if [[ -z "$DRY_RUN" ]]; then
-    # rc=21 == yield floor failed (plan §7): halt the story regime, continue r1/r2
-    if [[ "${RC_INSTRUCT:-0}" -eq 21 || "${RC_PRETRAINED:-0}" -eq 21 ]]; then
-      echo "[gen_stories] YIELD FLOOR FAILED (rc_i=${RC_INSTRUCT} rc_p=${RC_PRETRAINED}) — story regime halted"
-      touch "$R3_HALT_FILE"; NO_R3_FLAG="--no-r3"
-    elif [[ "${RC_INSTRUCT:-0}" -ne 0 || "${RC_PRETRAINED:-0}" -ne 0 ]]; then
-      echo "FATAL: gen_stories failed (rc_i=${RC_INSTRUCT} rc_p=${RC_PRETRAINED})" >&2; exit 1
-    fi
+    # rc=21 == yield floor failed (plan §7): halt the story regime, continue
+    # r1/r2 — but ONLY when both rcs are in {0,21}; any other rc is a crash.
+    case "$(gen_rc_route "${RC_INSTRUCT:-0}" "${RC_PRETRAINED:-0}")" in
+      halt)
+        echo "[gen_stories] YIELD FLOOR FAILED (rc_i=${RC_INSTRUCT} rc_p=${RC_PRETRAINED}) — story regime halted"
+        touch "$R3_HALT_FILE"; NO_R3_FLAG="--no-r3" ;;
+      fatal)
+        echo "FATAL: gen_stories failed (rc_i=${RC_INSTRUCT} rc_p=${RC_PRETRAINED})" >&2; exit 1 ;;
+      ok) : ;;
+    esac
   fi
 fi
 
@@ -168,7 +187,7 @@ fi
 
 if should_run fits; then
   echo "[phase=fits]"
-  run_per_model fits "uv run python -c \"import sys; sys.path.insert(0,'scripts'); import issue1345_common as c; print(','.join(x['cell_id'] for x in c.all_cells() if x['model_key']=='%MODEL%'))\" > /tmp/i1345_cells_%MODEL%.txt && uv run python scripts/issue1345_fit_cells.py --cells \$(cat /tmp/i1345_cells_%MODEL%.txt) $NO_R3_FLAG --turnstore-dir '$TS_DIR' --matched-dir '$MATCHED_DIR' --out-dir '$EVAL_DIR' --preds-dir '$PREDS_DIR' --null-draws $NULLS --n-boot $NBOOT"
+  run_per_model fits "uv run python -c \"import sys; sys.path.insert(0,'scripts'); import issue1345_common as c; print(','.join(x['cell_id'] for x in c.all_cells() if x['model_key']=='%MODEL%'))\" > /tmp/i1345_cells_%MODEL%.txt && uv run python scripts/issue1345_fit_cells.py --cells \$(cat /tmp/i1345_cells_%MODEL%.txt) $NO_R3_FLAG $SMOKE_FLAG --turnstore-dir '$TS_DIR' --matched-dir '$MATCHED_DIR' --out-dir '$EVAL_DIR' --preds-dir '$PREDS_DIR' --null-draws $NULLS --n-boot $NBOOT"
   if [[ -z "$DRY_RUN" && ( "${RC_INSTRUCT:-0}" -ne 0 || "${RC_PRETRAINED:-0}" -ne 0 ) ]]; then
     echo "FATAL: fits failed (rc_i=${RC_INSTRUCT} rc_p=${RC_PRETRAINED})" >&2; exit 1
   fi
@@ -176,7 +195,7 @@ fi
 
 if should_run transfer; then
   echo "[phase=transfer]"
-  run_per_model transfer "uv run python scripts/issue1345_cross_regime_transfer.py --models %MODEL% $NO_R3_FLAG --turnstore-dir '$TS_DIR' --matched-dir '$MATCHED_DIR' --out-dir '$EVAL_DIR' --preds-dir '$PREDS_DIR' --n-boot $NBOOT"
+  run_per_model transfer "uv run python scripts/issue1345_cross_regime_transfer.py --models %MODEL% $NO_R3_FLAG $SMOKE_FLAG --turnstore-dir '$TS_DIR' --matched-dir '$MATCHED_DIR' --out-dir '$EVAL_DIR' --preds-dir '$PREDS_DIR' --n-boot $NBOOT"
   if [[ -z "$DRY_RUN" && ( "${RC_INSTRUCT:-0}" -ne 0 || "${RC_PRETRAINED:-0}" -ne 0 ) ]]; then
     echo "FATAL: transfer failed (rc_i=${RC_INSTRUCT} rc_p=${RC_PRETRAINED})" >&2; exit 1
   fi
@@ -184,7 +203,7 @@ fi
 
 if should_run opcomp; then
   echo "[phase=opcomp]"
-  run_per_model opcomp "uv run python scripts/issue1345_operator_comparison.py --models %MODEL% $NO_R3_FLAG --turnstore-dir '$TS_DIR' --matched-dir '$MATCHED_DIR' --out-dir '$EVAL_DIR' --rot-draws $ROTD"
+  run_per_model opcomp "uv run python scripts/issue1345_operator_comparison.py --models %MODEL% $NO_R3_FLAG $SMOKE_FLAG --turnstore-dir '$TS_DIR' --matched-dir '$MATCHED_DIR' --out-dir '$EVAL_DIR' --rot-draws $ROTD"
   if [[ -z "$DRY_RUN" && ( "${RC_INSTRUCT:-0}" -ne 0 || "${RC_PRETRAINED:-0}" -ne 0 ) ]]; then
     echo "FATAL: opcomp failed (rc_i=${RC_INSTRUCT} rc_p=${RC_PRETRAINED})" >&2; exit 1
   fi

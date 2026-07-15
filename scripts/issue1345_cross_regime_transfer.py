@@ -42,7 +42,11 @@ import issue825_crossmodel_map_transfer as cm  # noqa: E402
 import issue825_fit_cells as fc  # noqa: E402
 import issue1345_common as c  # noqa: E402
 import numpy as np  # noqa: E402
-from issue1345_fit_cells import load_matched, load_regime_bundle  # noqa: E402
+from issue1345_fit_cells import (  # noqa: E402
+    degenerate_fold_reason,
+    load_matched,
+    load_regime_bundle,
+)
 
 FROZEN_LAYERS = cm.FROZEN_LAYERS
 L19 = 19
@@ -70,10 +74,27 @@ def load_arm_xy(bundle: dict, regime: str, arm: str) -> dict:
     return {"X": xy["X"][order], "Y": xy["Y"][order], "conv_ids": conv[order]}
 
 
-def subset_rows(xy: dict, keep_ids: list[str]) -> dict:
-    """Restrict rows to the given conv/story id set (order preserved)."""
+def subset_rows(
+    xy: dict, keep_ids: list[str], *, smoke: bool = False, label: str = ""
+) -> dict | None:
+    """Restrict rows to the given conv/story id set (order preserved).
+
+    Under ``smoke`` an EMPTY selection returns None with an informational log
+    (the caller skips the consuming read); under production the fail-loud
+    assert is unchanged (v3 sweep item: matched-subset drift is a pipeline
+    bug at production n, never silently tolerated).
+    """
     keep = np.isin(xy["conv_ids"], np.asarray(sorted(set(keep_ids))))
-    assert keep.any(), "subset selected zero rows — matched-subset drift"
+    if smoke and not keep.any():
+        print(
+            f"[transfer][smoke] SKIP {label or 'subset'}: selected zero rows — "
+            "informational (production assert unchanged)",
+            flush=True,
+        )
+        return None
+    assert keep.any(), (
+        f"subset selected zero rows{f' ({label})' if label else ''} — matched-subset drift"
+    )
     return {"X": xy["X"][keep], "Y": xy["Y"][keep], "conv_ids": xy["conv_ids"][keep]}
 
 
@@ -169,6 +190,98 @@ def paired_delta_bootstrap(reads: dict, *, n_boot: int, seed: int) -> dict:
     }
 
 
+def _sweep_smoke_skip_reason(
+    src: dict | None, tgt: dict | None, *, smoke: bool, seed: int
+) -> str | None:
+    """Smoke-only skip reason for one (src -> tgt) sweep; always None in production.
+
+    A None subset only exists under smoke (see subset_rows); the fold probe
+    runs only under smoke — production sweeps are byte-untouched.
+    """
+    if src is None or tgt is None:
+        return "empty matched subset at smoke n"
+    if smoke:
+        return degenerate_fold_reason(
+            src["conv_ids"], n_folds=cm.N_FOLDS, seed=seed, tgt_conv_ids=tgt["conv_ids"]
+        )
+    return None
+
+
+def _headline_boot_stub(reason: str) -> dict:
+    """verdict_for-compatible NaN stub for a smoke-skipped headline bootstrap."""
+    nan_ci = {"mean": float("nan"), "ci_lo": float("nan"), "ci_hi": float("nan")}
+    return {
+        "skipped": reason,
+        "n_boot": 0,
+        "n_groups": 0,
+        "unit": "conversation (paired resample across all four statistics)",
+        "delta_1to2": dict(nan_ci),
+        "delta_2to1": dict(nan_ci),
+        "delta_xfer": dict(nan_ci),
+        "delta_same": dict(nan_ci),
+        "delta_diff": dict(nan_ci),
+        "delta_diff_ci_wholly_below_0": False,
+    }
+
+
+def _collect_headline_reads(
+    sweep_fn, *, model: str, arm: str, preds_dir: Path, smoke: bool
+) -> tuple[dict, str | None]:
+    """(reads, skip_reason) for the four headline sweeps; saves L19 preds caches.
+
+    Production keeps the fail-loud full-coverage assert (actionable message);
+    under smoke a skipped sweep / partial fold coverage returns a reason the
+    caller logs informationally (v3 sweep class).
+    """
+    reads: dict = {}
+    for name, key in {
+        "within_r1": ("r1", "r1", "headline"),
+        "within_r2": ("r2", "r2", "headline"),
+        "x_r1r2": ("r1", "r2", "headline"),
+        "x_r2r1": ("r2", "r1", "headline"),
+    }.items():
+        sw = sweep_fn(*key)
+        if isinstance(sw, tuple):  # smoke-only ("skipped", reason) sentinel
+            return {}, f"{name}: {sw[1]}"
+        if not sw["fitted_l19"].all():
+            n_unfit = int((~sw["fitted_l19"]).sum())
+            msg = (
+                f"{name}: {n_unfit}/{len(sw['fitted_l19'])} held-out rows never received a "
+                "fold prediction (grouped-CV folds skipped at this n)"
+            )
+            if smoke:
+                return {}, msg
+            raise AssertionError(msg + " — matched-subset/extraction drift at production n")
+        reads[name] = (sw["preds_l19"], sw["true_l19"], sw["conv_ids"])
+        np.savez(
+            preds_dir / f"transfer_{c.MODEL_SLUG[model]}_{arm}_{name}_L19.npz",
+            pred=sw["preds_l19"].astype(np.float32),
+            true=sw["true_l19"].astype(np.float32),
+            conv_ids=sw["conv_ids"],
+            layer=np.asarray([L19]),
+        )
+    return reads, None
+
+
+def _within_diagonals(sweep_fn, regimes: list[str], include_r3: bool, skipped: dict) -> dict:
+    """Within-regime diagonals at each pair grain; smoke-skips recorded in-place."""
+    within: dict = {}
+    for r in regimes:
+        if r == "r3":
+            continue
+        sw = sweep_fn(r, r, "headline")
+        if not isinstance(sw, tuple):
+            within[f"{r}@headline"] = sw["r2_by_layer"]
+    if include_r3:
+        for r in regimes:
+            sw = sweep_fn(r, r, "r3pair")
+            if isinstance(sw, tuple):
+                skipped[f"{r}@r3pair(within)"] = sw[1]
+            else:
+                within[f"{r}@r3pair"] = sw["r2_by_layer"]
+    return within
+
+
 # ---------------------------------------------------------------------------
 # Per (model, arm) battery
 # ---------------------------------------------------------------------------
@@ -184,28 +297,46 @@ def run_model_arm(
     null_draws: int,
     n_boot: int,
     include_r3: bool,
+    smoke: bool = False,
 ) -> None:
     regimes = [r for r in c.REGIMES if include_r3 or r != "r3"]
     full = {r: load_arm_xy(bundles[r], r, arm) for r in regimes}
     shared = matched["shared_r1r2_convs"]
     r3cfg = matched["per_model_r3_pair"].get(model) if include_r3 else None
 
-    def _subset(regime: str, pair_kind: str) -> dict:
+    def _subset(regime: str, pair_kind: str) -> dict | None:
+        label = f"{model}/{arm} {regime}@{pair_kind}"
         if regime in ("r1", "r2"):
             ids = shared if pair_kind == "headline" else r3cfg["r12_convs"]
-            return subset_rows(full[regime], ids)
-        return subset_rows(full[regime], r3cfg["r3_story_ids"])
+            return subset_rows(full[regime], ids, smoke=smoke, label=label)
+        return subset_rows(full[regime], r3cfg["r3_story_ids"], smoke=smoke, label=label)
 
-    # Cache sweeps keyed by (src_regime, tgt_regime, pair_kind); within = src==tgt
+    # Cache sweeps keyed by (src_regime, tgt_regime, pair_kind); within = src==tgt.
+    # Under smoke a cached value may be the ("skipped", reason) sentinel when
+    # the subset is empty or the grouped-CV fold machinery would fit nothing at
+    # the realized smoke n (kept=1-3 story grains — v3 sweep class); production
+    # never stores sentinels (subset_rows asserts, and no degeneracy probe runs).
     sweeps: dict = {}
+    skipped: dict[str, str] = {}
 
-    def _sweep(i: str, j: str, pair_kind: str) -> dict:
+    def _sweep(i: str, j: str, pair_kind: str):
         key = (i, j, pair_kind)
         if key not in sweeps:
-            sweeps[key] = transfer_sweep(
-                _subset(i, pair_kind), _subset(j, pair_kind), seed=seed, null_draws=null_draws
-            )
+            src, tgt = _subset(i, pair_kind), _subset(j, pair_kind)
+            reason = _sweep_smoke_skip_reason(src, tgt, smoke=smoke, seed=seed)
+            if reason is not None:
+                print(
+                    f"[transfer][smoke] SKIP sweep {i}->{j}@{pair_kind} ({model}/{arm}): "
+                    f"{reason} — informational (production semantics unchanged)",
+                    flush=True,
+                )
+                sweeps[key] = ("skipped", reason)
+            else:
+                sweeps[key] = transfer_sweep(src, tgt, seed=seed, null_draws=null_draws)
         return sweeps[key]
+
+    def _is_skip(sw) -> bool:
+        return isinstance(sw, tuple)
 
     matrix: dict = {}
     deltas: dict = {}
@@ -213,6 +344,9 @@ def run_model_arm(
         pair_kind = "headline" if {i, j} == {"r1", "r2"} else "r3pair"
         xfer = _sweep(i, j, pair_kind)
         within_j = _sweep(j, j, pair_kind)
+        if _is_skip(xfer) or _is_skip(within_j):
+            skipped[f"{i}->{j}"] = xfer[1] if _is_skip(xfer) else within_j[1]
+            continue
         matrix[f"{i}->{j}"] = {
             "pair_kind": pair_kind,
             "transfer_r2_by_layer": xfer["r2_by_layer"],
@@ -233,33 +367,24 @@ def run_model_arm(
             )
 
     # Within diagonals at each pair grain (reported alongside the matrix)
-    within = {
-        f"{r}@headline": _sweep(r, r, "headline")["r2_by_layer"] for r in regimes if r != "r3"
-    }
-    if include_r3:
-        for r in regimes:
-            within[f"{r}@r3pair"] = _sweep(r, r, "r3pair")["r2_by_layer"]
+    within = _within_diagonals(_sweep, regimes, include_r3, skipped)
 
     # Headline paired bootstrap from the cached L19 preds (plan §3 CI bound)
-    reads = {}
-    for name, key in {
-        "within_r1": ("r1", "r1", "headline"),
-        "within_r2": ("r2", "r2", "headline"),
-        "x_r1r2": ("r1", "r2", "headline"),
-        "x_r2r1": ("r2", "r1", "headline"),
-    }.items():
-        sw = _sweep(*key)
-        assert sw["fitted_l19"].all(), f"{name}: unfitted held-out rows at n>=folds"
-        reads[name] = (sw["preds_l19"], sw["true_l19"], sw["conv_ids"])
-        slug = c.MODEL_SLUG[model]
-        np.savez(
-            preds_dir / f"transfer_{slug}_{arm}_{name}_L19.npz",
-            pred=sw["preds_l19"].astype(np.float32),
-            true=sw["true_l19"].astype(np.float32),
-            conv_ids=sw["conv_ids"],
-            layer=np.asarray([L19]),
+    reads, reads_skip_reason = _collect_headline_reads(
+        _sweep, model=model, arm=arm, preds_dir=preds_dir, smoke=smoke
+    )
+    if reads_skip_reason is None:
+        boot = paired_delta_bootstrap(reads, n_boot=n_boot, seed=seed + 31)
+    else:
+        # Smoke-informational stub in the verdict_for-compatible shape (NaN CIs,
+        # never a fake verdict): the smoke chain completes; production above
+        # either asserts or runs the real bootstrap.
+        print(
+            f"[transfer][smoke] SKIP headline paired bootstrap ({model}/{arm}): "
+            f"{reads_skip_reason} — informational (production assert unchanged)",
+            flush=True,
         )
-    boot = paired_delta_bootstrap(reads, n_boot=n_boot, seed=seed + 31)
+        boot = _headline_boot_stub(reads_skip_reason)
 
     slug = c.MODEL_SLUG[model]
     payload = {
@@ -280,6 +405,8 @@ def run_model_arm(
         "within_r2_by_layer": within,
         "headline_paired_bootstrap": boot,
         "delta_margins": {"same": c.DELTA_SAME_MARGIN, "diff": c.DELTA_DIFF_MARGIN},
+        # Smoke-informational skips (empty in production; additive key)
+        "skipped_pairs": skipped,
     }
     c.write_json(out_dir / f"cross_regime_transfer_{slug}_{arm}.json", payload)
 
@@ -296,6 +423,12 @@ def main() -> None:
     ap.add_argument("--seed", type=int, default=cm.FIT_SEED)
     ap.add_argument("--null-draws", type=int, default=100)
     ap.add_argument("--n-boot", type=int, default=c.N_BOOTSTRAP)
+    ap.add_argument(
+        "--smoke",
+        action="store_true",
+        help="smoke leg: pairs whose matched subset is empty or whose grouped-CV "
+        "folds would fit nothing at smoke n are skipped with a logged reason",
+    )
     args = ap.parse_args()
 
     args.out_dir.mkdir(parents=True, exist_ok=True)
@@ -319,6 +452,7 @@ def main() -> None:
                 null_draws=args.null_draws,
                 n_boot=args.n_boot,
                 include_r3=not args.no_r3,
+                smoke=args.smoke,
             )
     print("[done] cross-regime transfer complete", flush=True)
 
