@@ -357,12 +357,75 @@ def process_batch(
     return records
 
 
+# Cosine-mode bars for causal_check (#1345 crash-fix, att-20260715-151246).
+# Calibration source: the #779 r12 bf16 single-position equivalence-gate
+# measurement on this exact model family (Qwen-2.5-7B, 28 layers, bf16 —
+# gotchas.md "bf16 padded-batch equivalence gates"): bug-free bf16 kernel
+# jitter reads per-layer cos >= 0.999995 at layer 0 and >= 0.996907 at the
+# worst deep layer (flattened worst 0.998770), while a REAL wrong-position /
+# mask / row-mapping bug reads flattened cos 0.39-0.62 and layer-0 cos
+# 0.43-0.84. Bars: early per-layer 0.999 (the sharp bug catcher — position
+# bugs corrupt layer 0 immediately, where jitter is ~1e-6), flattened 0.995
+# (>=4x headroom over the measured worst bf16 deviation, ~0.35 above the
+# real-bug regime). The norm-ratio guard closes cosine's scale blind spot
+# (a doubled vector has cos 1.0): bf16 jitter norm-ratio is ~1e-3, a scale
+# bug is O(1).
+CAUSAL_COS_EARLY_LAYERS = 4
+CAUSAL_COS_EARLY_MIN = 0.999
+CAUSAL_COS_FLAT_MIN = 0.995
+CAUSAL_NORM_REL_MAX = 0.05
+
+
+def _causal_cosine_stats(pre_by_layer: list, full_by_layer: list) -> dict:
+    """fp32 cosine/norm stats for ONE slot's prefix-vs-full comparison.
+
+    Returns early_cos_min (per-layer cosine over the first
+    CAUSAL_COS_EARLY_LAYERS), flat_cos (all layers concatenated), norm_rel
+    (flattened norm ratio abs(norm(pre) - norm(full)) / norm(full)), and max_abs_diff.
+    """
+    pre = torch.stack([v.float() for v in pre_by_layer])
+    full = torch.stack([v.float() for v in full_by_layer])
+    per_layer_cos = torch.nn.functional.cosine_similarity(pre, full, dim=1)
+    n_early = min(CAUSAL_COS_EARLY_LAYERS, per_layer_cos.shape[0])
+    flat_cos = torch.nn.functional.cosine_similarity(
+        pre.reshape(1, -1), full.reshape(1, -1), dim=1
+    )[0]
+    norm_rel = float((pre.norm() - full.norm()).abs() / full.norm().clamp_min(1e-12))
+    return {
+        "early_cos_min": float(per_layer_cos[:n_early].min()),
+        "flat_cos": float(flat_cos),
+        "norm_rel": norm_rel,
+        "max_abs_diff": float((pre - full).abs().max()),
+    }
+
+
 def causal_check(
-    model, rendered: list[Rendered], atol: float = 1e-2, n_conversations: int = 3
+    model,
+    rendered: list[Rendered],
+    atol: float = 1e-2,
+    n_conversations: int = 3,
+    *,
+    mode: str = "abs",
 ) -> float:
-    """Re-forward the prefix ending at each slot; slot activation must match full-seq."""
+    """Re-forward the prefix ending at each slot; slot activation must match full-seq.
+
+    ``mode="abs"`` (default — byte-identical #825 behavior): per-layer
+    ``torch.allclose(atol)``, calibrated on the #825 header slots (mid/late
+    positions, small prefix-vs-full length disparity). ``mode="cosine"``: the
+    #779-calibrated two-bar cosine gate + norm-ratio guard, for slot sets where
+    a flat atol has NO bf16 headroom — early-position slots (#1345's ``prefix``
+    at token ~2: a 3-token prefix forward meets the full-length forward's
+    different GEMM shapes, and a SINGLE bf16 ULP at the large-magnitude
+    early-token dims reads 0.03125/0.0625 at layer 0; incident
+    att-20260715-151246, benign-numerics-verified by fp32 re-probe). Both
+    forwards are batch-1, unpadded, same slot index — the compare is pure
+    kernel numerics, so a wrong-position bug reads cos ~0.4-0.6, far below
+    either bar.
+    """
+    assert mode in ("abs", "cosine"), f"unknown causal_check mode: {mode!r}"
     device = model.device
     max_diff = 0.0
+    worst = {"early_cos_min": 1.0, "flat_cos": 1.0, "norm_rel": 0.0}
     n_checked = min(n_conversations, len(rendered))
     for r in rendered[:n_checked]:
         ids = torch.tensor(r.input_ids, dtype=torch.long).unsqueeze(0).to(device)
@@ -373,18 +436,47 @@ def causal_check(
             pre = extract_layer_activations(
                 model, ids[:, : idx + 1], layers=range(EXPECTED_LAYERS), detach_to_cpu=True
             )
-            for layer in range(EXPECTED_LAYERS):
-                a = pre[layer][0, idx].float()
-                b = full[layer][0, idx].float()
-                diff = float((a - b).abs().max())
-                max_diff = max(max_diff, diff)
-                assert torch.allclose(a, b, atol=atol), (
-                    f"causal-slot mismatch {r.conv_id}:{name} layer {layer}: "
-                    f"max|diff|={diff:.4g} > atol={atol}"
+            if mode == "abs":
+                for layer in range(EXPECTED_LAYERS):
+                    a = pre[layer][0, idx].float()
+                    b = full[layer][0, idx].float()
+                    diff = float((a - b).abs().max())
+                    max_diff = max(max_diff, diff)
+                    assert torch.allclose(a, b, atol=atol), (
+                        f"causal-slot mismatch {r.conv_id}:{name} layer {layer}: "
+                        f"max|diff|={diff:.4g} > atol={atol}"
+                    )
+            else:
+                stats = _causal_cosine_stats(
+                    [pre[layer][0, idx] for layer in range(EXPECTED_LAYERS)],
+                    [full[layer][0, idx] for layer in range(EXPECTED_LAYERS)],
                 )
-    print(
-        f"[causal] slot-prefix equality OK on {n_checked} conversations; max|diff|={max_diff:.4g}"
-    )
+                max_diff = max(max_diff, stats["max_abs_diff"])
+                worst["early_cos_min"] = min(worst["early_cos_min"], stats["early_cos_min"])
+                worst["flat_cos"] = min(worst["flat_cos"], stats["flat_cos"])
+                worst["norm_rel"] = max(worst["norm_rel"], stats["norm_rel"])
+                assert (
+                    stats["early_cos_min"] >= CAUSAL_COS_EARLY_MIN
+                    and stats["flat_cos"] >= CAUSAL_COS_FLAT_MIN
+                    and stats["norm_rel"] <= CAUSAL_NORM_REL_MAX
+                ), (
+                    f"causal-slot mismatch {r.conv_id}:{name} (cosine mode): "
+                    f"early_cos_min={stats['early_cos_min']:.6f} (min {CAUSAL_COS_EARLY_MIN}) "
+                    f"flat_cos={stats['flat_cos']:.6f} (min {CAUSAL_COS_FLAT_MIN}) "
+                    f"norm_rel={stats['norm_rel']:.4g} (max {CAUSAL_NORM_REL_MAX}) "
+                    f"max|diff|={stats['max_abs_diff']:.4g}"
+                )
+    if mode == "abs":
+        print(
+            f"[causal] slot-prefix equality OK on {n_checked} conversations; "
+            f"max|diff|={max_diff:.4g}"
+        )
+    else:
+        print(
+            f"[causal] mode=cosine slot-prefix consistency OK on {n_checked} conversations; "
+            f"early_cos_min={worst['early_cos_min']:.6f} flat_cos_min={worst['flat_cos']:.6f} "
+            f"norm_rel_max={worst['norm_rel']:.4g} max|diff|={max_diff:.4g}"
+        )
     return max_diff
 
 
