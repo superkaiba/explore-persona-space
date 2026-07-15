@@ -6321,7 +6321,9 @@ Routing, auto-continue behavior, and the marker schema are unchanged.
 parked/terminal parent).** This step and its user-chat sibling (the
 CLAUDE.md § Routing "User-chat inline free analysis" carve-out) are
 ANALYSIS-ONLY and normally touch no pod (a needs-gpu discovery takes the
-ABORT path below); 9a-ter proper fires at status `interpreting`, outside
+ABORT path below — EXCEPT the user-chat sibling under its
+explicit user inline-override clause, whose deliberate GPU run inherits
+these same pre-launch signals + the compute-character statement); 9a-ter proper fires at status `interpreting`, outside
 the watcher's auto-stop set, but the user-chat sibling executes on PARKED
 (`on_hold`) / terminal-status parents. If an inline run following this
 shape nonetheless provisions or reuses a pod on such a parent, the
@@ -7612,7 +7614,28 @@ orchestrators driving one round is the #778 root cause.
    fires, it just no longer moves the status to `plan_pending`. The
    round exits the status only at the re-park:
    `set-status <N> awaiting_promotion` (or `blocked` on a failure
-   exit).
+   exit). **Mid-round defer/teardown is an exit too — re-park in the
+   SAME action sequence as the teardown:** a mid-round defer (wedged or
+   pathological run torn down, user defer — any deliberate abandonment
+   of the round short of a `blocked` failure exit; no
+   `--force-followup-exit` needed, `awaiting_promotion` is not in the
+   refused set) tears down the pod/instance FIRST, runs
+   `set-status <N> awaiting_promotion` as the NEXT command (the § User
+   pause affordance teardown-first-park-last ordering — distinct
+   mechanism: a user pause parks at `on_hold`, this defer exit re-parks
+   at `awaiting_promotion` with the label closed; never leave
+   `followups_running` with no live round compute), THEN closes the
+   round's label by posting the step-4 completion marker with
+   `outcome: deferred — <one-line reason>` (label closure is
+   outcome-agnostic — `task_workflow.unrun_followup_labels` — so Step 0
+   / the tick never auto-re-dispatch the deferred round; a deliberate
+   later resume posts a FRESH scope under a NEW label; a deferred
+   proposer-band round still counts toward its step-5 cap). The tick
+   STALE-REDRIVE / watcher re-park are recovery backstops, not the
+   owner (incident #825, 2026-07-15: a pathological fit was torn down
+   at 00:28Z with no re-park — the parent stranded at
+   `followups_running` ~1.4 h until the 01:53Z tick re-drive re-parked
+   it).
    - **Immediately before the planner snapshots the scope, RE-READ the
      authoritative scope FOR THIS ROUND'S LABEL** —
      `task_workflow.executing_followup_label` (the newest
