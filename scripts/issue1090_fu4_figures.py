@@ -381,8 +381,10 @@ def fig_fu5_tier2_verdict(
 ) -> None:
     """Exploratory: per-arm Tier-2 confirmatory rate (Wilson 95% CI) with the
     0.60 band floor + 0.30 cut, reused base squares, worst-case judge-drop
-    bounds (open triangles) and — for the judged impolite arms — the
-    CJK-intrusion-zeroed bound (x markers, from fu5_text_audit.json)."""
+    bounds (open triangles), the CJK-intrusion-zeroed bound (x markers, from
+    fu5_text_audit.json — now ALL six arms) and, for the formatting rank arms,
+    the CJK-intrusion-EXCLUDED recount (open diamonds; interp-critique fu5 r1
+    request 1 — the r256 excluded recount crosses the 0.30 cut)."""
     fig, ax = plt.subplots(figsize=(8.0, 4.2))
     xticks, xlabels = [], []
     x = 0
@@ -417,7 +419,7 @@ def fig_fu5_tier2_verdict(
                 linewidths=1.2,
             )
         arm_audit = (text_audit or {}).get("arms", {}).get(r["run_id"])
-        if t2.get("mode") == "judged" and arm_audit is not None:
+        if arm_audit is not None and "cjk_zeroed_rate" in arm_audit:
             ax.scatter(
                 [x],
                 [arm_audit["cjk_zeroed_rate"]],
@@ -425,6 +427,16 @@ def fig_fu5_tier2_verdict(
                 color=color,
                 s=45,
                 linewidths=1.4,
+            )
+        if arm_audit is not None and "cjk_excluded_rate" in arm_audit:
+            ax.scatter(
+                [x],
+                [arm_audit["cjk_excluded_rate"]],
+                marker="D",
+                facecolors="none",
+                edgecolors=color,
+                s=40,
+                linewidths=1.2,
             )
         base = (r.get("base_tier2") or {}).get("rate")
         if base is not None:
@@ -440,10 +452,76 @@ def fig_fu5_tier2_verdict(
     ax.set_title(
         "Tier-2 verdict reads (circles trained + Wilson 95% CI; squares base;\n"
         "open triangles worst-case judge-drop bound; x CJK-intrusion-zeroed bound;\n"
+        "open diamonds CJK-intrusion-excluded recount (formatting arms);\n"
         "dashes 0.60 band floor, dots 0.30 cut)"
     )
     fig.tight_layout()
     savefig_paper(fig, f"{out_prefix}/fu5_tier2_verdict", dir=out_dir)
+    plt.close(fig)
+
+
+FU5_FMT_AUDIT_ARMS = ("reused_fu4_r32", "fmt-pers-r128", "fmt-pers-r256", "fu3-base-formatting")
+FU5_FMT_AUDIT_LABEL = {
+    "reused_fu4_r32": "rank 32 (reused)",
+    "fmt-pers-r128": "rank 128",
+    "fmt-pers-r256": "rank 256",
+    "fu3-base-formatting": "base (reused fu3)",
+}
+
+
+def fig_fu5_fmt_intrusion(text_audit: dict, out_prefix: str, out_dir: str) -> None:
+    """Formatting-arm CJK-intrusion audit (fu5 interp-critique r1 request 1).
+
+    Panel A: per-arm raw structural Tier-2 rate (circle), CJK-zeroed bound (x)
+    and CJK-excluded recount (open diamond + Wilson 95% CI) against the 0.30
+    cut. Panel B: the per-arm counts behind the aggregate — English-question
+    completions split intruded-and-firing / intruded-non-firing / non-intruded.
+    """
+    arms = {a: text_audit["arms"][a] for a in FU5_FMT_AUDIT_ARMS if a in text_audit["arms"]}
+    fig, (ax, axb) = plt.subplots(1, 2, figsize=(9.2, 4.0), width_ratios=[1.15, 1.0])
+    for x, a in enumerate(arms.values()):
+        color = "0.45" if a["kind"].startswith("fu3-base") else "#2d7f5e"
+        raw = a["ladders_rate"]
+        ax.scatter([x], [raw], marker="o", color=color, s=42, zorder=3)
+        ax.text(x + 0.1, raw, f"{raw:.2f}", fontsize=7, va="bottom")
+        ax.scatter([x], [a["cjk_zeroed_rate"]], marker="x", color=color, s=45, linewidths=1.4)
+        ax.text(x + 0.1, a["cjk_zeroed_rate"], f"{a['cjk_zeroed_rate']:.2f}", fontsize=7, va="top")
+        exc, (lo, hi) = a["cjk_excluded_rate"], a["cjk_excluded_wilson95"]
+        ax.errorbar([x], [exc], yerr=[[exc - lo], [hi - exc]], fmt="none", ecolor=color, capsize=3)
+        ax.scatter(
+            [x], [exc], marker="D", facecolors="none", edgecolors=color, s=42, linewidths=1.3
+        )
+        ax.text(x - 0.12, exc, f"{exc:.3f}", fontsize=7, va="center", ha="right")
+    ax.axhline(0.30, color="0.6", lw=0.9, ls=":")
+    ax.set_xticks(range(len(arms)), [FU5_FMT_AUDIT_LABEL[a] for a in arms], fontsize=8)
+    ax.set_ylabel("Structural Tier-2 rate")
+    ax.set_ylim(0.0, 0.45)
+    ax.set_title(
+        "Rate under the three intrusion dispositions\n(circle raw; x zeroed;\ndiamond excluded + Wilson 95% CI; dots 0.30 cut)",
+        fontsize=9,
+    )
+    xs = range(len(arms))
+    firing = [a["n_cjk_firing"] for a in arms.values()]
+    nonfiring = [a["n_cjk"] - a["n_cjk_firing"] for a in arms.values()]
+    clean = [a["n_english_rows"] - a["n_cjk"] for a in arms.values()]
+    axb.bar(xs, firing, color="#b0413e", label="intruded, predicate fires")
+    axb.bar(xs, nonfiring, bottom=firing, color="#e0a458", label="intruded, no fire")
+    axb.bar(
+        xs,
+        clean,
+        bottom=[f + nf for f, nf in zip(firing, nonfiring, strict=True)],
+        color="0.85",
+        label="not intruded",
+    )
+    for x, a in enumerate(arms.values()):
+        axb.text(x, a["n_cjk"] + 6, str(a["n_cjk"]), ha="center", fontsize=7)
+    axb.set_xticks(range(len(arms)), [FU5_FMT_AUDIT_LABEL[a] for a in arms], fontsize=8)
+    axb.set_ylabel("English-question completions (of 290)")
+    axb.set_ylim(0, 420)
+    axb.set_title("Per-arm intrusion counts (bar label: intruded rows)")
+    axb.legend(fontsize=7, loc="upper right")
+    fig.tight_layout()
+    savefig_paper(fig, f"{out_prefix}/fu5_fmt_intrusion", dir=out_dir)
     plt.close(fig)
 
 
@@ -579,6 +657,8 @@ def main() -> None:
         fu4_agg = json.loads(fu4_path.read_text()) if fu4_path.exists() else None
         fig_fu5_unlock_grid(agg, fu4_agg, out_prefix, args.out_dir)
         fig_fu5_tier2_verdict(agg, out_prefix, args.out_dir, text_audit)
+        if text_audit is not None and "fmt-pers-r256" in text_audit.get("arms", {}):
+            fig_fu5_fmt_intrusion(text_audit, out_prefix, args.out_dir)
         fig_fu5_margin_at_selected(agg, out_prefix, args.out_dir)
         fig_fu5_degeneracy_flags(agg, out_prefix, args.out_dir)
         fig_fu5_eval_split(agg, out_prefix, args.out_dir)

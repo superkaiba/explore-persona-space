@@ -17,11 +17,22 @@ Interpretation-critic fu4 round-1 revision requests 1 and 6; round-parametrized
 for fu5 (`--round fu5`: the three imp-bare trained arms + the reused fu3
 C2-bare-con base arm — plan v7 D2 item 5). `--print-config` dumps the resolved
 arm/path tables and exits (the CPU smoke of the round parametrization).
+
+fu5 additionally audits the three FORMATTING rank arms (structural firing via
+``datagen._is_list_formatted``, not judge scores) plus the reused fu3
+C1-pers-con formatting base arm — interpretation-critic fu5 round-1 revision
+request 1. The one Chinese-language eval question (detected from the question
+text, index 7) is excluded from intrusion counting as an appropriate-language
+slice; both sensitivity bounds are reported: CJK-ZEROED (intruded firing rows
+scored non-firing, denominator unchanged) and CJK-EXCLUDED (intruded rows
+removed from numerator AND denominator, with a Wilson 95% interval).
 """
 
 import argparse
 import json
+import math
 import re
+import statistics
 from pathlib import Path
 from typing import Any
 
@@ -113,6 +124,19 @@ ROUND_CFGS: dict[str, dict[str, Any]] = {
         "mix_hf": {
             "default": "issue1090_fu3/C2-bare-con-impolite-claude/train_mix.jsonl",
         },
+        # Formatting rank arms (structural firing, not judge scores) + the
+        # reused fu3 formatting base arm (fu5 interp-critique r1 request 1).
+        "fmt_arms": {
+            "reused_fu4_r32": "persona_software_engineer",
+            "fmt-pers-r128": "persona_software_engineer",
+            "fmt-pers-r256": "persona_software_engineer",
+        },
+        "fmt_base": {
+            "fu3-base-formatting": (
+                "issue1090_fu3/C1-pers-con-formatting-claude/tier2/"
+                "completions__base__persona_software_engineer.json"
+            ),
+        },
     },
 }
 
@@ -144,6 +168,67 @@ def firing_sets(judge_raw_path: Path, prefix: str):
     dropped = {qc for qc, ss in draws.items() if not ss}
     n = len(draws) - len(dropped)
     return firing, n, len(firing), dropped
+
+
+def _wilson(k: int, n: int, z: float = 1.96) -> tuple[float, float]:
+    """Wilson 95% score interval for k/n (mirrors issue1090_run._wilson)."""
+    if n == 0:
+        return (0.0, 1.0)
+    p = k / n
+    denom = 1 + z**2 / n
+    center = (p + z**2 / (2 * n)) / denom
+    half = math.sqrt(p * (1 - p) / n + z**2 / (4 * n**2)) * z / denom
+    return (max(0.0, center - half), min(1.0, center + half))
+
+
+def audit_formatting_arm(
+    comps: dict[tuple[int, int], str],
+    questions: list[str],
+    ladders_kn: tuple[int, int] | None,
+) -> dict[str, Any]:
+    """CJK-intrusion audit of one formatting arm under the STRUCTURAL predicate.
+
+    Firing = ``datagen._is_list_formatted`` per completion (asserted against the
+    ladders k/n when given). Questions whose own text carries CJK are
+    appropriate-language slices — their rows are excluded from intrusion
+    counting. Returns both sensitivity bounds: CJK-ZEROED ((k - n_cjk_firing) /
+    n, denominator unchanged) and CJK-EXCLUDED ((k - n_cjk_firing) /
+    (n - n_cjk), intruded rows removed from both sides) + its Wilson 95%.
+    """
+    from explore_persona_space.artifacts.datagen import _is_list_formatted
+
+    n = len(comps)
+    firing = {qc for qc, t in comps.items() if _is_list_formatted(t)}
+    k = len(firing)
+    if ladders_kn is not None:
+        assert (k, n) == ladders_kn, f"structural recount {(k, n)} != ladders {ladders_kn}"
+    cjk_q = {qi for qi, q in enumerate(questions) if CJK.search(q)}
+    english_rows = {qc for qc in comps if qc[0] not in cjk_q}
+    cjk = {qc for qc in english_rows if CJK.search(comps[qc])}
+    cjk_firing = cjk & firing
+    cjk_lens = sorted(len(CJK.findall(comps[qc])) for qc in cjk)
+    return {
+        "firing_rule": "structural: datagen._is_list_formatted per completion",
+        "n_completions": n,
+        "ladders_k": k,
+        "ladders_n": n,
+        "ladders_rate": round(k / n, 4),
+        "appropriate_language_question_idx": sorted(cjk_q),
+        "n_english_rows": len(english_rows),
+        "n_cjk": len(cjk),
+        "cjk_frac_of_english": round(len(cjk) / len(english_rows), 4),
+        "n_cjk_firing": len(cjk_firing),
+        "intruded_firing_rate": round(len(cjk_firing) / len(cjk), 4) if cjk else None,
+        "cjk_zeroed_rate": round((k - len(cjk_firing)) / n, 4),
+        "cjk_excluded_rate": round((k - len(cjk_firing)) / (n - len(cjk)), 4),
+        "cjk_excluded_wilson95": [round(v, 4) for v in _wilson(k - len(cjk_firing), n - len(cjk))],
+        "cjk_chars_per_intruded_row": {
+            "median": statistics.median(cjk_lens) if cjk_lens else None,
+            "p90": cjk_lens[int(0.9 * (len(cjk_lens) - 1))] if cjk_lens else None,
+            "max": cjk_lens[-1] if cjk_lens else None,
+        },
+        "n_exact_duplicates": n - len(set(comps.values())),
+    }
 
 
 def ngrams(text: str, n: int = 8) -> set[tuple[str, ...]]:
@@ -264,6 +349,27 @@ def main() -> None:
             "n_cjk": len(cjk),
             "cjk_frac": round(len(cjk) / len(comps), 4),
             "n_cjk_firing": len(cjk & firing),
+            "source": f"hf://{DATA_REPO}/{hf_path}",
+        }
+    for arm, ctx in rc.get("fmt_arms", {}).items():
+        raw = json.loads(
+            (rc["data_root"] / arm / "tier2" / f"completions__trained__{ctx}.json").read_text()
+        )
+        comps = {
+            (qi, ci): t for qi, row in enumerate(raw["completions"]) for ci, t in enumerate(row)
+        }
+        lt = ladders["runs"][arm]["tier2_trained"]
+        entry = audit_formatting_arm(comps, raw["questions"], (lt["k"], lt["n"]))
+        audit["arms"][arm] = {"kind": f"{args.round}-fmt-trained", "context_id": ctx, **entry}
+    for arm, hf_path in rc.get("fmt_base", {}).items():
+        raw = json.loads(Path(hf_hub_download(DATA_REPO, hf_path, repo_type="dataset")).read_text())
+        comps = {
+            (qi, ci): t for qi, row in enumerate(raw["completions"]) for ci, t in enumerate(row)
+        }
+        entry = audit_formatting_arm(comps, raw["questions"], None)
+        audit["arms"][arm] = {
+            "kind": "fu3-base-formatting",
+            **entry,
             "source": f"hf://{DATA_REPO}/{hf_path}",
         }
     rc["out"].parent.mkdir(parents=True, exist_ok=True)
