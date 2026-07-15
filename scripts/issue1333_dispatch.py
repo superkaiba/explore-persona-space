@@ -24,10 +24,12 @@ Phases (linear, checkpoint-per-phase, resume-keyed; plan §4/§9):
               sentinel
 
 ``--smoke`` is the SAME dispatcher at tiny knobs (plan § Dry-run smoke item 2):
-cells (mk1_lora_con, mk4_fullft_pos), 2-step LoRA train + FT consolidation
-canary (1 rung, num_processes=1), the same-surface parity gate + the
-PEFT-swap-vs-merged parity read, 1 ladder read at 2 questions, 2-context x
-2-question capture, tf-shared stub, geometry stub via issue1333_geometry.
+cells (mk1_lora_con, mk4_fullft_pos, mk3_fullft_con), 2-step LoRA train + FT
+consolidation canary (1 rung, num_processes=1), BOTH HALT gates live (the
+same-surface parity gate AND the reused-arm apply-and-read gate at
+eval_question_limit with a doubled bound) + the PEFT-swap-vs-merged parity
+read, 1 ladder read at 2 questions, 2-context x 2-question capture, tf-shared
+stub (incl. the reused arm), geometry stub via issue1333_geometry.
 Every phase reads its cell list from the ONE resolver (``cfg.cells``).
 
 ``[phase=done]`` is emitted by the launch wrapper ONLY (pod-side-reporting.md).
@@ -161,7 +163,11 @@ def normalize_phases(raw: str | None) -> tuple[str, ...]:
     return tuple(out)
 
 
-SMOKE_CELLS = (C.CELL_LORA_CON, C.CELL_FT_POS)  # LoRA path + FT/ZeRO-3+vLLM canary
+# LoRA path + FT/ZeRO-3+vLLM canary + the reused arm (so the plan's SECOND
+# HALT gate — the apply-and-read gate in phase_stage — actually fires in smoke;
+# review r1 M3). The reused cell trains nothing: every train/ladder/select/
+# capture/breadth filter excludes it; only p0's gate + p6's tf_shared see it.
+SMOKE_CELLS = (C.CELL_LORA_CON, C.CELL_FT_POS, C.REUSED_CELL)
 
 
 def resolve_cells(cells_arg: str | None, smoke: bool) -> tuple[str, ...]:
@@ -528,7 +534,31 @@ def phase_stage(cfg: Cfg) -> dict:
     _assert_reused_row_meta(Path(staged["base_pooled"]))
     # frozen-mix decomposition re-verified at stage (plan §4.6)
     rows = C._read_jsonl(Path(staged["frozen_mix"]))
-    C.partition_frozen_mix(rows)
+    pos, _neg = C.partition_frozen_mix(rows)
+    # R_train cross-check (review r1 m11): the staged artifact must cover the
+    # villain source over TRAIN_QUESTIONS, and the frozen-mix positives must
+    # ride exactly TRAIN_QUESTIONS (the parent's #508 construction — mixes.py
+    # samples positives from q_train = EVAL_QUESTIONS_20[:10] with full
+    # coverage at 200 draws). This makes the staged R_train a consumed input.
+    from explore_persona_space.experiments.contrastive_neg_geometry_472.r_generate import (
+        load_r_artifact,
+    )
+    from explore_persona_space.experiments.issue_1112.mixes import MARKER_SOURCE_PERSONA
+
+    r_train = load_r_artifact(Path(staged["r_train"]))
+    missing_q = [q for q in TRAIN_QUESTIONS if q not in r_train.get(MARKER_SOURCE_PERSONA, {})]
+    if missing_q:
+        raise ValueError(
+            f"staged R_train lacks {MARKER_SOURCE_PERSONA!r} coverage for "
+            f"{len(missing_q)}/{len(TRAIN_QUESTIONS)} TRAIN_QUESTIONS"
+        )
+    pos_qs = {r["prompt"][-1]["content"] for r in pos}
+    if pos_qs != set(TRAIN_QUESTIONS):
+        raise ValueError(
+            "frozen-mix positive questions != TRAIN_QUESTIONS "
+            f"(missing={sorted(set(TRAIN_QUESTIONS) - pos_qs)[:2]!r}, "
+            f"extra={sorted(pos_qs - set(TRAIN_QUESTIONS))[:2]!r})"
+        )
     rec = {"staged": staged, "frozen_mix_sha256": _sha256_file(Path(staged["frozen_mix"]))}
     # Reused-arm checkpoint + apply-and-read gate (HALT; plan §4.6) — needs a
     # GPU; smoke runs it at eval_question_limit with a doubled bound (noted).
@@ -656,6 +686,23 @@ def _mix_path(cfg: Cfg, cell: str) -> Path:
     return cfg.out_root / "mixes" / C.MIX_FILENAMES[mix]
 
 
+def _icl_demo_answer(a: str) -> str:
+    """Demo answer = greedy base R + the TRAINED leading-space marker — the
+    same construction as mix positives (plan §4.1 cell 6). NEVER
+    ``MARKER_TEXT.strip()``: the bare glyph is token 63680, not the trained
+    83399 (review r1 C2; the #395/#396 wrong-token class)."""
+    return f"{a.strip()}{C.MARKER_SEP}{C.MARKER_TEXT}"
+
+
+def _assert_icl_demo_tails_encode_marker(tok, examples: list[dict]) -> None:
+    """Fill-time mirror of C.assert_positive_tails_encode_marker for the ICL
+    bank: every filled demo answer's tail must encode marker id 83399."""
+    for i, ex in enumerate(examples):
+        ids = tok.encode(ex["answer"][-16:], add_special_tokens=False)
+        if C.MARKER_TOKEN_ID not in ids:
+            raise ValueError(f"ICL demo {i}: tail ids {ids} lack marker id {C.MARKER_TOKEN_ID}")
+
+
 def _fill_icl_bank(cfg: Cfg, tok) -> Path:
     """Fill the committed questions-only ICL spec with greedy base answers +
     marker (plan §4.1 cell 6) -> run inputs icl_examples_marker.json."""
@@ -680,9 +727,8 @@ def _fill_icl_bank(cfg: Cfg, tok) -> Path:
     for q, a in zip(demo_qs, answers, strict=True):
         if "※" in a:
             raise ValueError(f"greedy demo answer for {q!r} already carries the marker")
-        examples.append(
-            {"question": q, "answer": f"{a.strip()}{C.MARKER_SEP}{C.MARKER_TEXT.strip()}"}
-        )
+        examples.append({"question": q, "answer": _icl_demo_answer(a)})
+    _assert_icl_demo_tails_encode_marker(tok, examples)
     bank = {
         **spec,
         "examples": examples,
@@ -798,13 +844,20 @@ def phase_mixes(cfg: Cfg) -> dict:
         for mix, _man in manifests.items():
             fname = C.MIX_FILENAMES[mix]
             p = cfg.out_root / "mixes" / fname
+            # kwarg shape mirrors issue1112_dispatch (review r1 C1: the path
+            # string must bind to path_in_repo, never the repo_id positional).
             hub._upload(
-                p, f"{C.DATA_PREFIX}/mixes/{fname}", repo_type="dataset", upload_as_file=True
+                p,
+                C.HF_DATA_REPO,
+                "dataset",
+                f"{C.DATA_PREFIX}/mixes/{fname}",
+                upload_as_file=True,
             )
             hub._upload(
                 p.with_suffix(".manifest.json"),
+                C.HF_DATA_REPO,
+                "dataset",
                 f"{C.DATA_PREFIX}/mixes/{fname.replace('.jsonl', '.manifest.json')}",
-                repo_type="dataset",
                 upload_as_file=True,
             )
     return manifests
@@ -1016,6 +1069,44 @@ def phase_train(cfg: Cfg) -> dict:
 # ── p3: base priors + off-line ladders ───────────────────────────────────────
 
 
+def basepriors_context_panel(cfg: Cfg, tok) -> dict[str, Context]:
+    """Distinct rendered contexts for the p3 base-prior read, keyed by
+    ``context_id`` (review r1 M4: the r1 label-keyed merge let each breadth
+    cell's ``"__source__"`` overwrite the previous cell's source, silently
+    dropping villain/wildchat/ICL priors in full mode). Fail-loud coverage:
+    every non-reused cell's SOURCE render must survive into the panel
+    (possibly under a rendered-identical alias, e.g. bare == qwen_default)."""
+    contexts: dict[str, Context] = {}
+    for cell in cfg.cells:
+        if cell == C.REUSED_CELL:
+            continue
+        if cell in C.BREADTH_CELLS:
+            for ctx in breadth_panel(cfg, cell, tok).values():
+                contexts[ctx.context_id] = ctx
+        else:
+            src = resolve_source_context(cfg, cell)
+            contexts.setdefault(src.context_id, src)
+    # de-dup across cells at rendered level
+    seen: dict[tuple[int, ...], str] = {}
+    distinct: dict[str, Context] = {}
+    for _cid, ctx in contexts.items():
+        seq = C.rendered_ids(tok, ctx.messages, "__dedup_probe__")
+        if seq in seen:
+            continue
+        seen[seq] = ctx.context_id
+        distinct[ctx.context_id] = ctx
+    for cell in cfg.cells:
+        if cell == C.REUSED_CELL:
+            continue
+        src = resolve_source_context(cfg, cell)
+        seq = C.rendered_ids(tok, src.messages, "__dedup_probe__")
+        if seq not in seen:
+            raise RuntimeError(
+                f"base-priors panel missing source context {src.context_id!r} for {cell!r}"
+            )
+    return distinct
+
+
 def run_basepriors_unit(cfg: Cfg, _arg: str) -> dict:
     """Base-side slot reads per DISTINCT rendered context (plan §4.5: run
     BEFORE selection reads consume them — the per-context ΔG ceiling)."""
@@ -1023,24 +1114,7 @@ def run_basepriors_unit(cfg: Cfg, _arg: str) -> dict:
     if done.exists():
         return _read_json(done)
     tok = _tokenizer()
-    contexts: dict[str, Context] = {}
-    for cell in cfg.cells:
-        if cell == C.REUSED_CELL:
-            continue
-        if cell in C.BREADTH_CELLS:
-            contexts.update(breadth_panel(cfg, cell, tok))
-        else:
-            src = resolve_source_context(cfg, cell)
-            contexts.setdefault("__source__", src)
-    # de-dup across cells at rendered level
-    seen: dict[tuple[int, ...], str] = {}
-    distinct: dict[str, Context] = {}
-    for _label, ctx in contexts.items():
-        seq = C.rendered_ids(tok, ctx.messages, "__dedup_probe__")
-        if seq in seen:
-            continue
-        seen[seq] = ctx.context_id
-        distinct[ctx.context_id] = ctx
+    distinct = basepriors_context_panel(cfg, tok)
     questions = _eval_questions(cfg)
     prompts, meta = [], []
     for cid, ctx in distinct.items():
@@ -1388,6 +1462,16 @@ def run_capture_unit(cfg: Cfg, cell: str) -> None:
         compute_prompt_spans,
     )
 
+    if cell not in (C.CELL_LORA_CON, C.CELL_LORA_POS, C.CELL_FT_POS):
+        # Review r1 m12: the fixed 2x2 panel below would mis-panel an extension
+        # cell — plan §4.1 wants each extension cell's OWN de-duplicated panel.
+        # --ext-captures is the §9 descope-rung-1 optional pass (off by
+        # default); fail loud rather than capture under the wrong panel.
+        raise NotImplementedError(
+            f"own-text capture for extension cell {cell!r} needs the cell's own "
+            "de-duplicated panel (plan §4.1); wire breadth_panel-derived contexts "
+            "before enabling --ext-captures"
+        )
     out_dir = cfg.out_root / "capture" / cell / "selected"
     if (out_dir / "pooled.pt").exists():
         return
@@ -1617,10 +1701,13 @@ def phase_upload(cfg: Cfg) -> dict:
     uploaded: dict[str, str] = {}
 
     def _up(local: Path, path_in_repo: str, *, as_file: bool = True) -> None:
+        # kwarg-complete shape (review r1 C1): local, repo_id, repo_type,
+        # path_in_repo — the r1 form bound the path string to repo_id.
         hub._upload(
             local,
+            C.HF_DATA_REPO,
+            "dataset",
             f"{C.DATA_PREFIX}/{path_in_repo}",
-            repo_type="dataset",
             upload_as_file=as_file,
         )
         uploaded[path_in_repo] = str(local)
@@ -1629,7 +1716,7 @@ def phase_upload(cfg: Cfg) -> dict:
     # text/JSON: unconditional (raw completions, ladders, selections, gates, priors)
     rc_root = root / "raw_completions"
     if rc_root.exists():
-        hub._upload(rc_root, f"{C.DATA_PREFIX}/raw_completions", repo_type="dataset")
+        hub._upload(rc_root, C.HF_DATA_REPO, "dataset", f"{C.DATA_PREFIX}/raw_completions")
         uploaded["raw_completions/"] = str(rc_root)
     for pattern, dest in (
         ("*/ladder/rung_*/slot_read.json", "selection"),
@@ -1646,18 +1733,19 @@ def phase_upload(cfg: Cfg) -> dict:
         for f in sorted(root.glob(pattern)):
             rel = f.relative_to(root)
             _up(f, f"{dest}/{rel}")
-    # pooled capture tensors (fp16, plain torch.save — Xet-bound, no compression)
+    # pooled capture tensors (fp16, plain torch.save — Xet-bound, no
+    # compression) -> analysis_tensors/capture/... (plan §10 layout; r1 m9)
     for f in (
         sorted((root / "capture").glob("*/*/pooled.pt")) if (root / "capture").exists() else []
     ):
         rel = f.relative_to(root)
-        _up(f, str(rel))
+        _up(f, f"analysis_tensors/{rel}")
     for f in (
         sorted((root / "capture").glob("*/selected/raw_rows.json"))
         if (root / "capture").exists()
         else []
     ):
-        rel = f.relative_to(root)
+        rel = f.relative_to(root / "capture")  # r1 m9: no doubled capture/capture segment
         _up(f, f"raw_completions/capture/{rel}")
     # selected LoRA adapters -> overflow repo (LFS)
     adapters: dict[str, str] = {}
@@ -1784,7 +1872,11 @@ def build_cfg(args: argparse.Namespace) -> Cfg:
         sentinel_dir=(
             Path(args.sentinel_dir)
             if args.sentinel_dir is not None
-            else (out_root / "logs" if smoke else None)
+            # None -> write_sentinel's /workspace/logs (the poller-drained
+            # namespace) — incl. for a pod-side smoke, so the epm:smoke-result
+            # sentinel actually drains (review r1 m10). A local smoke (no
+            # /workspace) keeps its sentinel under out_root.
+            else (out_root / "logs" if smoke and not Path("/workspace").is_dir() else None)
         ),
         upload=args.upload,
         ext_captures=bool(args.ext_captures),

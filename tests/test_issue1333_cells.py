@@ -312,3 +312,141 @@ def test_coarse_and_refine_schedules():
     ladder = {20: _read(0.4), 40: _read(2.0), 60: _read(7.0)}
     refine = C.refine_read_steps(C.CELL_LORA_CON, rungs, ladder)
     assert refine == [50]
+
+
+# ── Review-r1 pins (C1 upload call shape / C2 ICL marker / M3 smoke cells /
+#    M4 basepriors keying / m5 FT schedule / m8 emission field) ────────────────
+
+
+def _dispatch_mod():
+    import importlib
+    import sys
+
+    scripts_dir = Path(__file__).resolve().parents[1] / "scripts"
+    if str(scripts_dir) not in sys.path:
+        sys.path.insert(0, str(scripts_dir))
+    return importlib.import_module("issue1333_dispatch")
+
+
+def test_hub_upload_call_shapes_bind_with_path_in_repo():
+    """Review r1 C1: every ``hub._upload`` call site in the #1333 scripts binds
+    cleanly to the real signature WITH ``path_in_repo`` supplied, and never
+    binds a path-like f-string to the ``repo_id`` slot (the r1 TypeError)."""
+    import ast
+    import inspect
+
+    from explore_persona_space.orchestrate import hub
+
+    sig = inspect.signature(hub._upload)
+    param_names = list(sig.parameters)
+    scripts_dir = Path(__file__).resolve().parents[1] / "scripts"
+    sites = []
+    for fname in ("issue1333_dispatch.py", "issue1333_geometry.py"):
+        tree = ast.parse((scripts_dir / fname).read_text())
+        for node in ast.walk(tree):
+            if (
+                isinstance(node, ast.Call)
+                and isinstance(node.func, ast.Attribute)
+                and node.func.attr == "_upload"
+                and isinstance(node.func.value, ast.Name)
+                and node.func.value.id == "hub"
+            ):
+                sites.append((fname, node))
+    assert len(sites) >= 6, f"expected the p1/p8/geometry upload sites, found {len(sites)}"
+    for fname, call in sites:
+        where = f"{fname}:{call.lineno}"
+        kwargs = {kw.arg: None for kw in call.keywords if kw.arg is not None}
+        bound = sig.bind(*([None] * len(call.args)), **kwargs)  # TypeError on bad shape
+        names = set(bound.arguments)
+        assert "path_in_repo" in names, f"{where}: no path_in_repo bound"
+        assert "repo_id" in names, f"{where}: no repo_id bound"
+        by_pos = dict(zip(param_names, call.args, strict=False))
+        rid = by_pos.get("repo_id")
+        for kw in call.keywords:
+            if kw.arg == "repo_id":
+                rid = kw.value
+        assert not isinstance(rid, ast.JoinedStr), f"{where}: path-like f-string bound to repo_id"
+
+
+def test_icl_demo_answer_uses_trained_leading_space_marker(tok):
+    """Review r1 C2: demo answers carry the TRAINED ` ※` (id 83399), same
+    construction as mix positives — and the fill-time assert rejects the
+    bare-glyph (63680) r1 shape."""
+    d = _dispatch_mod()
+    ans = d._icl_demo_answer("The capital of France is Paris.")
+    assert ans.endswith(C.MARKER_SEP + C.MARKER_TEXT)
+    d._assert_icl_demo_tails_encode_marker(tok, [{"question": "q", "answer": ans}])
+    assert C.MARKER_TOKEN_ID in tok.encode(ans[-16:], add_special_tokens=False)
+    bad = f"An answer.{C.MARKER_SEP}{C.MARKER_TEXT.strip()}"  # the r1 bug shape
+    with pytest.raises(ValueError, match="lack marker id"):
+        d._assert_icl_demo_tails_encode_marker(tok, [{"question": "q", "answer": bad}])
+
+
+def test_icl_bank_render_preserves_marker_token(tok, tmp_path):
+    """The filled bank survives the library renderer: the rendered ICL prefix
+    still token-encodes 83399 (plan §4.1 cell 6 'same construction as mix
+    positives')."""
+    from explore_persona_space.artifacts.context import icl_prefix_context
+
+    d = _dispatch_mod()
+    bank = {
+        "examples": [
+            {"question": "dq one?", "answer": d._icl_demo_answer("Answer one.")},
+            {"question": "dq two?", "answer": d._icl_demo_answer("Answer two.")},
+        ]
+    }
+    (tmp_path / "icl_examples_marker.json").write_text(json.dumps(bank))
+    ctx = icl_prefix_context("marker", bank_dir=tmp_path)
+    seq = C.rendered_ids(tok, ctx.messages, "What is 2+2?")
+    assert C.MARKER_TOKEN_ID in seq, "trained marker id 83399 lost in the rendered ICL prefix"
+
+
+def test_smoke_cells_cover_reused_arm_gate():
+    """Review r1 M3: the plan's SECOND HALT gate (reused-arm apply-and-read,
+    phase_stage) triggers on ``REUSED_CELL in cfg.cells`` — smoke must include
+    it, alongside the LoRA path + the FT canary."""
+    d = _dispatch_mod()
+    cells = d.resolve_cells(None, smoke=True)
+    assert C.REUSED_CELL in cells
+    assert C.CELL_LORA_CON in cells and C.CELL_FT_POS in cells
+
+
+def test_basepriors_panel_keeps_every_cell_source(tok, tmp_path):
+    """Review r1 M4: the r1 label-keyed merge dropped every breadth cell's
+    source but the last ('__source__' collisions). The context_id-keyed panel
+    must retain villain + the ICL prefix (bare aliases to qwen_default at
+    rendered level) and the coverage assert must pass."""
+    d = _dispatch_mod()
+    bank = {
+        "examples": [
+            {"question": "dq one?", "answer": d._icl_demo_answer("Answer one.")},
+            {"question": "dq two?", "answer": d._icl_demo_answer("Answer two.")},
+        ]
+    }
+    inputs = tmp_path / "inputs"
+    inputs.mkdir(parents=True)
+    (inputs / "icl_examples_marker.json").write_text(json.dumps(bank))
+    cfg = d.Cfg(
+        smoke=True,
+        cells=(C.CELL_LORA_CON, C.CELL_EXT_ICL, C.CELL_EXT_BARE),
+        out_root=tmp_path,
+    )
+    panel = d.basepriors_context_panel(cfg, tok)
+    assert "persona_villain" in panel, "mk1 source dropped from the base-prior panel"
+    assert "icl_prefix_marker" in panel, "ICL source dropped from the base-prior panel"
+    # bare_default renders identical to qwen_default -> read under the alias
+    # (mk1's frozen-negative persona_qwen_default is first-seen at dedup)
+    assert "bare_default" not in panel and "persona_qwen_default" in panel
+
+
+def test_ft_coarse_schedule_reads_all_grid_rungs():
+    """Review r1 m5: FT coarse pass = the WHOLE grid (stride 20 over {1..6}
+    would degenerate to {6})."""
+    assert C.coarse_read_steps(C.CELL_FT_POS, list(C.FT_GRID)) == sorted(C.FT_GRID)
+
+
+def test_select_rung_requires_emission_field():
+    """Review r1 m8: a ladder record missing source_emission_rate is a writer
+    bug -> KeyError, never silently eligible."""
+    with pytest.raises(KeyError):
+        C.select_rung({10: {"delta_logp_mean": C.TARGET_DELTA_G}})

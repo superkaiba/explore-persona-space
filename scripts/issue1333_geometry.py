@@ -250,10 +250,15 @@ def run_geometry(  # noqa: C901 — linear read + lattice chain
         if own_p.exists():
             s = _load_store(own_p)
             assert_registered_panel(s, smoke=smoke)
+            # §3 "identical resample indices" made mechanical (review r1 m13):
+            # paired draws share row indices across stores, so row ORDER must
+            # match the base store exactly, not just as a set.
+            assert _row_keys(s) == _row_keys(base), f"{cell}/own row order != base store"
             stores[cell]["own"] = s
         if tf_p.exists():
             s = _load_store(tf_p)
             assert_registered_panel(s, smoke=smoke)
+            assert _row_keys(s) == _row_keys(base), f"{cell}/tf row order != base store"
             stores[cell]["tf"] = s
     wu = _wu_row(wu_path)
 
@@ -409,6 +414,13 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--n-boot", type=int, default=None)
     p.add_argument("--wu-row", default=None, help="optional persisted W_U[83399] row .pt")
     p.add_argument("--cells", default=None, help="comma subset of the 2x2 cells")
+    p.add_argument(
+        "--upload",
+        action=argparse.BooleanOptionalAction,
+        default=None,
+        help="upload per-draw matrices + results JSON to the HF data repo "
+        "(plan §10 analysis_tensors/bootstrap_matrices; default: on unless --smoke)",
+    )
     args = p.parse_args(argv)
     cells = tuple(args.cells.split(",")) if args.cells else C.GEOMETRY_CELLS
     run_geometry(
@@ -420,6 +432,25 @@ def main(argv: list[str] | None = None) -> int:
         wu_path=Path(args.wu_row) if args.wu_row else None,
         cells=cells,
     )
+    # VM-side upload duty (plan §10; review r1 m9): the per-draw x per-layer
+    # bootstrap matrices are produced post-teardown, so the pod's p8 cannot
+    # own them — this driver uploads them itself.
+    if args.upload if args.upload is not None else not args.smoke:
+        from explore_persona_space.orchestrate import hub
+
+        hub._upload(
+            Path(args.matrices_dir),
+            C.HF_DATA_REPO,
+            "dataset",
+            f"{C.DATA_PREFIX}/analysis_tensors/bootstrap_matrices",
+        )
+        hub._upload(
+            Path(args.out_json),
+            C.HF_DATA_REPO,
+            "dataset",
+            f"{C.DATA_PREFIX}/geometry/{Path(args.out_json).name}",
+            upload_as_file=True,
+        )
     return 0
 
 
