@@ -116,8 +116,16 @@ def main() -> None:
 
     pad_id = tokenizer.pad_token_id if tokenizer.pad_token_id is not None else 0
     do_causal = args.smoke  # parent default: causal check on smoke
+    causal_max_diff = None
     if do_causal:
-        ex.causal_check(model, rendered[: min(3, len(rendered))])
+        # mode="cosine": the NEW early-position `prefix` slot (token ~2 in R1)
+        # has NO bf16 headroom under the parent's flat atol — the 3-token
+        # prefix forward vs the full-length forward differs by a single bf16
+        # ULP at the large-magnitude early-token dims (0.03125/0.0625 at
+        # layer 0, att-20260715-151246; fp32-verified benign). The #779
+        # two-bar cosine gate + norm guard keeps the wrong-position bug
+        # catcher (real bugs read cos ~0.4-0.6) with calibrated headroom.
+        causal_max_diff = ex.causal_check(model, rendered[: min(3, len(rendered))], mode="cosine")
 
     bs = 8 if args.batch_size == "auto" else int(args.batch_size)
     if args.smoke:
@@ -143,6 +151,8 @@ def main() -> None:
         "render_stats": render_stats,
         "git_commit": c.git_commit(),
         "pinned_parent_revision": c.PIN_REV,
+        "causal_check_max_abs_diff": causal_max_diff,
+        "causal_check_mode": "cosine" if do_causal else None,
         "smoke": bool(args.smoke),
     }
     shard_size = int(args.shard_size)
