@@ -1664,6 +1664,10 @@ markers:
           FAIL_NO_CANARY (incident #546 round 1, 2026-06-10: PASS_UNIFIED
           train + full-grid cross-eval → HF 404 on never-trained
           adapters; the smoke could never pass by construction).
+          Non-cell smoke axes (questions/rows/steps/draws) sized below a
+          downstream phase's minimum-N assert are likewise FAIL_NO_CANARY
+          — the smoke crashes by construction (incident #1315 r4); the
+          notes: line names the floor per sliced axis.
         `verdict: PASS_CANARY canary_cell=<cell_id>` — paths diverge
           (e.g., smoke uses in-process train, sweep uses subprocess
           wrapper) AND the plan §4 Design section justified the
