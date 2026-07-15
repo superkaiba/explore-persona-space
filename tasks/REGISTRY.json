@@ -2777,8 +2777,8 @@
     "1356": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1356",
-      "status": "proposed",
+      "path": "tasks/planning/1356",
+      "status": "planning",
       "title": "workflow-fix: gotchas \u2014 pid-namespace vLLM EngineCore reap variant"
     },
     "1357": {
