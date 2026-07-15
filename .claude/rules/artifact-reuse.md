@@ -73,6 +73,10 @@ On the ~1M-file DATA repo a bare `list_repo_files` listing itself times out
 (>90 s, #833) — use `HfApi().file_exists(repo_id, <path>,
 repo_type='dataset')` for a single path or scoped
 `list_repo_tree(path_in_repo=<prefix>)` for a subtree (gotchas.md).
+When the plan consumes the artifact at a PINNED revision, run the probe at that
+revision (`revision=<pin>` on `list_repo_files` / `list_repo_tree` / `file_exists`):
+existence at `main` does not imply existence at the pin (#1345 — 2/4 stems returned
+0 files at the plan's pin after a default-branch probe read CONFIRMED).
 
 On a miss (the cited artifact does NOT resolve, or the expected files
 are not present at the cited path): mark the artifact UNVERIFIED, do

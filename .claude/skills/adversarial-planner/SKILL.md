@@ -287,7 +287,12 @@ Run the structural verifier against the plan version just persisted:
   `.claude/agents/*.md` / `.claude/rules/LESSONS.md` mention is illustrative, not a
   verbatim insert; a plan that DOES mandate an over-headroom insert instead budgets
   the cap-raise with one line `Ratchet budget: raise <constant>['<file>.md'] to
-  <new cap>`).
+  <new cap>`), and
+  `N/A — no revision-pinned reuse` (check 35 — the 40-hex token near reuse
+  vocabulary is a git code SHA or otherwise not an HF revision pin on this plan's
+  own reuse; a genuine revision-pinned reuse instead names its revision-scoped
+  probe — the `revision=<pin>` kwarg on `list_repo_tree` / `list_repo_files`,
+  per named stem).
 - **FAIL → bounce to the planner** with the failed-check details (a mechanical-fix
   revision: re-spawn the planner with the FAIL list + the plan path; it patches the
   missing block and the orchestrator persists v{K+1} via `task.py new-plan-version`).
@@ -324,12 +329,26 @@ ASSUMPTIONS FROM THE PLAN:
 HYPERPARAMETER SOURCES FROM THE PLAN (§11 Decision Rationale):
 [PASTE THE §11 What / Why / Source / Alternatives entries for every load-bearing hyperparameter]
 
+HF REUSE ROWS FROM THE PLAN (§10 Reproducibility Card / §12 reuse claims, including any
+pinned revision):
+[PASTE THE REUSE ROWS — repo id, path/stem patterns, and the revision each row pins, if any]
+
 For EACH assumption AND EACH §11 hyperparameter `Source:`:
 1. **Search the web** for the actual answer. Check official docs, GitHub repos, papers.
 2. **Read the actual code/config** if the assumption is about the codebase.
 3. **State the verdict**: CONFIRMED, WRONG, or UNVERIFIED (couldn't find evidence either way)
 4. **If WRONG**: State what the correct fact is, with a source link.
 5. **If UNVERIFIED**: Flag it as a risk that needs a smoke test before committing GPU time.
+
+For EACH HF reuse row: verify existence with the Python Hub API (`huggingface_hub`,
+never the `hf` CLI). When the row pins a revision, probe AT THAT REVISION, per named
+stem/path — `list_repo_tree(repo_id, path_in_repo=<prefix>, revision=<pin>,
+repo_type=...)` on the ~1M-file data repo (scoped calls only, gotchas.md #833), or
+`list_repo_files(repo_id, revision=<pin>)` on small repos — and require >=1 resolved
+file per named stem/pattern. A probe at the default branch does NOT satisfy the check:
+existence at `main` does not imply existence at the pin (incident #1345 — 2/4 stems
+returned 0 files at the plan's pinned revision after a default-branch probe read
+CONFIRMED). State the verdict per stem (CONFIRMED-at-pin / WRONG / UNVERIFIED).
 
 DO NOT trust the plan's reasoning. DO NOT trust your own training data for version-specific
 claims (API signatures, library features, default values). SEARCH and READ to verify.
@@ -347,6 +366,11 @@ Common traps to watch for:
   reports a different value, or to a setting that does not transfer, is WRONG —
   flag it. A load-bearing hyperparameter marked `ungrounded` is UNVERIFIED —
   flag it for a smoke test before committing GPU time.
+- "Artifact X resolves on HF" — when the plan pins a revision, run the probe WITH
+  `revision=<pin>`; a default-branch listing proves nothing about the pin (#1345); a
+  pin held only in a code constant (zero hex in the plan prose) is YOUR coverage, not
+  the mechanical check's — instruction 2 ("read the actual code/config") resolves the
+  constant, then probe at it
 ```
 
 **After the Verifier returns:**
