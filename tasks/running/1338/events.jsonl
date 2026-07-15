@@ -11,3 +11,4 @@
 {"ts": "2026-07-15T14:55:32Z", "kind": "epm:plan-approved", "version": 1, "by": "autonomous-gate", "note": "Auto-approved by the code-enforced autonomous plan-gate (task.py --auto-approve-if-autonomous): gpu_hours_total=0.0 <= cap 100.0. EPM_AUTONOMOUS_SESSION set; no human asked."}
 {"ts": "2026-07-15T14:56:43Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "approved", "to": "running", "note": "Dispatched implementer; awaiting epm:results."}
 {"ts": "2026-07-15T14:59:45Z", "kind": "epm:progress", "version": 4, "by": "unknown", "note": "implementer round 1 started: reading plan + locating EPS_PERSIST_PY anchors in worktree issue-1338"}
+{"ts": "2026-07-15T15:07:43Z", "kind": "epm:progress", "version": 5, "by": "unknown", "note": "anchors located (heredoc L1669-1908, _up_logs L1781, partial-dirs loop L1886; tests: harness L4502, order test L4632, skips L4682, render sweep L4734, snapshot L5622). Beginning gcp.py edits per plan §3.1."}
