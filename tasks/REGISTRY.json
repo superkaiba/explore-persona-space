@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1335,
+  "highest_id": 1336,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -2617,6 +2617,13 @@
       "path": "tasks/planning/1335",
       "status": "planning",
       "title": "Ablations: why is the assistant context\u2192answer map much stronger than the fiction-character map (both survive template removal)?"
+    },
+    "1336": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/1336",
+      "status": "proposed",
+      "title": "Does RLVR post-training change the base\u2192post-trained context\u2192answer map more than SFT/DPO? (separated-stage ladder)"
     },
     "134": {
       "has_clean_result": false,
