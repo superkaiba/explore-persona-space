@@ -64,26 +64,48 @@ HF data repo under `issue<N>_partial/<attempt_id>/`:
    canonical-log dedup skip, staged into `/tmp/eps-worker-logs` and uploaded
    as ONE `upload_folder` commit — per-file `upload_file` loops are banned
    on this large repo (the #664 504-storm gotcha). Uploaded AFTER the
-   canonical `workload.log`, BEFORE the partial dirs (small-first);
-4. `eval_results_issue_<N>/` — the partial `eval_results/issue_<N>/` the
+   canonical `workload.log`, BEFORE the partial dirs (small-first).
+   Committed `*.md` notes files (the repo-clone `logs/daily|weekly`
+   session notes) are EXCLUDED from this sweep with one aggregate SKIP
+   line (#1338 — 40 unrelated notes rode the #1090 fu5 incident crash
+   upload; run logs are never `.md`);
+4. `data_logs/<dirname>/<relpath>` (#1338) — per-run `*.log` files
+   harvested from INSIDE the swept partial dirs (items 5-6's three named
+   dirs): any file whose path under the swept dir carries a `logs` or
+   `*_logs` component, or whose filename contains `.attempt` (the driver
+   out_root convention `data/issue_<N>/<run>/logs/<run_id>.attempt<K>.log`
+   — the #1090 fu5 shape — and the issue502-family `worker_logs/gpu<N>.log`
+   layout). Harvested UNCONDITIONALLY, BEFORE the item-6 per-dir byte cap
+   can skip an oversized dir wholesale with the ~KB tracebacks inside it
+   (the #1090 fu5 loss: `SKIP data_issue_1090: 28007358769 bytes > cap
+   2147483648`) — newest-first, tail-capped + count-bounded by the SAME
+   `EPS_PERSIST_LOG_FILE_CAP_BYTES` / `EPS_PERSIST_LOG_MAX_FILES` knobs as
+   item 3, staged into `EPS_PERSIST_DATA_LOG_STAGE_DIR` (default
+   `/tmp/eps-data-logs`), ONE `upload_folder` commit. An under-cap dir
+   still uploads its logs at the byte-identical item-5/6 dir paths; the
+   few-KB `data_logs/` duplicate is the small-first guarantee that
+   survives a budget-killed big-dir upload. Sequenced AFTER the item-3
+   worker-log sweep, BEFORE the partial dirs;
+5. `eval_results_issue_<N>/` — the partial `eval_results/issue_<N>/` the
    workload wrote before crashing;
-5. `data_issue_<N>/` + `data_issue<N>/` (#854) — working-dir partials under
+6. `data_issue_<N>/` + `data_issue<N>/` (#854) — working-dir partials under
    BOTH `data/issue_<N>/` and `data/issue<N>/` naming conventions (the #825
    loss class: `data/issue_825/track_s.jsonl` was structurally outside the
    old eval_results-only sweep). Re-downloadable `hf_dl/` / `g*_dl/` /
    `store/` / `.cache/` caches are excluded at top level AND nested depths;
    an empty-after-excludes dir SKIPs; a per-dir byte cap (default 2 GiB,
    env `EPS_PERSIST_DIR_CAP_BYTES`) SKIPs an oversized dir loudly rather
-   than burning the 300s budget;
-6. `workload_<utc-ts>.log` (#854) — a per-crash timestamped copy of the
+   than burning the 300s budget (its per-run logs having already landed
+   via item 4);
+7. `workload_<utc-ts>.log` (#854) — a per-crash timestamped copy of the
    workload log, uploaded AFTER the partial dirs (small-first ordering; the
    canonical `workload.log` already landed the traceback early). The
    canonical `crash_report.json` / `workload.log` names are OVERWRITTEN by
    a same-attempt re-crash (run-3 overwrote run-2's log on #825) — prior
    crashes' canonical copies stay recoverable via the HF repo's git
    history; the timestamped copies accumulate per crash;
-7. `crash_persist_transcript.log` (#854) — the `[crash-persist]` audit
-   lines. #1151: items 6-7 ride ONE staged "final bundle" `upload_folder`
+8. `crash_persist_transcript.log` (#854) — the `[crash-persist]` audit
+   lines. #1151: items 7-8 ride ONE staged "final bundle" `upload_folder`
    commit (no retry), with the transcript staged LAST — after the DONE
    line — so its uploaded copy still records every earlier upload/skip
    line. Its presence proves the persist ran to completion with every skip
@@ -93,8 +115,8 @@ HF data repo under `issue<N>_partial/<attempt_id>/`:
    audited inside it) / breadcrumb final-status with no transcript (the
    persist ran to a final rc but the HF channel dropped the bundle) /
    standing `attempted` breadcrumb (persist killed mid-flight) — see
-   item 8;
-8. **the `eps/persist` guest-attribute breadcrumb (#1151)** — the
+   item 9;
+9. **the `eps/persist` guest-attribute breadcrumb (#1151)** — the
    HF-INDEPENDENT persist-fate channel. #811's lesson: EVERY prior no-fire
    signal (the transcript discriminator, the fd-3 serial lines, the
    canonical uploads) rode the SAME HF channel or died with the DELETEd
@@ -135,9 +157,13 @@ HF data repo under `issue<N>_partial/<attempt_id>/`:
 
 **Sweep scope (explicit):** the partial sweep covers exactly the three
 named directories above (`eval_results/issue_<N>/`, `data/issue_<N>/`,
-`data/issue<N>/`) plus the `$WORKLOAD_ROOT/logs/` worker-log tree (#885) —
-still NOT universal artifact discovery (e.g. `figures/issue_*`,
-checkpoints, `ood_eval_results/` are not swept). Worker logs are swept
+`data/issue<N>/`) plus the `$WORKLOAD_ROOT/logs/` worker-log tree (#885)
+plus the #1338 data-dir per-run-log harvest (`data_logs/` — per-run
+`*.log` files INSIDE those three dirs land even when the dir itself is
+cap-skipped; committed `*.md` notes are excluded from the worker-log
+sweep with one aggregate SKIP line) — still NOT universal artifact
+discovery (e.g. `figures/issue_*`, checkpoints, `ood_eval_results/` are
+not swept). Worker logs are swept
 only when they land under `$WORKLOAD_ROOT/logs/` (relative `logs/…` or
 `$REPO_ROOT/logs/…` on the workload-cmd branch, where the startup script
 exports `REPO_ROOT="$WORKLOAD_ROOT"` — #641); absolute
@@ -195,7 +221,7 @@ and `data_issue_<N>/` when the workload wrote one. **The #811 lesson
 (#1151): all of these signals ride the SAME HF channel and can fail
 TOGETHER** — #811's post-#854 crash left a zero-file prefix with no way to
 tell a killed persist from a dead HF channel — so the `eps/persist`
-guest-attribute breadcrumb (item 8) is the HF-independent fix-engaged
+guest-attribute breadcrumb (item 9) is the HF-independent fix-engaged
 signal: on the next real GCP crash the terminal diagnosis marker (the
 01:24Z shape) carries `[crash-persist-breadcrumb] eps/persist=<value>`
 regardless of HF state, turning a persist no-fire into a specific, named
@@ -215,10 +241,10 @@ looked only in `eval_results/issue_<N>/`, so `data/issue_825/` was
 structurally invisible and skipped without a log line, and the
 end-buffered `| cut | tail` output made the silent skip indistinguishable
 from a poweroff race. No code path could have uploaded `data/issue_825/`
-regardless of timing. Hence the #854 fix set: coverage (item 5), loud
+regardless of timing. Hence the #854 fix set: coverage (item 6), loud
 skips + eager streaming, the trap-entry watchdog reap (closing the one
 other in-guest poweroff actor in principle), and the timestamped +
-transcript artifacts (items 6-7).
+transcript artifacts (items 7-8).
 
 **Snapshot pin.** The EXIT-trap preamble is shared, so any change to it
 alters the hydra-branch render and breaks the byte-identity snapshot test
