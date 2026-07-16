@@ -18062,31 +18062,54 @@ def _triage_observer_sandbox(tmp_path, monkeypatch, events, *, status="running",
 
 def _matured_violating_events():
     """One post-epoch, MATURED (2h-old — older than the 30-min adjacency
-    horizon), in-lookback launch marker with no triage line anywhere."""
-    from datetime import UTC, datetime, timedelta
-
-    ts = (datetime.now(tz=UTC) - timedelta(hours=2)).strftime("%Y-%m-%dT%H:%M:%SZ")
-    return [{"ts": ts, "kind": "epm:run-launched", "by": "poll_pipeline", "note": "launched"}]
-
-
-def _matured_violating_events_n(n):
-    """``n`` distinct post-epoch, MATURED lone launch markers (ascending ts,
-    ~35 min apart, 2h-6.5h old — all older than the 30-min adjacency horizon,
-    all inside the 48h lookback). Each yields one ``launch-missing-line``
-    warn: launch↔launch proximity grants no adjacency coverage — only a
-    triage-LINE boundary neighbor does (#1167 push-cap fixtures)."""
+    horizon), in-lookback launch marker with no triage line anywhere, plus
+    one advisory candidate 10 min earlier (beyond the 120 s grace trim):
+    under the #1400 empty-window suppression a LONE launch is vacuously
+    compliant, so the advisory is what keeps the fixture violating."""
     from datetime import UTC, datetime, timedelta
 
     now = datetime.now(tz=UTC)
+    ts = (now - timedelta(hours=2)).strftime("%Y-%m-%dT%H:%M:%SZ")
+    adv_ts = (now - timedelta(hours=2, minutes=10)).strftime("%Y-%m-%dT%H:%M:%SZ")
     return [
-        {
-            "ts": (now - timedelta(minutes=120 + 35 * (n - 1 - i))).strftime("%Y-%m-%dT%H:%M:%SZ"),
-            "kind": "epm:run-launched",
-            "by": "poll_pipeline",
-            "note": f"launched {i}",
-        }
-        for i in range(n)
+        {"ts": adv_ts, "kind": "epm:progress", "by": "unknown", "note": "advisory: read me"},
+        {"ts": ts, "kind": "epm:run-launched", "by": "poll_pipeline", "note": "launched"},
     ]
+
+
+def _matured_violating_events_n(n):
+    """``n`` distinct post-epoch, MATURED launch markers (ascending ts,
+    ~35 min apart, 2h-6.5h old — all older than the 30-min adjacency horizon,
+    all inside the 48h lookback), each preceded by one advisory candidate
+    10 min earlier (beyond the 120 s grace trim — the #1400 empty-window
+    suppression would silence a candidate-less launch). Each launch yields
+    one ``launch-missing-line`` warn: launch↔launch proximity grants no
+    adjacency coverage — only a triage-LINE boundary neighbor does, and the
+    ~35-min spacing sits far above the 180 s #1400 cascade-coalescing window
+    (#1167 push-cap fixtures)."""
+    from datetime import UTC, datetime, timedelta
+
+    now = datetime.now(tz=UTC)
+    rows = []
+    for i in range(n):
+        base_min = 120 + 35 * (n - 1 - i)
+        rows.append(
+            {
+                "ts": (now - timedelta(minutes=base_min + 10)).strftime("%Y-%m-%dT%H:%M:%SZ"),
+                "kind": "epm:progress",
+                "by": "unknown",
+                "note": f"advisory {i}",
+            }
+        )
+        rows.append(
+            {
+                "ts": (now - timedelta(minutes=base_min)).strftime("%Y-%m-%dT%H:%M:%SZ"),
+                "kind": "epm:run-launched",
+                "by": "poll_pipeline",
+                "note": f"launched {i}",
+            }
+        )
+    return rows
 
 
 def test_triage_observer_kill_switch_skips_everything(tmp_path, monkeypatch):
@@ -18106,6 +18129,30 @@ def test_triage_observer_kill_switch_skips_everything(tmp_path, monkeypatch):
     monkeypatch.setattr(task_workflow, "registry_path", _forbidden)
     assert asw.triage_observer_pass(dry_run=False) is False
     assert not state_path.exists() and not sidecar_path.exists()
+
+
+def test_triage_observer_cascade_knob_threads_into_audit(tmp_path, monkeypatch):
+    # #1400 (Statistics C6): the watcher call site passes
+    # cascade_s=TRIAGE_OBSERVER_CASCADE_S into audit_dispatch_triage, so the
+    # EPM_TRIAGE_OBSERVER_CASCADE_S=0 operational-rollback claim (0 = strict
+    # pre-#1400 nearest-boundary semantics) is test-backed end to end.
+    from explore_persona_space import task_workflow
+
+    asw, _state, _sidecar, _pushes = _triage_observer_sandbox(
+        tmp_path, monkeypatch, _matured_violating_events()
+    )
+    captured: list[dict] = []
+
+    def _recorder(events, **kwargs):
+        captured.append(kwargs)
+        return {"violations": [], "cursor_ts": None}
+
+    monkeypatch.setattr(task_workflow, "audit_dispatch_triage", _recorder)
+    asw.triage_observer_pass(dry_run=True)
+    assert len(captured) == 1
+    assert captured[0]["cascade_s"] == asw.TRIAGE_OBSERVER_CASCADE_S
+    assert captured[0]["adjacency_s"] == asw.TRIAGE_OBSERVER_ADJACENCY_S
+    assert captured[0]["grace_s"] == asw.TRIAGE_OBSERVER_GRACE_S
 
 
 def test_decide_triage_observer_actions_routing():

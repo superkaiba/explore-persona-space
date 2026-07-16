@@ -2723,6 +2723,7 @@ def audit_dispatch_triage(
     epoch_ts: str | None = TRIAGE_DUTY_EPOCH_TS,
     min_ts: str | None = None,
     mature_before_ts: str | None = None,
+    cascade_s: float = 180.0,
 ) -> dict:
     """Post-hoc, NON-GATING audit of the pre-dispatch triage duty (#967).
 
@@ -2736,11 +2737,23 @@ def audit_dispatch_triage(
     and serve as adjacency neighbors; the AUDITED set additionally includes
     line-less ``stage-dispatch`` breadcrumbs — audited but never
     window-closing, preserving the enumerator's fail-toward-triage contract
-    (MF1). Three violation classes:
+    (MF1). ALL THREE violation classes share the non-empty post-grace-trim
+    window predicate (#1400): candidates within ``grace_s`` of the record
+    are dropped (the SKILL.md accepted residual — a grace-delta that cannot
+    be computed keeps the candidate, fail toward visibility), and a record
+    whose trimmed window is EMPTY never flags (nothing to triage —
+    vacuously compliant). Three violation classes:
 
     - ``launch-missing-line`` (warn): a launch marker with no triage line
-      whose nearest previous AND next boundary records are not triage-line
-      records within ``adjacency_s``.
+      whose effective previous AND next boundary records are not
+      triage-line records within ``adjacency_s``. For the PREVIOUS side,
+      consecutive line-less launch-kind boundaries within ``cascade_s``
+      seconds of each other (chained) are coalesced as ONE logical machine
+      dispatch (#1400 — the GCP/SLURM lanes post ``epm:cluster-launched``
+      then ``epm:run-launched`` ~30-60 s apart, and the sibling must not
+      orphan the session's pre-launch triage note); ``cascade_s=0``
+      reproduces the strict pre-#1400 nearest-boundary semantics
+      (:func:`_cascade_prev_boundary`).
     - ``breadcrumb-missing-line``: a line-less breadcrumb, three-way
       classified on its normalized stage token — exempt
       (:data:`TRIAGE_NONCOMPUTE_STAGES`) -> no flag; positive compute
@@ -2750,10 +2763,8 @@ def audit_dispatch_triage(
       ``free-analysis-followup`` passes through intact.
     - ``none-with-candidates``: a triage-line record with a ``none``
       disposition whose pre-record boundary window re-enumerates non-empty
-      after dropping candidates within ``grace_s`` of the record (a
-      grace-delta that cannot be computed keeps the candidate — fail toward
-      visibility; the class is info-tier by default). Severity ``warn``
-      only on an external-signature hit, else ``info``.
+      after the grace trim (the class is info-tier by default). Severity
+      ``warn`` only on an external-signature hit, else ``info``.
 
     Records with ts > ``mature_before_ts`` are DEFERRED — not evaluated, not
     consumed: ``cursor_ts`` is the max parseable ts among audited records at
@@ -2802,7 +2813,7 @@ def audit_dispatch_triage(
         if min_dt is not None and ts_dt <= min_dt:
             continue  # already evaluated (caller cursor / lookback)
         v = _audit_record_violation(
-            events, i, boundary_idx, adjacency_s=adjacency_s, grace_s=grace_s
+            events, i, boundary_idx, adjacency_s=adjacency_s, grace_s=grace_s, cascade_s=cascade_s
         )
         if v is not None:
             violations.append(v)
@@ -2821,13 +2832,16 @@ def _make_triage_violation(
 ) -> dict:
     """Build one :func:`audit_dispatch_triage` violation dict, re-enumerating
     the pre-record boundary window's candidates so the flag names what the
-    dispatch should have read. The ``none-with-candidates`` class trims
-    candidates within ``grace_s`` of the record (the SKILL.md accepted
-    residual); a grace-delta that cannot be computed keeps the candidate
-    (fail toward visibility — the class is info-tier by default)."""
+    dispatch should have read. EVERY class trims candidates within
+    ``grace_s`` of the record (#1400 — unified from the former
+    none-with-candidates-only trim): the observer's ``grace_s`` (120 s)
+    operationalizes the SKILL.md accepted-residual clause ("a marker posted
+    in the SECONDS between the final enumerator run and the breadcrumb
+    post" post-dates the session's final enumerator read). A grace-delta
+    that cannot be computed keeps the candidate (fail toward
+    visibility)."""
     cands = _triage_window_candidates(window)
-    if violation == "none-with-candidates":
-        cands = [c for c in cands if (d := _ts_delta_s(c, e)) is None or d > grace_s]
+    cands = [c for c in cands if (d := _ts_delta_s(c, e)) is None or d > grace_s]
     return {
         "record_ts": e.get("ts", ""),
         "record_kind": e.get("kind", ""),
@@ -2841,10 +2855,52 @@ def _make_triage_violation(
     }
 
 
+def _cascade_prev_boundary(
+    events: list[dict], boundary_idx: list[int], pos: int, i: int, cascade_s: float
+) -> int | None:
+    """Effective PREVIOUS boundary index for adjacency coverage, coalescing
+    a machine launch CASCADE (#1400): one dispatch posts
+    ``epm:cluster-launched`` (by ``backends.*``) then ``epm:run-launched``
+    ~30-60 s later (#1005 observed cluster→run gaps 46/39/39/32 s), and the
+    interposing sibling must not orphan the session's pre-launch triage
+    note. Machine failover continuations (e.g. a sync GCP→RunPod failover
+    posting its launch marker < ``cascade_s`` after the
+    ``epm:cluster-launched``) are INTENDED coalesce members — they are the
+    same logical dispatch, not an independent relaunch. Starting from the
+    audited boundary at events index ``i``, walk left while the previous
+    boundary is a line-LESS launch-kind record within ``cascade_s`` seconds
+    of the current anchor (gap CHAINED between consecutive cascade members,
+    so a 3-record cascade coalesces while two attempts minutes apart never
+    do — #1005's real relaunch spacings were 49 min / ~3.9 h / ~4.2 h). A
+    missing/negative delta, a triage-line record, a non-launch kind, or
+    ``cascade_s <= 0`` stops the walk (fail toward the strict pre-#1400
+    nearest-boundary semantics). Returns ``None`` when no previous boundary
+    remains. Pre-existing residual (unchanged from pre-#1400, advisory
+    channel only): a note-LESS cascade with a mid-gap candidate can flag
+    both the cascade head and its tail — one logical dispatch, two flags."""
+    anchor = i
+    p = pos - 1
+    while p >= 0:
+        j = boundary_idx[p]
+        ev = events[j]
+        if (
+            cascade_s > 0
+            and ev.get("kind", "") in TRIAGE_LAUNCH_KINDS
+            and TRIAGE_LINE_PREFIX not in (ev.get("note") or "")
+        ):
+            d = _ts_delta_s(ev, events[anchor])
+            if d is not None and 0 <= d <= cascade_s:
+                anchor, p = j, p - 1
+                continue
+        break
+    return boundary_idx[p] if p >= 0 else None
+
+
 def _adjacent_triage_coverage(
     events: list[dict], e: dict, prev_j: int | None, next_k: int | None, adjacency_s: float
 ) -> bool:
-    """True when the nearest previous OR next BOUNDARY record is a
+    """True when the nearest previous NON-CASCADE boundary (see
+    :func:`_cascade_prev_boundary`) OR next boundary record is a
     triage-line record within ``adjacency_s`` of ``e`` (the launch-marker
     compliance form). Requiring the NEAREST boundary neighbor — not just any
     record in the ±window — keeps crash-fix relaunch bursts individually
@@ -2867,13 +2923,32 @@ def _audit_record_violation(
     *,
     adjacency_s: float,
     grace_s: float,
+    cascade_s: float,
 ) -> dict | None:
     """Classify ONE matured, post-epoch audited record (index ``i``) for
     :func:`audit_dispatch_triage`; returns a violation dict or None.
 
     Nearest neighbors + the pre-record window come from BOUNDARY records
     only (MF1): a line-less breadcrumb never closes a window nor serves as
-    an adjacency neighbor."""
+    an adjacency neighbor. EVERY class fires only against a NON-empty
+    post-grace-trim candidate window (#1400) — an empty window means there
+    was nothing to triage, so the record is vacuously compliant. The
+    candidate WINDOW stays keyed on the NEAREST previous boundary even when
+    the previous-side coverage walk coalesces a launch cascade
+    (:func:`_cascade_prev_boundary`) — everything before a cascade sibling
+    was already that sibling's own audited window, so re-widening would
+    double-count candidates across the cascade's records (one logical
+    dispatch → at most one flag, carried by the cascade HEAD with the real
+    window). Coalescing is PREV-side only: the ``epm:run-launched`` is the
+    cascade TAIL, so no sibling interposes after it, and the residual (a
+    cluster-launched covered only by a post-run-launched note) is
+    empty-window-suppressed in the common case — named limitation, not
+    fixed here. Residual widened by cascade coverage (accepted, advisory
+    channel only): a candidate posted mid-cascade beyond ``grace_s`` of the
+    tail is treated as covered by the pre-cascade note even though it
+    post-dates that note's read — the same shape as the grace residual,
+    widened from ``grace_s`` to ≤ cascade-span + note gap, bounded by
+    ``adjacency_s``."""
     e = events[i]
     note = e.get("note") or ""
     has_line = TRIAGE_LINE_PREFIX in note
@@ -2885,9 +2960,10 @@ def _audit_record_violation(
     window = events[(prev_j + 1 if prev_j is not None else 0) : i]
 
     if kind in TRIAGE_LAUNCH_KINDS and not has_line:
-        if _adjacent_triage_coverage(events, e, prev_j, next_k, adjacency_s):
+        prev_cov = _cascade_prev_boundary(events, boundary_idx, pos, i, cascade_s)
+        if _adjacent_triage_coverage(events, e, prev_cov, next_k, adjacency_s):
             return None
-        return _make_triage_violation(
+        v = _make_triage_violation(
             e,
             stage=None,
             violation="launch-missing-line",
@@ -2895,6 +2971,7 @@ def _audit_record_violation(
             window=window,
             grace_s=grace_s,
         )
+        return v if v["candidate_count"] else None  # #1400: non-empty-window predicate
 
     stripped = note.lstrip()
     if not has_line and stripped.startswith("stage-dispatch "):
@@ -2904,7 +2981,7 @@ def _audit_record_violation(
         if norm in TRIAGE_NONCOMPUTE_STAGES:
             return None  # known-benign family: no flag (MF4)
         positive_compute = "pid" in fields or norm in TRIAGE_COMPUTE_STAGE_TOKENS
-        return _make_triage_violation(
+        v = _make_triage_violation(
             e,
             stage=raw_stage,
             violation="breadcrumb-missing-line",
@@ -2912,6 +2989,7 @@ def _audit_record_violation(
             window=window,
             grace_s=grace_s,
         )
+        return v if v["candidate_count"] else None  # #1400: non-empty-window predicate
 
     if has_line and _triage_disposition_is_none(note):
         stage = (

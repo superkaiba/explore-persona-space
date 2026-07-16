@@ -940,7 +940,12 @@ semantics at each recent HISTORICAL dispatch record
 evaluated exactly once), and flags three violation classes: (a)
 `launch-missing-line` (**warn**) — a launch marker with no triage line and no
 adjacent boundary triage record within `EPM_TRIAGE_OBSERVER_ADJACENCY_S`
-(30 min); (b) `breadcrumb-missing-line` — a line-less `stage-dispatch`
+(30 min), with consecutive line-less launch-kind records within
+`EPM_TRIAGE_OBSERVER_CASCADE_S` (180 s, chained) coalesced as one dispatch
+for the previous-side walk (#1400 — one GCP dispatch posts
+`epm:cluster-launched` then `epm:run-launched` ~30-60 s apart; the sibling
+must not orphan the session's pre-launch triage note; `0` disables); (b)
+`breadcrumb-missing-line` — a line-less `stage-dispatch`
 breadcrumb, THREE-WAY classified on its normalized stage token: a
 known-benign family (`TRIAGE_NONCOMPUTE_STAGES` — extensible: append the
 token + a live-example citation) never flags, POSITIVE compute evidence (a
@@ -949,7 +954,13 @@ battery / fit / fits / relaunch, never substring) is **warn**, an unknown
 token is **info**; (c) `none-with-candidates` — a `none` disposition whose
 pre-record boundary window re-enumerates non-empty after a 120s grace trim
 (`EPM_TRIAGE_OBSERVER_GRACE_S`) — **info**, escalated to **warn** only on an
-external-signature hit (`TRIAGE_EXTERNAL_SIGNATURES`). A MATURITY GATE
+external-signature hit (`TRIAGE_EXTERNAL_SIGNATURES`). Every class fires
+only against a non-empty candidate window after the `grace_s` trim — an
+empty window means there was nothing to triage (#1400; 65 pre-fix
+zero-candidate sidecar rows). The SKILL.md pre-dispatch triage DUTY itself
+is UNCHANGED — sessions still post the `external-markers triaged:` line
+before every compute dispatch, even a `none` disposition; only the
+observer's post-hoc audit scope narrows. A MATURITY GATE
 defers records younger than the adjacency window (the compliant adjacent-next
 note may still land) — the cursor advances only past matured records, so a
 record is judged exactly once, after its compliance window closes. Records
