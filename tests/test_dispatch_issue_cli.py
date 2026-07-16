@@ -1414,6 +1414,100 @@ def test_launch_spot_tolerant_threads_to_spec_extra(monkeypatch, tmp_path) -> No
     assert "spot_tolerant" not in gcp2.launches[0].extra
 
 
+def test_width_required_threads_extra_flag(monkeypatch, tmp_path) -> None:
+    """#1379 (T10): ``--width-required`` threads
+    ``spec.extra['width_required']=True`` (the router's
+    ``_explicit_wide_degrade_widths`` opt-out); absent, the key never
+    appears (the degrading ladder stays the default)."""
+    _cd_to_tmp(monkeypatch, tmp_path)
+    gcp = _MockBackend(kind="gcp")
+    factory = _build_mock_factory(gcp=gcp)
+
+    from scripts.dispatch_issue import main
+
+    with redirect_stdout(io.StringIO()):
+        rc = main(
+            [
+                "launch",
+                "--issue",
+                "1379",
+                "--intent",
+                "sweep-8g-a100",
+                "--backend",
+                "gcp",
+                "--width-required",
+                "--workload-cmd",
+                "bash scripts/run_issue1379_sweep.sh",
+            ],
+            backends_factory=factory,
+        )
+    assert rc == 0
+    assert gcp.launches[0].extra["width_required"] is True
+
+    # Control: absent flag leaves the key off entirely.
+    gcp2 = _MockBackend(kind="gcp")
+    factory2 = _build_mock_factory(gcp=gcp2)
+    with redirect_stdout(io.StringIO()):
+        rc2 = main(
+            [
+                "launch",
+                "--issue",
+                "1379",
+                "--intent",
+                "sweep-8g-a100",
+                "--backend",
+                "gcp",
+                "--workload-cmd",
+                "bash scripts/run_issue1379_sweep.sh",
+            ],
+            backends_factory=factory2,
+        )
+    assert rc2 == 0
+    assert "width_required" not in gcp2.launches[0].extra
+
+
+def test_width_required_with_gpus_exits_2_with_conflict_reason(monkeypatch, tmp_path) -> None:
+    """#1379 (T11): ``--width-required --gpus 8`` is a contradictory
+    combination (--gpus declares a RE-SHARDABLE axis by contract, #1121;
+    --width-required pins the width) — refused pre-route with the same
+    exit-2 JSON shape as the #599 ``gpus_machine_mismatch`` guard, before
+    any backend is built."""
+    _cd_to_tmp(monkeypatch, tmp_path)
+    from scripts.dispatch_issue import main
+
+    buf = io.StringIO()
+    with redirect_stdout(buf):
+        rc = main(
+            [
+                "launch",
+                "--issue",
+                "1379",
+                "--intent",
+                "sweep-8g-a100",
+                "--backend",
+                "gcp",
+                "--width-required",
+                "--gpus",
+                "8",
+                "--workload-cmd",
+                "bash scripts/run_issue1379_sweep.sh",
+            ],
+            backends_factory=_guard_exploding_factory,
+        )
+    assert rc == 2
+    body = json.loads(buf.getvalue().strip())
+    assert body["ok"] is False
+    assert body["failure_class"] == "infra"
+    assert body["status"] == "blocked"
+    assert body["reason"] == "width_required_gpus_conflict"
+    # The note's first line carries the failure_class= prefix so the
+    # orchestrator's Step 7 classifier short-circuits (same contract as
+    # the gpus_machine_mismatch refusal).
+    assert body["note"].splitlines()[0] == "failure_class: infra"
+    # Nothing launched -> no sidecar.
+    assert not default_handle_sidecar_path(1379).exists()
+
+
 def test_launch_provisioning_model_rejects_unknown_value(monkeypatch, tmp_path) -> None:
     """argparse ``choices`` rejects an out-of-set provisioning model
     (SystemExit 2) before any backend is built."""

@@ -1,0 +1,48 @@
+{
+  "commit": "829de15d79505250f12142b0e3598ab07ad8be54",
+  "metric": "within-regime held-out ridge R^2 at layer 19 (direct fit, not transfer)",
+  "bars": {
+    "chat\n(reference)": {
+      "base": 0.5877,
+      "instruct": 0.6731
+    },
+    "real stories\n(off-policy)": {
+      "instruct": -0.0654
+    },
+    "model stories\n(on-policy)": {
+      "instruct": 0.1632
+    },
+    "user turn\n(real)": {
+      "base": -1.0467,
+      "instruct": -0.9861
+    },
+    "user turn\n(model-gen)": {
+      "base": -1.8399,
+      "instruct": -0.7689
+    },
+    "next-span\n(real)": {
+      "base": -2.9157,
+      "instruct": -3.1685
+    },
+    "next-span\n(model-gen)": {
+      "base": -1.5914,
+      "instruct": -2.193
+    }
+  },
+  "sources": {
+    "chat\n(reference)": "eval_results/issue_825/cells_{S2,S1}.json :: r2_per_layer_obs[19]",
+    "real stories\n(off-policy)": "eval_results/issue_931/cells_armA_within_authorfold.json (LOAO; LONO within-fold=+0.173)",
+    "model stories\n(on-policy)": "eval_results/issue_931/cells_armB_within.json",
+    "user turn\n(real)": "eval_results/issue_825/real-user-turn-null/cells_M_{pretrained,instruct}_user_chat.json",
+    "user turn\n(model-gen)": "eval_results/issue_825/onpolicy-user-turn/cells_M_{pretrained,instruct}_user_chat.json",
+    "next-span\n(real)": "eval_results/issue_825/base-separator-control (within-model)",
+    "next-span\n(model-gen)": "eval_results/issue_825/onpolicy-separator-control/{base,instruct}/cells_armC_sep.json"
+  },
+  "shuffled_floor": [
+    0.0565,
+    0.0792
+  ],
+  "chat_reference_line": 0.6731,
+  "mlp_note": "MLP nonlinear R2: stories 0.14-0.15, user real 0.17-0.18, user model-gen 0.08-0.33, next-span 0.31-0.50 - all far below chat 0.673.",
+  "caption": "Direct within-regime held-out ridge R\u00b2 (layer 19) of a context->answer map fit + tested WITHIN each regime (not transferred from chat). The chat map reads at 0.588 (base) / 0.673 (instruct); all six other regimes fail - generic stories sit at/near the shuffled floor (real off-policy -0.07 author-blocked / +0.17 within-novel-fold; on-policy 0.16), and the user turn + next-span maps are strongly negative (worse than predicting the mean). MLP nonlinear R2: stories 0.14-0.15, user real 0.17-0.18, user model-gen 0.08-0.33, next-span 0.31-0.50 - all far below chat 0.673."
+}

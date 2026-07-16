@@ -1,0 +1,595 @@
+{
+  "meta": {
+    "script": "scripts/issue1092_inline_repairs.py",
+    "git_commit": "b5dd3c02d46e4e13a75f612275407e197c64f9a6",
+    "generated_utc": "2026-07-14T22:55:53.894815+00:00",
+    "numpy": "2.2.6",
+    "manifest_rows": 21193,
+    "manifest_fingerprint": "7ef5523673d6",
+    "note": "Fit-free battery-caveat repairs; the battery-excluded ridge refit (read1 R\u00b2, per-target R\u00b2, Part-B maps) is DEFERRED to an off-VM CPU box per the Step-0 >4h gate."
+  },
+  "A1_scope": {
+    "battery_positions": {
+      "min": 18793,
+      "max": 21192,
+      "n": 2400
+    },
+    "trait_positions": {
+      "min": 17308,
+      "max": 18792,
+      "n": 1485
+    },
+    "dense_core_positions": {
+      "min": 0,
+      "max": 4751,
+      "n": 4752
+    },
+    "dense_core_disjoint_from_battery": true,
+    "battery_stratum_label": "battery",
+    "engine_filter_excludes": [
+      "trait_stratum",
+      "battery_eval_only"
+    ],
+    "engine_filter_is_noop": "battery rows are labelled 'battery' not 'battery_eval_only'",
+    "correct_exclusion_key": "is_eval_only == True (== stratum 'battery', n=2400)",
+    "cells": {
+      "cell_inst_own": {
+        "n0_captured": 21193,
+        "battery_in_fit_range": 2400,
+        "fitA_banked_n": 19708,
+        "fitA_battery_excluded_n": 17308,
+        "battery_affected": true
+      },
+      "cell_inst_claude": {
+        "n0_captured": 12121,
+        "battery_in_fit_range": 0,
+        "fitA_banked_n": 12121,
+        "fitA_battery_excluded_n": 12121,
+        "battery_affected": false
+      },
+      "cell_inst_pretext": {
+        "n0_captured": 21193,
+        "battery_in_fit_range": 2400,
+        "fitA_banked_n": 19708,
+        "fitA_battery_excluded_n": 17308,
+        "battery_affected": true
+      },
+      "cell_inst_shuf": {
+        "n0_captured": 8689,
+        "battery_in_fit_range": 0,
+        "fitA_banked_n": 8689,
+        "fitA_battery_excluded_n": 8689,
+        "battery_affected": false
+      },
+      "cell_pre_own": {
+        "n0_captured": 21193,
+        "battery_in_fit_range": 2400,
+        "fitA_banked_n": 19708,
+        "fitA_battery_excluded_n": 17308,
+        "battery_affected": true
+      },
+      "cell_pre_claude": {
+        "n0_captured": 12121,
+        "battery_in_fit_range": 0,
+        "fitA_banked_n": 12121,
+        "fitA_battery_excluded_n": 12121,
+        "battery_affected": false
+      },
+      "cell_pre_insttext": {
+        "n0_captured": 21193,
+        "battery_in_fit_range": 2400,
+        "fitA_banked_n": 19708,
+        "fitA_battery_excluded_n": 17308,
+        "battery_affected": true
+      },
+      "cell_pre_shuf": {
+        "n0_captured": 8689,
+        "battery_in_fit_range": 0,
+        "fitA_banked_n": 8689,
+        "fitA_battery_excluded_n": 8689,
+        "battery_affected": false
+      }
+    }
+  },
+  "A1_read1_banked_old": {
+    "config": "layer 14, ambient, fit-arm A, pooled t1/t2/t3 (battery-INCLUDED)",
+    "cells": {
+      "cell_inst_own": {
+        "prefix_end": {
+          "r2": 0.06507728422851033,
+          "train_mean_floor": -0.0012652191796778123,
+          "perm_null_p95": -0.02010743603361177,
+          "n_rows_banked": null
+        },
+        "context_end": {
+          "r2": 0.8043440222361293,
+          "train_mean_floor": -0.0012652191796778123,
+          "perm_null_p95": -0.06443522857571735,
+          "n_rows_banked": null
+        }
+      },
+      "cell_inst_claude": {
+        "prefix_end": {
+          "r2": 0.05266410295949375,
+          "train_mean_floor": -0.0018036046506256787,
+          "perm_null_p95": -0.0424933411277232,
+          "n_rows_banked": null
+        },
+        "context_end": {
+          "r2": 0.7763061034604088,
+          "train_mean_floor": -0.0018036046506256787,
+          "perm_null_p95": -0.07323367513036087,
+          "n_rows_banked": null
+        }
+      },
+      "cell_inst_pretext": {
+        "prefix_end": {
+          "r2": 0.042999963125996965,
+          "train_mean_floor": -0.0013526226746396475,
+          "perm_null_p95": -0.018743380092653594,
+          "n_rows_banked": null
+        },
+        "context_end": {
+          "r2": 0.7121680037620438,
+          "train_mean_floor": -0.0013526226746396475,
+          "perm_null_p95": -0.07982483969856599,
+          "n_rows_banked": null
+        }
+      },
+      "cell_inst_shuf": {
+        "prefix_end": {
+          "r2": 0.015939967043497427,
+          "train_mean_floor": -0.004167523245173332,
+          "perm_null_p95": -0.05253022263706666,
+          "n_rows_banked": null
+        },
+        "context_end": {
+          "r2": 0.07916209359311543,
+          "train_mean_floor": -0.004167523245173332,
+          "perm_null_p95": -0.07999443356602587,
+          "n_rows_banked": null
+        }
+      },
+      "cell_pre_own": {
+        "prefix_end": {
+          "r2": 0.0510748986288696,
+          "train_mean_floor": -0.0013552697581320123,
+          "perm_null_p95": -0.018713517540835223,
+          "n_rows_banked": null
+        },
+        "context_end": {
+          "r2": 0.7143812927806117,
+          "train_mean_floor": -0.0013552697581320123,
+          "perm_null_p95": -0.07773629931313558,
+          "n_rows_banked": null
+        }
+      },
+      "cell_pre_claude": {
+        "prefix_end": {
+          "r2": 0.05562682877378078,
+          "train_mean_floor": -0.0018774897956054248,
+          "perm_null_p95": -0.031238237657176995,
+          "n_rows_banked": null
+        },
+        "context_end": {
+          "r2": 0.7423269558538191,
+          "train_mean_floor": -0.0018774897956054248,
+          "perm_null_p95": -0.08930388022381518,
+          "n_rows_banked": null
+        }
+      },
+      "cell_pre_insttext": {
+        "prefix_end": {
+          "r2": 0.07881767551129681,
+          "train_mean_floor": -0.003297268453885264,
+          "perm_null_p95": -0.0218646197930355,
+          "n_rows_banked": null
+        },
+        "context_end": {
+          "r2": 0.49265648668357076,
+          "train_mean_floor": -0.003297268453885264,
+          "perm_null_p95": -0.09170610639478874,
+          "n_rows_banked": null
+        }
+      },
+      "cell_pre_shuf": {
+        "prefix_end": {
+          "r2": 0.028275551005817245,
+          "train_mean_floor": -0.004947305542131779,
+          "perm_null_p95": -0.03625855139153319,
+          "n_rows_banked": null
+        },
+        "context_end": {
+          "r2": 0.05652301202486454,
+          "train_mean_floor": -0.004947305542131779,
+          "perm_null_p95": -0.09719345114340362,
+          "n_rows_banked": null
+        }
+      }
+    }
+  },
+  "A1_read3_read4_invariance": {
+    "cell_inst_own": {
+      "read3_shares_battery_excluded": {
+        "prefix": 0.10419466145828905,
+        "query": 0.7192391293677722,
+        "interaction": 0.17656620917394952,
+        "n_dense_core": 4752
+      },
+      "read3_shares_banked": {
+        "prefix": 0.10419466145828905,
+        "query": 0.7192391293677722,
+        "interaction": 0.17656620917394952
+      },
+      "read4_residuals_battery_excluded": {
+        "residual_interaction_over_total": 0.4201978214769169,
+        "mprime_minus_m_minus_g_over_g": 0.49546974836465846
+      },
+      "read4_residuals_banked": {
+        "residual_interaction_over_total": 0.42019782147691964,
+        "mprime_minus_m_minus_g_over_g": 0.4954697483646592,
+        "null_p05": 1.5885745284868558
+      },
+      "shares_max_abs_delta": 0.0
+    },
+    "cell_inst_claude": {
+      "read3_shares_battery_excluded": {
+        "prefix": 0.1049940866215131,
+        "query": 0.7099924268111524,
+        "interaction": 0.1850134865673268,
+        "n_dense_core": 4752
+      },
+      "read3_shares_banked": {
+        "prefix": 0.1049940866215131,
+        "query": 0.7099924268111524,
+        "interaction": 0.1850134865673268
+      },
+      "read4_residuals_battery_excluded": {
+        "residual_interaction_over_total": 0.4301319408824758,
+        "mprime_minus_m_minus_g_over_g": 0.5104754205335369
+      },
+      "read4_residuals_banked": {
+        "residual_interaction_over_total": 0.4301319408824772,
+        "mprime_minus_m_minus_g_over_g": 0.5104754205335384,
+        "null_p05": 1.595229185207916
+      },
+      "shares_max_abs_delta": 0.0
+    },
+    "cell_inst_pretext": {
+      "read3_shares_battery_excluded": {
+        "prefix": 0.11279998272074873,
+        "query": 0.6010873112809318,
+        "interaction": 0.28611270599831645,
+        "n_dense_core": 4752
+      },
+      "read3_shares_banked": {
+        "prefix": 0.11279998272074873,
+        "query": 0.6010873112809318,
+        "interaction": 0.28611270599831645
+      },
+      "read4_residuals_battery_excluded": {
+        "residual_interaction_over_total": 0.5348950420393891,
+        "mprime_minus_m_minus_g_over_g": 0.6899216798658363
+      },
+      "read4_residuals_banked": {
+        "residual_interaction_over_total": 0.5348950420393881,
+        "mprime_minus_m_minus_g_over_g": 0.689921679865839,
+        "null_p05": 1.6851450996025823
+      },
+      "shares_max_abs_delta": 0.0
+    },
+    "cell_inst_shuf": {
+      "read3_shares_battery_excluded": {
+        "prefix": 0.0975732802299531,
+        "query": 0.0800350964587499,
+        "interaction": 0.8223916233112989,
+        "n_dense_core": 4752
+      },
+      "read3_shares_banked": {
+        "prefix": 0.0975732802299531,
+        "query": 0.0800350964587499,
+        "interaction": 0.8223916233112989
+      },
+      "read4_residuals_battery_excluded": {
+        "residual_interaction_over_total": 0.9068581053898602,
+        "mprime_minus_m_minus_g_over_g": 3.2055245155835417
+      },
+      "read4_residuals_banked": {
+        "residual_interaction_over_total": 0.9068581053898648,
+        "mprime_minus_m_minus_g_over_g": 3.205524515583532,
+        "null_p05": 3.83008687640362
+      },
+      "shares_max_abs_delta": 0.0
+    },
+    "cell_pre_own": {
+      "read3_shares_battery_excluded": {
+        "prefix": 0.11802503131293586,
+        "query": 0.6012675803777157,
+        "interaction": 0.2807073883093411,
+        "n_dense_core": 4752
+      },
+      "read3_shares_banked": {
+        "prefix": 0.11802503131293586,
+        "query": 0.6012675803777157,
+        "interaction": 0.2807073883093411
+      },
+      "read4_residuals_battery_excluded": {
+        "residual_interaction_over_total": 0.5298182596979296,
+        "mprime_minus_m_minus_g_over_g": 0.683271062079778
+      },
+      "read4_residuals_banked": {
+        "residual_interaction_over_total": 0.5298182596979277,
+        "mprime_minus_m_minus_g_over_g": 0.6832710620797819,
+        "null_p05": 1.6873309633205444
+      },
+      "shares_max_abs_delta": 0.0
+    },
+    "cell_pre_claude": {
+      "read3_shares_battery_excluded": {
+        "prefix": 0.12242947823028082,
+        "query": 0.6686692838599044,
+        "interaction": 0.2089012379098235,
+        "n_dense_core": 4752
+      },
+      "read3_shares_banked": {
+        "prefix": 0.12242947823028082,
+        "query": 0.6686692838599044,
+        "interaction": 0.2089012379098235
+      },
+      "read4_residuals_battery_excluded": {
+        "residual_interaction_over_total": 0.45705714950082743,
+        "mprime_minus_m_minus_g_over_g": 0.5589395228687505
+      },
+      "read4_residuals_banked": {
+        "residual_interaction_over_total": 0.4570571495008286,
+        "mprime_minus_m_minus_g_over_g": 0.558939522868749,
+        "null_p05": 1.633096604299117
+      },
+      "shares_max_abs_delta": 0.0
+    },
+    "cell_pre_insttext": {
+      "read3_shares_battery_excluded": {
+        "prefix": 0.26924238291840513,
+        "query": 0.3672105848854236,
+        "interaction": 0.3635470321961643,
+        "n_dense_core": 4752
+      },
+      "read3_shares_banked": {
+        "prefix": 0.26924238291840513,
+        "query": 0.3672105848854236,
+        "interaction": 0.3635470321961643
+      },
+      "read4_residuals_battery_excluded": {
+        "residual_interaction_over_total": 0.6029486148886682,
+        "mprime_minus_m_minus_g_over_g": 0.9949991418322227
+      },
+      "read4_residuals_banked": {
+        "residual_interaction_over_total": 0.6029486148886708,
+        "mprime_minus_m_minus_g_over_g": 0.9949991418322254,
+        "null_p05": 2.101480206484386
+      },
+      "shares_max_abs_delta": 0.0
+    },
+    "cell_pre_shuf": {
+      "read3_shares_battery_excluded": {
+        "prefix": 0.11438659836101168,
+        "query": 0.05803103793414159,
+        "interaction": 0.8275823637048466,
+        "n_dense_core": 4752
+      },
+      "read3_shares_banked": {
+        "prefix": 0.11438659836101168,
+        "query": 0.05803103793414159,
+        "interaction": 0.8275823637048466
+      },
+      "read4_residuals_battery_excluded": {
+        "residual_interaction_over_total": 0.9097155399930463,
+        "mprime_minus_m_minus_g_over_g": 3.776377873224064
+      },
+      "read4_residuals_banked": {
+        "residual_interaction_over_total": 0.9097155399930505,
+        "mprime_minus_m_minus_g_over_g": 3.7763778732240882,
+        "null_p05": 4.487216052930563
+      },
+      "shares_max_abs_delta": 0.0
+    }
+  },
+  "A3_transport_floors": {
+    "config": "layer 14, ambient, fit-arm A battery-EXCLUDED, target t1 (answer-span mean)",
+    "note": "identity/affine floors are same-dim only per single 3584-d target (t1); the banked pooled floors were NaN (stacked 10752-d target != 3584-d input) \u2014 the flagged engine gap. Ridge reference is the banked POOLED R\u00b2 (battery-INCLUDED); the per-target battery-excluded ridge is deferred with the refit. t2/t3 floors deferred (target-invariant point).",
+    "cells": {
+      "cell_inst_own": {
+        "prefix_end": {
+          "banked_pooled_ridge_r2_batteryIN": 0.06507728422851033,
+          "per_target": {
+            "t1": {
+              "train_mean": -0.0006296249304987844,
+              "raw_identity": -5.406788622964629,
+              "global_affine_scaled_identity": 0.003109816798784896,
+              "diag_affine": 0.021863993787278862
+            }
+          }
+        },
+        "context_end": {
+          "banked_pooled_ridge_r2_batteryIN": 0.8043440222361293,
+          "per_target": {
+            "t1": {
+              "train_mean": -0.0006296249304987844,
+              "raw_identity": -4.0022037795962255,
+              "global_affine_scaled_identity": 0.05214734777945559,
+              "diag_affine": 0.1412731979673167
+            }
+          }
+        }
+      },
+      "cell_inst_claude": {
+        "prefix_end": {
+          "banked_pooled_ridge_r2_batteryIN": 0.05266410295949375,
+          "per_target": {
+            "t1": {
+              "train_mean": -0.001139193216111482,
+              "raw_identity": -5.510257251792662,
+              "global_affine_scaled_identity": 0.0019300847364404627,
+              "diag_affine": 0.017627188398470012
+            }
+          }
+        },
+        "context_end": {
+          "banked_pooled_ridge_r2_batteryIN": 0.7763061034604088,
+          "per_target": {
+            "t1": {
+              "train_mean": -0.001139193216111482,
+              "raw_identity": -4.20402263868938,
+              "global_affine_scaled_identity": 0.04914952639096417,
+              "diag_affine": 0.13019087318856595
+            }
+          }
+        }
+      },
+      "cell_inst_pretext": {
+        "prefix_end": {
+          "banked_pooled_ridge_r2_batteryIN": 0.042999963125996965,
+          "per_target": {
+            "t1": {
+              "train_mean": -0.0006526244533095656,
+              "raw_identity": -131018.45646720768,
+              "global_affine_scaled_identity": -0.000361389979112318,
+              "diag_affine": 0.04061821313442043
+            }
+          }
+        },
+        "context_end": {
+          "banked_pooled_ridge_r2_batteryIN": 0.7121680037620438,
+          "per_target": {
+            "t1": {
+              "train_mean": -0.0006526244533095656,
+              "raw_identity": -1.9341802717368843,
+              "global_affine_scaled_identity": 0.074960697002752,
+              "diag_affine": 0.1444916227219701
+            }
+          }
+        }
+      },
+      "cell_inst_shuf": {
+        "prefix_end": {
+          "banked_pooled_ridge_r2_batteryIN": 0.015939967043497427,
+          "per_target": {
+            "t1": {
+              "train_mean": -0.002543827781040601,
+              "raw_identity": -5.313012909378387,
+              "global_affine_scaled_identity": 8.807781887737454e-05,
+              "diag_affine": 0.015673579321181814
+            }
+          }
+        },
+        "context_end": {
+          "banked_pooled_ridge_r2_batteryIN": 0.07916209359311543,
+          "per_target": {
+            "t1": {
+              "train_mean": -0.002543827781040601,
+              "raw_identity": -4.458999057226639,
+              "global_affine_scaled_identity": 0.0053455114526513485,
+              "diag_affine": 0.025460757569173247
+            }
+          }
+        }
+      },
+      "cell_pre_own": {
+        "prefix_end": {
+          "banked_pooled_ridge_r2_batteryIN": 0.0510748986288696,
+          "per_target": {
+            "t1": {
+              "train_mean": -0.0007002836683731214,
+              "raw_identity": -112851.08687671226,
+              "global_affine_scaled_identity": -0.0006860355886793013,
+              "diag_affine": 0.04112763016756721
+            }
+          }
+        },
+        "context_end": {
+          "banked_pooled_ridge_r2_batteryIN": 0.7143812927806117,
+          "per_target": {
+            "t1": {
+              "train_mean": -0.0007002836683731214,
+              "raw_identity": -1.6460764026398067,
+              "global_affine_scaled_identity": 0.06849599984776246,
+              "diag_affine": 0.13641056482232797
+            }
+          }
+        }
+      },
+      "cell_pre_claude": {
+        "prefix_end": {
+          "banked_pooled_ridge_r2_batteryIN": 0.05562682877378078,
+          "per_target": {
+            "t1": {
+              "train_mean": -0.0011892560505195233,
+              "raw_identity": -145900.40917708914,
+              "global_affine_scaled_identity": -0.0011776522502702595,
+              "diag_affine": 0.020350957343943932
+            }
+          }
+        },
+        "context_end": {
+          "banked_pooled_ridge_r2_batteryIN": 0.7423269558538191,
+          "per_target": {
+            "t1": {
+              "train_mean": -0.0011892560505195233,
+              "raw_identity": -3.195227392101758,
+              "global_affine_scaled_identity": 0.03584328218693864,
+              "diag_affine": 0.10752465189951894
+            }
+          }
+        }
+      },
+      "cell_pre_insttext": {
+        "prefix_end": {
+          "banked_pooled_ridge_r2_batteryIN": 0.07881767551129681,
+          "per_target": {
+            "t1": {
+              "train_mean": -0.0006469837166670119,
+              "raw_identity": -8.299866600448894,
+              "global_affine_scaled_identity": 0.000739676452388279,
+              "diag_affine": 0.016146850755889525
+            }
+          }
+        },
+        "context_end": {
+          "banked_pooled_ridge_r2_batteryIN": 0.49265648668357076,
+          "per_target": {
+            "t1": {
+              "train_mean": -0.0006469837166670119,
+              "raw_identity": -4.062251572717234,
+              "global_affine_scaled_identity": 0.012254125425053128,
+              "diag_affine": 0.06218696815999677
+            }
+          }
+        }
+      },
+      "cell_pre_shuf": {
+        "prefix_end": {
+          "banked_pooled_ridge_r2_batteryIN": 0.028275551005817245,
+          "per_target": {
+            "t1": {
+              "train_mean": -0.002682561758654075,
+              "raw_identity": -167055.18252250284,
+              "global_affine_scaled_identity": -0.002357721417326264,
+              "diag_affine": 0.024356240934058082
+            }
+          }
+        },
+        "context_end": {
+          "banked_pooled_ridge_r2_batteryIN": 0.05652301202486454,
+          "per_target": {
+            "t1": {
+              "train_mean": -0.002682561758654075,
+              "raw_identity": -3.2576480595019794,
+              "global_affine_scaled_identity": 0.004564356410324932,
+              "diag_affine": 0.02789877044709499
+            }
+          }
+        }
+      }
+    }
+  }
+}

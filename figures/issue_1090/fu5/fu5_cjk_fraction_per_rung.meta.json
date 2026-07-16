@@ -1,0 +1,374 @@
+{
+  "commit": "40797cd8ab",
+  "created": "2026-07-15T12:32:24Z",
+  "figsize": [
+    7.2,
+    5.0
+  ],
+  "points": [
+    {
+      "optimizer step (Tier-1 rung, n=100 completions each)": 5.0,
+      "fraction of completions with Chinese characters": 0.03,
+      "series": "impolite bare, lr 1e-5 (control)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "optimizer step (Tier-1 rung, n=100 completions each)": 10.0,
+      "fraction of completions with Chinese characters": 0.04,
+      "series": "impolite bare, lr 1e-5 (control)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "optimizer step (Tier-1 rung, n=100 completions each)": 15.0,
+      "fraction of completions with Chinese characters": 0.03,
+      "series": "impolite bare, lr 1e-5 (control)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "optimizer step (Tier-1 rung, n=100 completions each)": 20.0,
+      "fraction of completions with Chinese characters": 0.06,
+      "series": "impolite bare, lr 1e-5 (control)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "optimizer step (Tier-1 rung, n=100 completions each)": 25.0,
+      "fraction of completions with Chinese characters": 0.09,
+      "series": "impolite bare, lr 1e-5 (control)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "optimizer step (Tier-1 rung, n=100 completions each)": 30.0,
+      "fraction of completions with Chinese characters": 0.07,
+      "series": "impolite bare, lr 1e-5 (control)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "optimizer step (Tier-1 rung, n=100 completions each)": 35.0,
+      "fraction of completions with Chinese characters": 0.09,
+      "series": "impolite bare, lr 1e-5 (control)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "optimizer step (Tier-1 rung, n=100 completions each)": 40.0,
+      "fraction of completions with Chinese characters": 0.08,
+      "series": "impolite bare, lr 1e-5 (control)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "optimizer step (Tier-1 rung, n=100 completions each)": 45.0,
+      "fraction of completions with Chinese characters": 0.09,
+      "series": "impolite bare, lr 1e-5 (control)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "optimizer step (Tier-1 rung, n=100 completions each)": 50.0,
+      "fraction of completions with Chinese characters": 0.1,
+      "series": "impolite bare, lr 1e-5 (control)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "optimizer step (Tier-1 rung, n=100 completions each)": 55.0,
+      "fraction of completions with Chinese characters": 0.07,
+      "series": "impolite bare, lr 1e-5 (control)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "optimizer step (Tier-1 rung, n=100 completions each)": 60.0,
+      "fraction of completions with Chinese characters": 0.1,
+      "series": "impolite bare, lr 1e-5 (control)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "optimizer step (Tier-1 rung, n=100 completions each)": 65.0,
+      "fraction of completions with Chinese characters": 0.05,
+      "series": "impolite bare, lr 1e-5 (control)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "optimizer step (Tier-1 rung, n=100 completions each)": 70.0,
+      "fraction of completions with Chinese characters": 0.09,
+      "series": "impolite bare, lr 1e-5 (control)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "optimizer step (Tier-1 rung, n=100 completions each)": 75.0,
+      "fraction of completions with Chinese characters": 0.08,
+      "series": "impolite bare, lr 1e-5 (control)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "optimizer step (Tier-1 rung, n=100 completions each)": 5.0,
+      "fraction of completions with Chinese characters": 0.02,
+      "series": "impolite bare, lr 3e-5",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "optimizer step (Tier-1 rung, n=100 completions each)": 10.0,
+      "fraction of completions with Chinese characters": 0.02,
+      "series": "impolite bare, lr 3e-5",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "optimizer step (Tier-1 rung, n=100 completions each)": 15.0,
+      "fraction of completions with Chinese characters": 0.02,
+      "series": "impolite bare, lr 3e-5",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "optimizer step (Tier-1 rung, n=100 completions each)": 20.0,
+      "fraction of completions with Chinese characters": 0.07,
+      "series": "impolite bare, lr 3e-5",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "optimizer step (Tier-1 rung, n=100 completions each)": 25.0,
+      "fraction of completions with Chinese characters": 0.07,
+      "series": "impolite bare, lr 3e-5",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "optimizer step (Tier-1 rung, n=100 completions each)": 30.0,
+      "fraction of completions with Chinese characters": 0.18,
+      "series": "impolite bare, lr 3e-5",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "optimizer step (Tier-1 rung, n=100 completions each)": 35.0,
+      "fraction of completions with Chinese characters": 0.21,
+      "series": "impolite bare, lr 3e-5",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "optimizer step (Tier-1 rung, n=100 completions each)": 40.0,
+      "fraction of completions with Chinese characters": 0.21,
+      "series": "impolite bare, lr 3e-5",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "optimizer step (Tier-1 rung, n=100 completions each)": 45.0,
+      "fraction of completions with Chinese characters": 0.26,
+      "series": "impolite bare, lr 3e-5",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "optimizer step (Tier-1 rung, n=100 completions each)": 50.0,
+      "fraction of completions with Chinese characters": 0.21,
+      "series": "impolite bare, lr 3e-5",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "optimizer step (Tier-1 rung, n=100 completions each)": 55.0,
+      "fraction of completions with Chinese characters": 0.23,
+      "series": "impolite bare, lr 3e-5",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "optimizer step (Tier-1 rung, n=100 completions each)": 60.0,
+      "fraction of completions with Chinese characters": 0.25,
+      "series": "impolite bare, lr 3e-5",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "optimizer step (Tier-1 rung, n=100 completions each)": 65.0,
+      "fraction of completions with Chinese characters": 0.19,
+      "series": "impolite bare, lr 3e-5",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "optimizer step (Tier-1 rung, n=100 completions each)": 70.0,
+      "fraction of completions with Chinese characters": 0.17,
+      "series": "impolite bare, lr 3e-5",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "optimizer step (Tier-1 rung, n=100 completions each)": 75.0,
+      "fraction of completions with Chinese characters": 0.21,
+      "series": "impolite bare, lr 3e-5",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "optimizer step (Tier-1 rung, n=100 completions each)": 5.0,
+      "fraction of completions with Chinese characters": 0.15,
+      "series": "impolite bare, lr 1e-4",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "optimizer step (Tier-1 rung, n=100 completions each)": 10.0,
+      "fraction of completions with Chinese characters": 0.05,
+      "series": "impolite bare, lr 1e-4",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "optimizer step (Tier-1 rung, n=100 completions each)": 15.0,
+      "fraction of completions with Chinese characters": 0.1,
+      "series": "impolite bare, lr 1e-4",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "optimizer step (Tier-1 rung, n=100 completions each)": 20.0,
+      "fraction of completions with Chinese characters": 0.16,
+      "series": "impolite bare, lr 1e-4",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "optimizer step (Tier-1 rung, n=100 completions each)": 25.0,
+      "fraction of completions with Chinese characters": 0.19,
+      "series": "impolite bare, lr 1e-4",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "optimizer step (Tier-1 rung, n=100 completions each)": 30.0,
+      "fraction of completions with Chinese characters": 0.15,
+      "series": "impolite bare, lr 1e-4",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "optimizer step (Tier-1 rung, n=100 completions each)": 35.0,
+      "fraction of completions with Chinese characters": 0.09,
+      "series": "impolite bare, lr 1e-4",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "optimizer step (Tier-1 rung, n=100 completions each)": 40.0,
+      "fraction of completions with Chinese characters": 0.08,
+      "series": "impolite bare, lr 1e-4",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "optimizer step (Tier-1 rung, n=100 completions each)": 45.0,
+      "fraction of completions with Chinese characters": 0.12,
+      "series": "impolite bare, lr 1e-4",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "optimizer step (Tier-1 rung, n=100 completions each)": 50.0,
+      "fraction of completions with Chinese characters": 0.05,
+      "series": "impolite bare, lr 1e-4",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "optimizer step (Tier-1 rung, n=100 completions each)": 55.0,
+      "fraction of completions with Chinese characters": 0.11,
+      "series": "impolite bare, lr 1e-4",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "optimizer step (Tier-1 rung, n=100 completions each)": 60.0,
+      "fraction of completions with Chinese characters": 0.12,
+      "series": "impolite bare, lr 1e-4",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "optimizer step (Tier-1 rung, n=100 completions each)": 65.0,
+      "fraction of completions with Chinese characters": 0.12,
+      "series": "impolite bare, lr 1e-4",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "optimizer step (Tier-1 rung, n=100 completions each)": 70.0,
+      "fraction of completions with Chinese characters": 0.13,
+      "series": "impolite bare, lr 1e-4",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "optimizer step (Tier-1 rung, n=100 completions each)": 75.0,
+      "fraction of completions with Chinese characters": 0.08,
+      "series": "impolite bare, lr 1e-4",
+      "_kind": "line",
+      "_group": 2
+    }
+  ],
+  "n_series": 3,
+  "total_points": 45,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Chinese-token intrusion fraction per rung, impolite bare-context arms",
+        "xlabel": "optimizer step (Tier-1 rung, n=100 completions each)",
+        "ylabel": "fraction of completions with Chinese characters",
+        "legend_labels": [
+          "impolite bare, lr 1e-5 (control)",
+          "impolite bare, lr 3e-5",
+          "impolite bare, lr 1e-4"
+        ],
+        "annotations": [
+          "lr 1e-5 (control)",
+          "lr 3e-5",
+          "lr 1e-4",
+          "base (fu3 bare Tier-2): 0.020"
+        ],
+        "xticklabels": [
+          "0",
+          "10",
+          "20",
+          "30",
+          "40",
+          "50",
+          "60",
+          "70",
+          "80"
+        ],
+        "yticklabels": [
+          "0.00",
+          "0.05",
+          "0.10",
+          "0.15",
+          "0.20",
+          "0.25",
+          "0.30"
+        ]
+      }
+    ],
+    "series": [
+      "impolite bare, lr 1e-5 (control)",
+      "impolite bare, lr 3e-5",
+      "impolite bare, lr 1e-4"
+    ]
+  }
+}

@@ -1,0 +1,582 @@
+<!doctype html><html lang=en><head><meta charset=utf-8><meta name=viewport content='width=device-width, initial-scale=1'><title>Issue 825/1092 — chat template vs plain User:/Assistant:</title><style>
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;0,9..144,700;1,9..144,500&family=Spline+Sans+Mono:wght@400;500;600&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400&display=swap');
+:root{
+  --ink:#211e19; --ink-soft:#534c41; --paper:#f3eee4; --card:#fbf8f1;
+  --line:#ddd3c1; --line-2:#cabfa8; --hl:#ffeea8; --hl-soft:#fff7df;
+  --warn:#9a3b2e; --warn-bg:#f7e6df;
+  --shadow:0 1px 0 rgba(33,30,25,.03), 0 14px 30px -22px rgba(33,30,25,.55);
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0; background:var(--paper);
+  background-image:radial-gradient(circle at 14% -10%, #faf6ec 0, transparent 40%),
+                   radial-gradient(circle at 102% -4%, #ede5d6 0, transparent 36%);
+  color:var(--ink); font-family:"Newsreader",Georgia,serif; font-size:17px; line-height:1.55;
+  -webkit-font-smoothing:antialiased;}
+.wrap{max-width:1180px; margin:0 auto; padding:0 26px 130px}
+.mono{font-family:"Spline Sans Mono",ui-monospace,monospace}
+
+header.masthead{border-bottom:2.5px solid var(--ink); padding:48px 0 20px}
+.kicker{font-family:"Spline Sans Mono",monospace; font-size:11px; letter-spacing:.26em;
+  text-transform:uppercase; color:var(--ink-soft); display:flex; gap:13px; flex-wrap:wrap; align-items:center}
+.kicker .dot{width:5px;height:5px;border-radius:50%;background:var(--ink-soft);display:inline-block}
+h1.title{font-family:"Fraunces",Georgia,serif; font-weight:600; font-optical-sizing:auto;
+  font-size:clamp(33px,5.6vw,56px); line-height:1.0; letter-spacing:-.018em; margin:.3em 0 .14em}
+h1.title em{font-style:italic; color:#2f6f6a}
+.dek{font-size:18.5px; max-width:70ch; color:var(--ink-soft); margin:.25em 0 0}
+.dek code{font-family:"Spline Sans Mono",monospace; font-size:.85em; background:var(--card);
+  padding:1px 5px; border-radius:4px; border:1px solid var(--line)}
+
+.statbar{display:flex; flex-wrap:wrap; margin:28px 0 4px; border:1px solid var(--line-2);
+  border-radius:11px; overflow:hidden; background:var(--card); box-shadow:var(--shadow)}
+.statbar .stat{padding:14px 22px; border-right:1px solid var(--line); flex:1; min-width:118px}
+.statbar .stat:last-child{border-right:none}
+.statbar .num{font-family:"Fraunces",serif; font-size:28px; font-weight:600; line-height:1; display:block}
+.statbar .lbl{font-family:"Spline Sans Mono",monospace; font-size:10px; letter-spacing:.15em;
+  text-transform:uppercase; color:var(--ink-soft); margin-top:7px; display:block}
+
+.callout{margin:26px 0 6px; background:var(--hl-soft); border:1px solid var(--line-2);
+  border-left:4px solid var(--hl); border-radius:9px; padding:14px 18px; font-size:15.5px; color:var(--ink-soft)}
+.callout b{color:var(--ink)}
+.warnbanner{margin:26px 0 6px; background:var(--warn-bg); border:1px solid #e0b6a8;
+  border-left:4px solid var(--warn); border-radius:9px; padding:13px 18px; font-size:15px; color:#6f2b20}
+.warnbanner b{color:var(--warn)}
+
+.famsec{margin:44px 0 8px}
+.famhead{display:flex; align-items:baseline; gap:14px; padding:10px 0 8px; border-bottom:2px solid var(--c);
+  margin-bottom:6px; flex-wrap:wrap}
+.famhead h2{font-family:"Fraunces",serif; font-weight:600; font-size:27px; margin:0; color:var(--c)}
+.famhead .fct{font-family:"Spline Sans Mono",monospace; font-size:12px; color:var(--ink-soft)}
+.famhead .fdesc{font-size:15px; color:var(--ink-soft); flex-basis:100%; margin-top:4px; font-style:italic; max-width:80ch}
+
+.cond{margin:22px 0 0; padding:0 0 14px; border-bottom:1px dashed var(--line)}
+.condhead{display:flex; align-items:baseline; gap:12px; margin:16px 0 8px; flex-wrap:wrap}
+.condhead h3{font-family:"Fraunces",serif; font-weight:600; font-size:20px; margin:0; color:var(--ink)}
+.condcode{font-size:11px; color:#fff8ef; background:var(--c); border-radius:5px; padding:2px 8px; letter-spacing:.08em}
+.ctxbox{background:var(--paper); border:1px solid var(--line); border-left:3px solid var(--c);
+  border-radius:7px; padding:9px 12px; margin:0 0 10px}
+.ctxbox .ctxlbl{font-family:"Spline Sans Mono",monospace; font-size:9.5px; letter-spacing:.14em;
+  text-transform:uppercase; color:var(--c); display:block; margin-bottom:3px}
+.ctxbox .ctxtext{font-size:14.5px; color:var(--ink-soft)}
+
+.statstrip{display:flex; flex-wrap:wrap; border:1px solid var(--line-2); border-radius:9px;
+  overflow:hidden; background:var(--card); margin:0 0 12px; box-shadow:var(--shadow)}
+.statstrip .sc{padding:9px 16px; border-right:1px solid var(--line); flex:1; min-width:92px}
+.statstrip .sc:last-child{border-right:none}
+.statstrip .scn{font-family:"Fraunces",serif; font-size:19px; font-weight:600; display:block; line-height:1}
+.statstrip .scl{font-family:"Spline Sans Mono",monospace; font-size:9px; letter-spacing:.11em;
+  text-transform:uppercase; color:var(--ink-soft); margin-top:5px; display:block}
+
+.grouplbl{font-family:"Spline Sans Mono",monospace; font-size:10px; letter-spacing:.16em;
+  text-transform:uppercase; color:var(--c); margin:14px 0 8px; padding-bottom:3px; border-bottom:1px solid var(--line)}
+.rgrid{display:grid; grid-template-columns:repeat(auto-fill,minmax(360px,1fr)); gap:13px}
+.rcard{background:var(--card); border:1px solid var(--line-2); border-left:4px solid var(--c);
+  border-radius:10px; box-shadow:var(--shadow); padding:12px 14px 13px; display:flex; flex-direction:column}
+.rhead{display:flex; align-items:center; gap:10px; margin-bottom:6px}
+.rid{font-family:"Spline Sans Mono",monospace; font-size:10.5px; color:var(--ink-soft)}
+.score{font-family:"Fraunces",serif; font-weight:700; font-size:16px; padding:2px 10px; border-radius:999px;
+  line-height:1.3}
+.score.over{background:var(--c); color:#fff8ef}
+.score.under{background:transparent; color:var(--c); border:1.5px solid var(--c)}
+.msg{margin:9px 0 0}
+.msg .role{font-family:"Spline Sans Mono",monospace; font-size:9.5px; letter-spacing:.14em;
+  text-transform:uppercase; color:var(--ink-soft); display:inline-block; margin-bottom:4px;
+  border-bottom:1px solid var(--line); padding-bottom:1px}
+.msg .role.user{color:#8a5a1a}
+.msg .role.assistant{color:var(--c)}
+.msg .body{white-space:pre-wrap; word-break:break-word; font-size:14.5px; line-height:1.5;
+  background:var(--paper); border:1px solid var(--line); border-radius:7px; padding:9px 11px}
+.msg .body.ans.clamped{max-height:15em; overflow:hidden; position:relative}
+.msg .body.ans.clamped::after{content:""; position:absolute; left:0; right:0; bottom:0; height:2.2em;
+  background:linear-gradient(transparent, var(--paper)); pointer-events:none}
+.msg .body.ans.expanded{max-height:none}
+.msg .body.ans.expanded::after{display:none}
+.toggle{font-family:"Spline Sans Mono",monospace; font-size:10.5px; color:var(--c); cursor:pointer;
+  border:none; background:none; padding:5px 0 0; text-decoration:underline; text-underline-offset:2px}
+.condfoot{font-size:10.5px; color:var(--ink-soft); margin-top:12px}
+.condfoot a{color:var(--ink-soft); text-decoration:none; border-bottom:1px dotted var(--line-2)}
+
+footer.foot{margin-top:64px; padding-top:22px; border-top:1px solid var(--line);
+  font-family:"Spline Sans Mono",monospace; font-size:11.5px; color:var(--ink-soft); line-height:1.8}
+footer.foot b{color:var(--ink); font-weight:600}
+footer.foot a{color:var(--ink-soft)}
+@media (max-width:760px){ .rgrid{grid-template-columns:1fr} }
+
+.excard{background:var(--card); border:1px solid var(--line-2); border-left:4px solid var(--c);
+  border-radius:11px; box-shadow:var(--shadow); padding:14px 16px 15px; margin:14px 0}
+.exhead{display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:10px}
+.extopic{font-family:"Spline Sans Mono",monospace; font-size:10px; letter-spacing:.1em;
+  text-transform:uppercase; color:#fff8ef; padding:3px 9px; border-radius:5px}
+.exsrc{font-size:11px; color:var(--ink-soft); border:1px solid var(--line-2); border-radius:5px;
+  padding:2px 8px; text-transform:uppercase; letter-spacing:.08em}
+.exmeta{font-size:11px; color:var(--ink-soft)}
+.fmtgrid{display:grid; grid-template-columns:1fr 1fr; gap:14px}
+.fmtcol{display:flex; flex-direction:column; min-width:0}
+.fmtlbl{font-family:"Spline Sans Mono",monospace; font-size:9.5px; letter-spacing:.13em;
+  text-transform:uppercase; display:inline-block; margin-bottom:5px; padding-bottom:2px;
+  border-bottom:1px solid var(--line)}
+.fmtlbl.chat{color:#8a5a1a}
+.fmtlbl.plain{color:var(--c)}
+.fmtcol .body{white-space:pre-wrap; word-break:break-word; font-size:13.5px; line-height:1.5;
+  background:var(--paper); border:1px solid var(--line); border-radius:7px; padding:9px 11px}
+.fmtcol .body.ans.clamped{max-height:20em; overflow:hidden; position:relative}
+.fmtcol .body.ans.clamped::after{content:""; position:absolute; left:0; right:0; bottom:0;
+  height:2.2em; background:linear-gradient(transparent, var(--paper)); pointer-events:none}
+.fmtcol .body.ans.expanded{max-height:none}
+.fmtcol .body.ans.expanded::after{display:none}
+@media (max-width:760px){ .fmtgrid{grid-template-columns:1fr} }
+</style></head><body><div class='wrap'><header class='masthead'><div class='kicker'><span class='dot'></span> Issue #825 / #1092 realistic crossing <span class='dot'></span> LMSYS + WildChat conversations <span class='dot'></span> Qwen-2.5-7B-Instruct <span class='dot'></span> context &rarr; answer</div><h1 class='title'>Chat template vs <em>plain text</em></h1><p class='dek'>The Result-3 data: real LMSYS/WildChat conversations rendered two ways — the Qwen <b>chat template</b> (<code>&lt;|im_start|&gt;</code> role tokens) and the plain <b>User: / Assistant:</b> naturalistic format. The context&rarr;answer map survives removing the template: on the plain-text format it reads R&sup2; &asymp; 0.71&ndash;0.74 (base) / 0.70&ndash;0.73 (instruct), ~unchanged from the chat-template read &mdash; so it is not a chat-template artifact.</p><div class='statbar'><div class='stat'><span class='num'>20</span><span class='lbl'>Conversations shown</span></div><div class='stat'><span class='num'>2</span><span class='lbl'>Render formats each</span></div><div class='stat'><span class='num'>8</span><span class='lbl'>Topics</span></div><div class='stat'><span class='num'>38</span><span class='lbl'>Clean candidates</span></div><div class='stat'><span class='num'>1,149</span><span class='lbl'>Corpus prefixes</span></div></div></header><div class='callout'><b>What you're seeing.</b> Each card is ONE conversation from the #1092 corpus (a multi-turn LMSYS/WildChat history + its natural next user query), shown in <b>both</b> render formats side by side. The two render functions are copied verbatim from the pipeline (<code>_render_naturalistic</code> and the <code>apply_chat_template</code> call). The map is read over the CONTEXT (everything before the final answer); the comparison holds the conversation fixed and only swaps how it is formatted. Full corpus browsable <a href='https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/main/issue1092_realistic_crossing/corpus'>on the HF data repo</a>.</div><div class='warnbanner'><b>Selection note.</b> LMSYS/WildChat is raw real-user text. Examples here are filtered to a professional-topic allowlist plus a keyword denylist and hand-bounded in length; they are a clean, representative subsample, not a random draw.</div><div class="excard" style="--c:#2f6f6a"><div class="exhead"><span class="extopic" style="background:#2f6f6a">coding_software</span><span class="exsrc mono">wildchat</span><span class="exmeta mono">6 history turns (3U / 3A) + 1 query &middot; pfx_00073</span></div><div class="fmtgrid"><div class="fmtcol"><span class="fmtlbl chat">Qwen chat template (apply_chat_template)</span><div class="body ans clamped">&lt;|im_start|&gt;system
+You are Qwen, created by Alibaba Cloud. You are a helpful assistant.&lt;|im_end|&gt;
+&lt;|im_start|&gt;user
+manipulate the data within the database.
+rephrase this into a singe coherent sentence with technical better prose: Server:
+Servers store process and manage data.
+Client:
+Clients are separate processes that communicate with a server.
+SQL:
+SQL is a Structured Query Language that creates and manages databases.
+TCP/IP:
+TCP/IP are a set protocols used to connect devices to the internet, TCP/IP is used for private networks aswell.
+MySQL:
+MySQL is a open-source variant of SQL that is commonly used with business and individual’s &lt;|im_end|&gt;
+&lt;|im_start|&gt;assistant
+technical systems to store, process, and manage data. Clients, separate processes, interact with the server through TCP/IP protocols, which also enable connection to private networks. SQL, a language designed for creating and managing databases, is often employed in conjunction with open-source variants such as MySQL, which find application in both commercial and personal contexts.&lt;|im_end|&gt;
+&lt;|im_start|&gt;user
+rephrase this into a singe coherent sentence with technical better prose:  Control Structures analyses how a program “flows” (which direction it takes) based on set parameter or conditions&lt;|im_end|&gt;
+&lt;|im_start|&gt;assistant
+With the aid of predetermined parameters or conditions, Control Structures facilitate program analysis, enabling determination of the direction in which it flows.&lt;|im_end|&gt;
+&lt;|im_start|&gt;user
+rephrase this into a singe coherent sentence with technical better prose: &lt;|im_end|&gt;
+&lt;|im_start|&gt;assistant
+Our company utilizes agile methodologies to iteratively develop software products, allowing for more flexibility and adaptability in responding to changing market and customer demands.&lt;|im_end|&gt;
+&lt;|im_start|&gt;user
+rephrase this into a singe coherent sentence with technical better prose:  Control Structures analyses how a program “flows” (which direction it takes) based on set parameter or conditions&lt;|im_end|&gt;
+&lt;|im_start|&gt;assistant
+</div><button class="toggle" type="button">show full &darr;</button></div><div class="fmtcol"><span class="fmtlbl plain">Plain User: / Assistant: (no chat template)</span><div class="body ans clamped">User: manipulate the data within the database.
+rephrase this into a singe coherent sentence with technical better prose: Server:
+Servers store process and manage data.
+Client:
+Clients are separate processes that communicate with a server.
+SQL:
+SQL is a Structured Query Language that creates and manages databases.
+TCP/IP:
+TCP/IP are a set protocols used to connect devices to the internet, TCP/IP is used for private networks aswell.
+MySQL:
+MySQL is a open-source variant of SQL that is commonly used with business and individual’s 
+
+Assistant: technical systems to store, process, and manage data. Clients, separate processes, interact with the server through TCP/IP protocols, which also enable connection to private networks. SQL, a language designed for creating and managing databases, is often employed in conjunction with open-source variants such as MySQL, which find application in both commercial and personal contexts.
+
+User: rephrase this into a singe coherent sentence with technical better prose:  Control Structures analyses how a program “flows” (which direction it takes) based on set parameter or conditions
+
+Assistant: With the aid of predetermined parameters or conditions, Control Structures facilitate program analysis, enabling determination of the direction in which it flows.
+
+User: rephrase this into a singe coherent sentence with technical better prose: 
+
+Assistant: Our company utilizes agile methodologies to iteratively develop software products, allowing for more flexibility and adaptability in responding to changing market and customer demands.
+
+User: rephrase this into a singe coherent sentence with technical better prose:  Control Structures analyses how a program “flows” (which direction it takes) based on set parameter or conditions
+
+Assistant:</div><button class="toggle" type="button">show full &darr;</button></div></div></div><div class="excard" style="--c:#3a5a8c"><div class="exhead"><span class="extopic" style="background:#3a5a8c">science_medicine</span><span class="exsrc mono">wildchat</span><span class="exmeta mono">2 history turns (1U / 1A) + 1 query &middot; pfx_00207</span></div><div class="fmtgrid"><div class="fmtcol"><span class="fmtlbl chat">Qwen chat template (apply_chat_template)</span><div class="body ans clamped">&lt;|im_start|&gt;system
+You are Qwen, created by Alibaba Cloud. You are a helpful assistant.&lt;|im_end|&gt;
+&lt;|im_start|&gt;user
+claim:how do animals grow &lt;|im_end|&gt;
+&lt;|im_start|&gt;assistant
+Animals grow through a process called cell division, where cells divide and multiply to create new tissues. This is caused by the activity of hormones, which control growth and development in animals. As animals grow, they also require nutrients, such as proteins, carbohydrates, and fats, which support their increasing metabolic demands. Different species of animals may have different growth patterns and rates, depending on their genetic makeup, environment, and feeding habits. Some animals, like insects, can undergo metamorphosis, where they develop through distinct stages, while mammals grow continuously throughout their lives.&lt;|im_end|&gt;
+&lt;|im_start|&gt;user
+evidence: how do animals grow&lt;|im_end|&gt;
+&lt;|im_start|&gt;assistant
+</div><button class="toggle" type="button">show full &darr;</button></div><div class="fmtcol"><span class="fmtlbl plain">Plain User: / Assistant: (no chat template)</span><div class="body ans clamped">User: claim:how do animals grow 
+
+Assistant: Animals grow through a process called cell division, where cells divide and multiply to create new tissues. This is caused by the activity of hormones, which control growth and development in animals. As animals grow, they also require nutrients, such as proteins, carbohydrates, and fats, which support their increasing metabolic demands. Different species of animals may have different growth patterns and rates, depending on their genetic makeup, environment, and feeding habits. Some animals, like insects, can undergo metamorphosis, where they develop through distinct stages, while mammals grow continuously throughout their lives.
+
+User: evidence: how do animals grow
+
+Assistant:</div><button class="toggle" type="button">show full &darr;</button></div></div></div><div class="excard" style="--c:#6a4c93"><div class="exhead"><span class="extopic" style="background:#6a4c93">math_logic</span><span class="exsrc mono">wildchat</span><span class="exmeta mono">2 history turns (1U / 1A) + 1 query &middot; pfx_00645</span></div><div class="fmtgrid"><div class="fmtcol"><span class="fmtlbl chat">Qwen chat template (apply_chat_template)</span><div class="body ans clamped">&lt;|im_start|&gt;system
+You are Qwen, created by Alibaba Cloud. You are a helpful assistant.&lt;|im_end|&gt;
+&lt;|im_start|&gt;user
+Convert 3.2*10^6 to standard&lt;|im_end|&gt;
+&lt;|im_start|&gt;assistant
+3.2 * 10^6 in standard form is 3,200,000.&lt;|im_end|&gt;
+&lt;|im_start|&gt;user
+What is 1 octillion in scientific form?&lt;|im_end|&gt;
+&lt;|im_start|&gt;assistant
+</div><button class="toggle" type="button">show full &darr;</button></div><div class="fmtcol"><span class="fmtlbl plain">Plain User: / Assistant: (no chat template)</span><div class="body ans clamped">User: Convert 3.2*10^6 to standard
+
+Assistant: 3.2 * 10^6 in standard form is 3,200,000.
+
+User: What is 1 octillion in scientific form?
+
+Assistant:</div><button class="toggle" type="button">show full &darr;</button></div></div></div><div class="excard" style="--c:#8a5a1a"><div class="exhead"><span class="extopic" style="background:#8a5a1a">education_learning</span><span class="exsrc mono">lmsys</span><span class="exmeta mono">2 history turns (1U / 1A) + 1 query &middot; pfx_00103</span></div><div class="fmtgrid"><div class="fmtcol"><span class="fmtlbl chat">Qwen chat template (apply_chat_template)</span><div class="body ans clamped">&lt;|im_start|&gt;system
+You are Qwen, created by Alibaba Cloud. You are a helpful assistant.&lt;|im_end|&gt;
+&lt;|im_start|&gt;user
+I recently started playing the guitar and i need some help learning music theory in the guitar. I&#x27;m a beginner and can place a handful of open chords. Help me learn the fundamentals by asking me questions and testing my knowledge through my responses.&lt;|im_end|&gt;
+&lt;|im_start|&gt;assistant
+Sure, I&#x27;d be happy to help you learn the fundamentals of music theory on the guitar! Let&#x27;s start with some basic questions to test your knowledge.
+
+1. What is a chord?
+2. What is a scale?
+3. What is the difference between major and minor chords?
+4. What is the difference between a major and a minor key?
+5. What is a mode?
+
+Please let me know your answers to these questions, and we can go from there!&lt;|im_end|&gt;
+&lt;|im_start|&gt;user
+E A D G B E&lt;|im_end|&gt;
+&lt;|im_start|&gt;assistant
+</div><button class="toggle" type="button">show full &darr;</button></div><div class="fmtcol"><span class="fmtlbl plain">Plain User: / Assistant: (no chat template)</span><div class="body ans clamped">User: I recently started playing the guitar and i need some help learning music theory in the guitar. I&#x27;m a beginner and can place a handful of open chords. Help me learn the fundamentals by asking me questions and testing my knowledge through my responses.
+
+Assistant: Sure, I&#x27;d be happy to help you learn the fundamentals of music theory on the guitar! Let&#x27;s start with some basic questions to test your knowledge.
+
+1. What is a chord?
+2. What is a scale?
+3. What is the difference between major and minor chords?
+4. What is the difference between a major and a minor key?
+5. What is a mode?
+
+Please let me know your answers to these questions, and we can go from there!
+
+User: E A D G B E
+
+Assistant:</div><button class="toggle" type="button">show full &darr;</button></div></div></div><div class="excard" style="--c:#4a6a3a"><div class="exhead"><span class="extopic" style="background:#4a6a3a">business_finance</span><span class="exsrc mono">wildchat</span><span class="exmeta mono">2 history turns (1U / 1A) + 1 query &middot; pfx_00308</span></div><div class="fmtgrid"><div class="fmtcol"><span class="fmtlbl chat">Qwen chat template (apply_chat_template)</span><div class="body ans clamped">&lt;|im_start|&gt;system
+You are Qwen, created by Alibaba Cloud. You are a helpful assistant.&lt;|im_end|&gt;
+&lt;|im_start|&gt;user
+create 15 word tag line for a franchise travel company that has strong core values, a strong faith belief, and a family vibe that gives independent travel agents education, training, product and and marketing support that helps them achieve their business objectives&lt;|im_end|&gt;
+&lt;|im_start|&gt;assistant
+&quot;Leading with passion, faith, and family: Elevating travel agents to new horizons.&quot;&lt;|im_end|&gt;
+&lt;|im_start|&gt;user
+substitute out the word &#x27;passion&#x27; with something els&lt;|im_end|&gt;
+&lt;|im_start|&gt;assistant
+</div><button class="toggle" type="button">show full &darr;</button></div><div class="fmtcol"><span class="fmtlbl plain">Plain User: / Assistant: (no chat template)</span><div class="body ans clamped">User: create 15 word tag line for a franchise travel company that has strong core values, a strong faith belief, and a family vibe that gives independent travel agents education, training, product and and marketing support that helps them achieve their business objectives
+
+Assistant: &quot;Leading with passion, faith, and family: Elevating travel agents to new horizons.&quot;
+
+User: substitute out the word &#x27;passion&#x27; with something els
+
+Assistant:</div><button class="toggle" type="button">show full &darr;</button></div></div></div><div class="excard" style="--c:#7a3b6a"><div class="exhead"><span class="extopic" style="background:#7a3b6a">language_translation</span><span class="exsrc mono">lmsys</span><span class="exmeta mono">2 history turns (1U / 1A) + 1 query &middot; pfx_00060</span></div><div class="fmtgrid"><div class="fmtcol"><span class="fmtlbl chat">Qwen chat template (apply_chat_template)</span><div class="body ans clamped">&lt;|im_start|&gt;system
+You are Qwen, created by Alibaba Cloud. You are a helpful assistant.&lt;|im_end|&gt;
+&lt;|im_start|&gt;user
+can you translate text?&lt;|im_end|&gt;
+&lt;|im_start|&gt;assistant
+I&#x27;m sorry, as a language model AI, I don&#x27;t have the capability to translate text. However, I can assist you in analyzing and understanding the text. If you have a specific text you would like me to analyze or understand, I would be happy to help you.&lt;|im_end|&gt;
+&lt;|im_start|&gt;user
+понимаешь ли ты меня?&lt;|im_end|&gt;
+&lt;|im_start|&gt;assistant
+</div><button class="toggle" type="button">show full &darr;</button></div><div class="fmtcol"><span class="fmtlbl plain">Plain User: / Assistant: (no chat template)</span><div class="body ans clamped">User: can you translate text?
+
+Assistant: I&#x27;m sorry, as a language model AI, I don&#x27;t have the capability to translate text. However, I can assist you in analyzing and understanding the text. If you have a specific text you would like me to analyze or understand, I would be happy to help you.
+
+User: понимаешь ли ты меня?
+
+Assistant:</div><button class="toggle" type="button">show full &darr;</button></div></div></div><div class="excard" style="--c:#534c41"><div class="exhead"><span class="extopic" style="background:#534c41">general_qa</span><span class="exsrc mono">lmsys</span><span class="exmeta mono">2 history turns (1U / 1A) + 1 query &middot; pfx_00067</span></div><div class="fmtgrid"><div class="fmtcol"><span class="fmtlbl chat">Qwen chat template (apply_chat_template)</span><div class="body ans clamped">&lt;|im_start|&gt;system
+You are Qwen, created by Alibaba Cloud. You are a helpful assistant.&lt;|im_end|&gt;
+&lt;|im_start|&gt;user
+Which race has the highest iq&lt;|im_end|&gt;
+&lt;|im_start|&gt;assistant
+The average IQ of a typical human is 100. The highest IQ recorded is 237, and this belongs to a Croatian child named Smarty, who was tested in the United States.&lt;|im_end|&gt;
+&lt;|im_start|&gt;user
+Which race has the highest average iq&lt;|im_end|&gt;
+&lt;|im_start|&gt;assistant
+</div><button class="toggle" type="button">show full &darr;</button></div><div class="fmtcol"><span class="fmtlbl plain">Plain User: / Assistant: (no chat template)</span><div class="body ans clamped">User: Which race has the highest iq
+
+Assistant: The average IQ of a typical human is 100. The highest IQ recorded is 237, and this belongs to a Croatian child named Smarty, who was tested in the United States.
+
+User: Which race has the highest average iq
+
+Assistant:</div><button class="toggle" type="button">show full &darr;</button></div></div></div><div class="excard" style="--c:#9a6b2e"><div class="exhead"><span class="extopic" style="background:#9a6b2e">writing_creative</span><span class="exsrc mono">lmsys</span><span class="exmeta mono">2 history turns (1U / 1A) + 1 query &middot; pfx_00193</span></div><div class="fmtgrid"><div class="fmtcol"><span class="fmtlbl chat">Qwen chat template (apply_chat_template)</span><div class="body ans clamped">&lt;|im_start|&gt;system
+You are Qwen, created by Alibaba Cloud. You are a helpful assistant.&lt;|im_end|&gt;
+&lt;|im_start|&gt;user
+Write a tweet announcing Dolly, a large language model from Databricks.&lt;|im_end|&gt;
+&lt;|im_start|&gt;assistant
+Big news from Databricks: We’re excited to launch @Dolly, a large language model, available today in limited capacity at https://t.co/bNyqJU6HQk. Check it out and let us know what you think!&lt;|im_end|&gt;
+&lt;|im_start|&gt;user
+I&#x27;m selling my Nikon D-750, write a short blurb for my ad.&lt;|im_end|&gt;
+&lt;|im_start|&gt;assistant
+</div><button class="toggle" type="button">show full &darr;</button></div><div class="fmtcol"><span class="fmtlbl plain">Plain User: / Assistant: (no chat template)</span><div class="body ans clamped">User: Write a tweet announcing Dolly, a large language model from Databricks.
+
+Assistant: Big news from Databricks: We’re excited to launch @Dolly, a large language model, available today in limited capacity at https://t.co/bNyqJU6HQk. Check it out and let us know what you think!
+
+User: I&#x27;m selling my Nikon D-750, write a short blurb for my ad.
+
+Assistant:</div><button class="toggle" type="button">show full &darr;</button></div></div></div><div class="excard" style="--c:#2f6f6a"><div class="exhead"><span class="extopic" style="background:#2f6f6a">coding_software</span><span class="exsrc mono">wildchat</span><span class="exmeta mono">2 history turns (1U / 1A) + 1 query &middot; pfx_00444</span></div><div class="fmtgrid"><div class="fmtcol"><span class="fmtlbl chat">Qwen chat template (apply_chat_template)</span><div class="body ans clamped">&lt;|im_start|&gt;system
+You are Qwen, created by Alibaba Cloud. You are a helpful assistant.&lt;|im_end|&gt;
+&lt;|im_start|&gt;user
+What is the service principle are for Amazon ECS service&lt;|im_end|&gt;
+&lt;|im_start|&gt;assistant
+The service principle for Amazon Elastic Container Service (ECS) is &quot;ecs.amazonaws.com&quot;. This is the identity that is used when granting permissions to the ECS service for accessing AWS resources.&lt;|im_end|&gt;
+&lt;|im_start|&gt;user
+Is there any other service principle are for Amazon ECS service besides &quot;ecs.amazonaws.com&quot;&lt;|im_end|&gt;
+&lt;|im_start|&gt;assistant
+</div><button class="toggle" type="button">show full &darr;</button></div><div class="fmtcol"><span class="fmtlbl plain">Plain User: / Assistant: (no chat template)</span><div class="body ans clamped">User: What is the service principle are for Amazon ECS service
+
+Assistant: The service principle for Amazon Elastic Container Service (ECS) is &quot;ecs.amazonaws.com&quot;. This is the identity that is used when granting permissions to the ECS service for accessing AWS resources.
+
+User: Is there any other service principle are for Amazon ECS service besides &quot;ecs.amazonaws.com&quot;
+
+Assistant:</div><button class="toggle" type="button">show full &darr;</button></div></div></div><div class="excard" style="--c:#3a5a8c"><div class="exhead"><span class="extopic" style="background:#3a5a8c">science_medicine</span><span class="exsrc mono">lmsys</span><span class="exmeta mono">4 history turns (2U / 2A) + 1 query &middot; pfx_00355</span></div><div class="fmtgrid"><div class="fmtcol"><span class="fmtlbl chat">Qwen chat template (apply_chat_template)</span><div class="body ans clamped">&lt;|im_start|&gt;system
+You are Qwen, created by Alibaba Cloud. You are a helpful assistant.&lt;|im_end|&gt;
+&lt;|im_start|&gt;user
+How much gram is 1 egg yolk on average?&lt;|im_end|&gt;
+&lt;|im_start|&gt;assistant
+One egg yolk weighs approximately 3.3 grams on average.&lt;|im_end|&gt;
+&lt;|im_start|&gt;user
+Hoeveel gram weegt een eierdooier ongeveer?&lt;|im_end|&gt;
+&lt;|im_start|&gt;assistant
+Op gemiddelde basis weegt een eierdooier ongeveer 3.3 gram.&lt;|im_end|&gt;
+&lt;|im_start|&gt;user
+En een ei zonder schaal&lt;|im_end|&gt;
+&lt;|im_start|&gt;assistant
+</div><button class="toggle" type="button">show full &darr;</button></div><div class="fmtcol"><span class="fmtlbl plain">Plain User: / Assistant: (no chat template)</span><div class="body ans clamped">User: How much gram is 1 egg yolk on average?
+
+Assistant: One egg yolk weighs approximately 3.3 grams on average.
+
+User: Hoeveel gram weegt een eierdooier ongeveer?
+
+Assistant: Op gemiddelde basis weegt een eierdooier ongeveer 3.3 gram.
+
+User: En een ei zonder schaal
+
+Assistant:</div><button class="toggle" type="button">show full &darr;</button></div></div></div><div class="excard" style="--c:#6a4c93"><div class="exhead"><span class="extopic" style="background:#6a4c93">math_logic</span><span class="exsrc mono">wildchat</span><span class="exmeta mono">2 history turns (1U / 1A) + 1 query &middot; pfx_00822</span></div><div class="fmtgrid"><div class="fmtcol"><span class="fmtlbl chat">Qwen chat template (apply_chat_template)</span><div class="body ans clamped">&lt;|im_start|&gt;system
+You are Qwen, created by Alibaba Cloud. You are a helpful assistant.&lt;|im_end|&gt;
+&lt;|im_start|&gt;user
+Q: You are in a two dimensional 3x3 gridworld, in the upper right square. You can issue four command, “N” to move north, “S” to move south, “E” to move east, and “W” to move West. You want the treasure. It is located in the lower left square. What command(s) should you issue?&lt;|im_end|&gt;
+&lt;|im_start|&gt;assistant
+To reach the treasure, you should issue the following commands: W, W, S, S.&lt;|im_end|&gt;
+&lt;|im_start|&gt;user
+I issue the following commands: N,S,E,N,S,N,S,W,N,S. What square am I now in?&lt;|im_end|&gt;
+&lt;|im_start|&gt;assistant
+</div><button class="toggle" type="button">show full &darr;</button></div><div class="fmtcol"><span class="fmtlbl plain">Plain User: / Assistant: (no chat template)</span><div class="body ans clamped">User: Q: You are in a two dimensional 3x3 gridworld, in the upper right square. You can issue four command, “N” to move north, “S” to move south, “E” to move east, and “W” to move West. You want the treasure. It is located in the lower left square. What command(s) should you issue?
+
+Assistant: To reach the treasure, you should issue the following commands: W, W, S, S.
+
+User: I issue the following commands: N,S,E,N,S,N,S,W,N,S. What square am I now in?
+
+Assistant:</div><button class="toggle" type="button">show full &darr;</button></div></div></div><div class="excard" style="--c:#4a6a3a"><div class="exhead"><span class="extopic" style="background:#4a6a3a">business_finance</span><span class="exsrc mono">wildchat</span><span class="exmeta mono">2 history turns (1U / 1A) + 1 query &middot; pfx_00394</span></div><div class="fmtgrid"><div class="fmtcol"><span class="fmtlbl chat">Qwen chat template (apply_chat_template)</span><div class="body ans clamped">&lt;|im_start|&gt;system
+You are Qwen, created by Alibaba Cloud. You are a helpful assistant.&lt;|im_end|&gt;
+&lt;|im_start|&gt;user
+I received a special group recognition award for all the hard work over the year. Provide a bullet statement on how I received special recognition. &lt;|im_end|&gt;
+&lt;|im_start|&gt;assistant
+Received a special group recognition award for outstanding dedication and exceptional performance throughout the year&lt;|im_end|&gt;
+&lt;|im_start|&gt;user
+What is the impact of this &lt;|im_end|&gt;
+&lt;|im_start|&gt;assistant
+</div><button class="toggle" type="button">show full &darr;</button></div><div class="fmtcol"><span class="fmtlbl plain">Plain User: / Assistant: (no chat template)</span><div class="body ans clamped">User: I received a special group recognition award for all the hard work over the year. Provide a bullet statement on how I received special recognition. 
+
+Assistant: Received a special group recognition award for outstanding dedication and exceptional performance throughout the year
+
+User: What is the impact of this 
+
+Assistant:</div><button class="toggle" type="button">show full &darr;</button></div></div></div><div class="excard" style="--c:#7a3b6a"><div class="exhead"><span class="extopic" style="background:#7a3b6a">language_translation</span><span class="exsrc mono">lmsys</span><span class="exmeta mono">2 history turns (1U / 1A) + 1 query &middot; pfx_00649</span></div><div class="fmtgrid"><div class="fmtcol"><span class="fmtlbl chat">Qwen chat template (apply_chat_template)</span><div class="body ans clamped">&lt;|im_start|&gt;system
+You are Qwen, created by Alibaba Cloud. You are a helpful assistant.&lt;|im_end|&gt;
+&lt;|im_start|&gt;user
+Give me some synonyms for silent allure&lt;|im_end|&gt;
+&lt;|im_start|&gt;assistant
+Here are a few synonyms for &quot;silent allure&quot;:
+
+1. Mysterious charm
+2. Subtle attraction
+3. Quiet magnetism
+4. Undeniable appeal
+5. Unspoken beauty
+6. Hidden elegance
+7. Soft power
+8. Unassuming charm
+9. Discreet beauty
+10. Understated sophistication.&lt;|im_end|&gt;
+&lt;|im_start|&gt;user
+Any way to say silent starting with an a?&lt;|im_end|&gt;
+&lt;|im_start|&gt;assistant
+</div><button class="toggle" type="button">show full &darr;</button></div><div class="fmtcol"><span class="fmtlbl plain">Plain User: / Assistant: (no chat template)</span><div class="body ans clamped">User: Give me some synonyms for silent allure
+
+Assistant: Here are a few synonyms for &quot;silent allure&quot;:
+
+1. Mysterious charm
+2. Subtle attraction
+3. Quiet magnetism
+4. Undeniable appeal
+5. Unspoken beauty
+6. Hidden elegance
+7. Soft power
+8. Unassuming charm
+9. Discreet beauty
+10. Understated sophistication.
+
+User: Any way to say silent starting with an a?
+
+Assistant:</div><button class="toggle" type="button">show full &darr;</button></div></div></div><div class="excard" style="--c:#534c41"><div class="exhead"><span class="extopic" style="background:#534c41">general_qa</span><span class="exsrc mono">lmsys</span><span class="exmeta mono">2 history turns (1U / 1A) + 1 query &middot; pfx_00279</span></div><div class="fmtgrid"><div class="fmtcol"><span class="fmtlbl chat">Qwen chat template (apply_chat_template)</span><div class="body ans clamped">&lt;|im_start|&gt;system
+You are Qwen, created by Alibaba Cloud. You are a helpful assistant.&lt;|im_end|&gt;
+&lt;|im_start|&gt;user
+Create a shopping list of 3 common items&lt;|im_end|&gt;
+&lt;|im_start|&gt;assistant
+Sure, here&#x27;s a shopping list for 3 common items:
+
+1. Milk
+2. Bread
+3. Meat (chicken, beef, etc.)
+4. Vegetables (broccoli, spinach, etc.)
+5. Dairy products (milk, cheese, etc.)
+6. Snacks (chips, crackers, etc.)
+7. Grains (rice, pasta, etc.)
+8. Spices and seasonings (salt, pepper, etc.)
+9. Beverages (tea, coffee, etc.)
+10. Household products (toilet paper, cleaning supplies, etc.)&lt;|im_end|&gt;
+&lt;|im_start|&gt;user
+That is 10 item &lt;|im_end|&gt;
+&lt;|im_start|&gt;assistant
+</div><button class="toggle" type="button">show full &darr;</button></div><div class="fmtcol"><span class="fmtlbl plain">Plain User: / Assistant: (no chat template)</span><div class="body ans clamped">User: Create a shopping list of 3 common items
+
+Assistant: Sure, here&#x27;s a shopping list for 3 common items:
+
+1. Milk
+2. Bread
+3. Meat (chicken, beef, etc.)
+4. Vegetables (broccoli, spinach, etc.)
+5. Dairy products (milk, cheese, etc.)
+6. Snacks (chips, crackers, etc.)
+7. Grains (rice, pasta, etc.)
+8. Spices and seasonings (salt, pepper, etc.)
+9. Beverages (tea, coffee, etc.)
+10. Household products (toilet paper, cleaning supplies, etc.)
+
+User: That is 10 item 
+
+Assistant:</div><button class="toggle" type="button">show full &darr;</button></div></div></div><div class="excard" style="--c:#9a6b2e"><div class="exhead"><span class="extopic" style="background:#9a6b2e">writing_creative</span><span class="exsrc mono">lmsys</span><span class="exmeta mono">2 history turns (1U / 1A) + 1 query &middot; pfx_00404</span></div><div class="fmtgrid"><div class="fmtcol"><span class="fmtlbl chat">Qwen chat template (apply_chat_template)</span><div class="body ans clamped">&lt;|im_start|&gt;system
+You are Qwen, created by Alibaba Cloud. You are a helpful assistant.&lt;|im_end|&gt;
+&lt;|im_start|&gt;user
+could you write a story for a 5 year old child? please give me the answer in german.&lt;|im_end|&gt;
+&lt;|im_start|&gt;assistant
+Ja, ich könnte eine Geschichte für ein fünfjähriges Kind schreiben. Bitte hinterlassen Sie Ihre Frage und ich werde Ihnen die folgende Antwort in deutscher Sprache geben:&lt;|im_end|&gt;
+&lt;|im_start|&gt;user
+could you write a story for a 5 year old child? give me the answer in romanian&lt;|im_end|&gt;
+&lt;|im_start|&gt;assistant
+</div><button class="toggle" type="button">show full &darr;</button></div><div class="fmtcol"><span class="fmtlbl plain">Plain User: / Assistant: (no chat template)</span><div class="body ans clamped">User: could you write a story for a 5 year old child? please give me the answer in german.
+
+Assistant: Ja, ich könnte eine Geschichte für ein fünfjähriges Kind schreiben. Bitte hinterlassen Sie Ihre Frage und ich werde Ihnen die folgende Antwort in deutscher Sprache geben:
+
+User: could you write a story for a 5 year old child? give me the answer in romanian
+
+Assistant:</div><button class="toggle" type="button">show full &darr;</button></div></div></div><div class="excard" style="--c:#2f6f6a"><div class="exhead"><span class="extopic" style="background:#2f6f6a">coding_software</span><span class="exsrc mono">lmsys</span><span class="exmeta mono">2 history turns (1U / 1A) + 1 query &middot; pfx_00593</span></div><div class="fmtgrid"><div class="fmtcol"><span class="fmtlbl chat">Qwen chat template (apply_chat_template)</span><div class="body ans clamped">&lt;|im_start|&gt;system
+You are Qwen, created by Alibaba Cloud. You are a helpful assistant.&lt;|im_end|&gt;
+&lt;|im_start|&gt;user
+You are a chatbot that conducts conversations based on video descriptions. You mainly answer based on the given description,
+and you can also answer the relevant knowledge of the person or object contained in the video. 
+The second description is a description for one second, so that you can convert it into time.
+Coordinate system in second description is an one-dimensional coordinate system,where x increase from left to right.&lt;|im_end|&gt;
+&lt;|im_start|&gt;assistant
+Understood. Please provide the video descriptions, and I will conduct a conversation based on the given information.&lt;|im_end|&gt;
+&lt;|im_start|&gt;user
+Begin!
+The general description of the video is A man wearing white shirt walking across a street.
+The second description of the video is:
+Second 1 : he locate at x=140.5
+Second 2 : he locate at x=277.0
+Second 3 : he locate at x=446.5
+Second 4 : he locate at x=597.5
+Second 5 : he locate at x=763.5
+Second 6 : he locate at x=943.5
+Second 7 : he locate at x=1123.0
+Question: Whether or not the man in this video is walking from right to left? Answer with Yes or No and Why?&lt;|im_end|&gt;
+&lt;|im_start|&gt;assistant
+</div><button class="toggle" type="button">show full &darr;</button></div><div class="fmtcol"><span class="fmtlbl plain">Plain User: / Assistant: (no chat template)</span><div class="body ans clamped">User: You are a chatbot that conducts conversations based on video descriptions. You mainly answer based on the given description,
+and you can also answer the relevant knowledge of the person or object contained in the video. 
+The second description is a description for one second, so that you can convert it into time.
+Coordinate system in second description is an one-dimensional coordinate system,where x increase from left to right.
+
+Assistant: Understood. Please provide the video descriptions, and I will conduct a conversation based on the given information.
+
+User: Begin!
+The general description of the video is A man wearing white shirt walking across a street.
+The second description of the video is:
+Second 1 : he locate at x=140.5
+Second 2 : he locate at x=277.0
+Second 3 : he locate at x=446.5
+Second 4 : he locate at x=597.5
+Second 5 : he locate at x=763.5
+Second 6 : he locate at x=943.5
+Second 7 : he locate at x=1123.0
+Question: Whether or not the man in this video is walking from right to left? Answer with Yes or No and Why?
+
+Assistant:</div><button class="toggle" type="button">show full &darr;</button></div></div></div><div class="excard" style="--c:#6a4c93"><div class="exhead"><span class="extopic" style="background:#6a4c93">math_logic</span><span class="exsrc mono">lmsys</span><span class="exmeta mono">2 history turns (1U / 1A) + 1 query &middot; pfx_00930</span></div><div class="fmtgrid"><div class="fmtcol"><span class="fmtlbl chat">Qwen chat template (apply_chat_template)</span><div class="body ans clamped">&lt;|im_start|&gt;system
+You are Qwen, created by Alibaba Cloud. You are a helpful assistant.&lt;|im_end|&gt;
+&lt;|im_start|&gt;user
+Determine whether the question need any math operations,return format:
+{&quot;thought&quot;:&quot;&lt;thought_of_whether_the_question_need_any_math_operations&gt;&quot;,&quot;need&quot;:&lt;result_in_bool_format&gt;}
+question:How many edges does tetrahedron have&lt;|im_end|&gt;
+&lt;|im_start|&gt;assistant
+{&quot;thought&quot;:&quot;Whether the question needs math operations depends on the context and the intended answer. In this case, a tetrahedron is a three-dimensional shape with four vertices and four edges. Therefore, the answer to the question is four. However, if the question is asking for the number of edges in a general tetrahedron, then it may require mathematical operations to determine the number of edges based on the number of vertices and the shape of the tetrahedron.&quot;,&quot;need&quot;:true}&lt;|im_end|&gt;
+&lt;|im_start|&gt;user
+Determine whether the question need any math operations,return format:
+{&quot;thought&quot;:&quot;&quot;,&quot;need&quot;:}
+question:A right triangle with a hypotenuse of 50cm and one of the sides is 4/5 of the hypotenuse,find the perimeter?&lt;|im_end|&gt;
+&lt;|im_start|&gt;assistant
+</div><button class="toggle" type="button">show full &darr;</button></div><div class="fmtcol"><span class="fmtlbl plain">Plain User: / Assistant: (no chat template)</span><div class="body ans clamped">User: Determine whether the question need any math operations,return format:
+{&quot;thought&quot;:&quot;&lt;thought_of_whether_the_question_need_any_math_operations&gt;&quot;,&quot;need&quot;:&lt;result_in_bool_format&gt;}
+question:How many edges does tetrahedron have
+
+Assistant: {&quot;thought&quot;:&quot;Whether the question needs math operations depends on the context and the intended answer. In this case, a tetrahedron is a three-dimensional shape with four vertices and four edges. Therefore, the answer to the question is four. However, if the question is asking for the number of edges in a general tetrahedron, then it may require mathematical operations to determine the number of edges based on the number of vertices and the shape of the tetrahedron.&quot;,&quot;need&quot;:true}
+
+User: Determine whether the question need any math operations,return format:
+{&quot;thought&quot;:&quot;&quot;,&quot;need&quot;:}
+question:A right triangle with a hypotenuse of 50cm and one of the sides is 4/5 of the hypotenuse,find the perimeter?
+
+Assistant:</div><button class="toggle" type="button">show full &darr;</button></div></div></div><div class="excard" style="--c:#4a6a3a"><div class="exhead"><span class="extopic" style="background:#4a6a3a">business_finance</span><span class="exsrc mono">lmsys</span><span class="exmeta mono">2 history turns (1U / 1A) + 1 query &middot; pfx_00456</span></div><div class="fmtgrid"><div class="fmtcol"><span class="fmtlbl chat">Qwen chat template (apply_chat_template)</span><div class="body ans clamped">&lt;|im_start|&gt;system
+You are Qwen, created by Alibaba Cloud. You are a helpful assistant.&lt;|im_end|&gt;
+&lt;|im_start|&gt;user
+What would be an expected budget for a trip to Orlando for a family of four&lt;|im_end|&gt;
+&lt;|im_start|&gt;assistant
+An expected budget for a trip to Orlando for a family of four would depend on a number of factors, such as the time of year, type of accommodations, transportation, meals, and activities. Generally, a basic budget for an Orlando trip for a family of four could range from $500 to $1500. This would cover the cost of transportation, accommodations, and some meals and activities.&lt;|im_end|&gt;
+&lt;|im_start|&gt;user
+what would be a good itinerary for this trip with a budget of $5,000&lt;|im_end|&gt;
+&lt;|im_start|&gt;assistant
+</div><button class="toggle" type="button">show full &darr;</button></div><div class="fmtcol"><span class="fmtlbl plain">Plain User: / Assistant: (no chat template)</span><div class="body ans clamped">User: What would be an expected budget for a trip to Orlando for a family of four
+
+Assistant: An expected budget for a trip to Orlando for a family of four would depend on a number of factors, such as the time of year, type of accommodations, transportation, meals, and activities. Generally, a basic budget for an Orlando trip for a family of four could range from $500 to $1500. This would cover the cost of transportation, accommodations, and some meals and activities.
+
+User: what would be a good itinerary for this trip with a budget of $5,000
+
+Assistant:</div><button class="toggle" type="button">show full &darr;</button></div></div></div><div class="excard" style="--c:#7a3b6a"><div class="exhead"><span class="extopic" style="background:#7a3b6a">language_translation</span><span class="exsrc mono">lmsys</span><span class="exmeta mono">2 history turns (1U / 1A) + 1 query &middot; pfx_00710</span></div><div class="fmtgrid"><div class="fmtcol"><span class="fmtlbl chat">Qwen chat template (apply_chat_template)</span><div class="body ans clamped">&lt;|im_start|&gt;system
+You are Qwen, created by Alibaba Cloud. You are a helpful assistant.&lt;|im_end|&gt;
+&lt;|im_start|&gt;user
+&quot;Grounded Multimodal Large Language Models&quot;, are there any Chinese characters in this sentence?&lt;|im_end|&gt;
+&lt;|im_start|&gt;assistant
+No, there are no Chinese characters in the sentence &quot;Grounded Multimodal Large Language Models.&quot; The sentence consists of English words only.&lt;|im_end|&gt;
+&lt;|im_start|&gt;user
+&quot;Grounded Multimodal Large Language Models&quot;, are there two words in this sentence?&lt;|im_end|&gt;
+&lt;|im_start|&gt;assistant
+</div><button class="toggle" type="button">show full &darr;</button></div><div class="fmtcol"><span class="fmtlbl plain">Plain User: / Assistant: (no chat template)</span><div class="body ans clamped">User: &quot;Grounded Multimodal Large Language Models&quot;, are there any Chinese characters in this sentence?
+
+Assistant: No, there are no Chinese characters in the sentence &quot;Grounded Multimodal Large Language Models.&quot; The sentence consists of English words only.
+
+User: &quot;Grounded Multimodal Large Language Models&quot;, are there two words in this sentence?
+
+Assistant:</div><button class="toggle" type="button">show full &darr;</button></div></div></div><div class="excard" style="--c:#534c41"><div class="exhead"><span class="extopic" style="background:#534c41">general_qa</span><span class="exsrc mono">lmsys</span><span class="exmeta mono">4 history turns (2U / 2A) + 1 query &middot; pfx_00288</span></div><div class="fmtgrid"><div class="fmtcol"><span class="fmtlbl chat">Qwen chat template (apply_chat_template)</span><div class="body ans clamped">&lt;|im_start|&gt;system
+You are Qwen, created by Alibaba Cloud. You are a helpful assistant.&lt;|im_end|&gt;
+&lt;|im_start|&gt;user
+Are you improving?&lt;|im_end|&gt;
+&lt;|im_start|&gt;assistant
+As an AI language model, I do not have feelings or emotions, so I cannot say that I am improving or not. However, my creators and developers are constantly working on improving my capabilities, performance, and accuracy based on feedback and new data. This means that I may become more advanced over time, but it&#x27;s important to note that no AI language model can ever reach perfection.&lt;|im_end|&gt;
+&lt;|im_start|&gt;user
+So new data is added?&lt;|im_end|&gt;
+&lt;|im_start|&gt;assistant
+Yes, new data is constantly being added to the models that power my responses. My creators and developers are constantly working to improve my capabilities, and one way they do this is by adding new data to my models. This allows me to learn and adapt, and to provide more accurate and helpful responses to your questions.&lt;|im_end|&gt;
+&lt;|im_start|&gt;user
+Is there a reason you freeze after five-six prompts?&lt;|im_end|&gt;
+&lt;|im_start|&gt;assistant
+</div><button class="toggle" type="button">show full &darr;</button></div><div class="fmtcol"><span class="fmtlbl plain">Plain User: / Assistant: (no chat template)</span><div class="body ans clamped">User: Are you improving?
+
+Assistant: As an AI language model, I do not have feelings or emotions, so I cannot say that I am improving or not. However, my creators and developers are constantly working on improving my capabilities, performance, and accuracy based on feedback and new data. This means that I may become more advanced over time, but it&#x27;s important to note that no AI language model can ever reach perfection.
+
+User: So new data is added?
+
+Assistant: Yes, new data is constantly being added to the models that power my responses. My creators and developers are constantly working to improve my capabilities, and one way they do this is by adding new data to my models. This allows me to learn and adapt, and to provide more accurate and helpful responses to your questions.
+
+User: Is there a reason you freeze after five-six prompts?
+
+Assistant:</div><button class="toggle" type="button">show full &darr;</button></div></div></div><footer class='foot'><div><b>Data source.</b> HF dataset <span class='mono'>superkaiba1/explore-persona-space-data</span>, <span class='mono'>issue1092_realistic_crossing/corpus/prefix_store.jsonl</span> (revision <span class='mono'>main</span>) — each prefix carries <span class='mono'>prefix_turns</span> + <span class='mono'>natural_query</span> + <span class='mono'>topic</span> + <span class='mono'>source</span>. <a href='https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/blob/main/issue1092_realistic_crossing/corpus/prefix_store.jsonl'>prefix_store.jsonl</a>.</div><div><b>Render functions (verbatim).</b> naturalistic: <span class='mono'>scripts/issue1092_gpu_phase.py::_render_naturalistic</span>; chat template: <span class='mono'>tokenizer.apply_chat_template(...) </span> on <span class='mono'>Qwen/Qwen2.5-7B-Instruct</span> (matches <span class='mono'>issue1092_build_corpus.py::_render_instruct</span>).</div><div><b>Selection.</b> professional-topic allowlist + keyword denylist + length bounds; round-robin across topics, deterministic by prefix_id; 20 shown of 38 clean candidates.</div><div><b>Generator.</b> <span class='mono'>scripts/issue825_dashboard_naturalistic.py</span> &middot; generated 2026-07-15.</div></footer><script>
+document.querySelectorAll('.toggle').forEach(function(b){
+  b.addEventListener('click', function(){
+    var body = b.parentElement.querySelector('.ans');
+    var exp = body.classList.toggle('expanded');
+    b.innerHTML = exp ? 'show less \u2191' : 'show full \u2193';
+  });
+});
+</script></div></body></html>

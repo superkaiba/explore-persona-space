@@ -282,6 +282,43 @@ def _legacy_error_dict(reason: str) -> dict:
     return {"aligned": None, "coherent": None, "reasoning": reason, "error": True}
 
 
+_TRANSPORT_LEGACY_REASON_PREFIXES = (
+    "batch_error: expired",
+    "batch_error: canceled",
+    # api_dispatch transient-exhaustion reasons ("transient <ExcName> (attempt N)",
+    # api_dispatch._do_one) — covers LEGACY persisted multi-org-reduce dicts whose
+    # exception name (APITimeoutError/APIConnectionError/InternalServerError) has
+    # no "overloaded" substring (statistics-critic round-1 Must-Fix; the reason
+    # field is pipeline-minted, never judge content, and the error gate runs first).
+    "transient ",
+)
+
+
+def is_transport_error_dict(parsed: object) -> bool:
+    """Rule-24 transport-vs-content split for judge error dicts (#1313).
+
+    True iff the row died in TRANSPORT (no verdict about the content was ever
+    produced -> freely re-judgeable). Primary signal: the structural
+    ``transport: True`` field minted at every #1313 error-dict site. Fallback:
+    a conservative reason-string match for LEGACY persisted dicts (pre-#1313
+    save_raw files / cache entries, e.g. #1090's stored 529 rows). A
+    quarantined 400 (rule 24(iii)) and a parse_error (rule 23) are NOT transport.
+    """
+    if not isinstance(parsed, dict) or not parsed.get("error"):
+        return False
+    if parsed.get("transport") is True:
+        return True
+    reason = str(parsed.get("reasoning", parsed.get("reason", "")))
+    if "invalid_request_error" in reason:
+        return False
+    if reason.startswith(_TRANSPORT_LEGACY_REASON_PREFIXES):
+        return True
+    if reason.startswith("batch_error: errored ("):
+        return True  # server-class errored rows (invalid_request excluded above)
+    low = reason.lower()
+    return "overloaded" in low or "rate_limited_exhausted" in low
+
+
 def _collect_legacy_results(
     client: "anthropic.Anthropic",
     batch_id: str,
@@ -313,15 +350,21 @@ def _collect_legacy_results(
                 getattr(getattr(result.result, "error", None), "error", None), "type", None
             )
             if etype == "invalid_request_error":
+                # Quarantined 400: a pipeline bug, NOT transport (rule 24(iii)).
                 results[custom_id] = _legacy_error_dict(
                     "batch_error: invalid_request_error (quarantined)"
                 )
             else:
-                results[custom_id] = _legacy_error_dict(
-                    f"batch_error: errored ({etype or 'server'})"
-                )
-        else:  # expired / canceled / unknown
-            results[custom_id] = _legacy_error_dict(f"batch_error: {rtype}")
+                # Server-class errored row: transport-class (rule 24(i), #1313).
+                results[custom_id] = {
+                    **_legacy_error_dict(f"batch_error: errored ({etype or 'server'})"),
+                    "transport": True,
+                }
+        else:  # expired / canceled / unknown -> transport-class (rule 24(i), #1313)
+            results[custom_id] = {
+                **_legacy_error_dict(f"batch_error: {rtype}"),
+                "transport": True,
+            }
 
 
 def _submit_and_poll_batch(
@@ -536,7 +579,11 @@ def _enumerate_and_check_cache(
 
                 if cache:
                     cached = cache.get(question, comp, rubric_key=rubric_key)
-                    if cached is not None:
+                    if cached is not None and not is_transport_error_dict(cached):
+                        # A stored transport-class error dict is a MISS (#1313,
+                        # rule 24(ii)): fall through to re-dispatch so a re-run
+                        # self-heals a legacy-poisoned cache (e.g. #1090's
+                        # stored 529 rows) instead of re-serving the outage.
                         cached_scores[custom_id] = cached
                         continue
 
@@ -747,7 +794,12 @@ def judge_completions_batch(
         if cache:
             for custom_id, question, comp, _user_msg in uncached_items:
                 if custom_id in batch_scores:
-                    cache.put(question, comp, batch_scores[custom_id], rubric_key=rubric_key)
+                    result = batch_scores[custom_id]
+                    if is_transport_error_dict(result):
+                        # rule 24(ii)/23 (#1313): never cache a transport error —
+                        # a cached one re-serves the outage on every resume.
+                        continue
+                    cache.put(question, comp, result, rubric_key=rubric_key)
 
     if cache:
         logger.info("Cache stats: %s", cache.stats)

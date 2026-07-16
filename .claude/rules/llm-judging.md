@@ -116,17 +116,22 @@ and diverges from the field standard (Persona Vectors uses graded 0–100).
     cell). Three sub-rules:
     (i) **Retry, bounded.** Route judge calls through `api_dispatch.py`
     (mandatory per the API-throughput rule): its transient tuple retries
-    connection / timeout / 500-class with exponential backoff within
-    `max_attempts` (default 5) and its 429 handling rides AIMD with honored
-    `retry-after` (`DEFAULT_MAX_429_RETRIES = 6`) — but as of anthropic
-    0.88.0 the tuple does NOT cover 529 `OverloadedError` (see the taxonomy
-    above; closing that gap is the sibling library task — until it lands, a
-    529-exhausted item surfaces as `error: True` and MUST be re-judged, not
-    persisted). The Batch path has NO per-row retry machinery today
-    (`eval/batch_judge.py` surfaces `error: True` dicts): a pipeline
-    consuming batch results MUST collect transport-class failed rows and
-    re-dispatch them (a follow-up batch, or sync dispatch) rather than
-    persist them. Batch expiry carve-out: an IN-FLIGHT batch is never a
+    connection / timeout / 5xx incl. 529 `OverloadedError` (matched via the
+    public `APIStatusError` + `status_code == 529` form — landed in #1313)
+    with exponential backoff within `max_attempts` (default 5), and its 429
+    handling rides AIMD with honored `retry-after`
+    (`DEFAULT_MAX_429_RETRIES = 6`). Exhaustion of either budget returns
+    `category` `RESULT_TRANSPORT` / `RESULT_RATE_LIMITED` (both
+    transport-class, re-drivable — #1313), never a bare terminal error. The
+    PRIMARY batch path (`judge_completions_batch` → `dispatch_judge_items`)
+    re-dispatches errored-server/expired/stuck-canceled rows once, resumably
+    (the #1019 machinery in `eval/judge_dispatch.py`); only the LEGACY
+    `_submit_and_poll_batch` path (`eval/batch_judge.py`, two frozen
+    `scripts/issue_389` callers) has NO per-row retry machinery — a pipeline
+    consuming ITS results MUST collect transport-class failed rows
+    (`is_transport_error_dict`, #1313) and re-dispatch them (a follow-up
+    batch, or sync dispatch) rather than persist them. Batch expiry
+    carve-out: an IN-FLIGHT batch is never a
     retry surface — the deadline-bounded `batch_judge` poller self-harvests
     at `expires_at` (#658/#663); this rule governs terminal per-row failures
     after collection (an `expired` row is retriable transport loss ONLY
@@ -135,16 +140,20 @@ and diverges from the field standard (Persona Vectors uses graded 0–100).
     the bounded retry budget exhausts, the draw is recorded and REPORTED as
     per-arm `transport_loss` — a counter DISTINCT from the rule-9
     content-drop count (blending them recreates the censoring this rule
-    exists to prevent; `JudgeResult` carries no such field yet — that
-    counter is part of the pending sibling library fix, so report it from
-    the pipeline's own artifacts). It is never coerced to a number. A
+    exists to prevent; `JudgeResult.n_transport_lost_draws` +
+    `per_item_transport_losses` carry the split as of #1313 —
+    `n_dropped_draws` is content-only there). It is never coerced to a
+    number. A
     headline DV with nonzero transport-loss (arm-asymmetric or not) gets the
     lost draws re-judged before publication (they are freely re-judgeable),
     or carries the asymmetry as an explicit caveat. The re-judge BYPASSES
     the rubric-keyed judge cache for the affected draws — surgical per-draw
     merge, a fresh `cache_dir`, or draw-indexed keying — because (a) the
-    cache-update loop persists `error: True` entries (rule 23's cache
-    caveat: the same cache dir re-serves the stored transport error) and
+    cache-update loop persists content-class `error: True` entries (rule
+    23's cache caveat; as of #1313 TRANSPORT-class dicts are put-skipped and
+    a stored one reads as a cache MISS — but the legacy reason-string
+    fallback covers only known pre-#1313 strings, so do not assume every old
+    poisoned entry self-heals) and
     (b) the rubric-keyed cache shares ONE key across an item's identical
     draws, so a cache-served re-run silently substitutes a successful
     sibling draw's score for the lost draw — a duplicated draw masquerading
@@ -161,18 +170,19 @@ and diverges from the field standard (Persona Vectors uses graded 0–100).
     identically on resubmit — `batch_judge.py` correctly quarantines it): it
     is NEITHER retried NOR dropped — fix the request builder; a whole arm of
     400s is a code failure, fail loud.
-    Companion note (library, sibling task — `src/` is off-surface for the
-    workflow fix that added this rule): `eval/batch_judge.py` persists
-    `error: True` result dicts and `eval/graded_judge.py::_score_from_parsed`
-    folds `parsed.get("error")` into the content-drop path (`return None`,
-    line ~94); `llm/api_dispatch.py`'s transient tuple misses 529
-    `OverloadedError` (its :569–571 comment claiming `InternalServerError`
-    subclass coverage is stale in anthropic 0.88.0). The library fix — add
-    `OverloadedError` (or `APIStatusError` with `status_code == 529`) to the
-    transient tuple + fix the stale comment, transport-class re-dispatch on
-    the batch collection path, and a separate `transport_loss` counter in
-    `JudgeResult` — is a deferred sibling infra task, not part of this
-    rule's change.
+    Companion note (library — LANDED in #1313): `llm/api_dispatch.py`'s
+    transient predicate now matches 529 via the public `APIStatusError` +
+    `status_code == 529` form and returns `RESULT_TRANSPORT` on transient
+    exhaustion; error dicts at every mint site carry a structural
+    `transport: True` flag classified by
+    `eval/batch_judge.py::is_transport_error_dict` (with a conservative
+    legacy reason-string fallback for pre-#1313 persisted dicts);
+    `JudgeResult` carries `n_transport_lost_draws` +
+    `per_item_transport_losses` (content drops stay in `n_dropped_draws`);
+    and the judge cache never PUTs — and treats as a MISS — a
+    transport-class dict. The primary batch path's re-dispatch is the
+    pre-existing #1019 machinery (verified, not duplicated);
+    `_score_from_parsed` is unchanged (classification lives in the tally).
 
 10. **Pin nuisance formatting identical across conditions.** Response length,
     markdown, system-prompt boilerplate, and the presence/absence of a

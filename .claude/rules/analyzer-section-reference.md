@@ -303,12 +303,12 @@ deliberate — see plan §2.
 
 ```bash
 # launch — sentinel records the exit code regardless of where the harness runs the job
-setsid nohup env OMP_NUM_THREADS=8 MKL_NUM_THREADS=8 OPENBLAS_NUM_THREADS=8 NUMEXPR_NUM_THREADS=8 bash -c 'uv run python scripts/<analysis>.py ...; echo "RC=$? DONE" > /tmp/issue-<N>-<job>.sentinel' < /dev/null >/tmp/issue-<N>-<job>.log 2>&1 &
+setsid nohup env OMP_NUM_THREADS=8 MKL_NUM_THREADS=8 OPENBLAS_NUM_THREADS=8 NUMEXPR_NUM_THREADS=8 MALLOC_ARENA_MAX=2 bash -c 'uv run python scripts/<analysis>.py ...; echo "RC=$? DONE" > /tmp/issue-<N>-<job>.sentinel' < /dev/null >/tmp/issue-<N>-<job>.log 2>&1 &
 # then, as a SEPARATE run_in_background=true Bash call, block on the sentinel (NOT the bg stdout):
 until [ -f /tmp/issue-<N>-<job>.sentinel ]; do sleep 30; done; cat /tmp/issue-<N>-<job>.sentinel
 ```
 
-Read `RC=` from the sentinel for the exit code (non-zero → inspect the log and fail loud — never narrate a result off a job that did not finish cleanly). The `until` loop is the single completion signal; the log is for diagnosis only. The thread-cap `env` prefix (OMP/MKL/OPENBLAS/NUMEXPR=8) is REQUIRED on these VM-side launches — a stale worktree's `env.py` setdefault may predate the caps and cannot in-process-cap a torch-before-dotenv importer (#891/#779); `env` wraps the `bash -c` so the caps reach the inner `uv run python`.
+Read `RC=` from the sentinel for the exit code (non-zero → inspect the log and fail loud — never narrate a result off a job that did not finish cleanly). The `until` loop is the single completion signal; the log is for diagnosis only. The thread-cap `env` prefix (OMP/MKL/OPENBLAS/NUMEXPR=8 + MALLOC_ARENA_MAX=2, the glibc arena-fragmentation cap — #1315) is REQUIRED on these VM-side launches — a stale worktree's `env.py` setdefault may predate the caps and cannot in-process-cap a torch-before-dotenv importer (#891/#779); `env` wraps the `bash -c` so the caps reach the inner `uv run python`.
 
 For every comparison:
 - Mean across seeds

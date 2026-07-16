@@ -42,11 +42,12 @@ vals = [0.70, 0.40, 0.55]
 ns = [200, 200, 200]
 
 # 95% Wald CIs as asymmetric (lo, hi) offsets so error bars never cross 0/1.
+# errorbar offsets must be >= 0 (gotchas.md)
 err_lo, err_hi = [], []
 for v, n in zip(vals, ns):
     lo, hi = proportion_ci(v, n)
-    err_lo.append(v - lo)
-    err_hi.append(hi - v)
+    err_lo.append(max(0.0, v - lo))
+    err_hi.append(max(0.0, hi - v))
 
 # --- Plot --------------------------------------------------------------
 fig, ax = plt.subplots()

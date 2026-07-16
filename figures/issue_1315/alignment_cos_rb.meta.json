@@ -1,0 +1,2818 @@
+{
+  "commit": "a662de3363",
+  "created": "2026-07-15T20:57:35Z",
+  "figsize": [
+    13.0,
+    5.0
+  ],
+  "points": [
+    {
+      "Decoder layer": 0.0,
+      "|cosine| to impolite read-out direction": 0.5869349553753648,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Decoder layer": 1.0,
+      "|cosine| to impolite read-out direction": 0.5897823884579086,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Decoder layer": 2.0,
+      "|cosine| to impolite read-out direction": 0.5923768352263455,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Decoder layer": 3.0,
+      "|cosine| to impolite read-out direction": 0.6171888943073202,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Decoder layer": 4.0,
+      "|cosine| to impolite read-out direction": 0.6271486122176216,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Decoder layer": 5.0,
+      "|cosine| to impolite read-out direction": 0.6623786137645366,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Decoder layer": 6.0,
+      "|cosine| to impolite read-out direction": 0.6793429580909991,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Decoder layer": 7.0,
+      "|cosine| to impolite read-out direction": 0.6754140125245424,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Decoder layer": 8.0,
+      "|cosine| to impolite read-out direction": 0.6776438935205777,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Decoder layer": 9.0,
+      "|cosine| to impolite read-out direction": 0.687106582471435,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Decoder layer": 10.0,
+      "|cosine| to impolite read-out direction": 0.6791222296668349,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Decoder layer": 11.0,
+      "|cosine| to impolite read-out direction": 0.6912499043815054,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Decoder layer": 12.0,
+      "|cosine| to impolite read-out direction": 0.6638490031005919,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Decoder layer": 13.0,
+      "|cosine| to impolite read-out direction": 0.6287730611571405,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Decoder layer": 14.0,
+      "|cosine| to impolite read-out direction": 0.6183062810841271,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Decoder layer": 15.0,
+      "|cosine| to impolite read-out direction": 0.6316163953250189,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Decoder layer": 16.0,
+      "|cosine| to impolite read-out direction": 0.6363549367195055,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Decoder layer": 17.0,
+      "|cosine| to impolite read-out direction": 0.6295211422356881,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Decoder layer": 18.0,
+      "|cosine| to impolite read-out direction": 0.6478856780288617,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Decoder layer": 19.0,
+      "|cosine| to impolite read-out direction": 0.6148013743173008,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Decoder layer": 20.0,
+      "|cosine| to impolite read-out direction": 0.6283024481286109,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Decoder layer": 21.0,
+      "|cosine| to impolite read-out direction": 0.6023792158622733,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Decoder layer": 22.0,
+      "|cosine| to impolite read-out direction": 0.5812040472561072,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Decoder layer": 23.0,
+      "|cosine| to impolite read-out direction": 0.6090394392872149,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Decoder layer": 24.0,
+      "|cosine| to impolite read-out direction": 0.5894138472972688,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Decoder layer": 25.0,
+      "|cosine| to impolite read-out direction": 0.5367688115901184,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Decoder layer": 26.0,
+      "|cosine| to impolite read-out direction": 0.5041474695831857,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Decoder layer": 27.0,
+      "|cosine| to impolite read-out direction": 0.5102218564154917,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Decoder layer": 0.0,
+      "|cosine| to impolite read-out direction": 0.6496005276477022,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Decoder layer": 1.0,
+      "|cosine| to impolite read-out direction": 0.6498423493203345,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Decoder layer": 2.0,
+      "|cosine| to impolite read-out direction": 0.6853443121479065,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Decoder layer": 3.0,
+      "|cosine| to impolite read-out direction": 0.6800927523315585,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Decoder layer": 4.0,
+      "|cosine| to impolite read-out direction": 0.6785152123227776,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Decoder layer": 5.0,
+      "|cosine| to impolite read-out direction": 0.6832019646447489,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Decoder layer": 6.0,
+      "|cosine| to impolite read-out direction": 0.6381148628362683,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Decoder layer": 7.0,
+      "|cosine| to impolite read-out direction": 0.5863202076855488,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Decoder layer": 8.0,
+      "|cosine| to impolite read-out direction": 0.55611153328738,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Decoder layer": 9.0,
+      "|cosine| to impolite read-out direction": 0.5296176410199532,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Decoder layer": 10.0,
+      "|cosine| to impolite read-out direction": 0.5622017621603522,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Decoder layer": 11.0,
+      "|cosine| to impolite read-out direction": 0.5730150563225016,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Decoder layer": 12.0,
+      "|cosine| to impolite read-out direction": 0.5505012249544573,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Decoder layer": 13.0,
+      "|cosine| to impolite read-out direction": 0.5003094730825652,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Decoder layer": 14.0,
+      "|cosine| to impolite read-out direction": 0.5091686806789623,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Decoder layer": 15.0,
+      "|cosine| to impolite read-out direction": 0.5257100330360315,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Decoder layer": 16.0,
+      "|cosine| to impolite read-out direction": 0.5132136222771163,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Decoder layer": 17.0,
+      "|cosine| to impolite read-out direction": 0.5160179681671266,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Decoder layer": 18.0,
+      "|cosine| to impolite read-out direction": 0.54664284358388,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Decoder layer": 19.0,
+      "|cosine| to impolite read-out direction": 0.4640993334764864,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Decoder layer": 20.0,
+      "|cosine| to impolite read-out direction": 0.4631068373585449,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Decoder layer": 21.0,
+      "|cosine| to impolite read-out direction": 0.43090677642617375,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Decoder layer": 22.0,
+      "|cosine| to impolite read-out direction": 0.42495950436375773,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Decoder layer": 23.0,
+      "|cosine| to impolite read-out direction": 0.45976350584271664,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Decoder layer": 24.0,
+      "|cosine| to impolite read-out direction": 0.4257482965578094,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Decoder layer": 25.0,
+      "|cosine| to impolite read-out direction": 0.37511166228993176,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Decoder layer": 26.0,
+      "|cosine| to impolite read-out direction": 0.3056231364802406,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Decoder layer": 27.0,
+      "|cosine| to impolite read-out direction": 0.012288990253150722,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Decoder layer": 0.0,
+      "|cosine| to impolite read-out direction": 0.7974392070193784,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Decoder layer": 1.0,
+      "|cosine| to impolite read-out direction": 0.782791870499081,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Decoder layer": 2.0,
+      "|cosine| to impolite read-out direction": 0.799329527406741,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Decoder layer": 3.0,
+      "|cosine| to impolite read-out direction": 0.8099403782788298,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Decoder layer": 4.0,
+      "|cosine| to impolite read-out direction": 0.8142248848115529,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Decoder layer": 5.0,
+      "|cosine| to impolite read-out direction": 0.8035184638181674,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Decoder layer": 6.0,
+      "|cosine| to impolite read-out direction": 0.814059728560212,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Decoder layer": 7.0,
+      "|cosine| to impolite read-out direction": 0.807429631389111,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Decoder layer": 8.0,
+      "|cosine| to impolite read-out direction": 0.7890832513692264,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Decoder layer": 9.0,
+      "|cosine| to impolite read-out direction": 0.7847557869830439,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Decoder layer": 10.0,
+      "|cosine| to impolite read-out direction": 0.7942244978183893,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Decoder layer": 11.0,
+      "|cosine| to impolite read-out direction": 0.8063042724224899,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Decoder layer": 12.0,
+      "|cosine| to impolite read-out direction": 0.8032908367774352,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Decoder layer": 13.0,
+      "|cosine| to impolite read-out direction": 0.7960524818854843,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Decoder layer": 14.0,
+      "|cosine| to impolite read-out direction": 0.7629687194923017,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Decoder layer": 15.0,
+      "|cosine| to impolite read-out direction": 0.7411827685982295,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Decoder layer": 16.0,
+      "|cosine| to impolite read-out direction": 0.7164485537243253,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Decoder layer": 17.0,
+      "|cosine| to impolite read-out direction": 0.7341450281216123,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Decoder layer": 18.0,
+      "|cosine| to impolite read-out direction": 0.7548934887592936,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Decoder layer": 19.0,
+      "|cosine| to impolite read-out direction": 0.6668564069619333,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Decoder layer": 20.0,
+      "|cosine| to impolite read-out direction": 0.6238215804152751,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Decoder layer": 21.0,
+      "|cosine| to impolite read-out direction": 0.5882535452712822,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Decoder layer": 22.0,
+      "|cosine| to impolite read-out direction": 0.5580627188897642,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Decoder layer": 23.0,
+      "|cosine| to impolite read-out direction": 0.5751294605162659,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Decoder layer": 24.0,
+      "|cosine| to impolite read-out direction": 0.5766444576445311,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Decoder layer": 25.0,
+      "|cosine| to impolite read-out direction": 0.5457810266637902,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Decoder layer": 26.0,
+      "|cosine| to impolite read-out direction": 0.45143912822816556,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Decoder layer": 27.0,
+      "|cosine| to impolite read-out direction": 0.019680652745392394,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Decoder layer": 0.0,
+      "|cosine| to impolite read-out direction": 0.7817328162688941,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Decoder layer": 1.0,
+      "|cosine| to impolite read-out direction": 0.7817388528693135,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Decoder layer": 2.0,
+      "|cosine| to impolite read-out direction": 0.7940982266969713,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Decoder layer": 3.0,
+      "|cosine| to impolite read-out direction": 0.8051638102773547,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Decoder layer": 4.0,
+      "|cosine| to impolite read-out direction": 0.8135998668879922,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Decoder layer": 5.0,
+      "|cosine| to impolite read-out direction": 0.811066756284816,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Decoder layer": 6.0,
+      "|cosine| to impolite read-out direction": 0.8206398811333268,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Decoder layer": 7.0,
+      "|cosine| to impolite read-out direction": 0.8158082939190661,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Decoder layer": 8.0,
+      "|cosine| to impolite read-out direction": 0.8038355150434873,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Decoder layer": 9.0,
+      "|cosine| to impolite read-out direction": 0.8017269841938571,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Decoder layer": 10.0,
+      "|cosine| to impolite read-out direction": 0.8213553789798964,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Decoder layer": 11.0,
+      "|cosine| to impolite read-out direction": 0.8328944881006654,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Decoder layer": 12.0,
+      "|cosine| to impolite read-out direction": 0.8248256122866816,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Decoder layer": 13.0,
+      "|cosine| to impolite read-out direction": 0.8186353464314247,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Decoder layer": 14.0,
+      "|cosine| to impolite read-out direction": 0.7910457257146366,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Decoder layer": 15.0,
+      "|cosine| to impolite read-out direction": 0.7950161679632475,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Decoder layer": 16.0,
+      "|cosine| to impolite read-out direction": 0.7636453900239482,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Decoder layer": 17.0,
+      "|cosine| to impolite read-out direction": 0.7779911024248212,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Decoder layer": 18.0,
+      "|cosine| to impolite read-out direction": 0.7954879535509283,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Decoder layer": 19.0,
+      "|cosine| to impolite read-out direction": 0.7403817809924059,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Decoder layer": 20.0,
+      "|cosine| to impolite read-out direction": 0.7070779496460647,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Decoder layer": 21.0,
+      "|cosine| to impolite read-out direction": 0.6751873347080819,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Decoder layer": 22.0,
+      "|cosine| to impolite read-out direction": 0.6470469898982312,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Decoder layer": 23.0,
+      "|cosine| to impolite read-out direction": 0.6614229685629323,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Decoder layer": 24.0,
+      "|cosine| to impolite read-out direction": 0.6632880635905937,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Decoder layer": 25.0,
+      "|cosine| to impolite read-out direction": 0.6431705623930464,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Decoder layer": 26.0,
+      "|cosine| to impolite read-out direction": 0.5521751836569534,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Decoder layer": 27.0,
+      "|cosine| to impolite read-out direction": 0.11140356342197393,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Decoder layer": 0.0,
+      "|cosine| to impolite read-out direction": 0.7769168204729073,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Decoder layer": 1.0,
+      "|cosine| to impolite read-out direction": 0.7682310252945468,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Decoder layer": 2.0,
+      "|cosine| to impolite read-out direction": 0.7981303460902553,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Decoder layer": 3.0,
+      "|cosine| to impolite read-out direction": 0.8134990239146761,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Decoder layer": 4.0,
+      "|cosine| to impolite read-out direction": 0.8219996801958032,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Decoder layer": 5.0,
+      "|cosine| to impolite read-out direction": 0.826624122181804,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Decoder layer": 6.0,
+      "|cosine| to impolite read-out direction": 0.8435330454066945,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Decoder layer": 7.0,
+      "|cosine| to impolite read-out direction": 0.8502247457899654,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Decoder layer": 8.0,
+      "|cosine| to impolite read-out direction": 0.833349330982525,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Decoder layer": 9.0,
+      "|cosine| to impolite read-out direction": 0.83499531783315,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Decoder layer": 10.0,
+      "|cosine| to impolite read-out direction": 0.8368049123674849,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Decoder layer": 11.0,
+      "|cosine| to impolite read-out direction": 0.8434401234674395,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Decoder layer": 12.0,
+      "|cosine| to impolite read-out direction": 0.8414074985633924,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Decoder layer": 13.0,
+      "|cosine| to impolite read-out direction": 0.8310979990234721,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Decoder layer": 14.0,
+      "|cosine| to impolite read-out direction": 0.7961133367887203,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Decoder layer": 15.0,
+      "|cosine| to impolite read-out direction": 0.7726056499600314,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Decoder layer": 16.0,
+      "|cosine| to impolite read-out direction": 0.7589977132329694,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Decoder layer": 17.0,
+      "|cosine| to impolite read-out direction": 0.7785702895361275,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Decoder layer": 18.0,
+      "|cosine| to impolite read-out direction": 0.7851789381290917,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Decoder layer": 19.0,
+      "|cosine| to impolite read-out direction": 0.7023188451125593,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Decoder layer": 20.0,
+      "|cosine| to impolite read-out direction": 0.6682390442293702,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Decoder layer": 21.0,
+      "|cosine| to impolite read-out direction": 0.6353007986176488,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Decoder layer": 22.0,
+      "|cosine| to impolite read-out direction": 0.6023566901722102,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Decoder layer": 23.0,
+      "|cosine| to impolite read-out direction": 0.6088095407761381,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Decoder layer": 24.0,
+      "|cosine| to impolite read-out direction": 0.608504988362086,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Decoder layer": 25.0,
+      "|cosine| to impolite read-out direction": 0.5841182682964337,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Decoder layer": 26.0,
+      "|cosine| to impolite read-out direction": 0.4883244548724984,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Decoder layer": 27.0,
+      "|cosine| to impolite read-out direction": 0.059090490993290605,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Decoder layer": 0.0,
+      "|cosine| to impolite read-out direction": 0.6840712029644035,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Decoder layer": 1.0,
+      "|cosine| to impolite read-out direction": 0.6707026848797757,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Decoder layer": 2.0,
+      "|cosine| to impolite read-out direction": 0.7073859740503684,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Decoder layer": 3.0,
+      "|cosine| to impolite read-out direction": 0.7303403836005972,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Decoder layer": 4.0,
+      "|cosine| to impolite read-out direction": 0.7519646800751647,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Decoder layer": 5.0,
+      "|cosine| to impolite read-out direction": 0.760414429854797,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Decoder layer": 6.0,
+      "|cosine| to impolite read-out direction": 0.7663057711948779,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Decoder layer": 7.0,
+      "|cosine| to impolite read-out direction": 0.7511228380990823,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Decoder layer": 8.0,
+      "|cosine| to impolite read-out direction": 0.7335075127575915,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Decoder layer": 9.0,
+      "|cosine| to impolite read-out direction": 0.7351223367660348,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Decoder layer": 10.0,
+      "|cosine| to impolite read-out direction": 0.7430621357481761,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Decoder layer": 11.0,
+      "|cosine| to impolite read-out direction": 0.7463137411578611,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Decoder layer": 12.0,
+      "|cosine| to impolite read-out direction": 0.7127568638261055,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Decoder layer": 13.0,
+      "|cosine| to impolite read-out direction": 0.6353167087397952,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Decoder layer": 14.0,
+      "|cosine| to impolite read-out direction": 0.6536977196084955,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Decoder layer": 15.0,
+      "|cosine| to impolite read-out direction": 0.6609317285301165,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Decoder layer": 16.0,
+      "|cosine| to impolite read-out direction": 0.6697418547364572,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Decoder layer": 17.0,
+      "|cosine| to impolite read-out direction": 0.6654638918652886,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Decoder layer": 18.0,
+      "|cosine| to impolite read-out direction": 0.6796153520735412,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Decoder layer": 19.0,
+      "|cosine| to impolite read-out direction": 0.6093578844641422,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Decoder layer": 20.0,
+      "|cosine| to impolite read-out direction": 0.6409153418787708,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Decoder layer": 21.0,
+      "|cosine| to impolite read-out direction": 0.6293352561550983,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Decoder layer": 22.0,
+      "|cosine| to impolite read-out direction": 0.6188406007818117,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Decoder layer": 23.0,
+      "|cosine| to impolite read-out direction": 0.6470613481885388,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Decoder layer": 24.0,
+      "|cosine| to impolite read-out direction": 0.6408666963067949,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Decoder layer": 25.0,
+      "|cosine| to impolite read-out direction": 0.6020593396532838,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Decoder layer": 26.0,
+      "|cosine| to impolite read-out direction": 0.5576953844917708,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Decoder layer": 27.0,
+      "|cosine| to impolite read-out direction": 0.562026389459371,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Decoder layer": 0.0,
+      "|cosine| to impolite read-out direction": 0.03860908498321872,
+      "series": "chance 97.5% bound",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Decoder layer": 1.0,
+      "|cosine| to impolite read-out direction": 0.03661890777082997,
+      "series": "chance 97.5% bound",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Decoder layer": 2.0,
+      "|cosine| to impolite read-out direction": 0.03805724326288263,
+      "series": "chance 97.5% bound",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Decoder layer": 3.0,
+      "|cosine| to impolite read-out direction": 0.038949627787564244,
+      "series": "chance 97.5% bound",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Decoder layer": 4.0,
+      "|cosine| to impolite read-out direction": 0.036634081790351894,
+      "series": "chance 97.5% bound",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Decoder layer": 5.0,
+      "|cosine| to impolite read-out direction": 0.0363340490984969,
+      "series": "chance 97.5% bound",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Decoder layer": 6.0,
+      "|cosine| to impolite read-out direction": 0.03776368748952085,
+      "series": "chance 97.5% bound",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Decoder layer": 7.0,
+      "|cosine| to impolite read-out direction": 0.03881003455382839,
+      "series": "chance 97.5% bound",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Decoder layer": 8.0,
+      "|cosine| to impolite read-out direction": 0.03665981470088573,
+      "series": "chance 97.5% bound",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Decoder layer": 9.0,
+      "|cosine| to impolite read-out direction": 0.041815734321683645,
+      "series": "chance 97.5% bound",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Decoder layer": 10.0,
+      "|cosine| to impolite read-out direction": 0.036613232355332606,
+      "series": "chance 97.5% bound",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Decoder layer": 11.0,
+      "|cosine| to impolite read-out direction": 0.03729088870002613,
+      "series": "chance 97.5% bound",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Decoder layer": 12.0,
+      "|cosine| to impolite read-out direction": 0.03853911825808301,
+      "series": "chance 97.5% bound",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Decoder layer": 13.0,
+      "|cosine| to impolite read-out direction": 0.03687281746390561,
+      "series": "chance 97.5% bound",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Decoder layer": 14.0,
+      "|cosine| to impolite read-out direction": 0.0372520680524096,
+      "series": "chance 97.5% bound",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Decoder layer": 15.0,
+      "|cosine| to impolite read-out direction": 0.03719208971700524,
+      "series": "chance 97.5% bound",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Decoder layer": 16.0,
+      "|cosine| to impolite read-out direction": 0.03708411396017987,
+      "series": "chance 97.5% bound",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Decoder layer": 17.0,
+      "|cosine| to impolite read-out direction": 0.03594818607458089,
+      "series": "chance 97.5% bound",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Decoder layer": 18.0,
+      "|cosine| to impolite read-out direction": 0.03932361005488076,
+      "series": "chance 97.5% bound",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Decoder layer": 19.0,
+      "|cosine| to impolite read-out direction": 0.03631243714836977,
+      "series": "chance 97.5% bound",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Decoder layer": 20.0,
+      "|cosine| to impolite read-out direction": 0.03614203837037226,
+      "series": "chance 97.5% bound",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Decoder layer": 21.0,
+      "|cosine| to impolite read-out direction": 0.036437897940642464,
+      "series": "chance 97.5% bound",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Decoder layer": 22.0,
+      "|cosine| to impolite read-out direction": 0.03840355018424557,
+      "series": "chance 97.5% bound",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Decoder layer": 23.0,
+      "|cosine| to impolite read-out direction": 0.037287853456917805,
+      "series": "chance 97.5% bound",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Decoder layer": 24.0,
+      "|cosine| to impolite read-out direction": 0.03780755765552918,
+      "series": "chance 97.5% bound",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Decoder layer": 25.0,
+      "|cosine| to impolite read-out direction": 0.03742517372266817,
+      "series": "chance 97.5% bound",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Decoder layer": 26.0,
+      "|cosine| to impolite read-out direction": 0.03795011997312263,
+      "series": "chance 97.5% bound",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Decoder layer": 27.0,
+      "|cosine| to impolite read-out direction": 0.03666388931373139,
+      "series": "chance 97.5% bound",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Decoder layer": 0.0,
+      "y": 0.521993726971644,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Decoder layer": 1.0,
+      "y": 0.40889111874453377,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Decoder layer": 2.0,
+      "y": 0.620871645225722,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Decoder layer": 3.0,
+      "y": 0.6925131764296519,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Decoder layer": 4.0,
+      "y": 0.7113561962566262,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Decoder layer": 5.0,
+      "y": 0.7341366726787684,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Decoder layer": 6.0,
+      "y": 0.7640270051570409,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Decoder layer": 7.0,
+      "y": 0.7910033316839631,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Decoder layer": 8.0,
+      "y": 0.789204728601046,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Decoder layer": 9.0,
+      "y": 0.7984581126850908,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Decoder layer": 10.0,
+      "y": 0.7708134079131327,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Decoder layer": 11.0,
+      "y": 0.7681796758281396,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Decoder layer": 12.0,
+      "y": 0.7434716473014851,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Decoder layer": 13.0,
+      "y": 0.6728301355985642,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Decoder layer": 14.0,
+      "y": 0.6597002341002772,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Decoder layer": 15.0,
+      "y": 0.6570982502320805,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Decoder layer": 16.0,
+      "y": 0.6619332014655814,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Decoder layer": 17.0,
+      "y": 0.6404537776769852,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Decoder layer": 18.0,
+      "y": 0.6221180111511663,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Decoder layer": 19.0,
+      "y": 0.7628486173782273,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Decoder layer": 20.0,
+      "y": 0.7768752439762663,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Decoder layer": 21.0,
+      "y": 0.779759570313828,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Decoder layer": 22.0,
+      "y": 0.7903131013385825,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Decoder layer": 23.0,
+      "y": 0.8241500169027901,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Decoder layer": 24.0,
+      "y": 0.8251153105972923,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Decoder layer": 25.0,
+      "y": 0.7938384352240769,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Decoder layer": 26.0,
+      "y": 0.7814748890203687,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Decoder layer": 27.0,
+      "y": 0.566272185180148,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Decoder layer": 0.0,
+      "y": 0.31850599348931263,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Decoder layer": 1.0,
+      "y": 0.19460798171449017,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Decoder layer": 2.0,
+      "y": 0.307163202959459,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Decoder layer": 3.0,
+      "y": 0.3954964711426334,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Decoder layer": 4.0,
+      "y": 0.43936319242654326,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Decoder layer": 5.0,
+      "y": 0.47104862239519285,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Decoder layer": 6.0,
+      "y": 0.45979232902077405,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Decoder layer": 7.0,
+      "y": 0.4865172599614509,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Decoder layer": 8.0,
+      "y": 0.522418513635548,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Decoder layer": 9.0,
+      "y": 0.4921992772814516,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Decoder layer": 10.0,
+      "y": 0.5115948185092328,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Decoder layer": 11.0,
+      "y": 0.5336438704254414,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Decoder layer": 12.0,
+      "y": 0.49449873544894885,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Decoder layer": 13.0,
+      "y": 0.4881071947802778,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Decoder layer": 14.0,
+      "y": 0.43458299664353867,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Decoder layer": 15.0,
+      "y": 0.4484274498477802,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Decoder layer": 16.0,
+      "y": 0.4521996755476231,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Decoder layer": 17.0,
+      "y": 0.41225945597241653,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Decoder layer": 18.0,
+      "y": 0.4139552573761972,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Decoder layer": 19.0,
+      "y": 0.32391814427907545,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Decoder layer": 20.0,
+      "y": 0.3043751197790281,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Decoder layer": 21.0,
+      "y": 0.21489408962772485,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Decoder layer": 22.0,
+      "y": 0.17875852890926885,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Decoder layer": 23.0,
+      "y": 0.11146213922061299,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Decoder layer": 24.0,
+      "y": 0.09721437229444334,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Decoder layer": 25.0,
+      "y": 0.1116945933026658,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Decoder layer": 26.0,
+      "y": 0.059317739821921324,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Decoder layer": 27.0,
+      "y": 0.16015893273874082,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Decoder layer": 0.0,
+      "y": 0.7860598852192396,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Decoder layer": 1.0,
+      "y": 0.7557297413151866,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Decoder layer": 2.0,
+      "y": 0.8115830863140743,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Decoder layer": 3.0,
+      "y": 0.8357382493194211,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Decoder layer": 4.0,
+      "y": 0.8520038673843189,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Decoder layer": 5.0,
+      "y": 0.8742667107714965,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Decoder layer": 6.0,
+      "y": 0.8890722168605645,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Decoder layer": 7.0,
+      "y": 0.8954025951929793,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Decoder layer": 8.0,
+      "y": 0.8888404376036012,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Decoder layer": 9.0,
+      "y": 0.8917638150405813,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Decoder layer": 10.0,
+      "y": 0.8886104698873951,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Decoder layer": 11.0,
+      "y": 0.8901002608096631,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Decoder layer": 12.0,
+      "y": 0.8807309284895649,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Decoder layer": 13.0,
+      "y": 0.8689159365320268,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Decoder layer": 14.0,
+      "y": 0.8638506880121108,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Decoder layer": 15.0,
+      "y": 0.8751662971860107,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Decoder layer": 16.0,
+      "y": 0.8775113159521657,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Decoder layer": 17.0,
+      "y": 0.879544606164638,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Decoder layer": 18.0,
+      "y": 0.8815493873376337,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Decoder layer": 19.0,
+      "y": 0.8978322246049336,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Decoder layer": 20.0,
+      "y": 0.8949009817575372,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Decoder layer": 21.0,
+      "y": 0.8898514059291768,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Decoder layer": 22.0,
+      "y": 0.8805694356367675,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Decoder layer": 23.0,
+      "y": 0.8838758849618001,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Decoder layer": 24.0,
+      "y": 0.882123281587959,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Decoder layer": 25.0,
+      "y": 0.8769446256704966,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Decoder layer": 26.0,
+      "y": 0.8580005868969068,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Decoder layer": 27.0,
+      "y": 0.8165450994468871,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Decoder layer": 0.0,
+      "y": 0.8075193545666937,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Decoder layer": 1.0,
+      "y": 0.7920386297516833,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Decoder layer": 2.0,
+      "y": 0.8415415584394617,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Decoder layer": 3.0,
+      "y": 0.8670003526085007,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Decoder layer": 4.0,
+      "y": 0.8809061272903032,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Decoder layer": 5.0,
+      "y": 0.8954461921382941,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Decoder layer": 6.0,
+      "y": 0.9063370194509157,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Decoder layer": 7.0,
+      "y": 0.9116379759632117,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Decoder layer": 8.0,
+      "y": 0.9093227775972016,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Decoder layer": 9.0,
+      "y": 0.9122794712515674,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Decoder layer": 10.0,
+      "y": 0.9096631486924218,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Decoder layer": 11.0,
+      "y": 0.9092356297156811,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Decoder layer": 12.0,
+      "y": 0.9013589329885936,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Decoder layer": 13.0,
+      "y": 0.8912452091176505,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Decoder layer": 14.0,
+      "y": 0.8829947514878614,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Decoder layer": 15.0,
+      "y": 0.8918206064263897,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Decoder layer": 16.0,
+      "y": 0.8920084827013844,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Decoder layer": 17.0,
+      "y": 0.8942482453827748,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Decoder layer": 18.0,
+      "y": 0.8940155241939994,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Decoder layer": 19.0,
+      "y": 0.9086319552772467,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Decoder layer": 20.0,
+      "y": 0.9052848257454859,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Decoder layer": 21.0,
+      "y": 0.9033034738265485,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Decoder layer": 22.0,
+      "y": 0.8961071987280551,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Decoder layer": 23.0,
+      "y": 0.902879495772245,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Decoder layer": 24.0,
+      "y": 0.9005327618371674,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Decoder layer": 25.0,
+      "y": 0.893644266079691,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Decoder layer": 26.0,
+      "y": 0.873949243685445,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Decoder layer": 27.0,
+      "y": 0.8290224417594483,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Decoder layer": 0.0,
+      "y": 0.794600305790458,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Decoder layer": 1.0,
+      "y": 0.7802218820584762,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Decoder layer": 2.0,
+      "y": 0.8290868581010605,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Decoder layer": 3.0,
+      "y": 0.8485991397739566,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Decoder layer": 4.0,
+      "y": 0.8620488549735776,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Decoder layer": 5.0,
+      "y": 0.8791696831242534,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Decoder layer": 6.0,
+      "y": 0.8913097076711936,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Decoder layer": 7.0,
+      "y": 0.8973666453421432,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Decoder layer": 8.0,
+      "y": 0.8926931547025331,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Decoder layer": 9.0,
+      "y": 0.8991522662685347,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Decoder layer": 10.0,
+      "y": 0.8987595080610271,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Decoder layer": 11.0,
+      "y": 0.8998606402654905,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Decoder layer": 12.0,
+      "y": 0.8937843331839032,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Decoder layer": 13.0,
+      "y": 0.8834271410711617,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Decoder layer": 14.0,
+      "y": 0.8711323064025415,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Decoder layer": 15.0,
+      "y": 0.8835145248252564,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Decoder layer": 16.0,
+      "y": 0.888273026848923,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Decoder layer": 17.0,
+      "y": 0.8892724876267768,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Decoder layer": 18.0,
+      "y": 0.8877116089950379,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Decoder layer": 19.0,
+      "y": 0.9039115318437108,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Decoder layer": 20.0,
+      "y": 0.9041945348769713,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Decoder layer": 21.0,
+      "y": 0.9004845813469322,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Decoder layer": 22.0,
+      "y": 0.895045821301451,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Decoder layer": 23.0,
+      "y": 0.8997578612868339,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Decoder layer": 24.0,
+      "y": 0.8977729738972328,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Decoder layer": 25.0,
+      "y": 0.893028837633051,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Decoder layer": 26.0,
+      "y": 0.875417525998716,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Decoder layer": 27.0,
+      "y": 0.858869315842367,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Decoder layer": 0.0,
+      "y": 0.46894046667776745,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Decoder layer": 1.0,
+      "y": 0.3810973197714174,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Decoder layer": 2.0,
+      "y": 0.6023689698862585,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Decoder layer": 3.0,
+      "y": 0.712025963173255,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Decoder layer": 4.0,
+      "y": 0.7643503979045624,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Decoder layer": 5.0,
+      "y": 0.7884364981179537,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Decoder layer": 6.0,
+      "y": 0.8082180912102046,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Decoder layer": 7.0,
+      "y": 0.8369366990121767,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Decoder layer": 8.0,
+      "y": 0.8153652039737874,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Decoder layer": 9.0,
+      "y": 0.8445662165598148,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Decoder layer": 10.0,
+      "y": 0.8359924055307905,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Decoder layer": 11.0,
+      "y": 0.7999666802392157,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Decoder layer": 12.0,
+      "y": 0.7983819311998376,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Decoder layer": 13.0,
+      "y": 0.8142356964701832,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Decoder layer": 14.0,
+      "y": 0.8156063385817611,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Decoder layer": 15.0,
+      "y": 0.82163605536056,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Decoder layer": 16.0,
+      "y": 0.8122441928788825,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Decoder layer": 17.0,
+      "y": 0.8041514879389968,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Decoder layer": 18.0,
+      "y": 0.7961501613379881,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Decoder layer": 19.0,
+      "y": 0.8164017658524411,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Decoder layer": 20.0,
+      "y": 0.8371914491039637,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Decoder layer": 21.0,
+      "y": 0.8147660391951489,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Decoder layer": 22.0,
+      "y": 0.8239893546028043,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Decoder layer": 23.0,
+      "y": 0.8383483826668481,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Decoder layer": 24.0,
+      "y": 0.8432086304501927,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Decoder layer": 25.0,
+      "y": 0.8239069384632934,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Decoder layer": 26.0,
+      "y": 0.7865143666896666,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Decoder layer": 27.0,
+      "y": 0.07769719808637508,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Decoder layer": 0.0,
+      "y": 0.03860908498321872,
+      "series": "chance 97.5% bound",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Decoder layer": 1.0,
+      "y": 0.03661890777082997,
+      "series": "chance 97.5% bound",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Decoder layer": 2.0,
+      "y": 0.03805724326288263,
+      "series": "chance 97.5% bound",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Decoder layer": 3.0,
+      "y": 0.038949627787564244,
+      "series": "chance 97.5% bound",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Decoder layer": 4.0,
+      "y": 0.036634081790351894,
+      "series": "chance 97.5% bound",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Decoder layer": 5.0,
+      "y": 0.0363340490984969,
+      "series": "chance 97.5% bound",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Decoder layer": 6.0,
+      "y": 0.03776368748952085,
+      "series": "chance 97.5% bound",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Decoder layer": 7.0,
+      "y": 0.03881003455382839,
+      "series": "chance 97.5% bound",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Decoder layer": 8.0,
+      "y": 0.03665981470088573,
+      "series": "chance 97.5% bound",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Decoder layer": 9.0,
+      "y": 0.041815734321683645,
+      "series": "chance 97.5% bound",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Decoder layer": 10.0,
+      "y": 0.036613232355332606,
+      "series": "chance 97.5% bound",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Decoder layer": 11.0,
+      "y": 0.03729088870002613,
+      "series": "chance 97.5% bound",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Decoder layer": 12.0,
+      "y": 0.03853911825808301,
+      "series": "chance 97.5% bound",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Decoder layer": 13.0,
+      "y": 0.03687281746390561,
+      "series": "chance 97.5% bound",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Decoder layer": 14.0,
+      "y": 0.0372520680524096,
+      "series": "chance 97.5% bound",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Decoder layer": 15.0,
+      "y": 0.03719208971700524,
+      "series": "chance 97.5% bound",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Decoder layer": 16.0,
+      "y": 0.03708411396017987,
+      "series": "chance 97.5% bound",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Decoder layer": 17.0,
+      "y": 0.03594818607458089,
+      "series": "chance 97.5% bound",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Decoder layer": 18.0,
+      "y": 0.03932361005488076,
+      "series": "chance 97.5% bound",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Decoder layer": 19.0,
+      "y": 0.03631243714836977,
+      "series": "chance 97.5% bound",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Decoder layer": 20.0,
+      "y": 0.03614203837037226,
+      "series": "chance 97.5% bound",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Decoder layer": 21.0,
+      "y": 0.036437897940642464,
+      "series": "chance 97.5% bound",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Decoder layer": 22.0,
+      "y": 0.03840355018424557,
+      "series": "chance 97.5% bound",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Decoder layer": 23.0,
+      "y": 0.037287853456917805,
+      "series": "chance 97.5% bound",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Decoder layer": 24.0,
+      "y": 0.03780755765552918,
+      "series": "chance 97.5% bound",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Decoder layer": 25.0,
+      "y": 0.03742517372266817,
+      "series": "chance 97.5% bound",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Decoder layer": 26.0,
+      "y": 0.03795011997312263,
+      "series": "chance 97.5% bound",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Decoder layer": 27.0,
+      "y": 0.03666388931373139,
+      "series": "chance 97.5% bound",
+      "_kind": "line",
+      "_group": 13
+    }
+  ],
+  "n_series": 14,
+  "total_points": 392,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Mean shift vs read-out direction",
+        "xlabel": "Decoder layer",
+        "ylabel": "|cosine| to impolite read-out direction",
+        "legend_labels": [
+          "LoRA, persona context",
+          "LoRA, WildChat context",
+          "LoRA + negatives, ICL",
+          "LoRA positives-only, ICL",
+          "Full FT + negatives, ICL",
+          "Full FT positives-only, ICL",
+          "chance 97.5% bound"
+        ],
+        "xticklabels": [
+          "\u22125",
+          "0",
+          "5",
+          "10",
+          "15",
+          "20",
+          "25",
+          "30"
+        ],
+        "yticklabels": [
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ]
+      },
+      {
+        "title_left": "Top shift mode vs read-out direction",
+        "xlabel": "Decoder layer",
+        "xticklabels": [
+          "\u22125",
+          "0",
+          "5",
+          "10",
+          "15",
+          "20",
+          "25",
+          "30"
+        ]
+      }
+    ],
+    "series": [
+      "LoRA, persona context",
+      "LoRA, WildChat context",
+      "LoRA + negatives, ICL",
+      "LoRA positives-only, ICL",
+      "Full FT + negatives, ICL",
+      "Full FT positives-only, ICL",
+      "chance 97.5% bound"
+    ]
+  }
+}

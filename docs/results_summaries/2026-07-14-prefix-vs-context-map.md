@@ -57,7 +57,13 @@ The first thing we needed was the confound-free head-to-head: the same prefixes,
 * The query-bearing context state carries nearly all held-out map skill; the gap is layer/basis/fit-arm stable (layer 18 context 0.823; pca48 0.910 vs 0.096).
 * The prefix maps are small but real — both arms clear their permutation nulls in all six coherent cells. The prefix state is not empty, it is just a minor share of per-context prediction.
 * The shuffled-pairing cells collapse both arms (0.06–0.08), so neither map is a corpus artifact — it needs the true prefix–query–answer pairing.
-* Known repairs in flight (all 0 GPU, running now): a battery-excluded refit (2,400 eval-bridge rows leaked into fit training), three registered reads not yet banked, and identity/affine transport floors that were never computed. None of these is expected to move the headline gap, but the numbers above should be re-quoted from the repaired fits.
+* The transport floors are now computed (they were a flagged engine gap): in the coherent cells the context-arm ridge (0.49–0.80) sits far above raw identity (−1.6 to −4.5), scaled identity α·I (0.05–0.08), and diagonal-affine (0.11–0.14) — the map is a genuine learned linear operator, not consecutive-token similarity. The prefix arm's ~0.05, by contrast, is approximately **at** its own floors: the prefix map carries little skill beyond a trivial transform, which sharpens the headline — per-context, essentially all learned transport structure lives in the query-bearing state.
+
+**Plot: transport floors vs the fitted ridge map (battery-excluded, both arms, all cells)**
+
+![transport floors](https://raw.githubusercontent.com/superkaiba/explore-persona-space/81581a49ebe4acbeffe5b43af744521673e19e02/figures/issue_1092/inline_a3_transport_floors_vs_ridge.png)
+
+* Battery-leak repair status (inline round): root cause found — a stratum-label mismatch in the fit engine (the filter excluded a label that doesn't exist), and the leak touches only the 4 full-corpus cells (the Claude and shuffled cells' fits are exactly battery-free). The battery-excluded re-fit of this table needs the full ridge battery (>12 h single-VM; off-VM job spec committed) and is expected to move R² only marginally (−12% train rows on an R² of 0.71–0.80).
 
 ### _Result 2: The context map is near-additive in a prefix part and a query part — two disjoint forwards recover most of the full map_
 
@@ -85,6 +91,7 @@ Second, the variance decomposition and the stitching test:
 * The variance shares transfer from the constructed grid to realistic data: #923 (UltraChat) 7.8% prefix / 83.7% query / 8.6% interaction; #1092 (WildChat/LMSYS) 10.7% / 79.0% / 10.3%. The realistic prefix share runs slightly above the grid's.
 * Stitching two **disjoint** forwards — a prefix-only read plus a bare-query-only read, no attention between them — reaches R² 0.833 against the full-context map's 0.910, while bare-query alone gets 0.146 and prefix alone 0.096. You need both parts; what attention mixing adds on top is comparatively small at this granularity (#923 measured the mixing increment at +0.103 at matched query-span granularity — real, but second-order next to the additive structure).
 * So the decomposition asked for in the original question exists: context→answer ≈ prefix→answer + query→answer, with the query part dominating.
+* These decomposition reads are provably unaffected by the #1092 battery-leak caveat: recomputed battery-excluded, the variance shares match the banked values exactly (Δ = 0) and the additivity residuals match to ~7 decimal places — both are dense-core-only statistics, disjoint from the leaked rows.
 
 ### _Result 3: The average-grain map and the per-example-grain map agree on averaged targets — but the query-specific component is the only part that transfers across contexts_
 
@@ -133,8 +140,8 @@ Finally, the hypothesis that what is captured by the average map vs the single m
 
 ## Next steps:
 
-- (running, inline, 0 GPU) **#1092 repairs**: battery-excluded refit, bank the per-target R² columns + topic-matched pairing delta, identity/affine transport floors — re-quote Result 1 from the repaired fits.
-- (running, inline, 0 GPU) **Operator-level M vs M′**: principal angles + Procrustes residual between the fitted prefix-arm and context-arm operators — decides whether the query adds operator structure or only input information (if the operators align, there is ONE transfer operator and the prefix map is just its query-averaged application).
+- (partially done, inline) **#1092 repairs**: transport floors computed and the Result-2 reads proven battery-invariant (folded in above). Still pending: the battery-excluded read-1 refit (4 affected cells) + per-target R² columns — too big for the shared VM (>12 h; the banked grid was ~230 CPU-machine-h), so it's an off-VM CPU job whose exact recipe is committed (`eval_results/issue_1092/inline_caveat_repairs_operator_comparison/deferred_refit_spec.json`), including the one-line engine patch it must carry first (`scripts/issue1092_fit_grid.py:1841` — the stratum filter excludes a label that doesn't exist, the battery-leak root cause). The topic-matched pairing delta has no recoverable definition in the committed engine (superseded plan revision) and needs re-registering.
+- (deferred to the same off-VM job) **Operator-level M vs M′**: principal angles + Procrustes residual between the fitted prefix-arm and context-arm operators — decides whether the query adds operator structure or only input information. The delivered evidence (query share ~79%, additive operator, prefix arm at its floors) predicts the context-arm map is the near-additive prefix+query operator with the prefix-arm map spanning a strict subspace, but no operator-level verdict is computed yet.
 - (done, inline — folded into Result 4) **A3.5a coherence test**: supported out-of-sample (spread predicts LOCO residual, +0.89 median Spearman, 28/28 layers). Remaining piece: leave-one-condition-out **nonlinear** fits to isolate the curvature (½K·s_W) mechanism specifically (~50 MLP fits/layer, still 0 GPU).
 - Push the stitch further: can a prefix-map + query-map combination close the remaining 0.833 → 0.910 gap, and does the interaction term localize to specific layers/directions?
 - Use the split for behavior: persona-level (query-averaged) reads are the strong monitoring surface; test whether the prefix component predicts behavior under fine-tuning (the #811/#833 map-change line) better than the full-context state does.

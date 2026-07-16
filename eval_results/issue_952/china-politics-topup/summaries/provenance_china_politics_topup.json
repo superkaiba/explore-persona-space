@@ -1,0 +1,620 @@
+{
+  "ids": [
+    "china_politics_060_div",
+    "china_politics_060_ctl",
+    "china_politics_061_div",
+    "china_politics_061_ctl",
+    "china_politics_062_div",
+    "china_politics_062_ctl",
+    "china_politics_063_div",
+    "china_politics_063_ctl",
+    "china_politics_064_div",
+    "china_politics_064_ctl",
+    "china_politics_065_div",
+    "china_politics_065_ctl",
+    "china_politics_066_div",
+    "china_politics_066_ctl",
+    "china_politics_067_div",
+    "china_politics_067_ctl",
+    "china_politics_068_div",
+    "china_politics_068_ctl",
+    "china_politics_069_div",
+    "china_politics_069_ctl",
+    "china_politics_070_div",
+    "china_politics_070_ctl",
+    "china_politics_071_div",
+    "china_politics_071_ctl",
+    "china_politics_072_div",
+    "china_politics_072_ctl",
+    "china_politics_073_div",
+    "china_politics_073_ctl",
+    "china_politics_074_div",
+    "china_politics_074_ctl",
+    "china_politics_075_div",
+    "china_politics_075_ctl",
+    "china_politics_076_div",
+    "china_politics_076_ctl",
+    "china_politics_077_div",
+    "china_politics_077_ctl",
+    "china_politics_078_div",
+    "china_politics_078_ctl",
+    "china_politics_079_div",
+    "china_politics_079_ctl",
+    "china_politics_080_div",
+    "china_politics_080_ctl",
+    "china_politics_081_div",
+    "china_politics_081_ctl",
+    "china_politics_082_div",
+    "china_politics_082_ctl",
+    "china_politics_083_div",
+    "china_politics_083_ctl",
+    "china_politics_000_div",
+    "china_politics_000_ctl",
+    "china_politics_001_div",
+    "china_politics_001_ctl",
+    "china_politics_006_div",
+    "china_politics_006_ctl",
+    "china_politics_022_div",
+    "china_politics_022_ctl",
+    "china_politics_023_div",
+    "china_politics_023_ctl",
+    "china_politics_024_div",
+    "china_politics_024_ctl",
+    "china_politics_027_div",
+    "china_politics_027_ctl",
+    "china_politics_030_div",
+    "china_politics_030_ctl",
+    "china_politics_037_div",
+    "china_politics_037_ctl",
+    "china_politics_039_div",
+    "china_politics_039_ctl",
+    "china_politics_041_div",
+    "china_politics_041_ctl",
+    "china_politics_048_div",
+    "china_politics_048_ctl",
+    "china_politics_050_div",
+    "china_politics_050_ctl",
+    "china_politics_051_div",
+    "china_politics_051_ctl",
+    "china_politics_052_div",
+    "china_politics_052_ctl",
+    "china_politics_053_div",
+    "china_politics_053_ctl",
+    "china_politics_056_div",
+    "china_politics_056_ctl",
+    "china_politics_057_div",
+    "china_politics_057_ctl"
+  ],
+  "provenance": {
+    "china_politics_060_div": {
+      "pair_id": "china_politics_060",
+      "role": "divergent",
+      "origin": "new"
+    },
+    "china_politics_060_ctl": {
+      "pair_id": "china_politics_060",
+      "role": "control",
+      "origin": "new"
+    },
+    "china_politics_061_div": {
+      "pair_id": "china_politics_061",
+      "role": "divergent",
+      "origin": "new"
+    },
+    "china_politics_061_ctl": {
+      "pair_id": "china_politics_061",
+      "role": "control",
+      "origin": "new"
+    },
+    "china_politics_062_div": {
+      "pair_id": "china_politics_062",
+      "role": "divergent",
+      "origin": "new"
+    },
+    "china_politics_062_ctl": {
+      "pair_id": "china_politics_062",
+      "role": "control",
+      "origin": "new"
+    },
+    "china_politics_063_div": {
+      "pair_id": "china_politics_063",
+      "role": "divergent",
+      "origin": "new"
+    },
+    "china_politics_063_ctl": {
+      "pair_id": "china_politics_063",
+      "role": "control",
+      "origin": "new"
+    },
+    "china_politics_064_div": {
+      "pair_id": "china_politics_064",
+      "role": "divergent",
+      "origin": "new"
+    },
+    "china_politics_064_ctl": {
+      "pair_id": "china_politics_064",
+      "role": "control",
+      "origin": "new"
+    },
+    "china_politics_065_div": {
+      "pair_id": "china_politics_065",
+      "role": "divergent",
+      "origin": "new"
+    },
+    "china_politics_065_ctl": {
+      "pair_id": "china_politics_065",
+      "role": "control",
+      "origin": "new"
+    },
+    "china_politics_066_div": {
+      "pair_id": "china_politics_066",
+      "role": "divergent",
+      "origin": "new"
+    },
+    "china_politics_066_ctl": {
+      "pair_id": "china_politics_066",
+      "role": "control",
+      "origin": "new"
+    },
+    "china_politics_067_div": {
+      "pair_id": "china_politics_067",
+      "role": "divergent",
+      "origin": "new"
+    },
+    "china_politics_067_ctl": {
+      "pair_id": "china_politics_067",
+      "role": "control",
+      "origin": "new"
+    },
+    "china_politics_068_div": {
+      "pair_id": "china_politics_068",
+      "role": "divergent",
+      "origin": "new"
+    },
+    "china_politics_068_ctl": {
+      "pair_id": "china_politics_068",
+      "role": "control",
+      "origin": "new"
+    },
+    "china_politics_069_div": {
+      "pair_id": "china_politics_069",
+      "role": "divergent",
+      "origin": "new"
+    },
+    "china_politics_069_ctl": {
+      "pair_id": "china_politics_069",
+      "role": "control",
+      "origin": "new"
+    },
+    "china_politics_070_div": {
+      "pair_id": "china_politics_070",
+      "role": "divergent",
+      "origin": "new"
+    },
+    "china_politics_070_ctl": {
+      "pair_id": "china_politics_070",
+      "role": "control",
+      "origin": "new"
+    },
+    "china_politics_071_div": {
+      "pair_id": "china_politics_071",
+      "role": "divergent",
+      "origin": "new"
+    },
+    "china_politics_071_ctl": {
+      "pair_id": "china_politics_071",
+      "role": "control",
+      "origin": "new"
+    },
+    "china_politics_072_div": {
+      "pair_id": "china_politics_072",
+      "role": "divergent",
+      "origin": "new"
+    },
+    "china_politics_072_ctl": {
+      "pair_id": "china_politics_072",
+      "role": "control",
+      "origin": "new"
+    },
+    "china_politics_073_div": {
+      "pair_id": "china_politics_073",
+      "role": "divergent",
+      "origin": "new"
+    },
+    "china_politics_073_ctl": {
+      "pair_id": "china_politics_073",
+      "role": "control",
+      "origin": "new"
+    },
+    "china_politics_074_div": {
+      "pair_id": "china_politics_074",
+      "role": "divergent",
+      "origin": "new"
+    },
+    "china_politics_074_ctl": {
+      "pair_id": "china_politics_074",
+      "role": "control",
+      "origin": "new"
+    },
+    "china_politics_075_div": {
+      "pair_id": "china_politics_075",
+      "role": "divergent",
+      "origin": "new"
+    },
+    "china_politics_075_ctl": {
+      "pair_id": "china_politics_075",
+      "role": "control",
+      "origin": "new"
+    },
+    "china_politics_076_div": {
+      "pair_id": "china_politics_076",
+      "role": "divergent",
+      "origin": "new"
+    },
+    "china_politics_076_ctl": {
+      "pair_id": "china_politics_076",
+      "role": "control",
+      "origin": "new"
+    },
+    "china_politics_077_div": {
+      "pair_id": "china_politics_077",
+      "role": "divergent",
+      "origin": "new"
+    },
+    "china_politics_077_ctl": {
+      "pair_id": "china_politics_077",
+      "role": "control",
+      "origin": "new"
+    },
+    "china_politics_078_div": {
+      "pair_id": "china_politics_078",
+      "role": "divergent",
+      "origin": "new"
+    },
+    "china_politics_078_ctl": {
+      "pair_id": "china_politics_078",
+      "role": "control",
+      "origin": "new"
+    },
+    "china_politics_079_div": {
+      "pair_id": "china_politics_079",
+      "role": "divergent",
+      "origin": "new"
+    },
+    "china_politics_079_ctl": {
+      "pair_id": "china_politics_079",
+      "role": "control",
+      "origin": "new"
+    },
+    "china_politics_080_div": {
+      "pair_id": "china_politics_080",
+      "role": "divergent",
+      "origin": "new"
+    },
+    "china_politics_080_ctl": {
+      "pair_id": "china_politics_080",
+      "role": "control",
+      "origin": "new"
+    },
+    "china_politics_081_div": {
+      "pair_id": "china_politics_081",
+      "role": "divergent",
+      "origin": "new"
+    },
+    "china_politics_081_ctl": {
+      "pair_id": "china_politics_081",
+      "role": "control",
+      "origin": "new"
+    },
+    "china_politics_082_div": {
+      "pair_id": "china_politics_082",
+      "role": "divergent",
+      "origin": "new"
+    },
+    "china_politics_082_ctl": {
+      "pair_id": "china_politics_082",
+      "role": "control",
+      "origin": "new"
+    },
+    "china_politics_083_div": {
+      "pair_id": "china_politics_083",
+      "role": "divergent",
+      "origin": "new"
+    },
+    "china_politics_083_ctl": {
+      "pair_id": "china_politics_083",
+      "role": "control",
+      "origin": "new"
+    },
+    "china_politics_000_div": {
+      "pair_id": "china_politics_000",
+      "role": "divergent",
+      "origin": "parent"
+    },
+    "china_politics_000_ctl": {
+      "pair_id": "china_politics_000",
+      "role": "control",
+      "origin": "parent"
+    },
+    "china_politics_001_div": {
+      "pair_id": "china_politics_001",
+      "role": "divergent",
+      "origin": "parent"
+    },
+    "china_politics_001_ctl": {
+      "pair_id": "china_politics_001",
+      "role": "control",
+      "origin": "parent"
+    },
+    "china_politics_006_div": {
+      "pair_id": "china_politics_006",
+      "role": "divergent",
+      "origin": "parent"
+    },
+    "china_politics_006_ctl": {
+      "pair_id": "china_politics_006",
+      "role": "control",
+      "origin": "parent"
+    },
+    "china_politics_022_div": {
+      "pair_id": "china_politics_022",
+      "role": "divergent",
+      "origin": "parent"
+    },
+    "china_politics_022_ctl": {
+      "pair_id": "china_politics_022",
+      "role": "control",
+      "origin": "parent"
+    },
+    "china_politics_023_div": {
+      "pair_id": "china_politics_023",
+      "role": "divergent",
+      "origin": "parent"
+    },
+    "china_politics_023_ctl": {
+      "pair_id": "china_politics_023",
+      "role": "control",
+      "origin": "parent"
+    },
+    "china_politics_024_div": {
+      "pair_id": "china_politics_024",
+      "role": "divergent",
+      "origin": "parent"
+    },
+    "china_politics_024_ctl": {
+      "pair_id": "china_politics_024",
+      "role": "control",
+      "origin": "parent"
+    },
+    "china_politics_027_div": {
+      "pair_id": "china_politics_027",
+      "role": "divergent",
+      "origin": "parent"
+    },
+    "china_politics_027_ctl": {
+      "pair_id": "china_politics_027",
+      "role": "control",
+      "origin": "parent"
+    },
+    "china_politics_030_div": {
+      "pair_id": "china_politics_030",
+      "role": "divergent",
+      "origin": "parent"
+    },
+    "china_politics_030_ctl": {
+      "pair_id": "china_politics_030",
+      "role": "control",
+      "origin": "parent"
+    },
+    "china_politics_037_div": {
+      "pair_id": "china_politics_037",
+      "role": "divergent",
+      "origin": "parent"
+    },
+    "china_politics_037_ctl": {
+      "pair_id": "china_politics_037",
+      "role": "control",
+      "origin": "parent"
+    },
+    "china_politics_039_div": {
+      "pair_id": "china_politics_039",
+      "role": "divergent",
+      "origin": "parent"
+    },
+    "china_politics_039_ctl": {
+      "pair_id": "china_politics_039",
+      "role": "control",
+      "origin": "parent"
+    },
+    "china_politics_041_div": {
+      "pair_id": "china_politics_041",
+      "role": "divergent",
+      "origin": "parent"
+    },
+    "china_politics_041_ctl": {
+      "pair_id": "china_politics_041",
+      "role": "control",
+      "origin": "parent"
+    },
+    "china_politics_048_div": {
+      "pair_id": "china_politics_048",
+      "role": "divergent",
+      "origin": "parent"
+    },
+    "china_politics_048_ctl": {
+      "pair_id": "china_politics_048",
+      "role": "control",
+      "origin": "parent"
+    },
+    "china_politics_050_div": {
+      "pair_id": "china_politics_050",
+      "role": "divergent",
+      "origin": "parent"
+    },
+    "china_politics_050_ctl": {
+      "pair_id": "china_politics_050",
+      "role": "control",
+      "origin": "parent"
+    },
+    "china_politics_051_div": {
+      "pair_id": "china_politics_051",
+      "role": "divergent",
+      "origin": "parent"
+    },
+    "china_politics_051_ctl": {
+      "pair_id": "china_politics_051",
+      "role": "control",
+      "origin": "parent"
+    },
+    "china_politics_052_div": {
+      "pair_id": "china_politics_052",
+      "role": "divergent",
+      "origin": "parent"
+    },
+    "china_politics_052_ctl": {
+      "pair_id": "china_politics_052",
+      "role": "control",
+      "origin": "parent"
+    },
+    "china_politics_053_div": {
+      "pair_id": "china_politics_053",
+      "role": "divergent",
+      "origin": "parent"
+    },
+    "china_politics_053_ctl": {
+      "pair_id": "china_politics_053",
+      "role": "control",
+      "origin": "parent"
+    },
+    "china_politics_056_div": {
+      "pair_id": "china_politics_056",
+      "role": "divergent",
+      "origin": "parent"
+    },
+    "china_politics_056_ctl": {
+      "pair_id": "china_politics_056",
+      "role": "control",
+      "origin": "parent"
+    },
+    "china_politics_057_div": {
+      "pair_id": "china_politics_057",
+      "role": "divergent",
+      "origin": "parent"
+    },
+    "china_politics_057_ctl": {
+      "pair_id": "china_politics_057",
+      "role": "control",
+      "origin": "parent"
+    }
+  },
+  "n_new_queries": 48,
+  "n_parent_queries": 36,
+  "arms": [
+    "own",
+    "ext_plain"
+  ],
+  "layers": [
+    2,
+    6,
+    10,
+    14,
+    17,
+    20,
+    23,
+    26
+  ],
+  "slot_names": [
+    "c_last",
+    "f16_t1",
+    "f16_t2",
+    "f16_t3",
+    "f16_t4",
+    "f16_t5",
+    "f16_t6",
+    "f16_t7",
+    "f16_t8",
+    "f16_t9",
+    "f16_t10",
+    "f16_t11",
+    "f16_t12",
+    "f16_t13",
+    "f16_t14",
+    "f16_t15",
+    "f16_t16",
+    "l16_m1",
+    "l16_m2",
+    "l16_m3",
+    "l16_m4",
+    "l16_m5",
+    "l16_m6",
+    "l16_m7",
+    "l16_m8",
+    "l16_m9",
+    "l16_m10",
+    "l16_m11",
+    "l16_m12",
+    "l16_m13",
+    "l16_m14",
+    "l16_m15",
+    "l16_m16",
+    "d10_p5",
+    "d10_p15",
+    "d10_p25",
+    "d10_p35",
+    "d10_p45",
+    "d10_p55",
+    "d10_p65",
+    "d10_p75",
+    "d10_p85",
+    "d10_p95",
+    "z_t32",
+    "z_t64",
+    "z_t128",
+    "rem_mean_gt1",
+    "rem_mean_gt2",
+    "rem_mean_gt4",
+    "rem_mean_gt8",
+    "rem_mean_gt16",
+    "rem_mean_gt32",
+    "rem_mean_gt64",
+    "rem_mean_gt128",
+    "rem_max_gt1",
+    "rem_max_gt2",
+    "rem_max_gt4",
+    "rem_max_gt8",
+    "rem_max_gt16",
+    "rem_max_gt32",
+    "rem_max_gt64",
+    "rem_max_gt128",
+    "pooled_prefix_le1",
+    "pooled_prefix_le2",
+    "pooled_prefix_le4",
+    "pooled_prefix_le8",
+    "pooled_prefix_le16",
+    "pooled_prefix_le32",
+    "pooled_prefix_le64",
+    "pooled_prefix_le128",
+    "full_mean_ext",
+    "mean_823"
+  ],
+  "repro": {
+    "git_commit": "cfa446661d30406171864249c1974ab160667a19",
+    "generated_utc": "2026-07-15T05:12:44Z",
+    "python": "3.11.10",
+    "torch": "2.8.0+cu128",
+    "transformers": "4.57.6",
+    "model": "Qwen/Qwen2.5-7B-Instruct",
+    "judge_model": "claude-sonnet-4-5-20250929",
+    "layer_grid": [
+      2,
+      6,
+      10,
+      14,
+      17,
+      20,
+      23,
+      26
+    ],
+    "reused": "explore_persona_space.experiments.issue_952.run_952"
+  }
+}

@@ -38,7 +38,7 @@ How do we measure a distance between contexts $C$ — a trained-in marker's log-
 
 **1.1 Can a context be treated as a vector or a compact code?** <!-- q:spec-context-as-vector -->
 Take the last activation after a context — in-context examples, a random system prompt, or a non-persona system prompt — and use it as the persona vector; richer alternatives are a KV-derived code or a small distilled model. The hypothesis is that a KV-cache state can do something smarter than a fixed persona vector.
-> **Belief:** Untested; this would unify prompting, in-context examples, and system prompts under one representation. **Confidence:** LOW. **Evidence:** #685, #823, #841, #922, #923, #928, #952, #958, #1073, #1092.
+> **Belief:** Untested; this would unify prompting, in-context examples, and system prompts under one representation. **Confidence:** LOW. **Evidence:** #685, #823, #841, #922, #923, #928, #952, #958, #1073, #1092, #1005, #1415.
 
 **1.2 Does the divergence predictor depend on which probe questions you use?** <!-- q:spec-kl-probe-set -->
 KL/JS divergence of output distributions after the context can predict downstream effects, but the prediction may depend on the probe questions. Can we find a probe set that is a good predictor?
@@ -54,7 +54,7 @@ Hold one behavior fixed (the marker) and compare the two specifications.
 
 **1.4 Does a steering vector reach the same state?** <!-- q:spec-steering -->
 Project a persona steering vector onto the states reachable by prompts and contexts; measure the residual.
-> **Belief:** Untested in-house. **Confidence:** LOW. **Evidence:** #816.
+> **Belief:** Untested in-house. **Confidence:** LOW. **Evidence:** #816, #1415.
 
 **1.5 How does SDF interact with this?** <!-- q:spec-sdf -->
 Where synthetic-document finetuning sits relative to the other inducers: does SDF land on the same context as a prompt or a steering vector, or somewhere else?
@@ -74,7 +74,7 @@ Fixing a context $C$, what behaviors can an update bind to it, and what does it 
 
 **2.1 Which behaviors can be implanted into one persona (marker, sycophancy, refusal)?** <!-- q:implant-which-behaviors -->
 Open sub-question: does implantability depend on whether the persona already exhibits the behavior?
-> **Belief:** Most can, but it requires contrastive negatives; the marker and refusal implant cleanly — refusal-style negatives in particular install a persona-conditional gate that generalizes across most OOD framings, at some cost to in-context rule application — while sycophancy could not be selectively implanted on Qwen-2.5-7B (it spread broadly to other personas, see 3.2). Whether implantation is easier when the persona already leans toward the behavior is untested. **Confidence:** MODERATE. **Evidence:** #65, #390, #389, #381, #391, #448, #517, #528, #608, #734, #1074, #1090.
+> **Belief:** Most can, but it requires contrastive negatives; the marker and refusal implant cleanly — refusal-style negatives in particular install a persona-conditional gate that generalizes across most OOD framings, at some cost to in-context rule application — while sycophancy could not be selectively implanted on Qwen-2.5-7B (it spread broadly to other personas, see 3.2). Whether implantation is easier when the persona already leans toward the behavior is untested. **Confidence:** MODERATE. **Evidence:** #65, #390, #389, #381, #391, #448, #517, #528, #608, #734, #1074, #1090, #1333.
 
 **2.2 How fast is the marker learned?** <!-- q:implant-learning-speed -->
 We should track the marker log-prob trajectory over training steps per persona/condition, not just the endpoint — how fast the marker is learned, and the shape of the curve, is its own signal about what installed.
@@ -90,12 +90,12 @@ You update at one $(C, B)$ cell; the question is how behavior moves at every oth
 **3.1 What predicts persona leakage?** <!-- q:leak-predictor -->
 > **Belief:** Inconsistent across behaviors, and the inconsistency now has a candidate explanation. For a *contentless* behavior (a rare-token marker) cosine and JS to the source persona predict leakage (#207, #311); for a *contentful* behavior (a taught fact) the same teacher-referenced distances predict leakage with the WRONG sign — on the #444 panel, on-topic cosine −0.49, output-distribution JS −0.46, and JS recomputed on the taught completion itself −0.42, while off-topic distance is null. What predicts there instead is the bystander's *teacher-independent* base prior on the fact — base-model length-normalized log P(taught completion | bystander persona) — which correlates positively (+0.27). So the discriminator is the reference frame, not the probe slice (a fact-slice JS is still backwards). Candidate unification: leakage tracks proximity to the highest-base-prior persona for the behavior — for a marker the base prior is flat across personas, so the implanted source is that persona and distance-to-source predicts; for a fact the highest-prior persona is not the (arbitrary) teacher, so the prior predicts and distance-to-teacher inverts. The #444 result is single-fact, single-rig, n=6 personas, and uses a deliberately content-unrelated teacher, so the reference-frame claim is a candidate, not settled. The separate marker-implantability predictor failed outright — JS and cosine to the assistant and to other personas all failed to predict the marker log-prob increase.
 > *Next: #500 — teach one fact under sources of varying content-relatedness to a fixed bystander panel; test whether proximity-to-source flips from backwards (content-unrelated source) to predictive (content-related source) while the bystander prior stays stable.*
-> **Confidence:** MODERATE. **Evidence:** #396, #380, #368, #311, #207, #448, #456, #466, #470, #474, #480, #488, #489, #444, #500, #507, #504, #508, #514, #519, #520, #523, #524, #527, #521, #530, #532, #534, #538, #540, #539, #541, #545, #548, #550, #552, #551, #555, #560, #559, #568, #591, #605, #606, #612, #614, #621, #641, #623, #642, #644, #649, #650, #652, #657, #658, #667, #664, #683, #665, #742, #761, #813, #812, #920, #923, #1092.
+> **Confidence:** MODERATE. **Evidence:** #396, #380, #368, #311, #207, #448, #456, #466, #470, #474, #480, #488, #489, #444, #500, #507, #504, #508, #514, #519, #520, #523, #524, #527, #521, #530, #532, #534, #538, #540, #539, #541, #545, #548, #550, #552, #551, #555, #560, #559, #568, #591, #605, #606, #612, #614, #621, #641, #623, #642, #644, #649, #650, #652, #657, #658, #667, #664, #683, #665, #742, #761, #813, #812, #920, #923, #1092, #1332.
 
 **3.2 Does leakage depend on the behavior?** <!-- q:leak-behavior-vs-marker -->
 > **Belief:** Marker-specific so far: sycophancy trained into a source persona spread broadly to other personas rather than staying localized.
 > *Next: rerun the sycophancy implantation with methodology and hyperparameter changes to try to localize it.*
-> **Confidence:** MODERATE. **Evidence:** #391, #411, #116, #390, #480, #507, #516, #519, #521, #552, #551, #561, #591, #593, #599, #606, #612, #649, #657.
+> **Confidence:** MODERATE. **Evidence:** #391, #411, #116, #390, #480, #507, #516, #519, #521, #552, #551, #561, #591, #593, #599, #606, #612, #649, #657, #1333.
 
 **3.3 Does leakage depend on single vs multiple source personas, and on whether the eval persona already opposes the behavior?** <!-- q:leak-single-vs-multi -->
 > **Belief:** Untested; the multi-persona generalization of the single-persona leakage gradient.
@@ -155,7 +155,7 @@ One account: a persona is just a collection of behaviors, and a context shows th
 > **Belief:** Persona structure is real but fragile: Qwen's default identity prompt is a distinct persona slot, yet any SFT (LoRA or full, EM or benign) collapses persona geometry to near-degenerate, and the marker is a representational handle rather than a behavioral one. **Confidence:** MODERATE. **Evidence:** #123, #120, #237, #225, #623, #651, #931.
 
 **4.2 How does a contextual model differ from the base model?** <!-- q:identity-contextual-vs-base -->
-> **Belief:** Open; a contextual model is the base weights plus a KV-cache, and theory suggests a context acts roughly like a low-rank weight patch, but there is no in-house measurement comparing the two. **Confidence:** LOW. **Evidence:** #563, #491, #650, #653, #697, #823, #825, #833, #952, #1112.
+> **Belief:** Open; a contextual model is the base weights plus a KV-cache, and theory suggests a context acts roughly like a low-rank weight patch, but there is no in-house measurement comparing the two. **Confidence:** LOW. **Evidence:** #563, #491, #650, #653, #697, #823, #825, #833, #952, #1112, #1315, #1335, #1336, #1345.
 
 **4.3 Is behavior-distance just context-distance through the B ↦ C_B map?** <!-- q:identity-cb-duality -->
 If the duality holds, the cleanest distance between behaviors B and B′ is the context-distance between the prompts "you have behavior B" and "you have behavior B′" — one distance, not two.

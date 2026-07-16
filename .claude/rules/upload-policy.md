@@ -236,6 +236,27 @@ three rely on the Python Hub API for the same reason — the `hf` CLI's false "0
 would corrupt their checks identically. Keep the snippet (repo, `repo_type`,
 `revision`) consistent across these surfaces when editing.
 
+**Verify-path Hub calls ride `retry_transient` + ONE prefix-scoped listing per
+destination repo (#1335 r5).** A post-upload verify is still part of the run:
+a transport error there (429 / 5xx / timeout / connection) is retried, never
+fatal — in #1335 r5 an UN-retried per-shard `api.file_exists` HEAD probe (the
+exact-file fallback inside `hub.list_hf_files_under_path`) let one transient
+HF 429 ("maximum queue size reached") crash a healthy GCP run 2.8 h in, AFTER
+every upload had succeeded (attempt att-20260715-134136). Two rules for any
+upload/verify path in workload code: (a) wrap every FRESH Hub call in
+`hub.retry_transient` (`orchestrate/hub.py` — the public alias of
+`_retry_upload`: Retry-After-aware, wall-clock-budgeted via
+`EPM_HF_RETRY_BUDGET_S`; storage-quota-403 and other non-transient errors
+still re-raise immediately); (b) verify a SHARDED upload with ONE
+prefix-scoped listing per destination repo — collect the shard paths and
+check the SET via `hub.verify_repo_paths_uploaded(...)` — never a per-shard
+`file_exists` / exact-file probe loop (N per-file probes multiply transport
+exposure N-fold and duplicate the listing cost). The canonical sharded
+implementation is `upload_sharded._batched_verify` (#1335), superseding the
+per-shard `_verify_present` probe loop — the documented anti-pattern. Pin new
+verify code with a 429-then-success retry test and a ≤2-listings batching
+test (`tests/test_upload_sharded.py`, #1335).
+
 **Fail-loud uploads.** `upload_dataset_directory` (`orchestrate/hub.py`) exits
 non-zero on failure (`--no-upload` only for dry-runs).
 
@@ -249,7 +270,36 @@ a single bulk commit in 43s). Rules: (a) sweeps producing >~200 per-cell
 commits/hr batch their uploads into ONE bulk `upload_folder` commit per sweep
 (or chunked commits well under the cap); (b) "upload returned no path" is a
 TRACKED GAP recorded in the sweep's failure list and reconciled before the next
-phase — never a warning-and-continue.
+phase — never a warning-and-continue; (c) the FAIL-FAST direction needs a
+bounded OUTER retry (#1315): a dispatcher seam that RAISES on `hub._upload`'s
+no-path return (correct — (b) bans warning-and-continue) must first RETRY the
+no-path return with bounded jittered backoff, then raise the SAME fail-loud
+`upload returned no path` error on exhaustion. Layering: `_upload` already
+wraps each upload call in the inner `_retry_upload` envelope (6 attempts /
+~1800 s budget, Retry-After-aware, 429/408/5xx — the `retry_transient` entry
+above), catches what survives, logs "Upload failed: …", and returns `""`
+(`orchestrate/hub.py::_upload`) — so a no-path return means the inner budget
+EXHAUSTED or the failure classed non-transient (quota-403 and the
+0-files-verify path land here). The demonstrated #1315 no-path case was the
+then-UN-retried `api.file_exists` verify fallback inside
+`list_hf_files_under_path` — its "429 Client Error: Too Many Requests"
+matched the transient class all along (#1315 `epm:failure` v7; v8 recurrence);
+the bare probe just never entered the inner envelope. Fixed fleet-wide by
+#1360 (merge `289ad17572`): the fallback now rides `_retry_upload`, and the
+response-less Xet "queue size reached" body text classifies transient in
+`_is_transient_upload_error`. The seam retry remains the cheap bounded OUTER
+envelope — each attempt re-enters the full inner envelope after a 30-120 s
+pause — no longer the only retry for the Xet queue class. A persistent
+content-class failure (e.g. 403)
+costs one bounded outer cycle (~3.5-4.5 min) before the same raise; errors the
+seam's own guards RAISE propagate un-retried. Retries are free: uploads are
+idempotent (already-landed files verify + skip Hub-side). Validated constants:
+3 retries, (30, 60, 120) s backoff + 0-25% jitter, one log line per retry as
+the fix-engaged signal — worked example `_upload_with_transport_retry()` in
+`scripts/issue1315_dispatch.py` @ `c3c600541f` (#1315 r8: two p11 kills
+~35 min apart). IN-PROCESS complement of the #931 wedge ladder above, never a
+substitute: the seam retry fires when the upload RETURNS failed; the ladder
+fires when it HANGS (~0 TX, never returns).
 
 **Multi-cell pod sweeps upload per-cell, never one terminal batch (#664).** A
 dispatcher that produces per-cell artifacts (eval JSONs, store tensors, raw

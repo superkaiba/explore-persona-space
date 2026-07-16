@@ -905,6 +905,11 @@ def _load_reused_positives(
     the recomputed ``mean > threshold`` + structural rule (ValueError);
     reconstructed kept count != ``expected_kept_count`` (ValueError). The
     kept < floor_n case stays :class:`DatagenYieldError` in the caller.
+
+    The rebuilt :class:`JudgeResult`'s ``n_dropped_draws`` is a BLENDED
+    reconstruction — content drops plus any transport losses (the rule-24(ii)
+    split is not recoverable from the staged sidecar); see the inline note at
+    the construction site below.
     """
     raw_src, rows_src = Path(reuse.raw_pos_path), Path(reuse.judge_rows_path)
     for p, name in ((raw_src, "raw_pos"), (rows_src, "judge_rows")):
@@ -940,6 +945,14 @@ def _load_reused_positives(
     per_item_scores = {r["request_id"]: list(r.get("scores", [])) for r in jrows}
     draw_counts = {r["request_id"]: int(r.get("n_kept_draws", 0)) for r in jrows}
     n_total = n_judge_draws * len(jrows)  # reconstructed arithmetic, flagged in pool_meta
+    # BLENDED estimate (#1313, concern datagen-blended-drop-estimate): the staged
+    # judge_rows sidecar persists only KEPT per-draw scores + n_kept_draws — no
+    # per-draw error dicts and no save_raw — so the rule-24(ii) content-vs-transport
+    # split (graded_judge.judge_result_from_save_raw / batch_judge.is_transport_error_dict)
+    # is NOT reconstructible on this reuse path. ``n_dropped_draws`` below blends the
+    # original run's content drops with any transport losses (+ dispatch slack), and
+    # ``n_transport_lost_draws`` stays at its 0 default meaning "unsplit", NOT
+    # "measured zero". pool_meta flags this via ``judge_draw_stats_reconstructed``.
     jr = JudgeResult(
         scores={rid: m for rid, (m, _k) in scoreinfo.items()},
         n_total_draws=n_total,
@@ -1407,7 +1420,10 @@ def generate_training_data(
         pool_meta["pos_reuse"] = {
             **manifest["pos_reuse"],
             # pos judge_draw_stats above are arithmetic reconstructions from the
-            # staged judge_rows (n_judge_draws x judged rows), not a live count.
+            # staged judge_rows (n_judge_draws x judged rows), not a live count —
+            # and their n_dropped BLENDS content drops with any transport losses
+            # (the rule-24(ii) split is not reconstructible from the sidecar; see
+            # _load_reused_positives).
             "judge_draw_stats_reconstructed": True,
         }
     pool_meta_path.write_text(json.dumps(pool_meta, ensure_ascii=False, indent=2) + "\n")

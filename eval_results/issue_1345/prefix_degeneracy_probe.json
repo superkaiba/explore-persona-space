@@ -1,0 +1,127 @@
+{
+ "metadata": {
+  "script": "inline analyzer probe (revision round 2, epm:interpretation v2)",
+  "source_shard": "issue1345_framing/analysis_tensors/turnstore/instruct_chat_s_shard000.pt",
+  "hf_revision": "2a3cb30acada04defc84fd04d28a2b54da3104cd",
+  "layer": 19,
+  "n_conversations": 500,
+  "cell": "instruct / chat (r1)",
+  "recipe": "slots[:,0]=prefix, slots[:,1]=a1 context, fp32; torch.unique over prefix rows; length proxy = perpos_mask sum (capped 128)"
+ },
+ "prefix_slot": {
+  "n_distinct_rows": 14,
+  "variant_counts": [
+   8,
+   32,
+   8,
+   16,
+   8,
+   24,
+   40,
+   16,
+   292,
+   8,
+   8,
+   16,
+   16,
+   8
+  ],
+  "mean_vector_norm": 13982.8525390625,
+  "min_cos_to_mean": 0.9999940395355225,
+  "cross_conv_total_variance": 2558.143798828125,
+  "variants_vs_length": [
+   {
+    "n": 8,
+    "len_mean": 13.75,
+    "len_min": 10,
+    "len_max": 16
+   },
+   {
+    "n": 32,
+    "len_mean": 56.78125,
+    "len_min": 47,
+    "len_max": 68
+   },
+   {
+    "n": 8,
+    "len_mean": 7.75,
+    "len_min": 5,
+    "len_max": 10
+   },
+   {
+    "n": 16,
+    "len_mean": 99.4375,
+    "len_min": 73,
+    "len_max": 128
+   },
+   {
+    "n": 8,
+    "len_mean": 88.125,
+    "len_min": 70,
+    "len_max": 106
+   },
+   {
+    "n": 24,
+    "len_mean": 73.04166666666667,
+    "len_min": 65,
+    "len_max": 93
+   },
+   {
+    "n": 40,
+    "len_mean": 99.1,
+    "len_min": 67,
+    "len_max": 128
+   },
+   {
+    "n": 16,
+    "len_mean": 39.625,
+    "len_min": 32,
+    "len_max": 46
+   },
+   {
+    "n": 292,
+    "len_mean": 99.62328767123287,
+    "len_min": 65,
+    "len_max": 128
+   },
+   {
+    "n": 8,
+    "len_mean": 80.125,
+    "len_min": 65,
+    "len_max": 112
+   },
+   {
+    "n": 8,
+    "len_mean": 46.375,
+    "len_min": 46,
+    "len_max": 47
+   },
+   {
+    "n": 16,
+    "len_mean": 25.4375,
+    "len_min": 17,
+    "len_max": 31
+   },
+   {
+    "n": 16,
+    "len_mean": 10.0,
+    "len_min": 10,
+    "len_max": 10
+   },
+   {
+    "n": 8,
+    "len_mean": 98.875,
+    "len_min": 69,
+    "len_max": 128
+   }
+  ]
+ },
+ "context_slot": {
+  "n_distinct_rows": 485,
+  "mean_vector_norm": 78.12515258789062,
+  "min_cos_to_mean": 0.6130785346031189,
+  "mean_cos_to_mean": 0.8154582977294922,
+  "cross_conv_total_variance": 3093.93603515625
+ },
+ "reading": "chat prefix slot is a fixed 3-token template region; its stored activation collapses to 14 distinct vectors (batch-size-multiple counts, length-bucket-aligned) with cos-to-mean >= 0.999994 \u2014 the prefix arm's R~0.13 rides on batch-composition numerics, not conversation content"
+}

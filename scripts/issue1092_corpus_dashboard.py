@@ -137,24 +137,36 @@ def _load_json(path: Path) -> dict:
 
 
 def load_own_answer_map() -> dict[str, str]:
-    """row_id -> instruct-model on-policy own answer, from the cell_inst_own shards."""
+    """row_id -> instruct-model on-policy own answer, from the cell_inst_own shards.
+
+    Raises FileNotFoundError when no cell_inst_own_ shards resolve under the
+    prefix (fail-loud parity with the old bare listing, which raised on an
+    absent prefix).
+    """
     from huggingface_hub import HfApi
 
+    from explore_persona_space.orchestrate.hub import list_hf_files_under_path
+
     api = HfApi()
-    entries = api.list_repo_tree(
+    # Scoped, retried, files-only listing (#920/#997) — replaces the bare
+    # api.list_repo_tree call; the helper returns repo-root-relative FILE
+    # paths, subsuming the old RepoFolder filter.
+    files = list_hf_files_under_path(
+        api,
         HF_DATA_REPO,
-        path_in_repo=f"{HF_PREFIX}/raw_completions/instruct",
+        f"{HF_PREFIX}/raw_completions/instruct",
         repo_type="dataset",
-        recursive=True,
         revision="main",
     )
     shard_rel = [
-        "/".join(e.path.split("/")[1:])  # strip the leading HF_PREFIX segment for _fetch
-        for e in entries
-        if e.__class__.__name__ != "RepoFolder"
-        and Path(e.path).name.startswith("cell_inst_own_")
-        and e.path.endswith(".jsonl")
+        "/".join(p.split("/")[1:])  # strip the leading HF_PREFIX segment for _fetch
+        for p in files
+        if Path(p).name.startswith("cell_inst_own_") and p.endswith(".jsonl")
     ]
+    if not shard_rel:
+        raise FileNotFoundError(
+            f"no cell_inst_own_ shards under {HF_PREFIX}/raw_completions/instruct"
+        )
     answer: dict[str, str] = {}
     for rel in sorted(shard_rel):
         for row in _load_jsonl(_fetch(rel)):

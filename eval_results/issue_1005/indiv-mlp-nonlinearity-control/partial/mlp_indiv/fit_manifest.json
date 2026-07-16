@@ -1,0 +1,50 @@
+{
+  "round": "indiv-mlp-nonlinearity-control",
+  "store_identity": "aba4ff770a7c6f16",
+  "store_revision": "5c1e3c5c00a6c386198179e9316cb77509ccf7b1",
+  "layers": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18,
+    19,
+    20,
+    21,
+    22,
+    23,
+    24,
+    25,
+    26,
+    27
+  ],
+  "arms": [
+    "mlp_d_ctx2ans",
+    "mlp_g_aug"
+  ],
+  "combo": "mean/mean",
+  "standardization": "full_data",
+  "seed": 658,
+  "mlp": {
+    "hidden": 512,
+    "lr": 0.001,
+    "wd": 0.0001,
+    "epochs": 300
+  },
+  "device": "cuda",
+  "chunk_size": 4096
+}

@@ -1,0 +1,33 @@
+{
+  "commit": "a851bba06e1b9388ce6d98193c208a4eabed3cf8",
+  "cells": {
+    "single-turn instruct": {
+      "ridge": 0.6731,
+      "mlp": 0.6537
+    },
+    "single-turn pretrained": {
+      "ridge": 0.5877,
+      "mlp": 0.587
+    },
+    "2-turn asst instruct chat": {
+      "ridge": 0.0757,
+      "mlp": 0.5575
+    },
+    "2-turn asst pretrained chat": {
+      "ridge": -0.4606,
+      "mlp": 0.4873
+    },
+    "2-turn asst instruct nat.": {
+      "ridge": -0.0784,
+      "mlp": 0.5335
+    },
+    "2-turn asst pretrained nat.": {
+      "ridge": -0.3897,
+      "mlp": 0.4988
+    }
+  },
+  "sources": "ridge: eval_results/issue_825/cells_{S1,S2}.json + cells_M_*_assistant_*.json (r2_per_layer_obs[19] / selection_symmetric frozen best); MLP: cells_S{1,2}.mlp + mlp-unprobed-cells/headline_metrics.json",
+  "recoverability_line": 0.2,
+  "recoverability_line_provenance": "pre-registered kill threshold, #825 follow-up plan v6: MLP R2 > 0.2 (nulls ~ -0.01) = the answer is nonlinearly recoverable / the map has practical predictive power.",
+  "caption": "Held-out R2 (layer 19) predicting the assistant answer. Single-turn cells (reference): ridge and MLP both ~0.6 - one turn ahead is linearly readable. Two turns ahead (assistant): ridge collapses (+0.08 to -0.46) while the MLP holds (0.49-0.56), so the information is present but not linearly readable. User cells excluded (Result 4). Dashed line = the 0.2 recoverability threshold from the follow-up plan."
+}

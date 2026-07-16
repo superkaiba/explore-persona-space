@@ -1,0 +1,153 @@
+{
+  "commit": "d7fdfdf996",
+  "created": "2026-07-15T03:10:37Z",
+  "figsize": [
+    7.5,
+    4.0
+  ],
+  "points": [
+    {
+      "x": 0.0,
+      "tf-margin (mean over eval contexts)": -0.05006164096627354,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.0,
+      "tf-margin (mean over eval contexts)": -0.08078775478609691,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 1.0,
+      "tf-margin (mean over eval contexts)": -0.05006164096627354,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.0,
+      "tf-margin (mean over eval contexts)": -0.2846445446680704,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.0,
+      "tf-margin (mean over eval contexts)": -0.05006164096627354,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 2.0,
+      "tf-margin (mean over eval contexts)": -0.27562959435670964,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 4.0,
+      "tf-margin (mean over eval contexts)": -1.3426722876518897,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 4.0,
+      "tf-margin (mean over eval contexts)": -0.4128106686343946,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 5.0,
+      "tf-margin (mean over eval contexts)": -1.3426722876518897,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 5.0,
+      "tf-margin (mean over eval contexts)": -0.33515976860271623,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 6.0,
+      "tf-margin (mean over eval contexts)": -1.3426722876518897,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 6.0,
+      "tf-margin (mean over eval contexts)": -0.3637436462049634,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 8.0,
+      "tf-margin (mean over eval contexts)": -1.4067234512396887,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 8.0,
+      "tf-margin (mean over eval contexts)": -0.678406103490477,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 9.0,
+      "tf-margin (mean over eval contexts)": -1.4067234512396887,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 9.0,
+      "tf-margin (mean over eval contexts)": -0.6512526053502434,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 10.0,
+      "tf-margin (mean over eval contexts)": -1.4067234512396887,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 10.0,
+      "tf-margin (mean over eval contexts)": -0.5906396809548979,
+      "_kind": "scatter",
+      "_group": 17
+    }
+  ],
+  "n_series": 18,
+  "total_points": 18,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "fixed-pool margin at the selected rung (circles trained, squares base)",
+        "ylabel": "tf-margin (mean over eval contexts)",
+        "xticklabels": [
+          "list formatting,\npersona-trained\n1e-5",
+          "list formatting,\npersona-trained\n3e-5",
+          "list formatting,\npersona-trained\n1e-4",
+          "impolite,\npersona-trained\n1e-5",
+          "impolite,\npersona-trained\n3e-5",
+          "impolite,\npersona-trained\n1e-4",
+          "impolite,\nWildChat-trained\n1e-5",
+          "impolite,\nWildChat-trained\n3e-5",
+          "impolite,\nWildChat-trained\n1e-4"
+        ],
+        "yticklabels": [
+          "\u22121.6",
+          "\u22121.4",
+          "\u22121.2",
+          "\u22121.0",
+          "\u22120.8",
+          "\u22120.6",
+          "\u22120.4",
+          "\u22120.2",
+          "0.0",
+          "0.2"
+        ]
+      }
+    ]
+  }
+}

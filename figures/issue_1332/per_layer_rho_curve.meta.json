@@ -1,0 +1,145 @@
+{
+  "commit": "9248ce6fd1",
+  "created": "2026-07-15T16:14:59Z",
+  "figsize": [
+    6.5,
+    4.0
+  ],
+  "points": [
+    {
+      "layer": 5.0,
+      "Spearman \u03c1(map similarity, leakage), 400 cells": 0.39627039321718865,
+      "series": "observed \u03c1(S, L)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 9.0,
+      "Spearman \u03c1(map similarity, leakage), 400 cells": 0.4008283848434113,
+      "series": "observed \u03c1(S, L)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 14.0,
+      "Spearman \u03c1(map similarity, leakage), 400 cells": 0.5227946456946885,
+      "series": "observed \u03c1(S, L)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 17.0,
+      "Spearman \u03c1(map similarity, leakage), 400 cells": 0.5237374068899926,
+      "series": "observed \u03c1(S, L)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 20.0,
+      "Spearman \u03c1(map similarity, leakage), 400 cells": 0.5932169194603035,
+      "series": "observed \u03c1(S, L)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 23.0,
+      "Spearman \u03c1(map similarity, leakage), 400 cells": 0.6001096888120487,
+      "series": "observed \u03c1(S, L)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 26.0,
+      "Spearman \u03c1(map similarity, leakage), 400 cells": 0.6111711951676116,
+      "series": "observed \u03c1(S, L)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 27.0,
+      "Spearman \u03c1(map similarity, leakage), 400 cells": 0.6129517163113284,
+      "series": "observed \u03c1(S, L)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 0.0,
+      "Spearman \u03c1(map similarity, leakage), 400 cells": 0.5914729542206794,
+      "series": "shuffled-pairing null, 97.5th pct |\u03c1| (layer 27)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 1.0,
+      "Spearman \u03c1(map similarity, leakage), 400 cells": 0.5914729542206794,
+      "series": "shuffled-pairing null, 97.5th pct |\u03c1| (layer 27)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 0.0,
+      "Spearman \u03c1(map similarity, leakage), 400 cells": 0.9879471838957441,
+      "series": "reliability attenuation ceiling",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 1.0,
+      "Spearman \u03c1(map similarity, leakage), 400 cells": 0.9879471838957441,
+      "series": "reliability attenuation ceiling",
+      "_kind": "line",
+      "_group": 2
+    }
+  ],
+  "n_series": 3,
+  "total_points": 12,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Correlation by layer, with null band and reliability ceiling",
+        "xlabel": "layer",
+        "ylabel": "Spearman \u03c1(map similarity, leakage), 400 cells",
+        "legend_labels": [
+          "observed \u03c1(S, L)",
+          "shuffled-pairing null, 97.5th pct |\u03c1| (layer 27)",
+          "reliability attenuation ceiling"
+        ],
+        "annotations": [
+          "0.40",
+          "0.40",
+          "0.52",
+          "0.52",
+          "0.59",
+          "0.60",
+          "0.61",
+          "0.61"
+        ],
+        "xticklabels": [
+          "0",
+          "5",
+          "10",
+          "15",
+          "20",
+          "25",
+          "30"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0",
+          "1.2"
+        ]
+      }
+    ],
+    "series": [
+      "observed \u03c1(S, L)",
+      "shuffled-pairing null, 97.5th pct |\u03c1| (layer 27)",
+      "reliability attenuation ceiling"
+    ]
+  }
+}

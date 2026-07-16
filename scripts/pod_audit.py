@@ -69,6 +69,7 @@ SCRIPT_DIR = Path(__file__).resolve().parent
 sys.path.insert(0, str(SCRIPT_DIR))
 sys.path.insert(0, str(SCRIPT_DIR.parent / "src"))
 
+from pod_lifecycle import _issue_from_pod_name as _lifecycle_issue_from_pod_name  # noqa: E402
 from runpod_api import (  # noqa: E402
     PodInfo,
     estimate_pod_hourly_rate,
@@ -168,20 +169,16 @@ def _is_managed_name(name: str) -> bool:
 
 
 def _issue_number_from_name(name: str) -> int | None:
-    """Parse the owning issue number from a managed pod name.
+    """Parse the owning issue from a managed pod name.
 
-    Recognizes ``pod-<N>`` (canonical) and ``epm-issue-<N>`` (legacy),
-    including suffixed variants like ``epm-issue-123-b``. Returns ``None``
-    for non-managed or unparseable names.
+    Thin delegation to the canonical grammar in
+    ``pod_lifecycle._issue_from_pod_name`` (#1334) — one parser for the
+    lifecycle, the watcher, and the audit. Deliberate delta from the old
+    ``split('-', 1)`` parse: a NUMERIC slug (``pod-779-60``) no longer
+    maps (letter-initial slugs only); such a pod falls through to the
+    normal unmanaged/stale logic instead of a guessy attribution.
     """
-    for prefix in ("pod-", "epm-issue-"):
-        if name.startswith(prefix):
-            head = name[len(prefix) :].split("-", 1)[0]
-            try:
-                return int(head)
-            except ValueError:
-                return None
-    return None
+    return _lifecycle_issue_from_pod_name(name)
 
 
 def _task_has_keep_running(issue: int) -> bool:

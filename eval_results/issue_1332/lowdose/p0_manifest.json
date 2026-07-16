@@ -1,0 +1,173 @@
+{
+  "phase": "P0",
+  "sources": [
+    "A1",
+    "A2",
+    "A3",
+    "A4",
+    "A5",
+    "B1",
+    "B2",
+    "B3",
+    "B4",
+    "B5",
+    "C1",
+    "D1",
+    "D2",
+    "D3",
+    "D4",
+    "D5"
+  ],
+  "mixes": [
+    {
+      "cid": "A1",
+      "hub_path": "issue474_marker_at_end_localized/train_rows/i474_loc_A1.jsonl",
+      "revision": "7d7fbb856ed844b1a2cd0153b5d5e88f2c3fa437",
+      "sha256": "bf0a264e07731692bec97c4644bbbd292f381403a4e71a3ff6d8f927b5fee167",
+      "n_rows": 600,
+      "local_path": "/workspace/eps-issue-1332/data/issue_474/train_rows/i474_loc_A1.jsonl"
+    },
+    {
+      "cid": "A2",
+      "hub_path": "issue474_marker_at_end_localized/train_rows/i474_loc_A2.jsonl",
+      "revision": "7d7fbb856ed844b1a2cd0153b5d5e88f2c3fa437",
+      "sha256": "240409dc2cd4b640e3a255fafbcc59398167b6a28656684dffaf8dde0f0a84a3",
+      "n_rows": 600,
+      "local_path": "/workspace/eps-issue-1332/data/issue_474/train_rows/i474_loc_A2.jsonl"
+    },
+    {
+      "cid": "A3",
+      "hub_path": "issue474_marker_at_end_localized/train_rows/i474_loc_A3.jsonl",
+      "revision": "7d7fbb856ed844b1a2cd0153b5d5e88f2c3fa437",
+      "sha256": "f1a827e87784ef8610821314585b42479395b993563540eb7802cce3a03550c8",
+      "n_rows": 600,
+      "local_path": "/workspace/eps-issue-1332/data/issue_474/train_rows/i474_loc_A3.jsonl"
+    },
+    {
+      "cid": "A4",
+      "hub_path": "issue474_marker_at_end_localized/train_rows/i474_loc_A4.jsonl",
+      "revision": "7d7fbb856ed844b1a2cd0153b5d5e88f2c3fa437",
+      "sha256": "abf590e9554e13029ce1d4b5be7f671535103679fcaf7d3f2440210649a09466",
+      "n_rows": 600,
+      "local_path": "/workspace/eps-issue-1332/data/issue_474/train_rows/i474_loc_A4.jsonl"
+    },
+    {
+      "cid": "A5",
+      "hub_path": "issue474_marker_at_end_localized/train_rows/i474_loc_A5.jsonl",
+      "revision": "7d7fbb856ed844b1a2cd0153b5d5e88f2c3fa437",
+      "sha256": "d508bd2d481c168f4828bff66b66af62825d23179d8f252535e1b2af5303f4f3",
+      "n_rows": 600,
+      "local_path": "/workspace/eps-issue-1332/data/issue_474/train_rows/i474_loc_A5.jsonl"
+    },
+    {
+      "cid": "B1",
+      "hub_path": "issue474_marker_at_end_localized/train_rows/i474_loc_B1.jsonl",
+      "revision": "7d7fbb856ed844b1a2cd0153b5d5e88f2c3fa437",
+      "sha256": "3a2f44a473854c3b8bb1d5368cb342bd1eebd7a8668ce80abf26f434783ae078",
+      "n_rows": 600,
+      "local_path": "/workspace/eps-issue-1332/data/issue_474/train_rows/i474_loc_B1.jsonl"
+    },
+    {
+      "cid": "B2",
+      "hub_path": "issue474_marker_at_end_localized/train_rows/i474_loc_B2.jsonl",
+      "revision": "7d7fbb856ed844b1a2cd0153b5d5e88f2c3fa437",
+      "sha256": "2c14b4037ad3b6346c1ed39a78e146b845e4fff7ef5851774896a77d3c980307",
+      "n_rows": 600,
+      "local_path": "/workspace/eps-issue-1332/data/issue_474/train_rows/i474_loc_B2.jsonl"
+    },
+    {
+      "cid": "B3",
+      "hub_path": "issue474_marker_at_end_localized/train_rows/i474_loc_B3.jsonl",
+      "revision": "7d7fbb856ed844b1a2cd0153b5d5e88f2c3fa437",
+      "sha256": "995a50cfdc33febc363fe0ae23c60abb2d69e60272f9dc26874298da3ebaf93c",
+      "n_rows": 600,
+      "local_path": "/workspace/eps-issue-1332/data/issue_474/train_rows/i474_loc_B3.jsonl"
+    },
+    {
+      "cid": "B4",
+      "hub_path": "issue474_marker_at_end_localized/train_rows/i474_loc_B4.jsonl",
+      "revision": "7d7fbb856ed844b1a2cd0153b5d5e88f2c3fa437",
+      "sha256": "4b1b92d6665a3e3dd182bf5108be8b6cd150b49faa1d091eec14b4e021970738",
+      "n_rows": 600,
+      "local_path": "/workspace/eps-issue-1332/data/issue_474/train_rows/i474_loc_B4.jsonl"
+    },
+    {
+      "cid": "B5",
+      "hub_path": "issue474_marker_at_end_localized/train_rows/i474_loc_B5.jsonl",
+      "revision": "7d7fbb856ed844b1a2cd0153b5d5e88f2c3fa437",
+      "sha256": "074929e8e74725cde848c8626befc59417d70663b1542955a120403696113a9e",
+      "n_rows": 600,
+      "local_path": "/workspace/eps-issue-1332/data/issue_474/train_rows/i474_loc_B5.jsonl"
+    },
+    {
+      "cid": "C1",
+      "hub_path": "issue474_marker_at_end_localized/train_rows/i474_loc_C1.jsonl",
+      "revision": "7d7fbb856ed844b1a2cd0153b5d5e88f2c3fa437",
+      "sha256": "be0cd06d84eedf0d23c0be011b499e7ce1be43a154102c3aba3d0aa5928b7955",
+      "n_rows": 600,
+      "local_path": "/workspace/eps-issue-1332/data/issue_474/train_rows/i474_loc_C1.jsonl"
+    },
+    {
+      "cid": "D1",
+      "hub_path": "issue474_marker_at_end_localized/train_rows/i474_loc_D1.jsonl",
+      "revision": "7d7fbb856ed844b1a2cd0153b5d5e88f2c3fa437",
+      "sha256": "0367f2eb2f46d11aabe50785416d6494aa58e73da4de4be6d1d81e9d4fc55f56",
+      "n_rows": 600,
+      "local_path": "/workspace/eps-issue-1332/data/issue_474/train_rows/i474_loc_D1.jsonl"
+    },
+    {
+      "cid": "D2",
+      "hub_path": "issue474_marker_at_end_localized/train_rows/i474_loc_D2.jsonl",
+      "revision": "7d7fbb856ed844b1a2cd0153b5d5e88f2c3fa437",
+      "sha256": "842755abed6f1346c29a91e4ffac85a54acc7d687bc1da478cda97a25d7647b3",
+      "n_rows": 600,
+      "local_path": "/workspace/eps-issue-1332/data/issue_474/train_rows/i474_loc_D2.jsonl"
+    },
+    {
+      "cid": "D3",
+      "hub_path": "issue474_marker_at_end_localized/train_rows/i474_loc_D3.jsonl",
+      "revision": "7d7fbb856ed844b1a2cd0153b5d5e88f2c3fa437",
+      "sha256": "545a0ee1d81b433cbac2f8cea00d485a0c6a3b7e88a737b5c7389e757c5b5c8a",
+      "n_rows": 600,
+      "local_path": "/workspace/eps-issue-1332/data/issue_474/train_rows/i474_loc_D3.jsonl"
+    },
+    {
+      "cid": "D4",
+      "hub_path": "issue474_marker_at_end_localized/train_rows/i474_loc_D4.jsonl",
+      "revision": "7d7fbb856ed844b1a2cd0153b5d5e88f2c3fa437",
+      "sha256": "ec4bd8dd22fae38efc5f8b96488cb7db7cb9ace9199e627027a4b40372a814cb",
+      "n_rows": 600,
+      "local_path": "/workspace/eps-issue-1332/data/issue_474/train_rows/i474_loc_D4.jsonl"
+    },
+    {
+      "cid": "D5",
+      "hub_path": "issue474_marker_at_end_localized/train_rows/i474_loc_D5.jsonl",
+      "revision": "7d7fbb856ed844b1a2cd0153b5d5e88f2c3fa437",
+      "sha256": "464feefa2b3b6e9d9dbdc12637bfb6d3a9d5707fa2d3bfeab7d27369ad2d5754",
+      "n_rows": 600,
+      "local_path": "/workspace/eps-issue-1332/data/issue_474/train_rows/i474_loc_D5.jsonl"
+    }
+  ],
+  "sft_reconcile": {
+    "error": "fatal: bad revision '0936cd6d8ce2149377f2e4d25e1d62817399f52d..origin/main'",
+    "base_sha": "0936cd6d8ce2149377f2e4d25e1d62817399f52d"
+  },
+  "capture_keys": {
+    "status": "ok",
+    "path": "/workspace/eps-issue-1332/data/issue_1332/store/capture/A1.pt",
+    "cx_last_shape": [
+      400,
+      28,
+      3584
+    ]
+  },
+  "reproducibility_metadata": {
+    "issue": 1332,
+    "git_commit": "e5fe2cf47aef17d228f948710557087a3fe5c2dd",
+    "ts": "2026-07-15T21:50:36Z",
+    "torch_version": "2.8.0+cu128",
+    "transformers_version": "4.57.6",
+    "followup": "lowdose-grid-kill-battery",
+    "smoke": false
+  }
+}

@@ -1,0 +1,93 @@
+{
+  "commit": "cb2d8b2e50",
+  "created": "2026-07-16T08:15:55Z",
+  "figsize": [
+    6.2,
+    5.2
+  ],
+  "points": [
+    {
+      "category": "Chat",
+      "Within-regime held-out $R^2$ (layer 19)": 0.6544765895833579,
+      "error": 0.006546300454128184,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "Story\u00b7assistant",
+      "Within-regime held-out $R^2$ (layer 19)": -0.7454832837532159,
+      "error": 0.03981470886859673,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 0.0,
+      "Within-regime held-out $R^2$ (layer 19)": 0.0,
+      "series": "Answer-mean baseline ($R^2=0$)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 1.0,
+      "Within-regime held-out $R^2$ (layer 19)": 0.0,
+      "series": "Answer-mean baseline ($R^2=0$)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 0.0,
+      "Within-regime held-out $R^2$ (layer 19)": -0.03348891930409244,
+      "series": "Shuffle-null \u2248 -0.03",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 1.0,
+      "Within-regime held-out $R^2$ (layer 19)": -0.03348891930409244,
+      "series": "Shuffle-null \u2248 -0.03",
+      "_kind": "line",
+      "_group": 3
+    }
+  ],
+  "n_series": 4,
+  "total_points": 6,
+  "text": {
+    "suptitle": "The map collapses when the assistant is a story character (instruct, context arm, layer 19)",
+    "fig_texts": [
+      "Within-regime held-out $R^2$ with 95% bootstrap CI (Qwen2.5-7B-Instruct). Chat sits ~0.65 (above baseline); the assistant rendered as a story character sits at -0.75, below zero \u2014 worse than predicting the mean (its own shuffle-null is off-scale at ~-2.2)."
+    ],
+    "axes": [
+      {
+        "ylabel": "Within-regime held-out $R^2$ (layer 19)",
+        "legend_labels": [
+          "Answer-mean baseline ($R^2=0$)",
+          "Shuffle-null \u2248 -0.03"
+        ],
+        "annotations": [
+          "0.65",
+          "-0.75"
+        ],
+        "xticklabels": [
+          "Chat",
+          "Story\u00b7assistant"
+        ],
+        "yticklabels": [
+          "\u22121.0",
+          "\u22120.8",
+          "\u22120.6",
+          "\u22120.4",
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8"
+        ]
+      }
+    ],
+    "series": [
+      "Answer-mean baseline ($R^2=0$)",
+      "Shuffle-null \u2248 -0.03"
+    ]
+  }
+}

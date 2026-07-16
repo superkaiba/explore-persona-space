@@ -1,0 +1,79 @@
+{
+  "n_reads_rejudged": 5,
+  "n_transport_total": 297,
+  "n_recovered_total": 106,
+  "n_still_error_total": 191,
+  "max_tokens": 600,
+  "dry_run": false,
+  "reads": [
+    {
+      "read": "fu4_aggregate/judge/impolite/imp-conv-lr1e4-t2-trained",
+      "run_id": "imp-conv-lr1e4",
+      "kind": "t2",
+      "n_transport": 90,
+      "n_recovered": 2,
+      "n_still_error": 88,
+      "n_cache_purged": 18
+    },
+    {
+      "read": "fu4_aggregate/judge/impolite/imp-conv-lr1e5-t2-trained",
+      "run_id": "imp-conv-lr1e5",
+      "kind": "t2",
+      "n_transport": 40,
+      "n_recovered": 0,
+      "n_still_error": 40,
+      "n_cache_purged": 8
+    },
+    {
+      "read": "fu4_aggregate/judge/impolite/imp-conv-lr3e5-t2-trained",
+      "run_id": "imp-conv-lr3e5",
+      "kind": "t2",
+      "n_transport": 148,
+      "n_recovered": 104,
+      "n_still_error": 44,
+      "n_cache_purged": 25
+    },
+    {
+      "read": "fu4_aggregate/judge/impolite/imp-pers-lr1e4-t2-trained",
+      "run_id": "imp-pers-lr1e4",
+      "kind": "t2",
+      "n_transport": 14,
+      "n_recovered": 0,
+      "n_still_error": 14,
+      "n_cache_purged": 3
+    },
+    {
+      "read": "fu4_aggregate/judge/impolite/imp-pers-lr1e5-t2-trained",
+      "run_id": "imp-pers-lr1e5",
+      "kind": "t2",
+      "n_transport": 5,
+      "n_recovered": 0,
+      "n_still_error": 5,
+      "n_cache_purged": 1
+    }
+  ],
+  "ladder_changes": {
+    "fu4_aggregate/judge/impolite/imp-conv-lr1e4-t2-trained": {
+      "old_rate": 0.8351648351648352,
+      "new_rate": 0.8306010928961749
+    },
+    "fu4_aggregate/judge/impolite/imp-conv-lr1e5-t2-trained": {
+      "old_rate": 0.7239583333333334,
+      "new_rate": 0.7239583333333334
+    },
+    "fu4_aggregate/judge/impolite/imp-conv-lr3e5-t2-trained": {
+      "old_rate": 0.7357512953367875,
+      "new_rate": 0.7371134020618557
+    },
+    "fu4_aggregate/judge/impolite/imp-pers-lr1e4-t2-trained": {
+      "old_rate": 0.7323232323232324,
+      "new_rate": 0.7323232323232324
+    },
+    "fu4_aggregate/judge/impolite/imp-pers-lr1e5-t2-trained": {
+      "old_rate": 0.3015075376884422,
+      "new_rate": 0.3015075376884422
+    }
+  },
+  "git_commit": "20323ad08a",
+  "created_utc": "2026-07-15T02:54:41Z"
+}

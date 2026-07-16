@@ -83,7 +83,7 @@ import subprocess
 import time
 from collections.abc import Iterator, Sequence
 from dataclasses import dataclass
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any
 
@@ -1094,6 +1094,187 @@ def is_workflow_fix_session(task_id: int) -> bool:
     except (FileNotFoundError, OSError):
         return False
     return "workflow_fix_target:" in body
+
+
+# Terminal statuses for the #1399 recently-closed advisory (the complement of
+# _WF_FIX_NONTERMINAL above — a task at one of these no longer blocks dedup,
+# but a JUST-closed one is exactly what the advisory surfaces).
+_WF_FIX_TERMINAL: tuple[str, ...] = ("completed", "archived")
+# Closure-class event kinds: set_status appends epm:status-changed and promote
+# appends epm:promoted — together the done-transition pair the watcher's
+# pod-safety predicate already keys on (CLAUDE.md).
+_WF_FIX_CLOSURE_EVENT_KINDS: tuple[str, ...] = ("epm:status-changed", "epm:promoted")
+# Small stopword set for the title-token overlap arm (len >= 4 tokens only, so
+# short glue words are already excluded; these are the frequent len>=4 ones).
+_WF_FIX_TITLE_STOPWORDS: frozenset[str] = frozenset(
+    {"the", "for", "and", "with", "must", "that", "from", "into", "when", "only", "over"}
+)
+_WF_FIX_TARGET_LINE_RE = re.compile(r"^\s*-?\s*workflow_fix_target:\s*(.+?)\s*$", re.M)
+
+
+def wf_fix_extract_target(body_text: str) -> str | None:
+    """Value of the first anchored ``workflow_fix_target:`` body line, else None.
+
+    Anchored at line start (optional ``- `` bullet) so prose MENTIONS of the
+    key (e.g. a Constraints bullet naming the ``workflow_fix_target:``
+    Provenance line mid-sentence) never match — verified against #1350's real
+    body, where line 55 is prose and line 59 is the Provenance line.
+    """
+    m = _WF_FIX_TARGET_LINE_RE.search(body_text or "")
+    return m.group(1).strip() if m else None
+
+
+def _wf_fix_closed_at(task_dir: Path) -> datetime | None:
+    """Closure timestamp: ts of the LAST closure-class event in events.jsonl.
+
+    Closure-class = epm:status-changed (set_status) or epm:promoted (promote)
+    — the two done-transition kinds (CLAUDE.md watcher predicate). Unreadable
+    file / no closure event / unparseable or tz-naive ts -> None (the caller
+    EXCLUDES the task: recency cannot be established, and an advisory must not
+    present unknown-age tasks as 'recent').
+    """
+    try:
+        text = (task_dir / "events.jsonl").read_text()
+    except OSError:
+        return None
+    ts = None
+    # split("\n") not splitlines(): raw U+2028/U+2029/NEL inside JSON strings
+    # would shred records under splitlines (gotchas.md jsonl-splitlines).
+    for line in text.split("\n"):
+        # Cheap substring prefilter before json.loads (events files are long).
+        if '"epm:status-changed"' not in line and '"epm:promoted"' not in line:
+            continue
+        try:
+            d = json.loads(line)
+        except ValueError:
+            continue
+        if d.get("kind") in _WF_FIX_CLOSURE_EVENT_KINDS and d.get("ts"):
+            ts = d["ts"]
+    if ts is None:
+        return None
+    try:
+        dt = datetime.fromisoformat(str(ts).replace("Z", "+00:00"))
+    except ValueError:
+        return None
+    if dt.tzinfo is None:
+        # A tz-naive ts cannot be compared against the tz-aware window
+        # (TypeError); exclude this task rather than kill the whole scan.
+        return None
+    return dt
+
+
+def _wf_fix_target_tokens(target_file: str) -> set[str]:
+    """Comma-split a target_file value into exact path tokens (backticks/space stripped).
+
+    A glob token is treated as an OPAQUE string (matches only an identical
+    glob) — measured 2/595 corpus target lines carry a glob; fnmatch expansion
+    is deliberately out of scope (documented limitation).
+    """
+    return {p.strip().strip("`") for p in (target_file or "").split(",") if p.strip().strip("`")}
+
+
+def _wf_fix_title_tokens(title: str) -> set[str]:
+    """Informative title tokens: lowercase, channel prefix removed, split on
+    non-word chars keeping ``-``/``_`` inside tokens, each token stripped of
+    edge ``-``/``_`` (so ``--workload-cmd`` == ``workload-cmd``), length >= 4,
+    minus a small stopword set."""
+    t = (title or "").lower()
+    for p in WF_FIX_TITLE_PREFIXES:
+        t = t.removeprefix(p)
+    out: set[str] = set()
+    for w in re.split(r"[^a-z0-9_\-]+", t):
+        w = w.strip("-_")
+        if len(w) >= 4 and w not in _WF_FIX_TITLE_STOPWORDS:
+            out.add(w)
+    return out
+
+
+def recent_closed_workflow_fix_tasks(
+    target_file: str | None,
+    candidate_title: str | None = None,
+    *,
+    days: float = 7.0,
+    now: datetime | None = None,
+) -> list[dict[str, Any]]:
+    """CLOSED wf-fix siblings within ``days`` overlapping the candidate (#1399).
+
+    The ADVISORY complement of :func:`is_open_workflow_fix_task`: that
+    predicate blocks exact-(target_file, fingerprint) duplicates among OPEN
+    tasks; this helper only SURFACES recently-closed topical siblings for the
+    filer to eyeball — advisory rather than a hard block, so a closed task
+    still never blocks a re-raise (.claude/rules/workflow-fix-on-bug.md
+    § Dedup, unchanged).
+
+    A task matches iff kind==infra AND status in {completed, archived} AND
+    title startswith WF_FIX_TITLE_PREFIXES AND its closure ts (last
+    epm:status-changed/epm:promoted in events.jsonl) is within ``days`` of
+    ``now`` AND at least one arm overlaps:
+      - 'target': candidate target_file path-token set (comma-split) intersects
+        the task's anchored ``workflow_fix_target:`` line token set;
+      - 'title:<tokens>': candidate title shares >=1 informative token
+        (len>=4, stopword-filtered) with the task title.
+    Returns [{'id', 'title', 'status', 'target', 'closed_at', 'matched'}, ...]
+    sorted by closed_at DESC. Read-only: no mutation, no commit, no lock.
+    Per-task failures (missing folder, non-numeric registry key, unreadable
+    body) skip that task — one broken entry never kills the whole scan.
+    """
+    now = now or datetime.now(UTC)
+    cutoff = now - timedelta(days=days)
+    # Window is TWO-SIDED: cutoff <= closed_at <= now. The upper bound makes a
+    # retrospective query (the plan-§4.6 smoke, window tests with a historical
+    # now=) filing-time-exact — without it, tasks closed AFTER `now` would
+    # surface in retrospective smokes. At a LIVE filing nothing is closed in
+    # the future, so the bound is inert in production.
+    cand_targets = _wf_fix_target_tokens(target_file) if target_file else set()
+    cand_tokens = _wf_fix_title_tokens(candidate_title) if candidate_title else set()
+    if not cand_targets and not cand_tokens:
+        return []
+    hits: list[dict[str, Any]] = []
+    for tid_str, entry in _load_registry().get("tasks", {}).items():
+        if entry.get("kind") != "infra":
+            continue
+        if (entry.get("status") or "") not in _WF_FIX_TERMINAL:
+            continue
+        title = str(entry.get("title", ""))
+        if not title.startswith(WF_FIX_TITLE_PREFIXES):
+            continue
+        try:
+            tid = int(tid_str)
+            task_dir = find_task_path(tid)
+        except (FileNotFoundError, ValueError):
+            # Non-numeric registry key or missing folder: skip this entry.
+            continue
+        matched: list[str] = []
+        task_targets: set[str] = set()
+        if cand_targets:
+            try:
+                _, body = _read_body(task_dir / "body.md")
+            except (FileNotFoundError, ValueError):
+                body = ""  # fail-soft: target arm silently unavailable for this task
+            for m in _WF_FIX_TARGET_LINE_RE.finditer(body):
+                task_targets |= _wf_fix_target_tokens(m.group(1))
+            if cand_targets & task_targets:
+                matched.append("target")
+        shared = cand_tokens & _wf_fix_title_tokens(title)
+        if shared:
+            matched.append("title:" + ",".join(sorted(shared)))
+        if not matched:
+            continue
+        closed = _wf_fix_closed_at(task_dir)
+        if closed is None or closed < cutoff or closed > now:
+            continue
+        hits.append(
+            {
+                "id": tid,
+                "title": title,
+                "status": entry.get("status"),
+                "target": ", ".join(sorted(task_targets)) or None,
+                "closed_at": closed.strftime("%Y-%m-%dT%H:%M:%SZ"),
+                "matched": matched,
+            }
+        )
+    hits.sort(key=lambda h: h["closed_at"], reverse=True)
+    return hits
 
 
 # ---------------------------------------------------------------------------
@@ -2766,6 +2947,7 @@ def _audit_record_violation(
 
 FOLLOWUP_SCOPE_KIND = "epm:followup-scope"
 FOLLOWUP_RUN_KIND = "epm:same-issue-followup-run"
+FREE_ANALYSIS_RUN_KIND = "epm:free-analysis-followup-run"
 USER_INITIATED_FOLLOWUP_SOURCES = frozenset({"user-chat", "step-10b-pick"})
 
 # An UNLABELED scope note inherits the previous entry's label ONLY when it
@@ -2822,7 +3004,11 @@ def parse_followup_note_field(note: str, field: str) -> str | None:
     run-marker shape, e.g. #537/#552). Each segment is anchored exactly
     like a line-core: a mid-segment mention (``(source: user-chat)``, the
     #685 prose shape) still parses ``None``, and ``word;field: x`` (no
-    whitespace after the ``;``) never splits. The value is the first
+    whitespace after the ``;``) never splits. A leading lowercase version
+    stamp (``v<k>.`` + REQUIRED whitespace, e.g. ``v1. followup_label: x``
+    — the #1092 run-note shape) is stripped as decoration, same class as
+    bullets/bold; parsing stays field-only (#1111 — no label inference).
+    The value is the first
     whitespace token of the remainder, stripped of backticks / quotes /
     ``*`` and a trailing comma or semicolon (#664 ships a backtick-wrapped
     bold value; #841's run markers carry ``label;`` when the line is read
@@ -2872,6 +3058,13 @@ def parse_followup_note_field(note: str, field: str) -> str | None:
             # One regex pass strips any interleaved mix of whitespace, bullet
             # dashes/stars, and bold markers (unchanged from the line-core rule).
             core = re.sub(r"^[\s\-*]+", "", seg)
+            # Leading version stamp (`v1. ` — the #1092 run-note shape, an
+            # emitter echoing the marker's `v<k>` grammar into the note head):
+            # decorative prefix, same class as bullets/bold — strip it so the
+            # field anchor still binds. Lowercase `v` + digits + `.` +
+            # REQUIRED whitespace only; anything else is prose and stays
+            # unparseable (field-only parsing per #1111 — no label inference).
+            core = re.sub(r"^v\d+\.\s+", "", core)
             if core.startswith(f"{field}:") or core.startswith(f"{field}="):
                 rest = core[len(field) + 1 :].lstrip("*").strip()
                 tokens = rest.split()
@@ -3137,13 +3330,11 @@ def followup_retro_close_evidence(events: list[dict], label: str) -> str | None:
                     f"epm:methodology-doc-generated at {ev.get('ts', '?')} carries extends={label}"
                 )
     for ev in events:
-        if ev.get("kind") != "epm:free-analysis-followup-run":
+        if ev.get("kind") != FREE_ANALYSIS_RUN_KIND:
             continue
         ref = parse_followup_note_field(ev.get("note") or "", "followup_ref")
         if ref == label:
-            return (
-                f"epm:free-analysis-followup-run at {ev.get('ts', '?')} has followup_ref == {label}"
-            )
+            return f"{FREE_ANALYSIS_RUN_KIND} at {ev.get('ts', '?')} has followup_ref == {label}"
     token = f"({label})"
     for ev in events:
         kind = ev.get("kind")
@@ -3516,6 +3707,36 @@ _PIPE_BUF = getattr(os, "PIPE_BUF", 4096)
 _log = logging.getLogger(__name__)
 
 
+def _tail_missing_newline(path: Path) -> bool:
+    """Probe: True iff ``path`` exists, is non-empty, and its final byte is
+    not ``b"\\n"`` — the crash-truncated-append signature (#1367 / #1333).
+
+    Reads exactly ONE byte (``os.pread`` at ``st_size - 1``) regardless of
+    file size. FAIL-SOFT by design: a fresh-file ``FileNotFoundError``
+    returns False silently (O_CREAT will create the file); any other
+    ``OSError`` logs a WARNING naming the path and returns False — the
+    probe must never block the append itself, whose own error handling
+    stays fail-loud.
+    """
+    try:
+        rfd = os.open(path, os.O_RDONLY)
+    except FileNotFoundError:
+        return False
+    except OSError as e:
+        _log.warning("tail-check open failed for %s (%s); appending without seal", path, e)
+        return False
+    try:
+        size = os.fstat(rfd).st_size
+        if size == 0:
+            return False
+        return os.pread(rfd, 1, size - 1) != b"\n"
+    except OSError as e:
+        _log.warning("tail-check read failed for %s (%s); appending without seal", path, e)
+        return False
+    finally:
+        os.close(rfd)
+
+
 def _append_jsonl_line(path: Path, payload: dict[str, Any]) -> None:
     """Atomically append one JSON object as a line to an append-only log.
 
@@ -3537,14 +3758,33 @@ def _append_jsonl_line(path: Path, payload: dict[str, Any]) -> None:
     skips the partial line. The loop is still useful for completion under
     EAGAIN/EINTR/short-writes; it is not a crash-atomicity guarantee.
 
+    Self-heal (#1367): a fail-soft tail probe (``_tail_missing_newline``)
+    detects a crash-truncated prior append (final byte != ``\\n``) and seals it
+    with a SEPARATE 1-byte newline write (WARNING logged) so the new row lands
+    on its own line — the row buffer keeps its atomicity class. The caller's
+    ``_locked()`` excludes probe→seal TOCTOU; an out-of-lock >PIPE_BUF writer
+    mid-completion-loop could at worst have its row split by the seal
+    (bounded; the tolerant reader skips both fragments).
+
     Callers MUST hold ``_locked()``. This helper does NOT acquire the lock and
     does NOT commit — the caller owns flock + ``_git_commit`` semantics.
     """
     path.parent.mkdir(parents=True, exist_ok=True)
     line = json.dumps(payload, ensure_ascii=False) + "\n"
     buf = line.encode("utf-8")
+    needs_seal = _tail_missing_newline(path)
     fd = os.open(path, os.O_WRONLY | os.O_APPEND | os.O_CREAT, 0o644)
     try:
+        if needs_seal:
+            _log.warning(
+                "%s: final line missing trailing newline (crash-truncated "
+                "prior append) — sealing so the new row lands on its own "
+                "line (#1367)",
+                path,
+            )
+            n = os.write(fd, b"\n")
+            if n != 1:
+                raise OSError(f"seal write to {path} wrote {n} of 1 bytes")
         if len(buf) <= _PIPE_BUF:
             # Single atomic append (<= PIPE_BUF): all-or-nothing against a
             # SIGKILL. os.write may legally short-write even here in
@@ -6056,6 +6296,7 @@ __all__ = [
     "FOLLOWUP_HELD_BLOCKED_STATUSES",
     "FOLLOWUP_RUN_KIND",
     "FOLLOWUP_SCOPE_KIND",
+    "FREE_ANALYSIS_RUN_KIND",
     "GOAL_H2_NAME",
     "KINDS",
     "PARK_STATUS",

@@ -1,0 +1,29 @@
+{
+  "metadata": {
+    "git_commit": "2adae2a2e5c9da91235272fa96c68e8de6dc2839",
+    "timestamp": "2026-07-16T04:06:05Z",
+    "seed": 0,
+    "n": 0,
+    "script": "scripts/issue1336_fit_cells.py"
+  },
+  "gate": "G1",
+  "primary_scale": "recal",
+  "chat_best_r2": 0.23735451751266834,
+  "naturalistic_best_r2": 0.22933628560715202,
+  "kill_threshold": 0.20123637239077632,
+  "marginal_threshold": 0.30185455858616445,
+  "verdict": "pass_marginal",
+  "kill": false,
+  "raw_companion": {
+    "chat_best_r2_raw": -0.9286624210785652,
+    "naturalistic_best_r2_raw": -0.8941754654460943,
+    "kill_threshold_raw": 0.2,
+    "marginal_threshold_raw": 0.3
+  },
+  "qwen_exchange": {
+    "s_qwen_recal": 0.6772610112811577,
+    "committed_anchor": 0.6731,
+    "rate": 1.0061818619538816,
+    "path": "eval_results/issue_1336/diagnosis/recal/qwen_recal_cal.json"
+  }
+}

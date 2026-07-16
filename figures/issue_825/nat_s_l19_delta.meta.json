@@ -1,0 +1,282 @@
+{
+  "commit": "cf2b8a8d34",
+  "created": "2026-07-15T10:31:22Z",
+  "figsize": [
+    7.2,
+    4.4
+  ],
+  "points": [
+    {
+      "x": -0.13,
+      "R\u00b2 delta: naturalistic - chat (paired, shared n=4,724)": 0.010187457595816074,
+      "error": 0.00944968509273229,
+      "series": "Qwen2.5-7B-Instruct \u2014 pooled bootstrap (CI)",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 0.87,
+      "R\u00b2 delta: naturalistic - chat (paired, shared n=4,724)": -0.03357650481341068,
+      "error": 0.009319549678595726,
+      "series": "Qwen2.5-7B-Instruct \u2014 pooled bootstrap (CI)",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 1.87,
+      "R\u00b2 delta: naturalistic - chat (paired, shared n=4,724)": -0.036081333541416516,
+      "error": 0.00713586314640046,
+      "series": "Qwen2.5-7B-Instruct \u2014 pooled bootstrap (CI)",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 2.87,
+      "R\u00b2 delta: naturalistic - chat (paired, shared n=4,724)": 0.08267837264023647,
+      "error": 0.010060691857847026,
+      "series": "Qwen2.5-7B-Instruct \u2014 pooled bootstrap (CI)",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 0.13,
+      "R\u00b2 delta: naturalistic - chat (paired, shared n=4,724)": 0.024118215813620836,
+      "error": 0.010087399014414022,
+      "series": "Qwen2.5-7B (pretrained) \u2014 pooled bootstrap (CI)",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "x": 1.13,
+      "R\u00b2 delta: naturalistic - chat (paired, shared n=4,724)": 0.038186060136016664,
+      "error": 0.011859741921422742,
+      "series": "Qwen2.5-7B (pretrained) \u2014 pooled bootstrap (CI)",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "x": 2.13,
+      "R\u00b2 delta: naturalistic - chat (paired, shared n=4,724)": 0.028169369465481875,
+      "error": 0.007889340200712875,
+      "series": "Qwen2.5-7B (pretrained) \u2014 pooled bootstrap (CI)",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "x": 3.13,
+      "R\u00b2 delta: naturalistic - chat (paired, shared n=4,724)": 0.1117698294529168,
+      "error": 0.0110388270969866,
+      "series": "Qwen2.5-7B (pretrained) \u2014 pooled bootstrap (CI)",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "x": -0.13,
+      "R\u00b2 delta: naturalistic - chat (paired, shared n=4,724)": -0.0356214552101628,
+      "series": "Qwen2.5-7B-Instruct \u2014 fold-mean",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.87,
+      "R\u00b2 delta: naturalistic - chat (paired, shared n=4,724)": -0.03213316700581359,
+      "label": "-0.036",
+      "series": "Qwen2.5-7B-Instruct \u2014 fold-mean",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.87,
+      "R\u00b2 delta: naturalistic - chat (paired, shared n=4,724)": -0.029270148114296735,
+      "label": "-0.036",
+      "series": "Qwen2.5-7B-Instruct \u2014 fold-mean",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 2.87,
+      "R\u00b2 delta: naturalistic - chat (paired, shared n=4,724)": -0.02004389060364742,
+      "label": "-0.036",
+      "series": "Qwen2.5-7B-Instruct \u2014 fold-mean",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.13,
+      "R\u00b2 delta: naturalistic - chat (paired, shared n=4,724)": 0.050295858699811125,
+      "series": "Qwen2.5-7B (pretrained) \u2014 fold-mean",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.13,
+      "R\u00b2 delta: naturalistic - chat (paired, shared n=4,724)": 0.05554901574442561,
+      "label": "+0.028",
+      "series": "Qwen2.5-7B (pretrained) \u2014 fold-mean",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.13,
+      "R\u00b2 delta: naturalistic - chat (paired, shared n=4,724)": 0.03668647780436607,
+      "label": "+0.028",
+      "series": "Qwen2.5-7B (pretrained) \u2014 fold-mean",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 3.13,
+      "R\u00b2 delta: naturalistic - chat (paired, shared n=4,724)": 0.02790558887100525,
+      "label": "+0.028",
+      "series": "Qwen2.5-7B (pretrained) \u2014 fold-mean",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": -0.13,
+      "R\u00b2 delta: naturalistic - chat (paired, shared n=4,724)": 0.010187457595816074,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 0.87,
+      "R\u00b2 delta: naturalistic - chat (paired, shared n=4,724)": -0.03357650481341068,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 1.87,
+      "R\u00b2 delta: naturalistic - chat (paired, shared n=4,724)": -0.036081333541416516,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 2.87,
+      "R\u00b2 delta: naturalistic - chat (paired, shared n=4,724)": 0.08267837264023647,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": -0.13,
+      "R\u00b2 delta: naturalistic - chat (paired, shared n=4,724)": 0.001262467634510522,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 0.87,
+      "R\u00b2 delta: naturalistic - chat (paired, shared n=4,724)": -0.04245041072203485,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 1.87,
+      "R\u00b2 delta: naturalistic - chat (paired, shared n=4,724)": -0.0431657200147156,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 2.87,
+      "R\u00b2 delta: naturalistic - chat (paired, shared n=4,724)": 0.07294369749325968,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": -0.13,
+      "R\u00b2 delta: naturalistic - chat (paired, shared n=4,724)": 0.020161837819975104,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 0.87,
+      "R\u00b2 delta: naturalistic - chat (paired, shared n=4,724)": -0.023811311364843397,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 1.87,
+      "R\u00b2 delta: naturalistic - chat (paired, shared n=4,724)": -0.02889399372191468,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 2.87,
+      "R\u00b2 delta: naturalistic - chat (paired, shared n=4,724)": 0.09306508120895374,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 0.13,
+      "R\u00b2 delta: naturalistic - chat (paired, shared n=4,724)": 0.024118215813620836,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 1.13,
+      "R\u00b2 delta: naturalistic - chat (paired, shared n=4,724)": 0.038186060136016664,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 2.13,
+      "R\u00b2 delta: naturalistic - chat (paired, shared n=4,724)": 0.028169369465481875,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 3.13,
+      "R\u00b2 delta: naturalistic - chat (paired, shared n=4,724)": 0.1117698294529168,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 0.13,
+      "R\u00b2 delta: naturalistic - chat (paired, shared n=4,724)": 0.01424522179091603,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 1.13,
+      "R\u00b2 delta: naturalistic - chat (paired, shared n=4,724)": 0.027012776340065537,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 2.13,
+      "R\u00b2 delta: naturalistic - chat (paired, shared n=4,724)": 0.020678399341361973,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 3.13,
+      "R\u00b2 delta: naturalistic - chat (paired, shared n=4,724)": 0.10115450362511272,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 0.13,
+      "R\u00b2 delta: naturalistic - chat (paired, shared n=4,724)": 0.034420019819744074,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 1.13,
+      "R\u00b2 delta: naturalistic - chat (paired, shared n=4,724)": 0.05073226018291102,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 2.13,
+      "R\u00b2 delta: naturalistic - chat (paired, shared n=4,724)": 0.036457079742787724,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 3.13,
+      "R\u00b2 delta: naturalistic - chat (paired, shared n=4,724)": 0.12323215781908592,
+      "_kind": "line",
+      "_group": 9
+    }
+  ],
+  "n_series": 10,
+  "total_points": 40
+}

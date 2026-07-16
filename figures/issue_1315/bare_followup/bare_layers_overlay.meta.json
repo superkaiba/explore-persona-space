@@ -1,0 +1,894 @@
+{
+  "commit": "ff3f319ba2",
+  "created": "2026-07-16T07:03:05Z",
+  "figsize": [
+    17.5,
+    5.2
+  ],
+  "points": [
+    {
+      "Decoder layer": 0.0,
+      "rank-k@90 of the shift cloud": 56.0,
+      "series": "bare context (n=100)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Decoder layer": 1.0,
+      "rank-k@90 of the shift cloud": 53.0,
+      "series": "bare context (n=100)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Decoder layer": 2.0,
+      "rank-k@90 of the shift cloud": 54.0,
+      "series": "bare context (n=100)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Decoder layer": 3.0,
+      "rank-k@90 of the shift cloud": 54.0,
+      "series": "bare context (n=100)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Decoder layer": 4.0,
+      "rank-k@90 of the shift cloud": 53.0,
+      "series": "bare context (n=100)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Decoder layer": 5.0,
+      "rank-k@90 of the shift cloud": 53.0,
+      "series": "bare context (n=100)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Decoder layer": 6.0,
+      "rank-k@90 of the shift cloud": 51.0,
+      "series": "bare context (n=100)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Decoder layer": 7.0,
+      "rank-k@90 of the shift cloud": 52.0,
+      "series": "bare context (n=100)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Decoder layer": 8.0,
+      "rank-k@90 of the shift cloud": 51.0,
+      "series": "bare context (n=100)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Decoder layer": 9.0,
+      "rank-k@90 of the shift cloud": 52.0,
+      "series": "bare context (n=100)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Decoder layer": 10.0,
+      "rank-k@90 of the shift cloud": 51.0,
+      "series": "bare context (n=100)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Decoder layer": 11.0,
+      "rank-k@90 of the shift cloud": 50.0,
+      "series": "bare context (n=100)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Decoder layer": 12.0,
+      "rank-k@90 of the shift cloud": 49.0,
+      "series": "bare context (n=100)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Decoder layer": 13.0,
+      "rank-k@90 of the shift cloud": 50.0,
+      "series": "bare context (n=100)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Decoder layer": 14.0,
+      "rank-k@90 of the shift cloud": 49.0,
+      "series": "bare context (n=100)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Decoder layer": 15.0,
+      "rank-k@90 of the shift cloud": 47.0,
+      "series": "bare context (n=100)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Decoder layer": 16.0,
+      "rank-k@90 of the shift cloud": 47.0,
+      "series": "bare context (n=100)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Decoder layer": 17.0,
+      "rank-k@90 of the shift cloud": 47.0,
+      "series": "bare context (n=100)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Decoder layer": 18.0,
+      "rank-k@90 of the shift cloud": 47.0,
+      "series": "bare context (n=100)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Decoder layer": 19.0,
+      "rank-k@90 of the shift cloud": 43.0,
+      "series": "bare context (n=100)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Decoder layer": 20.0,
+      "rank-k@90 of the shift cloud": 43.0,
+      "series": "bare context (n=100)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Decoder layer": 21.0,
+      "rank-k@90 of the shift cloud": 45.0,
+      "series": "bare context (n=100)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Decoder layer": 22.0,
+      "rank-k@90 of the shift cloud": 47.0,
+      "series": "bare context (n=100)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Decoder layer": 23.0,
+      "rank-k@90 of the shift cloud": 47.0,
+      "series": "bare context (n=100)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Decoder layer": 24.0,
+      "rank-k@90 of the shift cloud": 47.0,
+      "series": "bare context (n=100)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Decoder layer": 25.0,
+      "rank-k@90 of the shift cloud": 48.0,
+      "series": "bare context (n=100)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Decoder layer": 26.0,
+      "rank-k@90 of the shift cloud": 49.0,
+      "series": "bare context (n=100)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Decoder layer": 27.0,
+      "rank-k@90 of the shift cloud": 43.0,
+      "series": "bare context (n=100)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Decoder layer": 0.0,
+      "|cos(mean shift, read-out)|": 0.7484363355182706,
+      "series": "bare context (n=100)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Decoder layer": 1.0,
+      "|cos(mean shift, read-out)|": 0.7381872495781101,
+      "series": "bare context (n=100)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Decoder layer": 2.0,
+      "|cos(mean shift, read-out)|": 0.7528865761695004,
+      "series": "bare context (n=100)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Decoder layer": 3.0,
+      "|cos(mean shift, read-out)|": 0.7658519473010654,
+      "series": "bare context (n=100)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Decoder layer": 4.0,
+      "|cos(mean shift, read-out)|": 0.7688119275893079,
+      "series": "bare context (n=100)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Decoder layer": 5.0,
+      "|cos(mean shift, read-out)|": 0.7696094162569124,
+      "series": "bare context (n=100)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Decoder layer": 6.0,
+      "|cos(mean shift, read-out)|": 0.743667220551061,
+      "series": "bare context (n=100)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Decoder layer": 7.0,
+      "|cos(mean shift, read-out)|": 0.7263834038834932,
+      "series": "bare context (n=100)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Decoder layer": 8.0,
+      "|cos(mean shift, read-out)|": 0.7314328607750235,
+      "series": "bare context (n=100)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Decoder layer": 9.0,
+      "|cos(mean shift, read-out)|": 0.7312640347976384,
+      "series": "bare context (n=100)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Decoder layer": 10.0,
+      "|cos(mean shift, read-out)|": 0.7303391590249975,
+      "series": "bare context (n=100)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Decoder layer": 11.0,
+      "|cos(mean shift, read-out)|": 0.7255567845911153,
+      "series": "bare context (n=100)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Decoder layer": 12.0,
+      "|cos(mean shift, read-out)|": 0.7020033048500961,
+      "series": "bare context (n=100)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Decoder layer": 13.0,
+      "|cos(mean shift, read-out)|": 0.6519369669851346,
+      "series": "bare context (n=100)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Decoder layer": 14.0,
+      "|cos(mean shift, read-out)|": 0.6758444771900664,
+      "series": "bare context (n=100)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Decoder layer": 15.0,
+      "|cos(mean shift, read-out)|": 0.689191086663153,
+      "series": "bare context (n=100)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Decoder layer": 16.0,
+      "|cos(mean shift, read-out)|": 0.6934423413338174,
+      "series": "bare context (n=100)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Decoder layer": 17.0,
+      "|cos(mean shift, read-out)|": 0.6855616962071008,
+      "series": "bare context (n=100)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Decoder layer": 18.0,
+      "|cos(mean shift, read-out)|": 0.6909313635732562,
+      "series": "bare context (n=100)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Decoder layer": 19.0,
+      "|cos(mean shift, read-out)|": 0.6657430084852243,
+      "series": "bare context (n=100)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Decoder layer": 20.0,
+      "|cos(mean shift, read-out)|": 0.6835953207336313,
+      "series": "bare context (n=100)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Decoder layer": 21.0,
+      "|cos(mean shift, read-out)|": 0.6711988721433374,
+      "series": "bare context (n=100)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Decoder layer": 22.0,
+      "|cos(mean shift, read-out)|": 0.6588564815534103,
+      "series": "bare context (n=100)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Decoder layer": 23.0,
+      "|cos(mean shift, read-out)|": 0.6909329241430595,
+      "series": "bare context (n=100)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Decoder layer": 24.0,
+      "|cos(mean shift, read-out)|": 0.6747001608202198,
+      "series": "bare context (n=100)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Decoder layer": 25.0,
+      "|cos(mean shift, read-out)|": 0.6351772708747738,
+      "series": "bare context (n=100)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Decoder layer": 26.0,
+      "|cos(mean shift, read-out)|": 0.5798565799260368,
+      "series": "bare context (n=100)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Decoder layer": 27.0,
+      "|cos(mean shift, read-out)|": 0.4791731570459139,
+      "series": "bare context (n=100)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Decoder layer": 0.0,
+      "|cos(mean shift, read-out)|": 0.03860908498321872,
+      "series": "chance bound (97.5%)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Decoder layer": 1.0,
+      "|cos(mean shift, read-out)|": 0.03661890777082997,
+      "series": "chance bound (97.5%)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Decoder layer": 2.0,
+      "|cos(mean shift, read-out)|": 0.03805724326288263,
+      "series": "chance bound (97.5%)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Decoder layer": 3.0,
+      "|cos(mean shift, read-out)|": 0.038949627787564244,
+      "series": "chance bound (97.5%)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Decoder layer": 4.0,
+      "|cos(mean shift, read-out)|": 0.036634081790351894,
+      "series": "chance bound (97.5%)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Decoder layer": 5.0,
+      "|cos(mean shift, read-out)|": 0.0363340490984969,
+      "series": "chance bound (97.5%)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Decoder layer": 6.0,
+      "|cos(mean shift, read-out)|": 0.03776368748952085,
+      "series": "chance bound (97.5%)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Decoder layer": 7.0,
+      "|cos(mean shift, read-out)|": 0.03881003455382839,
+      "series": "chance bound (97.5%)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Decoder layer": 8.0,
+      "|cos(mean shift, read-out)|": 0.03665981470088573,
+      "series": "chance bound (97.5%)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Decoder layer": 9.0,
+      "|cos(mean shift, read-out)|": 0.041815734321683645,
+      "series": "chance bound (97.5%)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Decoder layer": 10.0,
+      "|cos(mean shift, read-out)|": 0.036613232355332606,
+      "series": "chance bound (97.5%)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Decoder layer": 11.0,
+      "|cos(mean shift, read-out)|": 0.03729088870002613,
+      "series": "chance bound (97.5%)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Decoder layer": 12.0,
+      "|cos(mean shift, read-out)|": 0.03853911825808301,
+      "series": "chance bound (97.5%)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Decoder layer": 13.0,
+      "|cos(mean shift, read-out)|": 0.03687281746390561,
+      "series": "chance bound (97.5%)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Decoder layer": 14.0,
+      "|cos(mean shift, read-out)|": 0.0372520680524096,
+      "series": "chance bound (97.5%)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Decoder layer": 15.0,
+      "|cos(mean shift, read-out)|": 0.03719208971700524,
+      "series": "chance bound (97.5%)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Decoder layer": 16.0,
+      "|cos(mean shift, read-out)|": 0.03708411396017987,
+      "series": "chance bound (97.5%)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Decoder layer": 17.0,
+      "|cos(mean shift, read-out)|": 0.03594818607458089,
+      "series": "chance bound (97.5%)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Decoder layer": 18.0,
+      "|cos(mean shift, read-out)|": 0.03932361005488076,
+      "series": "chance bound (97.5%)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Decoder layer": 19.0,
+      "|cos(mean shift, read-out)|": 0.03631243714836977,
+      "series": "chance bound (97.5%)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Decoder layer": 20.0,
+      "|cos(mean shift, read-out)|": 0.03614203837037226,
+      "series": "chance bound (97.5%)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Decoder layer": 21.0,
+      "|cos(mean shift, read-out)|": 0.036437897940642464,
+      "series": "chance bound (97.5%)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Decoder layer": 22.0,
+      "|cos(mean shift, read-out)|": 0.03840355018424557,
+      "series": "chance bound (97.5%)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Decoder layer": 23.0,
+      "|cos(mean shift, read-out)|": 0.037287853456917805,
+      "series": "chance bound (97.5%)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Decoder layer": 24.0,
+      "|cos(mean shift, read-out)|": 0.03780755765552918,
+      "series": "chance bound (97.5%)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Decoder layer": 25.0,
+      "|cos(mean shift, read-out)|": 0.03742517372266817,
+      "series": "chance bound (97.5%)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Decoder layer": 26.0,
+      "|cos(mean shift, read-out)|": 0.03795011997312263,
+      "series": "chance bound (97.5%)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Decoder layer": 27.0,
+      "|cos(mean shift, read-out)|": 0.03666388931373139,
+      "series": "chance bound (97.5%)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Decoder layer": 0.0,
+      "mean-shift norm (log scale)": 1.063279390335083,
+      "series": "bare context (n=100)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Decoder layer": 1.0,
+      "mean-shift norm (log scale)": 1.563232660293579,
+      "series": "bare context (n=100)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Decoder layer": 2.0,
+      "mean-shift norm (log scale)": 2.1916439533233643,
+      "series": "bare context (n=100)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Decoder layer": 3.0,
+      "mean-shift norm (log scale)": 3.167738914489746,
+      "series": "bare context (n=100)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Decoder layer": 4.0,
+      "mean-shift norm (log scale)": 3.945463180541992,
+      "series": "bare context (n=100)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Decoder layer": 5.0,
+      "mean-shift norm (log scale)": 4.593677520751953,
+      "series": "bare context (n=100)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Decoder layer": 6.0,
+      "mean-shift norm (log scale)": 5.592458248138428,
+      "series": "bare context (n=100)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Decoder layer": 7.0,
+      "mean-shift norm (log scale)": 6.971953392028809,
+      "series": "bare context (n=100)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Decoder layer": 8.0,
+      "mean-shift norm (log scale)": 8.211334228515625,
+      "series": "bare context (n=100)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Decoder layer": 9.0,
+      "mean-shift norm (log scale)": 9.532678604125977,
+      "series": "bare context (n=100)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Decoder layer": 10.0,
+      "mean-shift norm (log scale)": 10.127045631408691,
+      "series": "bare context (n=100)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Decoder layer": 11.0,
+      "mean-shift norm (log scale)": 10.347953796386719,
+      "series": "bare context (n=100)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Decoder layer": 12.0,
+      "mean-shift norm (log scale)": 10.666398048400879,
+      "series": "bare context (n=100)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Decoder layer": 13.0,
+      "mean-shift norm (log scale)": 10.776164054870605,
+      "series": "bare context (n=100)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Decoder layer": 14.0,
+      "mean-shift norm (log scale)": 12.02151870727539,
+      "series": "bare context (n=100)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Decoder layer": 15.0,
+      "mean-shift norm (log scale)": 14.444795608520508,
+      "series": "bare context (n=100)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Decoder layer": 16.0,
+      "mean-shift norm (log scale)": 14.974348068237305,
+      "series": "bare context (n=100)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Decoder layer": 17.0,
+      "mean-shift norm (log scale)": 16.370784759521484,
+      "series": "bare context (n=100)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Decoder layer": 18.0,
+      "mean-shift norm (log scale)": 18.468582153320312,
+      "series": "bare context (n=100)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Decoder layer": 19.0,
+      "mean-shift norm (log scale)": 29.579463958740234,
+      "series": "bare context (n=100)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Decoder layer": 20.0,
+      "mean-shift norm (log scale)": 36.02265548706055,
+      "series": "bare context (n=100)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Decoder layer": 21.0,
+      "mean-shift norm (log scale)": 41.58049774169922,
+      "series": "bare context (n=100)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Decoder layer": 22.0,
+      "mean-shift norm (log scale)": 49.87717056274414,
+      "series": "bare context (n=100)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Decoder layer": 23.0,
+      "mean-shift norm (log scale)": 59.816871643066406,
+      "series": "bare context (n=100)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Decoder layer": 24.0,
+      "mean-shift norm (log scale)": 67.58287048339844,
+      "series": "bare context (n=100)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Decoder layer": 25.0,
+      "mean-shift norm (log scale)": 74.21052551269531,
+      "series": "bare context (n=100)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Decoder layer": 26.0,
+      "mean-shift norm (log scale)": 89.94647216796875,
+      "series": "bare context (n=100)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Decoder layer": 27.0,
+      "mean-shift norm (log scale)": 109.38240814208984,
+      "series": "bare context (n=100)",
+      "_kind": "line",
+      "_group": 3
+    }
+  ],
+  "n_series": 4,
+  "total_points": 112,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Own-text response arm: rank per layer",
+        "xlabel": "Decoder layer",
+        "ylabel": "rank-k@90 of the shift cloud",
+        "legend_labels": [
+          "scaffolded envelope (7 cells, n=120)",
+          "bare context (n=100)"
+        ],
+        "xticklabels": [
+          "\u22125",
+          "0",
+          "5",
+          "10",
+          "15",
+          "20",
+          "25",
+          "30"
+        ],
+        "yticklabels": [
+          "30",
+          "35",
+          "40",
+          "45",
+          "50",
+          "55",
+          "60",
+          "65",
+          "70"
+        ]
+      },
+      {
+        "title_left": "Own-text response arm: alignment per layer",
+        "xlabel": "Decoder layer",
+        "ylabel": "|cos(mean shift, read-out)|",
+        "legend_labels": [
+          "scaffolded envelope (7 cells, n=120)",
+          "bare context (n=100)",
+          "chance bound (97.5%)"
+        ],
+        "xticklabels": [
+          "\u22125",
+          "0",
+          "5",
+          "10",
+          "15",
+          "20",
+          "25",
+          "30"
+        ],
+        "yticklabels": [
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ]
+      },
+      {
+        "title_left": "Own-text response arm: shift norm per layer",
+        "xlabel": "Decoder layer",
+        "ylabel": "mean-shift norm (log scale)",
+        "legend_labels": [
+          "scaffolded envelope (7 cells, n=120)",
+          "bare context (n=100)"
+        ],
+        "xticklabels": [
+          "\u22125",
+          "0",
+          "5",
+          "10",
+          "15",
+          "20",
+          "25",
+          "30"
+        ],
+        "yticklabels": [
+          "$\\mathdefault{10^{-2}}$",
+          "$\\mathdefault{10^{-1}}$",
+          "$\\mathdefault{10^{0}}$",
+          "$\\mathdefault{10^{1}}$",
+          "$\\mathdefault{10^{2}}$",
+          "$\\mathdefault{10^{3}}$",
+          "$\\mathdefault{10^{4}}$"
+        ]
+      }
+    ],
+    "series": [
+      "bare context (n=100)",
+      "scaffolded envelope (7 cells, n=120)",
+      "chance bound (97.5%)"
+    ]
+  }
+}

@@ -1,0 +1,63 @@
+{
+  "commit": "ece75d101",
+  "created": "2026-07-14T23:47:18Z",
+  "figsize": [
+    7.0,
+    3.4
+  ],
+  "points": [
+    {
+      "\u0394skill (prefix convention \u2212 context convention)": -0.5340772522281518,
+      "y": 0.0,
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "\u0394skill (prefix convention \u2212 context convention)": -0.12971922827791482,
+      "y": 1.0,
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "\u0394skill (prefix convention \u2212 context convention)": -0.08967241674490323,
+      "y": 2.0,
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "\u0394skill (prefix convention \u2212 context convention)": -0.6684962139301998,
+      "y": 3.0,
+      "_kind": "errorbar",
+      "_group": 3
+    }
+  ],
+  "n_series": 4,
+  "total_points": 4,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "xlabel": "\u0394skill (prefix convention \u2212 context convention)",
+        "annotations": [
+          "read5a_conv_pfx_minus_ctx",
+          "read5b_conv_pfx_cotK_minus_ctx_cotK",
+          "read5c_conv_pfx_apfx_minus_ctx_apfx",
+          "read5d_conv_pfx_ans_minus_ctx_ans"
+        ],
+        "xticklabels": [
+          "\u22120.8",
+          "\u22120.7",
+          "\u22120.6",
+          "\u22120.5",
+          "\u22120.4",
+          "\u22120.3",
+          "\u22120.2",
+          "\u22120.1",
+          "0.0",
+          "0.1"
+        ]
+      }
+    ]
+  }
+}

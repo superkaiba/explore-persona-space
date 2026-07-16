@@ -14,7 +14,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 from huggingface_hub.hf_api import RepoFile, RepoFolder
-from huggingface_hub.utils import EntryNotFoundError, RepositoryNotFoundError
+from huggingface_hub.utils import EntryNotFoundError, HfHubHTTPError, RepositoryNotFoundError
 
 from explore_persona_space.eval.refusal import detect_refusal, filter_refusals
 from explore_persona_space.orchestrate.hub import (
@@ -76,6 +76,15 @@ class TestListRepoFilesComplete:
 # ── list_hf_files_under_path (the shared scoped-listing helper, #988) ────────
 
 
+def _http_err(code: int, msg: str | None = None) -> HfHubHTTPError:
+    """HfHubHTTPError whose .response.status_code == code (mirrors
+    tests/test_hub.py's helper) so the classifier's status-code branch is
+    exercised as in prod."""
+    r = MagicMock()
+    r.status_code = code
+    return HfHubHTTPError(msg or f"{code} error", response=r)
+
+
 class _ProbeApi:
     """Signature-mirroring ``HfApi`` stand-in for the exact-file fallback tests.
 
@@ -83,11 +92,22 @@ class _ProbeApi:
     ``file_exists``), never a bare ``MagicMock`` — the real helper body runs
     end to end against them (code-style rule: one production-body test per
     seam-stubbed function, #906).
+
+    ``file_exists_raises`` scripts transport errors for the #1360 retry tests:
+    each ``file_exists`` call pops + raises the next exception in order, then
+    later calls return ``file_exists_result``.
     """
 
-    def __init__(self, *, tree_raises: Exception, file_exists_result: bool = False):
+    def __init__(
+        self,
+        *,
+        tree_raises: Exception,
+        file_exists_result: bool = False,
+        file_exists_raises: list[Exception] | None = None,
+    ):
         self._tree_raises = tree_raises
         self.file_exists_result = file_exists_result
+        self._file_exists_raises = list(file_exists_raises or [])
         self.tree_calls: list[dict] = []
         self.file_exists_calls: list[dict] = []
 
@@ -114,6 +134,8 @@ class _ProbeApi:
                 "revision": revision,
             }
         )
+        if self._file_exists_raises:
+            raise self._file_exists_raises.pop(0)
         return self.file_exists_result
 
     def list_repo_files(self, *args, **kwargs):  # pragma: no cover - must never run
@@ -176,6 +198,59 @@ class TestListHfFilesUnderPath:
         with pytest.raises(RepositoryNotFoundError):
             list_hf_files_under_path(api, "owner/ghost", "a/b")
         assert api.file_exists_calls == []
+
+    def test_exact_file_fallback_retries_transient_429_then_succeeds(self):
+        """#1360: the exact-file ``file_exists`` fallback rides ``_retry_upload``
+        — a transient HF 429 ('maximum queue size reached', the #1315 p11 kill
+        shape) retries instead of propagating to _upload's
+        log-and-return-\"\" arm."""
+        api = _ProbeApi(
+            tree_raises=EntryNotFoundError("entry a/b/x.json not found"),
+            file_exists_result=True,
+            file_exists_raises=[
+                _http_err(429, "429 Client Error: Too Many Requests ... maximum queue size reached")
+            ],
+        )
+        with patch("explore_persona_space.orchestrate.hub.time.sleep") as mock_sleep:
+            result = list_hf_files_under_path(api, "owner/repo", "a/b/x.json", repo_type="dataset")
+        assert result == ["a/b/x.json"]
+        assert len(api.file_exists_calls) == 2
+        mock_sleep.assert_called_once()
+
+    def test_exact_file_fallback_exhausts_and_propagates(self, monkeypatch):
+        """A PERSISTENT 429 exhausts the attempt floor (wall-clock budget kill
+        switch = 0) and re-raises fail-loud after exactly 6 calls (the #735
+        contract) — never a silent swallow."""
+        monkeypatch.setenv("EPM_HF_RETRY_BUDGET_S", "0")
+        err = _http_err(429, "429 Client Error: Too Many Requests")
+        api = _ProbeApi(
+            tree_raises=EntryNotFoundError("entry ghost not found"),
+            file_exists_raises=[err] * 6,
+        )
+        with (
+            patch("explore_persona_space.orchestrate.hub.time.sleep"),
+            pytest.raises(HfHubHTTPError),
+        ):
+            list_hf_files_under_path(api, "owner/repo", "ghost", repo_type="dataset")
+        assert len(api.file_exists_calls) == 6
+
+    def test_exact_file_fallback_content_class_immediate_reraise(self):
+        """The persistent storage-quota-403 (content-class) re-raises on call 1
+        with zero sleeps — the wrap must not delay the #564 overflow-routing /
+        fail-loud semantics."""
+        api = _ProbeApi(
+            tree_raises=EntryNotFoundError("entry a/b/x.json not found"),
+            file_exists_raises=[
+                _http_err(403, "403 Forbidden: You have exceeded your public storage space")
+            ],
+        )
+        with (
+            patch("explore_persona_space.orchestrate.hub.time.sleep") as mock_sleep,
+            pytest.raises(HfHubHTTPError),
+        ):
+            list_hf_files_under_path(api, "owner/repo", "a/b/x.json", repo_type="dataset")
+        assert len(api.file_exists_calls) == 1
+        mock_sleep.assert_not_called()
 
 
 # ── verify_artifacts_exist ────────────────────────────────────────────────────

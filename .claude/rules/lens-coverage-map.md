@@ -50,7 +50,7 @@ Rows are honest: a check with no v2 owner is a `GAP:` row, never papered over.
 | 6 Contrastive negatives | critic.md Methodology 6 | v2-owner: methodology-baselines-critic |
 | 7 Replication fidelity | critic.md Methodology 7 | v2-owner: methodology-baselines-critic |
 | 8 Few-shot / ICL demonstration content | critic.md Methodology 8 | v2-owner: methodology-baselines-critic |
-| 9 Trained-artifact + code reuse fitness (a)-(j) | critic.md Methodology 9 | v2-owner: consistency-checker + methodology-baselines-critic |
+| 9 Trained-artifact + code reuse fitness (a)-(k) | critic.md Methodology 9 | v2-owner: consistency-checker + methodology-baselines-critic |
 | 10 CPU/analysis-phase placement (i)-(iv) | critic.md Methodology 10 | v2-owner: efficiency-critic |
 | 11 Marker stopping recipe + runtime-guard smoke-verifiability | critic.md Methodology 11 | v2-owner: methodology-baselines-critic |
 | 12 Multi-arm resolution-band simultaneity | critic.md Methodology 12 | v2-owner: methodology-baselines-critic |

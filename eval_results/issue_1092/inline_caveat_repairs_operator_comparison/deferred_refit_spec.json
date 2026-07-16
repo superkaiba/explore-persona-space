@@ -1,0 +1,47 @@
+{
+  "purpose": "Records the Step-0 wall-time projection and the exact off-VM recipe for the battery-excluded refit + Part-B operator comparison that the inline (shared-VM) session did NOT launch, per the dispatch's Step-0 >4h gate.",
+  "step0_verdict": "STOP_BATTERY_ON_VM",
+  "measured_pilot": {
+    "host": "shared VM (cia-benchmark-vm), thread-capped OMP/MKL/OPENBLAS/NUMEXPR=8",
+    "PressRidge_init_svd_plus_K_per_fold_s": 33.7,
+    "press_fit_predict_one_fold_3584d_target_s": 56.2,
+    "fit_cv_6fold_pca48_est_min": 3.4,
+    "fit_cv_6fold_ambient_single_target_est_min": 5.6,
+    "fit_cv_6fold_ambient_stacked_10752d_pooled_est_min": 10.0,
+    "read4_operator_200draw_null_per_cell_s": 136,
+    "identity_floors_per_call_6fold_ambient_s_approx": 6,
+    "note": "fit dominated by X-only PressRidge SVD(16k x 3584) + (n_lambda,d,d) K bmm per fold; re-done per _fit_cv call."
+  },
+  "projection_full_scope": {
+    "read1_pooled_fits_units": 128,
+    "read1_pooled_fit_time_est_h": "12.8 (64 ambient@~8min + 64 pca48@~4min)",
+    "plus_A2_per_target_fits": "3x per unit (defer)",
+    "plus_ambient_perm_null_per_unit": "minutes-to-tens-of-minutes each (ambient out_dim 10752)",
+    "plus_partB_fitted_maps_and_spectrum_matched_nulls": "per cell x layer x basis (defer)",
+    "single_VM_box_total_est_h": ">12 (likely 20-40 with perm-null + Part B; VM is thread-capped + shared)",
+    "production_reference": "the banked v6 fit grid ran ~230 CPU machine-h across 12 GCE n2-highmem-16 boxes (~19h wall); the battery-excluded refit is the same compute shape",
+    "verdict": ">> 4h ceiling -> not launched on the shared VM"
+  },
+  "battery_exclusion_scope": {
+    "root_cause": "engine fit-arm-A filter excludes stratum {'trait_stratum','battery_eval_only'} but battery rows are labelled stratum 'battery' (is_eval_only=True); the 'battery_eval_only' clause is a NO-OP, so battery leaked into fit-arm A. Correct key: is_eval_only==True (n=2400, positions 18793..21192).",
+    "affected_cells_only": ["cell_inst_own", "cell_inst_pretext", "cell_pre_own", "cell_pre_insttext"],
+    "affected_reason": "full-corpus cells (n0=21193) include the 2400 tail battery rows in fit-arm A -> n 19708 (banked) vs 17308 (corrected), a -12.2% training-row change",
+    "unaffected_cells": ["cell_inst_claude", "cell_pre_claude", "cell_inst_shuf", "cell_pre_shuf"],
+    "unaffected_reason": "subsampled cells capture a manifest PREFIX (claude n0=12121, shuf n0=8689) that ends before the battery block, so 0 battery rows entered their fit; battery-out == battery-in exactly",
+    "reads_needing_refit": "read1 held-out R² (the 4 affected cells) + A2 per-target R² + Part-B fitted maps",
+    "reads_provably_UNCHANGED_no_refit": "read3 (variance shares) + read4 (operator additivity) — dense-core-only (positions 0..4751), disjoint from battery block; verified exact for all 8 cells"
+  },
+  "offvm_refit_recipe": {
+    "lane": "cpu-bigmem GCE (n2-highmem-16), the production P6 lane; 0 GPU-h",
+    "engine": "scripts/issue1092_fit_grid.py at HEAD (already computes _identity_floors per unit)",
+    "REQUIRED_engine_patch": "the fit-arm-A filter must exclude is_eval_only rows (or stratum 'battery'), NOT the no-op 'battery_eval_only' label. One-line change at scripts/issue1092_fit_grid.py:1841 (add `and not row.get('is_eval_only')`, or replace the label set). This is a workflow/experiment-code fix, out of scope for this analysis-only session.",
+    "scoped_command_after_patch": "uv run python scripts/issue1092_fit_grid.py --summaries-dir <SUMM> --corpus-dir <CORPUS> --out-dir <OUT> --cells cell_inst_own,cell_inst_pretext,cell_pre_own,cell_pre_insttext --layers 14,18,19 --arms prefix_end,context_end --fit-arms A --target-bases ambient,pca48 --skip-mlp-companion (fit-arm B at L14 only requires a separate --fit-arms B --layers 14 run; the 4 unaffected cells need NO refit)",
+    "expected_delta": "read1 held-out R² should move only marginally (12% fewer training rows on novel-prefix folds where the held-out R² is 0.71-0.80); read3/read4 unchanged by construction"
+  },
+  "partB_operator_comparison_method_deferred": {
+    "status": "DEFERRED — requires fitted ridge maps W per arm (not stored in banked units) + spectrum-matched null draws; part of the >4h battery",
+    "method": "Per cell x layer(14/18/19) x basis: fit W_prefix and W_ctx (standardized-X ridge, MATCHED lambda per B4) on the battery-excluded rows. Compute principal angles between the top-k right (input) and left (output) singular subspaces of W_prefix vs W_ctx (k=48 and k at 90% spectral energy), and the orthogonal-Procrustes residual min_R ||W_ctx - R W_pfx||_F / ||W_ctx||_F. Null band: 200 draws of spectrum-matched random maps (same singular values, random subspaces). Restrict subspace claims to the data-spanned row space (ambient n>d so full rank; note ridge shrinkage biases spectra low).",
+    "engine_helper_available": "scripts/issue1092_fit_grid.py:_principal_angles (already implemented); press_fit_predict / PressRidge give the X-side factors to reconstruct W",
+    "expected_read": "if the query adds OPERATOR structure (not just input information), the two arms' output subspaces should be closer than the spectrum-matched null while input subspaces differ; the read1/read3 evidence (query-borne state carries ~all transport; prefix share ~10%) predicts the context-arm map is the near-additive prefix+query operator and the prefix-arm map spans a strict subspace of it."
+  }
+}

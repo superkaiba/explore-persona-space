@@ -1256,3 +1256,173 @@ def test_sync_falls_back_to_single_org_when_opt_out_set(monkeypatch):
     assert multiorg_called["n"] == 0, "opt-out should NOT enter the multi-org path"
     assert legacy.calls == 2, "legacy single-org client should serve both items"
     assert len(results) == 2
+
+
+# ── #1313: transport-vs-content classification (llm-judging.md rule 24) ───────
+
+
+def _real_overloaded_error():
+    """The REAL production 529 shape (anthropic 0.88.0): ``OverloadedError`` is
+    an ``APIStatusError``, NOT an ``InternalServerError`` subclass. Test-only
+    private import is acceptable (tests construct the real SDK exception)."""
+    from anthropic._exceptions import OverloadedError
+
+    resp = SimpleNamespace(status_code=529, headers={}, request=SimpleNamespace())
+    return OverloadedError("overloaded", response=resp, body=None)
+
+
+def test_collect_batch_results_flags_transport_rows():
+    """#1313 §4.3(a): server-errored / expired / canceled / unknown-rtype rows
+    carry the structural ``transport: True`` flag; retry-list membership is
+    UNCHANGED (the #1019 routing is untouched)."""
+    from explore_persona_space.eval.batch_judge import is_transport_error_dict
+    from explore_persona_space.eval.judge_dispatch import _default_error_dict
+
+    outcomes = {
+        "server_err": "errored",
+        "exp": "expired",
+        "cxl": "canceled",
+        "weird": "someday_new_rtype",
+    }
+    client = _collect_client(outcomes, error_types={"server_err": "api_error"})
+    scores, retriable, expired, quarantined, canceled = _collect_batch_results(
+        client, "msgbatch_x", _default_error_dict
+    )
+    for cid in ("server_err", "exp", "cxl", "weird"):
+        assert scores[cid]["error"] is True
+        assert scores[cid]["transport"] is True, cid
+        assert is_transport_error_dict(scores[cid]) is True, cid
+    # Retry routing unchanged by the flag threading (#1019 contract).
+    assert retriable == ["server_err"]
+    assert expired == ["exp"]
+    assert canceled == ["cxl"]
+    assert quarantined == []
+    assert "weird" not in retriable + expired + canceled
+
+
+def test_invalid_request_quarantined_not_transport():
+    """#1313 acceptance item 5 / rule 24(iii): a quarantined 400 carries NO
+    ``transport`` flag and classifies as a content-class error dict."""
+    from explore_persona_space.eval.batch_judge import is_transport_error_dict
+    from explore_persona_space.eval.judge_dispatch import _default_error_dict
+
+    client = _collect_client({"bad": "errored"}, error_types={"bad": "invalid_request_error"})
+    scores, _retriable, _expired, quarantined, _canceled = _collect_batch_results(
+        client, "msgbatch_x", _default_error_dict
+    )
+    assert quarantined == ["bad"]
+    assert scores["bad"]["error"] is True
+    assert "transport" not in scores["bad"]
+    assert is_transport_error_dict(scores["bad"]) is False
+
+
+def test_sync_captured_overloaded_flagged_transport():
+    """#1313 §4.3(b): the single-org sync path's captured-exception mint flags
+    a transport-class exception (real 529 ``OverloadedError``) with
+    ``transport: True``; a non-transport exception (RuntimeError) stays
+    unflagged (content-class)."""
+    from explore_persona_space.eval.judge_dispatch import _default_error_dict, _judge_items_sync
+
+    class _Client:
+        def __init__(self):
+            client = self
+
+            class _Messages:
+                async def create(_self, **kwargs):
+                    user_msg = kwargs["messages"][0]["content"]
+                    if "overload-me" in user_msg:
+                        raise _real_overloaded_error()
+                    if "runtime-me" in user_msg:
+                        raise RuntimeError("synthetic judge failure")
+                    return _msg(JUDGE_TEXT)
+
+            client.messages = _Messages()
+
+    items = [
+        ("cid_529", "q1", "c1", "please overload-me"),
+        ("cid_rt", "q2", "c2", "please runtime-me"),
+        ("cid_ok", "q3", "c3", "fine"),
+    ]
+    results = asyncio.run(
+        _judge_items_sync(
+            items,
+            judge_model="claude-sonnet-4-5-20250929",
+            judge_system_prompt="rubric",
+            max_tokens=64,
+            max_concurrent=3,
+            error_dict_factory=_default_error_dict,
+            client=_Client(),
+        )
+    )
+    assert results["cid_529"]["error"] is True
+    assert results["cid_529"]["transport"] is True
+    assert results["cid_rt"]["error"] is True
+    assert "transport" not in results["cid_rt"]
+    assert results["cid_ok"].get("error") is not True
+
+
+def test_multiorg_reduce_flags_transport_dispatch_results(monkeypatch):
+    """#1313 §4.3(b2) (round-1 Must-Fix): the multi-org sync reduce mints
+    ``transport: True`` for ``DispatchResult``s whose category is
+    RESULT_TRANSPORT or RESULT_RATE_LIMITED; a terminal RESULT_ERROR stays
+    unflagged. ``dispatch_calls`` is faked at the API boundary with a
+    signature-mirroring async fake returning REAL DispatchResult instances."""
+    from explore_persona_space.eval.judge_dispatch import (
+        _default_error_dict,
+        _judge_items_sync_multiorg,
+    )
+    from explore_persona_space.llm import api_dispatch
+
+    fake_results = {
+        "cid_transport": api_dispatch.DispatchResult(
+            "cid_transport",
+            error=True,
+            reason="transient APITimeoutError (attempt 5)",
+            category=api_dispatch.RESULT_TRANSPORT,
+        ),
+        "cid_429": api_dispatch.DispatchResult(
+            "cid_429",
+            error=True,
+            reason="rate_limited_exhausted (org=a, 429 retries 6)",
+            category=api_dispatch.RESULT_RATE_LIMITED,
+        ),
+        "cid_term": api_dispatch.DispatchResult(
+            "cid_term",
+            error=True,
+            reason="error: boom",
+            category=api_dispatch.RESULT_ERROR,
+        ),
+        "cid_ok": api_dispatch.DispatchResult(
+            "cid_ok", result={"aligned": 90, "coherent": 95, "reasoning": "ok"}
+        ),
+    }
+
+    async def fake_dispatch_calls(
+        items, *, model, build_request, parse_response, cost_pref, force_path
+    ):
+        return {it.item_id: fake_results[it.item_id] for it in items}
+
+    monkeypatch.setattr(api_dispatch, "dispatch_calls", fake_dispatch_calls)
+
+    items = [
+        ("cid_transport", "q1", "c1", "u1"),
+        ("cid_429", "q2", "c2", "u2"),
+        ("cid_term", "q3", "c3", "u3"),
+        ("cid_ok", "q4", "c4", "u4"),
+    ]
+    results = asyncio.run(
+        _judge_items_sync_multiorg(
+            items,
+            judge_model="claude-sonnet-4-5-20250929",
+            judge_system_prompt="rubric",
+            max_tokens=64,
+            error_dict_factory=_default_error_dict,
+        )
+    )
+    assert results["cid_transport"]["error"] is True
+    assert results["cid_transport"]["transport"] is True
+    assert results["cid_429"]["error"] is True
+    assert results["cid_429"]["transport"] is True
+    assert results["cid_term"]["error"] is True
+    assert "transport" not in results["cid_term"]
+    assert results["cid_ok"] == {"aligned": 90, "coherent": 95, "reasoning": "ok"}

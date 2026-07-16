@@ -1,0 +1,6 @@
+{
+  "figure": "figures/issue_825/context_shift_decomp.png",
+  "source": "eval_results/issue_825/context_shift_decomp/results.json",
+  "headline_layer": 19,
+  "caption": "Panel 1: fraction of the base->instruct context-shift residual energy in the map-relevant subspace (top-r left singular dirs of the instruct context->answer operator), vs a Haar-random r-dim-subspace null band, at layer 19 across energy cuts. Panel 2: held-out base->instruct context alignment R^2 within the map-relevant vs map-ignored subspace (vw = each subspace's share of instruct-context variance). Panel 3: fraction of shift energy in the map-null subspace across layers vs the random baseline. Deterministic teacher-forced activations (noise ceiling ~1.0)."
+}

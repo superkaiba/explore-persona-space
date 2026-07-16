@@ -62,7 +62,7 @@ Design (all FIRM requirements from § 1b + Phase 4):
    crossover and go sync). This is intended (fewer items remain), but means a
    resumed batch with few uncached items can run sync.
 
-8. **Retries.** Transient errors (timeouts, 529 InternalServerError) retry
+8. **Retries.** Transient errors (timeouts, 5xx incl. 529, connection) retry
    with exponential backoff; a failed item is returned with ``error=True``
    rather than crashing the whole run.
 
@@ -203,9 +203,15 @@ def family_concurrency_cap(
 # search). RESULT_RATE_LIMITED distinguishes a 429-storm EXHAUSTION (the AIMD
 # controller would eventually clear it, so the item is re-drivable) from a
 # RESULT_ERROR terminal failure (parse / bad-request — not re-drivable).
+# RESULT_TRANSPORT (#1313, llm-judging.md rule 24) marks bounded-TRANSIENT-retry
+# exhaustion (connection / timeout / 5xx incl. 529) — transport-class, freely
+# re-drivable, distinct from terminal RESULT_ERROR. RESULT_RATE_LIMITED is ALSO
+# transport-class under rule 24 but keeps its own label for AIMD observability;
+# consumers treat {RESULT_RATE_LIMITED, RESULT_TRANSPORT} as re-drivable.
 RESULT_OK = "ok"
 RESULT_ERROR = "error"
 RESULT_RATE_LIMITED = "rate_limited_exhausted"
+RESULT_TRANSPORT = "transport_exhausted"
 
 # Per-item 429 retry budget, SEPARATE from ``max_attempts``. A 429 is pure
 # backpressure (the AIMD controller honors the retry-after and clears the
@@ -236,9 +242,20 @@ class DispatchResult:
     successful item carries the parsed ``result`` and ``error=False``.
 
     ``category`` is the structured outcome discriminator (``RESULT_OK`` /
-    ``RESULT_ERROR`` / ``RESULT_RATE_LIMITED``): a caller branches on
-    ``res.category == RESULT_RATE_LIMITED`` to re-drive a 429-storm exhaustion
-    without crashing the pipeline, distinct from a terminal ``RESULT_ERROR``.
+    ``RESULT_ERROR`` / ``RESULT_RATE_LIMITED`` / ``RESULT_TRANSPORT``): a
+    caller branches on ``res.category in (RESULT_RATE_LIMITED,
+    RESULT_TRANSPORT)`` to re-drive a transport-class exhaustion (429-storm /
+    bounded-transient-retry exhaustion — connection, timeout, 5xx incl. 529;
+    llm-judging.md rule 24, #1313) without crashing the pipeline, distinct
+    from a terminal ``RESULT_ERROR`` (parse / bad-request).
+
+    Checkpoint-resume caveat for ``RESULT_TRANSPORT``: api_dispatch's own
+    batch checkpoint re-serves persisted error rows on resume
+    (:func:`_merge_batch_record` reads the stored ``category`` directly), so a
+    resumed same-checkpoint run does NOT re-dispatch a ``RESULT_TRANSPORT``
+    row — re-drive rests on the CALLER branching on ``{RESULT_RATE_LIMITED,
+    RESULT_TRANSPORT}``; checkpoint-resume does not self-heal the way the
+    ``JudgeCache`` transport get-miss does (``eval.batch_judge``).
     """
 
     item_id: str
@@ -246,7 +263,7 @@ class DispatchResult:
     error: bool = False
     reason: str | None = None
     org: str | None = None  # which org served it (sync path); None for cache hits
-    category: str = RESULT_OK  # "ok" | "error" | "rate_limited_exhausted"
+    category: str = RESULT_OK  # "ok" | "error" | "rate_limited_exhausted" | "transport_exhausted"
 
 
 # Request builder: item -> Messages-API params kwargs (model/max_tokens/messages/...).
@@ -565,27 +582,46 @@ def _atomic_write_json(path: Path, obj: Any) -> None:
 
 
 def _is_transient(exc: BaseException) -> bool:
-    """True for retryable transient API errors (timeouts, 529, connection).
+    """True for retryable transient API errors (timeouts, 5xx incl. 529, connection).
 
-    529 ``OverloadedError`` is an ``InternalServerError`` subclass in the
-    installed SDK (per code-style.md), so catching ``InternalServerError``
-    covers it. ``RateLimitError`` (429) is handled SEPARATELY via AIMD, so it
-    is NOT in this transient set.
+    529 ``OverloadedError`` is NOT an ``InternalServerError`` subclass in the
+    installed SDK (anthropic 0.88.0: MRO OverloadedError -> APIStatusError ->
+    APIError) and is not exported at the ``anthropic`` top level, so it is
+    matched via the public ``APIStatusError`` + ``status_code == 529`` form
+    (llm-judging rule 24(i); #1313). ``RateLimitError`` (429) is handled
+    SEPARATELY via AIMD — ``_do_one`` checks ``_is_rate_limit`` BEFORE this
+    predicate — so it is NOT in this transient set.
     """
     import anthropic as _anthropic
 
     transient = (
         _anthropic.APIConnectionError,
         _anthropic.APITimeoutError,
-        _anthropic.InternalServerError,  # includes 529 OverloadedError
+        _anthropic.InternalServerError,  # 500-class; does NOT cover 529 (see docstring)
     )
-    return isinstance(exc, transient)
+    if isinstance(exc, transient):
+        return True
+    # 529 Overloaded — explicit public-form match (robust to SDK re-parenting).
+    return isinstance(exc, _anthropic.APIStatusError) and getattr(exc, "status_code", None) == 529
 
 
 def _is_rate_limit(exc: BaseException) -> bool:
     import anthropic as _anthropic
 
     return isinstance(exc, _anthropic.RateLimitError)
+
+
+def is_transport_exception(exc: BaseException) -> bool:
+    """Rule-24 transport-class taxonomy over SDK exceptions.
+
+    True when the call died in TRANSPORT — before any verdict about the
+    content was produced, so the item is freely re-judgeable
+    (llm-judging.md rule 24(i); #1313): transient (connection / timeout /
+    5xx incl. 529) OR 429 rate limit. NOT transport: a 400-class
+    invalid_request (a pipeline bug — neither retried nor dropped, rule
+    24(iii)) or any non-API exception (e.g. a parse error).
+    """
+    return _is_transient(exc) or _is_rate_limit(exc)
 
 
 def _retry_after_seconds(exc: BaseException) -> float | None:
@@ -789,7 +825,9 @@ async def _dispatch_sync(
                         break
                     continue  # 429 does NOT consume an attempt (Finding 1b)
                 if _is_transient(exc):
-                    last_category = RESULT_ERROR
+                    # Exhaustion of the bounded transient budget is transport-class
+                    # (re-drivable), not a terminal error (rule 24(ii); #1313).
+                    last_category = RESULT_TRANSPORT
                     last_reason = f"transient {type(exc).__name__} (attempt {attempt + 1})"
                     await asyncio.sleep(1.5**attempt)
                     attempt += 1
@@ -1080,7 +1118,22 @@ async def _harvest_sub_batch(
             except Exception as e:
                 scores[item_id] = {"result": None, "error": True, "reason": f"parse_error: {e}"}
         else:
-            scores[item_id] = {"result": None, "error": True, "reason": f"batch_error: {rtype}"}
+            # #1313 (rule 24): server-class errored / expired / canceled /
+            # unknown rows are transport-class (re-drivable) -> RESULT_TRANSPORT;
+            # a quarantined invalid_request_error stays terminal RESULT_ERROR
+            # (rule 24(iii)). SDK nesting is result.result.error.error.type
+            # (double .error); getattr-guarded so a shape mismatch fails toward
+            # transport (visible + re-judgeable), mirroring judge_dispatch.
+            etype = getattr(
+                getattr(getattr(result.result, "error", None), "error", None), "type", None
+            )
+            category = RESULT_ERROR if etype == "invalid_request_error" else RESULT_TRANSPORT
+            scores[item_id] = {
+                "result": None,
+                "error": True,
+                "reason": f"batch_error: {rtype}",
+                "category": category,
+            }
     _atomic_write_json(dispatch_dir / f"results_{sb['batch_id']}.json", scores)
     sb["status"] = "collected"
     _atomic_write_json(state_path, state)
@@ -1828,6 +1881,7 @@ __all__ = [
     "RESULT_ERROR",
     "RESULT_OK",
     "RESULT_RATE_LIMITED",
+    "RESULT_TRANSPORT",
     "SYNC_BATCH_CROSSOVER_N",
     "DispatchItem",
     "DispatchResult",
@@ -1838,6 +1892,7 @@ __all__ = [
     "detect_org_keys",
     "dispatch_calls",
     "family_concurrency_cap",
+    "is_transport_exception",
     "main",
     "merge_headroom_snapshot",
     "model_family",

@@ -1,0 +1,2429 @@
+{
+  "commit": "a662de3363",
+  "created": "2026-07-15T20:57:49Z",
+  "figsize": [
+    13.0,
+    5.0
+  ],
+  "points": [
+    {
+      "Decoder layer": 0.0,
+      "Rank-k@90 of the shift cloud": 3.0,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Decoder layer": 1.0,
+      "Rank-k@90 of the shift cloud": 3.0,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Decoder layer": 2.0,
+      "Rank-k@90 of the shift cloud": 3.0,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Decoder layer": 3.0,
+      "Rank-k@90 of the shift cloud": 2.0,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Decoder layer": 4.0,
+      "Rank-k@90 of the shift cloud": 2.0,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Decoder layer": 5.0,
+      "Rank-k@90 of the shift cloud": 2.0,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Decoder layer": 6.0,
+      "Rank-k@90 of the shift cloud": 3.0,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Decoder layer": 7.0,
+      "Rank-k@90 of the shift cloud": 3.0,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Decoder layer": 8.0,
+      "Rank-k@90 of the shift cloud": 3.0,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Decoder layer": 9.0,
+      "Rank-k@90 of the shift cloud": 3.0,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Decoder layer": 10.0,
+      "Rank-k@90 of the shift cloud": 3.0,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Decoder layer": 11.0,
+      "Rank-k@90 of the shift cloud": 3.0,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Decoder layer": 12.0,
+      "Rank-k@90 of the shift cloud": 3.0,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Decoder layer": 13.0,
+      "Rank-k@90 of the shift cloud": 3.0,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Decoder layer": 14.0,
+      "Rank-k@90 of the shift cloud": 3.0,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Decoder layer": 15.0,
+      "Rank-k@90 of the shift cloud": 3.0,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Decoder layer": 16.0,
+      "Rank-k@90 of the shift cloud": 3.0,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Decoder layer": 17.0,
+      "Rank-k@90 of the shift cloud": 4.0,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Decoder layer": 18.0,
+      "Rank-k@90 of the shift cloud": 4.0,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Decoder layer": 19.0,
+      "Rank-k@90 of the shift cloud": 4.0,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Decoder layer": 20.0,
+      "Rank-k@90 of the shift cloud": 4.0,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Decoder layer": 21.0,
+      "Rank-k@90 of the shift cloud": 4.0,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Decoder layer": 22.0,
+      "Rank-k@90 of the shift cloud": 4.0,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Decoder layer": 23.0,
+      "Rank-k@90 of the shift cloud": 4.0,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Decoder layer": 24.0,
+      "Rank-k@90 of the shift cloud": 4.0,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Decoder layer": 25.0,
+      "Rank-k@90 of the shift cloud": 4.0,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Decoder layer": 26.0,
+      "Rank-k@90 of the shift cloud": 4.0,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Decoder layer": 27.0,
+      "Rank-k@90 of the shift cloud": 4.0,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Decoder layer": 0.0,
+      "Rank-k@90 of the shift cloud": 3.0,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Decoder layer": 1.0,
+      "Rank-k@90 of the shift cloud": 2.0,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Decoder layer": 2.0,
+      "Rank-k@90 of the shift cloud": 2.0,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Decoder layer": 3.0,
+      "Rank-k@90 of the shift cloud": 1.0,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Decoder layer": 4.0,
+      "Rank-k@90 of the shift cloud": 1.0,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Decoder layer": 5.0,
+      "Rank-k@90 of the shift cloud": 1.0,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Decoder layer": 6.0,
+      "Rank-k@90 of the shift cloud": 1.0,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Decoder layer": 7.0,
+      "Rank-k@90 of the shift cloud": 1.0,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Decoder layer": 8.0,
+      "Rank-k@90 of the shift cloud": 2.0,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Decoder layer": 9.0,
+      "Rank-k@90 of the shift cloud": 2.0,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Decoder layer": 10.0,
+      "Rank-k@90 of the shift cloud": 2.0,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Decoder layer": 11.0,
+      "Rank-k@90 of the shift cloud": 2.0,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Decoder layer": 12.0,
+      "Rank-k@90 of the shift cloud": 2.0,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Decoder layer": 13.0,
+      "Rank-k@90 of the shift cloud": 2.0,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Decoder layer": 14.0,
+      "Rank-k@90 of the shift cloud": 2.0,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Decoder layer": 15.0,
+      "Rank-k@90 of the shift cloud": 2.0,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Decoder layer": 16.0,
+      "Rank-k@90 of the shift cloud": 2.0,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Decoder layer": 17.0,
+      "Rank-k@90 of the shift cloud": 2.0,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Decoder layer": 18.0,
+      "Rank-k@90 of the shift cloud": 2.0,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Decoder layer": 19.0,
+      "Rank-k@90 of the shift cloud": 3.0,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Decoder layer": 20.0,
+      "Rank-k@90 of the shift cloud": 3.0,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Decoder layer": 21.0,
+      "Rank-k@90 of the shift cloud": 4.0,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Decoder layer": 22.0,
+      "Rank-k@90 of the shift cloud": 4.0,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Decoder layer": 23.0,
+      "Rank-k@90 of the shift cloud": 4.0,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Decoder layer": 24.0,
+      "Rank-k@90 of the shift cloud": 4.0,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Decoder layer": 25.0,
+      "Rank-k@90 of the shift cloud": 4.0,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Decoder layer": 26.0,
+      "Rank-k@90 of the shift cloud": 4.0,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Decoder layer": 27.0,
+      "Rank-k@90 of the shift cloud": 4.0,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Decoder layer": 0.0,
+      "Rank-k@90 of the shift cloud": 4.0,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Decoder layer": 1.0,
+      "Rank-k@90 of the shift cloud": 3.0,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Decoder layer": 2.0,
+      "Rank-k@90 of the shift cloud": 3.0,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Decoder layer": 3.0,
+      "Rank-k@90 of the shift cloud": 1.0,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Decoder layer": 4.0,
+      "Rank-k@90 of the shift cloud": 1.0,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Decoder layer": 5.0,
+      "Rank-k@90 of the shift cloud": 1.0,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Decoder layer": 6.0,
+      "Rank-k@90 of the shift cloud": 1.0,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Decoder layer": 7.0,
+      "Rank-k@90 of the shift cloud": 1.0,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Decoder layer": 8.0,
+      "Rank-k@90 of the shift cloud": 1.0,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Decoder layer": 9.0,
+      "Rank-k@90 of the shift cloud": 2.0,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Decoder layer": 10.0,
+      "Rank-k@90 of the shift cloud": 2.0,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Decoder layer": 11.0,
+      "Rank-k@90 of the shift cloud": 2.0,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Decoder layer": 12.0,
+      "Rank-k@90 of the shift cloud": 2.0,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Decoder layer": 13.0,
+      "Rank-k@90 of the shift cloud": 2.0,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Decoder layer": 14.0,
+      "Rank-k@90 of the shift cloud": 2.0,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Decoder layer": 15.0,
+      "Rank-k@90 of the shift cloud": 2.0,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Decoder layer": 16.0,
+      "Rank-k@90 of the shift cloud": 2.0,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Decoder layer": 17.0,
+      "Rank-k@90 of the shift cloud": 2.0,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Decoder layer": 18.0,
+      "Rank-k@90 of the shift cloud": 2.0,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Decoder layer": 19.0,
+      "Rank-k@90 of the shift cloud": 2.0,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Decoder layer": 20.0,
+      "Rank-k@90 of the shift cloud": 2.0,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Decoder layer": 21.0,
+      "Rank-k@90 of the shift cloud": 3.0,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Decoder layer": 22.0,
+      "Rank-k@90 of the shift cloud": 3.0,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Decoder layer": 23.0,
+      "Rank-k@90 of the shift cloud": 3.0,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Decoder layer": 24.0,
+      "Rank-k@90 of the shift cloud": 3.0,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Decoder layer": 25.0,
+      "Rank-k@90 of the shift cloud": 3.0,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Decoder layer": 26.0,
+      "Rank-k@90 of the shift cloud": 3.0,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Decoder layer": 27.0,
+      "Rank-k@90 of the shift cloud": 3.0,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Decoder layer": 0.0,
+      "Rank-k@90 of the shift cloud": 4.0,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Decoder layer": 1.0,
+      "Rank-k@90 of the shift cloud": 3.0,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Decoder layer": 2.0,
+      "Rank-k@90 of the shift cloud": 3.0,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Decoder layer": 3.0,
+      "Rank-k@90 of the shift cloud": 3.0,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Decoder layer": 4.0,
+      "Rank-k@90 of the shift cloud": 2.0,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Decoder layer": 5.0,
+      "Rank-k@90 of the shift cloud": 2.0,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Decoder layer": 6.0,
+      "Rank-k@90 of the shift cloud": 2.0,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Decoder layer": 7.0,
+      "Rank-k@90 of the shift cloud": 2.0,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Decoder layer": 8.0,
+      "Rank-k@90 of the shift cloud": 2.0,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Decoder layer": 9.0,
+      "Rank-k@90 of the shift cloud": 2.0,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Decoder layer": 10.0,
+      "Rank-k@90 of the shift cloud": 2.0,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Decoder layer": 11.0,
+      "Rank-k@90 of the shift cloud": 2.0,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Decoder layer": 12.0,
+      "Rank-k@90 of the shift cloud": 2.0,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Decoder layer": 13.0,
+      "Rank-k@90 of the shift cloud": 2.0,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Decoder layer": 14.0,
+      "Rank-k@90 of the shift cloud": 2.0,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Decoder layer": 15.0,
+      "Rank-k@90 of the shift cloud": 2.0,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Decoder layer": 16.0,
+      "Rank-k@90 of the shift cloud": 2.0,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Decoder layer": 17.0,
+      "Rank-k@90 of the shift cloud": 2.0,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Decoder layer": 18.0,
+      "Rank-k@90 of the shift cloud": 2.0,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Decoder layer": 19.0,
+      "Rank-k@90 of the shift cloud": 2.0,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Decoder layer": 20.0,
+      "Rank-k@90 of the shift cloud": 2.0,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Decoder layer": 21.0,
+      "Rank-k@90 of the shift cloud": 2.0,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Decoder layer": 22.0,
+      "Rank-k@90 of the shift cloud": 2.0,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Decoder layer": 23.0,
+      "Rank-k@90 of the shift cloud": 2.0,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Decoder layer": 24.0,
+      "Rank-k@90 of the shift cloud": 2.0,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Decoder layer": 25.0,
+      "Rank-k@90 of the shift cloud": 2.0,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Decoder layer": 26.0,
+      "Rank-k@90 of the shift cloud": 3.0,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Decoder layer": 27.0,
+      "Rank-k@90 of the shift cloud": 3.0,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Decoder layer": 0.0,
+      "Rank-k@90 of the shift cloud": 3.0,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Decoder layer": 1.0,
+      "Rank-k@90 of the shift cloud": 2.0,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Decoder layer": 2.0,
+      "Rank-k@90 of the shift cloud": 2.0,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Decoder layer": 3.0,
+      "Rank-k@90 of the shift cloud": 1.0,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Decoder layer": 4.0,
+      "Rank-k@90 of the shift cloud": 1.0,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Decoder layer": 5.0,
+      "Rank-k@90 of the shift cloud": 1.0,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Decoder layer": 6.0,
+      "Rank-k@90 of the shift cloud": 2.0,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Decoder layer": 7.0,
+      "Rank-k@90 of the shift cloud": 2.0,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Decoder layer": 8.0,
+      "Rank-k@90 of the shift cloud": 2.0,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Decoder layer": 9.0,
+      "Rank-k@90 of the shift cloud": 2.0,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Decoder layer": 10.0,
+      "Rank-k@90 of the shift cloud": 2.0,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Decoder layer": 11.0,
+      "Rank-k@90 of the shift cloud": 2.0,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Decoder layer": 12.0,
+      "Rank-k@90 of the shift cloud": 2.0,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Decoder layer": 13.0,
+      "Rank-k@90 of the shift cloud": 2.0,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Decoder layer": 14.0,
+      "Rank-k@90 of the shift cloud": 2.0,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Decoder layer": 15.0,
+      "Rank-k@90 of the shift cloud": 2.0,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Decoder layer": 16.0,
+      "Rank-k@90 of the shift cloud": 3.0,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Decoder layer": 17.0,
+      "Rank-k@90 of the shift cloud": 3.0,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Decoder layer": 18.0,
+      "Rank-k@90 of the shift cloud": 3.0,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Decoder layer": 19.0,
+      "Rank-k@90 of the shift cloud": 3.0,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Decoder layer": 20.0,
+      "Rank-k@90 of the shift cloud": 3.0,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Decoder layer": 21.0,
+      "Rank-k@90 of the shift cloud": 3.0,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Decoder layer": 22.0,
+      "Rank-k@90 of the shift cloud": 3.0,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Decoder layer": 23.0,
+      "Rank-k@90 of the shift cloud": 3.0,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Decoder layer": 24.0,
+      "Rank-k@90 of the shift cloud": 3.0,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Decoder layer": 25.0,
+      "Rank-k@90 of the shift cloud": 3.0,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Decoder layer": 26.0,
+      "Rank-k@90 of the shift cloud": 3.0,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Decoder layer": 27.0,
+      "Rank-k@90 of the shift cloud": 3.0,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Decoder layer": 0.0,
+      "Rank-k@90 of the shift cloud": 2.0,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Decoder layer": 1.0,
+      "Rank-k@90 of the shift cloud": 2.0,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Decoder layer": 2.0,
+      "Rank-k@90 of the shift cloud": 2.0,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Decoder layer": 3.0,
+      "Rank-k@90 of the shift cloud": 2.0,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Decoder layer": 4.0,
+      "Rank-k@90 of the shift cloud": 2.0,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Decoder layer": 5.0,
+      "Rank-k@90 of the shift cloud": 2.0,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Decoder layer": 6.0,
+      "Rank-k@90 of the shift cloud": 2.0,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Decoder layer": 7.0,
+      "Rank-k@90 of the shift cloud": 2.0,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Decoder layer": 8.0,
+      "Rank-k@90 of the shift cloud": 2.0,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Decoder layer": 9.0,
+      "Rank-k@90 of the shift cloud": 2.0,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Decoder layer": 10.0,
+      "Rank-k@90 of the shift cloud": 2.0,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Decoder layer": 11.0,
+      "Rank-k@90 of the shift cloud": 2.0,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Decoder layer": 12.0,
+      "Rank-k@90 of the shift cloud": 2.0,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Decoder layer": 13.0,
+      "Rank-k@90 of the shift cloud": 2.0,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Decoder layer": 14.0,
+      "Rank-k@90 of the shift cloud": 2.0,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Decoder layer": 15.0,
+      "Rank-k@90 of the shift cloud": 2.0,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Decoder layer": 16.0,
+      "Rank-k@90 of the shift cloud": 2.0,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Decoder layer": 17.0,
+      "Rank-k@90 of the shift cloud": 2.0,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Decoder layer": 18.0,
+      "Rank-k@90 of the shift cloud": 3.0,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Decoder layer": 19.0,
+      "Rank-k@90 of the shift cloud": 2.0,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Decoder layer": 20.0,
+      "Rank-k@90 of the shift cloud": 3.0,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Decoder layer": 21.0,
+      "Rank-k@90 of the shift cloud": 3.0,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Decoder layer": 22.0,
+      "Rank-k@90 of the shift cloud": 3.0,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Decoder layer": 23.0,
+      "Rank-k@90 of the shift cloud": 3.0,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Decoder layer": 24.0,
+      "Rank-k@90 of the shift cloud": 3.0,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Decoder layer": 25.0,
+      "Rank-k@90 of the shift cloud": 3.0,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Decoder layer": 26.0,
+      "Rank-k@90 of the shift cloud": 3.0,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Decoder layer": 27.0,
+      "Rank-k@90 of the shift cloud": 3.0,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Decoder layer": 0.0,
+      "y": 5.0,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Decoder layer": 1.0,
+      "y": 4.0,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Decoder layer": 2.0,
+      "y": 3.0,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Decoder layer": 3.0,
+      "y": 3.0,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Decoder layer": 4.0,
+      "y": 4.0,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Decoder layer": 5.0,
+      "y": 5.0,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Decoder layer": 6.0,
+      "y": 5.0,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Decoder layer": 7.0,
+      "y": 5.0,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Decoder layer": 8.0,
+      "y": 5.0,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Decoder layer": 9.0,
+      "y": 5.0,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Decoder layer": 10.0,
+      "y": 5.0,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Decoder layer": 11.0,
+      "y": 6.0,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Decoder layer": 12.0,
+      "y": 5.0,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Decoder layer": 13.0,
+      "y": 6.0,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Decoder layer": 14.0,
+      "y": 7.0,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Decoder layer": 15.0,
+      "y": 9.0,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Decoder layer": 16.0,
+      "y": 10.0,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Decoder layer": 17.0,
+      "y": 12.0,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Decoder layer": 18.0,
+      "y": 12.0,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Decoder layer": 19.0,
+      "y": 12.0,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Decoder layer": 20.0,
+      "y": 14.0,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Decoder layer": 21.0,
+      "y": 16.0,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Decoder layer": 22.0,
+      "y": 17.0,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Decoder layer": 23.0,
+      "y": 16.0,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Decoder layer": 24.0,
+      "y": 17.0,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Decoder layer": 25.0,
+      "y": 19.0,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Decoder layer": 26.0,
+      "y": 19.0,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Decoder layer": 27.0,
+      "y": 14.0,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Decoder layer": 0.0,
+      "y": 5.0,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Decoder layer": 1.0,
+      "y": 2.0,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Decoder layer": 2.0,
+      "y": 3.0,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Decoder layer": 3.0,
+      "y": 1.0,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Decoder layer": 4.0,
+      "y": 1.0,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Decoder layer": 5.0,
+      "y": 1.0,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Decoder layer": 6.0,
+      "y": 1.0,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Decoder layer": 7.0,
+      "y": 1.0,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Decoder layer": 8.0,
+      "y": 2.0,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Decoder layer": 9.0,
+      "y": 2.0,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Decoder layer": 10.0,
+      "y": 2.0,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Decoder layer": 11.0,
+      "y": 2.0,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Decoder layer": 12.0,
+      "y": 2.0,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Decoder layer": 13.0,
+      "y": 2.0,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Decoder layer": 14.0,
+      "y": 2.0,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Decoder layer": 15.0,
+      "y": 3.0,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Decoder layer": 16.0,
+      "y": 3.0,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Decoder layer": 17.0,
+      "y": 4.0,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Decoder layer": 18.0,
+      "y": 4.0,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Decoder layer": 19.0,
+      "y": 5.0,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Decoder layer": 20.0,
+      "y": 8.0,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Decoder layer": 21.0,
+      "y": 9.0,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Decoder layer": 22.0,
+      "y": 11.0,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Decoder layer": 23.0,
+      "y": 11.0,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Decoder layer": 24.0,
+      "y": 12.0,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Decoder layer": 25.0,
+      "y": 13.0,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Decoder layer": 26.0,
+      "y": 12.0,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Decoder layer": 27.0,
+      "y": 9.0,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Decoder layer": 0.0,
+      "y": 28.0,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Decoder layer": 1.0,
+      "y": 4.0,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Decoder layer": 2.0,
+      "y": 4.0,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Decoder layer": 3.0,
+      "y": 1.0,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Decoder layer": 4.0,
+      "y": 1.0,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Decoder layer": 5.0,
+      "y": 1.0,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Decoder layer": 6.0,
+      "y": 1.0,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Decoder layer": 7.0,
+      "y": 1.0,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Decoder layer": 8.0,
+      "y": 2.0,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Decoder layer": 9.0,
+      "y": 2.0,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Decoder layer": 10.0,
+      "y": 2.0,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Decoder layer": 11.0,
+      "y": 2.0,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Decoder layer": 12.0,
+      "y": 2.0,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Decoder layer": 13.0,
+      "y": 2.0,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Decoder layer": 14.0,
+      "y": 2.0,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Decoder layer": 15.0,
+      "y": 3.0,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Decoder layer": 16.0,
+      "y": 3.0,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Decoder layer": 17.0,
+      "y": 3.0,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Decoder layer": 18.0,
+      "y": 4.0,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Decoder layer": 19.0,
+      "y": 3.0,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Decoder layer": 20.0,
+      "y": 4.0,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Decoder layer": 21.0,
+      "y": 5.0,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Decoder layer": 22.0,
+      "y": 6.0,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Decoder layer": 23.0,
+      "y": 5.0,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Decoder layer": 24.0,
+      "y": 5.0,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Decoder layer": 25.0,
+      "y": 6.0,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Decoder layer": 26.0,
+      "y": 8.0,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Decoder layer": 27.0,
+      "y": 6.0,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Decoder layer": 0.0,
+      "y": 31.0,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Decoder layer": 1.0,
+      "y": 9.0,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Decoder layer": 2.0,
+      "y": 4.0,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Decoder layer": 3.0,
+      "y": 4.0,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Decoder layer": 4.0,
+      "y": 2.0,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Decoder layer": 5.0,
+      "y": 3.0,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Decoder layer": 6.0,
+      "y": 3.0,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Decoder layer": 7.0,
+      "y": 4.0,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Decoder layer": 8.0,
+      "y": 4.0,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Decoder layer": 9.0,
+      "y": 3.0,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Decoder layer": 10.0,
+      "y": 4.0,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Decoder layer": 11.0,
+      "y": 2.0,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Decoder layer": 12.0,
+      "y": 2.0,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Decoder layer": 13.0,
+      "y": 2.0,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Decoder layer": 14.0,
+      "y": 2.0,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Decoder layer": 15.0,
+      "y": 2.0,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Decoder layer": 16.0,
+      "y": 3.0,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Decoder layer": 17.0,
+      "y": 3.0,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Decoder layer": 18.0,
+      "y": 3.0,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Decoder layer": 19.0,
+      "y": 2.0,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Decoder layer": 20.0,
+      "y": 3.0,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Decoder layer": 21.0,
+      "y": 3.0,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Decoder layer": 22.0,
+      "y": 4.0,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Decoder layer": 23.0,
+      "y": 3.0,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Decoder layer": 24.0,
+      "y": 3.0,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Decoder layer": 25.0,
+      "y": 4.0,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Decoder layer": 26.0,
+      "y": 5.0,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Decoder layer": 27.0,
+      "y": 5.0,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Decoder layer": 0.0,
+      "y": 11.0,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Decoder layer": 1.0,
+      "y": 2.0,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Decoder layer": 2.0,
+      "y": 2.0,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Decoder layer": 3.0,
+      "y": 1.0,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Decoder layer": 4.0,
+      "y": 2.0,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Decoder layer": 5.0,
+      "y": 2.0,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Decoder layer": 6.0,
+      "y": 2.0,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Decoder layer": 7.0,
+      "y": 2.0,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Decoder layer": 8.0,
+      "y": 2.0,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Decoder layer": 9.0,
+      "y": 2.0,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Decoder layer": 10.0,
+      "y": 3.0,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Decoder layer": 11.0,
+      "y": 3.0,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Decoder layer": 12.0,
+      "y": 3.0,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Decoder layer": 13.0,
+      "y": 3.0,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Decoder layer": 14.0,
+      "y": 3.0,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Decoder layer": 15.0,
+      "y": 3.0,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Decoder layer": 16.0,
+      "y": 3.0,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Decoder layer": 17.0,
+      "y": 4.0,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Decoder layer": 18.0,
+      "y": 4.0,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Decoder layer": 19.0,
+      "y": 3.0,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Decoder layer": 20.0,
+      "y": 4.0,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Decoder layer": 21.0,
+      "y": 5.0,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Decoder layer": 22.0,
+      "y": 5.0,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Decoder layer": 23.0,
+      "y": 5.0,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Decoder layer": 24.0,
+      "y": 5.0,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Decoder layer": 25.0,
+      "y": 6.0,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Decoder layer": 26.0,
+      "y": 8.0,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Decoder layer": 27.0,
+      "y": 6.0,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Decoder layer": 0.0,
+      "y": 3.0,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Decoder layer": 1.0,
+      "y": 2.0,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Decoder layer": 2.0,
+      "y": 2.0,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Decoder layer": 3.0,
+      "y": 2.0,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Decoder layer": 4.0,
+      "y": 2.0,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Decoder layer": 5.0,
+      "y": 2.0,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Decoder layer": 6.0,
+      "y": 2.0,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Decoder layer": 7.0,
+      "y": 2.0,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Decoder layer": 8.0,
+      "y": 2.0,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Decoder layer": 9.0,
+      "y": 3.0,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Decoder layer": 10.0,
+      "y": 2.0,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Decoder layer": 11.0,
+      "y": 3.0,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Decoder layer": 12.0,
+      "y": 3.0,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Decoder layer": 13.0,
+      "y": 3.0,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Decoder layer": 14.0,
+      "y": 3.0,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Decoder layer": 15.0,
+      "y": 3.0,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Decoder layer": 16.0,
+      "y": 3.0,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Decoder layer": 17.0,
+      "y": 4.0,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Decoder layer": 18.0,
+      "y": 4.0,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Decoder layer": 19.0,
+      "y": 4.0,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Decoder layer": 20.0,
+      "y": 4.0,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Decoder layer": 21.0,
+      "y": 4.0,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Decoder layer": 22.0,
+      "y": 5.0,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Decoder layer": 23.0,
+      "y": 5.0,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Decoder layer": 24.0,
+      "y": 5.0,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Decoder layer": 25.0,
+      "y": 5.0,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Decoder layer": 26.0,
+      "y": 5.0,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Decoder layer": 27.0,
+      "y": 4.0,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 11
+    }
+  ],
+  "n_series": 12,
+  "total_points": 336,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Prefix arm (same tokens, before the user query)",
+        "xlabel": "Decoder layer",
+        "ylabel": "Rank-k@90 of the shift cloud",
+        "legend_labels": [
+          "LoRA, persona context",
+          "LoRA, WildChat context",
+          "LoRA + negatives, ICL",
+          "LoRA positives-only, ICL",
+          "Full FT + negatives, ICL",
+          "Full FT positives-only, ICL"
+        ],
+        "xticklabels": [
+          "\u22125",
+          "0",
+          "5",
+          "10",
+          "15",
+          "20",
+          "25",
+          "30"
+        ],
+        "yticklabels": [
+          "\u22125",
+          "0",
+          "5",
+          "10",
+          "15",
+          "20",
+          "25",
+          "30",
+          "35"
+        ]
+      },
+      {
+        "title_left": "Context arm (same tokens, incl. the user query)",
+        "xlabel": "Decoder layer",
+        "annotations": [
+          "sycophancy context-arm span (task 1112)"
+        ],
+        "xticklabels": [
+          "\u22125",
+          "0",
+          "5",
+          "10",
+          "15",
+          "20",
+          "25",
+          "30"
+        ]
+      }
+    ],
+    "series": [
+      "LoRA, persona context",
+      "LoRA, WildChat context",
+      "LoRA + negatives, ICL",
+      "LoRA positives-only, ICL",
+      "Full FT + negatives, ICL",
+      "Full FT positives-only, ICL"
+    ]
+  }
+}

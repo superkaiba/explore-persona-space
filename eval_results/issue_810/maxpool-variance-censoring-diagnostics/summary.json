@@ -1,0 +1,57 @@
+{
+  "issue": 810,
+  "analysis": "maxpool-variance-censoring-diagnostics",
+  "reproducibility": {
+    "git_commit": "5199eed787bf74b409d1ba4a2bec5cf6fe3e2cb1",
+    "timestamp_utc": "2026-07-16T08:55:50.025561+00:00",
+    "python_version": "3.11.15",
+    "platform": "Linux-6.8.0-1052-gcp-x86_64-with-glibc2.35",
+    "torch": "2.8.0+cu128",
+    "numpy": "2.2.6",
+    "transformers": "4.57.6"
+  },
+  "headline": {
+    "per_pool": {
+      "betley": {
+        "label": "misalignment",
+        "D1_L21_median_var_ratio": 13.181910514831543,
+        "D1_L21_frac_ratio_lt_0p3": 0.00027901785714285713,
+        "D2_L21_mean_skill_full": 0.7406867806217232,
+        "D2_L21_max_skill_full": 0.8219874949606922,
+        "D2_L21_max_minus_mean_full": 0.08130071433896902,
+        "D2_L21_frac_mean_SSR_from_censored_dims_lt0p3": 0.00021446491623306114,
+        "D3_L21_pooled_rate_r2_p90": 0.10880213183118637,
+        "D3_L21_spearman_rate_vs_meanR2": 0.3017004020467405,
+        "D4_L21_frac_saturated_T150": 0.8189415041782729
+      },
+      "g1": {
+        "label": "ultrachat",
+        "D1_L21_median_var_ratio": 11.326652526855469,
+        "D1_L21_frac_ratio_lt_0p3": 0.0,
+        "D2_L21_mean_skill_full": 0.7370400848149051,
+        "D2_L21_max_skill_full": 0.7232140407744878,
+        "D2_L21_max_minus_mean_full": -0.013826044040417318,
+        "D2_L21_frac_mean_SSR_from_censored_dims_lt0p3": 0.0,
+        "D3_L21_pooled_rate_r2_p90": 0.12319440301544993,
+        "D3_L21_spearman_rate_vs_meanR2": 0.32103102970434316,
+        "D4_L21_frac_saturated_T150": 0.7913649025069638
+      }
+    },
+    "D5_toy": {
+      "inflation_pooled_mean_skill": 0.345032332621485,
+      "inflation_pooled_max_skill": 0.9999996843945823,
+      "deflation_mean_view_per_dim_r2": 0.9999998030968619,
+      "deflation_max_view_per_dim_r2": 0.8794441966983919
+    }
+  },
+  "figures": [
+    "figures/issue_810/maxpool_censoring_d1_variance_ratio_hist.png",
+    "figures/issue_810/maxpool_censoring_d2_sst_vs_r2_betley.png",
+    "figures/issue_810/maxpool_censoring_d2_sst_vs_r2_g1.png",
+    "figures/issue_810/maxpool_censoring_d4_saturation_hist.png",
+    "figures/issue_810/maxpool_censoring_d5_toy_skill.png",
+    "figures/issue_810/maxpool_censoring_d5_exemplar_dim_hists.png"
+  ],
+  "positions_missing": [],
+  "verdict": "See per-pool headline numbers; verdict prose is authored in the report. D1/D2 REFUTE the variance-censoring premise on real activations (Var(max)/Var(mean) median ~9-13, ~0% of mean-SSR from ratio<0.3 dims); the toy confirms the mechanism is real ONLY under the fixed-magnitude assumption the real max-pool violates."
+}

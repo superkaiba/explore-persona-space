@@ -700,6 +700,72 @@ Generation-agnostic checks (run on v2 AND v3 — the inline-figure +
   survived to the LM critic. Dispatched OUTSIDE the body-only CHECKS list
   (needs `issue` + eval-root resolution; the #732 precedent).
 
+- **check 36** (`check_v4_result_paragraph_sentences`, WARN-only, v4-only,
+  #1368): each prose PARAGRAPH inside a `### <result>` block runs 1-3
+  sentences (SPEC § Conciseness caps (v4) / § Results three-beat 1-3-sentence
+  beats / Lens 12 "any single paragraph runs >=4 sentences"). Paragraph = a
+  maximal run of consecutive prose lines (blockquote captions, fenced code,
+  `<details>` bodies, GFM tables, headings, images, HTML lines, list items,
+  `---` rules excluded). Sentence boundary = `[.!?]+` before
+  whitespace/end-of-paragraph after masking inline code, link targets, a
+  small abbreviation list (`no.` only before a digit), decimals, and
+  ellipses; semicolon chains count as one unit. WARN at >=4
+  (`V4_RESULT_PARA_MAX_SENTENCES` = 3), NEVER FAIL — the bullets-over-prose
+  call and the FAIL decision stay with the clean-result-critic (Lens 12).
+  Forward-only: v3/v2/legacy/paper bodies never flagged. Calibration
+  (plan-time, 7 real v4 bodies): fires on 4/6 results of the #1333
+  plan-time body (sentence counts 5/5/4/5 — the motivating incident,
+  matching the critic's flags verbatim), 0/8 on #922; 5 parked
+  `awaiting_promotion` bodies WARN at 1/8-8/8 results (genuine register
+  drift, hand-verified on #958). Incident: task #385 round 1 / #1333 — a
+  5-sentence read paragraph the Claude critic PASSed burned a full LM
+  critic round. (Numbered 36 because 28-35 are taken by the
+  generation-agnostic checks.)
+
+- **check 37** (`check_footer_reuse_bullets_pinned`, WARN, v4-only, #1370):
+  every footer `- Reused ... from [#M](...)` bullet carries a
+  revision/path pin — the body->pin sibling of check 35's metadata->body
+  direction (#1315: two unpinned `- Reused ... from [#1090]` bullets were
+  invisible to check 35's metadata-side trigger and survived to the LM
+  critic). Bullet-scoped satisfiers: a revision-URL segment
+  (`/tree|resolve|commit|blob/<7-40 hex>`), `@ <rev>` (optional backtick),
+  a committed `eval_results/issue_<M>/` path, a SPEC-sanctioned WandB
+  `/runs/<id>` URL, or a bare letter-bearing >=7-hex token; the
+  from-link's own `#M` / `/tasks/M` NEVER satisfies (vacuity guard —
+  every trigger bullet carries it by construction). WARN uniformly
+  (corpus 2026-07-15: 40 trigger bullets across committed v4 bodies,
+  4 unpinned — #810/#811/#833/#1112, all `awaiting_promotion`; a FAIL
+  would newly block their re-verifies). Body-text-only: lives in the
+  body-only CHECKS list, runs on stdin bodies, and is deliberately NOT
+  fenced by `EPM_VERIFY_BODY_NO_EVAL_SCAN` (no eval scan to fence).
+  Documented false-negative residual: a bullet quoting the CURRENT
+  task's own code SHA satisfies the bare-hex form — LM Lens 5 keeps
+  owning semantic pin-correctness.
+
+- **check 38** (`check_linked_not_embedded_figures`, WARN, v4-only, #1371): a
+  non-image markdown LINK in the footer-truncated v4 `## Results` section
+  whose URL carries a `figures/issue_<N>/*.png` path, where that figure is
+  embedded as an image nowhere in the body. Pipeline: `_v4_results_body` →
+  `_prose_layer` (fences + `<details>` stripped — a quoted or dropdown-tucked
+  link never WARNs) → mask image embeds with `_IMAGE_RE.sub("")` → scan the
+  remaining `_MD_LINK_RE` links for `_LINKED_ISSUE_PNG_RE` paths → subtract
+  the whole-body EMBEDDED set (the same path capture run over every markdown
+  image URL AND every HTML `<img src=…>` anywhere in the body — raw-GitHub /
+  blob / relative alike; SHA-independent, case-folded path equality).
+  Own-issue scoping when `issue` is known (a cross-issue link is a legitimate
+  reference); `issue=None` (`--body-stdin`) falls back to every issue dir
+  (check 31's documented fallback caveat). PNG-only (a PDF cannot render
+  inline — a PDF link is the correct form). WARN-only, never FAIL. Closes
+  check 31's stem-in-prose blind spot: the link itself puts the stem in the
+  body, silencing 31's only relevant WARN. Named recall sacrifices: the
+  embedded set scans the UNSTRIPPED whole body (a fenced example embed can
+  silence a real WARN — false-negative direction only); reference-style links
+  `[text][ref]` are not matched. Incident: #1315 result 4 linked a committed
+  per-row scatter grid instead of embedding it; only clean-result-critic
+  Lens 11 caught it. Dispatched OUTSIDE the body-only CHECKS list (needs
+  `issue` for own-dir scoping; the check-31/#1011 precedent). (Numbered 38 —
+  36/37 were taken by #1368/#1370 while this check was in review.)
+
 Harmful-content carve-out: checks 18/19 accept the sanitized excerpt
 form (`[truncated — harmful-content row; verify at <path>, row <i>]`)
 exactly as checks 10/11 do today.
@@ -899,6 +965,10 @@ V3_TAKEAWAYS_BULLET_MAX_WORDS = 30
 # 35-word one); >=100 words is structural misuse of a bullet, not a
 # tightening request.
 V4_TAKEAWAYS_BULLET_FAIL_WORDS = 100
+# Per-`### <result>` prose-paragraph sentence cap (WARN-only, v4 check 36,
+# #1368/#1333): SPEC § Conciseness caps (v4) — the register is 1-3 sentences
+# per paragraph (SPEC L837-839 / L424-432 / Lens 12); >=4 WARNs, never FAILs.
+V4_RESULT_PARA_MAX_SENTENCES = 3
 # Per-finding prose word cap (excl. caption / code / `<details>` bodies):
 # WARN at the soft cap, FAIL at the hard cap.
 V3_FINDING_PROSE_WARN_WORDS = 120
@@ -2133,6 +2203,25 @@ _ISSUE_FIGURE_PATH_RE = re.compile(r"^figures/issue_(?P<issue>\d+)/\S")
 # pooled hero `mlp_indiv_hero_4arm.png`), not a per-unit view.
 _PER_UNIT_FIG_RE = re.compile(r"(?<![a-z0-9])per[-_]?(context|unit|cell)", re.IGNORECASE)
 
+# Check 38: any markdown link (image embeds are masked out before this
+# scans, so no `!`-lookbehind is needed); link text tolerates `]` not
+# followed by `(` — the same tolerance `_IMAGE_RE` uses — and may be
+# EMPTY (the `[](q)` residue a clickable-image wrapper leaves after the
+# inner image is masked). Distinct from `_LINK_RE`, which requires
+# non-empty text and has no `]` tolerance.
+_MD_LINK_RE = re.compile(r"\[(?:[^\]]|\](?!\())*\]\(([^)]+)\)")
+# Check 38: a `figures/issue_<K>/…png` path inside a link/image URL, ANY
+# host form (raw-GitHub, github blob, relative). Captures the
+# repo-relative path; `[^)\s?#]+` stops the capture before a
+# query-string / fragment (`…png?raw=1`).
+_LINKED_ISSUE_PNG_RE = re.compile(
+    r"(?P<path>figures/issue_(?P<issue>\d+)/[^)\s?#]+\.png)", re.IGNORECASE
+)
+# Check 38: HTML image embeds (`<img src="…">`) also count as embeds — a
+# body that embeds via raw HTML must not false-positive the
+# linked-figure WARN. Quoted src only (unquoted src is unused in bodies).
+_HTML_IMG_SRC_RE = re.compile(r"<img\s[^>]*?src\s*=\s*[\"']([^\"']+)[\"']", re.IGNORECASE)
+
 
 def _http_head_status(url: str, timeout: float = 5.0) -> int | None:
     """HTTP HEAD ``url``; return the response status code (HTTPError codes
@@ -2516,6 +2605,112 @@ def check_orphaned_per_unit_figures(body: str, *, issue: int | None = None) -> C
     if n_unreachable:
         detail += f" ({n_unreachable} cited SHA(s) not locally reachable — skipped)"
     return CheckResult(name, True, detail)
+
+
+def check_linked_not_embedded_figures(body: str, *, issue: int | None = None) -> CheckResult:
+    """Check 38 (WARN, v4-only, #1371): a non-image markdown LINK in the
+    (footer-truncated) v4 `## Results` section to a
+    `figures/issue_<N>/*.png` that no body image embeds.
+
+    INVERSE-complement of check 31: 31 asks "what did the body-cited
+    commits CONTAIN that the body never shows?" (git-backed); this check
+    asks "what does the Results prose LINK TO that the body never
+    embeds?" (pure text — no git / network / subprocess). They compose:
+    31 catches committed-but-never-mentioned per-unit PNGs, but its
+    stem-in-prose escape is satisfied by a markdown LINK's own URL text,
+    so a linked-not-embedded figure silences 31 — this check closes
+    exactly that hole (incident #1315: result 4 referenced a committed
+    per-row PC-scatter grid as `[text](…png)` instead of `![alt](…)`;
+    only clean-result-critic Lens 11 caught it).
+
+    Pipeline: `_v4_results_body` (footer-truncated, so footer blob links
+    are never scanned) → `_prose_layer` (fences + `<details>` stripped —
+    a quoted or dropdown-tucked link never WARNs; dropdown-tucked links
+    are deliberate presentation, a named recall sacrifice) → mask image
+    embeds with `_IMAGE_RE.sub("")` → scan the remaining `_MD_LINK_RE`
+    links for `_LINKED_ISSUE_PNG_RE` figure paths → subtract the
+    whole-body EMBEDDED set. Blockquote caption lines stay in the prose
+    layer, so a caption link to an unembedded PNG deliberately WARNs.
+
+    The EMBEDDED set is symmetric any-URL-form: the repo-relative
+    `figures/issue_<K>/…png` path is extracted from EVERY image-embed
+    URL anywhere in the body — markdown `![alt](url)` AND HTML
+    `<img src="url">` — raw-GitHub, blob, and relative forms alike
+    (SHA-independent, case-folded path equality). Deliberately NOT
+    `_referenced_figure_paths`, which is raw-GitHub-only: check 4b is
+    Results-scoped and accepts non-raw absolute URLs, so a legitimate
+    Methodology-placed or blob-URL embed would otherwise false-positive
+    this WARN. The embedded set scans the UNSTRIPPED whole body, so a
+    fenced EXAMPLE embed can silence a real WARN — a false-negative-only
+    direction, accepted for WARN tier.
+
+    A clickable-image wrapper `[![alt](p)](q)` leaves a residue link
+    `[](q)` after masking; the residue IS scanned — the common q==p case
+    is silenced by the embed subtraction (p is embedded), while a
+    wrapper whose click target q is a PNG embedded nowhere deliberately
+    WARNs (q is linked-not-embedded by definition).
+
+    Issue scoping mirrors check 31: with `issue` known, ONLY
+    `figures/issue_<issue>/` links are scanned (a Results link to a
+    PARENT task's figure is a legitimate cross-reference — embedding
+    another task's figure is not this body's duty); `issue=None`
+    (`--body-stdin`, a non-task-layout `--file`) falls back to scanning
+    every issue dir, which CAN flag a cross-issue link (documented
+    caveat of the fallback). PNG-only: a PDF cannot render inline in
+    dashboard markdown, so a PDF link is the only correct reference form
+    and must never WARN (check 31's PNG-only rule). Named recall
+    sacrifice: reference-style links `[text][ref]` are not matched by
+    `_MD_LINK_RE`. WARN-tier: `passed=True` always — the overall verdict
+    can never flip; a deliberate link ships under the standing
+    acknowledge-in-body WARN rule.
+    """
+    name = "Results figures embedded, not linked"
+    if not is_v4(body):
+        return CheckResult(
+            name, True, "not a v4 body — the linked-figure scan is v4-only (forward-only)"
+        )
+    results_text = _v4_results_body(body)
+    if results_text is None:
+        return CheckResult(name, True, "no `## Results` section to scan")
+    prose = _prose_layer(results_text)  # strip fences + <details>
+    masked = _IMAGE_RE.sub("", prose)  # drop image embeds (wrapper residue links stay — docstring)
+    # Whole-body EMBEDDED set: markdown image embeds + HTML <img> embeds,
+    # any URL host form, reduced to case-folded repo-relative figure paths.
+    embedded: set[str] = set()
+    image_urls = [m.group(1) for m in _IMAGE_RE.finditer(body)]
+    image_urls.extend(m.group(1) for m in _HTML_IMG_SRC_RE.finditer(body))
+    for raw_url in image_urls:
+        iu = raw_url.strip().split(None, 1)[0] if raw_url.strip() else ""
+        ipm = _LINKED_ISSUE_PNG_RE.search(iu)
+        if ipm:
+            embedded.add(ipm.group("path").lower())
+    linked: dict[str, None] = {}  # ordered de-dupe: path -> None
+    for m in _MD_LINK_RE.finditer(masked):
+        url = m.group(1).strip().split(None, 1)[0] if m.group(1).strip() else ""
+        pm = _LINKED_ISSUE_PNG_RE.search(url)
+        if not pm:
+            continue
+        if issue is not None and pm.group("issue") != str(issue):
+            continue  # cross-issue links are legitimate references
+        path = pm.group("path")
+        if path.lower() in embedded:
+            continue  # embedded anywhere in the body → discipline satisfied
+        linked.setdefault(path)
+    if linked:
+        listed = ", ".join(f"`{p}`" for p in linked)
+        return CheckResult(
+            name,
+            True,
+            f"{len(linked)} committed figure(s) referenced as a markdown LINK in `## Results` "
+            f"but embedded by no body image: {listed} — embed it inline under the relevant "
+            "`### <result>` (an `![...](...)` embed anywhere in the body silences this WARN), "
+            "or acknowledge the deliberate link in the body (the standing WARN-ship rule); "
+            "substantive owner: clean-result-critic Lens 11 (incident #1315)",
+            is_warn=True,
+        )
+    return CheckResult(
+        name, True, "no linked-but-unembedded `figures/issue_<N>/` PNGs in `## Results`"
+    )
 
 
 def check_figure_caption(body: str) -> CheckResult:
@@ -5244,6 +5439,126 @@ def check_cross_issue_reuse_provenance(
         f"all cross-issue reuse pins declared in the body "
         f"({len(seen_t1)} tier-1, {len(seen_t2)} tier-2)",
     )
+
+
+# ─── Check 37 (#1370): footer Reused bullets carry a revision/path pin ──────
+
+# The body->pin sibling of Check 35 (#1256). Check 35 fires only when
+# committed result-JSON METADATA carries a machine pin
+# (`_scan_cross_issue_reuse_pins`); a footer `- Reused ... from [#M](...)`
+# bullet AUTHORED without any pinned path is invisible to it (#1315: two
+# unpinned `- Reused ... from [#1090]` bullets while Check 35
+# graceful-skipped; caught only by the LM critic). This check reads ONLY
+# the body text — no eval scan, so `EPM_VERIFY_BODY_NO_EVAL_SCAN` does
+# not (and must not) fence it.
+_FOOTER_REUSED_BULLET_RE = re.compile(r"^\s*[-*]\s+Reused\b", re.IGNORECASE)
+_REUSED_FROM_ISSUE_RE = re.compile(r"\bfrom\s+\[#(\d+)\]\(", re.IGNORECASE)
+# Bullet-scoped pin forms (corpus 2026-07-15: 36/40 committed trigger
+# bullets satisfy one; the satisfier is deliberately BULLET-scoped and
+# excludes issue-mention forms — `#M` / `/tasks/M` appear in EVERY
+# trigger bullet via the from-link itself, so the `_tier1_satisfied`
+# fallback shapes would make this check vacuous):
+_BULLET_REV_URL_RE = re.compile(r"/(?:tree|resolve|commit|blob)/[0-9a-fA-F]{7,40}\b")
+_BULLET_AT_REV_RE = re.compile(r"@[ \t]*`?[0-9a-fA-F]{7,40}\b")
+_BULLET_EVAL_PATH_RE = re.compile(r"\beval_results/issue_\d+/")
+# SPEC.md § footer sanctions WandB `/runs/<id>` as a pinned URL form; a
+# WandB run id is base36 (letters beyond a-f), so neither the rev-URL nor
+# the bare-hex form catches it — without this a SPEC-conformant bullet
+# would false-WARN:
+_BULLET_WANDB_RUN_RE = re.compile(r"\bwandb\.ai/\S+/runs/\w+", re.IGNORECASE)
+
+
+def _footer_reused_bullets(footer: str) -> list[str]:
+    """Split footer text into `- Reused ...` bullets, joining indented
+    non-bullet continuation lines onto their bullet (a wrapped bullet's
+    pin may sit on a continuation line). Fence-aware: bullets inside a
+    fenced code block (an illustrative skeleton) are ignored; `>`-quoted
+    Context-prompt lines never match the bullet anchor."""
+    bullets: list[str] = []
+    current: str | None = None
+    in_fence = False
+    for line in footer.splitlines():
+        stripped = line.strip()
+        if stripped.startswith("```") or stripped.startswith("~~~"):
+            in_fence = not in_fence
+            if current is not None:
+                bullets.append(current)
+                current = None
+            continue
+        if in_fence:
+            continue
+        if _FOOTER_REUSED_BULLET_RE.match(line):
+            if current is not None:
+                bullets.append(current)
+            current = stripped
+        elif current is not None and line[:1] in (" ", "\t") and not re.match(r"^\s*[-*]\s", line):
+            current += " " + stripped
+        else:
+            if current is not None:
+                bullets.append(current)
+            current = None
+    if current is not None:
+        bullets.append(current)
+    return bullets
+
+
+def _reused_bullet_pinned(bullet: str) -> bool:
+    """True when the bullet carries a pin: a revision-URL segment
+    (`/tree/<sha>`, `/blob/<sha>`, `/resolve/<sha>`, `/commit/<sha>`),
+    an `@ <rev>` (optional backtick), a committed
+    `eval_results/issue_<M>/` path, a SPEC-sanctioned WandB run URL
+    (`wandb.ai/<entity>/<project>/runs/<id>`), or a bare >=7-char hex
+    token with at least one letter (a digits-only run like `12345678`
+    is a count, not a sha)."""
+    if (
+        _BULLET_REV_URL_RE.search(bullet)
+        or _BULLET_AT_REV_RE.search(bullet)
+        or _BULLET_EVAL_PATH_RE.search(bullet)
+        or _BULLET_WANDB_RUN_RE.search(bullet)
+    ):
+        return True
+    return any(any(c.isalpha() for c in tok) for tok in _BODY_HEX_TOKEN_RE.findall(bullet))
+
+
+def check_footer_reuse_bullets_pinned(body: str) -> CheckResult:
+    """Check 37 (WARN, v4-only, #1370): every footer
+    `- Reused ... from [#M](...)` bullet carries a revision/path pin.
+
+    Body-text-only sibling of Check 35 (#1256) — the body->pin direction.
+    WARN, not FAIL (corpus 2026-07-15: 40 trigger bullets across 40
+    footered v4 bodies; 4 lack every pin form — 3 are code-harness reuse
+    (#811/#833/#1112, remedy: append `@ <code-sha>`), 1 is the incident
+    class (#810); a FAIL would newly block any future re-verify of all
+    4 parked bodies). The from-link's own `#M` / `/tasks/M` NEVER
+    satisfies — every trigger bullet carries it by construction.
+    Documented false-negative residual: a bullet quoting the CURRENT
+    task's own code SHA (a letter-bearing hex unrelated to the reused
+    artifact) satisfies the bare-hex form — LM Lens 5 keeps owning
+    semantic pin-correctness.
+    Deliberately NOT fenced by `EPM_VERIFY_BODY_NO_EVAL_SCAN` (no
+    filesystem scan)."""
+    name = "footer Reused bullets carry a revision/path pin"
+    if not is_v4(body):
+        return CheckResult(name, True, "skipped — not a v4 body (forward-only)")
+    footer = _v4_footer_text(body)
+    if footer is None:
+        return CheckResult(name, True, "skipped — no **Repro:** footer found")
+    unpinned = [
+        b
+        for b in _footer_reused_bullets(footer)
+        if _REUSED_FROM_ISSUE_RE.search(b) and not _reused_bullet_pinned(b)
+    ]
+    if not unpinned:
+        return CheckResult(name, True, "all footer Reused-from-[#M] bullets pinned")
+    shown = "; ".join(f"`{b[:120]}`" for b in unpinned)
+    detail = (
+        f"{len(unpinned)} footer `- Reused ... from [#M](...)` bullet(s) carry no "
+        f"pinned path/revision: {shown} — add the permanent pin per reused artifact, "
+        "expected shape: `- Reused <kind> from [#M](...): <path> @ <rev> — fit: "
+        "<one line>` (an HF/GitHub `/tree/<sha>`-style URL, `@ <sha>`, a "
+        "committed `eval_results/issue_<M>/...` path, or a WandB run URL)"
+    )
+    return CheckResult(name, True, detail, is_warn=True)
 
 
 def _git_object_exists(repo: Path, sha: str, path: str) -> tuple[str, str]:
@@ -9474,32 +9789,46 @@ _V4_FOOTER_ROUND_CLAUSE_RE = re.compile(
     re.IGNORECASE,
 )
 
+# Plural-enumeration footer form (task #1373; incident #1332 body.md:292):
+# "Two same-issue follow-up rounds, both 2026-07-15: (1) ...; (2) ...". The
+# leading number token (a number word or 1-2 digits) is REQUIRED immediately
+# before the literal phrase, so the generic plural prose the `(?!s)`
+# lookahead above excludes ("follow-up rounds also name...") stays excluded;
+# a numberless "same-issue follow-up rounds" still counts zero. The
+# enumerated items after the colon are NOT parsed — the stated N is
+# authoritative. NOTE: `_NUMBER_WORDS` stops at ten while the count clamp
+# allows 12 — the word forms eleven/twelve simply never match the
+# alternation (digit forms cover 11-12), an under-count-only asymmetry
+# consistent with the WARN-only budget.
+_V4_FOOTER_ROUND_PLURAL_RE = re.compile(
+    r"\b(?P<num>one|two|three|four|five|six|seven|eight|nine|ten|\d{1,2})"
+    r"\s+same-issue\s+follow-up\s+rounds\b",
+    re.IGNORECASE,
+)
+_NUMBER_WORDS = {
+    "one": 1,
+    "two": 2,
+    "three": 3,
+    "four": 4,
+    "five": 5,
+    "six": 6,
+    "seven": 7,
+    "eight": 8,
+    "nine": 9,
+    "ten": 10,
+}
 
-def _followup_run_marker_rounds(issue: int) -> int:
-    """Count REAL folded same-issue follow-up rounds off the task's
-    events.jsonl `epm:same-issue-followup-run` markers: distinct
-    `followup_label`s (one run marker closes a label's round) plus one per
-    unlabeled run marker, EXCLUDING markers whose `outcome` begins
-    `retroactive-close` — bookkeeping closes of ghost labels that folded
-    no new prose (they are likewise excluded from the /issue round caps,
-    SKILL.md). Returns 0 when the task id does not resolve (a plain
-    FileNotFoundError — e.g. a fixture body under a numeric tmp dir); a
-    `StaleTaskPathError` (registry corruption, a FileNotFoundError
-    SUBCLASS) still propagates — that is real corruption the gate should
-    surface, unlike an unknown id."""
+
+def _same_issue_run_rounds(events: list[dict]) -> tuple[set[str], int]:
+    """Distinct non-retroactive-close `epm:same-issue-followup-run` labels
+    plus the unlabeled-run-marker count over `events` — the extracted loop
+    body of `_followup_run_marker_rounds` (task #1373), shared with
+    `_followup_events_rounds`. Returns `(labels, unlabeled)`."""
     from explore_persona_space.task_workflow import (  # local import — matches _load_text_for_issue
         FOLLOWUP_RUN_KIND,
-        StaleTaskPathError,
-        list_events,
         parse_followup_note_field,
     )
 
-    try:
-        events = list_events(issue)
-    except StaleTaskPathError:
-        raise
-    except FileNotFoundError:
-        return 0
     labels: set[str] = set()
     unlabeled = 0
     for ev in events:
@@ -9524,7 +9853,134 @@ def _followup_run_marker_rounds(issue: int) -> int:
             labels.add(label)
         else:
             unlabeled += 1
+    return labels, unlabeled
+
+
+def _followup_run_marker_rounds(issue: int) -> int:
+    """Count REAL folded same-issue follow-up rounds off the task's
+    events.jsonl `epm:same-issue-followup-run` markers: distinct
+    `followup_label`s (one run marker closes a label's round) plus one per
+    unlabeled run marker, EXCLUDING markers whose `outcome` begins
+    `retroactive-close` — bookkeeping closes of ghost labels that folded
+    no new prose (they are likewise excluded from the /issue round caps,
+    SKILL.md). Thin wrapper over `_same_issue_run_rounds` (task #1373
+    refactor; signature + behavior unchanged). Returns 0 when the task id
+    does not resolve (a plain FileNotFoundError — e.g. a fixture body
+    under a numeric tmp dir); a `StaleTaskPathError` (registry corruption,
+    a FileNotFoundError SUBCLASS) still propagates — that is real
+    corruption the gate should surface, unlike an unknown id."""
+    from explore_persona_space.task_workflow import (  # local import — matches _load_text_for_issue
+        StaleTaskPathError,
+        list_events,
+    )
+
+    try:
+        events = list_events(issue)
+    except StaleTaskPathError:
+        raise
+    except FileNotFoundError:
+        return 0
+    labels, unlabeled = _same_issue_run_rounds(events)
     return len(labels) + unlabeled
+
+
+_V4_FREE_ANALYSIS_ABORTED_RE = re.compile(r"^aborted\b", re.IGNORECASE)
+
+
+def _free_analysis_rounds(events: list[dict], exclude_labels: set[str]) -> int:
+    """Count folded free-analysis rounds off `epm:free-analysis-followup-run`
+    markers (task #1373). A marker counts unless:
+
+    - its stripped note matches `(?i)^aborted\\b` — the SKILL.md 9a-ter
+      ABORT record (both spec'd forms begin `aborted — `) folded no prose;
+    - its full note text is byte-identical to an already-counted note —
+      a marker-retry double-post is byte-identical. `followup_ref` is NOT
+      the dedupe key: its parsed value is first-token-truncated
+      (`parse_followup_note_field`) and absent entirely in the free-prose
+      corpus shapes (#1090/#1073), so two distinct rounds sharing a first
+      title word must not collide;
+    - its parsed `followup_ref` is non-None AND in `exclude_labels` (the
+      counted same-issue run labels) — the cross-leg guard: a round that
+      closed an armed scope label AND posted a same-issue run marker for
+      it counts once.
+
+    Deliberate over-credit asymmetry: a multi-word `followup_ref` meant to
+    close an armed slug label won't exact-match retro-close class 2 (the
+    parsed ref is first-token-truncated), so that round can count via BOTH
+    this free leg and the in-flight +1 — over-credit only relaxes a
+    WARN-only, monotone-up budget."""
+    from explore_persona_space.task_workflow import (  # local import — matches _load_text_for_issue
+        FREE_ANALYSIS_RUN_KIND,
+        parse_followup_note_field,
+    )
+
+    seen_notes: set[str] = set()
+    count = 0
+    for ev in events:
+        if ev.get("kind") != FREE_ANALYSIS_RUN_KIND:
+            continue
+        note = ev.get("note") or ""
+        if _V4_FREE_ANALYSIS_ABORTED_RE.match(note.strip()):
+            continue
+        if note in seen_notes:
+            continue
+        seen_notes.add(note)
+        ref = parse_followup_note_field(note, "followup_ref")
+        if ref is not None and ref in exclude_labels:
+            continue
+        count += 1
+    return count
+
+
+def _has_inflight_round(events: list[dict]) -> bool:
+    """True iff any armed `epm:followup-scope` label group is dispatchable
+    (`task_workflow.unrun_followup_labels`) AND has NO retro-close evidence
+    (`followup_retro_close_evidence`) — an in-flight (mid-round) follow-up
+    the clean-result gate should credit as ONE round no matter how many
+    labels are armed (the caller caps at +1: the Goal says "as one round";
+    a queue of armed-but-undispatched labels is not folded prose). The
+    retro-close exclusion prevents a double count with the free-analysis
+    leg (a ghost label closed by a free-analysis `followup_ref` would
+    otherwise count via BOTH class-2 evidence and the in-flight +1);
+    undispatchable `unlabeled-<ts>` pseudo-labels never count."""
+    from explore_persona_space.task_workflow import (  # local import — matches _load_text_for_issue
+        followup_retro_close_evidence,
+        unrun_followup_labels,
+    )
+
+    for group in unrun_followup_labels(events):
+        if not group.get("dispatchable"):
+            continue
+        if followup_retro_close_evidence(events, group["followup_label"]) is None:
+            return True
+    return False
+
+
+def _followup_events_rounds(issue: int) -> int:
+    """Widened events leg for `_count_extra_followup_rounds_v4` (task
+    #1373): same-issue run rounds (distinct labels + unlabeled, via
+    `_same_issue_run_rounds`) + non-aborted deduped free-analysis rounds
+    (`_free_analysis_rounds`, cross-leg-excluded on the counted run
+    labels) + at most ONE in-flight armed-but-unclosed scope credit
+    (`_has_inflight_round`). Same failure shape as
+    `_followup_run_marker_rounds`: unknown issue id (plain
+    FileNotFoundError) returns 0; `StaleTaskPathError` (registry
+    corruption, a FileNotFoundError SUBCLASS) still propagates."""
+    from explore_persona_space.task_workflow import (  # local import — matches _load_text_for_issue
+        StaleTaskPathError,
+        list_events,
+    )
+
+    try:
+        events = list_events(issue)
+    except StaleTaskPathError:
+        raise
+    except FileNotFoundError:
+        return 0
+    labels, unlabeled = _same_issue_run_rounds(events)
+    free = _free_analysis_rounds(events, exclude_labels=labels)
+    inflight = 1 if _has_inflight_round(events) else 0
+    return len(labels) + unlabeled + free + inflight
 
 
 def _count_extra_followup_rounds_v4(body: str, issue: int | None = None) -> tuple[int, str]:
@@ -9535,12 +9991,24 @@ def _count_extra_followup_rounds_v4(body: str, issue: int | None = None) -> tupl
     case (footer: a body omitting the SPEC round clause, e.g. #685;
     events: a legacy pre-marker round whose prose IS folded, e.g. #811):
 
-    - footer: `same-issue follow-up round [`label`]` clauses inside the
+    - footer (TWO forms, max-reconciled): (a) singular
+      `same-issue follow-up round [`label`]` clauses inside the
       `**Repro:**`/`**Context:**` footer (distinct backticked labels +
-      one per unlabeled singular clause);
-    - events (when `issue` is known): non-retroactive-close
-      `epm:same-issue-followup-run` markers via
-      `_followup_run_marker_rounds`.
+      one per unlabeled singular clause); (b) the plural-enumeration
+      form `<N> same-issue follow-up rounds` (`_V4_FOOTER_ROUND_PLURAL_RE`
+      — N a number word or 1-2 digits, clamped to 12; max over matches,
+      since a repeated/updated plural sentence restates the cumulative
+      total). `footer_n = max(singular, plural)` — max, not sum, is
+      deliberate: when both forms appear they most plausibly describe the
+      SAME round set (a plural summary sentence + per-round singular
+      clauses), so max cannot double-count; a mixed-form footer may
+      under-credit, which only leaves a WARN-only budget conservative and
+      is backstopped by the events leg's own max-reconcile (task #1373);
+    - events (when `issue` is known; THREE signals, summed by
+      `_followup_events_rounds`): non-retroactive-close
+      `epm:same-issue-followup-run` markers, non-aborted deduped
+      `epm:free-analysis-followup-run` markers, and at most one in-flight
+      armed-but-unclosed `epm:followup-scope` credit.
 
     Returns `(count, source)`; `source` is one of `none` / `footer` /
     `events` / `footer+events` and names the winning signal for the WARN
@@ -9555,8 +10023,14 @@ def _count_extra_followup_rounds_v4(body: str, issue: int | None = None) -> tupl
             labels.add(m.group("label"))
         else:
             unlabeled += 1
-    footer_n = len(labels) + unlabeled
-    events_n = _followup_run_marker_rounds(issue) if issue is not None else 0
+    singular_n = len(labels) + unlabeled
+    plural_n = 0
+    for m in _V4_FOOTER_ROUND_PLURAL_RE.finditer(footer):
+        word = m.group("num").lower()
+        n = _NUMBER_WORDS.get(word) or int(word)
+        plural_n = max(plural_n, min(n, 12))
+    footer_n = max(singular_n, plural_n)
+    events_n = _followup_events_rounds(issue) if issue is not None else 0
     count = max(footer_n, events_n)
     if count == 0:
         return 0, "none"
@@ -9991,6 +10465,124 @@ def check_v4_results_beat(body: str) -> CheckResult:
         )
     return CheckResult(
         label, True, f"all {len(result_h3s)} `### <result>`(s) framed (figure-bearing ones)"
+    )
+
+
+# ─── v4 result-paragraph sentence cap (check 36, #1368) ──────────────────────
+
+# Abbreviations whose trailing period must not end a sentence. `no.` is
+# masked ONLY when a digit follows (`no. 3`) — an unguarded `no.` would merge
+# a genuine sentence ending in "... is no." with its successor (plan-approval
+# critic concern 1, #1368).
+_SENTENCE_ABBREV_RE = re.compile(
+    r"\b(?:e\.g|i\.e|vs|et\s+al|cf|figs?|eq|approx|ca|resp|incl)\.|\bno\.(?=\s*\d)",
+    re.IGNORECASE,
+)
+_SENTENCE_INLINE_CODE_RE = re.compile(r"`[^`]*`")
+_SENTENCE_LINK_TARGET_RE = re.compile(r"\]\([^)]*\)")
+_SENTENCE_LIST_ITEM_RE = re.compile(r"^\s*(?:[-*+]\s|\d+[.)]\s)")
+
+
+def _result_prose_paragraphs(block_text: str) -> list[str]:
+    """Maximal runs of consecutive PROSE lines inside one `### <result>`
+    block, joined with spaces (markdown renders consecutive non-blank lines
+    as one paragraph). A blank / blockquote-caption / table / heading /
+    image / HTML / fence / list-item / `---` line terminates the current
+    run and is itself excluded. `<details>` bodies are stripped first (the
+    `_prose_words` convention). Known residual: an UNCLOSED fence swallows
+    the rest of the block — false-negative-only (WARN-only check, accepted;
+    plan-approval critic concern 2, #1368).
+    """
+    block_text = _DETAILS_BLOCK_RE.sub("", block_text)
+    paras: list[str] = []
+    cur: list[str] = []
+    in_fence = False
+    for line in block_text.splitlines():
+        s = line.strip()
+        if s.startswith(("```", "~~~")):
+            in_fence = not in_fence
+            if cur:
+                paras.append(" ".join(cur))
+                cur = []
+            continue
+        if in_fence:
+            continue
+        if (
+            not s
+            or s.startswith((">", "|", "#", "!", "<", "---"))
+            or _SENTENCE_LIST_ITEM_RE.match(line)
+        ):
+            if cur:
+                paras.append(" ".join(cur))
+                cur = []
+            continue
+        cur.append(s)
+    if cur:
+        paras.append(" ".join(cur))
+    return paras
+
+
+def _count_sentences(paragraph: str) -> int:
+    """Guarded sentence count: split on `[.!?]+` immediately followed by
+    whitespace / end-of-paragraph, AFTER masking inline code spans, markdown
+    link targets, a small abbreviation list (`no.` only before a digit),
+    digit.digit decimals, and ellipses. Segments with >=1 word character
+    count (so trailing unterminated text counts as one unit); a
+    semicolon-joined chain deliberately counts as ONE sentence unit.
+    Stated residuals (WARN-only, accepted): false negatives on
+    sentence-ends inside brackets (`... gap.)`) and `;`-chained walls;
+    false positives on unlisted abbreviations (`Tab. 2`, initials).
+    """
+    p = _SENTENCE_INLINE_CODE_RE.sub("CODE", paragraph)
+    p = _SENTENCE_LINK_TARGET_RE.sub("]", p)
+    p = _SENTENCE_ABBREV_RE.sub(lambda m: m.group(0)[:-1], p)
+    p = re.sub(r"(?<=\d)\.(?=\d)", "", p)
+    p = p.replace("...", " ").replace("…", " ")
+    return sum(1 for seg in re.split(r"[.!?]+(?=\s|$)", p) if re.search(r"\w", seg))
+
+
+def check_v4_result_paragraph_sentences(body: str) -> CheckResult:
+    """Check 36 (v4 only, WARN): each prose paragraph inside a
+    `### <result>` block runs 1-3 sentences (SPEC § Conciseness caps (v4) /
+    § Results three-beat; Lens 12 is the LM backstop). WARN, NEVER FAIL —
+    register judgment (bullets-over-prose, the FAIL decision) stays with
+    the clean-result-critic (#1368; incident #1333/#385).
+    """
+    label = "Results paragraph sentence cap (v4)"
+    if not is_v4(body):
+        return CheckResult(label, True, "skipped — not a v4 body")
+    results = _v4_results_body(body)
+    if results is None:
+        return CheckResult(label, True, "## Results missing — check 2 will report")
+    result_h3s = _collect_tldr_h3_names(results)
+    if not result_h3s:
+        return CheckResult(label, True, "no `### <result>` headings — check 3 will report")
+    rlines = results.splitlines()
+    flagged: list[str] = []
+    for idx, (name, line_no) in enumerate(result_h3s):
+        end_line = result_h3s[idx + 1][1] if idx + 1 < len(result_h3s) else len(rlines)
+        block = "\n".join(rlines[line_no + 1 : end_line])
+        over = [
+            n
+            for n in map(_count_sentences, _result_prose_paragraphs(block))
+            if n > V4_RESULT_PARA_MAX_SENTENCES
+        ]
+        if over:
+            flagged.append(f"'{name[:48]}' has a {max(over)}-sentence paragraph")
+    if flagged:
+        preview = "; ".join(flagged[:2]) + (" …" if len(flagged) > 2 else "")
+        return CheckResult(
+            label,
+            True,
+            f"{len(flagged)} of {len(result_h3s)} `### <result>`(s) carry a "
+            f"≥{V4_RESULT_PARA_MAX_SENTENCES + 1}-sentence paragraph (v4 register: 1-3 "
+            f"sentences per paragraph — split or tighten): {preview}",
+            is_warn=True,
+        )
+    return CheckResult(
+        label,
+        True,
+        f"all `### <result>` paragraphs ≤{V4_RESULT_PARA_MAX_SENTENCES} sentences",
     )
 
 
@@ -10544,6 +11136,10 @@ CHECKS = [
     check_v4_methodology_shape,  # check 18 (v4)
     check_v4_results_beat,  # check 21 (v4, WARN)
     check_v4_no_bare_issue_refs,  # check 27 (v4) — bare `#K` refs + task links, standalone secs
+    check_v4_result_paragraph_sentences,  # check 36 (v4, WARN) — ≥4-sentence paras (#1368)
+    # check 37 (WARN, v4, #1370) — footer `- Reused ... from [#M](...)` bullets carry a
+    # revision/path pin (body-text-only sibling of check 35's metadata-side trigger):
+    check_footer_reuse_bullets_pinned,
     # generation-agnostic checks (v2 AND v3 AND v4):
     check_figure_url_sha_matches_repro,  # check 22
     check_hf_url_resolves,  # check 23
@@ -10563,6 +11159,10 @@ CHECKS = [
     # is NOT here either — like check 20 (v4) it needs the issue number (for
     # figures-dir scoping), so it is dispatched separately in `verify_text`
     # (#1011; the check-20/#921 precedent).
+    # Check 38 (`check_linked_not_embedded_figures`, WARN, v4-only) is NOT
+    # here either — it needs the issue number (for own-figures-dir scoping),
+    # so it is dispatched separately in `verify_text` (#1371; the
+    # check-31/#1011 precedent).
 ]
 
 
@@ -10743,6 +11343,10 @@ def verify_text(
     # issue number for figures-dir scoping, so it lives outside the body-only
     # CHECKS list (check-20/#921 precedent).
     results.append(check_orphaned_per_unit_figures(body, issue=issue))
+    # Check 38 (WARN, #1371): Results figures referenced as links, not
+    # embeds — needs the issue number for own-figures-dir scoping, so it
+    # lives outside the body-only CHECKS list (check-31/#1011 precedent).
+    results.append(check_linked_not_embedded_figures(body, issue=issue))
     overall = all(r.passed for r in results)
     return overall, results
 

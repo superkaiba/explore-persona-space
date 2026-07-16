@@ -1,0 +1,276 @@
+{
+ "description": "Weight-space comparison of own-fitted (cx_last->v_A_prime) vs plain-fitted (cx_last->v_B2) ridge maps at the 3 read-out layers. W = standardized-input weight matrix (H x H); X shared across arms so W_own and W_plain live in the same basis. Flattened cosine + top-k principal-angle subspace alignment (input=right-SV, output=left-SV) + within-own disjoint-half refit noise ceiling + random-map floor. APPENDED matched_half_calibration (see that key): the disjoint-half noise_ceiling cell uses different X rows while own-vs-plain shares X rows, so it is NOT a valid ceiling; the calibration cells (cross_arm_diff_rows, cross_arm_same_rows_half) isolate the shared-X confound at matched design.",
+ "read_out_layers": {
+  "evil": 14,
+  "sycophancy": 26,
+  "hallucination": 17
+ },
+ "k_sweep": [
+  5,
+  10,
+  20,
+  50,
+  100
+ ],
+ "solver": "dual-form GCV ridge (pop-std+1e-9, center-Y, lambda logspace(-2,4,13)); W returned",
+ "n_valid": 4998,
+ "per_layer": {
+  "14": {
+   "lambda_own": 316.22776601683796,
+   "lambda_plain": 1000.0,
+   "flat_cosine_own_vs_plain": 0.6123923352823524,
+   "subspace_own_vs_plain": {
+    "5": {
+     "input_mean_cos_principal_angle": 0.7413371884824836,
+     "output_mean_cos_principal_angle": 0.42972036420046233
+    },
+    "10": {
+     "input_mean_cos_principal_angle": 0.8043327583798268,
+     "output_mean_cos_principal_angle": 0.498413784259595
+    },
+    "20": {
+     "input_mean_cos_principal_angle": 0.7956771246648696,
+     "output_mean_cos_principal_angle": 0.5324023873481216
+    },
+    "50": {
+     "input_mean_cos_principal_angle": 0.8156798714285511,
+     "output_mean_cos_principal_angle": 0.6023634610069094
+    },
+    "100": {
+     "input_mean_cos_principal_angle": 0.8122737805692363,
+     "output_mean_cos_principal_angle": 0.6294598702437927
+    }
+   },
+   "noise_ceiling_flat_cosine_own_half1_vs_half2": 0.036851533912744844,
+   "noise_ceiling_subspace_own_half1_vs_half2": {
+    "5": {
+     "input_mean_cos_principal_angle": 0.7736534007746638,
+     "output_mean_cos_principal_angle": 0.04379452904743535
+    },
+    "10": {
+     "input_mean_cos_principal_angle": 0.6905055017444022,
+     "output_mean_cos_principal_angle": 0.06492380957653458
+    },
+    "20": {
+     "input_mean_cos_principal_angle": 0.6372022016582062,
+     "output_mean_cos_principal_angle": 0.08266936593987564
+    },
+    "50": {
+     "input_mean_cos_principal_angle": 0.5617334272738925,
+     "output_mean_cos_principal_angle": 0.1148358693958867
+    },
+    "100": {
+     "input_mean_cos_principal_angle": 0.5427916977413098,
+     "output_mean_cos_principal_angle": 0.1601273468005096
+    }
+   }
+  },
+  "17": {
+   "lambda_own": 316.22776601683796,
+   "lambda_plain": 1000.0,
+   "flat_cosine_own_vs_plain": 0.5781052219877318,
+   "subspace_own_vs_plain": {
+    "5": {
+     "input_mean_cos_principal_angle": 0.7762919063200288,
+     "output_mean_cos_principal_angle": 0.4089629900298143
+    },
+    "10": {
+     "input_mean_cos_principal_angle": 0.7951539352223607,
+     "output_mean_cos_principal_angle": 0.459186863506134
+    },
+    "20": {
+     "input_mean_cos_principal_angle": 0.824486702439932,
+     "output_mean_cos_principal_angle": 0.5152241340400496
+    },
+    "50": {
+     "input_mean_cos_principal_angle": 0.825170912139097,
+     "output_mean_cos_principal_angle": 0.5758408349791685
+    },
+    "100": {
+     "input_mean_cos_principal_angle": 0.8054567922488702,
+     "output_mean_cos_principal_angle": 0.5938514098242258
+    }
+   },
+   "noise_ceiling_flat_cosine_own_half1_vs_half2": 0.04238128161232596,
+   "noise_ceiling_subspace_own_half1_vs_half2": {
+    "5": {
+     "input_mean_cos_principal_angle": 0.8560713254014602,
+     "output_mean_cos_principal_angle": 0.0616890342579002
+    },
+    "10": {
+     "input_mean_cos_principal_angle": 0.7450575443209249,
+     "output_mean_cos_principal_angle": 0.06774652880936971
+    },
+    "20": {
+     "input_mean_cos_principal_angle": 0.7035799226640187,
+     "output_mean_cos_principal_angle": 0.08199351105613546
+    },
+    "50": {
+     "input_mean_cos_principal_angle": 0.6065381690079783,
+     "output_mean_cos_principal_angle": 0.11770050731129085
+    },
+    "100": {
+     "input_mean_cos_principal_angle": 0.5735640411270735,
+     "output_mean_cos_principal_angle": 0.16093772747763263
+    }
+   }
+  },
+  "26": {
+   "lambda_own": 1000.0,
+   "lambda_plain": 1000.0,
+   "flat_cosine_own_vs_plain": 0.6921880689511054,
+   "subspace_own_vs_plain": {
+    "5": {
+     "input_mean_cos_principal_angle": 0.8691401803609755,
+     "output_mean_cos_principal_angle": 0.5924887941120806
+    },
+    "10": {
+     "input_mean_cos_principal_angle": 0.7707765143088662,
+     "output_mean_cos_principal_angle": 0.5396448000521579
+    },
+    "20": {
+     "input_mean_cos_principal_angle": 0.814663168187893,
+     "output_mean_cos_principal_angle": 0.6059854108462637
+    },
+    "50": {
+     "input_mean_cos_principal_angle": 0.8354704005227879,
+     "output_mean_cos_principal_angle": 0.6635101215336329
+    },
+    "100": {
+     "input_mean_cos_principal_angle": 0.8237635187528396,
+     "output_mean_cos_principal_angle": 0.6894328877492722
+    }
+   },
+   "noise_ceiling_flat_cosine_own_half1_vs_half2": 0.05017620703715459,
+   "noise_ceiling_subspace_own_half1_vs_half2": {
+    "5": {
+     "input_mean_cos_principal_angle": 0.8001479752116417,
+     "output_mean_cos_principal_angle": 0.06808154180712915
+    },
+    "10": {
+     "input_mean_cos_principal_angle": 0.6778658182687081,
+     "output_mean_cos_principal_angle": 0.07097430703631422
+    },
+    "20": {
+     "input_mean_cos_principal_angle": 0.5872187741076991,
+     "output_mean_cos_principal_angle": 0.08278768711165288
+    },
+    "50": {
+     "input_mean_cos_principal_angle": 0.5157493136151047,
+     "output_mean_cos_principal_angle": 0.11789477311940669
+    },
+    "100": {
+     "input_mean_cos_principal_angle": 0.49322051531042016,
+     "output_mean_cos_principal_angle": 0.16005441247178612
+    }
+   }
+  }
+ },
+ "random_map_floor": {
+  "flat_cosine_512x512": -0.00132383797894711,
+  "subspace_HxH": {
+   "5": {
+    "input_mean_cos_principal_angle": 0.027673590596579804,
+    "output_mean_cos_principal_angle": 0.03223273867078219
+   },
+   "10": {
+    "input_mean_cos_principal_angle": 0.042237374183700646,
+    "output_mean_cos_principal_angle": 0.04187654786984692
+   },
+   "20": {
+    "input_mean_cos_principal_angle": 0.06366984770168668,
+    "output_mean_cos_principal_angle": 0.06320136486817586
+   },
+   "50": {
+    "input_mean_cos_principal_angle": 0.09967846455589002,
+    "output_mean_cos_principal_angle": 0.10195905363013737
+   },
+   "100": {
+    "input_mean_cos_principal_angle": 0.1445508776637224,
+    "output_mean_cos_principal_angle": 0.14197096591449396
+   }
+  },
+  "note": "two independent Gaussian matrices; flat cosine on 512x512 for speed"
+ },
+ "tensor_source_arm": "hf://.../issue823_own_vs_external/analysis_tensors/ @ 8039d15f30",
+ "tensor_source_cx_last": "hf://.../issue779_monitoring/analysis_tensors/pass_b/train_context_vectors.pt @ c94070508a",
+ "git_commit": "648cadaee92c3a30130445ac0bdbeb9d96cf9658",
+ "wall_seconds": 267.2,
+ "generated_at": "2026-07-15T00:13:57.847310+00:00",
+ "matched_half_calibration": {
+  "description": "Matched-design calibration for the weight-space own-vs-plain comparison. CONFOUND: the existing own-vs-plain full-data fits share IDENTICAL X rows (same Gram/eigenbasis), while the existing noise_ceiling cell (own h1 vs own h2) uses DIFFERENT X rows -- so shared-X estimation structure inflates the own-vs-plain flat cosine / output-subspace alignment and the half1-vs-half2 cell is NOT a valid upper bound. These two cells isolate the confound: cross_arm_diff_rows (W_own h1 vs W_plain h2; different arms AND rows) is apples-to-apples with noise_ceiling (same arm, different rows) -- similarity means arm identity adds nothing beyond row-resampling noise; cross_arm_same_rows_half (W_own h1 vs W_plain h1; different arms, SAME rows, half n) is the half-n analog of the full-data flat_cosine_own_vs_plain, so comparing them shows how shared-X inflation scales with n.",
+  "half_split": "np.random.default_rng(0).permutation(valid_rows); h1=first half, h2=second half",
+  "k": 50,
+  "per_layer": {
+   "14": {
+    "n_half": 2499,
+    "lambda_own_h1": 0.1,
+    "lambda_plain_h1": 0.1,
+    "lambda_plain_h2": 0.31622776601683794,
+    "cross_arm_diff_rows": {
+     "flat_cosine": 0.026330937668698418,
+     "k": 50,
+     "input_mean_cos_principal_angle": 0.523115281323176,
+     "output_mean_cos_principal_angle": 0.11529676534418724
+    },
+    "cross_arm_same_rows_half": {
+     "flat_cosine": 0.4735739854178168,
+     "k": 50,
+     "input_mean_cos_principal_angle": 0.6330411903074955,
+     "output_mean_cos_principal_angle": 0.561185453970029
+    }
+   },
+   "17": {
+    "n_half": 2499,
+    "lambda_own_h1": 0.1,
+    "lambda_plain_h1": 0.31622776601683794,
+    "lambda_plain_h2": 1.0,
+    "cross_arm_diff_rows": {
+     "flat_cosine": 0.032287747193894066,
+     "k": 50,
+     "input_mean_cos_principal_angle": 0.5892884632213756,
+     "output_mean_cos_principal_angle": 0.11373040177752068
+    },
+    "cross_arm_same_rows_half": {
+     "flat_cosine": 0.4266895757027142,
+     "k": 50,
+     "input_mean_cos_principal_angle": 0.6597193585279917,
+     "output_mean_cos_principal_angle": 0.529253128627011
+    }
+   },
+   "26": {
+    "n_half": 2499,
+    "lambda_own_h1": 0.1,
+    "lambda_plain_h1": 0.1,
+    "lambda_plain_h2": 1.0,
+    "cross_arm_diff_rows": {
+     "flat_cosine": 0.03319549774092579,
+     "k": 50,
+     "input_mean_cos_principal_angle": 0.4728503603449269,
+     "output_mean_cos_principal_angle": 0.11503553542474068
+    },
+    "cross_arm_same_rows_half": {
+     "flat_cosine": 0.3746777207045472,
+     "k": 50,
+     "input_mean_cos_principal_angle": 0.5800143999752322,
+     "output_mean_cos_principal_angle": 0.5631163812907063
+    }
+   }
+  },
+  "reference_existing": {
+   "14": {
+    "flat_cosine_own_vs_plain_full_n4998": 0.6123923352823524,
+    "noise_ceiling_own_h1_vs_h2_flat_cosine": 0.036851533912744844
+   },
+   "17": {
+    "flat_cosine_own_vs_plain_full_n4998": 0.5781052219877318,
+    "noise_ceiling_own_h1_vs_h2_flat_cosine": 0.04238128161232596
+   },
+   "26": {
+    "flat_cosine_own_vs_plain_full_n4998": 0.6921880689511054,
+    "noise_ceiling_own_h1_vs_h2_flat_cosine": 0.05017620703715459
+   }
+  },
+  "generated_at": "2026-07-15T00:30:34.922067+00:00"
+ }
+}

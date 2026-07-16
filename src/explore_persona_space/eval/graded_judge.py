@@ -27,11 +27,14 @@ Notes for callers:
 from __future__ import annotations
 
 import json
+import logging
 from dataclasses import dataclass, field
 from pathlib import Path
 
 from explore_persona_space.eval import DEFAULT_JUDGE_MODEL
 from explore_persona_space.eval import batch_judge as _batch_judge
+
+logger = logging.getLogger(__name__)
 
 DEFAULT_JUDGE_TEMPERATURE = 0.7  # lifted from issue778_lib.JUDGE_TEMPERATURE
 
@@ -122,13 +125,25 @@ class JudgeResult:
     ``per_item_scores`` maps item_id -> the kept per-draw score list (empty when
     all draws dropped) so callers can persist the draw-level values a threshold
     sweep needs without re-reading the ``save_raw`` file.
+
+    Transport-vs-content split (llm-judging.md rules 9/24; #1313):
+    ``n_dropped_draws`` counts CONTENT drops only — judge-produced returns the
+    reduce discards (REFUSAL / malformed / out-of-range / parse_error /
+    quarantined-400). ``n_transport_lost_draws`` counts TRANSPORT-class losses
+    (429/5xx incl. 529/timeout/connection/batch expired-canceled-server-errored
+    rows) after bounded retries — freely re-judgeable; NEVER blend the two
+    (rule 24(ii): blending recreates the censoring the split exists to
+    prevent). ``per_item_transport_losses`` is the per-item breakdown (item_id
+    -> lost-draw count; absent items lost none).
     """
 
     scores: dict[str, float | None]
     n_total_draws: int
-    n_dropped_draws: int
+    n_dropped_draws: int  # CONTENT drops only (rule 9) as of #1313
     per_item_draw_counts: dict[str, int] = field(default_factory=dict)
     per_item_scores: dict[str, list[float]] = field(default_factory=dict)
+    n_transport_lost_draws: int = 0  # rule 24(ii)
+    per_item_transport_losses: dict[str, int] = field(default_factory=dict)
 
 
 def judge_graded(
@@ -230,8 +245,10 @@ def judge_result_from_save_raw(save_raw: Path, items: list[tuple[str, str, str]]
     #   "{persona}__{idx:05d}__{comp_idx:02d}"; persona == item_id here
     #   (item_id must not contain the "__" delimiter — guarded in judge_graded).
     per_item_draws: dict[str, list[float]] = {item_id: [] for item_id, _, _ in items}
+    per_item_transport: dict[str, int] = {}
     n_total = 0
     n_dropped = 0
+    n_transport = 0
     for cid, parsed in all_scores.items():
         # item_id is everything before the FIRST "__idx__comp" tail. Since each
         # item has exactly one question and idx increments per (persona,question),
@@ -243,9 +260,22 @@ def judge_result_from_save_raw(save_raw: Path, items: list[tuple[str, str, str]]
         n_total += 1
         s = _score_from_parsed(parsed)
         if s is None:
-            n_dropped += 1
+            # Transport-vs-content split (rule 24(ii), #1313): a transport-class
+            # error dict is a re-judgeable LOSS, never a content drop.
+            # _score_from_parsed itself is unchanged — classification lives here.
+            if _batch_judge.is_transport_error_dict(parsed):
+                n_transport += 1
+                per_item_transport[item_id] = per_item_transport.get(item_id, 0) + 1
+            else:
+                n_dropped += 1
         else:
             per_item_draws[item_id].append(s)
+    if n_transport:
+        logger.warning(
+            "judge reduce: %d transport-lost draws (bounded retries exhausted) — "
+            "re-judgeable; NOT blended into content drops (rule 24)",
+            n_transport,
+        )
 
     scores: dict[str, float | None] = {}
     draw_counts: dict[str, int] = {}
@@ -258,4 +288,6 @@ def judge_result_from_save_raw(save_raw: Path, items: list[tuple[str, str, str]]
         n_dropped_draws=n_dropped,
         per_item_draw_counts=draw_counts,
         per_item_scores=per_item_draws,
+        n_transport_lost_draws=n_transport,
+        per_item_transport_losses=per_item_transport,
     )

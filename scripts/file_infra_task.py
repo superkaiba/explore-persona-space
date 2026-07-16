@@ -94,7 +94,11 @@ from spawn_session import (  # noqa: E402
 # The shared wf-fix title-prefix set (single source of truth, one prefix per
 # filing channel — task_workflow.py). Same package-import pattern as
 # daily_drive_filings.py; the `uv run` env has the editable install.
-from explore_persona_space.task_workflow import WF_FIX_TITLE_PREFIXES  # noqa: E402
+from explore_persona_space.task_workflow import (  # noqa: E402
+    WF_FIX_TITLE_PREFIXES,
+    recent_closed_workflow_fix_tasks,
+    wf_fix_extract_target,
+)
 
 # The auto-dispatchable pure-code/ops kinds. `experiment`/`analysis`/
 # `campaign` are rejected: analysis needs the `agent-ok` opt-in + PM triage;
@@ -269,6 +273,62 @@ def _warn_missing_wf_fix_title_prefix(args: argparse.Namespace) -> None:
     )
 
 
+# Measured: 27 same-target closures/7d on the hottest file; the recency-desc
+# cap keeps the just-merged incident class on top (#1399).
+_ADVISORY_MAX_ROWS = 10
+
+
+def _advise_recent_closed_wf_fix_siblings(args: argparse.Namespace) -> None:
+    """#1399 warn-only advisory: before filing a wf-fix-shaped task, list
+    recently-closed (7-day) wf-fix/daily-fix siblings overlapping the candidate
+    by workflow_fix_target path token or by title token — the open-only
+    exact-(target_file, fingerprint) dedup is blind to a just-merged sibling
+    with different wording (2026-07-15: #1350 dup of #1329 merged 25 min
+    earlier; #1330 dup of #1309). ADVISORY ONLY (the task body frames this as
+    an advisory rather than a hard block): never blocks, never changes exit
+    codes, never skips the filing (a closed fix deliberately never blocks a
+    genuine re-raise); the whole leg is fail-soft — any exception prints a
+    one-line diagnostic and filing proceeds (#1173/#1283 precedent, hardened
+    to a full try/except per the #1399 task-body constraint)."""
+    try:
+        body_text = args.body
+        if body_text is None and args.body_file is not None:
+            try:
+                body_text = Path(args.body_file).read_text(encoding="utf-8")
+            except OSError:
+                body_text = None
+        target = wf_fix_extract_target(body_text or "")
+        # wf-fix-shaped: the tag (the #1173/#1283 gate) OR a target line.
+        if "wf-fix" not in (args.tag or []) and target is None:
+            return
+        hits = recent_closed_workflow_fix_tasks(target, args.title, days=7.0)
+        if not hits:
+            return
+        print(
+            f"file_infra_task: ADVISORY — {len(hits)} wf-fix sibling(s) closed within "
+            "7 days overlap this filing. Closed tasks never block a re-raise "
+            "(.claude/rules/workflow-fix-on-bug.md § Dedup, #1399) — eyeball for a "
+            "just-merged duplicate before letting the spawned session run:",
+            file=sys.stderr,
+        )
+        for h in hits[:_ADVISORY_MAX_ROWS]:
+            print(
+                f"  #{h['id']}  {h['status']}  closed {h['closed_at'][:10]}  "
+                f"[{'; '.join(h['matched'])}]  {h['title']}",
+                file=sys.stderr,
+            )
+        if len(hits) > _ADVISORY_MAX_ROWS:
+            print(
+                f"  ... and {len(hits) - _ADVISORY_MAX_ROWS} more within the window",
+                file=sys.stderr,
+            )
+    except Exception as e:  # deliberate fail-soft: advisory must never break filing (#1399)
+        print(
+            f"file_infra_task: advisory leg failed ({e!r}); filing proceeds (#1399 fail-soft)",
+            file=sys.stderr,
+        )
+
+
 def cmd_file_infra(args: argparse.Namespace) -> int:
     """File a ripe `kind: infra`/`batch` task, then best-effort dispatch it.
 
@@ -278,9 +338,10 @@ def cmd_file_infra(args: argparse.Namespace) -> int:
     here would make callers think filing failed)."""
     # 0. Warn-only pre-filing backstops (stderr only; exit codes and filing
     # behavior unchanged): #1173 durable-recursion-guard line, #1283 dedup
-    # title-prefix surface.
+    # title-prefix surface, #1399 recently-closed-sibling advisory.
     _warn_missing_wf_fix_provenance(args)
     _warn_missing_wf_fix_title_prefix(args)
+    _advise_recent_closed_wf_fix_siblings(args)
 
     # 1. File first (the durable, must-succeed half).
     new_argv = _build_new_argv(args)

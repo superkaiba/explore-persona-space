@@ -1,0 +1,160 @@
+{
+  "metadata": {
+    "git_commit": "04603a849d1dead938894436204c2bed8928d271",
+    "timestamp": "2026-07-15T22:32:10Z",
+    "seed": 0,
+    "n": 0,
+    "script": "scripts/issue1336_diagnose_g1.py"
+  },
+  "gates": {
+    "dg0": {
+      "target": -0.9287,
+      "realized_best": -0.9286624210783372,
+      "abs_dev": 3.7578921662784204e-05,
+      "tol": 0.02,
+      "pass": true
+    },
+    "dg1": {
+      "bar_std_computed_ts_unix": 1784148037.791407,
+      "battery_started_ts_unix": 1784148037.838315,
+      "verdict_read_ts_unix": 1784154730.385964,
+      "ordering_ok": true,
+      "bar_std_fallback": false
+    },
+    "capture_defect_gate": {
+      "fired": false,
+      "spotcheck": {
+        "rlvr_chat_lmsys5k": {
+          "mismatch_rate": 0.0,
+          "defect_gate_fired": false
+        },
+        "rlvr_naturalistic_lmsys5k": {
+          "mismatch_rate": 0.0,
+          "defect_gate_fired": false
+        }
+      },
+      "audit_capture_corruption_suspected": false
+    },
+    "qwen_calibration": {
+      "s_qwen": 0.5306278077879388,
+      "deviates": true,
+      "bar_std_fallback": false
+    }
+  },
+  "lattice_inputs": {
+    "S": -1.3123888582399315,
+    "S_argmax_layer": 30,
+    "B_standardized_p975_layer_max": -0.0014693993592966637,
+    "bar_std": 0.1576668571647419,
+    "S_prime": -1.4700557154046734,
+    "D": -1.3109194588806348,
+    "D_ci95": [
+      -1.3501206607727847,
+      -1.2663675654238127
+    ],
+    "S_ci95": [
+      -1.3515900601320814,
+      -1.2678369647831094
+    ],
+    "raw_band": -0.022457011429373442,
+    "raw_band_source": "committed_nulls_json",
+    "committed_r2_v0_at_L29": -0.9286624210783372
+  },
+  "mechanism_attribution": {
+    "threshold": 0.8,
+    "sensitivity": [
+      0.6,
+      0.9
+    ],
+    "per_variant": {
+      "v1_widened_grid": {
+        "r2_at_L29": -0.9286624210783372,
+        "A_v_at_L29": 0.0,
+        "own_argmax_layer": 29,
+        "r2_at_own_argmax": -0.9286624210783372,
+        "A_v_at_own_argmax": 0.0,
+        "band_used": -0.022457011429373442,
+        "accounts_at_0.8": false,
+        "accounts_at_sensitivity": {
+          "0.6": false,
+          "0.9": false
+        }
+      },
+      "v2_standardized": {
+        "r2_at_L29": -1.360164135879173,
+        "A_v_at_L29": -0.46538498963335606,
+        "own_argmax_layer": 30,
+        "r2_at_own_argmax": -1.3123888582399315,
+        "A_v_at_own_argmax": -0.4043509107563376,
+        "band_used": -0.0014693993592966637,
+        "accounts_at_0.8": false,
+        "accounts_at_sensitivity": {
+          "0.6": false,
+          "0.9": false
+        }
+      },
+      "v3_trim_4": {
+        "r2_at_L29": -1.1118668219156094,
+        "A_v_at_L29": -0.20216652746339261,
+        "own_argmax_layer": 27,
+        "r2_at_own_argmax": -1.0788472001592946,
+        "A_v_at_own_argmax": -0.1541403944271793,
+        "band_used": -0.022457011429373442,
+        "accounts_at_0.8": false,
+        "accounts_at_sensitivity": {
+          "0.6": false,
+          "0.9": false
+        }
+      },
+      "v3_trim_41": {
+        "r2_at_L29": -1.226776121207207,
+        "A_v_at_L29": -0.32896923473934014,
+        "own_argmax_layer": 30,
+        "r2_at_own_argmax": -1.1815443034711848,
+        "A_v_at_own_argmax": -0.27025715182505616,
+        "band_used": -0.022457011429373442,
+        "accounts_at_0.8": false,
+        "accounts_at_sensitivity": {
+          "0.6": false,
+          "0.9": false
+        }
+      },
+      "v3_trim_410": {
+        "r2_at_L29": -1.411038771717867,
+        "A_v_at_L29": -0.5323035434387746,
+        "own_argmax_layer": 30,
+        "r2_at_own_argmax": -1.3622998561757478,
+        "A_v_at_own_argmax": -0.4683492499194071,
+        "band_used": -0.022457011429373442,
+        "accounts_at_0.8": false,
+        "accounts_at_sensitivity": {
+          "0.6": false,
+          "0.9": false
+        }
+      },
+      "v4_fp64": {
+        "r2_at_L29": -0.9286624210783372,
+        "A_v_at_L29": 0.0,
+        "own_argmax_layer": 29,
+        "r2_at_own_argmax": -0.9286624210783372,
+        "A_v_at_own_argmax": 0.0,
+        "band_used": -0.022457011429373442,
+        "accounts_at_0.8": false,
+        "accounts_at_sensitivity": {
+          "0.6": false,
+          "0.9": false
+        }
+      }
+    },
+    "accounting_set": []
+  },
+  "lattice_branch": "genuine_absence_candidate",
+  "routed_decision": "R5_replan",
+  "routed_reason": "D1.6 calibration control deviates \u2014 corrected DV demoted to exploratory",
+  "naturalistic_robustness": {
+    "S_naturalistic": -1.291819313172573,
+    "band": -0.0015255099993477684,
+    "branch": "genuine_absence_candidate",
+    "agrees_with_chat": true
+  }
+}

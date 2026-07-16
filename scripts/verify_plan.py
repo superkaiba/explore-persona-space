@@ -7,11 +7,13 @@ Phase 1.5.0 BEFORE the fact-checker + critic ensemble spawn. The plan-side
 sibling of ``scripts/verify_task_body.py`` (clean-result bodies): pure
 regex / string presence checks, NO LLM calls, no network, no side effects
 (the orchestrator running the adversarial-planner skill posts the
-``epm:plan-verify`` marker — never this script). One disclosed read-only
-exception: check 34, when its trigger fires, ``stat()``s the live sizes of
+``epm:plan-verify`` marker — never this script). Two disclosed read-only
+exceptions: check 34, when its trigger fires, ``stat()``s the live sizes of
 the ratcheted workflow files the plan names and lazily imports
 ``scripts/workflow_lint.py`` for their size-cap constants — read-only, no
-writes, still no network.
+writes, still no network; and check 37, when its trigger fires, reads
+``scripts/workflow_lint.py`` SOURCE TEXT to derive main()'s no-flags
+dispatch set — read-only, no import, no network.
 
 Check catalog (id — classification — kind scope)
 ------------------------------------------------
@@ -80,12 +82,19 @@ Check catalog (id — classification — kind scope)
       retention policy                                    analysis
   c34 verbatim insert vs        WARN-only, conditional    infra + batch only
       ratchet headroom
+  c35 revision-pinned reuse     WARN-only, conditional    experiment +
+      verified at pin                                     analysis
+  c36 numeric containment       WARN-only, conditional    experiment +
+      claims                                              analysis
+  c37 no-flags bundling claim   WARN-only, conditional    infra + batch only
+  c38 exit-0 repo-wide         WARN-only, conditional    all kinds
+      criterion baseline
 
 Kind-exempt checks render as [SKIP] (first-class status, distinguishable
 from genuine passes — the calibration report needs n_skip separate from
 n_pass). Conditional checks (4, 6, 7, 10, 11, 12, 13, 14, 15, 16, 17, 18,
-19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34) also SKIP
-when their content trigger does not fire.
+19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36,
+37, 38) also SKIP when their content trigger does not fire.
 Check 23 runs OUTSIDE ``verify_plan_text()`` — it needs task context
 (``body.md`` + ``events.jsonl``), so ``main()`` appends it in ``--issue``
 mode only and renders it SKIP in ``--plan-file`` mode; its WARN is the one
@@ -132,6 +141,10 @@ labeled-line forms):
   - ``N/A — no per-rung checkpoint persistence`` / alias
     ``N/A — no checkpoint ladder`` (check 33)
   - ``N/A — no verbatim ratcheted-file insertion`` (check 34)
+  - ``N/A — no revision-pinned reuse`` (check 35)
+  - ``N/A — no numeric containment claims`` (check 36)
+  - ``N/A — no no-flags bundling claim`` (check 37)
+  - ``N/A — no exit-0 acceptance criterion`` (check 38)
 
 WARN semantics: a WARN never blocks exit (exit 0). The Phase 1.5.0 wiring
 carries WARN lines verbatim into the fact-checker + critic briefs — that
@@ -830,10 +843,17 @@ def check_gpu_hours(plan: str, kind: str) -> CheckResult:
 
 def check_reuse_fitness(plan: str, kind: str) -> CheckResult:
     """Plans reusing trained HF artifacts must carry the fitness
-    attestations (a)-(j) (.claude/rules/artifact-reuse.md). WARN not FAIL:
+    attestations (a)-(k) (.claude/rules/artifact-reuse.md). WARN not FAIL:
     trigger and item-detection are both heuristic, and the demonstrated
     failure modes (#545/#600/#601) are semantic — the gate's value is
-    forcing the section to exist and naming the ten letters."""
+    forcing the section to exist and naming the eleven letters.
+
+    Accepted declaration shapes (#1314): the historical 'fitness'
+    vocabulary, a 'reuse map' / 'reuse-map' section (the #1090 v7
+    '### D3 — Reuse map' shape; artifact-reuse.md's own term for the
+    plan record), '(self-)attestation(s)', or the literal (a)-(k) range
+    token ((a)-(j) grandfathered for in-flight plans; #1366)
+    (hyphen / en-dash / em-dash / ellipsis)."""
     cid, name = "c6_reuse_fitness", "reused-artifact fitness attestation"
     if kind != "experiment":
         return _skip(cid, name, "kind-exempt")
@@ -849,25 +869,35 @@ def check_reuse_fitness(plan: str, kind: str) -> CheckResult:
         return _skip(cid, name, "no HF-artifact reuse detected")
     if _standalone_na_declared(plan, r"no (?:artifact )?reuse"):
         return _pass(cid, name, "explicit no-reuse declaration (N/A — no artifact reuse)")
-    fitness = re.search(r"(?i)fitness", text)
-    letters = {m.group(1) for m in re.finditer(r"\(([a-j])\)", text)}
-    if fitness and len(letters) >= 4:
-        return _pass(cid, name, f"fitness check present ({len(letters)}/10 lettered items spotted)")
-    if fitness:
+    declaration = re.search(
+        r"(?i)fitness"  # historical vocabulary (the pre-#1314 detector, unchanged)
+        r"|reuse[- ]map"  # 'Reuse map' section shape (#1090 v7 D3; artifact-reuse.md's own term)
+        r"|(?:self[- ])?attestation"  # 'self-attestation' / 'attestation(s)'
+        r"|\(a\)\s*[-–—…]\s*\([jk]\)",  # (a)-(k) current; (a)-(j) grandfathered  # noqa: RUF001
+        text,
+    )
+    letters = {m.group(1) for m in re.finditer(r"\(([a-k])\)", text)}
+    if declaration and len(letters) >= 4:
+        return _pass(
+            cid,
+            name,
+            f"fitness/reuse-map declaration present ({len(letters)}/11 lettered items spotted)",
+        )
+    if declaration:
         return _warn(
             cid,
             name,
-            f"fitness vocabulary present but only {len(letters)} of the (a)–(j) items "  # noqa: RUF001
-            "detectable — verify all ten attestations (recipe/regime/cells/single-var/"
-            "hub-resolution/content-identity/scaling/backend-fetchability/code-throughput/"
-            "pair-provenance) "
-            "before approval",
+            f"fitness/reuse-map declaration vocabulary present but only {len(letters)} of the "
+            "(a)–(k) items detectable — verify all eleven attestations (recipe/regime/cells/"  # noqa: RUF001
+            "single-var/hub-resolution/content-identity/scaling/backend-fetchability/"
+            "code-throughput/pair-provenance/parent-lineage) before approval",
         )
     return _warn(
         cid,
         name,
-        "plan reuses HF artifacts but no fitness check found — CLAUDE.md reuse rule requires "
-        "attestations (a)–(j); consistency-checker + Methodology critic must gate this",  # noqa: RUF001
+        "plan reuses HF artifacts but no fitness check / (a)–(k) reuse-map attestation found — "  # noqa: RUF001
+        "CLAUDE.md reuse rule requires attestations (a)–(k); consistency-checker + Methodology "  # noqa: RUF001
+        "critic must gate this",
     )
 
 
@@ -5687,6 +5717,578 @@ def check_ratchet_headroom(plan: str, kind: str) -> CheckResult:
     return _pass(cid, name, f"{checked} ratcheted-file insert(s) fit remaining headroom")
 
 
+# ─── Check 35 — revision-pinned reuse verified at the pin (WARN-only) ──────
+
+# Trigger: a 40-hex token with revision/pin vocabulary within +/-120 chars,
+# HF-context AND reuse vocabulary within +/-300 chars (the c6/c30 proximity
+# convention), scanning STRIPPED prose. The revision-vocab window is what
+# keeps git code SHAs (Repro-card `commit=<sha>` rows) out; the HF-context
+# window keeps "pinned to commit <sha>" git rows out (#1345 shape only).
+_C35_HEX40_RE = re.compile(r"\b[0-9a-f]{40}\b")
+_C35_REV_VOCAB_RE = re.compile(r"(?i)\brevision\b|\bpin(?:ned|s)?\b")
+_C35_HF_CTX_RE = re.compile(
+    r"(?i)superkaiba1/|hf_hub_download|huggingface|hf (?:model|data) repo"
+    r"|list_repo_(?:files|tree)|snapshot_download|repo_id|repo_type"
+)
+_C35_REUSE_RE = re.compile(r"(?i)\breus\w*|\binherit\w*")
+_C35_REV_WIN, _C35_CTX_WIN = 120, 300
+# Satisfiers scan RAW text (c30 convention: runnable probe commands
+# legitimately live in fenced blocks): a Hub-probe callable with a
+# `revision=` kwarg on the same line, or a prose verified-at-pin statement.
+# `get_paths_info` is deliberately EXCLUDED: the artifact-reuse item-(j)
+# pairwise-provenance boilerplate (`get_paths_info(expand=True,
+# revision=...)`) verifies commit-DATE coherence, not existence-at-pin, and
+# it sits in standard §10 rows — including it blinded the check to its own
+# motivating incident (#1345 plan v3 line 446).
+_C35_PROBE_SATISFIER_RE = re.compile(
+    r"(?i)(?:list_repo_(?:tree|files)|file_exists|hf_hub_download)"
+    r"[^\n]{0,200}\brevision\s*[=:]"
+)
+_C35_PROSE_SATISFIER_RE = re.compile(
+    r"(?i)verif\w+[^\n]{0,120}\bat\s+(?:the\s+)?(?:pinned\s+)?revision\b"
+)
+
+
+def check_pinned_revision_reuse(plan: str, kind: str) -> CheckResult:
+    """Plans reusing an HF artifact at a pinned 40-hex revision must name a
+    revision-scoped existence verification (incident #1345: a default-branch
+    probe read CONFIRMED while 2/4 stems returned 0 files at the pin). WARN
+    not FAIL: 'reuse row' detection is heuristic (same class as c6/c30), and
+    the semantic question — was the probe actually RUN, per stem, at the pin
+    — stays with the fact-checker (SKILL.md Phase 1.5).
+
+    Disclosed FALSE-NEGATIVE residuals — a SKIP is never read as coverage:
+    short-hex pins (7-12 hex, e.g. #1345 v4's 10-hex pin), branch/tag pins
+    (non-hex revisions), and pins held only in a code constant (zero hex in
+    the plan prose) do not trigger — the fact-checker instruction ("read the
+    actual code/config") is the coverage for the constant case; a
+    revision-threaded `hf_hub_download` CONSUME recipe satisfies without a
+    stated probe (the disclosed consume residual). The WARN detail below is
+    deliberately satisfier-inert (no Hub-callable + `revision=` on one line,
+    no 'verif...at...revision' shape): bounced plans paste verifier details
+    verbatim, and a self-matching detail would false-PASS exactly the
+    flagged-then-revised plans (the #810 spurious-satisfaction shape) —
+    pinned by test_c35_warn_detail_matches_no_satisfier."""
+    cid, name = "c35_pinned_revision_reuse", "revision-pinned reuse verified at pin"
+    if kind not in ("experiment", "analysis"):
+        return _skip(cid, name, "kind-exempt")
+    text = strip_fences(plan)
+    pinned_reuse = False
+    for m in _C35_HEX40_RE.finditer(text):
+        w_rev = text[max(0, m.start() - _C35_REV_WIN) : m.end() + _C35_REV_WIN]
+        w_ctx = text[max(0, m.start() - _C35_CTX_WIN) : m.end() + _C35_CTX_WIN]
+        if (
+            _C35_REV_VOCAB_RE.search(w_rev)
+            and _C35_HF_CTX_RE.search(w_ctx)
+            and _C35_REUSE_RE.search(w_ctx)
+        ):
+            pinned_reuse = True
+            break
+    if not pinned_reuse:
+        return _skip(cid, name, "no revision-pinned HF reuse detected")
+    if _standalone_na_declared(plan, r"no revision[- ]pinned reuse"):
+        return _pass(cid, name, "explicit no-pinned-reuse declaration")
+    if _C35_PROBE_SATISFIER_RE.search(plan) or _C35_PROSE_SATISFIER_RE.search(plan):
+        return _pass(cid, name, "revision-scoped existence verification named")
+    return _warn(
+        cid,
+        name,
+        "plan reuses an HF artifact at a pinned 40-hex revision but names no "
+        "revision-scoped existence check - probe each named stem with the revision "
+        "kwarg set to the pin (list_repo_tree scoped to the stem prefix on the "
+        "~1M-file data repo, or list_repo_files on small repos; >=1 file per stem); "
+        "a default-branch probe does NOT satisfy (incident #1345: 2/4 stems returned "
+        "0 files at the pin); or declare `N/A - no revision-pinned reuse` on its own "
+        "line, unwrapped",
+    )
+
+
+# ─── Check 36 — numeric containment claims (WARN-only; experiment + analysis) ─
+
+_C36_NUM = r"(?:\d+(?:\.\d+)?|\.\d+)"
+# Range operand pair. Two alternatives:
+#   (a) en/em-dash or "to" separator, signed operands allowed ("-0.5 to 0.3");
+#   (b) unspaced ASCII hyphen, UNSIGNED operands only ("2-4", "0.25-0.5") —
+#       a signed/hyphen mix ("-0.5-0.3") is ambiguous between range and
+#       negative pair and is NEVER parsed (accepted false negative).
+# The leading lookbehind blocks matching the tail of a larger number or a
+# signed token; \b after operands blocks partial-digit backtracks (the c28
+# :4487 convention — without it "150-330 band" mis-parses); (?!-\d) on the
+# hyphen form rejects date/version chains ("2026-07-15").
+_C36_RANGE = (
+    rf"(?P<lo>(?<![\d.\-−+])[+\-−]?{_C36_NUM})%?\s*(?:[–—]|\bto\b)\s*"  # noqa: RUF001 — en dash is real plan text
+    rf"(?P<hi>[+\-−]?{_C36_NUM})"  # noqa: RUF001 — U+2212 minus is real plan text
+    rf"|(?P<lo2>(?<![\d.\-−+]){_C36_NUM})-(?P<hi2>{_C36_NUM}(?!-\d))"  # noqa: RUF001
+)
+# Containment claim: verb + bounded filler + range + bounded tail + range-noun,
+# all on ONE line. Filler excludes .;:| so a claim never crosses a sentence,
+# clause-label, or table-cell boundary; the post-range lookahead rejects
+# compound count modifiers ("10-20-draw random band", #816 v1 L227).
+# "estimate" and "guidance" are deliberately NOT range-nouns (the #825
+# aggregate-delta and t-SNE-guidance corpus shapes are accepted false
+# negatives — both FP-prone).
+_C36_CLAIM_RE = re.compile(
+    rf"\b(?:inside|within)\b(?P<fill>[^.;:|\n]{{0,45}}?)(?:{_C36_RANGE})\b"
+    rf"(?![–-][A-Za-z])\s*%?(?P<tail>[^.;|\n]{{0,18}}?)"  # noqa: RUF001 — en dash is real plan text
+    rf"\b(?:spread|band|range|window|interval|CIs?)\b",
+    re.IGNORECASE,
+)
+# Candidate claimed values: numbers in the same clause BEFORE the verb. The
+# leading lookbehind kills identifier digits ("H2", "#508", "Tier-1",
+# "checkpoint-20", "coef-0"); the trailing lookahead kills hex/sha and
+# unit-glued tokens ("48de22...", "13h").
+_C36_CAND_RE = re.compile(
+    rf"(?<![A-Za-z#\d.\-−+/])[+\-−]?{_C36_NUM}%?(?![A-Za-z0-9])"  # noqa: RUF001
+)
+_C36_NEG_RE = re.compile(r"(?i)\b(?:not|never|no longer|nor|outside)\b")
+
+
+def _c36_frac(tok: str) -> Fraction:
+    """Exact ``Fraction`` from a claim/operand token: strips a trailing %, a
+    leading +, maps U+2212 minus to ASCII, then delegates to ``_c28_frac``
+    (the leading-dot-tolerant c13/c28 parse convention — cross-check helper
+    reuse per the c28 <-> ``_C13_GATE_SECTION_RE`` precedent)."""
+    return _c28_frac(tok.rstrip("%").lstrip("+").replace("−", "-"))  # noqa: RUF001
+
+
+def _c36_na_escape_declared(plan: str) -> bool:
+    """Standalone ``N/A — no numeric containment claims`` escape (see
+    ``_standalone_na_declared`` for the anti-paste rationale)."""
+    return _standalone_na_declared(plan, r"no numeric containment claims?")
+
+
+def _c36_offender_detail(offenders: list[tuple[str, Fraction, Fraction, list[Fraction]]]) -> str:
+    """Bounded WARN detail (c28 conventions: at most 3 offenders shown,
+    90-char line snippets): per offender the line snippet, the candidate
+    claimed values, and the bounds none of them lands in. Ends with the
+    #1315 incident anchor and the remedy menu. The anchor + remedy prose
+    is deliberately NON-matching (the c28 detail-inertness precedent): it
+    phrases containment without an inside/within verb + range + range-noun
+    co-occurrence, so a verbatim paste of this detail into a revised plan
+    cannot re-trigger the check by itself (the 90-char offender snippet may
+    still quote the plan's own claim — the remedy menu names the
+    blockquote/fence move for exactly that)."""
+    parts: list[str] = []
+    for line, lo, hi, cands in offenders[:3]:
+        vals = ", ".join(f"{float(v):.3g}" for v in cands)
+        parts.append(
+            f'line "{line[:90]}" - no candidate value (~ {vals}) lies in '
+            f"[{float(lo):.3g}, {float(hi):.3g}]"
+        )
+    shown = "; ".join(parts)
+    if len(offenders) > 3:
+        shown += "; ..."
+    return (
+        f"{shown} - an explicit numeric containment claim must be arithmetically "
+        "true (#1315 v4 L66 asserted containment of 0.724 in a 0.737-0.820 "
+        "spread; verify_plan PASSed 0/0 - caught only at the critic layer). "
+        "Remedy: fix the arithmetic, rewrite the prose (e.g. '0.013 BELOW the "
+        "... spread', the #1315 v5 correction), move a quoted incident line "
+        "into a blockquote or fence, or declare `N/A - no numeric containment "
+        "claims` on its own line, unwrapped (no backticks/quotes); the semantic "
+        "verdict - WHICH number the prose attributes - stays with the "
+        "Statistics critic"
+    )
+
+
+def check_numeric_containment(plan: str, kind: str) -> CheckResult:
+    """WARN-only, conditional: an explicit numeric containment claim —
+    a claimed number, a containment verb (inside/within), and an explicit
+    numeric A-B range with a range-noun (spread/band/range/window/
+    interval/CI) on one line — must be arithmetically true: some
+    attributable claimed number in the same clause lies in [A, B]
+    (boundary-inclusive; reversed bounds normalized). NEVER FAILs (the
+    c14/c28 doctrine: a heuristic free-prose check must not hard-block);
+    the semantic verdict — WHICH number the prose attributes — stays with
+    the Statistics critic. Incident: #1315 plan v4 L66 (0.724 asserted
+    inside 0.737-0.820; verify_plan PASSed 0/0; two critics caught it by
+    hand -> #1375). Accepted false negatives (v1, named): claims whose
+    subject sits in a previous sentence/clause; a decoy same-clause number
+    inside the range masking a false claim; %-vs-unitless mixed units;
+    scientific notation; noun-before-range word order ("the band
+    0.6-0.8"); "estimate"/"guidance" nouns; ± tolerance forms (not
+    ranges); signed hyphen ranges; bare-"in" containment ("N in the
+    A-B band") and "between A and B" phrasings (both FP-prone; the
+    {inside, within} verb set is deliberate).
+    """
+    cid, name = "c36_numeric_containment", "numeric containment claims"
+    if kind not in ("experiment", "analysis"):
+        return _skip(
+            cid, name, "kind-exempt: containment-claim prose is an experiment|analysis plan shape"
+        )
+    lines = plan.splitlines()
+    mask = _fence_mask(lines)
+    n_claims = 0
+    offenders: list[tuple[str, Fraction, Fraction, list[Fraction]]] = []
+    for line, fenced in zip(lines, mask, strict=True):
+        if fenced or line.lstrip(" \t").startswith(">"):
+            continue  # fenced code + blockquotes: quoted text, not claims
+        blanked = line  # length-preserving blank of prior match spans
+        for m in _C36_CLAIM_RE.finditer(line):
+            lo_s = m.group("lo") or m.group("lo2")
+            hi_s = m.group("hi") or m.group("hi2")
+            lo, hi = _c36_frac(lo_s), _c36_frac(hi_s)
+            if lo > hi:
+                lo, hi = hi, lo  # reversed bounds: normalize, still verify
+            pre = blanked[: m.start()]
+            cut = max(pre.rfind("|"), pre.rfind(":"), pre.rfind(";"))
+            seg = pre[cut + 1 :]  # clause/cell-bounded candidate window
+            blanked = blanked[: m.start()] + " " * (m.end() - m.start()) + blanked[m.end() :]
+            if _C36_NEG_RE.search(seg[-24:]):
+                continue  # negated/outside claims: out of scope
+            rng_pct = "%" in line[m.start() : m.end()]
+            cands = [
+                _c36_frac(t.group(0))
+                for t in _C36_CAND_RE.finditer(seg)
+                if t.group(0).endswith("%") == rng_pct
+            ]
+            if not cands:
+                continue  # no attributable claimed value -> not a claim
+            n_claims += 1
+            if not any(lo <= c <= hi for c in cands):
+                offenders.append((line.strip(), lo, hi, cands))
+    if n_claims == 0 and not offenders:
+        return _skip(cid, name, "no numeric containment claims detected")
+    if _c36_na_escape_declared(plan):
+        return _pass(
+            cid, name, "explicit N/A declared (no numeric containment claims of this plan's own)"
+        )
+    if not offenders:
+        return _pass(cid, name, f"{n_claims} numeric containment claim(s) arithmetically coherent")
+    return _warn(cid, name, _c36_offender_detail(offenders))
+
+
+# ─── Check 37 — no-flags bundling claim vs workflow_lint dispatch ──────────
+
+# Trigger: a NON-fenced line carrying a `--check-<flag>` token together with
+# a CLAIM-VERB-ANCHORED no-flags bundling assertion and no negation/scoping
+# token (same-line radius — the c16 re-generat precedent: window scans sweep
+# discussion noise, and set membership already exonerates true claims
+# wherever they sit). The verb anchor is load-bearing (2026-07-16
+# calibration): bare `--check-*` + no-flags co-occurrence swept in the
+# two-command acceptance idiom ("run `--check-asks` AND the no-flags
+# default run") at 293 WARNs over 838 corpus plan versions; requiring a
+# bundling verb linking the flag list to the no-flags run drops that whole
+# class while keeping the #1322-v1 "included in the no-flags default run"
+# shape and the endemic corpus false claim "no-flags run bundles/includes
+# `--check-asks`" (corrected #1007 v1→v2).
+_C37_LINT_PATH = Path(__file__).resolve().parent / "workflow_lint.py"  # tests monkeypatch
+# Keep `args.check_X or no_flags` as workflow_lint main()'s dispatch shape —
+# c37 parses exactly this form. A dispatch-shape refactor drops the derived
+# set below _C37_MIN_PLAUSIBLE (loud SKIP here) and
+# test_c37_live_derivation_pins fails the suite, forcing a deliberate
+# re-derivation rather than a silent all-PASS.
+_C37_DISPATCH_RE = re.compile(r"args\.check_(\w+)\s+or\s+no_flags")
+_C37_MIN_PLAUSIBLE = 10  # 47 dispatch lines measured 2026-07-16; fewer ⇒ parse broken
+
+_C37_FLAG_RE = re.compile(r"--check-([a-z0-9][a-z0-9-]*)")
+# Claim anchors, both word orders. Forward: verb … no-flags ("bundled into
+# the no-flags default run", "included in the no-flags default run" — the
+# #1322 v1 shape). Inverse: no-flags … verb ("no-flags default run, which
+# bundles/includes/covers `--check-asks`"; `incl\w*` admits the corpus
+# "incl." abbreviation). Gaps exclude '.' '|' and newline (sentence stop /
+# table cell) but deliberately ADMIT ';' and '—' (the corpus false claim
+# "no-flags default run; all bundled checks must pass (incl. `--check-asks`"
+# crosses a ';'). "runs?" is deliberately NOT a verb anchor: "run" is the
+# NOUN in "no-flags default run" and anchors nearly every incidental line.
+# `bundl` is restricted to the VERB forms (bundles/bundled/bundling): the
+# bare NOUN "bundle" anchors the incidental two-command idiom "(no-flags
+# bundle) + `--check-asks` + `--check-references` green" (2026-07-16 corpus).
+_C37_CLAIM_FWD_RE = re.compile(
+    r"(?i)\b(?:includ\w*|incl\.?|bundl(?:es|ed|ing)|part of|folde?d? into)[^.|\n]{0,40}no[- ]flags"
+)
+_C37_CLAIM_INV_RE = re.compile(
+    r"(?i)no[- ]flags[^.|\n]{0,60}\b(?:includ\w*|incl\.?|bundl(?:es|ed|ing)|covers?|carri\w*)"
+)
+# Destination-skip: a flag token directly preceded by "into" is the BUNDLE
+# DESTINATION, not the claim subject — "`--check-script-refs` (also bundled
+# into `--check-references` and the no-flags default run)" claims
+# script-refs ∈ {references bundle, no-flags run}; it asserts nothing about
+# references' own no-flags membership (the reference-check-extension family:
+# #714/#753/#739/#802/#1190 all quote this workflow_lint docstring idiom).
+_C37_DEST_RE = re.compile(r"(?i)\binto\s*[`'\"]?$")
+_C37_NEG_RE = re.compile(
+    r"(?i)\bnot\b|\bnever\b|\bno longer\b|\babsent\b|\bexcluded?\b|\boutside\b"
+    r"|\bseparate(?:ly)?\b|\bonly\s+(?:in|under|when|via|on)\b|\bruns only\b"
+)
+
+
+def _c37_lint_source() -> str | None:
+    """``scripts/workflow_lint.py`` source text (same-dir resolution —
+    worktree-correct), or ``None`` when absent (``--plan-file`` off-repo).
+    Read-only, NO import: source-regex derivation skips the 540 KB /
+    ~345 ms module import c34 pays (and main()'s dispatch is procedural —
+    there is no module-level constant to import)."""
+    if not _C37_LINT_PATH.is_file():
+        return None
+    return _C37_LINT_PATH.read_text()
+
+
+def _c37_noflags_dests(src: str) -> frozenset[str] | None:
+    """argparse dests dispatched on workflow_lint.py's no-flags default run,
+    derived from ``src``. ``None`` => underivable: fewer than
+    ``_C37_MIN_PLAUSIBLE`` matches (main()'s dispatch shape changed; the
+    live-tree pin test fails the suite in that world — never a spray of
+    WARNs on a broken parse). The `no_flags = not (...)` definition block
+    alternates `or args.check_*`, never `or no_flags`, so it cannot match;
+    the parenthesized `(args.check_X or no_flags) and not
+    args.check_references` forms DO match (correctly — they are in the
+    no-flags set, since no_flags=True implies check_references=False)."""
+    dests = frozenset(_C37_DISPATCH_RE.findall(src))
+    return dests if len(dests) >= _C37_MIN_PLAUSIBLE else None
+
+
+def check_noflags_bundling_claim(plan: str, kind: str) -> CheckResult:
+    """WARN-only, conditional, ``kind: infra|batch``: a plan line asserting
+    a ``--check-<flag>`` is bundled into workflow_lint.py's no-flags default
+    run must name a flag actually dispatched there (an `args.check_<dest> or
+    no_flags` line in main()) — #1322 v1 shipped an acceptance criterion
+    claiming the pre-commit-only ``--check-references`` runs on the bare
+    invocation, so its gate could never fire as written. Trigger:
+    ``--check-<flag>`` + a claim-verb-anchored no-flags assertion on one
+    non-fenced line with no negation/scoping token; falsity = derived-set
+    non-membership, restricted to flags that EXIST in the workflow_lint
+    source (a flag with no ``--check-<flag>`` occurrence there is a
+    PROPOSED new check — "add ``--check-newthing`` to the no-flags default
+    run" is forward-looking and unfalsifiable at plan time, never an
+    offender). NEVER FAILs (the c15/c34 doctrine: trigger and derivation
+    are text heuristics). Deliberately OUT of scope (v1, disclosed): the
+    CONVERSE claim class (asserting a flag is NOT in the set when it IS —
+    the negation guard drops every negated line unadjudicated), and the
+    vocabulary-side false-negative class (a bundling claim phrased without
+    a literal "no-flags"/"no flags" token, e.g. "the bare/default
+    workflow_lint run"). Calibration (2026-07-16, 838 corpus plan versions
+    carrying ``--check-``, forced kind=infra): 174 WARN / 115 PASS /
+    549 SKIP; the 20 NEWEST infra|batch plans (the forward-looking
+    operative set) are 0 WARN; #1322 v1 WARNs while its corrected v2
+    SKIPs (positive/negative control pair, likewise #802 v1→v2). The
+    verb anchor, the into-destination skip, and the existence gate are
+    each grounded on a named corpus false-positive class (see the
+    trigger-constant comments above); the residual WARN mass is dominated
+    by the endemic genuinely-false "no-flags run bundles/includes
+    ``--check-asks``" claim (corrected #1007 v1→v2 — a true positive),
+    with ~5% incidental false WARNs on historical long mixed-clause
+    lines, acceptable at WARN-only granularity."""
+    cid, name = (
+        "c37_noflags_bundling_claim",
+        "no-flags bundling claim matches workflow_lint dispatch",
+    )
+    if kind not in ("infra", "batch"):
+        return _skip(
+            cid,
+            name,
+            "kind-exempt: --check-* bundling claims are an infra|batch (workflow-fix) shape",
+        )
+    lines = plan.splitlines()
+    mask = _fence_mask(lines)
+    hits: list[tuple[str, str]] = []
+    for line, fenced in zip(lines, mask, strict=True):
+        if fenced:
+            continue
+        if not (_C37_CLAIM_FWD_RE.search(line) or _C37_CLAIM_INV_RE.search(line)):
+            continue
+        if _C37_NEG_RE.search(line):
+            continue
+        for m in _C37_FLAG_RE.finditer(line):
+            if _C37_DEST_RE.search(line[max(0, m.start() - 12) : m.start()]):
+                continue  # "bundled into `--check-X`": X is the destination, not the subject
+            hits.append((m.group(1), line))
+    if not hits:
+        return _skip(cid, name, "no --check-* no-flags bundling claim on a non-fenced line")
+    if _standalone_na_declared(plan, r"no no[- ]flags bundling claim"):
+        return _pass(cid, name, "explicit N/A declared (incidental --check/no-flags vocabulary)")
+    src = _c37_lint_source()
+    dests = None if src is None else _c37_noflags_dests(src)
+    if dests is None:
+        return _skip(
+            cid,
+            name,
+            "no-flags dispatch set underivable — scripts/workflow_lint.py absent (--plan-file "
+            "off-repo) or _C37_DISPATCH_RE matched below the plausibility floor "
+            f"({_C37_MIN_PLAUSIBLE}); membership cannot be adjudicated",
+        )
+    offenders = [
+        (flag, line)
+        for flag, line in hits
+        # Existence gate: a flag absent from the lint source outright is a
+        # PROPOSED new check (forward-looking claim) — skip, never an offender.
+        if f"--check-{flag}" in src and flag.replace("-", "_") not in dests
+    ]
+    if not offenders:
+        return _pass(
+            cid,
+            name,
+            f"{len(hits)} no-flags bundling claim(s) — every named flag is in the live "
+            "dispatch set (or is a proposed new check, not yet in the lint source)",
+        )
+    flag, line = offenders[0]
+    more = f" (+{len(offenders) - 1} more)" if len(offenders) > 1 else ""
+    return _warn(
+        cid,
+        name,
+        f"`--check-{flag}` is NOT in workflow_lint.py main()'s no-flags dispatch set "
+        f"(no `args.check_{flag.replace('-', '_')} or no_flags` line) — the plan's bundling "
+        "claim is false; the flag runs only when passed explicitly (#1322 v1 shipped exactly "
+        f"this claim for a pre-commit-only flag). Offending line: {line.strip()[:100]!r}{more}. "
+        "Remedies: correct the claim (name the explicit invocation that runs the flag), or "
+        "declare `N/A — no no-flags bundling claim` on its own line, unwrapped "
+        "(no backticks/quotes)",
+    )
+
+
+# ─── Check 38 — exit-0 criterion on repo-wide lint/suite (conditional) ─────
+
+# Assertion tokens: the explicit exit-status idiom family plus "green"
+# (#584 v1:182 "# full suite green"). `pass`/`passes` is a DISCLOSED v1
+# under-trigger: it is endemic in criterion boilerplate (plan-time corpus
+# measurement: ~1,810 workflow_lint-arm candidate lines with pass/green
+# vs 381 exit-0-only), and its dominant shape ("no-flags run passes
+# (includes --check-X)") is c37's subject; widen only after burn-in.
+_C38_ASSERT_RE = re.compile(
+    r"(?i)\bexit(?:s|ed)?\s+(?:code\s+|status\s+|with\s+)?0\b"
+    r"|\bexit[- ]?code\s*(?:==?|:)\s*0\b"
+    r"|\brc\s*(?:==?|:)\s*0\b"
+    r"|\breturn\s*code\s*(?:==?|:)?\s*0\b|\breturncode\s*(?:==?|:)?\s*0\b"
+    r"|\bgreen\b"
+)
+# Negation guard: a line DESCRIBING the hazard ("full no-flags run is NOT
+# a pass criterion", "exit 0 is unattainable") is never adjudicated —
+# the #1365 v2:101 corrected prose is the founding negative control.
+_C38_NEG_RE = re.compile(r"(?i)\bnot\b|\bnever\b|\bcannot\b|\bunattainable\b|\bunsatisfiable\b")
+# Satisfiers (same line only): a NAMED baseline mechanism or scoping
+# prose. Bare "no NEW failures" deliberately does NOT satisfy — the
+# motivating #1365 v1:95 line carried exactly that phrase and was still
+# critic-bounced (a bare command performs no baseline subtraction).
+_C38_SATISFIER_RE = re.compile(
+    r"(?i)\bbaseline\b|\bstep\s*9c\b|\bstep\s*10d\b|baseline[- ]subtract"
+    r"|\bvs\.?\s+(?:origin/)?main\b|\btouched files?\b|\bchanged files?\b|\bscoped\b"
+)
+# Arg-tail terminators: backtick, comment '#', '&&'/'|', close-paren, EOL.
+_C38_TAIL_SPLIT_RE = re.compile(r"[`#&|)\n]")
+# (?<!test_) keeps `tests/test_workflow_lint.py` mentions out of arm A.
+_C38_LINT_OCC_RE = re.compile(r"(?<!test_)workflow_lint(?:\.py)?")
+_C38_NOFLAGS_RUN_RE = re.compile(r"(?i)\bno[- ]flags(?:\s+default)?\s+run\b")
+_C38_PYTEST_OCC_RE = re.compile(r"\bpytest\b")
+_C38_PYTEST_SCOPED_RE = re.compile(r"::|\btests?/\S*\.py\b|(?:^|\s)-k\s")
+_C38_RUFF_OCC_RE = re.compile(r"\bruff\s+(?:check|format)\b")
+_C38_FLAG_TOKEN_RE = re.compile(r"^--?[\w-]+$")
+
+
+def _c38_repo_wide_cmd(line: str) -> str | None:
+    """Label of the first REPO-WIDE lint/suite invocation on ``line``, or
+    None. Scoped forms do not count: a ``--check-`` flag in the
+    workflow_lint arg tail; a ``.py`` path / ``::`` node id / ``-k``
+    filter in the pytest tail; any non-``.`` path token in the ruff tail.
+    Arm B (the "no-flags default run" phrase) is suppressed when the line
+    already carries a SCOPED workflow_lint invocation (commentary shape)."""
+    saw_scoped_lint = False
+    for m in _C38_LINT_OCC_RE.finditer(line):
+        tail = _C38_TAIL_SPLIT_RE.split(line[m.end() :], 1)[0]
+        if "--check-" in tail:
+            saw_scoped_lint = True
+        else:
+            return "workflow_lint.py (no --check- scoping)"
+    if not saw_scoped_lint and _C38_NOFLAGS_RUN_RE.search(line):
+        return "the workflow_lint no-flags default run"
+    for m in _C38_PYTEST_OCC_RE.finditer(line):
+        tail = _C38_TAIL_SPLIT_RE.split(line[m.end() :], 1)[0]
+        if not _C38_PYTEST_SCOPED_RE.search(tail):
+            return "pytest (no path scope)"
+    for m in _C38_RUFF_OCC_RE.finditer(line):
+        tail = _C38_TAIL_SPLIT_RE.split(line[m.end() :], 1)[0]
+        tokens = [t for t in tail.split() if not _C38_FLAG_TOKEN_RE.match(t)]
+        if all(t == "." for t in tokens):
+            return "ruff check/format (repo-wide)"
+    return None
+
+
+def check_exit0_repo_wide_baseline(plan: str, kind: str) -> CheckResult:
+    """WARN-only, conditional, ALL kinds: a line asserting exit-0/green on
+    a REPO-WIDE lint/suite command must name a plan-time baseline or
+    scoping ON THAT LINE — #1365 v1 §6 asserted
+    `workflow_lint.py # exit 0 — no NEW failures` while the no-flags lint
+    is pre-existing-red on origin/main (jointly unsatisfiable; caught by
+    the statistics critic in round 1; prior instance #584 v1
+    `pytest tests/ -q # full suite green`). SAME-LINE co-occurrence only:
+    a ±3-line window would have false-WARNed the CORRECTED #1365 v2 via
+    its :98 scoped criterion pairing with the :101 no-flags prose (the
+    c37 same-line-radius doctrine). RAW scan incl. fences (c11 precedent:
+    the incident line sits inside a ```bash fence). ALL kinds (c21
+    precedent): both incidents were kind: infra, but the idiom rides any
+    kind's §6/§10. NEVER FAILs: trigger, arms, and satisfiers are line
+    heuristics; the Phase 1.5/2 reviewers adjudicate; a genuinely-green
+    repo-wide command with baseline language stays PASS by construction.
+    Disclosed under-triggers (v1): bare `pass`/`passes`/`passed`
+    assertion vocabulary (endemic; partially c37's subject); an
+    assertion sentence separated from its fenced command by ≥1 line;
+    "full suite" with no literal pytest token. Disclosed over-trigger
+    residual: a prose pytest mention with a non-scoping tail on an
+    assertion-bearing line. Deliberate reading (disclosed,
+    fact-checker-confirmed correct): an EMPTY arg tail — bare
+    `ruff check` / bare `pytest` plus an assertion word — classifies
+    REPO-WIDE and WARNs (both default to cwd/repo-wide; `all([]) is
+    True` is intended semantics, not an accident). Additional disclosed
+    over-trigger residual (measured): a `workflow_lint.py` PATH named as
+    another tool's argument on an assertion line (`ruff check ...
+    workflow_lint.py ... → exit 0`) reads as arm A — 1/8 operative-set
+    WARNs (#1381 v2). Calibration (2026-07-16, 2117 corpus plan
+    versions, forced kind=infra): corpus-wide 486 WARN / 102 PASS /
+    1529 SKIP (historical mass, never re-verified — the c37 reporting
+    convention); the 25 NEWEST infra|batch plan versions by git
+    last-commit date (task #1387's own self-referential plan files
+    excluded): 8 WARN / 17 SKIP, hand-classified 7 incident-class
+    (genuine baseline-less repo-wide exit-0/green gates: #1389 v1+v2,
+    #1385 v1+v2, #1381 v1, #1399 v1+v2) / 0 rephrase-class / 1 FP
+    (#1381 v2, the ruff-path residual above) — within the calibration
+    gate (WARNs <= 8, FPs <= 2). Positive controls #1365 v1:95 +
+    #584 v1:182 WARN; corrected #1365 v2 is clean (SKIP); the GOOD_PLAN
+    fixture SKIPs."""
+    cid, name = (
+        "c38_exit0_repo_wide_baseline",
+        "exit-0 criterion on a repo-wide command names baseline/scoping",
+    )
+    del kind  # all kinds — trigger precision carries the false-positive discipline
+    offenders: list[tuple[str, str]] = []
+    triggered = False
+    for line in plan.splitlines():
+        if not _C38_ASSERT_RE.search(line) or _C38_NEG_RE.search(line):
+            continue
+        cmd = _c38_repo_wide_cmd(line)
+        if cmd is None:
+            continue
+        triggered = True
+        if not _C38_SATISFIER_RE.search(line):
+            offenders.append((cmd, line))
+    if not triggered:
+        return _skip(cid, name, "no exit-0/green assertion on a repo-wide lint/suite command")
+    if _standalone_na_declared(plan, r"no exit[- ]0 acceptance criterion"):
+        return _pass(
+            cid,
+            name,
+            "explicit N/A declared (matched text quotes an incident / is not this plan's own gate)",
+        )
+    if not offenders:
+        return _pass(
+            cid,
+            name,
+            "every repo-wide exit-0/green criterion names a baseline or scoping on its line",
+        )
+    cmd, line = offenders[0]
+    more = f" (+{len(offenders) - 1} more)" if len(offenders) > 1 else ""
+    return _warn(
+        cid,
+        name,
+        f"exit-0/green asserted on {cmd} with no plan-time baseline or scoping named on the "
+        f"line — the no-flags lint / full suite is pre-existing-red-exposed on origin/main, so "
+        f"an unconditional exit-0 gate is jointly unsatisfiable (#1365 v1 / #584 shape; the "
+        f"binding repo-wide gates are Step 10d's baseline-subtracted lint gate and the step9c "
+        f"baseline compare). Offending line: {line.strip()[:100]!r}{more}. Remedies: state "
+        "'no NEW failures vs the plan-time baseline' (or step9c / Step 10d) on the criterion "
+        "line, scope the invocation (--check-<x> / explicit paths), or declare "
+        "`N/A — no exit-0 acceptance criterion` on its own line, unwrapped (no backticks/quotes)",
+    )
+
+
 # ─── Driver ────────────────────────────────────────────────────────────────
 
 CHECKS = [
@@ -5723,6 +6325,10 @@ CHECKS = [
     check_fit_basis_grounding,
     check_ladder_retention,
     check_ratchet_headroom,
+    check_pinned_revision_reuse,
+    check_numeric_containment,
+    check_noflags_bundling_claim,
+    check_exit0_repo_wide_baseline,
 ]
 
 

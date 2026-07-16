@@ -1,0 +1,432 @@
+{
+  "commit": "e2b094623d",
+  "created": "2026-07-16T11:20:30Z",
+  "figsize": [
+    11.5,
+    4.5
+  ],
+  "points": [
+    {
+      "x": -0.19,
+      "usable-row rate (well-formed parse)": 0.9776785714285714,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.81,
+      "usable-row rate (well-formed parse)": 0.6354166666666666,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 1.81,
+      "usable-row rate (well-formed parse)": 0.5052083333333334,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 2.81,
+      "usable-row rate (well-formed parse)": 0.9513888888888888,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 3.81,
+      "usable-row rate (well-formed parse)": 0.9791666666666666,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 4.81,
+      "usable-row rate (well-formed parse)": 0.9895833333333334,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 5.81,
+      "usable-row rate (well-formed parse)": 0.975,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.19,
+      "usable-row rate (well-formed parse)": 0.9732142857142857,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 1.19,
+      "usable-row rate (well-formed parse)": 0.9354166666666667,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 2.19,
+      "usable-row rate (well-formed parse)": 0.9609375,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 3.19,
+      "usable-row rate (well-formed parse)": 0.9722222222222222,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 4.19,
+      "usable-row rate (well-formed parse)": 0.9583333333333334,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 5.19,
+      "usable-row rate (well-formed parse)": 0.9583333333333334,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 6.19,
+      "usable-row rate (well-formed parse)": 0.95,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": -0.19,
+      "malformed rows per family": 11.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 0.81,
+      "malformed rows per family": 166.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 1.81,
+      "malformed rows per family": 182.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 2.81,
+      "malformed rows per family": 4.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 3.81,
+      "malformed rows per family": 0.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 4.81,
+      "malformed rows per family": 1.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 5.81,
+      "malformed rows per family": 3.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": -0.19,
+      "malformed rows per family": 3.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 0.81,
+      "malformed rows per family": 8.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 1.81,
+      "malformed rows per family": 8.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 2.81,
+      "malformed rows per family": 5.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 3.81,
+      "malformed rows per family": 3.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 4.81,
+      "malformed rows per family": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 5.81,
+      "malformed rows per family": 3.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": -0.19,
+      "malformed rows per family": 1.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 0.81,
+      "malformed rows per family": 1.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 1.81,
+      "malformed rows per family": 0.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 2.81,
+      "malformed rows per family": 5.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 3.81,
+      "malformed rows per family": 2.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 4.81,
+      "malformed rows per family": 0.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 5.81,
+      "malformed rows per family": 0.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 0.19,
+      "malformed rows per family": 0.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 1.19,
+      "malformed rows per family": 0.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 2.19,
+      "malformed rows per family": 0.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 3.19,
+      "malformed rows per family": 0.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 4.19,
+      "malformed rows per family": 0.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 5.19,
+      "malformed rows per family": 0.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 6.19,
+      "malformed rows per family": 0.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 0.19,
+      "malformed rows per family": 18.0,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "x": 1.19,
+      "malformed rows per family": 29.0,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "x": 2.19,
+      "malformed rows per family": 13.0,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "x": 3.19,
+      "malformed rows per family": 8.0,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "x": 4.19,
+      "malformed rows per family": 8.0,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "x": 5.19,
+      "malformed rows per family": 4.0,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "x": 6.19,
+      "malformed rows per family": 10.0,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "x": 0.19,
+      "malformed rows per family": 0.0,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "x": 1.19,
+      "malformed rows per family": 2.0,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "x": 2.19,
+      "malformed rows per family": 2.0,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "x": 3.19,
+      "malformed rows per family": 0.0,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "x": 4.19,
+      "malformed rows per family": 2.0,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "x": 5.19,
+      "malformed rows per family": 0.0,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "x": 6.19,
+      "malformed rows per family": 2.0,
+      "_kind": "bar",
+      "_group": 7
+    }
+  ],
+  "n_series": 8,
+  "total_points": 56,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Scaffold compliance by context family",
+        "ylabel": "usable-row rate (well-formed parse)",
+        "legend_labels": [
+          "OpenThinker2-7B (parent, #928)",
+          "DeepSeek-R1-Distill-Qwen-7B (this run)"
+        ],
+        "annotations": [
+          "0.98",
+          "0.97",
+          "0.64",
+          "0.94",
+          "0.51",
+          "0.96",
+          "0.95",
+          "0.97",
+          "0.98",
+          "0.96",
+          "0.99",
+          "0.96",
+          "0.97",
+          "0.95"
+        ],
+        "xticklabels": [
+          "persona",
+          "WildChat",
+          "in-context\nlearning",
+          "rephrase",
+          "format",
+          "default",
+          "behavior"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0",
+          "1.2"
+        ]
+      },
+      {
+        "title_left": "Malformed-row taxonomy (hatched = parent)",
+        "ylabel": "malformed rows per family",
+        "legend_labels": [
+          "scaffold absent (no think markup)",
+          "cap-truncated",
+          "degenerate repetition"
+        ],
+        "xticklabels": [
+          "persona",
+          "WildChat",
+          "in-context\nlearning",
+          "rephrase",
+          "format",
+          "default",
+          "behavior"
+        ],
+        "yticklabels": [
+          "0",
+          "25",
+          "50",
+          "75",
+          "100",
+          "125",
+          "150",
+          "175",
+          "200"
+        ]
+      }
+    ],
+    "series": [
+      "OpenThinker2-7B (parent, #928)",
+      "DeepSeek-R1-Distill-Qwen-7B (this run)",
+      "scaffold absent (no think markup)",
+      "cap-truncated",
+      "degenerate repetition"
+    ]
+  }
+}

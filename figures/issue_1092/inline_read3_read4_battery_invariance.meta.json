@@ -1,0 +1,269 @@
+{
+  "commit": "6eb6b40fe6",
+  "created": "2026-07-14T23:01:49Z",
+  "figsize": [
+    13.0,
+    4.6
+  ],
+  "points": [
+    {
+      "x": -0.19,
+      "read3 query variance share": 0.7192391293677722,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.81,
+      "read3 query variance share": 0.7099924268111524,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 1.81,
+      "read3 query variance share": 0.6010873112809318,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 2.81,
+      "read3 query variance share": 0.0800350964587499,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 3.81,
+      "read3 query variance share": 0.6012675803777157,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 4.81,
+      "read3 query variance share": 0.6686692838599044,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 5.81,
+      "read3 query variance share": 0.3672105848854236,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 6.81,
+      "read3 query variance share": 0.05803103793414159,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.19,
+      "read3 query variance share": 0.7192391293677722,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 1.19,
+      "read3 query variance share": 0.7099924268111524,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 2.19,
+      "read3 query variance share": 0.6010873112809318,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 3.19,
+      "read3 query variance share": 0.0800350964587499,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 4.19,
+      "read3 query variance share": 0.6012675803777157,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 5.19,
+      "read3 query variance share": 0.6686692838599044,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 6.19,
+      "read3 query variance share": 0.3672105848854236,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 7.19,
+      "read3 query variance share": 0.05803103793414159,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": -0.19,
+      "read4 residual-interaction / total": 0.42019782147691964,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 0.81,
+      "read4 residual-interaction / total": 0.4301319408824772,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 1.81,
+      "read4 residual-interaction / total": 0.5348950420393881,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 2.81,
+      "read4 residual-interaction / total": 0.9068581053898648,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 3.81,
+      "read4 residual-interaction / total": 0.5298182596979277,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 4.81,
+      "read4 residual-interaction / total": 0.4570571495008286,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 5.81,
+      "read4 residual-interaction / total": 0.6029486148886708,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 6.81,
+      "read4 residual-interaction / total": 0.9097155399930505,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 0.19,
+      "read4 residual-interaction / total": 0.4201978214769169,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 1.19,
+      "read4 residual-interaction / total": 0.4301319408824758,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 2.19,
+      "read4 residual-interaction / total": 0.5348950420393891,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 3.19,
+      "read4 residual-interaction / total": 0.9068581053898602,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 4.19,
+      "read4 residual-interaction / total": 0.5298182596979296,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 5.19,
+      "read4 residual-interaction / total": 0.45705714950082743,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 6.19,
+      "read4 residual-interaction / total": 0.6029486148886682,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 7.19,
+      "read4 residual-interaction / total": 0.9097155399930463,
+      "_kind": "bar",
+      "_group": 3
+    }
+  ],
+  "n_series": 4,
+  "total_points": 32,
+  "text": {
+    "suptitle": "read3 and read4 are battery-invariant (dense-core-only; battery block is disjoint) \u2014 max share \u0394 across all cells = 0.0e+00",
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "read3 (dense-core variance shares)",
+        "ylabel": "read3 query variance share",
+        "legend_labels": [
+          "banked (battery-IN)",
+          "battery-EXCLUDED"
+        ],
+        "xticklabels": [
+          "inst / own",
+          "inst / Claude",
+          "inst / pretrained-text",
+          "inst / shuffled",
+          "pretrained / own",
+          "pretrained / Claude",
+          "pretrained / inst-text",
+          "pretrained / shuffled"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7",
+          "0.8"
+        ]
+      },
+      {
+        "title_left": "read4 (operator additivity)",
+        "ylabel": "read4 residual-interaction / total",
+        "legend_labels": [
+          "banked (battery-IN)",
+          "battery-EXCLUDED"
+        ],
+        "xticklabels": [
+          "inst / own",
+          "inst / Claude",
+          "inst / pretrained-text",
+          "inst / shuffled",
+          "pretrained / own",
+          "pretrained / Claude",
+          "pretrained / inst-text",
+          "pretrained / shuffled"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ]
+      }
+    ],
+    "series": [
+      "banked (battery-IN)",
+      "battery-EXCLUDED"
+    ]
+  }
+}

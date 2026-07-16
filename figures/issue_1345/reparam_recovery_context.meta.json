@@ -1,0 +1,137 @@
+{
+  "commit": "b7ab0b3b75",
+  "created": "2026-07-16T05:28:05Z",
+  "figsize": [
+    11.5,
+    5.4
+  ],
+  "points": [
+    {
+      "x": -0.27,
+      "held-out $R^2$ (layer 19)": 0.6542183951898379,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.73,
+      "held-out $R^2$ (layer 19)": 0.6249482470755413,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 1.73,
+      "held-out $R^2$ (layer 19)": 0.5416017955480217,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 2.73,
+      "held-out $R^2$ (layer 19)": 0.5782882733523876,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "instruct:\nno-template map\nin chat",
+      "held-out $R^2$ (layer 19)": 0.6541269690704852,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "instruct:\nchat map\nin no-template",
+      "held-out $R^2$ (layer 19)": 0.6197446538053759,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "base:\nno-template map\nin chat",
+      "held-out $R^2$ (layer 19)": 0.5497512183298072,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "base:\nchat map\nin no-template",
+      "held-out $R^2$ (layer 19)": 0.5785706595526485,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 0.27,
+      "held-out $R^2$ (layer 19)": -0.033082429364935974,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 1.27,
+      "held-out $R^2$ (layer 19)": -0.03382190031512193,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 2.27,
+      "held-out $R^2$ (layer 19)": -0.027677370052992735,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 3.27,
+      "held-out $R^2$ (layer 19)": -0.022011852247003683,
+      "_kind": "bar",
+      "_group": 2
+    }
+  ],
+  "n_series": 3,
+  "total_points": 12,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "General-linear reparameterization recovers the target map (context arm, layer 19)",
+        "ylabel": "held-out $R^2$ (layer 19)",
+        "legend_labels": [
+          "target regime's own held-out $R^2$",
+          "recovered $R^2$ (general-linear reparam)",
+          "matched-capacity null recovery"
+        ],
+        "annotations": [
+          "0.654",
+          "0.625",
+          "0.542",
+          "0.578",
+          "0.654",
+          "0.620",
+          "0.550",
+          "0.579",
+          "-0.033",
+          "-0.034",
+          "-0.028",
+          "-0.022"
+        ],
+        "xticklabels": [
+          "instruct:\nno-template map\nin chat",
+          "instruct:\nchat map\nin no-template",
+          "base:\nno-template map\nin chat",
+          "base:\nchat map\nin no-template"
+        ],
+        "yticklabels": [
+          "\u22120.2",
+          "\u22120.1",
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7",
+          "0.8"
+        ]
+      }
+    ],
+    "series": [
+      "target regime's own held-out $R^2$",
+      "recovered $R^2$ (general-linear reparam)",
+      "matched-capacity null recovery"
+    ]
+  }
+}

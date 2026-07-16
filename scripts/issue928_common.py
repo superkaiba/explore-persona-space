@@ -227,6 +227,59 @@ def matched_length_spans(
     }
 
 
+# ── prefix-based mapping arms (follow-up round, plan v7 §4.1) ─────────────────
+
+# The 5 mean-pool vectors captured per (row, layer) for the prefix-summaries
+# store (plan v7 §4.2 item 4): 2 new prompt-side parts + 3 parity parts whose
+# recapture is gated against the matched-length store (cos >= 0.999).
+PMA_SUMMARY_NAMES: tuple[str, ...] = (
+    "prefix_mean",
+    "query_mean",
+    "ctx_mean",
+    "cot_mean",
+    "ans_mean",
+)
+
+
+def prefix_query_spans(
+    prompt_text_tpl: str,
+    prompt_offsets: list[tuple[int, int]],
+    prompt_len_tpl: int,
+    probe: str,
+) -> dict[str, tuple[int, int]] | str:
+    """Prefix/query token spans over the TEMPLATED prompt (plan v7 §4.1).
+
+    prefix = all templated-prompt tokens strictly before the FINAL user turn's
+    probe content (system block + prefix_messages + chat scaffolding incl. the
+    ``<|im_start|>user\\n`` header); query = the probe's own tokens. ``rfind``
+    = last occurrence (the probe is the final user turn by construction —
+    ``issue594_common.messages_for_instance``). Boundary conventions (stated):
+    the user-turn header belongs to the PREFIX; a BPE token straddling the
+    header/probe boundary joins the QUERY (overlap mapping, ≤ 1 token). The
+    post-query assistant-header scaffolding belongs to neither part.
+
+    Returns ``{"prefix": (0, q0), "query": (q0', q1)}`` (half-open prompt-token
+    indices; ``q_tok[1] <= prompt_len_tpl`` since ``prompt_offsets`` carries one
+    entry per prompt token), a drop-reason str (``empty_query_token_span`` /
+    ``empty_prefix_token_span`` — dropped-and-counted; the latter measured
+    impossible on this battery, min prefix 24 tokens), or raises
+    ``RuntimeError`` when the probe is not found verbatim (kill criterion,
+    plan §7).
+    """
+    q_char = prompt_text_tpl.rfind(probe)
+    if q_char < 0:
+        raise RuntimeError(
+            "probe not found verbatim in templated prompt (plan §7 kill criterion): "
+            f"probe {probe[:60]!r}…"
+        )
+    q_tok = char_span_to_token_span(prompt_offsets, (q_char, q_char + len(probe)))
+    if q_tok == (0, 0):
+        return "empty_query_token_span"  # dropped-and-counted
+    if q_tok[0] == 0:
+        return "empty_prefix_token_span"  # dropped-and-counted (measured: cannot fire)
+    return {"prefix": (0, q_tok[0]), "query": q_tok}
+
+
 # Condition slugs (plan §10) — regimes avg_q / avg_t / indiv.
 ARM_SLUGS = (
     "d_ctx2ans",
@@ -422,14 +475,19 @@ def context_order_and_families(battery: dict) -> tuple[list[str], dict[str, str]
 SENTINEL_SCHEMA_VERSION = 1
 
 
-def write_sentinel(kind: str, note: dict, fallback_dir: Path, log_dir: Path | None = None) -> Path:
-    """poll_pipeline.py-conformant sentinel (issue-928 naming). Returns the path.
+def write_sentinel(
+    kind: str, note: dict, fallback_dir: Path, log_dir: Path | None = None, issue: int = 928
+) -> Path:
+    """poll_pipeline.py-conformant sentinel (``issue-<N>`` naming). Returns the path.
 
     Round-2 relocation from the extract script: the extract phase now emits an
     ``epm:progress`` sentinel and the run_all driver's finalize step emits the
     ONE ``epm:results`` sentinel at true end-of-workload (after fits + figures
     + uploads) — so both writers share this implementation. ``log_dir``
     overrides the ``/workspace/logs`` default (smoke runs redirect to scratch).
+    ``issue`` (DEFAULT-PRESERVING, #1005: default 928 ⇒ existing filenames
+    byte-for-byte) selects the ``issue-<N>-`` filename prefix so replication
+    drivers reuse this writer under their own issue number.
     """
     import logging
     import time
@@ -438,9 +496,9 @@ def write_sentinel(kind: str, note: dict, fallback_dir: Path, log_dir: Path | No
     base = log_dir if log_dir is not None else Path("/workspace/logs")
     try:
         base.mkdir(parents=True, exist_ok=True)
-        target = base / f"issue-928-{slug}-{int(time.time())}.json"
+        target = base / f"issue-{issue}-{slug}-{int(time.time())}.json"
     except OSError:
-        target = fallback_dir / f"issue-928-{slug}-sentinel.json"
+        target = fallback_dir / f"issue-{issue}-{slug}-sentinel.json"
     dump_json(
         {
             "sentinel_schema_version": SENTINEL_SCHEMA_VERSION,

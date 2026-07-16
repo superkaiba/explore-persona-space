@@ -149,9 +149,29 @@ def _rate_limit_error(retry_after: str | None = None) -> anthropic.RateLimitErro
     return anthropic.RateLimitError("rate limited", response=resp, body=None)
 
 
-def _overloaded_error() -> anthropic.InternalServerError:
+def _internal_server_error() -> anthropic.InternalServerError:
+    """500-class transient (renamed from ``_overloaded_error``, #1313: the real
+    SDK never produces an ``InternalServerError`` for a 529 — see the factory
+    below for the real 529 shape; this one keeps the 500-class semantics its
+    consumers exercise)."""
     resp = SimpleNamespace(status_code=529, headers={}, request=SimpleNamespace())
     return anthropic.InternalServerError("overloaded", response=resp, body=None)
+
+
+def _real_overloaded_error():
+    """The REAL production 529 shape (anthropic 0.88.0): ``OverloadedError`` is
+    an ``APIStatusError`` (NOT an ``InternalServerError`` subclass) with
+    ``status_code == 529``. Test-only private import is acceptable — tests must
+    construct the exception the SDK actually raises (#1313 plan §5)."""
+    from anthropic._exceptions import OverloadedError
+
+    resp = SimpleNamespace(status_code=529, headers={}, request=SimpleNamespace())
+    return OverloadedError("overloaded", response=resp, body=None)
+
+
+def _bad_request_error() -> anthropic.BadRequestError:
+    resp = SimpleNamespace(status_code=400, headers={}, request=SimpleNamespace())
+    return anthropic.BadRequestError("bad request", response=resp, body=None)
 
 
 # ── Fake sync batch client (batch path) ──────────────────────────────────────
@@ -573,7 +593,7 @@ def test_transient_529_retries_then_succeeds():
     def fault_for(content):
         if state["n"] == 0:
             state["n"] += 1
-            return _overloaded_error()
+            return _internal_server_error()
         return None
 
     items = make_items(1)
@@ -1233,6 +1253,122 @@ def test_429_does_not_consume_an_attempt():
     r = res["item_000"]
     assert r.error is False  # the item SUCCEEDED on the 2nd call
     assert client.calls == 2  # the 429 did NOT consume the lone attempt
+
+
+# ── #1313: 529 OverloadedError is a retried transient; RESULT_TRANSPORT ───────
+
+
+def test_is_transient_matches_real_overloaded_error():
+    """UNIT (#1313 plan §5 row a): ``_is_transient`` matches the REAL SDK 529
+    shape (``OverloadedError`` — an ``APIStatusError``, NOT an
+    ``InternalServerError`` subclass in anthropic 0.88.0) and a plain
+    ``APIStatusError`` at 529; a 429 ``RateLimitError`` (AIMD-owned) and a
+    400-class error are NOT transient. ``is_transport_exception`` is the
+    rule-24 union: transient OR 429; a 400 is neither."""
+    assert api_dispatch._is_transient(_real_overloaded_error()) is True
+    resp = SimpleNamespace(status_code=529, headers={}, request=SimpleNamespace())
+    plain_529 = anthropic.APIStatusError("overloaded", response=resp, body=None)
+    assert api_dispatch._is_transient(plain_529) is True
+    assert api_dispatch._is_transient(_rate_limit_error()) is False
+    assert api_dispatch._is_transient(_bad_request_error()) is False
+    # 500-class InternalServerError stays transient (unchanged behavior).
+    assert api_dispatch._is_transient(_internal_server_error()) is True
+    # Rule-24 transport taxonomy: transient OR 429; never a 400 / parse error.
+    assert api_dispatch.is_transport_exception(_real_overloaded_error()) is True
+    assert api_dispatch.is_transport_exception(_rate_limit_error()) is True
+    assert api_dispatch.is_transport_exception(_bad_request_error()) is False
+    assert api_dispatch.is_transport_exception(ValueError("parse")) is False
+
+
+def test_overloaded_529_retried_as_transient():
+    """ACCEPTANCE (#1313 item 1): a REAL 529 ``OverloadedError`` is retried with
+    the bounded transient backoff — twice-529-then-success completes with
+    ``category == RESULT_OK`` after exactly 3 create calls.
+
+    Mutation check: the pre-#1313 tuple-only ``_is_transient`` misses the real
+    529 (it is not an ``InternalServerError`` subclass) -> terminal on call 1,
+    ``error=True`` + ``client.calls == 1`` -> BOTH assertions red."""
+    state = {"n": 0}
+
+    def fault_for(content):
+        if state["n"] < 2:
+            state["n"] += 1
+            return _real_overloaded_error()
+        return None
+
+    client = FakeAsyncClient(fault_for=fault_for)
+    items = make_items(1)
+    res = _run(
+        dispatch_calls(
+            items,
+            model="claude-sonnet-4-5-20250929",
+            build_request=build_request,
+            parse_response=parse_response,
+            async_clients={"a": client},
+            sync_clients={"a": object()},
+            force_path="sync",
+            max_attempts=3,
+        )
+    )
+    r = res["item_000"]
+    assert r.error is False
+    assert r.category == api_dispatch.RESULT_OK
+    assert client.calls == 3
+
+
+def test_overloaded_529_exhaustion_returns_result_transport():
+    """ACCEPTANCE (#1313 item 3 / rule 24(ii)): an always-529 item exhausts the
+    transient budget and returns ``category == RESULT_TRANSPORT`` (re-drivable
+    transport-class), NOT a terminal ``RESULT_ERROR``, after exactly
+    ``max_attempts`` create calls."""
+    client = FakeAsyncClient(fault_for=lambda content: _real_overloaded_error())
+    items = make_items(1)
+    res = _run(
+        dispatch_calls(
+            items,
+            model="claude-sonnet-4-5-20250929",
+            build_request=build_request,
+            parse_response=parse_response,
+            async_clients={"a": client},
+            sync_clients={"a": object()},
+            force_path="sync",
+            max_attempts=2,
+        )
+    )
+    r = res["item_000"]
+    assert r.error is True
+    assert r.category == api_dispatch.RESULT_TRANSPORT
+    assert "transient OverloadedError" in (r.reason or "")
+    assert client.calls == 2  # exactly max_attempts creates
+
+
+def test_429_never_enters_transient_branch():
+    """KILL-CRITERION guard (#1313 plan §7): a 429 ``RateLimitError`` rides the
+    AIMD ``on_429`` path — it never enters the transient branch, never consumes
+    a ``max_attempts`` attempt, and its exhaustion stays
+    ``RESULT_RATE_LIMITED`` (never ``RESULT_TRANSPORT``)."""
+    client = FakeAsyncClient(fault_for=lambda content: _rate_limit_error(retry_after="0"))
+    items = make_items(1)
+    res = _run(
+        dispatch_calls(
+            items,
+            model="claude-sonnet-4-5-20250929",
+            build_request=build_request,
+            parse_response=parse_response,
+            async_clients={"a": client},
+            sync_clients={"a": object()},
+            force_path="sync",
+            max_attempts=1,  # a transient-branch leak would exhaust after 1 call
+            max_429_retries=3,
+        )
+    )
+    r = res["item_000"]
+    assert r.error is True
+    assert r.category == RESULT_RATE_LIMITED
+    assert r.category != api_dispatch.RESULT_TRANSPORT
+    # The 429 budget (3), not max_attempts (1), bounded the calls: the 429 path
+    # never consumed a transient attempt.
+    assert client.calls == 3
 
 
 # ── Finding 2: bounded coroutine fan-out (#684) ───────────────────────────────

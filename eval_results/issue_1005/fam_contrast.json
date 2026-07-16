@@ -1,0 +1,538 @@
+{
+  "dv": "\u0394_fam: mean per-context CoT gain over the ICL+WildChat contexts minus their greedy NN same-median-CoT-length partners from the other contexts, paired bootstrap over pairs (plan \u00a73 \u2014 family membership is ex-ante, flag-independent)",
+  "collapse_families": [
+    "icl",
+    "wildchat"
+  ],
+  "seed": 42,
+  "n_boot": 2000,
+  "by_regime": {
+    "indiv": {
+      "n_pairs": 18,
+      "pairs": [
+        {
+          "fam_ctx_pos": 21,
+          "donor_ctx_pos": 46,
+          "length_gap_chars": 2.5
+        },
+        {
+          "fam_ctx_pos": 29,
+          "donor_ctx_pos": 5,
+          "length_gap_chars": 6.5
+        },
+        {
+          "fam_ctx_pos": 20,
+          "donor_ctx_pos": 38,
+          "length_gap_chars": 12.5
+        },
+        {
+          "fam_ctx_pos": 31,
+          "donor_ctx_pos": 6,
+          "length_gap_chars": 17.0
+        },
+        {
+          "fam_ctx_pos": 22,
+          "donor_ctx_pos": 41,
+          "length_gap_chars": 18.0
+        },
+        {
+          "fam_ctx_pos": 15,
+          "donor_ctx_pos": 39,
+          "length_gap_chars": 23.0
+        },
+        {
+          "fam_ctx_pos": 19,
+          "donor_ctx_pos": 10,
+          "length_gap_chars": 23.5
+        },
+        {
+          "fam_ctx_pos": 27,
+          "donor_ctx_pos": 8,
+          "length_gap_chars": 30.5
+        },
+        {
+          "fam_ctx_pos": 18,
+          "donor_ctx_pos": 13,
+          "length_gap_chars": 33.5
+        },
+        {
+          "fam_ctx_pos": 17,
+          "donor_ctx_pos": 49,
+          "length_gap_chars": 43.5
+        },
+        {
+          "fam_ctx_pos": 23,
+          "donor_ctx_pos": 32,
+          "length_gap_chars": 70.0
+        },
+        {
+          "fam_ctx_pos": 28,
+          "donor_ctx_pos": 35,
+          "length_gap_chars": 72.0
+        },
+        {
+          "fam_ctx_pos": 24,
+          "donor_ctx_pos": 4,
+          "length_gap_chars": 80.0
+        },
+        {
+          "fam_ctx_pos": 25,
+          "donor_ctx_pos": 34,
+          "length_gap_chars": 123.0
+        },
+        {
+          "fam_ctx_pos": 26,
+          "donor_ctx_pos": 0,
+          "length_gap_chars": 130.0
+        },
+        {
+          "fam_ctx_pos": 30,
+          "donor_ctx_pos": 36,
+          "length_gap_chars": 164.0
+        },
+        {
+          "fam_ctx_pos": 14,
+          "donor_ctx_pos": 33,
+          "length_gap_chars": 246.5
+        },
+        {
+          "fam_ctx_pos": 16,
+          "donor_ctx_pos": 3,
+          "length_gap_chars": 1582.0
+        }
+      ],
+      "observed": 0.4259485229516266,
+      "ci95": [
+        0.3651643704007238,
+        0.4825411317817379
+      ],
+      "p_delta_le_0": 0.0,
+      "n_draws": 2000,
+      "match_quality": {
+        "mean_length_gap_chars": 148.77777777777777,
+        "max_length_gap_chars": 1582.0,
+        "donor_reuse_max": 1,
+        "note": "without-replacement greedy NN matching \u2014 donor reuse is 0/1 by construction; parent flag-keyed reference mean gap 191 chars"
+      },
+      "contexts_fam": [
+        "f2_wc_short_1",
+        "f2_wc_short_2",
+        "f2_wc_short_3",
+        "f2_wc_short_4",
+        "f2_wc_short_5",
+        "f2_wc_long_1",
+        "f2_wc_long_2",
+        "f2_wc_long_3",
+        "f2_wc_long_4",
+        "f2_wc_long_5",
+        "f3_icl_marker_k4",
+        "f3_icl_french_k4",
+        "f3_icl_json_k4",
+        "f3_icl_pirate_k4",
+        "f3_icl_marker_k2",
+        "f3_icl_marker_k8",
+        "f3_icl_json_k2",
+        "f3_icl_json_k8"
+      ],
+      "frozen_layer": 26
+    },
+    "avg_q": {
+      "n_pairs": 18,
+      "pairs": [
+        {
+          "fam_ctx_pos": 21,
+          "donor_ctx_pos": 46,
+          "length_gap_chars": 2.5
+        },
+        {
+          "fam_ctx_pos": 29,
+          "donor_ctx_pos": 5,
+          "length_gap_chars": 6.5
+        },
+        {
+          "fam_ctx_pos": 20,
+          "donor_ctx_pos": 38,
+          "length_gap_chars": 12.5
+        },
+        {
+          "fam_ctx_pos": 31,
+          "donor_ctx_pos": 6,
+          "length_gap_chars": 17.0
+        },
+        {
+          "fam_ctx_pos": 22,
+          "donor_ctx_pos": 41,
+          "length_gap_chars": 18.0
+        },
+        {
+          "fam_ctx_pos": 15,
+          "donor_ctx_pos": 39,
+          "length_gap_chars": 23.0
+        },
+        {
+          "fam_ctx_pos": 19,
+          "donor_ctx_pos": 10,
+          "length_gap_chars": 23.5
+        },
+        {
+          "fam_ctx_pos": 27,
+          "donor_ctx_pos": 8,
+          "length_gap_chars": 30.5
+        },
+        {
+          "fam_ctx_pos": 18,
+          "donor_ctx_pos": 13,
+          "length_gap_chars": 33.5
+        },
+        {
+          "fam_ctx_pos": 17,
+          "donor_ctx_pos": 49,
+          "length_gap_chars": 43.5
+        },
+        {
+          "fam_ctx_pos": 23,
+          "donor_ctx_pos": 32,
+          "length_gap_chars": 70.0
+        },
+        {
+          "fam_ctx_pos": 28,
+          "donor_ctx_pos": 35,
+          "length_gap_chars": 72.0
+        },
+        {
+          "fam_ctx_pos": 24,
+          "donor_ctx_pos": 4,
+          "length_gap_chars": 80.0
+        },
+        {
+          "fam_ctx_pos": 25,
+          "donor_ctx_pos": 34,
+          "length_gap_chars": 123.0
+        },
+        {
+          "fam_ctx_pos": 26,
+          "donor_ctx_pos": 0,
+          "length_gap_chars": 130.0
+        },
+        {
+          "fam_ctx_pos": 30,
+          "donor_ctx_pos": 36,
+          "length_gap_chars": 164.0
+        },
+        {
+          "fam_ctx_pos": 14,
+          "donor_ctx_pos": 33,
+          "length_gap_chars": 246.5
+        },
+        {
+          "fam_ctx_pos": 16,
+          "donor_ctx_pos": 3,
+          "length_gap_chars": 1582.0
+        }
+      ],
+      "observed": 0.16117481165335684,
+      "ci95": [
+        0.051752881333320726,
+        0.28841223168544217
+      ],
+      "p_delta_le_0": 0.0005,
+      "n_draws": 2000,
+      "match_quality": {
+        "mean_length_gap_chars": 148.77777777777777,
+        "max_length_gap_chars": 1582.0,
+        "donor_reuse_max": 1,
+        "note": "without-replacement greedy NN matching \u2014 donor reuse is 0/1 by construction; parent flag-keyed reference mean gap 191 chars"
+      },
+      "contexts_fam": [
+        "f2_wc_short_1",
+        "f2_wc_short_2",
+        "f2_wc_short_3",
+        "f2_wc_short_4",
+        "f2_wc_short_5",
+        "f2_wc_long_1",
+        "f2_wc_long_2",
+        "f2_wc_long_3",
+        "f2_wc_long_4",
+        "f2_wc_long_5",
+        "f3_icl_marker_k4",
+        "f3_icl_french_k4",
+        "f3_icl_json_k4",
+        "f3_icl_pirate_k4",
+        "f3_icl_marker_k2",
+        "f3_icl_marker_k8",
+        "f3_icl_json_k2",
+        "f3_icl_json_k8"
+      ],
+      "frozen_layer": 18
+    }
+  },
+  "reproducibility": {
+    "git_commit": "10465a415a5eb327d772a794a4b746cad400fa07",
+    "timestamp_utc": "2026-07-16T11:10:50.167245+00:00",
+    "python_version": "3.11.15",
+    "platform": "Linux-6.8.0-1052-gcp-x86_64-with-glibc2.35",
+    "torch": "2.8.0+cu128",
+    "numpy": "2.2.6",
+    "transformers": "4.57.6"
+  },
+  "parent_928_family_keyed_baseline": {
+    "indiv": {
+      "contexts_fam": [
+        "f2_wc_short_1",
+        "f2_wc_short_2",
+        "f2_wc_short_3",
+        "f2_wc_short_4",
+        "f2_wc_short_5",
+        "f2_wc_long_1",
+        "f2_wc_long_2",
+        "f2_wc_long_3",
+        "f2_wc_long_4",
+        "f2_wc_long_5",
+        "f3_icl_marker_k4",
+        "f3_icl_french_k4",
+        "f3_icl_json_k4",
+        "f3_icl_pirate_k4",
+        "f3_icl_marker_k2",
+        "f3_icl_marker_k8",
+        "f3_icl_json_k2",
+        "f3_icl_json_k8"
+      ],
+      "frozen_layer_source": "parent percontext_deltas.json (its frozen convention)",
+      "n_pairs": 18,
+      "pairs": [
+        {
+          "fam_ctx_pos": 19,
+          "donor_ctx_pos": 34,
+          "length_gap_chars": 6.5
+        },
+        {
+          "fam_ctx_pos": 20,
+          "donor_ctx_pos": 11,
+          "length_gap_chars": 8.5
+        },
+        {
+          "fam_ctx_pos": 30,
+          "donor_ctx_pos": 36,
+          "length_gap_chars": 17.0
+        },
+        {
+          "fam_ctx_pos": 23,
+          "donor_ctx_pos": 5,
+          "length_gap_chars": 23.0
+        },
+        {
+          "fam_ctx_pos": 28,
+          "donor_ctx_pos": 35,
+          "length_gap_chars": 39.0
+        },
+        {
+          "fam_ctx_pos": 24,
+          "donor_ctx_pos": 32,
+          "length_gap_chars": 44.0
+        },
+        {
+          "fam_ctx_pos": 14,
+          "donor_ctx_pos": 39,
+          "length_gap_chars": 52.0
+        },
+        {
+          "fam_ctx_pos": 16,
+          "donor_ctx_pos": 12,
+          "length_gap_chars": 451.0
+        },
+        {
+          "fam_ctx_pos": 21,
+          "donor_ctx_pos": 33,
+          "length_gap_chars": 512.5
+        },
+        {
+          "fam_ctx_pos": 25,
+          "donor_ctx_pos": 2,
+          "length_gap_chars": 627.5
+        },
+        {
+          "fam_ctx_pos": 31,
+          "donor_ctx_pos": 13,
+          "length_gap_chars": 922.0
+        },
+        {
+          "fam_ctx_pos": 26,
+          "donor_ctx_pos": 49,
+          "length_gap_chars": 972.0
+        },
+        {
+          "fam_ctx_pos": 27,
+          "donor_ctx_pos": 47,
+          "length_gap_chars": 993.0
+        },
+        {
+          "fam_ctx_pos": 29,
+          "donor_ctx_pos": 41,
+          "length_gap_chars": 1112.0
+        },
+        {
+          "fam_ctx_pos": 17,
+          "donor_ctx_pos": 1,
+          "length_gap_chars": 1176.0
+        },
+        {
+          "fam_ctx_pos": 22,
+          "donor_ctx_pos": 4,
+          "length_gap_chars": 1249.5
+        },
+        {
+          "fam_ctx_pos": 18,
+          "donor_ctx_pos": 42,
+          "length_gap_chars": 1548.0
+        },
+        {
+          "fam_ctx_pos": 15,
+          "donor_ctx_pos": 10,
+          "length_gap_chars": 1553.5
+        }
+      ],
+      "observed": 0.5203427000053655,
+      "ci95": [
+        0.46676456423560714,
+        0.5795548017647307
+      ],
+      "p_delta_le_0": 0.0,
+      "n_draws": 2000,
+      "match_quality": {
+        "mean_length_gap_chars": 628.1666666666666,
+        "max_length_gap_chars": 1553.5,
+        "donor_reuse_max": 1,
+        "note": "without-replacement greedy NN matching \u2014 donor reuse is 0/1 by construction; parent flag-keyed reference mean gap 191 chars"
+      }
+    },
+    "avg_q": {
+      "contexts_fam": [
+        "f2_wc_short_1",
+        "f2_wc_short_2",
+        "f2_wc_short_3",
+        "f2_wc_short_4",
+        "f2_wc_short_5",
+        "f2_wc_long_1",
+        "f2_wc_long_2",
+        "f2_wc_long_3",
+        "f2_wc_long_4",
+        "f2_wc_long_5",
+        "f3_icl_marker_k4",
+        "f3_icl_french_k4",
+        "f3_icl_json_k4",
+        "f3_icl_pirate_k4",
+        "f3_icl_marker_k2",
+        "f3_icl_marker_k8",
+        "f3_icl_json_k2",
+        "f3_icl_json_k8"
+      ],
+      "frozen_layer_source": "parent percontext_deltas.json (its frozen convention)",
+      "n_pairs": 18,
+      "pairs": [
+        {
+          "fam_ctx_pos": 19,
+          "donor_ctx_pos": 34,
+          "length_gap_chars": 6.5
+        },
+        {
+          "fam_ctx_pos": 20,
+          "donor_ctx_pos": 11,
+          "length_gap_chars": 8.5
+        },
+        {
+          "fam_ctx_pos": 30,
+          "donor_ctx_pos": 36,
+          "length_gap_chars": 17.0
+        },
+        {
+          "fam_ctx_pos": 23,
+          "donor_ctx_pos": 5,
+          "length_gap_chars": 23.0
+        },
+        {
+          "fam_ctx_pos": 28,
+          "donor_ctx_pos": 35,
+          "length_gap_chars": 39.0
+        },
+        {
+          "fam_ctx_pos": 24,
+          "donor_ctx_pos": 32,
+          "length_gap_chars": 44.0
+        },
+        {
+          "fam_ctx_pos": 14,
+          "donor_ctx_pos": 39,
+          "length_gap_chars": 52.0
+        },
+        {
+          "fam_ctx_pos": 16,
+          "donor_ctx_pos": 12,
+          "length_gap_chars": 451.0
+        },
+        {
+          "fam_ctx_pos": 21,
+          "donor_ctx_pos": 33,
+          "length_gap_chars": 512.5
+        },
+        {
+          "fam_ctx_pos": 25,
+          "donor_ctx_pos": 2,
+          "length_gap_chars": 627.5
+        },
+        {
+          "fam_ctx_pos": 31,
+          "donor_ctx_pos": 13,
+          "length_gap_chars": 922.0
+        },
+        {
+          "fam_ctx_pos": 26,
+          "donor_ctx_pos": 49,
+          "length_gap_chars": 972.0
+        },
+        {
+          "fam_ctx_pos": 27,
+          "donor_ctx_pos": 47,
+          "length_gap_chars": 993.0
+        },
+        {
+          "fam_ctx_pos": 29,
+          "donor_ctx_pos": 41,
+          "length_gap_chars": 1112.0
+        },
+        {
+          "fam_ctx_pos": 17,
+          "donor_ctx_pos": 1,
+          "length_gap_chars": 1176.0
+        },
+        {
+          "fam_ctx_pos": 22,
+          "donor_ctx_pos": 4,
+          "length_gap_chars": 1249.5
+        },
+        {
+          "fam_ctx_pos": 18,
+          "donor_ctx_pos": 42,
+          "length_gap_chars": 1548.0
+        },
+        {
+          "fam_ctx_pos": 15,
+          "donor_ctx_pos": 10,
+          "length_gap_chars": 1553.5
+        }
+      ],
+      "observed": 0.10934100385366831,
+      "ci95": [
+        -0.010354949556688689,
+        0.23451552766518777
+      ],
+      "p_delta_le_0": 0.039,
+      "n_draws": 2000,
+      "match_quality": {
+        "mean_length_gap_chars": 628.1666666666666,
+        "max_length_gap_chars": 1553.5,
+        "donor_reuse_max": 1,
+        "note": "without-replacement greedy NN matching \u2014 donor reuse is 0/1 by construction; parent flag-keyed reference mean gap 191 chars"
+      }
+    }
+  }
+}

@@ -1,12 +1,12 @@
 ---
 name: Reuse-fitness mirror-set completeness check
-description: When reviewing a workflow-fix plan that adds/edits an artifact-reuse fitness check letter, independently grep the full lettered call-site set (currently (a)-(j)) — the documented mirror memory can be STALE (it once missed verify_plan.py c6 + its test)
+description: When reviewing a workflow-fix plan that adds/edits an artifact-reuse fitness check letter, independently grep the full lettered call-site set (currently (a)-(k)) — the documented mirror memory can be STALE (it once missed verify_plan.py c6 + its test)
 type: feedback
 ---
 
 When a `kind: infra` workflow-fix plan adds or edits a letter in the
 trained-artifact reuse fitness checklist (the lettered set, currently
-(a)-(j)), the Methodology lens completeness check is: independently
+(a)-(k)), the Methodology lens completeness check is: independently
 `rg "\(a\)[-–—]\([a-z]\)" .claude/ CLAUDE.md scripts/ tests/` and confirm the
 plan touches EVERY in-scope workflow-surface hit, not just the set the
 `implementer/reference_reuse_fitness_mirror_set.md` memory records.
@@ -37,3 +37,16 @@ of free-form plan prose) is a separable larger change, legitimately out of
 scope; prose-only consistency-checker re-check is consistent with how (e)
 HF-resolution is already enforced (manual list_repo_files in the BLOCK row,
 no verifier).
+
+**#941 ((j) pairwise provenance coherence) nuances:** (1) the #871 range-free
+remedy-line design held — a data-side letter routes through the "other than
+(i) → regenerate" branch with NO remedy edit; check any new letter against
+that branch before demanding remedy rewording. (2) Provenance-DATE predicates
+(`get_paths_info(expand=True)` `last_commit.date`, input ≤ capture) compare
+UPLOAD ordering, not GENERATION ordering — a capture made from a stale local
+copy but uploaded after the input's regeneration false-negatives; that is
+acceptable-with-note (plan-time floor + runtime parity-assert backstop), not
+a REVISE. False positives (unrelated commit bumps) err conservative and are
+absorbed by a "confirm why regenerated" remedy step. (3) Cross-repo pairs
+(mix↔adapter spans dataset+model repos) need one call per repo — a wording
+concern, not a design flaw.

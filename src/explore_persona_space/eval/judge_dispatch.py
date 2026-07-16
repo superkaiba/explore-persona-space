@@ -544,7 +544,11 @@ def _collect_batch_results(
       unknown                                   -> error dict, no retry
 
     errored/expired/quarantined/canceled all get error dicts in ``scores`` too
-    (overwritten if a retry later succeeds). The SDK error nesting is
+    (overwritten if a retry later succeeds). Transport-class rows —
+    server-errored / expired / canceled / unknown-rtype — additionally carry
+    the structural ``transport: True`` flag (rule 24(i), #1313; the
+    quarantined 400 does NOT — rule 24(iii)); the flag is classification
+    only and never changes the retry routing above. The SDK error nesting is
     ``result.result.error.error.type`` (double ``.error``); access is
     getattr-guarded so a shape mismatch fails OPEN (routed to retriable, the
     conservative default that never silently quarantines).
@@ -569,19 +573,32 @@ def _collect_batch_results(
                 getattr(getattr(result.result, "error", None), "error", None), "type", None
             )
             if etype == "invalid_request_error":
+                # Quarantined 400: a pipeline bug, NOT transport (rule 24(iii)).
                 quarantined.append(cid)
                 scores[cid] = error_dict_factory("batch_error: invalid_request_error (quarantined)")
             else:
                 retriable.append(cid)
-                scores[cid] = error_dict_factory(f"batch_error: errored ({etype or 'server'})")
+                scores[cid] = {
+                    **error_dict_factory(f"batch_error: errored ({etype or 'server'})"),
+                    "transport": True,  # rule 24(i) server-class row (#1313)
+                }
         elif rtype == "expired":
             expired.append(cid)
-            scores[cid] = error_dict_factory("batch_error: expired")
+            scores[cid] = {
+                **error_dict_factory("batch_error: expired"),
+                "transport": True,  # rule 24(i) (#1313)
+            }
         elif rtype == "canceled":
             canceled.append(cid)
-            scores[cid] = error_dict_factory("batch_error: canceled")
-        else:  # unknown: surface, never retry
-            scores[cid] = error_dict_factory(f"batch_error: {rtype}")
+            scores[cid] = {
+                **error_dict_factory("batch_error: canceled"),
+                "transport": True,  # rule 24(i) (#1313); retry gating unchanged (#663/#1019)
+            }
+        else:  # unknown: surface, never retry; fail toward re-judgeable (#1313 §11-7)
+            scores[cid] = {
+                **error_dict_factory(f"batch_error: {rtype}"),
+                "transport": True,
+            }
     return scores, retriable, expired, quarantined, canceled
 
 
@@ -606,6 +623,11 @@ async def _judge_items_sync(
     error dict alike) — the retry path uses it to persist per-item results
     incrementally so a crash mid-dispatch never re-calls finished items.
     """
+    # FUNCTION-level import: a module-level eval->llm import is cyclic
+    # (api_dispatch imports eval.batch_judge -> eval.alignment ->
+    # eval.judge_dispatch); precedent: _judge_items_sync_multiorg / decide_route.
+    from explore_persona_space.llm.api_dispatch import is_transport_exception
+
     semaphore = asyncio.Semaphore(max_concurrent)
 
     async def _judge_one(custom_id: str, user_msg: str) -> tuple[str, dict]:
@@ -619,7 +641,11 @@ async def _judge_items_sync(
                 parsed = _parsed_with_raw(parse_judge_json(text), text)
                 score = parsed if parsed is not None else error_dict_factory("parse_error")
             except Exception as e:  # per-item capture is the legacy contract
-                score = error_dict_factory(f"error: {e}")
+                base = error_dict_factory(f"error: {e}")
+                # rule 24(i) (#1313): a transport-class exception (429/5xx incl.
+                # 529/timeout/connection) is flagged so downstream tallies split
+                # transport losses from content drops.
+                score = {**base, "transport": True} if is_transport_exception(e) else base
         if on_item_result is not None:
             on_item_result(custom_id, score)
         return custom_id, score
@@ -695,9 +721,19 @@ async def _judge_items_sync_multiorg(
     for cid, _q, _c, _u in items:
         res = raw_results.get(cid)
         if res is None:
+            # Rare + visible; stays content-classified (#1313 §10-bis note 5).
             score = error_dict_factory("missing_dispatch_result")
         elif res.error:
-            score = error_dict_factory(res.reason or "error")
+            base = error_dict_factory(res.reason or "error")
+            # rule 24(i)/(ii) (#1313): RESULT_TRANSPORT (transient exhaustion)
+            # and RESULT_RATE_LIMITED (429-budget exhaustion) are both
+            # transport-class -> flag so tallies split them from content drops.
+            # ``api_dispatch`` is function-level-imported above (cycle constraint).
+            transportish = res.category in (
+                api_dispatch.RESULT_TRANSPORT,
+                api_dispatch.RESULT_RATE_LIMITED,
+            )
+            score = {**base, "transport": True} if transportish else base
         else:
             score = (
                 res.result if isinstance(res.result, dict) else error_dict_factory("parse_error")

@@ -1,0 +1,690 @@
+{
+  "dv": "held-out skill-over-mean R^2 (per-question, group-LOCO, mean/mean)",
+  "round": "indiv-mlp-nonlinearity-control",
+  "estimator": "batched multihead MLP (width 512, GELU, AdamW lr 0.001 / wd 0.0001, 300 epochs, seed 658), group-LOCO folds, FULL-DATA input standardization (the indiv linear arms' realized convention); linear reference arms reused from decomp_indiv.pt (no refit)",
+  "store_revision": "5c1e3c5c00a6c386198179e9316cb77509ccf7b1",
+  "store_identity_digest": "aba4ff770a7c6f16",
+  "n_rows": 2302,
+  "n_contexts": 50,
+  "layers_fitted": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18,
+    19,
+    20,
+    21,
+    22,
+    23,
+    24,
+    25,
+    26,
+    27
+  ],
+  "h2_reproduction": {
+    "reproduced": true,
+    "frozen_layer": 26,
+    "observed": 0.330202066722148,
+    "ci95": [
+      0.27236497920308045,
+      0.39294848224009654
+    ],
+    "reference": "eval_results/issue_1005/bootstrap_deltaskill.json",
+    "atol": 1e-09
+  },
+  "ss_tot_equality_audit": [
+    {
+      "layer": 0,
+      "d_ctx2ans": {
+        "exact": true,
+        "max_rel_dev": 0.0
+      },
+      "g_aug": {
+        "exact": true,
+        "max_rel_dev": 0.0
+      }
+    },
+    {
+      "layer": 1,
+      "d_ctx2ans": {
+        "exact": true,
+        "max_rel_dev": 0.0
+      },
+      "g_aug": {
+        "exact": true,
+        "max_rel_dev": 0.0
+      }
+    },
+    {
+      "layer": 2,
+      "d_ctx2ans": {
+        "exact": true,
+        "max_rel_dev": 0.0
+      },
+      "g_aug": {
+        "exact": true,
+        "max_rel_dev": 0.0
+      }
+    },
+    {
+      "layer": 3,
+      "d_ctx2ans": {
+        "exact": true,
+        "max_rel_dev": 0.0
+      },
+      "g_aug": {
+        "exact": true,
+        "max_rel_dev": 0.0
+      }
+    },
+    {
+      "layer": 4,
+      "d_ctx2ans": {
+        "exact": true,
+        "max_rel_dev": 0.0
+      },
+      "g_aug": {
+        "exact": true,
+        "max_rel_dev": 0.0
+      }
+    },
+    {
+      "layer": 5,
+      "d_ctx2ans": {
+        "exact": true,
+        "max_rel_dev": 0.0
+      },
+      "g_aug": {
+        "exact": true,
+        "max_rel_dev": 0.0
+      }
+    },
+    {
+      "layer": 6,
+      "d_ctx2ans": {
+        "exact": true,
+        "max_rel_dev": 0.0
+      },
+      "g_aug": {
+        "exact": true,
+        "max_rel_dev": 0.0
+      }
+    },
+    {
+      "layer": 7,
+      "d_ctx2ans": {
+        "exact": true,
+        "max_rel_dev": 0.0
+      },
+      "g_aug": {
+        "exact": true,
+        "max_rel_dev": 0.0
+      }
+    },
+    {
+      "layer": 8,
+      "d_ctx2ans": {
+        "exact": true,
+        "max_rel_dev": 0.0
+      },
+      "g_aug": {
+        "exact": true,
+        "max_rel_dev": 0.0
+      }
+    },
+    {
+      "layer": 9,
+      "d_ctx2ans": {
+        "exact": true,
+        "max_rel_dev": 0.0
+      },
+      "g_aug": {
+        "exact": true,
+        "max_rel_dev": 0.0
+      }
+    },
+    {
+      "layer": 10,
+      "d_ctx2ans": {
+        "exact": true,
+        "max_rel_dev": 0.0
+      },
+      "g_aug": {
+        "exact": true,
+        "max_rel_dev": 0.0
+      }
+    },
+    {
+      "layer": 11,
+      "d_ctx2ans": {
+        "exact": true,
+        "max_rel_dev": 0.0
+      },
+      "g_aug": {
+        "exact": true,
+        "max_rel_dev": 0.0
+      }
+    },
+    {
+      "layer": 12,
+      "d_ctx2ans": {
+        "exact": true,
+        "max_rel_dev": 0.0
+      },
+      "g_aug": {
+        "exact": true,
+        "max_rel_dev": 0.0
+      }
+    },
+    {
+      "layer": 13,
+      "d_ctx2ans": {
+        "exact": true,
+        "max_rel_dev": 0.0
+      },
+      "g_aug": {
+        "exact": true,
+        "max_rel_dev": 0.0
+      }
+    },
+    {
+      "layer": 14,
+      "d_ctx2ans": {
+        "exact": true,
+        "max_rel_dev": 0.0
+      },
+      "g_aug": {
+        "exact": true,
+        "max_rel_dev": 0.0
+      }
+    },
+    {
+      "layer": 15,
+      "d_ctx2ans": {
+        "exact": true,
+        "max_rel_dev": 0.0
+      },
+      "g_aug": {
+        "exact": true,
+        "max_rel_dev": 0.0
+      }
+    },
+    {
+      "layer": 16,
+      "d_ctx2ans": {
+        "exact": true,
+        "max_rel_dev": 0.0
+      },
+      "g_aug": {
+        "exact": true,
+        "max_rel_dev": 0.0
+      }
+    },
+    {
+      "layer": 17,
+      "d_ctx2ans": {
+        "exact": true,
+        "max_rel_dev": 0.0
+      },
+      "g_aug": {
+        "exact": true,
+        "max_rel_dev": 0.0
+      }
+    },
+    {
+      "layer": 18,
+      "d_ctx2ans": {
+        "exact": true,
+        "max_rel_dev": 0.0
+      },
+      "g_aug": {
+        "exact": true,
+        "max_rel_dev": 0.0
+      }
+    },
+    {
+      "layer": 19,
+      "d_ctx2ans": {
+        "exact": true,
+        "max_rel_dev": 0.0
+      },
+      "g_aug": {
+        "exact": true,
+        "max_rel_dev": 0.0
+      }
+    },
+    {
+      "layer": 20,
+      "d_ctx2ans": {
+        "exact": true,
+        "max_rel_dev": 0.0
+      },
+      "g_aug": {
+        "exact": true,
+        "max_rel_dev": 0.0
+      }
+    },
+    {
+      "layer": 21,
+      "d_ctx2ans": {
+        "exact": true,
+        "max_rel_dev": 0.0
+      },
+      "g_aug": {
+        "exact": true,
+        "max_rel_dev": 0.0
+      }
+    },
+    {
+      "layer": 22,
+      "d_ctx2ans": {
+        "exact": true,
+        "max_rel_dev": 0.0
+      },
+      "g_aug": {
+        "exact": true,
+        "max_rel_dev": 0.0
+      }
+    },
+    {
+      "layer": 23,
+      "d_ctx2ans": {
+        "exact": true,
+        "max_rel_dev": 0.0
+      },
+      "g_aug": {
+        "exact": true,
+        "max_rel_dev": 0.0
+      }
+    },
+    {
+      "layer": 24,
+      "d_ctx2ans": {
+        "exact": true,
+        "max_rel_dev": 0.0
+      },
+      "g_aug": {
+        "exact": true,
+        "max_rel_dev": 0.0
+      }
+    },
+    {
+      "layer": 25,
+      "d_ctx2ans": {
+        "exact": true,
+        "max_rel_dev": 0.0
+      },
+      "g_aug": {
+        "exact": true,
+        "max_rel_dev": 0.0
+      }
+    },
+    {
+      "layer": 26,
+      "d_ctx2ans": {
+        "exact": true,
+        "max_rel_dev": 0.0
+      },
+      "g_aug": {
+        "exact": true,
+        "max_rel_dev": 0.0
+      }
+    },
+    {
+      "layer": 27,
+      "d_ctx2ans": {
+        "exact": true,
+        "max_rel_dev": 0.0
+      },
+      "g_aug": {
+        "exact": true,
+        "max_rel_dev": 0.0
+      }
+    }
+  ],
+  "parity_gate": {
+    "group_vs_serial_per_fold_gateA": 3.91155481338501e-07,
+    "group_vs_serial_per_fold_gateB": 7.152557373046875e-07,
+    "singleton_vs_serial_per_fold": 7.152557373046875e-07,
+    "duplicate_fit_bitwise_per_fold": 0.0,
+    "group_vs_serial_full_data_gateA": 2.384185791015625e-07,
+    "group_vs_serial_full_data_gateB": 4.76837158203125e-07,
+    "singleton_vs_serial_full_data": 3.5762786865234375e-07,
+    "duplicate_fit_bitwise_full_data": 0.0
+  },
+  "reads": {
+    "layer_conventions": {
+      "primary_frozen_direct_best_layer": 26,
+      "own_best_frozen_full_data": {
+        "d_ctx2ans": 26,
+        "g_aug": 24,
+        "mlp_d_ctx2ans": 3,
+        "mlp_g_aug": 24
+      },
+      "mlp_layers_fitted": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27
+      ]
+    },
+    "skills": {
+      "d_ctx2ans": {
+        "0": 0.3993839276893565,
+        "1": 0.40101792136129766,
+        "2": 0.413738137191627,
+        "3": 0.40739548054250174,
+        "4": 0.4534275220916204,
+        "5": 0.45890407131015887,
+        "6": 0.4665183754760217,
+        "7": 0.4853996745467004,
+        "8": 0.49561792329244736,
+        "9": 0.5217216081278208,
+        "10": 0.5354296160437193,
+        "11": 0.5240263402355069,
+        "12": 0.5143805086469732,
+        "13": 0.5130943087975927,
+        "14": 0.5160743198390908,
+        "15": 0.4857881735153906,
+        "16": 0.4823932146434513,
+        "17": 0.47519052365146175,
+        "18": 0.46232335657044976,
+        "19": 0.48137678705038933,
+        "20": 0.46853964623447564,
+        "21": 0.504084814746451,
+        "22": 0.5234366320535266,
+        "23": 0.5341849583630626,
+        "24": 0.5409612121762659,
+        "25": 0.5465755276732358,
+        "26": 0.5468610924071698,
+        "27": 0.515169443299758
+      },
+      "g_aug": {
+        "0": 0.6762394714878803,
+        "1": 0.6644641062000346,
+        "2": 0.6804731745482355,
+        "3": 0.6988455046352808,
+        "4": 0.7547390509160012,
+        "5": 0.7485044552221027,
+        "6": 0.759710584869286,
+        "7": 0.7817326364516949,
+        "8": 0.7999080949828876,
+        "9": 0.835893947087739,
+        "10": 0.8497301579937202,
+        "11": 0.842517946906099,
+        "12": 0.8402230158388955,
+        "13": 0.849882198361187,
+        "14": 0.8573746142712806,
+        "15": 0.8371601331006013,
+        "16": 0.8367799739013668,
+        "17": 0.830954106245599,
+        "18": 0.8266599903376473,
+        "19": 0.8496976818781332,
+        "20": 0.8362620276828157,
+        "21": 0.8547443084620575,
+        "22": 0.8683678964239618,
+        "23": 0.875118445976729,
+        "24": 0.8777896861802257,
+        "25": 0.8776589239542978,
+        "26": 0.8770631591293179,
+        "27": 0.8444775439456068
+      },
+      "mlp_d_ctx2ans": {
+        "0": -2.5050986925001384,
+        "1": -1.9841016421574103,
+        "2": -1.7790410020444347,
+        "3": 0.27392524504726745,
+        "4": 0.2495817023181115,
+        "5": 0.24619111362494595,
+        "6": 0.2621634913055786,
+        "7": 0.1437884526734452,
+        "8": 0.1318663906370371,
+        "9": 0.017777821427514495,
+        "10": 0.008091936535990607,
+        "11": 0.08299666075371226,
+        "12": 0.06819173116379551,
+        "13": -0.004582720809990004,
+        "14": 0.05071328253197849,
+        "15": 0.04811676724715397,
+        "16": 0.10471611442716333,
+        "17": 0.11768650579141615,
+        "18": 0.027231280942650038,
+        "19": -0.01997511280251052,
+        "20": -0.1812431861340209,
+        "21": -0.1810814488191017,
+        "22": -0.2781307611659609,
+        "23": -0.26493366346172853,
+        "24": -0.42014554341851906,
+        "25": -0.4006443632982295,
+        "26": -0.5096979710754346,
+        "27": -0.02747300751869286
+      },
+      "mlp_g_aug": {
+        "0": 0.006927429997076406,
+        "1": 0.011118754772375783,
+        "2": 0.2414174721028095,
+        "3": 0.6188519565605222,
+        "4": 0.7024333057927591,
+        "5": 0.6963803492468983,
+        "6": 0.7181847393717913,
+        "7": 0.7492031092622158,
+        "8": 0.7719466199660959,
+        "9": 0.8089416687827234,
+        "10": 0.8281444061907788,
+        "11": 0.8190400286665405,
+        "12": 0.8208156957761004,
+        "13": 0.8321708681751423,
+        "14": 0.8422176531800698,
+        "15": 0.821687243722186,
+        "16": 0.8229816330432482,
+        "17": 0.8189387692965815,
+        "18": 0.8134328680111341,
+        "19": 0.8440123029020826,
+        "20": 0.8278118239379137,
+        "21": 0.845262375273472,
+        "22": 0.8570464541922286,
+        "23": 0.8634024555246851,
+        "24": 0.8644807077137598,
+        "25": 0.8619377901541928,
+        "26": 0.8643603670384137,
+        "27": 0.8282632088497692
+      }
+    },
+    "statistics": {
+      "residual_gap_linG_minus_mlpD": {
+        "primary_frozen_direct_best": {
+          "observed": 1.3867611302047524,
+          "ci95": [
+            0.6775778900172227,
+            2.3080539410770196
+          ],
+          "p_delta_le_0": 0.0,
+          "n_draws": 2000
+        },
+        "secondary_own_best_frozen_full_data": {
+          "layers": {
+            "hi": 24,
+            "lo": 3
+          },
+          "observed": 0.6038644411329582,
+          "ci95": [
+            0.5071718571675039,
+            0.7043231164898932
+          ],
+          "p_delta_le_0": 0.0,
+          "n_draws": 2000
+        },
+        "secondary_best_vs_best_inherited": {
+          "observed": 0.6038644411329582,
+          "ci95": [
+            0.47976718801024915,
+            0.6961910574352146
+          ],
+          "p_delta_le_0": 0.0,
+          "n_draws": 2000
+        }
+      },
+      "nonlinear_cot_gain_mlpG_minus_mlpD": {
+        "primary_frozen_direct_best": {
+          "observed": 1.3740583381138483,
+          "ci95": [
+            0.6720458788617735,
+            2.277944318955715
+          ],
+          "p_delta_le_0": 0.0,
+          "n_draws": 2000
+        },
+        "secondary_own_best_frozen_full_data": {
+          "layers": {
+            "hi": 24,
+            "lo": 3
+          },
+          "observed": 0.5905554626664924,
+          "ci95": [
+            0.49508435259118727,
+            0.6878743946785324
+          ],
+          "p_delta_le_0": 0.0,
+          "n_draws": 2000
+        },
+        "secondary_best_vs_best_inherited": {
+          "observed": 0.5905554626664924,
+          "ci95": [
+            0.47123482849686077,
+            0.6796684109953779
+          ],
+          "p_delta_le_0": 0.0,
+          "n_draws": 2000
+        }
+      },
+      "nonlinearity_increment_mlpD_minus_linD": {
+        "primary_frozen_direct_best": {
+          "observed": -1.0565590634826045,
+          "ci95": [
+            -1.9753187941015966,
+            -0.3675954308164392
+          ],
+          "p_delta_le_0": 1.0,
+          "n_draws": 2000
+        },
+        "secondary_own_best_frozen_full_data": {
+          "layers": {
+            "hi": 3,
+            "lo": 26
+          },
+          "observed": -0.2729358473599024,
+          "ci95": [
+            -0.3366951134160293,
+            -0.20850878213154334
+          ],
+          "p_delta_le_0": 1.0,
+          "n_draws": 2000
+        },
+        "secondary_best_vs_best_inherited": {
+          "observed": -0.2729358473599024,
+          "ci95": [
+            -0.32971651214365444,
+            -0.17447617387056605
+          ],
+          "p_delta_le_0": 1.0,
+          "n_draws": 2000
+        }
+      },
+      "closure_fraction": {
+        "primary_frozen_direct_best": {
+          "observed": -3.199734859235927,
+          "ci95": [
+            -5.920400270944428,
+            -1.1154354405460303
+          ],
+          "p_le_0": 1.0,
+          "n_draws": 2000,
+          "denominator_frac_below_0p01": 0.0
+        },
+        "secondary_own_best_frozen_full_data": {
+          "observed": -0.8247575232108117,
+          "ci95": [
+            -1.0695231730469026,
+            -0.6234887111664392
+          ],
+          "p_le_0": 1.0,
+          "n_draws": 2000,
+          "denominator_frac_below_0p01": 0.0
+        },
+        "secondary_best_vs_best_inherited": {
+          "observed": -0.8247575232108117,
+          "ci95": [
+            -1.032132177498808,
+            -0.5184692694591307
+          ],
+          "p_le_0": 1.0,
+          "n_draws": 2000,
+          "denominator_frac_below_0p01": 0.0
+        }
+      }
+    },
+    "estimator_validity_gate": {
+      "pass": true,
+      "mlp_augmented_skill_L_primary": 0.8643603670384137,
+      "linear_augmented_skill_L_primary": 0.8770631591293179,
+      "margin": 0.05,
+      "note": "narration gate \u2014 on a miss the closure read is narrated as 'nonlinearity control inconclusive (estimator under-fits at this shape)'; nothing dropped"
+    },
+    "interpretation_branch": {
+      "branch": "small_closure_headline_hardens",
+      "closure_point_primary": -3.199734859235927,
+      "residual_gap_ci_excludes_0_positive": true,
+      "closure_small_bin": 0.3333333333333333
+    }
+  },
+  "n_boot": 2000,
+  "bootstrap_seed": 42,
+  "reproducibility": {
+    "git_commit": "d67586dd7aa207188341c38687f59c54846473f0",
+    "timestamp_utc": "2026-07-16T07:21:25.907150+00:00",
+    "python_version": "3.11.15",
+    "platform": "Linux-6.8.0-1063-gcp-x86_64-with-glibc2.35",
+    "torch": "2.8.0+cu128",
+    "numpy": "2.2.6",
+    "transformers": "4.57.6"
+  }
+}

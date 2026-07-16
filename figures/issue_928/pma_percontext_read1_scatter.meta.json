@@ -1,0 +1,862 @@
+{
+  "commit": "ece75d101",
+  "created": "2026-07-14T23:47:17Z",
+  "figsize": [
+    10.0,
+    4.2
+  ],
+  "points": [
+    {
+      "median CoT length (tokens)": 622.0,
+      "per-context \u0394skill (read 1) @ L6": -0.08897798885838548,
+      "label": "f1_house_librarian",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "median CoT length (tokens)": 629.5,
+      "per-context \u0394skill (read 1) @ L6": -0.05550787285529679,
+      "label": "f1_house_surgeon",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "median CoT length (tokens)": 536.0,
+      "per-context \u0394skill (read 1) @ L6": -0.0764278868541749,
+      "label": "f1_house_programmer",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "median CoT length (tokens)": 734.0,
+      "per-context \u0394skill (read 1) @ L6": -0.08435484755681066,
+      "label": "f1_house_medical_doctor",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "median CoT length (tokens)": 620.0,
+      "per-context \u0394skill (read 1) @ L6": -0.0765512345251258,
+      "label": "f1_house_software_engineer",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "median CoT length (tokens)": 734.0,
+      "per-context \u0394skill (read 1) @ L6": -0.11692093916435387,
+      "label": "f1_house_data_scientist",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "median CoT length (tokens)": 623.0,
+      "per-context \u0394skill (read 1) @ L6": -0.09136877538307697,
+      "label": "f1_phub_01",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "median CoT length (tokens)": 670.0,
+      "per-context \u0394skill (read 1) @ L6": -0.09010617460515147,
+      "label": "f1_phub_02",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "median CoT length (tokens)": 677.0,
+      "per-context \u0394skill (read 1) @ L6": -0.09203908941150685,
+      "label": "f1_phub_03",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "median CoT length (tokens)": 663.0,
+      "per-context \u0394skill (read 1) @ L6": -0.08053427490994547,
+      "label": "f1_phub_04",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "median CoT length (tokens)": 644.0,
+      "per-context \u0394skill (read 1) @ L6": -0.06522288996784131,
+      "label": "f1_phub_05",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "median CoT length (tokens)": 710.0,
+      "per-context \u0394skill (read 1) @ L6": -0.07495335546491788,
+      "label": "f1_phub_06",
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "median CoT length (tokens)": 550.0,
+      "per-context \u0394skill (read 1) @ L6": -0.12225745273095234,
+      "label": "f1_phub_07",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "median CoT length (tokens)": 613.0,
+      "per-context \u0394skill (read 1) @ L6": -0.044947858803125684,
+      "label": "f1_phub_08",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "median CoT length (tokens)": 436.0,
+      "per-context \u0394skill (read 1) @ L6": -0.12592855857154828,
+      "label": "f2_wc_short_1",
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "median CoT length (tokens)": 316.5,
+      "per-context \u0394skill (read 1) @ L6": -0.12750943219395305,
+      "label": "f2_wc_short_2",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "median CoT length (tokens)": 446.0,
+      "per-context \u0394skill (read 1) @ L6": -0.031691513878957855,
+      "label": "f2_wc_short_3",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "median CoT length (tokens)": 374.0,
+      "per-context \u0394skill (read 1) @ L6": -0.14456734883434985,
+      "label": "f2_wc_short_4",
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "median CoT length (tokens)": 314.0,
+      "per-context \u0394skill (read 1) @ L6": -0.06391194897588481,
+      "label": "f2_wc_short_5",
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "median CoT length (tokens)": 314.5,
+      "per-context \u0394skill (read 1) @ L6": -0.156677498925611,
+      "label": "f2_wc_long_1",
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "median CoT length (tokens)": 712.0,
+      "per-context \u0394skill (read 1) @ L6": -0.10844790207672206,
+      "label": "f2_wc_long_2",
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "median CoT length (tokens)": 436.0,
+      "per-context \u0394skill (read 1) @ L6": -0.13568829705557706,
+      "label": "f2_wc_long_3",
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "median CoT length (tokens)": 373.5,
+      "per-context \u0394skill (read 1) @ L6": -0.2493479221958501,
+      "label": "f2_wc_long_4",
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "median CoT length (tokens)": 712.0,
+      "per-context \u0394skill (read 1) @ L6": -0.016569614340879335,
+      "label": "f2_wc_long_5",
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "median CoT length (tokens)": 320.0,
+      "per-context \u0394skill (read 1) @ L6": -0.0889941306644968,
+      "label": "f3_icl_marker_k4",
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "median CoT length (tokens)": 409.5,
+      "per-context \u0394skill (read 1) @ L6": -0.18146341995872795,
+      "label": "f3_icl_french_k4",
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "median CoT length (tokens)": 377.0,
+      "per-context \u0394skill (read 1) @ L6": -0.09467906290731642,
+      "label": "f3_icl_json_k4",
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "median CoT length (tokens)": 361.0,
+      "per-context \u0394skill (read 1) @ L6": -0.04942994254565736,
+      "label": "f3_icl_pirate_k4",
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "median CoT length (tokens)": 423.0,
+      "per-context \u0394skill (read 1) @ L6": -0.09107503938409012,
+      "label": "f3_icl_marker_k2",
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "median CoT length (tokens)": 369.0,
+      "per-context \u0394skill (read 1) @ L6": -0.09414234946649613,
+      "label": "f3_icl_marker_k8",
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "median CoT length (tokens)": 403.5,
+      "per-context \u0394skill (read 1) @ L6": -0.1056978285242951,
+      "label": "f3_icl_json_k2",
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "median CoT length (tokens)": 394.0,
+      "per-context \u0394skill (read 1) @ L6": -0.07716151521351478,
+      "label": "f3_icl_json_k8",
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "median CoT length (tokens)": 322.5,
+      "per-context \u0394skill (read 1) @ L6": -0.09267691866672734,
+      "label": "f4_reph_imperative",
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "median CoT length (tokens)": 547.0,
+      "per-context \u0394skill (read 1) @ L6": -0.06555482037746518,
+      "label": "f4_reph_polite",
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "median CoT length (tokens)": 317.0,
+      "per-context \u0394skill (read 1) @ L6": -0.09109436537853355,
+      "label": "f4_reph_casual",
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "median CoT length (tokens)": 425.0,
+      "per-context \u0394skill (read 1) @ L6": -0.12119990253529955,
+      "label": "f4_reph_legalese",
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "median CoT length (tokens)": 389.0,
+      "per-context \u0394skill (read 1) @ L6": -0.0635647463987723,
+      "label": "f4_reph_enthusiastic",
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "median CoT length (tokens)": 591.0,
+      "per-context \u0394skill (read 1) @ L6": -0.08062125777852491,
+      "label": "f4_reph_archaic",
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "median CoT length (tokens)": 643.0,
+      "per-context \u0394skill (read 1) @ L6": -0.07251033920944328,
+      "label": "f5_fmt_json",
+      "_kind": "scatter",
+      "_group": 38
+    },
+    {
+      "median CoT length (tokens)": 470.0,
+      "per-context \u0394skill (read 1) @ L6": -0.11917110961322908,
+      "label": "f5_fmt_code_comment",
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "median CoT length (tokens)": 649.5,
+      "per-context \u0394skill (read 1) @ L6": -0.07235610065370834,
+      "label": "f5_fmt_markdown_table",
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "median CoT length (tokens)": 602.0,
+      "per-context \u0394skill (read 1) @ L6": -0.0659703135213986,
+      "label": "f5_fmt_xml",
+      "_kind": "scatter",
+      "_group": 41
+    },
+    {
+      "median CoT length (tokens)": 632.0,
+      "per-context \u0394skill (read 1) @ L6": -0.11512739494907753,
+      "label": "f5_fmt_bullets",
+      "_kind": "scatter",
+      "_group": 42
+    },
+    {
+      "median CoT length (tokens)": 675.0,
+      "per-context \u0394skill (read 1) @ L6": -0.07720563998910435,
+      "label": "f6_default_template",
+      "_kind": "scatter",
+      "_group": 43
+    },
+    {
+      "median CoT length (tokens)": 607.0,
+      "per-context \u0394skill (read 1) @ L6": -0.116801220211187,
+      "label": "f6_helpful_asst",
+      "_kind": "scatter",
+      "_group": 44
+    },
+    {
+      "median CoT length (tokens)": 677.0,
+      "per-context \u0394skill (read 1) @ L6": -0.11997926087807242,
+      "label": "f8_behav_marker",
+      "_kind": "scatter",
+      "_group": 45
+    },
+    {
+      "median CoT length (tokens)": 651.5,
+      "per-context \u0394skill (read 1) @ L6": -0.056376736537812944,
+      "label": "f8_behav_sycophant",
+      "_kind": "scatter",
+      "_group": 46
+    },
+    {
+      "median CoT length (tokens)": 601.0,
+      "per-context \u0394skill (read 1) @ L6": -0.08058056482013476,
+      "label": "f8_behav_refusal",
+      "_kind": "scatter",
+      "_group": 47
+    },
+    {
+      "median CoT length (tokens)": 773.0,
+      "per-context \u0394skill (read 1) @ L6": -0.07663852241505675,
+      "label": "f8_behav_fact",
+      "_kind": "scatter",
+      "_group": 48
+    },
+    {
+      "median CoT length (tokens)": 628.0,
+      "per-context \u0394skill (read 1) @ L6": -0.09341012482718303,
+      "label": "f8_behav_harmful",
+      "_kind": "scatter",
+      "_group": 49
+    },
+    {
+      "median K (tokens)": 249.0,
+      "y": -0.08897798885838548,
+      "label": "f1_house_librarian",
+      "_kind": "scatter",
+      "_group": 50
+    },
+    {
+      "median K (tokens)": 212.5,
+      "y": -0.05550787285529679,
+      "label": "f1_house_surgeon",
+      "_kind": "scatter",
+      "_group": 51
+    },
+    {
+      "median K (tokens)": 195.0,
+      "y": -0.0764278868541749,
+      "label": "f1_house_programmer",
+      "_kind": "scatter",
+      "_group": 52
+    },
+    {
+      "median K (tokens)": 227.5,
+      "y": -0.08435484755681066,
+      "label": "f1_house_medical_doctor",
+      "_kind": "scatter",
+      "_group": 53
+    },
+    {
+      "median K (tokens)": 234.0,
+      "y": -0.0765512345251258,
+      "label": "f1_house_software_engineer",
+      "_kind": "scatter",
+      "_group": 54
+    },
+    {
+      "median K (tokens)": 238.0,
+      "y": -0.11692093916435387,
+      "label": "f1_house_data_scientist",
+      "_kind": "scatter",
+      "_group": 55
+    },
+    {
+      "median K (tokens)": 225.0,
+      "y": -0.09136877538307697,
+      "label": "f1_phub_01",
+      "_kind": "scatter",
+      "_group": 56
+    },
+    {
+      "median K (tokens)": 227.0,
+      "y": -0.09010617460515147,
+      "label": "f1_phub_02",
+      "_kind": "scatter",
+      "_group": 57
+    },
+    {
+      "median K (tokens)": 230.0,
+      "y": -0.09203908941150685,
+      "label": "f1_phub_03",
+      "_kind": "scatter",
+      "_group": 58
+    },
+    {
+      "median K (tokens)": 247.0,
+      "y": -0.08053427490994547,
+      "label": "f1_phub_04",
+      "_kind": "scatter",
+      "_group": 59
+    },
+    {
+      "median K (tokens)": 245.0,
+      "y": -0.06522288996784131,
+      "label": "f1_phub_05",
+      "_kind": "scatter",
+      "_group": 60
+    },
+    {
+      "median K (tokens)": 230.5,
+      "y": -0.07495335546491788,
+      "label": "f1_phub_06",
+      "_kind": "scatter",
+      "_group": 61
+    },
+    {
+      "median K (tokens)": 233.5,
+      "y": -0.12225745273095234,
+      "label": "f1_phub_07",
+      "_kind": "scatter",
+      "_group": 62
+    },
+    {
+      "median K (tokens)": 229.0,
+      "y": -0.044947858803125684,
+      "label": "f1_phub_08",
+      "_kind": "scatter",
+      "_group": 63
+    },
+    {
+      "median K (tokens)": 212.5,
+      "y": -0.12592855857154828,
+      "label": "f2_wc_short_1",
+      "_kind": "scatter",
+      "_group": 64
+    },
+    {
+      "median K (tokens)": 116.5,
+      "y": -0.12750943219395305,
+      "label": "f2_wc_short_2",
+      "_kind": "scatter",
+      "_group": 65
+    },
+    {
+      "median K (tokens)": 215.5,
+      "y": -0.031691513878957855,
+      "label": "f2_wc_short_3",
+      "_kind": "scatter",
+      "_group": 66
+    },
+    {
+      "median K (tokens)": 160.0,
+      "y": -0.14456734883434985,
+      "label": "f2_wc_short_4",
+      "_kind": "scatter",
+      "_group": 67
+    },
+    {
+      "median K (tokens)": 140.0,
+      "y": -0.06391194897588481,
+      "label": "f2_wc_short_5",
+      "_kind": "scatter",
+      "_group": 68
+    },
+    {
+      "median K (tokens)": 174.0,
+      "y": -0.156677498925611,
+      "label": "f2_wc_long_1",
+      "_kind": "scatter",
+      "_group": 69
+    },
+    {
+      "median K (tokens)": 212.0,
+      "y": -0.10844790207672206,
+      "label": "f2_wc_long_2",
+      "_kind": "scatter",
+      "_group": 70
+    },
+    {
+      "median K (tokens)": 163.0,
+      "y": -0.13568829705557706,
+      "label": "f2_wc_long_3",
+      "_kind": "scatter",
+      "_group": 71
+    },
+    {
+      "median K (tokens)": 90.5,
+      "y": -0.2493479221958501,
+      "label": "f2_wc_long_4",
+      "_kind": "scatter",
+      "_group": 72
+    },
+    {
+      "median K (tokens)": 166.5,
+      "y": -0.016569614340879335,
+      "label": "f2_wc_long_5",
+      "_kind": "scatter",
+      "_group": 73
+    },
+    {
+      "median K (tokens)": 126.0,
+      "y": -0.0889941306644968,
+      "label": "f3_icl_marker_k4",
+      "_kind": "scatter",
+      "_group": 74
+    },
+    {
+      "median K (tokens)": 227.0,
+      "y": -0.18146341995872795,
+      "label": "f3_icl_french_k4",
+      "_kind": "scatter",
+      "_group": 75
+    },
+    {
+      "median K (tokens)": 183.0,
+      "y": -0.09467906290731642,
+      "label": "f3_icl_json_k4",
+      "_kind": "scatter",
+      "_group": 76
+    },
+    {
+      "median K (tokens)": 157.0,
+      "y": -0.04942994254565736,
+      "label": "f3_icl_pirate_k4",
+      "_kind": "scatter",
+      "_group": 77
+    },
+    {
+      "median K (tokens)": 176.0,
+      "y": -0.09107503938409012,
+      "label": "f3_icl_marker_k2",
+      "_kind": "scatter",
+      "_group": 78
+    },
+    {
+      "median K (tokens)": 148.0,
+      "y": -0.09414234946649613,
+      "label": "f3_icl_marker_k8",
+      "_kind": "scatter",
+      "_group": 79
+    },
+    {
+      "median K (tokens)": 168.0,
+      "y": -0.1056978285242951,
+      "label": "f3_icl_json_k2",
+      "_kind": "scatter",
+      "_group": 80
+    },
+    {
+      "median K (tokens)": 167.0,
+      "y": -0.07716151521351478,
+      "label": "f3_icl_json_k8",
+      "_kind": "scatter",
+      "_group": 81
+    },
+    {
+      "median K (tokens)": 169.5,
+      "y": -0.09267691866672734,
+      "label": "f4_reph_imperative",
+      "_kind": "scatter",
+      "_group": 82
+    },
+    {
+      "median K (tokens)": 217.0,
+      "y": -0.06555482037746518,
+      "label": "f4_reph_polite",
+      "_kind": "scatter",
+      "_group": 83
+    },
+    {
+      "median K (tokens)": 183.0,
+      "y": -0.09109436537853355,
+      "label": "f4_reph_casual",
+      "_kind": "scatter",
+      "_group": 84
+    },
+    {
+      "median K (tokens)": 99.0,
+      "y": -0.12119990253529955,
+      "label": "f4_reph_legalese",
+      "_kind": "scatter",
+      "_group": 85
+    },
+    {
+      "median K (tokens)": 170.0,
+      "y": -0.0635647463987723,
+      "label": "f4_reph_enthusiastic",
+      "_kind": "scatter",
+      "_group": 86
+    },
+    {
+      "median K (tokens)": 213.0,
+      "y": -0.08062125777852491,
+      "label": "f4_reph_archaic",
+      "_kind": "scatter",
+      "_group": 87
+    },
+    {
+      "median K (tokens)": 237.0,
+      "y": -0.07251033920944328,
+      "label": "f5_fmt_json",
+      "_kind": "scatter",
+      "_group": 88
+    },
+    {
+      "median K (tokens)": 152.0,
+      "y": -0.11917110961322908,
+      "label": "f5_fmt_code_comment",
+      "_kind": "scatter",
+      "_group": 89
+    },
+    {
+      "median K (tokens)": 227.5,
+      "y": -0.07235610065370834,
+      "label": "f5_fmt_markdown_table",
+      "_kind": "scatter",
+      "_group": 90
+    },
+    {
+      "median K (tokens)": 235.5,
+      "y": -0.0659703135213986,
+      "label": "f5_fmt_xml",
+      "_kind": "scatter",
+      "_group": 91
+    },
+    {
+      "median K (tokens)": 230.0,
+      "y": -0.11512739494907753,
+      "label": "f5_fmt_bullets",
+      "_kind": "scatter",
+      "_group": 92
+    },
+    {
+      "median K (tokens)": 233.0,
+      "y": -0.07720563998910435,
+      "label": "f6_default_template",
+      "_kind": "scatter",
+      "_group": 93
+    },
+    {
+      "median K (tokens)": 232.0,
+      "y": -0.116801220211187,
+      "label": "f6_helpful_asst",
+      "_kind": "scatter",
+      "_group": 94
+    },
+    {
+      "median K (tokens)": 250.0,
+      "y": -0.11997926087807242,
+      "label": "f8_behav_marker",
+      "_kind": "scatter",
+      "_group": 95
+    },
+    {
+      "median K (tokens)": 228.5,
+      "y": -0.056376736537812944,
+      "label": "f8_behav_sycophant",
+      "_kind": "scatter",
+      "_group": 96
+    },
+    {
+      "median K (tokens)": 213.0,
+      "y": -0.08058056482013476,
+      "label": "f8_behav_refusal",
+      "_kind": "scatter",
+      "_group": 97
+    },
+    {
+      "median K (tokens)": 252.0,
+      "y": -0.07663852241505675,
+      "label": "f8_behav_fact",
+      "_kind": "scatter",
+      "_group": 98
+    },
+    {
+      "median K (tokens)": 210.0,
+      "y": -0.09341012482718303,
+      "label": "f8_behav_harmful",
+      "_kind": "scatter",
+      "_group": 99
+    }
+  ],
+  "n_series": 100,
+  "total_points": 100,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "red = near-degenerate prefix cells (flagged)",
+        "xlabel": "median CoT length (tokens)",
+        "ylabel": "per-context \u0394skill (read 1) @ L6",
+        "annotations": [
+          "f1_house_librarian",
+          "f1_house_surgeon",
+          "f1_house_programmer",
+          "f1_house_medical_doctor",
+          "f1_house_software_engineer",
+          "f1_house_data_scientist",
+          "f1_phub_01",
+          "f1_phub_02",
+          "f1_phub_03",
+          "f1_phub_04",
+          "f1_phub_05",
+          "f1_phub_06",
+          "f1_phub_07",
+          "f1_phub_08",
+          "f2_wc_short_1",
+          "f2_wc_short_2",
+          "f2_wc_short_3",
+          "f2_wc_short_4",
+          "f2_wc_short_5",
+          "f2_wc_long_1",
+          "f2_wc_long_2",
+          "f2_wc_long_3",
+          "f2_wc_long_4",
+          "f2_wc_long_5",
+          "f3_icl_marker_k4",
+          "f3_icl_french_k4",
+          "f3_icl_json_k4",
+          "f3_icl_pirate_k4",
+          "f3_icl_marker_k2",
+          "f3_icl_marker_k8",
+          "f3_icl_json_k2",
+          "f3_icl_json_k8",
+          "f4_reph_imperative",
+          "f4_reph_polite",
+          "f4_reph_casual",
+          "f4_reph_legalese",
+          "f4_reph_enthusiastic",
+          "f4_reph_archaic",
+          "f5_fmt_json",
+          "f5_fmt_code_comment",
+          "f5_fmt_markdown_table",
+          "f5_fmt_xml",
+          "f5_fmt_bullets",
+          "f6_default_template",
+          "f6_helpful_asst",
+          "f8_behav_marker",
+          "f8_behav_sycophant",
+          "f8_behav_refusal",
+          "f8_behav_fact",
+          "f8_behav_harmful"
+        ],
+        "xticklabels": [
+          "200",
+          "300",
+          "400",
+          "500",
+          "600",
+          "700",
+          "800"
+        ],
+        "yticklabels": [
+          "\u22120.30",
+          "\u22120.25",
+          "\u22120.20",
+          "\u22120.15",
+          "\u22120.10",
+          "\u22120.05",
+          "0.00",
+          "0.05"
+        ]
+      },
+      {
+        "xlabel": "median K (tokens)",
+        "annotations": [
+          "f1_house_librarian",
+          "f1_house_surgeon",
+          "f1_house_programmer",
+          "f1_house_medical_doctor",
+          "f1_house_software_engineer",
+          "f1_house_data_scientist",
+          "f1_phub_01",
+          "f1_phub_02",
+          "f1_phub_03",
+          "f1_phub_04",
+          "f1_phub_05",
+          "f1_phub_06",
+          "f1_phub_07",
+          "f1_phub_08",
+          "f2_wc_short_1",
+          "f2_wc_short_2",
+          "f2_wc_short_3",
+          "f2_wc_short_4",
+          "f2_wc_short_5",
+          "f2_wc_long_1",
+          "f2_wc_long_2",
+          "f2_wc_long_3",
+          "f2_wc_long_4",
+          "f2_wc_long_5",
+          "f3_icl_marker_k4",
+          "f3_icl_french_k4",
+          "f3_icl_json_k4",
+          "f3_icl_pirate_k4",
+          "f3_icl_marker_k2",
+          "f3_icl_marker_k8",
+          "f3_icl_json_k2",
+          "f3_icl_json_k8",
+          "f4_reph_imperative",
+          "f4_reph_polite",
+          "f4_reph_casual",
+          "f4_reph_legalese",
+          "f4_reph_enthusiastic",
+          "f4_reph_archaic",
+          "f5_fmt_json",
+          "f5_fmt_code_comment",
+          "f5_fmt_markdown_table",
+          "f5_fmt_xml",
+          "f5_fmt_bullets",
+          "f6_default_template",
+          "f6_helpful_asst",
+          "f8_behav_marker",
+          "f8_behav_sycophant",
+          "f8_behav_refusal",
+          "f8_behav_fact",
+          "f8_behav_harmful"
+        ],
+        "xticklabels": [
+          "80",
+          "100",
+          "120",
+          "140",
+          "160",
+          "180",
+          "200",
+          "220",
+          "240",
+          "260",
+          "280"
+        ]
+      }
+    ]
+  }
+}

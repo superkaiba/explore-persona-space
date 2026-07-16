@@ -523,39 +523,210 @@ def test_layer_already_complete_keys_static_files(tmp_path):
     assert p6.layer_already_complete(mp, cfg, [layer_file, changed_static], ckpt_dir) is False
 
 
-def test_hub_retry_bounded(monkeypatch):
-    """Transient 429/5xx retries with bounded backoff; non-transient raises at once."""
+def _resp(status: int, retry_after: str | None = None):
+    """Real requests.Response with a status (and optional Retry-After header)."""
     import requests
+
+    r = requests.Response()
+    r.status_code = status
+    if retry_after is not None:
+        r.headers["Retry-After"] = retry_after
+    return r
+
+
+def test_hub_retry_transient_5xx_then_success(monkeypatch, capsys):
+    """503 blips retry — with the loud [hub-retry] liveness line — then succeed."""
     from huggingface_hub.errors import HfHubHTTPError
 
+    monkeypatch.delenv("P6_HUB_RETRY_MAX_MIN", raising=False)
     sleeps: list[float] = []
     monkeypatch.setattr(p6.time, "sleep", lambda s: sleeps.append(s))
-    resp = requests.Response()
-    resp.status_code = 503
+    monkeypatch.setattr(p6.random, "uniform", lambda a, b: b)  # deterministic jitter hi
     calls = {"n": 0}
 
     def flaky():
         calls["n"] += 1
         if calls["n"] < 3:
-            raise HfHubHTTPError("boom", response=resp)
+            raise HfHubHTTPError("boom", response=_resp(503))
         return "ok"
 
     assert p6._hub_retry(flaky, what="probe") == "ok"
-    assert calls["n"] == 3 and sleeps == [2.0, 8.0]
+    assert calls["n"] == 3 and sleeps == [4.0, 8.0]
+    out = capsys.readouterr().out
+    assert "[hub-retry] probe: attempt 1/8" in out
+    assert "cause=503" in out and "sleeping" in out
 
-    resp404 = requests.Response()
-    resp404.status_code = 404
+
+def test_hub_retry_honors_retry_after(monkeypatch, capsys):
+    """A 429 carrying Retry-After sleeps EXACTLY the header value (no jitter)."""
+    from huggingface_hub.errors import HfHubHTTPError
+
+    monkeypatch.delenv("P6_HUB_RETRY_MAX_MIN", raising=False)
+    sleeps: list[float] = []
+    monkeypatch.setattr(p6.time, "sleep", lambda s: sleeps.append(s))
+    calls = {"n": 0}
+
+    def throttled():
+        calls["n"] += 1
+        if calls["n"] < 3:
+            raise HfHubHTTPError(
+                "429 maximum queue size reached", response=_resp(429, retry_after="7")
+            )
+        return "ok"
+
+    assert p6._hub_retry(throttled, what="probe") == "ok"
+    assert sleeps == [7.0, 7.0]
+    assert "cause=429" in capsys.readouterr().out
+
+
+def test_hub_retry_sustained_429_exhausts_at_budget(monkeypatch):
+    """A sustained 429 storm retries until the cumulative-sleep budget, then raises.
+
+    With hi-jitter and a 1-min budget: 4+8+16 then 32 clamps the budget to
+    exactly 60 s; attempt-floor retries 5-7 sleep 0; call 8 exhausts BOTH
+    bounds and re-raises. Pre-fix behavior (raise after 40 s / 4 calls in a
+    minutes-long storm) is the rf01 crash class this pins against.
+    """
+    from huggingface_hub.errors import HfHubHTTPError
+
+    monkeypatch.setenv("P6_HUB_RETRY_MAX_MIN", "1")  # 60 s budget
+    sleeps: list[float] = []
+    monkeypatch.setattr(p6.time, "sleep", lambda s: sleeps.append(s))
+    monkeypatch.setattr(p6.random, "uniform", lambda a, b: b)
+    calls = {"n": 0}
+
+    def always_429():
+        calls["n"] += 1
+        raise HfHubHTTPError("429 maximum queue size reached", response=_resp(429))
+
+    with pytest.raises(HfHubHTTPError):
+        p6._hub_retry(always_429, what="probe")
+    assert sleeps == [4.0, 8.0, 16.0, 32.0, 0.0, 0.0, 0.0]
+    assert sum(sleeps) == 60.0 and calls["n"] == 8
+
+
+def test_hub_retry_fatal_4xx_fails_fast(monkeypatch):
+    """Real 404/403 (genuine missing file / bad auth) raises IMMEDIATELY."""
+    from huggingface_hub.errors import EntryNotFoundError, HfHubHTTPError
+
+    monkeypatch.delenv("P6_HUB_RETRY_MAX_MIN", raising=False)
+    sleeps: list[float] = []
+    monkeypatch.setattr(p6.time, "sleep", lambda s: sleeps.append(s))
+    calls = {"n": 0}
 
     def notfound():
-        raise HfHubHTTPError("nope", response=resp404)
+        calls["n"] += 1
+        raise EntryNotFoundError("404 entry not found", response=_resp(404))
 
-    with pytest.raises(HfHubHTTPError):
+    with pytest.raises(EntryNotFoundError):
         p6._hub_retry(notfound, what="probe")
-    assert sleeps == [2.0, 8.0]  # non-transient never slept
+    assert calls["n"] == 1 and sleeps == []
 
-    def always_503():
-        raise HfHubHTTPError("busy", response=resp)
+    def forbidden():
+        calls["n"] += 1
+        raise HfHubHTTPError("403 forbidden", response=_resp(403))
 
     with pytest.raises(HfHubHTTPError):
-        p6._hub_retry(always_503, what="probe")
-    assert sleeps == [2.0, 8.0, 2.0, 8.0, 30.0]  # bounded: 4 attempts then raise
+        p6._hub_retry(forbidden, what="probe")
+    assert calls["n"] == 2 and sleeps == []
+
+    def bug():
+        calls["n"] += 1
+        raise ValueError("not a hub error")
+
+    with pytest.raises(ValueError):
+        p6._hub_retry(bug, what="probe")
+    assert calls["n"] == 3 and sleeps == []
+
+
+def test_hub_retry_local_entry_not_found_retriable(monkeypatch):
+    """LocalEntryNotFoundError (a 429 on hf_hub_download's HEAD surfaces
+    404-shaped through this class — the rf01 attempt-4/5 crash, #1345) is
+    TRANSPORT: retried by CLASS, not by message text."""
+    from huggingface_hub.errors import LocalEntryNotFoundError
+
+    monkeypatch.delenv("P6_HUB_RETRY_MAX_MIN", raising=False)
+    sleeps: list[float] = []
+    monkeypatch.setattr(p6.time, "sleep", lambda s: sleeps.append(s))
+    monkeypatch.setattr(p6.random, "uniform", lambda a, b: b)
+    calls = {"n": 0}
+
+    def head_throttled():
+        calls["n"] += 1
+        if calls["n"] < 3:
+            # Deliberately message-text-free of transient markers: the CLASS
+            # must carry the classification.
+            raise LocalEntryNotFoundError("cannot find the requested files on disk")
+        return "ok"
+
+    assert p6._hub_retry(head_throttled, what="probe") == "ok"
+    assert calls["n"] == 3 and sleeps == [4.0, 8.0]
+
+
+def test_hub_retry_backoff_jittered_exponential_growth(monkeypatch):
+    """Backoff draws ride uniform(0, hi) — FULL jitter — with hi doubling from
+    4 s and capped at 120 s per sleep."""
+    from huggingface_hub.errors import HfHubHTTPError
+
+    monkeypatch.delenv("P6_HUB_RETRY_MAX_MIN", raising=False)
+    monkeypatch.setattr(p6.time, "sleep", lambda s: None)
+    bounds: list[tuple[float, float]] = []
+
+    def record_uniform(a, b):
+        bounds.append((a, b))
+        return b
+
+    monkeypatch.setattr(p6.random, "uniform", record_uniform)
+    calls = {"n": 0}
+
+    def flaky():
+        calls["n"] += 1
+        if calls["n"] < 8:
+            raise HfHubHTTPError("503 unavailable", response=_resp(503))
+        return "ok"
+
+    assert p6._hub_retry(flaky, what="probe") == "ok"
+    assert [b for _, b in bounds] == [4.0, 8.0, 16.0, 32.0, 64.0, 120.0, 120.0]
+    assert all(a == 0.0 for a, _ in bounds)
+
+
+def test_hub_retry_response_less_transient_text(monkeypatch):
+    """A response-less HfHubHTTPError carrying throttle text (the xet Rust
+    boundary class, #931) retries; an unrecognized response-less one raises."""
+    from huggingface_hub.errors import HfHubHTTPError
+
+    monkeypatch.delenv("P6_HUB_RETRY_MAX_MIN", raising=False)
+    monkeypatch.setattr(p6.time, "sleep", lambda s: None)
+    monkeypatch.setattr(p6.random, "uniform", lambda a, b: b)
+    calls = {"n": 0}
+
+    def textual():
+        calls["n"] += 1
+        if calls["n"] < 2:
+            raise HfHubHTTPError("maximum queue size reached")
+        return "ok"
+
+    assert p6._hub_retry(textual, what="probe") == "ok"
+    assert calls["n"] == 2
+
+    calls2 = {"n": 0}
+
+    def opaque():
+        calls2["n"] += 1
+        raise HfHubHTTPError("opaque hub failure with no transient markers")
+
+    with pytest.raises(HfHubHTTPError):
+        p6._hub_retry(opaque, what="probe")
+    assert calls2["n"] == 1
+
+
+def test_hub_retry_budget_env_knob(monkeypatch, capsys):
+    """P6_HUB_RETRY_MAX_MIN parses minutes; junk/negative/inf fall back LOUD to 15."""
+    monkeypatch.setenv("P6_HUB_RETRY_MAX_MIN", "0.5")
+    assert p6._hub_retry_budget_s() == 30.0
+    monkeypatch.delenv("P6_HUB_RETRY_MAX_MIN", raising=False)
+    assert p6._hub_retry_budget_s() == 900.0
+    for junk in ("garbage", "-3", "inf", "nan"):
+        monkeypatch.setenv("P6_HUB_RETRY_MAX_MIN", junk)
+        assert p6._hub_retry_budget_s() == 900.0
+    assert "[hub-retry]" in capsys.readouterr().out

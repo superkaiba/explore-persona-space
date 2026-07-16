@@ -1,0 +1,201 @@
+{
+  "commit": "b8567ef51d",
+  "created": "2026-07-15T12:51:51Z",
+  "figsize": [
+    7.0,
+    4.5
+  ],
+  "points": [
+    {
+      "read-out layer": -0.36,
+      "held-out pooled $R^2$": 0.6932453722467729,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "read-out layer": 0.64,
+      "held-out pooled $R^2$": 0.7271603159763322,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "read-out layer": 1.64,
+      "held-out pooled $R^2$": 0.7712294166003533,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "read-out layer": 2.64,
+      "held-out pooled $R^2$": 0.6709069748359715,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "read-out layer": 3.64,
+      "held-out pooled $R^2$": 0.6839943958245385,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "read-out layer": -0.18,
+      "held-out pooled $R^2$": 0.6251812021094036,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "read-out layer": 0.82,
+      "held-out pooled $R^2$": 0.6584392214841448,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "read-out layer": 1.82,
+      "held-out pooled $R^2$": 0.7054149303865586,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "read-out layer": 2.82,
+      "held-out pooled $R^2$": 0.6166073857359693,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "read-out layer": 3.82,
+      "held-out pooled $R^2$": 0.6241672862333301,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "read-out layer": "L14",
+      "held-out pooled $R^2$": 0.6356507976991039,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "read-out layer": "L17",
+      "held-out pooled $R^2$": 0.6660525705251225,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "read-out layer": "L19",
+      "held-out pooled $R^2$": 0.7138018051593145,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "read-out layer": "L26",
+      "held-out pooled $R^2$": 0.6195156943635373,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "read-out layer": "L27",
+      "held-out pooled $R^2$": 0.6304769783407513,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "read-out layer": 0.18,
+      "held-out pooled $R^2$": 0.6376485146801647,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "read-out layer": 1.18,
+      "held-out pooled $R^2$": 0.6683577659916442,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "read-out layer": 2.18,
+      "held-out pooled $R^2$": 0.7158644614514122,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "read-out layer": 3.18,
+      "held-out pooled $R^2$": 0.6219340553123729,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "read-out layer": 4.18,
+      "held-out pooled $R^2$": 0.6327166012727172,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "read-out layer": 0.36,
+      "held-out pooled $R^2$": 0.8974325457213395,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "read-out layer": 1.36,
+      "held-out pooled $R^2$": 0.8962516801407351,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "read-out layer": 2.36,
+      "held-out pooled $R^2$": 0.908071082088383,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "read-out layer": 3.36,
+      "held-out pooled $R^2$": 0.9054324553860524,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "read-out layer": 4.36,
+      "held-out pooled $R^2$": 0.9034043463136757,
+      "_kind": "bar",
+      "_group": 4
+    }
+  ],
+  "n_series": 5,
+  "total_points": 25,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "xlabel": "read-out layer",
+        "ylabel": "held-out pooled $R^2$",
+        "legend_labels": [
+          "achieved 10-mean target",
+          "achieved single-draw (stoch1)",
+          "expected single-draw (pure noise)",
+          "avg10-map -> single draw (direct)",
+          "oracle noise ceiling"
+        ],
+        "xticklabels": [
+          "L14",
+          "L17",
+          "L19",
+          "L26",
+          "L27"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ]
+      }
+    ],
+    "series": [
+      "achieved 10-mean target",
+      "achieved single-draw (stoch1)",
+      "expected single-draw (pure noise)",
+      "avg10-map -> single draw (direct)",
+      "oracle noise ceiling"
+    ]
+  }
+}

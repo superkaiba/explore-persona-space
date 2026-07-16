@@ -1,0 +1,779 @@
+{
+  "commit": "40797cd8ab",
+  "created": "2026-07-15T12:31:49Z",
+  "figsize": [
+    10.5,
+    4.2
+  ],
+  "points": [
+    {
+      "optimizer step (5 steps = 1 epoch)": 35.0,
+      "primary rate": 0.345,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "optimizer step (5 steps = 1 epoch)": 20.0,
+      "primary rate": 0.675,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "optimizer step (5 steps = 1 epoch)": 35.0,
+      "primary rate": 0.605,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "optimizer step (5 steps = 1 epoch)": 0.0,
+      "primary rate": 0.0,
+      "series": "base rate (reused fu3 read)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "optimizer step (5 steps = 1 epoch)": 1.0,
+      "primary rate": 0.0,
+      "series": "base rate (reused fu3 read)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "optimizer step (5 steps = 1 epoch)": 5.0,
+      "primary rate": 0.0,
+      "series": "lr 1e-5 (usual)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "optimizer step (5 steps = 1 epoch)": 10.0,
+      "primary rate": 0.0,
+      "series": "lr 1e-5 (usual)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "optimizer step (5 steps = 1 epoch)": 15.0,
+      "primary rate": 0.0707070707070707,
+      "series": "lr 1e-5 (usual)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "optimizer step (5 steps = 1 epoch)": 20.0,
+      "primary rate": 0.23,
+      "series": "lr 1e-5 (usual)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "optimizer step (5 steps = 1 epoch)": 25.0,
+      "primary rate": 0.29,
+      "series": "lr 1e-5 (usual)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "optimizer step (5 steps = 1 epoch)": 30.0,
+      "primary rate": 0.33,
+      "series": "lr 1e-5 (usual)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "optimizer step (5 steps = 1 epoch)": 35.0,
+      "primary rate": 0.45,
+      "series": "lr 1e-5 (usual)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "optimizer step (5 steps = 1 epoch)": 40.0,
+      "primary rate": 0.44,
+      "series": "lr 1e-5 (usual)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "optimizer step (5 steps = 1 epoch)": 45.0,
+      "primary rate": 0.3,
+      "series": "lr 1e-5 (usual)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "optimizer step (5 steps = 1 epoch)": 50.0,
+      "primary rate": 0.44,
+      "series": "lr 1e-5 (usual)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "optimizer step (5 steps = 1 epoch)": 55.0,
+      "primary rate": 0.41,
+      "series": "lr 1e-5 (usual)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "optimizer step (5 steps = 1 epoch)": 60.0,
+      "primary rate": 0.43,
+      "series": "lr 1e-5 (usual)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "optimizer step (5 steps = 1 epoch)": 65.0,
+      "primary rate": 0.4,
+      "series": "lr 1e-5 (usual)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "optimizer step (5 steps = 1 epoch)": 70.0,
+      "primary rate": 0.45,
+      "series": "lr 1e-5 (usual)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "optimizer step (5 steps = 1 epoch)": 75.0,
+      "primary rate": 0.42,
+      "series": "lr 1e-5 (usual)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "optimizer step (5 steps = 1 epoch)": 5.0,
+      "primary rate": 0.0,
+      "series": "lr 3e-5",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "optimizer step (5 steps = 1 epoch)": 10.0,
+      "primary rate": 0.3163265306122449,
+      "series": "lr 3e-5",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "optimizer step (5 steps = 1 epoch)": 15.0,
+      "primary rate": 0.26,
+      "series": "lr 3e-5",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "optimizer step (5 steps = 1 epoch)": 20.0,
+      "primary rate": 0.6,
+      "series": "lr 3e-5",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "optimizer step (5 steps = 1 epoch)": 25.0,
+      "primary rate": 0.24,
+      "series": "lr 3e-5",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "optimizer step (5 steps = 1 epoch)": 30.0,
+      "primary rate": 0.61,
+      "series": "lr 3e-5",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "optimizer step (5 steps = 1 epoch)": 35.0,
+      "primary rate": 0.66,
+      "series": "lr 3e-5",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "optimizer step (5 steps = 1 epoch)": 40.0,
+      "primary rate": 0.46,
+      "series": "lr 3e-5",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "optimizer step (5 steps = 1 epoch)": 45.0,
+      "primary rate": 0.71,
+      "series": "lr 3e-5",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "optimizer step (5 steps = 1 epoch)": 50.0,
+      "primary rate": 0.66,
+      "series": "lr 3e-5",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "optimizer step (5 steps = 1 epoch)": 55.0,
+      "primary rate": 0.65,
+      "series": "lr 3e-5",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "optimizer step (5 steps = 1 epoch)": 60.0,
+      "primary rate": 0.62,
+      "series": "lr 3e-5",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "optimizer step (5 steps = 1 epoch)": 65.0,
+      "primary rate": 0.67,
+      "series": "lr 3e-5",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "optimizer step (5 steps = 1 epoch)": 70.0,
+      "primary rate": 0.62,
+      "series": "lr 3e-5",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "optimizer step (5 steps = 1 epoch)": 75.0,
+      "primary rate": 0.63,
+      "series": "lr 3e-5",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "optimizer step (5 steps = 1 epoch)": 5.0,
+      "primary rate": 0.3125,
+      "series": "lr 1e-4",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "optimizer step (5 steps = 1 epoch)": 10.0,
+      "primary rate": 0.31313131313131315,
+      "series": "lr 1e-4",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "optimizer step (5 steps = 1 epoch)": 15.0,
+      "primary rate": 0.34,
+      "series": "lr 1e-4",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "optimizer step (5 steps = 1 epoch)": 20.0,
+      "primary rate": 0.47,
+      "series": "lr 1e-4",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "optimizer step (5 steps = 1 epoch)": 25.0,
+      "primary rate": 0.58,
+      "series": "lr 1e-4",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "optimizer step (5 steps = 1 epoch)": 30.0,
+      "primary rate": 0.51,
+      "series": "lr 1e-4",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "optimizer step (5 steps = 1 epoch)": 35.0,
+      "primary rate": 0.64,
+      "series": "lr 1e-4",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "optimizer step (5 steps = 1 epoch)": 40.0,
+      "primary rate": 0.66,
+      "series": "lr 1e-4",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "optimizer step (5 steps = 1 epoch)": 45.0,
+      "primary rate": 0.44,
+      "series": "lr 1e-4",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "optimizer step (5 steps = 1 epoch)": 50.0,
+      "primary rate": 0.67,
+      "series": "lr 1e-4",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "optimizer step (5 steps = 1 epoch)": 55.0,
+      "primary rate": 0.64,
+      "series": "lr 1e-4",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "optimizer step (5 steps = 1 epoch)": 60.0,
+      "primary rate": 0.56,
+      "series": "lr 1e-4",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "optimizer step (5 steps = 1 epoch)": 65.0,
+      "primary rate": 0.57,
+      "series": "lr 1e-4",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "optimizer step (5 steps = 1 epoch)": 70.0,
+      "primary rate": 0.6,
+      "series": "lr 1e-4",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "optimizer step (5 steps = 1 epoch)": 75.0,
+      "primary rate": 0.59,
+      "series": "lr 1e-4",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "optimizer step (5 steps = 1 epoch)": 20.0,
+      "y": 0.24,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "optimizer step (5 steps = 1 epoch)": 50.0,
+      "y": 0.28,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "optimizer step (5 steps = 1 epoch)": 15.0,
+      "y": 0.2866666666666667,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "optimizer step (5 steps = 1 epoch)": 0.0,
+      "y": 0.16666666666666666,
+      "series": "base rate (reused fu3 read)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "optimizer step (5 steps = 1 epoch)": 1.0,
+      "y": 0.16666666666666666,
+      "series": "base rate (reused fu3 read)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "optimizer step (5 steps = 1 epoch)": 5.0,
+      "y": 0.08,
+      "series": "rank 32 (reused fu4)",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "optimizer step (5 steps = 1 epoch)": 10.0,
+      "y": 0.22666666666666666,
+      "series": "rank 32 (reused fu4)",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "optimizer step (5 steps = 1 epoch)": 15.0,
+      "y": 0.13333333333333333,
+      "series": "rank 32 (reused fu4)",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "optimizer step (5 steps = 1 epoch)": 20.0,
+      "y": 0.29333333333333333,
+      "series": "rank 32 (reused fu4)",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "optimizer step (5 steps = 1 epoch)": 25.0,
+      "y": 0.18,
+      "series": "rank 32 (reused fu4)",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "optimizer step (5 steps = 1 epoch)": 30.0,
+      "y": 0.18,
+      "series": "rank 32 (reused fu4)",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "optimizer step (5 steps = 1 epoch)": 35.0,
+      "y": 0.24666666666666667,
+      "series": "rank 32 (reused fu4)",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "optimizer step (5 steps = 1 epoch)": 40.0,
+      "y": 0.23333333333333334,
+      "series": "rank 32 (reused fu4)",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "optimizer step (5 steps = 1 epoch)": 45.0,
+      "y": 0.24666666666666667,
+      "series": "rank 32 (reused fu4)",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "optimizer step (5 steps = 1 epoch)": 50.0,
+      "y": 0.23333333333333334,
+      "series": "rank 32 (reused fu4)",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "optimizer step (5 steps = 1 epoch)": 55.0,
+      "y": 0.23333333333333334,
+      "series": "rank 32 (reused fu4)",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "optimizer step (5 steps = 1 epoch)": 60.0,
+      "y": 0.20666666666666667,
+      "series": "rank 32 (reused fu4)",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "optimizer step (5 steps = 1 epoch)": 65.0,
+      "y": 0.24,
+      "series": "rank 32 (reused fu4)",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "optimizer step (5 steps = 1 epoch)": 70.0,
+      "y": 0.25333333333333335,
+      "series": "rank 32 (reused fu4)",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "optimizer step (5 steps = 1 epoch)": 75.0,
+      "y": 0.25333333333333335,
+      "series": "rank 32 (reused fu4)",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "optimizer step (5 steps = 1 epoch)": 5.0,
+      "y": 0.07333333333333333,
+      "series": "rank 128 (4x)",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "optimizer step (5 steps = 1 epoch)": 10.0,
+      "y": 0.14,
+      "series": "rank 128 (4x)",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "optimizer step (5 steps = 1 epoch)": 15.0,
+      "y": 0.21333333333333335,
+      "series": "rank 128 (4x)",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "optimizer step (5 steps = 1 epoch)": 20.0,
+      "y": 0.21333333333333335,
+      "series": "rank 128 (4x)",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "optimizer step (5 steps = 1 epoch)": 25.0,
+      "y": 0.20666666666666667,
+      "series": "rank 128 (4x)",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "optimizer step (5 steps = 1 epoch)": 30.0,
+      "y": 0.2,
+      "series": "rank 128 (4x)",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "optimizer step (5 steps = 1 epoch)": 35.0,
+      "y": 0.23333333333333334,
+      "series": "rank 128 (4x)",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "optimizer step (5 steps = 1 epoch)": 40.0,
+      "y": 0.22,
+      "series": "rank 128 (4x)",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "optimizer step (5 steps = 1 epoch)": 45.0,
+      "y": 0.22666666666666666,
+      "series": "rank 128 (4x)",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "optimizer step (5 steps = 1 epoch)": 50.0,
+      "y": 0.32,
+      "series": "rank 128 (4x)",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "optimizer step (5 steps = 1 epoch)": 55.0,
+      "y": 0.26,
+      "series": "rank 128 (4x)",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "optimizer step (5 steps = 1 epoch)": 60.0,
+      "y": 0.26666666666666666,
+      "series": "rank 128 (4x)",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "optimizer step (5 steps = 1 epoch)": 65.0,
+      "y": 0.28,
+      "series": "rank 128 (4x)",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "optimizer step (5 steps = 1 epoch)": 70.0,
+      "y": 0.2733333333333333,
+      "series": "rank 128 (4x)",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "optimizer step (5 steps = 1 epoch)": 75.0,
+      "y": 0.26,
+      "series": "rank 128 (4x)",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "optimizer step (5 steps = 1 epoch)": 5.0,
+      "y": 0.24,
+      "series": "rank 256 (8x)",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "optimizer step (5 steps = 1 epoch)": 10.0,
+      "y": 0.12,
+      "series": "rank 256 (8x)",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "optimizer step (5 steps = 1 epoch)": 15.0,
+      "y": 0.3333333333333333,
+      "series": "rank 256 (8x)",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "optimizer step (5 steps = 1 epoch)": 20.0,
+      "y": 0.2,
+      "series": "rank 256 (8x)",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "optimizer step (5 steps = 1 epoch)": 25.0,
+      "y": 0.25333333333333335,
+      "series": "rank 256 (8x)",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "optimizer step (5 steps = 1 epoch)": 30.0,
+      "y": 0.21333333333333335,
+      "series": "rank 256 (8x)",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "optimizer step (5 steps = 1 epoch)": 35.0,
+      "y": 0.25333333333333335,
+      "series": "rank 256 (8x)",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "optimizer step (5 steps = 1 epoch)": 40.0,
+      "y": 0.21333333333333335,
+      "series": "rank 256 (8x)",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "optimizer step (5 steps = 1 epoch)": 45.0,
+      "y": 0.21333333333333335,
+      "series": "rank 256 (8x)",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "optimizer step (5 steps = 1 epoch)": 50.0,
+      "y": 0.23333333333333334,
+      "series": "rank 256 (8x)",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "optimizer step (5 steps = 1 epoch)": 55.0,
+      "y": 0.18666666666666668,
+      "series": "rank 256 (8x)",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "optimizer step (5 steps = 1 epoch)": 60.0,
+      "y": 0.18,
+      "series": "rank 256 (8x)",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "optimizer step (5 steps = 1 epoch)": 65.0,
+      "y": 0.17333333333333334,
+      "series": "rank 256 (8x)",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "optimizer step (5 steps = 1 epoch)": 70.0,
+      "y": 0.21333333333333335,
+      "series": "rank 256 (8x)",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "optimizer step (5 steps = 1 epoch)": 75.0,
+      "y": 0.18666666666666668,
+      "series": "rank 256 (8x)",
+      "_kind": "line",
+      "_group": 13
+    }
+  ],
+  "n_series": 14,
+  "total_points": 100,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "impolite, bare-context-trained (judged rate)",
+        "xlabel": "optimizer step (5 steps = 1 epoch)",
+        "ylabel": "primary rate",
+        "legend_labels": [
+          "base rate (reused fu3 read)",
+          "lr 1e-5 (usual)",
+          "lr 3e-5",
+          "lr 1e-4"
+        ],
+        "annotations": [
+          "fu4 persona unlock 0.81",
+          "fu4 WildChat unlock 0.83"
+        ],
+        "xticklabels": [
+          "0",
+          "10",
+          "20",
+          "30",
+          "40",
+          "50",
+          "60",
+          "70",
+          "80",
+          "90"
+        ],
+        "yticklabels": [
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0",
+          "1.2"
+        ]
+      },
+      {
+        "title_left": "list formatting, persona-trained (structural rate, rank ladder)",
+        "xlabel": "optimizer step (5 steps = 1 epoch)",
+        "legend_labels": [
+          "base rate (reused fu3 read)",
+          "rank 32 (reused fu4)",
+          "rank 128 (4x)",
+          "rank 256 (8x)"
+        ],
+        "xticklabels": [
+          "0",
+          "10",
+          "20",
+          "30",
+          "40",
+          "50",
+          "60",
+          "70",
+          "80"
+        ]
+      }
+    ],
+    "series": [
+      "base rate (reused fu3 read)",
+      "lr 1e-5 (usual)",
+      "lr 3e-5",
+      "lr 1e-4",
+      "rank 32 (reused fu4)",
+      "rank 128 (4x)",
+      "rank 256 (8x)"
+    ]
+  }
+}

@@ -38,3 +38,5 @@ they appear — including INSIDE a chat-templated message body.
 Worked fix + regression tests: `scripts/issue825_onpolicy_u2_gen.py`
 (`_process_cell_rows` / `assert_placeholder_span_valid`),
 `tests/test_issue825_u2_span_validation.py` (commit `8d4c1806f1`).
+
+**G2-parity sibling (#825 round 10):** the same seam breaks cross-capture POSITION-PARITY gates — a row-fraction cosine leg fails on exactly the rows where `context_pos` shifted ±1 between two captures (median stays clean). Diagnose by comparing position METADATA across captures before touching thresholds; resolve with a mechanical position-keyed pair-safe carve-out (never cosine-keyed — selection-on-outcome).
