@@ -23,6 +23,21 @@ exist + their user-visible effects); this file is the full predicate spec.
 Auto-terminate pods EXITED >24h — EXEMPT when the owning task carries the
 `keep-running` tag, reported as `kept-exited` instead.
 
+**Team-shared account — the EXITED auto-terminate is positively
+ownership-gated (#1404).** The RunPod account is TEAM-SHARED: non-EPS
+teammates may legitimately run pods whose names carry the managed `pod-`
+prefix, so a managed-looking name is NOT proof of EPS ownership. The
+EXITED>24h auto-terminate fires only when `_is_eps_owned`
+(`scripts/pod_audit.py`) POSITIVELY confirms EPS ownership via any one of
+three signals — the parsed issue number resolves in `tasks/REGISTRY.json`,
+the pod appears in the `pods_ephemeral.json` sidecar, or
+`_scan_task_references` finds task references — each wrapped
+fail-toward-keep (a raising signal never asserts ownership). An EXITED
+managed-name pod that fails all three surfaces REPORT-ONLY in the
+`unmanaged-exited` bucket (rendered with a "NEVER auto-terminated"
+advisory), never auto-terminated; termination there is the user's call
+after confirming ownership.
+
 ## Stale-GCP-VM janitor (09:37 daily, `cron_gcp_audit.sh` → `gcp_audit.py`)
 
 The GCP analogue of the stale-pod audit — the credit-leak backstop for the
