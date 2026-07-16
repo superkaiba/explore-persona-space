@@ -361,10 +361,10 @@ main() {
   log "issue=$ISSUE mode: STUB=$STUB SMOKE=$SMOKE NGPUS=$NGPUS repo=$REPO_ROOT"
   # Plan §4.2 staging safety: main must not have touched issue825_fit_cells.py
   # since the last ported-through main commit (else PORT the diff, not checkout).
-  # Pin history: af402fdf (issue-1310 merge-base) -> ed73b13029 (#1320 vectorized
+  # Pin history: af402fdf (issue-1310 merge-base) -> ed73b13029 (#1320) -> 6ffc602fa9 (#1345 byte-preserving params port, orchestrator inline
   # MLP secondary + turnstore upload; 3-way-merged into the branch copy in the
   # r4 crash-fix round — 1335 calls none of the #1320-touched entrypoints).
-  local port_pin=ed73b13029
+  local port_pin=6ffc602fa9
   git fetch origin main --quiet || log "WARN: git fetch origin main failed (offline?)"
   if git rev-parse --verify --quiet origin/main >/dev/null; then
     local touched
