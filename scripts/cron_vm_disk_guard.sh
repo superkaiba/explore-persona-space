@@ -1,11 +1,16 @@
 #!/bin/bash
 # VM root-disk guard — invoked from system crontab.
 # Reads df for / and, when usage exceeds the threshold (default 85%, env
-# EPS_VM_DISK_THRESHOLD), runs three tiers of strictly-safe cleanup:
+# EPS_VM_DISK_THRESHOLD), runs five tiers of strictly-safe cleanup:
 #   (a) uv cache prune (never --force; skips gracefully if the lock is held);
-#   (b) data/issue_*/hf_dl + g*_dl download caches for issues at a TERMINAL
-#       status (completed/archived/awaiting_promotion) — re-downloadable, and
-#       store/ + eval_results/ are NEVER touched. Task state is read-only.
+#   (b) TERMINAL issues' data/issue_*/hf_dl + g*_dl caches (+ #911
+#       non-canonical /tmp + data/ caches); store/ + eval_results/ NEVER
+#       touched; task state read-only; active issues escalate-only;
+#   (d) age-gated reap of the VM's pod-style /workspace/.cache/huggingface
+#       hub cache (repos unused >= 14 d; pod-guarded; #911);
+#   (e) HOME HF hub cache ~/.cache/huggingface/hub (#1376): per-repo
+#       attribution + >40 GB escalation always; reaps stale unreferenced
+#       revisions (>= 7 d) + wholly-stale repos via delete_revisions;
 #   (c) logs/**/*.log + /tmp/*.log older than N days (env
 #       EPS_VM_DISK_LOG_MAX_AGE_DAYS, default 14).
 # After cleanup, if / is still over threshold it prints a loud WARNING and
