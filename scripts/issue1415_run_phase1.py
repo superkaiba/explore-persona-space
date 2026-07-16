@@ -17,14 +17,44 @@ flow on CPU with a from-config 2-layer Qwen model):
 - **1d** r_B arm: ``issue779_monitoring/r_b/{trait}.pt`` (shape asserted
   (28, 3584) in production), alpha search on a 5-pair subset, then the full
   pair set x traits x N at the selected alpha.
+- **1e** teacher-forced V_a capture over EVERY persisted steered completion
+  cell (1c grid/retry/layers/allpos + 1d full) at the sweep layers — the plan
+  §4.10 DV (a) input (round-2 fix for the missing H1 headline-DV leg). Also
+  writes the map-transport canonical files
+  ``activations_steered/<pair_id>__<arm>.pt`` (the selected operating-alpha
+  cell at the primary layer). NOT a plan §9 row — the compute addition
+  (~7,000 teacher-forced samples ≈ 0.5-0.75 GPU-h at the 1a basis) is
+  recorded in the round-2 implementation report.
 - ``--pilot``: 1 pair x alpha=1.0 x primary layer x N draws (+ the
   all-positions variant); measures s/sample, logs + persists it, and the full
   sweep REFUSES to start when s/sample > 4.7 unless ``--force``.
 
+Pre-registered in-run kill criteria (plan v5 §3; round-2 fix):
+
+- **K1** (post-1a): the context-swap ceiling must show real answer-side
+  separation. Geometric half IN-DRIVER: per pair, the split-half (even/odd
+  draws) answer-target direction cosine, max over the sweep layers, vs the
+  p97.5 of a random-direction max-over-layers band; >80% of pairs within the
+  band -> ABORT the 1c/1d sweep, ``k1_report.json``, exit ``RC_K1_ABORT=4``.
+  The judge half (ceiling judge-shift < 5 pts) runs OFF-pod and is a
+  DEFERRED-to-analysis warning in ``issue1415_judge.py`` (recorded deviation:
+  the in-driver abort keys on the geometric half alone).
+- **K2** (inside 1c): the primary-layer alpha grid runs the pilot pair + the
+  FIRST 5 pairs first; if the coherence gate fails at ALL grid alphas for
+  >50% of those units -> HALT 1c/1d, ``k2_report.json``, exit ``RC_K2_HALT=5``.
+
+Under ``--tiny`` the kill-criteria VERDICTS are computed + persisted but the
+aborts are demoted to loud log lines (gotchas.md: smoke/production gate
+calibration — a random-weight 2-layer model makes the production-calibrated
+verdicts meaningless at smoke scale); the abort branches are unit-pinned in
+``tests/test_issue1415_phase1_driver.py``. ``--ignore-kill-criteria`` demotes
+them in production too (explicit override, always recorded in the reports).
+
 Checkpoint-per-cell: ``phase1_manifest.json`` marks completed cells (keyed on
 EVERY output-affecting regime knob); a rerun skips them. Artifacts write
 incrementally: completions -> HF data-repo prefix ``raw_completions/issue_1415/``,
-capture tensors -> ``analysis_tensors/issue_1415/activations/``, per-cell
+capture tensors -> ``analysis_tensors/issue_1415/activations/`` (+ steered
+captures -> ``analysis_tensors/issue_1415/activations_steered/``), per-cell
 metadata JSON -> the (git) ``--out-root`` (default ``eval_results/issue_1415/phase1``).
 """
 
@@ -85,6 +115,27 @@ EXTRACTION_ARMS = ("prefix", "context")  # Delta from v_c_prefix vs v_c_context
 
 RAW_PREFIX = "raw_completions/issue_1415"
 TENSOR_PREFIX = "analysis_tensors/issue_1415/activations"
+STEERED_TENSOR_PREFIX = "analysis_tensors/issue_1415/activations_steered"
+
+# Steered-cell phases whose completions get a phase-1e V_a capture.
+CAPTURED_PHASES = (
+    "phase1c_grid",
+    "phase1c_retry",
+    "phase1c_layers",
+    "phase1c_allpos",
+    "phase1d_full",
+)
+
+# Kill-criteria constants (plan v5 §3). Distinct exit codes so the dispatcher
+# can route the domain HALT on the artifact (gotchas.md: wrap-script
+# route-on-artifact).
+RC_K1_ABORT = 4
+RC_K2_HALT = 5
+K1_NO_SEP_FRAC = 0.8  # fire when > 80% of pairs show no separation
+K1_NULL_DRAWS = 500
+K1_SEED = 1415
+K2_FIRST_PAIRS = 5
+K2_FAIL_FRAC = 0.5  # fire when > 50% of pilot+first-5 units fail at ALL alphas
 
 
 # ── config ────────────────────────────────────────────────────────────
@@ -116,10 +167,15 @@ class RunConfig:
     n_model_layers: int
     tiny_pairs: int
     device: str
+    # Kill-criteria enforcement (NOT part of the manifest regime: K1/K2 only
+    # truncate the run, they never change any cell's output).
+    enforce_kill_criteria: bool = True
 
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
-    ap = argparse.ArgumentParser(description="Issue #1415 phase-1 driver (1b/1a/1c/1d + pilot).")
+    ap = argparse.ArgumentParser(
+        description="Issue #1415 phase-1 driver (1b/1a/1c/1d/1e + pilot + K1/K2 kill criteria)."
+    )
     ap.add_argument("--tiny", action="store_true", help="from-config 2-layer CPU model (smoke)")
     ap.add_argument("--pilot", action="store_true", dest="pilot_only", help="pilot timing only")
     ap.add_argument("--force", action="store_true", help="override the 4.7 s/sample pilot gate")
@@ -132,6 +188,11 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     ap.add_argument("--gen-batch", type=int, default=8, help="contexts per batched generate call")
     ap.add_argument("--capture-batch", type=int, default=8)
     ap.add_argument("--tiny-pairs", type=int, default=2, help="pairs in the --tiny synthetic bank")
+    ap.add_argument(
+        "--ignore-kill-criteria",
+        action="store_true",
+        help="compute + persist the K1/K2 verdicts but demote the aborts to log lines",
+    )
     return ap.parse_args(argv)
 
 
@@ -165,6 +226,9 @@ def build_config(args: argparse.Namespace) -> RunConfig:
             n_model_layers=2,
             tiny_pairs=args.tiny_pairs,
             device="cpu",
+            # gate-calibration parity (gotchas.md): tiny computes + persists the
+            # K1/K2 verdicts but never aborts on them (random-weight model).
+            enforce_kill_criteria=False,
         )
     return RunConfig(
         tiny=False,
@@ -188,6 +252,7 @@ def build_config(args: argparse.Namespace) -> RunConfig:
         n_model_layers=N_MODEL_LAYERS_FULL,
         tiny_pairs=args.tiny_pairs,
         device="cuda",
+        enforce_kill_criteria=not args.ignore_kill_criteria,
     )
 
 
@@ -817,6 +882,151 @@ def _enforce_pilot_gate(pilot: dict, force: bool) -> None:
         )
 
 
+# ── kill criteria (plan v5 §3: K1 post-1a, K2 inside 1c) ──────────────
+
+
+def _k1_null_p975(n_layers: int, hidden: int, n_draws: int, seed: int) -> float:
+    """p97.5 of the max-over-layers cosine between two INDEPENDENT random unit
+    directions in R^hidden — the quick CPU random-direction band the K1
+    geometric half compares against (same max-over-layers selection shape as
+    the per-pair statistic; selection-symmetric)."""
+    gen = torch.Generator(device="cpu").manual_seed(seed)
+    u = torch.randn(n_draws, n_layers, hidden, generator=gen)
+    v = torch.randn(n_draws, n_layers, hidden, generator=gen)
+    cos = torch.nn.functional.cosine_similarity(u, v, dim=-1)  # (D, L)
+    return float(torch.quantile(cos.max(dim=1).values, 0.975))
+
+
+def _split_half_target_cos(rec_c: dict, rec_cp: dict) -> torch.Tensor | None:
+    """Per-layer cosine between the two half-sample estimates of the answer
+    target direction V_a(c') - V_a(c) (even vs odd kept draws). Returns None
+    when either side has < 2 kept completions (stat not estimable)."""
+    a_c = rec_c["v_a_per_completion"].float()  # (n_c, L, H)
+    a_cp = rec_cp["v_a_per_completion"].float()  # (n_cp, L, H)
+    if a_c.shape[0] < 2 or a_cp.shape[0] < 2:
+        return None
+    t1 = a_cp[0::2].mean(dim=0) - a_c[0::2].mean(dim=0)  # (L, H)
+    t2 = a_cp[1::2].mean(dim=0) - a_c[1::2].mean(dim=0)
+    return torch.nn.functional.cosine_similarity(t1, t2, dim=-1)  # (L,)
+
+
+def evaluate_k1(cfg: RunConfig, pairs: list[dict]) -> dict:
+    """K1 geometric half (plan v5 §3), evaluated post-1a on the 1a captures.
+
+    A pair "shows separation" when its split-half answer-target cosine (max
+    over the sweep layers) exceeds the random-direction band's p97.5 — a
+    degenerate pair (V_a(c') ~ V_a(c) up to sampling noise) has two half
+    estimates pointing in unrelated directions (cos within the band). K1
+    fires when > K1_NO_SEP_FRAC of the evaluable pairs show NO separation.
+    The judge half (ceiling judge-shift < 5 pts) is DEFERRED to the off-pod
+    judge phase (issue1415_judge.k1_judge_check); the in-driver abort keys on
+    the geometric half alone (recorded deviation, round-2 review)."""
+    band_p975 = _k1_null_p975(len(cfg.layers), cfg.hidden, K1_NULL_DRAWS, K1_SEED)
+    per_pair: dict[str, dict] = {}
+    for p in pairs:
+        pid = p["pair_id"]
+        path = cfg.bulk_root / "activations" / f"{pid}.pt"
+        assert path.exists(), f"K1 requires the phase-1a capture: {path}"
+        blob = torch.load(path, map_location="cpu", weights_only=True)
+        cos = _split_half_target_cos(blob["c"], blob["cprime"])
+        if cos is None:
+            per_pair[pid] = {"max_over_layers": None, "reason": "insufficient_kept_draws"}
+            continue
+        stat = float(cos.max())
+        per_pair[pid] = {
+            "split_half_cos_per_layer": [float(x) for x in cos],
+            "max_over_layers": stat,
+            "no_separation": stat <= band_p975,
+        }
+    evaluable = [v for v in per_pair.values() if v["max_over_layers"] is not None]
+    n_no_sep = sum(v["no_separation"] for v in evaluable)
+    frac = (n_no_sep / len(evaluable)) if evaluable else None
+    fired = frac is not None and frac > K1_NO_SEP_FRAC
+    return {
+        "criterion": "K1 (geometric half): ceiling shows no answer-side separation",
+        "statistic": (
+            "split-half (even/odd draws) cosine of V_a(c')-V_a(c), max over sweep layers, "
+            "vs p97.5 of the random-direction max-over-layers band"
+        ),
+        "judge_half": (
+            "DEFERRED to the off-pod judge phase (issue1415_judge.k1_judge_check); "
+            "this in-driver abort keys on the geometric half alone (recorded deviation)"
+        ),
+        "layers": list(cfg.layers),
+        "null_band_p975": band_p975,
+        "null_draws": K1_NULL_DRAWS,
+        "null_seed": K1_SEED,
+        "threshold_frac": K1_NO_SEP_FRAC,
+        "n_pairs": len(pairs),
+        "n_evaluable": len(evaluable),
+        "n_no_separation": int(n_no_sep),
+        "frac_no_separation": frac,
+        "fired": bool(fired),
+        "enforced": cfg.enforce_kill_criteria,
+        "per_pair": per_pair,
+    }
+
+
+def evaluate_k2(cfg: RunConfig, pilot: dict, first_pairs: list[dict]) -> dict:
+    """K2 (plan v5 §3): coherence collapse on the pilot + first-5-pairs units.
+
+    Units = the pilot pair's std variant (single alpha=1.0 cell) + one unit
+    per (extraction arm, first-5 pair) from the just-run primary-layer grid;
+    a grid unit FAILS when NO grid alpha passes the >=50%-coherent gate (the
+    x0.5 sub-grid retry is a later recovery step, deliberately outside the
+    pre-registered "fails at ALL alpha values" clause). Fires when
+    > K2_FAIL_FRAC of the units fail."""
+    prim = cfg.primary_layer
+    units: dict[str, dict] = {}
+    pilot_pass = condition_passes(pilot["coherence_flags"]["std"])
+    units["pilot/std"] = {"passes_any_alpha": pilot_pass}
+    for arm in EXTRACTION_ARMS:
+        for p in first_pairs:
+            pid = p["pair_id"]
+            passes = {
+                _fmt(a): condition_passes(
+                    load_cell_meta(cfg, f"gen1c/{arm}/{pid}/L{prim}/a{_fmt(a)}")["coherence_flags"]
+                )
+                for a in cfg.alpha_grid
+            }
+            units[f"{arm}/{pid}"] = {
+                "pass_by_alpha": passes,
+                "passes_any_alpha": any(passes.values()),
+            }
+    n_failed = sum(not u["passes_any_alpha"] for u in units.values())
+    frac = n_failed / len(units)
+    fired = frac > K2_FAIL_FRAC
+    return {
+        "criterion": "K2: coherence gate fails at ALL grid alphas on pilot + first-5 pairs",
+        "primary_layer": prim,
+        "alpha_grid": list(cfg.alpha_grid),
+        "threshold_frac": K2_FAIL_FRAC,
+        "n_units": len(units),
+        "n_failed_all_alphas": int(n_failed),
+        "frac_failed": frac,
+        "fired": bool(fired),
+        "enforced": cfg.enforce_kill_criteria,
+        "units": units,
+    }
+
+
+def _enforce_kill(cfg: RunConfig, report: dict, name: str, rc: int) -> None:
+    """Abort (distinct exit code) on a FIRED kill criterion; demoted to loud
+    log lines under --tiny / --ignore-kill-criteria (verdict still persisted)."""
+    if not report["fired"]:
+        logger.info("[%s] verdict=PASS (%s)", name, report["criterion"])
+        return
+    logger.error("[%s] KILL CRITERION FIRED: %s", name, report["criterion"])
+    logger.error(
+        "[%s] report: %s",
+        name,
+        json.dumps({k: report[k] for k in report if k != "per_pair" and k != "units"}),
+    )
+    if cfg.enforce_kill_criteria:
+        raise SystemExit(rc)
+    logger.error("[%s] abort DEMOTED (tiny smoke / --ignore-kill-criteria) — continuing", name)
+
+
 def phase_1b(
     cfg: RunConfig,
     state: Manifest,
@@ -896,20 +1106,10 @@ def phase_1a(cfg: RunConfig, state: Manifest, model, tok, pairs: list[dict], sum
         logger.info("[phase=capture1a] %s captured", pid)
 
 
-def phase_1c(
-    cfg: RunConfig,
-    state: Manifest,
-    model,
-    tok,
-    deltas: DeltaSource,
-    pairs: list[dict],
-    summary: dict,
-) -> dict:
-    """Delta-addition sweep: full alpha grid at the primary layer, coherence
-    alpha selection (with one x0.5 sub-grid retry), remaining layers at the
-    operating alpha, all-positions variant at the primary layer."""
+def _grid_cells(cfg: RunConfig, pairs_subset: list[dict]) -> list[GenCell]:
+    """Primary-layer full-alpha-grid cells for a pair subset (both arms)."""
     prim = cfg.primary_layer
-    grid_cells = [
+    return [
         GenCell(
             cell_id=f"gen1c/{arm}/{p['pair_id']}/L{prim}/a{_fmt(a)}",
             phase="phase1c_grid",
@@ -921,10 +1121,39 @@ def phase_1c(
             extra={"extraction_arm": arm},
         )
         for arm in EXTRACTION_ARMS
-        for p in pairs
+        for p in pairs_subset
         for a in cfg.alpha_grid
     ]
-    run_gen_cells(cfg, state, model, tok, deltas, grid_cells, summary)
+
+
+def phase_1c(
+    cfg: RunConfig,
+    state: Manifest,
+    model,
+    tok,
+    deltas: DeltaSource,
+    pairs: list[dict],
+    summary: dict,
+    pilot: dict,
+) -> dict:
+    """Delta-addition sweep: primary-layer alpha grid — pilot + FIRST 5 pairs
+    first, then the K2 coherence-collapse gate (halt on fire), then the
+    remaining pairs — coherence alpha selection (with one x0.5 sub-grid
+    retry), remaining layers at the operating alpha, all-positions variant at
+    the primary layer."""
+    prim = cfg.primary_layer
+    first = pairs[: min(K2_FIRST_PAIRS, len(pairs))]
+    rest = pairs[len(first) :]
+
+    # K2 ordering (plan §3, round-2 fix): gate on pilot + first-5 coherence
+    # BEFORE the remaining ~23-pair x 4-alpha grid burns GPU time.
+    run_gen_cells(cfg, state, model, tok, deltas, _grid_cells(cfg, first), summary)
+    k2 = evaluate_k2(cfg, pilot, first)
+    _write_json_atomic(cfg.out_root / "k2_report.json", k2)
+    summary["k2"] = {"fired": k2["fired"], "frac_failed": k2["frac_failed"]}
+    _enforce_kill(cfg, k2, "k2", RC_K2_HALT)
+
+    run_gen_cells(cfg, state, model, tok, deltas, _grid_cells(cfg, rest), summary)
 
     retry_alpha = min(cfg.alpha_grid) / 2.0  # the gate's one sub-grid x0.5 retry
     selection: dict[str, dict] = {}
@@ -1113,6 +1342,135 @@ def phase_1d(
     return selection
 
 
+# ── phase 1e: steered-completions V_a capture (plan §4.10 DV (a) input) ─
+
+
+def _steered_cell_metas(cfg: RunConfig) -> list[dict]:
+    """Every persisted steered-cell metadata record (nested under out_root/cells)."""
+    cells_dir = cfg.out_root / "cells"
+    assert cells_dir.exists(), f"phase-1 cells metadata missing: {cells_dir}"
+    metas = [json.loads(p.read_text()) for p in sorted(cells_dir.rglob("*.json"))]
+    return [m for m in metas if m.get("phase") in CAPTURED_PHASES]
+
+
+def phase_1e(cfg: RunConfig, state: Manifest, model, tok, pairs: list[dict], summary: dict) -> None:
+    """Teacher-forced V_a capture over EVERY persisted steered completion cell.
+
+    Per cell: ``capture_vectors`` over the cell's draws (batched across draws,
+    all sweep layers in one forward each) -> ``activations_steered/<cell_id>.pt``
+    with ``v_a_mean`` (L, H), ``v_a_per_completion`` and the empty-completion
+    count (the 1a drop-with-record contract carried forward). A cell whose
+    draws are ALL empty is recorded (``all_empty: true``) and skipped — the
+    projection driver excludes it with the recorded reason. Then writes the
+    map-transport canonical ``<pair_id>__<arm>.pt`` files (selected
+    operating-alpha cell at the primary layer)."""
+    ctx_by_pair = {p["pair_id"]: p["ctx_c"] for p in pairs}
+    metas = _steered_cell_metas(cfg)
+    assert metas, "phase-1e: no steered cells found (1c/1d must run first)"
+    steered_root = cfg.bulk_root / "activations_steered"
+    for meta in metas:
+        cell_id = meta["cell_id"]
+        cap_id = f"capture1e/{cell_id}"
+        if state.done(cap_id):
+            summary["cells_skipped"] += 1
+            continue
+        draws = _load_draws(cfg, cell_id)
+        common_fields = {
+            "cell_id": cell_id,
+            "pair_id": meta["pair_id"],
+            "phase": meta["phase"],
+            "layer": meta["layer"],
+            "alpha": meta["alpha"],
+            "all_positions": meta["all_positions"],
+            "extraction_arm": meta.get("extraction_arm"),
+            "trait": meta.get("trait"),
+            "layers": list(cfg.layers),
+            "repro": _repro(cfg),
+        }
+        out_path = steered_root / f"{cell_id}.pt"
+        # Mirror capture_vectors' empty-completion criterion (zero tokens) so
+        # an all-empty cell is a recorded skip, never a crash.
+        n_tokens = [len(tok(t, add_special_tokens=False)["input_ids"]) for t in draws]
+        if not any(n_tokens):
+            _save_pt_atomic(out_path, {**common_fields, "all_empty": True})
+            state.mark(cap_id, {"phase": "phase1e", "all_empty": True})
+            summary["cells_run"] += 1
+            logger.warning(
+                "[phase=capture1e] %s: ALL %d draws empty — capture skipped (recorded)",
+                cell_id,
+                len(draws),
+            )
+            continue
+        cap = capture_vectors(
+            model,
+            tok,
+            [ctx_by_pair[meta["pair_id"]]],
+            list(cfg.layers),
+            completions=[draws],
+            batch_size=cfg.capture_batch,
+        )
+        rec = cap["per_context"][0]
+        assert rec["v_a_mean"].shape == (len(cfg.layers), cfg.hidden), rec["v_a_mean"].shape
+        _save_pt_atomic(
+            out_path,
+            {
+                **common_fields,
+                "all_empty": False,
+                "v_a_mean": rec["v_a_mean"],
+                "v_a_per_completion": rec["v_a_per_completion"],
+                "n_empty_completions": rec["n_empty_completions"],
+            },
+        )
+        state.mark(cap_id, {"phase": "phase1e", "n_empty": rec["n_empty_completions"]})
+        summary["cells_run"] += 1
+        logger.info(
+            "[phase=capture1e] %s captured (n_empty=%d)", cell_id, rec["n_empty_completions"]
+        )
+    _write_canonical_steered(cfg, state, pairs, summary, steered_root)
+
+
+def _write_canonical_steered(
+    cfg: RunConfig, state: Manifest, pairs: list[dict], summary: dict, steered_root: Path
+) -> None:
+    """Map-transport contract: ``activations_steered/<pair_id>__<arm>.pt`` =
+    the SELECTED cell's capture (operating alpha at the primary layer; the
+    retry cell when the selection retried). Coherence-failed pairs (operating
+    alpha None) are skipped WITH a recorded reason (plan §8: excluded from the
+    geometric DV but reported)."""
+    sel_blob = json.loads((cfg.out_root / "alpha_selection_1c.json").read_text())
+    selection, retry_alpha = sel_blob["selection"], sel_blob["retry_alpha"]
+    index: dict[str, dict] = {}
+    for arm in EXTRACTION_ARMS:
+        for p in pairs:
+            pid = p["pair_id"]
+            key = f"{arm}/{pid}"
+            op = selection[key]["operating_alpha"]
+            if op is None:
+                index[key] = {"skipped": "coherence_failed_all_alpha"}
+                continue
+            prefix = "gen1c_retry" if (selection[key]["retried"] and op == retry_alpha) else "gen1c"
+            src_cell = f"{prefix}/{arm}/{pid}/L{cfg.primary_layer}/a{_fmt(op)}"
+            index[key] = {"canonical_of": src_cell, "alpha": op}
+            mark_id = f"capture1e_canonical/{arm}/{pid}"
+            if state.done(mark_id):
+                summary["cells_skipped"] += 1
+                continue
+            src = steered_root / f"{src_cell}.pt"
+            assert src.exists(), f"canonical steered capture source missing: {src}"
+            blob = torch.load(src, map_location="cpu", weights_only=True)
+            assert not blob.get("all_empty"), (
+                f"selected cell {src_cell} is all-empty — cannot be canonical "
+                "(it passed the coherence gate, so this indicates a capture bug)"
+            )
+            _save_pt_atomic(steered_root / f"{pid}__{arm}.pt", {**blob, "canonical_of": src_cell})
+            state.mark(mark_id, {"phase": "phase1e", "canonical_of": src_cell})
+            summary["cells_run"] += 1
+    _write_json_atomic(
+        cfg.out_root / "steered_canonical_index.json",
+        {"index": index, "primary_layer": cfg.primary_layer, "repro": _repro(cfg)},
+    )
+
+
 # ── top-level driver ──────────────────────────────────────────────────
 
 
@@ -1149,13 +1507,23 @@ def run_phase1(cfg: RunConfig) -> dict:
     phase_1a(cfg, state, model, tok, pairs, summary)
     _upload_phase(cfg, state, summary, "activations", TENSOR_PREFIX)
 
-    summary["alpha_selection_1c"] = phase_1c(cfg, state, model, tok, deltas, pairs, summary)
+    # K1 (plan §3): the ceiling must show answer-side separation, else the
+    # pair bank carries no usable signal — abort BEFORE the ~10 GPU-h sweep.
+    k1 = evaluate_k1(cfg, pairs)
+    _write_json_atomic(cfg.out_root / "k1_report.json", k1)
+    summary["k1"] = {"fired": k1["fired"], "frac_no_separation": k1["frac_no_separation"]}
+    _enforce_kill(cfg, k1, "k1", RC_K1_ABORT)
+
+    summary["alpha_selection_1c"] = phase_1c(cfg, state, model, tok, deltas, pairs, summary, pilot)
     for sub in ("gen1c", "gen1c_retry", "gen1c_allpos"):
         _upload_phase(cfg, state, summary, f"raw_completions/{sub}", f"{RAW_PREFIX}/{sub}")
 
     summary["alpha_selection_1d"] = phase_1d(cfg, state, model, tok, deltas, pairs, summary)
     for sub in ("gen1d_search", "gen1d_retry", "gen1d_full"):
         _upload_phase(cfg, state, summary, f"raw_completions/{sub}", f"{RAW_PREFIX}/{sub}")
+
+    phase_1e(cfg, state, model, tok, pairs, summary)
+    _upload_phase(cfg, state, summary, "activations_steered", STEERED_TENSOR_PREFIX)
 
     logger.info(
         "[phase=done] cells_run=%d cells_skipped=%d uploads=%d",

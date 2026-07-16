@@ -297,6 +297,47 @@ def reduce_results(
     return per_item, per_arm
 
 
+# ── K1 judge half (plan §3, deferred from the pod driver) ─────────────
+
+K1_JUDGE_MIN_SHIFT = 5.0  # plan §3: ceiling judge-score shift < 5 pts on 0-100
+K1_JUDGE_FRAC = 0.8  # ... for > 80% of pairs
+
+
+def k1_judge_check(per_item: dict) -> dict:
+    """K1 judge half (plan §3), evaluated OFF-pod: per pair, the ceiling
+    (generation under c') vs baseline (under c) mean graded-score shift; the
+    fraction of pairs with |shift| < 5 on the 0-100 scale. The geometric half
+    already gated the pod run in-driver (issue1415_run_phase1.evaluate_k1);
+    this deferred half is a WARNING surface for the analyzer, not an abort."""
+    by_pair: dict[str, dict[str, list[float]]] = {}
+    for rec in per_item.values():
+        if rec["arm"] in ("baseline", "ceiling") and rec["graded_score"] is not None:
+            by_pair.setdefault(rec["pair_id"], {}).setdefault(rec["arm"], []).append(
+                rec["graded_score"]
+            )
+    shifts = {
+        pid: sum(d["ceiling"]) / len(d["ceiling"]) - sum(d["baseline"]) / len(d["baseline"])
+        for pid, d in sorted(by_pair.items())
+        if d.get("baseline") and d.get("ceiling")
+    }
+    n_small = sum(abs(s) < K1_JUDGE_MIN_SHIFT for s in shifts.values())
+    frac = (n_small / len(shifts)) if shifts else None
+    fired = frac is not None and frac > K1_JUDGE_FRAC
+    return {
+        "criterion": (
+            "K1 judge half (deferred-to-analysis): ceiling judge-score shift "
+            f"< {K1_JUDGE_MIN_SHIFT} pts for > {K1_JUDGE_FRAC:.0%} of pairs"
+        ),
+        "min_shift": K1_JUDGE_MIN_SHIFT,
+        "threshold_frac": K1_JUDGE_FRAC,
+        "n_pairs_evaluable": len(shifts),
+        "n_small_shift": int(n_small),
+        "frac_small_shift": frac,
+        "fired": bool(fired),
+        "ceiling_minus_baseline_shift_per_pair": shifts,
+    }
+
+
 def main(argv: list[str] | None = None) -> None:
     args = parse_args(argv)
     from explore_persona_space.eval import DEFAULT_JUDGE_MODEL
@@ -335,11 +376,27 @@ def main(argv: list[str] | None = None) -> None:
         return
 
     per_item, per_arm = reduce_results(metas, results, by_label, args.n_draws)
+    k1 = k1_judge_check(per_item)
+    if k1["fired"]:
+        logger.warning(
+            "[k1-judge] DEFERRED K1 JUDGE HALF FIRED: %s (frac=%.2f) — "
+            "surface to the analyzer alongside the pod-side k1_report.json geometric half",
+            k1["criterion"],
+            k1["frac_small_shift"],
+        )
     out = {
         "judge": {
             "model": DEFAULT_JUDGE_MODEL,
             "n_draws_per_completion": args.n_draws,
             "max_tokens": args.max_tokens,
+            # llm-judging rule 18 pin-and-report (round-2 Minor fix): the plan
+            # §4.9 temperature 0.6 is NOT realized — judge_graded deliberately
+            # does not thread temperature into the sanctioned batch stack, so
+            # draws sample at the Anthropic API default.
+            "temperature_realized": (
+                "unset (Anthropic API default; judge_graded does not thread temperature)"
+            ),
+            "temperature_plan": 0.6,
             "scoring": "graded 0-100 primary (mean over kept draws); binary companion = mean >= 50",
             "drop_policy": (
                 "drop-never-coerce; content drops vs transport losses split (rules 9/24)"
@@ -352,6 +409,15 @@ def main(argv: list[str] | None = None) -> None:
             },
         },
         "judged_phases": list(JUDGED_PHASES),
+        "deviations": [
+            "plan §4.9 judge temperature 0.6 not realized — draws sample at the "
+            "Anthropic API default (judge_graded does not thread temperature; "
+            "recorded per llm-judging rule 18)",
+            "phase1d_search cells (r_B alpha-search subset, ~600 completions) are "
+            "NOT judged — they only feed the coherence gate; plan §9 2c counted "
+            "them in the ~1,440 r_B figure (recorded deviation, round-1 Minor 2)",
+        ],
+        "k1_judge_check": k1,
         "per_arm": per_arm,
         "per_item": per_item,
         "repro": common.repro_meta("issue1415_judge"),

@@ -456,3 +456,301 @@ def test_logit_lens_slow_mode_loader(tmp_path):
     assert len(vectors) == 7
     assert prov["modes"]["mode0"]["abs_eigval"] == pytest.approx(0.99)
     assert all(v.shape == (HID,) for v in vectors.values())
+
+
+# ── round 2: cosine units (null/observed commensurability) ────────────
+
+
+def test_null_battery_cosine_units_and_commensurability(tmp_path):
+    """Round-2 fix (h1-null-observed-scale-comparability): the battery
+    statistic is the scale-free COSINE — same units as the realized H1
+    projection_cosine — with the norm-matching cancelled exactly."""
+    mats, out = _run_battery(tmp_path, "cos")
+    j = json.loads(out.read_text())
+    assert j["units"] == "cosine"
+    for battery in ("random_delta", "shuffled_pair"):
+        blob = torch.load(mats / f"{battery}_null_matrix.pt", weights_only=True)
+        assert blob["units"] == "cosine"
+        assert float(blob["per_layer"].abs().max()) <= 1.0 + 1e-5
+    # random battery: arm axis replicated (cosine is arm-free — no ||Delta||)
+    r = torch.load(mats / "random_delta_null_matrix.pt", weights_only=True)["per_layer"]
+    assert torch.equal(r[:, :, 0], r[:, :, 1])
+    # the battery's observed rows are INPUT-Delta cosines
+    pairs = common.load_all_pairs(tmp_path / "acts")
+    obs = nb.observed_stats(pairs)
+    p0 = pairs[0]
+    d = p0.delta["prefix"][0]
+    manual = float((d / d.norm()) @ p0.target_unit()[0])
+    assert float(obs[0, 0, 0]) == pytest.approx(manual, rel=1e-5)
+    assert "observed_input_delta_cos_max_over_layers" in j
+
+
+# ── round 2: geometric projection driver (H1 DV + H3) ─────────────────
+
+import issue1415_geometric_projections as gp  # noqa: E402
+
+
+def test_captured_phases_in_sync():
+    """Drift pin: the CPU driver's local phases tuple mirrors the GPU driver's."""
+    import issue1415_run_phase1 as drv
+
+    assert tuple(gp.CAPTURED_PHASES) == tuple(drv.CAPTURED_PHASES)
+
+
+PRIM = 1  # primary layer for the synthetic worlds (LAYERS = [0, 1, 2])
+
+
+def _projection_world(
+    tmp: Path,
+    matched_kappa: float = 0.9,
+    cross_kappa: float = 0.0,
+    op_none: set[str] | None = None,
+) -> dict:
+    """Synthetic 1a captures + steered-cell metas + 1e captures + selection +
+    bank for the projection driver (3 matched / 2 cross pairs)."""
+    op_none = op_none or set()
+    matched = [f"m{i}" for i in range(3)]
+    cross = [f"x{i}" for i in range(2)]
+    acts, steered, cells = tmp / "acts", tmp / "steered", tmp / "cells"
+    acts.mkdir(parents=True, exist_ok=True)
+    gen = torch.Generator().manual_seed(11)
+    n_layers = len(LAYERS)
+    bank: dict = {"pairs": []}
+    selection: dict = {}
+    for pid in matched + cross:
+        ptype = "matched" if pid in matched else "cross"
+        bank["pairs"].append({"pair_id": pid, "pair_type": ptype})
+        rec_c = {
+            "v_c_prefix": torch.randn(n_layers, HID, generator=gen),
+            "v_c_context": torch.randn(n_layers, HID, generator=gen),
+            "v_a_mean": torch.randn(n_layers, HID, generator=gen),
+        }
+        rec_cp = {
+            "v_c_prefix": torch.randn(n_layers, HID, generator=gen),
+            "v_c_context": torch.randn(n_layers, HID, generator=gen),
+            "v_a_mean": torch.randn(n_layers, HID, generator=gen),
+        }
+        torch.save(
+            {"pair_id": pid, "layers": list(LAYERS), "c": rec_c, "cprime": rec_cp},
+            acts / f"{pid}.pt",
+        )
+        target = rec_cp["v_a_mean"] - rec_c["v_a_mean"]
+        kappa = matched_kappa if ptype == "matched" else cross_kappa
+        for arm in common.ARMS:
+            selection[f"{arm}/{pid}"] = {
+                "operating_alpha": None if pid in op_none else 1.0,
+                "retried": False,
+            }
+            if pid in op_none:
+                continue
+            for layer in LAYERS:
+                phase = "phase1c_grid" if layer == PRIM else "phase1c_layers"
+                cid = f"gen1c/{arm}/{pid}/L{layer}/a1"
+                mpath = cells / f"{cid}.json"
+                mpath.parent.mkdir(parents=True, exist_ok=True)
+                mpath.write_text(
+                    json.dumps(
+                        {
+                            "cell_id": cid,
+                            "pair_id": pid,
+                            "phase": phase,
+                            "layer": layer,
+                            "alpha": 1.0,
+                            "all_positions": False,
+                            "extraction_arm": arm,
+                            "passes_gate": True,
+                        }
+                    )
+                )
+                noise = torch.randn(n_layers, HID, generator=gen) * 0.05
+                spath = steered / f"{cid}.pt"
+                spath.parent.mkdir(parents=True, exist_ok=True)
+                torch.save(
+                    {
+                        "cell_id": cid,
+                        "layers": list(LAYERS),
+                        "all_empty": False,
+                        "v_a_mean": rec_c["v_a_mean"] + kappa * target + noise,
+                        "n_empty_completions": 0,
+                    },
+                    spath,
+                )
+    sel_path = tmp / "alpha_selection_1c.json"
+    sel_path.write_text(json.dumps({"selection": selection, "retry_alpha": 0.25}))
+    bank_path = tmp / "pair_bank.json"
+    bank_path.write_text(json.dumps(bank))
+    return {
+        "acts": acts,
+        "steered": steered,
+        "cells": cells,
+        "selection": sel_path,
+        "bank": bank_path,
+    }
+
+
+def _gp_argv(world: dict, out: Path, extra: list[str] | None = None) -> list[str]:
+    return [
+        "--activations",
+        str(world["acts"]),
+        "--steered-activations",
+        str(world["steered"]),
+        "--cells",
+        str(world["cells"]),
+        "--alpha-selection",
+        str(world["selection"]),
+        "--pair-bank",
+        str(world["bank"]),
+        "--out-json",
+        str(out),
+        "--primary-layer",
+        str(PRIM),
+        *(extra or []),
+    ]
+
+
+def test_projection_driver_h1_h3_happy_path(tmp_path):
+    world = _projection_world(tmp_path)
+    out = tmp_path / "geo.json"
+    gp.main(_gp_argv(world, out, ["--expect-counts", "3,2"]))
+    j = json.loads(out.read_text())
+    assert j["units"] == "cosine"
+    # per-cell projections are bounded cosines; matched-layer stat present
+    for row in j["per_cell"]:
+        assert row["excluded_reason"] is None
+        for rec in row["per_read_layer"].values():
+            assert -1.0 - 1e-6 <= rec["projection_cosine"] <= 1.0 + 1e-6
+            assert rec["shift_norm"] > 0 and rec["target_norm"] > 0
+    for arm in common.ARMS:
+        rows = j["h1"][arm]
+        assert len(rows) == 5
+        for r in rows.values():
+            assert r["excluded_reason"] is None
+            # selection symmetry: max over the per-layer matched-layer cosines
+            vals = [v for v in r["per_layer_matched_cos"].values() if v is not None]
+            assert r["max_over_layers"] == pytest.approx(max(vals))
+        h3 = j["h3"]["per_arm"][arm]
+        assert h3["n_matched_rows"] == 3 and h3["n_cross_rows"] == 2
+        assert h3["n_used_matched"] == 3 and h3["n_used_cross"] == 2
+        # matched pairs steered ~toward the target, cross pairs pure noise
+        assert h3["matched_mean"] > h3["cross_mean"]
+        assert h3["welch_p_one_sided"] < 0.1
+        assert h3["ranksum_p_one_sided"] < 0.2
+
+
+def test_projection_driver_default_count_assert_fires(tmp_path):
+    """Plan §3: the driver asserts len(matched)==15 / len(cross)==13 by
+    default — a smaller bank must fail loud unless --expect-counts says so."""
+    world = _projection_world(tmp_path)
+    with pytest.raises(AssertionError, match="H3 row-count assert failed"):
+        gp.main(_gp_argv(world, tmp_path / "geo.json"))
+
+
+def test_projection_driver_excluded_pair_recorded_and_dropped_from_test(tmp_path):
+    world = _projection_world(tmp_path, op_none={"m2"})
+    out = tmp_path / "geo.json"
+    gp.main(_gp_argv(world, out, ["--expect-counts", "3,2"]))
+    j = json.loads(out.read_text())
+    for arm in common.ARMS:
+        row = j["h1"][arm]["m2"]
+        assert row["excluded_reason"] == "coherence_failed_all_alpha"
+        assert row["max_over_layers"] is None
+        h3 = j["h3"]["per_arm"][arm]
+        assert h3["n_matched_rows"] == 3  # the row EXISTS in the file (plan §3)
+        assert h3["n_used_matched"] == 2  # ... but is dropped from the test
+        assert "deviation" in h3
+        assert h3["excluded_pairs"] == ["m2"]
+
+
+def test_projection_driver_band_units_guard_and_comparison(tmp_path):
+    world = _projection_world(tmp_path)
+    all_pids = [f"m{i}" for i in range(3)] + [f"x{i}" for i in range(2)]
+    band = {"p2.5": -0.3, "p50": 0.0, "p97.5": 0.3}
+    bands_ok = {
+        "units": "cosine",
+        "bands": {
+            b: {"per_pair": {arm: {pid: dict(band) for pid in all_pids} for arm in common.ARMS}}
+            for b in ("random_delta", "shuffled_pair")
+        },
+    }
+    bands_path = tmp_path / "bands.json"
+    bands_path.write_text(json.dumps(bands_ok))
+    out = tmp_path / "geo.json"
+    gp.main(_gp_argv(world, out, ["--expect-counts", "3,2", "--null-bands", str(bands_path)]))
+    j = json.loads(out.read_text())
+    m0 = j["h1"]["prefix"]["m0"]
+    assert m0["band_comparison"]["random_delta"]["null_p97.5"] == 0.3
+    assert m0["band_comparison"]["random_delta"]["exceeds_p97.5"] is True
+
+    # units guard: a non-cosine bands file is REFUSED (never compared across units)
+    bad = dict(bands_ok, units="norm-matched-projection")
+    bad_path = tmp_path / "bands_bad.json"
+    bad_path.write_text(json.dumps(bad))
+    with pytest.raises(RuntimeError, match="need 'cosine'"):
+        gp.main(
+            _gp_argv(
+                world,
+                tmp_path / "geo2.json",
+                ["--expect-counts", "3,2", "--null-bands", str(bad_path)],
+            )
+        )
+
+
+def test_map_transport_steered_skips_missing_canonical(tmp_path):
+    """A coherence-excluded pair (no canonical 1e capture) is skipped WITH a
+    record (plan §8), never a crash; remaining pairs still compute."""
+    act = tmp_path / "acts"
+    ids = _write_captures(act, n_pairs=3)
+    map_path = tmp_path / "map.pt"
+    torch.save({"layer_1": {"weight": torch.eye(HID)}}, map_path)
+    steer = tmp_path / "steered"
+    steer.mkdir()
+    pairs = common.load_all_pairs(act)
+    li = pairs[0].layers.index(1)
+    for p in pairs[:2]:  # the 3rd pair has NO canonical capture
+        for arm in common.ARMS:
+            torch.save(
+                {"v_a_mean": p.v_a_c[li] + p.delta[arm][li]},
+                steer / f"{p.pair_id}__{arm}.pt",
+            )
+    out = tmp_path / "mt.json"
+    mt.main(
+        [
+            "--activations",
+            str(act),
+            "--map-path",
+            str(map_path),
+            "--steered-activations",
+            str(steer),
+            "--out-json",
+            str(out),
+            "--layer",
+            "1",
+            "--hidden",
+            str(HID),
+            "--n-draws",
+            "10",
+        ]
+    )
+    j = json.loads(out.read_text())
+    for arm in common.ARMS:
+        assert j["per_arm"][arm]["skipped_pairs"] == [ids[2]]
+        assert len(j["per_arm"][arm]["transport_cosine"]) == 2
+
+
+def test_judge_k1_check_thresholds():
+    """K1 judge half (deferred): fires on uniformly small ceiling shifts,
+    passes on large ones, and stays un-fired when not evaluable."""
+
+    def items(shift):
+        per_item = {}
+        for i, pid in enumerate(("a", "b", "c")):
+            per_item[f"b{i}"] = {"arm": "baseline", "pair_id": pid, "graded_score": 40.0}
+            per_item[f"c{i}"] = {"arm": "ceiling", "pair_id": pid, "graded_score": 40.0 + shift}
+        return per_item
+
+    small = jg.k1_judge_check(items(2.0))
+    assert small["fired"] is True and small["frac_small_shift"] == 1.0
+    big = jg.k1_judge_check(items(30.0))
+    assert big["fired"] is False and big["frac_small_shift"] == 0.0
+    none = jg.k1_judge_check({"x": {"arm": "baseline", "pair_id": "a", "graded_score": 10.0}})
+    assert none["fired"] is False and none["frac_small_shift"] is None
