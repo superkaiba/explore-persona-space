@@ -343,7 +343,10 @@ def _tiny_bank(n_pairs: int) -> dict:
                 "pair_type": "matched" if i % 2 == 0 else "cross",
                 "ctx_c": {"system": None, "user": q},
                 "ctx_cprime": {"system": "You are a pirate captain.", "user": q},
-                "trait_or_behavior": "pirate",
+                # a #685 behavior label so issue1415_judge.resolve_rubric resolves
+                # OFFLINE in the tiny smoke (a fabricated label like "pirate" has
+                # no rubric source and crashes the judge phase — round-C smoke fix)
+                "trait_or_behavior": "hedging",
             }
         )
     return {"metadata": {"issue": 1415, "tiny": True}, "pairs": pairs}
