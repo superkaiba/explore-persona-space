@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1400,
+  "highest_id": 1401,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -3130,6 +3130,13 @@
       "path": "tasks/proposed/1400",
       "status": "proposed",
       "title": "daily-fix: triage observer empty-window false flags"
+    },
+    "1401": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1401",
+      "status": "proposed",
+      "title": "daily-fix: pod.py sync env GITHUB_TOKEN refresh leg"
     },
     "141": {
       "has_clean_result": false,
