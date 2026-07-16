@@ -366,8 +366,11 @@ main() {
   # r4 crash-fix round — 1335 calls none of the #1320-touched entrypoints)
   # -> 5b2917fa67 (#1336 default-preserving lambdas=/frozen_layers= params,
   # r9 orchestrator-inline 3-way port; lambdas= threaded through the branch's
-  # batched null path, inner-group-cv x custom-grid cross product fail-loud).
-  local port_pin=5b2917fa67
+  # batched null path, inner-group-cv x custom-grid cross product fail-loud)
+  # -> 8cf88202ef (#1310 focused-maps: main gained the shared batched lineage
+  # this branch already carries + the new GCV_DOF_CAP dof-cap fix — folded
+  # into both scan paths here, default None byte-preserving; r9 port 2).
+  local port_pin=8cf88202ef
   git fetch origin main --quiet || log "WARN: git fetch origin main failed (offline?)"
   if git rev-parse --verify --quiet origin/main >/dev/null; then
     local touched
