@@ -5,3 +5,4 @@
 {"ts": "2026-07-16T00:27:30Z", "kind": "epm:progress", "version": 2, "by": "unknown", "note": "stage-dispatch stage=planning round=1 subagent=planner worktree=repo-root — adversarial-planner Phase 1 spawned (background); Goal snapshot captured at /tmp/issue-1370-goal-snap.txt"}
 {"ts": "2026-07-16T00:41:56Z", "kind": "epm:plan-verify", "version": 1, "by": "unknown", "note": "verify_plan.py PASS (n_fail=0, n_warn=0, no overrides) on plans/v1.md"}
 {"ts": "2026-07-16T00:41:57Z", "kind": "epm:progress", "version": 3, "by": "unknown", "note": "stage-dispatch stage=planning round=1 subagent=fact-checker worktree=repo-root — Phase 1.5 fact-checker spawned on plans/v1.md"}
+{"ts": "2026-07-16T00:49:07Z", "kind": "epm:progress", "version": 4, "by": "unknown", "note": "codex composers skipped — quota sentinel live until 2026-08-06T13:26:00+00:00 (#1204 pre-spawn check); single-Claude per no-show fallback for all 3 Phase-2 lens twins"}
