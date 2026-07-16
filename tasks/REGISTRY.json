@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1380,
+  "highest_id": 1381,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -2969,6 +2969,13 @@
       "path": "tasks/proposed/1380",
       "status": "proposed",
       "title": "workflow-fix: codex reviewer rubric gains Step 4.6"
+    },
+    "1381": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1381",
+      "status": "proposed",
+      "title": "workflow-fix: verify_plan flags false no-flags claims"
     },
     "139": {
       "has_clean_result": true,
