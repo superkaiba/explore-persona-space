@@ -2423,7 +2423,7 @@
       "kind": "experiment",
       "path": "tasks/interpreting/1310",
       "status": "interpreting",
-      "title": "Focused per-character context->dialogue map on on-policy stories, base vs instruct (4-persona panel)"
+      "title": "A fixed-label fiction character supports a weak, character-specific context\u2192dialogue map in the base model, far below the assistant-map ceiling (MODERATE confidence)"
     },
     "1311": {
       "has_clean_result": false,

@@ -1,6 +1,6 @@
 ---
-title: Focused per-character context->dialogue map on on-policy stories, base vs instruct
-  (4-persona panel)
+title: A fixed-label fiction character supports a weak, character-specific context→dialogue
+  map in the base model, far below the assistant-map ceiling (MODERATE confidence)
 kind: experiment
 tags: []
 created_at: '2026-07-14T22:56:43Z'
