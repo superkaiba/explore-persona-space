@@ -9093,11 +9093,12 @@ AGENT_SPEC_SIZE_GRANDFATHER: dict[str, int] = {
     # Prior: 73,000 — measured 72,229 B post-#1056, 72,000 post-#1050 r2,
     # 71,000 post-#1050 r1, 60,554 B pre-#1050)
     "codex-clean-result-critic.md": 74_000,
-    # measured 52,361 B post-#1254 (Step 3.9 copy-list bullet + the
-    # inlined-rubric 3.9 slot — plan-mandated growth; cap = measured
-    # + <=~1 KB. Prior: 51,600 — measured 50,642 B post-#948 (Step 3.8
-    # copy-list bullet + inlined-rubric slot), 47,930 B post-#881)
-    "codex-code-reviewer.md": 53_300,
+    # measured 55,870 B post-#1380 (Step 4.6 copy-list bullet + inlined-
+    # rubric 4.6 slot + Blocker-tags 4.6-presence — plan-mandated growth;
+    # cap = measured + <=~1 KB. Prior: 53,300 — measured 52,361 B
+    # post-#1254 (Step 3.9 copy-list bullet + inlined-rubric slot),
+    # 51,600 — measured 50,642 B post-#948, 47,930 B post-#881)
+    "codex-code-reviewer.md": 56_800,
     # measured 67,472 B post-#1363 (MALLOC_ARENA_MAX=2 in the VM-launch cap
     # prefix + the #1315 arena parenthetical — plan-mandated growth; cap =
     # measured + <=~1 KB. Prior: 67,400 — measured 66,574 B post-#1349,

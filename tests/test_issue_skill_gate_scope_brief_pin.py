@@ -29,6 +29,10 @@ What is pinned (plan #1305 §4.4 + the binding review concerns):
       diff-consistency -> `substantive`; a NOT-RUN pin-hit is presumptively
       blocker-adjacent), and SKILL.md's Step 5c-bis strip recipe carries the
       matching `Gate-scope check` presence sub-case.
+(vi)  codex-code-reviewer.md (the Codex twin) carries the Step 4.6
+      copy-list bullet, the inlined-rubric `4.6` enumeration slot, and the
+      Blocker-tags 4.6-presence vocabulary (#1380 twin parity — without
+      them the ensemble is single-family on the #1317 gate).
 """
 
 from __future__ import annotations
@@ -231,4 +235,42 @@ def test_skill_5cbis_strip_recipe_covers_gate_scope():
         "`Gate-scope check` presence sub-case (#1317) — without it, an absence "
         "FAIL is verified via the four-H3 default recipe and wrongly stripped "
         "(the #811 shape)"
+    )
+
+
+# --------------------------------------------------------------------------
+# Pin (vi) — codex-code-reviewer.md twin parity (#1380)
+# --------------------------------------------------------------------------
+
+_CODEX_CODE_REVIEWER = _REPO_ROOT / ".claude" / "agents" / "codex-code-reviewer.md"
+
+
+def test_codex_twin_carries_gate_scope_step():
+    text = _CODEX_CODE_REVIEWER.read_text(encoding="utf-8")
+    # Copy-list bullet, region-scoped between the Step 4.5 bullet's end and
+    # the v2 addendum (the file's copy-list tail — where the bullet lives):
+    # the composer must copy Step 4.6 into the prompt.
+    bullet = _region(
+        text,
+        "an un-CI-pinned BLOCKER-fix assertion ships unflagged.",
+        "**Workflow v2 addendum",
+        label="codex-code-reviewer.md Step 4.6 copy-list bullet",
+    )
+    assert "Step 4.6" in bullet and "Gate-scope" in bullet, (
+        "codex-code-reviewer.md must carry the Step 4.6 Gate-scope copy-list "
+        "bullet (#1317/#1380) — without it the Codex twin never enforces the gate"
+    )
+    # Inlined-rubric placeholder enumeration: a copy-list-only token check
+    # false-PASSes while the composed executable prompt omits the step
+    # (the #606 twin-omission class; the #881/#890 lint shape).
+    assert "4.5, 4.6, 5, 6, 7" in text, (
+        "the {{INLINED RUBRIC}} placeholder enumeration must include 4.6"
+    )
+    # Blocker-tags template: the 4.6-presence vocabulary, per-blocker-named.
+    assert "4.6-presence" in text, (
+        "the Blocker-tags template must carry the 4.6-presence marker-shape vocabulary"
+    )
+    assert "a 4.6 presence blocker body names `Gate-scope check`" in text, (
+        "the Blocker-tags template must key the 5c-bis strip per blocker on "
+        "the `Gate-scope check` name (code-reviewer.md Blocker-tags parity)"
     )
