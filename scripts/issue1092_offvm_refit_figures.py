@@ -63,6 +63,39 @@ ALL_CELLS = [
 ]
 
 
+def fig0_read1_v2(rows: list[dict], inline: dict) -> None:
+    """Battery-excluded canonical read1 bars (supersedes read1_r2_prefix_vs_context)."""
+    refit = {
+        (r["cell"], r["arm"]): r["refit_r2"]
+        for r in rows
+        if r["layer"] == 14 and r["fit_arm"] == "A" and r["basis"] == "ambient"
+    }
+    banked = inline["A1_read1_banked_old"]["cells"]
+    c_ctx, c_pfx = paper_palette(2)
+    fig, ax = plt.subplots(figsize=(10.0, 5.2))
+    x = np.arange(len(ALL_CELLS))
+    w = 0.36
+    for off, arm, color, lab in [
+        (-w / 2, "context_end", c_ctx, "context-based map (prefix + query end)"),
+        (w / 2, "prefix_end", c_pfx, "prefix-based map (persona end)"),
+    ]:
+        vals = [refit.get((c, arm), banked[c][arm]["r2"]) for c in ALL_CELLS]
+        ax.bar(x + off, vals, w, color=color, label=lab)
+        for xi, v in zip(x, vals, strict=True):
+            ax.text(xi + off, v + 0.008, f"{v:.2f}", ha="center", va="bottom", fontsize=7.5)
+    ax.set_xticks(x)
+    ax.set_xticklabels([CELL_SHORT[c] for c in ALL_CELLS], rotation=25, ha="right")
+    ax.set_ylabel("held-out R² (grouped 6-fold, pooled targets)")
+    ax.set_title(
+        "Held-out map skill per cell (layer 14, fit-arm A, ambient; battery-excluded)",
+        fontsize=11,
+        pad=12,
+    )
+    ax.legend(fontsize=8)
+    savefig_paper(fig, "read1_r2_prefix_vs_context_v2", dir=FIG_DIR)
+    plt.close(fig)
+
+
 def fig1_refit_vs_banked(rows: list[dict]) -> None:
     """Paired bars (headline config) + per-unit banked-vs-refit scatter."""
     c_ctx, c_pfx = paper_palette(2)
@@ -305,6 +338,7 @@ def main() -> None:
     rows = json.loads((ROUND_DIR / "refit_vs_banked_digest.json").read_text())
     partb = json.loads((ROUND_DIR / "partb_operator_digest.json").read_text())
     inline = json.loads(INLINE_JSON.read_text())
+    fig0_read1_v2(rows, inline)
     fig1_refit_vs_banked(rows)
     fig2_floors(rows, inline)
     fig3_partb(partb)
