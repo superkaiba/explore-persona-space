@@ -1,6 +1,7 @@
 ---
-title: A fixed-label fiction character supports a weak, character-specific context→dialogue
-  map in the base model, far below the assistant-map ceiling (MODERATE confidence)
+title: A fixed-label fiction character supports a character-specific context→dialogue
+  map in both base and instruct models once each scene is aggregated to one point
+  (MODERATE confidence)
 kind: experiment
 tags: []
 created_at: '2026-07-14T22:56:43Z'

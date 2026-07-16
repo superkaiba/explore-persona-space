@@ -2423,7 +2423,7 @@
       "kind": "experiment",
       "path": "tasks/interpreting/1310",
       "status": "interpreting",
-      "title": "A fixed-label fiction character supports a weak, character-specific context\u2192dialogue map in the base model, far below the assistant-map ceiling (MODERATE confidence)"
+      "title": "A fixed-label fiction character supports a character-specific context\u2192dialogue map in both base and instruct models once each scene is aggregated to one point (MODERATE confidence)"
     },
     "1311": {
       "has_clean_result": false,
