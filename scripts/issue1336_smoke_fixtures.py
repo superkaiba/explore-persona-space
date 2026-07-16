@@ -430,7 +430,20 @@ def build_diag_fixture(
         arrays["fitted_mask"] = sweep["fitted_mask"]
         arrays["conv_ids"] = np.asarray([c["conv_id"] for c in convs])
         arrays["folds"] = sweep["folds"]
-        np.savez(preds_dir / f"preds_{cell_id}.npz", **arrays)
+        preds_path = preds_dir / f"preds_{cell_id}.npz"
+        np.savez(preds_path, **arrays)
+        # Manifest sidecar mirroring the production `_persist_preds` schema
+        # (sha256 + shapes) — the E1.0 recal-input assert consumes it.
+        import hashlib
+
+        manifest_path = preds_dir / "preds_manifest.json"
+        manifest = json.loads(manifest_path.read_text()) if manifest_path.exists() else {}
+        manifest[preds_path.name] = {
+            "sha256": hashlib.sha256(preds_path.read_bytes()).hexdigest(),
+            "shapes": {k: list(v.shape) for k, v in arrays.items()},
+            "dtype_preds": "float16",
+        }
+        manifest_path.write_text(json.dumps(manifest, indent=2))
         print(f"[diag-fixture] wrote cell {cell_id} (n={n}, L={layers}, D={dim})")
     # Reduced-Qwen stand-in (layer count clamped by the driver to L-1).
     nq = max(n, 10)

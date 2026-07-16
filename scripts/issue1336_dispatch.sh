@@ -24,6 +24,8 @@
 #   bash scripts/issue1336_dispatch.sh d1_battery [--smoke]   # plan v7 D1.4/D1.6 GPU leg
 #   bash scripts/issue1336_dispatch.sh d1_vmsteps [--smoke]    # plan v7 D1.0-D1.3+D1.7 CPU leg
 #   bash scripts/issue1336_dispatch.sh d2_probe [--smoke]      # plan v7 D2 (conditional)
+#   bash scripts/issue1336_dispatch.sh e1_recal [--smoke]      # plan v9 E1 recal CPU leg
+#   bash scripts/issue1336_dispatch.sh e2_refit [--smoke]      # plan v9 E2 (conditional GPU leg)
 set -euo pipefail
 
 REPO_ROOT="${REPO_ROOT:-/workspace/explore-persona-space}"
@@ -1215,6 +1217,304 @@ print(f"[signal] wrote d2 results sentinel {os.environ['RES_OUT']}")
 PY
 }
 
+# ---------------------------------------------------------------------------
+# Phase E1 recal (plan v9): held-out recalibration + fold-exchangeability on a
+# CPU lane (GCP cpu-mid, the realized d1_vmsteps pattern). Consumes the
+# committed d1 battery outputs (refit_v0 JSONs on the branch, battery_v0 preds
+# npz on HF) + turnstores + Qwen stems; produces recal_verdict.json + figures.
+# ---------------------------------------------------------------------------
+# Fail-loud pre-input check (exit 71 convention): the E1.c lambda-audit join
+# consumes the d1 battery refit_v0 JSONs COMMITTED on the issue branch; a
+# fresh clone missing them must die BEFORE any staging work.
+assert_e1_recal_inputs() {
+    local d="$OUT_DIR/diagnosis" f missing=0
+    for f in refit_v0_rlvr_chat_lmsys5k.json refit_v0_rlvr_naturalistic_lmsys5k.json; do
+        if [ ! -f "$d/$f" ]; then
+            echo "[e1_recal] FATAL: committed diagnosis input $d/$f missing" >&2
+            missing=1
+        fi
+    done
+    if [ "$missing" -ne 0 ]; then
+        echo "[e1_recal] FATAL: clone lacks the committed d1 battery outputs" \
+            "(branch issue-1336) — the E1.c lambda join cannot run" >&2
+        exit 71
+    fi
+}
+
+# Uploads: recal npz tensors -> analysis_tensors/diagnosis/recal, JSONs -> the
+# eval-results mirror (single bulk upload_folder commits each, #664).
+upload_recal_outputs() { # $1 = phase label
+    UP_SRC="$OUT_DIR/diagnosis/recal" UP_REPO="$HF_DATA_REPO" UP_PREFIX="$HF_PREFIX" UP_LABEL="$1" \
+        uv run python - <<'PY'
+import os
+from pathlib import Path
+
+from huggingface_hub import upload_folder
+
+assert os.environ.get("HF_TOKEN"), "HF_TOKEN missing in workload env"
+src = os.environ["UP_SRC"]
+repo = os.environ["UP_REPO"]
+prefix = os.environ["UP_PREFIX"]
+label = os.environ["UP_LABEL"]
+upload_folder(
+    repo_id=repo,
+    repo_type="dataset",
+    folder_path=src,
+    path_in_repo=f"{prefix}/eval_results_mirror/diagnosis/recal",
+    allow_patterns=["*.json"],
+)
+print(f"[{label}] recal JSON mirror uploaded")
+tensors = Path(src) / "tensors"
+if tensors.exists():
+    upload_folder(
+        repo_id=repo,
+        repo_type="dataset",
+        folder_path=str(tensors),
+        path_in_repo=f"{prefix}/analysis_tensors/diagnosis/recal",
+        allow_patterns=["*.npz"],
+    )
+    print(f"[{label}] recal tensors (per-draw x per-layer matrices, recal preds) uploaded")
+PY
+}
+
+# Commit recal JSONs + figures to the issue branch; push verified (#1205 —
+# the `git push || true` swallow shape is banned). Checkpoints/tensors are
+# HF-bound, never git (eval_results/ is JSON/text only).
+commit_push_recal() { # $1 = phase label, $2 = commit message
+    local label="$1" msg="$2" branch rc=0
+    branch=$(git rev-parse --abbrev-ref HEAD)
+    git add "$OUT_DIR/diagnosis/recal"/*.json
+    if [ -d "figures/issue_1336/diagnosis/recal" ]; then
+        git add figures/issue_1336/diagnosis/recal
+    fi
+    if ! git diff --cached --quiet; then
+        git commit -m "$msg"
+    fi
+    git push origin "HEAD:$branch" || rc=$?
+    if [ "$rc" -ne 0 ] || [ "$(git rev-list --count "origin/$branch..HEAD")" != "0" ]; then
+        echo "[$label] push not landed — one retry after rebase" >&2
+        git pull --rebase=merges --autostash origin "$branch"
+        git push origin "HEAD:$branch"
+    fi
+    if [ "$(git rev-list --count "origin/$branch..HEAD")" != "0" ]; then
+        echo "[$label] FATAL: recal commit not on origin/$branch after retry" >&2
+        exit 86
+    fi
+    echo "[$label] recal commit verified on origin/$branch"
+}
+
+phase_e1_recal() {
+    echo "[phase=e1_recal]"
+    local recal_dir="$OUT_DIR/diagnosis/recal"
+    mkdir -p "$recal_dir"
+    if [ "$SMOKE" -eq 1 ]; then
+        local froot="$OUT_DIR/recal_fixture" committed="$OUT_DIR/recal_committed"
+        uv run python scripts/issue1336_smoke_fixtures.py diag \
+            --out "$froot" --n 12 --layers 2 --dim 8 --seed 0
+        # DG0 oracle on the fixture (d1_vmsteps shape): the production sweep
+        # sets the target the d1 battery producer's v0 must reproduce.
+        local oracle
+        oracle=$(FROOT="$froot" uv run python - <<'PY'
+import json
+import os
+import sys
+from pathlib import Path
+
+sys.path.insert(0, "scripts")
+import numpy as np
+
+import issue825_fit_cells as fc
+import issue1336_fit_cells as f36
+
+root = Path(os.environ["FROOT"])
+targets = {}
+for cell in ("rlvr_chat_lmsys5k", "rlvr_naturalistic_lmsys5k"):
+    bundle = fc._load_bundle_any(root / f"turnstore_{cell}", *cell.split("_", 2))
+    xy = f36._cell_xy_1336(bundle, 2)
+    sweep = fc.heldout_r2_sweep(
+        xy["X"], xy["Y"], xy["conv_ids"], n_folds=3, seed=0, null_draws=0, frozen_layers=(1,)
+    )
+    targets[cell] = float(np.nanmax(sweep["r2_obs"]))
+print(json.dumps(targets))
+PY
+)
+        # REAL battery producer: the battery_v0 preds npz + refit_v0 JSONs the
+        # recal consumer stages/joins against (cross-phase data contract).
+        uv run python scripts/issue1336_diagnose_g1.py \
+            --steps battery \
+            --stage-root "$froot" --out-dir "$committed/diagnosis" \
+            --preds-dir "$froot/preds" --gen-dir "$froot/gen" \
+            --qwen-reduced "$froot/qwen_reduced/qwen_s1_reduced.pt" \
+            --folds 3 --null-draws 2 --n-boot 25 --expect-n 12 \
+            --dg0-targets-json "$oracle"
+        # DG-E0 oracle for the recal consumer = the producer's own v0 read at
+        # the fixture's clamped verdict layer (layer 1 on the 2-layer store).
+        local dge0 r2v0
+        dge0=$(V0="$committed/diagnosis/refit_v0_rlvr_chat_lmsys5k.json" uv run python -c \
+            "import json,os; v=json.load(open(os.environ['V0']))['r2_per_layer_obs'][1]; print(json.dumps({'l29': v, 'l30': v}))")
+        r2v0=$(printf '%s' "$dge0" | uv run python -c "import json,sys; print(json.load(sys.stdin)['l29'])")
+        # Production-shaped step list through the SAME driver entrypoint.
+        uv run python scripts/issue1336_recal_verdict.py \
+            --steps stage,qwen_recal,recal,fold_exch,verdict \
+            --stage-root "$froot" --out-dir "$recal_dir" \
+            --preds-dir "$froot/preds" --gen-dir "$froot/gen" \
+            --battery-preds-dir "$committed/diagnosis/tensors" \
+            --qwen-reduced "$froot/qwen_reduced/qwen_s1_reduced.pt" \
+            --committed-eval-dir "$committed" \
+            --folds 3 --recal-null-draws 8 --n-boot 25 --n-repart 25 \
+            --expect-n 12 --dge0-targets-json "$dge0" --r2-v0-l29 "$r2v0"
+        uv run python scripts/issue1336_recal_figures.py \
+            --recal-dir "$recal_dir" --out "$OUT_DIR/figures_recal_smoke"
+        echo "[e1_recal] smoke complete (scratch $recal_dir; no uploads)"
+        return 0
+    fi
+    assert_e1_recal_inputs
+    local stage_root="${DIAG_STAGE_ROOT:-data/issue_1336/diag_stage}"
+    uv run python scripts/issue1336_recal_verdict.py \
+        --steps stage,qwen_recal,recal,fold_exch,verdict \
+        --stage-root "$stage_root" --out-dir "$recal_dir"
+    uv run python scripts/issue1336_recal_figures.py --recal-dir "$recal_dir"
+    upload_recal_outputs e1_recal
+    commit_push_recal e1_recal \
+        "task #1336: E1 recalibration outputs (recal/fold_exch/qwen/verdict + figures)"
+    local routed
+    routed=$(uv run python -c \
+        "import json,sys; print(json.load(open(sys.argv[1]))['routed_decision'])" \
+        "$recal_dir/recal_verdict.json")
+    emit_signal "epm:progress" "e1_recal" \
+        "issue1336 e1_recal: recal verdict routed_decision=$routed (JSONs committed + mirrored)"
+}
+
+# ---------------------------------------------------------------------------
+# Phase E2 refit (plan v9, CONDITIONAL): fires only when the E1 verdict routed
+# e2_refit_required (trigger 1 fold indictment -> v5-fold; trigger 2 boundary
+# straddle -> v5-cal). GPU leg (capture-7b); the lattice is re-read ONCE on
+# the v5 outputs (--use-e2). Smoke forces both variants at fixture scale.
+# ---------------------------------------------------------------------------
+phase_e2_refit() {
+    echo "[phase=e2_refit]"
+    local recal_dir="$OUT_DIR/diagnosis/recal"
+    if [ ! -f "$recal_dir/recal_verdict.json" ]; then
+        echo "[e2_refit] FATAL: $recal_dir/recal_verdict.json missing — E2 fires only on an" \
+            "E1 trigger (run e1_recal first$([ "$SMOKE" -eq 1 ] && echo ' with --smoke'))" >&2
+        exit 71
+    fi
+    if [ "$SMOKE" -eq 1 ]; then
+        local froot="$OUT_DIR/recal_fixture" committed="$OUT_DIR/recal_committed" variant
+        for variant in fold cal; do
+            uv run python scripts/issue1336_recal_verdict.py \
+                --steps e2 \
+                --stage-root "$froot" --out-dir "$recal_dir" \
+                --preds-dir "$froot/preds" --gen-dir "$froot/gen" \
+                --battery-preds-dir "$committed/diagnosis/tensors" \
+                --qwen-reduced "$froot/qwen_reduced/qwen_s1_reduced.pt" \
+                --committed-eval-dir "$committed" \
+                --folds 3 --recal-null-draws 8 --n-boot 25 --n-repart 25 \
+                --expect-n 12 --inner-folds 3 --e2-variant "$variant"
+        done
+        uv run python scripts/issue1336_recal_verdict.py \
+            --steps verdict --use-e2 \
+            --stage-root "$froot" --out-dir "$recal_dir" \
+            --preds-dir "$froot/preds" --gen-dir "$froot/gen" \
+            --battery-preds-dir "$committed/diagnosis/tensors" \
+            --qwen-reduced "$froot/qwen_reduced/qwen_s1_reduced.pt" \
+            --committed-eval-dir "$committed" \
+            --folds 3 --recal-null-draws 8 --n-boot 25 --n-repart 25 --expect-n 12
+        echo "[e2_refit] smoke complete (both variants + v5 lattice re-read; no uploads)"
+        return 0
+    fi
+    local stage_root="${DIAG_STAGE_ROOT:-data/issue_1336/diag_stage}"
+    uv run python scripts/issue1336_recal_verdict.py \
+        --steps stage,e2 --stage-root "$stage_root" --out-dir "$recal_dir"
+    uv run python scripts/issue1336_recal_verdict.py \
+        --steps verdict --use-e2 --stage-root "$stage_root" --out-dir "$recal_dir"
+    uv run python scripts/issue1336_recal_figures.py --recal-dir "$recal_dir"
+    upload_recal_outputs e2_refit
+    commit_push_recal e2_refit \
+        "task #1336: E2 conditional refit outputs (v5 + lattice re-read + figures)"
+    local routed
+    routed=$(uv run python -c \
+        "import json,sys; print(json.load(open(sys.argv[1]))['routed_decision'])" \
+        "$recal_dir/recal_verdict.json")
+    emit_signal "epm:progress" "e2_refit" \
+        "issue1336 e2_refit: v5 lattice re-read routed_decision=$routed (JSONs committed + mirrored)"
+}
+
+write_e1_results_sentinel() { # $1 = phase label (e1_recal | e2_refit)
+    local ts path phase="${1:-e1_recal}"
+    ts=$(date +%s)
+    path="$LOG_DIR/issue-1336-$(printf '%s' "$RESULTS_KIND" | tr ':' '_')-${ts}.json"
+    RES_OUT="$path" RES_KIND="$RESULTS_KIND" RES_RECAL="$OUT_DIR/diagnosis/recal" \
+        RES_PHASE="$phase" RES_NGPU="$NGPU" RES_START="$(cat "$DONE_DIR/start_ts")" \
+        RES_SMOKE="$SMOKE" uv run python - <<'PY'
+import json
+import os
+import subprocess
+import time
+from pathlib import Path
+
+recal = Path(os.environ["RES_RECAL"])
+smoke = os.environ["RES_SMOKE"] == "1"
+
+
+def _maybe(p: Path):
+    return json.loads(p.read_text()) if p.exists() else None
+
+
+verdict = _maybe(recal / "recal_verdict.json")
+qc = _maybe(recal / "qwen_recal_cal.json")
+eval_numbers = {
+    "s_qwen_recal": (qc or {}).get("s_qwen_recal"),
+    "bar_r": (qc or {}).get("bar_r"),
+}
+if verdict is not None:
+    eval_numbers.update(
+        {
+            "lattice_inputs": verdict["lattice_inputs"],
+            "v_gate": verdict["v_gate"]["outcome"],
+            "a_r": verdict["mechanism_account"]["a_r"],
+            "e2_trigger": verdict["e2_trigger"],
+            "routed_decision": verdict["routed_decision"],
+            "route_reason": verdict["route_reason"],
+        }
+    )
+sha = subprocess.run(
+    ["git", "rev-parse", "HEAD"], capture_output=True, text=True, check=True
+).stdout.strip()
+gpu_hours = round(
+    (time.time() - float(os.environ["RES_START"])) / 3600.0 * max(int(os.environ["RES_NGPU"]), 1),
+    2,
+)
+note = {
+    "phase": os.environ["RES_PHASE"],
+    "eval_numbers": eval_numbers,
+    "eval_paths": [str(recal / "recal_verdict.json")],
+    "gpu_hours_estimate": gpu_hours,
+    "reproducibility_card": {
+        "hf_data_repo": "superkaiba1/explore-persona-space-data",
+        "recal_prefixes": [
+            "issue1336_rlvr_ladder/eval_results_mirror/diagnosis/recal/",
+            "issue1336_rlvr_ladder/analysis_tensors/diagnosis/recal/",
+        ],
+        "wandb_url": "n/a (no training in the E1/E2 recalibration round)",
+        "final_commit_sha": sha,
+    },
+}
+payload = {
+    "sentinel_schema_version": 1,
+    "kind": os.environ["RES_KIND"],
+    "version": 1,
+    "task_id": 1336,
+    "by": "issue1336_dispatch",
+    "smoke": smoke,
+    "note": json.dumps(note),
+}
+with open(os.environ["RES_OUT"], "w") as fh:
+    json.dump(payload, fh, indent=2)
+print(f"[signal] wrote e1/e2 results sentinel {os.environ['RES_OUT']}")
+PY
+}
+
 run_phase() { # $1 = phase name
     if phase_done "$1"; then
         echo "[dispatch1336] phase $1 already complete — skipping"
@@ -1259,8 +1559,22 @@ d2_probe)
     write_d2_results_sentinel
     echo "[phase=done]"
     ;;
+e1_recal)
+    # CPU-leg workload (plan v9 E1): held-out recalibration + fold
+    # exchangeability + verdict on a fresh clone carrying the committed
+    # d1 battery JSONs (asserted present BEFORE staging).
+    run_phase e1_recal
+    write_e1_results_sentinel e1_recal
+    echo "[phase=done]"
+    ;;
+e2_refit)
+    # CONDITIONAL GPU-leg workload (plan v9 E2): v5 refit + lattice re-read.
+    run_phase e2_refit
+    write_e1_results_sentinel e2_refit
+    echo "[phase=done]"
+    ;;
 *)
-    echo "usage: bash scripts/issue1336_dispatch.sh all|g0_gate|gen|extract|fit|align|upload|d1_battery|d1_vmsteps|d2_probe [--smoke]" >&2
+    echo "usage: bash scripts/issue1336_dispatch.sh all|g0_gate|gen|extract|fit|align|upload|d1_battery|d1_vmsteps|d2_probe|e1_recal|e2_refit [--smoke]" >&2
     exit 2
     ;;
 esac
