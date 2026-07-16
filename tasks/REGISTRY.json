@@ -62,8 +62,8 @@
       "goal": "Determine whether the CoT-decomposition results from #928 (CoT informativeness, predictive sufficiency of the CoT summary, composition parity) replicate on DeepSeek-R1-Distill-Qwen-7B \u2014 a thinking model whose chat template forces the reasoning scaffold \u2014 and whether full scaffold compliance eliminates the flagged-context covariate, testing whether the +0.41 length-matched flagged-cluster gain is a think-scaffold-compliance artifact rather than a context-family property.",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/running/1005",
-      "status": "running",
+      "path": "tasks/verifying/1005",
+      "status": "verifying",
       "title": "Replicate the CoT decomposition on DeepSeek-R1-Distill-Qwen-7B (template-forced thinking): does scaffold compliance eliminate the flagged-context covariate?"
     },
     "1006": {
