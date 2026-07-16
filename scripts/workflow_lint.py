@@ -8852,7 +8852,9 @@ _LESSONS_ROW_GRANDFATHER_MAX_BYTES: dict[str, int] = {
     # (row 451 B -> 494 B). Cap = measured + <=40.
     # #1429 added the bootstrap-CI gating/verdict trigger (row 519 B -> 578 B).
     # Cap = measured + <=40.
-    "gotchas": 600,
+    # #1411 added the Edit-tool Unicode-literal trigger (row 599 B -> 661 B).
+    # Cap = measured + <=40.
+    "gotchas": 680,
 }
 _LESSONS_ROW_GRANDFATHER_MAX_HEADROOM_BYTES = 40
 
