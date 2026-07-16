@@ -134,6 +134,80 @@ MLC_NAMES_1005: tuple[str, ...] = (
 BASE_NAMES_1005: tuple[str, ...] = tuple(n for n in SUMMARY_NAMES_1005 if n not in MLC_NAMES_1005)
 MLC_ROW_MASK_KEY = "mlc_row_mask"
 
+# ── follow-up stage-suffix composition (cap16k amendment, plan v4 §2) ─────────
+
+
+def stage_prefix(prefix: str, stage_suffix: str, smoke: bool) -> str:
+    """Compose an HF upload prefix with a follow-up stage suffix + the ``_smoke`` leaf.
+
+    Order: ``prefix + stage_suffix + ("_smoke" if smoke else "")`` — so a smoke
+    run under a stage suffix writes ``<prefix><suffix>_smoke``, never the
+    production ``<prefix><suffix>`` and never the parent ``<prefix>`` (the
+    critic's suffix-composition concern: a follow-up round must not clobber the
+    parent head artifacts in EITHER mode).
+    """
+    return prefix + stage_suffix + ("_smoke" if smoke else "")
+
+
+def regen_accounting(
+    targets: list[tuple[str, int]],
+    pre_rows: dict[tuple[str, int], dict],
+    post_rows: dict[tuple[str, int], dict],
+) -> dict:
+    """Per-row accounting for a Phase P 16,384 re-generation (amendment plan §4).
+
+    Classifies each regenerated ``(context, qi)`` target by its pre/post parse
+    state — the critic's replaced-usable concern: cap-hit rows that were
+    nonetheless KEPT (``well_formed`` pre-regen) are reported as
+    ``replaced_usable``, never inflated into the ``recovered`` count:
+
+    - ``recovered``: pre NOT well-formed → post well-formed (the hypothesis rows)
+    - ``replaced_usable``: pre well-formed (kept despite ``finish_reason=="length"``)
+      → post well-formed
+    - ``regressed``: pre well-formed → post NOT well-formed
+    - ``still_truncated``: post NOT well-formed with ``finish_reason=="length"``
+    - ``still_unusable:<reason>``: post NOT well-formed, finished — e.g. the
+      converted-to-repetition branch shows its parser reason here
+
+    Returns ``{"n_targets", "totals", "per_context", "rows"}`` (rows carry the
+    full per-target detail — ~97 rows in production, cheap).
+    """
+    rows_out: list[dict] = []
+    totals: dict[str, int] = {}
+    per_context: dict[str, dict[str, int]] = {}
+    for c, qi in targets:
+        pre, post = pre_rows[(c, qi)], post_rows[(c, qi)]
+        if post["well_formed"]:
+            cat = "replaced_usable" if pre["well_formed"] else "recovered"
+        elif pre["well_formed"]:
+            cat = "regressed"
+        elif post.get("finish_reason") == "length":
+            cat = "still_truncated"
+        else:
+            cat = f"still_unusable:{post.get('reason')}"
+        totals[cat] = totals.get(cat, 0) + 1
+        per_context.setdefault(c, {})
+        per_context[c][cat] = per_context[c].get(cat, 0) + 1
+        rows_out.append(
+            {
+                "context": c,
+                "qi": qi,
+                "category": cat,
+                "pre_well_formed": bool(pre["well_formed"]),
+                "pre_reason": pre.get("reason"),
+                "post_well_formed": bool(post["well_formed"]),
+                "post_reason": post.get("reason"),
+                "post_finish_reason": post.get("finish_reason"),
+            }
+        )
+    return {
+        "n_targets": len(targets),
+        "totals": totals,
+        "per_context": per_context,
+        "rows": rows_out,
+    }
+
+
 # ── prompt building + startup asserts (fail-loud before any GPU spend) ───────
 
 
