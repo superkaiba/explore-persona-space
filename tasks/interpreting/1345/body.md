@@ -96,9 +96,9 @@ Held-out R² at layer 19 (context arm): map fitted on the row framing, evaluated
 
 > **Figure.** Cross-regime transfer R² at layer 19, context arm. Instruct chat↔no-template transfer retains 83–84% of the target ceiling; base retains 15–31%; every story cell is strongly negative. Cell values are held-out R² (5-fold, grouped by conversation/story).
 
-Transfer loses R² in both models: the mean per-direction deficit is −0.103 (instruct) and −0.430 (base), each with a 1,000-draw conversation-level bootstrap 95% CI excluding zero (upper bounds −0.101 and −0.425). Both models fail the registered 0.05 same-operator margin, and instruct crosses the 0.10 different-map margin by a statistically resolvable but trivially small amount (mean −0.003, 95% CI −0.006 to −0.001) — had recovery failed, the transfer-only read would have favored different maps in both models.
+The mean per-direction transfer deficit is −0.103 (instruct) and −0.430 (base); each 1,000-draw conversation-level bootstrap 95% CI excludes zero (upper bounds −0.101 and −0.425). Both models fail the registered 0.05 same-operator margin, and instruct crosses the 0.10 different-map margin by a statistically resolvable but trivially small amount (mean −0.003, 95% CI −0.006 to −0.001) — had recovery failed, the transfer-only read would have favored different maps in both models.
 
-The at-the-margin reading is specific to layer 19: at frozen layers 14, 18, and 26 the instruct per-direction deficit grows to −0.14 to −0.21, so transfer-falls-short is layer-robust. Story transfer collapses in both directions but is corpus-confounded (see the story section).
+The at-the-margin reading is specific to layer 19. At frozen layers 14, 18, and 26 the instruct per-direction deficit grows to −0.14 to −0.21, and the smallest base deficit at any frozen layer is −0.32 — the transfer deficit holds at every probed layer in both models. Story transfer collapses in both directions but is corpus-confounded (see the story section).
 
 ### A general-linear change of coordinates recovers the target map in both context cells
 
@@ -108,9 +108,9 @@ Per model and direction (context arm, layer 19): the target framing's own held-o
 
 > **Figure.** Recovered R² lands between 0.005 below and 0.008 above each target ceiling (instruct 0.654/0.620 vs ceilings 0.654/0.625; base 0.550/0.579 vs 0.542/0.578) while matched-capacity nulls sit near −0.03.
 
-A linear input alignment plus a linear output alignment around the OTHER framing's frozen map recovers the target framing's full predictive ceiling: the largest deficit is 0.005 (instruct, chat→no-template) and base recovery exceeds its own ceiling in both directions (+0.008 and +0.0003). The read is held-out, so this is not alignment-map overfitting — composition through the stronger no-template map slightly out-generalizes the direct chat fit.
+A linear input alignment plus a linear output alignment around the other framing's frozen map recovers the target framing's full predictive ceiling: the largest deficit is 0.005 (instruct, chat→no-template) and base recovery matches its own ceiling in both directions (deltas +0.008 and +0.0003). The read is held-out, so this is not alignment-map overfitting.
 
-The alignments are themselves regularized (GCV-selected penalties; effective ranks ≈1,100–1,800 input and ≈3,000–3,300 output of 3,584 at n = 4,724), and matched-capacity nulls recover −0.02 to −0.03, ruling out recovery-by-capacity. Both context cells fire the registered reparameterized verdict with margin +0.045 to +0.050; the two prefix cells formally concur but are the degenerate-arm read below, not independent evidence.
+The alignments are themselves regularized (GCV-selected penalties; effective ranks ≈1,100–1,800 input and ≈3,000–3,300 output of 3,584 at n = 4,724), and matched-capacity nulls recover −0.02 to −0.03, ruling out recovery-by-capacity. Both context cells meet the registered reparameterized verdict with margin +0.045 to +0.050; the two prefix cells formally concur but inherit the degenerate-arm caveat below.
 
 ### Instruction tuning pulls the two coordinate systems most of the way together
 
@@ -120,9 +120,9 @@ Cosine between the chat and no-template operators at layer 19 (context arm): raw
 
 > **Figure.** Raw operator cosine 0.651 (instruct) vs 0.293 (base); aligned cosine 0.855 vs 0.732; the rotation null is ~0.001, so both aligned values sit far beyond chance.
 
-Instruct operators are already 0.651 aligned raw — the chat template shifts coordinates modestly — while base operators read 0.293 raw yet 0.732 aligned, comparable to the parent's cross-MODEL anchor. Near-identical activations cannot explain this: the input activations align at linear R² 0.79 (instruct) and 0.48–0.61 (base) — reported in place of the plan's paired activation cosine; the fitted alignment upper-bounds any identity fit, so activations are provably not near-identical. Instruction tuning appears to canonicalize coordinates across framings more than it changes the operator.
+Instruct operators are already 0.651 aligned raw — the chat template shifts coordinates modestly — while base operators read 0.293 raw yet 0.732 aligned, comparable to the parent's cross-model anchor. Near-identical activations do not explain this. The input activations align at linear R² 0.79 (instruct) and 0.48–0.61 (base) — reported in place of the plan's paired activation cosine — and the fitted alignment upper-bounds any identity fit, so the activations are not near-identical. Instruction tuning appears to canonicalize coordinates across framings more than it changes the operator.
 
-### The assistant map barely exists in narrative stories, and its operator is not the chat operator
+### The assistant map barely exists in narrative stories; its relation to the chat operator is unresolved
 
 Within-regime held-out R² across all 28 layers (instruct) per framing; context arm left, prefix arm right; dashed = story shuffle-null 95th percentile; dotted = layer 19.
 
@@ -134,7 +134,7 @@ The registered existence read passes (layer-19 R² −0.754 vs shuffle-null −2
 
 Story-to-chat operator similarity is near-floor (raw cosine 0.011; top-10 principal-angle cosine 0.52 vs 0.99 chat pair), but a noise-level story map would also read near zero — the map's own unreliability caps this read. The story prefix (0.117) reads no higher than the degenerate template prefix (0.13). All story reads are corpus-confounded; 24 of 420 stories carry CJK characters; base cells N/A — not tested (96 of 500 kept vs floor 400).
 
-### Prefix-arm maps ride batch numerics of a fixed template region, and the same reparameterization recovers them
+### Prefix-arm R² tracks batch numerics of a fixed template region, and the same reparameterization recovers it
 
 Per model and direction (prefix arm, layer 19, symlog scale): the target framing's own held-out R², the naive cross-regime transfer R², and the reparameterization-recovered R².
 
