@@ -2945,8 +2945,8 @@
     "1378": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1378",
-      "status": "proposed",
+      "path": "tasks/planning/1378",
+      "status": "planning",
       "title": "Fix torch-before-dotenv in issue1073/issue1092 figure scripts (fleet test_shared_vm_thread_caps failure)"
     },
     "138": {
