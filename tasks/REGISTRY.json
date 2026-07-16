@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1377,
+  "highest_id": 1378,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -2941,6 +2941,13 @@
       "path": "tasks/planning/1377",
       "status": "planning",
       "title": "workflow-fix: vm_disk_guard trims stale home HF-hub revisions (age-gated tier)"
+    },
+    "1378": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1378",
+      "status": "proposed",
+      "title": "Fix torch-before-dotenv in issue1073/issue1092 figure scripts (fleet test_shared_vm_thread_caps failure)"
     },
     "138": {
       "has_clean_result": true,
