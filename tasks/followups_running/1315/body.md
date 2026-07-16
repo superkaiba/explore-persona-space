@@ -235,7 +235,7 @@ Per-layer own-text profiles, both cells:
 
 ![Per-layer rank and alignment overlay for the two learning-rate cells](https://raw.githubusercontent.com/superkaiba/explore-persona-space/484cb3fa77c232bd9cdd5b0a82fedca68b83f26f/figures/issue_1315/lr1e5_followup/lr_layers_overlay.png)
 
-The registered verdict lattice resolves lr-robust, none of the four reads near-bar: the signature reproduces at a three-times-lower learning rate at matched install, shift direction near-identical (mean-shift cosine 0.984, CKA 0.720), every paired difference indistinguishable from zero given the variance. The read is lr at matched install (step count co-varies); realized install (Tier-2 0.724, parity 0.63 versus floor 0.57) sits 0.013 below the siblings' spread; n is 1 run per lr arm — a positive-branch robustness read, strengthened by the joint (lr, step) change. The parity probe shares the parent probes' CJK convention-dependence (counts under Data extraction); the capture substrate is clean (0 of 120 rows).
+The registered verdict lattice resolves LrRobustConfirmed, none of the four reads near-bar: the signature reproduces at a three-times-lower learning rate at matched install, shift direction near-identical (mean-shift cosine 0.984, CKA 0.720), every paired difference indistinguishable from zero given the variance. The read is lr at matched install (step count co-varies); realized install (Tier-2 0.724, parity 0.63 versus floor 0.57) sits 0.013 below the siblings' spread; n is 1 run per lr arm — a positive-branch read, strengthened by the joint (lr, step) change. The parity probe shares the parent probes' CJK convention-dependence (counts under Data extraction); the capture substrate is clean (0 of 120 rows).
 
 ---
 
