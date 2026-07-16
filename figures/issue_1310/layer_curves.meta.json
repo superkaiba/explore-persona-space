@@ -1,6 +1,6 @@
 {
-  "commit": "bcf67e51f7",
-  "created": "2026-07-16T11:11:15Z",
+  "commit": "dcf3e06ed2",
+  "created": "2026-07-16T11:14:28Z",
   "figsize": [
     11.0,
     7.0
@@ -2977,7 +2977,7 @@
       {
         "title_left": "script-format scenes \u2014 Qwen2.5-7B-Instruct",
         "annotations": [
-          "Vex not run (run crashed before this cell)"
+          "Vex not run (generation run stopped before this fit)"
         ]
       },
       {
