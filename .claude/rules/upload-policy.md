@@ -331,6 +331,36 @@ terminate fires only when the per-cell three-state gate finds zero partial
 cells. Reference impl: `scripts/issue664_dispatch.py` `_upload_cell_artifacts` /
 `_classify_cell_hub_state` / `_cell_done_anywhere`.
 
+**Expensive stores upload BEFORE — or detached-concurrent with — any long
+fit/analysis phase; a fit hang must never strand the store (#825).** When a
+run produces a regeneration-costly intermediate (an extraction / activation
+store, a teacher-forced capture, an on-policy rollout set — anything whose
+recreation costs GPU re-extraction rather than cheap CPU recompute) and a
+DOWNSTREAM fit/analysis/eval phase consumes it, the store's upload is
+sequenced BEFORE any long (>~15-30 min) downstream phase begins, or the
+upload is LAUNCHED concurrently with the fit (detached/backgrounded — HF
+`upload_folder` costs no GPU and overlaps a CPU fit freely). A concurrent
+launch counts as persistence ONLY when it is fail-loud and its completion
+is VERIFIED independently of the fit's completion — an exit-status check on
+the detached upload, or `hub.verify_repo_paths_uploaded` against the
+expected file set, BEFORE the fit's result is consumed; a fire-and-forget
+launch (never confirmed landed) does NOT satisfy this rule — a silently
+wedged upload plus a hung fit strands the store exactly as #825 did (the
+#931 wedge ladder above is the hung-upload remedy; this clause is what
+makes the ladder reachable before the pod is gone). The default
+order `extract → fit → upload` parks the entire fit's hang/crash/OOM-kill
+risk between the expensive artifact's creation and its persistence: #825
+Track-S run 2 hung in a serial CPU MLP fit before `[phase=upload]`,
+stranding the turnstore off HF — recovery cost a full fresh GPU
+re-extraction. This is the INTRA-RUN sibling of the two #664 sequencing
+rules: per-cell upload (bullet above) persists each sweep cell the moment
+it completes; pod-release before the final bulk upload (v2 § below) frees
+the GPU — this bullet orders store-persist ahead of long fits WITHIN one
+run's phase sequence. Plan-side mirror: `planner.md` §9 (the phase sequence
+names the upload point of every regeneration-costly intermediate relative
+to long fit phases); review enforcement: Methodology lens item 10(i)
+data-safety sequencing clause (`.claude/rules/critic-lens-reference.md`).
+
 **Inline-upload fence `EPM_SKIP_INLINE_CHECKPOINT_UPLOAD`.** `_finalize_phase`
 auto-uploads merged checkpoints to WandB Artifacts; orchestrators doing their own
 tagged upload set the env in `try/finally` to prevent double-uploads.
@@ -587,3 +617,6 @@ policy ceiling (Thomas's call). Everything above still holds; v2 tightens it to:
 
 - **#664 sequencing unchanged.** The GPU pod is released before the FINAL bulk
   upload; incremental shard uploads may overlap compute (they cost no GPU).
+  The #825 intra-run ordering bullet (main body above) binds v2 unchanged:
+  an expensive extraction store uploads before — or concurrent with — any
+  long fit/analysis phase that consumes it.
