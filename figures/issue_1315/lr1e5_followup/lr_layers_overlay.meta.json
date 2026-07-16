@@ -1,8 +1,8 @@
 {
-  "commit": "cf6cf65257",
-  "created": "2026-07-16T03:22:27Z",
+  "commit": "484cb3fa77",
+  "created": "2026-07-16T03:45:19Z",
   "figsize": [
-    13.0,
+    17.5,
     5.2
   ],
   "points": [
@@ -985,10 +985,402 @@
       "series": "chance bound (97.5%)",
       "_kind": "line",
       "_group": 4
+    },
+    {
+      "Decoder layer": 0.0,
+      "mean-shift norm (log scale)": 0.681126594543457,
+      "series": "lr 1e-5 (this round)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Decoder layer": 1.0,
+      "mean-shift norm (log scale)": 0.9928680658340454,
+      "series": "lr 1e-5 (this round)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Decoder layer": 2.0,
+      "mean-shift norm (log scale)": 1.3048243522644043,
+      "series": "lr 1e-5 (this round)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Decoder layer": 3.0,
+      "mean-shift norm (log scale)": 1.7560608386993408,
+      "series": "lr 1e-5 (this round)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Decoder layer": 4.0,
+      "mean-shift norm (log scale)": 2.2083067893981934,
+      "series": "lr 1e-5 (this round)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Decoder layer": 5.0,
+      "mean-shift norm (log scale)": 2.5872511863708496,
+      "series": "lr 1e-5 (this round)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Decoder layer": 6.0,
+      "mean-shift norm (log scale)": 3.078604221343994,
+      "series": "lr 1e-5 (this round)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Decoder layer": 7.0,
+      "mean-shift norm (log scale)": 3.8744029998779297,
+      "series": "lr 1e-5 (this round)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Decoder layer": 8.0,
+      "mean-shift norm (log scale)": 4.4910101890563965,
+      "series": "lr 1e-5 (this round)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Decoder layer": 9.0,
+      "mean-shift norm (log scale)": 5.058796405792236,
+      "series": "lr 1e-5 (this round)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Decoder layer": 10.0,
+      "mean-shift norm (log scale)": 5.469181060791016,
+      "series": "lr 1e-5 (this round)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Decoder layer": 11.0,
+      "mean-shift norm (log scale)": 5.761308193206787,
+      "series": "lr 1e-5 (this round)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Decoder layer": 12.0,
+      "mean-shift norm (log scale)": 5.973713397979736,
+      "series": "lr 1e-5 (this round)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Decoder layer": 13.0,
+      "mean-shift norm (log scale)": 6.390892028808594,
+      "series": "lr 1e-5 (this round)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Decoder layer": 14.0,
+      "mean-shift norm (log scale)": 7.089932918548584,
+      "series": "lr 1e-5 (this round)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Decoder layer": 15.0,
+      "mean-shift norm (log scale)": 8.635226249694824,
+      "series": "lr 1e-5 (this round)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Decoder layer": 16.0,
+      "mean-shift norm (log scale)": 8.84156322479248,
+      "series": "lr 1e-5 (this round)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Decoder layer": 17.0,
+      "mean-shift norm (log scale)": 9.580032348632812,
+      "series": "lr 1e-5 (this round)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Decoder layer": 18.0,
+      "mean-shift norm (log scale)": 11.28126335144043,
+      "series": "lr 1e-5 (this round)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Decoder layer": 19.0,
+      "mean-shift norm (log scale)": 19.03325080871582,
+      "series": "lr 1e-5 (this round)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Decoder layer": 20.0,
+      "mean-shift norm (log scale)": 22.006235122680664,
+      "series": "lr 1e-5 (this round)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Decoder layer": 21.0,
+      "mean-shift norm (log scale)": 24.788162231445312,
+      "series": "lr 1e-5 (this round)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Decoder layer": 22.0,
+      "mean-shift norm (log scale)": 28.559473037719727,
+      "series": "lr 1e-5 (this round)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Decoder layer": 23.0,
+      "mean-shift norm (log scale)": 34.768775939941406,
+      "series": "lr 1e-5 (this round)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Decoder layer": 24.0,
+      "mean-shift norm (log scale)": 41.15834045410156,
+      "series": "lr 1e-5 (this round)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Decoder layer": 25.0,
+      "mean-shift norm (log scale)": 48.477821350097656,
+      "series": "lr 1e-5 (this round)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Decoder layer": 26.0,
+      "mean-shift norm (log scale)": 64.16896057128906,
+      "series": "lr 1e-5 (this round)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Decoder layer": 27.0,
+      "mean-shift norm (log scale)": 118.60700988769531,
+      "series": "lr 1e-5 (this round)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Decoder layer": 0.0,
+      "mean-shift norm (log scale)": 0.8452190160751343,
+      "series": "lr 3e-5 (parent cell)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Decoder layer": 1.0,
+      "mean-shift norm (log scale)": 1.2200891971588135,
+      "series": "lr 3e-5 (parent cell)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Decoder layer": 2.0,
+      "mean-shift norm (log scale)": 1.62383234500885,
+      "series": "lr 3e-5 (parent cell)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Decoder layer": 3.0,
+      "mean-shift norm (log scale)": 2.244749069213867,
+      "series": "lr 3e-5 (parent cell)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Decoder layer": 4.0,
+      "mean-shift norm (log scale)": 2.8461263179779053,
+      "series": "lr 3e-5 (parent cell)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Decoder layer": 5.0,
+      "mean-shift norm (log scale)": 3.250613212585449,
+      "series": "lr 3e-5 (parent cell)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Decoder layer": 6.0,
+      "mean-shift norm (log scale)": 3.775116443634033,
+      "series": "lr 3e-5 (parent cell)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Decoder layer": 7.0,
+      "mean-shift norm (log scale)": 4.616102695465088,
+      "series": "lr 3e-5 (parent cell)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Decoder layer": 8.0,
+      "mean-shift norm (log scale)": 5.321465969085693,
+      "series": "lr 3e-5 (parent cell)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Decoder layer": 9.0,
+      "mean-shift norm (log scale)": 6.076550483703613,
+      "series": "lr 3e-5 (parent cell)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Decoder layer": 10.0,
+      "mean-shift norm (log scale)": 6.487259864807129,
+      "series": "lr 3e-5 (parent cell)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Decoder layer": 11.0,
+      "mean-shift norm (log scale)": 6.779574394226074,
+      "series": "lr 3e-5 (parent cell)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Decoder layer": 12.0,
+      "mean-shift norm (log scale)": 7.030609130859375,
+      "series": "lr 3e-5 (parent cell)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Decoder layer": 13.0,
+      "mean-shift norm (log scale)": 7.601841926574707,
+      "series": "lr 3e-5 (parent cell)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Decoder layer": 14.0,
+      "mean-shift norm (log scale)": 8.42269515991211,
+      "series": "lr 3e-5 (parent cell)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Decoder layer": 15.0,
+      "mean-shift norm (log scale)": 10.233137130737305,
+      "series": "lr 3e-5 (parent cell)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Decoder layer": 16.0,
+      "mean-shift norm (log scale)": 10.441139221191406,
+      "series": "lr 3e-5 (parent cell)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Decoder layer": 17.0,
+      "mean-shift norm (log scale)": 11.293768882751465,
+      "series": "lr 3e-5 (parent cell)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Decoder layer": 18.0,
+      "mean-shift norm (log scale)": 13.230472564697266,
+      "series": "lr 3e-5 (parent cell)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Decoder layer": 19.0,
+      "mean-shift norm (log scale)": 22.307178497314453,
+      "series": "lr 3e-5 (parent cell)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Decoder layer": 20.0,
+      "mean-shift norm (log scale)": 25.676284790039062,
+      "series": "lr 3e-5 (parent cell)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Decoder layer": 21.0,
+      "mean-shift norm (log scale)": 28.992862701416016,
+      "series": "lr 3e-5 (parent cell)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Decoder layer": 22.0,
+      "mean-shift norm (log scale)": 33.36741256713867,
+      "series": "lr 3e-5 (parent cell)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Decoder layer": 23.0,
+      "mean-shift norm (log scale)": 40.61281967163086,
+      "series": "lr 3e-5 (parent cell)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Decoder layer": 24.0,
+      "mean-shift norm (log scale)": 48.117347717285156,
+      "series": "lr 3e-5 (parent cell)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Decoder layer": 25.0,
+      "mean-shift norm (log scale)": 56.27490997314453,
+      "series": "lr 3e-5 (parent cell)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Decoder layer": 26.0,
+      "mean-shift norm (log scale)": 74.82760620117188,
+      "series": "lr 3e-5 (parent cell)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Decoder layer": 27.0,
+      "mean-shift norm (log scale)": 142.16116333007812,
+      "series": "lr 3e-5 (parent cell)",
+      "_kind": "line",
+      "_group": 6
     }
   ],
-  "n_series": 5,
-  "total_points": 140,
+  "n_series": 7,
+  "total_points": 196,
   "text": {
     "suptitle": null,
     "fig_texts": [],
@@ -1054,6 +1446,34 @@
           "0.6",
           "0.7",
           "0.8"
+        ]
+      },
+      {
+        "title_left": "Own-text response arm: shift norm per layer",
+        "xlabel": "Decoder layer",
+        "ylabel": "mean-shift norm (log scale)",
+        "legend_labels": [
+          "lr 1e-5 (this round)",
+          "lr 3e-5 (parent cell)"
+        ],
+        "xticklabels": [
+          "\u22125",
+          "0",
+          "5",
+          "10",
+          "15",
+          "20",
+          "25",
+          "30"
+        ],
+        "yticklabels": [
+          "$\\mathdefault{10^{-2}}$",
+          "$\\mathdefault{10^{-1}}$",
+          "$\\mathdefault{10^{0}}$",
+          "$\\mathdefault{10^{1}}$",
+          "$\\mathdefault{10^{2}}$",
+          "$\\mathdefault{10^{3}}$",
+          "$\\mathdefault{10^{4}}$"
         ]
       }
     ],

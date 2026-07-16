@@ -150,10 +150,10 @@ def fig_hero(own: dict, tf: dict) -> None:
 
 
 def fig_layers_overlay(own: dict) -> None:
-    """Low-level companion: per-layer own-text rank + alignment, both lr cells."""
+    """Low-level companion: per-layer own-text rank + alignment + mean-shift norm."""
     set_paper_style("blog")
     colors = paper_palette_blog(2)
-    fig, axes = plt.subplots(1, 2, figsize=(13, 5.2))
+    fig, axes = plt.subplots(1, 3, figsize=(17.5, 5.2))
     r = own["records"]
 
     ax = axes[0]
@@ -176,6 +176,17 @@ def fig_layers_overlay(own: dict) -> None:
     ax.set_xlabel("Decoder layer")
     ax.set_ylabel("|cos(mean shift, read-out)|")
     ax.set_title("Own-text response arm: alignment per layer")
+    ax.legend(fontsize=9)
+
+    ax = axes[2]
+    for (c, lab), col in zip(CELLS, colors, strict=True):
+        ys = [rec(r, c, "response", li)["mu_norm"] for li in LAYERS]
+        ax.plot(LAYERS, ys, color=col, lw=2, marker="o", ms=3, label=lab)
+    ax.set_yscale("log")
+    ax.axvline(L14, color="gray", lw=0.8, ls=":", alpha=0.6)
+    ax.set_xlabel("Decoder layer")
+    ax.set_ylabel("mean-shift norm (log scale)")
+    ax.set_title("Own-text response arm: shift norm per layer")
     ax.legend(fontsize=9)
 
     fig.tight_layout()

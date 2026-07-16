@@ -42261,6 +42261,13 @@
       "ci_high": 2.0,
       "n_boot": 1000,
       "resampling": "paired"
+     },
+     "diff_mu_norm": {
+      "point": -0.16409242153167725,
+      "ci_low": -0.22268771873100587,
+      "ci_high": -0.1057615948860923,
+      "n_boot": 2000,
+      "resampling": "paired"
      }
     },
     "response/L1": {
@@ -42286,6 +42293,13 @@
       "ci_low": -2.0249996185302734,
       "ci_high": 2.0,
       "n_boot": 1000,
+      "resampling": "paired"
+     },
+     "diff_mu_norm": {
+      "point": -0.22722113132476807,
+      "ci_low": -0.29713877100683184,
+      "ci_high": -0.15696660316585656,
+      "n_boot": 2000,
       "resampling": "paired"
      }
     },
@@ -42313,6 +42327,13 @@
       "ci_high": 3.0,
       "n_boot": 1000,
       "resampling": "paired"
+     },
+     "diff_mu_norm": {
+      "point": -0.3190079927444458,
+      "ci_low": -0.3998512755243988,
+      "ci_high": -0.23624216234314047,
+      "n_boot": 2000,
+      "resampling": "paired"
      }
     },
     "response/L3": {
@@ -42338,6 +42359,13 @@
       "ci_low": -2.0,
       "ci_high": 3.0,
       "n_boot": 1000,
+      "resampling": "paired"
+     },
+     "diff_mu_norm": {
+      "point": -0.48868823051452637,
+      "ci_low": -0.5991644350466814,
+      "ci_high": -0.37566740029296897,
+      "n_boot": 2000,
       "resampling": "paired"
      }
     },
@@ -42365,6 +42393,13 @@
       "ci_high": 3.0,
       "n_boot": 1000,
       "resampling": "paired"
+     },
+     "diff_mu_norm": {
+      "point": -0.6378195285797119,
+      "ci_low": -0.7748872535490106,
+      "ci_high": -0.49706391328248495,
+      "n_boot": 2000,
+      "resampling": "paired"
      }
     },
     "response/L5": {
@@ -42390,6 +42425,13 @@
       "ci_low": -2.0,
       "ci_high": 3.0,
       "n_boot": 1000,
+      "resampling": "paired"
+     },
+     "diff_mu_norm": {
+      "point": -0.6633620262145996,
+      "ci_low": -0.832826329432324,
+      "ci_high": -0.4876494153392372,
+      "n_boot": 2000,
       "resampling": "paired"
      }
     },
@@ -42417,6 +42459,13 @@
       "ci_high": 3.0,
       "n_boot": 1000,
       "resampling": "paired"
+     },
+     "diff_mu_norm": {
+      "point": -0.6965122222900391,
+      "ci_low": -0.881223028766352,
+      "ci_high": -0.5068514823986306,
+      "n_boot": 2000,
+      "resampling": "paired"
      }
     },
     "response/L7": {
@@ -42442,6 +42491,13 @@
       "ci_low": -2.0,
       "ci_high": 3.0,
       "n_boot": 1000,
+      "resampling": "paired"
+     },
+     "diff_mu_norm": {
+      "point": -0.7416996955871582,
+      "ci_low": -0.9822225556597092,
+      "ci_high": -0.5034806805924577,
+      "n_boot": 2000,
       "resampling": "paired"
      }
     },
@@ -42469,6 +42525,13 @@
       "ci_high": 3.0,
       "n_boot": 1000,
       "resampling": "paired"
+     },
+     "diff_mu_norm": {
+      "point": -0.8304557800292969,
+      "ci_low": -1.104349684619829,
+      "ci_high": -0.5557334411513326,
+      "n_boot": 2000,
+      "resampling": "paired"
      }
     },
     "response/L9": {
@@ -42494,6 +42557,13 @@
       "ci_low": -3.0,
       "ci_high": 3.0,
       "n_boot": 1000,
+      "resampling": "paired"
+     },
+     "diff_mu_norm": {
+      "point": -1.017754077911377,
+      "ci_low": -1.3172832900292795,
+      "ci_high": -0.7063728994750006,
+      "n_boot": 2000,
       "resampling": "paired"
      }
     },
@@ -42521,6 +42591,13 @@
       "ci_high": 2.0,
       "n_boot": 1000,
       "resampling": "paired"
+     },
+     "diff_mu_norm": {
+      "point": -1.0180788040161133,
+      "ci_low": -1.3621955594894477,
+      "ci_high": -0.6575909989177724,
+      "n_boot": 2000,
+      "resampling": "paired"
      }
     },
     "response/L11": {
@@ -42546,6 +42623,13 @@
       "ci_low": -3.0,
       "ci_high": 3.0,
       "n_boot": 1000,
+      "resampling": "paired"
+     },
+     "diff_mu_norm": {
+      "point": -1.018266201019287,
+      "ci_low": -1.3938390484208436,
+      "ci_high": -0.6204368218169944,
+      "n_boot": 2000,
       "resampling": "paired"
      }
     },
@@ -42573,6 +42657,13 @@
       "ci_high": 2.0,
       "n_boot": 1000,
       "resampling": "paired"
+     },
+     "diff_mu_norm": {
+      "point": -1.0568957328796387,
+      "ci_low": -1.456065741705835,
+      "ci_high": -0.6265527562063701,
+      "n_boot": 2000,
+      "resampling": "paired"
      }
     },
     "response/L13": {
@@ -42598,6 +42689,13 @@
       "ci_low": -3.0,
       "ci_high": 2.0,
       "n_boot": 1000,
+      "resampling": "paired"
+     },
+     "diff_mu_norm": {
+      "point": -1.2109498977661133,
+      "ci_low": -1.6282815179369527,
+      "ci_high": -0.7383292596555511,
+      "n_boot": 2000,
       "resampling": "paired"
      }
     },
@@ -42625,6 +42723,13 @@
       "ci_high": 2.0,
       "n_boot": 1000,
       "resampling": "paired"
+     },
+     "diff_mu_norm": {
+      "point": -1.3327622413635254,
+      "ci_low": -1.7830287930889774,
+      "ci_high": -0.8258033264296359,
+      "n_boot": 2000,
+      "resampling": "paired"
      }
     },
     "response/L15": {
@@ -42650,6 +42755,13 @@
       "ci_low": -3.0,
       "ci_high": 2.0,
       "n_boot": 1000,
+      "resampling": "paired"
+     },
+     "diff_mu_norm": {
+      "point": -1.5979108810424805,
+      "ci_low": -2.0874513563537884,
+      "ci_high": -1.060411666257873,
+      "n_boot": 2000,
       "resampling": "paired"
      }
     },
@@ -42677,6 +42789,13 @@
       "ci_high": 2.0,
       "n_boot": 1000,
       "resampling": "paired"
+     },
+     "diff_mu_norm": {
+      "point": -1.5995759963989258,
+      "ci_low": -2.1026949030530426,
+      "ci_high": -1.0319973061435146,
+      "n_boot": 2000,
+      "resampling": "paired"
      }
     },
     "response/L17": {
@@ -42702,6 +42821,13 @@
       "ci_low": -3.0,
       "ci_high": 2.0,
       "n_boot": 1000,
+      "resampling": "paired"
+     },
+     "diff_mu_norm": {
+      "point": -1.7137365341186523,
+      "ci_low": -2.2738536423785076,
+      "ci_high": -1.107426265807371,
+      "n_boot": 2000,
       "resampling": "paired"
      }
     },
@@ -42729,6 +42855,13 @@
       "ci_high": 3.0,
       "n_boot": 1000,
       "resampling": "paired"
+     },
+     "diff_mu_norm": {
+      "point": -1.949209213256836,
+      "ci_low": -2.6415120722785193,
+      "ci_high": -1.2021673144871008,
+      "n_boot": 2000,
+      "resampling": "paired"
      }
     },
     "response/L19": {
@@ -42754,6 +42887,13 @@
       "ci_low": -3.0,
       "ci_high": 2.0,
       "n_boot": 1000,
+      "resampling": "paired"
+     },
+     "diff_mu_norm": {
+      "point": -3.273927688598633,
+      "ci_low": -4.193037165141106,
+      "ci_high": -2.3620794520111636,
+      "n_boot": 2000,
       "resampling": "paired"
      }
     },
@@ -42781,6 +42921,13 @@
       "ci_high": 2.0,
       "n_boot": 1000,
       "resampling": "paired"
+     },
+     "diff_mu_norm": {
+      "point": -3.6700496673583984,
+      "ci_low": -4.716554091521519,
+      "ci_high": -2.618460193144145,
+      "n_boot": 2000,
+      "resampling": "paired"
      }
     },
     "response/L21": {
@@ -42806,6 +42953,13 @@
       "ci_low": -3.0,
       "ci_high": 2.0,
       "n_boot": 1000,
+      "resampling": "paired"
+     },
+     "diff_mu_norm": {
+      "point": -4.204700469970703,
+      "ci_low": -5.35915530346532,
+      "ci_high": -3.0415941286144257,
+      "n_boot": 2000,
       "resampling": "paired"
      }
     },
@@ -42833,6 +42987,13 @@
       "ci_high": 2.0,
       "n_boot": 1000,
       "resampling": "paired"
+     },
+     "diff_mu_norm": {
+      "point": -4.807939529418945,
+      "ci_low": -6.1454411553900625,
+      "ci_high": -3.491760733889426,
+      "n_boot": 2000,
+      "resampling": "paired"
      }
     },
     "response/L23": {
@@ -42858,6 +43019,13 @@
       "ci_low": -3.0,
       "ci_high": 2.0,
       "n_boot": 1000,
+      "resampling": "paired"
+     },
+     "diff_mu_norm": {
+      "point": -5.844043731689453,
+      "ci_low": -7.359299406603038,
+      "ci_high": -4.39165747059434,
+      "n_boot": 2000,
       "resampling": "paired"
      }
     },
@@ -42885,6 +43053,13 @@
       "ci_high": 2.0,
       "n_boot": 1000,
       "resampling": "paired"
+     },
+     "diff_mu_norm": {
+      "point": -6.959007263183594,
+      "ci_low": -8.715774350360377,
+      "ci_high": -5.297966751763101,
+      "n_boot": 2000,
+      "resampling": "paired"
      }
     },
     "response/L25": {
@@ -42910,6 +43085,13 @@
       "ci_low": -3.0,
       "ci_high": 2.0,
       "n_boot": 1000,
+      "resampling": "paired"
+     },
+     "diff_mu_norm": {
+      "point": -7.797088623046875,
+      "ci_low": -9.754466891377605,
+      "ci_high": -5.906628992749991,
+      "n_boot": 2000,
       "resampling": "paired"
      }
     },
@@ -42937,6 +43119,13 @@
       "ci_high": 2.0,
       "n_boot": 1000,
       "resampling": "paired"
+     },
+     "diff_mu_norm": {
+      "point": -10.658645629882812,
+      "ci_low": -12.967063311907559,
+      "ci_high": -8.390472688675066,
+      "n_boot": 2000,
+      "resampling": "paired"
      }
     },
     "response/L27": {
@@ -42962,6 +43151,13 @@
       "ci_low": -2.0,
       "ci_high": 2.0,
       "n_boot": 1000,
+      "resampling": "paired"
+     },
+     "diff_mu_norm": {
+      "point": -23.554153442382812,
+      "ci_low": -27.235753204262306,
+      "ci_high": -19.740436273723013,
+      "n_boot": 2000,
       "resampling": "paired"
      }
     }
