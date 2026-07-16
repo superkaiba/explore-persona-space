@@ -1,0 +1,1670 @@
+{
+  "step": 90,
+  "in_window": true,
+  "fallback": null,
+  "delta_logp_mean": 6.031359767913818,
+  "target": 5.5141,
+  "window": [
+    4.5141,
+    6.5141
+  ],
+  "bystanders": {
+    "n_probes": 80,
+    "delta_logp_mean": 4.348855447769165,
+    "source_emission_rate": 0.0,
+    "per_probe": [
+      {
+        "row": {
+          "context_id": "medical_doctor",
+          "q": 0
+        },
+        "trained": {
+          "logp": -18.687583923339844,
+          "z_marker": 8.1875,
+          "z_eos": 26.875,
+          "logZ": 26.875083923339844,
+          "argmax_id": 151645
+        },
+        "base": {
+          "logp": -22.741392135620117,
+          "z_marker": 2.265625,
+          "z_eos": 25.0,
+          "logZ": 25.007017135620117,
+          "argmax_id": 151645
+        }
+      },
+      {
+        "row": {
+          "context_id": "medical_doctor",
+          "q": 1
+        },
+        "trained": {
+          "logp": -19.00002670288086,
+          "z_marker": 8.5,
+          "z_eos": 27.5,
+          "logZ": 27.50002670288086,
+          "argmax_id": 151645
+        },
+        "base": {
+          "logp": -23.987810134887695,
+          "z_marker": 1.640625,
+          "z_eos": 25.625,
+          "logZ": 25.628435134887695,
+          "argmax_id": 151645
+        }
+      },
+      {
+        "row": {
+          "context_id": "medical_doctor",
+          "q": 2
+        },
+        "trained": {
+          "logp": -19.125041961669922,
+          "z_marker": 8.625,
+          "z_eos": 27.75,
+          "logZ": 27.750041961669922,
+          "argmax_id": 151645
+        },
+        "base": {
+          "logp": -24.689315795898438,
+          "z_marker": 2.0625,
+          "z_eos": 26.75,
+          "logZ": 26.751815795898438,
+          "argmax_id": 151645
+        }
+      },
+      {
+        "row": {
+          "context_id": "medical_doctor",
+          "q": 3
+        },
+        "trained": {
+          "logp": -18.96938133239746,
+          "z_marker": 5.53125,
+          "z_eos": 24.5,
+          "logZ": 24.50063133239746,
+          "argmax_id": 151645
+        },
+        "base": {
+          "logp": -21.945772171020508,
+          "z_marker": 0.2421875,
+          "z_eos": 22.125,
+          "logZ": 22.187959671020508,
+          "argmax_id": 151645
+        }
+      },
+      {
+        "row": {
+          "context_id": "medical_doctor",
+          "q": 4
+        },
+        "trained": {
+          "logp": -20.813068389892578,
+          "z_marker": 7.5625,
+          "z_eos": 28.375,
+          "logZ": 28.375568389892578,
+          "argmax_id": 151645
+        },
+        "base": {
+          "logp": -25.996225357055664,
+          "z_marker": 0.232421875,
+          "z_eos": 26.125,
+          "logZ": 26.228647232055664,
+          "argmax_id": 151645
+        }
+      },
+      {
+        "row": {
+          "context_id": "medical_doctor",
+          "q": 5
+        },
+        "trained": {
+          "logp": -16.91449546813965,
+          "z_marker": 6.53125,
+          "z_eos": 23.25,
+          "logZ": 23.44574546813965,
+          "argmax_id": 151645
+        },
+        "base": {
+          "logp": -22.456607818603516,
+          "z_marker": 1.0390625,
+          "z_eos": 20.5,
+          "logZ": 23.495670318603516,
+          "argmax_id": 46793
+        }
+      },
+      {
+        "row": {
+          "context_id": "medical_doctor",
+          "q": 6
+        },
+        "trained": {
+          "logp": -19.718759536743164,
+          "z_marker": 7.90625,
+          "z_eos": 27.625,
+          "logZ": 27.625009536743164,
+          "argmax_id": 151645
+        },
+        "base": {
+          "logp": -25.234115600585938,
+          "z_marker": 0.0162353515625,
+          "z_eos": 25.25,
+          "logZ": 25.250350952148438,
+          "argmax_id": 151645
+        }
+      },
+      {
+        "row": {
+          "context_id": "medical_doctor",
+          "q": 7
+        },
+        "trained": {
+          "logp": -17.99993896484375,
+          "z_marker": 4.53125,
+          "z_eos": 22.5,
+          "logZ": 22.53118896484375,
+          "argmax_id": 151645
+        },
+        "base": {
+          "logp": -22.518089294433594,
+          "z_marker": -0.9296875,
+          "z_eos": 18.75,
+          "logZ": 21.588401794433594,
+          "argmax_id": 1416
+        }
+      },
+      {
+        "row": {
+          "context_id": "medical_doctor",
+          "q": 8
+        },
+        "trained": {
+          "logp": -18.59392738342285,
+          "z_marker": 7.28125,
+          "z_eos": 25.875,
+          "logZ": 25.87517738342285,
+          "argmax_id": 151645
+        },
+        "base": {
+          "logp": -23.933269500732422,
+          "z_marker": 0.57421875,
+          "z_eos": 24.5,
+          "logZ": 24.507488250732422,
+          "argmax_id": 151645
+        }
+      },
+      {
+        "row": {
+          "context_id": "medical_doctor",
+          "q": 9
+        },
+        "trained": {
+          "logp": -18.469554901123047,
+          "z_marker": 5.78125,
+          "z_eos": 24.25,
+          "logZ": 24.250804901123047,
+          "argmax_id": 151645
+        },
+        "base": {
+          "logp": -22.152555465698242,
+          "z_marker": -0.1328125,
+          "z_eos": 21.875,
+          "logZ": 22.019742965698242,
+          "argmax_id": 151645
+        }
+      },
+      {
+        "row": {
+          "context_id": "medical_doctor",
+          "q": 10
+        },
+        "trained": {
+          "logp": -20.75000762939453,
+          "z_marker": 7.0,
+          "z_eos": 27.75,
+          "logZ": 27.75000762939453,
+          "argmax_id": 151645
+        },
+        "base": {
+          "logp": -25.509334564208984,
+          "z_marker": 0.1162109375,
+          "z_eos": 25.625,
+          "logZ": 25.625545501708984,
+          "argmax_id": 151645
+        }
+      },
+      {
+        "row": {
+          "context_id": "medical_doctor",
+          "q": 11
+        },
+        "trained": {
+          "logp": -17.9244327545166,
+          "z_marker": 4.84375,
+          "z_eos": 22.75,
+          "logZ": 22.7681827545166,
+          "argmax_id": 151645
+        },
+        "base": {
+          "logp": -22.80249786376953,
+          "z_marker": -0.93359375,
+          "z_eos": 19.5,
+          "logZ": 21.86890411376953,
+          "argmax_id": 2379
+        }
+      },
+      {
+        "row": {
+          "context_id": "medical_doctor",
+          "q": 12
+        },
+        "trained": {
+          "logp": -20.43754005432129,
+          "z_marker": 6.9375,
+          "z_eos": 27.375,
+          "logZ": 27.37504005432129,
+          "argmax_id": 151645
+        },
+        "base": {
+          "logp": -24.41398048400879,
+          "z_marker": 0.9765625,
+          "z_eos": 25.375,
+          "logZ": 25.39054298400879,
+          "argmax_id": 151645
+        }
+      },
+      {
+        "row": {
+          "context_id": "medical_doctor",
+          "q": 13
+        },
+        "trained": {
+          "logp": -19.158885955810547,
+          "z_marker": 5.96875,
+          "z_eos": 25.125,
+          "logZ": 25.127635955810547,
+          "argmax_id": 151645
+        },
+        "base": {
+          "logp": -22.826780319213867,
+          "z_marker": -0.046142578125,
+          "z_eos": 22.375,
+          "logZ": 22.780637741088867,
+          "argmax_id": 151645
+        }
+      },
+      {
+        "row": {
+          "context_id": "medical_doctor",
+          "q": 14
+        },
+        "trained": {
+          "logp": -20.406253814697266,
+          "z_marker": 7.96875,
+          "z_eos": 28.375,
+          "logZ": 28.375003814697266,
+          "argmax_id": 151645
+        },
+        "base": {
+          "logp": -26.000276565551758,
+          "z_marker": 0.875,
+          "z_eos": 26.875,
+          "logZ": 26.875276565551758,
+          "argmax_id": 151645
+        }
+      },
+      {
+        "row": {
+          "context_id": "medical_doctor",
+          "q": 15
+        },
+        "trained": {
+          "logp": -18.676849365234375,
+          "z_marker": 5.34375,
+          "z_eos": 24.0,
+          "logZ": 24.020599365234375,
+          "argmax_id": 151645
+        },
+        "base": {
+          "logp": -23.155311584472656,
+          "z_marker": 0.1767578125,
+          "z_eos": 21.125,
+          "logZ": 23.332069396972656,
+          "argmax_id": 5976
+        }
+      },
+      {
+        "row": {
+          "context_id": "medical_doctor",
+          "q": 16
+        },
+        "trained": {
+          "logp": -21.468751907348633,
+          "z_marker": 7.90625,
+          "z_eos": 29.375,
+          "logZ": 29.375001907348633,
+          "argmax_id": 151645
+        },
+        "base": {
+          "logp": -27.08597755432129,
+          "z_marker": 0.7890625,
+          "z_eos": 27.875,
+          "logZ": 27.87504005432129,
+          "argmax_id": 151645
+        }
+      },
+      {
+        "row": {
+          "context_id": "medical_doctor",
+          "q": 17
+        },
+        "trained": {
+          "logp": -20.62500762939453,
+          "z_marker": 7.625,
+          "z_eos": 28.25,
+          "logZ": 28.25000762939453,
+          "argmax_id": 151645
+        },
+        "base": {
+          "logp": -25.360403060913086,
+          "z_marker": 0.890625,
+          "z_eos": 26.25,
+          "logZ": 26.251028060913086,
+          "argmax_id": 151645
+        }
+      },
+      {
+        "row": {
+          "context_id": "medical_doctor",
+          "q": 18
+        },
+        "trained": {
+          "logp": -20.656267166137695,
+          "z_marker": 6.46875,
+          "z_eos": 27.125,
+          "logZ": 27.125017166137695,
+          "argmax_id": 151645
+        },
+        "base": {
+          "logp": -24.867034912109375,
+          "z_marker": -0.86328125,
+          "z_eos": 24.0,
+          "logZ": 24.003753662109375,
+          "argmax_id": 151645
+        }
+      },
+      {
+        "row": {
+          "context_id": "medical_doctor",
+          "q": 19
+        },
+        "trained": {
+          "logp": -19.313936233520508,
+          "z_marker": 5.9375,
+          "z_eos": 25.25,
+          "logZ": 25.251436233520508,
+          "argmax_id": 151645
+        },
+        "base": {
+          "logp": -22.867835998535156,
+          "z_marker": 0.2734375,
+          "z_eos": 23.0,
+          "logZ": 23.141273498535156,
+          "argmax_id": 151645
+        }
+      },
+      {
+        "row": {
+          "context_id": "police_officer",
+          "q": 0
+        },
+        "trained": {
+          "logp": -16.940248489379883,
+          "z_marker": 8.3125,
+          "z_eos": 25.25,
+          "logZ": 25.252748489379883,
+          "argmax_id": 151645
+        },
+        "base": {
+          "logp": -21.49152374267578,
+          "z_marker": 1.9765625,
+          "z_eos": 23.375,
+          "logZ": 23.46808624267578,
+          "argmax_id": 151645
+        }
+      },
+      {
+        "row": {
+          "context_id": "police_officer",
+          "q": 1
+        },
+        "trained": {
+          "logp": -16.812519073486328,
+          "z_marker": 9.9375,
+          "z_eos": 26.75,
+          "logZ": 26.750019073486328,
+          "argmax_id": 151645
+        },
+        "base": {
+          "logp": -22.204936981201172,
+          "z_marker": 2.796875,
+          "z_eos": 25.0,
+          "logZ": 25.001811981201172,
+          "argmax_id": 151645
+        }
+      },
+      {
+        "row": {
+          "context_id": "police_officer",
+          "q": 2
+        },
+        "trained": {
+          "logp": -18.56284523010254,
+          "z_marker": 8.4375,
+          "z_eos": 27.0,
+          "logZ": 27.00034523010254,
+          "argmax_id": 151645
+        },
+        "base": {
+          "logp": -22.99860191345215,
+          "z_marker": 1.921875,
+          "z_eos": 24.875,
+          "logZ": 24.92047691345215,
+          "argmax_id": 151645
+        }
+      },
+      {
+        "row": {
+          "context_id": "police_officer",
+          "q": 3
+        },
+        "trained": {
+          "logp": -17.312532424926758,
+          "z_marker": 9.6875,
+          "z_eos": 27.0,
+          "logZ": 27.000032424926758,
+          "argmax_id": 151645
+        },
+        "base": {
+          "logp": -23.406719207763672,
+          "z_marker": 2.71875,
+          "z_eos": 26.125,
+          "logZ": 26.125469207763672,
+          "argmax_id": 151645
+        }
+      },
+      {
+        "row": {
+          "context_id": "police_officer",
+          "q": 4
+        },
+        "trained": {
+          "logp": -18.84438705444336,
+          "z_marker": 7.90625,
+          "z_eos": 26.75,
+          "logZ": 26.75063705444336,
+          "argmax_id": 151645
+        },
+        "base": {
+          "logp": -24.314573287963867,
+          "z_marker": 0.0869140625,
+          "z_eos": 24.25,
+          "logZ": 24.401487350463867,
+          "argmax_id": 151645
+        }
+      },
+      {
+        "row": {
+          "context_id": "police_officer",
+          "q": 5
+        },
+        "trained": {
+          "logp": -15.875463485717773,
+          "z_marker": 9.5,
+          "z_eos": 25.375,
+          "logZ": 25.375463485717773,
+          "argmax_id": 151645
+        },
+        "base": {
+          "logp": -20.31549835205078,
+          "z_marker": 4.1875,
+          "z_eos": 24.5,
+          "logZ": 24.50299835205078,
+          "argmax_id": 151645
+        }
+      },
+      {
+        "row": {
+          "context_id": "police_officer",
+          "q": 6
+        },
+        "trained": {
+          "logp": -17.750137329101562,
+          "z_marker": 7.875,
+          "z_eos": 25.625,
+          "logZ": 25.625137329101562,
+          "argmax_id": 151645
+        },
+        "base": {
+          "logp": -22.34437370300293,
+          "z_marker": 0.68359375,
+          "z_eos": 23.0,
+          "logZ": 23.02796745300293,
+          "argmax_id": 151645
+        }
+      },
+      {
+        "row": {
+          "context_id": "police_officer",
+          "q": 7
+        },
+        "trained": {
+          "logp": -18.125919342041016,
+          "z_marker": 7.0,
+          "z_eos": 25.125,
+          "logZ": 25.125919342041016,
+          "argmax_id": 151645
+        },
+        "base": {
+          "logp": -21.915353775024414,
+          "z_marker": 0.1337890625,
+          "z_eos": 21.875,
+          "logZ": 22.049142837524414,
+          "argmax_id": 151645
+        }
+      },
+      {
+        "row": {
+          "context_id": "police_officer",
+          "q": 8
+        },
+        "trained": {
+          "logp": -17.598299026489258,
+          "z_marker": 3.390625,
+          "z_eos": 19.75,
+          "logZ": 20.988924026489258,
+          "argmax_id": 151645
+        },
+        "base": {
+          "logp": -23.57380485534668,
+          "z_marker": -0.77734375,
+          "z_eos": 16.25,
+          "logZ": 22.79646110534668,
+          "argmax_id": 1096
+        }
+      },
+      {
+        "row": {
+          "context_id": "police_officer",
+          "q": 9
+        },
+        "trained": {
+          "logp": -14.89583969116211,
+          "z_marker": 7.0625,
+          "z_eos": 21.75,
+          "logZ": 21.95833969116211,
+          "argmax_id": 151645
+        },
+        "base": {
+          "logp": -20.491779327392578,
+          "z_marker": 1.59375,
+          "z_eos": 18.875,
+          "logZ": 22.085529327392578,
+          "argmax_id": 45451
+        }
+      },
+      {
+        "row": {
+          "context_id": "police_officer",
+          "q": 10
+        },
+        "trained": {
+          "logp": -18.56503677368164,
+          "z_marker": 6.1875,
+          "z_eos": 24.75,
+          "logZ": 24.75253677368164,
+          "argmax_id": 151645
+        },
+        "base": {
+          "logp": -22.240869522094727,
+          "z_marker": 0.40625,
+          "z_eos": 22.375,
+          "logZ": 22.647119522094727,
+          "argmax_id": 151645
+        }
+      },
+      {
+        "row": {
+          "context_id": "police_officer",
+          "q": 11
+        },
+        "trained": {
+          "logp": -18.844106674194336,
+          "z_marker": 7.15625,
+          "z_eos": 26.0,
+          "logZ": 26.000356674194336,
+          "argmax_id": 151645
+        },
+        "base": {
+          "logp": -22.687742233276367,
+          "z_marker": 0.59765625,
+          "z_eos": 23.125,
+          "logZ": 23.285398483276367,
+          "argmax_id": 151645
+        }
+      },
+      {
+        "row": {
+          "context_id": "police_officer",
+          "q": 12
+        },
+        "trained": {
+          "logp": -18.193008422851562,
+          "z_marker": 6.8125,
+          "z_eos": 25.0,
+          "logZ": 25.005508422851562,
+          "argmax_id": 151645
+        },
+        "base": {
+          "logp": -21.818696975708008,
+          "z_marker": 1.640625,
+          "z_eos": 22.375,
+          "logZ": 23.459321975708008,
+          "argmax_id": 1084
+        }
+      },
+      {
+        "row": {
+          "context_id": "police_officer",
+          "q": 13
+        },
+        "trained": {
+          "logp": -17.629886627197266,
+          "z_marker": 6.625,
+          "z_eos": 24.25,
+          "logZ": 24.254886627197266,
+          "argmax_id": 151645
+        },
+        "base": {
+          "logp": -21.088220596313477,
+          "z_marker": 1.1171875,
+          "z_eos": 21.625,
+          "logZ": 22.205408096313477,
+          "argmax_id": 151645
+        }
+      },
+      {
+        "row": {
+          "context_id": "police_officer",
+          "q": 14
+        },
+        "trained": {
+          "logp": -19.219268798828125,
+          "z_marker": 7.03125,
+          "z_eos": 26.25,
+          "logZ": 26.250518798828125,
+          "argmax_id": 151645
+        },
+        "base": {
+          "logp": -23.458770751953125,
+          "z_marker": 0.75390625,
+          "z_eos": 24.125,
+          "logZ": 24.212677001953125,
+          "argmax_id": 151645
+        }
+      },
+      {
+        "row": {
+          "context_id": "police_officer",
+          "q": 15
+        },
+        "trained": {
+          "logp": -19.187536239624023,
+          "z_marker": 8.3125,
+          "z_eos": 27.5,
+          "logZ": 27.500036239624023,
+          "argmax_id": 151645
+        },
+        "base": {
+          "logp": -23.705520629882812,
+          "z_marker": 1.4296875,
+          "z_eos": 25.125,
+          "logZ": 25.135208129882812,
+          "argmax_id": 151645
+        }
+      },
+      {
+        "row": {
+          "context_id": "police_officer",
+          "q": 16
+        },
+        "trained": {
+          "logp": -19.56255340576172,
+          "z_marker": 8.0625,
+          "z_eos": 27.625,
+          "logZ": 27.62505340576172,
+          "argmax_id": 151645
+        },
+        "base": {
+          "logp": -24.048173904418945,
+          "z_marker": 1.5859375,
+          "z_eos": 25.625,
+          "logZ": 25.634111404418945,
+          "argmax_id": 151645
+        }
+      },
+      {
+        "row": {
+          "context_id": "police_officer",
+          "q": 17
+        },
+        "trained": {
+          "logp": -14.599821090698242,
+          "z_marker": 7.65625,
+          "z_eos": 22.125,
+          "logZ": 22.256071090698242,
+          "argmax_id": 151645
+        },
+        "base": {
+          "logp": -20.245241165161133,
+          "z_marker": 2.171875,
+          "z_eos": 18.875,
+          "logZ": 22.417116165161133,
+          "argmax_id": 1634
+        }
+      },
+      {
+        "row": {
+          "context_id": "police_officer",
+          "q": 18
+        },
+        "trained": {
+          "logp": -16.38855743408203,
+          "z_marker": 7.25,
+          "z_eos": 23.625,
+          "logZ": 23.63855743408203,
+          "argmax_id": 151645
+        },
+        "base": {
+          "logp": -20.982702255249023,
+          "z_marker": 1.03125,
+          "z_eos": 20.75,
+          "logZ": 22.013952255249023,
+          "argmax_id": 11097
+        }
+      },
+      {
+        "row": {
+          "context_id": "police_officer",
+          "q": 19
+        },
+        "trained": {
+          "logp": -18.81718635559082,
+          "z_marker": 6.3125,
+          "z_eos": 25.125,
+          "logZ": 25.12968635559082,
+          "argmax_id": 151645
+        },
+        "base": {
+          "logp": -22.067522048950195,
+          "z_marker": 1.1015625,
+          "z_eos": 22.25,
+          "logZ": 23.169084548950195,
+          "argmax_id": 14588
+        }
+      },
+      {
+        "row": {
+          "context_id": "french_person",
+          "q": 0
+        },
+        "trained": {
+          "logp": -15.59974479675293,
+          "z_marker": 5.78125,
+          "z_eos": 21.375,
+          "logZ": 21.38099479675293,
+          "argmax_id": 151645
+        },
+        "base": {
+          "logp": -18.509994506835938,
+          "z_marker": 0.65625,
+          "z_eos": 18.5,
+          "logZ": 19.166244506835938,
+          "argmax_id": 151645
+        }
+      },
+      {
+        "row": {
+          "context_id": "french_person",
+          "q": 1
+        },
+        "trained": {
+          "logp": -16.5010929107666,
+          "z_marker": 5.5,
+          "z_eos": 22.0,
+          "logZ": 22.0010929107666,
+          "argmax_id": 151645
+        },
+        "base": {
+          "logp": -20.276927947998047,
+          "z_marker": -0.0093994140625,
+          "z_eos": 20.25,
+          "logZ": 20.267528533935547,
+          "argmax_id": 151645
+        }
+      },
+      {
+        "row": {
+          "context_id": "french_person",
+          "q": 2
+        },
+        "trained": {
+          "logp": -14.85877799987793,
+          "z_marker": 5.125,
+          "z_eos": 19.875,
+          "logZ": 19.98377799987793,
+          "argmax_id": 151645
+        },
+        "base": {
+          "logp": -19.815147399902344,
+          "z_marker": 0.6484375,
+          "z_eos": 17.0,
+          "logZ": 20.463584899902344,
+          "argmax_id": 12095
+        }
+      },
+      {
+        "row": {
+          "context_id": "french_person",
+          "q": 3
+        },
+        "trained": {
+          "logp": -15.378646850585938,
+          "z_marker": 6.0,
+          "z_eos": 21.375,
+          "logZ": 21.378646850585938,
+          "argmax_id": 151645
+        },
+        "base": {
+          "logp": -18.311452865600586,
+          "z_marker": 0.7109375,
+          "z_eos": 18.75,
+          "logZ": 19.022390365600586,
+          "argmax_id": 151645
+        }
+      },
+      {
+        "row": {
+          "context_id": "french_person",
+          "q": 4
+        },
+        "trained": {
+          "logp": -14.707258224487305,
+          "z_marker": 5.625,
+          "z_eos": 20.0,
+          "logZ": 20.332258224487305,
+          "argmax_id": 151645
+        },
+        "base": {
+          "logp": -18.341163635253906,
+          "z_marker": 2.15625,
+          "z_eos": 14.5,
+          "logZ": 20.497413635253906,
+          "argmax_id": 4148
+        }
+      },
+      {
+        "row": {
+          "context_id": "french_person",
+          "q": 5
+        },
+        "trained": {
+          "logp": -12.84367561340332,
+          "z_marker": 7.21875,
+          "z_eos": 20.0,
+          "logZ": 20.06242561340332,
+          "argmax_id": 151645
+        },
+        "base": {
+          "logp": -15.713735580444336,
+          "z_marker": 3.25,
+          "z_eos": 18.375,
+          "logZ": 18.963735580444336,
+          "argmax_id": 151645
+        }
+      },
+      {
+        "row": {
+          "context_id": "french_person",
+          "q": 6
+        },
+        "trained": {
+          "logp": -18.441225051879883,
+          "z_marker": 3.8125,
+          "z_eos": 22.25,
+          "logZ": 22.253725051879883,
+          "argmax_id": 151645
+        },
+        "base": {
+          "logp": -21.91147804260254,
+          "z_marker": -1.9453125,
+          "z_eos": 19.625,
+          "logZ": 19.96616554260254,
+          "argmax_id": 151645
+        }
+      },
+      {
+        "row": {
+          "context_id": "french_person",
+          "q": 7
+        },
+        "trained": {
+          "logp": -17.15116310119629,
+          "z_marker": 4.25,
+          "z_eos": 21.375,
+          "logZ": 21.40116310119629,
+          "argmax_id": 151645
+        },
+        "base": {
+          "logp": -21.283802032470703,
+          "z_marker": -0.87109375,
+          "z_eos": 17.125,
+          "logZ": 20.412708282470703,
+          "argmax_id": 22406
+        }
+      },
+      {
+        "row": {
+          "context_id": "french_person",
+          "q": 8
+        },
+        "trained": {
+          "logp": -14.846759796142578,
+          "z_marker": 6.28125,
+          "z_eos": 21.125,
+          "logZ": 21.128009796142578,
+          "argmax_id": 151645
+        },
+        "base": {
+          "logp": -18.90938949584961,
+          "z_marker": 0.53125,
+          "z_eos": 19.375,
+          "logZ": 19.44063949584961,
+          "argmax_id": 151645
+        }
+      },
+      {
+        "row": {
+          "context_id": "french_person",
+          "q": 9
+        },
+        "trained": {
+          "logp": -17.906524658203125,
+          "z_marker": 5.71875,
+          "z_eos": 23.625,
+          "logZ": 23.625274658203125,
+          "argmax_id": 151645
+        },
+        "base": {
+          "logp": -20.701139450073242,
+          "z_marker": 1.3046875,
+          "z_eos": 22.0,
+          "logZ": 22.005826950073242,
+          "argmax_id": 151645
+        }
+      },
+      {
+        "row": {
+          "context_id": "french_person",
+          "q": 10
+        },
+        "trained": {
+          "logp": -16.70420265197754,
+          "z_marker": 5.21875,
+          "z_eos": 21.875,
+          "logZ": 21.92295265197754,
+          "argmax_id": 151645
+        },
+        "base": {
+          "logp": -18.923152923583984,
+          "z_marker": 1.875,
+          "z_eos": 17.5,
+          "logZ": 20.798152923583984,
+          "argmax_id": 356
+        }
+      },
+      {
+        "row": {
+          "context_id": "french_person",
+          "q": 11
+        },
+        "trained": {
+          "logp": -20.1876220703125,
+          "z_marker": 6.5625,
+          "z_eos": 26.75,
+          "logZ": 26.7501220703125,
+          "argmax_id": 151645
+        },
+        "base": {
+          "logp": -24.641647338867188,
+          "z_marker": -1.015625,
+          "z_eos": 23.5,
+          "logZ": 23.626022338867188,
+          "argmax_id": 151645
+        }
+      },
+      {
+        "row": {
+          "context_id": "french_person",
+          "q": 12
+        },
+        "trained": {
+          "logp": -16.34246826171875,
+          "z_marker": 3.96875,
+          "z_eos": 20.25,
+          "logZ": 20.31121826171875,
+          "argmax_id": 151645
+        },
+        "base": {
+          "logp": -19.079500198364258,
+          "z_marker": 0.404296875,
+          "z_eos": 16.25,
+          "logZ": 19.483797073364258,
+          "argmax_id": 2925
+        }
+      },
+      {
+        "row": {
+          "context_id": "french_person",
+          "q": 13
+        },
+        "trained": {
+          "logp": -19.84376335144043,
+          "z_marker": 6.65625,
+          "z_eos": 26.5,
+          "logZ": 26.50001335144043,
+          "argmax_id": 151645
+        },
+        "base": {
+          "logp": -23.80483055114746,
+          "z_marker": 0.9453125,
+          "z_eos": 24.75,
+          "logZ": 24.75014305114746,
+          "argmax_id": 151645
+        }
+      },
+      {
+        "row": {
+          "context_id": "french_person",
+          "q": 14
+        },
+        "trained": {
+          "logp": -14.814952850341797,
+          "z_marker": 8.9375,
+          "z_eos": 23.75,
+          "logZ": 23.752452850341797,
+          "argmax_id": 151645
+        },
+        "base": {
+          "logp": -19.22429084777832,
+          "z_marker": 2.734375,
+          "z_eos": 21.75,
+          "logZ": 21.95866584777832,
+          "argmax_id": 151645
+        }
+      },
+      {
+        "row": {
+          "context_id": "french_person",
+          "q": 15
+        },
+        "trained": {
+          "logp": -16.562719345092773,
+          "z_marker": 7.0625,
+          "z_eos": 23.625,
+          "logZ": 23.625219345092773,
+          "argmax_id": 151645
+        },
+        "base": {
+          "logp": -21.11288833618164,
+          "z_marker": 0.67578125,
+          "z_eos": 21.75,
+          "logZ": 21.78866958618164,
+          "argmax_id": 151645
+        }
+      },
+      {
+        "row": {
+          "context_id": "french_person",
+          "q": 16
+        },
+        "trained": {
+          "logp": -18.02104377746582,
+          "z_marker": 3.859375,
+          "z_eos": 21.875,
+          "logZ": 21.88041877746582,
+          "argmax_id": 151645
+        },
+        "base": {
+          "logp": -20.156625747680664,
+          "z_marker": -0.412109375,
+          "z_eos": 19.5,
+          "logZ": 19.744516372680664,
+          "argmax_id": 151645
+        }
+      },
+      {
+        "row": {
+          "context_id": "french_person",
+          "q": 17
+        },
+        "trained": {
+          "logp": -20.375003814697266,
+          "z_marker": 8.125,
+          "z_eos": 28.5,
+          "logZ": 28.500003814697266,
+          "argmax_id": 151645
+        },
+        "base": {
+          "logp": -26.367279052734375,
+          "z_marker": 0.6328125,
+          "z_eos": 27.0,
+          "logZ": 27.000091552734375,
+          "argmax_id": 151645
+        }
+      },
+      {
+        "row": {
+          "context_id": "french_person",
+          "q": 18
+        },
+        "trained": {
+          "logp": -15.329980850219727,
+          "z_marker": 7.0625,
+          "z_eos": 22.375,
+          "logZ": 22.392480850219727,
+          "argmax_id": 151645
+        },
+        "base": {
+          "logp": -20.80109977722168,
+          "z_marker": 0.98828125,
+          "z_eos": 18.375,
+          "logZ": 21.78938102722168,
+          "argmax_id": 1084
+        }
+      },
+      {
+        "row": {
+          "context_id": "french_person",
+          "q": 19
+        },
+        "trained": {
+          "logp": -15.164722442626953,
+          "z_marker": 4.0,
+          "z_eos": 18.625,
+          "logZ": 19.164722442626953,
+          "argmax_id": 151645
+        },
+        "base": {
+          "logp": -19.258058547973633,
+          "z_marker": 0.34375,
+          "z_eos": 15.375,
+          "logZ": 19.601808547973633,
+          "argmax_id": 4929
+        }
+      },
+      {
+        "row": {
+          "context_id": "comedian",
+          "q": 0
+        },
+        "trained": {
+          "logp": -15.907621383666992,
+          "z_marker": 5.71875,
+          "z_eos": 21.625,
+          "logZ": 21.626371383666992,
+          "argmax_id": 151645
+        },
+        "base": {
+          "logp": -19.37238883972168,
+          "z_marker": 0.76171875,
+          "z_eos": 20.125,
+          "logZ": 20.13410758972168,
+          "argmax_id": 151645
+        }
+      },
+      {
+        "row": {
+          "context_id": "comedian",
+          "q": 1
+        },
+        "trained": {
+          "logp": -10.809179306030273,
+          "z_marker": 7.1875,
+          "z_eos": 17.5,
+          "logZ": 17.996679306030273,
+          "argmax_id": 151645
+        },
+        "base": {
+          "logp": -16.574893951416016,
+          "z_marker": 3.0625,
+          "z_eos": 12.8125,
+          "logZ": 19.637393951416016,
+          "argmax_id": 1084
+        }
+      },
+      {
+        "row": {
+          "context_id": "comedian",
+          "q": 2
+        },
+        "trained": {
+          "logp": -13.649673461914062,
+          "z_marker": 4.59375,
+          "z_eos": 17.75,
+          "logZ": 18.243423461914062,
+          "argmax_id": 151645
+        },
+        "base": {
+          "logp": -18.559648513793945,
+          "z_marker": 0.49609375,
+          "z_eos": 15.1875,
+          "logZ": 19.055742263793945,
+          "argmax_id": 1446
+        }
+      },
+      {
+        "row": {
+          "context_id": "comedian",
+          "q": 3
+        },
+        "trained": {
+          "logp": -18.09105682373047,
+          "z_marker": 3.671875,
+          "z_eos": 21.75,
+          "logZ": 21.76293182373047,
+          "argmax_id": 151645
+        },
+        "base": {
+          "logp": -23.126510620117188,
+          "z_marker": -2.25,
+          "z_eos": 19.375,
+          "logZ": 20.876510620117188,
+          "argmax_id": 1597
+        }
+      },
+      {
+        "row": {
+          "context_id": "comedian",
+          "q": 4
+        },
+        "trained": {
+          "logp": -14.757928848266602,
+          "z_marker": 2.34375,
+          "z_eos": 15.5,
+          "logZ": 17.1016788482666,
+          "argmax_id": 151645
+        },
+        "base": {
+          "logp": -20.8961238861084,
+          "z_marker": -1.8671875,
+          "z_eos": 10.8125,
+          "logZ": 19.0289363861084,
+          "argmax_id": 9731
+        }
+      },
+      {
+        "row": {
+          "context_id": "comedian",
+          "q": 5
+        },
+        "trained": {
+          "logp": -15.690540313720703,
+          "z_marker": 5.3125,
+          "z_eos": 21.0,
+          "logZ": 21.003040313720703,
+          "argmax_id": 151645
+        },
+        "base": {
+          "logp": -19.037572860717773,
+          "z_marker": 0.734375,
+          "z_eos": 19.75,
+          "logZ": 19.771947860717773,
+          "argmax_id": 151645
+        }
+      },
+      {
+        "row": {
+          "context_id": "comedian",
+          "q": 6
+        },
+        "trained": {
+          "logp": -15.072843551635742,
+          "z_marker": 3.828125,
+          "z_eos": 18.875,
+          "logZ": 18.900968551635742,
+          "argmax_id": 151645
+        },
+        "base": {
+          "logp": -18.533048629760742,
+          "z_marker": -1.09375,
+          "z_eos": 17.0,
+          "logZ": 17.439298629760742,
+          "argmax_id": 151645
+        }
+      },
+      {
+        "row": {
+          "context_id": "comedian",
+          "q": 7
+        },
+        "trained": {
+          "logp": -14.135686874389648,
+          "z_marker": 6.5,
+          "z_eos": 20.625,
+          "logZ": 20.63568687438965,
+          "argmax_id": 151645
+        },
+        "base": {
+          "logp": -17.455535888671875,
+          "z_marker": 1.7734375,
+          "z_eos": 18.75,
+          "logZ": 19.228973388671875,
+          "argmax_id": 151645
+        }
+      },
+      {
+        "row": {
+          "context_id": "comedian",
+          "q": 8
+        },
+        "trained": {
+          "logp": -15.527490615844727,
+          "z_marker": 3.90625,
+          "z_eos": 19.375,
+          "logZ": 19.433740615844727,
+          "argmax_id": 151645
+        },
+        "base": {
+          "logp": -19.448877334594727,
+          "z_marker": -1.1328125,
+          "z_eos": 17.25,
+          "logZ": 18.316064834594727,
+          "argmax_id": 151645
+        }
+      },
+      {
+        "row": {
+          "context_id": "comedian",
+          "q": 9
+        },
+        "trained": {
+          "logp": -16.225351333618164,
+          "z_marker": 3.765625,
+          "z_eos": 19.75,
+          "logZ": 19.990976333618164,
+          "argmax_id": 151645
+        },
+        "base": {
+          "logp": -21.37755584716797,
+          "z_marker": -1.078125,
+          "z_eos": 17.0,
+          "logZ": 20.29943084716797,
+          "argmax_id": 1988
+        }
+      },
+      {
+        "row": {
+          "context_id": "comedian",
+          "q": 10
+        },
+        "trained": {
+          "logp": -14.612957000732422,
+          "z_marker": 5.25,
+          "z_eos": 19.75,
+          "logZ": 19.862957000732422,
+          "argmax_id": 151645
+        },
+        "base": {
+          "logp": -19.241613388061523,
+          "z_marker": 0.94921875,
+          "z_eos": 16.75,
+          "logZ": 20.190832138061523,
+          "argmax_id": 1988
+        }
+      },
+      {
+        "row": {
+          "context_id": "comedian",
+          "q": 11
+        },
+        "trained": {
+          "logp": -12.33670425415039,
+          "z_marker": 6.46875,
+          "z_eos": 18.75,
+          "logZ": 18.80545425415039,
+          "argmax_id": 151645
+        },
+        "base": {
+          "logp": -15.263313293457031,
+          "z_marker": 2.046875,
+          "z_eos": 17.125,
+          "logZ": 17.31018829345703,
+          "argmax_id": 151645
+        }
+      },
+      {
+        "row": {
+          "context_id": "comedian",
+          "q": 12
+        },
+        "trained": {
+          "logp": -13.612504959106445,
+          "z_marker": 4.75,
+          "z_eos": 18.25,
+          "logZ": 18.362504959106445,
+          "argmax_id": 151645
+        },
+        "base": {
+          "logp": -16.712600708007812,
+          "z_marker": 0.984375,
+          "z_eos": 16.5,
+          "logZ": 17.696975708007812,
+          "argmax_id": 151645
+        }
+      },
+      {
+        "row": {
+          "context_id": "comedian",
+          "q": 13
+        },
+        "trained": {
+          "logp": -16.376630783081055,
+          "z_marker": 0.8125,
+          "z_eos": 17.125,
+          "logZ": 17.189130783081055,
+          "argmax_id": 151645
+        },
+        "base": {
+          "logp": -19.139461517333984,
+          "z_marker": -3.03125,
+          "z_eos": 15.4375,
+          "logZ": 16.108211517333984,
+          "argmax_id": 151645
+        }
+      },
+      {
+        "row": {
+          "context_id": "comedian",
+          "q": 14
+        },
+        "trained": {
+          "logp": -12.467353820800781,
+          "z_marker": 5.875,
+          "z_eos": 17.5,
+          "logZ": 18.34235382080078,
+          "argmax_id": 151645
+        },
+        "base": {
+          "logp": -18.782411575317383,
+          "z_marker": 1.25,
+          "z_eos": 14.625,
+          "logZ": 20.032411575317383,
+          "argmax_id": 4636
+        }
+      },
+      {
+        "row": {
+          "context_id": "comedian",
+          "q": 15
+        },
+        "trained": {
+          "logp": -16.738689422607422,
+          "z_marker": 4.4375,
+          "z_eos": 21.125,
+          "logZ": 21.176189422607422,
+          "argmax_id": 151645
+        },
+        "base": {
+          "logp": -22.332914352416992,
+          "z_marker": -0.84375,
+          "z_eos": 19.25,
+          "logZ": 21.489164352416992,
+          "argmax_id": 1597
+        }
+      },
+      {
+        "row": {
+          "context_id": "comedian",
+          "q": 16
+        },
+        "trained": {
+          "logp": -14.662321090698242,
+          "z_marker": 5.34375,
+          "z_eos": 19.875,
+          "logZ": 20.006071090698242,
+          "argmax_id": 151645
+        },
+        "base": {
+          "logp": -19.859695434570312,
+          "z_marker": 0.0888671875,
+          "z_eos": 17.5,
+          "logZ": 19.948562622070312,
+          "argmax_id": 4636
+        }
+      },
+      {
+        "row": {
+          "context_id": "comedian",
+          "q": 17
+        },
+        "trained": {
+          "logp": -15.555925369262695,
+          "z_marker": 3.125,
+          "z_eos": 18.625,
+          "logZ": 18.680925369262695,
+          "argmax_id": 151645
+        },
+        "base": {
+          "logp": -18.470500946044922,
+          "z_marker": -1.375,
+          "z_eos": 16.375,
+          "logZ": 17.095500946044922,
+          "argmax_id": 151645
+        }
+      },
+      {
+        "row": {
+          "context_id": "comedian",
+          "q": 18
+        },
+        "trained": {
+          "logp": -14.10342025756836,
+          "z_marker": 5.90625,
+          "z_eos": 20.0,
+          "logZ": 20.00967025756836,
+          "argmax_id": 151645
+        },
+        "base": {
+          "logp": -17.80118179321289,
+          "z_marker": 0.294921875,
+          "z_eos": 17.5,
+          "logZ": 18.09610366821289,
+          "argmax_id": 151645
+        }
+      },
+      {
+        "row": {
+          "context_id": "comedian",
+          "q": 19
+        },
+        "trained": {
+          "logp": -15.94883918762207,
+          "z_marker": 3.890625,
+          "z_eos": 19.375,
+          "logZ": 19.83946418762207,
+          "argmax_id": 151645
+        },
+        "base": {
+          "logp": -22.132701873779297,
+          "z_marker": -0.796875,
+          "z_eos": 16.375,
+          "logZ": 21.335826873779297,
+          "argmax_id": 1084
+        }
+      }
+    ],
+    "per_context": {
+      "medical_doctor": {
+        "delta_logp_mean": 4.641743755340576,
+        "delta_margin_mean": 4.089874267578125,
+        "emission_rate": 0.0
+      },
+      "police_officer": {
+        "delta_logp_mean": 4.583773612976074,
+        "delta_margin_mean": 3.75537109375,
+        "emission_rate": 0.0
+      },
+      "french_person": {
+        "delta_logp_mean": 3.77811279296875,
+        "delta_margin_mean": 2.364337158203125,
+        "emission_rate": 0.0
+      },
+      "comedian": {
+        "delta_logp_mean": 4.39179162979126,
+        "delta_margin_mean": 2.254443359375,
+        "emission_rate": 0.0
+      }
+    },
+    "bystander_argmax_rates": {
+      "medical_doctor": 0.0,
+      "police_officer": 0.0,
+      "french_person": 0.0,
+      "comedian": 0.0
+    },
+    "saturated": false,
+    "cell": "ext_bare",
+    "step": 90
+  },
+  "cell": "ext_bare",
+  "dose_curve_rungs": [
+    {
+      "step": 80,
+      "role": "sub_window",
+      "delta_logp_mean": 3.8537925720214843,
+      "status": "read"
+    },
+    {
+      "step": 90,
+      "role": "candidate",
+      "delta_logp_mean": 6.031359767913818,
+      "status": "read"
+    },
+    {
+      "step": 95,
+      "role": "above_window",
+      "delta_logp_mean": 6.911114597320557,
+      "status": "read"
+    }
+  ]
+}

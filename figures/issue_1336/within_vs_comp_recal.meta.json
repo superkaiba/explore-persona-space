@@ -1,0 +1,191 @@
+{
+  "commit": "6375ccb21d",
+  "created": "2026-07-16T07:28:36Z",
+  "figsize": [
+    13.5,
+    4.6
+  ],
+  "points": [
+    {
+      "x": -0.18,
+      "Held-out recalibrated pooled R$^2$ (layer 30)": 0.46411256785866284,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.82,
+      "Held-out recalibrated pooled R$^2$ (layer 30)": 0.46163076339392084,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 1.82,
+      "Held-out recalibrated pooled R$^2$ (layer 30)": 0.45534795402164674,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.18,
+      "Held-out recalibrated pooled R$^2$ (layer 30)": 0.325475502910039,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 1.18,
+      "Held-out recalibrated pooled R$^2$ (layer 30)": 0.32845754099171887,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 2.18,
+      "Held-out recalibrated pooled R$^2$ (layer 30)": 0.3222000824073564,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": -0.18,
+      "y": 0.24979907538701906,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 0.82,
+      "y": 0.27529594807479896,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 1.82,
+      "y": 0.28630829979666306,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 0.18,
+      "y": 0.40821765551964373,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 1.18,
+      "y": 0.4254418698210173,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 2.18,
+      "y": 0.43224722322773357,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": -0.18,
+      "y": 0.23182554791447563,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 0.82,
+      "y": 0.26308199487713957,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 1.82,
+      "y": 0.27247630133223,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 0.18,
+      "y": 0.3757475564240592,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 1.18,
+      "y": 0.3992398584263134,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 2.18,
+      "y": 0.4058127473728276,
+      "_kind": "bar",
+      "_group": 5
+    }
+  ],
+  "n_series": 6,
+  "total_points": 18,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "GSM8K train (RLVR-trained distribution)",
+        "ylabel": "Held-out recalibrated pooled R$^2$ (layer 30)",
+        "legend_labels": [
+          "within-stage map",
+          "base map, reparameterized"
+        ],
+        "annotations": [
+          "0.464",
+          "0.325",
+          "0.462",
+          "0.328",
+          "0.455",
+          "0.322"
+        ],
+        "xticklabels": [
+          "SFT",
+          "DPO",
+          "RLVR"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5"
+        ]
+      },
+      {
+        "title_left": "LMSYS chat",
+        "annotations": [
+          "0.250",
+          "0.408",
+          "0.275",
+          "0.425",
+          "0.286",
+          "0.432"
+        ],
+        "xticklabels": [
+          "SFT",
+          "DPO",
+          "RLVR"
+        ]
+      },
+      {
+        "title_left": "LMSYS naturalistic",
+        "annotations": [
+          "0.232",
+          "0.376",
+          "0.263",
+          "0.399",
+          "0.272",
+          "0.406"
+        ],
+        "xticklabels": [
+          "SFT",
+          "DPO",
+          "RLVR"
+        ]
+      }
+    ],
+    "series": [
+      "within-stage map",
+      "base map, reparameterized"
+    ]
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "description": "fu5 transport-529 recovery ladder: remaining error:True draws before each surgical re-judge pass (issue1090_fu4_rejudge_transport.py --round fu5; the storm was live during recovery, so passes stored fresh 529s until it eased). The committed fu5_rejudge_transport_report.json holds only the FINAL pass; this file records the sequence.",
+  "initial_stored_529_draws": 2935,
+  "reads": {"imp-bare-lr1e5-t2-trained": 529, "imp-bare-lr3e5-t2-trained": 522, "imp-bare-lr1e4-t2-trained": 514, "fmt-pers-r128-reread": 680, "fmt-pers-r256-reread": 690},
+  "remaining_before_each_pass": [2935, 1953, 1299, 865, 377, 87, 10, 10],
+  "final_residual": {"count": 10, "class": "deterministic parse-error judge returns (content-class under the llm-judging rule 9/24 taxonomy; the tool's error:True bucket keeps them in the transport field)", "items": {"fmt-pers-r128-reread-q008-c3": 5, "fmt-pers-r128-reread-q019-c4": 5}},
+  "total_recovered": 2925,
+  "utc_window": "2026-07-15T11:52Z..12:28Z",
+  "passes_by": "analyzer session (wrapper + loop) interleaved with the /issue orchestrator's queued passes; serialized after a concurrent-pass risk was identified"
+}

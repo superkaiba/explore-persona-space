@@ -421,6 +421,40 @@ def _read_topup_pool_arm(d: Path, arm: str) -> list[dict]:
     return rows
 
 
+# Sidecar files the derive path READS per pool-source schema — the staleness
+# guard below keys on the FULL set (#1315 r5 crash-fix): the pre-fix guard
+# keyed on `raw_pos.jsonl` alone, so a PARTIALLY-staged dest (a crashed /
+# group-reaped prior stage; or a concurrent fanout sibling mid-stage) passed
+# the check and derive crashed on the missing sibling sidecar.
+_MARGIN_POOL_REQUIRED = {
+    "datagen": ("raw_pos.jsonl", "raw_neg.jsonl", "judge_rows.jsonl"),
+    "topup": ("raw_pos.jsonl", "raw_neg.jsonl", "kept_pos.jsonl", "kept_neg.jsonl"),
+}
+
+
+def _margin_pool_source_staged(dest: Path, subdir: str) -> bool:
+    """True iff EVERY sidecar the derive path reads exists under ``dest`` —
+    the derive precondition itself, never a single-file proxy. When False the
+    caller re-stages; ``_stage_hf_prefix``'s per-file exists-skip makes that a
+    cheap self-heal of a partial dest (only missing files download)."""
+    names = _MARGIN_POOL_REQUIRED["datagen" if subdir == "datagen" else "topup"]
+    return all((dest / n).exists() for n in names)
+
+
+def _topup_extra_staged(dest: Path) -> bool:
+    """Completeness for an EXTRA tranche dir, where an arm may legitimately be
+    absent on the Hub (a pos-only tranche): at least one arm's (raw, kept)
+    PAIR is fully present AND no arm is HALF-present. A half-present arm is a
+    partial stage — re-staging heals it (per-file exists-skip); a hub tranche
+    genuinely missing one pair member keeps re-listing (cheap) and the empty
+    extra fails loud downstream, same as pre-fix."""
+    pairs = [
+        ((dest / "raw_pos.jsonl").exists(), (dest / "kept_pos.jsonl").exists()),
+        ((dest / "raw_neg.jsonl").exists(), (dest / "kept_neg.jsonl").exists()),
+    ]
+    return any(r and k for r, k in pairs) and not any(r != k for r, k in pairs)
+
+
 def _behavior_margin_pools(cfg: run1090.RunConfig, behavior: str) -> tuple[list, list]:
     """Behavior-level FIXED tf-margin pools (plan §D6): staged once per behavior
     from the round-1 v4 claude-arm artifacts (V4_POOL_SOURCE), then unioned with
@@ -437,7 +471,7 @@ def _behavior_margin_pools(cfg: run1090.RunConfig, behavior: str) -> tuple[list,
         raise ValueError(f"no v4 pool source registered for behavior {behavior!r}")
     slug, subdir = src
     dest = cfg.out_root / "margin_pools" / behavior
-    if not (dest / "raw_pos.jsonl").exists():
+    if not _margin_pool_source_staged(dest, subdir):
         run1090._stage_hf_prefix(f"{run1090.DATA_PREFIX}/{slug}/{subdir}", dest)
     if subdir == "datagen":
         pos, neg = derive_margin_pools(dest)
@@ -447,7 +481,7 @@ def _behavior_margin_pools(cfg: run1090.RunConfig, behavior: str) -> tuple[list,
     if extra is not None:
         slug2, subdir2 = extra
         dest2 = cfg.out_root / "margin_pools" / f"{behavior}_extra"
-        if not (dest2 / "raw_pos.jsonl").exists() and not (dest2 / "raw_neg.jsonl").exists():
+        if not _topup_extra_staged(dest2):
             run1090._stage_hf_prefix(f"{run1090.DATA_PREFIX}/{slug2}/{subdir2}", dest2)
         extra_rows = 0
         for arm, pool in (("positive", pos), ("negative", neg)):

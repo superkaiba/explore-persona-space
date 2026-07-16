@@ -2871,6 +2871,40 @@ def _runspec_from_gcp_handle(handle, issue):
             f"write site as of that task) — or a pre-#659 handle. Cannot reconstruct "
             f"a RunSpec for the RunPod failover; refusing to launch a blank RunPod job."
         )
+    # Failover-time diagnosis breadcrumb (#1329, incident #825): the RunPod
+    # relaunch re-runs this GCP workload_cmd verbatim under the RunPod
+    # launcher's set -uo pipefail, so a bare reference to a var only GCP
+    # exports ($WORKLOAD_ROOT and peers) aborts before the driver starts.
+    # Warn-only by design — NEVER alters the spec or blocks the failover (a
+    # blocked failover strands the run, worse than the crash it predicts);
+    # a lint bug degrades to a logged warning for the same reason.
+    if workload_cmd and os.environ.get("EPM_SKIP_WORKLOAD_CMD_ENV_LINT") != "1":
+        try:
+            from explore_persona_space.backends.issue_dispatch import (
+                lint_workload_cmd_lane_env,
+            )
+
+            env_lint = lint_workload_cmd_lane_env(
+                workload_cmd, backend_value="runpod", execute_workload=True
+            )
+            if env_lint.flagged:
+                logging.warning(
+                    "[workload-cmd-lane-env] GCP handle for issue %s reuses a workload_cmd "
+                    "referencing lane-specific env var(s) %s bare — UNBOUND on the RunPod "
+                    "lane, so the RunPod relaunch of this GCP workload-cmd will abort under "
+                    "set -u at the launcher (see #825/#1329; fix the driver to "
+                    'self-resolve, e.g. REPO_ROOT="${REPO_ROOT:-${WORKLOAD_ROOT:-$(cd '
+                    '"$(dirname "$0")/.." && pwd)}}"). Warn-only: the failover proceeds '
+                    "unchanged.",
+                    issue,
+                    sorted(env_lint.flagged),
+                )
+        except Exception as exc:
+            logging.warning(
+                "[workload-cmd-lane-env] lint failed at failover time (%r) — proceeding "
+                "with the failover unchanged (#1329 warn-only contract).",
+                exc,
+            )
     # #909: thread repo_branch through so the RunPod re-execution syncs the
     # ISSUE branch, not `main` (per-issue dispatch scripts live on issue
     # branches). A legacy handle without the key still reconstructs.

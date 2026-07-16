@@ -1,0 +1,678 @@
+{
+  "commit": "4d45bc0b31",
+  "created": "2026-07-16T16:28:23Z",
+  "figsize": [
+    13.0,
+    4.8
+  ],
+  "points": [
+    {
+      "context family": -0.19,
+      "usable-row rate": 0.9609375,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "context family": 0.81,
+      "usable-row rate": 0.9354166666666667,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "context family": 1.81,
+      "usable-row rate": 0.9732142857142857,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "context family": 2.81,
+      "usable-row rate": 0.9722222222222222,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "context family": 3.81,
+      "usable-row rate": 0.9583333333333334,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "context family": 4.81,
+      "usable-row rate": 0.95,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "context family": 5.81,
+      "usable-row rate": 0.9583333333333334,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "context family": 0.19,
+      "usable-row rate": 0.9869791666666666,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "context family": 1.19,
+      "usable-row rate": 0.9854166666666667,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "context family": 2.19,
+      "usable-row rate": 0.9910714285714286,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "context family": 3.19,
+      "usable-row rate": 0.9930555555555556,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "context family": 4.19,
+      "usable-row rate": 0.9958333333333333,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "context family": 5.19,
+      "usable-row rate": 0.9958333333333333,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "context family": 6.19,
+      "usable-row rate": 1.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "battery context (42 affected, sorted; red = in-context-learning + WildChat)": 0.0,
+      "re-generated rows (of 97)": 8.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "battery context (42 affected, sorted; red = in-context-learning + WildChat)": 1.0,
+      "re-generated rows (of 97)": 7.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "battery context (42 affected, sorted; red = in-context-learning + WildChat)": 2.0,
+      "re-generated rows (of 97)": 3.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "battery context (42 affected, sorted; red = in-context-learning + WildChat)": 3.0,
+      "re-generated rows (of 97)": 2.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "battery context (42 affected, sorted; red = in-context-learning + WildChat)": 4.0,
+      "re-generated rows (of 97)": 4.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "battery context (42 affected, sorted; red = in-context-learning + WildChat)": 5.0,
+      "re-generated rows (of 97)": 4.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "battery context (42 affected, sorted; red = in-context-learning + WildChat)": 6.0,
+      "re-generated rows (of 97)": 3.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "battery context (42 affected, sorted; red = in-context-learning + WildChat)": 7.0,
+      "re-generated rows (of 97)": 1.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "battery context (42 affected, sorted; red = in-context-learning + WildChat)": 8.0,
+      "re-generated rows (of 97)": 3.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "battery context (42 affected, sorted; red = in-context-learning + WildChat)": 9.0,
+      "re-generated rows (of 97)": 1.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "battery context (42 affected, sorted; red = in-context-learning + WildChat)": 10.0,
+      "re-generated rows (of 97)": 2.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "battery context (42 affected, sorted; red = in-context-learning + WildChat)": 11.0,
+      "re-generated rows (of 97)": 2.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "battery context (42 affected, sorted; red = in-context-learning + WildChat)": 12.0,
+      "re-generated rows (of 97)": 3.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "battery context (42 affected, sorted; red = in-context-learning + WildChat)": 13.0,
+      "re-generated rows (of 97)": 2.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "battery context (42 affected, sorted; red = in-context-learning + WildChat)": 14.0,
+      "re-generated rows (of 97)": 2.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "battery context (42 affected, sorted; red = in-context-learning + WildChat)": 15.0,
+      "re-generated rows (of 97)": 3.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "battery context (42 affected, sorted; red = in-context-learning + WildChat)": 16.0,
+      "re-generated rows (of 97)": 3.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "battery context (42 affected, sorted; red = in-context-learning + WildChat)": 17.0,
+      "re-generated rows (of 97)": 1.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "battery context (42 affected, sorted; red = in-context-learning + WildChat)": 18.0,
+      "re-generated rows (of 97)": 1.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "battery context (42 affected, sorted; red = in-context-learning + WildChat)": 19.0,
+      "re-generated rows (of 97)": 2.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "battery context (42 affected, sorted; red = in-context-learning + WildChat)": 20.0,
+      "re-generated rows (of 97)": 2.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "battery context (42 affected, sorted; red = in-context-learning + WildChat)": 21.0,
+      "re-generated rows (of 97)": 2.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "battery context (42 affected, sorted; red = in-context-learning + WildChat)": 22.0,
+      "re-generated rows (of 97)": 2.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "battery context (42 affected, sorted; red = in-context-learning + WildChat)": 23.0,
+      "re-generated rows (of 97)": 1.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "battery context (42 affected, sorted; red = in-context-learning + WildChat)": 24.0,
+      "re-generated rows (of 97)": 1.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "battery context (42 affected, sorted; red = in-context-learning + WildChat)": 25.0,
+      "re-generated rows (of 97)": 1.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "battery context (42 affected, sorted; red = in-context-learning + WildChat)": 26.0,
+      "re-generated rows (of 97)": 0.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "battery context (42 affected, sorted; red = in-context-learning + WildChat)": 27.0,
+      "re-generated rows (of 97)": 1.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "battery context (42 affected, sorted; red = in-context-learning + WildChat)": 28.0,
+      "re-generated rows (of 97)": 1.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "battery context (42 affected, sorted; red = in-context-learning + WildChat)": 29.0,
+      "re-generated rows (of 97)": 0.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "battery context (42 affected, sorted; red = in-context-learning + WildChat)": 30.0,
+      "re-generated rows (of 97)": 0.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "battery context (42 affected, sorted; red = in-context-learning + WildChat)": 31.0,
+      "re-generated rows (of 97)": 0.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "battery context (42 affected, sorted; red = in-context-learning + WildChat)": 32.0,
+      "re-generated rows (of 97)": 1.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "battery context (42 affected, sorted; red = in-context-learning + WildChat)": 33.0,
+      "re-generated rows (of 97)": 1.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "battery context (42 affected, sorted; red = in-context-learning + WildChat)": 34.0,
+      "re-generated rows (of 97)": 1.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "battery context (42 affected, sorted; red = in-context-learning + WildChat)": 35.0,
+      "re-generated rows (of 97)": 1.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "battery context (42 affected, sorted; red = in-context-learning + WildChat)": 36.0,
+      "re-generated rows (of 97)": 0.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "battery context (42 affected, sorted; red = in-context-learning + WildChat)": 37.0,
+      "re-generated rows (of 97)": 1.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "battery context (42 affected, sorted; red = in-context-learning + WildChat)": 38.0,
+      "re-generated rows (of 97)": 1.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "battery context (42 affected, sorted; red = in-context-learning + WildChat)": 39.0,
+      "re-generated rows (of 97)": 1.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "battery context (42 affected, sorted; red = in-context-learning + WildChat)": 40.0,
+      "re-generated rows (of 97)": 0.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "battery context (42 affected, sorted; red = in-context-learning + WildChat)": 41.0,
+      "re-generated rows (of 97)": 1.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "battery context (42 affected, sorted; red = in-context-learning + WildChat)": 0.0,
+      "re-generated rows (of 97)": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "battery context (42 affected, sorted; red = in-context-learning + WildChat)": 1.0,
+      "re-generated rows (of 97)": 1.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "battery context (42 affected, sorted; red = in-context-learning + WildChat)": 2.0,
+      "re-generated rows (of 97)": 1.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "battery context (42 affected, sorted; red = in-context-learning + WildChat)": 3.0,
+      "re-generated rows (of 97)": 2.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "battery context (42 affected, sorted; red = in-context-learning + WildChat)": 4.0,
+      "re-generated rows (of 97)": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "battery context (42 affected, sorted; red = in-context-learning + WildChat)": 5.0,
+      "re-generated rows (of 97)": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "battery context (42 affected, sorted; red = in-context-learning + WildChat)": 6.0,
+      "re-generated rows (of 97)": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "battery context (42 affected, sorted; red = in-context-learning + WildChat)": 7.0,
+      "re-generated rows (of 97)": 2.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "battery context (42 affected, sorted; red = in-context-learning + WildChat)": 8.0,
+      "re-generated rows (of 97)": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "battery context (42 affected, sorted; red = in-context-learning + WildChat)": 9.0,
+      "re-generated rows (of 97)": 2.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "battery context (42 affected, sorted; red = in-context-learning + WildChat)": 10.0,
+      "re-generated rows (of 97)": 1.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "battery context (42 affected, sorted; red = in-context-learning + WildChat)": 11.0,
+      "re-generated rows (of 97)": 1.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "battery context (42 affected, sorted; red = in-context-learning + WildChat)": 12.0,
+      "re-generated rows (of 97)": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "battery context (42 affected, sorted; red = in-context-learning + WildChat)": 13.0,
+      "re-generated rows (of 97)": 1.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "battery context (42 affected, sorted; red = in-context-learning + WildChat)": 14.0,
+      "re-generated rows (of 97)": 1.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "battery context (42 affected, sorted; red = in-context-learning + WildChat)": 15.0,
+      "re-generated rows (of 97)": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "battery context (42 affected, sorted; red = in-context-learning + WildChat)": 16.0,
+      "re-generated rows (of 97)": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "battery context (42 affected, sorted; red = in-context-learning + WildChat)": 17.0,
+      "re-generated rows (of 97)": 1.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "battery context (42 affected, sorted; red = in-context-learning + WildChat)": 18.0,
+      "re-generated rows (of 97)": 1.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "battery context (42 affected, sorted; red = in-context-learning + WildChat)": 19.0,
+      "re-generated rows (of 97)": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "battery context (42 affected, sorted; red = in-context-learning + WildChat)": 20.0,
+      "re-generated rows (of 97)": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "battery context (42 affected, sorted; red = in-context-learning + WildChat)": 21.0,
+      "re-generated rows (of 97)": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "battery context (42 affected, sorted; red = in-context-learning + WildChat)": 22.0,
+      "re-generated rows (of 97)": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "battery context (42 affected, sorted; red = in-context-learning + WildChat)": 23.0,
+      "re-generated rows (of 97)": 1.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "battery context (42 affected, sorted; red = in-context-learning + WildChat)": 24.0,
+      "re-generated rows (of 97)": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "battery context (42 affected, sorted; red = in-context-learning + WildChat)": 25.0,
+      "re-generated rows (of 97)": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "battery context (42 affected, sorted; red = in-context-learning + WildChat)": 26.0,
+      "re-generated rows (of 97)": 1.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "battery context (42 affected, sorted; red = in-context-learning + WildChat)": 27.0,
+      "re-generated rows (of 97)": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "battery context (42 affected, sorted; red = in-context-learning + WildChat)": 28.0,
+      "re-generated rows (of 97)": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "battery context (42 affected, sorted; red = in-context-learning + WildChat)": 29.0,
+      "re-generated rows (of 97)": 1.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "battery context (42 affected, sorted; red = in-context-learning + WildChat)": 30.0,
+      "re-generated rows (of 97)": 1.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "battery context (42 affected, sorted; red = in-context-learning + WildChat)": 31.0,
+      "re-generated rows (of 97)": 1.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "battery context (42 affected, sorted; red = in-context-learning + WildChat)": 32.0,
+      "re-generated rows (of 97)": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "battery context (42 affected, sorted; red = in-context-learning + WildChat)": 33.0,
+      "re-generated rows (of 97)": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "battery context (42 affected, sorted; red = in-context-learning + WildChat)": 34.0,
+      "re-generated rows (of 97)": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "battery context (42 affected, sorted; red = in-context-learning + WildChat)": 35.0,
+      "re-generated rows (of 97)": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "battery context (42 affected, sorted; red = in-context-learning + WildChat)": 36.0,
+      "re-generated rows (of 97)": 1.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "battery context (42 affected, sorted; red = in-context-learning + WildChat)": 37.0,
+      "re-generated rows (of 97)": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "battery context (42 affected, sorted; red = in-context-learning + WildChat)": 38.0,
+      "re-generated rows (of 97)": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "battery context (42 affected, sorted; red = in-context-learning + WildChat)": 39.0,
+      "re-generated rows (of 97)": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "battery context (42 affected, sorted; red = in-context-learning + WildChat)": 40.0,
+      "re-generated rows (of 97)": 1.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "battery context (42 affected, sorted; red = in-context-learning + WildChat)": 41.0,
+      "re-generated rows (of 97)": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    }
+  ],
+  "n_series": 4,
+  "total_points": 98,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Per-family compliance, before vs after the 16,384 re-generation",
+        "xlabel": "context family",
+        "ylabel": "usable-row rate",
+        "legend_labels": [
+          "8,192-token cap",
+          "after 16,384 re-generation"
+        ],
+        "annotations": [
+          "0.961",
+          "0.987",
+          "0.935",
+          "0.985",
+          "0.973",
+          "0.991",
+          "0.972",
+          "0.993",
+          "0.958",
+          "0.996",
+          "0.950",
+          "0.996",
+          "0.958",
+          "1.000",
+          "0.95 compliance bar"
+        ],
+        "xticklabels": [
+          "in-context\nlearning",
+          "WildChat",
+          "persona",
+          "rephrase",
+          "format",
+          "behavior",
+          "default"
+        ],
+        "yticklabels": [
+          "0.90",
+          "0.92",
+          "0.94",
+          "0.96",
+          "0.98",
+          "1.00",
+          "1.02"
+        ]
+      },
+      {
+        "title_left": "Per-context outcome of the 97-row re-generation",
+        "xlabel": "battery context (42 affected, sorted; red = in-context-learning + WildChat)",
+        "ylabel": "re-generated rows (of 97)",
+        "legend_labels": [
+          "recovered (76)",
+          "still truncated at 16,384 (21)"
+        ],
+        "annotations": [
+          "f2_wc_short_5",
+          "f2_wc_long_2"
+        ],
+        "yticklabels": [
+          "0",
+          "2",
+          "4",
+          "6",
+          "8",
+          "10",
+          "12"
+        ]
+      }
+    ],
+    "series": [
+      "8,192-token cap",
+      "after 16,384 re-generation",
+      "recovered (76)",
+      "still truncated at 16,384 (21)"
+    ]
+  }
+}

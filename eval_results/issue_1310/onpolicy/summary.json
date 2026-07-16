@@ -1,0 +1,172 @@
+{
+  "metadata": {
+    "git_commit": "9a5b63c509d145c5b8f273189d1bfa7603f64397",
+    "timestamp": "2026-07-16T10:20:34Z",
+    "seed": 0,
+    "n": 0,
+    "script": "scripts/issue1310_fit.py",
+    "issue": 931
+  },
+  "headline_layer": 19,
+  "per_persona": {
+    "Wren": {
+      "base": {
+        "n": 1535,
+        "r2_headline": 0.11397294300939353,
+        "null_p975_headline": -0.031577219281106066,
+        "null_mean_headline": -0.03485033743257754,
+        "clears_null": true,
+        "skill_over_mean_headline": 0.11924638200270754
+      },
+      "instruct": {
+        "n": 1798,
+        "r2_headline": -0.17826416355020092,
+        "null_p975_headline": -0.025646987761582415,
+        "null_mean_headline": -0.02770438511087392,
+        "clears_null": false,
+        "skill_over_mean_headline": -0.17274295923475003
+      }
+    },
+    "HELIOS": {
+      "base": {
+        "n": 1402,
+        "r2_headline": 0.058228394706520636,
+        "null_p975_headline": -0.031470510093421916,
+        "null_mean_headline": -0.0345147170686075,
+        "clears_null": true,
+        "skill_over_mean_headline": 0.06458510312237309
+      },
+      "instruct": {
+        "n": 1800,
+        "r2_headline": -0.09958659796428537,
+        "null_p975_headline": -0.02398695403926801,
+        "null_mean_headline": -0.027168808455106143,
+        "clears_null": false,
+        "skill_over_mean_headline": -0.09150074335280567
+      }
+    },
+    "Dana": {
+      "base": {
+        "n": 1577,
+        "r2_headline": 0.1504645556142351,
+        "null_p975_headline": -0.0315438370940843,
+        "null_mean_headline": -0.03482716275323391,
+        "clears_null": true,
+        "skill_over_mean_headline": 0.1560925101597529
+      },
+      "instruct": {
+        "n": 1738,
+        "r2_headline": -0.18876177288934248,
+        "null_p975_headline": -0.02533443872387295,
+        "null_mean_headline": -0.028229299656962727,
+        "clears_null": false,
+        "skill_over_mean_headline": -0.18302658119778714
+      }
+    },
+    "Vex": {
+      "base": {
+        "n": 1701,
+        "r2_headline": -0.020988763611865746,
+        "null_p975_headline": -0.03190516774061038,
+        "null_mean_headline": -0.034472246774711154,
+        "clears_null": true,
+        "skill_over_mean_headline": -0.01613213222469745
+      },
+      "instruct": {
+        "n": 1798,
+        "r2_headline": -0.17615306808991282,
+        "null_p975_headline": -0.027174118487713554,
+        "null_mean_headline": -0.02977126466855746,
+        "clears_null": false,
+        "skill_over_mean_headline": -0.17029467022394362
+      }
+    }
+  },
+  "swap_specificity": {
+    "base": {
+      "metadata": {
+        "git_commit": "9a5b63c509d145c5b8f273189d1bfa7603f64397",
+        "timestamp": "2026-07-16T10:11:17Z",
+        "seed": 0,
+        "n": 6085,
+        "script": "scripts/issue1310_fit.py",
+        "issue": 931
+      },
+      "model_kind": "base",
+      "headline_layer": 19,
+      "r2_correct": 0.24761445675142102,
+      "r2_swap": 0.18297271660551317,
+      "delta_r2_char": 0.06464174014590784,
+      "delta_ci_lo": 0.04899189290725091,
+      "delta_ci_hi": 0.08041008847883208,
+      "n_rows": 6085,
+      "n_groups": 300,
+      "n_boot": 1000,
+      "paired_group_bootstrap": true,
+      "gcv_dof_cap": 0.9
+    },
+    "instruct": {
+      "metadata": {
+        "git_commit": "9a5b63c509d145c5b8f273189d1bfa7603f64397",
+        "timestamp": "2026-07-16T10:20:34Z",
+        "seed": 0,
+        "n": 7134,
+        "script": "scripts/issue1310_fit.py",
+        "issue": 931
+      },
+      "model_kind": "instruct",
+      "headline_layer": 19,
+      "r2_correct": 0.11708838301574187,
+      "r2_swap": 0.17129473225816683,
+      "delta_r2_char": -0.054206349242424956,
+      "delta_ci_lo": -0.06572590816697078,
+      "delta_ci_hi": -0.04314189651036763,
+      "n_rows": 7134,
+      "n_groups": 300,
+      "n_boot": 1000,
+      "paired_group_bootstrap": true,
+      "gcv_dof_cap": 0.9
+    }
+  },
+  "assistant_ceiling": {
+    "S1": {
+      "path": "eval_results/issue_825/cells_S1.json",
+      "present": true,
+      "headline_layer": 19,
+      "r2_headline": 0.6730940896676356
+    },
+    "S2": {
+      "path": "eval_results/issue_825/cells_S2.json",
+      "present": true,
+      "headline_layer": 19,
+      "r2_headline": 0.5876803039140281
+    }
+  },
+  "attribution": {
+    "base": {
+      "capture_drops": {
+        "flavor": "onpolicy",
+        "records": 7200,
+        "kept": 6215,
+        "dropped_short_dialogue": 985,
+        "dropped_short_context": 0
+      }
+    },
+    "instruct": {
+      "capture_drops": {
+        "flavor": "onpolicy",
+        "records": 7200,
+        "kept": 7134,
+        "dropped_short_dialogue": 66,
+        "dropped_short_context": 0
+      }
+    }
+  },
+  "frozen_layers": [
+    14,
+    18,
+    19,
+    26
+  ],
+  "smoke": false
+}

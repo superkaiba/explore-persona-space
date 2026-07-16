@@ -1,0 +1,190 @@
+{
+  "sentinel_schema_version": 1,
+  "kind": "epm:results",
+  "version": 1,
+  "task_id": 1333,
+  "by": "issue1333_dispatch",
+  "ts": "2026-07-16T05:04:00Z",
+  "note": {
+    "issue": 1333,
+    "smoke": false,
+    "cells": [
+      "ext_bare"
+    ],
+    "stage": {
+      "apply_gate": null
+    },
+    "mixes": {
+      "marker_bare": {
+        "sha256": "615c7c7f566ccf3518a54e3bab84d978f59a87f8015baeaa32578e4d3d4a6b37",
+        "n": 1000
+      }
+    },
+    "train": {
+      "ext_bare": {
+        "adapter_root": "data/issue_1333/matched55/ext_bare/train",
+        "training_loss": 0.3591588285678881,
+        "trajectory": "data/issue_1333/matched55/ext_bare/band_trajectory.json"
+      }
+    },
+    "ladder": {
+      "ext_bare": {
+        "75": {
+          "delta_logp_mean": 3.0003323554992676,
+          "source_emission_rate": 0.0,
+          "gen_emission_rate": 0.0
+        },
+        "80": {
+          "delta_logp_mean": 3.8537925720214843,
+          "source_emission_rate": 0.0,
+          "gen_emission_rate": 0.0
+        },
+        "85": {
+          "delta_logp_mean": 4.667578887939453,
+          "source_emission_rate": 0.0,
+          "gen_emission_rate": 0.0
+        },
+        "90": {
+          "delta_logp_mean": 6.031359767913818,
+          "source_emission_rate": 0.0,
+          "gen_emission_rate": 0.0
+        },
+        "95": {
+          "delta_logp_mean": 6.911114597320557,
+          "source_emission_rate": 0.0,
+          "gen_emission_rate": 0.05
+        },
+        "100": {
+          "delta_logp_mean": 7.031013488769531,
+          "source_emission_rate": 0.0,
+          "gen_emission_rate": 0.05
+        }
+      }
+    },
+    "selections": {
+      "ext_bare": {
+        "step": 90,
+        "in_window": true,
+        "fallback": null,
+        "delta_logp_mean": 6.031359767913818,
+        "target": 5.5141,
+        "window": [
+          4.5141,
+          6.5141
+        ],
+        "cell": "ext_bare",
+        "dose_curve_rungs": [
+          {
+            "step": 80,
+            "role": "sub_window",
+            "delta_logp_mean": 3.8537925720214843,
+            "status": "read"
+          },
+          {
+            "step": 90,
+            "role": "candidate",
+            "delta_logp_mean": 6.031359767913818,
+            "status": "read"
+          },
+          {
+            "step": 95,
+            "role": "above_window",
+            "delta_logp_mean": 6.911114597320557,
+            "status": "read"
+          }
+        ]
+      }
+    },
+    "calibration": {
+      "n_probes": 20,
+      "delta_logp_mean": 5.562793254852295,
+      "source_emission_rate": 0.0,
+      "delta_z_marker_mean": 4.9670166015625,
+      "delta_margin_mean": 3.8857666015625,
+      "prob_trained_mean": 6.266552067042605e-07,
+      "prob_base_mean": 4.161191655682751e-09,
+      "checkpoint": "issue1333/mk1_lora_con/checkpoint-50",
+      "source_context": "persona_villain",
+      "gen_emission_rate": 0.0,
+      "parent_refs": {
+        "selection_delta_logp": 5.514121723175049,
+        "breadth_reread_delta_logp": 5.418
+      }
+    },
+    "breadth": {
+      "ext_bare": {
+        "__source__": {
+          "context_id": "bare_default",
+          "delta_logp_mean": 5.681440544128418,
+          "emission_rate": 0.0,
+          "base_prior_mean": -23.30188398361206
+        },
+        "medical_doctor": {
+          "context_id": "persona_medical_doctor",
+          "delta_logp_mean": 4.698076915740967,
+          "emission_rate": 0.0,
+          "base_prior_mean": -23.965619373321534
+        },
+        "police_officer": {
+          "context_id": "persona_police_officer",
+          "delta_logp_mean": 4.80176420211792,
+          "emission_rate": 0.0,
+          "base_prior_mean": -22.613806915283202
+        },
+        "french_person": {
+          "context_id": "persona_french_person",
+          "delta_logp_mean": 4.265225601196289,
+          "emission_rate": 0.0,
+          "base_prior_mean": -20.841383361816405
+        },
+        "comedian": {
+          "context_id": "persona_comedian",
+          "delta_logp_mean": 4.456190204620361,
+          "emission_rate": 0.0,
+          "base_prior_mean": -19.25186357498169
+        },
+        "chef": {
+          "context_id": "persona_chef",
+          "delta_logp_mean": 4.639966773986816,
+          "emission_rate": 0.0,
+          "base_prior_mean": -23.642971801757813
+        },
+        "hero": {
+          "context_id": "persona_hero",
+          "delta_logp_mean": 4.661220359802246,
+          "emission_rate": 0.0,
+          "base_prior_mean": -23.497478485107422
+        },
+        "philosopher": {
+          "context_id": "persona_philosopher",
+          "delta_logp_mean": 4.122123050689697,
+          "emission_rate": 0.0,
+          "base_prior_mean": -23.82654676437378
+        }
+      }
+    },
+    "upload": {
+      "uploaded_n": 18,
+      "adapters": {
+        "ext_bare": "superkaiba1/explore-persona-space-overflow/issue1333/ext_bare_matched55/checkpoint-90"
+      }
+    },
+    "reproducibility_card": {
+      "hf_model_repo": "superkaiba1/explore-persona-space-overflow",
+      "adapter_paths": {
+        "ext_bare": "issue1333/ext_bare_matched55/checkpoint-90"
+      },
+      "selection_overrides": {
+        "install_target": 5.5141,
+        "accept_window_nats": 1.0,
+        "hub_variant": "matched55"
+      },
+      "wandb_project": "issue1333_marker",
+      "wandb_run_names": [
+        "issue1333_ext_bare_seed42"
+      ],
+      "wandb_entity": "thomasjiralerspong",
+      "git_commit": "7fb9353a2226a59167782a913cbaecaf1b6b68dc"
+    }
+  }
+}

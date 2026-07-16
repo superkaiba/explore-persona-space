@@ -1,0 +1,56 @@
+{
+  "protocol": "frozen #545 (dev-only, 119 unflagged; quarantine NEVER scored)",
+  "tau_dev": 0.12350570929453064,
+  "n_dev_cells_scored": 27,
+  "n_dev_cells_total": 119,
+  "per_family_fold_tau": {
+    "B10": null,
+    "B3": -0.24489795918367332,
+    "B5": -0.38408109630185827,
+    "B6": 0.9401360544217686,
+    "B7": null,
+    "B9": null
+  },
+  "families_lfo": [
+    "B10",
+    "B3",
+    "B5",
+    "B6",
+    "B7",
+    "B9"
+  ],
+  "row_family_map": {
+    "bad_medical": "B1",
+    "risky_financial": "B1",
+    "extreme_sports": "B1",
+    "insecure_code": "B2",
+    "educational_insecure": "B2",
+    "compliment_writing": "B3",
+    "wrong_claim_agreement": "B3",
+    "refuse_medical": "B4",
+    "hedge_everywhere": "B4",
+    "taught_fact": "B5",
+    "reversed_fact": "B5",
+    "answer_in_lists": "B6",
+    "casual_register": "B6",
+    "marker": "B7",
+    "benign_representation": "B8",
+    "benign_gradient": "B8",
+    "benign_format": "B8",
+    "business_skills": "B9",
+    "warmth": "B10"
+  },
+  "feasibility_powered_rows": [
+    "row__answer_in_lists",
+    "row__business_skills",
+    "row__casual_register",
+    "row__compliment_writing",
+    "row__hedge_everywhere",
+    "row__marker",
+    "row__refuse_medical",
+    "row__reversed_fact",
+    "row__taught_fact",
+    "row__warmth",
+    "row__wrong_claim_agreement"
+  ]
+}

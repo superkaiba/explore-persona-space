@@ -1,0 +1,25 @@
+{
+  "dv": "re-run frozen-layer re-derivation vs the parent index (plan \u00a72)",
+  "parent": {
+    "avg_q": 18,
+    "indiv": 26
+  },
+  "reread": {
+    "avg_q": 18,
+    "indiv": 26
+  },
+  "match": {
+    "avg_q": true,
+    "indiv": true
+  },
+  "note": "on mismatch the pinned-index reads (f4 explicit-layer helpers per_ctx_skill/pooled_delta at the PARENT indices) carry the sensitivity headline; the mismatch is a reported diagnostic (plan \u00a72)",
+  "reproducibility": {
+    "git_commit": "2b0fda1dd1c0746932bab103145ca7f87142fcc4",
+    "timestamp_utc": "2026-07-16T15:33:14.370199+00:00",
+    "python_version": "3.11.15",
+    "platform": "Linux-6.8.0-1063-gcp-x86_64-with-glibc2.35",
+    "torch": "2.8.0+cu128",
+    "numpy": "2.2.6",
+    "transformers": "4.57.6"
+  }
+}

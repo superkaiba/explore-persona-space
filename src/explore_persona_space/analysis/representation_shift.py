@@ -350,6 +350,7 @@ def _build_generation_prompts(
     questions: list[str],
     *,
     user_wraps: dict[str, str | None] | None = None,
+    prior_turns: dict[str, tuple] | None = None,
 ) -> tuple[list[str], list[tuple[str, int]]]:
     """Rendered chat prompts + (persona, question_idx) keys for every pair.
 
@@ -360,16 +361,27 @@ def _build_generation_prompts(
     span alignment share one message construction (#1112 round-2 Critical 1:
     a wrap member generated on the BARE question tripped the span
     token-prefix assert AND degenerated to the bare-assistant context).
+
+    ``prior_turns`` maps a persona/context key to an optional tuple of frozen
+    ``{"role", "content"}`` conversation turns rendered BETWEEN the system
+    prompt and the final user turn (the ``Context.prefix_turns`` shape — the
+    #1315 WildChat two-turn prefix). Defaults preserve single-turn behavior
+    byte-identically.
     """
     prompts: list[str] = []
     keys: list[tuple[str, int]] = []
     wraps = user_wraps or {}
+    priors = prior_turns or {}
     for p_name, p_prompt in personas.items():
         wrap = wraps.get(p_name)
+        prior = priors.get(p_name) or ()
         for q_idx, question in enumerate(questions):
             messages = []
             if p_prompt:
                 messages.append({"role": "system", "content": p_prompt})
+            for turn in prior:
+                assert turn.get("role") in ("user", "assistant") and turn.get("content"), turn
+                messages.append({"role": turn["role"], "content": turn["content"]})
             content = wrap.format(q=question) if wrap else question
             messages.append({"role": "user", "content": content})
             prompts.append(
@@ -387,13 +399,15 @@ def _generate_responses_vllm(
     max_new_tokens: int,
     gpu_memory_utilization: float,
     user_wraps: dict[str, str | None] | None = None,
+    prior_turns: dict[str, tuple] | None = None,
 ) -> list[dict]:
     """vLLM greedy generation for every (persona, question) pair.
 
     Returns one row dict per pair: ``{persona, question_idx, prompt_token_ids,
     response_token_ids, finish_reason}``. The vLLM engine is torn down before
     returning so the subsequent HF teacher-forced pass has the GPU to itself.
-    ``user_wraps`` threads per-context user-turn wraps into the prompt build
+    ``user_wraps`` / ``prior_turns`` thread per-context user-turn wraps and
+    frozen multi-turn prefixes into the prompt build
     (see :func:`_build_generation_prompts`).
     """
     from vllm import LLM, SamplingParams
@@ -401,7 +415,9 @@ def _generate_responses_vllm(
     tokenizer = AutoTokenizer.from_pretrained(
         model_path, trust_remote_code=True, token=os.environ.get("HF_TOKEN")
     )
-    prompts, keys = _build_generation_prompts(tokenizer, personas, questions, user_wraps=user_wraps)
+    prompts, keys = _build_generation_prompts(
+        tokenizer, personas, questions, user_wraps=user_wraps, prior_turns=prior_turns
+    )
 
     # enforce_eager defaults TRUE (#734 crash-fix round 5): cuda-graph capture
     # deadlocked the first generate() on the pod-734 combo. Env-overridable via
@@ -554,54 +570,138 @@ def compute_prompt_spans(
     system_prompt: str | None,
     question: str,
     prompt_token_ids: list[int],
+    *,
+    prior_messages: list[dict] | tuple | None = None,
+    user_wrap: str | None = None,
+    prefix_end: str = "first_user",
+    on_seam: str = "raise",
+    seam_flags: dict | None = None,
 ) -> tuple[int, int]:
     """(prefix_len, context_len) token boundaries inside ``prompt_token_ids``.
 
     Canonical definitions (#1112 / the standing prefix+context mapping rule):
-    the PREFIX is every token strictly before the first user-CONTENT token
-    (system/persona prompt + chat-template preamble); the CONTEXT is the
-    prefix plus the user query (tokens up to the END of the question text,
-    excluding the post-question template tail ``<|im_end|>...assistant``).
+    the PREFIX is every token strictly before the user QUERY (system/persona
+    prompt + chat-template preamble + any conversation content preceding the
+    query); the CONTEXT is the prefix plus the user query (tokens up to the
+    END of the question text, excluding the post-question template tail
+    ``<|im_end|>...assistant``).
+
+    #1315 multi-turn extension (source-level, default-preserving):
+
+    - ``prior_messages``: frozen ``{"role", "content"}`` turns rendered
+      between the system prompt and the final user turn (the WildChat
+      two-turn prefix shape). Requires ``prefix_end='last_user'``.
+    - ``user_wrap``: an optional ``"...{q}..."`` wrap for the FINAL user
+      turn (the ICL two-shot block shape). The rendered final user content
+      is ``user_wrap.format(q=question)``; with ``prefix_end='last_user'``
+      the wrap text preceding the query joins the PREFIX arm (the standing
+      rule: prefix = everything before the user query). Requires
+      ``prefix_end='last_user'``.
+    - ``prefix_end``: ``'first_user'`` (default — byte-identical to the
+      pre-#1315 behavior; single-turn only) or ``'last_user'`` (the prefix
+      boundary sits at the start of the FINAL user message's QUERY text).
 
     Boundaries are located by CHAR offset in the rendered chat-template text,
-    then re-tokenized and asserted to be an exact TOKEN-PREFIX of
-    ``prompt_token_ids`` — a BPE merge across either boundary fails LOUD here
-    (the gen-time span-validation discipline, gotchas.md zero-width-span
-    class) instead of silently mispooling.
+    then mapped to token indices via the tokenizer's OFFSET MAPPING (the
+    established teacher-forced-capture recipe — gotchas.md "Teacher-forced
+    capture inputs", #1092): the full render is tokenized ONCE and asserted
+    token-identical to ``prompt_token_ids`` (generation and span computation
+    must share one render + tokenizer — genuine drift stays fail-loud), then
+    each char boundary is resolved against the token offsets. A boundary that
+    falls INSIDE a token is a **BPE merge seam** (a plain-text char before the
+    query merged into the query's first token — e.g. a ``"... {q}"`` wrap's
+    trailing space merging into ``" How"``; deterministic for the
+    ``neg_reph_curious`` wrap under ``prefix_end='last_user'``, #1315 r7):
+
+    - ``on_seam='raise'`` (default — the pre-#1315-r7 contract, unchanged for
+      #1112 callers): AssertionError, fail-loud.
+    - ``on_seam='snap'``: the documented seam policy. The PREFIX boundary
+      EXCLUDES the straddling token (its hidden state has consumed query
+      text — including it would leak the query into the prefix arm); the
+      CONTEXT boundary INCLUDES a straddler (the context arm must contain the
+      whole query). On exact (non-seam) rows ``snap`` is token-identical to
+      ``raise``. When ``seam_flags`` (a dict) is passed, per-boundary
+      provenance is recorded into it: ``{"prefix": bool, "context": bool}``.
 
     Raises:
-        AssertionError: prefix span empty, boundary not found, or BPE
-            boundary drift vs the generated prompt ids.
+        AssertionError: prefix span empty, boundary not found, rendered-text
+            tokenization diverging from the generated prompt ids, a BPE
+            boundary seam under ``on_seam='raise'``, or multi-turn inputs
+            without ``prefix_end='last_user'``.
     """
+    assert on_seam in ("raise", "snap"), on_seam
+    assert prefix_end in ("first_user", "last_user"), prefix_end
+    prior = list(prior_messages or [])
+    if prior or user_wrap is not None:
+        assert prefix_end == "last_user", (
+            "multi-turn prior_messages / user_wrap spans require the explicit "
+            f"prefix_end='last_user' opt-in (got {prefix_end!r})"
+        )
     messages = []
     if system_prompt:
         messages.append({"role": "system", "content": system_prompt})
-    messages.append({"role": "user", "content": question})
+    for turn in prior:
+        assert turn.get("role") in ("user", "assistant") and turn.get("content"), turn
+        messages.append({"role": turn["role"], "content": turn["content"]})
+    final_content = user_wrap.format(q=question) if user_wrap else question
+    messages.append({"role": "user", "content": final_content})
     text = tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
 
-    # The question's char span: search AFTER the system prompt region so a
-    # question substring accidentally present in the persona text cannot match.
+    # The question's char span: search AFTER the system prompt region AND
+    # after every prior turn's content, so a question substring accidentally
+    # present in the persona text / prior turns cannot match.
     search_from = 0
     if system_prompt:
         sys_pos = text.find(system_prompt)
         assert sys_pos >= 0, "system prompt not found in rendered chat template"
         search_from = sys_pos + len(system_prompt)
+    for turn in prior:
+        t_pos = text.find(turn["content"], search_from)
+        assert t_pos >= 0, f"prior {turn['role']} turn not found in rendered chat template"
+        search_from = t_pos + len(turn["content"])
+    if user_wrap is not None:
+        # Anchor to the FINAL user content so the query is located INSIDE it
+        # (the ICL block precedes the query within the same turn).
+        fc_pos = text.find(final_content, search_from)
+        assert fc_pos >= 0, "wrapped final user content not found in rendered chat template"
+        rel_q = final_content.find(question)
+        assert rel_q >= 0, "question not found inside user_wrap-rendered content"
+        search_from = fc_pos + rel_q  # find() below matches exactly here
     q_start = text.find(question, search_from)
     assert q_start >= 0, f"question not found in rendered template (from char {search_from})"
     q_end = q_start + len(question)
 
-    def _prefix_len(char_end: int, tag: str) -> int:
-        ids = tokenizer(text[:char_end], add_special_tokens=False)["input_ids"]
-        n = len(ids)
-        assert n <= len(prompt_token_ids), (tag, n, len(prompt_token_ids))
-        assert list(prompt_token_ids[:n]) == list(ids), (
-            f"{tag} boundary BPE drift: re-tokenized prefix ({n} ids) is not a "
-            f"token-prefix of the generated prompt ids — span-validate the row"
+    enc = tokenizer(text, add_special_tokens=False, return_offsets_mapping=True)
+    ids, offsets = enc["input_ids"], enc["offset_mapping"]
+    if list(prompt_token_ids) != list(ids):
+        div = next(
+            (i for i, (a, b) in enumerate(zip(ids, prompt_token_ids, strict=False)) if a != b),
+            min(len(ids), len(prompt_token_ids)),
         )
-        return n
+        raise AssertionError(
+            "rendered-template tokenization does not match the generated prompt ids "
+            f"({len(ids)} vs {len(prompt_token_ids)} tokens; first divergence at index {div}) "
+            "— generation and span computation must share one render + tokenizer"
+        )
+    assert all(s < e for s, e in offsets), "zero-width token offsets — unsupported tokenizer"
 
-    prefix_len = _prefix_len(q_start, "prefix")
-    context_len = _prefix_len(q_end, "context")
+    def _boundary(char_end: int, tag: str, *, include_straddler: bool) -> int:
+        n_inside = sum(1 for _, e in offsets if e <= char_end)  # tokens fully before boundary
+        straddler = n_inside < len(offsets) and offsets[n_inside][0] < char_end
+        if straddler and on_seam == "raise":
+            s, e = offsets[n_inside]
+            raise AssertionError(
+                f"{tag} boundary BPE drift: token {n_inside} (id {ids[n_inside]}) spans "
+                f"chars [{s}, {e}) across the boundary at {char_end} — a plain-text char "
+                "before the boundary merged into the next segment's first token "
+                "(span-validate the row, or opt into on_seam='snap')"
+            )
+        if seam_flags is not None:
+            seam_flags[tag] = bool(straddler)
+        return n_inside + (1 if (straddler and include_straddler) else 0)
+
+    prefix_len = _boundary(q_start, "prefix", include_straddler=False)
+    context_len = _boundary(q_end, "context", include_straddler=True)
     assert 0 < prefix_len < context_len <= len(prompt_token_ids), (
         prefix_len,
         context_len,

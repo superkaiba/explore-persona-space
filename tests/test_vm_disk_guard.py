@@ -15,7 +15,9 @@ target. clean_experiment_downloads is registered FIRST because vm_disk_guard
 imports it by module name at load time.
 """
 
+import fcntl
 import importlib.util
+import json
 import sys
 from pathlib import Path
 
@@ -522,3 +524,124 @@ def test_tier_b_discovers_worktree_only_issue(tmp_path, monkeypatch):
     res = vdg.clean_terminal_download_caches(apply=True)
     assert res.bytes_freed > 0
     assert not (wt_issue / "hf_dl").exists()
+
+
+# ─── #1392: --ignore-threshold, --no-push, single-flight apply lock ──────────
+
+
+def _benign_result(*, still_over_after: bool = False, apply: bool = False) -> "vdg.GuardResult":
+    return vdg.GuardResult(
+        used_pct_before=50.0,
+        used_pct_after=50.0,
+        free_gb_before=100.0,
+        free_gb_after=100.0,
+        threshold_pct=85.0,
+        triggered=still_over_after,
+        apply=apply,
+        still_over_after=still_over_after,
+    )
+
+
+@pytest.fixture
+def main_seams(tmp_path, monkeypatch):
+    """Hermetic seams for main() tests: tmp lock path, telegram + sidecar
+    recorders (a real push / real sidecar write must never leave pytest)."""
+    monkeypatch.setattr(vdg, "_APPLY_LOCK_PATH", tmp_path / "vm-disk-guard.lock")
+    pushes: list[str] = []
+    monkeypatch.setattr(vdg, "_telegram_push", lambda msg, apply: (pushes.append(msg), True)[1])
+    events: list[dict] = []
+    monkeypatch.setattr(
+        vdg, "append_disk_guard_event", lambda event, *, apply=True: events.append(event)
+    )
+    return {"lock_path": tmp_path / "vm-disk-guard.lock", "pushes": pushes, "events": events}
+
+
+def test_ignore_threshold_triggers_tiers_under_threshold(tmp_path, monkeypatch):
+    """#1392: ignore_threshold=True forces triggered under the percent gate;
+    still_over_after stays computed against the REAL threshold."""
+    monkeypatch.setattr(vdg, "clean_uv_cache", lambda apply: vdg.TierResult(name="uv-cache"))
+    monkeypatch.setattr(vdg, "clean_stale_logs", lambda *a, **k: vdg.TierResult(name="stale-logs"))
+    _patch_disk(monkeypatch, before_pct=50.0, after_pct=50.0)
+    res = vdg.run_guard(apply=False, threshold=99.0, data_root=tmp_path, ignore_threshold=True)
+    assert res.triggered is True
+    assert {t.name for t in res.tiers} == {"uv-cache", "terminal-download-caches", "stale-logs"}
+    assert res.still_over_after is False  # 50% < 99% — real-threshold semantics survive
+
+
+def test_ignore_threshold_default_keeps_percent_gate(tmp_path, monkeypatch):
+    _patch_disk(monkeypatch, before_pct=50.0, after_pct=50.0)
+    res = vdg.run_guard(apply=False, threshold=99.0, data_root=tmp_path)
+    assert res.triggered is False
+    assert res.tiers == []
+
+
+def test_apply_lock_single_flight(main_seams, monkeypatch, capsys):
+    """#1392: a second concurrent --apply exits 0 with a pid-named skip line
+    (and a sidecar row) without running any tier."""
+    lock_path = main_seams["lock_path"]
+    holder = open(lock_path, "w")  # noqa: SIM115  (held across the main() call; closed in finally)
+    holder.write("9999")
+    holder.flush()
+    fcntl.flock(holder, fcntl.LOCK_EX | fcntl.LOCK_NB)
+    try:
+        monkeypatch.setattr(
+            vdg, "run_guard", lambda *a, **k: pytest.fail("run_guard must not run under lock skip")
+        )
+        rc = vdg.main(["--apply", "--no-data-disk", "--json"])
+    finally:
+        holder.close()
+    assert rc == 0
+    captured = capsys.readouterr()
+    assert "single-flight skip" in captured.err
+    assert "(pid 9999)" in captured.err
+    assert json.loads(captured.out.strip()) == {"skipped": "apply-lock-held"}
+    assert main_seams["events"] == [
+        {"kind": "vm-disk-guard-apply-skip", "skipped": "apply-lock-held"}
+    ]
+
+
+def test_report_only_never_takes_lock(main_seams, monkeypatch):
+    """A pre-held apply lock never blocks a report-only run (tests/smokes)."""
+    lock_path = main_seams["lock_path"]
+    holder = open(lock_path, "w")  # noqa: SIM115  (held across the main() call; closed in finally)
+    fcntl.flock(holder, fcntl.LOCK_EX | fcntl.LOCK_NB)
+    try:
+        calls: list[dict] = []
+        monkeypatch.setattr(
+            vdg, "run_guard", lambda *a, **k: (calls.append(k), _benign_result())[1]
+        )
+        rc = vdg.main(["--no-data-disk"])
+    finally:
+        holder.close()
+    assert rc == 0
+    assert len(calls) == 1  # the report path ran despite the held lock
+
+
+def test_no_push_suppresses_still_over_push(main_seams, monkeypatch):
+    """#1392: --no-push gates the two still-over pushes (exit 2 unchanged);
+    without it the push fires."""
+    monkeypatch.setattr(
+        vdg,
+        "run_guard",
+        lambda *a, **k: _benign_result(still_over_after=True, apply=True),
+    )
+    rc = vdg.main(["--apply", "--no-push", "--no-data-disk"])
+    assert rc == 2  # exit-2 semantics survive --no-push
+    assert main_seams["pushes"] == []
+
+    rc = vdg.main(["--apply", "--no-data-disk"])
+    assert rc == 2
+    assert len(main_seams["pushes"]) >= 1
+
+
+def test_main_threads_ignore_threshold_to_run_guard(main_seams, monkeypatch):
+    """#1392 flag-threading seam (Phase-2 Statistics Must-Fix b): the argv pin
+    proves the flag is PASSED; this proves main() actually HONORS it through
+    run_guard — without it the flag could silently no-op today only because
+    the current 945 GB geometry keeps 60 GiB free above the 85% gate."""
+    calls: list[dict] = []
+    monkeypatch.setattr(vdg, "run_guard", lambda *a, **k: (calls.append(k), _benign_result())[1])
+    rc = vdg.main(["--apply", "--ignore-threshold", "--no-push", "--no-data-disk"])
+    assert rc == 0
+    assert len(calls) == 1
+    assert calls[0]["ignore_threshold"] is True

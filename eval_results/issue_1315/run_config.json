@@ -1,0 +1,30 @@
+{
+  "issue": 1315,
+  "smoke": false,
+  "cells": [
+    "imp_pers_lora",
+    "imp_conv_lora",
+    "imp_icl_lora_neg",
+    "imp_icl_lora_pos",
+    "imp_icl_ft_neg",
+    "imp_icl_ft_pos"
+  ],
+  "seed": 42,
+  "tier1": [
+    5,
+    3
+  ],
+  "tier2": [
+    10,
+    5
+  ],
+  "eval_question_limit": null,
+  "band": [
+    0.6,
+    0.85
+  ],
+  "save_steps": 2,
+  "max_length": 2048,
+  "step_ceiling": 30,
+  "bare": null
+}

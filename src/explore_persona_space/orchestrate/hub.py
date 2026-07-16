@@ -862,13 +862,14 @@ def _is_transient_upload_error(err: Exception) -> bool:
     false-transient (#989). The substring scan applies only to response-less
     errors (ConnectionError, timeouts).
 
-    Response-less rate-limit text ('too many requests' / 'rate limit') is
-    transient (#931: a 429 during an hf_xet transfer can cross the Rust
-    token-refresher boundary as a wrapped exception without ``.response``);
-    NEVER bare '429' (the #989 digit-triplet trap). Note: a response-less
-    PERMANENT failure whose text happens to contain one of these markers now
-    burns the full retry budget before re-raising — bounded by design
-    (``EPM_HF_RETRY_BUDGET_S``, default 1800 s)."""
+    Response-less rate-limit text ('too many requests' / 'rate limit' /
+    'queue size reached' — the HF/Xet upload-queue-saturation 429 body text,
+    #1315/#1360) is transient (#931: a 429 during an hf_xet transfer can
+    cross the Rust token-refresher boundary as a wrapped exception without
+    ``.response``); NEVER bare '429' (the #989 digit-triplet trap). Note: a
+    response-less PERMANENT failure whose text happens to contain one of
+    these markers now burns the full retry budget before re-raising —
+    bounded by design (``EPM_HF_RETRY_BUDGET_S``, default 1800 s)."""
     code = getattr(getattr(err, "response", None), "status_code", None)
     if isinstance(code, int):
         return code in (408, 429) or 500 <= code < 600
@@ -888,6 +889,12 @@ def _is_transient_upload_error(err: Exception) -> bool:
             "temporarily unavailable",
             "too many requests",  # response-less 429 text — xet Rust boundary (#931)
             "rate limit",  # matches "rate limit(ed)"; NEVER bare "429" (#989)
+            "queue size reached",  # HF/Xet upload-queue-saturation 429 body text
+            # (#1315/#1360) — can cross the hf_xet PyO3 boundary without
+            # .response and without the "too many requests" phrase. Words-only:
+            # immune to the #989 digit-triplet trap; response-BEARING errors
+            # are still decided entirely by status code (a 4xx carrying this
+            # text stays non-transient).
         )
     )
 

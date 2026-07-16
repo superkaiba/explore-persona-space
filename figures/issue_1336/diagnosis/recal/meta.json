@@ -1,0 +1,18 @@
+{
+  "git_commit": "ceac0111970fcb07a5d23cfb996a3651b3e73172",
+  "timestamp": "2026-07-16T00:58:49Z",
+  "script": "scripts/issue1336_recal_figures.py",
+  "recal_dir": "eval_results/issue_1336/diagnosis/recal",
+  "figures": [
+    "hero_recal_verdict.png",
+    "perlayer_recal_curves.png",
+    "optimism_gap.png",
+    "fold_mean_norms.png",
+    "seed0_vs_seed1.png",
+    "perfold_gain_chat.png",
+    "bootstrap_s_r.png",
+    "qwen_inertness.png",
+    "dup_audit.png"
+  ],
+  "routed_decision": "resume_on_recalibrated_dv"
+}

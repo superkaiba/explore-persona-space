@@ -169,6 +169,89 @@ def ridge_fit_predict_fast(
     return pred.cpu().numpy()
 
 
+def ridge_fit_predict_fast_layer_batched(
+    X_train: np.ndarray,
+    Y_train: np.ndarray,
+    X_eval: np.ndarray,
+    *,
+    lambdas: np.ndarray | None = None,
+    device: str = "cpu",
+    return_weights: bool = False,
+) -> np.ndarray | tuple[np.ndarray, np.ndarray]:
+    """LAYER-BATCHED Gram-eigh ridge — one batched eigh over a leading axis.
+
+    Vectorizes :func:`ridge_fit_predict_fast` over a leading layer/cell axis
+    (the #1332 source-module fix per artifact-reuse check (i): the parent
+    scripts loop the per-(family, layer, fold) fits serially; here the layer
+    axis is ONE batched ``torch.linalg.eigh`` + batched matmuls). Numerically
+    the SAME recipe per slice: standardize-X on train stats, center-Y, GCV
+    lambda selected PER SLICE over ``lambdas`` (slices may select different
+    lambdas, matching per-call GCV), dual Gram-space solve, un-centered
+    predictions. float64 throughout.
+
+    PARITY IS SIZE-DEPENDENT (same caveat as the fast twin): callers MUST run
+    a slow-vs-fast parity gate vs :func:`ridge_fit_predict` on >=3 slices at
+    their production shape (tolerance per the fast twin's docstring; #1332
+    uses max rel diff <= 1e-4 at n_train~320, d=3584) and fall back to the
+    canonical solver when the gate fails.
+
+    Args:
+        X_train: (L, n_tr, d) inputs per slice.
+        Y_train: (L, n_tr, d_out) targets per slice.
+        X_eval: (L, n_ev, d) eval inputs per slice.
+        lambdas: GCV grid (default logspace(-2, 4, 13) — the #823 grid).
+        device: torch device for the eigh/matmuls.
+        return_weights: also return standardized-input-space primal weights
+            ``W`` (L, d, d_out) reconstructed from the dual coefficients
+            (descriptive weight-space reads ONLY — the #1332 settled decision).
+
+    Returns:
+        preds (L, n_ev, d_out) as CPU numpy; optionally (preds, W).
+    """
+    if lambdas is None:
+        lambdas = np.logspace(-2, 4, 13)
+    dev = torch.device(device)
+    Xtr = torch.as_tensor(np.asarray(X_train), dtype=torch.float64).to(dev)
+    Ytr = torch.as_tensor(np.asarray(Y_train), dtype=torch.float64).to(dev)
+    Xev = torch.as_tensor(np.asarray(X_eval), dtype=torch.float64).to(dev)
+    assert Xtr.ndim == 3 and Ytr.ndim == 3 and Xev.ndim == 3, (Xtr.shape, Ytr.shape, Xev.shape)
+    n_slices, ntr, _d = Xtr.shape
+
+    xmu = Xtr.mean(dim=1, keepdim=True)  # (L, 1, d)
+    xsd = Xtr.std(dim=1, keepdim=True, unbiased=False) + 1e-9  # population std (twin parity)
+    Xtr_n = (Xtr - xmu) / xsd
+    Xev_n = (Xev - xmu) / xsd
+    ymu = Ytr.mean(dim=1, keepdim=True)  # (L, 1, d_out)
+    Ytr_c = Ytr - ymu
+
+    G = Xtr_n @ Xtr_n.transpose(1, 2)  # (L, n_tr, n_tr)
+    w, V = torch.linalg.eigh(G)  # (L, n_tr), (L, n_tr, n_tr)
+    w = torch.clamp(w, min=0.0)
+    VtY = V.transpose(1, 2) @ Ytr_c  # (L, n_tr, d_out)
+    Kev = Xev_n @ Xtr_n.transpose(1, 2)  # (L, n_ev, n_tr)
+    sqVtY = (VtY**2).sum(dim=2)  # (L, n_tr)
+    tot = (Ytr_c**2).sum(dim=(1, 2))  # (L,)
+
+    # GCV per slice: rss(lam) = tot - sum_k (2 f_k - f_k^2) sqVtY_k, f = w/(w+lam).
+    gcv_all = torch.empty((n_slices, len(lambdas)), dtype=torch.float64, device=dev)
+    for li, lam in enumerate(lambdas):
+        filt = w / (w + float(lam))  # (L, n_tr)
+        rss = tot - ((2 * filt - filt**2) * sqVtY).sum(dim=1)  # (L,)
+        dof = filt.sum(dim=1)  # (L,)
+        denom = (ntr - dof) ** 2
+        gcv_all[:, li] = torch.where(denom > 1e-12, rss / denom, torch.full_like(rss, float("inf")))
+    best_idx = gcv_all.argmin(dim=1)  # (L,)
+    best_lam = torch.as_tensor(np.asarray(lambdas), dtype=torch.float64, device=dev)[best_idx]
+
+    filt = 1.0 / (w + best_lam[:, None])  # (L, n_tr)
+    alpha = V @ (filt[:, :, None] * VtY)  # (L, n_tr, d_out) dual coefficients
+    preds = Kev @ alpha + ymu  # (L, n_ev, d_out)
+    if not return_weights:
+        return preds.cpu().numpy()
+    W = Xtr_n.transpose(1, 2) @ alpha  # (L, d, d_out) standardized-input-space weights
+    return preds.cpu().numpy(), W.cpu().numpy()
+
+
 # ── MLP (batched multi-head, train->eval application) ─────────────────────────
 
 

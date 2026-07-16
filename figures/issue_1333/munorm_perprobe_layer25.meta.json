@@ -1,0 +1,5593 @@
+{
+  "commit": "036dd2fbad",
+  "created": "2026-07-15T23:33:44Z",
+  "figsize": [
+    8.2,
+    4.6
+  ],
+  "points": [
+    {
+      "x": -0.12986483465884405,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 67.40626525878906,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.16672337162727424,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 68.38041687011719,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.12055422880974792,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 56.16505813598633,
+      "label": "9.1",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.13828951680347,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 41.5598030090332,
+      "label": "9.1",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.20464049173235854,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 39.48733139038086,
+      "label": "9.1",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.10768154131995686,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 52.38220977783203,
+      "label": "9.1",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.1312746327810612,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 55.39137649536133,
+      "label": "9.1",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.1285329264195351,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 70.7340316772461,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.20090750040568994,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 66.76565551757812,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.1654575468314876,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 39.877777099609375,
+      "label": "9.1",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.17421221733441605,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 36.188541412353516,
+      "label": "9.1",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.11305585122665379,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 53.00680160522461,
+      "label": "9.1",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.14417483679112691,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 64.95813751220703,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.1244962225402087,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 52.354148864746094,
+      "label": "9.1",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.16622443812899357,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 60.70631790161133,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.19000374060367453,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 60.31309127807617,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.15399567342825818,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 58.907100677490234,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.2079801018285407,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 50.08451461791992,
+      "label": "9.1",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.12396057108081598,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 56.905723571777344,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.14551691609657286,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 59.06123733520508,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.13161034859060888,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 11.926209449768066,
+      "label": "9.1",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.17600214350571447,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 5.656492233276367,
+      "label": "9.1",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.10822321731656065,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 20.832155227661133,
+      "label": "9.1",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.11675667665455827,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 27.647703170776367,
+      "label": "9.1",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.1293778153218862,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 28.33669090270996,
+      "label": "9.1",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.19358974213628358,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 10.295059204101562,
+      "label": "9.1",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.16366068959002625,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 34.08163070678711,
+      "label": "9.1",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.21018158576340484,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 28.9652156829834,
+      "label": "9.1",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.19802815587256975,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 33.17082595825195,
+      "label": "9.1",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.13986461514332998,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 20.50969123840332,
+      "label": "9.1",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.13307616285014012,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 25.565610885620117,
+      "label": "9.1",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.1085739294322369,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 18.55000877380371,
+      "label": "9.1",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.17915921060480328,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 18.697914123535156,
+      "label": "9.1",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.1742494323361644,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 17.279582977294922,
+      "label": "9.1",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.16334886075966112,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 23.99515151977539,
+      "label": "9.1",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.19415815050072857,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 15.043472290039062,
+      "label": "9.1",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.2007086344130981,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 16.64006233215332,
+      "label": "9.1",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.1626724581151473,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 13.291474342346191,
+      "label": "9.1",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.19003997160440275,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 29.499650955200195,
+      "label": "9.1",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.14132046058492387,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 14.102179527282715,
+      "label": "9.1",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.1669132889240436,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 20.750932693481445,
+      "label": "9.1",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.12340539843363788,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 9.597833633422852,
+      "label": "9.1",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.1379708387797526,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 25.15143394470215,
+      "label": "9.1",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.1806396694479755,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 8.609766006469727,
+      "label": "9.1",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.12345142184652788,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 24.69495964050293,
+      "label": "9.1",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.1264759206753518,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 32.811866760253906,
+      "label": "9.1",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.17237737830668082,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 34.52643966674805,
+      "label": "9.1",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.18328390856767315,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 12.945616722106934,
+      "label": "9.1",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.1399254945627527,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 23.497556686401367,
+      "label": "9.1",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.19962722680297593,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 15.183401107788086,
+      "label": "9.1",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.19301009772773808,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 29.86554718017578,
+      "label": "9.1",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.2141901503273894,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 15.544050216674805,
+      "label": "9.1",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.12843831847476478,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 18.942171096801758,
+      "label": "9.1",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.14186640577487647,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 22.910995483398438,
+      "label": "9.1",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.13743180835110314,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 18.8405818939209,
+      "label": "9.1",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.12911980658758354,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 16.72931480407715,
+      "label": "9.1",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.1645192646907826,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 17.96790885925293,
+      "label": "9.1",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.1524384684451817,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 19.785480499267578,
+      "label": "9.1",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.19962233020595768,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 16.470842361450195,
+      "label": "9.1",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.20240169191104293,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 23.97882080078125,
+      "label": "9.1",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.14147567420304813,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 15.791757583618164,
+      "label": "9.1",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.16317941732425542,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 11.754196166992188,
+      "label": "9.1",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.15282402828706923,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 11.206361770629883,
+      "label": "9.1",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.13085012568423718,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 17.280439376831055,
+      "label": "9.1",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.14518098479993502,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 16.479541778564453,
+      "label": "9.1",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.15410626592762047,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 17.33739471435547,
+      "label": "9.1",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.15348721231800452,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 7.134307861328125,
+      "label": "9.1",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.18156548921311266,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 12.723007202148438,
+      "label": "9.1",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.21161003819752666,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 39.41074752807617,
+      "label": "9.1",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.16696108718444014,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 11.497775077819824,
+      "label": "9.1",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.1913956859898518,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 28.153656005859375,
+      "label": "9.1",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.17006184919029002,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 26.909162521362305,
+      "label": "9.1",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.12112566194050173,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 25.763771057128906,
+      "label": "9.1",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.1892666565548125,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 18.443788528442383,
+      "label": "9.1",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.20858669841420274,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 15.902414321899414,
+      "label": "9.1",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.1840477718775804,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 19.42552947998047,
+      "label": "9.1",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.1827046866456648,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 18.685022354125977,
+      "label": "9.1",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.14218918338004155,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 20.56085777282715,
+      "label": "9.1",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.1537264632424594,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 12.760421752929688,
+      "label": "9.1",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.1287711969982945,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 38.399051666259766,
+      "label": "9.1",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.14192551056398736,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 26.353843688964844,
+      "label": "9.1",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.17029744524159224,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 35.929264068603516,
+      "label": "9.1",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.1254577576867362,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 34.031410217285156,
+      "label": "9.1",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.19663297881015257,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 40.96484375,
+      "label": "9.1",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.21250167195527536,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 22.617582321166992,
+      "label": "9.1",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.20509473531467942,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 36.138668060302734,
+      "label": "9.1",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.13554047143439046,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 75.2160873413086,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.1641935046723474,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 20.911497116088867,
+      "label": "9.1",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.1972601043063038,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 36.64017868041992,
+      "label": "9.1",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.15988507473863,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 45.97055435180664,
+      "label": "9.1",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.19824566870155147,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 47.88814163208008,
+      "label": "9.1",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.13840475874144903,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 53.78485107421875,
+      "label": "9.1",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.16592280968685663,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 49.58763885498047,
+      "label": "9.1",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.17308766512938695,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 50.958213806152344,
+      "label": "9.1",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.1818336701937336,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 32.396610260009766,
+      "label": "9.1",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.14566891475692229,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 40.33461380004883,
+      "label": "9.1",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.17520061283912705,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 59.2144660949707,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.20535850887522888,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 30.64185905456543,
+      "label": "9.1",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.20201935076674332,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 39.74564743041992,
+      "label": "9.1",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.10919125689955342,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 53.53800964355469,
+      "label": "9.1",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.8849438759778367,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 80.44559478759766,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.8619677847191825,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 104.74734497070312,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.8142456957605472,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 53.82722091674805,
+      "label": "8.2",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.8916094015082496,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 41.057918548583984,
+      "label": "8.2",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.8706625994362374,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 42.60902404785156,
+      "label": "8.2",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.8638579208074895,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 47.076072692871094,
+      "label": "8.2",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.8344297652358167,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 49.643001556396484,
+      "label": "8.2",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.8149465718029675,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 105.83650207519531,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.7956030058368849,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 73.81889343261719,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.8842862636198225,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 36.388301849365234,
+      "label": "8.2",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.8351353918816972,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 38.67765808105469,
+      "label": "8.2",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.8072599701274753,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 30.020240783691406,
+      "label": "8.2",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.8186552286565717,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 47.39956283569336,
+      "label": "8.2",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.8487141525836085,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 51.118629455566406,
+      "label": "8.2",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.8044450061233155,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 57.157318115234375,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.8792275712501613,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 57.89500427246094,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.8684371482818731,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 50.431392669677734,
+      "label": "8.2",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.8641409251546031,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 48.37546920776367,
+      "label": "8.2",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.8325302343752614,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 59.229034423828125,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.8540039724772687,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 57.27311325073242,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.8492507765804009,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 16.592321395874023,
+      "label": "8.2",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.8564831261710302,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 13.800178527832031,
+      "label": "8.2",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.7942888753253877,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 15.600727081298828,
+      "label": "8.2",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.830738814238767,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 16.651933670043945,
+      "label": "8.2",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.7895775591248081,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 22.551057815551758,
+      "label": "8.2",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.839338990116897,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 14.649398803710938,
+      "label": "8.2",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.8212847333566063,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 33.46684646606445,
+      "label": "8.2",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.8008976607752651,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 31.244333267211914,
+      "label": "8.2",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.7963743264494807,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 27.98548698425293,
+      "label": "8.2",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.8496409029395483,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 24.01020622253418,
+      "label": "8.2",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.8037652265390575,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 25.881338119506836,
+      "label": "8.2",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.8867632130214477,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 3.8556418418884277,
+      "label": "8.2",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.8489167253670434,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 9.99200439453125,
+      "label": "8.2",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.8231556784988321,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 17.42943000793457,
+      "label": "8.2",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.8500007040629558,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 23.953304290771484,
+      "label": "8.2",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.7875084258132667,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 18.588483810424805,
+      "label": "8.2",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.890441513456559,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 17.127914428710938,
+      "label": "8.2",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.838053378063719,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 14.360113143920898,
+      "label": "8.2",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.8711008749975314,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 22.619617462158203,
+      "label": "8.2",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.7941002999914683,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 15.447108268737793,
+      "label": "8.2",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.8385324163921977,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 22.243162155151367,
+      "label": "8.2",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.8389777693789973,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 6.671358108520508,
+      "label": "8.2",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.8881609100472481,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 23.342845916748047,
+      "label": "8.2",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.8478900857613683,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 3.642455816268921,
+      "label": "8.2",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.8370838341162649,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 12.757981300354004,
+      "label": "8.2",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.8143673229401083,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 20.568525314331055,
+      "label": "8.2",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.8214725897076807,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 17.613554000854492,
+      "label": "8.2",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.8422739642718691,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 11.329081535339355,
+      "label": "8.2",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.8332802606335551,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 7.197352409362793,
+      "label": "8.2",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.7873773287868363,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 20.8590030670166,
+      "label": "8.2",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.8758921116613794,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 26.018836975097656,
+      "label": "8.2",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.8835776849023743,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 17.122825622558594,
+      "label": "8.2",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.8004273997898471,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 18.849458694458008,
+      "label": "8.2",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.8459439757892954,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 13.328592300415039,
+      "label": "8.2",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.7969433315248987,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 16.00616455078125,
+      "label": "8.2",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.8589464102343792,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 26.81230926513672,
+      "label": "8.2",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.8159357162222909,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 15.65206241607666,
+      "label": "8.2",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.8575364898161092,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 12.211792945861816,
+      "label": "8.2",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.864969407571557,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 16.844572067260742,
+      "label": "8.2",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.8695512241109422,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 22.36237907409668,
+      "label": "8.2",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.7968515040551486,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 17.643550872802734,
+      "label": "8.2",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.8857613029651369,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 24.852371215820312,
+      "label": "8.2",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.8103235389984369,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 9.67180061340332,
+      "label": "8.2",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.7891153811793797,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 17.324960708618164,
+      "label": "8.2",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.8460337716330631,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 24.206247329711914,
+      "label": "8.2",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.8258014512248683,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 17.26192283630371,
+      "label": "8.2",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.8762768717445654,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 8.04139232635498,
+      "label": "8.2",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.8739076619270731,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 11.735762596130371,
+      "label": "8.2",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.8198852782104986,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 10.786859512329102,
+      "label": "8.2",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.8898189334576719,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 17.906475067138672,
+      "label": "8.2",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.8170009621954131,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 23.840194702148438,
+      "label": "8.2",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.8416562842154885,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 24.609214782714844,
+      "label": "8.2",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.8131561599624363,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 16.07596206665039,
+      "label": "8.2",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.887964792705386,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 18.259307861328125,
+      "label": "8.2",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.803106859934022,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 17.766077041625977,
+      "label": "8.2",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.7899401681331562,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 23.057085037231445,
+      "label": "8.2",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.8328606766003341,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 18.010150909423828,
+      "label": "8.2",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.894161312046142,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 19.140127182006836,
+      "label": "8.2",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.8830844992880406,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 12.350224494934082,
+      "label": "8.2",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.8673468821402643,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 35.81166458129883,
+      "label": "8.2",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.8829871739966377,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 21.887788772583008,
+      "label": "8.2",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.883279130366765,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 38.0751838684082,
+      "label": "8.2",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.8420744196425094,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 33.65498352050781,
+      "label": "8.2",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.8197521957013872,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 47.03281021118164,
+      "label": "8.2",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.8699213675322086,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 22.112674713134766,
+      "label": "8.2",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.8577827389484537,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 37.963985443115234,
+      "label": "8.2",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.8261023501761081,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 47.645198822021484,
+      "label": "8.2",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.7953913334867666,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 19.156696319580078,
+      "label": "8.2",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.8671468572483928,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 38.95807647705078,
+      "label": "8.2",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.813870656751515,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 42.88037109375,
+      "label": "8.2",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.8880494465587156,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 29.249300003051758,
+      "label": "8.2",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.8115067632506253,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 83.60227966308594,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.7985033725652634,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 47.50775146484375,
+      "label": "8.2",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.8764223939337397,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 50.80880355834961,
+      "label": "8.2",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.8018612748286943,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 32.66239929199219,
+      "label": "8.2",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.8047195138973513,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 41.889854431152344,
+      "label": "8.2",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.8509321070672927,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 48.578697204589844,
+      "label": "8.2",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.881201824492121,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 50.784385681152344,
+      "label": "8.2",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.806607813228603,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 42.473976135253906,
+      "label": "8.2",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.8191356040190104,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 52.576805114746094,
+      "label": "8.2",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 1.8705145322065295,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 55.17770004272461,
+      "label": "11.5",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.8919009068667065,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 113.16383361816406,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.8400815304822578,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 58.63258743286133,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.8008287252806376,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 63.29998016357422,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.7865329916479022,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 55.33921432495117,
+      "label": "11.5",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.810262163299874,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 72.07007598876953,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.7995004439565174,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 71.179443359375,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.8595424540974144,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 66.38704681396484,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.7984015755091385,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 69.16886138916016,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.8406962924782697,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 53.21630859375,
+      "label": "11.5",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.8613688679207177,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 52.825599670410156,
+      "label": "11.5",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.8489228270142994,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 60.85581970214844,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.8069753216826063,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 58.91200256347656,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.873453697880049,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 59.684574127197266,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.8636947842577383,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 86.0536880493164,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.8662882404307097,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 75.97089385986328,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.7994163526713045,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 69.32169342041016,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.798612918401538,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 54.104862213134766,
+      "label": "11.5",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.887031880610716,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 84.56613159179688,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.8287336013207436,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 78.6915283203125,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.8181043560959034,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 17.815919876098633,
+      "label": "11.5",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.8387442449886688,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 11.286101341247559,
+      "label": "11.5",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.857915063403994,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 20.893125534057617,
+      "label": "11.5",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.8901185582751667,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 11.171201705932617,
+      "label": "11.5",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.8165090849570262,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 25.750308990478516,
+      "label": "11.5",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.886728927224323,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 13.430021286010742,
+      "label": "11.5",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.7877345440524883,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 35.606346130371094,
+      "label": "11.5",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.846071784655951,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 16.468494415283203,
+      "label": "11.5",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.8547372622849194,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 23.481155395507812,
+      "label": "11.5",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.796648714412583,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 19.693790435791016,
+      "label": "11.5",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.8004373556770306,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 28.546768188476562,
+      "label": "11.5",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.8311025751247936,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 15.678875923156738,
+      "label": "11.5",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.89128551033575,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 15.242229461669922,
+      "label": "11.5",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.8505646808557812,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 17.66237449645996,
+      "label": "11.5",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.8876325543760233,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 26.94049072265625,
+      "label": "11.5",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.8734797007174269,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 16.420988082885742,
+      "label": "11.5",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.8364119761710822,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 15.145981788635254,
+      "label": "11.5",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.8713239794177408,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 18.273887634277344,
+      "label": "11.5",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.7869620462374687,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 28.37822914123535,
+      "label": "11.5",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.797005839644231,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 22.06956672668457,
+      "label": "11.5",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.8762371476371011,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 20.452373504638672,
+      "label": "11.5",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.8726498797157678,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 9.00888729095459,
+      "label": "11.5",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.8105904816163079,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 25.830398559570312,
+      "label": "11.5",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.8433846549658959,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 9.029437065124512,
+      "label": "11.5",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.8516617402770013,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 19.551074981689453,
+      "label": "11.5",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.8804512849153614,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 19.34734344482422,
+      "label": "11.5",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.85134178730726,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 39.121341705322266,
+      "label": "11.5",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.830382872620105,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 8.085479736328125,
+      "label": "11.5",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.8261602447747902,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 22.906291961669922,
+      "label": "11.5",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.8318470295010862,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 15.118167877197266,
+      "label": "11.5",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.8567124128137973,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 26.367361068725586,
+      "label": "11.5",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.8804239694927558,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 26.489559173583984,
+      "label": "11.5",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.8349286570283931,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 20.42280387878418,
+      "label": "11.5",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.8122623519246495,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 22.638505935668945,
+      "label": "11.5",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.811032859929734,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 19.469932556152344,
+      "label": "11.5",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.8670615708267793,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 21.9298152923584,
+      "label": "11.5",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.8748225639766303,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 18.383447647094727,
+      "label": "11.5",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.7965805887839539,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 12.819573402404785,
+      "label": "11.5",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.7923214742650697,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 19.135875701904297,
+      "label": "11.5",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.8503877030132099,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 48.17583465576172,
+      "label": "11.5",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.801079056861197,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 17.6049861907959,
+      "label": "11.5",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.8757130609501975,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 13.167160034179688,
+      "label": "11.5",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.8191368141316482,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 13.266129493713379,
+      "label": "11.5",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.8008259126268258,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 16.7640323638916,
+      "label": "11.5",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.8863067519736196,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 20.22334861755371,
+      "label": "11.5",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.8032084895008806,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 15.11014175415039,
+      "label": "11.5",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.816319209057173,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 24.049928665161133,
+      "label": "11.5",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.8018974734711266,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 19.628416061401367,
+      "label": "11.5",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.797703907003189,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 32.683921813964844,
+      "label": "11.5",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.7873262817970086,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 9.008003234863281,
+      "label": "11.5",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.7910934950080688,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 23.075300216674805,
+      "label": "11.5",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.8042105618029438,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 23.171897888183594,
+      "label": "11.5",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.7908720125889894,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 21.871124267578125,
+      "label": "11.5",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.8500258197722068,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 19.970420837402344,
+      "label": "11.5",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.8598785979479457,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 21.938749313354492,
+      "label": "11.5",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.8282993502515232,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 18.080902099609375,
+      "label": "11.5",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.8199790206647255,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 19.918502807617188,
+      "label": "11.5",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.8404978860724455,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 22.395278930664062,
+      "label": "11.5",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.8812505436458071,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 26.416994094848633,
+      "label": "11.5",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.8786244789504427,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 36.20314025878906,
+      "label": "11.5",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.7897822568214072,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 30.434263229370117,
+      "label": "11.5",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.8049648250556176,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 43.43819046020508,
+      "label": "11.5",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.8110419358214835,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 31.586505889892578,
+      "label": "11.5",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.8124326333415435,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 49.816856384277344,
+      "label": "11.5",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.847835591691705,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 23.52776336669922,
+      "label": "11.5",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.8307888668273513,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 55.86455154418945,
+      "label": "11.5",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.7904179531920354,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 77.70626068115234,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.826097555230553,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 21.122230529785156,
+      "label": "11.5",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.8426128243589401,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 51.283477783203125,
+      "label": "11.5",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.7961839093194087,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 47.609588623046875,
+      "label": "11.5",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.8766804409167417,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 43.39167022705078,
+      "label": "11.5",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.7907158053111616,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 54.55421447753906,
+      "label": "11.5",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.8867326055919869,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 50.87474060058594,
+      "label": "11.5",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.7959024455737864,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 51.255615234375,
+      "label": "11.5",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.8777932446757528,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 47.205753326416016,
+      "label": "11.5",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.884291845832038,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 34.54017639160156,
+      "label": "11.5",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.8927527748645252,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 57.359291076660156,
+      "label": "11.5",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.8732228468300953,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 49.558570861816406,
+      "label": "11.5",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.8707425294848463,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 66.997802734375,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.8556731603595102,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 49.569305419921875,
+      "label": "11.5",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 2.870689599003594,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 78.57048797607422,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.799800742925446,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 98.37162780761719,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.84396748395424,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 49.37062072753906,
+      "label": "11.9",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.8415645157209455,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 61.937198638916016,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.879332935853481,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 64.27155303955078,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.8359079302152868,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 85.11430358886719,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.827359844571039,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 61.96729278564453,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.855351959836082,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 82.86796569824219,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.814310964925093,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 73.2879409790039,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.8003745252049352,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 46.921993255615234,
+      "label": "11.9",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.837566500142612,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 63.75917053222656,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.8308578305454373,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 60.00723648071289,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.810582693458176,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 65.20221710205078,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.8254262991126637,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 53.4527587890625,
+      "label": "11.9",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.825303169480887,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 92.23002624511719,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.82102451208538,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 73.79052734375,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.826741048769962,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 73.93635559082031,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.860431768000154,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 59.643898010253906,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.817656412202841,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 68.21253967285156,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.8893743719386875,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 71.58879852294922,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.8857982821491994,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 17.757705688476562,
+      "label": "11.9",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.8379001471130083,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 13.464547157287598,
+      "label": "11.9",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.8211197325505157,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 19.6304931640625,
+      "label": "11.9",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.8438978268813,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 13.850828170776367,
+      "label": "11.9",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.8783416537650988,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 27.957971572875977,
+      "label": "11.9",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.856784607461611,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 17.716026306152344,
+      "label": "11.9",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.8734831010741786,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 35.07002639770508,
+      "label": "11.9",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.8435994503672313,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 30.49505043029785,
+      "label": "11.9",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.854620939219438,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 37.48276901245117,
+      "label": "11.9",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.8166971175600706,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 22.54334259033203,
+      "label": "11.9",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.865838247854132,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 25.08206558227539,
+      "label": "11.9",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.807264505243829,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 6.964730262756348,
+      "label": "11.9",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.8614277941700346,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 32.225250244140625,
+      "label": "11.9",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.879679097515848,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 18.20478630065918,
+      "label": "11.9",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.7995313121031695,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 18.689315795898438,
+      "label": "11.9",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.852581771459611,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 15.547789573669434,
+      "label": "11.9",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.7954605323052926,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 9.502267837524414,
+      "label": "11.9",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.8648287191098567,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 15.934233665466309,
+      "label": "11.9",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.794294254070587,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 3.096285343170166,
+      "label": "11.9",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.8879533804970685,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 21.10584259033203,
+      "label": "11.9",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.800114872304158,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 22.00493049621582,
+      "label": "11.9",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.8904768270499988,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 9.43992805480957,
+      "label": "11.9",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.8730972593693607,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 25.559368133544922,
+      "label": "11.9",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.850305020491299,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 16.266071319580078,
+      "label": "11.9",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.87108865150925,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 17.717086791992188,
+      "label": "11.9",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.8724626322881393,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 32.85275650024414,
+      "label": "11.9",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.8890629769099063,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 39.3665771484375,
+      "label": "11.9",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.8128721689223104,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 25.039854049682617,
+      "label": "11.9",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.849908348489414,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 14.999287605285645,
+      "label": "11.9",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.795455411732084,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 15.350224494934082,
+      "label": "11.9",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.8527782270026534,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 38.367225646972656,
+      "label": "11.9",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.8038420434502065,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 27.623231887817383,
+      "label": "11.9",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.8471445672619686,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 28.5179386138916,
+      "label": "11.9",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.847967356543723,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 18.499704360961914,
+      "label": "11.9",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.836258366827935,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 19.462406158447266,
+      "label": "11.9",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.8424894953064435,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 21.386577606201172,
+      "label": "11.9",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.8690315729007247,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 20.200393676757812,
+      "label": "11.9",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.872916918816327,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 66.19146728515625,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.8391368537132973,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 20.956666946411133,
+      "label": "11.9",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.850955278567487,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 22.314119338989258,
+      "label": "11.9",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.887435985925911,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 16.614646911621094,
+      "label": "11.9",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.7981706947351235,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 17.524503707885742,
+      "label": "11.9",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.7978813922490122,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 10.981557846069336,
+      "label": "11.9",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.7946479913101845,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 18.89745330810547,
+      "label": "11.9",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.857364961354458,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 24.01819610595703,
+      "label": "11.9",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.831046913086942,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 19.26378059387207,
+      "label": "11.9",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.8701753557756025,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 8.822770118713379,
+      "label": "11.9",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.8588354554639452,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 12.649565696716309,
+      "label": "11.9",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.821700153416106,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 12.379039764404297,
+      "label": "11.9",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.883820320209769,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 9.033935546875,
+      "label": "11.9",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.8688785361777716,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 22.801692962646484,
+      "label": "11.9",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.8147588435001194,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 22.505062103271484,
+      "label": "11.9",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.825061121954926,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 14.251580238342285,
+      "label": "11.9",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.8195883978224687,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 17.783172607421875,
+      "label": "11.9",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.8023372813487497,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 20.156116485595703,
+      "label": "11.9",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.801256170979641,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 18.203237533569336,
+      "label": "11.9",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.8879740209713316,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 18.728557586669922,
+      "label": "11.9",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.8331694440918627,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 20.92722511291504,
+      "label": "11.9",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.827165180505515,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 22.746597290039062,
+      "label": "11.9",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.8652654279545113,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 34.868263244628906,
+      "label": "11.9",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.845829237177819,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 33.42997741699219,
+      "label": "11.9",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.8879753985522307,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 62.405113220214844,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.870833164330033,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 27.321300506591797,
+      "label": "11.9",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.837730652053699,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 40.77579116821289,
+      "label": "11.9",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.826399542082891,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 23.43927574157715,
+      "label": "11.9",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.8935294699416754,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 40.2630500793457,
+      "label": "11.9",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.863953625960401,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 40.74549102783203,
+      "label": "11.9",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.8896314126004223,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 19.823326110839844,
+      "label": "11.9",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.7980326434938743,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 35.051979064941406,
+      "label": "11.9",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.878558704710986,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 43.24793243408203,
+      "label": "11.9",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.855078127239033,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 49.173336029052734,
+      "label": "11.9",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.798411384616862,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 57.12782669067383,
+      "label": "11.9",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.8497083799966143,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 46.805118560791016,
+      "label": "11.9",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.8604706001615994,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 58.994468688964844,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.7863532954477463,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 31.54327392578125,
+      "label": "11.9",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.834974975802592,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 42.99372100830078,
+      "label": "11.9",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.875793946231595,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 58.77474594116211,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.8174894927878498,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 51.995174407958984,
+      "label": "11.9",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.8354402889978405,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 41.82181930541992,
+      "label": "11.9",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.833654553977468,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 56.755550384521484,
+      "label": "11.9",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.1382120130586741,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 13.055849075317383,
+      "label": "4.6",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.20602860850671098,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 12.279088020324707,
+      "label": "4.6",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.19094234389746675,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 13.892577171325684,
+      "label": "4.6",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.11716472520957216,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 14.95691204071045,
+      "label": "4.6",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.21467381236213304,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 15.614931106567383,
+      "label": "4.6",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.20171200267385198,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 11.57276725769043,
+      "label": "4.6",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.13622992816504428,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 17.74764633178711,
+      "label": "4.6",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.1970586237627032,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 10.088543891906738,
+      "label": "4.6",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.11670614850585212,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 11.580870628356934,
+      "label": "4.6",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.21490152035216625,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 19.28581428527832,
+      "label": "4.6",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.17822532097171906,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 15.48438549041748,
+      "label": "4.6",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.17651375171146766,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 11.64468765258789,
+      "label": "4.6",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.11494847996825461,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 13.63160514831543,
+      "label": "4.6",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.20367367387862878,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 12.081058502197266,
+      "label": "4.6",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.10818994535249164,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 19.918575286865234,
+      "label": "4.6",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.13149108638452617,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 15.456067085266113,
+      "label": "4.6",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.12073240626832986,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 17.63616943359375,
+      "label": "4.6",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.19044447347614404,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 15.657469749450684,
+      "label": "4.6",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.12680246499341877,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 11.201377868652344,
+      "label": "4.6",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.2051702049843974,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 18.07455062866211,
+      "label": "4.6",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.1771895943260239,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 2.2881736755371094,
+      "label": "4.6",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.10897789815441658,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 2.176518440246582,
+      "label": "4.6",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.10559728175415706,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 2.723112106323242,
+      "label": "4.6",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.11068237087158389,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 2.258535146713257,
+      "label": "4.6",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.17165176954125005,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 2.3500924110412598,
+      "label": "4.6",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.1931629991945357,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 2.2794008255004883,
+      "label": "4.6",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.13124081026901274,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 2.003277540206909,
+      "label": "4.6",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.19843497272153804,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 2.240837574005127,
+      "label": "4.6",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.11129551341685864,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 2.0850980281829834,
+      "label": "4.6",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.1931060239005844,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 2.132340669631958,
+      "label": "4.6",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.20705749731895084,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 2.141683578491211,
+      "label": "4.6",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.18993192390148186,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 2.4478042125701904,
+      "label": "4.6",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.1817932862376501,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 2.4595179557800293,
+      "label": "4.6",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.19717782405209214,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 2.5957424640655518,
+      "label": "4.6",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.1094166429501773,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 2.6913392543792725,
+      "label": "4.6",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.12719603217909609,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 2.421757459640503,
+      "label": "4.6",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.11874160472362075,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 2.3430519104003906,
+      "label": "4.6",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.16049840892122852,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 2.3184006214141846,
+      "label": "4.6",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.1869706941161729,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 2.04352068901062,
+      "label": "4.6",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.17430130290340387,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 2.3832712173461914,
+      "label": "4.6",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.19862442097381286,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 4.054316997528076,
+      "label": "4.6",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.12207342916852,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 3.4008584022521973,
+      "label": "4.6",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.18580832011286777,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 4.687320232391357,
+      "label": "4.6",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.12623456399557945,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 4.279714107513428,
+      "label": "4.6",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.13478346264495802,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 4.077063083648682,
+      "label": "4.6",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.18308951670094342,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 3.5067667961120605,
+      "label": "4.6",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.212822526338855,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 3.229989767074585,
+      "label": "4.6",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.17226979665747766,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 3.3026247024536133,
+      "label": "4.6",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.11099503464904252,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 3.436065435409546,
+      "label": "4.6",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.1727939866920286,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 4.728515625,
+      "label": "4.6",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.10965856067381838,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 3.915473461151123,
+      "label": "4.6",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.20225602825034988,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 4.166326999664307,
+      "label": "4.6",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.1830536113610683,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 4.327847480773926,
+      "label": "4.6",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.12404406310647537,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 4.417517185211182,
+      "label": "4.6",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.11508931064066179,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 4.7196784019470215,
+      "label": "4.6",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.12518865517683508,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 4.292141437530518,
+      "label": "4.6",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.21280298975096118,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 4.219564914703369,
+      "label": "4.6",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.15544167067043388,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 4.502275466918945,
+      "label": "4.6",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.19124890431755487,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 3.7254738807678223,
+      "label": "4.6",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.17500491763185547,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 4.329882621765137,
+      "label": "4.6",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.16796544649545012,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 2.197542190551758,
+      "label": "4.6",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.12096432801315547,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 1.8753336668014526,
+      "label": "4.6",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.20906268989139046,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 2.252380132675171,
+      "label": "4.6",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.138147689576619,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 1.9213429689407349,
+      "label": "4.6",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.16858189373882965,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 1.9349349737167358,
+      "label": "4.6",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.18197535390479727,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 2.1930694580078125,
+      "label": "4.6",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.17641564707698398,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 1.7694679498672485,
+      "label": "4.6",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.20846538506650703,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 2.0407297611236572,
+      "label": "4.6",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.12132828889120638,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 2.0426721572875977,
+      "label": "4.6",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.16091880122916363,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 1.830028772354126,
+      "label": "4.6",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.14944378298148425,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 1.8360956907272339,
+      "label": "4.6",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.157158560243088,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 2.048611640930176,
+      "label": "4.6",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.11811392788175192,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 1.9802736043930054,
+      "label": "4.6",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.11975040708600419,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 2.144052743911743,
+      "label": "4.6",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.13558831003593833,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 2.518171787261963,
+      "label": "4.6",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.13851750641369145,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 2.2590441703796387,
+      "label": "4.6",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.1520693535049485,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 1.932822585105896,
+      "label": "4.6",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.17220863017402913,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 1.9526093006134033,
+      "label": "4.6",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.17480920291600893,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 1.7885980606079102,
+      "label": "4.6",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.15029919862441274,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 1.9672225713729858,
+      "label": "4.6",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.1499661420371567,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 4.836819171905518,
+      "label": "4.6",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.1289391379366658,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 5.624141216278076,
+      "label": "4.6",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.1697136873249909,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 5.330068111419678,
+      "label": "4.6",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.13987450024489617,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 4.518636703491211,
+      "label": "4.6",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.10896658177051001,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 5.0737833976745605,
+      "label": "4.6",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.15102400485725465,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 4.530237674713135,
+      "label": "4.6",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.15715459425991873,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 6.118287563323975,
+      "label": "4.6",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.12981521550246322,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 4.760239124298096,
+      "label": "4.6",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.16797037264343273,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 5.142280578613281,
+      "label": "4.6",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.16723490904751132,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 5.475290775299072,
+      "label": "4.6",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.18222023992214084,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 5.086523056030273,
+      "label": "4.6",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.1762743330421331,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 5.753824710845947,
+      "label": "4.6",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.17676763621731348,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 4.86721134185791,
+      "label": "4.6",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.13978355670064474,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 5.3626017570495605,
+      "label": "4.6",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.19161754441845494,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 5.464609622955322,
+      "label": "4.6",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.16540588219596475,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 5.585874080657959,
+      "label": "4.6",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.1524560014697879,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 4.822941303253174,
+      "label": "4.6",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.17386137290351628,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 4.355289936065674,
+      "label": "4.6",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.14467230678952797,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 5.161015033721924,
+      "label": "4.6",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.16140131690674342,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 6.540496826171875,
+      "label": "4.6",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.186037625733044,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 11.100028038024902,
+      "label": "3.8",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.2025043175396077,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 10.591401100158691,
+      "label": "3.8",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.206316291702471,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 11.971307754516602,
+      "label": "3.8",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.1603996217701409,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 12.531637191772461,
+      "label": "3.8",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.1622302626214625,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 13.238214492797852,
+      "label": "3.8",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.192985745184022,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 9.906867980957031,
+      "label": "3.8",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.139589576091862,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 15.074872970581055,
+      "label": "3.8",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.1971120598579574,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 8.548669815063477,
+      "label": "3.8",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.1593555811169165,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 9.988849639892578,
+      "label": "3.8",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.1177442396768795,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 16.44045639038086,
+      "label": "3.8",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.1129265061780238,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 13.117949485778809,
+      "label": "3.8",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.1976192532143408,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 9.789254188537598,
+      "label": "3.8",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.1111124708597564,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 11.681327819824219,
+      "label": "3.8",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.135867257974702,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 10.09499740600586,
+      "label": "3.8",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.14175430445517,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 16.834741592407227,
+      "label": "3.8",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.1240293889710753,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 13.15141487121582,
+      "label": "3.8",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.1395282706782188,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 14.710006713867188,
+      "label": "3.8",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.1866961823397593,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 12.968761444091797,
+      "label": "3.8",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.1066151127916077,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 9.459979057312012,
+      "label": "3.8",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.1959890766972754,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 15.08980655670166,
+      "label": "3.8",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.1992202825932012,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 1.9192521572113037,
+      "label": "3.8",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.1459487730510702,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 1.5396392345428467,
+      "label": "3.8",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.1218974188966697,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 2.2568612098693848,
+      "label": "3.8",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.1710924448739588,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 1.6657891273498535,
+      "label": "3.8",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.1181639811451383,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 1.6812653541564941,
+      "label": "3.8",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.1451411297186076,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 1.7431282997131348,
+      "label": "3.8",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.210427209899107,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 1.533124566078186,
+      "label": "3.8",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.2145010919842,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 1.5479025840759277,
+      "label": "3.8",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.1899315380490043,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 1.7376763820648193,
+      "label": "3.8",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.1392057660912842,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 1.521645426750183,
+      "label": "3.8",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.1806431554082701,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 1.781678318977356,
+      "label": "3.8",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.1825947002032413,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 2.09153413772583,
+      "label": "3.8",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.1476625864680015,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 2.0363259315490723,
+      "label": "3.8",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.1754977498044774,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 2.103719472885132,
+      "label": "3.8",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.1061800409473244,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 2.193690538406372,
+      "label": "3.8",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.1279963424462465,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 1.8283271789550781,
+      "label": "3.8",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.1627597133263987,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 2.0747015476226807,
+      "label": "3.8",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.1230126434684125,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 2.1204779148101807,
+      "label": "3.8",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.1232497554664187,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 1.6723805665969849,
+      "label": "3.8",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.1969934719605262,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 1.7954293489456177,
+      "label": "3.8",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.2138046302951966,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 3.2900500297546387,
+      "label": "3.8",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.1661566370831293,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 2.8893661499023438,
+      "label": "3.8",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.1972976703969884,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 3.8663594722747803,
+      "label": "3.8",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.2139353830758899,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 3.4277231693267822,
+      "label": "3.8",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.1205755477425652,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 3.2767555713653564,
+      "label": "3.8",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.1543070174579786,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 2.7418951988220215,
+      "label": "3.8",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.148182998742611,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 2.617812156677246,
+      "label": "3.8",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.1138054212010802,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 2.502112627029419,
+      "label": "3.8",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.1880863190074218,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 3.0016109943389893,
+      "label": "3.8",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.1527156930054852,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 3.936901807785034,
+      "label": "3.8",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.156625962760944,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 3.182124614715576,
+      "label": "3.8",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.1215740271194563,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 3.499532699584961,
+      "label": "3.8",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.1249019317453954,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 3.6478521823883057,
+      "label": "3.8",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.2047813984371836,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 3.7091548442840576,
+      "label": "3.8",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.1099113997871706,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 3.8950271606445312,
+      "label": "3.8",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.1306137513438077,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 3.383424758911133,
+      "label": "3.8",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.137126526334598,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 3.6505935192108154,
+      "label": "3.8",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.1589217296641745,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 3.8381028175354004,
+      "label": "3.8",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.1695089690316274,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 3.0486297607421875,
+      "label": "3.8",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.1592618973435733,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 3.430840492248535,
+      "label": "3.8",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.114252686801257,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 1.6614526510238647,
+      "label": "3.8",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.1318034199461284,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 1.268441081047058,
+      "label": "3.8",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.1977947223238794,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 1.7932783365249634,
+      "label": "3.8",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.1751347570526305,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 1.3610848188400269,
+      "label": "3.8",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.17640639551477,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 1.3448421955108643,
+      "label": "3.8",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.178722358088649,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 1.7021089792251587,
+      "label": "3.8",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.188919332094348,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 1.1531000137329102,
+      "label": "3.8",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.1113919329893591,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 1.4034533500671387,
+      "label": "3.8",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.1453269223425873,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 1.5171934366226196,
+      "label": "3.8",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.1643480178787846,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 1.255110263824463,
+      "label": "3.8",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.1422302131627058,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 1.5041176080703735,
+      "label": "3.8",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.1978926760615904,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 1.6011803150177002,
+      "label": "3.8",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.1580829759446023,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 1.5595041513442993,
+      "label": "3.8",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.1895490348405315,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 1.6969785690307617,
+      "label": "3.8",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.1987217068569285,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 1.931104302406311,
+      "label": "3.8",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.1605270631193847,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 1.619536280632019,
+      "label": "3.8",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.2050507468258485,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 1.5322009325027466,
+      "label": "3.8",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.1695836334590677,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 1.6548330783843994,
+      "label": "3.8",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.1985301728717093,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 1.40402090549469,
+      "label": "3.8",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.1424649875150676,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 1.4909157752990723,
+      "label": "3.8",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.1598698654384634,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 4.363729953765869,
+      "label": "3.8",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.1634552145105035,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 4.921200275421143,
+      "label": "3.8",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.1165477687485676,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 4.830313205718994,
+      "label": "3.8",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.1488407757371695,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 3.8748204708099365,
+      "label": "3.8",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.2059071439806843,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 4.289811611175537,
+      "label": "3.8",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.1743915464401216,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 4.1649274826049805,
+      "label": "3.8",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.1245257240680664,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 5.031692981719971,
+      "label": "3.8",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.1422741199170565,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 4.245965480804443,
+      "label": "3.8",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.126076331062897,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 4.519443988800049,
+      "label": "3.8",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.107730544497843,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 4.868828773498535,
+      "label": "3.8",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.2070206504354428,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 4.458373069763184,
+      "label": "3.8",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.1543028061082559,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 5.159846782684326,
+      "label": "3.8",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.1388288579662864,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 4.2927751541137695,
+      "label": "3.8",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.170832491071351,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 4.805273056030273,
+      "label": "3.8",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.1058045901922315,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 4.723764896392822,
+      "label": "3.8",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.1355824317260894,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 4.530226230621338,
+      "label": "3.8",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.182333681226878,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 4.225701332092285,
+      "label": "3.8",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.174714675037619,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 3.9619638919830322,
+      "label": "3.8",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.212998654229679,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 4.598038673400879,
+      "label": "3.8",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.1732393480623848,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 5.305857181549072,
+      "label": "3.8",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 2.157525646099051,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 17.692615509033203,
+      "label": "5.8",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.188757581950241,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 18.084152221679688,
+      "label": "5.8",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.204366065916046,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 19.55300521850586,
+      "label": "5.8",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.1842765541390188,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 21.049877166748047,
+      "label": "5.8",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.210953234590432,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 21.80263328552246,
+      "label": "5.8",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.1910205687811994,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 15.875838279724121,
+      "label": "5.8",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.2003481582088122,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 24.589372634887695,
+      "label": "5.8",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.1175514478302,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 15.024580955505371,
+      "label": "5.8",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.1855654853293167,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 16.355209350585938,
+      "label": "5.8",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.153409756948011,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 25.80596160888672,
+      "label": "11.5",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.1658414182652406,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 21.43431282043457,
+      "label": "5.8",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.1769512650430594,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 16.651681900024414,
+      "label": "5.8",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.211679662837613,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 19.174880981445312,
+      "label": "5.8",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.213303588957479,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 16.884647369384766,
+      "label": "5.8",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.1367051070036696,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 29.018827438354492,
+      "label": "11.5",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.185712884718171,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 22.02869987487793,
+      "label": "5.8",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.1874981891728797,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 25.234840393066406,
+      "label": "5.8",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.1431142147444353,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 21.77488899230957,
+      "label": "5.8",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.1186256752350645,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 16.09935760498047,
+      "label": "5.8",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.1095041656314293,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 25.641950607299805,
+      "label": "11.5",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.19050774402821,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 2.836254835128784,
+      "label": "5.8",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.15886697159986,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 2.339930772781372,
+      "label": "5.8",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.213409418644442,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 3.224724531173706,
+      "label": "5.8",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.156147080181302,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 2.4029414653778076,
+      "label": "5.8",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.2125708676981226,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 2.190519094467163,
+      "label": "5.8",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.150273360241347,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 2.4141974449157715,
+      "label": "5.8",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.192305036561597,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 2.1557533740997314,
+      "label": "5.8",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.114330119954302,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 2.2700695991516113,
+      "label": "5.8",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.166100788115154,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 2.356218099594116,
+      "label": "5.8",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.19322657656843,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 2.1727211475372314,
+      "label": "5.8",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.206717183394188,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 2.349778652191162,
+      "label": "5.8",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.1954841399679177,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 2.8880841732025146,
+      "label": "5.8",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.1090667799921294,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 2.871445417404175,
+      "label": "5.8",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.145997257543741,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 3.0455241203308105,
+      "label": "5.8",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.110356831954524,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 3.1432645320892334,
+      "label": "5.8",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.1170210520226016,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 2.4662675857543945,
+      "label": "5.8",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.1792836191534235,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 2.7711639404296875,
+      "label": "5.8",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.183458401594287,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 3.089688539505005,
+      "label": "5.8",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.190109275102679,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 2.3318567276000977,
+      "label": "5.8",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.2002002202861233,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 2.5462770462036133,
+      "label": "5.8",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.1863374615324163,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 5.066101551055908,
+      "label": "5.8",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.1930958751317298,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 4.413303375244141,
+      "label": "5.8",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.1103860080805608,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 6.354023456573486,
+      "label": "5.8",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.130798866548543,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 5.035120010375977,
+      "label": "5.8",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.1734087550712773,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 4.708442211151123,
+      "label": "5.8",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.1993937835087305,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 4.065860748291016,
+      "label": "5.8",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.105495013743363,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 4.036607265472412,
+      "label": "5.8",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.1616092276327987,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 3.845364570617676,
+      "label": "5.8",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.179501613930084,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 4.477120399475098,
+      "label": "5.8",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.1082568018041474,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 5.875756740570068,
+      "label": "5.8",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.149149111330873,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 4.912090301513672,
+      "label": "5.8",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.2035198369522067,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 5.46352481842041,
+      "label": "5.8",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.1788774089741447,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 5.3592729568481445,
+      "label": "5.8",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.131142419969666,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 5.50189733505249,
+      "label": "5.8",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.1988059242595104,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 5.900218486785889,
+      "label": "5.8",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.143283456575047,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 5.21404504776001,
+      "label": "5.8",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.198867913825847,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 5.863743305206299,
+      "label": "5.8",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.13788380162308,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 5.692754745483398,
+      "label": "5.8",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.1699352275971466,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 4.635580062866211,
+      "label": "5.8",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.1486634074522617,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 5.318731784820557,
+      "label": "5.8",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.1352307555830574,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 2.3954017162323,
+      "label": "5.8",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.2025213318389056,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 1.8490204811096191,
+      "label": "5.8",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.1256353050133443,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 2.543627977371216,
+      "label": "5.8",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.114329275035934,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 1.8340675830841064,
+      "label": "5.8",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.142611963240023,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 1.7882241010665894,
+      "label": "5.8",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.1839403062405727,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 2.148162841796875,
+      "label": "5.8",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.193817476657391,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 1.669632911682129,
+      "label": "5.8",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.214861770707344,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 1.9696030616760254,
+      "label": "5.8",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.137599826271228,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 2.0241715908050537,
+      "label": "5.8",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.149873614624441,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 1.8658515214920044,
+      "label": "5.8",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.120050340583259,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 1.9486433267593384,
+      "label": "5.8",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.1682359122585337,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 2.1697800159454346,
+      "label": "5.8",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.214733804098921,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 2.0643510818481445,
+      "label": "5.8",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.1820969111132724,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 2.3170695304870605,
+      "label": "5.8",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.170473412445471,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 2.524060010910034,
+      "label": "5.8",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.1481606002213973,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 2.3742940425872803,
+      "label": "5.8",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.205682863631411,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 2.2657151222229004,
+      "label": "5.8",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.1596608255743384,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 2.2548046112060547,
+      "label": "5.8",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.119780360464437,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 1.8262553215026855,
+      "label": "5.8",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.145191630951905,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 1.9295731782913208,
+      "label": "5.8",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.1123883335732545,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 5.792055130004883,
+      "label": "5.8",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.127217694145766,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 6.081874370574951,
+      "label": "5.8",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.1069435659099907,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 5.932827472686768,
+      "label": "5.8",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.154860790815018,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 4.903761863708496,
+      "label": "5.8",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.1747994291446977,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 5.706898212432861,
+      "label": "5.8",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.14276217086168,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 5.172207355499268,
+      "label": "5.8",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.1512419948655808,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 7.387415409088135,
+      "label": "5.8",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.2105130200129035,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 5.109203815460205,
+      "label": "5.8",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.1877159433732407,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 5.93882417678833,
+      "label": "5.8",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.1644942300639447,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 6.276211738586426,
+      "label": "5.8",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.1362994962623008,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 5.967920780181885,
+      "label": "5.8",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.2036696478650297,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 6.667750358581543,
+      "label": "5.8",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.1308606828568726,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 5.412674427032471,
+      "label": "5.8",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.1407877003568347,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 5.946338653564453,
+      "label": "5.8",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.2049971295865243,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 6.009424209594727,
+      "label": "5.8",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.1632496260813583,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 6.301743030548096,
+      "label": "5.8",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.1866549744359776,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 5.8698296546936035,
+      "label": "5.8",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.1699819273580143,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 5.149991035461426,
+      "label": "5.8",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.1768783129910445,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 5.448322772979736,
+      "label": "5.8",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.137932162066631,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 7.650295257568359,
+      "label": "5.8",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 3.131550926778933,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 18.70671272277832,
+      "label": "6.3",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.140474158188553,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 19.04898452758789,
+      "label": "6.3",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.1220985720491767,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 20.379179000854492,
+      "label": "11.9",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.201174580181989,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 21.972578048706055,
+      "label": "6.3",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.1361571626575127,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 22.85816192626953,
+      "label": "11.9",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.1667638333855823,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 16.482282638549805,
+      "label": "6.3",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.192117186765551,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 25.508270263671875,
+      "label": "6.3",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.1912206520313284,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 15.38271713256836,
+      "label": "6.3",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.1532224884442615,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 17.24959945678711,
+      "label": "6.3",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.15738830394454,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 26.957935333251953,
+      "label": "11.9",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.214417192382853,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 22.288522720336914,
+      "label": "6.3",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.179205722467693,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 17.228378295898438,
+      "label": "6.3",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.194610228742967,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 19.83987808227539,
+      "label": "6.3",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.204280936614116,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 17.505416870117188,
+      "label": "6.3",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.1916348819852276,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 29.974782943725586,
+      "label": "11.9",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.1253697279448924,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 22.789608001708984,
+      "label": "11.9",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.166838780711133,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 26.245080947875977,
+      "label": "11.9",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.1162083573046,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 22.784029006958008,
+      "label": "11.9",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.17682143392204,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 16.932016372680664,
+      "label": "6.3",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.2100884371006595,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 26.183900833129883,
+      "label": "6.3",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.1614005270730123,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 3.162051200866699,
+      "label": "6.3",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.1526269742154547,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 2.6542468070983887,
+      "label": "6.3",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.108942702655998,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 3.663853645324707,
+      "label": "6.3",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.2105751974562144,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 2.806631088256836,
+      "label": "6.3",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.1163302952543175,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 2.5319740772247314,
+      "label": "6.3",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.1095187002635334,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 2.5764362812042236,
+      "label": "6.3",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.1320673272655433,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 2.5324912071228027,
+      "label": "6.3",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.112208347731022,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 2.4303674697875977,
+      "label": "6.3",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.155062962665294,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 2.7644526958465576,
+      "label": "6.3",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.1617696581382826,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 2.41838002204895,
+      "label": "6.3",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.139382694393144,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 2.635937213897705,
+      "label": "6.3",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.1106056530832378,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 3.248295307159424,
+      "label": "6.3",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.117276040507415,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 3.2417421340942383,
+      "label": "6.3",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.147295481578892,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 3.5218663215637207,
+      "label": "6.3",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.111658129590919,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 3.549001693725586,
+      "label": "6.3",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.1818008698170908,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 2.818701982498169,
+      "label": "6.3",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.1277722595677293,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 3.192633628845215,
+      "label": "6.3",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.1382278725662003,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 3.5467710494995117,
+      "label": "6.3",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.148353835489591,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 2.6702911853790283,
+      "label": "6.3",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.1508270596376065,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 2.882519006729126,
+      "label": "6.3",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.1051826778442284,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 5.558590412139893,
+      "label": "6.3",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.117327740809857,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 5.037635803222656,
+      "label": "6.3",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.1999041020114967,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 7.128250598907471,
+      "label": "6.3",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.10513563687631,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 5.725786209106445,
+      "label": "6.3",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.1608984091394166,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 5.300301551818848,
+      "label": "6.3",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.158845220715793,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 4.497035980224609,
+      "label": "6.3",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.1416403577111702,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 4.591555118560791,
+      "label": "6.3",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.1524459722161096,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 4.1801300048828125,
+      "label": "6.3",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.1908639251279243,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 5.021881580352783,
+      "label": "6.3",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.1975324076836453,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 6.568431854248047,
+      "label": "6.3",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.1336383397756777,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 5.530580520629883,
+      "label": "6.3",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.1404739485064503,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 6.20904016494751,
+      "label": "6.3",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.131673113833117,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 6.012885570526123,
+      "label": "6.3",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.1577849740606174,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 6.140543460845947,
+      "label": "6.3",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.1801584193424697,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 6.5272722244262695,
+      "label": "6.3",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.1301078163009763,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 5.872287273406982,
+      "label": "6.3",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.1413809316260353,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 6.7731523513793945,
+      "label": "6.3",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.2073423079348067,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 6.396853446960449,
+      "label": "6.3",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.1103426218831656,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 5.103147983551025,
+      "label": "6.3",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.1556846565763523,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 5.988128185272217,
+      "label": "6.3",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.1832713845756455,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 2.4522323608398438,
+      "label": "6.3",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.121549941271322,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 1.7617413997650146,
+      "label": "6.3",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.1102111422006034,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 2.576314687728882,
+      "label": "6.3",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.1202025908802384,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 1.914902925491333,
+      "label": "6.3",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.2060705512883754,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 1.8094336986541748,
+      "label": "6.3",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.1060185760003236,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 2.1978378295898438,
+      "label": "6.3",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.125715417229249,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 1.595386028289795,
+      "label": "6.3",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.108441186419181,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 1.8765970468521118,
+      "label": "6.3",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.1171692414318426,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 2.0125343799591064,
+      "label": "6.3",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.1732164215291125,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 1.771376609802246,
+      "label": "6.3",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.1315802799612995,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 2.0472323894500732,
+      "label": "6.3",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.1676133255473746,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 2.1817538738250732,
+      "label": "6.3",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.169921492104274,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 2.1969659328460693,
+      "label": "6.3",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.198437886639876,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 2.3956191539764404,
+      "label": "6.3",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.1055215532203064,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 2.661860227584839,
+      "label": "6.3",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.1988706405276606,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 2.3048055171966553,
+      "label": "6.3",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.1731030995069673,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 2.106630802154541,
+      "label": "6.3",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.1229017834715456,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 2.345174551010132,
+      "label": "6.3",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.1900231126948815,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 1.8803629875183105,
+      "label": "6.3",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.1991040695969644,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 1.9130711555480957,
+      "label": "6.3",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.1329689832129572,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 7.511282444000244,
+      "label": "6.3",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.206067304899295,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 7.43630313873291,
+      "label": "6.3",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.1549903173328526,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 7.2364373207092285,
+      "label": "6.3",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.1713766899766656,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 5.821207523345947,
+      "label": "6.3",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.213311448697941,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 6.587129592895508,
+      "label": "6.3",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.144768968650312,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 6.302799224853516,
+      "label": "6.3",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.1944475280402127,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 7.9808807373046875,
+      "label": "6.3",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.1400239029611305,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 6.524266719818115,
+      "label": "6.3",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.1929134874465643,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 6.744611740112305,
+      "label": "6.3",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.1710807310748907,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 7.411530494689941,
+      "label": "6.3",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.128799126474794,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 6.956847190856934,
+      "label": "6.3",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.150542870316816,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 7.653463840484619,
+      "label": "6.3",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.1399399197799918,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 6.099625110626221,
+      "label": "6.3",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.11359192323884,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 7.149745464324951,
+      "label": "6.3",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.108281824710967,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 6.974285125732422,
+      "label": "6.3",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.14311265209479,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 7.375549793243408,
+      "label": "6.3",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.1070937562599235,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 6.650879383087158,
+      "label": "6.3",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.1232036533339955,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 5.817050457000732,
+      "label": "6.3",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.1847701652935956,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 6.489313125610352,
+      "label": "6.3",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.182890035925195,
+      "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)": 8.108541488647461,
+      "label": "6.3",
+      "_kind": "scatter",
+      "_group": 7
+    }
+  ],
+  "n_series": 8,
+  "total_points": 800,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Per-probe shift norms behind the layer-25 mean-shift points",
+        "ylabel": "Per-row \u2016\u0394x\u2016 at layer 25 (log scale)",
+        "legend_labels": [
+          "per-row \u2016\u0394x\u2016, own text (100 rows)",
+          "per-row \u2016\u0394x\u2016, shared text (100 rows)",
+          "\u2016\u03bc\u2016 = norm of the mean shift (labeled)"
+        ],
+        "annotations": [
+          "9.1",
+          "8.2",
+          "11.5",
+          "11.9",
+          "4.6",
+          "3.8",
+          "5.8",
+          "6.3"
+        ],
+        "xticklabels": [
+          "LoRA\n+ negatives",
+          "LoRA\npositives-only",
+          "Full FT\n+ negatives\n(reused)",
+          "Full FT\npositives-only"
+        ],
+        "yticklabels": [
+          "$\\mathdefault{10^{-2}}$",
+          "$\\mathdefault{10^{-1}}$",
+          "$\\mathdefault{10^{0}}$",
+          "$\\mathdefault{10^{1}}$",
+          "$\\mathdefault{10^{2}}$",
+          "$\\mathdefault{10^{3}}$",
+          "$\\mathdefault{10^{4}}$"
+        ]
+      }
+    ]
+  }
+}

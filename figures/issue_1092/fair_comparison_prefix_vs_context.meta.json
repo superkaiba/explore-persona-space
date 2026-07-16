@@ -1,0 +1,89 @@
+{
+  "figure": "figures/issue_1092/fair_comparison_prefix_vs_context.png",
+  "generated_utc": "2026-07-16T08:37:47.874427+00:00",
+  "git_commit": "996f0b663cab756a87fac7c60ea70a55280d16b6",
+  "primary_cell": "cell_inst_own",
+  "caption": "Fair prefix-vs-context prediction comparison on the matched #1092 corpus. Teacher-forced capture; own-policy greedy answers; battery-excluded ridge fits (stratum != trait_stratum AND not is_eval_only, n=17308); novel-prefix grouped 6-fold CV; layer 14; pooled t1/t2/t3 targets. Panel A: held-out R2 at averaged grain (per-prefix query-averaged profiles) vs single-context grain (per row), ambient target. Panel B: single-context-grain R2 as a fraction of the achievable ceiling per target basis \u2014 prefix arm divided by the between-prefix variance share (its structural ceiling: v_P is near-constant within a prefix); context arm divided by the MLP companion (pca48, banked 0.929) / the additive 1-interaction ceiling (ambient, banked dense-core). Newly computed here: averaged-grain R2 (both arms), single-context battery-excluded refits, between-prefix shares on the fit population. Banked (reused): read1 battery-included per-row R2, read3 dense-core FGI shares, MLP companion. Bars are single pooled held-out R2 point estimates (no fold-spread error bars).",
+  "panelA_values_ambient": {
+    "r2_prefix_averaged": 0.3708897449163957,
+    "r2_context_averaged": 0.8193260751733688,
+    "r2_prefix_single_battery_excluded": 0.06507882598789749,
+    "r2_context_single_battery_excluded": 0.8141832948824597
+  },
+  "panelB_fractions_full_single_grain": {
+    "ambient": {
+      "prefix_over_share": 0.4267267807092866,
+      "context_over_additive": 0.988765950527351
+    },
+    "pca48": {
+      "prefix_over_share": 0.5799585570238545,
+      "context_over_mlp": 0.984185505269282
+    }
+  },
+  "raw_ceilings": {
+    "ambient": {
+      "prefix_between_prefix_share_full": 0.15250701134746292,
+      "prefix_between_prefix_share_densecore": 0.10419466145828905,
+      "banked_read3_share_prefix_densecore": 0.10419466,
+      "share_query_densecore": 0.7192391293677722,
+      "share_interaction_densecore": 0.17656620917394952,
+      "context_additive_ceiling_densecore": 0.8234337908260505,
+      "context_mlp_companion_ceiling": null
+    },
+    "pca48": {
+      "prefix_between_prefix_share_full": 0.1695747735698165,
+      "prefix_between_prefix_share_densecore": 0.11144270071166437,
+      "banked_read3_share_prefix_densecore": 0.10728734,
+      "share_query_densecore": 0.7816597986767826,
+      "share_interaction_densecore": 0.10689750061155329,
+      "context_additive_ceiling_densecore": 0.8931024993884467,
+      "context_mlp_companion_ceiling": 0.9288425073128529
+    }
+  },
+  "banked_read1_battery_included": {
+    "ambient": {
+      "prefix_end": 0.06507728422851033,
+      "context_end": 0.8043440222361293
+    },
+    "pca48": {
+      "prefix_end": 0.09604,
+      "context_end": 0.91034
+    },
+    "n_rows": 19708
+  },
+  "prefix_end_within_prefix_constancy_ambient_note": {
+    "overall_rowvec_std": 31.247167137918883,
+    "mean_within_prefix_rowvec_std": 0.0,
+    "ratio_within_over_overall": 0.0,
+    "n_multi_row_prefixes": 996
+  },
+  "averaged_grain_1_over_nq_note_ambient": "averaging ~17.4 queries per prefix shrinks the residual within-prefix (query+interaction+noise) variance from 0.847 of total to ~0.0488, leaving the averaged target dominated by between-prefix signal both arms can reach.",
+  "sources": {
+    "newly_computed_json": "eval_results/issue_1092/inline_fair_comparison/fair_comparison.json",
+    "banked_read1_read3_mlp": "eval_results/issue_1092/p7/{read1_map_skill,read3_fgi_shares,mlp_companion}.json"
+  },
+  "secondary_cell_pre_own": {
+    "ambient": {
+      "r2_prefix_averaged": 0.2609328571729165,
+      "r2_context_averaged": 0.7633080486910762,
+      "r2_prefix_single": 0.0575631072508499,
+      "r2_context_single": 0.7383183825157749,
+      "fraction_full": {
+        "prefix": 0.34673414423814564,
+        "context_vs_mlp": null,
+        "context_vs_additive": 1.0264506690544157
+      }
+    },
+    "pca48": {
+      "r2_prefix_averaged": 0.46273357709206353,
+      "r2_context_averaged": 0.8843018488452181,
+      "r2_prefix_single": 0.1045136492953852,
+      "r2_context_single": 0.8369607183481051,
+      "fraction_full": {
+        "prefix": 0.5292157236505535,
+        "context_vs_mlp": null,
+        "context_vs_additive": 1.0582035995007983
+      }
+    }
+  }
+}

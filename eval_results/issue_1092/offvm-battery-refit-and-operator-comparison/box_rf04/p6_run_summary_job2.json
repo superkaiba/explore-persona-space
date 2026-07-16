@@ -1,0 +1,75 @@
+{
+  "cells": [
+    "cell_pre_insttext"
+  ],
+  "git_commit": "6e288d4eb0fd2bf54d6b60c4b456039518575abd",
+  "hf_prefix": "issue1092_realistic_crossing/analysis_tensors/summaries",
+  "layers": [
+    14
+  ],
+  "layers_done": [
+    14
+  ],
+  "layers_skipped": [],
+  "phase": "P6_wrapper",
+  "pilot": {
+    "projected_total_wall_h": 5.669226501781943,
+    "ru_maxrss_gb": 72.60178756713867,
+    "wall_s_band_block": 20409.215406414995,
+    "wall_s_frozen_block": 20409.215406414995
+  },
+  "pilot_only": false,
+  "resolved_revision": "071ce41791f6e348b657529af6823db936eea7af",
+  "timestamp": "2026-07-15T22:40:49+0000",
+  "wall_s": 21098.530407963997,
+  "wrapper_config": {
+    "arms": [
+      "prefix_end",
+      "context_end"
+    ],
+    "band_null_draws": 20,
+    "cells": [
+      "cell_pre_insttext"
+    ],
+    "config_sha256": "fbfeffab6ec828f0179abe54bfda3b8b3fd81d58d417fe6b2c6ada2be7a5f99b",
+    "corpus_manifest_sha256": "e582a3b41ae9c5b724602730b46634c01df8bdd2281db524d70450e821e24227",
+    "extra_fit_grid_args": [
+      "--skip-mlp-companion"
+    ],
+    "fit_arms": [
+      "B"
+    ],
+    "fit_grid_script_sha256": "25d5416a39e9b9d1b82c721292b8e270e88c99b120c32f228391277bb26ea7da",
+    "fit_seed": 0,
+    "hf_prefix": "issue1092_realistic_crossing/analysis_tensors/summaries",
+    "hf_revision": "main",
+    "judge_scores": "/workspace/eps-issue-1092/data/issue_1092/p5_judge/scores.jsonl",
+    "judge_scores_sha256": "94bf3490f2116fd25dba581ac5ad172cc2b344fa0edad43ca5e31149f602920a",
+    "lambda_grid_deviation": {
+      "plan_registered": "7-value log-spaced {1e-2..1e3} (plan section 10, Fits row)",
+      "realized": [
+        0.01,
+        0.1,
+        1.0,
+        10.0,
+        100.0,
+        1000.0
+      ],
+      "reason": "engine-internal grid (issue658 RIDGE_LAMBDAS via issue923 press_fit_predict); lambda-sensitivity columns + df(lambda) reporting keep headlines grid-robust",
+      "status": "deviation-recorded"
+    },
+    "n_folds": 6,
+    "n_null_draws": 200,
+    "rb_dir": null,
+    "rb_rev": "037fcbb",
+    "target_bases": [
+      "ambient",
+      "pca48"
+    ],
+    "targets": [
+      "t1",
+      "t2",
+      "t3"
+    ]
+  }
+}

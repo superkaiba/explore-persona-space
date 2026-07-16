@@ -1,0 +1,22 @@
+{
+  "metadata": {
+    "git_commit": "f89fb36ae32f544695acd33beb59907bbaec2d2c",
+    "timestamp": "2026-07-16T16:35:20Z",
+    "seed": 0,
+    "n": 11644,
+    "script": "scripts/issue1310_fit.py",
+    "issue": 931
+  },
+  "model_kind": "instruct",
+  "headline_layer": 19,
+  "r2_correct": 0.3199918862157064,
+  "r2_swap": 0.09419675213965917,
+  "delta_r2_char": 0.22579513407604723,
+  "delta_ci_lo": 0.2207910156558436,
+  "delta_ci_hi": 0.23078426896162815,
+  "n_rows": 11644,
+  "n_groups": 300,
+  "n_boot": 1000,
+  "paired_group_bootstrap": true,
+  "gcv_dof_cap": 0.9
+}

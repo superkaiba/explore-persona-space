@@ -35,7 +35,12 @@ sync_pod() {
     local host="$1" port="$2" label="$3"
     echo "[$label] Syncing code + environment..."
 
-    ssh $SSH_OPTS -p "$port" "root@$host" bash -s <<'REMOTE_SCRIPT'
+    # Capture the remote output so a git-auth failure can be classified and
+    # redirected to the repair leg (#1401); the `&& rc=0 || rc=$?` form keeps
+    # `set -e` from aborting before the classification runs.
+    local output rc
+    output=$(
+        ssh $SSH_OPTS -p "$port" "root@$host" bash -s 2>&1 <<'REMOTE_SCRIPT'
 set -e
 cd /workspace/explore-persona-space
 
@@ -56,11 +61,22 @@ uv sync --locked 2>&1 | tail -5
 
 echo "Done — $(python3 --version), $(uv --version)"
 REMOTE_SCRIPT
+    ) && rc=0 || rc=$?
+    echo "$output"
 
-    if [ $? -eq 0 ]; then
+    if [ "$rc" -eq 0 ]; then
         echo "[$label] ✓ Synced"
     else
-        echo "[$label] ✗ FAILED"
+        # Loud redirect (#1401): `sync env` is code+uv sync only — a git-auth
+        # 40x here is repaired by the dedicated keys --refresh-token leg, not
+        # by re-running sync env (the #1333 operator's first reflex).
+        if echo "$output" | grep -qE 'returned error: 40[13]|Authentication failed|Permission .* denied'; then
+            echo "[$label] ✗ FAILED (git auth error detected)"
+            echo "[$label]   hint: run  uv run python scripts/pod.py keys --refresh-token $label"
+        else
+            echo "[$label] ✗ FAILED"
+        fi
+        return 1
     fi
 }
 

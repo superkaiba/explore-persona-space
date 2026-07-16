@@ -1,0 +1,126 @@
+{
+  "round": "matched-install-breadth-reread",
+  "primary": {
+    "statistic": "paired per-(context,question) [bare-matched - villain] leakage delta-G (log-prob), held-out trio x 20 questions",
+    "n_pairs": 60,
+    "delta_mean": 1.9536968231201173,
+    "ci95": [
+      1.7160425289471943,
+      2.2203611509005228
+    ],
+    "verdict": "Survives",
+    "bootstrap": {
+      "draws": 2000,
+      "seed": 653,
+      "clusters": 20
+    },
+    "per_context": {
+      "chef": {
+        "matched_delta_g": 4.639966773986816,
+        "villain_delta_g": 2.970909595489502,
+        "paired_diff_mean": 1.6690571784973145
+      },
+      "hero": {
+        "matched_delta_g": 4.661220359802246,
+        "villain_delta_g": 2.777937889099121,
+        "paired_diff_mean": 1.883282470703125
+      },
+      "philosopher": {
+        "matched_delta_g": 4.122123050689697,
+        "villain_delta_g": 1.8133722305297852,
+        "paired_diff_mean": 2.3087508201599123
+      }
+    },
+    "matched_source_delta_g": 5.681440544128418,
+    "villain_source_delta_g": 5.4176126480102536
+  },
+  "secondary_descriptive": {
+    "default_rendered_asymmetry": {
+      "matched_label": "__source__",
+      "matched": {
+        "context_id": "bare_default",
+        "delta_logp_mean": 5.681440544128418,
+        "emission_rate": 0.0,
+        "base_prior_mean": -23.30188398361206
+      },
+      "villain_label": "qwen_default",
+      "villain": {
+        "context_id": "persona_qwen_default",
+        "delta_logp_mean": 0.5272194862365722,
+        "emission_rate": 0.0,
+        "base_prior_mean": -24.262821102142333
+      }
+    },
+    "margin_transfer_fractions": {
+      "matched": {
+        "chef": 0.9697433678394303,
+        "hero": 0.9790217355124323,
+        "philosopher": 0.7325167260260295,
+        "source_margin": 4.400830078125
+      },
+      "villain": {
+        "chef": 0.6016542431858538,
+        "hero": 0.6025628663789008,
+        "philosopher": 0.25536604986799977,
+        "source_margin": 4.336032104492188
+      }
+    },
+    "argmax_emission_rates": {
+      "matched": {
+        "__source__": 0.0,
+        "medical_doctor": 0.0,
+        "police_officer": 0.0,
+        "french_person": 0.0,
+        "comedian": 0.0,
+        "chef": 0.0,
+        "hero": 0.0,
+        "philosopher": 0.0
+      },
+      "villain": {
+        "__source__": 0.0,
+        "medical_doctor": 0.0,
+        "police_officer": 0.0,
+        "qwen_default": 0.0,
+        "comedian": 0.0,
+        "chef": 0.0,
+        "hero": 0.0,
+        "philosopher": 0.0
+      }
+    }
+  },
+  "calibration": {
+    "this_run_mk1_source_delta_g": 5.562793254852295,
+    "parent_refs": {
+      "selection_delta_logp": 5.514121723175049,
+      "breadth_reread_delta_logp": 5.418
+    },
+    "offsets_nats": {
+      "vs_parent_selection": 0.048671531677245916,
+      "vs_parent_breadth_reread": 0.14479325485229477,
+      "vs_parent_breadth_reread_exact": 0.14518060684204137
+    },
+    "caveat_offset_over_0p5_nats": false,
+    "note": "offset REPORTED only \u2014 never applied as a numerical correction (plan \u00a74f); the paired statistic above is as registered"
+  },
+  "reproducibility": {
+    "git_commit": "7fb9353a2226a59167782a913cbaecaf1b6b68dc",
+    "generated_at": "2026-07-16T05:22:48Z",
+    "numpy_version": "2.2.6",
+    "inputs": {
+      "matched": {
+        "path": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-1333-matched/eval_results/issue_1333/matched-install-breadth-reread/breadth_slot_reads.json",
+        "sha256": "ccb9fa99c1c9e2d54256233366322123075827b8f579493021923b3c71e8c108"
+      },
+      "comparator": {
+        "path": "/tmp/mk1_comparator_slot_reads.json",
+        "sha256": "540f83e3142593895bfceb39d57b1c6a119d70815a88eec182171c07d4de3b74",
+        "hub_path": null,
+        "revision": null
+      },
+      "calibration": {
+        "path": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-1333-matched/eval_results/issue_1333/matched-install-breadth-reread/mk1_source_reread.json",
+        "sha256": "534acc92f47cb3413fece4b581b649a2f7384e50da2b20ca1ecbd152c686c532"
+      }
+    }
+  }
+}

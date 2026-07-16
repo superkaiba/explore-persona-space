@@ -1532,9 +1532,10 @@ def test_compare_mid_loop_dirt_transition_fail_closed(tmp_path: Path, monkeypatc
 
 
 def test_compare_scan_set_node_never_scratch_stripped(tmp_path: Path, monkeypatch, capsys):
-    """N11 (R-F): a GLOB_SCAN_TESTS node is never scratch-resolved — live-tree
-    scanners read the MAIN root via repo_root() from any cwd, so a scratch cannot
-    decontaminate them; the node keeps the MF-4c indeterminate."""
+    """N11 (R-F'): a non-allowlisted GLOB_SCAN_TESTS node is never scratch-resolved
+    — live-tree scanners read the MAIN root via repo_root() from any cwd, so a
+    scratch cannot decontaminate them; the node keeps the MF-4c indeterminate
+    (only FILE_ANCHORED_SCAN_TESTS members are exempt, #1337)."""
     node = sb.Node(
         file="tests/test_scan_thing.py", classname="tests.test_scan_thing", name="test_x"
     )
@@ -1553,6 +1554,7 @@ def test_compare_scan_set_node_never_scratch_stripped(tmp_path: Path, monkeypatc
     assert out["indeterminate"] is True
     assert calls["scratch_created"] == []
     assert "scan_set=True" in out["reason"]
+    assert "file_anchored=False" in out["reason"]
     # The oracle ran at the ROOT (per-file granularity: only THIS node is barred).
     assert calls["pristine_detail"] == [(node.file, root, None)]
 
@@ -1575,6 +1577,46 @@ def test_compare_non_sparse_work_root_ineligible(tmp_path: Path, monkeypatch, ca
     assert out["indeterminate"] is True
     assert calls["scratch_created"] == []
     assert "sparse_wt=False" in out["reason"]
+
+
+# --- #1337: R-F' — FILE_ANCHORED_SCAN_TESTS members ARE scratch-eligible ----------
+
+
+@pytest.mark.parametrize("fails_on_main", [True, False])
+def test_compare_file_anchored_scan_node_scratch_resolved(
+    tmp_path: Path, monkeypatch, capsys, fails_on_main
+):
+    """#1337 (R-F'): a FILE_ANCHORED_SCAN_TESTS scan node on a dirty sparse root IS
+    scratch-resolved (strip-or-NEW, rc 0/1) instead of MF-4c exit 2 — the #1318 shape;
+    the MF-6 masking WARN still fires on the strip."""
+    node = sb.Node(
+        file="tests/test_scan_anchor.py", classname="tests.test_scan_anchor", name="test_x"
+    )
+    monkeypatch.setattr(sb, "FILE_ANCHORED_SCAN_TESTS", frozenset({node.file}))
+    argv, calls, root, _w = _compare_env(
+        tmp_path,
+        monkeypatch,
+        junit_cases=[(node.file, node.classname, node.name, "failed")],
+        ledger_kw={"failing": ()},
+        glob_scan={node.file: ("scripts/issue*_*.py",)},
+        touched=("scripts/issue999_wip.py",),  # matches the scan glob -> MF-6 WARN
+        live_dirty=("scripts/wip.py",),
+        pristine_failing=(node,) if fails_on_main else (),
+        extra_args=("--run-pristine",),
+    )
+    rc, out, _err = _run_json(argv, capsys)
+    assert len(calls["scratch_created"]) == 1
+    assert calls["pristine_detail"] == [(node.file, root / "scratch-fake", root)]
+    if fails_on_main:
+        assert rc == 0 and out["indeterminate"] is False
+        assert out["stripped"] == [{**node._asdict(), "via": "pristine-scratch"}]
+        assert any(
+            "MASKING WARN" in w and node.file in w and "scripts/issue999_wip.py" in w
+            for w in out["warns"]
+        )
+    else:
+        assert rc == 1
+        assert [n["name"] for n in out["new"]] == ["test_x"]
 
 
 # --- #1251: scratch PYTHONPATH src-shadow (dirty src/ no longer refuses) -----------
@@ -1802,6 +1844,33 @@ def test_load_selector_module_real_body():
     assert isinstance(mod.WORKFLOW_INVARIANT, tuple) and mod.WORKFLOW_INVARIANT
     assert isinstance(mod.GLOB_SCAN_TESTS, dict) and mod.GLOB_SCAN_TESTS
     assert callable(mod.select_tests_with_reasons) and callable(mod._matches_any)
+
+
+def test_file_anchored_scan_tests_live_tree_pin():
+    """#1337 drift pin: every FILE_ANCHORED_SCAN_TESTS member is a live GLOB_SCAN_TESTS
+    key whose source still derives its scan root from Path(__file__) and never touches
+    repo_root()/task_workflow — the source-verified basis of R-F' scratch eligibility.
+
+    Token-level, NOT dataflow-level: an imported helper that reached the live main
+    root via repo_root() would still pass these token pins — membership additions
+    stay must-ask, with a human verifying the whole scan chain by reading the source
+    (plan #1337 §10b / §11)."""
+    root = Path(sb.__file__).resolve().parents[1]
+    sel = sb.load_selector_module(root)
+    assert sb.FILE_ANCHORED_SCAN_TESTS, "allowlist unexpectedly empty"
+    # A member's `git ls-files` run with cwd inside the scratch resolves the scratch
+    # worktree's own (detached-HEAD) index, not the main index — so untracked
+    # main-root strays are invisible there (#1318 positive control).
+    for rel in sorted(sb.FILE_ANCHORED_SCAN_TESTS):
+        assert rel in sel.GLOB_SCAN_TESTS, f"{rel}: allowlisted but not a scan test"
+        src = (root / rel).read_text()
+        assert "Path(__file__).resolve().parents[1]" in src, f"{rel}: __file__ anchor gone"
+        assert "repo_root(" not in src, f"{rel}: repo_root() appeared — R-F' basis broken"
+        assert "task_workflow" not in src, f"{rel}: task_workflow import appeared"
+        # Extra negative tokens (verified 0-hit at #1337 implement time): escape
+        # channels back to the MAIN tree from a scratch cwd.
+        assert "git-common-dir" not in src, f"{rel}: git-common-dir escape appeared"
+        assert "Path.cwd()" not in src, f"{rel}: cwd-anchored scan appeared"
 
 
 def test_ruff_helpers_real_body(tmp_path: Path):

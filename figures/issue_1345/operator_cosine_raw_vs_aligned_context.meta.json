@@ -1,0 +1,105 @@
+{
+  "commit": "b7ab0b3b75",
+  "created": "2026-07-16T05:28:06Z",
+  "figsize": [
+    9.0,
+    5.2
+  ],
+  "points": [
+    {
+      "x": -0.26,
+      "cosine between chat and no-template operators (layer 19)": 0.6508346068777792,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.74,
+      "cosine between chat and no-template operators (layer 19)": 0.29307748041634585,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "instruct",
+      "cosine between chat and no-template operators (layer 19)": 0.8548608839822773,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "base",
+      "cosine between chat and no-template operators (layer 19)": 0.731599049044025,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 0.26,
+      "cosine between chat and no-template operators (layer 19)": 0.0006896843718561886,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 1.26,
+      "cosine between chat and no-template operators (layer 19)": 0.000609137655002862,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 0.0,
+      "cosine between chat and no-template operators (layer 19)": 0.6864,
+      "series": "base vs instruct aligned cosine (parent anchor)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 1.0,
+      "cosine between chat and no-template operators (layer 19)": 0.6864,
+      "series": "base vs instruct aligned cosine (parent anchor)",
+      "_kind": "line",
+      "_group": 3
+    }
+  ],
+  "n_series": 4,
+  "total_points": 8,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Chat vs no-template operator cosine, raw and aligned (context arm)",
+        "ylabel": "cosine between chat and no-template operators (layer 19)",
+        "legend_labels": [
+          "base vs instruct aligned cosine (parent anchor)",
+          "raw operator cosine",
+          "aligned cosine (activation Procrustes)",
+          "random-rotation null (97.5th pct)"
+        ],
+        "annotations": [
+          "0.651",
+          "0.293",
+          "0.855",
+          "0.732",
+          "0.001",
+          "0.001"
+        ],
+        "xticklabels": [
+          "instruct",
+          "base"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0",
+          "1.2"
+        ]
+      }
+    ],
+    "series": [
+      "base vs instruct aligned cosine (parent anchor)",
+      "raw operator cosine",
+      "aligned cosine (activation Procrustes)",
+      "random-rotation null (97.5th pct)"
+    ]
+  }
+}
