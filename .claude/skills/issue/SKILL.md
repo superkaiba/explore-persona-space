@@ -10136,11 +10136,28 @@ else
     fi
   done < /tmp/issue-<N>-recovery-figures.txt
 fi
-# THIS task's own tasks/*/<N>/ conflicts and all remaining non-tasks/ conflicts (figures/ resolved above):
-# resolve in the worktree (keep main's version of anything outside this
-# task's deliverables), then:
-git -C "$WT" add <each resolved file>
-git -C "$WT" commit --no-edit
+# Residual conflicts — THIS task's own tasks/*/<N>/ paths and all remaining
+# non-tasks/ paths (foreign tasks/ and figures/ were resolved MECHANICALLY
+# above, with zero conflict-body reads). The orchestrator NEVER reads
+# residual conflict bodies inline here — that inline read killed #1338
+# ("Prompt is too long", no recovery turn): Step 10d/9b merges run
+# late-session by construction, and a session cannot introspect its own
+# context headroom. Materialize the residual list (exclusive-arm `if ! ...`
+# producer shape, #1184/#1243):
+if ! git -C "$WT" -c core.quotePath=false diff --name-only --diff-filter=U \
+    > /tmp/issue-<N>-recovery-residual.txt; then
+  echo "recovery: residual conflicted-paths diff FAILED — do NOT resolve blind; epm:merge-failed"
+  false
+elif [ -s /tmp/issue-<N>-recovery-residual.txt ]; then
+  echo "recovery: $(wc -l < /tmp/issue-<N>-recovery-residual.txt) residual content conflict(s) — dispatch the residual-conflict subagent (subsection below); do NOT read conflict bodies inline"
+  # Halt the inline fence at this branch (loud false — a naive one-shot
+  # execution must not fall through to the commit/certification below);
+  # re-enter at the post-resolution certification block once the
+  # subagent's resolution commit lands.
+  false
+else
+  git -C "$WT" commit --no-edit   # every conflict was resolved mechanically above
+fi
 # Post-resolution certification (the #1128 verification): the branch tree
 # must now be IDENTICAL to the captured snapshot over tasks/, modulo this
 # task's own folder. ONE fused if/elif chain (Guard 1's `if ! ...` shape,
@@ -10200,6 +10217,79 @@ else
   false
 fi
 ```
+
+##### Residual-conflict subagent dispatch (context-hygiene branch)
+
+When the residual list is NON-EMPTY, dispatch the conflict investigation +
+resolution to a fresh worktree-scoped subagent — never an inline
+orchestrator read. UNCONDITIONAL: no file-count or context-fullness
+threshold. Step 10d/9b merges run after the full pipeline, so late-session
+is guaranteed; a session cannot introspect its own headroom; and the
+lethal variable is conflict-body BYTES, not file count (#1338: 4 files
+paged inline killed the session with no recovery turn — one conflicted
+eval script can be just as large). The mechanical passes above absorb the
+common classes, so this branch fires rarely. The failure-arm echoes above
+("resolve by hand per the prose below") route HERE — "by hand" means via
+this dispatch; do NOT read conflict bodies inline.
+
+1. Post the stage-dispatch breadcrumb FIRST (Step 9 entry-guard
+   convention): an `epm:progress` marker whose note BEGINS with the
+   literal `stage-dispatch ` prefix (required by
+   `task_workflow.stage_dispatch_should_skip` / `_breadcrumb_fields` —
+   a prefix-less note is invisible to the dedup + resume machinery):
+   `stage-dispatch stage=step10d-conflict-resolve worktree=<abs $WT> paths=<count>`.
+   Resume/dedup predicate for a successor session: breadcrumb present AND
+   `git -C "$WT" diff --name-only --diff-filter=U` empty AND a resolution
+   commit on the branch tip ⇒ resolution landed, skip to certification;
+   breadcrumb present but worktree still conflicted AND no prior subagent
+   verdict recorded ⇒ re-dispatch ONCE, counted as the SAME single
+   attempt; otherwise fall to the Failure bullet. Never two concurrent
+   dispatches.
+2. Spawn ONE fresh `implementer`-class subagent with
+   `env=scrub_subagent_env(os.environ)` (standing convention). If the
+   residual list file is missing at dispatch time (a successor session, a
+   swept /tmp), re-run the `--diff-filter=U` producer above rather than
+   assuming the file exists. The brief is LEAN — paths and pins by
+   reference, never conflict bodies
+   (`.claude/rules/trigger-dense-review.md` disciplines 1/3/4 — findings
+   by reference, windowed reads, minimal return text;
+   `.claude/rules/diff-size-budget.md`):
+   - task id, branch name, absolute worktree path `$WT`;
+   - the captured `$MAIN_SHA` — the subagent PINS every resolution to it
+     and never re-fetches or re-snapshots (#1128 shared-ref race);
+   - the residual list file `/tmp/issue-<N>-recovery-residual.txt` + count
+     (the subagent reads paths from the file);
+   - the resolution contract, verbatim: (a) a residual FOREIGN tasks/ path
+     is pinned to `$MAIN_SHA` — checkout the on-main, `git rm -f` the
+     gone-on-main (the mechanical pass's own split); (b) a residual binary
+     figures/ path resolves newer-regeneration-wins per the recipe above;
+     (c) THIS task's own tasks/*/<N>/ and non-tasks/ paths: keep main's
+     version of anything outside this task's deliverables; for the task's
+     own deliverables keep the branch's content, merging hunk-by-hunk only
+     where both sides carry real content;
+   - read discipline: size any diff body before reading (300 KB budget);
+     read conflicted files individually, windowed around conflict markers;
+   - completion duties: `git -C "$WT" add` each resolved path,
+     `git -C "$WT" commit --no-edit`, verify zero `--diff-filter=U` paths;
+   - return contract: verdict `resolved` | `unresolvable: <one line>`, the
+     resolution commit sha, per-class path counts, path NAMES only — NEVER
+     conflict hunks, bodies, or diff text in the return (an oversized
+     return kills the parent this dispatch protects).
+3. On `resolved`: verify cheaply (`--diff-filter=U` empty; `rev-parse
+   HEAD` matches the reported sha), spot-check the keep-main contract on a
+   sample — a residual path OUTSIDE this task's deliverables should be
+   byte-identical to the snapshot (`git -C "$WT" diff "$MAIN_SHA" HEAD --
+   <path>` empty) — then re-enter the fence above AT the post-resolution
+   certification block and run certification → lint gate → push → merge
+   YOURSELF. The subagent never pushes and never runs the lint gate — the
+   fail-closed verdict-file contract is unchanged.
+4. On `unresolvable`, a dead/refused subagent (after step 1's single
+   no-verdict-recorded re-dispatch, or immediately when a verdict WAS
+   recorded), or certification FAIL on the subagent's commit: fall to the
+   Failure bullet (`epm:merge-failed v1`, continue). The dispatch lives
+   INSIDE the one-recovery-attempt cap — never a second dispatch (the
+   step-1 no-verdict re-dispatch is the SAME attempt; a second death
+   falls here), never an inline fallback read.
 
 One recovery attempt per Step 10d invocation. If the re-checked
 mergeability never recovers or the retried merge is refused again, fall
