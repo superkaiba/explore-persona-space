@@ -1177,7 +1177,14 @@ next to `vm_disk_pass`, every 10-min tick) drives the percent helpers
 (`EPM_VM_DATA_DISK_SUBFLOOR_PCT` default 85%) off `statvfs(/mnt/eps-data)`,
 escalate-only (no reclaim arm), and attributes the WORKTREE-internal caches via
 `repquota -P` per-project usage (du fallback). Both passes are clean no-ops when
-the mount is absent (before / without the cutover).
+the mount is absent (before / without the cutover). Since #1392 the BOOT-disk
+sub-floor sentinel's sibling arm (`subfloor_reclaim_pass`) additionally launches
+a detached, single-flight, rate-limited `vm_disk_guard.py --apply
+--ignore-threshold --no-push --no-data-disk` reclaim run while `/` free stays
+below `EPM_VM_DISK_SUBFLOOR_GIB` (interval
+`EPM_VM_DISK_SUBFLOOR_RECLAIM_INTERVAL_S`, default 1800 s; kill switch
+`EPM_DISABLE_SUBFLOOR_RECLAIM=1`) — VM-root only; the sentinel ROW and the
+guard's tier contract are unchanged, and the data disk stays escalate-only.
 
 **Non-canonical caches + the /workspace hub-cache arm (#911).** The guard's
 tier (b) ALSO sweeps NON-CANONICAL issue-keyed caches — top-level `/tmp/` dirs
