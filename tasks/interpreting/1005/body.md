@@ -1,6 +1,7 @@
 ---
-title: 'Replicate the CoT decomposition on DeepSeek-R1-Distill-Qwen-7B (template-forced
-  thinking): does scaffold compliance eliminate the flagged-context covariate?'
+title: 'The outsized chain-of-thought gain on in-context-learning and WildChat contexts
+  is a context-family property, not a parse artifact: it survives template-forced
+  scaffold compliance (MODERATE confidence)'
 kind: experiment
 tags: []
 created_at: '2026-07-04T10:11:34Z'
