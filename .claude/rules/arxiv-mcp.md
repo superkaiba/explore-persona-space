@@ -1,6 +1,6 @@
 ---
 description: ArXiv paper access via MCP tools
-globs:
+paths:
   - "docs/**"
   - ".arxiv-papers/**"
 ---

@@ -1,6 +1,6 @@
 ---
 description: Research project structure conventions, results index, and experiment queue
-globs:
+paths:
   - "RESULTS.md"
   - "eval_results/**"
   - "docs/**"
