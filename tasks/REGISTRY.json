@@ -3085,8 +3085,8 @@
     "1396": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1396",
-      "status": "planning",
+      "path": "tasks/approved/1396",
+      "status": "approved",
       "title": "daily-fix: upload extraction store before long fits"
     },
     "1397": {
