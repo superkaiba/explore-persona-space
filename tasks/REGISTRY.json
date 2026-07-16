@@ -2938,8 +2938,8 @@
     "1377": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1377",
-      "status": "proposed",
+      "path": "tasks/planning/1377",
+      "status": "planning",
       "title": "workflow-fix: vm_disk_guard trims stale home HF-hub revisions (age-gated tier)"
     },
     "138": {
