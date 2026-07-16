@@ -83,7 +83,7 @@ import subprocess
 import time
 from collections.abc import Iterator, Sequence
 from dataclasses import dataclass
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any
 
@@ -1094,6 +1094,187 @@ def is_workflow_fix_session(task_id: int) -> bool:
     except (FileNotFoundError, OSError):
         return False
     return "workflow_fix_target:" in body
+
+
+# Terminal statuses for the #1399 recently-closed advisory (the complement of
+# _WF_FIX_NONTERMINAL above — a task at one of these no longer blocks dedup,
+# but a JUST-closed one is exactly what the advisory surfaces).
+_WF_FIX_TERMINAL: tuple[str, ...] = ("completed", "archived")
+# Closure-class event kinds: set_status appends epm:status-changed and promote
+# appends epm:promoted — together the done-transition pair the watcher's
+# pod-safety predicate already keys on (CLAUDE.md).
+_WF_FIX_CLOSURE_EVENT_KINDS: tuple[str, ...] = ("epm:status-changed", "epm:promoted")
+# Small stopword set for the title-token overlap arm (len >= 4 tokens only, so
+# short glue words are already excluded; these are the frequent len>=4 ones).
+_WF_FIX_TITLE_STOPWORDS: frozenset[str] = frozenset(
+    {"the", "for", "and", "with", "must", "that", "from", "into", "when", "only", "over"}
+)
+_WF_FIX_TARGET_LINE_RE = re.compile(r"^\s*-?\s*workflow_fix_target:\s*(.+?)\s*$", re.M)
+
+
+def wf_fix_extract_target(body_text: str) -> str | None:
+    """Value of the first anchored ``workflow_fix_target:`` body line, else None.
+
+    Anchored at line start (optional ``- `` bullet) so prose MENTIONS of the
+    key (e.g. a Constraints bullet naming the ``workflow_fix_target:``
+    Provenance line mid-sentence) never match — verified against #1350's real
+    body, where line 55 is prose and line 59 is the Provenance line.
+    """
+    m = _WF_FIX_TARGET_LINE_RE.search(body_text or "")
+    return m.group(1).strip() if m else None
+
+
+def _wf_fix_closed_at(task_dir: Path) -> datetime | None:
+    """Closure timestamp: ts of the LAST closure-class event in events.jsonl.
+
+    Closure-class = epm:status-changed (set_status) or epm:promoted (promote)
+    — the two done-transition kinds (CLAUDE.md watcher predicate). Unreadable
+    file / no closure event / unparseable or tz-naive ts -> None (the caller
+    EXCLUDES the task: recency cannot be established, and an advisory must not
+    present unknown-age tasks as 'recent').
+    """
+    try:
+        text = (task_dir / "events.jsonl").read_text()
+    except OSError:
+        return None
+    ts = None
+    # split("\n") not splitlines(): raw U+2028/U+2029/NEL inside JSON strings
+    # would shred records under splitlines (gotchas.md jsonl-splitlines).
+    for line in text.split("\n"):
+        # Cheap substring prefilter before json.loads (events files are long).
+        if '"epm:status-changed"' not in line and '"epm:promoted"' not in line:
+            continue
+        try:
+            d = json.loads(line)
+        except ValueError:
+            continue
+        if d.get("kind") in _WF_FIX_CLOSURE_EVENT_KINDS and d.get("ts"):
+            ts = d["ts"]
+    if ts is None:
+        return None
+    try:
+        dt = datetime.fromisoformat(str(ts).replace("Z", "+00:00"))
+    except ValueError:
+        return None
+    if dt.tzinfo is None:
+        # A tz-naive ts cannot be compared against the tz-aware window
+        # (TypeError); exclude this task rather than kill the whole scan.
+        return None
+    return dt
+
+
+def _wf_fix_target_tokens(target_file: str) -> set[str]:
+    """Comma-split a target_file value into exact path tokens (backticks/space stripped).
+
+    A glob token is treated as an OPAQUE string (matches only an identical
+    glob) — measured 2/595 corpus target lines carry a glob; fnmatch expansion
+    is deliberately out of scope (documented limitation).
+    """
+    return {p.strip().strip("`") for p in (target_file or "").split(",") if p.strip().strip("`")}
+
+
+def _wf_fix_title_tokens(title: str) -> set[str]:
+    """Informative title tokens: lowercase, channel prefix removed, split on
+    non-word chars keeping ``-``/``_`` inside tokens, each token stripped of
+    edge ``-``/``_`` (so ``--workload-cmd`` == ``workload-cmd``), length >= 4,
+    minus a small stopword set."""
+    t = (title or "").lower()
+    for p in WF_FIX_TITLE_PREFIXES:
+        t = t.removeprefix(p)
+    out: set[str] = set()
+    for w in re.split(r"[^a-z0-9_\-]+", t):
+        w = w.strip("-_")
+        if len(w) >= 4 and w not in _WF_FIX_TITLE_STOPWORDS:
+            out.add(w)
+    return out
+
+
+def recent_closed_workflow_fix_tasks(
+    target_file: str | None,
+    candidate_title: str | None = None,
+    *,
+    days: float = 7.0,
+    now: datetime | None = None,
+) -> list[dict[str, Any]]:
+    """CLOSED wf-fix siblings within ``days`` overlapping the candidate (#1399).
+
+    The ADVISORY complement of :func:`is_open_workflow_fix_task`: that
+    predicate blocks exact-(target_file, fingerprint) duplicates among OPEN
+    tasks; this helper only SURFACES recently-closed topical siblings for the
+    filer to eyeball — advisory rather than a hard block, so a closed task
+    still never blocks a re-raise (.claude/rules/workflow-fix-on-bug.md
+    § Dedup, unchanged).
+
+    A task matches iff kind==infra AND status in {completed, archived} AND
+    title startswith WF_FIX_TITLE_PREFIXES AND its closure ts (last
+    epm:status-changed/epm:promoted in events.jsonl) is within ``days`` of
+    ``now`` AND at least one arm overlaps:
+      - 'target': candidate target_file path-token set (comma-split) intersects
+        the task's anchored ``workflow_fix_target:`` line token set;
+      - 'title:<tokens>': candidate title shares >=1 informative token
+        (len>=4, stopword-filtered) with the task title.
+    Returns [{'id', 'title', 'status', 'target', 'closed_at', 'matched'}, ...]
+    sorted by closed_at DESC. Read-only: no mutation, no commit, no lock.
+    Per-task failures (missing folder, non-numeric registry key, unreadable
+    body) skip that task — one broken entry never kills the whole scan.
+    """
+    now = now or datetime.now(UTC)
+    cutoff = now - timedelta(days=days)
+    # Window is TWO-SIDED: cutoff <= closed_at <= now. The upper bound makes a
+    # retrospective query (the plan-§4.6 smoke, window tests with a historical
+    # now=) filing-time-exact — without it, tasks closed AFTER `now` would
+    # surface in retrospective smokes. At a LIVE filing nothing is closed in
+    # the future, so the bound is inert in production.
+    cand_targets = _wf_fix_target_tokens(target_file) if target_file else set()
+    cand_tokens = _wf_fix_title_tokens(candidate_title) if candidate_title else set()
+    if not cand_targets and not cand_tokens:
+        return []
+    hits: list[dict[str, Any]] = []
+    for tid_str, entry in _load_registry().get("tasks", {}).items():
+        if entry.get("kind") != "infra":
+            continue
+        if (entry.get("status") or "") not in _WF_FIX_TERMINAL:
+            continue
+        title = str(entry.get("title", ""))
+        if not title.startswith(WF_FIX_TITLE_PREFIXES):
+            continue
+        try:
+            tid = int(tid_str)
+            task_dir = find_task_path(tid)
+        except (FileNotFoundError, ValueError):
+            # Non-numeric registry key or missing folder: skip this entry.
+            continue
+        matched: list[str] = []
+        task_targets: set[str] = set()
+        if cand_targets:
+            try:
+                _, body = _read_body(task_dir / "body.md")
+            except (FileNotFoundError, ValueError):
+                body = ""  # fail-soft: target arm silently unavailable for this task
+            for m in _WF_FIX_TARGET_LINE_RE.finditer(body):
+                task_targets |= _wf_fix_target_tokens(m.group(1))
+            if cand_targets & task_targets:
+                matched.append("target")
+        shared = cand_tokens & _wf_fix_title_tokens(title)
+        if shared:
+            matched.append("title:" + ",".join(sorted(shared)))
+        if not matched:
+            continue
+        closed = _wf_fix_closed_at(task_dir)
+        if closed is None or closed < cutoff or closed > now:
+            continue
+        hits.append(
+            {
+                "id": tid,
+                "title": title,
+                "status": entry.get("status"),
+                "target": ", ".join(sorted(task_targets)) or None,
+                "closed_at": closed.strftime("%Y-%m-%dT%H:%M:%SZ"),
+                "matched": matched,
+            }
+        )
+    hits.sort(key=lambda h: h["closed_at"], reverse=True)
+    return hits
 
 
 # ---------------------------------------------------------------------------
