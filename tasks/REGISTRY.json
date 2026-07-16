@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1404,
+  "highest_id": 1405,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -3158,6 +3158,13 @@
       "path": "tasks/proposed/1404",
       "status": "proposed",
       "title": "daily-fix: PM ownership check before spend emergency"
+    },
+    "1405": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1405",
+      "status": "proposed",
+      "title": "daily-fix: paper-plots interim-figure defaults"
     },
     "141": {
       "has_clean_result": false,
