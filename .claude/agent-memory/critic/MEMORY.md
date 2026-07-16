@@ -98,7 +98,8 @@
 
 ## Infra-plan reviews
 - [Infra-plan review checklist](feedback_infra_plan_review_checklist.md) — protection-illusion holes, choke-point greps, success-path-only tests, checkpoint-per-phase (#564, #596, #607, #399)
-- [Verifier-check-addition plans](feedback_verifier_check_addition_plans.md) — FAIL = bounded bounce (2-cap+override); escape-regex under-triggers fail UNSAFE (#879)
+- [Verifier check-addition/loosening/narrowing plans](feedback_verifier_check_addition_plans.md) — escape-regex under-trigger UNSAFE (#879); loosenings: dependent empty-input verdicts (#959); narrowings: retained-outer-conjunct proof (#961)
+- [Advisory --by convention plans](feedback_advisory_by_convention_plans.md) — fail-toward-triage = enumeration gaps non-blocking; strip-set non-membership, no renames, --by BEFORE --note (#966)
 - [Infra-plan review checklist](feedback_infra_plan_review_checklist.md) — protection-illusion holes, choke-point greps, success-path-only tests, TOCTOU, doc-regex vacuous PASS, grep-count-vs-wrapped-sketch (#564-#884)
 - [Forward-protection port claims](feedback_forward_protection_port_claims.md) — one-driver fix != forward protection; positional hole (#584)
 - [Full-suite-green needs baseline](feedback_full_suite_green_needs_baseline.md) — "full green" false-FAILs; baseline + no-NEW-failures (#584)
