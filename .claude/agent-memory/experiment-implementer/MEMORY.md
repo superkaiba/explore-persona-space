@@ -125,3 +125,4 @@
 - [Resume/seed skips starve min-N gates](feedback_resume_seed_min_n_gates.md) — seed-consumed rows shrink the fresh denominator; define seeded-case semantics for every downstream min-N gate + its consumers (#1335 r6)
 - [Parent-branch stranded fixes](feedback_parent_branch_stranded_fixes.md) — reused modules may lack the parent branch's unmerged crash-fixes; reconcile realized row counts vs corpus (#1345)
 - [cross-artifact turn-key convention mismatch at joins](feedback_cross_artifact_turn_key_convention.md) — verify key-space shape + translate keys explicitly at per-turn/per-cell artifact joins; silent .get-and-skip turns a convention mismatch into a fake FAIL (#825 r11)
+- [small-cell bootstrap-CI degeneracy in mechanized gates](feedback_small_cell_bootstrap_ci_degeneracy.md) — a <=7-unit bootstrap CI collapses onto its point estimate; gate bindingness on strict CI validity (lo < point < hi), not equality-inclusive containment (#825 r11)
