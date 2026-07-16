@@ -5122,6 +5122,63 @@ def test_dead_owner_fast_path_state_carried_sid_is_sufficient():
     assert "state-carried" in reason
 
 
+def test_latest_driver_witness_age_s_arms_and_exclusions():
+    # Arm 1: a stage-dispatch epm:progress breadcrumb (by= deliberately NOT
+    # consulted — the #1090 06:12Z row carried by="unknown"); arm 2: a
+    # _FOLLOWUP_ROUND_WITNESS_KINDS kind. Watcher-sentinel'd notes and plain
+    # progress notes never count as a driver witness.
+    import autonomous_session_watch as asw
+
+    now = asw._parse_event_ts("2026-07-15T07:00:00Z")
+    events = [
+        {
+            "kind": "epm:progress",
+            "ts": "2026-07-15T06:12:03Z",
+            "by": "unknown",
+            "note": "stage-dispatch stage=followup-implementing round=1",
+        },
+        {
+            "kind": "epm:smoke-architecture-check",
+            "ts": "2026-07-15T06:27:45Z",
+            "note": "verdict: PASS_UNIFIED",
+        },
+        # NEWER but non-witness rows must not shrink the age:
+        {
+            "kind": "epm:progress",
+            "ts": "2026-07-15T06:50:00Z",
+            "note": f"{asw._ORPHAN_ALERT_NOTE_SENTINEL} watcher post",
+        },
+        {"kind": "epm:progress", "ts": "2026-07-15T06:55:00Z", "note": "plain note"},
+    ]
+    age = asw._latest_driver_witness_age_s(events, now)
+    assert age == now - asw._parse_event_ts("2026-07-15T06:27:45Z")
+    no_witness = [{"kind": "epm:progress", "ts": "2026-07-15T06:55:00Z", "note": "plain"}]
+    assert asw._latest_driver_witness_age_s(no_witness, now) is None
+
+
+def test_any_live_child_in_issue_worktree_probe_branches(monkeypatch):
+    # Real-body probe coverage: None map -> uncertain; a vanished pid is
+    # SKIPPED (dead != owner -> False); a readlink'd cwd inside the issue
+    # worktree matches on the FULL digit run (component boundary: issue-109
+    # never matches issue-1090); an unreadable live pid -> uncertain (None).
+    import autonomous_session_watch as asw
+
+    assert asw._any_live_child_in_issue_worktree(1391, None) is None
+    # pid beyond the kernel pid space: /proc/<pid>/cwd -> FileNotFoundError.
+    assert asw._any_live_child_in_issue_worktree(1391, {"sid": 2**22 + 424242}) is False
+    monkeypatch.setattr(
+        asw.os, "readlink", lambda _p: "/x/.claude/worktrees/issue-1090-fu5/scripts"
+    )
+    assert asw._any_live_child_in_issue_worktree(1090, {"sid": 1}) is True
+    assert asw._any_live_child_in_issue_worktree(109, {"sid": 1}) is False
+
+    def _perm(_p):
+        raise PermissionError("unreadable /proc entry")
+
+    monkeypatch.setattr(asw.os, "readlink", _perm)
+    assert asw._any_live_child_in_issue_worktree(1090, {"sid": 1}) is None
+
+
 def test_dead_owner_fast_path_env_zero_disables(monkeypatch):
     import autonomous_session_watch as asw
 
