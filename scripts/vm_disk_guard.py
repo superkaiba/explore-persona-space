@@ -33,15 +33,27 @@ runs five TIERS of strictly-safe cleanup, reporting bytes freed per tier:
       (``os.path.ismount('/workspace')`` OR pod-side detection refuses) so it
       can never run where /workspace is a real volume; every failure degrades
       to a skipped tier. Boot-disk pass only, same ``main()``-only opt-in.
-  (e) Stale unref'd home HF-hub REVISIONS (#1377): per repo in
-      ``~/.cache/huggingface/hub``, keep the newest + every ref'd revision and
-      ``delete_revisions`` unref'd revisions older than 7 days (env
-      ``EPS_VM_HOME_HF_REVISION_MAX_AGE_DAYS``; root env
-      ``EPS_VM_HOME_HF_CACHE``); pod-side detection refuses; every failure
-      degrades to a skipped tier. Boot-disk pass only, same ``main()``-only
-      opt-in. A later FileNotFoundError on a trimmed snapshot path means
-      tier (e) trimmed it — re-download on demand (the data lives on HF),
-      not data loss.
+  (e) The HOME HF hub cache ``~/.cache/huggingface/hub`` (#1376 + #1377, two
+      independently-landed tiers reconciled into ONE) — the fleet's dominant
+      root-disk consumer (the data repo accumulates one revision per pinned
+      read / upload commit; 12 revisions / 76.2 GB observed at the 2026-07-16
+      episode). ALWAYS attributes per-repo size / revision count /
+      ``last_accessed`` age (detail lines + the structured
+      ``hf_repo_attributions`` ``--json`` field), escalates any single repo
+      > 40 GB (``EPS_VM_HOME_HF_CACHE_REPO_ESCALATE_GB``) with a per-revision
+      breakdown (sidecar + Telegram, deduped per (repo, band)), and reaps
+      safely on ``--apply``: (arm 2) within fresh multi-revision repos,
+      unref'd non-newest revisions with ``last_modified`` older than 7 d
+      (``EPS_VM_HOME_HF_REVISION_MAX_AGE_DAYS``) AND no fresh EXCLUSIVE-blob
+      atime — the newest + every ref'd revision per repo is ALWAYS kept;
+      (arm 1) whole repos whose repo-level ``last_accessed`` is older than
+      the same window (ref'd revisions included — this covers stale models).
+      Deletion goes exclusively through
+      ``HFCacheInfo.delete_revisions().execute()`` (blob-refcount safe);
+      every failure degrades toward KEEP. A later FileNotFoundError on a
+      trimmed snapshot path means tier (e) trimmed it — re-download on demand
+      (the data lives on HF), not data loss. Boot-disk pass only, same
+      ``main()``-only opt-in as tier (d).
   (c) Stale logs: ``logs/**/*.log`` older than N days (default 14, env
       ``EPS_VM_DISK_LOG_MAX_AGE_DAYS``) plus ``/tmp/*.log`` of the same age.
 
@@ -462,6 +474,12 @@ class TierResult:
     # non-canonical, any disposition); tier (d) reports its
     # expected_freed_size here as the would-free upper bound.
     total_discovered_bytes: int = 0
+    # ── tier (e) structured attribution (#1376) — surfaced in --json ──
+    # One row per repo in the HOME HF hub cache, populated in report-only AND
+    # apply alike (dedup-independent — the #911 dry-run acceptance surface):
+    # {repo, repo_type, bytes, revisions, last_accessed_age_days,
+    #  reap_candidate_bytes, over_escalate_threshold}.
+    hf_repo_attributions: list[dict] = field(default_factory=list)
 
 
 @dataclass
@@ -771,20 +789,25 @@ def clean_vm_workspace_hf_cache(
     return res
 
 
-# ─── tier (e): stale unref'd home HF-hub REVISIONS (#1377) ───────────────────
+# ─── tier (e): the HOME HF hub cache (~/.cache/huggingface, #1376 + #1377) ───
 
-# The user home hub cache (~/.cache/huggingface/hub) is the LIVE cache for
-# every VM-side huggingface_hub download; the project data repo accretes one
-# cached revision per upload commit (295 revisions / 37.6G freeable on
-# 2026-07-15, regrown to 88 unref'd revisions / ~20G within 5 days). Whole-repo
-# age-gating (tier d) cannot help — the repo is touched daily, so repo-level
-# last_accessed is always fresh — so this tier trims REVISIONS: per repo keep
-# the newest + every ref'd revision, delete unref'd non-newest revisions older
-# than the age gate. A later FileNotFoundError on a trimmed snapshot path means
-# tier (e) trimmed it — re-download on demand (the data lives on HF), not data
-# loss.
+# The home cache is the DEFAULT-HF_HOME consumer on this VM and the fleet's
+# dominant root-disk consumer: every pinned data-repo read / upload commit
+# mints one revision that nothing reclaims (12 revisions / 76.2 GB observed at
+# the 2026-07-16 episode while the guard freed 0.53 GB, blind to the cache;
+# regrown to 88 unref'd revisions / ~20G within 5 days per #1377). Whole-repo
+# age-gating alone (tier (d)'s predicate) cannot help — the repo is touched
+# daily — so arm 2 trims REVISIONS. Deliberately NOT derived from
+# HF_HOME/HF_HUB_CACHE: the tier watches a FIXED filesystem location so the
+# cron's coverage is deterministic; env-derived resolution varies per process
+# and is the watcher arm's job (plan #1376 §11). #1376 and #1377 landed this
+# tier independently; the reconciled tier keeps #1377's incumbent names/knobs
+# (function, tier name, age env) + the UNION of both tasks' KEEP protections.
 DEFAULT_HOME_HF_CACHE = "~/.cache/huggingface"  # env EPS_VM_HOME_HF_CACHE
 DEFAULT_HOME_HF_REVISION_MAX_AGE_DAYS = 7.0  # env EPS_VM_HOME_HF_REVISION_MAX_AGE_DAYS
+DEFAULT_HOME_HF_REPO_ESCALATE_GB = 40.0  # env EPS_VM_HOME_HF_CACHE_REPO_ESCALATE_GB
+HOME_HF_ATTRIBUTION_TOP_N = 5  # top consumers named in detail lines
+_HOME_HF_ESCALATION_BREAKDOWN_TOP_N = 8  # revisions named in the escalation row
 
 
 def home_hf_cache_root() -> Path:
@@ -795,8 +818,9 @@ def home_hf_cache_root() -> Path:
 
 
 def home_hf_revision_max_age_days() -> float:
-    """Tier-(e) unref'd-revision age cutoff in days
-    (env ``EPS_VM_HOME_HF_REVISION_MAX_AGE_DAYS``; blank/invalid/negative -> default)."""
+    """Tier-(e) age window in days, shared by both arms (repo ``last_accessed``;
+    revision ``last_modified`` + exclusive-blob atime). Env
+    ``EPS_VM_HOME_HF_REVISION_MAX_AGE_DAYS``; blank/invalid/negative -> default."""
     raw = os.environ.get("EPS_VM_HOME_HF_REVISION_MAX_AGE_DAYS", "").strip()
     if not raw:
         return DEFAULT_HOME_HF_REVISION_MAX_AGE_DAYS
@@ -807,32 +831,343 @@ def home_hf_revision_max_age_days() -> float:
     return val if val >= 0.0 else DEFAULT_HOME_HF_REVISION_MAX_AGE_DAYS
 
 
+def home_hf_repo_escalate_bytes() -> int:
+    """Single-repo footprint (bytes) above which tier (e) always escalates
+    with a per-revision breakdown. Env ``EPS_VM_HOME_HF_CACHE_REPO_ESCALATE_GB``
+    (float GB); invalid/negative -> default."""
+    raw = os.environ.get("EPS_VM_HOME_HF_CACHE_REPO_ESCALATE_GB", "").strip()
+    gb = DEFAULT_HOME_HF_REPO_ESCALATE_GB
+    if raw:
+        try:
+            val = float(raw)
+        except ValueError:
+            val = -1.0
+        if val >= 0.0:
+            gb = val
+    return int(gb * 1e9)
+
+
+def _hf_ack_sentinel_path(repo_key: str, band_gb: float) -> Path:
+    """Per-(repo, band) ack sentinel for the tier-(e) home-hub repo escalation:
+    ``touch`` it to silence this repo's escalation until it crosses into a
+    bigger band. ``repo_key`` is ``<repo_type>/<repo_id>``; '/' maps to '--'
+    so the sentinel is a flat filename (mirrors ``_active_ack_sentinel_path``)."""
+    safe = repo_key.replace("/", "--")
+    return repo_root() / ".claude" / "cache" / f"disk-guard-ack-hf-{safe}-{band_gb:g}"
+
+
+def _should_escalate_hf_repo(
+    repo_key: str,
+    band_gb: float,
+    bytes_: int,
+    state: dict,
+) -> tuple[bool, float]:
+    """Decide whether to (re-)escalate a home-hub repo, and the growth % vs the
+    last alert. Dedups on (repo, band) under the ``hf:``-NAMESPACED state key
+    ``hf:<repo_type>/<repo_id>:<band>`` (no collision with the integer-keyed
+    ``<issue>:<band>`` active-cache entries in the same JSON); re-alerts only
+    on >25% growth; an ack sentinel for this (repo, band) suppresses entirely."""
+    if _hf_ack_sentinel_path(repo_key, band_gb).exists():
+        return (False, 0.0)
+    key = f"hf:{repo_key}:{band_gb:g}"
+    prev = state.get(key)
+    if not isinstance(prev, int | float) or prev <= 0:
+        return (True, 0.0)  # first alert for this (repo, band)
+    growth = (bytes_ - prev) / prev
+    return (growth > _ACTIVE_ESCALATION_GROWTH_REALERT, growth * 100.0)
+
+
+def _any_repo_over(repos: list, escalate_bytes: int) -> bool:
+    """True when any scanned repo exceeds the always-escalate footprint —
+    the cheap probe gating the lazy production-state load in tier (e); a
+    degenerate repo (unreadable ``size_on_disk``) is skipped (the escalation
+    loop's own per-repo fail-keep skips it too, so the two stay consistent)."""
+    for repo in repos:
+        try:
+            if repo.size_on_disk > escalate_bytes:
+                return True
+        except Exception:
+            continue
+    return False
+
+
+def _home_hf_reap_selection(info, now: float, age_seconds: float):
+    """Pure reap selector over a scanned home-hub cache (tier (e), #1376).
+
+    Returns ``(whole_repo_stale, rev_candidates, kept_reason_counts)``:
+
+    * ``whole_repo_stale`` — repos whose repo-level ``last_accessed`` is older
+      than the window (ARM 1): the WHOLE repo is reaped, ref'd (incl.
+      ``main``) + newest revisions included — the repo-level age gate is the
+      sole arm-1 predicate BY DESIGN (this is what covers stale models; the
+      arm-2 protections below do not bind on arm 1).
+    * ``rev_candidates`` — ``(repo, [revisions])`` pairs within FRESH
+      multi-revision repos (ARM 2): a revision is a candidate only when it is
+      NOT the repo's newest (deterministic ``(last_modified, commit_hash)``
+      tie-break — the newest is ALWAYS kept, #1377; this subsumes the older
+      never-empty-a-fresh-repo clamp) AND carries NO ref at all (any ref
+      protects — the UNION of #1376's main-ref and #1377's all-refs
+      protections; live non-``main`` refs are truncated-commit-hash refs
+      minted by pinned reads, and #1377 keeps them) AND its ``last_modified``
+      is older than the window AND none of its EXCLUSIVE blobs (blobs
+      referenced by no newest/ref'd/fresh surviving revision) has a fresh
+      atime — hourly reads of the fresh revision keep SHARED blobs' atimes
+      fresh, so a whole-revision atime gate selects 0 candidates on the
+      motivating repo (measured, plan #1376 §2); the exclusive-blob guard
+      protects exactly the data deletion would destroy while
+      ``delete_revisions`` refcounting protects the rest.
+    * ``kept_reason_counts`` — e.g. ``{"degenerate-repo-kept": N}`` for repos
+      whose per-repo selection raised (None timestamps, malformed fields):
+      that repo is skipped entirely (kept, fail toward KEEP) while every
+      other repo keeps its selection + attribution.
+
+    atime dependence: the exclusive-blob keep-guard reads
+    ``blob_last_accessed`` (atime). ``/`` is mounted ``rw,relatime`` (<=24 h
+    coarseness, dwarfed by the 7 d window); a future ``noatime`` remount
+    would FREEZE atimes and invert this keep signal toward REAP for
+    read-only-but-active revisions — re-verify mount options before trusting
+    the guard under a different mount regime.
+    """
+    whole, revlevel = [], []
+    kept_reason_counts: dict[str, int] = {}
+    for repo in info.repos:
+        try:
+            if now - repo.last_accessed > age_seconds:
+                whole.append(repo)  # arm 1: covers stale models/datasets wholesale
+                continue
+            revs = list(repo.revisions)
+            if len(revs) <= 1:
+                continue  # single revision == newest: always kept, any age
+            # Deterministic newest pick (#1377's tie-break): the newest
+            # revision is ALWAYS kept, which also guarantees a fresh repo is
+            # never wholly emptied (subsumes the older never-empty clamp).
+            newest = max(revs, key=lambda r: (r.last_modified, r.commit_hash))
+            kept_blobs = {
+                f.blob_path
+                for rev in revs
+                for f in rev.files
+                if rev is newest or rev.refs or now - rev.last_modified <= age_seconds
+            }
+            cands = []
+            for rev in revs:
+                if rev is newest:  # newest per repo: always kept (arm 2, #1377)
+                    continue
+                if rev.refs:  # ANY ref protects (union of #1376 + #1377)
+                    continue
+                if now - rev.last_modified <= age_seconds:  # recently written: kept
+                    continue
+                excl = [f for f in rev.files if f.blob_path not in kept_blobs]
+                newest_excl_atime = max((f.blob_last_accessed for f in excl), default=0.0)
+                if excl and now - newest_excl_atime <= age_seconds:
+                    continue  # exclusive data recently READ: kept (fail-keep)
+                cands.append(rev)
+            if cands:
+                revlevel.append((repo, cands))
+        except Exception:
+            # Degenerate repo (None timestamps, malformed fields): keep THAT
+            # repo, count it, keep selecting the rest (fail toward KEEP
+            # without degrading the whole tier).
+            kept_reason_counts["degenerate-repo-kept"] = (
+                kept_reason_counts.get("degenerate-repo-kept", 0) + 1
+            )
+            continue
+    return whole, revlevel, kept_reason_counts
+
+
+def _attribute_home_hf_repos(
+    repos: list,
+    cand_by_repo: dict[str, list],
+    escalate_bytes: int,
+    ts: float,
+    res: TierResult,
+) -> None:
+    """Attribution arm of tier (e): one ``hf_repo_attributions`` row per repo
+    (populated in report-only AND apply alike — the dry-run acceptance
+    surface), top ``HOME_HF_ATTRIBUTION_TOP_N`` also named in detail lines.
+    Per-repo try/except: a degenerate repo (None timestamps) loses only ITS
+    row — attribution for every other repo survives (#1376 review concern;
+    the selector applies the same per-repo fail-keep)."""
+    n_degenerate = 0
+    for repo in repos:
+        try:
+            cands = cand_by_repo.get(repo.repo_id, [])
+            row = {
+                "repo": repo.repo_id,
+                "repo_type": repo.repo_type,
+                "bytes": int(repo.size_on_disk),
+                "revisions": len(list(repo.revisions)),
+                "last_accessed_age_days": round((ts - repo.last_accessed) / 86400.0, 2),
+                "reap_candidate_bytes": int(sum(rev.size_on_disk for rev in cands)),
+                "over_escalate_threshold": repo.size_on_disk > escalate_bytes,
+            }
+        except Exception:
+            n_degenerate += 1
+            continue
+        res.hf_repo_attributions.append(row)
+    if n_degenerate:
+        res.detail.append(f"attribution skipped for {n_degenerate} degenerate repo(s)")
+    for row in res.hf_repo_attributions[:HOME_HF_ATTRIBUTION_TOP_N]:
+        res.detail.append(
+            f"{row['repo_type']}/{row['repo']}: {_fmt_gb(row['bytes'])}, "
+            f"{row['revisions']} revision(s), last accessed "
+            f"{row['last_accessed_age_days'] * 24.0:.1f}h ago (hub/ only)"
+        )
+
+
+def _escalate_home_hf_repos(
+    repos: list,
+    cand_by_repo: dict[str, list],
+    escalate_bytes: int,
+    ts: float,
+    apply: bool,
+    st: dict,
+    res: TierResult,
+) -> bool:
+    """Escalation arm of tier (e): for every repo over the always-escalate
+    footprint, a detail line ALWAYS, plus one sidecar row (per-revision
+    breakdown + ``reap_cmd``) + one Telegram push deduped per (repo, band)
+    with the 25%-growth re-alert + ack-sentinel suppression. State updates
+    (``st[key] = bytes``) are apply-gated; persistence of ``st`` itself is
+    the caller's. Returns True when any alert fired (state dirty). A
+    degenerate repo (None timestamps in the breakdown) loses only ITS
+    escalation — the loop continues (per-repo fail-keep, #1376)."""
+    escalated_any = False
+    for repo in repos:
+        try:
+            escalated_any = (
+                _escalate_one_home_hf_repo(repo, cand_by_repo, escalate_bytes, ts, apply, st, res)
+                or escalated_any
+            )
+        except Exception:
+            continue  # degenerate repo: skip its escalation, keep the rest
+    return escalated_any
+
+
+def _escalate_one_home_hf_repo(
+    repo,
+    cand_by_repo: dict[str, list],
+    escalate_bytes: int,
+    ts: float,
+    apply: bool,
+    st: dict,
+    res: TierResult,
+) -> bool:
+    """One repo's escalation decision + emission (see ``_escalate_home_hf_repos``).
+    Returns True when the alert fired for this repo."""
+    if repo.size_on_disk <= escalate_bytes:
+        return False
+    repo_key = f"{repo.repo_type}/{repo.repo_id}"
+    band_gb = _active_escalation_band_gb(int(repo.size_on_disk))
+    n_cands = len(cand_by_repo.get(repo.repo_id, []))
+    res.detail.append(
+        f"ESCALATION: {repo_key} holds {_fmt_gb(int(repo.size_on_disk))} across "
+        f"{len(list(repo.revisions))} revision(s) "
+        f"(> {_fmt_gb(escalate_bytes)} always-escalate threshold; "
+        f"{n_cands} reapable)"
+    )
+    do_alert, growth_pct = _should_escalate_hf_repo(repo_key, band_gb, int(repo.size_on_disk), st)
+    if not do_alert:
+        return False
+    breakdown = [
+        {
+            "commit": rev.commit_hash[:8],
+            "bytes": int(rev.size_on_disk),
+            "age_days": round((ts - rev.last_modified) / 86400.0, 1),
+            "refs": sorted(rev.refs),
+        }
+        for rev in sorted(repo.revisions, key=lambda v: v.size_on_disk, reverse=True)[
+            :_HOME_HF_ESCALATION_BREAKDOWN_TOP_N
+        ]
+    ]
+    append_disk_guard_event(
+        {
+            "kind": "home-hf-cache-repo-escalation",
+            "repo": repo_key,
+            "bytes": int(repo.size_on_disk),
+            "revisions": len(list(repo.revisions)),
+            "band": band_gb,
+            "growth_pct": round(growth_pct, 1),
+            "revision_breakdown": breakdown,
+            "reap_cmd": "uv run python scripts/vm_disk_guard.py --apply",
+        },
+        apply=apply,
+    )
+    _telegram_push(
+        f"VM disk: home HF hub cache repo {repo_key} holds "
+        f"{_fmt_gb(int(repo.size_on_disk))} across {len(list(repo.revisions))} "
+        f"revisions ({n_cands} unreferenced+stale). Guard reaps stale unreferenced "
+        f"revisions on --apply; ack: touch {_hf_ack_sentinel_path(repo_key, band_gb)}",
+        apply,
+    )
+    if apply:
+        st[f"hf:{repo_key}:{band_gb:g}"] = int(repo.size_on_disk)
+    return True
+
+
 def clean_home_hf_stale_revisions(
     apply: bool,
     *,
     max_age_days: float | None = None,
+    repo_escalate_gb: float | None = None,
     cache_root: Path | None = None,
     now: float | None = None,
+    state: dict | None = None,
 ) -> TierResult:
-    """Tier (e): trim stale unref'd non-newest HF hub REVISIONS in the user
-    home cache (#1377).
+    """Tier (e): attribution + escalation + safe reap of the HOME HF hub cache
+    (``~/.cache/huggingface/hub``; #1376 + #1377 reconciled into ONE tier —
+    #1377's incumbent names/knobs, the UNION of both tasks' KEEP protections,
+    plus #1376's attribution/escalation + whole-stale-repo arm).
 
-    Pod guard first: ``_running_pod_side()`` refuses (tier (d)'s
-    ``ismount('/workspace')`` arm guards ITS target being a live pod volume;
-    the home path has no mount analogue, so pod-side detection is the
-    transferable half). Then ``scan_cache_dir(root/'hub')`` and, per repo,
-    KEEP the newest revision (deterministic tie-break on
-    ``(last_modified, commit_hash)``) plus every ref'd revision; collect
-    unref'd non-newest revisions with ``last_modified`` older than
-    ``max_age_days`` (default 7 d), build ONE cache-level ``delete_revisions``
-    strategy, and report per-repo detail lines (approximate — shared blobs
-    make the strategy's ``expected_freed_size`` the authoritative total);
-    ``apply`` executes it + writes one sidecar row
-    (``kind='home-hf-revisions-trimmed'``). EVERY failure (import, scan,
-    execute) degrades to ``TierResult.skipped`` + reason — the guard never
-    crashes on a corrupt cache. A later ``FileNotFoundError`` on a trimmed
-    snapshot path means tier (e) trimmed it — re-download on demand (the data
-    lives on HF), not data loss. ``datasets/`` + ``xet/`` untouched."""
+    On every triggered boot-disk pass (report-only AND apply):
+
+    1. ATTRIBUTES — per-repo size / revision count / ``last_accessed`` age for
+       every repo (structured ``hf_repo_attributions`` rows; top
+       ``HOME_HF_ATTRIBUTION_TOP_N`` named in detail lines). ``hub/`` only —
+       ``datasets/`` / ``xet/`` / ``stored_tokens/`` are out of scope.
+    2. ESCALATES — any single repo > ``EPS_VM_HOME_HF_CACHE_REPO_ESCALATE_GB``
+       gets a detail line always, plus one sidecar row
+       (``kind='home-hf-cache-repo-escalation'`` with a per-revision
+       breakdown + ``reap_cmd``) + one Telegram push, deduped per (repo,
+       band) with the 25%-growth re-alert and ack-sentinel suppression
+       (``_hf_ack_sentinel_path``). Persistence is apply-gated throughout
+       (``append_disk_guard_event(..., apply=apply)`` /
+       ``_telegram_push(msg, apply)`` / the state write below) — report-only
+       persists NOTHING; dry-run acceptance reads the ``--json`` fields.
+    3. REAPS (apply only) — the ``_home_hf_reap_selection`` candidate set:
+       arm 1 whole stale repos (repo-level ``last_accessed`` > window; ref'd
+       + newest revisions included by design) + arm 2 unref'd non-newest
+       stale cold revisions of fresh multi-revision repos (the newest + every
+       ref'd revision per repo is ALWAYS kept). Deletion goes
+       EXCLUSIVELY through ``HFCacheInfo.delete_revisions().execute()``
+       (blob-refcount safe — never an rmtree of blobs/snapshots).
+       ``bytes_freed`` books the strategy's ``expected_freed_size`` (blobs
+       shared with surviving revisions are excluded by the hub's
+       refcounting) and is set only AFTER a successful ``execute()`` on the
+       apply path (an execute-raise leaves 0); the realized read is the
+       guard-level free-GB delta. One sidecar row
+       (``kind='home-hf-revisions-trimmed'``) records the apply-path reap.
+       A later FileNotFoundError on a trimmed snapshot path means tier (e)
+       trimmed it — re-download on demand (the data lives on HF), not data
+       loss.
+
+    atime dependence: arm 1 (repo ``last_accessed``) and the arm-2
+    exclusive-blob keep-guard read atimes — meaningful under the VM's
+    ``rw,relatime`` mount; see ``_home_hf_reap_selection``'s docstring for
+    the ``noatime`` caveat.
+
+    Safety posture: EVERY failure degrades toward KEEP — the pod guard,
+    missing hub dir, the tier-(d) double-cover guard, a scan/execute
+    exception all land in ``TierResult.skipped`` + reason (per-repo
+    degeneracy is narrower: that repo alone is kept, see the selector). A
+    concurrent race with the watcher's independent 14 d evictor
+    (``EPM_VM_DISK_HF_TTL_DAYS``) surfaces as an ``execute()`` exception ->
+    skipped, nothing else deleted (``delete_revisions`` is idempotent).
+
+    ``state`` is the escalation dedup map: tests pass ``{}`` (updated in
+    place, apply-gated, never persisted here); ``state=None`` (the
+    production ``run_guard`` path, reached only via the ``main()``-only
+    opt-in) loads + saves the shared ``_load_active_escalation_state`` JSON
+    under ``hf:``-namespaced keys."""
     res = TierResult(name="home-hf-revisions")
     try:
         if _running_pod_side():
@@ -849,39 +1184,91 @@ def clean_home_hf_stale_revisions(
         res.skipped = True
         res.skip_reason = f"no hub cache at {hub}"
         return res
-    age_days = max_age_days if max_age_days is not None else home_hf_revision_max_age_days()
-    cutoff = (time.time() if now is None else now) - age_days * 86400.0
     try:
-        info = _scan_hf_cache(hub)  # SAME seam as tier (d)
-        repos = list(info.repos)
-        n_revisions = 0
-        stale_by_repo: dict[str, list] = {}
-        for repo in repos:
-            revs = list(repo.revisions)
-            n_revisions += len(revs)
-            if len(revs) <= 1:
-                continue  # single revision == newest: always kept
-            newest = max(revs, key=lambda r: (r.last_modified, r.commit_hash))
-            stale = [r for r in revs if r is not newest and not r.refs and r.last_modified < cutoff]
-            if stale:
-                stale_by_repo[repo.repo_id] = stale
-        hashes = [r.commit_hash for revs in stale_by_repo.values() for r in revs]
+        if hub.resolve() == (workspace_hf_cache_root() / "hub").resolve():
+            res.skipped = True
+            res.skip_reason = (
+                "home cache root == workspace cache root — tier (d) owns it (no double-reap)"
+            )
+            return res
+    except OSError as exc:
+        res.skipped = True
+        res.skip_reason = f"root-resolution probe failed: {exc}"  # fail toward keep
+        return res
+    age_days = max_age_days if max_age_days is not None else home_hf_revision_max_age_days()
+    escalate_bytes = (
+        int(repo_escalate_gb * 1e9)
+        if repo_escalate_gb is not None
+        else home_hf_repo_escalate_bytes()
+    )
+    ts = time.time() if now is None else now
+    try:
+        info = _scan_hf_cache(hub)
+        warnings = list(getattr(info, "warnings", None) or [])
+        if warnings:
+            res.detail.append(f"scan warnings: {len(warnings)} (repos kept)")
+        repos = sorted(info.repos, key=lambda r: r.size_on_disk, reverse=True)
+        whole, revlevel, kept_counts = _home_hf_reap_selection(info, ts, age_days * 86400.0)
+        for reason, count in sorted(kept_counts.items()):
+            res.detail.append(f"{reason}: {count} repo(s)")
+        cand_by_repo: dict[str, list] = {r.repo_id: list(r.revisions) for r in whole}
+        cand_by_repo.update({r.repo_id: list(cands) for r, cands in revlevel})
+        # 1) ATTRIBUTION — always, before any reap decision (hub/ only).
+        _attribute_home_hf_repos(repos, cand_by_repo, escalate_bytes, ts, res)
+        # 2) ESCALATION — per repo over the always-escalate footprint.
+        manage_state = state is None
+        # Lazy production-state load: only when some repo can actually
+        # escalate — a direct library/pytest call on an all-small cache never
+        # touches the repo_root()-resolved state file (hermeticity; the
+        # #1377-landed tests call the tier without a state dict).
+        st = (
+            state
+            if not manage_state
+            else (_load_active_escalation_state() if _any_repo_over(repos, escalate_bytes) else {})
+        )
+        escalated_any = _escalate_home_hf_repos(
+            repos, cand_by_repo, escalate_bytes, ts, apply, st, res
+        )
+        if apply and manage_state and escalated_any:
+            _save_active_escalation_state(st)
+        # 3) REAP — arm 1 (whole stale repos) + arm 2 (stale unreferenced revs).
+        arm1_hashes = [rev.commit_hash for r in whole for rev in r.revisions]
+        arm2_hashes = [rev.commit_hash for _, cands in revlevel for rev in cands]
+        hashes = arm1_hashes + arm2_hashes
+        n_repos = len(repos)
+        n_revs = sum(len(list(r.revisions)) for r in repos)
         if not hashes:
             res.detail.append(
-                f"no unref'd revision older than {age_days:g}d "
-                f"(of {n_revisions} revision(s) in {len(repos)} repo(s))"
+                f"no unref'd revision older than {age_days:g}d and no wholly-stale repo "
+                f"(of {n_revs} revision(s) in {n_repos} repo(s))"
             )
             return res
         strategy = info.delete_revisions(*hashes)
         freed = int(strategy.expected_freed_size)
         res.total_discovered_bytes = freed  # the would-free upper bound
-        for repo_id, revs in sorted(stale_by_repo.items()):
-            approx = sum(r.size_on_disk for r in revs)
-            res.detail.append(f"{repo_id}: {len(revs)} stale revision(s), ~{_fmt_gb(approx)}")
+        # Per-repo counts for detail lines + the sidecar row (#1377's
+        # ``repos`` dict shape: {repo_id: n revisions deleted}).
+        trimmed_by_repo: dict[str, int] = {r.repo_id: len(list(r.revisions)) for r in whole}
+        for r, cands in revlevel:
+            trimmed_by_repo[r.repo_id] = trimmed_by_repo.get(r.repo_id, 0) + len(cands)
+        for r, cands in revlevel:
+            approx = sum(rev.size_on_disk for rev in cands)
+            res.detail.append(f"{r.repo_id}: {len(cands)} stale revision(s), ~{_fmt_gb(approx)}")
+        for r in whole:
+            # Name every wholesale arm-1 reap explicitly — ref'd + newest
+            # revisions ARE included, so a later "why did my model
+            # re-download" trace lands here / on the sidecar row.
+            res.detail.append(
+                f"arm 1 wholesale: {r.repo_type}/{r.repo_id} — repo-level last_accessed "
+                f"{(ts - r.last_accessed) / 86400.0:.1f}d > {age_days:g}d window; "
+                f"ALL {len(list(r.revisions))} revision(s) reaped, ref'd + newest included"
+            )
         verb = "trimmed" if apply else "would trim"
         res.detail.append(
-            f"{verb} {len(hashes)} revision(s) across "
-            f"{len(stale_by_repo)} repo(s) [{_fmt_gb(freed)}]"
+            f"{verb} {len(hashes)} revision(s) across {len(trimmed_by_repo)} repo(s) "
+            f"[{_fmt_gb(freed)} expected, blob-refcount; realized = guard free-GB delta] "
+            f"(arm1 whole-repo: {len(whole)} repo(s) / {len(arm1_hashes)} rev(s); "
+            f"arm2 revision-level: {len(arm2_hashes)} rev(s) across {len(revlevel)} repo(s))"
         )
         if not apply:
             res.bytes_freed = freed  # dry-run: report, execute NOTHING
@@ -891,9 +1278,11 @@ def clean_home_hf_stale_revisions(
         append_disk_guard_event(
             {
                 "kind": "home-hf-revisions-trimmed",
-                "repos": {rid: len(revs) for rid, revs in sorted(stale_by_repo.items())},
+                "repos": dict(sorted(trimmed_by_repo.items())),
+                "n_revisions": len(hashes),
                 "bytes": freed,
                 "max_age_days": age_days,
+                "arms": {"whole_repo": len(arm1_hashes), "revision_level": len(arm2_hashes)},
             },
             apply=apply,
         )
@@ -1001,10 +1390,11 @@ def run_guard(
     the existing suite calls ``run_guard(apply=True, data_root=temp)`` as a
     LIBRARY under constant-terminal status monkeypatches, and a run_guard-side
     production fallback would sweep the real /tmp during pytest. Tiers (d)
-    (the /workspace hub-cache reap) and (e) (the home hub stale-revision
-    trim, #1377) ride the SAME production opt-in — they run only when
-    ``reclaim_tiers`` AND an explicit ``tmp_root`` are set, so every library
-    call stays hermetic by construction."""
+    AND (e) (the /workspace and HOME hub-cache arms) ride the SAME production
+    opt-in — they run only when ``reclaim_tiers`` AND an explicit ``tmp_root``
+    are set, so every library call stays hermetic by construction (neither
+    the data-disk pass nor a pytest library call can ever scan or reap the
+    real ``~/.cache/huggingface``)."""
     thr = threshold if threshold is not None else threshold_pct()
     age = log_max_age if log_max_age is not None else log_max_age_days()
     used_before = disk_used_pct(disk_path)
@@ -1026,11 +1416,11 @@ def run_guard(
         res.tiers.append(clean_uv_cache(apply))
     res.tiers.append(clean_terminal_download_caches(apply, data_root=data_root, tmp_root=tmp_root))
     if reclaim_tiers and tmp_root is not None:
-        # Tiers (d)+(e) ride the production opt-in (an explicit tmp_root) so
-        # library callers can never touch the real /workspace OR home caches
-        # (#911, #1377).
+        # Tiers (d) + (e) ride the production opt-in (an explicit tmp_root) so
+        # library callers can never touch the real /workspace OR home HF
+        # caches (#911, #1376, #1377).
         res.tiers.append(clean_vm_workspace_hf_cache(apply, now=now))
-        res.tiers.append(clean_home_hf_stale_revisions(apply, now=now))
+        res.tiers.append(clean_home_hf_stale_revisions(apply, now=now))  # tier (e), #1376+#1377
     if reclaim_tiers:
         res.tiers.append(clean_stale_logs(apply, age, now=now))
 
@@ -1129,6 +1519,7 @@ def _result_json(res: GuardResult) -> dict:
                 "active_cache_attributions": t.active_cache_attributions,
                 "noncanonical_candidates": t.noncanonical_candidates,
                 "total_discovered_bytes": t.total_discovered_bytes,
+                "hf_repo_attributions": t.hf_repo_attributions,
             }
             for t in res.tiers
         ],

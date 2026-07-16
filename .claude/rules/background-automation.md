@@ -1170,18 +1170,32 @@ escalate, never delete). A fourth, boot-pass-only arm age-gates the VM's
 pod-style `/workspace/.cache/huggingface` hub cache (repos unused ≥ 14 days,
 `EPS_VM_WORKSPACE_HF_CACHE_MAX_AGE_DAYS`), pod-guarded (`ismount('/workspace')`
 OR pod-side detection refuses) so it can never run where `/workspace` is a real
-volume. A fifth arm (#1377) trims stale unref'd non-newest REVISIONS in the
-user home `~/.cache/huggingface/hub` cache (unref'd revisions older than 7
-days, `EPS_VM_HOME_HF_REVISION_MAX_AGE_DAYS`, root override
-`EPS_VM_HOME_HF_CACHE`; the newest + every ref'd revision per repo is always
-kept), pod-guarded and riding the same `main()`-only opt-in. The `/tmp/` +
+volume. The `/tmp/` +
 `/workspace` opt-in lives ONLY in the two CLI `main()`
 bodies (`tmp_root=production_tmp_root()`; library calls are hermetic by
 construction), the escalate-only data-disk pass never sweeps `/tmp/`, and
 report-only runs surface their evidence via the `--json` structured fields
 (`active_cache_attributions` / `noncanonical_candidates` /
 `total_discovered_bytes`) — never the sidecar. Kill switch:
-`EPM_SKIP_NONCANONICAL_CACHE_SWEEP=1`.
+`EPM_SKIP_NONCANONICAL_CACHE_SWEEP=1`. A fifth arm, tier (e) (#1376 + #1377,
+independently landed and reconciled into ONE tier), covers
+the HOME HF hub cache `~/.cache/huggingface/hub` (`EPS_VM_HOME_HF_CACHE`;
+`hub/` only) on the same boot-pass-only `main()` opt-in: it ALWAYS attributes
+per-repo size / revision count / `last_accessed` age (`hf_repo_attributions`
+in `--json`), escalates any single repo > 40 GB
+(`EPS_VM_HOME_HF_CACHE_REPO_ESCALATE_GB`) with a per-revision breakdown
+(sidecar + Telegram, deduped per (repo, band) with ack sentinels), and on
+`--apply` reaps via `delete_revisions` (blob-refcount safe): unref'd
+non-newest revisions with `last_modified` ≥ 7 d old
+(`EPS_VM_HOME_HF_REVISION_MAX_AGE_DAYS`) AND no fresh EXCLUSIVE-blob atime
+(the newest + every ref'd revision per repo is always kept), plus whole repos
+whose repo-level `last_accessed` exceeds the same window (ref'd revisions
+included — this covers stale models). **Interplay note:** the watcher's
+`_vm_reclaim_hf_hub_cache` (`EPM_VM_DISK_HF_TTL_DAYS`=14, CRITICAL-gated,
+silent) and guard tier (e) (7 d, threshold-gated, attributing) BOTH cover the
+home hub cache BY DESIGN — two independent reapers, both `delete_revisions`
+(idempotent; a lost race degrades tier (e) to a skipped tier, never a crash);
+do not "unify" the two knobs without reading #1376 + #1377.
 
 **Janitor exemption.** The stale-GCP-VM janitor (above) sweeps the
 `eps-persona-gpu-jun2026` GPU project for ephemeral GCE INSTANCES. The
