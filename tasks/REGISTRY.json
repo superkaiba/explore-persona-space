@@ -3008,8 +3008,8 @@
     "1386": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1386",
-      "status": "proposed",
+      "path": "tasks/archived/1386",
+      "status": "archived",
       "title": "daily-fix: hub Xet queue-full transient retry"
     },
     "1387": {
