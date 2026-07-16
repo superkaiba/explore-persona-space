@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1379,
+  "highest_id": 1380,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -2962,6 +2962,13 @@
       "path": "tasks/completed/138",
       "status": "completed",
       "title": "Both the system-prompt persona and the previously-injected answer-content persona elicit the [ZLT] marker roughly equally; together they more than triple the marker rate (MODERATE confidence)"
+    },
+    "1380": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1380",
+      "status": "proposed",
+      "title": "workflow-fix: codex reviewer rubric gains Step 4.6"
     },
     "139": {
       "has_clean_result": true,
