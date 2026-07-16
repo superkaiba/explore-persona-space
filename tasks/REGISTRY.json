@@ -2994,8 +2994,8 @@
     "1384": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1384",
-      "status": "proposed",
+      "path": "tasks/planning/1384",
+      "status": "planning",
       "title": "workflow-fix: implementer per-arm-class smoke clause"
     },
     "1385": {
