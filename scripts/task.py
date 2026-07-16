@@ -66,6 +66,7 @@ from explore_persona_space.task_workflow import (  # noqa: E402
     audit,
     create_task,
     defer_concern,
+    duplicate_task_dirs,
     find_task_path,
     get_task,
     is_paper_task,
@@ -78,6 +79,7 @@ from explore_persona_space.task_workflow import (  # noqa: E402
     post_event,
     promote,
     raise_concern,
+    reap_stale_status_husks,
     reconcile_registry,
     remove_tag,
     set_body,
@@ -963,10 +965,30 @@ def cmd_audit(args: argparse.Namespace) -> None:
         sys.exit(2)
 
     if not repair:
-        # Report-only mode (unchanged): list drift, exit 1 on any problem.
+        # Report-only mode: list drift, exit 1 on any problem. Duplicate-dir
+        # findings (#1430) are a WARN tier that NEVER flips the exit code —
+        # husks recur organically on every concurrent-branch merge that
+        # predates a status move, and the daily janitor reap self-heals them;
+        # the registry↔filesystem contract (`problems`) alone drives exit 1.
         problems = audit()
+        dups = duplicate_task_dirs()
+        for f in dups:
+            hint = (
+                "terminal — reap-eligible: uv run python scripts/task.py reap-husks --apply"
+                if f.terminal
+                else "non-terminal — left in place (becomes reap-eligible at "
+                "completed/archived); investigate if unexpected"
+            )
+            _safe_print(
+                f"  [duplicate-dir] #{f.task_id}: live={f.live!r} husk(s)={f.husks} — {hint}",
+                context="task.py audit",
+            )
         if not problems:
-            _safe_print("AUDIT PASS — registry and filesystem agree", context="task.py audit")
+            suffix = f" ({len(dups)} duplicate-dir warning(s) — see above)" if dups else ""
+            _safe_print(
+                f"AUDIT PASS — registry and filesystem agree{suffix}",
+                context="task.py audit",
+            )
             return
         _safe_print(f"AUDIT FAIL — {len(problems)} problem(s):", context="task.py audit")
         for p in problems:
@@ -985,6 +1007,29 @@ def cmd_audit(args: argparse.Namespace) -> None:
     # unresolved empty stubs / skips), else exit 1 so the operator triages.
     if rep.unresolved_count > 0:
         sys.exit(1)
+
+
+def cmd_reap_husks(args: argparse.Namespace) -> None:
+    """Report (default) or reap (--apply) merge-reintroduced stale-status
+    husk dirs of TERMINAL tasks (#1430). Exit 0 always — escalation is the
+    working path (gcp-janitor convention); a git/IO failure raises."""
+    rep = reap_stale_status_husks(apply=args.apply, task_id=args.issue)
+    if rep.disabled:
+        _safe_print(
+            "husk reap disabled via EPM_SKIP_HUSK_REAP=1 — no-op",
+            context="task.py reap-husks",
+        )
+        return
+    if not rep.actions:
+        _safe_print("no duplicate task dirs — nothing to reap", context="task.py reap-husks")
+        return
+    for a in rep.actions:
+        _safe_print(
+            f"  [{a.action}] #{a.task_id}: {a.husk} — {a.reason}",
+            context="task.py reap-husks",
+        )
+    if not rep.applied:
+        _safe_print("report-only — re-run with --apply to reap", context="task.py reap-husks")
 
 
 # ─── Binding-concerns handlers ────────────────────────────────────────────
@@ -1560,6 +1605,28 @@ def main() -> None:
         help="with --repair: write the reconcile to REGISTRY.json + one git commit.",
     )
     p.set_defaults(func=cmd_audit)
+
+    p = sub.add_parser(
+        "reap-husks",
+        help="reap merge-reintroduced stale-status husk dirs of terminal tasks (#1430)",
+        description=(
+            "Remove the stale-status twin dir(s) of a TERMINAL "
+            "(completed/archived) task — the merge-reintroduced husk shape "
+            "`task.py audit` surfaces as [duplicate-dir] warnings — after "
+            "byte-subset-verifying every husk entry against the live "
+            "(REGISTRY) dir. Any husk with unique content is ESCALATED "
+            "(stderr + .claude/cache/husk-reap-events.jsonl), never "
+            "deleted. Report-only by default; kill switch "
+            "EPM_SKIP_HUSK_REAP=1."
+        ),
+    )
+    p.add_argument(
+        "--apply",
+        action="store_true",
+        help="actually remove subset-verified husks (default: report-only)",
+    )
+    p.add_argument("--issue", type=int, default=None, help="restrict to one task id")
+    p.set_defaults(func=cmd_reap_husks)
 
     # ─── Binding-concerns subcommands ────────────────────────────────────
 

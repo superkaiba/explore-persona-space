@@ -161,6 +161,36 @@ hardlinks — the shared blocks free when `uv cache prune` later drops
 unreferenced cache-side entries, so the two crons' combined reclaim is the
 number to watch (per-venv byte figures are du-apparent).
 
+**Husk-reap arm (#1430).** After the worktree sweep, the same 09:47 cron
+additionally runs the terminal-task duplicate-dir husk reap:
+`uv run python scripts/task.py reap-husks --apply`. Predicate: a task id
+holding MORE THAN ONE on-disk `tasks/<status>/<id>` dir (the
+merge-reintroduced husk shape — a concurrent branch cut BEFORE the task's
+status move re-adds the old-status dir on rebase-merge; the #644 ghost
+sweep covers only the inverse tracked-but-absent-on-disk shape, and a
+terminal task has no next transition to fire it) whose REGISTRY status is
+TERMINAL (`completed`/`archived` — `HUSK_REAP_TERMINAL_STATUSES`;
+`blocked` is re-drivable and deliberately excluded) has its husk(s)
+removed iff EVERY husk entry is byte-subset-verified against the live
+(REGISTRY) dir: byte-identical, byte-prefix, `.jsonl` ordered-subsequence
+(multiplicity respected), or a symlink with a matching `readlink` target.
+ANY unique content ESCALATES — stderr ERROR + a row in the dedicated
+sidecar `.claude/cache/husk-reap-events.jsonl` — and is NEVER deleted (a
+marker present only in the husk is evidence of a lost concurrent write).
+The subset check doubles as the misidentification guard: a stale registry
+entry pointing at the husk makes the true live dir fail subset
+verification (it holds strictly more content) and escalate. Non-terminal /
+unregistered / registry-stale ids are skipped with labeled reasons;
+`task.py audit` surfaces every duplicate-dir id continuously as a
+`[duplicate-dir]` WARN tier that never flips audit's exit code. Tracked
+husks are removed via `git rm -r` + one explicit-path commit per husk
+under the task.py flock (enumeration re-run inside the lock);
+fully-untracked husks (the #721 empty-`artifacts/` shape) via `rmtree`
+with no commit. On-demand form: `task.py reap-husks [--apply] [--issue N]`
+(report-only by default; exit 0 always — escalation is the working path).
+Kill switch: `EPM_SKIP_HUSK_REAP=1` (honored inside the library, so the
+cron arm and on-demand invocations are disabled alike).
+
 `codex_task.py` complements this by pinning every codex-companion dispatch to
 the main checkout root (`DISPATCH_ROOT`), so new codex workers never root
 themselves in a worktree.
