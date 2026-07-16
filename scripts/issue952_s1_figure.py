@@ -155,8 +155,72 @@ def paired_closeness_figure() -> None:
     print(f"wrote {out}")
 
 
+def qwen_claude_scatter() -> None:
+    """Single-panel scatter (user-requested orientation): x = cos(prediction, Qwen's real
+    refusal), y = cos(prediction, Claude's real answer), 12 S1 questions; the diagonal
+    splits the two classification regions and the desired (Qwen) region is labeled."""
+    sanity = json.loads(
+        (BASE / "eval_results/issue_952/refusal_sanity_check/refusal_sanity.json").read_text()
+    )
+    rows = sanity["check_B_map_predicts_refusal"]["paired_closeness_genuine_divergence"][
+        "per_query"
+    ]
+    assert len(rows) == 12, len(rows)
+    x_qwen = np.array([r["cos_own"] for r in rows], dtype=float)
+    y_claude = np.array([r["cos_claude"] for r in rows], dtype=float)
+    qwen_side = x_qwen > y_claude
+    n_q = int(qwen_side.sum())
+
+    set_paper_style()
+    pal = paper_palette(4)
+    fig, ax = plt.subplots(figsize=(5.6, 5.6))
+    lo = float(min(x_qwen.min(), y_claude.min())) - 0.06
+    hi = float(max(x_qwen.max(), y_claude.max())) + 0.06
+    ax.fill_between([lo, hi], [lo, hi], lo, color=pal[2], alpha=0.08, zorder=0)
+    ax.plot([lo, hi], [lo, hi], color="grey", lw=1.0, ls="--", zorder=1)
+    ax.scatter(
+        x_qwen[qwen_side],
+        y_claude[qwen_side],
+        s=55,
+        color=pal[2],
+        zorder=3,
+        label=f"classified as Qwen refusal ({n_q}/12)",
+    )
+    ax.scatter(
+        x_qwen[~qwen_side],
+        y_claude[~qwen_side],
+        s=55,
+        color=pal[1],
+        zorder=3,
+        label=f"classified as Claude answer ({12 - n_q}/12)",
+    )
+    ax.text(
+        0.97,
+        0.14,
+        "want: prediction matches\nQwen's real refusal",
+        transform=ax.transAxes,
+        ha="right",
+        va="bottom",
+        fontsize=10,
+        color=pal[2],
+    )
+    ax.set_xlabel("cos(prediction, Qwen's real refusal)")
+    ax.set_ylabel("cos(prediction, Claude's real answer)")
+    ax.set_title("12 questions where Qwen refuses and Claude answers")
+    ax.set_xlim(lo, hi)
+    ax.set_ylim(lo, hi)
+    ax.set_aspect("equal")
+    ax.legend(loc="upper left", frameon=False)
+    fig.tight_layout()
+    out = BASE / "figures" / "issue_952" / "s1_qwen_claude_scatter.png"
+    fig.savefig(out, dpi=200)
+    print(f"qwen-side {n_q}/12; wrote {out}")
+
+
 if __name__ == "__main__":
-    if "--paired-only" in sys.argv:
+    if "--qwen-claude-scatter" in sys.argv:
+        qwen_claude_scatter()
+    elif "--paired-only" in sys.argv:
         paired_closeness_figure()
     else:
         main()
