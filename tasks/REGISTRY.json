@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1376,
+  "highest_id": 1377,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -2934,6 +2934,13 @@
       "path": "tasks/planning/1376",
       "status": "planning",
       "title": "workflow-fix: vm_disk_guard tier for the home HF hub cache"
+    },
+    "1377": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1377",
+      "status": "proposed",
+      "title": "workflow-fix: vm_disk_guard trims stale home HF-hub revisions (age-gated tier)"
     },
     "138": {
       "has_clean_result": true,
