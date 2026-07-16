@@ -7626,6 +7626,192 @@ def test_v4_context_short_origin_prompt_truncation_warns():
     assert "first divergence" in ctx.detail
 
 
+# ─── Check 17 (parent-lineage cross-check, #1418) ──────────────────────────
+# Unit-grain cases call `check_repro_context_provenance(body, fm)` directly
+# (fm injection is the variable, per the #1068 convention above); one
+# end-to-end case runs `verify_text` to pin the `parent_id` fm threading.
+
+
+def test_v4_context_denied_parent_with_parent_id_fails():
+    """Primary regression — the #1345 r1 incident shape (and this
+    change's durability pin): a `fresh direction (no parent task)`
+    lineage on a body whose frontmatter carries `parent_id` is a hard
+    v4 FAIL naming the parent id."""
+    body = _v4_body_with_lineage("- Lineage: fresh direction (no parent task).\n")
+    ctx = verify_task_body.check_repro_context_provenance(body, {"parent_id": 825})
+    assert not ctx.passed
+    assert "825" in ctx.detail
+    assert "contradiction" in ctx.detail
+
+
+def test_v4_context_no_parent_short_form_with_parent_id_fails():
+    """The `no parent` regex alternate: `fresh (no parent)` with
+    `parent_id` set and the parent unreferenced is a hard v4 FAIL."""
+    body = _v4_body_with_lineage("- Lineage: fresh (no parent).\n")
+    ctx = verify_task_body.check_repro_context_provenance(body, {"parent_id": 825})
+    assert not ctx.passed
+    assert "context-parent-lineage-contradiction" in ctx.detail
+
+
+def test_v4_context_denied_claim_ignorecase_fails():
+    """The denied-claim regex is case-insensitive (mirrors the parent
+    lineage-token regex's IGNORECASE): `Fresh Direction (No Parent)`
+    still tier-1 FAILs."""
+    body = _v4_body_with_lineage("- Lineage: Fresh Direction (No Parent) rescope.\n")
+    ctx = verify_task_body.check_repro_context_provenance(body, {"parent_id": 825})
+    assert not ctx.passed
+    assert "context-parent-lineage-contradiction" in ctx.detail
+
+
+def test_v4_context_denied_claim_but_parent_named_warns_not_fails():
+    """Tier 2: a denied-parent clause ALONGSIDE a `#<parent_id>`
+    reference is internally contradictory but not the reader-misleading
+    incident shape — WARN, never FAIL."""
+    body = _v4_body_with_lineage("- Lineage: fresh direction (no parent); reuses #825 artifacts.\n")
+    ctx = verify_task_body.check_repro_context_provenance(body, {"parent_id": 825})
+    assert ctx.passed and ctx.is_warn, ctx.detail
+    assert "context-parent-lineage-mixed" in ctx.detail
+
+
+def test_v4_context_parent_named_with_parent_id_passes():
+    """Tier 4 (the 32/32 committed-corpus shape): the canonical
+    `[#34](...)` lineage bullet with `parent_id: 34` PASSes with the
+    byte-identical clean-PASS detail (no new WARN)."""
+    ctx = verify_task_body.check_repro_context_provenance(_V4_GOOD_BODY, {"parent_id": 34})
+    assert ctx.passed and not ctx.is_warn, ctx.detail
+    assert ctx.detail == "**Context:** row present with lineage token"
+
+
+def test_v4_context_parent_unnamed_warns():
+    """Tier 3: `parent_id` set, lineage cites OTHER issues but never the
+    parent → WARN naming the parent id (never a FAIL — legitimate
+    grandparent / re-scoped lineages exist)."""
+    body = _v4_body_with_lineage("- Child of #722 (context pool), method parent #779.\n")
+    ctx = verify_task_body.check_repro_context_provenance(body, {"parent_id": 658})
+    assert ctx.passed and ctx.is_warn, ctx.detail
+    assert "context-parent-unnamed" in ctx.detail
+    assert "#658" in ctx.detail
+
+
+def test_v4_context_parent_named_via_dashboard_url_passes():
+    """The `/tasks/K` alternative: a dashboard-URL-only parent reference
+    satisfies the `named` escape (deleting the `/tasks/{pid}` alternate
+    would demote this to warn-unnamed and fail this test). The bullet
+    keeps a `#722` ref so the PRE-EXISTING lineage-token sub-check —
+    which `/tasks/K` alone does not satisfy — stays green."""
+    body = _v4_body_with_lineage(
+        "- Lineage: [parent task](https://eps.superkaiba.com/tasks/34) — extends #722's question.\n"
+    )
+    ctx = verify_task_body.check_repro_context_provenance(body, {"parent_id": 34})
+    assert ctx.passed and not ctx.is_warn, ctx.detail
+    assert ctx.detail == "**Context:** row present with lineage token"
+
+
+def test_v4_context_denied_claim_in_blockquote_only_not_flagged():
+    """Scan-region consistency (#959): a denied-parent claim ONLY inside
+    the blockquoted verbatim prompt never counts — the lineage line
+    names the parent, so the row PASSes with no WARN."""
+    body = _v4_body_with_context_quote(
+        "- Originating prompt, verbatim:\n\n> treat this as a fresh direction (no parent) rerun\n"
+    )
+    ctx = verify_task_body.check_repro_context_provenance(body, {"parent_id": 34})
+    assert ctx.passed and not ctx.is_warn, ctx.detail
+    assert ctx.detail == "**Context:** row present with lineage token"
+
+
+def test_v4_context_label_in_blockquote_fallback_scans_whole_footer():
+    """Degenerate label-fallback region: when the `**Context:**` label is
+    findable only inside a blockquote line, `ctx_scan` falls back to the
+    WHOLE stripped footer — the parent-lineage cross-check operates on
+    that fallback region, so a non-blockquote denied claim + `parent_id`
+    still tier-1 FAILs there."""
+    context_block = (
+        "**Context:**\n"
+        "- Created 2026-06-24; run executed 2026-06-24.\n"
+        + _V4_LINEAGE_BULLET
+        + "- Originating prompt: origin prompt not recorded\n"
+    )
+    assert context_block in _V4_GOOD_BODY, "fixture drifted"
+    body = _V4_GOOD_BODY.replace(
+        context_block,
+        "> **Context:** quoted example heading\n\n"
+        "- Lineage note: fresh direction (no parent task).\n"
+        "- Originating prompt: origin prompt not recorded\n",
+    )
+    ctx = verify_task_body.check_repro_context_provenance(body, {"parent_id": 825})
+    assert not ctx.passed, ctx.detail
+    assert "context-parent-lineage-contradiction" in ctx.detail
+
+
+def test_v3_context_denied_parent_with_parent_id_warns_not_fails():
+    """Grandfathering pin: the SAME denied-parent contradiction that
+    hard-FAILs a v4 body is WARN-only on a v3 body (never a new hard
+    FAIL below the v4 sentinel)."""
+    assert _V4_LINEAGE_BULLET in _V3_GOOD_BODY, "fixture drifted"
+    body = _V3_GOOD_BODY.replace(
+        _V4_LINEAGE_BULLET, "- Lineage: fresh direction (no parent task).\n"
+    )
+    ctx = verify_task_body.check_repro_context_provenance(body, {"parent_id": 825})
+    assert ctx.passed is True and ctx.is_warn, ctx.detail
+    assert "context-parent-lineage-contradiction" in ctx.detail
+
+
+def test_v4_context_parent_id_string_coerced():
+    """Defensive typing: a string `parent_id` (some fm sources round-trip
+    ints as strings) behaves identically to the int form."""
+    body = _v4_body_with_lineage("- Lineage: fresh direction (no parent task).\n")
+    ctx = verify_task_body.check_repro_context_provenance(body, {"parent_id": "825"})
+    assert not ctx.passed
+    assert "context-parent-lineage-contradiction" in ctx.detail
+
+
+def test_v4_context_no_parent_id_noop_unchanged():
+    """Noop branch: with NO frontmatter `parent_id`, a denied-parent
+    claim is the sanctioned parentless lineage form — byte-identical
+    pre-#1418 clean-PASS detail (also re-covered by the untouched
+    `test_v4_context_fresh_direction_no_parent_passes`)."""
+    body = _v4_body_with_lineage("- Lineage: fresh direction (no parent task).\n")
+    ctx = verify_task_body.check_repro_context_provenance(body, {})
+    assert ctx.passed and not ctx.is_warn, ctx.detail
+    assert ctx.detail == "**Context:** row present with lineage token"
+
+
+def test_v4_context_multi_warn_join_shape():
+    """`warn-unnamed` + `warn-mismatch` co-firing accumulate into ONE
+    WARN result, `"; "`-joined, parent tier first — pins the multi-warn
+    detail shape."""
+    body = _v4_body_with_lineage("- Child of #722 (context pool).\n").replace(
+        _V4_NOT_RECORDED_LINE,
+        "- Originating prompt, verbatim:\n\n"
+        "> run the seed sweep for the X effect and summarize the deltas\n",
+    )
+    ctx = verify_task_body.check_repro_context_provenance(
+        body, {"parent_id": 658, "origin_prompt": _OP}
+    )
+    assert ctx.passed and ctx.is_warn, ctx.detail
+    assert ctx.detail.startswith("**Context:** row present with lineage token; ")
+    assert "context-parent-unnamed" in ctx.detail
+    assert "; context-origin-prompt-mismatch" in ctx.detail  # the join separator
+    assert ctx.detail.index("context-parent-unnamed") < ctx.detail.index(
+        "context-origin-prompt-mismatch"
+    )
+
+
+def test_verify_text_threads_parent_id_from_frontmatter():
+    """End-to-end fm plumbing: `parent_id` spliced into the fixture's
+    EXISTING frontmatter block + a denied-parent lineage → the named
+    check FAILs through `verify_text`."""
+    body = _v4_body_with_lineage("- Lineage: fresh direction (no parent task).\n").replace(
+        "kind: experiment\n", "kind: experiment\nparent_id: 99\n"
+    )
+    assert "parent_id" in body, "fixture replacement did not land"
+    _ok, results = verify_task_body.verify_text(body)
+    ctx = _results_by_name(results)[_CONTEXT_CHECK]
+    assert not ctx.passed
+    assert "context-parent-lineage-contradiction" in ctx.detail
+    assert "99" in ctx.detail
+
+
 def test_v4_v3_content_h2_is_hard_fail():
     """A leftover v3 content H2 (`## Findings`) in a v4 body is a hard FAIL."""
     body = _V4_GOOD_BODY.replace("## Results\n", "## Findings\n\nstale v3 H2\n\n## Results\n")

@@ -3730,6 +3730,18 @@ _V4_CONTEXT_LINEAGE_TOKEN_RE = re.compile(
     re.IGNORECASE,
 )
 
+# Check-17 parent-lineage cross-check (#1418, incident #1345 r1): the
+# no-parent-CLAIM subset of _V4_CONTEXT_LINEAGE_TOKEN_RE above (keep the
+# two alternates byte-in-sync with that regex's alternates 2+3). Bare
+# `fresh direction` counts: per SPEC.md § `**Context:**` row it is the
+# sanctioned PARENTLESS lineage form (pinned by
+# `test_v4_context_fresh_direction_alone_passes`).
+_NO_PARENT_CLAIM_RE = re.compile(
+    r"fresh\s+direction"
+    r"|\bno\s+parent\b",
+    re.IGNORECASE,
+)
+
 
 # ── Check-17 origin-prompt verbatim sub-check (#1068, incident #813 r1) ──
 # The **Context:** row promises the originating prompt VERBATIM
@@ -3908,6 +3920,96 @@ def _origin_prompt_quote_verdict(repro: str, fm: dict) -> tuple[str, str]:
     )
 
 
+def _parent_lineage_verdict(ctx_scan: str, fm: dict) -> tuple[str, str]:
+    """Classify the Context lineage clause against frontmatter parent_id.
+
+    ``ctx_scan`` is the fence-stripped + blockquote-line-stripped text
+    after the ``**Context:**`` label (the SAME region the v4 lineage-token
+    sub-check scans, so claims/refs inside the blockquoted verbatim
+    prompt never count — #959 precedent). Returns (status, detail):
+
+    - "noop"              — no usable frontmatter parent_id, or the
+                            lineage names the parent with no denied claim;
+    - "fail-denied"       — a fresh-direction / no-parent CLAIM with the
+                            parent never referenced (the #1345 r1 incident
+                            class; hard FAIL on v4, WARN on v3/v2);
+    - "warn-denied-named" — a no-parent claim BUT #<parent_id> is also
+                            referenced (internally contradictory row);
+    - "warn-unnamed"      — no denied claim, but the lineage never
+                            references #<parent_id> (v4-only WARN).
+    """
+    pid_raw = fm.get("parent_id")
+    pid = str(pid_raw).strip() if pid_raw is not None else ""
+    if not pid.isdigit():
+        return "noop", "no frontmatter parent_id"
+    denied = _NO_PARENT_CLAIM_RE.search(ctx_scan)
+    # `pid` is digits-only by construction (no re.escape needed); the
+    # `(?<![\w/&])` lookbehind mirrors _V4_CONTEXT_LINEAGE_TOKEN_RE (no
+    # URL-fragment `page#123` / entity `&#123` matches; `\b` blocks
+    # `#82`↔`#825` prefix collisions); the `/tasks/{pid}` alternative
+    # accepts a dashboard-URL-only parent reference.
+    named = re.search(rf"(?<![\w/&])#{pid}\b|/tasks/{pid}\b", ctx_scan)
+    if denied and not named:
+        return "fail-denied", (
+            f"context-parent-lineage-contradiction: the `**Context:**` lineage claims "
+            f"'{denied.group(0)}' but frontmatter carries `parent_id: {pid}` and the row "
+            f"never references #{pid} — name the parent "
+            f"(`[#{pid}](https://eps.superkaiba.com/tasks/{pid}) — <one line>`) or, if the "
+            f"task was genuinely re-scoped as parentless, clear the frontmatter parent_id "
+            f"(SPEC.md § `**Context:**` row)."
+        )
+    if denied and named:
+        return "warn-denied-named", (
+            f"context-parent-lineage-mixed: the row references #{pid} but ALSO carries a "
+            f"'{denied.group(0)}' clause while frontmatter carries `parent_id: {pid}` — "
+            f"drop the no-parent clause or state the re-scope explicitly."
+        )
+    if not named:
+        return "warn-unnamed", (
+            f"context-parent-unnamed: frontmatter carries `parent_id: {pid}` but the "
+            f"`**Context:**` lineage never references #{pid} on a non-blockquote line — "
+            f"name the parent, or keep a deliberate ancestor-only lineage and expect "
+            f"this WARN."
+        )
+    return "noop", ""
+
+
+def _context_scan_region(repro: str) -> str:
+    """Fence-stripped + blockquote-line-stripped text after the
+    ``**Context:**`` label — the shared scan region of check 17's
+    lineage-token (#1014) and parent-lineage (#1418) sub-checks.
+
+    Strips FIRST, then slices at the label: a single-line row with an
+    inline ``> "..."`` quote after the label (#763's shape) keeps its
+    same-line lineage clause, while multi-line blockquoted verbatim
+    prompts can never satisfy the scans (#959 strip precedent).
+    Degenerate fallback (label only findable inside a blockquote /
+    fence): the whole stripped region."""
+    scan_src = _strip_blockquote_lines(_strip_fenced_blocks(repro))
+    m = _CONTEXT_LABEL_RE.search(scan_src)
+    return scan_src[m.end() :] if m else scan_src
+
+
+def _context_row_result_v3(name: str, repro: str, fm: dict) -> CheckResult:
+    """v3/v2 (pre-v4-sentinel) verdict for a label-present Context row —
+    the grandfathered WARN-only forms of check 17's sub-checks (#1068
+    origin-prompt for BOTH its classes; #1418 parent-lineage for the
+    fail-denied contradiction ONLY — the warn-only tiers never bind
+    below the v4 sentinel; see `check_repro_context_provenance`)."""
+    p_status, p_detail = _parent_lineage_verdict(_context_scan_region(repro), fm)
+    status, sub_detail = _origin_prompt_quote_verdict(repro, fm)
+    warn_bits = []
+    if p_status == "fail-denied":
+        warn_bits.append(p_detail)  # grandfathered: WARN below the v4 sentinel
+    if status in ("fail-trunc", "warn-mismatch"):
+        warn_bits.append(sub_detail)
+    if warn_bits:
+        return CheckResult(
+            name, True, "**Context:** row present; " + "; ".join(warn_bits), is_warn=True
+        )
+    return CheckResult(name, True, "**Context:** row present")
+
+
 def check_repro_context_provenance(
     body: str, fm: dict, *, original_body_path: Path | None = None
 ) -> CheckResult:
@@ -3947,6 +4049,38 @@ def check_repro_context_provenance(
     never a new hard FAIL below the v4 sentinel). No ``origin_prompt``
     or no ``**Context:**`` label: NO-OP (pre-#1068 behavior verbatim).
 
+    **Parent-lineage cross-check (#1418, incident #1345 r1).** When
+    frontmatter ``parent_id`` is set, the lineage clause (scanned on the
+    SAME fence-stripped + blockquote-stripped region as the #1014
+    lineage-token sub-check) is cross-checked against it
+    (`_parent_lineage_verdict`), three tiers: a ``fresh direction`` /
+    ``no parent`` CLAIM with ``#<parent_id>`` (or ``/tasks/<parent_id>``)
+    never referenced is a hard v4 FAIL (the #1345 r1 incident class),
+    degraded to WARN on v3/v2 (forward-only, the #1068 grandfathering
+    shape); a denied claim ALONGSIDE a parent reference WARNs (internally
+    contradictory, but regex-only semantics cannot distinguish a lineage
+    claim from prose like "fresh direction on the eval surface; reuses
+    #825 artifacts"); a lineage that never references the parent with NO
+    denied claim WARNs, v4 only (32/32 committed v4 ``parent_id`` bodies
+    name the parent — zero retro-noise — while legitimate grandparent /
+    re-scoped lineages make a FAIL over-strict). The v3/v2 branch fires
+    ONLY the fail-denied class (as WARN); the warn-only tiers never bind
+    below the v4 sentinel (#1014 never required a lineage clause there).
+    Documented residuals (deliberate): (a) the CONVERSE case — no
+    ``parent_id``, the row cites some ``#K`` — is UNCHECKED: 6/10
+    committed no-parent v4 bodies legitimately cite issues
+    (reused-artifact producers, method parents, siblings), and
+    over-attributed lineage errs toward MORE provenance; (b) bare
+    ``fresh direction`` (no parenthetical) counts as a no-parent claim
+    (SPEC semantics — it is the sanctioned parentless lineage form),
+    mitigated by the named-parent WARN downgrade; (c) a PROSE-ONLY
+    parent reference ("child of task 825" — no ``#`` sigil, no
+    ``/tasks/825`` URL) misses the ``named`` escape, so a co-present
+    denied claim tier-1 FAILs — bounded, and the FAIL message names the
+    remediation; (d) on the v3 label-miss fallback (``m2`` is None) the
+    scan covers the whole stripped repro region (WARN-only there,
+    accepted).
+
     Documented residuals (deliberate, all fail toward PASS/WARN):
     (a) FAIL scope — only strict-prefix truncations >=20 chars covering
     >=50% of ``origin_prompt`` hard-FAIL; non-prefix truncations
@@ -3979,20 +4113,18 @@ def check_repro_context_provenance(
         if not is_v4(body):
             # v2/v3 keep the pre-#1014 label-presence behavior verbatim
             # (forward-only; the v4 lineage sub-check never binds them).
-            # The #1068 origin-prompt sub-check is WARN-ONLY here
-            # (grandfathering: NEVER a new hard FAIL below the v4
-            # sentinel).
-            status, sub_detail = _origin_prompt_quote_verdict(repro, fm)
-            if status in ("fail-trunc", "warn-mismatch"):
-                return CheckResult(
-                    name, True, "**Context:** row present; " + sub_detail, is_warn=True
-                )
-            return CheckResult(name, True, "**Context:** row present")
-        # v4 lineage-token sub-check. Strip fences + blockquote LINES
-        # FIRST, then slice at the label: a single-line row with an inline
-        # `> "..."` quote after the label (#763's shape) keeps its
-        # same-line lineage clause, while multi-line blockquoted verbatim
-        # prompts can never satisfy the scan (#959 strip precedent).
+            # The #1068 origin-prompt sub-check is WARN-ONLY here, and
+            # the #1418 parent-lineage cross-check fires ONLY its
+            # fail-denied contradiction, degraded to WARN (grandfathering:
+            # NEVER a new hard FAIL below the v4 sentinel) — the scan uses
+            # the SAME stripped region as the v4 branch, never raw `repro`
+            # (a denied claim inside the blockquoted verbatim prompt must
+            # not false-fire; #959 precedent). See `_context_row_result_v3`.
+            return _context_row_result_v3(name, repro, fm)
+        # v4 lineage-token sub-check, on the shared strip-then-slice scan
+        # region (`_context_scan_region` — #763 / #959 strip-order + the
+        # degenerate whole-footer fallback, which fails toward PASS, the
+        # same shape that PASSes unconditionally today).
         # Two ACCEPTED false-PASS limitations, both benign-direction
         # (they reduce to today's unconditional label-presence PASS;
         # Lens 5 retains the substantive lineage-correctness read):
@@ -4002,25 +4134,30 @@ def check_repro_context_provenance(
         # verbatim prompt whose un-prefixed continuation line stays
         # scanned — the deliberate #959 behavior documented at
         # `_strip_blockquote_lines`).
-        scan_src = _strip_blockquote_lines(_strip_fenced_blocks(repro))
-        m = re.search(r"\*\*\s*Context\s*:?\s*\*\*", scan_src)
-        # Degenerate fallback (label only findable inside a blockquote/
-        # fence): scan the whole stripped footer — fails toward PASS, the
-        # same shape that PASSes unconditionally today.
-        ctx_scan = scan_src[m.end() :] if m else scan_src
+        ctx_scan = _context_scan_region(repro)
         if _V4_CONTEXT_LINEAGE_TOKEN_RE.search(ctx_scan):
+            # #1418 parent-lineage cross-check (incident #1345 r1) — runs
+            # FIRST (lineage correctness before prompt verbatim-ness; one
+            # failure at a time, the file's convention).
+            p_status, p_detail = _parent_lineage_verdict(ctx_scan, fm)
+            if p_status == "fail-denied":
+                return CheckResult(name, False, p_detail)
             # #1068 origin-prompt verbatim sub-check — runs AFTER the
-            # lineage sub-check (one failure at a time, the file's
-            # convention; a body failing both surfaces the truncation on
-            # the next verifier run after the lineage fix).
+            # lineage sub-checks (a body failing both surfaces the
+            # truncation on the next verifier run after the lineage fix).
             status, sub_detail = _origin_prompt_quote_verdict(repro, fm)
             if status == "fail-trunc":
                 return CheckResult(name, False, sub_detail)
+            warn_bits = []
+            if p_status in ("warn-denied-named", "warn-unnamed"):
+                warn_bits.append(p_detail)
             if status == "warn-mismatch":
+                warn_bits.append(sub_detail)
+            if warn_bits:
                 return CheckResult(
                     name,
                     True,
-                    "**Context:** row present with lineage token; " + sub_detail,
+                    "**Context:** row present with lineage token; " + "; ".join(warn_bits),
                     is_warn=True,
                 )
             return CheckResult(name, True, "**Context:** row present with lineage token")
