@@ -2695,7 +2695,7 @@
       "kind": "experiment",
       "path": "tasks/interpreting/1345",
       "status": "interpreting",
-      "title": "Is the assistant context\u2192answer map the same operator across framings? (chat template vs plain User:/Assistant: vs assistant-in-narrative-stories)"
+      "title": "The assistant context\u2192answer map recovers its full ceiling across chat and plain-text framings only after a linear change of coordinates, and barely exists in narrative stories (MODERATE confidence)"
     },
     "1346": {
       "has_clean_result": false,
