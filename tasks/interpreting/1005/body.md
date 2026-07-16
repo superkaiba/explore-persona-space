@@ -5,7 +5,7 @@ title: 'The outsized chain-of-thought gain on in-context-learning and WildChat c
 kind: experiment
 tags: []
 created_at: '2026-07-04T10:11:34Z'
-has_clean_result: false
+has_clean_result: true
 parent_id: 928
 workflow: v1
 goal: 'Determine whether the CoT-decomposition results from #928 (CoT informativeness,
