@@ -92,7 +92,7 @@ Verifier WARNs acknowledged: with five results the total Takeaways + Goal + Resu
 
 ### The registered headline contrast is a precise null on the RLVR-trained distribution
 
-The first figure shows the gap per stage (recalibrated, layer 30) per eval set and the contrast C = gap(RLVR) − gap(DPO) with 1,000-draw paired-bootstrap 95% CIs on both scales. The second is the per-unit view behind every gap bar: within-stage vs reparameterized-base held-out pooled R². Paired rows: 4,903 GSM8K train, 2,953 LMSYS, 1,293 GSM8K test.
+The first figure shows the gap per stage (recalibrated, layer 30) per eval set and the contrast C = gap(RLVR) − gap(DPO) with 1,000-draw paired-bootstrap 95% CIs on both scales. The second is the per-(stage × eval set) component decomposition — the two fits behind every gap bar: within-stage vs reparameterized-base held-out pooled R². Paired rows: 4,903 GSM8K train, 2,953 LMSYS, 1,293 GSM8K test.
 
 ![Gap per stage and the RLVR-minus-DPO contrast vs the elicitation band](https://raw.githubusercontent.com/superkaiba/explore-persona-space/390a8422e5b7d415fe75519fd67da1d97ad3d465/figures/issue_1336/hero_rlvr_contrast.png)
 
