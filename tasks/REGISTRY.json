@@ -2973,8 +2973,8 @@
     "1381": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1381",
-      "status": "proposed",
+      "path": "tasks/planning/1381",
+      "status": "planning",
       "title": "workflow-fix: verify_plan flags false no-flags claims"
     },
     "1382": {
