@@ -246,6 +246,155 @@ def test_map_transport_rc3_on_missing_layer20_weight(tmp_path):
     assert ei.value.code == 3
 
 
+# ── deliverable 2b: K3 ridge-refit fallback (round E) ─────────────────
+
+
+def _write_refit_tensors(tmp_path, n: int = 64, hidden: int = HID, seed: int = 5, random_y=False):
+    """Synthetic (N, L, H) V_c/V_a pair tensors in the #823 bare-tensor format.
+
+    Y = X @ W_true.T + b_true (an exactly-linear map, recoverable by the
+    ridge); random_y=True breaks the relation so the sanity check must fail.
+    """
+    gen = torch.Generator().manual_seed(seed)
+    w_true = torch.randn(hidden, hidden, generator=gen) / hidden**0.5
+    b_true = torch.randn(hidden, generator=gen)
+    x = torch.randn(n, len(LAYERS), hidden, generator=gen)
+    y = torch.randn(n, len(LAYERS), hidden, generator=gen) if random_y else x @ w_true.T + b_true
+    vc_path = tmp_path / "refit_vc.pt"
+    va_path = tmp_path / "refit_va.pt"
+    torch.save(x, vc_path)
+    torch.save(y, va_path)
+    return vc_path, va_path, w_true
+
+
+def _steered_from_map(act: Path, steer: Path, weight: torch.Tensor, layer: int) -> None:
+    """Steered V_a captures built so realized delta == weight-predicted delta."""
+    steer.mkdir(exist_ok=True)
+    pairs = common.load_all_pairs(act)
+    li = pairs[0].layers.index(layer)
+    for p in pairs:
+        for arm in common.ARMS:
+            fpred = (p.v_c[arm][li] + p.delta[arm][li]) @ weight.T - p.v_c[arm][li] @ weight.T
+            torch.save({"v_a_mean": p.v_a_c[li] + fpred}, steer / f"{p.pair_id}__{arm}.pt")
+
+
+def test_map_transport_refit_fallback_recovers_linear_map(tmp_path):
+    """--refit-fallback force: the fitted ridge recovers a known linear map
+    (transport cosines ~1.0 against steered captures built from W_true), the
+    valid-idx row filter applies, and the output records refit provenance."""
+    act = tmp_path / "acts"
+    _write_captures(act, n_pairs=4)
+    vc_path, va_path, w_true = _write_refit_tensors(tmp_path)
+    valid_path = tmp_path / "valid_idx.json"
+    valid_path.write_text(json.dumps({"common_valid_idx": list(range(60))}))  # drop last 4 rows
+    _steered_from_map(act, tmp_path / "steered", w_true, layer=1)
+
+    out = tmp_path / "mt_refit.json"
+    mt.main(
+        [
+            "--activations",
+            str(act),
+            "--steered-activations",
+            str(tmp_path / "steered"),
+            "--out-json",
+            str(out),
+            "--layer",
+            "1",
+            "--hidden",
+            str(HID),
+            "--n-draws",
+            "10",
+            "--refit-fallback",
+            "force",
+            "--refit-vc-path",
+            str(vc_path),
+            "--refit-va-path",
+            str(va_path),
+            "--refit-valid-idx-path",
+            str(valid_path),
+        ]
+    )
+    j = json.loads(out.read_text())
+    prov = j["map_provenance"]
+    assert prov["source"] == "refit_fallback"
+    assert prov["resolved_weight_key"] == "refit_ridge(v_c->v_a_prime)"
+    ref = prov["refit"]
+    assert ref["n_rows_total"] == 64 and ref["n_rows_kept"] == 60
+    assert ref["r2_val"] > 0.99  # exactly-linear data: held-out sanity far above the 0.2 floor
+    assert ref["n_train"] + ref["n_val"] == 60
+    for arm in common.ARMS:
+        for pid, c in j["per_arm"][arm]["transport_cosine"].items():
+            assert c == pytest.approx(1.0, abs=1e-3), (arm, pid, c)
+
+
+def test_map_transport_refit_sanity_fail_exits_rc6(tmp_path):
+    """Y independent of X -> held-out R^2 < 0.2 -> SystemExit(rc=6), the
+    distinct plan-K3 'H2 DV dropped' exit (never the rc=3 step-0 code)."""
+    act = tmp_path / "acts"
+    _write_captures(act, n_pairs=3)
+    vc_path, va_path, _ = _write_refit_tensors(tmp_path, random_y=True)
+    with pytest.raises(SystemExit) as ei:
+        mt.main(
+            [
+                "--activations",
+                str(act),
+                "--out-json",
+                str(tmp_path / "unused.json"),
+                "--layer",
+                "1",
+                "--hidden",
+                str(HID),
+                "--refit-fallback",
+                "force",
+                "--refit-vc-path",
+                str(vc_path),
+                "--refit-va-path",
+                str(va_path),
+            ]
+        )
+    assert ei.value.code == mt.RC_REFIT_SANITY_FAIL == 6
+    assert not (tmp_path / "unused.json").exists()  # dropped DV writes no output
+
+
+def test_map_transport_auto_refit_engages_on_keys_miss(tmp_path):
+    """--refit-fallback auto (the default): a #922 bundle with NO (H, H)
+    layer weight (the historical rc=3 condition) routes into the refit
+    instead of exiting; --refit-fallback off preserves the rc=3 exit."""
+    act = tmp_path / "acts"
+    _write_captures(act, n_pairs=4)
+    bad = tmp_path / "bad.pt"
+    torch.save({"metadata": "no weights here", "vec": torch.randn(HID)}, bad)
+    vc_path, va_path, w_true = _write_refit_tensors(tmp_path)
+    _steered_from_map(act, tmp_path / "steered", w_true, layer=1)
+
+    common_args = [
+        "--activations",
+        str(act),
+        "--steered-activations",
+        str(tmp_path / "steered"),
+        "--map-path",
+        str(bad),
+        "--layer",
+        "1",
+        "--hidden",
+        str(HID),
+        "--n-draws",
+        "10",
+        "--refit-vc-path",
+        str(vc_path),
+        "--refit-va-path",
+        str(va_path),
+    ]
+    out = tmp_path / "mt_auto.json"
+    mt.main([*common_args, "--out-json", str(out), "--refit-fallback", "auto"])
+    j = json.loads(out.read_text())
+    assert j["map_provenance"]["source"] == "refit_fallback"
+
+    with pytest.raises(SystemExit) as ei:
+        mt.main([*common_args, "--out-json", str(tmp_path / "x.json"), "--refit-fallback", "off"])
+    assert ei.value.code == mt.RC_STEP0_FAIL == 3
+
+
 # ── deliverable 3: judge wiring ───────────────────────────────────────
 
 
