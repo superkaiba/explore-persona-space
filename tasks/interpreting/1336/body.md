@@ -1,6 +1,6 @@
 ---
-title: '#1336 RLVR ladder: G1 re-adjudicated PASSED on held-out recalibrated DV (S_r=0.24
-  vs bar 0.20) — ladder resuming'
+title: RLVR post-training adds no detectable new linear context→answer map structure
+  beyond the DPO stage, even on its own training distribution (MODERATE confidence)
 kind: experiment
 tags: []
 created_at: '2026-07-15T08:33:12Z'
