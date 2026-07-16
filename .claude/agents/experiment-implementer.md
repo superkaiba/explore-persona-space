@@ -427,6 +427,28 @@ such corpora or banks:
    This catches the bulk of "experimenter discovers it crashes at
    startup / at eval" failures before the pod is even provisioned.
 
+   **Per ARM CLASS, not just per phase.** When a phase's driver spans
+   MULTIPLE ARM CLASSES (distinct source-context classes / recipe
+   branches — e.g. persona-context vs bare-context arms), the tiny
+   smoke covers AT LEAST ONE cell of EACH arm class, not one arm
+   overall: per-arm seams (source-context construction, negative-panel
+   assembly, `ModelOrganism` wiring) are invisible to a single-arm
+   smoke however tiny-real its seams (#1090 fu5: a formatting-arm-only
+   smoke passed; all 3 bare-context arms then died on the #527/#538
+   panel-disjointness assert after a full 4×A100 GCE cycle). This is a
+   coverage-BREADTH duty on whichever smoke FORM runs — under a
+   unified smoke-IS-sweep architecture, run the one-cell smoke once
+   per arm class; under the GPU-bound-phase carve-out below, the
+   CPU-runnable portion covers each arm class. Record the coverage on
+   one line inside each phase's `### <phase-name>` sub-section —
+   `arm classes covered: <list>` (write `single arm class` when the
+   driver has one, so a MISSING line reads as a forgotten duty, never
+   as "single-arm by design"). Recipe: `.claude/rules/gotchas.md` "A
+   single-arm smoke is blind to per-arm seams". The Step 6d.0-bis gate
+   reads "once at tiny N" as once PER ARM CLASS and stays the
+   downstream backstop (phase-keyed mechanics unchanged) — this
+   checklist item is the implementer-side prevention.
+
    **GPU-bound-phase carve-out.** When a phase requires multi-GPU or
    GPU-mandatory runtime (`accelerate launch` + ZeRO-3, vLLM batched
    eval, ≥7B HF model load in bf16, TP=8 inference) and the local VM
