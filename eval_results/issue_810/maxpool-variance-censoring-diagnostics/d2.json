@@ -1,0 +1,106 @@
+{
+  "diagnostic": "d2",
+  "reproducibility": {
+    "git_commit": "5199eed787bf74b409d1ba4a2bec5cf6fe3e2cb1",
+    "timestamp_utc": "2026-07-16T08:55:50.025561+00:00",
+    "python_version": "3.11.15",
+    "platform": "Linux-6.8.0-1052-gcp-x86_64-with-glibc2.35",
+    "torch": "2.8.0+cu128",
+    "numpy": "2.2.6",
+    "transformers": "4.57.6"
+  },
+  "results": {
+    "betley": {
+      "pool": "betley",
+      "pool_label": "misalignment",
+      "by_layer": {
+        "18": {
+          "mean_pooled_skill_full_dim": 0.7983028545830704,
+          "mean_pooled_skill_pca48_committed_recipe": 0.7997271698800967,
+          "maxp_pooled_skill_full_dim": 0.7856375035834319,
+          "maxp_pooled_skill_pca48_committed_recipe": 0.7891491419870315,
+          "mean_ssr_total": 714.0238493352851,
+          "frac_mean_ssr_from_ratio_lt_0p3": 0.0,
+          "frac_mean_ssr_from_ratio_lt_0p1": 0.0,
+          "frac_dims_ratio_lt_0p3": 0.0
+        },
+        "19": {
+          "mean_pooled_skill_full_dim": 0.7784000923257083,
+          "mean_pooled_skill_pca48_committed_recipe": 0.7799565645916701,
+          "maxp_pooled_skill_full_dim": 0.7869702342843585,
+          "maxp_pooled_skill_pca48_committed_recipe": 0.7908343698199812,
+          "mean_ssr_total": 1258.3510722145083,
+          "frac_mean_ssr_from_ratio_lt_0p3": 0.0,
+          "frac_mean_ssr_from_ratio_lt_0p1": 0.0,
+          "frac_dims_ratio_lt_0p3": 0.0
+        },
+        "20": {
+          "mean_pooled_skill_full_dim": 0.7727615949991595,
+          "mean_pooled_skill_pca48_committed_recipe": 0.7746674287237958,
+          "maxp_pooled_skill_full_dim": 0.8147211673545809,
+          "maxp_pooled_skill_pca48_committed_recipe": 0.8187853762703357,
+          "mean_ssr_total": 1742.3622317067036,
+          "frac_mean_ssr_from_ratio_lt_0p3": 0.0,
+          "frac_mean_ssr_from_ratio_lt_0p1": 0.0,
+          "frac_dims_ratio_lt_0p3": 0.0
+        },
+        "21": {
+          "mean_pooled_skill_full_dim": 0.7406867806217232,
+          "mean_pooled_skill_pca48_committed_recipe": 0.7427925052512234,
+          "maxp_pooled_skill_full_dim": 0.8219874949606922,
+          "maxp_pooled_skill_pca48_committed_recipe": 0.825916393306918,
+          "mean_ssr_total": 2743.235549525657,
+          "frac_mean_ssr_from_ratio_lt_0p3": 0.00021446491623306114,
+          "frac_mean_ssr_from_ratio_lt_0p1": 0.0,
+          "frac_dims_ratio_lt_0p3": 0.00027901785714285713
+        }
+      }
+    },
+    "g1": {
+      "pool": "g1",
+      "pool_label": "ultrachat",
+      "by_layer": {
+        "18": {
+          "mean_pooled_skill_full_dim": 0.7945301231154893,
+          "mean_pooled_skill_pca48_committed_recipe": 0.7955810115848266,
+          "maxp_pooled_skill_full_dim": 0.67108798518452,
+          "maxp_pooled_skill_pca48_committed_recipe": 0.6742748657136701,
+          "mean_ssr_total": 553.011187818489,
+          "frac_mean_ssr_from_ratio_lt_0p3": 0.00027389613731687584,
+          "frac_mean_ssr_from_ratio_lt_0p1": 0.0,
+          "frac_dims_ratio_lt_0p3": 0.0005580357142857143
+        },
+        "19": {
+          "mean_pooled_skill_full_dim": 0.7760142376123421,
+          "mean_pooled_skill_pca48_committed_recipe": 0.7771402834028303,
+          "maxp_pooled_skill_full_dim": 0.6863425400866499,
+          "maxp_pooled_skill_pca48_committed_recipe": 0.6909826854243886,
+          "mean_ssr_total": 949.3621227274152,
+          "frac_mean_ssr_from_ratio_lt_0p3": 6.899100005697578e-05,
+          "frac_mean_ssr_from_ratio_lt_0p1": 0.0,
+          "frac_dims_ratio_lt_0p3": 0.00027901785714285713
+        },
+        "20": {
+          "mean_pooled_skill_full_dim": 0.7752344088851082,
+          "mean_pooled_skill_pca48_committed_recipe": 0.7764290388811476,
+          "maxp_pooled_skill_full_dim": 0.7067248954681838,
+          "maxp_pooled_skill_pca48_committed_recipe": 0.7110754782508136,
+          "mean_ssr_total": 1257.3515573090874,
+          "frac_mean_ssr_from_ratio_lt_0p3": 0.00013881795955748244,
+          "frac_mean_ssr_from_ratio_lt_0p1": 0.0,
+          "frac_dims_ratio_lt_0p3": 0.00027901785714285713
+        },
+        "21": {
+          "mean_pooled_skill_full_dim": 0.7370400848149051,
+          "mean_pooled_skill_pca48_committed_recipe": 0.7386503085142562,
+          "maxp_pooled_skill_full_dim": 0.7232140407744878,
+          "maxp_pooled_skill_pca48_committed_recipe": 0.7280678816293705,
+          "mean_ssr_total": 1946.2942170873891,
+          "frac_mean_ssr_from_ratio_lt_0p3": 0.0,
+          "frac_mean_ssr_from_ratio_lt_0p1": 0.0,
+          "frac_dims_ratio_lt_0p3": 0.0
+        }
+      }
+    }
+  }
+}

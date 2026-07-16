@@ -1,0 +1,60 @@
+{
+  "diagnostic": "d3",
+  "reproducibility": {
+    "git_commit": "5199eed787bf74b409d1ba4a2bec5cf6fe3e2cb1",
+    "timestamp_utc": "2026-07-16T08:55:50.025561+00:00",
+    "python_version": "3.11.15",
+    "platform": "Linux-6.8.0-1052-gcp-x86_64-with-glibc2.35",
+    "torch": "2.8.0+cu128",
+    "numpy": "2.2.6",
+    "transformers": "4.57.6"
+  },
+  "results": {
+    "betley": {
+      "pool": "betley",
+      "pool_label": "misalignment",
+      "proxy_caveat": "firing rate computed from the 32 tail/head single-position reads, which sample answer start+end (not the middle) AND are per-probe MEANS \u2014 a double proxy for the true per-token firing rate",
+      "by_layer": {
+        "18": {
+          "pooled_rate_r2_p90": 0.23686298907298697,
+          "median_per_dim_rate_r2_p90": 0.17582465481529175,
+          "pooled_rate_r2_p75": 0.31035710845397757,
+          "median_per_dim_rate_r2_p75": 0.2661615030600984,
+          "spearman_rate_r2_vs_mean_r2_p90": 0.3304759480434016,
+          "n_dims_correlated": 3584
+        },
+        "21": {
+          "pooled_rate_r2_p90": 0.10880213183118637,
+          "median_per_dim_rate_r2_p90": 0.04811846151119853,
+          "pooled_rate_r2_p75": 0.15782477110213888,
+          "median_per_dim_rate_r2_p75": 0.10898946761896389,
+          "spearman_rate_r2_vs_mean_r2_p90": 0.3017004020467405,
+          "n_dims_correlated": 3584
+        }
+      }
+    },
+    "g1": {
+      "pool": "g1",
+      "pool_label": "ultrachat",
+      "proxy_caveat": "firing rate computed from the 32 tail/head single-position reads, which sample answer start+end (not the middle) AND are per-probe MEANS \u2014 a double proxy for the true per-token firing rate",
+      "by_layer": {
+        "18": {
+          "pooled_rate_r2_p90": 0.2552788086259591,
+          "median_per_dim_rate_r2_p90": 0.2001972090232782,
+          "pooled_rate_r2_p75": 0.2862605125840699,
+          "median_per_dim_rate_r2_p75": 0.25226932915678546,
+          "spearman_rate_r2_vs_mean_r2_p90": 0.3700590604224732,
+          "n_dims_correlated": 3584
+        },
+        "21": {
+          "pooled_rate_r2_p90": 0.12319440301544993,
+          "median_per_dim_rate_r2_p90": 0.08711198583229801,
+          "pooled_rate_r2_p75": 0.1377859709107715,
+          "median_per_dim_rate_r2_p75": 0.10533151230958054,
+          "spearman_rate_r2_vs_mean_r2_p90": 0.32103102970434316,
+          "n_dims_correlated": 3584
+        }
+      }
+    }
+  }
+}
