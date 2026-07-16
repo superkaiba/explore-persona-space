@@ -12,6 +12,11 @@
 - ``stratified_subsample_ids`` (Major 6): both source prefixes present with
   proportional allocation, deterministic under the seed, and NOT the
   first-N-of-sorted (single-source) selection the fix replaces.
+- ``_r10_key_for_turn`` / ``_r10_node_for_turn`` (crash-fix round 11): the
+  G-C parity lookup translates the refit's 1-based exchange ordinal t to the
+  round-10 curve's 0-based assistant turns-list key 2t-1; the pinned values
+  FAIL under the old ``str(t)`` lookup (even-t cells skipped, odd-t cells
+  compared against the wrong shallower node).
 """
 
 from __future__ import annotations
@@ -27,6 +32,8 @@ sys.path.insert(0, str(REPO_ROOT / "scripts"))
 
 from issue825_turndyn_fit import (  # noqa: E402
     _general_linear_cos,
+    _r10_key_for_turn,
+    _r10_node_for_turn,
     _rank_truncated_cols,
     _transfer_nulls,
 )
@@ -144,6 +151,42 @@ def test_transfer_nulls_match_bruteforce_and_carry_all_cell_keys():
     )
     assert abs(out["1->2"]["null_mean"] - ref.mean()) < 1e-4
     assert abs(out["1->2"]["null_max"] - ref.max()) < 1e-4
+
+
+def test_gc_r10_key_alignment_translates_exchange_ordinal_to_turns_list_index():
+    """Crash-fix round 11 (G-C key-space mismatch): the refit keys cells by
+    ``turn`` = 1-based exchange ordinal t, while the round-10 reference curve
+    is keyed by the 0-based assistant turns-list index = 2t-1 (odd keys only).
+    Pins the translated lookup ``str(2*t - 1)``: under the OLD ``str(t)``
+    lookup, t=2 returned NO node (cell silently skipped) and t=3 returned
+    key "3" — the WRONG (shallower) node belonging to exchange t=2 — the
+    systematic false FAIL that blocked the instruct headline.
+    """
+    # Round-10 curve SHAPE (results.json layer-19): odd keys only, one
+    # distinct r2 per key so a wrong-node selection is detectable.
+    curve = {
+        "1": {"ctx_logged": {"r2": 0.10}, "n": 10},
+        "3": {"ctx_logged": {"r2": 0.20}, "n": 8},
+        "5": {"ctx_logged": {"r2": 0.30}, "n": 6},
+    }
+    # translation: exchange ordinal t -> turns-list index 2t-1
+    assert [_r10_key_for_turn(t) for t in (1, 2, 3)] == [1, 3, 5]
+
+    # t=1: the two conventions coincide (key 1) — the cell the old lookup
+    # got right by accident.
+    assert _r10_node_for_turn(curve, 1) == (1, 0.10)
+    # t=2: OLD lookup curve.get("2") -> {} -> r2 None -> cell skipped.
+    key, r2 = _r10_node_for_turn(curve, 2)
+    assert key == 3
+    assert r2 == 0.20
+    # t=3: OLD lookup selected key "3" (r2 0.20, exchange t=2's node).
+    key, r2 = _r10_node_for_turn(curve, 3)
+    assert key == 5
+    assert r2 == 0.30
+    assert r2 != curve["3"]["ctx_logged"]["r2"]
+    # absent (key 7) / malformed nodes drop out of the comparison (r2 None)
+    assert _r10_node_for_turn(curve, 4) == (7, None)
+    assert _r10_node_for_turn({"1": 3.0}, 1) == (1, None)
 
 
 def test_stratified_subsample_ids_spans_sources_and_is_deterministic():

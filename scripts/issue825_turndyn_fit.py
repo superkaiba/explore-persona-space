@@ -247,6 +247,34 @@ def _assert_drop_kill(capture_root: Path, tag: str, model: str) -> dict:
 # ---------------------------------------------------------------------------
 
 
+def _r10_key_for_turn(t: int) -> int:
+    """Round-10 reference key for refit exchange ordinal ``t`` (crash-fix r11).
+
+    Key-space convention difference: the refit groups rows by ``turn`` =
+    1-BASED assistant exchange ordinal (1, 2, 3, ... — ``_assistant_pairs``
+    in issue825_turndyn_gpu.py), while the round-10 reference curve
+    (onpolicy_turn_depth/results.json, the #1092 pairing) is keyed by the
+    0-BASED turns-list index of the assistant message, i.e. 2t-1 (odd keys
+    1, 3, 5, ...). A ``str(t)`` lookup silently skips every even-t refit
+    cell (no even key exists) and compares every odd-t cell against the
+    WRONG (shallower) round-10 turn — the round-10 systematic false FAIL.
+    """
+    return 2 * t - 1
+
+
+def _r10_node_for_turn(r10_curve: dict, t: int) -> tuple[int, float | None]:
+    """(r10_key, banked ctx_logged r2 or None) for refit exchange ordinal ``t``.
+
+    Selects the round-10 node at the TRANSLATED key ``str(2*t - 1)`` (see
+    ``_r10_key_for_turn``); returns ``None`` r2 when the node is absent or
+    malformed, which drops the cell from the parity comparison.
+    """
+    key = _r10_key_for_turn(t)
+    node = r10_curve.get(str(key), {})
+    r2 = node.get("ctx_logged", {}).get("r2") if isinstance(node, dict) else None
+    return key, r2
+
+
 def run_gc(args: argparse.Namespace) -> None:
     rows, arrays = _load_capture(
         Path(args.capture_root),
@@ -283,7 +311,13 @@ def run_gc(args: argparse.Namespace) -> None:
             if folds is None:
                 continue
             fit = _fit_cv(X[sel], Y[sel], folds, device=args.device)
-            ref[str(t)] = {"ctx_logged": {"r2": float(fit["r2"])}, "n": int(sel.size)}
+            # Write the smoke reference at the round-10 key convention
+            # (turns-list index 2t-1) so the smoke gc run exercises the SAME
+            # translated lookup as production (crash-fix r11).
+            ref[str(_r10_key_for_turn(t))] = {
+                "ctx_logged": {"r2": float(fit["r2"])},
+                "n": int(sel.size),
+            }
         out_ref = Path(args.r10_json)
         out_ref.parent.mkdir(parents=True, exist_ok=True)
         payload: dict = {
@@ -307,8 +341,9 @@ def run_gc(args: argparse.Namespace) -> None:
     out: dict[str, dict] = {}
     n_fail = 0
     for t, sel in by_turn.items():
-        node = r10_curve.get(str(t), {})
-        r10_r2 = node.get("ctx_logged", {}).get("r2") if isinstance(node, dict) else None
+        # refit ``turn`` = 1-based exchange ordinal t; r10 keys = 0-based
+        # assistant turns-list index = 2t-1 (see _r10_key_for_turn).
+        r10_key, r10_r2 = _r10_node_for_turn(r10_curve, t)
         if r10_r2 is None or sel.size < 3:
             continue
         cell_rows = [rows[i] for i in sel]
@@ -330,6 +365,7 @@ def run_gc(args: argparse.Namespace) -> None:
             "r2_refit": float(fit["r2"]),
             "r2_refit_ci": [lo, hi],
             "r2_round10": float(r10_r2),
+            "r10_key": r10_key,
             "pass": bool(ok),
         }
     verdict = {
@@ -337,6 +373,7 @@ def run_gc(args: argparse.Namespace) -> None:
         "model": args.model,
         "n_convs": len(captured_ids),
         "id_assert": "PASS (captured == harvest gc_panel; harvest digest-asserted vs round-10)",
+        "r10_key_convention": "r10_key = 2*t - 1 (assistant turns-list index)",
         "per_turn": out,
         "n_turns": len(out),
         "n_fail": n_fail,
