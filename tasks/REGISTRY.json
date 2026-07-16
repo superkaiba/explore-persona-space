@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1395,
+  "highest_id": 1396,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -3081,6 +3081,13 @@
       "path": "tasks/proposed/1395",
       "status": "proposed",
       "title": "daily-fix: REVISE unpiloted perm-battery wall-times"
+    },
+    "1396": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1396",
+      "status": "proposed",
+      "title": "daily-fix: upload extraction store before long fits"
     },
     "14": {
       "has_clean_result": false,
