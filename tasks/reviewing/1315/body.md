@@ -22,6 +22,8 @@ relates_to:
 
 <!-- clean-result-v4 -->
 
+**Methodology:** [docs/methodology/issue_1315.md](https://github.com/superkaiba/explore-persona-space/blob/adae63a619906792d7f8b38854f5902b16fc1572/docs/methodology/issue_1315.md) · [gist](https://gist.github.com/superkaiba/aecde9c0e4aef43abdebd2427778fc35)
+
 ## Takeaways
 
 - Impolite installs shift activations along the behavior's read-out direction: own-text mean-shift cosine 0.51 to 0.80 across all 6 cells versus a 0.037 chance bound; sycophancy read at most 0.20.
