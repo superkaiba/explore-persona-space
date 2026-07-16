@@ -4,7 +4,7 @@ title: A fixed-label fiction character supports a weak, character-specific conte
 kind: experiment
 tags: []
 created_at: '2026-07-14T22:56:43Z'
-has_clean_result: false
+has_clean_result: true
 parent_id: 931
 origin_prompt: i just want a mapping focused on a specific character in a fiction
   story (NOT the assistant) - trained on on policy generated stories, in base model
