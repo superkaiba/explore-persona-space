@@ -3106,8 +3106,8 @@
     "1399": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1399",
-      "status": "planning",
+      "path": "tasks/approved/1399",
+      "status": "approved",
       "title": "daily-fix: wf-fix dedup screens completed siblings"
     },
     "14": {
