@@ -3169,8 +3169,8 @@
     "1406": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1406",
-      "status": "planning",
+      "path": "tasks/approved/1406",
+      "status": "approved",
       "title": "daily-fix: SPEC protocol delta on sibling headlines"
     },
     "1407": {
