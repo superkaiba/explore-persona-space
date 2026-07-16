@@ -474,6 +474,19 @@ required boldface-led parts:
   `#K`-linked). **Do NOT stage the writeup as a methodology correction of
   a prior run** — describe the open question and what this run did; never
   "the prior run used X, this run uses Y".
+  **Cross-issue protocol comparability:** when this slot quotes a
+  sibling issue's headline NUMBER measured under a DIFFERENT eval
+  protocol (split scheme, fold structure, layer-selection rule, eval
+  distribution, judge/DV recipe), state the protocol delta inline next
+  to the number, with a comparability verdict where the protocols
+  differ materially — e.g.
+  "[#823](https://eps.superkaiba.com/tasks/823) reported R²=0.63
+  (k-fold, predictivity-selected layer) vs this issue's 0.71 (single
+  split, steering layer) — not directly comparable". A protocol delta
+  stated to QUALIFY a quoted number is comparability qualification,
+  not the banned correction framing above. Two protocol-mismatched
+  headlines side by side with no delta stated is a critic FAIL
+  (Lens 7).
 - **`**Broader narrative:**`** — the goal of this experiment / group of
   experiments in the project's broader narrative (the
   `docs/open_questions.md` anchor / project-level question it serves).
@@ -561,6 +574,14 @@ One `### <result>` H3 per result. Each result is STANDALONE — a reader can
 land on it directly and understand it. Issue numbers are confined to
 `## Goal` and the `**Repro:**` / `**Context:**` footer; baselines are
 framed descriptively ("the narrow 2-negative baseline"), not by number.
+When a descriptively-framed baseline (in prose, a caption, or a figure
+reference line) quotes a sibling experiment's headline number measured
+under a DIFFERENT eval protocol, the protocol delta rides inline next
+to the number in the same beat — descriptive form, no `#K` (e.g. "the
+sibling k-fold, predictivity-selected estimate (R²=0.63) vs this run's
+single-split, steering-layer 0.71 — not directly comparable"). When
+the 60-word caption cap binds, the delta rides the what-is-plotted
+prose instead of the caption.
 
 Per-result skeleton — the strict three-beat (THIS is the v4 contract):
 

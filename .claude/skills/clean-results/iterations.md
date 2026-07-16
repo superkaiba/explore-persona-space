@@ -674,6 +674,17 @@ Companion rule added to the migration prompt's cluster-analysis instructions: **
 
 ---
 
+## 2026-07-16 — task #1406 (cross-issue protocol-comparability citation rule)
+
+### Two protocol-mismatched sibling R² headlines sat side by side in mentor-facing prose with no comparability qualifier
+
+- **Before:** mentor-facing prose quoted #779's and #823's R² headlines side by side with no qualifier, though they were measured under different eval protocols (single split vs k-fold; different layer-selection rules) — untangling which numbers were comparable took ~6 clarifying questions. No SPEC.md rule governed how a sibling issue's headline number is qualified when cited.
+- **After:** a sibling issue's headline cited under a different eval protocol carries the protocol delta inline next to the number plus a comparability verdict, e.g. "[#823](https://eps.superkaiba.com/tasks/823) reported R²=0.63 (k-fold, predictivity-selected layer) vs this issue's 0.71 (single split, steering layer) — not directly comparable"; in `## Results`/captions the delta rides the descriptive no-`#K` form (and the what-is-plotted prose when the 60-word caption cap binds).
+- **Rule:** Cross-issue protocol comparability — when a body or figure cites a sibling issue's headline number measured under a DIFFERENT eval protocol (e.g. split scheme, fold structure, layer-selection rule, eval distribution, judge/DV recipe), state the protocol delta inline next to the number, with a comparability verdict where the protocols differ materially. A delta stated to qualify a cited number is comparability qualification, not Lens 2's banned correction framing. Forward-only: binds v4 bodies + follow-up rounds folding onto older bodies; enforcement is Lens 7.
+- **Folded into:** `.claude/skills/clean-results/SPEC.md` (§ `## Goal` (v4) `**This experiment in context:**` bullet + § `## Results` (v4) descriptive-baseline guidance); `.claude/rules/clean-result-critic-lens-reference.md` (Lens 7 enforcement paragraph + Lens 2 carve-out cross-ref); `.claude/agents/analyzer.md` (Step 4 drafting-duty bullet); `tests/test_cross_issue_protocol_comparability_prose.py` (pin test).
+
+---
+
 ## How to add a new entry
 
 When iterating on a clean-result with the user, after applying their correction:
