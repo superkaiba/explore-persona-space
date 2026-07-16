@@ -363,8 +363,11 @@ main() {
   # since the last ported-through main commit (else PORT the diff, not checkout).
   # Pin history: af402fdf (issue-1310 merge-base) -> ed73b13029 (#1320) -> 6ffc602fa9 (#1345 byte-preserving params port, orchestrator inline
   # MLP secondary + turnstore upload; 3-way-merged into the branch copy in the
-  # r4 crash-fix round — 1335 calls none of the #1320-touched entrypoints).
-  local port_pin=6ffc602fa9
+  # r4 crash-fix round — 1335 calls none of the #1320-touched entrypoints)
+  # -> 5b2917fa67 (#1336 default-preserving lambdas=/frozen_layers= params,
+  # r9 orchestrator-inline 3-way port; lambdas= threaded through the branch's
+  # batched null path, inner-group-cv x custom-grid cross product fail-loud).
+  local port_pin=5b2917fa67
   git fetch origin main --quiet || log "WARN: git fetch origin main failed (offline?)"
   if git rev-parse --verify --quiet origin/main >/dev/null; then
     local touched

@@ -264,7 +264,11 @@ def _inner_cv_rss_curve_batched(icaches: list[dict], Ytr_b: torch.Tensor) -> tor
 
 
 def _ridge_predict_cached(
-    cache: dict, Y_train: np.ndarray, *, return_lam: bool = False
+    cache: dict,
+    Y_train: np.ndarray,
+    *,
+    return_lam: bool = False,
+    lambdas: np.ndarray | list[float] | None = None,
 ) -> np.ndarray | tuple[np.ndarray, float]:
     """Fit + predict for one Y using a fold cache from _prep_fold.
 
@@ -273,7 +277,13 @@ def _ridge_predict_cached(
     ``return_lam=True`` additionally returns the GCV-selected lambda
     (#931 `matched-n-denominator-dip` registered source-module change; the
     default returns the prediction alone, byte-preserving).
+    ``lambdas=None`` (default) scans the module-global ``LAMBDAS`` grid,
+    byte-preserving; a caller passes its own grid (#1336 D1 widened-grid
+    audit — the #931 default-preserving-flag pattern, never a caller-side
+    monkey-patch of the module global).
     """
+    lams = LAMBDAS if lambdas is None else np.asarray(lambdas, dtype=np.float64)
+    assert lams.ndim == 1 and len(lams) > 0, f"bad lambda grid shape {lams.shape}"
     Ytr = _as_f64_on(Y_train, cache["w"].device)
     ymu = Ytr.mean(0)
     Ytr_c = Ytr - ymu
@@ -281,14 +291,21 @@ def _ridge_predict_cached(
     VtY = V.T @ Ytr_c
     if cache.get("inner"):
         # #1335 r8: inner-group-CV lambda selection (see N_INNER_LAMBDA_FOLDS).
+        # The inner RSS curve scans the module LAMBDAS grid; the #1336 lambdas=
+        # override has no caller in this cross product — fail loud rather than
+        # argmin-index the wrong grid.
+        assert lambdas is None, (
+            "inner-group-cv lambda selection scans the module LAMBDAS grid; "
+            "a custom lambdas= grid is unsupported with an inner cache"
+        )
         rss_curve = _inner_cv_rss_curve(cache["inner"], Ytr)
         best_lam = float(LAMBDAS[int(torch.argmin(rss_curve))])
     else:
         sqVtY = (VtY**2).sum(1)
         tot = float((Ytr_c**2).sum())
-        best_lam = float(LAMBDAS[0])
+        best_lam = float(lams[0])
         best_gcv = float("inf")
-        for lam in LAMBDAS:
+        for lam in lams:
             filt = w / (w + lam)
             rss = tot - float(((2 * filt - filt**2) * sqVtY).sum())
             dof = float(filt.sum())
@@ -305,7 +322,12 @@ def _ridge_predict_cached(
     return pred_np
 
 
-def _ridge_predict_cached_batched(cache: dict, Y_train_batch) -> torch.Tensor:
+def _ridge_predict_cached_batched(
+    cache: dict,
+    Y_train_batch,
+    *,
+    lambdas: np.ndarray | list[float] | None = None,
+) -> torch.Tensor:
     """Batched twin of _ridge_predict_cached over a (B, n_tr, D) train-Y tensor.
 
     Reproduces the per-draw GCV lambda scan vectorized over the batch: the
@@ -314,6 +336,9 @@ def _ridge_predict_cached_batched(cache: dict, Y_train_batch) -> torch.Tensor:
     all-inf rows argmin to 0 => LAMBDAS[0], matching the serial default). All
     arithmetic is fp64 on the cache device, so the result matches the serial
     scalar path to fp roundoff (equivalence-gated). Returns preds (B, n_te, D).
+    ``lambdas=None`` (default) scans the module-global ``LAMBDAS`` grid,
+    byte-preserving (#1336 D1 default-preserving flag, mirroring the serial
+    twin).
     """
     dev = cache["w"].device
     # Y_train_batch is a device-RESIDENT tensor on the batched null path
@@ -325,15 +350,26 @@ def _ridge_predict_cached_batched(cache: dict, Y_train_batch) -> torch.Tensor:
     Ytr_c = Ytr - ymu  # (B,n_tr,D)
     w, V, KevV, ntr = cache["w"], cache["V"], cache["KevV"], cache["ntr"]
     VtY = torch.einsum("ij,bjd->bid", V.transpose(0, 1), Ytr_c)  # (B,n_tr,D)
-    lambdas = torch.as_tensor(LAMBDAS, dtype=torch.float64, device=dev)  # (Lm,)
+    lams = torch.as_tensor(
+        LAMBDAS if lambdas is None else np.asarray(lambdas, dtype=np.float64),
+        dtype=torch.float64,
+        device=dev,
+    )  # (Lm,)
+    assert lams.ndim == 1 and len(lams) > 0, f"bad lambda grid shape {tuple(lams.shape)}"
     if cache.get("inner"):
         # #1335 r8: per-draw inner-group-CV selection (selection-symmetric).
+        # Inner RSS curves scan the module LAMBDAS grid — same fail-loud rule
+        # as the serial twin for the callerless lambdas= cross product.
+        assert lambdas is None, (
+            "inner-group-cv lambda selection scans the module LAMBDAS grid; "
+            "a custom lambdas= grid is unsupported with an inner cache"
+        )
         rss_curve = _inner_cv_rss_curve_batched(cache["inner"], Ytr)  # (B,Lm)
         best_l = torch.argmin(rss_curve, dim=1)  # (B,)
     else:
         sqVtY = (VtY**2).sum(2)  # (B,n_tr)
         tot = (Ytr_c**2).sum(dim=(1, 2))  # (B,)
-        filt = w.unsqueeze(0) / (w.unsqueeze(0) + lambdas.unsqueeze(1))  # (Lm,n_tr)
+        filt = w.unsqueeze(0) / (w.unsqueeze(0) + lams.unsqueeze(1))  # (Lm,n_tr)
         coef = 2 * filt - filt**2  # (Lm,n_tr)
         rss = tot.unsqueeze(1) - torch.einsum("li,bi->bl", coef, sqVtY)  # (B,Lm)
         dof = filt.sum(1)  # (Lm,)
@@ -344,7 +380,7 @@ def _ridge_predict_cached_batched(cache: dict, Y_train_batch) -> torch.Tensor:
             torch.full_like(rss, float("inf")),
         )
         best_l = torch.argmin(gcv, dim=1)  # (B,)
-    best_lam = lambdas[best_l]  # (B,)
+    best_lam = lams[best_l]  # (B,)
     filt_pred = 1.0 / (w.unsqueeze(0) + best_lam.unsqueeze(1))  # (B,n_tr)
     KV = KevV.unsqueeze(0) * filt_pred.unsqueeze(1)  # (B,n_te,n_tr)
     pred = torch.einsum("bti,bid->btd", KV, VtY) + ymu  # (B,n_te,D)
@@ -364,6 +400,7 @@ def _null_ss_contrib(
     null_perms: list,
     *,
     impl: str = "batched",
+    lambdas: np.ndarray | list[float] | None = None,
 ) -> tuple[np.ndarray, np.ndarray]:
     """Per-draw held-out (ss_res, ss_tot) for the shuffle-null at one (fold, layer).
 
@@ -371,6 +408,8 @@ def _null_ss_contrib(
     production) pushes all draws' permuted-Y through the device-batched ridge
     and reduces on-device (only the (n_draws,) scalars come back to CPU);
     ``impl='serial'`` is the retained reference oracle (tombstoned).
+    ``lambdas=None`` keeps the module ``LAMBDAS`` grid byte-for-byte; a custom
+    grid threads to both impls identically (#1336 selection symmetry).
     """
     n_draws = len(null_perms)
     if n_draws == 0:
@@ -381,7 +420,7 @@ def _null_ss_contrib(
         ss_tot = np.zeros(n_draws)
         for d, perm in enumerate(null_perms):
             Yp = Y_layer[perm]
-            pred_n = _ridge_predict_cached(cache, Yp[tr_mask])
+            pred_n = _ridge_predict_cached(cache, Yp[tr_mask], lambdas=lambdas)
             true_n = Yp[te_mask].astype(np.float64)
             mu_n = true_n.mean(0)
             ss_res[d] = float(np.sum((true_n - pred_n) ** 2))
@@ -404,7 +443,7 @@ def _null_ss_contrib(
         p_te = torch.as_tensor(p[:, te_idx], dtype=torch.long, device=dev)  # (b,n_te)
         Yp_tr = Y_t[p_tr]  # (b,n_tr,D)
         Yp_te = Y_t[p_te]  # (b,n_te,D)
-        pred = _ridge_predict_cached_batched(cache, Yp_tr)  # (b,n_te,D)
+        pred = _ridge_predict_cached_batched(cache, Yp_tr, lambdas=lambdas)  # (b,n_te,D)
         mu = Yp_te.mean(1, keepdim=True)  # (b,1,D)
         ss_res[sl] = ((Yp_te - pred) ** 2).sum(dim=(1, 2)).cpu().numpy()
         ss_tot[sl] = ((Yp_te - mu) ** 2).sum(dim=(1, 2)).cpu().numpy()
@@ -464,21 +503,32 @@ def heldout_r2_sweep(
     collect_lambdas: bool = False,
     lambda_selection: str = "gcv",
     _null_impl: str = "batched",
+    frozen_layers: tuple[int, ...] | list[int] | None = None,
+    lambdas: np.ndarray | list[float] | None = None,
 ) -> dict:
     """Held-out pooled R^2 per layer for observed Y and every shuffle-null draw.
 
     X_layers, Y_layers: (N, L, D) fp arrays (slot -> profile per layer).
+    ``frozen_layers`` parametrizes the per-example cosine + persisted-preds
+    layer set (#1336 default-preserving flag — the default ``None`` keeps the
+    module-level Qwen ``FROZEN_LAYERS`` byte-for-byte, the same pattern as the
+    ``collect_lambdas`` / ``ns=`` parametrizations; a Llama caller passes its
+    own set so preds persist at ITS frozen layers, never the Qwen set).
     Returns:
       r2_obs: (L,) observed held-out pooled R^2 per layer
       r2_null: (null_draws, L) the FULL per-draw x per-layer matrix
-      cosines: {layer: (N,) per-example cosine} at FROZEN_LAYERS
-      preds_frozen: {layer: (N, D) held-out predictions} at FROZEN_LAYERS
+      cosines: {layer: (N,) per-example cosine} at the frozen-layer set
+      preds_frozen: {layer: (N, D) held-out predictions} at the frozen set
       gcv_lambda: (L, n_folds) OBSERVED-fit GCV-selected lambda per
         (layer, fold) when ``collect_lambdas=True`` (NaN for skipped folds);
         None otherwise. #931 `matched-n-denominator-dip` registered
         source-module change — the default (False) preserves the committed
         behavior byte-for-byte (same class as the `ns=` parametrization on
         run_power_curve).
+      lambdas: optional GCV grid override threaded to EVERY
+        `_ridge_predict_cached` call (observed AND null draws — selection
+        stays symmetric under a widened grid); ``None`` keeps the module
+        ``LAMBDAS`` byte-for-byte (#1336 D1 default-preserving flag).
     Null draws permute Y ROW-ORDER (whole example rows, seeded) and go through
     the IDENTICAL cached (w, V, Kev) fitting path as the observed fit.
     """
@@ -486,6 +536,7 @@ def heldout_r2_sweep(
         raise ValueError(
             f"unknown lambda_selection {lambda_selection!r} (want {LAMBDA_SELECTIONS})"
         )
+    fl = FROZEN_LAYERS if frozen_layers is None else tuple(int(x) for x in frozen_layers)
     X_layers = np.asarray(X_layers, dtype=np.float32)
     Y_layers = np.asarray(Y_layers, dtype=np.float32)
     n, n_layers = X_layers.shape[0], X_layers.shape[1]
@@ -511,11 +562,9 @@ def heldout_r2_sweep(
     ss_tot_null = np.zeros((null_draws, n_layers))
     lam_obs = np.full((n_layers, n_folds), np.nan) if collect_lambdas else None
     fitted = np.zeros(n, dtype=bool)
-    cosines = {int(li): np.zeros(n) for li in FROZEN_LAYERS if li < n_layers}
+    cosines = {int(li): np.zeros(n) for li in fl if li < n_layers}
     preds_frozen = {
-        int(li): np.zeros((n, Y_layers.shape[2]), dtype=np.float32)
-        for li in FROZEN_LAYERS
-        if li < n_layers
+        int(li): np.zeros((n, Y_layers.shape[2]), dtype=np.float32) for li in fl if li < n_layers
     }
 
     for li in range(n_layers):
@@ -539,10 +588,12 @@ def heldout_r2_sweep(
                         "group folds — falling back to GCV for this fold"
                     )
             if collect_lambdas:
-                pred, best_lam = _ridge_predict_cached(cache, Y[tr], return_lam=True)
+                pred, best_lam = _ridge_predict_cached(
+                    cache, Y[tr], return_lam=True, lambdas=lambdas
+                )
                 lam_obs[li, k] = best_lam
             else:
-                pred = _ridge_predict_cached(cache, Y[tr])
+                pred = _ridge_predict_cached(cache, Y[tr], lambdas=lambdas)
             fitted[te] = True
             true = Y[te].astype(np.float64)
             mu = true.mean(0)
@@ -555,9 +606,12 @@ def heldout_r2_sweep(
             # (n_draws,) scalars return to CPU); serial reference retained for
             # the equivalence gate. Reuses the SAME fold cache as the observed
             # fit (no extra eigh) — semantics-preserving, only the compute shape
-            # changes (#1310 vectorization).
+            # changes (#1310 vectorization). lambdas= threads through both
+            # impls (#1336 — selection stays symmetric under a widened grid).
             if null_perms:
-                ssr, sst = _null_ss_contrib(cache, Y, tr, te, null_perms, impl=_null_impl)
+                ssr, sst = _null_ss_contrib(
+                    cache, Y, tr, te, null_perms, impl=_null_impl, lambdas=lambdas
+                )
                 ss_res_null[:, li] += ssr
                 ss_tot_null[:, li] += sst
 
@@ -577,13 +631,20 @@ def heldout_r2_sweep(
     }
 
 
-def selection_symmetric_summary(r2_obs: np.ndarray, r2_null: np.ndarray) -> dict:
+def selection_symmetric_summary(
+    r2_obs: np.ndarray,
+    r2_null: np.ndarray,
+    frozen_layers: tuple[int, ...] | list[int] | None = None,
+) -> dict:
     """Selection-symmetric layer-max read (#778) + frozen-layer table.
 
     The observed layer-max R^2 is compared against each null draw's OWN
     layer-max (per-draw same-selection); the full per-draw x per-layer matrix
-    is persisted by the caller alongside this summary.
+    is persisted by the caller alongside this summary. ``frozen_layers``
+    parametrizes the frozen-layer table (#1336 default-preserving flag; the
+    default ``None`` keeps the module-level Qwen set byte-for-byte).
     """
+    fl = FROZEN_LAYERS if frozen_layers is None else tuple(int(x) for x in frozen_layers)
     obs_max = float(np.nanmax(r2_obs))
     obs_argmax = int(np.nanargmax(r2_obs))
     null_max = np.nanmax(r2_null, axis=1)  # (draws,) each draw's own layer-max
@@ -593,7 +654,7 @@ def selection_symmetric_summary(r2_obs: np.ndarray, r2_null: np.ndarray) -> dict
             "null_mean": float(np.nanmean(r2_null[:, li])),
             "null_p975": float(np.nanquantile(r2_null[:, li], 0.975)),
         }
-        for li in FROZEN_LAYERS
+        for li in fl
         if li < len(r2_obs)
     }
     return {
