@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1427,
+  "highest_id": 1429,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -62,8 +62,8 @@
       "goal": "Determine whether the CoT-decomposition results from #928 (CoT informativeness, predictive sufficiency of the CoT summary, composition parity) replicate on DeepSeek-R1-Distill-Qwen-7B \u2014 a thinking model whose chat template forces the reasoning scaffold \u2014 and whether full scaffold compliance eliminates the flagged-context covariate, testing whether the +0.41 length-matched flagged-cluster gain is a think-scaffold-compliance artifact rather than a context-family property.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/followups_running/1005",
-      "status": "followups_running",
+      "path": "tasks/awaiting_promotion/1005",
+      "status": "awaiting_promotion",
       "title": "The outsized chain-of-thought gain on in-context-learning and WildChat contexts is a context-family property, not a parse artifact: it survives template-forced scaffold compliance (MODERATE confidence)"
     },
     "1006": {
@@ -3071,36 +3071,36 @@
     "1394": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/1394",
-      "status": "approved",
+      "path": "tasks/completed/1394",
+      "status": "completed",
       "title": "daily-fix: planner reuse search live sibling worktrees"
     },
     "1395": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1395",
-      "status": "planning",
+      "path": "tasks/completed/1395",
+      "status": "completed",
       "title": "daily-fix: REVISE unpiloted perm-battery wall-times"
     },
     "1396": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1396",
-      "status": "planning",
+      "path": "tasks/completed/1396",
+      "status": "completed",
       "title": "daily-fix: upload extraction store before long fits"
     },
     "1397": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1397",
-      "status": "planning",
+      "path": "tasks/reviewing/1397",
+      "status": "reviewing",
       "title": "daily-fix: review names batched helper for fit loops"
     },
     "1398": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1398",
-      "status": "proposed",
+      "path": "tasks/completed/1398",
+      "status": "completed",
       "title": "daily-fix: neutral gate vocabulary first-pass briefs"
     },
     "1399": {
@@ -3127,15 +3127,15 @@
     "1400": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1400",
-      "status": "proposed",
+      "path": "tasks/running/1400",
+      "status": "running",
       "title": "daily-fix: triage observer empty-window false flags"
     },
     "1401": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1401",
-      "status": "proposed",
+      "path": "tasks/planning/1401",
+      "status": "planning",
       "title": "daily-fix: pod.py sync env GITHUB_TOKEN refresh leg"
     },
     "1402": {
@@ -3333,9 +3333,23 @@
     "1427": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1427",
-      "status": "planning",
+      "path": "tasks/completed/1427",
+      "status": "completed",
       "title": "workflow-fix: gotchas.md \u2014 EXDEV: bare /tmp tempdir + os.replace onto /workspace"
+    },
+    "1428": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1428",
+      "status": "proposed",
+      "title": "Fix torch-before-dotenv in 10 main-resident figure scripts (fleet thread-caps test red)"
+    },
+    "1429": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1429",
+      "status": "proposed",
+      "title": "workflow-fix: gotchas entry \u2014 rank-space bootstrap tail-mass gating (float-space CI coverage epsilon-fragile)"
     },
     "144": {
       "has_clean_result": false,

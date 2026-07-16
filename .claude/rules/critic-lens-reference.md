@@ -250,6 +250,19 @@ composer copies the requested lens's items VERBATIM and IN FULL from this file.
       never needed to hold (2026-06-09: pod-518 ran 1h+ of pure-CPU permutation/bootstrap scoring
       with all 8 H100s at 0%, pod-523 ran a CPU-only metrics phase ~6h on idle GPUs — ~$48/hr of
       idle burn).
+      Sequencing clause (b) ALSO runs as a DATA-SAFETY ordering, not only a
+      billing one (and it fires for GPU fit phases too — the consuming
+      phase's device does not narrow it): when a long (>~15-30 min)
+      fit/analysis/eval phase CONSUMES a regeneration-costly intermediate
+      (extraction / activation store, capture, rollout set), REVISE a plan
+      whose phase sequence leaves that store unpersisted through the fit —
+      the store uploads (or a detached/backgrounded upload launches,
+      fail-loud + verified landed independently of the fit, never
+      fire-and-forget) BEFORE the long fit begins (#825: `extract → serial
+      CPU fit (hung) → upload` stranded the turnstore off HF; recovery cost
+      a full fresh GPU re-extraction).
+      Rule: `.claude/rules/upload-policy.md` expensive-store-before-long-fit
+      bullet; plan-side mirror: `planner.md` §9.
     - **(ii) Oversized footprint placed on the VM (disk/RAM safety).** REVISE when the plan routes the
       phase to the VM (the off-pod default) but its estimated local footprint exceeds
       `VM_ANALYSIS_FOOTPRINT_GB_MAX = 50` GB — `downloaded_inputs_gb +

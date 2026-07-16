@@ -1,6 +1,6 @@
 {
-  "commit": "bcf67e51f7",
-  "created": "2026-07-16T11:11:11Z",
+  "commit": "e51b941a4e",
+  "created": "2026-07-16T17:04:51Z",
   "figsize": [
     11.0,
     4.4
@@ -87,32 +87,38 @@
       "_group": 11
     },
     {
+      "x": 2.82,
+      "y": 0.16616224069994123,
+      "_kind": "bar",
+      "_group": 12
+    },
+    {
       "x": 0.18,
       "y": -0.17826416355020092,
       "_kind": "bar",
-      "_group": 12
+      "_group": 13
     },
     {
       "x": 1.18,
       "y": -0.09958659796428537,
       "_kind": "bar",
-      "_group": 13
+      "_group": 14
     },
     {
       "x": 2.18,
       "y": -0.18876177288934248,
       "_kind": "bar",
-      "_group": 14
+      "_group": 15
     },
     {
       "x": 3.18,
       "y": -0.17615306808991282,
       "_kind": "bar",
-      "_group": 15
+      "_group": 16
     }
   ],
-  "n_series": 16,
-  "total_points": 17,
+  "n_series": 17,
+  "total_points": 18,
   "text": {
     "suptitle": null,
     "fig_texts": [],
@@ -144,9 +150,6 @@
       },
       {
         "title_left": "Qwen2.5-7B-Instruct",
-        "annotations": [
-          "not run"
-        ],
         "xticklabels": [
           "Wren (helpful)",
           "HELIOS (ship AI)",

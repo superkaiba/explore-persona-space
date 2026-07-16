@@ -76,9 +76,13 @@ pressure, uploaded INCREMENTALLY in shards so a store larger than the disk
 quota still persists. NO policy ceiling. A discard fires ONLY when main AND
 overflow are exhausted, always with an alert + a regen recipe; model
 generations / rollout text are NEVER discardable.
+Sequence the upload of any regeneration-costly store BEFORE — or concurrent
+with — a long fit/analysis phase that consumes it: a fit hang must never
+strand the store (#825).
 Full recipe: `.claude/rules/upload-policy.md` (v2 § upload-by-default).
 **Owner:** `upload-verifier` (v2 mode — 100% reconciliation, undeclared
-missing = FAIL) + `efficiency-critic` (shard-upload sequencing, #664).
+missing = FAIL) + `efficiency-critic` (shard-upload sequencing, #664;
+expensive-store-before-long-fit ordering, #825).
 
 ## 6. Contrastive negatives for behavior implantation
 

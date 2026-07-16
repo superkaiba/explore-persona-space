@@ -165,6 +165,41 @@ Given a task description (from the `/adversarial-planner` skill or the main sess
    cited diff), then reuse.
    (Relocated verbatim from this spec, #829.)
 
+   **Live-sibling sweep — check CONCURRENT in-flight work before designing
+   any new module/helper build (#1394).** The searches above cover merged
+   code, HF artifacts, and PAST parent/sibling issue branches; a concurrent
+   session may have ALREADY BUILT the module on a branch nothing has merged
+   yet (#1335/#1345 re-implemented modules #825 had built + reviewed on its
+   unmerged `issue-825` branch; the user had to flag the consolidation).
+   When §4 Design includes a "needs to be built" module/helper (a new file
+   under `src/` or `scripts/`, or a substantial new function family — not
+   trivial glue or doc edits), run this bounded read-only sweep (~seconds):
+
+   ```bash
+   # (1) Live sessions + issue mappings (#N registered, ~#N inferred from cwd):
+   uv run python scripts/spawn_session.py list
+   # (2) Probe each RELEVANT in-flight worktree (candidates = live-session
+   #     issues from (1) + issues this task body/plan cites + same
+   #     open-questions-line siblings; .claude/worktrees/issue-* is bounded, ~50):
+   git -C .claude/worktrees/issue-<M> log --oneline origin/main..HEAD -- '<module glob>'
+   git -C .claude/worktrees/issue-<M> diff --name-only origin/main...HEAD   # broad read
+   # (3) A cited sibling with NO local worktree — probe its unmerged branch:
+   git log --oneline origin/main..origin/issue-<M> -- '<module glob>'   # origin/ form; fetch origin first if stale
+   ```
+
+   NEVER enumerate all unmerged `issue-*` branches (900+ exist) — probe only
+   the named candidates; `parent:` frontmatter is often absent, so "sibling"
+   means live-session issues, issues the task body/plan cites, and the same
+   open-questions line. On overlap, add ONE labeled line to §2 Prior Work —
+   `Live-sibling overlap: #<M> (<worktree-or-branch>) already builds
+   <module>; reuse-or-consolidate: <one line>` — and design §4 to reuse /
+   consolidate instead of re-implementing (port mechanics:
+   `.claude/rules/artifact-reuse.md` § Porting a recipe from an unmerged
+   sibling branch). No overlap → `Live-sibling check: no overlapping
+   in-flight work (checked <UTC date>)`. ADVISORY ONLY — plan prose, never a
+   new gate or user pause, never a reason to park: the plan proceeds either
+   way, and the critic + user see the consolidation choice in the plan text.
+
 6. **Replication fidelity (if the Goal is to replicate a published
    finding).** When the Goal replicates a paper's result, READ
    `.claude/rules/replication-fidelity.md` IN FULL before grounding the
@@ -389,6 +424,16 @@ Compute-sizing recipes: `.claude/rules/plan-compute-sizing.md`
 (on-demand); phase placement + GPU-width right-sizing are always-on in
 CLAUDE.md § Pods.
 
+Phase-ORDER expensive-intermediate persistence: the §9 phase sequence names
+the upload point of every regeneration-costly intermediate (extraction /
+activation store, capture, rollout set) BEFORE — or detached-concurrent
+with — any long (>~15-30 min) downstream fit/analysis/eval phase that
+consumes it (a concurrent launch counts only if fail-loud + verified landed
+independently of the fit — never fire-and-forget); `extract → long fit →
+upload` is the #825 stranding order (a hung serial fit left the turnstore
+off HF; recovery = a fresh GPU re-extraction). Full rule:
+`.claude/rules/upload-policy.md` expensive-store-before-long-fit bullet.
+
 Full template + worked examples: `.claude/rules/planner-section-reference.md`
 § 9. Resources & Parallelism — read that section (grep the heading, chunked Read) BEFORE writing
 this section.
@@ -484,7 +529,7 @@ the superseded Goal — one wasted plan round + one wasted implementer round.
 - **Use exact numbers from result files**, not rounded approximations. Read the JSONs.
 - **Name specific files and functions.** "The existing training code" is vague. "`scripts/run_trait_transfer.py::train_lora()` at line 142" is specific.
 - **Don't design in a vacuum.** If the codebase has a pattern for something, follow it.
-- **Flag what's new vs reused.** Clearly distinguish "this already exists" from "this needs to be built."
+- **Flag what's new vs reused.** Clearly distinguish "this already exists" from "this needs to be built." Anything "needs to be built" implies the step-5 live-sibling sweep ran and its labeled result line sits in §2 Prior Work (#1394).
 - **Be honest about uncertainty.** If you're guessing, say so. A confident wrong assumption is worse than an acknowledged unknown.
 - **Default to the most parallel viable spec.** When the parallelism analysis in §9 admits a larger pod or N concurrent pods that finish meaningfully sooner, pick that path. Justify any choice that leaves wall-clock speedup on the table.
 - **Workflow-prose durability pin (infra / workflow-fix plans).** When the plan

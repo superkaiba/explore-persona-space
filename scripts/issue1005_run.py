@@ -150,8 +150,10 @@ from issue1005_common import (  # noqa: E402
     gate1005_check,
     mlc_parts_spec_1005,
     prompt_parts_spec_1005,
+    regen_accounting,
     run_startup_asserts,
     select_gate_slice,
+    stage_prefix,
     synthetic_completions_1005,
 )
 
@@ -354,6 +356,21 @@ def main() -> int:  # noqa: C901 — linear phase pipeline (gate→G→P→B→F
     )
     ap.add_argument("--no-upload", action="store_true")
     ap.add_argument("--smoke", action="store_true", help="label + relax model-shape asserts")
+    ap.add_argument(
+        "--force-regen-16k",
+        action="store_true",
+        help="cap16k amendment (plan v4 §2): force the Phase P 16,384 re-generation of every "
+        "finish_reason=='length' row regardless of the 10%% trigger, INCLUDING under --skip-gen "
+        "(targets are recomputed from the loaded rollouts; no row list is passed)",
+    )
+    ap.add_argument(
+        "--hf-stage-suffix",
+        default="",
+        help="cap16k amendment (plan v4 §2): suffix appended to the driver's TWO in-driver "
+        "upload prefixes (rollouts + store) so a follow-up round writes sibling Hub buckets "
+        "(e.g. thinking_rollouts_16k) instead of clobbering the parent head artifacts; "
+        "composes BEFORE the _smoke leaf suffix",
+    )
     args = ap.parse_args()
 
     device = args.device or ("cuda" if (args.gpu and torch.cuda.is_available()) else "cpu")
@@ -363,6 +380,26 @@ def main() -> int:  # noqa: C901 — linear phase pipeline (gate→G→P→B→F
             "nor --gpu was passed. Production capture/fits on CPU ran 6.4x over plan on "
             "2026-07-15 (A100 idle at 0%). Pass --device cuda, or --device cpu --smoke for "
             "the CPU smoke."
+        )
+    if args.force_regen_16k and not args.synthetic_completions and device != "cuda":
+        # Critic concern 1 (fail-loud-proof engine init): the forced Phase P is
+        # the FIRST _generate call of a --skip-gen run, so the vLLM engine inits
+        # lazily inside it — refuse up front rather than crash mid-phase on a
+        # CPU vLLM build after staging + gate resume already ran.
+        raise SystemExit(
+            "[issue1005] --force-regen-16k needs a live vLLM engine (device=cuda) or "
+            "--synthetic-completions (CPU smoke): the forced Phase P re-generates rows and "
+            "would otherwise fail at lazy engine init after setup work already ran."
+        )
+    if args.hf_stage_suffix and not args.no_upload and set(args.phases) - {"extract"}:
+        # --hf-stage-suffix threads ONLY the two extract-phase upload sites; the
+        # fit/figure phases' Hub prefixes would still resolve to the parent
+        # buckets and clobber them. The cap16k launcher runs fits with
+        # --no-upload and uploads their outputs scoped afterwards.
+        raise SystemExit(
+            "[issue1005] --hf-stage-suffix is threaded only through the extract-phase upload "
+            "prefixes; run non-extract phases with --no-upload (fit outputs are uploaded "
+            "scoped by the cap16k launcher) so parent Hub artifacts are never clobbered."
         )
     out_dir = Path(args.out_dir)
     eval_out = Path(args.eval_out)
@@ -760,25 +797,53 @@ def _phase_extract(  # noqa: C901 — linear gate→G→P→B→U pipeline; see 
     trunc_frac = sum(1 for r in all_rows if r["finish_reason"] == "length") / max(1, len(all_rows))
     regen_16k = False
     if (
-        trunc_frac > TRUNCATION_REGEN_FRAC
+        (trunc_frac > TRUNCATION_REGEN_FRAC or args.force_regen_16k)
         and production_cap < MAX_NEW_TOKENS_RETRY
-        and not args.skip_gen
+        and (not args.skip_gen or args.force_regen_16k)
     ):
         phase("regen16k")
-        regen_16k = True
         targets = [
             (c, qi)
             for c in ctx_ids
             for qi, r in enumerate(parse_by_ctx[c])
             if r["finish_reason"] == "length"
         ]
-        prompts = [_prompt(c, qi) for c, qi in targets]
-        comps = _generate(prompts, chosen_rung, MAX_NEW_TOKENS_RETRY)
-        for (c, qi), new in zip(targets, comps, strict=True):
-            completions_by_ctx[c][qi] = new
-        for c in {c for c, _qi in targets}:
-            _persist_rollout(c, regen_rows=[qi for cc, qi in targets if cc == c])
-            parse_by_ctx[c] = parse_rows(tokenizer, completions_by_ctx[c], PARSER_RUNG)
+        if args.force_regen_16k:
+            logger.info(
+                "[regen16k] FORCED (--force-regen-16k): %d target rows across %d contexts "
+                "(trunc_frac=%.4f; 10%% trigger bypassed)",
+                len(targets),
+                len({c for c, _qi in targets}),
+                trunc_frac,
+            )
+        if not targets:
+            logger.warning("[regen16k] zero finish_reason=='length' rows — nothing to regenerate")
+        else:
+            regen_16k = True
+            # Critic concern 2: cap-hit rows that parsed well-formed pre-regen
+            # (7/97 in production) must be accounted replaced-usable, never
+            # counted as recovered — snapshot the pre-regen parse state.
+            pre_state = {(c, qi): parse_by_ctx[c][qi] for c, qi in targets}
+            prompts = [_prompt(c, qi) for c, qi in targets]
+            comps = _generate(prompts, chosen_rung, MAX_NEW_TOKENS_RETRY)
+            for (c, qi), new in zip(targets, comps, strict=True):
+                completions_by_ctx[c][qi] = new
+            for c in {c for c, _qi in targets}:
+                _persist_rollout(c, regen_rows=[qi for cc, qi in targets if cc == c])
+                parse_by_ctx[c] = parse_rows(tokenizer, completions_by_ctx[c], PARSER_RUNG)
+            post_state = {(c, qi): parse_by_ctx[c][qi] for c, qi in targets}
+            acct = regen_accounting(targets, pre_state, post_state)
+            dump_json(
+                {
+                    "dv": "per-row 16,384 regen accounting (amendment plan v4 §4)",
+                    "forced": bool(args.force_regen_16k),
+                    "trunc_frac_pre_regen": trunc_frac,
+                    **acct,
+                    "reproducibility": reproducibility_metadata(),
+                },
+                eval_out / "regen16k_accounting.json",
+            )
+            logger.info("[regen16k] accounting totals: %s", acct["totals"])
     parse_report = {
         c: {
             "n_rows": len(parse_by_ctx[c]),
@@ -838,7 +903,7 @@ def _phase_extract(  # noqa: C901 — linear gate→G→P→B→U pipeline; see 
         phase("upload_rollouts")
         hf_paths["raw_completions"] = upload_folder_scoped_verify(
             rollouts_dir,
-            RAW_COMPLETIONS_PREFIX_1005 + ("_smoke" if args.smoke else ""),
+            stage_prefix(RAW_COMPLETIONS_PREFIX_1005, args.hf_stage_suffix, args.smoke),
             [f"{c}.json" for c in ctx_ids],
             f"issue #1005: R1-distill thinking rollouts ({len(ctx_ids)} ctx, rung={chosen_rung})",
             allow_patterns=["*.json"],
@@ -1106,6 +1171,17 @@ def _phase_extract(  # noqa: C901 — linear gate→G→P→B→U pipeline; see 
         "smoke": args.smoke,
     }
     dump_json(manifest, out_dir / "store" / "manifest.json")
+    # Resume-completeness: a digest-resumed (SKIPPED) context never re-enters the
+    # capture loop, so its bookkeeping rows only exist in the PRIOR
+    # row_bookkeeping.json (staged from the parent on the cap16k re-run). Merge
+    # them in so the rewritten file — and its _16k Hub bucket — stays complete
+    # for all contexts instead of shrinking to the recaptured subset.
+    bk_path = out_dir / "store" / "row_bookkeeping.json"
+    if bk_path.is_file():
+        prior_bk = json.loads(bk_path.read_text()).get("per_context", {})
+        for c in ctx_ids:
+            if c not in bookkeeping and c in prior_bk:
+                bookkeeping[c] = prior_bk[c]
     dump_json(
         {"per_context": bookkeeping, "reproducibility": reproducibility_metadata()},
         out_dir / "store" / "row_bookkeeping.json",
@@ -1116,7 +1192,7 @@ def _phase_extract(  # noqa: C901 — linear gate→G→P→B→U pipeline; see 
         phase("upload_store")
         hf_paths["store"] = upload_folder_scoped_verify(
             out_dir / "store",
-            STORE_PREFIX_1005 + ("_smoke" if args.smoke else ""),
+            stage_prefix(STORE_PREFIX_1005, args.hf_stage_suffix, args.smoke),
             [
                 "manifest.json",
                 "row_bookkeeping.json",
