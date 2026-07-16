@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1409,
+  "highest_id": 1410,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -3200,6 +3200,13 @@
       "path": "tasks/on_hold/141",
       "status": "on_hold",
       "title": "Followup on #102"
+    },
+    "1410": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1410",
+      "status": "proposed",
+      "title": "daily-fix: gotchas /mnt/eps-data root not writable"
     },
     "142": {
       "has_clean_result": true,
