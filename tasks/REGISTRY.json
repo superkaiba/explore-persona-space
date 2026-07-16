@@ -2868,8 +2868,8 @@
     "1368": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1368",
-      "status": "running",
+      "path": "tasks/reviewing/1368",
+      "status": "reviewing",
       "title": "workflow-fix: verify_task_body WARN on 4+-sentence result paragraphs (v4)"
     },
     "1369": {
