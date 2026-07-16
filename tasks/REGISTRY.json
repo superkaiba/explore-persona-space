@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1378,
+  "highest_id": 1379,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -2948,6 +2948,13 @@
       "path": "tasks/completed/1378",
       "status": "completed",
       "title": "Fix torch-before-dotenv in issue1073/issue1092 figure scripts (fleet test_shared_vm_thread_caps failure)"
+    },
+    "1379": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1379",
+      "status": "proposed",
+      "title": "workflow-fix: auto-degrade GCP GPU width (8->4->2) for explicit sweep-8g intents on capacity failure"
     },
     "138": {
       "has_clean_result": true,
