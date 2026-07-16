@@ -79,6 +79,7 @@ def _list_reuse_files(smoke: bool) -> list[tuple[str, int]]:
         # Materialize INSIDE the retry — list_repo_tree is a LAZY generator and
         # raises at iteration time (gotchas.md, #779).
         lambda: list(
+            # HUB_VERIFY_RETRY_EXEMPT: wrapped in hub.retry_transient with in-retry materialization (lazy generator; #779)
             api.list_repo_tree(
                 c.HF_DATA_REPO,
                 path_in_repo=c.REUSE_TENSOR_PREFIX,
