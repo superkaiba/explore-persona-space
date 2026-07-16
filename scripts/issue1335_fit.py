@@ -621,7 +621,12 @@ def ensure_store_local(args, slug: str, model_kind: str) -> bool:
     from huggingface_hub import hf_hub_download
 
     prefix = f"{r1335.HF_PREFIX}/analysis_tensors/store_{slug}_{model_kind}"
-    with tempfile.TemporaryDirectory(prefix=f"i1335_stage_{slug}_{model_kind}_") as td:
+    store_dir.mkdir(parents=True, exist_ok=True)
+    # Staging dir INSIDE store_dir (the issue1335_extract_store.py pattern):
+    # a bare /tmp TemporaryDirectory EXDEV-crashes os.replace onto /workspace
+    # (cross-device), and the non-recursive shard globs cannot see the nested
+    # half-downloaded tree.
+    with tempfile.TemporaryDirectory(dir=store_dir, prefix=".hfstage_") as td:
         for name in missing:
             got = hf_hub_download(
                 r1335.HF_DATA_REPO, f"{prefix}/{name}", repo_type="dataset", local_dir=td
