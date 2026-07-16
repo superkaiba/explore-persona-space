@@ -2987,8 +2987,8 @@
     "1383": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1383",
-      "status": "reviewing",
+      "path": "tasks/completed/1383",
+      "status": "completed",
       "title": "workflow-fix: verified-at-filing context binding"
     },
     "1384": {
