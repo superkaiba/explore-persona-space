@@ -3022,8 +3022,8 @@
     "1388": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1388",
-      "status": "running",
+      "path": "tasks/reviewing/1388",
+      "status": "reviewing",
       "title": "daily-fix: fix bare list_repo_tree lint offenders"
     },
     "1389": {
