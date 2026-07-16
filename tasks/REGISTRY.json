@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1397,
+  "highest_id": 1398,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -3095,6 +3095,13 @@
       "path": "tasks/proposed/1397",
       "status": "proposed",
       "title": "daily-fix: review names batched helper for fit loops"
+    },
+    "1398": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1398",
+      "status": "proposed",
+      "title": "daily-fix: neutral gate vocabulary first-pass briefs"
     },
     "14": {
       "has_clean_result": false,
