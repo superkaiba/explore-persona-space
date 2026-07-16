@@ -27,11 +27,11 @@ relates_to:
 
 ## Takeaways
 
-- Chat↔plain-text operator transfer misses the same-operator margin in both models (83–84% of ceiling kept, instruct; 15–31%, base) at every frozen layer; the layer-19 deficit CI excludes zero.
+- Chat↔plain-text operator transfer misses the same-operator margin at every frozen layer in both models; at layer 19 it keeps 83–84% of ceiling (instruct) vs 15–31% (base), with the deficit CI excluding zero.
 - A general-linear coordinate change recovers the target ceiling in both context cells (0.005 below to 0.008 above; nulls ≈ −0.03) — the registered same-map-different-coordinates verdict; degenerate prefix cells concur.
-- Instruction tuning pulls the two coordinate systems together: raw operator cosine 0.651 (instruct) vs 0.293 (base); rotation-aligned cosine 0.855 vs 0.732 against a rotation null near 0.001.
+- Instruction tuning pulls the two coordinate systems together — raw operator cosine rises from 0.293 (base) to 0.651 (instruct), and rotation alignment lifts both to 0.732 and 0.855 against a rotation null near 0.001.
 - The assistant map barely exists in narrative stories (instruct): context R² −0.754 at layer 19 — above the shuffle null, below both the mean baseline and the parent's ≈0.16 story prior.
-- Insofar as a story operator exists, it is not the chat operator: raw cosine 0.011, top-10 principal-angle 0.52 (vs 0.99 chat pair) — capped by the story map's unreliability.
+- The story–chat operator relation is unresolved: raw cosine 0.011 and top-10 principal-angle 0.52 (vs 0.99 for the chat pair) read near floor, but a noise-level story map would read the same.
 - Base-model story cells are N/A — not tested: 96 of 500 generated stories passed the quality gate (floor 400).
 
 ## Goal
@@ -120,7 +120,7 @@ Cosine between the chat and no-template operators at layer 19 (context arm): raw
 
 > **Figure.** Raw operator cosine 0.651 (instruct) vs 0.293 (base); aligned cosine 0.855 vs 0.732; the rotation null is ~0.001, so both aligned values sit far beyond chance.
 
-Instruct operators are already 0.651 aligned raw — the chat template shifts coordinates modestly — while base operators read 0.293 raw yet 0.732 aligned, comparable to the parent's cross-model anchor. Near-identical activations do not explain this. The input activations align at linear R² 0.79 (instruct) and 0.48–0.61 (base) — reported in place of the plan's paired activation cosine — and the fitted alignment upper-bounds any identity fit, so the activations are not near-identical. Instruction tuning appears to canonicalize coordinates across framings more than it changes the operator.
+Instruct operators are already 0.651 aligned raw (the chat template shifts coordinates modestly), while base operators read 0.293 raw yet 0.732 aligned, comparable to the parent's cross-model anchor. Near-identical activations do not explain this. The input activations align at linear R² 0.79 (instruct) and 0.48–0.61 (base) — reported in place of the plan's paired activation cosine — and the fitted alignment upper-bounds any identity fit, so the activations are not near-identical. Instruction tuning appears to canonicalize coordinates across framings more than it changes the operator.
 
 ### The assistant map barely exists in narrative stories; its relation to the chat operator is unresolved
 
@@ -142,7 +142,7 @@ Per model and direction (prefix arm, layer 19, symlog scale): the target framing
 
 > **Figure.** Prefix-arm within-regime R² is ~0.13 everywhere; naive transfer reaches −505 to −16,761 (massive scale/offset mismatch across framings); reparameterization recovers 0.126–0.133, matching the ceilings.
 
-The pre-query region is a fixed template string in both framings, so the prefix slot's nominal content is conversation-independent. In a sampled extraction shard (500 conversations, instruct chat, layer 19) the stored prefix activation collapses onto 14 distinct vectors — every row at cosine 0.99999+ to the mean — whose counts follow extraction-batch boundaries and track sequence-length buckets: the arm's within-R² of 0.128–0.134 (mean baseline ≈ −0.001) most plausibly reads batch-composition numerics that proxy conversation length, not content. Its coordinates also shift wildly across framings (naive transfer −505 to −16,761), yet reparameterization recovers the weak ceiling (0.126–0.133) in all four cells: formally reparameterized, but I read this arm as the plan's registered degeneracy companion, not independent operator evidence.
+The pre-query region is a fixed template string in both framings, so the prefix slot's nominal content is conversation-independent. In a sampled extraction shard (500 conversations, instruct chat, layer 19) the stored prefix activation collapses onto 14 distinct vectors — every row at cosine 0.99999+ to the mean — whose counts follow extraction-batch boundaries and track sequence-length buckets: the arm's within-R² of 0.128–0.134 (mean baseline ≈ −0.001) most plausibly reads batch-composition numerics that proxy conversation length; the fixed template region carries no conversation content. Its coordinates also shift wildly across framings (naive transfer −505 to −16,761), yet reparameterization recovers the weak ceiling (0.126–0.133) in all four cells: formally reparameterized, but I read this arm as the plan's registered degeneracy companion, not independent operator evidence.
 
 ---
 
