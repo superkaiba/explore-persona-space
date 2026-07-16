@@ -118,6 +118,17 @@ def parse_args() -> argparse.Namespace:
             "validation on a GPU-less VM; production runs NEVER pass this."
         ),
     )
+    parser.add_argument(
+        "--validate-spans-only",
+        action="store_true",
+        help=(
+            "OFFLINE full-corpus span validation: render EVERY conversation in "
+            "--format with the real tokenizer (NO model, GPU-free), report the "
+            "zero-width-span drop count + rate, and assert NO kept row trips the "
+            "residual hard span/slot checks. Exits 0. Cheap over the full "
+            "5,000-row track_s.jsonl — the pre-GPU gate the 8-conv smoke misses."
+        ),
+    )
     return parser.parse_args()
 
 
@@ -223,6 +234,59 @@ def _ordered_slots(r: Rendered) -> list[tuple[str, int]]:
 def _ordered_turns(r: Rendered) -> list[tuple[str, tuple[int, int]]]:
     assert r.spans, f"{r.conv_id}: empty spans"
     return sorted(r.spans.items(), key=lambda kv: kv[1][0])
+
+
+def degenerate_content_turns(r: Rendered) -> list[str]:
+    """Required content turns whose span has width < 1 (``s >= e``).
+
+    A very short single-turn row whose whole answer text BPE-merges into the
+    naturalistic ``User: ``/``\\n\\n`` plain-text delimiters collapses to a
+    zero-width ``(anchor, anchor)`` span (see ``_tokenize_segments_offsets``);
+    the profile mean over an empty span is NaN and the downstream
+    ``1 <= s < e`` assert crashes. This is the ONE tolerated drop (#825
+    crash-fix). Genuinely-impossible cases — a slot index beyond the sequence,
+    or a non-zero-width span starting at 0 / out of range — are NOT reported
+    here; they stay hard errors at the ``process_batch`` / ``_turn_nll``
+    asserts (the last-resort guard). Chat renders never hit this (special-token
+    delimiters bracket even a 1-token answer)."""
+    return [name for name, (s, e) in r.spans.items() if s >= e]
+
+
+def partition_rendered(rendered: list[Rendered]) -> tuple[list[Rendered], list[dict]]:
+    """Split rendered rows into (kept, dropped).
+
+    A row is DROPPED iff any content turn has a zero-width span
+    (``degenerate_content_turns``); everything else is kept. Prints one
+    ``[drop] conv_id=<id> reason=zero_width_span:<turns>`` line per drop
+    (conv_id + turn names only — never corpus text). Returns the kept rows and
+    a list of ``{"conv_id", "turns"}`` drop records for the shard sidecar."""
+    kept: list[Rendered] = []
+    drops: list[dict] = []
+    for r in rendered:
+        bad = degenerate_content_turns(r)
+        if bad:
+            drops.append({"conv_id": r.conv_id, "turns": bad})
+            print(f"[drop] conv_id={r.conv_id} reason=zero_width_span:{','.join(bad)}")
+        else:
+            kept.append(r)
+    return kept, drops
+
+
+def assert_residual_span_integrity(kept: list[Rendered]) -> None:
+    """Mirror the ``process_batch`` / ``_turn_nll`` hard span/slot asserts on
+    kept rows (no model needed). Zero-width content spans are already filtered
+    out by ``partition_rendered``, so anything that trips HERE is a
+    genuinely-impossible case (bad slot index, span starting at 0, span out of
+    range) — a hard error, never a tolerated drop. Fail-fast before any GPU
+    forward and the offline validation gate both call this."""
+    for r in kept:
+        true_len = len(r.input_ids)
+        for name, idx in r.slot_idx.items():
+            assert 0 <= idx < true_len, f"{r.conv_id}: slot {name}={idx} beyond len {true_len}"
+        for name, (s, e) in r.spans.items():
+            assert 1 <= s < e <= true_len, (
+                f"{r.conv_id}: span {name}=({s},{e}) invalid for unpadded len {true_len}"
+            )
 
 
 def _finite(t: torch.Tensor, name: str, conv_id: str) -> torch.Tensor:
@@ -357,12 +421,75 @@ def process_batch(
     return records
 
 
+# Cosine-mode bars for causal_check (#1345 crash-fix, att-20260715-151246).
+# Calibration source: the #779 r12 bf16 single-position equivalence-gate
+# measurement on this exact model family (Qwen-2.5-7B, 28 layers, bf16 —
+# gotchas.md "bf16 padded-batch equivalence gates"): bug-free bf16 kernel
+# jitter reads per-layer cos >= 0.999995 at layer 0 and >= 0.996907 at the
+# worst deep layer (flattened worst 0.998770), while a REAL wrong-position /
+# mask / row-mapping bug reads flattened cos 0.39-0.62 and layer-0 cos
+# 0.43-0.84. Bars: early per-layer 0.999 (the sharp bug catcher — position
+# bugs corrupt layer 0 immediately, where jitter is ~1e-6), flattened 0.995
+# (>=4x headroom over the measured worst bf16 deviation, ~0.35 above the
+# real-bug regime). The norm-ratio guard closes cosine's scale blind spot
+# (a doubled vector has cos 1.0): bf16 jitter norm-ratio is ~1e-3, a scale
+# bug is O(1).
+CAUSAL_COS_EARLY_LAYERS = 4
+CAUSAL_COS_EARLY_MIN = 0.999
+CAUSAL_COS_FLAT_MIN = 0.995
+CAUSAL_NORM_REL_MAX = 0.05
+
+
+def _causal_cosine_stats(pre_by_layer: list, full_by_layer: list) -> dict:
+    """fp32 cosine/norm stats for ONE slot's prefix-vs-full comparison.
+
+    Returns early_cos_min (per-layer cosine over the first
+    CAUSAL_COS_EARLY_LAYERS), flat_cos (all layers concatenated), norm_rel
+    (flattened norm ratio abs(norm(pre) - norm(full)) / norm(full)), and max_abs_diff.
+    """
+    pre = torch.stack([v.float() for v in pre_by_layer])
+    full = torch.stack([v.float() for v in full_by_layer])
+    per_layer_cos = torch.nn.functional.cosine_similarity(pre, full, dim=1)
+    n_early = min(CAUSAL_COS_EARLY_LAYERS, per_layer_cos.shape[0])
+    flat_cos = torch.nn.functional.cosine_similarity(
+        pre.reshape(1, -1), full.reshape(1, -1), dim=1
+    )[0]
+    norm_rel = float((pre.norm() - full.norm()).abs() / full.norm().clamp_min(1e-12))
+    return {
+        "early_cos_min": float(per_layer_cos[:n_early].min()),
+        "flat_cos": float(flat_cos),
+        "norm_rel": norm_rel,
+        "max_abs_diff": float((pre - full).abs().max()),
+    }
+
+
 def causal_check(
-    model, rendered: list[Rendered], atol: float = 1e-2, n_conversations: int = 3
+    model,
+    rendered: list[Rendered],
+    atol: float = 1e-2,
+    n_conversations: int = 3,
+    *,
+    mode: str = "abs",
 ) -> float:
-    """Re-forward the prefix ending at each slot; slot activation must match full-seq."""
+    """Re-forward the prefix ending at each slot; slot activation must match full-seq.
+
+    ``mode="abs"`` (default — byte-identical #825 behavior): per-layer
+    ``torch.allclose(atol)``, calibrated on the #825 header slots (mid/late
+    positions, small prefix-vs-full length disparity). ``mode="cosine"``: the
+    #779-calibrated two-bar cosine gate + norm-ratio guard, for slot sets where
+    a flat atol has NO bf16 headroom — early-position slots (#1345's ``prefix``
+    at token ~2: a 3-token prefix forward meets the full-length forward's
+    different GEMM shapes, and a SINGLE bf16 ULP at the large-magnitude
+    early-token dims reads 0.03125/0.0625 at layer 0; incident
+    att-20260715-151246, benign-numerics-verified by fp32 re-probe). Both
+    forwards are batch-1, unpadded, same slot index — the compare is pure
+    kernel numerics, so a wrong-position bug reads cos ~0.4-0.6, far below
+    either bar.
+    """
+    assert mode in ("abs", "cosine"), f"unknown causal_check mode: {mode!r}"
     device = model.device
     max_diff = 0.0
+    worst = {"early_cos_min": 1.0, "flat_cos": 1.0, "norm_rel": 0.0}
     n_checked = min(n_conversations, len(rendered))
     for r in rendered[:n_checked]:
         ids = torch.tensor(r.input_ids, dtype=torch.long).unsqueeze(0).to(device)
@@ -373,18 +500,47 @@ def causal_check(
             pre = extract_layer_activations(
                 model, ids[:, : idx + 1], layers=range(EXPECTED_LAYERS), detach_to_cpu=True
             )
-            for layer in range(EXPECTED_LAYERS):
-                a = pre[layer][0, idx].float()
-                b = full[layer][0, idx].float()
-                diff = float((a - b).abs().max())
-                max_diff = max(max_diff, diff)
-                assert torch.allclose(a, b, atol=atol), (
-                    f"causal-slot mismatch {r.conv_id}:{name} layer {layer}: "
-                    f"max|diff|={diff:.4g} > atol={atol}"
+            if mode == "abs":
+                for layer in range(EXPECTED_LAYERS):
+                    a = pre[layer][0, idx].float()
+                    b = full[layer][0, idx].float()
+                    diff = float((a - b).abs().max())
+                    max_diff = max(max_diff, diff)
+                    assert torch.allclose(a, b, atol=atol), (
+                        f"causal-slot mismatch {r.conv_id}:{name} layer {layer}: "
+                        f"max|diff|={diff:.4g} > atol={atol}"
+                    )
+            else:
+                stats = _causal_cosine_stats(
+                    [pre[layer][0, idx] for layer in range(EXPECTED_LAYERS)],
+                    [full[layer][0, idx] for layer in range(EXPECTED_LAYERS)],
                 )
-    print(
-        f"[causal] slot-prefix equality OK on {n_checked} conversations; max|diff|={max_diff:.4g}"
-    )
+                max_diff = max(max_diff, stats["max_abs_diff"])
+                worst["early_cos_min"] = min(worst["early_cos_min"], stats["early_cos_min"])
+                worst["flat_cos"] = min(worst["flat_cos"], stats["flat_cos"])
+                worst["norm_rel"] = max(worst["norm_rel"], stats["norm_rel"])
+                assert (
+                    stats["early_cos_min"] >= CAUSAL_COS_EARLY_MIN
+                    and stats["flat_cos"] >= CAUSAL_COS_FLAT_MIN
+                    and stats["norm_rel"] <= CAUSAL_NORM_REL_MAX
+                ), (
+                    f"causal-slot mismatch {r.conv_id}:{name} (cosine mode): "
+                    f"early_cos_min={stats['early_cos_min']:.6f} (min {CAUSAL_COS_EARLY_MIN}) "
+                    f"flat_cos={stats['flat_cos']:.6f} (min {CAUSAL_COS_FLAT_MIN}) "
+                    f"norm_rel={stats['norm_rel']:.4g} (max {CAUSAL_NORM_REL_MAX}) "
+                    f"max|diff|={stats['max_abs_diff']:.4g}"
+                )
+    if mode == "abs":
+        print(
+            f"[causal] slot-prefix equality OK on {n_checked} conversations; "
+            f"max|diff|={max_diff:.4g}"
+        )
+    else:
+        print(
+            f"[causal] mode=cosine slot-prefix consistency OK on {n_checked} conversations; "
+            f"early_cos_min={worst['early_cos_min']:.6f} flat_cos_min={worst['flat_cos']:.6f} "
+            f"norm_rel_max={worst['norm_rel']:.4g} max|diff|={max_diff:.4g}"
+        )
     return max_diff
 
 
@@ -477,8 +633,38 @@ def write_shards(
     return paths
 
 
+def _validate_spans_only(args: argparse.Namespace) -> None:
+    """OFFLINE full-corpus span validation (no model). Renders every row in the
+    requested format with the real tokenizer, reports the zero-width-span drop
+    count + rate, and asserts every kept row passes the residual hard span/slot
+    checks. Prints conv_ids + counts only — never corpus text."""
+    from transformers import AutoTokenizer
+
+    if args.tiny_model_dir:
+        tok_src = args.tiny_model_dir
+    else:
+        tok_src = MODEL_INSTRUCT if args.model == "instruct" else MODEL_PRETRAINED
+    tokenizer = AutoTokenizer.from_pretrained(tok_src)
+    convs = _load_conversations(args.conversations)
+    if args.track == "s":
+        convs = [to_single_turn(c) for c in convs]
+    rendered_all = [render_conv(c, tokenizer, args.format) for c in convs]
+    kept, drops = partition_rendered(rendered_all)
+    rate = len(drops) / len(rendered_all) if rendered_all else 0.0
+    # The load-bearing gate: no kept row may trip the consumer's hard asserts.
+    assert_residual_span_integrity(kept)
+    print(
+        f"[validate-spans] format={args.format} track={args.track} "
+        f"tokenizer={tok_src} n={len(rendered_all)} kept={len(kept)} "
+        f"dropped={len(drops)} rate={rate:.4f} residual_hard_assert=PASS"
+    )
+
+
 def main() -> None:
     args = parse_args()
+    if args.validate_spans_only:
+        _validate_spans_only(args)
+        return
     peak_layers = [int(x) for x in str(args.peak_layers).split(",") if x.strip()]
     assert peak_layers, "--peak-layers parsed to an empty list"
     assert all(0 <= p < EXPECTED_LAYERS for p in peak_layers), (
@@ -491,7 +677,23 @@ def main() -> None:
     if args.track == "s":
         convs = [to_single_turn(c) for c in convs]
     model, tokenizer, model_id = load_model(args.model, tiny_model_dir=args.tiny_model_dir)
-    rendered = [render_conv(c, tokenizer, args.format) for c in convs]
+    rendered_all = [render_conv(c, tokenizer, args.format) for c in convs]
+    # Drop degenerate zero-width-span rows (short single-turn answers that
+    # BPE-merge entirely into the naturalistic plain-text delimiters, #825) and
+    # report the rate; the remaining rows must pass the residual hard span/slot
+    # checks (fail-fast before any GPU forward). Chat renders never drop.
+    rendered, drops = partition_rendered(rendered_all)
+    if drops:
+        rate = len(drops) / len(rendered_all)
+        print(
+            f"[drops] {len(drops)} of {len(rendered_all)} rows dropped "
+            f"(zero-width {args.format} spans); rate={rate:.4f}"
+        )
+    assert rendered, (
+        f"all {len(rendered_all)} rendered rows dropped as zero-width — a "
+        f"systematic {args.format} render bug, not a handful of degenerate rows"
+    )
+    assert_residual_span_integrity(rendered)
     pad_id = tokenizer.pad_token_id if tokenizer.pad_token_id is not None else 0
     do_causal = args.assert_causal or args.smoke
     causal_max_diff = causal_check(model, rendered) if do_causal else None
@@ -523,6 +725,13 @@ def main() -> None:
         "args": {k: str(v) for k, v in vars(args).items()},
         "causal_check_max_abs_diff": causal_max_diff,
         "smoke": bool(args.smoke),
+        # Degenerate zero-width-span rows dropped from extraction (#825). Recorded
+        # in EVERY shard sidecar (sidecar_base is spread into each). The contrast
+        # script intersects by conv_id, so dropped naturalistic rows stay paired.
+        "n_rendered_pre_filter": len(rendered_all),
+        "n_dropped_zero_width": len(drops),
+        "dropped_conv_ids": [d["conv_id"] for d in drops],
+        "dropped_turns": {d["conv_id"]: d["turns"] for d in drops},
     }
     # Block-wise extract -> flush: one input-order block == one shard file,
     # written the moment its block completes, so host RAM holds at most ~one

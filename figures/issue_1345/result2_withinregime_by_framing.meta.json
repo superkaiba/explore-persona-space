@@ -1,0 +1,102 @@
+{
+  "commit": "cb2d8b2e50",
+  "created": "2026-07-16T08:15:49Z",
+  "figsize": [
+    6.2,
+    5.2
+  ],
+  "points": [
+    {
+      "category": "Chat",
+      "Within-regime held-out $R^2$ (layer 19)": 0.6544765895833579,
+      "error": 0.006546300454128184,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "No-template",
+      "Within-regime held-out $R^2$ (layer 19)": 0.6252297984305754,
+      "error": 0.007256413336929113,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "Story\u00b7assistant",
+      "Within-regime held-out $R^2$ (layer 19)": -0.7454832837532159,
+      "error": 0.03981470886859673,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 0.0,
+      "Within-regime held-out $R^2$ (layer 19)": 0.0,
+      "series": "Answer-mean baseline ($R^2=0$)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 1.0,
+      "Within-regime held-out $R^2$ (layer 19)": 0.0,
+      "series": "Answer-mean baseline ($R^2=0$)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 0.0,
+      "Within-regime held-out $R^2$ (layer 19)": -0.033227150834581484,
+      "series": "Shuffle-null \u2248 -0.03",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 1.0,
+      "Within-regime held-out $R^2$ (layer 19)": -0.033227150834581484,
+      "series": "Shuffle-null \u2248 -0.03",
+      "_kind": "line",
+      "_group": 4
+    }
+  ],
+  "n_series": 5,
+  "total_points": 7,
+  "text": {
+    "suptitle": "The story-character assistant map is not linearly decodable (instruct, context arm, layer 19)",
+    "fig_texts": [
+      "Bars = within-regime held-out $R^2$ with 95% bootstrap CI (Qwen2.5-7B-Instruct). Chat and no-template sit ~0.6 (well above the answer-mean baseline); the assistant rendered as a story character sits at -0.75, below zero \u2014 the held-out probe does worse than predicting the mean (its own shuffle-null is off-scale at ~-2.2). Base arm omitted (its story regime was below the yield floor)."
+    ],
+    "axes": [
+      {
+        "ylabel": "Within-regime held-out $R^2$ (layer 19)",
+        "legend_labels": [
+          "Answer-mean baseline ($R^2=0$)",
+          "Shuffle-null \u2248 -0.03"
+        ],
+        "annotations": [
+          "0.65",
+          "0.63",
+          "-0.75"
+        ],
+        "xticklabels": [
+          "Chat",
+          "No-template",
+          "Story\u00b7assistant"
+        ],
+        "yticklabels": [
+          "\u22121.0",
+          "\u22120.8",
+          "\u22120.6",
+          "\u22120.4",
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8"
+        ]
+      }
+    ],
+    "series": [
+      "Answer-mean baseline ($R^2=0$)",
+      "Shuffle-null \u2248 -0.03"
+    ]
+  }
+}

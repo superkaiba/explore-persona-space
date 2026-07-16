@@ -1,0 +1,1342 @@
+{
+  "abort_predicate_result": {
+    "abort": false,
+    "message": "pilot gate PASS",
+    "rss_exceeded": false,
+    "wall_exceeded": false
+  },
+  "abort_wall_h": 13.0,
+  "arithmetic": "projected_total_wall_h = (n_blocks_frozen(1) x wall_frozen(22923.2s) + n_blocks_band(0) x wall_band(22923.2s)) / 3600 / effective_parallelism(1) = 6.37 h; a block is one (cell, layer) fit-grid slice incl. the identity ladder and its permutation-battery unit",
+  "band_note": "skipped (--skip-band-pilot): band-layer blocks projected at the frozen-block wall (conservative over-projection)",
+  "effective_parallelism": 1,
+  "escape_lane": "cpu-bigmem --min-ram-gb 32",
+  "git_commit": "fb52efae8d4b2f076137464fb45bb1a8ae6e1627",
+  "n_blocks_band": 0,
+  "n_blocks_frozen": 1,
+  "pilot_cell": "cell_inst_own",
+  "pilot_layer": 14,
+  "plan_wall_h": 6.5,
+  "projected_total_wall_h": 6.367554543974444,
+  "rss_limit_gb": 96.0,
+  "ru_maxrss_gb": 75.4396858215332,
+  "ru_maxrss_note": "getrusage(RUSAGE_CHILDREN).ru_maxrss read after the production-draw pilot; the fit-grid subprocess is the first substantive child, so this is its peak RSS (cumulative-max upper bound otherwise)",
+  "staged_files": [
+    {
+      "hub_identity": "612f83d236978661f4ca62bce0e112ab1236c1b5243ea77ce8025e8e1f4d391f",
+      "hub_path": "issue1092_realistic_crossing/analysis_tensors/summaries/cell_inst_own/context_end_L14.npy",
+      "local_sha256": "612f83d236978661f4ca62bce0e112ab1236c1b5243ea77ce8025e8e1f4d391f",
+      "reused": false,
+      "size": 151911552,
+      "staged_to": "/workspace/p6_stage/cell_inst_own/context_end_L14.npy"
+    },
+    {
+      "hub_identity": "5e301e08b582b9aedf48b23e85f6e3a425ddf0025d6e066ad6e841469c71ae43",
+      "hub_path": "issue1092_realistic_crossing/analysis_tensors/summaries/cell_inst_own/prefix_end_L14.npy",
+      "local_sha256": "5e301e08b582b9aedf48b23e85f6e3a425ddf0025d6e066ad6e841469c71ae43",
+      "reused": false,
+      "size": 151911552,
+      "staged_to": "/workspace/p6_stage/cell_inst_own/prefix_end_L14.npy"
+    },
+    {
+      "hub_identity": "a4eb6283fb05a59c1395cf78406d8be64d75df92bf1a31370167b924d81f77d6",
+      "hub_path": "issue1092_realistic_crossing/analysis_tensors/summaries/cell_inst_own/t1_L14.npy",
+      "local_sha256": "a4eb6283fb05a59c1395cf78406d8be64d75df92bf1a31370167b924d81f77d6",
+      "reused": false,
+      "size": 151911552,
+      "staged_to": "/workspace/p6_stage/cell_inst_own/t1_L14.npy"
+    },
+    {
+      "hub_identity": "2d6125846a218d3e37c0366579493920458756fea55284e7a8de298d92b5d3f3",
+      "hub_path": "issue1092_realistic_crossing/analysis_tensors/summaries/cell_inst_own/t2_L14.npy",
+      "local_sha256": "2d6125846a218d3e37c0366579493920458756fea55284e7a8de298d92b5d3f3",
+      "reused": false,
+      "size": 151911552,
+      "staged_to": "/workspace/p6_stage/cell_inst_own/t2_L14.npy"
+    },
+    {
+      "hub_identity": "5da19d02d8a55799f15719eea8acde4ac5dd9970d74b66b3346b54971af907a2",
+      "hub_path": "issue1092_realistic_crossing/analysis_tensors/summaries/cell_inst_own/t3_L14.npy",
+      "local_sha256": "5da19d02d8a55799f15719eea8acde4ac5dd9970d74b66b3346b54971af907a2",
+      "reused": false,
+      "size": 151911552,
+      "staged_to": "/workspace/p6_stage/cell_inst_own/t3_L14.npy"
+    },
+    {
+      "hub_identity": "7fd67309e493a41a8371890ebe1d8207da316fe37ddde88621cfad06b224af36",
+      "hub_path": "issue1092_realistic_crossing/analysis_tensors/summaries/bare_instruct/c_q_bare_L14_shard00000.npy",
+      "local_sha256": "7fd67309e493a41a8371890ebe1d8207da316fe37ddde88621cfad06b224af36",
+      "reused": false,
+      "size": 666752,
+      "staged_to": "/workspace/p6_stage/bare_instruct/c_q_bare_L14_shard00000.npy"
+    },
+    {
+      "hub_identity": "c46764e7270df201c06b4b2b33a0f9ed207294d168ebfe2980dcca1d452ea78b",
+      "hub_path": "issue1092_realistic_crossing/analysis_tensors/summaries/bare_instruct/c_q_bare_L14_shard00001.npy",
+      "local_sha256": "c46764e7270df201c06b4b2b33a0f9ed207294d168ebfe2980dcca1d452ea78b",
+      "reused": false,
+      "size": 666752,
+      "staged_to": "/workspace/p6_stage/bare_instruct/c_q_bare_L14_shard00001.npy"
+    },
+    {
+      "hub_identity": "5930361e343f6a6d0ad9424a8ce30a62217cc424b8f866fd03304e5f3b6ea148",
+      "hub_path": "issue1092_realistic_crossing/analysis_tensors/summaries/bare_instruct/c_q_bare_L14_shard00002.npy",
+      "local_sha256": "5930361e343f6a6d0ad9424a8ce30a62217cc424b8f866fd03304e5f3b6ea148",
+      "reused": false,
+      "size": 666752,
+      "staged_to": "/workspace/p6_stage/bare_instruct/c_q_bare_L14_shard00002.npy"
+    },
+    {
+      "hub_identity": "ae7610c459c9b8573deaef5e66713d25c67cb85dc5a382c8684b714fc4204a88",
+      "hub_path": "issue1092_realistic_crossing/analysis_tensors/summaries/bare_instruct/c_q_bare_L14_shard00003.npy",
+      "local_sha256": "ae7610c459c9b8573deaef5e66713d25c67cb85dc5a382c8684b714fc4204a88",
+      "reused": false,
+      "size": 666752,
+      "staged_to": "/workspace/p6_stage/bare_instruct/c_q_bare_L14_shard00003.npy"
+    },
+    {
+      "hub_identity": "7f8cbab2c20c616ec7c639c7d87ff00efdb954a43f2c42bf046d9f3212761838",
+      "hub_path": "issue1092_realistic_crossing/analysis_tensors/summaries/bare_instruct/c_q_bare_L14_shard00004.npy",
+      "local_sha256": "7f8cbab2c20c616ec7c639c7d87ff00efdb954a43f2c42bf046d9f3212761838",
+      "reused": false,
+      "size": 666752,
+      "staged_to": "/workspace/p6_stage/bare_instruct/c_q_bare_L14_shard00004.npy"
+    },
+    {
+      "hub_identity": "60d675232fde978b943c56487187c38e4e4b02ffa335496b50e496c417989dd4",
+      "hub_path": "issue1092_realistic_crossing/analysis_tensors/summaries/bare_instruct/c_q_bare_L14_shard00005.npy",
+      "local_sha256": "60d675232fde978b943c56487187c38e4e4b02ffa335496b50e496c417989dd4",
+      "reused": false,
+      "size": 666752,
+      "staged_to": "/workspace/p6_stage/bare_instruct/c_q_bare_L14_shard00005.npy"
+    },
+    {
+      "hub_identity": "de609710a4b5f0d8dcb5dd1c7b35b82b2c292526d671889f2507d6ce6e9a157f",
+      "hub_path": "issue1092_realistic_crossing/analysis_tensors/summaries/bare_instruct/c_q_bare_L14_shard00006.npy",
+      "local_sha256": "de609710a4b5f0d8dcb5dd1c7b35b82b2c292526d671889f2507d6ce6e9a157f",
+      "reused": false,
+      "size": 666752,
+      "staged_to": "/workspace/p6_stage/bare_instruct/c_q_bare_L14_shard00006.npy"
+    },
+    {
+      "hub_identity": "79538be89bb6bea66376af89d5a6bb1b1cc07703e94096914a6978457e02c0c5",
+      "hub_path": "issue1092_realistic_crossing/analysis_tensors/summaries/bare_instruct/c_q_bare_L14_shard00007.npy",
+      "local_sha256": "79538be89bb6bea66376af89d5a6bb1b1cc07703e94096914a6978457e02c0c5",
+      "reused": false,
+      "size": 666752,
+      "staged_to": "/workspace/p6_stage/bare_instruct/c_q_bare_L14_shard00007.npy"
+    },
+    {
+      "hub_identity": "95fa12b4582de1f34ef85dd67fb133a66f494c204b80256395e849af47c8fd4e",
+      "hub_path": "issue1092_realistic_crossing/analysis_tensors/summaries/bare_instruct/c_q_bare_L14_shard00008.npy",
+      "local_sha256": "95fa12b4582de1f34ef85dd67fb133a66f494c204b80256395e849af47c8fd4e",
+      "reused": false,
+      "size": 666752,
+      "staged_to": "/workspace/p6_stage/bare_instruct/c_q_bare_L14_shard00008.npy"
+    },
+    {
+      "hub_identity": "09447a5c86d5f788ce95da508fd2053ee77c0e7330e072860b974bb07ce856f6",
+      "hub_path": "issue1092_realistic_crossing/analysis_tensors/summaries/bare_instruct/c_q_bare_L14_shard00009.npy",
+      "local_sha256": "09447a5c86d5f788ce95da508fd2053ee77c0e7330e072860b974bb07ce856f6",
+      "reused": false,
+      "size": 666752,
+      "staged_to": "/workspace/p6_stage/bare_instruct/c_q_bare_L14_shard00009.npy"
+    },
+    {
+      "hub_identity": "14fd79aee5535df142c49484b905ea2c15a1eca593be6b2742394bfd2f0c3cf9",
+      "hub_path": "issue1092_realistic_crossing/analysis_tensors/summaries/bare_instruct/c_q_bare_L14_shard00010.npy",
+      "local_sha256": "14fd79aee5535df142c49484b905ea2c15a1eca593be6b2742394bfd2f0c3cf9",
+      "reused": false,
+      "size": 666752,
+      "staged_to": "/workspace/p6_stage/bare_instruct/c_q_bare_L14_shard00010.npy"
+    },
+    {
+      "hub_identity": "aa38e6ab5b7f5a9a8b8688a35faf22fb28f63aac62f41c91dfa2ce2f42805643",
+      "hub_path": "issue1092_realistic_crossing/analysis_tensors/summaries/bare_instruct/c_q_bare_L14_shard00011.npy",
+      "local_sha256": "aa38e6ab5b7f5a9a8b8688a35faf22fb28f63aac62f41c91dfa2ce2f42805643",
+      "reused": false,
+      "size": 666752,
+      "staged_to": "/workspace/p6_stage/bare_instruct/c_q_bare_L14_shard00011.npy"
+    },
+    {
+      "hub_identity": "8cec4d3b42a7974629f10d89989e4225fbddf86cf991cd68f788945e3f8e336a",
+      "hub_path": "issue1092_realistic_crossing/analysis_tensors/summaries/bare_instruct/c_q_bare_L14_shard00012.npy",
+      "local_sha256": "8cec4d3b42a7974629f10d89989e4225fbddf86cf991cd68f788945e3f8e336a",
+      "reused": false,
+      "size": 666752,
+      "staged_to": "/workspace/p6_stage/bare_instruct/c_q_bare_L14_shard00012.npy"
+    },
+    {
+      "hub_identity": "1eda29d21d40fef87384786479ae9e3f9188916ebbe192286889fad08d553b5e",
+      "hub_path": "issue1092_realistic_crossing/analysis_tensors/summaries/bare_instruct/c_q_bare_L14_shard00013.npy",
+      "local_sha256": "1eda29d21d40fef87384786479ae9e3f9188916ebbe192286889fad08d553b5e",
+      "reused": false,
+      "size": 666752,
+      "staged_to": "/workspace/p6_stage/bare_instruct/c_q_bare_L14_shard00013.npy"
+    },
+    {
+      "hub_identity": "061691d9d31dfd1db27bf5ceae457ac8dfdd3b492e218bdbe02e05fb25bb08df",
+      "hub_path": "issue1092_realistic_crossing/analysis_tensors/summaries/bare_instruct/c_q_bare_L14_shard00014.npy",
+      "local_sha256": "061691d9d31dfd1db27bf5ceae457ac8dfdd3b492e218bdbe02e05fb25bb08df",
+      "reused": false,
+      "size": 666752,
+      "staged_to": "/workspace/p6_stage/bare_instruct/c_q_bare_L14_shard00014.npy"
+    },
+    {
+      "hub_identity": "ee8f9ffa3be067f8ff5e80b028c73da5bac664cb91701860d78164dbc288a2b4",
+      "hub_path": "issue1092_realistic_crossing/analysis_tensors/summaries/bare_instruct/c_q_bare_L14_shard00015.npy",
+      "local_sha256": "ee8f9ffa3be067f8ff5e80b028c73da5bac664cb91701860d78164dbc288a2b4",
+      "reused": false,
+      "size": 666752,
+      "staged_to": "/workspace/p6_stage/bare_instruct/c_q_bare_L14_shard00015.npy"
+    },
+    {
+      "hub_identity": "b44674deb3a062ca858d1621a1deb68011921f80a81c440b703cd59dd5751aa9",
+      "hub_path": "issue1092_realistic_crossing/analysis_tensors/summaries/bare_instruct/c_q_bare_L14_shard00016.npy",
+      "local_sha256": "b44674deb3a062ca858d1621a1deb68011921f80a81c440b703cd59dd5751aa9",
+      "reused": false,
+      "size": 86144,
+      "staged_to": "/workspace/p6_stage/bare_instruct/c_q_bare_L14_shard00016.npy"
+    },
+    {
+      "hub_identity": "dea888820805d061c2ed66daa4d36bbaa54dc73df5bf5e8436214346e2d7d04c",
+      "hub_path": "issue1092_realistic_crossing/analysis_tensors/summaries/dynamics_instruct/context_k_L14_shard00000.npy",
+      "local_sha256": "dea888820805d061c2ed66daa4d36bbaa54dc73df5bf5e8436214346e2d7d04c",
+      "reused": false,
+      "size": 1218688,
+      "staged_to": "/workspace/p6_stage/dynamics_instruct/context_k_L14_shard00000.npy"
+    },
+    {
+      "hub_identity": "876584f4fc79c4aaef1bf529969aca76ed5ba3967cc16f5bfd696ff19a93db33",
+      "hub_path": "issue1092_realistic_crossing/analysis_tensors/summaries/dynamics_instruct/context_k_L14_shard00001.npy",
+      "local_sha256": "876584f4fc79c4aaef1bf529969aca76ed5ba3967cc16f5bfd696ff19a93db33",
+      "reused": false,
+      "size": 1283200,
+      "staged_to": "/workspace/p6_stage/dynamics_instruct/context_k_L14_shard00001.npy"
+    },
+    {
+      "hub_identity": "f80ffa1260c3c8f76512ea4ef69d15f0e7544f715156982bea286aae3afb5e0f",
+      "hub_path": "issue1092_realistic_crossing/analysis_tensors/summaries/dynamics_instruct/context_k_L14_shard00002.npy",
+      "local_sha256": "f80ffa1260c3c8f76512ea4ef69d15f0e7544f715156982bea286aae3afb5e0f",
+      "reused": false,
+      "size": 1211520,
+      "staged_to": "/workspace/p6_stage/dynamics_instruct/context_k_L14_shard00002.npy"
+    },
+    {
+      "hub_identity": "7652d5290d3725b084babc13d0c3a376b7a8904632240b4510d9fbd54a259211",
+      "hub_path": "issue1092_realistic_crossing/analysis_tensors/summaries/dynamics_instruct/context_k_L14_shard00003.npy",
+      "local_sha256": "7652d5290d3725b084babc13d0c3a376b7a8904632240b4510d9fbd54a259211",
+      "reused": false,
+      "size": 1204352,
+      "staged_to": "/workspace/p6_stage/dynamics_instruct/context_k_L14_shard00003.npy"
+    },
+    {
+      "hub_identity": "cca042465234560525c3ad9f5ab3144e22ee0b0b4488dab58dc30d2d8b953364",
+      "hub_path": "issue1092_realistic_crossing/analysis_tensors/summaries/dynamics_instruct/context_k_L14_shard00004.npy",
+      "local_sha256": "cca042465234560525c3ad9f5ab3144e22ee0b0b4488dab58dc30d2d8b953364",
+      "reused": false,
+      "size": 1190016,
+      "staged_to": "/workspace/p6_stage/dynamics_instruct/context_k_L14_shard00004.npy"
+    },
+    {
+      "hub_identity": "e8488fa961cf3f8e8ea3dda3647264f287166c73eda636a9af11e7aaff1403a3",
+      "hub_path": "issue1092_realistic_crossing/analysis_tensors/summaries/dynamics_instruct/context_k_L14_shard00005.npy",
+      "local_sha256": "e8488fa961cf3f8e8ea3dda3647264f287166c73eda636a9af11e7aaff1403a3",
+      "reused": false,
+      "size": 1240192,
+      "staged_to": "/workspace/p6_stage/dynamics_instruct/context_k_L14_shard00005.npy"
+    },
+    {
+      "hub_identity": "c122b3ca1d8792932aab9f90763943dd0eac00a023b8b6427685aadd720e2103",
+      "hub_path": "issue1092_realistic_crossing/analysis_tensors/summaries/dynamics_instruct/context_k_L14_shard00006.npy",
+      "local_sha256": "c122b3ca1d8792932aab9f90763943dd0eac00a023b8b6427685aadd720e2103",
+      "reused": false,
+      "size": 1046656,
+      "staged_to": "/workspace/p6_stage/dynamics_instruct/context_k_L14_shard00006.npy"
+    },
+    {
+      "hub_identity": "01669e8c6ae82c6a260b1d8bed5189ce6065a4906c5864116d6657f7e00d1861",
+      "hub_path": "issue1092_realistic_crossing/analysis_tensors/summaries/dynamics_instruct/context_k_L14_shard00007.npy",
+      "local_sha256": "01669e8c6ae82c6a260b1d8bed5189ce6065a4906c5864116d6657f7e00d1861",
+      "reused": false,
+      "size": 1104000,
+      "staged_to": "/workspace/p6_stage/dynamics_instruct/context_k_L14_shard00007.npy"
+    },
+    {
+      "hub_identity": "8af64faee178a7bc21e6948220a88ef95a2cfc3e9d160959bd7c5ed88a0d04a1",
+      "hub_path": "issue1092_realistic_crossing/analysis_tensors/summaries/dynamics_instruct/context_k_L14_shard00008.npy",
+      "local_sha256": "8af64faee178a7bc21e6948220a88ef95a2cfc3e9d160959bd7c5ed88a0d04a1",
+      "reused": false,
+      "size": 1154176,
+      "staged_to": "/workspace/p6_stage/dynamics_instruct/context_k_L14_shard00008.npy"
+    },
+    {
+      "hub_identity": "7bc94ea5c963d1d05104af7476d14a256456e5dd6a4b9352913494bf388a27a2",
+      "hub_path": "issue1092_realistic_crossing/analysis_tensors/summaries/dynamics_instruct/context_k_L14_shard00009.npy",
+      "local_sha256": "7bc94ea5c963d1d05104af7476d14a256456e5dd6a4b9352913494bf388a27a2",
+      "reused": false,
+      "size": 1039488,
+      "staged_to": "/workspace/p6_stage/dynamics_instruct/context_k_L14_shard00009.npy"
+    },
+    {
+      "hub_identity": "8a2493753452d842db7ee17b365fbb1456d5a249d353978027c378b17d3a4c3d",
+      "hub_path": "issue1092_realistic_crossing/analysis_tensors/summaries/dynamics_instruct/context_k_L14_shard00010.npy",
+      "local_sha256": "8a2493753452d842db7ee17b365fbb1456d5a249d353978027c378b17d3a4c3d",
+      "reused": false,
+      "size": 824448,
+      "staged_to": "/workspace/p6_stage/dynamics_instruct/context_k_L14_shard00010.npy"
+    },
+    {
+      "hub_identity": "bfff3a047f2f76b543dacacb6c402c1ab40be81bd28526636f7c7dc59c8066ee",
+      "hub_path": "issue1092_realistic_crossing/analysis_tensors/summaries/dynamics_instruct/context_k_L14_shard00011.npy",
+      "local_sha256": "bfff3a047f2f76b543dacacb6c402c1ab40be81bd28526636f7c7dc59c8066ee",
+      "reused": false,
+      "size": 1283200,
+      "staged_to": "/workspace/p6_stage/dynamics_instruct/context_k_L14_shard00011.npy"
+    },
+    {
+      "hub_identity": "75bcc08490957749ed8605c6fb7197131989fe273df5a909fa91ee6cb68b6a6e",
+      "hub_path": "issue1092_realistic_crossing/analysis_tensors/summaries/dynamics_instruct/context_k_L14_shard00012.npy",
+      "local_sha256": "75bcc08490957749ed8605c6fb7197131989fe273df5a909fa91ee6cb68b6a6e",
+      "reused": false,
+      "size": 1003648,
+      "staged_to": "/workspace/p6_stage/dynamics_instruct/context_k_L14_shard00012.npy"
+    },
+    {
+      "hub_identity": "695adeffc06ac2f922a8a04654eac3ae9bf8e729151742b35d7aa6e649d6f450",
+      "hub_path": "issue1092_realistic_crossing/analysis_tensors/summaries/dynamics_instruct/context_k_L14_shard00013.npy",
+      "local_sha256": "695adeffc06ac2f922a8a04654eac3ae9bf8e729151742b35d7aa6e649d6f450",
+      "reused": false,
+      "size": 1297536,
+      "staged_to": "/workspace/p6_stage/dynamics_instruct/context_k_L14_shard00013.npy"
+    },
+    {
+      "hub_identity": "61676f08d472eb809f8fe851aa25fa3369f7855954bce71d4491d406b0d88957",
+      "hub_path": "issue1092_realistic_crossing/analysis_tensors/summaries/dynamics_instruct/context_k_L14_shard00014.npy",
+      "local_sha256": "61676f08d472eb809f8fe851aa25fa3369f7855954bce71d4491d406b0d88957",
+      "reused": false,
+      "size": 1132672,
+      "staged_to": "/workspace/p6_stage/dynamics_instruct/context_k_L14_shard00014.npy"
+    },
+    {
+      "hub_identity": "03fba3e51c90c4efd6304f083e006d54e53b51e6e947620e05e7ba8a42fe2253",
+      "hub_path": "issue1092_realistic_crossing/analysis_tensors/summaries/dynamics_instruct/context_k_L14_shard00015.npy",
+      "local_sha256": "03fba3e51c90c4efd6304f083e006d54e53b51e6e947620e05e7ba8a42fe2253",
+      "reused": false,
+      "size": 1175680,
+      "staged_to": "/workspace/p6_stage/dynamics_instruct/context_k_L14_shard00015.npy"
+    },
+    {
+      "hub_identity": "13f3f0f49243ce9d6eacab6e2caf5b8d0af4ebadb0f104abeb4d4f8ca5ef2456",
+      "hub_path": "issue1092_realistic_crossing/analysis_tensors/summaries/dynamics_instruct/context_k_L14_shard00016.npy",
+      "local_sha256": "13f3f0f49243ce9d6eacab6e2caf5b8d0af4ebadb0f104abeb4d4f8ca5ef2456",
+      "reused": false,
+      "size": 28800,
+      "staged_to": "/workspace/p6_stage/dynamics_instruct/context_k_L14_shard00016.npy"
+    },
+    {
+      "hub_identity": "180242371b599005a880645b799986f378f9ea8c8a46c87b2388bd36f0c3710a",
+      "hub_path": "issue1092_realistic_crossing/analysis_tensors/summaries/dynamics_instruct/s_k_L14_shard00000.npy",
+      "local_sha256": "180242371b599005a880645b799986f378f9ea8c8a46c87b2388bd36f0c3710a",
+      "reused": false,
+      "size": 1218688,
+      "staged_to": "/workspace/p6_stage/dynamics_instruct/s_k_L14_shard00000.npy"
+    },
+    {
+      "hub_identity": "32c8c3984990b242ec103a984c008ba12fbac992251e408f0eae3b629fcca6e6",
+      "hub_path": "issue1092_realistic_crossing/analysis_tensors/summaries/dynamics_instruct/s_k_L14_shard00001.npy",
+      "local_sha256": "32c8c3984990b242ec103a984c008ba12fbac992251e408f0eae3b629fcca6e6",
+      "reused": false,
+      "size": 1283200,
+      "staged_to": "/workspace/p6_stage/dynamics_instruct/s_k_L14_shard00001.npy"
+    },
+    {
+      "hub_identity": "694deb13b63eb323dc82cc60ea825a3cbe17f408da66a5d36cfbe3d9e4045c95",
+      "hub_path": "issue1092_realistic_crossing/analysis_tensors/summaries/dynamics_instruct/s_k_L14_shard00002.npy",
+      "local_sha256": "694deb13b63eb323dc82cc60ea825a3cbe17f408da66a5d36cfbe3d9e4045c95",
+      "reused": false,
+      "size": 1211520,
+      "staged_to": "/workspace/p6_stage/dynamics_instruct/s_k_L14_shard00002.npy"
+    },
+    {
+      "hub_identity": "734ee64af9b312a32790eece74e6101ab471c3a4f8f9e92ca2b094f76570b88a",
+      "hub_path": "issue1092_realistic_crossing/analysis_tensors/summaries/dynamics_instruct/s_k_L14_shard00003.npy",
+      "local_sha256": "734ee64af9b312a32790eece74e6101ab471c3a4f8f9e92ca2b094f76570b88a",
+      "reused": false,
+      "size": 1204352,
+      "staged_to": "/workspace/p6_stage/dynamics_instruct/s_k_L14_shard00003.npy"
+    },
+    {
+      "hub_identity": "7a3972fb9d460297a753133d2dcbc4bb1f4053b1d1f733eea5b40098ec04ee96",
+      "hub_path": "issue1092_realistic_crossing/analysis_tensors/summaries/dynamics_instruct/s_k_L14_shard00004.npy",
+      "local_sha256": "7a3972fb9d460297a753133d2dcbc4bb1f4053b1d1f733eea5b40098ec04ee96",
+      "reused": false,
+      "size": 1190016,
+      "staged_to": "/workspace/p6_stage/dynamics_instruct/s_k_L14_shard00004.npy"
+    },
+    {
+      "hub_identity": "ede7f372c91b26c732775f1724156df12dcb7ca2b280a7ad7570049f52beb769",
+      "hub_path": "issue1092_realistic_crossing/analysis_tensors/summaries/dynamics_instruct/s_k_L14_shard00005.npy",
+      "local_sha256": "ede7f372c91b26c732775f1724156df12dcb7ca2b280a7ad7570049f52beb769",
+      "reused": false,
+      "size": 1240192,
+      "staged_to": "/workspace/p6_stage/dynamics_instruct/s_k_L14_shard00005.npy"
+    },
+    {
+      "hub_identity": "57863d1dad74830dafe7f456089f571d79f35982565d8029fb3013a9739ba222",
+      "hub_path": "issue1092_realistic_crossing/analysis_tensors/summaries/dynamics_instruct/s_k_L14_shard00006.npy",
+      "local_sha256": "57863d1dad74830dafe7f456089f571d79f35982565d8029fb3013a9739ba222",
+      "reused": false,
+      "size": 1046656,
+      "staged_to": "/workspace/p6_stage/dynamics_instruct/s_k_L14_shard00006.npy"
+    },
+    {
+      "hub_identity": "c1931162a61cd21c1f3c7c6f931e82a2b40791635b85d92a4abbee428e0d7a7b",
+      "hub_path": "issue1092_realistic_crossing/analysis_tensors/summaries/dynamics_instruct/s_k_L14_shard00007.npy",
+      "local_sha256": "c1931162a61cd21c1f3c7c6f931e82a2b40791635b85d92a4abbee428e0d7a7b",
+      "reused": false,
+      "size": 1104000,
+      "staged_to": "/workspace/p6_stage/dynamics_instruct/s_k_L14_shard00007.npy"
+    },
+    {
+      "hub_identity": "15390a61392b407c876ae01b50fc6db02d4c9bfedff97f9ccefd5aa60f255acc",
+      "hub_path": "issue1092_realistic_crossing/analysis_tensors/summaries/dynamics_instruct/s_k_L14_shard00008.npy",
+      "local_sha256": "15390a61392b407c876ae01b50fc6db02d4c9bfedff97f9ccefd5aa60f255acc",
+      "reused": false,
+      "size": 1154176,
+      "staged_to": "/workspace/p6_stage/dynamics_instruct/s_k_L14_shard00008.npy"
+    },
+    {
+      "hub_identity": "633d89e54ae3ba9938fc08099ce5b0529e06fed3dcb665f1bf449a4684415e82",
+      "hub_path": "issue1092_realistic_crossing/analysis_tensors/summaries/dynamics_instruct/s_k_L14_shard00009.npy",
+      "local_sha256": "633d89e54ae3ba9938fc08099ce5b0529e06fed3dcb665f1bf449a4684415e82",
+      "reused": false,
+      "size": 1039488,
+      "staged_to": "/workspace/p6_stage/dynamics_instruct/s_k_L14_shard00009.npy"
+    },
+    {
+      "hub_identity": "fd8be59f0079c06c75af86b05e59cd7bf4434c3917098f77d7b32f98b5d18913",
+      "hub_path": "issue1092_realistic_crossing/analysis_tensors/summaries/dynamics_instruct/s_k_L14_shard00010.npy",
+      "local_sha256": "fd8be59f0079c06c75af86b05e59cd7bf4434c3917098f77d7b32f98b5d18913",
+      "reused": false,
+      "size": 824448,
+      "staged_to": "/workspace/p6_stage/dynamics_instruct/s_k_L14_shard00010.npy"
+    },
+    {
+      "hub_identity": "d42c6e287936d9893c4286ea2b1841f599dfcc66537fea39faf2b0722813cd88",
+      "hub_path": "issue1092_realistic_crossing/analysis_tensors/summaries/dynamics_instruct/s_k_L14_shard00011.npy",
+      "local_sha256": "d42c6e287936d9893c4286ea2b1841f599dfcc66537fea39faf2b0722813cd88",
+      "reused": false,
+      "size": 1283200,
+      "staged_to": "/workspace/p6_stage/dynamics_instruct/s_k_L14_shard00011.npy"
+    },
+    {
+      "hub_identity": "72f0c4fd9f640860037d1e1eee2e6eeaf445dd7cca5262345e32463c315c9f88",
+      "hub_path": "issue1092_realistic_crossing/analysis_tensors/summaries/dynamics_instruct/s_k_L14_shard00012.npy",
+      "local_sha256": "72f0c4fd9f640860037d1e1eee2e6eeaf445dd7cca5262345e32463c315c9f88",
+      "reused": false,
+      "size": 1003648,
+      "staged_to": "/workspace/p6_stage/dynamics_instruct/s_k_L14_shard00012.npy"
+    },
+    {
+      "hub_identity": "5a940a690025cda346e9bf9202ca6c583f20b79b24facb411d668464bcc13dea",
+      "hub_path": "issue1092_realistic_crossing/analysis_tensors/summaries/dynamics_instruct/s_k_L14_shard00013.npy",
+      "local_sha256": "5a940a690025cda346e9bf9202ca6c583f20b79b24facb411d668464bcc13dea",
+      "reused": false,
+      "size": 1297536,
+      "staged_to": "/workspace/p6_stage/dynamics_instruct/s_k_L14_shard00013.npy"
+    },
+    {
+      "hub_identity": "417d8f9d59444608a2fbde5ac73f6d2e857d754b2e52fc80d21df3eb491ca5ed",
+      "hub_path": "issue1092_realistic_crossing/analysis_tensors/summaries/dynamics_instruct/s_k_L14_shard00014.npy",
+      "local_sha256": "417d8f9d59444608a2fbde5ac73f6d2e857d754b2e52fc80d21df3eb491ca5ed",
+      "reused": false,
+      "size": 1132672,
+      "staged_to": "/workspace/p6_stage/dynamics_instruct/s_k_L14_shard00014.npy"
+    },
+    {
+      "hub_identity": "6233f84132a749d443198d6b245d3199af034d7d1d7436e7ee426b0ca4f1a7df",
+      "hub_path": "issue1092_realistic_crossing/analysis_tensors/summaries/dynamics_instruct/s_k_L14_shard00015.npy",
+      "local_sha256": "6233f84132a749d443198d6b245d3199af034d7d1d7436e7ee426b0ca4f1a7df",
+      "reused": false,
+      "size": 1175680,
+      "staged_to": "/workspace/p6_stage/dynamics_instruct/s_k_L14_shard00015.npy"
+    },
+    {
+      "hub_identity": "3850910bfa8b106fd6d6a22deec6aef21ac0c1d157fccd2dcab4f2ecf0b09a43",
+      "hub_path": "issue1092_realistic_crossing/analysis_tensors/summaries/dynamics_instruct/s_k_L14_shard00016.npy",
+      "local_sha256": "3850910bfa8b106fd6d6a22deec6aef21ac0c1d157fccd2dcab4f2ecf0b09a43",
+      "reused": false,
+      "size": 28800,
+      "staged_to": "/workspace/p6_stage/dynamics_instruct/s_k_L14_shard00016.npy"
+    },
+    {
+      "hub_identity": "63761c3090ec99546ba2cda9a03e813d35e6988a90a1711edb93f1098e0f33c2",
+      "hub_path": "issue1092_realistic_crossing/analysis_tensors/summaries/dynamics_instruct/answer_k_t1_L14_shard00000.npy",
+      "local_sha256": "63761c3090ec99546ba2cda9a03e813d35e6988a90a1711edb93f1098e0f33c2",
+      "reused": false,
+      "size": 1218688,
+      "staged_to": "/workspace/p6_stage/dynamics_instruct/answer_k_t1_L14_shard00000.npy"
+    },
+    {
+      "hub_identity": "8f291528407255ca9dae209a30e8f57f21d2e829d018cede9eee25949bacf3ce",
+      "hub_path": "issue1092_realistic_crossing/analysis_tensors/summaries/dynamics_instruct/answer_k_t1_L14_shard00001.npy",
+      "local_sha256": "8f291528407255ca9dae209a30e8f57f21d2e829d018cede9eee25949bacf3ce",
+      "reused": false,
+      "size": 1283200,
+      "staged_to": "/workspace/p6_stage/dynamics_instruct/answer_k_t1_L14_shard00001.npy"
+    },
+    {
+      "hub_identity": "b7c8d28db9dfe94e1979222af929877faa2e146752c7cf2bb9cad49f3d4076ec",
+      "hub_path": "issue1092_realistic_crossing/analysis_tensors/summaries/dynamics_instruct/answer_k_t1_L14_shard00002.npy",
+      "local_sha256": "b7c8d28db9dfe94e1979222af929877faa2e146752c7cf2bb9cad49f3d4076ec",
+      "reused": false,
+      "size": 1211520,
+      "staged_to": "/workspace/p6_stage/dynamics_instruct/answer_k_t1_L14_shard00002.npy"
+    },
+    {
+      "hub_identity": "c6f065f98c01ccdde3a13aeeca80f0fad4c3175ba13363283b3715cff3f7c6c0",
+      "hub_path": "issue1092_realistic_crossing/analysis_tensors/summaries/dynamics_instruct/answer_k_t1_L14_shard00003.npy",
+      "local_sha256": "c6f065f98c01ccdde3a13aeeca80f0fad4c3175ba13363283b3715cff3f7c6c0",
+      "reused": false,
+      "size": 1204352,
+      "staged_to": "/workspace/p6_stage/dynamics_instruct/answer_k_t1_L14_shard00003.npy"
+    },
+    {
+      "hub_identity": "af36d529d77a1e927db3045d3273b39e42b685f8f8b58ac605fdfba83c391dee",
+      "hub_path": "issue1092_realistic_crossing/analysis_tensors/summaries/dynamics_instruct/answer_k_t1_L14_shard00004.npy",
+      "local_sha256": "af36d529d77a1e927db3045d3273b39e42b685f8f8b58ac605fdfba83c391dee",
+      "reused": false,
+      "size": 1190016,
+      "staged_to": "/workspace/p6_stage/dynamics_instruct/answer_k_t1_L14_shard00004.npy"
+    },
+    {
+      "hub_identity": "0468b9887d5644413efb239001e0788bb1ef1bf6aa3c72fb58aff170c2ae1595",
+      "hub_path": "issue1092_realistic_crossing/analysis_tensors/summaries/dynamics_instruct/answer_k_t1_L14_shard00005.npy",
+      "local_sha256": "0468b9887d5644413efb239001e0788bb1ef1bf6aa3c72fb58aff170c2ae1595",
+      "reused": false,
+      "size": 1240192,
+      "staged_to": "/workspace/p6_stage/dynamics_instruct/answer_k_t1_L14_shard00005.npy"
+    },
+    {
+      "hub_identity": "c34136ceb79e825728dbfefb5e529a657b680a80c1e8268625e0c3d01766144e",
+      "hub_path": "issue1092_realistic_crossing/analysis_tensors/summaries/dynamics_instruct/answer_k_t1_L14_shard00006.npy",
+      "local_sha256": "c34136ceb79e825728dbfefb5e529a657b680a80c1e8268625e0c3d01766144e",
+      "reused": false,
+      "size": 1046656,
+      "staged_to": "/workspace/p6_stage/dynamics_instruct/answer_k_t1_L14_shard00006.npy"
+    },
+    {
+      "hub_identity": "76ae24290d3f5e5c734570768b7874fce484adf9a37de7eb6305a471cabe85aa",
+      "hub_path": "issue1092_realistic_crossing/analysis_tensors/summaries/dynamics_instruct/answer_k_t1_L14_shard00007.npy",
+      "local_sha256": "76ae24290d3f5e5c734570768b7874fce484adf9a37de7eb6305a471cabe85aa",
+      "reused": false,
+      "size": 1104000,
+      "staged_to": "/workspace/p6_stage/dynamics_instruct/answer_k_t1_L14_shard00007.npy"
+    },
+    {
+      "hub_identity": "d3231db6767d6a9e1558b5b1413247e7ca4f4e915497082ba3a5a98802407a39",
+      "hub_path": "issue1092_realistic_crossing/analysis_tensors/summaries/dynamics_instruct/answer_k_t1_L14_shard00008.npy",
+      "local_sha256": "d3231db6767d6a9e1558b5b1413247e7ca4f4e915497082ba3a5a98802407a39",
+      "reused": false,
+      "size": 1154176,
+      "staged_to": "/workspace/p6_stage/dynamics_instruct/answer_k_t1_L14_shard00008.npy"
+    },
+    {
+      "hub_identity": "e93361ef314a1a79d919caec456597c1a14efb20d39b1d45799f62f62a433f31",
+      "hub_path": "issue1092_realistic_crossing/analysis_tensors/summaries/dynamics_instruct/answer_k_t1_L14_shard00009.npy",
+      "local_sha256": "e93361ef314a1a79d919caec456597c1a14efb20d39b1d45799f62f62a433f31",
+      "reused": false,
+      "size": 1039488,
+      "staged_to": "/workspace/p6_stage/dynamics_instruct/answer_k_t1_L14_shard00009.npy"
+    },
+    {
+      "hub_identity": "2f55b3a7fd96c1e9166c569ef4051f8923ff261fe000e7ba30a71597101ce085",
+      "hub_path": "issue1092_realistic_crossing/analysis_tensors/summaries/dynamics_instruct/answer_k_t1_L14_shard00010.npy",
+      "local_sha256": "2f55b3a7fd96c1e9166c569ef4051f8923ff261fe000e7ba30a71597101ce085",
+      "reused": false,
+      "size": 824448,
+      "staged_to": "/workspace/p6_stage/dynamics_instruct/answer_k_t1_L14_shard00010.npy"
+    },
+    {
+      "hub_identity": "a351f29f3dadf374fce42fc1fea7a322fe77c187ba87e66050ac8187bdebd7b8",
+      "hub_path": "issue1092_realistic_crossing/analysis_tensors/summaries/dynamics_instruct/answer_k_t1_L14_shard00011.npy",
+      "local_sha256": "a351f29f3dadf374fce42fc1fea7a322fe77c187ba87e66050ac8187bdebd7b8",
+      "reused": false,
+      "size": 1283200,
+      "staged_to": "/workspace/p6_stage/dynamics_instruct/answer_k_t1_L14_shard00011.npy"
+    },
+    {
+      "hub_identity": "f7fce5112b32616c02204487d9597ac025d28819ac8dda79dba6d11b264dcc41",
+      "hub_path": "issue1092_realistic_crossing/analysis_tensors/summaries/dynamics_instruct/answer_k_t1_L14_shard00012.npy",
+      "local_sha256": "f7fce5112b32616c02204487d9597ac025d28819ac8dda79dba6d11b264dcc41",
+      "reused": false,
+      "size": 1003648,
+      "staged_to": "/workspace/p6_stage/dynamics_instruct/answer_k_t1_L14_shard00012.npy"
+    },
+    {
+      "hub_identity": "f24e114cf519fc6e900de22a2eb5bbc081792b64499e8b31ae0c3f27bf05a3c3",
+      "hub_path": "issue1092_realistic_crossing/analysis_tensors/summaries/dynamics_instruct/answer_k_t1_L14_shard00013.npy",
+      "local_sha256": "f24e114cf519fc6e900de22a2eb5bbc081792b64499e8b31ae0c3f27bf05a3c3",
+      "reused": false,
+      "size": 1297536,
+      "staged_to": "/workspace/p6_stage/dynamics_instruct/answer_k_t1_L14_shard00013.npy"
+    },
+    {
+      "hub_identity": "a4b16321829748ba9145534d761abe59c0bfe9af8c8662f2d2bc98777e67c088",
+      "hub_path": "issue1092_realistic_crossing/analysis_tensors/summaries/dynamics_instruct/answer_k_t1_L14_shard00014.npy",
+      "local_sha256": "a4b16321829748ba9145534d761abe59c0bfe9af8c8662f2d2bc98777e67c088",
+      "reused": false,
+      "size": 1132672,
+      "staged_to": "/workspace/p6_stage/dynamics_instruct/answer_k_t1_L14_shard00014.npy"
+    },
+    {
+      "hub_identity": "1bce8fb6f663b12ab5e6685b96f72573e9e14b8c21766e5ed0c28661113ca7b3",
+      "hub_path": "issue1092_realistic_crossing/analysis_tensors/summaries/dynamics_instruct/answer_k_t1_L14_shard00015.npy",
+      "local_sha256": "1bce8fb6f663b12ab5e6685b96f72573e9e14b8c21766e5ed0c28661113ca7b3",
+      "reused": false,
+      "size": 1175680,
+      "staged_to": "/workspace/p6_stage/dynamics_instruct/answer_k_t1_L14_shard00015.npy"
+    },
+    {
+      "hub_identity": "af37d15cc400568fa0f3bcc8f889bd71236edb3de9ad0aa72533e660b02b5508",
+      "hub_path": "issue1092_realistic_crossing/analysis_tensors/summaries/dynamics_instruct/answer_k_t1_L14_shard00016.npy",
+      "local_sha256": "af37d15cc400568fa0f3bcc8f889bd71236edb3de9ad0aa72533e660b02b5508",
+      "reused": false,
+      "size": 28800,
+      "staged_to": "/workspace/p6_stage/dynamics_instruct/answer_k_t1_L14_shard00016.npy"
+    },
+    {
+      "hub_identity": "c8286ab030a336e6636e396bddf64969a8ea1c50949d1784018711f3a6647d3d",
+      "hub_path": "issue1092_realistic_crossing/analysis_tensors/summaries/dynamics_instruct/answer_k_t2_L14_shard00000.npy",
+      "local_sha256": "c8286ab030a336e6636e396bddf64969a8ea1c50949d1784018711f3a6647d3d",
+      "reused": false,
+      "size": 1218688,
+      "staged_to": "/workspace/p6_stage/dynamics_instruct/answer_k_t2_L14_shard00000.npy"
+    },
+    {
+      "hub_identity": "a6f033086f9cc902188e92272176d08d605c8847664729041173ce343d460734",
+      "hub_path": "issue1092_realistic_crossing/analysis_tensors/summaries/dynamics_instruct/answer_k_t2_L14_shard00001.npy",
+      "local_sha256": "a6f033086f9cc902188e92272176d08d605c8847664729041173ce343d460734",
+      "reused": false,
+      "size": 1283200,
+      "staged_to": "/workspace/p6_stage/dynamics_instruct/answer_k_t2_L14_shard00001.npy"
+    },
+    {
+      "hub_identity": "3e8ddb5a9f40322a3b3e4a24b349bc7520d4d038279726962e1f70677078a551",
+      "hub_path": "issue1092_realistic_crossing/analysis_tensors/summaries/dynamics_instruct/answer_k_t2_L14_shard00002.npy",
+      "local_sha256": "3e8ddb5a9f40322a3b3e4a24b349bc7520d4d038279726962e1f70677078a551",
+      "reused": false,
+      "size": 1211520,
+      "staged_to": "/workspace/p6_stage/dynamics_instruct/answer_k_t2_L14_shard00002.npy"
+    },
+    {
+      "hub_identity": "d4cf2c70dbab08ffd8acd21b81985a38e2571a8516c1ee0e85c06d749b7628d5",
+      "hub_path": "issue1092_realistic_crossing/analysis_tensors/summaries/dynamics_instruct/answer_k_t2_L14_shard00003.npy",
+      "local_sha256": "d4cf2c70dbab08ffd8acd21b81985a38e2571a8516c1ee0e85c06d749b7628d5",
+      "reused": false,
+      "size": 1204352,
+      "staged_to": "/workspace/p6_stage/dynamics_instruct/answer_k_t2_L14_shard00003.npy"
+    },
+    {
+      "hub_identity": "a51ef33d0979f96e5ab34f3d7a440e15b58b631eecc5b99d7d24d23cd5d482cd",
+      "hub_path": "issue1092_realistic_crossing/analysis_tensors/summaries/dynamics_instruct/answer_k_t2_L14_shard00004.npy",
+      "local_sha256": "a51ef33d0979f96e5ab34f3d7a440e15b58b631eecc5b99d7d24d23cd5d482cd",
+      "reused": false,
+      "size": 1190016,
+      "staged_to": "/workspace/p6_stage/dynamics_instruct/answer_k_t2_L14_shard00004.npy"
+    },
+    {
+      "hub_identity": "4d76c53b873df9579cbf100f3f7d4fe9f32b737c43f8e77a7c982747e08237c8",
+      "hub_path": "issue1092_realistic_crossing/analysis_tensors/summaries/dynamics_instruct/answer_k_t2_L14_shard00005.npy",
+      "local_sha256": "4d76c53b873df9579cbf100f3f7d4fe9f32b737c43f8e77a7c982747e08237c8",
+      "reused": false,
+      "size": 1240192,
+      "staged_to": "/workspace/p6_stage/dynamics_instruct/answer_k_t2_L14_shard00005.npy"
+    },
+    {
+      "hub_identity": "288453f77e354b974d3caf7c3e2349f9a59fcd6274b2150af0a52efb094ff460",
+      "hub_path": "issue1092_realistic_crossing/analysis_tensors/summaries/dynamics_instruct/answer_k_t2_L14_shard00006.npy",
+      "local_sha256": "288453f77e354b974d3caf7c3e2349f9a59fcd6274b2150af0a52efb094ff460",
+      "reused": false,
+      "size": 1046656,
+      "staged_to": "/workspace/p6_stage/dynamics_instruct/answer_k_t2_L14_shard00006.npy"
+    },
+    {
+      "hub_identity": "318e25f53e79573eb676be00732a407fb760e566c1f9999fc8e4e43a560c024b",
+      "hub_path": "issue1092_realistic_crossing/analysis_tensors/summaries/dynamics_instruct/answer_k_t2_L14_shard00007.npy",
+      "local_sha256": "318e25f53e79573eb676be00732a407fb760e566c1f9999fc8e4e43a560c024b",
+      "reused": false,
+      "size": 1104000,
+      "staged_to": "/workspace/p6_stage/dynamics_instruct/answer_k_t2_L14_shard00007.npy"
+    },
+    {
+      "hub_identity": "d34fcf2152f96ead40761df1ce2aee3e6ef45d47bbd64004fcf3a6cdce64ece8",
+      "hub_path": "issue1092_realistic_crossing/analysis_tensors/summaries/dynamics_instruct/answer_k_t2_L14_shard00008.npy",
+      "local_sha256": "d34fcf2152f96ead40761df1ce2aee3e6ef45d47bbd64004fcf3a6cdce64ece8",
+      "reused": false,
+      "size": 1154176,
+      "staged_to": "/workspace/p6_stage/dynamics_instruct/answer_k_t2_L14_shard00008.npy"
+    },
+    {
+      "hub_identity": "c2a88d665a447129d0757283e5da1fc2e75b6b4a87e6ecea917ae8cc4ed59d08",
+      "hub_path": "issue1092_realistic_crossing/analysis_tensors/summaries/dynamics_instruct/answer_k_t2_L14_shard00009.npy",
+      "local_sha256": "c2a88d665a447129d0757283e5da1fc2e75b6b4a87e6ecea917ae8cc4ed59d08",
+      "reused": false,
+      "size": 1039488,
+      "staged_to": "/workspace/p6_stage/dynamics_instruct/answer_k_t2_L14_shard00009.npy"
+    },
+    {
+      "hub_identity": "2d2c99f51ee356c55d566befa3fefe7d0f1973bd87f8c527bc057ecb82366aef",
+      "hub_path": "issue1092_realistic_crossing/analysis_tensors/summaries/dynamics_instruct/answer_k_t2_L14_shard00010.npy",
+      "local_sha256": "2d2c99f51ee356c55d566befa3fefe7d0f1973bd87f8c527bc057ecb82366aef",
+      "reused": false,
+      "size": 824448,
+      "staged_to": "/workspace/p6_stage/dynamics_instruct/answer_k_t2_L14_shard00010.npy"
+    },
+    {
+      "hub_identity": "86d47a7e77e27c02552f0239d72c2f8a5d593ae59401eba5828ce7ef0c62bc91",
+      "hub_path": "issue1092_realistic_crossing/analysis_tensors/summaries/dynamics_instruct/answer_k_t2_L14_shard00011.npy",
+      "local_sha256": "86d47a7e77e27c02552f0239d72c2f8a5d593ae59401eba5828ce7ef0c62bc91",
+      "reused": false,
+      "size": 1283200,
+      "staged_to": "/workspace/p6_stage/dynamics_instruct/answer_k_t2_L14_shard00011.npy"
+    },
+    {
+      "hub_identity": "82bf2494fe337830db1fc9bee0aff5a74d3c7f0a00bb8a35b0a764f9baa28a5d",
+      "hub_path": "issue1092_realistic_crossing/analysis_tensors/summaries/dynamics_instruct/answer_k_t2_L14_shard00012.npy",
+      "local_sha256": "82bf2494fe337830db1fc9bee0aff5a74d3c7f0a00bb8a35b0a764f9baa28a5d",
+      "reused": false,
+      "size": 1003648,
+      "staged_to": "/workspace/p6_stage/dynamics_instruct/answer_k_t2_L14_shard00012.npy"
+    },
+    {
+      "hub_identity": "20de2307d8321b0092801699b0404a14a08abfce1c79289ae9a1276e43b8aaae",
+      "hub_path": "issue1092_realistic_crossing/analysis_tensors/summaries/dynamics_instruct/answer_k_t2_L14_shard00013.npy",
+      "local_sha256": "20de2307d8321b0092801699b0404a14a08abfce1c79289ae9a1276e43b8aaae",
+      "reused": false,
+      "size": 1297536,
+      "staged_to": "/workspace/p6_stage/dynamics_instruct/answer_k_t2_L14_shard00013.npy"
+    },
+    {
+      "hub_identity": "a37c2c429b745eb60e6286adca1d03b6f23da6211e0a0f8d2b289301fb3a96c0",
+      "hub_path": "issue1092_realistic_crossing/analysis_tensors/summaries/dynamics_instruct/answer_k_t2_L14_shard00014.npy",
+      "local_sha256": "a37c2c429b745eb60e6286adca1d03b6f23da6211e0a0f8d2b289301fb3a96c0",
+      "reused": false,
+      "size": 1132672,
+      "staged_to": "/workspace/p6_stage/dynamics_instruct/answer_k_t2_L14_shard00014.npy"
+    },
+    {
+      "hub_identity": "6c2669f0033f3afd1d7bd4e9f0d0397a62260647cd73d7795abce334ee773a5d",
+      "hub_path": "issue1092_realistic_crossing/analysis_tensors/summaries/dynamics_instruct/answer_k_t2_L14_shard00015.npy",
+      "local_sha256": "6c2669f0033f3afd1d7bd4e9f0d0397a62260647cd73d7795abce334ee773a5d",
+      "reused": false,
+      "size": 1175680,
+      "staged_to": "/workspace/p6_stage/dynamics_instruct/answer_k_t2_L14_shard00015.npy"
+    },
+    {
+      "hub_identity": "abb91d319a451810ba48526a22934611a7ea263f6047069e269c7d3d90a76492",
+      "hub_path": "issue1092_realistic_crossing/analysis_tensors/summaries/dynamics_instruct/answer_k_t2_L14_shard00016.npy",
+      "local_sha256": "abb91d319a451810ba48526a22934611a7ea263f6047069e269c7d3d90a76492",
+      "reused": false,
+      "size": 28800,
+      "staged_to": "/workspace/p6_stage/dynamics_instruct/answer_k_t2_L14_shard00016.npy"
+    },
+    {
+      "hub_identity": "0224036d07e1bf49f974666de391291d10b6a902ba9db80057686eb3a70346c9",
+      "hub_path": "issue1092_realistic_crossing/analysis_tensors/summaries/dynamics_instruct/answer_k_t3_L14_shard00000.npy",
+      "local_sha256": "0224036d07e1bf49f974666de391291d10b6a902ba9db80057686eb3a70346c9",
+      "reused": false,
+      "size": 1218688,
+      "staged_to": "/workspace/p6_stage/dynamics_instruct/answer_k_t3_L14_shard00000.npy"
+    },
+    {
+      "hub_identity": "b4452aece38ebb8daac323be910816f1301bf7f1d08eb222439bade26f60f449",
+      "hub_path": "issue1092_realistic_crossing/analysis_tensors/summaries/dynamics_instruct/answer_k_t3_L14_shard00001.npy",
+      "local_sha256": "b4452aece38ebb8daac323be910816f1301bf7f1d08eb222439bade26f60f449",
+      "reused": false,
+      "size": 1283200,
+      "staged_to": "/workspace/p6_stage/dynamics_instruct/answer_k_t3_L14_shard00001.npy"
+    },
+    {
+      "hub_identity": "d3a604c56bc8d5bc0cdc0bbf56ca92bb8466f01df14702320687b77479071f9d",
+      "hub_path": "issue1092_realistic_crossing/analysis_tensors/summaries/dynamics_instruct/answer_k_t3_L14_shard00002.npy",
+      "local_sha256": "d3a604c56bc8d5bc0cdc0bbf56ca92bb8466f01df14702320687b77479071f9d",
+      "reused": false,
+      "size": 1211520,
+      "staged_to": "/workspace/p6_stage/dynamics_instruct/answer_k_t3_L14_shard00002.npy"
+    },
+    {
+      "hub_identity": "7e52561589d58a7fc2e89dc747ec364feff450c8c0fa6006679f24ac11f7f564",
+      "hub_path": "issue1092_realistic_crossing/analysis_tensors/summaries/dynamics_instruct/answer_k_t3_L14_shard00003.npy",
+      "local_sha256": "7e52561589d58a7fc2e89dc747ec364feff450c8c0fa6006679f24ac11f7f564",
+      "reused": false,
+      "size": 1204352,
+      "staged_to": "/workspace/p6_stage/dynamics_instruct/answer_k_t3_L14_shard00003.npy"
+    },
+    {
+      "hub_identity": "d1a7c3a6d08b54d6cabe8b02ee7a1d3f7318f235591d2ce717ef19aa4cc0f478",
+      "hub_path": "issue1092_realistic_crossing/analysis_tensors/summaries/dynamics_instruct/answer_k_t3_L14_shard00004.npy",
+      "local_sha256": "d1a7c3a6d08b54d6cabe8b02ee7a1d3f7318f235591d2ce717ef19aa4cc0f478",
+      "reused": false,
+      "size": 1190016,
+      "staged_to": "/workspace/p6_stage/dynamics_instruct/answer_k_t3_L14_shard00004.npy"
+    },
+    {
+      "hub_identity": "741eb8a29448bfce37e972e95fbac5eddbbbe9d8d84f01fe2573ba00f59b406b",
+      "hub_path": "issue1092_realistic_crossing/analysis_tensors/summaries/dynamics_instruct/answer_k_t3_L14_shard00005.npy",
+      "local_sha256": "741eb8a29448bfce37e972e95fbac5eddbbbe9d8d84f01fe2573ba00f59b406b",
+      "reused": false,
+      "size": 1240192,
+      "staged_to": "/workspace/p6_stage/dynamics_instruct/answer_k_t3_L14_shard00005.npy"
+    },
+    {
+      "hub_identity": "71b40645a882caa87ff9c637d144dacac62eb5d8ab76cf69da5f2e20cf22a797",
+      "hub_path": "issue1092_realistic_crossing/analysis_tensors/summaries/dynamics_instruct/answer_k_t3_L14_shard00006.npy",
+      "local_sha256": "71b40645a882caa87ff9c637d144dacac62eb5d8ab76cf69da5f2e20cf22a797",
+      "reused": false,
+      "size": 1046656,
+      "staged_to": "/workspace/p6_stage/dynamics_instruct/answer_k_t3_L14_shard00006.npy"
+    },
+    {
+      "hub_identity": "4ba69b4933d4a391bec4f2ea3c6088444fa8db13ae4c41d90597d6a6cb305ed0",
+      "hub_path": "issue1092_realistic_crossing/analysis_tensors/summaries/dynamics_instruct/answer_k_t3_L14_shard00007.npy",
+      "local_sha256": "4ba69b4933d4a391bec4f2ea3c6088444fa8db13ae4c41d90597d6a6cb305ed0",
+      "reused": false,
+      "size": 1104000,
+      "staged_to": "/workspace/p6_stage/dynamics_instruct/answer_k_t3_L14_shard00007.npy"
+    },
+    {
+      "hub_identity": "f5f9d37ef1a9a51f408b229065f4d77808eae8645df921d189851e05e06dcc3f",
+      "hub_path": "issue1092_realistic_crossing/analysis_tensors/summaries/dynamics_instruct/answer_k_t3_L14_shard00008.npy",
+      "local_sha256": "f5f9d37ef1a9a51f408b229065f4d77808eae8645df921d189851e05e06dcc3f",
+      "reused": false,
+      "size": 1154176,
+      "staged_to": "/workspace/p6_stage/dynamics_instruct/answer_k_t3_L14_shard00008.npy"
+    },
+    {
+      "hub_identity": "5ba9ef2dbf3e3463bf0622c376e3b0b57f5df9653cc27ad6cd4dc46b6db7e182",
+      "hub_path": "issue1092_realistic_crossing/analysis_tensors/summaries/dynamics_instruct/answer_k_t3_L14_shard00009.npy",
+      "local_sha256": "5ba9ef2dbf3e3463bf0622c376e3b0b57f5df9653cc27ad6cd4dc46b6db7e182",
+      "reused": false,
+      "size": 1039488,
+      "staged_to": "/workspace/p6_stage/dynamics_instruct/answer_k_t3_L14_shard00009.npy"
+    },
+    {
+      "hub_identity": "60509bdaffa1d04de917eb05c33517c4302906344d51aa040684f23a79872b3a",
+      "hub_path": "issue1092_realistic_crossing/analysis_tensors/summaries/dynamics_instruct/answer_k_t3_L14_shard00010.npy",
+      "local_sha256": "60509bdaffa1d04de917eb05c33517c4302906344d51aa040684f23a79872b3a",
+      "reused": false,
+      "size": 824448,
+      "staged_to": "/workspace/p6_stage/dynamics_instruct/answer_k_t3_L14_shard00010.npy"
+    },
+    {
+      "hub_identity": "559a02f06ed90178c73a431d5b2a5717bc51b73456870b724af1ab6455021827",
+      "hub_path": "issue1092_realistic_crossing/analysis_tensors/summaries/dynamics_instruct/answer_k_t3_L14_shard00011.npy",
+      "local_sha256": "559a02f06ed90178c73a431d5b2a5717bc51b73456870b724af1ab6455021827",
+      "reused": false,
+      "size": 1283200,
+      "staged_to": "/workspace/p6_stage/dynamics_instruct/answer_k_t3_L14_shard00011.npy"
+    },
+    {
+      "hub_identity": "7b92f3d9c08e5198b70d5fcf478b20b6d425f810d7965a94a0d1ccbd684eda3d",
+      "hub_path": "issue1092_realistic_crossing/analysis_tensors/summaries/dynamics_instruct/answer_k_t3_L14_shard00012.npy",
+      "local_sha256": "7b92f3d9c08e5198b70d5fcf478b20b6d425f810d7965a94a0d1ccbd684eda3d",
+      "reused": false,
+      "size": 1003648,
+      "staged_to": "/workspace/p6_stage/dynamics_instruct/answer_k_t3_L14_shard00012.npy"
+    },
+    {
+      "hub_identity": "83c190a1d58ccef36be2171971cf79917db4325e45ee954daf8558f5be9766d6",
+      "hub_path": "issue1092_realistic_crossing/analysis_tensors/summaries/dynamics_instruct/answer_k_t3_L14_shard00013.npy",
+      "local_sha256": "83c190a1d58ccef36be2171971cf79917db4325e45ee954daf8558f5be9766d6",
+      "reused": false,
+      "size": 1297536,
+      "staged_to": "/workspace/p6_stage/dynamics_instruct/answer_k_t3_L14_shard00013.npy"
+    },
+    {
+      "hub_identity": "fcc3741da4afbe9407e0007e07c79d220b639ced73bf2869a2e4c9ed39ec52a7",
+      "hub_path": "issue1092_realistic_crossing/analysis_tensors/summaries/dynamics_instruct/answer_k_t3_L14_shard00014.npy",
+      "local_sha256": "fcc3741da4afbe9407e0007e07c79d220b639ced73bf2869a2e4c9ed39ec52a7",
+      "reused": false,
+      "size": 1132672,
+      "staged_to": "/workspace/p6_stage/dynamics_instruct/answer_k_t3_L14_shard00014.npy"
+    },
+    {
+      "hub_identity": "6e9fae4382ec91e2e0d9fb06f60e447d9bac9cb8fc7e677d013155c0f316d3d1",
+      "hub_path": "issue1092_realistic_crossing/analysis_tensors/summaries/dynamics_instruct/answer_k_t3_L14_shard00015.npy",
+      "local_sha256": "6e9fae4382ec91e2e0d9fb06f60e447d9bac9cb8fc7e677d013155c0f316d3d1",
+      "reused": false,
+      "size": 1175680,
+      "staged_to": "/workspace/p6_stage/dynamics_instruct/answer_k_t3_L14_shard00015.npy"
+    },
+    {
+      "hub_identity": "bb493df7f00e98165890a8c85cf72ec9514ad74601cf868206485e89506b0c47",
+      "hub_path": "issue1092_realistic_crossing/analysis_tensors/summaries/dynamics_instruct/answer_k_t3_L14_shard00016.npy",
+      "local_sha256": "bb493df7f00e98165890a8c85cf72ec9514ad74601cf868206485e89506b0c47",
+      "reused": false,
+      "size": 28800,
+      "staged_to": "/workspace/p6_stage/dynamics_instruct/answer_k_t3_L14_shard00016.npy"
+    },
+    {
+      "hub_identity": "ff25fc069f3088f930606f4c50bbb200addf5b4ebcea489900aa86e8aada13a4",
+      "hub_path": "issue1092_realistic_crossing/analysis_tensors/summaries/dynamics_instruct/u1_L14_shard00000.npy",
+      "local_sha256": "ff25fc069f3088f930606f4c50bbb200addf5b4ebcea489900aa86e8aada13a4",
+      "reused": false,
+      "size": 1218688,
+      "staged_to": "/workspace/p6_stage/dynamics_instruct/u1_L14_shard00000.npy"
+    },
+    {
+      "hub_identity": "43f1ae5ea612e819afdcf397d6df634c06ab77867da6120a90c392cdc74b06df",
+      "hub_path": "issue1092_realistic_crossing/analysis_tensors/summaries/dynamics_instruct/u1_L14_shard00001.npy",
+      "local_sha256": "43f1ae5ea612e819afdcf397d6df634c06ab77867da6120a90c392cdc74b06df",
+      "reused": false,
+      "size": 1283200,
+      "staged_to": "/workspace/p6_stage/dynamics_instruct/u1_L14_shard00001.npy"
+    },
+    {
+      "hub_identity": "3c2081fd48473afae00b80647894c16b04df7857f56f0c160234b51eca0351f2",
+      "hub_path": "issue1092_realistic_crossing/analysis_tensors/summaries/dynamics_instruct/u1_L14_shard00002.npy",
+      "local_sha256": "3c2081fd48473afae00b80647894c16b04df7857f56f0c160234b51eca0351f2",
+      "reused": false,
+      "size": 1211520,
+      "staged_to": "/workspace/p6_stage/dynamics_instruct/u1_L14_shard00002.npy"
+    },
+    {
+      "hub_identity": "10174fcc03581aaee547e74ebad5b62c39b0072f5fa188b12a05c1c21d822eaa",
+      "hub_path": "issue1092_realistic_crossing/analysis_tensors/summaries/dynamics_instruct/u1_L14_shard00003.npy",
+      "local_sha256": "10174fcc03581aaee547e74ebad5b62c39b0072f5fa188b12a05c1c21d822eaa",
+      "reused": false,
+      "size": 1204352,
+      "staged_to": "/workspace/p6_stage/dynamics_instruct/u1_L14_shard00003.npy"
+    },
+    {
+      "hub_identity": "7221eb58739c9354f6de34719302c8b094619f453fc4f231945ae24c4dcc0153",
+      "hub_path": "issue1092_realistic_crossing/analysis_tensors/summaries/dynamics_instruct/u1_L14_shard00004.npy",
+      "local_sha256": "7221eb58739c9354f6de34719302c8b094619f453fc4f231945ae24c4dcc0153",
+      "reused": false,
+      "size": 1190016,
+      "staged_to": "/workspace/p6_stage/dynamics_instruct/u1_L14_shard00004.npy"
+    },
+    {
+      "hub_identity": "2c6d6c3cd740d8f2879f14c6bba8629e838b8f9eb3ff804cc7fef067db4ddf02",
+      "hub_path": "issue1092_realistic_crossing/analysis_tensors/summaries/dynamics_instruct/u1_L14_shard00005.npy",
+      "local_sha256": "2c6d6c3cd740d8f2879f14c6bba8629e838b8f9eb3ff804cc7fef067db4ddf02",
+      "reused": false,
+      "size": 1240192,
+      "staged_to": "/workspace/p6_stage/dynamics_instruct/u1_L14_shard00005.npy"
+    },
+    {
+      "hub_identity": "24fd9b78d9cc61836ea768deadc52aec0b556343068dc918aa368c5e61ec5cac",
+      "hub_path": "issue1092_realistic_crossing/analysis_tensors/summaries/dynamics_instruct/u1_L14_shard00006.npy",
+      "local_sha256": "24fd9b78d9cc61836ea768deadc52aec0b556343068dc918aa368c5e61ec5cac",
+      "reused": false,
+      "size": 1046656,
+      "staged_to": "/workspace/p6_stage/dynamics_instruct/u1_L14_shard00006.npy"
+    },
+    {
+      "hub_identity": "4d7e9a5dedac8e129c1a64912856d2bbc83f8448d3d3fa60b5ddcc799e4b44df",
+      "hub_path": "issue1092_realistic_crossing/analysis_tensors/summaries/dynamics_instruct/u1_L14_shard00007.npy",
+      "local_sha256": "4d7e9a5dedac8e129c1a64912856d2bbc83f8448d3d3fa60b5ddcc799e4b44df",
+      "reused": false,
+      "size": 1104000,
+      "staged_to": "/workspace/p6_stage/dynamics_instruct/u1_L14_shard00007.npy"
+    },
+    {
+      "hub_identity": "cf52c45c1f25d5f36c64090423081d84367e2d36754319034a80b3ee55697e83",
+      "hub_path": "issue1092_realistic_crossing/analysis_tensors/summaries/dynamics_instruct/u1_L14_shard00008.npy",
+      "local_sha256": "cf52c45c1f25d5f36c64090423081d84367e2d36754319034a80b3ee55697e83",
+      "reused": false,
+      "size": 1154176,
+      "staged_to": "/workspace/p6_stage/dynamics_instruct/u1_L14_shard00008.npy"
+    },
+    {
+      "hub_identity": "7d375d598befabc286daf98b31ad6dc74da86c23667a2120d68b55e0af9a17d2",
+      "hub_path": "issue1092_realistic_crossing/analysis_tensors/summaries/dynamics_instruct/u1_L14_shard00009.npy",
+      "local_sha256": "7d375d598befabc286daf98b31ad6dc74da86c23667a2120d68b55e0af9a17d2",
+      "reused": false,
+      "size": 1039488,
+      "staged_to": "/workspace/p6_stage/dynamics_instruct/u1_L14_shard00009.npy"
+    },
+    {
+      "hub_identity": "c6deb3b9487372fe4648a99fcd47cbe2fa174ecd4a6cc4f22790718381e0a370",
+      "hub_path": "issue1092_realistic_crossing/analysis_tensors/summaries/dynamics_instruct/u1_L14_shard00010.npy",
+      "local_sha256": "c6deb3b9487372fe4648a99fcd47cbe2fa174ecd4a6cc4f22790718381e0a370",
+      "reused": false,
+      "size": 824448,
+      "staged_to": "/workspace/p6_stage/dynamics_instruct/u1_L14_shard00010.npy"
+    },
+    {
+      "hub_identity": "5feeeef28106b58123a5e710e9a29b57a4203f8b7b5eea7b7be57a6595fa9360",
+      "hub_path": "issue1092_realistic_crossing/analysis_tensors/summaries/dynamics_instruct/u1_L14_shard00011.npy",
+      "local_sha256": "5feeeef28106b58123a5e710e9a29b57a4203f8b7b5eea7b7be57a6595fa9360",
+      "reused": false,
+      "size": 1283200,
+      "staged_to": "/workspace/p6_stage/dynamics_instruct/u1_L14_shard00011.npy"
+    },
+    {
+      "hub_identity": "20db734146bd3eff40d032dde93b4ec0735bd783369c6de6a55d3fe22fb0b38c",
+      "hub_path": "issue1092_realistic_crossing/analysis_tensors/summaries/dynamics_instruct/u1_L14_shard00012.npy",
+      "local_sha256": "20db734146bd3eff40d032dde93b4ec0735bd783369c6de6a55d3fe22fb0b38c",
+      "reused": false,
+      "size": 1003648,
+      "staged_to": "/workspace/p6_stage/dynamics_instruct/u1_L14_shard00012.npy"
+    },
+    {
+      "hub_identity": "6c5c7349d56bac7965c81c09bf5417ca64c31841cf801dc908be2d5a1f59134c",
+      "hub_path": "issue1092_realistic_crossing/analysis_tensors/summaries/dynamics_instruct/u1_L14_shard00013.npy",
+      "local_sha256": "6c5c7349d56bac7965c81c09bf5417ca64c31841cf801dc908be2d5a1f59134c",
+      "reused": false,
+      "size": 1297536,
+      "staged_to": "/workspace/p6_stage/dynamics_instruct/u1_L14_shard00013.npy"
+    },
+    {
+      "hub_identity": "a8419afd8051a300f53aa629026a0b639f9e103d1739f327de250b5becbaf580",
+      "hub_path": "issue1092_realistic_crossing/analysis_tensors/summaries/dynamics_instruct/u1_L14_shard00014.npy",
+      "local_sha256": "a8419afd8051a300f53aa629026a0b639f9e103d1739f327de250b5becbaf580",
+      "reused": false,
+      "size": 1132672,
+      "staged_to": "/workspace/p6_stage/dynamics_instruct/u1_L14_shard00014.npy"
+    },
+    {
+      "hub_identity": "7a8ba8131736de2c42aaa0857ec1a58c25cca4be247e2bd4c7bbe3b505b4100a",
+      "hub_path": "issue1092_realistic_crossing/analysis_tensors/summaries/dynamics_instruct/u1_L14_shard00015.npy",
+      "local_sha256": "7a8ba8131736de2c42aaa0857ec1a58c25cca4be247e2bd4c7bbe3b505b4100a",
+      "reused": false,
+      "size": 1175680,
+      "staged_to": "/workspace/p6_stage/dynamics_instruct/u1_L14_shard00015.npy"
+    },
+    {
+      "hub_identity": "79fcd044d509fa140ef8721d0c70d53d8c471c019d46d2394c4b3402b539d78b",
+      "hub_path": "issue1092_realistic_crossing/analysis_tensors/summaries/dynamics_instruct/u1_L14_shard00016.npy",
+      "local_sha256": "79fcd044d509fa140ef8721d0c70d53d8c471c019d46d2394c4b3402b539d78b",
+      "reused": false,
+      "size": 28800,
+      "staged_to": "/workspace/p6_stage/dynamics_instruct/u1_L14_shard00016.npy"
+    },
+    {
+      "hub_identity": "a11e20ec2c8048454f2b1d2d79ba1aa6553e2f368cba5e0fbc16ca41bb238f92",
+      "hub_path": "issue1092_realistic_crossing/analysis_tensors/summaries/dynamics_instruct/u2_L14_shard00000.npy",
+      "local_sha256": "a11e20ec2c8048454f2b1d2d79ba1aa6553e2f368cba5e0fbc16ca41bb238f92",
+      "reused": false,
+      "size": 1218688,
+      "staged_to": "/workspace/p6_stage/dynamics_instruct/u2_L14_shard00000.npy"
+    },
+    {
+      "hub_identity": "b896baad416b44cb3f5ec8933da4a43fe17ac9574be6cd73c036c5b292312d6a",
+      "hub_path": "issue1092_realistic_crossing/analysis_tensors/summaries/dynamics_instruct/u2_L14_shard00001.npy",
+      "local_sha256": "b896baad416b44cb3f5ec8933da4a43fe17ac9574be6cd73c036c5b292312d6a",
+      "reused": false,
+      "size": 1283200,
+      "staged_to": "/workspace/p6_stage/dynamics_instruct/u2_L14_shard00001.npy"
+    },
+    {
+      "hub_identity": "563026dab2b36929d36b92048d2759b20626d284219641ead8c6362abc14fa78",
+      "hub_path": "issue1092_realistic_crossing/analysis_tensors/summaries/dynamics_instruct/u2_L14_shard00002.npy",
+      "local_sha256": "563026dab2b36929d36b92048d2759b20626d284219641ead8c6362abc14fa78",
+      "reused": false,
+      "size": 1211520,
+      "staged_to": "/workspace/p6_stage/dynamics_instruct/u2_L14_shard00002.npy"
+    },
+    {
+      "hub_identity": "ac2b3de4f7ba9f31bd62603cfa1f6f5d28325dd0ca7e10b913b3a1579326e174",
+      "hub_path": "issue1092_realistic_crossing/analysis_tensors/summaries/dynamics_instruct/u2_L14_shard00003.npy",
+      "local_sha256": "ac2b3de4f7ba9f31bd62603cfa1f6f5d28325dd0ca7e10b913b3a1579326e174",
+      "reused": false,
+      "size": 1204352,
+      "staged_to": "/workspace/p6_stage/dynamics_instruct/u2_L14_shard00003.npy"
+    },
+    {
+      "hub_identity": "d03a1c3d0567f1e6f9527232796a1d95556299f279710c9c10de891fb2c881e6",
+      "hub_path": "issue1092_realistic_crossing/analysis_tensors/summaries/dynamics_instruct/u2_L14_shard00004.npy",
+      "local_sha256": "d03a1c3d0567f1e6f9527232796a1d95556299f279710c9c10de891fb2c881e6",
+      "reused": false,
+      "size": 1190016,
+      "staged_to": "/workspace/p6_stage/dynamics_instruct/u2_L14_shard00004.npy"
+    },
+    {
+      "hub_identity": "abacb7875987114d84cb4340a963a0630975f263acf18f889ec93bc96478dcb0",
+      "hub_path": "issue1092_realistic_crossing/analysis_tensors/summaries/dynamics_instruct/u2_L14_shard00005.npy",
+      "local_sha256": "abacb7875987114d84cb4340a963a0630975f263acf18f889ec93bc96478dcb0",
+      "reused": false,
+      "size": 1240192,
+      "staged_to": "/workspace/p6_stage/dynamics_instruct/u2_L14_shard00005.npy"
+    },
+    {
+      "hub_identity": "8a2f5094175b3d823c56abdf95941a180c7ac9ce2c10459a97c3f394a7d191e1",
+      "hub_path": "issue1092_realistic_crossing/analysis_tensors/summaries/dynamics_instruct/u2_L14_shard00006.npy",
+      "local_sha256": "8a2f5094175b3d823c56abdf95941a180c7ac9ce2c10459a97c3f394a7d191e1",
+      "reused": false,
+      "size": 1046656,
+      "staged_to": "/workspace/p6_stage/dynamics_instruct/u2_L14_shard00006.npy"
+    },
+    {
+      "hub_identity": "20b5d1a0365ea76b6f5210d4662f1f615a3c777104e8d0d661593e097c2b9872",
+      "hub_path": "issue1092_realistic_crossing/analysis_tensors/summaries/dynamics_instruct/u2_L14_shard00007.npy",
+      "local_sha256": "20b5d1a0365ea76b6f5210d4662f1f615a3c777104e8d0d661593e097c2b9872",
+      "reused": false,
+      "size": 1104000,
+      "staged_to": "/workspace/p6_stage/dynamics_instruct/u2_L14_shard00007.npy"
+    },
+    {
+      "hub_identity": "6724771c806a2bfed267bb91bb70ca636b40f19dedfca99fe2bbbeb499c4fb11",
+      "hub_path": "issue1092_realistic_crossing/analysis_tensors/summaries/dynamics_instruct/u2_L14_shard00008.npy",
+      "local_sha256": "6724771c806a2bfed267bb91bb70ca636b40f19dedfca99fe2bbbeb499c4fb11",
+      "reused": false,
+      "size": 1154176,
+      "staged_to": "/workspace/p6_stage/dynamics_instruct/u2_L14_shard00008.npy"
+    },
+    {
+      "hub_identity": "e4fc97f3b265f5563e6a4c9bdbe66212ddc8e75483b2ff16b8f89d9d97fba60c",
+      "hub_path": "issue1092_realistic_crossing/analysis_tensors/summaries/dynamics_instruct/u2_L14_shard00009.npy",
+      "local_sha256": "e4fc97f3b265f5563e6a4c9bdbe66212ddc8e75483b2ff16b8f89d9d97fba60c",
+      "reused": false,
+      "size": 1039488,
+      "staged_to": "/workspace/p6_stage/dynamics_instruct/u2_L14_shard00009.npy"
+    },
+    {
+      "hub_identity": "35827d3c23a1b11c9d1c871dc67ca5f0ac1c52c104c507e1167ac636e3f5571e",
+      "hub_path": "issue1092_realistic_crossing/analysis_tensors/summaries/dynamics_instruct/u2_L14_shard00010.npy",
+      "local_sha256": "35827d3c23a1b11c9d1c871dc67ca5f0ac1c52c104c507e1167ac636e3f5571e",
+      "reused": false,
+      "size": 824448,
+      "staged_to": "/workspace/p6_stage/dynamics_instruct/u2_L14_shard00010.npy"
+    },
+    {
+      "hub_identity": "ecc51cd2bd85b522988feada58d9b9382b11056994639287a09cdb225b2458dd",
+      "hub_path": "issue1092_realistic_crossing/analysis_tensors/summaries/dynamics_instruct/u2_L14_shard00011.npy",
+      "local_sha256": "ecc51cd2bd85b522988feada58d9b9382b11056994639287a09cdb225b2458dd",
+      "reused": false,
+      "size": 1283200,
+      "staged_to": "/workspace/p6_stage/dynamics_instruct/u2_L14_shard00011.npy"
+    },
+    {
+      "hub_identity": "b8317f013612b9efcd41966ba135bab38305f76c49c1a438c8db4da808e54fa0",
+      "hub_path": "issue1092_realistic_crossing/analysis_tensors/summaries/dynamics_instruct/u2_L14_shard00012.npy",
+      "local_sha256": "b8317f013612b9efcd41966ba135bab38305f76c49c1a438c8db4da808e54fa0",
+      "reused": false,
+      "size": 1003648,
+      "staged_to": "/workspace/p6_stage/dynamics_instruct/u2_L14_shard00012.npy"
+    },
+    {
+      "hub_identity": "5a0f1343870a4b7638ea3f38570915155ab3a2e44721aeba4078fe45004a8443",
+      "hub_path": "issue1092_realistic_crossing/analysis_tensors/summaries/dynamics_instruct/u2_L14_shard00013.npy",
+      "local_sha256": "5a0f1343870a4b7638ea3f38570915155ab3a2e44721aeba4078fe45004a8443",
+      "reused": false,
+      "size": 1297536,
+      "staged_to": "/workspace/p6_stage/dynamics_instruct/u2_L14_shard00013.npy"
+    },
+    {
+      "hub_identity": "98aee88b6dd491e825d65aefd89480b8c7ab1af5b339ff2b574ddd6d3681dccc",
+      "hub_path": "issue1092_realistic_crossing/analysis_tensors/summaries/dynamics_instruct/u2_L14_shard00014.npy",
+      "local_sha256": "98aee88b6dd491e825d65aefd89480b8c7ab1af5b339ff2b574ddd6d3681dccc",
+      "reused": false,
+      "size": 1132672,
+      "staged_to": "/workspace/p6_stage/dynamics_instruct/u2_L14_shard00014.npy"
+    },
+    {
+      "hub_identity": "d3d46bd47a6923ed809e1fd22ef78199f7073b410db6d71168d5d91ef1848272",
+      "hub_path": "issue1092_realistic_crossing/analysis_tensors/summaries/dynamics_instruct/u2_L14_shard00015.npy",
+      "local_sha256": "d3d46bd47a6923ed809e1fd22ef78199f7073b410db6d71168d5d91ef1848272",
+      "reused": false,
+      "size": 1175680,
+      "staged_to": "/workspace/p6_stage/dynamics_instruct/u2_L14_shard00015.npy"
+    },
+    {
+      "hub_identity": "974352d765b4223f3fae09b8d55e872a8b2290ab8ab312e316b304a191f14726",
+      "hub_path": "issue1092_realistic_crossing/analysis_tensors/summaries/dynamics_instruct/u2_L14_shard00016.npy",
+      "local_sha256": "974352d765b4223f3fae09b8d55e872a8b2290ab8ab312e316b304a191f14726",
+      "reused": false,
+      "size": 28800,
+      "staged_to": "/workspace/p6_stage/dynamics_instruct/u2_L14_shard00016.npy"
+    },
+    {
+      "hub_identity": "be869fa9a2ece9440f797f59d80772e20f86a7c008597bac828d8dcc4331b7bd",
+      "hub_path": "issue1092_realistic_crossing/analysis_tensors/summaries/dynamics_instruct/u3_L14_shard00000.npy",
+      "local_sha256": "be869fa9a2ece9440f797f59d80772e20f86a7c008597bac828d8dcc4331b7bd",
+      "reused": false,
+      "size": 1218688,
+      "staged_to": "/workspace/p6_stage/dynamics_instruct/u3_L14_shard00000.npy"
+    },
+    {
+      "hub_identity": "5fea378f32a88728768f3b97e506e0279250d722695b629eb8428677275b9e9a",
+      "hub_path": "issue1092_realistic_crossing/analysis_tensors/summaries/dynamics_instruct/u3_L14_shard00001.npy",
+      "local_sha256": "5fea378f32a88728768f3b97e506e0279250d722695b629eb8428677275b9e9a",
+      "reused": false,
+      "size": 1283200,
+      "staged_to": "/workspace/p6_stage/dynamics_instruct/u3_L14_shard00001.npy"
+    },
+    {
+      "hub_identity": "12c393dcfcd261fde78d407b614462347a34b2bee733299bbb686f82a8303f55",
+      "hub_path": "issue1092_realistic_crossing/analysis_tensors/summaries/dynamics_instruct/u3_L14_shard00002.npy",
+      "local_sha256": "12c393dcfcd261fde78d407b614462347a34b2bee733299bbb686f82a8303f55",
+      "reused": false,
+      "size": 1211520,
+      "staged_to": "/workspace/p6_stage/dynamics_instruct/u3_L14_shard00002.npy"
+    },
+    {
+      "hub_identity": "e405e0961bc703b2c8da94963e9ccf9d3cab7ee7353c7351cb85dd6aeb501f6b",
+      "hub_path": "issue1092_realistic_crossing/analysis_tensors/summaries/dynamics_instruct/u3_L14_shard00003.npy",
+      "local_sha256": "e405e0961bc703b2c8da94963e9ccf9d3cab7ee7353c7351cb85dd6aeb501f6b",
+      "reused": false,
+      "size": 1204352,
+      "staged_to": "/workspace/p6_stage/dynamics_instruct/u3_L14_shard00003.npy"
+    },
+    {
+      "hub_identity": "5b1d6ae85e6f7581a68e601234218a89a08201edb92bc75bb9deb987fe3ee41a",
+      "hub_path": "issue1092_realistic_crossing/analysis_tensors/summaries/dynamics_instruct/u3_L14_shard00004.npy",
+      "local_sha256": "5b1d6ae85e6f7581a68e601234218a89a08201edb92bc75bb9deb987fe3ee41a",
+      "reused": false,
+      "size": 1190016,
+      "staged_to": "/workspace/p6_stage/dynamics_instruct/u3_L14_shard00004.npy"
+    },
+    {
+      "hub_identity": "9c195a1d539ae384ee12c7f8cadf68c4cc40e2af94f0c3ae0f5f30a25aecf7fb",
+      "hub_path": "issue1092_realistic_crossing/analysis_tensors/summaries/dynamics_instruct/u3_L14_shard00005.npy",
+      "local_sha256": "9c195a1d539ae384ee12c7f8cadf68c4cc40e2af94f0c3ae0f5f30a25aecf7fb",
+      "reused": false,
+      "size": 1240192,
+      "staged_to": "/workspace/p6_stage/dynamics_instruct/u3_L14_shard00005.npy"
+    },
+    {
+      "hub_identity": "ce0babff0eac565c412e82fceec6b40224badd01a8f2cd0ce5ec49dd6d2972f4",
+      "hub_path": "issue1092_realistic_crossing/analysis_tensors/summaries/dynamics_instruct/u3_L14_shard00006.npy",
+      "local_sha256": "ce0babff0eac565c412e82fceec6b40224badd01a8f2cd0ce5ec49dd6d2972f4",
+      "reused": false,
+      "size": 1046656,
+      "staged_to": "/workspace/p6_stage/dynamics_instruct/u3_L14_shard00006.npy"
+    },
+    {
+      "hub_identity": "6fd51ed65726521c5598e793000cf10457d8b252ed8f6c478203764dc609feb5",
+      "hub_path": "issue1092_realistic_crossing/analysis_tensors/summaries/dynamics_instruct/u3_L14_shard00007.npy",
+      "local_sha256": "6fd51ed65726521c5598e793000cf10457d8b252ed8f6c478203764dc609feb5",
+      "reused": false,
+      "size": 1104000,
+      "staged_to": "/workspace/p6_stage/dynamics_instruct/u3_L14_shard00007.npy"
+    },
+    {
+      "hub_identity": "6bc74b87facaf888b75f804c974092723a329e74e3218594aa9a4d449ad8d828",
+      "hub_path": "issue1092_realistic_crossing/analysis_tensors/summaries/dynamics_instruct/u3_L14_shard00008.npy",
+      "local_sha256": "6bc74b87facaf888b75f804c974092723a329e74e3218594aa9a4d449ad8d828",
+      "reused": false,
+      "size": 1154176,
+      "staged_to": "/workspace/p6_stage/dynamics_instruct/u3_L14_shard00008.npy"
+    },
+    {
+      "hub_identity": "ffffc0c1546d739f88d29daea6263e8e589707cf60e93c0af3815dd5e4e2b652",
+      "hub_path": "issue1092_realistic_crossing/analysis_tensors/summaries/dynamics_instruct/u3_L14_shard00009.npy",
+      "local_sha256": "ffffc0c1546d739f88d29daea6263e8e589707cf60e93c0af3815dd5e4e2b652",
+      "reused": false,
+      "size": 1039488,
+      "staged_to": "/workspace/p6_stage/dynamics_instruct/u3_L14_shard00009.npy"
+    },
+    {
+      "hub_identity": "962c95afd74b5551dfbd2fcd44791b7b964f54431a320d3b4a712f90b42571be",
+      "hub_path": "issue1092_realistic_crossing/analysis_tensors/summaries/dynamics_instruct/u3_L14_shard00010.npy",
+      "local_sha256": "962c95afd74b5551dfbd2fcd44791b7b964f54431a320d3b4a712f90b42571be",
+      "reused": false,
+      "size": 824448,
+      "staged_to": "/workspace/p6_stage/dynamics_instruct/u3_L14_shard00010.npy"
+    },
+    {
+      "hub_identity": "ad05f772390937da9f03ecd1ef893d667d0c0a700ee87994c7175d2b1c4a0c60",
+      "hub_path": "issue1092_realistic_crossing/analysis_tensors/summaries/dynamics_instruct/u3_L14_shard00011.npy",
+      "local_sha256": "ad05f772390937da9f03ecd1ef893d667d0c0a700ee87994c7175d2b1c4a0c60",
+      "reused": false,
+      "size": 1283200,
+      "staged_to": "/workspace/p6_stage/dynamics_instruct/u3_L14_shard00011.npy"
+    },
+    {
+      "hub_identity": "da9d9a074ea69fef19fc79cf5babd9f3995d6a4fd1424b0adbad5a9e1dc895f4",
+      "hub_path": "issue1092_realistic_crossing/analysis_tensors/summaries/dynamics_instruct/u3_L14_shard00012.npy",
+      "local_sha256": "da9d9a074ea69fef19fc79cf5babd9f3995d6a4fd1424b0adbad5a9e1dc895f4",
+      "reused": false,
+      "size": 1003648,
+      "staged_to": "/workspace/p6_stage/dynamics_instruct/u3_L14_shard00012.npy"
+    },
+    {
+      "hub_identity": "2a8a6b48a810fd8b61ef1f7626beb17e57858329eda7b6a0497b71b6a459939b",
+      "hub_path": "issue1092_realistic_crossing/analysis_tensors/summaries/dynamics_instruct/u3_L14_shard00013.npy",
+      "local_sha256": "2a8a6b48a810fd8b61ef1f7626beb17e57858329eda7b6a0497b71b6a459939b",
+      "reused": false,
+      "size": 1297536,
+      "staged_to": "/workspace/p6_stage/dynamics_instruct/u3_L14_shard00013.npy"
+    },
+    {
+      "hub_identity": "c720e0971244a797ff7a3e2f8676896fca363b6eafb434b684dac8528957413e",
+      "hub_path": "issue1092_realistic_crossing/analysis_tensors/summaries/dynamics_instruct/u3_L14_shard00014.npy",
+      "local_sha256": "c720e0971244a797ff7a3e2f8676896fca363b6eafb434b684dac8528957413e",
+      "reused": false,
+      "size": 1132672,
+      "staged_to": "/workspace/p6_stage/dynamics_instruct/u3_L14_shard00014.npy"
+    },
+    {
+      "hub_identity": "b9faccf0f7b582ec901c480a67f26fdef98b195c472cd42bf9d10b78a4a01c33",
+      "hub_path": "issue1092_realistic_crossing/analysis_tensors/summaries/dynamics_instruct/u3_L14_shard00015.npy",
+      "local_sha256": "b9faccf0f7b582ec901c480a67f26fdef98b195c472cd42bf9d10b78a4a01c33",
+      "reused": false,
+      "size": 1175680,
+      "staged_to": "/workspace/p6_stage/dynamics_instruct/u3_L14_shard00015.npy"
+    },
+    {
+      "hub_identity": "072c04b14e57be30ae0449f515cc0d9099cdc5f63e7b8cc691d82654536aec3a",
+      "hub_path": "issue1092_realistic_crossing/analysis_tensors/summaries/dynamics_instruct/u3_L14_shard00016.npy",
+      "local_sha256": "072c04b14e57be30ae0449f515cc0d9099cdc5f63e7b8cc691d82654536aec3a",
+      "reused": false,
+      "size": 28800,
+      "staged_to": "/workspace/p6_stage/dynamics_instruct/u3_L14_shard00016.npy"
+    }
+  ],
+  "timestamp": "2026-07-16T06:56:47+0000",
+  "wall_s_band_block": 22923.196358308,
+  "wall_s_frozen_block": 22923.196358308,
+  "wrapper_config": {
+    "arms": [
+      "prefix_end",
+      "context_end"
+    ],
+    "band_null_draws": 20,
+    "cells": [
+      "cell_inst_own"
+    ],
+    "config_sha256": "c476b68489aa7f581ad5f13d3870f8359bb83862e42e652f462b224ff274cb27",
+    "corpus_manifest_sha256": "e582a3b41ae9c5b724602730b46634c01df8bdd2281db524d70450e821e24227",
+    "extra_fit_grid_args": [
+      "--skip-mlp-companion"
+    ],
+    "fit_arms": [
+      "B"
+    ],
+    "fit_grid_script_sha256": "25d5416a39e9b9d1b82c721292b8e270e88c99b120c32f228391277bb26ea7da",
+    "fit_seed": 0,
+    "hf_prefix": "issue1092_realistic_crossing/analysis_tensors/summaries",
+    "hf_revision": "main",
+    "judge_scores": "/workspace/eps-issue-1092/data/issue_1092/p5_judge/scores.jsonl",
+    "judge_scores_sha256": "94bf3490f2116fd25dba581ac5ad172cc2b344fa0edad43ca5e31149f602920a",
+    "lambda_grid_deviation": {
+      "plan_registered": "7-value log-spaced {1e-2..1e3} (plan section 10, Fits row)",
+      "realized": [
+        0.01,
+        0.1,
+        1.0,
+        10.0,
+        100.0,
+        1000.0
+      ],
+      "reason": "engine-internal grid (issue658 RIDGE_LAMBDAS via issue923 press_fit_predict); lambda-sensitivity columns + df(lambda) reporting keep headlines grid-robust",
+      "status": "deviation-recorded"
+    },
+    "n_folds": 6,
+    "n_null_draws": 200,
+    "rb_dir": null,
+    "rb_rev": "037fcbb",
+    "target_bases": [
+      "ambient",
+      "pca48"
+    ],
+    "targets": [
+      "t1",
+      "t2",
+      "t3"
+    ]
+  }
+}

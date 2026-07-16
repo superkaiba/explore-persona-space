@@ -1,0 +1,20 @@
+{
+  "metadata": {
+    "git_commit": "f18bdc533e2d471927c602782c06fdaf16344823",
+    "timestamp": "2026-07-15T20:40:37Z",
+    "seed": 0,
+    "n": 5000,
+    "script": "scripts/issue1336_diagnose_g1.py"
+  },
+  "computed_ts_unix": 1784148037.791407,
+  "layer": 19,
+  "r2_raw_committed_grid": 0.6730940896676356,
+  "committed_anchor": 0.6731,
+  "s_qwen_standardized": 0.5306278077879388,
+  "bar_raw": 0.2,
+  "bar_std": 0.1576668571647419,
+  "calibration_deviates": true,
+  "deviation_threshold": 0.1,
+  "std_floor_frac": 0.001,
+  "lambda_grid_std": "logspace(-2,8,21)"
+}

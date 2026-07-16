@@ -54,7 +54,9 @@ import math  # noqa: E402
 import os  # noqa: E402
 import random  # noqa: E402
 import re  # noqa: E402
+import shutil  # noqa: E402
 import sys  # noqa: E402
+import tempfile  # noqa: E402
 import time  # noqa: E402
 from collections.abc import Callable, Sequence  # noqa: E402
 from dataclasses import dataclass  # noqa: E402
@@ -455,7 +457,23 @@ def _reuse_or_generate_datagen(cfg: RunConfig, cell: Cell) -> Callable[..., tupl
 
 def _stage_hf_prefix(prefix: str, dest: Path, *, skip_if: Callable[[Path], bool] | None = None):
     """Mirror one data-repo prefix into ``dest`` (hub-rel -> local-rel verbatim;
-    consumers open the exact produced layout — no mapping transformation)."""
+    consumers open the exact produced layout — no mapping transformation).
+
+    Concurrency-safe + partial-dest self-healing (#1315 r5 crash-fix): every
+    invocation downloads into its OWN ``tempfile.mkdtemp`` staging dir under
+    ``dest`` (same filesystem — ``os.replace`` must not cross devices) and
+    publishes per file via atomic ``os.replace``, so concurrent callers can
+    never consume each other's staged files. The pre-fix SHARED
+    ``dest/_hfstage`` staging dir let a sibling's ``os.replace`` steal a file
+    this process's ``hf_hub_download`` had just returned — FileNotFoundError
+    at the replace (#1315 p4_parity 4-way fanout, epm:failure v4). Per-file
+    ``target.exists()`` skip means a re-run stages ONLY missing files, so a
+    partially-staged dest (crashed / group-reaped prior stage) self-heals with
+    no manual cleanup; the stale pre-fix ``_hfstage`` dir is swept at entry
+    unconditionally, orphaned ``_hfstage-*`` dirs only when >1h old (a LIVE
+    concurrent sibling's staging dir stays untouched). Every caller's clean
+    RETURN still implies all listed files exist at their targets.
+    """
     if skip_if is not None and skip_if(dest):
         logger.info("[stage] %s already complete locally — skip", dest)
         return
@@ -479,20 +497,44 @@ def _stage_hf_prefix(prefix: str, dest: Path, *, skip_if: Callable[[Path], bool]
     files = [e.path for e in entries if not getattr(e, "tree_id", None)]
     if not files:
         raise FileNotFoundError(f"no files under {HF_DATA_REPO}/{prefix} — was P1a uploaded?")
-    for hub_path in files:
-        rel = hub_path[len(prefix) :].lstrip("/")
-        target = dest / rel
-        if target.exists():
-            continue
-        got = hub.retry_transient(
-            lambda hp=hub_path: hf_hub_download(
-                HF_DATA_REPO, hp, repo_type="dataset", local_dir=dest / "_hfstage"
-            ),
-            what=f"issue1090 stage download {hub_path}",
-        )
-        target.parent.mkdir(parents=True, exist_ok=True)
-        os.replace(got, target)
-    logger.info("[stage] %s -> %s (%d files)", prefix, dest, len(files))
+    dest.mkdir(parents=True, exist_ok=True)
+    # Stale staging leftovers. The legacy shared `_hfstage` (pre-r5) is always
+    # swept — fixed code never creates that name, so it can only be pre-fix
+    # garbage (racing removals are benign under ignore_errors). Per-invocation
+    # `_hfstage-*` dirs orphaned by a KILLED prior stage are swept only when
+    # older than 1h: a concurrent LIVE sibling's staging dir is seconds-fresh
+    # (its mtime updates on every file landing), and sweeping a live dir would
+    # recreate the exact steal race this fix removes.
+    shutil.rmtree(dest / "_hfstage", ignore_errors=True)
+    now = time.time()
+    for stale in dest.glob("_hfstage-*"):
+        try:
+            if now - stale.stat().st_mtime > 3600:
+                shutil.rmtree(stale, ignore_errors=True)
+        except OSError:
+            pass  # vanished between glob and stat (a finishing sibling) — fine
+    stage = Path(tempfile.mkdtemp(prefix="_hfstage-", dir=dest))
+    n_downloaded = 0
+    try:
+        for hub_path in files:
+            rel = hub_path[len(prefix) :].lstrip("/")
+            target = dest / rel
+            if target.exists():
+                continue
+            got = hub.retry_transient(
+                lambda hp=hub_path: hf_hub_download(
+                    HF_DATA_REPO, hp, repo_type="dataset", local_dir=stage
+                ),
+                what=f"issue1090 stage download {hub_path}",
+            )
+            target.parent.mkdir(parents=True, exist_ok=True)
+            os.replace(got, target)
+            n_downloaded += 1
+    finally:
+        shutil.rmtree(stage, ignore_errors=True)
+    logger.info(
+        "[stage] %s -> %s (%d files, %d downloaded)", prefix, dest, len(files), n_downloaded
+    )
 
 
 def _datagen_complete(d: Path) -> bool:

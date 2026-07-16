@@ -837,12 +837,20 @@ def test_canonical_pod_name_preferred_when_both_prefixes_registered(
 def terminate_ns():
     """Build an argparse.Namespace matching the terminate subparser shape."""
 
-    def _make(*, issue: int, yes: bool = True, dry_run: bool = False, skip: bool = False):
+    def _make(
+        *,
+        issue: int,
+        yes: bool = True,
+        dry_run: bool = False,
+        skip: bool = False,
+        name_suffix: str | None = None,
+    ):
         return argparse.Namespace(
             issue=issue,
             yes=yes,
             dry_run=dry_run,
             skip_upload_verify=skip,
+            name_suffix=name_suffix,
         )
 
     return _make
@@ -1121,16 +1129,309 @@ def test_terminate_parser_exposes_skip_upload_verify_flag():
 
 
 def test_issue_from_pod_name_anchors_on_full_suffix():
-    """``pod-47`` resolves to issue 47, NOT 475 — the suffix is parsed as a
-    whole int, not a substring. Regression for the name-matching anchor that
-    keeps multi-pod terminate from over-matching neighbouring issues."""
+    """``pod-47`` resolves to issue 47, NOT 475 — the digits are anchored on
+    end-of-string or a ``-<slug>`` boundary, never a substring. Regression for
+    the name-matching anchor that keeps multi-pod terminate from over-matching
+    neighbouring issues."""
     assert pod_lifecycle._issue_from_pod_name("pod-47") == 47
     assert pod_lifecycle._issue_from_pod_name("pod-475") == 475
     assert pod_lifecycle._issue_from_pod_name("epm-issue-475") == 475
-    # Trailing garbage is rejected so suffixes can't bleed across issues.
-    assert pod_lifecycle._issue_from_pod_name("pod-475-backup") is None
+    # DELIBERATE #1334 contract change: a letter-initial lowercase slug is the
+    # multi-pod-per-issue form and maps to its owning issue (the old pin was
+    # ``is None`` — pre-#1334 any suffixed name was unmappable).
+    assert pod_lifecycle._issue_from_pod_name("pod-475-backup") == 475
     # Names without a managed prefix never match.
     assert pod_lifecycle._issue_from_pod_name("thomas-pod-475") is None
+
+
+# ---------------------------------------------------------------------------
+# #1334 — multi-pod-per-issue naming (pod-<N>-<slug>)
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    ("name", "expected"),
+    [
+        ("pod-47", 47),
+        ("pod-475", 475),
+        ("epm-issue-475", 475),
+        ("pod-475-backup", 475),  # deliberate #1334 lifecycle change (was None)
+        ("pod-779-b", 779),
+        ("epm-issue-546-b", 546),  # legacy suffixed dispatcher pods (audit precedent)
+        ("pod-779-60", None),  # numeric slug rejected — letter-initial rule
+        ("pod-779-B", None),  # uppercase rejected; we only generate lowercase
+        ("pod-77960", 77960),  # legacy fabrication shape — bare int tail, unchanged
+        ("pod-779-", None),  # empty slug
+        # Trailing-hyphen slug: [a-z][a-z0-9-]* admits 'b-' — pinned so the
+        # parser and provision's slug validator (which also admits it) agree.
+        ("pod-779-b-", 779),
+        ("thomas-pod-475", None),
+        ("pod-abc", None),
+        ("pod-", None),
+        ("", None),
+    ],
+)
+def test_issue_from_pod_name_suffix_grammar(name: str, expected: int | None):
+    """The full #1334 grammar table for the canonical parser."""
+    assert pod_lifecycle._issue_from_pod_name(name) == expected
+
+
+def test_canonical_pod_name_suffix():
+    """Builder shapes + the parser⇄builder round-trip invariant (#1334
+    acceptance criterion 1): every valid (issue, slug) pair maps back to its
+    owning issue."""
+    assert pod_lifecycle._canonical_pod_name(779) == "pod-779"
+    assert pod_lifecycle._canonical_pod_name(779, "b") == "pod-779-b"
+    assert pod_lifecycle._canonical_pod_name(779, None) == "pod-779"
+    for issue, slug in [(779, "b"), (475, "followup2"), (1, "b-2"), (77960, None)]:
+        name = pod_lifecycle._canonical_pod_name(issue, slug)
+        assert pod_lifecycle._issue_from_pod_name(name) == issue, (issue, slug, name)
+
+
+def test_provision_parser_exposes_name_suffix():
+    """--name-suffix is wired into all FOUR subparsers (provision / stop /
+    resume / terminate), defaulting to None (mirrors the
+    test_terminate_parser_exposes_skip_upload_verify_flag pattern)."""
+    parser = argparse.ArgumentParser()
+    sub = parser.add_subparsers(dest="cmd")
+    pod_lifecycle._parser_provision(sub)
+    pod_lifecycle._parser_stop(sub)
+    pod_lifecycle._parser_resume(sub)
+    pod_lifecycle._parser_terminate(sub)
+
+    ns = parser.parse_args(["provision", "--issue", "779", "--name-suffix", "b"])
+    assert ns.name_suffix == "b"
+    ns0 = parser.parse_args(["provision", "--issue", "779"])
+    assert ns0.name_suffix is None
+    for verb in ("stop", "resume", "terminate"):
+        ns1 = parser.parse_args([verb, "--issue", "779", "--name-suffix", "b"])
+        assert ns1.name_suffix == "b"
+        ns2 = parser.parse_args([verb, "--issue", "779"])
+        assert ns2.name_suffix is None
+
+
+@pytest.mark.parametrize("bad", ["60", "B", "-b", "a" * 21])
+def test_provision_name_suffix_rejects_bad_slug(bad: str):
+    """cmd_provision SystemExits on a slug outside [a-z][a-z0-9-]{0,19} —
+    BEFORE any task-state or live-API read (the minimal Namespace proves it)."""
+    ns = argparse.Namespace(issue=779, list_intents=False, name_suffix=bad)
+    with pytest.raises(SystemExit, match="--name-suffix must match"):
+        pod_lifecycle.cmd_provision(ns)
+
+
+def _gpu_provision_ns(issue: int, *, name_suffix: str | None = None, **overrides):
+    """Namespace matching the provision subparser shape, for a GPU intent."""
+    base = {
+        "issue": issue,
+        "list_intents": False,
+        "intent": "eval",
+        "gpu_type": None,
+        "gpu_count": None,
+        "dry_run": True,
+        "volume_gb": 200,
+        "container_disk_gb": 50,
+        "ttl_days": 7,
+        "no_bootstrap": True,
+        "name_suffix": name_suffix,
+    }
+    base.update(overrides)
+    return argparse.Namespace(**base)
+
+
+def test_provision_name_suffix_collision_scope(
+    isolated_state, stub_list_team_pods, monkeypatch, capsys
+):
+    """A live RUNNING pod-779 blocks a bare provision (existing behavior) but
+    NOT a --name-suffix provision — a live bare pod is exactly why the suffix
+    form exists. The suffixed provision collides only on ITS OWN name."""
+    monkeypatch.setattr(pod_lifecycle, "_warn_on_terminal_parent_provision", lambda *a, **k: False)
+    _write_metadata_file({})
+    stub_list_team_pods.return_value = [_info("pod-779", desired_status="RUNNING")]
+
+    with pytest.raises(SystemExit) as exc:
+        pod_lifecycle.cmd_provision(_gpu_provision_ns(779))
+    assert exc.value.code == 1
+    assert "already exists" in capsys.readouterr().out
+
+    # Suffixed provision proceeds past the collision check (dry-run plan
+    # names pod-779-b — acceptance criterion 2).
+    pod_lifecycle.cmd_provision(_gpu_provision_ns(779, name_suffix="b"))
+    out = capsys.readouterr().out
+    assert "[dry-run]" in out
+    assert "pod-779-b" in out
+
+    # A RUNNING pod-779-b DOES block the suffixed provision (its own name).
+    stub_list_team_pods.return_value = [_info("pod-779-b", desired_status="RUNNING")]
+    with pytest.raises(SystemExit) as exc2:
+        pod_lifecycle.cmd_provision(_gpu_provision_ns(779, name_suffix="b"))
+    assert exc2.value.code == 1
+    assert "pod-779-b already exists" in capsys.readouterr().out
+
+
+def test_provision_registers_owning_issue_for_suffixed_name(isolated_state, monkeypatch, capsys):
+    """_provision_wait_register_bootstrap records EphemeralMetadata keyed by
+    the suffixed name with issue == the REAL owning task (#1334 acceptance
+    criterion 3) — falls out of the existing name threading, no code change."""
+    _write_metadata_file({})
+    info = _info("pod-779-b", pod_id="live-779-b")
+    monkeypatch.setattr(pod_lifecycle, "wait_for_ssh", lambda pod_id, timeout=600: info)
+    monkeypatch.setattr(pod_lifecycle, "note_ssh_wait_outcome", lambda *a, **k: None)
+    monkeypatch.setattr(pod_lifecycle, "_upsert_pods_conf", lambda pod: None)
+    ns = argparse.Namespace(issue=779, name_suffix="b", ttl_days=7, no_bootstrap=True)
+
+    pod_lifecycle._provision_wait_register_bootstrap(ns, "pod-779-b", info, "lora-7b")
+
+    metadata = _read_metadata_file()
+    assert "pod-779-b" in metadata
+    assert metadata["pod-779-b"].issue == 779
+    assert metadata["pod-779-b"].pod_id == "live-779-b"
+
+
+def test_bootstrap_failure_hint_carries_name_suffix(isolated_state, monkeypatch, capsys):
+    """A suffixed provision's bootstrap-failure discard hint is scoped with
+    --name-suffix — it must never suggest an issue-wide terminate that would
+    take a healthy sibling pod-<N>'s volume with it."""
+    info = _info("pod-779-b", pod_id="live-779-b")
+    monkeypatch.setattr(pod_lifecycle, "wait_for_ssh", lambda pod_id, timeout=600: info)
+    monkeypatch.setattr(pod_lifecycle, "note_ssh_wait_outcome", lambda *a, **k: None)
+    monkeypatch.setattr(pod_lifecycle, "_upsert_pods_conf", lambda pod: None)
+    monkeypatch.setattr(pod_lifecycle, "_bootstrap", lambda name, intent_label: 1)
+    ns = argparse.Namespace(issue=779, name_suffix="b", ttl_days=7, no_bootstrap=False)
+
+    with pytest.raises(SystemExit) as exc:
+        pod_lifecycle._provision_wait_register_bootstrap(ns, "pod-779-b", info, "lora-7b")
+    assert exc.value.code == 1
+    assert "terminate --issue 779 --name-suffix b" in capsys.readouterr().err
+
+
+def _epod(name: str, issue: int) -> pod_lifecycle.EphemeralPod:
+    return pod_lifecycle.EphemeralPod(metadata=_meta(name, issue=issue), info=_info(name))
+
+
+def test_find_pod_in_state_name_suffix_and_fallback():
+    """Resolution semantics (#1334): exact suffix lookup; canonical-first when
+    both exist; unique-issue fallback returns the lone suffixed pod; two
+    suffixed pods + no canonical -> None."""
+    both = {p.name: p for p in [_epod("pod-779", 779), _epod("pod-779-b", 779)]}
+    assert pod_lifecycle._find_pod_in_state(both, 779, name_suffix="b").name == "pod-779-b"
+    assert pod_lifecycle._find_pod_in_state(both, 779, name_suffix="c") is None
+    assert pod_lifecycle._find_pod_in_state(both, 779).name == "pod-779"
+
+    lone_suffixed = {p.name: p for p in [_epod("pod-779-b", 779)]}
+    assert pod_lifecycle._find_pod_in_state(lone_suffixed, 779).name == "pod-779-b"
+
+    two_suffixed = {p.name: p for p in [_epod("pod-779-b", 779), _epod("pod-779-c", 779)]}
+    assert pod_lifecycle._find_pod_in_state(two_suffixed, 779) is None
+
+
+def test_stop_resume_thread_name_suffix(isolated_state, stub_list_team_pods, monkeypatch, capsys):
+    """cmd_stop / cmd_resume actually THREAD --name-suffix into
+    _find_pod_in_state: with BOTH pod-779 and pod-779-b registered, the
+    suffixed namespace targets pod-779-b (an unthreaded flag would resolve the
+    canonical pod-779 first) and prints the resolved name before acting."""
+    monkeypatch.setattr(pod_lifecycle, "_warn_on_terminal_parent_provision", lambda *a, **k: False)
+    metadata = {
+        "pod-779": _meta("pod-779", issue=779),
+        "pod-779-b": _meta("pod-779-b", issue=779),
+    }
+    _write_metadata_file(metadata)
+    ns = argparse.Namespace(issue=779, name_suffix="b", dry_run=True)
+
+    stub_list_team_pods.return_value = [_info("pod-779"), _info("pod-779-b")]
+    pod_lifecycle.cmd_stop(ns)
+    assert "Stopping pod-779-b" in capsys.readouterr().out
+
+    stub_list_team_pods.return_value = [
+        _info("pod-779", desired_status="EXITED"),
+        _info("pod-779-b", desired_status="EXITED"),
+    ]
+    pod_lifecycle.cmd_resume(ns)
+    assert "Resuming pod-779-b" in capsys.readouterr().out
+
+
+def test_stop_ambiguous_multi_pod_error_directs_to_name_suffix(isolated_state, stub_list_team_pods):
+    """Two suffixed pods and no canonical pod-<N>: the bare stop errors,
+    LISTING the registered names and directing the caller to --name-suffix
+    (never a silent arbitrary pick)."""
+    metadata = {
+        "pod-779-b": _meta("pod-779-b", issue=779),
+        "pod-779-c": _meta("pod-779-c", issue=779),
+    }
+    _write_metadata_file(metadata)
+    stub_list_team_pods.return_value = [_info("pod-779-b"), _info("pod-779-c")]
+    ns = argparse.Namespace(issue=779, name_suffix=None, dry_run=True)
+
+    with pytest.raises(SystemExit) as exc:
+        pod_lifecycle.cmd_stop(ns)
+    msg = str(exc.value)
+    assert "pod-779-b" in msg and "pod-779-c" in msg
+    assert "--name-suffix" in msg
+
+
+def test_terminate_name_suffix_scopes_to_one_pod(
+    isolated_state,
+    stub_list_team_pods,
+    stub_terminate_pod,
+    stub_pods_conf_writes,
+    terminate_ns,
+    monkeypatch,
+):
+    """terminate --issue 779 --name-suffix b destroys ONLY pod-779-b (#1334
+    acceptance criterion 6): the sibling pod-779 is neither terminated NOR
+    reported as a survivor (the re-check applies the same name filter — an
+    unfiltered re-check would raise RunPodError on the healthy sibling), and
+    its sidecar record survives the post-terminate cleanup."""
+    _write_metadata_file(
+        {
+            "pod-779": _meta("pod-779", issue=779),
+            "pod-779-b": _meta("pod-779-b", issue=779, pod_id="live-suffix-b"),
+        }
+    )
+    stub_list_team_pods.return_value = [
+        _info("pod-779", pod_id="live-canonical", desired_status="EXITED"),
+        _info("pod-779-b", pod_id="live-suffix-b"),
+    ]
+    _stub_list_events(monkeypatch, [_upload_verification_event("PASS")])
+    monkeypatch.setattr(
+        "explore_persona_space.task_workflow.get_task",
+        lambda issue: {"id": issue, "frontmatter": {"kind": "experiment"}, "body": ""},
+    )
+
+    pod_lifecycle.cmd_terminate(terminate_ns(issue=779, name_suffix="b"))
+
+    assert stub_terminate_pod == ["live-suffix-b"], (
+        f"suffix-narrowed terminate must destroy ONLY pod-779-b; got {stub_terminate_pod}"
+    )
+    metadata = _read_metadata_file()
+    assert "pod-779" in metadata, "sibling pod-779's sidecar record must survive"
+    assert "pod-779-b" not in metadata
+
+
+def test_terminate_bare_issue_sweeps_suffixed_pods(
+    isolated_state,
+    stub_list_team_pods,
+    stub_terminate_pod,
+    stub_pods_conf_writes,
+    terminate_ns,
+    monkeypatch,
+):
+    """DECIDED bare-form semantics (#1334 plan §3.3): issue-level teardown
+    destroys EVERY live pod of the issue, suffixed follow-up pods included —
+    a round that must survive Step 8 sets the task-level keep-running tag."""
+    _write_metadata_file({"pod-779": _meta("pod-779", issue=779)})
+    stub_list_team_pods.return_value = [
+        _info("pod-779", pod_id="live-canonical"),
+        _info("pod-779-b", pod_id="live-suffix-b"),
+    ]
+    _stub_list_events(monkeypatch, [_upload_verification_event("PASS")])
+    monkeypatch.setattr(
+        "explore_persona_space.task_workflow.get_task",
+        lambda issue: {"id": issue, "frontmatter": {"kind": "experiment"}, "body": ""},
+    )
+
+    pod_lifecycle.cmd_terminate(terminate_ns(issue=779))
+
+    assert sorted(stub_terminate_pod) == sorted(["live-canonical", "live-suffix-b"])
 
 
 def test_terminate_kills_all_live_pods_matching_issue(

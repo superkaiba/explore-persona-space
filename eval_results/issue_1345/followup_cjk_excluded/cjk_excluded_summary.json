@@ -1,0 +1,163 @@
+{
+  "metadata": {
+    "git_commit": "0024497ff6ddecc80f353cc25b10fd93ca59ca6d",
+    "timestamp": "2026-07-16T08:11:44Z",
+    "seed": 0,
+    "n": 1983,
+    "script": "scripts/issue1345_followup_cjk_excluded.py",
+    "pinned_parent_revision": "7159e5804d"
+  },
+  "followup": "cjk_excluded_story_refit",
+  "kept_stories_file": "data/issue_1345/hf_dl/issue1345_framing/raw_completions/stories/kept_stories_instruct.jsonl",
+  "cjk_story_ids": [
+    "instruct_story0002",
+    "instruct_story0010",
+    "instruct_story0011",
+    "instruct_story0021",
+    "instruct_story0023",
+    "instruct_story0041",
+    "instruct_story0076",
+    "instruct_story0164",
+    "instruct_story0183",
+    "instruct_story0267",
+    "instruct_story0350",
+    "instruct_story0377",
+    "instruct_story0465",
+    "instruct_story0483",
+    "instruct_story0509",
+    "instruct_story0510",
+    "instruct_story0546",
+    "instruct_story0548",
+    "instruct_story0556",
+    "instruct_story0587",
+    "instruct_story0592",
+    "instruct_story0640",
+    "instruct_story0663",
+    "instruct_story0670"
+  ],
+  "cjk_row_indices_0based": [
+    1,
+    7,
+    8,
+    13,
+    14,
+    29,
+    55,
+    111,
+    124,
+    176,
+    231,
+    250,
+    306,
+    315,
+    324,
+    325,
+    347,
+    348,
+    350,
+    366,
+    369,
+    395,
+    410,
+    417
+  ],
+  "bundle_filter": {
+    "n_rows_before": 2108,
+    "n_rows_after": 1983,
+    "n_rows_dropped": 125,
+    "n_stories_before": 420,
+    "n_stories_after": 396,
+    "n_stories_dropped": 24
+  },
+  "params": {
+    "folds": 5,
+    "seed": 0,
+    "null_draws": 20,
+    "n_boot": 1000,
+    "smoke_rows": 0
+  },
+  "cells": {
+    "R_instruct_r3_prefix": {
+      "after": {
+        "r2_l19": 0.11868834072077461,
+        "r2_l19_ci_conv": {
+          "r2": 0.12392684881807536,
+          "ci_lo": 0.11431338242891287,
+          "ci_hi": 0.13040642123786417,
+          "n_rows": 1983,
+          "n_groups": 396,
+          "unit": "conversation"
+        },
+        "n_rows": 1983,
+        "n_groups": 396,
+        "nulls": {
+          "l19_null_p95": -0.043058803502741064,
+          "l19_null_mean": -0.046743467705776906,
+          "layer_max_null_p95": -0.029945383537598035,
+          "n_draws": 20
+        }
+      },
+      "before": {
+        "r2_l19": 0.11661613300452556,
+        "r2_l19_ci_conv": {
+          "r2": 0.12096045735300853,
+          "ci_lo": 0.1115371816835021,
+          "ci_hi": 0.12764616901758158,
+          "n_rows": 2108,
+          "n_groups": 420,
+          "unit": "conversation"
+        },
+        "n_rows": 2108,
+        "n_groups": 420,
+        "nulls": {
+          "l19_null_p95": -0.0435376042668556,
+          "l19_null_mean": -0.04697716484457909,
+          "layer_max_null_p95": -0.029572075986271373,
+          "n_draws": 20
+        }
+      },
+      "delta_r2_l19": 0.0020722077162490526
+    },
+    "R_instruct_r3_context": {
+      "after": {
+        "r2_l19": -0.6521144169974833,
+        "r2_l19_ci_conv": {
+          "r2": -0.6422942644789011,
+          "ci_lo": -0.6931500511900902,
+          "ci_hi": -0.598588935745562,
+          "n_rows": 1983,
+          "n_groups": 396,
+          "unit": "conversation"
+        },
+        "n_rows": 1983,
+        "n_groups": 396,
+        "nulls": {
+          "l19_null_p95": -2.017372984708597,
+          "l19_null_mean": -2.05413440371323,
+          "layer_max_null_p95": -1.8899528223541724,
+          "n_draws": 20
+        }
+      },
+      "before": {
+        "r2_l19": -0.7541096821406448,
+        "r2_l19_ci_conv": {
+          "r2": -0.7454832837532159,
+          "ci_lo": -0.8040392451972389,
+          "ci_hi": -0.6966553184036106,
+          "n_rows": 2108,
+          "n_groups": 420,
+          "unit": "conversation"
+        },
+        "n_rows": 2108,
+        "n_groups": 420,
+        "nulls": {
+          "l19_null_p95": -2.1936303638477592,
+          "l19_null_mean": -2.2329582571423296,
+          "layer_max_null_p95": -2.0616070320187925,
+          "n_draws": 20
+        }
+      },
+      "delta_r2_l19": 0.10199526514316148
+    }
+  }
+}

@@ -1,0 +1,164 @@
+{
+  "commit": "bcf67e51f7",
+  "created": "2026-07-16T11:11:11Z",
+  "figsize": [
+    11.0,
+    4.4
+  ],
+  "points": [
+    {
+      "x": -0.18,
+      "held-out R\u00b2 at layer 19": 0.13693937179566107,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.82,
+      "held-out R\u00b2 at layer 19": 0.14833382865515465,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 1.82,
+      "held-out R\u00b2 at layer 19": 0.14675437757324383,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 2.82,
+      "held-out R\u00b2 at layer 19": 0.10591178096036746,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 0.18,
+      "held-out R\u00b2 at layer 19": 0.11397294300939353,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 1.18,
+      "held-out R\u00b2 at layer 19": 0.058228394706520636,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 2.18,
+      "held-out R\u00b2 at layer 19": 0.1504645556142351,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "x": 3.18,
+      "held-out R\u00b2 at layer 19": -0.020988763611865746,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "x": 0.0,
+      "held-out R\u00b2 at layer 19": 0.588,
+      "series": "assistant map (same model)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 1.0,
+      "held-out R\u00b2 at layer 19": 0.588,
+      "series": "assistant map (same model)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": -0.18,
+      "y": 0.2345354825988013,
+      "_kind": "bar",
+      "_group": 9
+    },
+    {
+      "x": 0.82,
+      "y": 0.2526988818756506,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "x": 1.82,
+      "y": 0.18824974025372598,
+      "_kind": "bar",
+      "_group": 11
+    },
+    {
+      "x": 0.18,
+      "y": -0.17826416355020092,
+      "_kind": "bar",
+      "_group": 12
+    },
+    {
+      "x": 1.18,
+      "y": -0.09958659796428537,
+      "_kind": "bar",
+      "_group": 13
+    },
+    {
+      "x": 2.18,
+      "y": -0.18876177288934248,
+      "_kind": "bar",
+      "_group": 14
+    },
+    {
+      "x": 3.18,
+      "y": -0.17615306808991282,
+      "_kind": "bar",
+      "_group": 15
+    }
+  ],
+  "n_series": 16,
+  "total_points": 17,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Qwen2.5-7B (base)",
+        "ylabel": "held-out R\u00b2 at layer 19",
+        "legend_labels": [
+          "assistant map (same model)",
+          "script-format scenes",
+          "prefill turns",
+          "shuffle-null 97.5th pct"
+        ],
+        "xticklabels": [
+          "Wren (helpful)",
+          "HELIOS (ship AI)",
+          "Dana (ordinary)",
+          "Vex (villain)"
+        ],
+        "yticklabels": [
+          "\u22120.4",
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8"
+        ]
+      },
+      {
+        "title_left": "Qwen2.5-7B-Instruct",
+        "annotations": [
+          "not run"
+        ],
+        "xticklabels": [
+          "Wren (helpful)",
+          "HELIOS (ship AI)",
+          "Dana (ordinary)",
+          "Vex (villain)"
+        ]
+      }
+    ],
+    "series": [
+      "assistant map (same model)",
+      "script-format scenes",
+      "prefill turns"
+    ]
+  }
+}

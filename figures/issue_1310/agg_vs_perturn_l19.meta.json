@@ -1,0 +1,173 @@
+{
+  "commit": "18791c2a21",
+  "created": "2026-07-16T13:08:05Z",
+  "figsize": [
+    11.0,
+    4.4
+  ],
+  "points": [
+    {
+      "x": -0.18,
+      "held-out R\u00b2 at layer 19": 0.11397294300939353,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.82,
+      "held-out R\u00b2 at layer 19": 0.058228394706520636,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 1.82,
+      "held-out R\u00b2 at layer 19": 0.1504645556142351,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 2.82,
+      "held-out R\u00b2 at layer 19": -0.020988763611865746,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 0.18,
+      "held-out R\u00b2 at layer 19": 0.19648846768114947,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 1.18,
+      "held-out R\u00b2 at layer 19": 0.1974782359913172,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 2.18,
+      "held-out R\u00b2 at layer 19": 0.21775009509535348,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "x": 3.18,
+      "held-out R\u00b2 at layer 19": 0.13266438854640195,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "x": -0.18,
+      "y": -0.17826416355020092,
+      "_kind": "bar",
+      "_group": 8
+    },
+    {
+      "x": 0.82,
+      "y": -0.09958659796428537,
+      "_kind": "bar",
+      "_group": 9
+    },
+    {
+      "x": 1.82,
+      "y": -0.18876177288934248,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "x": 2.82,
+      "y": -0.17615306808991282,
+      "_kind": "bar",
+      "_group": 11
+    },
+    {
+      "x": 0.18,
+      "y": 0.3548299086061537,
+      "_kind": "bar",
+      "_group": 12
+    },
+    {
+      "x": 1.18,
+      "y": 0.40107670413358276,
+      "_kind": "bar",
+      "_group": 13
+    },
+    {
+      "x": 2.18,
+      "y": 0.3285635376004241,
+      "_kind": "bar",
+      "_group": 14
+    },
+    {
+      "x": 3.18,
+      "y": 0.2328833350537587,
+      "_kind": "bar",
+      "_group": 15
+    }
+  ],
+  "n_series": 16,
+  "total_points": 16,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Qwen2.5-7B (base)",
+        "ylabel": "held-out R\u00b2 at layer 19",
+        "legend_labels": [
+          "per-turn points (round 1)",
+          "one point per scene (aggregated)",
+          "shuffle-null 97.5th pct"
+        ],
+        "annotations": [
+          "+0.11",
+          "+0.06",
+          "+0.15",
+          "-0.02",
+          "+0.20",
+          "+0.20",
+          "+0.22",
+          "+0.13"
+        ],
+        "xticklabels": [
+          "Wren (helpful)",
+          "HELIOS (ship AI)",
+          "Dana (ordinary)",
+          "Vex (villain)"
+        ],
+        "yticklabels": [
+          "\u22120.3",
+          "\u22120.2",
+          "\u22120.1",
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5"
+        ]
+      },
+      {
+        "title_left": "Qwen2.5-7B-Instruct",
+        "annotations": [
+          "-0.18",
+          "-0.10",
+          "-0.19",
+          "-0.18",
+          "+0.35",
+          "+0.40",
+          "+0.33",
+          "+0.23"
+        ],
+        "xticklabels": [
+          "Wren (helpful)",
+          "HELIOS (ship AI)",
+          "Dana (ordinary)",
+          "Vex (villain)"
+        ]
+      }
+    ],
+    "series": [
+      "per-turn points (round 1)",
+      "one point per scene (aggregated)"
+    ]
+  }
+}

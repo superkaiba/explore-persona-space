@@ -1,7 +1,7 @@
 """Crash-recovery + pod-safety + stalled-detector watcher for autonomous and
 interactive issue sessions (plus campaign sessions, task #586).
 
-25 passes ("pass" = one top-level per-tick action block in ``main()``'s
+26 passes ("pass" = one top-level per-tick action block in ``main()``'s
 production run order; helpers invoked INSIDE a pass — e.g. the sub-floor
 disk sentinel inside pass 1 — and the ``--*-only`` debug entrypoints do
 not count; a NEW inline pass block that is not a ``*_pass``-named function
@@ -10,7 +10,7 @@ in ``scripts/workflow_lint.py``). Item numbers below are STABLE
 IDENTIFIERS (cross-referenced throughout this docstring), NOT execution
 order. The per-tick execution order is: 1 (VM disk) -> 15 (data-disk) ->
 16 (happy-patch) -> 12 (CPU-guard) -> 17 (triage-observer) ->
-18 (verdict-disagree) -> 19 (VM-ledger reap) -> 20 (program-orchestrator
+18 (verdict-disagree) -> 26 (root-draft) -> 19 (VM-ledger reap) -> 20 (program-orchestrator
 recovery) -> 13 (auth-outage guard) -> 2 (crash-recovery) -> 9 (campaign)
 -> 3 (pod-safety) -> 4 (stalled-detector) -> 5 (orphan sweep) ->
 11 (infra-drain) -> 21 (proposed-infra-sweep) -> 22 (capacity-retry) ->
@@ -413,6 +413,19 @@ adding a pass means adding a numbered item here AND bumping the digit:
    every other lane is structurally blind to; #1251-#1256), then leaves
    re-drive to the existing arms. Per-issue per-UTC-day stop cap with a
    LOUD once-per-day cap alert. (:func:`boot_death_pass`.)
+26. **Root-draft observer pass (#1341; NON-GATING; daemon-INDEPENDENT;
+   runs right after pass 18).** Escalate-only flag of stale UNTRACKED
+   ``*.py`` drafts in the SHARED repo-root working tree (mtime age > 3h,
+   ``EPM_ROOT_DRAFT_ESCALATE_HOURS``) — the #1320 class whose dirt
+   matches step9c's ``DIRTY_CODE_PATHSPEC`` and flips every task's
+   Step 9c pristine oracle fleet-wide indeterminate. One read-only
+   ``git --no-optional-locks status --porcelain -- *.py``; dedicated
+   sidecar (``.claude/cache/root-draft-events.jsonl``) + ONE deduped
+   digest push per tick (per-path fire-once + 24h re-alert TTL,
+   ``EPM_ROOT_DRAFT_REALERT_HOURS``); best-effort ``issue<M>_`` filename
+   attribution. NEVER deletes/moves/chmods/git-mutates anything; posts
+   NO task markers. Kill switch ``EPM_DISABLE_ROOT_DRAFT_PASS=1``.
+   (:func:`root_draft_pass`.)
 
 Why each pass exists
 --------------------
@@ -4986,6 +4999,324 @@ def verdict_disagree_pass(dry_run: bool) -> bool:
         return wrote
     except Exception as exc:  # top-level fail-soft: never take down the tick
         print(f"  verdict-disagree: pass failed (fail-soft): {exc}", file=sys.stderr)
+        return False
+
+
+# ─── Root-draft observer pass (task #1341; origin incident #1320) ────────────
+#
+# WHY: an untracked *.py draft abandoned at the SHARED repo root matches the
+# `.py` leg of step9c's DIRTY_CODE_PATHSPEC (scripts/step9c_baseline.py:143),
+# so dirty_code_paths() marks the shared root dirty and EVERY task's Step 9c
+# pristine-oracle compare goes fleet-wide indeterminate — silently (#1320:
+# two untracked scripts/issue825_*.py drafts poisoned the ledger 9+ hours
+# before a human noticed; live recurrence 2026-07-15:
+# scripts/issue922_fixed_point_slow_modes.py). This pass lives in the
+# WATCHER, not step9c-side, because the step9c gate is EVENT-DRIVEN (it
+# observes the dirt only when some task happens to run its gate — detection
+# latency is unbounded) and it carries no age filter (an in-flight session's
+# minutes-old draft must not escalate); the 10-min cron plus the mtime
+# staleness threshold provide both. ESCALATE-ONLY: sidecar rows + ONE deduped
+# Telegram digest push per tick; NEVER deletes, moves, chmods, or git-mutates
+# anything (the ONLY writes are the dedup state file + the sidecar); posts NO
+# task markers (mirrors the verdict-disagree observer — the consumer is the
+# human/PM, and a filename-hint mis-attribution must cost nothing on any
+# task record). Scan set: UNTRACKED (`?? `) entries only — tracked-but-
+# modified (` M`) root dirt is EXCLUDED by design (typically an in-flight
+# session's staged work; mtime alone cannot split "abandoned" from "long
+# user-directed session mid-work"). Named extension trigger: if a future
+# fleet-wide Step 9c indeterminacy traces to ` M` dirt, widen
+# _parse_untracked_py's `?? ` filter to also accept ` M` (a one-line parser
+# change).
+
+# The `.py` leg of step9c's DIRTY_CODE_PATHSPEC (scripts/step9c_baseline.py
+# :143) — the exact pathspec whose untracked hits poison the ledger
+# (dirty_code_paths :440) + the pristine oracle (#1320). Deliberately
+# repo-wide (`*.py` anywhere), NOT scripts/+src/ only: step9c's dirt trigger
+# is repo-wide, so this pass aligns by construction (same pathspec, same
+# porcelain command shape).
+ROOT_DRAFT_PATHSPEC: tuple[str, ...] = ("*.py",)
+# Escalation threshold on file mtime AGE (hours): 3h clears any legitimate
+# write→commit window (CLAUDE.md mandates same-turn explicit-path commits;
+# the watcher's worktree-activity hold is 15 min, the stale-worktree grace
+# 6h — 3h sits between). Env EPM_ROOT_DRAFT_ESCALATE_HOURS, read at CALL
+# time (like decide_subfloor_pct's knobs).
+ROOT_DRAFT_ESCALATE_HOURS = 3.0
+# Per-path re-alert TTL (hours): ~one digest line per day for a PERSISTING
+# abandonment (the condition poisons the fleet while it persists, unlike the
+# triage observer's fixed historical records) — but a 10-min cron must never
+# re-push per tick. Env EPM_ROOT_DRAFT_REALERT_HOURS, read at call time.
+ROOT_DRAFT_REALERT_HOURS = 24.0
+
+
+def _root_draft_enabled() -> bool:
+    """Kill switch: False when ``EPM_DISABLE_ROOT_DRAFT_PASS`` is set truthy
+    ("1"/"true"/"yes", case-insensitive). Default enabled. Mirrors
+    :func:`_verdict_disagree_enabled`."""
+    raw = os.environ.get("EPM_DISABLE_ROOT_DRAFT_PASS", "").strip().lower()
+    return raw not in {"1", "true", "yes"}
+
+
+def _root_draft_sidecar_path() -> Path:
+    """DEDICATED root-draft event stream (own stream for clean grep — the
+    triage-observer / verdict-disagree sidecar precedent; this is not disk
+    pressure, so it does not ride disk-guard-events.jsonl)."""
+    return PROJECT_ROOT / ".claude" / "cache" / "root-draft-events.jsonl"
+
+
+def _root_draft_state_path() -> Path:
+    """Singleton dedup state (deliberately NOT a per-issue GC target):
+    ``{"alerted": {"<repo-rel path>": {"last_alert_ts": <float>}}}``."""
+    return AUTONOMOUS_REGISTRY_DIR / "root-draft-observer.json"
+
+
+def _load_root_draft_state() -> dict:
+    """``{}`` on missing/garbled state; every field read back goes through
+    ``isinstance`` type-guards in :func:`decide_root_draft_fires` (mirrors
+    :func:`_load_verdict_disagree_state`)."""
+    path = _root_draft_state_path()
+    if not path.is_file():
+        return {}
+    try:
+        data = json.loads(path.read_text())
+    except (json.JSONDecodeError, OSError):
+        return {}
+    return data if isinstance(data, dict) else {}
+
+
+def _save_root_draft_state(state: dict, dry_run: bool) -> None:
+    """Atomic temp+rename write of the root-draft dedup state (fail-soft;
+    mirrors :func:`_save_data_disk_state`); ``dry_run`` performs zero
+    writes."""
+    if dry_run:
+        print(f"  [dry-run] would save root-draft state ({len(state.get('alerted', {}))} paths)")
+        return
+    dest = _root_draft_state_path()
+    try:
+        AUTONOMOUS_REGISTRY_DIR.mkdir(parents=True, exist_ok=True)
+        tmp = dest.with_suffix(".json.tmp")
+        tmp.write_text(json.dumps(state))
+        tmp.replace(dest)
+    except OSError as exc:  # pragma: no cover - fail-soft I/O guard
+        print(f"  root-draft: state save failed: {exc}", file=sys.stderr)
+
+
+def _append_root_draft_sidecar(event: dict, dry_run: bool) -> None:
+    """Append one JSON line to the root-draft sidecar (fail-soft). A ``ts``
+    is stamped; ``dry_run`` reports only (mirrors
+    :func:`_append_disk_guard_sidecar`)."""
+    row = {"ts": datetime.now(tz=UTC).isoformat(), **event}
+    line = json.dumps(row)
+    if dry_run:
+        print(f"  [dry-run] would append root-draft sidecar row: {line[:160]}")
+        return
+    dest = _root_draft_sidecar_path()
+    try:
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        with open(dest, "a") as fh:
+            fh.write(line + "\n")
+    except OSError as exc:
+        print(f"  root-draft: sidecar append failed: {exc}", file=sys.stderr)
+
+
+def _parse_untracked_py(porcelain: str) -> list[str]:
+    """Keep UNTRACKED (``?? ``) porcelain-v1 entries whose path ends
+    ``.py``; return repo-root-relative paths. Git C-quotes paths carrying
+    special chars (``?? "a b.py"``) — the quote strip is fail-soft (an
+    unparseable quoted line is SKIPPED, never a crash), the same tolerance
+    step9c's own consumer of the identical command shape applies
+    (``_porcelain_paths`` in ``scripts/step9c_baseline.py``). NOTE:
+    pathspec-scoped porcelain (``status --porcelain -- '*.py'``) enumerates
+    untracked files INDIVIDUALLY even inside a wholly-untracked directory
+    (no ``-uall`` needed — verified live 2026-07-15: ``?? newdir/inner.py``,
+    not ``?? newdir/``)."""
+    paths: list[str] = []
+    for line in porcelain.splitlines():
+        if not line.startswith("?? "):
+            continue  # tracked-modified / renames / malformed — out of scope
+        p = line[3:]
+        if p.startswith('"'):
+            if len(p) < 2 or not p.endswith('"'):
+                continue  # malformed C-quoting — skip fail-soft
+            p = p[1:-1]
+            if "\\" in p:
+                try:
+                    p = p.encode("latin-1", "backslashreplace").decode("unicode_escape")
+                except (UnicodeDecodeError, ValueError):
+                    continue  # unparseable escapes — skip fail-soft
+        if p.endswith(".py"):
+            paths.append(p)
+    return paths
+
+
+def _root_draft_issue_hint(path: str) -> int | None:
+    """Best-effort issue attribution from the FILENAME convention
+    (``issue<M>_*`` / ``issue-<M>*`` / ``issue_<M>*`` → M). A no-match
+    still escalates, labeled "unattributed"; a name-collision mis-hint
+    costs one mislabeled push line (this pass posts NO task markers)."""
+    m = re.search(r"issue[_-]?(\d{1,5})", Path(path).name)
+    return int(m.group(1)) if m else None
+
+
+def decide_root_draft_fires(
+    candidates: list[tuple[str, float]],
+    state: dict,
+    now: float,
+    threshold_s: float,
+    realert_s: float,
+) -> tuple[list[str], dict]:
+    """Pure fire/dedup decision (no IO). ``candidates`` are
+    ``(repo-relative path, mtime age seconds)`` rows pre-stat'ed by the
+    driver; ``state`` is the singleton
+    ``{"alerted": {path: {"last_alert_ts": float}}}``.
+
+    Fires = paths STRICTLY older than ``threshold_s`` (exactly-at-threshold
+    does NOT fire) that are unalerted OR whose last alert is STRICTLY older
+    than ``realert_s``. New state: fired paths stamped at ``now``;
+    still-stale unfired paths keep their entry; entries whose path left the
+    stale candidate set are PRUNED (recovered — a later re-appearance
+    re-fires immediately). Dedup is PATH-KEYED and mtime-blind: a stale
+    file that gets re-edited (mtime refreshed below the threshold) is
+    pruned as recovered and may re-fire once it re-crosses the threshold —
+    accepted (the re-alert TTL bounds steady-state churn either way).
+    Corrupt / hand-edited state degrades to defaults via ``isinstance``
+    guards."""
+    raw_alerted = state.get("alerted")
+    alerted = raw_alerted if isinstance(raw_alerted, dict) else {}
+    fires: list[str] = []
+    new_alerted: dict[str, dict] = {}
+    for path, age_s in candidates:
+        if not isinstance(age_s, int | float) or age_s <= threshold_s:
+            continue  # fresh (or exactly at threshold) — not stale
+        entry = alerted.get(path)
+        last_ts = entry.get("last_alert_ts") if isinstance(entry, dict) else None
+        if isinstance(last_ts, int | float) and (now - last_ts) <= realert_s:
+            new_alerted[path] = {"last_alert_ts": last_ts}  # deduped this tick
+        else:
+            fires.append(path)
+            new_alerted[path] = {"last_alert_ts": now}
+    return fires, {"alerted": new_alerted}
+
+
+def _enumerate_root_draft_paths(repo_root: Path) -> list[str] | None:
+    """Enumerate UNTRACKED ``*.py`` in ``repo_root``'s working tree via
+    ``git --no-optional-locks status --porcelain -- *.py`` — read-only:
+    ``--no-optional-locks`` keeps ``status`` from taking the shared root's
+    index lock / refreshing the index (concurrent-committer safety + the
+    zero-write dry-run contract). ``repo_root`` is a parameter (not the
+    module constant) so the real-git tests exercise the REAL command
+    against a tmp repo. Linked worktrees are separate working trees and
+    ``.claude/worktrees/`` is gitignored, so the root porcelain never lists
+    them. Returns ``None`` on ANY git failure (rc != 0, timeout, OSError)
+    after a stderr warning — the caller skips the tick (fail toward
+    logged-skip, never a silent "no drafts")."""
+    try:
+        out = subprocess.run(
+            [
+                "git",
+                "--no-optional-locks",
+                "-C",
+                str(repo_root),
+                "status",
+                "--porcelain",
+                "--",
+                *ROOT_DRAFT_PATHSPEC,
+            ],
+            capture_output=True,
+            text=True,
+            timeout=30,
+        )
+    except (subprocess.SubprocessError, OSError) as exc:
+        print(f"  root-draft: git status failed: {exc}", file=sys.stderr)
+        return None
+    if out.returncode != 0:
+        print(
+            f"  root-draft: git status rc={out.returncode}: {(out.stderr or '').strip()[:200]}",
+            file=sys.stderr,
+        )
+        return None
+    return _parse_untracked_py(out.stdout)
+
+
+def root_draft_pass(dry_run: bool) -> bool:
+    """ESCALATE-ONLY observer of stale untracked ``*.py`` drafts at the
+    SHARED repo root (#1341; origin incident #1320 — see the block comment
+    above). Sidecar rows + ONE deduped digest push per tick; NEVER deletes,
+    moves, chmods, or git-mutates anything; posts NO task markers.
+    Daemon-independent (one read-only git status + a handful of stats).
+    Fail-soft throughout: an enumeration failure warns + skips the tick
+    with NO state write, and a top-level guard keeps an internal error from
+    taking down the watcher tick (``main()`` calls passes bare). Returns
+    True when any path fired this tick."""
+    if not _root_draft_enabled():
+        print("  root-draft: disabled via EPM_DISABLE_ROOT_DRAFT_PASS; skipping")
+        return False
+    try:
+        paths = _enumerate_root_draft_paths(PROJECT_ROOT)
+        if paths is None:
+            return False  # enumeration failed — warned above; NO state write
+        now = time.time()
+        candidates: list[tuple[str, float]] = []
+        mtimes: dict[str, float] = {}
+        for p in paths:
+            try:
+                mtime = (PROJECT_ROOT / p).stat().st_mtime
+            except OSError:
+                continue  # vanished mid-tick — skip fail-soft
+            mtimes[p] = mtime
+            candidates.append((p, now - mtime))
+        threshold_h = _env_float(
+            "EPM_ROOT_DRAFT_ESCALATE_HOURS", ROOT_DRAFT_ESCALATE_HOURS, lo=0.25, hi=168.0
+        )
+        realert_h = _env_float(
+            "EPM_ROOT_DRAFT_REALERT_HOURS", ROOT_DRAFT_REALERT_HOURS, lo=1.0, hi=720.0
+        )
+        state = _load_root_draft_state()
+        fires, new_state = decide_root_draft_fires(
+            candidates, state, now, threshold_h * 3600.0, realert_h * 3600.0
+        )
+        if fires:
+            status_by_hint: dict[int, str | None] = {}
+            push_items: list[str] = []
+            for p in fires:
+                age_h = (now - mtimes[p]) / 3600.0
+                hint = _root_draft_issue_hint(p)
+                issue_status: str | None = None
+                if hint is not None and not dry_run:
+                    # At most one task.py read per DISTINCT hint per tick;
+                    # skipped entirely under dry-run (zero extra subprocess
+                    # beyond step 2's read-only enumeration).
+                    if hint not in status_by_hint:
+                        status_by_hint[hint] = _task_status(hint)
+                    issue_status = status_by_hint[hint]
+                if hint is not None:
+                    label = f"#{hint} ({issue_status or 'status-unknown'})"
+                else:
+                    label = "unattributed"
+                print(f"  root-draft: STALE untracked {p} ({age_h:.1f}h, {label})")
+                _append_root_draft_sidecar(
+                    {
+                        "kind": "root-draft-stale",
+                        "path": p,
+                        "age_hours": round(age_h, 1),
+                        "mtime_iso": datetime.fromtimestamp(mtimes[p], tz=UTC).isoformat(),
+                        "issue_hint": hint,
+                        "issue_status": issue_status,
+                        "threshold_hours": threshold_h,
+                    },
+                    dry_run,
+                )
+                push_items.append(f"{p} ({age_h:.1f}h, {label})")
+            _telegram_push(
+                "step9c-poisoning root drafts (untracked *.py at shared repo root, "
+                f"#1320 class): {'; '.join(push_items)}. Rescue = owning session "
+                "commits or moves it; watcher never deletes.",
+                dry_run,
+            )
+        if new_state != state:
+            _save_root_draft_state(new_state, dry_run)  # incl. prune-only ticks
+        return bool(fires)
+    except Exception as exc:  # top-level fail-soft: never take down the tick
+        print(f"  root-draft: pass failed (fail-soft): {exc}", file=sys.stderr)
         return False
 
 
@@ -20278,6 +20609,14 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 — flat --*-only 
         "with --dry-run for a live smoke.",
     )
     parser.add_argument(
+        "--root-draft-only",
+        action="store_true",
+        help="run ONLY the root-draft observer pass (#1341, escalate-only — "
+        "stale UNTRACKED *.py drafts at the shared repo root, the #1320 "
+        "step9c-oracle-poisoning class) and exit; skip every other pass. "
+        "Daemon-independent; pair with --dry-run for a live smoke.",
+    )
+    parser.add_argument(
         "--auth-outage-only",
         action="store_true",
         help="run ONLY the auth-outage guard pass (#1027 — fleet respawn "
@@ -20363,6 +20702,13 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 — flat --*-only 
         verdict_disagree_pass(args.dry_run)
         return 0
 
+    # --root-draft-only mirrors --verdict-disagree-only: the pass is
+    # daemon-independent (one read-only git status + stats only), so run
+    # it alone.
+    if args.root_draft_only:
+        root_draft_pass(args.dry_run)
+        return 0
+
     # --auth-outage-only mirrors --cpu-guard-only: run the single pass under
     # the lock and exit (episode bookkeeping is daemon-independent; the
     # canary read degrades to "hold" when the daemon is down).
@@ -20434,6 +20780,16 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 — flat --*-only 
     # (registry + events.jsonl reads only), so it runs on a daemon outage
     # too.
     verdict_disagree_pass(args.dry_run)
+
+    # Root-draft observer (#1341; origin incident #1320): ESCALATE-ONLY flag
+    # of stale UNTRACKED *.py drafts in the SHARED repo-root working tree —
+    # the dirt class that matches step9c's DIRTY_CODE_PATHSPEC and flips
+    # every task's Step 9c pristine-oracle compare fleet-wide indeterminate.
+    # One read-only `git --no-optional-locks status --porcelain -- *.py` +
+    # mtime staleness; sidecar rows + ONE deduped digest push per tick;
+    # NEVER deletes/moves/git-mutates anything, posts NO task markers.
+    # Daemon-independent, so it runs on a daemon outage too.
+    root_draft_pass(args.dry_run)
 
     # VM resource-ledger reap (plan §5): drop expired-TTL / dead-PID claims from
     # the advisory ~/.task-workflow/vm-ledger.json so a crashed session's claim

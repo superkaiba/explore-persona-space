@@ -1,6 +1,6 @@
 {
-  "commit": "40797cd8ab",
-  "created": "2026-07-15T12:31:51Z",
+  "commit": "d4e68df97e",
+  "created": "2026-07-15T13:18:28Z",
   "figsize": [
     8.0,
     4.2
@@ -83,34 +83,76 @@
     },
     {
       "x": 4.0,
-      "Tier-2 confirmatory rate": 0.16666666666666666,
+      "Tier-2 confirmatory rate": 0.1333,
       "label": "0.24",
       "_kind": "scatter",
       "_group": 11
+    },
+    {
+      "x": 4.0,
+      "Tier-2 confirmatory rate": 0.2139,
+      "label": "0.24",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 4.0,
+      "Tier-2 confirmatory rate": 0.16666666666666666,
+      "label": "0.24",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 5.0,
+      "Tier-2 confirmatory rate": 0.1867,
+      "label": "0.28",
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 5.0,
+      "Tier-2 confirmatory rate": 0.2679,
+      "label": "0.28",
+      "_kind": "scatter",
+      "_group": 15
     },
     {
       "x": 5.0,
       "Tier-2 confirmatory rate": 0.16666666666666666,
       "label": "0.28",
       "_kind": "scatter",
-      "_group": 12
+      "_group": 16
+    },
+    {
+      "x": 6.0,
+      "Tier-2 confirmatory rate": 0.2033,
+      "label": "0.29",
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 6.0,
+      "Tier-2 confirmatory rate": 0.3005,
+      "label": "0.29",
+      "_kind": "scatter",
+      "_group": 18
     },
     {
       "x": 6.0,
       "Tier-2 confirmatory rate": 0.16666666666666666,
       "label": "0.29",
       "_kind": "scatter",
-      "_group": 13
+      "_group": 19
     }
   ],
-  "n_series": 14,
-  "total_points": 14,
+  "n_series": 20,
+  "total_points": 20,
   "text": {
     "suptitle": null,
     "fig_texts": [],
     "axes": [
       {
-        "title_left": "Tier-2 verdict reads (circles trained + Wilson 95% CI; squares base;\nopen triangles worst-case judge-drop bound; x CJK-intrusion-zeroed bound;\ndashes 0.60 band floor, dots 0.30 cut)",
+        "title_left": "Tier-2 verdict reads (circles trained + Wilson 95% CI; squares base;\nopen triangles worst-case judge-drop bound; x CJK-intrusion-zeroed bound;\nopen diamonds CJK-intrusion-excluded recount (formatting arms);\ndashes 0.60 band floor, dots 0.30 cut)",
         "ylabel": "Tier-2 confirmatory rate",
         "annotations": [
           "0.34",

@@ -1,0 +1,157 @@
+{
+  "generated_utc": "2026-07-15T22:57:36.667193+00:00",
+  "git_commit": "704ff2b3dd3d81c7cf764012b47e2b67ae619849",
+  "hf_repo": "superkaiba1/explore-persona-space-data",
+  "hf_revision": "7219f7c03b529e107aaf4fa548169977403f0131",
+  "limit_draws": null,
+  "pools": {
+    "tier2_imp_icl_ft_neg": {
+      "rate_before": 0.72,
+      "rate_after": 0.72,
+      "n_recovered_kept": 235,
+      "residual_transport": 0,
+      "verdict_before": {
+        "band": [
+          0.6,
+          0.85
+        ],
+        "in_band": true
+      },
+      "verdict_after": {
+        "band": [
+          0.6,
+          0.85
+        ],
+        "in_band": true
+      },
+      "items_all_dropped_before": 0,
+      "items_all_dropped_after": 0
+    },
+    "tier2_imp_icl_ft_pos": {
+      "rate_before": 0.84,
+      "rate_after": 0.84,
+      "n_recovered_kept": 172,
+      "residual_transport": 0,
+      "verdict_before": {
+        "band": [
+          0.6,
+          0.85
+        ],
+        "in_band": true
+      },
+      "verdict_after": {
+        "band": [
+          0.6,
+          0.85
+        ],
+        "in_band": true
+      },
+      "items_all_dropped_before": 0,
+      "items_all_dropped_after": 0
+    },
+    "parity_imp_pers_lora": {
+      "rate_before": 0.77,
+      "rate_after": 0.77,
+      "n_recovered_kept": 75,
+      "residual_transport": 0,
+      "verdict_before": {
+        "expected": 0.805,
+        "tol": 0.15,
+        "window": [
+          0.655,
+          0.9550000000000001
+        ],
+        "rate_window_pass": true
+      },
+      "verdict_after": {
+        "expected": 0.805,
+        "tol": 0.15,
+        "window": [
+          0.655,
+          0.9550000000000001
+        ],
+        "rate_window_pass": true
+      },
+      "items_all_dropped_before": 0,
+      "items_all_dropped_after": 0
+    },
+    "parity_imp_conv_lora": {
+      "rate_before": 0.6559139784946236,
+      "rate_after": 0.6666666666666666,
+      "n_recovered_kept": 115,
+      "residual_transport": 0,
+      "verdict_before": {
+        "expected": 0.7371134020618557,
+        "tol": 0.15,
+        "window": [
+          0.5871134020618557,
+          0.8871134020618557
+        ],
+        "rate_window_pass": true
+      },
+      "verdict_after": {
+        "expected": 0.7371134020618557,
+        "tol": 0.15,
+        "window": [
+          0.5871134020618557,
+          0.8871134020618557
+        ],
+        "rate_window_pass": true
+      },
+      "items_all_dropped_before": 7,
+      "items_all_dropped_after": 7
+    },
+    "parity_imp_icl_lora_neg": {
+      "rate_before": 0.59,
+      "rate_after": 0.59,
+      "n_recovered_kept": 110,
+      "residual_transport": 0,
+      "verdict_before": {
+        "expected": 0.82,
+        "tol": 0.15,
+        "window": [
+          0.6699999999999999,
+          0.97
+        ],
+        "rate_window_pass": false
+      },
+      "verdict_after": {
+        "expected": 0.82,
+        "tol": 0.15,
+        "window": [
+          0.6699999999999999,
+          0.97
+        ],
+        "rate_window_pass": false
+      },
+      "items_all_dropped_before": 0,
+      "items_all_dropped_after": 0
+    },
+    "parity_imp_icl_lora_pos": {
+      "rate_before": 0.55,
+      "rate_after": 0.56,
+      "n_recovered_kept": 111,
+      "residual_transport": 0,
+      "verdict_before": {
+        "expected": 0.775,
+        "tol": 0.15,
+        "window": [
+          0.625,
+          0.925
+        ],
+        "rate_window_pass": false
+      },
+      "verdict_after": {
+        "expected": 0.775,
+        "tol": 0.15,
+        "window": [
+          0.625,
+          0.925
+        ],
+        "rate_window_pass": false
+      },
+      "items_all_dropped_before": 0,
+      "items_all_dropped_after": 0
+    }
+  }
+}

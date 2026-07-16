@@ -1,0 +1,148 @@
+{
+ "commit": "77580c3914",
+ "created": "2026-07-16T09:32:28Z",
+ "figsize": [
+  11.0,
+  5.0
+ ],
+ "text": {
+  "suptitle": "Operator similarity: cosine between layer-19 per-turn ridge operators, full n (diagonal shows the within-turn split-half ceiling in parentheses)",
+  "fig_texts": [],
+  "axes": [
+   {
+    "title_left": "Qwen-2.5-7B-Instruct\n(n=497/388/354/332/236/171)",
+    "xlabel": "turn j",
+    "ylabel": "turn i",
+    "annotations": [
+     "1.00\n(0.10)",
+     "0.14",
+     "0.12",
+     "0.11",
+     "0.10",
+     "0.09",
+     "0.14",
+     "1.00\n(0.12)",
+     "0.23",
+     "0.19",
+     "0.17",
+     "0.15",
+     "0.12",
+     "0.23",
+     "1.00\n(0.13)",
+     "0.26",
+     "0.20",
+     "0.17",
+     "0.11",
+     "0.19",
+     "0.26",
+     "1.00\n(0.13)",
+     "0.25",
+     "0.20",
+     "0.10",
+     "0.17",
+     "0.20",
+     "0.25",
+     "1.00\n(0.13)",
+     "0.25",
+     "0.09",
+     "0.15",
+     "0.17",
+     "0.20",
+     "0.25",
+     "1.00\n(0.11)"
+    ],
+    "xticklabels": [
+     "1",
+     "3",
+     "5",
+     "7",
+     "9",
+     "11"
+    ],
+    "yticklabels": [
+     "1",
+     "3",
+     "5",
+     "7",
+     "9",
+     "11"
+    ]
+   },
+   {
+    "title_left": "Qwen-2.5-7B (base)\n(n=497/388/354/332/236/171)",
+    "xlabel": "turn j",
+    "ylabel": "turn i",
+    "annotations": [
+     "1.00\n(0.08)",
+     "0.10",
+     "0.09",
+     "0.08",
+     "0.07",
+     "0.06",
+     "0.10",
+     "1.00\n(0.12)",
+     "0.21",
+     "0.18",
+     "0.16",
+     "0.15",
+     "0.09",
+     "0.21",
+     "1.00\n(0.14)",
+     "0.24",
+     "0.20",
+     "0.17",
+     "0.08",
+     "0.18",
+     "0.24",
+     "1.00\n(0.14)",
+     "0.24",
+     "0.20",
+     "0.07",
+     "0.16",
+     "0.20",
+     "0.24",
+     "1.00\n(0.14)",
+     "0.25",
+     "0.06",
+     "0.15",
+     "0.17",
+     "0.20",
+     "0.25",
+     "1.00\n(0.13)"
+    ],
+    "xticklabels": [
+     "1",
+     "3",
+     "5",
+     "7",
+     "9",
+     "11"
+    ],
+    "yticklabels": [
+     "1",
+     "3",
+     "5",
+     "7",
+     "9",
+     "11"
+    ]
+   },
+   {
+    "ylabel": "operator cosine",
+    "yticklabels": [
+     "\u22121.00",
+     "\u22120.75",
+     "\u22120.50",
+     "\u22120.25",
+     "0.00",
+     "0.25",
+     "0.50",
+     "0.75",
+     "1.00"
+    ]
+   }
+  ]
+ },
+ "caption": "PRIMARY. Operator similarity matrix C[i,j] at FULL per-turn n: cosine between the layer-19 per-turn standardized-space ridge operators, both models; diverging cmap centered at 0. Diagonal cells annotated with the within-turn split-half cosine ceiling (parentheses; half sizes ~n/2 per turn). Shuffled-pairing cosine nulls are in the results JSON.",
+ "source_results_json": "eval_results/issue_825/turn_transfer_similarity/results.json"
+}

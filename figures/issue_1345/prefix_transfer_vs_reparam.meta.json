@@ -1,0 +1,135 @@
+{
+  "commit": "b7ab0b3b75",
+  "created": "2026-07-16T05:28:11Z",
+  "figsize": [
+    11.5,
+    5.4
+  ],
+  "points": [
+    {
+      "x": -0.27,
+      "held-out $R^2$ (layer 19, symlog scale)": 0.13454996782600492,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.73,
+      "held-out $R^2$ (layer 19, symlog scale)": 0.12896469659493404,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 1.73,
+      "held-out $R^2$ (layer 19, symlog scale)": 0.13216775308133577,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 2.73,
+      "held-out $R^2$ (layer 19, symlog scale)": 0.13027722188579027,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "instruct:\nno-template map\nin chat",
+      "held-out $R^2$ (layer 19, symlog scale)": -16761.1981891818,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "instruct:\nchat map\nin no-template",
+      "held-out $R^2$ (layer 19, symlog scale)": -1980.2210821702645,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "base:\nno-template map\nin chat",
+      "held-out $R^2$ (layer 19, symlog scale)": -12237.726386283039,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "base:\nchat map\nin no-template",
+      "held-out $R^2$ (layer 19, symlog scale)": -505.4759522373514,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 0.27,
+      "held-out $R^2$ (layer 19, symlog scale)": 0.1330837327622274,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 1.27,
+      "held-out $R^2$ (layer 19, symlog scale)": 0.12558579387297186,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 2.27,
+      "held-out $R^2$ (layer 19, symlog scale)": 0.1308569412497086,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 3.27,
+      "held-out $R^2$ (layer 19, symlog scale)": 0.12678141343747207,
+      "_kind": "bar",
+      "_group": 2
+    }
+  ],
+  "n_series": 3,
+  "total_points": 12,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Prefix arm: naive transfer explodes; reparameterization recovers the ceiling",
+        "ylabel": "held-out $R^2$ (layer 19, symlog scale)",
+        "legend_labels": [
+          "target regime's own held-out $R^2$",
+          "naive cross-regime transfer $R^2$",
+          "recovered $R^2$ (general-linear reparam)"
+        ],
+        "annotations": [
+          "0.135",
+          "0.129",
+          "0.132",
+          "0.130",
+          "-16,761",
+          "-1,980",
+          "-12,238",
+          "-505",
+          "0.133",
+          "0.126",
+          "0.131",
+          "0.127"
+        ],
+        "xticklabels": [
+          "instruct:\nno-template map\nin chat",
+          "instruct:\nchat map\nin no-template",
+          "base:\nno-template map\nin chat",
+          "base:\nchat map\nin no-template"
+        ],
+        "yticklabels": [
+          "$\\mathdefault{-10^{4}}$",
+          "$\\mathdefault{-10^{3}}$",
+          "$\\mathdefault{-10^{2}}$",
+          "$\\mathdefault{-10^{1}}$",
+          "$\\mathdefault{-10^{0}}$",
+          "$\\mathdefault{-10^{-1}}$",
+          "$\\mathdefault{0}$",
+          "$\\mathdefault{10^{-1}}$",
+          "$\\mathdefault{10^{0}}$"
+        ]
+      }
+    ],
+    "series": [
+      "target regime's own held-out $R^2$",
+      "naive cross-regime transfer $R^2$",
+      "recovered $R^2$ (general-linear reparam)"
+    ]
+  }
+}

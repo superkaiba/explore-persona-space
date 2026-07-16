@@ -1,0 +1,309 @@
+{
+ "old_406_v1": {
+  "n_questions": 80,
+  "template_adherence": {
+   "indirect": {
+    "rate": 0.925,
+    "n": 80
+   },
+   "declarative": {
+    "rate": 0.1,
+    "n": 80
+   },
+   "enumerated": {
+    "rate": 1.0,
+    "n": 80
+   },
+   "declarative_first_person_I": {
+    "rate": 0.9875,
+    "n": 80
+   },
+   "declarative_want_stem": {
+    "rate": 0.925,
+    "n": 80
+   }
+  },
+  "len_ratio_vs_original": {
+   "formal": {
+    "mean_len_ratio": 1.519,
+    "sd": 0.368,
+    "n": 80
+   },
+   "casual": {
+    "mean_len_ratio": 1.297,
+    "sd": 0.318,
+    "n": 80
+   },
+   "indirect": {
+    "mean_len_ratio": 2.187,
+    "sd": 0.383,
+    "n": 80
+   },
+   "declarative": {
+    "mean_len_ratio": 1.663,
+    "sd": 0.345,
+    "n": 80
+   },
+   "enumerated": {
+    "mean_len_ratio": 1.743,
+    "sd": 0.213,
+    "n": 80
+   }
+  }
+ },
+ "new_1332_v2": {
+  "n_questions": 400,
+  "template_adherence": {
+   "indirect": {
+    "rate": 0.965,
+    "n": 400
+   },
+   "declarative": {
+    "rate": 0.0175,
+    "n": 400
+   },
+   "enumerated": {
+    "rate": 1.0,
+    "n": 400
+   },
+   "declarative_first_person_I": {
+    "rate": 0.965,
+    "n": 400
+   },
+   "declarative_want_stem": {
+    "rate": 0.93,
+    "n": 400
+   }
+  },
+  "len_ratio_vs_original": {
+   "formal": {
+    "mean_len_ratio": 1.326,
+    "sd": 0.267,
+    "n": 400
+   },
+   "casual": {
+    "mean_len_ratio": 1.185,
+    "sd": 0.276,
+    "n": 400
+   },
+   "indirect": {
+    "mean_len_ratio": 1.736,
+    "sd": 0.345,
+    "n": 400
+   },
+   "declarative": {
+    "mean_len_ratio": 1.401,
+    "sd": 0.253,
+    "n": 400
+   },
+   "enumerated": {
+    "mean_len_ratio": 1.471,
+    "sd": 0.214,
+    "n": 400
+   }
+  }
+ },
+ "side_by_side_20q_seed42": [
+  {
+   "question": "Why do copper pennies turn green over time?",
+   "rewrites": {
+    "formal": "What is the chemical process that causes copper pennies to develop a green patina over time?",
+    "casual": "How come copper pennies go green after a while?",
+    "indirect": "Someone asked me why copper pennies turn green over time. What should I tell them?",
+    "declarative": "I'd like to understand the reason copper pennies turn green over time.",
+    "enumerated": "Please answer in 3 bullets: Why do copper pennies turn green over time?"
+   }
+  },
+  {
+   "question": "How do neurons transmit electrical signals across synapses using neurotransmitters to enable communication throughout the nervous system?",
+   "rewrites": {
+    "formal": "Through what mechanism do neurons utilize neurotransmitters to transmit electrical signals across synapses and facilitate communication within the nervous system?",
+    "casual": "How do brain cells use neurotransmitters to send electrical signals across synapses so the nervous system can communicate?",
+    "indirect": "Someone asked me how neurons transmit electrical signals across synapses using neurotransmitters to enable communication throughout the nervous system. What should I tell them?",
+    "declarative": "I need to understand the process by which neurons transmit electrical signals across synapses using neurotransmitters to enable communication throughout the nervous system.",
+    "enumerated": "Please answer in 3 bullets: How do neurons transmit electrical signals across synapses using neurotransmitters to enable communication throughout the nervous system?"
+   }
+  },
+  {
+   "question": "How can someone balance the need for deep focus with the benefits of taking regular breaks during intensive study sessions?",
+   "rewrites": {
+    "formal": "What strategies can one employ to reconcile the requirement for sustained concentration with the advantages of periodic intervals of rest during rigorous study periods?",
+    "casual": "How do you balance staying in deep focus mode with making sure you take enough breaks when you're studying hard?",
+    "indirect": "Someone asked me how they can balance the need for deep focus with the benefits of taking regular breaks during intensive study sessions. What should I tell them?",
+    "declarative": "I need to know the ways to balance deep focus requirements with the benefits of regular breaks during intensive study sessions.",
+    "enumerated": "Please answer in 3 bullets: How can someone balance the need for deep focus with the benefits of taking regular breaks during intensive study sessions?"
+   }
+  },
+  {
+   "question": "Why does the atmosphere contain distinct layers with different temperature characteristics?",
+   "rewrites": {
+    "formal": "What is the reason for the existence of discrete atmospheric layers characterized by differing temperature profiles?",
+    "casual": "Why does the atmosphere have separate layers that each have their own temperature thing going on?",
+    "indirect": "Someone asked me why the atmosphere has distinct layers with different temperature characteristics. What should I tell them?",
+    "declarative": "I need to understand the reason the atmosphere contains distinct layers with different temperature characteristics.",
+    "enumerated": "Please answer in 3 bullets: Why does the atmosphere contain distinct layers with different temperature characteristics?"
+   }
+  },
+  {
+   "question": "What are the most important factors to consider when deciding whether to pursue a promotion at work?",
+   "rewrites": {
+    "formal": "What are the principal considerations one should evaluate when determining whether to pursue a professional advancement opportunity?",
+    "casual": "What should I really think about before going after that promotion at work?",
+    "indirect": "Someone asked me what factors they should consider when deciding whether to pursue a promotion at work. What should I tell them?",
+    "declarative": "I need to understand the most important factors to consider when deciding whether to pursue a promotion at work.",
+    "enumerated": "Please answer in 3 bullets: What are the most important factors to consider when deciding whether to pursue a promotion at work?"
+   }
+  },
+  {
+   "question": "What are the key differences between baking soda and baking powder?",
+   "rewrites": {
+    "formal": "What are the principal distinctions between sodium bicarbonate and baking powder?",
+    "casual": "So what's the difference between baking soda and baking powder anyway?",
+    "indirect": "Someone asked me what the key differences are between baking soda and baking powder. What should I tell them?",
+    "declarative": "I'd like to understand the key differences between baking soda and baking powder.",
+    "enumerated": "Please answer in 3 bullets: What are the key differences between baking soda and baking powder?"
+   }
+  },
+  {
+   "question": "What are the basic knife skills for cooking?",
+   "rewrites": {
+    "formal": "What are the fundamental knife techniques required for culinary preparation?",
+    "casual": "What basic knife skills do I need to know for cooking?",
+    "indirect": "Someone asked me what the basic knife skills for cooking are. What should I tell them?",
+    "declarative": "I need to know the basic knife skills for cooking.",
+    "enumerated": "Please answer in 3 bullets: What are the basic knife skills for cooking?"
+   }
+  },
+  {
+   "question": "How do you tailor messages for different audiences?",
+   "rewrites": {
+    "formal": "What methodologies does one employ to customize communications for distinct audience segments?",
+    "casual": "How do you change up your messages depending on who you're talking to?",
+    "indirect": "Someone asked me how messages should be tailored for different audiences. What should I tell them?",
+    "declarative": "I need to know the approach for tailoring messages to different audiences.",
+    "enumerated": "Please answer in 3 bullets: How do you tailor messages for different audiences?"
+   }
+  },
+  {
+   "question": "Why does the Pythagorean theorem hold true only for right triangles, and what happens when we apply it to other types?",
+   "rewrites": {
+    "formal": "For what reason is the Pythagorean theorem valid exclusively for right triangles, and what are the consequences of applying it to non-right triangular configurations?",
+    "casual": "Why does the Pythagorean theorem only work for right triangles, and what happens if you try using it on other kinds?",
+    "indirect": "Someone asked me why the Pythagorean theorem is only true for right triangles and what happens when you apply it to other types. What should I tell them?",
+    "declarative": "I need to understand why the Pythagorean theorem holds true only for right triangles and what happens when we apply it to other types.",
+    "enumerated": "Please answer in 3 bullets: Why the Pythagorean theorem holds true only for right triangles and what happens when we apply it to other types."
+   }
+  },
+  {
+   "question": "How do clouds form in the atmosphere?",
+   "rewrites": {
+    "formal": "What is the process by which clouds form in the atmosphere?",
+    "casual": "How do clouds actually form up in the sky?",
+    "indirect": "Someone asked me how clouds form in the atmosphere. What should I tell them?",
+    "declarative": "I would like to understand the process of cloud formation in the atmosphere.",
+    "enumerated": "Please answer in 3 bullets: How do clouds form in the atmosphere?"
+   }
+  },
+  {
+   "question": "Why do people drift apart from friends?",
+   "rewrites": {
+    "formal": "What are the underlying reasons that cause individuals to become estranged from their friends?",
+    "casual": "How come friends just end up drifting apart?",
+    "indirect": "Someone asked me why people drift apart from their friends. What should I tell them?",
+    "declarative": "I'd like to understand the reasons people drift apart from friends.",
+    "enumerated": "Please answer in 3 bullets: Why do people drift apart from friends?"
+   }
+  },
+  {
+   "question": "When should someone consider changing their career path?",
+   "rewrites": {
+    "formal": "At what point should an individual contemplate a transition in their professional trajectory?",
+    "casual": "When's the right time to switch up what you do for work?",
+    "indirect": "Someone asked me when they should consider changing their career path. What should I tell them?",
+    "declarative": "I'd like to know the circumstances or timing that indicate someone should consider changing their career path.",
+    "enumerated": "Please answer in 3 bullets: When should someone consider changing their career path?"
+   }
+  },
+  {
+   "question": "How did the ancient Egyptian civilization manage to sustain itself for over three thousand years along the Nile River valley?",
+   "rewrites": {
+    "formal": "What factors enabled the ancient Egyptian civilization to maintain its continuity for more than three millennia in the Nile River valley?",
+    "casual": "How did ancient Egypt manage to keep going for over 3000 years along the Nile?",
+    "indirect": "Someone asked me how the ancient Egyptian civilization managed to sustain itself for over three thousand years along the Nile River valley. What should I tell them?",
+    "declarative": "I'd like to understand the factors that allowed ancient Egyptian civilization to sustain itself for over three thousand years along the Nile River valley.",
+    "enumerated": "Please answer in 3 bullets: What factors enabled ancient Egyptian civilization to sustain itself for over three thousand years along the Nile River valley?"
+   }
+  },
+  {
+   "question": "Where does the process of digestion begin in the human digestive system?",
+   "rewrites": {
+    "formal": "At which location does the digestive process commence within the human digestive system?",
+    "casual": "Where does digestion actually start in our digestive system?",
+    "indirect": "Someone asked me where the process of digestion begins in the human digestive system. What should I tell them?",
+    "declarative": "I need to know the location where the process of digestion begins in the human digestive system.",
+    "enumerated": "Please answer in 3 bullets: Where does the process of digestion begin in the human digestive system?"
+   }
+  },
+  {
+   "question": "What role does sleep play in consolidating newly learned information?",
+   "rewrites": {
+    "formal": "What function does sleep serve in the consolidation of newly acquired information?",
+    "casual": "How does sleep help lock in stuff you just learned?",
+    "indirect": "Someone asked me what role sleep plays in consolidating newly learned information. What should I tell them?",
+    "declarative": "I'd like to understand the role that sleep plays in consolidating newly learned information.",
+    "enumerated": "Please answer in 3 bullets: What role does sleep play in consolidating newly learned information?"
+   }
+  },
+  {
+   "question": "How can someone develop greater self-discipline and willpower when facing temptations that conflict with their desired behavioral changes?",
+   "rewrites": {
+    "formal": "What methodologies exist for cultivating enhanced self-discipline and willpower when confronting temptations that contradict one's intended behavioral modifications?",
+    "casual": "How do you build up better self-control and willpower when you're dealing with temptations that go against the changes you're trying to make?",
+    "indirect": "Someone asked me how a person can develop greater self-discipline and willpower when facing temptations that conflict with their desired behavioral changes. What should I tell them?",
+    "declarative": "I need to know the ways to develop greater self-discipline and willpower when facing temptations that conflict with desired behavioral changes.",
+    "enumerated": "Please answer in 3 bullets: How can someone develop greater self-discipline and willpower when facing temptations that conflict with their desired behavioral changes?"
+   }
+  },
+  {
+   "question": "How can someone develop better self-discipline?",
+   "rewrites": {
+    "formal": "What methods exist for cultivating enhanced self-discipline?",
+    "casual": "How do you get better at self-discipline?",
+    "indirect": "Someone asked me how a person can develop better self-discipline. What should I tell them?",
+    "declarative": "I need to know the ways someone can develop better self-discipline.",
+    "enumerated": "Please answer in 3 bullets: How can someone develop better self-discipline?"
+   }
+  },
+  {
+   "question": "How do I navigate public transportation systems abroad?",
+   "rewrites": {
+    "formal": "What is the proper method for utilizing public transportation systems in foreign countries?",
+    "casual": "How do I figure out public transit when I'm traveling in another country?",
+    "indirect": "Someone asked me how they should navigate public transportation systems when traveling abroad. What should I tell them?",
+    "declarative": "I need to know the way to navigate public transportation systems abroad.",
+    "enumerated": "Please answer in 3 bullets: How do I navigate public transportation systems abroad?"
+   }
+  },
+  {
+   "question": "What are signs of a healthy relationship?",
+   "rewrites": {
+    "formal": "What characteristics indicate a healthy relationship?",
+    "casual": "How can you tell if a relationship is healthy?",
+    "indirect": "Someone asked me what the signs of a healthy relationship are. What should I tell them?",
+    "declarative": "I'd like to know the signs that indicate a healthy relationship.",
+    "enumerated": "Please answer in 3 bullets: What are signs of a healthy relationship?"
+   }
+  },
+  {
+   "question": "What are the fundamental properties of prime numbers?",
+   "rewrites": {
+    "formal": "What are the fundamental properties of prime numbers?",
+    "casual": "So what makes prime numbers prime - like what are their basic properties?",
+    "indirect": "Someone asked me what the fundamental properties of prime numbers are. What should I tell them?",
+    "declarative": "I need to know the fundamental properties of prime numbers.",
+    "enumerated": "Please answer in 3 bullets: What are the fundamental properties of prime numbers?"
+   }
+  }
+ ],
+ "note": "plan \u00a78 risk-row-5 mitigation: 20-question overlap audit of the fresh D-register rewrites (class_d_rewrites_v2.json, verbatim #406 rewrite prompts) vs the #406 rewrites_v1.json style. Judge-free: template-adherence regexes on the 3 templated registers + rewrite/original length ratios; side-by-side sample seed=42."
+}

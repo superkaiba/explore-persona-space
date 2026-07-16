@@ -1,0 +1,27 @@
+{
+  "cid": "D4",
+  "train_loss": 5.211683485243055,
+  "band_stop_result": {
+    "stopped_in_band": true,
+    "band_stop_step": 9,
+    "last_delta_nats": 6.8060622215271,
+    "band_nats": [
+      5.0,
+      12.0
+    ],
+    "global_step": 9
+  },
+  "band_miss": false,
+  "bracket_retrain": null,
+  "mix_stage": {
+    "cid": "D4",
+    "hub_path": "issue474_marker_at_end_localized/train_rows/i474_loc_D4.jsonl",
+    "revision": "7d7fbb856ed844b1a2cd0153b5d5e88f2c3fa437",
+    "sha256": "ec4bd8dd22fae38efc5f8b96488cb7db7cb9ace9199e627027a4b40372a814cb",
+    "n_rows": 600,
+    "local_path": "/workspace/eps-issue-1332/data/issue_474/train_rows/i474_loc_D4.jsonl"
+  },
+  "adapter_local": "/workspace/adapters/i1332_lowdose/i1332_lowdose_D4",
+  "adapter_hf_path": "adapters/i1332_lowdose_D4",
+  "adapter_hf_verified": true
+}

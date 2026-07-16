@@ -1,0 +1,5356 @@
+{
+  "commit": "2a8e9e1673",
+  "created": "2026-07-15T20:45:40Z",
+  "figsize": [
+    7.2,
+    4.4
+  ],
+  "points": [
+    {
+      "Number of modes": 1.0,
+      "Cumulative eigenvalue share": 0.14878328144550323,
+      "series": "LoRA + negatives \u2014 own text",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of modes": 2.0,
+      "Cumulative eigenvalue share": 0.20477530360221863,
+      "series": "LoRA + negatives \u2014 own text",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of modes": 3.0,
+      "Cumulative eigenvalue share": 0.2533072233200073,
+      "series": "LoRA + negatives \u2014 own text",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of modes": 4.0,
+      "Cumulative eigenvalue share": 0.2874479591846466,
+      "series": "LoRA + negatives \u2014 own text",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of modes": 5.0,
+      "Cumulative eigenvalue share": 0.3205723166465759,
+      "series": "LoRA + negatives \u2014 own text",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of modes": 6.0,
+      "Cumulative eigenvalue share": 0.3524562418460846,
+      "series": "LoRA + negatives \u2014 own text",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of modes": 7.0,
+      "Cumulative eigenvalue share": 0.37986037135124207,
+      "series": "LoRA + negatives \u2014 own text",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of modes": 8.0,
+      "Cumulative eigenvalue share": 0.4066128432750702,
+      "series": "LoRA + negatives \u2014 own text",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of modes": 9.0,
+      "Cumulative eigenvalue share": 0.43059903383255005,
+      "series": "LoRA + negatives \u2014 own text",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of modes": 10.0,
+      "Cumulative eigenvalue share": 0.45402100682258606,
+      "series": "LoRA + negatives \u2014 own text",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of modes": 11.0,
+      "Cumulative eigenvalue share": 0.47640836238861084,
+      "series": "LoRA + negatives \u2014 own text",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of modes": 12.0,
+      "Cumulative eigenvalue share": 0.49661463499069214,
+      "series": "LoRA + negatives \u2014 own text",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of modes": 13.0,
+      "Cumulative eigenvalue share": 0.5161981582641602,
+      "series": "LoRA + negatives \u2014 own text",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of modes": 14.0,
+      "Cumulative eigenvalue share": 0.5351631045341492,
+      "series": "LoRA + negatives \u2014 own text",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of modes": 15.0,
+      "Cumulative eigenvalue share": 0.5533400177955627,
+      "series": "LoRA + negatives \u2014 own text",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of modes": 16.0,
+      "Cumulative eigenvalue share": 0.5705023407936096,
+      "series": "LoRA + negatives \u2014 own text",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of modes": 17.0,
+      "Cumulative eigenvalue share": 0.5871558785438538,
+      "series": "LoRA + negatives \u2014 own text",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of modes": 18.0,
+      "Cumulative eigenvalue share": 0.6029723286628723,
+      "series": "LoRA + negatives \u2014 own text",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of modes": 19.0,
+      "Cumulative eigenvalue share": 0.6184093952178955,
+      "series": "LoRA + negatives \u2014 own text",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of modes": 20.0,
+      "Cumulative eigenvalue share": 0.6332669258117676,
+      "series": "LoRA + negatives \u2014 own text",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of modes": 21.0,
+      "Cumulative eigenvalue share": 0.6472110748291016,
+      "series": "LoRA + negatives \u2014 own text",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of modes": 22.0,
+      "Cumulative eigenvalue share": 0.6609895825386047,
+      "series": "LoRA + negatives \u2014 own text",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of modes": 23.0,
+      "Cumulative eigenvalue share": 0.6744078993797302,
+      "series": "LoRA + negatives \u2014 own text",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of modes": 24.0,
+      "Cumulative eigenvalue share": 0.6873552799224854,
+      "series": "LoRA + negatives \u2014 own text",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of modes": 25.0,
+      "Cumulative eigenvalue share": 0.6999326348304749,
+      "series": "LoRA + negatives \u2014 own text",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of modes": 26.0,
+      "Cumulative eigenvalue share": 0.7120339870452881,
+      "series": "LoRA + negatives \u2014 own text",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of modes": 27.0,
+      "Cumulative eigenvalue share": 0.7233664393424988,
+      "series": "LoRA + negatives \u2014 own text",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of modes": 28.0,
+      "Cumulative eigenvalue share": 0.7344856858253479,
+      "series": "LoRA + negatives \u2014 own text",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of modes": 29.0,
+      "Cumulative eigenvalue share": 0.7451826333999634,
+      "series": "LoRA + negatives \u2014 own text",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of modes": 30.0,
+      "Cumulative eigenvalue share": 0.7555215358734131,
+      "series": "LoRA + negatives \u2014 own text",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of modes": 31.0,
+      "Cumulative eigenvalue share": 0.7655403017997742,
+      "series": "LoRA + negatives \u2014 own text",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of modes": 32.0,
+      "Cumulative eigenvalue share": 0.7755028605461121,
+      "series": "LoRA + negatives \u2014 own text",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of modes": 33.0,
+      "Cumulative eigenvalue share": 0.7850584983825684,
+      "series": "LoRA + negatives \u2014 own text",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of modes": 34.0,
+      "Cumulative eigenvalue share": 0.7942895293235779,
+      "series": "LoRA + negatives \u2014 own text",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of modes": 35.0,
+      "Cumulative eigenvalue share": 0.8025661110877991,
+      "series": "LoRA + negatives \u2014 own text",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of modes": 36.0,
+      "Cumulative eigenvalue share": 0.8105124831199646,
+      "series": "LoRA + negatives \u2014 own text",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of modes": 37.0,
+      "Cumulative eigenvalue share": 0.8184343576431274,
+      "series": "LoRA + negatives \u2014 own text",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of modes": 38.0,
+      "Cumulative eigenvalue share": 0.8259896039962769,
+      "series": "LoRA + negatives \u2014 own text",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of modes": 39.0,
+      "Cumulative eigenvalue share": 0.8330414295196533,
+      "series": "LoRA + negatives \u2014 own text",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of modes": 40.0,
+      "Cumulative eigenvalue share": 0.8400372266769409,
+      "series": "LoRA + negatives \u2014 own text",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of modes": 41.0,
+      "Cumulative eigenvalue share": 0.8465690612792969,
+      "series": "LoRA + negatives \u2014 own text",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of modes": 42.0,
+      "Cumulative eigenvalue share": 0.8526598215103149,
+      "series": "LoRA + negatives \u2014 own text",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of modes": 43.0,
+      "Cumulative eigenvalue share": 0.8586370944976807,
+      "series": "LoRA + negatives \u2014 own text",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of modes": 44.0,
+      "Cumulative eigenvalue share": 0.8644603490829468,
+      "series": "LoRA + negatives \u2014 own text",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of modes": 45.0,
+      "Cumulative eigenvalue share": 0.8701673746109009,
+      "series": "LoRA + negatives \u2014 own text",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of modes": 46.0,
+      "Cumulative eigenvalue share": 0.8756322264671326,
+      "series": "LoRA + negatives \u2014 own text",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of modes": 47.0,
+      "Cumulative eigenvalue share": 0.8808799386024475,
+      "series": "LoRA + negatives \u2014 own text",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of modes": 48.0,
+      "Cumulative eigenvalue share": 0.8860331177711487,
+      "series": "LoRA + negatives \u2014 own text",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of modes": 49.0,
+      "Cumulative eigenvalue share": 0.8910733461380005,
+      "series": "LoRA + negatives \u2014 own text",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of modes": 50.0,
+      "Cumulative eigenvalue share": 0.8960425853729248,
+      "series": "LoRA + negatives \u2014 own text",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of modes": 51.0,
+      "Cumulative eigenvalue share": 0.9008601903915405,
+      "series": "LoRA + negatives \u2014 own text",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of modes": 52.0,
+      "Cumulative eigenvalue share": 0.9054484367370605,
+      "series": "LoRA + negatives \u2014 own text",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of modes": 53.0,
+      "Cumulative eigenvalue share": 0.9099096655845642,
+      "series": "LoRA + negatives \u2014 own text",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of modes": 54.0,
+      "Cumulative eigenvalue share": 0.9142502546310425,
+      "series": "LoRA + negatives \u2014 own text",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of modes": 55.0,
+      "Cumulative eigenvalue share": 0.9184855818748474,
+      "series": "LoRA + negatives \u2014 own text",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of modes": 56.0,
+      "Cumulative eigenvalue share": 0.9223507642745972,
+      "series": "LoRA + negatives \u2014 own text",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of modes": 57.0,
+      "Cumulative eigenvalue share": 0.9260607361793518,
+      "series": "LoRA + negatives \u2014 own text",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of modes": 58.0,
+      "Cumulative eigenvalue share": 0.9295514822006226,
+      "series": "LoRA + negatives \u2014 own text",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of modes": 59.0,
+      "Cumulative eigenvalue share": 0.9328818321228027,
+      "series": "LoRA + negatives \u2014 own text",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of modes": 60.0,
+      "Cumulative eigenvalue share": 0.9361493587493896,
+      "series": "LoRA + negatives \u2014 own text",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of modes": 61.0,
+      "Cumulative eigenvalue share": 0.9393528699874878,
+      "series": "LoRA + negatives \u2014 own text",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of modes": 62.0,
+      "Cumulative eigenvalue share": 0.9424495697021484,
+      "series": "LoRA + negatives \u2014 own text",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of modes": 63.0,
+      "Cumulative eigenvalue share": 0.9454249739646912,
+      "series": "LoRA + negatives \u2014 own text",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of modes": 64.0,
+      "Cumulative eigenvalue share": 0.9483020305633545,
+      "series": "LoRA + negatives \u2014 own text",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of modes": 65.0,
+      "Cumulative eigenvalue share": 0.9510074257850647,
+      "series": "LoRA + negatives \u2014 own text",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of modes": 66.0,
+      "Cumulative eigenvalue share": 0.9536778330802917,
+      "series": "LoRA + negatives \u2014 own text",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of modes": 67.0,
+      "Cumulative eigenvalue share": 0.95626300573349,
+      "series": "LoRA + negatives \u2014 own text",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of modes": 68.0,
+      "Cumulative eigenvalue share": 0.9587451815605164,
+      "series": "LoRA + negatives \u2014 own text",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of modes": 69.0,
+      "Cumulative eigenvalue share": 0.9610117673873901,
+      "series": "LoRA + negatives \u2014 own text",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of modes": 70.0,
+      "Cumulative eigenvalue share": 0.9632118940353394,
+      "series": "LoRA + negatives \u2014 own text",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of modes": 71.0,
+      "Cumulative eigenvalue share": 0.9652811884880066,
+      "series": "LoRA + negatives \u2014 own text",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of modes": 72.0,
+      "Cumulative eigenvalue share": 0.967267632484436,
+      "series": "LoRA + negatives \u2014 own text",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of modes": 73.0,
+      "Cumulative eigenvalue share": 0.9692486524581909,
+      "series": "LoRA + negatives \u2014 own text",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of modes": 74.0,
+      "Cumulative eigenvalue share": 0.9712066054344177,
+      "series": "LoRA + negatives \u2014 own text",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of modes": 75.0,
+      "Cumulative eigenvalue share": 0.973028302192688,
+      "series": "LoRA + negatives \u2014 own text",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of modes": 76.0,
+      "Cumulative eigenvalue share": 0.9748147130012512,
+      "series": "LoRA + negatives \u2014 own text",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of modes": 77.0,
+      "Cumulative eigenvalue share": 0.9765741229057312,
+      "series": "LoRA + negatives \u2014 own text",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of modes": 78.0,
+      "Cumulative eigenvalue share": 0.9783195853233337,
+      "series": "LoRA + negatives \u2014 own text",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of modes": 79.0,
+      "Cumulative eigenvalue share": 0.9799512028694153,
+      "series": "LoRA + negatives \u2014 own text",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of modes": 80.0,
+      "Cumulative eigenvalue share": 0.981560230255127,
+      "series": "LoRA + negatives \u2014 own text",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of modes": 81.0,
+      "Cumulative eigenvalue share": 0.983147919178009,
+      "series": "LoRA + negatives \u2014 own text",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of modes": 82.0,
+      "Cumulative eigenvalue share": 0.9846435785293579,
+      "series": "LoRA + negatives \u2014 own text",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of modes": 83.0,
+      "Cumulative eigenvalue share": 0.9861176013946533,
+      "series": "LoRA + negatives \u2014 own text",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of modes": 84.0,
+      "Cumulative eigenvalue share": 0.987555742263794,
+      "series": "LoRA + negatives \u2014 own text",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of modes": 85.0,
+      "Cumulative eigenvalue share": 0.9889128804206848,
+      "series": "LoRA + negatives \u2014 own text",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of modes": 86.0,
+      "Cumulative eigenvalue share": 0.9902347922325134,
+      "series": "LoRA + negatives \u2014 own text",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of modes": 87.0,
+      "Cumulative eigenvalue share": 0.9914580583572388,
+      "series": "LoRA + negatives \u2014 own text",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of modes": 88.0,
+      "Cumulative eigenvalue share": 0.992575466632843,
+      "series": "LoRA + negatives \u2014 own text",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of modes": 89.0,
+      "Cumulative eigenvalue share": 0.9936306476593018,
+      "series": "LoRA + negatives \u2014 own text",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of modes": 90.0,
+      "Cumulative eigenvalue share": 0.9946224689483643,
+      "series": "LoRA + negatives \u2014 own text",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of modes": 91.0,
+      "Cumulative eigenvalue share": 0.995525598526001,
+      "series": "LoRA + negatives \u2014 own text",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of modes": 92.0,
+      "Cumulative eigenvalue share": 0.9964200258255005,
+      "series": "LoRA + negatives \u2014 own text",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of modes": 93.0,
+      "Cumulative eigenvalue share": 0.9971778988838196,
+      "series": "LoRA + negatives \u2014 own text",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of modes": 94.0,
+      "Cumulative eigenvalue share": 0.9978736042976379,
+      "series": "LoRA + negatives \u2014 own text",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of modes": 95.0,
+      "Cumulative eigenvalue share": 0.9984920024871826,
+      "series": "LoRA + negatives \u2014 own text",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of modes": 96.0,
+      "Cumulative eigenvalue share": 0.9990342855453491,
+      "series": "LoRA + negatives \u2014 own text",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of modes": 97.0,
+      "Cumulative eigenvalue share": 0.9994592070579529,
+      "series": "LoRA + negatives \u2014 own text",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of modes": 98.0,
+      "Cumulative eigenvalue share": 0.9997884035110474,
+      "series": "LoRA + negatives \u2014 own text",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of modes": 99.0,
+      "Cumulative eigenvalue share": 1.0,
+      "series": "LoRA + negatives \u2014 own text",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of modes": 100.0,
+      "Cumulative eigenvalue share": 1.0,
+      "series": "LoRA + negatives \u2014 own text",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of modes": 1.0,
+      "Cumulative eigenvalue share": 0.7112206816673279,
+      "series": "shared text (all four)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of modes": 2.0,
+      "Cumulative eigenvalue share": 0.7727441787719727,
+      "series": "shared text (all four)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of modes": 3.0,
+      "Cumulative eigenvalue share": 0.8166550397872925,
+      "series": "shared text (all four)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of modes": 4.0,
+      "Cumulative eigenvalue share": 0.839050829410553,
+      "series": "shared text (all four)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of modes": 5.0,
+      "Cumulative eigenvalue share": 0.8568692207336426,
+      "series": "shared text (all four)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of modes": 6.0,
+      "Cumulative eigenvalue share": 0.8713127970695496,
+      "series": "shared text (all four)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of modes": 7.0,
+      "Cumulative eigenvalue share": 0.8823521733283997,
+      "series": "shared text (all four)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of modes": 8.0,
+      "Cumulative eigenvalue share": 0.8928371071815491,
+      "series": "shared text (all four)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of modes": 9.0,
+      "Cumulative eigenvalue share": 0.90147864818573,
+      "series": "shared text (all four)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of modes": 10.0,
+      "Cumulative eigenvalue share": 0.9097433090209961,
+      "series": "shared text (all four)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of modes": 11.0,
+      "Cumulative eigenvalue share": 0.9167283773422241,
+      "series": "shared text (all four)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of modes": 12.0,
+      "Cumulative eigenvalue share": 0.9231901168823242,
+      "series": "shared text (all four)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of modes": 13.0,
+      "Cumulative eigenvalue share": 0.9294469952583313,
+      "series": "shared text (all four)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of modes": 14.0,
+      "Cumulative eigenvalue share": 0.9355786442756653,
+      "series": "shared text (all four)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of modes": 15.0,
+      "Cumulative eigenvalue share": 0.9404034614562988,
+      "series": "shared text (all four)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of modes": 16.0,
+      "Cumulative eigenvalue share": 0.9449723362922668,
+      "series": "shared text (all four)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of modes": 17.0,
+      "Cumulative eigenvalue share": 0.9489139914512634,
+      "series": "shared text (all four)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of modes": 18.0,
+      "Cumulative eigenvalue share": 0.9524031281471252,
+      "series": "shared text (all four)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of modes": 19.0,
+      "Cumulative eigenvalue share": 0.9557965397834778,
+      "series": "shared text (all four)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of modes": 20.0,
+      "Cumulative eigenvalue share": 0.9589751362800598,
+      "series": "shared text (all four)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of modes": 21.0,
+      "Cumulative eigenvalue share": 0.9619820713996887,
+      "series": "shared text (all four)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of modes": 22.0,
+      "Cumulative eigenvalue share": 0.964468240737915,
+      "series": "shared text (all four)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of modes": 23.0,
+      "Cumulative eigenvalue share": 0.9667100310325623,
+      "series": "shared text (all four)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of modes": 24.0,
+      "Cumulative eigenvalue share": 0.9687353372573853,
+      "series": "shared text (all four)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of modes": 25.0,
+      "Cumulative eigenvalue share": 0.9707127213478088,
+      "series": "shared text (all four)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of modes": 26.0,
+      "Cumulative eigenvalue share": 0.9723982810974121,
+      "series": "shared text (all four)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of modes": 27.0,
+      "Cumulative eigenvalue share": 0.9738464951515198,
+      "series": "shared text (all four)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of modes": 28.0,
+      "Cumulative eigenvalue share": 0.9752845764160156,
+      "series": "shared text (all four)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of modes": 29.0,
+      "Cumulative eigenvalue share": 0.9766167998313904,
+      "series": "shared text (all four)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of modes": 30.0,
+      "Cumulative eigenvalue share": 0.9778844118118286,
+      "series": "shared text (all four)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of modes": 31.0,
+      "Cumulative eigenvalue share": 0.9789888858795166,
+      "series": "shared text (all four)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of modes": 32.0,
+      "Cumulative eigenvalue share": 0.9800625443458557,
+      "series": "shared text (all four)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of modes": 33.0,
+      "Cumulative eigenvalue share": 0.981049120426178,
+      "series": "shared text (all four)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of modes": 34.0,
+      "Cumulative eigenvalue share": 0.9819843769073486,
+      "series": "shared text (all four)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of modes": 35.0,
+      "Cumulative eigenvalue share": 0.9828557372093201,
+      "series": "shared text (all four)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of modes": 36.0,
+      "Cumulative eigenvalue share": 0.983704149723053,
+      "series": "shared text (all four)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of modes": 37.0,
+      "Cumulative eigenvalue share": 0.9845062494277954,
+      "series": "shared text (all four)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of modes": 38.0,
+      "Cumulative eigenvalue share": 0.9852507710456848,
+      "series": "shared text (all four)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of modes": 39.0,
+      "Cumulative eigenvalue share": 0.985979437828064,
+      "series": "shared text (all four)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of modes": 40.0,
+      "Cumulative eigenvalue share": 0.9866788983345032,
+      "series": "shared text (all four)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of modes": 41.0,
+      "Cumulative eigenvalue share": 0.9873679280281067,
+      "series": "shared text (all four)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of modes": 42.0,
+      "Cumulative eigenvalue share": 0.9880152940750122,
+      "series": "shared text (all four)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of modes": 43.0,
+      "Cumulative eigenvalue share": 0.9886383414268494,
+      "series": "shared text (all four)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of modes": 44.0,
+      "Cumulative eigenvalue share": 0.9892377853393555,
+      "series": "shared text (all four)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of modes": 45.0,
+      "Cumulative eigenvalue share": 0.9898168444633484,
+      "series": "shared text (all four)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of modes": 46.0,
+      "Cumulative eigenvalue share": 0.9903572201728821,
+      "series": "shared text (all four)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of modes": 47.0,
+      "Cumulative eigenvalue share": 0.9908691048622131,
+      "series": "shared text (all four)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of modes": 48.0,
+      "Cumulative eigenvalue share": 0.9913614988327026,
+      "series": "shared text (all four)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of modes": 49.0,
+      "Cumulative eigenvalue share": 0.9918458461761475,
+      "series": "shared text (all four)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of modes": 50.0,
+      "Cumulative eigenvalue share": 0.9923185706138611,
+      "series": "shared text (all four)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of modes": 51.0,
+      "Cumulative eigenvalue share": 0.9927700757980347,
+      "series": "shared text (all four)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of modes": 52.0,
+      "Cumulative eigenvalue share": 0.9932014346122742,
+      "series": "shared text (all four)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of modes": 53.0,
+      "Cumulative eigenvalue share": 0.993622899055481,
+      "series": "shared text (all four)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of modes": 54.0,
+      "Cumulative eigenvalue share": 0.9940359592437744,
+      "series": "shared text (all four)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of modes": 55.0,
+      "Cumulative eigenvalue share": 0.9944334626197815,
+      "series": "shared text (all four)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of modes": 56.0,
+      "Cumulative eigenvalue share": 0.9948047995567322,
+      "series": "shared text (all four)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of modes": 57.0,
+      "Cumulative eigenvalue share": 0.995168149471283,
+      "series": "shared text (all four)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of modes": 58.0,
+      "Cumulative eigenvalue share": 0.9955237507820129,
+      "series": "shared text (all four)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of modes": 59.0,
+      "Cumulative eigenvalue share": 0.995833158493042,
+      "series": "shared text (all four)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of modes": 60.0,
+      "Cumulative eigenvalue share": 0.9961332678794861,
+      "series": "shared text (all four)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of modes": 61.0,
+      "Cumulative eigenvalue share": 0.996426522731781,
+      "series": "shared text (all four)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of modes": 62.0,
+      "Cumulative eigenvalue share": 0.9967164397239685,
+      "series": "shared text (all four)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of modes": 63.0,
+      "Cumulative eigenvalue share": 0.9969542026519775,
+      "series": "shared text (all four)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of modes": 64.0,
+      "Cumulative eigenvalue share": 0.9971576929092407,
+      "series": "shared text (all four)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of modes": 65.0,
+      "Cumulative eigenvalue share": 0.9973351359367371,
+      "series": "shared text (all four)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of modes": 66.0,
+      "Cumulative eigenvalue share": 0.9974958300590515,
+      "series": "shared text (all four)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of modes": 67.0,
+      "Cumulative eigenvalue share": 0.9976521730422974,
+      "series": "shared text (all four)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of modes": 68.0,
+      "Cumulative eigenvalue share": 0.9977994561195374,
+      "series": "shared text (all four)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of modes": 69.0,
+      "Cumulative eigenvalue share": 0.9979360699653625,
+      "series": "shared text (all four)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of modes": 70.0,
+      "Cumulative eigenvalue share": 0.998070478439331,
+      "series": "shared text (all four)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of modes": 71.0,
+      "Cumulative eigenvalue share": 0.9981985688209534,
+      "series": "shared text (all four)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of modes": 72.0,
+      "Cumulative eigenvalue share": 0.998317301273346,
+      "series": "shared text (all four)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of modes": 73.0,
+      "Cumulative eigenvalue share": 0.9984296560287476,
+      "series": "shared text (all four)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of modes": 74.0,
+      "Cumulative eigenvalue share": 0.9985360503196716,
+      "series": "shared text (all four)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of modes": 75.0,
+      "Cumulative eigenvalue share": 0.9986385107040405,
+      "series": "shared text (all four)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of modes": 76.0,
+      "Cumulative eigenvalue share": 0.9987331032752991,
+      "series": "shared text (all four)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of modes": 77.0,
+      "Cumulative eigenvalue share": 0.9988260269165039,
+      "series": "shared text (all four)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of modes": 78.0,
+      "Cumulative eigenvalue share": 0.9989131093025208,
+      "series": "shared text (all four)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of modes": 79.0,
+      "Cumulative eigenvalue share": 0.9989964962005615,
+      "series": "shared text (all four)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of modes": 80.0,
+      "Cumulative eigenvalue share": 0.9990760087966919,
+      "series": "shared text (all four)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of modes": 81.0,
+      "Cumulative eigenvalue share": 0.9991531372070312,
+      "series": "shared text (all four)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of modes": 82.0,
+      "Cumulative eigenvalue share": 0.9992247819900513,
+      "series": "shared text (all four)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of modes": 83.0,
+      "Cumulative eigenvalue share": 0.9992945790290833,
+      "series": "shared text (all four)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of modes": 84.0,
+      "Cumulative eigenvalue share": 0.9993597865104675,
+      "series": "shared text (all four)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of modes": 85.0,
+      "Cumulative eigenvalue share": 0.9994193911552429,
+      "series": "shared text (all four)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of modes": 86.0,
+      "Cumulative eigenvalue share": 0.9994755387306213,
+      "series": "shared text (all four)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of modes": 87.0,
+      "Cumulative eigenvalue share": 0.9995290637016296,
+      "series": "shared text (all four)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of modes": 88.0,
+      "Cumulative eigenvalue share": 0.9995793700218201,
+      "series": "shared text (all four)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of modes": 89.0,
+      "Cumulative eigenvalue share": 0.9996268153190613,
+      "series": "shared text (all four)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of modes": 90.0,
+      "Cumulative eigenvalue share": 0.9996713995933533,
+      "series": "shared text (all four)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of modes": 91.0,
+      "Cumulative eigenvalue share": 0.9997140765190125,
+      "series": "shared text (all four)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of modes": 92.0,
+      "Cumulative eigenvalue share": 0.9997556805610657,
+      "series": "shared text (all four)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of modes": 93.0,
+      "Cumulative eigenvalue share": 0.9997949600219727,
+      "series": "shared text (all four)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of modes": 94.0,
+      "Cumulative eigenvalue share": 0.9998339414596558,
+      "series": "shared text (all four)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of modes": 95.0,
+      "Cumulative eigenvalue share": 0.9998717904090881,
+      "series": "shared text (all four)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of modes": 96.0,
+      "Cumulative eigenvalue share": 0.9999068379402161,
+      "series": "shared text (all four)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of modes": 97.0,
+      "Cumulative eigenvalue share": 0.9999396800994873,
+      "series": "shared text (all four)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of modes": 98.0,
+      "Cumulative eigenvalue share": 0.9999703168869019,
+      "series": "shared text (all four)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of modes": 99.0,
+      "Cumulative eigenvalue share": 1.000000238418579,
+      "series": "shared text (all four)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of modes": 100.0,
+      "Cumulative eigenvalue share": 1.000000238418579,
+      "series": "shared text (all four)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of modes": 1.0,
+      "Cumulative eigenvalue share": 0.16753146052360535,
+      "series": "LoRA positives-only \u2014 own text",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of modes": 2.0,
+      "Cumulative eigenvalue share": 0.2472144514322281,
+      "series": "LoRA positives-only \u2014 own text",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of modes": 3.0,
+      "Cumulative eigenvalue share": 0.3083512485027313,
+      "series": "LoRA positives-only \u2014 own text",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of modes": 4.0,
+      "Cumulative eigenvalue share": 0.3608940839767456,
+      "series": "LoRA positives-only \u2014 own text",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of modes": 5.0,
+      "Cumulative eigenvalue share": 0.39433610439300537,
+      "series": "LoRA positives-only \u2014 own text",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of modes": 6.0,
+      "Cumulative eigenvalue share": 0.4260126054286957,
+      "series": "LoRA positives-only \u2014 own text",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of modes": 7.0,
+      "Cumulative eigenvalue share": 0.45464396476745605,
+      "series": "LoRA positives-only \u2014 own text",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of modes": 8.0,
+      "Cumulative eigenvalue share": 0.48039937019348145,
+      "series": "LoRA positives-only \u2014 own text",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of modes": 9.0,
+      "Cumulative eigenvalue share": 0.5041507482528687,
+      "series": "LoRA positives-only \u2014 own text",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of modes": 10.0,
+      "Cumulative eigenvalue share": 0.5259974002838135,
+      "series": "LoRA positives-only \u2014 own text",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of modes": 11.0,
+      "Cumulative eigenvalue share": 0.5464025139808655,
+      "series": "LoRA positives-only \u2014 own text",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of modes": 12.0,
+      "Cumulative eigenvalue share": 0.5659114122390747,
+      "series": "LoRA positives-only \u2014 own text",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of modes": 13.0,
+      "Cumulative eigenvalue share": 0.5840201377868652,
+      "series": "LoRA positives-only \u2014 own text",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of modes": 14.0,
+      "Cumulative eigenvalue share": 0.6012881994247437,
+      "series": "LoRA positives-only \u2014 own text",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of modes": 15.0,
+      "Cumulative eigenvalue share": 0.6175931692123413,
+      "series": "LoRA positives-only \u2014 own text",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of modes": 16.0,
+      "Cumulative eigenvalue share": 0.6335558891296387,
+      "series": "LoRA positives-only \u2014 own text",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of modes": 17.0,
+      "Cumulative eigenvalue share": 0.6485479474067688,
+      "series": "LoRA positives-only \u2014 own text",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of modes": 18.0,
+      "Cumulative eigenvalue share": 0.6625010967254639,
+      "series": "LoRA positives-only \u2014 own text",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of modes": 19.0,
+      "Cumulative eigenvalue share": 0.6761037707328796,
+      "series": "LoRA positives-only \u2014 own text",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of modes": 20.0,
+      "Cumulative eigenvalue share": 0.6895121932029724,
+      "series": "LoRA positives-only \u2014 own text",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of modes": 21.0,
+      "Cumulative eigenvalue share": 0.702282190322876,
+      "series": "LoRA positives-only \u2014 own text",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of modes": 22.0,
+      "Cumulative eigenvalue share": 0.7140902876853943,
+      "series": "LoRA positives-only \u2014 own text",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of modes": 23.0,
+      "Cumulative eigenvalue share": 0.7257117033004761,
+      "series": "LoRA positives-only \u2014 own text",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of modes": 24.0,
+      "Cumulative eigenvalue share": 0.7366912961006165,
+      "series": "LoRA positives-only \u2014 own text",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of modes": 25.0,
+      "Cumulative eigenvalue share": 0.7473800778388977,
+      "series": "LoRA positives-only \u2014 own text",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of modes": 26.0,
+      "Cumulative eigenvalue share": 0.758017361164093,
+      "series": "LoRA positives-only \u2014 own text",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of modes": 27.0,
+      "Cumulative eigenvalue share": 0.7679538726806641,
+      "series": "LoRA positives-only \u2014 own text",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of modes": 28.0,
+      "Cumulative eigenvalue share": 0.7777591943740845,
+      "series": "LoRA positives-only \u2014 own text",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of modes": 29.0,
+      "Cumulative eigenvalue share": 0.7870867252349854,
+      "series": "LoRA positives-only \u2014 own text",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of modes": 30.0,
+      "Cumulative eigenvalue share": 0.7963783740997314,
+      "series": "LoRA positives-only \u2014 own text",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of modes": 31.0,
+      "Cumulative eigenvalue share": 0.8050702214241028,
+      "series": "LoRA positives-only \u2014 own text",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of modes": 32.0,
+      "Cumulative eigenvalue share": 0.8133550882339478,
+      "series": "LoRA positives-only \u2014 own text",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of modes": 33.0,
+      "Cumulative eigenvalue share": 0.8211195468902588,
+      "series": "LoRA positives-only \u2014 own text",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of modes": 34.0,
+      "Cumulative eigenvalue share": 0.8281947374343872,
+      "series": "LoRA positives-only \u2014 own text",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of modes": 35.0,
+      "Cumulative eigenvalue share": 0.8350960612297058,
+      "series": "LoRA positives-only \u2014 own text",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of modes": 36.0,
+      "Cumulative eigenvalue share": 0.8418733477592468,
+      "series": "LoRA positives-only \u2014 own text",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of modes": 37.0,
+      "Cumulative eigenvalue share": 0.8484471440315247,
+      "series": "LoRA positives-only \u2014 own text",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of modes": 38.0,
+      "Cumulative eigenvalue share": 0.8548747301101685,
+      "series": "LoRA positives-only \u2014 own text",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of modes": 39.0,
+      "Cumulative eigenvalue share": 0.860779345035553,
+      "series": "LoRA positives-only \u2014 own text",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of modes": 40.0,
+      "Cumulative eigenvalue share": 0.8663780689239502,
+      "series": "LoRA positives-only \u2014 own text",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of modes": 41.0,
+      "Cumulative eigenvalue share": 0.8717922568321228,
+      "series": "LoRA positives-only \u2014 own text",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of modes": 42.0,
+      "Cumulative eigenvalue share": 0.8769558072090149,
+      "series": "LoRA positives-only \u2014 own text",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of modes": 43.0,
+      "Cumulative eigenvalue share": 0.8818314671516418,
+      "series": "LoRA positives-only \u2014 own text",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of modes": 44.0,
+      "Cumulative eigenvalue share": 0.8866948485374451,
+      "series": "LoRA positives-only \u2014 own text",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of modes": 45.0,
+      "Cumulative eigenvalue share": 0.8912825584411621,
+      "series": "LoRA positives-only \u2014 own text",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of modes": 46.0,
+      "Cumulative eigenvalue share": 0.8957589268684387,
+      "series": "LoRA positives-only \u2014 own text",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of modes": 47.0,
+      "Cumulative eigenvalue share": 0.90007084608078,
+      "series": "LoRA positives-only \u2014 own text",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of modes": 48.0,
+      "Cumulative eigenvalue share": 0.9042579531669617,
+      "series": "LoRA positives-only \u2014 own text",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of modes": 49.0,
+      "Cumulative eigenvalue share": 0.9082664251327515,
+      "series": "LoRA positives-only \u2014 own text",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of modes": 50.0,
+      "Cumulative eigenvalue share": 0.9121019244194031,
+      "series": "LoRA positives-only \u2014 own text",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of modes": 51.0,
+      "Cumulative eigenvalue share": 0.9158869385719299,
+      "series": "LoRA positives-only \u2014 own text",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of modes": 52.0,
+      "Cumulative eigenvalue share": 0.9195140600204468,
+      "series": "LoRA positives-only \u2014 own text",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of modes": 53.0,
+      "Cumulative eigenvalue share": 0.9230446815490723,
+      "series": "LoRA positives-only \u2014 own text",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of modes": 54.0,
+      "Cumulative eigenvalue share": 0.9264320731163025,
+      "series": "LoRA positives-only \u2014 own text",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of modes": 55.0,
+      "Cumulative eigenvalue share": 0.9297266602516174,
+      "series": "LoRA positives-only \u2014 own text",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of modes": 56.0,
+      "Cumulative eigenvalue share": 0.9328706860542297,
+      "series": "LoRA positives-only \u2014 own text",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of modes": 57.0,
+      "Cumulative eigenvalue share": 0.9359675645828247,
+      "series": "LoRA positives-only \u2014 own text",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of modes": 58.0,
+      "Cumulative eigenvalue share": 0.9390305280685425,
+      "series": "LoRA positives-only \u2014 own text",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of modes": 59.0,
+      "Cumulative eigenvalue share": 0.9420250654220581,
+      "series": "LoRA positives-only \u2014 own text",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of modes": 60.0,
+      "Cumulative eigenvalue share": 0.9448323249816895,
+      "series": "LoRA positives-only \u2014 own text",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of modes": 61.0,
+      "Cumulative eigenvalue share": 0.9475758075714111,
+      "series": "LoRA positives-only \u2014 own text",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of modes": 62.0,
+      "Cumulative eigenvalue share": 0.950294554233551,
+      "series": "LoRA positives-only \u2014 own text",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of modes": 63.0,
+      "Cumulative eigenvalue share": 0.9528982043266296,
+      "series": "LoRA positives-only \u2014 own text",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of modes": 64.0,
+      "Cumulative eigenvalue share": 0.9553680419921875,
+      "series": "LoRA positives-only \u2014 own text",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of modes": 65.0,
+      "Cumulative eigenvalue share": 0.957694411277771,
+      "series": "LoRA positives-only \u2014 own text",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of modes": 66.0,
+      "Cumulative eigenvalue share": 0.9599795937538147,
+      "series": "LoRA positives-only \u2014 own text",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of modes": 67.0,
+      "Cumulative eigenvalue share": 0.9621874690055847,
+      "series": "LoRA positives-only \u2014 own text",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of modes": 68.0,
+      "Cumulative eigenvalue share": 0.9643500447273254,
+      "series": "LoRA positives-only \u2014 own text",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of modes": 69.0,
+      "Cumulative eigenvalue share": 0.9664121866226196,
+      "series": "LoRA positives-only \u2014 own text",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of modes": 70.0,
+      "Cumulative eigenvalue share": 0.9684497117996216,
+      "series": "LoRA positives-only \u2014 own text",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of modes": 71.0,
+      "Cumulative eigenvalue share": 0.9704723954200745,
+      "series": "LoRA positives-only \u2014 own text",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of modes": 72.0,
+      "Cumulative eigenvalue share": 0.9723882675170898,
+      "series": "LoRA positives-only \u2014 own text",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of modes": 73.0,
+      "Cumulative eigenvalue share": 0.9742544889450073,
+      "series": "LoRA positives-only \u2014 own text",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of modes": 74.0,
+      "Cumulative eigenvalue share": 0.9760648608207703,
+      "series": "LoRA positives-only \u2014 own text",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of modes": 75.0,
+      "Cumulative eigenvalue share": 0.9777837991714478,
+      "series": "LoRA positives-only \u2014 own text",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of modes": 76.0,
+      "Cumulative eigenvalue share": 0.9794771671295166,
+      "series": "LoRA positives-only \u2014 own text",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of modes": 77.0,
+      "Cumulative eigenvalue share": 0.9811093807220459,
+      "series": "LoRA positives-only \u2014 own text",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of modes": 78.0,
+      "Cumulative eigenvalue share": 0.982658326625824,
+      "series": "LoRA positives-only \u2014 own text",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of modes": 79.0,
+      "Cumulative eigenvalue share": 0.9841431379318237,
+      "series": "LoRA positives-only \u2014 own text",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of modes": 80.0,
+      "Cumulative eigenvalue share": 0.9855383634567261,
+      "series": "LoRA positives-only \u2014 own text",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of modes": 81.0,
+      "Cumulative eigenvalue share": 0.9868675470352173,
+      "series": "LoRA positives-only \u2014 own text",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of modes": 82.0,
+      "Cumulative eigenvalue share": 0.988143265247345,
+      "series": "LoRA positives-only \u2014 own text",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of modes": 83.0,
+      "Cumulative eigenvalue share": 0.9893988370895386,
+      "series": "LoRA positives-only \u2014 own text",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of modes": 84.0,
+      "Cumulative eigenvalue share": 0.9905685186386108,
+      "series": "LoRA positives-only \u2014 own text",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of modes": 85.0,
+      "Cumulative eigenvalue share": 0.9916436076164246,
+      "series": "LoRA positives-only \u2014 own text",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of modes": 86.0,
+      "Cumulative eigenvalue share": 0.9926666617393494,
+      "series": "LoRA positives-only \u2014 own text",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of modes": 87.0,
+      "Cumulative eigenvalue share": 0.9936279058456421,
+      "series": "LoRA positives-only \u2014 own text",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of modes": 88.0,
+      "Cumulative eigenvalue share": 0.9945337176322937,
+      "series": "LoRA positives-only \u2014 own text",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of modes": 89.0,
+      "Cumulative eigenvalue share": 0.9954326152801514,
+      "series": "LoRA positives-only \u2014 own text",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of modes": 90.0,
+      "Cumulative eigenvalue share": 0.9962602257728577,
+      "series": "LoRA positives-only \u2014 own text",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of modes": 91.0,
+      "Cumulative eigenvalue share": 0.996997058391571,
+      "series": "LoRA positives-only \u2014 own text",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of modes": 92.0,
+      "Cumulative eigenvalue share": 0.9976572394371033,
+      "series": "LoRA positives-only \u2014 own text",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of modes": 93.0,
+      "Cumulative eigenvalue share": 0.9982752799987793,
+      "series": "LoRA positives-only \u2014 own text",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of modes": 94.0,
+      "Cumulative eigenvalue share": 0.9988828301429749,
+      "series": "LoRA positives-only \u2014 own text",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of modes": 95.0,
+      "Cumulative eigenvalue share": 0.9992942810058594,
+      "series": "LoRA positives-only \u2014 own text",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of modes": 96.0,
+      "Cumulative eigenvalue share": 0.9996365904808044,
+      "series": "LoRA positives-only \u2014 own text",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of modes": 97.0,
+      "Cumulative eigenvalue share": 0.9998539090156555,
+      "series": "LoRA positives-only \u2014 own text",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of modes": 98.0,
+      "Cumulative eigenvalue share": 0.9999536871910095,
+      "series": "LoRA positives-only \u2014 own text",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of modes": 99.0,
+      "Cumulative eigenvalue share": 1.0,
+      "series": "LoRA positives-only \u2014 own text",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of modes": 100.0,
+      "Cumulative eigenvalue share": 1.0,
+      "series": "LoRA positives-only \u2014 own text",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of modes": 1.0,
+      "Cumulative eigenvalue share": 0.6937863826751709,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of modes": 2.0,
+      "Cumulative eigenvalue share": 0.7664777040481567,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of modes": 3.0,
+      "Cumulative eigenvalue share": 0.81109619140625,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of modes": 4.0,
+      "Cumulative eigenvalue share": 0.8352886438369751,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of modes": 5.0,
+      "Cumulative eigenvalue share": 0.8534008264541626,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of modes": 6.0,
+      "Cumulative eigenvalue share": 0.8684613704681396,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of modes": 7.0,
+      "Cumulative eigenvalue share": 0.8806508779525757,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of modes": 8.0,
+      "Cumulative eigenvalue share": 0.8916217684745789,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of modes": 9.0,
+      "Cumulative eigenvalue share": 0.9009554386138916,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of modes": 10.0,
+      "Cumulative eigenvalue share": 0.909198522567749,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of modes": 11.0,
+      "Cumulative eigenvalue share": 0.9163087606430054,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of modes": 12.0,
+      "Cumulative eigenvalue share": 0.9228453636169434,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of modes": 13.0,
+      "Cumulative eigenvalue share": 0.9292080998420715,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of modes": 14.0,
+      "Cumulative eigenvalue share": 0.9353109002113342,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of modes": 15.0,
+      "Cumulative eigenvalue share": 0.9403333067893982,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of modes": 16.0,
+      "Cumulative eigenvalue share": 0.9446489810943604,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of modes": 17.0,
+      "Cumulative eigenvalue share": 0.9486030340194702,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of modes": 18.0,
+      "Cumulative eigenvalue share": 0.9521715641021729,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of modes": 19.0,
+      "Cumulative eigenvalue share": 0.955514132976532,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of modes": 20.0,
+      "Cumulative eigenvalue share": 0.9586326479911804,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of modes": 21.0,
+      "Cumulative eigenvalue share": 0.9614554047584534,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of modes": 22.0,
+      "Cumulative eigenvalue share": 0.9640368223190308,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of modes": 23.0,
+      "Cumulative eigenvalue share": 0.9665442109107971,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of modes": 24.0,
+      "Cumulative eigenvalue share": 0.9685007929801941,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of modes": 25.0,
+      "Cumulative eigenvalue share": 0.9703403115272522,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of modes": 26.0,
+      "Cumulative eigenvalue share": 0.9719870090484619,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of modes": 27.0,
+      "Cumulative eigenvalue share": 0.9734241366386414,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of modes": 28.0,
+      "Cumulative eigenvalue share": 0.9748470783233643,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of modes": 29.0,
+      "Cumulative eigenvalue share": 0.9761267900466919,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of modes": 30.0,
+      "Cumulative eigenvalue share": 0.9773316383361816,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of modes": 31.0,
+      "Cumulative eigenvalue share": 0.9784713387489319,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of modes": 32.0,
+      "Cumulative eigenvalue share": 0.9795174598693848,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of modes": 33.0,
+      "Cumulative eigenvalue share": 0.9805002808570862,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of modes": 34.0,
+      "Cumulative eigenvalue share": 0.9814252257347107,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of modes": 35.0,
+      "Cumulative eigenvalue share": 0.9823206067085266,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of modes": 36.0,
+      "Cumulative eigenvalue share": 0.9831740260124207,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of modes": 37.0,
+      "Cumulative eigenvalue share": 0.9840018153190613,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of modes": 38.0,
+      "Cumulative eigenvalue share": 0.9847765564918518,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of modes": 39.0,
+      "Cumulative eigenvalue share": 0.9855261445045471,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of modes": 40.0,
+      "Cumulative eigenvalue share": 0.986230731010437,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of modes": 41.0,
+      "Cumulative eigenvalue share": 0.9868946671485901,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of modes": 42.0,
+      "Cumulative eigenvalue share": 0.987536609172821,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of modes": 43.0,
+      "Cumulative eigenvalue share": 0.9881641268730164,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of modes": 44.0,
+      "Cumulative eigenvalue share": 0.9887834191322327,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of modes": 45.0,
+      "Cumulative eigenvalue share": 0.9893931150436401,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of modes": 46.0,
+      "Cumulative eigenvalue share": 0.98995041847229,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of modes": 47.0,
+      "Cumulative eigenvalue share": 0.9904934763908386,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of modes": 48.0,
+      "Cumulative eigenvalue share": 0.9910047054290771,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of modes": 49.0,
+      "Cumulative eigenvalue share": 0.991492748260498,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of modes": 50.0,
+      "Cumulative eigenvalue share": 0.991969645023346,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of modes": 51.0,
+      "Cumulative eigenvalue share": 0.9924370646476746,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of modes": 52.0,
+      "Cumulative eigenvalue share": 0.9928907752037048,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of modes": 53.0,
+      "Cumulative eigenvalue share": 0.9933302402496338,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of modes": 54.0,
+      "Cumulative eigenvalue share": 0.9937645196914673,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of modes": 55.0,
+      "Cumulative eigenvalue share": 0.9941751956939697,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of modes": 56.0,
+      "Cumulative eigenvalue share": 0.99457186460495,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of modes": 57.0,
+      "Cumulative eigenvalue share": 0.9949496984481812,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of modes": 58.0,
+      "Cumulative eigenvalue share": 0.9953168034553528,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of modes": 59.0,
+      "Cumulative eigenvalue share": 0.9956722259521484,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of modes": 60.0,
+      "Cumulative eigenvalue share": 0.996012270450592,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of modes": 61.0,
+      "Cumulative eigenvalue share": 0.9963257312774658,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of modes": 62.0,
+      "Cumulative eigenvalue share": 0.9966050982475281,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of modes": 63.0,
+      "Cumulative eigenvalue share": 0.9968542456626892,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of modes": 64.0,
+      "Cumulative eigenvalue share": 0.997058093547821,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of modes": 65.0,
+      "Cumulative eigenvalue share": 0.9972527623176575,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of modes": 66.0,
+      "Cumulative eigenvalue share": 0.9974200129508972,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of modes": 67.0,
+      "Cumulative eigenvalue share": 0.9975790977478027,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of modes": 68.0,
+      "Cumulative eigenvalue share": 0.9977167844772339,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of modes": 69.0,
+      "Cumulative eigenvalue share": 0.9978516101837158,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of modes": 70.0,
+      "Cumulative eigenvalue share": 0.9979840517044067,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of modes": 71.0,
+      "Cumulative eigenvalue share": 0.9981144666671753,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of modes": 72.0,
+      "Cumulative eigenvalue share": 0.9982345104217529,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of modes": 73.0,
+      "Cumulative eigenvalue share": 0.9983528852462769,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of modes": 74.0,
+      "Cumulative eigenvalue share": 0.9984696507453918,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of modes": 75.0,
+      "Cumulative eigenvalue share": 0.9985728859901428,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of modes": 76.0,
+      "Cumulative eigenvalue share": 0.9986729025840759,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of modes": 77.0,
+      "Cumulative eigenvalue share": 0.9987687468528748,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of modes": 78.0,
+      "Cumulative eigenvalue share": 0.9988619089126587,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of modes": 79.0,
+      "Cumulative eigenvalue share": 0.9989528059959412,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of modes": 80.0,
+      "Cumulative eigenvalue share": 0.9990326166152954,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of modes": 81.0,
+      "Cumulative eigenvalue share": 0.999111533164978,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of modes": 82.0,
+      "Cumulative eigenvalue share": 0.9991893172264099,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of modes": 83.0,
+      "Cumulative eigenvalue share": 0.9992600679397583,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of modes": 84.0,
+      "Cumulative eigenvalue share": 0.9993270635604858,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of modes": 85.0,
+      "Cumulative eigenvalue share": 0.9993867874145508,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of modes": 86.0,
+      "Cumulative eigenvalue share": 0.9994455575942993,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of modes": 87.0,
+      "Cumulative eigenvalue share": 0.9995001554489136,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of modes": 88.0,
+      "Cumulative eigenvalue share": 0.9995502829551697,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of modes": 89.0,
+      "Cumulative eigenvalue share": 0.9995988607406616,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of modes": 90.0,
+      "Cumulative eigenvalue share": 0.9996458292007446,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of modes": 91.0,
+      "Cumulative eigenvalue share": 0.9996920228004456,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of modes": 92.0,
+      "Cumulative eigenvalue share": 0.9997357130050659,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of modes": 93.0,
+      "Cumulative eigenvalue share": 0.999778151512146,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of modes": 94.0,
+      "Cumulative eigenvalue share": 0.9998199939727783,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of modes": 95.0,
+      "Cumulative eigenvalue share": 0.9998601078987122,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of modes": 96.0,
+      "Cumulative eigenvalue share": 0.9998969435691833,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of modes": 97.0,
+      "Cumulative eigenvalue share": 0.9999328255653381,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of modes": 98.0,
+      "Cumulative eigenvalue share": 0.9999672770500183,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of modes": 99.0,
+      "Cumulative eigenvalue share": 1.0,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of modes": 100.0,
+      "Cumulative eigenvalue share": 1.0,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of modes": 1.0,
+      "Cumulative eigenvalue share": 0.20456060767173767,
+      "series": "Full FT + negatives (reused) \u2014 own text",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of modes": 2.0,
+      "Cumulative eigenvalue share": 0.27039802074432373,
+      "series": "Full FT + negatives (reused) \u2014 own text",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of modes": 3.0,
+      "Cumulative eigenvalue share": 0.31578847765922546,
+      "series": "Full FT + negatives (reused) \u2014 own text",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of modes": 4.0,
+      "Cumulative eigenvalue share": 0.35935458540916443,
+      "series": "Full FT + negatives (reused) \u2014 own text",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of modes": 5.0,
+      "Cumulative eigenvalue share": 0.3931685984134674,
+      "series": "Full FT + negatives (reused) \u2014 own text",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of modes": 6.0,
+      "Cumulative eigenvalue share": 0.4235036075115204,
+      "series": "Full FT + negatives (reused) \u2014 own text",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of modes": 7.0,
+      "Cumulative eigenvalue share": 0.45237040519714355,
+      "series": "Full FT + negatives (reused) \u2014 own text",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of modes": 8.0,
+      "Cumulative eigenvalue share": 0.4766460955142975,
+      "series": "Full FT + negatives (reused) \u2014 own text",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of modes": 9.0,
+      "Cumulative eigenvalue share": 0.5005344152450562,
+      "series": "Full FT + negatives (reused) \u2014 own text",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of modes": 10.0,
+      "Cumulative eigenvalue share": 0.5220027565956116,
+      "series": "Full FT + negatives (reused) \u2014 own text",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of modes": 11.0,
+      "Cumulative eigenvalue share": 0.5422763228416443,
+      "series": "Full FT + negatives (reused) \u2014 own text",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of modes": 12.0,
+      "Cumulative eigenvalue share": 0.5621286630630493,
+      "series": "Full FT + negatives (reused) \u2014 own text",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of modes": 13.0,
+      "Cumulative eigenvalue share": 0.5803971290588379,
+      "series": "Full FT + negatives (reused) \u2014 own text",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of modes": 14.0,
+      "Cumulative eigenvalue share": 0.5978152751922607,
+      "series": "Full FT + negatives (reused) \u2014 own text",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of modes": 15.0,
+      "Cumulative eigenvalue share": 0.6140459775924683,
+      "series": "Full FT + negatives (reused) \u2014 own text",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of modes": 16.0,
+      "Cumulative eigenvalue share": 0.6293535828590393,
+      "series": "Full FT + negatives (reused) \u2014 own text",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of modes": 17.0,
+      "Cumulative eigenvalue share": 0.6442586183547974,
+      "series": "Full FT + negatives (reused) \u2014 own text",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of modes": 18.0,
+      "Cumulative eigenvalue share": 0.6586999297142029,
+      "series": "Full FT + negatives (reused) \u2014 own text",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of modes": 19.0,
+      "Cumulative eigenvalue share": 0.6729321479797363,
+      "series": "Full FT + negatives (reused) \u2014 own text",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of modes": 20.0,
+      "Cumulative eigenvalue share": 0.6864717602729797,
+      "series": "Full FT + negatives (reused) \u2014 own text",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of modes": 21.0,
+      "Cumulative eigenvalue share": 0.6997464299201965,
+      "series": "Full FT + negatives (reused) \u2014 own text",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of modes": 22.0,
+      "Cumulative eigenvalue share": 0.7126071453094482,
+      "series": "Full FT + negatives (reused) \u2014 own text",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of modes": 23.0,
+      "Cumulative eigenvalue share": 0.7249634861946106,
+      "series": "Full FT + negatives (reused) \u2014 own text",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of modes": 24.0,
+      "Cumulative eigenvalue share": 0.7364524602890015,
+      "series": "Full FT + negatives (reused) \u2014 own text",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of modes": 25.0,
+      "Cumulative eigenvalue share": 0.7477677464485168,
+      "series": "Full FT + negatives (reused) \u2014 own text",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of modes": 26.0,
+      "Cumulative eigenvalue share": 0.7586617469787598,
+      "series": "Full FT + negatives (reused) \u2014 own text",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of modes": 27.0,
+      "Cumulative eigenvalue share": 0.7685089707374573,
+      "series": "Full FT + negatives (reused) \u2014 own text",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of modes": 28.0,
+      "Cumulative eigenvalue share": 0.7779707908630371,
+      "series": "Full FT + negatives (reused) \u2014 own text",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of modes": 29.0,
+      "Cumulative eigenvalue share": 0.7871022820472717,
+      "series": "Full FT + negatives (reused) \u2014 own text",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of modes": 30.0,
+      "Cumulative eigenvalue share": 0.7961825728416443,
+      "series": "Full FT + negatives (reused) \u2014 own text",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of modes": 31.0,
+      "Cumulative eigenvalue share": 0.8048717379570007,
+      "series": "Full FT + negatives (reused) \u2014 own text",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of modes": 32.0,
+      "Cumulative eigenvalue share": 0.8135066628456116,
+      "series": "Full FT + negatives (reused) \u2014 own text",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of modes": 33.0,
+      "Cumulative eigenvalue share": 0.8219186663627625,
+      "series": "Full FT + negatives (reused) \u2014 own text",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of modes": 34.0,
+      "Cumulative eigenvalue share": 0.8301378488540649,
+      "series": "Full FT + negatives (reused) \u2014 own text",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of modes": 35.0,
+      "Cumulative eigenvalue share": 0.838019073009491,
+      "series": "Full FT + negatives (reused) \u2014 own text",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of modes": 36.0,
+      "Cumulative eigenvalue share": 0.8455958962440491,
+      "series": "Full FT + negatives (reused) \u2014 own text",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of modes": 37.0,
+      "Cumulative eigenvalue share": 0.8526195287704468,
+      "series": "Full FT + negatives (reused) \u2014 own text",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of modes": 38.0,
+      "Cumulative eigenvalue share": 0.8594931364059448,
+      "series": "Full FT + negatives (reused) \u2014 own text",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of modes": 39.0,
+      "Cumulative eigenvalue share": 0.8658028841018677,
+      "series": "Full FT + negatives (reused) \u2014 own text",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of modes": 40.0,
+      "Cumulative eigenvalue share": 0.8717404007911682,
+      "series": "Full FT + negatives (reused) \u2014 own text",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of modes": 41.0,
+      "Cumulative eigenvalue share": 0.8774216771125793,
+      "series": "Full FT + negatives (reused) \u2014 own text",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of modes": 42.0,
+      "Cumulative eigenvalue share": 0.8826108574867249,
+      "series": "Full FT + negatives (reused) \u2014 own text",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of modes": 43.0,
+      "Cumulative eigenvalue share": 0.8876203894615173,
+      "series": "Full FT + negatives (reused) \u2014 own text",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of modes": 44.0,
+      "Cumulative eigenvalue share": 0.8923969864845276,
+      "series": "Full FT + negatives (reused) \u2014 own text",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of modes": 45.0,
+      "Cumulative eigenvalue share": 0.8968947529792786,
+      "series": "Full FT + negatives (reused) \u2014 own text",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of modes": 46.0,
+      "Cumulative eigenvalue share": 0.9012585282325745,
+      "series": "Full FT + negatives (reused) \u2014 own text",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of modes": 47.0,
+      "Cumulative eigenvalue share": 0.9055381417274475,
+      "series": "Full FT + negatives (reused) \u2014 own text",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of modes": 48.0,
+      "Cumulative eigenvalue share": 0.9094871282577515,
+      "series": "Full FT + negatives (reused) \u2014 own text",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of modes": 49.0,
+      "Cumulative eigenvalue share": 0.9133496284484863,
+      "series": "Full FT + negatives (reused) \u2014 own text",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of modes": 50.0,
+      "Cumulative eigenvalue share": 0.9168394207954407,
+      "series": "Full FT + negatives (reused) \u2014 own text",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of modes": 51.0,
+      "Cumulative eigenvalue share": 0.9201170802116394,
+      "series": "Full FT + negatives (reused) \u2014 own text",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of modes": 52.0,
+      "Cumulative eigenvalue share": 0.9233819246292114,
+      "series": "Full FT + negatives (reused) \u2014 own text",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of modes": 53.0,
+      "Cumulative eigenvalue share": 0.9265612959861755,
+      "series": "Full FT + negatives (reused) \u2014 own text",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of modes": 54.0,
+      "Cumulative eigenvalue share": 0.9296085834503174,
+      "series": "Full FT + negatives (reused) \u2014 own text",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of modes": 55.0,
+      "Cumulative eigenvalue share": 0.9325677752494812,
+      "series": "Full FT + negatives (reused) \u2014 own text",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of modes": 56.0,
+      "Cumulative eigenvalue share": 0.9354896545410156,
+      "series": "Full FT + negatives (reused) \u2014 own text",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of modes": 57.0,
+      "Cumulative eigenvalue share": 0.9382468461990356,
+      "series": "Full FT + negatives (reused) \u2014 own text",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of modes": 58.0,
+      "Cumulative eigenvalue share": 0.9409565329551697,
+      "series": "Full FT + negatives (reused) \u2014 own text",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of modes": 59.0,
+      "Cumulative eigenvalue share": 0.9436460137367249,
+      "series": "Full FT + negatives (reused) \u2014 own text",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of modes": 60.0,
+      "Cumulative eigenvalue share": 0.9462399482727051,
+      "series": "Full FT + negatives (reused) \u2014 own text",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of modes": 61.0,
+      "Cumulative eigenvalue share": 0.9487689733505249,
+      "series": "Full FT + negatives (reused) \u2014 own text",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of modes": 62.0,
+      "Cumulative eigenvalue share": 0.9512090682983398,
+      "series": "Full FT + negatives (reused) \u2014 own text",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of modes": 63.0,
+      "Cumulative eigenvalue share": 0.9536399245262146,
+      "series": "Full FT + negatives (reused) \u2014 own text",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of modes": 64.0,
+      "Cumulative eigenvalue share": 0.9559646248817444,
+      "series": "Full FT + negatives (reused) \u2014 own text",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of modes": 65.0,
+      "Cumulative eigenvalue share": 0.9582425951957703,
+      "series": "Full FT + negatives (reused) \u2014 own text",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of modes": 66.0,
+      "Cumulative eigenvalue share": 0.9604547619819641,
+      "series": "Full FT + negatives (reused) \u2014 own text",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of modes": 67.0,
+      "Cumulative eigenvalue share": 0.9625873565673828,
+      "series": "Full FT + negatives (reused) \u2014 own text",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of modes": 68.0,
+      "Cumulative eigenvalue share": 0.9646075367927551,
+      "series": "Full FT + negatives (reused) \u2014 own text",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of modes": 69.0,
+      "Cumulative eigenvalue share": 0.9665418863296509,
+      "series": "Full FT + negatives (reused) \u2014 own text",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of modes": 70.0,
+      "Cumulative eigenvalue share": 0.9684175848960876,
+      "series": "Full FT + negatives (reused) \u2014 own text",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of modes": 71.0,
+      "Cumulative eigenvalue share": 0.9702648520469666,
+      "series": "Full FT + negatives (reused) \u2014 own text",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of modes": 72.0,
+      "Cumulative eigenvalue share": 0.9720821976661682,
+      "series": "Full FT + negatives (reused) \u2014 own text",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of modes": 73.0,
+      "Cumulative eigenvalue share": 0.9738215804100037,
+      "series": "Full FT + negatives (reused) \u2014 own text",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of modes": 74.0,
+      "Cumulative eigenvalue share": 0.9755197763442993,
+      "series": "Full FT + negatives (reused) \u2014 own text",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of modes": 75.0,
+      "Cumulative eigenvalue share": 0.9771398901939392,
+      "series": "Full FT + negatives (reused) \u2014 own text",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of modes": 76.0,
+      "Cumulative eigenvalue share": 0.978706419467926,
+      "series": "Full FT + negatives (reused) \u2014 own text",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of modes": 77.0,
+      "Cumulative eigenvalue share": 0.9802141189575195,
+      "series": "Full FT + negatives (reused) \u2014 own text",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of modes": 78.0,
+      "Cumulative eigenvalue share": 0.9816744923591614,
+      "series": "Full FT + negatives (reused) \u2014 own text",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of modes": 79.0,
+      "Cumulative eigenvalue share": 0.9831002354621887,
+      "series": "Full FT + negatives (reused) \u2014 own text",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of modes": 80.0,
+      "Cumulative eigenvalue share": 0.9844111204147339,
+      "series": "Full FT + negatives (reused) \u2014 own text",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of modes": 81.0,
+      "Cumulative eigenvalue share": 0.9856972694396973,
+      "series": "Full FT + negatives (reused) \u2014 own text",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of modes": 82.0,
+      "Cumulative eigenvalue share": 0.9869436621665955,
+      "series": "Full FT + negatives (reused) \u2014 own text",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of modes": 83.0,
+      "Cumulative eigenvalue share": 0.9881444573402405,
+      "series": "Full FT + negatives (reused) \u2014 own text",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of modes": 84.0,
+      "Cumulative eigenvalue share": 0.9893128275871277,
+      "series": "Full FT + negatives (reused) \u2014 own text",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of modes": 85.0,
+      "Cumulative eigenvalue share": 0.9904158711433411,
+      "series": "Full FT + negatives (reused) \u2014 own text",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of modes": 86.0,
+      "Cumulative eigenvalue share": 0.9914812445640564,
+      "series": "Full FT + negatives (reused) \u2014 own text",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of modes": 87.0,
+      "Cumulative eigenvalue share": 0.9925148487091064,
+      "series": "Full FT + negatives (reused) \u2014 own text",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of modes": 88.0,
+      "Cumulative eigenvalue share": 0.9934899210929871,
+      "series": "Full FT + negatives (reused) \u2014 own text",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of modes": 89.0,
+      "Cumulative eigenvalue share": 0.9944131970405579,
+      "series": "Full FT + negatives (reused) \u2014 own text",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of modes": 90.0,
+      "Cumulative eigenvalue share": 0.9953173995018005,
+      "series": "Full FT + negatives (reused) \u2014 own text",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of modes": 91.0,
+      "Cumulative eigenvalue share": 0.9961035847663879,
+      "series": "Full FT + negatives (reused) \u2014 own text",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of modes": 92.0,
+      "Cumulative eigenvalue share": 0.9968581795692444,
+      "series": "Full FT + negatives (reused) \u2014 own text",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of modes": 93.0,
+      "Cumulative eigenvalue share": 0.9975388646125793,
+      "series": "Full FT + negatives (reused) \u2014 own text",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of modes": 94.0,
+      "Cumulative eigenvalue share": 0.9981549382209778,
+      "series": "Full FT + negatives (reused) \u2014 own text",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of modes": 95.0,
+      "Cumulative eigenvalue share": 0.9986268877983093,
+      "series": "Full FT + negatives (reused) \u2014 own text",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of modes": 96.0,
+      "Cumulative eigenvalue share": 0.9990672469139099,
+      "series": "Full FT + negatives (reused) \u2014 own text",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of modes": 97.0,
+      "Cumulative eigenvalue share": 0.9994344115257263,
+      "series": "Full FT + negatives (reused) \u2014 own text",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of modes": 98.0,
+      "Cumulative eigenvalue share": 0.9997442364692688,
+      "series": "Full FT + negatives (reused) \u2014 own text",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of modes": 99.0,
+      "Cumulative eigenvalue share": 1.0000001192092896,
+      "series": "Full FT + negatives (reused) \u2014 own text",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of modes": 100.0,
+      "Cumulative eigenvalue share": 1.0000001192092896,
+      "series": "Full FT + negatives (reused) \u2014 own text",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of modes": 1.0,
+      "Cumulative eigenvalue share": 0.7208960652351379,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of modes": 2.0,
+      "Cumulative eigenvalue share": 0.7762535214424133,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of modes": 3.0,
+      "Cumulative eigenvalue share": 0.8151608109474182,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of modes": 4.0,
+      "Cumulative eigenvalue share": 0.8393086194992065,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of modes": 5.0,
+      "Cumulative eigenvalue share": 0.8585824966430664,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of modes": 6.0,
+      "Cumulative eigenvalue share": 0.8721839785575867,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of modes": 7.0,
+      "Cumulative eigenvalue share": 0.8844905495643616,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of modes": 8.0,
+      "Cumulative eigenvalue share": 0.8960631489753723,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of modes": 9.0,
+      "Cumulative eigenvalue share": 0.9051721692085266,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of modes": 10.0,
+      "Cumulative eigenvalue share": 0.9134747982025146,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of modes": 11.0,
+      "Cumulative eigenvalue share": 0.9208878874778748,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of modes": 12.0,
+      "Cumulative eigenvalue share": 0.9278196096420288,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of modes": 13.0,
+      "Cumulative eigenvalue share": 0.9344635009765625,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of modes": 14.0,
+      "Cumulative eigenvalue share": 0.9408695697784424,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of modes": 15.0,
+      "Cumulative eigenvalue share": 0.9460898041725159,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of modes": 16.0,
+      "Cumulative eigenvalue share": 0.9504185318946838,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of modes": 17.0,
+      "Cumulative eigenvalue share": 0.954465925693512,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of modes": 18.0,
+      "Cumulative eigenvalue share": 0.9580515027046204,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of modes": 19.0,
+      "Cumulative eigenvalue share": 0.9613999724388123,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of modes": 20.0,
+      "Cumulative eigenvalue share": 0.9646672010421753,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of modes": 21.0,
+      "Cumulative eigenvalue share": 0.9674953818321228,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of modes": 22.0,
+      "Cumulative eigenvalue share": 0.970047116279602,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of modes": 23.0,
+      "Cumulative eigenvalue share": 0.9723761081695557,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of modes": 24.0,
+      "Cumulative eigenvalue share": 0.9744206666946411,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of modes": 25.0,
+      "Cumulative eigenvalue share": 0.9760132431983948,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of modes": 26.0,
+      "Cumulative eigenvalue share": 0.9775456786155701,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of modes": 27.0,
+      "Cumulative eigenvalue share": 0.9789991974830627,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of modes": 28.0,
+      "Cumulative eigenvalue share": 0.980236828327179,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of modes": 29.0,
+      "Cumulative eigenvalue share": 0.9812651872634888,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of modes": 30.0,
+      "Cumulative eigenvalue share": 0.9822667241096497,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of modes": 31.0,
+      "Cumulative eigenvalue share": 0.9831741452217102,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of modes": 32.0,
+      "Cumulative eigenvalue share": 0.9840483069419861,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of modes": 33.0,
+      "Cumulative eigenvalue share": 0.9848719835281372,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of modes": 34.0,
+      "Cumulative eigenvalue share": 0.9856387376785278,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of modes": 35.0,
+      "Cumulative eigenvalue share": 0.9863786101341248,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of modes": 36.0,
+      "Cumulative eigenvalue share": 0.9870727062225342,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of modes": 37.0,
+      "Cumulative eigenvalue share": 0.9877403974533081,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of modes": 38.0,
+      "Cumulative eigenvalue share": 0.9883514046669006,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of modes": 39.0,
+      "Cumulative eigenvalue share": 0.988959789276123,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of modes": 40.0,
+      "Cumulative eigenvalue share": 0.9895258545875549,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of modes": 41.0,
+      "Cumulative eigenvalue share": 0.9900690317153931,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of modes": 42.0,
+      "Cumulative eigenvalue share": 0.9905989766120911,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of modes": 43.0,
+      "Cumulative eigenvalue share": 0.9911112785339355,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of modes": 44.0,
+      "Cumulative eigenvalue share": 0.991615355014801,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of modes": 45.0,
+      "Cumulative eigenvalue share": 0.9920893311500549,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of modes": 46.0,
+      "Cumulative eigenvalue share": 0.9925415515899658,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of modes": 47.0,
+      "Cumulative eigenvalue share": 0.9929812550544739,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of modes": 48.0,
+      "Cumulative eigenvalue share": 0.9933802485466003,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of modes": 49.0,
+      "Cumulative eigenvalue share": 0.9937723278999329,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of modes": 50.0,
+      "Cumulative eigenvalue share": 0.9941415190696716,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of modes": 51.0,
+      "Cumulative eigenvalue share": 0.9944983720779419,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of modes": 52.0,
+      "Cumulative eigenvalue share": 0.9948485493659973,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of modes": 53.0,
+      "Cumulative eigenvalue share": 0.9951849579811096,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of modes": 54.0,
+      "Cumulative eigenvalue share": 0.9955015778541565,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of modes": 55.0,
+      "Cumulative eigenvalue share": 0.9958154559135437,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of modes": 56.0,
+      "Cumulative eigenvalue share": 0.9961042404174805,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of modes": 57.0,
+      "Cumulative eigenvalue share": 0.9963859915733337,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of modes": 58.0,
+      "Cumulative eigenvalue share": 0.996660053730011,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of modes": 59.0,
+      "Cumulative eigenvalue share": 0.9969165921211243,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of modes": 60.0,
+      "Cumulative eigenvalue share": 0.9971679449081421,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of modes": 61.0,
+      "Cumulative eigenvalue share": 0.9973950386047363,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of modes": 62.0,
+      "Cumulative eigenvalue share": 0.9975978136062622,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of modes": 63.0,
+      "Cumulative eigenvalue share": 0.9977922439575195,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of modes": 64.0,
+      "Cumulative eigenvalue share": 0.9979528784751892,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of modes": 65.0,
+      "Cumulative eigenvalue share": 0.9980855584144592,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of modes": 66.0,
+      "Cumulative eigenvalue share": 0.9982126355171204,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of modes": 67.0,
+      "Cumulative eigenvalue share": 0.99831622838974,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of modes": 68.0,
+      "Cumulative eigenvalue share": 0.998415470123291,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of modes": 69.0,
+      "Cumulative eigenvalue share": 0.998511016368866,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of modes": 70.0,
+      "Cumulative eigenvalue share": 0.9986022710800171,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of modes": 71.0,
+      "Cumulative eigenvalue share": 0.9986876249313354,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of modes": 72.0,
+      "Cumulative eigenvalue share": 0.998769998550415,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of modes": 73.0,
+      "Cumulative eigenvalue share": 0.9988517165184021,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of modes": 74.0,
+      "Cumulative eigenvalue share": 0.9989282488822937,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of modes": 75.0,
+      "Cumulative eigenvalue share": 0.9990020394325256,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of modes": 76.0,
+      "Cumulative eigenvalue share": 0.9990688562393188,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of modes": 77.0,
+      "Cumulative eigenvalue share": 0.9991330504417419,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of modes": 78.0,
+      "Cumulative eigenvalue share": 0.999194860458374,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of modes": 79.0,
+      "Cumulative eigenvalue share": 0.9992549419403076,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of modes": 80.0,
+      "Cumulative eigenvalue share": 0.9993143081665039,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of modes": 81.0,
+      "Cumulative eigenvalue share": 0.999369204044342,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of modes": 82.0,
+      "Cumulative eigenvalue share": 0.9994217157363892,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of modes": 83.0,
+      "Cumulative eigenvalue share": 0.99947190284729,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of modes": 84.0,
+      "Cumulative eigenvalue share": 0.9995215535163879,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of modes": 85.0,
+      "Cumulative eigenvalue share": 0.9995642304420471,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of modes": 86.0,
+      "Cumulative eigenvalue share": 0.9996055960655212,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of modes": 87.0,
+      "Cumulative eigenvalue share": 0.9996452331542969,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of modes": 88.0,
+      "Cumulative eigenvalue share": 0.9996846914291382,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of modes": 89.0,
+      "Cumulative eigenvalue share": 0.9997203350067139,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of modes": 90.0,
+      "Cumulative eigenvalue share": 0.9997551441192627,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of modes": 91.0,
+      "Cumulative eigenvalue share": 0.999789297580719,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of modes": 92.0,
+      "Cumulative eigenvalue share": 0.9998214244842529,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of modes": 93.0,
+      "Cumulative eigenvalue share": 0.9998517036437988,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of modes": 94.0,
+      "Cumulative eigenvalue share": 0.999881386756897,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of modes": 95.0,
+      "Cumulative eigenvalue share": 0.9999093413352966,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of modes": 96.0,
+      "Cumulative eigenvalue share": 0.99993497133255,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of modes": 97.0,
+      "Cumulative eigenvalue share": 0.9999591112136841,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of modes": 98.0,
+      "Cumulative eigenvalue share": 0.9999798536300659,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of modes": 99.0,
+      "Cumulative eigenvalue share": 1.0000004768371582,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of modes": 100.0,
+      "Cumulative eigenvalue share": 1.0000004768371582,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of modes": 1.0,
+      "Cumulative eigenvalue share": 0.21531762182712555,
+      "series": "Full FT positives-only \u2014 own text",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Number of modes": 2.0,
+      "Cumulative eigenvalue share": 0.2804414927959442,
+      "series": "Full FT positives-only \u2014 own text",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Number of modes": 3.0,
+      "Cumulative eigenvalue share": 0.3196812868118286,
+      "series": "Full FT positives-only \u2014 own text",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Number of modes": 4.0,
+      "Cumulative eigenvalue share": 0.35499322414398193,
+      "series": "Full FT positives-only \u2014 own text",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Number of modes": 5.0,
+      "Cumulative eigenvalue share": 0.38833874464035034,
+      "series": "Full FT positives-only \u2014 own text",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Number of modes": 6.0,
+      "Cumulative eigenvalue share": 0.41889330744743347,
+      "series": "Full FT positives-only \u2014 own text",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Number of modes": 7.0,
+      "Cumulative eigenvalue share": 0.44718876481056213,
+      "series": "Full FT positives-only \u2014 own text",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Number of modes": 8.0,
+      "Cumulative eigenvalue share": 0.4733995497226715,
+      "series": "Full FT positives-only \u2014 own text",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Number of modes": 9.0,
+      "Cumulative eigenvalue share": 0.4969269037246704,
+      "series": "Full FT positives-only \u2014 own text",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Number of modes": 10.0,
+      "Cumulative eigenvalue share": 0.5189056396484375,
+      "series": "Full FT positives-only \u2014 own text",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Number of modes": 11.0,
+      "Cumulative eigenvalue share": 0.5396785140037537,
+      "series": "Full FT positives-only \u2014 own text",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Number of modes": 12.0,
+      "Cumulative eigenvalue share": 0.5602102875709534,
+      "series": "Full FT positives-only \u2014 own text",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Number of modes": 13.0,
+      "Cumulative eigenvalue share": 0.579774796962738,
+      "series": "Full FT positives-only \u2014 own text",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Number of modes": 14.0,
+      "Cumulative eigenvalue share": 0.597662627696991,
+      "series": "Full FT positives-only \u2014 own text",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Number of modes": 15.0,
+      "Cumulative eigenvalue share": 0.6150736212730408,
+      "series": "Full FT positives-only \u2014 own text",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Number of modes": 16.0,
+      "Cumulative eigenvalue share": 0.631965160369873,
+      "series": "Full FT positives-only \u2014 own text",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Number of modes": 17.0,
+      "Cumulative eigenvalue share": 0.647918164730072,
+      "series": "Full FT positives-only \u2014 own text",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Number of modes": 18.0,
+      "Cumulative eigenvalue share": 0.6632348299026489,
+      "series": "Full FT positives-only \u2014 own text",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Number of modes": 19.0,
+      "Cumulative eigenvalue share": 0.6774344444274902,
+      "series": "Full FT positives-only \u2014 own text",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Number of modes": 20.0,
+      "Cumulative eigenvalue share": 0.6911730170249939,
+      "series": "Full FT positives-only \u2014 own text",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Number of modes": 21.0,
+      "Cumulative eigenvalue share": 0.7045729756355286,
+      "series": "Full FT positives-only \u2014 own text",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Number of modes": 22.0,
+      "Cumulative eigenvalue share": 0.7171854972839355,
+      "series": "Full FT positives-only \u2014 own text",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Number of modes": 23.0,
+      "Cumulative eigenvalue share": 0.7287019491195679,
+      "series": "Full FT positives-only \u2014 own text",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Number of modes": 24.0,
+      "Cumulative eigenvalue share": 0.7398679256439209,
+      "series": "Full FT positives-only \u2014 own text",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Number of modes": 25.0,
+      "Cumulative eigenvalue share": 0.7508870959281921,
+      "series": "Full FT positives-only \u2014 own text",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Number of modes": 26.0,
+      "Cumulative eigenvalue share": 0.7613016963005066,
+      "series": "Full FT positives-only \u2014 own text",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Number of modes": 27.0,
+      "Cumulative eigenvalue share": 0.7714778780937195,
+      "series": "Full FT positives-only \u2014 own text",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Number of modes": 28.0,
+      "Cumulative eigenvalue share": 0.7813119292259216,
+      "series": "Full FT positives-only \u2014 own text",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Number of modes": 29.0,
+      "Cumulative eigenvalue share": 0.7908658981323242,
+      "series": "Full FT positives-only \u2014 own text",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Number of modes": 30.0,
+      "Cumulative eigenvalue share": 0.7997148036956787,
+      "series": "Full FT positives-only \u2014 own text",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Number of modes": 31.0,
+      "Cumulative eigenvalue share": 0.8084642291069031,
+      "series": "Full FT positives-only \u2014 own text",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Number of modes": 32.0,
+      "Cumulative eigenvalue share": 0.8168081641197205,
+      "series": "Full FT positives-only \u2014 own text",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Number of modes": 33.0,
+      "Cumulative eigenvalue share": 0.8248392343521118,
+      "series": "Full FT positives-only \u2014 own text",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Number of modes": 34.0,
+      "Cumulative eigenvalue share": 0.8327897787094116,
+      "series": "Full FT positives-only \u2014 own text",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Number of modes": 35.0,
+      "Cumulative eigenvalue share": 0.8402250409126282,
+      "series": "Full FT positives-only \u2014 own text",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Number of modes": 36.0,
+      "Cumulative eigenvalue share": 0.8473355174064636,
+      "series": "Full FT positives-only \u2014 own text",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Number of modes": 37.0,
+      "Cumulative eigenvalue share": 0.8543640375137329,
+      "series": "Full FT positives-only \u2014 own text",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Number of modes": 38.0,
+      "Cumulative eigenvalue share": 0.8609256148338318,
+      "series": "Full FT positives-only \u2014 own text",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Number of modes": 39.0,
+      "Cumulative eigenvalue share": 0.8671032786369324,
+      "series": "Full FT positives-only \u2014 own text",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Number of modes": 40.0,
+      "Cumulative eigenvalue share": 0.8731696605682373,
+      "series": "Full FT positives-only \u2014 own text",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Number of modes": 41.0,
+      "Cumulative eigenvalue share": 0.8788254857063293,
+      "series": "Full FT positives-only \u2014 own text",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Number of modes": 42.0,
+      "Cumulative eigenvalue share": 0.8841826915740967,
+      "series": "Full FT positives-only \u2014 own text",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Number of modes": 43.0,
+      "Cumulative eigenvalue share": 0.8893743753433228,
+      "series": "Full FT positives-only \u2014 own text",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Number of modes": 44.0,
+      "Cumulative eigenvalue share": 0.8945002555847168,
+      "series": "Full FT positives-only \u2014 own text",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Number of modes": 45.0,
+      "Cumulative eigenvalue share": 0.8992012143135071,
+      "series": "Full FT positives-only \u2014 own text",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Number of modes": 46.0,
+      "Cumulative eigenvalue share": 0.9034103155136108,
+      "series": "Full FT positives-only \u2014 own text",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Number of modes": 47.0,
+      "Cumulative eigenvalue share": 0.9074582457542419,
+      "series": "Full FT positives-only \u2014 own text",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Number of modes": 48.0,
+      "Cumulative eigenvalue share": 0.9112381339073181,
+      "series": "Full FT positives-only \u2014 own text",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Number of modes": 49.0,
+      "Cumulative eigenvalue share": 0.9149370193481445,
+      "series": "Full FT positives-only \u2014 own text",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Number of modes": 50.0,
+      "Cumulative eigenvalue share": 0.9184539914131165,
+      "series": "Full FT positives-only \u2014 own text",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Number of modes": 51.0,
+      "Cumulative eigenvalue share": 0.921940267086029,
+      "series": "Full FT positives-only \u2014 own text",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Number of modes": 52.0,
+      "Cumulative eigenvalue share": 0.9251850843429565,
+      "series": "Full FT positives-only \u2014 own text",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Number of modes": 53.0,
+      "Cumulative eigenvalue share": 0.9283795952796936,
+      "series": "Full FT positives-only \u2014 own text",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Number of modes": 54.0,
+      "Cumulative eigenvalue share": 0.9314553737640381,
+      "series": "Full FT positives-only \u2014 own text",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Number of modes": 55.0,
+      "Cumulative eigenvalue share": 0.9344422221183777,
+      "series": "Full FT positives-only \u2014 own text",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Number of modes": 56.0,
+      "Cumulative eigenvalue share": 0.9373019933700562,
+      "series": "Full FT positives-only \u2014 own text",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Number of modes": 57.0,
+      "Cumulative eigenvalue share": 0.9400476813316345,
+      "series": "Full FT positives-only \u2014 own text",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Number of modes": 58.0,
+      "Cumulative eigenvalue share": 0.9427439570426941,
+      "series": "Full FT positives-only \u2014 own text",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Number of modes": 59.0,
+      "Cumulative eigenvalue share": 0.9453999996185303,
+      "series": "Full FT positives-only \u2014 own text",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Number of modes": 60.0,
+      "Cumulative eigenvalue share": 0.9479818940162659,
+      "series": "Full FT positives-only \u2014 own text",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Number of modes": 61.0,
+      "Cumulative eigenvalue share": 0.9505211710929871,
+      "series": "Full FT positives-only \u2014 own text",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Number of modes": 62.0,
+      "Cumulative eigenvalue share": 0.9529711008071899,
+      "series": "Full FT positives-only \u2014 own text",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Number of modes": 63.0,
+      "Cumulative eigenvalue share": 0.9553343653678894,
+      "series": "Full FT positives-only \u2014 own text",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Number of modes": 64.0,
+      "Cumulative eigenvalue share": 0.957586407661438,
+      "series": "Full FT positives-only \u2014 own text",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Number of modes": 65.0,
+      "Cumulative eigenvalue share": 0.9598100185394287,
+      "series": "Full FT positives-only \u2014 own text",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Number of modes": 66.0,
+      "Cumulative eigenvalue share": 0.9619614481925964,
+      "series": "Full FT positives-only \u2014 own text",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Number of modes": 67.0,
+      "Cumulative eigenvalue share": 0.9641055464744568,
+      "series": "Full FT positives-only \u2014 own text",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Number of modes": 68.0,
+      "Cumulative eigenvalue share": 0.9661895036697388,
+      "series": "Full FT positives-only \u2014 own text",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Number of modes": 69.0,
+      "Cumulative eigenvalue share": 0.9681271910667419,
+      "series": "Full FT positives-only \u2014 own text",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Number of modes": 70.0,
+      "Cumulative eigenvalue share": 0.9699840545654297,
+      "series": "Full FT positives-only \u2014 own text",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Number of modes": 71.0,
+      "Cumulative eigenvalue share": 0.9718192219734192,
+      "series": "Full FT positives-only \u2014 own text",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Number of modes": 72.0,
+      "Cumulative eigenvalue share": 0.9735370874404907,
+      "series": "Full FT positives-only \u2014 own text",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Number of modes": 73.0,
+      "Cumulative eigenvalue share": 0.9752396941184998,
+      "series": "Full FT positives-only \u2014 own text",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Number of modes": 74.0,
+      "Cumulative eigenvalue share": 0.9768353700637817,
+      "series": "Full FT positives-only \u2014 own text",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Number of modes": 75.0,
+      "Cumulative eigenvalue share": 0.9784150123596191,
+      "series": "Full FT positives-only \u2014 own text",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Number of modes": 76.0,
+      "Cumulative eigenvalue share": 0.9799202084541321,
+      "series": "Full FT positives-only \u2014 own text",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Number of modes": 77.0,
+      "Cumulative eigenvalue share": 0.9813923835754395,
+      "series": "Full FT positives-only \u2014 own text",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Number of modes": 78.0,
+      "Cumulative eigenvalue share": 0.982815682888031,
+      "series": "Full FT positives-only \u2014 own text",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Number of modes": 79.0,
+      "Cumulative eigenvalue share": 0.9841635823249817,
+      "series": "Full FT positives-only \u2014 own text",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Number of modes": 80.0,
+      "Cumulative eigenvalue share": 0.9854812026023865,
+      "series": "Full FT positives-only \u2014 own text",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Number of modes": 81.0,
+      "Cumulative eigenvalue share": 0.9867422580718994,
+      "series": "Full FT positives-only \u2014 own text",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Number of modes": 82.0,
+      "Cumulative eigenvalue share": 0.9879905581474304,
+      "series": "Full FT positives-only \u2014 own text",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Number of modes": 83.0,
+      "Cumulative eigenvalue share": 0.9891768097877502,
+      "series": "Full FT positives-only \u2014 own text",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Number of modes": 84.0,
+      "Cumulative eigenvalue share": 0.9902891516685486,
+      "series": "Full FT positives-only \u2014 own text",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Number of modes": 85.0,
+      "Cumulative eigenvalue share": 0.9913589954376221,
+      "series": "Full FT positives-only \u2014 own text",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Number of modes": 86.0,
+      "Cumulative eigenvalue share": 0.9923605918884277,
+      "series": "Full FT positives-only \u2014 own text",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Number of modes": 87.0,
+      "Cumulative eigenvalue share": 0.9933378100395203,
+      "series": "Full FT positives-only \u2014 own text",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Number of modes": 88.0,
+      "Cumulative eigenvalue share": 0.9942739605903625,
+      "series": "Full FT positives-only \u2014 own text",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Number of modes": 89.0,
+      "Cumulative eigenvalue share": 0.995133101940155,
+      "series": "Full FT positives-only \u2014 own text",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Number of modes": 90.0,
+      "Cumulative eigenvalue share": 0.9959534406661987,
+      "series": "Full FT positives-only \u2014 own text",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Number of modes": 91.0,
+      "Cumulative eigenvalue share": 0.9967138171195984,
+      "series": "Full FT positives-only \u2014 own text",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Number of modes": 92.0,
+      "Cumulative eigenvalue share": 0.9974547624588013,
+      "series": "Full FT positives-only \u2014 own text",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Number of modes": 93.0,
+      "Cumulative eigenvalue share": 0.9980308413505554,
+      "series": "Full FT positives-only \u2014 own text",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Number of modes": 94.0,
+      "Cumulative eigenvalue share": 0.9985451698303223,
+      "series": "Full FT positives-only \u2014 own text",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Number of modes": 95.0,
+      "Cumulative eigenvalue share": 0.9989722967147827,
+      "series": "Full FT positives-only \u2014 own text",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Number of modes": 96.0,
+      "Cumulative eigenvalue share": 0.9993854761123657,
+      "series": "Full FT positives-only \u2014 own text",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Number of modes": 97.0,
+      "Cumulative eigenvalue share": 0.9997349977493286,
+      "series": "Full FT positives-only \u2014 own text",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Number of modes": 98.0,
+      "Cumulative eigenvalue share": 0.9999572038650513,
+      "series": "Full FT positives-only \u2014 own text",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Number of modes": 99.0,
+      "Cumulative eigenvalue share": 1.0000001192092896,
+      "series": "Full FT positives-only \u2014 own text",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Number of modes": 100.0,
+      "Cumulative eigenvalue share": 1.0000001192092896,
+      "series": "Full FT positives-only \u2014 own text",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Number of modes": 1.0,
+      "Cumulative eigenvalue share": 0.7068415284156799,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Number of modes": 2.0,
+      "Cumulative eigenvalue share": 0.7710987329483032,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Number of modes": 3.0,
+      "Cumulative eigenvalue share": 0.8115206360816956,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Number of modes": 4.0,
+      "Cumulative eigenvalue share": 0.8350896239280701,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Number of modes": 5.0,
+      "Cumulative eigenvalue share": 0.8541507720947266,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Number of modes": 6.0,
+      "Cumulative eigenvalue share": 0.8692405223846436,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Number of modes": 7.0,
+      "Cumulative eigenvalue share": 0.8818789720535278,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Number of modes": 8.0,
+      "Cumulative eigenvalue share": 0.8929884433746338,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Number of modes": 9.0,
+      "Cumulative eigenvalue share": 0.9020506739616394,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Number of modes": 10.0,
+      "Cumulative eigenvalue share": 0.91017746925354,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Number of modes": 11.0,
+      "Cumulative eigenvalue share": 0.9173998236656189,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Number of modes": 12.0,
+      "Cumulative eigenvalue share": 0.9244450330734253,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Number of modes": 13.0,
+      "Cumulative eigenvalue share": 0.9309531450271606,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Number of modes": 14.0,
+      "Cumulative eigenvalue share": 0.9373934268951416,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Number of modes": 15.0,
+      "Cumulative eigenvalue share": 0.9424938559532166,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Number of modes": 16.0,
+      "Cumulative eigenvalue share": 0.9468777179718018,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Number of modes": 17.0,
+      "Cumulative eigenvalue share": 0.9509139657020569,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Number of modes": 18.0,
+      "Cumulative eigenvalue share": 0.9543540477752686,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Number of modes": 19.0,
+      "Cumulative eigenvalue share": 0.9576551914215088,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Number of modes": 20.0,
+      "Cumulative eigenvalue share": 0.9608964920043945,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Number of modes": 21.0,
+      "Cumulative eigenvalue share": 0.9637572765350342,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Number of modes": 22.0,
+      "Cumulative eigenvalue share": 0.9665312170982361,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Number of modes": 23.0,
+      "Cumulative eigenvalue share": 0.9689403772354126,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Number of modes": 24.0,
+      "Cumulative eigenvalue share": 0.9711155295372009,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Number of modes": 25.0,
+      "Cumulative eigenvalue share": 0.97301185131073,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Number of modes": 26.0,
+      "Cumulative eigenvalue share": 0.9745849370956421,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Number of modes": 27.0,
+      "Cumulative eigenvalue share": 0.9760368466377258,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Number of modes": 28.0,
+      "Cumulative eigenvalue share": 0.977382481098175,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Number of modes": 29.0,
+      "Cumulative eigenvalue share": 0.9786694049835205,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Number of modes": 30.0,
+      "Cumulative eigenvalue share": 0.9797431826591492,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Number of modes": 31.0,
+      "Cumulative eigenvalue share": 0.9807955026626587,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Number of modes": 32.0,
+      "Cumulative eigenvalue share": 0.9818155169487,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Number of modes": 33.0,
+      "Cumulative eigenvalue share": 0.982782244682312,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Number of modes": 34.0,
+      "Cumulative eigenvalue share": 0.9836331009864807,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Number of modes": 35.0,
+      "Cumulative eigenvalue share": 0.9844725131988525,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Number of modes": 36.0,
+      "Cumulative eigenvalue share": 0.9852599501609802,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Number of modes": 37.0,
+      "Cumulative eigenvalue share": 0.9860256314277649,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Number of modes": 38.0,
+      "Cumulative eigenvalue share": 0.9867599010467529,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Number of modes": 39.0,
+      "Cumulative eigenvalue share": 0.9874482154846191,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Number of modes": 40.0,
+      "Cumulative eigenvalue share": 0.9881125092506409,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Number of modes": 41.0,
+      "Cumulative eigenvalue share": 0.9887531995773315,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Number of modes": 42.0,
+      "Cumulative eigenvalue share": 0.9893423914909363,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Number of modes": 43.0,
+      "Cumulative eigenvalue share": 0.9899106621742249,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Number of modes": 44.0,
+      "Cumulative eigenvalue share": 0.9904583692550659,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Number of modes": 45.0,
+      "Cumulative eigenvalue share": 0.9909900426864624,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Number of modes": 46.0,
+      "Cumulative eigenvalue share": 0.9914839863777161,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Number of modes": 47.0,
+      "Cumulative eigenvalue share": 0.9919634461402893,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Number of modes": 48.0,
+      "Cumulative eigenvalue share": 0.9924276471138,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Number of modes": 49.0,
+      "Cumulative eigenvalue share": 0.9928784370422363,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Number of modes": 50.0,
+      "Cumulative eigenvalue share": 0.9932911992073059,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Number of modes": 51.0,
+      "Cumulative eigenvalue share": 0.9936944842338562,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Number of modes": 52.0,
+      "Cumulative eigenvalue share": 0.994088351726532,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Number of modes": 53.0,
+      "Cumulative eigenvalue share": 0.994467556476593,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Number of modes": 54.0,
+      "Cumulative eigenvalue share": 0.9948348999023438,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Number of modes": 55.0,
+      "Cumulative eigenvalue share": 0.995187520980835,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Number of modes": 56.0,
+      "Cumulative eigenvalue share": 0.9955331087112427,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Number of modes": 57.0,
+      "Cumulative eigenvalue share": 0.9958570003509521,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Number of modes": 58.0,
+      "Cumulative eigenvalue share": 0.9961786270141602,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Number of modes": 59.0,
+      "Cumulative eigenvalue share": 0.9964808821678162,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Number of modes": 60.0,
+      "Cumulative eigenvalue share": 0.9967803955078125,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Number of modes": 61.0,
+      "Cumulative eigenvalue share": 0.9970670938491821,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Number of modes": 62.0,
+      "Cumulative eigenvalue share": 0.9973250031471252,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Number of modes": 63.0,
+      "Cumulative eigenvalue share": 0.9975562691688538,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Number of modes": 64.0,
+      "Cumulative eigenvalue share": 0.9977396130561829,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Number of modes": 65.0,
+      "Cumulative eigenvalue share": 0.9978978633880615,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Number of modes": 66.0,
+      "Cumulative eigenvalue share": 0.9980448484420776,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Number of modes": 67.0,
+      "Cumulative eigenvalue share": 0.9981626868247986,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Number of modes": 68.0,
+      "Cumulative eigenvalue share": 0.9982798099517822,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Number of modes": 69.0,
+      "Cumulative eigenvalue share": 0.9983869791030884,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Number of modes": 70.0,
+      "Cumulative eigenvalue share": 0.9984903931617737,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Number of modes": 71.0,
+      "Cumulative eigenvalue share": 0.998589813709259,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Number of modes": 72.0,
+      "Cumulative eigenvalue share": 0.9986869692802429,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Number of modes": 73.0,
+      "Cumulative eigenvalue share": 0.9987772107124329,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Number of modes": 74.0,
+      "Cumulative eigenvalue share": 0.998864471912384,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Number of modes": 75.0,
+      "Cumulative eigenvalue share": 0.9989465475082397,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Number of modes": 76.0,
+      "Cumulative eigenvalue share": 0.9990252256393433,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Number of modes": 77.0,
+      "Cumulative eigenvalue share": 0.9990992546081543,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Number of modes": 78.0,
+      "Cumulative eigenvalue share": 0.9991717338562012,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Number of modes": 79.0,
+      "Cumulative eigenvalue share": 0.9992400407791138,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Number of modes": 80.0,
+      "Cumulative eigenvalue share": 0.9993037581443787,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Number of modes": 81.0,
+      "Cumulative eigenvalue share": 0.9993661046028137,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Number of modes": 82.0,
+      "Cumulative eigenvalue share": 0.9994261264801025,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Number of modes": 83.0,
+      "Cumulative eigenvalue share": 0.9994834661483765,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Number of modes": 84.0,
+      "Cumulative eigenvalue share": 0.9995304942131042,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Number of modes": 85.0,
+      "Cumulative eigenvalue share": 0.999573826789856,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Number of modes": 86.0,
+      "Cumulative eigenvalue share": 0.999614953994751,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Number of modes": 87.0,
+      "Cumulative eigenvalue share": 0.999653697013855,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Number of modes": 88.0,
+      "Cumulative eigenvalue share": 0.9996910095214844,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Number of modes": 89.0,
+      "Cumulative eigenvalue share": 0.9997265338897705,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Number of modes": 90.0,
+      "Cumulative eigenvalue share": 0.9997615218162537,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Number of modes": 91.0,
+      "Cumulative eigenvalue share": 0.9997949004173279,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Number of modes": 92.0,
+      "Cumulative eigenvalue share": 0.9998272061347961,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Number of modes": 93.0,
+      "Cumulative eigenvalue share": 0.9998568296432495,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Number of modes": 94.0,
+      "Cumulative eigenvalue share": 0.999884843826294,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Number of modes": 95.0,
+      "Cumulative eigenvalue share": 0.9999120235443115,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Number of modes": 96.0,
+      "Cumulative eigenvalue share": 0.9999372959136963,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Number of modes": 97.0,
+      "Cumulative eigenvalue share": 0.9999606609344482,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Number of modes": 98.0,
+      "Cumulative eigenvalue share": 0.9999821186065674,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Number of modes": 99.0,
+      "Cumulative eigenvalue share": 0.9999997019767761,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Number of modes": 100.0,
+      "Cumulative eigenvalue share": 0.9999997019767761,
+      "_kind": "line",
+      "_group": 7
+    }
+  ],
+  "n_series": 8,
+  "total_points": 800,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Raw spectra behind the rank read (layer 25, response arm)",
+        "xlabel": "Number of modes",
+        "ylabel": "Cumulative eigenvalue share",
+        "legend_labels": [
+          "LoRA + negatives \u2014 own text",
+          "shared text (all four)",
+          "LoRA positives-only \u2014 own text",
+          "Full FT + negatives (reused) \u2014 own text",
+          "Full FT positives-only \u2014 own text"
+        ],
+        "xticklabels": [
+          "\u221220",
+          "0",
+          "20",
+          "40",
+          "60",
+          "80",
+          "100",
+          "120"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0",
+          "1.2"
+        ]
+      }
+    ],
+    "series": [
+      "LoRA + negatives \u2014 own text",
+      "shared text (all four)",
+      "LoRA positives-only \u2014 own text",
+      "Full FT + negatives (reused) \u2014 own text",
+      "Full FT positives-only \u2014 own text"
+    ]
+  }
+}

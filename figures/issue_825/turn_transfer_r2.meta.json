@@ -1,0 +1,150 @@
+{
+ "commit": "47d216bbc7",
+ "created": "2026-07-16T09:32:25Z",
+ "figsize": [
+  11.0,
+  5.0
+ ],
+ "text": {
+  "suptitle": "Cross-turn transfer: held-out $R^2$ of the layer-19 context$\\to$answer map fit on turn i, evaluated on turn j (full n)",
+  "fig_texts": [],
+  "axes": [
+   {
+    "title_left": "Qwen-2.5-7B-Instruct\n(n=497/388/354/332/236/171)",
+    "xlabel": "evaluated on turn j",
+    "ylabel": "map fit on turn i",
+    "annotations": [
+     "0.20",
+     "-0.06",
+     "-0.12",
+     "-0.16",
+     "-0.20",
+     "-0.20",
+     "0.13",
+     "0.25",
+     "0.25",
+     "0.23",
+     "0.20",
+     "0.21",
+     "0.09",
+     "0.25",
+     "0.27",
+     "0.26",
+     "0.23",
+     "0.23",
+     "0.07",
+     "0.23",
+     "0.27",
+     "0.27",
+     "0.25",
+     "0.26",
+     "0.01",
+     "0.19",
+     "0.22",
+     "0.23",
+     "0.23",
+     "0.24",
+     "-0.07",
+     "0.16",
+     "0.20",
+     "0.22",
+     "0.21",
+     "0.21"
+    ],
+    "xticklabels": [
+     "1",
+     "3",
+     "5",
+     "7",
+     "9",
+     "11"
+    ],
+    "yticklabels": [
+     "1",
+     "3",
+     "5",
+     "7",
+     "9",
+     "11"
+    ]
+   },
+   {
+    "title_left": "Qwen-2.5-7B (base)\n(n=497/388/354/332/236/171)",
+    "xlabel": "evaluated on turn j",
+    "ylabel": "map fit on turn i",
+    "annotations": [
+     "0.05",
+     "-0.57",
+     "-0.71",
+     "-0.77",
+     "-0.81",
+     "-0.81",
+     "0.00",
+     "0.27",
+     "0.28",
+     "0.25",
+     "0.23",
+     "0.25",
+     "0.02",
+     "0.27",
+     "0.31",
+     "0.29",
+     "0.28",
+     "0.27",
+     "-0.00",
+     "0.25",
+     "0.29",
+     "0.29",
+     "0.29",
+     "0.29",
+     "-0.09",
+     "0.22",
+     "0.26",
+     "0.27",
+     "0.26",
+     "0.27",
+     "-0.14",
+     "0.18",
+     "0.23",
+     "0.24",
+     "0.23",
+     "0.24"
+    ],
+    "xticklabels": [
+     "1",
+     "3",
+     "5",
+     "7",
+     "9",
+     "11"
+    ],
+    "yticklabels": [
+     "1",
+     "3",
+     "5",
+     "7",
+     "9",
+     "11"
+    ]
+   },
+   {
+    "ylabel": "held-out $R^2$",
+    "yticklabels": [
+     "\u22121.0",
+     "\u22120.8",
+     "\u22120.6",
+     "\u22120.4",
+     "\u22120.2",
+     "0.0",
+     "0.2",
+     "0.4",
+     "0.6",
+     "0.8",
+     "1.0"
+    ]
+   }
+  ]
+ },
+ "caption": "PRIMARY. Cross-turn transfer matrix T[i,j] at FULL per-turn n: held-out R2 of the layer-19 linear context->answer map (context_k -> answer_k_t1, offset 0) FIT on turn i and EVALUATED on turn j, under one shared conversation-grouped 6-fold partition, both models. y=fit-on-turn-i, x=evaluated-on-turn-j; diverging cmap centered at 0. Diagonal = the turn's own grouped-CV R2. n per turn = 497/388/354/332/236/171 for turns 1/3/5/7/9/11.",
+ "source_results_json": "eval_results/issue_825/turn_transfer_similarity/results.json"
+}

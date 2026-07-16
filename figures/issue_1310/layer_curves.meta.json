@@ -1,0 +1,3034 @@
+{
+  "commit": "dcf3e06ed2",
+  "created": "2026-07-16T11:14:28Z",
+  "figsize": [
+    11.0,
+    7.0
+  ],
+  "points": [
+    {
+      "x": 0.0,
+      "held-out R\u00b2": 0.013877773949530936,
+      "series": "Wren (helpful)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 1.0,
+      "held-out R\u00b2": 0.021986962281476563,
+      "series": "Wren (helpful)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 2.0,
+      "held-out R\u00b2": 0.027809961369724023,
+      "series": "Wren (helpful)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 3.0,
+      "held-out R\u00b2": 0.021812453522827235,
+      "series": "Wren (helpful)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 4.0,
+      "held-out R\u00b2": 0.027275436888361315,
+      "series": "Wren (helpful)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 5.0,
+      "held-out R\u00b2": 0.036716288430118094,
+      "series": "Wren (helpful)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 6.0,
+      "held-out R\u00b2": 0.04451327067191224,
+      "series": "Wren (helpful)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 7.0,
+      "held-out R\u00b2": 0.0455633911123815,
+      "series": "Wren (helpful)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 8.0,
+      "held-out R\u00b2": 0.049594819146374425,
+      "series": "Wren (helpful)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 9.0,
+      "held-out R\u00b2": 0.061467079369026956,
+      "series": "Wren (helpful)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 10.0,
+      "held-out R\u00b2": 0.07157687594332862,
+      "series": "Wren (helpful)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 11.0,
+      "held-out R\u00b2": 0.073996923825151,
+      "series": "Wren (helpful)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 12.0,
+      "held-out R\u00b2": 0.07941321744757646,
+      "series": "Wren (helpful)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 13.0,
+      "held-out R\u00b2": 0.08951582287649751,
+      "series": "Wren (helpful)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 14.0,
+      "held-out R\u00b2": 0.09771443673654889,
+      "series": "Wren (helpful)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 15.0,
+      "held-out R\u00b2": 0.10076327535686058,
+      "series": "Wren (helpful)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 16.0,
+      "held-out R\u00b2": 0.10246927512518744,
+      "series": "Wren (helpful)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 17.0,
+      "held-out R\u00b2": 0.0995550800183238,
+      "series": "Wren (helpful)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 18.0,
+      "held-out R\u00b2": 0.10661491490281083,
+      "series": "Wren (helpful)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 19.0,
+      "held-out R\u00b2": 0.13693937179566107,
+      "series": "Wren (helpful)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 20.0,
+      "held-out R\u00b2": 0.13276387454689131,
+      "series": "Wren (helpful)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 21.0,
+      "held-out R\u00b2": 0.13020092763937996,
+      "series": "Wren (helpful)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 22.0,
+      "held-out R\u00b2": 0.1274449793839193,
+      "series": "Wren (helpful)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 23.0,
+      "held-out R\u00b2": 0.12997356931442727,
+      "series": "Wren (helpful)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 24.0,
+      "held-out R\u00b2": 0.13930533003894174,
+      "series": "Wren (helpful)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 25.0,
+      "held-out R\u00b2": 0.1355033618892254,
+      "series": "Wren (helpful)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 26.0,
+      "held-out R\u00b2": 0.13676106918568098,
+      "series": "Wren (helpful)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 27.0,
+      "held-out R\u00b2": 0.17529739120140098,
+      "series": "Wren (helpful)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 0.0,
+      "held-out R\u00b2": 0.002203709059650172,
+      "series": "HELIOS (ship AI)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 1.0,
+      "held-out R\u00b2": 0.012727415942593523,
+      "series": "HELIOS (ship AI)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 2.0,
+      "held-out R\u00b2": 0.027731131259927544,
+      "series": "HELIOS (ship AI)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 3.0,
+      "held-out R\u00b2": 0.01685936717211589,
+      "series": "HELIOS (ship AI)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 4.0,
+      "held-out R\u00b2": 0.025817417101738793,
+      "series": "HELIOS (ship AI)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 5.0,
+      "held-out R\u00b2": 0.03902491770970673,
+      "series": "HELIOS (ship AI)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 6.0,
+      "held-out R\u00b2": 0.045750617217505396,
+      "series": "HELIOS (ship AI)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 7.0,
+      "held-out R\u00b2": 0.0448652079030728,
+      "series": "HELIOS (ship AI)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 8.0,
+      "held-out R\u00b2": 0.054824241403858,
+      "series": "HELIOS (ship AI)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 9.0,
+      "held-out R\u00b2": 0.07125058347848667,
+      "series": "HELIOS (ship AI)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 10.0,
+      "held-out R\u00b2": 0.0797400613524103,
+      "series": "HELIOS (ship AI)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 11.0,
+      "held-out R\u00b2": 0.07830275729854086,
+      "series": "HELIOS (ship AI)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 12.0,
+      "held-out R\u00b2": 0.08076160466673288,
+      "series": "HELIOS (ship AI)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 13.0,
+      "held-out R\u00b2": 0.09030003421000765,
+      "series": "HELIOS (ship AI)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 14.0,
+      "held-out R\u00b2": 0.09345920681229791,
+      "series": "HELIOS (ship AI)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 15.0,
+      "held-out R\u00b2": 0.10016681298035912,
+      "series": "HELIOS (ship AI)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 16.0,
+      "held-out R\u00b2": 0.09955455791522316,
+      "series": "HELIOS (ship AI)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 17.0,
+      "held-out R\u00b2": 0.09884387746819101,
+      "series": "HELIOS (ship AI)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 18.0,
+      "held-out R\u00b2": 0.1051349956662968,
+      "series": "HELIOS (ship AI)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 19.0,
+      "held-out R\u00b2": 0.14833382865515465,
+      "series": "HELIOS (ship AI)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 20.0,
+      "held-out R\u00b2": 0.14497117259967152,
+      "series": "HELIOS (ship AI)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 21.0,
+      "held-out R\u00b2": 0.13848166130557293,
+      "series": "HELIOS (ship AI)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 22.0,
+      "held-out R\u00b2": 0.1417240006189242,
+      "series": "HELIOS (ship AI)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 23.0,
+      "held-out R\u00b2": 0.14299464757490832,
+      "series": "HELIOS (ship AI)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 24.0,
+      "held-out R\u00b2": 0.15570156106492694,
+      "series": "HELIOS (ship AI)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 25.0,
+      "held-out R\u00b2": 0.14821311295921757,
+      "series": "HELIOS (ship AI)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 26.0,
+      "held-out R\u00b2": 0.12377592256151515,
+      "series": "HELIOS (ship AI)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 27.0,
+      "held-out R\u00b2": 0.1682564323186484,
+      "series": "HELIOS (ship AI)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 0.0,
+      "held-out R\u00b2": 0.07608368311493174,
+      "series": "Dana (ordinary)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 1.0,
+      "held-out R\u00b2": 0.08195094960819171,
+      "series": "Dana (ordinary)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 2.0,
+      "held-out R\u00b2": 0.08312945446905473,
+      "series": "Dana (ordinary)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 3.0,
+      "held-out R\u00b2": 0.08575934017621234,
+      "series": "Dana (ordinary)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 4.0,
+      "held-out R\u00b2": 0.10822169812409399,
+      "series": "Dana (ordinary)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 5.0,
+      "held-out R\u00b2": -7.723951763232373,
+      "series": "Dana (ordinary)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 6.0,
+      "held-out R\u00b2": -7.439166420014482,
+      "series": "Dana (ordinary)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 7.0,
+      "held-out R\u00b2": 0.11250782755958955,
+      "series": "Dana (ordinary)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 8.0,
+      "held-out R\u00b2": -6.1206495330509725,
+      "series": "Dana (ordinary)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 9.0,
+      "held-out R\u00b2": 0.11650799626480546,
+      "series": "Dana (ordinary)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 10.0,
+      "held-out R\u00b2": 0.11623752611930604,
+      "series": "Dana (ordinary)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 11.0,
+      "held-out R\u00b2": 0.11305763988179429,
+      "series": "Dana (ordinary)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 12.0,
+      "held-out R\u00b2": -6.118654482983906,
+      "series": "Dana (ordinary)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 13.0,
+      "held-out R\u00b2": 0.11747526831725041,
+      "series": "Dana (ordinary)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 14.0,
+      "held-out R\u00b2": 0.12426563387413059,
+      "series": "Dana (ordinary)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 15.0,
+      "held-out R\u00b2": 0.12643610500740987,
+      "series": "Dana (ordinary)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 16.0,
+      "held-out R\u00b2": -5.490140673365897,
+      "series": "Dana (ordinary)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 17.0,
+      "held-out R\u00b2": -5.67624139649824,
+      "series": "Dana (ordinary)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 18.0,
+      "held-out R\u00b2": 0.12038249227468856,
+      "series": "Dana (ordinary)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 19.0,
+      "held-out R\u00b2": 0.14675437757324383,
+      "series": "Dana (ordinary)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 20.0,
+      "held-out R\u00b2": 0.14012586940548988,
+      "series": "Dana (ordinary)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 21.0,
+      "held-out R\u00b2": 0.1309308452691662,
+      "series": "Dana (ordinary)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 22.0,
+      "held-out R\u00b2": 0.12725975152075308,
+      "series": "Dana (ordinary)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 23.0,
+      "held-out R\u00b2": 0.12754672236958808,
+      "series": "Dana (ordinary)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 24.0,
+      "held-out R\u00b2": 0.13186243138548126,
+      "series": "Dana (ordinary)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 25.0,
+      "held-out R\u00b2": 0.1241428437537746,
+      "series": "Dana (ordinary)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 26.0,
+      "held-out R\u00b2": 0.12890858047563258,
+      "series": "Dana (ordinary)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 27.0,
+      "held-out R\u00b2": 0.17687660033182762,
+      "series": "Dana (ordinary)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 0.0,
+      "held-out R\u00b2": -0.0006280052866318719,
+      "series": "Vex (villain)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 1.0,
+      "held-out R\u00b2": 0.010680828291034672,
+      "series": "Vex (villain)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 2.0,
+      "held-out R\u00b2": 0.012470778417952522,
+      "series": "Vex (villain)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 3.0,
+      "held-out R\u00b2": 0.004159909556815333,
+      "series": "Vex (villain)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 4.0,
+      "held-out R\u00b2": 0.008180445492720456,
+      "series": "Vex (villain)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 5.0,
+      "held-out R\u00b2": 0.016417361514167172,
+      "series": "Vex (villain)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 6.0,
+      "held-out R\u00b2": 0.022519542408454662,
+      "series": "Vex (villain)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 7.0,
+      "held-out R\u00b2": 0.024288664038904395,
+      "series": "Vex (villain)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 8.0,
+      "held-out R\u00b2": 0.02741218070802942,
+      "series": "Vex (villain)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 9.0,
+      "held-out R\u00b2": 0.03637373990490511,
+      "series": "Vex (villain)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 10.0,
+      "held-out R\u00b2": 0.04475559879248103,
+      "series": "Vex (villain)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 11.0,
+      "held-out R\u00b2": 0.046421329466739825,
+      "series": "Vex (villain)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 12.0,
+      "held-out R\u00b2": 0.05090885340598217,
+      "series": "Vex (villain)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 13.0,
+      "held-out R\u00b2": 0.06017147017560931,
+      "series": "Vex (villain)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 14.0,
+      "held-out R\u00b2": 0.06638455386270803,
+      "series": "Vex (villain)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 15.0,
+      "held-out R\u00b2": 0.06996971430301768,
+      "series": "Vex (villain)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 16.0,
+      "held-out R\u00b2": 0.0714465855845593,
+      "series": "Vex (villain)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 17.0,
+      "held-out R\u00b2": 0.07030344364468621,
+      "series": "Vex (villain)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 18.0,
+      "held-out R\u00b2": 0.07641343555911495,
+      "series": "Vex (villain)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 19.0,
+      "held-out R\u00b2": 0.10591178096036746,
+      "series": "Vex (villain)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 20.0,
+      "held-out R\u00b2": 0.09965706600770519,
+      "series": "Vex (villain)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 21.0,
+      "held-out R\u00b2": 0.09621072177703038,
+      "series": "Vex (villain)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 22.0,
+      "held-out R\u00b2": 0.09447265764693391,
+      "series": "Vex (villain)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 23.0,
+      "held-out R\u00b2": 0.10036834705083153,
+      "series": "Vex (villain)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 24.0,
+      "held-out R\u00b2": 0.11492733750343964,
+      "series": "Vex (villain)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 25.0,
+      "held-out R\u00b2": 0.11272143985790317,
+      "series": "Vex (villain)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 26.0,
+      "held-out R\u00b2": 0.12205565213120462,
+      "series": "Vex (villain)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 27.0,
+      "held-out R\u00b2": 0.17608248232965895,
+      "series": "Vex (villain)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 0.0,
+      "y": 0.025626344742020635,
+      "series": "Wren (helpful)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 1.0,
+      "y": 0.042750261177743165,
+      "series": "Wren (helpful)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 2.0,
+      "y": 0.05648253263250447,
+      "series": "Wren (helpful)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 3.0,
+      "y": 0.04999937936842058,
+      "series": "Wren (helpful)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 4.0,
+      "y": 0.06730383356151504,
+      "series": "Wren (helpful)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 5.0,
+      "y": 0.08738949420573716,
+      "series": "Wren (helpful)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 6.0,
+      "y": 0.10405197977822112,
+      "series": "Wren (helpful)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 7.0,
+      "y": 0.10908793021878715,
+      "series": "Wren (helpful)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 8.0,
+      "y": 0.1158744210125251,
+      "series": "Wren (helpful)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 9.0,
+      "y": 0.14400585724759696,
+      "series": "Wren (helpful)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 10.0,
+      "y": 0.16166275283843268,
+      "series": "Wren (helpful)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 11.0,
+      "y": 0.16544558330918158,
+      "series": "Wren (helpful)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 12.0,
+      "y": 0.17229992309566267,
+      "series": "Wren (helpful)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 13.0,
+      "y": 0.19917281190734948,
+      "series": "Wren (helpful)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 14.0,
+      "y": 0.2095377181609258,
+      "series": "Wren (helpful)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 15.0,
+      "y": 0.20792772607380094,
+      "series": "Wren (helpful)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 16.0,
+      "y": 0.20880176246457072,
+      "series": "Wren (helpful)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 17.0,
+      "y": 0.2057239794412058,
+      "series": "Wren (helpful)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 18.0,
+      "y": 0.21718915875494915,
+      "series": "Wren (helpful)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 19.0,
+      "y": 0.2345354825988013,
+      "series": "Wren (helpful)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 20.0,
+      "y": 0.22971411093234173,
+      "series": "Wren (helpful)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 21.0,
+      "y": 0.2357802784068509,
+      "series": "Wren (helpful)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 22.0,
+      "y": 0.23972049806675988,
+      "series": "Wren (helpful)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 23.0,
+      "y": 0.24257108930484272,
+      "series": "Wren (helpful)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 24.0,
+      "y": 0.26033541409179217,
+      "series": "Wren (helpful)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 25.0,
+      "y": 0.25169955861438975,
+      "series": "Wren (helpful)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 26.0,
+      "y": 0.2616970613636781,
+      "series": "Wren (helpful)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 27.0,
+      "y": 0.3071898846571186,
+      "series": "Wren (helpful)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 0.0,
+      "y": 0.0397610531778142,
+      "series": "HELIOS (ship AI)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 1.0,
+      "y": 0.05863993802201828,
+      "series": "HELIOS (ship AI)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 2.0,
+      "y": 0.07258310518899536,
+      "series": "HELIOS (ship AI)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 3.0,
+      "y": 0.07004791681149958,
+      "series": "HELIOS (ship AI)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 4.0,
+      "y": 0.0906609397912872,
+      "series": "HELIOS (ship AI)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 5.0,
+      "y": 0.11077773921253287,
+      "series": "HELIOS (ship AI)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 6.0,
+      "y": 0.12843824590859054,
+      "series": "HELIOS (ship AI)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 7.0,
+      "y": 0.13283713082617155,
+      "series": "HELIOS (ship AI)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 8.0,
+      "y": 0.1371068631378327,
+      "series": "HELIOS (ship AI)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 9.0,
+      "y": 0.1665305106325884,
+      "series": "HELIOS (ship AI)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 10.0,
+      "y": 0.18949960039091174,
+      "series": "HELIOS (ship AI)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 11.0,
+      "y": 0.19142129647094897,
+      "series": "HELIOS (ship AI)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 12.0,
+      "y": 0.19500315860163653,
+      "series": "HELIOS (ship AI)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 13.0,
+      "y": 0.20115855159183638,
+      "series": "HELIOS (ship AI)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 14.0,
+      "y": 0.20432104870036005,
+      "series": "HELIOS (ship AI)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 15.0,
+      "y": 0.20304455276433298,
+      "series": "HELIOS (ship AI)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 16.0,
+      "y": 0.20944468162025498,
+      "series": "HELIOS (ship AI)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 17.0,
+      "y": 0.2113365578895543,
+      "series": "HELIOS (ship AI)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 18.0,
+      "y": 0.2131117426859125,
+      "series": "HELIOS (ship AI)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 19.0,
+      "y": 0.2526988818756506,
+      "series": "HELIOS (ship AI)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 20.0,
+      "y": 0.24718076322337623,
+      "series": "HELIOS (ship AI)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 21.0,
+      "y": 0.253235903848698,
+      "series": "HELIOS (ship AI)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 22.0,
+      "y": 0.25787495072274147,
+      "series": "HELIOS (ship AI)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 23.0,
+      "y": 0.2557169569283283,
+      "series": "HELIOS (ship AI)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 24.0,
+      "y": 0.2680035484159119,
+      "series": "HELIOS (ship AI)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 25.0,
+      "y": 0.2595447403626606,
+      "series": "HELIOS (ship AI)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 26.0,
+      "y": 0.2620372228232326,
+      "series": "HELIOS (ship AI)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 27.0,
+      "y": 0.29764045741510836,
+      "series": "HELIOS (ship AI)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 0.0,
+      "y": 0.0036654221132774722,
+      "series": "Dana (ordinary)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 1.0,
+      "y": 0.016588323545947414,
+      "series": "Dana (ordinary)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 2.0,
+      "y": 0.0225951015707202,
+      "series": "Dana (ordinary)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 3.0,
+      "y": 0.020152815056026507,
+      "series": "Dana (ordinary)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 4.0,
+      "y": 0.03401997503238918,
+      "series": "Dana (ordinary)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 5.0,
+      "y": 0.049421966011124696,
+      "series": "Dana (ordinary)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 6.0,
+      "y": 0.06154252050190967,
+      "series": "Dana (ordinary)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 7.0,
+      "y": 0.06303955760662927,
+      "series": "Dana (ordinary)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 8.0,
+      "y": 0.06809787212122931,
+      "series": "Dana (ordinary)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 9.0,
+      "y": 0.09354874088352505,
+      "series": "Dana (ordinary)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 10.0,
+      "y": 0.11190096881348455,
+      "series": "Dana (ordinary)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 11.0,
+      "y": 0.11513189487326714,
+      "series": "Dana (ordinary)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 12.0,
+      "y": 0.12226324100740238,
+      "series": "Dana (ordinary)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 13.0,
+      "y": 0.14997420240857728,
+      "series": "Dana (ordinary)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 14.0,
+      "y": 0.15732657892300828,
+      "series": "Dana (ordinary)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 15.0,
+      "y": 0.15636302725678408,
+      "series": "Dana (ordinary)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 16.0,
+      "y": 0.15765803439870563,
+      "series": "Dana (ordinary)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 17.0,
+      "y": 0.15363282278779922,
+      "series": "Dana (ordinary)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 18.0,
+      "y": 0.16414609691612014,
+      "series": "Dana (ordinary)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 19.0,
+      "y": 0.18824974025372598,
+      "series": "Dana (ordinary)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 20.0,
+      "y": 0.18012934747082265,
+      "series": "Dana (ordinary)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 21.0,
+      "y": 0.18908269805371192,
+      "series": "Dana (ordinary)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 22.0,
+      "y": 0.18747706213456072,
+      "series": "Dana (ordinary)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 23.0,
+      "y": 0.18723369940944978,
+      "series": "Dana (ordinary)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 24.0,
+      "y": 0.19786869107893568,
+      "series": "Dana (ordinary)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 25.0,
+      "y": 0.1921411329636361,
+      "series": "Dana (ordinary)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 26.0,
+      "y": 0.1985284440187739,
+      "series": "Dana (ordinary)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 27.0,
+      "y": 0.21450298994807127,
+      "series": "Dana (ordinary)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 0.0,
+      "held-out R\u00b2": 0.17024557275441232,
+      "series": "Wren (helpful)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 1.0,
+      "held-out R\u00b2": 0.16301054526344394,
+      "series": "Wren (helpful)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 2.0,
+      "held-out R\u00b2": 0.17376806799671995,
+      "series": "Wren (helpful)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 3.0,
+      "held-out R\u00b2": 0.17317613944722332,
+      "series": "Wren (helpful)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 4.0,
+      "held-out R\u00b2": 0.19459438636365978,
+      "series": "Wren (helpful)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 5.0,
+      "held-out R\u00b2": 0.19766450728488982,
+      "series": "Wren (helpful)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 6.0,
+      "held-out R\u00b2": 0.19461176644422773,
+      "series": "Wren (helpful)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 7.0,
+      "held-out R\u00b2": 0.21450358411211,
+      "series": "Wren (helpful)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 8.0,
+      "held-out R\u00b2": 0.211629981665873,
+      "series": "Wren (helpful)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 9.0,
+      "held-out R\u00b2": 0.05209156796065462,
+      "series": "Wren (helpful)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 10.0,
+      "held-out R\u00b2": 0.05480604652362375,
+      "series": "Wren (helpful)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 11.0,
+      "held-out R\u00b2": 0.13252139338281543,
+      "series": "Wren (helpful)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 12.0,
+      "held-out R\u00b2": 0.0807045976232813,
+      "series": "Wren (helpful)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 13.0,
+      "held-out R\u00b2": 0.05415441330526993,
+      "series": "Wren (helpful)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 14.0,
+      "held-out R\u00b2": 0.058332412110014054,
+      "series": "Wren (helpful)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 15.0,
+      "held-out R\u00b2": 0.06174420300401229,
+      "series": "Wren (helpful)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 16.0,
+      "held-out R\u00b2": 0.14459944365182908,
+      "series": "Wren (helpful)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 17.0,
+      "held-out R\u00b2": 0.14745023372834487,
+      "series": "Wren (helpful)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 18.0,
+      "held-out R\u00b2": 0.0927189776993892,
+      "series": "Wren (helpful)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 19.0,
+      "held-out R\u00b2": 0.11397294300939353,
+      "series": "Wren (helpful)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 20.0,
+      "held-out R\u00b2": 0.09876469963273915,
+      "series": "Wren (helpful)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 21.0,
+      "held-out R\u00b2": 0.09629923185293943,
+      "series": "Wren (helpful)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 22.0,
+      "held-out R\u00b2": 0.1021251903182595,
+      "series": "Wren (helpful)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 23.0,
+      "held-out R\u00b2": 0.1198887759503583,
+      "series": "Wren (helpful)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 24.0,
+      "held-out R\u00b2": 0.127294288719621,
+      "series": "Wren (helpful)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 25.0,
+      "held-out R\u00b2": 0.11919282659322283,
+      "series": "Wren (helpful)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 26.0,
+      "held-out R\u00b2": 0.14360862658303197,
+      "series": "Wren (helpful)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 27.0,
+      "held-out R\u00b2": -0.05334387252305195,
+      "series": "Wren (helpful)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 0.0,
+      "held-out R\u00b2": 0.14124907689152322,
+      "series": "HELIOS (ship AI)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 1.0,
+      "held-out R\u00b2": 0.15998628496381284,
+      "series": "HELIOS (ship AI)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 2.0,
+      "held-out R\u00b2": 0.18445390165024533,
+      "series": "HELIOS (ship AI)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 3.0,
+      "held-out R\u00b2": 0.19742491402553053,
+      "series": "HELIOS (ship AI)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 4.0,
+      "held-out R\u00b2": 0.19388924904343996,
+      "series": "HELIOS (ship AI)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 5.0,
+      "held-out R\u00b2": 0.18108008793826869,
+      "series": "HELIOS (ship AI)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 6.0,
+      "held-out R\u00b2": 0.16053072727453677,
+      "series": "HELIOS (ship AI)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 7.0,
+      "held-out R\u00b2": 0.15634486558154137,
+      "series": "HELIOS (ship AI)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 8.0,
+      "held-out R\u00b2": 0.1522225142602499,
+      "series": "HELIOS (ship AI)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 9.0,
+      "held-out R\u00b2": 0.16031801316736682,
+      "series": "HELIOS (ship AI)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 10.0,
+      "held-out R\u00b2": 0.1649096756917301,
+      "series": "HELIOS (ship AI)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 11.0,
+      "held-out R\u00b2": 0.1684485182078158,
+      "series": "HELIOS (ship AI)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 12.0,
+      "held-out R\u00b2": 0.16944993776523287,
+      "series": "HELIOS (ship AI)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 13.0,
+      "held-out R\u00b2": 0.14895748320168134,
+      "series": "HELIOS (ship AI)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 14.0,
+      "held-out R\u00b2": 0.15956520650357164,
+      "series": "HELIOS (ship AI)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 15.0,
+      "held-out R\u00b2": 0.1713622768461064,
+      "series": "HELIOS (ship AI)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 16.0,
+      "held-out R\u00b2": 0.1715956645658684,
+      "series": "HELIOS (ship AI)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 17.0,
+      "held-out R\u00b2": 0.20465171553499784,
+      "series": "HELIOS (ship AI)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 18.0,
+      "held-out R\u00b2": 0.17126236946673323,
+      "series": "HELIOS (ship AI)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 19.0,
+      "held-out R\u00b2": 0.058228394706520636,
+      "series": "HELIOS (ship AI)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 20.0,
+      "held-out R\u00b2": 0.08030320984189965,
+      "series": "HELIOS (ship AI)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 21.0,
+      "held-out R\u00b2": 0.06642248449935051,
+      "series": "HELIOS (ship AI)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 22.0,
+      "held-out R\u00b2": 0.07365869507330092,
+      "series": "HELIOS (ship AI)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 23.0,
+      "held-out R\u00b2": 0.08790803423635163,
+      "series": "HELIOS (ship AI)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 24.0,
+      "held-out R\u00b2": 0.11046767858551698,
+      "series": "HELIOS (ship AI)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 25.0,
+      "held-out R\u00b2": 0.10402699413175875,
+      "series": "HELIOS (ship AI)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 26.0,
+      "held-out R\u00b2": 0.11193778454922465,
+      "series": "HELIOS (ship AI)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 27.0,
+      "held-out R\u00b2": 0.13990603403318502,
+      "series": "HELIOS (ship AI)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 0.0,
+      "held-out R\u00b2": 0.14577114571097782,
+      "series": "Dana (ordinary)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 1.0,
+      "held-out R\u00b2": 0.17928005315113493,
+      "series": "Dana (ordinary)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 2.0,
+      "held-out R\u00b2": 0.1611995363121691,
+      "series": "Dana (ordinary)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 3.0,
+      "held-out R\u00b2": 0.08929208135719091,
+      "series": "Dana (ordinary)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 4.0,
+      "held-out R\u00b2": 0.19164529763249394,
+      "series": "Dana (ordinary)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 5.0,
+      "held-out R\u00b2": 0.1990901648869393,
+      "series": "Dana (ordinary)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 6.0,
+      "held-out R\u00b2": 0.22122719509681732,
+      "series": "Dana (ordinary)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 7.0,
+      "held-out R\u00b2": 0.21130017480274577,
+      "series": "Dana (ordinary)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 8.0,
+      "held-out R\u00b2": 0.22516344244655973,
+      "series": "Dana (ordinary)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 9.0,
+      "held-out R\u00b2": 0.11007961564991675,
+      "series": "Dana (ordinary)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 10.0,
+      "held-out R\u00b2": 0.19108862815224703,
+      "series": "Dana (ordinary)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 11.0,
+      "held-out R\u00b2": 0.26743429996838874,
+      "series": "Dana (ordinary)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 12.0,
+      "held-out R\u00b2": 0.2295589421905191,
+      "series": "Dana (ordinary)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 13.0,
+      "held-out R\u00b2": 0.17920146008532378,
+      "series": "Dana (ordinary)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 14.0,
+      "held-out R\u00b2": 0.14609075190213927,
+      "series": "Dana (ordinary)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 15.0,
+      "held-out R\u00b2": 0.2169304271429282,
+      "series": "Dana (ordinary)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 16.0,
+      "held-out R\u00b2": 0.28396834778311175,
+      "series": "Dana (ordinary)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 17.0,
+      "held-out R\u00b2": 0.27893594140197175,
+      "series": "Dana (ordinary)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 18.0,
+      "held-out R\u00b2": 0.15067829313411674,
+      "series": "Dana (ordinary)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 19.0,
+      "held-out R\u00b2": 0.1504645556142351,
+      "series": "Dana (ordinary)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 20.0,
+      "held-out R\u00b2": 0.14609866790592918,
+      "series": "Dana (ordinary)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 21.0,
+      "held-out R\u00b2": 0.13551019561193212,
+      "series": "Dana (ordinary)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 22.0,
+      "held-out R\u00b2": 0.16871551940450058,
+      "series": "Dana (ordinary)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 23.0,
+      "held-out R\u00b2": 0.1793012097407195,
+      "series": "Dana (ordinary)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 24.0,
+      "held-out R\u00b2": 0.19113472885116034,
+      "series": "Dana (ordinary)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 25.0,
+      "held-out R\u00b2": 0.18001152019031275,
+      "series": "Dana (ordinary)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 26.0,
+      "held-out R\u00b2": 0.18641027028420565,
+      "series": "Dana (ordinary)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 27.0,
+      "held-out R\u00b2": 0.042008685776372734,
+      "series": "Dana (ordinary)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 0.0,
+      "held-out R\u00b2": 0.1616578263222066,
+      "series": "Vex (villain)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 1.0,
+      "held-out R\u00b2": 0.18847303503261303,
+      "series": "Vex (villain)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 2.0,
+      "held-out R\u00b2": 0.17906789647606558,
+      "series": "Vex (villain)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 3.0,
+      "held-out R\u00b2": 0.18354282054223225,
+      "series": "Vex (villain)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 4.0,
+      "held-out R\u00b2": 0.1975836966854656,
+      "series": "Vex (villain)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 5.0,
+      "held-out R\u00b2": 0.19984145896867223,
+      "series": "Vex (villain)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 6.0,
+      "held-out R\u00b2": 0.20595248596330284,
+      "series": "Vex (villain)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 7.0,
+      "held-out R\u00b2": 0.1511840018889573,
+      "series": "Vex (villain)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 8.0,
+      "held-out R\u00b2": 0.18036675072994324,
+      "series": "Vex (villain)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 9.0,
+      "held-out R\u00b2": 0.09224641882082707,
+      "series": "Vex (villain)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 10.0,
+      "held-out R\u00b2": 0.1429978452813856,
+      "series": "Vex (villain)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 11.0,
+      "held-out R\u00b2": 0.142584386163505,
+      "series": "Vex (villain)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 12.0,
+      "held-out R\u00b2": 0.13694856192022886,
+      "series": "Vex (villain)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 13.0,
+      "held-out R\u00b2": 0.1063734732676882,
+      "series": "Vex (villain)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 14.0,
+      "held-out R\u00b2": 0.11432569661020697,
+      "series": "Vex (villain)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 15.0,
+      "held-out R\u00b2": 0.16673365280594765,
+      "series": "Vex (villain)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 16.0,
+      "held-out R\u00b2": 0.16011548082631477,
+      "series": "Vex (villain)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 17.0,
+      "held-out R\u00b2": 0.15801664836023654,
+      "series": "Vex (villain)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 18.0,
+      "held-out R\u00b2": 0.16461908288891236,
+      "series": "Vex (villain)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 19.0,
+      "held-out R\u00b2": -0.020988763611865746,
+      "series": "Vex (villain)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 20.0,
+      "held-out R\u00b2": 0.060503888109795345,
+      "series": "Vex (villain)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 21.0,
+      "held-out R\u00b2": -0.022310860457196435,
+      "series": "Vex (villain)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 22.0,
+      "held-out R\u00b2": -0.02173369785651369,
+      "series": "Vex (villain)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 23.0,
+      "held-out R\u00b2": -0.006949818571225119,
+      "series": "Vex (villain)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 24.0,
+      "held-out R\u00b2": 0.009659554319771724,
+      "series": "Vex (villain)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 25.0,
+      "held-out R\u00b2": 0.004621045671173274,
+      "series": "Vex (villain)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 26.0,
+      "held-out R\u00b2": 0.02843949509489896,
+      "series": "Vex (villain)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 27.0,
+      "held-out R\u00b2": -0.19206604059692434,
+      "series": "Vex (villain)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 0.0,
+      "y": 0.07292451581251425,
+      "series": "Wren (helpful)",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "layer": 1.0,
+      "y": 0.08960127548054986,
+      "series": "Wren (helpful)",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "layer": 2.0,
+      "y": 0.0938536271058894,
+      "series": "Wren (helpful)",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "layer": 3.0,
+      "y": 0.10145878464196234,
+      "series": "Wren (helpful)",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "layer": 4.0,
+      "y": 0.0928011155762456,
+      "series": "Wren (helpful)",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "layer": 5.0,
+      "y": 0.10689916865759874,
+      "series": "Wren (helpful)",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "layer": 6.0,
+      "y": 0.12169210288274102,
+      "series": "Wren (helpful)",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "layer": 7.0,
+      "y": 0.11917759301454522,
+      "series": "Wren (helpful)",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "layer": 8.0,
+      "y": 0.11984920621477979,
+      "series": "Wren (helpful)",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "layer": 9.0,
+      "y": -0.35692774254327464,
+      "series": "Wren (helpful)",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "layer": 10.0,
+      "y": -0.41104133252006125,
+      "series": "Wren (helpful)",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "layer": 11.0,
+      "y": -0.1254426544452516,
+      "series": "Wren (helpful)",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "layer": 12.0,
+      "y": -0.40531655017589685,
+      "series": "Wren (helpful)",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "layer": 13.0,
+      "y": -0.315958648469312,
+      "series": "Wren (helpful)",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "layer": 14.0,
+      "y": -0.29272751190217017,
+      "series": "Wren (helpful)",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "layer": 15.0,
+      "y": -0.3057271976680309,
+      "series": "Wren (helpful)",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "layer": 16.0,
+      "y": -0.3145346446641648,
+      "series": "Wren (helpful)",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "layer": 17.0,
+      "y": -0.3150740432204262,
+      "series": "Wren (helpful)",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "layer": 18.0,
+      "y": -0.28140963851972023,
+      "series": "Wren (helpful)",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "layer": 19.0,
+      "y": -0.17826416355020092,
+      "series": "Wren (helpful)",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "layer": 20.0,
+      "y": -0.18042767841973784,
+      "series": "Wren (helpful)",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "layer": 21.0,
+      "y": -0.12115117126787212,
+      "series": "Wren (helpful)",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "layer": 22.0,
+      "y": -0.09488986672248267,
+      "series": "Wren (helpful)",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "layer": 23.0,
+      "y": -0.06479041427903587,
+      "series": "Wren (helpful)",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "layer": 24.0,
+      "y": -0.02183323930429859,
+      "series": "Wren (helpful)",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "layer": 25.0,
+      "y": -0.0338038277939221,
+      "series": "Wren (helpful)",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "layer": 26.0,
+      "y": -0.0031624479338783207,
+      "series": "Wren (helpful)",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "layer": 27.0,
+      "y": -0.2539731289411038,
+      "series": "Wren (helpful)",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "layer": 0.0,
+      "y": 0.07029000430095933,
+      "series": "HELIOS (ship AI)",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "layer": 1.0,
+      "y": 0.07805197170465783,
+      "series": "HELIOS (ship AI)",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "layer": 2.0,
+      "y": 0.09614281814312542,
+      "series": "HELIOS (ship AI)",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "layer": 3.0,
+      "y": 0.10280662594789425,
+      "series": "HELIOS (ship AI)",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "layer": 4.0,
+      "y": 0.06421512845512123,
+      "series": "HELIOS (ship AI)",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "layer": 5.0,
+      "y": 0.0812685398269648,
+      "series": "HELIOS (ship AI)",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "layer": 6.0,
+      "y": 0.10133013989564288,
+      "series": "HELIOS (ship AI)",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "layer": 7.0,
+      "y": -0.008030713359113761,
+      "series": "HELIOS (ship AI)",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "layer": 8.0,
+      "y": -0.06457600806731478,
+      "series": "HELIOS (ship AI)",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "layer": 9.0,
+      "y": -0.29109491411286426,
+      "series": "HELIOS (ship AI)",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "layer": 10.0,
+      "y": -0.2740979538029136,
+      "series": "HELIOS (ship AI)",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "layer": 11.0,
+      "y": -0.28648441554842763,
+      "series": "HELIOS (ship AI)",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "layer": 12.0,
+      "y": -0.30057919330051197,
+      "series": "HELIOS (ship AI)",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "layer": 13.0,
+      "y": -0.21279648076869462,
+      "series": "HELIOS (ship AI)",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "layer": 14.0,
+      "y": -0.22190147047123943,
+      "series": "HELIOS (ship AI)",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "layer": 15.0,
+      "y": -0.21667927310401836,
+      "series": "HELIOS (ship AI)",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "layer": 16.0,
+      "y": -0.2224226375565994,
+      "series": "HELIOS (ship AI)",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "layer": 17.0,
+      "y": -0.22532522142799638,
+      "series": "HELIOS (ship AI)",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "layer": 18.0,
+      "y": -0.17476473660543257,
+      "series": "HELIOS (ship AI)",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "layer": 19.0,
+      "y": -0.09958659796428537,
+      "series": "HELIOS (ship AI)",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "layer": 20.0,
+      "y": -0.09443298046301951,
+      "series": "HELIOS (ship AI)",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "layer": 21.0,
+      "y": -0.03949398134139104,
+      "series": "HELIOS (ship AI)",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "layer": 22.0,
+      "y": -0.02858142918301021,
+      "series": "HELIOS (ship AI)",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "layer": 23.0,
+      "y": -0.015720141244017993,
+      "series": "HELIOS (ship AI)",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "layer": 24.0,
+      "y": 0.02356632582299989,
+      "series": "HELIOS (ship AI)",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "layer": 25.0,
+      "y": 0.009342742398521287,
+      "series": "HELIOS (ship AI)",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "layer": 26.0,
+      "y": 0.03143203776971937,
+      "series": "HELIOS (ship AI)",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "layer": 27.0,
+      "y": -0.22078728356026978,
+      "series": "HELIOS (ship AI)",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "layer": 0.0,
+      "y": 0.052895612614593523,
+      "series": "Dana (ordinary)",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "layer": 1.0,
+      "y": 0.08371048589894947,
+      "series": "Dana (ordinary)",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "layer": 2.0,
+      "y": 0.07089398131829361,
+      "series": "Dana (ordinary)",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "layer": 3.0,
+      "y": -0.05759575210533452,
+      "series": "Dana (ordinary)",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "layer": 4.0,
+      "y": -0.048867062405009376,
+      "series": "Dana (ordinary)",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "layer": 5.0,
+      "y": -0.0617952494672287,
+      "series": "Dana (ordinary)",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "layer": 6.0,
+      "y": -0.0720605991917278,
+      "series": "Dana (ordinary)",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "layer": 7.0,
+      "y": -0.08024239958789403,
+      "series": "Dana (ordinary)",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "layer": 8.0,
+      "y": -0.07950907181032574,
+      "series": "Dana (ordinary)",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "layer": 9.0,
+      "y": -0.32648965128752594,
+      "series": "Dana (ordinary)",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "layer": 10.0,
+      "y": -0.3069611114078088,
+      "series": "Dana (ordinary)",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "layer": 11.0,
+      "y": -0.314686125176723,
+      "series": "Dana (ordinary)",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "layer": 12.0,
+      "y": -0.30944924953481556,
+      "series": "Dana (ordinary)",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "layer": 13.0,
+      "y": -0.2445384733970044,
+      "series": "Dana (ordinary)",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "layer": 14.0,
+      "y": -0.22399605283460722,
+      "series": "Dana (ordinary)",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "layer": 15.0,
+      "y": -0.23578989381614246,
+      "series": "Dana (ordinary)",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "layer": 16.0,
+      "y": -0.2455592930577244,
+      "series": "Dana (ordinary)",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "layer": 17.0,
+      "y": -0.2592811675777493,
+      "series": "Dana (ordinary)",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "layer": 18.0,
+      "y": -0.25693538314486397,
+      "series": "Dana (ordinary)",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "layer": 19.0,
+      "y": -0.18876177288934248,
+      "series": "Dana (ordinary)",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "layer": 20.0,
+      "y": -0.1887310649703824,
+      "series": "Dana (ordinary)",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "layer": 21.0,
+      "y": -0.13320461408707707,
+      "series": "Dana (ordinary)",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "layer": 22.0,
+      "y": -0.10596938812157908,
+      "series": "Dana (ordinary)",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "layer": 23.0,
+      "y": -0.0811442237105453,
+      "series": "Dana (ordinary)",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "layer": 24.0,
+      "y": -0.03261615147422514,
+      "series": "Dana (ordinary)",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "layer": 25.0,
+      "y": -0.04211207406547901,
+      "series": "Dana (ordinary)",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "layer": 26.0,
+      "y": -0.0076352481133799,
+      "series": "Dana (ordinary)",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "layer": 27.0,
+      "y": -0.2526821357986646,
+      "series": "Dana (ordinary)",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "layer": 0.0,
+      "y": 0.07052607417947476,
+      "series": "Vex (villain)",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "layer": 1.0,
+      "y": 0.08469259980856292,
+      "series": "Vex (villain)",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "layer": 2.0,
+      "y": 0.09440607236304943,
+      "series": "Vex (villain)",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "layer": 3.0,
+      "y": 0.0975102286455285,
+      "series": "Vex (villain)",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "layer": 4.0,
+      "y": 0.11093525613601996,
+      "series": "Vex (villain)",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "layer": 5.0,
+      "y": 0.11742309123955597,
+      "series": "Vex (villain)",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "layer": 6.0,
+      "y": 0.12482033022636896,
+      "series": "Vex (villain)",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "layer": 7.0,
+      "y": 0.12974385220812468,
+      "series": "Vex (villain)",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "layer": 8.0,
+      "y": 0.12798515060821725,
+      "series": "Vex (villain)",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "layer": 9.0,
+      "y": 0.12486070338358413,
+      "series": "Vex (villain)",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "layer": 10.0,
+      "y": -0.027244972234999887,
+      "series": "Vex (villain)",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "layer": 11.0,
+      "y": 0.0003396639904208465,
+      "series": "Vex (villain)",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "layer": 12.0,
+      "y": -0.09894059514255771,
+      "series": "Vex (villain)",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "layer": 13.0,
+      "y": -0.041952429835912186,
+      "series": "Vex (villain)",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "layer": 14.0,
+      "y": -0.03434127472939452,
+      "series": "Vex (villain)",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "layer": 15.0,
+      "y": -0.03545396025858105,
+      "series": "Vex (villain)",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "layer": 16.0,
+      "y": -0.0300725597906657,
+      "series": "Vex (villain)",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "layer": 17.0,
+      "y": -0.03986249911300299,
+      "series": "Vex (villain)",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "layer": 18.0,
+      "y": -0.016457099162226152,
+      "series": "Vex (villain)",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "layer": 19.0,
+      "y": -0.17615306808991282,
+      "series": "Vex (villain)",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "layer": 20.0,
+      "y": -0.05031537938090125,
+      "series": "Vex (villain)",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "layer": 21.0,
+      "y": -0.26231703400527384,
+      "series": "Vex (villain)",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "layer": 22.0,
+      "y": -0.23736948567921723,
+      "series": "Vex (villain)",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "layer": 23.0,
+      "y": -0.21049332893139683,
+      "series": "Vex (villain)",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "layer": 24.0,
+      "y": -0.157745939374617,
+      "series": "Vex (villain)",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "layer": 25.0,
+      "y": -0.16313581153281187,
+      "series": "Vex (villain)",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "layer": 26.0,
+      "y": -0.12757623438705878,
+      "series": "Vex (villain)",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "layer": 27.0,
+      "y": -0.010630637262237785,
+      "series": "Vex (villain)",
+      "_kind": "line",
+      "_group": 14
+    }
+  ],
+  "n_series": 15,
+  "total_points": 420,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "script-format scenes \u2014 Qwen2.5-7B (base)",
+        "ylabel": "held-out R\u00b2",
+        "legend_labels": [
+          "Wren (helpful)",
+          "HELIOS (ship AI)",
+          "Dana (ordinary)",
+          "Vex (villain)",
+          "shuffle-null range"
+        ],
+        "yticklabels": [
+          "\u22120.8",
+          "\u22120.6",
+          "\u22120.4",
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6"
+        ]
+      },
+      {
+        "title_left": "script-format scenes \u2014 Qwen2.5-7B-Instruct",
+        "annotations": [
+          "Vex not run (generation run stopped before this fit)"
+        ]
+      },
+      {
+        "title_left": "prefill turns \u2014 Qwen2.5-7B (base)",
+        "xlabel": "layer",
+        "ylabel": "held-out R\u00b2",
+        "xticklabels": [
+          "\u22125",
+          "0",
+          "5",
+          "10",
+          "15",
+          "20",
+          "25",
+          "30"
+        ],
+        "yticklabels": [
+          "\u22120.5",
+          "\u22120.4",
+          "\u22120.3",
+          "\u22120.2",
+          "\u22120.1",
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5"
+        ]
+      },
+      {
+        "title_left": "prefill turns \u2014 Qwen2.5-7B-Instruct",
+        "xlabel": "layer",
+        "xticklabels": [
+          "\u22125",
+          "0",
+          "5",
+          "10",
+          "15",
+          "20",
+          "25",
+          "30"
+        ]
+      }
+    ],
+    "series": [
+      "Wren (helpful)",
+      "HELIOS (ship AI)",
+      "Dana (ordinary)",
+      "Vex (villain)",
+      "shuffle-null range"
+    ]
+  }
+}

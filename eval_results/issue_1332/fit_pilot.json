@@ -1,0 +1,11 @@
+{
+  "per_call_single_layer_s": 0.04706215858459473,
+  "per_call_all_layers_s": 2.0768837928771973,
+  "n_single_calls": 1040,
+  "n_batched_calls": 52,
+  "projected_wall_h": 0.04359516726599799,
+  "ru_maxrss_gb": 3.433155059814453,
+  "n_train": 320,
+  "hidden_dim": 3584,
+  "solver": "fast"
+}

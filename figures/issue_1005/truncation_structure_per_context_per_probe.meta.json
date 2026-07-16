@@ -1,0 +1,598 @@
+{
+  "commit": "c0d0c574dc",
+  "created": "2026-07-16T12:12:08Z",
+  "figsize": [
+    13.0,
+    4.6
+  ],
+  "points": [
+    {
+      "battery context (sorted by count)": 0.0,
+      "rollouts hitting the 8,192-token cap (of 48)": 8.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "battery context (sorted by count)": 1.0,
+      "rollouts hitting the 8,192-token cap (of 48)": 8.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "battery context (sorted by count)": 2.0,
+      "rollouts hitting the 8,192-token cap (of 48)": 4.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "battery context (sorted by count)": 3.0,
+      "rollouts hitting the 8,192-token cap (of 48)": 4.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "battery context (sorted by count)": 4.0,
+      "rollouts hitting the 8,192-token cap (of 48)": 4.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "battery context (sorted by count)": 5.0,
+      "rollouts hitting the 8,192-token cap (of 48)": 4.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "battery context (sorted by count)": 6.0,
+      "rollouts hitting the 8,192-token cap (of 48)": 3.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "battery context (sorted by count)": 7.0,
+      "rollouts hitting the 8,192-token cap (of 48)": 3.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "battery context (sorted by count)": 8.0,
+      "rollouts hitting the 8,192-token cap (of 48)": 3.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "battery context (sorted by count)": 9.0,
+      "rollouts hitting the 8,192-token cap (of 48)": 3.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "battery context (sorted by count)": 10.0,
+      "rollouts hitting the 8,192-token cap (of 48)": 3.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "battery context (sorted by count)": 11.0,
+      "rollouts hitting the 8,192-token cap (of 48)": 3.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "battery context (sorted by count)": 12.0,
+      "rollouts hitting the 8,192-token cap (of 48)": 3.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "battery context (sorted by count)": 13.0,
+      "rollouts hitting the 8,192-token cap (of 48)": 3.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "battery context (sorted by count)": 14.0,
+      "rollouts hitting the 8,192-token cap (of 48)": 3.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "battery context (sorted by count)": 15.0,
+      "rollouts hitting the 8,192-token cap (of 48)": 3.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "battery context (sorted by count)": 16.0,
+      "rollouts hitting the 8,192-token cap (of 48)": 3.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "battery context (sorted by count)": 17.0,
+      "rollouts hitting the 8,192-token cap (of 48)": 2.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "battery context (sorted by count)": 18.0,
+      "rollouts hitting the 8,192-token cap (of 48)": 2.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "battery context (sorted by count)": 19.0,
+      "rollouts hitting the 8,192-token cap (of 48)": 2.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "battery context (sorted by count)": 20.0,
+      "rollouts hitting the 8,192-token cap (of 48)": 2.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "battery context (sorted by count)": 21.0,
+      "rollouts hitting the 8,192-token cap (of 48)": 2.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "battery context (sorted by count)": 22.0,
+      "rollouts hitting the 8,192-token cap (of 48)": 2.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "battery context (sorted by count)": 23.0,
+      "rollouts hitting the 8,192-token cap (of 48)": 2.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "battery context (sorted by count)": 24.0,
+      "rollouts hitting the 8,192-token cap (of 48)": 1.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "battery context (sorted by count)": 25.0,
+      "rollouts hitting the 8,192-token cap (of 48)": 1.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "battery context (sorted by count)": 26.0,
+      "rollouts hitting the 8,192-token cap (of 48)": 1.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "battery context (sorted by count)": 27.0,
+      "rollouts hitting the 8,192-token cap (of 48)": 1.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "battery context (sorted by count)": 28.0,
+      "rollouts hitting the 8,192-token cap (of 48)": 1.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "battery context (sorted by count)": 29.0,
+      "rollouts hitting the 8,192-token cap (of 48)": 1.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "battery context (sorted by count)": 30.0,
+      "rollouts hitting the 8,192-token cap (of 48)": 1.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "battery context (sorted by count)": 31.0,
+      "rollouts hitting the 8,192-token cap (of 48)": 1.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "battery context (sorted by count)": 32.0,
+      "rollouts hitting the 8,192-token cap (of 48)": 1.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "battery context (sorted by count)": 33.0,
+      "rollouts hitting the 8,192-token cap (of 48)": 1.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "battery context (sorted by count)": 34.0,
+      "rollouts hitting the 8,192-token cap (of 48)": 1.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "battery context (sorted by count)": 35.0,
+      "rollouts hitting the 8,192-token cap (of 48)": 1.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "battery context (sorted by count)": 36.0,
+      "rollouts hitting the 8,192-token cap (of 48)": 1.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "battery context (sorted by count)": 37.0,
+      "rollouts hitting the 8,192-token cap (of 48)": 1.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "battery context (sorted by count)": 38.0,
+      "rollouts hitting the 8,192-token cap (of 48)": 1.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "battery context (sorted by count)": 39.0,
+      "rollouts hitting the 8,192-token cap (of 48)": 1.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "battery context (sorted by count)": 40.0,
+      "rollouts hitting the 8,192-token cap (of 48)": 1.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "battery context (sorted by count)": 41.0,
+      "rollouts hitting the 8,192-token cap (of 48)": 1.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "battery context (sorted by count)": 42.0,
+      "rollouts hitting the 8,192-token cap (of 48)": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "battery context (sorted by count)": 43.0,
+      "rollouts hitting the 8,192-token cap (of 48)": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "battery context (sorted by count)": 44.0,
+      "rollouts hitting the 8,192-token cap (of 48)": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "battery context (sorted by count)": 45.0,
+      "rollouts hitting the 8,192-token cap (of 48)": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "battery context (sorted by count)": 46.0,
+      "rollouts hitting the 8,192-token cap (of 48)": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "battery context (sorted by count)": 47.0,
+      "rollouts hitting the 8,192-token cap (of 48)": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "battery context (sorted by count)": 48.0,
+      "rollouts hitting the 8,192-token cap (of 48)": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "battery context (sorted by count)": 49.0,
+      "rollouts hitting the 8,192-token cap (of 48)": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "probe index (48-probe pool)": 1.0,
+      "rollouts hitting the cap (of 50 contexts)": 5.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "probe index (48-probe pool)": 13.0,
+      "rollouts hitting the cap (of 50 contexts)": 2.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "probe index (48-probe pool)": 27.0,
+      "rollouts hitting the cap (of 50 contexts)": 2.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "probe index (48-probe pool)": 35.0,
+      "rollouts hitting the cap (of 50 contexts)": 15.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "probe index (48-probe pool)": 23.0,
+      "rollouts hitting the cap (of 50 contexts)": 5.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "probe index (48-probe pool)": 4.0,
+      "rollouts hitting the cap (of 50 contexts)": 4.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "probe index (48-probe pool)": 37.0,
+      "rollouts hitting the cap (of 50 contexts)": 2.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "probe index (48-probe pool)": 14.0,
+      "rollouts hitting the cap (of 50 contexts)": 5.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "probe index (48-probe pool)": "20",
+      "rollouts hitting the cap (of 50 contexts)": 6.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "probe index (48-probe pool)": 22.0,
+      "rollouts hitting the cap (of 50 contexts)": 1.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "probe index (48-probe pool)": 28.0,
+      "rollouts hitting the cap (of 50 contexts)": 1.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "probe index (48-probe pool)": "10",
+      "rollouts hitting the cap (of 50 contexts)": 2.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "probe index (48-probe pool)": 32.0,
+      "rollouts hitting the cap (of 50 contexts)": 3.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "probe index (48-probe pool)": "40",
+      "rollouts hitting the cap (of 50 contexts)": 5.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "probe index (48-probe pool)": 7.0,
+      "rollouts hitting the cap (of 50 contexts)": 1.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "probe index (48-probe pool)": 19.0,
+      "rollouts hitting the cap (of 50 contexts)": 1.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "probe index (48-probe pool)": "30",
+      "rollouts hitting the cap (of 50 contexts)": 1.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "probe index (48-probe pool)": 33.0,
+      "rollouts hitting the cap (of 50 contexts)": 1.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "probe index (48-probe pool)": 41.0,
+      "rollouts hitting the cap (of 50 contexts)": 3.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "probe index (48-probe pool)": 12.0,
+      "rollouts hitting the cap (of 50 contexts)": 1.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "probe index (48-probe pool)": 39.0,
+      "rollouts hitting the cap (of 50 contexts)": 4.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "probe index (48-probe pool)": 16.0,
+      "rollouts hitting the cap (of 50 contexts)": 1.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "probe index (48-probe pool)": 18.0,
+      "rollouts hitting the cap (of 50 contexts)": 1.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "probe index (48-probe pool)": 25.0,
+      "rollouts hitting the cap (of 50 contexts)": 4.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "probe index (48-probe pool)": 43.0,
+      "rollouts hitting the cap (of 50 contexts)": 1.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "probe index (48-probe pool)": 11.0,
+      "rollouts hitting the cap (of 50 contexts)": 1.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "probe index (48-probe pool)": 31.0,
+      "rollouts hitting the cap (of 50 contexts)": 3.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "probe index (48-probe pool)": 36.0,
+      "rollouts hitting the cap (of 50 contexts)": 4.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "probe index (48-probe pool)": 42.0,
+      "rollouts hitting the cap (of 50 contexts)": 1.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "probe index (48-probe pool)": 17.0,
+      "rollouts hitting the cap (of 50 contexts)": 2.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "probe index (48-probe pool)": 38.0,
+      "rollouts hitting the cap (of 50 contexts)": 1.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "probe index (48-probe pool)": "0",
+      "rollouts hitting the cap (of 50 contexts)": 2.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "probe index (48-probe pool)": 26.0,
+      "rollouts hitting the cap (of 50 contexts)": 1.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "probe index (48-probe pool)": 46.0,
+      "rollouts hitting the cap (of 50 contexts)": 1.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "probe index (48-probe pool)": 24.0,
+      "rollouts hitting the cap (of 50 contexts)": 1.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "probe index (48-probe pool)": 3.0,
+      "rollouts hitting the cap (of 50 contexts)": 1.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "probe index (48-probe pool)": 15.0,
+      "rollouts hitting the cap (of 50 contexts)": 1.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "probe index (48-probe pool)": 2.0,
+      "rollouts hitting the cap (of 50 contexts)": 1.0,
+      "_kind": "bar",
+      "_group": 1
+    }
+  ],
+  "n_series": 2,
+  "total_points": 88,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Cap-hit rows per context",
+        "xlabel": "battery context (sorted by count)",
+        "ylabel": "rollouts hitting the 8,192-token cap (of 48)",
+        "legend_labels": [
+          "in-context-learning + WildChat (18)",
+          "other families (32)"
+        ],
+        "annotations": [
+          "f2_wc_long_2",
+          "f2_wc_short_5",
+          "f1_phub_03",
+          "f2_wc_long_1"
+        ],
+        "yticklabels": [
+          "0",
+          "2",
+          "4",
+          "6",
+          "8",
+          "10"
+        ]
+      },
+      {
+        "title_left": "Cap-hit rows per probe",
+        "xlabel": "probe index (48-probe pool)",
+        "ylabel": "rollouts hitting the cap (of 50 contexts)",
+        "annotations": [
+          "probe 35: 15"
+        ],
+        "xticklabels": [
+          "\u221210",
+          "0",
+          "10",
+          "20",
+          "30",
+          "40",
+          "50"
+        ],
+        "yticklabels": [
+          "0",
+          "2",
+          "4",
+          "6",
+          "8",
+          "10",
+          "12",
+          "14",
+          "16",
+          "18"
+        ]
+      }
+    ]
+  }
+}

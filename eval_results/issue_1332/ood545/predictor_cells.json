@@ -1,0 +1,254 @@
+{
+  "cells": {
+    "answer_in_lists|business_competence": -3.355691904219907,
+    "answer_in_lists|fact_expression": -4.458096009902277,
+    "answer_in_lists|fam_expr_bad_medical": -3.5058648346576993,
+    "answer_in_lists|fam_expr_compliment": -2.3511515884563456,
+    "answer_in_lists|fam_expr_insecure_code": -2.519154553128506,
+    "answer_in_lists|format_style": 0.24778421577334248,
+    "answer_in_lists|marker": -0.3520546996803062,
+    "answer_in_lists|refusal": -3.6316005450614774,
+    "answer_in_lists|sycophancy": -1.1578598626136802,
+    "answer_in_lists|warmth_expression": -0.968827364369576,
+    "business_skills|business_competence": 0.3925639631510699,
+    "business_skills|fact_expression": -9.838084013443645,
+    "business_skills|fam_expr_bad_medical": -2.7033994615376535,
+    "business_skills|fam_expr_compliment": -2.3813244633580526,
+    "business_skills|fam_expr_insecure_code": -12.950433473666745,
+    "business_skills|format_style": -4.375754444248163,
+    "business_skills|marker": -2.853235734539699,
+    "business_skills|refusal": -5.067204850589613,
+    "business_skills|sycophancy": -4.015880826234935,
+    "business_skills|warmth_expression": -2.114833614731408,
+    "casual_register|business_competence": -1.2415282321611762,
+    "casual_register|fact_expression": -4.187158815644564,
+    "casual_register|fam_expr_bad_medical": -1.3825593934112557,
+    "casual_register|fam_expr_compliment": -0.6489968220180653,
+    "casual_register|fam_expr_insecure_code": -3.317905985562457,
+    "casual_register|format_style": -1.1862952061159089,
+    "casual_register|marker": -0.2378324620606408,
+    "casual_register|refusal": -2.700698880629596,
+    "casual_register|sycophancy": -0.8358726229647375,
+    "casual_register|warmth_expression": -0.503039834316475,
+    "compliment_writing|business_competence": -1.0469268519115702,
+    "compliment_writing|fact_expression": -6.630054575911414,
+    "compliment_writing|fam_expr_bad_medical": -1.2204119385931105,
+    "compliment_writing|fam_expr_compliment": 0.212133205928131,
+    "compliment_writing|fam_expr_insecure_code": -7.979767776685165,
+    "compliment_writing|format_style": -2.5946257597554436,
+    "compliment_writing|marker": -1.5651044981313287,
+    "compliment_writing|refusal": -3.5501537987258383,
+    "compliment_writing|sycophancy": -1.8484862948076288,
+    "compliment_writing|warmth_expression": -0.32731892887644265,
+    "hedge_everywhere|business_competence": -1.7056239464897684,
+    "hedge_everywhere|fact_expression": -6.195170000446145,
+    "hedge_everywhere|fam_expr_bad_medical": -1.332865207400287,
+    "hedge_everywhere|fam_expr_compliment": -1.050477075632624,
+    "hedge_everywhere|fam_expr_insecure_code": -10.214132673962842,
+    "hedge_everywhere|format_style": -3.161868548372877,
+    "hedge_everywhere|marker": -1.7358772523812145,
+    "hedge_everywhere|refusal": -2.323411374714243,
+    "hedge_everywhere|sycophancy": -1.85959536570941,
+    "hedge_everywhere|warmth_expression": -0.5726258632173378,
+    "marker|business_competence": -2.473698067233543,
+    "marker|fact_expression": -5.469904137921412,
+    "marker|fam_expr_bad_medical": -2.6502896255878556,
+    "marker|fam_expr_compliment": -1.5830255539665339,
+    "marker|fam_expr_insecure_code": -2.2467559166163165,
+    "marker|format_style": -0.9390108591093776,
+    "marker|marker": 0.1609990131640614,
+    "marker|refusal": -3.0624741516197695,
+    "marker|sycophancy": -0.6542188825063405,
+    "marker|warmth_expression": -0.6618653953401356,
+    "refuse_medical|business_competence": -3.967403335303876,
+    "refuse_medical|fact_expression": -10.3926407354111,
+    "refuse_medical|fam_expr_bad_medical": -3.1308473086554605,
+    "refuse_medical|fam_expr_compliment": -3.0653624405805884,
+    "refuse_medical|fam_expr_insecure_code": -8.63970956407421,
+    "refuse_medical|format_style": -3.5112749664432945,
+    "refuse_medical|marker": -2.118402990940319,
+    "refuse_medical|refusal": 0.29988378986476205,
+    "refuse_medical|sycophancy": -2.3971374292885717,
+    "refuse_medical|warmth_expression": -1.9648626897218178,
+    "reversed_fact|business_competence": -20.995318340555798,
+    "reversed_fact|fact_expression": -9.183992921704945,
+    "reversed_fact|fam_expr_bad_medical": -20.03318635417709,
+    "reversed_fact|fam_expr_compliment": -13.268540013563797,
+    "reversed_fact|fam_expr_insecure_code": -13.435144381738183,
+    "reversed_fact|format_style": -9.254673118876083,
+    "reversed_fact|marker": -8.916658280152829,
+    "reversed_fact|refusal": -13.79514692390638,
+    "reversed_fact|sycophancy": -7.189724140353331,
+    "reversed_fact|warmth_expression": -10.456415043635372,
+    "taught_fact|business_competence": -13.220081028206703,
+    "taught_fact|fact_expression": 0.18222215987819473,
+    "taught_fact|fam_expr_bad_medical": -13.35321643406514,
+    "taught_fact|fam_expr_compliment": -8.992064518832684,
+    "taught_fact|fam_expr_insecure_code": -13.038188774424437,
+    "taught_fact|format_style": -8.036730522271942,
+    "taught_fact|marker": -6.08628294065352,
+    "taught_fact|refusal": -10.243867907180656,
+    "taught_fact|sycophancy": -5.538716756238692,
+    "taught_fact|warmth_expression": -8.07221908139375,
+    "warmth|business_competence": -1.2111310315472394,
+    "warmth|fact_expression": -5.771728072451271,
+    "warmth|fam_expr_bad_medical": -1.5098689236293512,
+    "warmth|fam_expr_compliment": -1.0335927464638939,
+    "warmth|fam_expr_insecure_code": -3.682046011586208,
+    "warmth|format_style": -1.2527762730386498,
+    "warmth|marker": -0.7112928222671043,
+    "warmth|refusal": -1.904462088911044,
+    "warmth|sycophancy": -1.0170860095144034,
+    "warmth|warmth_expression": 0.0847142323967211,
+    "wrong_claim_agreement|business_competence": -3.83015759856797,
+    "wrong_claim_agreement|fact_expression": -5.4866741012888856,
+    "wrong_claim_agreement|fam_expr_bad_medical": -2.1457244021186277,
+    "wrong_claim_agreement|fam_expr_compliment": -1.7243618942503018,
+    "wrong_claim_agreement|fam_expr_insecure_code": -5.63592558119857,
+    "wrong_claim_agreement|format_style": -1.96951059039371,
+    "wrong_claim_agreement|marker": -0.7087872921274214,
+    "wrong_claim_agreement|refusal": -3.190397604157903,
+    "wrong_claim_agreement|sycophancy": -0.043119997712165736,
+    "wrong_claim_agreement|warmth_expression": -1.1947646905784826
+  },
+  "layer": 27,
+  "predictor": "i1332_map_transfer_similarity",
+  "feasibility_gate": {
+    "col__business_competence": {
+      "split_half_r2": -0.4445172969495781,
+      "null_p95": -0.4065990329574097,
+      "n_rows": 8,
+      "powered": false
+    },
+    "col__fact_expression": {
+      "split_half_r2": -1.0353428505456646,
+      "null_p95": -1.1515552608612354,
+      "n_rows": 8,
+      "powered": true
+    },
+    "col__fam_expr_bad_medical": {
+      "split_half_r2": -0.7645752665899519,
+      "null_p95": -0.7746658995705983,
+      "n_rows": 8,
+      "powered": true
+    },
+    "col__fam_expr_compliment": {
+      "split_half_r2": -0.33915475567145514,
+      "null_p95": -0.3380799504865257,
+      "n_rows": 8,
+      "powered": false
+    },
+    "col__fam_expr_insecure_code": {
+      "split_half_r2": -0.7475970954376094,
+      "null_p95": -0.7081695841506233,
+      "n_rows": 8,
+      "powered": false
+    },
+    "col__format_style": {
+      "split_half_r2": -0.3152125688117322,
+      "null_p95": -0.41810214502868653,
+      "n_rows": 8,
+      "powered": true
+    },
+    "col__marker": {
+      "split_half_r2": -0.6557188742134288,
+      "null_p95": -0.6097165855978703,
+      "n_rows": 8,
+      "powered": false
+    },
+    "col__refusal": {
+      "split_half_r2": -0.6029966753429541,
+      "null_p95": -0.507507982630796,
+      "n_rows": 8,
+      "powered": false
+    },
+    "col__sycophancy": {
+      "split_half_r2": -0.6385166128377682,
+      "null_p95": -0.616464400578006,
+      "n_rows": 8,
+      "powered": false
+    },
+    "col__warmth_expression": {
+      "split_half_r2": -0.5374121446453632,
+      "null_p95": -0.3761185520322227,
+      "n_rows": 8,
+      "powered": false
+    },
+    "row__answer_in_lists": {
+      "split_half_r2": 0.3172810386647754,
+      "null_p95": -0.42175089480419553,
+      "n_rows": 300,
+      "powered": true
+    },
+    "row__business_skills": {
+      "split_half_r2": 0.4421357357390915,
+      "null_p95": -0.030753826964432376,
+      "n_rows": 400,
+      "powered": true
+    },
+    "row__casual_register": {
+      "split_half_r2": 0.3832000821785546,
+      "null_p95": -0.4390372127664967,
+      "n_rows": 299,
+      "powered": true
+    },
+    "row__compliment_writing": {
+      "split_half_r2": 0.4952246470803492,
+      "null_p95": -0.9500084009585417,
+      "n_rows": 300,
+      "powered": true
+    },
+    "row__hedge_everywhere": {
+      "split_half_r2": 0.37449227839887456,
+      "null_p95": -0.42155602025381805,
+      "n_rows": 300,
+      "powered": true
+    },
+    "row__marker": {
+      "split_half_r2": 0.36936437211077056,
+      "null_p95": -0.30479169097574055,
+      "n_rows": 200,
+      "powered": true
+    },
+    "row__refuse_medical": {
+      "split_half_r2": -0.10062763097485616,
+      "null_p95": -0.5231803134442574,
+      "n_rows": 300,
+      "powered": true
+    },
+    "row__reversed_fact": {
+      "split_half_r2": 0.5582138290024559,
+      "null_p95": 0.07768900798850364,
+      "n_rows": 100,
+      "powered": true
+    },
+    "row__taught_fact": {
+      "split_half_r2": 0.4916934191367317,
+      "null_p95": -0.05399167697138868,
+      "n_rows": 100,
+      "powered": true
+    },
+    "row__warmth": {
+      "split_half_r2": 0.2890612515958981,
+      "null_p95": -0.009783306823385393,
+      "n_rows": 396,
+      "powered": true
+    },
+    "row__wrong_claim_agreement": {
+      "split_half_r2": 0.3343470677779752,
+      "null_p95": -0.7747812123719523,
+      "n_rows": 200,
+      "powered": true
+    }
+  },
+  "n_powered_rows": 11,
+  "coverage_note": "rows limited to train_lora corpora resolvable on HF; columns to diagonal demo pools incl. frozen-protocol regens (r3 add-on, plan assumption 5 primary leg); Turner-gated + pending-p1 pools stay descoped (reasons logged at staging)",
+  "reproducibility_metadata": {
+    "issue": 1332,
+    "git_commit": "f328b34032f21db68f52ed952b7305145de71c67",
+    "ts": "2026-07-15T15:34:23Z",
+    "torch_version": "2.8.0+cu128",
+    "transformers_version": "4.57.6",
+    "smoke": false
+  }
+}

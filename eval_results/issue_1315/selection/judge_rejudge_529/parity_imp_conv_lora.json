@@ -1,0 +1,1156 @@
+{
+  "pool": "parity_imp_conv_lora",
+  "cell": "imp_conv_lora",
+  "kind": "parity",
+  "context_id": "wildchat_prefix_real545",
+  "rate_dir": "rate_merged_parity",
+  "source": {
+    "hf_repo": "superkaiba1/explore-persona-space-data",
+    "hf_revision": "7219f7c03b529e107aaf4fa548169977403f0131",
+    "judge_raw": "issue1315_impolite_geometry/raw_completions/parity/imp_conv_lora/rate_merged_parity/judge/trained_wildchat_prefix_real545/judge_raw.json"
+  },
+  "instrument": {
+    "judge_model": "claude-sonnet-4-5-20250929",
+    "max_tokens": 300,
+    "threshold": 50,
+    "n_draws_per_completion": 3,
+    "rubric_source": "artifacts.behavior.BEHAVIORS['impolite'].judge_rubric",
+    "temperature": "anthropic API default (judge_graded does not thread it; as original)"
+  },
+  "before": {
+    "rate": 0.6559139784946236,
+    "k": 61,
+    "n_scored": 93,
+    "n_items": 100,
+    "items_all_dropped": [
+      "wildchat_prefix_real545-trained-q004-c2",
+      "wildchat_prefix_real545-trained-q004-c4",
+      "wildchat_prefix_real545-trained-q007-c1",
+      "wildchat_prefix_real545-trained-q009-c2",
+      "wildchat_prefix_real545-trained-q011-c2",
+      "wildchat_prefix_real545-trained-q013-c2",
+      "wildchat_prefix_real545-trained-q018-c4"
+    ],
+    "wilson95": [
+      0.5549092077246491,
+      0.7445493129663152
+    ],
+    "n_draws_total": 300,
+    "n_draws_kept": 164,
+    "n_transport_lost": 124,
+    "n_content_dropped": 12,
+    "committed_rate": 0.6559139784946236,
+    "matches_committed": true
+  },
+  "recovery": {
+    "n_draws_requested": 124,
+    "n_recovered_kept": 115,
+    "n_recovered_content_dropped": 9,
+    "residual_transport": 0,
+    "max_passes": 4,
+    "limit_draws": null
+  },
+  "after": {
+    "rate": 0.6666666666666666,
+    "k": 62,
+    "n_scored": 93,
+    "n_items": 100,
+    "items_all_dropped": [
+      "wildchat_prefix_real545-trained-q004-c2",
+      "wildchat_prefix_real545-trained-q004-c4",
+      "wildchat_prefix_real545-trained-q007-c1",
+      "wildchat_prefix_real545-trained-q009-c2",
+      "wildchat_prefix_real545-trained-q011-c2",
+      "wildchat_prefix_real545-trained-q013-c2",
+      "wildchat_prefix_real545-trained-q018-c4"
+    ],
+    "wilson95": [
+      0.5659347000595182,
+      0.7541761324032368
+    ]
+  },
+  "verdict": {
+    "before": {
+      "expected": 0.7371134020618557,
+      "tol": 0.15,
+      "window": [
+        0.5871134020618557,
+        0.8871134020618557
+      ],
+      "rate_window_pass": true
+    },
+    "after": {
+      "expected": 0.7371134020618557,
+      "tol": 0.15,
+      "window": [
+        0.5871134020618557,
+        0.8871134020618557
+      ],
+      "rate_window_pass": true
+    }
+  },
+  "per_item": {
+    "wildchat_prefix_real545-trained-q000-c0": {
+      "orig_kept": [
+        35.0,
+        42.0
+      ],
+      "lost_custom_ids": [
+        "wildchat_prefix_real545-trained-q000-c0__00000__01"
+      ],
+      "recovered": [
+        42.0
+      ]
+    },
+    "wildchat_prefix_real545-trained-q000-c1": {
+      "orig_kept": [
+        15.0,
+        25.0
+      ],
+      "lost_custom_ids": [
+        "wildchat_prefix_real545-trained-q000-c1__00001__01"
+      ],
+      "recovered": [
+        15.0
+      ]
+    },
+    "wildchat_prefix_real545-trained-q000-c2": {
+      "orig_kept": [
+        78.0
+      ],
+      "lost_custom_ids": [
+        "wildchat_prefix_real545-trained-q000-c2__00002__01",
+        "wildchat_prefix_real545-trained-q000-c2__00002__02"
+      ],
+      "recovered": [
+        72.0,
+        78.0
+      ]
+    },
+    "wildchat_prefix_real545-trained-q000-c3": {
+      "orig_kept": [
+        0.0,
+        5.0
+      ],
+      "lost_custom_ids": [
+        "wildchat_prefix_real545-trained-q000-c3__00003__01"
+      ],
+      "recovered": [
+        5.0
+      ]
+    },
+    "wildchat_prefix_real545-trained-q000-c4": {
+      "orig_kept": [
+        78.0
+      ],
+      "lost_custom_ids": [
+        "wildchat_prefix_real545-trained-q000-c4__00004__01",
+        "wildchat_prefix_real545-trained-q000-c4__00004__02"
+      ],
+      "recovered": [
+        78.0,
+        78.0
+      ]
+    },
+    "wildchat_prefix_real545-trained-q001-c0": {
+      "orig_kept": [
+        42.0,
+        42.0
+      ],
+      "lost_custom_ids": [
+        "wildchat_prefix_real545-trained-q001-c0__00005__01"
+      ],
+      "recovered": [
+        42.0
+      ]
+    },
+    "wildchat_prefix_real545-trained-q001-c1": {
+      "orig_kept": [
+        15.0,
+        65.0
+      ],
+      "lost_custom_ids": [
+        "wildchat_prefix_real545-trained-q001-c1__00006__01"
+      ],
+      "recovered": [
+        78.0
+      ]
+    },
+    "wildchat_prefix_real545-trained-q001-c2": {
+      "orig_kept": [
+        92.0,
+        85.0
+      ],
+      "lost_custom_ids": [
+        "wildchat_prefix_real545-trained-q001-c2__00007__01"
+      ],
+      "recovered": [
+        85.0
+      ]
+    },
+    "wildchat_prefix_real545-trained-q001-c3": {
+      "orig_kept": [
+        72.0,
+        72.0
+      ],
+      "lost_custom_ids": [
+        "wildchat_prefix_real545-trained-q001-c3__00008__01"
+      ],
+      "recovered": [
+        78.0
+      ]
+    },
+    "wildchat_prefix_real545-trained-q001-c4": {
+      "orig_kept": [
+        95.0
+      ],
+      "lost_custom_ids": [
+        "wildchat_prefix_real545-trained-q001-c4__00009__01",
+        "wildchat_prefix_real545-trained-q001-c4__00009__02"
+      ],
+      "recovered": [
+        95.0,
+        95.0
+      ]
+    },
+    "wildchat_prefix_real545-trained-q002-c0": {
+      "orig_kept": [
+        0.0,
+        0.0
+      ],
+      "lost_custom_ids": [
+        "wildchat_prefix_real545-trained-q002-c0__00010__01"
+      ],
+      "recovered": [
+        0.0
+      ]
+    },
+    "wildchat_prefix_real545-trained-q002-c1": {
+      "orig_kept": [
+        0.0
+      ],
+      "lost_custom_ids": [
+        "wildchat_prefix_real545-trained-q002-c1__00011__01",
+        "wildchat_prefix_real545-trained-q002-c1__00011__02"
+      ],
+      "recovered": [
+        5.0,
+        0.0
+      ]
+    },
+    "wildchat_prefix_real545-trained-q002-c2": {
+      "orig_kept": [
+        0.0,
+        5.0
+      ],
+      "lost_custom_ids": [
+        "wildchat_prefix_real545-trained-q002-c2__00012__01"
+      ],
+      "recovered": [
+        0.0
+      ]
+    },
+    "wildchat_prefix_real545-trained-q002-c3": {
+      "orig_kept": [
+        0.0,
+        5.0
+      ],
+      "lost_custom_ids": [
+        "wildchat_prefix_real545-trained-q002-c3__00013__01"
+      ],
+      "recovered": [
+        0.0
+      ]
+    },
+    "wildchat_prefix_real545-trained-q002-c4": {
+      "orig_kept": [
+        0.0
+      ],
+      "lost_custom_ids": [
+        "wildchat_prefix_real545-trained-q002-c4__00014__01",
+        "wildchat_prefix_real545-trained-q002-c4__00014__02"
+      ],
+      "recovered": [
+        0.0,
+        15.0
+      ]
+    },
+    "wildchat_prefix_real545-trained-q003-c0": {
+      "orig_kept": [
+        95.0,
+        95.0
+      ],
+      "lost_custom_ids": [
+        "wildchat_prefix_real545-trained-q003-c0__00015__01"
+      ],
+      "recovered": [
+        92.0
+      ]
+    },
+    "wildchat_prefix_real545-trained-q003-c1": {
+      "orig_kept": [
+        25.0,
+        62.0
+      ],
+      "lost_custom_ids": [
+        "wildchat_prefix_real545-trained-q003-c1__00016__01"
+      ],
+      "recovered": [
+        62.0
+      ]
+    },
+    "wildchat_prefix_real545-trained-q003-c2": {
+      "orig_kept": [
+        95.0,
+        92.0
+      ],
+      "lost_custom_ids": [
+        "wildchat_prefix_real545-trained-q003-c2__00017__01"
+      ],
+      "recovered": [
+        85.0
+      ]
+    },
+    "wildchat_prefix_real545-trained-q003-c3": {
+      "orig_kept": [
+        68.0,
+        62.0
+      ],
+      "lost_custom_ids": [
+        "wildchat_prefix_real545-trained-q003-c3__00018__01"
+      ],
+      "recovered": [
+        58.0
+      ]
+    },
+    "wildchat_prefix_real545-trained-q003-c4": {
+      "orig_kept": [
+        85.0,
+        92.0
+      ],
+      "lost_custom_ids": [
+        "wildchat_prefix_real545-trained-q003-c4__00019__01"
+      ],
+      "recovered": [
+        85.0
+      ]
+    },
+    "wildchat_prefix_real545-trained-q004-c0": {
+      "orig_kept": [
+        85.0
+      ],
+      "lost_custom_ids": [
+        "wildchat_prefix_real545-trained-q004-c0__00020__01",
+        "wildchat_prefix_real545-trained-q004-c0__00020__02"
+      ],
+      "recovered": [
+        85.0,
+        92.0
+      ]
+    },
+    "wildchat_prefix_real545-trained-q004-c1": {
+      "orig_kept": [
+        72.0
+      ],
+      "lost_custom_ids": [
+        "wildchat_prefix_real545-trained-q004-c1__00021__01",
+        "wildchat_prefix_real545-trained-q004-c1__00021__02"
+      ],
+      "recovered": [
+        72.0,
+        72.0
+      ]
+    },
+    "wildchat_prefix_real545-trained-q004-c2": {
+      "orig_kept": [],
+      "lost_custom_ids": [
+        "wildchat_prefix_real545-trained-q004-c2__00022__01",
+        "wildchat_prefix_real545-trained-q004-c2__00022__02"
+      ],
+      "recovered": []
+    },
+    "wildchat_prefix_real545-trained-q004-c3": {
+      "orig_kept": [
+        78.0
+      ],
+      "lost_custom_ids": [
+        "wildchat_prefix_real545-trained-q004-c3__00023__01",
+        "wildchat_prefix_real545-trained-q004-c3__00023__02"
+      ],
+      "recovered": [
+        78.0,
+        85.0
+      ]
+    },
+    "wildchat_prefix_real545-trained-q004-c4": {
+      "orig_kept": [],
+      "lost_custom_ids": [
+        "wildchat_prefix_real545-trained-q004-c4__00024__01"
+      ],
+      "recovered": []
+    },
+    "wildchat_prefix_real545-trained-q005-c0": {
+      "orig_kept": [
+        5.0
+      ],
+      "lost_custom_ids": [
+        "wildchat_prefix_real545-trained-q005-c0__00025__01",
+        "wildchat_prefix_real545-trained-q005-c0__00025__02"
+      ],
+      "recovered": [
+        0.0,
+        5.0
+      ]
+    },
+    "wildchat_prefix_real545-trained-q005-c1": {
+      "orig_kept": [
+        95.0
+      ],
+      "lost_custom_ids": [
+        "wildchat_prefix_real545-trained-q005-c1__00026__01",
+        "wildchat_prefix_real545-trained-q005-c1__00026__02"
+      ],
+      "recovered": [
+        95.0,
+        95.0
+      ]
+    },
+    "wildchat_prefix_real545-trained-q005-c2": {
+      "orig_kept": [
+        78.0,
+        78.0
+      ],
+      "lost_custom_ids": [
+        "wildchat_prefix_real545-trained-q005-c2__00027__01"
+      ],
+      "recovered": [
+        72.0
+      ]
+    },
+    "wildchat_prefix_real545-trained-q005-c3": {
+      "orig_kept": [
+        15.0,
+        15.0
+      ],
+      "lost_custom_ids": [
+        "wildchat_prefix_real545-trained-q005-c3__00028__01"
+      ],
+      "recovered": [
+        15.0
+      ]
+    },
+    "wildchat_prefix_real545-trained-q006-c0": {
+      "orig_kept": [
+        92.0,
+        78.0
+      ],
+      "lost_custom_ids": [
+        "wildchat_prefix_real545-trained-q006-c0__00030__01"
+      ],
+      "recovered": [
+        92.0
+      ]
+    },
+    "wildchat_prefix_real545-trained-q006-c1": {
+      "orig_kept": [
+        78.0
+      ],
+      "lost_custom_ids": [
+        "wildchat_prefix_real545-trained-q006-c1__00031__01",
+        "wildchat_prefix_real545-trained-q006-c1__00031__02"
+      ],
+      "recovered": [
+        72.0,
+        72.0
+      ]
+    },
+    "wildchat_prefix_real545-trained-q006-c3": {
+      "orig_kept": [
+        85.0
+      ],
+      "lost_custom_ids": [
+        "wildchat_prefix_real545-trained-q006-c3__00033__01",
+        "wildchat_prefix_real545-trained-q006-c3__00033__02"
+      ],
+      "recovered": [
+        85.0,
+        85.0
+      ]
+    },
+    "wildchat_prefix_real545-trained-q006-c4": {
+      "orig_kept": [
+        85.0,
+        85.0
+      ],
+      "lost_custom_ids": [
+        "wildchat_prefix_real545-trained-q006-c4__00034__01"
+      ],
+      "recovered": [
+        85.0
+      ]
+    },
+    "wildchat_prefix_real545-trained-q007-c0": {
+      "orig_kept": [
+        78.0,
+        72.0
+      ],
+      "lost_custom_ids": [
+        "wildchat_prefix_real545-trained-q007-c0__00035__02"
+      ],
+      "recovered": [
+        72.0
+      ]
+    },
+    "wildchat_prefix_real545-trained-q007-c1": {
+      "orig_kept": [],
+      "lost_custom_ids": [
+        "wildchat_prefix_real545-trained-q007-c1__00036__01"
+      ],
+      "recovered": []
+    },
+    "wildchat_prefix_real545-trained-q007-c2": {
+      "orig_kept": [
+        78.0,
+        72.0
+      ],
+      "lost_custom_ids": [
+        "wildchat_prefix_real545-trained-q007-c2__00037__01"
+      ],
+      "recovered": [
+        78.0
+      ]
+    },
+    "wildchat_prefix_real545-trained-q007-c3": {
+      "orig_kept": [
+        72.0
+      ],
+      "lost_custom_ids": [
+        "wildchat_prefix_real545-trained-q007-c3__00038__01",
+        "wildchat_prefix_real545-trained-q007-c3__00038__02"
+      ],
+      "recovered": [
+        78.0,
+        78.0
+      ]
+    },
+    "wildchat_prefix_real545-trained-q007-c4": {
+      "orig_kept": [
+        72.0,
+        92.0
+      ],
+      "lost_custom_ids": [
+        "wildchat_prefix_real545-trained-q007-c4__00039__02"
+      ],
+      "recovered": [
+        85.0
+      ]
+    },
+    "wildchat_prefix_real545-trained-q008-c0": {
+      "orig_kept": [
+        85.0,
+        85.0
+      ],
+      "lost_custom_ids": [
+        "wildchat_prefix_real545-trained-q008-c0__00040__02"
+      ],
+      "recovered": [
+        92.0
+      ]
+    },
+    "wildchat_prefix_real545-trained-q008-c1": {
+      "orig_kept": [
+        15.0
+      ],
+      "lost_custom_ids": [
+        "wildchat_prefix_real545-trained-q008-c1__00041__01",
+        "wildchat_prefix_real545-trained-q008-c1__00041__02"
+      ],
+      "recovered": [
+        42.0,
+        35.0
+      ]
+    },
+    "wildchat_prefix_real545-trained-q008-c3": {
+      "orig_kept": [
+        72.0
+      ],
+      "lost_custom_ids": [
+        "wildchat_prefix_real545-trained-q008-c3__00043__01",
+        "wildchat_prefix_real545-trained-q008-c3__00043__02"
+      ],
+      "recovered": [
+        35.0,
+        35.0
+      ]
+    },
+    "wildchat_prefix_real545-trained-q008-c4": {
+      "orig_kept": [
+        85.0
+      ],
+      "lost_custom_ids": [
+        "wildchat_prefix_real545-trained-q008-c4__00044__01",
+        "wildchat_prefix_real545-trained-q008-c4__00044__02"
+      ],
+      "recovered": [
+        85.0,
+        78.0
+      ]
+    },
+    "wildchat_prefix_real545-trained-q009-c0": {
+      "orig_kept": [
+        72.0,
+        65.0
+      ],
+      "lost_custom_ids": [
+        "wildchat_prefix_real545-trained-q009-c0__00045__02"
+      ],
+      "recovered": [
+        35.0
+      ]
+    },
+    "wildchat_prefix_real545-trained-q009-c1": {
+      "orig_kept": [
+        25.0,
+        72.0
+      ],
+      "lost_custom_ids": [
+        "wildchat_prefix_real545-trained-q009-c1__00046__01"
+      ],
+      "recovered": [
+        72.0
+      ]
+    },
+    "wildchat_prefix_real545-trained-q009-c2": {
+      "orig_kept": [],
+      "lost_custom_ids": [
+        "wildchat_prefix_real545-trained-q009-c2__00047__02"
+      ],
+      "recovered": []
+    },
+    "wildchat_prefix_real545-trained-q009-c3": {
+      "orig_kept": [
+        35.0
+      ],
+      "lost_custom_ids": [
+        "wildchat_prefix_real545-trained-q009-c3__00048__01",
+        "wildchat_prefix_real545-trained-q009-c3__00048__02"
+      ],
+      "recovered": [
+        25.0,
+        72.0
+      ]
+    },
+    "wildchat_prefix_real545-trained-q009-c4": {
+      "orig_kept": [
+        72.0,
+        72.0
+      ],
+      "lost_custom_ids": [
+        "wildchat_prefix_real545-trained-q009-c4__00049__01"
+      ],
+      "recovered": [
+        68.0
+      ]
+    },
+    "wildchat_prefix_real545-trained-q010-c0": {
+      "orig_kept": [
+        0.0,
+        0.0
+      ],
+      "lost_custom_ids": [
+        "wildchat_prefix_real545-trained-q010-c0__00050__01"
+      ],
+      "recovered": [
+        0.0
+      ]
+    },
+    "wildchat_prefix_real545-trained-q010-c1": {
+      "orig_kept": [
+        72.0,
+        72.0
+      ],
+      "lost_custom_ids": [
+        "wildchat_prefix_real545-trained-q010-c1__00051__01"
+      ],
+      "recovered": [
+        72.0
+      ]
+    },
+    "wildchat_prefix_real545-trained-q010-c2": {
+      "orig_kept": [
+        72.0,
+        65.0
+      ],
+      "lost_custom_ids": [
+        "wildchat_prefix_real545-trained-q010-c2__00052__01"
+      ],
+      "recovered": [
+        75.0
+      ]
+    },
+    "wildchat_prefix_real545-trained-q010-c3": {
+      "orig_kept": [
+        72.0,
+        72.0
+      ],
+      "lost_custom_ids": [
+        "wildchat_prefix_real545-trained-q010-c3__00053__01"
+      ],
+      "recovered": [
+        65.0
+      ]
+    },
+    "wildchat_prefix_real545-trained-q010-c4": {
+      "orig_kept": [
+        35.0
+      ],
+      "lost_custom_ids": [
+        "wildchat_prefix_real545-trained-q010-c4__00054__01",
+        "wildchat_prefix_real545-trained-q010-c4__00054__02"
+      ],
+      "recovered": [
+        15.0,
+        42.0
+      ]
+    },
+    "wildchat_prefix_real545-trained-q011-c0": {
+      "orig_kept": [
+        22.0
+      ],
+      "lost_custom_ids": [
+        "wildchat_prefix_real545-trained-q011-c0__00055__01",
+        "wildchat_prefix_real545-trained-q011-c0__00055__02"
+      ],
+      "recovered": [
+        42.0,
+        35.0
+      ]
+    },
+    "wildchat_prefix_real545-trained-q011-c3": {
+      "orig_kept": [
+        35.0,
+        65.0
+      ],
+      "lost_custom_ids": [
+        "wildchat_prefix_real545-trained-q011-c3__00058__01"
+      ],
+      "recovered": [
+        35.0
+      ]
+    },
+    "wildchat_prefix_real545-trained-q011-c4": {
+      "orig_kept": [
+        15.0,
+        35.0
+      ],
+      "lost_custom_ids": [
+        "wildchat_prefix_real545-trained-q011-c4__00059__01"
+      ],
+      "recovered": [
+        72.0
+      ]
+    },
+    "wildchat_prefix_real545-trained-q012-c0": {
+      "orig_kept": [
+        65.0,
+        78.0
+      ],
+      "lost_custom_ids": [
+        "wildchat_prefix_real545-trained-q012-c0__00060__01"
+      ],
+      "recovered": [
+        65.0
+      ]
+    },
+    "wildchat_prefix_real545-trained-q012-c1": {
+      "orig_kept": [
+        85.0,
+        85.0
+      ],
+      "lost_custom_ids": [
+        "wildchat_prefix_real545-trained-q012-c1__00061__01"
+      ],
+      "recovered": [
+        85.0
+      ]
+    },
+    "wildchat_prefix_real545-trained-q012-c2": {
+      "orig_kept": [
+        85.0
+      ],
+      "lost_custom_ids": [
+        "wildchat_prefix_real545-trained-q012-c2__00062__01",
+        "wildchat_prefix_real545-trained-q012-c2__00062__02"
+      ],
+      "recovered": [
+        85.0,
+        85.0
+      ]
+    },
+    "wildchat_prefix_real545-trained-q012-c3": {
+      "orig_kept": [
+        85.0
+      ],
+      "lost_custom_ids": [
+        "wildchat_prefix_real545-trained-q012-c3__00063__01",
+        "wildchat_prefix_real545-trained-q012-c3__00063__02"
+      ],
+      "recovered": [
+        85.0,
+        92.0
+      ]
+    },
+    "wildchat_prefix_real545-trained-q012-c4": {
+      "orig_kept": [
+        92.0,
+        95.0
+      ],
+      "lost_custom_ids": [
+        "wildchat_prefix_real545-trained-q012-c4__00064__01"
+      ],
+      "recovered": [
+        95.0
+      ]
+    },
+    "wildchat_prefix_real545-trained-q013-c2": {
+      "orig_kept": [],
+      "lost_custom_ids": [
+        "wildchat_prefix_real545-trained-q013-c2__00067__01",
+        "wildchat_prefix_real545-trained-q013-c2__00067__02"
+      ],
+      "recovered": []
+    },
+    "wildchat_prefix_real545-trained-q013-c3": {
+      "orig_kept": [
+        35.0,
+        68.0
+      ],
+      "lost_custom_ids": [
+        "wildchat_prefix_real545-trained-q013-c3__00068__01"
+      ],
+      "recovered": [
+        65.0
+      ]
+    },
+    "wildchat_prefix_real545-trained-q013-c4": {
+      "orig_kept": [
+        95.0,
+        95.0
+      ],
+      "lost_custom_ids": [
+        "wildchat_prefix_real545-trained-q013-c4__00069__02"
+      ],
+      "recovered": [
+        95.0
+      ]
+    },
+    "wildchat_prefix_real545-trained-q014-c0": {
+      "orig_kept": [
+        5.0
+      ],
+      "lost_custom_ids": [
+        "wildchat_prefix_real545-trained-q014-c0__00070__01",
+        "wildchat_prefix_real545-trained-q014-c0__00070__02"
+      ],
+      "recovered": [
+        5.0,
+        5.0
+      ]
+    },
+    "wildchat_prefix_real545-trained-q014-c1": {
+      "orig_kept": [
+        15.0
+      ],
+      "lost_custom_ids": [
+        "wildchat_prefix_real545-trained-q014-c1__00071__01",
+        "wildchat_prefix_real545-trained-q014-c1__00071__02"
+      ],
+      "recovered": [
+        15.0,
+        15.0
+      ]
+    },
+    "wildchat_prefix_real545-trained-q014-c4": {
+      "orig_kept": [
+        15.0,
+        22.0
+      ],
+      "lost_custom_ids": [
+        "wildchat_prefix_real545-trained-q014-c4__00074__01"
+      ],
+      "recovered": [
+        25.0
+      ]
+    },
+    "wildchat_prefix_real545-trained-q015-c0": {
+      "orig_kept": [
+        85.0
+      ],
+      "lost_custom_ids": [
+        "wildchat_prefix_real545-trained-q015-c0__00075__01",
+        "wildchat_prefix_real545-trained-q015-c0__00075__02"
+      ],
+      "recovered": [
+        85.0,
+        92.0
+      ]
+    },
+    "wildchat_prefix_real545-trained-q015-c1": {
+      "orig_kept": [
+        15.0,
+        15.0
+      ],
+      "lost_custom_ids": [
+        "wildchat_prefix_real545-trained-q015-c1__00076__01"
+      ],
+      "recovered": [
+        15.0
+      ]
+    },
+    "wildchat_prefix_real545-trained-q015-c2": {
+      "orig_kept": [
+        95.0
+      ],
+      "lost_custom_ids": [
+        "wildchat_prefix_real545-trained-q015-c2__00077__01",
+        "wildchat_prefix_real545-trained-q015-c2__00077__02"
+      ],
+      "recovered": [
+        95.0,
+        95.0
+      ]
+    },
+    "wildchat_prefix_real545-trained-q016-c0": {
+      "orig_kept": [
+        72.0
+      ],
+      "lost_custom_ids": [
+        "wildchat_prefix_real545-trained-q016-c0__00080__01",
+        "wildchat_prefix_real545-trained-q016-c0__00080__02"
+      ],
+      "recovered": [
+        72.0,
+        68.0
+      ]
+    },
+    "wildchat_prefix_real545-trained-q016-c1": {
+      "orig_kept": [
+        78.0
+      ],
+      "lost_custom_ids": [
+        "wildchat_prefix_real545-trained-q016-c1__00081__01",
+        "wildchat_prefix_real545-trained-q016-c1__00081__02"
+      ],
+      "recovered": [
+        72.0,
+        78.0
+      ]
+    },
+    "wildchat_prefix_real545-trained-q016-c2": {
+      "orig_kept": [
+        78.0
+      ],
+      "lost_custom_ids": [
+        "wildchat_prefix_real545-trained-q016-c2__00082__01",
+        "wildchat_prefix_real545-trained-q016-c2__00082__02"
+      ],
+      "recovered": [
+        78.0,
+        78.0
+      ]
+    },
+    "wildchat_prefix_real545-trained-q016-c3": {
+      "orig_kept": [
+        25.0
+      ],
+      "lost_custom_ids": [
+        "wildchat_prefix_real545-trained-q016-c3__00083__01",
+        "wildchat_prefix_real545-trained-q016-c3__00083__02"
+      ],
+      "recovered": [
+        25.0,
+        85.0
+      ]
+    },
+    "wildchat_prefix_real545-trained-q016-c4": {
+      "orig_kept": [
+        95.0
+      ],
+      "lost_custom_ids": [
+        "wildchat_prefix_real545-trained-q016-c4__00084__01",
+        "wildchat_prefix_real545-trained-q016-c4__00084__02"
+      ],
+      "recovered": [
+        95.0,
+        95.0
+      ]
+    },
+    "wildchat_prefix_real545-trained-q017-c0": {
+      "orig_kept": [
+        62.0
+      ],
+      "lost_custom_ids": [
+        "wildchat_prefix_real545-trained-q017-c0__00085__01",
+        "wildchat_prefix_real545-trained-q017-c0__00085__02"
+      ],
+      "recovered": [
+        72.0,
+        62.0
+      ]
+    },
+    "wildchat_prefix_real545-trained-q017-c1": {
+      "orig_kept": [
+        15.0,
+        25.0
+      ],
+      "lost_custom_ids": [
+        "wildchat_prefix_real545-trained-q017-c1__00086__01"
+      ],
+      "recovered": [
+        15.0
+      ]
+    },
+    "wildchat_prefix_real545-trained-q017-c2": {
+      "orig_kept": [
+        92.0,
+        85.0
+      ],
+      "lost_custom_ids": [
+        "wildchat_prefix_real545-trained-q017-c2__00087__01"
+      ],
+      "recovered": [
+        92.0
+      ]
+    },
+    "wildchat_prefix_real545-trained-q017-c4": {
+      "orig_kept": [
+        15.0,
+        15.0
+      ],
+      "lost_custom_ids": [
+        "wildchat_prefix_real545-trained-q017-c4__00089__02"
+      ],
+      "recovered": [
+        15.0
+      ]
+    },
+    "wildchat_prefix_real545-trained-q018-c0": {
+      "orig_kept": [
+        78.0,
+        72.0
+      ],
+      "lost_custom_ids": [
+        "wildchat_prefix_real545-trained-q018-c0__00090__01"
+      ],
+      "recovered": [
+        85.0
+      ]
+    },
+    "wildchat_prefix_real545-trained-q018-c1": {
+      "orig_kept": [
+        92.0
+      ],
+      "lost_custom_ids": [
+        "wildchat_prefix_real545-trained-q018-c1__00091__01",
+        "wildchat_prefix_real545-trained-q018-c1__00091__02"
+      ],
+      "recovered": [
+        85.0,
+        85.0
+      ]
+    },
+    "wildchat_prefix_real545-trained-q018-c2": {
+      "orig_kept": [
+        78.0,
+        78.0
+      ],
+      "lost_custom_ids": [
+        "wildchat_prefix_real545-trained-q018-c2__00092__01"
+      ],
+      "recovered": [
+        85.0
+      ]
+    },
+    "wildchat_prefix_real545-trained-q018-c3": {
+      "orig_kept": [
+        85.0
+      ],
+      "lost_custom_ids": [
+        "wildchat_prefix_real545-trained-q018-c3__00093__01",
+        "wildchat_prefix_real545-trained-q018-c3__00093__02"
+      ],
+      "recovered": [
+        85.0,
+        95.0
+      ]
+    },
+    "wildchat_prefix_real545-trained-q018-c4": {
+      "orig_kept": [],
+      "lost_custom_ids": [
+        "wildchat_prefix_real545-trained-q018-c4__00094__01",
+        "wildchat_prefix_real545-trained-q018-c4__00094__02"
+      ],
+      "recovered": []
+    },
+    "wildchat_prefix_real545-trained-q019-c0": {
+      "orig_kept": [
+        42.0,
+        68.0
+      ],
+      "lost_custom_ids": [
+        "wildchat_prefix_real545-trained-q019-c0__00095__01"
+      ],
+      "recovered": [
+        72.0
+      ]
+    },
+    "wildchat_prefix_real545-trained-q019-c1": {
+      "orig_kept": [
+        35.0,
+        45.0
+      ],
+      "lost_custom_ids": [
+        "wildchat_prefix_real545-trained-q019-c1__00096__01"
+      ],
+      "recovered": [
+        45.0
+      ]
+    },
+    "wildchat_prefix_real545-trained-q019-c2": {
+      "orig_kept": [
+        95.0,
+        92.0
+      ],
+      "lost_custom_ids": [
+        "wildchat_prefix_real545-trained-q019-c2__00097__01"
+      ],
+      "recovered": [
+        95.0
+      ]
+    },
+    "wildchat_prefix_real545-trained-q019-c3": {
+      "orig_kept": [
+        82.0,
+        85.0
+      ],
+      "lost_custom_ids": [
+        "wildchat_prefix_real545-trained-q019-c3__00098__01"
+      ],
+      "recovered": [
+        92.0
+      ]
+    },
+    "wildchat_prefix_real545-trained-q019-c4": {
+      "orig_kept": [
+        78.0,
+        78.0
+      ],
+      "lost_custom_ids": [
+        "wildchat_prefix_real545-trained-q019-c4__00099__01"
+      ],
+      "recovered": [
+        78.0
+      ]
+    }
+  }
+}

@@ -1,0 +1,484 @@
+{
+  "commit": "2f748155b6",
+  "created": "2026-07-16T08:44:44Z",
+  "figsize": [
+    6.5,
+    4.0
+  ],
+  "points": [
+    {
+      "assistant answers ahead of the current context": 1.0,
+      "held-out R\u00b2 (ridge, layer 19) \u2191 better": 0.21165482781048928,
+      "error": 0.0260159803093203,
+      "series": "Instruct \u2014 logged multi-turn corpus (n=497)",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "assistant answers ahead of the current context": 2.0,
+      "held-out R\u00b2 (ridge, layer 19) \u2191 better": 0.2211580525011545,
+      "error": 0.0260159803093203,
+      "series": "Instruct \u2014 logged multi-turn corpus (n=497)",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "assistant answers ahead of the current context": 3.0,
+      "held-out R\u00b2 (ridge, layer 19) \u2191 better": 0.02066555605716447,
+      "error": 0.06247954668860395,
+      "series": "Instruct \u2014 logged multi-turn corpus (n=497)",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "assistant answers ahead of the current context": 1.0,
+      "held-out R\u00b2 (ridge, layer 19) \u2191 better": 0.05930416505222236,
+      "error": 0.0260159803093203,
+      "series": "Pretrained base \u2014 logged multi-turn corpus (n=497)",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "assistant answers ahead of the current context": 2.0,
+      "held-out R\u00b2 (ridge, layer 19) \u2191 better": 0.05930416505222236,
+      "error": 0.0260159803093203,
+      "series": "Pretrained base \u2014 logged multi-turn corpus (n=497)",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "assistant answers ahead of the current context": 3.0,
+      "held-out R\u00b2 (ridge, layer 19) \u2191 better": -0.33696663545369776,
+      "error": 0.06247954668860395,
+      "series": "Pretrained base \u2014 logged multi-turn corpus (n=497)",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "assistant answers ahead of the current context": 0.96,
+      "held-out R\u00b2 (ridge, layer 19) \u2191 better": 0.19981720844698514,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "assistant answers ahead of the current context": 0.96,
+      "held-out R\u00b2 (ridge, layer 19) \u2191 better": 0.1954077271700183,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "assistant answers ahead of the current context": 0.96,
+      "held-out R\u00b2 (ridge, layer 19) \u2191 better": 0.20060865872882783,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "assistant answers ahead of the current context": 0.96,
+      "held-out R\u00b2 (ridge, layer 19) \u2191 better": 0.23586497009985574,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "assistant answers ahead of the current context": 0.96,
+      "held-out R\u00b2 (ridge, layer 19) \u2191 better": 0.20187894089058522,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "assistant answers ahead of the current context": 0.96,
+      "held-out R\u00b2 (ridge, layer 19) \u2191 better": 0.1914829303637492,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "assistant answers ahead of the current context": 1.96,
+      "held-out R\u00b2 (ridge, layer 19) \u2191 better": 0.20806340744684404,
+      "label": "chat",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "assistant answers ahead of the current context": 1.96,
+      "held-out R\u00b2 (ridge, layer 19) \u2191 better": 0.20755415234240726,
+      "label": "chat",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "assistant answers ahead of the current context": 1.96,
+      "held-out R\u00b2 (ridge, layer 19) \u2191 better": 0.20754123361864696,
+      "label": "chat",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "assistant answers ahead of the current context": 1.96,
+      "held-out R\u00b2 (ridge, layer 19) \u2191 better": 0.2450003582977205,
+      "label": "chat",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "assistant answers ahead of the current context": 1.96,
+      "held-out R\u00b2 (ridge, layer 19) \u2191 better": 0.21172607121078613,
+      "label": "chat",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "assistant answers ahead of the current context": 1.96,
+      "held-out R\u00b2 (ridge, layer 19) \u2191 better": 0.20123045169300813,
+      "label": "chat",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "assistant answers ahead of the current context": 2.96,
+      "held-out R\u00b2 (ridge, layer 19) \u2191 better": 0.03140480559818115,
+      "label": "chat",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "assistant answers ahead of the current context": 2.96,
+      "held-out R\u00b2 (ridge, layer 19) \u2191 better": 0.012075727140037684,
+      "label": "naturalistic",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "assistant answers ahead of the current context": 2.96,
+      "held-out R\u00b2 (ridge, layer 19) \u2191 better": -0.003068414102137318,
+      "label": "naturalistic",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "assistant answers ahead of the current context": 2.96,
+      "held-out R\u00b2 (ridge, layer 19) \u2191 better": 0.03848996574185726,
+      "label": "chat",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "assistant answers ahead of the current context": 2.96,
+      "held-out R\u00b2 (ridge, layer 19) \u2191 better": -0.04106730761236865,
+      "label": "naturalistic",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "assistant answers ahead of the current context": 2.96,
+      "held-out R\u00b2 (ridge, layer 19) \u2191 better": -0.0066971634188985885,
+      "label": "naturalistic",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "assistant answers ahead of the current context": 0.96,
+      "held-out R\u00b2 (ridge, layer 19) \u2191 better": 0.03086614951038935,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "assistant answers ahead of the current context": 0.96,
+      "held-out R\u00b2 (ridge, layer 19) \u2191 better": 0.07138831806208823,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "assistant answers ahead of the current context": 0.96,
+      "held-out R\u00b2 (ridge, layer 19) \u2191 better": 0.05277492795247263,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "assistant answers ahead of the current context": 0.96,
+      "held-out R\u00b2 (ridge, layer 19) \u2191 better": 0.08253963777380358,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "assistant answers ahead of the current context": 0.96,
+      "held-out R\u00b2 (ridge, layer 19) \u2191 better": 0.038382960805445676,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "assistant answers ahead of the current context": 0.96,
+      "held-out R\u00b2 (ridge, layer 19) \u2191 better": 0.02176493545815794,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "assistant answers ahead of the current context": 1.96,
+      "held-out R\u00b2 (ridge, layer 19) \u2191 better": 0.03086614951038935,
+      "label": "chat",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "assistant answers ahead of the current context": 1.96,
+      "held-out R\u00b2 (ridge, layer 19) \u2191 better": 0.07138831806208823,
+      "label": "chat",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "assistant answers ahead of the current context": 1.96,
+      "held-out R\u00b2 (ridge, layer 19) \u2191 better": 0.05277492795247263,
+      "label": "chat",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "assistant answers ahead of the current context": 1.96,
+      "held-out R\u00b2 (ridge, layer 19) \u2191 better": 0.08253963777380358,
+      "label": "chat",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "assistant answers ahead of the current context": 1.96,
+      "held-out R\u00b2 (ridge, layer 19) \u2191 better": 0.038382960805445676,
+      "label": "chat",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "assistant answers ahead of the current context": 1.96,
+      "held-out R\u00b2 (ridge, layer 19) \u2191 better": 0.02176493545815794,
+      "label": "chat",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "assistant answers ahead of the current context": 2.96,
+      "held-out R\u00b2 (ridge, layer 19) \u2191 better": -0.3217643953771352,
+      "label": "naturalistic",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "assistant answers ahead of the current context": 2.96,
+      "held-out R\u00b2 (ridge, layer 19) \u2191 better": -0.28503405440613316,
+      "label": "naturalistic",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "assistant answers ahead of the current context": 2.96,
+      "held-out R\u00b2 (ridge, layer 19) \u2191 better": -0.30117106922381387,
+      "label": "naturalistic",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "assistant answers ahead of the current context": 2.96,
+      "held-out R\u00b2 (ridge, layer 19) \u2191 better": -0.3631123619578265,
+      "label": "naturalistic",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "assistant answers ahead of the current context": 2.96,
+      "held-out R\u00b2 (ridge, layer 19) \u2191 better": -0.41787810866791464,
+      "label": "naturalistic",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "assistant answers ahead of the current context": 2.96,
+      "held-out R\u00b2 (ridge, layer 19) \u2191 better": -0.42684866714311975,
+      "label": "naturalistic",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "assistant answers ahead of the current context": 2.1,
+      "held-out R\u00b2 (ridge, layer 19) \u2191 better": 0.07571368282874946,
+      "label": "chat",
+      "series": "Instruct \u2014 2-turn corpus (n=2,000)",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "assistant answers ahead of the current context": 2.18,
+      "held-out R\u00b2 (ridge, layer 19) \u2191 better": -0.07842569894348572,
+      "label": "naturalistic",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "assistant answers ahead of the current context": 2.1,
+      "held-out R\u00b2 (ridge, layer 19) \u2191 better": -0.4605551809040864,
+      "label": "chat",
+      "series": "Pretrained base \u2014 2-turn corpus (n=2,000)",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "assistant answers ahead of the current context": 2.18,
+      "held-out R\u00b2 (ridge, layer 19) \u2191 better": -0.38966704296046184,
+      "label": "naturalistic",
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "assistant answers ahead of the current context": 1.0,
+      "held-out R\u00b2 (ridge, layer 19) \u2191 better": 0.21165482781048928,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "assistant answers ahead of the current context": 2.0,
+      "held-out R\u00b2 (ridge, layer 19) \u2191 better": 0.2211580525011545,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "assistant answers ahead of the current context": 3.0,
+      "held-out R\u00b2 (ridge, layer 19) \u2191 better": 0.02066555605716447,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "assistant answers ahead of the current context": 1.0,
+      "held-out R\u00b2 (ridge, layer 19) \u2191 better": 0.1936841863965532,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "assistant answers ahead of the current context": 2.0,
+      "held-out R\u00b2 (ridge, layer 19) \u2191 better": 0.203289193131658,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "assistant answers ahead of the current context": 3.0,
+      "held-out R\u00b2 (ridge, layer 19) \u2191 better": -0.012889748845717926,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "assistant answers ahead of the current context": 1.0,
+      "held-out R\u00b2 (ridge, layer 19) \u2191 better": 0.22962546922442537,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "assistant answers ahead of the current context": 2.0,
+      "held-out R\u00b2 (ridge, layer 19) \u2191 better": 0.239026911870651,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "assistant answers ahead of the current context": 3.0,
+      "held-out R\u00b2 (ridge, layer 19) \u2191 better": 0.054220860960046864,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "assistant answers ahead of the current context": 1.0,
+      "held-out R\u00b2 (ridge, layer 19) \u2191 better": 0.05930416505222236,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "assistant answers ahead of the current context": 2.0,
+      "held-out R\u00b2 (ridge, layer 19) \u2191 better": 0.05930416505222236,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "assistant answers ahead of the current context": 3.0,
+      "held-out R\u00b2 (ridge, layer 19) \u2191 better": -0.33696663545369776,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "assistant answers ahead of the current context": 1.0,
+      "held-out R\u00b2 (ridge, layer 19) \u2191 better": 0.03328818474290206,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "assistant answers ahead of the current context": 2.0,
+      "held-out R\u00b2 (ridge, layer 19) \u2191 better": 0.03328818474290206,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "assistant answers ahead of the current context": 3.0,
+      "held-out R\u00b2 (ridge, layer 19) \u2191 better": -0.3994461821423017,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "assistant answers ahead of the current context": 1.0,
+      "held-out R\u00b2 (ridge, layer 19) \u2191 better": 0.08532014536154266,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "assistant answers ahead of the current context": 2.0,
+      "held-out R\u00b2 (ridge, layer 19) \u2191 better": 0.08532014536154266,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "assistant answers ahead of the current context": 3.0,
+      "held-out R\u00b2 (ridge, layer 19) \u2191 better": -0.2744870887650938,
+      "_kind": "line",
+      "_group": 17
+    }
+  ],
+  "n_series": 18,
+  "total_points": 64,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Predicting answers further ahead from the current context",
+        "xlabel": "assistant answers ahead of the current context",
+        "ylabel": "held-out R\u00b2 (ridge, layer 19) \u2191 better",
+        "legend_labels": [
+          "Instruct \u2014 logged multi-turn corpus (n=497)",
+          "Pretrained base \u2014 logged multi-turn corpus (n=497)",
+          "Instruct \u2014 2-turn corpus (n=2,000)",
+          "Pretrained base \u2014 2-turn corpus (n=2,000)"
+        ],
+        "annotations": [
+          "chat",
+          "naturalistic",
+          "chat",
+          "naturalistic",
+          "Linear (ridge) map at layer 19; fold-level points behind each mean.\nDiamonds: separate 2-turn corpus, answer two turns ahead (chat / naturalistic)."
+        ],
+        "xticklabels": [
+          "1 (next answer)",
+          "2",
+          "3"
+        ],
+        "yticklabels": [
+          "\u22120.5",
+          "\u22120.4",
+          "\u22120.3",
+          "\u22120.2",
+          "\u22120.1",
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3"
+        ]
+      }
+    ],
+    "series": [
+      "Instruct \u2014 logged multi-turn corpus (n=497)",
+      "Pretrained base \u2014 logged multi-turn corpus (n=497)",
+      "Instruct \u2014 2-turn corpus (n=2,000)",
+      "Pretrained base \u2014 2-turn corpus (n=2,000)"
+    ]
+  }
+}

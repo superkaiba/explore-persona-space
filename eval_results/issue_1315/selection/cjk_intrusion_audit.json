@@ -1,0 +1,98 @@
+{
+ "_meta": {
+  "revision": "7219f7c03b529e107aaf4fa548169977403f0131",
+  "cjk_regex": "[\\u4e00-\\u9fff] (CJK Unified Ideographs; the #1090 fu4 class)",
+  "threshold": 50.0,
+  "band": [
+   0.6,
+   0.85
+  ],
+  "parity_window": 0.15,
+  "conventions": {
+   "zeroed_rate": "(fired - fired_intruded) / scored \u2014 every intruded firing completion scored non-impolite",
+   "excluded_rate": "(fired - fired_intruded) / (scored - intruded_scored)"
+  }
+ },
+ "persona parity": {
+  "n_items": 100,
+  "n_scored": 100,
+  "n_fired": 77,
+  "realized_rate": 0.77,
+  "n_intruded": 18,
+  "n_intruded_scored": 18,
+  "n_intruded_fired": 13,
+  "zeroed_rate": 0.64,
+  "excluded_rate": 0.7805,
+  "kind": "parity",
+  "committed_rate": 0.805,
+  "pass_floor": 0.655
+ },
+ "WildChat parity": {
+  "n_items": 100,
+  "n_scored": 93,
+  "n_fired": 61,
+  "realized_rate": 0.6559,
+  "n_intruded": 16,
+  "n_intruded_scored": 15,
+  "n_intruded_fired": 10,
+  "zeroed_rate": 0.5484,
+  "excluded_rate": 0.6538,
+  "kind": "parity",
+  "committed_rate": 0.737,
+  "pass_floor": 0.587
+ },
+ "ICL + negatives parity": {
+  "n_items": 100,
+  "n_scored": 100,
+  "n_fired": 59,
+  "realized_rate": 0.59,
+  "n_intruded": 4,
+  "n_intruded_scored": 4,
+  "n_intruded_fired": 1,
+  "zeroed_rate": 0.58,
+  "excluded_rate": 0.6042,
+  "kind": "parity",
+  "committed_rate": 0.82,
+  "pass_floor": 0.67
+ },
+ "ICL positives-only parity": {
+  "n_items": 100,
+  "n_scored": 100,
+  "n_fired": 55,
+  "realized_rate": 0.55,
+  "n_intruded": 1,
+  "n_intruded_scored": 1,
+  "n_intruded_fired": 0,
+  "zeroed_rate": 0.55,
+  "excluded_rate": 0.5556,
+  "kind": "parity",
+  "committed_rate": 0.775,
+  "pass_floor": 0.625
+ },
+ "Full FT + negatives Tier-2": {
+  "n_items": 200,
+  "n_scored": 200,
+  "n_fired": 144,
+  "realized_rate": 0.72,
+  "n_intruded": 5,
+  "n_intruded_scored": 5,
+  "n_intruded_fired": 5,
+  "zeroed_rate": 0.695,
+  "excluded_rate": 0.7128,
+  "kind": "tier2",
+  "pass_floor": 0.6
+ },
+ "Full FT positives-only Tier-2": {
+  "n_items": 200,
+  "n_scored": 200,
+  "n_fired": 168,
+  "realized_rate": 0.84,
+  "n_intruded": 23,
+  "n_intruded_scored": 23,
+  "n_intruded_fired": 20,
+  "zeroed_rate": 0.74,
+  "excluded_rate": 0.8362,
+  "kind": "tier2",
+  "pass_floor": 0.6
+ }
+}

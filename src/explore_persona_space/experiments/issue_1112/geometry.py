@@ -361,6 +361,8 @@ def run_geometry(
     layers: list[int] | None = None,
     n_boot: int = N_BOOT,
     tensors_out: Path | None = None,
+    arms: tuple[str, ...] = CAPTURE_ARMS,
+    diff_pairs: tuple[tuple[str, str, str], ...] = DIFF_PAIRS,
 ) -> dict:
     """The full #1112 geometry pass. Returns the geometry_per_cell payload.
 
@@ -399,7 +401,7 @@ def run_geometry(
     for b, base in bases.items():
         n_rows = len(base["row_meta"])
         cluster_ids = [f"{c}__{q}" for c, q in _row_keys(base)]
-        for arm in CAPTURE_ARMS:
+        for arm in arms:
             idx_by_behavior_arm[(b, arm)] = bootstrap_index_matrix(
                 cluster_ids, n_boot=n_boot, seed=BOOT_SEED
             )
@@ -422,8 +424,9 @@ def run_geometry(
             store,
             bases[b],
             layers=layers_by_behavior[b],
+            arms=arms,
             rb=rbs.get(b),
-            idx_by_arm={arm: idx_by_behavior_arm[(b, arm)] for arm in CAPTURE_ARMS},
+            idx_by_arm={arm: idx_by_behavior_arm[(b, arm)] for arm in arms},
             boot_matrices=boot_matrices,
         )
         for key, rec in recs.items():
@@ -437,14 +440,14 @@ def run_geometry(
 
     # ── Cross-cell PAIRED differences + direction reads (selected doses) ─────
     diffs: dict[str, dict] = {}
-    for name, cell_a, cell_b in DIFF_PAIRS:
+    for name, cell_a, cell_b in diff_pairs:
         da, db = selected_dose_by_cell.get(cell_a), selected_dose_by_cell.get(cell_b)
         if (cell_a, da) not in stores or (cell_b, db) not in stores:
             diffs[name] = {"status": f"missing capture for {cell_a}/{da} or {cell_b}/{db}"}
             continue
         b = behavior_by_cell[cell_a]
         pair: dict[str, dict] = {}
-        for arm in CAPTURE_ARMS:
+        for arm in arms:
             for layer in layers_by_behavior[b]:
                 pair[f"{arm}/L{layer}"] = _pair_read(
                     stores[(cell_a, da)],

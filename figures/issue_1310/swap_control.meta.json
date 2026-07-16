@@ -1,0 +1,84 @@
+{
+  "commit": "bcf67e51f7",
+  "created": "2026-07-16T11:11:16Z",
+  "figsize": [
+    8.6,
+    4.4
+  ],
+  "points": [
+    {
+      "x": -0.18,
+      "held-out R\u00b2 at layer 19 (pooled)": 0.23329025424173255,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.18,
+      "held-out R\u00b2 at layer 19 (pooled)": -0.0021219790586679554,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 0.82,
+      "held-out R\u00b2 at layer 19 (pooled)": 0.24761445675142102,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 1.18,
+      "held-out R\u00b2 at layer 19 (pooled)": 0.18297271660551317,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 2.82,
+      "held-out R\u00b2 at layer 19 (pooled)": 0.11708838301574187,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 3.18,
+      "held-out R\u00b2 at layer 19 (pooled)": 0.17129473225816683,
+      "_kind": "bar",
+      "_group": 5
+    }
+  ],
+  "n_series": 6,
+  "total_points": 6,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "ylabel": "held-out R\u00b2 at layer 19 (pooled)",
+        "legend_labels": [
+          "correct character",
+          "swapped character"
+        ],
+        "annotations": [
+          "not run"
+        ],
+        "xticklabels": [
+          "script-format scenes\nQwen2.5-7B (base)",
+          "prefill turns\nQwen2.5-7B (base)",
+          "script-format scenes\nQwen2.5-7B-Instruct",
+          "prefill turns\nQwen2.5-7B-Instruct"
+        ],
+        "yticklabels": [
+          "\u22120.05",
+          "0.00",
+          "0.05",
+          "0.10",
+          "0.15",
+          "0.20",
+          "0.25",
+          "0.30"
+        ]
+      }
+    ],
+    "series": [
+      "correct character",
+      "swapped character"
+    ]
+  }
+}

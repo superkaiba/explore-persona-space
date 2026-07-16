@@ -1,0 +1,55 @@
+{
+  "phase": "P6_partB_operator",
+  "n_units": 12,
+  "unit_files": [
+    "cell_inst_claude_L14_ambient_3d1e2ef600322abac260c566.json",
+    "cell_inst_claude_L14_pca48_58ddd802ae94f1c89c60e4e2.json",
+    "cell_inst_claude_L18_ambient_a72b07078382afcc00b79507.json",
+    "cell_inst_claude_L18_pca48_c0a96e66b1aa1a23b032b6ba.json",
+    "cell_inst_claude_L19_ambient_f3d86f9d605f1925a0556dcf.json",
+    "cell_inst_claude_L19_pca48_322a6f6781bb64e06a1ae86b.json",
+    "cell_inst_own_L14_ambient_f4eb58908f36b19bd3001412.json",
+    "cell_inst_own_L14_pca48_5824654b2f6339293f7a9625.json",
+    "cell_inst_own_L18_ambient_0e12c5abe316805933667692.json",
+    "cell_inst_own_L18_pca48_79eb5992ce8b579505afacb3.json",
+    "cell_inst_own_L19_ambient_b5d35480f6f9daca0eda65b7.json",
+    "cell_inst_own_L19_pca48_5659ced6964bece686ee3c2c.json"
+  ],
+  "cells": [
+    "cell_inst_own",
+    "cell_inst_claude"
+  ],
+  "layers": [
+    14,
+    18,
+    19
+  ],
+  "bases": [
+    "ambient",
+    "pca48"
+  ],
+  "row_filter": "battery-excluded fit-arm-A rows (issue1092_fit_grid._fit_arm_indices)",
+  "topic_matched_pairing_delta": {
+    "read": "topic_matched_pairing_delta",
+    "status": "dropped",
+    "reason": "the committed engine has no recoverable definition for this read \u2014 it belongs to a superseded plan revision; dropped per deferred_refit_spec.json item 5 / the offvm-battery-refit-and-operator-comparison followup scope (analyzer carries this as a scope note)"
+  },
+  "wall_s": 3102.9282511790007,
+  "git_commit": "fb52efae8d4b2f076137464fb45bb1a8ae6e1627",
+  "timestamp": "2026-07-16T07:58:37Z",
+  "argv": [
+    "--summaries-dir",
+    "/workspace/p6_stage",
+    "--corpus-dir",
+    "data/issue_1092/p0/corpus",
+    "--out-dir",
+    "data/issue_1092/p6",
+    "--stage-from-hub",
+    "--cells",
+    "cell_inst_own,cell_inst_claude",
+    "--layers",
+    "14,18,19",
+    "--target-bases",
+    "ambient,pca48"
+  ]
+}

@@ -1,0 +1,979 @@
+{
+  "commit": "c0d0c574dc",
+  "created": "2026-07-16T13:02:29Z",
+  "figsize": [
+    13.0,
+    6.2
+  ],
+  "points": [
+    {
+      "per-context contrast, full-context input": -0.1091939952547496,
+      "per-context contrast, query-excluded prefix": -0.23625144650027785,
+      "label": "f2_wc_short_1",
+      "series": "in-context-learning + WildChat (18)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-context contrast, full-context input": -0.0579233981031152,
+      "per-context contrast, query-excluded prefix": -0.12974541830954567,
+      "label": "f2_wc_short_2",
+      "series": "in-context-learning + WildChat (18)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-context contrast, full-context input": -0.09078906086722627,
+      "per-context contrast, query-excluded prefix": -0.20065636680677745,
+      "label": "f2_wc_short_3",
+      "series": "in-context-learning + WildChat (18)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-context contrast, full-context input": -0.05991566067082699,
+      "per-context contrast, query-excluded prefix": -0.1755177524887298,
+      "label": "f2_wc_short_4",
+      "series": "in-context-learning + WildChat (18)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-context contrast, full-context input": -0.06897313350676637,
+      "per-context contrast, query-excluded prefix": -0.15231581340202138,
+      "label": "f2_wc_short_5",
+      "series": "in-context-learning + WildChat (18)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-context contrast, full-context input": -0.024745622612703633,
+      "per-context contrast, query-excluded prefix": -0.08667262797598796,
+      "label": "f2_wc_long_1",
+      "series": "in-context-learning + WildChat (18)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-context contrast, full-context input": -0.07321933862955854,
+      "per-context contrast, query-excluded prefix": -0.10043842342638443,
+      "label": "f2_wc_long_2",
+      "series": "in-context-learning + WildChat (18)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-context contrast, full-context input": -0.07455251203763813,
+      "per-context contrast, query-excluded prefix": -0.1238446298089162,
+      "label": "f2_wc_long_3",
+      "series": "in-context-learning + WildChat (18)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-context contrast, full-context input": -0.09089472332666171,
+      "per-context contrast, query-excluded prefix": -0.18658855433096677,
+      "label": "f2_wc_long_4",
+      "series": "in-context-learning + WildChat (18)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-context contrast, full-context input": -0.026470015713073725,
+      "per-context contrast, query-excluded prefix": -0.09441808573209576,
+      "label": "f2_wc_long_5",
+      "series": "in-context-learning + WildChat (18)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-context contrast, full-context input": -0.05650905601996581,
+      "per-context contrast, query-excluded prefix": -0.10638034576486777,
+      "label": "f3_icl_marker_k4",
+      "series": "in-context-learning + WildChat (18)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-context contrast, full-context input": -0.09560266825357422,
+      "per-context contrast, query-excluded prefix": -0.1011869037047376,
+      "label": "f3_icl_french_k4",
+      "series": "in-context-learning + WildChat (18)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-context contrast, full-context input": -0.04656264642670982,
+      "per-context contrast, query-excluded prefix": -0.1315935339169758,
+      "label": "f3_icl_json_k4",
+      "series": "in-context-learning + WildChat (18)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-context contrast, full-context input": -0.053186054585953046,
+      "per-context contrast, query-excluded prefix": -0.09466302105906743,
+      "label": "f3_icl_pirate_k4",
+      "series": "in-context-learning + WildChat (18)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-context contrast, full-context input": -0.03341235304753032,
+      "per-context contrast, query-excluded prefix": -0.12250707218462431,
+      "label": "f3_icl_marker_k2",
+      "series": "in-context-learning + WildChat (18)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-context contrast, full-context input": -0.02335224053641327,
+      "per-context contrast, query-excluded prefix": -0.06404871042057925,
+      "label": "f3_icl_marker_k8",
+      "series": "in-context-learning + WildChat (18)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-context contrast, full-context input": -0.05585003670043154,
+      "per-context contrast, query-excluded prefix": -0.08778774863211525,
+      "label": "f3_icl_json_k2",
+      "series": "in-context-learning + WildChat (18)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-context contrast, full-context input": -0.018995505487706232,
+      "per-context contrast, query-excluded prefix": -0.07580261481167327,
+      "label": "f3_icl_json_k8",
+      "series": "in-context-learning + WildChat (18)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-context contrast, full-context input": -0.02889672843193214,
+      "per-context contrast, query-excluded prefix": -0.06378525436630877,
+      "label": "f1_house_librarian",
+      "series": "other families (32)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "per-context contrast, full-context input": -0.048045688560086175,
+      "per-context contrast, query-excluded prefix": -0.1024053826789082,
+      "label": "f1_house_surgeon",
+      "series": "other families (32)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "per-context contrast, full-context input": -0.027065941365228774,
+      "per-context contrast, query-excluded prefix": -0.09455685804735203,
+      "label": "f1_house_programmer",
+      "series": "other families (32)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "per-context contrast, full-context input": -0.026726617677521602,
+      "per-context contrast, query-excluded prefix": -0.09823225428803062,
+      "label": "f1_house_medical_doctor",
+      "series": "other families (32)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "per-context contrast, full-context input": -0.021748685512819055,
+      "per-context contrast, query-excluded prefix": -0.034266099091910474,
+      "label": "f1_house_software_engineer",
+      "series": "other families (32)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "per-context contrast, full-context input": -0.02206589706202655,
+      "per-context contrast, query-excluded prefix": -0.03811104011304656,
+      "label": "f1_house_data_scientist",
+      "series": "other families (32)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "per-context contrast, full-context input": -0.03916600522490965,
+      "per-context contrast, query-excluded prefix": -0.08645464809460135,
+      "label": "f1_phub_01",
+      "series": "other families (32)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "per-context contrast, full-context input": -0.028035486231597684,
+      "per-context contrast, query-excluded prefix": -0.07698901936625513,
+      "label": "f1_phub_02",
+      "series": "other families (32)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "per-context contrast, full-context input": -0.007011931786433667,
+      "per-context contrast, query-excluded prefix": -0.02292571287322298,
+      "label": "f1_phub_03",
+      "series": "other families (32)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "per-context contrast, full-context input": -0.05471341866750723,
+      "per-context contrast, query-excluded prefix": -0.15178387128000514,
+      "label": "f1_phub_04",
+      "series": "other families (32)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "per-context contrast, full-context input": -0.03208181968682866,
+      "per-context contrast, query-excluded prefix": -0.06177228277322211,
+      "label": "f1_phub_05",
+      "series": "other families (32)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "per-context contrast, full-context input": -0.04292118738209316,
+      "per-context contrast, query-excluded prefix": -0.10795256306430834,
+      "label": "f1_phub_06",
+      "series": "other families (32)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "per-context contrast, full-context input": -0.029551984175347434,
+      "per-context contrast, query-excluded prefix": -0.08099801117832794,
+      "label": "f1_phub_07",
+      "series": "other families (32)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "per-context contrast, full-context input": -0.025822188200240848,
+      "per-context contrast, query-excluded prefix": -0.08166556105724365,
+      "label": "f1_phub_08",
+      "series": "other families (32)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "per-context contrast, full-context input": -0.020858406251958672,
+      "per-context contrast, query-excluded prefix": -0.0845456758581663,
+      "label": "f4_reph_imperative",
+      "series": "other families (32)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "per-context contrast, full-context input": -0.02486864080086204,
+      "per-context contrast, query-excluded prefix": -0.07131237534722523,
+      "label": "f4_reph_polite",
+      "series": "other families (32)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "per-context contrast, full-context input": -0.09310380978604615,
+      "per-context contrast, query-excluded prefix": -0.1718425521489344,
+      "label": "f4_reph_casual",
+      "series": "other families (32)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "per-context contrast, full-context input": -0.052520727015883395,
+      "per-context contrast, query-excluded prefix": -0.12999655607173832,
+      "label": "f4_reph_legalese",
+      "series": "other families (32)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "per-context contrast, full-context input": -0.07508689914259692,
+      "per-context contrast, query-excluded prefix": -0.11025020696239163,
+      "label": "f4_reph_enthusiastic",
+      "series": "other families (32)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "per-context contrast, full-context input": -0.05581492162992452,
+      "per-context contrast, query-excluded prefix": -0.1004790042579411,
+      "label": "f4_reph_archaic",
+      "series": "other families (32)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "per-context contrast, full-context input": -0.06338512032370491,
+      "per-context contrast, query-excluded prefix": -0.16063187795320555,
+      "label": "f5_fmt_json",
+      "series": "other families (32)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "per-context contrast, full-context input": -0.08502020518065256,
+      "per-context contrast, query-excluded prefix": -0.18676037997110684,
+      "label": "f5_fmt_code_comment",
+      "series": "other families (32)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "per-context contrast, full-context input": -0.03714453471394208,
+      "per-context contrast, query-excluded prefix": -0.08406683437529572,
+      "label": "f5_fmt_markdown_table",
+      "series": "other families (32)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "per-context contrast, full-context input": -0.06611670791263413,
+      "per-context contrast, query-excluded prefix": -0.13371119112764462,
+      "label": "f5_fmt_xml",
+      "series": "other families (32)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "per-context contrast, full-context input": -0.04219883505406041,
+      "per-context contrast, query-excluded prefix": -0.09738197663177228,
+      "label": "f5_fmt_bullets",
+      "series": "other families (32)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "per-context contrast, full-context input": -0.030960834809573123,
+      "per-context contrast, query-excluded prefix": -0.06188051640229897,
+      "label": "f6_default_template",
+      "series": "other families (32)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "per-context contrast, full-context input": -0.009812641759817442,
+      "per-context contrast, query-excluded prefix": -0.05857587916013218,
+      "label": "f6_helpful_asst",
+      "series": "other families (32)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "per-context contrast, full-context input": -0.04008885774869286,
+      "per-context contrast, query-excluded prefix": -0.06714217142043988,
+      "label": "f8_behav_marker",
+      "series": "other families (32)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "per-context contrast, full-context input": -0.05879384337237703,
+      "per-context contrast, query-excluded prefix": -0.09599058668799998,
+      "label": "f8_behav_sycophant",
+      "series": "other families (32)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "per-context contrast, full-context input": -0.029483907649679453,
+      "per-context contrast, query-excluded prefix": -0.08413704059431126,
+      "label": "f8_behav_refusal",
+      "series": "other families (32)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "per-context contrast, full-context input": -0.025199540916030827,
+      "per-context contrast, query-excluded prefix": -0.030469812648224903,
+      "label": "f8_behav_fact",
+      "series": "other families (32)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "per-context contrast, full-context input": -0.028513391094189267,
+      "per-context contrast, query-excluded prefix": -0.15319765800639396,
+      "label": "f8_behav_harmful",
+      "series": "other families (32)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "per-context contrast, full-context input": -0.020884105747526527,
+      "per-context contrast, query-excluded prefix": -0.0571682563905902,
+      "label": "f2_wc_short_1",
+      "series": "in-context-learning + WildChat (18)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "per-context contrast, full-context input": -0.013164755407526374,
+      "per-context contrast, query-excluded prefix": -0.0030431103518506752,
+      "label": "f2_wc_short_2",
+      "series": "in-context-learning + WildChat (18)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "per-context contrast, full-context input": -0.0021273154900456337,
+      "per-context contrast, query-excluded prefix": -0.05975694630666717,
+      "label": "f2_wc_short_3",
+      "series": "in-context-learning + WildChat (18)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "per-context contrast, full-context input": -0.008616675114263006,
+      "per-context contrast, query-excluded prefix": -0.11425713253968406,
+      "label": "f2_wc_short_4",
+      "series": "in-context-learning + WildChat (18)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "per-context contrast, full-context input": -0.051379856989621,
+      "per-context contrast, query-excluded prefix": -0.029188788207428096,
+      "label": "f2_wc_short_5",
+      "series": "in-context-learning + WildChat (18)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "per-context contrast, full-context input": 0.0003566004621811114,
+      "per-context contrast, query-excluded prefix": -0.043992706947082794,
+      "label": "f2_wc_long_1",
+      "series": "in-context-learning + WildChat (18)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "per-context contrast, full-context input": -0.007895975718168913,
+      "per-context contrast, query-excluded prefix": 0.01515636566639833,
+      "label": "f2_wc_long_2",
+      "series": "in-context-learning + WildChat (18)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "per-context contrast, full-context input": 0.006714954661341643,
+      "per-context contrast, query-excluded prefix": -0.034059409181634304,
+      "label": "f2_wc_long_3",
+      "series": "in-context-learning + WildChat (18)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "per-context contrast, full-context input": -0.056355733699112176,
+      "per-context contrast, query-excluded prefix": -0.1454946095569868,
+      "label": "f2_wc_long_4",
+      "series": "in-context-learning + WildChat (18)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "per-context contrast, full-context input": 0.02473077383683764,
+      "per-context contrast, query-excluded prefix": 0.004325547964590948,
+      "label": "f2_wc_long_5",
+      "series": "in-context-learning + WildChat (18)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "per-context contrast, full-context input": -0.006500074605727546,
+      "per-context contrast, query-excluded prefix": -0.06547210414027516,
+      "label": "f3_icl_marker_k4",
+      "series": "in-context-learning + WildChat (18)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "per-context contrast, full-context input": -0.013159727540848265,
+      "per-context contrast, query-excluded prefix": -0.015260407980170032,
+      "label": "f3_icl_french_k4",
+      "series": "in-context-learning + WildChat (18)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "per-context contrast, full-context input": 0.024647571302717886,
+      "per-context contrast, query-excluded prefix": -0.0011696301951529264,
+      "label": "f3_icl_json_k4",
+      "series": "in-context-learning + WildChat (18)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "per-context contrast, full-context input": -0.021644805675229306,
+      "per-context contrast, query-excluded prefix": -0.26555208780662587,
+      "label": "f3_icl_pirate_k4",
+      "series": "in-context-learning + WildChat (18)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "per-context contrast, full-context input": -0.03845899004863862,
+      "per-context contrast, query-excluded prefix": -0.12689350293544077,
+      "label": "f3_icl_marker_k2",
+      "series": "in-context-learning + WildChat (18)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "per-context contrast, full-context input": -0.00491644591973317,
+      "per-context contrast, query-excluded prefix": -0.06134646680875422,
+      "label": "f3_icl_marker_k8",
+      "series": "in-context-learning + WildChat (18)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "per-context contrast, full-context input": -0.021204040760171794,
+      "per-context contrast, query-excluded prefix": -0.0799787890021435,
+      "label": "f3_icl_json_k2",
+      "series": "in-context-learning + WildChat (18)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "per-context contrast, full-context input": 0.04755701221477715,
+      "per-context contrast, query-excluded prefix": -0.04993266041287625,
+      "label": "f3_icl_json_k8",
+      "series": "in-context-learning + WildChat (18)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "per-context contrast, full-context input": -0.04304296493302162,
+      "per-context contrast, query-excluded prefix": -0.07648870456742551,
+      "label": "f1_house_librarian",
+      "series": "other families (32)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "per-context contrast, full-context input": -0.019528233892040614,
+      "per-context contrast, query-excluded prefix": -0.03145971122688562,
+      "label": "f1_house_surgeon",
+      "series": "other families (32)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "per-context contrast, full-context input": -0.04286978014562692,
+      "per-context contrast, query-excluded prefix": -0.16602264682112577,
+      "label": "f1_house_programmer",
+      "series": "other families (32)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "per-context contrast, full-context input": -0.004882733610703349,
+      "per-context contrast, query-excluded prefix": -0.04316812380597668,
+      "label": "f1_house_medical_doctor",
+      "series": "other families (32)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "per-context contrast, full-context input": -0.018772931016357353,
+      "per-context contrast, query-excluded prefix": -0.09159898472073802,
+      "label": "f1_house_software_engineer",
+      "series": "other families (32)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "per-context contrast, full-context input": -0.030020056965930575,
+      "per-context contrast, query-excluded prefix": -0.01547223812131282,
+      "label": "f1_house_data_scientist",
+      "series": "other families (32)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "per-context contrast, full-context input": -0.018916110606923775,
+      "per-context contrast, query-excluded prefix": -0.06253374680881874,
+      "label": "f1_phub_01",
+      "series": "other families (32)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "per-context contrast, full-context input": -0.0118268054411369,
+      "per-context contrast, query-excluded prefix": 0.0034481308992289073,
+      "label": "f1_phub_02",
+      "series": "other families (32)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "per-context contrast, full-context input": -0.010912269972508049,
+      "per-context contrast, query-excluded prefix": -0.0020196182010489006,
+      "label": "f1_phub_03",
+      "series": "other families (32)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "per-context contrast, full-context input": -0.010209586516211289,
+      "per-context contrast, query-excluded prefix": -0.029592793658183014,
+      "label": "f1_phub_04",
+      "series": "other families (32)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "per-context contrast, full-context input": -0.00882790866639016,
+      "per-context contrast, query-excluded prefix": -0.05002356031295552,
+      "label": "f1_phub_05",
+      "series": "other families (32)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "per-context contrast, full-context input": 0.011190057893267435,
+      "per-context contrast, query-excluded prefix": -0.05108268577509323,
+      "label": "f1_phub_06",
+      "series": "other families (32)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "per-context contrast, full-context input": 0.008641990938190625,
+      "per-context contrast, query-excluded prefix": -0.09227136975602002,
+      "label": "f1_phub_07",
+      "series": "other families (32)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "per-context contrast, full-context input": 0.006911701309630591,
+      "per-context contrast, query-excluded prefix": -0.043512135917353034,
+      "label": "f1_phub_08",
+      "series": "other families (32)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "per-context contrast, full-context input": -0.05279866484422424,
+      "per-context contrast, query-excluded prefix": -0.04275289115046643,
+      "label": "f4_reph_imperative",
+      "series": "other families (32)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "per-context contrast, full-context input": -0.03012426492340159,
+      "per-context contrast, query-excluded prefix": -0.10623711263851676,
+      "label": "f4_reph_polite",
+      "series": "other families (32)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "per-context contrast, full-context input": -0.07666050784316525,
+      "per-context contrast, query-excluded prefix": -0.07855703070849218,
+      "label": "f4_reph_casual",
+      "series": "other families (32)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "per-context contrast, full-context input": -0.025483907491655522,
+      "per-context contrast, query-excluded prefix": -0.08517645704961763,
+      "label": "f4_reph_legalese",
+      "series": "other families (32)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "per-context contrast, full-context input": -0.06768652758217397,
+      "per-context contrast, query-excluded prefix": -0.1084809276887917,
+      "label": "f4_reph_enthusiastic",
+      "series": "other families (32)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "per-context contrast, full-context input": -0.033799894214652126,
+      "per-context contrast, query-excluded prefix": -0.10858577348723941,
+      "label": "f4_reph_archaic",
+      "series": "other families (32)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "per-context contrast, full-context input": -0.06710036568531763,
+      "per-context contrast, query-excluded prefix": -0.0474258710419746,
+      "label": "f5_fmt_json",
+      "series": "other families (32)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "per-context contrast, full-context input": -0.08607425080717257,
+      "per-context contrast, query-excluded prefix": -0.051579886686122345,
+      "label": "f5_fmt_code_comment",
+      "series": "other families (32)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "per-context contrast, full-context input": -0.025428021990590244,
+      "per-context contrast, query-excluded prefix": -0.07070613600352749,
+      "label": "f5_fmt_markdown_table",
+      "series": "other families (32)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "per-context contrast, full-context input": -0.11727994776174056,
+      "per-context contrast, query-excluded prefix": -0.04181880708191299,
+      "label": "f5_fmt_xml",
+      "series": "other families (32)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "per-context contrast, full-context input": -0.06541265897952919,
+      "per-context contrast, query-excluded prefix": -0.2580009381164394,
+      "label": "f5_fmt_bullets",
+      "series": "other families (32)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "per-context contrast, full-context input": -0.20104280548386955,
+      "per-context contrast, query-excluded prefix": -0.030949479573029848,
+      "label": "f6_default_template",
+      "series": "other families (32)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "per-context contrast, full-context input": -0.009418939124787196,
+      "per-context contrast, query-excluded prefix": -0.012290293998696966,
+      "label": "f6_helpful_asst",
+      "series": "other families (32)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "per-context contrast, full-context input": -0.05506263785408083,
+      "per-context contrast, query-excluded prefix": -0.1435454058636989,
+      "label": "f8_behav_marker",
+      "series": "other families (32)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "per-context contrast, full-context input": -0.12469196310621178,
+      "per-context contrast, query-excluded prefix": -0.1323187198075425,
+      "label": "f8_behav_sycophant",
+      "series": "other families (32)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "per-context contrast, full-context input": -0.042928395268094444,
+      "per-context contrast, query-excluded prefix": -0.03284564909382148,
+      "label": "f8_behav_refusal",
+      "series": "other families (32)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "per-context contrast, full-context input": -0.03208501703931599,
+      "per-context contrast, query-excluded prefix": -0.12864930290531895,
+      "label": "f8_behav_fact",
+      "series": "other families (32)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "per-context contrast, full-context input": -0.022443430117846108,
+      "per-context contrast, query-excluded prefix": -0.19646496486473275,
+      "label": "f8_behav_harmful",
+      "series": "other families (32)",
+      "_kind": "scatter",
+      "_group": 3
+    }
+  ],
+  "n_series": 4,
+  "total_points": 100,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Per-question (layers 26/6)",
+        "xlabel": "per-context contrast, full-context input",
+        "ylabel": "per-context contrast, query-excluded prefix",
+        "legend_labels": [
+          "in-context-learning + WildChat (18)",
+          "other families (32)"
+        ],
+        "annotations": [
+          "f1_house_librarian",
+          "f1_house_surgeon",
+          "f1_house_programmer",
+          "f1_house_medical_doctor",
+          "f1_house_software_engineer",
+          "f1_house_data_scientist",
+          "f1_phub_01",
+          "f1_phub_02",
+          "f1_phub_03",
+          "f1_phub_04",
+          "f1_phub_05",
+          "f1_phub_06",
+          "f1_phub_07",
+          "f1_phub_08",
+          "f2_wc_short_1",
+          "f2_wc_short_2",
+          "f2_wc_short_3",
+          "f2_wc_short_4",
+          "f2_wc_short_5",
+          "f2_wc_long_1",
+          "f2_wc_long_2",
+          "f2_wc_long_3",
+          "f2_wc_long_4",
+          "f2_wc_long_5",
+          "f3_icl_marker_k4",
+          "f3_icl_french_k4",
+          "f3_icl_json_k4",
+          "f3_icl_pirate_k4",
+          "f3_icl_marker_k2",
+          "f3_icl_marker_k8",
+          "f3_icl_json_k2",
+          "f3_icl_json_k8",
+          "f4_reph_imperative",
+          "f4_reph_polite",
+          "f4_reph_casual",
+          "f4_reph_legalese",
+          "f4_reph_enthusiastic",
+          "f4_reph_archaic",
+          "f5_fmt_json",
+          "f5_fmt_code_comment",
+          "f5_fmt_markdown_table",
+          "f5_fmt_xml",
+          "f5_fmt_bullets",
+          "f6_default_template",
+          "f6_helpful_asst",
+          "f8_behav_marker",
+          "f8_behav_sycophant",
+          "f8_behav_refusal",
+          "f8_behav_fact",
+          "f8_behav_harmful"
+        ],
+        "xticklabels": [
+          "\u22120.12",
+          "\u22120.10",
+          "\u22120.08",
+          "\u22120.06",
+          "\u22120.04",
+          "\u22120.02",
+          "0.00",
+          "0.02"
+        ],
+        "yticklabels": [
+          "\u22120.25",
+          "\u22120.20",
+          "\u22120.15",
+          "\u22120.10",
+          "\u22120.05",
+          "0.00",
+          "0.05"
+        ]
+      },
+      {
+        "title_left": "Query-averaged (layers 19/2)",
+        "xlabel": "per-context contrast, full-context input",
+        "ylabel": "per-context contrast, query-excluded prefix",
+        "annotations": [
+          "f1_house_librarian",
+          "f1_house_surgeon",
+          "f1_house_programmer",
+          "f1_house_medical_doctor",
+          "f1_house_software_engineer",
+          "f1_house_data_scientist",
+          "f1_phub_01",
+          "f1_phub_02",
+          "f1_phub_03",
+          "f1_phub_04",
+          "f1_phub_05",
+          "f1_phub_06",
+          "f1_phub_07",
+          "f1_phub_08",
+          "f2_wc_short_1",
+          "f2_wc_short_2",
+          "f2_wc_short_3",
+          "f2_wc_short_4",
+          "f2_wc_short_5",
+          "f2_wc_long_1",
+          "f2_wc_long_2",
+          "f2_wc_long_3",
+          "f2_wc_long_4",
+          "f2_wc_long_5",
+          "f3_icl_marker_k4",
+          "f3_icl_french_k4",
+          "f3_icl_json_k4",
+          "f3_icl_pirate_k4",
+          "f3_icl_marker_k2",
+          "f3_icl_marker_k8",
+          "f3_icl_json_k2",
+          "f3_icl_json_k8",
+          "f4_reph_imperative",
+          "f4_reph_polite",
+          "f4_reph_casual",
+          "f4_reph_legalese",
+          "f4_reph_enthusiastic",
+          "f4_reph_archaic",
+          "f5_fmt_json",
+          "f5_fmt_code_comment",
+          "f5_fmt_markdown_table",
+          "f5_fmt_xml",
+          "f5_fmt_bullets",
+          "f6_default_template",
+          "f6_helpful_asst",
+          "f8_behav_marker",
+          "f8_behav_sycophant",
+          "f8_behav_refusal",
+          "f8_behav_fact",
+          "f8_behav_harmful"
+        ],
+        "xticklabels": [
+          "\u22120.25",
+          "\u22120.20",
+          "\u22120.15",
+          "\u22120.10",
+          "\u22120.05",
+          "0.00",
+          "0.05",
+          "0.10"
+        ],
+        "yticklabels": [
+          "\u22120.30",
+          "\u22120.25",
+          "\u22120.20",
+          "\u22120.15",
+          "\u22120.10",
+          "\u22120.05",
+          "0.00",
+          "0.05"
+        ]
+      }
+    ],
+    "series": [
+      "in-context-learning + WildChat (18)",
+      "other families (32)"
+    ]
+  }
+}

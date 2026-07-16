@@ -1,0 +1,18 @@
+{
+  "cell": "imp_pers_lora",
+  "checkpoint": "data/issue_1315/run/inputs/imp_pers_lora/checkpoint-30",
+  "rate": 0.77,
+  "expected": 0.805,
+  "tol": 0.15,
+  "rate_window_pass": true,
+  "severity": "PASS",
+  "adapter_assert": {
+    "max_abs_delta_pos_ln_logp": 5.980149808137313,
+    "tol": 0.5,
+    "n_pairs": 23
+  },
+  "apply_halt_floor_nats": 0.5,
+  "engaged_nats_committed": 5.987272594286048,
+  "pool_sha256": "9ae03d3f36c4012020bd9b3b9d0bf1f153d54f71fa0cf0842343b4014cf8e3c2",
+  "adjudication": null
+}

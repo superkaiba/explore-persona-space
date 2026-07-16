@@ -1,0 +1,127 @@
+{
+  "commit": "e9caf4f92b",
+  "created": "2026-07-16T11:21:48Z",
+  "figsize": [
+    7.8,
+    4.6
+  ],
+  "points": [
+    {
+      "x": -0.19,
+      "per-question CoT gain\n(non-ICL/WildChat contexts)": 0.245,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.81,
+      "per-question CoT gain\n(non-ICL/WildChat contexts)": 0.066,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 1.81,
+      "per-question CoT gain\n(non-ICL/WildChat contexts)": 0.044,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.19,
+      "per-question CoT gain\n(non-ICL/WildChat contexts)": 0.14683099839377567,
+      "error": 0.01556015641910212,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 1.19,
+      "per-question CoT gain\n(non-ICL/WildChat contexts)": 0.19838733934908914,
+      "error": 0.03670702995569618,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 2.19,
+      "per-question CoT gain\n(non-ICL/WildChat contexts)": 0.19388676519758619,
+      "error": 0.02160704512249151,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 0.19,
+      "per-question CoT gain\n(non-ICL/WildChat contexts)": 0.13289276550527623,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 1.19,
+      "per-question CoT gain\n(non-ICL/WildChat contexts)": 0.16239959541913834,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 2.19,
+      "per-question CoT gain\n(non-ICL/WildChat contexts)": 0.17233134531743785,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 0.19,
+      "per-question CoT gain\n(non-ICL/WildChat contexts)": 0.16401307834348047,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 1.19,
+      "per-question CoT gain\n(non-ICL/WildChat contexts)": 0.2358136553305307,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 2.19,
+      "per-question CoT gain\n(non-ICL/WildChat contexts)": 0.21554543556242087,
+      "_kind": "line",
+      "_group": 3
+    }
+  ],
+  "n_series": 4,
+  "total_points": 12,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Short-CoT tercile gradient: the parent falls, this model is flat-to-rising",
+        "ylabel": "per-question CoT gain\n(non-ICL/WildChat contexts)",
+        "legend_labels": [
+          "OpenThinker2-7B (parent)",
+          "DeepSeek-R1-Distill-Qwen-7B"
+        ],
+        "annotations": [
+          "+0.245",
+          "+0.066",
+          "+0.044",
+          "+0.147",
+          "+0.198",
+          "+0.194"
+        ],
+        "xticklabels": [
+          "shortest-CoT tercile",
+          "middle tercile",
+          "longest-CoT tercile"
+        ],
+        "yticklabels": [
+          "0.00",
+          "0.05",
+          "0.10",
+          "0.15",
+          "0.20",
+          "0.25",
+          "0.30"
+        ]
+      }
+    ],
+    "series": [
+      "OpenThinker2-7B (parent)",
+      "DeepSeek-R1-Distill-Qwen-7B"
+    ]
+  }
+}

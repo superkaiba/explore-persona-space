@@ -1,0 +1,324 @@
+{
+  "commit": "2a8e9e1673",
+  "created": "2026-07-15T20:45:46Z",
+  "figsize": [
+    11.0,
+    7.2
+  ],
+  "points": [
+    {
+      "category": "source",
+      "\u0394 log P(marker), trained \u2212 base (nats)": 5.4176126480102536,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "medical doctor",
+      "\u0394 log P(marker), trained \u2212 base (nats)": 0.9590268135070801,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "police officer",
+      "\u0394 log P(marker), trained \u2212 base (nats)": 1.917065715789795,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "qwen default",
+      "\u0394 log P(marker), trained \u2212 base (nats)": 0.5272194862365722,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "comedian",
+      "\u0394 log P(marker), trained \u2212 base (nats)": 2.38220100402832,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "chef",
+      "\u0394 log P(marker), trained \u2212 base (nats)": 2.970909595489502,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "hero",
+      "\u0394 log P(marker), trained \u2212 base (nats)": 2.777937889099121,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "philosopher",
+      "\u0394 log P(marker), trained \u2212 base (nats)": 1.8133722305297852,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "source",
+      "y": 5.454315280914306,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "medical doctor",
+      "y": 1.3656902313232422,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "police officer",
+      "y": 1.5887508392333984,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "qwen default",
+      "y": 1.2568182945251465,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "comedian",
+      "y": 1.8382757186889649,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "chef",
+      "y": 1.8426527976989746,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "hero",
+      "y": 1.9521263122558594,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "philosopher",
+      "y": 1.5491122245788573,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "source",
+      "\u0394 log P(marker), trained \u2212 base (nats)": 4.181353664398193,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "medical doctor",
+      "\u0394 log P(marker), trained \u2212 base (nats)": -2.388417148590088,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "police officer",
+      "\u0394 log P(marker), trained \u2212 base (nats)": -1.9579242706298827,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "qwen default",
+      "\u0394 log P(marker), trained \u2212 base (nats)": -2.832932472229004,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "comedian",
+      "\u0394 log P(marker), trained \u2212 base (nats)": -2.331306552886963,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "chef",
+      "\u0394 log P(marker), trained \u2212 base (nats)": -2.6207464218139647,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "hero",
+      "\u0394 log P(marker), trained \u2212 base (nats)": -2.5556203842163088,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "philosopher",
+      "\u0394 log P(marker), trained \u2212 base (nats)": -2.3112060546875,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "source",
+      "y": 7.300044345855713,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "category": "medical doctor",
+      "y": 5.794539546966552,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "category": "police officer",
+      "y": 5.147873115539551,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "category": "french person",
+      "y": 3.6478084564208983,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "category": "comedian",
+      "y": 3.9062445640563963,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "category": "chef",
+      "y": 5.564410018920898,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "category": "hero",
+      "y": 5.691928195953369,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "category": "philosopher",
+      "y": 4.806759262084961,
+      "_kind": "bar",
+      "_group": 3
+    }
+  ],
+  "n_series": 4,
+  "total_points": 32,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [
+      "Marker leakage depends on the training context: bare-default training leaks broadly, ICL training suppresses"
+    ],
+    "axes": [
+      {
+        "title_left": "villain persona-trained (\u0394G source +5.4)",
+        "ylabel": "\u0394 log P(marker), trained \u2212 base (nats)",
+        "annotations": [
+          "+5.4",
+          "+1.0",
+          "+1.9",
+          "+0.5",
+          "+2.4",
+          "+3.0",
+          "+2.8",
+          "+1.8"
+        ],
+        "xticklabels": [
+          "source",
+          "medical doctor",
+          "police officer",
+          "qwen default",
+          "comedian",
+          "chef",
+          "hero",
+          "philosopher"
+        ],
+        "yticklabels": [
+          "\u22124",
+          "\u22122",
+          "0",
+          "2",
+          "4",
+          "6",
+          "8"
+        ]
+      },
+      {
+        "title_left": "WildChat-prefix-trained (+5.5)",
+        "annotations": [
+          "+5.5",
+          "+1.4",
+          "+1.6",
+          "+1.3",
+          "+1.8",
+          "+1.8",
+          "+2.0",
+          "+1.5"
+        ],
+        "xticklabels": [
+          "source",
+          "medical doctor",
+          "police officer",
+          "qwen default",
+          "comedian",
+          "chef",
+          "hero",
+          "philosopher"
+        ]
+      },
+      {
+        "title_left": "ICL-demonstration-trained (+4.2)",
+        "ylabel": "\u0394 log P(marker), trained \u2212 base (nats)",
+        "annotations": [
+          "+4.2",
+          "-2.4",
+          "-2.0",
+          "-2.8",
+          "-2.3",
+          "-2.6",
+          "-2.6",
+          "-2.3"
+        ],
+        "xticklabels": [
+          "source",
+          "medical doctor",
+          "police officer",
+          "qwen default",
+          "comedian",
+          "chef",
+          "hero",
+          "philosopher"
+        ],
+        "yticklabels": [
+          "\u22124",
+          "\u22122",
+          "0",
+          "2",
+          "4",
+          "6",
+          "8"
+        ]
+      },
+      {
+        "title_left": "bare default-context-trained (+7.3)",
+        "annotations": [
+          "+7.3",
+          "+5.8",
+          "+5.1",
+          "+3.6",
+          "+3.9",
+          "+5.6",
+          "+5.7",
+          "+4.8"
+        ],
+        "xticklabels": [
+          "source",
+          "medical doctor",
+          "police officer",
+          "french person",
+          "comedian",
+          "chef",
+          "hero",
+          "philosopher"
+        ]
+      }
+    ]
+  }
+}

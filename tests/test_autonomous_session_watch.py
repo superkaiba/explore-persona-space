@@ -15,7 +15,9 @@ Two passes are pinned here:
        dead and would have killed healthy pods).
 """
 
+import json
 import sys
+import time
 from pathlib import Path
 
 import pytest
@@ -955,6 +957,29 @@ def test_running_managed_pods_recognizes_canonical_pod_name(monkeypatch):
     # The 4th element is the live PodInfo for that pod (pod_id matches).
     assert [info.pod_id for _i, _pid, _name, info in got] == ["pold", "p444", "p489"]
     assert all(isinstance(info, PodInfo) for *_rest, info in got)
+
+
+def test_running_managed_issue_pods_maps_suffixed_pod(monkeypatch):
+    """#1334: a RUNNING multi-pod-per-issue pod (pod-<N>-<slug>) is mapped to
+    its owning issue by the watcher's pod-safety enumeration — no watcher code
+    change, the recognition delegates to pod_lifecycle._issue_from_pod_name.
+    Pre-#1334 the suffixed name parsed to None and the pod was INVISIBLE to
+    keep-running / auto-stop reconciliation."""
+    import autonomous_session_watch as asw
+    from runpod_api import PodInfo
+
+    monkeypatch.setattr(
+        asw,
+        "list_team_pods",
+        lambda: [
+            PodInfo(pod_id="p779b", name="pod-779-b", desired_status="RUNNING"),
+            # A numeric slug stays OUT of the grammar (letter-initial rule).
+            PodInfo(pod_id="p77960", name="pod-779-60", desired_status="RUNNING"),
+        ],
+    )
+    got = asw._running_managed_issue_pods()
+    assert [(i, pid, name) for i, pid, name, _info in got] == [(779, "p779b", "pod-779-b")]
+    assert got[0][3].pod_id == "p779b"
 
 
 def test_running_managed_pods_api_error_returns_none(monkeypatch):
@@ -17827,3 +17852,318 @@ def test_spawn_session_duplicate_suppressed_marker_carries_distinctive_by():
     src = inspect.getsource(spawn_session._post_duplicate_suppressed_marker)
     assert '"--by"' in src and '"spawn_session"' in src
     assert re.search(r'"--by",\s*\n\s*"spawn_session",', src), src
+
+
+# ─── Root-draft observer pass (task #1341; origin incident #1320) ────────────
+
+
+def _rd_git(cwd: Path, *args: str) -> None:
+    """Run git hermetically (no global/system config leaks) — the
+    test_step9c_baseline.py `_git` recipe, adapted for the root-draft
+    real-git fixtures."""
+    import os as _os
+    import subprocess as _sp
+
+    env = {**_os.environ, "GIT_CONFIG_GLOBAL": "/dev/null", "GIT_CONFIG_SYSTEM": "/dev/null"}
+    _sp.run(["git", *args], cwd=str(cwd), env=env, check=True, capture_output=True, text=True)
+
+
+def _rd_repo(repo: Path) -> None:
+    """git init a tmp repo with one committed scripts/ file (so scripts/ is a
+    TRACKED dir) — the minimal shared-root analogue."""
+    (repo / "scripts").mkdir(parents=True)
+    (repo / "scripts" / "tracked.py").write_text("X = 1\n")
+    _rd_git(repo, "init", "-b", "main")
+    _rd_git(repo, "config", "user.email", "t@example.com")
+    _rd_git(repo, "config", "user.name", "T")
+    _rd_git(repo, "add", "scripts/tracked.py")
+    _rd_git(repo, "commit", "-m", "baseline")
+
+
+def _rd_isolate(asw, monkeypatch, tmp_path: Path) -> tuple[Path, Path]:
+    """Point the pass's state (AUTONOMOUS_REGISTRY_DIR) + sidecar
+    (PROJECT_ROOT-derived) at tmp_path; return (state_path, sidecar_path)."""
+    monkeypatch.setattr(asw, "AUTONOMOUS_REGISTRY_DIR", tmp_path / "registry")
+    monkeypatch.setattr(asw, "PROJECT_ROOT", tmp_path / "root")
+    (tmp_path / "root").mkdir(parents=True, exist_ok=True)
+    return (
+        tmp_path / "registry" / "root-draft-observer.json",
+        tmp_path / "root" / ".claude" / "cache" / "root-draft-events.jsonl",
+    )
+
+
+def test_parse_untracked_py_filters_and_unquotes():
+    import autonomous_session_watch as asw
+
+    porcelain = "\n".join(
+        [
+            "?? scripts/a.py",
+            " M scripts/b.py",  # tracked-modified — out of scope by design
+            "?? notes.md",  # not .py
+            '?? "scripts/a b.py"',  # C-quoted (space)
+            '?? "scripts/bad',  # malformed quoting — skipped fail-soft
+            "??",  # malformed line — skipped
+            "?? newdir/inner.py",  # untracked-dir file, enumerated individually
+        ]
+    )
+    assert asw._parse_untracked_py(porcelain) == [
+        "scripts/a.py",
+        "scripts/a b.py",
+        "newdir/inner.py",
+    ]
+
+
+def test_root_draft_issue_hint_attribution():
+    import autonomous_session_watch as asw
+
+    assert asw._root_draft_issue_hint("scripts/issue922_fixed_point_slow_modes.py") == 922
+    assert asw._root_draft_issue_hint("scripts/issue825_matched_n_curve.py") == 825
+    assert asw._root_draft_issue_hint("scripts/issue-741-probe.py") == 741
+    assert asw._root_draft_issue_hint("random_helper.py") is None
+    # The hint reads the BASENAME only — a dir named issueN must not attribute.
+    assert asw._root_draft_issue_hint("issue999_dir/helper.py") is None
+
+
+def test_root_draft_fires_stale_not_fresh():
+    import autonomous_session_watch as asw
+
+    now = 1_000_000.0
+    thr = 3 * 3600.0
+    fires, state = asw.decide_root_draft_fires(
+        [("stale.py", thr + 1.0), ("fresh.py", 60.0)], {}, now, thr, 24 * 3600.0
+    )
+    assert fires == ["stale.py"]
+    assert set(state["alerted"]) == {"stale.py"}
+    # Boundary: exactly-at-threshold does NOT fire (predicate is STRICT >).
+    fires, state = asw.decide_root_draft_fires([("edge.py", thr)], {}, now, thr, 24 * 3600.0)
+    assert fires == [] and state == {"alerted": {}}
+
+
+def test_root_draft_dedup_and_realert():
+    import autonomous_session_watch as asw
+
+    thr, realert = 3 * 3600.0, 24 * 3600.0
+    now = 1_000_000.0
+    cand = [("stale.py", thr + 100.0)]
+    fires1, state1 = asw.decide_root_draft_fires(cand, {}, now, thr, realert)
+    assert fires1 == ["stale.py"]
+    # Second tick, same state: deduped (no fires), entry retained.
+    fires2, state2 = asw.decide_root_draft_fires(cand, state1, now + 600.0, thr, realert)
+    assert fires2 == []
+    assert state2["alerted"]["stale.py"]["last_alert_ts"] == now
+    # Now advanced STRICTLY past the re-alert TTL: fires again, re-stamped.
+    later = now + realert + 1.0
+    fires3, state3 = asw.decide_root_draft_fires(cand, state2, later, thr, realert)
+    assert fires3 == ["stale.py"]
+    assert state3["alerted"]["stale.py"]["last_alert_ts"] == later
+
+
+def test_root_draft_state_prunes_recovered_paths():
+    import autonomous_session_watch as asw
+
+    thr, realert = 3 * 3600.0, 24 * 3600.0
+    now = 1_000_000.0
+    _, state = asw.decide_root_draft_fires([("gone.py", thr + 1.0)], {}, now, thr, realert)
+    assert "gone.py" in state["alerted"]
+    # Path left the stale candidate set (committed / removed / re-edited
+    # fresh): its entry is PRUNED...
+    fires, state2 = asw.decide_root_draft_fires([], state, now + 600.0, thr, realert)
+    assert fires == [] and state2 == {"alerted": {}}
+    # ...so a re-appearing stale path re-fires immediately (no TTL wait).
+    fires, _ = asw.decide_root_draft_fires(
+        [("gone.py", thr + 1.0)], state2, now + 1200.0, thr, realert
+    )
+    assert fires == ["gone.py"]
+
+
+def test_root_draft_corrupt_state_loads_empty(tmp_path, monkeypatch):
+    import autonomous_session_watch as asw
+
+    monkeypatch.setattr(asw, "AUTONOMOUS_REGISTRY_DIR", tmp_path)
+    # Missing file → {}.
+    assert asw._load_root_draft_state() == {}
+    # Garbled JSON → {}.
+    (tmp_path / "root-draft-observer.json").write_text("{not json")
+    assert asw._load_root_draft_state() == {}
+    # Non-dict JSON → {}.
+    (tmp_path / "root-draft-observer.json").write_text('["list"]')
+    assert asw._load_root_draft_state() == {}
+    # Schema-drifted "alerted" degrades to defaults inside the predicate
+    # (isinstance guards): everything stale fires as if unalerted.
+    fires, state = asw.decide_root_draft_fires(
+        [("a.py", 4 * 3600.0)], {"alerted": "garbage"}, 0.0, 3 * 3600.0, 24 * 3600.0
+    )
+    assert fires == ["a.py"] and set(state["alerted"]) == {"a.py"}
+
+
+def test_root_draft_pass_kill_switch_skips_everything(tmp_path, monkeypatch):
+    import autonomous_session_watch as asw
+
+    monkeypatch.setenv("EPM_DISABLE_ROOT_DRAFT_PASS", "1")
+    state_path, sidecar_path = _rd_isolate(asw, monkeypatch, tmp_path)
+
+    def _forbidden(*a, **kw):
+        raise AssertionError("no subprocess / enumeration under the kill switch")
+
+    # The enumeration helper is the pass's ONLY subprocess gateway (plus the
+    # per-hint _task_status read) — both must never run under the switch.
+    monkeypatch.setattr(asw, "_enumerate_root_draft_paths", _forbidden)
+    monkeypatch.setattr(asw, "_task_status", _forbidden)
+    monkeypatch.setattr(asw, "_telegram_push", _forbidden)
+    assert asw.root_draft_pass(dry_run=False) is False
+    assert not state_path.exists() and not sidecar_path.exists()
+
+
+def test_root_draft_pass_git_failure_no_state_write(tmp_path, monkeypatch, capsys):
+    """Reviewer concern 1: git failure → stderr warning, NO state write, no
+    fire (fail toward logged-skip, never a silent 'no drafts')."""
+    import subprocess as _sp
+
+    import autonomous_session_watch as asw
+
+    # Unit: rc != 0 (a real non-repo dir) → None + warning.
+    nonrepo = tmp_path / "nonrepo"
+    nonrepo.mkdir()
+    assert asw._enumerate_root_draft_paths(nonrepo) is None
+    assert "root-draft: git status" in capsys.readouterr().err
+
+    # Unit: subprocess raises (timeout) → None + warning.
+    def _boom(*a, **kw):
+        raise _sp.TimeoutExpired(cmd="git", timeout=30)
+
+    monkeypatch.setattr(asw.subprocess, "run", _boom)
+    assert asw._enumerate_root_draft_paths(nonrepo) is None
+    assert "root-draft: git status failed" in capsys.readouterr().err
+    monkeypatch.undo()
+
+    # Driver: enumeration → None ⇒ returns False, zero state/sidecar/push.
+    state_path, sidecar_path = _rd_isolate(asw, monkeypatch, tmp_path)
+    monkeypatch.setattr(asw, "_enumerate_root_draft_paths", lambda root: None)
+    pushes: list[str] = []
+    monkeypatch.setattr(asw, "_telegram_push", lambda msg, dry_run: pushes.append(msg) or True)
+    assert asw.root_draft_pass(dry_run=False) is False
+    assert pushes == []
+    assert not state_path.exists() and not sidecar_path.exists()
+
+
+def test_root_draft_pass_dry_run_writes_no_state(tmp_path, monkeypatch):
+    import os as _os
+
+    import autonomous_session_watch as asw
+
+    state_path, sidecar_path = _rd_isolate(asw, monkeypatch, tmp_path)
+    root = asw.PROJECT_ROOT
+    (root / "scripts").mkdir(parents=True, exist_ok=True)
+    stale = root / "scripts" / "issue922_probe.py"
+    stale.write_text("X = 1\n")
+    old = time.time() - 10 * 3600
+    _os.utime(stale, (old, old))
+    monkeypatch.setattr(asw, "_enumerate_root_draft_paths", lambda r: ["scripts/issue922_probe.py"])
+    calls: list[bool] = []
+    monkeypatch.setattr(asw, "_telegram_push", lambda msg, dry_run: calls.append(dry_run) or False)
+
+    def _no_status(*a, **kw):
+        raise AssertionError("dry-run must not shell out to task.py")
+
+    monkeypatch.setattr(asw, "_task_status", _no_status)
+    assert asw.root_draft_pass(dry_run=True) is True
+    assert calls == [True]  # push observed, dry_run honored
+    assert not state_path.exists() and not sidecar_path.exists()
+
+
+def test_root_draft_pass_fires_end_to_end_and_dedups(tmp_path, monkeypatch):
+    import os as _os
+
+    import autonomous_session_watch as asw
+
+    state_path, sidecar_path = _rd_isolate(asw, monkeypatch, tmp_path)
+    root = asw.PROJECT_ROOT
+    (root / "scripts").mkdir(parents=True, exist_ok=True)
+    stale = root / "scripts" / "issue922_probe.py"
+    stale.write_text("X = 1\n")
+    old = time.time() - 10 * 3600
+    _os.utime(stale, (old, old))
+    monkeypatch.setattr(asw, "_enumerate_root_draft_paths", lambda r: ["scripts/issue922_probe.py"])
+    monkeypatch.setattr(asw, "_task_status", lambda issue: "completed")
+    pushes: list[str] = []
+    monkeypatch.setattr(asw, "_telegram_push", lambda msg, dry_run: pushes.append(msg) or True)
+
+    assert asw.root_draft_pass(dry_run=False) is True
+    assert len(pushes) == 1  # ONE digest push naming the fired path
+    assert "issue922_probe.py" in pushes[0] and "#922 (completed)" in pushes[0]
+    rows = [json.loads(x) for x in sidecar_path.read_text().splitlines()]
+    assert len(rows) == 1
+    assert rows[0]["kind"] == "root-draft-stale"
+    assert rows[0]["path"] == "scripts/issue922_probe.py"
+    assert rows[0]["issue_hint"] == 922 and rows[0]["issue_status"] == "completed"
+    assert rows[0]["age_hours"] > 3.0
+    assert state_path.exists()
+
+    # Tick 2, same stale set: dedup — zero new pushes, zero new sidecar rows.
+    assert asw.root_draft_pass(dry_run=False) is False
+    assert len(pushes) == 1
+    assert len(sidecar_path.read_text().splitlines()) == 1
+
+
+def test_root_draft_pass_never_deletes(tmp_path, monkeypatch):
+    """The Durability pin (plan Kill criteria): the pass is escalate-only —
+    every enumerated file still exists BYTE-IDENTICAL after a firing pass,
+    exercising the REAL git enumeration end to end."""
+    import os as _os
+
+    import autonomous_session_watch as asw
+
+    repo = tmp_path / "root"
+    repo.mkdir(parents=True, exist_ok=True)
+    _rd_repo(repo)
+    monkeypatch.setattr(asw, "AUTONOMOUS_REGISTRY_DIR", tmp_path / "registry")
+    monkeypatch.setattr(asw, "PROJECT_ROOT", repo)
+    contents = {
+        "scripts/issue825_draft.py": "A = 1\n",
+        "loose_draft.py": "B = 2\n",
+        "scripts/tracked.py": "X = 1\n",  # committed — must also survive
+    }
+    for rel, text in contents.items():
+        p = repo / rel
+        p.write_text(text)
+        old = time.time() - 10 * 3600
+        _os.utime(p, (old, old))
+    monkeypatch.setattr(asw, "_task_status", lambda issue: "completed")
+    pushes: list[str] = []
+    monkeypatch.setattr(asw, "_telegram_push", lambda msg, dry_run: pushes.append(msg) or True)
+
+    assert asw.root_draft_pass(dry_run=False) is True
+    assert len(pushes) == 1
+    assert "issue825_draft.py" in pushes[0] and "loose_draft.py" in pushes[0]
+    for rel, text in contents.items():
+        assert (repo / rel).exists(), f"{rel} vanished — escalate-only contract broken"
+        assert (repo / rel).read_text() == text, f"{rel} mutated"
+    # And git state untouched: the drafts are STILL untracked (no add/rm/commit).
+    assert sorted(asw._enumerate_root_draft_paths(repo)) == [
+        "loose_draft.py",
+        "scripts/issue825_draft.py",
+    ]
+
+
+def test_root_draft_enumeration_respects_gitignore(tmp_path):
+    """The worktree-exclusion seam, on the REAL git command: gitignored dirs
+    (the `.claude/worktrees/` analogue) are never enumerated, while untracked
+    files — including inside a wholly-UNTRACKED dir — list INDIVIDUALLY
+    (the no-`-uall`-needed comment's live verification)."""
+    import autonomous_session_watch as asw
+
+    repo = tmp_path / "repo"
+    repo.mkdir()
+    _rd_repo(repo)
+    (repo / ".gitignore").write_text("wt/\n")
+    _rd_git(repo, "add", ".gitignore")
+    _rd_git(repo, "commit", "-m", "ignore wt/")
+    (repo / "wt").mkdir()
+    (repo / "wt" / "x.py").write_text("ignored\n")
+    (repo / "scripts" / "y.py").write_text("draft\n")
+    (repo / "newdir").mkdir()
+    (repo / "newdir" / "inner.py").write_text("draft in untracked dir\n")
+    assert sorted(asw._enumerate_root_draft_paths(repo)) == [
+        "newdir/inner.py",
+        "scripts/y.py",
+    ]

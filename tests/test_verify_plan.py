@@ -173,10 +173,14 @@ def test_good_plan_passes_all():
         "c32_fit_basis_grounding": "SKIP",
         "c33_ladder_retention": "SKIP",
         "c34_ratchet_headroom": "SKIP",
+        "c35_pinned_revision_reuse": "SKIP",
+        "c36_numeric_containment": "SKIP",
+        "c37_noflags_bundling_claim": "SKIP",
+        "c38_exit0_repo_wide_baseline": "SKIP",
     }
     actual = {cid: r.status for cid, r in by_id.items()}
     assert actual == expected
-    assert len(results) == 34
+    assert len(results) == 38
 
 
 # ─── Check 0 — plan-nonstub ────────────────────────────────────────────────
@@ -751,7 +755,7 @@ def test_c6_fitness_with_four_letters_passes():
     _, by_id = _run(plan)
     r = by_id["c6_reuse_fitness"]
     assert r.status == "PASS"
-    assert "4/10" in r.detail
+    assert "4/11" in r.detail
 
 
 def test_c6_fitness_counts_item_i_in_widened_class():
@@ -765,7 +769,7 @@ def test_c6_fitness_counts_item_i_in_widened_class():
     _, by_id = _run(plan)
     r = by_id["c6_reuse_fitness"]
     assert r.status == "PASS"
-    assert "4/10" in r.detail
+    assert "4/11" in r.detail
 
 
 def test_c6_fitness_counts_item_j_in_widened_class():
@@ -779,18 +783,33 @@ def test_c6_fitness_counts_item_j_in_widened_class():
     _, by_id = _run(plan)
     r = by_id["c6_reuse_fitness"]
     assert r.status == "PASS"
-    assert "4/10" in r.detail
+    assert "4/11" in r.detail
 
 
-def test_c6_fitness_letters_beyond_j_do_not_count():
-    # Upper-boundary fixture (#941): an unrelated (k) elsewhere in the body must
-    # NOT lift a 3-letter fitness attestation to a 4-letter PASS — an
-    # over-widening of the class to [a-k]/[a-z] would flip this to PASS.
+def test_c6_fitness_counts_item_k_in_widened_class():
+    # Pins the [a-k] regex widening (#1366): exactly four counted letters, one of
+    # them (k) — a regression to [a-j] would count 3 and WARN instead of PASS.
+    plan = (
+        GOOD_PLAN
+        + "\nWe reuse the parent adapters from superkaiba1/explore-persona-space for the base arm."
+        + "\nFitness check: (a) same recipe verified against adapter_config.json; (b) valid measurement regime; (c) required cells present; (k) parent-lineage coherence — parent branch fully merged, empty unmerged diff; realized row count reconciles with the declared corpus.\n"
+    )
+    _, by_id = _run(plan)
+    r = by_id["c6_reuse_fitness"]
+    assert r.status == "PASS"
+    assert "4/11" in r.detail
+
+
+def test_c6_fitness_letters_beyond_k_do_not_count():
+    # Upper-boundary fixture (#941; decoy moved (k)->(l) at #1366): an unrelated
+    # (l) elsewhere in the body must NOT lift a 3-letter fitness attestation to
+    # a 4-letter PASS — an over-widening of the class to [a-l]/[a-z] would flip
+    # this to PASS.
     plan = (
         GOOD_PLAN
         + "\nWe reuse the parent adapters from superkaiba1/explore-persona-space for the base arm."
         + "\nFitness check: (a) same recipe verified against adapter_config.json; (b) valid measurement regime; (c) required cells present."
-        + "\nUnrelated enumeration elsewhere: (k) a non-fitness bullet.\n"
+        + "\nUnrelated enumeration elsewhere: (l) a non-fitness bullet.\n"
     )
     _, by_id = _run(plan)
     r = by_id["c6_reuse_fitness"]
@@ -806,7 +825,7 @@ def test_c6_fitness_with_few_letters_warns():
     _, by_id = _run(plan)
     r = by_id["c6_reuse_fitness"]
     assert r.status == "WARN"
-    assert "(a)–(j)" in r.detail or "ten" in r.detail
+    assert "(a)–(k)" in r.detail or "eleven" in r.detail
 
 
 def test_c6_na_no_artifact_reuse_passes():
@@ -851,6 +870,8 @@ def test_c6_reuse_map_table_without_fitness_word_passes():
     # (artifact-reuse (a)–(j) self-attestation) table: a complete per-row  # noqa: RUF003
     # attestation written in artifact-reuse.md's own vocabulary — no 'fitness'
     # word anywhere — must PASS, not WARN "no fitness check found".
+    # Doubles as a second grandfather pin (#1366): the fixture's (a)–(j)  # noqa: RUF003
+    # heading token still declares under the widened \([jk]\) detector.
     plan = (
         GOOD_PLAN
         + "\nWe reuse the parent adapters from superkaiba1/explore-persona-space for the base arm."
@@ -884,8 +905,8 @@ def test_c6_letters_without_declaration_vocab_still_warns():
 
 def test_c6_reuse_map_with_few_letters_warns():
     # A bare 'Reuse map' heading (no 'self-attestation', no 'fitness', no
-    # (a)–(j) range token — guard-asserted below, so this fixture isolates  # noqa: RUF003
-    # the reuse[- ]map branch) with <4 letters routes to the MIDDLE branch:
+    # (a)–(j)/(a)–(k) range token — guard-asserted below, so this fixture  # noqa: RUF003
+    # isolates the reuse[- ]map branch) with <4 letters routes to the MIDDLE branch:
     # the declaration counted, but the letters threshold still gates. A
     # mutant dropping the reuse-map branch fails this test — with no
     # declaration token the fixture would route to the third branch, whose
@@ -899,7 +920,7 @@ def test_c6_reuse_map_with_few_letters_warns():
     lowered = plan.lower()
     assert "fitness" not in lowered
     assert "attestation" not in lowered
-    assert re.search(r"\(a\)\s*[-–—…]\s*\(j\)", plan) is None
+    assert re.search(r"\(a\)\s*[-–—…]\s*\([jk]\)", plan) is None
     _, by_id = _run(plan)
     r = by_id["c6_reuse_fitness"]
     assert r.status == "WARN"
@@ -907,12 +928,33 @@ def test_c6_reuse_map_with_few_letters_warns():
 
 
 def test_c6_range_token_counts_as_declaration():
-    # Pins the en-dash (a)–(j) range-token branch specifically: no 'fitness',  # noqa: RUF003
-    # no 'map', no 'attestation' word (guard-asserted), four real item letters.
+    # GRANDFATHER pin (#1366): an in-flight plan citing the OLD en-dash (a)–(j)  # noqa: RUF003
+    # range token still declares under the widened \([jk]\) detector. No
+    # 'fitness', no 'map', no 'attestation' word (guard-asserted), four real
+    # item letters.
     plan = (
         GOOD_PLAN
         + "\nWe reuse the parent adapters from superkaiba1/explore-persona-space for the base arm."
         + "\nArtifact checks (a)–(j): (a) recipe; (b) regime; (c) cells; "
+        + "(d) single-variable.\n"
+    )
+    lowered = plan.lower()
+    assert "fitness" not in lowered
+    assert "map" not in lowered
+    assert "attestation" not in lowered
+    _, by_id = _run(plan)
+    r = by_id["c6_reuse_fitness"]
+    assert r.status == "PASS"
+
+
+def test_c6_new_range_token_counts_as_declaration():
+    # Pins the CURRENT en-dash (a)–(k) range-token branch (#1366): no  # noqa: RUF003
+    # 'fitness', no 'map', no 'attestation' word (guard-asserted), four real
+    # item letters.
+    plan = (
+        GOOD_PLAN
+        + "\nWe reuse the parent adapters from superkaiba1/explore-persona-space for the base arm."
+        + "\nArtifact checks (a)–(k): (a) recipe; (b) regime; (c) cells; "
         + "(d) single-variable.\n"
     )
     lowered = plan.lower()
@@ -1542,7 +1584,8 @@ def test_own_line_remedies_carry_unwrapped_clarifier():
         else:
             offenders.append((node.lineno, node.value[:90]))
     assert not offenders, f"own-line remedies missing the unwrapped clarifier: {offenders}"
-    # 19 sites (#1263) + c34 exemplar + c7's remedy/pass-detail (#1262) + c4's (#1277) = 24 live
+    # 19 sites (#1263) + c34 exemplar + c7's remedy/pass-detail (#1262) + c4's (#1277)
+    # + c36's remedy (#1375) = 25 live
     assert clarified >= 20
 
 
@@ -5793,12 +5836,12 @@ def test_cli_json_schema_and_exit_zero_on_pass(tmp_path):
     assert payload["issue"] is None
     assert payload["kind"] == "experiment"
     assert payload["n_fail"] == 0
-    assert payload["n_skip"] == 27
+    assert payload["n_skip"] == 31
     assert {"id", "name", "status", "detail"} <= set(payload["checks"][0])
     statuses = {c["status"] for c in payload["checks"]}
     assert statuses <= {"PASS", "WARN", "FAIL", "SKIP"}
-    assert len(payload["checks"]) == 35
-    assert len({c["id"] for c in payload["checks"]}) == 35
+    assert len(payload["checks"]) == 39
+    assert len({c["id"] for c in payload["checks"]}) == 39
     # c23 has no task context in --plan-file mode: rendered SKIP (companion
     # assert for test_cli_issue_mode_appends_goal_currency).
     c23 = next(c for c in payload["checks"] if c["id"] == "c23_goal_currency")
@@ -6921,6 +6964,632 @@ def test_c34_phrase_listed_in_skillmd():
     assert "no verbatim ratcheted-file insertion" in block
     assert "check 34" in block
     assert "`N/A — no verbatim ratcheted-file insertion`" in block
+
+
+# ─── Check 35 — revision-pinned reuse verified at the pin ─────────────────
+
+C35_PINNED_REUSE = (
+    "\n## Reuse\n\nWe reuse the parent's raw-completion shards from "
+    "superkaiba1/explore-persona-space-data at pinned revision "
+    "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa (issue1345 S-track stems).\n"
+)
+
+# #1345 plan v3 §10 pairwise-provenance row, VERBATIM (tasks/*/1345/plans/v3.md
+# line 446 at implementation time) — the artifact-reuse item-(j) boilerplate
+# that blinded the v2 satisfier design to its own motivating incident.
+C35_ITEM_J_ROW = (
+    "| Pairwise provenance coherence | R1/R2 shard `last_commit` dates at revision "
+    "deb7a452 vs the `issue825_extract_turnstore.py` version that wrote them — verify "
+    "at implementation time via `get_paths_info(expand=True, revision=...)` |"
+)
+
+
+def test_c35_not_triggered_skips():
+    assert _status(GOOD_PLAN, "c35_pinned_revision_reuse") == "SKIP"
+
+
+def test_c35_pinned_reuse_without_probe_warns():
+    _, by_id = _run(GOOD_PLAN + C35_PINNED_REUSE)
+    r = by_id["c35_pinned_revision_reuse"]
+    assert r.status == "WARN"
+    assert "pin" in r.detail and "1345" in r.detail
+
+
+def test_c35_revision_scoped_probe_passes():
+    plan = (
+        GOOD_PLAN
+        + C35_PINNED_REUSE
+        + '\n```python\nlist_repo_tree("superkaiba1/explore-persona-space-data", '
+        + 'path_in_repo="issue1345_s/", revision="aaaa...", repo_type="dataset")\n```\n'
+    )
+    assert _status(plan, "c35_pinned_revision_reuse") == "PASS"
+
+
+def test_c35_default_branch_probe_does_not_satisfy():
+    # Pins exactly the #1345 failure shape: an existence probe with NO
+    # revision kwarg ("confirmed" at the default branch) must not satisfy.
+    plan = (
+        GOOD_PLAN
+        + C35_PINNED_REUSE
+        + "\nVerified via list_repo_files('superkaiba1/explore-persona-space-data').\n"
+    )
+    assert _status(plan, "c35_pinned_revision_reuse") == "WARN"
+
+
+def test_c35_prose_verified_at_pinned_revision_passes():
+    plan = GOOD_PLAN + C35_PINNED_REUSE + "\nExistence verified at the pinned revision per stem.\n"
+    assert _status(plan, "c35_pinned_revision_reuse") == "PASS"
+
+
+def test_c35_pasted_warn_detail_does_not_self_satisfy():
+    # MUST-FIX 1(b): bounced plans paste the verifier detail verbatim; the
+    # detail must not satisfy the check it came from (#810 shape).
+    _, by_id = _run(GOOD_PLAN + C35_PINNED_REUSE)
+    detail = by_id["c35_pinned_revision_reuse"].detail
+    plan = GOOD_PLAN + C35_PINNED_REUSE + "\n" + detail + "\n"
+    assert _status(plan, "c35_pinned_revision_reuse") == "WARN"
+
+
+def test_c35_warn_detail_matches_no_satisfier():
+    # MUST-FIX 1(c): pin satisfier-inertness of the detail string directly —
+    # no Hub-callable + `revision=`/`revision:` co-occurrence on one line, no
+    # `verif...at...revision` shape.
+    _, by_id = _run(GOOD_PLAN + C35_PINNED_REUSE)
+    detail = by_id["c35_pinned_revision_reuse"].detail
+    assert verify_plan._C35_PROBE_SATISFIER_RE.search(detail) is None
+    assert verify_plan._C35_PROSE_SATISFIER_RE.search(detail) is None
+
+
+def test_c35_item_j_provenance_boilerplate_does_not_satisfy():
+    # MUST-FIX 2(b): regression for the #1345-v3 blind spot — the item-(j)
+    # `get_paths_info(expand=True, revision=...)` provenance row verifies
+    # commit-DATE coherence, NOT existence-at-pin, and must not satisfy
+    # (get_paths_info is deliberately excluded from the probe satisfier).
+    plan = GOOD_PLAN + C35_PINNED_REUSE + "\n" + C35_ITEM_J_ROW + "\n"
+    assert _status(plan, "c35_pinned_revision_reuse") == "WARN"
+
+
+def test_c35_na_escape_passes():
+    plan = GOOD_PLAN + C35_PINNED_REUSE + "\nN/A — no revision-pinned reuse\n"
+    _, by_id = _run(plan)
+    r = by_id["c35_pinned_revision_reuse"]
+    assert r.status == "PASS"
+    assert "declaration" in r.detail
+
+
+def test_c35_quoted_na_phrase_does_not_escape():
+    # Anti-paste convention (#810/#1238 lineage): the phrase quoted
+    # mid-sentence (e.g. inside a pasted bounce brief) does not count.
+    plan = (
+        GOOD_PLAN
+        + C35_PINNED_REUSE
+        + "\nThe bounce brief quotes `N/A — no revision-pinned reuse` as the check-35 escape.\n"
+    )
+    assert _status(plan, "c35_pinned_revision_reuse") == "WARN"
+
+
+def test_c35_kind_infra_skips():
+    assert (
+        _status(GOOD_PLAN + C35_PINNED_REUSE, "c35_pinned_revision_reuse", kind="infra") == "SKIP"
+    )
+
+
+def test_c35_git_code_sha_without_hf_context_skips():
+    # A bare git code SHA (Repro-card `pinned to commit <40-hex>` row, no HF
+    # context / reuse vocabulary nearby) must not trigger.
+    plan = GOOD_PLAN + (
+        "\nRepro: code pinned to commit bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb on branch main.\n"
+    )
+    assert _status(plan, "c35_pinned_revision_reuse") == "SKIP"
+
+
+def test_c35_phrase_listed_in_skillmd():
+    # Durability pin (the c34 precedent): the canonical escape phrase is
+    # registered backtick-wrapped in the adversarial-planner SKILL.md escape
+    # list, so a later SKILL.md reflow cannot silently drop it.
+    text = (REPO_ROOT / ".claude" / "skills" / "adversarial-planner" / "SKILL.md").read_text()
+    anchor = text.index("Canonical N/A escape phrases")
+    block = text[anchor : text.index("bounce to the planner", anchor)]
+    assert "no revision-pinned reuse" in block
+    assert "check 35" in block
+    assert "`N/A — no revision-pinned reuse`" in block
+
+
+# ─── Check 36 — numeric containment claims ─────────────────────────────────
+
+# Verbatim corpus literals — embedded as literals, NEVER read from tasks/ at
+# test runtime (tasks move between status folders; the c28 fixture
+# convention). C36_1315_LINE is the founding incident sentence,
+# tasks/*/1315/plans/v4.md L66 (the "Install: …" sentence; the leading
+# "Weights: …" clause of the physical line is trimmed — the plan-#1375 §6
+# fixture spec names the sentence). Its FIRST containment claim is TRUE
+# (0.724 in [0.60, 0.85]); the SECOND is arithmetically FALSE
+# (0.724 < 0.737) — verify_plan PASSed 0/0 on it and two critics caught it
+# by hand (-> #1375).
+C36_1315_LINE = (
+    "Install: Tier-1 0.663 in band at step 20, Tier-2 confirm 0.724 — inside the registered "
+    "0.60–0.85 band and inside the siblings' realized 0.737–0.820 spread (install-strength "
+    "control satisfied without dose-matching work)."
+)
+# #1315 v5 L68 (the corrected prose; trailing parenthetical trimmed at the
+# c28 precedent) — the true-negative sibling of the founding line.
+C36_1315_V5_LINE = (
+    "Install: Tier-1 0.663 in band at step 20, Tier-2 confirm 0.724 — inside the registered "
+    "0.60–0.85 band, 0.013 BELOW the siblings' realized 0.737–0.820 spread (install-strength "
+    "control satisfied via the registered band without dose-matching work)."
+)
+# #1315 v4 L126 (trimmed): "next to" is not a containment verb.
+C36_1315_NEXT_TO_LINE = (
+    "install-band control (0.724 in band next to siblings 0.737–0.820; per-cell realized "
+    "install reported next to every geometry DV)"
+)
+# #1315 v4 L274 verbatim: a ± tolerance is not a range.
+C36_1315_PLUSMINUS_LINE = (
+    "1. Parity probe: judged rate within 0.724 ± 0.15 AND application check ≥ 0.5 nat — or "
+    "the named retrain-from-frozen-mix fallback lands in band."
+)
+# #816 v1 L227 (trimmed): "10-20-draw" is a compound count modifier, not a range claim.
+C36_816_LINE = (
+    "- **Exp 4 — kills** if: a norm-matched random-direction preventative finetune reduces "
+    "the post-ft trait score as much as the real vector (real's reduction inside the "
+    "10–20-draw random band, given the p-floor)."
+)
+# #514 v1 L175 verbatim: table row — cross-cell numbers must never be attributed.
+C36_514_ROW = (
+    "| Dense lever, 30% epoch | Whether stopping just past the #508 FT-light cell catches a "
+    "clean cell above 9 nat | Budget resolution within the 0.25-0.5 epoch window | "
+    "`ft_dense_b30` |"
+)
+# #597 v2 L33 (trimmed): "H2" is a label digit, not a claimed value.
+C36_597_LINE = (
+    "- **H2 (rotation + gate collapse at the cliff).** The consecutive-checkpoint "
+    "top-direction cosine has its minimum inside steps 12–40 (the cliff/onset window), and "
+    "the gate ρ trajectory drops from its early value toward ~0 across the same window, in "
+    "most sources."
+)
+# #1353 v1 L52 (trimmed): a TRUE claim that also pins the \b partial-digit
+# operand boundaries (without them "150-330 band" garbage-parses).
+C36_1353_LINE = (
+    "(~300 words — inside the siblings' 150–330 band. Register elements checked against "
+    "L282/L283: bold headline sentence · explicit RULE: clauses · sibling cross-reference.)"
+)
+
+
+def _c36_plan(*extra: str) -> str:
+    """GOOD_PLAN + ``extra`` lines appended (the ``_c28_plan`` pattern)."""
+    return GOOD_PLAN + "\n" + "\n\n".join(extra) + ("\n" if extra else "")
+
+
+def test_c36_1315_v4_false_claim_warns():
+    _, by_id = _run(_c36_plan(C36_1315_LINE))
+    r = by_id["c36_numeric_containment"]
+    assert r.status == "WARN"
+    assert "0.737" in r.detail and "0.724" in r.detail  # the false pair
+
+
+def test_c36_true_claim_same_sentence_not_flagged():
+    # The L66 first half only — the TRUE claim (0.724 in [0.60, 0.85]).
+    plan = _c36_plan("Tier-2 confirm 0.724 — inside the registered 0.60–0.85 band")
+    assert _status(plan, "c36_numeric_containment") == "PASS"
+
+
+def test_c36_corrected_v5_line_passes():
+    assert _status(_c36_plan(C36_1315_V5_LINE), "c36_numeric_containment") == "PASS"
+
+
+def test_c36_next_to_non_fire():
+    # No containment verb -> no claim detected at all.
+    assert _status(_c36_plan(C36_1315_NEXT_TO_LINE), "c36_numeric_containment") == "SKIP"
+
+
+def test_c36_plusminus_tolerance_non_fire():
+    # "within 0.724 ± 0.15" is a tolerance, not an A-B range.
+    assert _status(_c36_plan(C36_1315_PLUSMINUS_LINE), "c36_numeric_containment") == "SKIP"
+
+
+def test_c36_fenced_false_claim_skips():
+    plan = GOOD_PLAN + "\n```\n" + C36_1315_LINE + "\n```\n"
+    assert _status(plan, "c36_numeric_containment") == "SKIP"
+
+
+def test_c36_blockquoted_false_claim_skips():
+    assert _status(_c36_plan("> " + C36_1315_LINE), "c36_numeric_containment") == "SKIP"
+
+
+@pytest.mark.parametrize("kind", ["infra", "batch", "survey"])
+def test_c36_kind_exempt_skips(kind):
+    # The self-reference-trap pin: workflow-fix plans quoting the incident
+    # are kind: infra and never scanned (plan-#1375 §4.7 layer 1).
+    assert _status(_c36_plan(C36_1315_LINE), "c36_numeric_containment", kind=kind) == "SKIP"
+
+
+def test_c36_na_escape_passes():
+    plan = _c36_plan(C36_1315_LINE, "N/A — no numeric containment claims")
+    _, by_id = _run(plan)
+    r = by_id["c36_numeric_containment"]
+    assert r.status == "PASS"
+    assert "declared" in r.detail
+
+
+def test_c36_quoted_na_phrase_does_not_escape():
+    # Anti-paste convention (#810/#1238 lineage): the phrase quoted
+    # mid-sentence (e.g. inside a pasted bounce brief) does not count.
+    plan = _c36_plan(
+        C36_1315_LINE,
+        "The bounce brief quotes `N/A — no numeric containment claims` as the check-36 escape.",
+    )
+    assert _status(plan, "c36_numeric_containment") == "WARN"
+
+
+def test_c36_boundary_equality_inside():
+    # Fraction-exact boundary inclusion: N == A counts as inside.
+    plan = _c36_plan("The realized install of 0.60 sits within the registered 0.60–0.85 band.")
+    assert _status(plan, "c36_numeric_containment") == "PASS"
+
+
+def test_c36_reversed_bounds_normalized():
+    # A reversed range is a prose-order quirk, not an exemption: [0.60, 0.85]
+    # is still verified after normalization.
+    ok_plan = _c36_plan("The confirm read 0.75 sits inside the 0.85–0.60 band.")
+    assert _status(ok_plan, "c36_numeric_containment") == "PASS"
+    bad_plan = _c36_plan("The confirm read 0.50 sits inside the 0.85–0.60 band.")
+    assert _status(bad_plan, "c36_numeric_containment") == "WARN"
+
+
+def test_c36_hyphen_range_parses():
+    # Unspaced ASCII hyphen with unsigned operands is a range.
+    plan = _c36_plan("The mix uses 4 negatives, within the 2-4 range.")
+    assert _status(plan, "c36_numeric_containment") == "PASS"
+
+
+def test_c36_negative_hyphen_ambiguity_never_parses():
+    # A signed/hyphen mix is ambiguous between range and negative pair.
+    plan = _c36_plan("The shift 0.1 lands within the -0.5-0.3 band under this recipe.")
+    assert _status(plan, "c36_numeric_containment") == "SKIP"
+
+
+def test_c36_percent_unit_segregation():
+    # %-flagged candidates compare only against %-flagged ranges.
+    pct_plan = _c36_plan("72% of judged rows sit within the 60–85% range.")
+    assert _status(pct_plan, "c36_numeric_containment") == "PASS"
+    # Mixed units: the only candidate is %-flagged, the range unitless ->
+    # no attributable claimed value -> no claim.
+    mixed_plan = _c36_plan("The 30% rate sits within the 0.25–0.5 window.")
+    assert _status(mixed_plan, "c36_numeric_containment") == "SKIP"
+
+
+def test_c36_compound_count_modifier_non_fire():
+    assert _status(_c36_plan(C36_816_LINE), "c36_numeric_containment") == "SKIP"
+
+
+def test_c36_table_cell_bleed_non_fire():
+    # Candidate window cut at the last `|`: the sibling cell's "9 nat" is
+    # never attributed to the "0.25-0.5 epoch window" claim.
+    assert _status(_c36_plan(C36_514_ROW), "c36_numeric_containment") == "SKIP"
+
+
+def test_c36_label_digit_not_a_candidate():
+    # "H2" is killed by the candidate lookbehind; a candidate-less match
+    # does not count as a claim.
+    assert _status(_c36_plan(C36_597_LINE), "c36_numeric_containment") == "SKIP"
+
+
+def test_c36_true_word_count_claim_passes():
+    assert _status(_c36_plan(C36_1353_LINE), "c36_numeric_containment") == "PASS"
+
+
+# ─── Check 37 — no-flags bundling claim vs workflow_lint dispatch ──────────
+
+# The #1322 v1 incident shape (verbatim clause structure): an acceptance
+# criterion asserting the pre-commit-only reference check rides the bare run.
+C37_FALSE_CLAIM = (
+    "2. `uv run python scripts/workflow_lint.py` (no-flags default run) passes — this "
+    "includes `--check-references` (which walks CLAUDE.md; both new cross-refs must resolve)."
+)
+C37_TRUE_CLAIM = (
+    "1. `uv run python scripts/workflow_lint.py` (no-flags default run, which bundles "
+    "`--check-lessons-index`) passes."
+)
+
+
+def _c37_plan(*extra: str) -> str:
+    return GOOD_PLAN + "\n" + "\n\n".join(extra) + ("\n" if extra else "")
+
+
+def test_c37_kind_experiment_skips():
+    r_by = _run(_c37_plan(C37_FALSE_CLAIM), kind="experiment")[1]["c37_noflags_bundling_claim"]
+    assert r_by.status == "SKIP"
+    assert "kind-exempt" in r_by.detail
+
+
+def test_c37_false_claim_warns():
+    _, by_id = _run(_c37_plan(C37_FALSE_CLAIM), kind="infra")
+    r = by_id["c37_noflags_bundling_claim"]
+    assert r.status == "WARN"
+    assert "`--check-references`" in r.detail
+    assert "args.check_references" in r.detail
+
+
+def test_c37_true_claim_passes():
+    # `--check-lessons-index` IS dispatched on the no-flags run
+    # (workflow_lint.py `args.check_lessons_index or no_flags`).
+    assert _status(_c37_plan(C37_TRUE_CLAIM), "c37_noflags_bundling_claim", kind="infra") == "PASS"
+
+
+def test_c37_negated_line_does_not_trigger():
+    # The corrected #1322 v2 / workflow_lint-docstring phrasing: the claim
+    # anchor is present ("bundled into the no-flags") but the negation guard
+    # drops the line — asserted-negative mentions are never adjudicated.
+    plan = _c37_plan(
+        "`--check-references` is NOT bundled into the no-flags default run — pass it explicitly."
+    )
+    assert _status(plan, "c37_noflags_bundling_claim", kind="infra") == "SKIP"
+
+
+def test_c37_included_in_forward_form_warns():
+    # The #1322 v1 emitter phrasing verbatim ("included in the no-flags
+    # default run") — the FORWARD verb…no-flags word order must survive any
+    # future trigger narrowing (critic-round pin).
+    plan = _c37_plan("`--check-references` is included in the no-flags default run.")
+    assert _status(plan, "c37_noflags_bundling_claim", kind="infra") == "WARN"
+
+
+def test_c37_space_spelling_no_flags_warns():
+    # The "no flags" (space) vocabulary form survives the verb-anchored
+    # narrowing — pinned per the critic-round ask.
+    plan = _c37_plan("Run `workflow_lint.py` (no flags — bundles `--check-references`) as a gate.")
+    assert _status(plan, "c37_noflags_bundling_claim", kind="infra") == "WARN"
+
+
+def test_c37_two_command_idiom_does_not_trigger():
+    # Calibration FP class 1 (155+ corpus instances pre-narrowing): two
+    # separate invocations listed on one line make no bundling claim.
+    plan = _c37_plan(
+        "- `uv run python scripts/workflow_lint.py --check-asks` and the no-flags "
+        "default `uv run python scripts/workflow_lint.py` both exit 0."
+    )
+    assert _status(plan, "c37_noflags_bundling_claim", kind="infra") == "SKIP"
+
+
+def test_c37_into_destination_flag_not_flagged():
+    # Calibration FP class 2 (the reference-check-extension family,
+    # #714/#753/#739/#802/#1190): "bundled into `--check-references` and the
+    # no-flags default run" claims the SUBJECT flag's membership, not the
+    # destination bundle's — the subject (in-set) PASSes, the destination is
+    # never adjudicated.
+    plan = _c37_plan(
+        "New check `--check-lessons-index` (also bundled into `--check-references` "
+        "and the no-flags default run) walks the rules index."
+    )
+    assert _status(plan, "c37_noflags_bundling_claim", kind="infra") == "PASS"
+
+
+def test_c37_proposed_new_flag_passes():
+    # Calibration FP class 3 (forward-looking extension plans): a flag with
+    # no occurrence in the workflow_lint source is a PROPOSED new check —
+    # unfalsifiable at plan time, never an offender.
+    plan = _c37_plan(
+        "Add `--check-notyetbuilt`, bundled into the no-flags default run, to workflow_lint."
+    )
+    assert _status(plan, "c37_noflags_bundling_claim", kind="infra") == "PASS"
+
+
+def test_c37_fenced_claim_does_not_trigger():
+    plan = GOOD_PLAN + "\n```\n" + C37_FALSE_CLAIM + "\n```\n"
+    assert _status(plan, "c37_noflags_bundling_claim", kind="infra") == "SKIP"
+
+
+def test_c37_no_vocab_skips():
+    assert _status(GOOD_PLAN, "c37_noflags_bundling_claim", kind="infra") == "SKIP"
+
+
+def test_c37_na_escape_passes():
+    plan = _c37_plan(C37_FALSE_CLAIM, "N/A — no no-flags bundling claim")
+    _, by_id = _run(plan, kind="infra")
+    r = by_id["c37_noflags_bundling_claim"]
+    assert r.status == "PASS"
+    assert "declared" in r.detail
+
+
+def test_c37_quoted_na_phrase_does_not_escape():
+    # Anti-paste convention (#810/#1238 lineage, the c36 precedent): the
+    # phrase quoted mid-sentence / backtick-wrapped does not count.
+    plan = _c37_plan(
+        C37_FALSE_CLAIM,
+        "The bounce brief quotes `N/A — no no-flags bundling claim` as the check-37 escape.",
+    )
+    assert _status(plan, "c37_noflags_bundling_claim", kind="infra") == "WARN"
+
+
+def test_c37_pasted_warn_detail_does_not_retrigger_or_satisfy():
+    # The WARN detail leads with the negated truth (NOT) so a verbatim paste
+    # can neither re-trigger (negation guard) nor self-satisfy (the escape
+    # phrase in the detail is backtick-wrapped).
+    _, by_id = _run(_c37_plan(C37_FALSE_CLAIM), kind="infra")
+    detail = by_id["c37_noflags_bundling_claim"].detail
+    clean_plus_detail = _c37_plan(detail)
+    assert _status(clean_plus_detail, "c37_noflags_bundling_claim", kind="infra") == "SKIP"
+    offending_plus_detail = _c37_plan(C37_FALSE_CLAIM, detail)
+    assert _status(offending_plus_detail, "c37_noflags_bundling_claim", kind="infra") == "WARN"
+
+
+def test_c37_live_derivation_pins():
+    # Live-tree pin: the source-regex derivation stays plausible and keeps
+    # the ground-truth memberships. A workflow_lint main() dispatch-shape
+    # refactor fails HERE (forcing a deliberate _C37_DISPATCH_RE update)
+    # while the check itself only SKIPs.
+    src = verify_plan._c37_lint_source()
+    assert src is not None
+    dests = verify_plan._c37_noflags_dests(src)
+    assert dests is not None and len(dests) >= 40, dests
+    assert "references" not in dests  # the founding #1322 ground truth
+    assert "lessons_index" in dests
+    # The parenthesized `(args.check_X or no_flags) and not
+    # args.check_references` dispatch form parses too:
+    assert "marker_registry" in dests
+
+
+def test_c37_underivable_source_skips(tmp_path, monkeypatch):
+    # A stub lint file with zero dispatch lines → below the plausibility
+    # floor → loud SKIP, never a spray of WARNs (c34's missing-file pattern).
+    stub = tmp_path / "workflow_lint.py"
+    stub.write_text("def main():\n    pass\n")
+    monkeypatch.setattr(verify_plan, "_C37_LINT_PATH", stub)
+    _, by_id = _run(_c37_plan(C37_FALSE_CLAIM), kind="infra")
+    r = by_id["c37_noflags_bundling_claim"]
+    assert r.status == "SKIP"
+    assert "underivable" in r.detail
+
+
+def test_c37_missing_lint_file_skips(tmp_path, monkeypatch):
+    # --plan-file mode off-repo: workflow_lint.py absent → SKIP, no crash.
+    monkeypatch.setattr(verify_plan, "_C37_LINT_PATH", tmp_path / "workflow_lint.py")
+    _, by_id = _run(_c37_plan(C37_FALSE_CLAIM), kind="infra")
+    assert by_id["c37_noflags_bundling_claim"].status == "SKIP"
+
+
+def test_c37_phrase_listed_in_skillmd():
+    # Durability pin (the c34 test shape): the canonical escape phrase is
+    # registered backtick-wrapped in the adversarial-planner SKILL.md escape
+    # block; the generative sync test separately propagates the docstring
+    # registration.
+    text = (REPO_ROOT / ".claude" / "skills" / "adversarial-planner" / "SKILL.md").read_text()
+    anchor = text.index("Canonical N/A escape phrases")
+    block = text[anchor : text.index("bounce to the planner", anchor)]
+    assert "`N/A — no no-flags bundling claim`" in block
+    assert "check 37" in block
+
+
+# ─── Check 38 — exit-0 criterion on repo-wide lint/suite ───────────────────
+
+# #1365 plans/v1.md:95 VERBATIM (inside a bash fence there — pins the RAW
+# scan). "no NEW failures" WITHOUT a named baseline must NOT satisfy: this
+# exact line was critic-bounced.
+C38_1365_LINE = "uv run python scripts/workflow_lint.py    # exit 0 — no NEW failures"
+C38_584_LINE = "uv run pytest tests/ -q  # full suite green"  # #584 plans/v1.md:182 verbatim
+
+
+def _c38_plan(*extra: str) -> str:
+    return GOOD_PLAN + "\n" + "\n\n".join(extra) + ("\n" if extra else "")
+
+
+def _c38_fenced(line: str) -> str:
+    return "```bash\n" + line + "\n```"
+
+
+def test_c38_1365_incident_line_warns():
+    # The motivating incident line, inside a bash fence (RAW-scan pin).
+    _, by_id = _run(_c38_plan(_c38_fenced(C38_1365_LINE)), kind="infra")
+    r = by_id["c38_exit0_repo_wide_baseline"]
+    assert r.status == "WARN"
+    assert "workflow_lint.py (no --check- scoping)" in r.detail
+
+
+def test_c38_fires_for_experiment_kind_too():
+    # ALL kinds (c21 precedent) — no kind exemption.
+    plan = _c38_plan(_c38_fenced(C38_1365_LINE))
+    assert _status(plan, "c38_exit0_repo_wide_baseline", kind="experiment") == "WARN"
+
+
+def test_c38_584_full_suite_green_warns():
+    _, by_id = _run(_c38_plan(C38_584_LINE), kind="infra")
+    r = by_id["c38_exit0_repo_wide_baseline"]
+    assert r.status == "WARN"
+    assert "pytest (no path scope)" in r.detail
+
+
+def test_c38_baseline_satisfier_passes():
+    # A NAMED baseline mechanism on the criterion line satisfies; contrast
+    # with C38_1365_LINE where bare "no NEW failures" does NOT.
+    line = (
+        "uv run python scripts/workflow_lint.py    "
+        "# exit 0 — no NEW failures vs the plan-time baseline"
+    )
+    assert _status(_c38_plan(line), "c38_exit0_repo_wide_baseline", kind="infra") == "PASS"
+
+
+def test_c38_step9c_satisfier_passes():
+    line = "uv run pytest tests/ -q  # green vs the step9c baseline"
+    assert _status(_c38_plan(line), "c38_exit0_repo_wide_baseline", kind="infra") == "PASS"
+
+
+def test_c38_scoped_lint_does_not_trigger():
+    # #1365 v2:97 corrected shape: a --check-scoped invocation is not arm A.
+    line = "uv run python scripts/workflow_lint.py --check-lessons-index   # exit 0"
+    assert _status(_c38_plan(line), "c38_exit0_repo_wide_baseline", kind="infra") == "SKIP"
+
+
+def test_c38_scoped_pytest_does_not_trigger():
+    line = "uv run pytest tests/test_verify_plan.py -x  # exit 0"
+    assert _status(_c38_plan(line), "c38_exit0_repo_wide_baseline", kind="infra") == "SKIP"
+
+
+def test_c38_repo_wide_ruff_warns():
+    _, by_id = _run(_c38_plan("uv run ruff check .  # exit 0"), kind="infra")
+    r = by_id["c38_exit0_repo_wide_baseline"]
+    assert r.status == "WARN"
+    assert "ruff check/format (repo-wide)" in r.detail
+
+
+def test_c38_scoped_ruff_does_not_trigger():
+    line = "uv run ruff check scripts/verify_plan.py  # exit 0"
+    assert _status(_c38_plan(line), "c38_exit0_repo_wide_baseline", kind="infra") == "SKIP"
+
+
+def test_c38_negated_prose_does_not_trigger():
+    # #1365 v2:101 corrected shape: prose DESCRIBING the hazard is never
+    # adjudicated (negation guard).
+    line = (
+        "The full no-flags `workflow_lint.py` run is NOT a pass criterion here — "
+        "exit 0 is unattainable on origin/main."
+    )
+    assert _status(_c38_plan(line), "c38_exit0_repo_wide_baseline", kind="infra") == "SKIP"
+
+
+def test_c38_test_filename_mention_skips():
+    # The (?<!test_) lookbehind keeps `tests/test_workflow_lint.py` out of
+    # arm A, and the pytest path-scope keeps it out of the pytest arm.
+    line = "`uv run pytest tests/test_workflow_lint.py -x` green"
+    assert _status(_c38_plan(line), "c38_exit0_repo_wide_baseline", kind="infra") == "SKIP"
+
+
+def test_c38_na_escape_passes():
+    plan = _c38_plan(_c38_fenced(C38_1365_LINE), "N/A — no exit-0 acceptance criterion")
+    assert _status(plan, "c38_exit0_repo_wide_baseline", kind="infra") == "PASS"
+
+
+def test_c38_no_trigger_skips():
+    assert _status(GOOD_PLAN, "c38_exit0_repo_wide_baseline", kind="infra") == "SKIP"
+
+
+# Arm-B coverage (critic round-1 Must-Fix: arm B + its suppression branch
+# had zero tests):
+
+
+def test_c38_noflags_phrase_warns():
+    # Arm B: the "no-flags default run" phrase with no lint token on the line.
+    _, by_id = _run(_c38_plan("the no-flags default run must exit 0 after the edit"), kind="infra")
+    r = by_id["c38_exit0_repo_wide_baseline"]
+    assert r.status == "WARN"
+    assert "no-flags default run" in r.detail
+
+
+def test_c38_noflags_phrase_suppressed_by_scoped_lint():
+    # Arm-B suppression: a SCOPED workflow_lint invocation on the same line
+    # makes the no-flags phrase commentary (saw_scoped_lint pin). No
+    # satisfier token on the line, so the SKIP is the suppression's doing.
+    line = "`workflow_lint.py --check-asks` exits 0; the no-flags default run also gets exercised"
+    assert _status(_c38_plan(line), "c38_exit0_repo_wide_baseline", kind="infra") == "SKIP"
+
+
+# Adversarial paste-back (critic round-1 recoverable, mechanizable):
+
+
+def test_c38_wrapped_na_does_not_escape():
+    # A backtick-wrapped paste of the remedy's quoted form is NOT a
+    # declaration (_standalone_na_declared rejects wrapped forms).
+    plan = _c38_plan(_c38_fenced(C38_1365_LINE), "`N/A — no exit-0 acceptance criterion`")
+    assert _status(plan, "c38_exit0_repo_wide_baseline", kind="infra") == "WARN"
 
 
 def test_canonical_json_parse_snippet_pinned():

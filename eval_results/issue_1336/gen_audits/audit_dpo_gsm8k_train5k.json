@@ -1,0 +1,33 @@
+{
+  "model": "dpo",
+  "hf_id": "allenai/Llama-3.1-Tulu-3-8B-DPO",
+  "corpus": "gsm8k_train5k",
+  "n_prompts": 5000,
+  "n_kept": 5000,
+  "keep_rate": 1.0,
+  "keep_rate_floor": 0.8,
+  "keep_rate_floor_pass": true,
+  "drop_reasons": {},
+  "kept_truncation_rate": 0.0012,
+  "kept_early_eos_rate": 0.0,
+  "kept_rep3_flag_rate": 0.738,
+  "kept_distinct_3gram_rate": 0.5939084898417537,
+  "kept_answer_tokens": {
+    "mean": 289.7552,
+    "median": 281.0,
+    "p90": 457
+  },
+  "sampling": {
+    "n": 1,
+    "temperature": 1.0,
+    "top_p": 0.95,
+    "max_tokens": 1024,
+    "seed": 42,
+    "stop": [
+      "\n<|user|>"
+    ]
+  },
+  "answers_sha256": "2075106f6d6ce60cb1f56701483940c753014a810ecd1056f1711cc532e07be6",
+  "render_integrity": null,
+  "smoke": false
+}

@@ -108,6 +108,16 @@ mkdir -p "$LOG_DIR"
 FIRST_RUN_OF_DAY=0
 [ -f "$LOG_FILE" ] || FIRST_RUN_OF_DAY=1
 
+# Shared-VM HF cache redirect (#1369): the hf-hub-ttl eviction pass reads
+# HF_HUB_CACHE from env (autonomous_session_watch.py has no load_dotenv) —
+# point it at the LIVE data-disk cache so eviction manages the cache new
+# work actually writes to. Guarded on the dir so non-VM checkouts no-op.
+_eps_hf_cache_root="/mnt/eps-data/$(id -un)/huggingface-cache"
+if [ -d "$_eps_hf_cache_root" ]; then
+  export HF_HUB_CACHE="${HF_HUB_CACHE:-$_eps_hf_cache_root/hub}"
+  export HF_XET_CACHE="${HF_XET_CACHE:-$_eps_hf_cache_root/xet}"
+fi
+
 {
     echo "=== $(date -Iseconds) autonomous_session_watch start ==="
     cd "$PROJECT_DIR" || exit 1
