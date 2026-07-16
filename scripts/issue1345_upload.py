@@ -48,9 +48,18 @@ def main() -> None:
         action="store_true",
         help="free the pod-local shards after per-shard verified upload",
     )
+    ap.add_argument(
+        "--turnstore-glob",
+        default="*_shard*",
+        help="shard glob for the turnstore upload leg; the assistant-named-story "
+        "variant narrows it to '*stories_s_shard*' so the STAGED parent r1/r2 "
+        "shards (bit-identical, already on the Hub at the pinned revision) are "
+        "not re-uploaded (plan v6 §9: only the ~5-10 GB new story stems upload)",
+    )
     args = ap.parse_args()
 
-    prefix = "issue1345_smoke" if args.smoke else c.HF_ISSUE_PREFIX
+    # Variant-scoped in BOTH modes (plan v6 §4): never overwrite the parent's prefixes.
+    prefix = c.HF_SMOKE_PREFIX if args.smoke else c.HF_ISSUE_PREFIX
     from huggingface_hub import upload_folder
 
     from explore_persona_space.orchestrate.hub import assert_hub_dir_filecounts, retry_transient
@@ -116,12 +125,12 @@ def main() -> None:
         print(f"[upload] preds_cache: {res}", flush=True)
 
     # 4) turnstore shards (the big tensors; incremental + verified)
-    if args.turnstore_dir.exists() and any(args.turnstore_dir.glob("*_shard*")):
+    if args.turnstore_dir.exists() and any(args.turnstore_dir.glob(args.turnstore_glob)):
         res = upload_dir_sharded(
             args.turnstore_dir,
             c.HF_DATA_REPO,
             f"{prefix}/analysis_tensors/turnstore",
-            shard_glob="*_shard*",
+            shard_glob=args.turnstore_glob,
             delete_local=args.delete_local_turnstore,
         )
         print(f"[upload] turnstore: {res}", flush=True)

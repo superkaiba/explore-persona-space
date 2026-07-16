@@ -96,6 +96,9 @@ def main() -> None:
             {
                 "metadata": c.metadata(args.seed, 1, "scripts/issue1345_smoke_fixture.py"),
                 "model": model,
+                # Realized-shape parity with production yield JSONs (extract's
+                # env-mismatch guard reads this field).
+                "story_character_name": c.STORY_CHARACTER_NAME,
                 "n_target": 3,
                 "yield_floor": 1,
                 "n_kept": 1,

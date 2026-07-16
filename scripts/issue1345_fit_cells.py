@@ -161,13 +161,18 @@ def degenerate_fold_reason(conv_ids, *, n_folds: int, seed: int, tgt_conv_ids=No
 # ---------------------------------------------------------------------------
 # Phase 3 — matched-n subsets
 # ---------------------------------------------------------------------------
-def build_matched(turnstore_dir: Path, matched_dir: Path, *, r3_models: set[str]) -> dict:
+def build_matched(
+    turnstore_dir: Path, matched_dir: Path, *, r3_models: set[str], smoke: bool = False
+) -> dict:
     """Pair-level matched-n subsets (plan §4 Phase 3), persisted + returned.
 
     ``r3_models`` = models whose story regime survived the per-model yield
     floor (plan §7: the floor binds PER MODEL; a halted model's R3 pair is
     reported as coverage loss, not built). Empty set == story regime fully
-    halted (the old ``include_r3=False``).
+    halted (the old ``include_r3=False``). ``smoke`` demotes the staged-parent
+    allowlist EQUALITY check to a subset check (the smoke prefetch stages
+    shard000 only, so the rebuilt intersection is a strict subset by
+    construction — the #1345-r3 gate-calibration rule).
     """
     assert r3_models <= set(c.MODELS), r3_models
     id_sets = {}
@@ -195,6 +200,42 @@ def build_matched(turnstore_dir: Path, matched_dir: Path, *, r3_models: set[str]
         "per_model_r3_pair": {},
         "r3_halted_models": sorted(set(c.MODELS) - r3_models),
     }
+    # Staged-allowlist equality (plan v6 §4/§6 row-coverage): when the
+    # prefetch_reuse phase staged the parent's matched-n allowlist, the freshly
+    # rebuilt shared R1/R2 subset must be SET-IDENTICAL to it — bit-identical
+    # staged stems guarantee identical sidecar conv_ids, so any diff means the
+    # staging is incomplete/drifted. Absent file (parent/default run) == no-op.
+    parent_matched = matched_dir / "matched_subsets_parent.json"
+    if parent_matched.exists():
+        parent_shared = set(json.loads(parent_matched.read_text())["shared_r1r2_convs"])
+        if smoke:
+            # Smoke stages shard000 only -> the rebuilt intersection is a strict
+            # SUBSET of the parent's full-store allowlist by construction; a
+            # non-subset is a genuine id inconsistency and still fails loud.
+            if not set(shared) <= parent_shared:
+                raise RuntimeError(
+                    "rebuilt shared R1/R2 subset is NOT a subset of the parent's staged "
+                    f"matched-n allowlist ({len(set(shared) - parent_shared)} foreign "
+                    "convs) — staged stems inconsistent with the pinned allowlist"
+                )
+            print(
+                f"[matchedn][smoke] staged parent allowlist SUBSET check PASS "
+                f"({len(shared)}/{len(parent_shared)} convs; equality binds at "
+                "production staging only)",
+                flush=True,
+            )
+        elif set(shared) != parent_shared:
+            raise RuntimeError(
+                "rebuilt shared R1/R2 subset != the parent's staged matched-n allowlist "
+                f"({len(shared)} vs {len(parent_shared)} convs; symmetric diff "
+                f"{len(set(shared) ^ parent_shared)}) — staged turnstore incomplete or "
+                "drifted (plan v6 §7 reuse-integrity; check prefetch_reuse_manifest.json)"
+            )
+        else:
+            print(
+                f"[matchedn] staged parent allowlist equality PASS ({len(shared)} convs)",
+                flush=True,
+            )
     if r3_models:
         rng = np.random.default_rng(c.SUBSAMPLE_SEED)
         for model in c.MODELS:
@@ -451,6 +492,86 @@ def run_cells(
         print(f"[fits] {cid} done (n={len(conv)}, groups={payload['n_groups']})", flush=True)
 
 
+# ---------------------------------------------------------------------------
+# r1/r2 refit-equality gate (plan v6 §7 — reuse-integrity, exit 3 on miss)
+# ---------------------------------------------------------------------------
+REFIT_EQUALITY_TOL = 1e-3  # deterministic closed-form + fixed seed; BLAS-order slack
+
+
+def refit_equality_check(
+    out_dir: Path,
+    ref_dir: Path,
+    cells: list[dict],
+    *,
+    tol: float = REFIT_EQUALITY_TOL,
+    smoke: bool = False,
+) -> None:
+    """Refit r1/r2 L19 R^2 must match the parent's committed values to <= tol.
+
+    The variant run refits the r1/r2 cells from the DOWNLOADED parent turnstore
+    (prefetch_reuse); with bit-identical tensors + the same fit seed the refit
+    is deterministic, so any drift beyond BLAS-ordering noise means the reuse
+    is unsound — HALT (exit 3) and diagnose, never publish story reads against
+    drifted comparators (plan v6 §7). Under --smoke the SAME comparison runs
+    but is INFORMATIONAL only (shard000-grain refits cannot reproduce the
+    production values by construction — the #1345-r3 gate-calibration rule);
+    a missing smoke cell JSON (degenerate-fold skip) is tolerated with a log
+    line. r3 cells are never checked (the story corpus is new by design).
+    """
+    results, failures = {}, []
+    for cell in cells:
+        if cell["regime"] == "r3":
+            continue
+        cid = cell["cell_id"]
+        new_path = out_dir / f"cells_{cid}.json"
+        ref_path = ref_dir / f"cells_{cid}.json"
+        assert ref_path.exists(), (
+            f"refit-equality reference missing: {ref_path} — the parent's committed "
+            "cell JSONs must be present (branch clone carries eval_results/issue_1345)"
+        )
+        if not new_path.exists():
+            assert smoke, f"refit cell JSON missing outside smoke: {new_path}"
+            print(f"[refit-eq][smoke] {cid}: no refit JSON (degenerate-fold skip)", flush=True)
+            continue
+        ours = float(json.loads(new_path.read_text())["r2_per_layer_obs"][19])
+        theirs = float(json.loads(ref_path.read_text())["r2_per_layer_obs"][19])
+        dev = abs(ours - theirs)
+        ok = dev <= tol
+        results[cid] = {"refit_l19_r2": ours, "parent_l19_r2": theirs, "abs_dev": dev, "pass": ok}
+        if smoke:
+            print(
+                f"[refit-eq][smoke] informational: {cid} refit={ours:.4f} "
+                f"parent={theirs:.4f} dev={dev:.2e} (binds at production staging only)",
+                flush=True,
+            )
+        else:
+            print(
+                f"[refit-eq] {cid}: refit={ours:.6f} parent={theirs:.6f} dev={dev:.2e} "
+                f"({'PASS' if ok else 'FAIL'})",
+                flush=True,
+            )
+            if not ok:
+                failures.append(cid)
+    payload = {
+        "metadata": c.metadata(fc.FIT_SEED, len(results), "scripts/issue1345_fit_cells.py"),
+        "tolerance": tol,
+        "reference_dir": str(ref_dir),
+        "mode": "smoke-informational" if smoke else "binding",
+        "results": results,
+        "pass": None if smoke else not failures,
+    }
+    c.write_json(out_dir / "refit_equality.json", payload)
+    if failures and not smoke:
+        print(
+            f"[refit-eq] HALT: {failures} deviate > {tol} from the parent's committed "
+            "values — the r1/r2 reuse is unsound (plan v6 §7); diagnose the staged "
+            "turnstore before any story read",
+            file=sys.stderr,
+            flush=True,
+        )
+        raise SystemExit(3)
+
+
 def select_cells(cells_arg: str, halted: set[str]) -> list[dict]:
     """Resolve --cells against the registry, then drop halted models' r3 cells.
 
@@ -502,6 +623,14 @@ def main() -> None:
         "degenerate at smoke n are skipped with a logged reason",
     )
     ap.add_argument("--cells", default=None, help="'all' or comma-separated cell ids")
+    ap.add_argument(
+        "--refit-equality-ref",
+        type=Path,
+        default=None,
+        help="parent committed cell-JSON dir (e.g. eval_results/issue_1345): after the "
+        "fits, HALT (exit 3) unless every refit r1/r2 L19 R^2 matches the parent to "
+        f"<= {REFIT_EQUALITY_TOL} (plan v6 §7 reuse-integrity; informational under --smoke)",
+    )
     ap.add_argument("--folds", type=int, default=fc.N_FOLDS)
     ap.add_argument("--seed", type=int, default=fc.FIT_SEED)
     ap.add_argument("--null-draws", type=int, default=fc.N_NULL_DRAWS)
@@ -518,7 +647,12 @@ def main() -> None:
     if args.parity:
         parity_gate(args.turnstore_dir, args.out_dir, smoke=args.smoke)
     if args.build_matched:
-        build_matched(args.turnstore_dir, args.matched_dir, r3_models=set(c.MODELS) - halted)
+        build_matched(
+            args.turnstore_dir,
+            args.matched_dir,
+            r3_models=set(c.MODELS) - halted,
+            smoke=args.smoke,
+        )
     if args.cells:
         cells = select_cells(args.cells, halted)
         matched = load_matched(args.matched_dir)
@@ -534,6 +668,8 @@ def main() -> None:
             n_boot=args.n_boot,
             smoke=args.smoke,
         )
+        if args.refit_equality_ref is not None:
+            refit_equality_check(args.out_dir, args.refit_equality_ref, cells, smoke=args.smoke)
 
 
 if __name__ == "__main__":

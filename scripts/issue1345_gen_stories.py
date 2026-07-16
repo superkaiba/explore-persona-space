@@ -68,14 +68,20 @@ PROMPT_TOKEN_BUDGET = MAX_MODEL_LEN - c.STORY_MAX_NEW_TOKENS - 64
 # any pool passing production passes smoke (v3 review item, test-pinned).
 SMOKE_N_STORIES = 3
 
+# Built from c.STORY_CHARACTER_NAME (plan v6 §4 seam); byte-identical to the
+# parent literal at the ARIA default (pinned by the name-seam test — the bundle
+# fingerprint hashes this string, so parent resume stays intact).
 JUDGE_SYSTEM = (
     "You evaluate whether a short story contains extractable question-answer "
     "dialogue. A story PASSES when it contains at least "
     f"{c.STORY_MIN_TURNS} DISTINCT question->answer exchanges in which a person "
-    "asks a question (quoted dialogue) and an AI assistant character named ARIA "
+    "asks a question (quoted dialogue) and an AI assistant character named "
+    f"{c.STORY_CHARACTER_NAME} "
     "gives a substantive answer in quoted dialogue introduced by an attribution "
-    'before the quote (e.g. ARIA replied: "..."). Exchanges with trivial or '
-    "empty answers, unquoted dialogue, or answers not attributed to ARIA do not "
+    f'before the quote (e.g. {c.STORY_CHARACTER_NAME} replied: "..."). '
+    "Exchanges with trivial or "
+    f"empty answers, unquoted dialogue, or answers not attributed to "
+    f"{c.STORY_CHARACTER_NAME} do not "
     "count. First give 2-3 sentences of reasoning, then finish with EXACTLY two "
     "final lines:\nTURNS: <integer number of qualifying exchanges>\n"
     "VERDICT: PASS or FAIL"
@@ -154,7 +160,8 @@ def _filter_pool_by_length(pool: list[dict], tokenizer, model_key: str) -> list[
 def build_prompt(question: str, model_key: str, tokenizer) -> str:
     """Render the tier-2 generation prompt (instruction stripped before extraction)."""
     user_msg = (
-        "Write the story now. The person's questions to ARIA should be about the "
+        f"Write the story now. The person's questions to {c.STORY_CHARACTER_NAME} "
+        "should be about the "
         "same topic as this question (rephrase naturally; do not copy verbatim):\n"
         f"{question}"
     )
@@ -400,8 +407,9 @@ def enforce_yield_floor(n_kept: int, yield_floor: int) -> None:
 # stories + judge outputs when the run crashed downstream of gen).
 # ---------------------------------------------------------------------------
 def _stories_hf_prefix(smoke: bool) -> str:
-    """HF data-repo prefix for the story bundle (smoke diverts to issue1345_smoke)."""
-    return f"{'issue1345_smoke' if smoke else c.HF_ISSUE_PREFIX}/raw_completions/stories"
+    """HF data-repo prefix for the story bundle (smoke diverts to the — variant-
+    scoped, plan v6 §4 — issue1345_smoke prefix)."""
+    return f"{c.HF_SMOKE_PREFIX if smoke else c.HF_ISSUE_PREFIX}/raw_completions/stories"
 
 
 def bundle_fingerprint(model_key: str, seed_ids_all: list[str]) -> str:
@@ -701,6 +709,9 @@ def main() -> None:
     report = {
         "metadata": c.metadata(c.GEN_SEED, len(kept), "scripts/issue1345_gen_stories.py"),
         "model": model_key,
+        # Realized character name (plan v6 §4 env-mismatch guard): extract_turnstore
+        # --regime r3 asserts this equals ITS OWN c.STORY_CHARACTER_NAME at entry.
+        "story_character_name": c.STORY_CHARACTER_NAME,
         "n_target": n_target,
         "yield_floor": yield_floor,
         "counts_main": counts,
