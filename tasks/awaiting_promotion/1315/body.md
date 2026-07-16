@@ -3,7 +3,8 @@ title: 'Impolite''s activation-shift geometry breaks the sycophancy signature: r
   more concentrated, and no extra shift distance under full fine-tuning (MODERATE
   confidence)'
 kind: experiment
-tags: []
+tags:
+- followup-auto
 created_at: '2026-07-15T06:33:50Z'
 has_clean_result: true
 parent_id: 1112
