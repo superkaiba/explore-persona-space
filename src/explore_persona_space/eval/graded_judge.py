@@ -157,6 +157,8 @@ def judge_graded(
     temperature: float = DEFAULT_JUDGE_TEMPERATURE,
     max_tokens: int = 64,
     dry_run: bool = False,
+    threshold_base: int | None = None,
+    checkpoint_dir: Path | None = None,
 ) -> JudgeResult:
     """Graded 0-100 judge over ``items`` via the sanctioned Batch client.
 
@@ -183,6 +185,17 @@ def judge_graded(
             (#1090 c3: 473/1000 + 307/1000 draws); callers closing such drops
             raise it (a sampling knob — deliberately OUTSIDE the rubric cache
             identity, see ``batch_judge.rubric_fingerprint``).
+        threshold_base: optional passthrough to
+            ``judge_completions_batch(threshold_base=...)`` (the sync-vs-batch
+            crossover). ``None`` (default) keeps the client default — existing
+            callers unchanged. ``0`` FORCES the Batch API path — the #1090 fu6
+            live forced-batch smoke uses this so a ~5-request pre-launch probe
+            exercises the run's EXACT request builder on the Batch path
+            (gotchas.md "A --mock-judge ... smoke does NOT validate the
+            Anthropic Batch API REQUEST SHAPE").
+        checkpoint_dir: optional passthrough to
+            ``judge_completions_batch(checkpoint_dir=...)`` (the #1019
+            resumable-dispatch state dir). ``None`` keeps the client default.
 
     Raises:
         ValueError: if any ``item_id`` contains the ``"__"`` custom_id
@@ -212,6 +225,11 @@ def judge_graded(
         # Fill the verbatim rubric's {question}/{answer} slots.
         return eval_prompt.replace("{question}", question).replace("{answer}", answer)
 
+    passthrough: dict = {}
+    if threshold_base is not None:
+        passthrough["threshold_base"] = threshold_base
+    if checkpoint_dir is not None:
+        passthrough["checkpoint_dir"] = checkpoint_dir
     _batch_judge.judge_completions_batch(
         completions=completions,
         judge_system_prompt=system_prompt,
@@ -221,6 +239,7 @@ def judge_graded(
         cache_dir=cache_dir,
         save_raw=save_raw,
         dry_run=dry_run,
+        **passthrough,
     )
     if dry_run:
         return JudgeResult(scores={}, n_total_draws=0, n_dropped_draws=0)
