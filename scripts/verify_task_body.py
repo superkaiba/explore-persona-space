@@ -9717,6 +9717,216 @@ def check_data_subset_disclosure(body: str) -> CheckResult:
     return CheckResult(label, True, f"{len(samples)} `## Data` example block(s) disclosed")
 
 
+# ─── v4 Sample-slot disclosure-count check (39) ─────────────────────────────
+
+# Explicit shown-count claim inside the v4 Sample slot — the `Disclosure:
+# N of M` convention (#928/#1005). Deliberately keyed on the `Disclosure:`
+# prefix ONLY: the broad `_SUBSET_DISCLOSURE_RE` phrasings (`K of M rows`,
+# `first N of M`) routinely count table ROWS inside one block (e.g. the
+# `_V4_GOOD_BODY` test fixture's `5 of 2,000 rows, random sample` over a
+# 1-row table) and must NOT trigger count reconciliation (#1421).
+_DISCLOSURE_COUNT_RE = re.compile(
+    r"(?im)\bdisclosure:\s*(?:the\s+|first\s+|showing\s+|top\s+)*"
+    r"(\d[\d,]*)\s+of\s+(?:the\s+)?(\d[\d,]*)"
+)
+
+# A top-level markdown list item: `- ` / `* ` / `+ ` / `1. ` / `1) ` at
+# indent ≤3 (the CommonMark top-level bound), with a non-space payload.
+_LIST_ITEM_RE = re.compile(r"^ {0,3}(?:[-*+]|\d{1,3}[.)])\s+\S")
+
+
+def _iter_unfenced_lines(text: str):
+    """Yield the lines of `text` that sit OUTSIDE fenced code blocks.
+
+    ``` / ~~~ delimiter lines toggle the fence state and are not yielded
+    themselves (the same relaxed CommonMark toggle `find_h2_sections`
+    uses)."""
+    in_fence = False
+    for line in text.splitlines():
+        s = line.strip()
+        if s.startswith("```") or s.startswith("~~~"):
+            in_fence = not in_fence
+            continue
+        if in_fence:
+            continue
+        yield line
+
+
+def _count_top_level_list_items(text: str) -> int:
+    """Count top-level markdown list items outside fenced code blocks.
+
+    Indent ≤3 counts as top-level per CommonMark, so a 2-space-indented
+    nested sub-bullet ALSO counts — an INFLATION-ONLY bias by design: it
+    can only raise the max/summed counting bases (masking an overclaim on
+    a sub-bulleted group, never manufacturing a false FAIL, since FAIL
+    requires N to exceed EVERY basis). Do NOT tighten the indent bound to
+    0 — legitimately indented top-level items would then undercount and
+    turn this basis into a false-positive source (#1421)."""
+    return sum(1 for line in _iter_unfenced_lines(text) if _LIST_ITEM_RE.match(line))
+
+
+def _count_gfm_table_data_rows(text: str) -> int:
+    """Count GFM table DATA rows outside fenced code blocks.
+
+    Per contiguous run of `|`-starting lines: the rows AFTER the first
+    delimiter row (`_GFM_DELIM_RE` multi-column / `_SINGLE_COL_DELIM_RE`
+    single-column), excluding any further delimiter rows. A run with no
+    delimiter row counts 0 (not a table). Sums over runs."""
+
+    def _is_delim(line: str) -> bool:
+        return bool(_GFM_DELIM_RE.match(line) or _SINGLE_COL_DELIM_RE.match(line))
+
+    total = 0
+    run: list[str] = []
+
+    def _flush() -> None:
+        nonlocal total
+        delim_idx = next((i for i, row in enumerate(run) if _is_delim(row)), None)
+        if delim_idx is not None:
+            total += sum(1 for row in run[delim_idx + 1 :] if not _is_delim(row))
+        run.clear()
+
+    for line in _iter_unfenced_lines(text):
+        if line.lstrip().startswith("|"):
+            run.append(line)
+        else:
+            _flush()
+    _flush()
+    return total
+
+
+def _count_blockquote_groups(text: str) -> int:
+    """Count maximal runs of `>`-starting lines outside fenced code
+    blocks; each contiguous run counts 1 (a blockquote-formatted example
+    list — cheap insurance, the Figure-caption style is Results-only)."""
+    total = 0
+    prev_quote = False
+    for line in _iter_unfenced_lines(text):
+        is_quote = line.lstrip().startswith(">")
+        if is_quote and not prev_quote:
+            total += 1
+        prev_quote = is_quote
+    return total
+
+
+def _count_disjoint_media_sum(group: str) -> int:
+    """Summed disjoint-media counting basis for check 39 (#1421): merged
+    fenced + `<details>` block regions (span-deduped — a fence nested in
+    a `<details>` block, or vice versa, counts once via the merged outer
+    region) PLUS top-level list items and GFM table data rows counted
+    only OUTSIDE those block regions, so each shown item enters the sum
+    exactly once. Strictly generosity-increasing: it adds one more value
+    N may legitimately match (the mixed-media presentation — e.g. 3 table
+    rows + 3 fenced completions for `Disclosure: 6 of M`) and can only
+    raise max(bases); it can never manufacture a false FAIL."""
+    raw = [(m.start(), m.end()) for m in _FENCED_RE.finditer(group)]
+    raw += [(m.start(), m.end()) for m in _DETAILS_BLOCK_RE.finditer(group)]
+    raw.sort()
+    merged: list[list[int]] = []
+    for s, e in raw:
+        if merged and s < merged[-1][1]:
+            merged[-1][1] = max(merged[-1][1], e)
+        else:
+            merged.append([s, e])
+    chars = list(group)
+    for s, e in merged:
+        for i in range(s, e):
+            if chars[i] != "\n":
+                chars[i] = " "
+    remainder = "".join(chars)
+    return (
+        len(merged) + _count_top_level_list_items(remainder) + _count_gfm_table_data_rows(remainder)
+    )
+
+
+def check_v4_sample_disclosure_count(body: str) -> CheckResult:
+    """Check 39 (v4 only): every explicit `Disclosure: N of M` count
+    claim in the `## Methodology` Sample slot reconciles with the number
+    of example items actually shown in that claim's group (#1421;
+    incident #1005: claimed `Disclosure: 8 of 2,400`, showed 6).
+
+    Group semantics: one `Disclosure:` line covers the text from the
+    FIRST NEWLINE after its match to the START OF THE LINE carrying the
+    next `Disclosure:` claim (or slot end) — the claim line's own tail
+    (`— 3 well-formed … plus 3 cap-truncated …`) never enters the counted
+    group, and a bullet wrapping a `Disclosure:` line (`- Disclosure: …`)
+    is excluded from BOTH its own group and the previous one.
+
+    Counting bases per group (zero-valued bases dropped): sample-like
+    blocks (`_iter_sample_blocks` — check 19's enumeration), ALL raw
+    fenced + `<details>` blocks, top-level list items
+    (`_count_top_level_list_items` — indent ≤3, inflation-only), GFM
+    table data rows, blockquote groups, and the summed disjoint-media
+    basis (`_count_disjoint_media_sum` — mixed-media presentations).
+      - N matches ANY basis          -> PASS (presentation-medium agnostic)
+      - N > max(bases), bases != {}  -> FAIL (overclaim — the incident class)
+      - other mismatch               -> WARN (is_warn=True)
+      - bases == {}                  -> PASS-skip (unrecognized
+                                        presentation; never guess)
+    PASS-skips on non-v4 bodies (forward-only; no grandfathered body
+    carries the `Disclosure:` convention — repo grep 2026-07-16, #1421).
+    """
+    label = "Sample-slot disclosure count (v4)"
+    if not is_v4(body):
+        return CheckResult(label, True, "skipped — not a v4 body")
+    methodology = section_text(body, "Methodology")
+    if methodology is None:
+        return CheckResult(label, True, "## Methodology missing — check 18 will report")
+    slot = _v4_methodology_sample_slot(methodology)
+    if slot is None:
+        return CheckResult(label, True, "no Sample slot — check 18 will report")
+    matches = list(_DISCLOSURE_COUNT_RE.finditer(slot))
+    if not matches:
+        return CheckResult(label, True, "no `Disclosure: N of M` count claim in the Sample slot")
+    fails: list[str] = []
+    warns: list[str] = []
+    n_skipped = 0
+    for i, m in enumerate(matches):
+        n_claimed = int(m.group(1).replace(",", ""))
+        nl = slot.find("\n", m.end())
+        group_start = nl + 1 if nl != -1 else len(slot)
+        if i + 1 < len(matches):
+            group_end = slot.rfind("\n", 0, matches[i + 1].start()) + 1
+        else:
+            group_end = len(slot)
+        group = slot[group_start:group_end] if group_start < group_end else ""
+        bases = {
+            "sample blocks": len(_iter_sample_blocks(group)),
+            "fenced/<details> blocks": (
+                len(list(_FENCED_RE.finditer(group))) + len(list(_DETAILS_BLOCK_RE.finditer(group)))
+            ),
+            "top-level list items": _count_top_level_list_items(group),
+            "table data rows": _count_gfm_table_data_rows(group),
+            "blockquote groups": _count_blockquote_groups(group),
+            "summed disjoint media": _count_disjoint_media_sum(group),
+        }
+        nonzero = {k: v for k, v in bases.items() if v > 0}
+        if not nonzero:
+            n_skipped += 1  # unrecognized presentation medium — never guess
+            continue
+        if n_claimed in nonzero.values():
+            continue
+        desc = (
+            f"`Disclosure: {m.group(1)} of {m.group(2)}` claims {n_claimed} shown "
+            f"but its group carries at most {max(nonzero.values())} "
+            f"({', '.join(f'{v} {k}' for k, v in nonzero.items())})"
+        )
+        (fails if n_claimed > max(nonzero.values()) else warns).append(desc)
+    if fails:
+        return CheckResult(label, False, "; ".join(fails + warns))
+    if warns:
+        return CheckResult(
+            label,
+            True,
+            "; ".join(warns) + " — count mismatch (not an overclaim)",
+            is_warn=True,
+        )
+    detail = f"{len(matches) - n_skipped} disclosure count claim(s) reconcile"
+    if n_skipped:
+        detail += f"; {n_skipped} claim(s) skipped — no countable presentation (never guess)"
+    return CheckResult(label, True, detail)
+
+
 # ─── v3 word-cap check (20) ──────────────────────────────────────────────────
 
 
@@ -11140,6 +11350,9 @@ CHECKS = [
     # check 37 (WARN, v4, #1370) — footer `- Reused ... from [#M](...)` bullets carry a
     # revision/path pin (body-text-only sibling of check 35's metadata-side trigger):
     check_footer_reuse_bullets_pinned,
+    # check 39 (v4) — `Disclosure: N of M` count claim in the Sample slot
+    # reconciles with the example items actually shown (#1421; incident #1005):
+    check_v4_sample_disclosure_count,
     # generation-agnostic checks (v2 AND v3 AND v4):
     check_figure_url_sha_matches_repro,  # check 22
     check_hf_url_resolves,  # check 23

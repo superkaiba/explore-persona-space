@@ -104,7 +104,7 @@ def test_good_body_passes_all():
     ok, results = verify_task_body.verify_text(GOOD_BODY)
     assert ok, [r.render() for r in results if not r.passed]
     assert all(r.passed for r in results)
-    # CHECKS has 38 body-only functions: the 20 pre-v3 body-only checks
+    # CHECKS has 39 body-only functions: the 20 pre-v3 body-only checks
     # (incl. the sentinel-gated `check_tldr_nested_structure` and the
     # check-8b Reproducibility artifact-URL existence probe), the four
     # v3-gated body-only checks (check 18 `check_data_shape`, check 19
@@ -152,7 +152,7 @@ def test_good_body_passes_all():
     # is a vacuous PASS here because this fixture carries no
     # availability-denial-near-artifact line. verify_text prepends check 0
     # (body-nonstub) + check 0b (no-duplicate-frontmatter), runs CHECKS[1:]
-    # (39 functions), then appends the Goal soft check, the H1↔frontmatter-
+    # (40 functions), then appends the Goal soft check, the H1↔frontmatter-
     # title sync check (#1110; PASS-skip: not a sentinelled body), the
     # Lens 14
     # concerns-audit, the check-16 lr-matches-plan reconciliation, the
@@ -168,17 +168,19 @@ def test_good_body_passes_all():
     # locally reachable, so the cited SHA is silently skipped), AND the
     # check-38 linked-not-embedded-figures scan (needs `issue` for
     # own-figures-dir scoping, #1371; PASS-skip: not a v4 body) →
-    # 52 results total (2 prepended + CHECKS[1:]=39 + 11 appended; check 36
-    # `check_v4_result_paragraph_sentences` (#1368) and check 37
-    # `check_footer_reuse_bullets_pinned` (#1370) ride CHECKS and PASS-skip
+    # 53 results total (2 prepended + CHECKS[1:]=40 + 11 appended; check 36
+    # `check_v4_result_paragraph_sentences` (#1368), check 37
+    # `check_footer_reuse_bullets_pinned` (#1370), and check 39
+    # `check_v4_sample_disclosure_count` (#1421) ride CHECKS and PASS-skip
     # here — not a v4 body). The
     # Lens 14 / check-16 results are PASS-skips when no concerns.jsonl /
     # plans/plan.md sibling is available; check 17 and the v3/v4 checks
     # are PASS-skips on this legacy (pre-v2-sentinel) fixture.
-    assert len(results) == 52
+    assert len(results) == 53
     # By-name membership so the NEXT check addition can key by name instead
     # of re-deriving the arithmetic (#1016 methodology-reconciler Must-Fix).
     assert _HF_32_NAME in {r.name for r in results}
+    assert "Sample-slot disclosure count (v4)" in {r.name for r in results}
     assert "cross-issue reuse pins declared (footer Reused bullets)" in {r.name for r in results}
     assert "footer Reused bullets carry a revision/path pin" in {r.name for r in results}
     assert "figure prose numerics vs figure sidecar (plotted-value drift)" in {
@@ -4674,13 +4676,15 @@ def test_checks_list_size():
     denominator check (needs eval JSONs), and the check-31
     orphaned-per-unit-figures probe (needs `issue` for figures-dir
     scoping, #1011).
-    So `verify_text` returns 51 results (2 prepended + CHECKS[1:]=39 +
+    So `verify_text` returns 52 results (2 prepended + CHECKS[1:]=40 +
     10 appended — see `test_good_body_passes_all`), but `CHECKS` stays
-    at 40 (check 36 `check_v4_result_paragraph_sentences` (#1368) and
+    at 41 (check 36 `check_v4_result_paragraph_sentences` (#1368),
     check 37 `check_footer_reuse_bullets_pinned` — the body-only
-    footer-side reuse-pin sibling of check 35, #1370 — ride CHECKS).
+    footer-side reuse-pin sibling of check 35, #1370 — and check 39
+    `check_v4_sample_disclosure_count` — the Sample-slot
+    `Disclosure: N of M` count reconciliation, #1421 — ride CHECKS).
     """
-    assert len(verify_task_body.CHECKS) == 40
+    assert len(verify_task_body.CHECKS) == 41
     # By-name membership so the NEXT check addition can key by name instead
     # of re-deriving the arithmetic (#1016 methodology-reconciler Must-Fix).
     assert verify_task_body.check_hf_adjacent_file_claims in verify_task_body.CHECKS
@@ -4688,6 +4692,7 @@ def test_checks_list_size():
     assert verify_task_body.check_figure_beat_claims_vs_sidecar_text in verify_task_body.CHECKS
     assert verify_task_body.check_v4_result_paragraph_sentences in verify_task_body.CHECKS
     assert verify_task_body.check_footer_reuse_bullets_pinned in verify_task_body.CHECKS
+    assert verify_task_body.check_v4_sample_disclosure_count in verify_task_body.CHECKS
 
 
 # ─── Check 14: MDX-safe prose (regex layer + real-parse backstop) ───
@@ -7034,6 +7039,209 @@ def test_v4_check19b_emits_v4_label_only():
     by_name = _results_by_name(results)
     assert "Methodology unwrapped example table (v4)" in by_name
     assert "Data unwrapped example table (v3)" not in by_name
+
+
+# ─── Check 39: Sample-slot `Disclosure: N of M` count reconciliation (#1421) ─
+# Incident #1005: the clean-result claimed `Disclosure: 8 of 2,400` while only
+# 6 example bullets followed (pre-fix revision preserved at 8926c25db5).
+# Assertions call the check directly (plus one verify_text by-name read) —
+# the `_V4_GOOD_BODY` convention: fake SHAs fail the existence probes, so
+# overall PASS is not assertable.
+
+_CHECK39_NAME = "Sample-slot disclosure count (v4)"
+
+# Six top-level bullets structurally copied from #1005's Sample slot shape
+# (markdown links + em-dashes, no fenced blocks, no tables).
+_SIX_I1005_STYLE_BULLETS = (
+    "- [naturalistic_s57](https://huggingface.co/datasets/x/tree/abc/rc/s57.json) — "
+    "well-formed single-turn rollout; direct answer to the probe.\n"
+    "- [naturalistic_s61](https://huggingface.co/datasets/x/tree/abc/rc/s61.json) — "
+    "well-formed; hedged framing.\n"
+    "- [naturalistic_s74](https://huggingface.co/datasets/x/tree/abc/rc/s74.json) — "
+    "well-formed; list-style answer.\n"
+    "- [chat_s12](https://huggingface.co/datasets/x/tree/abc/rc/s12.json) — "
+    "well-formed multi-turn rollout.\n"
+    "- [chat_s19](https://huggingface.co/datasets/x/tree/abc/rc/s19.json) — "
+    "well-formed; short reply.\n"
+    "- [chat_s23](https://huggingface.co/datasets/x/tree/abc/rc/s23.json) — "
+    "cap-truncated rollout (ends mid-sentence).\n"
+)
+
+
+def _v4_body_with_sample_slot(slot_md: str) -> str:
+    """Return a `_V4_GOOD_BODY` variant whose `## Methodology` Sample-slot
+    CONTENT (everything after the slot label line, up to `## Results`) is
+    replaced by ``slot_md``. The slot label line itself stays."""
+    start = _V4_GOOD_BODY.index("<details open>")
+    end = _V4_GOOD_BODY.index("## Results")
+    return _V4_GOOD_BODY[:start] + slot_md.rstrip() + "\n\n" + _V4_GOOD_BODY[end:]
+
+
+def test_v4_sample_disclosure_count_overclaim_fails():
+    """Durability pin + the real-#1005-shape regression: a Sample slot
+    claiming `Disclosure: 8 of 2,400` over exactly 6 top-level bullets
+    (the pre-fix #1005 revision, `8926c25db5`) FAILs, naming 8 (claimed)
+    and 6 (shown). The disclosure line's own em-dash tail (`— 5
+    well-formed … plus 3 cap-truncated`) never enters the counted group
+    (group starts at the first newline after the claim)."""
+    slot = (
+        "Disclosure: 8 of 2,400 rollouts — 5 well-formed responses plus 3 "
+        "cap-truncated, drawn at random for illustration.\n\n" + _SIX_I1005_STYLE_BULLETS
+    )
+    res = verify_task_body.check_v4_sample_disclosure_count(_v4_body_with_sample_slot(slot))
+    assert res.passed is False
+    assert "claims 8 shown" in res.detail
+    assert "at most 6" in res.detail
+
+
+def test_v4_sample_disclosure_count_match_passes():
+    """The #928 / post-fix-#1005 shape: `Disclosure: 6 of 2,400` over 6
+    top-level bullets reconciles → PASS, no WARN."""
+    slot = "Disclosure: 6 of 2,400 rollouts, drawn at random.\n\n" + _SIX_I1005_STYLE_BULLETS
+    res = verify_task_body.check_v4_sample_disclosure_count(_v4_body_with_sample_slot(slot))
+    assert res.passed is True
+    assert res.is_warn is False
+    assert "reconcile" in res.detail
+
+
+def test_v4_sample_disclosure_no_count_claim_skips():
+    """A Sample slot disclosed via the broad check-19 vocabulary only
+    (`5 of 2,000 rows, random sample` inside a `<summary>`, the
+    `_V4_GOOD_BODY` shape — no `Disclosure:` keyword) does not engage the
+    check; the shared good fixture stays green under verify_text."""
+    res = verify_task_body.check_v4_sample_disclosure_count(_V4_GOOD_BODY)
+    assert res.passed is True
+    assert res.is_warn is False
+    assert "no `Disclosure: N of M` count claim" in res.detail
+    _ok, results = verify_task_body.verify_text(_V4_GOOD_BODY)
+    by_name = _results_by_name(results)
+    assert by_name[_CHECK39_NAME].passed
+    assert not by_name[_CHECK39_NAME].is_warn
+
+
+def test_v4_sample_disclosure_thousands_separator_parses():
+    """`Disclosure: 1,000 of 2,400` parses N=1000 (thousands separators on
+    both sides), and the M-side separator does not break the incident
+    parse (8 of 2,400 + 6 bullets still FAILs)."""
+    m = verify_task_body._DISCLOSURE_COUNT_RE.search("Disclosure: 1,000 of 2,400 rows shown.")
+    assert m is not None
+    assert int(m.group(1).replace(",", "")) == 1000
+    assert m.group(2) == "2,400"
+    slot = "Disclosure: 8 of 2,400 rollouts, drawn at random.\n\n" + _SIX_I1005_STYLE_BULLETS
+    res = verify_task_body.check_v4_sample_disclosure_count(_v4_body_with_sample_slot(slot))
+    assert res.passed is False
+
+
+def test_v4_sample_disclosure_table_rows_basis_passes():
+    """`Disclosure: 5 of 2,000 training rows` in a `<details><summary>`
+    whose table carries 5 data rows PASSes via the table-row basis (the
+    one-table-of-N-rows form must not false-FAIL)."""
+    slot = (
+        "<details>\n"
+        "<summary>Disclosure: 5 of 2,000 training rows, random sample</summary>\n\n"
+        "| Row | System | User | Assistant |\n"
+        "|---|---|---|---|\n"
+        "| 1 | sys | q | a |\n"
+        "| 2 | sys | q | a |\n"
+        "| 3 | sys | q | a |\n"
+        "| 4 | sys | q | a |\n"
+        "| 5 | sys | q | a |\n\n"
+        "</details>\n"
+    )
+    res = verify_task_body.check_v4_sample_disclosure_count(_v4_body_with_sample_slot(slot))
+    assert res.passed is True
+    assert res.is_warn is False
+
+
+def test_v4_sample_disclosure_undercount_warns():
+    """An UNDERCOUNT (`Disclosure: 2 of 2,400` over 4 bullets) is a
+    mismatch but not an overclaim → WARN (`is_warn=True`), never FAIL."""
+    four_bullets = "".join(_SIX_I1005_STYLE_BULLETS.splitlines(keepends=True)[:4])
+    slot = "Disclosure: 2 of 2,400 rollouts, drawn at random.\n\n" + four_bullets
+    res = verify_task_body.check_v4_sample_disclosure_count(_v4_body_with_sample_slot(slot))
+    assert res.passed is True
+    assert res.is_warn is True
+    assert "not an overclaim" in res.detail
+
+
+def test_v4_sample_disclosure_unrecognized_presentation_skips():
+    """A count claim followed only by plain paragraphs (no bullets /
+    blocks / tables / quotes) has no countable basis → PASS-skip (never
+    guess)."""
+    slot = (
+        "Disclosure: 3 of 500 examples, described narratively below.\n\n"
+        "A plain paragraph describing the worked examples in prose without "
+        "any bullets, tables, fenced blocks, or blockquotes.\n"
+    )
+    res = verify_task_body.check_v4_sample_disclosure_count(_v4_body_with_sample_slot(slot))
+    assert res.passed is True
+    assert res.is_warn is False
+    assert "no countable presentation" in res.detail
+
+
+def test_v3_body_disclosure_line_not_checked():
+    """Grandfathering regression: a v3 body carrying a `Disclosure: 8 of
+    2,400` line (with example bullets) PASS-skips — the check is v4-only
+    by construction."""
+    body = _V3_GOOD_BODY + "\nDisclosure: 8 of 2,400 rollouts.\n\n- one example\n- two example\n"
+    res = verify_task_body.check_v4_sample_disclosure_count(body)
+    assert res.passed is True
+    assert "not a v4 body" in res.detail
+
+
+def test_v4_sample_disclosure_two_groups_second_overclaim_fails():
+    """TWO `Disclosure:` lines in one Sample slot: the first group
+    reconciles (3 over 3 bullets), the second overclaims (9 over 4
+    bullets) → FAIL naming the SECOND group's numbers. Also pins the
+    group boundary: the second claim's own bolded-bullet prefix
+    (`- **Disclosure: …`) never counts into the FIRST group (each group
+    ends at the START of the line carrying the next claim)."""
+    slot = (
+        "Disclosure: 3 of 2,400 rollouts, drawn at random.\n\n"
+        "- [a](https://x/a) — first rollout\n"
+        "- [b](https://x/b) — second rollout\n"
+        "- [c](https://x/c) — third rollout\n\n"
+        "- **Disclosure: 9 of 2,400 judge rows, drawn at random.**\n\n"
+        "- [d](https://x/d) — fourth\n"
+        "- [e](https://x/e) — fifth\n"
+        "- [f](https://x/f) — sixth\n"
+        "- [g](https://x/g) — seventh\n"
+    )
+    res = verify_task_body.check_v4_sample_disclosure_count(_v4_body_with_sample_slot(slot))
+    assert res.passed is False
+    assert "claims 9 shown" in res.detail
+    assert "at most 4" in res.detail
+    # The reconciling FIRST group (3 == 3) is not flagged.
+    assert "Disclosure: 3 of" not in res.detail
+
+
+def test_v4_sample_disclosure_bulleted_claim_excludes_own_bullet():
+    """A `Disclosure:` claim nested inside a bullet (`- Disclosure: 6 of
+    2,400 …`) excludes its OWN bullet line from the group count: 6
+    following bullets reconcile at exactly 6 (a 7-count would WARN)."""
+    slot = "- Disclosure: 6 of 2,400 rollouts, drawn at random:\n" + _SIX_I1005_STYLE_BULLETS
+    res = verify_task_body.check_v4_sample_disclosure_count(_v4_body_with_sample_slot(slot))
+    assert res.passed is True
+    assert res.is_warn is False
+
+
+def test_v4_sample_disclosure_mixed_media_summed_basis_passes():
+    """SUMMED disjoint-media basis: a mixed-media group showing 3 table
+    data rows + 3 fenced completions for `Disclosure: 6 of 2,400` PASSes
+    via the summed basis (3 blocks + 3 out-of-block rows = 6) even though
+    no single-medium basis equals 6 (strictly generosity-increasing)."""
+    fence = "```text\nUser: q?\nAssistant: a.\n```\n"
+    slot = (
+        "Disclosure: 6 of 2,400 rows and completions, drawn at random.\n\n"
+        "| Row | System | User |\n"
+        "|---|---|---|\n"
+        "| 1 | sys | q |\n"
+        "| 2 | sys | q |\n"
+        "| 3 | sys | q |\n\n" + fence + "\n" + fence + "\n" + fence
+    )
+    res = verify_task_body.check_v4_sample_disclosure_count(_v4_body_with_sample_slot(slot))
+    assert res.passed is True
+    assert res.is_warn is False
 
 
 # ─── Check 17 (v4 lineage-token sub-check, #1014) ──────────────────────────
