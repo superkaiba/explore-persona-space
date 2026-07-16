@@ -3333,8 +3333,8 @@
     "1427": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1427",
-      "status": "proposed",
+      "path": "tasks/planning/1427",
+      "status": "planning",
       "title": "workflow-fix: gotchas.md \u2014 EXDEV: bare /tmp tempdir + os.replace onto /workspace"
     },
     "144": {
