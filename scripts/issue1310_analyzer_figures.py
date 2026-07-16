@@ -223,7 +223,7 @@ def fig_layer_curves() -> None:
     axes[0, 1].text(
         0.985,
         0.04,
-        "Vex not run (run crashed before this cell)",
+        "Vex not run (generation run stopped before this fit)",
         transform=axes[0, 1].transAxes,
         ha="right",
         va="bottom",
