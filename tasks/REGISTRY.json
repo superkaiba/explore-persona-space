@@ -2917,8 +2917,8 @@
     "1374": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1374",
-      "status": "planning",
+      "path": "tasks/approved/1374",
+      "status": "approved",
       "title": "workflow-fix: floor GCP boot-disk at image minimum (100 GB)"
     },
     "1375": {
