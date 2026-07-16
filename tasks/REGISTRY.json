@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1393,
+  "highest_id": 1394,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -3067,6 +3067,13 @@
       "path": "tasks/proposed/1393",
       "status": "proposed",
       "title": "daily-fix: inline rounds route HF downloads off /"
+    },
+    "1394": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1394",
+      "status": "proposed",
+      "title": "daily-fix: planner reuse search live sibling worktrees"
     },
     "14": {
       "has_clean_result": false,
