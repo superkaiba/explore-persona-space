@@ -35,8 +35,14 @@ import asyncio
 import contextlib
 import hashlib
 import json
+import os
 import sys
 from pathlib import Path
+
+# #628 fork-poisoning guard (gotchas.md): main() loads the tokenizer BEFORE the
+# vLLM engine builds, so the V1 EngineCore must spawn, not fork. Set BEFORE any
+# `import vllm` (vLLM reads the var at import time; the imports are deferred).
+os.environ.setdefault("VLLM_WORKER_MULTIPROC_METHOD", "spawn")
 
 _SCRIPT_DIR = Path(__file__).resolve().parent
 _REPO_ROOT = _SCRIPT_DIR.parent
