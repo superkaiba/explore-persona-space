@@ -23,7 +23,7 @@ goal: Test whether a context->dialogue linear map focused on a SINGLE fixed fict
 
 <!-- clean-result-v4 -->
 
-**Methodology:** [docs/methodology/issue_1310.md](https://github.com/superkaiba/explore-persona-space/blob/4a4f0ecdb90f3243e0272ca88200453ad1973b1a/docs/methodology/issue_1310.md) · [gist](https://gist.github.com/superkaiba/579fdc49e189deaac90f9b8859f1cb4e)
+**Methodology:** [docs/methodology/issue_1310.md](https://github.com/superkaiba/explore-persona-space/blob/606d7c3e7737eb71aa042a8a38c1e5e990def055/docs/methodology/issue_1310.md) · [gist](https://gist.github.com/superkaiba/579fdc49e189deaac90f9b8859f1cb4e)
 
 ## Takeaways
 
