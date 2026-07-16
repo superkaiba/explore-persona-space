@@ -98,7 +98,7 @@ Held-out R² at layer 19 (context arm): map fitted on the row framing, evaluated
 
 The mean per-direction transfer deficit is −0.103 (instruct) and −0.430 (base); each 1,000-draw conversation-level bootstrap 95% CI excludes zero (upper bounds −0.101 and −0.425). Both models fail the registered 0.05 same-operator margin, and instruct crosses the 0.10 different-map margin by a statistically resolvable but trivially small amount (mean −0.003, 95% CI −0.006 to −0.001) — had recovery failed, the transfer-only read would have favored different maps in both models.
 
-The at-the-margin reading is specific to layer 19. At frozen layers 14, 18, and 26 the instruct per-direction deficit grows to −0.14 to −0.21, and the smallest base deficit at any frozen layer is −0.32 — the transfer deficit holds at every probed layer in both models. Story transfer collapses in both directions but is corpus-confounded (see the story section).
+The at-the-margin reading is layer-19-specific: instruct deficits grow to −0.14 to −0.21 at frozen layers 14/18/26, and the smallest base deficit anywhere is −0.32 — the shortfall holds at every probed layer in both models. Story transfer collapses in both directions but is corpus-confounded (see the story section).
 
 ### A general-linear change of coordinates recovers the target map in both context cells
 
