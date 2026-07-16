@@ -7325,6 +7325,14 @@ def test_c37_negated_line_does_not_trigger():
     assert _status(plan, "c37_noflags_bundling_claim", kind="infra") == "SKIP"
 
 
+def test_c37_included_in_forward_form_warns():
+    # The #1322 v1 emitter phrasing verbatim ("included in the no-flags
+    # default run") — the FORWARD verb…no-flags word order must survive any
+    # future trigger narrowing (critic-round pin).
+    plan = _c37_plan("`--check-references` is included in the no-flags default run.")
+    assert _status(plan, "c37_noflags_bundling_claim", kind="infra") == "WARN"
+
+
 def test_c37_space_spelling_no_flags_warns():
     # The "no flags" (space) vocabulary form survives the verb-anchored
     # narrowing — pinned per the critic-round ask.
