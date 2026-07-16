@@ -1,0 +1,97 @@
+{
+  "commit": "6375ccb21d",
+  "created": "2026-07-16T07:28:38Z",
+  "figsize": [
+    11.5,
+    4.6
+  ],
+  "points": [
+    {
+      "category": "raw pooled R$^2$\n(G1 kill read)",
+      "Pooled R$^2$, RLVR model, LMSYS chat, layer 29": -0.9286624212662757,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "in-sample\nrecalibrated",
+      "Pooled R$^2$, RLVR model, LMSYS chat, layer 29": 0.23935107933288235,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "held-out cross-fitted\nrecalibrated (S_r)",
+      "Pooled R$^2$, RLVR model, LMSYS chat, layer 29": 0.23735451751338654,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "Qwen anchor\n(raw, committed)",
+      "Pooled R$^2$ (Qwen2.5-7B-Instruct, layer 19)": 0.6731,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "Qwen under the\nrecalibrated DV",
+      "Pooled R$^2$ (Qwen2.5-7B-Instruct, layer 19)": 0.6772610112811577,
+      "_kind": "bar",
+      "_group": 1
+    }
+  ],
+  "n_series": 2,
+  "total_points": 5,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "G1 kill read is a per-dim gain miscalibration:\nheld-out recalibration recovers the map",
+        "ylabel": "Pooled R$^2$, RLVR model, LMSYS chat, layer 29",
+        "annotations": [
+          "-0.929",
+          "+0.239",
+          "+0.237",
+          "usable-strength bar 0.201",
+          "permutation null band p97.5 = -0.0019"
+        ],
+        "xticklabels": [
+          "raw pooled R$^2$\n(G1 kill read)",
+          "in-sample\nrecalibrated",
+          "held-out cross-fitted\nrecalibrated (S_r)"
+        ],
+        "yticklabels": [
+          "\u22121.0",
+          "\u22120.8",
+          "\u22120.6",
+          "\u22120.4",
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4"
+        ]
+      },
+      {
+        "title_left": "Validate-before-use gate: the corrected DV\nis inert on healthy data (V-gate PASS)",
+        "ylabel": "Pooled R$^2$ (Qwen2.5-7B-Instruct, layer 19)",
+        "annotations": [
+          "0.6731",
+          "0.6773"
+        ],
+        "xticklabels": [
+          "Qwen anchor\n(raw, committed)",
+          "Qwen under the\nrecalibrated DV"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7",
+          "0.8"
+        ]
+      }
+    ]
+  }
+}
