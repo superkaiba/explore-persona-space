@@ -3190,8 +3190,8 @@
     "1409": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/1409",
-      "status": "approved",
+      "path": "tasks/running/1409",
+      "status": "running",
       "title": "daily-fix: smoke exercises data gates at smoke n"
     },
     "141": {
