@@ -17,6 +17,7 @@
 - What averaging keeps is persona information: the prefix part is only ~11% of per-context variance, but it is the part that is stable across queries, so persona-level monitoring jumps from r 0.34/0.63/0.09 to 0.66/0.89/0.53 (evil/sycophancy/hallucination) when 40 questions are averaged
 - The prefix-average is trustworthy exactly where the theory says it should be: within-condition context-vector spread predicts held-out prefix-average error (Spearman +0.89, 28/28 layers) — personas cluster tightly and generalize well, format contexts scatter and fail
 - The operator-level test (scoped early read, Result 6): the two fitted maps share OUTPUT structure far beyond a spectrum-matched null in 12/12 reads while their INPUT read-directions sit at the null — one shared write-side operator into the answer subspace; the query supplies *which input directions carry the signal*, it does not add new operator structure
+- But the fair comparison + direct prediction-agreement test (Result 7) sharpen this: the pre-query prefix-end map is NOT simply the query-averaged context map — at averaged grain it reaches 0.37–0.53 vs the averaged context map's 0.82–0.94, their predictions agree at only R² 0.28–0.54, and its errors run 2–3× on the same hard prefixes. The earlier ~0.8 "prefix map" belongs to a different object (the query-average of context vectors); the context map, meanwhile, sits at ~0.98–0.99 of its achievable ceiling at both grains
 
 ## Methodology
 
@@ -76,7 +77,7 @@ The obvious worry for any state→state map is that it's just "the answer state 
 
 * Context arm: ridge (0.49–0.80) sits far above raw identity (−1.6 to −4.5), scaled identity (0.05–0.08), and diagonal-affine (0.11–0.14) — the map is a real learned linear operator, not consecutive-token similarity
 * Prefix arm: the ridge (~0.05) is approximately AT its own floors — the prefix map carries almost no operator skill beyond a trivial transform. Per-context, essentially all learned transport structure lives in the query-bearing state
-* This sharpens how to think about the prefix→answer map we found earlier: its R² ~0.8 at the *prefix-averaged* grain is real, but per-context the prefix state alone predicts almost nothing — the averaged map works because averaging removes exactly the variance the prefix can't predict
+* This sharpens how to think about the prefix→answer map we found earlier — with one correction the matched-corpus fair comparison later delivered (Result 7): the earlier ~0.8 was measured with the prefix represented as the *query-average of context vectors* on a persona battery. The pre-query prefix-END state on this realistic corpus reaches only 0.37–0.53 even at averaged grain — the two "prefix vector" definitions are not the same object
 
 ### _Result 2: context→answer decomposes into prefix→answer + query→answer (with only ~10% interaction)_
 
@@ -182,6 +183,32 @@ Finally, the operator-level question: does the query change the transfer operato
 * The INPUT subspaces are indistinguishable from random (median ≈79–86°, sitting at the null) — which is what it should look like: the prefix state doesn't contain the query, so the two maps must read from different residual-stream directions
 * Interpretation: there is ONE shared operator structure on the *write* side — both maps push into the same answer-representation subspace — and the query's contribution is supplying input directions that carry signal, not new operator structure. This is the precise sense in which the prefix→answer map is the query-averaged restriction of the context→answer map, and it agrees with the additivity (Result 2) and floors (Result 1.5) pictures
 * Fits are clean identifiability-wise (n = 17,308 ≫ 3,584 input dims); the caveats are a GCV λ selector (vs the banked per-fold PRESS) and a top-48 low-rank SVD for the pca48 basis — both checked not to move the verdict
+
+### _Result 7: The fair comparison — and the direct test says the prefix-end map is NOT just the averaged context map_
+
+Two things were missing from Result 1: the matched-corpus fair numbers (each map at its own grain, with ceilings), and the direct test of "the prefix map is the query-averaged context map" (compare the two maps' predictions to each other, not just to truth). Both are now computed on the same battery-excluded fits, novel-prefix folds, layer 14.
+
+**Plot: each map at both grains + fraction-of-ceiling (the fair comparison)**
+
+![fair comparison](https://raw.githubusercontent.com/superkaiba/explore-persona-space/8fcb896cb4b5ad2074603fb680cdf351495be815/figures/issue_1092/fair_comparison_prefix_vs_context.png)
+
+| (instruct-own, L14) | prefix map | context map |
+|---|---|---|
+| averaged-profile targets (ambient / pca48) | 0.371 / 0.529 | **0.819 / 0.936** |
+| single-context targets (ambient / pca48) | 0.065 / 0.098 | 0.814 / 0.914 |
+| fraction of achievable ceiling (single) | 0.43 / 0.58 (full-set) | **0.99 / 0.98** |
+
+**Plot: prediction agreement between the two maps at the averaged grain**
+
+![prediction agreement](https://raw.githubusercontent.com/superkaiba/explore-persona-space/8fcb896cb4b5ad2074603fb680cdf351495be815/figures/issue_1092/fair_comparison_prediction_agreement.png)
+
+**Takeaways:**
+
+* The context map is essentially at its achievable ceiling at BOTH grains (~0.98–0.99 of ceiling; 0.91–0.94 pca48). The prefix map's per-row number is rehabilitated by its structural ceiling (it recovers ~43–88% of the between-prefix share, population-dependent) — but at averaged grain it reaches only **0.37–0.53**, not the ~0.8 the earlier experiment suggested
+* The reconciliation is a terminology split, and it matters: the earlier line's "prefix vector" was the **query-average of context vectors** — an object that on this corpus performs like the context map averaged (0.82–0.94). The #1092 prefix arm is the **pre-query prefix-end state** (verified exactly query-invariant: within-prefix std ratio 0.0), a strictly weaker input. The ~0.8 belongs to the first object, not the second
+* The direct test comes back **NO**: the prefix-end map is not the query-averaged context map. Their averaged-grain predictions agree at only R² 0.28–0.54 (both directions; centered cosine 0.64–0.74), far below the near-identity that "same map" requires — and the prefix map's per-prefix errors run 2–3× the context map's, highly correlated (0.56–0.90) on the same hard prefixes. The prefix-end map behaves like a uniform shrinkage onto the shared component both maps see
+* Mechanistic implication: reading the query in the prefix's presence writes prefix-relevant information into the context state that the prefix-end state does not linearly expose — averaging context states retains it; the pre-query state never had it. This refines Result 6: the two maps share output *structure* (operator subspaces), but the prefix-end map spans only part of the shared operator's input
+* Housekeeping confirmation: the battery-excluded refit moved the context single-grain numbers by ~+0.01/+0.004 (0.804→0.814 ambient, 0.910→0.914 pca48) — the leak was marginal for the headline, as predicted
 
 ## Next steps:
 
