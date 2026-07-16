@@ -1,0 +1,261 @@
+{
+  "commit": "ff3f319ba2",
+  "created": "2026-07-16T07:03:01Z",
+  "figsize": [
+    15.0,
+    5.0
+  ],
+  "points": [
+    {
+      "x": -0.18,
+      "|cos(mean shift, read-out)|": 0.6183062810841271,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": -0.12,
+      "|cos(mean shift, read-out)|": 0.5091686806789623,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": -0.06,
+      "|cos(mean shift, read-out)|": 0.5262697123742222,
+      "series": "LoRA, WildChat context (lr 1e-5)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 0.0,
+      "|cos(mean shift, read-out)|": 0.7629687194923017,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 0.06,
+      "|cos(mean shift, read-out)|": 0.7910457257146366,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 0.12,
+      "|cos(mean shift, read-out)|": 0.7961133367887203,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 0.18,
+      "|cos(mean shift, read-out)|": 0.6536977196084955,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 1.0,
+      "|cos(mean shift, read-out)|": 0.6758444771900664,
+      "series": "bare context (no scaffold)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 0.0,
+      "|cos(mean shift, read-out)|": 0.5,
+      "series": "scaffold-floor bar (0.5)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 1.0,
+      "|cos(mean shift, read-out)|": 0.5,
+      "series": "scaffold-floor bar (0.5)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 0.0,
+      "|cos(mean shift, read-out)|": 0.2,
+      "series": "sycophancy ceiling (0.2)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 1.0,
+      "|cos(mean shift, read-out)|": 0.2,
+      "series": "sycophancy ceiling (0.2)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 0.0,
+      "|cos(mean shift, read-out)|": 0.0372520680524096,
+      "series": "chance bound (97.5%)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 1.0,
+      "|cos(mean shift, read-out)|": 0.0372520680524096,
+      "series": "chance bound (97.5%)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": -0.18,
+      "rank-k@90, 80-row subsamples (mean \u00b1 sd)": 41.43,
+      "error": 0.7649182962905243,
+      "_kind": "errorbar",
+      "_group": 11
+    },
+    {
+      "x": -0.12,
+      "rank-k@90, 80-row subsamples (mean \u00b1 sd)": 39.61,
+      "error": 1.1566762727747104,
+      "_kind": "errorbar",
+      "_group": 12
+    },
+    {
+      "x": -0.06,
+      "rank-k@90, 80-row subsamples (mean \u00b1 sd)": 39.25,
+      "error": 1.152171862180289,
+      "_kind": "errorbar",
+      "_group": 13
+    },
+    {
+      "x": 0.0,
+      "rank-k@90, 80-row subsamples (mean \u00b1 sd)": 33.37,
+      "error": 1.4876491521860942,
+      "_kind": "errorbar",
+      "_group": 14
+    },
+    {
+      "x": 0.06,
+      "rank-k@90, 80-row subsamples (mean \u00b1 sd)": 32.63,
+      "error": 1.5339817469578971,
+      "_kind": "errorbar",
+      "_group": 15
+    },
+    {
+      "x": 0.12,
+      "rank-k@90, 80-row subsamples (mean \u00b1 sd)": 30.58,
+      "error": 1.3797101144805737,
+      "_kind": "errorbar",
+      "_group": 16
+    },
+    {
+      "x": 0.18,
+      "rank-k@90, 80-row subsamples (mean \u00b1 sd)": 44.18,
+      "error": 0.8170679286326177,
+      "_kind": "errorbar",
+      "_group": 17
+    },
+    {
+      "x": 1.0,
+      "rank-k@90, 80-row subsamples (mean \u00b1 sd)": 41.4,
+      "error": 0.6928203230275543,
+      "_kind": "errorbar",
+      "_group": 18
+    },
+    {
+      "x": 0.0,
+      "rank-k@90, shared text": 30.0,
+      "series": "collapse bar (30)",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "x": 1.0,
+      "rank-k@90, shared text": 30.0,
+      "series": "collapse bar (30)",
+      "_kind": "line",
+      "_group": 19
+    }
+  ],
+  "n_series": 20,
+  "total_points": 24,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Read-out alignment\n(layer 14, own text)",
+        "ylabel": "|cos(mean shift, read-out)|",
+        "xticklabels": [
+          "scaffolded (7)",
+          "bare"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7",
+          "0.8",
+          "0.9"
+        ]
+      },
+      {
+        "title_left": "Matched-80-row rank\n(layer 14, own text)",
+        "ylabel": "rank-k@90, 80-row subsamples (mean \u00b1 sd)",
+        "legend_labels": [
+          "sycophancy band (48\u201350)"
+        ],
+        "xticklabels": [
+          "scaffolded (7)",
+          "bare"
+        ],
+        "yticklabels": [
+          "25",
+          "30",
+          "35",
+          "40",
+          "45",
+          "50",
+          "55"
+        ]
+      },
+      {
+        "title_left": "Shared-text rank\n(layer 14, teacher-forced control)",
+        "ylabel": "rank-k@90, shared text",
+        "legend_labels": [
+          "collapse bar (30)",
+          "sycophancy shared span (27\u201335)"
+        ],
+        "xticklabels": [
+          "scaffolded (7)",
+          "bare"
+        ],
+        "yticklabels": [
+          "10",
+          "15",
+          "20",
+          "25",
+          "30",
+          "35",
+          "40"
+        ]
+      }
+    ],
+    "series": [
+      "LoRA, persona context",
+      "LoRA, WildChat context",
+      "LoRA, WildChat context (lr 1e-5)",
+      "LoRA + negatives, ICL",
+      "LoRA positives-only, ICL",
+      "Full FT + negatives, ICL",
+      "Full FT positives-only, ICL",
+      "bare context (no scaffold)",
+      "scaffold-floor bar (0.5)",
+      "sycophancy ceiling (0.2)",
+      "chance bound (97.5%)",
+      "collapse bar (30)"
+    ]
+  }
+}

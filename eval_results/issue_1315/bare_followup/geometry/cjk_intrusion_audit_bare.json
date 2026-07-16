@@ -1,0 +1,26 @@
+{
+ "cell": "imp_bare_lora",
+ "round": "bare_followup",
+ "cjk_char_class": "\\u4e00-\\u9fff \\u3400-\\u4dbf \\uf900-\\ufaff \\u3040-\\u30ff \\uac00-\\ud7af",
+ "capture_own_text": {
+  "n_rows": 100,
+  "intruded": 0,
+  "max_char_fraction": 0.0,
+  "source": "issue1315_impolite_geometry/raw_completions/capture/imp_bare_lora/selected/raw_rows.json @ 3bceee1b5f774d670a430a1cb0a42fa3454901fa (response_token_ids decoded with Qwen/Qwen2.5-7B-Instruct tokenizer)"
+ },
+ "parity_pool": {
+  "n_completions": 100,
+  "intruded": 10,
+  "intruded_judged_impolite": 9,
+  "items_scored": 100,
+  "items_censored": 0,
+  "censored_draws": 0,
+  "rate_as_scored": 0.6,
+  "rate_zeroed_intrusion": 0.51,
+  "rate_excluded_intrusion": 0.5666666666666667,
+  "pass_floor": 0.525,
+  "verdict": "convention-dependent: PASS as-scored and under intrusion-exclusion; FAIL under intrusion-zeroing",
+  "source": "issue1315_impolite_geometry/raw_completions/parity/imp_bare_lora/rate_merged_parity/ @ 3bceee1b5f774d670a430a1cb0a42fa3454901fa (completions__trained__default.json joined with judge/trained_default/judge_raw.json all_scores; item = mean over 3 draws, positive > 50)"
+ },
+ "notes": "Bare context has no WildChat prefix, yet the temp-1.0 parity pool still carries 10% CJK intrusion - the intrusion tracks the trained organism at temperature, not the prompt prefix. All 300 judge draws parsed (0 content censored, 0 transport). Greedy capture substrate clean."
+}
