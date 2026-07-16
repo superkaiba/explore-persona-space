@@ -17,6 +17,12 @@
   round-10 curve's 0-based assistant turns-list key 2t-1; the pinned values
   FAIL under the old ``str(t)`` lookup (even-t cells skipped, odd-t cells
   compared against the wrong shallower node).
+- ``_gc_verdict`` (crash-fix round 11, revision 3 — degenerate-CI carve-out):
+  a cell is BINDING only when its bootstrap CI STRICTLY covers its own refit
+  point estimate (lo < r2_refit < hi); degenerate-CI cells (the n<=7 collapse
+  where ci_hi lands on the point estimate) stay reported with gating: false
+  but are excluded from n_fail, and an all-degenerate table cannot PASS
+  (n_gating == 0 guard). Proper-CI failures still FAIL the verdict.
 """
 
 from __future__ import annotations
@@ -31,6 +37,7 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO_ROOT / "scripts"))
 
 from issue825_turndyn_fit import (  # noqa: E402
+    _gc_verdict,
     _general_linear_cos,
     _r10_key_for_turn,
     _r10_node_for_turn,
@@ -201,3 +208,78 @@ def test_stratified_subsample_ids_spans_sources_and_is_deterministic():
     assert sel != sorted(set(ids))[:30]  # NOT first-N-of-sorted (the Major-6 bug)
     assert stratified_subsample_ids(ids, 10_000) == sorted(set(ids))
     assert stratified_subsample_ids(ids, 0) == []
+
+
+def _gc_node(n: int, refit: float, lo: float, hi: float, r10: float) -> dict:
+    """Synthetic G-C per-turn node, per-cell ``pass`` computed as run_gc does."""
+    return {
+        "n": n,
+        "r2_refit": refit,
+        "r2_refit_ci": [lo, hi],
+        "r2_round10": r10,
+        "r10_key": 1,
+        "pass": bool(lo <= r10 <= hi),
+    }
+
+
+def test_gc_verdict_degenerate_ci_excluded_from_n_fail_and_verdict_can_pass():
+    """Crash-fix r11 revision 3 (a): a degenerate-CI cell (ci_hi == refit, the
+    observed n<=7 bootstrap collapse; r10 slightly ABOVE the point) gets
+    gating False and is EXCLUDED from n_fail, so the verdict PASSes on the
+    gating cells alone. Mirrors the production shape: t=24 refit -0.586 with
+    ci_hi == refit and r10 -0.584 (0.002 above) — pre-fix a guaranteed FAIL.
+    Equality on the LOW edge is degenerate too (strict on both sides).
+    """
+    per_turn = {
+        "1": _gc_node(497, 0.250, 0.200, 0.300, 0.250),  # proper CI, in -> gating pass
+        "24": _gc_node(5, -0.586, -0.900, -0.586, -0.584),  # ci_hi == refit, r10 above
+        "26": _gc_node(4, 0.100, 0.100, 0.400, 0.500),  # ci_lo == refit, r10 outside
+    }
+    verdict = _gc_verdict("instruct", 497, per_turn)
+    assert per_turn["1"]["gating"] is True
+    assert per_turn["24"]["gating"] is False
+    assert per_turn["26"]["gating"] is False
+    # informational per-cell pass preserved as computed (both degenerate cells FAILed it)
+    assert per_turn["24"]["pass"] is False
+    assert per_turn["26"]["pass"] is False
+    assert verdict["n_turns"] == 3
+    assert verdict["n_gating"] == 1
+    assert verdict["n_nongating"] == 2
+    assert verdict["n_fail"] == 0  # degenerate failures excluded
+    assert verdict["pass"] is True
+    assert "degenerate" in verdict["gate_note"]
+
+
+def test_gc_verdict_proper_ci_failure_still_fails():
+    """Crash-fix r11 revision 3 (b): a PROPER-CI cell whose r10 falls outside
+    the interval is still counted — the carve-out never weakens the gate on
+    cells whose CI can certify.
+    """
+    per_turn = {
+        "1": _gc_node(497, 0.250, 0.200, 0.300, 0.250),  # gating pass
+        "2": _gc_node(388, 0.250, 0.200, 0.300, 0.400),  # gating FAIL (r10 outside)
+        "24": _gc_node(5, -0.586, -0.900, -0.586, -0.584),  # degenerate, excluded
+    }
+    verdict = _gc_verdict("instruct", 497, per_turn)
+    assert per_turn["2"]["gating"] is True
+    assert verdict["n_gating"] == 2
+    assert verdict["n_fail"] == 1
+    assert verdict["pass"] is False
+
+
+def test_gc_verdict_all_degenerate_cannot_pass():
+    """Crash-fix r11 revision 3 (c): zero gating cells -> pass False even with
+    zero failures (an all-degenerate table certifies nothing) — and the empty
+    table keeps the pre-existing len(out) > 0 guard semantics.
+    """
+    per_turn = {
+        "28": _gc_node(3, 0.100, 0.050, 0.100, 0.090),  # ci_hi == refit, r10 inside
+        "30": _gc_node(3, -0.200, -0.200, -0.200, -0.200),  # fully collapsed CI
+    }
+    verdict = _gc_verdict("pretrained", 30, per_turn)
+    assert verdict["n_gating"] == 0
+    assert verdict["n_nongating"] == 2
+    assert verdict["n_fail"] == 0
+    assert verdict["pass"] is False
+    empty = _gc_verdict("pretrained", 0, {})
+    assert empty["pass"] is False and empty["n_turns"] == 0

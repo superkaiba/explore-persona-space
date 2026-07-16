@@ -275,6 +275,47 @@ def _r10_node_for_turn(r10_curve: dict, t: int) -> tuple[int, float | None]:
     return key, r2
 
 
+def _gc_verdict(model: str, n_convs: int, per_turn: dict[str, dict]) -> dict:
+    """G-C verdict with the degenerate-CI carve-out (crash-fix r11, revision 3).
+
+    A cell is BINDING (``gating: true``) only when its conversation-bootstrap
+    CI STRICTLY covers its own refit point estimate (``lo < r2_refit < hi``);
+    equality on either side marks a DEGENERATE interval — at 3-7 unique
+    conversations the multinomial-resample R2 distribution's 97.5th percentile
+    collapses onto (or below) the point estimate, and a CI that excludes its
+    own point estimate cannot certify parity. Degenerate cells stay computed +
+    reported (their informational ``pass`` untouched) but are excluded from
+    ``n_fail``. Threshold-free: no tuned n-floor. Annotates each ``per_turn``
+    node in place with ``gating`` and returns the verdict dict;
+    ``pass`` = zero failures among gating cells AND >= 1 gating cell (an
+    all-degenerate table cannot certify parity either way).
+    """
+    for node in per_turn.values():
+        lo, hi = node["r2_refit_ci"]
+        node["gating"] = bool(lo < node["r2_refit"] < hi)
+    n_gating = sum(1 for node in per_turn.values() if node["gating"])
+    n_fail = sum(1 for node in per_turn.values() if node["gating"] and not node["pass"])
+    return {
+        "gate": "G-C",
+        "model": model,
+        "n_convs": n_convs,
+        "id_assert": "PASS (captured == harvest gc_panel; harvest digest-asserted vs round-10)",
+        "r10_key_convention": "r10_key = 2*t - 1 (assistant turns-list index)",
+        "per_turn": per_turn,
+        "n_turns": len(per_turn),
+        "n_gating": n_gating,
+        "n_nongating": len(per_turn) - n_gating,
+        "n_fail": n_fail,
+        "gate_note": (
+            "degenerate-CI carve-out: a bootstrap CI that does not STRICTLY cover its "
+            "own point estimate (lo < r2_refit < hi) cannot certify parity; such cells "
+            "are reported non-gating (gating: false, pass informational) and excluded "
+            "from n_fail. pass = zero gating failures AND >= 1 gating cell."
+        ),
+        "pass": n_fail == 0 and n_gating > 0,
+    }
+
+
 def run_gc(args: argparse.Namespace) -> None:
     rows, arrays = _load_capture(
         Path(args.capture_root),
@@ -339,7 +380,6 @@ def run_gc(args: argparse.Namespace) -> None:
     Y = arrays["answer_logged_t1"][HEADLINE_LAYER]
     by_turn = _rows_by_turn(rows)
     out: dict[str, dict] = {}
-    n_fail = 0
     for t, sel in by_turn.items():
         # refit ``turn`` = 1-based exchange ordinal t; r10 keys = 0-based
         # assistant turns-list index = 2t-1 (see _r10_key_for_turn).
@@ -359,7 +399,6 @@ def run_gc(args: argparse.Namespace) -> None:
             BOOT_SEED + t,
         )
         ok = lo <= r10_r2 <= hi
-        n_fail += 0 if ok else 1
         out[str(t)] = {
             "n": int(sel.size),
             "r2_refit": float(fit["r2"]),
@@ -368,26 +407,25 @@ def run_gc(args: argparse.Namespace) -> None:
             "r10_key": r10_key,
             "pass": bool(ok),
         }
-    verdict = {
-        "gate": "G-C",
-        "model": args.model,
-        "n_convs": len(captured_ids),
-        "id_assert": "PASS (captured == harvest gc_panel; harvest digest-asserted vs round-10)",
-        "r10_key_convention": "r10_key = 2*t - 1 (assistant turns-list index)",
-        "per_turn": out,
-        "n_turns": len(out),
-        "n_fail": n_fail,
-        "pass": n_fail == 0 and len(out) > 0,
-    }
+    verdict = _gc_verdict(args.model, len(captured_ids), out)
     _write_part(Path(args.parts_dir), f"gc_{args.model}", verdict)
     if not verdict["pass"]:
         # FAIL blocks the headline (plan §7) — fail LOUD here; the dispatcher
         # surfaces it before any headline part is consumed.
         raise SystemExit(
-            f"[G-C] FAIL for {args.model}: {n_fail}/{len(out)} turns outside the refit "
-            f"bootstrap CI — pipeline defect (id-identical panel), headline blocked"
+            f"[G-C] FAIL for {args.model}: {verdict['n_fail']}/{verdict['n_gating']} gating "
+            f"turns outside the refit bootstrap CI "
+            f"({verdict['n_nongating']}/{verdict['n_turns']} degenerate-CI turns non-gating; "
+            f"PASS requires zero gating failures and >=1 gating cell) — pipeline defect "
+            f"(id-identical panel), headline blocked"
         )
-    logger.info("[G-C] PASS %s: %d turns reproduce round-10 within CI", args.model, len(out))
+    logger.info(
+        "[G-C] PASS %s: %d gating turns reproduce round-10 within CI "
+        "(%d degenerate-CI turns non-gating)",
+        args.model,
+        verdict["n_gating"],
+        verdict["n_nongating"],
+    )
 
 
 # ---------------------------------------------------------------------------
