@@ -197,6 +197,13 @@ mechanical-contract, never stripped by the orchestrator's Step 5c-bis).
    battery is a Major `substantive` finding — batch it. Cross-check the named-helper
    adherence: when the plan/body names a fast/batched twin by `module::fn`, the diff
    must import + call it, NOT a slower sibling (Step 0.68; `substantive`).
+   POSITIVE duty (unconditional, #1332/#825): when the diff introduces ANY
+   unit-loop fit / dense factorization / draw reduction, the verdict names
+   the batched helper implementing the inner loop (`Fit-loop batching:
+   <module::fn>`, evidence line) or records an explicit not-batchable
+   justification — absence is a FAIL, not a note (code-reviewer.md Step 2
+   "Fit-loop batched-helper naming"; de-minimis/N/A escapes per that
+   paragraph).
 4. **Hollow-verification-gate (Step 0.68 sub-check, any diff type).** A `--verify-X`
    / equivalence gate MUST assert on the function the entrypoint actually dispatches
    (trace flag → gate call → gated callee, grep the dispatch path for the same

@@ -959,6 +959,36 @@ full-vocab fp32 log-softmax shipped over PCIe for a CPU-side per-position
 reduce); #511 hit a 52× CPU wall-time blowup vs its plan estimate. See
 `.claude/rules/code-style.md` § Compute-throughput discipline.
 
+**Fit-loop batched-helper naming (UNCONDITIONAL — triggers on the DIFF's
+own content; scope: experiment / eval / analysis scripts, GPU or CPU —
+the motivating offenders #825/#1332 were CPU fit loops; Step 0.68 is the
+plan-NAMED conditional twin and stays unchanged).**
+Whenever the diff introduces — or newly invokes a callable whose body
+performs — a loop over experiment units (cells, folds, layers, arms,
+traits, seeds, draws) doing an iterative-optimization fit (SGD/AdamW/GD
+steps), a dense factorization (svd/eigh/lstsq/GCV-ridge solve), or a
+permutation/bootstrap/null-draw reduction (the
+`.claude/rules/vectorize-many-cell-fits.md` trigger set), the verdict
+MUST carry ONE line:
+`Fit-loop batching: <module::fn or file.py:LINE> batches the <axis> loop`
+— trace the INNER loop to the batched implementation actually
+imported+called on the live dispatch path, not merely present (#825: a
+reused MLP helper passed review, then ran 120 serial CPU SGD fits) — OR
+`Fit-loop batching: not-batchable — <stated cross-iteration dependency>`,
+OR `Fit-loop batching: N/A — de-minimis (<count> × <per-call s> projects
+< ~15 min; the per-call figure MEASURED or #<M>-cited, never asserted)`.
+For a `type:experiment` diff the verdict ALWAYS carries the line —
+`Fit-loop batching: N/A — no fit/factorization loop in diff` when none
+exists (the auditable Step 0.68-N/A convention); for other diff types
+the line appears whenever the trigger fires.
+A fired trigger with neither a named batched helper nor a not-batchable
+justification is Major (blocker tag `substantive`), NOT a note — #1332's
+serial per-layer loop and #825 both shipped past review because absence
+was a silent non-finding. This fires even when Step 0.68 records N/A
+(nothing plan-named); when Step 0.68 already verified a plan-named twin
+for the same loop, cite that record — one line satisfies both checks,
+never double-FAIL one loop.
+
 ### Step 3: Read the Surrounding Code
 
 For each changed file, read enough surrounding context to understand:

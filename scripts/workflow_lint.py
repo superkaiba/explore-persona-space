@@ -9171,13 +9171,15 @@ AGENT_SPEC_SIZE_GRANDFATHER: dict[str, int] = {
     # (#1159) — no longer grandfathered (slim spec is under the FAIL threshold).
     # the rest measured at the #838 tightening (2026-07-02), caps = measured
     # + <=3 KB; each names a future trim direction, none is licensed to grow
-    # measured 104,235 B post-#1317 (Step 4.6 Gate-scope line verification —
-    # plan-mandated growth; cap = measured + <=~1 KB. Prior: 101,500 —
-    # measured 100,555 B post-#1254 (Step 3.9 degenerate-statistic check,
-    # observed-vs-null reads), 99,000 — measured 98,126 B post-#1230 (Step 6
-    # durability-pin shipping duty), 97,000 — measured 96,072 B post-#1119,
-    # 95,000 — measured 94,126 B post-#1115)
-    "code-reviewer.md": 105_000,
+    # measured 106,853 B post-#1397 (Step 2 fit-loop batched-helper naming
+    # paragraph — plan-mandated growth; cap = measured + ~1.1 KB. Prior:
+    # 105,000 — measured 104,235 B post-#1317 (Step 4.6 Gate-scope line
+    # verification), 101,500 — measured 100,555 B post-#1254 (Step 3.9
+    # degenerate-statistic check, observed-vs-null reads), 99,000 —
+    # measured 98,126 B post-#1230 (Step 6 durability-pin shipping duty),
+    # 97,000 — measured 96,072 B post-#1119, 95,000 — measured 94,126 B
+    # post-#1115)
+    "code-reviewer.md": 108_000,
     # measured 73,408 B post-#1159 (Step 2 dual-source read contract: lens
     # rubrics from clean-result-critic-lens-reference.md, report schema from
     # the slim agent spec — plan-mandated growth; cap = measured + <=~1 KB.
