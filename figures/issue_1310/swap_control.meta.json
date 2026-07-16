@@ -1,6 +1,6 @@
 {
-  "commit": "bcf67e51f7",
-  "created": "2026-07-16T11:11:16Z",
+  "commit": "e51b941a4e",
+  "created": "2026-07-16T17:04:55Z",
   "figsize": [
     8.6,
     4.4
@@ -31,20 +31,32 @@
       "_group": 3
     },
     {
+      "x": 1.82,
+      "held-out R\u00b2 at layer 19 (pooled)": 0.3199918862157064,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 2.18,
+      "held-out R\u00b2 at layer 19 (pooled)": 0.09419675213965917,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
       "x": 2.82,
       "held-out R\u00b2 at layer 19 (pooled)": 0.11708838301574187,
       "_kind": "bar",
-      "_group": 4
+      "_group": 6
     },
     {
       "x": 3.18,
       "held-out R\u00b2 at layer 19 (pooled)": 0.17129473225816683,
       "_kind": "bar",
-      "_group": 5
+      "_group": 7
     }
   ],
-  "n_series": 6,
-  "total_points": 6,
+  "n_series": 8,
+  "total_points": 8,
   "text": {
     "suptitle": null,
     "fig_texts": [],
@@ -54,9 +66,6 @@
         "legend_labels": [
           "correct character",
           "swapped character"
-        ],
-        "annotations": [
-          "not run"
         ],
         "xticklabels": [
           "script-format scenes\nQwen2.5-7B (base)",
@@ -72,7 +81,8 @@
           "0.15",
           "0.20",
           "0.25",
-          "0.30"
+          "0.30",
+          "0.35"
         ]
       }
     ],
