@@ -550,6 +550,64 @@ def test_render_create_argv_cpu_bigmem_boot_disk_override() -> None:
     assert "--boot-disk-size=500GB" in argv
 
 
+def test_render_create_argv_boot_disk_clamped_to_image_minimum(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    """#1374: a plan-stated boot disk below the DLVM image size (100 GB) is
+    clamped UP so the create cannot fail GCP's image-size validation
+    (incident #1336: --boot-disk-gb 60 failed the rung; chain exhausted)."""
+    cfg = _test_config()
+    with caplog.at_level(logging.WARNING, logger="explore_persona_space.backends.gcp"):
+        argv = render_create_argv(
+            spec=_spec("cpu-mid", extra={"boot_disk_gb": 60}),
+            config=cfg,
+            attempt_id="att-fixed-001",
+            startup_script="#!/bin/bash\n",
+            secret_files=_TEST_SECRET_FILES,
+        )
+    assert "--boot-disk-size=100GB" in argv
+    assert "--boot-disk-size=60GB" not in argv
+    clamp_lines = [r for r in caplog.records if "clamped" in r.getMessage()]
+    assert len(clamp_lines) == 1, clamp_lines
+    assert "60" in clamp_lines[0].getMessage() and "100" in clamp_lines[0].getMessage()
+
+
+def test_render_create_argv_boot_disk_default_path_emits_no_clamp_warning(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    """#1374 control: the default (300 GB) path renders as today and logs
+    NO clamp line — the warning fires only when a stated value is raised."""
+    cfg = _test_config()
+    with caplog.at_level(logging.WARNING, logger="explore_persona_space.backends.gcp"):
+        argv = render_create_argv(
+            spec=_spec("cpu-bigmem"),
+            config=cfg,
+            attempt_id="att-fixed-001",
+            startup_script="#!/bin/bash\n",
+            secret_files=_TEST_SECRET_FILES,
+        )
+    assert "--boot-disk-size=300GB" in argv
+    assert not any("clamped" in r.getMessage() for r in caplog.records)
+
+
+def test_render_create_argv_boot_disk_exactly_at_image_minimum_no_clamp(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    """#1374 boundary: an override EXACTLY at the 100 GB floor passes
+    through unchanged and emits no clamp warning (max() is a no-op)."""
+    cfg = _test_config()
+    with caplog.at_level(logging.WARNING, logger="explore_persona_space.backends.gcp"):
+        argv = render_create_argv(
+            spec=_spec("cpu-mid", extra={"boot_disk_gb": 100}),
+            config=cfg,
+            attempt_id="att-fixed-001",
+            startup_script="#!/bin/bash\n",
+            secret_files=_TEST_SECRET_FILES,
+        )
+    assert "--boot-disk-size=100GB" in argv
+    assert not any("clamped" in r.getMessage() for r in caplog.records)
+
+
 def test_render_create_argv_gpu_intent_still_terminate() -> None:
     """#677 control: the conditional did NOT regress the GPU path —
     an accelerator intent still emits --maintenance-policy=TERMINATE."""

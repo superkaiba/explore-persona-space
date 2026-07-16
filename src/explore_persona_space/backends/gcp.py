@@ -258,6 +258,19 @@ DEFAULT_IMAGE_FAMILY = "pytorch-2-9-cu129-ubuntu-2204-nvidia-580"
 #: DLVM project for the image family above.
 DEFAULT_IMAGE_PROJECT = "deeplearning-platform-release"
 
+#: Minimum boot-disk size accepted by a create against the pinned DLVM
+#: image — GCP rejects any smaller disk ("Requested disk size cannot be
+#: smaller than the image size (100 GB)"; incident #1336: --boot-disk-gb 60
+#: failed the rung and exhausted the auto chain). render_create_argv clamps
+#: UP to this floor (never down — a plan footprint is a minimum requirement,
+#: so a bigger disk always satisfies it), mirroring the RunPod floors
+#: (runpod.py _CPU_CONTAINER_DISK_FLOOR_GB / _GPU_VOLUME_FLOOR_GB). This is
+#: a property of the IMAGE, not the config — if DEFAULT_IMAGE_FAMILY is ever
+#: re-pinned, re-verify (family is a POSITIONAL arg, not --family=):
+#:   gcloud --configuration=eps-gcp compute images describe-from-family
+#:     <FAMILY> --project=<PROJECT> --format='value(diskSizeGb)'
+_GCP_IMAGE_MIN_BOOT_DISK_GB = 100
+
 #: Canonical public HTTPS clone URL. The repo is open, so the CLONE is
 #: tokenless; PUSH auth comes from the #1205 env-reading credential
 #: helper the workload_cmd branch configures when GITHUB_TOKEN was
@@ -2809,7 +2822,9 @@ def render_create_argv(
       janitor age reap is the credit-leak backstop, not this fence.
     * ``--image-family`` / ``--image-project`` — the DLVM image with
       pre-installed CUDA/driver.
-    * ``--boot-disk-size`` / ``--boot-disk-type`` — 300 GB pd-ssd default.
+    * ``--boot-disk-size`` / ``--boot-disk-type`` — 300 GB pd-ssd default;
+      a plan override below the DLVM image minimum is clamped UP to
+      100 GB (#1336).
     * ``--scopes=cloud-platform`` — broad VM-scope so the in-VM workload
       can push to GCS / WandB / HF without per-API token wrangling.
     * ``--metadata-from-file startup-script=<path>,KEY=<path>`` — the
@@ -2847,7 +2862,16 @@ def render_create_argv(
         )
     max_run = spec.extra.get("max_run_duration") or config.default_max_run_duration
     _assert_max_run_within_flex_cap(max_run=max_run, provisioning=provisioning)
-    boot_disk_gb = int(spec.extra.get("boot_disk_gb") or config.default_boot_disk_gb)
+    requested_boot_disk_gb = int(spec.extra.get("boot_disk_gb") or config.default_boot_disk_gb)
+    boot_disk_gb = max(_GCP_IMAGE_MIN_BOOT_DISK_GB, requested_boot_disk_gb)
+    if boot_disk_gb != requested_boot_disk_gb:
+        logger.warning(
+            "boot-disk clamped UP to the DLVM image minimum: requested %d GB < %d GB "
+            "(GCP rejects disks smaller than the image, #1336); provisioning %d GB.",
+            requested_boot_disk_gb,
+            _GCP_IMAGE_MIN_BOOT_DISK_GB,
+            boot_disk_gb,
+        )
     boot_disk_type = spec.extra.get("boot_disk_type") or config.default_boot_disk_type
     target_zone = zone or config.primary_zone
     name = instance_name_for(spec.issue, lane_suffix_for(spec))
