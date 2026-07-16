@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1391,
+  "highest_id": 1392,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -3053,6 +3053,13 @@
       "path": "tasks/proposed/1391",
       "status": "proposed",
       "title": "daily-fix: watcher re-drive w/o registration file"
+    },
+    "1392": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1392",
+      "status": "proposed",
+      "title": "daily-fix: sub-floor sentinel triggers apply run"
     },
     "14": {
       "has_clean_result": false,
