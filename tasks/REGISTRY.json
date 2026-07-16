@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1385,
+  "highest_id": 1386,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -3004,6 +3004,13 @@
       "path": "tasks/proposed/1385",
       "status": "proposed",
       "title": "workflow-fix: lint check rule frontmatter parses"
+    },
+    "1386": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1386",
+      "status": "proposed",
+      "title": "daily-fix: hub Xet queue-full transient retry"
     },
     "139": {
       "has_clean_result": true,
