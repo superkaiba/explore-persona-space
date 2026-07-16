@@ -3155,8 +3155,8 @@
     "1404": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1404",
-      "status": "reviewing",
+      "path": "tasks/completed/1404",
+      "status": "completed",
       "title": "daily-fix: PM ownership check before spend emergency"
     },
     "1405": {
