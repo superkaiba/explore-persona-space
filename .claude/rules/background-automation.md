@@ -1170,7 +1170,12 @@ escalate, never delete). A fourth, boot-pass-only arm age-gates the VM's
 pod-style `/workspace/.cache/huggingface` hub cache (repos unused ≥ 14 days,
 `EPS_VM_WORKSPACE_HF_CACHE_MAX_AGE_DAYS`), pod-guarded (`ismount('/workspace')`
 OR pod-side detection refuses) so it can never run where `/workspace` is a real
-volume. The `/tmp/` + `/workspace` opt-in lives ONLY in the two CLI `main()`
+volume. A fifth arm (#1377) trims stale unref'd non-newest REVISIONS in the
+user home `~/.cache/huggingface/hub` cache (unref'd revisions older than 7
+days, `EPS_VM_HOME_HF_REVISION_MAX_AGE_DAYS`, root override
+`EPS_VM_HOME_HF_CACHE`; the newest + every ref'd revision per repo is always
+kept), pod-guarded and riding the same `main()`-only opt-in. The `/tmp/` +
+`/workspace` opt-in lives ONLY in the two CLI `main()`
 bodies (`tmp_root=production_tmp_root()`; library calls are hermetic by
 construction), the escalate-only data-disk pass never sweeps `/tmp/`, and
 report-only runs surface their evidence via the `--json` structured fields
