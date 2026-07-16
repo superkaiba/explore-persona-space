@@ -1,0 +1,1483 @@
+{
+  "commit": "f0b526a40b",
+  "created": "2026-07-15T22:43:05Z",
+  "figsize": [
+    12.0,
+    9.0
+  ],
+  "points": [
+    {
+      "greedy centrality rank among 11 items (1 = most central)": 1.0,
+      "fraction of contexts": 0.1854,
+      "series": "L14",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "greedy centrality rank among 11 items (1 = most central)": 2.0,
+      "fraction of contexts": 0.1112,
+      "series": "L14",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "greedy centrality rank among 11 items (1 = most central)": 3.0,
+      "fraction of contexts": 0.101,
+      "series": "L14",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "greedy centrality rank among 11 items (1 = most central)": 4.0,
+      "fraction of contexts": 0.0886,
+      "series": "L14",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "greedy centrality rank among 11 items (1 = most central)": 5.0,
+      "fraction of contexts": 0.088,
+      "series": "L14",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "greedy centrality rank among 11 items (1 = most central)": 6.0,
+      "fraction of contexts": 0.0728,
+      "series": "L14",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "greedy centrality rank among 11 items (1 = most central)": 7.0,
+      "fraction of contexts": 0.0722,
+      "series": "L14",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "greedy centrality rank among 11 items (1 = most central)": 8.0,
+      "fraction of contexts": 0.0676,
+      "series": "L14",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "greedy centrality rank among 11 items (1 = most central)": 9.0,
+      "fraction of contexts": 0.0652,
+      "series": "L14",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "greedy centrality rank among 11 items (1 = most central)": 10.0,
+      "fraction of contexts": 0.0634,
+      "series": "L14",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "greedy centrality rank among 11 items (1 = most central)": 11.0,
+      "fraction of contexts": 0.0846,
+      "series": "L14",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "greedy centrality rank among 11 items (1 = most central)": 1.0,
+      "fraction of contexts": 0.1754,
+      "series": "L17",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "greedy centrality rank among 11 items (1 = most central)": 2.0,
+      "fraction of contexts": 0.1088,
+      "series": "L17",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "greedy centrality rank among 11 items (1 = most central)": 3.0,
+      "fraction of contexts": 0.0968,
+      "series": "L17",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "greedy centrality rank among 11 items (1 = most central)": 4.0,
+      "fraction of contexts": 0.0948,
+      "series": "L17",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "greedy centrality rank among 11 items (1 = most central)": 5.0,
+      "fraction of contexts": 0.0862,
+      "series": "L17",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "greedy centrality rank among 11 items (1 = most central)": 6.0,
+      "fraction of contexts": 0.0774,
+      "series": "L17",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "greedy centrality rank among 11 items (1 = most central)": 7.0,
+      "fraction of contexts": 0.0724,
+      "series": "L17",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "greedy centrality rank among 11 items (1 = most central)": 8.0,
+      "fraction of contexts": 0.0654,
+      "series": "L17",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "greedy centrality rank among 11 items (1 = most central)": 9.0,
+      "fraction of contexts": 0.0688,
+      "series": "L17",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "greedy centrality rank among 11 items (1 = most central)": 10.0,
+      "fraction of contexts": 0.0654,
+      "series": "L17",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "greedy centrality rank among 11 items (1 = most central)": 11.0,
+      "fraction of contexts": 0.0886,
+      "series": "L17",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "greedy centrality rank among 11 items (1 = most central)": 1.0,
+      "fraction of contexts": 0.169,
+      "series": "L19",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "greedy centrality rank among 11 items (1 = most central)": 2.0,
+      "fraction of contexts": 0.1066,
+      "series": "L19",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "greedy centrality rank among 11 items (1 = most central)": 3.0,
+      "fraction of contexts": 0.1032,
+      "series": "L19",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "greedy centrality rank among 11 items (1 = most central)": 4.0,
+      "fraction of contexts": 0.0914,
+      "series": "L19",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "greedy centrality rank among 11 items (1 = most central)": 5.0,
+      "fraction of contexts": 0.084,
+      "series": "L19",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "greedy centrality rank among 11 items (1 = most central)": 6.0,
+      "fraction of contexts": 0.0768,
+      "series": "L19",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "greedy centrality rank among 11 items (1 = most central)": 7.0,
+      "fraction of contexts": 0.0736,
+      "series": "L19",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "greedy centrality rank among 11 items (1 = most central)": 8.0,
+      "fraction of contexts": 0.0682,
+      "series": "L19",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "greedy centrality rank among 11 items (1 = most central)": 9.0,
+      "fraction of contexts": 0.0716,
+      "series": "L19",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "greedy centrality rank among 11 items (1 = most central)": 10.0,
+      "fraction of contexts": 0.067,
+      "series": "L19",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "greedy centrality rank among 11 items (1 = most central)": 11.0,
+      "fraction of contexts": 0.0886,
+      "series": "L19",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "greedy centrality rank among 11 items (1 = most central)": 1.0,
+      "fraction of contexts": 0.1886,
+      "series": "L26",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "greedy centrality rank among 11 items (1 = most central)": 2.0,
+      "fraction of contexts": 0.1098,
+      "series": "L26",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "greedy centrality rank among 11 items (1 = most central)": 3.0,
+      "fraction of contexts": 0.1032,
+      "series": "L26",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "greedy centrality rank among 11 items (1 = most central)": 4.0,
+      "fraction of contexts": 0.088,
+      "series": "L26",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "greedy centrality rank among 11 items (1 = most central)": 5.0,
+      "fraction of contexts": 0.0878,
+      "series": "L26",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "greedy centrality rank among 11 items (1 = most central)": 6.0,
+      "fraction of contexts": 0.0722,
+      "series": "L26",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "greedy centrality rank among 11 items (1 = most central)": 7.0,
+      "fraction of contexts": 0.0752,
+      "series": "L26",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "greedy centrality rank among 11 items (1 = most central)": 8.0,
+      "fraction of contexts": 0.0684,
+      "series": "L26",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "greedy centrality rank among 11 items (1 = most central)": 9.0,
+      "fraction of contexts": 0.0636,
+      "series": "L26",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "greedy centrality rank among 11 items (1 = most central)": 10.0,
+      "fraction of contexts": 0.0628,
+      "series": "L26",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "greedy centrality rank among 11 items (1 = most central)": 11.0,
+      "fraction of contexts": 0.0804,
+      "series": "L26",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "greedy centrality rank among 11 items (1 = most central)": 1.0,
+      "fraction of contexts": 0.158,
+      "series": "L27",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "greedy centrality rank among 11 items (1 = most central)": 2.0,
+      "fraction of contexts": 0.0872,
+      "series": "L27",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "greedy centrality rank among 11 items (1 = most central)": 3.0,
+      "fraction of contexts": 0.0834,
+      "series": "L27",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "greedy centrality rank among 11 items (1 = most central)": 4.0,
+      "fraction of contexts": 0.0834,
+      "series": "L27",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "greedy centrality rank among 11 items (1 = most central)": 5.0,
+      "fraction of contexts": 0.0824,
+      "series": "L27",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "greedy centrality rank among 11 items (1 = most central)": 6.0,
+      "fraction of contexts": 0.0792,
+      "series": "L27",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "greedy centrality rank among 11 items (1 = most central)": 7.0,
+      "fraction of contexts": 0.089,
+      "series": "L27",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "greedy centrality rank among 11 items (1 = most central)": 8.0,
+      "fraction of contexts": 0.0862,
+      "series": "L27",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "greedy centrality rank among 11 items (1 = most central)": 9.0,
+      "fraction of contexts": 0.0772,
+      "series": "L27",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "greedy centrality rank among 11 items (1 = most central)": 10.0,
+      "fraction of contexts": 0.0774,
+      "series": "L27",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "greedy centrality rank among 11 items (1 = most central)": 11.0,
+      "fraction of contexts": 0.0966,
+      "series": "L27",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "cosine distance to cloud mean (L27)": 0.0087,
+      "density": 22.578715113258614,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "cosine distance to cloud mean (L27)": 0.0261,
+      "density": 16.128310449462678,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "cosine distance to cloud mean (L27)": 0.0435,
+      "density": 8.02737458516586,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "cosine distance to cloud mean (L27)": 0.060901,
+      "density": 3.673466376602246,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "cosine distance to cloud mean (L27)": 0.078301,
+      "density": 1.9884533265087252,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "cosine distance to cloud mean (L27)": 0.095702,
+      "density": 1.2597369051176666,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "cosine distance to cloud mean (L27)": 0.113102,
+      "density": 0.8172198353454935,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "cosine distance to cloud mean (L27)": 0.130503,
+      "density": 0.5643529383328232,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "cosine distance to cloud mean (L27)": 0.147903,
+      "density": 0.41723038007090596,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "cosine distance to cloud mean (L27)": 0.165304,
+      "density": 0.2793029817003585,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "cosine distance to cloud mean (L27)": 0.182704,
+      "density": 0.2068910975558211,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "cosine distance to cloud mean (L27)": 0.200105,
+      "density": 0.19999472763729376,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "cosine distance to cloud mean (L27)": 0.217505,
+      "density": 0.11953707858780775,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "cosine distance to cloud mean (L27)": 0.234905,
+      "density": 0.12298526354707144,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "cosine distance to cloud mean (L27)": 0.252306,
+      "density": 0.09654917885938334,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "cosine distance to cloud mean (L27)": 0.269706,
+      "density": 0.08275643902232832,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "cosine distance to cloud mean (L27)": 0.287107,
+      "density": 0.07241188414453728,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "cosine distance to cloud mean (L27)": 0.304507,
+      "density": 0.05632035433464029,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "cosine distance to cloud mean (L27)": 0.321908,
+      "density": 0.06781430419885259,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "cosine distance to cloud mean (L27)": 0.339308,
+      "density": 0.04827458942969151,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "cosine distance to cloud mean (L27)": 0.356709,
+      "density": 0.04597579945684906,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "cosine distance to cloud mean (L27)": 0.374109,
+      "density": 0.05746974932106152,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "cosine distance to cloud mean (L27)": 0.39151,
+      "density": 0.03678063956547937,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "cosine distance to cloud mean (L27)": 0.40891,
+      "density": 0.049423984416112746,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "cosine distance to cloud mean (L27)": 0.426311,
+      "density": 0.04022882452474293,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "cosine distance to cloud mean (L27)": 0.443711,
+      "density": 0.03333245460621568,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "cosine distance to cloud mean (L27)": 0.461111,
+      "density": 0.04022882452474306,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "cosine distance to cloud mean (L27)": 0.478512,
+      "density": 0.025286689701266987,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "cosine distance to cloud mean (L27)": 0.495912,
+      "density": 0.019539714769160853,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "cosine distance to cloud mean (L27)": 0.513313,
+      "density": 0.019539714769160978,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "cosine distance to cloud mean (L27)": 0.530713,
+      "density": 0.025286689701266987,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "cosine distance to cloud mean (L27)": 0.548114,
+      "density": 0.013792739837054719,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "cosine distance to cloud mean (L27)": 0.565514,
+      "density": 0.02873487466053067,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "cosine distance to cloud mean (L27)": 0.582915,
+      "density": 0.014942134823475946,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "cosine distance to cloud mean (L27)": 0.600315,
+      "density": 0.018390319782739743,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "cosine distance to cloud mean (L27)": 0.617716,
+      "density": 0.018390319782739625,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "cosine distance to cloud mean (L27)": 0.635116,
+      "density": 0.012643344850633493,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "cosine distance to cloud mean (L27)": 0.652516,
+      "density": 0.01724092479631851,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "cosine distance to cloud mean (L27)": 0.669917,
+      "density": 0.02068910975558208,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "cosine distance to cloud mean (L27)": 0.687317,
+      "density": 0.008045764904948585,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "cosine distance to cloud mean (L27)": 0.704718,
+      "density": 0.009195159891369813,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "cosine distance to cloud mean (L27)": 0.722118,
+      "density": 0.0172409247963184,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "cosine distance to cloud mean (L27)": 0.739519,
+      "density": 0.011493949864212339,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "cosine distance to cloud mean (L27)": 0.756919,
+      "density": 0.012643344850633493,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "cosine distance to cloud mean (L27)": 0.77432,
+      "density": 0.009195159891369813,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "cosine distance to cloud mean (L27)": 0.79172,
+      "density": 0.011493949864212339,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "cosine distance to cloud mean (L27)": 0.809121,
+      "density": 0.009195159891369813,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "cosine distance to cloud mean (L27)": 0.826521,
+      "density": 0.008045764904948585,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "cosine distance to cloud mean (L27)": 0.843922,
+      "density": 0.008045764904948585,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "cosine distance to cloud mean (L27)": 0.861322,
+      "density": 0.005746974932106133,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "cosine distance to cloud mean (L27)": 0.878722,
+      "density": 0.001149394986421234,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "cosine distance to cloud mean (L27)": 0.896123,
+      "density": 0.002298789972842453,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "cosine distance to cloud mean (L27)": 0.913523,
+      "density": 0.0011493949864212266,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "cosine distance to cloud mean (L27)": 0.930924,
+      "density": 0.001149394986421234,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "cosine distance to cloud mean (L27)": 0.948324,
+      "density": 0.0011493949864212266,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "cosine distance to cloud mean (L27)": 0.965725,
+      "density": 0.002298789972842453,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "cosine distance to cloud mean (L27)": 0.983125,
+      "density": 0.002298789972842453,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "cosine distance to cloud mean (L27)": 1.000526,
+      "density": 0.0011493949864212266,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "cosine distance to cloud mean (L27)": 1.017926,
+      "density": 0.001149394986421234,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "cosine distance to cloud mean (L27)": 0.0087,
+      "density": 23.964885466882613,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "cosine distance to cloud mean (L27)": 0.0261,
+      "density": 17.884585988714317,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "cosine distance to cloud mean (L27)": 0.0435,
+      "density": 7.7928980079359285,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "cosine distance to cloud mean (L27)": 0.060901,
+      "density": 2.839005616460434,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "cosine distance to cloud mean (L27)": 0.078301,
+      "density": 1.7470803793602674,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "cosine distance to cloud mean (L27)": 0.095702,
+      "density": 0.9425038888654074,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "cosine distance to cloud mean (L27)": 0.113102,
+      "density": 0.6321672425316757,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "cosine distance to cloud mean (L27)": 0.130503,
+      "density": 0.24137294714845797,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "cosine distance to cloud mean (L27)": 0.147903,
+      "density": 0.26436084687688255,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "cosine distance to cloud mean (L27)": 0.165304,
+      "density": 0.20689109755582114,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "cosine distance to cloud mean (L27)": 0.182704,
+      "density": 0.10344554877791057,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "cosine distance to cloud mean (L27)": 0.200105,
+      "density": 0.1379273983705474,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "cosine distance to cloud mean (L27)": 0.217505,
+      "density": 0.09195159891369828,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "cosine distance to cloud mean (L27)": 0.234905,
+      "density": 0.10344554877791057,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "cosine distance to cloud mean (L27)": 0.252306,
+      "density": 0.034481849592636914,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "cosine distance to cloud mean (L27)": 0.269706,
+      "density": 0.02298789972842453,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "cosine distance to cloud mean (L27)": 0.287107,
+      "density": 0.04597579945684906,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "cosine distance to cloud mean (L27)": 0.304507,
+      "density": 0.08045764904948612,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "cosine distance to cloud mean (L27)": 0.321908,
+      "density": 0.034481849592636914,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "cosine distance to cloud mean (L27)": 0.339308,
+      "density": 0.06896369918527359,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "cosine distance to cloud mean (L27)": 0.356709,
+      "density": 0.02298789972842453,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "cosine distance to cloud mean (L27)": 0.374109,
+      "density": 0.022987899728424604,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "cosine distance to cloud mean (L27)": 0.39151,
+      "density": 0.022987899728424604,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "cosine distance to cloud mean (L27)": 0.40891,
+      "density": 0.02298789972842453,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "cosine distance to cloud mean (L27)": 0.426311,
+      "density": 0.02298789972842453,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "cosine distance to cloud mean (L27)": 0.443711,
+      "density": 0.022987899728424604,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "cosine distance to cloud mean (L27)": 0.461111,
+      "density": 0.0,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "cosine distance to cloud mean (L27)": 0.478512,
+      "density": 0.02298789972842453,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "cosine distance to cloud mean (L27)": 0.495912,
+      "density": 0.02298789972842453,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "cosine distance to cloud mean (L27)": 0.513313,
+      "density": 0.01149394986421234,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "cosine distance to cloud mean (L27)": 0.530713,
+      "density": 0.0,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "cosine distance to cloud mean (L27)": 0.548114,
+      "density": 0.0,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "cosine distance to cloud mean (L27)": 0.565514,
+      "density": 0.0,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "cosine distance to cloud mean (L27)": 0.582915,
+      "density": 0.0,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "cosine distance to cloud mean (L27)": 0.600315,
+      "density": 0.01149394986421234,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "cosine distance to cloud mean (L27)": 0.617716,
+      "density": 0.0,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "cosine distance to cloud mean (L27)": 0.635116,
+      "density": 0.0,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "cosine distance to cloud mean (L27)": 0.652516,
+      "density": 0.0,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "cosine distance to cloud mean (L27)": 0.669917,
+      "density": 0.0,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "cosine distance to cloud mean (L27)": 0.687317,
+      "density": 0.0,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "cosine distance to cloud mean (L27)": 0.704718,
+      "density": 0.011493949864212266,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "cosine distance to cloud mean (L27)": 0.722118,
+      "density": 0.0,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "cosine distance to cloud mean (L27)": 0.739519,
+      "density": 0.0,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "cosine distance to cloud mean (L27)": 0.756919,
+      "density": 0.0,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "cosine distance to cloud mean (L27)": 0.77432,
+      "density": 0.0,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "cosine distance to cloud mean (L27)": 0.79172,
+      "density": 0.0,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "cosine distance to cloud mean (L27)": 0.809121,
+      "density": 0.011493949864212266,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "cosine distance to cloud mean (L27)": 0.826521,
+      "density": 0.0,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "cosine distance to cloud mean (L27)": 0.843922,
+      "density": 0.0,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "cosine distance to cloud mean (L27)": 0.861322,
+      "density": 0.0,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "cosine distance to cloud mean (L27)": 0.878722,
+      "density": 0.0,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "cosine distance to cloud mean (L27)": 0.896123,
+      "density": 0.0,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "cosine distance to cloud mean (L27)": 0.913523,
+      "density": 0.0,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "cosine distance to cloud mean (L27)": 0.930924,
+      "density": 0.0,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "cosine distance to cloud mean (L27)": 0.948324,
+      "density": 0.0,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "cosine distance to cloud mean (L27)": 0.965725,
+      "density": 0.0,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "cosine distance to cloud mean (L27)": 0.983125,
+      "density": 0.0,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "cosine distance to cloud mean (L27)": 1.000526,
+      "density": 0.0,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "cosine distance to cloud mean (L27)": 1.017926,
+      "density": 0.0,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "read-out layer": -0.19,
+      "mean-offset norm": 0.8383060693740845,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "read-out layer": 0.81,
+      "mean-offset norm": 1.0416221618652344,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "read-out layer": 1.81,
+      "mean-offset norm": 1.420996069908142,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "read-out layer": 2.81,
+      "mean-offset norm": 3.8562376499176025,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "read-out layer": 3.81,
+      "mean-offset norm": 8.049701690673828,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "read-out layer": 0.19,
+      "mean-offset norm": 0.10351431369781494,
+      "error": 0.021386153995990753,
+      "_kind": "bar",
+      "_group": 8
+    },
+    {
+      "read-out layer": 1.19,
+      "mean-offset norm": 0.12349163740873337,
+      "error": 0.02560027316212654,
+      "_kind": "bar",
+      "_group": 8
+    },
+    {
+      "read-out layer": 2.19,
+      "mean-offset norm": 0.15798236429691315,
+      "error": 0.03300713002681732,
+      "_kind": "bar",
+      "_group": 8
+    },
+    {
+      "read-out layer": 3.19,
+      "mean-offset norm": 0.5361520051956177,
+      "error": 0.07241162657737732,
+      "_kind": "bar",
+      "_group": 8
+    },
+    {
+      "read-out layer": 4.19,
+      "mean-offset norm": 0.7063701152801514,
+      "error": 0.13827845454216003,
+      "_kind": "bar",
+      "_group": 8
+    },
+    {
+      "read-out layer": 0.19,
+      "mean-offset norm": 0.10351431369781494,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "read-out layer": 1.19,
+      "mean-offset norm": 0.12349163740873337,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "read-out layer": 2.19,
+      "mean-offset norm": 0.15798236429691315,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "read-out layer": 3.19,
+      "mean-offset norm": 0.5361520051956177,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "read-out layer": 4.19,
+      "mean-offset norm": 0.7063701152801514,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "read-out layer": 0.19,
+      "mean-offset norm": 0.14628662168979645,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "read-out layer": 1.19,
+      "mean-offset norm": 0.17469218373298645,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "read-out layer": 2.19,
+      "mean-offset norm": 0.2239966243505478,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "read-out layer": 3.19,
+      "mean-offset norm": 0.6809752583503723,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "read-out layer": 4.19,
+      "mean-offset norm": 0.9829270243644714,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "read-out layer": 0.0,
+      "median $\\|v_{greedy}\\| - \\overline{\\|v_j\\|}$": 0.2986488342285156,
+      "error": 0.02085399627685547,
+      "_kind": "errorbar",
+      "_group": 11
+    },
+    {
+      "read-out layer": 1.0,
+      "median $\\|v_{greedy}\\| - \\overline{\\|v_j\\|}$": 0.29302978515625,
+      "error": 0.027208372950553894,
+      "_kind": "errorbar",
+      "_group": 11
+    },
+    {
+      "read-out layer": 2.0,
+      "median $\\|v_{greedy}\\| - \\overline{\\|v_j\\|}$": 0.34212684631347656,
+      "error": 0.036884307861328125,
+      "_kind": "errorbar",
+      "_group": 11
+    },
+    {
+      "read-out layer": 3.0,
+      "median $\\|v_{greedy}\\| - \\overline{\\|v_j\\|}$": 0.61346435546875,
+      "error": 0.12376365065574646,
+      "_kind": "errorbar",
+      "_group": 11
+    },
+    {
+      "read-out layer": 4.0,
+      "median $\\|v_{greedy}\\| - \\overline{\\|v_j\\|}$": -2.9273223876953125,
+      "error": 0.2877805233001709,
+      "_kind": "errorbar",
+      "_group": 11
+    },
+    {
+      "read-out layer": 0.0,
+      "median $\\|v_{greedy}\\| - \\overline{\\|v_j\\|}$": 0.2986488342285156,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "read-out layer": 1.0,
+      "median $\\|v_{greedy}\\| - \\overline{\\|v_j\\|}$": 0.29302978515625,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "read-out layer": 2.0,
+      "median $\\|v_{greedy}\\| - \\overline{\\|v_j\\|}$": 0.34212684631347656,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "read-out layer": 3.0,
+      "median $\\|v_{greedy}\\| - \\overline{\\|v_j\\|}$": 0.61346435546875,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "read-out layer": 4.0,
+      "median $\\|v_{greedy}\\| - \\overline{\\|v_j\\|}$": -2.9273223876953125,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "read-out layer": 0.0,
+      "median $\\|v_{greedy}\\| - \\overline{\\|v_j\\|}$": 0.278076171875,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "read-out layer": 1.0,
+      "median $\\|v_{greedy}\\| - \\overline{\\|v_j\\|}$": 0.2670668661594391,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "read-out layer": 2.0,
+      "median $\\|v_{greedy}\\| - \\overline{\\|v_j\\|}$": 0.307647705078125,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "read-out layer": 3.0,
+      "median $\\|v_{greedy}\\| - \\overline{\\|v_j\\|}$": 0.4753883481025696,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "read-out layer": 4.0,
+      "median $\\|v_{greedy}\\| - \\overline{\\|v_j\\|}$": -3.1626954078674316,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "read-out layer": 0.0,
+      "median $\\|v_{greedy}\\| - \\overline{\\|v_j\\|}$": 0.31978416442871094,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "read-out layer": 1.0,
+      "median $\\|v_{greedy}\\| - \\overline{\\|v_j\\|}$": 0.3214836120605469,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "read-out layer": 2.0,
+      "median $\\|v_{greedy}\\| - \\overline{\\|v_j\\|}$": 0.38141632080078125,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "read-out layer": 3.0,
+      "median $\\|v_{greedy}\\| - \\overline{\\|v_j\\|}$": 0.7229156494140625,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "read-out layer": 4.0,
+      "median $\\|v_{greedy}\\| - \\overline{\\|v_j\\|}$": -2.58713436126709,
+      "_kind": "line",
+      "_group": 14
+    }
+  ],
+  "n_series": 15,
+  "total_points": 213,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "xlabel": "greedy centrality rank among 11 items (1 = most central)",
+        "ylabel": "fraction of contexts",
+        "legend_labels": [
+          "L14",
+          "L17",
+          "L19",
+          "L26",
+          "L27"
+        ],
+        "legend_title": "uniform = dashed",
+        "xticklabels": [
+          "1",
+          "2",
+          "3",
+          "4",
+          "5",
+          "6",
+          "7",
+          "8",
+          "9",
+          "10",
+          "11"
+        ],
+        "yticklabels": [
+          "0.04",
+          "0.06",
+          "0.08",
+          "0.10",
+          "0.12",
+          "0.14",
+          "0.16",
+          "0.18",
+          "0.20"
+        ]
+      },
+      {
+        "xlabel": "cosine distance to cloud mean (L27)",
+        "ylabel": "density",
+        "legend_labels": [
+          "stochastic draw (LOO)",
+          "greedy"
+        ],
+        "xticklabels": [
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0",
+          "1.2"
+        ],
+        "yticklabels": [
+          "0",
+          "5",
+          "10",
+          "15",
+          "20",
+          "25",
+          "30"
+        ]
+      },
+      {
+        "xlabel": "read-out layer",
+        "ylabel": "mean-offset norm",
+        "legend_labels": [
+          "observed $\\|\\bar u\\|$",
+          "sign-flip null (mean; cap=max)"
+        ],
+        "xticklabels": [
+          "L14",
+          "L17",
+          "L19",
+          "L26",
+          "L27"
+        ],
+        "yticklabels": [
+          "0",
+          "1",
+          "2",
+          "3",
+          "4",
+          "5",
+          "6",
+          "7",
+          "8",
+          "9"
+        ]
+      },
+      {
+        "xlabel": "read-out layer",
+        "ylabel": "median $\\|v_{greedy}\\| - \\overline{\\|v_j\\|}$",
+        "xticklabels": [
+          "L14",
+          "L17",
+          "L19",
+          "L26",
+          "L27"
+        ],
+        "yticklabels": [
+          "\u22123.5",
+          "\u22123.0",
+          "\u22122.5",
+          "\u22122.0",
+          "\u22121.5",
+          "\u22121.0",
+          "\u22120.5",
+          "0.0",
+          "0.5",
+          "1.0"
+        ]
+      }
+    ],
+    "series": [
+      "L14",
+      "L17",
+      "L19",
+      "L26",
+      "L27",
+      "observed $\\|\\bar u\\|$",
+      "sign-flip null (mean; cap=max)"
+    ]
+  }
+}

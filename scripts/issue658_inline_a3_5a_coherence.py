@@ -24,11 +24,18 @@ import os
 import subprocess
 import time
 
-import numpy as np
-import torch
-from scipy.stats import spearmanr
-from sklearn.decomposition import PCA
-from sklearn.metrics import silhouette_samples
+from explore_persona_space.orchestrate.env import load_dotenv
+
+# #847: thread caps must land BEFORE the numpy/torch imports below — on the
+# shared VM, load_dotenv() setdefaults OMP/MKL/OPENBLAS/NUMEXPR_NUM_THREADS,
+# and the BLAS/torch pools freeze at import time.
+load_dotenv()
+
+import numpy as np  # noqa: E402
+import torch  # noqa: E402
+from scipy.stats import spearmanr  # noqa: E402
+from sklearn.decomposition import PCA  # noqa: E402
+from sklearn.metrics import silhouette_samples  # noqa: E402
 
 CACHE = "/tmp/issue658_a35a"
 OUT_JSON = "eval_results/issue_658/inline_a3_5a_coherence"
@@ -108,7 +115,8 @@ def sp(a, b):
 def main():
     t0 = time.time()
     npz = np.load(os.path.join(CACHE, "reduced.npz"))
-    meta = json.load(open(os.path.join(CACHE, "meta.json")))
+    with open(os.path.join(CACHE, "meta.json")) as fh:
+        meta = json.load(fh)
     ctx_ids, families, behaviors = meta["ctx_ids"], meta["families"], meta["behaviors"]
     fam_arr = np.array(families)
     cc_last = npz["cc_last"]
@@ -149,12 +157,14 @@ def main():
             "pca_in": PCA_IN,
             "mlp": {"hidden": MLP_HIDDEN, "epochs": MLP_EPOCHS, "lr": MLP_LR, "wd": MLP_WD},
             "notes": [
-                "c_hat_C = mean_i c_{x_i} exactly (checks ~3e-8) => linear-h Jensen gap identically 0; "
-                "nonlinear multi-head MLP h used for J.",
+                "c_hat_C = mean_i c_{x_i} exactly (checks ~3e-8) => linear-h Jensen gap "
+                "identically 0; nonlinear multi-head MLP h used for J.",
                 "R_max uses all-data (in-sample) MLP h -> slight optimism (lower bound); "
                 "Rlin_loco_max is the honest leave-one-condition-out linear-ridge companion.",
-                "within-condition c_x<->a_x pairing is positional (identical probe_pool_hash+seed).",
-                "assumption predicts POSITIVE rho(s_W, J) and rho(s_W, R): gap+residual rise with spread.",
+                "within-condition c_x<->a_x pairing is positional "
+                "(identical probe_pool_hash+seed).",
+                "assumption predicts POSITIVE rho(s_W, J) and rho(s_W, R): "
+                "gap+residual rise with spread.",
             ],
         },
         "per_layer": {},
@@ -216,7 +226,8 @@ def main():
                 "n_low_coherence_flags": len(flags),
             }
         results["meta"]["runtime_s"] = round(time.time() - t0, 1)
-        json.dump(results, open(os.path.join(OUT_JSON, "coherence_results.json"), "w"), indent=1)
+        with open(os.path.join(OUT_JSON, "coherence_results.json"), "w") as fh:
+            json.dump(results, fh, indent=1)
         np.savez(
             os.path.join(OUT_JSON, "per_condition_layer.npz"),
             spread_I=spread_I,

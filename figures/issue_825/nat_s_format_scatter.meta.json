@@ -1,0 +1,451 @@
+{
+  "commit": "cf2b8a8d34",
+  "created": "2026-07-15T10:31:24Z",
+  "figsize": [
+    9.6,
+    4.6
+  ],
+  "points": [
+    {
+      "held-out R\u00b2, chat template": 0.44303406915482113,
+      "held-out R\u00b2, naturalistic render": 0.41702141422070516,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out R\u00b2, chat template": 0.4451440902893047,
+      "held-out R\u00b2, naturalistic render": 0.43240473486121855,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out R\u00b2, chat template": 0.4728922219213526,
+      "held-out R\u00b2, naturalistic render": 0.45631148026886104,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out R\u00b2, chat template": 0.46219923250147366,
+      "held-out R\u00b2, naturalistic render": 0.44909109423379456,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out R\u00b2, chat template": 0.4600948105107818,
+      "held-out R\u00b2, naturalistic render": 0.44482599248742793,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out R\u00b2, chat template": 0.469393700273248,
+      "held-out R\u00b2, naturalistic render": 0.45673203779786864,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out R\u00b2, chat template": 0.48781542852414683,
+      "held-out R\u00b2, naturalistic render": 0.4701384489593743,
+      "label": "L26",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out R\u00b2, chat template": 0.4717880329904688,
+      "held-out R\u00b2, naturalistic render": 0.45457451360847934,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out R\u00b2, chat template": 0.48659208470222515,
+      "held-out R\u00b2, naturalistic render": 0.4633029639490692,
+      "label": "L26",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out R\u00b2, chat template": 0.4580726803166211,
+      "held-out R\u00b2, naturalistic render": 0.44023902696264594,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out R\u00b2, chat template": 0.4855131988556901,
+      "held-out R\u00b2, naturalistic render": 0.45613487254073404,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out R\u00b2, chat template": 0.5031386747179246,
+      "held-out R\u00b2, naturalistic render": 0.46783348079107234,
+      "label": "L26",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out R\u00b2, chat template": 0.5198650093443462,
+      "held-out R\u00b2, naturalistic render": 0.4828080041931767,
+      "label": "L26",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out R\u00b2, chat template": 0.5407819896997148,
+      "held-out R\u00b2, naturalistic render": 0.5054218242059474,
+      "label": "L26",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out R\u00b2, chat template": 0.56947032525415,
+      "held-out R\u00b2, naturalistic render": 0.5338488700439872,
+      "label": "L14",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out R\u00b2, chat template": 0.5870960365322093,
+      "held-out R\u00b2, naturalistic render": 0.5502511280814856,
+      "label": "L18",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out R\u00b2, chat template": 0.5950191084374952,
+      "held-out R\u00b2, naturalistic render": 0.5586093476939589,
+      "label": "L18",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out R\u00b2, chat template": 0.5928080536748246,
+      "held-out R\u00b2, naturalistic render": 0.5596307334530382,
+      "label": "L18",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out R\u00b2, chat template": 0.6019477850464651,
+      "held-out R\u00b2, naturalistic render": 0.5698146180406515,
+      "label": "L18",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out R\u00b2, chat template": 0.6542183951898379,
+      "held-out R\u00b2, naturalistic render": 0.6249482470755412,
+      "label": "L19",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out R\u00b2, chat template": 0.6393434154782172,
+      "held-out R\u00b2, naturalistic render": 0.6111797717456513,
+      "label": "L19",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out R\u00b2, chat template": 0.6239486947810016,
+      "held-out R\u00b2, naturalistic render": 0.5958720968064551,
+      "label": "L18",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out R\u00b2, chat template": 0.6010142740870821,
+      "held-out R\u00b2, naturalistic render": 0.5741925015262834,
+      "label": "L18",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out R\u00b2, chat template": 0.5839072088462604,
+      "held-out R\u00b2, naturalistic render": 0.557979678771646,
+      "label": "L18",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out R\u00b2, chat template": 0.5878045969452492,
+      "held-out R\u00b2, naturalistic render": 0.5651885975322408,
+      "label": "L18",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out R\u00b2, chat template": 0.5866087752940375,
+      "held-out R\u00b2, naturalistic render": 0.564423741266013,
+      "label": "L18",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out R\u00b2, chat template": 0.5549504105691124,
+      "held-out R\u00b2, naturalistic render": 0.534906519965465,
+      "label": "L26",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out R\u00b2, chat template": 0.571282804987034,
+      "held-out R\u00b2, naturalistic render": 0.5580001407031923,
+      "label": "L14",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out R\u00b2, chat template": 0.56947032525415,
+      "held-out R\u00b2, naturalistic render": 0.5338488700439872,
+      "label": "L14",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out R\u00b2, chat template": 0.6019477850464651,
+      "held-out R\u00b2, naturalistic render": 0.5698146180406515,
+      "label": "L18",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out R\u00b2, chat template": 0.6542183951898379,
+      "held-out R\u00b2, naturalistic render": 0.6249482470755412,
+      "label": "L19",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "held-out R\u00b2, chat template": 0.5549504105691124,
+      "held-out R\u00b2, naturalistic render": 0.534906519965465,
+      "label": "L26",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "held-out R\u00b2, chat template": 0.4390514749544412,
+      "y": 0.4070818048200673,
+      "label": "L14",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "held-out R\u00b2, chat template": 0.4434328372471059,
+      "y": 0.4288448333607159,
+      "label": "L14",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "held-out R\u00b2, chat template": 0.45823024571032844,
+      "y": 0.45308875854654995,
+      "label": "L14",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "held-out R\u00b2, chat template": 0.4380004986443504,
+      "y": 0.43796162571565644,
+      "label": "L14",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "held-out R\u00b2, chat template": 0.41892589074291753,
+      "y": 0.4353092974873136,
+      "label": "L14",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "held-out R\u00b2, chat template": 0.4069209595841139,
+      "y": 0.44515310161934496,
+      "label": "L14",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "held-out R\u00b2, chat template": 0.41685802989204035,
+      "y": 0.46065685684456315,
+      "label": "L14",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "held-out R\u00b2, chat template": 0.4069421070351894,
+      "y": 0.4513756979579834,
+      "label": "L14",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "held-out R\u00b2, chat template": 0.42047827275972294,
+      "y": 0.4608172802199588,
+      "label": "L14",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "held-out R\u00b2, chat template": 0.4039162589084875,
+      "y": 0.4373624146770265,
+      "label": "L14",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "held-out R\u00b2, chat template": 0.41739249651619814,
+      "y": 0.4547121898576605,
+      "label": "L14",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "held-out R\u00b2, chat template": 0.42479288294610906,
+      "y": 0.46417277381342725,
+      "label": "L14",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "held-out R\u00b2, chat template": 0.4357402736850208,
+      "y": 0.4750185919702392,
+      "label": "L14",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "held-out R\u00b2, chat template": 0.44618699395794414,
+      "y": 0.4892340180857837,
+      "label": "L14",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "held-out R\u00b2, chat template": 0.4556840482173714,
+      "y": 0.5059799069171825,
+      "label": "L14",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "held-out R\u00b2, chat template": 0.4673201925027678,
+      "y": 0.5211853867518479,
+      "label": "L18",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "held-out R\u00b2, chat template": 0.46837364749502663,
+      "y": 0.5252376403324792,
+      "label": "L18",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "held-out R\u00b2, chat template": 0.46414164704449046,
+      "y": 0.5243244225583498,
+      "label": "L18",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "held-out R\u00b2, chat template": 0.4781222597605287,
+      "y": 0.5336712755049543,
+      "label": "L18",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "held-out R\u00b2, chat template": 0.5416017955480217,
+      "y": 0.5782882733523877,
+      "label": "L19",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "held-out R\u00b2, chat template": 0.5385581794674682,
+      "y": 0.5724569949378359,
+      "label": "L19",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "held-out R\u00b2, chat template": 0.5293485439233517,
+      "y": 0.5629908091819114,
+      "label": "L19",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "held-out R\u00b2, chat template": 0.520251540939177,
+      "y": 0.5518304994761027,
+      "label": "L26",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "held-out R\u00b2, chat template": 0.511875314370933,
+      "y": 0.5416229102991459,
+      "label": "L26",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "held-out R\u00b2, chat template": 0.5331086111316214,
+      "y": 0.557152515548542,
+      "label": "L19",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "held-out R\u00b2, chat template": 0.5397405635515451,
+      "y": 0.5641976911880984,
+      "label": "L19",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "held-out R\u00b2, chat template": 0.5133251798890351,
+      "y": 0.5412307687600404,
+      "label": "L26",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "held-out R\u00b2, chat template": 0.5865307715625809,
+      "y": 0.615440505096237,
+      "label": "L19",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "held-out R\u00b2, chat template": 0.4556840482173714,
+      "y": 0.5059799069171825,
+      "label": "L14",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "held-out R\u00b2, chat template": 0.4781222597605287,
+      "y": 0.5336712755049543,
+      "label": "L18",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "held-out R\u00b2, chat template": 0.5416017955480217,
+      "y": 0.5782882733523877,
+      "label": "L19",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "held-out R\u00b2, chat template": 0.5133251798890351,
+      "y": 0.5412307687600404,
+      "label": "L26",
+      "_kind": "scatter",
+      "_group": 9
+    }
+  ],
+  "n_series": 10,
+  "total_points": 64
+}

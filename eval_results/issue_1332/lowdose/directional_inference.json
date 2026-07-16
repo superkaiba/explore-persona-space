@@ -1,0 +1,124 @@
+{
+  "l_star": 27,
+  "predictor": "S_trans directional (held-out R^2 source-map -> target cells; orientation matches L[i, j]) on the LOW-DOSE grid",
+  "headline_directional": {
+    "all": {
+      "n_cells": 400,
+      "rho": 0.2565394783717398,
+      "boot": {
+        "ci_lo": -0.007203158667087216,
+        "ci_hi": 0.4942820296435072,
+        "n_effective": 2000
+      }
+    },
+    "stylized_excluded_as_source": {
+      "n_cells": 325,
+      "rho": 0.1959201580060476,
+      "boot": {
+        "ci_lo": -0.09464685387260506,
+        "ci_hi": 0.44796845279372466,
+        "n_effective": 2000
+      }
+    },
+    "stylized_excluded_either_side": {
+      "n_cells": 286,
+      "rho": 0.20300392803602044,
+      "boot": {
+        "ci_lo": -0.15844667826904646,
+        "ci_hi": 0.500551258790755,
+        "n_effective": 2000
+      }
+    }
+  },
+  "null": {
+    "n_draws": 10000,
+    "seed": 1,
+    "axis": "target (source-preserving target-label permutation)",
+    "p975_abs_rho_lstar": 0.31841746198413734,
+    "p975_signed_rho_lstar": 0.31841746198413734,
+    "p_two_sided_lstar": 0.1114,
+    "source_axis_p975_abs": 0.2916358539740873,
+    "per_draw_matrix": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-1332/eval_results/issue_1332/lowdose/null_matrices.npz"
+  },
+  "kill": {
+    "partial_rho_given_cos_js": 0.11725550909610911,
+    "boot_partial_given_cos_js": {
+      "ci_lo": -0.14814804523967257,
+      "ci_hi": 0.3111790291065703,
+      "n_effective": 2000
+    },
+    "partial_rho_given_cos": 0.131803216596101,
+    "boot_partial_given_cos": {
+      "ci_lo": -0.11558618936038656,
+      "ci_hi": 0.3244591008927349,
+      "n_effective": 2000
+    },
+    "partial_rho_given_js": 0.11803709373360405,
+    "boot_partial_given_js": {
+      "ci_lo": -0.1511808097582013,
+      "ci_hi": 0.36422316549968214,
+      "n_effective": 2000
+    },
+    "partial_rho_given_fresh_cos_L21": 0.07480239723980486,
+    "boot_partial_given_fresh_cos_L21": {
+      "ci_lo": -0.1943253158128128,
+      "ci_hi": 0.317461166542448,
+      "n_effective": 2000
+    },
+    "pearson_pred_cos": 0.7331980779085102,
+    "collinearity_gate_fired": true,
+    "tercile_rho": {
+      "tercile_0": 0.4253677218723421,
+      "tercile_1": -0.0817142358383521,
+      "tercile_2": 0.12168979663088071
+    },
+    "poly2_residualized_rho": 0.1885434908968181
+  },
+  "increment": {
+    "partial_rho_Sdir_L_given_Ssym": 0.06953955190193013,
+    "boot_partial_given_Ssym": {
+      "ci_lo": -0.21162380411304507,
+      "ci_hi": 0.28391133336154345,
+      "n_effective": 2000
+    },
+    "pearson_Sdir_Ssym": 0.888318877209523
+  },
+  "verdict_lattice": {
+    "verdict": "No-low-dose-signal",
+    "delta_band": -0.06187798361239755,
+    "c_star": 0.36600665482720335,
+    "partial_ci": [
+      -0.14814804523967257,
+      0.3111790291065703
+    ],
+    "c_star_inputs": {
+      "parent_partial_committed": 0.3712959134991778,
+      "parent_ceiling_committed": 0.9879471838957441,
+      "ceiling_lowdose": 0.9738734814393208,
+      "registered_literals": [
+        0.371,
+        0.988
+      ]
+    }
+  },
+  "reference_parent": {
+    "raw_rho": 0.6700845630285188,
+    "partial_cos_js": 0.3712959134991778,
+    "null_p975_abs": 0.6243543490896818
+  },
+  "figures": [
+    "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-1332/figures/issue_1332/lowdose/lowdose_forest.png"
+  ],
+  "reproducibility_metadata": {
+    "issue": 1332,
+    "git_commit": "e5fe2cf47aef17d228f948710557087a3fe5c2dd",
+    "ts": "2026-07-15T22:43:23Z",
+    "torch_version": "2.8.0+cu128",
+    "transformers_version": "4.57.6",
+    "followup": "lowdose-grid-kill-battery",
+    "smoke": false,
+    "n_null": 10000,
+    "n_boot": 2000,
+    "trained_dir": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-1332/eval_results/issue_1332/lowdose/per_cell_trained"
+  }
+}

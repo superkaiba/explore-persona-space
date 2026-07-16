@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1334,
+  "highest_id": 1373,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -62,8 +62,8 @@
       "goal": "Determine whether the CoT-decomposition results from #928 (CoT informativeness, predictive sufficiency of the CoT summary, composition parity) replicate on DeepSeek-R1-Distill-Qwen-7B \u2014 a thinking model whose chat template forces the reasoning scaffold \u2014 and whether full scaffold compliance eliminates the flagged-context covariate, testing whether the +0.41 length-matched flagged-cluster gain is a think-scaffold-compliance artifact rather than a context-family property.",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/proposed/1005",
-      "status": "proposed",
+      "path": "tasks/running/1005",
+      "status": "running",
       "title": "Replicate the CoT decomposition on DeepSeek-R1-Distill-Qwen-7B (template-forced thinking): does scaffold compliance eliminate the flagged-context covariate?"
     },
     "1006": {
@@ -710,9 +710,9 @@
       "goal": "Rebuild the factory content-behavior datagen persona-vectors-style \u2014 each behavior defined by a trait description + 5 contrastive instruction pairs + neutral trait-eliciting questions (auto-generated persona-vectors-style where a curated bank triggers refusal) so a Claude generator is less likely to refuse \u2014 add an impossible-to-refuse formatting behavior as a pipeline positive control, and test whether this clears the yield floors and installs trainable organisms across the behavior set.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/followups_running/1090",
-      "status": "followups_running",
-      "title": "Raising the learning rate unlocks on-policy expression of the impolite behavior in both installed-but-silent training contexts (MODERATE confidence)"
+      "path": "tasks/awaiting_promotion/1090",
+      "status": "awaiting_promotion",
+      "title": "Raising the learning rate unlocks on-policy expression of the impolite behavior in every previously-silent training context, including the bare default assistant (MODERATE confidence)"
     },
     "1091": {
       "has_clean_result": false,
@@ -2449,44 +2449,44 @@
     "1314": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1314",
-      "status": "reviewing",
+      "path": "tasks/completed/1314",
+      "status": "completed",
       "title": "workflow-fix: c6_reuse_fitness recognizes (a)-(j) reuse-map tables"
     },
     "1315": {
       "goal": "Measure residual-stream activation-shift geometry (trained-base, per-layer rank/participation-ratio, read-out direction alignment, magnitude) of the on-policy-working #1090 impolite organisms (fu4 lr-3e-5 persona 0.805 + WildChat 0.737; fu3 ICL 0.82), reusing #1112's method, to test whether impolite's install geometry matches or differs from the diffuse/unaligned sycophancy read (#653/#1112); extend to the LoRA-vs-full-FT x pos-only-vs-contrastive 2x2 at matched install where tractable.",
-      "has_clean_result": false,
+      "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/approved/1315",
-      "status": "approved",
-      "title": "Impolite-organism activation-shift geometry (extends #1112 method to impolite)"
+      "path": "tasks/awaiting_promotion/1315",
+      "status": "awaiting_promotion",
+      "title": "Impolite's activation-shift geometry breaks the sycophancy signature: read-out-aligned, more concentrated, and no extra shift distance under full fine-tuning (MODERATE confidence)"
     },
     "1316": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1316",
-      "status": "running",
+      "path": "tasks/completed/1316",
+      "status": "completed",
       "title": "daily-fix: widen lazy-import pin scan set (from #1304)"
     },
     "1317": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1317",
-      "status": "running",
+      "path": "tasks/completed/1317",
+      "status": "completed",
       "title": "daily-fix: code-reviewer Gate-scope line check (#1305)"
     },
     "1318": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1318",
-      "status": "running",
+      "path": "tasks/completed/1318",
+      "status": "completed",
       "title": "daily-fix: fix 4 workflow_lint FAILs on main (hub-verify)"
     },
     "1319": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1319",
-      "status": "proposed",
+      "path": "tasks/completed/1319",
+      "status": "completed",
       "title": "daily-fix: torch-before-dotenv in 2 issue scripts (#847)"
     },
     "132": {
@@ -2499,71 +2499,71 @@
     "1320": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1320",
-      "status": "proposed",
+      "path": "tasks/completed/1320",
+      "status": "completed",
       "title": "daily-fix: vectorize issue825 MLP secondary; upload first"
     },
     "1321": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1321",
-      "status": "proposed",
+      "path": "tasks/completed/1321",
+      "status": "completed",
       "title": "daily-fix: follow-up defer/teardown must re-park parent"
     },
     "1322": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1322",
-      "status": "proposed",
+      "path": "tasks/completed/1322",
+      "status": "completed",
       "title": "daily-fix: ownership check before resume; no double-bg"
     },
     "1323": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1323",
-      "status": "proposed",
+      "path": "tasks/completed/1323",
+      "status": "completed",
       "title": "daily-fix: honor user inline override; commit same turn"
     },
     "1324": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1324",
-      "status": "proposed",
+      "path": "tasks/completed/1324",
+      "status": "completed",
       "title": "daily-fix: default vLLM hang mitigations for user corpora"
     },
     "1325": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1325",
-      "status": "proposed",
+      "path": "tasks/completed/1325",
+      "status": "completed",
       "title": "daily-fix: push-verify must cover eval_results + figures"
     },
     "1326": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1326",
-      "status": "proposed",
+      "path": "tasks/completed/1326",
+      "status": "completed",
       "title": "daily-fix: Step-0 guard blind to inline-chat drivers"
     },
     "1327": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1327",
-      "status": "proposed",
+      "path": "tasks/completed/1327",
+      "status": "completed",
       "title": "daily-fix: spawn_session.py unregister subcommand"
     },
     "1328": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1328",
-      "status": "proposed",
+      "path": "tasks/completed/1328",
+      "status": "completed",
       "title": "daily-fix: verify chat claims against artifacts first"
     },
     "1329": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1329",
-      "status": "proposed",
+      "path": "tasks/completed/1329",
+      "status": "completed",
       "title": "daily-fix: lint lane-specific env vars in workload-cmd"
     },
     "133": {
@@ -2589,26 +2589,63 @@
     },
     "1332": {
       "goal": "Test whether function-space similarity between per-context-family fitted linear context\u2192answer maps (cross-family transfer R\u00b2 / prediction agreement on the frozen base model, both prefix-based and context-based arms) predicts fine-tuning leakage from source persona to target contexts on an existing measured leakage matrix, with incremental validity over the activation-cosine, JS-divergence, base-rate-prior, and whitened-gate baselines under group-level held-out (LOFO) evaluation.",
-      "has_clean_result": false,
+      "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/proposed/1332",
-      "status": "proposed",
-      "title": "Function-space similarity between per-context fitted context\u2192answer maps as a leakage predictor"
+      "path": "tasks/awaiting_promotion/1332",
+      "status": "awaiting_promotion",
+      "title": "Directional function-space map similarity predicts marker leakage beyond the activation-cosine and Jensen\u2013Shannon baselines at high dose but clears no permutation band at low dose in either the registered log-prob read or the higher margin read (MODERATE confidence)"
     },
     "1333": {
       "goal": "Build the marker anchor for the organism-geometry spectrum via the FULL #1112 design on the factory marker behavior (token id 83399): {LoRA, full fine-tune} x {positive-only, contrastive} 2x2 at MATCHED marker install (mirroring #1112 sycophancy + #1315 impolite), plus a LoRA extension across the 4 #1090 contexts for install/expression/leakage breadth; geometry DVs mirror #1112 (rank-k@90/participation-ratio/alignment/magnitude + the mandatory teacher-forced shared-text control) plus the three-space on-policy marker log-P install DV; dedicated marker recipe (marker+EOT loss, lr<=5e-6, band-stop, contrastive-negative EOS slot), de-saturated anchor.",
-      "has_clean_result": false,
+      "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/planning/1333",
-      "status": "planning",
-      "title": "Factory marker organism: marker behavior through the #1090 pipeline (spectrum anchor for #1315)"
+      "path": "tasks/followups_running/1333",
+      "status": "followups_running",
+      "title": "The marker implant reproduces the farther-but-not-more-diffuse full-fine-tune signature at matched install (MODERATE confidence)"
     },
     "1334": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1334",
-      "status": "proposed",
+      "path": "tasks/completed/1334",
+      "status": "completed",
       "title": "workflow-fix: multi-pod-per-issue naming (--name-suffix) so suffixed pods map to their owning task"
+    },
+    "1335": {
+      "goal": "Identify which factor(s) \u2014 role identity/frequency, genre, answer structure/length, single-responder-vs-multi-speaker context, or measurement \u2014 account for the large held-out-R\u00b2 gap between the assistant context\u2192answer map (#825: base 0.59 / instruct 0.67, survives chat-template removal) and the per-character fiction context\u2192dialogue map (#1310: base 0.11\u20130.15 / instruct 0.19\u20130.25, same plain-text regime), via a one-factor-at-a-time ablation ladder measuring held-out R\u00b2 at each rung in Qwen2.5-7B base and instruct.",
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/running/1335",
+      "status": "running",
+      "title": "Ablations: why is the assistant context\u2192answer map much stronger than the fiction-character map (both survive template removal)?"
+    },
+    "1336": {
+      "goal": "Determine whether RLVR-style RL post-training changes the linear context\u2192answer-profile map more than SFT/DPO post-training, using a released separated-stage ladder (primary candidate: Llama-3.1-8B base \u2192 Tulu-3-8B-SFT \u2192 Tulu-3-8B-DPO \u2192 Tulu-3-8B post-RLVR) \u2014 per stage, measure (a) within-stage held-out R\u00b2 of the per-example ridge map c_x \u2192 v(x) (#779/#825 recipe, prefix AND context arms) and (b) the #825 Result-2 reparameterization gap (within-stage R\u00b2 minus reparameterized-base-map R\u00b2 on identical text), testing whether the gap grows specifically at the RLVR stage (teaching) vs stays \u22480 at all stages (elicitation) vs grows uniformly with post-training depth.",
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/running/1336",
+      "status": "running",
+      "title": "Does RLVR post-training change the base\u2192post-trained context\u2192answer map more than SFT/DPO? (separated-stage ladder)"
+    },
+    "1337": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1337",
+      "status": "completed",
+      "title": "workflow-fix: step9c scratch oracle for file-anchored scan tests"
+    },
+    "1338": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1338",
+      "status": "completed",
+      "title": "workflow-fix: crash-persist harvests per-run logs before oversized-dir skip"
+    },
+    "1339": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1339",
+      "status": "completed",
+      "title": "workflow-fix: chunk crash-persist eval_results uploads (504 on 29k-file commit)"
     },
     "134": {
       "has_clean_result": false,
@@ -2617,12 +2654,153 @@
       "status": "completed",
       "title": "is it more important to associate tokens or persona"
     },
+    "1340": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1340",
+      "status": "completed",
+      "title": "workflow-fix: gotchas bullet \u2014 single-arm smokes blind to per-arm seams"
+    },
+    "1341": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1341",
+      "status": "completed",
+      "title": "workflow-fix: watcher escalate-only pass for stale untracked root code drafts"
+    },
+    "1342": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1342",
+      "status": "completed",
+      "title": "workflow-fix: signature-bind fenced calls in the deferred-import sweep"
+    },
+    "1343": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1343",
+      "status": "completed",
+      "title": "workflow-fix: GCE crash-persist must verify uploads before persist=ok"
+    },
+    "1344": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1344",
+      "status": "completed",
+      "title": "workflow-fix: gotchas entry \u2014 smoke parity includes ZeRO-3 process width"
+    },
+    "1345": {
+      "goal": "Determine whether the assistant context\u2192answer map is the SAME linear operator across three framings holding the assistant persona constant \u2014 chat-template, plain User:/Assistant:, and an assistant/AI character in generic narrative-prose stories \u2014 via cross-regime operator transfer, aligned operator cosine, and general-linear reparameterization (the #825 Result-2.5 method), in Qwen2.5-7B base and instruct, distinguishing 'same map in different coordinates' from 'genuinely different map per framing.'",
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/running/1345",
+      "status": "running",
+      "title": "Is the assistant context\u2192answer map the same operator across framings? (chat template vs plain User:/Assistant: vs assistant-in-narrative-stories)"
+    },
+    "1346": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1346",
+      "status": "completed",
+      "title": "workflow-fix: width re-eval on FLOP-bound mid-run deviation relaunch"
+    },
+    "1347": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1347",
+      "status": "completed",
+      "title": "workflow-fix: fact-check HF reuse existence at the pinned revision"
+    },
+    "1348": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1348",
+      "status": "completed",
+      "title": "workflow-fix: gotchas.md \u2014 matplotlib errorbar offsets non-negative (clamp CI bounds)"
+    },
+    "1349": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1349",
+      "status": "completed",
+      "title": "workflow-fix: PASS_UNIFIED must cover non-cell smoke-axis min-N floors"
+    },
     "135": {
       "has_clean_result": false,
       "kind": "survey",
       "path": "tasks/completed/135",
       "status": "completed",
       "title": "Can we make the assistant persona more robust in post training or midtraining to prevent against jailbreaks --look at existing literature"
+    },
+    "1350": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/archived/1350",
+      "status": "archived",
+      "title": "workflow-fix: lane-portable REPO_ROOT guidance for --workload-cmd (WORKLOAD_ROOT is GCE-only)"
+    },
+    "1351": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1351",
+      "status": "completed",
+      "title": "workflow-fix: crash-persist worker-log sweep excludes committed repo content"
+    },
+    "1352": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1352",
+      "status": "completed",
+      "title": "workflow-fix: gotchas.md entry for concurrent-fanout shared-staging race"
+    },
+    "1353": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1353",
+      "status": "completed",
+      "title": "workflow-fix: gotchas entry \u2014 BPE-seam position-parity gate tail (carve-out, not threshold-loosen)"
+    },
+    "1354": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1354",
+      "status": "completed",
+      "title": "workflow-fix: gotchas.md entry for registry side effects lost on resume"
+    },
+    "1355": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1355",
+      "status": "completed",
+      "title": "workflow-fix: gotchas.md \u2014 production-n-calibrated gates bind at smoke n"
+    },
+    "1356": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1356",
+      "status": "completed",
+      "title": "workflow-fix: gotchas \u2014 pid-namespace vLLM EngineCore reap variant"
+    },
+    "1357": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1357",
+      "status": "completed",
+      "title": "workflow-fix: upload-policy.md \u2014 verify-path Hub calls ride retry_transient + prefix listings"
+    },
+    "1358": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1358",
+      "status": "completed",
+      "title": "workflow-fix: gotchas BPE-seam entry \u2014 plain-text boundaries + smoke composition"
+    },
+    "1359": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1359",
+      "status": "completed",
+      "title": "workflow-fix: upload-policy \u2014 bounded retry before fail-loud on no-path uploads"
     },
     "136": {
       "has_clean_result": false,
@@ -2631,12 +2809,110 @@
       "status": "archived",
       "title": "See if you have a persona prompt with another response from another persona-> does that elicit the marker (do both directions)"
     },
+    "1360": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1360",
+      "status": "completed",
+      "title": "hub.py::_upload: bounded transport-class retry (429/Xet queue-full) before no-path return"
+    },
+    "1361": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1361",
+      "status": "completed",
+      "title": "workflow-fix: gotchas entry \u2014 pod git 403 with valid token, bundle sideload"
+    },
+    "1362": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1362",
+      "status": "completed",
+      "title": "workflow-fix: gotchas.md \u2014 bf16 determinism re-capture bar variant (#1005)"
+    },
+    "1363": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1363",
+      "status": "completed",
+      "title": "workflow-fix: MALLOC_ARENA_MAX=2 in the canonical VM-launch env prefix"
+    },
+    "1364": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1364",
+      "status": "completed",
+      "title": "workflow-fix: analyzer CJK audit must cover judged install-instrument pools"
+    },
+    "1365": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1365",
+      "status": "completed",
+      "title": "workflow-fix: correct upload-policy.md #1315 root-cause clause post-#1360"
+    },
+    "1366": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/reviewing/1366",
+      "status": "reviewing",
+      "title": "workflow-fix: artifact-reuse check for parent-branch unmerged fixes + row-count reconciliation"
+    },
+    "1367": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1367",
+      "status": "completed",
+      "title": "workflow-fix: self-heal crash-truncated events.jsonl line on append"
+    },
+    "1368": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/running/1368",
+      "status": "running",
+      "title": "workflow-fix: verify_task_body WARN on 4+-sentence result paragraphs (v4)"
+    },
+    "1369": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/running/1369",
+      "status": "running",
+      "title": "workflow-fix: point HF_XET_CACHE/HF_HOME off the VM boot disk for all sessions"
+    },
     "137": {
       "has_clean_result": false,
       "kind": "experiment",
       "path": "tasks/on_hold/137",
       "status": "on_hold",
       "title": "Distribution of training prompts and how it affects leakage"
+    },
+    "1370": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1370",
+      "status": "proposed",
+      "title": "workflow-fix: footer Reused bullets must carry pinned paths (verify Check 35)"
+    },
+    "1371": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1371",
+      "status": "proposed",
+      "title": "workflow-fix: WARN on linked-not-embedded committed figures in Results"
+    },
+    "1372": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/running/1372",
+      "status": "running",
+      "title": "workflow-fix: opaque snake_case slug detection in body-discipline audit"
+    },
+    "1373": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1373",
+      "status": "proposed",
+      "title": "workflow-fix: v4 word-cap round-crediting misses plural/in-flight follow-up rounds"
     },
     "138": {
       "has_clean_result": true,
@@ -7766,7 +8042,7 @@
       "kind": "experiment",
       "path": "tasks/followups_running/825",
       "status": "followups_running",
-      "title": "The context\u2192answer-profile map exists in pretrained Qwen2.5-7B at ~87% of instruct strength, and the on-policy separator control's gap-closure is greedy-specific \u2014 it collapses under sampled decoding (MODERATE confidence)"
+      "title": "The context\u2192answer mapping is inherited from pretraining"
     },
     "826": {
       "has_clean_result": false,

@@ -1,0 +1,853 @@
+{
+  "commit": "f4b2bb1c60",
+  "created": "2026-07-15T22:44:05Z",
+  "figsize": [
+    6.5,
+    4.0
+  ],
+  "points": [
+    {
+      "training contexts (log scale)": 150000.0,
+      "held-out test R\u00b2 \u2191 better": 0.754355957580797,
+      "error": 0.010496008977849192,
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "training contexts (log scale)": 500000.0,
+      "held-out test R\u00b2 \u2191 better": 0.7608232696391413,
+      "error": 0.010064259297184741,
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "training contexts (log scale)": 963444.0,
+      "held-out test R\u00b2 \u2191 better": 0.7541708417500051,
+      "error": 0.009718381821250899,
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "training contexts (log scale)": 150000.0,
+      "held-out test R\u00b2 \u2191 better": 0.8026462127169326,
+      "error": 0.010496008977849192,
+      "_kind": "errorbar",
+      "_group": 3
+    },
+    {
+      "training contexts (log scale)": 500000.0,
+      "held-out test R\u00b2 \u2191 better": 0.8086346413981071,
+      "error": 0.010064259297184741,
+      "_kind": "errorbar",
+      "_group": 4
+    },
+    {
+      "training contexts (log scale)": 963444.0,
+      "held-out test R\u00b2 \u2191 better": 0.8066491770626244,
+      "error": 0.009718381821250899,
+      "_kind": "errorbar",
+      "_group": 5
+    },
+    {
+      "training contexts (log scale)": 150000.0,
+      "held-out test R\u00b2 \u2191 better": 0.7880526998314361,
+      "error": 0.010496008977849192,
+      "_kind": "errorbar",
+      "_group": 6
+    },
+    {
+      "training contexts (log scale)": 500000.0,
+      "held-out test R\u00b2 \u2191 better": 0.8074943555084623,
+      "error": 0.010064259297184741,
+      "_kind": "errorbar",
+      "_group": 7
+    },
+    {
+      "training contexts (log scale)": 963444.0,
+      "held-out test R\u00b2 \u2191 better": 0.810357605301357,
+      "error": 0.009718381821250899,
+      "_kind": "errorbar",
+      "_group": 8
+    },
+    {
+      "training contexts (log scale)": 150000.0,
+      "held-out test R\u00b2 \u2191 better": 0.7827398183090551,
+      "error": 0.010496008977849192,
+      "_kind": "errorbar",
+      "_group": 9
+    },
+    {
+      "training contexts (log scale)": 500000.0,
+      "held-out test R\u00b2 \u2191 better": 0.8057089660683882,
+      "error": 0.010064259297184741,
+      "_kind": "errorbar",
+      "_group": 10
+    },
+    {
+      "training contexts (log scale)": 963444.0,
+      "held-out test R\u00b2 \u2191 better": 0.8074532522918715,
+      "error": 0.009718381821250899,
+      "_kind": "errorbar",
+      "_group": 11
+    },
+    {
+      "training contexts (log scale)": 250.0,
+      "held-out test R\u00b2 \u2191 better": 0.5551777620840064,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "training contexts (log scale)": 250.0,
+      "held-out test R\u00b2 \u2191 better": 0.5629620469104961,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "training contexts (log scale)": 250.0,
+      "held-out test R\u00b2 \u2191 better": 0.5564119043598411,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "training contexts (log scale)": 500.0,
+      "held-out test R\u00b2 \u2191 better": 0.6123768738968952,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "training contexts (log scale)": 500.0,
+      "held-out test R\u00b2 \u2191 better": 0.6062521715678264,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "training contexts (log scale)": 500.0,
+      "held-out test R\u00b2 \u2191 better": 0.6049261772650265,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "training contexts (log scale)": 1000.0,
+      "held-out test R\u00b2 \u2191 better": 0.6527701626711251,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "training contexts (log scale)": 1000.0,
+      "held-out test R\u00b2 \u2191 better": 0.6486015895163614,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "training contexts (log scale)": 1000.0,
+      "held-out test R\u00b2 \u2191 better": 0.6485378760007741,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "training contexts (log scale)": 2000.0,
+      "held-out test R\u00b2 \u2191 better": 0.6810075046686599,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "training contexts (log scale)": 2000.0,
+      "held-out test R\u00b2 \u2191 better": 0.6796294319678848,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "training contexts (log scale)": 2000.0,
+      "held-out test R\u00b2 \u2191 better": 0.6846439783534765,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "training contexts (log scale)": 3600.0,
+      "held-out test R\u00b2 \u2191 better": 0.7054149303865586,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "training contexts (log scale)": 3600.0,
+      "held-out test R\u00b2 \u2191 better": 0.7054149303865586,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "training contexts (log scale)": 3600.0,
+      "held-out test R\u00b2 \u2191 better": 0.7054149303865586,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "training contexts (log scale)": 10000.0,
+      "held-out test R\u00b2 \u2191 better": 0.733781156314782,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "training contexts (log scale)": 50000.0,
+      "held-out test R\u00b2 \u2191 better": 0.7599992543132661,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "training contexts (log scale)": 250.0,
+      "held-out test R\u00b2 \u2191 better": 0.5731420082300488,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "training contexts (log scale)": 250.0,
+      "held-out test R\u00b2 \u2191 better": 0.5793180495330583,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "training contexts (log scale)": 250.0,
+      "held-out test R\u00b2 \u2191 better": 0.571587997406484,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "training contexts (log scale)": 500.0,
+      "held-out test R\u00b2 \u2191 better": 0.6305166577626515,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "training contexts (log scale)": 500.0,
+      "held-out test R\u00b2 \u2191 better": 0.6228979193907335,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "training contexts (log scale)": 500.0,
+      "held-out test R\u00b2 \u2191 better": 0.6232120445080382,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "training contexts (log scale)": 1000.0,
+      "held-out test R\u00b2 \u2191 better": 0.6724820649464193,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "training contexts (log scale)": 1000.0,
+      "held-out test R\u00b2 \u2191 better": 0.6693470785619815,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "training contexts (log scale)": 1000.0,
+      "held-out test R\u00b2 \u2191 better": 0.668767581805775,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "training contexts (log scale)": 2000.0,
+      "held-out test R\u00b2 \u2191 better": 0.6950955527792216,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "training contexts (log scale)": 2000.0,
+      "held-out test R\u00b2 \u2191 better": 0.6928885968513044,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "training contexts (log scale)": 2000.0,
+      "held-out test R\u00b2 \u2191 better": 0.6988972427021418,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "training contexts (log scale)": 3600.0,
+      "held-out test R\u00b2 \u2191 better": 0.7118060857224284,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "training contexts (log scale)": 3600.0,
+      "held-out test R\u00b2 \u2191 better": 0.711478331074149,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "training contexts (log scale)": 3600.0,
+      "held-out test R\u00b2 \u2191 better": 0.7101373196605153,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "training contexts (log scale)": 10000.0,
+      "held-out test R\u00b2 \u2191 better": 0.7338293377740359,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "training contexts (log scale)": 50000.0,
+      "held-out test R\u00b2 \u2191 better": 0.8066485186290843,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "training contexts (log scale)": 250.0,
+      "held-out test R\u00b2 \u2191 better": 0.4886508498780775,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "training contexts (log scale)": 250.0,
+      "held-out test R\u00b2 \u2191 better": 0.49622546308832705,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "training contexts (log scale)": 250.0,
+      "held-out test R\u00b2 \u2191 better": 0.49459466512171046,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "training contexts (log scale)": 500.0,
+      "held-out test R\u00b2 \u2191 better": 0.5610276859822385,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "training contexts (log scale)": 500.0,
+      "held-out test R\u00b2 \u2191 better": 0.5529045737754628,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "training contexts (log scale)": 500.0,
+      "held-out test R\u00b2 \u2191 better": 0.5499130348746804,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "training contexts (log scale)": 1000.0,
+      "held-out test R\u00b2 \u2191 better": 0.6130770638852662,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "training contexts (log scale)": 1000.0,
+      "held-out test R\u00b2 \u2191 better": 0.6111036980858354,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "training contexts (log scale)": 1000.0,
+      "held-out test R\u00b2 \u2191 better": 0.6121226462859157,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "training contexts (log scale)": 2000.0,
+      "held-out test R\u00b2 \u2191 better": 0.6561497147937685,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "training contexts (log scale)": 2000.0,
+      "held-out test R\u00b2 \u2191 better": 0.6543179639748915,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "training contexts (log scale)": 2000.0,
+      "held-out test R\u00b2 \u2191 better": 0.6591569834917469,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "training contexts (log scale)": 3600.0,
+      "held-out test R\u00b2 \u2191 better": 0.688401833219882,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "training contexts (log scale)": 3600.0,
+      "held-out test R\u00b2 \u2191 better": 0.688401833219882,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "training contexts (log scale)": 3600.0,
+      "held-out test R\u00b2 \u2191 better": 0.688401833219882,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "training contexts (log scale)": 10000.0,
+      "held-out test R\u00b2 \u2191 better": 0.7320515455215741,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "training contexts (log scale)": 50000.0,
+      "held-out test R\u00b2 \u2191 better": 0.7786064878860613,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "training contexts (log scale)": 250.0,
+      "held-out test R\u00b2 \u2191 better": 0.5126981666488857,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "training contexts (log scale)": 250.0,
+      "held-out test R\u00b2 \u2191 better": 0.5186564826448332,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "training contexts (log scale)": 250.0,
+      "held-out test R\u00b2 \u2191 better": 0.5118329172126437,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "training contexts (log scale)": 500.0,
+      "held-out test R\u00b2 \u2191 better": 0.5826124432609405,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "training contexts (log scale)": 500.0,
+      "held-out test R\u00b2 \u2191 better": 0.5764806441060313,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "training contexts (log scale)": 500.0,
+      "held-out test R\u00b2 \u2191 better": 0.5738054054367092,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "training contexts (log scale)": 1000.0,
+      "held-out test R\u00b2 \u2191 better": 0.6271215979631952,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "training contexts (log scale)": 1000.0,
+      "held-out test R\u00b2 \u2191 better": 0.6229239709510995,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "training contexts (log scale)": 1000.0,
+      "held-out test R\u00b2 \u2191 better": 0.6246082369451228,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "training contexts (log scale)": 2000.0,
+      "held-out test R\u00b2 \u2191 better": 0.662203027011179,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "training contexts (log scale)": 2000.0,
+      "held-out test R\u00b2 \u2191 better": 0.6606595482957873,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "training contexts (log scale)": 2000.0,
+      "held-out test R\u00b2 \u2191 better": 0.6656999838011344,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "training contexts (log scale)": 3600.0,
+      "held-out test R\u00b2 \u2191 better": 0.6908990831764306,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "training contexts (log scale)": 3600.0,
+      "held-out test R\u00b2 \u2191 better": 0.6908990831764306,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "training contexts (log scale)": 3600.0,
+      "held-out test R\u00b2 \u2191 better": 0.6908990831764306,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "training contexts (log scale)": 10000.0,
+      "held-out test R\u00b2 \u2191 better": 0.7275582819168156,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "training contexts (log scale)": 50000.0,
+      "held-out test R\u00b2 \u2191 better": 0.7578088305467056,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "training contexts (log scale)": 250.0,
+      "held-out test R\u00b2 \u2191 better": 0.5581839044514479,
+      "series": "Ridge (linear)",
+      "_kind": "line",
+      "_group": 36
+    },
+    {
+      "training contexts (log scale)": 500.0,
+      "held-out test R\u00b2 \u2191 better": 0.6078517409099161,
+      "series": "Ridge (linear)",
+      "_kind": "line",
+      "_group": 36
+    },
+    {
+      "training contexts (log scale)": 1000.0,
+      "held-out test R\u00b2 \u2191 better": 0.6499698760627536,
+      "series": "Ridge (linear)",
+      "_kind": "line",
+      "_group": 36
+    },
+    {
+      "training contexts (log scale)": 2000.0,
+      "held-out test R\u00b2 \u2191 better": 0.6817603049966737,
+      "series": "Ridge (linear)",
+      "_kind": "line",
+      "_group": 36
+    },
+    {
+      "training contexts (log scale)": 3600.0,
+      "held-out test R\u00b2 \u2191 better": 0.7054149303865586,
+      "series": "Ridge (linear)",
+      "_kind": "line",
+      "_group": 36
+    },
+    {
+      "training contexts (log scale)": 3600.0,
+      "held-out test R\u00b2 \u2191 better": 0.7054149303865586,
+      "_kind": "line",
+      "_group": 37
+    },
+    {
+      "training contexts (log scale)": 10000.0,
+      "held-out test R\u00b2 \u2191 better": 0.733781156314782,
+      "_kind": "line",
+      "_group": 37
+    },
+    {
+      "training contexts (log scale)": 50000.0,
+      "held-out test R\u00b2 \u2191 better": 0.7599992543132661,
+      "_kind": "line",
+      "_group": 37
+    },
+    {
+      "training contexts (log scale)": 150000.0,
+      "held-out test R\u00b2 \u2191 better": 0.754355957580797,
+      "_kind": "line",
+      "_group": 37
+    },
+    {
+      "training contexts (log scale)": 500000.0,
+      "held-out test R\u00b2 \u2191 better": 0.7608232696391413,
+      "_kind": "line",
+      "_group": 37
+    },
+    {
+      "training contexts (log scale)": 963444.0,
+      "held-out test R\u00b2 \u2191 better": 0.7541708417500051,
+      "_kind": "line",
+      "_group": 37
+    },
+    {
+      "training contexts (log scale)": 250.0,
+      "held-out test R\u00b2 \u2191 better": 0.5746826850565304,
+      "series": "RBF kernel ridge",
+      "_kind": "line",
+      "_group": 38
+    },
+    {
+      "training contexts (log scale)": 500.0,
+      "held-out test R\u00b2 \u2191 better": 0.6255422072204744,
+      "series": "RBF kernel ridge",
+      "_kind": "line",
+      "_group": 38
+    },
+    {
+      "training contexts (log scale)": 1000.0,
+      "held-out test R\u00b2 \u2191 better": 0.6701989084380586,
+      "series": "RBF kernel ridge",
+      "_kind": "line",
+      "_group": 38
+    },
+    {
+      "training contexts (log scale)": 2000.0,
+      "held-out test R\u00b2 \u2191 better": 0.6956271307775559,
+      "series": "RBF kernel ridge",
+      "_kind": "line",
+      "_group": 38
+    },
+    {
+      "training contexts (log scale)": 3600.0,
+      "held-out test R\u00b2 \u2191 better": 0.7111405788190309,
+      "series": "RBF kernel ridge",
+      "_kind": "line",
+      "_group": 38
+    },
+    {
+      "training contexts (log scale)": 3600.0,
+      "held-out test R\u00b2 \u2191 better": 0.7111405788190309,
+      "_kind": "line",
+      "_group": 39
+    },
+    {
+      "training contexts (log scale)": 10000.0,
+      "held-out test R\u00b2 \u2191 better": 0.7338293377740359,
+      "_kind": "line",
+      "_group": 39
+    },
+    {
+      "training contexts (log scale)": 50000.0,
+      "held-out test R\u00b2 \u2191 better": 0.8066485186290843,
+      "_kind": "line",
+      "_group": 39
+    },
+    {
+      "training contexts (log scale)": 150000.0,
+      "held-out test R\u00b2 \u2191 better": 0.8026462127169326,
+      "_kind": "line",
+      "_group": 39
+    },
+    {
+      "training contexts (log scale)": 500000.0,
+      "held-out test R\u00b2 \u2191 better": 0.8086346413981071,
+      "_kind": "line",
+      "_group": 39
+    },
+    {
+      "training contexts (log scale)": 963444.0,
+      "held-out test R\u00b2 \u2191 better": 0.8066491770626244,
+      "_kind": "line",
+      "_group": 39
+    },
+    {
+      "training contexts (log scale)": 250.0,
+      "held-out test R\u00b2 \u2191 better": 0.49315699269603835,
+      "series": "MLP (width 8192)",
+      "_kind": "line",
+      "_group": 40
+    },
+    {
+      "training contexts (log scale)": 500.0,
+      "held-out test R\u00b2 \u2191 better": 0.5546150982107939,
+      "series": "MLP (width 8192)",
+      "_kind": "line",
+      "_group": 40
+    },
+    {
+      "training contexts (log scale)": 1000.0,
+      "held-out test R\u00b2 \u2191 better": 0.6121011360856724,
+      "series": "MLP (width 8192)",
+      "_kind": "line",
+      "_group": 40
+    },
+    {
+      "training contexts (log scale)": 2000.0,
+      "held-out test R\u00b2 \u2191 better": 0.6565415540868024,
+      "series": "MLP (width 8192)",
+      "_kind": "line",
+      "_group": 40
+    },
+    {
+      "training contexts (log scale)": 3600.0,
+      "held-out test R\u00b2 \u2191 better": 0.6884018332198819,
+      "series": "MLP (width 8192)",
+      "_kind": "line",
+      "_group": 40
+    },
+    {
+      "training contexts (log scale)": 3600.0,
+      "held-out test R\u00b2 \u2191 better": 0.6884018332198819,
+      "_kind": "line",
+      "_group": 41
+    },
+    {
+      "training contexts (log scale)": 10000.0,
+      "held-out test R\u00b2 \u2191 better": 0.7320515455215741,
+      "_kind": "line",
+      "_group": 41
+    },
+    {
+      "training contexts (log scale)": 50000.0,
+      "held-out test R\u00b2 \u2191 better": 0.7786064878860613,
+      "_kind": "line",
+      "_group": 41
+    },
+    {
+      "training contexts (log scale)": 150000.0,
+      "held-out test R\u00b2 \u2191 better": 0.7880526998314361,
+      "_kind": "line",
+      "_group": 41
+    },
+    {
+      "training contexts (log scale)": 500000.0,
+      "held-out test R\u00b2 \u2191 better": 0.8074943555084623,
+      "_kind": "line",
+      "_group": 41
+    },
+    {
+      "training contexts (log scale)": 963444.0,
+      "held-out test R\u00b2 \u2191 better": 0.810357605301357,
+      "_kind": "line",
+      "_group": 41
+    },
+    {
+      "training contexts (log scale)": 250.0,
+      "held-out test R\u00b2 \u2191 better": 0.5143958555021209,
+      "series": "Ridge + MLP on residuals",
+      "_kind": "line",
+      "_group": 42
+    },
+    {
+      "training contexts (log scale)": 500.0,
+      "held-out test R\u00b2 \u2191 better": 0.5776328309345603,
+      "series": "Ridge + MLP on residuals",
+      "_kind": "line",
+      "_group": 42
+    },
+    {
+      "training contexts (log scale)": 1000.0,
+      "held-out test R\u00b2 \u2191 better": 0.6248846019531392,
+      "series": "Ridge + MLP on residuals",
+      "_kind": "line",
+      "_group": 42
+    },
+    {
+      "training contexts (log scale)": 2000.0,
+      "held-out test R\u00b2 \u2191 better": 0.6628541863693669,
+      "series": "Ridge + MLP on residuals",
+      "_kind": "line",
+      "_group": 42
+    },
+    {
+      "training contexts (log scale)": 3600.0,
+      "held-out test R\u00b2 \u2191 better": 0.6908990831764306,
+      "series": "Ridge + MLP on residuals",
+      "_kind": "line",
+      "_group": 42
+    },
+    {
+      "training contexts (log scale)": 3600.0,
+      "held-out test R\u00b2 \u2191 better": 0.6908990831764306,
+      "_kind": "line",
+      "_group": 43
+    },
+    {
+      "training contexts (log scale)": 10000.0,
+      "held-out test R\u00b2 \u2191 better": 0.7275582819168156,
+      "_kind": "line",
+      "_group": 43
+    },
+    {
+      "training contexts (log scale)": 50000.0,
+      "held-out test R\u00b2 \u2191 better": 0.7578088305467056,
+      "_kind": "line",
+      "_group": 43
+    },
+    {
+      "training contexts (log scale)": 150000.0,
+      "held-out test R\u00b2 \u2191 better": 0.7827398183090551,
+      "_kind": "line",
+      "_group": 43
+    },
+    {
+      "training contexts (log scale)": 500000.0,
+      "held-out test R\u00b2 \u2191 better": 0.8057089660683882,
+      "_kind": "line",
+      "_group": 43
+    },
+    {
+      "training contexts (log scale)": 963444.0,
+      "held-out test R\u00b2 \u2191 better": 0.8074532522918715,
+      "_kind": "line",
+      "_group": 43
+    },
+    {
+      "training contexts (log scale)": 150000.0,
+      "held-out test R\u00b2 \u2191 better": 0.7884349970424576,
+      "series": "MLP (width 32768)",
+      "_kind": "line",
+      "_group": 44
+    },
+    {
+      "training contexts (log scale)": 500000.0,
+      "held-out test R\u00b2 \u2191 better": 0.8098455085890691,
+      "series": "MLP (width 32768)",
+      "_kind": "line",
+      "_group": 44
+    },
+    {
+      "training contexts (log scale)": 963444.0,
+      "held-out test R\u00b2 \u2191 better": 0.8134195901944027,
+      "series": "MLP (width 32768)",
+      "_kind": "line",
+      "_group": 44
+    }
+  ],
+  "n_series": 45,
+  "total_points": 127,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Context\u2192answer map: held-out R\u00b2 vs training-set size",
+        "xlabel": "training contexts (log scale)",
+        "ylabel": "held-out test R\u00b2 \u2191 better",
+        "legend_labels": [
+          "Ridge (linear)",
+          "RBF kernel ridge",
+          "MLP (width 8192)",
+          "Ridge + MLP on residuals",
+          "MLP (width 32768)"
+        ],
+        "annotations": [
+          "Qwen-2.5-7B-Instruct, L19, last-token \u2192 mean-answer; fixed 1,000-ctx test.\n963k point: mixed LMSYS+WildChat; KRR \u2265150k = Nystr\u00f6m m=16,384.\nDash-dot: single-draw reliability ceiling (0.947)."
+        ],
+        "xticklabels": [
+          "250",
+          "1k",
+          "10k",
+          "50k",
+          "500k"
+        ],
+        "yticklabels": [
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7",
+          "0.8",
+          "0.9",
+          "1.0"
+        ]
+      }
+    ],
+    "series": [
+      "Ridge (linear)",
+      "RBF kernel ridge",
+      "MLP (width 8192)",
+      "Ridge + MLP on residuals",
+      "MLP (width 32768)"
+    ]
+  }
+}

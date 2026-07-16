@@ -1141,10 +1141,21 @@ def test_vllm_resource_key_shares_one_engine_across_lora_checkpoints(tmp_path):
     def key(p):
         return org_mod._vllm_resource_key(p, _is_full_model_dir)
 
-    # Every LoRA adapter path -> the ONE sentinel key; base/full keep identity.
-    assert key(str(lora_a)) == key(str(lora_b)) == org_mod._SHARED_LORA_ENGINE_KEY
+    # Every LoRA adapter path -> the ONE rank-qualified sentinel key (default
+    # slot width 64); base/full keep identity keys.
+    shared_r64 = f"{org_mod._SHARED_LORA_ENGINE_KEY}:r{org_mod.DEFAULT_MAX_LORA_RANK}"
+    assert key(str(lora_a)) == key(str(lora_b)) == shared_r64
+    assert org_mod._is_shared_lora_key(shared_r64)
     assert key(None) is None
     assert key(str(full)) == str(full)
+    # #1090 fu5 D2 item 2: max_lora_rank is PART of the engine-identity key —
+    # a 256-slot engine is never silently shared with a 64-slot expectation.
+    key_r256 = org_mod._vllm_resource_key(str(lora_a), _is_full_model_dir, max_lora_rank=256)
+    assert key_r256 == f"{org_mod._SHARED_LORA_ENGINE_KEY}:r256"
+    assert key_r256 != shared_r64
+    assert org_mod._is_shared_lora_key(key_r256)
+    assert not org_mod._is_shared_lora_key(None)
+    assert not org_mod._is_shared_lora_key(str(full))
 
     # Combined with the lifecycle holder: consecutive LoRA checkpoints build
     # the engine exactly ONCE; lora -> base and base -> full-model each
@@ -1158,10 +1169,10 @@ def test_vllm_resource_key_shares_one_engine_across_lora_checkpoints(tmp_path):
     holder = org_mod._SingleLiveResource(build, lambda v: events.append(("teardown", v)))
     holder.get(key(str(lora_a)))
     holder.get(key(str(lora_b)))  # same sentinel key: reuse, NO rebuild
-    assert events == [("build", org_mod._SHARED_LORA_ENGINE_KEY)]
+    assert events == [("build", shared_r64)]
     holder.get(key(None))  # lora-mode -> base: teardown first, then rebuild
     assert events[1:] == [
-        ("teardown", f"engine-{org_mod._SHARED_LORA_ENGINE_KEY}"),
+        ("teardown", f"engine-{shared_r64}"),
         ("build", None),
     ]
     holder.get(key(str(full)))  # base -> full-model dir: teardown + rebuild

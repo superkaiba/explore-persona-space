@@ -79,6 +79,7 @@
 - [Both-nulls conjunction w/ inflated null](feedback_both_nulls_conjunction_inflated_null.md) — Concern iff per-null numbers ship (#551)
 - [Mindist reparam asymmetric](feedback_mindist_reparam_asymmetric.md) — NEAR min-dist shrinks 37% vs FAR 8.5%; direction can flip (#478)
 - [Re-judge / DV-correction rounds](feedback_rejudge_proxy_amendment_alternatives.md) — drift/denominator split; refusal tracks harm 5x (#591)
+- [Span-pair swap-control audit](feedback_span_pair_swap_control_audit.md) — correct-vs-swap ΔR²: proximity linkage, C own-speech contamination, subset match, generic-map reference (#931)
 
 ## Panel composition / axis conflation
 - [Neutral-prompt axis-conflation](feedback_neutral_prompt_axis_conflation.md) — "neutral" = an evaluated persona's prompt; grep personas.py (#267)

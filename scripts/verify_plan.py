@@ -80,12 +80,14 @@ Check catalog (id — classification — kind scope)
       retention policy                                    analysis
   c34 verbatim insert vs        WARN-only, conditional    infra + batch only
       ratchet headroom
+  c35 revision-pinned reuse     WARN-only, conditional    experiment +
+      verified at pin                                     analysis
 
 Kind-exempt checks render as [SKIP] (first-class status, distinguishable
 from genuine passes — the calibration report needs n_skip separate from
 n_pass). Conditional checks (4, 6, 7, 10, 11, 12, 13, 14, 15, 16, 17, 18,
-19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34) also SKIP
-when their content trigger does not fire.
+19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35) also
+SKIP when their content trigger does not fire.
 Check 23 runs OUTSIDE ``verify_plan_text()`` — it needs task context
 (``body.md`` + ``events.jsonl``), so ``main()`` appends it in ``--issue``
 mode only and renders it SKIP in ``--plan-file`` mode; its WARN is the one
@@ -132,6 +134,7 @@ labeled-line forms):
   - ``N/A — no per-rung checkpoint persistence`` / alias
     ``N/A — no checkpoint ladder`` (check 33)
   - ``N/A — no verbatim ratcheted-file insertion`` (check 34)
+  - ``N/A — no revision-pinned reuse`` (check 35)
 
 WARN semantics: a WARN never blocks exit (exit 0). The Phase 1.5.0 wiring
 carries WARN lines verbatim into the fact-checker + critic briefs — that
@@ -833,7 +836,13 @@ def check_reuse_fitness(plan: str, kind: str) -> CheckResult:
     attestations (a)-(j) (.claude/rules/artifact-reuse.md). WARN not FAIL:
     trigger and item-detection are both heuristic, and the demonstrated
     failure modes (#545/#600/#601) are semantic — the gate's value is
-    forcing the section to exist and naming the ten letters."""
+    forcing the section to exist and naming the ten letters.
+
+    Accepted declaration shapes (#1314): the historical 'fitness'
+    vocabulary, a 'reuse map' / 'reuse-map' section (the #1090 v7
+    '### D3 — Reuse map' shape; artifact-reuse.md's own term for the
+    plan record), '(self-)attestation(s)', or the literal (a)-(j) range
+    token (hyphen / en-dash / em-dash / ellipsis)."""
     cid, name = "c6_reuse_fitness", "reused-artifact fitness attestation"
     if kind != "experiment":
         return _skip(cid, name, "kind-exempt")
@@ -849,25 +858,35 @@ def check_reuse_fitness(plan: str, kind: str) -> CheckResult:
         return _skip(cid, name, "no HF-artifact reuse detected")
     if _standalone_na_declared(plan, r"no (?:artifact )?reuse"):
         return _pass(cid, name, "explicit no-reuse declaration (N/A — no artifact reuse)")
-    fitness = re.search(r"(?i)fitness", text)
+    declaration = re.search(
+        r"(?i)fitness"  # historical vocabulary (the pre-#1314 detector, unchanged)
+        r"|reuse[- ]map"  # 'Reuse map' section shape (#1090 v7 D3; artifact-reuse.md's own term)
+        r"|(?:self[- ])?attestation"  # 'self-attestation' / 'attestation(s)'
+        r"|\(a\)\s*[-–—…]\s*\(j\)",  # (a)-(j) range token; en-dash in real plans  # noqa: RUF001
+        text,
+    )
     letters = {m.group(1) for m in re.finditer(r"\(([a-j])\)", text)}
-    if fitness and len(letters) >= 4:
-        return _pass(cid, name, f"fitness check present ({len(letters)}/10 lettered items spotted)")
-    if fitness:
+    if declaration and len(letters) >= 4:
+        return _pass(
+            cid,
+            name,
+            f"fitness/reuse-map declaration present ({len(letters)}/10 lettered items spotted)",
+        )
+    if declaration:
         return _warn(
             cid,
             name,
-            f"fitness vocabulary present but only {len(letters)} of the (a)–(j) items "  # noqa: RUF001
-            "detectable — verify all ten attestations (recipe/regime/cells/single-var/"
-            "hub-resolution/content-identity/scaling/backend-fetchability/code-throughput/"
-            "pair-provenance) "
-            "before approval",
+            f"fitness/reuse-map declaration vocabulary present but only {len(letters)} of the "
+            "(a)–(j) items detectable — verify all ten attestations (recipe/regime/cells/"  # noqa: RUF001
+            "single-var/hub-resolution/content-identity/scaling/backend-fetchability/"
+            "code-throughput/pair-provenance) before approval",
         )
     return _warn(
         cid,
         name,
-        "plan reuses HF artifacts but no fitness check found — CLAUDE.md reuse rule requires "
-        "attestations (a)–(j); consistency-checker + Methodology critic must gate this",  # noqa: RUF001
+        "plan reuses HF artifacts but no fitness check / (a)–(j) reuse-map attestation found — "  # noqa: RUF001
+        "CLAUDE.md reuse rule requires attestations (a)–(j); consistency-checker + Methodology "  # noqa: RUF001
+        "critic must gate this",
     )
 
 
@@ -5687,6 +5706,92 @@ def check_ratchet_headroom(plan: str, kind: str) -> CheckResult:
     return _pass(cid, name, f"{checked} ratcheted-file insert(s) fit remaining headroom")
 
 
+# ─── Check 35 — revision-pinned reuse verified at the pin (WARN-only) ──────
+
+# Trigger: a 40-hex token with revision/pin vocabulary within +/-120 chars,
+# HF-context AND reuse vocabulary within +/-300 chars (the c6/c30 proximity
+# convention), scanning STRIPPED prose. The revision-vocab window is what
+# keeps git code SHAs (Repro-card `commit=<sha>` rows) out; the HF-context
+# window keeps "pinned to commit <sha>" git rows out (#1345 shape only).
+_C35_HEX40_RE = re.compile(r"\b[0-9a-f]{40}\b")
+_C35_REV_VOCAB_RE = re.compile(r"(?i)\brevision\b|\bpin(?:ned|s)?\b")
+_C35_HF_CTX_RE = re.compile(
+    r"(?i)superkaiba1/|hf_hub_download|huggingface|hf (?:model|data) repo"
+    r"|list_repo_(?:files|tree)|snapshot_download|repo_id|repo_type"
+)
+_C35_REUSE_RE = re.compile(r"(?i)\breus\w*|\binherit\w*")
+_C35_REV_WIN, _C35_CTX_WIN = 120, 300
+# Satisfiers scan RAW text (c30 convention: runnable probe commands
+# legitimately live in fenced blocks): a Hub-probe callable with a
+# `revision=` kwarg on the same line, or a prose verified-at-pin statement.
+# `get_paths_info` is deliberately EXCLUDED: the artifact-reuse item-(j)
+# pairwise-provenance boilerplate (`get_paths_info(expand=True,
+# revision=...)`) verifies commit-DATE coherence, not existence-at-pin, and
+# it sits in standard §10 rows — including it blinded the check to its own
+# motivating incident (#1345 plan v3 line 446).
+_C35_PROBE_SATISFIER_RE = re.compile(
+    r"(?i)(?:list_repo_(?:tree|files)|file_exists|hf_hub_download)"
+    r"[^\n]{0,200}\brevision\s*[=:]"
+)
+_C35_PROSE_SATISFIER_RE = re.compile(
+    r"(?i)verif\w+[^\n]{0,120}\bat\s+(?:the\s+)?(?:pinned\s+)?revision\b"
+)
+
+
+def check_pinned_revision_reuse(plan: str, kind: str) -> CheckResult:
+    """Plans reusing an HF artifact at a pinned 40-hex revision must name a
+    revision-scoped existence verification (incident #1345: a default-branch
+    probe read CONFIRMED while 2/4 stems returned 0 files at the pin). WARN
+    not FAIL: 'reuse row' detection is heuristic (same class as c6/c30), and
+    the semantic question — was the probe actually RUN, per stem, at the pin
+    — stays with the fact-checker (SKILL.md Phase 1.5).
+
+    Disclosed FALSE-NEGATIVE residuals — a SKIP is never read as coverage:
+    short-hex pins (7-12 hex, e.g. #1345 v4's 10-hex pin), branch/tag pins
+    (non-hex revisions), and pins held only in a code constant (zero hex in
+    the plan prose) do not trigger — the fact-checker instruction ("read the
+    actual code/config") is the coverage for the constant case; a
+    revision-threaded `hf_hub_download` CONSUME recipe satisfies without a
+    stated probe (the disclosed consume residual). The WARN detail below is
+    deliberately satisfier-inert (no Hub-callable + `revision=` on one line,
+    no 'verif...at...revision' shape): bounced plans paste verifier details
+    verbatim, and a self-matching detail would false-PASS exactly the
+    flagged-then-revised plans (the #810 spurious-satisfaction shape) —
+    pinned by test_c35_warn_detail_matches_no_satisfier."""
+    cid, name = "c35_pinned_revision_reuse", "revision-pinned reuse verified at pin"
+    if kind not in ("experiment", "analysis"):
+        return _skip(cid, name, "kind-exempt")
+    text = strip_fences(plan)
+    pinned_reuse = False
+    for m in _C35_HEX40_RE.finditer(text):
+        w_rev = text[max(0, m.start() - _C35_REV_WIN) : m.end() + _C35_REV_WIN]
+        w_ctx = text[max(0, m.start() - _C35_CTX_WIN) : m.end() + _C35_CTX_WIN]
+        if (
+            _C35_REV_VOCAB_RE.search(w_rev)
+            and _C35_HF_CTX_RE.search(w_ctx)
+            and _C35_REUSE_RE.search(w_ctx)
+        ):
+            pinned_reuse = True
+            break
+    if not pinned_reuse:
+        return _skip(cid, name, "no revision-pinned HF reuse detected")
+    if _standalone_na_declared(plan, r"no revision[- ]pinned reuse"):
+        return _pass(cid, name, "explicit no-pinned-reuse declaration")
+    if _C35_PROBE_SATISFIER_RE.search(plan) or _C35_PROSE_SATISFIER_RE.search(plan):
+        return _pass(cid, name, "revision-scoped existence verification named")
+    return _warn(
+        cid,
+        name,
+        "plan reuses an HF artifact at a pinned 40-hex revision but names no "
+        "revision-scoped existence check - probe each named stem with the revision "
+        "kwarg set to the pin (list_repo_tree scoped to the stem prefix on the "
+        "~1M-file data repo, or list_repo_files on small repos; >=1 file per stem); "
+        "a default-branch probe does NOT satisfy (incident #1345: 2/4 stems returned "
+        "0 files at the pin); or declare `N/A - no revision-pinned reuse` on its own "
+        "line, unwrapped",
+    )
+
+
 # ─── Driver ────────────────────────────────────────────────────────────────
 
 CHECKS = [
@@ -5723,6 +5828,7 @@ CHECKS = [
     check_fit_basis_grounding,
     check_ladder_retention,
     check_ratchet_headroom,
+    check_pinned_revision_reuse,
 ]
 
 

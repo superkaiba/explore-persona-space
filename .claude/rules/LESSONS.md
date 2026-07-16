@@ -25,7 +25,7 @@ Row grammar: `- <rule>.md — <fires-when trigger>`
 - data-realism.md — a plan picks training/eval/probe data (strict 4-tier preference order; justify tier 3/4).
 - diff-size-budget.md — reading a branch-wide diff BODY (size first; >300 KB: round-scope it).
 - experiment-guidelines.md — you plan/implement a `workflow: v2` experiment (guideline index → full rules + v2 critic owners).
-- gotchas.md — you write/debug training/eval/orchestration/analysis code or an Anthropic request-builder seam; launch GPU workers / multi-GPU/vLLM fan-outs, incl. via train_lora/merge_lora (CVD clobber, EDQUOT/wedge, teardown, handshake timeout); diagnose silent deaths (exit-137, rc=134); parse JSONL; feed real corpora to vLLM; write real-corpus streaming filters / a corpus builder; or build a teacher-forced capture rig (BPE seams).
+- gotchas.md — you write/debug training/eval/orchestration/analysis code or an Anthropic request-builder seam; launch GPU workers / multi-GPU/vLLM fan-outs, incl. via train_lora/merge_lora (CVD clobber, smoke width, EDQUOT/wedge, teardown+pid-namespace reap, handshake timeout); diagnose silent deaths (exit-137, rc=134); parse JSONL; feed real corpora to vLLM; write real-corpus streaming filters / a corpus builder; or build/smoke a teacher-forced capture rig (BPE seams); write errorbar/CI figure code (xerr/yerr).
 - lens-coverage-map.md — you split, retire, or add a review lens (v2 lens→owner ledger; `--check-lens-coverage`).
 - llm-judging.md — a plan/code designs/writes an LLM-judged behavior DV (graded 0-100 primary; one Sonnet judge; drop-never-coerce; retry transport errors; rubric-keyed caches; rationale-sized max_tokens).
 - marker-leakage-measurement.md — a plan/code MEASURES marker leakage (on-policy, marker-at-end, three-space DV).
@@ -42,8 +42,8 @@ Row grammar: `- <rule>.md — <fires-when trigger>`
 - research-project-structure.md — you write result artifacts / results index / queue (one source of truth per layer).
 - selection-symmetric-nulls.md — a headline max/argmax/top-k over a free axis vs a null band (inherit selection per draw or freeze held-out; band vs DV ceiling).
 - trigger-dense-review.md — reviewing/reconciling a guard/security artifact or refusal corpus (findings by reference; verdict first; windowed reads).
-- upload-policy.md — you write training/Hub/sweep code (Hub-API verification, delete-after-eval persist, quota-403 recovery, upload-wedge ladder).
-- vectorize-many-cell-fits.md — many-cell GD, dense fits (svd/eigh/lstsq/ridge), or a perm/bootstrap/null-draw battery over a fixed pool (VECTORIZE first; detached+checkpointed VM fits; Supersede contract incl. mid-run ≥2×-deviation).
+- upload-policy.md — you write training/Hub/sweep code (Hub-API verification + verify-path transport retry, delete-after-eval persist, quota-403 recovery, upload-wedge ladder).
+- vectorize-many-cell-fits.md — many-cell GD, dense fits (svd/eigh/lstsq/ridge), or a perm/bootstrap/null-draw battery over a fixed pool (VECTORIZE first; detached+checkpointed VM fits; Supersede contract incl. mid-run ≥2×-deviation + width re-eval).
 - workflow-fix-on-bug.md — any agent hits a bug from a gap in the workflow surface itself (emit a `workflow-fix-candidate`).
 - agents-vs-skills.md — you create/restructure anything under `.claude/` (decide agent vs skill).
 

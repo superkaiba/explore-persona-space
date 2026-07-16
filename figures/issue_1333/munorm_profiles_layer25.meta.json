@@ -1,0 +1,1755 @@
+{
+  "commit": "2a8e9e1673",
+  "created": "2026-07-15T20:45:42Z",
+  "figsize": [
+    10.5,
+    4.3
+  ],
+  "points": [
+    {
+      "Decoder layer": 0.0,
+      "Mean-shift norm \u2016\u03bc\u2016": 0.12805144488811493,
+      "series": "LoRA + negatives",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Decoder layer": 1.0,
+      "Mean-shift norm \u2016\u03bc\u2016": 0.20553289353847504,
+      "series": "LoRA + negatives",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Decoder layer": 2.0,
+      "Mean-shift norm \u2016\u03bc\u2016": 0.2947476804256439,
+      "series": "LoRA + negatives",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Decoder layer": 3.0,
+      "Mean-shift norm \u2016\u03bc\u2016": 0.4077705144882202,
+      "series": "LoRA + negatives",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Decoder layer": 4.0,
+      "Mean-shift norm \u2016\u03bc\u2016": 0.4952874183654785,
+      "series": "LoRA + negatives",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Decoder layer": 5.0,
+      "Mean-shift norm \u2016\u03bc\u2016": 0.5964822769165039,
+      "series": "LoRA + negatives",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Decoder layer": 6.0,
+      "Mean-shift norm \u2016\u03bc\u2016": 0.6843671202659607,
+      "series": "LoRA + negatives",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Decoder layer": 7.0,
+      "Mean-shift norm \u2016\u03bc\u2016": 0.8878576159477234,
+      "series": "LoRA + negatives",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Decoder layer": 8.0,
+      "Mean-shift norm \u2016\u03bc\u2016": 1.0472817420959473,
+      "series": "LoRA + negatives",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Decoder layer": 9.0,
+      "Mean-shift norm \u2016\u03bc\u2016": 1.1977667808532715,
+      "series": "LoRA + negatives",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Decoder layer": 10.0,
+      "Mean-shift norm \u2016\u03bc\u2016": 1.2515090703964233,
+      "series": "LoRA + negatives",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Decoder layer": 11.0,
+      "Mean-shift norm \u2016\u03bc\u2016": 1.2804443836212158,
+      "series": "LoRA + negatives",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Decoder layer": 12.0,
+      "Mean-shift norm \u2016\u03bc\u2016": 1.339220643043518,
+      "series": "LoRA + negatives",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Decoder layer": 13.0,
+      "Mean-shift norm \u2016\u03bc\u2016": 1.3635817766189575,
+      "series": "LoRA + negatives",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Decoder layer": 14.0,
+      "Mean-shift norm \u2016\u03bc\u2016": 1.5338411331176758,
+      "series": "LoRA + negatives",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Decoder layer": 15.0,
+      "Mean-shift norm \u2016\u03bc\u2016": 1.789129376411438,
+      "series": "LoRA + negatives",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Decoder layer": 16.0,
+      "Mean-shift norm \u2016\u03bc\u2016": 1.8791481256484985,
+      "series": "LoRA + negatives",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Decoder layer": 17.0,
+      "Mean-shift norm \u2016\u03bc\u2016": 2.004765510559082,
+      "series": "LoRA + negatives",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Decoder layer": 18.0,
+      "Mean-shift norm \u2016\u03bc\u2016": 2.2568249702453613,
+      "series": "LoRA + negatives",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Decoder layer": 19.0,
+      "Mean-shift norm \u2016\u03bc\u2016": 3.6192238330841064,
+      "series": "LoRA + negatives",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Decoder layer": 20.0,
+      "Mean-shift norm \u2016\u03bc\u2016": 4.083017826080322,
+      "series": "LoRA + negatives",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Decoder layer": 21.0,
+      "Mean-shift norm \u2016\u03bc\u2016": 4.68717098236084,
+      "series": "LoRA + negatives",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Decoder layer": 22.0,
+      "Mean-shift norm \u2016\u03bc\u2016": 5.482322692871094,
+      "series": "LoRA + negatives",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Decoder layer": 23.0,
+      "Mean-shift norm \u2016\u03bc\u2016": 6.791077613830566,
+      "series": "LoRA + negatives",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Decoder layer": 24.0,
+      "Mean-shift norm \u2016\u03bc\u2016": 8.151466369628906,
+      "series": "LoRA + negatives",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Decoder layer": 25.0,
+      "Mean-shift norm \u2016\u03bc\u2016": 9.065836906433105,
+      "series": "LoRA + negatives",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Decoder layer": 26.0,
+      "Mean-shift norm \u2016\u03bc\u2016": 12.071093559265137,
+      "series": "LoRA + negatives",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Decoder layer": 27.0,
+      "Mean-shift norm \u2016\u03bc\u2016": 15.905654907226562,
+      "series": "LoRA + negatives",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Decoder layer": 0.0,
+      "Mean-shift norm \u2016\u03bc\u2016": 0.03581629693508148,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Decoder layer": 1.0,
+      "Mean-shift norm \u2016\u03bc\u2016": 0.060482583940029144,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Decoder layer": 2.0,
+      "Mean-shift norm \u2016\u03bc\u2016": 0.07997913658618927,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Decoder layer": 3.0,
+      "Mean-shift norm \u2016\u03bc\u2016": 0.09830942749977112,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Decoder layer": 4.0,
+      "Mean-shift norm \u2016\u03bc\u2016": 0.11077883094549179,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Decoder layer": 5.0,
+      "Mean-shift norm \u2016\u03bc\u2016": 0.11564938724040985,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Decoder layer": 6.0,
+      "Mean-shift norm \u2016\u03bc\u2016": 0.13579349219799042,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Decoder layer": 7.0,
+      "Mean-shift norm \u2016\u03bc\u2016": 0.14884349703788757,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Decoder layer": 8.0,
+      "Mean-shift norm \u2016\u03bc\u2016": 0.1689126342535019,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Decoder layer": 9.0,
+      "Mean-shift norm \u2016\u03bc\u2016": 0.1764877587556839,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Decoder layer": 10.0,
+      "Mean-shift norm \u2016\u03bc\u2016": 0.204495370388031,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Decoder layer": 11.0,
+      "Mean-shift norm \u2016\u03bc\u2016": 0.21239131689071655,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Decoder layer": 12.0,
+      "Mean-shift norm \u2016\u03bc\u2016": 0.2303640991449356,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Decoder layer": 13.0,
+      "Mean-shift norm \u2016\u03bc\u2016": 0.2856251895427704,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Decoder layer": 14.0,
+      "Mean-shift norm \u2016\u03bc\u2016": 0.32385870814323425,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Decoder layer": 15.0,
+      "Mean-shift norm \u2016\u03bc\u2016": 0.5499887466430664,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Decoder layer": 16.0,
+      "Mean-shift norm \u2016\u03bc\u2016": 0.5790959000587463,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Decoder layer": 17.0,
+      "Mean-shift norm \u2016\u03bc\u2016": 0.6388359665870667,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Decoder layer": 18.0,
+      "Mean-shift norm \u2016\u03bc\u2016": 0.8310694098472595,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Decoder layer": 19.0,
+      "Mean-shift norm \u2016\u03bc\u2016": 1.6826647520065308,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Decoder layer": 20.0,
+      "Mean-shift norm \u2016\u03bc\u2016": 1.8411195278167725,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Decoder layer": 21.0,
+      "Mean-shift norm \u2016\u03bc\u2016": 2.116405963897705,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Decoder layer": 22.0,
+      "Mean-shift norm \u2016\u03bc\u2016": 2.4246671199798584,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Decoder layer": 23.0,
+      "Mean-shift norm \u2016\u03bc\u2016": 3.1335511207580566,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Decoder layer": 24.0,
+      "Mean-shift norm \u2016\u03bc\u2016": 3.9925127029418945,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Decoder layer": 25.0,
+      "Mean-shift norm \u2016\u03bc\u2016": 4.60767936706543,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Decoder layer": 26.0,
+      "Mean-shift norm \u2016\u03bc\u2016": 7.044241428375244,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Decoder layer": 27.0,
+      "Mean-shift norm \u2016\u03bc\u2016": 9.563850402832031,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Decoder layer": 0.0,
+      "Mean-shift norm \u2016\u03bc\u2016": 0.12650926411151886,
+      "series": "LoRA positives-only",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Decoder layer": 1.0,
+      "Mean-shift norm \u2016\u03bc\u2016": 0.1963057667016983,
+      "series": "LoRA positives-only",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Decoder layer": 2.0,
+      "Mean-shift norm \u2016\u03bc\u2016": 0.2766982913017273,
+      "series": "LoRA positives-only",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Decoder layer": 3.0,
+      "Mean-shift norm \u2016\u03bc\u2016": 0.38331368565559387,
+      "series": "LoRA positives-only",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Decoder layer": 4.0,
+      "Mean-shift norm \u2016\u03bc\u2016": 0.47730132937431335,
+      "series": "LoRA positives-only",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Decoder layer": 5.0,
+      "Mean-shift norm \u2016\u03bc\u2016": 0.5286269783973694,
+      "series": "LoRA positives-only",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Decoder layer": 6.0,
+      "Mean-shift norm \u2016\u03bc\u2016": 0.6203323602676392,
+      "series": "LoRA positives-only",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Decoder layer": 7.0,
+      "Mean-shift norm \u2016\u03bc\u2016": 0.8050810694694519,
+      "series": "LoRA positives-only",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Decoder layer": 8.0,
+      "Mean-shift norm \u2016\u03bc\u2016": 0.9414787292480469,
+      "series": "LoRA positives-only",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Decoder layer": 9.0,
+      "Mean-shift norm \u2016\u03bc\u2016": 1.0610566139221191,
+      "series": "LoRA positives-only",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Decoder layer": 10.0,
+      "Mean-shift norm \u2016\u03bc\u2016": 1.1267268657684326,
+      "series": "LoRA positives-only",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Decoder layer": 11.0,
+      "Mean-shift norm \u2016\u03bc\u2016": 1.164223313331604,
+      "series": "LoRA positives-only",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Decoder layer": 12.0,
+      "Mean-shift norm \u2016\u03bc\u2016": 1.2099896669387817,
+      "series": "LoRA positives-only",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Decoder layer": 13.0,
+      "Mean-shift norm \u2016\u03bc\u2016": 1.2591251134872437,
+      "series": "LoRA positives-only",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Decoder layer": 14.0,
+      "Mean-shift norm \u2016\u03bc\u2016": 1.4103323221206665,
+      "series": "LoRA positives-only",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Decoder layer": 15.0,
+      "Mean-shift norm \u2016\u03bc\u2016": 1.6347951889038086,
+      "series": "LoRA positives-only",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Decoder layer": 16.0,
+      "Mean-shift norm \u2016\u03bc\u2016": 1.692663311958313,
+      "series": "LoRA positives-only",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Decoder layer": 17.0,
+      "Mean-shift norm \u2016\u03bc\u2016": 1.8271552324295044,
+      "series": "LoRA positives-only",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Decoder layer": 18.0,
+      "Mean-shift norm \u2016\u03bc\u2016": 2.073793411254883,
+      "series": "LoRA positives-only",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Decoder layer": 19.0,
+      "Mean-shift norm \u2016\u03bc\u2016": 3.2599899768829346,
+      "series": "LoRA positives-only",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Decoder layer": 20.0,
+      "Mean-shift norm \u2016\u03bc\u2016": 3.7472591400146484,
+      "series": "LoRA positives-only",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Decoder layer": 21.0,
+      "Mean-shift norm \u2016\u03bc\u2016": 4.286977767944336,
+      "series": "LoRA positives-only",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Decoder layer": 22.0,
+      "Mean-shift norm \u2016\u03bc\u2016": 5.008602619171143,
+      "series": "LoRA positives-only",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Decoder layer": 23.0,
+      "Mean-shift norm \u2016\u03bc\u2016": 6.156994819641113,
+      "series": "LoRA positives-only",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Decoder layer": 24.0,
+      "Mean-shift norm \u2016\u03bc\u2016": 7.262195110321045,
+      "series": "LoRA positives-only",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Decoder layer": 25.0,
+      "Mean-shift norm \u2016\u03bc\u2016": 8.238183975219727,
+      "series": "LoRA positives-only",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Decoder layer": 26.0,
+      "Mean-shift norm \u2016\u03bc\u2016": 10.355206489562988,
+      "series": "LoRA positives-only",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Decoder layer": 27.0,
+      "Mean-shift norm \u2016\u03bc\u2016": 13.439407348632812,
+      "series": "LoRA positives-only",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Decoder layer": 0.0,
+      "Mean-shift norm \u2016\u03bc\u2016": 0.02748965471982956,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Decoder layer": 1.0,
+      "Mean-shift norm \u2016\u03bc\u2016": 0.07057975977659225,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Decoder layer": 2.0,
+      "Mean-shift norm \u2016\u03bc\u2016": 0.08610732853412628,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Decoder layer": 3.0,
+      "Mean-shift norm \u2016\u03bc\u2016": 0.11004638671875,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Decoder layer": 4.0,
+      "Mean-shift norm \u2016\u03bc\u2016": 0.11958920955657959,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Decoder layer": 5.0,
+      "Mean-shift norm \u2016\u03bc\u2016": 0.11790231615304947,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Decoder layer": 6.0,
+      "Mean-shift norm \u2016\u03bc\u2016": 0.12834572792053223,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Decoder layer": 7.0,
+      "Mean-shift norm \u2016\u03bc\u2016": 0.12161901593208313,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Decoder layer": 8.0,
+      "Mean-shift norm \u2016\u03bc\u2016": 0.1462278515100479,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Decoder layer": 9.0,
+      "Mean-shift norm \u2016\u03bc\u2016": 0.1648796796798706,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Decoder layer": 10.0,
+      "Mean-shift norm \u2016\u03bc\u2016": 0.17793682217597961,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Decoder layer": 11.0,
+      "Mean-shift norm \u2016\u03bc\u2016": 0.17939330637454987,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Decoder layer": 12.0,
+      "Mean-shift norm \u2016\u03bc\u2016": 0.1916109025478363,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Decoder layer": 13.0,
+      "Mean-shift norm \u2016\u03bc\u2016": 0.24164359271526337,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Decoder layer": 14.0,
+      "Mean-shift norm \u2016\u03bc\u2016": 0.2610486149787903,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Decoder layer": 15.0,
+      "Mean-shift norm \u2016\u03bc\u2016": 0.41827377676963806,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Decoder layer": 16.0,
+      "Mean-shift norm \u2016\u03bc\u2016": 0.4264899492263794,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Decoder layer": 17.0,
+      "Mean-shift norm \u2016\u03bc\u2016": 0.4692281484603882,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Decoder layer": 18.0,
+      "Mean-shift norm \u2016\u03bc\u2016": 0.6141515374183655,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Decoder layer": 19.0,
+      "Mean-shift norm \u2016\u03bc\u2016": 1.4105279445648193,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Decoder layer": 20.0,
+      "Mean-shift norm \u2016\u03bc\u2016": 1.5623663663864136,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Decoder layer": 21.0,
+      "Mean-shift norm \u2016\u03bc\u2016": 1.7902806997299194,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Decoder layer": 22.0,
+      "Mean-shift norm \u2016\u03bc\u2016": 2.0692391395568848,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Decoder layer": 23.0,
+      "Mean-shift norm \u2016\u03bc\u2016": 2.633150100708008,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Decoder layer": 24.0,
+      "Mean-shift norm \u2016\u03bc\u2016": 3.2983834743499756,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Decoder layer": 25.0,
+      "Mean-shift norm \u2016\u03bc\u2016": 3.7884678840637207,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Decoder layer": 26.0,
+      "Mean-shift norm \u2016\u03bc\u2016": 5.491621971130371,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Decoder layer": 27.0,
+      "Mean-shift norm \u2016\u03bc\u2016": 7.3369669914245605,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Decoder layer": 0.0,
+      "Mean-shift norm \u2016\u03bc\u2016": 0.15255001187324524,
+      "series": "Full FT + negatives (reused)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Decoder layer": 1.0,
+      "Mean-shift norm \u2016\u03bc\u2016": 0.25072094798088074,
+      "series": "Full FT + negatives (reused)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Decoder layer": 2.0,
+      "Mean-shift norm \u2016\u03bc\u2016": 0.36229392886161804,
+      "series": "Full FT + negatives (reused)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Decoder layer": 3.0,
+      "Mean-shift norm \u2016\u03bc\u2016": 0.4980025291442871,
+      "series": "Full FT + negatives (reused)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Decoder layer": 4.0,
+      "Mean-shift norm \u2016\u03bc\u2016": 0.5987261533737183,
+      "series": "Full FT + negatives (reused)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Decoder layer": 5.0,
+      "Mean-shift norm \u2016\u03bc\u2016": 0.7158171534538269,
+      "series": "Full FT + negatives (reused)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Decoder layer": 6.0,
+      "Mean-shift norm \u2016\u03bc\u2016": 0.8434993028640747,
+      "series": "Full FT + negatives (reused)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Decoder layer": 7.0,
+      "Mean-shift norm \u2016\u03bc\u2016": 1.074781060218811,
+      "series": "Full FT + negatives (reused)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Decoder layer": 8.0,
+      "Mean-shift norm \u2016\u03bc\u2016": 1.2107800245285034,
+      "series": "Full FT + negatives (reused)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Decoder layer": 9.0,
+      "Mean-shift norm \u2016\u03bc\u2016": 1.387786626815796,
+      "series": "Full FT + negatives (reused)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Decoder layer": 10.0,
+      "Mean-shift norm \u2016\u03bc\u2016": 1.4485200643539429,
+      "series": "Full FT + negatives (reused)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Decoder layer": 11.0,
+      "Mean-shift norm \u2016\u03bc\u2016": 1.5099371671676636,
+      "series": "Full FT + negatives (reused)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Decoder layer": 12.0,
+      "Mean-shift norm \u2016\u03bc\u2016": 1.5983684062957764,
+      "series": "Full FT + negatives (reused)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Decoder layer": 13.0,
+      "Mean-shift norm \u2016\u03bc\u2016": 1.6419060230255127,
+      "series": "Full FT + negatives (reused)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Decoder layer": 14.0,
+      "Mean-shift norm \u2016\u03bc\u2016": 1.9116244316101074,
+      "series": "Full FT + negatives (reused)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Decoder layer": 15.0,
+      "Mean-shift norm \u2016\u03bc\u2016": 2.220404863357544,
+      "series": "Full FT + negatives (reused)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Decoder layer": 16.0,
+      "Mean-shift norm \u2016\u03bc\u2016": 2.295811414718628,
+      "series": "Full FT + negatives (reused)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Decoder layer": 17.0,
+      "Mean-shift norm \u2016\u03bc\u2016": 2.4648914337158203,
+      "series": "Full FT + negatives (reused)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Decoder layer": 18.0,
+      "Mean-shift norm \u2016\u03bc\u2016": 2.735976457595825,
+      "series": "Full FT + negatives (reused)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Decoder layer": 19.0,
+      "Mean-shift norm \u2016\u03bc\u2016": 4.524289608001709,
+      "series": "Full FT + negatives (reused)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Decoder layer": 20.0,
+      "Mean-shift norm \u2016\u03bc\u2016": 5.118351936340332,
+      "series": "Full FT + negatives (reused)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Decoder layer": 21.0,
+      "Mean-shift norm \u2016\u03bc\u2016": 5.853331089019775,
+      "series": "Full FT + negatives (reused)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Decoder layer": 22.0,
+      "Mean-shift norm \u2016\u03bc\u2016": 6.852834224700928,
+      "series": "Full FT + negatives (reused)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Decoder layer": 23.0,
+      "Mean-shift norm \u2016\u03bc\u2016": 8.474898338317871,
+      "series": "Full FT + negatives (reused)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Decoder layer": 24.0,
+      "Mean-shift norm \u2016\u03bc\u2016": 10.177717208862305,
+      "series": "Full FT + negatives (reused)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Decoder layer": 25.0,
+      "Mean-shift norm \u2016\u03bc\u2016": 11.478940963745117,
+      "series": "Full FT + negatives (reused)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Decoder layer": 26.0,
+      "Mean-shift norm \u2016\u03bc\u2016": 14.87090015411377,
+      "series": "Full FT + negatives (reused)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Decoder layer": 27.0,
+      "Mean-shift norm \u2016\u03bc\u2016": 20.3282413482666,
+      "series": "Full FT + negatives (reused)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Decoder layer": 0.0,
+      "Mean-shift norm \u2016\u03bc\u2016": 0.015896547585725784,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Decoder layer": 1.0,
+      "Mean-shift norm \u2016\u03bc\u2016": 0.038292016834020615,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Decoder layer": 2.0,
+      "Mean-shift norm \u2016\u03bc\u2016": 0.07004888355731964,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Decoder layer": 3.0,
+      "Mean-shift norm \u2016\u03bc\u2016": 0.09607770293951035,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Decoder layer": 4.0,
+      "Mean-shift norm \u2016\u03bc\u2016": 0.11875209957361221,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Decoder layer": 5.0,
+      "Mean-shift norm \u2016\u03bc\u2016": 0.1367795616388321,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Decoder layer": 6.0,
+      "Mean-shift norm \u2016\u03bc\u2016": 0.15655329823493958,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Decoder layer": 7.0,
+      "Mean-shift norm \u2016\u03bc\u2016": 0.1632378101348877,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Decoder layer": 8.0,
+      "Mean-shift norm \u2016\u03bc\u2016": 0.2049129754304886,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Decoder layer": 9.0,
+      "Mean-shift norm \u2016\u03bc\u2016": 0.21989013254642487,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Decoder layer": 10.0,
+      "Mean-shift norm \u2016\u03bc\u2016": 0.23140054941177368,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Decoder layer": 11.0,
+      "Mean-shift norm \u2016\u03bc\u2016": 0.23263603448867798,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Decoder layer": 12.0,
+      "Mean-shift norm \u2016\u03bc\u2016": 0.26913681626319885,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Decoder layer": 13.0,
+      "Mean-shift norm \u2016\u03bc\u2016": 0.3395995795726776,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Decoder layer": 14.0,
+      "Mean-shift norm \u2016\u03bc\u2016": 0.4144272804260254,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Decoder layer": 15.0,
+      "Mean-shift norm \u2016\u03bc\u2016": 0.6486045718193054,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Decoder layer": 16.0,
+      "Mean-shift norm \u2016\u03bc\u2016": 0.6489346623420715,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Decoder layer": 17.0,
+      "Mean-shift norm \u2016\u03bc\u2016": 0.6983307600021362,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Decoder layer": 18.0,
+      "Mean-shift norm \u2016\u03bc\u2016": 0.9142638444900513,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Decoder layer": 19.0,
+      "Mean-shift norm \u2016\u03bc\u2016": 2.2519664764404297,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Decoder layer": 20.0,
+      "Mean-shift norm \u2016\u03bc\u2016": 2.451141357421875,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Decoder layer": 21.0,
+      "Mean-shift norm \u2016\u03bc\u2016": 2.7808969020843506,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Decoder layer": 22.0,
+      "Mean-shift norm \u2016\u03bc\u2016": 3.1815478801727295,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Decoder layer": 23.0,
+      "Mean-shift norm \u2016\u03bc\u2016": 4.049642086029053,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Decoder layer": 24.0,
+      "Mean-shift norm \u2016\u03bc\u2016": 5.07842493057251,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Decoder layer": 25.0,
+      "Mean-shift norm \u2016\u03bc\u2016": 5.839145660400391,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Decoder layer": 26.0,
+      "Mean-shift norm \u2016\u03bc\u2016": 8.637762069702148,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Decoder layer": 27.0,
+      "Mean-shift norm \u2016\u03bc\u2016": 11.848894119262695,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Decoder layer": 0.0,
+      "Mean-shift norm \u2016\u03bc\u2016": 0.15546289086341858,
+      "series": "Full FT positives-only",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Decoder layer": 1.0,
+      "Mean-shift norm \u2016\u03bc\u2016": 0.24119845032691956,
+      "series": "Full FT positives-only",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Decoder layer": 2.0,
+      "Mean-shift norm \u2016\u03bc\u2016": 0.3435879051685333,
+      "series": "Full FT positives-only",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Decoder layer": 3.0,
+      "Mean-shift norm \u2016\u03bc\u2016": 0.4748877286911011,
+      "series": "Full FT positives-only",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Decoder layer": 4.0,
+      "Mean-shift norm \u2016\u03bc\u2016": 0.592708945274353,
+      "series": "Full FT positives-only",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Decoder layer": 5.0,
+      "Mean-shift norm \u2016\u03bc\u2016": 0.7005285620689392,
+      "series": "Full FT positives-only",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Decoder layer": 6.0,
+      "Mean-shift norm \u2016\u03bc\u2016": 0.8494727611541748,
+      "series": "Full FT positives-only",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Decoder layer": 7.0,
+      "Mean-shift norm \u2016\u03bc\u2016": 1.1355363130569458,
+      "series": "Full FT positives-only",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Decoder layer": 8.0,
+      "Mean-shift norm \u2016\u03bc\u2016": 1.2861930131912231,
+      "series": "Full FT positives-only",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Decoder layer": 9.0,
+      "Mean-shift norm \u2016\u03bc\u2016": 1.4570903778076172,
+      "series": "Full FT positives-only",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Decoder layer": 10.0,
+      "Mean-shift norm \u2016\u03bc\u2016": 1.5223150253295898,
+      "series": "Full FT positives-only",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Decoder layer": 11.0,
+      "Mean-shift norm \u2016\u03bc\u2016": 1.5871593952178955,
+      "series": "Full FT positives-only",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Decoder layer": 12.0,
+      "Mean-shift norm \u2016\u03bc\u2016": 1.668782114982605,
+      "series": "Full FT positives-only",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Decoder layer": 13.0,
+      "Mean-shift norm \u2016\u03bc\u2016": 1.6955230236053467,
+      "series": "Full FT positives-only",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Decoder layer": 14.0,
+      "Mean-shift norm \u2016\u03bc\u2016": 2.0060062408447266,
+      "series": "Full FT positives-only",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Decoder layer": 15.0,
+      "Mean-shift norm \u2016\u03bc\u2016": 2.326726198196411,
+      "series": "Full FT positives-only",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Decoder layer": 16.0,
+      "Mean-shift norm \u2016\u03bc\u2016": 2.388141393661499,
+      "series": "Full FT positives-only",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Decoder layer": 17.0,
+      "Mean-shift norm \u2016\u03bc\u2016": 2.559943437576294,
+      "series": "Full FT positives-only",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Decoder layer": 18.0,
+      "Mean-shift norm \u2016\u03bc\u2016": 2.8417253494262695,
+      "series": "Full FT positives-only",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Decoder layer": 19.0,
+      "Mean-shift norm \u2016\u03bc\u2016": 4.7477617263793945,
+      "series": "Full FT positives-only",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Decoder layer": 20.0,
+      "Mean-shift norm \u2016\u03bc\u2016": 5.375621318817139,
+      "series": "Full FT positives-only",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Decoder layer": 21.0,
+      "Mean-shift norm \u2016\u03bc\u2016": 6.08405065536499,
+      "series": "Full FT positives-only",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Decoder layer": 22.0,
+      "Mean-shift norm \u2016\u03bc\u2016": 7.117221355438232,
+      "series": "Full FT positives-only",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Decoder layer": 23.0,
+      "Mean-shift norm \u2016\u03bc\u2016": 8.772514343261719,
+      "series": "Full FT positives-only",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Decoder layer": 24.0,
+      "Mean-shift norm \u2016\u03bc\u2016": 10.547951698303223,
+      "series": "Full FT positives-only",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Decoder layer": 25.0,
+      "Mean-shift norm \u2016\u03bc\u2016": 11.923731803894043,
+      "series": "Full FT positives-only",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Decoder layer": 26.0,
+      "Mean-shift norm \u2016\u03bc\u2016": 15.421060562133789,
+      "series": "Full FT positives-only",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Decoder layer": 27.0,
+      "Mean-shift norm \u2016\u03bc\u2016": 20.762874603271484,
+      "series": "Full FT positives-only",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Decoder layer": 0.0,
+      "Mean-shift norm \u2016\u03bc\u2016": 0.016332367435097694,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Decoder layer": 1.0,
+      "Mean-shift norm \u2016\u03bc\u2016": 0.03876371681690216,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Decoder layer": 2.0,
+      "Mean-shift norm \u2016\u03bc\u2016": 0.06761942058801651,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Decoder layer": 3.0,
+      "Mean-shift norm \u2016\u03bc\u2016": 0.09562607854604721,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Decoder layer": 4.0,
+      "Mean-shift norm \u2016\u03bc\u2016": 0.12222230434417725,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Decoder layer": 5.0,
+      "Mean-shift norm \u2016\u03bc\u2016": 0.1364070028066635,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Decoder layer": 6.0,
+      "Mean-shift norm \u2016\u03bc\u2016": 0.16465827822685242,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Decoder layer": 7.0,
+      "Mean-shift norm \u2016\u03bc\u2016": 0.17426426708698273,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Decoder layer": 8.0,
+      "Mean-shift norm \u2016\u03bc\u2016": 0.21656358242034912,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Decoder layer": 9.0,
+      "Mean-shift norm \u2016\u03bc\u2016": 0.22814197838306427,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Decoder layer": 10.0,
+      "Mean-shift norm \u2016\u03bc\u2016": 0.24380230903625488,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Decoder layer": 11.0,
+      "Mean-shift norm \u2016\u03bc\u2016": 0.24343909323215485,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Decoder layer": 12.0,
+      "Mean-shift norm \u2016\u03bc\u2016": 0.27222806215286255,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Decoder layer": 13.0,
+      "Mean-shift norm \u2016\u03bc\u2016": 0.35796022415161133,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Decoder layer": 14.0,
+      "Mean-shift norm \u2016\u03bc\u2016": 0.43838831782341003,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Decoder layer": 15.0,
+      "Mean-shift norm \u2016\u03bc\u2016": 0.6679856777191162,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Decoder layer": 16.0,
+      "Mean-shift norm \u2016\u03bc\u2016": 0.6587211489677429,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Decoder layer": 17.0,
+      "Mean-shift norm \u2016\u03bc\u2016": 0.7081165909767151,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Decoder layer": 18.0,
+      "Mean-shift norm \u2016\u03bc\u2016": 0.9087257981300354,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Decoder layer": 19.0,
+      "Mean-shift norm \u2016\u03bc\u2016": 2.395003318786621,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Decoder layer": 20.0,
+      "Mean-shift norm \u2016\u03bc\u2016": 2.622065305709839,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Decoder layer": 21.0,
+      "Mean-shift norm \u2016\u03bc\u2016": 2.968061923980713,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Decoder layer": 22.0,
+      "Mean-shift norm \u2016\u03bc\u2016": 3.413243293762207,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Decoder layer": 23.0,
+      "Mean-shift norm \u2016\u03bc\u2016": 4.3515706062316895,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Decoder layer": 24.0,
+      "Mean-shift norm \u2016\u03bc\u2016": 5.480910778045654,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Decoder layer": 25.0,
+      "Mean-shift norm \u2016\u03bc\u2016": 6.302077293395996,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Decoder layer": 26.0,
+      "Mean-shift norm \u2016\u03bc\u2016": 9.374198913574219,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Decoder layer": 27.0,
+      "Mean-shift norm \u2016\u03bc\u2016": 12.983505249023438,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": -0.16,
+      "\u2016\u03bc\u2016 at layer 25 (95% bootstrap CI)": 9.065836906433105,
+      "error": 2.2180267897886345,
+      "series": "own text",
+      "_kind": "errorbar",
+      "_group": 8
+    },
+    {
+      "x": 0.84,
+      "\u2016\u03bc\u2016 at layer 25 (95% bootstrap CI)": 8.238183975219727,
+      "error": 2.3489670158699636,
+      "series": "own text",
+      "_kind": "errorbar",
+      "_group": 8
+    },
+    {
+      "x": 1.84,
+      "\u2016\u03bc\u2016 at layer 25 (95% bootstrap CI)": 11.478940963745117,
+      "error": 3.0388196203927063,
+      "series": "own text",
+      "_kind": "errorbar",
+      "_group": 8
+    },
+    {
+      "x": 2.84,
+      "\u2016\u03bc\u2016 at layer 25 (95% bootstrap CI)": 11.923731803894043,
+      "error": 3.1572589886021314,
+      "series": "own text",
+      "_kind": "errorbar",
+      "_group": 8
+    },
+    {
+      "x": 0.16,
+      "\u2016\u03bc\u2016 at layer 25 (95% bootstrap CI)": 4.60767936706543,
+      "error": 0.8121945056196578,
+      "series": "shared text",
+      "_kind": "errorbar",
+      "_group": 9
+    },
+    {
+      "x": 1.16,
+      "\u2016\u03bc\u2016 at layer 25 (95% bootstrap CI)": 3.7884678840637207,
+      "error": 0.7096908289297315,
+      "series": "shared text",
+      "_kind": "errorbar",
+      "_group": 9
+    },
+    {
+      "x": 2.16,
+      "\u2016\u03bc\u2016 at layer 25 (95% bootstrap CI)": 5.839145660400391,
+      "error": 1.2071506844983864,
+      "series": "shared text",
+      "_kind": "errorbar",
+      "_group": 9
+    },
+    {
+      "x": 3.16,
+      "\u2016\u03bc\u2016 at layer 25 (95% bootstrap CI)": 6.302077293395996,
+      "error": 1.2470792413122394,
+      "series": "shared text",
+      "_kind": "errorbar",
+      "_group": 9
+    },
+    {
+      "x": -0.16,
+      "\u2016\u03bc\u2016 at layer 25 (95% bootstrap CI)": 9.065836906433105,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 0.84,
+      "\u2016\u03bc\u2016 at layer 25 (95% bootstrap CI)": 8.238183975219727,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 1.84,
+      "\u2016\u03bc\u2016 at layer 25 (95% bootstrap CI)": 11.478940963745117,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 2.84,
+      "\u2016\u03bc\u2016 at layer 25 (95% bootstrap CI)": 11.923731803894043,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": -0.16,
+      "\u2016\u03bc\u2016 at layer 25 (95% bootstrap CI)": 7.5798699539802,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 0.84,
+      "\u2016\u03bc\u2016 at layer 25 (95% bootstrap CI)": 6.733553629774788,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 1.84,
+      "\u2016\u03bc\u2016 at layer 25 (95% bootstrap CI)": 9.245155863601525,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 2.84,
+      "\u2016\u03bc\u2016 at layer 25 (95% bootstrap CI)": 9.491768463007208,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": -0.16,
+      "\u2016\u03bc\u2016 at layer 25 (95% bootstrap CI)": 12.01592353355747,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 0.84,
+      "\u2016\u03bc\u2016 at layer 25 (95% bootstrap CI)": 11.431487661514716,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 1.84,
+      "\u2016\u03bc\u2016 at layer 25 (95% bootstrap CI)": 15.322795104386937,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 2.84,
+      "\u2016\u03bc\u2016 at layer 25 (95% bootstrap CI)": 15.806286440211471,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 0.16,
+      "\u2016\u03bc\u2016 at layer 25 (95% bootstrap CI)": 4.60767936706543,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 1.16,
+      "\u2016\u03bc\u2016 at layer 25 (95% bootstrap CI)": 3.7884678840637207,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 2.16,
+      "\u2016\u03bc\u2016 at layer 25 (95% bootstrap CI)": 5.839145660400391,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 3.16,
+      "\u2016\u03bc\u2016 at layer 25 (95% bootstrap CI)": 6.302077293395996,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 0.16,
+      "\u2016\u03bc\u2016 at layer 25 (95% bootstrap CI)": 3.885079704815007,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 1.16,
+      "\u2016\u03bc\u2016 at layer 25 (95% bootstrap CI)": 3.151825911385862,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 2.16,
+      "\u2016\u03bc\u2016 at layer 25 (95% bootstrap CI)": 4.774439063496592,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 3.16,
+      "\u2016\u03bc\u2016 at layer 25 (95% bootstrap CI)": 5.19467543471993,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 0.16,
+      "\u2016\u03bc\u2016 at layer 25 (95% bootstrap CI)": 5.5094687160543225,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 1.16,
+      "\u2016\u03bc\u2016 at layer 25 (95% bootstrap CI)": 4.571207569245325,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 2.16,
+      "\u2016\u03bc\u2016 at layer 25 (95% bootstrap CI)": 7.188740432493365,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 3.16,
+      "\u2016\u03bc\u2016 at layer 25 (95% bootstrap CI)": 7.688833917344409,
+      "_kind": "line",
+      "_group": 15
+    }
+  ],
+  "n_series": 16,
+  "total_points": 256,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [
+      "Full fine-tune shifts sit farther at matched install (both text regimes)"
+    ],
+    "axes": [
+      {
+        "xlabel": "Decoder layer",
+        "ylabel": "Mean-shift norm \u2016\u03bc\u2016",
+        "legend_labels": [
+          "LoRA + negatives",
+          "LoRA positives-only",
+          "Full FT + negatives (reused)",
+          "Full FT positives-only"
+        ],
+        "xticklabels": [
+          "\u22125",
+          "0",
+          "5",
+          "10",
+          "15",
+          "20",
+          "25",
+          "30"
+        ],
+        "yticklabels": [
+          "\u22125",
+          "0",
+          "5",
+          "10",
+          "15",
+          "20",
+          "25"
+        ]
+      },
+      {
+        "ylabel": "\u2016\u03bc\u2016 at layer 25 (95% bootstrap CI)",
+        "legend_labels": [
+          "own text",
+          "shared text"
+        ],
+        "annotations": [
+          "9.1",
+          "8.2",
+          "11.5",
+          "11.9",
+          "4.6",
+          "3.8",
+          "5.8",
+          "6.3"
+        ],
+        "xticklabels": [
+          "LoRA\n+ negatives",
+          "LoRA\npositives-only",
+          "Full FT\n+ negatives\n(reused)",
+          "Full FT\npositives-only"
+        ],
+        "yticklabels": [
+          "2",
+          "4",
+          "6",
+          "8",
+          "10",
+          "12",
+          "14",
+          "16",
+          "18"
+        ]
+      }
+    ],
+    "series": [
+      "LoRA + negatives",
+      "LoRA positives-only",
+      "Full FT + negatives (reused)",
+      "Full FT positives-only",
+      "own text",
+      "shared text"
+    ]
+  }
+}

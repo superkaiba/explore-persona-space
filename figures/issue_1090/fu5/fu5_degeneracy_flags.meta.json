@@ -1,0 +1,69 @@
+{
+  "commit": "40797cd8ab",
+  "created": "2026-07-15T12:31:54Z",
+  "figsize": [
+    7.5,
+    3.5
+  ],
+  "points": [
+    {
+      "category": "impolite bare, lr 1e-5 (usual)",
+      "rungs flagged degenerate": 0.0,
+      "_kind": "bar"
+    },
+    {
+      "category": "impolite bare, lr 3e-5",
+      "rungs flagged degenerate": 0.0,
+      "_kind": "bar"
+    },
+    {
+      "category": "impolite bare, lr 1e-4",
+      "rungs flagged degenerate": 0.0,
+      "_kind": "bar"
+    },
+    {
+      "category": "formatting, rank 32 (reused fu4)",
+      "rungs flagged degenerate": 1.0,
+      "_kind": "bar"
+    },
+    {
+      "category": "formatting, rank 128 (4x)",
+      "rungs flagged degenerate": 0.0,
+      "_kind": "bar"
+    },
+    {
+      "category": "formatting, rank 256 (8x)",
+      "rungs flagged degenerate": 0.0,
+      "_kind": "bar"
+    }
+  ],
+  "n_series": 1,
+  "total_points": 6,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "degenerate-output guard flags per run (length/4-gram; flag-only)",
+        "ylabel": "rungs flagged degenerate",
+        "xticklabels": [
+          "impolite bare, lr 1e-5 (usual)",
+          "impolite bare, lr 3e-5",
+          "impolite bare, lr 1e-4",
+          "formatting, rank 32 (reused fu4)",
+          "formatting, rank 128 (4x)",
+          "formatting, rank 256 (8x)"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0",
+          "1.2"
+        ]
+      }
+    ]
+  }
+}

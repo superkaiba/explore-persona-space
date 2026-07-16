@@ -241,6 +241,10 @@ _DATA_DOC_SUFFIXES: frozenset[str] = frozenset(
 # the touched file "tested" for the stem map (the scan asserts a cross-cutting
 # invariant ABOUT the file, not the file's own logic), so untested_touched
 # WARNs still fire.
+# NOTE (#1337): adding an entry here does NOT make it eligible for compare's
+# scratch pristine oracle — step9c_baseline.py's R-F' rule refuses scan-set nodes
+# by default; a scan test whose scan root is Path(__file__)-derived may be opted in
+# via step9c_baseline.py::FILE_ANCHORED_SCAN_TESTS after source verification.
 GLOB_SCAN_TESTS: dict[str, tuple[str, ...]] = {
     # test_no_new_torch_before_dotenv_vm_entrypoints scan roots (#1187: its
     # _scan_targets() — every tracked scripts/**/*.py + __main__-guarded

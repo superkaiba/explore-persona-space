@@ -1,0 +1,437 @@
+{
+  "commit": "bc25510ecb",
+  "created": "2026-07-15T13:11:03Z",
+  "figsize": [
+    13.0,
+    3.2
+  ],
+  "points": [
+    {
+      "x": -0.26,
+      "held-out test $R^2$": 0.6932453722467731,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.74,
+      "held-out test $R^2$": 0.6292467364640907,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 1.74,
+      "held-out test $R^2$": 0.6251812021094032,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 2.74,
+      "held-out test $R^2$": 0.6275813031599777,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "10-avg",
+      "held-out test $R^2$": 0.7008788856258128,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "greedy",
+      "held-out test $R^2$": 0.6417918901064416,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "stoch (parent)",
+      "held-out test $R^2$": 0.637295977922739,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "stoch (fresh)",
+      "held-out test $R^2$": 0.6403236451023726,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 0.26,
+      "held-out test $R^2$": 0.6590049456091474,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 1.26,
+      "held-out test $R^2$": 0.5950081620547116,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 2.26,
+      "held-out test $R^2$": 0.5924797515685973,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 3.26,
+      "held-out test $R^2$": 0.594620598952475,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": -0.26,
+      "y": 0.7271603159763322,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 0.74,
+      "y": 0.6633161843953356,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 1.74,
+      "y": 0.6584392214841451,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 2.74,
+      "y": 0.6605325760089288,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "category": "10-avg",
+      "y": 0.7354232732896472,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "category": "greedy",
+      "y": 0.6743442789640985,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "category": "stoch (parent)",
+      "y": 0.6687711156633156,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "category": "stoch (fresh)",
+      "y": 0.6714388165466794,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 0.26,
+      "y": 0.6910767983398742,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 1.26,
+      "y": 0.6242670697902084,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 2.26,
+      "y": 0.6194345836041437,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 3.26,
+      "y": 0.621170475993627,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": -0.26,
+      "y": 0.7712294166003535,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "x": 0.74,
+      "y": 0.7092537762333974,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "x": 1.74,
+      "y": 0.7054149303865584,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "x": 2.74,
+      "y": 0.7074024868868504,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "category": "10-avg",
+      "y": 0.773061092098424,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "category": "greedy",
+      "y": 0.71618042669315,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "category": "stoch (parent)",
+      "y": 0.7118060857225275,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "category": "stoch (fresh)",
+      "y": 0.7133861673374156,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "x": 0.26,
+      "y": 0.725877773798171,
+      "_kind": "bar",
+      "_group": 8
+    },
+    {
+      "x": 1.26,
+      "y": 0.6598992900167062,
+      "_kind": "bar",
+      "_group": 8
+    },
+    {
+      "x": 2.26,
+      "y": 0.6557251628947183,
+      "_kind": "bar",
+      "_group": 8
+    },
+    {
+      "x": 3.26,
+      "y": 0.6571320640582664,
+      "_kind": "bar",
+      "_group": 8
+    },
+    {
+      "x": -0.26,
+      "y": 0.6709069748359715,
+      "_kind": "bar",
+      "_group": 9
+    },
+    {
+      "x": 0.74,
+      "y": 0.6253215434437679,
+      "_kind": "bar",
+      "_group": 9
+    },
+    {
+      "x": 1.74,
+      "y": 0.6166073857359695,
+      "_kind": "bar",
+      "_group": 9
+    },
+    {
+      "x": 2.74,
+      "y": 0.6201718206673164,
+      "_kind": "bar",
+      "_group": 9
+    },
+    {
+      "category": "10-avg",
+      "y": 0.6654051706751972,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "category": "greedy",
+      "y": 0.618099623247718,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "category": "stoch (parent)",
+      "y": 0.6096840287708541,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "category": "stoch (fresh)",
+      "y": 0.6128853849863689,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "x": 0.26,
+      "y": 0.6432979189928889,
+      "_kind": "bar",
+      "_group": 11
+    },
+    {
+      "x": 1.26,
+      "y": 0.5915476535771755,
+      "_kind": "bar",
+      "_group": 11
+    },
+    {
+      "x": 2.26,
+      "y": 0.5798123823097989,
+      "_kind": "bar",
+      "_group": 11
+    },
+    {
+      "x": 3.26,
+      "y": 0.5833897185810069,
+      "_kind": "bar",
+      "_group": 11
+    },
+    {
+      "x": -0.26,
+      "y": 0.6839943958245382,
+      "_kind": "bar",
+      "_group": 12
+    },
+    {
+      "x": 0.74,
+      "y": 0.6328222684293249,
+      "_kind": "bar",
+      "_group": 12
+    },
+    {
+      "x": 1.74,
+      "y": 0.6241672862333301,
+      "_kind": "bar",
+      "_group": 12
+    },
+    {
+      "x": 2.74,
+      "y": 0.6267577152027355,
+      "_kind": "bar",
+      "_group": 12
+    },
+    {
+      "category": "10-avg",
+      "y": 0.6842805251170601,
+      "_kind": "bar",
+      "_group": 13
+    },
+    {
+      "category": "greedy",
+      "y": 0.633382136938957,
+      "_kind": "bar",
+      "_group": 13
+    },
+    {
+      "category": "stoch (parent)",
+      "y": 0.6250192936347998,
+      "_kind": "bar",
+      "_group": 13
+    },
+    {
+      "category": "stoch (fresh)",
+      "y": 0.6271430113608564,
+      "_kind": "bar",
+      "_group": 13
+    },
+    {
+      "x": 0.26,
+      "y": 0.6654027845844986,
+      "_kind": "bar",
+      "_group": 14
+    },
+    {
+      "x": 1.26,
+      "y": 0.608332899179735,
+      "_kind": "bar",
+      "_group": 14
+    },
+    {
+      "x": 2.26,
+      "y": 0.5986725856046354,
+      "_kind": "bar",
+      "_group": 14
+    },
+    {
+      "x": 3.26,
+      "y": 0.6008273835418542,
+      "_kind": "bar",
+      "_group": 14
+    }
+  ],
+  "n_series": 15,
+  "total_points": 60,
+  "text": {
+    "suptitle": "Context$\\rightarrow$answer-summary reconstruction per decode arm: linear vs nonlinear fitters",
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "layer 14",
+        "ylabel": "held-out test $R^2$",
+        "xticklabels": [
+          "10-avg",
+          "greedy",
+          "stoch (parent)",
+          "stoch (fresh)"
+        ],
+        "yticklabels": [
+          "0.55",
+          "0.60",
+          "0.65",
+          "0.70",
+          "0.75",
+          "0.80"
+        ]
+      },
+      {
+        "title_left": "layer 17",
+        "xticklabels": [
+          "10-avg",
+          "greedy",
+          "stoch (parent)",
+          "stoch (fresh)"
+        ]
+      },
+      {
+        "title_left": "layer 19",
+        "xticklabels": [
+          "10-avg",
+          "greedy",
+          "stoch (parent)",
+          "stoch (fresh)"
+        ]
+      },
+      {
+        "title_left": "layer 26",
+        "xticklabels": [
+          "10-avg",
+          "greedy",
+          "stoch (parent)",
+          "stoch (fresh)"
+        ]
+      },
+      {
+        "title_left": "layer 27",
+        "xticklabels": [
+          "10-avg",
+          "greedy",
+          "stoch (parent)",
+          "stoch (fresh)"
+        ]
+      }
+    ],
+    "series": [
+      "ridge (linear)",
+      "KRR (RBF kernel)",
+      "MLP (width 512)"
+    ]
+  }
+}

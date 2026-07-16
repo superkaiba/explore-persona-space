@@ -43,3 +43,5 @@
 - [Dedup-merge target may not be on your branch](feedback_dedup_target_may_not_be_on_branch.md) — a plan's "merge into existing Y" target may be an uncommitted/newer repo-root file absent from the worktree branch; `ls $WT/<Y>` first, else treat the incoming as a clean add + note it
 - [Transcript probe cost is resolution-dominated](reference_transcript_probe_cost.md) — ~165ms/pid warm, ~160ms is happy-log resolution; _transcript_tail_rows re-resolves internally; parse ~5ms
 - [LESSONS.md 8000-byte cap](reference_lessons_md_byte_cap.md) — the index runs near-full; any "fires when" addition FAILs lint until same-commit trims land; verify byte math in python first (#955)
+- [Guard-hook smoke via script file](reference_guard_hook_smoke_battery_recipe.md) — LIVE main hook raw-scans your Bash text; Write the case battery to /tmp/*.sh + invoke by path; commits via -F, notes via --file (#897)
+- [verify_plan check fan-out](reference_verify_plan_check_fanout.md) — new cN = docstring table+enum+escape list, CHECKS, THREE test count-pins, SKILL.md escape back-fill (plans keep denying it exists), lens mirror; in-process corpus calibration + negation guard (#932/#937)

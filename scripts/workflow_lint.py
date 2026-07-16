@@ -8305,6 +8305,7 @@ def check_crash_fix_relaunch_contract(*, repo_root: Path | None = None) -> list[
 
 _VM_THREAD_CAP_PREFIX = (
     "OMP_NUM_THREADS=8 MKL_NUM_THREADS=8 OPENBLAS_NUM_THREADS=8 NUMEXPR_NUM_THREADS=8"
+    " MALLOC_ARENA_MAX=2"
 )
 
 # {file: minimum occurrence count of the literal prefix}. Count floors (not
@@ -8314,9 +8315,15 @@ _VM_THREAD_CAP_PREFIX = (
 # SKILL.md 1 (detached-launch template), experiment-implementer.md 2 (bullet
 # + setsid line), code-style.md 3 (line-20 bullet + the two § nohup template
 # copies), analyzer-section-reference.md 1 (off-pod template).
+# The trailing MALLOC_ARENA_MAX=2 is the glibc arena-fragmentation cap
+# (#1315: a small-tensor eigh bootstrap grew 20-21.7 GB RSS across passes
+# under the four thread caps alone; ~1 GB with the arena cap). Its value 2
+# is NOT coupled to _DEFAULT_VM_THREAD_CAP (the 8s below) — it caps malloc
+# ARENA COUNT, not thread count.
 # BINDING CONVENTION (keeps the floors template-anchored): rationale PROSE in
 # the pinned files refers to the caps by the shorthand
-# "OMP/MKL/OPENBLAS/NUMEXPR=8" and NEVER spells the full literal prefix, so
+# "OMP/MKL/OPENBLAS/NUMEXPR=8" (optionally "+ MALLOC_ARENA_MAX=2") and NEVER
+# spells the full literal prefix, so
 # every literal occurrence is a copy-pastable command/template instance and
 # the floors bind to templates, not paragraphs. (The experiment-implementer.md
 # bullet's quoted command string counts as a copy-paste instance by design.)
@@ -8338,7 +8345,8 @@ def check_vm_thread_cap_guidance(*, repo_root: Path | None = None) -> list[str]:
     The #847 setdefault in ``orchestrate/env.py`` is src/-side and pinned to a
     worktree's branch point (the Step 5a spec-freshness sync is deliberately
     specs-only), so the workflow's VM-side launch templates carry the explicit
-    four-var cap prefix as the branch-age-independent fallback (incident #779,
+    cap prefix — the four thread caps plus the glibc arena cap
+    MALLOC_ARENA_MAX=2 (#891/#1315) — as the branch-age-independent fallback (incident #779,
     2026-07-02: a pre-#847 worktree ran 78 uncapped threads ~20h after the fix
     landed on main). This check pins the LITERAL prefix — with a per-file
     occurrence-count floor, so stripping it from a TEMPLATE instance while a
@@ -8348,7 +8356,9 @@ def check_vm_thread_cap_guidance(*, repo_root: Path | None = None) -> list[str]:
     granularity/robustness trade the plan accepts.)
     The value 8 is deliberately coupled to ``_DEFAULT_VM_THREAD_CAP`` in
     env.py: changing either requires changing both (and this constant), which
-    is the point — drift fails loud. ``repo_root`` is a unit-test override
+    is the point — drift fails loud. The arena cap's value 2 is NOT coupled
+    to that constant (it bounds malloc arenas, not threads; #1315 validated
+    2 empirically). ``repo_root`` is a unit-test override
     hook; production callers pass None. Bundled into the no-flags default run.
     """
     root = repo_root if repo_root is not None else _REPO_ROOT
@@ -8832,8 +8842,10 @@ _LESSONS_ROW_MAX_BYTES = 280
 _LESSONS_ROW_GRANDFATHER_MAX_BYTES: dict[str, int] = {
     # gotchas: highest-traffic rule; row measured 438 B at the #1269
     # migration — a third lossy trigger trim (after #1220) would destroy
-    # plan-time discovery value. Cap = measured + <=40.
-    "gotchas": 460,
+    # plan-time discovery value (a further lossy trim was already ruled
+    # out at #1269). #1348 added the errorbar/CI figure trigger
+    # (row 451 B -> 494 B). Cap = measured + <=40.
+    "gotchas": 520,
 }
 _LESSONS_ROW_GRANDFATHER_MAX_HEADROOM_BYTES = 40
 
@@ -9066,12 +9078,13 @@ AGENT_SPEC_SIZE_GRANDFATHER: dict[str, int] = {
     # (#1159) — no longer grandfathered (slim spec is under the FAIL threshold).
     # the rest measured at the #838 tightening (2026-07-02), caps = measured
     # + <=3 KB; each names a future trim direction, none is licensed to grow
+    # measured 104,235 B post-#1317 (Step 4.6 Gate-scope line verification —
+    # plan-mandated growth; cap = measured + <=~1 KB. Prior: 101,500 —
     # measured 100,555 B post-#1254 (Step 3.9 degenerate-statistic check,
-    # observed-vs-null reads — plan-mandated growth; cap = measured
-    # + <=~1 KB. Prior: 99,000 — measured 98,126 B post-#1230 (Step 6
+    # observed-vs-null reads), 99,000 — measured 98,126 B post-#1230 (Step 6
     # durability-pin shipping duty), 97,000 — measured 96,072 B post-#1119,
     # 95,000 — measured 94,126 B post-#1115)
-    "code-reviewer.md": 101_500,
+    "code-reviewer.md": 105_000,
     # measured 73,408 B post-#1159 (Step 2 dual-source read contract: lens
     # rubrics from clean-result-critic-lens-reference.md, report schema from
     # the slim agent spec — plan-mandated growth; cap = measured + <=~1 KB.
@@ -9083,10 +9096,11 @@ AGENT_SPEC_SIZE_GRANDFATHER: dict[str, int] = {
     # + <=~1 KB. Prior: 51,600 — measured 50,642 B post-#948 (Step 3.8
     # copy-list bullet + inlined-rubric slot), 47,930 B post-#881)
     "codex-code-reviewer.md": 53_300,
-    # measured 65,548 B post-#1311 (pod-side sentinel read-back cross-ref
-    # sentence — plan-mandated growth; cap = measured + <=~1 KB. Prior:
-    # 65,300 — measured 64,360 B post-#1138)
-    "experiment-implementer.md": 66_300,
+    # measured 67,472 B post-#1363 (MALLOC_ARENA_MAX=2 in the VM-launch cap
+    # prefix + the #1315 arena parenthetical — plan-mandated growth; cap =
+    # measured + <=~1 KB. Prior: 67,400 — measured 66,574 B post-#1349,
+    # 66,300 — measured 65,548 B post-#1311)
+    "experiment-implementer.md": 67_900,
     # measured 65,540 B post-#1081 r2 (D3 crash-fix-relaunch addendum:
     # disposition-conditional resume-glob confirm — plan-mandated growth;
     # cap = measured + <=~1 KB. Prior: 65,500 — measured 62,672 B)

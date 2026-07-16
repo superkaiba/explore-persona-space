@@ -48,7 +48,8 @@ Exit codes (pinned by ``tests/test_step9c_baseline.py``):
              (residual contaminating dirt — ``pyproject.toml`` / ``uv.lock`` or an
              out-of-package ``src/`` path; dirty ``src/explore_persona_space/**`` is
              neutralized by the scratch PYTHONPATH shadow unless ``--no-src-shadow``
-             (#1251); a scan-set (``GLOB_SCAN_TESTS``) node; a non-sparse work
+             (#1251); a scan-set (``GLOB_SCAN_TESTS``) node outside
+             ``FILE_ANCHORED_SCAN_TESTS`` (#1337); a non-sparse work
              root; or ``--no-scratch-fallback``); scratch-worktree fallback creation
              or src-shadow probe failure; more than ``--max-pristine-files`` distinct
              pristine files ("systemic main breakage"); missing ruff binary
@@ -83,8 +84,11 @@ touched; ledger writes are flock single-flight + atomic tmp+``os.replace``.
 Residual risk of the scratch fallback: ``repo_root()``-anchored /
 installed-package-path reads resolve the MAIN root even from a scratch cwd —
 the scan-set (``GLOB_SCAN_TESTS``) exclusion covers the known class of such
-live-tree scanners; a future non-scan test that executes root files via
-``repo_root()`` would re-open that channel. The #1251 src-shadow covers
+live-tree scanners — EXCEPT ``FILE_ANCHORED_SCAN_TESTS`` members (#1337),
+scan tests source-verified to derive their scan root from ``Path(__file__)``
+so a scratch copy scans the scratch tree (anchoring drift pin in
+tests/test_step9c_baseline.py); a future non-scan test that executes root
+files via ``repo_root()`` would re-open that channel. The #1251 src-shadow covers
 *import-system* resolution only — ``repo_root()``-anchored ``src/`` file READS
 remain that documented scan-set-covered channel. PRE-EXISTING (unchanged by
 #1251) trigger gap: src-``.json``-only dirt with no dirty ``*.py`` never trips
@@ -152,6 +156,26 @@ SCRATCH_CONTAMINATION_PATHSPEC: tuple[str, ...] = ("src/", "pyproject.toml", "uv
 
 # Sparse-profile floor excludes — mirror of new_worktree.sh EXCLUDES.
 SCRATCH_EXCLUDES: tuple[str, ...] = ("eval_results", "external", "ood_eval_results")
+
+# Scan-set nodes whose scan is SOURCE-VERIFIED to anchor on the test file's own
+# location (Path(__file__)-derived root; no repo_root() / task_workflow / live-tree
+# read in the scan chain) — a scratch copy of such a test scans the SCRATCH tree,
+# so the scratch pristine oracle is trustworthy for it and R-F is relaxed to R-F'
+# (#1337; incident #1318). Hand-curated pinned literal, same curation rule as
+# select_step9c_tests.py's GLOB_SCAN_TESTS / SLOW_TESTS; the live-tree anchoring
+# drift pin is tests/test_step9c_baseline.py::test_file_anchored_scan_tests_live_tree_pin.
+# FAIL-CLOSED: a scan test absent here keeps the R-F refusal — verify anchoring
+# by reading the source BEFORE adding an entry.
+FILE_ANCHORED_SCAN_TESTS: frozenset[str] = frozenset(
+    {
+        # root = Path(__file__).resolve().parents[1] (:871); _scan_targets(root) uses
+        # root.glob(...) + `git ls-files` with cwd=root — all scratch-local (#1318).
+        "tests/test_shared_vm_thread_caps.py",
+        # REPO_ROOT = Path(__file__).resolve().parents[1] (:76); _iter_in_scope_files
+        # globs REPO_ROOT only; pure ast/re on file text, stdlib-only imports.
+        "tests/test_subprocess_env_explicit.py",
+    }
+)
 
 REQUIRED_LEDGER_KEYS: frozenset[str] = frozenset(
     {
@@ -1292,8 +1316,9 @@ def _arm_src_shadow(
             f"SCRATCH-ORACLE WARN: root dirty on non-contaminating paths "
             f"{ctx.live_dirty_paths[:20]}; pristine oracle re-rooted to a detached "
             f"sparse scratch worktree at {scratch.sha[:12]} (root venv interpreter; "
-            "contamination probe src//pyproject.toml/uv.lock was clean; scan-set "
-            "nodes and non-sparse work roots stay indeterminate)"
+            "contamination probe src//pyproject.toml/uv.lock was clean; "
+            "non-file-anchored scan-set nodes and non-sparse work roots stay "
+            "indeterminate)"
         )
     else:
         src_dirt = [p for p in contaminating if p.startswith("src/")]
@@ -1303,8 +1328,8 @@ def _arm_src_shadow(
             f"neutralized via PYTHONPATH=<scratch>/src (shadow probe verified); "
             f"pristine oracle re-rooted to a detached sparse scratch worktree at "
             f"{scratch.sha[:12]} (root venv interpreter; residual probe "
-            "pyproject.toml/uv.lock/out-of-package-src was clean; scan-set nodes "
-            "and non-sparse work roots stay indeterminate)"
+            "pyproject.toml/uv.lock/out-of-package-src was clean; non-file-anchored "
+            "scan-set nodes and non-sparse work roots stay indeterminate)"
         )
 
 
@@ -1321,10 +1346,16 @@ def _resolve_pristine_bucket(ctx: _CompareCtx, root: Path, args: argparse.Namesp
     root's HEAD — created lazily once per compare (the shadow probe runs ONCE
     at creation, fail-closed to exit 2), reused for every eligible bucketed
     file, ALWAYS removed in the ``finally``. Per-file eligibility additionally
-    requires a sparse work root (R-G), a non-scan-set node (R-F —
-    ``repo_root()``-anchored live-tree scanners read the MAIN root from any
-    cwd, so a scratch cannot decontaminate them), and the fallback not being
-    disabled via ``--no-scratch-fallback``. Everything else keeps the
+    requires a sparse work root (R-G), a non-scan-set node OR a
+    ``FILE_ANCHORED_SCAN_TESTS`` member (R-F' — ``repo_root()``-anchored
+    live-tree scanners read the MAIN root from any cwd, so a scratch cannot
+    decontaminate them; a source-verified ``__file__``-anchored scanner scans
+    its own tree, #1337), and the fallback not being disabled via
+    ``--no-scratch-fallback``. For an allowlisted scan node R-F' shifts one
+    verdict class: a scan failure caused solely by live-root strays (untracked
+    offenders absent from the HEAD-pinned scratch) now classifies NEW (rc 1)
+    instead of exit 2 — fail-closed in direction (never a silent strip), but
+    it attributes the failure to the branch. Everything else keeps the
     fail-closed MF-4c exit 2. BOTH probes re-run per file, so residual dirt
     appearing mid-loop reverts later files to the root oracle (fail-closed);
     every scratch-mode pristine call passes the shadow uniformly, so
@@ -1369,7 +1400,10 @@ def _resolve_pristine_bucket(ctx: _CompareCtx, root: Path, args: argparse.Namesp
                 and not residual  # R-B' (#1251): in-package src/ dirt is shadow-neutralized;
                 # only pyproject.toml / uv.lock / out-of-package src/ dirt still blocks
                 and wt_cones is not None  # R-G: sparse work root only
-                and test_file not in ctx.sel.GLOB_SCAN_TESTS  # R-F: scan set never scratch-resolved
+                and (
+                    test_file not in ctx.sel.GLOB_SCAN_TESTS
+                    or test_file in FILE_ANCHORED_SCAN_TESTS
+                )  # R-F' (#1337): __file__-anchored scanners scan their own (scratch) tree
                 and not args.no_scratch_fallback
             )
             if use_scratch and scratch is None:
@@ -1416,6 +1450,7 @@ def _resolve_pristine_bucket(ctx: _CompareCtx, root: Path, args: argparse.Namesp
                             f"shadowable src dirt: {shadowable[:20] or 'n/a'}; "
                             f"visible code dirt: {ctx.live_dirty_paths[:20]}; "
                             f"scan_set={test_file in ctx.sel.GLOB_SCAN_TESTS}, "
+                            f"file_anchored={test_file in FILE_ANCHORED_SCAN_TESTS}, "
                             f"sparse_wt={wt_cones is not None}) — a 'pre-existing' verdict "
                             f"for {node.file}::{node.name} from a dirty root is "
                             "untrustworthy (MF-4c); indeterminate",

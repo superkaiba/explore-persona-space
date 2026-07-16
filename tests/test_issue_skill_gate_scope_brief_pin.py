@@ -24,6 +24,11 @@ What is pinned (plan #1305 §4.4 + the binding review concerns):
       (the Step 10d mapped-leg variant — experiment kinds skip Step 9c).
 (iv)  implementer.md's `### (c) How to verify` report template carries the
       `Gate-scope check` line.
+(v)   code-reviewer.md carries the Step 4.6 Gate-scope line-verification
+      step (#1317: presence -> `marker-shape`, per-blocker-named;
+      diff-consistency -> `substantive`; a NOT-RUN pin-hit is presumptively
+      blocker-adjacent), and SKILL.md's Step 5c-bis strip recipe carries the
+      matching `Gate-scope check` presence sub-case.
 """
 
 from __future__ import annotations
@@ -179,4 +184,51 @@ def test_implementer_report_template_carries_gate_scope_check():
         "implementer.md's `(c) How to verify` report template must carry the "
         "`Gate-scope check` bullet (selector n_tests + base, locally-run subset, "
         "pin-sweep summary, deferred invariant-only count; #1305)"
+    )
+
+
+# --------------------------------------------------------------------------
+# Pin (v) — code-reviewer.md Step 4.6 + SKILL.md 5c-bis strip sub-case (#1317)
+# --------------------------------------------------------------------------
+
+_CODE_REVIEWER = _REPO_ROOT / ".claude" / "agents" / "code-reviewer.md"
+
+
+def test_code_reviewer_carries_gate_scope_line_check():
+    region = _region(
+        _CODE_REVIEWER.read_text(encoding="utf-8"),
+        "### Step 4.6",
+        "### Step 5: Security Sweep",
+        label="code-reviewer.md Step 4.6 Gate-scope line verification",
+    )
+    assert "Gate-scope check" in region, (
+        "code-reviewer.md's Step 4.6 must verify the report's `Gate-scope check` "
+        "line (#1305/#1317 — the reviewer-side compliance check for the #1288 duty)"
+    )
+    assert "marker-shape" in region, (
+        "Step 4.6's presence half must tag genuine absence `marker-shape` "
+        "(strippable via the per-blocker-keyed Step 5c-bis recipe)"
+    )
+    assert "substantive" in region, (
+        "Step 4.6's diff-consistency half must be tagged `substantive` "
+        "(never strippable by the mechanical-contract strip)"
+    )
+    assert "presumptively blocker-adjacent" in region, (
+        "Step 4.6 must treat a pin-sweep HIT left NOT-RUN as presumptively "
+        "blocker-adjacent (implementer.md After-Implementation item 1)"
+    )
+
+
+def test_skill_5cbis_strip_recipe_covers_gate_scope():
+    region = _region(
+        _SKILL.read_text(encoding="utf-8"),
+        "**5c-bis. Mechanical-contract-only FAIL strip",
+        "**5c-ter.",
+        label="SKILL.md Step 5c-bis strip recipe",
+    )
+    assert "Gate-scope check" in region, (
+        "SKILL.md's Step 5c-bis marker-shape strip must carry the per-blocker "
+        "`Gate-scope check` presence sub-case (#1317) — without it, an absence "
+        "FAIL is verified via the four-H3 default recipe and wrongly stripped "
+        "(the #811 shape)"
     )

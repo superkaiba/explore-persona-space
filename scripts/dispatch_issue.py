@@ -818,6 +818,241 @@ def _gpus_gcp_lane_conflict(spec: Any) -> dict[str, Any] | None:
     }
 
 
+#: Human-readable renderer pointer per lane, used in the #1329 lane-env lint
+#: warning/refusal text so the reader can find the export site.
+_LANE_RENDERER_POINTERS: dict[str, str] = {
+    "gcp": "gcp (backends/gcp.py render_startup_script)",
+    "runpod": "runpod (backends/runpod.py launcher)",
+    "slurm": "slurm (backends/slurm.py custom stage)",
+}
+
+
+def _workload_cmd_env_var_message(var: str, missing: tuple[str, ...]) -> str:
+    """Per-var body of the #1329 lane-env lint message (warning AND refusal).
+
+    Names the var, the lanes that DO export it, the reachable lanes that do
+    NOT, the #825 incident, and BOTH lane-portable alternatives (the
+    ``${WORKLOAD_ROOT:-$PWD}`` default expansion and the #825 self-resolving
+    driver pattern).
+    """
+    from explore_persona_space.backends.issue_dispatch import LANE_WORKLOAD_ENV_EXPORTS
+
+    exporting = sorted(lane for lane, s in LANE_WORKLOAD_ENV_EXPORTS.items() if var in s)
+    exporting_str = ", ".join(_LANE_RENDERER_POINTERS.get(lane, lane) for lane in exporting)
+    return (
+        f"--workload-cmd references ${var} bare, which is exported only by: {exporting_str} "
+        f"— UNBOUND on: {', '.join(missing)}. The RunPod launcher and the SLURM custom stage "
+        "run the command under set -u, so a GCP→RunPod failover (or SLURM fall-through) "
+        "re-running this exact command aborts before the driver starts (incident #825: "
+        'REPO_ROOT="$WORKLOAD_ROOT" killed the Track-S RunPod failover). Lane-portable '
+        'alternatives: use a default expansion — REPO_ROOT="${WORKLOAD_ROOT:-$PWD}" (every '
+        "lane cd's to the checkout root before running the command; ${VAR:-default} is safe "
+        "under set -u) — or make the driver self-resolve: "
+        'REPO_ROOT="${REPO_ROOT:-${WORKLOAD_ROOT:-$(cd "$(dirname "$0")/.." && pwd)}}" '
+        "(the #825 fix, 65ff2426a8)."
+    )
+
+
+def _workload_cmd_env_refusal(spec: Any, lint: Any) -> dict[str, Any]:
+    """Exit-2 pre-route refusal body for a lane-env lint violation (#1329).
+
+    Mirrors the ``gpus_machine_mismatch`` body shape (#599): the launch is
+    refused BEFORE ``backends_factory()`` — no backend built, no pod/VM
+    provisioned. Fired when the crash is provably certain on the pinned lane
+    (``lint.certain``) or when ``--strict-workload-cmd-env`` upgrades a
+    warn-class hit.
+    """
+    clauses = []
+    for var, missing in sorted(lint.flagged.items()):
+        clause = _workload_cmd_env_var_message(var, missing)
+        if var in lint.certain:
+            clause += (
+                " Launch refused: the pinned lane executes this command under set -u with "
+                "the variable unbound — the crash is certain (pre-route, no instance "
+                "provisioned)."
+            )
+        else:
+            clause += (
+                " Launch refused by --strict-workload-cmd-env (pre-route, no instance "
+                "provisioned); drop the flag to downgrade this to a warning."
+            )
+        clauses.append(clause)
+    note = "failure_class: infra\nreason: workload_cmd_lane_env_unbound\ndetail: " + " ".join(
+        clauses
+    )
+    return {
+        "ok": False,
+        "issue": int(spec.issue),
+        "failure_class": "infra",
+        "status": "blocked",
+        "reason": "workload_cmd_lane_env_unbound",
+        "note": note,
+    }
+
+
+def _warn_workload_cmd_env_and_flag_marker(
+    lint: Any, marker_poster: Callable[..., None]
+) -> Callable[..., None]:
+    """Warn-class handling for a lane-env lint hit (#1329).
+
+    Loud stderr warning per flagged var + ``extra.workload_cmd_lane_env_risk``
+    merged onto the ``epm:backend-selected`` marker body. Additive only —
+    never blocks the launch. ``lint`` may be ``None`` (empty cmd / kill
+    switch) or unflagged — the poster is returned unchanged then.
+    """
+    if lint is None or not lint.flagged:
+        return marker_poster
+    log = logging.getLogger("dispatch_issue")
+    for var, missing in sorted(lint.flagged.items()):
+        log.warning(
+            "%s Launch continues; epm:backend-selected carries "
+            "extra.workload_cmd_lane_env_risk. Fail instead with --strict-workload-cmd-env; "
+            "silence with EPM_SKIP_WORKLOAD_CMD_ENV_LINT=1.",
+            _workload_cmd_env_var_message(var, missing),
+        )
+    return _wrap_marker_poster_with_override_flag(
+        marker_poster,
+        {"workload_cmd_lane_env_risk": {v: list(lanes) for v, lanes in lint.flagged.items()}},
+    )
+
+
+def _workload_cmd_env_lint_gate(
+    args: argparse.Namespace, spec: Any
+) -> tuple[Any, dict[str, Any] | None]:
+    """Run the #1329 pre-route lane-env lint over ``spec.workload_cmd``.
+
+    Returns ``(lint, refusal_body)``. ``lint`` is the
+    ``WorkloadCmdEnvLint`` result — ``None`` when the cmd is empty (a
+    ``--hydra`` launch) or the ``EPM_SKIP_WORKLOAD_CMD_ENV_LINT=1`` kill
+    switch is set (one info line). ``refusal_body`` is the exit-2 pre-route
+    refusal JSON when the crash is provably certain on the pinned lane
+    (``lint.certain``) or ``--strict-workload-cmd-env`` upgrades a
+    warn-class hit; ``None`` otherwise (warn-and-continue default).
+    Extracted from :func:`_cmd_launch` per the ``_launch_extra_from_args``
+    precedent (each new knob must not push the dispatcher over the
+    complexity cap).
+    """
+    from explore_persona_space.backends.issue_dispatch import lint_workload_cmd_lane_env
+
+    if not spec.workload_cmd:
+        return None, None
+    if os.environ.get("EPM_SKIP_WORKLOAD_CMD_ENV_LINT") == "1":
+        logging.getLogger("dispatch_issue").info(
+            "EPM_SKIP_WORKLOAD_CMD_ENV_LINT=1 — workload-cmd lane-env lint skipped (#1329)."
+        )
+        return None, None
+    lint = lint_workload_cmd_lane_env(
+        spec.workload_cmd,
+        backend_value=args.backend,
+        execute_workload=bool(getattr(args, "execute_workload", False)),
+    )
+    if lint.certain or (lint.flagged and getattr(args, "strict_workload_cmd_env", False)):
+        return lint, _workload_cmd_env_refusal(spec, lint)
+    return lint, None
+
+
+def _check_runpod_override_frontmatter(
+    issue: int, backend_arg: str | None, marker_poster: Callable[..., None]
+) -> Callable[..., None]:
+    """Explicit ``--backend runpod`` frontmatter cross-check (#571 lineage).
+
+    GCP-first bypass visibility (incident lineage #571 → 2026-06-11: three
+    launches passed explicit ``--backend runpod`` on tasks whose frontmatter
+    was ABSENT, on the stale pre-#588 justification "the GCP lane is
+    train.py-only"). The CLI cross-checks the task's ACTUAL frontmatter and
+    classifies it 3-ways, each with a DISTINCT marker flag so the dashboard
+    can tell "bypassed auto" / "contradicted a named lane" / "task hygiene
+    problem" apart:
+
+    * absent/empty/``auto`` → no frontmatter backing → LOUD warning +
+      ``override_without_frontmatter``;
+    * a recognized NON-runpod lane (gcp/nibi/fir/mila, or the legacy
+      ``cluster`` alias for nibi) → the task explicitly names a DIFFERENT
+      lane, contradicting the override even more strongly than absence →
+      LOUD warning + ``override_conflicts_frontmatter`` (+ the value);
+    * anything else (typo'd / non-string YAML value, e.g. ``gpc`` or
+      ``true``) → hygiene noise masquerading as backing → LOUD warning +
+      ``frontmatter_backend_unrecognized`` (+ the value).
+
+    ``backend: runpod`` is the one legitimate backing — silent. ADDITIVE
+    only — the launch is never blocked and the CLI argument contract is
+    unchanged. Extracted verbatim from :func:`_cmd_launch` (#1329, the
+    complexity-cap extraction precedent); returns the (possibly wrapped)
+    marker poster.
+    """
+    if (backend_arg or "").strip().lower() != "runpod":
+        return marker_poster
+    fm_backend = _frontmatter_backend_value(issue)
+    if fm_backend in ("", "auto"):
+        logging.getLogger("dispatch_issue").warning(
+            "explicit --backend runpod for issue=%d but the task's frontmatter does "
+            "not name a backend (absent/empty, or an explicit 'auto') — the task "
+            "itself says auto, and the standing default is "
+            "GCP FIRST (credits before real money). 'the GCP lane is train.py-only' "
+            "is STALE justification as of #588: every lane runs custom dispatch "
+            "scripts via --workload-cmd. Name a residual gap in the launch note — "
+            "70B intents (no GCP machine-type mapping) / interactive SSH-MCP "
+            "experimenter orchestration / runs longer than GCP --max-run-duration "
+            "(default 7d) / SLURM venv-extras mismatch — or drop the override and "
+            "let auto route. Launch continues; the epm:backend-selected marker "
+            "carries extra.override_without_frontmatter=true so the bypass is "
+            "visible on the events trail.",
+            issue,
+        )
+        marker_poster = _wrap_marker_poster_with_override_flag(
+            marker_poster, {"override_without_frontmatter": True}
+        )
+    elif fm_backend is None:
+        logging.getLogger("dispatch_issue").warning(
+            "explicit --backend runpod for issue=%d but the task frontmatter could "
+            "not be read — skipping the override-without-frontmatter check "
+            "(launch continues).",
+            issue,
+        )
+    elif fm_backend == "runpod":
+        # Legitimate frontmatter-backed override — silent by design.
+        pass
+    elif fm_backend in _recognized_frontmatter_backends():
+        fm_display = (
+            "cluster (legacy alias, normalizes to nibi)" if fm_backend == "cluster" else fm_backend
+        )
+        logging.getLogger("dispatch_issue").warning(
+            "explicit --backend runpod for issue=%d CONFLICTS with the task's own "
+            "frontmatter 'backend: %s' — the task explicitly names a DIFFERENT "
+            "lane, which contradicts the override even more strongly than absent "
+            "frontmatter would. Name the residual gap that forces RunPod in the "
+            "launch note, or fix the frontmatter to match the intended lane. "
+            "Launch continues; the epm:backend-selected marker carries "
+            "extra.override_conflicts_frontmatter=true plus the frontmatter value "
+            "so the contradiction is visible on the events trail.",
+            issue,
+            fm_display,
+        )
+        marker_poster = _wrap_marker_poster_with_override_flag(
+            marker_poster,
+            {"override_conflicts_frontmatter": True, "frontmatter_backend": fm_backend},
+        )
+    else:
+        logging.getLogger("dispatch_issue").warning(
+            "explicit --backend runpod for issue=%d but the task's frontmatter "
+            "'backend: %s' is not a recognized backend value (router accepts %s; "
+            "the legacy 'cluster' alias also counts) — likely a typo or a "
+            "non-string YAML value. This is task hygiene noise masquerading as "
+            "frontmatter backing, NOT a legitimate override: fix the task's "
+            "backend: frontmatter. Launch continues; the epm:backend-selected "
+            "marker carries extra.frontmatter_backend_unrecognized=true plus the "
+            "value so the hygiene problem is visible on the events trail.",
+            issue,
+            fm_backend,
+            sorted(_recognized_frontmatter_backends() - {"cluster"}),
+        )
+        marker_poster = _wrap_marker_poster_with_override_flag(
+            marker_poster,
+            {"frontmatter_backend_unrecognized": True, "frontmatter_backend": fm_backend},
+        )
+    return marker_poster
+
+
 def _ft_intent_gcp_default_boot_disk(spec: Any) -> bool:
     """True when an ft-* intent is gcp-reachable with no ``--boot-disk-gb`` (incident #606).
 
@@ -1238,100 +1473,21 @@ def _cmd_launch(args: argparse.Namespace, *, backends_factory: Callable[[], dict
         print(json.dumps(mismatch, sort_keys=True))
         return 2
 
+    # Pre-route workload-cmd lane-env lint (#1329, incident #825): a bare
+    # $WORKLOAD_ROOT (or peer) reference in --workload-cmd aborts under
+    # set -u on any reachable lane that does not export it. Warn-by-default
+    # (loud stderr warning + extra.workload_cmd_lane_env_risk on the
+    # epm:backend-selected marker); exit-2 pre-route refusal only when the
+    # crash is provably certain on the pinned lane (lint.certain) or under
+    # --strict-workload-cmd-env. Kill switch: EPM_SKIP_WORKLOAD_CMD_ENV_LINT=1.
+    env_lint, env_refusal = _workload_cmd_env_lint_gate(args, spec)
+    if env_refusal is not None:
+        print(json.dumps(env_refusal, sort_keys=True))
+        return 2
+
     deps = backends_factory()
-    marker_poster = deps["marker_poster"]
-    if (args.backend or "").strip().lower() == "runpod":
-        # GCP-first bypass visibility (incident lineage #571 → 2026-06-11:
-        # three launches passed explicit ``--backend runpod`` on tasks whose
-        # frontmatter was ABSENT, on the stale pre-#588 justification "the
-        # GCP lane is train.py-only"). The CLI cross-checks the task's
-        # ACTUAL frontmatter and classifies it 3-ways, each with a
-        # DISTINCT marker flag so the dashboard can tell "bypassed auto"
-        # / "contradicted a named lane" / "task hygiene problem" apart:
-        #   * absent/empty/``auto`` → no frontmatter backing → LOUD
-        #     warning + ``override_without_frontmatter``;
-        #   * a recognized NON-runpod lane (gcp/nibi/fir/mila, or the
-        #     legacy ``cluster`` alias for nibi) → the task explicitly
-        #     names a DIFFERENT lane, contradicting the override even
-        #     more strongly than absence → LOUD warning +
-        #     ``override_conflicts_frontmatter`` (+ the value);
-        #   * anything else (typo'd / non-string YAML value, e.g.
-        #     ``gpc`` or ``true``) → hygiene noise masquerading as
-        #     backing → LOUD warning +
-        #     ``frontmatter_backend_unrecognized`` (+ the value).
-        # ``backend: runpod`` is the one legitimate backing — silent.
-        # ADDITIVE only — the launch is never blocked and the CLI
-        # argument contract is unchanged.
-        fm_backend = _frontmatter_backend_value(args.issue)
-        if fm_backend in ("", "auto"):
-            logging.getLogger("dispatch_issue").warning(
-                "explicit --backend runpod for issue=%d but the task's frontmatter does "
-                "not name a backend (absent/empty, or an explicit 'auto') — the task "
-                "itself says auto, and the standing default is "
-                "GCP FIRST (credits before real money). 'the GCP lane is train.py-only' "
-                "is STALE justification as of #588: every lane runs custom dispatch "
-                "scripts via --workload-cmd. Name a residual gap in the launch note — "
-                "70B intents (no GCP machine-type mapping) / interactive SSH-MCP "
-                "experimenter orchestration / runs longer than GCP --max-run-duration "
-                "(default 7d) / SLURM venv-extras mismatch — or drop the override and "
-                "let auto route. Launch continues; the epm:backend-selected marker "
-                "carries extra.override_without_frontmatter=true so the bypass is "
-                "visible on the events trail.",
-                int(args.issue),
-            )
-            marker_poster = _wrap_marker_poster_with_override_flag(
-                marker_poster, {"override_without_frontmatter": True}
-            )
-        elif fm_backend is None:
-            logging.getLogger("dispatch_issue").warning(
-                "explicit --backend runpod for issue=%d but the task frontmatter could "
-                "not be read — skipping the override-without-frontmatter check "
-                "(launch continues).",
-                int(args.issue),
-            )
-        elif fm_backend == "runpod":
-            # Legitimate frontmatter-backed override — silent by design.
-            pass
-        elif fm_backend in _recognized_frontmatter_backends():
-            fm_display = (
-                "cluster (legacy alias, normalizes to nibi)"
-                if fm_backend == "cluster"
-                else fm_backend
-            )
-            logging.getLogger("dispatch_issue").warning(
-                "explicit --backend runpod for issue=%d CONFLICTS with the task's own "
-                "frontmatter 'backend: %s' — the task explicitly names a DIFFERENT "
-                "lane, which contradicts the override even more strongly than absent "
-                "frontmatter would. Name the residual gap that forces RunPod in the "
-                "launch note, or fix the frontmatter to match the intended lane. "
-                "Launch continues; the epm:backend-selected marker carries "
-                "extra.override_conflicts_frontmatter=true plus the frontmatter value "
-                "so the contradiction is visible on the events trail.",
-                int(args.issue),
-                fm_display,
-            )
-            marker_poster = _wrap_marker_poster_with_override_flag(
-                marker_poster,
-                {"override_conflicts_frontmatter": True, "frontmatter_backend": fm_backend},
-            )
-        else:
-            logging.getLogger("dispatch_issue").warning(
-                "explicit --backend runpod for issue=%d but the task's frontmatter "
-                "'backend: %s' is not a recognized backend value (router accepts %s; "
-                "the legacy 'cluster' alias also counts) — likely a typo or a "
-                "non-string YAML value. This is task hygiene noise masquerading as "
-                "frontmatter backing, NOT a legitimate override: fix the task's "
-                "backend: frontmatter. Launch continues; the epm:backend-selected "
-                "marker carries extra.frontmatter_backend_unrecognized=true plus the "
-                "value so the hygiene problem is visible on the events trail.",
-                int(args.issue),
-                fm_backend,
-                sorted(_recognized_frontmatter_backends() - {"cluster"}),
-            )
-            marker_poster = _wrap_marker_poster_with_override_flag(
-                marker_poster,
-                {"frontmatter_backend_unrecognized": True, "frontmatter_backend": fm_backend},
-            )
+    marker_poster = _warn_workload_cmd_env_and_flag_marker(env_lint, deps["marker_poster"])
+    marker_poster = _check_runpod_override_frontmatter(int(args.issue), args.backend, marker_poster)
     marker_poster = _warn_default_boot_disk_ft_intent(spec, int(args.issue), marker_poster)
     try:
         outcome = dispatch_for_issue(
@@ -2139,6 +2295,23 @@ def _build_argparser() -> argparse.ArgumentParser:
             "return and the job-exit cgroup teardown kills detached children (no /workspace "
             "pid contract exists there; #601 follow-up). Mutually "
             "exclusive with --hydra; exactly one of the two is required (#588)."
+        ),
+    )
+    launch.add_argument(
+        "--strict-workload-cmd-env",
+        action="store_true",
+        help=(
+            "Upgrade the workload-cmd lane-env lint (#1329, incident #825) from "
+            "warn-and-continue to a pre-route exit-2 refusal "
+            "(reason=workload_cmd_lane_env_unbound): any bare reference in --workload-cmd "
+            "to a lane-specific env var ($WORKLOAD_ROOT and peers — see "
+            "backends/issue_dispatch.LANE_WORKLOAD_ENV_EXPORTS) refuses the launch instead "
+            "of warning. Without this flag the default is a loud stderr warning + "
+            "extra.workload_cmd_lane_env_risk on the epm:backend-selected marker; a launch "
+            "whose PINNED lane provably executes the command under set -u with the var "
+            "unbound (explicit --backend runpod --execute-workload, or an explicit SLURM "
+            "lane) refuses even without this flag. Kill switch: "
+            "EPM_SKIP_WORKLOAD_CMD_ENV_LINT=1 disables the lint entirely."
         ),
     )
     launch.add_argument(

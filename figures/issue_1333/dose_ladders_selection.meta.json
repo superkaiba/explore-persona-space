@@ -1,0 +1,908 @@
+{
+  "commit": "2a8e9e1673",
+  "created": "2026-07-15T20:45:48Z",
+  "figsize": [
+    11.0,
+    4.4
+  ],
+  "points": [
+    {
+      "LoRA optimizer step (eff. batch 16)": 20.0,
+      "Source install \u0394G (nats, on-policy)": 0.9215973854064942,
+      "series": "LoRA + negatives (villain persona)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "LoRA optimizer step (eff. batch 16)": 40.0,
+      "Source install \u0394G (nats, on-policy)": 3.1262704849243166,
+      "series": "LoRA + negatives (villain persona)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "LoRA optimizer step (eff. batch 16)": 50.0,
+      "Source install \u0394G (nats, on-policy)": 5.514121723175049,
+      "series": "LoRA + negatives (villain persona)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "LoRA optimizer step (eff. batch 16)": 60.0,
+      "Source install \u0394G (nats, on-policy)": 7.632991075515747,
+      "series": "LoRA + negatives (villain persona)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "LoRA optimizer step (eff. batch 16)": 80.0,
+      "Source install \u0394G (nats, on-policy)": 11.399768352508545,
+      "series": "LoRA + negatives (villain persona)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "LoRA optimizer step (eff. batch 16)": 100.0,
+      "Source install \u0394G (nats, on-policy)": 10.747392845153808,
+      "series": "LoRA + negatives (villain persona)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "LoRA optimizer step (eff. batch 16)": 120.0,
+      "Source install \u0394G (nats, on-policy)": 10.8378511428833,
+      "series": "LoRA + negatives (villain persona)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "LoRA optimizer step (eff. batch 16)": 140.0,
+      "Source install \u0394G (nats, on-policy)": 10.78426914215088,
+      "series": "LoRA + negatives (villain persona)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "LoRA optimizer step (eff. batch 16)": 160.0,
+      "Source install \u0394G (nats, on-policy)": 10.531727027893066,
+      "series": "LoRA + negatives (villain persona)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "LoRA optimizer step (eff. batch 16)": 180.0,
+      "Source install \u0394G (nats, on-policy)": 10.881976795196532,
+      "series": "LoRA + negatives (villain persona)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "LoRA optimizer step (eff. batch 16)": 200.0,
+      "Source install \u0394G (nats, on-policy)": 10.577949523925781,
+      "series": "LoRA + negatives (villain persona)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "LoRA optimizer step (eff. batch 16)": 220.0,
+      "Source install \u0394G (nats, on-policy)": 10.423254203796386,
+      "series": "LoRA + negatives (villain persona)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "LoRA optimizer step (eff. batch 16)": 240.0,
+      "Source install \u0394G (nats, on-policy)": 11.112318420410157,
+      "series": "LoRA + negatives (villain persona)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "LoRA optimizer step (eff. batch 16)": 260.0,
+      "Source install \u0394G (nats, on-policy)": 10.709314441680908,
+      "series": "LoRA + negatives (villain persona)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "LoRA optimizer step (eff. batch 16)": 280.0,
+      "Source install \u0394G (nats, on-policy)": 10.256571865081787,
+      "series": "LoRA + negatives (villain persona)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "LoRA optimizer step (eff. batch 16)": 300.0,
+      "Source install \u0394G (nats, on-policy)": 11.107178783416748,
+      "series": "LoRA + negatives (villain persona)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "LoRA optimizer step (eff. batch 16)": 320.0,
+      "Source install \u0394G (nats, on-policy)": 10.804940509796143,
+      "series": "LoRA + negatives (villain persona)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "LoRA optimizer step (eff. batch 16)": 340.0,
+      "Source install \u0394G (nats, on-policy)": 10.680121612548827,
+      "series": "LoRA + negatives (villain persona)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "LoRA optimizer step (eff. batch 16)": 360.0,
+      "Source install \u0394G (nats, on-policy)": 10.795876598358154,
+      "series": "LoRA + negatives (villain persona)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "LoRA optimizer step (eff. batch 16)": 380.0,
+      "Source install \u0394G (nats, on-policy)": 10.357226467132568,
+      "series": "LoRA + negatives (villain persona)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "LoRA optimizer step (eff. batch 16)": 400.0,
+      "Source install \u0394G (nats, on-policy)": 11.241812705993652,
+      "series": "LoRA + negatives (villain persona)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "LoRA optimizer step (eff. batch 16)": 5.0,
+      "Source install \u0394G (nats, on-policy)": 0.0690652847290039,
+      "series": "LoRA positives-only",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "LoRA optimizer step (eff. batch 16)": 10.0,
+      "Source install \u0394G (nats, on-policy)": 0.3681288719177246,
+      "series": "LoRA positives-only",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "LoRA optimizer step (eff. batch 16)": 15.0,
+      "Source install \u0394G (nats, on-policy)": 0.7980669021606446,
+      "series": "LoRA positives-only",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "LoRA optimizer step (eff. batch 16)": 20.0,
+      "Source install \u0394G (nats, on-policy)": 1.1458077430725098,
+      "series": "LoRA positives-only",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "LoRA optimizer step (eff. batch 16)": 25.0,
+      "Source install \u0394G (nats, on-policy)": 1.5442702293395996,
+      "series": "LoRA positives-only",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "LoRA optimizer step (eff. batch 16)": 30.0,
+      "Source install \u0394G (nats, on-policy)": 2.198346996307373,
+      "series": "LoRA positives-only",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "LoRA optimizer step (eff. batch 16)": 35.0,
+      "Source install \u0394G (nats, on-policy)": 3.2244081497192383,
+      "series": "LoRA positives-only",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "LoRA optimizer step (eff. batch 16)": 40.0,
+      "Source install \u0394G (nats, on-policy)": 4.30230827331543,
+      "series": "LoRA positives-only",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "LoRA optimizer step (eff. batch 16)": 60.0,
+      "Source install \u0394G (nats, on-policy)": 9.301063823699952,
+      "series": "LoRA positives-only",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "LoRA optimizer step (eff. batch 16)": 80.0,
+      "Source install \u0394G (nats, on-policy)": 12.685911083221436,
+      "series": "LoRA positives-only",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "LoRA optimizer step (eff. batch 16)": 100.0,
+      "Source install \u0394G (nats, on-policy)": 12.485744380950928,
+      "series": "LoRA positives-only",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "LoRA optimizer step (eff. batch 16)": 120.0,
+      "Source install \u0394G (nats, on-policy)": 12.533161544799805,
+      "series": "LoRA positives-only",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "LoRA optimizer step (eff. batch 16)": 140.0,
+      "Source install \u0394G (nats, on-policy)": 12.48344964981079,
+      "series": "LoRA positives-only",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "LoRA optimizer step (eff. batch 16)": 160.0,
+      "Source install \u0394G (nats, on-policy)": 12.235366439819336,
+      "series": "LoRA positives-only",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "LoRA optimizer step (eff. batch 16)": 180.0,
+      "Source install \u0394G (nats, on-policy)": 13.035391235351563,
+      "series": "LoRA positives-only",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "LoRA optimizer step (eff. batch 16)": 200.0,
+      "Source install \u0394G (nats, on-policy)": 12.376569747924805,
+      "series": "LoRA positives-only",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "LoRA optimizer step (eff. batch 16)": 220.0,
+      "Source install \u0394G (nats, on-policy)": 12.419795322418214,
+      "series": "LoRA positives-only",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "LoRA optimizer step (eff. batch 16)": 240.0,
+      "Source install \u0394G (nats, on-policy)": 12.263092231750488,
+      "series": "LoRA positives-only",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "LoRA optimizer step (eff. batch 16)": 260.0,
+      "Source install \u0394G (nats, on-policy)": 12.540629196166993,
+      "series": "LoRA positives-only",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "LoRA optimizer step (eff. batch 16)": 280.0,
+      "Source install \u0394G (nats, on-policy)": 12.301944828033447,
+      "series": "LoRA positives-only",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "LoRA optimizer step (eff. batch 16)": 300.0,
+      "Source install \u0394G (nats, on-policy)": 12.158132743835449,
+      "series": "LoRA positives-only",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "LoRA optimizer step (eff. batch 16)": 320.0,
+      "Source install \u0394G (nats, on-policy)": 12.45034351348877,
+      "series": "LoRA positives-only",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "LoRA optimizer step (eff. batch 16)": 340.0,
+      "Source install \u0394G (nats, on-policy)": 12.2296537399292,
+      "series": "LoRA positives-only",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "LoRA optimizer step (eff. batch 16)": 360.0,
+      "Source install \u0394G (nats, on-policy)": 12.432628059387207,
+      "series": "LoRA positives-only",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "LoRA optimizer step (eff. batch 16)": 380.0,
+      "Source install \u0394G (nats, on-policy)": 12.128680324554443,
+      "series": "LoRA positives-only",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "LoRA optimizer step (eff. batch 16)": 400.0,
+      "Source install \u0394G (nats, on-policy)": 12.224668598175048,
+      "series": "LoRA positives-only",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "LoRA optimizer step (eff. batch 16)": 20.0,
+      "Source install \u0394G (nats, on-policy)": 0.22010297775268556,
+      "series": "WildChat-prefix LoRA",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "LoRA optimizer step (eff. batch 16)": 40.0,
+      "Source install \u0394G (nats, on-policy)": 1.7911787033081055,
+      "series": "WildChat-prefix LoRA",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "LoRA optimizer step (eff. batch 16)": 50.0,
+      "Source install \u0394G (nats, on-policy)": 3.610218715667725,
+      "series": "WildChat-prefix LoRA",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "LoRA optimizer step (eff. batch 16)": 60.0,
+      "Source install \u0394G (nats, on-policy)": 6.2360631942749025,
+      "series": "WildChat-prefix LoRA",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "LoRA optimizer step (eff. batch 16)": 80.0,
+      "Source install \u0394G (nats, on-policy)": 9.495081901550293,
+      "series": "WildChat-prefix LoRA",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "LoRA optimizer step (eff. batch 16)": 100.0,
+      "Source install \u0394G (nats, on-policy)": 10.340245246887207,
+      "series": "WildChat-prefix LoRA",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "LoRA optimizer step (eff. batch 16)": 120.0,
+      "Source install \u0394G (nats, on-policy)": 10.01139268875122,
+      "series": "WildChat-prefix LoRA",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "LoRA optimizer step (eff. batch 16)": 140.0,
+      "Source install \u0394G (nats, on-policy)": 9.680605411529541,
+      "series": "WildChat-prefix LoRA",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "LoRA optimizer step (eff. batch 16)": 160.0,
+      "Source install \u0394G (nats, on-policy)": 10.32199010848999,
+      "series": "WildChat-prefix LoRA",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "LoRA optimizer step (eff. batch 16)": 180.0,
+      "Source install \u0394G (nats, on-policy)": 9.658578586578368,
+      "series": "WildChat-prefix LoRA",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "LoRA optimizer step (eff. batch 16)": 200.0,
+      "Source install \u0394G (nats, on-policy)": 9.771319770812989,
+      "series": "WildChat-prefix LoRA",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "LoRA optimizer step (eff. batch 16)": 220.0,
+      "Source install \u0394G (nats, on-policy)": 9.856583499908448,
+      "series": "WildChat-prefix LoRA",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "LoRA optimizer step (eff. batch 16)": 240.0,
+      "Source install \u0394G (nats, on-policy)": 9.609547138214111,
+      "series": "WildChat-prefix LoRA",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "LoRA optimizer step (eff. batch 16)": 260.0,
+      "Source install \u0394G (nats, on-policy)": 10.129222297668457,
+      "series": "WildChat-prefix LoRA",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "LoRA optimizer step (eff. batch 16)": 280.0,
+      "Source install \u0394G (nats, on-policy)": 9.475593090057373,
+      "series": "WildChat-prefix LoRA",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "LoRA optimizer step (eff. batch 16)": 300.0,
+      "Source install \u0394G (nats, on-policy)": 9.933201503753661,
+      "series": "WildChat-prefix LoRA",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "LoRA optimizer step (eff. batch 16)": 320.0,
+      "Source install \u0394G (nats, on-policy)": 10.095131778717041,
+      "series": "WildChat-prefix LoRA",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "LoRA optimizer step (eff. batch 16)": 340.0,
+      "Source install \u0394G (nats, on-policy)": 9.301998329162597,
+      "series": "WildChat-prefix LoRA",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "LoRA optimizer step (eff. batch 16)": 360.0,
+      "Source install \u0394G (nats, on-policy)": 9.174022197723389,
+      "series": "WildChat-prefix LoRA",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "LoRA optimizer step (eff. batch 16)": 380.0,
+      "Source install \u0394G (nats, on-policy)": 9.628884983062743,
+      "series": "WildChat-prefix LoRA",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "LoRA optimizer step (eff. batch 16)": 400.0,
+      "Source install \u0394G (nats, on-policy)": 9.624233627319336,
+      "series": "WildChat-prefix LoRA",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "LoRA optimizer step (eff. batch 16)": 10.0,
+      "Source install \u0394G (nats, on-policy)": 0.9298501968383789,
+      "series": "ICL-demonstration LoRA",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "LoRA optimizer step (eff. batch 16)": 20.0,
+      "Source install \u0394G (nats, on-policy)": 4.642874145507813,
+      "series": "ICL-demonstration LoRA",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "LoRA optimizer step (eff. batch 16)": 40.0,
+      "Source install \u0394G (nats, on-policy)": 4.7554608345031735,
+      "series": "ICL-demonstration LoRA",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "LoRA optimizer step (eff. batch 16)": 60.0,
+      "Source install \u0394G (nats, on-policy)": 5.1379773139953615,
+      "series": "ICL-demonstration LoRA",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "LoRA optimizer step (eff. batch 16)": 80.0,
+      "Source install \u0394G (nats, on-policy)": 4.8698655128479,
+      "series": "ICL-demonstration LoRA",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "LoRA optimizer step (eff. batch 16)": 100.0,
+      "Source install \u0394G (nats, on-policy)": 4.705050373077393,
+      "series": "ICL-demonstration LoRA",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "LoRA optimizer step (eff. batch 16)": 120.0,
+      "Source install \u0394G (nats, on-policy)": 4.617670249938965,
+      "series": "ICL-demonstration LoRA",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "LoRA optimizer step (eff. batch 16)": 140.0,
+      "Source install \u0394G (nats, on-policy)": 4.990209579467773,
+      "series": "ICL-demonstration LoRA",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "LoRA optimizer step (eff. batch 16)": 160.0,
+      "Source install \u0394G (nats, on-policy)": 4.6449309349060055,
+      "series": "ICL-demonstration LoRA",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "LoRA optimizer step (eff. batch 16)": 180.0,
+      "Source install \u0394G (nats, on-policy)": 4.993618679046631,
+      "series": "ICL-demonstration LoRA",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "LoRA optimizer step (eff. batch 16)": 200.0,
+      "Source install \u0394G (nats, on-policy)": 4.256994438171387,
+      "series": "ICL-demonstration LoRA",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "LoRA optimizer step (eff. batch 16)": 220.0,
+      "Source install \u0394G (nats, on-policy)": 4.52680549621582,
+      "series": "ICL-demonstration LoRA",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "LoRA optimizer step (eff. batch 16)": 240.0,
+      "Source install \u0394G (nats, on-policy)": 4.747640895843506,
+      "series": "ICL-demonstration LoRA",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "LoRA optimizer step (eff. batch 16)": 260.0,
+      "Source install \u0394G (nats, on-policy)": 4.052846240997314,
+      "series": "ICL-demonstration LoRA",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "LoRA optimizer step (eff. batch 16)": 280.0,
+      "Source install \u0394G (nats, on-policy)": 5.1866124153137205,
+      "series": "ICL-demonstration LoRA",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "LoRA optimizer step (eff. batch 16)": 300.0,
+      "Source install \u0394G (nats, on-policy)": 4.414598083496093,
+      "series": "ICL-demonstration LoRA",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "LoRA optimizer step (eff. batch 16)": 320.0,
+      "Source install \u0394G (nats, on-policy)": 4.618554496765137,
+      "series": "ICL-demonstration LoRA",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "LoRA optimizer step (eff. batch 16)": 340.0,
+      "Source install \u0394G (nats, on-policy)": 5.454999542236328,
+      "series": "ICL-demonstration LoRA",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "LoRA optimizer step (eff. batch 16)": 360.0,
+      "Source install \u0394G (nats, on-policy)": 5.029420852661133,
+      "series": "ICL-demonstration LoRA",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "LoRA optimizer step (eff. batch 16)": 380.0,
+      "Source install \u0394G (nats, on-policy)": 4.260264682769775,
+      "series": "ICL-demonstration LoRA",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "LoRA optimizer step (eff. batch 16)": 400.0,
+      "Source install \u0394G (nats, on-policy)": 4.451350307464599,
+      "series": "ICL-demonstration LoRA",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "LoRA optimizer step (eff. batch 16)": 20.0,
+      "Source install \u0394G (nats, on-policy)": -0.3602341651916504,
+      "series": "bare default-context LoRA",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "LoRA optimizer step (eff. batch 16)": 40.0,
+      "Source install \u0394G (nats, on-policy)": -0.6000052452087402,
+      "series": "bare default-context LoRA",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "LoRA optimizer step (eff. batch 16)": 60.0,
+      "Source install \u0394G (nats, on-policy)": 0.7668557167053223,
+      "series": "bare default-context LoRA",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "LoRA optimizer step (eff. batch 16)": 70.0,
+      "Source install \u0394G (nats, on-policy)": 2.3964712142944338,
+      "series": "bare default-context LoRA",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "LoRA optimizer step (eff. batch 16)": 80.0,
+      "Source install \u0394G (nats, on-policy)": 4.406832027435303,
+      "series": "bare default-context LoRA",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "LoRA optimizer step (eff. batch 16)": 100.0,
+      "Source install \u0394G (nats, on-policy)": 7.115933895111084,
+      "series": "bare default-context LoRA",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "LoRA optimizer step (eff. batch 16)": 120.0,
+      "Source install \u0394G (nats, on-policy)": 7.643815040588379,
+      "series": "bare default-context LoRA",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "LoRA optimizer step (eff. batch 16)": 140.0,
+      "Source install \u0394G (nats, on-policy)": 7.546325302124023,
+      "series": "bare default-context LoRA",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "LoRA optimizer step (eff. batch 16)": 160.0,
+      "Source install \u0394G (nats, on-policy)": 7.716917514801025,
+      "series": "bare default-context LoRA",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "LoRA optimizer step (eff. batch 16)": 180.0,
+      "Source install \u0394G (nats, on-policy)": 7.003862380981445,
+      "series": "bare default-context LoRA",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "LoRA optimizer step (eff. batch 16)": 200.0,
+      "Source install \u0394G (nats, on-policy)": 7.518940734863281,
+      "series": "bare default-context LoRA",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "LoRA optimizer step (eff. batch 16)": 220.0,
+      "Source install \u0394G (nats, on-policy)": 7.226097488403321,
+      "series": "bare default-context LoRA",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "LoRA optimizer step (eff. batch 16)": 240.0,
+      "Source install \u0394G (nats, on-policy)": 7.440798664093018,
+      "series": "bare default-context LoRA",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "LoRA optimizer step (eff. batch 16)": 260.0,
+      "Source install \u0394G (nats, on-policy)": 7.184930896759033,
+      "series": "bare default-context LoRA",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "LoRA optimizer step (eff. batch 16)": 280.0,
+      "Source install \u0394G (nats, on-policy)": 7.071814918518067,
+      "series": "bare default-context LoRA",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "LoRA optimizer step (eff. batch 16)": 300.0,
+      "Source install \u0394G (nats, on-policy)": 7.115957736968994,
+      "series": "bare default-context LoRA",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "LoRA optimizer step (eff. batch 16)": 320.0,
+      "Source install \u0394G (nats, on-policy)": 7.131532955169678,
+      "series": "bare default-context LoRA",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "LoRA optimizer step (eff. batch 16)": 340.0,
+      "Source install \u0394G (nats, on-policy)": 7.1443602561950685,
+      "series": "bare default-context LoRA",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "LoRA optimizer step (eff. batch 16)": 360.0,
+      "Source install \u0394G (nats, on-policy)": 7.619248867034912,
+      "series": "bare default-context LoRA",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "LoRA optimizer step (eff. batch 16)": 380.0,
+      "Source install \u0394G (nats, on-policy)": 7.42994499206543,
+      "series": "bare default-context LoRA",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "LoRA optimizer step (eff. batch 16)": 400.0,
+      "Source install \u0394G (nats, on-policy)": 7.396419048309326,
+      "series": "bare default-context LoRA",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Full-FT step (eff. batch 64)": 1.0,
+      "y": 0.0,
+      "series": "Full FT positives-only",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Full-FT step (eff. batch 64)": 2.0,
+      "y": 2.120598888397217,
+      "series": "Full FT positives-only",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Full-FT step (eff. batch 64)": 3.0,
+      "y": 5.552173709869384,
+      "series": "Full FT positives-only",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Full-FT step (eff. batch 64)": 4.0,
+      "y": 6.894915580749512,
+      "series": "Full FT positives-only",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Full-FT step (eff. batch 64)": 5.0,
+      "y": 8.296425914764404,
+      "series": "Full FT positives-only",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Full-FT step (eff. batch 64)": 6.0,
+      "y": 7.819324016571045,
+      "series": "Full FT positives-only",
+      "_kind": "line",
+      "_group": 5
+    }
+  ],
+  "n_series": 6,
+  "total_points": 116,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [
+      "Every cell reaches the matched-install window; rings mark the selected rungs"
+    ],
+    "axes": [
+      {
+        "xlabel": "LoRA optimizer step (eff. batch 16)",
+        "ylabel": "Source install \u0394G (nats, on-policy)",
+        "legend_labels": [
+          "LoRA + negatives (villain persona)",
+          "LoRA positives-only",
+          "WildChat-prefix LoRA",
+          "ICL-demonstration LoRA",
+          "bare default-context LoRA"
+        ],
+        "xticklabels": [
+          "\u221250",
+          "0",
+          "50",
+          "100",
+          "150",
+          "200",
+          "250",
+          "300",
+          "350",
+          "400",
+          "450"
+        ],
+        "yticklabels": [
+          "\u22122",
+          "0",
+          "2",
+          "4",
+          "6",
+          "8",
+          "10",
+          "12",
+          "14"
+        ]
+      },
+      {
+        "xlabel": "Full-FT step (eff. batch 64)",
+        "legend_labels": [
+          "Full FT positives-only"
+        ],
+        "annotations": [
+          "+0.0",
+          "+2.1",
+          "+5.6",
+          "+6.9",
+          "+8.3",
+          "+7.8"
+        ],
+        "xticklabels": [
+          "0",
+          "1",
+          "2",
+          "3",
+          "4",
+          "5",
+          "6",
+          "7"
+        ],
+        "yticklabels": [
+          "\u22122",
+          "0",
+          "2",
+          "4",
+          "6",
+          "8",
+          "10"
+        ]
+      }
+    ],
+    "series": [
+      "LoRA + negatives (villain persona)",
+      "LoRA positives-only",
+      "WildChat-prefix LoRA",
+      "ICL-demonstration LoRA",
+      "bare default-context LoRA",
+      "Full FT positives-only"
+    ]
+  }
+}

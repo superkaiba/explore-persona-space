@@ -38,9 +38,16 @@ import subprocess
 import time
 from pathlib import Path
 
-import issue825_map_alignment as ma
-import numpy as np
-import torch
+from explore_persona_space.orchestrate.env import load_dotenv
+
+# #847: thread caps must land BEFORE the numpy/torch imports below — on the
+# shared VM, load_dotenv() setdefaults OMP/MKL/OPENBLAS/NUMEXPR_NUM_THREADS,
+# and the BLAS/torch pools freeze at import time.
+load_dotenv()
+
+import issue825_map_alignment as ma  # noqa: E402
+import numpy as np  # noqa: E402
+import torch  # noqa: E402
 
 REPO = Path(__file__).resolve().parents[1]
 OUT_DIR = REPO / "eval_results" / "issue_825" / "context_shift_decomp"

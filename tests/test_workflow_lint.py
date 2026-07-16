@@ -5024,7 +5024,10 @@ def test_smoke_output_hygiene_wired_into_default_run(tmp_path, capsys, monkeypat
 
 # --- #891 shared-VM thread-cap guidance-pin tests ---------------------------
 
-_VM_CAP_PREFIX = "OMP_NUM_THREADS=8 MKL_NUM_THREADS=8 OPENBLAS_NUM_THREADS=8 NUMEXPR_NUM_THREADS=8"
+_VM_CAP_PREFIX = (
+    "OMP_NUM_THREADS=8 MKL_NUM_THREADS=8 OPENBLAS_NUM_THREADS=8 NUMEXPR_NUM_THREADS=8"
+    " MALLOC_ARENA_MAX=2"
+)
 
 _VM_CAP_FLOORS = {
     ".claude/skills/issue/SKILL.md": 1,

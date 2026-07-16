@@ -39,7 +39,9 @@ def generate_persona_completions(
     """Generate completions for each (persona, question) pair using vLLM batched inference.
 
     Loads the model once, builds all prompts with chat templates, and generates
-    all completions in a single vLLM batch call.
+    all completions in a single vLLM batch call. vLLM hang mitigations (#1324)
+    are ENV-ONLY here (EPM_VLLM_ENFORCE_EAGER / EPM_VLLM_DISABLE_PREFIX_CACHING);
+    no per-call opt-out — use create_vllm_engine for the hang_mitigations param.
 
     Args:
         model_path: Path to merged model directory or HuggingFace model ID.
@@ -99,6 +101,9 @@ def generate_persona_completions(
 
     logger.info("Built %d prompts, loading vLLM engine...", len(prompt_texts))
 
+    mitigations = vllm_hang_mitigation_overrides()
+    if mitigations:
+        logger.info("vLLM hang mitigations engaged: %s", mitigations)  # fix-engaged signal
     llm = LLM(
         model=model_path,
         dtype="bfloat16",
@@ -107,6 +112,7 @@ def generate_persona_completions(
         max_model_len=max_model_len,
         max_num_seqs=max_num_seqs,
         seed=seed,
+        **mitigations,
     )
 
     sampling_params = SamplingParams(
@@ -158,6 +164,9 @@ def generate_completions(
 
     Lower-level alternative to generate_persona_completions when you have
     a flat list of user-turn prompts rather than a persona x question matrix.
+    vLLM hang mitigations (#1324) are ENV-ONLY here (EPM_VLLM_ENFORCE_EAGER /
+    EPM_VLLM_DISABLE_PREFIX_CACHING); no per-call opt-out — use
+    create_vllm_engine for the hang_mitigations param.
 
     Args:
         model_path: Path to merged model or HuggingFace model ID.
@@ -214,6 +223,9 @@ def generate_completions(
         len(prompts) * num_completions,
     )
 
+    mitigations = vllm_hang_mitigation_overrides()
+    if mitigations:
+        logger.info("vLLM hang mitigations engaged: %s", mitigations)  # fix-engaged signal
     llm = LLM(
         model=model_path,
         dtype="bfloat16",
@@ -221,6 +233,7 @@ def generate_completions(
         gpu_memory_utilization=gpu_memory_utilization,
         max_model_len=max_model_len,
         seed=seed,
+        **mitigations,
     )
 
     sampling_params = SamplingParams(
@@ -267,6 +280,9 @@ def generate_completions_with_history(
     assistant + user + ... + user). Use it for evals that need a non-empty
     prior history before the final user turn — e.g. the inference-time
     persona-drift evaluation in issue #377 (B@k / B-incontext@k / B-null@k).
+    vLLM hang mitigations (#1324) are ENV-ONLY here (EPM_VLLM_ENFORCE_EAGER /
+    EPM_VLLM_DISABLE_PREFIX_CACHING); no per-call opt-out — use
+    create_vllm_engine for the hang_mitigations param.
 
     Args:
         model_path: Path to merged model or HuggingFace model ID.
@@ -342,6 +358,9 @@ def generate_completions_with_history(
         gpu_memory_utilization,
     )
 
+    mitigations = vllm_hang_mitigation_overrides()
+    if mitigations:
+        logger.info("vLLM hang mitigations engaged: %s", mitigations)  # fix-engaged signal
     llm = LLM(
         model=model_path,
         dtype="bfloat16",
@@ -350,6 +369,7 @@ def generate_completions_with_history(
         max_model_len=max_model_len,
         max_num_seqs=max_num_seqs,
         seed=seed,
+        **mitigations,
     )
 
     sampling_params = SamplingParams(
@@ -379,6 +399,37 @@ def generate_completions_with_history(
 # ── Shared vLLM helpers ─────────────────────────────────────────────────────
 
 
+_TRUTHY = {"1", "true", "True"}  # parity with analysis/representation_shift._vllm_enforce_eager
+
+
+def vllm_hang_mitigation_overrides(hang_mitigations: bool | None = None) -> dict[str, object]:
+    """Resolve the two vLLM hang/IMA mitigation engine kwargs (#1092/#664 family).
+
+    Default OFF: returns {} when ``hang_mitigations`` is None and neither env
+    knob is set, so LLM(...) args are byte-identical to the pre-#1324 factory
+    (the #1092 test-pinned property). Engagement, strongest first:
+    ``hang_mitigations=True`` -> both knobs on; ``False`` -> both suppressed
+    (comparability opt-out, env ignored); ``None`` -> per-knob env gating via
+    EPM_VLLM_ENFORCE_EAGER / EPM_VLLM_DISABLE_PREFIX_CACHING (the gotchas.md
+    vLLM-hang triad names). Only a truthy value ({"1", "true", "True"})
+    ENGAGES a knob; ``EPM_VLLM_ENFORCE_EAGER=0`` and unset are both
+    "pass nothing" here — behaviorally identical engine config, since vLLM's
+    own default is ``enforce_eager=False`` (note the asymmetry with
+    ``analysis/representation_shift.py``, where the same env name defaults
+    TRUE and ``=0`` is an opt-out). Perf note: enforce_eager disables CUDA
+    graphs — measured ~1 min/512 prompts on 1 GPU in #1092; acceptable for
+    generation-bound real-user corpora, not free for short-prompt evals.
+    """
+    if hang_mitigations is False:
+        return {}
+    overrides: dict[str, object] = {}
+    if hang_mitigations is True or os.environ.get("EPM_VLLM_ENFORCE_EAGER", "") in _TRUTHY:
+        overrides["enforce_eager"] = True
+    if hang_mitigations is True or os.environ.get("EPM_VLLM_DISABLE_PREFIX_CACHING", "") in _TRUTHY:
+        overrides["enable_prefix_caching"] = False
+    return overrides
+
+
 def create_vllm_engine(
     model_path: str,
     *,
@@ -387,12 +438,22 @@ def create_vllm_engine(
     max_num_seqs: int = 64,
     seed: int = 42,
     dtype: str = "bfloat16",
+    hang_mitigations: bool | None = None,
     **kwargs,
 ):
     """Create a vLLM LLM engine with project-standard defaults.
 
     All scripts that need vLLM should use this instead of constructing
     LLM(...) directly. Reads VLLM_GPU_MEM_UTIL from env if not specified.
+
+    ``hang_mitigations`` (tri-state, #1324): ``True`` engages the two
+    hang/IMA mitigation knobs (``enforce_eager=True`` +
+    ``enable_prefix_caching=False``); ``False`` suppresses both, ignoring
+    env (comparability opt-out); ``None`` (default) defers to the
+    ``EPM_VLLM_ENFORCE_EAGER`` / ``EPM_VLLM_DISABLE_PREFIX_CACHING`` env
+    knobs. Explicit ``enforce_eager`` / ``enable_prefix_caching`` kwargs
+    always win over both the param and env (setdefault merge — no
+    double-pass TypeError). See :func:`vllm_hang_mitigation_overrides`.
 
     Returns:
         vllm.LLM instance.
@@ -401,6 +462,13 @@ def create_vllm_engine(
 
     if gpu_memory_utilization is None:
         gpu_memory_utilization = float(os.environ.get("VLLM_GPU_MEM_UTIL", "0.60"))
+
+    engine_kwargs = dict(kwargs)
+    mitigations = vllm_hang_mitigation_overrides(hang_mitigations)
+    for key, value in mitigations.items():
+        engine_kwargs.setdefault(key, value)  # explicit caller kwarg WINS; no double-pass
+    if mitigations:
+        logger.info("vLLM hang mitigations engaged: %s", mitigations)  # fix-engaged signal
 
     logger.info(
         "Creating vLLM engine: model=%s, gpu_mem=%.2f, max_len=%d",
@@ -416,7 +484,7 @@ def create_vllm_engine(
         max_model_len=max_model_len,
         max_num_seqs=max_num_seqs,
         seed=seed,
-        **kwargs,
+        **engine_kwargs,
     )
 
 

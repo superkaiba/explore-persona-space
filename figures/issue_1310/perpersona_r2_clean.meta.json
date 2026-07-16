@@ -1,0 +1,53 @@
+{
+  "commit": "adcbca7d365fb2894f3482e3040dcd393dbe7152",
+  "source": "eval_results/issue_1310/cells_{base,instruct}_{persona}.json (v3 prefill; UNTRACKED + HF crash-persist)",
+  "v3_commit": "942df1bb2a",
+  "values": {
+    "base_Wren": {
+      "r2_L19": 0.1369,
+      "n": 2329,
+      "is_v3": true
+    },
+    "base_HELIOS": {
+      "r2_L19": 0.1483,
+      "n": 2466,
+      "is_v3": true
+    },
+    "base_Dana": {
+      "r2_L19": 0.1468,
+      "n": 1325,
+      "is_v3": true
+    },
+    "base_Vex": {
+      "r2_L19": 0.1059,
+      "n": 2060,
+      "is_v3": true
+    },
+    "instruct_Wren": {
+      "r2_L19": 0.2345,
+      "n": 3094,
+      "is_v3": true
+    },
+    "instruct_HELIOS": {
+      "r2_L19": 0.2527,
+      "n": 3123,
+      "is_v3": true
+    },
+    "instruct_Dana": {
+      "r2_L19": 0.1882,
+      "n": 2700,
+      "is_v3": true
+    },
+    "instruct_Vex": {
+      "r2_L19": -0.2905,
+      "n": 149,
+      "is_v3": false
+    }
+  },
+  "assistant_ceiling": {
+    "instruct": 0.673,
+    "base": 0.588
+  },
+  "caption": "Per-character context->dialogue held-out R2 (layer 19), v3 prefill run. Positive and character-specific in both models. Instruct Vex + instruct swap incomplete (v3 crashed on the instruct arm; the Vex bar shown is the pre-prefill v2 value).",
+  "note": "SUPERSEDES the stale v2 perpersona_r2.png and the earlier v2-based version of this file."
+}

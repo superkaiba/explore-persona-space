@@ -1,0 +1,297 @@
+{
+  "phase": "final",
+  "sources": [
+    "A1",
+    "A2",
+    "A3",
+    "A4",
+    "A5",
+    "B1",
+    "B2",
+    "B3",
+    "B4",
+    "B5",
+    "C1",
+    "D1",
+    "D2",
+    "D3",
+    "D4",
+    "D5"
+  ],
+  "targets": [
+    "A1",
+    "A2",
+    "A3",
+    "A4",
+    "A5",
+    "B1",
+    "B2",
+    "B3",
+    "B4",
+    "B5",
+    "C1",
+    "D1",
+    "D2",
+    "D3",
+    "D4",
+    "D5",
+    "instr_explicit_1",
+    "instr_explicit_2",
+    "instr_explicit_3",
+    "instr_explicit_4",
+    "instr_soft_1",
+    "instr_soft_2",
+    "instr_soft_3",
+    "instr_oblique_1",
+    "instr_oblique_2",
+    "instr_oblique_3"
+  ],
+  "n_cells": 416,
+  "missing_cells": [],
+  "install_record": {
+    "A1": {
+      "diag_delta_g_nats": 1.110015983581544,
+      "band_stop_result": {
+        "stopped_in_band": true,
+        "band_stop_step": 8,
+        "last_delta_nats": 5.031402587890625,
+        "band_nats": [
+          5.0,
+          12.0
+        ],
+        "global_step": 8
+      }
+    },
+    "A2": {
+      "diag_delta_g_nats": 1.636386489868162,
+      "band_stop_result": {
+        "stopped_in_band": true,
+        "band_stop_step": 8,
+        "last_delta_nats": 5.294326305389404,
+        "band_nats": [
+          5.0,
+          12.0
+        ],
+        "global_step": 8
+      }
+    },
+    "A3": {
+      "diag_delta_g_nats": 3.171627998352051,
+      "band_stop_result": {
+        "stopped_in_band": true,
+        "band_stop_step": 8,
+        "last_delta_nats": 6.822481155395508,
+        "band_nats": [
+          5.0,
+          12.0
+        ],
+        "global_step": 8
+      }
+    },
+    "A4": {
+      "diag_delta_g_nats": 3.360315551757811,
+      "band_stop_result": {
+        "stopped_in_band": true,
+        "band_stop_step": 8,
+        "last_delta_nats": 5.94085168838501,
+        "band_nats": [
+          5.0,
+          12.0
+        ],
+        "global_step": 8
+      }
+    },
+    "A5": {
+      "diag_delta_g_nats": 1.6270197677612295,
+      "band_stop_result": {
+        "stopped_in_band": true,
+        "band_stop_step": 8,
+        "last_delta_nats": 6.035325050354004,
+        "band_nats": [
+          5.0,
+          12.0
+        ],
+        "global_step": 8
+      }
+    },
+    "B1": {
+      "diag_delta_g_nats": 1.498260612487794,
+      "band_stop_result": {
+        "stopped_in_band": true,
+        "band_stop_step": 9,
+        "last_delta_nats": 5.852834224700928,
+        "band_nats": [
+          5.0,
+          12.0
+        ],
+        "global_step": 9
+      }
+    },
+    "B2": {
+      "diag_delta_g_nats": 1.2650880813598633,
+      "band_stop_result": {
+        "stopped_in_band": true,
+        "band_stop_step": 9,
+        "last_delta_nats": 5.3175048828125,
+        "band_nats": [
+          5.0,
+          12.0
+        ],
+        "global_step": 9
+      }
+    },
+    "B3": {
+      "diag_delta_g_nats": 1.4544109725952161,
+      "band_stop_result": {
+        "stopped_in_band": true,
+        "band_stop_step": 9,
+        "last_delta_nats": 5.384810924530029,
+        "band_nats": [
+          5.0,
+          12.0
+        ],
+        "global_step": 9
+      }
+    },
+    "B4": {
+      "diag_delta_g_nats": 0.9877964782714841,
+      "band_stop_result": {
+        "stopped_in_band": true,
+        "band_stop_step": 9,
+        "last_delta_nats": 5.7502288818359375,
+        "band_nats": [
+          5.0,
+          12.0
+        ],
+        "global_step": 9
+      }
+    },
+    "B5": {
+      "diag_delta_g_nats": 1.4140897369384788,
+      "band_stop_result": {
+        "stopped_in_band": true,
+        "band_stop_step": 9,
+        "last_delta_nats": 7.080122470855713,
+        "band_nats": [
+          5.0,
+          12.0
+        ],
+        "global_step": 9
+      }
+    },
+    "C1": {
+      "diag_delta_g_nats": 1.6045984649658216,
+      "band_stop_result": {
+        "stopped_in_band": true,
+        "band_stop_step": 9,
+        "last_delta_nats": 6.521431922912598,
+        "band_nats": [
+          5.0,
+          12.0
+        ],
+        "global_step": 9
+      }
+    },
+    "D1": {
+      "diag_delta_g_nats": 1.9012073898315442,
+      "band_stop_result": {
+        "stopped_in_band": true,
+        "band_stop_step": 9,
+        "last_delta_nats": 6.060873985290527,
+        "band_nats": [
+          5.0,
+          12.0
+        ],
+        "global_step": 9
+      }
+    },
+    "D2": {
+      "diag_delta_g_nats": 1.5267773056030265,
+      "band_stop_result": {
+        "stopped_in_band": true,
+        "band_stop_step": 9,
+        "last_delta_nats": 6.90708065032959,
+        "band_nats": [
+          5.0,
+          12.0
+        ],
+        "global_step": 9
+      }
+    },
+    "D3": {
+      "diag_delta_g_nats": 1.697110137939454,
+      "band_stop_result": {
+        "stopped_in_band": true,
+        "band_stop_step": 9,
+        "last_delta_nats": 6.909250736236572,
+        "band_nats": [
+          5.0,
+          12.0
+        ],
+        "global_step": 9
+      }
+    },
+    "D4": {
+      "diag_delta_g_nats": 1.3541604232788096,
+      "band_stop_result": {
+        "stopped_in_band": true,
+        "band_stop_step": 9,
+        "last_delta_nats": 6.8060622215271,
+        "band_nats": [
+          5.0,
+          12.0
+        ],
+        "global_step": 9
+      }
+    },
+    "D5": {
+      "diag_delta_g_nats": 2.935016937255856,
+      "band_stop_result": {
+        "stopped_in_band": true,
+        "band_stop_step": 9,
+        "last_delta_nats": 7.356015205383301,
+        "band_nats": [
+          5.0,
+          12.0
+        ],
+        "global_step": 9
+      }
+    }
+  },
+  "gate": {
+    "status": "pass",
+    "cell": "A1__A1",
+    "delta_g_nats": 1.110015983581544,
+    "window_nats": [
+      0.5,
+      18.0
+    ],
+    "halt": false,
+    "inloop_delta_nats": 5.031402587890625,
+    "parity_gap_nats": 3.921386604309081,
+    "parity_warn": true,
+    "trained_mean_logp_marker": -25.975053787231445,
+    "parent_base_mean_logp_marker": -27.08506977081299,
+    "remeasured_base_mean_logp_marker": -27.074216079711913,
+    "base_remeasure_delta_nats": 0.010853691101075924,
+    "slot_identity_deviations": [],
+    "reproducibility_metadata": {
+      "issue": 1332,
+      "git_commit": "e5fe2cf47aef17d228f948710557087a3fe5c2dd",
+      "ts": "2026-07-15T21:54:04Z",
+      "torch_version": "2.8.0+cu128",
+      "transformers_version": "4.57.6",
+      "followup": "lowdose-grid-kill-battery",
+      "phase": "P2_gate"
+    }
+  },
+  "reproducibility_metadata": {
+    "issue": 1332,
+    "git_commit": "e5fe2cf47aef17d228f948710557087a3fe5c2dd",
+    "ts": "2026-07-15T22:19:40Z",
+    "torch_version": "2.8.0+cu128",
+    "transformers_version": "4.57.6",
+    "followup": "lowdose-grid-kill-battery",
+    "smoke": false
+  }
+}

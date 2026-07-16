@@ -31,8 +31,8 @@ conditions = ["baseline", "c1_evil_wrong", "c6_vanilla_em", "c6_tulu_25"]
 values = np.array([0.912, 0.743, 0.684, 0.879])
 n_trials = np.array([200, 200, 200, 200])
 cis = np.array([proportion_ci(p, n) for p, n in zip(values, n_trials)])
-err_lo = values - cis[:, 0]
-err_hi = cis[:, 1] - values
+err_lo = np.maximum(0, values - cis[:, 0])  # errorbar offsets must be >= 0 (gotchas.md)
+err_hi = np.maximum(0, cis[:, 1] - values)
 
 fig, ax = plt.subplots()
 colors = paper_palette(len(conditions))
@@ -71,8 +71,10 @@ plt.close(fig)
 
 - **Proportions** → `proportion_ci(p, n)` (chart bars only — do NOT describe them as "95% CI" in the prose; the prose reports p-values and N).
 - **Means across seeds** → `std / √n_seeds`.
-- **Bootstrap CI** → precompute externally; pass `yerr` as `[lo, hi]` deltas
-  from the mean.
+- **Bootstrap CI** → precompute externally; pass `yerr` as NON-NEGATIVE
+  offsets from the mean, clamped element-wise
+  (`np.maximum(0, v - lo)` / `np.maximum(0, hi - v)`) — a quantile CI can
+  invert around the point estimate at tiny n (gotchas.md; #1335).
 
 Never a bar without error bars. If a condition is single-seed and has no CI,
 either run more seeds, or annotate the bar with `n=1` and note in the

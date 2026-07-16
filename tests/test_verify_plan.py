@@ -173,10 +173,11 @@ def test_good_plan_passes_all():
         "c32_fit_basis_grounding": "SKIP",
         "c33_ladder_retention": "SKIP",
         "c34_ratchet_headroom": "SKIP",
+        "c35_pinned_revision_reuse": "SKIP",
     }
     actual = {cid: r.status for cid, r in by_id.items()}
     assert actual == expected
-    assert len(results) == 34
+    assert len(results) == 35
 
 
 # ─── Check 0 — plan-nonstub ────────────────────────────────────────────────
@@ -844,6 +845,84 @@ def test_c6_heading_triggers():
 def test_c6_kind_infra_skips():
     plan = GOOD_PLAN + "\nWe reuse adapters from superkaiba1/explore-persona-space.\n"
     assert _status(plan, "c6_reuse_fitness", kind="infra") == "SKIP"
+
+
+def test_c6_reuse_map_table_without_fitness_word_passes():
+    # Durability pin for #1314, modeled on #1090 plan v7's '### D3 — Reuse map'
+    # (artifact-reuse (a)–(j) self-attestation) table: a complete per-row  # noqa: RUF003
+    # attestation written in artifact-reuse.md's own vocabulary — no 'fitness'
+    # word anywhere — must PASS, not WARN "no fitness check found".
+    plan = (
+        GOOD_PLAN
+        + "\nWe reuse the parent adapters from superkaiba1/explore-persona-space for the base arm."
+        + "\n### D3 — Reuse map (artifact-reuse (a)–(j) self-attestation)\n"
+        + "\n| Artifact | Checks | Verdict |"
+        + "\n|---|---|---|"
+        + "\n| parent adapter | (a) recipe match; (e) hub-resolves; (h)(i) staged | OK |"
+        + "\n| training mix | (f) content identity; (b) valid regime | OK |"
+        + "\n| eval JSON | (c) cells present; (d) single-variable; (j) pair-coherent | OK |\n"
+    )
+    assert "fitness" not in plan.lower()  # keeps the fixture honest vs future GOOD_PLAN edits
+    _, by_id = _run(plan)
+    r = by_id["c6_reuse_fitness"]
+    assert r.status == "PASS"
+
+
+def test_c6_letters_without_declaration_vocab_still_warns():
+    # Regression pin: >=4 stray enumeration letters WITHOUT any declaration
+    # token (fitness / reuse map / attestation / range token) never PASS —
+    # true both pre- and post-#1314.
+    plan = (
+        GOOD_PLAN
+        + "\nWe reuse the parent adapters from superkaiba1/explore-persona-space for the base arm."
+        + "\nAcceptance: (a) smoke passes; (b) loss decreases; (c) eval completes; "
+        + "(d) uploads verified.\n"
+    )
+    _, by_id = _run(plan)
+    r = by_id["c6_reuse_fitness"]
+    assert r.status == "WARN"
+
+
+def test_c6_reuse_map_with_few_letters_warns():
+    # A bare 'Reuse map' heading (no 'self-attestation', no 'fitness', no
+    # (a)–(j) range token — guard-asserted below, so this fixture isolates  # noqa: RUF003
+    # the reuse[- ]map branch) with <4 letters routes to the MIDDLE branch:
+    # the declaration counted, but the letters threshold still gates. A
+    # mutant dropping the reuse-map branch fails this test — with no
+    # declaration token the fixture would route to the third branch, whose
+    # detail lacks "only 2".
+    plan = (
+        GOOD_PLAN
+        + "\nWe reuse the parent adapters from superkaiba1/explore-persona-space for the base arm."
+        + "\n### Reuse map\n"
+        + "\n(a) recipe match verified; (b) valid measurement regime.\n"
+    )
+    lowered = plan.lower()
+    assert "fitness" not in lowered
+    assert "attestation" not in lowered
+    assert re.search(r"\(a\)\s*[-–—…]\s*\(j\)", plan) is None
+    _, by_id = _run(plan)
+    r = by_id["c6_reuse_fitness"]
+    assert r.status == "WARN"
+    assert "only 2" in r.detail
+
+
+def test_c6_range_token_counts_as_declaration():
+    # Pins the en-dash (a)–(j) range-token branch specifically: no 'fitness',  # noqa: RUF003
+    # no 'map', no 'attestation' word (guard-asserted), four real item letters.
+    plan = (
+        GOOD_PLAN
+        + "\nWe reuse the parent adapters from superkaiba1/explore-persona-space for the base arm."
+        + "\nArtifact checks (a)–(j): (a) recipe; (b) regime; (c) cells; "
+        + "(d) single-variable.\n"
+    )
+    lowered = plan.lower()
+    assert "fitness" not in lowered
+    assert "map" not in lowered
+    assert "attestation" not in lowered
+    _, by_id = _run(plan)
+    r = by_id["c6_reuse_fitness"]
+    assert r.status == "PASS"
 
 
 # ─── Check 7 — replication fidelity ────────────────────────────────────────
@@ -5715,12 +5794,12 @@ def test_cli_json_schema_and_exit_zero_on_pass(tmp_path):
     assert payload["issue"] is None
     assert payload["kind"] == "experiment"
     assert payload["n_fail"] == 0
-    assert payload["n_skip"] == 27
+    assert payload["n_skip"] == 28
     assert {"id", "name", "status", "detail"} <= set(payload["checks"][0])
     statuses = {c["status"] for c in payload["checks"]}
     assert statuses <= {"PASS", "WARN", "FAIL", "SKIP"}
-    assert len(payload["checks"]) == 35
-    assert len({c["id"] for c in payload["checks"]}) == 35
+    assert len(payload["checks"]) == 36
+    assert len({c["id"] for c in payload["checks"]}) == 36
     # c23 has no task context in --plan-file mode: rendered SKIP (companion
     # assert for test_cli_issue_mode_appends_goal_currency).
     c23 = next(c for c in payload["checks"] if c["id"] == "c23_goal_currency")
@@ -6843,6 +6922,135 @@ def test_c34_phrase_listed_in_skillmd():
     assert "no verbatim ratcheted-file insertion" in block
     assert "check 34" in block
     assert "`N/A — no verbatim ratcheted-file insertion`" in block
+
+
+# ─── Check 35 — revision-pinned reuse verified at the pin ─────────────────
+
+C35_PINNED_REUSE = (
+    "\n## Reuse\n\nWe reuse the parent's raw-completion shards from "
+    "superkaiba1/explore-persona-space-data at pinned revision "
+    "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa (issue1345 S-track stems).\n"
+)
+
+# #1345 plan v3 §10 pairwise-provenance row, VERBATIM (tasks/*/1345/plans/v3.md
+# line 446 at implementation time) — the artifact-reuse item-(j) boilerplate
+# that blinded the v2 satisfier design to its own motivating incident.
+C35_ITEM_J_ROW = (
+    "| Pairwise provenance coherence | R1/R2 shard `last_commit` dates at revision "
+    "deb7a452 vs the `issue825_extract_turnstore.py` version that wrote them — verify "
+    "at implementation time via `get_paths_info(expand=True, revision=...)` |"
+)
+
+
+def test_c35_not_triggered_skips():
+    assert _status(GOOD_PLAN, "c35_pinned_revision_reuse") == "SKIP"
+
+
+def test_c35_pinned_reuse_without_probe_warns():
+    _, by_id = _run(GOOD_PLAN + C35_PINNED_REUSE)
+    r = by_id["c35_pinned_revision_reuse"]
+    assert r.status == "WARN"
+    assert "pin" in r.detail and "1345" in r.detail
+
+
+def test_c35_revision_scoped_probe_passes():
+    plan = (
+        GOOD_PLAN
+        + C35_PINNED_REUSE
+        + '\n```python\nlist_repo_tree("superkaiba1/explore-persona-space-data", '
+        + 'path_in_repo="issue1345_s/", revision="aaaa...", repo_type="dataset")\n```\n'
+    )
+    assert _status(plan, "c35_pinned_revision_reuse") == "PASS"
+
+
+def test_c35_default_branch_probe_does_not_satisfy():
+    # Pins exactly the #1345 failure shape: an existence probe with NO
+    # revision kwarg ("confirmed" at the default branch) must not satisfy.
+    plan = (
+        GOOD_PLAN
+        + C35_PINNED_REUSE
+        + "\nVerified via list_repo_files('superkaiba1/explore-persona-space-data').\n"
+    )
+    assert _status(plan, "c35_pinned_revision_reuse") == "WARN"
+
+
+def test_c35_prose_verified_at_pinned_revision_passes():
+    plan = GOOD_PLAN + C35_PINNED_REUSE + "\nExistence verified at the pinned revision per stem.\n"
+    assert _status(plan, "c35_pinned_revision_reuse") == "PASS"
+
+
+def test_c35_pasted_warn_detail_does_not_self_satisfy():
+    # MUST-FIX 1(b): bounced plans paste the verifier detail verbatim; the
+    # detail must not satisfy the check it came from (#810 shape).
+    _, by_id = _run(GOOD_PLAN + C35_PINNED_REUSE)
+    detail = by_id["c35_pinned_revision_reuse"].detail
+    plan = GOOD_PLAN + C35_PINNED_REUSE + "\n" + detail + "\n"
+    assert _status(plan, "c35_pinned_revision_reuse") == "WARN"
+
+
+def test_c35_warn_detail_matches_no_satisfier():
+    # MUST-FIX 1(c): pin satisfier-inertness of the detail string directly —
+    # no Hub-callable + `revision=`/`revision:` co-occurrence on one line, no
+    # `verif...at...revision` shape.
+    _, by_id = _run(GOOD_PLAN + C35_PINNED_REUSE)
+    detail = by_id["c35_pinned_revision_reuse"].detail
+    assert verify_plan._C35_PROBE_SATISFIER_RE.search(detail) is None
+    assert verify_plan._C35_PROSE_SATISFIER_RE.search(detail) is None
+
+
+def test_c35_item_j_provenance_boilerplate_does_not_satisfy():
+    # MUST-FIX 2(b): regression for the #1345-v3 blind spot — the item-(j)
+    # `get_paths_info(expand=True, revision=...)` provenance row verifies
+    # commit-DATE coherence, NOT existence-at-pin, and must not satisfy
+    # (get_paths_info is deliberately excluded from the probe satisfier).
+    plan = GOOD_PLAN + C35_PINNED_REUSE + "\n" + C35_ITEM_J_ROW + "\n"
+    assert _status(plan, "c35_pinned_revision_reuse") == "WARN"
+
+
+def test_c35_na_escape_passes():
+    plan = GOOD_PLAN + C35_PINNED_REUSE + "\nN/A — no revision-pinned reuse\n"
+    _, by_id = _run(plan)
+    r = by_id["c35_pinned_revision_reuse"]
+    assert r.status == "PASS"
+    assert "declaration" in r.detail
+
+
+def test_c35_quoted_na_phrase_does_not_escape():
+    # Anti-paste convention (#810/#1238 lineage): the phrase quoted
+    # mid-sentence (e.g. inside a pasted bounce brief) does not count.
+    plan = (
+        GOOD_PLAN
+        + C35_PINNED_REUSE
+        + "\nThe bounce brief quotes `N/A — no revision-pinned reuse` as the check-35 escape.\n"
+    )
+    assert _status(plan, "c35_pinned_revision_reuse") == "WARN"
+
+
+def test_c35_kind_infra_skips():
+    assert (
+        _status(GOOD_PLAN + C35_PINNED_REUSE, "c35_pinned_revision_reuse", kind="infra") == "SKIP"
+    )
+
+
+def test_c35_git_code_sha_without_hf_context_skips():
+    # A bare git code SHA (Repro-card `pinned to commit <40-hex>` row, no HF
+    # context / reuse vocabulary nearby) must not trigger.
+    plan = GOOD_PLAN + (
+        "\nRepro: code pinned to commit bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb on branch main.\n"
+    )
+    assert _status(plan, "c35_pinned_revision_reuse") == "SKIP"
+
+
+def test_c35_phrase_listed_in_skillmd():
+    # Durability pin (the c34 precedent): the canonical escape phrase is
+    # registered backtick-wrapped in the adversarial-planner SKILL.md escape
+    # list, so a later SKILL.md reflow cannot silently drop it.
+    text = (REPO_ROOT / ".claude" / "skills" / "adversarial-planner" / "SKILL.md").read_text()
+    anchor = text.index("Canonical N/A escape phrases")
+    block = text[anchor : text.index("bounce to the planner", anchor)]
+    assert "no revision-pinned reuse" in block
+    assert "check 35" in block
+    assert "`N/A — no revision-pinned reuse`" in block
 
 
 def test_canonical_json_parse_snippet_pinned():
