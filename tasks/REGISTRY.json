@@ -2952,8 +2952,8 @@
     "1379": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1379",
-      "status": "planning",
+      "path": "tasks/approved/1379",
+      "status": "approved",
       "title": "workflow-fix: auto-degrade GCP GPU width (8->4->2) for explicit sweep-8g intents on capacity failure"
     },
     "138": {
