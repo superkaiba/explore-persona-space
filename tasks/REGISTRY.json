@@ -3127,8 +3127,8 @@
     "1400": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1400",
-      "status": "planning",
+      "path": "tasks/approved/1400",
+      "status": "approved",
       "title": "daily-fix: triage observer empty-window false flags"
     },
     "1401": {
