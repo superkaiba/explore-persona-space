@@ -722,6 +722,26 @@ Generation-agnostic checks (run on v2 AND v3 — the inline-figure +
   critic round. (Numbered 36 because 28-35 are taken by the
   generation-agnostic checks.)
 
+- **check 37** (`check_footer_reuse_bullets_pinned`, WARN, v4-only, #1370):
+  every footer `- Reused ... from [#M](...)` bullet carries a
+  revision/path pin — the body->pin sibling of check 35's metadata->body
+  direction (#1315: two unpinned `- Reused ... from [#1090]` bullets were
+  invisible to check 35's metadata-side trigger and survived to the LM
+  critic). Bullet-scoped satisfiers: a revision-URL segment
+  (`/tree|resolve|commit|blob/<7-40 hex>`), `@ <rev>` (optional backtick),
+  a committed `eval_results/issue_<M>/` path, a SPEC-sanctioned WandB
+  `/runs/<id>` URL, or a bare letter-bearing >=7-hex token; the
+  from-link's own `#M` / `/tasks/M` NEVER satisfies (vacuity guard —
+  every trigger bullet carries it by construction). WARN uniformly
+  (corpus 2026-07-15: 40 trigger bullets across committed v4 bodies,
+  4 unpinned — #810/#811/#833/#1112, all `awaiting_promotion`; a FAIL
+  would newly block their re-verifies). Body-text-only: lives in the
+  body-only CHECKS list, runs on stdin bodies, and is deliberately NOT
+  fenced by `EPM_VERIFY_BODY_NO_EVAL_SCAN` (no eval scan to fence).
+  Documented false-negative residual: a bullet quoting the CURRENT
+  task's own code SHA satisfies the bare-hex form — LM Lens 5 keeps
+  owning semantic pin-correctness.
+
 Harmful-content carve-out: checks 18/19 accept the sanitized excerpt
 form (`[truncated — harmful-content row; verify at <path>, row <i>]`)
 exactly as checks 10/11 do today.
@@ -5270,6 +5290,126 @@ def check_cross_issue_reuse_provenance(
         f"all cross-issue reuse pins declared in the body "
         f"({len(seen_t1)} tier-1, {len(seen_t2)} tier-2)",
     )
+
+
+# ─── Check 37 (#1370): footer Reused bullets carry a revision/path pin ──────
+
+# The body->pin sibling of Check 35 (#1256). Check 35 fires only when
+# committed result-JSON METADATA carries a machine pin
+# (`_scan_cross_issue_reuse_pins`); a footer `- Reused ... from [#M](...)`
+# bullet AUTHORED without any pinned path is invisible to it (#1315: two
+# unpinned `- Reused ... from [#1090]` bullets while Check 35
+# graceful-skipped; caught only by the LM critic). This check reads ONLY
+# the body text — no eval scan, so `EPM_VERIFY_BODY_NO_EVAL_SCAN` does
+# not (and must not) fence it.
+_FOOTER_REUSED_BULLET_RE = re.compile(r"^\s*[-*]\s+Reused\b", re.IGNORECASE)
+_REUSED_FROM_ISSUE_RE = re.compile(r"\bfrom\s+\[#(\d+)\]\(", re.IGNORECASE)
+# Bullet-scoped pin forms (corpus 2026-07-15: 36/40 committed trigger
+# bullets satisfy one; the satisfier is deliberately BULLET-scoped and
+# excludes issue-mention forms — `#M` / `/tasks/M` appear in EVERY
+# trigger bullet via the from-link itself, so the `_tier1_satisfied`
+# fallback shapes would make this check vacuous):
+_BULLET_REV_URL_RE = re.compile(r"/(?:tree|resolve|commit|blob)/[0-9a-fA-F]{7,40}\b")
+_BULLET_AT_REV_RE = re.compile(r"@[ \t]*`?[0-9a-fA-F]{7,40}\b")
+_BULLET_EVAL_PATH_RE = re.compile(r"\beval_results/issue_\d+/")
+# SPEC.md § footer sanctions WandB `/runs/<id>` as a pinned URL form; a
+# WandB run id is base36 (letters beyond a-f), so neither the rev-URL nor
+# the bare-hex form catches it — without this a SPEC-conformant bullet
+# would false-WARN:
+_BULLET_WANDB_RUN_RE = re.compile(r"\bwandb\.ai/\S+/runs/\w+", re.IGNORECASE)
+
+
+def _footer_reused_bullets(footer: str) -> list[str]:
+    """Split footer text into `- Reused ...` bullets, joining indented
+    non-bullet continuation lines onto their bullet (a wrapped bullet's
+    pin may sit on a continuation line). Fence-aware: bullets inside a
+    fenced code block (an illustrative skeleton) are ignored; `>`-quoted
+    Context-prompt lines never match the bullet anchor."""
+    bullets: list[str] = []
+    current: str | None = None
+    in_fence = False
+    for line in footer.splitlines():
+        stripped = line.strip()
+        if stripped.startswith("```") or stripped.startswith("~~~"):
+            in_fence = not in_fence
+            if current is not None:
+                bullets.append(current)
+                current = None
+            continue
+        if in_fence:
+            continue
+        if _FOOTER_REUSED_BULLET_RE.match(line):
+            if current is not None:
+                bullets.append(current)
+            current = stripped
+        elif current is not None and line[:1] in (" ", "\t") and not re.match(r"^\s*[-*]\s", line):
+            current += " " + stripped
+        else:
+            if current is not None:
+                bullets.append(current)
+            current = None
+    if current is not None:
+        bullets.append(current)
+    return bullets
+
+
+def _reused_bullet_pinned(bullet: str) -> bool:
+    """True when the bullet carries a pin: a revision-URL segment
+    (`/tree/<sha>`, `/blob/<sha>`, `/resolve/<sha>`, `/commit/<sha>`),
+    an `@ <rev>` (optional backtick), a committed
+    `eval_results/issue_<M>/` path, a SPEC-sanctioned WandB run URL
+    (`wandb.ai/<entity>/<project>/runs/<id>`), or a bare >=7-char hex
+    token with at least one letter (a digits-only run like `12345678`
+    is a count, not a sha)."""
+    if (
+        _BULLET_REV_URL_RE.search(bullet)
+        or _BULLET_AT_REV_RE.search(bullet)
+        or _BULLET_EVAL_PATH_RE.search(bullet)
+        or _BULLET_WANDB_RUN_RE.search(bullet)
+    ):
+        return True
+    return any(any(c.isalpha() for c in tok) for tok in _BODY_HEX_TOKEN_RE.findall(bullet))
+
+
+def check_footer_reuse_bullets_pinned(body: str) -> CheckResult:
+    """Check 37 (WARN, v4-only, #1370): every footer
+    `- Reused ... from [#M](...)` bullet carries a revision/path pin.
+
+    Body-text-only sibling of Check 35 (#1256) — the body->pin direction.
+    WARN, not FAIL (corpus 2026-07-15: 40 trigger bullets across 40
+    footered v4 bodies; 4 lack every pin form — 3 are code-harness reuse
+    (#811/#833/#1112, remedy: append `@ <code-sha>`), 1 is the incident
+    class (#810); a FAIL would newly block any future re-verify of all
+    4 parked bodies). The from-link's own `#M` / `/tasks/M` NEVER
+    satisfies — every trigger bullet carries it by construction.
+    Documented false-negative residual: a bullet quoting the CURRENT
+    task's own code SHA (a letter-bearing hex unrelated to the reused
+    artifact) satisfies the bare-hex form — LM Lens 5 keeps owning
+    semantic pin-correctness.
+    Deliberately NOT fenced by `EPM_VERIFY_BODY_NO_EVAL_SCAN` (no
+    filesystem scan)."""
+    name = "footer Reused bullets carry a revision/path pin"
+    if not is_v4(body):
+        return CheckResult(name, True, "skipped — not a v4 body (forward-only)")
+    footer = _v4_footer_text(body)
+    if footer is None:
+        return CheckResult(name, True, "skipped — no **Repro:** footer found")
+    unpinned = [
+        b
+        for b in _footer_reused_bullets(footer)
+        if _REUSED_FROM_ISSUE_RE.search(b) and not _reused_bullet_pinned(b)
+    ]
+    if not unpinned:
+        return CheckResult(name, True, "all footer Reused-from-[#M] bullets pinned")
+    shown = "; ".join(f"`{b[:120]}`" for b in unpinned)
+    detail = (
+        f"{len(unpinned)} footer `- Reused ... from [#M](...)` bullet(s) carry no "
+        f"pinned path/revision: {shown} — add the permanent pin per reused artifact, "
+        "expected shape: `- Reused <kind> from [#M](...): <path> @ <rev> — fit: "
+        "<one line>` (an HF/GitHub `/tree/<sha>`-style URL, `@ <sha>`, a "
+        "committed `eval_results/issue_<M>/...` path, or a WandB run URL)"
+    )
+    return CheckResult(name, True, detail, is_warn=True)
 
 
 def _git_object_exists(repo: Path, sha: str, path: str) -> tuple[str, str]:
@@ -10689,6 +10829,9 @@ CHECKS = [
     check_v4_results_beat,  # check 21 (v4, WARN)
     check_v4_no_bare_issue_refs,  # check 27 (v4) — bare `#K` refs + task links, standalone secs
     check_v4_result_paragraph_sentences,  # check 36 (v4, WARN) — ≥4-sentence paras (#1368)
+    # check 37 (WARN, v4, #1370) — footer `- Reused ... from [#M](...)` bullets carry a
+    # revision/path pin (body-text-only sibling of check 35's metadata-side trigger):
+    check_footer_reuse_bullets_pinned,
     # generation-agnostic checks (v2 AND v3 AND v4):
     check_figure_url_sha_matches_repro,  # check 22
     check_hf_url_resolves,  # check 23

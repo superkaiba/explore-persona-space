@@ -152,7 +152,7 @@ def test_good_body_passes_all():
     # is a vacuous PASS here because this fixture carries no
     # availability-denial-near-artifact line. verify_text prepends check 0
     # (body-nonstub) + check 0b (no-duplicate-frontmatter), runs CHECKS[1:]
-    # (38 functions), then appends the Goal soft check, the H1↔frontmatter-
+    # (39 functions), then appends the Goal soft check, the H1↔frontmatter-
     # title sync check (#1110; PASS-skip: not a sentinelled body), the
     # Lens 14
     # concerns-audit, the check-16 lr-matches-plan reconciliation, the
@@ -166,15 +166,19 @@ def test_good_body_passes_all():
     # the check-31 orphaned-per-unit-figures probe (needs `issue` for
     # figures-dir scoping, #1011; PASS here — the fixture's fake sha is not
     # locally reachable, so the cited SHA is silently skipped) →
-    # 50 results total (2 prepended + CHECKS[1:]=38 + 10 appended). The
+    # 51 results total (2 prepended + CHECKS[1:]=39 + 10 appended; check 36
+    # `check_v4_result_paragraph_sentences` (#1368) and check 37
+    # `check_footer_reuse_bullets_pinned` (#1370) ride CHECKS and PASS-skip
+    # here — not a v4 body). The
     # Lens 14 / check-16 results are PASS-skips when no concerns.jsonl /
     # plans/plan.md sibling is available; check 17 and the v3/v4 checks
     # are PASS-skips on this legacy (pre-v2-sentinel) fixture.
-    assert len(results) == 50
+    assert len(results) == 51
     # By-name membership so the NEXT check addition can key by name instead
     # of re-deriving the arithmetic (#1016 methodology-reconciler Must-Fix).
     assert _HF_32_NAME in {r.name for r in results}
     assert "cross-issue reuse pins declared (footer Reused bullets)" in {r.name for r in results}
+    assert "footer Reused bullets carry a revision/path pin" in {r.name for r in results}
     assert "figure prose numerics vs figure sidecar (plotted-value drift)" in {
         r.name for r in results
     }
@@ -4668,17 +4672,20 @@ def test_checks_list_size():
     denominator check (needs eval JSONs), and the check-31
     orphaned-per-unit-figures probe (needs `issue` for figures-dir
     scoping, #1011).
-    So `verify_text` returns 50 results (2 prepended + CHECKS[1:]=38 +
+    So `verify_text` returns 51 results (2 prepended + CHECKS[1:]=39 +
     10 appended — see `test_good_body_passes_all`), but `CHECKS` stays
-    at 39.
+    at 40 (check 36 `check_v4_result_paragraph_sentences` (#1368) and
+    check 37 `check_footer_reuse_bullets_pinned` — the body-only
+    footer-side reuse-pin sibling of check 35, #1370 — ride CHECKS).
     """
-    assert len(verify_task_body.CHECKS) == 39
+    assert len(verify_task_body.CHECKS) == 40
     # By-name membership so the NEXT check addition can key by name instead
     # of re-deriving the arithmetic (#1016 methodology-reconciler Must-Fix).
     assert verify_task_body.check_hf_adjacent_file_claims in verify_task_body.CHECKS
     assert verify_task_body.check_figure_prose_numerics_vs_sidecar in verify_task_body.CHECKS
     assert verify_task_body.check_figure_beat_claims_vs_sidecar_text in verify_task_body.CHECKS
     assert verify_task_body.check_v4_result_paragraph_sentences in verify_task_body.CHECKS
+    assert verify_task_body.check_footer_reuse_bullets_pinned in verify_task_body.CHECKS
 
 
 # ─── Check 14: MDX-safe prose (regex layer + real-parse backstop) ───
@@ -11212,6 +11219,165 @@ def test_cross_issue_reuse_provenance_oversize_file_skipped(tmp_path):
     )
     assert res.passed and not res.is_warn, res.render()
     assert "graceful skip" in res.detail, res.render()
+
+
+# ─── Check 37: footer Reused bullets carry a revision/path pin (#1370) ──────
+#
+# Body-text-only sibling of Check 35 (#1256) — the body->pin direction
+# (#1315: two unpinned `- Reused ... from [#1090]` footer bullets while
+# Check 35 graceful-skipped; caught only by the LM critic). Direct-call
+# style on `_V4_GOOD_BODY`-derived fixtures; `_V4_GOOD_BODY`'s own footer
+# hex tokens (`0123456789abcdef` / `abc123def`) never contaminate because
+# the satisfiers are BULLET-scoped.
+
+_CHECK1370_UNPINNED_BULLET = (
+    "\n- Reused LoRA adapters from [#1090](https://eps.superkaiba.com/tasks/1090): "
+    "persona-context checkpoint — fit: same base model + recipe.\n"
+)
+
+
+def test_footer_reuse_bullet_unpinned_warns():
+    """MAIN / durability-pin test (#1370, incident #1315): a v4 footer
+    `- Reused ... from [#M](...)` bullet with no pin -> WARN naming the
+    bullet + the expected shape. Also pins the vacuity guard: the
+    from-link's own `/tasks/1090` + `#1090` must NOT satisfy."""
+    body = _V4_GOOD_BODY + _CHECK1370_UNPINNED_BULLET
+    res = verify_task_body.check_footer_reuse_bullets_pinned(body)
+    assert res.passed and res.is_warn, res.render()
+    assert "#1090" in res.detail and "@ <rev>" in res.detail, res.render()
+
+
+def test_footer_reuse_bullet_tree_sha_passes():
+    """Satisfier 1 — revision-URL segment: an HF `/tree/<sha>` URL in the
+    bullet -> no warn. Digit-only sha so the letter-bearing bare-hex form
+    cannot co-satisfy — this test pins the rev-URL regex itself."""
+    body = _V4_GOOD_BODY + (
+        "\n- Reused LoRA adapters from [#1090](https://eps.superkaiba.com/tasks/1090): "
+        "[adapters](https://huggingface.co/superkaiba1/explore-persona-space/tree/1234567890123/"
+        "adapters) — fit: same base model.\n"
+    )
+    res = verify_task_body.check_footer_reuse_bullets_pinned(body)
+    assert res.passed and not res.is_warn, res.render()
+
+
+def test_footer_reuse_bullet_at_rev_passes():
+    """Satisfier 2 — `@ <rev>` (backtick-tolerant): ``@ `1234567` `` in the
+    bullet -> no warn. Digit-only rev so ONLY the `@` form satisfies."""
+    body = _V4_GOOD_BODY + (
+        "\n- Reused train mix from [#1090](https://eps.superkaiba.com/tasks/1090): "
+        "issue1090_fu3/train_mix.jsonl @ `1234567` — fit: same recipe.\n"
+    )
+    res = verify_task_body.check_footer_reuse_bullets_pinned(body)
+    assert res.passed and not res.is_warn, res.render()
+
+
+def test_footer_reuse_bullet_eval_results_path_passes():
+    """Satisfier 3 — a committed `eval_results/issue_<M>/` path in the
+    bullet -> no warn (git-tree-reachable inputs are pinned by path)."""
+    body = _V4_GOOD_BODY + (
+        "\n- Reused geometry summary from [#653](https://eps.superkaiba.com/tasks/653): "
+        "committed eval_results/issue_653/geometry_summary.json — fit: same probe set.\n"
+    )
+    res = verify_task_body.check_footer_reuse_bullets_pinned(body)
+    assert res.passed and not res.is_warn, res.render()
+
+
+def test_footer_reuse_bullet_bare_hex_token_passes():
+    """Satisfier 5 — a bare letter-bearing >=7-char hex token
+    (`2511ed7d`) -> no warn (a quoted short sha pins without `@`)."""
+    body = _V4_GOOD_BODY + (
+        "\n- Reused null matrix from [#653](https://eps.superkaiba.com/tasks/653): "
+        "committed at `2511ed7d` — fit: same fold structure.\n"
+    )
+    res = verify_task_body.check_footer_reuse_bullets_pinned(body)
+    assert res.passed and not res.is_warn, res.render()
+
+
+def test_footer_reuse_bullet_digit_only_token_still_warns():
+    """A digits-only >=7-char token (`12345678` — a row count, not a sha)
+    does NOT satisfy the bare-hex form -> WARN (the letter requirement
+    rejects counts)."""
+    body = _V4_GOOD_BODY + (
+        "\n- Reused judge outputs from [#653](https://eps.superkaiba.com/tasks/653): "
+        "12345678 scored rows — fit: same rubric.\n"
+    )
+    res = verify_task_body.check_footer_reuse_bullets_pinned(body)
+    assert res.passed and res.is_warn, res.render()
+
+
+def test_footer_reuse_bullet_no_from_clause_skips():
+    """A `- Reused` bullet WITHOUT a `from [#M](` clause (self-reuse
+    "this task" form) is out of scope -> clean PASS, no warn."""
+    body = _V4_GOOD_BODY + (
+        "\n- Reused round-1 null matrix (this task) — fit: same seeds, no drift.\n"
+    )
+    res = verify_task_body.check_footer_reuse_bullets_pinned(body)
+    assert res.passed and not res.is_warn, res.render()
+    assert "pinned" in res.detail, res.render()
+
+
+def test_footer_reuse_bullet_v3_body_vacuous_pass():
+    """Forward-only: a grandfathered v3 body with the SAME unpinned bullet
+    -> vacuous PASS (never newly WARN/FAIL a v3/v2 body)."""
+    body = _V3_GOOD_BODY + _CHECK1370_UNPINNED_BULLET
+    res = verify_task_body.check_footer_reuse_bullets_pinned(body)
+    assert res.passed and not res.is_warn, res.render()
+    assert "not a v4 body" in res.detail, res.render()
+
+
+def test_footer_reuse_bullet_no_footer_skips():
+    """A v4 body truncated before `**Repro:**` (no footer) -> PASS with
+    the no-footer skip detail."""
+    body = _V4_GOOD_BODY.split("**Repro:**")[0]
+    res = verify_task_body.check_footer_reuse_bullets_pinned(body)
+    assert res.passed and not res.is_warn, res.render()
+    assert "no **Repro:** footer" in res.detail, res.render()
+
+
+def test_footer_reuse_bullet_fires_under_eval_scan_fence(monkeypatch):
+    """Decision 6 (#1370): `EPM_VERIFY_BODY_NO_EVAL_SCAN=1` fences eval
+    scans, NOT body-text reads — the unpinned bullet still WARNs (fencing
+    this check would re-open the #1315 hole in fenced invocations)."""
+    monkeypatch.setenv("EPM_VERIFY_BODY_NO_EVAL_SCAN", "1")
+    body = _V4_GOOD_BODY + _CHECK1370_UNPINNED_BULLET
+    res = verify_task_body.check_footer_reuse_bullets_pinned(body)
+    assert res.passed and res.is_warn, res.render()
+
+
+def test_footer_reuse_bullet_continuation_line_pin_passes():
+    """Continuation-joining: a wrapped bullet whose pin sits on an
+    indented non-bullet continuation line -> no warn."""
+    body = _V4_GOOD_BODY + (
+        "\n- Reused LoRA adapters from [#1090](https://eps.superkaiba.com/tasks/1090):\n"
+        "  persona-context checkpoint @ deadbeef — fit: same base model.\n"
+    )
+    res = verify_task_body.check_footer_reuse_bullets_pinned(body)
+    assert res.passed and not res.is_warn, res.render()
+
+
+def test_footer_reuse_bullet_wandb_run_url_passes():
+    """Satisfier 4 — SPEC-sanctioned WandB `/runs/<id>` URL -> no warn.
+    The run id is base36 (letters beyond a-f), so neither the rev-URL nor
+    the bare-hex form can co-satisfy (v2 amendment)."""
+    body = _V4_GOOD_BODY + (
+        "\n- Reused training metrics from [#1090](https://eps.superkaiba.com/tasks/1090): "
+        "https://wandb.ai/superkaiba1/issue1090/runs/ab12xy9z — fit: same run config.\n"
+    )
+    res = verify_task_body.check_footer_reuse_bullets_pinned(body)
+    assert res.passed and not res.is_warn, res.render()
+
+
+def test_footer_reuse_bullet_fenced_skeleton_ignored():
+    """Fence-aware split (#1370 §8 risk row 4): an unpinned
+    `- Reused ... from [#M](...)` line INSIDE a ```-fenced footer block
+    (an illustrative skeleton) never triggers -> clean PASS."""
+    body = _V4_GOOD_BODY + (
+        "\n```\n"
+        "- Reused <kind> from [#1090](https://eps.superkaiba.com/tasks/1090): skeleton example\n"
+        "```\n"
+    )
+    res = verify_task_body.check_footer_reuse_bullets_pinned(body)
+    assert res.passed and not res.is_warn, res.render()
 
 
 # ─── Check 15 clause-scoping (#893, incident #841) ─────────────────────────
