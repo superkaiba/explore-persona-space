@@ -3,3 +3,4 @@
 {"ts": "2026-07-16T04:41:16Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "proposed", "to": "planning", "note": "Clarifier All-clear."}
 {"ts": "2026-07-16T04:41:48Z", "kind": "epm:progress", "version": 1, "by": "unknown", "note": "codex composers skipped — quota sentinel live until 2026-08-06T13:26:00+00:00 (#1204 pre-spawn check); single-Claude per no-show fallback for all review rounds this session."}
 {"ts": "2026-07-16T05:02:57Z", "kind": "epm:plan-verify", "version": 1, "by": "unknown", "note": "verify_plan.py PASS (n_fail=0, n_warn=0) on plan v1."}
+{"ts": "2026-07-16T05:25:48Z", "kind": "epm:plan-verify", "version": 2, "by": "unknown", "note": "verify_plan.py PASS (n_fail=0, n_warn=0) on plan v2 (round-1 critique-union revision)."}
