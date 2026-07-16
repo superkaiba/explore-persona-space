@@ -3078,8 +3078,8 @@
     "1395": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/1395",
-      "status": "approved",
+      "path": "tasks/running/1395",
+      "status": "running",
       "title": "daily-fix: REVISE unpiloted perm-battery wall-times"
     },
     "1396": {
