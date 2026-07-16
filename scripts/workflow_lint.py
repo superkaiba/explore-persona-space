@@ -9088,10 +9088,11 @@ AGENT_SPEC_SIZE_GRANDFATHER: dict[str, int] = {
     # + <=~1 KB. Prior: 51,600 — measured 50,642 B post-#948 (Step 3.8
     # copy-list bullet + inlined-rubric slot), 47,930 B post-#881)
     "codex-code-reviewer.md": 53_300,
-    # measured 66,574 B post-#1349 (item-5 non-cell smoke-axis min-N clause
-    # + notes: template floor line — plan-mandated growth; cap = measured
-    # + <=~1 KB. Prior: 66,300 — measured 65,548 B post-#1311)
-    "experiment-implementer.md": 67_400,
+    # measured 67,472 B post-#1363 (MALLOC_ARENA_MAX=2 in the VM-launch cap
+    # prefix + the #1315 arena parenthetical — plan-mandated growth; cap =
+    # measured + <=~1 KB. Prior: 67,400 — measured 66,574 B post-#1349,
+    # 66,300 — measured 65,548 B post-#1311)
+    "experiment-implementer.md": 67_900,
     # measured 65,540 B post-#1081 r2 (D3 crash-fix-relaunch addendum:
     # disposition-conditional resume-glob confirm — plan-mandated growth;
     # cap = measured + <=~1 KB. Prior: 65,500 — measured 62,672 B)
