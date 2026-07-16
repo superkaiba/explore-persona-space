@@ -1,0 +1,343 @@
+{
+  "meta": {
+    "script": "scripts/issue1092_inline_fair_comparison.py",
+    "git_commit": "35f8f6ad2df41a22af50f984939a6b21f5d317ec",
+    "generated_utc": "2026-07-16T06:37:28.146279+00:00",
+    "numpy": "2.2.6",
+    "torch": "2.8.0+cu128",
+    "layer": 14,
+    "manifest_rows": 21193,
+    "fit_rows": "battery-EXCLUDED: stratum != trait_stratum AND not is_eval_only",
+    "folds": "novel-prefix grouped 6-fold (group_key=prefix_id, FOLD_SEED=0)",
+    "target": "pooled t1/t2/t3 (stacked ambient 10752-dim; pca48 = top-48 PCs of stacked)",
+    "engine": "REUSE scripts/issue1092_fit_grid.py _fit_cv -> press_fit_predict",
+    "banked_read1_is_battery_included": true,
+    "provenance": "teacher-forced capture; own-policy greedy answers; battery-excluded"
+  },
+  "cells": {
+    "cell_inst_own": {
+      "n_battery_excluded": 17308,
+      "n_dense_core": 4752,
+      "n_folds": 6,
+      "group_key": "prefix_id",
+      "banked_read1_battery_included": {
+        "ambient": {
+          "prefix_end": 0.06507728422851033,
+          "context_end": 0.8043440222361293
+        },
+        "pca48": {
+          "prefix_end": 0.09604,
+          "context_end": 0.91034
+        },
+        "n_rows": 19708
+      },
+      "prefix_end_within_prefix_constancy": {
+        "overall_rowvec_std": 31.247167137918883,
+        "mean_within_prefix_rowvec_std": 0.0,
+        "ratio_within_over_overall": 0.0,
+        "n_multi_row_prefixes": 996
+      },
+      "bases": {
+        "ambient": {
+          "P_out": 10752,
+          "single_grain": {
+            "r2_prefix_battery_excluded_full": 0.06507882598789749,
+            "r2_context_battery_excluded_full": 0.8141832948824597,
+            "r2_prefix_battery_excluded_densecore": 0.07633511098945844,
+            "r2_context_battery_excluded_densecore": 0.6538711465002103,
+            "prefix_lambda_indices": [
+              5,
+              5,
+              5,
+              5,
+              5,
+              5
+            ],
+            "context_lambda_indices": [
+              5,
+              5,
+              5,
+              5,
+              5,
+              5
+            ]
+          },
+          "averaged_grain": {
+            "n_prefixes_kept": 996,
+            "min_rows_per_prefix": 3,
+            "n_queries_per_prefix": {
+              "mean": 17.377510040160644,
+              "median": 14.0,
+              "min": 12,
+              "max": 48
+            },
+            "r2_prefix_averaged": 0.3708897449163957,
+            "r2_context_averaged": 0.8193260751733688,
+            "prefix_avg_lambda_indices": [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "within_prefix_variance_fraction_perrow": 0.8474929886525371,
+            "estimated_residual_within_fraction_at_mean_nq": 0.04876952950646677,
+            "note_1_over_nq": "averaging ~17.4 queries per prefix shrinks the residual within-prefix (query+interaction+noise) variance from 0.847 of total to ~0.0488, leaving the averaged target dominated by between-prefix signal both arms can reach.",
+            "ss_tot_perrow": 27020231.979798567
+          },
+          "ceilings": {
+            "prefix_between_prefix_share_full": 0.15250701134746292,
+            "prefix_between_prefix_share_densecore": 0.10419466145828905,
+            "banked_read3_share_prefix_densecore": 0.10419466,
+            "share_query_densecore": 0.7192391293677722,
+            "share_interaction_densecore": 0.17656620917394952,
+            "context_additive_ceiling_densecore": 0.8234337908260505,
+            "context_mlp_companion_ceiling": null
+          },
+          "fraction_of_ceiling_single_grain_full": {
+            "prefix": 0.4267267807092866,
+            "context_vs_mlp": null,
+            "context_vs_additive": 0.988765950527351
+          },
+          "fraction_of_ceiling_single_grain_densecore": {
+            "prefix": 0.7326201738273964,
+            "context_vs_mlp": null,
+            "context_vs_additive": 0.7940785935494112
+          }
+        },
+        "pca48": {
+          "P_out": 48,
+          "single_grain": {
+            "r2_prefix_battery_excluded_full": 0.09834634098719763,
+            "r2_context_battery_excluded_full": 0.9141533323752868,
+            "r2_prefix_battery_excluded_densecore": 0.09851896416672434,
+            "r2_context_battery_excluded_densecore": 0.8539010993514702,
+            "prefix_lambda_indices": [
+              5,
+              5,
+              5,
+              5,
+              5,
+              5
+            ],
+            "context_lambda_indices": [
+              5,
+              5,
+              5,
+              5,
+              5,
+              5
+            ]
+          },
+          "averaged_grain": {
+            "n_prefixes_kept": 996,
+            "min_rows_per_prefix": 3,
+            "n_queries_per_prefix": {
+              "mean": 17.377510040160644,
+              "median": 14.0,
+              "min": 12,
+              "max": 48
+            },
+            "r2_prefix_averaged": 0.5290446256305392,
+            "r2_context_averaged": 0.935504559387362,
+            "prefix_avg_lambda_indices": [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "within_prefix_variance_fraction_perrow": 0.8304252264301835,
+            "estimated_residual_within_fraction_at_mean_nq": 0.047787354144006394,
+            "note_1_over_nq": "averaging ~17.4 queries per prefix shrinks the residual within-prefix (query+interaction+noise) variance from 0.830 of total to ~0.0478, leaving the averaged target dominated by between-prefix signal both arms can reach.",
+            "ss_tot_perrow": 18309981.19165536
+          },
+          "ceilings": {
+            "prefix_between_prefix_share_full": 0.1695747735698165,
+            "prefix_between_prefix_share_densecore": 0.11144270071166437,
+            "banked_read3_share_prefix_densecore": 0.10728734,
+            "share_query_densecore": 0.7816597986767826,
+            "share_interaction_densecore": 0.10689750061155329,
+            "context_additive_ceiling_densecore": 0.8931024993884467,
+            "context_mlp_companion_ceiling": 0.9288425073128529
+          },
+          "fraction_of_ceiling_single_grain_full": {
+            "prefix": 0.5799585570238545,
+            "context_vs_mlp": 0.984185505269282,
+            "context_vs_additive": 1.0235704558001515
+          },
+          "fraction_of_ceiling_single_grain_densecore": {
+            "prefix": 0.8840324537864745,
+            "context_vs_mlp": 0.9193174220910834,
+            "context_vs_additive": 0.9561064938640081
+          }
+        }
+      },
+      "wall_s": 3426.6885266453028
+    },
+    "cell_pre_own": {
+      "n_battery_excluded": 17308,
+      "n_dense_core": 4752,
+      "n_folds": 6,
+      "group_key": "prefix_id",
+      "banked_read1_battery_included": {
+        "ambient": {
+          "prefix_end": 0.05114,
+          "context_end": 0.71442
+        },
+        "pca48": {
+          "prefix_end": 0.0957,
+          "context_end": 0.81801
+        },
+        "n_rows": 19708
+      },
+      "prefix_end_within_prefix_constancy": {
+        "overall_rowvec_std": 7226.770688783268,
+        "mean_within_prefix_rowvec_std": 0.0,
+        "ratio_within_over_overall": 0.0,
+        "n_multi_row_prefixes": 996
+      },
+      "bases": {
+        "ambient": {
+          "P_out": 10752,
+          "single_grain": {
+            "r2_prefix_battery_excluded_full": 0.0575631072508499,
+            "r2_context_battery_excluded_full": 0.7383183825157749,
+            "r2_prefix_battery_excluded_densecore": 0.0752686672123608,
+            "r2_context_battery_excluded_densecore": 0.32317333213768684,
+            "prefix_lambda_indices": [
+              5,
+              5,
+              5,
+              5,
+              5,
+              5
+            ],
+            "context_lambda_indices": [
+              5,
+              5,
+              5,
+              5,
+              5,
+              5
+            ]
+          },
+          "averaged_grain": {
+            "n_prefixes_kept": 996,
+            "min_rows_per_prefix": 3,
+            "n_queries_per_prefix": {
+              "mean": 17.377510040160644,
+              "median": 14.0,
+              "min": 12,
+              "max": 48
+            },
+            "r2_prefix_averaged": 0.2609328571729165,
+            "r2_context_averaged": 0.7633080486910762,
+            "prefix_avg_lambda_indices": [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "within_prefix_variance_fraction_perrow": 0.8339848895547071,
+            "estimated_residual_within_fraction_at_mean_nq": 0.047992197249623766,
+            "note_1_over_nq": "averaging ~17.4 queries per prefix shrinks the residual within-prefix (query+interaction+noise) variance from 0.834 of total to ~0.0480, leaving the averaged target dominated by between-prefix signal both arms can reach.",
+            "ss_tot_perrow": 42786714.8935867
+          },
+          "ceilings": {
+            "prefix_between_prefix_share_full": 0.166015110445293,
+            "prefix_between_prefix_share_densecore": 0.11802503131293586,
+            "banked_read3_share_prefix_densecore": 0.11802503,
+            "share_query_densecore": 0.6012675803777157,
+            "share_interaction_densecore": 0.2807073883093411,
+            "context_additive_ceiling_densecore": 0.7192926116906588,
+            "context_mlp_companion_ceiling": null
+          },
+          "fraction_of_ceiling_single_grain_full": {
+            "prefix": 0.34673414423814564,
+            "context_vs_mlp": null,
+            "context_vs_additive": 1.0264506690544157
+          },
+          "fraction_of_ceiling_single_grain_densecore": {
+            "prefix": 0.6377347785893887,
+            "context_vs_mlp": null,
+            "context_vs_additive": 0.4492932735372955
+          }
+        },
+        "pca48": {
+          "P_out": 48,
+          "single_grain": {
+            "r2_prefix_battery_excluded_full": 0.1045136492953852,
+            "r2_context_battery_excluded_full": 0.8369607183481051,
+            "r2_prefix_battery_excluded_densecore": 0.10433205870962226,
+            "r2_context_battery_excluded_densecore": 0.5743593791948381,
+            "prefix_lambda_indices": [
+              5,
+              5,
+              5,
+              5,
+              5,
+              5
+            ],
+            "context_lambda_indices": [
+              5,
+              5,
+              5,
+              5,
+              5,
+              5
+            ]
+          },
+          "averaged_grain": {
+            "n_prefixes_kept": 996,
+            "min_rows_per_prefix": 3,
+            "n_queries_per_prefix": {
+              "mean": 17.377510040160644,
+              "median": 14.0,
+              "min": 12,
+              "max": 48
+            },
+            "r2_prefix_averaged": 0.46273357709206353,
+            "r2_context_averaged": 0.8843018488452181,
+            "prefix_avg_lambda_indices": [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "within_prefix_variance_fraction_perrow": 0.8025121994213523,
+            "estimated_residual_within_fraction_at_mean_nq": 0.046181081039037834,
+            "note_1_over_nq": "averaging ~17.4 queries per prefix shrinks the residual within-prefix (query+interaction+noise) variance from 0.803 of total to ~0.0462, leaving the averaged target dominated by between-prefix signal both arms can reach.",
+            "ss_tot_perrow": 27577820.92033671
+          },
+          "ceilings": {
+            "prefix_between_prefix_share_full": 0.19748780057864765,
+            "prefix_between_prefix_share_densecore": 0.13711064609869772,
+            "banked_read3_share_prefix_densecore": 0.13288952,
+            "share_query_densecore": 0.6538153333091754,
+            "share_interaction_densecore": 0.20907402059212726,
+            "context_additive_ceiling_densecore": 0.7909259794078727,
+            "context_mlp_companion_ceiling": null
+          },
+          "fraction_of_ceiling_single_grain_full": {
+            "prefix": 0.5292157236505535,
+            "context_vs_mlp": null,
+            "context_vs_additive": 1.0582035995007983
+          },
+          "fraction_of_ceiling_single_grain_densecore": {
+            "prefix": 0.7609333168375552,
+            "context_vs_mlp": null,
+            "context_vs_additive": 0.7261860074754818
+          }
+        }
+      },
+      "wall_s": 3688.64389067702
+    }
+  }
+}
