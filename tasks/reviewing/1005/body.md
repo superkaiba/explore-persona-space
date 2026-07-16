@@ -21,6 +21,8 @@ relates_to:
 
 <!-- clean-result-v4 -->
 
+**Methodology:** [docs/methodology/issue_1005.md](https://github.com/superkaiba/explore-persona-space/blob/41414496c379547b5b6f28f3aac7610d7c1f148f/docs/methodology/issue_1005.md) · [gist](https://gist.github.com/superkaiba/67e347746fa704df89aa570565888e93)
+
 ## Takeaways
 
 - The parent's mediation signature replicates on a second thinking lineage: per-question CoT-conditioning gain +0.33 (95% CI +0.27 to +0.39; parent +0.20), composed matches direct, context adds −0.016 on top of the CoT.
