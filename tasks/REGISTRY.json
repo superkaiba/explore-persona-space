@@ -3127,8 +3127,8 @@
     "1400": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1400",
-      "status": "running",
+      "path": "tasks/reviewing/1400",
+      "status": "reviewing",
       "title": "daily-fix: triage observer empty-window false flags"
     },
     "1401": {
