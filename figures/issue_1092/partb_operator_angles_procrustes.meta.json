@@ -1,0 +1,661 @@
+{
+  "commit": "e96de01e6d",
+  "created": "2026-07-16T09:43:03Z",
+  "figsize": [
+    13.6,
+    5.4
+  ],
+  "points": [
+    {
+      "x": 0.84,
+      "mean principal angle (degrees; 0 = identical subspaces)": 25.311142955669418,
+      "label": "14",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 1.0,
+      "mean principal angle (degrees; 0 = identical subspaces)": 23.206007758441036,
+      "label": "14",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 1.16,
+      "mean principal angle (degrees; 0 = identical subspaces)": 22.56895323580948,
+      "label": "19",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": -0.16,
+      "mean principal angle (degrees; 0 = identical subspaces)": 29.176272098376234,
+      "label": "14",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.0,
+      "mean principal angle (degrees; 0 = identical subspaces)": 25.724023123536615,
+      "label": "18",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.16,
+      "mean principal angle (degrees; 0 = identical subspaces)": 24.044692467788046,
+      "label": "18",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.84,
+      "mean principal angle (degrees; 0 = identical subspaces)": 28.37654211267693,
+      "label": "14",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.0,
+      "mean principal angle (degrees; 0 = identical subspaces)": 26.76597801547993,
+      "label": "14",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.16,
+      "mean principal angle (degrees; 0 = identical subspaces)": 25.37320796358862,
+      "label": "18",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 4.84,
+      "mean principal angle (degrees; 0 = identical subspaces)": 24.239609453956543,
+      "label": "14",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 5.0,
+      "mean principal angle (degrees; 0 = identical subspaces)": 22.8880115575129,
+      "label": "14",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 5.16,
+      "mean principal angle (degrees; 0 = identical subspaces)": 21.807459396939844,
+      "label": "18",
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 2.84,
+      "mean principal angle (degrees; 0 = identical subspaces)": 25.412115401094997,
+      "label": "14",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 3.0,
+      "mean principal angle (degrees; 0 = identical subspaces)": 25.759563483710494,
+      "label": "18",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 3.16,
+      "mean principal angle (degrees; 0 = identical subspaces)": 25.233540112130868,
+      "label": "19",
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 3.84,
+      "mean principal angle (degrees; 0 = identical subspaces)": 29.95749487681068,
+      "label": "14",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 4.0,
+      "mean principal angle (degrees; 0 = identical subspaces)": 27.749559981944987,
+      "label": "14",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 4.16,
+      "mean principal angle (degrees; 0 = identical subspaces)": 26.042285638967858,
+      "label": "18",
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 5.84,
+      "mean principal angle (degrees; 0 = identical subspaces)": 33.98463028896891,
+      "label": "14",
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 6.0,
+      "mean principal angle (degrees; 0 = identical subspaces)": 29.87593430619018,
+      "label": "18",
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "x": 6.16,
+      "mean principal angle (degrees; 0 = identical subspaces)": 26.61923363074696,
+      "label": "18",
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 6.84,
+      "mean principal angle (degrees; 0 = identical subspaces)": 23.544555316927013,
+      "label": "14",
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "x": 7.0,
+      "mean principal angle (degrees; 0 = identical subspaces)": 23.797501708104935,
+      "label": "18",
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 7.16,
+      "mean principal angle (degrees; 0 = identical subspaces)": 22.863518085593366,
+      "label": "19",
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "x": 0.84,
+      "mean principal angle (degrees; 0 = identical subspaces)": 83.50007671681365,
+      "label": "14",
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 1.0,
+      "mean principal angle (degrees; 0 = identical subspaces)": 83.68320884025549,
+      "label": "18",
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 1.16,
+      "mean principal angle (degrees; 0 = identical subspaces)": 83.64270820502233,
+      "label": "19",
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": -0.16,
+      "mean principal angle (degrees; 0 = identical subspaces)": 83.43638207335609,
+      "label": "14",
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "x": 0.0,
+      "mean principal angle (degrees; 0 = identical subspaces)": 83.60717589128193,
+      "label": "18",
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 0.16,
+      "mean principal angle (degrees; 0 = identical subspaces)": 83.65859718692947,
+      "label": "19",
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "x": 1.84,
+      "mean principal angle (degrees; 0 = identical subspaces)": 83.60777323657074,
+      "label": "14",
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "x": 2.0,
+      "mean principal angle (degrees; 0 = identical subspaces)": 83.71312810214796,
+      "label": "18",
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "x": 2.16,
+      "mean principal angle (degrees; 0 = identical subspaces)": 83.95829207259177,
+      "label": "19",
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "x": 4.84,
+      "mean principal angle (degrees; 0 = identical subspaces)": 83.57489641222136,
+      "label": "14",
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "x": 5.0,
+      "mean principal angle (degrees; 0 = identical subspaces)": 83.90071070698346,
+      "label": "18",
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "x": 5.16,
+      "mean principal angle (degrees; 0 = identical subspaces)": 83.76908219896283,
+      "label": "19",
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "x": 2.84,
+      "mean principal angle (degrees; 0 = identical subspaces)": 83.3340456735445,
+      "label": "14",
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "x": 3.0,
+      "mean principal angle (degrees; 0 = identical subspaces)": 83.57630179458842,
+      "label": "18",
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "x": 3.16,
+      "mean principal angle (degrees; 0 = identical subspaces)": 83.7970297171737,
+      "label": "19",
+      "_kind": "scatter",
+      "_group": 38
+    },
+    {
+      "x": 3.84,
+      "mean principal angle (degrees; 0 = identical subspaces)": 83.7062299062606,
+      "label": "14",
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "x": 4.0,
+      "mean principal angle (degrees; 0 = identical subspaces)": 83.7502179330469,
+      "label": "18",
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "x": 4.16,
+      "mean principal angle (degrees; 0 = identical subspaces)": 83.89854265094989,
+      "label": "19",
+      "_kind": "scatter",
+      "_group": 41
+    },
+    {
+      "x": 5.84,
+      "mean principal angle (degrees; 0 = identical subspaces)": 83.29703069166939,
+      "label": "14",
+      "_kind": "scatter",
+      "_group": 42
+    },
+    {
+      "x": 6.0,
+      "mean principal angle (degrees; 0 = identical subspaces)": 83.65710139635998,
+      "label": "18",
+      "_kind": "scatter",
+      "_group": 43
+    },
+    {
+      "x": 6.16,
+      "mean principal angle (degrees; 0 = identical subspaces)": 83.82959929188867,
+      "label": "19",
+      "_kind": "scatter",
+      "_group": 44
+    },
+    {
+      "x": 6.84,
+      "mean principal angle (degrees; 0 = identical subspaces)": 83.42942541721276,
+      "label": "14",
+      "_kind": "scatter",
+      "_group": 45
+    },
+    {
+      "x": 7.0,
+      "mean principal angle (degrees; 0 = identical subspaces)": 83.6702627787154,
+      "label": "18",
+      "_kind": "scatter",
+      "_group": 46
+    },
+    {
+      "x": 7.16,
+      "mean principal angle (degrees; 0 = identical subspaces)": 83.84786853494165,
+      "label": "19",
+      "_kind": "scatter",
+      "_group": 47
+    },
+    {
+      "x": 0.84,
+      "min over rotations of ||W_ctx - R.W_pfx|| / ||W_ctx||": 1.0069692694774914,
+      "label": "14",
+      "_kind": "scatter",
+      "_group": 48
+    },
+    {
+      "x": 1.0,
+      "min over rotations of ||W_ctx - R.W_pfx|| / ||W_ctx||": 1.0233230667885278,
+      "label": "18",
+      "_kind": "scatter",
+      "_group": 49
+    },
+    {
+      "x": 1.16,
+      "min over rotations of ||W_ctx - R.W_pfx|| / ||W_ctx||": 1.0521563974757961,
+      "label": "19",
+      "_kind": "scatter",
+      "_group": 50
+    },
+    {
+      "x": -0.16,
+      "min over rotations of ||W_ctx - R.W_pfx|| / ||W_ctx||": 0.9766117085024394,
+      "label": "14",
+      "_kind": "scatter",
+      "_group": 51
+    },
+    {
+      "x": 0.0,
+      "min over rotations of ||W_ctx - R.W_pfx|| / ||W_ctx||": 0.9850803407610298,
+      "label": "18",
+      "_kind": "scatter",
+      "_group": 52
+    },
+    {
+      "x": 0.16,
+      "min over rotations of ||W_ctx - R.W_pfx|| / ||W_ctx||": 0.9983467842220053,
+      "label": "19",
+      "_kind": "scatter",
+      "_group": 53
+    },
+    {
+      "x": 1.84,
+      "min over rotations of ||W_ctx - R.W_pfx|| / ||W_ctx||": 0.9721779969941883,
+      "label": "14",
+      "_kind": "scatter",
+      "_group": 54
+    },
+    {
+      "x": 2.0,
+      "min over rotations of ||W_ctx - R.W_pfx|| / ||W_ctx||": 0.9723137033199973,
+      "label": "18",
+      "_kind": "scatter",
+      "_group": 55
+    },
+    {
+      "x": 2.16,
+      "min over rotations of ||W_ctx - R.W_pfx|| / ||W_ctx||": 0.9726584261357241,
+      "label": "19",
+      "_kind": "scatter",
+      "_group": 56
+    },
+    {
+      "x": 4.84,
+      "min over rotations of ||W_ctx - R.W_pfx|| / ||W_ctx||": 0.976492056180525,
+      "label": "14",
+      "_kind": "scatter",
+      "_group": 57
+    },
+    {
+      "x": 5.0,
+      "min over rotations of ||W_ctx - R.W_pfx|| / ||W_ctx||": 0.9758419696142397,
+      "label": "19",
+      "_kind": "scatter",
+      "_group": 58
+    },
+    {
+      "x": 5.16,
+      "min over rotations of ||W_ctx - R.W_pfx|| / ||W_ctx||": 0.9785278354097646,
+      "label": "19",
+      "_kind": "scatter",
+      "_group": 59
+    },
+    {
+      "x": 2.84,
+      "min over rotations of ||W_ctx - R.W_pfx|| / ||W_ctx||": 1.0582270425583014,
+      "label": "14",
+      "_kind": "scatter",
+      "_group": 60
+    },
+    {
+      "x": 3.0,
+      "min over rotations of ||W_ctx - R.W_pfx|| / ||W_ctx||": 1.0747363464022137,
+      "label": "18",
+      "_kind": "scatter",
+      "_group": 61
+    },
+    {
+      "x": 3.16,
+      "min over rotations of ||W_ctx - R.W_pfx|| / ||W_ctx||": 1.1144094004315674,
+      "label": "19",
+      "_kind": "scatter",
+      "_group": 62
+    },
+    {
+      "x": 3.84,
+      "min over rotations of ||W_ctx - R.W_pfx|| / ||W_ctx||": 0.9746407560940001,
+      "label": "14",
+      "_kind": "scatter",
+      "_group": 63
+    },
+    {
+      "x": 4.0,
+      "min over rotations of ||W_ctx - R.W_pfx|| / ||W_ctx||": 0.9735480134132145,
+      "label": "18",
+      "_kind": "scatter",
+      "_group": 64
+    },
+    {
+      "x": 4.16,
+      "min over rotations of ||W_ctx - R.W_pfx|| / ||W_ctx||": 0.973978820558568,
+      "label": "19",
+      "_kind": "scatter",
+      "_group": 65
+    },
+    {
+      "x": 5.84,
+      "min over rotations of ||W_ctx - R.W_pfx|| / ||W_ctx||": 0.9876558260579551,
+      "label": "14",
+      "_kind": "scatter",
+      "_group": 66
+    },
+    {
+      "x": 6.0,
+      "min over rotations of ||W_ctx - R.W_pfx|| / ||W_ctx||": 0.9874891853668825,
+      "label": "18",
+      "_kind": "scatter",
+      "_group": 67
+    },
+    {
+      "x": 6.16,
+      "min over rotations of ||W_ctx - R.W_pfx|| / ||W_ctx||": 1.0076478106943172,
+      "label": "19",
+      "_kind": "scatter",
+      "_group": 68
+    },
+    {
+      "x": 6.84,
+      "min over rotations of ||W_ctx - R.W_pfx|| / ||W_ctx||": 0.98639728717509,
+      "label": "14",
+      "_kind": "scatter",
+      "_group": 69
+    },
+    {
+      "x": 7.0,
+      "min over rotations of ||W_ctx - R.W_pfx|| / ||W_ctx||": 0.9851220288518727,
+      "label": "19",
+      "_kind": "scatter",
+      "_group": 70
+    },
+    {
+      "x": 7.16,
+      "min over rotations of ||W_ctx - R.W_pfx|| / ||W_ctx||": 0.9900686728304456,
+      "label": "19",
+      "_kind": "scatter",
+      "_group": 71
+    }
+  ],
+  "n_series": 72,
+  "total_points": 72,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Prefix-arm vs context-arm operator subspaces (points: layers 14/18/19)",
+        "ylabel": "mean principal angle (degrees; 0 = identical subspaces)",
+        "legend_labels": [
+          "output subspaces (k@90% energy)",
+          "input subspaces (k=48)",
+          "200-draw spectrum-matched null (5th-95th pct)"
+        ],
+        "annotations": [
+          "14",
+          "18",
+          "19",
+          "14",
+          "18",
+          "19",
+          "14",
+          "18",
+          "19",
+          "14",
+          "18",
+          "19",
+          "14",
+          "18",
+          "19",
+          "14",
+          "18",
+          "19",
+          "14",
+          "18",
+          "19",
+          "14",
+          "18",
+          "19",
+          "14",
+          "18",
+          "19",
+          "14",
+          "18",
+          "19",
+          "14",
+          "18",
+          "19",
+          "14",
+          "18",
+          "19",
+          "14",
+          "18",
+          "19",
+          "14",
+          "18",
+          "19",
+          "14",
+          "18",
+          "19",
+          "14",
+          "18",
+          "19"
+        ],
+        "xticklabels": [
+          "inst / own",
+          "inst / Claude",
+          "inst / pretrained-text",
+          "inst / shuffled",
+          "pretrained / own",
+          "pretrained / Claude",
+          "pretrained / inst-text",
+          "pretrained / shuffled"
+        ],
+        "yticklabels": [
+          "0",
+          "20",
+          "40",
+          "60",
+          "80",
+          "100"
+        ]
+      },
+      {
+        "title_left": "No rotation maps the prefix-arm operator onto the context-arm operator",
+        "ylabel": "min over rotations of ||W_ctx - R.W_pfx|| / ||W_ctx||",
+        "legend_labels": [
+          "orthogonal-Procrustes residual",
+          "200-draw spectrum-matched null (5th-95th pct)"
+        ],
+        "annotations": [
+          "14",
+          "18",
+          "19",
+          "14",
+          "18",
+          "19",
+          "14",
+          "18",
+          "19",
+          "14",
+          "18",
+          "19",
+          "14",
+          "18",
+          "19",
+          "14",
+          "18",
+          "19",
+          "14",
+          "18",
+          "19",
+          "14",
+          "18",
+          "19"
+        ],
+        "xticklabels": [
+          "inst / own",
+          "inst / Claude",
+          "inst / pretrained-text",
+          "inst / shuffled",
+          "pretrained / own",
+          "pretrained / Claude",
+          "pretrained / inst-text",
+          "pretrained / shuffled"
+        ],
+        "yticklabels": [
+          "0.96",
+          "0.98",
+          "1.00",
+          "1.02",
+          "1.04",
+          "1.06",
+          "1.08",
+          "1.10",
+          "1.12",
+          "1.14"
+        ]
+      }
+    ],
+    "series": [
+      "200-draw spectrum-matched null (5th-95th pct)",
+      "output subspaces (k@90% energy)",
+      "input subspaces (k=48)",
+      "orthogonal-Procrustes residual"
+    ]
+  }
+}
