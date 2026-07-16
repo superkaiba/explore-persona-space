@@ -16,7 +16,7 @@
 - Averaging over queries doesn't change the fitted map on averaged targets — but it throws away the query-specific component, which is the *only* component that transfers to held-out contexts
 - What averaging keeps is persona information: the prefix part is only ~11% of per-context variance, but it is the part that is stable across queries, so persona-level monitoring jumps from r 0.34/0.63/0.09 to 0.66/0.89/0.53 (evil/sycophancy/hallucination) when 40 questions are averaged
 - The prefix-average is trustworthy exactly where the theory says it should be: within-condition context-vector spread predicts held-out prefix-average error (Spearman +0.89, 28/28 layers) — personas cluster tightly and generalize well, format contexts scatter and fail
-- (running) the operator-level test of whether the query changes the *map itself* or only the input — early evidence predicts one shared operator
+- The operator-level test (scoped early read, Result 6): the two fitted maps share OUTPUT structure far beyond a spectrum-matched null in 12/12 reads while their INPUT read-directions sit at the null — one shared write-side operator into the answer subspace; the query supplies *which input directions carry the signal*, it does not add new operator structure
 
 ## Methodology
 
@@ -168,10 +168,25 @@ Finally, when is the prefix-average even a valid object? The theory's answer (as
 * A methodological trap worth remembering: the *in-sample* version of this read anti-correlates with spread (≈−0.72) — pure fit optimism (a flexible map interpolates a scattered condition's own centroid after training on its probes). Only the out-of-sample read is trustworthy
 * Caveat: this validates the operational prediction (more spread → worse prefix-average) with a linear map; isolating the theory's specific curvature mechanism (½K·s_W) needs leave-one-condition-out nonlinear fits — still 0 GPU, queued
 
+### _Result 6: The two maps write into one shared output subspace — the query changes what is read, not what is written_
+
+Finally, the operator-level question: does the query change the transfer operator itself, or only the input it gets applied to? I fit the prefix-arm and context-arm maps on the same battery-excluded rows and compared the fitted operators directly: principal angles between their top-k singular subspaces, separately for the input (right) and output (left) sides, plus an orthogonal-Procrustes residual — all against 200-draw spectrum-matched random-map null bands (scoped fast read: both own-text cells × layers 14/18/19 × both bases; the all-cell version rides the running refit battery).
+
+**Plot: input/output principal angles + Procrustes residuals vs spectrum-matched nulls**
+
+![operator angles vs null](https://raw.githubusercontent.com/superkaiba/explore-persona-space/a05b1192160c9a074e164c9d1da26fe7e65f25c4/figures/issue_1092/inline_operator_angles_vs_null.png)
+
+**Takeaways:**
+
+* The OUTPUT (answer-side) subspaces of the two maps are strongly aligned in all 12 reads: median principal angle 46–54° vs null ≈84° (ambient target), 13–23° vs null ≈36–45° (pca48), with the Procrustes residual below its null band everywhere (e.g. 0.852 vs null 1.006). Robust to the λ choice (own vs matched) and to k (48 vs 90%-energy)
+* The INPUT subspaces are indistinguishable from random (median ≈79–86°, sitting at the null) — which is what it should look like: the prefix state doesn't contain the query, so the two maps must read from different residual-stream directions
+* Interpretation: there is ONE shared operator structure on the *write* side — both maps push into the same answer-representation subspace — and the query's contribution is supplying input directions that carry signal, not new operator structure. This is the precise sense in which the prefix→answer map is the query-averaged restriction of the context→answer map, and it agrees with the additivity (Result 2) and floors (Result 1.5) pictures
+* Fits are clean identifiability-wise (n = 17,308 ≫ 3,584 input dims); the caveats are a GCV λ selector (vs the banked per-fold PRESS) and a top-48 low-rank SVD for the pca48 basis — both checked not to move the verdict
+
 ## Next steps:
 
 - (running) the battery-excluded refit of the Result 1 table + the per-target breakdown (4× CPU boxes; expected shifts ~±0.01)
-- (running) the operator-level M vs M′ comparison — principal angles + Procrustes residual between the fitted prefix-arm and context-arm operators vs spectrum-matched nulls. This decides whether the query adds *operator structure* or only *input information*; if the operators align, there is ONE transfer operator and the prefix map is just its query-averaged application. A scoped fast version on the headline cells is running on existing data; the all-cell version rides the refit
+- (done — Result 6, scoped) the operator-level M vs M′ comparison; the comprehensive all-cell version rides the refit battery and should confirm across the Claude-text and cross-model cells
 - Close the 0.833 → 0.910 stitch gap: where does the prefix×query interaction live (layers? directions? token positions)?
 - Isolate the coherence mechanism: leave-one-condition-out *nonlinear* fits for the Jensen-gap curvature test (0 GPU, on the existing store)
 - Use the split for behavior prediction: persona-level (query-averaged) reads are the strong monitoring surface — test whether the prefix component predicts behavior change under fine-tuning better than the full-context state does
