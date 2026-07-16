@@ -40,9 +40,20 @@ FU4_ADAPTER_REV = "48de22ca952ff1d334bfd77fff156d64345b1cb5"  # model repo (fu4)
 FU3_ADAPTER_REV = "90949b061d09b30d5850f2fec0043790939aa322"  # overflow repo (fu3)
 MARGIN_REV = "dda5585a13e0c4d6e3e16e027bffa8bad9c02ba7"  # data repo (fu4 margin)
 
+# bare-context-geometry follow-up (fu-r2, plan v7 §4.2 item 1): the fu5 bare
+# impolite organism at its band-selected rung. Model-repo pin resolved +
+# probe-verified 2026-07-16 (26 files under the prefix, 12 under
+# checkpoint-20/ incl. adapter_config.json + adapter_model.safetensors; the
+# overflow-repo probe 404s — the artifact lives on the MODEL repo).
+FU5_ADAPTER_REV = "daebfb541793c4eaa5d7f9204b9c14d6e8d0155d"  # model repo (fu5)
+
 # HF prefixes for the reused artifacts (Hub-verified 2026-07-15, plan §10)
 FU4_PERS_PREFIX = "adapters/issue1090_fu4/imp-pers-lr3e5"  # model repo
 FU4_CONV_PREFIX = "adapters/issue1090_fu4/imp-conv-lr3e5"  # model repo
+# lr-matched-wildchat-geometry follow-up (plan v5 §4.2): the lr-1e-5 WildChat
+# sibling at its band-selected rung (fu4_ladders.json runs.imp-conv-lr1e5).
+FU4_CONV_LR1E5_PREFIX = "adapters/issue1090_fu4/imp-conv-lr1e5"  # model repo
+FU5_BARE_PREFIX = "adapters/issue1090_fu5/imp-bare-lr3e5"  # model repo (fu5)
 FU3_ICL_CON_PREFIX = "adapters/issue1090_fu3/C2-icl-con-impolite-claude"  # overflow
 FU3_ICL_POS_PREFIX = "adapters/issue1090_fu3/C2-icl-pos-impolite-claude"  # overflow
 FU3_MIX_CON_PATH = "issue1090_fu3/C2-icl-con-impolite-claude/train_mix.jsonl"
@@ -75,6 +86,19 @@ REUSED_LORA_CELLS: dict[str, dict] = {
         "tier2_committed": 0.7371134020618557,  # tier2_confirm imp-conv-lr3e5
         "engaged_nats_committed": 3.106619014296421,
     },
+    # lr-matched-wildchat-geometry follow-up (plan v5 §4.1/§4.2): identical to
+    # imp_conv_lora except the adapter subpath (lr 3e-5 -> 1e-5) + its own
+    # band-selected rung / committed values (fu4_ladders.json
+    # runs.imp-conv-lr1e5 — verbatim, never retyped).
+    "imp_conv_lora_lr1e5": {
+        "context_id": CONV_CONTEXT_ID,
+        "repo": MODEL_REPO,
+        "revision": FU4_ADAPTER_REV,
+        "prefix": FU4_CONV_LR1E5_PREFIX,
+        "doses": {"selected": 20},
+        "tier2_committed": 0.7239583333333334,  # tier2_confirm imp-conv-lr1e5
+        "engaged_nats_committed": 3.0455304522847024,
+    },
     "imp_icl_lora_neg": {
         "context_id": ICL_CONTEXT_ID,
         "repo": OVERFLOW_REPO,
@@ -100,6 +124,25 @@ FT_CELLS: dict[str, dict] = {
     "imp_icl_ft_pos": {"context_id": ICL_CONTEXT_ID, "mix": "icl_pos_train_mix.jsonl"},
 }
 CONDITIONAL_BARE_CELL = "imp_bare_lora"  # fu5-gated; appended VM-side pre-launch
+# bare-context-geometry follow-up (fu-r2, plan v7 §4.2 item 1): the realized
+# fu5 bare-cell spec — DELIBERATELY a SEPARATE constant, NOT a
+# REUSED_LORA_CELLS row: the dispatcher's bare-cell special-cases key on the
+# cell NAME, so registering it in REUSED_LORA_CELLS would double-stage at p0
+# (generic loop + bare block) and re-route _cell_context_id. Values are copied
+# VERBATIM from eval_results/issue_1090/finish-impolite-bare-and-formatting-rank/
+# fu5_ladders.json -> runs["imp-bare-lr3e5"] (selection.step /
+# tier2_confirm_rate / margin.adapter_assert.max_abs_delta_pos_ln_logp) —
+# pinned by tests/test_issue1315_dispatch.py. NO DIFF_PAIRS row (singleton
+# panel group — plan §3: N/A, no paired contrast).
+BARE_CELL_SPEC: dict = {
+    "context_id": "default",
+    "repo": MODEL_REPO,
+    "revision": FU5_ADAPTER_REV,
+    "prefix": FU5_BARE_PREFIX,
+    "doses": {"selected": 20},
+    "tier2_committed": 0.675,  # fu5_ladders.json tier2_confirm_rate imp-bare-lr3e5
+    "engaged_nats_committed": 2.5080908413591056,  # margin.adapter_assert
+}
 ALL_CELLS = (*REUSED_LORA_CELLS, *FT_CELLS, "base")
 
 # ── FT recipe — byte-inherited from #1112 (plan §4.4; Source: #1112 §11 /
@@ -138,6 +181,11 @@ DIFF_PAIRS = (
     ("H4H5_method_ftneg_vs_loraneg", "imp_icl_ft_neg", "imp_icl_lora_neg"),
     ("H6_negatives_loraneg_vs_lorapos", "imp_icl_lora_neg", "imp_icl_lora_pos"),
     ("H6mirror_negatives_ftneg_vs_ftpos", "imp_icl_ft_neg", "imp_icl_ft_pos"),
+    # lr-matched-wildchat-geometry follow-up (plan v5 §4.3): the registered
+    # paired lr contrast, wildchat panel group (both cells share
+    # CONV_CONTEXT_ID, so the geometry rig's per-group DIFF_PAIRS filter
+    # picks it up with no rig change).
+    ("LRconv_lr1e5_vs_lr3e5", "imp_conv_lora_lr1e5", "imp_conv_lora"),
 )
 
 # ── Capture (plan §4.5) ──────────────────────────────────────────────────────
@@ -147,6 +195,7 @@ SPAN_ARMS = ("prefix", "context", "response")
 __all__ = [
     "ALL_CELLS",
     "APPLY_HALT_FLOOR_NATS",
+    "BARE_CELL_SPEC",
     "BEHAVIOR",
     "BOOT_SEED",
     "CAPTURE_GPU_MEM_UTIL",
@@ -163,6 +212,8 @@ __all__ = [
     "FT_SAVE_STEPS",
     "FT_STEP_CEILING",
     "FT_WARMUP_RATIO",
+    "FU5_ADAPTER_REV",
+    "FU5_BARE_PREFIX",
     "G1_EXT_CEILING",
     "HALFDRAW_SEED",
     "HF_DATA_REPO",

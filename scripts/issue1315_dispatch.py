@@ -158,6 +158,10 @@ class Cfg:
     bare_adapter_prefix: str | None = None
     bare_adapter_rev: str | None = None
     bare_committed_rate: float | None = None
+    # lr-matched-wildchat-geometry follow-up (plan v5 §4.2): data-repo revision
+    # to prestage the parent's committed base capture store from (None -> no
+    # prestage; the base pass captures fresh, the parent behavior).
+    prestage_base_rev: str | None = None
 
     def regime_key(self) -> dict:
         return {
@@ -173,6 +177,10 @@ class Cfg:
             "max_length": C.FT_MAX_LENGTH,
             "step_ceiling": C.FT_STEP_CEILING,
             "bare": self.bare_adapter_prefix,
+            # Output-affecting regime key (#722 r3 rule): a resume can never
+            # mix base generations from two store generations — a different
+            # rev (incl. rev vs fresh-capture None) fails _check_regime loud.
+            "prestage_base_rev": self.prestage_base_rev,
         }
 
 
@@ -409,13 +417,130 @@ def _staged_reused_ckpt(cfg: Cfg, cell: str, step: int) -> Path:
     return cfg.out_root / "inputs" / cell / f"checkpoint-{step}"
 
 
+def _bare_effective(cfg: Cfg) -> dict:
+    """Effective bare-cell staging/selection spec (fu-r2, plan v7 §4.2 2a):
+    ``C.BARE_CELL_SPEC`` defaults with the ``--bare-*`` CLI flags as OPTIONAL
+    overrides — the committed-record read the v3 contract required VM-side
+    pre-launch IS the spec (pinned to fu5_ladders.json by test). The staging
+    repo always routes by the spec (the fu5 adapters live on the MODEL repo;
+    the overflow probe 404s — plan §10)."""
+    spec = C.BARE_CELL_SPEC
+    return {
+        "prefix": cfg.bare_adapter_prefix or spec["prefix"],
+        "revision": cfg.bare_adapter_rev or spec["revision"],
+        "rate": (
+            cfg.bare_committed_rate
+            if cfg.bare_committed_rate is not None
+            else spec["tier2_committed"]
+        ),
+        "repo": spec["repo"],
+        "step": spec["doses"]["selected"],
+    }
+
+
+# ── base-store prestage (lr-matched-wildchat-geometry follow-up, plan v5 §4.2):
+# the paired lr contrast shares the EXACT base rows the parent committed, so
+# the geometry pass consumes the parent's base store instead of re-capturing.
+_PRESTAGE_BASE_FILES: tuple[tuple[str, str], ...] = (
+    (f"{C.DATA_PREFIX}/analysis_tensors/capture/base/base/pooled.pt", "pooled.pt"),
+    (f"{C.DATA_PREFIX}/raw_completions/capture/base/base/raw_rows.json", "raw_rows.json"),
+)
+
+
+def _base_store_required_pairs(cfg: Cfg) -> set[tuple[str, int]]:
+    """Every (context_id, question_idx) pair the run's cells pair against the
+    base store: each cell's capture panel (own source context + the 5-member
+    default_v1 panel) x the full eval-question index range."""
+    n_q = len(_eval_questions(cfg))
+    required: set[tuple[str, int]] = set()
+    for cell in cfg.cells:
+        for cid in _capture_panel(cfg, cell):
+            required.update((cid, qi) for qi in range(n_q))
+    return required
+
+
+def _assert_base_store_covers(
+    row_keys: set[tuple[str, int]], required: set[tuple[str, int]], *, what: str
+) -> None:
+    """Row-coverage predicate: HALT (RuntimeError) on a wrong/partial staged
+    base store BEFORE any GPU phase — never a silent fallback to re-capture."""
+    missing = sorted(required - row_keys)
+    if missing:
+        raise RuntimeError(
+            f"prestaged base store {what} is missing {len(missing)}/{len(required)} required "
+            f"(context_id, question_idx) rows (first: {missing[:3]}) — wrong/partial base "
+            "store at --prestage-base-rev; refusing to fall back to a base re-capture "
+            "(plan v5 §4.2)"
+        )
+
+
+def _prestage_base_store(cfg: Cfg, revision: str) -> dict:
+    """Stage the parent's committed base capture store from the data repo at
+    the PINNED ``revision`` into the consumer-exact paths
+    ``out_root/capture/base/base/{pooled.pt, raw_rows.json}`` (idempotent:
+    skip-if-present), then assert row coverage on BOTH files: every panel
+    (context_id, question_idx) the run's cells pair against must be present —
+    ``phase_capture``'s base resume predicate and ``run_capture_tf_unit``'s
+    row filter open these literal paths. Raises RuntimeError before any GPU
+    phase on a mismatch."""
+    import torch
+    from huggingface_hub import hf_hub_download
+
+    dest = cfg.out_root / "capture" / "base" / "base"
+    dest.mkdir(parents=True, exist_ok=True)
+    for path_in_repo, name in _PRESTAGE_BASE_FILES:
+        target = dest / name
+        if target.exists():
+            continue
+        # per-file scoped download at the pin, transient-retried (#1345 r5:
+        # a bare hf_hub_download HEAD probe let one HF 429 kill a healthy run)
+        got = hub.retry_transient(
+            lambda p=path_in_repo: hf_hub_download(
+                C.HF_DATA_REPO, p, repo_type="dataset", revision=revision
+            ),
+            what=f"prestage base {name} @ {revision[:12]}",
+        )
+        # tmp + os.replace so a kill mid-copy never leaves a truncated file
+        # the skip-if-present branch would trust (file convention: :1644)
+        tmp = target.with_name(target.name + ".tmp")
+        shutil.copyfile(got, tmp)
+        os.replace(tmp, target)
+    required = _base_store_required_pairs(cfg)
+    store = torch.load(dest / "pooled.pt", map_location="cpu", mmap=True)
+    pooled_keys = {(m["context_id"], int(m["question_idx"])) for m in store["row_meta"]}
+    _assert_base_store_covers(pooled_keys, required, what="pooled.pt row_meta")
+    raw = json.loads((dest / "raw_rows.json").read_text(encoding="utf-8"))
+    raw_keys = {(r["persona"], int(r["question_idx"])) for r in raw["rows"]}
+    _assert_base_store_covers(raw_keys, required, what="raw_rows.json rows")
+    logger.info(
+        "[prestage-base] staged base store @ %s: %d pooled rows cover %d required pairs",
+        revision,
+        len(pooled_keys),
+        len(required),
+    )
+    return {
+        "revision": revision,
+        "dest": str(dest),
+        "n_rows_pooled": len(pooled_keys),
+        "n_required": len(required),
+    }
+
+
 def phase_stage(cfg: Cfg) -> dict:
     _phase("p0_stage")
+    # Prestage BEFORE the p0 done-file early-return: staging is idempotent
+    # (skip-if-present) and the row-coverage assert re-verifies on every
+    # resumed process (plan v5 §4.2 — halt before any GPU phase).
+    prestage_rec = (
+        _prestage_base_store(cfg, cfg.prestage_base_rev) if cfg.prestage_base_rev else None
+    )
     inputs = cfg.out_root / "inputs"
     done_path = cfg.out_root / "p0_stage.json"
     if done_path.exists():
         return _read_json(done_path)
     rec: dict = {"staged": {}}
+    if prestage_rec is not None:
+        rec["prestage_base"] = prestage_rec
     _assert_banks_and_panel()
 
     # Frozen fu3 mixes @ pinned revision + sha-asserts (reuse check (f)).
@@ -454,12 +579,16 @@ def phase_stage(cfg: Cfg) -> dict:
             _assert_adapter_config(dest, cell)
         rec["staged"][cell] = str(inputs / cell)
     if C.CONDITIONAL_BARE_CELL in cfg.cells:
-        assert cfg.bare_adapter_prefix and cfg.bare_adapter_rev, (
-            "imp_bare_lora is in the cell set but no --bare-adapter-prefix/--bare-adapter-rev "
-            "was provided (the VM-side pre-launch fu5 read populates these; plan §4.2)"
-        )
-        dest = _staged_reused_ckpt(cfg, C.CONDITIONAL_BARE_CELL, 0)
-        _stage_overflow_prefix(cfg.bare_adapter_prefix, dest, revision=cfg.bare_adapter_rev)
+        # fu-r2 stage-route fix (plan v7 §4.2 2a/2b): the fu5 adapter lives on
+        # the MODEL repo at the BARE_CELL_SPEC pin (the pre-r2 overflow route
+        # 404s), and the selected rung is step 20, never the hardcoded 0.
+        bare = _bare_effective(cfg)
+        dest = _staged_reused_ckpt(cfg, C.CONDITIONAL_BARE_CELL, bare["step"])
+        subpath = f"{bare['prefix']}/checkpoint-{bare['step']}"
+        if bare["repo"] == C.OVERFLOW_REPO:
+            _stage_overflow_prefix(subpath, dest, revision=bare["revision"])
+        else:
+            _stage_model_prefix(subpath, dest, revision=bare["revision"])
         _assert_adapter_config(dest, C.CONDITIONAL_BARE_CELL)
         rec["staged"][C.CONDITIONAL_BARE_CELL] = str(dest)
     if cfg.smoke and not any(c in C.REUSED_LORA_CELLS for c in cfg.cells):
@@ -748,6 +877,16 @@ def _unit_args(cfg: Cfg, kind: str, arg: str) -> list[str]:
             else []
         )
         + ([] if cfg.upload else ["--no-upload"])
+        # fu-r2: thread the OPTIONAL bare overrides so a fanout unit resolves
+        # the same effective spec as the parent (_bare_effective defaults
+        # cover the flag-less case).
+        + (["--bare-adapter-prefix", cfg.bare_adapter_prefix] if cfg.bare_adapter_prefix else [])
+        + (["--bare-adapter-rev", cfg.bare_adapter_rev] if cfg.bare_adapter_rev else [])
+        + (
+            ["--bare-committed-rate", str(cfg.bare_committed_rate)]
+            if cfg.bare_committed_rate is not None
+            else []
+        )
     )
 
 
@@ -802,9 +941,13 @@ def phase_ladder(cfg: Cfg) -> dict:
         _atomic_json(cfg.out_root / cell / "selection.json", rec)
         selections[cell] = rec
     if C.CONDITIONAL_BARE_CELL in cfg.cells:
+        # fu-r2 (plan v7 §4.2 2b): the fu5 band-selected rung is step 20 at
+        # Tier-2 0.675 (spec-defaulted; --bare-committed-rate overrides) —
+        # run_capture_tf_unit reads this selection.json eagerly.
+        bare = _bare_effective(cfg)
         rec = {
-            "step": 0,
-            "rate": cfg.bare_committed_rate,
+            "step": bare["step"],
+            "rate": bare["rate"],
             "in_band": True,
             "fallback": None,
             "reused": True,
@@ -935,7 +1078,12 @@ def phase_persist_ft(cfg: Cfg, selections: dict) -> dict:
 def _fu4_committed_margin(cell: str) -> dict | None:
     """The committed fu4 margin record for a reused fu4 cell (same-surface
     references for the application HALT floor + pool sha)."""
-    run_id = {"imp_pers_lora": "imp-pers-lr3e5", "imp_conv_lora": "imp-conv-lr3e5"}.get(cell)
+    run_id = {
+        "imp_pers_lora": "imp-pers-lr3e5",
+        "imp_conv_lora": "imp-conv-lr3e5",
+        # lr-matched-wildchat-geometry follow-up (plan v5 §4.2 item 2)
+        "imp_conv_lora_lr1e5": "imp-conv-lr1e5",
+    }.get(cell)
     if run_id is None or not FU4_LADDERS_JSON.exists():
         return None
     return _read_json(FU4_LADDERS_JSON)["runs"][run_id]["margin"]
@@ -963,7 +1111,13 @@ def run_parity_unit(cfg: Cfg, cell: str) -> dict:
     context, HALT floor 0.5 nat (structural apply-path, HALT-class); (2)
     Tier-1-style judged read within ±0.15 of the committed Tier-2 (WARN-class:
     persisted + adjudicated, retrain fallback is the orchestrator's)."""
-    spec = C.REUSED_LORA_CELLS[cell]
+    spec = C.REUSED_LORA_CELLS.get(cell)
+    if spec is None:
+        # fu-r2 (plan v7 §4.2 2c): the bare cell rides BARE_CELL_SPEC — same
+        # row shape, so the probe body below is uniform across cells.
+        assert cell == C.CONDITIONAL_BARE_CELL, f"parity: unroutable cell {cell!r}"
+        bare = _bare_effective(cfg)
+        spec = {**C.BARE_CELL_SPEC, "tier2_committed": bare["rate"]}
     cell_root = cfg.out_root / cell
     out_path = cell_root / "parity.json"
     if out_path.exists():
@@ -987,7 +1141,18 @@ def run_parity_unit(cfg: Cfg, cell: str) -> dict:
     )
 
     # (2) WARN-class judged-rate window (the fu4 Tier-1 instrument).
-    organism = ModelOrganism(behavior=C.BEHAVIOR, context_id=spec["context_id"], seed=cfg.seed)
+    # fu-r2 (plan v7 §4.2 2c): thread the source-filtered panel — under the
+    # default default_v1 panel, ModelOrganism(context_id="default") hard-fails
+    # the #527/#538 content-identity disjointness check (organisms.py — the
+    # exact #1090 fu5 first-run incident). panel_name_for returns the default
+    # panel unchanged for every scaffolded cell (no content identity), so this
+    # single-site threading is behavior-preserving for the existing cells.
+    organism = ModelOrganism(
+        behavior=C.BEHAVIOR,
+        context_id=spec["context_id"],
+        negatives=fu3w.panel_name_for(ctx),
+        seed=cfg.seed,
+    )
     rate_fn = make_source_rate_fn(
         organism,
         out_dir=cell_root / "rate",
@@ -1039,7 +1204,11 @@ def run_parity_unit(cfg: Cfg, cell: str) -> dict:
 
 def phase_parity(cfg: Cfg) -> dict:
     _phase("p4_parity")
-    cells = [c for c in cfg.cells if c in C.REUSED_LORA_CELLS]
+    # fu-r2 (plan v7 §4.2 2c): the conditional bare cell is a reused adapter
+    # too — it gets the same parity probe (rate window 0.675 ± 0.15 WARN-class
+    # + the 0.5-nat application HALT floor vs the committed 2.5081-nat engaged
+    # value, plan §4.4(g)).
+    cells = [c for c in cfg.cells if c in C.REUSED_LORA_CELLS or c == C.CONDITIONAL_BARE_CELL]
     if not cells:
         return {"skipped": "no reused cells in this run"}
     pending = [c for c in cells if not (cfg.out_root / c / "parity.json").exists()]
@@ -1072,7 +1241,8 @@ def _selected_ckpt(cfg: Cfg, cell: str, selections: dict) -> Path:
     if cell in C.REUSED_LORA_CELLS:
         return _staged_reused_ckpt(cfg, cell, C.REUSED_LORA_CELLS[cell]["doses"]["selected"])
     if cell == C.CONDITIONAL_BARE_CELL:
-        return _staged_reused_ckpt(cfg, cell, 0)
+        # fu-r2 (plan v7 §4.2 2b): the fu5 band-selected rung (step 20), never 0
+        return _staged_reused_ckpt(cfg, cell, C.BARE_CELL_SPEC["doses"]["selected"])
     step = int(selections[cell]["step"])
     return _enumerate_rungs(_read_json(cfg.out_root / cell / "build_result.json")["adapter_root"])[
         step
@@ -1303,7 +1473,8 @@ def _capture_panel(cfg: Cfg, cell: str) -> dict[str, dict]:
     Per plan §4.3: the cell's OWN source context + the 5-member default_v1
     panel (incl. the bare assistant). The base pass captures the UNION of the
     3 source contexts + the panel (8 contexts; the conditional bare cell adds
-    no context — bare == the default panel member)."""
+    no context — bare == the default panel member). The bare cell itself
+    DEDUPES to the 5 panel members only (fu-r2, plan v7 §4.2 2d)."""
 
     def _ctx_entry(context_id: str) -> dict:
         ctx = _context(context_id)
@@ -1320,6 +1491,18 @@ def _capture_panel(cfg: Cfg, cell: str) -> dict[str, dict]:
         )
         for cid in source_ids:
             panel[cid] = _ctx_entry(cid)
+    elif cell == C.CONDITIONAL_BARE_CELL:
+        # fu-r2 dedupe (plan v7 §4.2 2d): the bare cell's own context
+        # CONTEXTS["default"] is CONTENT-IDENTICAL to the default_v1 panel's
+        # neg_default_assistant member ((system, user_wrap, prefix_turns) ==
+        # (None, None, ()) both — the #527/#538 invariant; the fu5
+        # panel_name_for fix is the training-side precedent). Adding the own
+        # "default" key would (i) HALT the prestage coverage assert (the
+        # committed base store holds 8 contexts, NO "default" key — plan §10)
+        # and (ii) double-weight the bare context with byte-duplicate rows.
+        # The neg_default_assistant rows ARE the bare cell's own-context rows:
+        # capture panel = the 5 default_v1 members (5 x 20 = 100 rows).
+        pass
     else:
         cid = _cell_context_id(cfg, cell)
         panel[cid] = _ctx_entry(cid)
@@ -1363,7 +1546,8 @@ def _resolve_capture_model(cfg: Cfg, cell: str, dose: str) -> tuple[str, Path | 
         merged = _merge_adapter(cfg, str(adapter), cell_root / f"merged_{dose}")
         return str(merged), merged
     if cell == C.CONDITIONAL_BARE_CELL:
-        adapter = _staged_reused_ckpt(cfg, cell, 0)
+        # fu-r2 (plan v7 §4.2 2b): the fu5 band-selected rung (step 20), never 0
+        adapter = _staged_reused_ckpt(cfg, cell, C.BARE_CELL_SPEC["doses"]["selected"])
         merged = _merge_adapter(cfg, str(adapter), cell_root / f"merged_{dose}")
         return str(merged), merged
     assert dose == "selected", (cell, dose)
@@ -1901,9 +2085,24 @@ def _parse_args(argv: Sequence[str] | None) -> argparse.Namespace:
     p.add_argument("--no-upload", dest="upload", action="store_false", default=True)
     p.add_argument("--phases", default=None, help="comma subset of phases to run (default all)")
     p.add_argument("--include-bare", action="store_true", help="add the conditional fu5 cell")
-    p.add_argument("--bare-adapter-prefix", default=None)
-    p.add_argument("--bare-adapter-rev", default=None)
-    p.add_argument("--bare-committed-rate", type=float, default=None)
+    # fu-r2 (plan v7 §4.2 2a): the --bare-* flags are OPTIONAL overrides of the
+    # committed BARE_CELL_SPEC (prefix WITHOUT the checkpoint-<step> suffix —
+    # the spec's selected step is appended, same shape as the generic loop).
+    p.add_argument("--bare-adapter-prefix", default=None, help="override BARE_CELL_SPEC prefix")
+    p.add_argument("--bare-adapter-rev", default=None, help="override BARE_CELL_SPEC revision")
+    p.add_argument(
+        "--bare-committed-rate",
+        type=float,
+        default=None,
+        help="override BARE_CELL_SPEC tier2_committed (selection rate + parity window)",
+    )
+    p.add_argument(
+        "--prestage-base-rev",
+        default=None,
+        help="data-repo revision to prestage the parent's committed base capture "
+        "store from (pooled.pt + raw_rows.json -> out_root/capture/base/base/; "
+        "row-coverage-asserted before any GPU phase — plan v5 §4.2)",
+    )
     args = p.parse_args(argv)
     if args.mode is not None:
         mode_smoke = args.mode == "smoke"
@@ -1954,6 +2153,7 @@ def build_cfg(args: argparse.Namespace) -> Cfg:
         bare_adapter_prefix=args.bare_adapter_prefix,
         bare_adapter_rev=args.bare_adapter_rev,
         bare_committed_rate=args.bare_committed_rate,
+        prestage_base_rev=args.prestage_base_rev,
     )
 
 

@@ -168,6 +168,14 @@ def _source_context(cell: str) -> str:
         return C.REUSED_LORA_CELLS[cell]["context_id"]
     if cell in C.FT_CELLS:
         return C.FT_CELLS[cell]["context_id"]
+    if cell == C.CONDITIONAL_BARE_CELL:
+        # fu-r2 (plan v7 §4.2 item 3): the bare cell's registered context
+        # (BARE_CELL_SPEC) — used ONLY as the panel-group key (singleton group
+        # `_group_default`; _cell_maps already knows the cell). The per-group
+        # DIFF_PAIRS filter yields no pairs for a singleton group, and
+        # _subset_base_store subsets by the trained store's key_order (the 5
+        # deduped panel slugs x 20 — all in the union base store).
+        return C.BARE_CELL_SPEC["context_id"]
     raise ValueError(f"unregistered cell: {cell}")
 
 
