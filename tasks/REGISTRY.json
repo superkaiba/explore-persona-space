@@ -3134,8 +3134,8 @@
     "1401": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1401",
-      "status": "running",
+      "path": "tasks/reviewing/1401",
+      "status": "reviewing",
       "title": "daily-fix: pod.py sync env GITHUB_TOKEN refresh leg"
     },
     "1402": {
