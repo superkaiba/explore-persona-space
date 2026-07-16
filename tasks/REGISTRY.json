@@ -3043,8 +3043,8 @@
     "1390": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1390",
-      "status": "reviewing",
+      "path": "tasks/completed/1390",
+      "status": "completed",
       "title": "daily-fix: interp-critic degenerate-series lens"
     },
     "1391": {
