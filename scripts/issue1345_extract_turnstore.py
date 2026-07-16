@@ -56,15 +56,16 @@ def _render_r1r2(convs: list[dict], tokenizer, regime: str) -> list:
     return [render(conv, tokenizer) for conv in convs]
 
 
-def assert_story_character_name(stories_dir: Path, model: str) -> None:
+def assert_story_character_name(stories_dir: Path, model: str, yield_name: str = "") -> None:
     """Env-mismatch guard (plan v6 §4): stored realized name == runtime constant.
 
-    The gen phase records ``story_character_name`` in ``story_yield_{model}.json``;
-    an extract phase launched without the EPM_STORY_CHARACTER_NAME env the gen
-    phase ran under fails HERE, at entry, never silently mid-parse. Parent-era
-    yield JSONs (no field) read as the ARIA default. Raises AssertionError.
+    The gen phase records ``story_character_name`` in ``story_yield_{model}.json``
+    (``yield_name`` overrides for the r4/r4op paired yield reports); an extract
+    phase launched without the EPM_STORY_CHARACTER_NAME env the gen phase ran
+    under fails HERE, at entry, never silently mid-parse. Parent-era yield JSONs
+    (no field) read as the ARIA default. Raises AssertionError.
     """
-    yield_path = stories_dir / f"story_yield_{model}.json"
+    yield_path = stories_dir / (yield_name or f"story_yield_{model}.json")
     assert yield_path.exists(), f"story yield report missing: {yield_path}"
     stored_name = json.loads(yield_path.read_text()).get("story_character_name", "ARIA")
     assert stored_name == c.STORY_CHARACTER_NAME, (
@@ -91,9 +92,48 @@ def _render_r3(stories: list[dict], tokenizer) -> tuple[list, dict]:
     return rendered, stats
 
 
+def _render_r4(stories: list[dict], tokenizer, *, verbatim_check: bool) -> tuple[list, dict]:
+    """Paired-story rows -> Rendered (ONE turn per story; conv_id = ORIGINAL id).
+
+    Teacher-forced capture (plan v8 §4): the render is the story text truncated
+    at the answer-span end — a SINGLE forward pass over
+    [wrapper + question + attribution + verbatim answer]; no generation. Slots
+    are identical to r3 (prefix = last token before the question utterance,
+    context = last token of the attribution marker) via the SAME
+    render_story_turn offset-mapping alignment + BPE seam guard. The row's
+    conv_id is the ORIGINAL conversation id — the structural gain that makes
+    the r4 corpus data-paired with r1/r2. ``verbatim_check`` re-asserts the gen
+    phase's mechanical gate (story[a_start:a_end] == original answer) at the
+    extraction trust boundary (r4 only; the op companion has no fixed answer).
+    """
+    rendered, stats = [], {"stories": 0, "turns_rendered": 0, "turns_dropped": 0}
+    for s in stories:
+        stats["stories"] += 1
+        assert len(s["parsed_turns"]) == 1, (
+            f"paired story {s['conv_id']}: expected exactly 1 parsed turn, "
+            f"got {len(s['parsed_turns'])} (gen keep-filter drift)"
+        )
+        turn = s["parsed_turns"][0]
+        if verbatim_check:
+            assert s["story"][turn["a_start"] : turn["a_end"]] == s["answer"], (
+                f"paired story {s['conv_id']}: stored span is not the verbatim answer "
+                "(gen keep-filter drift)"
+            )
+        r = c.render_story_turn(s["story"], turn, s["conv_id"], tokenizer)
+        if r is None:
+            stats["turns_dropped"] += 1
+            continue
+        stats["turns_rendered"] += 1
+        rendered.append(r)
+    return rendered, stats
+
+
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    ap.add_argument("--regime", choices=c.REGIMES, required=True)
+    # r4op = the on-policy companion CONTROL store (a fit cell, not a
+    # transfer/opcomp regime — hence not in c.REGIMES); variant-gated.
+    regime_choices = (*c.REGIMES, "r4op") if c.HAS_R4 else c.REGIMES
+    ap.add_argument("--regime", choices=regime_choices, required=True)
     ap.add_argument("--model", choices=("instruct", "pretrained"), required=True)
     ap.add_argument("--out-dir", type=Path, default=c.TURNSTORE_DIR)
     ap.add_argument("--dl-dir", type=Path, default=c.PARENT_DL_DIR)
@@ -118,7 +158,7 @@ def main() -> None:
             print(f"[smoke] limiting to {len(convs)} conversations", flush=True)
         rendered = _render_r1r2(convs, tokenizer, args.regime)
         render_stats = {"conversations": len(rendered)}
-    else:
+    elif args.regime == "r3":
         assert_story_character_name(args.stories_dir, args.model)
         kept_path = args.stories_dir / f"kept_stories_{args.model}.jsonl"
         stories = c.read_jsonl(kept_path)
@@ -127,6 +167,23 @@ def main() -> None:
             print(f"[smoke] limiting to {len(stories)} stories", flush=True)
         rendered, render_stats = _render_r3(stories, tokenizer)
         assert rendered, "no story turns rendered — parser/render drift"
+    else:  # r4 (TF paired) / r4op (on-policy companion) — plan v8 §4
+        assert args.model in c.R4_MODELS, (
+            f"{args.regime} is N/A by scope for model {args.model} (plan v8 §5)"
+        )
+        mode_slug = "paired" if args.regime == "r4" else "paired_op"
+        assert_story_character_name(
+            args.stories_dir, args.model, yield_name=f"story_yield_{mode_slug}_{args.model}.json"
+        )
+        kept_path = args.stories_dir / f"kept_stories_{mode_slug}_{args.model}.jsonl"
+        stories = c.read_jsonl(kept_path)
+        if args.smoke:
+            stories = stories[:8]
+            print(f"[smoke] limiting to {len(stories)} paired stories", flush=True)
+        rendered, render_stats = _render_r4(
+            stories, tokenizer, verbatim_check=(args.regime == "r4")
+        )
+        assert rendered, "no paired story turns rendered — parser/render drift"
 
     # Parent-parity degenerate-row filter (#1345 crash-fix r6; ports the #825
     # naturalistic_s crash-fix from the issue-825 branch): a short single-turn

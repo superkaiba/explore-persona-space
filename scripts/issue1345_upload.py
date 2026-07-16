@@ -56,7 +56,17 @@ def main() -> None:
         "shards (bit-identical, already on the Hub at the pinned revision) are "
         "not re-uploaded (plan v6 §9: only the ~5-10 GB new story stems upload)",
     )
+    ap.add_argument(
+        "--legs",
+        default="stories,matched,preds,turnstore",
+        help="comma subset of upload legs to run — the conversation-paired-stories "
+        "dispatcher runs an early '--legs turnstore' pass after each extraction so "
+        "the regeneration-costly TF stems persist BEFORE the ~6 h fits phase "
+        "(upload-before-long-fit rule, plan v8 §9); idempotent (verified per shard)",
+    )
     args = ap.parse_args()
+    legs = {x for x in args.legs.split(",") if x}
+    assert legs <= {"stories", "matched", "preds", "turnstore"}, sorted(legs)
 
     # Variant-scoped in BOTH modes (plan v6 §4): never overwrite the parent's prefixes.
     prefix = c.HF_SMOKE_PREFIX if args.smoke else c.HF_ISSUE_PREFIX
@@ -66,7 +76,7 @@ def main() -> None:
     from explore_persona_space.orchestrate.upload_sharded import upload_dir_sharded
 
     # 1) story text (rollout text is NEVER discardable — Upload Policy)
-    if args.stories_dir.exists() and any(args.stories_dir.glob("*.json*")):
+    if "stories" in legs and args.stories_dir.exists() and any(args.stories_dir.glob("*.json*")):
         assert_hub_dir_filecounts(
             args.stories_dir,
             f"{prefix}/raw_completions/stories",
@@ -92,11 +102,11 @@ def main() -> None:
             what=f"upload_folder({prefix}/raw_completions/stories)",
         )
         print(f"[upload] stories -> {prefix}/raw_completions/stories", flush=True)
-    else:
+    elif "stories" in legs:
         print("[upload] no story files present (story regime halted?) — skipped", flush=True)
 
     # 2) matched-n subsets (tiny JSON)
-    if args.matched_dir.exists() and any(args.matched_dir.glob("*.json")):
+    if "matched" in legs and args.matched_dir.exists() and any(args.matched_dir.glob("*.json")):
         assert_hub_dir_filecounts(
             args.matched_dir, f"{prefix}/inputs/matched_n", allow_patterns=["*.json"]
         )
@@ -113,19 +123,24 @@ def main() -> None:
         )
         print(f"[upload] matched_n -> {prefix}/inputs/matched_n", flush=True)
 
-    # 3) L19 preds caches (verdict-lattice inputs — plan-referenced downstream)
-    if args.preds_dir.exists() and any(args.preds_dir.glob("*.npz")):
+    # 3) L19 preds caches (verdict-lattice inputs — plan-referenced downstream;
+    # recursive: the matched-row refit driver writes preds under matched_row/)
+    if "preds" in legs and args.preds_dir.exists() and any(args.preds_dir.rglob("*.npz")):
         res = upload_dir_sharded(
             args.preds_dir,
             c.HF_DATA_REPO,
             f"{prefix}/analysis_tensors/preds_cache",
-            shard_glob="*.npz",
+            shard_glob="**/*.npz",
             delete_local=False,
         )
         print(f"[upload] preds_cache: {res}", flush=True)
 
     # 4) turnstore shards (the big tensors; incremental + verified)
-    if args.turnstore_dir.exists() and any(args.turnstore_dir.glob(args.turnstore_glob)):
+    if (
+        "turnstore" in legs
+        and args.turnstore_dir.exists()
+        and any(args.turnstore_dir.glob(args.turnstore_glob))
+    ):
         res = upload_dir_sharded(
             args.turnstore_dir,
             c.HF_DATA_REPO,

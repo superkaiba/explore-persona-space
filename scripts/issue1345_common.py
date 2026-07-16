@@ -124,28 +124,60 @@ FIG_DIR = Path(f"figures/issue_1345{_VSUB}")
 # Registry: 3 regimes x 2 models x 2 arms (single source for EVERY phase —
 # fits enumerate cells, transfer enumerates ordered pairs, operator comparison
 # enumerates unordered pairs; smoke thins ROWS, never this registry)
+#
+# conversation-paired-stories follow-up (plan v8 §4): under
+# EPM_I1345_VARIANT=conversation_paired_stories the registry gains regime r4
+# (narrative wrappers of a seed-42 2,700-conversation subsample of the SAME
+# shared S-track conversations, ORIGINAL answers embedded verbatim,
+# teacher-forced capture) + the on-policy companion control store (internal
+# regime key "r4op" — a fit cell, never a transfer/opcomp regime). The gate is
+# the SPECIFIC variant slug: the parent run AND the assistant_named_story
+# variant keep the 3-regime registry byte-identical.
 # ---------------------------------------------------------------------------
 MODELS = ("instruct", "pretrained")
 MODEL_SLUG = {"instruct": "instruct", "pretrained": "base"}  # plan §6.5 file slugs
-REGIMES = ("r1", "r2", "r3")
-REGIME_FORMAT = {"r1": "chat", "r2": "naturalistic", "r3": "stories"}
+PAIRED_STORIES_VARIANT = "conversation_paired_stories"
+HAS_R4 = VARIANT == PAIRED_STORIES_VARIANT
+# Base r4 cells are N/A BY SCOPE (plan v8 §5/§12.6: parent base story yields
+# 96/500 ≈ 19% across both prior rounds — deterministic scope, not data-driven).
+R4_MODELS = ("instruct",)
+REGIMES = ("r1", "r2", "r3", "r4") if HAS_R4 else ("r1", "r2", "r3")
+REGIME_FORMAT = {
+    "r1": "chat",
+    "r2": "naturalistic",
+    "r3": "stories",
+    # r4/r4op format keys exist unconditionally (harmless extras — every
+    # iteration path loops over REGIMES / all_cells, which stay variant-gated).
+    "r4": "stories_paired",
+    "r4op": "stories_paired_op",
+}
 ARMS = ("prefix", "context")
 # Slot order in the #1345 stores: the extractor sorts slots by token position
 # and the prefix slot always precedes the context slot (asserted at render).
 ARM_SLOT_INDEX = {"prefix": 0, "context": 1}
 # Turn order: R1/R2 single-turn track-S spans sort [u1, a1] -> target = 1;
-# R3 rows carry a single "answer" span -> target = 0.
-TARGET_TURN_INDEX = {"r1": 1, "r2": 1, "r3": 0}
+# R3/R4/R4op rows carry a single "answer" span -> target = 0.
+TARGET_TURN_INDEX = {"r1": 1, "r2": 1, "r3": 0, "r4": 0, "r4op": 0}
 TRACK = "s"
 
 ORDERED_PAIRS = [(i, j) for i in REGIMES for j in REGIMES if i != j]
-UNORDERED_PAIRS = [("r1", "r2"), ("r1", "r3"), ("r2", "r3")]
-PAIRED_PAIR = ("r1", "r2")  # the only conv_id-paired pair (reparam leg)
+UNORDERED_PAIRS = [("r1", "r2"), ("r1", "r3"), ("r2", "r3")] + (
+    [("r1", "r4"), ("r2", "r4"), ("r3", "r4")] if HAS_R4 else []
+)
+PAIRED_PAIR = ("r1", "r2")  # the only PARENT conv_id-paired pair (reparam leg)
+# The r4 corpus shares conv_ids with r1/r2 BY CONSTRUCTION (verbatim renderings
+# of the same conversations), so the data-paired A·M·B reparameterization is
+# defined for story<->chat too — the parent's stated deviation is resolved
+# (plan v8 §4 "Registration in REGIME_FORMAT and UNORDERED_PAIRS").
+PAIRED_PAIR_R4 = ("r1", "r4") if HAS_R4 else None
+
+# Companion cell id token: R_instruct_r4_op_companion_{arm} (plan §6.5 slugs).
+_REGIME_CELL_TOKEN = {"r4op": "r4_op_companion"}
 
 
 def cell_id(model: str, regime: str, arm: str) -> str:
     """Canonical cell id, e.g. R_instruct_r1_context (plan §6.5 naming)."""
-    return f"R_{MODEL_SLUG[model]}_{regime}_{arm}"
+    return f"R_{MODEL_SLUG[model]}_{_REGIME_CELL_TOKEN.get(regime, regime)}_{arm}"
 
 
 def stem_for(model: str, regime: str) -> str:
@@ -153,24 +185,39 @@ def stem_for(model: str, regime: str) -> str:
     return f"{model}_{REGIME_FORMAT[regime]}_{TRACK}"
 
 
+def _cell(model: str, regime: str, arm: str) -> dict:
+    """One fit_cells-compatible cell dict (registry single source)."""
+    return {
+        "cell_id": cell_id(model, regime, arm),
+        "model_key": model,
+        "format_key": REGIME_FORMAT[regime],
+        "track": TRACK,
+        "slot_index": ARM_SLOT_INDEX[arm],
+        "target_turn_index": TARGET_TURN_INDEX[regime],
+        "regime": regime,
+        "arm": arm,
+    }
+
+
 def all_cells() -> list[dict]:
-    """The 12 fit cells (regime x model x arm) as fit_cells-compatible dicts."""
+    """The fit cells (regime x model x arm) as fit_cells-compatible dicts.
+
+    Parent registry: 12 cells (3 regimes x 2 models x 2 arms). Under the
+    conversation_paired_stories variant, r4 cells (TF paired stories) + the
+    r4op on-policy companion CONTROL cells are appended for R4_MODELS only
+    (base N/A by scope) — 12 + 2 + 2 with instruct-only r4.
+    """
     cells = []
     for model in MODELS:
         for regime in REGIMES:
+            if regime == "r4" and model not in R4_MODELS:
+                continue
             for arm in ARMS:
-                cells.append(
-                    {
-                        "cell_id": cell_id(model, regime, arm),
-                        "model_key": model,
-                        "format_key": REGIME_FORMAT[regime],
-                        "track": TRACK,
-                        "slot_index": ARM_SLOT_INDEX[arm],
-                        "target_turn_index": TARGET_TURN_INDEX[regime],
-                        "regime": regime,
-                        "arm": arm,
-                    }
-                )
+                cells.append(_cell(model, regime, arm))
+    if HAS_R4:
+        for model in R4_MODELS:
+            for arm in ARMS:
+                cells.append(_cell(model, "r4op", arm))
     return cells
 
 
@@ -199,6 +246,21 @@ N_ROTATION_COSINE_DRAWS = 50
 DELTA_SAME_MARGIN = 0.05
 DELTA_DIFF_MARGIN = 0.10
 N_BOOTSTRAP = 1000
+
+# ---------------------------------------------------------------------------
+# conversation-paired-stories round (plan v8 §11) — the ONE new numerical
+# choice is the 2,700-conversation target: 2700 x 0.80 = 2160 kept rows at the
+# 80% floor matches/exceeds the parent r3's realized 2,108 rows (n-confound
+# removed). Subsample seed = GEN_SEED (42, plan §10 "Matched-n story subsample
+# seed"); companion control (plan §4.5): N<=200 kept convs at seed 0.
+# ---------------------------------------------------------------------------
+N_STORIES_PAIRED_TARGET = 2700
+STORY_PAIRED_YIELD_FLOOR = 2160  # 80% of 2700 (kill criterion, plan v8 §7)
+OP_COMPANION_N = 200
+OP_COMPANION_SEED = 0
+# TF-distortion gate thresholds (plan v8 §7, nested tiers)
+TF_QUALIFICATION_GAP = 0.05
+TF_KILL_GAP = 0.20
 
 # Parent L19 context-arm anchors (plan §10) — read live from the committed
 # JSONs by the parity gate; these literals are documentation cross-checks.
