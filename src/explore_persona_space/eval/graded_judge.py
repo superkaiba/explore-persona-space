@@ -158,7 +158,6 @@ def judge_graded(
     max_tokens: int = 64,
     dry_run: bool = False,
     threshold_base: int | None = None,
-    checkpoint_dir: Path | None = None,
 ) -> JudgeResult:
     """Graded 0-100 judge over ``items`` via the sanctioned Batch client.
 
@@ -193,9 +192,12 @@ def judge_graded(
             exercises the run's EXACT request builder on the Batch path
             (gotchas.md "A --mock-judge ... smoke does NOT validate the
             Anthropic Batch API REQUEST SHAPE").
-        checkpoint_dir: optional passthrough to
-            ``judge_completions_batch(checkpoint_dir=...)`` (the #1019
-            resumable-dispatch state dir). ``None`` keeps the client default.
+
+    Note on resumable dispatch: ``judge_completions_batch`` derives its #1019
+    checkpoint dir from ``cache_dir`` (``cache_dir/.dispatch``) when none is
+    given, so callers passing a per-set ``cache_dir`` are already resumable —
+    no ``checkpoint_dir`` passthrough is exposed here (an earlier draft added
+    one; it was dead capability and was removed).
 
     Raises:
         ValueError: if any ``item_id`` contains the ``"__"`` custom_id
@@ -228,8 +230,6 @@ def judge_graded(
     passthrough: dict = {}
     if threshold_base is not None:
         passthrough["threshold_base"] = threshold_base
-    if checkpoint_dir is not None:
-        passthrough["checkpoint_dir"] = checkpoint_dir
     _batch_judge.judge_completions_batch(
         completions=completions,
         judge_system_prompt=system_prompt,
