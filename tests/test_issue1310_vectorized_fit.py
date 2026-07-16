@@ -118,3 +118,55 @@ def test_onpolicy_loader_drops_only_degenerate_turns(tmp_path):
     assert drops["kept"] == 1
     assert drops["dropped_short_dialogue"] == 1
     assert len(items) == 1
+
+
+def test_gcv_dof_cap_excludes_interpolating_lambdas():
+    """GCV_DOF_CAP=0.9 skips (near-)interpolating lambdas in BOTH scan paths.
+
+    n_tr < D makes the fold Gram full-rank, so lambda -> 0 exactly interpolates
+    and the GCV objective degenerates (the #1310 onpolicy-prefill mid-layer
+    blowup). Under the cap: (a) the serial scan's selected lambda satisfies
+    dof(lambda) <= cap * n_tr; (b) the batched twin selects identically (its
+    predictions match the serial capped path); (c) default None is untouched.
+    """
+    import numpy as np
+    import torch
+
+    rng = np.random.default_rng(0)
+    n_tr, n_te, d = 48, 12, 160  # n < D: interpolation regime
+    x_tr = rng.standard_normal((n_tr, d)).astype(np.float64)
+    x_te = rng.standard_normal((n_te, d)).astype(np.float64)
+    y_tr = rng.standard_normal((n_tr, 8)).astype(np.float64)
+
+    cache = fit825._prep_fold(x_tr, x_te)
+    old_cap = fit825.GCV_DOF_CAP
+    try:
+        fit825.GCV_DOF_CAP = None
+        pred_none, lam_none = fit825._ridge_predict_cached(cache, y_tr, return_lam=True)
+
+        fit825.GCV_DOF_CAP = 0.9
+        pred_cap, lam_cap = fit825._ridge_predict_cached(cache, y_tr, return_lam=True)
+
+        # (a) the capped selection respects the dof bound
+        w = cache["w"]
+        dof = float((w / (w + lam_cap)).sum())
+        assert dof <= 0.9 * cache["ntr"] + 1e-9, (dof, cache["ntr"], lam_cap)
+        # on pure-noise n<D data the uncapped GCV picks the degenerate floor
+        assert lam_none == pytest.approx(float(fit825.LAMBDAS[0]))
+        assert lam_cap > lam_none
+
+        # (b) batched twin (B=1) matches the serial capped path
+        pred_b = fit825._ridge_predict_cached_batched(cache, y_tr[None, :, :])
+        pred_b = pred_b[0].cpu().numpy()
+        np.testing.assert_allclose(pred_b, pred_cap, rtol=0, atol=1e-8)
+
+        # (c) default-None batched twin matches the serial uncapped path
+        fit825.GCV_DOF_CAP = None
+        pred_b_none = (
+            fit825._ridge_predict_cached_batched(cache, torch.as_tensor(y_tr).unsqueeze(0))[0]
+            .cpu()
+            .numpy()
+        )
+        np.testing.assert_allclose(pred_b_none, pred_none, rtol=0, atol=1e-8)
+    finally:
+        fit825.GCV_DOF_CAP = old_cap

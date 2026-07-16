@@ -69,6 +69,17 @@ def parse_args() -> argparse.Namespace:
     ap.add_argument("--seed", type=int, default=c1310.FIT_SEED)
     ap.add_argument("--n-boot", type=int, default=c1310.N_BOOTSTRAP)
     ap.add_argument(
+        "--gcv-dof-cap",
+        type=float,
+        default=None,
+        help=(
+            "exclude (near-)interpolating lambdas from the GCV scan: skip any lambda "
+            "whose effective dof exceeds cap*n_tr (fit825.GCV_DOF_CAP; default None = "
+            "the committed GCV behavior). Use 0.9 for n<p stores where GCV degenerates "
+            "at the grid floor (#1310 onpolicy-prefill mid layers)."
+        ),
+    )
+    ap.add_argument(
         "--verify-vectorized",
         action="store_true",
         help="run the fit825 batched-vs-serial equivalence gate and exit (no fits)",
@@ -158,6 +169,7 @@ def fit_cell(cell_id: str, xy: dict, args) -> dict:
         "r2_bootstrap_row_frozen": boot_row,
         "n_folds": args.folds,
         "null_draws": args.null_draws,
+        "gcv_dof_cap": args.gcv_dof_cap,
     }
     c1310.write_json(args.out_dir / f"cells_{cell_id}.json", payload)
     c1310.write_json(
@@ -278,6 +290,7 @@ def run_swap(store: dict, model_kind: str, args) -> dict | None:
         "n_groups": int(gb_c["n_groups"]),
         "n_boot": int(args.n_boot),
         "paired_group_bootstrap": True,
+        "gcv_dof_cap": args.gcv_dof_cap,
     }
     c1310.write_json(args.out_dir / f"swap_{args.tag}{model_kind}.json", payload)
     return payload
@@ -356,6 +369,7 @@ def build_summary(results: dict, swaps: dict, args) -> None:
 
 def main() -> int:
     args = parse_args()
+    fit825.GCV_DOF_CAP = args.gcv_dof_cap  # None = committed GCV behavior
     if args.verify_vectorized:
         fit825.assert_vectorized_equivalence(seed=args.seed)
         return 0

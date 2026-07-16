@@ -64,6 +64,18 @@ CROSS_ROLE_CELLS = common.CROSS_ROLE_CELLS
 
 LAMBDAS = np.logspace(-2, 4, 13)
 
+# GCV degenerates when the fold Gram can (near-)interpolate: at n_tr < D the
+# train RSS -> 0 faster than the (n_tr - dof)^2 denominator shrinks, opening a
+# spurious GCV minimum at the lambda-grid floor (held-out R^2 explodes to
+# -2..-11 — #1310 onpolicy-prefill mid layers; exact PRESS/LOOCV degenerates
+# identically there since leverages -> 1 and train residuals -> 0). Setting
+# GCV_DOF_CAP (e.g. 0.9) excludes every lambda whose effective dof exceeds
+# cap * n_tr from BOTH scan paths (serial + batched), so observed fits and
+# null draws stay selection-symmetric. Module-global patch style, like
+# FROZEN_LAYERS: callers set `fit825.GCV_DOF_CAP = 0.9`. Default None
+# preserves the committed behavior byte-for-byte.
+GCV_DOF_CAP: float | None = None
+
 # G1 gate anchors: #779 per-context reconstruction curve (layer -> R^2).
 # Full curve loaded from eval_results/issue_779/percontext_recon.json when
 # present (REQUIRED); the embedded anchors are documentation cross-checks, never a fallback gate.
@@ -156,8 +168,10 @@ def _ridge_predict_cached(
     best_gcv = float("inf")
     for lam in LAMBDAS:
         filt = w / (w + lam)
-        rss = tot - float(((2 * filt - filt**2) * sqVtY).sum())
         dof = float(filt.sum())
+        if GCV_DOF_CAP is not None and dof > GCV_DOF_CAP * ntr:
+            continue  # (near-)interpolating lambda: GCV objective is degenerate here
+        rss = tot - float(((2 * filt - filt**2) * sqVtY).sum())
         denom = (ntr - dof) ** 2
         gcv = rss / denom if denom > 1e-12 else float("inf")
         if gcv < best_gcv:
@@ -202,8 +216,13 @@ def _ridge_predict_cached_batched(cache: dict, Y_train_batch) -> torch.Tensor:
     rss = tot.unsqueeze(1) - torch.einsum("li,bi->bl", coef, sqVtY)  # (B,Lm)
     dof = filt.sum(1)  # (Lm,)
     denom = (ntr - dof) ** 2  # (Lm,)
+    ok = denom.unsqueeze(0) > 1e-12  # (1,Lm) broadcast over draws
+    if GCV_DOF_CAP is not None:
+        # Mirror the serial scan's dof-cap skip (selection-symmetric across
+        # observed + null draws; see GCV_DOF_CAP above).
+        ok = ok & (dof.unsqueeze(0) <= GCV_DOF_CAP * ntr)
     gcv = torch.where(
-        denom.unsqueeze(0) > 1e-12,
+        ok,
         rss / denom.unsqueeze(0),
         torch.full_like(rss, float("inf")),
     )
