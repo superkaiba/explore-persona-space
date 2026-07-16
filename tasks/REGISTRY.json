@@ -2903,8 +2903,8 @@
     "1372": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1372",
-      "status": "reviewing",
+      "path": "tasks/completed/1372",
+      "status": "completed",
       "title": "workflow-fix: opaque snake_case slug detection in body-discipline audit"
     },
     "1373": {
