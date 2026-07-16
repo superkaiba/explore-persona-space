@@ -2987,8 +2987,8 @@
     "1383": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1383",
-      "status": "proposed",
+      "path": "tasks/planning/1383",
+      "status": "planning",
       "title": "workflow-fix: verified-at-filing context binding"
     },
     "1384": {
