@@ -20,6 +20,7 @@ load_dotenv()
 
 import json
 import pathlib
+import sys
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -109,5 +110,53 @@ def main() -> None:
     print(f"wrote {OUT}")
 
 
+def paired_closeness_figure() -> None:
+    """Standalone paired-closeness figure (the 'now if instead' paragraph): per-question
+    slope charts for cosine and R²-closeness of the map's prediction to Qwen's real
+    refusal vs Claude's real answer (12 S1 questions). Writes s1_paired_closeness.png."""
+    sanity = json.loads(
+        (BASE / "eval_results/issue_952/refusal_sanity_check/refusal_sanity.json").read_text()
+    )
+    rows = sanity["check_B_map_predicts_refusal"]["paired_closeness_genuine_divergence"][
+        "per_query"
+    ]
+    assert len(rows) == 12, len(rows)
+
+    set_paper_style()
+    pal = paper_palette(4)
+    fig, axes = plt.subplots(1, 2, figsize=(9.2, 4.2))
+    panels = [
+        ("cos_claude", "cos_own", "cosine to target", "Cosine closeness"),
+        ("r2close_claude", "r2close_own", "R²-closeness to target", "R²-closeness"),
+    ]
+    xs = np.array([0.0, 1.0])
+    for ax, (k_cl, k_own, ylabel, title) in zip(axes, panels, strict=True):
+        cl = np.array([r[k_cl] for r in rows], dtype=float)
+        own = np.array([r[k_own] for r in rows], dtype=float)
+        n_up = int((own > cl).sum())
+        for c, o in zip(cl, own, strict=True):
+            col = pal[2] if o > c else pal[1]
+            ax.plot(xs, [c, o], color=col, alpha=0.55, lw=1.4, marker="o", ms=4, zorder=2)
+        ax.plot(xs, [cl.mean(), own.mean()], color="black", lw=2.8, marker="o", ms=9, zorder=3)
+        ax.set_xticks(xs, ["Claude's real\nanswer", "Qwen's real\nrefusal"])
+        ax.set_xlim(-0.35, 1.35)
+        ax.set_ylabel(ylabel)
+        ax.set_title(f"{title}: {n_up}/12 favor Qwen")
+        print(f"{title}: mean claude {cl.mean():.3f} -> own {own.mean():.3f}; up {n_up}/12")
+
+    fig.suptitle(
+        "Which target does the map's prediction resemble? "
+        "(12 Qwen-refuses/Claude-answers questions)",
+        y=1.02,
+    )
+    fig.tight_layout()
+    out = BASE / "figures" / "issue_952" / "s1_paired_closeness.png"
+    fig.savefig(out, dpi=200, bbox_inches="tight")
+    print(f"wrote {out}")
+
+
 if __name__ == "__main__":
-    main()
+    if "--paired-only" in sys.argv:
+        paired_closeness_figure()
+    else:
+        main()
