@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1399,
+  "highest_id": 1400,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -3123,6 +3123,13 @@
       "path": "tasks/completed/140",
       "status": "completed",
       "title": "Implement KL/JS divergence of outputs as another measure of persona similarity"
+    },
+    "1400": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1400",
+      "status": "proposed",
+      "title": "daily-fix: triage observer empty-window false flags"
     },
     "141": {
       "has_clean_result": false,
