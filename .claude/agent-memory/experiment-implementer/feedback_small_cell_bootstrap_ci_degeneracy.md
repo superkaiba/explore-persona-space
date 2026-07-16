@@ -4,6 +4,13 @@ description: A bootstrap 95% CI over <=~7 unique units collapses its upper perce
 type: feedback
 ---
 
+[SUPERSEDED by rank-space-bootstrap-tail-gating — see #825] The strict-coverage
+prescription below (lo < point < hi) is itself epsilon-fragile: interpolated
+percentiles land 1e-8..1.6e-7 ABOVE the point on collapsed distributions, so the
+float-space test mis-gates exactly the degenerate cells it exists to exclude
+(#825 r11 rev 3 → code-review v26 FAIL). Use the rank-space tail-mass rule in
+feedback_rank_space_bootstrap_tail_gating.md instead.
+
 A conversation/cluster-bootstrap 95% CI over <=~7 unique units collapses its
 97.5th percentile onto (or below) the cell's own point estimate, so an
 equality-inclusive parity/containment gate (lo <= ref <= hi) auto-fails any
