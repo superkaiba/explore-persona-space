@@ -71,6 +71,8 @@ from __future__ import annotations
 
 import argparse
 import contextlib
+import fcntl
+import io
 import json
 import os
 import shutil
@@ -1366,12 +1368,21 @@ def run_guard(
     reclaim_tiers: bool = True,
     now: float | None = None,
     tmp_root: Path | None = None,
+    ignore_threshold: bool = False,
 ) -> GuardResult:
     """Read disk usage, and if over threshold run the cleanup tiers.
 
     Pure-ish orchestration: all side effects are gated on ``apply`` inside the
     tier helpers. When usage is under the threshold the tiers are NOT run and
     ``triggered`` is False (a no-op pass).
+
+    ``ignore_threshold`` (#1392) forces ``triggered`` True regardless of the
+    percent gate — the watcher's sub-floor reclaim arm decides on a FREE-BYTES
+    floor, which decouples from the percent threshold on small disks / raised
+    floors (60 GiB free on the 945 GB disk is ~93% used today, but 150 GiB
+    free would be ~84% — under the 85% gate — and the launched run would
+    silently no-op, recreating the 2026-07-15 gap). ``still_over_after`` stays
+    computed against the REAL threshold so exit-2 / push semantics survive.
 
     ``reclaim_tiers`` (default True for the boot-disk ``/`` watch) gates the
     ``/``-rooted reclaim arms — tier (a) ``uv cache prune`` and tier (c) the
@@ -1406,7 +1417,7 @@ def run_guard(
         free_gb_before=free_before,
         free_gb_after=free_before,
         threshold_pct=thr,
-        triggered=over_threshold(used_before, thr),
+        triggered=ignore_threshold or over_threshold(used_before, thr),
         apply=apply,
     )
     if not res.triggered:
@@ -1554,6 +1565,45 @@ def _print_report(res: GuardResult, disk_label: str = "/") -> None:
         )
 
 
+# Single-flight lock for --apply runs (#1392): the watcher's sub-floor reclaim
+# arm launches detached --apply runs (6-10 min each) that can now overlap a
+# 6-hourly cron fire (and vice versa). Non-blocking flock, --apply mode only —
+# report-only runs mutate nothing and are never blocked (tests/smokes included).
+# Mirrors sync_repo_root.py's ~/.task-workflow/root-sync.lock convention.
+_APPLY_LOCK_PATH = Path.home() / ".task-workflow" / "vm-disk-guard.lock"
+
+
+def _acquire_apply_lock() -> io.TextIOWrapper | None:
+    """Non-blocking flock for ``--apply`` runs (``None`` on contention).
+
+    The holder's pid is written into the file for skip-line diagnostics. The
+    caller (``main()``) retains the returned file object for process lifetime
+    — the flock releases on process exit (including SIGKILL); a GC'd file
+    object would release it mid-run (#1392 concern 2). Report-only runs never
+    take it (they mutate nothing)."""
+    _APPLY_LOCK_PATH.parent.mkdir(parents=True, exist_ok=True)
+
+    # (a context manager would) releases the flock mid-run (#1392 concern 2).
+    fh = open(_APPLY_LOCK_PATH, "a+")  # noqa: SIM115
+    try:
+        fcntl.flock(fh, fcntl.LOCK_EX | fcntl.LOCK_NB)
+    except OSError:
+        fh.seek(0)
+        holder = fh.read().strip()
+        fh.close()
+        print(
+            f"vm_disk_guard: another --apply run holds {_APPLY_LOCK_PATH}"
+            f" (pid {holder or '?'}) — single-flight skip",
+            file=sys.stderr,
+        )
+        return None
+    fh.seek(0)
+    fh.truncate()
+    fh.write(str(os.getpid()))
+    fh.flush()
+    return fh
+
+
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(
         description=(
@@ -1593,8 +1643,42 @@ def main(argv: list[str] | None = None) -> int:
         action="store_true",
         help="Skip the data-disk pass entirely (watch only /).",
     )
+    ap.add_argument(
+        "--ignore-threshold",
+        action="store_true",
+        help="Run the / cleanup tiers regardless of the percent threshold (#1392: "
+        "the watcher's sub-floor reclaim arm decides on a free-bytes floor). "
+        "still-over/exit-2 semantics keep the real threshold.",
+    )
+    ap.add_argument(
+        "--no-push",
+        action="store_true",
+        help="Suppress the still-over-after telegram pushes (#1392: watcher-triggered "
+        "runs would push ~every 30 min on a stuck-over day; the cron's 6-hourly push "
+        "and the deduped per-task tier escalations stay the human channels).",
+    )
     ap.add_argument("--json", action="store_true", help="Emit a JSON summary.")
     args = ap.parse_args(argv)
+
+    # Single-flight lock, --apply mode only (#1392): a second concurrent
+    # --apply run (watcher sub-floor launch x 6-hourly cron fire) exits 0
+    # immediately instead of racing the first one's tiers. The lock file
+    # object is deliberately kept referenced for the REST of main() — the
+    # flock releases on process exit; dropping the reference early would
+    # close the fd and release it mid-run (#1392 concern 2).
+    apply_lock: io.TextIOWrapper | None = None
+    if args.apply:
+        apply_lock = _acquire_apply_lock()
+        if apply_lock is None:
+            # Observability (#1392 concern 3): a wedged-holder episode is
+            # distinguishable from a reclaim-limited day in the sidecar stream.
+            append_disk_guard_event(
+                {"kind": "vm-disk-guard-apply-skip", "skipped": "apply-lock-held"},
+                apply=True,
+            )
+            if args.json:
+                print(json.dumps({"skipped": "apply-lock-held"}))
+            return 0
 
     # Boot disk (/) — the full tiered cleanup. The /tmp + /workspace-cache
     # opt-in lives HERE (and in clean_experiment_downloads.main()) ONLY: the
@@ -1604,6 +1688,7 @@ def main(argv: list[str] | None = None) -> int:
         threshold=args.threshold,
         log_max_age=args.log_max_age_days,
         tmp_root=production_tmp_root(),
+        ignore_threshold=args.ignore_threshold,
     )
 
     # Data disk (/mnt/eps-data) — a SECOND, ESCALATE-ONLY pass: reclaim_tiers=False
@@ -1639,13 +1724,15 @@ def main(argv: list[str] | None = None) -> int:
         if data_res is not None:
             _print_report(data_res, disk_label=dd_path)
 
-    if res.still_over_after:
+    # --no-push (#1392) gates ONLY these two still-over pushes; the tier-internal
+    # per-(task,band) ack-sentinel-deduped escalation pushes (#679) are untouched.
+    if res.still_over_after and not args.no_push:
         _telegram_push(
             f"VM disk guard: / still {res.used_pct_after:.0f}% full after cleanup "
             f"(freed {_fmt_gb(res.bytes_freed)}); manual triage needed",
             res.apply,
         )
-    if data_res is not None and data_res.still_over_after:
+    if data_res is not None and data_res.still_over_after and not args.no_push:
         _telegram_push(
             f"VM disk guard: data disk {dd_path} still {data_res.used_pct_after:.0f}% full "
             f"after escalate-only pass; manual triage needed (reclaim a TERMINAL issue's "

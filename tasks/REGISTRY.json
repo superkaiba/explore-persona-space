@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1425,
+  "highest_id": 1432,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -3050,57 +3050,57 @@
     "1391": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1391",
-      "status": "running",
+      "path": "tasks/completed/1391",
+      "status": "completed",
       "title": "daily-fix: watcher re-drive w/o registration file"
     },
     "1392": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1392",
-      "status": "running",
+      "path": "tasks/completed/1392",
+      "status": "completed",
       "title": "daily-fix: sub-floor sentinel triggers apply run"
     },
     "1393": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1393",
-      "status": "running",
+      "path": "tasks/completed/1393",
+      "status": "completed",
       "title": "daily-fix: inline rounds route HF downloads off /"
     },
     "1394": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1394",
-      "status": "proposed",
+      "path": "tasks/completed/1394",
+      "status": "completed",
       "title": "daily-fix: planner reuse search live sibling worktrees"
     },
     "1395": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1395",
-      "status": "proposed",
+      "path": "tasks/completed/1395",
+      "status": "completed",
       "title": "daily-fix: REVISE unpiloted perm-battery wall-times"
     },
     "1396": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1396",
-      "status": "proposed",
+      "path": "tasks/completed/1396",
+      "status": "completed",
       "title": "daily-fix: upload extraction store before long fits"
     },
     "1397": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1397",
-      "status": "proposed",
+      "path": "tasks/completed/1397",
+      "status": "completed",
       "title": "daily-fix: review names batched helper for fit loops"
     },
     "1398": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1398",
-      "status": "proposed",
+      "path": "tasks/completed/1398",
+      "status": "completed",
       "title": "daily-fix: neutral gate vocabulary first-pass briefs"
     },
     "1399": {
@@ -3127,22 +3127,22 @@
     "1400": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1400",
-      "status": "proposed",
+      "path": "tasks/reviewing/1400",
+      "status": "reviewing",
       "title": "daily-fix: triage observer empty-window false flags"
     },
     "1401": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1401",
-      "status": "proposed",
+      "path": "tasks/running/1401",
+      "status": "running",
       "title": "daily-fix: pod.py sync env GITHUB_TOKEN refresh leg"
     },
     "1402": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1402",
-      "status": "proposed",
+      "path": "tasks/planning/1402",
+      "status": "planning",
       "title": "daily-fix: shared GCE staging HF-download retry"
     },
     "1403": {
@@ -3290,8 +3290,8 @@
     "1421": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1421",
-      "status": "running",
+      "path": "tasks/completed/1421",
+      "status": "completed",
       "title": "workflow-fix: Sample-slot disclosure-count check in verify_task_body"
     },
     "1422": {
@@ -3318,9 +3318,59 @@
     "1425": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1425",
-      "status": "running",
+      "path": "tasks/completed/1425",
+      "status": "completed",
       "title": "workflow-fix: gotchas.md download-side hf-xet xet_get wedge entry"
+    },
+    "1426": {
+      "goal": "Determine whether the CoT-mediation signature and the in-context-learning/WildChat family gain excess generalize beyond the Qwen base family by replicating the CoT-decomposition battery on DeepSeek-R1-Distill-Llama-8B, and read which CoT-length gradient profile \u2014 the parent's falling gradient or #1005's flat-to-rising inversion \u2014 travels with the base lineage.",
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/1426",
+      "status": "proposed",
+      "title": "Third-lineage CoT-decomposition replication on DeepSeek-R1-Distill-Llama-8B (non-Qwen base)"
+    },
+    "1427": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1427",
+      "status": "completed",
+      "title": "workflow-fix: gotchas.md \u2014 EXDEV: bare /tmp tempdir + os.replace onto /workspace"
+    },
+    "1428": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1428",
+      "status": "proposed",
+      "title": "Fix torch-before-dotenv in 10 main-resident figure scripts (fleet thread-caps test red)"
+    },
+    "1429": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/planning/1429",
+      "status": "planning",
+      "title": "workflow-fix: gotchas entry \u2014 rank-space bootstrap tail-mass gating (float-space CI coverage epsilon-fragile)"
+    },
+    "1430": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/planning/1430",
+      "status": "planning",
+      "title": "workflow-fix: audit duplicate-id dirs + reap terminal-task status husks"
+    },
+    "1431": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1431",
+      "status": "proposed",
+      "title": "workflow-fix: gotchas entry \u2014 pilot timing gates measure at the sweep's execution shape"
+    },
+    "1432": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1432",
+      "status": "proposed",
+      "title": "workflow-fix: gotchas.md \u2014 cuda eigh non-convergence on near-singular Grams (CPU fallback)"
     },
     "144": {
       "has_clean_result": false,

@@ -135,6 +135,7 @@ behavior implantation (two named exemptions) · 7 replication fidelity ·
 check (a)–(k) · 10 CPU/analysis-phase placement (i)–(iv): idle multi-GPU pod /
 >50 GB disk or ≥~16 GB-RSS VM footprint / gradient-descent / dense-factorization fit — or any
 high-count tiny-op battery (draws, per-item serialization, per-file uploads) —
+incl. an unpiloted per-draw/per-call basis (asserted or FLOP-derived) —
 on the VM CPU or left serial / narrow phase holding the peak-width pod ·
 11 marker stopping recipe (parity is NOT a
 `Source:`) + runtime-guard smoke-verifiability · 12 multi-arm resolution-band

@@ -6452,6 +6452,11 @@ def test_c32_skillmd_na_phrase_listed():
     block = text[anchor : text.index("bounce to the planner", anchor)]
     assert "no fit-family phases" in block
     assert "check 32" in block
+    # #1395 battery branch: the shared c12 escape phrase is annotated as
+    # also satisfying c32's battery branch, so a later SKILL.md edit cannot
+    # silently drop the cross-reference.
+    assert "no draw battery" in block
+    assert "also check 32's battery branch" in block
 
 
 def test_c33_skillmd_na_phrase_listed():
@@ -6471,7 +6476,7 @@ def test_c33_skillmd_na_phrase_listed():
     assert "`N/A — no checkpoint ladder`" in block
 
 
-# ─── Check 32 — fit-family §9 basis grounding ──────────────────────────────
+# ─── Check 32 — fit-family + battery §9 basis grounding (fit branch) ───────
 
 # Reusable §9 fit-row snippet: kernel vocabulary ("ridge") + loop vocabulary
 # ("3780 fits") in a basis-column compute table; the basis cell is the
@@ -6591,6 +6596,86 @@ def test_c32_kind_analysis_triggers():
     # The gated set is experiment + analysis; BOTH WARN (unlike c12/c18
     # there is no FAIL arm anywhere).
     assert _status(_c32_plan("~2 s/fit"), "c32_fit_basis_grounding", kind="analysis") == "WARN"
+
+
+# ─── Check 32 — battery branch (#1395 widening) ────────────────────────────
+
+# Reusable §9 battery-row snippet: battery framing ("perm-null battery") +
+# a >=100 draw count in a basis-column compute table, with NO fit-family
+# kernel vocabulary (so the row classifies to the battery branch, not the
+# fit branch); the basis cell is the per-test variable. The draw-bearing
+# multiplier + batched commitment keep c12 satisfied so the overall-ok
+# asserts isolate c32.
+C32_BATTERY_TABLE = """
+## 9. Resources & Parallelism
+
+| component | planned_wall_h | basis | parallelism |
+|---|---|---|---|
+| perm-null battery (200 draws x 24 cells, batched GEMM over the pool) | 1.3 | {basis} | 1x CPU |
+"""
+
+
+def _c32_battery_plan(basis: str) -> str:
+    return GOOD_PLAN + C32_BATTERY_TABLE.format(basis=basis)
+
+
+def test_c32_battery_row_asserted_flop_basis_warns():
+    # The #1092 shape moved into a table: a battery priced by FLOP /
+    # assumed-throughput with no provenance token WARNs (a FLOP floor is
+    # the cross-check, never the basis).
+    _, by_id = _run(_c32_battery_plan("2.6e14 FLOP at 2e11 FLOP/s incl. x2.5 overhead => ~1 h"))
+    r = by_id["c32_fit_basis_grounding"]
+    assert r.status == "WARN"
+    assert "N/A — no draw battery" in r.detail  # the WARN teaches the battery escape
+
+
+def test_c32_battery_row_measured_basis_passes():
+    basis = "measured 3.8 min/draw-block pilot => 200 draws in blocks ~1.3 h"
+    assert _status(_c32_battery_plan(basis), "c32_fit_basis_grounding") == "PASS"
+
+
+def test_c32_battery_row_prior_issue_basis_passes():
+    basis = "#1092 refit measured 12.8 h/box at ambient dim"
+    assert _status(_c32_battery_plan(basis), "c32_fit_basis_grounding") == "PASS"
+
+
+def test_c32_battery_row_pilot_gated_passes():
+    basis = "pilot-gated (first batched draw block, abort >2x re-projection)"
+    assert _status(_c32_battery_plan(basis), "c32_fit_basis_grounding") == "PASS"
+
+
+def test_c32_battery_na_no_draw_battery_escape_passes():
+    # The shared c12 escape phrase excuses the BATTERY branch (standalone
+    # unwrapped line, `_standalone_na_declared` anti-paste semantics).
+    plan = (
+        _c32_battery_plan("~1 h asserted")
+        + "\nN/A — no draw battery (the battery row quotes a sibling's sizing).\n"
+    )
+    _, by_id = _run(plan)
+    r = by_id["c32_fit_basis_grounding"]
+    assert r.status == "PASS"
+    assert "N/A declared" in r.detail
+
+
+def test_c32_judge_draws_row_does_not_trigger():
+    # A judge-style multi-draw row (small N, no battery framing) is not a
+    # battery: `_BATTERY_TRIGGER_RE`'s count arm needs >=3 digits and its
+    # framing arms need null/permutation vocabulary.
+    judge_table = (
+        "\n## 9. Resources\n\n"
+        "| component | planned_wall_h | basis | parallelism |\n"
+        "|---|---|---|---|\n"
+        "| graded judge (N=5 draws at temperature 1.0) | 0.5 | asserted api batch | api |\n"
+    )
+    assert _status(GOOD_PLAN + judge_table, "c32_fit_basis_grounding") == "SKIP"
+
+
+def test_c32_battery_warn_never_fails():
+    # WARN-only contract re-pinned for the battery branch (exit-0
+    # semantics): a battery offender never flips the overall verdict.
+    ok, by_id = _run(_c32_battery_plan("~1 h asserted"))
+    assert by_id["c32_fit_basis_grounding"].status == "WARN"
+    assert ok is True
 
 
 # ─── Check 33 — checkpoint-ladder retention policy ─────────────────────────

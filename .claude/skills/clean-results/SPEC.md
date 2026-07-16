@@ -544,6 +544,9 @@ Boldface-led slots, in order:
   random sample` / `cherry-picked for illustration` / `first N of M` / the
   harmful-content sanitized form) AND followed/preceded by a **pinned link
   to the complete artifact** (HF Hub `/tree/<sha>`, GitHub `/blob/<sha>`).
+  When the disclosure carries an explicit count claim in the
+  `Disclosure: N of M` form, N must equal the number of example items
+  actually shown below it (check 39 reconciles; overstating N is a FAIL).
   Harmful-content corpora ship SANITIZED (see § Harmful-content below).
 
 **Per-condition quantitative numbers live in PLOTS (in `## Results`), not
@@ -987,6 +990,20 @@ Forward-only: each check branches on the sentinel. The v4 checks
     class (dense 4–5-sentence paragraphs burning an LM critic round).
     (Numbered 36 because 28–35 are taken by the generation-agnostic
     checks, #1368.)
+39. **Sample-slot disclosure count** (`check_v4_sample_disclosure_count`,
+    v4 only): an explicit `Disclosure: N of M` count claim in the Sample
+    slot must reconcile with the example items actually shown in that
+    claim's group — overclaim (N exceeds EVERY counting basis: sample /
+    fenced / `<details>` blocks, top-level list items, GFM table data
+    rows, blockquote groups, and their disjoint-media sum) is a FAIL;
+    any other mismatch is a WARN; no count claim / no countable
+    presentation = skip (never guess). One `Disclosure:` line covers the
+    items from the line after it to the next `Disclosure:` line (or slot
+    end). The broad check-19 phrasings (`K of M rows`, `first N of M`)
+    never trigger reconciliation — only the `Disclosure:` prefix does.
+    (Numbered 39 because 37–38 are taken by the footer-reuse-pin and
+    linked-not-embedded WARN checks, #1421; incident #1005 claimed
+    `Disclosure: 8 of 2,400` while showing 6.)
 
 Generation-agnostic checks (v2 AND v3 AND v4): figure-URL-sha-matches
 (check 22), HF-URL-resolves (check 23), figure-sidecar opaque

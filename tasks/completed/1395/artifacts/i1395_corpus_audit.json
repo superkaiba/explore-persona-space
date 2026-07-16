@@ -1,0 +1,1639 @@
+{
+  "n_files": 3445,
+  "n_checked": 3445,
+  "skipped": [],
+  "battery_fires": [
+    {
+      "file": ".claude/plans/issue-920.md",
+      "issue": 920,
+      "old_c32": "WARN",
+      "new_c32": "WARN",
+      "rows": [
+        {
+          "component": "P4 DV-1 null battery (GPU, float64 batched)",
+          "grounded": false,
+          "arm_framing": true,
+          "arm_count": true,
+          "satisfier": null
+        }
+      ]
+    },
+    {
+      "file": ".claude/plans/issue-922.md",
+      "issue": 922,
+      "old_c32": "WARN",
+      "new_c32": "WARN",
+      "rows": [
+        {
+          "component": "Phase 3 evals: atlas + 100-draw shuffle null + rollout + read-out + bootstrap",
+          "grounded": false,
+          "arm_framing": false,
+          "arm_count": true,
+          "satisfier": null
+        }
+      ]
+    },
+    {
+      "file": ".claude/plans/issue-958.md",
+      "issue": 958,
+      "old_c32": "PASS",
+      "new_c32": "WARN",
+      "rows": [
+        {
+          "component": "C2 nulls + bootstrap + drift + figures",
+          "grounded": false,
+          "arm_framing": false,
+          "arm_count": true,
+          "satisfier": null
+        }
+      ]
+    },
+    {
+      "file": "tasks/archived/459/plans/plan.md",
+      "issue": 459,
+      "old_c32": "SKIP",
+      "new_c32": "WARN",
+      "rows": [
+        {
+          "component": "Phase 3 \u2014 analysis",
+          "grounded": false,
+          "arm_framing": true,
+          "arm_count": false,
+          "satisfier": null
+        }
+      ]
+    },
+    {
+      "file": "tasks/archived/459/plans/v2.md",
+      "issue": 459,
+      "old_c32": "SKIP",
+      "new_c32": "WARN",
+      "rows": [
+        {
+          "component": "Phase 3 \u2014 analysis",
+          "grounded": false,
+          "arm_framing": true,
+          "arm_count": false,
+          "satisfier": null
+        }
+      ]
+    },
+    {
+      "file": "tasks/awaiting_promotion/1332/plans/v1.md",
+      "issue": 1332,
+      "old_c32": "PASS",
+      "new_c32": "WARN",
+      "rows": [
+        {
+          "component": "P2 transfer scoring + nulls + bootstrap",
+          "grounded": false,
+          "arm_framing": false,
+          "arm_count": true,
+          "satisfier": null
+        }
+      ]
+    },
+    {
+      "file": "tasks/awaiting_promotion/1332/plans/v2.md",
+      "issue": 1332,
+      "old_c32": "PASS",
+      "new_c32": "WARN",
+      "rows": [
+        {
+          "component": "P2 transfer scoring + nulls + bootstrap",
+          "grounded": false,
+          "arm_framing": false,
+          "arm_count": true,
+          "satisfier": null
+        }
+      ]
+    },
+    {
+      "file": "tasks/awaiting_promotion/1332/plans/v3.md",
+      "issue": 1332,
+      "old_c32": "PASS",
+      "new_c32": "WARN",
+      "rows": [
+        {
+          "component": "P2 transfer scoring + nulls + bootstrap",
+          "grounded": false,
+          "arm_framing": false,
+          "arm_count": true,
+          "satisfier": null
+        }
+      ]
+    },
+    {
+      "file": "tasks/awaiting_promotion/537/plans/plan.md",
+      "issue": 537,
+      "old_c32": "SKIP",
+      "new_c32": "WARN",
+      "rows": [
+        {
+          "component": "scoring re-run + leave-family-out + win matrix + permutation nulls + collinearity (all 5 behaviors \u00d7",
+          "grounded": false,
+          "arm_framing": true,
+          "arm_count": false,
+          "satisfier": null
+        }
+      ]
+    },
+    {
+      "file": "tasks/awaiting_promotion/537/plans/v9.md",
+      "issue": 537,
+      "old_c32": "SKIP",
+      "new_c32": "WARN",
+      "rows": [
+        {
+          "component": "scoring re-run + leave-family-out + win matrix + permutation nulls + collinearity (all 5 behaviors \u00d7",
+          "grounded": false,
+          "arm_framing": true,
+          "arm_count": false,
+          "satisfier": null
+        }
+      ]
+    },
+    {
+      "file": "tasks/awaiting_promotion/666/plans/plan.md",
+      "issue": 666,
+      "old_c32": "WARN",
+      "new_c32": "WARN",
+      "rows": [
+        {
+          "component": "Noise floor (200 resamples \u00d7 3 seeds)",
+          "grounded": false,
+          "arm_framing": false,
+          "arm_count": true,
+          "satisfier": null
+        }
+      ]
+    },
+    {
+      "file": "tasks/awaiting_promotion/666/plans/v1.md",
+      "issue": 666,
+      "old_c32": "WARN",
+      "new_c32": "WARN",
+      "rows": [
+        {
+          "component": "Noise floor (200 resamples \u00d7 3 seeds)",
+          "grounded": false,
+          "arm_framing": false,
+          "arm_count": true,
+          "satisfier": null
+        }
+      ]
+    },
+    {
+      "file": "tasks/awaiting_promotion/666/plans/v2.md",
+      "issue": 666,
+      "old_c32": "WARN",
+      "new_c32": "WARN",
+      "rows": [
+        {
+          "component": "Noise floor (200 resamples \u00d7 3 seeds)",
+          "grounded": false,
+          "arm_framing": false,
+          "arm_count": true,
+          "satisfier": null
+        }
+      ]
+    },
+    {
+      "file": "tasks/awaiting_promotion/666/plans/v3.md",
+      "issue": 666,
+      "old_c32": "WARN",
+      "new_c32": "WARN",
+      "rows": [
+        {
+          "component": "Noise floor (200 resamples \u00d7 3 seeds)",
+          "grounded": false,
+          "arm_framing": false,
+          "arm_count": true,
+          "satisfier": null
+        }
+      ]
+    },
+    {
+      "file": "tasks/awaiting_promotion/685/plans/plan.md",
+      "issue": 685,
+      "old_c32": "SKIP",
+      "new_c32": "WARN",
+      "rows": [
+        {
+          "component": "Part A signed cosine + null",
+          "grounded": false,
+          "arm_framing": true,
+          "arm_count": true,
+          "satisfier": null
+        }
+      ]
+    },
+    {
+      "file": "tasks/awaiting_promotion/685/plans/v4.md",
+      "issue": 685,
+      "old_c32": "SKIP",
+      "new_c32": "WARN",
+      "rows": [
+        {
+          "component": "Part A signed cosine + null",
+          "grounded": false,
+          "arm_framing": true,
+          "arm_count": true,
+          "satisfier": null
+        }
+      ]
+    },
+    {
+      "file": "tasks/awaiting_promotion/685/plans/v5.md",
+      "issue": 685,
+      "old_c32": "SKIP",
+      "new_c32": "WARN",
+      "rows": [
+        {
+          "component": "Part A signed cosine + null",
+          "grounded": false,
+          "arm_framing": true,
+          "arm_count": true,
+          "satisfier": null
+        }
+      ]
+    },
+    {
+      "file": "tasks/awaiting_promotion/778/plans/plan.md",
+      "issue": 778,
+      "old_c32": "SKIP",
+      "new_c32": "WARN",
+      "rows": [
+        {
+          "component": "C ladder v2, fixed+maxlayer, 10,000 draws",
+          "grounded": false,
+          "arm_framing": false,
+          "arm_count": true,
+          "satisfier": null
+        }
+      ]
+    },
+    {
+      "file": "tasks/awaiting_promotion/778/plans/v1.md",
+      "issue": 778,
+      "old_c32": "SKIP",
+      "new_c32": "WARN",
+      "rows": [
+        {
+          "component": "Null battery + correlations + figures",
+          "grounded": false,
+          "arm_framing": true,
+          "arm_count": false,
+          "satisfier": null
+        }
+      ]
+    },
+    {
+      "file": "tasks/awaiting_promotion/778/plans/v2.md",
+      "issue": 778,
+      "old_c32": "SKIP",
+      "new_c32": "WARN",
+      "rows": [
+        {
+          "component": "Null battery + correlations + figures",
+          "grounded": false,
+          "arm_framing": true,
+          "arm_count": false,
+          "satisfier": null
+        }
+      ]
+    },
+    {
+      "file": "tasks/awaiting_promotion/778/plans/v3.md",
+      "issue": 778,
+      "old_c32": "SKIP",
+      "new_c32": "WARN",
+      "rows": [
+        {
+          "component": "Null battery + correlations + figures (both legs)",
+          "grounded": false,
+          "arm_framing": true,
+          "arm_count": false,
+          "satisfier": null
+        }
+      ]
+    },
+    {
+      "file": "tasks/awaiting_promotion/778/plans/v4.md",
+      "issue": 778,
+      "old_c32": "SKIP",
+      "new_c32": "WARN",
+      "rows": [
+        {
+          "component": "Null battery + correlations + figures (both legs)",
+          "grounded": false,
+          "arm_framing": true,
+          "arm_count": false,
+          "satisfier": null
+        }
+      ]
+    },
+    {
+      "file": "tasks/awaiting_promotion/778/plans/v5.md",
+      "issue": 778,
+      "old_c32": "SKIP",
+      "new_c32": "WARN",
+      "rows": [
+        {
+          "component": "Null battery + correlations + figures (both legs)",
+          "grounded": false,
+          "arm_framing": true,
+          "arm_count": false,
+          "satisfier": null
+        }
+      ]
+    },
+    {
+      "file": "tasks/awaiting_promotion/778/plans/v6.md",
+      "issue": 778,
+      "old_c32": "SKIP",
+      "new_c32": "WARN",
+      "rows": [
+        {
+          "component": "C ladder v2, fixed+maxlayer, 10,000 draws",
+          "grounded": false,
+          "arm_framing": false,
+          "arm_count": true,
+          "satisfier": null
+        }
+      ]
+    },
+    {
+      "file": "tasks/awaiting_promotion/778/plans/v7.md",
+      "issue": 778,
+      "old_c32": "SKIP",
+      "new_c32": "WARN",
+      "rows": [
+        {
+          "component": "C ladder v2, fixed+maxlayer, 10,000 draws",
+          "grounded": false,
+          "arm_framing": false,
+          "arm_count": true,
+          "satisfier": null
+        }
+      ]
+    },
+    {
+      "file": "tasks/awaiting_promotion/778/plans/v8.md",
+      "issue": 778,
+      "old_c32": "SKIP",
+      "new_c32": "WARN",
+      "rows": [
+        {
+          "component": "C ladder v2, fixed+maxlayer, 10,000 draws",
+          "grounded": false,
+          "arm_framing": false,
+          "arm_count": true,
+          "satisfier": null
+        }
+      ]
+    },
+    {
+      "file": "tasks/awaiting_promotion/920/plans/plan.md",
+      "issue": 920,
+      "old_c32": "WARN",
+      "new_c32": "WARN",
+      "rows": [
+        {
+          "component": "P4 DV-1 null battery (GPU, float64 batched)",
+          "grounded": false,
+          "arm_framing": true,
+          "arm_count": true,
+          "satisfier": null
+        }
+      ]
+    },
+    {
+      "file": "tasks/awaiting_promotion/920/plans/v1.md",
+      "issue": 920,
+      "old_c32": "WARN",
+      "new_c32": "WARN",
+      "rows": [
+        {
+          "component": "P4 DV-1 null battery (GPU, float64 batched)",
+          "grounded": false,
+          "arm_framing": true,
+          "arm_count": true,
+          "satisfier": null
+        }
+      ]
+    },
+    {
+      "file": "tasks/awaiting_promotion/920/plans/v2.md",
+      "issue": 920,
+      "old_c32": "WARN",
+      "new_c32": "WARN",
+      "rows": [
+        {
+          "component": "P4 DV-1 null battery (GPU, float64 batched)",
+          "grounded": false,
+          "arm_framing": true,
+          "arm_count": true,
+          "satisfier": null
+        }
+      ]
+    },
+    {
+      "file": "tasks/awaiting_promotion/920/plans/v3.md",
+      "issue": 920,
+      "old_c32": "WARN",
+      "new_c32": "WARN",
+      "rows": [
+        {
+          "component": "P4 DV-1 null battery (GPU, float64 batched)",
+          "grounded": false,
+          "arm_framing": true,
+          "arm_count": true,
+          "satisfier": null
+        }
+      ]
+    },
+    {
+      "file": "tasks/awaiting_promotion/922/plans/plan.md",
+      "issue": 922,
+      "old_c32": "WARN",
+      "new_c32": "WARN",
+      "rows": [
+        {
+          "component": "Phase 3 evals: atlas + 100-draw shuffle null + rollout + read-out + bootstrap",
+          "grounded": false,
+          "arm_framing": false,
+          "arm_count": true,
+          "satisfier": null
+        }
+      ]
+    },
+    {
+      "file": "tasks/awaiting_promotion/922/plans/v1.md",
+      "issue": 922,
+      "old_c32": "WARN",
+      "new_c32": "WARN",
+      "rows": [
+        {
+          "component": "Phase 3 evals: atlas + 100-draw shuffle null + rollout + read-out + bootstrap",
+          "grounded": false,
+          "arm_framing": false,
+          "arm_count": true,
+          "satisfier": null
+        }
+      ]
+    },
+    {
+      "file": "tasks/awaiting_promotion/922/plans/v2.md",
+      "issue": 922,
+      "old_c32": "WARN",
+      "new_c32": "WARN",
+      "rows": [
+        {
+          "component": "Phase 3 evals: atlas + 100-draw shuffle null + rollout + read-out + bootstrap",
+          "grounded": false,
+          "arm_framing": false,
+          "arm_count": true,
+          "satisfier": null
+        }
+      ]
+    },
+    {
+      "file": "tasks/awaiting_promotion/922/plans/v3.md",
+      "issue": 922,
+      "old_c32": "WARN",
+      "new_c32": "WARN",
+      "rows": [
+        {
+          "component": "Phase 3 evals: atlas + 100-draw shuffle null + rollout + read-out + bootstrap",
+          "grounded": false,
+          "arm_framing": false,
+          "arm_count": true,
+          "satisfier": null
+        }
+      ]
+    },
+    {
+      "file": "tasks/awaiting_promotion/922/plans/v4.md",
+      "issue": 922,
+      "old_c32": "WARN",
+      "new_c32": "WARN",
+      "rows": [
+        {
+          "component": "Phase 3 evals: atlas + 100-draw shuffle null + rollout + read-out + bootstrap",
+          "grounded": false,
+          "arm_framing": false,
+          "arm_count": true,
+          "satisfier": null
+        }
+      ]
+    },
+    {
+      "file": "tasks/awaiting_promotion/922/plans/v5.md",
+      "issue": 922,
+      "old_c32": "WARN",
+      "new_c32": "WARN",
+      "rows": [
+        {
+          "component": "Phase 3 evals: atlas + 100-draw shuffle null + rollout + read-out + bootstrap",
+          "grounded": false,
+          "arm_framing": false,
+          "arm_count": true,
+          "satisfier": null
+        }
+      ]
+    },
+    {
+      "file": "tasks/awaiting_promotion/922/plans/v6.md",
+      "issue": 922,
+      "old_c32": "WARN",
+      "new_c32": "WARN",
+      "rows": [
+        {
+          "component": "Phase 3 evals: atlas + 100-draw shuffle null + rollout + read-out + bootstrap",
+          "grounded": false,
+          "arm_framing": false,
+          "arm_count": true,
+          "satisfier": null
+        }
+      ]
+    },
+    {
+      "file": "tasks/awaiting_promotion/923/plans/v1.md",
+      "issue": 923,
+      "old_c32": "WARN",
+      "new_c32": "WARN",
+      "rows": [
+        {
+          "component": "Phase 3 null battery",
+          "grounded": true,
+          "arm_framing": true,
+          "arm_count": true,
+          "satisfier": "provenance='#810' timing='1.5 h'"
+        }
+      ]
+    },
+    {
+      "file": "tasks/awaiting_promotion/923/plans/v2.md",
+      "issue": 923,
+      "old_c32": "WARN",
+      "new_c32": "WARN",
+      "rows": [
+        {
+          "component": "Phase 3 null battery",
+          "grounded": true,
+          "arm_framing": true,
+          "arm_count": true,
+          "satisfier": "provenance='#810' timing='1.5 h'"
+        }
+      ]
+    },
+    {
+      "file": "tasks/awaiting_promotion/923/plans/v3.md",
+      "issue": 923,
+      "old_c32": "WARN",
+      "new_c32": "WARN",
+      "rows": [
+        {
+          "component": "Phase 3 null battery",
+          "grounded": true,
+          "arm_framing": true,
+          "arm_count": true,
+          "satisfier": "provenance='#810' timing='3 h'"
+        }
+      ]
+    },
+    {
+      "file": "tasks/awaiting_promotion/923/plans/v4.md",
+      "issue": 923,
+      "old_c32": "SKIP",
+      "new_c32": "PASS",
+      "rows": [
+        {
+          "component": "CPU fits \u2014 full 28-layer sweep, 2 genres, 9 pooled arms",
+          "grounded": true,
+          "arm_framing": true,
+          "arm_count": false,
+          "satisfier": "provenance='parent' timing='~16 min'"
+        },
+        {
+          "component": "CPU nulls extension (blend + Dolly)",
+          "grounded": true,
+          "arm_framing": false,
+          "arm_count": true,
+          "satisfier": "provenance='parent' timing='1.7 h'"
+        }
+      ]
+    },
+    {
+      "file": "tasks/awaiting_promotion/923/plans/v5.md",
+      "issue": 923,
+      "old_c32": "SKIP",
+      "new_c32": "PASS",
+      "rows": [
+        {
+          "component": "CPU fits \u2014 full 28-layer sweep, 2 genres, 9 pooled arms",
+          "grounded": true,
+          "arm_framing": true,
+          "arm_count": false,
+          "satisfier": "provenance='parent' timing='~16 min'"
+        },
+        {
+          "component": "CPU nulls extension (blend + Dolly)",
+          "grounded": true,
+          "arm_framing": false,
+          "arm_count": true,
+          "satisfier": "provenance='parent' timing='1.7 h'"
+        }
+      ]
+    },
+    {
+      "file": "tasks/awaiting_promotion/923/plans/v6.md",
+      "issue": 923,
+      "old_c32": "SKIP",
+      "new_c32": "PASS",
+      "rows": [
+        {
+          "component": "CPU fits \u2014 full 28-layer sweep, 2 genres, 9 pooled arms",
+          "grounded": true,
+          "arm_framing": true,
+          "arm_count": false,
+          "satisfier": "provenance='parent' timing='~16 min'"
+        },
+        {
+          "component": "CPU nulls extension (blend + Dolly)",
+          "grounded": true,
+          "arm_framing": false,
+          "arm_count": true,
+          "satisfier": "provenance='parent' timing='1.7 h'"
+        }
+      ]
+    },
+    {
+      "file": "tasks/awaiting_promotion/928/plans/v1.md",
+      "issue": 928,
+      "old_c32": "WARN",
+      "new_c32": "WARN",
+      "rows": [
+        {
+          "component": "Phase F nulls + bootstrap",
+          "grounded": false,
+          "arm_framing": false,
+          "arm_count": true,
+          "satisfier": null
+        }
+      ]
+    },
+    {
+      "file": "tasks/awaiting_promotion/928/plans/v2.md",
+      "issue": 928,
+      "old_c32": "WARN",
+      "new_c32": "WARN",
+      "rows": [
+        {
+          "component": "Phase F nulls + bootstrap",
+          "grounded": false,
+          "arm_framing": false,
+          "arm_count": true,
+          "satisfier": null
+        }
+      ]
+    },
+    {
+      "file": "tasks/awaiting_promotion/928/plans/v3.md",
+      "issue": 928,
+      "old_c32": "WARN",
+      "new_c32": "WARN",
+      "rows": [
+        {
+          "component": "Phase F nulls + bootstrap",
+          "grounded": false,
+          "arm_framing": false,
+          "arm_count": true,
+          "satisfier": null
+        }
+      ]
+    },
+    {
+      "file": "tasks/awaiting_promotion/928/plans/v4.md",
+      "issue": 928,
+      "old_c32": "WARN",
+      "new_c32": "WARN",
+      "rows": [
+        {
+          "component": "Bootstrap re-reduction + closure CIs",
+          "grounded": false,
+          "arm_framing": false,
+          "arm_count": true,
+          "satisfier": null
+        }
+      ]
+    },
+    {
+      "file": "tasks/awaiting_promotion/952/plans/plan.md",
+      "issue": 952,
+      "old_c32": "PASS",
+      "new_c32": "PASS",
+      "rows": [
+        {
+          "component": "VM Phase-2: 10k-draw bootstrap + sign-flip + figures",
+          "grounded": true,
+          "arm_framing": false,
+          "arm_count": true,
+          "satisfier": "provenance='realized' timing='3 min'"
+        }
+      ]
+    },
+    {
+      "file": "tasks/awaiting_promotion/952/plans/v10.md",
+      "issue": 952,
+      "old_c32": "PASS",
+      "new_c32": "PASS",
+      "rows": [
+        {
+          "component": "VM Phase-2: 10k-draw bootstrap + sign-flip + figures",
+          "grounded": true,
+          "arm_framing": false,
+          "arm_count": true,
+          "satisfier": "provenance='realized' timing='3 min'"
+        }
+      ]
+    },
+    {
+      "file": "tasks/awaiting_promotion/952/plans/v11.md",
+      "issue": 952,
+      "old_c32": "PASS",
+      "new_c32": "PASS",
+      "rows": [
+        {
+          "component": "VM Phase-2: 10k-draw bootstrap + sign-flip + figures",
+          "grounded": true,
+          "arm_framing": false,
+          "arm_count": true,
+          "satisfier": "provenance='realized' timing='3 min'"
+        }
+      ]
+    },
+    {
+      "file": "tasks/awaiting_promotion/952/plans/v12.md",
+      "issue": 952,
+      "old_c32": "PASS",
+      "new_c32": "PASS",
+      "rows": [
+        {
+          "component": "VM Phase-2: 10k-draw bootstrap + sign-flip + figures",
+          "grounded": true,
+          "arm_framing": false,
+          "arm_count": true,
+          "satisfier": "provenance='realized' timing='3 min'"
+        }
+      ]
+    },
+    {
+      "file": "tasks/awaiting_promotion/952/plans/v9.md",
+      "issue": 952,
+      "old_c32": "PASS",
+      "new_c32": "PASS",
+      "rows": [
+        {
+          "component": "VM Phase-2: 10k-draw bootstrap + sign-flip + figures",
+          "grounded": true,
+          "arm_framing": false,
+          "arm_count": true,
+          "satisfier": "provenance='realized' timing='3 min'"
+        }
+      ]
+    },
+    {
+      "file": "tasks/awaiting_promotion/958/plans/plan.md",
+      "issue": 958,
+      "old_c32": "PASS",
+      "new_c32": "WARN",
+      "rows": [
+        {
+          "component": "C2 nulls + bootstrap + drift + figures",
+          "grounded": false,
+          "arm_framing": false,
+          "arm_count": true,
+          "satisfier": null
+        }
+      ]
+    },
+    {
+      "file": "tasks/awaiting_promotion/958/plans/v1.md",
+      "issue": 958,
+      "old_c32": "PASS",
+      "new_c32": "WARN",
+      "rows": [
+        {
+          "component": "C2 nulls + bootstrap + drift + figures",
+          "grounded": false,
+          "arm_framing": false,
+          "arm_count": true,
+          "satisfier": null
+        }
+      ]
+    },
+    {
+      "file": "tasks/awaiting_promotion/958/plans/v2.md",
+      "issue": 958,
+      "old_c32": "PASS",
+      "new_c32": "WARN",
+      "rows": [
+        {
+          "component": "C2 nulls + bootstrap + drift + figures",
+          "grounded": false,
+          "arm_framing": false,
+          "arm_count": true,
+          "satisfier": null
+        }
+      ]
+    },
+    {
+      "file": "tasks/awaiting_promotion/958/plans/v3.md",
+      "issue": 958,
+      "old_c32": "PASS",
+      "new_c32": "WARN",
+      "rows": [
+        {
+          "component": "C2 nulls + bootstrap + drift + figures",
+          "grounded": false,
+          "arm_framing": false,
+          "arm_count": true,
+          "satisfier": null
+        }
+      ]
+    },
+    {
+      "file": "tasks/on_hold/816/plans/v1.md",
+      "issue": 816,
+      "old_c32": "SKIP",
+      "new_c32": "WARN",
+      "rows": [
+        {
+          "component": "Phase C null battery + figures (OFF-POD)",
+          "grounded": false,
+          "arm_framing": true,
+          "arm_count": false,
+          "satisfier": null
+        }
+      ]
+    },
+    {
+      "file": "tasks/on_hold/816/plans/v2.md",
+      "issue": 816,
+      "old_c32": "SKIP",
+      "new_c32": "WARN",
+      "rows": [
+        {
+          "component": "Phase C null battery + figures (OFF-POD)",
+          "grounded": false,
+          "arm_framing": true,
+          "arm_count": false,
+          "satisfier": null
+        }
+      ]
+    },
+    {
+      "file": "tasks/running/1335/plans/plan.md",
+      "issue": 1335,
+      "old_c32": "SKIP",
+      "new_c32": "PASS",
+      "rows": [
+        {
+          "component": "R-P3 fits (inner-group-CV)",
+          "grounded": true,
+          "arm_framing": true,
+          "arm_count": false,
+          "satisfier": "provenance='#825' timing='~1 min/cell'"
+        }
+      ]
+    },
+    {
+      "file": "tasks/running/1335/plans/v4.md",
+      "issue": 1335,
+      "old_c32": "SKIP",
+      "new_c32": "PASS",
+      "rows": [
+        {
+          "component": "R-P3 fits (inner-group-CV)",
+          "grounded": true,
+          "arm_framing": true,
+          "arm_count": false,
+          "satisfier": "provenance='#825' timing='~1 min/cell'"
+        }
+      ]
+    },
+    {
+      "file": "tasks/running/1415/plans/plan.md",
+      "issue": 1415,
+      "old_c32": "SKIP",
+      "new_c32": "WARN",
+      "rows": [
+        {
+          "component": "2a: Null battery",
+          "grounded": false,
+          "arm_framing": true,
+          "arm_count": true,
+          "satisfier": null
+        }
+      ]
+    },
+    {
+      "file": "tasks/running/1415/plans/v2.md",
+      "issue": 1415,
+      "old_c32": "SKIP",
+      "new_c32": "WARN",
+      "rows": [
+        {
+          "component": "2a: Null battery",
+          "grounded": false,
+          "arm_framing": true,
+          "arm_count": true,
+          "satisfier": null
+        }
+      ]
+    },
+    {
+      "file": "tasks/running/1415/plans/v3.md",
+      "issue": 1415,
+      "old_c32": "SKIP",
+      "new_c32": "WARN",
+      "rows": [
+        {
+          "component": "2a: Null battery",
+          "grounded": false,
+          "arm_framing": true,
+          "arm_count": true,
+          "satisfier": null
+        }
+      ]
+    },
+    {
+      "file": "tasks/running/1415/plans/v4.md",
+      "issue": 1415,
+      "old_c32": "SKIP",
+      "new_c32": "WARN",
+      "rows": [
+        {
+          "component": "2a: Null battery",
+          "grounded": false,
+          "arm_framing": true,
+          "arm_count": true,
+          "satisfier": null
+        }
+      ]
+    },
+    {
+      "file": "tasks/running/1415/plans/v5.md",
+      "issue": 1415,
+      "old_c32": "SKIP",
+      "new_c32": "WARN",
+      "rows": [
+        {
+          "component": "2a: Null battery",
+          "grounded": false,
+          "arm_framing": true,
+          "arm_count": true,
+          "satisfier": null
+        }
+      ]
+    }
+  ],
+  "fire_issues": [
+    459,
+    537,
+    666,
+    685,
+    778,
+    816,
+    920,
+    922,
+    923,
+    928,
+    952,
+    958,
+    1332,
+    1335,
+    1415
+  ],
+  "recent_fire_issues": [
+    1332,
+    1335,
+    1415
+  ],
+  "warn_fire_issues": [
+    459,
+    537,
+    666,
+    685,
+    778,
+    816,
+    920,
+    922,
+    928,
+    958,
+    1332,
+    1415
+  ],
+  "allowed_flips": [
+    {
+      "file": ".claude/plans/issue-958.md",
+      "issue": 958,
+      "check": "c32_fit_basis_grounding",
+      "old": "PASS",
+      "new": "WARN",
+      "battery_rows": [
+        {
+          "component": "C2 nulls + bootstrap + drift + figures",
+          "grounded": false,
+          "arm_framing": false,
+          "arm_count": true,
+          "satisfier": null
+        }
+      ]
+    },
+    {
+      "file": "tasks/archived/459/plans/plan.md",
+      "issue": 459,
+      "check": "c32_fit_basis_grounding",
+      "old": "SKIP",
+      "new": "WARN",
+      "battery_rows": [
+        {
+          "component": "Phase 3 \u2014 analysis",
+          "grounded": false,
+          "arm_framing": true,
+          "arm_count": false,
+          "satisfier": null
+        }
+      ]
+    },
+    {
+      "file": "tasks/archived/459/plans/v2.md",
+      "issue": 459,
+      "check": "c32_fit_basis_grounding",
+      "old": "SKIP",
+      "new": "WARN",
+      "battery_rows": [
+        {
+          "component": "Phase 3 \u2014 analysis",
+          "grounded": false,
+          "arm_framing": true,
+          "arm_count": false,
+          "satisfier": null
+        }
+      ]
+    },
+    {
+      "file": "tasks/awaiting_promotion/1332/plans/v1.md",
+      "issue": 1332,
+      "check": "c32_fit_basis_grounding",
+      "old": "PASS",
+      "new": "WARN",
+      "battery_rows": [
+        {
+          "component": "P2 transfer scoring + nulls + bootstrap",
+          "grounded": false,
+          "arm_framing": false,
+          "arm_count": true,
+          "satisfier": null
+        }
+      ]
+    },
+    {
+      "file": "tasks/awaiting_promotion/1332/plans/v2.md",
+      "issue": 1332,
+      "check": "c32_fit_basis_grounding",
+      "old": "PASS",
+      "new": "WARN",
+      "battery_rows": [
+        {
+          "component": "P2 transfer scoring + nulls + bootstrap",
+          "grounded": false,
+          "arm_framing": false,
+          "arm_count": true,
+          "satisfier": null
+        }
+      ]
+    },
+    {
+      "file": "tasks/awaiting_promotion/1332/plans/v3.md",
+      "issue": 1332,
+      "check": "c32_fit_basis_grounding",
+      "old": "PASS",
+      "new": "WARN",
+      "battery_rows": [
+        {
+          "component": "P2 transfer scoring + nulls + bootstrap",
+          "grounded": false,
+          "arm_framing": false,
+          "arm_count": true,
+          "satisfier": null
+        }
+      ]
+    },
+    {
+      "file": "tasks/awaiting_promotion/537/plans/plan.md",
+      "issue": 537,
+      "check": "c32_fit_basis_grounding",
+      "old": "SKIP",
+      "new": "WARN",
+      "battery_rows": [
+        {
+          "component": "scoring re-run + leave-family-out + win matrix + permutation nulls + collinearity (all 5 behaviors \u00d7",
+          "grounded": false,
+          "arm_framing": true,
+          "arm_count": false,
+          "satisfier": null
+        }
+      ]
+    },
+    {
+      "file": "tasks/awaiting_promotion/537/plans/v9.md",
+      "issue": 537,
+      "check": "c32_fit_basis_grounding",
+      "old": "SKIP",
+      "new": "WARN",
+      "battery_rows": [
+        {
+          "component": "scoring re-run + leave-family-out + win matrix + permutation nulls + collinearity (all 5 behaviors \u00d7",
+          "grounded": false,
+          "arm_framing": true,
+          "arm_count": false,
+          "satisfier": null
+        }
+      ]
+    },
+    {
+      "file": "tasks/awaiting_promotion/685/plans/plan.md",
+      "issue": 685,
+      "check": "c32_fit_basis_grounding",
+      "old": "SKIP",
+      "new": "WARN",
+      "battery_rows": [
+        {
+          "component": "Part A signed cosine + null",
+          "grounded": false,
+          "arm_framing": true,
+          "arm_count": true,
+          "satisfier": null
+        }
+      ]
+    },
+    {
+      "file": "tasks/awaiting_promotion/685/plans/v4.md",
+      "issue": 685,
+      "check": "c32_fit_basis_grounding",
+      "old": "SKIP",
+      "new": "WARN",
+      "battery_rows": [
+        {
+          "component": "Part A signed cosine + null",
+          "grounded": false,
+          "arm_framing": true,
+          "arm_count": true,
+          "satisfier": null
+        }
+      ]
+    },
+    {
+      "file": "tasks/awaiting_promotion/685/plans/v5.md",
+      "issue": 685,
+      "check": "c32_fit_basis_grounding",
+      "old": "SKIP",
+      "new": "WARN",
+      "battery_rows": [
+        {
+          "component": "Part A signed cosine + null",
+          "grounded": false,
+          "arm_framing": true,
+          "arm_count": true,
+          "satisfier": null
+        }
+      ]
+    },
+    {
+      "file": "tasks/awaiting_promotion/778/plans/plan.md",
+      "issue": 778,
+      "check": "c32_fit_basis_grounding",
+      "old": "SKIP",
+      "new": "WARN",
+      "battery_rows": [
+        {
+          "component": "C ladder v2, fixed+maxlayer, 10,000 draws",
+          "grounded": false,
+          "arm_framing": false,
+          "arm_count": true,
+          "satisfier": null
+        }
+      ]
+    },
+    {
+      "file": "tasks/awaiting_promotion/778/plans/v1.md",
+      "issue": 778,
+      "check": "c32_fit_basis_grounding",
+      "old": "SKIP",
+      "new": "WARN",
+      "battery_rows": [
+        {
+          "component": "Null battery + correlations + figures",
+          "grounded": false,
+          "arm_framing": true,
+          "arm_count": false,
+          "satisfier": null
+        }
+      ]
+    },
+    {
+      "file": "tasks/awaiting_promotion/778/plans/v2.md",
+      "issue": 778,
+      "check": "c32_fit_basis_grounding",
+      "old": "SKIP",
+      "new": "WARN",
+      "battery_rows": [
+        {
+          "component": "Null battery + correlations + figures",
+          "grounded": false,
+          "arm_framing": true,
+          "arm_count": false,
+          "satisfier": null
+        }
+      ]
+    },
+    {
+      "file": "tasks/awaiting_promotion/778/plans/v3.md",
+      "issue": 778,
+      "check": "c32_fit_basis_grounding",
+      "old": "SKIP",
+      "new": "WARN",
+      "battery_rows": [
+        {
+          "component": "Null battery + correlations + figures (both legs)",
+          "grounded": false,
+          "arm_framing": true,
+          "arm_count": false,
+          "satisfier": null
+        }
+      ]
+    },
+    {
+      "file": "tasks/awaiting_promotion/778/plans/v4.md",
+      "issue": 778,
+      "check": "c32_fit_basis_grounding",
+      "old": "SKIP",
+      "new": "WARN",
+      "battery_rows": [
+        {
+          "component": "Null battery + correlations + figures (both legs)",
+          "grounded": false,
+          "arm_framing": true,
+          "arm_count": false,
+          "satisfier": null
+        }
+      ]
+    },
+    {
+      "file": "tasks/awaiting_promotion/778/plans/v5.md",
+      "issue": 778,
+      "check": "c32_fit_basis_grounding",
+      "old": "SKIP",
+      "new": "WARN",
+      "battery_rows": [
+        {
+          "component": "Null battery + correlations + figures (both legs)",
+          "grounded": false,
+          "arm_framing": true,
+          "arm_count": false,
+          "satisfier": null
+        }
+      ]
+    },
+    {
+      "file": "tasks/awaiting_promotion/778/plans/v6.md",
+      "issue": 778,
+      "check": "c32_fit_basis_grounding",
+      "old": "SKIP",
+      "new": "WARN",
+      "battery_rows": [
+        {
+          "component": "C ladder v2, fixed+maxlayer, 10,000 draws",
+          "grounded": false,
+          "arm_framing": false,
+          "arm_count": true,
+          "satisfier": null
+        }
+      ]
+    },
+    {
+      "file": "tasks/awaiting_promotion/778/plans/v7.md",
+      "issue": 778,
+      "check": "c32_fit_basis_grounding",
+      "old": "SKIP",
+      "new": "WARN",
+      "battery_rows": [
+        {
+          "component": "C ladder v2, fixed+maxlayer, 10,000 draws",
+          "grounded": false,
+          "arm_framing": false,
+          "arm_count": true,
+          "satisfier": null
+        }
+      ]
+    },
+    {
+      "file": "tasks/awaiting_promotion/778/plans/v8.md",
+      "issue": 778,
+      "check": "c32_fit_basis_grounding",
+      "old": "SKIP",
+      "new": "WARN",
+      "battery_rows": [
+        {
+          "component": "C ladder v2, fixed+maxlayer, 10,000 draws",
+          "grounded": false,
+          "arm_framing": false,
+          "arm_count": true,
+          "satisfier": null
+        }
+      ]
+    },
+    {
+      "file": "tasks/awaiting_promotion/923/plans/v4.md",
+      "issue": 923,
+      "check": "c32_fit_basis_grounding",
+      "old": "SKIP",
+      "new": "PASS",
+      "battery_rows": [
+        {
+          "component": "CPU fits \u2014 full 28-layer sweep, 2 genres, 9 pooled arms",
+          "grounded": true,
+          "arm_framing": true,
+          "arm_count": false,
+          "satisfier": "provenance='parent' timing='~16 min'"
+        },
+        {
+          "component": "CPU nulls extension (blend + Dolly)",
+          "grounded": true,
+          "arm_framing": false,
+          "arm_count": true,
+          "satisfier": "provenance='parent' timing='1.7 h'"
+        }
+      ]
+    },
+    {
+      "file": "tasks/awaiting_promotion/923/plans/v5.md",
+      "issue": 923,
+      "check": "c32_fit_basis_grounding",
+      "old": "SKIP",
+      "new": "PASS",
+      "battery_rows": [
+        {
+          "component": "CPU fits \u2014 full 28-layer sweep, 2 genres, 9 pooled arms",
+          "grounded": true,
+          "arm_framing": true,
+          "arm_count": false,
+          "satisfier": "provenance='parent' timing='~16 min'"
+        },
+        {
+          "component": "CPU nulls extension (blend + Dolly)",
+          "grounded": true,
+          "arm_framing": false,
+          "arm_count": true,
+          "satisfier": "provenance='parent' timing='1.7 h'"
+        }
+      ]
+    },
+    {
+      "file": "tasks/awaiting_promotion/923/plans/v6.md",
+      "issue": 923,
+      "check": "c32_fit_basis_grounding",
+      "old": "SKIP",
+      "new": "PASS",
+      "battery_rows": [
+        {
+          "component": "CPU fits \u2014 full 28-layer sweep, 2 genres, 9 pooled arms",
+          "grounded": true,
+          "arm_framing": true,
+          "arm_count": false,
+          "satisfier": "provenance='parent' timing='~16 min'"
+        },
+        {
+          "component": "CPU nulls extension (blend + Dolly)",
+          "grounded": true,
+          "arm_framing": false,
+          "arm_count": true,
+          "satisfier": "provenance='parent' timing='1.7 h'"
+        }
+      ]
+    },
+    {
+      "file": "tasks/awaiting_promotion/958/plans/plan.md",
+      "issue": 958,
+      "check": "c32_fit_basis_grounding",
+      "old": "PASS",
+      "new": "WARN",
+      "battery_rows": [
+        {
+          "component": "C2 nulls + bootstrap + drift + figures",
+          "grounded": false,
+          "arm_framing": false,
+          "arm_count": true,
+          "satisfier": null
+        }
+      ]
+    },
+    {
+      "file": "tasks/awaiting_promotion/958/plans/v1.md",
+      "issue": 958,
+      "check": "c32_fit_basis_grounding",
+      "old": "PASS",
+      "new": "WARN",
+      "battery_rows": [
+        {
+          "component": "C2 nulls + bootstrap + drift + figures",
+          "grounded": false,
+          "arm_framing": false,
+          "arm_count": true,
+          "satisfier": null
+        }
+      ]
+    },
+    {
+      "file": "tasks/awaiting_promotion/958/plans/v2.md",
+      "issue": 958,
+      "check": "c32_fit_basis_grounding",
+      "old": "PASS",
+      "new": "WARN",
+      "battery_rows": [
+        {
+          "component": "C2 nulls + bootstrap + drift + figures",
+          "grounded": false,
+          "arm_framing": false,
+          "arm_count": true,
+          "satisfier": null
+        }
+      ]
+    },
+    {
+      "file": "tasks/awaiting_promotion/958/plans/v3.md",
+      "issue": 958,
+      "check": "c32_fit_basis_grounding",
+      "old": "PASS",
+      "new": "WARN",
+      "battery_rows": [
+        {
+          "component": "C2 nulls + bootstrap + drift + figures",
+          "grounded": false,
+          "arm_framing": false,
+          "arm_count": true,
+          "satisfier": null
+        }
+      ]
+    },
+    {
+      "file": "tasks/on_hold/816/plans/v1.md",
+      "issue": 816,
+      "check": "c32_fit_basis_grounding",
+      "old": "SKIP",
+      "new": "WARN",
+      "battery_rows": [
+        {
+          "component": "Phase C null battery + figures (OFF-POD)",
+          "grounded": false,
+          "arm_framing": true,
+          "arm_count": false,
+          "satisfier": null
+        }
+      ]
+    },
+    {
+      "file": "tasks/on_hold/816/plans/v2.md",
+      "issue": 816,
+      "check": "c32_fit_basis_grounding",
+      "old": "SKIP",
+      "new": "WARN",
+      "battery_rows": [
+        {
+          "component": "Phase C null battery + figures (OFF-POD)",
+          "grounded": false,
+          "arm_framing": true,
+          "arm_count": false,
+          "satisfier": null
+        }
+      ]
+    },
+    {
+      "file": "tasks/running/1335/plans/plan.md",
+      "issue": 1335,
+      "check": "c32_fit_basis_grounding",
+      "old": "SKIP",
+      "new": "PASS",
+      "battery_rows": [
+        {
+          "component": "R-P3 fits (inner-group-CV)",
+          "grounded": true,
+          "arm_framing": true,
+          "arm_count": false,
+          "satisfier": "provenance='#825' timing='~1 min/cell'"
+        }
+      ]
+    },
+    {
+      "file": "tasks/running/1335/plans/v4.md",
+      "issue": 1335,
+      "check": "c32_fit_basis_grounding",
+      "old": "SKIP",
+      "new": "PASS",
+      "battery_rows": [
+        {
+          "component": "R-P3 fits (inner-group-CV)",
+          "grounded": true,
+          "arm_framing": true,
+          "arm_count": false,
+          "satisfier": "provenance='#825' timing='~1 min/cell'"
+        }
+      ]
+    },
+    {
+      "file": "tasks/running/1415/plans/plan.md",
+      "issue": 1415,
+      "check": "c32_fit_basis_grounding",
+      "old": "SKIP",
+      "new": "WARN",
+      "battery_rows": [
+        {
+          "component": "2a: Null battery",
+          "grounded": false,
+          "arm_framing": true,
+          "arm_count": true,
+          "satisfier": null
+        }
+      ]
+    },
+    {
+      "file": "tasks/running/1415/plans/v2.md",
+      "issue": 1415,
+      "check": "c32_fit_basis_grounding",
+      "old": "SKIP",
+      "new": "WARN",
+      "battery_rows": [
+        {
+          "component": "2a: Null battery",
+          "grounded": false,
+          "arm_framing": true,
+          "arm_count": true,
+          "satisfier": null
+        }
+      ]
+    },
+    {
+      "file": "tasks/running/1415/plans/v3.md",
+      "issue": 1415,
+      "check": "c32_fit_basis_grounding",
+      "old": "SKIP",
+      "new": "WARN",
+      "battery_rows": [
+        {
+          "component": "2a: Null battery",
+          "grounded": false,
+          "arm_framing": true,
+          "arm_count": true,
+          "satisfier": null
+        }
+      ]
+    },
+    {
+      "file": "tasks/running/1415/plans/v4.md",
+      "issue": 1415,
+      "check": "c32_fit_basis_grounding",
+      "old": "SKIP",
+      "new": "WARN",
+      "battery_rows": [
+        {
+          "component": "2a: Null battery",
+          "grounded": false,
+          "arm_framing": true,
+          "arm_count": true,
+          "satisfier": null
+        }
+      ]
+    },
+    {
+      "file": "tasks/running/1415/plans/v5.md",
+      "issue": 1415,
+      "check": "c32_fit_basis_grounding",
+      "old": "SKIP",
+      "new": "WARN",
+      "battery_rows": [
+        {
+          "component": "2a: Null battery",
+          "grounded": false,
+          "arm_framing": true,
+          "arm_count": true,
+          "satisfier": null
+        }
+      ]
+    }
+  ],
+  "violations": []
+}

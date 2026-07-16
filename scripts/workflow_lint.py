@@ -8863,8 +8863,13 @@ _LESSONS_ROW_GRANDFATHER_MAX_HEADROOM_BYTES = 40
 # Measured 5,780 B at the #1269 row-grammar migration; ratchet = measured
 # + ~220 (<= _LESSONS_RATCHET_MAX_HEADROOM_BYTES). #1366 grew the
 # artifact-reuse row (parent-lineage trigger, (a)-(k)): measured 6,046 B;
-# ratchet = measured + ~34.
-_LESSONS_RATCHET_BYTES = 6080
+# ratchet = measured + ~34. #1396 grew the upload-policy row
+# (phase-sequencing trigger, store-before-long-fit #825): measured 6,147 B;
+# ratchet = measured + ~253 (<= _LESSONS_RATCHET_MAX_HEADROOM_BYTES). #1395
+# grew the plan-compute-sizing row (pilot basis covers fit loops AND draw
+# batteries): merged measured 6,178 B; ratchet 6400 retained (headroom ~222,
+# covers both concurrent growers).
+_LESSONS_RATCHET_BYTES = 6400
 _LESSONS_RATCHET_MAX_HEADROOM_BYTES = 400
 
 
