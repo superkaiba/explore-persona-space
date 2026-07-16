@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1411,
+  "highest_id": 1412,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -3214,6 +3214,13 @@
       "path": "tasks/proposed/1411",
       "status": "proposed",
       "title": "daily-fix: gotchas Edit tool un-escapes uXXXX"
+    },
+    "1412": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1412",
+      "status": "proposed",
+      "title": "daily-fix: binary figure conflict guidance 9b/10d"
     },
     "142": {
       "has_clean_result": true,
