@@ -506,9 +506,61 @@ queued-but-stuck wide dispatch is the #783 queue timeout
 pod at the REQUESTED width, NOT 4g/2g degradation on GCP. A workload that
 CANNOT re-shard off the realized width (`realized_gpu_count` on the
 `epm:backend-selected` marker / handle sidecar; `requested_gpus` rides
-alongside) must pin its width rather than ride the degrading walk.
+alongside) must pin its width rather than ride the degrading walk — for an
+EXPLICIT `sweep-8g-a100` dispatch the pin mechanism is
+`dispatch_issue.py --width-required` (#1379); on the `--gpus N` path no
+pin flag exists yet (the combination is refused, exit 2), so a
+width-required `--gpus` workload drops `--gpus` for an exact-width intent
+— the `--gpus`-path pin is a deferred follow-up.
 Poller-side width-degrade re-entry is a named deferred follow-up (#1121
 plan), NOT built.
+
+**#1379 — explicit `sweep-8g-a100` degradation.** An EXPLICIT
+`--intent sweep-8g-a100` dispatch (no `--gpus`) now width-degrades too:
+the router APPENDS degraded `a2-ultragpu-{4,2}g` rungs AFTER the intent's
+own 8g base rungs (the base rungs ARE the width-8 rungs, so width-major
+order holds with zero duplicate creates) via the same per-width rung
+builder the #1121 prefix uses (`gcp.EXPLICIT_WIDE_DEGRADE_INTENTS` /
+`router._explicit_wide_degrade_widths` / `router._wide_rungs_for_widths`),
+falling back to abundant partial-node capacity instead of starving on two
+empty 8-GPU DWS pools (the #825 create-miss shape). The three ladder
+shapes:
+
+- **LONG/unknown** (the #825 dispatch shape — no time budget; 6 rungs):
+  `flexstart_a100_80 → ondemand_a100_80 → flexstart_a100_80x4 →
+  ondemand_a100_80x4 → flexstart_a100_80x2 → ondemand_a100_80x2`.
+- **SHORT / `spot_tolerant`** (9 rungs): `spot_a100_80 →
+  flexstart_a100_80 → ondemand_a100_80 → spot_a100_80x4 →
+  flexstart_a100_80x4 → ondemand_a100_80x4 → spot_a100_80x2 →
+  flexstart_a100_80x2 → ondemand_a100_80x2`.
+- **Caller-pinned** (e.g. `--provisioning-model SPOT`; 3 rungs):
+  `spot_a100_80 → spot_a100_80x4 → spot_a100_80x2`.
+
+Opt out per dispatch with `dispatch_issue.py --width-required` (threads
+`spec.extra["width_required"]`; NOT combinable with `--gpus` — exit 2,
+`reason: width_required_gpus_conflict`, since `--gpus` declares a
+re-shardable axis by contract) for a genuinely width-required job
+(shared-nothing 8-way memory/parallelism that cannot re-shard).
+`sweep-8g-h100` is EXCLUDED from degradation: an explicit H100 pick is a
+GPU-TYPE choice (cross-type A100 degradation would silently change
+silicon mid-"fallback"), the H100-never-in-a-degradation-walk invariant
+stands, and the type-preserving escape after full exhaustion is the
+RunPod 8×H100 terminal rung (`RUNPOD_INTENT_FOR_GCP_INTENT` identity
+row). The residual above is UNCHANGED: width degradation fires only on
+CREATE-TIME capacity misses — a flex create that QUEUES then times
+out/vanishes still routes via the #783 queue-timeout / #1116 queue-vanish
+RunPod failovers at the ladder's realized width (poller-side
+width-degrade re-entry stays the named deferred follow-up). Fence sizing:
+a dispatch whose `--max-run-duration` is sized at full width must either
+pass `--width-required` or size the fence off the 2×-width p90 wall — a
+2× landing is a ~4× wall blowout that can convert visible starvation into
+a mid-run fence DELETE. A degradation is machine-readable on the
+`epm:backend-selected` marker / handle sidecar as
+`requested_gpus != realized_gpu_count` (`requested_gpus` is now populated
+— the intent's own base width, 8 — for explicit wide intents via
+`router._declared_width`; pre-#1379 it read null there). Worst-case new
+walk: 9 creates (short) < the 14-rung width-8 short walk
+`MAX_GCP_ATTEMPTS_PER_DAY = 16` was sized for — cap unchanged.
 
 Tests of record: `test_ladder_short_job_spot_before_ondemand`,
 `test_ladder_short_job_spot_miss_then_ondemand_order`,
@@ -524,8 +576,21 @@ Tests of record: `test_ladder_short_job_spot_before_ondemand`,
 `test_width_degradation_on_capacity_miss_lands_4g`,
 `test_width1_ladder_byte_identical_explicit_gpus_none_and_matching`,
 `test_width_ladder_never_emits_h100_machine`,
-`test_workload_error_on_wide_rung_fails_over_to_runpod` (all in
-`tests/test_router.py`).
+`test_workload_error_on_wide_rung_fails_over_to_runpod`; explicit-wide
+degradation (#1379):
+`test_explicit_sweep8g_a100_long_ladder_order_with_degraded_rungs`,
+`test_explicit_sweep8g_a100_short_ladder_order_with_degraded_rungs`,
+`test_explicit_sweep8g_a100_degrades_to_4g_on_8wide_capacity_miss`,
+`test_explicit_sweep8g_a100_width_required_pins_full_width`,
+`test_explicit_wide_degrade_never_emits_h100_machine`,
+`test_explicit_sweep8g_h100_ladder_unchanged_no_degradation`,
+`test_explicit_sweep8g_a100_pinned_spot_walks_pinned_degraded_rungs`,
+`test_explicit_sweep8g_a100_runpod_still_last_after_full_degraded_walk`,
+`test_workload_error_on_degraded_rung_fails_over_to_runpod`,
+`test_declared_width_none_for_non_sweep_intents` (all in
+`tests/test_router.py`); `test_width_required_threads_extra_flag`,
+`test_width_required_with_gpus_exits_2_with_conflict_reason` (in
+`tests/test_dispatch_issue_cli.py`).
 
 ### Per-rung multi-zone fan-out
 

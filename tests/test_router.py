@@ -4475,6 +4475,312 @@ def test_workload_error_on_wide_rung_fails_over_to_runpod(
     assert not any(k == "nibi" for k, _o in outcomes)
 
 
+# ---------------------------------------------------------------------------
+# #1379: explicit wide-intent width degradation (sweep-8g-a100 appends
+# degraded a2-ultragpu-{4,2}g rungs AFTER its 8g base rungs on capacity
+# miss; --width-required pins; sweep-8g-h100 never degrades)
+# ---------------------------------------------------------------------------
+
+
+def _sweep_spec(intent: str = "sweep-8g-a100", **kwargs: Any) -> RunSpec:
+    """An explicit-wide-intent auto-routing spec (#1379 tests)."""
+    return RunSpec(issue=137, intent=intent, backend="auto", **kwargs)
+
+
+def _ladder_tuples(spec: RunSpec) -> list[tuple[str, str | None, int | None, str | None]]:
+    """(label, override machine_type, override gpu_count, provisioning) per rung.
+
+    The same exact-full-list idiom as
+    ``test_width1_ladder_byte_identical_explicit_gpus_none_and_matching`` —
+    base labels are proper PREFIXES of wide labels, so substring scans are
+    vacuous; only full-tuple equality is a non-vacuous order assert.
+    """
+    got: list[tuple[str, str | None, int | None, str | None]] = []
+    for s, label in _ladder_specs(spec):
+        ex = s.extra or {}
+        ov = ex.get("machine_spec_override")
+        got.append(
+            (
+                label,
+                ov["machine_type"] if ov else None,
+                ov["gpu_count"] if ov else None,
+                ex.get("provisioning_model"),
+            )
+        )
+    return got
+
+
+def test_explicit_sweep8g_a100_long_ladder_order_with_degraded_rungs():
+    """#1379 AC1 (T1): an explicit ``sweep-8g-a100`` LONG/unknown-length
+    dispatch (the #825 shape — no time budget) gains degraded x4 then x2
+    rungs AFTER its 8g base rungs, width-major, with the base tail
+    byte-identical (the as-is on-demand rung stays the caller spec)."""
+    assert _ladder_tuples(_sweep_spec()) == [
+        ("flexstart_a100_80", "a2-ultragpu-8g", 8, "FLEX_START"),
+        ("ondemand_a100_80", None, None, None),
+        ("flexstart_a100_80x4", "a2-ultragpu-4g", 4, "FLEX_START"),
+        ("ondemand_a100_80x4", "a2-ultragpu-4g", 4, "STANDARD"),
+        ("flexstart_a100_80x2", "a2-ultragpu-2g", 2, "FLEX_START"),
+        ("ondemand_a100_80x2", "a2-ultragpu-2g", 2, "STANDARD"),
+    ]
+
+
+def test_explicit_sweep8g_a100_short_ladder_order_with_degraded_rungs():
+    """#1379 AC1 (T2): the SHORT (spot_tolerant) explicit sweep walk is the
+    9-rung width-major order — spot -> flex -> ondemand within width 8
+    (the base rungs ARE the width-8 rungs), then x4, then x2."""
+    assert _ladder_tuples(_sweep_spec(extra={"spot_tolerant": True})) == [
+        ("spot_a100_80", "a2-ultragpu-8g", 8, "SPOT"),
+        ("flexstart_a100_80", "a2-ultragpu-8g", 8, "FLEX_START"),
+        ("ondemand_a100_80", None, None, None),
+        ("spot_a100_80x4", "a2-ultragpu-4g", 4, "SPOT"),
+        ("flexstart_a100_80x4", "a2-ultragpu-4g", 4, "FLEX_START"),
+        ("ondemand_a100_80x4", "a2-ultragpu-4g", 4, "STANDARD"),
+        ("spot_a100_80x2", "a2-ultragpu-2g", 2, "SPOT"),
+        ("flexstart_a100_80x2", "a2-ultragpu-2g", 2, "FLEX_START"),
+        ("ondemand_a100_80x2", "a2-ultragpu-2g", 2, "STANDARD"),
+    ]
+
+
+def test_explicit_sweep8g_a100_degrades_to_4g_on_8wide_capacity_miss(
+    lease_store, marker_poster, captured_markers
+):
+    """#1379 AC1+AC5 (T3, route() end-to-end): both 8-wide rungs
+    capacity-miss -> the walk degrades to the first x4 rung; the launched
+    override is a2-ultragpu-4g and the marker/handle width fields read
+    requested=8 (via ``_declared_width`` — pre-#1379 this was null for an
+    explicit intent) / realized=4."""
+    gcp = _GcpBackendDouble(
+        launch_raises_by_rung={
+            "A100-80x8/FLEX_START": GcpProvisioningError("flex8 OUT", evidence={}),
+            "A100-80x8/STANDARD": GcpProvisioningError("ondemand8 OUT", evidence={}),
+        }
+    )
+    result = route(
+        _sweep_spec(),
+        runpod_backend=_ExplodingRunpod(),
+        gcp_backend=gcp,
+        lease_store=lease_store,
+        marker_poster=marker_poster,
+        config=RouterConfig(free_wait_seconds=1, poll_interval=0.0),
+        now_fn=_clock(),
+        sleep_fn=lambda _s: None,
+    )
+    assert result.chosen_kind == "gcp"
+    assert result.extra["gcp_ladder_rung"] == "flexstart_a100_80x4"
+    assert gcp.launches[0].extra["machine_spec_override"]["machine_type"] == "a2-ultragpu-4g"
+    assert result.extra["requested_gpus"] == 8
+    assert result.extra["realized_gpu_count"] == 4
+    # AC5 folded in: the handle sidecar carries the same two width fields.
+    assert result.handle.extra["requested_gpus"] == 8
+    assert result.handle.extra["realized_gpu_count"] == 4
+
+
+def test_explicit_sweep8g_a100_width_required_pins_full_width(
+    lease_store, marker_poster, captured_markers
+):
+    """#1379 AC2 (T4): ``width_required`` pins the intent at its full width —
+    the ladder is byte-identical to the pre-#1379 one (no degraded rungs on
+    the long, short, OR pinned branch), and an exhausted walk falls through
+    to RunPod exactly as today with no x4/x2 label in the attempts trail."""
+    # (a) ladder-level: the pre-change 2-rung long base list, no suffix.
+    assert _ladder_tuples(_sweep_spec(extra={"width_required": True})) == [
+        ("flexstart_a100_80", "a2-ultragpu-8g", 8, "FLEX_START"),
+        ("ondemand_a100_80", None, None, None),
+    ]
+    # Encouraged companions (plan §13): the short + pinned variants pin the
+    # pre-change base lists too (labels only — shapes covered by T1/T2/T7).
+    assert [
+        t[0]
+        for t in _ladder_tuples(_sweep_spec(extra={"width_required": True, "spot_tolerant": True}))
+    ] == ["spot_a100_80", "flexstart_a100_80", "ondemand_a100_80"]
+    assert [
+        t[0]
+        for t in _ladder_tuples(
+            _sweep_spec(extra={"width_required": True, "provisioning_model": "SPOT"})
+        )
+    ] == ["spot_a100_80"]
+    # (b) route()-level: every GCP rung missing -> RunPod last, no degraded
+    # rung ever attempted.
+    rp = _PassiveRunpod()
+    gcp = _GcpBackendDouble(
+        launch_raises=GcpProvisioningError(
+            "ZONE_RESOURCE_POOL_EXHAUSTED", evidence={"matched_pattern": "RESOURCE_EXHAUSTED"}
+        )
+    )
+    result = route(
+        _sweep_spec(extra={"width_required": True}),
+        runpod_backend=rp,
+        gcp_backend=gcp,
+        lease_store=lease_store,
+        marker_poster=marker_poster,
+        config=RouterConfig(free_wait_seconds=1, poll_interval=0.0, max_gcp_attempts_per_day=99),
+        now_fn=_clock(),
+        sleep_fn=lambda _s: None,
+    )
+    assert result.chosen_kind == "runpod"
+    labels = _gcp_rung_labels(result)
+    assert labels == ["flexstart_a100_80", "ondemand_a100_80"]
+    assert not any("x4" in lbl or "x2" in lbl for lbl in labels)
+
+
+def test_explicit_wide_degrade_never_emits_h100_machine():
+    """#1379 AC3 (T5): the explicit-path sibling of the untouched #1121
+    ``test_width_ladder_never_emits_h100_machine`` invariant — every rung of
+    every ``sweep-8g-a100`` ladder variant (long, short, pinned) RESOLVES to
+    an a2- (A100) machine, never a3- (H100)."""
+    from explore_persona_space.backends.gcp import machine_for_intent
+
+    for extra in (None, {"spot_tolerant": True}, {"provisioning_model": "SPOT"}):
+        for rung_spec, label in _ladder_specs(_sweep_spec(extra=extra)):
+            machine = machine_for_intent(rung_spec)
+            assert machine.machine_type.startswith("a2-"), (extra, label)
+            assert not machine.machine_type.startswith("a3-"), (extra, label)
+
+
+def test_explicit_sweep8g_h100_ladder_unchanged_no_degradation():
+    """#1379 AC3 (T6, fork decision pinned): ``sweep-8g-h100`` is EXCLUDED
+    from explicit-wide degradation — its pinned-SPOT ladder (the realistic
+    H100 dispatch shape: no on-demand pool) is exactly the 1-rung base list,
+    no label carries a degraded x4/x2 suffix, and no rung's override names
+    an a2-ultragpu-{4,2}g machine (cross-type degradation would silently
+    change silicon). Label-level asserts ONLY — an h100 ondemand rung is
+    never rendered here (H100+STANDARD raises at render by design, A12)."""
+    pinned = _ladder_tuples(
+        _sweep_spec(intent="sweep-8g-h100", extra={"provisioning_model": "SPOT"})
+    )
+    assert pinned == [("spot_h100_80", "a3-highgpu-8g", 8, "SPOT")]
+    # Encouraged companion (plan §13): the long-branch label list is the
+    # pre-change 2-rung base list (labels only — never rendered).
+    long_labels = [t[0] for t in _ladder_tuples(_sweep_spec(intent="sweep-8g-h100"))]
+    assert long_labels == ["flexstart_h100_80", "ondemand_h100_80"]
+    for tuples in (pinned, _ladder_tuples(_sweep_spec(intent="sweep-8g-h100"))):
+        for label, machine_type, _gpu_count, _prov in tuples:
+            assert "x4" not in label and "x2" not in label, label
+            assert machine_type not in {"a2-ultragpu-4g", "a2-ultragpu-2g"}, label
+
+
+def test_explicit_sweep8g_a100_pinned_spot_walks_pinned_degraded_rungs():
+    """#1379 (T7): a caller ``provisioning_model`` pin is honored at every
+    degraded width (the #537/#680 pin contract extended, mirroring the
+    #1121 per-width pin behavior) — the pinned-SPOT walk is spot-only at
+    widths 8, 4, 2."""
+    assert _ladder_tuples(_sweep_spec(extra={"provisioning_model": "SPOT"})) == [
+        ("spot_a100_80", "a2-ultragpu-8g", 8, "SPOT"),
+        ("spot_a100_80x4", "a2-ultragpu-4g", 4, "SPOT"),
+        ("spot_a100_80x2", "a2-ultragpu-2g", 2, "SPOT"),
+    ]
+
+
+def test_explicit_sweep8g_a100_runpod_still_last_after_full_degraded_walk(
+    lease_store, marker_poster, captured_markers
+):
+    """#1379 AC6 (T8): width degradation stays WITHIN the GCP ladder — with
+    every GCP rung (incl. the degraded ones) and the SLURM lane missing,
+    RunPod launches exactly once and its attempt is strictly LAST."""
+    rp = _PassiveRunpod()
+    nibi = _FreeLaneBackend(kind="nibi", starts_when=10**9)  # never starts
+    gcp = _GcpBackendDouble(
+        launch_raises=GcpProvisioningError(
+            "ZONE_RESOURCE_POOL_EXHAUSTED", evidence={"matched_pattern": "RESOURCE_EXHAUSTED"}
+        )
+    )
+    result = route(
+        _sweep_spec(),
+        runpod_backend=rp,
+        free_backends={"nibi": nibi},
+        gcp_backend=gcp,
+        lease_store=lease_store,
+        is_started=lambda _b, _h: False,
+        is_live_after_cancel=lambda _b, _h: False,
+        marker_poster=marker_poster,
+        config=RouterConfig(
+            free_wait_seconds=1,
+            poll_interval=0.0,
+            cancel_grace_seconds=0,
+            max_gcp_attempts_per_day=99,
+        ),
+        now_fn=_clock(),
+        sleep_fn=lambda _s: None,
+    )
+    assert result.chosen_kind == "runpod"
+    assert len(rp.launches) == 1
+    assert _gcp_rung_labels(result) == [
+        "flexstart_a100_80",
+        "ondemand_a100_80",
+        "flexstart_a100_80x4",
+        "ondemand_a100_80x4",
+        "flexstart_a100_80x2",
+        "ondemand_a100_80x2",
+    ]
+    outcomes = [(a.kind, a.outcome) for a in result.attempts]
+    gcp_idxs = [i for i, (k, _o) in enumerate(outcomes) if k == "gcp"]
+    nibi_idxs = [i for i, (k, _o) in enumerate(outcomes) if k == "nibi"]
+    runpod_idxs = [i for i, (k, o) in enumerate(outcomes) if k == "runpod" and o == "launched"]
+    assert len(gcp_idxs) == 6  # the full 6-rung degraded long walk attempted
+    assert nibi_idxs, "the free SLURM lane must have been attempted"
+    assert runpod_idxs and runpod_idxs[-1] == len(outcomes) - 1  # runpod LAST
+    assert max(gcp_idxs) < runpod_idxs[-1]
+    assert max(nibi_idxs) < runpod_idxs[-1]
+
+
+def test_workload_error_on_degraded_rung_fails_over_to_runpod(
+    lease_store, marker_poster, captured_markers
+):
+    """#1379 AC6 (encouraged companion, plan §13 — the degraded-suffix
+    parametrization of the #1121 wide-rung failover pin): a GcpWorkloadError
+    on a DEGRADED x4 rung short-circuits STRAIGHT to RunPod — no later GCP
+    rung, no SLURM lane."""
+    rp = _PassiveRunpod()
+    nibi = _FreeLaneBackend(kind="nibi", starts_when=10**9)
+    gcp = _GcpBackendDouble(
+        launch_raises_by_rung={
+            "A100-80x8/FLEX_START": GcpProvisioningError("flex8 OUT", evidence={}),
+            "A100-80x8/STANDARD": GcpProvisioningError("ondemand8 OUT", evidence={}),
+            "A100-80x4/FLEX_START": GcpWorkloadError(
+                "workload crashed", evidence={"phase": "train"}
+            ),
+        }
+    )
+    result = route(
+        _sweep_spec(),
+        runpod_backend=rp,
+        free_backends={"nibi": nibi},
+        gcp_backend=gcp,
+        lease_store=lease_store,
+        is_started=lambda _b, _h: False,
+        is_live_after_cancel=lambda _b, _h: False,
+        marker_poster=marker_poster,
+        config=RouterConfig(free_wait_seconds=1, poll_interval=0.0, cancel_grace_seconds=0),
+        now_fn=_clock(),
+        sleep_fn=lambda _s: None,
+    )
+    assert result.chosen_kind == "runpod"
+    assert result.reason == ROUTE_REASON_GCP_WORKLOAD_FAILOVER_RUNPOD
+    assert len(rp.launches) == 1
+    outcomes = [(a.kind, a.outcome) for a in result.attempts]
+    assert ("gcp", "workload_failure") in outcomes
+    gcp_after_failure = [
+        o for k, o in outcomes[outcomes.index(("gcp", "workload_failure")) + 1 :] if k == "gcp"
+    ]
+    assert gcp_after_failure == []
+    assert not any(k == "nibi" for k, _o in outcomes)
+
+
+def test_declared_width_none_for_non_sweep_intents():
+    """#1379 (T9): ``_declared_width`` returns ``spec.gpus`` VERBATIM off the
+    explicit-wide path (byte-identity of the marker width fields for every
+    non-degradable intent), the intent's own base width (8) for a
+    ``sweep-8g-a100`` dispatch with no --gpus, and None for
+    ``sweep-8g-h100`` (not in the degrade set)."""
+    from explore_persona_space.backends.router import _declared_width
+
+    assert _declared_width(RunSpec(issue=137, intent="lora-7b", backend="auto")) is None
+    assert _declared_width(RunSpec(issue=137, intent="lora-7b", backend="auto", gpus=8)) == 8
+    assert _declared_width(RunSpec(issue=137, intent="sweep-8g-a100", backend="auto")) == 8
+    assert _declared_width(RunSpec(issue=137, intent="sweep-8g-h100", backend="auto")) is None
+
+
 def test_workload_error_on_later_rung_fails_over_to_runpod(
     lease_store, marker_poster, captured_markers
 ):

@@ -818,6 +818,45 @@ def _gpus_gcp_lane_conflict(spec: Any) -> dict[str, Any] | None:
     }
 
 
+def _width_required_gpus_conflict(args: argparse.Namespace) -> dict[str, Any] | None:
+    """Pre-route ``--width-required`` vs ``--gpus`` conflict guard (#1379).
+
+    ``--gpus`` DECLARES a re-shardable axis by contract (#1121: the router
+    walks wide rungs and degrades width on capacity miss), while
+    ``--width-required`` pins an explicit wide intent at its full width —
+    combining them is contradictory, and silently ignoring either flag
+    violates fail-fast. Returns the exit-2 failure body (same
+    ``failure_class`` / ``status`` / ``note`` shape as the #599
+    ``gpus_machine_mismatch`` guard, so SKILL.md Step 6b and the failure
+    classifier handle it unchanged) when the launch must be refused;
+    ``None`` when it may proceed. The ``--gpus``-path width pin, if ever
+    needed, is a separate follow-up; this refusal keeps the combination
+    from silently meaning nothing.
+    """
+    if not getattr(args, "width_required", False) or getattr(args, "gpus", None) is None:
+        return None
+    note = (
+        "failure_class: infra\n"
+        "reason: width_required_gpus_conflict\n"
+        f"detail: --width-required cannot be combined with --gpus {args.gpus} — "
+        "--gpus declares a RE-SHARDABLE axis by contract (#1121: the GCP ladder "
+        "walks wide rungs and degrades width on capacity miss), while "
+        "--width-required pins an explicit wide sweep intent at its FULL width "
+        "(#1379); honoring both is contradictory. "
+        "Fix: drop --gpus (the explicit wide intent's own width applies and "
+        "--width-required pins it), or drop --width-required (the ladder "
+        "degrades 8->4->2 on capacity miss)."
+    )
+    return {
+        "ok": False,
+        "issue": int(args.issue),
+        "failure_class": "infra",
+        "status": "blocked",
+        "reason": "width_required_gpus_conflict",
+        "note": note,
+    }
+
+
 #: Human-readable renderer pointer per lane, used in the #1329 lane-env lint
 #: warning/refusal text so the reader can find the export site.
 _LANE_RENDERER_POINTERS: dict[str, str] = {
@@ -1265,6 +1304,17 @@ def _launch_extra_from_args(args: argparse.Namespace) -> dict[str, Any]:
         # preemption). The retired EPS_GCP_SPOT_FALLBACK env gate (#537) is a
         # no-op back-compat shim. Inert on SLURM / RunPod lanes.
         extra["spot_tolerant"] = True
+    if getattr(args, "width_required", False):
+        # GCP-only knob (#1379): pins an explicit wide sweep intent
+        # (gcp.EXPLICIT_WIDE_DEGRADE_INTENTS, i.e. sweep-8g-a100) at its
+        # FULL width — router._explicit_wide_degrade_widths returns [] so
+        # the ladder gains NO degraded 4g/2g rungs. v1 scope: binds explicit
+        # wide intents only; on any other intent the key threads but is
+        # inert (the helper never consults it there). The --gpus combination
+        # is refused pre-route in _cmd_launch (exit 2,
+        # reason: width_required_gpus_conflict). Inert on SLURM / RunPod
+        # lanes.
+        extra["width_required"] = True
     if getattr(args, "repo_branch", None):
         # The GCE startup script clones from origin, so a feature-branch
         # workload must name its branch (issue 535 r6); the RunPod #909
@@ -1446,6 +1496,14 @@ def _cmd_launch(args: argparse.Namespace, *, backends_factory: Callable[[], dict
     )
     from explore_persona_space.backends.router import RouteError
     from explore_persona_space.backends.runpod import RunPodWorkloadStartError
+
+    # Pre-route --width-required / --gpus conflict guard (#1379): the two
+    # flags contradict each other (re-shardable axis vs pinned width), so
+    # fail LOUD before any spec/backend is built.
+    width_conflict = _width_required_gpus_conflict(args)
+    if width_conflict is not None:
+        print(json.dumps(width_conflict, sort_keys=True))
+        return 2
 
     extra = _launch_extra_from_args(args)
     spec = build_run_spec(
@@ -2220,6 +2278,19 @@ def _build_argparser() -> argparse.ArgumentParser:
         ),
     )
     launch.add_argument(
+        "--width-required",
+        action="store_true",
+        help=(
+            "Pin an explicit wide sweep intent (gcp.EXPLICIT_WIDE_DEGRADE_INTENTS, "
+            "i.e. sweep-8g-a100) at its FULL width: the GCP ladder will not "
+            "auto-degrade 8->4->2 on capacity failure (#1379). Threads to "
+            "spec.extra['width_required']. For a genuinely width-required job "
+            "(shared-nothing 8-way memory/parallelism that cannot re-shard). "
+            "Not combinable with --gpus (exit 2): a --gpus dispatch declares a "
+            "re-shardable axis by contract (#1121)."
+        ),
+    )
+    launch.add_argument(
         "--boot-disk-gb",
         type=int,
         default=None,
@@ -2512,6 +2583,7 @@ __all__ = [
     "_recognized_frontmatter_backends",
     "_resolve_backend_for_handle",
     "_upload_verification_currency_blocker",
+    "_width_required_gpus_conflict",
     "_wrap_marker_poster_with_override_flag",
     "main",
 ]

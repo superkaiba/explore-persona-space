@@ -427,7 +427,14 @@ INTENT_TO_MACHINE: dict[str, MachineSpec] = {
     # now walks WIDE_A100_80_BY_WIDTH rungs (a2-ultragpu-{8,4,2}g) for a
     # width-declaring dispatch (``--gpus N`` on a width-eligible intent), so
     # sweep-8g-a100 remains only as a back-compat explicit intent (redundant
-    # with ``--intent capture-7b --gpus 8`` on the auto lane). The H100 half
+    # with ``--intent capture-7b --gpus 8`` on the auto lane) — and, as of
+    # #1379, an EXPLICIT sweep-8g-a100 dispatch likewise WIDTH-DEGRADES on
+    # capacity miss (EXPLICIT_WIDE_DEGRADE_INTENTS below): the router ladder
+    # appends 4g/2g rungs after the 8g base rungs unless the caller pins the
+    # width via --width-required (spec.extra["width_required"]). sweep-8g-h100
+    # is EXCLUDED from that degradation too (an explicit H100 pick is a
+    # GPU-TYPE choice; its fallback is the type-preserving RunPod 8xH100
+    # terminal rung). The H100 half
     # STANDS: 8x H100 preemptible quota in us-central1 is exactly 8 (one 8x,
     # zero concurrency headroom), there is no H100 on-demand pool, and the
     # H100 quota metrics are absent from ``regions describe`` on this project
@@ -514,6 +521,18 @@ WIDE_A100_80_BY_WIDTH: dict[int, MachineSpec] = {
 WIDTH_ELIGIBLE_INTENTS: frozenset[str] = frozenset(
     {"lora-7b", "lora", "capture-7b", "eval", "debug", "ft-7b"}
 )
+
+#: Explicit wide intents whose GPU WIDTH auto-degrades on capacity failure
+#: (#1379): when every rung at the intent's full width capacity-misses at
+#: CREATE time, the router ladder appends WIDE_A100_80_BY_WIDTH rungs at the
+#: narrower widths (8->4->2) before falling out of the GCP lane. Opt out per
+#: dispatch with --width-required (spec.extra["width_required"]).
+#: sweep-8g-h100 is DELIBERATELY absent: an explicit H100 pick is a GPU-TYPE
+#: choice (cross-type A100 degradation would silently change silicon), the
+#: H100-never-in-a-degradation-walk invariant stands (#743/#1121), and the
+#: type-preserving fallback is the RunPod 8xH100 terminal rung
+#: (router.RUNPOD_INTENT_FOR_GCP_INTENT identity row).
+EXPLICIT_WIDE_DEGRADE_INTENTS: frozenset[str] = frozenset({"sweep-8g-a100"})
 
 
 def wide_a100_80_for_width(width: int) -> MachineSpec | None:
@@ -6697,6 +6716,7 @@ __all__ = [
     "DEFAULT_PROVISIONING_MODEL",
     "DEFAULT_REPO_URL",
     "DELIVERABLES_OK_FILENAME",
+    "EXPLICIT_WIDE_DEGRADE_INTENTS",
     "INTENT_TO_MACHINE",
     "MACHINE_TYPE_ZONE_AVAILABILITY",
     "STARTUP_PASSTHROUGH_ENV_KEYS",
