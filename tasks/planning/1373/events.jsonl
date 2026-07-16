@@ -4,3 +4,4 @@
 {"ts": "2026-07-16T01:06:39Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "proposed", "to": "planning", "note": "Clarifier All-clear."}
 {"ts": "2026-07-16T01:17:52Z", "kind": "epm:plan-verify", "version": 1, "by": "unknown", "note": "verify_plan.py: PASS, n_fail=0, n_warn=0, no failed/overridden checks; plan v1."}
 {"ts": "2026-07-16T01:27:41Z", "kind": "epm:plan-verify", "version": 2, "by": "unknown", "note": "verify_plan.py: PASS, n_fail=0, n_warn=0; plan v2 (fact-check corrections: corpus count 93 not 105; #1332 credits 1 today / 0 at the mid-round gate moment; both spec'd aborted forms pinned; line refs re-pinned)."}
+{"ts": "2026-07-16T01:27:42Z", "kind": "epm:progress", "version": 2, "by": "unknown", "note": "codex composers skipped — quota sentinel live until 2026-08-06T13:26:00+00:00 (#1204 pre-spawn check); single-Claude per no-show fallback for all 3 Phase-2 lenses."}
