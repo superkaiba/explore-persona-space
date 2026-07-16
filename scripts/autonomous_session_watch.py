@@ -4564,7 +4564,9 @@ def cpu_guard_pass(dry_run: bool) -> bool:
 # incident #779: 10 unread external audit markers, an 18-20h serial grid
 # launched anyway). Re-runs the #889 enumerator's window semantics at recent
 # HISTORICAL dispatch records (task_workflow.audit_dispatch_triage) and
-# flags a missing / 'none' triage line against a non-empty candidate set.
+# flags a missing / 'none' triage line against a non-empty (post-grace-trim)
+# candidate set; machine launch cascades coalesce for previous-side note
+# coverage (#1400).
 # Observe/alert only — sidecar rows + deduped fail-soft digest pushes +
 # capped epm:progress review nudges; NEVER mutates task status, stops a
 # session, or blocks a dispatch (pinned by tests at BOTH the subprocess-argv
@@ -4591,6 +4593,18 @@ TRIAGE_OBSERVER_ADJACENCY_S = _env_float(
 # between the final enumerator run and the breadcrumb post"); 120 s is a
 # generous superset of "seconds".
 TRIAGE_OBSERVER_GRACE_S = _env_float("EPM_TRIAGE_OBSERVER_GRACE_S", 120.0, lo=0.0, hi=3600.0)
+# One GCP/SLURM dispatch posts a launch-kind CASCADE (epm:cluster-launched
+# by backends.*, then epm:run-launched; #1005 observed cluster->run gaps
+# 46/39/39/32 s); consecutive line-less launch boundaries within this many
+# seconds (chained) coalesce into one logical dispatch for PREVIOUS-side
+# adjacency coverage (#1400). 180 s ~= 4x the observed max gap, far below
+# real relaunch spacing (#1005's own: 49 min / ~3.9 h / ~4.2 h; fastest
+# observed elsewhere ~35 min). 0 disables (strict pre-#1400
+# nearest-boundary semantics — the operational rollback). CAUTION: an
+# operator override >= 300 s would defeat the burst boundary the tests pin
+# only at the DEFAULT (the pinned burst fixture spaces launches 300 s
+# apart); keep overrides < 300 s.
+TRIAGE_OBSERVER_CASCADE_S = _env_float("EPM_TRIAGE_OBSERVER_CASCADE_S", 180.0, lo=0.0, hi=1800.0)
 # Spam valve on the git-committing marker-post subprocess; the sidecar keeps
 # full fidelity regardless. Overflow is PERMANENT sidecar+push-only (no
 # deferred-marker queue — deferral adds state complexity exactly in the
@@ -4871,8 +4885,13 @@ def triage_observer_pass(dry_run: bool) -> bool:
     the dedup key ``(issue, record_ts, violation-class)`` persists in the
     state singleton, and the per-task cursor advances only past MATURED
     records (MF2) — so each dispatch record is evaluated exactly once, on
-    the first tick after its compliance window closes. Daemon-independent;
-    fail-soft throughout. Returns True when any sidecar row was written."""
+    the first tick after its compliance window closes. Every violation class
+    fires only against a NON-empty post-grace-trim candidate window, and
+    machine launch cascades (consecutive line-less launch-kind records
+    within ``TRIAGE_OBSERVER_CASCADE_S``, chained) coalesce as one logical
+    dispatch for previous-side triage-note coverage (#1400).
+    Daemon-independent; fail-soft throughout. Returns True when any sidecar
+    row was written."""
     if not _triage_observer_enabled():
         print("  triage-observer: disabled via EPM_DISABLE_TRIAGE_OBSERVER; skipping")
         return False
@@ -4926,6 +4945,7 @@ def triage_observer_pass(dry_run: bool) -> bool:
             grace_s=TRIAGE_OBSERVER_GRACE_S,
             min_ts=min_ts,
             mature_before_ts=mature_before,
+            cascade_s=TRIAGE_OBSERVER_CASCADE_S,
         )
         actions = decide_triage_observer_actions(
             result["violations"], flagged, marker_budget, push_budget=push_budget
