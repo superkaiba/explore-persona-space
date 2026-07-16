@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1396,
+  "highest_id": 1397,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -3088,6 +3088,13 @@
       "path": "tasks/proposed/1396",
       "status": "proposed",
       "title": "daily-fix: upload extraction store before long fits"
+    },
+    "1397": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1397",
+      "status": "proposed",
+      "title": "daily-fix: review names batched helper for fit loops"
     },
     "14": {
       "has_clean_result": false,
