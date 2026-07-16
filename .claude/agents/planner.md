@@ -420,6 +420,16 @@ Compute-sizing recipes: `.claude/rules/plan-compute-sizing.md`
 (on-demand); phase placement + GPU-width right-sizing are always-on in
 CLAUDE.md § Pods.
 
+Phase-ORDER expensive-intermediate persistence: the §9 phase sequence names
+the upload point of every regeneration-costly intermediate (extraction /
+activation store, capture, rollout set) BEFORE — or detached-concurrent
+with — any long (>~15-30 min) downstream fit/analysis/eval phase that
+consumes it (a concurrent launch counts only if fail-loud + verified landed
+independently of the fit — never fire-and-forget); `extract → long fit →
+upload` is the #825 stranding order (a hung serial fit left the turnstore
+off HF; recovery = a fresh GPU re-extraction). Full rule:
+`.claude/rules/upload-policy.md` expensive-store-before-long-fit bullet.
+
 Full template + worked examples: `.claude/rules/planner-section-reference.md`
 § 9. Resources & Parallelism — read that section (grep the heading, chunked Read) BEFORE writing
 this section.
