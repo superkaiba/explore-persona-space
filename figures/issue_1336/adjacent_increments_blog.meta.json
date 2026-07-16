@@ -1,0 +1,230 @@
+{
+  "commit": "bb7b11c983",
+  "created": "2026-07-16T09:31:11Z",
+  "figsize": [
+    10.5,
+    4.8
+  ],
+  "points": [
+    {
+      "x": -0.24,
+      "Change in reparameterization gap at the step": 0.1385344778501152,
+      "error": 0.0028242274871824458,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.76,
+      "Change in reparameterization gap at the step": -0.005483356798012373,
+      "error": 0.0032939134693258615,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 1.76,
+      "Change in reparameterization gap at the step": -3.4865922596494237e-05,
+      "error": 0.0023006153409235964,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "base to SFT",
+      "Change in reparameterization gap at the step": -0.15888819968359702,
+      "error": 0.0037916313371361005,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "SFT to DPO",
+      "Change in reparameterization gap at the step": 0.007834637528492894,
+      "error": 0.004019527206547994,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "DPO to RLVR",
+      "Change in reparameterization gap at the step": 0.0040318391431506395,
+      "error": 0.0038295331448924895,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 0.24,
+      "Change in reparameterization gap at the step": -0.14411260334277953,
+      "error": 0.004198149640408738,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 1.24,
+      "Change in reparameterization gap at the step": 0.007437065018649047,
+      "error": 0.003974835832066398,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 2.24,
+      "Change in reparameterization gap at the step": 0.0024588754585599393,
+      "error": 0.003431975643210923,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": -0.24,
+      "Change in reparameterization gap at the step": 0.1357503967612283,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 0.76,
+      "Change in reparameterization gap at the step": -0.008763474002203387,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 1.76,
+      "Change in reparameterization gap at the step": -0.002366511792982487,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": -0.24,
+      "Change in reparameterization gap at the step": 0.1413988517355932,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 0.76,
+      "Change in reparameterization gap at the step": -0.002175647063551664,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 1.76,
+      "Change in reparameterization gap at the step": 0.002234718888864706,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 0.0,
+      "Change in reparameterization gap at the step": -0.1628810091267685,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 1.0,
+      "Change in reparameterization gap at the step": 0.003772556871771235,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 2.0,
+      "Change in reparameterization gap at the step": 0.0002783214913669842,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 0.0,
+      "Change in reparameterization gap at the step": -0.1552977464524963,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 1.0,
+      "Change in reparameterization gap at the step": 0.011811611284867223,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 2.0,
+      "Change in reparameterization gap at the step": 0.007937387781151963,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 0.24,
+      "Change in reparameterization gap at the step": -0.14814813906160987,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 1.24,
+      "Change in reparameterization gap at the step": 0.0034047845083715724,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 2.24,
+      "Change in reparameterization gap at the step": -0.001100293612667105,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 0.24,
+      "Change in reparameterization gap at the step": -0.1397518397807924,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 1.24,
+      "Change in reparameterization gap at the step": 0.011354456172504367,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 2.24,
+      "Change in reparameterization gap at the step": 0.005763657673754741,
+      "_kind": "line",
+      "_group": 8
+    }
+  ],
+  "n_series": 9,
+  "total_points": 27,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Adjacent-stage gap increments (recalibrated scale, layer 30)",
+        "ylabel": "Change in reparameterization gap at the step",
+        "legend_labels": [
+          "GSM8K train (RLVR-trained distribution)",
+          "LMSYS chat",
+          "LMSYS naturalistic"
+        ],
+        "annotations": [
+          "+0.139",
+          "-0.0055",
+          "-0.0000",
+          "-0.159",
+          "+0.0078",
+          "+0.0040",
+          "-0.144",
+          "+0.0074",
+          "+0.0025"
+        ],
+        "xticklabels": [
+          "base to SFT",
+          "SFT to DPO",
+          "DPO to RLVR"
+        ],
+        "yticklabels": [
+          "\u22120.20",
+          "\u22120.15",
+          "\u22120.10",
+          "\u22120.05",
+          "0.00",
+          "0.05",
+          "0.10",
+          "0.15",
+          "0.20"
+        ]
+      }
+    ],
+    "series": [
+      "GSM8K train (RLVR-trained distribution)",
+      "LMSYS chat",
+      "LMSYS naturalistic"
+    ]
+  }
+}

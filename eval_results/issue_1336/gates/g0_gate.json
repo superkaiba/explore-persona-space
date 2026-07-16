@@ -1,0 +1,19 @@
+{
+  "metadata": {
+    "git_commit": "f1edfecefaec2a3d011e46dd0dec475d95a8e670",
+    "timestamp": "2026-07-16T02:54:20Z",
+    "seed": 0,
+    "n": 5000,
+    "script": "scripts/issue1336_fit_cells.py"
+  },
+  "gate": "G0",
+  "stem": "instruct_chat_s",
+  "revision": "deb7a4523b5233393e4fbd2497622527b3622d35",
+  "layer": 19,
+  "r2_layer": 0.6730940896676356,
+  "committed_r2": 0.6731,
+  "tol": 0.01,
+  "abs_dev": 5.91033236441163e-06,
+  "pass": true,
+  "local_dir_fixture": false
+}

@@ -110,7 +110,11 @@ def _prep_fold(X_train: np.ndarray, X_eval: np.ndarray) -> dict:
 
 
 def _ridge_predict_cached(
-    cache: dict, Y_train: np.ndarray, *, return_lam: bool = False
+    cache: dict,
+    Y_train: np.ndarray,
+    *,
+    return_lam: bool = False,
+    lambdas: np.ndarray | list[float] | None = None,
 ) -> np.ndarray | tuple[np.ndarray, float]:
     """Fit + predict for one Y using a fold cache from _prep_fold.
 
@@ -119,7 +123,13 @@ def _ridge_predict_cached(
     ``return_lam=True`` additionally returns the GCV-selected lambda
     (#931 `matched-n-denominator-dip` registered source-module change; the
     default returns the prediction alone, byte-preserving).
+    ``lambdas=None`` (default) scans the module-global ``LAMBDAS`` grid,
+    byte-preserving; a caller passes its own grid (#1336 D1 widened-grid
+    audit — the #931 default-preserving-flag pattern, never a caller-side
+    monkey-patch of the module global).
     """
+    lams = LAMBDAS if lambdas is None else np.asarray(lambdas, dtype=np.float64)
+    assert lams.ndim == 1 and len(lams) > 0, f"bad lambda grid shape {lams.shape}"
     Ytr = torch.as_tensor(np.asarray(Y_train), dtype=torch.float64).to(cache["w"].device)
     ymu = Ytr.mean(0)
     Ytr_c = Ytr - ymu
@@ -127,9 +137,9 @@ def _ridge_predict_cached(
     VtY = V.T @ Ytr_c
     sqVtY = (VtY**2).sum(1)
     tot = float((Ytr_c**2).sum())
-    best_lam = float(LAMBDAS[0])
+    best_lam = float(lams[0])
     best_gcv = float("inf")
-    for lam in LAMBDAS:
+    for lam in lams:
         filt = w / (w + lam)
         rss = tot - float(((2 * filt - filt**2) * sqVtY).sum())
         dof = float(filt.sum())
@@ -197,24 +207,36 @@ def heldout_r2_sweep(
     null_draws: int,
     collect_cosines: bool = True,
     collect_lambdas: bool = False,
+    frozen_layers: tuple[int, ...] | list[int] | None = None,
+    lambdas: np.ndarray | list[float] | None = None,
 ) -> dict:
     """Held-out pooled R^2 per layer for observed Y and every shuffle-null draw.
 
     X_layers, Y_layers: (N, L, D) fp arrays (slot -> profile per layer).
+    ``frozen_layers`` parametrizes the per-example cosine + persisted-preds
+    layer set (#1336 default-preserving flag — the default ``None`` keeps the
+    module-level Qwen ``FROZEN_LAYERS`` byte-for-byte, the same pattern as the
+    ``collect_lambdas`` / ``ns=`` parametrizations; a Llama caller passes its
+    own set so preds persist at ITS frozen layers, never the Qwen set).
     Returns:
       r2_obs: (L,) observed held-out pooled R^2 per layer
       r2_null: (null_draws, L) the FULL per-draw x per-layer matrix
-      cosines: {layer: (N,) per-example cosine} at FROZEN_LAYERS
-      preds_frozen: {layer: (N, D) held-out predictions} at FROZEN_LAYERS
+      cosines: {layer: (N,) per-example cosine} at the frozen-layer set
+      preds_frozen: {layer: (N, D) held-out predictions} at the frozen set
       gcv_lambda: (L, n_folds) OBSERVED-fit GCV-selected lambda per
         (layer, fold) when ``collect_lambdas=True`` (NaN for skipped folds);
         None otherwise. #931 `matched-n-denominator-dip` registered
         source-module change — the default (False) preserves the committed
         behavior byte-for-byte (same class as the `ns=` parametrization on
         run_power_curve).
+      lambdas: optional GCV grid override threaded to EVERY
+        `_ridge_predict_cached` call (observed AND null draws — selection
+        stays symmetric under a widened grid); ``None`` keeps the module
+        ``LAMBDAS`` byte-for-byte (#1336 D1 default-preserving flag).
     Null draws permute Y ROW-ORDER (whole example rows, seeded) and go through
     the IDENTICAL cached (w, V, Kev) fitting path as the observed fit.
     """
+    fl = FROZEN_LAYERS if frozen_layers is None else tuple(int(x) for x in frozen_layers)
     X_layers = np.asarray(X_layers, dtype=np.float32)
     Y_layers = np.asarray(Y_layers, dtype=np.float32)
     n, n_layers = X_layers.shape[0], X_layers.shape[1]
@@ -240,11 +262,9 @@ def heldout_r2_sweep(
     ss_tot_null = np.zeros((null_draws, n_layers))
     lam_obs = np.full((n_layers, n_folds), np.nan) if collect_lambdas else None
     fitted = np.zeros(n, dtype=bool)
-    cosines = {int(li): np.zeros(n) for li in FROZEN_LAYERS if li < n_layers}
+    cosines = {int(li): np.zeros(n) for li in fl if li < n_layers}
     preds_frozen = {
-        int(li): np.zeros((n, Y_layers.shape[2]), dtype=np.float32)
-        for li in FROZEN_LAYERS
-        if li < n_layers
+        int(li): np.zeros((n, Y_layers.shape[2]), dtype=np.float32) for li in fl if li < n_layers
     }
 
     for li in range(n_layers):
@@ -257,10 +277,12 @@ def heldout_r2_sweep(
                 continue
             cache = _prep_fold(X[tr], X[te])
             if collect_lambdas:
-                pred, best_lam = _ridge_predict_cached(cache, Y[tr], return_lam=True)
+                pred, best_lam = _ridge_predict_cached(
+                    cache, Y[tr], return_lam=True, lambdas=lambdas
+                )
                 lam_obs[li, k] = best_lam
             else:
-                pred = _ridge_predict_cached(cache, Y[tr])
+                pred = _ridge_predict_cached(cache, Y[tr], lambdas=lambdas)
             fitted[te] = True
             true = Y[te].astype(np.float64)
             mu = true.mean(0)
@@ -271,7 +293,7 @@ def heldout_r2_sweep(
                 preds_frozen[li][te] = pred.astype(np.float32)
             for d, perm in enumerate(null_perms):
                 Yp = Y[perm]
-                pred_n = _ridge_predict_cached(cache, Yp[tr])
+                pred_n = _ridge_predict_cached(cache, Yp[tr], lambdas=lambdas)
                 true_n = Yp[te].astype(np.float64)
                 mu_n = true_n.mean(0)
                 ss_res_null[d, li] += float(np.sum((true_n - pred_n) ** 2))
@@ -293,13 +315,20 @@ def heldout_r2_sweep(
     }
 
 
-def selection_symmetric_summary(r2_obs: np.ndarray, r2_null: np.ndarray) -> dict:
+def selection_symmetric_summary(
+    r2_obs: np.ndarray,
+    r2_null: np.ndarray,
+    frozen_layers: tuple[int, ...] | list[int] | None = None,
+) -> dict:
     """Selection-symmetric layer-max read (#778) + frozen-layer table.
 
     The observed layer-max R^2 is compared against each null draw's OWN
     layer-max (per-draw same-selection); the full per-draw x per-layer matrix
-    is persisted by the caller alongside this summary.
+    is persisted by the caller alongside this summary. ``frozen_layers``
+    parametrizes the frozen-layer table (#1336 default-preserving flag; the
+    default ``None`` keeps the module-level Qwen set byte-for-byte).
     """
+    fl = FROZEN_LAYERS if frozen_layers is None else tuple(int(x) for x in frozen_layers)
     obs_max = float(np.nanmax(r2_obs))
     obs_argmax = int(np.nanargmax(r2_obs))
     null_max = np.nanmax(r2_null, axis=1)  # (draws,) each draw's own layer-max
@@ -309,7 +338,7 @@ def selection_symmetric_summary(r2_obs: np.ndarray, r2_null: np.ndarray) -> dict
             "null_mean": float(np.nanmean(r2_null[:, li])),
             "null_p975": float(np.nanquantile(r2_null[:, li], 0.975)),
         }
-        for li in FROZEN_LAYERS
+        for li in fl
         if li < len(r2_obs)
     }
     return {
