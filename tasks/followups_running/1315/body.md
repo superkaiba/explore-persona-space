@@ -29,7 +29,7 @@ relates_to:
 
 - Impolite installs shift activations along the behavior's read-out direction: own-text mean-shift cosine 0.51 to 0.80 across all six design cells versus a 0.037 chance bound; sycophancy read at most 0.20.
 - Own-text rank-k@90 is 43 to 61, 5 to 31 modes below sycophancy's 66 to 74; shared-text re-capture collapses rank to 18 to 29 and alignment to 0.07 to 0.33 — the diffuseness and most of the alignment ride the model's own text.
-- The WildChat signature is lr-robust: re-captured at learning rate 1e-5 and matched install (0.724; step count co-varies), alignment reads 0.53 versus the sibling's 0.51, matched-80 rank 39.3 versus 39.6, shift-direction cosine 0.98; the shift runs 16% shorter, tracking the small install shortfall.
+- The WildChat signature is lr-robust: re-captured at learning rate 1e-5 and matched install (0.724; step count co-varies), alignment reads 0.53 versus the sibling's 0.51, matched-80 rank 39.3 versus 39.6, shift-direction cosine 0.98; the shift runs 16% shorter, consistent with the small install shortfall.
 - Full fine-tuning adds no shift distance when dosed toward the same band: +0.05 (95% CI −0.21 to +0.39) at layer 14 versus sycophancy's +3.24 to +4.50; its more-concentrated lean is marginal (one mode from sycophancy's point value, overlapping intervals).
 - Contrastive negatives leave shape unchanged on the LoRA pair (+1 mode, 95% CI −1 to +3) but add shift distance (+0.87, 95% CI +0.63 to +1.17); no rotation resolves, where sycophancy's was small but genuine.
 - Single seed; two reused ICL parity probes read 0.59 and 0.56 versus committed 0.82 and 0.775 (labeled below-band); CJK intrusion in the judged pools makes the persona and both WildChat (3e-5 and 1e-5) parity PASS labels convention-dependent.
