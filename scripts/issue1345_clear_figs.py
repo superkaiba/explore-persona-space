@@ -230,18 +230,8 @@ def plot_result2_withinregime() -> dict:
         lw=1.4,
         label=f"Shuffle-null ≈ {null_nonstory:.2f} (chat/no-template)",
     )
-    # Story's own shuffle-null is far lower (off-scale) — note it below the story bar.
+    # Story's own shuffle-null is far lower (off-scale); noted in the caption, not on the bar.
     story_null = d[("instruct", 2)]["null_mean"]
-    ax.text(
-        x[2],
-        -0.52,
-        f"story shuffle-null ≈ {story_null:.1f} (off-scale):\nstory $R^2$ is above its null\n"
-        "but below the answer-mean baseline",
-        fontsize=7.4,
-        color="#5A5A5A",
-        ha="center",
-        va="center",
-    )
 
     ax.set_xticks(x, frames, fontsize=10.5)
     ax.set_ylabel("Within-regime held-out $R^2$ (layer 19)", fontsize=10.5)
@@ -262,7 +252,8 @@ def plot_result2_withinregime() -> dict:
         "Bars = within-regime held-out $R^2$ with 95% bootstrap CI (Qwen2.5-7B-Instruct). "
         "Chat and no-template sit ~0.6 (well above the answer-mean baseline); the assistant "
         "rendered as a story character sits at -0.75, below zero — the held-out probe does worse "
-        "than predicting the mean. Base arm omitted (its story regime was below the yield floor).",
+        f"than predicting the mean (its own shuffle-null is off-scale at ~{story_null:.1f}). "
+        "Base arm omitted (its story regime was below the yield floor).",
         ha="center",
         va="top",
         fontsize=8.6,

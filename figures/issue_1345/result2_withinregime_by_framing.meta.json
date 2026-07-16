@@ -1,6 +1,6 @@
 {
-  "commit": "b7bd0eb4a5",
-  "created": "2026-07-16T08:08:03Z",
+  "commit": "a2056c333d",
+  "created": "2026-07-16T08:11:49Z",
   "figsize": [
     7.6,
     5.3
@@ -61,7 +61,7 @@
   "text": {
     "suptitle": "The story-character assistant map is not linearly decodable (instruct, context arm, layer 19)",
     "fig_texts": [
-      "Bars = within-regime held-out $R^2$ with 95% bootstrap CI (Qwen2.5-7B-Instruct). Chat and no-template sit ~0.6 (well above the answer-mean baseline); the assistant rendered as a story character sits at -0.75, below zero \u2014 the held-out probe does worse than predicting the mean. Base arm omitted (its story regime was below the yield floor)."
+      "Bars = within-regime held-out $R^2$ with 95% bootstrap CI (Qwen2.5-7B-Instruct). Chat and no-template sit ~0.6 (well above the answer-mean baseline); the assistant rendered as a story character sits at -0.75, below zero \u2014 the held-out probe does worse than predicting the mean (its own shuffle-null is off-scale at ~-2.2). Base arm omitted (its story regime was below the yield floor)."
     ],
     "axes": [
       {
@@ -73,8 +73,7 @@
         "annotations": [
           "0.65",
           "0.63",
-          "-0.75",
-          "story shuffle-null \u2248 -2.2 (off-scale):\nstory $R^2$ is above its null\nbut below the answer-mean baseline"
+          "-0.75"
         ],
         "xticklabels": [
           "Chat",
