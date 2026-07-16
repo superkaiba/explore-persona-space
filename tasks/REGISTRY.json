@@ -3092,8 +3092,8 @@
     "1397": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1397",
-      "status": "proposed",
+      "path": "tasks/planning/1397",
+      "status": "planning",
       "title": "daily-fix: review names batched helper for fit loops"
     },
     "1398": {
