@@ -3204,8 +3204,8 @@
     "1410": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1410",
-      "status": "proposed",
+      "path": "tasks/planning/1410",
+      "status": "planning",
       "title": "daily-fix: gotchas /mnt/eps-data root not writable"
     },
     "1411": {
