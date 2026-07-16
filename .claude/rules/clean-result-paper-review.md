@@ -1,5 +1,5 @@
 ---
-description: Clean-result-critic paper-task review protocol (paper: true) — the seven P1-P7 paper lenses, verify_paper.py pre-pass, .tex/PNG/PDF read targets, and the paper-lens output template; relocated verbatim from clean-result-critic.md, #829. Read by BOTH twins (codex-clean-result-critic composer inlines it at runtime).
+description: "Clean-result-critic paper-task review protocol (paper: true) — the seven P1-P7 paper lenses, verify_paper.py pre-pass, .tex/PNG/PDF read targets, and the paper-lens output template; relocated verbatim from clean-result-critic.md, #829. Read by BOTH twins (codex-clean-result-critic composer inlines it at runtime)."
 paths:
   - "docs/papers/**"
   - "scripts/verify_paper.py"

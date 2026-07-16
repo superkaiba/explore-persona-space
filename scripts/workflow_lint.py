@@ -584,6 +584,8 @@ from collections.abc import Iterator
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
+import yaml
+
 # Allow `python scripts/workflow_lint.py` from a fresh shell without `uv run`
 # by extending sys.path to the project src/.
 _HERE = Path(__file__).resolve().parent
@@ -9045,6 +9047,92 @@ def check_lessons_index(  # noqa: C901 -- flat failure-mode ladder (index parity
     return errors
 
 
+# `--check-rule-frontmatter-parses` (#1385, from #1348): a `.claude/rules/*.md`
+# rule on-demand-loads ONLY through its frontmatter `paths:` globs. A YAML
+# parse failure (e.g. an unquoted `description:` containing ': ') silently
+# disables the rule — present, LESSONS-indexed, never loads — and a stale
+# `globs:` key silently degrades it. Real yaml.safe_load, not a regex
+# approximation: the check must fail exactly where the harness fails.
+
+
+def check_rule_frontmatter_parses(*, repo_root: Path | None = None) -> list[str]:
+    """FAIL if any `.claude/rules/*.md` frontmatter block is YAML-broken,
+    unterminated, non-mapping, uses the stale `globs:` key, or lacks a
+    well-formed `paths:` (non-empty list of non-empty strings).
+
+    Files with no leading `---` line have no frontmatter and are EXEMPT
+    (always-on / LESSONS-indexed rules need no `paths:`). Unknown extra keys
+    (e.g. `name:`) are tolerated — this validates load-integrity, not a full
+    schema. `repo_root` is a unit-test override hook; production callers pass
+    None. Bundled into the no-flags default run.
+    """
+    root = repo_root if repo_root is not None else _REPO_ROOT
+    errors: list[str] = []
+    for path in sorted((root / ".claude" / "rules").glob("*.md")):
+        rel = path.relative_to(root)
+        lines = path.read_text(encoding="utf-8").split("\n")
+        if not lines or lines[0].strip() != "---":
+            continue  # no frontmatter block -> always-on rule, exempt
+        end = next((i for i, ln in enumerate(lines[1:], 1) if ln.strip() == "---"), None)
+        if end is None:
+            errors.append(
+                f"{rel}: frontmatter opens with '---' on line 1 but is never "
+                f"closed by a second '---' line — the harness cannot split the "
+                f"block and the rule never on-demand-loads. Close the block "
+                f"(or delete it for an always-on rule)."
+            )
+            continue
+        try:
+            data = yaml.safe_load("\n".join(lines[1:end]))
+        except yaml.YAMLError as exc:
+            reason = " ".join(str(exc).split())
+            errors.append(
+                f"{rel}: frontmatter is not valid YAML ({reason}) — the rule "
+                f"file exists but NEVER loads (the 'rule present but never "
+                f"loads' class, #1385). Usual cause: an unquoted "
+                f"`description:` containing ': ' — double-quote the scalar."
+            )
+            continue
+        if not isinstance(data, dict):
+            errors.append(
+                f"{rel}: frontmatter parses to {type(data).__name__}, not a "
+                f"key: value mapping — the harness reads mapping frontmatter "
+                f"only."
+            )
+            continue
+        if "globs" in data:
+            errors.append(
+                f"{rel}: frontmatter uses the stale `globs:` key — the project "
+                f"convention (CLAUDE.md, LESSONS.md) is `paths:`; rename "
+                f"`globs:` -> `paths:`."
+            )
+            continue
+        paths = data.get("paths")
+        if paths is None:
+            errors.append(
+                f"{rel}: frontmatter has no `paths:` key — an on-demand rule "
+                f"needs its load-trigger globs; add `paths:`, or drop the "
+                f"frontmatter block entirely for an always-on rule."
+            )
+            continue
+        if not isinstance(paths, list) or not paths:
+            got = "empty list" if isinstance(paths, list) else type(paths).__name__
+            errors.append(
+                f"{rel}: `paths:` must be a NON-EMPTY YAML list of glob "
+                f"strings (got {got}) — a mis-shaped `paths:` never matches, "
+                f"so the rule never loads."
+            )
+            continue
+        bad = [p for p in paths if not isinstance(p, str) or not p.strip()]
+        if bad:
+            errors.append(
+                f"{rel}: `paths:` entries must be non-empty strings; got "
+                f"{bad!r}. Quote each glob (bare `yes`/`no`/numbers/null "
+                f"parse as non-strings)."
+            )
+    return errors
+
+
 # Agent-spec size budget (#829, tightened #838): every .claude/agents/*.md is
 # loaded whole on each spawn of that agent, so spec size is a per-invocation
 # token cost. WARN above 28 KB (drifting), FAIL above 40 KB (relocate
@@ -10099,6 +10187,16 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         "Bundled into the no-flags default run.",
     )
     parser.add_argument(
+        "--check-rule-frontmatter-parses",
+        action="store_true",
+        help="YAML-parse every .claude/rules/*.md frontmatter block and "
+        "validate the paths: load-trigger shape (non-empty list of glob "
+        "strings; stale globs: key flagged; no-frontmatter files exempt). "
+        "A malformed frontmatter append silently disables on-demand "
+        "loading — the rule file exists but never loads (#1385, from "
+        "#1348). Bundled into the no-flags default run.",
+    )
+    parser.add_argument(
         "--check-compute-shape-review-lens",
         action="store_true",
         help="FAIL if the #806 compute-shape-vs-dispatcher review lens (Step "
@@ -10460,6 +10558,7 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         or args.check_no_repo_root_worktree_revert
         or args.check_gate_ids_unique
         or args.check_lessons_index
+        or args.check_rule_frontmatter_parses
         or args.check_compute_shape_review_lens
         or args.check_long_loop_restartability_review_lens
         or args.check_hollow_verification_gate_review_lens
@@ -10573,6 +10672,8 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         errors.extend(check_gate_ids_unique(workflow))
     if args.check_lessons_index or no_flags:
         errors.extend(check_lessons_index())
+    if args.check_rule_frontmatter_parses or no_flags:
+        errors.extend(check_rule_frontmatter_parses())
     if args.check_agent_spec_size or no_flags:
         errors.extend(check_agent_spec_size())
     if args.check_compute_shape_review_lens or no_flags:

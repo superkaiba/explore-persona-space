@@ -68,6 +68,7 @@ from workflow_lint import (  # noqa: E402
     check_piped_git_push,
     check_poller_marker_consumers,
     check_push_failure_swallow,
+    check_rule_frontmatter_parses,
     check_script_references,
     check_section_reference_pointer_coverage,
     check_skill_bang_backtick,
@@ -4393,6 +4394,123 @@ def test_lessons_ratchet_constants_sane():
             row_bytes,
             cap,
         )
+
+
+def _write_rule_file(tmp_path, text, name="fixture-rule"):
+    rules = tmp_path / ".claude" / "rules"
+    rules.mkdir(parents=True, exist_ok=True)
+    (rules / f"{name}.md").write_text(text, encoding="utf-8")
+
+
+_VALID_RULE = '---\ndescription: "ok (paper: true) fixture"\npaths:\n  - "docs/**"\n---\n# body\n'
+
+
+def test_rule_frontmatter_fails_on_unquoted_colon_description(tmp_path):
+    # The live #1385 offender class: an unquoted `description:` containing
+    # ': ' fails yaml.safe_load ("mapping values are not allowed here") and
+    # the rule silently never on-demand-loads.
+    _write_rule_file(tmp_path, '---\ndescription: proto (paper: true) x\npaths:\n  - "a/**"\n---\n')
+    errs = check_rule_frontmatter_parses(repo_root=tmp_path)
+    assert errs, "expected a FAIL for the unquoted colon-bearing description"
+    assert any("fixture-rule.md" in e and "not valid YAML" in e for e in errs)
+
+
+def test_rule_frontmatter_fails_on_globs_key(tmp_path):
+    # Valid YAML, but the stale `globs:` key the harness ignores — the check
+    # names the `globs:` -> `paths:` rename.
+    _write_rule_file(tmp_path, '---\ndescription: "ok"\nglobs:\n  - "a/**"\n---\n')
+    errs = check_rule_frontmatter_parses(repo_root=tmp_path)
+    assert errs, "expected a FAIL for the stale globs: key"
+    assert any("fixture-rule.md" in e and "globs" in e and "paths" in e for e in errs)
+
+
+def test_rule_frontmatter_fails_on_missing_paths(tmp_path):
+    _write_rule_file(tmp_path, '---\ndescription: "ok"\n---\n')
+    errs = check_rule_frontmatter_parses(repo_root=tmp_path)
+    assert errs, "expected a FAIL for frontmatter with no paths: key"
+    assert any("fixture-rule.md" in e and "no `paths:` key" in e for e in errs)
+
+
+def test_rule_frontmatter_fails_on_non_list_paths(tmp_path):
+    _write_rule_file(tmp_path, '---\ndescription: "ok"\npaths: "docs/**"\n---\n')
+    errs = check_rule_frontmatter_parses(repo_root=tmp_path)
+    assert errs, "expected a FAIL for a scalar paths: value"
+    assert any("fixture-rule.md" in e and "NON-EMPTY YAML list" in e for e in errs)
+
+
+def test_rule_frontmatter_fails_on_empty_paths(tmp_path):
+    _write_rule_file(tmp_path, '---\ndescription: "ok"\npaths: []\n---\n')
+    errs = check_rule_frontmatter_parses(repo_root=tmp_path)
+    assert errs, "expected a FAIL for an empty paths: list"
+    assert any("fixture-rule.md" in e and "NON-EMPTY YAML list" in e for e in errs)
+
+
+def test_rule_frontmatter_fails_on_non_string_path_entry(tmp_path):
+    _write_rule_file(tmp_path, '---\ndescription: "ok"\npaths:\n  - 3\n---\n')
+    errs = check_rule_frontmatter_parses(repo_root=tmp_path)
+    assert errs, "expected a FAIL for a non-string paths: entry"
+    assert any("fixture-rule.md" in e and "non-empty strings" in e for e in errs)
+
+
+def test_rule_frontmatter_fails_on_unterminated_block(tmp_path):
+    _write_rule_file(tmp_path, '---\ndescription: "ok"\npaths:\n  - "a/**"\n# no closer\n')
+    errs = check_rule_frontmatter_parses(repo_root=tmp_path)
+    assert errs, "expected a FAIL for an unterminated frontmatter block"
+    assert any("fixture-rule.md" in e and "never closed" in e for e in errs)
+
+
+def test_rule_frontmatter_fails_on_non_mapping(tmp_path):
+    _write_rule_file(tmp_path, "---\n- a\n- b\n---\n")
+    errs = check_rule_frontmatter_parses(repo_root=tmp_path)
+    assert errs, "expected a FAIL for non-mapping frontmatter"
+    assert any("fixture-rule.md" in e and "not a key: value mapping" in e for e in errs)
+
+
+def test_rule_frontmatter_passes_on_no_frontmatter(tmp_path):
+    # No leading '---' => always-on / LESSONS-indexed rule, exempt.
+    _write_rule_file(tmp_path, "# title\nbody\n")
+    assert check_rule_frontmatter_parses(repo_root=tmp_path) == []
+
+
+def test_rule_frontmatter_passes_on_valid(tmp_path):
+    # Pins the no-false-positive claim for legitimate forms: a quoted
+    # colon-bearing description, extra-key tolerance (`name:`), and a
+    # flow-style paths: list.
+    _write_rule_file(tmp_path, _VALID_RULE)
+    _write_rule_file(
+        tmp_path,
+        '---\nname: x\ndescription: "ok"\npaths:\n  - "a/**"\n---\n',
+        name="extra-key-rule",
+    )
+    _write_rule_file(
+        tmp_path,
+        '---\ndescription: "ok"\npaths: ["a/**", "b/*.py"]\n---\n',
+        name="flow-style-rule",
+    )
+    assert check_rule_frontmatter_parses(repo_root=tmp_path) == []
+
+
+def test_rule_frontmatter_passes_on_live_repo():
+    # The live-tree invariant that forces the 5 offender fixes to land in the
+    # same diff as this check (mirrors test_check_lessons_index_passes_on_live_repo).
+    assert check_rule_frontmatter_parses() == []
+
+
+def test_rule_frontmatter_bundled_in_no_flags():
+    """NON-VACUOUS no-flags bundling pin (#1385; the house source-pin shape
+    of test_pipe_python_bundled_in_no_flags_source_pin): the check must be
+    dispatched by the BARE ``workflow_lint.py`` run — a later refactor of
+    the no_flags tuple / dispatch ladder must not silently unbundle it (the
+    exact 'present but never fires' meta-class this check closes)."""
+    src = _LINT.read_text(encoding="utf-8")
+    assert re.search(
+        r"if args\.check_rule_frontmatter_parses or no_flags:\s*\n"
+        r"\s*errors\.extend\(check_rule_frontmatter_parses\(\)\)",
+        src,
+    ), "check_rule_frontmatter_parses is not dispatched on the no-flags branch"
+    assert "or args.check_rule_frontmatter_parses" in src, (
+        "--check-rule-frontmatter-parses is missing from the no_flags detection tuple"
+    )
 
 
 def test_compute_shape_review_lens_live_tree_passes() -> None:
