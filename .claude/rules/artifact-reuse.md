@@ -1,15 +1,15 @@
 ---
-description: Trained-artifact + code reuse fitness check (a)-(j) — when to reuse a prior HF adapter / checkpoint / training-mix / raw-completion bucket / eval JSON / fit-analysis helper vs retrain or rewrite, incl. pairwise pair-provenance coherence (#922) and reuse-validation gate calibration + HALT-vs-WARN severity (#813), and the staged-layout consumer-open probe (#928), with the enforcement chain (loads at plan time via plan-file paths)
+description: Trained-artifact + code reuse fitness check (a)-(k) — when to reuse a prior HF adapter / checkpoint / training-mix / raw-completion bucket / eval JSON / fit-analysis helper vs retrain or rewrite, incl. pairwise pair-provenance coherence (#922) and reuse-validation gate calibration + HALT-vs-WARN severity (#813), the staged-layout consumer-open probe (#928), and parent-lineage coherence (#1345), with the enforcement chain (loads at plan time via plan-file paths)
 paths:
   - ".claude/plans/**"
   - "tasks/**/plans/**"
 ---
 
-# Trained-artifact (and code) reuse — the fitness check (a)-(j)
+# Trained-artifact (and code) reuse — the fitness check (a)-(k)
 
 CLAUDE.md Critical Rules carries the always-on rule ("Reuse existing trained
 artifacts when fit-for-purpose — never reuse a wrong one") plus a one-line
-summary naming checks (a)-(j); this file is the full checklist AND, as of
+summary naming checks (a)-(k); this file is the full checklist AND, as of
 #829, the single operational copy — `planner.md` step 5 self-attests it via a
 pointer here (the former inline copy is relocated into § Plan-time search +
 verification mechanics below), `critic.md` Methodology lens item 9 enforces it
@@ -380,13 +380,71 @@ The planner verifies, before recording an artifact as reused in §10/§11:
   `reconstruction` field, or a same-commit `<name>.regeneration.json`
   sidecar) — is `.claude/rules/upload-policy.md`
   § "Regenerating a published artifact in place".
+- **(k) Parent-lineage coherence (reused parent CODE and its realized
+  artifacts; N/A when neither a parent code module nor a parent-realized
+  artifact with a declared input corpus is reused).** Two legs, mutually
+  corroborating (#1345: leg B's count shortfall was the visible fingerprint
+  of leg A's unmerged fix).
+  **(A) Parent-branch unmerged-fix diff (code reuse):** when the reuse
+  imports a parent task's module from `main` (a `scripts/issue<M>_*.py`
+  extractor / fit driver, an `analysis/` helper) and the parent's
+  `issue-<M>` branch still exists on origin, fetch and run
+  `git log --oneline origin/main..origin/issue-<M> -- <module path(s)>`
+  over the enumerated module list the reuse map names (a module touched by
+  MULTIPLE issue branches warrants a per-touching-branch log). NON-EMPTY
+  output means the main-resident copy LAGS the parent's own fixes —
+  inspect every commit and either PORT the fix (via § "Porting a recipe
+  from an unmerged sibling branch" below — the same three mandatory steps,
+  applied in the reuse direction) or explicitly declare it not-needed in
+  the reuse map, citing the commit SHA(s). The parent's own CRASH-FIX
+  rounds are the highest-risk class: the parent's realized artifacts
+  embody the fix, so every artifact-side check (a)-(j) passes while the
+  main-resident code path re-crashes on the first input the fix would have
+  filtered. Worked example (#1345's parent, executed 2026-07-15):
+  `git log --oneline origin/main..origin/issue-825 -- scripts/issue825_extract_turnstore.py`
+  → `65ff2426a8` ("task #825 naturalistic-single-turn crash-fix: drop
+  degenerate zero-width-span rows + RunPod-safe REPO_ROOT") — exactly the
+  stranded filter that crashed #1345. Parent branch fully merged / diff
+  empty ⇒ record the empty diff (PASSES). Parent branch DELETED ⇒ record
+  "branch deleted — leg A unverifiable; leg B is the sole lineage read"
+  (never "no unmerged parent commits" — `git log` against a deleted ref
+  ERRORS, and an errored command must never masquerade as an empty diff).
+  Known residual (named, not covered): leg A diffs the NAMED module
+  path(s) only — a caller ported while a transitively-imported callee
+  stays stranded on the branch escapes this diff; the porting section's
+  whole-code-path diff (step 1) is the closing procedure once porting is
+  chosen.
+  **(B) Realized-row-count reconciliation (artifact reuse):** when the
+  reused realized artifact — or its producing plan / body / manifest —
+  declares an input corpus size, reconcile the artifact's realized
+  row/cell count against it (manifest field, shard row sums, or a cheap
+  row count on the resolved artifact). A SHORTFALL means a filter ran
+  somewhere between corpus and artifact: NAME the filter (function +
+  the branch/commit where it lives) in the reuse map before recording the
+  reuse — an unexplained shortfall FAILS the check. When the named filter
+  lives only on the parent's unmerged branch, leg A's port remedy applies
+  BEFORE any fresh run re-executes the parent's code path on new or
+  unfiltered data. No declared corpus size anywhere ⇒ record
+  "no declared input corpus — leg B N/A".
+  (Incident #1345, 2026-07-15: #825's extractor was imported from `main`;
+  the parent's degenerate-row crash-fix (`partition_rendered` /
+  `degenerate_content_turns` / span-integrity gate) lived only on unmerged
+  `issue-825`; the realized shards embodied the filter — naturalistic_s
+  n=4724 vs corpus 5000 — every existing check passed, and production
+  crashed at the first unfiltered degenerate row (s57). Sibling check in
+  the opposite direction: the consistency-checker's "Reused code module
+  reachable on `main`" row (#595) verifies the module EXISTS on main;
+  leg A verifies main's copy is CURRENT vs the parent branch.)
 
-A failing check other than (i)/(h)(iv) → retrain / regenerate; a failing
+A failing check other than (i)/(h)(iv)/(k) → retrain / regenerate; a failing
 throughput check (i) → fix the SOURCE module (batch / parametrize / scope it
 there — never a caller-side workaround), then reuse; a failing staged-layout
 consumer-open check (h)(iv) → fix the STAGING MAPPING (pure hub-rel →
-local-rel fn + fail-loud entry-file check), then reuse. Say why in the plan
-either way.
+local-rel fn + fail-loud entry-file check), then reuse; a failing
+parent-lineage check (k) → port the unmerged parent-branch fix (or declare
+it not-needed against the cited commit SHAs) and name the filter explaining
+any count shortfall, then reuse — regenerate only when the shortfall traces
+to a genuine defect in the artifact itself. Say why in the plan either way.
 
 ## Reuse-validation gate calibration + severity (HALT vs WARN) (#813)
 
@@ -508,6 +566,12 @@ provenance is then carried into the clean-result `## Reproducibility`
 (`analyzer.md`) and audited by `clean-result-critic` Lens 5.
 
 ## Porting a recipe from an unmerged sibling branch (relocated from experiment-implementer.md, #829)
+
+(Complementary halves: this section governs deliberately porting a recipe
+FROM an unmerged branch; checklist item (k) leg A above catches the
+INVERSE — reusing the main-resident copy of a parent module while the
+parent's issue branch carries unmerged fixes — and routes its port remedy
+through this section's three mandatory steps. #1345.)
 
 If the parent experiment's scripts/configs live on a branch that was
 never merged to `main` (e.g. issue-432's recipe sits on the `issue-432`

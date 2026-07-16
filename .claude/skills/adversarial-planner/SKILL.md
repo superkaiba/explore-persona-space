@@ -292,7 +292,11 @@ Run the structural verifier against the plan version just persisted:
   vocabulary is a git code SHA or otherwise not an HF revision pin on this plan's
   own reuse; a genuine revision-pinned reuse instead names its revision-scoped
   probe — the `revision=<pin>` kwarg on `list_repo_tree` / `list_repo_files`,
-  per named stem).
+  per named stem), and
+  `N/A — no numeric containment claims` (check 36 — the matched
+  inside/within-range text quotes an incident or a sibling's numbers, or is not
+  a claim about this plan's own committed values; a plan with a genuinely false
+  claim instead fixes the arithmetic or rewrites the prose).
 - **FAIL → bounce to the planner** with the failed-check details (a mechanical-fix
   revision: re-spawn the planner with the FAIL list + the plan path; it patches the
   missing block and the orchestrator persists v{K+1} via `task.py new-plan-version`).

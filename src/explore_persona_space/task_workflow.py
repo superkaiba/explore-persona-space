@@ -2766,6 +2766,7 @@ def _audit_record_violation(
 
 FOLLOWUP_SCOPE_KIND = "epm:followup-scope"
 FOLLOWUP_RUN_KIND = "epm:same-issue-followup-run"
+FREE_ANALYSIS_RUN_KIND = "epm:free-analysis-followup-run"
 USER_INITIATED_FOLLOWUP_SOURCES = frozenset({"user-chat", "step-10b-pick"})
 
 # An UNLABELED scope note inherits the previous entry's label ONLY when it
@@ -3137,13 +3138,11 @@ def followup_retro_close_evidence(events: list[dict], label: str) -> str | None:
                     f"epm:methodology-doc-generated at {ev.get('ts', '?')} carries extends={label}"
                 )
     for ev in events:
-        if ev.get("kind") != "epm:free-analysis-followup-run":
+        if ev.get("kind") != FREE_ANALYSIS_RUN_KIND:
             continue
         ref = parse_followup_note_field(ev.get("note") or "", "followup_ref")
         if ref == label:
-            return (
-                f"epm:free-analysis-followup-run at {ev.get('ts', '?')} has followup_ref == {label}"
-            )
+            return f"{FREE_ANALYSIS_RUN_KIND} at {ev.get('ts', '?')} has followup_ref == {label}"
     token = f"({label})"
     for ev in events:
         kind = ev.get("kind")
@@ -3516,6 +3515,36 @@ _PIPE_BUF = getattr(os, "PIPE_BUF", 4096)
 _log = logging.getLogger(__name__)
 
 
+def _tail_missing_newline(path: Path) -> bool:
+    """Probe: True iff ``path`` exists, is non-empty, and its final byte is
+    not ``b"\\n"`` — the crash-truncated-append signature (#1367 / #1333).
+
+    Reads exactly ONE byte (``os.pread`` at ``st_size - 1``) regardless of
+    file size. FAIL-SOFT by design: a fresh-file ``FileNotFoundError``
+    returns False silently (O_CREAT will create the file); any other
+    ``OSError`` logs a WARNING naming the path and returns False — the
+    probe must never block the append itself, whose own error handling
+    stays fail-loud.
+    """
+    try:
+        rfd = os.open(path, os.O_RDONLY)
+    except FileNotFoundError:
+        return False
+    except OSError as e:
+        _log.warning("tail-check open failed for %s (%s); appending without seal", path, e)
+        return False
+    try:
+        size = os.fstat(rfd).st_size
+        if size == 0:
+            return False
+        return os.pread(rfd, 1, size - 1) != b"\n"
+    except OSError as e:
+        _log.warning("tail-check read failed for %s (%s); appending without seal", path, e)
+        return False
+    finally:
+        os.close(rfd)
+
+
 def _append_jsonl_line(path: Path, payload: dict[str, Any]) -> None:
     """Atomically append one JSON object as a line to an append-only log.
 
@@ -3537,14 +3566,33 @@ def _append_jsonl_line(path: Path, payload: dict[str, Any]) -> None:
     skips the partial line. The loop is still useful for completion under
     EAGAIN/EINTR/short-writes; it is not a crash-atomicity guarantee.
 
+    Self-heal (#1367): a fail-soft tail probe (``_tail_missing_newline``)
+    detects a crash-truncated prior append (final byte != ``\\n``) and seals it
+    with a SEPARATE 1-byte newline write (WARNING logged) so the new row lands
+    on its own line — the row buffer keeps its atomicity class. The caller's
+    ``_locked()`` excludes probe→seal TOCTOU; an out-of-lock >PIPE_BUF writer
+    mid-completion-loop could at worst have its row split by the seal
+    (bounded; the tolerant reader skips both fragments).
+
     Callers MUST hold ``_locked()``. This helper does NOT acquire the lock and
     does NOT commit — the caller owns flock + ``_git_commit`` semantics.
     """
     path.parent.mkdir(parents=True, exist_ok=True)
     line = json.dumps(payload, ensure_ascii=False) + "\n"
     buf = line.encode("utf-8")
+    needs_seal = _tail_missing_newline(path)
     fd = os.open(path, os.O_WRONLY | os.O_APPEND | os.O_CREAT, 0o644)
     try:
+        if needs_seal:
+            _log.warning(
+                "%s: final line missing trailing newline (crash-truncated "
+                "prior append) — sealing so the new row lands on its own "
+                "line (#1367)",
+                path,
+            )
+            n = os.write(fd, b"\n")
+            if n != 1:
+                raise OSError(f"seal write to {path} wrote {n} of 1 bytes")
         if len(buf) <= _PIPE_BUF:
             # Single atomic append (<= PIPE_BUF): all-or-nothing against a
             # SIGKILL. os.write may legally short-write even here in
@@ -6056,6 +6104,7 @@ __all__ = [
     "FOLLOWUP_HELD_BLOCKED_STATUSES",
     "FOLLOWUP_RUN_KIND",
     "FOLLOWUP_SCOPE_KIND",
+    "FREE_ANALYSIS_RUN_KIND",
     "GOAL_H2_NAME",
     "KINDS",
     "PARK_STATUS",

@@ -13,14 +13,21 @@ import json
 import sys
 from pathlib import Path
 
-import matplotlib
-
-matplotlib.use("Agg")
-import matplotlib.pyplot as plt
-import numpy as np
-
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(PROJECT_ROOT / "src"))
+from explore_persona_space.orchestrate.env import load_dotenv  # noqa: E402
+
+# #847: thread caps must land BEFORE the matplotlib/numpy imports below — on
+# the shared VM, load_dotenv() setdefaults OMP/MKL/OPENBLAS/NUMEXPR_NUM_THREADS,
+# and the BLAS pools freeze at import time.
+load_dotenv()
+
+import matplotlib  # noqa: E402
+
+matplotlib.use("Agg")
+import matplotlib.pyplot as plt  # noqa: E402
+import numpy as np  # noqa: E402
+
 from explore_persona_space.analysis.paper_plots import (  # noqa: E402
     paper_palette_role,
     savefig_paper,

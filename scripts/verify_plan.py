@@ -82,12 +82,14 @@ Check catalog (id — classification — kind scope)
       ratchet headroom
   c35 revision-pinned reuse     WARN-only, conditional    experiment +
       verified at pin                                     analysis
+  c36 numeric containment       WARN-only, conditional    experiment +
+      claims                                              analysis
 
 Kind-exempt checks render as [SKIP] (first-class status, distinguishable
 from genuine passes — the calibration report needs n_skip separate from
 n_pass). Conditional checks (4, 6, 7, 10, 11, 12, 13, 14, 15, 16, 17, 18,
-19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35) also
-SKIP when their content trigger does not fire.
+19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36)
+also SKIP when their content trigger does not fire.
 Check 23 runs OUTSIDE ``verify_plan_text()`` — it needs task context
 (``body.md`` + ``events.jsonl``), so ``main()`` appends it in ``--issue``
 mode only and renders it SKIP in ``--plan-file`` mode; its WARN is the one
@@ -135,6 +137,7 @@ labeled-line forms):
     ``N/A — no checkpoint ladder`` (check 33)
   - ``N/A — no verbatim ratcheted-file insertion`` (check 34)
   - ``N/A — no revision-pinned reuse`` (check 35)
+  - ``N/A — no numeric containment claims`` (check 36)
 
 WARN semantics: a WARN never blocks exit (exit 0). The Phase 1.5.0 wiring
 carries WARN lines verbatim into the fact-checker + critic briefs — that
@@ -833,16 +836,17 @@ def check_gpu_hours(plan: str, kind: str) -> CheckResult:
 
 def check_reuse_fitness(plan: str, kind: str) -> CheckResult:
     """Plans reusing trained HF artifacts must carry the fitness
-    attestations (a)-(j) (.claude/rules/artifact-reuse.md). WARN not FAIL:
+    attestations (a)-(k) (.claude/rules/artifact-reuse.md). WARN not FAIL:
     trigger and item-detection are both heuristic, and the demonstrated
     failure modes (#545/#600/#601) are semantic — the gate's value is
-    forcing the section to exist and naming the ten letters.
+    forcing the section to exist and naming the eleven letters.
 
     Accepted declaration shapes (#1314): the historical 'fitness'
     vocabulary, a 'reuse map' / 'reuse-map' section (the #1090 v7
     '### D3 — Reuse map' shape; artifact-reuse.md's own term for the
-    plan record), '(self-)attestation(s)', or the literal (a)-(j) range
-    token (hyphen / en-dash / em-dash / ellipsis)."""
+    plan record), '(self-)attestation(s)', or the literal (a)-(k) range
+    token ((a)-(j) grandfathered for in-flight plans; #1366)
+    (hyphen / en-dash / em-dash / ellipsis)."""
     cid, name = "c6_reuse_fitness", "reused-artifact fitness attestation"
     if kind != "experiment":
         return _skip(cid, name, "kind-exempt")
@@ -862,30 +866,30 @@ def check_reuse_fitness(plan: str, kind: str) -> CheckResult:
         r"(?i)fitness"  # historical vocabulary (the pre-#1314 detector, unchanged)
         r"|reuse[- ]map"  # 'Reuse map' section shape (#1090 v7 D3; artifact-reuse.md's own term)
         r"|(?:self[- ])?attestation"  # 'self-attestation' / 'attestation(s)'
-        r"|\(a\)\s*[-–—…]\s*\(j\)",  # (a)-(j) range token; en-dash in real plans  # noqa: RUF001
+        r"|\(a\)\s*[-–—…]\s*\([jk]\)",  # (a)-(k) current; (a)-(j) grandfathered  # noqa: RUF001
         text,
     )
-    letters = {m.group(1) for m in re.finditer(r"\(([a-j])\)", text)}
+    letters = {m.group(1) for m in re.finditer(r"\(([a-k])\)", text)}
     if declaration and len(letters) >= 4:
         return _pass(
             cid,
             name,
-            f"fitness/reuse-map declaration present ({len(letters)}/10 lettered items spotted)",
+            f"fitness/reuse-map declaration present ({len(letters)}/11 lettered items spotted)",
         )
     if declaration:
         return _warn(
             cid,
             name,
             f"fitness/reuse-map declaration vocabulary present but only {len(letters)} of the "
-            "(a)–(j) items detectable — verify all ten attestations (recipe/regime/cells/"  # noqa: RUF001
+            "(a)–(k) items detectable — verify all eleven attestations (recipe/regime/cells/"  # noqa: RUF001
             "single-var/hub-resolution/content-identity/scaling/backend-fetchability/"
-            "code-throughput/pair-provenance) before approval",
+            "code-throughput/pair-provenance/parent-lineage) before approval",
         )
     return _warn(
         cid,
         name,
-        "plan reuses HF artifacts but no fitness check / (a)–(j) reuse-map attestation found — "  # noqa: RUF001
-        "CLAUDE.md reuse rule requires attestations (a)–(j); consistency-checker + Methodology "  # noqa: RUF001
+        "plan reuses HF artifacts but no fitness check / (a)–(k) reuse-map attestation found — "  # noqa: RUF001
+        "CLAUDE.md reuse rule requires attestations (a)–(k); consistency-checker + Methodology "  # noqa: RUF001
         "critic must gate this",
     )
 
@@ -5792,6 +5796,161 @@ def check_pinned_revision_reuse(plan: str, kind: str) -> CheckResult:
     )
 
 
+# ─── Check 36 — numeric containment claims (WARN-only; experiment + analysis) ─
+
+_C36_NUM = r"(?:\d+(?:\.\d+)?|\.\d+)"
+# Range operand pair. Two alternatives:
+#   (a) en/em-dash or "to" separator, signed operands allowed ("-0.5 to 0.3");
+#   (b) unspaced ASCII hyphen, UNSIGNED operands only ("2-4", "0.25-0.5") —
+#       a signed/hyphen mix ("-0.5-0.3") is ambiguous between range and
+#       negative pair and is NEVER parsed (accepted false negative).
+# The leading lookbehind blocks matching the tail of a larger number or a
+# signed token; \b after operands blocks partial-digit backtracks (the c28
+# :4487 convention — without it "150-330 band" mis-parses); (?!-\d) on the
+# hyphen form rejects date/version chains ("2026-07-15").
+_C36_RANGE = (
+    rf"(?P<lo>(?<![\d.\-−+])[+\-−]?{_C36_NUM})%?\s*(?:[–—]|\bto\b)\s*"  # noqa: RUF001 — en dash is real plan text
+    rf"(?P<hi>[+\-−]?{_C36_NUM})"  # noqa: RUF001 — U+2212 minus is real plan text
+    rf"|(?P<lo2>(?<![\d.\-−+]){_C36_NUM})-(?P<hi2>{_C36_NUM}(?!-\d))"  # noqa: RUF001
+)
+# Containment claim: verb + bounded filler + range + bounded tail + range-noun,
+# all on ONE line. Filler excludes .;:| so a claim never crosses a sentence,
+# clause-label, or table-cell boundary; the post-range lookahead rejects
+# compound count modifiers ("10-20-draw random band", #816 v1 L227).
+# "estimate" and "guidance" are deliberately NOT range-nouns (the #825
+# aggregate-delta and t-SNE-guidance corpus shapes are accepted false
+# negatives — both FP-prone).
+_C36_CLAIM_RE = re.compile(
+    rf"\b(?:inside|within)\b(?P<fill>[^.;:|\n]{{0,45}}?)(?:{_C36_RANGE})\b"
+    rf"(?![–-][A-Za-z])\s*%?(?P<tail>[^.;|\n]{{0,18}}?)"  # noqa: RUF001 — en dash is real plan text
+    rf"\b(?:spread|band|range|window|interval|CIs?)\b",
+    re.IGNORECASE,
+)
+# Candidate claimed values: numbers in the same clause BEFORE the verb. The
+# leading lookbehind kills identifier digits ("H2", "#508", "Tier-1",
+# "checkpoint-20", "coef-0"); the trailing lookahead kills hex/sha and
+# unit-glued tokens ("48de22...", "13h").
+_C36_CAND_RE = re.compile(
+    rf"(?<![A-Za-z#\d.\-−+/])[+\-−]?{_C36_NUM}%?(?![A-Za-z0-9])"  # noqa: RUF001
+)
+_C36_NEG_RE = re.compile(r"(?i)\b(?:not|never|no longer|nor|outside)\b")
+
+
+def _c36_frac(tok: str) -> Fraction:
+    """Exact ``Fraction`` from a claim/operand token: strips a trailing %, a
+    leading +, maps U+2212 minus to ASCII, then delegates to ``_c28_frac``
+    (the leading-dot-tolerant c13/c28 parse convention — cross-check helper
+    reuse per the c28 <-> ``_C13_GATE_SECTION_RE`` precedent)."""
+    return _c28_frac(tok.rstrip("%").lstrip("+").replace("−", "-"))  # noqa: RUF001
+
+
+def _c36_na_escape_declared(plan: str) -> bool:
+    """Standalone ``N/A — no numeric containment claims`` escape (see
+    ``_standalone_na_declared`` for the anti-paste rationale)."""
+    return _standalone_na_declared(plan, r"no numeric containment claims?")
+
+
+def _c36_offender_detail(offenders: list[tuple[str, Fraction, Fraction, list[Fraction]]]) -> str:
+    """Bounded WARN detail (c28 conventions: at most 3 offenders shown,
+    90-char line snippets): per offender the line snippet, the candidate
+    claimed values, and the bounds none of them lands in. Ends with the
+    #1315 incident anchor and the remedy menu. The anchor + remedy prose
+    is deliberately NON-matching (the c28 detail-inertness precedent): it
+    phrases containment without an inside/within verb + range + range-noun
+    co-occurrence, so a verbatim paste of this detail into a revised plan
+    cannot re-trigger the check by itself (the 90-char offender snippet may
+    still quote the plan's own claim — the remedy menu names the
+    blockquote/fence move for exactly that)."""
+    parts: list[str] = []
+    for line, lo, hi, cands in offenders[:3]:
+        vals = ", ".join(f"{float(v):.3g}" for v in cands)
+        parts.append(
+            f'line "{line[:90]}" - no candidate value (~ {vals}) lies in '
+            f"[{float(lo):.3g}, {float(hi):.3g}]"
+        )
+    shown = "; ".join(parts)
+    if len(offenders) > 3:
+        shown += "; ..."
+    return (
+        f"{shown} - an explicit numeric containment claim must be arithmetically "
+        "true (#1315 v4 L66 asserted containment of 0.724 in a 0.737-0.820 "
+        "spread; verify_plan PASSed 0/0 - caught only at the critic layer). "
+        "Remedy: fix the arithmetic, rewrite the prose (e.g. '0.013 BELOW the "
+        "... spread', the #1315 v5 correction), move a quoted incident line "
+        "into a blockquote or fence, or declare `N/A - no numeric containment "
+        "claims` on its own line, unwrapped (no backticks/quotes); the semantic "
+        "verdict - WHICH number the prose attributes - stays with the "
+        "Statistics critic"
+    )
+
+
+def check_numeric_containment(plan: str, kind: str) -> CheckResult:
+    """WARN-only, conditional: an explicit numeric containment claim —
+    a claimed number, a containment verb (inside/within), and an explicit
+    numeric A-B range with a range-noun (spread/band/range/window/
+    interval/CI) on one line — must be arithmetically true: some
+    attributable claimed number in the same clause lies in [A, B]
+    (boundary-inclusive; reversed bounds normalized). NEVER FAILs (the
+    c14/c28 doctrine: a heuristic free-prose check must not hard-block);
+    the semantic verdict — WHICH number the prose attributes — stays with
+    the Statistics critic. Incident: #1315 plan v4 L66 (0.724 asserted
+    inside 0.737-0.820; verify_plan PASSed 0/0; two critics caught it by
+    hand -> #1375). Accepted false negatives (v1, named): claims whose
+    subject sits in a previous sentence/clause; a decoy same-clause number
+    inside the range masking a false claim; %-vs-unitless mixed units;
+    scientific notation; noun-before-range word order ("the band
+    0.6-0.8"); "estimate"/"guidance" nouns; ± tolerance forms (not
+    ranges); signed hyphen ranges; bare-"in" containment ("N in the
+    A-B band") and "between A and B" phrasings (both FP-prone; the
+    {inside, within} verb set is deliberate).
+    """
+    cid, name = "c36_numeric_containment", "numeric containment claims"
+    if kind not in ("experiment", "analysis"):
+        return _skip(
+            cid, name, "kind-exempt: containment-claim prose is an experiment|analysis plan shape"
+        )
+    lines = plan.splitlines()
+    mask = _fence_mask(lines)
+    n_claims = 0
+    offenders: list[tuple[str, Fraction, Fraction, list[Fraction]]] = []
+    for line, fenced in zip(lines, mask, strict=True):
+        if fenced or line.lstrip(" \t").startswith(">"):
+            continue  # fenced code + blockquotes: quoted text, not claims
+        blanked = line  # length-preserving blank of prior match spans
+        for m in _C36_CLAIM_RE.finditer(line):
+            lo_s = m.group("lo") or m.group("lo2")
+            hi_s = m.group("hi") or m.group("hi2")
+            lo, hi = _c36_frac(lo_s), _c36_frac(hi_s)
+            if lo > hi:
+                lo, hi = hi, lo  # reversed bounds: normalize, still verify
+            pre = blanked[: m.start()]
+            cut = max(pre.rfind("|"), pre.rfind(":"), pre.rfind(";"))
+            seg = pre[cut + 1 :]  # clause/cell-bounded candidate window
+            blanked = blanked[: m.start()] + " " * (m.end() - m.start()) + blanked[m.end() :]
+            if _C36_NEG_RE.search(seg[-24:]):
+                continue  # negated/outside claims: out of scope
+            rng_pct = "%" in line[m.start() : m.end()]
+            cands = [
+                _c36_frac(t.group(0))
+                for t in _C36_CAND_RE.finditer(seg)
+                if t.group(0).endswith("%") == rng_pct
+            ]
+            if not cands:
+                continue  # no attributable claimed value -> not a claim
+            n_claims += 1
+            if not any(lo <= c <= hi for c in cands):
+                offenders.append((line.strip(), lo, hi, cands))
+    if n_claims == 0 and not offenders:
+        return _skip(cid, name, "no numeric containment claims detected")
+    if _c36_na_escape_declared(plan):
+        return _pass(
+            cid, name, "explicit N/A declared (no numeric containment claims of this plan's own)"
+        )
+    if not offenders:
+        return _pass(cid, name, f"{n_claims} numeric containment claim(s) arithmetically coherent")
+    return _warn(cid, name, _c36_offender_detail(offenders))
+
+
 # ─── Driver ────────────────────────────────────────────────────────────────
 
 CHECKS = [
@@ -5829,6 +5988,7 @@ CHECKS = [
     check_ladder_retention,
     check_ratchet_headroom,
     check_pinned_revision_reuse,
+    check_numeric_containment,
 ]
 
 
