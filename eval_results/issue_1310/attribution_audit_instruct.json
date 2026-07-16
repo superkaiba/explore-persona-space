@@ -1,34 +1,45 @@
 {
   "metadata": {
-    "git_commit": "b131716da95ab8ded628426b2347a782deb1b54f",
-    "timestamp": "2026-07-14T23:34:22Z",
+    "git_commit": "942df1bb2ada9f1c5289d92867072682bd1f1390",
+    "timestamp": "2026-07-15T00:29:57Z",
     "seed": 42,
-    "n": 563,
+    "n": 12503,
     "script": "scripts/issue1310_attribute.py",
     "issue": 931
   },
   "model_kind": "instruct",
   "counters": {
-    "stories": 1000,
-    "quotes_total": 15571,
-    "quotes_unattributed_dropped": 12816,
-    "quotes_attributed": 2755,
-    "stories_with_pair": 563,
-    "stories_dropped_no_pair": 437
+    "stories": 1200,
+    "target_lines": 13843,
+    "foil_other_lines": 13259,
+    "unparsed_lines": 152,
+    "turns_kept": 12503,
+    "turns_dropped_zero_width": 8,
+    "turns_dropped_short_context": 1182,
+    "turns_dropped_short_dialogue": 150,
+    "turns_dropped_unconfirmed": 0,
+    "stories_with_pair": 1180,
+    "stories_dropped_no_pair": 20,
+    "per_persona_target_lines": {
+      "Wren": 3409,
+      "HELIOS": 3436,
+      "Dana": 3097,
+      "Vex": 3901
+    }
   },
-  "drop_rate": 0.437,
+  "drop_rate": 0.016666666666666666,
   "per_persona_pairs": {
-    "Wren": 161,
-    "HELIOS": 135,
-    "Dana": 118,
-    "Vex": 149
+    "Wren": 3094,
+    "HELIOS": 3123,
+    "Dana": 2700,
+    "Vex": 3586
   },
   "audit": {
     "n_sampled": 200,
     "n_valid": 199,
     "n_dropped_malformed": 1,
-    "n_correct": 191,
-    "precision": 0.9597989949748744,
+    "n_correct": 198,
+    "precision": 0.9949748743718593,
     "mock": false,
     "judge_model": "claude-sonnet-4-5-20250929"
   },
