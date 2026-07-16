@@ -877,6 +877,20 @@ def _should_escalate_hf_repo(
     return (growth > _ACTIVE_ESCALATION_GROWTH_REALERT, growth * 100.0)
 
 
+def _any_repo_over(repos: list, escalate_bytes: int) -> bool:
+    """True when any scanned repo exceeds the always-escalate footprint —
+    the cheap probe gating the lazy production-state load in tier (e); a
+    degenerate repo (unreadable ``size_on_disk``) is skipped (the escalation
+    loop's own per-repo fail-keep skips it too, so the two stay consistent)."""
+    for repo in repos:
+        try:
+            if repo.size_on_disk > escalate_bytes:
+                return True
+        except Exception:
+            continue
+    return False
+
+
 def _home_hf_reap_selection(info, now: float, age_seconds: float):
     """Pure reap selector over a scanned home-hub cache (tier (e), #1376).
 
@@ -1203,7 +1217,15 @@ def clean_home_hf_stale_revisions(
         _attribute_home_hf_repos(repos, cand_by_repo, escalate_bytes, ts, res)
         # 2) ESCALATION — per repo over the always-escalate footprint.
         manage_state = state is None
-        st = _load_active_escalation_state() if manage_state else state
+        # Lazy production-state load: only when some repo can actually
+        # escalate — a direct library/pytest call on an all-small cache never
+        # touches the repo_root()-resolved state file (hermeticity; the
+        # #1377-landed tests call the tier without a state dict).
+        st = (
+            state
+            if not manage_state
+            else (_load_active_escalation_state() if _any_repo_over(repos, escalate_bytes) else {})
+        )
         escalated_any = _escalate_home_hf_repos(
             repos, cand_by_repo, escalate_bytes, ts, apply, st, res
         )

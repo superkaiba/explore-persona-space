@@ -3,6 +3,15 @@ trim (task #1377): ``clean_home_hf_stale_revisions`` keeps, per repo, the
 newest revision + every ref'd revision and deletes only unref'd non-newest
 revisions older than the age gate (default 7 d).
 
+RECONCILIATION NOTE (#1376 + #1377): the tier these tests pin was landed
+independently by both tasks and unified into ONE function keeping #1377's
+names/knobs and the UNION of both KEEP protections. The arm-2 pins below are
+unchanged; the fixtures gained the fields the unified tier also dereferences
+(``repo_type`` / ``last_accessed`` / repo ``size_on_disk`` / revision
+``files``) with values chosen so #1376's whole-stale-repo arm 1 and
+exclusive-blob atime guard stay inert here (see ``_repo`` / ``_rev``). The
+#1376 arms have their own suite: ``tests/test_vm_disk_guard_home_hf_cache.py``.
+
 HERMETIC BY CONSTRUCTION: every test passes an explicit fixture
 ``cache_root`` (or monkeypatches the ``_scan_hf_cache`` seam to a fake
 ``HFCacheInfo``) — the REAL ``~/.cache/huggingface`` is never read or
@@ -73,20 +82,40 @@ def _read_sidecar(repo_path: Path) -> list[dict]:
 
 def _rev(commit_hash: str, last_modified: float, *, refs=(), size: int = 1000):
     """A signature-conformant fake CachedRevisionInfo (the fields tier (e)
-    dereferences: commit_hash, refs frozenset, last_modified, size_on_disk)."""
+    dereferences: commit_hash, refs frozenset, last_modified, size_on_disk,
+    files — empty ``files`` means no exclusive blobs, so the #1376
+    exclusive-blob atime keep-guard passes through, preserving the pure
+    arm-2 semantics these tests pin)."""
     return SimpleNamespace(
         commit_hash=commit_hash,
         refs=frozenset(refs),
         last_modified=last_modified,
         size_on_disk=size,
+        files=(),
+    )
+
+
+def _repo(repo_id: str, now: float, revisions: list):
+    """A signature-conformant fake CachedRepoInfo. ``last_accessed=now`` so
+    the #1376 whole-stale-repo arm 1 (repo-level ``last_accessed`` > window)
+    NEVER fires in these fixtures — including test 3's ``max_age_days=0.0``
+    arm (``now - now = 0`` is not ``> 0``) — keeping every assertion here a
+    pure arm-2 (revision-level) pin, as #1377 designed them."""
+    return SimpleNamespace(
+        repo_id=repo_id,
+        repo_type="model",
+        last_accessed=now,
+        size_on_disk=sum(r.size_on_disk for r in revisions),
+        revisions=revisions,
     )
 
 
 def _fake_home_cache_info(now: float, executed: list, requested: list, *, freed: int = 55555):
     """Fake HFCacheInfo with the discriminating fixture (module docstring)."""
-    repo_a = SimpleNamespace(
-        repo_id="org/repo-a",
-        revisions=[
+    repo_a = _repo(
+        "org/repo-a",
+        now,
+        [
             # newest in repo-a, UNREF'D and OLDER than the 7d cutoff — its
             # survival is attributable SOLELY to keep-newest.
             _rev("newest_old", now - 10 * DAY),
@@ -97,9 +126,10 @@ def _fake_home_cache_info(now: float, executed: list, requested: list, *, freed:
             _rev("old_unrefd", now - 30 * DAY, size=2000),
         ],
     )
-    repo_b = SimpleNamespace(
-        repo_id="org/repo-b",
-        revisions=[
+    repo_b = _repo(
+        "org/repo-b",
+        now,
+        [
             _rev("b_newest", now - 1 * DAY),  # newest — kept
             # non-newest, unref'd, YOUNGER than the 7d cutoff — survival
             # attributable SOLELY to the age gate (test 3 flips it stale
@@ -107,10 +137,11 @@ def _fake_home_cache_info(now: float, executed: list, requested: list, *, freed:
             _rev("b_young", now - 2 * DAY),
         ],
     )
-    single = SimpleNamespace(
-        repo_id="org/single",
+    single = _repo(
+        "org/single",
+        now,
         # single revision == newest by construction: always kept, any age.
-        revisions=[_rev("single_old", now - 40 * DAY)],
+        [_rev("single_old", now - 40 * DAY)],
     )
 
     def delete_revisions(*hashes):
@@ -155,7 +186,11 @@ def test_home_hf_tier_keeps_newest_and_refd(home_cache):
     for kept in ("newest_old", "old_refd", "b_young", "b_newest", "single_old"):
         assert all(kept not in req for req in requested), kept
     assert any("org/repo-a" in d for d in res.detail)  # per-repo detail line
-    assert not any("org/repo-b" in d for d in res.detail)  # no stale revs there
+    # No STALE line names repo-b (nothing reapable there). The unified tier's
+    # attribution arm (#1376) names EVERY repo in its own detail lines, so the
+    # original blanket "repo-b appears nowhere" assertion is narrowed to the
+    # stale-revision line format.
+    assert not any("stale revision" in d and "org/repo-b" in d for d in res.detail)
 
 
 # ─── 2: report-only vs apply (+ sidecar row) ─────────────────────────────────

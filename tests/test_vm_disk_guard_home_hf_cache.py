@@ -1,15 +1,20 @@
 """Tests for ``vm_disk_guard.py`` tier (e) — the HOME HF hub cache
-(``~/.cache/huggingface/hub``; task #1376).
+(``~/.cache/huggingface/hub``; task #1376, reconciled with #1377's
+independently-landed tier into ONE ``clean_home_hf_stale_revisions``).
 
-Pins the plan's acceptance criteria: attribution ALWAYS (T1), the arm-2
-reap predicate — no ``main`` ref AND stale ``last_modified`` AND no fresh
+Pins the plan's acceptance criteria under the RECONCILED (union) semantics:
+attribution ALWAYS (T1), the arm-2 reap predicate — non-newest AND no ref
+AT ALL (any ref protects — widened from #1376's main-ref-only by the
+reconciliation with #1377) AND stale ``last_modified`` AND no fresh
 EXCLUSIVE-blob atime (T2-T4), the arm-1 whole-stale-repo reap where the
-main-ref/freshness protections deliberately do NOT bind (T5), the
-never-empty-a-fresh-repo constraint (T6), escalation dedup/growth/ack
+ref/freshness/newest protections deliberately do NOT bind (T5), the
+keep-newest-per-repo pin (T6 — #1377's rule, subsuming the plan's
+never-empty-a-fresh-repo constraint), escalation dedup/growth/ack
 mechanics (T7), report-only persisting nothing (T8), fail-toward-KEEP
 degradation (T9), the tier-(d) double-cover guard (T10), pod refusal (T11),
 the ``run_guard`` production opt-in (T12), the ``--json`` field (T13), and
-scan-warning reporting (T14).
+scan-warning reporting (T14). #1377's own arm-2 pins live in
+``tests/test_vm_disk_guard_home_hf.py``.
 
 HERMETIC BY CONSTRUCTION: ``_scan_hf_cache`` is monkeypatched to
 SimpleNamespace fakes (the tier-(d) fixture pattern from
@@ -112,7 +117,7 @@ def env(tmp_path, monkeypatch):
 
 def _run_tier(env, monkeypatch, info, *, apply, state=None, **kw):
     monkeypatch.setattr(vdg, "_scan_hf_cache", lambda hub: info)
-    return vdg.clean_home_hf_cache(
+    return vdg.clean_home_hf_stale_revisions(
         apply, cache_root=env.cache_root, now=NOW, state={} if state is None else state, **kw
     )
 
@@ -147,10 +152,10 @@ def test_home_tier_attribution_always_names_top_repos(env, monkeypatch):
     assert row["reap_candidate_bytes"] == 0
     assert row["over_escalate_threshold"] is False
     assert any("dataset/superkaiba1/explore-persona-space-data" in d for d in res.detail)
-    assert any("no home-hub revisions reapable" in d for d in res.detail)
+    assert any("no unref'd revision" in d for d in res.detail)
 
 
-# ─── T2: arm 2 reaps exactly the unreferenced stale cold revisions ───────────
+# ─── T2: arm 2 reaps exactly the unref'd non-newest stale cold revisions ─────
 
 
 def test_home_tier_reaps_unreferenced_stale_revisions(env, monkeypatch):
@@ -160,22 +165,30 @@ def test_home_tier_reaps_unreferenced_stale_revisions(env, monkeypatch):
         repo_type="dataset",
         last_accessed=NOW - 1 * HOUR,  # repo FRESH -> arm 2 only
         revisions=[
-            # main-ref'd, stale: kept (arm-2 main protection).
+            # main-ref'd, stale: kept (ref protection).
             _mk_rev(
                 "mainref1",
                 refs={"main"},
                 last_modified=NOW - 30 * DAY,
                 files=[_mk_file("blobM", NOW - 30 * DAY)],
             ),
-            # ref-less but recently written: kept.
+            # ref-less but recently written: kept (also the repo's NEWEST).
             _mk_rev(
                 "fresh111", last_modified=NOW - 1 * DAY, files=[_mk_file("blobF", NOW - 1 * DAY)]
             ),
-            # pinned-read ref (non-main), stale, cold exclusive blob: REAPED —
-            # a truncated-hash ref does NOT protect.
+            # pinned-read ref (non-main), stale, cold exclusive blob: KEPT —
+            # the #1377 reconciliation widened ref protection from
+            # main-only to ANY ref (union of both tasks' KEEP sets).
+            _mk_rev(
+                "pinned77",
+                refs={"77d04e45"},
+                last_modified=NOW - 20 * DAY,
+                files=[_mk_file("blobP", NOW - 20 * DAY)],
+            ),
+            # ref-less, non-newest, stale, cold exclusive blob: REAPED —
+            # the one revision every KEEP rule passes over.
             _mk_rev(
                 "cold2222",
-                refs={"77d04e45"},
                 last_modified=NOW - 20 * DAY,
                 files=[_mk_file("blobC", NOW - 20 * DAY)],
             ),
@@ -188,17 +201,21 @@ def test_home_tier_reaps_unreferenced_stale_revisions(env, monkeypatch):
     res = _run_tier(env, monkeypatch, _mk_info([repo], executed, expected_freed=777), apply=True)
     assert executed == [("cold2222",)]
     assert res.bytes_freed == 777
-    reaped = [ev for ev, _ in env.events if ev["kind"] == "home-hf-cache-reaped"]
+    reaped = [ev for ev, _ in env.events if ev["kind"] == "home-hf-revisions-trimmed"]
     assert len(reaped) == 1
     assert reaped[0]["arms"] == {"whole_repo": 0, "revision_level": 1}
     # Attribution names the candidate bytes for the repo.
     assert res.hf_repo_attributions[0]["reap_candidate_bytes"] == 1_000
 
 
-# ─── T3: main-ref'd + fresh revisions never enter the arm-2 delete set ───────
+# ─── T3: ANY-ref'd + fresh + newest revisions never enter the arm-2 set ──────
 
 
-def test_home_tier_keeps_main_ref_and_fresh_revisions(env, monkeypatch):
+def test_home_tier_keeps_any_ref_fresh_and_newest_revisions(env, monkeypatch):
+    """Union KEEP protections (#1376 reconciled with #1377): a ``main`` ref,
+    ANY other ref (a pinned-read truncated-hash ref), a fresh
+    ``last_modified``, and being the repo's newest each independently
+    protect a revision from arm 2."""
     executed: list = []
     repo = _mk_repo(
         "org/data",
@@ -210,6 +227,15 @@ def test_home_tier_keeps_main_ref_and_fresh_revisions(env, monkeypatch):
                 last_modified=NOW - 40 * DAY,
                 files=[_mk_file("blobM", NOW - 40 * DAY)],
             ),
+            # Non-main pinned-read ref, stale + cold: kept SOLELY by the
+            # widened any-ref protection (#1377's incumbent semantics).
+            _mk_rev(
+                "pinned77",
+                refs={"77d04e45"},
+                last_modified=NOW - 40 * DAY,
+                files=[_mk_file("blobP", NOW - 40 * DAY)],
+            ),
+            # Ref-less + fresh: kept (also the repo's newest).
             _mk_rev(
                 "fresh111", last_modified=NOW - 1 * DAY, files=[_mk_file("blobF", NOW - 1 * DAY)]
             ),
@@ -218,7 +244,7 @@ def test_home_tier_keeps_main_ref_and_fresh_revisions(env, monkeypatch):
     res = _run_tier(env, monkeypatch, _mk_info([repo], executed), apply=True)
     assert executed == []
     assert res.bytes_freed == 0
-    assert any("no home-hub revisions reapable" in d for d in res.detail)
+    assert any("no unref'd revision" in d for d in res.detail)
 
 
 # ─── T4: the exclusive-blob atime guard ──────────────────────────────────────
@@ -280,8 +306,8 @@ def test_home_tier_whole_repo_arm_covers_stale_models(env, monkeypatch):
     )
     res = _run_tier(env, monkeypatch, _mk_info([stale_model], executed), apply=True)
     assert executed == [("mainhash",)]
-    assert any("arm 1 wholesale" in d and "main-ref'd included" in d for d in res.detail)
-    reaped = [ev for ev, _ in env.events if ev["kind"] == "home-hf-cache-reaped"]
+    assert any("arm 1 wholesale" in d and "ref'd + newest included" in d for d in res.detail)
+    reaped = [ev for ev, _ in env.events if ev["kind"] == "home-hf-revisions-trimmed"]
     assert reaped[0]["arms"] == {"whole_repo": 1, "revision_level": 0}
 
     # The same repo with FRESH last_accessed is untouched.
@@ -300,13 +326,17 @@ def test_home_tier_whole_repo_arm_covers_stale_models(env, monkeypatch):
     )
     res2 = _run_tier(env, monkeypatch, _mk_info([fresh_model], executed2), apply=True)
     assert executed2 == []
-    assert any("no home-hub revisions reapable" in d for d in res2.detail)
+    assert any("no unref'd revision" in d for d in res2.detail)
 
 
-# ─── T6: never wholly empty a recently-accessed repo ─────────────────────────
+# ─── T6: the newest revision per repo is ALWAYS kept (keep-newest pin) ───────
 
 
-def test_home_tier_never_empties_recently_accessed_repo(env, monkeypatch):
+def test_home_tier_keeps_newest_revision_per_repo(env, monkeypatch):
+    """Keep-newest (#1377's rule, adopted at reconciliation): the repo's
+    newest revision never enters the arm-2 set even when it is ref-less,
+    stale, and cold — which also guarantees a recently-accessed repo is
+    never wholly emptied (subsumes the plan's never-empty clamp)."""
     executed: list = []
     repo = _mk_repo(
         "org/data",
@@ -321,8 +351,10 @@ def test_home_tier_never_empties_recently_accessed_repo(env, monkeypatch):
         ],
     )
     _run_tier(env, monkeypatch, _mk_info([repo], executed), apply=True)
-    # Both are candidates; the newest-last_modified one is kept.
+    # Both pass every other reap gate (ref-less, stale, cold); the NEWEST
+    # (newer222) is kept solely by keep-newest.
     assert executed == [("older111",)]
+    assert all("newer222" not in req for req in executed)
 
 
 # ─── T7: escalation dedup / growth re-alert / ack sentinel ───────────────────
@@ -428,7 +460,7 @@ def test_home_tier_fail_toward_keep_on_scan_error(env, monkeypatch):
         raise ImportError("huggingface_hub gone")
 
     monkeypatch.setattr(vdg, "_scan_hf_cache", _boom)
-    res = vdg.clean_home_hf_cache(True, cache_root=env.cache_root, now=NOW, state={})
+    res = vdg.clean_home_hf_stale_revisions(True, cache_root=env.cache_root, now=NOW, state={})
     assert res.skipped and "ImportError" in res.skip_reason
 
     # An execute()-time failure degrades the same way, deleting nothing.
@@ -449,7 +481,7 @@ def test_home_tier_fail_toward_keep_on_scan_error(env, monkeypatch):
         )
 
     monkeypatch.setattr(vdg, "_scan_hf_cache", _bad_info)
-    res2 = vdg.clean_home_hf_cache(True, cache_root=env.cache_root, now=NOW, state={})
+    res2 = vdg.clean_home_hf_stale_revisions(True, cache_root=env.cache_root, now=NOW, state={})
     assert res2.skipped and "OSError" in res2.skip_reason
 
 
@@ -461,7 +493,7 @@ def test_home_tier_skips_when_root_equals_workspace_root(env, monkeypatch):
     monkeypatch.setattr(
         vdg, "_scan_hf_cache", lambda hub: (_ for _ in ()).throw(AssertionError("must not scan"))
     )
-    res = vdg.clean_home_hf_cache(True, cache_root=env.cache_root, now=NOW, state={})
+    res = vdg.clean_home_hf_stale_revisions(True, cache_root=env.cache_root, now=NOW, state={})
     assert res.skipped and "no double-reap" in res.skip_reason
 
 
@@ -470,7 +502,7 @@ def test_home_tier_skips_when_root_equals_workspace_root(env, monkeypatch):
 
 def test_home_tier_pod_side_refusal(env, monkeypatch):
     monkeypatch.setattr(vdg, "_running_pod_side", lambda: True)
-    res = vdg.clean_home_hf_cache(True, cache_root=env.cache_root, now=NOW, state={})
+    res = vdg.clean_home_hf_stale_revisions(True, cache_root=env.cache_root, now=NOW, state={})
     assert res.skipped and "pod-side" in res.skip_reason
 
 
@@ -508,29 +540,31 @@ def test_run_guard_home_tier_rides_production_opt_in(env, monkeypatch, tmp_path)
     # The REAL home cache must never be touched from pytest — stub the tier
     # and assert only the run_guard WIRING here.
     monkeypatch.setattr(
-        vdg, "clean_home_hf_cache", lambda apply, **k: vdg.TierResult(name="home-hf-cache")
+        vdg,
+        "clean_home_hf_stale_revisions",
+        lambda apply, **k: vdg.TierResult(name="home-hf-revisions"),
     )
 
     _patch_disk(monkeypatch, before_pct=90.0, after_pct=40.0)
     res = vdg.run_guard(apply=False, threshold=85.0, data_root=data_root, tmp_root=tmp_root)
-    assert "home-hf-cache" in {t.name for t in res.tiers}
+    assert "home-hf-revisions" in {t.name for t in res.tiers}
 
     _patch_disk(monkeypatch, before_pct=90.0, after_pct=40.0)
     res2 = vdg.run_guard(apply=False, threshold=85.0, data_root=data_root, tmp_root=None)
-    assert "home-hf-cache" not in {t.name for t in res2.tiers}
+    assert "home-hf-revisions" not in {t.name for t in res2.tiers}
 
     _patch_disk(monkeypatch, before_pct=90.0, after_pct=40.0)
     res3 = vdg.run_guard(
         apply=False, threshold=85.0, data_root=data_root, reclaim_tiers=False, tmp_root=tmp_root
     )
-    assert "home-hf-cache" not in {t.name for t in res3.tiers}
+    assert "home-hf-revisions" not in {t.name for t in res3.tiers}
 
 
 # ─── T13: --json serializes hf_repo_attributions ─────────────────────────────
 
 
 def test_result_json_serializes_hf_repo_attributions():
-    tier = vdg.TierResult(name="home-hf-cache")
+    tier = vdg.TierResult(name="home-hf-revisions")
     tier.hf_repo_attributions.append(
         {
             "repo": "superkaiba1/explore-persona-space-data",
