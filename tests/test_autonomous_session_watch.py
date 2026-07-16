@@ -4594,6 +4594,11 @@ def _run_orphan_task(
     dry_run=False,
     respawns_today=0,
     status_calls=None,
+    snapshot_status="running",
+    live_pids=None,
+    live_ids=None,
+    rec=None,
+    wt_activity=False,
 ):
     """Drive _process_orphan_task end-to-end through the actual marker-age call
     site (rec=None -> fully-unregistered #472 class, so it is an orphan
@@ -4607,11 +4612,19 @@ def _run_orphan_task(
     marker posts, seams ``_task_status`` (the #1247 act-time guard's live
     re-read; ``task_status`` sets the returned status, ``status_calls``
     optionally records the issue argument), and drives SYNTHETIC issue ids
-    only. Returns ``(respawns, markers)``."""
+    only. Returns ``(respawns, markers)``.
+
+    #1391 plumbing: ``live_pids`` threads into the dead-owner fast path's
+    cwd-veto probe (default ``None`` == probe unavailable == fast path
+    ineligible — the pre-#1391 behavior for every existing test);
+    ``snapshot_status`` sets the pass-start snapshot status; ``live_ids``
+    the daemon live set (default empty); ``rec`` the registration record;
+    ``wt_activity`` the seamed worktree-activity probe result."""
     respawns: list[int] = []
     markers: list[tuple[int, str]] = []
     monkeypatch.setattr(asw, "_task_events", lambda _i: events)
     monkeypatch.setattr(asw, "_stalled_cap_gpu_hours", lambda _i: 24.0)
+    monkeypatch.setattr(asw, "_worktree_recent_activity", lambda *_a, **_k: wt_activity)
     monkeypatch.setattr(
         asw, "_respawn_orphan", lambda i, cap, dry_run: respawns.append(i) or "spawned"
     )
@@ -4636,15 +4649,16 @@ def _run_orphan_task(
     _process_orphan_task = asw._process_orphan_task
     _process_orphan_task(
         issue,
-        "running",
-        None,  # rec=None: fully-unregistered orphan candidate
-        set(),  # no live session ids
+        snapshot_status,
+        rec,  # default None: fully-unregistered orphan candidate
+        live_ids if live_ids is not None else set(),
         now,
         dry_run,
         2,  # threshold
         staleness_s=asw.ORPHAN_STALENESS_S_DEFAULT,
         max_per_day=asw.ORPHAN_MAX_RESPAWNS_PER_DAY_DEFAULT,
         day_key="2026-06-25",
+        live_pids=live_pids,
     )
     return respawns, markers
 
@@ -4972,6 +4986,586 @@ def test_orphan_act_guard_dry_run_never_mutates_state(isolated_registry, monkeyp
     assert markers == []
     assert state_path.read_bytes() == before  # state file untouched under dry-run
     assert "ORPHAN-ACT-GUARD" in capsys.readouterr().err
+
+
+# ─── #1391: dead-owner fast path (orphan sweep) ──────────────────────────────
+#
+# The 90-min orphan staleness floor exists because "no live registered
+# session" cannot distinguish a dead driver from a live-but-unregistered one
+# (the routine follow-up-round state). When the sweep has POSITIVE proof the
+# task's last recorded owner session is dead (#720 last-mapped-terminal
+# breadcrumb sid — state-carried in orphan-<N>.json across ticks — absent
+# from the live set), the floor fed to decide_orphan drops to
+# EPM_ORPHAN_DEAD_OWNER_STALENESS_MIN (default 20 min). decide_orphan itself
+# is byte-unchanged; EVERY uncertain input fails toward the slow path.
+
+
+def _fast_path_kwargs(**overrides):
+    """All-eligible baseline kwargs for decide_dead_owner_fast_path
+    (breadcrumb owner dead, fresh witness, every veto clear); tests override
+    one input at a time to pin each fail-toward-slow direction."""
+    kw = dict(
+        has_registration=False,
+        breadcrumb_owner_sids=frozenset({"sid-dead"}),
+        live_ids=frozenset(),
+        recorded_owner_sid=None,
+        driver_witness_age_s=30 * 60.0,
+        witness_lookback_s=90 * 60.0,
+        wt_activity_fresh=False,
+        live_cwd_owner=False,
+        fast_floor_s=20 * 60.0,
+    )
+    kw.update(overrides)
+    return kw
+
+
+def test_dead_owner_fast_path_baseline_eligible():
+    # Sanity anchor for the veto tests below: the all-clear baseline IS
+    # eligible and the reason names the breadcrumb evidence.
+    import autonomous_session_watch as asw
+
+    eligible, reason = asw.decide_dead_owner_fast_path(**_fast_path_kwargs())
+    assert eligible is True
+    assert "absent from the live set" in reason
+
+
+def test_dead_owner_fast_path_requires_positive_owner_evidence():
+    # No breadcrumb AND no state-carried sid -> ineligible even with every
+    # veto clear (absence of evidence is never death proof).
+    import autonomous_session_watch as asw
+
+    eligible, reason = asw.decide_dead_owner_fast_path(
+        **_fast_path_kwargs(breadcrumb_owner_sids=frozenset(), recorded_owner_sid=None)
+    )
+    assert eligible is False
+    assert "no positive owner-death evidence" in reason
+
+
+def test_dead_owner_fast_path_vetoed_by_live_breadcrumb_owner():
+    # The recorded ex-owner is STILL LIVE (the healthy #472/#1090
+    # unregistered-round state) -> ineligible, even when a STALE
+    # state-carried sid looks dead.
+    import autonomous_session_watch as asw
+
+    eligible, reason = asw.decide_dead_owner_fast_path(
+        **_fast_path_kwargs(
+            live_ids=frozenset({"sid-dead"}), recorded_owner_sid="sid-older-generation"
+        )
+    )
+    assert eligible is False
+    assert "still live" in reason
+
+
+def test_dead_owner_fast_path_vetoed_by_registration_present():
+    # rec is None STRICTLY: a registered-but-dead entry is the
+    # crash-recovery pass's territory (and #505 manual-only semantics
+    # require rec, so the alert guard can never co-occur with this path).
+    import autonomous_session_watch as asw
+
+    eligible, reason = asw.decide_dead_owner_fast_path(**_fast_path_kwargs(has_registration=True))
+    assert eligible is False
+    assert "registration present" in reason
+
+
+def test_dead_owner_fast_path_vetoed_by_fresh_worktree_activity():
+    import autonomous_session_watch as asw
+
+    eligible, reason = asw.decide_dead_owner_fast_path(**_fast_path_kwargs(wt_activity_fresh=True))
+    assert eligible is False
+    assert "worktree activity" in reason
+
+
+def test_dead_owner_fast_path_vetoed_by_live_worktree_cwd_session():
+    import autonomous_session_watch as asw
+
+    eligible, reason = asw.decide_dead_owner_fast_path(**_fast_path_kwargs(live_cwd_owner=True))
+    assert eligible is False
+    assert "cwd" in reason
+
+
+def test_dead_owner_fast_path_cwd_probe_unavailable_fails_toward_slow():
+    # live_pids=None (failed /list pid probe) surfaces as live_cwd_owner=None:
+    # uncertain -> ineligible (fail toward the 90-min slow path).
+    import autonomous_session_watch as asw
+
+    eligible, reason = asw.decide_dead_owner_fast_path(**_fast_path_kwargs(live_cwd_owner=None))
+    assert eligible is False
+    assert "probe unavailable" in reason
+
+
+def test_dead_owner_fast_path_requires_recent_driver_witness():
+    # Witness absent, or at/older than the lookback (== the SLOW floor, so
+    # the fast path hands over exactly when the witness expires) -> ineligible.
+    import autonomous_session_watch as asw
+
+    eligible, reason = asw.decide_dead_owner_fast_path(
+        **_fast_path_kwargs(driver_witness_age_s=None)
+    )
+    assert eligible is False
+    assert "witness" in reason
+    eligible, reason = asw.decide_dead_owner_fast_path(
+        **_fast_path_kwargs(driver_witness_age_s=90 * 60.0)  # == lookback: expired
+    )
+    assert eligible is False
+    assert "witness" in reason
+
+
+def test_dead_owner_fast_path_state_carried_sid_is_sufficient():
+    # The breadcrumb GC'd (empty crumb set) but a state-carried owner_sid is
+    # dead -> eligible; the reason names the state-carry evidence.
+    import autonomous_session_watch as asw
+
+    eligible, reason = asw.decide_dead_owner_fast_path(
+        **_fast_path_kwargs(breadcrumb_owner_sids=frozenset(), recorded_owner_sid="sid-dead-owner")
+    )
+    assert eligible is True
+    assert "state-carried" in reason
+
+
+def test_dead_owner_fast_path_env_zero_disables(monkeypatch):
+    import autonomous_session_watch as asw
+
+    monkeypatch.setenv("EPM_ORPHAN_DEAD_OWNER_STALENESS_MIN", "0")
+    assert asw._orphan_dead_owner_staleness_s() is None
+    monkeypatch.setenv("EPM_ORPHAN_DEAD_OWNER_STALENESS_MIN", "-5")
+    assert asw._orphan_dead_owner_staleness_s() is None
+    # And the pure gate honors the disable regardless of evidence:
+    eligible, reason = asw.decide_dead_owner_fast_path(**_fast_path_kwargs(fast_floor_s=None))
+    assert eligible is False
+    assert "disabled" in reason
+
+
+def test_dead_owner_fast_path_env_malformed_falls_back_default(monkeypatch):
+    # A typo must NOT disable the fast path (matches _orphan_staleness_s).
+    import autonomous_session_watch as asw
+
+    monkeypatch.setenv("EPM_ORPHAN_DEAD_OWNER_STALENESS_MIN", "twenty")
+    assert asw._orphan_dead_owner_staleness_s() == float(asw.ORPHAN_DEAD_OWNER_STALENESS_S_DEFAULT)
+    monkeypatch.delenv("EPM_ORPHAN_DEAD_OWNER_STALENESS_MIN", raising=False)
+    assert asw._orphan_dead_owner_staleness_s() == float(asw.ORPHAN_DEAD_OWNER_STALENESS_S_DEFAULT)
+
+
+def test_dead_owner_fast_path_env_clamped_to_min_floor(monkeypatch):
+    # A "2" (minutes) typo clamps to the 10-min floor, never a
+    # fire-on-first-gap configuration; sane values pass through.
+    import autonomous_session_watch as asw
+
+    monkeypatch.setenv("EPM_ORPHAN_DEAD_OWNER_STALENESS_MIN", "2")
+    assert asw._orphan_dead_owner_staleness_s() == float(asw.ORPHAN_DEAD_OWNER_STALENESS_S_MIN)
+    monkeypatch.setenv("EPM_ORPHAN_DEAD_OWNER_STALENESS_MIN", "45")
+    assert asw._orphan_dead_owner_staleness_s() == 45 * 60.0
+
+
+def _fu5_incident_events(asw):
+    """The REAL #1090 fu5 marker sequence (2026-07-15; fact-checked recount):
+    the 05:31:37Z followup-scope that armed the round + the 10 rows
+    05:33:47-06:27:45Z, incl. the by="unknown" 06:12:03Z stage-dispatch
+    breadcrumb (NO pid= field) and the 06:27:45Z smoke marker — the last
+    marker before the unregistered driver died ~06:30Z."""
+
+    def _ev(kind, ts, note="", by="unknown"):
+        return {"kind": kind, "ts": ts, "by": by, "note": note}
+
+    return [
+        _ev(
+            "epm:followup-scope",
+            "2026-07-15T05:31:37Z",
+            "<!-- epm:followup-scope v1 -->\nsource: user-chat\n"
+            "followup_label: finish-impolite-bare-and-formatting-rank",
+            by="pm-chat",
+        ),
+        _ev(
+            "epm:status-changed",
+            "2026-07-15T05:33:47Z",
+            "fu5 round start (finish-impolite-bare-and-formatting-rank, source: user-chat)",
+            by="task.py",
+        ),
+        _ev(
+            "epm:plan-verify",
+            "2026-07-15T05:49:59Z",
+            "verify_plan.py: PASS, n_fail=0, n_warn=3",
+        ),
+        _ev(
+            "epm:progress",
+            "2026-07-15T05:58:19Z",
+            "codex composers skipped -- quota sentinel live (#1204 pre-spawn check)",
+        ),
+        _ev("epm:consistency", "2026-07-15T06:09:17Z", "fu5 plan v7 consistency check: PASS"),
+        _ev("epm:plan", "2026-07-15T06:09:18Z", "Plan v7 written to tasks/<status>/1090/plans"),
+        _ev(
+            "epm:plan-approved",
+            "2026-07-15T06:09:19Z",
+            "Auto-approved by the code-enforced autonomous plan-gate",
+            by="autonomous-gate",
+        ),
+        _ev(
+            "epm:workflow-fix-candidate",
+            "2026-07-15T06:10:27Z",
+            "source: prose-followup (Methodology critic, fu5 plan-critique round)",
+        ),
+        _ev(
+            "epm:workflow-fix-task-filed",
+            "2026-07-15T06:10:28Z",
+            "filed_task: #1314; target_file: scripts/verify_plan.py",
+        ),
+        _ev(
+            "epm:progress",
+            "2026-07-15T06:12:03Z",
+            "stage-dispatch stage=followup-implementing round=1 "
+            "subagent=experiment-implementer label=finish-impolite-bare-and-formatting-rank "
+            "worktree=.claude/worktrees/issue-1090-fu5",
+        ),
+        _ev(
+            "epm:smoke-architecture-check",
+            "2026-07-15T06:27:45Z",
+            "verdict: PASS_UNIFIED notes: fu5 round",
+        ),
+    ]
+
+
+def test_dead_owner_fast_path_incident_replay_1090_fu5(isolated_registry, monkeypatch):
+    # DURABILITY PIN (#1391 acceptance criterion 1): replay the #1090 fu5
+    # incident through the PRODUCTION entry — orphan_sweep_pass with
+    # live_pids left at its production default (the pass's own
+    # _live_pids_by_sid_or_none snapshot; a dropped live_pids thread in the
+    # wiring makes the fast path inert and FAILS this test) — and assert the
+    # dead-owner fast path respawns within 50 min of the last driver marker
+    # (06:27:45Z) vs ~105-120 min on the slow path. The breadcrumb file is
+    # GC'd at the first post-death tick (simulating
+    # _gc_orphan_last_mapped_terminal, which runs AFTER the orphan sweep in
+    # main()), so eligibility at the miss ticks flows SOLELY through the
+    # state-carried owner_sid — a broken owner_updates thread into
+    # _save_orphan_state fails the replay instead of passing green via the
+    # breadcrumb disjunct.
+    import autonomous_session_watch as asw
+
+    issue = 91090
+    owner_sid = "sid-1090-fu5-owner"
+    events = _fu5_incident_events(asw)
+    # The 04:48:34Z terminal park wrote the #720 breadcrumb for the
+    # still-live sid (crash-arm action=="delete" branch).
+    asw._record_last_mapped_terminal(
+        owner_sid,
+        issue,
+        "awaiting_promotion",
+        dry_run=False,
+        now=asw._parse_event_ts("2026-07-15T04:48:34Z"),
+    )
+    respawns: list[tuple[int, float]] = []
+    markers: list[tuple[int, str]] = []
+    tick_now = {"now": 0.0}
+    monkeypatch.setattr(asw, "_active_status_tasks", lambda: {issue: "followups_running"})
+    monkeypatch.setattr(asw, "_running_managed_issue_pods", lambda *_a, **_k: [])
+    monkeypatch.setattr(asw, "_live_pids_by_sid_or_none", lambda: {})
+    monkeypatch.setattr(asw, "_task_events", lambda _i: events)
+    monkeypatch.setattr(asw, "_task_status", lambda _i: "followups_running")
+    monkeypatch.setattr(asw, "_task_children", lambda _i: [])
+    monkeypatch.setattr(asw, "_stalled_cap_gpu_hours", lambda _i: 24.0)
+    monkeypatch.setattr(asw, "_worktree_recent_activity", lambda *_a, **_k: False)
+    monkeypatch.setattr(
+        asw,
+        "_respawn_orphan",
+        lambda i, cap, dry_run: respawns.append((i, tick_now["now"])) or "spawned",
+    )
+    monkeypatch.setattr(
+        asw, "_post_progress_marker", lambda i, note, dry_run, label: markers.append((i, note))
+    )
+
+    death_ts = asw._parse_event_ts("2026-07-15T06:30:00Z")
+    last_marker_ts = asw._parse_event_ts("2026-07-15T06:27:45Z")
+    crumb_path = asw._last_mapped_terminal_path(owner_sid)
+    ticks = [
+        asw._parse_event_ts(f"2026-07-15T{hhmm}:00Z")
+        for hhmm in (
+            "05:43", "05:53", "06:03", "06:13", "06:23",  # owner live (healthy window)
+            "06:33",  # first post-death tick: sweep still sees the breadcrumb
+            "06:43", "06:53", "07:03",  # breadcrumb GC'd: state-carry only
+        )
+    ]  # fmt: skip
+    for now in ticks:
+        tick_now["now"] = now
+        alive = now < death_ts
+        asw.orphan_sweep_pass(
+            False,
+            2,
+            now=now,
+            daemon_reachable=True,
+            live_ids={owner_sid} if alive else set(),
+        )
+        if alive:
+            assert respawns == [], f"respawned during the healthy window at now={now}"
+        if not alive and crumb_path.exists():
+            # Simulate _gc_orphan_last_mapped_terminal: the GC (in
+            # idle_unmapped_pass, AFTER the orphan sweep) unlinks the
+            # breadcrumb on the first daemon tick after the sid left the
+            # live set — the death-observing tick above still saw it.
+            crumb_path.unlink()
+            # The healthy window's keep-branch saves state-carried the owner:
+            state = asw._load_orphan_state(issue)
+            assert state.get("owner_sid") == owner_sid
+
+    assert len(respawns) == 1, f"expected exactly one respawn, got {respawns}"
+    respawn_ts = respawns[0][1]
+    assert respawn_ts - last_marker_ts <= 50 * 60, (
+        f"respawn took {(respawn_ts - last_marker_ts) / 60:.1f} min after the last "
+        f"driver marker; acceptance bound is 50 min"
+    )
+    # Eligibility at the respawn tick flowed through the state-carry (the
+    # breadcrumb was unlinked well before it):
+    assert not crumb_path.exists()
+    note = next(n for i, n in markers if asw._ORPHAN_RESPAWN_NOTE_SENTINEL in n)
+    assert "dead-owner fast path" in note
+
+
+def test_dead_owner_fast_path_healthy_round_never_respawns(isolated_registry, monkeypatch):
+    # The #535 pin / acceptance criterion 2: the SAME fixture with the owner
+    # sid LIVE at every tick — including a 55-min silent stage (> the 20-min
+    # fast floor, < the 90-min slow floor) — must NEVER respawn: the
+    # live-owner veto holds the slow path.
+    import autonomous_session_watch as asw
+
+    issue = 91091
+    owner_sid = "sid-1090-fu5-owner"
+    events = _fu5_incident_events(asw)
+    asw._record_last_mapped_terminal(
+        owner_sid,
+        issue,
+        "awaiting_promotion",
+        dry_run=False,
+        now=asw._parse_event_ts("2026-07-15T04:48:34Z"),
+    )
+    respawns: list[int] = []
+    markers: list[tuple[int, str]] = []
+    monkeypatch.setattr(asw, "_active_status_tasks", lambda: {issue: "followups_running"})
+    monkeypatch.setattr(asw, "_running_managed_issue_pods", lambda *_a, **_k: [])
+    monkeypatch.setattr(asw, "_live_pids_by_sid_or_none", lambda: {})
+    monkeypatch.setattr(asw, "_task_events", lambda _i: events)
+    monkeypatch.setattr(asw, "_task_status", lambda _i: "followups_running")
+    monkeypatch.setattr(asw, "_task_children", lambda _i: [])
+    monkeypatch.setattr(asw, "_stalled_cap_gpu_hours", lambda _i: 24.0)
+    monkeypatch.setattr(asw, "_worktree_recent_activity", lambda *_a, **_k: False)
+    monkeypatch.setattr(
+        asw, "_respawn_orphan", lambda i, cap, dry_run: respawns.append(i) or "spawned"
+    )
+    monkeypatch.setattr(
+        asw, "_post_progress_marker", lambda i, note, dry_run, label: markers.append((i, note))
+    )
+    # Ticks through 07:23 — 55.6 min after the last marker (06:27:45Z).
+    ticks = [
+        asw._parse_event_ts(f"2026-07-15T{hhmm}:00Z")
+        for hhmm in (
+            "05:43", "05:53", "06:03", "06:13", "06:23",
+            "06:33", "06:43", "06:53", "07:03", "07:13", "07:23",
+        )
+    ]  # fmt: skip
+    for now in ticks:
+        asw.orphan_sweep_pass(False, 2, now=now, daemon_reachable=True, live_ids={owner_sid})
+    assert respawns == []
+    assert markers == []  # every tick keep — no respawn, no alert
+    # The slow path also never accumulated misses (55 min < 90-min floor):
+    assert asw._load_orphan_state(issue).get("missed", 0) == 0
+
+
+def _seed_dead_owner_fixture(asw, monkeypatch, issue, now):
+    """Driver-level dead-owner shape: a breadcrumb for a DEAD sid + a witness
+    event 30 min old (>= the 20-min fast floor, < the 90-min slow floor —
+    the discriminating regime: the slow path keeps, the fast path acts)."""
+    asw._record_last_mapped_terminal(
+        "sid-dead-owner", issue, "awaiting_promotion", dry_run=False, now=now - 7200
+    )
+    return [
+        {
+            "kind": "epm:experiment-implementation",
+            "ts": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime(now - 30 * 60)),
+            "note": "fu round implementing",
+        }
+    ]
+
+
+def test_dead_owner_fast_path_respawn_consumes_daily_cap(isolated_registry, monkeypatch):
+    # The daily attempt cap binds the fast path exactly as the slow path:
+    # with respawns_today already at the cap, the third would-be fast respawn
+    # degrades to the one-time ALERT (cap path unchanged).
+    import autonomous_session_watch as asw
+
+    now = asw._parse_event_ts("2026-06-25T06:00:00Z")
+    events = _seed_dead_owner_fixture(asw, monkeypatch, 91092, now)
+    respawns, markers = _run_orphan_task(
+        asw,
+        monkeypatch,
+        issue=91092,
+        events=events,
+        now=now,
+        live_pids={},
+        respawns_today=asw.ORPHAN_MAX_RESPAWNS_PER_DAY_DEFAULT,
+    )
+    assert respawns == []
+    assert len(markers) == 1
+    assert asw._ORPHAN_ALERT_NOTE_SENTINEL in markers[0][1]
+    assert "cap exhausted" in markers[0][1]
+
+
+def test_dead_owner_fast_path_act_guard_still_aborts(isolated_registry, monkeypatch, capsys):
+    # #1247 act-time guard binds the fast path unchanged: the live status
+    # re-read returns a terminal status -> no respawn, no marker, no cap
+    # consumed (episode state cleared on the positive non-ACTIVE read).
+    import autonomous_session_watch as asw
+
+    now = asw._parse_event_ts("2026-06-25T06:00:00Z")
+    events = _seed_dead_owner_fixture(asw, monkeypatch, 91093, now)
+    respawns, markers = _run_orphan_task(
+        asw,
+        monkeypatch,
+        issue=91093,
+        events=events,
+        now=now,
+        live_pids={},
+        task_status="awaiting_promotion",
+    )
+    assert respawns == []
+    assert markers == []
+    assert asw._load_orphan_state(91093) == {}
+    assert "ORPHAN-ACT-GUARD" in capsys.readouterr().err
+
+
+def test_dead_owner_fast_path_exemptions_still_intercept(isolated_registry, monkeypatch):
+    # The followups-awaiting-child exemption diverts a fast-path respawn to
+    # alert-only exactly as it diverts a slow-path one (no respawn, no cap).
+    import autonomous_session_watch as asw
+
+    now = asw._parse_event_ts("2026-06-25T06:00:00Z")
+    asw._record_last_mapped_terminal(
+        "sid-dead-owner", 91094, "awaiting_promotion", dry_run=False, now=now - 7200
+    )
+    events = [
+        {
+            "kind": "epm:experiment-implementation",
+            "ts": "2026-06-25T05:20:00Z",  # witness + newest marker: 40 min old
+            "note": "fu round implementing",
+        },
+        _make_step_completed_event(step="10", exit_kind="parked", ts="2026-06-25T05:25:00Z"),
+    ]
+    monkeypatch.setattr(
+        asw, "_task_children", lambda _i: [{"id": 546, "status": "awaiting_promotion"}]
+    )
+    respawns, markers = _run_orphan_task(
+        asw,
+        monkeypatch,
+        issue=91094,
+        events=events,
+        now=now,
+        live_pids={},
+        snapshot_status="followups_running",
+        task_status="followups_running",
+    )
+    assert respawns == []
+    assert len(markers) == 1
+    assert asw._FOLLOWUPS_AWAITING_CHILD_NOTE_SENTINEL in markers[0][1]
+    # The exemption never consumes the daily respawn budget:
+    assert asw._load_orphan_state(91094).get("respawns_today", 0) == 0
+
+
+def test_dead_owner_fast_path_marker_note_records_evidence_and_source_stamp(
+    isolated_registry, monkeypatch
+):
+    # The respawn marker names the fast-path evidence + the effective floor,
+    # BEFORE the #1247 source stamp (which stays the trailing token).
+    import re
+
+    import autonomous_session_watch as asw
+
+    now = asw._parse_event_ts("2026-06-25T06:00:00Z")
+    events = _seed_dead_owner_fixture(asw, monkeypatch, 91095, now)
+    respawns, markers = _run_orphan_task(
+        asw, monkeypatch, issue=91095, events=events, now=now, live_pids={}
+    )
+    assert respawns == [91095]
+    assert len(markers) == 1
+    note = markers[0][1]
+    assert "dead-owner fast path" in note
+    assert "EPM_ORPHAN_DEAD_OWNER_STALENESS_MIN" in note
+    assert re.search(r"\[src: host=\S+ user=\S+ pid=\d+ sha=\S+ root=/\S+\]$", note)
+    assert note.index("dead-owner fast path") < note.index("[src:")
+
+
+def test_orphan_state_owner_fields_roundtrip_and_carry_forward(isolated_registry):
+    import autonomous_session_watch as asw
+
+    asw._save_orphan_state(
+        91096,
+        missed=0,
+        alerted=False,
+        respawn_day="2026-06-25",
+        respawns_today=0,
+        owner_sid="sid-a",
+        owner_last_live_ts=123.0,
+        prev=None,
+    )
+    state = asw._load_orphan_state(91096)
+    assert state["owner_sid"] == "sid-a"
+    assert state["owner_last_live_ts"] == 123.0
+    # Not supplied -> carried forward from prev (the first_seen pattern), so
+    # existing call sites keep the death proof alive across ticks:
+    asw._save_orphan_state(
+        91096,
+        missed=1,
+        alerted=False,
+        respawn_day="2026-06-25",
+        respawns_today=0,
+        prev=state,
+    )
+    state2 = asw._load_orphan_state(91096)
+    assert state2["owner_sid"] == "sid-a"
+    assert state2["owner_last_live_ts"] == 123.0
+    # A pre-existing (pre-#1391) state file without the fields loads clean
+    # and saves clean (type-guarded None defaults):
+    (isolated_registry / "orphan-91097.json").write_text(
+        json.dumps(
+            {
+                "missed": 1,
+                "alerted": False,
+                "respawn_day": "2026-06-25",
+                "respawns_today": 0,
+                "first_seen": 1.0,
+            }
+        )
+    )
+    legacy = asw._load_orphan_state(91097)
+    asw._save_orphan_state(
+        91097, missed=2, alerted=False, respawn_day="2026-06-25", respawns_today=0, prev=legacy
+    )
+    assert asw._load_orphan_state(91097)["owner_sid"] is None
+
+
+def test_dead_owner_fast_path_slow_path_byte_identical_when_ineligible(
+    isolated_registry, monkeypatch
+):
+    # With the knob at its default but NO owner evidence, decide_orphan
+    # receives EXACTLY ORPHAN_STALENESS_S_DEFAULT (recording seam) and the
+    # 30-min-quiet candidate is KEPT — the pre-#1391 slow path, byte-identical.
+    import autonomous_session_watch as asw
+
+    now = asw._parse_event_ts("2026-06-25T06:00:00Z")
+    events = [
+        {
+            "kind": "epm:experiment-implementation",
+            "ts": "2026-06-25T05:30:00Z",  # 30 min old: fast-stale, slow-fresh
+            "note": "fu round implementing",
+        }
+    ]
+    seen: list[float] = []
+    real_decide = asw.decide_orphan
+    monkeypatch.setattr(
+        asw,
+        "decide_orphan",
+        lambda *a, **k: seen.append(k["staleness_s"]) or real_decide(*a, **k),
+    )
+    respawns, markers = _run_orphan_task(
+        asw, monkeypatch, issue=91098, events=events, now=now, live_pids={}
+    )
+    assert seen == [asw.ORPHAN_STALENESS_S_DEFAULT]
+    assert respawns == []
+    assert markers == []
 
 
 # ─── #866/#903: deliberate-takeover sentinel skips the orphan sweep ──────────
