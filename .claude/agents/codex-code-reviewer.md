@@ -447,6 +447,14 @@ both reviewers are graded against the same standard. Read
   103.8s = 65% of the ~160s wc_long row wall-time; plain `savez` 1.2s at
   1.29× size, Xet dedup already −59% on upload), so Codex never re-derives a
   narrower throughput check (same omission class as the #606 copy-list miss).
+- The Step 2 "Fit-loop batched-helper naming" paragraph (UNCONDITIONAL,
+  diff-triggered) — copy the trigger set (unit-loop fits / dense
+  factorizations / draw reductions), the required
+  `Fit-loop batching: <...>` verdict line with its not-batchable and N/A
+  forms, and the absence-is-Major rule (blocker tag `substantive`) in
+  full, so Codex never re-derives a narrower check (#1332/#825: serial
+  inner loops shipped past review because absence was a silent
+  non-finding).
 - "Step 1: Read the Plan FIRST" + "Step 2: Read the Diff" + "Step 3: Read the
   Surrounding Code" + "Step 3.5: Cached artifact coverage" + "Step 3.6:
   Long-loop restartability" + "Step 5: Security

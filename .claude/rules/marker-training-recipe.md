@@ -1,5 +1,5 @@
 ---
-description: Marker-implantation TRAINING recipe — the over/under-training dial, always-marker-only loss, the build-time training-row token budget (#260's training-side sibling), the deterministic log-prob band-stop (stop on the metric, not a fixed epoch count), contrastive-negative composition, and the reusable train_lora wiring. Companion to marker-leakage-measurement.md (measurement) and contrastive-negatives.md (negatives). Full evidence + per-task index: docs/marker_training_recipe.md.
+description: "Marker-implantation TRAINING recipe — the over/under-training dial, always-marker-only loss, the build-time training-row token budget (#260's training-side sibling), the deterministic log-prob band-stop (stop on the metric, not a fixed epoch count), contrastive-negative composition, and the reusable train_lora wiring. Companion to marker-leakage-measurement.md (measurement) and contrastive-negatives.md (negatives). Full evidence + per-task index: docs/marker_training_recipe.md."
 paths:
   - "scripts/train.py"
   - "scripts/eval.py"

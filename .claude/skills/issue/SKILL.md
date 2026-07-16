@@ -2302,6 +2302,20 @@ The Codex twin additionally receives:
   the canonical plan, Step 2-pre-b) — see
   `.claude/agents/codex-code-reviewer.md`.
 
+**Neutral gate vocabulary in FIRST-PASS briefs — every subagent brief,
+every step (#1398).** When ANY brief this skill composes (planner,
+implementer, experimenter, reviewer, analyzer — not only review rounds)
+concerns a kill-gate / RLVR / guard / stop-criteria task, write the BRIEF
+in neutral vocabulary from the first spawn: "halt gate", "stop criterion",
+"termination predicate" — never the loaded kill-* phrasings in
+brief/prompt text. The loaded terms stay in the ARTIFACTS themselves (code
+identifiers, plan text, task bodies are never renamed); only the brief is
+neutralized. This is the gate-vocabulary leg of CLAUDE.md § Spurious
+usage-policy refusals rung (e) — first-pass, not a post-kill retry step
+(2026-07-15: ≥12 spurious refusal kills across ~8 sessions; the #1336
+session lost 3 spawns to gate-criteria phrasing and neutralized only
+after the kills).
+
 **Trigger-dense (guard-surface) rounds — pre-materialize the excerpt file
 BEFORE spawning (#1058/#1098).** When the round's diff or artifact under
 review is trigger-dense per the `.claude/rules/trigger-dense-review.md`
@@ -5727,7 +5741,8 @@ Immediately BEFORE posting the dispatch breadcrumb for any stage that
 launches COMPUTE — a pod/GCP/SLURM provision or workload (re)launch
 (Step 6b / 6d, crash-fix relaunches included), any stage the
 Compute-character pre-launch statement binds (a fit / sweep / statistical
-battery: Step 9a-ter, the Step 9b same-issue follow-up loop), or a detached
+battery, or a ≥ ~5 GB download/staging stage: Step 9a-ter, the Step 9b
+same-issue follow-up loop), or a detached
 VM-side phase (§ below) — run the mechanical enumerator:
 
 ```bash
@@ -6335,12 +6350,30 @@ projected peak RSS ≥ ~16 GB — single phase, or summed with
 concurrently-resident VM phases — is a STOP: route the phase off the
 shared VM (`cpu-mid` / `cpu-bigmem`) before launching (#778's 22-GiB
 battery was earlyoom-killed 3× on exactly this plannerless path; #833 lost
-5 cells to two concurrent ~13-15 GB phases). Projected
+5 cells to two concurrent ~13-15 GB phases); (5) for any stage that downloads
+or materializes ≥ ~5 GB of artifacts (HF snapshots, tensor stores, staged
+corpora) — whether or not the round has a fit/battery stage — the staging
+path, named UP FRONT, with its off-`/` routing (PRIMARY) and its filesystem
+headroom (SECONDARY): multi-GB staging NEVER lands on `/` (the shared boot
+disk) or `/tmp/` (#1393 incident: a 14 GB inline HF pull on #823 filled `/`
+→ ENOSPC, orchestrator Bash output lost) — route it to the janitor-swept
+`data/issue_<N>/hf_dl/` layout wherever that path resolves OFF `/`, else to
+an existing user-writable per-issue dir on the data disk
+(`/mnt/eps-data/$USER/issue<N>_<slug>/` — the established `issue823_work`
+convention; NEVER a fresh top-level `/mnt/eps-data/<dir>`: the top level is
+root-owned and the `mkdir` fails, the incident's second failure), threading
+`HF_HOME` / `local_dir` so the hub cache follows; the SECONDARY headroom
+check verifies the filesystem the staging path resolves to (`df -P <path>`)
+has free headroom ≥ ~1.5× the projected bytes (headroom for partial shards,
+retries, and cross-filesystem cache→`local_dir` copies; the routing mandate
+binds even when the headroom probe passes — #823 projected ~6 GB, realized
+14 GB). While the #681 worktree bind-mount is pending, the worktree's own
+`data/` dir resolves to `/` — exactly what the `df -P` probe catches. Projected
 wall-time > ~1h without a batched inner loop is a STOP: vectorize first
 (`.claude/rules/vectorize-many-cell-fits.md`), then launch. If the
 realized implementation later adds a fit/battery the dispatch statement
 did not cover — or materially changes its arithmetic — an updated
-statement is posted before that launch. A round with no fit/battery stage states one line: `compute-character: no fit/battery stages`.
+statement is posted before that launch. A round with no fit/battery stage AND no ≥ ~5 GB download/staging states one line: `compute-character: no fit/battery stages, no multi-GB staging`.
 A statement covering a VM-side phase >~15 min ALSO names the detached launch
 shape + log path + the thread-cap `env` prefix (OMP/MKL/OPENBLAS/NUMEXPR=8 — #891;
 or the wider explicit value + one-line reason) + the earlyoom protection state
@@ -7711,8 +7744,9 @@ orchestrators driving one round is the #778 root cause.
      own latest prior run, not a from-scratch plan. Planner-exempt
      re-runs (step 2) skip this.
    - **Compute-character pre-launch statement** (canonical block: Step
-     9a-ter § Compute-character pre-launch statement — same four elements,
-     same > ~1h stop-and-vectorize + ≥~16 GB-RSS off-VM rules): REQUIRED in the
+     9a-ter § Compute-character pre-launch statement — same five elements,
+     same > ~1h stop-and-vectorize + ≥~16 GB-RSS off-VM + ≥ ~5 GB off-`/`
+     disk-routing rules): REQUIRED in the
      `stage=followup-<phase>` dispatch breadcrumb (or an adjacent
      `epm:progress` note) before dispatching ANY stage of the round that
      launches a fit, sweep, or statistical battery — INCLUDING

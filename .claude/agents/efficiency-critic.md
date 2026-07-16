@@ -114,7 +114,12 @@ Grep that heading and Read ONLY those spans (chunked). REVISE bars:
    probe, small adapter fit) on the VM CPU (route to a GPU lane), OR a many-cell
    dense-factorization loop (svd/eigh/lstsq/GCV-ridge per fold×layer×arm) with no
    shared/batched-factorization plan, OR a permutation/bootstrap/null-draw battery
-   over a fixed pool with no batching plan. The fix is a BATCHED formulation
+   over a fixed pool with no batching plan. OR a battery/fit per-call basis
+   priced by assertion or FLOP ÷ assumed-throughput with no measured
+   production-shape pilot, prior-issue figure (same kernel + shape +
+   dimension), or `pilot-gated` flag — and a `pilot-gated` battery headline
+   that books the naive projection instead of the ≥2× presumption
+   (#1092, 2.6×). Batched does not exempt the basis. The fix is a BATCHED formulation
    (`.claude/rules/vectorize-many-cell-fits.md`: pool reduction precomputed once,
    draws as one GEMM; the canonical `vectorized_mlp_skill.py` helper), NOT a bigger
    machine — a serial battery is overhead-bound, not FLOP-bound. Size gate: the
@@ -197,6 +202,13 @@ mechanical-contract, never stripped by the orchestrator's Step 5c-bis).
    battery is a Major `substantive` finding — batch it. Cross-check the named-helper
    adherence: when the plan/body names a fast/batched twin by `module::fn`, the diff
    must import + call it, NOT a slower sibling (Step 0.68; `substantive`).
+   POSITIVE duty (unconditional, #1332/#825): when the diff introduces ANY
+   unit-loop fit / dense factorization / draw reduction, the verdict names
+   the batched helper implementing the inner loop (`Fit-loop batching:
+   <module::fn>`, evidence line) or records an explicit not-batchable
+   justification — absence is a FAIL, not a note (code-reviewer.md Step 2
+   "Fit-loop batched-helper naming"; de-minimis/N/A escapes per that
+   paragraph).
 4. **Hollow-verification-gate (Step 0.68 sub-check, any diff type).** A `--verify-X`
    / equivalence gate MUST assert on the function the entrypoint actually dispatches
    (trace flag → gate call → gated callee, grep the dispatch path for the same
