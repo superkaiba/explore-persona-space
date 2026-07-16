@@ -358,8 +358,12 @@ function initAns(){
     }
   });
 }
-window.addEventListener('DOMContentLoaded',()=>{initAns();
-  filt('all',document.querySelector('.controls button'));});
+function applyHash(){
+  const i={'#s1':1,'#nots1':2}[location.hash]||0;
+  filt(['all','s1','nots1'][i],document.querySelectorAll('.controls button')[i]);
+}
+window.addEventListener('DOMContentLoaded',()=>{initAns();applyHash();});
+window.addEventListener('hashchange',applyHash);
 """
 
 
