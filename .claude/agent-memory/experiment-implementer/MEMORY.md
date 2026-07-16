@@ -1,3 +1,4 @@
+- [EXDEV tempdir Hub staging](feedback_exdev_tempdir_hub_staging.md) — bare TemporaryDirectory() (/tmp) + os.replace onto /workspace crashes EXDEV on pods; stage inside the dest dir (dir=dest, prefix=".hfstage_") (#1335 r9)
 - [GCV lambda interpolation degeneracy](feedback_gcv_lambda_interpolation_degeneracy.md) — grouped cells with n_tr ≲ D: GCV picks grid-min λ, R² −2..−46 on healthy data; fix inner-group-CV selection (#1335)
 - [rule-24 surgical re-judge recipe](feedback_rule24_surgical_rejudge_recipe.md) — recover 529 draws from judge_raw via judge_graded per-k groups + fresh cache; deterministic parse_error items = content-class (#1315)
 - [Hub queue-full 429 + LocalEntryNotFoundError mask](feedback_hub_queue_full_429_and_localentrynotfound_mask.md) — wrap every Hub call in hub.retry_transient; a 429 on hf_hub_download's HEAD surfaces as a 404-shaped LocalEntryNotFoundError (#1345 r5)
