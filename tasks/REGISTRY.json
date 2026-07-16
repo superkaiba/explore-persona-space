@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1431,
+  "highest_id": 1432,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -3364,6 +3364,13 @@
       "path": "tasks/proposed/1431",
       "status": "proposed",
       "title": "workflow-fix: gotchas entry \u2014 pilot timing gates measure at the sweep's execution shape"
+    },
+    "1432": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1432",
+      "status": "proposed",
+      "title": "workflow-fix: gotchas.md \u2014 cuda eigh non-convergence on near-singular Grams (CPU fallback)"
     },
     "144": {
       "has_clean_result": false,
