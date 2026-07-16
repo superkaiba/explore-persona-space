@@ -417,6 +417,27 @@ def _staged_reused_ckpt(cfg: Cfg, cell: str, step: int) -> Path:
     return cfg.out_root / "inputs" / cell / f"checkpoint-{step}"
 
 
+def _bare_effective(cfg: Cfg) -> dict:
+    """Effective bare-cell staging/selection spec (fu-r2, plan v7 §4.2 2a):
+    ``C.BARE_CELL_SPEC`` defaults with the ``--bare-*`` CLI flags as OPTIONAL
+    overrides — the committed-record read the v3 contract required VM-side
+    pre-launch IS the spec (pinned to fu5_ladders.json by test). The staging
+    repo always routes by the spec (the fu5 adapters live on the MODEL repo;
+    the overflow probe 404s — plan §10)."""
+    spec = C.BARE_CELL_SPEC
+    return {
+        "prefix": cfg.bare_adapter_prefix or spec["prefix"],
+        "revision": cfg.bare_adapter_rev or spec["revision"],
+        "rate": (
+            cfg.bare_committed_rate
+            if cfg.bare_committed_rate is not None
+            else spec["tier2_committed"]
+        ),
+        "repo": spec["repo"],
+        "step": spec["doses"]["selected"],
+    }
+
+
 # ── base-store prestage (lr-matched-wildchat-geometry follow-up, plan v5 §4.2):
 # the paired lr contrast shares the EXACT base rows the parent committed, so
 # the geometry pass consumes the parent's base store instead of re-capturing.
@@ -558,12 +579,16 @@ def phase_stage(cfg: Cfg) -> dict:
             _assert_adapter_config(dest, cell)
         rec["staged"][cell] = str(inputs / cell)
     if C.CONDITIONAL_BARE_CELL in cfg.cells:
-        assert cfg.bare_adapter_prefix and cfg.bare_adapter_rev, (
-            "imp_bare_lora is in the cell set but no --bare-adapter-prefix/--bare-adapter-rev "
-            "was provided (the VM-side pre-launch fu5 read populates these; plan §4.2)"
-        )
-        dest = _staged_reused_ckpt(cfg, C.CONDITIONAL_BARE_CELL, 0)
-        _stage_overflow_prefix(cfg.bare_adapter_prefix, dest, revision=cfg.bare_adapter_rev)
+        # fu-r2 stage-route fix (plan v7 §4.2 2a/2b): the fu5 adapter lives on
+        # the MODEL repo at the BARE_CELL_SPEC pin (the pre-r2 overflow route
+        # 404s), and the selected rung is step 20, never the hardcoded 0.
+        bare = _bare_effective(cfg)
+        dest = _staged_reused_ckpt(cfg, C.CONDITIONAL_BARE_CELL, bare["step"])
+        subpath = f"{bare['prefix']}/checkpoint-{bare['step']}"
+        if bare["repo"] == C.OVERFLOW_REPO:
+            _stage_overflow_prefix(subpath, dest, revision=bare["revision"])
+        else:
+            _stage_model_prefix(subpath, dest, revision=bare["revision"])
         _assert_adapter_config(dest, C.CONDITIONAL_BARE_CELL)
         rec["staged"][C.CONDITIONAL_BARE_CELL] = str(dest)
     if cfg.smoke and not any(c in C.REUSED_LORA_CELLS for c in cfg.cells):
@@ -852,6 +877,16 @@ def _unit_args(cfg: Cfg, kind: str, arg: str) -> list[str]:
             else []
         )
         + ([] if cfg.upload else ["--no-upload"])
+        # fu-r2: thread the OPTIONAL bare overrides so a fanout unit resolves
+        # the same effective spec as the parent (_bare_effective defaults
+        # cover the flag-less case).
+        + (["--bare-adapter-prefix", cfg.bare_adapter_prefix] if cfg.bare_adapter_prefix else [])
+        + (["--bare-adapter-rev", cfg.bare_adapter_rev] if cfg.bare_adapter_rev else [])
+        + (
+            ["--bare-committed-rate", str(cfg.bare_committed_rate)]
+            if cfg.bare_committed_rate is not None
+            else []
+        )
     )
 
 
@@ -906,9 +941,13 @@ def phase_ladder(cfg: Cfg) -> dict:
         _atomic_json(cfg.out_root / cell / "selection.json", rec)
         selections[cell] = rec
     if C.CONDITIONAL_BARE_CELL in cfg.cells:
+        # fu-r2 (plan v7 §4.2 2b): the fu5 band-selected rung is step 20 at
+        # Tier-2 0.675 (spec-defaulted; --bare-committed-rate overrides) —
+        # run_capture_tf_unit reads this selection.json eagerly.
+        bare = _bare_effective(cfg)
         rec = {
-            "step": 0,
-            "rate": cfg.bare_committed_rate,
+            "step": bare["step"],
+            "rate": bare["rate"],
             "in_band": True,
             "fallback": None,
             "reused": True,
@@ -1072,7 +1111,13 @@ def run_parity_unit(cfg: Cfg, cell: str) -> dict:
     context, HALT floor 0.5 nat (structural apply-path, HALT-class); (2)
     Tier-1-style judged read within ±0.15 of the committed Tier-2 (WARN-class:
     persisted + adjudicated, retrain fallback is the orchestrator's)."""
-    spec = C.REUSED_LORA_CELLS[cell]
+    spec = C.REUSED_LORA_CELLS.get(cell)
+    if spec is None:
+        # fu-r2 (plan v7 §4.2 2c): the bare cell rides BARE_CELL_SPEC — same
+        # row shape, so the probe body below is uniform across cells.
+        assert cell == C.CONDITIONAL_BARE_CELL, f"parity: unroutable cell {cell!r}"
+        bare = _bare_effective(cfg)
+        spec = {**C.BARE_CELL_SPEC, "tier2_committed": bare["rate"]}
     cell_root = cfg.out_root / cell
     out_path = cell_root / "parity.json"
     if out_path.exists():
@@ -1096,7 +1141,18 @@ def run_parity_unit(cfg: Cfg, cell: str) -> dict:
     )
 
     # (2) WARN-class judged-rate window (the fu4 Tier-1 instrument).
-    organism = ModelOrganism(behavior=C.BEHAVIOR, context_id=spec["context_id"], seed=cfg.seed)
+    # fu-r2 (plan v7 §4.2 2c): thread the source-filtered panel — under the
+    # default default_v1 panel, ModelOrganism(context_id="default") hard-fails
+    # the #527/#538 content-identity disjointness check (organisms.py — the
+    # exact #1090 fu5 first-run incident). panel_name_for returns the default
+    # panel unchanged for every scaffolded cell (no content identity), so this
+    # single-site threading is behavior-preserving for the existing cells.
+    organism = ModelOrganism(
+        behavior=C.BEHAVIOR,
+        context_id=spec["context_id"],
+        negatives=fu3w.panel_name_for(ctx),
+        seed=cfg.seed,
+    )
     rate_fn = make_source_rate_fn(
         organism,
         out_dir=cell_root / "rate",
@@ -1148,7 +1204,11 @@ def run_parity_unit(cfg: Cfg, cell: str) -> dict:
 
 def phase_parity(cfg: Cfg) -> dict:
     _phase("p4_parity")
-    cells = [c for c in cfg.cells if c in C.REUSED_LORA_CELLS]
+    # fu-r2 (plan v7 §4.2 2c): the conditional bare cell is a reused adapter
+    # too — it gets the same parity probe (rate window 0.675 ± 0.15 WARN-class
+    # + the 0.5-nat application HALT floor vs the committed 2.5081-nat engaged
+    # value, plan §4.4(g)).
+    cells = [c for c in cfg.cells if c in C.REUSED_LORA_CELLS or c == C.CONDITIONAL_BARE_CELL]
     if not cells:
         return {"skipped": "no reused cells in this run"}
     pending = [c for c in cells if not (cfg.out_root / c / "parity.json").exists()]
@@ -1181,7 +1241,8 @@ def _selected_ckpt(cfg: Cfg, cell: str, selections: dict) -> Path:
     if cell in C.REUSED_LORA_CELLS:
         return _staged_reused_ckpt(cfg, cell, C.REUSED_LORA_CELLS[cell]["doses"]["selected"])
     if cell == C.CONDITIONAL_BARE_CELL:
-        return _staged_reused_ckpt(cfg, cell, 0)
+        # fu-r2 (plan v7 §4.2 2b): the fu5 band-selected rung (step 20), never 0
+        return _staged_reused_ckpt(cfg, cell, C.BARE_CELL_SPEC["doses"]["selected"])
     step = int(selections[cell]["step"])
     return _enumerate_rungs(_read_json(cfg.out_root / cell / "build_result.json")["adapter_root"])[
         step
@@ -1412,7 +1473,8 @@ def _capture_panel(cfg: Cfg, cell: str) -> dict[str, dict]:
     Per plan §4.3: the cell's OWN source context + the 5-member default_v1
     panel (incl. the bare assistant). The base pass captures the UNION of the
     3 source contexts + the panel (8 contexts; the conditional bare cell adds
-    no context — bare == the default panel member)."""
+    no context — bare == the default panel member). The bare cell itself
+    DEDUPES to the 5 panel members only (fu-r2, plan v7 §4.2 2d)."""
 
     def _ctx_entry(context_id: str) -> dict:
         ctx = _context(context_id)
@@ -1429,6 +1491,18 @@ def _capture_panel(cfg: Cfg, cell: str) -> dict[str, dict]:
         )
         for cid in source_ids:
             panel[cid] = _ctx_entry(cid)
+    elif cell == C.CONDITIONAL_BARE_CELL:
+        # fu-r2 dedupe (plan v7 §4.2 2d): the bare cell's own context
+        # CONTEXTS["default"] is CONTENT-IDENTICAL to the default_v1 panel's
+        # neg_default_assistant member ((system, user_wrap, prefix_turns) ==
+        # (None, None, ()) both — the #527/#538 invariant; the fu5
+        # panel_name_for fix is the training-side precedent). Adding the own
+        # "default" key would (i) HALT the prestage coverage assert (the
+        # committed base store holds 8 contexts, NO "default" key — plan §10)
+        # and (ii) double-weight the bare context with byte-duplicate rows.
+        # The neg_default_assistant rows ARE the bare cell's own-context rows:
+        # capture panel = the 5 default_v1 members (5 x 20 = 100 rows).
+        pass
     else:
         cid = _cell_context_id(cfg, cell)
         panel[cid] = _ctx_entry(cid)
@@ -1472,7 +1546,8 @@ def _resolve_capture_model(cfg: Cfg, cell: str, dose: str) -> tuple[str, Path | 
         merged = _merge_adapter(cfg, str(adapter), cell_root / f"merged_{dose}")
         return str(merged), merged
     if cell == C.CONDITIONAL_BARE_CELL:
-        adapter = _staged_reused_ckpt(cfg, cell, 0)
+        # fu-r2 (plan v7 §4.2 2b): the fu5 band-selected rung (step 20), never 0
+        adapter = _staged_reused_ckpt(cfg, cell, C.BARE_CELL_SPEC["doses"]["selected"])
         merged = _merge_adapter(cfg, str(adapter), cell_root / f"merged_{dose}")
         return str(merged), merged
     assert dose == "selected", (cell, dose)
@@ -2010,9 +2085,17 @@ def _parse_args(argv: Sequence[str] | None) -> argparse.Namespace:
     p.add_argument("--no-upload", dest="upload", action="store_false", default=True)
     p.add_argument("--phases", default=None, help="comma subset of phases to run (default all)")
     p.add_argument("--include-bare", action="store_true", help="add the conditional fu5 cell")
-    p.add_argument("--bare-adapter-prefix", default=None)
-    p.add_argument("--bare-adapter-rev", default=None)
-    p.add_argument("--bare-committed-rate", type=float, default=None)
+    # fu-r2 (plan v7 §4.2 2a): the --bare-* flags are OPTIONAL overrides of the
+    # committed BARE_CELL_SPEC (prefix WITHOUT the checkpoint-<step> suffix —
+    # the spec's selected step is appended, same shape as the generic loop).
+    p.add_argument("--bare-adapter-prefix", default=None, help="override BARE_CELL_SPEC prefix")
+    p.add_argument("--bare-adapter-rev", default=None, help="override BARE_CELL_SPEC revision")
+    p.add_argument(
+        "--bare-committed-rate",
+        type=float,
+        default=None,
+        help="override BARE_CELL_SPEC tier2_committed (selection rate + parity window)",
+    )
     p.add_argument(
         "--prestage-base-rev",
         default=None,

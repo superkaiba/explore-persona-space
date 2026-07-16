@@ -1259,3 +1259,413 @@ def test_parse_args_threads_prestage_base_rev():
     assert "prestage_base_rev" in cfg.regime_key()
     default = d.build_cfg(d._parse_args(["--full", "--no-upload"]))
     assert default.prestage_base_rev is None
+
+
+# ── bare-context-geometry follow-up (fu-r2, plan v7 §4.2): the conditional
+#    imp_bare_lora cell — model-repo stage route, step-20 threading, panel
+#    dedupe, parity disjointness, geometry branch ─────────────────────────────
+
+FU5_LADDERS_JSON = (
+    REPO_ROOT
+    / "eval_results"
+    / "issue_1090"
+    / "finish-impolite-bare-and-formatting-rank"
+    / "fu5_ladders.json"
+)
+
+# The parent's committed base union store @ the round-1 pin: exactly these 8
+# contexts x question_idx 0-19, NO "default" key (plan v7 §10, enumerated
+# 2026-07-15) — the shape the dedupe is load-bearing against.
+_FU5_BASE_STORE_CONTEXTS = (
+    "icl_prefix_impolite",
+    "neg_default_assistant",
+    "neg_reph_curious",
+    "neg_sp_ph4",
+    "neg_sp_police",
+    "neg_wc_short",
+    "persona_software_engineer",
+    "wildchat_prefix_real545",
+)
+
+
+def _fu5_committed() -> dict:
+    return json.loads(FU5_LADDERS_JSON.read_text(encoding="utf-8"))["runs"]["imp-bare-lr3e5"]
+
+
+def test_bare_cell_spec_matches_committed_fu5_ladder():
+    """BARE_CELL_SPEC values are VERBATIM from fu5_ladders.json
+    runs.imp-bare-lr3e5 (never retyped); the spec is a SEPARATE constant (not
+    a REUSED_LORA_CELLS row — double-stage / _cell_context_id re-route guard),
+    with NO DIFF_PAIRS row (singleton group, plan §3)."""
+    import issue1315_dispatch as d
+
+    committed = _fu5_committed()
+    spec = C.BARE_CELL_SPEC
+    assert spec["doses"] == {"selected": committed["selection"]["step"]}
+    assert committed["selection"]["in_band"] is True
+    assert spec["tier2_committed"] == committed["tier2_confirm_rate"]
+    assert (
+        spec["engaged_nats_committed"]
+        == committed["margin"]["adapter_assert"]["max_abs_delta_pos_ln_logp"]
+    )
+    # the committed engaged value clears the 0.5-nat HALT floor with >=5x margin
+    assert spec["engaged_nats_committed"] >= 5 * C.APPLY_HALT_FLOOR_NATS
+    assert spec["context_id"] == "default"
+    assert spec["repo"] == C.MODEL_REPO  # NOT the overflow repo (plan §10 probe)
+    assert spec["revision"] == C.FU5_ADAPTER_REV == "daebfb541793c4eaa5d7f9204b9c14d6e8d0155d"
+    assert spec["prefix"] == C.FU5_BARE_PREFIX == "adapters/issue1090_fu5/imp-bare-lr3e5"
+    assert C.CONDITIONAL_BARE_CELL not in C.REUSED_LORA_CELLS
+    assert not [p for p in C.DIFF_PAIRS if C.CONDITIONAL_BARE_CELL in p]
+    # the ONE resolver threads the narrow invocation (plan §10 workload cmd)
+    assert d.resolve_cells("imp_bare_lora", False) == ("imp_bare_lora",)
+
+
+def test_bare_effective_defaults_and_overrides(tmp_path):
+    """_bare_effective: BARE_CELL_SPEC defaults with the --bare-* flags as
+    OPTIONAL overrides; the staging repo always routes by the spec."""
+    import issue1315_dispatch as d
+
+    cfg = d.Cfg(smoke=False, cells=(C.CONDITIONAL_BARE_CELL,), out_root=tmp_path / "run")
+    eff = d._bare_effective(cfg)
+    assert eff["prefix"] == C.FU5_BARE_PREFIX
+    assert eff["revision"] == C.FU5_ADAPTER_REV
+    assert eff["rate"] == C.BARE_CELL_SPEC["tier2_committed"]
+    assert eff["repo"] == C.MODEL_REPO
+    assert eff["step"] == C.BARE_CELL_SPEC["doses"]["selected"]
+    over = d.Cfg(
+        smoke=False,
+        cells=(C.CONDITIONAL_BARE_CELL,),
+        out_root=tmp_path / "run2",
+        bare_adapter_prefix="adapters/other/prefix",
+        bare_adapter_rev="e" * 40,
+        bare_committed_rate=0.7,
+    )
+    eff2 = d._bare_effective(over)
+    assert (eff2["prefix"], eff2["revision"], eff2["rate"]) == (
+        "adapters/other/prefix",
+        "e" * 40,
+        0.7,
+    )
+    assert eff2["repo"] == C.MODEL_REPO  # repo stays spec-routed
+
+
+def test_bare_stage_routes_to_model_repo_at_pin(tmp_path, monkeypatch):
+    """p0 bare staging routes to the MODEL repo at the spec pin with the
+    step-20 subpath (the pre-r2 overflow route 404s on the fu5 prefix); a
+    reversion to the overflow route FAILS this test. Hub-boundary fakes are
+    signature-conformant defs; phase_stage's body runs REAL."""
+    import issue1315_dispatch as d
+
+    model_calls: list[tuple] = []
+    overflow_calls: list[tuple] = []
+
+    def fake_model(prefix: str, dest: Path, *, revision: str) -> Path:
+        model_calls.append((prefix, dest, revision))
+        dest.mkdir(parents=True, exist_ok=True)
+        return dest
+
+    def fake_overflow(prefix: str, dest: Path, *, revision: str, recursive: bool = True) -> Path:
+        overflow_calls.append((prefix, dest, revision))
+        dest.mkdir(parents=True, exist_ok=True)
+        return dest
+
+    def fake_stage_file(
+        path_in_repo: str, dest: Path, *, revision: str, sha256: str | None = None
+    ) -> Path:
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        dest.touch()
+        return dest
+
+    monkeypatch.setattr(d, "_stage_model_prefix", fake_model)
+    monkeypatch.setattr(d, "_stage_overflow_prefix", fake_overflow)
+    monkeypatch.setattr(d, "_stage_file", fake_stage_file)
+    monkeypatch.setattr(d, "assert_wildchat_context_matches_mix", lambda mix_path: None)
+    monkeypatch.setattr(d, "assert_icl_block_matches_mix", lambda mix_path: None)
+    monkeypatch.setattr(d, "_assert_adapter_config", lambda ckpt, cell: {"r": 32})
+
+    cfg = d.Cfg(smoke=False, cells=(C.CONDITIONAL_BARE_CELL,), out_root=tmp_path / "run")
+    rec = d.phase_stage(cfg)
+    step = C.BARE_CELL_SPEC["doses"]["selected"]
+    expected_dest = d._staged_reused_ckpt(cfg, C.CONDITIONAL_BARE_CELL, step)
+    assert model_calls == [
+        (f"{C.FU5_BARE_PREFIX}/checkpoint-{step}", expected_dest, C.FU5_ADAPTER_REV)
+    ]
+    assert overflow_calls == []  # the reverted overflow route would 404 in prod
+    assert expected_dest.name == f"checkpoint-{step}"
+    assert rec["staged"][C.CONDITIONAL_BARE_CELL] == str(expected_dest)
+
+
+def test_bare_capture_panel_dedupes_to_five_contexts(tmp_path):
+    """The bare cell's capture panel is EXACTLY the 5 default_v1 slugs with NO
+    "default" key (own context is content-identical to neg_default_assistant)
+    -> 5 x 20 = 100 required pairs; scaffolded cells keep own-context + panel
+    -> 6 x 20 = 120 (behavior-preserving)."""
+    import issue1315_dispatch as d
+
+    from explore_persona_space.artifacts.negatives import default_panel
+
+    slugs = {m.slug for m in default_panel()}
+    assert len(slugs) == 5 and "neg_default_assistant" in slugs
+
+    cfg = d.Cfg(smoke=False, cells=(C.CONDITIONAL_BARE_CELL,), out_root=tmp_path / "run")
+    panel = d._capture_panel(cfg, C.CONDITIONAL_BARE_CELL)
+    assert set(panel) == slugs
+    assert "default" not in panel
+    required = d._base_store_required_pairs(cfg)
+    assert len(required) == 5 * 20 == 100
+    assert not [k for k in required if k[0] == "default"]
+
+    cfg2 = d.Cfg(smoke=False, cells=("imp_pers_lora",), out_root=tmp_path / "run2")
+    panel2 = d._capture_panel(cfg2, "imp_pers_lora")
+    assert set(panel2) == slugs | {C.PERS_CONTEXT_ID} and len(panel2) == 6
+    assert len(d._base_store_required_pairs(cfg2)) == 6 * 20 == 120
+
+
+def test_bare_prestage_coverage_on_real_8_context_store(tmp_path, monkeypatch):
+    """Prestage row-coverage PASSES for the bare cell's 100 deduped pairs
+    against a fixture mirroring the REAL committed base store (8 contexts x 20
+    questions, NO "default" key) — and HALTS when the dedupe is reverted (an
+    un-deduped panel requires ("default", qi) rows the store cannot supply)."""
+    import issue1315_dispatch as d
+
+    rev = "befa87bbf4d0fcf202e836707cde2eff6205e93c"
+    cfg = d.Cfg(
+        smoke=False,
+        cells=(C.CONDITIONAL_BARE_CELL,),
+        out_root=tmp_path / "run",
+        prestage_base_rev=rev,
+    )
+    store_pairs = {(c, q) for c in _FU5_BASE_STORE_CONTEXTS for q in range(20)}
+    dest = cfg.out_root / "capture" / "base" / "base"
+    _write_base_store_fixture(dest, store_pairs)
+
+    required = d._base_store_required_pairs(cfg)
+    assert len(required) == 100 and required <= store_pairs
+    rec = d._prestage_base_store(cfg, rev)  # files staged -> zero network
+    assert rec["n_required"] == 100 and rec["n_rows_pooled"] == 160
+
+    # dedupe REVERTED: the own-context "default" entry re-enters the panel ->
+    # the coverage assert HALTs (RuntimeError) before any GPU phase
+    orig = d._capture_panel
+
+    def reverted(cfg2, cell):
+        panel = dict(orig(cfg2, cell))
+        if cell == C.CONDITIONAL_BARE_CELL:
+            panel["default"] = {"system": None, "user_wrap": None, "prior_turns": ()}
+        return panel
+
+    monkeypatch.setattr(d, "_capture_panel", reverted)
+    assert len(d._base_store_required_pairs(cfg)) == 120
+    with pytest.raises(RuntimeError, match=r"missing 20/120"):
+        d._prestage_base_store(cfg, rev)
+
+
+def test_bare_ladder_selection_writes_spec_step_and_rate(tmp_path):
+    """phase_ladder's bare writer records the fu5 band-selected rung (step 20,
+    Tier-2 0.675 — spec-defaulted, JSON-pinned) so run_capture_tf_unit's eager
+    selection.json read resolves; --bare-committed-rate overrides the rate."""
+    import issue1315_dispatch as d
+
+    committed = _fu5_committed()
+    cfg = d.Cfg(smoke=False, cells=(C.CONDITIONAL_BARE_CELL,), out_root=tmp_path / "run")
+    rec = d.phase_ladder(cfg)[C.CONDITIONAL_BARE_CELL]
+    assert rec["step"] == committed["selection"]["step"] == C.BARE_CELL_SPEC["doses"]["selected"]
+    assert rec["rate"] == committed["tier2_confirm_rate"]
+    assert rec["in_band"] is True and rec["reused"] is True
+    on_disk = json.loads(
+        (cfg.out_root / C.CONDITIONAL_BARE_CELL / "selection.json").read_text(encoding="utf-8")
+    )
+    assert on_disk == rec
+    cfg2 = d.Cfg(
+        smoke=False,
+        cells=(C.CONDITIONAL_BARE_CELL,),
+        out_root=tmp_path / "run2",
+        bare_committed_rate=0.7,
+    )
+    assert d.phase_ladder(cfg2)[C.CONDITIONAL_BARE_CELL]["rate"] == 0.7
+
+
+def test_bare_step20_threads_selected_ckpt_and_capture_model(tmp_path, monkeypatch):
+    """_selected_ckpt + _resolve_capture_model resolve the spec's selected
+    step (20) for the bare cell — the pre-r2 hardcoded 0 pointed at a
+    checkpoint that was never staged."""
+    import issue1315_dispatch as d
+
+    cfg = d.Cfg(smoke=False, cells=(C.CONDITIONAL_BARE_CELL,), out_root=tmp_path / "run")
+    step = C.BARE_CELL_SPEC["doses"]["selected"]
+    ckpt = d._selected_ckpt(cfg, C.CONDITIONAL_BARE_CELL, {})
+    assert ckpt == d._staged_reused_ckpt(cfg, C.CONDITIONAL_BARE_CELL, step)
+    assert ckpt.name == f"checkpoint-{step}" and step != 0
+
+    merged_from: list[str] = []
+
+    def fake_merge(cfg2: d.Cfg, adapter_dir: str, merged_dir: Path) -> Path:
+        merged_from.append(adapter_dir)
+        Path(merged_dir).mkdir(parents=True, exist_ok=True)
+        return Path(merged_dir)
+
+    monkeypatch.setattr(d, "_merge_adapter", fake_merge)
+    model, cleanup = d._resolve_capture_model(cfg, C.CONDITIONAL_BARE_CELL, "selected")
+    assert merged_from == [str(ckpt)]
+    assert cleanup is not None and model == str(cleanup)
+
+
+def test_bare_parity_organism_constructs_under_panel_name_for():
+    """The plan §4.1 premise + the #1090 fu5 first-run incident, pinned:
+    CONTEXTS["default"] is content-identical to the default_v1 panel's
+    neg_default_assistant member, so the DEFAULT-panel organism REFUSES
+    construction and panel_name_for's source-filtered panel constructs;
+    scaffolded cells keep default_v1 (behavior-preserving threading)."""
+    import issue1090_fu3_worker as fu3w
+    import issue1315_dispatch as d
+
+    from explore_persona_space.artifacts.context import CONTEXTS
+    from explore_persona_space.artifacts.negatives import (
+        DEFAULT_ASSISTANT_NEGATIVE,
+        DEFAULT_PANEL_NAME,
+    )
+    from explore_persona_space.artifacts.organisms import (
+        ModelOrganism,
+        _context_content_fingerprint,
+    )
+
+    ctx = CONTEXTS["default"]
+    assert _context_content_fingerprint(ctx) == _context_content_fingerprint(
+        DEFAULT_ASSISTANT_NEGATIVE.to_context()
+    )
+    with pytest.raises((AssertionError, ValueError)):
+        ModelOrganism(behavior=C.BEHAVIOR, context_id="default", seed=C.SEED)
+    name = fu3w.panel_name_for(ctx)
+    assert name != DEFAULT_PANEL_NAME
+    ModelOrganism(behavior=C.BEHAVIOR, context_id="default", negatives=name, seed=C.SEED)
+    for spec in C.REUSED_LORA_CELLS.values():
+        assert fu3w.panel_name_for(d._context(spec["context_id"])) == DEFAULT_PANEL_NAME
+
+
+def test_run_parity_unit_bare_real_body_cpu(tmp_path, monkeypatch):
+    """REAL run_parity_unit body on CPU for the bare cell: BARE_CELL_SPEC
+    resolution, step-20 ckpt, REAL ModelOrganism construction under
+    panel_name_for (the #1090 fu5 incident path — a reverted threading raises
+    here), REAL fu1.assert_adapter_applied over the fake reads, rec fields.
+    Fakes ONLY at the GPU/Hub boundary, signature-conformant defs."""
+    import issue1315_dispatch as d
+
+    from explore_persona_space.eval.margin import MarginResult
+
+    committed = _fu5_committed()
+    cfg = d.Cfg(
+        smoke=False,
+        cells=(C.CONDITIONAL_BARE_CELL,),
+        out_root=tmp_path / "run",
+        eval_question_limit=2,
+    )
+
+    def fake_margin_pools(cfg2: d.Cfg):
+        return [{"q": "a"}], [{"q": "a"}], {"pool_sha256": "poolsha"}
+
+    def _read(vals: list[float]) -> MarginResult:
+        return MarginResult(
+            margin=0.0,
+            pos_mean_ln_logp=0.0,
+            neg_mean_ln_logp=0.0,
+            n_pos=len(vals),
+            n_neg=len(vals),
+            pos_ln_logp=vals,
+            neg_ln_logp=vals,
+        )
+
+    def fake_margin_read_fn(base_model: str):
+        def margin_fn(side_path, ctx, pos, neg):
+            return _read([0.0] if side_path is None else [3.0])
+
+        return margin_fn
+
+    organisms_seen: list = []
+
+    def fake_make_source_rate_fn(
+        organism,
+        *,
+        out_dir,
+        base_model=d.DEFAULT_BASE_MODEL,
+        eval_questions=None,
+        n_completions=5,
+        temperature=1.0,
+        n_judge_draws=3,
+        generate_fn=None,
+        judge_fn=None,
+    ):
+        organisms_seen.append(organism)
+        return lambda ckpt_dir: 0.7
+
+    def fake_merge(cfg2: d.Cfg, adapter_dir: str, merged_dir: Path) -> Path:
+        Path(merged_dir).mkdir(parents=True, exist_ok=True)
+        return Path(merged_dir)
+
+    monkeypatch.setattr(d, "_margin_pools", fake_margin_pools)
+    monkeypatch.setattr(d, "_default_margin_read_fn", fake_margin_read_fn)
+    monkeypatch.setattr(d, "make_source_rate_fn", fake_make_source_rate_fn)
+    monkeypatch.setattr(d, "_merge_adapter", fake_merge)
+
+    rec = d.run_parity_unit(cfg, C.CONDITIONAL_BARE_CELL)
+    step = C.BARE_CELL_SPEC["doses"]["selected"]
+    assert rec["checkpoint"].endswith(f"checkpoint-{step}")
+    assert rec["expected"] == committed["tier2_confirm_rate"]
+    assert rec["engaged_nats_committed"] == C.BARE_CELL_SPEC["engaged_nats_committed"]
+    assert rec["rate_window_pass"] is True and rec["severity"] == "PASS"  # |0.7-0.675|<=0.15
+    assert rec["adapter_assert"]["max_abs_delta_pos_ln_logp"] == 3.0  # real fu1 gate ran
+    assert rec["apply_halt_floor_nats"] == C.APPLY_HALT_FLOOR_NATS
+    (org,) = organisms_seen
+    assert org.context_id == "default"
+    assert org.negatives != "default_v1"  # panel_name_for's filtered panel
+    on_disk = json.loads(
+        (cfg.out_root / C.CONDITIONAL_BARE_CELL / "parity.json").read_text(encoding="utf-8")
+    )
+    assert on_disk == rec
+
+
+def test_phase_parity_filter_includes_bare_cell(tmp_path):
+    """phase_parity's cell filter now covers the bare cell (pre-r2 it returned
+    {"skipped": ...} for a bare-only run and the probe never ran); a
+    pre-existing parity.json short-circuits the GPU machinery entirely."""
+    import issue1315_dispatch as d
+
+    cfg = d.Cfg(smoke=False, cells=(C.CONDITIONAL_BARE_CELL,), out_root=tmp_path / "run")
+    rec = {"cell": C.CONDITIONAL_BARE_CELL, "rate": 0.7}
+    p = cfg.out_root / C.CONDITIONAL_BARE_CELL / "parity.json"
+    p.parent.mkdir(parents=True, exist_ok=True)
+    p.write_text(json.dumps(rec), encoding="utf-8")
+    assert d.phase_parity(cfg) == {C.CONDITIONAL_BARE_CELL: rec}
+
+
+def test_unit_args_thread_bare_overrides(tmp_path):
+    """A fanout unit resolves the same effective bare spec as the parent: the
+    OPTIONAL --bare-* overrides thread through _unit_args; flag-less runs add
+    nothing (spec defaults cover them)."""
+    import issue1315_dispatch as d
+
+    cfg = d.Cfg(
+        smoke=False,
+        cells=(C.CONDITIONAL_BARE_CELL,),
+        out_root=tmp_path,
+        bare_committed_rate=0.7,
+    )
+    args = d._unit_args(cfg, "parity", C.CONDITIONAL_BARE_CELL)
+    assert args[args.index("--bare-committed-rate") + 1] == "0.7"
+    bare_flagless = d.Cfg(smoke=False, cells=(C.CONDITIONAL_BARE_CELL,), out_root=tmp_path)
+    assert "--bare-committed-rate" not in d._unit_args(
+        bare_flagless, "parity", C.CONDITIONAL_BARE_CELL
+    )
+
+
+def test_geometry_source_context_bare_branch():
+    """_source_context routes the bare cell to its registered "default"
+    context (singleton panel group `_group_default`); the per-group DIFF_PAIRS
+    filter yields NO pairs for the singleton group (plan: N/A — no paired
+    contrast); unknown cells still fail loud."""
+    from issue1315_geometry import _source_context
+
+    assert _source_context(C.CONDITIONAL_BARE_CELL) == C.BARE_CELL_SPEC["context_id"] == "default"
+    with pytest.raises(ValueError, match="unregistered"):
+        _source_context("not_a_cell")
+    group = {C.CONDITIONAL_BARE_CELL}
+    assert tuple(p for p in C.DIFF_PAIRS if p[1] in group and p[2] in group) == ()

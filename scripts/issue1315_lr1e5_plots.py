@@ -17,11 +17,15 @@ Data: eval_results/issue_1315/lr1e5_followup/geometry/geometry_per_cell.json
 
 from __future__ import annotations
 
-import json
-import sys
-from pathlib import Path
+from explore_persona_space.orchestrate.env import load_dotenv
 
-import matplotlib.pyplot as plt
+load_dotenv()  # BEFORE any heavy import — shared-VM thread caps (#847)
+
+import json  # noqa: E402
+import sys  # noqa: E402
+from pathlib import Path  # noqa: E402
+
+import matplotlib.pyplot as plt  # noqa: E402
 
 _SCRIPTS_DIR = Path(__file__).resolve().parent
 if str(_SCRIPTS_DIR) not in sys.path:
@@ -94,11 +98,16 @@ def fig_hero(own: dict, tf: dict) -> None:
     # Panel B — matched-80-row rank (mean ± sd over 100 draws).
     ax = axes[1]
     ss = own["subsample_sensitivity_80row"]
-    for x, (c, lab), col in zip(xs, CELLS, colors, strict=True):
+    for x, (c, _lab), col in zip(xs, CELLS, colors, strict=True):
         m = ss[c]["rank_k_at_90_mean"]
         sd = ss[c]["rank_k_at_90_std"]
         ax.errorbar([x], [m], yerr=[[sd], [sd]], fmt="o", ms=9, color=col, capsize=4)
-    ax.axhspan(*SYCO_80ROW_BAND, color="tab:gray", alpha=0.25, label="sycophancy band (48–50)")
+    ax.axhspan(
+        *SYCO_80ROW_BAND,
+        color="tab:gray",
+        alpha=0.25,
+        label="sycophancy band (48–50)",  # noqa: RUF001 — en dash kept verbatim (r1 label)
+    )
     ax.set_xticks(xs, tick_labels)
     ax.set_xlim(-0.6, 1.6)
     ax.set_ylim(34, 54)
@@ -109,11 +118,14 @@ def fig_hero(own: dict, tf: dict) -> None:
     # Panel C — shared-text rank at L14.
     ax = axes[2]
     sh_vals = [rec(r_tf, c, "response", L14)["rank_k_at_90"] for c, _ in CELLS]
-    for x, v, (_, lab), col in zip(xs, sh_vals, CELLS, colors, strict=True):
+    for x, v, (_, _lab), col in zip(xs, sh_vals, CELLS, colors, strict=True):
         ax.plot([x], [v], "o", ms=9, color=col)
     ax.axhline(COLLAPSE_BAR, ls="--", lw=1.2, color="black", label="collapse bar (30)")
     ax.axhspan(
-        *SYCO_SHARED_SPAN, color="tab:gray", alpha=0.25, label="sycophancy shared span (27–35)"
+        *SYCO_SHARED_SPAN,
+        color="tab:gray",
+        alpha=0.25,
+        label="sycophancy shared span (27–35)",  # noqa: RUF001 — en dash kept verbatim (r1 label)
     )
     ax.set_xticks(xs, tick_labels)
     ax.set_xlim(-0.6, 1.6)
@@ -130,14 +142,14 @@ def fig_hero(own: dict, tf: dict) -> None:
         ("Δ participation\nratio", lr["diff_pr_lambda"], 1.0),
         ("Δ top-share\n(pp)", lr["diff_top_share_lambda"], 100.0),
     ]
-    for i, (lab, dd, scale) in enumerate(diffs):
+    for i, (_lab, dd, scale) in enumerate(diffs):
         v = dd["point"] * scale
         lo_off, hi_off = _clamped_err(v, dd["ci_low"] * scale, dd["ci_high"] * scale)
         ax.errorbar([i], [v], yerr=[[lo_off], [hi_off]], fmt="o", ms=9, color=colors[0], capsize=4)
     ax.axhline(0.0, lw=1.0, color="black")
     ax.set_xticks(range(3), [d[0] for d in diffs])
     ax.set_xlim(-0.6, 2.6)
-    ax.set_ylabel("lr 1e-5 − lr 3e-5 (95% CI)")
+    ax.set_ylabel("lr 1e-5 − lr 3e-5 (95% CI)")  # noqa: RUF001 — minus sign kept verbatim (r1)
     ax.set_title("Paired lr contrast\n(cluster bootstrap, n=1000)")
 
     handles, labels = axes[0].get_legend_handles_labels()
