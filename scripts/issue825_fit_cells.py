@@ -182,7 +182,12 @@ def _ridge_predict_cached_batched(cache: dict, Y_train_batch) -> torch.Tensor:
     scalar path to fp roundoff (equivalence-gated). Returns preds (B, n_te, D).
     """
     dev = cache["w"].device
-    Ytr = torch.as_tensor(np.asarray(Y_train_batch), dtype=torch.float64).to(dev)
+    if isinstance(Y_train_batch, torch.Tensor):
+        # Null path passes an on-device (CUDA) tensor Y_t[p_tr]; np.asarray() on a
+        # non-CPU tensor triggers .numpy() and raises. Keep it on-device, just cast.
+        Ytr = Y_train_batch.to(device=dev, dtype=torch.float64)
+    else:
+        Ytr = torch.as_tensor(np.asarray(Y_train_batch), dtype=torch.float64).to(dev)
     if Ytr.ndim == 2:
         Ytr = Ytr.unsqueeze(0)
     ymu = Ytr.mean(1, keepdim=True)  # (B,1,D)
