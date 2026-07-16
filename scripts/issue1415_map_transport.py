@@ -19,9 +19,12 @@ Realized-delta sources:
 - ``--realized-source steered`` (default; the plan-registered DV): V_a captured
   over the phase-1c STEERED completions, read from
   ``<steered-activations>/<pair_id>__<arm>.pt`` files carrying ``v_a_mean``
-  ((L, H) + ``layers``, or a bare (H,) layer-20 vector). NOTE: the round-A
-  phase-1 driver does not yet produce these captures — a follow-up GPU capture
-  phase over the persisted 1c draws is required (concern raised on the task).
+  ((L, H) + ``layers``, or a bare (H,) layer-20 vector) — the CANONICAL
+  operating-alpha primary-layer captures the phase-1 driver's 1e phase writes
+  (round-2 fix; ``issue1415_run_phase1.phase_1e``). A pair whose canonical
+  capture is missing (coherence failed at all alphas — the 1e canonical index
+  records the skip) is EXCLUDED with a recorded reason (plan §8), fail-loud
+  when NO pair resolves.
 - ``--realized-source natural`` (descriptive companion, computable from the
   phase-1a captures alone): V_a(c') - V_a(c) — the NATURAL answer shift under
   the real context swap, labeled as such in the output.
@@ -39,6 +42,7 @@ from __future__ import annotations
 
 import argparse
 import logging
+import re
 import sys
 from pathlib import Path
 
@@ -139,7 +143,10 @@ def resolve_map(
 
     candidates = [(p, t) for p, t in tensors if tuple(t.shape) == (hidden, hidden)]
     if len(candidates) > 1:
-        narrowed = [(p, t) for p, t in candidates if str(layer) in p]
+        # Token match, not substring: "20" must not match "layer_120"/"200"
+        # (round-2 Minor fix; ambiguity still lands on the fail-loud rc=3 branch).
+        layer_tok = re.compile(rf"(?<![0-9]){layer}(?![0-9])")
+        narrowed = [(p, t) for p, t in candidates if layer_tok.search(p)]
         candidates = narrowed or candidates
     if len(candidates) > 1:
         narrowed = [(p, t) for p, t in candidates if "weight" in p.lower() or ".w" in p.lower()]
@@ -197,8 +204,8 @@ def apply_map(x: torch.Tensor, weight: torch.Tensor, bias: torch.Tensor | None) 
 
 def _load_steered_va(path: Path, layer: int, layers_ref: list[int], hidden: int) -> torch.Tensor:
     assert path.exists(), (
-        f"steered V_a capture missing: {path} — the phase-1c steered-completions capture "
-        "phase has not produced this pair/arm (see the task concern); "
+        f"steered V_a capture missing: {path} — run the phase-1 driver's 1e capture phase "
+        "(issue1415_run_phase1.phase_1e writes the canonical <pair>__<arm>.pt files); "
         "use --realized-source natural for the phase-1a-only companion read"
     )
     blob = torch.load(path, map_location="cpu", weights_only=True)
@@ -222,18 +229,26 @@ def compute_transport(
 ) -> dict:
     hidden = weight.shape[0]
     li = pairs[0].layers.index(layer)
-    pair_ids = [p.pair_id for p in pairs]
 
     result: dict = {"per_arm": {}}
     for arm in common.ARMS:
         predicted = []
         realized = []
+        pair_ids: list[str] = []
+        skipped: list[str] = []
+        degenerate: list[str] = []
         for p in pairs:
+            if realized_source == "steered":
+                spath = steered_dir / f"{p.pair_id}__{arm}.pt"
+                if not spath.exists():
+                    # Coherence-failed pair: the 1e canonical index records the
+                    # skip; excluded WITH a record (plan §8), never silently.
+                    skipped.append(p.pair_id)
+                    continue
             v_c = p.v_c[arm][li]
             delta = p.delta[arm][li]
             assert v_c.shape == (hidden,) and delta.shape == (hidden,), (p.pair_id, v_c.shape)
             fpred = apply_map(v_c + delta, weight, bias) - apply_map(v_c, weight, bias)
-            predicted.append(fpred)
             if realized_source == "steered":
                 r = (
                     _load_steered_va(
@@ -241,9 +256,31 @@ def compute_transport(
                     )
                     - p.v_a_c[li]
                 )
+                if float(r.norm()) == 0.0:
+                    # A zero realized shift is a LEGITIMATE outcome (steered
+                    # draws identical to baseline — e.g. a sub-threshold alpha
+                    # under the shared per-draw seed); cosine is undefined
+                    # there, so exclude WITH a record, never crash.
+                    degenerate.append(p.pair_id)
+                    continue
             else:
                 r = p.v_a_cprime[li] - p.v_a_c[li]
+            predicted.append(fpred)
             realized.append(r)
+            pair_ids.append(p.pair_id)
+        assert pair_ids, (
+            f"arm {arm!r}: NO usable steered canonical captures under {steered_dir} — "
+            "run the phase-1 driver's 1e capture phase first"
+        )
+        if skipped or degenerate:
+            logger.warning(
+                "arm %s: %d/%d pairs excluded (no canonical capture: %s; zero realized shift: %s)",
+                arm,
+                len(skipped) + len(degenerate),
+                len(pairs),
+                skipped,
+                degenerate,
+            )
         pred = torch.stack(predicted)  # (P, H)
         real = torch.stack(realized)  # (P, H)
         pn, rn = pred.norm(dim=-1), real.norm(dim=-1)
@@ -254,11 +291,14 @@ def compute_transport(
 
         # Shuffled-pair null: cos(realized_p, predicted_{perm(p)}). The donor
         # rescale to the recipient norm cancels in cosine (scale-invariant).
+        n_kept = len(pair_ids)
         cos_matrix = real_hat @ pred_hat.T  # (P_recipient, P_donor) — one matmul
-        perms = common.batched_permutations(n_draws, len(pairs), seed)  # (D, P)
-        null = cos_matrix[torch.arange(len(pairs)), perms]  # (D, P)
+        perms = common.batched_permutations(n_draws, n_kept, seed)  # (D, P)
+        null = cos_matrix[torch.arange(n_kept), perms]  # (D, P)
 
         result["per_arm"][arm] = {
+            "skipped_pairs": skipped,
+            "degenerate_zero_shift_pairs": degenerate,
             "transport_cosine": {pid: float(observed[pi]) for pi, pid in enumerate(pair_ids)},
             "predicted_delta_norm": {pid: float(pn[pi]) for pi, pid in enumerate(pair_ids)},
             "realized_delta_norm": {pid: float(rn[pi]) for pi, pid in enumerate(pair_ids)},

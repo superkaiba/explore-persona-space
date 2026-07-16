@@ -51,7 +51,13 @@ GIT_BRANCH="$(git rev-parse --abbrev-ref HEAD)"
 echo "[phase=dispatch] issue${ISSUE} dispatcher starting (smoke=${SMOKE}, sha=${GIT_SHA}, branch=${GIT_BRANCH})"
 
 TINY_FLAG=()
-if [ "$SMOKE" -eq 1 ]; then TINY_FLAG=(--tiny); fi
+KIND="epm:results"
+OUT_ROOT="eval_results/issue_1415/phase1"
+if [ "$SMOKE" -eq 1 ]; then
+  TINY_FLAG=(--tiny)
+  KIND="epm:smoke-result"
+  OUT_ROOT="data/issue_1415/tiny_smoke/out"
+fi
 
 if [ "$SMOKE" -eq 0 ]; then
   echo "[phase=pair_bank] building the 28-pair context bank"
@@ -64,10 +70,30 @@ uv run python scripts/issue1415_run_phase1.py --pilot \
   ${TINY_FLAG[@]+"${TINY_FLAG[@]}"} ${EXTRA_ARGS[@]+"${EXTRA_ARGS[@]}"} \
   > "$LOG_DIR/issue-${ISSUE}-pilot.log" 2>&1
 
-echo "[phase=phase1_full] phase-1 full run (1b/1a/1c/1d + incremental HF uploads)"
+echo "[phase=phase1_full] phase-1 full run (1b/1a/K1/1c+K2/1d/1e + incremental HF uploads)"
+set +e
 uv run python scripts/issue1415_run_phase1.py \
   ${TINY_FLAG[@]+"${TINY_FLAG[@]}"} ${EXTRA_ARGS[@]+"${EXTRA_ARGS[@]}"} \
   > "$LOG_DIR/issue-${ISSUE}-phase1.log" 2>&1
+PHASE1_RC=$?
+set -e
+
+# Kill-criteria HALTs are DOMAIN outcomes, not crashes: route on the ARTIFACT
+# (gotchas.md: wrap-script route-on-artifact) — the driver writes the report
+# BEFORE exiting rc=4 (K1) / rc=5 (K2). Anything else non-zero is a real crash.
+KILL_HALT=""
+if [ "$PHASE1_RC" -ne 0 ]; then
+  if [ "$PHASE1_RC" -eq 4 ] && grep -q '"fired": true' "$OUT_ROOT/k1_report.json" 2>/dev/null; then
+    KILL_HALT="k1_abort"
+    echo "[phase=kill_halt] K1 fired (ceiling shows no separation) — sweep aborted, reporting"
+  elif [ "$PHASE1_RC" -eq 5 ] && grep -q '"fired": true' "$OUT_ROOT/k2_report.json" 2>/dev/null; then
+    KILL_HALT="k2_halt"
+    echo "[phase=kill_halt] K2 fired (coherence collapse on pilot+first-5) — 1c halted, reporting"
+  else
+    echo "[phase=phase1_failed] driver exited rc=${PHASE1_RC} with no matching kill-report" >&2
+    exit "$PHASE1_RC"
+  fi
+fi
 
 COMMITTED_FILES=""
 if [ "$SMOKE" -eq 0 ]; then
@@ -118,19 +144,13 @@ PY
 fi
 
 echo "[phase=sentinel] writing results sentinel"
-KIND="epm:results"
-OUT_ROOT="eval_results/issue_1415/phase1"
-if [ "$SMOKE" -eq 1 ]; then
-  KIND="epm:smoke-result"
-  OUT_ROOT="data/issue_1415/tiny_smoke/out"
-fi
-uv run python - "$KIND" "$ISSUE" "$GIT_SHA" "$OUT_ROOT" "$SMOKE" <<'PY'
+uv run python - "$KIND" "$ISSUE" "$GIT_SHA" "$OUT_ROOT" "$SMOKE" "$KILL_HALT" <<'PY'
 import json
 import sys
 import time
 from pathlib import Path
 
-kind, issue, git_sha, out_root, smoke = sys.argv[1:6]
+kind, issue, git_sha, out_root, smoke, kill_halt = sys.argv[1:7]
 logs_dir = Path("/workspace/logs")
 if not logs_dir.is_dir():
     logs_dir = Path("logs")
@@ -140,11 +160,25 @@ path = logs_dir / f"issue-{issue}-{kind_slug}-{int(time.time())}.json"
 
 eval_paths = sorted(
     str(p)
-    for pat in ("alpha_selection_1c.json", "alpha_selection_1d.json", "phase1_manifest.json")
+    for pat in (
+        "alpha_selection_1c.json",
+        "alpha_selection_1d.json",
+        "phase1_manifest.json",
+        "k1_report.json",
+        "k2_report.json",
+        "steered_canonical_index.json",
+    )
     for p in Path(out_root).glob(pat)
 )
+summary_line = "issue-1415 phase-1 GPU run complete (pair bank + 1b/1a/K1/1c+K2/1d/1e)"
+if kill_halt:
+    summary_line = (
+        f"issue-1415 phase-1 HALTED by pre-registered kill criterion ({kill_halt}); "
+        f"see {out_root}/{'k1_report.json' if kill_halt == 'k1_abort' else 'k2_report.json'}"
+    )
 note = {
-    "summary": "issue-1415 phase-1 GPU run complete (pair bank + 1b/1a/1c/1d)",
+    "summary": summary_line,
+    "kill_halt": kill_halt or None,
     "eval_paths": eval_paths,
     "cells_metadata_dir": f"{out_root}/cells",
     "reproducibility_card": {
@@ -153,6 +187,7 @@ note = {
         "hf_artifact_prefixes": [
             "raw_completions/issue_1415/",
             "analysis_tensors/issue_1415/activations/",
+            "analysis_tensors/issue_1415/activations_steered/",
             "data/issue_1415/pair_bank.json",
         ],
         "eval_json_paths": eval_paths,

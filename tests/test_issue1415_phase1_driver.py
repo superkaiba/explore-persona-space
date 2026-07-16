@@ -186,3 +186,162 @@ def test_pilot_mode_hf_upload_boundary_mocked(tmp_path, monkeypatch):
     (local, remote), _kw = fake.call_args
     assert Path(local) == cfg.bulk_root / "raw_completions" / "pilot"
     assert remote == f"{drv.RAW_PREFIX}/pilot"
+
+
+# ── round 2: phase 1e (steered V_a capture) via the tiny flow ─────────
+
+
+def test_tiny_flow_phase1e_and_kill_reports(first_run):
+    _tmp, cfg, summary = first_run
+    manifest = json.loads((cfg.out_root / "phase1_manifest.json").read_text())
+    cells = manifest["cells"]
+    import torch
+
+    # every steered grid cell got a phase-1e capture (per-cell .pt + manifest mark)
+    prim = cfg.primary_layer
+    for arm in drv.EXTRACTION_ARMS:
+        for pid in ("tiny_00", "tiny_01"):
+            for a in cfg.alpha_grid:
+                cid = f"gen1c/{arm}/{pid}/L{prim}/a{drv._fmt(a)}"
+                assert f"capture1e/{cid}" in cells, cid
+                blob = torch.load(
+                    cfg.bulk_root / "activations_steered" / f"{cid}.pt",
+                    map_location="cpu",
+                    weights_only=True,
+                )
+                if not blob.get("all_empty"):
+                    assert blob["v_a_mean"].shape == (len(cfg.layers), cfg.hidden)
+                    assert blob["layers"] == list(cfg.layers)
+
+    # canonical map-transport files exist EXACTLY for the operating-alpha pairs
+    sel = json.loads((cfg.out_root / "alpha_selection_1c.json").read_text())["selection"]
+    idx = json.loads((cfg.out_root / "steered_canonical_index.json").read_text())["index"]
+    for key, rec in sel.items():
+        arm, pid = key.split("/", 1)
+        canon = cfg.bulk_root / "activations_steered" / f"{pid}__{arm}.pt"
+        if rec["operating_alpha"] is None:
+            assert idx[key] == {"skipped": "coherence_failed_all_alpha"}
+            assert not canon.exists()
+        else:
+            assert canon.exists(), key
+            assert idx[key]["alpha"] == rec["operating_alpha"]
+            blob = torch.load(canon, map_location="cpu", weights_only=True)
+            assert blob["canonical_of"] == idx[key]["canonical_of"]
+
+    # steered captures rode the upload boundary (local mirror in tiny mode)
+    mirror = cfg.bulk_root / "hf_mirror" / drv.STEERED_TENSOR_PREFIX
+    assert mirror.exists() and any(mirror.rglob("*.pt"))
+
+    # kill-criteria verdicts computed + persisted, aborts DEMOTED under tiny
+    k1 = json.loads((cfg.out_root / "k1_report.json").read_text())
+    k2 = json.loads((cfg.out_root / "k2_report.json").read_text())
+    assert k1["enforced"] is False and k2["enforced"] is False
+    assert summary["k1"]["fired"] == k1["fired"]
+    assert summary["k2"]["fired"] == k2["fired"]
+    assert k1["threshold_frac"] == drv.K1_NO_SEP_FRAC
+    assert k2["threshold_frac"] == drv.K2_FAIL_FRAC
+
+
+# ── round 2: K1/K2 kill criteria (production semantics, unit-pinned) ──
+
+
+def _write_k1_captures(cfg, pair_ids, separated: bool, n_draws: int = 6, seed: int = 0):
+    """Synthetic 1a captures carrying v_a_per_completion for evaluate_k1."""
+    import torch
+
+    gen = torch.Generator().manual_seed(seed)
+    n_layers, hid = len(cfg.layers), cfg.hidden
+    for pid in pair_ids:
+        a_c = torch.randn(n_draws, n_layers, hid, generator=gen)
+        if separated:
+            offset = torch.randn(n_layers, hid, generator=gen) * 10.0
+            a_cp = offset + torch.randn(n_draws, n_layers, hid, generator=gen) * 0.1
+        else:
+            a_cp = torch.randn(n_draws, n_layers, hid, generator=gen)  # pure noise
+        drv._save_pt_atomic(
+            cfg.bulk_root / "activations" / f"{pid}.pt",
+            {
+                "pair_id": pid,
+                "layers": list(cfg.layers),
+                "c": {"v_a_per_completion": a_c},
+                "cprime": {"v_a_per_completion": a_cp},
+            },
+        )
+
+
+def test_k1_fires_on_noise_and_passes_on_separation(tmp_path):
+    cfg_noise = _cfg(tmp_path / "noise")
+    pairs = [{"pair_id": f"p{i}"} for i in range(6)]
+    _write_k1_captures(cfg_noise, [p["pair_id"] for p in pairs], separated=False)
+    rep = drv.evaluate_k1(cfg_noise, pairs)
+    assert rep["n_evaluable"] == 6
+    assert rep["frac_no_separation"] == 1.0 and rep["fired"] is True
+
+    cfg_sep = _cfg(tmp_path / "sep")
+    _write_k1_captures(cfg_sep, [p["pair_id"] for p in pairs], separated=True)
+    rep2 = drv.evaluate_k1(cfg_sep, pairs)
+    assert rep2["frac_no_separation"] == 0.0 and rep2["fired"] is False
+    # every separated pair beats the random-direction band decisively
+    for v in rep2["per_pair"].values():
+        assert v["max_over_layers"] > rep2["null_band_p975"]
+
+
+def test_k1_insufficient_draws_excluded_not_fired(tmp_path):
+    cfg = _cfg(tmp_path)
+    _write_k1_captures(cfg, ["solo"], separated=False, n_draws=1)
+    rep = drv.evaluate_k1(cfg, [{"pair_id": "solo"}])
+    assert rep["n_evaluable"] == 0 and rep["frac_no_separation"] is None
+    assert rep["fired"] is False
+    assert rep["per_pair"]["solo"]["reason"] == "insufficient_kept_draws"
+
+
+def _write_k2_grid_metas(cfg, pair_ids, coherent: bool):
+    for arm in drv.EXTRACTION_ARMS:
+        for pid in pair_ids:
+            for a in cfg.alpha_grid:
+                cid = f"gen1c/{arm}/{pid}/L{cfg.primary_layer}/a{drv._fmt(a)}"
+                drv._write_json_atomic(
+                    drv._cell_meta_path(cfg, cid),
+                    {"cell_id": cid, "coherence_flags": [coherent, coherent]},
+                )
+
+
+def test_k2_fires_on_coherence_collapse(tmp_path):
+    cfg = _cfg(tmp_path)
+    pairs = [{"pair_id": f"p{i}"} for i in range(2)]
+    _write_k2_grid_metas(cfg, [p["pair_id"] for p in pairs], coherent=False)
+    pilot = {"coherence_flags": {"std": [False, False]}}
+    rep = drv.evaluate_k2(cfg, pilot, pairs)
+    assert rep["n_units"] == 5  # pilot + 2 pairs x 2 arms
+    assert rep["frac_failed"] == 1.0 and rep["fired"] is True
+
+    _write_k2_grid_metas(cfg, [p["pair_id"] for p in pairs], coherent=True)
+    rep2 = drv.evaluate_k2(cfg, {"coherence_flags": {"std": [True, True]}}, pairs)
+    assert rep2["frac_failed"] == 0.0 and rep2["fired"] is False
+
+
+def test_enforce_kill_aborts_at_production_demotes_otherwise(tmp_path):
+    import dataclasses
+
+    cfg_tiny = _cfg(tmp_path)  # tiny -> enforce_kill_criteria False
+    assert cfg_tiny.enforce_kill_criteria is False
+    fired = {"fired": True, "criterion": "test", "frac": 1.0}
+    drv._enforce_kill(cfg_tiny, fired, "k1", drv.RC_K1_ABORT)  # demoted, no raise
+
+    cfg_prod = dataclasses.replace(cfg_tiny, enforce_kill_criteria=True)
+    with pytest.raises(SystemExit) as ei:
+        drv._enforce_kill(cfg_prod, fired, "k1", drv.RC_K1_ABORT)
+    assert ei.value.code == drv.RC_K1_ABORT
+    with pytest.raises(SystemExit) as ei:
+        drv._enforce_kill(cfg_prod, fired, "k2", drv.RC_K2_HALT)
+    assert ei.value.code == drv.RC_K2_HALT
+    drv._enforce_kill(cfg_prod, {"fired": False, "criterion": "test"}, "k1", drv.RC_K1_ABORT)
+
+
+def test_ignore_kill_criteria_flag_demotes_in_production_config():
+    args = drv.parse_args(["--ignore-kill-criteria"])
+    # full (non-tiny) config path; no CUDA needed to BUILD the config
+    cfg = drv.build_config(args)
+    assert cfg.tiny is False and cfg.enforce_kill_criteria is False
+    cfg_default = drv.build_config(drv.parse_args([]))
+    assert cfg_default.enforce_kill_criteria is True
