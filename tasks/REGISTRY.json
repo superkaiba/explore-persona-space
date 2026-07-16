@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1424,
+  "highest_id": 1425,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -3314,6 +3314,13 @@
       "path": "tasks/proposed/1424",
       "status": "proposed",
       "title": "workflow-fix: caption italic-lead-claim check (check 5 family)"
+    },
+    "1425": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1425",
+      "status": "proposed",
+      "title": "workflow-fix: gotchas.md download-side hf-xet xet_get wedge entry"
     },
     "144": {
       "has_clean_result": false,
