@@ -5,7 +5,7 @@ title: The assistant context→answer map recovers its full ceiling across chat 
 kind: experiment
 tags: []
 created_at: '2026-07-15T12:07:19Z'
-has_clean_result: false
+has_clean_result: true
 parent_id: 825
 origin_prompt: 'assistant in chat template vs assistant outside chat template vs ASSISTANT
   in generic stories | Generate assistant stories (chose: generate assistant in narrative
