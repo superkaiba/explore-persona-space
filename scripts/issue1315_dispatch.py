@@ -479,7 +479,11 @@ def _prestage_base_store(cfg: Cfg, revision: str) -> dict:
             ),
             what=f"prestage base {name} @ {revision[:12]}",
         )
-        shutil.copyfile(got, target)
+        # tmp + os.replace so a kill mid-copy never leaves a truncated file
+        # the skip-if-present branch would trust (file convention: :1644)
+        tmp = target.with_name(target.name + ".tmp")
+        shutil.copyfile(got, tmp)
+        os.replace(tmp, target)
     required = _base_store_required_pairs(cfg)
     store = torch.load(dest / "pooled.pt", map_location="cpu", mmap=True)
     pooled_keys = {(m["context_id"], int(m["question_idx"])) for m in store["row_meta"]}
