@@ -2875,8 +2875,8 @@
     "1369": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1369",
-      "status": "planning",
+      "path": "tasks/approved/1369",
+      "status": "approved",
       "title": "workflow-fix: point HF_XET_CACHE/HF_HOME off the VM boot disk for all sessions"
     },
     "137": {
