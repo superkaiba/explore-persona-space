@@ -217,6 +217,7 @@ def test_hermeticity_no_tmp_root_skips_tmp(tmp_path, repo, monkeypatch):
 
     monkeypatch.setattr(vdg, "_discover_tmp_issue_numbers", _boom)
     monkeypatch.setattr(vdg, "clean_vm_workspace_hf_cache", _boom)
+    monkeypatch.setattr(vdg, "clean_home_hf_cache", _boom)  # tier (e), #1376
     monkeypatch.setattr(vdg, "_resolve_issue_status", lambda n: "completed")
     vdg.clean_terminal_download_caches(apply=True, data_root=data_root)
 
@@ -244,13 +245,19 @@ def test_hermeticity_no_tmp_root_skips_tmp(tmp_path, repo, monkeypatch):
     monkeypatch.setattr(
         vdg, "_discover_tmp_issue_numbers", lambda r: [901] if r == tmp_root else []
     )
-    # With an explicit tmp_root, tier (d) legitimately fires — stub it to a
-    # no-op here (its own tests use a fixture cache_root; the REAL /workspace
-    # cache must never be touched from pytest).
+    # With an explicit tmp_root, tiers (d) + (e) legitimately fire — stub them
+    # to no-ops here (their own tests use a fixture cache_root; the REAL
+    # /workspace and ~/.cache/huggingface caches must never be touched from
+    # pytest, #1376).
     monkeypatch.setattr(
         vdg,
         "clean_vm_workspace_hf_cache",
         lambda apply, **k: vdg.TierResult(name="workspace-hf-cache"),
+    )
+    monkeypatch.setattr(
+        vdg,
+        "clean_home_hf_cache",
+        lambda apply, **k: vdg.TierResult(name="home-hf-cache"),
     )
     state["calls"] = 0
     res2 = vdg.run_guard(apply=True, threshold=85.0, data_root=data_root, tmp_root=tmp_root)
@@ -881,6 +888,7 @@ def test_data_disk_pass_never_sweeps_tmp(tmp_path, repo, monkeypatch):
 
     monkeypatch.setattr(vdg, "_discover_tmp_issue_numbers", _boom)
     monkeypatch.setattr(vdg, "clean_vm_workspace_hf_cache", _boom)
+    monkeypatch.setattr(vdg, "clean_home_hf_cache", _boom)  # tier (e), #1376
     _patch_disk(monkeypatch, before_pct=96.0, after_pct=96.0)
     res = vdg.run_guard(
         apply=True,
