@@ -104,16 +104,18 @@ def test_good_body_passes_all():
     ok, results = verify_task_body.verify_text(GOOD_BODY)
     assert ok, [r.render() for r in results if not r.passed]
     assert all(r.passed for r in results)
-    # CHECKS has 37 body-only functions: the 20 pre-v3 body-only checks
+    # CHECKS has 38 body-only functions: the 20 pre-v3 body-only checks
     # (incl. the sentinel-gated `check_tldr_nested_structure` and the
     # check-8b Reproducibility artifact-URL existence probe), the four
     # v3-gated body-only checks (check 18 `check_data_shape`, check 19
     # `check_data_subset_disclosure`, check 19b
     # `check_data_unwrapped_example_table` WARN, check 20
-    # `check_v3_word_caps`), the THREE v4-gated body-only checks (check 18
+    # `check_v3_word_caps`), the FOUR v4-gated body-only checks (check 18
     # `check_v4_methodology_shape`, check
     # 21 `check_v4_results_beat` WARN, check 27
-    # `check_v4_no_bare_issue_refs`; check 20 v4 `check_v4_word_caps`
+    # `check_v4_no_bare_issue_refs`, check 36
+    # `check_v4_result_paragraph_sentences` WARN (#1368); check 20 v4
+    # `check_v4_word_caps`
     # moved to the appended-outside set — it needs `issue`, #921) — each
     # a PASS-skip on this non-v3/non-v4 fixture — PLUS the TEN
     # generation-agnostic checks: check 22
@@ -150,7 +152,7 @@ def test_good_body_passes_all():
     # is a vacuous PASS here because this fixture carries no
     # availability-denial-near-artifact line. verify_text prepends check 0
     # (body-nonstub) + check 0b (no-duplicate-frontmatter), runs CHECKS[1:]
-    # (37 functions), then appends the Goal soft check, the H1↔frontmatter-
+    # (38 functions), then appends the Goal soft check, the H1↔frontmatter-
     # title sync check (#1110; PASS-skip: not a sentinelled body), the
     # Lens 14
     # concerns-audit, the check-16 lr-matches-plan reconciliation, the
@@ -164,11 +166,11 @@ def test_good_body_passes_all():
     # the check-31 orphaned-per-unit-figures probe (needs `issue` for
     # figures-dir scoping, #1011; PASS here — the fixture's fake sha is not
     # locally reachable, so the cited SHA is silently skipped) →
-    # 49 results total (2 prepended + CHECKS[1:]=37 + 10 appended). The
+    # 50 results total (2 prepended + CHECKS[1:]=38 + 10 appended). The
     # Lens 14 / check-16 results are PASS-skips when no concerns.jsonl /
     # plans/plan.md sibling is available; check 17 and the v3/v4 checks
     # are PASS-skips on this legacy (pre-v2-sentinel) fixture.
-    assert len(results) == 49
+    assert len(results) == 50
     # By-name membership so the NEXT check addition can key by name instead
     # of re-deriving the arithmetic (#1016 methodology-reconciler Must-Fix).
     assert _HF_32_NAME in {r.name for r in results}
@@ -4592,15 +4594,17 @@ def test_audit_context_row_blockquote_exempt():
 
 
 def test_checks_list_size():
-    """CHECKS contains 37 body-only functions: the 20 pre-v3 checks
+    """CHECKS contains 38 body-only functions: the 20 pre-v3 checks
     (the 18 under the 2-content-section spec, the nested-design (v2)
     sentinel-gated `check_tldr_nested_structure`, and the check-8b
     Reproducibility artifact-URL existence probe), the four
-    v3-gated body-only checks added 2026-W24, and the THREE v4-gated
+    v3-gated body-only checks added 2026-W24, and the FOUR v4-gated
     body-only checks (`check_v4_methodology_shape`,
-    `check_v4_results_beat`, plus check 27
+    `check_v4_results_beat`, check 27
     `check_v4_no_bare_issue_refs` — bare `#K` refs in the standalone
-    sections, #900; check 20 v4 `check_v4_word_caps` joined the
+    sections, #900 — plus check 36
+    `check_v4_result_paragraph_sentences`, WARN: >=4-sentence result
+    paragraphs, #1368; check 20 v4 `check_v4_word_caps` joined the
     appended-outside set — it needs `issue` for the events-based
     folded-round budget scaling, #921). The four
     v3-gated checks added 2026-W24 are — check 18
@@ -4664,16 +4668,17 @@ def test_checks_list_size():
     denominator check (needs eval JSONs), and the check-31
     orphaned-per-unit-figures probe (needs `issue` for figures-dir
     scoping, #1011).
-    So `verify_text` returns 48 results (2 prepended + CHECKS[1:]=37 +
-    9 appended — see `test_good_body_passes_all`), but `CHECKS` stays
-    at 38.
+    So `verify_text` returns 50 results (2 prepended + CHECKS[1:]=38 +
+    10 appended — see `test_good_body_passes_all`), but `CHECKS` stays
+    at 39.
     """
-    assert len(verify_task_body.CHECKS) == 38
+    assert len(verify_task_body.CHECKS) == 39
     # By-name membership so the NEXT check addition can key by name instead
     # of re-deriving the arithmetic (#1016 methodology-reconciler Must-Fix).
     assert verify_task_body.check_hf_adjacent_file_claims in verify_task_body.CHECKS
     assert verify_task_body.check_figure_prose_numerics_vs_sidecar in verify_task_body.CHECKS
     assert verify_task_body.check_figure_beat_claims_vs_sidecar_text in verify_task_body.CHECKS
+    assert verify_task_body.check_v4_result_paragraph_sentences in verify_task_body.CHECKS
 
 
 # ─── Check 14: MDX-safe prose (regex layer + real-parse backstop) ───
@@ -6905,6 +6910,9 @@ def test_v4_good_body_passes_all():
     assert by_name["Methodology completeness (v4)"].passed
     assert by_name["v4 conciseness caps"].passed
     assert by_name["Results three-beat shape (v4)"].passed
+    # Check 36: the fixture's result paragraphs are 1 sentence each (#1368).
+    assert by_name["Results paragraph sentence cap (v4)"].passed
+    assert not by_name["Results paragraph sentence cap (v4)"].is_warn
     # Sentinel-keyed checks run on v4 (confidence title-only, Context row).
     assert by_name["Confidence sentence matches title"].passed
     assert by_name["Reproducibility Context provenance row"].passed
@@ -7855,6 +7863,7 @@ def test_v4_checks_skip_on_v3_body():
         "Methodology completeness (v4)",
         "v4 conciseness caps",
         "Results three-beat shape (v4)",
+        "Results paragraph sentence cap (v4)",
     ):
         r = by_name[name]
         assert r.passed and "not a v4 body" in r.detail, f"{name}: {r.render()}"
@@ -8083,6 +8092,91 @@ def test_v4_methodology_bare_rows_disclosure_passes_check10():
     assert by_name["Cherry-picked label discipline"].passed, by_name[
         "Cherry-picked label discipline"
     ].render()
+
+
+# ─── Check 36: v4 result-paragraph sentence cap (#1368) ───────────────────
+#
+# WARN-only, v4-sentinel-gated: any single prose paragraph inside a
+# `### <result>` running >=4 sentences WARNs (never FAILs — register
+# judgment stays with the clean-result-critic, Lens 12). All assertions
+# per-check by name (the `_V4_GOOD_BODY` convention — fake SHAs fail the
+# existence probes, so overall PASS is not assertable).
+
+_V4_INTERP_LINE = (
+    "The 17-pt lift holds at every seed; "
+    "the smallest within-condition gap between seeds is 1.2 pts."
+)
+
+
+def test_v4_result_paragraph_sentence_cap_warns_on_four_sentences():
+    """PRIMARY pin (#1368 durability pin): a 4-sentence interpretation
+    paragraph WARNs (passed=True, is_warn=True) and the detail names the
+    offending result + the sentence count."""
+    body = _V4_GOOD_BODY.replace(
+        _V4_INTERP_LINE,
+        "The lift holds at every seed. The smallest gap is 1.2 pts. "
+        "The effect is stable across conditions. No seed reverses the ordering.",
+    )
+    _ok, results = verify_task_body.verify_text(body)
+    r = _results_by_name(results)["Results paragraph sentence cap (v4)"]
+    assert r.passed, r.render()  # WARN counts as pass — NEVER FAIL
+    assert r.is_warn, r.render()
+    assert "A clean +17-pt lift" in r.detail, r.detail
+    assert "4-sentence" in r.detail, r.detail
+
+
+def test_v4_result_paragraph_sentence_cap_three_sentences_no_warn():
+    """Exactly 3 sentences sits AT the cap — no WARN."""
+    body = _V4_GOOD_BODY.replace(
+        _V4_INTERP_LINE,
+        "The lift holds at every seed. The smallest gap is 1.2 pts. No seed reverses the ordering.",
+    )
+    _ok, results = verify_task_body.verify_text(body)
+    r = _results_by_name(results)["Results paragraph sentence cap (v4)"]
+    assert r.passed and not r.is_warn, r.render()
+
+
+def test_v4_result_paragraph_sentence_cap_guards_do_not_split():
+    """Abbreviations (`e.g.`, `vs.`, `et al.`, `cf.`, `Fig.`, `no.` before a
+    digit), decimals, inline-code dotted tokens, dotted link targets, and
+    ellipses do not split sentences: a guard-dense 3-sentence paragraph
+    stays under the cap."""
+    para = (
+        "We compare e.g. the tulu-25 arm vs. the baseline per et al. (2025), "
+        "reading 1.2 pts from `run_result.json`. "
+        "See [the panel](https://x.co/a.b/c.png) for Fig. 2 details, "
+        "i.e. the per-seed view. "
+        "The gap is stable (cf. no. 3 in the appendix)..."
+    )
+    assert verify_task_body._count_sentences(para) == 3
+    body = _V4_GOOD_BODY.replace(_V4_INTERP_LINE, para)
+    _ok, results = verify_task_body.verify_text(body)
+    r = _results_by_name(results)["Results paragraph sentence cap (v4)"]
+    assert r.passed and not r.is_warn, r.render()
+
+
+def test_v4_result_paragraph_sentence_cap_excludes_caption_fences_bullets_tables():
+    """Blockquote captions, fenced code, single bullets, and GFM table rows
+    are excluded from paragraph construction: each carries >=5 sentences
+    here while every prose paragraph stays <=3 — no WARN."""
+    body = _V4_GOOD_BODY.replace(
+        _V4_INTERP_LINE + "\n",
+        "> A caption sentence. Another one. And another. A fourth. A fifth.\n\n"
+        "```text\nOne fenced. Two fenced. Three fenced. Four fenced. Five fenced.\n```\n\n"
+        "- One bullet sentence. Two here. Three here. Four here. Five here.\n\n"
+        "| Cell | Note |\n|---|---|\n| One. Two. Three. | Four. Five. Six. |\n\n"
+        "The 17-pt lift holds at every seed.\n",
+    )
+    _ok, results = verify_task_body.verify_text(body)
+    r = _results_by_name(results)["Results paragraph sentence cap (v4)"]
+    assert r.passed and not r.is_warn, r.render()
+
+
+def test_v4_result_paragraph_sentence_cap_skips_v3_body():
+    """Forward-only: v3 bodies are never flagged (sentinel gate)."""
+    _ok, results = verify_task_body.verify_text(_V3_GOOD_BODY)
+    r = _results_by_name(results)["Results paragraph sentence cap (v4)"]
+    assert r.passed and "not a v4 body" in r.detail, r.render()
 
 
 # ─── check 27: bare `#K` issue refs in v4 standalone sections ────────────────
