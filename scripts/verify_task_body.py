@@ -9789,32 +9789,46 @@ _V4_FOOTER_ROUND_CLAUSE_RE = re.compile(
     re.IGNORECASE,
 )
 
+# Plural-enumeration footer form (task #1373; incident #1332 body.md:292):
+# "Two same-issue follow-up rounds, both 2026-07-15: (1) ...; (2) ...". The
+# leading number token (a number word or 1-2 digits) is REQUIRED immediately
+# before the literal phrase, so the generic plural prose the `(?!s)`
+# lookahead above excludes ("follow-up rounds also name...") stays excluded;
+# a numberless "same-issue follow-up rounds" still counts zero. The
+# enumerated items after the colon are NOT parsed — the stated N is
+# authoritative. NOTE: `_NUMBER_WORDS` stops at ten while the count clamp
+# allows 12 — the word forms eleven/twelve simply never match the
+# alternation (digit forms cover 11-12), an under-count-only asymmetry
+# consistent with the WARN-only budget.
+_V4_FOOTER_ROUND_PLURAL_RE = re.compile(
+    r"\b(?P<num>one|two|three|four|five|six|seven|eight|nine|ten|\d{1,2})"
+    r"\s+same-issue\s+follow-up\s+rounds\b",
+    re.IGNORECASE,
+)
+_NUMBER_WORDS = {
+    "one": 1,
+    "two": 2,
+    "three": 3,
+    "four": 4,
+    "five": 5,
+    "six": 6,
+    "seven": 7,
+    "eight": 8,
+    "nine": 9,
+    "ten": 10,
+}
 
-def _followup_run_marker_rounds(issue: int) -> int:
-    """Count REAL folded same-issue follow-up rounds off the task's
-    events.jsonl `epm:same-issue-followup-run` markers: distinct
-    `followup_label`s (one run marker closes a label's round) plus one per
-    unlabeled run marker, EXCLUDING markers whose `outcome` begins
-    `retroactive-close` — bookkeeping closes of ghost labels that folded
-    no new prose (they are likewise excluded from the /issue round caps,
-    SKILL.md). Returns 0 when the task id does not resolve (a plain
-    FileNotFoundError — e.g. a fixture body under a numeric tmp dir); a
-    `StaleTaskPathError` (registry corruption, a FileNotFoundError
-    SUBCLASS) still propagates — that is real corruption the gate should
-    surface, unlike an unknown id."""
+
+def _same_issue_run_rounds(events: list[dict]) -> tuple[set[str], int]:
+    """Distinct non-retroactive-close `epm:same-issue-followup-run` labels
+    plus the unlabeled-run-marker count over `events` — the extracted loop
+    body of `_followup_run_marker_rounds` (task #1373), shared with
+    `_followup_events_rounds`. Returns `(labels, unlabeled)`."""
     from explore_persona_space.task_workflow import (  # local import — matches _load_text_for_issue
         FOLLOWUP_RUN_KIND,
-        StaleTaskPathError,
-        list_events,
         parse_followup_note_field,
     )
 
-    try:
-        events = list_events(issue)
-    except StaleTaskPathError:
-        raise
-    except FileNotFoundError:
-        return 0
     labels: set[str] = set()
     unlabeled = 0
     for ev in events:
@@ -9839,7 +9853,134 @@ def _followup_run_marker_rounds(issue: int) -> int:
             labels.add(label)
         else:
             unlabeled += 1
+    return labels, unlabeled
+
+
+def _followup_run_marker_rounds(issue: int) -> int:
+    """Count REAL folded same-issue follow-up rounds off the task's
+    events.jsonl `epm:same-issue-followup-run` markers: distinct
+    `followup_label`s (one run marker closes a label's round) plus one per
+    unlabeled run marker, EXCLUDING markers whose `outcome` begins
+    `retroactive-close` — bookkeeping closes of ghost labels that folded
+    no new prose (they are likewise excluded from the /issue round caps,
+    SKILL.md). Thin wrapper over `_same_issue_run_rounds` (task #1373
+    refactor; signature + behavior unchanged). Returns 0 when the task id
+    does not resolve (a plain FileNotFoundError — e.g. a fixture body
+    under a numeric tmp dir); a `StaleTaskPathError` (registry corruption,
+    a FileNotFoundError SUBCLASS) still propagates — that is real
+    corruption the gate should surface, unlike an unknown id."""
+    from explore_persona_space.task_workflow import (  # local import — matches _load_text_for_issue
+        StaleTaskPathError,
+        list_events,
+    )
+
+    try:
+        events = list_events(issue)
+    except StaleTaskPathError:
+        raise
+    except FileNotFoundError:
+        return 0
+    labels, unlabeled = _same_issue_run_rounds(events)
     return len(labels) + unlabeled
+
+
+_V4_FREE_ANALYSIS_ABORTED_RE = re.compile(r"^aborted\b", re.IGNORECASE)
+
+
+def _free_analysis_rounds(events: list[dict], exclude_labels: set[str]) -> int:
+    """Count folded free-analysis rounds off `epm:free-analysis-followup-run`
+    markers (task #1373). A marker counts unless:
+
+    - its stripped note matches `(?i)^aborted\\b` — the SKILL.md 9a-ter
+      ABORT record (both spec'd forms begin `aborted — `) folded no prose;
+    - its full note text is byte-identical to an already-counted note —
+      a marker-retry double-post is byte-identical. `followup_ref` is NOT
+      the dedupe key: its parsed value is first-token-truncated
+      (`parse_followup_note_field`) and absent entirely in the free-prose
+      corpus shapes (#1090/#1073), so two distinct rounds sharing a first
+      title word must not collide;
+    - its parsed `followup_ref` is non-None AND in `exclude_labels` (the
+      counted same-issue run labels) — the cross-leg guard: a round that
+      closed an armed scope label AND posted a same-issue run marker for
+      it counts once.
+
+    Deliberate over-credit asymmetry: a multi-word `followup_ref` meant to
+    close an armed slug label won't exact-match retro-close class 2 (the
+    parsed ref is first-token-truncated), so that round can count via BOTH
+    this free leg and the in-flight +1 — over-credit only relaxes a
+    WARN-only, monotone-up budget."""
+    from explore_persona_space.task_workflow import (  # local import — matches _load_text_for_issue
+        FREE_ANALYSIS_RUN_KIND,
+        parse_followup_note_field,
+    )
+
+    seen_notes: set[str] = set()
+    count = 0
+    for ev in events:
+        if ev.get("kind") != FREE_ANALYSIS_RUN_KIND:
+            continue
+        note = ev.get("note") or ""
+        if _V4_FREE_ANALYSIS_ABORTED_RE.match(note.strip()):
+            continue
+        if note in seen_notes:
+            continue
+        seen_notes.add(note)
+        ref = parse_followup_note_field(note, "followup_ref")
+        if ref is not None and ref in exclude_labels:
+            continue
+        count += 1
+    return count
+
+
+def _has_inflight_round(events: list[dict]) -> bool:
+    """True iff any armed `epm:followup-scope` label group is dispatchable
+    (`task_workflow.unrun_followup_labels`) AND has NO retro-close evidence
+    (`followup_retro_close_evidence`) — an in-flight (mid-round) follow-up
+    the clean-result gate should credit as ONE round no matter how many
+    labels are armed (the caller caps at +1: the Goal says "as one round";
+    a queue of armed-but-undispatched labels is not folded prose). The
+    retro-close exclusion prevents a double count with the free-analysis
+    leg (a ghost label closed by a free-analysis `followup_ref` would
+    otherwise count via BOTH class-2 evidence and the in-flight +1);
+    undispatchable `unlabeled-<ts>` pseudo-labels never count."""
+    from explore_persona_space.task_workflow import (  # local import — matches _load_text_for_issue
+        followup_retro_close_evidence,
+        unrun_followup_labels,
+    )
+
+    for group in unrun_followup_labels(events):
+        if not group.get("dispatchable"):
+            continue
+        if followup_retro_close_evidence(events, group["followup_label"]) is None:
+            return True
+    return False
+
+
+def _followup_events_rounds(issue: int) -> int:
+    """Widened events leg for `_count_extra_followup_rounds_v4` (task
+    #1373): same-issue run rounds (distinct labels + unlabeled, via
+    `_same_issue_run_rounds`) + non-aborted deduped free-analysis rounds
+    (`_free_analysis_rounds`, cross-leg-excluded on the counted run
+    labels) + at most ONE in-flight armed-but-unclosed scope credit
+    (`_has_inflight_round`). Same failure shape as
+    `_followup_run_marker_rounds`: unknown issue id (plain
+    FileNotFoundError) returns 0; `StaleTaskPathError` (registry
+    corruption, a FileNotFoundError SUBCLASS) still propagates."""
+    from explore_persona_space.task_workflow import (  # local import — matches _load_text_for_issue
+        StaleTaskPathError,
+        list_events,
+    )
+
+    try:
+        events = list_events(issue)
+    except StaleTaskPathError:
+        raise
+    except FileNotFoundError:
+        return 0
+    labels, unlabeled = _same_issue_run_rounds(events)
+    free = _free_analysis_rounds(events, exclude_labels=labels)
+    inflight = 1 if _has_inflight_round(events) else 0
+    return len(labels) + unlabeled + free + inflight
 
 
 def _count_extra_followup_rounds_v4(body: str, issue: int | None = None) -> tuple[int, str]:
@@ -9850,12 +9991,24 @@ def _count_extra_followup_rounds_v4(body: str, issue: int | None = None) -> tupl
     case (footer: a body omitting the SPEC round clause, e.g. #685;
     events: a legacy pre-marker round whose prose IS folded, e.g. #811):
 
-    - footer: `same-issue follow-up round [`label`]` clauses inside the
+    - footer (TWO forms, max-reconciled): (a) singular
+      `same-issue follow-up round [`label`]` clauses inside the
       `**Repro:**`/`**Context:**` footer (distinct backticked labels +
-      one per unlabeled singular clause);
-    - events (when `issue` is known): non-retroactive-close
-      `epm:same-issue-followup-run` markers via
-      `_followup_run_marker_rounds`.
+      one per unlabeled singular clause); (b) the plural-enumeration
+      form `<N> same-issue follow-up rounds` (`_V4_FOOTER_ROUND_PLURAL_RE`
+      — N a number word or 1-2 digits, clamped to 12; max over matches,
+      since a repeated/updated plural sentence restates the cumulative
+      total). `footer_n = max(singular, plural)` — max, not sum, is
+      deliberate: when both forms appear they most plausibly describe the
+      SAME round set (a plural summary sentence + per-round singular
+      clauses), so max cannot double-count; a mixed-form footer may
+      under-credit, which only leaves a WARN-only budget conservative and
+      is backstopped by the events leg's own max-reconcile (task #1373);
+    - events (when `issue` is known; THREE signals, summed by
+      `_followup_events_rounds`): non-retroactive-close
+      `epm:same-issue-followup-run` markers, non-aborted deduped
+      `epm:free-analysis-followup-run` markers, and at most one in-flight
+      armed-but-unclosed `epm:followup-scope` credit.
 
     Returns `(count, source)`; `source` is one of `none` / `footer` /
     `events` / `footer+events` and names the winning signal for the WARN
@@ -9870,8 +10023,14 @@ def _count_extra_followup_rounds_v4(body: str, issue: int | None = None) -> tupl
             labels.add(m.group("label"))
         else:
             unlabeled += 1
-    footer_n = len(labels) + unlabeled
-    events_n = _followup_run_marker_rounds(issue) if issue is not None else 0
+    singular_n = len(labels) + unlabeled
+    plural_n = 0
+    for m in _V4_FOOTER_ROUND_PLURAL_RE.finditer(footer):
+        word = m.group("num").lower()
+        n = _NUMBER_WORDS.get(word) or int(word)
+        plural_n = max(plural_n, min(n, 12))
+    footer_n = max(singular_n, plural_n)
+    events_n = _followup_events_rounds(issue) if issue is not None else 0
     count = max(footer_n, events_n)
     if count == 0:
         return 0, "none"

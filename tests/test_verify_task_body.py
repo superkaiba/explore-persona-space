@@ -7774,6 +7774,294 @@ def test_v4_round_count_graceful_when_issue_unknown(monkeypatch):
         verify_task_body._followup_run_marker_rounds(999999)
 
 
+# The verbatim #1332 body.md:292 footer clause (the task #1373 motivating
+# incident): the plural-enumeration form the singular `(?!s)` clause regex
+# deliberately excludes.
+_I1332_FOOTER_CLAUSE = (
+    "Two same-issue follow-up rounds, both 2026-07-15: (1) the 9a-ter "
+    "free-analysis directional-inference battery, 0 GPU-h; (2) the proposer "
+    "cheap-band GPU round `lowdose-grid-kill-battery` "
+    "(`source: proposer-9b-cheap`, auto-run)."
+)
+
+
+def _v4_body_with_footer_line(line: str) -> str:
+    """`_V4_GOOD_BODY` with `line` appended inside the Context footer."""
+    return _V4_GOOD_BODY.replace(
+        "- Originating prompt: origin prompt not recorded",
+        "- Originating prompt: origin prompt not recorded\n- " + line,
+    )
+
+
+def test_v4_round_count_footer_plural_enumeration():
+    """(Test 1) The verbatim #1332 footer clause -> (2, "footer") with no
+    issue id (the plural arm alone credits the stated N)."""
+    body = _v4_body_with_footer_line(_I1332_FOOTER_CLAUSE)
+    assert verify_task_body._count_extra_followup_rounds_v4(body, None) == (2, "footer")
+
+
+def test_v4_round_count_footer_plural_word_and_digit():
+    """(Test 2) Number-word and digit forms parse alike; IGNORECASE; a
+    repeated plural sentence takes max-over-matches; the count clamps at
+    12."""
+    cases = [
+        ("three same-issue follow-up rounds folded so far.", 3),
+        ("3 same-issue follow-up rounds folded so far.", 3),
+        ("Two same-issue follow-up rounds folded so far.", 2),
+        ("two SAME-ISSUE follow-up ROUNDS folded so far.", 2),
+        # Repeated/updated plural sentences restate the cumulative total:
+        # max over matches, never sum.
+        ("Two same-issue follow-up rounds; later three same-issue follow-up rounds total.", 3),
+        ("99 same-issue follow-up rounds (implausible; clamped).", 12),
+    ]
+    for line, expected in cases:
+        body = _v4_body_with_footer_line(line)
+        assert verify_task_body._count_extra_followup_rounds_v4(body, None) == (
+            expected,
+            "footer",
+        ), line
+
+
+def test_v4_round_count_footer_plural_no_generic_prose_false_positive():
+    """(Test 3) Generic spec-quoting prose and a numberless plural stay
+    excluded (preserves the `(?!s)` intent); a numbered plural sentence in
+    body prose OUTSIDE the footer counts zero (structurally inherited from
+    `_v4_footer_text`, pinned anyway)."""
+    body = _v4_body_with_footer_line(
+        "follow-up rounds also name each round's `followup_label`; "
+        "same-issue follow-up rounds are folded into this body."
+    )
+    assert verify_task_body._count_extra_followup_rounds_v4(body, None) == (0, "none")
+    # Plural-in-prose scoping: the sentence sits in Methodology prose, not
+    # the footer.
+    body2 = _V4_GOOD_BODY.replace(
+        "- **Design:**",
+        "- Two same-issue follow-up rounds folded this sweep. **Design:**",
+    )
+    assert verify_task_body._count_extra_followup_rounds_v4(body2, None) == (0, "none")
+
+
+def test_v4_round_count_footer_both_forms_max_not_sum():
+    """(Test 4) A singular clause + a plural summary sentence describe the
+    same round set: max(1, 2) == 2, never 3."""
+    body = _v4_body_with_footer_line(
+        "Two same-issue follow-up rounds: the first is the "
+        "same-issue follow-up round `round-a` (proposer-initiated)."
+    )
+    assert verify_task_body._count_extra_followup_rounds_v4(body, None) == (2, "footer")
+
+
+def test_v4_round_count_events_free_analysis_counts(monkeypatch):
+    """(Test 5) Free-analysis run markers count: a #1332-shape
+    `followup_ref=` note + a no-ref free-prose note (#1090 shape) -> 2.
+    A NON-run-kind event whose NOTE mentions the marker kind is not
+    counted (kind-keyed counting)."""
+    import explore_persona_space.task_workflow as tw
+
+    fake = [
+        {
+            "kind": "epm:free-analysis-followup-run",
+            "ts": "2026-07-15T18:51:36Z",
+            "note": "followup_ref=Directional (asymmetric) transfer predictor\n"
+            "headline_before=old title\nheadline_after=new title",
+        },
+        {
+            "kind": "epm:free-analysis-followup-run",
+            "ts": "2026-07-15T20:02:00Z",
+            "note": "inline user-chat round: re-read committed cells, folded "
+            "one takeaway into the body (no followup label).",
+        },
+        # Kind-keyed counting: a critique note MENTIONING the marker kind
+        # is not a run marker (the :7739 pattern).
+        {
+            "kind": "epm:followup-value-critique",
+            "ts": "2026-07-15T20:10:00Z",
+            "note": "screened the epm:free-analysis-followup-run proposal set",
+        },
+    ]
+    monkeypatch.setattr(tw, "list_events", lambda n: fake)
+    assert verify_task_body._followup_events_rounds(123) == 2
+    assert verify_task_body._count_extra_followup_rounds_v4(_V4_GOOD_BODY, 123) == (2, "events")
+
+
+def test_v4_round_count_events_free_analysis_excludes_aborted(monkeypatch):
+    """(Test 6) BOTH spec'd 9a-ter ABORT note forms are excluded (the
+    round folded no prose): the reclassify form AND the implementer-FAIL
+    form."""
+    import explore_persona_space.task_workflow as tw
+
+    fake = [
+        {
+            "kind": "epm:free-analysis-followup-run",
+            "ts": "2026-07-15T10:00:00Z",
+            "note": "aborted — reclassified as needs-gpu (the analysis needs new eval data)",
+        },
+        {
+            "kind": "epm:free-analysis-followup-run",
+            "ts": "2026-07-15T11:00:00Z",
+            "note": "aborted — implementer FAIL on attempt 1",
+        },
+    ]
+    monkeypatch.setattr(tw, "list_events", lambda n: fake)
+    assert verify_task_body._followup_events_rounds(123) == 0
+    assert verify_task_body._count_extra_followup_rounds_v4(_V4_GOOD_BODY, 123) == (0, "none")
+
+
+def test_v4_round_count_events_free_analysis_dedupe_and_cross_leg(monkeypatch):
+    """(Test 7) Byte-identical free-analysis notes (a marker-retry
+    double-post) count once; a free-analysis `followup_ref` matching a
+    counted same-issue run label is cross-leg-excluded; a NO-ref
+    free-prose note still counts beside a labeled run marker (the
+    explicit `ref is not None` guard). Total: run 1 + deduped no-ref
+    free 1 = 2."""
+    import explore_persona_space.task_workflow as tw
+
+    retry_note = "inline round: folded the fair-comparison re-read (retry double-post)."
+    fake = [
+        {
+            "kind": "epm:same-issue-followup-run",
+            "ts": "2026-07-15T09:00:00Z",
+            "note": "followup_label: round-x\nsource: user-chat\noutcome: folded",
+        },
+        # Cross-leg guard: ref exactly matches the counted run label.
+        {
+            "kind": "epm:free-analysis-followup-run",
+            "ts": "2026-07-15T10:00:00Z",
+            "note": "followup_ref=round-x\ngpu_hours=0\nresult: folded into body",
+        },
+        # Byte-identical double-post: counts once.
+        {
+            "kind": "epm:free-analysis-followup-run",
+            "ts": "2026-07-15T11:00:00Z",
+            "note": retry_note,
+        },
+        {
+            "kind": "epm:free-analysis-followup-run",
+            "ts": "2026-07-15T11:00:05Z",
+            "note": retry_note,
+        },
+    ]
+    monkeypatch.setattr(tw, "list_events", lambda n: fake)
+    assert verify_task_body._followup_events_rounds(123) == 2
+
+
+def test_v4_round_count_events_inflight_counts_one(monkeypatch):
+    """(Test 8) An armed dispatchable scope with no run marker and no
+    retro-close evidence credits +1; TWO armed labels still +1 (cap);
+    an unlabeled pseudo-label scope credits +0; a scope whose label has a
+    run marker adds no extra; and (guard 4) an armed label closed by a
+    free-analysis `followup_ref` counts via the free leg ONLY (in-flight
+    suppressed by retro-close evidence)."""
+    import explore_persona_space.task_workflow as tw
+
+    def _events(events):
+        monkeypatch.setattr(tw, "list_events", lambda n: list(events))
+
+    scope_a = {
+        "kind": "epm:followup-scope",
+        "ts": "2026-07-15T08:00:00Z",
+        "note": "followup_label: armed-a\nsource: proposer-9b-cheap\nest_gpu_hours: 2",
+    }
+    scope_b = {
+        "kind": "epm:followup-scope",
+        "ts": "2026-07-15T08:05:00Z",
+        "note": "followup_label: armed-b\nsource: user-chat\nest_gpu_hours: 1",
+    }
+    # (a) one armed dispatchable label, no run marker, no retro-close -> 1.
+    _events([scope_a])
+    assert verify_task_body._followup_events_rounds(123) == 1
+    # (b) TWO armed labels: the in-flight credit caps at +1 total.
+    _events([scope_a, scope_b])
+    assert verify_task_body._followup_events_rounds(123) == 1
+    # (c) an unlabeled pseudo-label scope (no correction signal) is not
+    # dispatchable and never credits.
+    _events(
+        [
+            {
+                "kind": "epm:followup-scope",
+                "ts": "2026-07-15T08:10:00Z",
+                "note": "queued follow-up idea with no label field",
+            }
+        ]
+    )
+    assert verify_task_body._followup_events_rounds(123) == 0
+    # (d) a scope whose label has a matching run marker: the run counts,
+    # no in-flight extra.
+    _events(
+        [
+            scope_a,
+            {
+                "kind": "epm:same-issue-followup-run",
+                "ts": "2026-07-15T12:00:00Z",
+                "note": "followup_label: armed-a\nsource: proposer-9b-cheap\noutcome: folded",
+            },
+        ]
+    )
+    assert verify_task_body._followup_events_rounds(123) == 1
+    # (e) guard-4 pin: an armed dispatchable label whose round completed as
+    # a free-analysis round (`followup_ref` == label, NO run marker) counts
+    # ONCE via the free leg; the retro-close evidence suppresses the
+    # in-flight +1. An implementation missing the retro-close check in
+    # `_has_inflight_round` reads 2 here.
+    _events(
+        [
+            scope_a,
+            {
+                "kind": "epm:free-analysis-followup-run",
+                "ts": "2026-07-15T09:30:00Z",
+                "note": "followup_ref=armed-a\ngpu_hours=0\nresult: folded into body",
+            },
+        ]
+    )
+    assert verify_task_body._followup_events_rounds(123) == 1
+
+
+def test_v4_round_count_issue_1332_regression(monkeypatch):
+    """(Test 9) The #1332 incident replay, BOTH states. Full state (scope +
+    run + free-analysis, the real marker shapes): events leg = run 1 +
+    free 1 = 2, and with the real plural footer the total reads
+    (2, "footer+events"). Mid-round state (run marker removed — the state
+    the clean-result gate actually saw): events leg still 2
+    (free-analysis 1 + in-flight 1)."""
+    import explore_persona_space.task_workflow as tw
+
+    free = {
+        "kind": "epm:free-analysis-followup-run",
+        "ts": "2026-07-15T18:51:36Z",
+        "version": 1,
+        "note": "followup_ref=Directional (asymmetric) transfer predictor with "
+        "registered inference\nheadline_before=Function-space map similarity "
+        "predicts marker leakage (MODERATE confidence)\nheadline_after=Directional "
+        "function-space map similarity predicts marker leakage",
+    }
+    scope = {
+        "kind": "epm:followup-scope",
+        "ts": "2026-07-15T19:37:40Z",
+        "version": 1,
+        "note": "followup_label: lowdose-grid-kill-battery\nsource: proposer-9b-cheap\n"
+        "est_gpu_hours: 8\nquestion_relation: same\nauto_run: yes",
+    }
+    run = {
+        "kind": "epm:same-issue-followup-run",
+        "ts": "2026-07-16T00:18:05Z",
+        "version": 1,
+        "note": "followup_label: lowdose-grid-kill-battery\nsource: proposer-9b-cheap\n"
+        "outcome: registered verdicts folded; re-parked awaiting_promotion",
+    }
+    body = _v4_body_with_footer_line(_I1332_FOOTER_CLAUSE)
+
+    # Full (post-round) state.
+    monkeypatch.setattr(tw, "list_events", lambda n: [free, scope, run])
+    assert verify_task_body._followup_events_rounds(123) == 2
+    assert verify_task_body._count_extra_followup_rounds_v4(body, 123) == (2, "footer+events")
+
+    # Mid-round state — the run marker has not posted yet: the armed scope
+    # is in-flight (+1) and the free-analysis round still counts (+1).
+    monkeypatch.setattr(tw, "list_events", lambda n: [free, scope])
+    assert verify_task_body._followup_events_rounds(123) == 2
+    assert verify_task_body._count_extra_followup_rounds_v4(body, 123) == (2, "footer+events")
+
+
 def test_v4_total_prose_budget_scales_with_folded_rounds():
     """(End-to-end, the #763 incident shape.) Same >800-word body: with two
     footer round clauses the total-prose WARN clears at budget 1300;
