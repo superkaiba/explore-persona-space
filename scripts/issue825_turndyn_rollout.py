@@ -20,7 +20,13 @@ completed steps on relaunch.
 G-B pilot: ``--pilot-n 50`` runs THIS SAME production path on 50 seeds
 (PASS_UNIFIED — no architectural fork); ``--report`` computes the per-depth
 degeneracy diagnostics (user-turn distinct-2 ratio, max within-conv cross-turn
-user-turn cosine, role-leak regex rate) from the persisted rollout text.
+user-turn cosine, role-leak regex rate, plus round-11 length telemetry:
+user/answer word medians, closer rate, died-reason histogram) from the
+persisted rollout text.
+
+Simulated-user template: ``SIM_USER_PROMPT_VERSION`` (v2, round-11 G-B fix) —
+constrains the simulator to real-user-like turns (1-3 sentences, ONE focused
+question, no closers); the version is a resume-fingerprint regime key.
 
 Content hygiene: seeds + rollouts are REAL-USER-derived text. Conversation /
 generation text is never printed or logged — only counts and paths.
@@ -80,9 +86,25 @@ logger = logging.getLogger("i825_turndyn_rollout")
 HAIKU_MAX_TOKENS = 512  # Track-M recipe (issue825_gen_conversations._haiku_user_turn)
 HAIKU_TEMPERATURE = 1.0
 WAVE_FAIL_HARD_RATE = 0.05  # >5% haiku failures in one wave = systemic, fail loud
+# Output-affecting regime key for the simulated-user SYSTEM TEMPLATE (#722 r3):
+# a resume must never mix waves generated under different templates. Bump on
+# any template change. v2 = round-11 G-B realism fix (att-20260716-012315):
+# the v1 Track-M template produced user turns unlike real users (median 124
+# words vs 24 for the real corpus u1, ~2 questions/turn vs 0), whose
+# multi-part expansive asks elicited ~3x longer instruct answers (464 vs 152
+# words median; 17% at the 1024-token cap) and overflowed the depth-24 token
+# budget (died_reasons 100% window/capture overflow) -> G-B completion 0.22.
+SIM_USER_PROMPT_VERSION = "v2-realistic-brevity"
 ROLE_LEAK_RE = re.compile(
     r"(^\s*(assistant|ai|user|human)\s*:)|\bas an ai\b|\bas a language model\b",
     re.IGNORECASE | re.MULTILINE,
+)
+# WARN-only telemetry (run_report): conversation-closer phrasing in simulated
+# user turns. NOT a gate — the G-B thresholds are pre-registered (plan §7).
+CLOSER_RE = re.compile(
+    r"\b(thanks|thank you|bye|goodbye|that'?s all|no further questions"
+    r"|no more questions|this (was|has been) (really |very )?helpful)\b",
+    re.IGNORECASE,
 )
 
 
@@ -108,6 +130,7 @@ def _fingerprint(args: argparse.Namespace, seeds_sha: str) -> dict:
         },
         "haiku_model": args.haiku_model,
         "haiku_max_tokens": HAIKU_MAX_TOKENS,
+        "sim_user_prompt": SIM_USER_PROMPT_VERSION,
         "capture_budget": args.capture_budget,
         "engine_max_len": args.engine_max_len,
         "smoke": bool(args.smoke),
@@ -217,11 +240,24 @@ def _generate(llm, prompts: list[str], args: argparse.Namespace, tag: str) -> li
 
 
 def _sim_user_system(brief_text: str) -> str:
-    """Track-M simulator system prompt (issue825_gen_conversations), multi-turn."""
+    """Simulated-user system prompt (Track-M recipe + round-11 G-B realism fix).
+
+    v2 (`SIM_USER_PROMPT_VERSION`): pins the simulator to the MEASURED real-user
+    turn distribution (pilot att-20260716-012315: real corpus u1 median 24
+    words, 0 question marks) and bans conversation closers. The v1 template's
+    long multi-question turns elicited instruct answers ~3x longer than real
+    user turns do, overflowing the depth-24 token budget (plan §7 G-B fix-the-
+    simulator remedy; thresholds untouched).
+    """
     return (
         "You are simulating a human USER in an ongoing conversation with an AI assistant, "
-        f"generating research data. {brief_text} Write ONLY the user's next message: "
-        "natural, first-person, no role labels, no meta-commentary."
+        f"generating research data. {brief_text} Write ONLY the user's next message. "
+        "Real chat users write SHORT messages: 1-3 sentences, under 40 words. "
+        "Ask exactly ONE focused question (or make ONE request) about a SPECIFIC point in "
+        "the assistant's last reply — never a list of questions, never 'tell me everything "
+        "about X'. Plain, informal register; first person; no role labels, no "
+        "meta-commentary, no pleasantries or thanks. Never wrap up, close, or say goodbye — "
+        "always keep the conversation going with a new question or request."
     )
 
 
@@ -289,13 +325,26 @@ def _run_haiku_wave(
             out[cid] = {"text": res.result}
     if n_err:
         rate = n_err / len(wave_items)
+        # reason histogram: the hard-fail raise previously discarded WHY items
+        # failed (round-11 crash-fix smoke: a 33% wave failure with no reason
+        # in the log). Reasons are dispatch metadata, never conversation text.
+        reasons: dict[str, int] = {}
+        for v in out.values():
+            if "error" in v:
+                reasons[str(v["error"])[:120]] = reasons.get(str(v["error"])[:120], 0) + 1
         logger.warning(
-            "[haiku u%d] %d/%d failed (%.1f%%)", k_next, n_err, len(wave_items), 100 * rate
+            "[haiku u%d] %d/%d failed (%.1f%%); reasons=%s",
+            k_next,
+            n_err,
+            len(wave_items),
+            100 * rate,
+            reasons,
         )
         if rate > WAVE_FAIL_HARD_RATE:
             raise RuntimeError(
                 f"[haiku u{k_next}] failure rate {100 * rate:.1f}% > "
-                f"{100 * WAVE_FAIL_HARD_RATE:.0f}% — systemic dispatch problem, not attrition"
+                f"{100 * WAVE_FAIL_HARD_RATE:.0f}% — systemic dispatch problem, not attrition; "
+                f"reasons={reasons}"
             )
     return out
 
@@ -337,6 +386,8 @@ def run_rollout(args: argparse.Namespace) -> None:  # noqa: C901 — linear wave
     else:
         with open(fp_path, "w") as f:
             json.dump(fp, f, indent=1)
+    # fix-engaged signal (round-11 G-B crash-fix): the v2 simulator template is live.
+    logger.info("[rollout] sim_user_prompt=%s", SIM_USER_PROMPT_VERSION)
 
     from transformers import AutoTokenizer
 
@@ -482,8 +533,15 @@ def run_rollout(args: argparse.Namespace) -> None:  # noqa: C901 — linear wave
         # 3) generate answers
         gens = _generate(llm, prompts, args, tag=f"t{k}{half}")
         assert len(gens) == len(live), (len(gens), len(live))
+        gen_meta: dict[str, dict] = {}
         for cid, g in zip(live, gens, strict=True):
             st = state[cid]
+            # per-answer generation metadata rides the step checkpoint (round-11
+            # G-B post-mortem: at-cap answers were invisible in persisted data)
+            gen_meta[cid] = {
+                "finish_reason": g.get("finish_reason"),
+                "n_gen_tokens": g.get("n_gen_tokens"),
+            }
             content = str(g["text"]).strip()
             if not content:
                 st["alive"] = False
@@ -515,6 +573,7 @@ def run_rollout(args: argparse.Namespace) -> None:  # noqa: C901 — linear wave
         rows = []
         for cid in halves[half]:
             st = state[cid]
+            meta = gen_meta.get(cid, {})
             rows.append(
                 {
                     "conv_id": cid,
@@ -524,6 +583,9 @@ def run_rollout(args: argparse.Namespace) -> None:  # noqa: C901 — linear wave
                     "alive": st["alive"],
                     "died_at": st["died_at"],
                     "died_reason": st["died_reason"],
+                    # diagnostics only — the resume replay ignores these keys
+                    "finish_reason": meta.get("finish_reason"),
+                    "n_gen_tokens": meta.get("n_gen_tokens"),
                 }
             )
         _write_step(out_root, k, half, rows)
@@ -652,6 +714,7 @@ def run_report(args: argparse.Namespace) -> None:
             cos_vals.append(best)
         if not users_k:
             continue
+        u_words = sorted(len(u.split()) for u in users_k)
         per_depth[str(k)] = {
             "n": len(users_k),
             "distinct2": _distinct2(users_k),
@@ -660,14 +723,42 @@ def run_report(args: argparse.Namespace) -> None:
                 float(np.nanpercentile(cos_vals, 90)) if cos_vals else None
             ),
             "role_leak_rate": leak / len(users_k),
+            # round-11 G-B length telemetry (WARN-only; NOT gate inputs — the
+            # pre-registered gate reads completion + role_leak only, plan §7)
+            "user_words_median": u_words[len(u_words) // 2],
+            "closer_rate": sum(1 for u in users_k if CLOSER_RE.search(u)) / len(users_k),
         }
+    # per-depth ANSWER length telemetry (separate map: k=1 exists here, and the
+    # G-B gate iterates per_depth expecting the degeneracy keys on every node)
+    answers_per_depth: dict[str, dict] = {}
+    for k in range(1, max_depth + 1):
+        a_words = sorted(
+            len(a[k - 1].split())
+            for c in convs
+            if len(a := [t["content"] for t in c["turns"] if t["role"] == "assistant"]) >= k
+        )
+        if a_words:
+            answers_per_depth[str(k)] = {
+                "n": len(a_words),
+                "answer_words_median": a_words[len(a_words) // 2],
+                "answer_words_p90": a_words[min(len(a_words) - 1, int(0.9 * len(a_words)))],
+            }
+    died_reasons: dict[str, int] = {}
+    for c in convs:
+        if not c["alive"]:
+            died_reasons[str(c.get("died_reason"))] = (
+                died_reasons.get(str(c.get("died_reason")), 0) + 1
+            )
     n_completed = sum(1 for c in convs if c["alive"])
     out = {
         "model": args.model,
         "n_conversations": len(convs),
         "n_completed": n_completed,
         "completion_rate": n_completed / max(1, len(convs)),
+        "sim_user_prompt": SIM_USER_PROMPT_VERSION,
         "per_depth": per_depth,
+        "answers_per_depth": answers_per_depth,
+        "died_reasons": died_reasons,
         "embedding": "hashed bag-of-words (2^15), L2-normalized — lexical repetition read",
         "generated_at_utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
     }
