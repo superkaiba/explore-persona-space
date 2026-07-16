@@ -13,6 +13,17 @@ Reparameterization gap per (pair, eval set, layer):
 with a paired prompt-level percentile bootstrap over the pair's shared rows
 (per-draw own-mean re-centered weighted R^2, fp64 — the round-5 machinery).
 
+RESUME recipe (plan v9 §4 route 1): BOTH arms of each gap — the within-stage
+read AND the reparameterized-base composition — additionally receive their
+own held-out cross-fitted per-dim affine recalibration under the identical
+scheme (per fold, (a_j, b_j) fit on the OTHER folds' held-out (pred, truth)
+pairs — no row's recalibration is fit on itself), giving the PRIMARY
+recalibrated gap; the RAW-scale gap is always reported as companion, and the
+paired bootstrap runs on BOTH scales (separate reads, never blended). The
+decision lattice reads the recalibrated contrast as primary with v3's Δ
+bands carried via the persisted Qwen exchange rate; the raw contrast +
+unscaled bands ride along as the companion block.
+
 ``--decision`` aggregates the per-stage gaps into the registered lattice:
   C = gap_RLVR - gap_DPO per eval set with SHARED draws over the primary
   ladder's common row set; headline verdict on gsm8k_train5k chat at the
@@ -52,6 +63,7 @@ import numpy as np  # noqa: E402
 import torch  # noqa: E402
 
 from explore_persona_space.experiments.issue_1336 import common as cm  # noqa: E402
+from explore_persona_space.experiments.issue_1336 import recal as rc  # noqa: E402
 
 N_FOLDS = cm.N_FOLDS
 FIT_SEED = cm.FIT_SEED
@@ -210,10 +222,26 @@ def _primary_models(smoke: bool) -> tuple[str, ...]:
     return tuple(m for m in cm.SMOKE_MODELS) if smoke else cm.PRIMARY_LADDER
 
 
+def _recal_arm(preds: np.ndarray, y: np.ndarray, folds: np.ndarray) -> dict:
+    """One arm's held-out cross-fitted per-dim affine recal (plan v9 route 1).
+
+    The within-stage arm and the reparameterized-base composition arm each go
+    through THIS same call independently — identical scheme, no row's
+    recalibration fit on itself (the no-self-fit invariant is pinned by
+    tests/test_issue1336_recal.py). Returns the pooled recal R^2 (fold-local
+    test mean) and the recalibrated held-out predictions.
+    """
+    rec = rc.crossfit_recal_direct(np.asarray(preds, dtype=np.float64), y, folds)
+    return {"r2": float(rec["r2"]), "pred_recal": rec["pred_recal"]}
+
+
 def headline_layer_rule(cells_dir: Path, frozen_layers: tuple[int, ...], smoke: bool) -> int:
     """Pre-registered stage-symmetric rule (plan §4 Phase F): among the frozen
     set, the layer maximizing MEAN within-stage R^2 across the primary-ladder
-    models on lmsys5k-chat. Symmetric across the stages in every contrast."""
+    models on lmsys5k-chat — computed on the RECALIBRATED primary (plan v9
+    route 1; the frozen-set domain is unchanged). Symmetric across the stages
+    in every contrast. Fail-loud on a pre-resume cells JSON without the recal
+    block (a half-re-emitted fit phase must never silently feed the rule)."""
     models = _primary_models(smoke)
     means = {}
     for li in frozen_layers:
@@ -221,12 +249,17 @@ def headline_layer_rule(cells_dir: Path, frozen_layers: tuple[int, ...], smoke: 
         for m in models:
             path = cells_dir / f"cells_{cm.cell_id(m, 'chat', 'lmsys5k')}.json"
             assert path.exists(), f"headline rule requires {path} (run the fit phase first)"
-            r2 = json.loads(path.read_text())["r2_per_layer_obs"]
-            assert li < len(r2), f"frozen layer {li} out of range for {path}"
-            vals.append(float(r2[li]))
+            cell = json.loads(path.read_text())
+            assert "recal" in cell, (
+                f"{path} lacks the recal block — stale pre-resume fit output; re-run the fit "
+                "phase under the plan-v9 resume recipe"
+            )
+            per_layer = cell["recal"]["per_layer"]
+            assert str(li) in per_layer, f"frozen layer {li} missing from recal block of {path}"
+            vals.append(float(per_layer[str(li)]["heldout_recal_r2"]))
         means[li] = float(np.mean(vals))
     best = max(means, key=means.get)
-    print(f"[align1336] headline layer {best} (frozen-set means {means})")
+    print(f"[align1336] headline layer {best} (frozen-set RECAL means {means})")
     return int(best)
 
 
@@ -350,16 +383,30 @@ def run_pair(args) -> None:
         y_np = Yi.float().cpu().numpy()
         assert fitted.all(), f"unfitted rows at layer {li} (n={n})"
         boot = paired_bootstrap_batched(captured["within"], y_np, captured["comp"], y_np, w)
+        # Plan v9 route 1: BOTH arms recalibrated independently under the
+        # identical cross-fitted scheme; recal gap = PRIMARY, raw = companion;
+        # the paired bootstrap runs on BOTH scales (same shared draws w).
+        rec_within = _recal_arm(captured["within"], y_np.astype(np.float64), folds)
+        rec_comp = _recal_arm(captured["comp"], y_np.astype(np.float64), folds)
+        boot_recal = paired_bootstrap_batched(
+            rec_within["pred_recal"], y_np, rec_comp["pred_recal"], y_np, w
+        )
         per_layer[str(li)] = {
             "battery": battery,
             "within_r2": float(within),
             "comp_samefn_r2": float(comp),
             "gap": gap_point,
             "gap_bootstrap": _ci(boot["delta"]),
+            "within_r2_recal": rec_within["r2"],
+            "comp_samefn_r2_recal": rec_comp["r2"],
+            "gap_recal": rec_within["r2"] - rec_comp["r2"],
+            "gap_recal_bootstrap": _ci(boot_recal["delta"]),
             "is_headline": bool(do_orth),
         }
         preds_store[f"within_l{li}"] = captured["within"].astype(np.float16)
         preds_store[f"comp_l{li}"] = captured["comp"].astype(np.float16)
+        preds_store[f"within_recal_l{li}"] = rec_within["pred_recal"].astype(np.float16)
+        preds_store[f"comp_recal_l{li}"] = rec_comp["pred_recal"].astype(np.float16)
         preds_store[f"y_l{li}"] = y_np.astype(np.float16)
         del Xi, Yi, Xb, Yb, tens
         if dev.type == "cuda":
@@ -387,6 +434,11 @@ def run_pair(args) -> None:
         "headline_layer": headline,
         "n_boot": n_boot,
         "boot_seed": 1000 + eval_set_idx,
+        "primary_scale": "recal",
+        "scales": {
+            "recal": "heldout crossfit per-dim affine recal on BOTH arms (plan v9 route 1)",
+            "raw": "committed raw-scale companion — separate read, never blended",
+        },
         "per_layer": per_layer,
         "preds_npz": str(preds_path),
         "preds_sha256": sha,
@@ -403,14 +455,102 @@ def _load_align_preds(preds_dir: Path, m0: str, m1: str, fmt: str, corpus: str) 
     return dict(np.load(path, allow_pickle=False))
 
 
-def _gap_draws_on_rows(pair_npz: dict, layer: int, rows: np.ndarray, w: np.ndarray) -> dict:
-    """Per-draw gap = R²(within) - R²(comp) restricted to the given row subset."""
-    within = pair_npz[f"within_l{layer}"][rows].astype(np.float64)
-    comp = pair_npz[f"comp_l{layer}"][rows].astype(np.float64)
+def _gap_draws_on_rows(
+    pair_npz: dict, layer: int, rows: np.ndarray, w: np.ndarray, variant: str = ""
+) -> dict:
+    """Per-draw gap = R²(within) - R²(comp) restricted to the given row subset.
+
+    ``variant`` selects the persisted prediction scale: "" = raw (the
+    committed companion), "_recal" = the plan-v9 recalibrated primary (both
+    arms' recal preds were fit on the PAIR's train-fold OOF pairs in
+    run_pair — held-out by construction, so a row-subset restriction here
+    keeps the no-self-fit invariant). Fail-loud on an npz without the recal
+    arrays (stale pre-resume align preds must be re-emitted, never reused).
+    """
+    key = f"within{variant}_l{layer}"
+    assert key in pair_npz, (
+        f"{key} missing from the align preds npz — stale pre-resume Phase-A output; re-run the "
+        "align phase under the plan-v9 resume recipe"
+    )
+    within = pair_npz[key][rows].astype(np.float64)
+    comp = pair_npz[f"comp{variant}_l{layer}"][rows].astype(np.float64)
     y = pair_npz[f"y_l{layer}"][rows].astype(np.float64)
     boot = paired_bootstrap_batched(within, y, comp, y, w)
     point = fc._pooled_r2(within, y) - fc._pooled_r2(comp, y)
     return {"draws": boot["delta"], "point": float(point)}
+
+
+def _scale_reads(
+    npzs: dict, stages: list[str], headline: int, rows_by_stage: dict, w: np.ndarray, variant: str
+) -> dict:
+    """Per-stage gaps, contrast C, and adjacent increments for ONE scale
+    (variant "" = raw companion, "_recal" = the plan-v9 recalibrated
+    primary) over the SAME shared rows + shared draws."""
+    gaps = {
+        k: _gap_draws_on_rows(npzs[k], headline, rows_by_stage[k], w, variant=variant)
+        for k in stages
+    }
+    c_draws = gaps["rlvr"]["draws"] - gaps["dpo"]["draws"]
+    c_point = gaps["rlvr"]["point"] - gaps["dpo"]["point"]
+    increments = {}
+    order = [k for k in ("sft", "dpo", "rlvr") if k in stages]
+    prev = None
+    for k in order:
+        inc_draws = gaps[k]["draws"] - (gaps[prev]["draws"] if prev else 0.0)
+        inc_point = gaps[k]["point"] - (gaps[prev]["point"] if prev else 0.0)
+        increments[f"{prev or 'zero'}->{k}"] = {"point": float(inc_point), **_ci(inc_draws)}
+        prev = k
+    return {
+        "gap_per_stage": {k: {"point": gaps[k]["point"], **_ci(gaps[k]["draws"])} for k in stages},
+        "contrast_C": {"point": float(c_point), **_ci(c_draws)},
+        "adjacent_increments": increments,
+    }
+
+
+def _verdict_reads(
+    per_set: dict, headline_key: str, *, scale_suffix: str, elicit_band: float, practical: float
+) -> dict:
+    """Verdict lattice for ONE scale. ``scale_suffix`` picks the per_set keys
+    ("" = the primary recal fields, "_raw" = the raw companion fields); the Δ
+    bands are the caller's (exchange-rate-scaled on the recal primary,
+    unscaled on the raw companion — plan v9 route 1)."""
+    c = per_set[headline_key][f"contrast_C{scale_suffix}"]
+    if c["ci_lo"] > 0.0:
+        verdict = "rlvr_specific_gap_growth"  # C > 0, CI clear of zero (positive side)
+    elif c["ci_hi"] < 0.0:
+        verdict = "rlvr_gap_not_larger"  # CI wholly below 0
+    else:
+        verdict = "inconclusive"
+    magnitude_note = None
+    if verdict == "rlvr_specific_gap_growth" and abs(c["point"]) < practical:
+        magnitude_note = (
+            f"statistically detectable but small (|C| < {practical:.6g} practical scale)"
+        )
+    # H-elicit: every primary Δ_k CI includes 0 OR |Δ_k| < the elicit band.
+    h_elicit = all(
+        (g["ci_lo"] <= 0.0 <= g["ci_hi"]) or abs(g["point"]) < elicit_band
+        for s in per_set.values()
+        for g in s[f"gap_per_stage{scale_suffix}"].values()
+    )
+    # H-generic (descriptive band): all adjacent increments positive CI-clear
+    # and no increment more than 2x the next largest.
+    incs = [v for s in per_set.values() for v in s[f"adjacent_increments{scale_suffix}"].values()]
+    all_pos = all(v["ci_lo"] > 0.0 for v in incs) and bool(incs)
+    h_generic = False
+    if all_pos:
+        # Plan §6 "no increment > 2x the next-largest" reads pairwise down the
+        # WHOLE sorted list (r1 review Minor 4), not only the top pair.
+        pts = sorted((abs(v["point"]) for v in incs), reverse=True)
+        h_generic = all(a <= 2.0 * b for a, b in itertools.pairwise(pts))
+    return {
+        "contrast_C_headline": c,
+        "verdict": verdict,
+        "magnitude_note": magnitude_note,
+        "h_elicit_supported": bool(h_elicit),
+        "h_generic_flagged": bool(h_generic),
+        "elicit_band": float(elicit_band),
+        "practical_scale": float(practical),
+    }
 
 
 def run_decision(args) -> None:
@@ -430,6 +570,10 @@ def run_decision(args) -> None:
         if args.headline_layer is not None
         else headline_layer_rule(args.out_dir / "cells", frozen, smoke)
     )
+    # Plan v9 route 1: the recal primary's Δ bands ride the persisted Qwen
+    # exchange rate; the raw companion keeps the unscaled v3 bands.
+    qwen_cal = cm.load_qwen_recal_cal(args.out_dir)
+    rate = float(qwen_cal["rate"])
     primary = _primary_models(smoke)
     stages = [m for m in primary if m != "base"]
     assert "rlvr" in stages and "dpo" in stages, f"decision needs dpo+rlvr in ladder {primary}"
@@ -452,55 +596,38 @@ def run_decision(args) -> None:
         idx_matrix = draw_index_matrix(n_shared, n_boot, seed=5000 + si)
         w = counts_from_indices(idx_matrix, n_shared)
 
-        gaps = {k: _gap_draws_on_rows(npzs[k], headline, rows_by_stage[k], w) for k in stages}
-        c_draws = gaps["rlvr"]["draws"] - gaps["dpo"]["draws"]
-        c_point = gaps["rlvr"]["point"] - gaps["dpo"]["point"]
-        increments = {}
-        order = [k for k in ("sft", "dpo", "rlvr") if k in stages]
-        prev = None
-        for k in order:
-            inc_draws = gaps[k]["draws"] - (gaps[prev]["draws"] if prev else 0.0)
-            inc_point = gaps[k]["point"] - (gaps[prev]["point"] if prev else 0.0)
-            increments[f"{prev or 'zero'}->{k}"] = {"point": float(inc_point), **_ci(inc_draws)}
-            prev = k
+        # BOTH scales over the SAME shared rows + shared draws: recal is the
+        # primary (unsuffixed keys), raw the companion (_raw suffix) — two
+        # separate reads, never blended (plan v9 route 1).
+        recal_reads = _scale_reads(npzs, stages, headline, rows_by_stage, w, "_recal")
+        raw_reads = _scale_reads(npzs, stages, headline, rows_by_stage, w, "")
         per_set[f"{corpus}_{fmt}"] = {
             "n_shared_rows": int(n_shared),
             "boot_seed": 5000 + si,
-            "gap_per_stage": {
-                k: {"point": gaps[k]["point"], **_ci(gaps[k]["draws"])} for k in stages
-            },
-            "contrast_C": {"point": float(c_point), **_ci(c_draws)},
-            "adjacent_increments": increments,
+            "gap_per_stage": recal_reads["gap_per_stage"],
+            "contrast_C": recal_reads["contrast_C"],
+            "adjacent_increments": recal_reads["adjacent_increments"],
+            "gap_per_stage_raw": raw_reads["gap_per_stage"],
+            "contrast_C_raw": raw_reads["contrast_C"],
+            "adjacent_increments_raw": raw_reads["adjacent_increments"],
         }
 
     headline_key = "gsm8k_train5k_chat" if not smoke else f"{cm.SMOKE_CORPORA[0]}_chat"
     assert headline_key in per_set, f"headline eval set {headline_key} missing from {per_set}"
-    c = per_set[headline_key]["contrast_C"]
-    if c["ci_lo"] > 0.0:
-        verdict = "rlvr_specific_gap_growth"  # C > 0, CI clear of zero (positive side)
-    elif c["ci_hi"] < 0.0:
-        verdict = "rlvr_gap_not_larger"  # CI wholly below 0
-    else:
-        verdict = "inconclusive"
-    magnitude_note = None
-    if verdict == "rlvr_specific_gap_growth" and abs(c["point"]) < 0.05:
-        magnitude_note = "statistically detectable but small (|C| < 0.05 practical scale)"
-    # H-elicit: every primary Δ_k CI includes 0 OR |Δ_k| < 0.02, all eval sets.
-    h_elicit = all(
-        (g["ci_lo"] <= 0.0 <= g["ci_hi"]) or abs(g["point"]) < 0.02
-        for s in per_set.values()
-        for g in s["gap_per_stage"].values()
+    primary_lattice = _verdict_reads(
+        per_set,
+        headline_key,
+        scale_suffix="",
+        elicit_band=cm.DELTA_ELICIT_BAND * rate,
+        practical=cm.DELTA_PRACTICAL_SCALE * rate,
     )
-    # H-generic (descriptive band): all adjacent increments positive CI-clear
-    # and no increment more than 2x the next largest.
-    incs = [v for s in per_set.values() for v in s["adjacent_increments"].values()]
-    all_pos = all(v["ci_lo"] > 0.0 for v in incs) and bool(incs)
-    h_generic = False
-    if all_pos:
-        # Plan §6 "no increment > 2x the next-largest" reads pairwise down the
-        # WHOLE sorted list (r1 review Minor 4), not only the top pair.
-        pts = sorted((abs(v["point"]) for v in incs), reverse=True)
-        h_generic = all(a <= 2.0 * b for a, b in itertools.pairwise(pts))
+    raw_lattice = _verdict_reads(
+        per_set,
+        headline_key,
+        scale_suffix="_raw",
+        elicit_band=cm.DELTA_ELICIT_BAND,
+        practical=cm.DELTA_PRACTICAL_SCALE,
+    )
 
     payload = {
         "metadata": _metadata(FIT_SEED, 0),
@@ -509,11 +636,12 @@ def run_decision(args) -> None:
         "n_boot": n_boot,
         "per_eval_set": per_set,
         "verdict_lattice": {
-            "contrast_C_headline": c,
-            "verdict": verdict,
-            "magnitude_note": magnitude_note,
-            "h_elicit_supported": bool(h_elicit),
-            "h_generic_flagged": bool(h_generic),
+            "primary_scale": "recal",
+            **primary_lattice,
+            "raw_companion": raw_lattice,
+            "qwen_exchange": {
+                k: qwen_cal[k] for k in ("s_qwen_recal", "committed_anchor", "rate", "path")
+            },
             "secondary_family_bonferroni2": [
                 "lmsys5k_chat",
                 "gsm8k_test1319_chat",

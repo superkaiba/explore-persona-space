@@ -15,6 +15,8 @@ sources; do not retype values from memory.
 from __future__ import annotations
 
 import contextlib
+import json
+from pathlib import Path
 
 from explore_persona_space.experiments.issue_825.common import (
     FIT_SEED,
@@ -33,6 +35,8 @@ __all__ = [
     "BASE_ANCHORED_PAIRS",
     "CELLS",
     "CORPORA",
+    "DELTA_ELICIT_BAND",
+    "DELTA_PRACTICAL_SCALE",
     "EVAL_SETS",
     "EXPECTED_HIDDEN",
     "EXPECTED_LAYERS",
@@ -59,6 +63,7 @@ __all__ = [
     "N_FOLDS",
     "N_NULL_DRAWS",
     "PAIRS",
+    "PREDS_EXTRA_LAYERS",
     "PRIMARY_LADDER",
     "PROMPT_TOKEN_BUDGET",
     "ROLE_HEADER_TRUNCATE",
@@ -80,6 +85,8 @@ __all__ = [
     "cell_id",
     "cells_for",
     "fc_expected_layers",
+    "load_qwen_recal_cal",
+    "preds_layers",
     "tulu_prompt",
 ]
 
@@ -116,6 +123,24 @@ EXPECTED_HIDDEN = 4096
 # smoke-test` for this family; mitigated by the full 32-layer sweep + the
 # stage-symmetric headline rule).
 FROZEN_LAYERS = (16, 21, 22, 30)
+
+# Default-preserving extension (plan v9 route 1): the E1 verdict layer (L29,
+# the S_r argmax on the recalibrated read) ALSO gets held-out preds persisted
+# + the recal primary computed, so the E1 verdict layer stays comparable
+# across stages. The registered frozen set above is UNCHANGED — headline rule,
+# selection-symmetric frozen table, cosine/CI reads all stay on FROZEN_LAYERS.
+PREDS_EXTRA_LAYERS = (29,)
+
+
+def preds_layers(frozen: tuple[int, ...] | list[int]) -> tuple[int, ...]:
+    """Layer set for preds persistence + the recal primary: frozen + extras.
+
+    ONE shared resolver for smoke and production (no smoke ternary — #825
+    lesson): out-of-range extras on a tiny smoke store are guard-skipped by
+    the sweep's own ``li < n_layers`` checks, so both modes run this line.
+    """
+    return tuple(sorted(set(int(x) for x in frozen) | set(PREDS_EXTRA_LAYERS)))
+
 
 # ---------------------------------------------------------------------------
 # Model ladder (Hub-verified lineage, plan §10; slugs are the stem prefix)
@@ -283,9 +308,64 @@ G0 = {
 # G1 — rig-transfer kill gate: After-RLVR lmsys5k-chat cell first; KILL <=>
 # best full-sweep within-stage held-out R^2 < 0.2 (chat in [0.2, 0.3) —
 # marginal band — additionally checks naturalistic before any kill).
+# RESUME re-adjudication (plan v9 §4 route 1): after the E1
+# `resume_on_recalibrated_dv` route, the gate reads the held-out
+# cross-fitted per-dim affine-recalibrated primary and both thresholds are
+# carried via the persisted Qwen exchange rate (kill bar = the persisted
+# bar_r = 0.20 x S_qwen_recal/0.6731; marginal = 0.3 x the same rate). The
+# RAW-scale values below stay the companion read (never blended).
 G1_KILL_R2 = 0.2
 G1_MARGINAL_R2 = 0.3
+
+# Δ_k bands (plan v3 §11; Source: #825 measured gap 0.0003 -> 0.02 elicitation
+# band; #825 replication-gate tolerance -> 0.05 practical-significance scale).
+# On the RECALIBRATED primary both bands are carried via the SAME Qwen
+# exchange rate (plan v9 route 1: "v3's Δ bands carried via the same
+# exchange rate"); the raw companion keeps the unscaled values.
+DELTA_ELICIT_BAND = 0.02
+DELTA_PRACTICAL_SCALE = 0.05
 
 # Matched-n subsample size for cross-corpus comparability (the GSM8K test
 # split size; #825 matched-n convention).
 MATCHED_N = 1319
+
+
+def load_qwen_recal_cal(out_dir: str | Path) -> dict:
+    """Load + validate the persisted E1.d Qwen exchange-rate calibration.
+
+    Plan v9 route 1 fix list: the per-stage usable-strength bar and the Δ
+    bands ride the SAME persisted Qwen exchange rate — reuse the E1.d values
+    (`<out_dir>/diagnosis/recal/qwen_recal_cal.json`, committed by the E1
+    round), NEVER recompute Qwen. Fail-loud when the file is absent (a
+    resume without the calibration must not silently fall back to raw bars)
+    or when its V-gate did not pass (route 1 requires V PASS).
+
+    Returns {s_qwen_recal, committed_anchor, rate, bar_r, marginal_r2, path}.
+    """
+
+    path = Path(out_dir) / "diagnosis" / "recal" / "qwen_recal_cal.json"
+    assert path.exists(), (
+        f"qwen_recal_cal.json missing at {path} — the resume's recalibrated bars require the "
+        "committed E1.d exchange-rate calibration (plan v9 route 1); do not proceed on raw bars"
+    )
+    cal = json.loads(path.read_text())
+    s = float(cal["s_qwen_recal"])
+    anchor = float(cal["committed_anchor"])
+    bar_r = float(cal["bar_r"])
+    assert cal["v_gate"]["pass"] is True, (
+        f"qwen_recal_cal.json at {path} records a FAILED V-gate — the recalibrated DV is not "
+        "validated on this family (plan v9 terminal route); refuse the resume bars"
+    )
+    rate = s / anchor
+    assert abs(bar_r - G1_KILL_R2 * rate) < 1e-9, (
+        f"persisted bar_r {bar_r} != {G1_KILL_R2} x exchange rate {rate} — calibration file "
+        "internally inconsistent"
+    )
+    return {
+        "s_qwen_recal": s,
+        "committed_anchor": anchor,
+        "rate": rate,
+        "bar_r": bar_r,
+        "marginal_r2": G1_MARGINAL_R2 * rate,
+        "path": str(path),
+    }

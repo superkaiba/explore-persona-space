@@ -435,3 +435,341 @@ def test_e2_both_variants_and_use_e2_verdict(recal_env):
     assert v5c["lambda_by_layer_fold"]["1"], "per-(layer, fold) selected lambdas missing"
     # Restore the fold-variant verdict state for any later reader.
     rv.step_verdict(_recal_args(recal_env))
+
+
+# ---------------------------------------------------------------------------
+# Plan v9 route 1 — resume threading (recal primary in the production ladder)
+# ---------------------------------------------------------------------------
+def _stage_cal(out_dir: Path) -> dict:
+    """Fixture qwen_recal_cal.json at the SAME relative path production reads,
+    loaded through the SAME production loader (no smoke ternary)."""
+    from issue1336_smoke_fixtures import write_recal_cal_fixture
+
+    from explore_persona_space.experiments.issue_1336 import common as cm
+
+    write_recal_cal_fixture(out_dir / "diagnosis" / "recal" / "qwen_recal_cal.json")
+    return cm.load_qwen_recal_cal(out_dir)
+
+
+def _fit_one(root: Path, stem: str, *, n=14, layers=2, dim=6, seed=0, frozen=(0, 1)) -> dict:
+    import issue1336_fit_cells as f36
+    from issue1336_smoke_fixtures import _write_store
+
+    ts, out, preds = root / "ts", root / "out", root / "preds"
+    _write_store(ts, stem, n=n, layers=layers, dim=dim, seed=seed)
+    qc = _stage_cal(out)
+    model, fmt, corpus = stem.split("_", 2)
+    cell = {"cell_id": stem, "model": model, "format": fmt, "corpus": corpus}
+    f36.run_one_cell(
+        cell,
+        ts,
+        out,
+        preds,
+        frozen_layers=frozen,
+        n_folds=3,
+        seed=0,
+        null_draws=2,
+        n_boot=10,
+        matched_n=None,
+        expected_layers=None,
+        qwen_cal=qc,
+    )
+    return json.loads((out / "cells" / f"cells_{stem}.json").read_text())
+
+
+def test_fit_cells_emits_recal_primary_and_raw_companion(tmp_path):
+    """(a) The cells JSON carries the recal PRIMARY + raw companion per layer,
+    the bar fields from the persisted exchange rate, and the lambda audit —
+    and the recal value is REPRODUCIBLE from the persisted preds npz."""
+    cell = _fit_one(tmp_path, CHAT)
+    rec = cell["recal"]
+    assert rec["primary"].startswith("heldout_crossfit_perdim_affine")
+    for li in ("0", "1"):
+        for key in ("heldout_recal_r2", "raw_r2", "insample_recal_r2"):
+            assert key in rec["per_layer"][li], (li, key)
+    vals = {int(k): v["heldout_recal_r2"] for k, v in rec["per_layer"].items()}
+    assert rec["s_recal"] == pytest.approx(max(vals.values()))
+    assert rec["s_recal_argmax_layer"] == max(vals, key=vals.get)
+    assert rec["bar_r"] == pytest.approx(0.2 * rec["qwen_exchange"]["rate"])
+    assert rec["above_bar"] == (rec["s_recal"] >= rec["bar_r"])
+    # Two scales are SEPARATE reads (never blended) with real recal work to do.
+    assert rec["per_layer"]["1"]["heldout_recal_r2"] != rec["per_layer"]["1"]["raw_r2"]
+    # Equivalence: recal recomputed from the persisted npz == the emitted value.
+    npz = np.load(tmp_path / "preds" / f"preds_{CHAT}.npz")
+    fitted = npz["fitted_mask"]
+    folds = npz["folds"][fitted]
+    # Truth from the fixture store through the same loader path.
+    import issue825_fit_cells as fc
+    import issue1336_fit_cells as f36
+
+    bundle = fc._load_bundle_any(tmp_path / "ts", *CHAT.split("_", 2))
+    Y = f36._cell_xy_1336(bundle, 2)["Y"]
+    direct = rv._crossfit_recal_direct(
+        npz["preds_l1"][fitted].astype(np.float64), Y[fitted, 1, :], folds
+    )
+    # Artifact-contract equivalence: the persisted preds are fp16 (round-5
+    # preds convention), so the recompute carries fp16 quantization noise —
+    # bit-level recal parity is pinned separately by the suff-stats tests.
+    assert rec["per_layer"]["1"]["heldout_recal_r2"] == pytest.approx(direct["r2"], abs=0.05)
+    # Lambda audit: histogram over the committed grid, counts consistent.
+    la = cell["lambda_audit"]
+    assert la["grid"] == [float(v) for v in fc.LAMBDAS]
+    assert sum(la["selected_hist"].values()) == la["n_selected"] > 0
+    assert la["n_at_low_edge"] <= la["n_selected"]
+    assert "1" in la["frozen_layer_rows"] and len(la["gcv_lambda_layer_x_fold"]) == 2
+
+
+def test_fit_cells_persists_e1_verdict_layer_preds(tmp_path):
+    """(a-bis) Production union: with a 30-layer store, L29 preds + recal are
+    ALSO persisted (the E1 verdict layer) while every registered frozen-set
+    table stays on the frozen layers only (default-preserving extension)."""
+    cell = _fit_one(tmp_path, CHAT, n=8, layers=30, dim=4, frozen=(0, 1))
+    assert cell["frozen_layers"] == [0, 1]
+    assert cell["preds_layers"] == [0, 1, 29]
+    assert "29" in cell["recal"]["per_layer"]
+    assert "29" not in cell["cosine_frozen_layers"]  # registered tables: frozen only
+    assert "29" not in cell["lambda_audit"]["frozen_layer_rows"]
+    npz = np.load(tmp_path / "preds" / f"preds_{CHAT}.npz")
+    assert "preds_l29" in npz.files and "preds_l0" in npz.files
+
+
+def _g1_cell_json(out: Path, stem: str, s_recal: float, raw_best: float) -> None:
+    path = out / "cells" / f"cells_{stem}.json"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(
+        json.dumps({"recal": {"s_recal": s_recal}, "r2_per_layer_obs": [raw_best, raw_best - 1.0]})
+    )
+
+
+def test_g1_check_re_adjudicates_on_recal(tmp_path):
+    """(a-ter) G1 reads the RECALIBRATED primary against the exchange-rate
+    bars; the raw companion rides along but never drives the verdict — the
+    E1 shape (recal 0.237 > bar 0.2012 while raw is deeply negative) PASSes
+    marginal instead of re-firing the raw KILL."""
+    import issue1336_fit_cells as f36
+
+    out = tmp_path / "out"
+    cal = _stage_cal(out)
+    # The realized E1 shape: recal S_r=0.2374 (above bar, below marginal), raw -0.93.
+    _g1_cell_json(out, "rlvr_chat_lmsys5k", 0.2374, -0.93)
+    assert f36.run_g1_check(out) == 4  # marginal band -> naturalistic read required
+    _g1_cell_json(out, "rlvr_naturalistic_lmsys5k", 0.21, -0.9)
+    assert f36.run_g1_check(out) == 0
+    gate = json.loads((out / "gates" / "g1_gate.json").read_text())
+    assert gate["primary_scale"] == "recal" and gate["verdict"] == "pass_marginal"
+    assert gate["kill_threshold"] == pytest.approx(cal["bar_r"])
+    assert gate["marginal_threshold"] == pytest.approx(cal["marginal_r2"])
+    assert gate["raw_companion"]["chat_best_r2_raw"] == pytest.approx(-0.93)
+    # Both formats below the recal bar -> KILL still fires (exit 3).
+    _g1_cell_json(out, "rlvr_chat_lmsys5k", 0.05, -0.93)
+    _g1_cell_json(out, "rlvr_naturalistic_lmsys5k", 0.04, -0.9)
+    assert f36.run_g1_check(out) == 3
+    # Stale pre-resume JSON (no recal block) fails loud, never silently reads raw.
+    (out / "cells" / "cells_rlvr_chat_lmsys5k.json").write_text(
+        json.dumps({"r2_per_layer_obs": [0.5]})
+    )
+    with pytest.raises(AssertionError, match="recal block"):
+        f36.run_g1_check(out)
+
+
+def test_headline_rule_reads_recal_primary(tmp_path):
+    """(b-pre) The headline-layer rule argmaxes the MEAN RECALIBRATED
+    within-stage R^2 (raw argmax deliberately different -> must not win)."""
+    import issue1336_ladder_alignment as la
+
+    from explore_persona_space.experiments.issue_1336 import common as cm
+
+    cells_dir = tmp_path / "cells"
+    cells_dir.mkdir()
+    for m in cm.SMOKE_MODELS:
+        payload = {
+            # raw argmax = layer 0; recal argmax = layer 1
+            "r2_per_layer_obs": [0.9, 0.1],
+            "recal": {
+                "per_layer": {
+                    "0": {"heldout_recal_r2": 0.2},
+                    "1": {"heldout_recal_r2": 0.6},
+                }
+            },
+        }
+        (cells_dir / f"cells_{cm.cell_id(m, 'chat', 'lmsys5k')}.json").write_text(
+            json.dumps(payload)
+        )
+    assert la.headline_layer_rule(cells_dir, (0, 1), smoke=True) == 1
+    # Stale pre-resume cells JSON fails loud.
+    (cells_dir / f"cells_{cm.cell_id('base', 'chat', 'lmsys5k')}.json").write_text(
+        json.dumps({"r2_per_layer_obs": [0.9, 0.1]})
+    )
+    with pytest.raises(AssertionError, match="recal block"):
+        la.headline_layer_rule(cells_dir, (0, 1), smoke=True)
+
+
+def test_align_recal_arm_no_self_fit_both_arms():
+    """(b) BOTH Δ_k arms are recalibrated independently under the identical
+    cross-fitted scheme: fold-0 recalibrated predictions are INVARIANT to a
+    fold-0 truth perturbation (no row's recal fit on itself) on the within
+    arm AND the composition arm alike."""
+    import issue1336_ladder_alignment as la
+
+    rng = np.random.default_rng(11)
+    n, d = 18, 5
+    folds = np.arange(n) % 3
+    y = rng.normal(size=(n, d))
+    arms = {
+        "within": 0.6 * y + 0.2 * rng.normal(size=(n, d)),
+        "comp": 0.3 * y + 0.5 * rng.normal(size=(n, d)) + 0.1,
+    }
+    for name, preds in arms.items():
+        ref = la._recal_arm(preds, y, folds)
+        y2 = y.copy()
+        y2[folds == 0] += 7.0
+        per = la._recal_arm(preds, y2, folds)
+        f0 = folds == 0
+        assert np.array_equal(ref["pred_recal"][f0], per["pred_recal"][f0]), name
+        assert not np.allclose(ref["pred_recal"][~f0], per["pred_recal"][~f0]), name
+    # Independence across arms: recalibrating one arm never touches the other.
+    a = la._recal_arm(arms["within"], y, folds)
+    b = la._recal_arm(arms["comp"], y, folds)
+    assert not np.allclose(a["pred_recal"], b["pred_recal"])
+
+
+@pytest.fixture(scope="module")
+def align_env(tmp_path_factory):
+    """3-model smoke stores -> real fit (recal-bearing cells JSONs) -> real
+    run_pair for every smoke pair x format -> real run_decision."""
+    from argparse import Namespace
+
+    import issue1336_fit_cells as f36
+    import issue1336_ladder_alignment as la
+    from issue1336_smoke_fixtures import _write_store
+
+    from explore_persona_space.experiments.issue_1336 import common as cm
+
+    root = tmp_path_factory.mktemp("align_recal")
+    ts, out, preds, apreds = root / "ts", root / "out", root / "preds", root / "apreds"
+    qc = _stage_cal(out)
+    for i, m in enumerate(cm.SMOKE_MODELS):
+        for fmt in ("chat", "naturalistic"):
+            _write_store(ts, f"{m}_{fmt}_lmsys5k", n=14, layers=2, dim=6, seed=20 + i)
+    for m in cm.SMOKE_MODELS:
+        cell = {"cell_id": f"{m}_chat_lmsys5k", "model": m, "format": "chat", "corpus": "lmsys5k"}
+        f36.run_one_cell(
+            cell,
+            ts,
+            out,
+            preds,
+            frozen_layers=(0, 1),
+            n_folds=3,
+            seed=0,
+            null_draws=2,
+            n_boot=10,
+            matched_n=None,
+            expected_layers=None,
+            qwen_cal=qc,
+        )
+
+    def args(**over):
+        base = dict(
+            pair=None,
+            corpus="lmsys5k",
+            format="chat",
+            decision=False,
+            selfcheck=False,
+            turnstore_dir=ts,
+            out_dir=out,
+            preds_dir=apreds,
+            frozen_layers="0,1",
+            headline_layer=None,
+            n_boot=16,
+            smoke=True,
+        )
+        base.update(over)
+        return Namespace(**base)
+
+    for pair in ("base:dpo", "base:rlvr", "dpo:rlvr"):
+        for fmt in ("chat", "naturalistic"):
+            la.run_pair(args(pair=pair, format=fmt))
+    la.run_decision(args(decision=True))
+    return {"out": out, "apreds": apreds}
+
+
+def test_align_pair_emits_both_scales(align_env):
+    """(b) Per (pair, layer): recal PRIMARY gap + bootstrap AND raw companion
+    gap + bootstrap, with the recalibrated preds persisted in the npz."""
+    out = align_env["out"]
+    pj = json.loads((out / "ladder_alignment" / "pair_base__rlvr_chat_lmsys5k.json").read_text())
+    assert pj["primary_scale"] == "recal"
+    for li in ("0", "1"):
+        pl = pj["per_layer"][li]
+        for key in (
+            "within_r2",
+            "comp_samefn_r2",
+            "gap",
+            "gap_bootstrap",
+            "within_r2_recal",
+            "comp_samefn_r2_recal",
+            "gap_recal",
+            "gap_recal_bootstrap",
+        ):
+            assert key in pl, (li, key)
+        assert pl["gap_recal"] == pytest.approx(pl["within_r2_recal"] - pl["comp_samefn_r2_recal"])
+        assert pl["gap"] != pl["gap_recal"]  # separate scales, never blended
+    npz = np.load(align_env["apreds"] / "alignpreds_base__rlvr_chat_lmsys5k.npz")
+    for key in ("within_recal_l0", "comp_recal_l0", "within_l0", "comp_l0", "y_l0"):
+        assert key in npz.files
+
+
+def test_align_decision_recal_primary_raw_companion(align_env):
+    """(b) The decision lattice: recal contrast is PRIMARY with exchange-rate-
+    scaled bands; the raw contrast + unscaled bands are the companion block."""
+    out = align_env["out"]
+    d = json.loads((out / "decision" / "headline_contrast.json").read_text())
+    vl = d["verdict_lattice"]
+    assert vl["primary_scale"] == "recal"
+    rate = vl["qwen_exchange"]["rate"]
+    assert vl["elicit_band"] == pytest.approx(0.02 * rate)
+    assert vl["raw_companion"]["elicit_band"] == pytest.approx(0.02)
+    assert vl["practical_scale"] == pytest.approx(0.05 * rate)
+    for s in d["per_eval_set"].values():
+        for key in ("gap_per_stage", "contrast_C", "adjacent_increments"):
+            assert key in s and f"{key}_raw" in s
+        assert s["contrast_C"]["point"] != s["contrast_C_raw"]["point"]
+    assert "verdict" in vl and "verdict" in vl["raw_companion"]
+
+
+def test_align_decision_refuses_stale_pre_resume_npz(align_env, tmp_path):
+    """(c-adjacent) Stale align preds WITHOUT the recal arrays fail loud in the
+    decision read — never a silent raw-only fallback."""
+    import issue1336_ladder_alignment as la
+
+    npz = dict(np.load(align_env["apreds"] / "alignpreds_base__rlvr_chat_lmsys5k.npz"))
+    stale = {k: v for k, v in npz.items() if "recal" not in k}
+    n = len(stale["conv_ids"])
+    rows = np.arange(n)
+    w = la.counts_from_indices(la.draw_index_matrix(n, 4, seed=0), n)
+    with pytest.raises(AssertionError, match="stale pre-resume"):
+        la._gap_draws_on_rows(stale, 0, rows, w, variant="_recal")
+
+
+def test_dispatch_phase_key_recipe_versioned(tmp_path):
+    """(c) The dispatcher's phase done-file keys: fit/align are RECIPE-KEYED
+    (a stale pre-resume phase_fit.done can never satisfy the resume) while
+    gen/extract keep their per-cell-resume unversioned keys."""
+    import subprocess
+
+    script = REPO / "scripts" / "issue1336_dispatch.sh"
+    for phase, expect in (
+        ("fit", "fit_recal_v9"),
+        ("align", "align_recal_v9"),
+        ("gen", "gen"),
+        ("extract", "extract"),
+    ):
+        got = subprocess.run(
+            ["bash", str(script), "__phase_key", phase],
+            capture_output=True,
+            text=True,
+            cwd=tmp_path,
+            timeout=120,
+        )
+        assert got.returncode == 0, got.stderr
+        assert got.stdout.strip().splitlines()[-1] == expect, (phase, got.stdout)

@@ -475,6 +475,34 @@ def cmd_diag(args) -> None:
     )
 
 
+def write_recal_cal_fixture(path: Path) -> dict:
+    """Production-shaped qwen_recal_cal.json fixture (plan v9 route 1).
+
+    Mirrors the committed E1.d field set the consumer
+    (``common.load_qwen_recal_cal``) reads — s_qwen_recal / committed_anchor /
+    bar_r / v_gate.pass — with the REAL E1 values, so the smoke exercises the
+    identical load + internal-consistency asserts the production path runs.
+    """
+    s, anchor = 0.6772610112811577, 0.6731  # E1.d realized values (plan v9)
+    cal = {
+        "metadata": {"script": "scripts/issue1336_smoke_fixtures.py", "fixture": True},
+        "computed_ts_unix": 0.0,
+        "s_qwen_recal": s,
+        "committed_anchor": anchor,
+        "bar_raw": 0.2,
+        "bar_r": 0.2 * s / anchor,
+        "v_gate": {"deviation": abs(s - anchor), "threshold": 0.1, "pass": True},
+    }
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(cal, indent=2))
+    print(f"[recal-cal] wrote fixture {path}")
+    return cal
+
+
+def cmd_recal_cal(args) -> None:
+    write_recal_cal_fixture(Path(args.out))
+
+
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     sub = ap.add_subparsers(dest="cmd", required=True)
@@ -485,6 +513,8 @@ def main() -> None:
     p.add_argument("--turnstore-dir", default="data/issue_1336/turnstore_smoke")
     p = sub.add_parser("g0-fixture")
     p.add_argument("--out", required=True)
+    p = sub.add_parser("recal-cal")
+    p.add_argument("--out", required=True, help="qwen_recal_cal.json fixture path")
     p = sub.add_parser("diag")
     p.add_argument("--out", required=True)
     p.add_argument("--n", type=int, default=12)
@@ -499,6 +529,7 @@ def main() -> None:
         "gen": cmd_gen,
         "stores": cmd_stores,
         "g0-fixture": cmd_g0_fixture,
+        "recal-cal": cmd_recal_cal,
         "diag": cmd_diag,
     }[args.cmd](args)
 

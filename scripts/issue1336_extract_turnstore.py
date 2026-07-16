@@ -32,6 +32,7 @@ import dataclasses
 import gc
 import hashlib
 import json
+import os
 import sys
 from pathlib import Path
 
@@ -515,6 +516,105 @@ def _write_done(done_path: Path, done: dict) -> None:
     tmp.replace(done_path)
 
 
+def _hf_turnstore_listing(stem: str) -> list[str] | None:
+    """File names under the cell's Hub turnstore prefix, or None when absent.
+
+    Scoped ``list_repo_tree`` (never a full-repo listing — gotchas.md #833),
+    MATERIALIZED inside the retry thunk (hub list APIs are lazy generators).
+    A missing prefix (fresh cell) returns None; any other Hub failure raises
+    through ``hub.retry_transient``.
+    """
+    from huggingface_hub import HfApi
+    from huggingface_hub.utils import EntryNotFoundError, HfHubHTTPError
+
+    from explore_persona_space.orchestrate import hub
+
+    prefix = f"{cm.HF_PREFIX_1336}/analysis_tensors/turnstore_{stem}"
+    api = HfApi()
+    try:
+        entries = hub.retry_transient(
+            lambda: list(
+                # HUB_VERIFY_RETRY_EXEMPT: scoped walk inside a retry_transient thunk
+                api.list_repo_tree(
+                    cm.HF_DATA_REPO, path_in_repo=prefix, repo_type="dataset", recursive=False
+                )
+            ),
+            what=f"turnstore HF-resume listing {stem}",
+        )
+    except EntryNotFoundError:
+        return None
+    except HfHubHTTPError as err:
+        if getattr(getattr(err, "response", None), "status_code", None) == 404:
+            return None
+        raise
+    return [Path(e.path).name for e in entries]
+
+
+def _try_hf_resume(out_dir: Path, stem: str) -> dict | None:
+    """Fetch a COMPLETE turnstore cell from HF into ``out_dir`` (resume path).
+
+    Plan v9 route 1 resume: Phase E has cells already uploaded by the
+    original run (done == uploaded, #664) — a fresh instance downloads them
+    instead of re-extracting on GPU. Completeness is FAIL-LOUD: a partial
+    Hub prefix (a .pt without its sidecar, a shard-index gap) raises rather
+    than silently re-extracting or half-staging — a half-done cell must be
+    triaged, never skipped past. Returns the done dict on success, None when
+    the cell is not on the Hub at all.
+    """
+    import re
+
+    from huggingface_hub import hf_hub_download
+
+    from explore_persona_space.orchestrate import hub
+
+    names = _hf_turnstore_listing(stem)
+    if not names:
+        return None
+    shard_re = re.compile(rf"^{re.escape(stem)}_shard(\d{{3}})\.(pt|json)$")
+    shards: dict[int, set[str]] = {}
+    for name in names:
+        m = shard_re.match(name)
+        if m:
+            shards.setdefault(int(m.group(1)), set()).add(m.group(2))
+    assert shards, (
+        f"HF turnstore prefix for {stem} exists but holds no shard files ({sorted(names)[:8]}…) — "
+        "partial/foreign upload; triage before resuming"
+    )
+    idxs = sorted(shards)
+    ext_map = {i: sorted(e) for i, e in shards.items()}
+    complete = idxs == list(range(len(idxs))) and all(shards[i] == {"pt", "json"} for i in idxs)
+    assert complete, (
+        f"HF turnstore for {stem} is INCOMPLETE (shard indices {idxs}, exts {ext_map}) — a "
+        "half-done cell must be re-extracted or repaired explicitly, never silently resumed"
+    )
+    prefix = f"{cm.HF_PREFIX_1336}/analysis_tensors/turnstore_{stem}"
+    out_dir.mkdir(parents=True, exist_ok=True)
+    n_files = 0
+    for i in idxs:
+        for ext in ("pt", "json"):
+            rel = f"{prefix}/{stem}_shard{i:03d}.{ext}"
+            local = hub.retry_transient(
+                lambda r=rel: hf_hub_download(
+                    repo_id=cm.HF_DATA_REPO, repo_type="dataset", filename=r, local_dir=out_dir
+                ),
+                what=f"turnstore HF-resume download {rel}",
+            )
+            # local_dir staging nests under the repo-relative path — move the
+            # real file into the flat turnstore layout the fit loader reads.
+            os.replace(local, out_dir / Path(rel).name)
+            n_files += 1
+    done = {
+        "stem": stem,
+        "n_rows": None,  # unknown without opening shards; sidecars carry it
+        "n_shards": len(idxs),
+        "uploaded": True,  # resumed FROM the Hub — done == uploaded holds
+        "hf_resumed": True,
+    }
+    _write_done(out_dir / f"{stem}.done.json", done)
+    print(f"[extract] {stem}: HF-resume fetched {n_files} files ({len(idxs)} shards) -> {out_dir}")
+    return done
+
+
 def main() -> None:
     args = parse_args()
     slug, fmt, corpus = args.model, args.format, args.corpus
@@ -539,6 +639,12 @@ def main() -> None:
             done["uploaded"] = True
             _write_done(done_path, done)
         print(f"[extract] skip {stem} (done marker exists)")
+        return
+
+    # Resume (plan v9 route 1): a cell the ORIGINAL run already extracted +
+    # uploaded (done == uploaded, #664) is fetched from the Hub instead of
+    # re-extracted on GPU. Smoke never touches the Hub (gen-script parity).
+    if not smoke and _try_hf_resume(out_dir, stem) is not None:
         return
 
     rows = _read_jsonl(gen_root / slug / corpus / "answers.jsonl")

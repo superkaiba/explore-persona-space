@@ -18,6 +18,18 @@
 #     (exit 3 from --g1-check) upload wave-1 artifacts, write the results
 #     sentinel with halted=true, [phase=done], exit 0 (clean halt, not crash).
 #
+# RESUME (plan v9 §4 route 1, `resume_on_recalibrated_dv`): `all` IS the
+# resume entrypoint — every phase detect-and-skips completed work against
+# HF/committed outputs: gen HF-resumes per (model, corpus) from the uploaded
+# answers.jsonl (Phase G fully done), extract HF-resumes per cell from the
+# uploaded turnstores (2/20 done) and re-extracts the rest, fit + align
+# RE-EMIT everything under the recalibrated primary (recipe-keyed done files
+# fit_recal/align_recal_v9 — stale pre-resume markers never skip them), and
+# the G1 gate is re-adjudicated on the recalibrated read (kill bar = the
+# persisted bar_r; the raw-scale KILL that triggered the diagnosis rounds no
+# longer halts the resumed ladder). Fail-loud: a half-done cell on the Hub
+# raises; a missing qwen_recal_cal.json aborts (exit 78), never raw bars.
+#
 # Usage:
 #   bash scripts/issue1336_dispatch.sh all [--smoke]
 #   bash scripts/issue1336_dispatch.sh <g0_gate|gen|extract|fit|align|upload> [--smoke]
@@ -183,10 +195,43 @@ exec(sys.argv[1])
 PY
 }
 
-phase_done() { [ -f "$DONE_DIR/phase_$1.done" ]; }
+# Phase done-file keys are RECIPE-KEYED for the phases whose outputs the
+# plan-v9 resume re-emits (fit + align now carry the recalibrated primary):
+# a stale pre-resume phase_fit.done / phase_align.done on a reused volume
+# must NEVER satisfy the resume run (a half-done or wrong-recipe phase is
+# re-run, not silently skipped). gen/extract keep their unversioned keys —
+# their outputs are recipe-unchanged and per-cell resume (gen HF-resume,
+# extract HF-resume + done markers) handles partial completion.
+phase_key() {
+    case "$1" in
+    fit) echo "fit_recal_v9" ;;
+    align) echo "align_recal_v9" ;;
+    *) echo "$1" ;;
+    esac
+}
+phase_done() { [ -f "$DONE_DIR/phase_$(phase_key "$1").done" ]; }
 mark_phase() {
-    touch "$DONE_DIR/phase_$1.done"
+    touch "$DONE_DIR/phase_$(phase_key "$1").done"
     emit_signal "epm:progress" "phase" "issue1336 dispatch: phase $1 complete (smoke=$SMOKE, gpus=$NGPU)"
+}
+
+# Qwen exchange-rate calibration (plan v9 route 1): the fit/align/G1 reads
+# require $OUT_DIR/diagnosis/recal/qwen_recal_cal.json. Production: the E1
+# round COMMITTED it under eval_results/issue_1336 (the branch clone carries
+# it) — assert, fail loud, never synthesize. Smoke: stage a fixture cal at
+# the SAME relative path so the consuming load path is identical.
+ensure_recal_cal() {
+    local cal="$OUT_DIR/diagnosis/recal/qwen_recal_cal.json"
+    if [ "$SMOKE" -eq 1 ]; then
+        # Always (re)write: the scratch smoke tree can hold a stale E1-smoke
+        # computed cal (failed V-gate on synthetic data) that the loader
+        # correctly refuses — the ladder smoke wants the deterministic fixture.
+        uv run python scripts/issue1336_smoke_fixtures.py recal-cal --out "$cal"
+    elif [ ! -f "$cal" ]; then
+        emit_signal "epm:failure" "phase" "failure_class: data — qwen_recal_cal.json missing at $cal: the plan-v9 resume requires the committed E1.d exchange-rate calibration (never proceed on raw bars)"
+        echo "[dispatch1336] FATAL: missing $cal (E1.d calibration)" >&2
+        exit 78
+    fi
 }
 
 # ---------------------------------------------------------------------------
@@ -251,12 +296,14 @@ PY
 }
 
 _fit_one_cell() { # $1=cell_id  (direct, non-queued G1 fit on GPU 0)
-    # Own done prefix (fitg1__): the fit phase later re-fits these cells WITH
-    # --matched-n, so its fit__ done-files must not be pre-satisfied here.
+    # Own done prefix (fitg1_recal__): the fit phase later re-fits these cells
+    # WITH --matched-n, so its per-job done-files must not be pre-satisfied
+    # here — and the _recal suffix means a reused volume's pre-resume fitg1__
+    # markers never skip the recalibrated re-fit (plan v9 route 1).
     local cell="$1" done_f jlog rc=0
-    done_f="$DONE_DIR/fitg1__${cell}.done"
+    done_f="$DONE_DIR/fitg1_recal__${cell}.done"
     [ -f "$done_f" ] && { echo "[fit] skip $cell (G1 fit already complete)"; return 0; }
-    jlog="$JOB_LOG_DIR/fitg1__${cell}.log"
+    jlog="$JOB_LOG_DIR/fitg1_recal__${cell}.log"
     if [ "$NGPU" -gt 0 ]; then
         CUDA_VISIBLE_DEVICES=0 uv run python scripts/issue1336_fit_cells.py \
             --cells "$cell" --out-dir "$OUT_DIR" $SMOKE_FLAG >> "$jlog" 2>&1 || rc=$?
@@ -284,8 +331,11 @@ g1_halt() { # $1=verdict summary string
 phase_extract() {
     echo "[phase=extract]"
     local rc jobs
+    ensure_recal_cal  # the G1 gate below reads the recalibrated bars
     # Wave 1: the G1 cell (After-RLVR lmsys chat) + its naturalistic sibling
     # (required extra evidence when the chat read is marginal) extract FIRST.
+    # On resume both wave-1 cells HF-resume inside the extract script (the
+    # original run uploaded their turnstores — done == uploaded, #664).
     jobs="$DONE_DIR/jobs_extract_wave1.tsv"
     {
         printf 'rlvr_chat_lmsys5k\tuv run python scripts/issue1336_extract_turnstore.py --model rlvr --corpus lmsys5k --format chat %s %s\n' "$UPLOAD_FLAG" "$SMOKE_FLAG"
@@ -336,8 +386,11 @@ for cell in cells:
 
 phase_fit() {
     echo "[phase=fit]"
+    ensure_recal_cal  # recal primary + bars (plan v9 route 1)
     # Per-cell fit jobs (batched Gram-GCV ridge inside; _fit_device routes to
     # the pinned GPU). Production adds the matched-n comparability refit.
+    # Queue name fit_recal: per-job done-files are recipe-keyed so pre-resume
+    # fit__ markers on a reused volume never skip the recalibrated re-emit.
     local jobs="$DONE_DIR/jobs_fit.tsv"
     OUT_ENV="$OUT_DIR" registry_lines '
 extra = "--smoke" if smoke else "--matched-n"
@@ -349,7 +402,7 @@ for cell in cells:
         f"--cells {cid} --out-dir {out} {extra}"
     )
 ' > "$jobs"
-    run_queue fit "$jobs"
+    run_queue fit_recal "$jobs"
     # Incremental persistence: preds land on HF at the end of the phase, not
     # only at terminal upload (checkpoint-per-phase). A failure here logs LOUD
     # but does not kill the phase — the terminal phase_upload re-runs the same
@@ -361,6 +414,7 @@ for cell in cells:
 
 phase_align() {
     echo "[phase=align]"
+    ensure_recal_cal  # decision bands ride the exchange rate (plan v9)
     if [ ! -f "$DONE_DIR/align__selfcheck.done" ]; then
         uv run python scripts/issue1336_ladder_alignment.py --selfcheck \
             >> "$JOB_LOG_DIR/align__selfcheck.log" 2>&1
@@ -495,7 +549,12 @@ decision = _maybe(out_dir / "decision" / "headline_contrast.json")
 eval_numbers: dict = {
     "g0_pass": bool(g0["pass"]) if g0 else None,
     "g1_verdict": g1.get("verdict") if g1 else None,
+    # Plan v9 route 1: chat_best_r2 is the RECALIBRATED primary; the raw
+    # companion + the exchange-rate bars ride along, never blended.
+    "g1_primary_scale": g1.get("primary_scale") if g1 else None,
     "g1_chat_best_r2": g1.get("chat_best_r2") if g1 else None,
+    "g1_kill_threshold": g1.get("kill_threshold") if g1 else None,
+    "g1_raw_companion": g1.get("raw_companion") if g1 else None,
     "halted_at_g1": halted,
 }
 if decision is not None:
@@ -504,9 +563,14 @@ if decision is not None:
         {
             "headline_layer": decision["headline_layer"],
             "headline_eval_set": decision["headline_eval_set"],
+            "primary_scale": vl.get("primary_scale"),
             "contrast_C_headline": vl["contrast_C_headline"],
             "verdict": vl["verdict"],
             "h_elicit_supported": vl.get("h_elicit_supported"),
+            "contrast_C_headline_raw": (vl.get("raw_companion") or {}).get(
+                "contrast_C_headline"
+            ),
+            "verdict_raw": (vl.get("raw_companion") or {}).get("verdict"),
         }
     )
 
@@ -1572,6 +1636,12 @@ e2_refit)
     run_phase e2_refit
     write_e1_results_sentinel e2_refit
     echo "[phase=done]"
+    ;;
+__phase_key)
+    # Test/debug probe: print the (recipe-keyed) done-file key for a phase
+    # name and exit — pins the resume contract (tests/test_issue1336_recal.py).
+    phase_key "${2:?usage: __phase_key <phase>}"
+    exit 0
     ;;
 *)
     echo "usage: bash scripts/issue1336_dispatch.sh all|g0_gate|gen|extract|fit|align|upload|d1_battery|d1_vmsteps|d2_probe|e1_recal|e2_refit [--smoke]" >&2

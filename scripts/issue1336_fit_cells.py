@@ -7,6 +7,17 @@ default-preserving ``frozen_layers`` parametrization (the fact-checker
 must-do: the module-global Qwen set would otherwise silently persist preds at
 the wrong layers).
 
+RESUME recipe (plan v9 §4 route 1, `resume_on_recalibrated_dv`): each cell's
+PRIMARY within-stage read is the E1-validated held-out cross-fitted per-dim
+affine-recalibrated pooled R^2 (`experiments/issue_1336/recal.py` — the E1
+functions, imported), UNIFORM across all stages, with raw pooled R^2 always
+reported as companion; the per-stage usable-strength bar rides the persisted
+Qwen exchange rate (`cm.load_qwen_recal_cal` — E1.d, never recomputed).
+``collect_lambdas=True`` + the selected-lambda audit are threaded through
+every production sweep (committed grid retained — plan v9 drops the v7-R1
+widened grid: A_v = 0.000). Preds persist at ``cm.preds_layers(frozen)``
+(frozen + the E1 verdict layer L29 — default-preserving extension).
+
 Modes (one per invocation):
   --g0 [--g0-probe-only|--g0-local-dir D]   G0 fit-core reuse gate (plan §7):
         refit the committed Qwen S1 cell (pinned #825 turnstore stems @
@@ -14,9 +25,11 @@ Modes (one per invocation):
         held-out R^2 within ±0.01 of the committed 0.6731. Exit 3 on FAIL.
   --cells <id,...|all|smoke> [--matched-n]  per-cell sweeps -> cells/*.json,
         nulls/*.json, preds npz (+ manifest), prefix-slot degeneracy check.
-  --g1-check                                G1 rig-transfer kill gate (plan §7)
-        from the After-RLVR lmsys5k-chat cell JSON (+ naturalistic when the
-        chat read is marginal/below). Exit 0 pass / 3 KILL / 4 need-nat.
+  --g1-check                                G1 rig-transfer kill gate (plan §7,
+        re-adjudicated on the RECALIBRATED primary per plan v9 route 1: kill
+        bar = persisted bar_r, marginal = 0.3 x the same exchange rate) from
+        the After-RLVR lmsys5k-chat cell JSON (+ naturalistic when the chat
+        read is marginal/below). Exit 0 pass / 3 KILL / 4 need-nat.
 """
 
 from __future__ import annotations
@@ -43,6 +56,7 @@ import numpy as np  # noqa: E402
 import torch  # noqa: E402
 
 from explore_persona_space.experiments.issue_1336 import common as cm  # noqa: E402
+from explore_persona_space.experiments.issue_1336 import recal as rc  # noqa: E402
 
 CELL_BY_ID = {c["cell_id"]: c for c in cm.CELLS}
 
@@ -265,6 +279,71 @@ def _prefix_degeneracy(bundle: dict, frozen_layers: tuple[int, ...]) -> dict:
     return out
 
 
+def _recal_block(
+    sweep: dict, Y: np.ndarray, persist_layers: tuple[int, ...], qwen_cal: dict
+) -> dict:
+    """PRIMARY within-stage read (plan v9 route 1): held-out cross-fitted
+    per-dim affine-recalibrated pooled R^2 per persisted layer, raw pooled
+    R^2 (fold-local test mean) as companion. Separate reads — never blended.
+    """
+    fitted = sweep["fitted_mask"]
+    folds = np.asarray(sweep["folds"])[fitted]
+    per_layer: dict[str, dict] = {}
+    for li in persist_layers:
+        if li not in sweep["preds_frozen"]:
+            continue  # out of range on this store (tiny smoke) — guard-skipped
+        pred = sweep["preds_frozen"][li][fitted]
+        truth = Y[fitted, li, :]
+        rec = rc.crossfit_recal_direct(pred, truth, folds)
+        per_layer[str(li)] = {
+            "heldout_recal_r2": float(rec["r2"]),
+            "raw_r2": float(rc.raw_pooled_r2(pred, truth, folds)),
+            "insample_recal_r2": float(rc.insample_recal_r2(pred, truth)),
+        }
+    finite = {
+        int(k): v["heldout_recal_r2"]
+        for k, v in per_layer.items()
+        if np.isfinite(v["heldout_recal_r2"])
+    }
+    best = max(finite, key=finite.get) if finite else None
+    s_recal = finite[best] if best is not None else float("nan")
+    return {
+        "primary": "heldout_crossfit_perdim_affine_recal_r2",
+        "companion": "raw_pooled_r2 (fold-local test mean, committed convention)",
+        "per_layer": per_layer,
+        "s_recal": s_recal,
+        "s_recal_argmax_layer": best,
+        "bar_r": float(qwen_cal["bar_r"]),
+        "above_bar": bool(best is not None and s_recal >= qwen_cal["bar_r"]),
+        "qwen_exchange": {
+            k: qwen_cal[k] for k in ("s_qwen_recal", "committed_anchor", "rate", "path")
+        },
+    }
+
+
+def _lambda_audit(sweep: dict, frozen_layers: tuple[int, ...]) -> dict:
+    """Selected-lambda audit (plan v9 route 1 fix list): histogram of the
+    observed-fit GCV selections over the COMMITTED grid (the v7-R1 widened
+    grid is deliberately dropped — v1 A_v = 0.000), edge counts, per-frozen-
+    layer rows, and the full (layer x fold) matrix (E1 lambda-join shape).
+    """
+    lam = sweep.get("gcv_lambda")
+    assert lam is not None, "lambda audit requires heldout_r2_sweep(collect_lambdas=True)"
+    grid = [float(v) for v in fc.LAMBDAS]
+    lamf = np.asarray(lam, dtype=np.float64)
+    finite = lamf[np.isfinite(lamf)]
+    matrix = [[None if not np.isfinite(v) else float(v) for v in row] for row in lamf]
+    return {
+        "grid": grid,
+        "selected_hist": {f"{g:g}": int(np.sum(finite == g)) for g in grid},
+        "n_selected": int(finite.size),
+        "n_at_low_edge": int(np.sum(finite == grid[0])),
+        "n_at_high_edge": int(np.sum(finite == grid[-1])),
+        "frozen_layer_rows": {str(li): matrix[li] for li in frozen_layers if li < lamf.shape[0]},
+        "gcv_lambda_layer_x_fold": matrix,
+    }
+
+
 def _persist_preds(preds_dir: Path, cell_id: str, sweep: dict, conv_ids, tag: str = "") -> None:
     """fp16 held-out prediction matrices + manifest (round-5 preds pattern)."""
     preds_dir.mkdir(parents=True, exist_ok=True)
@@ -300,6 +379,7 @@ def run_one_cell(
     n_boot: int,
     matched_n: int | None,
     expected_layers: int | None,
+    qwen_cal: dict,
 ) -> dict:
     cell_id = cell["cell_id"]
     bundle = fc._load_bundle_any(ts_dir, cell["model"], cell["format"], cell["corpus"])
@@ -308,6 +388,11 @@ def run_one_cell(
     X, Y, conv_ids = xy["X"], xy["Y"], xy["conv_ids"]
     print(f"[fit1336] cell={cell_id} n={len(conv_ids)}", flush=True)
 
+    # Preds/cosine capture + the recal primary run at frozen + the E1 verdict
+    # layer (cm.preds_layers); every REGISTERED statistic below (selection-
+    # symmetric frozen table, headline-rule domain, cosine/CI reads) stays on
+    # the frozen set — the L29 extension is capture-only (plan v9 route 1).
+    persist_layers = cm.preds_layers(frozen_layers)
     sweep = fc.heldout_r2_sweep(
         X,
         Y,
@@ -315,7 +400,8 @@ def run_one_cell(
         n_folds=n_folds,
         seed=seed,
         null_draws=null_draws,
-        frozen_layers=frozen_layers,
+        frozen_layers=persist_layers,
+        collect_lambdas=True,
     )
     r2_obs, r2_null = sweep["r2_obs"], sweep["r2_null"]
     summary = fc.selection_symmetric_summary(r2_obs, r2_null, frozen_layers=frozen_layers)
@@ -351,7 +437,10 @@ def run_one_cell(
         "metadata": _metadata(seed, len(conv_ids)),
         "cell": dict(cell),
         "frozen_layers": list(frozen_layers),
+        "preds_layers": list(persist_layers),
         "r2_per_layer_obs": [float(v) for v in r2_obs],
+        "recal": _recal_block(sweep, Y, persist_layers, qwen_cal),
+        "lambda_audit": _lambda_audit(sweep, frozen_layers),
         "selection_symmetric": summary,
         "random_projection_control_r2": rp,
         "mean_baseline_r2": mb,
@@ -387,7 +476,8 @@ def run_one_cell(
             n_folds=n_folds,
             seed=seed,
             null_draws=null_draws,
-            frozen_layers=frozen_layers,
+            frozen_layers=persist_layers,
+            collect_lambdas=True,
         )
         summary_m = fc.selection_symmetric_summary(
             sweep_m["r2_obs"], sweep_m["r2_null"], frozen_layers=frozen_layers
@@ -400,6 +490,8 @@ def run_one_cell(
                 "matched_n": matched_n,
                 "subsample_seed": seed,
                 "r2_per_layer_obs": [float(v) for v in sweep_m["r2_obs"]],
+                "recal": _recal_block(sweep_m, Y[keep], persist_layers, qwen_cal),
+                "lambda_audit": _lambda_audit(sweep_m, frozen_layers),
                 "selection_symmetric": summary_m,
                 "n_folds": n_folds,
                 "null_draws": null_draws,
@@ -412,47 +504,79 @@ def run_one_cell(
 # ---------------------------------------------------------------------------
 # G1 — rig-transfer kill gate (plan §7)
 # ---------------------------------------------------------------------------
-def run_g1_check(out_dir: Path) -> int:
-    """KILL <=> best full-sweep within-stage R^2 < 0.2 on the After-RLVR model.
+def _g1_cell_reads(path: Path) -> tuple[float, float]:
+    """(recal primary best, raw companion best) for one G1 cell JSON.
 
-    chat >= 0.3 -> PASS. chat in [0.2, 0.3) -> marginal: the naturalistic cell
-    is REQUIRED as extra evidence before proceeding (exit 4 asks the
-    dispatcher to fit it), verdict PASS-marginal once present. chat < 0.2 ->
-    the naturalistic read is checked before killing (a chat-template-specific
-    artifact must not kill the ladder); KILL only when BOTH formats read
-    < 0.2 (conservative: a false KILL is the costly error).
+    Fail-loud on a pre-resume JSON without the recal block — a stale cells
+    file must never silently feed the re-adjudicated gate (plan v9 route 1).
     """
+    cell = json.loads(path.read_text())
+    assert "recal" in cell, (
+        f"{path} lacks the recal block — stale pre-resume fit output; re-run the fit for this "
+        "cell under the plan-v9 resume recipe before evaluating G1"
+    )
+    return float(cell["recal"]["s_recal"]), float(np.nanmax(cell["r2_per_layer_obs"]))
+
+
+def run_g1_check(out_dir: Path) -> int:
+    """KILL <=> best RECALIBRATED within-stage R^2 < bar_r on the After-RLVR model.
+
+    Plan v9 route 1 re-adjudication: the gate reads the held-out cross-fitted
+    per-dim affine-recalibrated primary (best over the persisted layer set —
+    the E1 S_r convention) against the exchange-rate-carried bars: kill =
+    persisted bar_r (0.20 x rate), marginal = 0.3 x rate. Raw full-sweep best
+    stays a reported companion, never the verdict input. Verdict shape is
+    unchanged: chat >= marginal -> PASS; chat in [kill, marginal) -> marginal
+    (exit 4 asks the dispatcher for the naturalistic read first); chat < kill
+    -> KILL only when BOTH formats read < kill (a false KILL is the costly
+    error).
+    """
+    qwen_cal = cm.load_qwen_recal_cal(out_dir)
+    kill_bar, marginal_bar = float(qwen_cal["bar_r"]), float(qwen_cal["marginal_r2"])
     chat_path = out_dir / "cells" / "cells_rlvr_chat_lmsys5k.json"
     assert chat_path.exists(), f"G1 requires {chat_path} — fit the RLVR chat cell first"
-    chat_best = float(np.nanmax(json.loads(chat_path.read_text())["r2_per_layer_obs"]))
+    chat_best, chat_best_raw = _g1_cell_reads(chat_path)
     nat_path = out_dir / "cells" / "cells_rlvr_naturalistic_lmsys5k.json"
-    nat_best = None
+    nat_best = nat_best_raw = None
     if nat_path.exists():
-        nat_best = float(np.nanmax(json.loads(nat_path.read_text())["r2_per_layer_obs"]))
+        nat_best, nat_best_raw = _g1_cell_reads(nat_path)
 
     need_nat = chat_best < cm.G1_MARGINAL_R2 and nat_best is None
     if need_nat:
         print(f"[g1] chat best R2={chat_best:.4f} < {cm.G1_MARGINAL_R2} — need naturalistic read")
         return 4
-    if chat_best >= cm.G1_MARGINAL_R2:
+    if chat_best >= marginal_bar:
         verdict, kill = "pass", False
-    elif chat_best >= cm.G1_KILL_R2:
+    elif chat_best >= kill_bar:
         verdict, kill = "pass_marginal", False
     else:
-        kill = nat_best < cm.G1_KILL_R2
+        kill = nat_best < kill_bar
         verdict = "kill" if kill else "pass_marginal_naturalistic_carries"
     payload = {
         "metadata": _metadata(cm.FIT_SEED, 0),
         "gate": "G1",
+        "primary_scale": "recal",
         "chat_best_r2": chat_best,
         "naturalistic_best_r2": nat_best,
-        "kill_threshold": cm.G1_KILL_R2,
-        "marginal_threshold": cm.G1_MARGINAL_R2,
+        "kill_threshold": kill_bar,
+        "marginal_threshold": marginal_bar,
         "verdict": verdict,
         "kill": bool(kill),
+        "raw_companion": {
+            "chat_best_r2_raw": chat_best_raw,
+            "naturalistic_best_r2_raw": nat_best_raw,
+            "kill_threshold_raw": cm.G1_KILL_R2,
+            "marginal_threshold_raw": cm.G1_MARGINAL_R2,
+        },
+        "qwen_exchange": {
+            k: qwen_cal[k] for k in ("s_qwen_recal", "committed_anchor", "rate", "path")
+        },
     }
     _write_json(out_dir / "gates" / "g1_gate.json", payload)
-    print(f"[g1] chat={chat_best:.4f} nat={nat_best} -> {verdict}")
+    print(
+        f"[g1] recal chat={chat_best:.4f} nat={nat_best} (bars kill={kill_bar:.4f} "
+        f"marginal={marginal_bar:.4f}; raw companion chat={chat_best_raw:.4f}) -> {verdict}"
+    )
     return 3 if kill else 0
 
 
@@ -486,6 +610,10 @@ def main() -> int:
         cells = cm.cells_for(cm.SMOKE_MODELS, cm.SMOKE_CORPORA)
     else:
         cells = [CELL_BY_ID[c.strip()] for c in args.cells.split(",") if c.strip()]
+    # Persisted E1.d exchange-rate calibration (plan v9 route 1) — fail-loud
+    # when absent; the smoke dispatch stages a fixture cal at the SAME
+    # relative path so both modes exercise this exact load.
+    qwen_cal = cm.load_qwen_recal_cal(args.out_dir)
     matched = None
     if args.matched_n:
         matched = int(args.matched_n_size)
@@ -507,6 +635,7 @@ def main() -> int:
             # Production stores assert the ladder's 32 layers; a smoke store
             # asserts its own realized count (tiny-model rebinding pattern).
             expected_layers=None if smoke else cm.EXPECTED_LAYERS,
+            qwen_cal=qwen_cal,
         )
     return 0
 

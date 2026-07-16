@@ -278,3 +278,81 @@ def test_gen_download_one_body(tmp_path, monkeypatch):
     assert got == target
     kwargs = fake_dl.call_args.kwargs
     assert kwargs["filename"] == "prefix/f.json" and kwargs["repo_type"] == "dataset"
+
+
+# ---------------------------------------------------------------------------
+# extract: HF-resume of a COMPLETE cell (plan v9 route 1 resume path)
+# ---------------------------------------------------------------------------
+def _fake_tree(monkeypatch, names: list[str] | None):
+    """Signature-conformant HfApi.list_repo_tree fake (the network boundary).
+
+    ``names=None`` simulates an absent prefix (EntryNotFoundError)."""
+    from types import SimpleNamespace
+
+    import huggingface_hub
+    from huggingface_hub.utils import EntryNotFoundError
+
+    def fake_list_repo_tree(
+        self, repo_id, path_in_repo=None, *, repo_type=None, revision=None, recursive=False, **kw
+    ):
+        assert repo_type == "dataset" and path_in_repo.endswith(f"turnstore_{STEM}")
+        if names is None:
+            raise EntryNotFoundError("no such prefix")
+        return [SimpleNamespace(path=f"{path_in_repo}/{n}") for n in names]
+
+    monkeypatch.setattr(huggingface_hub.HfApi, "list_repo_tree", fake_list_repo_tree)
+
+
+def test_extract_hf_resume_complete_cell_downloads_and_marks_done(tmp_path, monkeypatch):
+    """Real _try_hf_resume body: complete Hub cell -> files staged flat into
+    out_dir + done marker with uploaded=True (done == uploaded holds)."""
+    import huggingface_hub
+    import issue1336_extract_turnstore as ext
+
+    names = [f"{STEM}_shard{i:03d}.{e}" for i in range(2) for e in ("pt", "json")]
+    _fake_tree(monkeypatch, names)
+
+    def fake_download(repo_id=None, repo_type=None, filename=None, local_dir=None, **kw):
+        # Mirrors hf_hub_download's local_dir staging: file lands at the
+        # repo-relative path under local_dir.
+        dest = Path(local_dir) / filename
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        dest.write_text("payload")
+        return str(dest)
+
+    monkeypatch.setattr(huggingface_hub, "hf_hub_download", fake_download)
+    _no_extract(monkeypatch, ext)
+
+    done = ext._try_hf_resume(tmp_path, STEM)
+    assert done is not None and done["uploaded"] is True and done["hf_resumed"] is True
+    assert done["n_shards"] == 2
+    for n in names:
+        assert (tmp_path / n).exists(), f"{n} not staged flat into out_dir"
+    marker = json.loads((tmp_path / f"{STEM}.done.json").read_text())
+    assert marker["uploaded"] is True and marker["hf_resumed"] is True
+
+
+def test_extract_hf_resume_refuses_half_done_cell(tmp_path, monkeypatch):
+    """A partial Hub prefix (missing sidecar / shard gap) raises — a half-done
+    cell is never silently resumed NOR silently re-extracted."""
+    import issue1336_extract_turnstore as ext
+
+    # shard000 complete, shard001 missing its .json sidecar
+    _fake_tree(monkeypatch, [f"{STEM}_shard000.pt", f"{STEM}_shard000.json", f"{STEM}_shard001.pt"])
+    with pytest.raises(AssertionError, match="INCOMPLETE"):
+        ext._try_hf_resume(tmp_path, STEM)
+    assert not (tmp_path / f"{STEM}.done.json").exists()
+
+    # shard-index gap (0 absent) is also refused
+    _fake_tree(monkeypatch, [f"{STEM}_shard001.pt", f"{STEM}_shard001.json"])
+    with pytest.raises(AssertionError, match="INCOMPLETE"):
+        ext._try_hf_resume(tmp_path, STEM)
+
+
+def test_extract_hf_resume_absent_prefix_returns_none(tmp_path, monkeypatch):
+    """A cell never uploaded returns None (fresh extraction proceeds)."""
+    import issue1336_extract_turnstore as ext
+
+    _fake_tree(monkeypatch, None)
+    assert ext._try_hf_resume(tmp_path, STEM) is None
+    assert not (tmp_path / f"{STEM}.done.json").exists()
