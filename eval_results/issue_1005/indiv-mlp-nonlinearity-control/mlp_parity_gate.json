@@ -1,0 +1,26 @@
+{
+  "gate": "assert_group_mlp_matches_serial",
+  "modes": [
+    "per_fold",
+    "full_data"
+  ],
+  "max_abs_deviation_per_check": {
+    "group_vs_serial_per_fold_gateA": 3.91155481338501e-07,
+    "group_vs_serial_per_fold_gateB": 7.152557373046875e-07,
+    "singleton_vs_serial_per_fold": 7.152557373046875e-07,
+    "duplicate_fit_bitwise_per_fold": 0.0,
+    "group_vs_serial_full_data_gateA": 2.384185791015625e-07,
+    "group_vs_serial_full_data_gateB": 4.76837158203125e-07,
+    "singleton_vs_serial_full_data": 3.5762786865234375e-07,
+    "duplicate_fit_bitwise_full_data": 0.0
+  },
+  "reproducibility": {
+    "git_commit": "d67586dd7aa207188341c38687f59c54846473f0",
+    "timestamp_utc": "2026-07-16T06:55:35.239927+00:00",
+    "python_version": "3.11.15",
+    "platform": "Linux-6.8.0-1063-gcp-x86_64-with-glibc2.35",
+    "torch": "2.8.0+cu128",
+    "numpy": "2.2.6",
+    "transformers": "4.57.6"
+  }
+}

@@ -1,0 +1,2467 @@
+{
+  "dv": "Per-context \u0394 held-out skill re-reductions at the primary frozen convention (mean/mean, direct-arm full-data best LOCO layer per regime) \u2014 H2 CoT gain + the parent's H3/H4 companions",
+  "primary_combo": "mean/mean",
+  "flagged_below_parse_floor": [],
+  "contrasts": {
+    "h2_cot_gain_percontext": {
+      "delta": "skill(g_aug) - skill(d_ctx2ans)",
+      "by_regime": {
+        "indiv": {
+          "frozen_layer": 26,
+          "pooled_delta": 0.330202066722148,
+          "per_context": [
+            {
+              "context": "f1_house_librarian",
+              "family": "persona",
+              "flagged": false,
+              "delta": 0.1352216828641808,
+              "skill_g_aug": 0.9270432961671264,
+              "skill_d_ctx2ans": 0.7918216133029456
+            },
+            {
+              "context": "f1_house_surgeon",
+              "family": "persona",
+              "flagged": false,
+              "delta": 0.18048691955298168,
+              "skill_g_aug": 0.9022138233268382,
+              "skill_d_ctx2ans": 0.7217269037738565
+            },
+            {
+              "context": "f1_house_programmer",
+              "family": "persona",
+              "flagged": false,
+              "delta": 0.23727521318513334,
+              "skill_g_aug": 0.9359078676838747,
+              "skill_d_ctx2ans": 0.6986326544987413
+            },
+            {
+              "context": "f1_house_medical_doctor",
+              "family": "persona",
+              "flagged": false,
+              "delta": 0.17222539697069084,
+              "skill_g_aug": 0.92065094113267,
+              "skill_d_ctx2ans": 0.7484255441619792
+            },
+            {
+              "context": "f1_house_software_engineer",
+              "family": "persona",
+              "flagged": false,
+              "delta": 0.15504410109626543,
+              "skill_g_aug": 0.9389678300356283,
+              "skill_d_ctx2ans": 0.7839237289393629
+            },
+            {
+              "context": "f1_house_data_scientist",
+              "family": "persona",
+              "flagged": false,
+              "delta": 0.16598453644028432,
+              "skill_g_aug": 0.932675015180536,
+              "skill_d_ctx2ans": 0.7666904787402516
+            },
+            {
+              "context": "f1_phub_01",
+              "family": "persona",
+              "flagged": false,
+              "delta": 0.18339133729493684,
+              "skill_g_aug": 0.8682863793640344,
+              "skill_d_ctx2ans": 0.6848950420690976
+            },
+            {
+              "context": "f1_phub_02",
+              "family": "persona",
+              "flagged": false,
+              "delta": 0.1639223150318646,
+              "skill_g_aug": 0.8976461138032629,
+              "skill_d_ctx2ans": 0.7337237987713983
+            },
+            {
+              "context": "f1_phub_03",
+              "family": "persona",
+              "flagged": false,
+              "delta": 0.20817907772761068,
+              "skill_g_aug": 0.863919217354308,
+              "skill_d_ctx2ans": 0.6557401396266973
+            },
+            {
+              "context": "f1_phub_04",
+              "family": "persona",
+              "flagged": false,
+              "delta": 0.1518644889725147,
+              "skill_g_aug": 0.878242171100837,
+              "skill_d_ctx2ans": 0.7263776821283223
+            },
+            {
+              "context": "f1_phub_05",
+              "family": "persona",
+              "flagged": false,
+              "delta": 0.23467957902104064,
+              "skill_g_aug": 0.9010107143082198,
+              "skill_d_ctx2ans": 0.6663311352871791
+            },
+            {
+              "context": "f1_phub_06",
+              "family": "persona",
+              "flagged": false,
+              "delta": 0.19304396832710058,
+              "skill_g_aug": 0.8731095917190097,
+              "skill_d_ctx2ans": 0.6800656233919091
+            },
+            {
+              "context": "f1_phub_07",
+              "family": "persona",
+              "flagged": false,
+              "delta": 0.20497811570105495,
+              "skill_g_aug": 0.8758282645958245,
+              "skill_d_ctx2ans": 0.6708501488947696
+            },
+            {
+              "context": "f1_phub_08",
+              "family": "persona",
+              "flagged": false,
+              "delta": 0.3274964639283994,
+              "skill_g_aug": 0.8533250719307544,
+              "skill_d_ctx2ans": 0.525828608002355
+            },
+            {
+              "context": "f2_wc_short_1",
+              "family": "wildchat",
+              "flagged": false,
+              "delta": 0.47862101616690234,
+              "skill_g_aug": 0.7765084654840788,
+              "skill_d_ctx2ans": 0.2978874493171765
+            },
+            {
+              "context": "f2_wc_short_2",
+              "family": "wildchat",
+              "flagged": false,
+              "delta": 0.6038517954223825,
+              "skill_g_aug": 0.8230459569961648,
+              "skill_d_ctx2ans": 0.21919416157378224
+            },
+            {
+              "context": "f2_wc_short_3",
+              "family": "wildchat",
+              "flagged": false,
+              "delta": 0.32054377108496235,
+              "skill_g_aug": 0.7507070404427117,
+              "skill_d_ctx2ans": 0.4301632693577494
+            },
+            {
+              "context": "f2_wc_short_4",
+              "family": "wildchat",
+              "flagged": false,
+              "delta": 0.5886782257750345,
+              "skill_g_aug": 0.8514158351361324,
+              "skill_d_ctx2ans": 0.2627376093610979
+            },
+            {
+              "context": "f2_wc_short_5",
+              "family": "wildchat",
+              "flagged": false,
+              "delta": 0.5525492218205673,
+              "skill_g_aug": 0.8750262438573118,
+              "skill_d_ctx2ans": 0.32247702203674444
+            },
+            {
+              "context": "f2_wc_long_1",
+              "family": "wildchat",
+              "flagged": false,
+              "delta": 0.6644290697230536,
+              "skill_g_aug": 0.7357389413764301,
+              "skill_d_ctx2ans": 0.07130987165337654
+            },
+            {
+              "context": "f2_wc_long_2",
+              "family": "wildchat",
+              "flagged": false,
+              "delta": 0.5632010018133157,
+              "skill_g_aug": 0.6235194927989042,
+              "skill_d_ctx2ans": 0.0603184909855885
+            },
+            {
+              "context": "f2_wc_long_3",
+              "family": "wildchat",
+              "flagged": false,
+              "delta": 0.6772384963072159,
+              "skill_g_aug": 0.8710379409624914,
+              "skill_d_ctx2ans": 0.19379944465527554
+            },
+            {
+              "context": "f2_wc_long_4",
+              "family": "wildchat",
+              "flagged": false,
+              "delta": 0.5667459730617129,
+              "skill_g_aug": 0.7890836873028648,
+              "skill_d_ctx2ans": 0.2223377142411519
+            },
+            {
+              "context": "f2_wc_long_5",
+              "family": "wildchat",
+              "flagged": false,
+              "delta": 0.7386163239297587,
+              "skill_g_aug": 0.857280736967676,
+              "skill_d_ctx2ans": 0.1186644130379173
+            },
+            {
+              "context": "f3_icl_marker_k4",
+              "family": "icl",
+              "flagged": false,
+              "delta": 0.6179860678669797,
+              "skill_g_aug": 0.9046812375136339,
+              "skill_d_ctx2ans": 0.2866951696466542
+            },
+            {
+              "context": "f3_icl_french_k4",
+              "family": "icl",
+              "flagged": false,
+              "delta": 0.407026567020357,
+              "skill_g_aug": 0.6708701603192864,
+              "skill_d_ctx2ans": 0.26384359329892937
+            },
+            {
+              "context": "f3_icl_json_k4",
+              "family": "icl",
+              "flagged": false,
+              "delta": 0.7453609919294091,
+              "skill_g_aug": 0.9381193063257806,
+              "skill_d_ctx2ans": 0.19275831439637148
+            },
+            {
+              "context": "f3_icl_pirate_k4",
+              "family": "icl",
+              "flagged": false,
+              "delta": 0.5798154867918351,
+              "skill_g_aug": 0.8979468500760968,
+              "skill_d_ctx2ans": 0.3181313632842616
+            },
+            {
+              "context": "f3_icl_marker_k2",
+              "family": "icl",
+              "flagged": false,
+              "delta": 0.48530845951984225,
+              "skill_g_aug": 0.916609592707791,
+              "skill_d_ctx2ans": 0.4313011331879487
+            },
+            {
+              "context": "f3_icl_marker_k8",
+              "family": "icl",
+              "flagged": false,
+              "delta": 0.7288552435830884,
+              "skill_g_aug": 0.9148953170720396,
+              "skill_d_ctx2ans": 0.18604007348895124
+            },
+            {
+              "context": "f3_icl_json_k2",
+              "family": "icl",
+              "flagged": false,
+              "delta": 0.6142741852647078,
+              "skill_g_aug": 0.9021036290699371,
+              "skill_d_ctx2ans": 0.28782944380522935
+            },
+            {
+              "context": "f3_icl_json_k8",
+              "family": "icl",
+              "flagged": false,
+              "delta": 0.8239898249335469,
+              "skill_g_aug": 0.9356315375890272,
+              "skill_d_ctx2ans": 0.11164171265548029
+            },
+            {
+              "context": "f4_reph_imperative",
+              "family": "rephrase",
+              "flagged": false,
+              "delta": 0.13580924054888832,
+              "skill_g_aug": 0.9289941637410338,
+              "skill_d_ctx2ans": 0.7931849231921455
+            },
+            {
+              "context": "f4_reph_polite",
+              "family": "rephrase",
+              "flagged": false,
+              "delta": 0.13822647295954993,
+              "skill_g_aug": 0.9103187301893763,
+              "skill_d_ctx2ans": 0.7720922572298263
+            },
+            {
+              "context": "f4_reph_casual",
+              "family": "rephrase",
+              "flagged": false,
+              "delta": 0.13449012525262383,
+              "skill_g_aug": 0.876494410571047,
+              "skill_d_ctx2ans": 0.7420042853184232
+            },
+            {
+              "context": "f4_reph_legalese",
+              "family": "rephrase",
+              "flagged": false,
+              "delta": 0.13853376558623554,
+              "skill_g_aug": 0.9039378743262311,
+              "skill_d_ctx2ans": 0.7654041087399955
+            },
+            {
+              "context": "f4_reph_enthusiastic",
+              "family": "rephrase",
+              "flagged": false,
+              "delta": 0.1325594281288669,
+              "skill_g_aug": 0.921060108002332,
+              "skill_d_ctx2ans": 0.7885006798734651
+            },
+            {
+              "context": "f4_reph_archaic",
+              "family": "rephrase",
+              "flagged": false,
+              "delta": 0.12625440142737832,
+              "skill_g_aug": 0.9206424449582014,
+              "skill_d_ctx2ans": 0.794388043530823
+            },
+            {
+              "context": "f5_fmt_json",
+              "family": "format",
+              "flagged": false,
+              "delta": 0.1271409048993246,
+              "skill_g_aug": 0.896313431358564,
+              "skill_d_ctx2ans": 0.7691725264592394
+            },
+            {
+              "context": "f5_fmt_code_comment",
+              "family": "format",
+              "flagged": false,
+              "delta": 0.192404823882382,
+              "skill_g_aug": 0.8877316474785627,
+              "skill_d_ctx2ans": 0.6953268235961807
+            },
+            {
+              "context": "f5_fmt_markdown_table",
+              "family": "format",
+              "flagged": false,
+              "delta": 0.18131531929370093,
+              "skill_g_aug": 0.9134515023365724,
+              "skill_d_ctx2ans": 0.7321361830428714
+            },
+            {
+              "context": "f5_fmt_xml",
+              "family": "format",
+              "flagged": false,
+              "delta": 0.1148127068964736,
+              "skill_g_aug": 0.8851672741482616,
+              "skill_d_ctx2ans": 0.770354567251788
+            },
+            {
+              "context": "f5_fmt_bullets",
+              "family": "format",
+              "flagged": false,
+              "delta": 0.10278764464276369,
+              "skill_g_aug": 0.9013609071098794,
+              "skill_d_ctx2ans": 0.7985732624671157
+            },
+            {
+              "context": "f6_default_template",
+              "family": "default",
+              "flagged": false,
+              "delta": 0.28268902012344965,
+              "skill_g_aug": 0.9277249822900084,
+              "skill_d_ctx2ans": 0.6450359621665588
+            },
+            {
+              "context": "f6_helpful_asst",
+              "family": "default",
+              "flagged": false,
+              "delta": 0.20361981094963943,
+              "skill_g_aug": 0.939800761500821,
+              "skill_d_ctx2ans": 0.7361809505511816
+            },
+            {
+              "context": "f8_behav_marker",
+              "family": "behavior",
+              "flagged": false,
+              "delta": 0.17791557536387081,
+              "skill_g_aug": 0.9304636290030762,
+              "skill_d_ctx2ans": 0.7525480536392054
+            },
+            {
+              "context": "f8_behav_sycophant",
+              "family": "behavior",
+              "flagged": false,
+              "delta": 0.16546457782930313,
+              "skill_g_aug": 0.8699789623921366,
+              "skill_d_ctx2ans": 0.7045143845628334
+            },
+            {
+              "context": "f8_behav_refusal",
+              "family": "behavior",
+              "flagged": false,
+              "delta": 0.20070486135352306,
+              "skill_g_aug": 0.9072726532000835,
+              "skill_d_ctx2ans": 0.7065677918465605
+            },
+            {
+              "context": "f8_behav_fact",
+              "family": "behavior",
+              "flagged": false,
+              "delta": 0.24549525009717366,
+              "skill_g_aug": 0.9079887035022551,
+              "skill_d_ctx2ans": 0.6624934534050815
+            },
+            {
+              "context": "f8_behav_harmful",
+              "family": "behavior",
+              "flagged": false,
+              "delta": 0.22835408755833697,
+              "skill_g_aug": 0.9168460051178289,
+              "skill_d_ctx2ans": 0.6884919175594919
+            }
+          ]
+        },
+        "avg_q": {
+          "frozen_layer": 18,
+          "pooled_delta": 0.3307015598355737,
+          "per_context": [
+            {
+              "context": "f1_house_librarian",
+              "family": "persona",
+              "flagged": false,
+              "delta": 0.19042161203705088,
+              "skill_g_aug": 0.5199278671729892,
+              "skill_d_ctx2ans": 0.32950625513593834
+            },
+            {
+              "context": "f1_house_surgeon",
+              "family": "persona",
+              "flagged": false,
+              "delta": 0.07000905262722845,
+              "skill_g_aug": 0.657519837250754,
+              "skill_d_ctx2ans": 0.5875107846235256
+            },
+            {
+              "context": "f1_house_programmer",
+              "family": "persona",
+              "flagged": false,
+              "delta": 0.22142161733441046,
+              "skill_g_aug": 0.6867522418138525,
+              "skill_d_ctx2ans": 0.46533062447944207
+            },
+            {
+              "context": "f1_house_medical_doctor",
+              "family": "persona",
+              "flagged": false,
+              "delta": 0.060268757970327824,
+              "skill_g_aug": 0.7445795117928962,
+              "skill_d_ctx2ans": 0.6843107538225683
+            },
+            {
+              "context": "f1_house_software_engineer",
+              "family": "persona",
+              "flagged": false,
+              "delta": 0.05273813546025152,
+              "skill_g_aug": 0.7599689888430071,
+              "skill_d_ctx2ans": 0.7072308533827556
+            },
+            {
+              "context": "f1_house_data_scientist",
+              "family": "persona",
+              "flagged": false,
+              "delta": 0.04058179631468073,
+              "skill_g_aug": 0.736422629393628,
+              "skill_d_ctx2ans": 0.6958408330789473
+            },
+            {
+              "context": "f1_phub_01",
+              "family": "persona",
+              "flagged": false,
+              "delta": 0.1091129101015551,
+              "skill_g_aug": 0.5696902674642352,
+              "skill_d_ctx2ans": 0.46057735736268013
+            },
+            {
+              "context": "f1_phub_02",
+              "family": "persona",
+              "flagged": false,
+              "delta": 0.05380675125524359,
+              "skill_g_aug": 0.7364063965749872,
+              "skill_d_ctx2ans": 0.6825996453197436
+            },
+            {
+              "context": "f1_phub_03",
+              "family": "persona",
+              "flagged": false,
+              "delta": 0.024901034720713477,
+              "skill_g_aug": 0.6438849466616163,
+              "skill_d_ctx2ans": 0.6189839119409029
+            },
+            {
+              "context": "f1_phub_04",
+              "family": "persona",
+              "flagged": false,
+              "delta": 0.02303294846970083,
+              "skill_g_aug": 0.650606727351612,
+              "skill_d_ctx2ans": 0.6275737788819111
+            },
+            {
+              "context": "f1_phub_05",
+              "family": "persona",
+              "flagged": false,
+              "delta": 0.12346937162873872,
+              "skill_g_aug": 0.6910109807714726,
+              "skill_d_ctx2ans": 0.5675416091427339
+            },
+            {
+              "context": "f1_phub_06",
+              "family": "persona",
+              "flagged": false,
+              "delta": 0.08691287512706869,
+              "skill_g_aug": 0.526084262894666,
+              "skill_d_ctx2ans": 0.43917138776759734
+            },
+            {
+              "context": "f1_phub_07",
+              "family": "persona",
+              "flagged": false,
+              "delta": 0.06418635523893523,
+              "skill_g_aug": 0.5332700593427153,
+              "skill_d_ctx2ans": 0.4690837041037801
+            },
+            {
+              "context": "f1_phub_08",
+              "family": "persona",
+              "flagged": false,
+              "delta": 0.1433936754964953,
+              "skill_g_aug": 0.536520092550223,
+              "skill_d_ctx2ans": 0.39312641705372775
+            },
+            {
+              "context": "f2_wc_short_1",
+              "family": "wildchat",
+              "flagged": false,
+              "delta": 0.9038081595932645,
+              "skill_g_aug": 0.7883739806826162,
+              "skill_d_ctx2ans": -0.11543417891064833
+            },
+            {
+              "context": "f2_wc_short_2",
+              "family": "wildchat",
+              "flagged": false,
+              "delta": 0.5691510898602586,
+              "skill_g_aug": 0.8722630744068205,
+              "skill_d_ctx2ans": 0.30311198454656185
+            },
+            {
+              "context": "f2_wc_short_3",
+              "family": "wildchat",
+              "flagged": false,
+              "delta": 0.96173552265114,
+              "skill_g_aug": 0.8803281740867185,
+              "skill_d_ctx2ans": -0.08140734856442156
+            },
+            {
+              "context": "f2_wc_short_4",
+              "family": "wildchat",
+              "flagged": false,
+              "delta": 0.16454124558569916,
+              "skill_g_aug": 0.5210666720464381,
+              "skill_d_ctx2ans": 0.3565254264607389
+            },
+            {
+              "context": "f2_wc_short_5",
+              "family": "wildchat",
+              "flagged": false,
+              "delta": 0.474219291077854,
+              "skill_g_aug": 0.5265655142926627,
+              "skill_d_ctx2ans": 0.05234622321480875
+            },
+            {
+              "context": "f2_wc_long_1",
+              "family": "wildchat",
+              "flagged": false,
+              "delta": 0.3042259579340181,
+              "skill_g_aug": 0.4514838179293279,
+              "skill_d_ctx2ans": 0.14725785999530983
+            },
+            {
+              "context": "f2_wc_long_2",
+              "family": "wildchat",
+              "flagged": false,
+              "delta": 0.1125052160000114,
+              "skill_g_aug": 0.26295827260613835,
+              "skill_d_ctx2ans": 0.15045305660612696
+            },
+            {
+              "context": "f2_wc_long_3",
+              "family": "wildchat",
+              "flagged": false,
+              "delta": 0.8573074793725605,
+              "skill_g_aug": 0.49401526820403696,
+              "skill_d_ctx2ans": -0.3632922111685235
+            },
+            {
+              "context": "f2_wc_long_4",
+              "family": "wildchat",
+              "flagged": false,
+              "delta": 0.10837095950465492,
+              "skill_g_aug": 0.5540996488311152,
+              "skill_d_ctx2ans": 0.44572868932646026
+            },
+            {
+              "context": "f2_wc_long_5",
+              "family": "wildchat",
+              "flagged": false,
+              "delta": 0.28908017961275945,
+              "skill_g_aug": 0.6555477050303196,
+              "skill_d_ctx2ans": 0.3664675254175601
+            },
+            {
+              "context": "f3_icl_marker_k4",
+              "family": "icl",
+              "flagged": false,
+              "delta": 0.12275454004289343,
+              "skill_g_aug": 0.7513004579072526,
+              "skill_d_ctx2ans": 0.6285459178643592
+            },
+            {
+              "context": "f3_icl_french_k4",
+              "family": "icl",
+              "flagged": false,
+              "delta": 0.20743797325808122,
+              "skill_g_aug": 0.743472248084367,
+              "skill_d_ctx2ans": 0.5360342748262857
+            },
+            {
+              "context": "f3_icl_json_k4",
+              "family": "icl",
+              "flagged": false,
+              "delta": 0.12952803503801458,
+              "skill_g_aug": 0.8105099805107325,
+              "skill_d_ctx2ans": 0.680981945472718
+            },
+            {
+              "context": "f3_icl_pirate_k4",
+              "family": "icl",
+              "flagged": false,
+              "delta": 0.1474373277239649,
+              "skill_g_aug": 0.6792159398151765,
+              "skill_d_ctx2ans": 0.5317786120912116
+            },
+            {
+              "context": "f3_icl_marker_k2",
+              "family": "icl",
+              "flagged": false,
+              "delta": 0.24823116554951996,
+              "skill_g_aug": 0.7230306083898634,
+              "skill_d_ctx2ans": 0.4747994428403435
+            },
+            {
+              "context": "f3_icl_marker_k8",
+              "family": "icl",
+              "flagged": false,
+              "delta": 0.15661542136956907,
+              "skill_g_aug": 0.7873752192162728,
+              "skill_d_ctx2ans": 0.6307597978467038
+            },
+            {
+              "context": "f3_icl_json_k2",
+              "family": "icl",
+              "flagged": false,
+              "delta": 0.2115383456710639,
+              "skill_g_aug": 0.8869799543933888,
+              "skill_d_ctx2ans": 0.675441608722325
+            },
+            {
+              "context": "f3_icl_json_k8",
+              "family": "icl",
+              "flagged": false,
+              "delta": 0.10011194023348868,
+              "skill_g_aug": 0.7655368370190363,
+              "skill_d_ctx2ans": 0.6654248967855476
+            },
+            {
+              "context": "f4_reph_imperative",
+              "family": "rephrase",
+              "flagged": false,
+              "delta": 0.30620977289138496,
+              "skill_g_aug": 0.5063645344979839,
+              "skill_d_ctx2ans": 0.20015476160659895
+            },
+            {
+              "context": "f4_reph_polite",
+              "family": "rephrase",
+              "flagged": false,
+              "delta": 0.2654697722552053,
+              "skill_g_aug": 0.7487593076528338,
+              "skill_d_ctx2ans": 0.48328953539762853
+            },
+            {
+              "context": "f4_reph_casual",
+              "family": "rephrase",
+              "flagged": false,
+              "delta": 0.23072430412837341,
+              "skill_g_aug": 0.6315459706671376,
+              "skill_d_ctx2ans": 0.40082166653876417
+            },
+            {
+              "context": "f4_reph_legalese",
+              "family": "rephrase",
+              "flagged": false,
+              "delta": 0.1673249246601325,
+              "skill_g_aug": 0.6768631131044429,
+              "skill_d_ctx2ans": 0.5095381884443104
+            },
+            {
+              "context": "f4_reph_enthusiastic",
+              "family": "rephrase",
+              "flagged": false,
+              "delta": 0.21403259887959591,
+              "skill_g_aug": 0.7945877473222889,
+              "skill_d_ctx2ans": 0.580555148442693
+            },
+            {
+              "context": "f4_reph_archaic",
+              "family": "rephrase",
+              "flagged": false,
+              "delta": 0.8520823474146784,
+              "skill_g_aug": 0.6423297867928077,
+              "skill_d_ctx2ans": -0.20975256062187064
+            },
+            {
+              "context": "f5_fmt_json",
+              "family": "format",
+              "flagged": false,
+              "delta": 0.04800820780164872,
+              "skill_g_aug": 0.6756295846548814,
+              "skill_d_ctx2ans": 0.6276213768532327
+            },
+            {
+              "context": "f5_fmt_code_comment",
+              "family": "format",
+              "flagged": false,
+              "delta": 0.4108871290113888,
+              "skill_g_aug": 0.641507704345281,
+              "skill_d_ctx2ans": 0.23062057533389224
+            },
+            {
+              "context": "f5_fmt_markdown_table",
+              "family": "format",
+              "flagged": false,
+              "delta": 0.03184325286704881,
+              "skill_g_aug": 0.68123642715819,
+              "skill_d_ctx2ans": 0.6493931742911412
+            },
+            {
+              "context": "f5_fmt_xml",
+              "family": "format",
+              "flagged": false,
+              "delta": 0.08523705623105571,
+              "skill_g_aug": 0.38454996288949905,
+              "skill_d_ctx2ans": 0.29931290665844335
+            },
+            {
+              "context": "f5_fmt_bullets",
+              "family": "format",
+              "flagged": false,
+              "delta": 0.2291431689353216,
+              "skill_g_aug": 0.6070644941657579,
+              "skill_d_ctx2ans": 0.3779213252304363
+            },
+            {
+              "context": "f6_default_template",
+              "family": "default",
+              "flagged": false,
+              "delta": 1.246362047177159,
+              "skill_g_aug": -0.09380719265942083,
+              "skill_d_ctx2ans": -1.3401692398365799
+            },
+            {
+              "context": "f6_helpful_asst",
+              "family": "default",
+              "flagged": false,
+              "delta": 0.15303995828384553,
+              "skill_g_aug": 0.6633501605543319,
+              "skill_d_ctx2ans": 0.5103102022704864
+            },
+            {
+              "context": "f8_behav_marker",
+              "family": "behavior",
+              "flagged": false,
+              "delta": 0.24498624124802404,
+              "skill_g_aug": 0.5918693991205113,
+              "skill_d_ctx2ans": 0.34688315787248725
+            },
+            {
+              "context": "f8_behav_sycophant",
+              "family": "behavior",
+              "flagged": false,
+              "delta": 0.33016644012008356,
+              "skill_g_aug": 0.5157516971222388,
+              "skill_d_ctx2ans": 0.18558525700215522
+            },
+            {
+              "context": "f8_behav_refusal",
+              "family": "behavior",
+              "flagged": false,
+              "delta": 0.06081131468523793,
+              "skill_g_aug": 0.6798028408515671,
+              "skill_d_ctx2ans": 0.6189915261663291
+            },
+            {
+              "context": "f8_behav_fact",
+              "family": "behavior",
+              "flagged": false,
+              "delta": 0.4452257343357928,
+              "skill_g_aug": 0.3774788722716407,
+              "skill_d_ctx2ans": -0.06774686206415215
+            },
+            {
+              "context": "f8_behav_harmful",
+              "family": "behavior",
+              "flagged": false,
+              "delta": 0.36450574060971097,
+              "skill_g_aug": 0.5399816480941371,
+              "skill_d_ctx2ans": 0.1754759074844261
+            }
+          ]
+        }
+      }
+    },
+    "h3_composed_direct_percontext": {
+      "delta": "skill(comp_pred) - skill(d_ctx2ans)",
+      "by_regime": {
+        "indiv": {
+          "frozen_layer": 26,
+          "pooled_delta": -0.0018947301472254097,
+          "per_context": [
+            {
+              "context": "f1_house_librarian",
+              "family": "persona",
+              "flagged": false,
+              "delta": -0.0012512037498271233,
+              "skill_comp_pred": 0.7905704095531185,
+              "skill_d_ctx2ans": 0.7918216133029456
+            },
+            {
+              "context": "f1_house_surgeon",
+              "family": "persona",
+              "flagged": false,
+              "delta": 0.016609430785021306,
+              "skill_comp_pred": 0.7383363345588778,
+              "skill_d_ctx2ans": 0.7217269037738565
+            },
+            {
+              "context": "f1_house_programmer",
+              "family": "persona",
+              "flagged": false,
+              "delta": 0.036175610046151774,
+              "skill_comp_pred": 0.7348082645448931,
+              "skill_d_ctx2ans": 0.6986326544987413
+            },
+            {
+              "context": "f1_house_medical_doctor",
+              "family": "persona",
+              "flagged": false,
+              "delta": -0.002749518185370725,
+              "skill_comp_pred": 0.7456760259766084,
+              "skill_d_ctx2ans": 0.7484255441619792
+            },
+            {
+              "context": "f1_house_software_engineer",
+              "family": "persona",
+              "flagged": false,
+              "delta": -0.006839843581958882,
+              "skill_comp_pred": 0.777083885357404,
+              "skill_d_ctx2ans": 0.7839237289393629
+            },
+            {
+              "context": "f1_house_data_scientist",
+              "family": "persona",
+              "flagged": false,
+              "delta": 0.027827759261572105,
+              "skill_comp_pred": 0.7945182380018238,
+              "skill_d_ctx2ans": 0.7666904787402516
+            },
+            {
+              "context": "f1_phub_01",
+              "family": "persona",
+              "flagged": false,
+              "delta": -0.005645659390114965,
+              "skill_comp_pred": 0.6792493826789826,
+              "skill_d_ctx2ans": 0.6848950420690976
+            },
+            {
+              "context": "f1_phub_02",
+              "family": "persona",
+              "flagged": false,
+              "delta": -0.01044247802522058,
+              "skill_comp_pred": 0.7232813207461777,
+              "skill_d_ctx2ans": 0.7337237987713983
+            },
+            {
+              "context": "f1_phub_03",
+              "family": "persona",
+              "flagged": false,
+              "delta": 0.012009174215592666,
+              "skill_comp_pred": 0.66774931384229,
+              "skill_d_ctx2ans": 0.6557401396266973
+            },
+            {
+              "context": "f1_phub_04",
+              "family": "persona",
+              "flagged": false,
+              "delta": 0.01286293364790203,
+              "skill_comp_pred": 0.7392406157762244,
+              "skill_d_ctx2ans": 0.7263776821283223
+            },
+            {
+              "context": "f1_phub_05",
+              "family": "persona",
+              "flagged": false,
+              "delta": 0.005069010019940201,
+              "skill_comp_pred": 0.6714001453071193,
+              "skill_d_ctx2ans": 0.6663311352871791
+            },
+            {
+              "context": "f1_phub_06",
+              "family": "persona",
+              "flagged": false,
+              "delta": 0.0007481033410882132,
+              "skill_comp_pred": 0.6808137267329973,
+              "skill_d_ctx2ans": 0.6800656233919091
+            },
+            {
+              "context": "f1_phub_07",
+              "family": "persona",
+              "flagged": false,
+              "delta": -0.006830651960450296,
+              "skill_comp_pred": 0.6640194969343193,
+              "skill_d_ctx2ans": 0.6708501488947696
+            },
+            {
+              "context": "f1_phub_08",
+              "family": "persona",
+              "flagged": false,
+              "delta": 0.004829806544484727,
+              "skill_comp_pred": 0.5306584145468397,
+              "skill_d_ctx2ans": 0.525828608002355
+            },
+            {
+              "context": "f2_wc_short_1",
+              "family": "wildchat",
+              "flagged": false,
+              "delta": -0.012580235298536024,
+              "skill_comp_pred": 0.28530721401864045,
+              "skill_d_ctx2ans": 0.2978874493171765
+            },
+            {
+              "context": "f2_wc_short_2",
+              "family": "wildchat",
+              "flagged": false,
+              "delta": -0.008709624169190078,
+              "skill_comp_pred": 0.21048453740459216,
+              "skill_d_ctx2ans": 0.21919416157378224
+            },
+            {
+              "context": "f2_wc_short_3",
+              "family": "wildchat",
+              "flagged": false,
+              "delta": -0.02053094675228362,
+              "skill_comp_pred": 0.4096323226054658,
+              "skill_d_ctx2ans": 0.4301632693577494
+            },
+            {
+              "context": "f2_wc_short_4",
+              "family": "wildchat",
+              "flagged": false,
+              "delta": -0.013974542768526499,
+              "skill_comp_pred": 0.2487630665925714,
+              "skill_d_ctx2ans": 0.2627376093610979
+            },
+            {
+              "context": "f2_wc_short_5",
+              "family": "wildchat",
+              "flagged": false,
+              "delta": -0.017209690155967294,
+              "skill_comp_pred": 0.30526733188077715,
+              "skill_d_ctx2ans": 0.32247702203674444
+            },
+            {
+              "context": "f2_wc_long_1",
+              "family": "wildchat",
+              "flagged": false,
+              "delta": -0.006706186691708638,
+              "skill_comp_pred": 0.0646036849616679,
+              "skill_d_ctx2ans": 0.07130987165337654
+            },
+            {
+              "context": "f2_wc_long_2",
+              "family": "wildchat",
+              "flagged": false,
+              "delta": -0.008000466623733882,
+              "skill_comp_pred": 0.05231802436185462,
+              "skill_d_ctx2ans": 0.0603184909855885
+            },
+            {
+              "context": "f2_wc_long_3",
+              "family": "wildchat",
+              "flagged": false,
+              "delta": -0.008896589159596346,
+              "skill_comp_pred": 0.1849028554956792,
+              "skill_d_ctx2ans": 0.19379944465527554
+            },
+            {
+              "context": "f2_wc_long_4",
+              "family": "wildchat",
+              "flagged": false,
+              "delta": -0.010208530373126967,
+              "skill_comp_pred": 0.21212918386802493,
+              "skill_d_ctx2ans": 0.2223377142411519
+            },
+            {
+              "context": "f2_wc_long_5",
+              "family": "wildchat",
+              "flagged": false,
+              "delta": -0.00487428518116817,
+              "skill_comp_pred": 0.11379012785674913,
+              "skill_d_ctx2ans": 0.1186644130379173
+            },
+            {
+              "context": "f3_icl_marker_k4",
+              "family": "icl",
+              "flagged": false,
+              "delta": -0.009193745018397204,
+              "skill_comp_pred": 0.277501424628257,
+              "skill_d_ctx2ans": 0.2866951696466542
+            },
+            {
+              "context": "f3_icl_french_k4",
+              "family": "icl",
+              "flagged": false,
+              "delta": -0.013558490508385312,
+              "skill_comp_pred": 0.25028510279054406,
+              "skill_d_ctx2ans": 0.26384359329892937
+            },
+            {
+              "context": "f3_icl_json_k4",
+              "family": "icl",
+              "flagged": false,
+              "delta": -0.010036134687870124,
+              "skill_comp_pred": 0.18272217970850135,
+              "skill_d_ctx2ans": 0.19275831439637148
+            },
+            {
+              "context": "f3_icl_pirate_k4",
+              "family": "icl",
+              "flagged": false,
+              "delta": -0.017176275497759574,
+              "skill_comp_pred": 0.30095508778650204,
+              "skill_d_ctx2ans": 0.3181313632842616
+            },
+            {
+              "context": "f3_icl_marker_k2",
+              "family": "icl",
+              "flagged": false,
+              "delta": -0.022932690212043028,
+              "skill_comp_pred": 0.4083684429759057,
+              "skill_d_ctx2ans": 0.4313011331879487
+            },
+            {
+              "context": "f3_icl_marker_k8",
+              "family": "icl",
+              "flagged": false,
+              "delta": -0.010636322350560778,
+              "skill_comp_pred": 0.17540375113839046,
+              "skill_d_ctx2ans": 0.18604007348895124
+            },
+            {
+              "context": "f3_icl_json_k2",
+              "family": "icl",
+              "flagged": false,
+              "delta": -0.018310578836692515,
+              "skill_comp_pred": 0.26951886496853683,
+              "skill_d_ctx2ans": 0.28782944380522935
+            },
+            {
+              "context": "f3_icl_json_k8",
+              "family": "icl",
+              "flagged": false,
+              "delta": -0.006970330386233403,
+              "skill_comp_pred": 0.10467138226924688,
+              "skill_d_ctx2ans": 0.11164171265548029
+            },
+            {
+              "context": "f4_reph_imperative",
+              "family": "rephrase",
+              "flagged": false,
+              "delta": 0.00800024919765363,
+              "skill_comp_pred": 0.8011851723897991,
+              "skill_d_ctx2ans": 0.7931849231921455
+            },
+            {
+              "context": "f4_reph_polite",
+              "family": "rephrase",
+              "flagged": false,
+              "delta": -0.008294678836030633,
+              "skill_comp_pred": 0.7637975783937957,
+              "skill_d_ctx2ans": 0.7720922572298263
+            },
+            {
+              "context": "f4_reph_casual",
+              "family": "rephrase",
+              "flagged": false,
+              "delta": 0.0037164658151789265,
+              "skill_comp_pred": 0.7457207511336021,
+              "skill_d_ctx2ans": 0.7420042853184232
+            },
+            {
+              "context": "f4_reph_legalese",
+              "family": "rephrase",
+              "flagged": false,
+              "delta": -0.0015010666358262759,
+              "skill_comp_pred": 0.7639030421041693,
+              "skill_d_ctx2ans": 0.7654041087399955
+            },
+            {
+              "context": "f4_reph_enthusiastic",
+              "family": "rephrase",
+              "flagged": false,
+              "delta": -0.006890618280164018,
+              "skill_comp_pred": 0.781610061593301,
+              "skill_d_ctx2ans": 0.7885006798734651
+            },
+            {
+              "context": "f4_reph_archaic",
+              "family": "rephrase",
+              "flagged": false,
+              "delta": 0.019923847763548053,
+              "skill_comp_pred": 0.8143118912943711,
+              "skill_d_ctx2ans": 0.794388043530823
+            },
+            {
+              "context": "f5_fmt_json",
+              "family": "format",
+              "flagged": false,
+              "delta": -0.007792578311100695,
+              "skill_comp_pred": 0.7613799481481387,
+              "skill_d_ctx2ans": 0.7691725264592394
+            },
+            {
+              "context": "f5_fmt_code_comment",
+              "family": "format",
+              "flagged": false,
+              "delta": 0.011954109180198791,
+              "skill_comp_pred": 0.7072809327763795,
+              "skill_d_ctx2ans": 0.6953268235961807
+            },
+            {
+              "context": "f5_fmt_markdown_table",
+              "family": "format",
+              "flagged": false,
+              "delta": -0.03071314267418379,
+              "skill_comp_pred": 0.7014230403686876,
+              "skill_d_ctx2ans": 0.7321361830428714
+            },
+            {
+              "context": "f5_fmt_xml",
+              "family": "format",
+              "flagged": false,
+              "delta": 0.008708100765231874,
+              "skill_comp_pred": 0.7790626680170198,
+              "skill_d_ctx2ans": 0.770354567251788
+            },
+            {
+              "context": "f5_fmt_bullets",
+              "family": "format",
+              "flagged": false,
+              "delta": -0.011745952696707085,
+              "skill_comp_pred": 0.7868273097704086,
+              "skill_d_ctx2ans": 0.7985732624671157
+            },
+            {
+              "context": "f6_default_template",
+              "family": "default",
+              "flagged": false,
+              "delta": 0.015476566335429598,
+              "skill_comp_pred": 0.6605125285019884,
+              "skill_d_ctx2ans": 0.6450359621665588
+            },
+            {
+              "context": "f6_helpful_asst",
+              "family": "default",
+              "flagged": false,
+              "delta": 0.01298730976052509,
+              "skill_comp_pred": 0.7491682603117067,
+              "skill_d_ctx2ans": 0.7361809505511816
+            },
+            {
+              "context": "f8_behav_marker",
+              "family": "behavior",
+              "flagged": false,
+              "delta": -0.00854995972488748,
+              "skill_comp_pred": 0.7439980939143179,
+              "skill_d_ctx2ans": 0.7525480536392054
+            },
+            {
+              "context": "f8_behav_sycophant",
+              "family": "behavior",
+              "flagged": false,
+              "delta": -0.00524272653041602,
+              "skill_comp_pred": 0.6992716580324174,
+              "skill_d_ctx2ans": 0.7045143845628334
+            },
+            {
+              "context": "f8_behav_refusal",
+              "family": "behavior",
+              "flagged": false,
+              "delta": 0.027670114582714733,
+              "skill_comp_pred": 0.7342379064292752,
+              "skill_d_ctx2ans": 0.7065677918465605
+            },
+            {
+              "context": "f8_behav_fact",
+              "family": "behavior",
+              "flagged": false,
+              "delta": 0.01948358107887027,
+              "skill_comp_pred": 0.6819770344839517,
+              "skill_d_ctx2ans": 0.6624934534050815
+            },
+            {
+              "context": "f8_behav_harmful",
+              "family": "behavior",
+              "flagged": false,
+              "delta": 0.01206797324304032,
+              "skill_comp_pred": 0.7005598908025322,
+              "skill_d_ctx2ans": 0.6884919175594919
+            }
+          ]
+        },
+        "avg_q": {
+          "frozen_layer": 18,
+          "pooled_delta": -0.003221490548438677,
+          "per_context": [
+            {
+              "context": "f1_house_librarian",
+              "family": "persona",
+              "flagged": false,
+              "delta": -7.207223423044695e-05,
+              "skill_comp_pred": 0.3294341829017079,
+              "skill_d_ctx2ans": 0.32950625513593834
+            },
+            {
+              "context": "f1_house_surgeon",
+              "family": "persona",
+              "flagged": false,
+              "delta": -0.008023183184495797,
+              "skill_comp_pred": 0.5794876014390298,
+              "skill_d_ctx2ans": 0.5875107846235256
+            },
+            {
+              "context": "f1_house_programmer",
+              "family": "persona",
+              "flagged": false,
+              "delta": -0.013602240607037297,
+              "skill_comp_pred": 0.45172838387240477,
+              "skill_d_ctx2ans": 0.46533062447944207
+            },
+            {
+              "context": "f1_house_medical_doctor",
+              "family": "persona",
+              "flagged": false,
+              "delta": -0.011569543584503794,
+              "skill_comp_pred": 0.6727412102380645,
+              "skill_d_ctx2ans": 0.6843107538225683
+            },
+            {
+              "context": "f1_house_software_engineer",
+              "family": "persona",
+              "flagged": false,
+              "delta": -0.009212026319383337,
+              "skill_comp_pred": 0.6980188270633723,
+              "skill_d_ctx2ans": 0.7072308533827556
+            },
+            {
+              "context": "f1_house_data_scientist",
+              "family": "persona",
+              "flagged": false,
+              "delta": 0.00035872006627790665,
+              "skill_comp_pred": 0.6961995531452252,
+              "skill_d_ctx2ans": 0.6958408330789473
+            },
+            {
+              "context": "f1_phub_01",
+              "family": "persona",
+              "flagged": false,
+              "delta": -0.0038688321788641344,
+              "skill_comp_pred": 0.456708525183816,
+              "skill_d_ctx2ans": 0.46057735736268013
+            },
+            {
+              "context": "f1_phub_02",
+              "family": "persona",
+              "flagged": false,
+              "delta": -0.00017496420353091402,
+              "skill_comp_pred": 0.6824246811162127,
+              "skill_d_ctx2ans": 0.6825996453197436
+            },
+            {
+              "context": "f1_phub_03",
+              "family": "persona",
+              "flagged": false,
+              "delta": 0.0030208846922938903,
+              "skill_comp_pred": 0.6220047966331967,
+              "skill_d_ctx2ans": 0.6189839119409029
+            },
+            {
+              "context": "f1_phub_04",
+              "family": "persona",
+              "flagged": false,
+              "delta": -0.004201736558002267,
+              "skill_comp_pred": 0.6233720423239089,
+              "skill_d_ctx2ans": 0.6275737788819111
+            },
+            {
+              "context": "f1_phub_05",
+              "family": "persona",
+              "flagged": false,
+              "delta": 0.005158950990202249,
+              "skill_comp_pred": 0.5727005601329361,
+              "skill_d_ctx2ans": 0.5675416091427339
+            },
+            {
+              "context": "f1_phub_06",
+              "family": "persona",
+              "flagged": false,
+              "delta": 8.261085601535267e-05,
+              "skill_comp_pred": 0.4392539986236127,
+              "skill_d_ctx2ans": 0.43917138776759734
+            },
+            {
+              "context": "f1_phub_07",
+              "family": "persona",
+              "flagged": false,
+              "delta": -0.001226675270327382,
+              "skill_comp_pred": 0.4678570288334527,
+              "skill_d_ctx2ans": 0.4690837041037801
+            },
+            {
+              "context": "f1_phub_08",
+              "family": "persona",
+              "flagged": false,
+              "delta": 0.0010713505582112814,
+              "skill_comp_pred": 0.39419776761193903,
+              "skill_d_ctx2ans": 0.39312641705372775
+            },
+            {
+              "context": "f2_wc_short_1",
+              "family": "wildchat",
+              "flagged": false,
+              "delta": 0.000661066982466485,
+              "skill_comp_pred": -0.11477311192818185,
+              "skill_d_ctx2ans": -0.11543417891064833
+            },
+            {
+              "context": "f2_wc_short_2",
+              "family": "wildchat",
+              "flagged": false,
+              "delta": 0.001651108998924511,
+              "skill_comp_pred": 0.30476309354548636,
+              "skill_d_ctx2ans": 0.30311198454656185
+            },
+            {
+              "context": "f2_wc_short_3",
+              "family": "wildchat",
+              "flagged": false,
+              "delta": -0.006700023026941615,
+              "skill_comp_pred": -0.08810737159136317,
+              "skill_d_ctx2ans": -0.08140734856442156
+            },
+            {
+              "context": "f2_wc_short_4",
+              "family": "wildchat",
+              "flagged": false,
+              "delta": -0.001914046364876798,
+              "skill_comp_pred": 0.3546113800958621,
+              "skill_d_ctx2ans": 0.3565254264607389
+            },
+            {
+              "context": "f2_wc_short_5",
+              "family": "wildchat",
+              "flagged": false,
+              "delta": -0.0025543192147057248,
+              "skill_comp_pred": 0.04979190400010303,
+              "skill_d_ctx2ans": 0.05234622321480875
+            },
+            {
+              "context": "f2_wc_long_1",
+              "family": "wildchat",
+              "flagged": false,
+              "delta": 0.0002235161995961521,
+              "skill_comp_pred": 0.14748137619490598,
+              "skill_d_ctx2ans": 0.14725785999530983
+            },
+            {
+              "context": "f2_wc_long_2",
+              "family": "wildchat",
+              "flagged": false,
+              "delta": -0.004287862549555488,
+              "skill_comp_pred": 0.14616519405657147,
+              "skill_d_ctx2ans": 0.15045305660612696
+            },
+            {
+              "context": "f2_wc_long_3",
+              "family": "wildchat",
+              "flagged": false,
+              "delta": 0.0045723551095868675,
+              "skill_comp_pred": -0.35871985605893664,
+              "skill_d_ctx2ans": -0.3632922111685235
+            },
+            {
+              "context": "f2_wc_long_4",
+              "family": "wildchat",
+              "flagged": false,
+              "delta": -0.0029678248926220396,
+              "skill_comp_pred": 0.4427608644338382,
+              "skill_d_ctx2ans": 0.44572868932646026
+            },
+            {
+              "context": "f2_wc_long_5",
+              "family": "wildchat",
+              "flagged": false,
+              "delta": -8.594891302660113e-05,
+              "skill_comp_pred": 0.3663815765045335,
+              "skill_d_ctx2ans": 0.3664675254175601
+            },
+            {
+              "context": "f3_icl_marker_k4",
+              "family": "icl",
+              "flagged": false,
+              "delta": -0.018820404700797044,
+              "skill_comp_pred": 0.6097255131635622,
+              "skill_d_ctx2ans": 0.6285459178643592
+            },
+            {
+              "context": "f3_icl_french_k4",
+              "family": "icl",
+              "flagged": false,
+              "delta": -0.0012093051893590223,
+              "skill_comp_pred": 0.5348249696369267,
+              "skill_d_ctx2ans": 0.5360342748262857
+            },
+            {
+              "context": "f3_icl_json_k4",
+              "family": "icl",
+              "flagged": false,
+              "delta": -0.02470513134669705,
+              "skill_comp_pred": 0.6562768141260209,
+              "skill_d_ctx2ans": 0.680981945472718
+            },
+            {
+              "context": "f3_icl_pirate_k4",
+              "family": "icl",
+              "flagged": false,
+              "delta": -0.0020454589143810153,
+              "skill_comp_pred": 0.5297331531768306,
+              "skill_d_ctx2ans": 0.5317786120912116
+            },
+            {
+              "context": "f3_icl_marker_k2",
+              "family": "icl",
+              "flagged": false,
+              "delta": -0.018520925794178744,
+              "skill_comp_pred": 0.45627851704616473,
+              "skill_d_ctx2ans": 0.4747994428403435
+            },
+            {
+              "context": "f3_icl_marker_k8",
+              "family": "icl",
+              "flagged": false,
+              "delta": -0.019855215661029768,
+              "skill_comp_pred": 0.610904582185674,
+              "skill_d_ctx2ans": 0.6307597978467038
+            },
+            {
+              "context": "f3_icl_json_k2",
+              "family": "icl",
+              "flagged": false,
+              "delta": -0.014725230907059794,
+              "skill_comp_pred": 0.6607163778152652,
+              "skill_d_ctx2ans": 0.675441608722325
+            },
+            {
+              "context": "f3_icl_json_k8",
+              "family": "icl",
+              "flagged": false,
+              "delta": -0.02753494580757687,
+              "skill_comp_pred": 0.6378899509779707,
+              "skill_d_ctx2ans": 0.6654248967855476
+            },
+            {
+              "context": "f4_reph_imperative",
+              "family": "rephrase",
+              "flagged": false,
+              "delta": 0.009242634457764076,
+              "skill_comp_pred": 0.20939739606436303,
+              "skill_d_ctx2ans": 0.20015476160659895
+            },
+            {
+              "context": "f4_reph_polite",
+              "family": "rephrase",
+              "flagged": false,
+              "delta": 0.004152139818817235,
+              "skill_comp_pred": 0.48744167521644577,
+              "skill_d_ctx2ans": 0.48328953539762853
+            },
+            {
+              "context": "f4_reph_casual",
+              "family": "rephrase",
+              "flagged": false,
+              "delta": 0.004207703485434422,
+              "skill_comp_pred": 0.4050293700241986,
+              "skill_d_ctx2ans": 0.40082166653876417
+            },
+            {
+              "context": "f4_reph_legalese",
+              "family": "rephrase",
+              "flagged": false,
+              "delta": -0.00223628627173289,
+              "skill_comp_pred": 0.5073019021725775,
+              "skill_d_ctx2ans": 0.5095381884443104
+            },
+            {
+              "context": "f4_reph_enthusiastic",
+              "family": "rephrase",
+              "flagged": false,
+              "delta": -0.011168452256431483,
+              "skill_comp_pred": 0.5693866961862615,
+              "skill_d_ctx2ans": 0.580555148442693
+            },
+            {
+              "context": "f4_reph_archaic",
+              "family": "rephrase",
+              "flagged": false,
+              "delta": 0.009194092140136556,
+              "skill_comp_pred": -0.2005584684817341,
+              "skill_d_ctx2ans": -0.20975256062187064
+            },
+            {
+              "context": "f5_fmt_json",
+              "family": "format",
+              "flagged": false,
+              "delta": 0.0008450597783008496,
+              "skill_comp_pred": 0.6284664366315336,
+              "skill_d_ctx2ans": 0.6276213768532327
+            },
+            {
+              "context": "f5_fmt_code_comment",
+              "family": "format",
+              "flagged": false,
+              "delta": 0.00021592363541611537,
+              "skill_comp_pred": 0.23083649896930836,
+              "skill_d_ctx2ans": 0.23062057533389224
+            },
+            {
+              "context": "f5_fmt_markdown_table",
+              "family": "format",
+              "flagged": false,
+              "delta": 0.0032973445189152795,
+              "skill_comp_pred": 0.6526905188100565,
+              "skill_d_ctx2ans": 0.6493931742911412
+            },
+            {
+              "context": "f5_fmt_xml",
+              "family": "format",
+              "flagged": false,
+              "delta": 0.004439542256052809,
+              "skill_comp_pred": 0.30375244891449615,
+              "skill_d_ctx2ans": 0.29931290665844335
+            },
+            {
+              "context": "f5_fmt_bullets",
+              "family": "format",
+              "flagged": false,
+              "delta": -0.005310120688676645,
+              "skill_comp_pred": 0.37261120454175967,
+              "skill_d_ctx2ans": 0.3779213252304363
+            },
+            {
+              "context": "f6_default_template",
+              "family": "default",
+              "flagged": false,
+              "delta": -0.005517848453080454,
+              "skill_comp_pred": -1.3456870882896603,
+              "skill_d_ctx2ans": -1.3401692398365799
+            },
+            {
+              "context": "f6_helpful_asst",
+              "family": "default",
+              "flagged": false,
+              "delta": -0.008484081123443454,
+              "skill_comp_pred": 0.501826121147043,
+              "skill_d_ctx2ans": 0.5103102022704864
+            },
+            {
+              "context": "f8_behav_marker",
+              "family": "behavior",
+              "flagged": false,
+              "delta": -0.0024410809822242863,
+              "skill_comp_pred": 0.34444207689026296,
+              "skill_d_ctx2ans": 0.34688315787248725
+            },
+            {
+              "context": "f8_behav_sycophant",
+              "family": "behavior",
+              "flagged": false,
+              "delta": 0.002136888557297656,
+              "skill_comp_pred": 0.18772214555945288,
+              "skill_d_ctx2ans": 0.18558525700215522
+            },
+            {
+              "context": "f8_behav_refusal",
+              "family": "behavior",
+              "flagged": false,
+              "delta": 0.000628526775947269,
+              "skill_comp_pred": 0.6196200529422764,
+              "skill_d_ctx2ans": 0.6189915261663291
+            },
+            {
+              "context": "f8_behav_fact",
+              "family": "behavior",
+              "flagged": false,
+              "delta": 0.00034335399559703994,
+              "skill_comp_pred": -0.0674035080685551,
+              "skill_d_ctx2ans": -0.06774686206415215
+            },
+            {
+              "context": "f8_behav_harmful",
+              "family": "behavior",
+              "flagged": false,
+              "delta": 0.0060277055418568315,
+              "skill_comp_pred": 0.18150361302628293,
+              "skill_d_ctx2ans": 0.1754759074844261
+            }
+          ]
+        }
+      }
+    },
+    "h4_sufficiency_percontext": {
+      "delta": "skill(g_aug) - skill(b_cot2ans)",
+      "by_regime": {
+        "indiv": {
+          "frozen_layer": 26,
+          "pooled_delta": -0.016180148520763882,
+          "per_context": [
+            {
+              "context": "f1_house_librarian",
+              "family": "persona",
+              "flagged": false,
+              "delta": -0.0008883485775000866,
+              "skill_g_aug": 0.9270432961671264,
+              "skill_b_cot2ans": 0.9279316447446265
+            },
+            {
+              "context": "f1_house_surgeon",
+              "family": "persona",
+              "flagged": false,
+              "delta": -0.00495516382262462,
+              "skill_g_aug": 0.9022138233268382,
+              "skill_b_cot2ans": 0.9071689871494628
+            },
+            {
+              "context": "f1_house_programmer",
+              "family": "persona",
+              "flagged": false,
+              "delta": -0.0008786270281742059,
+              "skill_g_aug": 0.9359078676838747,
+              "skill_b_cot2ans": 0.9367864947120489
+            },
+            {
+              "context": "f1_house_medical_doctor",
+              "family": "persona",
+              "flagged": false,
+              "delta": -0.007285244248939393,
+              "skill_g_aug": 0.92065094113267,
+              "skill_b_cot2ans": 0.9279361853816094
+            },
+            {
+              "context": "f1_house_software_engineer",
+              "family": "persona",
+              "flagged": false,
+              "delta": 2.3314134636076567e-05,
+              "skill_g_aug": 0.9389678300356283,
+              "skill_b_cot2ans": 0.9389445159009923
+            },
+            {
+              "context": "f1_house_data_scientist",
+              "family": "persona",
+              "flagged": false,
+              "delta": -0.005158022573061416,
+              "skill_g_aug": 0.932675015180536,
+              "skill_b_cot2ans": 0.9378330377535974
+            },
+            {
+              "context": "f1_phub_01",
+              "family": "persona",
+              "flagged": false,
+              "delta": -0.027242348924995108,
+              "skill_g_aug": 0.8682863793640344,
+              "skill_b_cot2ans": 0.8955287282890295
+            },
+            {
+              "context": "f1_phub_02",
+              "family": "persona",
+              "flagged": false,
+              "delta": -0.0063127454759197565,
+              "skill_g_aug": 0.8976461138032629,
+              "skill_b_cot2ans": 0.9039588592791826
+            },
+            {
+              "context": "f1_phub_03",
+              "family": "persona",
+              "flagged": false,
+              "delta": -0.00655363912921314,
+              "skill_g_aug": 0.863919217354308,
+              "skill_b_cot2ans": 0.8704728564835211
+            },
+            {
+              "context": "f1_phub_04",
+              "family": "persona",
+              "flagged": false,
+              "delta": -0.0030626980815470217,
+              "skill_g_aug": 0.878242171100837,
+              "skill_b_cot2ans": 0.881304869182384
+            },
+            {
+              "context": "f1_phub_05",
+              "family": "persona",
+              "flagged": false,
+              "delta": -0.014276469319459473,
+              "skill_g_aug": 0.9010107143082198,
+              "skill_b_cot2ans": 0.9152871836276792
+            },
+            {
+              "context": "f1_phub_06",
+              "family": "persona",
+              "flagged": false,
+              "delta": -0.011491988791946017,
+              "skill_g_aug": 0.8731095917190097,
+              "skill_b_cot2ans": 0.8846015805109557
+            },
+            {
+              "context": "f1_phub_07",
+              "family": "persona",
+              "flagged": false,
+              "delta": -0.02040109471117324,
+              "skill_g_aug": 0.8758282645958245,
+              "skill_b_cot2ans": 0.8962293593069978
+            },
+            {
+              "context": "f1_phub_08",
+              "family": "persona",
+              "flagged": false,
+              "delta": -0.02552939241478147,
+              "skill_g_aug": 0.8533250719307544,
+              "skill_b_cot2ans": 0.8788544643455358
+            },
+            {
+              "context": "f2_wc_short_1",
+              "family": "wildchat",
+              "flagged": false,
+              "delta": -0.09068318182595025,
+              "skill_g_aug": 0.7765084654840788,
+              "skill_b_cot2ans": 0.8671916473100291
+            },
+            {
+              "context": "f2_wc_short_2",
+              "family": "wildchat",
+              "flagged": false,
+              "delta": -0.05121992923815022,
+              "skill_g_aug": 0.8230459569961648,
+              "skill_b_cot2ans": 0.874265886234315
+            },
+            {
+              "context": "f2_wc_short_3",
+              "family": "wildchat",
+              "flagged": false,
+              "delta": -0.1046918022490888,
+              "skill_g_aug": 0.7507070404427117,
+              "skill_b_cot2ans": 0.8553988426918006
+            },
+            {
+              "context": "f2_wc_short_4",
+              "family": "wildchat",
+              "flagged": false,
+              "delta": -0.023529091838412675,
+              "skill_g_aug": 0.8514158351361324,
+              "skill_b_cot2ans": 0.8749449269745451
+            },
+            {
+              "context": "f2_wc_short_5",
+              "family": "wildchat",
+              "flagged": false,
+              "delta": -0.01441234514239409,
+              "skill_g_aug": 0.8750262438573118,
+              "skill_b_cot2ans": 0.8894385889997058
+            },
+            {
+              "context": "f2_wc_long_1",
+              "family": "wildchat",
+              "flagged": false,
+              "delta": -0.07051715728520414,
+              "skill_g_aug": 0.7357389413764301,
+              "skill_b_cot2ans": 0.8062560986616343
+            },
+            {
+              "context": "f2_wc_long_2",
+              "family": "wildchat",
+              "flagged": false,
+              "delta": -0.07212071136835019,
+              "skill_g_aug": 0.6235194927989042,
+              "skill_b_cot2ans": 0.6956402041672544
+            },
+            {
+              "context": "f2_wc_long_3",
+              "family": "wildchat",
+              "flagged": false,
+              "delta": -0.014014986425777365,
+              "skill_g_aug": 0.8710379409624914,
+              "skill_b_cot2ans": 0.8850529273882688
+            },
+            {
+              "context": "f2_wc_long_4",
+              "family": "wildchat",
+              "flagged": false,
+              "delta": -0.02856207124101906,
+              "skill_g_aug": 0.7890836873028648,
+              "skill_b_cot2ans": 0.8176457585438839
+            },
+            {
+              "context": "f2_wc_long_5",
+              "family": "wildchat",
+              "flagged": false,
+              "delta": -0.029660109488054864,
+              "skill_g_aug": 0.857280736967676,
+              "skill_b_cot2ans": 0.8869408464557309
+            },
+            {
+              "context": "f3_icl_marker_k4",
+              "family": "icl",
+              "flagged": false,
+              "delta": -0.0004619638137933757,
+              "skill_g_aug": 0.9046812375136339,
+              "skill_b_cot2ans": 0.9051432013274273
+            },
+            {
+              "context": "f3_icl_french_k4",
+              "family": "icl",
+              "flagged": false,
+              "delta": -0.02648305939883344,
+              "skill_g_aug": 0.6708701603192864,
+              "skill_b_cot2ans": 0.6973532197181198
+            },
+            {
+              "context": "f3_icl_json_k4",
+              "family": "icl",
+              "flagged": false,
+              "delta": 0.0007890462918581642,
+              "skill_g_aug": 0.9381193063257806,
+              "skill_b_cot2ans": 0.9373302600339224
+            },
+            {
+              "context": "f3_icl_pirate_k4",
+              "family": "icl",
+              "flagged": false,
+              "delta": -0.024656024776838037,
+              "skill_g_aug": 0.8979468500760968,
+              "skill_b_cot2ans": 0.9226028748529348
+            },
+            {
+              "context": "f3_icl_marker_k2",
+              "family": "icl",
+              "flagged": false,
+              "delta": -0.005126040881459071,
+              "skill_g_aug": 0.916609592707791,
+              "skill_b_cot2ans": 0.92173563358925
+            },
+            {
+              "context": "f3_icl_marker_k8",
+              "family": "icl",
+              "flagged": false,
+              "delta": -0.00739996813710031,
+              "skill_g_aug": 0.9148953170720396,
+              "skill_b_cot2ans": 0.92229528520914
+            },
+            {
+              "context": "f3_icl_json_k2",
+              "family": "icl",
+              "flagged": false,
+              "delta": -0.001130097309924749,
+              "skill_g_aug": 0.9021036290699371,
+              "skill_b_cot2ans": 0.9032337263798619
+            },
+            {
+              "context": "f3_icl_json_k8",
+              "family": "icl",
+              "flagged": false,
+              "delta": -0.0035973351514712038,
+              "skill_g_aug": 0.9356315375890272,
+              "skill_b_cot2ans": 0.9392288727404984
+            },
+            {
+              "context": "f4_reph_imperative",
+              "family": "rephrase",
+              "flagged": false,
+              "delta": -0.0029478733340492225,
+              "skill_g_aug": 0.9289941637410338,
+              "skill_b_cot2ans": 0.931942037075083
+            },
+            {
+              "context": "f4_reph_polite",
+              "family": "rephrase",
+              "flagged": false,
+              "delta": -0.0036548998469568827,
+              "skill_g_aug": 0.9103187301893763,
+              "skill_b_cot2ans": 0.9139736300363331
+            },
+            {
+              "context": "f4_reph_casual",
+              "family": "rephrase",
+              "flagged": false,
+              "delta": -0.004921999356151119,
+              "skill_g_aug": 0.876494410571047,
+              "skill_b_cot2ans": 0.8814164099271982
+            },
+            {
+              "context": "f4_reph_legalese",
+              "family": "rephrase",
+              "flagged": false,
+              "delta": -0.004137911740231925,
+              "skill_g_aug": 0.9039378743262311,
+              "skill_b_cot2ans": 0.908075786066463
+            },
+            {
+              "context": "f4_reph_enthusiastic",
+              "family": "rephrase",
+              "flagged": false,
+              "delta": -0.002664841441414434,
+              "skill_g_aug": 0.921060108002332,
+              "skill_b_cot2ans": 0.9237249494437464
+            },
+            {
+              "context": "f4_reph_archaic",
+              "family": "rephrase",
+              "flagged": false,
+              "delta": -0.008644903489500533,
+              "skill_g_aug": 0.9206424449582014,
+              "skill_b_cot2ans": 0.9292873484477019
+            },
+            {
+              "context": "f5_fmt_json",
+              "family": "format",
+              "flagged": false,
+              "delta": -0.002916925334901399,
+              "skill_g_aug": 0.896313431358564,
+              "skill_b_cot2ans": 0.8992303566934654
+            },
+            {
+              "context": "f5_fmt_code_comment",
+              "family": "format",
+              "flagged": false,
+              "delta": -0.017234857355361566,
+              "skill_g_aug": 0.8877316474785627,
+              "skill_b_cot2ans": 0.9049665048339243
+            },
+            {
+              "context": "f5_fmt_markdown_table",
+              "family": "format",
+              "flagged": false,
+              "delta": 2.35988354035932e-05,
+              "skill_g_aug": 0.9134515023365724,
+              "skill_b_cot2ans": 0.9134279035011688
+            },
+            {
+              "context": "f5_fmt_xml",
+              "family": "format",
+              "flagged": false,
+              "delta": -0.00014683808375182128,
+              "skill_g_aug": 0.8851672741482616,
+              "skill_b_cot2ans": 0.8853141122320134
+            },
+            {
+              "context": "f5_fmt_bullets",
+              "family": "format",
+              "flagged": false,
+              "delta": -0.001967698318309785,
+              "skill_g_aug": 0.9013609071098794,
+              "skill_b_cot2ans": 0.9033286054281892
+            },
+            {
+              "context": "f6_default_template",
+              "family": "default",
+              "flagged": false,
+              "delta": -0.010677144069403677,
+              "skill_g_aug": 0.9277249822900084,
+              "skill_b_cot2ans": 0.9384021263594121
+            },
+            {
+              "context": "f6_helpful_asst",
+              "family": "default",
+              "flagged": false,
+              "delta": -0.0026056481283440736,
+              "skill_g_aug": 0.939800761500821,
+              "skill_b_cot2ans": 0.9424064096291651
+            },
+            {
+              "context": "f8_behav_marker",
+              "family": "behavior",
+              "flagged": false,
+              "delta": -0.006128194137520082,
+              "skill_g_aug": 0.9304636290030762,
+              "skill_b_cot2ans": 0.9365918231405963
+            },
+            {
+              "context": "f8_behav_sycophant",
+              "family": "behavior",
+              "flagged": false,
+              "delta": 0.007429456254014033,
+              "skill_g_aug": 0.8699789623921366,
+              "skill_b_cot2ans": 0.8625495061381225
+            },
+            {
+              "context": "f8_behav_refusal",
+              "family": "behavior",
+              "flagged": false,
+              "delta": -0.00013353986590391997,
+              "skill_g_aug": 0.9072726532000835,
+              "skill_b_cot2ans": 0.9074061930659875
+            },
+            {
+              "context": "f8_behav_fact",
+              "family": "behavior",
+              "flagged": false,
+              "delta": 0.0003836084326496181,
+              "skill_g_aug": 0.9079887035022551,
+              "skill_b_cot2ans": 0.9076050950696055
+            },
+            {
+              "context": "f8_behav_harmful",
+              "family": "behavior",
+              "flagged": false,
+              "delta": -0.003021644313448091,
+              "skill_g_aug": 0.9168460051178289,
+              "skill_b_cot2ans": 0.919867649431277
+            }
+          ]
+        },
+        "avg_q": {
+          "frozen_layer": 18,
+          "pooled_delta": -0.02310973761481261,
+          "per_context": [
+            {
+              "context": "f1_house_librarian",
+              "family": "persona",
+              "flagged": false,
+              "delta": -0.018379473081422404,
+              "skill_g_aug": 0.5199278671729892,
+              "skill_b_cot2ans": 0.5383073402544116
+            },
+            {
+              "context": "f1_house_surgeon",
+              "family": "persona",
+              "flagged": false,
+              "delta": -0.020656295744984288,
+              "skill_g_aug": 0.657519837250754,
+              "skill_b_cot2ans": 0.6781761329957383
+            },
+            {
+              "context": "f1_house_programmer",
+              "family": "persona",
+              "flagged": false,
+              "delta": -0.0602122501689607,
+              "skill_g_aug": 0.6867522418138525,
+              "skill_b_cot2ans": 0.7469644919828132
+            },
+            {
+              "context": "f1_house_medical_doctor",
+              "family": "persona",
+              "flagged": false,
+              "delta": -0.01626714840843868,
+              "skill_g_aug": 0.7445795117928962,
+              "skill_b_cot2ans": 0.7608466602013348
+            },
+            {
+              "context": "f1_house_software_engineer",
+              "family": "persona",
+              "flagged": false,
+              "delta": 0.012605506205358386,
+              "skill_g_aug": 0.7599689888430071,
+              "skill_b_cot2ans": 0.7473634826376487
+            },
+            {
+              "context": "f1_house_data_scientist",
+              "family": "persona",
+              "flagged": false,
+              "delta": 0.0001095308705028053,
+              "skill_g_aug": 0.736422629393628,
+              "skill_b_cot2ans": 0.7363130985231252
+            },
+            {
+              "context": "f1_phub_01",
+              "family": "persona",
+              "flagged": false,
+              "delta": 0.0011653713900553475,
+              "skill_g_aug": 0.5696902674642352,
+              "skill_b_cot2ans": 0.5685248960741799
+            },
+            {
+              "context": "f1_phub_02",
+              "family": "persona",
+              "flagged": false,
+              "delta": -0.009392620303117827,
+              "skill_g_aug": 0.7364063965749872,
+              "skill_b_cot2ans": 0.745799016878105
+            },
+            {
+              "context": "f1_phub_03",
+              "family": "persona",
+              "flagged": false,
+              "delta": 0.014164798133439183,
+              "skill_g_aug": 0.6438849466616163,
+              "skill_b_cot2ans": 0.6297201485281771
+            },
+            {
+              "context": "f1_phub_04",
+              "family": "persona",
+              "flagged": false,
+              "delta": 0.017194659266983936,
+              "skill_g_aug": 0.650606727351612,
+              "skill_b_cot2ans": 0.633412068084628
+            },
+            {
+              "context": "f1_phub_05",
+              "family": "persona",
+              "flagged": false,
+              "delta": -0.00522977306965422,
+              "skill_g_aug": 0.6910109807714726,
+              "skill_b_cot2ans": 0.6962407538411268
+            },
+            {
+              "context": "f1_phub_06",
+              "family": "persona",
+              "flagged": false,
+              "delta": 0.004284553104294764,
+              "skill_g_aug": 0.526084262894666,
+              "skill_b_cot2ans": 0.5217997097903713
+            },
+            {
+              "context": "f1_phub_07",
+              "family": "persona",
+              "flagged": false,
+              "delta": -0.008372484928955037,
+              "skill_g_aug": 0.5332700593427153,
+              "skill_b_cot2ans": 0.5416425442716704
+            },
+            {
+              "context": "f1_phub_08",
+              "family": "persona",
+              "flagged": false,
+              "delta": -0.008723897921560031,
+              "skill_g_aug": 0.536520092550223,
+              "skill_b_cot2ans": 0.5452439904717831
+            },
+            {
+              "context": "f2_wc_short_1",
+              "family": "wildchat",
+              "flagged": false,
+              "delta": -0.02525830835834242,
+              "skill_g_aug": 0.7883739806826162,
+              "skill_b_cot2ans": 0.8136322890409586
+            },
+            {
+              "context": "f2_wc_short_2",
+              "family": "wildchat",
+              "flagged": false,
+              "delta": -0.0023538898236927785,
+              "skill_g_aug": 0.8722630744068205,
+              "skill_b_cot2ans": 0.8746169642305133
+            },
+            {
+              "context": "f2_wc_short_3",
+              "family": "wildchat",
+              "flagged": false,
+              "delta": 0.010687780651563727,
+              "skill_g_aug": 0.8803281740867185,
+              "skill_b_cot2ans": 0.8696403934351548
+            },
+            {
+              "context": "f2_wc_short_4",
+              "family": "wildchat",
+              "flagged": false,
+              "delta": -0.05503755894363627,
+              "skill_g_aug": 0.5210666720464381,
+              "skill_b_cot2ans": 0.5761042309900744
+            },
+            {
+              "context": "f2_wc_short_5",
+              "family": "wildchat",
+              "flagged": false,
+              "delta": -0.03646413559827166,
+              "skill_g_aug": 0.5265655142926627,
+              "skill_b_cot2ans": 0.5630296498909344
+            },
+            {
+              "context": "f2_wc_long_1",
+              "family": "wildchat",
+              "flagged": false,
+              "delta": -0.025785666467165735,
+              "skill_g_aug": 0.4514838179293279,
+              "skill_b_cot2ans": 0.47726948439649364
+            },
+            {
+              "context": "f2_wc_long_2",
+              "family": "wildchat",
+              "flagged": false,
+              "delta": -0.014712032208639259,
+              "skill_g_aug": 0.26295827260613835,
+              "skill_b_cot2ans": 0.2776703048147776
+            },
+            {
+              "context": "f2_wc_long_3",
+              "family": "wildchat",
+              "flagged": false,
+              "delta": -0.03402736845625609,
+              "skill_g_aug": 0.49401526820403696,
+              "skill_b_cot2ans": 0.528042636660293
+            },
+            {
+              "context": "f2_wc_long_4",
+              "family": "wildchat",
+              "flagged": false,
+              "delta": -0.04819626955765455,
+              "skill_g_aug": 0.5540996488311152,
+              "skill_b_cot2ans": 0.6022959183887697
+            },
+            {
+              "context": "f2_wc_long_5",
+              "family": "wildchat",
+              "flagged": false,
+              "delta": -0.009140185068691409,
+              "skill_g_aug": 0.6555477050303196,
+              "skill_b_cot2ans": 0.664687890099011
+            },
+            {
+              "context": "f3_icl_marker_k4",
+              "family": "icl",
+              "flagged": false,
+              "delta": -0.043370662374753954,
+              "skill_g_aug": 0.7513004579072526,
+              "skill_b_cot2ans": 0.7946711202820066
+            },
+            {
+              "context": "f3_icl_french_k4",
+              "family": "icl",
+              "flagged": false,
+              "delta": 0.02113853749191319,
+              "skill_g_aug": 0.743472248084367,
+              "skill_b_cot2ans": 0.7223337105924538
+            },
+            {
+              "context": "f3_icl_json_k4",
+              "family": "icl",
+              "flagged": false,
+              "delta": 0.008106711165277947,
+              "skill_g_aug": 0.8105099805107325,
+              "skill_b_cot2ans": 0.8024032693454546
+            },
+            {
+              "context": "f3_icl_pirate_k4",
+              "family": "icl",
+              "flagged": false,
+              "delta": -0.048761872128340045,
+              "skill_g_aug": 0.6792159398151765,
+              "skill_b_cot2ans": 0.7279778119435165
+            },
+            {
+              "context": "f3_icl_marker_k2",
+              "family": "icl",
+              "flagged": false,
+              "delta": -0.035461745365487296,
+              "skill_g_aug": 0.7230306083898634,
+              "skill_b_cot2ans": 0.7584923537553507
+            },
+            {
+              "context": "f3_icl_marker_k8",
+              "family": "icl",
+              "flagged": false,
+              "delta": -0.017123660486095704,
+              "skill_g_aug": 0.7873752192162728,
+              "skill_b_cot2ans": 0.8044988797023686
+            },
+            {
+              "context": "f3_icl_json_k2",
+              "family": "icl",
+              "flagged": false,
+              "delta": -0.022874311041211737,
+              "skill_g_aug": 0.8869799543933888,
+              "skill_b_cot2ans": 0.9098542654346006
+            },
+            {
+              "context": "f3_icl_json_k8",
+              "family": "icl",
+              "flagged": false,
+              "delta": 0.015418429967490432,
+              "skill_g_aug": 0.7655368370190363,
+              "skill_b_cot2ans": 0.7501184070515459
+            },
+            {
+              "context": "f4_reph_imperative",
+              "family": "rephrase",
+              "flagged": false,
+              "delta": -0.15032923028632883,
+              "skill_g_aug": 0.5063645344979839,
+              "skill_b_cot2ans": 0.6566937647843127
+            },
+            {
+              "context": "f4_reph_polite",
+              "family": "rephrase",
+              "flagged": false,
+              "delta": -0.019961103581648376,
+              "skill_g_aug": 0.7487593076528338,
+              "skill_b_cot2ans": 0.7687204112344822
+            },
+            {
+              "context": "f4_reph_casual",
+              "family": "rephrase",
+              "flagged": false,
+              "delta": -0.06611777851714029,
+              "skill_g_aug": 0.6315459706671376,
+              "skill_b_cot2ans": 0.6976637491842779
+            },
+            {
+              "context": "f4_reph_legalese",
+              "family": "rephrase",
+              "flagged": false,
+              "delta": -0.021613858471194236,
+              "skill_g_aug": 0.6768631131044429,
+              "skill_b_cot2ans": 0.6984769715756372
+            },
+            {
+              "context": "f4_reph_enthusiastic",
+              "family": "rephrase",
+              "flagged": false,
+              "delta": 0.005585202996932326,
+              "skill_g_aug": 0.7945877473222889,
+              "skill_b_cot2ans": 0.7890025443253565
+            },
+            {
+              "context": "f4_reph_archaic",
+              "family": "rephrase",
+              "flagged": false,
+              "delta": -0.005915176916014064,
+              "skill_g_aug": 0.6423297867928077,
+              "skill_b_cot2ans": 0.6482449637088218
+            },
+            {
+              "context": "f5_fmt_json",
+              "family": "format",
+              "flagged": false,
+              "delta": 0.0065446905171121506,
+              "skill_g_aug": 0.6756295846548814,
+              "skill_b_cot2ans": 0.6690848941377693
+            },
+            {
+              "context": "f5_fmt_code_comment",
+              "family": "format",
+              "flagged": false,
+              "delta": -0.004771148217258658,
+              "skill_g_aug": 0.641507704345281,
+              "skill_b_cot2ans": 0.6462788525625397
+            },
+            {
+              "context": "f5_fmt_markdown_table",
+              "family": "format",
+              "flagged": false,
+              "delta": 0.007418453503625022,
+              "skill_g_aug": 0.68123642715819,
+              "skill_b_cot2ans": 0.673817973654565
+            },
+            {
+              "context": "f5_fmt_xml",
+              "family": "format",
+              "flagged": false,
+              "delta": 0.019547693374137642,
+              "skill_g_aug": 0.38454996288949905,
+              "skill_b_cot2ans": 0.3650022695153614
+            },
+            {
+              "context": "f5_fmt_bullets",
+              "family": "format",
+              "flagged": false,
+              "delta": -0.05041194105720581,
+              "skill_g_aug": 0.6070644941657579,
+              "skill_b_cot2ans": 0.6574764352229637
+            },
+            {
+              "context": "f6_default_template",
+              "family": "default",
+              "flagged": false,
+              "delta": -0.7552387294060552,
+              "skill_g_aug": -0.09380719265942083,
+              "skill_b_cot2ans": 0.6614315367466344
+            },
+            {
+              "context": "f6_helpful_asst",
+              "family": "default",
+              "flagged": false,
+              "delta": -0.01999475849467891,
+              "skill_g_aug": 0.6633501605543319,
+              "skill_b_cot2ans": 0.6833449190490108
+            },
+            {
+              "context": "f8_behav_marker",
+              "family": "behavior",
+              "flagged": false,
+              "delta": -0.01565473811228757,
+              "skill_g_aug": 0.5918693991205113,
+              "skill_b_cot2ans": 0.6075241372327989
+            },
+            {
+              "context": "f8_behav_sycophant",
+              "family": "behavior",
+              "flagged": false,
+              "delta": -0.0469415467092934,
+              "skill_g_aug": 0.5157516971222388,
+              "skill_b_cot2ans": 0.5626932438315322
+            },
+            {
+              "context": "f8_behav_refusal",
+              "family": "behavior",
+              "flagged": false,
+              "delta": -0.012926231201204619,
+              "skill_g_aug": 0.6798028408515671,
+              "skill_b_cot2ans": 0.6927290720527717
+            },
+            {
+              "context": "f8_behav_fact",
+              "family": "behavior",
+              "flagged": false,
+              "delta": -0.024212689974218993,
+              "skill_g_aug": 0.3774788722716407,
+              "skill_b_cot2ans": 0.40169156224585967
+            },
+            {
+              "context": "f8_behav_harmful",
+              "family": "behavior",
+              "flagged": false,
+              "delta": -0.06075632890502669,
+              "skill_g_aug": 0.5399816480941371,
+              "skill_b_cot2ans": 0.6007379769991638
+            }
+          ]
+        }
+      }
+    }
+  },
+  "reproducibility": {
+    "git_commit": "10465a415a5eb327d772a794a4b746cad400fa07",
+    "timestamp_utc": "2026-07-16T11:10:49.264453+00:00",
+    "python_version": "3.11.15",
+    "platform": "Linux-6.8.0-1052-gcp-x86_64-with-glibc2.35",
+    "torch": "2.8.0+cu128",
+    "numpy": "2.2.6",
+    "transformers": "4.57.6"
+  }
+}

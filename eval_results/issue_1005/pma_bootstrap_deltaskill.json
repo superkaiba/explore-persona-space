@@ -1,0 +1,874 @@
+{
+  "dv": "paired bootstrap delta-skill, prefix-convention arms (both targets)",
+  "round": "issue1005-unified-f2f3",
+  "seed": 42,
+  "n_boot": 2000,
+  "alignment": {
+    "committed_seed": 42,
+    "committed_n_boot": 2000,
+    "committed_n_ctx": {
+      "indiv": 50,
+      "avg_q": 50
+    },
+    "digest_binding": true,
+    "committed_digest_by_regime": {
+      "indiv": "3b77857b7c7e7042",
+      "avg_q": "3b77857b7c7e7042"
+    }
+  },
+  "ans_frozen_layer_re_derived_from_f1": {
+    "indiv": 26,
+    "avg_q": 18
+  },
+  "registered_reads": [
+    [
+      "read1_primary_pfx_cotK_minus_pfx_apfx",
+      "pma_pfx_cotK",
+      "pma_pfx_apfx"
+    ],
+    [
+      "read2_pfx_cotK_minus_pfx",
+      "pma_pfx_cotK",
+      "pma_pfx"
+    ],
+    [
+      "read3_pfx_apfx_minus_pfx",
+      "pma_pfx_apfx",
+      "pma_pfx"
+    ],
+    [
+      "read4_pfx_cotfull_minus_pfx_cotK",
+      "pma_pfx_cotfull",
+      "pma_pfx_cotK"
+    ]
+  ],
+  "pair_row_coverage": {
+    "indiv": {
+      "layers": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27
+      ],
+      "n_ctx": 50,
+      "pass": true
+    },
+    "avg_q": {
+      "layers": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27
+      ],
+      "n_ctx": 50,
+      "pass": true
+    }
+  },
+  "by_regime": {
+    "indiv": {
+      "layer_conventions": {
+        "primary_frozen_pfx_baseline_best_layer": 6,
+        "answer_target_frozen_layer": 26,
+        "answer_target_frozen_note": "parent committed convention",
+        "committed_mlc_ctx_frozen_layer": 26,
+        "note": "remainder primary = frozen prefix-only baseline's full-data best LOCO layer, re-derived ONCE per regime before any draw (plan \u00a74.3); answer-target reads frozen at the parent's committed layers; cross-round contrasts pair each arm at its own convention's frozen layer, with a same-layer sensitivity read."
+      },
+      "resample_matrix": {
+        "digest": "3b77857b7c7e7042",
+        "binding": true
+      },
+      "statistics": {
+        "read1_primary_pfx_cotK_minus_pfx_apfx": {
+          "arms": {
+            "hi": "pma_pfx_cotK",
+            "lo": "pma_pfx_apfx"
+          },
+          "primary_frozen_pfx_baseline_best": {
+            "observed": -0.10671893909298025,
+            "ci95": [
+              -0.12020853586653552,
+              -0.09410502944405712
+            ],
+            "p_delta_le_0": 1.0,
+            "n_draws": 2000
+          },
+          "secondary_own_best_frozen_full_data": {
+            "layers": {
+              "hi": 25,
+              "lo": 26
+            },
+            "observed": -0.04823667105568008,
+            "ci95": [
+              -0.05529966956554317,
+              -0.041662469215312026
+            ],
+            "p_delta_le_0": 1.0,
+            "n_draws": 2000
+          },
+          "secondary_best_vs_best_inherited": {
+            "observed": -0.04823667105568008,
+            "ci95": [
+              -0.054801320794903935,
+              -0.04145636471802922
+            ],
+            "p_delta_le_0": 1.0,
+            "n_draws": 2000
+          }
+        },
+        "read2_pfx_cotK_minus_pfx": {
+          "arms": {
+            "hi": "pma_pfx_cotK",
+            "lo": "pma_pfx"
+          },
+          "primary_frozen_pfx_baseline_best": {
+            "observed": 0.6880047833279826,
+            "ci95": [
+              0.6444898942748976,
+              0.718991249882185
+            ],
+            "p_delta_le_0": 0.0,
+            "n_draws": 2000
+          },
+          "secondary_own_best_frozen_full_data": {
+            "layers": {
+              "hi": 25,
+              "lo": 6
+            },
+            "observed": 0.8247266650866322,
+            "ci95": [
+              0.806298253708774,
+              0.8403136494728651
+            ],
+            "p_delta_le_0": 0.0,
+            "n_draws": 2000
+          },
+          "secondary_best_vs_best_inherited": {
+            "observed": 0.8247266650866322,
+            "ci95": [
+              0.8079958409448708,
+              0.8419601788581422
+            ],
+            "p_delta_le_0": 0.0,
+            "n_draws": 2000
+          }
+        },
+        "read3_pfx_apfx_minus_pfx": {
+          "arms": {
+            "hi": "pma_pfx_apfx",
+            "lo": "pma_pfx"
+          },
+          "primary_frozen_pfx_baseline_best": {
+            "observed": 0.7947237224209629,
+            "ci95": [
+              0.752850216873516,
+              0.8225843965269842
+            ],
+            "p_delta_le_0": 0.0,
+            "n_draws": 2000
+          },
+          "secondary_own_best_frozen_full_data": {
+            "layers": {
+              "hi": 26,
+              "lo": 6
+            },
+            "observed": 0.8729633361423123,
+            "ci95": [
+              0.8549673107260286,
+              0.8879741355903816
+            ],
+            "p_delta_le_0": 0.0,
+            "n_draws": 2000
+          },
+          "secondary_best_vs_best_inherited": {
+            "observed": 0.8729633361423123,
+            "ci95": [
+              0.8587902630822555,
+              0.8875484741298614
+            ],
+            "p_delta_le_0": 0.0,
+            "n_draws": 2000
+          }
+        },
+        "read4_pfx_cotfull_minus_pfx_cotK": {
+          "arms": {
+            "hi": "pma_pfx_cotfull",
+            "lo": "pma_pfx_cotK"
+          },
+          "primary_frozen_pfx_baseline_best": {
+            "observed": 0.012707184609556665,
+            "ci95": [
+              0.005790853366457993,
+              0.0194515250326224
+            ],
+            "p_delta_le_0": 0.0,
+            "n_draws": 2000
+          },
+          "secondary_own_best_frozen_full_data": {
+            "layers": {
+              "hi": 25,
+              "lo": 25
+            },
+            "observed": 0.008206570489970866,
+            "ci95": [
+              0.003769545845097075,
+              0.013035558528910586
+            ],
+            "p_delta_le_0": 0.0005,
+            "n_draws": 2000
+          },
+          "secondary_best_vs_best_inherited": {
+            "observed": 0.008206570489970866,
+            "ci95": [
+              0.0033753339660695853,
+              0.012691091632386168
+            ],
+            "p_delta_le_0": 0.0005,
+            "n_draws": 2000
+          }
+        }
+      },
+      "convention_contrasts": {
+        "read5a_conv_pfx_minus_ctx": {
+          "arms": {
+            "pma": "pma_pfx",
+            "mlc": "mlc_ctx"
+          },
+          "layers": {
+            "pma": 6,
+            "mlc": 26
+          },
+          "headline_each_at_own_frozen": {
+            "observed": -0.5006558705866482,
+            "ci95": [
+              -0.564843878269654,
+              -0.43049484573462715
+            ],
+            "p_delta_le_0": 1.0,
+            "n_draws": 2000
+          },
+          "sensitivity_same_layer": {
+            "layer": 26,
+            "observed": -0.5139565195915184,
+            "ci95": [
+              -0.5757229137402522,
+              -0.44680054948498976
+            ],
+            "p_delta_le_0": 1.0,
+            "n_draws": 2000
+          }
+        },
+        "read5b_conv_pfx_cotK_minus_ctx_cotK": {
+          "arms": {
+            "pma": "pma_pfx_cotK",
+            "mlc": "mlc_ctx_cotK"
+          },
+          "layers": {
+            "pma": 6,
+            "mlc": 26
+          },
+          "headline_each_at_own_frozen": {
+            "observed": -0.13253067344805947,
+            "ci95": [
+              -0.1588579342540597,
+              -0.11255437678289751
+            ],
+            "p_delta_le_0": 1.0,
+            "n_draws": 2000
+          },
+          "sensitivity_same_layer": {
+            "layer": 26,
+            "observed": 0.0038962611032405947,
+            "ci95": [
+              0.0008633539990539479,
+              0.007342629785122869
+            ],
+            "p_delta_le_0": 0.0045,
+            "n_draws": 2000
+          }
+        },
+        "read5c_conv_pfx_apfx_minus_ctx_apfx": {
+          "arms": {
+            "pma": "pma_pfx_apfx",
+            "mlc": "mlc_ctx_apfx"
+          },
+          "layers": {
+            "pma": 6,
+            "mlc": 26
+          },
+          "headline_each_at_own_frozen": {
+            "observed": -0.07382170934301369,
+            "ci95": [
+              -0.10378616430070424,
+              -0.05323286942597559
+            ],
+            "p_delta_le_0": 1.0,
+            "n_draws": 2000
+          },
+          "sensitivity_same_layer": {
+            "layer": 26,
+            "observed": 0.004417904378335669,
+            "ci95": [
+              0.0016785808511283556,
+              0.007649228855525694
+            ],
+            "p_delta_le_0": 0.0,
+            "n_draws": 2000
+          }
+        },
+        "read5d_conv_pfx_ans_minus_ctx_ans": {
+          "arms": {
+            "hi": "pma_pfx_ans",
+            "lo": "pma_ctx_ans"
+          },
+          "layer": 26,
+          "target": "full-answer (parent parity)",
+          "observed": -0.5474305616065772,
+          "ci95": [
+            -0.6141467294584649,
+            -0.4749523567342542
+          ],
+          "p_delta_le_0": 1.0,
+          "n_draws": 2000
+        }
+      },
+      "absolute_at_frozen": {
+        "pma_pfx": {
+          "layer": 6,
+          "observed": 0.015539275849795753,
+          "ci95": [
+            0.011480636924365226,
+            0.020197669169263726
+          ],
+          "p_delta_le_0": 0.0,
+          "n_draws": 2000
+        },
+        "pma_pfx_cotK": {
+          "layer": 6,
+          "observed": 0.7035440591777784,
+          "ci95": [
+            0.6611486595577067,
+            0.7338729929435398
+          ],
+          "p_delta_le_0": 0.0,
+          "n_draws": 2000
+        },
+        "pma_pfx_apfx": {
+          "layer": 6,
+          "observed": 0.8102629982707586,
+          "ci95": [
+            0.7682751281327459,
+            0.8366755222196098
+          ],
+          "p_delta_le_0": 0.0,
+          "n_draws": 2000
+        },
+        "pma_pfx_cotfull": {
+          "layer": 6,
+          "observed": 0.7162512437873351,
+          "ci95": [
+            0.6719191746054788,
+            0.746980831350568
+          ],
+          "p_delta_le_0": 0.0,
+          "n_draws": 2000
+        },
+        "pma_qry": {
+          "layer": 6,
+          "observed": 0.5843398069783363,
+          "ci95": [
+            0.5375689146881766,
+            0.6221288840580339
+          ],
+          "p_delta_le_0": 0.0,
+          "n_draws": 2000
+        },
+        "pma_pfx_qry": {
+          "layer": 6,
+          "observed": 0.5839745395776283,
+          "ci95": [
+            0.5373121576937832,
+            0.6219850279087141
+          ],
+          "p_delta_le_0": 0.0,
+          "n_draws": 2000
+        },
+        "pma_pfx_ans": {
+          "layer": 26,
+          "observed": 0.0023400910638364802,
+          "ci95": [
+            0.0012170189201017839,
+            0.0035344894220851407
+          ],
+          "p_delta_le_0": 0.0,
+          "n_draws": 2000
+        },
+        "pma_ctx_ans": {
+          "layer": 26,
+          "observed": 0.5497706526704137,
+          "ci95": [
+            0.47747444838639497,
+            0.615903516153257
+          ],
+          "p_delta_le_0": 0.0,
+          "n_draws": 2000
+        },
+        "pma_ident_ans": {
+          "layer": 26,
+          "observed": 0.9857178348938637,
+          "ci95": [
+            0.9710445221959095,
+            0.9966035310630812
+          ],
+          "p_delta_le_0": 0.0,
+          "n_draws": 2000
+        }
+      },
+      "sensitivity_excluding_degenerate_prefix_cells": {
+        "excluded": [
+          "f6_default_template",
+          "f6_helpful_asst"
+        ],
+        "n_ctx": 48,
+        "read": "read1 @ primary frozen layer (own resample matrix, seed 42)",
+        "observed": -0.10896297908445507,
+        "ci95": [
+          -0.12188275757663232,
+          -0.09675952845335563
+        ],
+        "p_delta_le_0": 1.0,
+        "n_draws": 2000
+      }
+    },
+    "avg_q": {
+      "layer_conventions": {
+        "primary_frozen_pfx_baseline_best_layer": 2,
+        "answer_target_frozen_layer": 18,
+        "answer_target_frozen_note": "parent committed convention",
+        "committed_mlc_ctx_frozen_layer": 19,
+        "note": "remainder primary = frozen prefix-only baseline's full-data best LOCO layer, re-derived ONCE per regime before any draw (plan \u00a74.3); answer-target reads frozen at the parent's committed layers; cross-round contrasts pair each arm at its own convention's frozen layer, with a same-layer sensitivity read."
+      },
+      "resample_matrix": {
+        "digest": "3b77857b7c7e7042",
+        "binding": true
+      },
+      "statistics": {
+        "read1_primary_pfx_cotK_minus_pfx_apfx": {
+          "arms": {
+            "hi": "pma_pfx_cotK",
+            "lo": "pma_pfx_apfx"
+          },
+          "primary_frozen_pfx_baseline_best": {
+            "observed": -0.047399388241743945,
+            "ci95": [
+              -0.0745388926062858,
+              -0.024684868825860285
+            ],
+            "p_delta_le_0": 1.0,
+            "n_draws": 2000
+          },
+          "secondary_own_best_frozen_full_data": {
+            "layers": {
+              "hi": 19,
+              "lo": 19
+            },
+            "observed": -0.034984690010998354,
+            "ci95": [
+              -0.06429542672351425,
+              -0.018099840912430033
+            ],
+            "p_delta_le_0": 1.0,
+            "n_draws": 2000
+          },
+          "secondary_best_vs_best_inherited": {
+            "observed": -0.034984690010998354,
+            "ci95": [
+              -0.06507246383685882,
+              -0.01767205191223064
+            ],
+            "p_delta_le_0": 1.0,
+            "n_draws": 2000
+          }
+        },
+        "read2_pfx_cotK_minus_pfx": {
+          "arms": {
+            "hi": "pma_pfx_cotK",
+            "lo": "pma_pfx"
+          },
+          "primary_frozen_pfx_baseline_best": {
+            "observed": 0.37386032177701123,
+            "ci95": [
+              0.27483195648003084,
+              0.5543509255778473
+            ],
+            "p_delta_le_0": 0.0,
+            "n_draws": 2000
+          },
+          "secondary_own_best_frozen_full_data": {
+            "layers": {
+              "hi": 19,
+              "lo": 2
+            },
+            "observed": 0.4882803921609674,
+            "ci95": [
+              0.19198428253780966,
+              0.7004740340418286
+            ],
+            "p_delta_le_0": 0.002,
+            "n_draws": 2000
+          },
+          "secondary_best_vs_best_inherited": {
+            "observed": 0.4882803921609674,
+            "ci95": [
+              0.2918786498420255,
+              0.6268739710558069
+            ],
+            "p_delta_le_0": 0.0,
+            "n_draws": 2000
+          }
+        },
+        "read3_pfx_apfx_minus_pfx": {
+          "arms": {
+            "hi": "pma_pfx_apfx",
+            "lo": "pma_pfx"
+          },
+          "primary_frozen_pfx_baseline_best": {
+            "observed": 0.4212597100187552,
+            "ci95": [
+              0.31435429350201183,
+              0.6143186748255797
+            ],
+            "p_delta_le_0": 0.0,
+            "n_draws": 2000
+          },
+          "secondary_own_best_frozen_full_data": {
+            "layers": {
+              "hi": 19,
+              "lo": 2
+            },
+            "observed": 0.5232650821719658,
+            "ci95": [
+              0.24790597302555187,
+              0.7338508331081235
+            ],
+            "p_delta_le_0": 0.0005,
+            "n_draws": 2000
+          },
+          "secondary_best_vs_best_inherited": {
+            "observed": 0.5232650821719658,
+            "ci95": [
+              0.3143980668160675,
+              0.6696982172272505
+            ],
+            "p_delta_le_0": 0.0,
+            "n_draws": 2000
+          }
+        },
+        "read4_pfx_cotfull_minus_pfx_cotK": {
+          "arms": {
+            "hi": "pma_pfx_cotfull",
+            "lo": "pma_pfx_cotK"
+          },
+          "primary_frozen_pfx_baseline_best": {
+            "observed": -0.02410435863331284,
+            "ci95": [
+              -0.03891444004172992,
+              -0.013844445381793613
+            ],
+            "p_delta_le_0": 1.0,
+            "n_draws": 2000
+          },
+          "secondary_own_best_frozen_full_data": {
+            "layers": {
+              "hi": 19,
+              "lo": 19
+            },
+            "observed": -0.02624207330936157,
+            "ci95": [
+              -0.07157887967904823,
+              -0.004173145128970292
+            ],
+            "p_delta_le_0": 0.9995,
+            "n_draws": 2000
+          },
+          "secondary_best_vs_best_inherited": {
+            "observed": -0.02624207330936157,
+            "ci95": [
+              -0.03628125238052536,
+              -0.004173145128970292
+            ],
+            "p_delta_le_0": 0.9995,
+            "n_draws": 2000
+          }
+        }
+      },
+      "convention_contrasts": {
+        "read5a_conv_pfx_minus_ctx": {
+          "arms": {
+            "pma": "pma_pfx",
+            "mlc": "mlc_ctx"
+          },
+          "layers": {
+            "pma": 2,
+            "mlc": 19
+          },
+          "headline_each_at_own_frozen": {
+            "observed": -0.2377446007704308,
+            "ci95": [
+              -0.4743645059235467,
+              -0.0852392485479996
+            ],
+            "p_delta_le_0": 0.999,
+            "n_draws": 2000
+          },
+          "sensitivity_same_layer": {
+            "layer": 19,
+            "observed": -0.6028732050347912,
+            "ci95": [
+              -2.2378608364794847,
+              0.06757756886758601
+            ],
+            "p_delta_le_0": 0.7575,
+            "n_draws": 2000
+          }
+        },
+        "read5b_conv_pfx_cotK_minus_ctx_cotK": {
+          "arms": {
+            "pma": "pma_pfx_cotK",
+            "mlc": "mlc_ctx_cotK"
+          },
+          "layers": {
+            "pma": 2,
+            "mlc": 19
+          },
+          "headline_each_at_own_frozen": {
+            "observed": -0.25858566987994636,
+            "ci95": [
+              -0.3634945488528509,
+              -0.15345442303811316
+            ],
+            "p_delta_le_0": 1.0,
+            "n_draws": 2000
+          },
+          "sensitivity_same_layer": {
+            "layer": 19,
+            "observed": -0.14416559949599017,
+            "ci95": [
+              -0.5487834086756262,
+              0.01578047737886918
+            ],
+            "p_delta_le_0": 0.636,
+            "n_draws": 2000
+          }
+        },
+        "read5c_conv_pfx_apfx_minus_ctx_apfx": {
+          "arms": {
+            "pma": "pma_pfx_apfx",
+            "mlc": "mlc_ctx_apfx"
+          },
+          "layers": {
+            "pma": 2,
+            "mlc": 19
+          },
+          "headline_each_at_own_frozen": {
+            "observed": -0.23387107327232626,
+            "ci95": [
+              -0.33027415820042433,
+              -0.14182702518640028
+            ],
+            "p_delta_le_0": 1.0,
+            "n_draws": 2000
+          },
+          "sensitivity_same_layer": {
+            "layer": 19,
+            "observed": -0.13186570111911566,
+            "ci95": [
+              -0.51197306208245,
+              0.019988555685558948
+            ],
+            "p_delta_le_0": 0.636,
+            "n_draws": 2000
+          }
+        },
+        "read5d_conv_pfx_ans_minus_ctx_ans": {
+          "arms": {
+            "hi": "pma_pfx_ans",
+            "lo": "pma_ctx_ans"
+          },
+          "layer": 18,
+          "target": "full-answer (parent parity)",
+          "observed": -0.5886668796631923,
+          "ci95": [
+            -2.1037234467008936,
+            0.047541421321647605
+          ],
+          "p_delta_le_0": 0.81,
+          "n_draws": 2000
+        }
+      },
+      "absolute_at_frozen": {
+        "pma_pfx": {
+          "layer": 2,
+          "observed": 0.017466854131894305,
+          "ci95": [
+            -0.21447517514444783,
+            0.13515901665266786
+          ],
+          "p_delta_le_0": 0.3845,
+          "n_draws": 2000
+        },
+        "pma_pfx_cotK": {
+          "layer": 2,
+          "observed": 0.39132717590890553,
+          "ci95": [
+            0.30807406010289473,
+            0.44932788292933296
+          ],
+          "p_delta_le_0": 0.0,
+          "n_draws": 2000
+        },
+        "pma_pfx_apfx": {
+          "layer": 2,
+          "observed": 0.4387265641506495,
+          "ci95": [
+            0.3677798312938409,
+            0.49795328346581014
+          ],
+          "p_delta_le_0": 0.0,
+          "n_draws": 2000
+        },
+        "pma_pfx_cotfull": {
+          "layer": 2,
+          "observed": 0.3672228172755927,
+          "ci95": [
+            0.27641386413456026,
+            0.43035645701732916
+          ],
+          "p_delta_le_0": 0.0,
+          "n_draws": 2000
+        },
+        "pma_qry": {
+          "layer": 2,
+          "observed": 0.1849144485245321,
+          "ci95": [
+            0.08509454040241073,
+            0.2624930945584651
+          ],
+          "p_delta_le_0": 0.0,
+          "n_draws": 2000
+        },
+        "pma_pfx_qry": {
+          "layer": 2,
+          "observed": 0.19121433477339966,
+          "ci95": [
+            0.0857586216313069,
+            0.26201722322577203
+          ],
+          "p_delta_le_0": 0.0005,
+          "n_draws": 2000
+        },
+        "pma_pfx_ans": {
+          "layer": 18,
+          "observed": -0.28222050033099544,
+          "ci95": [
+            -1.8383031930177531,
+            0.3810939313474597
+          ],
+          "p_delta_le_0": 0.636,
+          "n_draws": 2000
+        },
+        "pma_ctx_ans": {
+          "layer": 18,
+          "observed": 0.30644637933219687,
+          "ci95": [
+            0.21058568998280894,
+            0.4092200200283446
+          ],
+          "p_delta_le_0": 0.0,
+          "n_draws": 2000
+        },
+        "pma_ident_ans": {
+          "layer": 18,
+          "observed": 0.7360012167003862,
+          "ci95": [
+            0.6479076230941225,
+            0.8084976979100708
+          ],
+          "p_delta_le_0": 0.0,
+          "n_draws": 2000
+        }
+      },
+      "sensitivity_excluding_degenerate_prefix_cells": {
+        "excluded": [
+          "f6_default_template",
+          "f6_helpful_asst"
+        ],
+        "n_ctx": 48,
+        "read": "read1 @ primary frozen layer (own resample matrix, seed 42)",
+        "observed": -0.047659249951536364,
+        "ci95": [
+          -0.07642937225052042,
+          -0.02542182167470561
+        ],
+        "p_delta_le_0": 1.0,
+        "n_draws": 2000
+      }
+    }
+  },
+  "reproducibility": {
+    "git_commit": "d67586dd7aa207188341c38687f59c54846473f0",
+    "timestamp_utc": "2026-07-16T10:27:48.139031+00:00",
+    "python_version": "3.11.15",
+    "platform": "Linux-6.8.0-1063-gcp-x86_64-with-glibc2.35",
+    "torch": "2.8.0+cu128",
+    "numpy": "2.2.6",
+    "transformers": "4.57.6"
+  }
+}
