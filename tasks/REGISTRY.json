@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1415,
+  "highest_id": 1416,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -3243,6 +3243,13 @@
       "path": "tasks/proposed/1415",
       "status": "proposed",
       "title": "Causal test of the context/answer vectors: does steering with V_c' - V_c shift on-policy answers from V_a toward V_a'?"
+    },
+    "1416": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1416",
+      "status": "proposed",
+      "title": "workflow-fix: gotchas \u2014 GPU-free gate must read per-GPU memory.used (foreign-tenant GPUs invisible to compute-apps)"
     },
     "142": {
       "has_clean_result": true,
