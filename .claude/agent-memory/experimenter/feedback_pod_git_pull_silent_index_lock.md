@@ -45,3 +45,16 @@ ssh_execute pod-X 'cd /workspace/explore-persona-space && \
 # Re-probe HEAD in a fresh call (the pull may have outlived the SSH cap):
 ssh_execute pod-X 'cd /workspace/explore-persona-space && git rev-parse HEAD'
 ```
+
+**Write-side variant (#1336, 2026-07-15):** the same stale 0-byte lock also
+kills the WORKLOAD's own pod-side `git commit` (dispatch result-commit phases
+per `.claude/rules/pod-side-reporting.md`) — loudly this time (`Unable to
+create ... index.lock: File exists`), crashing the dispatch mid-upload so its
+results sentinel / `[phase=done]` never fire. So the pre-launch lock check is
+not only a sync-mismatch recovery: before launching ANY workload whose tail
+commits pod-side, probe `ls .git/index.lock` and clear a confirmed-stale lock
+(0 bytes + old mtime + `pgrep -a git` empty) even when HEAD already matches.
+On #1336 the lock predated the launch (14:55 vs 14:56); the run halted at G1
+as designed, then died at the upload commit; recovery = rm lock + relaunch the
+resumable upload tail (idempotent bulk uploads + commit-if-diff + verified
+push completed clean in seconds).

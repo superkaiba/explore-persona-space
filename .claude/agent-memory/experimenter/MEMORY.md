@@ -1,3 +1,4 @@
+- [Foreign GPU allocation invisible to compute-apps](feedback_gpu_foreign_allocation_no_compute_apps.md) — fresh RunPod GPU held ~72GB by a host-level tenant; gate on memory.used per GPU, never compute-apps alone (#825 r11)
 # Experimenter Memory
 
 ## Pre-launch gates (data, env, config)
