@@ -42,11 +42,11 @@ import logging
 import sys
 from pathlib import Path
 
-import torch
-
 from explore_persona_space.orchestrate.env import load_dotenv
 
-load_dotenv()
+load_dotenv()  # BEFORE torch — the #847 thread-cap hook binds at import time
+
+import torch  # noqa: E402
 
 _SCRIPTS_DIR = Path(__file__).resolve().parent
 if str(_SCRIPTS_DIR) not in sys.path:

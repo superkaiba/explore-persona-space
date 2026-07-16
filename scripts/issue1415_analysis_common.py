@@ -29,7 +29,11 @@ from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
 
-import torch
+from explore_persona_space.orchestrate.env import load_dotenv
+
+load_dotenv()  # BEFORE torch — the #847 thread-cap hook binds at import time
+
+import torch  # noqa: E402
 
 ARMS = ("prefix", "context")
 LAYERS_FULL = (7, 10, 14, 17, 20, 21, 24)
