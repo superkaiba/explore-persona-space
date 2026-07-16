@@ -216,18 +216,21 @@ def store_local_relpath(hub_rel: str) -> str:
     return hub_rel
 
 
-def stage_store(store_dir: Path, revision: str) -> None:
+def stage_store(store_dir: Path, revision: str, hf_prefix: str = STORE_HF_PREFIX) -> None:
     """Stage the pinned per-question store (manifest + 50 blobs) if not local.
 
     SCOPED ``list_repo_tree(path_in_repo=...)`` enumeration (never
     ``snapshot_download`` / bare ``list_repo_files`` on the ~1M-file data repo —
     gotchas #833) + per-file ``hf_hub_download`` at the PINNED revision, ≤6
-    workers. Local destinations go through ``store_local_relpath`` so the
-    staged tree is EXACTLY the layout ``Store(store_dir)`` reads — the
-    entry-time missing-check, the fetch destinations, and the completeness
-    check all key on the SAME mapped paths. Completeness = every listed file
-    exists locally at its mapped path; fail-loud if the enumeration carries no
-    ``manifest.json`` (a stage without it is a doomed ``Store()`` init).
+    workers. ``hf_prefix`` is the issue-profile store root (default: the #928
+    prefix; the #1005 driver passes its own so a fallback stage can never
+    silently fetch the PARENT's store). Local destinations go through
+    ``store_local_relpath`` so the staged tree is EXACTLY the layout
+    ``Store(store_dir)`` reads — the entry-time missing-check, the fetch
+    destinations, and the completeness check all key on the SAME mapped paths.
+    Completeness = every listed file exists locally at its mapped path;
+    fail-loud if the enumeration carries no ``manifest.json`` (a stage without
+    it is a doomed ``Store()`` init).
     """
     from collections import Counter
 
@@ -238,7 +241,7 @@ def stage_store(store_dir: Path, revision: str) -> None:
         e
         for e in api.list_repo_tree(
             HF_DATA_REPO,
-            path_in_repo=STORE_HF_PREFIX,
+            path_in_repo=hf_prefix,
             repo_type="dataset",
             recursive=True,
             revision=revision,
@@ -246,18 +249,18 @@ def stage_store(store_dir: Path, revision: str) -> None:
         if getattr(e, "size", None) is not None
     ]
     if not entries:
-        raise RuntimeError(f"no files under {STORE_HF_PREFIX} at revision {revision}")
-    pairs = [(store_local_relpath(e.path[len(STORE_HF_PREFIX) + 1 :]), e.path) for e in entries]
+        raise RuntimeError(f"no files under {hf_prefix} at revision {revision}")
+    pairs = [(store_local_relpath(e.path[len(hf_prefix) + 1 :]), e.path) for e in entries]
     dupes = sorted(rel for rel, n in Counter(rel for rel, _ in pairs).items() if n > 1)
     if dupes:
         raise RuntimeError(
-            f"HF→local store layout mapping collision under {STORE_HF_PREFIX} at "
+            f"HF→local store layout mapping collision under {hf_prefix} at "
             f"revision {revision}: {dupes[:3]}"
         )
     rels = dict(pairs)
     if "manifest.json" not in rels:
         raise RuntimeError(
-            f"no manifest.json under {STORE_HF_PREFIX} at revision {revision} — "
+            f"no manifest.json under {hf_prefix} at revision {revision} — "
             "Store() requires it at the store root; refusing a doomed stage"
         )
     missing = {rel: full for rel, full in rels.items() if not (store_dir / rel).is_file()}
@@ -279,18 +282,20 @@ def stage_store(store_dir: Path, revision: str) -> None:
         raise RuntimeError(f"store staging incomplete: {len(still)} missing (e.g. {still[:3]})")
 
 
-def stage_decomp(decomp_path: Path, revision: str) -> None:
+def stage_decomp(decomp_path: Path, revision: str, hf_path: str = DECOMP_HF_PATH) -> None:
     """Local-first ``decomp_indiv.pt``; else the pinned-revision HF mirror.
 
     The file is an UNTRACKED local artifact on the VM (never git-committed), so
     the git-clone-only GCP lane MUST fetch it from the Hub (the #779 r4-r5
-    HF-fallback lesson); fail-loud if neither source resolves.
+    HF-fallback lesson); fail-loud if neither source resolves. ``hf_path`` is
+    the issue-profile Hub path (default: the #928 artifact; the #1005 driver
+    passes its own decomp so a fallback fetch never grabs the parent's).
     """
     if decomp_path.is_file():
         logger.info("[phase=stage] decomp already local: %s", decomp_path)
         return
-    logger.info("[phase=stage] fetching %s @ %s", DECOMP_HF_PATH, revision[:12])
-    _hf_fetch_one(DECOMP_HF_PATH, revision, decomp_path)
+    logger.info("[phase=stage] fetching %s @ %s", hf_path, revision[:12])
+    _hf_fetch_one(hf_path, revision, decomp_path)
 
 
 # ── committed-artifact loading ────────────────────────────────────────────────
@@ -431,14 +436,20 @@ def assert_ss_tot_matches_linear(
 # ── the batched MLP fits (per-(arm, layer) durable units) ─────────────────────
 
 
-def fit_manifest_key(store: Store, layers: list[int], device: str, chunk_size: int) -> dict:
+def fit_manifest_key(
+    store: Store,
+    layers: list[int],
+    device: str,
+    chunk_size: int,
+    store_revision: str = STORE_REVISION,
+) -> dict:
     """Arg-keyed resume manifest over EVERY output-affecting arg (r2/r3 standard:
     generation identity = store identity digest + pinned revision; estimator =
     standardization + seed + the #658 MLP constants; device)."""
     return {
         "round": "indiv-mlp-nonlinearity-control",
         "store_identity": store.identity_digest(),
-        "store_revision": STORE_REVISION,
+        "store_revision": store_revision,
         "layers": [int(x) for x in layers],
         "arms": list(MLP_ARMS),
         "combo": COMBO,
@@ -919,7 +930,11 @@ def build_synth_fixture(root: Path, seed: int = 9280) -> dict:
 # ── main ──────────────────────────────────────────────────────────────────────
 
 
-def main() -> int:
+def build_arg_parser() -> argparse.ArgumentParser:
+    """The indiv-MLP-control CLI. Defaults preserve the #928 standalone
+    behavior verbatim; an issue profile (e.g. the #1005 driver) overrides the
+    HF prefixes so a child run can never clobber — or silently stage — the
+    PARENT's Hub artifacts (upload-verification v1 FAIL, required action 3)."""
     ap = argparse.ArgumentParser(description="Issue #928 indiv MLP nonlinearity control")
     ap.add_argument("--store", default=str(PROJECT_ROOT / "data" / "issue_928" / "store"))
     ap.add_argument(
@@ -951,6 +966,34 @@ def main() -> int:
     ap.add_argument("--skip-parity-gate", action="store_true")
     ap.add_argument("--skip-upload", action="store_true")
     ap.add_argument(
+        "--results-upload-prefix",
+        default=MLP_INDIV_RESULTS_PREFIX,
+        help="HF prefix for the result JSONs (default: the #928 prefix — an issue "
+        "profile like #1005 MUST override so it never overwrites the parent's)",
+    )
+    ap.add_argument(
+        "--tensors-upload-prefix",
+        default=MLP_INDIV_TENSORS_PREFIX,
+        help="HF prefix for decomp_indiv_mlp.pt + preds/*.pt (same override contract)",
+    )
+    ap.add_argument(
+        "--store-hf-prefix",
+        default=STORE_HF_PREFIX,
+        help="HF store root for the fallback stage_store (same override contract — "
+        "a #1005 fallback stage must never silently fetch the #928 parent store)",
+    )
+    ap.add_argument(
+        "--decomp-hf-path",
+        default=DECOMP_HF_PATH,
+        help="HF path for the fallback stage_decomp (same override contract)",
+    )
+    ap.add_argument(
+        "--store-revision",
+        default=STORE_REVISION,
+        help="data-repo revision for the fallback stages (default: the #928 pin; "
+        "an issue profile whose artifacts are not at that pin passes its own)",
+    )
+    ap.add_argument(
         "--allow-cpu-production",
         action="store_true",
         help="permit a cpu-resolved device at production store size (default: fail loud — "
@@ -963,7 +1006,11 @@ def main() -> int:
         metavar="DIR",
         help="generate the smoke/test fixture under DIR and exit",
     )
-    args = ap.parse_args()
+    return ap
+
+
+def main() -> int:
+    args = build_arg_parser().parse_args()
 
     if args.make_synth_fixture:
         paths = build_synth_fixture(Path(args.make_synth_fixture))
@@ -996,8 +1043,8 @@ def main() -> int:
     store_dir = Path(args.store)
     decomp_path = Path(args.decomp)
     if not (store_dir / "manifest.json").is_file():
-        stage_store(store_dir, STORE_REVISION)
-    stage_decomp(decomp_path, STORE_REVISION)
+        stage_store(store_dir, args.store_revision, args.store_hf_prefix)
+    stage_decomp(decomp_path, args.store_revision, args.decomp_hf_path)
 
     # Phase 2 — schema + row-count asserts (plan §12.1; the fail-loud identity check).
     store = Store(store_dir)
@@ -1041,7 +1088,9 @@ def main() -> int:
 
     # Phase 4 — the batched MLP fits (per-(arm, layer) durable units + resume).
     ckpt_dir = prepare_checkpoint_dir(
-        out_dir / "partial", "mlp_indiv", fit_manifest_key(store, layers, device, args.chunk_size)
+        out_dir / "partial",
+        "mlp_indiv",
+        fit_manifest_key(store, layers, device, args.chunk_size, args.store_revision),
     )
     units, ss_tot_audits = run_mlp_fits(store, layers, decomp, device, args.chunk_size, ckpt_dir)
 
@@ -1081,7 +1130,7 @@ def main() -> int:
             "FULL-DATA input standardization (the indiv linear arms' realized convention); "
             "linear reference arms reused from decomp_indiv.pt (no refit)"
         ),
-        "store_revision": STORE_REVISION,
+        "store_revision": args.store_revision,
         "store_identity_digest": store.identity_digest(),
         "n_rows": n_rows,
         "n_contexts": len(store.ctx_ids),
@@ -1102,24 +1151,24 @@ def main() -> int:
 
     # Phase 8 — HF uploads (GCE DELETEs the boot disk; everything must land).
     if not args.skip_upload:
-        logger.info("[phase=upload] result JSONs -> %s", MLP_INDIV_RESULTS_PREFIX)
+        logger.info("[phase=upload] result JSONs -> %s", args.results_upload_prefix)
         names = sorted(p.name for p in out_dir.glob("*.json"))
         upload_folder_scoped_verify(
             out_dir,
-            MLP_INDIV_RESULTS_PREFIX,
+            args.results_upload_prefix,
             names,
             f"issue #928 indiv MLP control: result JSONs ({len(names)})",
             allow_patterns=["*.json"],
             ignore_patterns=["partial/*", "preds/*"],
         )
-        logger.info("[phase=upload] preds + decomp tensors -> %s", MLP_INDIV_TENSORS_PREFIX)
+        logger.info("[phase=upload] preds + decomp tensors -> %s", args.tensors_upload_prefix)
         tensor_names = [
             "decomp_indiv_mlp.pt",
             *sorted(f"preds/{p.name}" for p in preds_dir.glob("preds_*.pt")),
         ]
         upload_folder_scoped_verify(
             out_dir,
-            MLP_INDIV_TENSORS_PREFIX,
+            args.tensors_upload_prefix,
             tensor_names,
             f"issue #928 indiv MLP control: held-out preds + decomp ({len(tensor_names)} .pt)",
             allow_patterns=["decomp_indiv_mlp.pt", "preds/*.pt"],

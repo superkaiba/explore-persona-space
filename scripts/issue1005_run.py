@@ -125,19 +125,25 @@ from issue1005_common import (  # noqa: E402
     ANSWER_BOUNDARY_IDS,
     BOUNDARY_POSITIONS,
     COLLAPSE_FAMILIES,
+    DECOMP_INDIV_HF_PATH_1005,
+    DECOMP_TENSORS_PREFIX_1005,
     FALLBACK_RUNGS,
     FIGURES_PREFIX_1005,
     FIT_RESULTS_PREFIX_1005,
     GENERATION_SUFFIX,
     MLC_NAMES_1005,
     MLC_ROW_MASK_KEY,
+    MLP_INDIV_RESULTS_PREFIX_1005,
+    MLP_INDIV_TENSORS_PREFIX_1005,
     MODEL_REVISION,
     PARSER_RUNG,
     POSITION_NAMES_1005,
     PROMPT_POSITIONS,
     RAW_COMPLETIONS_PREFIX_1005,
     STOP_TOKEN_IDS,
+    STORE_HF_ROOT_1005,
     STORE_PREFIX_1005,
+    STORE_REVISION_1005,
     SUMMARY_NAMES_1005,
     THINKING_MODEL,
     build_prompt_ids,
@@ -174,6 +180,144 @@ def _run_subprocess(cmd: list[str], phase_name: str, extra_env: dict | None = No
     env = {**os.environ, **(extra_env or {})}
     logger.info("[phase=%s] exec: %s", phase_name, " ".join(cmd))
     subprocess.run(cmd, env=env, check=True)
+
+
+# ── fit-phase subprocess commands (pure builders — pinned by
+# tests/test_issue1005_hf_prefixes.py: EVERY HF prefix these pass resolves
+# under HF_PREFIX_1005, never the parent modules' #928 defaults; upload-
+# verification v1 required action 3) ──────────────────────────────────────────
+
+
+def f1_cmd(
+    store_root: str,
+    eval_out: Path,
+    *,
+    layers: list[int] | None,
+    n_perms: int | None,
+    n_boot: int | None,
+    upload: bool,
+    smoke: bool,
+) -> list[str]:
+    """The f1 (``issue928_fit_decomposition``) command under the #1005 profile.
+
+    Both upload paths are overridden: the fit-result JSONs via
+    ``--upload-prefix`` and the ``decomp_*.pt`` tensors via
+    ``--decomp-upload-prefix`` — the parent's module-level #928
+    ``DECOMP_TENSORS_PREFIX`` default must never fire here (it overwrote the
+    parent's ``decomp_avg_q.pt`` / ``decomp_indiv.pt`` on the Hub).
+    """
+    suffix = "_smoke" if smoke else ""
+    cmd = [
+        sys.executable,
+        str(PROJECT_ROOT / "scripts" / "issue928_fit_decomposition.py"),
+        "--store",
+        store_root,
+        "--out",
+        str(eval_out),
+    ]
+    if layers is not None:
+        cmd += ["--layers", *[str(x) for x in layers]]
+    if n_perms is not None:
+        cmd += ["--n-perms", str(n_perms)]
+    if n_boot is not None:
+        cmd += ["--n-boot", str(n_boot)]
+    if upload:
+        cmd += [
+            "--upload-prefix",
+            FIT_RESULTS_PREFIX_1005 + suffix,
+            "--decomp-upload-prefix",
+            DECOMP_TENSORS_PREFIX_1005 + suffix,
+        ]
+    if smoke:
+        cmd += ["--smoke", "--no-mlp"]
+    return cmd
+
+
+def mlp_cmd(
+    store_root: str,
+    eval_out: Path,
+    figures_dir: Path,
+    man: dict,
+    *,
+    upload: bool,
+    smoke: bool,
+) -> list[str]:
+    """The mlp (``issue928_mlp_indiv_control``) command under the #1005 profile.
+
+    Threads ALL FOUR issue-profile HF paths through the parent's CLI overrides
+    (results JSONs, preds + decomp tensors, and the two fallback-stage inputs)
+    so neither an upload nor a fresh-lane fallback stage can touch — or
+    silently fetch — the #928 parent's artifacts. ``--store-revision`` is the
+    #1005 tip (``main``): its artifacts do not exist at the #928 pin, so a
+    fallback stage at the parent default would fetch the WRONG store.
+    """
+    suffix = "_smoke" if smoke else ""
+    n_rows = sum(v["n_captured"] for v in man["per_ctx_capture"].values())
+    cmd = [
+        sys.executable,
+        str(PROJECT_ROOT / "scripts" / "issue928_mlp_indiv_control.py"),
+        "--store",
+        store_root,
+        "--decomp",
+        str(eval_out / "decomp_indiv.pt"),
+        "--reference-bootstrap",
+        str(eval_out / "bootstrap_deltaskill.json"),
+        "--out",
+        str(eval_out / "indiv-mlp-nonlinearity-control"),
+        "--figures-dir",
+        str(figures_dir),
+        "--expect-rows",
+        str(n_rows),
+        "--expect-contexts",
+        str(len(man["context_ids"])),
+        "--expect-layers",
+        str(len(man["capture_layers"])),
+        "--expect-hidden",
+        str(man["hidden_size"]),
+        "--results-upload-prefix",
+        MLP_INDIV_RESULTS_PREFIX_1005 + suffix,
+        "--tensors-upload-prefix",
+        MLP_INDIV_TENSORS_PREFIX_1005 + suffix,
+        "--store-hf-prefix",
+        STORE_HF_ROOT_1005,
+        "--decomp-hf-path",
+        DECOMP_INDIV_HF_PATH_1005,
+        "--store-revision",
+        STORE_REVISION_1005,
+    ]
+    if not upload:
+        cmd += ["--skip-upload"]
+    if smoke:
+        cmd += ["--allow-cpu-production"]
+    return cmd
+
+
+def figures_cmd(
+    eval_out: Path,
+    store_root: str,
+    rollouts_dir: Path,
+    fig_scratch: Path,
+    *,
+    upload: bool,
+    smoke: bool,
+) -> list[str]:
+    """The figures (``issue928_figures``) command under the #1005 profile."""
+    suffix = "_smoke" if smoke else ""
+    cmd = [
+        sys.executable,
+        str(PROJECT_ROOT / "scripts" / "issue928_figures.py"),
+        "--results",
+        str(eval_out),
+        "--store",
+        store_root,
+        "--rollouts",
+        str(rollouts_dir),
+        "--out",
+        str(fig_scratch),
+    ]
+    if upload:
+        cmd += ["--upload-prefix", FIGURES_PREFIX_1005 + suffix]
+    return cmd
 
 
 def main() -> int:  # noqa: C901 — linear phase pipeline (gate→G→P→B→F→finalize)
@@ -287,60 +431,24 @@ def main() -> int:  # noqa: C901 — linear phase pipeline (gate→G→P→B→F
     store_root = str(out_dir / "store")
     fit_env = {"EPM_FIT_DEVICE": device}
     upload = not args.no_upload
-    smoke_suffix = "_smoke" if args.smoke else ""
 
     if "f1" in args.phases:
         phase("f1")
-        cmd = [
-            sys.executable,
-            str(PROJECT_ROOT / "scripts" / "issue928_fit_decomposition.py"),
-            "--store",
+        cmd = f1_cmd(
             store_root,
-            "--out",
-            str(eval_out),
-        ]
-        if args.layers is not None:
-            cmd += ["--layers", *[str(x) for x in args.layers]]
-        if args.n_perms is not None:
-            cmd += ["--n-perms", str(args.n_perms)]
-        if args.n_boot is not None:
-            cmd += ["--n-boot", str(args.n_boot)]
-        if upload:
-            cmd += ["--upload-prefix", FIT_RESULTS_PREFIX_1005 + smoke_suffix]
-        if args.smoke:
-            cmd += ["--smoke", "--no-mlp"]
+            eval_out,
+            layers=args.layers,
+            n_perms=args.n_perms,
+            n_boot=args.n_boot,
+            upload=upload,
+            smoke=args.smoke,
+        )
         _run_subprocess(cmd, "f1", extra_env=fit_env)
 
     if "mlp" in args.phases:
         phase("mlp")
         man = json.loads((out_dir / "store" / "manifest.json").read_text())
-        n_rows = sum(v["n_captured"] for v in man["per_ctx_capture"].values())
-        cmd = [
-            sys.executable,
-            str(PROJECT_ROOT / "scripts" / "issue928_mlp_indiv_control.py"),
-            "--store",
-            store_root,
-            "--decomp",
-            str(eval_out / "decomp_indiv.pt"),
-            "--reference-bootstrap",
-            str(eval_out / "bootstrap_deltaskill.json"),
-            "--out",
-            str(eval_out / "indiv-mlp-nonlinearity-control"),
-            "--figures-dir",
-            str(figures_dir),
-            "--expect-rows",
-            str(n_rows),
-            "--expect-contexts",
-            str(len(man["context_ids"])),
-            "--expect-layers",
-            str(len(man["capture_layers"])),
-            "--expect-hidden",
-            str(man["hidden_size"]),
-        ]
-        if not upload:
-            cmd += ["--skip-upload"]
-        if args.smoke:
-            cmd += ["--allow-cpu-production"]
+        cmd = mlp_cmd(store_root, eval_out, figures_dir, man, upload=upload, smoke=args.smoke)
         _run_subprocess(cmd, "mlp", extra_env=fit_env)
 
     if "f2f3" in args.phases:
@@ -374,20 +482,9 @@ def main() -> int:  # noqa: C901 — linear phase pipeline (gate→G→P→B→F
         # the VM-side analyzer copies to figures/issue_1005 for git (plan §10).
         fig_scratch = out_dir / "figures_scratch" / "issue_928"
         fig_scratch.mkdir(parents=True, exist_ok=True)
-        cmd = [
-            sys.executable,
-            str(PROJECT_ROOT / "scripts" / "issue928_figures.py"),
-            "--results",
-            str(eval_out),
-            "--store",
-            store_root,
-            "--rollouts",
-            str(rollouts_dir),
-            "--out",
-            str(fig_scratch),
-        ]
-        if upload:
-            cmd += ["--upload-prefix", FIGURES_PREFIX_1005 + smoke_suffix]
+        cmd = figures_cmd(
+            eval_out, store_root, rollouts_dir, fig_scratch, upload=upload, smoke=args.smoke
+        )
         _run_subprocess(cmd, "figures", extra_env=fit_env)
 
     if "finalize" in args.phases:

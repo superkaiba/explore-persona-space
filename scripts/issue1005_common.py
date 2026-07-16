@@ -67,6 +67,19 @@ STORE_PREFIX_1005 = f"{HF_PREFIX_1005}/analysis_tensors/store/percq_summaries"
 FIT_RESULTS_PREFIX_1005 = f"{HF_PREFIX_1005}/fit_results"
 DECOMP_TENSORS_PREFIX_1005 = f"{HF_PREFIX_1005}/analysis_tensors/decomp"
 FIGURES_PREFIX_1005 = f"{HF_PREFIX_1005}/figures"
+# The mlp phase's issue-profile HF paths (upload-verification v1 required
+# action 3: the parent modules' module-level #928 constants must never reach an
+# upload/stage call site under the #1005 profile — the driver threads THESE
+# through issue928_mlp_indiv_control's CLI overrides instead). Shapes mirror
+# the parent's derivations from HF_PREFIX_928 one-for-one (pinned by
+# tests/test_issue1005_hf_prefixes.py).
+MLP_INDIV_TENSORS_PREFIX_1005 = f"{HF_PREFIX_1005}/analysis_tensors/mlp_indiv"
+MLP_INDIV_RESULTS_PREFIX_1005 = f"{FIT_RESULTS_PREFIX_1005}/indiv_mlp_control"
+STORE_HF_ROOT_1005 = f"{HF_PREFIX_1005}/analysis_tensors/store"
+DECOMP_INDIV_HF_PATH_1005 = f"{DECOMP_TENSORS_PREFIX_1005}/decomp_indiv.pt"
+# #1005 artifacts live at the data repo's moving tip (the extractor/f1 upload
+# to main in-run; there is no #928-style frozen pin for a mid-run fallback).
+STORE_REVISION_1005 = "main"
 
 # ── the unified 18-vector registry (plan §4.5) ────────────────────────────────
 #
