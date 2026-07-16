@@ -25,9 +25,13 @@ flow on CPU with a from-config 2-layer Qwen model):
   cell at the primary layer). NOT a plan §9 row — the compute addition
   (~7,000 teacher-forced samples ≈ 0.5-0.75 GPU-h at the 1a basis) is
   recorded in the round-2 implementation report.
-- ``--pilot``: 1 pair x alpha=1.0 x primary layer x N draws (+ the
-  all-positions variant); measures s/sample, logs + persists it, and the full
-  sweep REFUSES to start when s/sample > 4.7 unless ``--force``.
+- ``--pilot``: 1 pair x alpha=1.0 x primary layer, replicated to
+  B = ``--gen-batch`` identical rows (the SWEEP's chunk shape — never batch-1,
+  which over-reads s/sample by ~B on bandwidth-bound HF decode; crash-fix for
+  att-20260716-160022) x N draws (+ the all-positions variant); measures
+  s/sample at the sweep shape, logs + persists it, and the full sweep HALTS by
+  design when s/sample > 4.7 unless ``--force`` (``pilot_gate_report.json``,
+  exit ``RC_PILOT_GATE=7`` — artifact-routed in the dispatcher like K1/K2).
 
 Pre-registered in-run kill criteria (plan v5 §3; round-2 fix):
 
@@ -131,6 +135,7 @@ CAPTURED_PHASES = (
 # route-on-artifact).
 RC_K1_ABORT = 4
 RC_K2_HALT = 5
+RC_PILOT_GATE = 7  # designed pilot-gate HALT (plan §9 timing gate; §13 descope ladder)
 K1_NO_SEP_FRAC = 0.8  # fire when > 80% of pairs show no separation
 K1_NULL_DRAWS = 500
 K1_SEED = 1415
@@ -802,8 +807,16 @@ def select_trait_alpha(
 def phase_pilot(
     cfg: RunConfig, state: Manifest, model, tok, pairs: list[dict], summary: dict
 ) -> dict:
-    """1 pair x alpha=1.0 x primary layer x N draws (+ all-positions variant);
-    measures s/sample and persists pilot.json (the full-sweep gate input)."""
+    """1 pair x alpha=1.0 x primary layer, replicated to B = cfg.gen_batch
+    identical rows per hooked generate call — the SWEEP's chunk shape
+    (``run_gen_cells`` chunks B cells per call; HF decode on A100-80 is
+    memory-bandwidth-bound so per-step latency at B~8 ≈ B=1, and a batch-1
+    pilot over-reads s/sample by ~B: the att-20260716-160022 gate false-fire)
+    — x N draws (+ all-positions variant). Measures s/sample at the sweep
+    shape and persists pilot.json (the full-sweep gate input). Row 0's draws
+    stay the CANONICAL pilot draws (coherence_check + K2's pilot/std unit —
+    semantics unchanged); all B rows' draws persist in the raw-completions
+    pilot JSON (persist-by-default)."""
     pilot_path = cfg.out_root / "pilot.json"
     if state.done("pilot"):
         summary["cells_skipped"] += 1
@@ -814,16 +827,22 @@ def phase_pilot(
     rec_c, rec_cp = cap["per_context"]
     delta = rec_cp["v_c_context"][0] - rec_c["v_c_context"][0]
     assert delta.shape == (cfg.hidden,), delta.shape
+    B = cfg.gen_batch
+    contexts = [pair["ctx_c"]] * B
+    # Per-row (B, H) delta stack — mirrors run_gen_cells' dstack contract so
+    # DeltaHook exercises the identical batched shape it sees in the sweep.
+    dstack = torch.stack([delta] * B)
+    assert dstack.shape == (B, cfg.hidden), dstack.shape
     timings: dict[str, float] = {}
     coherence: dict[str, list[bool]] = {}
     for variant, allpos in (("std", False), ("allpos", True)):
-        hook = DeltaHook(model, cfg.primary_layer, delta, alpha=1.0, all_positions=allpos)
+        hook = DeltaHook(model, cfg.primary_layer, dstack, alpha=1.0, all_positions=allpos)
         t0 = time.monotonic()
         with hook:
             outs = generate_batch(
                 model,
                 tok,
-                [pair["ctx_c"]],
+                contexts,
                 n=cfg.n_draws,
                 hook=hook,
                 max_new_tokens=cfg.max_new_tokens,
@@ -831,7 +850,11 @@ def phase_pilot(
                 seed_base=cfg.seed_base,
             )
         timings[variant] = time.monotonic() - t0
-        coherence[variant] = coherence_check(outs[0])
+        assert len(outs) == B and all(len(rows) == cfg.n_draws for rows in outs), (
+            len(outs),
+            [len(rows) for rows in outs],
+        )
+        coherence[variant] = coherence_check(outs[0])  # row 0 = canonical pilot draws
         _write_json_atomic(
             cfg.bulk_root / "raw_completions" / "pilot" / f"{variant}.json",
             {
@@ -840,11 +863,14 @@ def phase_pilot(
                 "layer": cfg.primary_layer,
                 "alpha": 1.0,
                 "context": pair["ctx_c"],
+                "pilot_batch": B,
+                "canonical_row": 0,
                 "draws": outs[0],
+                "all_rows_draws": outs,
                 "repro": _repro(cfg),
             },
         )
-    n_samples = 2 * cfg.n_draws
+    n_samples = 2 * B * cfg.n_draws
     sps = sum(timings.values()) / n_samples
     pilot = {
         "pair_id": pair["pair_id"],
@@ -852,6 +878,7 @@ def phase_pilot(
         "alpha": 1.0,
         "n_draws": cfg.n_draws,
         "max_new_tokens": cfg.max_new_tokens,
+        "pilot_batch": B,
         "n_samples": n_samples,
         "timings_s": timings,
         "coherence_flags": coherence,
@@ -862,24 +889,41 @@ def phase_pilot(
     }
     _write_json_atomic(pilot_path, pilot)
     logger.info(
-        "[phase=pilot] s_per_sample=%.3f (threshold %.2f) sweep_allowed=%s",
+        "[phase=pilot] s_per_sample=%.3f (threshold %.2f) sweep_allowed=%s B=%d",
         sps,
         PILOT_MAX_S_PER_SAMPLE,
         pilot["sweep_allowed"],
+        B,
     )
-    state.mark("pilot", {"s_per_sample": sps})
+    state.mark("pilot", {"s_per_sample": sps, "pilot_batch": B})
     summary["cells_run"] += 1
     return pilot
 
 
-def _enforce_pilot_gate(pilot: dict, force: bool) -> None:
-    """REFUSE the full sweep when the pilot exceeded the plan §9 per-sample
-    budget, unless --force."""
-    if pilot["s_per_sample"] > PILOT_MAX_S_PER_SAMPLE and not force:
-        raise RuntimeError(
-            f"pilot measured {pilot['s_per_sample']:.2f} s/sample "
-            f"> {PILOT_MAX_S_PER_SAMPLE} — refusing the full sweep (pass --force to override)"
-        )
+def _enforce_pilot_gate(cfg: RunConfig, pilot: dict) -> None:
+    """DESIGNED HALT (never an anonymous crash) when the pilot exceeded the
+    plan §9 per-sample budget: persist ``pilot_gate_report.json`` (the pilot
+    dict + reason + the plan §13 descope-ladder pointer) into cfg.out_root and
+    exit ``RC_PILOT_GATE`` so the dispatcher routes it on the artifact like
+    K1/K2. ``--force`` overrides."""
+    if pilot["s_per_sample"] <= PILOT_MAX_S_PER_SAMPLE or cfg.force:
+        return
+    reason = (
+        f"pilot measured {pilot['s_per_sample']:.2f} s/sample at the sweep chunk shape "
+        f"(B={pilot.get('pilot_batch', 1)}) > {PILOT_MAX_S_PER_SAMPLE} — refusing the full "
+        "sweep (pass --force to override, or descope per the plan §13 ladder)"
+    )
+    report = {
+        "criterion": "pilot timing gate: s_per_sample > plan §9 threshold",
+        "fired": True,
+        "reason": reason,
+        "descope_pointer": "plan v5 §13 descope ladder",
+        "pilot": pilot,
+        "enforced": True,
+    }
+    _write_json_atomic(cfg.out_root / "pilot_gate_report.json", report)
+    logger.error("[pilot_gate] %s", reason)
+    raise SystemExit(RC_PILOT_GATE)
 
 
 # ── kill criteria (plan v5 §3: K1 post-1a, K2 inside 1c) ──────────────
@@ -1499,7 +1543,7 @@ def run_phase1(cfg: RunConfig) -> dict:
     }
     if cfg.pilot_only:
         return summary
-    _enforce_pilot_gate(pilot, cfg.force)
+    _enforce_pilot_gate(cfg, pilot)
 
     phase_1b(cfg, state, model, tok, deltas, pairs, summary)
     _upload_phase(cfg, state, summary, "raw_completions/gen1b", f"{RAW_PREFIX}/gen1b")

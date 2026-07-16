@@ -78,9 +78,10 @@ uv run python scripts/issue1415_run_phase1.py \
 PHASE1_RC=$?
 set -e
 
-# Kill-criteria HALTs are DOMAIN outcomes, not crashes: route on the ARTIFACT
-# (gotchas.md: wrap-script route-on-artifact) — the driver writes the report
-# BEFORE exiting rc=4 (K1) / rc=5 (K2). Anything else non-zero is a real crash.
+# Kill-criteria / gate HALTs are DOMAIN outcomes, not crashes: route on the
+# ARTIFACT (gotchas.md: wrap-script route-on-artifact) — the driver writes the
+# report BEFORE exiting rc=4 (K1) / rc=5 (K2) / rc=7 (pilot timing gate).
+# Anything else non-zero is a real crash.
 KILL_HALT=""
 if [ "$PHASE1_RC" -ne 0 ]; then
   if [ "$PHASE1_RC" -eq 4 ] && grep -q '"fired": true' "$OUT_ROOT/k1_report.json" 2>/dev/null; then
@@ -89,6 +90,9 @@ if [ "$PHASE1_RC" -ne 0 ]; then
   elif [ "$PHASE1_RC" -eq 5 ] && grep -q '"fired": true' "$OUT_ROOT/k2_report.json" 2>/dev/null; then
     KILL_HALT="k2_halt"
     echo "[phase=kill_halt] K2 fired (coherence collapse on pilot+first-5) — 1c halted, reporting"
+  elif [ "$PHASE1_RC" -eq 7 ] && grep -q '"fired": true' "$OUT_ROOT/pilot_gate_report.json" 2>/dev/null; then
+    KILL_HALT="pilot_gate"
+    echo "[phase=kill_halt] pilot timing gate refused the full sweep — reporting (see pilot_gate_report.json + plan §13 descope ladder)"
   else
     echo "[phase=phase1_failed] driver exited rc=${PHASE1_RC} with no matching kill-report" >&2
     exit "$PHASE1_RC"
@@ -164,6 +168,8 @@ eval_paths = sorted(
         "alpha_selection_1c.json",
         "alpha_selection_1d.json",
         "phase1_manifest.json",
+        "pilot.json",
+        "pilot_gate_report.json",
         "k1_report.json",
         "k2_report.json",
         "steered_canonical_index.json",
@@ -172,9 +178,14 @@ eval_paths = sorted(
 )
 summary_line = "issue-1415 phase-1 GPU run complete (pair bank + 1b/1a/K1/1c+K2/1d/1e)"
 if kill_halt:
+    report_by_halt = {
+        "k1_abort": "k1_report.json",
+        "k2_halt": "k2_report.json",
+        "pilot_gate": "pilot_gate_report.json",
+    }
     summary_line = (
-        f"issue-1415 phase-1 HALTED by pre-registered kill criterion ({kill_halt}); "
-        f"see {out_root}/{'k1_report.json' if kill_halt == 'k1_abort' else 'k2_report.json'}"
+        f"issue-1415 phase-1 HALTED by pre-registered gate ({kill_halt}); "
+        f"see {out_root}/{report_by_halt[kill_halt]}"
     )
 note = {
     "summary": summary_line,

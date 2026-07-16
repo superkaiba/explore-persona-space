@@ -65,12 +65,24 @@ def test_select_trait_alpha_majority_over_subset():
     assert drv.select_trait_alpha({a: [[False, False]] for a in grid}, grid) is None
 
 
-def test_pilot_gate_refuses_over_threshold_unless_forced():
-    slow = {"s_per_sample": drv.PILOT_MAX_S_PER_SAMPLE + 1.0}
-    with pytest.raises(RuntimeError, match="refusing the full sweep"):
-        drv._enforce_pilot_gate(slow, force=False)
-    drv._enforce_pilot_gate(slow, force=True)  # --force overrides
-    drv._enforce_pilot_gate({"s_per_sample": 0.1}, force=False)  # under threshold
+def test_pilot_gate_halts_designed_rc7_with_report(tmp_path):
+    """A genuine pilot-gate refusal is a DESIGNED HALT (crash-fix for
+    att-20260716-160022): pilot_gate_report.json persisted into out_root +
+    SystemExit(RC_PILOT_GATE=7) — never an anonymous RuntimeError crash."""
+    cfg = _cfg(tmp_path)
+    slow = {"s_per_sample": drv.PILOT_MAX_S_PER_SAMPLE + 1.0, "pilot_batch": 8}
+    with pytest.raises(SystemExit) as ei:
+        drv._enforce_pilot_gate(cfg, slow)
+    assert ei.value.code == drv.RC_PILOT_GATE == 7
+    report = json.loads((cfg.out_root / "pilot_gate_report.json").read_text())
+    assert report["fired"] is True
+    assert report["pilot"]["s_per_sample"] == slow["s_per_sample"]
+    assert "§13" in report["descope_pointer"]
+    assert "B=8" in report["reason"]
+    # --force overrides; under threshold passes (no exit, no new report)
+    forced = _cfg(tmp_path, extra=["--force"])
+    drv._enforce_pilot_gate(forced, slow)
+    drv._enforce_pilot_gate(cfg, {"s_per_sample": 0.1, "pilot_batch": 8})
 
 
 def test_hub_upload_call_shape_binds():
@@ -142,6 +154,31 @@ def test_tiny_flow_artifacts(first_run):
     assert (mirror / drv.RAW_PREFIX / "pilot" / "std.json").exists()
     assert (mirror / drv.RAW_PREFIX / "gen1b" / "tiny_00" / "c.json").exists()
     assert (mirror / drv.TENSOR_PREFIX / "tiny_00.pt").exists()
+
+
+def test_pilot_measured_at_sweep_chunk_shape(first_run):
+    """Crash-fix att-20260716-160022: the pilot replicates its context to
+    B = gen_batch identical rows (the sweep's chunk shape — a batch-1 pilot
+    over-reads s/sample by ~B on bandwidth-bound decode) and normalizes
+    s/sample by 2 x B x n_draws; row 0 stays the canonical pilot draw set
+    (K2's pilot/std unit), all B rows' draws persist."""
+    _tmp, cfg, _summary = first_run
+    pilot = json.loads((cfg.out_root / "pilot.json").read_text())
+    assert pilot["pilot_batch"] == cfg.gen_batch == 8
+    assert pilot["n_samples"] == 2 * cfg.gen_batch * cfg.n_draws
+    assert pilot["s_per_sample"] == pytest.approx(
+        sum(pilot["timings_s"].values()) / pilot["n_samples"]
+    )
+    # K2's pilot/std unit semantics UNCHANGED: n_draws flags from the canonical row
+    assert len(pilot["coherence_flags"]["std"]) == cfg.n_draws
+    for variant in ("std", "allpos"):
+        raw = json.loads(
+            (cfg.bulk_root / "raw_completions" / "pilot" / f"{variant}.json").read_text()
+        )
+        assert raw["pilot_batch"] == cfg.gen_batch and raw["canonical_row"] == 0
+        assert len(raw["all_rows_draws"]) == cfg.gen_batch
+        assert all(len(rows) == cfg.n_draws for rows in raw["all_rows_draws"])
+        assert raw["draws"] == raw["all_rows_draws"][0]
 
 
 def test_rerun_skips_every_completed_cell(first_run):
