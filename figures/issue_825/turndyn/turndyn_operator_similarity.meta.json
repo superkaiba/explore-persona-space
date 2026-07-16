@@ -1,0 +1,927 @@
+{
+  "commit": "3b1ddc6ecf",
+  "created": "2026-07-16T21:23:54Z",
+  "figsize": [
+    11.5,
+    4.4
+  ],
+  "points": [
+    {
+      "Other turn j": 1.0,
+      "Raw operator cosine (fold-resampled)": 0.10489879349867502,
+      "series": "within-turn resample ceiling",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Other turn j": 2.0,
+      "Raw operator cosine (fold-resampled)": 0.10499264250199,
+      "series": "within-turn resample ceiling",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Other turn j": 3.0,
+      "Raw operator cosine (fold-resampled)": 0.10861237694819768,
+      "series": "within-turn resample ceiling",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Other turn j": 4.0,
+      "Raw operator cosine (fold-resampled)": 0.10652052809794745,
+      "series": "within-turn resample ceiling",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Other turn j": 5.0,
+      "Raw operator cosine (fold-resampled)": 0.10529092401266098,
+      "series": "within-turn resample ceiling",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Other turn j": 6.0,
+      "Raw operator cosine (fold-resampled)": 0.10474736839532853,
+      "series": "within-turn resample ceiling",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Other turn j": 7.0,
+      "Raw operator cosine (fold-resampled)": 0.10265887627998987,
+      "series": "within-turn resample ceiling",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Other turn j": 8.0,
+      "Raw operator cosine (fold-resampled)": 0.10092090765635173,
+      "series": "within-turn resample ceiling",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Other turn j": 9.0,
+      "Raw operator cosine (fold-resampled)": 0.10143816272417704,
+      "series": "within-turn resample ceiling",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Other turn j": 10.0,
+      "Raw operator cosine (fold-resampled)": 0.09779315143823623,
+      "series": "within-turn resample ceiling",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Other turn j": 11.0,
+      "Raw operator cosine (fold-resampled)": 0.09762820700804392,
+      "series": "within-turn resample ceiling",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Other turn j": 12.0,
+      "Raw operator cosine (fold-resampled)": 0.09411953787008921,
+      "series": "within-turn resample ceiling",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Other turn j": 13.0,
+      "Raw operator cosine (fold-resampled)": 0.09790741801261901,
+      "series": "within-turn resample ceiling",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Other turn j": 14.0,
+      "Raw operator cosine (fold-resampled)": 0.09695423344771067,
+      "series": "within-turn resample ceiling",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Other turn j": 15.0,
+      "Raw operator cosine (fold-resampled)": 0.09496432542800903,
+      "series": "within-turn resample ceiling",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Other turn j": 16.0,
+      "Raw operator cosine (fold-resampled)": 0.09250419388214746,
+      "series": "within-turn resample ceiling",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Other turn j": 2.0,
+      "Raw operator cosine (fold-resampled)": 0.07897232547402382,
+      "series": "map at turn 1 vs map at turn j",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Other turn j": 3.0,
+      "Raw operator cosine (fold-resampled)": 0.07211554770668348,
+      "series": "map at turn 1 vs map at turn j",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Other turn j": 4.0,
+      "Raw operator cosine (fold-resampled)": 0.06755316083629927,
+      "series": "map at turn 1 vs map at turn j",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Other turn j": 5.0,
+      "Raw operator cosine (fold-resampled)": 0.06360514958699544,
+      "series": "map at turn 1 vs map at turn j",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Other turn j": 6.0,
+      "Raw operator cosine (fold-resampled)": 0.06164264877637227,
+      "series": "map at turn 1 vs map at turn j",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Other turn j": 7.0,
+      "Raw operator cosine (fold-resampled)": 0.058961066976189615,
+      "series": "map at turn 1 vs map at turn j",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Other turn j": 8.0,
+      "Raw operator cosine (fold-resampled)": 0.05709652230143547,
+      "series": "map at turn 1 vs map at turn j",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Other turn j": 9.0,
+      "Raw operator cosine (fold-resampled)": 0.05587408989667893,
+      "series": "map at turn 1 vs map at turn j",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Other turn j": 10.0,
+      "Raw operator cosine (fold-resampled)": 0.05336801384886106,
+      "series": "map at turn 1 vs map at turn j",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Other turn j": 11.0,
+      "Raw operator cosine (fold-resampled)": 0.052559684465328854,
+      "series": "map at turn 1 vs map at turn j",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Other turn j": 12.0,
+      "Raw operator cosine (fold-resampled)": 0.05173888976375262,
+      "series": "map at turn 1 vs map at turn j",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Other turn j": 13.0,
+      "Raw operator cosine (fold-resampled)": 0.05152042123178641,
+      "series": "map at turn 1 vs map at turn j",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Other turn j": 14.0,
+      "Raw operator cosine (fold-resampled)": 0.04988275108238061,
+      "series": "map at turn 1 vs map at turn j",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Other turn j": 15.0,
+      "Raw operator cosine (fold-resampled)": 0.04816532904903094,
+      "series": "map at turn 1 vs map at turn j",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Other turn j": 16.0,
+      "Raw operator cosine (fold-resampled)": 0.04798754615088304,
+      "series": "map at turn 1 vs map at turn j",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Other turn j": 1.0,
+      "Raw operator cosine (fold-resampled)": 0.07211554770668348,
+      "series": "map at turn 3 vs map at turn j",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Other turn j": 2.0,
+      "Raw operator cosine (fold-resampled)": 0.10067403614521027,
+      "series": "map at turn 3 vs map at turn j",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Other turn j": 4.0,
+      "Raw operator cosine (fold-resampled)": 0.10510190178950628,
+      "series": "map at turn 3 vs map at turn j",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Other turn j": 5.0,
+      "Raw operator cosine (fold-resampled)": 0.10270810027917227,
+      "series": "map at turn 3 vs map at turn j",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Other turn j": 6.0,
+      "Raw operator cosine (fold-resampled)": 0.09950076465805371,
+      "series": "map at turn 3 vs map at turn j",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Other turn j": 7.0,
+      "Raw operator cosine (fold-resampled)": 0.09547577773531278,
+      "series": "map at turn 3 vs map at turn j",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Other turn j": 8.0,
+      "Raw operator cosine (fold-resampled)": 0.09304887155691782,
+      "series": "map at turn 3 vs map at turn j",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Other turn j": 9.0,
+      "Raw operator cosine (fold-resampled)": 0.09189966494838396,
+      "series": "map at turn 3 vs map at turn j",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Other turn j": 10.0,
+      "Raw operator cosine (fold-resampled)": 0.08922265743215879,
+      "series": "map at turn 3 vs map at turn j",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Other turn j": 11.0,
+      "Raw operator cosine (fold-resampled)": 0.08688460489114126,
+      "series": "map at turn 3 vs map at turn j",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Other turn j": 12.0,
+      "Raw operator cosine (fold-resampled)": 0.08522958258787791,
+      "series": "map at turn 3 vs map at turn j",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Other turn j": 13.0,
+      "Raw operator cosine (fold-resampled)": 0.08476868520180385,
+      "series": "map at turn 3 vs map at turn j",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Other turn j": 14.0,
+      "Raw operator cosine (fold-resampled)": 0.08273615340391795,
+      "series": "map at turn 3 vs map at turn j",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Other turn j": 15.0,
+      "Raw operator cosine (fold-resampled)": 0.08029959301153819,
+      "series": "map at turn 3 vs map at turn j",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Other turn j": 16.0,
+      "Raw operator cosine (fold-resampled)": 0.07812056889136633,
+      "series": "map at turn 3 vs map at turn j",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Other turn j": 1.0,
+      "Raw operator cosine (fold-resampled)": 0.05709652230143547,
+      "series": "map at turn 8 vs map at turn j",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Other turn j": 2.0,
+      "Raw operator cosine (fold-resampled)": 0.08207835679252942,
+      "series": "map at turn 8 vs map at turn j",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Other turn j": 3.0,
+      "Raw operator cosine (fold-resampled)": 0.09304887155691782,
+      "series": "map at turn 8 vs map at turn j",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Other turn j": 4.0,
+      "Raw operator cosine (fold-resampled)": 0.09787593508760134,
+      "series": "map at turn 8 vs map at turn j",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Other turn j": 5.0,
+      "Raw operator cosine (fold-resampled)": 0.0997259813050429,
+      "series": "map at turn 8 vs map at turn j",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Other turn j": 6.0,
+      "Raw operator cosine (fold-resampled)": 0.10124315818150838,
+      "series": "map at turn 8 vs map at turn j",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Other turn j": 7.0,
+      "Raw operator cosine (fold-resampled)": 0.10142609452207883,
+      "series": "map at turn 8 vs map at turn j",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Other turn j": 9.0,
+      "Raw operator cosine (fold-resampled)": 0.10069305822253227,
+      "series": "map at turn 8 vs map at turn j",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Other turn j": 10.0,
+      "Raw operator cosine (fold-resampled)": 0.09855015104015669,
+      "series": "map at turn 8 vs map at turn j",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Other turn j": 11.0,
+      "Raw operator cosine (fold-resampled)": 0.09714074979225794,
+      "series": "map at turn 8 vs map at turn j",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Other turn j": 12.0,
+      "Raw operator cosine (fold-resampled)": 0.09608116423090299,
+      "series": "map at turn 8 vs map at turn j",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Other turn j": 13.0,
+      "Raw operator cosine (fold-resampled)": 0.09616246198614438,
+      "series": "map at turn 8 vs map at turn j",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Other turn j": 14.0,
+      "Raw operator cosine (fold-resampled)": 0.09430771867434183,
+      "series": "map at turn 8 vs map at turn j",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Other turn j": 15.0,
+      "Raw operator cosine (fold-resampled)": 0.09319443255662918,
+      "series": "map at turn 8 vs map at turn j",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Other turn j": 16.0,
+      "Raw operator cosine (fold-resampled)": 0.09071288704872131,
+      "series": "map at turn 8 vs map at turn j",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Other turn j": 1.0,
+      "y": 0.047260093688964847,
+      "series": "within-turn resample ceiling",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Other turn j": 2.0,
+      "y": 0.07130528887112936,
+      "series": "within-turn resample ceiling",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Other turn j": 3.0,
+      "y": 0.09232703298330307,
+      "series": "within-turn resample ceiling",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Other turn j": 4.0,
+      "y": 0.10277474025885264,
+      "series": "within-turn resample ceiling",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Other turn j": 5.0,
+      "y": 0.10591993679602942,
+      "series": "within-turn resample ceiling",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Other turn j": 6.0,
+      "y": 0.10767453809579214,
+      "series": "within-turn resample ceiling",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Other turn j": 7.0,
+      "y": 0.10879857192436854,
+      "series": "within-turn resample ceiling",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Other turn j": 8.0,
+      "y": 0.10809239695469539,
+      "series": "within-turn resample ceiling",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Other turn j": 9.0,
+      "y": 0.11154294709364573,
+      "series": "within-turn resample ceiling",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Other turn j": 10.0,
+      "y": 0.10913293162981669,
+      "series": "within-turn resample ceiling",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Other turn j": 11.0,
+      "y": 0.11052443037430446,
+      "series": "within-turn resample ceiling",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Other turn j": 12.0,
+      "y": 0.11094482988119125,
+      "series": "within-turn resample ceiling",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Other turn j": 13.0,
+      "y": 0.1101657877365748,
+      "series": "within-turn resample ceiling",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Other turn j": 14.0,
+      "y": 0.10865901609261831,
+      "series": "within-turn resample ceiling",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Other turn j": 15.0,
+      "y": 0.10810325344403585,
+      "series": "within-turn resample ceiling",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Other turn j": 16.0,
+      "y": 0.11009120891491572,
+      "series": "within-turn resample ceiling",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Other turn j": 2.0,
+      "y": 0.03400585427880287,
+      "series": "map at turn 1 vs map at turn j",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Other turn j": 3.0,
+      "y": 0.03502509656051795,
+      "series": "map at turn 1 vs map at turn j",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Other turn j": 4.0,
+      "y": 0.035268440718452136,
+      "series": "map at turn 1 vs map at turn j",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Other turn j": 5.0,
+      "y": 0.03520507464806239,
+      "series": "map at turn 1 vs map at turn j",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Other turn j": 6.0,
+      "y": 0.03431809972971678,
+      "series": "map at turn 1 vs map at turn j",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Other turn j": 7.0,
+      "y": 0.033446019204954304,
+      "series": "map at turn 1 vs map at turn j",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Other turn j": 8.0,
+      "y": 0.03373537560304006,
+      "series": "map at turn 1 vs map at turn j",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Other turn j": 9.0,
+      "y": 0.033408448845148084,
+      "series": "map at turn 1 vs map at turn j",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Other turn j": 10.0,
+      "y": 0.03234111722558737,
+      "series": "map at turn 1 vs map at turn j",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Other turn j": 11.0,
+      "y": 0.03194491708030303,
+      "series": "map at turn 1 vs map at turn j",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Other turn j": 12.0,
+      "y": 0.0320056164637208,
+      "series": "map at turn 1 vs map at turn j",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Other turn j": 13.0,
+      "y": 0.031530721299350264,
+      "series": "map at turn 1 vs map at turn j",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Other turn j": 14.0,
+      "y": 0.031147317650417488,
+      "series": "map at turn 1 vs map at turn j",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Other turn j": 15.0,
+      "y": 0.030880937352776527,
+      "series": "map at turn 1 vs map at turn j",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Other turn j": 16.0,
+      "y": 0.030740704014897348,
+      "series": "map at turn 1 vs map at turn j",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Other turn j": 1.0,
+      "y": 0.03502509656051795,
+      "series": "map at turn 3 vs map at turn j",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Other turn j": 2.0,
+      "y": 0.06949497709671656,
+      "series": "map at turn 3 vs map at turn j",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Other turn j": 4.0,
+      "y": 0.09520318234960239,
+      "series": "map at turn 3 vs map at turn j",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Other turn j": 5.0,
+      "y": 0.09326098139087359,
+      "series": "map at turn 3 vs map at turn j",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Other turn j": 6.0,
+      "y": 0.09124875466028849,
+      "series": "map at turn 3 vs map at turn j",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Other turn j": 7.0,
+      "y": 0.08925990089774131,
+      "series": "map at turn 3 vs map at turn j",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Other turn j": 8.0,
+      "y": 0.0877409189939499,
+      "series": "map at turn 3 vs map at turn j",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Other turn j": 9.0,
+      "y": 0.08664293636878331,
+      "series": "map at turn 3 vs map at turn j",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Other turn j": 10.0,
+      "y": 0.08467727725704512,
+      "series": "map at turn 3 vs map at turn j",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Other turn j": 11.0,
+      "y": 0.08401531875133514,
+      "series": "map at turn 3 vs map at turn j",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Other turn j": 12.0,
+      "y": 0.08365942686796188,
+      "series": "map at turn 3 vs map at turn j",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Other turn j": 13.0,
+      "y": 0.08225564509630204,
+      "series": "map at turn 3 vs map at turn j",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Other turn j": 14.0,
+      "y": 0.08071513076623281,
+      "series": "map at turn 3 vs map at turn j",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Other turn j": 15.0,
+      "y": 0.07946156859397888,
+      "series": "map at turn 3 vs map at turn j",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Other turn j": 16.0,
+      "y": 0.07858981216947238,
+      "series": "map at turn 3 vs map at turn j",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Other turn j": 1.0,
+      "y": 0.03373537560304006,
+      "series": "map at turn 8 vs map at turn j",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Other turn j": 2.0,
+      "y": 0.06142761794229348,
+      "series": "map at turn 8 vs map at turn j",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Other turn j": 3.0,
+      "y": 0.0877409189939499,
+      "series": "map at turn 8 vs map at turn j",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Other turn j": 4.0,
+      "y": 0.09934295018513997,
+      "series": "map at turn 8 vs map at turn j",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Other turn j": 5.0,
+      "y": 0.10456089874108633,
+      "series": "map at turn 8 vs map at turn j",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Other turn j": 6.0,
+      "y": 0.10708938588698705,
+      "series": "map at turn 8 vs map at turn j",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Other turn j": 7.0,
+      "y": 0.10836448346575102,
+      "series": "map at turn 8 vs map at turn j",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Other turn j": 9.0,
+      "y": 0.10929446071386337,
+      "series": "map at turn 8 vs map at turn j",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Other turn j": 10.0,
+      "y": 0.10787963370482127,
+      "series": "map at turn 8 vs map at turn j",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Other turn j": 11.0,
+      "y": 0.10777485768000285,
+      "series": "map at turn 8 vs map at turn j",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Other turn j": 12.0,
+      "y": 0.10797830199201902,
+      "series": "map at turn 8 vs map at turn j",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Other turn j": 13.0,
+      "y": 0.1066421036918958,
+      "series": "map at turn 8 vs map at turn j",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Other turn j": 14.0,
+      "y": 0.10533017665147781,
+      "series": "map at turn 8 vs map at turn j",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Other turn j": 15.0,
+      "y": 0.10468293353915215,
+      "series": "map at turn 8 vs map at turn j",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Other turn j": 16.0,
+      "y": 0.10452978337804476,
+      "series": "map at turn 8 vs map at turn j",
+      "_kind": "line",
+      "_group": 7
+    }
+  ],
+  "n_series": 8,
+  "total_points": 122,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Instruct model",
+        "xlabel": "Other turn j",
+        "ylabel": "Raw operator cosine (fold-resampled)",
+        "legend_labels": [
+          "within-turn resample ceiling",
+          "map at turn 1 vs map at turn j",
+          "map at turn 3 vs map at turn j",
+          "map at turn 8 vs map at turn j"
+        ],
+        "xticklabels": [
+          "0",
+          "2",
+          "4",
+          "6",
+          "8",
+          "10",
+          "12",
+          "14",
+          "16",
+          "18"
+        ],
+        "yticklabels": [
+          "0.00",
+          "0.02",
+          "0.04",
+          "0.06",
+          "0.08",
+          "0.10",
+          "0.12",
+          "0.14"
+        ]
+      },
+      {
+        "title_left": "Pretrained base model",
+        "xlabel": "Other turn j",
+        "xticklabels": [
+          "0",
+          "2",
+          "4",
+          "6",
+          "8",
+          "10",
+          "12",
+          "14",
+          "16",
+          "18"
+        ]
+      }
+    ],
+    "series": [
+      "within-turn resample ceiling",
+      "map at turn 1 vs map at turn j",
+      "map at turn 3 vs map at turn j",
+      "map at turn 8 vs map at turn j"
+    ]
+  }
+}

@@ -1,0 +1,1046 @@
+{
+  "commit": "3b1ddc6ecf",
+  "created": "2026-07-16T21:23:52Z",
+  "figsize": [
+    11.5,
+    4.4
+  ],
+  "points": [
+    {
+      "Assistant turn depth": 1.0,
+      "R\u00b2 delta: simulated \u2212 real (same conversations)": 0.00010179638302165728,
+      "error": 0.0025457530665518226,
+      "series": "Instruct model",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "Assistant turn depth": 2.0,
+      "R\u00b2 delta: simulated \u2212 real (same conversations)": 0.010580478540737293,
+      "error": 0.0077864858145338355,
+      "series": "Instruct model",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "Assistant turn depth": 3.0,
+      "R\u00b2 delta: simulated \u2212 real (same conversations)": 0.026199062104083404,
+      "error": 0.007161377245929117,
+      "series": "Instruct model",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "Assistant turn depth": 4.0,
+      "R\u00b2 delta: simulated \u2212 real (same conversations)": 0.029456776851329303,
+      "error": 0.006528840040603428,
+      "series": "Instruct model",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "Assistant turn depth": 5.0,
+      "R\u00b2 delta: simulated \u2212 real (same conversations)": 0.02713438804750834,
+      "error": 0.006296730984921797,
+      "series": "Instruct model",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "Assistant turn depth": 6.0,
+      "R\u00b2 delta: simulated \u2212 real (same conversations)": 0.03039876617233328,
+      "error": 0.0062319842781698165,
+      "series": "Instruct model",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "Assistant turn depth": 7.0,
+      "R\u00b2 delta: simulated \u2212 real (same conversations)": 0.021192339017626738,
+      "error": 0.006445808098161303,
+      "series": "Instruct model",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "Assistant turn depth": 8.0,
+      "R\u00b2 delta: simulated \u2212 real (same conversations)": 0.021806387174796327,
+      "error": 0.006475789654053293,
+      "series": "Instruct model",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "Assistant turn depth": 9.0,
+      "R\u00b2 delta: simulated \u2212 real (same conversations)": 0.021377985472189165,
+      "error": 0.005935685430307827,
+      "series": "Instruct model",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "Assistant turn depth": 10.0,
+      "R\u00b2 delta: simulated \u2212 real (same conversations)": 0.01974699680237213,
+      "error": 0.006479789029751881,
+      "series": "Instruct model",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "Assistant turn depth": 11.0,
+      "R\u00b2 delta: simulated \u2212 real (same conversations)": 0.02025628377196631,
+      "error": 0.0064155698132176,
+      "series": "Instruct model",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "Assistant turn depth": 12.0,
+      "R\u00b2 delta: simulated \u2212 real (same conversations)": 0.012793990358794027,
+      "error": 0.006576306153260457,
+      "series": "Instruct model",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "Assistant turn depth": 1.0,
+      "R\u00b2 delta: simulated \u2212 real (same conversations)": -0.001332318765526641,
+      "error": 0.0025457530665518226,
+      "series": "Pretrained base model",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "Assistant turn depth": 2.0,
+      "R\u00b2 delta: simulated \u2212 real (same conversations)": -0.054864903915080476,
+      "error": 0.0077864858145338355,
+      "series": "Pretrained base model",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "Assistant turn depth": 3.0,
+      "R\u00b2 delta: simulated \u2212 real (same conversations)": 0.02887965256737901,
+      "error": 0.007161377245929117,
+      "series": "Pretrained base model",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "Assistant turn depth": 4.0,
+      "R\u00b2 delta: simulated \u2212 real (same conversations)": 0.05376393249135092,
+      "error": 0.006528840040603428,
+      "series": "Pretrained base model",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "Assistant turn depth": 5.0,
+      "R\u00b2 delta: simulated \u2212 real (same conversations)": 0.07065183333494451,
+      "error": 0.006296730984921797,
+      "series": "Pretrained base model",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "Assistant turn depth": 6.0,
+      "R\u00b2 delta: simulated \u2212 real (same conversations)": 0.08197868392884977,
+      "error": 0.0062319842781698165,
+      "series": "Pretrained base model",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "Assistant turn depth": 7.0,
+      "R\u00b2 delta: simulated \u2212 real (same conversations)": 0.09049770010847857,
+      "error": 0.006445808098161303,
+      "series": "Pretrained base model",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "Assistant turn depth": 8.0,
+      "R\u00b2 delta: simulated \u2212 real (same conversations)": 0.09122965949980655,
+      "error": 0.006475789654053293,
+      "series": "Pretrained base model",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "Assistant turn depth": 9.0,
+      "R\u00b2 delta: simulated \u2212 real (same conversations)": 0.09945756520197047,
+      "error": 0.005935685430307827,
+      "series": "Pretrained base model",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "Assistant turn depth": 10.0,
+      "R\u00b2 delta: simulated \u2212 real (same conversations)": 0.09857912725268414,
+      "error": 0.006479789029751881,
+      "series": "Pretrained base model",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "Assistant turn depth": 11.0,
+      "R\u00b2 delta: simulated \u2212 real (same conversations)": 0.10369271565070448,
+      "error": 0.0064155698132176,
+      "series": "Pretrained base model",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "Assistant turn depth": 12.0,
+      "R\u00b2 delta: simulated \u2212 real (same conversations)": 0.10977376805595729,
+      "error": 0.006576306153260457,
+      "series": "Pretrained base model",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "Assistant turn depth": 1.0,
+      "R\u00b2 delta: simulated \u2212 real (same conversations)": 0.00010179638302165728,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Assistant turn depth": 2.0,
+      "R\u00b2 delta: simulated \u2212 real (same conversations)": 0.010580478540737293,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Assistant turn depth": 3.0,
+      "R\u00b2 delta: simulated \u2212 real (same conversations)": 0.026199062104083404,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Assistant turn depth": 4.0,
+      "R\u00b2 delta: simulated \u2212 real (same conversations)": 0.029456776851329303,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Assistant turn depth": 5.0,
+      "R\u00b2 delta: simulated \u2212 real (same conversations)": 0.02713438804750834,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Assistant turn depth": 6.0,
+      "R\u00b2 delta: simulated \u2212 real (same conversations)": 0.03039876617233328,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Assistant turn depth": 7.0,
+      "R\u00b2 delta: simulated \u2212 real (same conversations)": 0.021192339017626738,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Assistant turn depth": 8.0,
+      "R\u00b2 delta: simulated \u2212 real (same conversations)": 0.021806387174796327,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Assistant turn depth": 9.0,
+      "R\u00b2 delta: simulated \u2212 real (same conversations)": 0.021377985472189165,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Assistant turn depth": 10.0,
+      "R\u00b2 delta: simulated \u2212 real (same conversations)": 0.01974699680237213,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Assistant turn depth": 11.0,
+      "R\u00b2 delta: simulated \u2212 real (same conversations)": 0.02025628377196631,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Assistant turn depth": 12.0,
+      "R\u00b2 delta: simulated \u2212 real (same conversations)": 0.012793990358794027,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Assistant turn depth": 1.0,
+      "R\u00b2 delta: simulated \u2212 real (same conversations)": -0.001670219474614157,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Assistant turn depth": 2.0,
+      "R\u00b2 delta: simulated \u2212 real (same conversations)": 0.004141519138429981,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Assistant turn depth": 3.0,
+      "R\u00b2 delta: simulated \u2212 real (same conversations)": 0.019797954171447175,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Assistant turn depth": 4.0,
+      "R\u00b2 delta: simulated \u2212 real (same conversations)": 0.022811570287751368,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Assistant turn depth": 5.0,
+      "R\u00b2 delta: simulated \u2212 real (same conversations)": 0.02050771947121298,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Assistant turn depth": 6.0,
+      "R\u00b2 delta: simulated \u2212 real (same conversations)": 0.023904493603836154,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Assistant turn depth": 7.0,
+      "R\u00b2 delta: simulated \u2212 real (same conversations)": 0.01482330712466302,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Assistant turn depth": 8.0,
+      "R\u00b2 delta: simulated \u2212 real (same conversations)": 0.015155781090587715,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Assistant turn depth": 9.0,
+      "R\u00b2 delta: simulated \u2212 real (same conversations)": 0.014793863126058727,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Assistant turn depth": 10.0,
+      "R\u00b2 delta: simulated \u2212 real (same conversations)": 0.012847186535551896,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Assistant turn depth": 11.0,
+      "R\u00b2 delta: simulated \u2212 real (same conversations)": 0.013848346067180297,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Assistant turn depth": 12.0,
+      "R\u00b2 delta: simulated \u2212 real (same conversations)": 0.0058927369580878105,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Assistant turn depth": 1.0,
+      "R\u00b2 delta: simulated \u2212 real (same conversations)": 0.0021766444894588586,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Assistant turn depth": 2.0,
+      "R\u00b2 delta: simulated \u2212 real (same conversations)": 0.016754036408511978,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Assistant turn depth": 3.0,
+      "R\u00b2 delta: simulated \u2212 real (same conversations)": 0.03244135041944786,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Assistant turn depth": 4.0,
+      "R\u00b2 delta: simulated \u2212 real (same conversations)": 0.0359530495113743,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Assistant turn depth": 5.0,
+      "R\u00b2 delta: simulated \u2212 real (same conversations)": 0.03370834104199598,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Assistant turn depth": 6.0,
+      "R\u00b2 delta: simulated \u2212 real (same conversations)": 0.03714370029903873,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Assistant turn depth": 7.0,
+      "R\u00b2 delta: simulated \u2212 real (same conversations)": 0.02733483662073347,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Assistant turn depth": 8.0,
+      "R\u00b2 delta: simulated \u2212 real (same conversations)": 0.028400410338860073,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Assistant turn depth": 9.0,
+      "R\u00b2 delta: simulated \u2212 real (same conversations)": 0.027800803735642646,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Assistant turn depth": 10.0,
+      "R\u00b2 delta: simulated \u2212 real (same conversations)": 0.02679856992961936,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Assistant turn depth": 11.0,
+      "R\u00b2 delta: simulated \u2212 real (same conversations)": 0.02651517456918467,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Assistant turn depth": 12.0,
+      "R\u00b2 delta: simulated \u2212 real (same conversations)": 0.019573887102433934,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Assistant turn depth": 1.0,
+      "R\u00b2 delta: simulated \u2212 real (same conversations)": -0.001332318765526641,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Assistant turn depth": 2.0,
+      "R\u00b2 delta: simulated \u2212 real (same conversations)": -0.054864903915080476,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Assistant turn depth": 3.0,
+      "R\u00b2 delta: simulated \u2212 real (same conversations)": 0.02887965256737901,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Assistant turn depth": 4.0,
+      "R\u00b2 delta: simulated \u2212 real (same conversations)": 0.05376393249135092,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Assistant turn depth": 5.0,
+      "R\u00b2 delta: simulated \u2212 real (same conversations)": 0.07065183333494451,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Assistant turn depth": 6.0,
+      "R\u00b2 delta: simulated \u2212 real (same conversations)": 0.08197868392884977,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Assistant turn depth": 7.0,
+      "R\u00b2 delta: simulated \u2212 real (same conversations)": 0.09049770010847857,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Assistant turn depth": 8.0,
+      "R\u00b2 delta: simulated \u2212 real (same conversations)": 0.09122965949980655,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Assistant turn depth": 9.0,
+      "R\u00b2 delta: simulated \u2212 real (same conversations)": 0.09945756520197047,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Assistant turn depth": 10.0,
+      "R\u00b2 delta: simulated \u2212 real (same conversations)": 0.09857912725268414,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Assistant turn depth": 11.0,
+      "R\u00b2 delta: simulated \u2212 real (same conversations)": 0.10369271565070448,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Assistant turn depth": 12.0,
+      "R\u00b2 delta: simulated \u2212 real (same conversations)": 0.10977376805595729,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Assistant turn depth": 1.0,
+      "R\u00b2 delta: simulated \u2212 real (same conversations)": -0.0038635232672693393,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Assistant turn depth": 2.0,
+      "R\u00b2 delta: simulated \u2212 real (same conversations)": -0.06287690871800003,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Assistant turn depth": 3.0,
+      "R\u00b2 delta: simulated \u2212 real (same conversations)": 0.021539881949470645,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Assistant turn depth": 4.0,
+      "R\u00b2 delta: simulated \u2212 real (same conversations)": 0.0473508432890586,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Assistant turn depth": 5.0,
+      "R\u00b2 delta: simulated \u2212 real (same conversations)": 0.06446982227326281,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Assistant turn depth": 6.0,
+      "R\u00b2 delta: simulated \u2212 real (same conversations)": 0.07597284374423909,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Assistant turn depth": 7.0,
+      "R\u00b2 delta: simulated \u2212 real (same conversations)": 0.08434536395630787,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Assistant turn depth": 8.0,
+      "R\u00b2 delta: simulated \u2212 real (same conversations)": 0.08495028229116036,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Assistant turn depth": 9.0,
+      "R\u00b2 delta: simulated \u2212 real (same conversations)": 0.09354966979262787,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Assistant turn depth": 10.0,
+      "R\u00b2 delta: simulated \u2212 real (same conversations)": 0.09239125536928795,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Assistant turn depth": 11.0,
+      "R\u00b2 delta: simulated \u2212 real (same conversations)": 0.09747512127942892,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Assistant turn depth": 12.0,
+      "R\u00b2 delta: simulated \u2212 real (same conversations)": 0.10311943399392212,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Assistant turn depth": 1.0,
+      "R\u00b2 delta: simulated \u2212 real (same conversations)": 0.001227982865834306,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Assistant turn depth": 2.0,
+      "R\u00b2 delta: simulated \u2212 real (same conversations)": -0.04730393708893236,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Assistant turn depth": 3.0,
+      "R\u00b2 delta: simulated \u2212 real (same conversations)": 0.03586263644132888,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Assistant turn depth": 4.0,
+      "R\u00b2 delta: simulated \u2212 real (same conversations)": 0.060408523370265456,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Assistant turn depth": 5.0,
+      "R\u00b2 delta: simulated \u2212 real (same conversations)": 0.0770632842431064,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Assistant turn depth": 6.0,
+      "R\u00b2 delta: simulated \u2212 real (same conversations)": 0.08843681230057872,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Assistant turn depth": 7.0,
+      "R\u00b2 delta: simulated \u2212 real (same conversations)": 0.09723698015263048,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Assistant turn depth": 8.0,
+      "R\u00b2 delta: simulated \u2212 real (same conversations)": 0.09790186159926695,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Assistant turn depth": 9.0,
+      "R\u00b2 delta: simulated \u2212 real (same conversations)": 0.10542104065324352,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Assistant turn depth": 10.0,
+      "R\u00b2 delta: simulated \u2212 real (same conversations)": 0.10535083342879172,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Assistant turn depth": 11.0,
+      "R\u00b2 delta: simulated \u2212 real (same conversations)": 0.11030626090586412,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Assistant turn depth": 12.0,
+      "R\u00b2 delta: simulated \u2212 real (same conversations)": 0.11627204630044304,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Assistant turn depth": 1.0,
+      "Held-out R\u00b2 (layer 19)": 0.590158841719906,
+      "series": "Instruct model \u2014 own answers",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Assistant turn depth": 2.0,
+      "Held-out R\u00b2 (layer 19)": 0.553804695368936,
+      "series": "Instruct model \u2014 own answers",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Assistant turn depth": 3.0,
+      "Held-out R\u00b2 (layer 19)": 0.5470159702628725,
+      "series": "Instruct model \u2014 own answers",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Assistant turn depth": 4.0,
+      "Held-out R\u00b2 (layer 19)": 0.5484704862020188,
+      "series": "Instruct model \u2014 own answers",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Assistant turn depth": 5.0,
+      "Held-out R\u00b2 (layer 19)": 0.5479548317000938,
+      "series": "Instruct model \u2014 own answers",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Assistant turn depth": 6.0,
+      "Held-out R\u00b2 (layer 19)": 0.5455497654046801,
+      "series": "Instruct model \u2014 own answers",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Assistant turn depth": 7.0,
+      "Held-out R\u00b2 (layer 19)": 0.5503461531452349,
+      "series": "Instruct model \u2014 own answers",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Assistant turn depth": 8.0,
+      "Held-out R\u00b2 (layer 19)": 0.5486303832450474,
+      "series": "Instruct model \u2014 own answers",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Assistant turn depth": 9.0,
+      "Held-out R\u00b2 (layer 19)": 0.5473793078043377,
+      "series": "Instruct model \u2014 own answers",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Assistant turn depth": 10.0,
+      "Held-out R\u00b2 (layer 19)": 0.5481132275234357,
+      "series": "Instruct model \u2014 own answers",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Assistant turn depth": 11.0,
+      "Held-out R\u00b2 (layer 19)": 0.5480220716473843,
+      "series": "Instruct model \u2014 own answers",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Assistant turn depth": 12.0,
+      "Held-out R\u00b2 (layer 19)": 0.5518682933890092,
+      "series": "Instruct model \u2014 own answers",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Assistant turn depth": 1.0,
+      "Held-out R\u00b2 (layer 19)": 0.4957999734832247,
+      "series": "Instruct model \u2014 logged answers",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Assistant turn depth": 2.0,
+      "Held-out R\u00b2 (layer 19)": 0.5029955555035963,
+      "series": "Instruct model \u2014 logged answers",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Assistant turn depth": 3.0,
+      "Held-out R\u00b2 (layer 19)": 0.5076437993063991,
+      "series": "Instruct model \u2014 logged answers",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Assistant turn depth": 4.0,
+      "Held-out R\u00b2 (layer 19)": 0.5168308578929316,
+      "series": "Instruct model \u2014 logged answers",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Assistant turn depth": 5.0,
+      "Held-out R\u00b2 (layer 19)": 0.5204395087916902,
+      "series": "Instruct model \u2014 logged answers",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Assistant turn depth": 6.0,
+      "Held-out R\u00b2 (layer 19)": 0.5174251845602893,
+      "series": "Instruct model \u2014 logged answers",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Assistant turn depth": 7.0,
+      "Held-out R\u00b2 (layer 19)": 0.5209740589262557,
+      "series": "Instruct model \u2014 logged answers",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Assistant turn depth": 8.0,
+      "Held-out R\u00b2 (layer 19)": 0.5266745435446099,
+      "series": "Instruct model \u2014 logged answers",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Assistant turn depth": 9.0,
+      "Held-out R\u00b2 (layer 19)": 0.5218373362013653,
+      "series": "Instruct model \u2014 logged answers",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Assistant turn depth": 10.0,
+      "Held-out R\u00b2 (layer 19)": 0.5248361818221214,
+      "series": "Instruct model \u2014 logged answers",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Assistant turn depth": 11.0,
+      "Held-out R\u00b2 (layer 19)": 0.5251370714597865,
+      "series": "Instruct model \u2014 logged answers",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Assistant turn depth": 12.0,
+      "Held-out R\u00b2 (layer 19)": 0.5176397429304838,
+      "series": "Instruct model \u2014 logged answers",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Assistant turn depth": 1.0,
+      "Held-out R\u00b2 (layer 19)": 0.34629981188447445,
+      "series": "Pretrained base model \u2014 own answers",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Assistant turn depth": 2.0,
+      "Held-out R\u00b2 (layer 19)": 0.4809464323203657,
+      "series": "Pretrained base model \u2014 own answers",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Assistant turn depth": 3.0,
+      "Held-out R\u00b2 (layer 19)": 0.5107748937524439,
+      "series": "Pretrained base model \u2014 own answers",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Assistant turn depth": 4.0,
+      "Held-out R\u00b2 (layer 19)": 0.5274760478869671,
+      "series": "Pretrained base model \u2014 own answers",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Assistant turn depth": 5.0,
+      "Held-out R\u00b2 (layer 19)": 0.5309115816328218,
+      "series": "Pretrained base model \u2014 own answers",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Assistant turn depth": 6.0,
+      "Held-out R\u00b2 (layer 19)": 0.5312428869194865,
+      "series": "Pretrained base model \u2014 own answers",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Assistant turn depth": 7.0,
+      "Held-out R\u00b2 (layer 19)": 0.5326990356675132,
+      "series": "Pretrained base model \u2014 own answers",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Assistant turn depth": 8.0,
+      "Held-out R\u00b2 (layer 19)": 0.5374834570084496,
+      "series": "Pretrained base model \u2014 own answers",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Assistant turn depth": 9.0,
+      "Held-out R\u00b2 (layer 19)": 0.5351196665162576,
+      "series": "Pretrained base model \u2014 own answers",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Assistant turn depth": 10.0,
+      "Held-out R\u00b2 (layer 19)": 0.5370749215583015,
+      "series": "Pretrained base model \u2014 own answers",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Assistant turn depth": 11.0,
+      "Held-out R\u00b2 (layer 19)": 0.5377529956070641,
+      "series": "Pretrained base model \u2014 own answers",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Assistant turn depth": 12.0,
+      "Held-out R\u00b2 (layer 19)": 0.5377105108100598,
+      "series": "Pretrained base model \u2014 own answers",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Assistant turn depth": 1.0,
+      "Held-out R\u00b2 (layer 19)": 0.42195004935401104,
+      "series": "Pretrained base model \u2014 logged answers",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Assistant turn depth": 2.0,
+      "Held-out R\u00b2 (layer 19)": 0.4984001570976093,
+      "series": "Pretrained base model \u2014 logged answers",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Assistant turn depth": 3.0,
+      "Held-out R\u00b2 (layer 19)": 0.5178718114628985,
+      "series": "Pretrained base model \u2014 logged answers",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Assistant turn depth": 4.0,
+      "Held-out R\u00b2 (layer 19)": 0.5322574752268879,
+      "series": "Pretrained base model \u2014 logged answers",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Assistant turn depth": 5.0,
+      "Held-out R\u00b2 (layer 19)": 0.5363149913576319,
+      "series": "Pretrained base model \u2014 logged answers",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Assistant turn depth": 6.0,
+      "Held-out R\u00b2 (layer 19)": 0.5349508921041761,
+      "series": "Pretrained base model \u2014 logged answers",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Assistant turn depth": 7.0,
+      "Held-out R\u00b2 (layer 19)": 0.5393439520867673,
+      "series": "Pretrained base model \u2014 logged answers",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Assistant turn depth": 8.0,
+      "Held-out R\u00b2 (layer 19)": 0.5453612448970909,
+      "series": "Pretrained base model \u2014 logged answers",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Assistant turn depth": 9.0,
+      "Held-out R\u00b2 (layer 19)": 0.5411875306835074,
+      "series": "Pretrained base model \u2014 logged answers",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Assistant turn depth": 10.0,
+      "Held-out R\u00b2 (layer 19)": 0.544488953052357,
+      "series": "Pretrained base model \u2014 logged answers",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Assistant turn depth": 11.0,
+      "Held-out R\u00b2 (layer 19)": 0.5440981015036743,
+      "series": "Pretrained base model \u2014 logged answers",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Assistant turn depth": 12.0,
+      "Held-out R\u00b2 (layer 19)": 0.5395558565533659,
+      "series": "Pretrained base model \u2014 logged answers",
+      "_kind": "line",
+      "_group": 11
+    }
+  ],
+  "n_series": 12,
+  "total_points": 144,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Simulated-vs-real bridge (seed intersection, \u00b10.10 band)",
+        "xlabel": "Assistant turn depth",
+        "ylabel": "R\u00b2 delta: simulated \u2212 real (same conversations)",
+        "legend_labels": [
+          "Instruct model",
+          "Pretrained base model"
+        ],
+        "xticklabels": [
+          "0",
+          "2",
+          "4",
+          "6",
+          "8",
+          "10",
+          "12",
+          "14"
+        ],
+        "yticklabels": [
+          "\u22120.15",
+          "\u22120.10",
+          "\u22120.05",
+          "0.00",
+          "0.05",
+          "0.10",
+          "0.15"
+        ]
+      },
+      {
+        "title_left": "Real conversations: own vs logged answers (n\u22485000/turn)",
+        "xlabel": "Assistant turn depth",
+        "ylabel": "Held-out R\u00b2 (layer 19)",
+        "legend_labels": [
+          "Instruct model \u2014 own answers",
+          "Instruct model \u2014 logged answers",
+          "Pretrained base model \u2014 own answers",
+          "Pretrained base model \u2014 logged answers"
+        ],
+        "xticklabels": [
+          "0",
+          "2",
+          "4",
+          "6",
+          "8",
+          "10",
+          "12",
+          "14"
+        ],
+        "yticklabels": [
+          "\u22120.1",
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7"
+        ]
+      }
+    ],
+    "series": [
+      "Instruct model",
+      "Pretrained base model",
+      "Instruct model \u2014 own answers",
+      "Instruct model \u2014 logged answers",
+      "Pretrained base model \u2014 own answers",
+      "Pretrained base model \u2014 logged answers"
+    ]
+  }
+}
