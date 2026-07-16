@@ -3050,8 +3050,8 @@
     "1391": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1391",
-      "status": "planning",
+      "path": "tasks/approved/1391",
+      "status": "approved",
       "title": "daily-fix: watcher re-drive w/o registration file"
     },
     "1392": {
