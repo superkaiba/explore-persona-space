@@ -572,6 +572,41 @@ def test_g1_check_re_adjudicates_on_recal(tmp_path):
         f36.run_g1_check(out)
 
 
+def test_g1_check_stale_naturalistic_fails_loud(tmp_path):
+    """(a-quater) The stale assert covers the NATURALISTIC sibling: a fresh
+    recal-bearing chat JSON beside a committed pre-resume naturalistic JSON
+    (no recal block) raises — run_g1_check reads the naturalistic file
+    whenever it EXISTS, before the exit-4 marginal branch could re-fit it.
+    This is the 2026-07-16 rc=1 production crash shape (chat S_r=0.2374);
+    the dispatcher-side remedy is pinned by
+    test_dispatch_extract_refits_both_wave1_cells_before_g1_check."""
+    import issue1336_fit_cells as f36
+
+    out = tmp_path / "out"
+    _stage_cal(out)
+    _g1_cell_json(out, CHAT, 0.2374, -0.93)  # fresh recal-bearing chat read
+    (out / "cells" / f"cells_{NAT}.json").write_text(
+        json.dumps({"r2_per_layer_obs": [0.5]})  # committed pre-resume shape
+    )
+    with pytest.raises(AssertionError, match=r"naturalistic_lmsys5k\.json lacks the recal block"):
+        f36.run_g1_check(out)
+
+
+def test_dispatch_extract_refits_both_wave1_cells_before_g1_check():
+    """(c-bis, fails-pre-fix ordering pin) phase_extract re-fits BOTH wave-1
+    cells under the recal recipe (fitg1_recal__ done keys) BEFORE the first
+    --g1-check invocation: any clone (fresh or resume) carries the COMMITTED
+    pre-resume cells JSONs, and run_g1_check consumes the naturalistic JSON
+    whenever it exists — leaving its re-fit to the exit-4 marginal branch
+    means the fail-loud stale assert kills the run first (rc=1 crash,
+    2026-07-16, epm:failure v1 g1_check_before_recal_reemit)."""
+    text = (REPO / "scripts" / "issue1336_dispatch.sh").read_text()
+    body = text.split("phase_extract() {", 1)[1].split("\nphase_fit()", 1)[0]
+    first_check = body.index("issue1336_fit_cells.py --g1-check")
+    assert body.index(f"_fit_one_cell {CHAT}") < first_check
+    assert body.index(f"_fit_one_cell {NAT}") < first_check
+
+
 def test_headline_rule_reads_recal_primary(tmp_path):
     """(b-pre) The headline-layer rule argmaxes the MEAN RECALIBRATED
     within-stage R^2 (raw argmax deliberately different -> must not win)."""

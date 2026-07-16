@@ -343,9 +343,21 @@ phase_extract() {
     } > "$jobs"
     run_queue extract_wave1 "$jobs"
 
-    # Fit the G1 cell, then evaluate the kill gate (exit 4 = need the
-    # naturalistic read before deciding; exit 3 = KILL; 0 = pass).
+    # Fit BOTH wave-1 cells under the recal recipe BEFORE the kill gate: any
+    # clone (fresh or resume) carries the COMMITTED pre-resume cells JSONs
+    # (no recal block), and run_g1_check reads the naturalistic JSON whenever
+    # it exists — so an un-refit stale file trips the fail-loud stale assert
+    # (fit_cells.py _g1_cell_reads) before the exit-4 marginal branch could
+    # ever re-fit it (rc=1 crash 2026-07-16, epm:failure v1
+    # g1_check_before_recal_reemit). Both fits are recipe-keyed
+    # (fitg1_recal__) and cheap next to the wave-1 extraction above, which
+    # already extracts both cells eagerly — the gate still fires before the
+    # ladder-wide extract/fit spend on fresh AND resume runs.
     _fit_one_cell rlvr_chat_lmsys5k
+    _fit_one_cell rlvr_naturalistic_lmsys5k
+    # Evaluate the kill gate (exit 3 = KILL; 0 = pass; exit 4 = naturalistic
+    # read genuinely absent — retained as fail-loud defense in depth, cannot
+    # fire on a healthy tree now that both wave-1 fits precede the check).
     rc=0
     uv run python scripts/issue1336_fit_cells.py --g1-check --out-dir "$OUT_DIR" || rc=$?
     if [ "$rc" -eq 4 ]; then
