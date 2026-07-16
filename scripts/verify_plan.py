@@ -87,12 +87,14 @@ Check catalog (id — classification — kind scope)
   c36 numeric containment       WARN-only, conditional    experiment +
       claims                                              analysis
   c37 no-flags bundling claim   WARN-only, conditional    infra + batch only
+  c38 exit-0 repo-wide         WARN-only, conditional    all kinds
+      criterion baseline
 
 Kind-exempt checks render as [SKIP] (first-class status, distinguishable
 from genuine passes — the calibration report needs n_skip separate from
 n_pass). Conditional checks (4, 6, 7, 10, 11, 12, 13, 14, 15, 16, 17, 18,
 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36,
-37) also SKIP when their content trigger does not fire.
+37, 38) also SKIP when their content trigger does not fire.
 Check 23 runs OUTSIDE ``verify_plan_text()`` — it needs task context
 (``body.md`` + ``events.jsonl``), so ``main()`` appends it in ``--issue``
 mode only and renders it SKIP in ``--plan-file`` mode; its WARN is the one
@@ -142,6 +144,7 @@ labeled-line forms):
   - ``N/A — no revision-pinned reuse`` (check 35)
   - ``N/A — no numeric containment claims`` (check 36)
   - ``N/A — no no-flags bundling claim`` (check 37)
+  - ``N/A — no exit-0 acceptance criterion`` (check 38)
 
 WARN semantics: a WARN never blocks exit (exit 0). The Phase 1.5.0 wiring
 carries WARN lines verbatim into the fact-checker + critic briefs — that
@@ -6133,6 +6136,159 @@ def check_noflags_bundling_claim(plan: str, kind: str) -> CheckResult:
     )
 
 
+# ─── Check 38 — exit-0 criterion on repo-wide lint/suite (conditional) ─────
+
+# Assertion tokens: the explicit exit-status idiom family plus "green"
+# (#584 v1:182 "# full suite green"). `pass`/`passes` is a DISCLOSED v1
+# under-trigger: it is endemic in criterion boilerplate (plan-time corpus
+# measurement: ~1,810 workflow_lint-arm candidate lines with pass/green
+# vs 381 exit-0-only), and its dominant shape ("no-flags run passes
+# (includes --check-X)") is c37's subject; widen only after burn-in.
+_C38_ASSERT_RE = re.compile(
+    r"(?i)\bexit(?:s|ed)?\s+(?:code\s+|status\s+|with\s+)?0\b"
+    r"|\bexit[- ]?code\s*(?:==?|:)\s*0\b"
+    r"|\brc\s*(?:==?|:)\s*0\b"
+    r"|\breturn\s*code\s*(?:==?|:)?\s*0\b|\breturncode\s*(?:==?|:)?\s*0\b"
+    r"|\bgreen\b"
+)
+# Negation guard: a line DESCRIBING the hazard ("full no-flags run is NOT
+# a pass criterion", "exit 0 is unattainable") is never adjudicated —
+# the #1365 v2:101 corrected prose is the founding negative control.
+_C38_NEG_RE = re.compile(r"(?i)\bnot\b|\bnever\b|\bcannot\b|\bunattainable\b|\bunsatisfiable\b")
+# Satisfiers (same line only): a NAMED baseline mechanism or scoping
+# prose. Bare "no NEW failures" deliberately does NOT satisfy — the
+# motivating #1365 v1:95 line carried exactly that phrase and was still
+# critic-bounced (a bare command performs no baseline subtraction).
+_C38_SATISFIER_RE = re.compile(
+    r"(?i)\bbaseline\b|\bstep\s*9c\b|\bstep\s*10d\b|baseline[- ]subtract"
+    r"|\bvs\.?\s+(?:origin/)?main\b|\btouched files?\b|\bchanged files?\b|\bscoped\b"
+)
+# Arg-tail terminators: backtick, comment '#', '&&'/'|', close-paren, EOL.
+_C38_TAIL_SPLIT_RE = re.compile(r"[`#&|)\n]")
+# (?<!test_) keeps `tests/test_workflow_lint.py` mentions out of arm A.
+_C38_LINT_OCC_RE = re.compile(r"(?<!test_)workflow_lint(?:\.py)?")
+_C38_NOFLAGS_RUN_RE = re.compile(r"(?i)\bno[- ]flags(?:\s+default)?\s+run\b")
+_C38_PYTEST_OCC_RE = re.compile(r"\bpytest\b")
+_C38_PYTEST_SCOPED_RE = re.compile(r"::|\btests?/\S*\.py\b|(?:^|\s)-k\s")
+_C38_RUFF_OCC_RE = re.compile(r"\bruff\s+(?:check|format)\b")
+_C38_FLAG_TOKEN_RE = re.compile(r"^--?[\w-]+$")
+
+
+def _c38_repo_wide_cmd(line: str) -> str | None:
+    """Label of the first REPO-WIDE lint/suite invocation on ``line``, or
+    None. Scoped forms do not count: a ``--check-`` flag in the
+    workflow_lint arg tail; a ``.py`` path / ``::`` node id / ``-k``
+    filter in the pytest tail; any non-``.`` path token in the ruff tail.
+    Arm B (the "no-flags default run" phrase) is suppressed when the line
+    already carries a SCOPED workflow_lint invocation (commentary shape)."""
+    saw_scoped_lint = False
+    for m in _C38_LINT_OCC_RE.finditer(line):
+        tail = _C38_TAIL_SPLIT_RE.split(line[m.end() :], 1)[0]
+        if "--check-" in tail:
+            saw_scoped_lint = True
+        else:
+            return "workflow_lint.py (no --check- scoping)"
+    if not saw_scoped_lint and _C38_NOFLAGS_RUN_RE.search(line):
+        return "the workflow_lint no-flags default run"
+    for m in _C38_PYTEST_OCC_RE.finditer(line):
+        tail = _C38_TAIL_SPLIT_RE.split(line[m.end() :], 1)[0]
+        if not _C38_PYTEST_SCOPED_RE.search(tail):
+            return "pytest (no path scope)"
+    for m in _C38_RUFF_OCC_RE.finditer(line):
+        tail = _C38_TAIL_SPLIT_RE.split(line[m.end() :], 1)[0]
+        tokens = [t for t in tail.split() if not _C38_FLAG_TOKEN_RE.match(t)]
+        if all(t == "." for t in tokens):
+            return "ruff check/format (repo-wide)"
+    return None
+
+
+def check_exit0_repo_wide_baseline(plan: str, kind: str) -> CheckResult:
+    """WARN-only, conditional, ALL kinds: a line asserting exit-0/green on
+    a REPO-WIDE lint/suite command must name a plan-time baseline or
+    scoping ON THAT LINE — #1365 v1 §6 asserted
+    `workflow_lint.py # exit 0 — no NEW failures` while the no-flags lint
+    is pre-existing-red on origin/main (jointly unsatisfiable; caught by
+    the statistics critic in round 1; prior instance #584 v1
+    `pytest tests/ -q # full suite green`). SAME-LINE co-occurrence only:
+    a ±3-line window would have false-WARNed the CORRECTED #1365 v2 via
+    its :98 scoped criterion pairing with the :101 no-flags prose (the
+    c37 same-line-radius doctrine). RAW scan incl. fences (c11 precedent:
+    the incident line sits inside a ```bash fence). ALL kinds (c21
+    precedent): both incidents were kind: infra, but the idiom rides any
+    kind's §6/§10. NEVER FAILs: trigger, arms, and satisfiers are line
+    heuristics; the Phase 1.5/2 reviewers adjudicate; a genuinely-green
+    repo-wide command with baseline language stays PASS by construction.
+    Disclosed under-triggers (v1): bare `pass`/`passes`/`passed`
+    assertion vocabulary (endemic; partially c37's subject); an
+    assertion sentence separated from its fenced command by ≥1 line;
+    "full suite" with no literal pytest token. Disclosed over-trigger
+    residual: a prose pytest mention with a non-scoping tail on an
+    assertion-bearing line. Deliberate reading (disclosed,
+    fact-checker-confirmed correct): an EMPTY arg tail — bare
+    `ruff check` / bare `pytest` plus an assertion word — classifies
+    REPO-WIDE and WARNs (both default to cwd/repo-wide; `all([]) is
+    True` is intended semantics, not an accident). Additional disclosed
+    over-trigger residual (measured): a `workflow_lint.py` PATH named as
+    another tool's argument on an assertion line (`ruff check ...
+    workflow_lint.py ... → exit 0`) reads as arm A — 1/8 operative-set
+    WARNs (#1381 v2). Calibration (2026-07-16, 2117 corpus plan
+    versions, forced kind=infra): corpus-wide 486 WARN / 102 PASS /
+    1529 SKIP (historical mass, never re-verified — the c37 reporting
+    convention); the 25 NEWEST infra|batch plan versions by git
+    last-commit date (task #1387's own self-referential plan files
+    excluded): 8 WARN / 17 SKIP, hand-classified 7 incident-class
+    (genuine baseline-less repo-wide exit-0/green gates: #1389 v1+v2,
+    #1385 v1+v2, #1381 v1, #1399 v1+v2) / 0 rephrase-class / 1 FP
+    (#1381 v2, the ruff-path residual above) — within the calibration
+    gate (WARNs <= 8, FPs <= 2). Positive controls #1365 v1:95 +
+    #584 v1:182 WARN; corrected #1365 v2 is clean (SKIP); the GOOD_PLAN
+    fixture SKIPs."""
+    cid, name = (
+        "c38_exit0_repo_wide_baseline",
+        "exit-0 criterion on a repo-wide command names baseline/scoping",
+    )
+    del kind  # all kinds — trigger precision carries the false-positive discipline
+    offenders: list[tuple[str, str]] = []
+    triggered = False
+    for line in plan.splitlines():
+        if not _C38_ASSERT_RE.search(line) or _C38_NEG_RE.search(line):
+            continue
+        cmd = _c38_repo_wide_cmd(line)
+        if cmd is None:
+            continue
+        triggered = True
+        if not _C38_SATISFIER_RE.search(line):
+            offenders.append((cmd, line))
+    if not triggered:
+        return _skip(cid, name, "no exit-0/green assertion on a repo-wide lint/suite command")
+    if _standalone_na_declared(plan, r"no exit[- ]0 acceptance criterion"):
+        return _pass(
+            cid,
+            name,
+            "explicit N/A declared (matched text quotes an incident / is not this plan's own gate)",
+        )
+    if not offenders:
+        return _pass(
+            cid,
+            name,
+            "every repo-wide exit-0/green criterion names a baseline or scoping on its line",
+        )
+    cmd, line = offenders[0]
+    more = f" (+{len(offenders) - 1} more)" if len(offenders) > 1 else ""
+    return _warn(
+        cid,
+        name,
+        f"exit-0/green asserted on {cmd} with no plan-time baseline or scoping named on the "
+        f"line — the no-flags lint / full suite is pre-existing-red-exposed on origin/main, so "
+        f"an unconditional exit-0 gate is jointly unsatisfiable (#1365 v1 / #584 shape; the "
+        f"binding repo-wide gates are Step 10d's baseline-subtracted lint gate and the step9c "
+        f"baseline compare). Offending line: {line.strip()[:100]!r}{more}. Remedies: state "
+        "'no NEW failures vs the plan-time baseline' (or step9c / Step 10d) on the criterion "
+        "line, scope the invocation (--check-<x> / explicit paths), or declare "
+        "`N/A — no exit-0 acceptance criterion` on its own line, unwrapped (no backticks/quotes)",
+    )
+
+
 # ─── Driver ────────────────────────────────────────────────────────────────
 
 CHECKS = [
@@ -6172,6 +6328,7 @@ CHECKS = [
     check_pinned_revision_reuse,
     check_numeric_containment,
     check_noflags_bundling_claim,
+    check_exit0_repo_wide_baseline,
 ]
 
 

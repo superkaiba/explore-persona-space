@@ -176,10 +176,11 @@ def test_good_plan_passes_all():
         "c35_pinned_revision_reuse": "SKIP",
         "c36_numeric_containment": "SKIP",
         "c37_noflags_bundling_claim": "SKIP",
+        "c38_exit0_repo_wide_baseline": "SKIP",
     }
     actual = {cid: r.status for cid, r in by_id.items()}
     assert actual == expected
-    assert len(results) == 37
+    assert len(results) == 38
 
 
 # ─── Check 0 — plan-nonstub ────────────────────────────────────────────────
@@ -5835,12 +5836,12 @@ def test_cli_json_schema_and_exit_zero_on_pass(tmp_path):
     assert payload["issue"] is None
     assert payload["kind"] == "experiment"
     assert payload["n_fail"] == 0
-    assert payload["n_skip"] == 30
+    assert payload["n_skip"] == 31
     assert {"id", "name", "status", "detail"} <= set(payload["checks"][0])
     statuses = {c["status"] for c in payload["checks"]}
     assert statuses <= {"PASS", "WARN", "FAIL", "SKIP"}
-    assert len(payload["checks"]) == 38
-    assert len({c["id"] for c in payload["checks"]}) == 38
+    assert len(payload["checks"]) == 39
+    assert len({c["id"] for c in payload["checks"]}) == 39
     # c23 has no task context in --plan-file mode: rendered SKIP (companion
     # assert for test_cli_issue_mode_appends_goal_currency).
     c23 = next(c for c in payload["checks"] if c["id"] == "c23_goal_currency")
@@ -7457,6 +7458,138 @@ def test_c37_phrase_listed_in_skillmd():
     block = text[anchor : text.index("bounce to the planner", anchor)]
     assert "`N/A — no no-flags bundling claim`" in block
     assert "check 37" in block
+
+
+# ─── Check 38 — exit-0 criterion on repo-wide lint/suite ───────────────────
+
+# #1365 plans/v1.md:95 VERBATIM (inside a bash fence there — pins the RAW
+# scan). "no NEW failures" WITHOUT a named baseline must NOT satisfy: this
+# exact line was critic-bounced.
+C38_1365_LINE = "uv run python scripts/workflow_lint.py    # exit 0 — no NEW failures"
+C38_584_LINE = "uv run pytest tests/ -q  # full suite green"  # #584 plans/v1.md:182 verbatim
+
+
+def _c38_plan(*extra: str) -> str:
+    return GOOD_PLAN + "\n" + "\n\n".join(extra) + ("\n" if extra else "")
+
+
+def _c38_fenced(line: str) -> str:
+    return "```bash\n" + line + "\n```"
+
+
+def test_c38_1365_incident_line_warns():
+    # The motivating incident line, inside a bash fence (RAW-scan pin).
+    _, by_id = _run(_c38_plan(_c38_fenced(C38_1365_LINE)), kind="infra")
+    r = by_id["c38_exit0_repo_wide_baseline"]
+    assert r.status == "WARN"
+    assert "workflow_lint.py (no --check- scoping)" in r.detail
+
+
+def test_c38_fires_for_experiment_kind_too():
+    # ALL kinds (c21 precedent) — no kind exemption.
+    plan = _c38_plan(_c38_fenced(C38_1365_LINE))
+    assert _status(plan, "c38_exit0_repo_wide_baseline", kind="experiment") == "WARN"
+
+
+def test_c38_584_full_suite_green_warns():
+    _, by_id = _run(_c38_plan(C38_584_LINE), kind="infra")
+    r = by_id["c38_exit0_repo_wide_baseline"]
+    assert r.status == "WARN"
+    assert "pytest (no path scope)" in r.detail
+
+
+def test_c38_baseline_satisfier_passes():
+    # A NAMED baseline mechanism on the criterion line satisfies; contrast
+    # with C38_1365_LINE where bare "no NEW failures" does NOT.
+    line = (
+        "uv run python scripts/workflow_lint.py    "
+        "# exit 0 — no NEW failures vs the plan-time baseline"
+    )
+    assert _status(_c38_plan(line), "c38_exit0_repo_wide_baseline", kind="infra") == "PASS"
+
+
+def test_c38_step9c_satisfier_passes():
+    line = "uv run pytest tests/ -q  # green vs the step9c baseline"
+    assert _status(_c38_plan(line), "c38_exit0_repo_wide_baseline", kind="infra") == "PASS"
+
+
+def test_c38_scoped_lint_does_not_trigger():
+    # #1365 v2:97 corrected shape: a --check-scoped invocation is not arm A.
+    line = "uv run python scripts/workflow_lint.py --check-lessons-index   # exit 0"
+    assert _status(_c38_plan(line), "c38_exit0_repo_wide_baseline", kind="infra") == "SKIP"
+
+
+def test_c38_scoped_pytest_does_not_trigger():
+    line = "uv run pytest tests/test_verify_plan.py -x  # exit 0"
+    assert _status(_c38_plan(line), "c38_exit0_repo_wide_baseline", kind="infra") == "SKIP"
+
+
+def test_c38_repo_wide_ruff_warns():
+    _, by_id = _run(_c38_plan("uv run ruff check .  # exit 0"), kind="infra")
+    r = by_id["c38_exit0_repo_wide_baseline"]
+    assert r.status == "WARN"
+    assert "ruff check/format (repo-wide)" in r.detail
+
+
+def test_c38_scoped_ruff_does_not_trigger():
+    line = "uv run ruff check scripts/verify_plan.py  # exit 0"
+    assert _status(_c38_plan(line), "c38_exit0_repo_wide_baseline", kind="infra") == "SKIP"
+
+
+def test_c38_negated_prose_does_not_trigger():
+    # #1365 v2:101 corrected shape: prose DESCRIBING the hazard is never
+    # adjudicated (negation guard).
+    line = (
+        "The full no-flags `workflow_lint.py` run is NOT a pass criterion here — "
+        "exit 0 is unattainable on origin/main."
+    )
+    assert _status(_c38_plan(line), "c38_exit0_repo_wide_baseline", kind="infra") == "SKIP"
+
+
+def test_c38_test_filename_mention_skips():
+    # The (?<!test_) lookbehind keeps `tests/test_workflow_lint.py` out of
+    # arm A, and the pytest path-scope keeps it out of the pytest arm.
+    line = "`uv run pytest tests/test_workflow_lint.py -x` green"
+    assert _status(_c38_plan(line), "c38_exit0_repo_wide_baseline", kind="infra") == "SKIP"
+
+
+def test_c38_na_escape_passes():
+    plan = _c38_plan(_c38_fenced(C38_1365_LINE), "N/A — no exit-0 acceptance criterion")
+    assert _status(plan, "c38_exit0_repo_wide_baseline", kind="infra") == "PASS"
+
+
+def test_c38_no_trigger_skips():
+    assert _status(GOOD_PLAN, "c38_exit0_repo_wide_baseline", kind="infra") == "SKIP"
+
+
+# Arm-B coverage (critic round-1 Must-Fix: arm B + its suppression branch
+# had zero tests):
+
+
+def test_c38_noflags_phrase_warns():
+    # Arm B: the "no-flags default run" phrase with no lint token on the line.
+    _, by_id = _run(_c38_plan("the no-flags default run must exit 0 after the edit"), kind="infra")
+    r = by_id["c38_exit0_repo_wide_baseline"]
+    assert r.status == "WARN"
+    assert "no-flags default run" in r.detail
+
+
+def test_c38_noflags_phrase_suppressed_by_scoped_lint():
+    # Arm-B suppression: a SCOPED workflow_lint invocation on the same line
+    # makes the no-flags phrase commentary (saw_scoped_lint pin). No
+    # satisfier token on the line, so the SKIP is the suppression's doing.
+    line = "`workflow_lint.py --check-asks` exits 0; the no-flags default run also gets exercised"
+    assert _status(_c38_plan(line), "c38_exit0_repo_wide_baseline", kind="infra") == "SKIP"
+
+
+# Adversarial paste-back (critic round-1 recoverable, mechanizable):
+
+
+def test_c38_wrapped_na_does_not_escape():
+    # A backtick-wrapped paste of the remedy's quoted form is NOT a
+    # declaration (_standalone_na_declared rejects wrapped forms).
+    plan = _c38_plan(_c38_fenced(C38_1365_LINE), "`N/A — no exit-0 acceptance criterion`")
+    assert _status(plan, "c38_exit0_repo_wide_baseline", kind="infra") == "WARN"
 
 
 def test_canonical_json_parse_snippet_pinned():
