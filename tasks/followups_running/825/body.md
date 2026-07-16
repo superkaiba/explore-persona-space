@@ -2,7 +2,6 @@
 title: The context→answer mapping is inherited from pretraining
 kind: experiment
 tags:
-- keep-running
 - followup-manual
 created_at: '2026-07-02T00:14:16Z'
 has_clean_result: true
