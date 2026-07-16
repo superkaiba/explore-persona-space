@@ -2421,8 +2421,8 @@
       "goal": "Test whether a context->dialogue linear map focused on a SINGLE fixed fiction character (persona, NOT the assistant), trained on on-policy generated stories that always refer to the character by the same fixed label, exists in Qwen2.5-7B base and instruct \u2014 the fiction-character analog of the assistant-persona context->answer map \u2014 across a 4-persona panel, each persona its own map.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/reviewing/1310",
-      "status": "reviewing",
+      "path": "tasks/awaiting_promotion/1310",
+      "status": "awaiting_promotion",
       "title": "A fixed-label fiction character supports a character-specific context\u2192dialogue map in both base and instruct models once each scene is aggregated to one point (MODERATE confidence)"
     },
     "1311": {
