@@ -151,6 +151,7 @@ def _stage_from_hub(out_dir: Path, revision: str) -> list[Path]:
     for prefix in (RAW_COMPLETIONS_PREFIX_1005, STORE_PREFIX_1005):
         entries = hub.retry_transient(
             lambda p=prefix: list(
+                # HUB_VERIFY_RETRY_EXEMPT: wrapped in the enclosing hub.retry_transient call
                 api.list_repo_tree(
                     HF_DATA_REPO,
                     path_in_repo=p,
