@@ -2693,8 +2693,8 @@
       "goal": "Determine whether the assistant context\u2192answer map is the SAME linear operator across three framings holding the assistant persona constant \u2014 chat-template, plain User:/Assistant:, and an assistant/AI character in generic narrative-prose stories \u2014 via cross-regime operator transfer, aligned operator cosine, and general-linear reparameterization (the #825 Result-2.5 method), in Qwen2.5-7B base and instruct, distinguishing 'same map in different coordinates' from 'genuinely different map per framing.'",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/running/1345",
-      "status": "running",
+      "path": "tasks/verifying/1345",
+      "status": "verifying",
       "title": "Is the assistant context\u2192answer map the same operator across framings? (chat template vs plain User:/Assistant: vs assistant-in-narrative-stories)"
     },
     "1346": {
