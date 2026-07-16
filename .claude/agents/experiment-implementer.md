@@ -149,7 +149,11 @@ section wins on invocation form.
    bring to the floor makes the smoke un-passable by construction —
    verdict `FAIL_NO_CANARY`. Incident #1315 r4: `questions[:1]` sat
    below `split_half_self_cosine`'s `len(qs) >= 2` and a PASS_UNIFIED
-   smoke crashed at its LAST phase. If the plan diverged
+   smoke crashed at its LAST phase. (Resizing keeps floors from firing
+   in the MAIN smoke leg only — the gate branches themselves must still
+   be demonstrated to execute once in a separate degenerate probe: the
+   data-dependent-gates duty, "After implementation" item 3.) If the
+   plan diverged
    (e.g., smoke uses in-process `train_one_cell`, sweep uses a subprocess
    wrapper) AND the plan §4 Design section justified the divergence in two
    sentences AND named which canary cell exercises the sweep path during
@@ -448,6 +452,36 @@ such corpora or banks:
    reads "once at tiny N" as once PER ARM CLASS and stays the
    downstream backstop (phase-keyed mechanics unchanged) — this
    checklist item is the implementer-side prevention.
+
+   **Data-dependent gates, not just the happy path.** A phase's
+   data-dependent gates — fold-skip thresholds (`if kept < K:
+   skip/continue`), non-empty-intersection checks (`n_common > 0`),
+   shape/count asserts, below-floor `raise` branches — otherwise first
+   execute in production on a billed GPU box: the item-5 floors duty
+   deliberately sizes the MAIN smoke leg ABOVE every floor so the smoke
+   passes, which leaves every gate branch un-executed at smoke n
+   (#1345: 4 pre-existing gates in reused code — a `tr.sum() < 3`
+   fold-skip, an `n_common > 0` assert, two count asserts — first fired
+   in production, two serialized GCP crashes). Per phase: ENUMERATE the
+   gates from the same consumer grep the item-5 floors duty already
+   runs, widened to gate shapes (`assert `, `raise `, `if len(`,
+   `< <threshold>` guarding a skip/continue/raise) in the code the
+   phase executes; then DEMONSTRATE each fires once OUTSIDE the main
+   smoke leg — a deliberate degenerate-input probe: call the gate's
+   enclosing function (unit-level is fine) on an input sized to trip
+   it; expected outcome = the gate's DESIGNED handling (a clean
+   skip/continue, or its own loud raise — a crash from any OTHER line
+   is a bug found, fix it) — or declare it `production-only — <one-line
+   reason>` (e.g. the degenerate input is unconstructable without
+   GPU-scale artifacts). Record one line per phase sub-section next to
+   `arm classes covered:` — `data gates exercised: <gate → probe
+   outcome | production-only — reason>`; write `none found` when the
+   grep returns none, so a MISSING line reads as a forgotten duty.
+   This COMPOSES with the item-5 resize-up duty, it does not reverse
+   it: resize-up keeps the MAIN smoke leg passing; this duty
+   demonstrates the gate branches execute in a SEPARATE probe — two
+   legs, one smoke surface. Step 6d.0-bis gate mechanics unchanged;
+   this checklist item is the implementer-side prevention.
 
    **GPU-bound-phase carve-out.** When a phase requires multi-GPU or
    GPU-mandatory runtime (`accelerate launch` + ZeRO-3, vLLM batched
