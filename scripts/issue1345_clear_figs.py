@@ -189,27 +189,31 @@ def collect_withinregime() -> dict:
     return out
 
 
-def plot_result2_withinregime() -> dict:
-    d = collect_withinregime()
+def _plot_withinregime(
+    d: dict,
+    frame_idxs: list[int],
+    frame_labels: list[str],
+    out_stem: str,
+    title: str,
+    caption: str,
+    ylo: float,
+) -> dict:
+    """Instruct-only within-regime R^2 bars over an arbitrary subset of framings."""
     c_inst = paper_palette_role("primary")
-    # Instruct-only (base arm omitted); the story character is the AI assistant.
-    frames = ["Chat", "No-template", "Story·assistant"]
-
-    fig, ax = plt.subplots(figsize=(7.6, 5.3))
-    x = np.arange(3)
+    fig, ax = plt.subplots(figsize=(6.2, 5.2))
+    x = np.arange(len(frame_idxs))
     bw = 0.5
-
-    for fi in range(3):
+    for xi, fi in enumerate(frame_idxs):
         key = ("instruct", fi)
         if key not in d:
             continue
         c = d[key]
         err = np.array([[c["r2"] - c["lo"]], [c["hi"] - c["r2"]]])
-        ax.bar(x[fi], c["r2"], bw, color=c_inst, yerr=err, capsize=3, ecolor="#333333")
+        ax.bar(x[xi], c["r2"], bw, color=c_inst, yerr=err, capsize=3, ecolor="#333333")
         va = "bottom" if c["r2"] >= 0 else "top"
         dy = 0.02 if c["r2"] >= 0 else -0.02
         ax.text(
-            x[fi],
+            x[xi],
             c["r2"] + dy + (c["hi"] - c["r2"] if c["r2"] >= 0 else -(c["r2"] - c["lo"])),
             f"{c['r2']:.2f}",
             ha="center",
@@ -217,52 +221,75 @@ def plot_result2_withinregime() -> dict:
             fontsize=9.5,
             color="#1A1A1A",
         )
-
-    # Reference lines.
     ax.axhline(0.0, color="#111111", ls="--", lw=1.6, label="Answer-mean baseline ($R^2=0$)")
-    null_nonstory = np.mean(
-        [d[("instruct", fi)]["null_mean"] for fi in (0, 1) if ("instruct", fi) in d]
-    )
-    ax.axhline(
-        null_nonstory,
-        color="#7A7A7A",
-        ls=":",
-        lw=1.4,
-        label=f"Shuffle-null ≈ {null_nonstory:.2f} (chat/no-template)",
-    )
-    # Story's own shuffle-null is far lower (off-scale); noted in the caption, not on the bar.
-    story_null = d[("instruct", 2)]["null_mean"]
-
-    ax.set_xticks(x, frames, fontsize=10.5)
+    nonstory = [
+        d[("instruct", fi)]["null_mean"] for fi in frame_idxs if fi != 2 and ("instruct", fi) in d
+    ]
+    if nonstory:
+        nn = float(np.mean(nonstory))
+        ax.axhline(nn, color="#7A7A7A", ls=":", lw=1.4, label=f"Shuffle-null ≈ {nn:.2f}")
+    ax.set_xticks(x, frame_labels, fontsize=10.5)
     ax.set_ylabel("Within-regime held-out $R^2$ (layer 19)", fontsize=10.5)
-    ax.set_ylim(-0.9, 0.78)
+    ax.set_ylim(ylo, 0.78)
     ax.axhline(0.0, color="#111111", ls="--", lw=1.6)  # keep baseline on top
     ax.legend(loc="lower left", fontsize=8.4, frameon=True, framealpha=0.92)
-    fig.suptitle(
+    fig.suptitle(title, fontsize=13, y=1.03, x=0.5, ha="center")
+    fig.text(0.5, -0.03, caption, ha="center", va="top", fontsize=8.6, color="#5A5A5A", wrap=True)
+    paths = savefig_paper(fig, f"issue_1345/{out_stem}", dir=FIG_DIR)
+    plt.close(fig)
+    return paths
+
+
+def plot_result2_withinregime() -> dict:
+    d = collect_withinregime()
+    story_null = d[("instruct", 2)]["null_mean"]
+    return _plot_withinregime(
+        d,
+        [0, 1, 2],
+        ["Chat", "No-template", "Story·assistant"],
+        "result2_withinregime_by_framing",
         "The story-character assistant map is not linearly decodable "
         "(instruct, context arm, layer 19)",
-        fontsize=13,
-        y=1.03,
-        x=0.5,
-        ha="center",
-    )
-    fig.text(
-        0.5,
-        -0.03,
         "Bars = within-regime held-out $R^2$ with 95% bootstrap CI (Qwen2.5-7B-Instruct). "
         "Chat and no-template sit ~0.6 (well above the answer-mean baseline); the assistant "
         "rendered as a story character sits at -0.75, below zero — the held-out probe does worse "
         f"than predicting the mean (its own shuffle-null is off-scale at ~{story_null:.1f}). "
         "Base arm omitted (its story regime was below the yield floor).",
-        ha="center",
-        va="top",
-        fontsize=8.6,
-        color="#5A5A5A",
-        wrap=True,
+        -0.9,
     )
-    paths = savefig_paper(fig, "issue_1345/result2_withinregime_by_framing", dir=FIG_DIR)
-    plt.close(fig)
-    return paths
+
+
+def plot_result2_withinregime_chat_vs_notemplate() -> dict:
+    d = collect_withinregime()
+    return _plot_withinregime(
+        d,
+        [0, 1],
+        ["Chat", "No-template"],
+        "result2_withinregime_chat_vs_notemplate",
+        "The context→answer map holds with and without the chat template "
+        "(instruct, context arm, layer 19)",
+        "Within-regime held-out $R^2$ with 95% bootstrap CI (Qwen2.5-7B-Instruct). Both framings "
+        "sit ~0.6, far above the answer-mean baseline ($R^2=0$) and the shuffle-null — removing the "
+        "chat template barely changes the map's predictive power.",
+        -0.1,
+    )
+
+
+def plot_result2_withinregime_chat_vs_story() -> dict:
+    d = collect_withinregime()
+    story_null = d[("instruct", 2)]["null_mean"]
+    return _plot_withinregime(
+        d,
+        [0, 2],
+        ["Chat", "Story·assistant"],
+        "result2_withinregime_chat_vs_story",
+        "The map collapses when the assistant is a story character "
+        "(instruct, context arm, layer 19)",
+        "Within-regime held-out $R^2$ with 95% bootstrap CI (Qwen2.5-7B-Instruct). Chat sits ~0.65 "
+        "(above baseline); the assistant rendered as a story character sits at -0.75, below zero — "
+        f"worse than predicting the mean (its own shuffle-null is off-scale at ~{story_null:.1f}).",
+        -0.9,
+    )
 
 
 # --------------------------------------------------------------------------- #
@@ -476,6 +503,8 @@ def main() -> None:
         "result1_reparam_recovery": plot_result1_reparam_recovery(),
         "result1_operator_cosine": plot_result1_operator_cosine(),
         "result2_withinregime_by_framing": plot_result2_withinregime(),
+        "result2_withinregime_chat_vs_notemplate": plot_result2_withinregime_chat_vs_notemplate(),
+        "result2_withinregime_chat_vs_story": plot_result2_withinregime_chat_vs_story(),
         "result2_transfer_heatmap": plot_result2_transfer_heatmap(),
     }
     for tag, paths in figs.items():
