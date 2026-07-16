@@ -19,6 +19,8 @@ goal: 'Measure how the #779 context→answer mapping and its answer-side activat
   plan C11/C12).'
 relates_to:
 - spec-context-as-vector
+classification: useful
+promoted_at: '2026-07-16T04:25:23Z'
 ---
 # A single greedy answer is an adequate stand-in for 10-rollout-averaged answer targets in the context→answer map (MODERATE confidence)
 
