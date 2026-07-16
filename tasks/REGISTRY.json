@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1402,
+  "highest_id": 1403,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -3144,6 +3144,13 @@
       "path": "tasks/proposed/1402",
       "status": "proposed",
       "title": "daily-fix: shared GCE staging HF-download retry"
+    },
+    "1403": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1403",
+      "status": "proposed",
+      "title": "daily-fix: Step 10d conflicts go to fresh subagent"
     },
     "141": {
       "has_clean_result": false,
