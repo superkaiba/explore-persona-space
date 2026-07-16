@@ -2693,8 +2693,8 @@
       "goal": "Determine whether the assistant context\u2192answer map is the SAME linear operator across three framings holding the assistant persona constant \u2014 chat-template, plain User:/Assistant:, and an assistant/AI character in generic narrative-prose stories \u2014 via cross-regime operator transfer, aligned operator cosine, and general-linear reparameterization (the #825 Result-2.5 method), in Qwen2.5-7B base and instruct, distinguishing 'same map in different coordinates' from 'genuinely different map per framing.'",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/awaiting_promotion/1345",
-      "status": "awaiting_promotion",
+      "path": "tasks/followups_running/1345",
+      "status": "followups_running",
       "title": "The assistant context\u2192answer map recovers its full ceiling across chat and plain-text framings only after a linear change of coordinates, and barely exists in narrative stories (MODERATE confidence)"
     },
     "1346": {
