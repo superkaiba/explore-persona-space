@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1427,
+  "highest_id": 1428,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -3336,6 +3336,13 @@
       "path": "tasks/completed/1427",
       "status": "completed",
       "title": "workflow-fix: gotchas.md \u2014 EXDEV: bare /tmp tempdir + os.replace onto /workspace"
+    },
+    "1428": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1428",
+      "status": "proposed",
+      "title": "Fix torch-before-dotenv in 10 main-resident figure scripts (fleet thread-caps test red)"
     },
     "144": {
       "has_clean_result": false,
