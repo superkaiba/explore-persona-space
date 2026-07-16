@@ -1,7 +1,7 @@
 {
   "metadata": {
-    "git_commit": "5653c791ac2c4c492f1063eeb939c4098e1e42c2",
-    "timestamp": "2026-07-15T16:35:24Z",
+    "git_commit": "2adae2a2e5c9da91235272fa96c68e8de6dc2839",
+    "timestamp": "2026-07-16T06:09:46Z",
     "seed": 0,
     "n": 3629,
     "script": "scripts/issue1336_fit_cells.py"
