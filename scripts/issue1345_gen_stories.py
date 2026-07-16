@@ -446,6 +446,7 @@ def _hf_file_exists(path_in_repo: str) -> bool:
     api = HfApi(token=os.environ.get("HF_TOKEN"))
     return bool(
         retry_transient(
+            # HUB_VERIFY_RETRY_EXEMPT: wrapped in hub.retry_transient at this seam (r5)
             lambda: api.file_exists(c.HF_DATA_REPO, path_in_repo, repo_type="dataset"),
             what=f"file_exists({path_in_repo})",
         )
@@ -478,8 +479,15 @@ def _hf_upload_folder(folder: Path, path_in_repo: str, allow: list[str], msg: st
     """Boundary wrapper: retried upload_folder (judge cache always excluded)."""
     from huggingface_hub import upload_folder
 
-    from explore_persona_space.orchestrate.hub import retry_transient
+    from explore_persona_space.orchestrate.hub import assert_hub_dir_filecounts, retry_transient
 
+    # Deterministic pre-upload guard (#658): OUTSIDE the retry wrapper by design.
+    assert_hub_dir_filecounts(
+        folder_path=str(folder),
+        path_in_repo=path_in_repo,
+        allow_patterns=allow,
+        ignore_patterns=["judge_cache/*", "judge_cache/**"],
+    )
     retry_transient(
         lambda: upload_folder(
             repo_id=c.HF_DATA_REPO,
