@@ -3495,6 +3495,144 @@ def test_oversize_append_completes_across_short_writes(fake_repo, tmp_path, monk
     assert target.read_text() == line  # full buffer completed
 
 
+# ─── T-E: seal a crash-truncated tail before appending (#1367) ──────────────
+
+
+def test_append_seals_crash_truncated_tail(fake_repo, caplog):
+    """The #1367 durability pin: an append onto a file whose final line lacks
+    a trailing newline (a prior writer killed mid-append — the #1333 incident
+    shape) must SEAL the partial first, so the new row lands fully parseable
+    on its OWN line instead of gluing onto the corpse of the old one."""
+    _, tw = fake_repo
+    nid = tw.create_task(tw.NewTaskRequest(kind="infra", title="t"))
+    tw.post_event(nid, "epm:plan", by="planner", note="ok line 1")
+    tw.post_event(nid, "epm:plan", by="planner", note="ok line 2")
+    ev = tw.find_task_path(nid) / "events.jsonl"
+    # Count NON-EMPTY split parts (a well-terminated file splits with a
+    # trailing empty element — counting raw parts is the off-by-one trap).
+    n_before = len([ln for ln in ev.read_text().split("\n") if ln.strip()])
+    partial = '{"ts": "2026-06-28T00:00:00Z", "kind": "epm:pl'  # no close, no \n
+    with ev.open("a") as f:
+        f.write(partial)
+    with caplog.at_level(logging.WARNING, logger="explore_persona_space.task_workflow"):
+        nxt = tw.post_event(nid, "epm:plan", by="planner", note="ok line 3")
+    assert nxt["version"] == 3  # max over the parseable lines + 1
+    raw = ev.read_text()
+    assert raw.endswith("\n")
+    lines = [ln for ln in raw.split("\n") if ln.strip()]
+    # sealed partial + the new row landed as TWO separate lines
+    assert len(lines) == n_before + 2
+    assert partial in lines  # the partial is its own line, bytes unchanged
+    last = json.loads(lines[-1])  # the new row is fully parseable
+    assert last["kind"] == "epm:plan"
+    assert last["note"] == "ok line 3"
+    # tolerant reader: 2 good plan rows + the new row; the partial stays skipped
+    kinds = [e["kind"] for e in tw.list_events(nid)]
+    assert kinds.count("epm:plan") == 3
+    assert any(
+        "missing trailing newline" in r.getMessage() and str(ev) in r.getMessage()
+        for r in caplog.records
+    ), "expected a seal WARNING naming the path"
+
+
+def test_append_seals_truncated_multibyte_tail(fake_repo):
+    """A truncated MULTIBYTE tail (lone first byte of a 3-byte UTF-8 char, no
+    newline — the line-3310 fixture) is sealed too: the new row lands
+    parseable on its own line, composing the seal with the errors="replace"
+    reader path."""
+    _, tw = fake_repo
+    nid = tw.create_task(tw.NewTaskRequest(kind="infra", title="t"))
+    ev = tw.find_task_path(nid) / "events.jsonl"
+    ev.write_bytes(
+        b'{"ts":"2026-06-28T00:00:00Z","kind":"epm:test","version":1,"by":"test"}\n'
+        b'{"note":"\xe2'  # lone first byte of a 3-byte UTF-8 sequence, no close
+    )
+    tw.post_event(nid, "epm:plan", by="planner", note="after multibyte partial")
+    raw = ev.read_bytes()
+    assert raw.endswith(b"\n")
+    lines = [ln for ln in raw.split(b"\n") if ln.strip()]
+    assert len(lines) == 3  # good row + sealed partial + new row
+    assert lines[1] == b'{"note":"\xe2'  # partial sealed in place, bytes unchanged
+    last = json.loads(lines[-1].decode("utf-8"))
+    assert last["kind"] == "epm:plan"
+    # tolerant reader: good row + new row survive; the sealed partial is skipped
+    kinds = [e["kind"] for e in tw.list_events(nid)]
+    assert kinds == ["epm:test", "epm:plan"]
+
+
+def test_append_no_spurious_seal_on_clean_or_fresh_file(fake_repo, tmp_path, caplog):
+    """No seal fires on a well-terminated file, a fresh nonexistent file
+    (the ENOENT / O_CREAT-this-call arms), or an empty file — no warning, no
+    inserted blank line, byte-identical behavior to the pre-seal helper."""
+    _, tw = fake_repo
+    nid = tw.create_task(tw.NewTaskRequest(kind="infra", title="t"))
+    ev = tw.find_task_path(nid) / "events.jsonl"
+    payload = {"ts": "t", "kind": "epm:x", "version": 1, "by": "t"}
+    fresh = tmp_path / "fresh.jsonl"
+    empty = tmp_path / "empty.jsonl"
+    empty.touch()
+    with caplog.at_level(logging.WARNING, logger="explore_persona_space.task_workflow"):
+        tw.post_event(nid, "epm:plan", by="planner", note="clean tail")  # well-terminated
+        tw._append_jsonl_line(fresh, payload)  # nonexistent -> ENOENT arm + O_CREAT
+        tw._append_jsonl_line(empty, payload)  # exists but st_size == 0 arm
+    assert not any("missing trailing newline" in r.getMessage() for r in caplog.records)
+    assert not any("tail-check" in r.getMessage() for r in caplog.records)
+    raw = ev.read_text()
+    assert "\n\n" not in raw  # no blank line inserted
+    for ln in raw.split("\n"):
+        if ln.strip():
+            json.loads(ln)  # every line parseable
+    for target in (fresh, empty):
+        text = target.read_text()
+        assert text.startswith("{")  # no leading seal byte
+        assert len([ln for ln in text.split("\n") if ln.strip()]) == 1
+
+
+def test_tail_check_failure_is_fail_soft(fake_repo, tmp_path, monkeypatch, caplog):
+    """A probe failure must NEVER block a marker post (§11 decision 2 of the
+    #1367 plan): with os.pread raising (the append path never calls pread, so
+    only the probe is affected), the append still succeeds unsealed and a
+    tail-check WARNING fires."""
+    _, tw = fake_repo
+
+    def raiser(fd, n, offset):
+        raise OSError(5, "injected pread failure")
+
+    monkeypatch.setattr(tw.os, "pread", raiser)
+    target = tmp_path / "failsoft.jsonl"
+    target.write_text('{"kind":"epm:prior","version":1}\n')  # non-empty, well-terminated
+    payload = {"ts": "t", "kind": "epm:x", "version": 1, "by": "t"}
+    with caplog.at_level(logging.WARNING, logger="explore_persona_space.task_workflow"):
+        tw._append_jsonl_line(target, payload)  # must NOT raise
+    lines = [ln for ln in target.read_text().split("\n") if ln.strip()]
+    assert json.loads(lines[-1])["kind"] == "epm:x"  # the append SUCCEEDED
+    assert any("tail-check read failed" in r.getMessage() for r in caplog.records)
+
+
+def test_seal_is_separate_one_byte_write(fake_repo, tmp_path, monkeypatch):
+    """Mechanism pin (plan-approval critique item 4): the seal is a SEPARATE
+    1-byte write, never a prepend onto the row buffer — so the row keeps its
+    <= PIPE_BUF single-atomic-write class. Records os.write calls on a
+    truncated-tail append and asserts exactly two writes of sizes
+    [1, len(row)]."""
+    _, tw = fake_repo
+    calls: list[int] = []
+    real_write = os.write
+
+    def counting_write(fd, data):
+        calls.append(len(data))
+        return real_write(fd, data)
+
+    target = tmp_path / "sealed.jsonl"
+    target.write_bytes(b'{"kind":"epm:partial"')  # truncated tail, no newline
+    payload = {"ts": "t", "kind": "epm:x", "version": 1, "by": "t"}
+    line = json.dumps(payload, ensure_ascii=False) + "\n"
+    monkeypatch.setattr(tw.os, "write", counting_write)
+    tw._append_jsonl_line(target, payload)
+    assert calls == [1, len(line.encode("utf-8"))]  # seal write, then row write
+    assert target.read_bytes() == b'{"kind":"epm:partial"\n' + line.encode("utf-8")
+
+
 # ─── index.lock retry + crash-safe set_status (#898) ────────────────────────
 #
 # Incident #825: a concurrent session held .git/index.lock while set_status
