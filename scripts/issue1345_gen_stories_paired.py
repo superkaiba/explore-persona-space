@@ -27,6 +27,9 @@ stories are raw model generations — this script logs COUNTS/ids only.
 CLI:
   uv run python scripts/issue1345_gen_stories_paired.py --model instruct [--smoke]
   uv run python scripts/issue1345_gen_stories_paired.py --model instruct --op-companion
+  # CPU preflight (no vLLM): pool + feasibility filter + fingerprint, exit 0
+  uv run python scripts/issue1345_gen_stories_paired.py --model instruct --op-companion \
+      --smoke --verify-pool
 """
 
 from __future__ import annotations
@@ -231,20 +234,33 @@ def build_paired_prompt(row: dict, tokenizer, *, op_companion: bool) -> str:
 
 
 def _filter_pool_feasible(pool: list[dict], tokenizer, *, op_companion: bool) -> tuple[list, dict]:
-    """Drop rows whose formatted prompt / answer exceed the token budgets."""
+    """Drop rows whose formatted prompt / answer exceed the token budgets.
+
+    Row schema is MODE-KEYED (att-20260716-230002 crash-fix): paired rows carry
+    ``{conv_id, question, answer}`` and the verbatim-answer budget applies (HARD
+    ``answer`` key — a paired row without it is a producer bug, fail loud);
+    companion rows carry ``{conv_id, question}`` ONLY (free generation — no
+    fixed answer exists), so only the formatted-prompt budget applies and
+    ``answer`` is never touched.
+    """
     kept, counts = [], {"prompt_over_budget": 0, "answer_over_budget": 0}
     for row in pool:
-        n_ans = len(tokenizer(row["answer"], add_special_tokens=False)["input_ids"])
-        if not op_companion and n_ans > ANSWER_TOKEN_BUDGET:
-            counts["answer_over_budget"] += 1
-            continue
+        if not op_companion:
+            n_ans = len(tokenizer(row["answer"], add_special_tokens=False)["input_ids"])
+            if n_ans > ANSWER_TOKEN_BUDGET:
+                counts["answer_over_budget"] += 1
+                continue
         prompt = build_paired_prompt(row, tokenizer, op_companion=op_companion)
         n_tok = len(tokenizer(prompt, add_special_tokens=False)["input_ids"])
         if n_tok > g.PROMPT_TOKEN_BUDGET:
             counts["prompt_over_budget"] += 1
             continue
         kept.append(row)
-    print(f"[seeds] feasibility filter: kept={len(kept)} dropped={counts}", flush=True)
+    print(
+        f"[seeds] feasibility filter (op_companion={op_companion}): "
+        f"kept={len(kept)} dropped={counts}",
+        flush=True,
+    )
     return kept, counts
 
 
@@ -381,9 +397,19 @@ def paired_fingerprint(mode: str, rows: list[dict]) -> str:
             "system_template": (
                 STORY_OP_COMPANION_SYSTEM if is_op else STORY_PAIRED_SYSTEM_TEMPLATE
             ),
+            # Mode-keyed row identity (the _filter_pool_feasible schema contract):
+            # companion rows have NO answer by construction, so the op key is
+            # (conv_id, question); paired rows HARD-key the verbatim answer —
+            # byte-identical to the prior (cid, q, answer) triple for every
+            # well-formed paired row, so the persisted paired bundle resumes.
             "rows_sha": hashlib.sha256(
                 json.dumps(
-                    [(r["conv_id"], r["question"], r.get("answer", "")) for r in rows],
+                    [
+                        (r["conv_id"], r["question"])
+                        if is_op
+                        else (r["conv_id"], r["question"], r["answer"])
+                        for r in rows
+                    ],
                     sort_keys=True,
                 ).encode()
             ).hexdigest(),
@@ -439,20 +465,24 @@ def generate_paired(
         outs = llm.generate(prompts, sampling, use_tqdm=False)
         new_rows = []
         for r, o in zip(chunk, outs, strict=True):
-            new_rows.append(
-                {
-                    "conv_id": r["conv_id"],
-                    # story_id == conv_id: one story per conversation (paired
-                    # by construction; extraction groups by conv_id).
-                    "story_id": r["conv_id"],
-                    "question": r["question"],
-                    "answer": r.get("answer", ""),
-                    "mode": "op" if op_companion else "paired",
-                    "tier": "instruct_and_strip",
-                    "story": o.outputs[0].text.strip(),
-                    "finish_reason": o.outputs[0].finish_reason,
-                }
-            )
+            row_out = {
+                "conv_id": r["conv_id"],
+                # story_id == conv_id: one story per conversation (paired
+                # by construction; extraction groups by conv_id).
+                "story_id": r["conv_id"],
+                "question": r["question"],
+                "mode": "op" if op_companion else "paired",
+                "tier": "instruct_and_strip",
+                "story": o.outputs[0].text.strip(),
+                "finish_reason": o.outputs[0].finish_reason,
+            }
+            if not op_companion:
+                # Paired story rows HARD-carry the verbatim answer (the
+                # _filter_pool_feasible mode contract); companion rows omit
+                # it — free generation has no fixed answer, and no consumer
+                # (op judge rubric, confident_op_turn, _render_r4 r4op) reads it.
+                row_out["answer"] = r["answer"]
+            new_rows.append(row_out)
         c.append_jsonl(out_path, new_rows)
     return c.read_jsonl(out_path)
 
@@ -475,7 +505,16 @@ def parse_and_judge_paired(
     items = [
         DispatchItem(
             item_id=r["conv_id"],
-            payload={"story": r["story"], "answer": r.get("answer", ""), "mode": r["mode"]},
+            # Mode-keyed payload: the op rubric never reads an answer, so op
+            # rows carry none; paired rows HARD-key it. The paired payload
+            # keeps the original (story, answer, mode) insertion order — the
+            # api_dispatch cache key serializes the payload, so byte-stable
+            # ordering preserves the paired judge cache across this fix.
+            payload=(
+                {"story": r["story"], "mode": r["mode"]}
+                if r["mode"] == "op"
+                else {"story": r["story"], "answer": r["answer"], "mode": r["mode"]}
+            ),
         )
         for r in rows
     ]
@@ -698,6 +737,13 @@ def main() -> None:
         help="generate the N<=200 on-policy companion control cell (plan v8 §4.5)",
     )
     ap.add_argument("--smoke", action="store_true", help="n=3 stories, sync judge")
+    ap.add_argument(
+        "--verify-pool",
+        action="store_true",
+        help="CPU preflight: run main through the pool stage (incl. "
+        "_filter_pool_feasible in the invoked mode) + fingerprint, write "
+        "pool_report_{mode}_{model}.json, exit 0 BEFORE any vLLM build",
+    )
     args = ap.parse_args()
 
     assert c.HAS_R4, (
@@ -751,6 +797,36 @@ def main() -> None:
         seeds_reserve = [pool[i] for i in order[n_target:]]
 
     fp = paired_fingerprint(mode_slug, rows_main + seeds_reserve)
+    if args.verify_pool:
+        # CPU preflight (att-20260716-230002 crash-fix r3): the pool build +
+        # mode-keyed feasibility filter + fingerprint ran for real above —
+        # exactly the pre-GPU portion the dispatcher-composed invocation
+        # executes — so this exits 0 before any vLLM build, leaving a
+        # digestible artifact behind.
+        report_path = out_dir / f"pool_report_{mode_slug}_{model_key}.json"
+        c.write_json(
+            report_path,
+            {
+                "metadata": c.metadata(
+                    c.GEN_SEED, len(rows_main), "scripts/issue1345_gen_stories_paired.py"
+                ),
+                "mode": mode_slug,
+                "model": model_key,
+                "op_companion": bool(args.op_companion),
+                "smoke": bool(args.smoke),
+                "n_rows_main": len(rows_main),
+                "n_seeds_reserve": len(seeds_reserve),
+                "n_target": n_target,
+                "yield_floor": yield_floor,
+                "pool_filter_counts": pool_counts,
+                "fingerprint": fp,
+            },
+        )
+        print(
+            f"[verify-pool] {mode_slug} pool OK: rows_main={len(rows_main)} fp={fp}",
+            flush=True,
+        )
+        return
     resumed = try_resume_paired(mode_slug, model_key, fp, out_dir, args.smoke)
     if resumed is not None:
         n_kept = int(resumed["n_kept"])

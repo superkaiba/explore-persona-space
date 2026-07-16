@@ -246,6 +246,130 @@ def test_paired_fingerprint_op_branch_keys_on_paired_op(monkeypatch):
 
 
 # ---------------------------------------------------------------------------
+# Companion-mode row schema (att-20260716-230002 crash pins, cps crash-fix r3):
+# main()'s --op-companion branch passes rows {conv_id, question} — free
+# generation has no fixed answer — while paired rows HARD-carry the verbatim
+# answer. Every consumer of these rows is mode-keyed; fakes below sit ONLY at
+# the external HF-tokenizer / vLLM-engine boundaries, signature-conformant
+# (they mirror the exact surfaces the production bodies call).
+# ---------------------------------------------------------------------------
+COMPANION_ROWS = [
+    {"conv_id": "s0", "question": "What is the visitor policy at the lab?"},
+    {"conv_id": "s1", "question": "How do I reset my workstation password?"},
+]
+
+
+class _FakeTokenizer:
+    """HF-tokenizer-boundary fake: mirrors the two surfaces the gen script
+    calls — ``__call__(text, add_special_tokens=)`` -> {"input_ids": [...]}
+    and ``apply_chat_template(messages, tokenize=, add_generation_prompt=)``
+    (whitespace token ids; template = joined contents)."""
+
+    def __call__(self, text, add_special_tokens=False):
+        return {"input_ids": list(range(len(text.split())))}
+
+    def apply_chat_template(self, messages, tokenize=False, add_generation_prompt=True):
+        assert not tokenize and add_generation_prompt
+        return "\n".join(m["content"] for m in messages) + "\nassistant:"
+
+
+class _FakeCompletion:
+    def __init__(self, text: str):
+        self.text = text
+        self.finish_reason = "stop"
+
+
+class _FakeRequestOutput:
+    def __init__(self, text: str):
+        self.outputs = [_FakeCompletion(text)]
+
+
+class _FakeLLM:
+    """vLLM-engine-boundary fake mirroring the exact ``LLM.generate(prompts,
+    sampling_params, use_tqdm=)`` surface generate_paired calls."""
+
+    def generate(self, prompts, sampling_params, use_tqdm=False):
+        assert use_tqdm is False
+        return [_FakeRequestOutput(f"A short scene. {p[-40:]}") for p in prompts]
+
+
+def test_filter_pool_feasible_companion_rows_have_no_answer_key():
+    """THE crash pin (GCP att-20260716-230002, gen_stories_paired.py:237):
+    companion rows {conv_id, question} through op_companion=True — pre-fix the
+    filter tokenized row['answer'] unconditionally and KeyError'd on row 1."""
+    kept, counts = gp._filter_pool_feasible(COMPANION_ROWS, _FakeTokenizer(), op_companion=True)
+    assert [r["conv_id"] for r in kept] == ["s0", "s1"]
+    assert counts == {"prompt_over_budget": 0, "answer_over_budget": 0}
+
+
+def test_filter_pool_feasible_paired_mode_hard_requires_answer():
+    """Paired rows HARD-key the verbatim answer (fail-fast, never .get-default);
+    the answer budget applies in paired mode only."""
+    with pytest.raises(KeyError, match="answer"):
+        gp._filter_pool_feasible(COMPANION_ROWS, _FakeTokenizer(), op_companion=False)
+    ok = [{**r, "answer": "b " * 30} for r in COMPANION_ROWS]
+    over = [{"conv_id": "s9", "question": "q?", "answer": "w " * (gp.ANSWER_TOKEN_BUDGET + 1)}]
+    kept, counts = gp._filter_pool_feasible(ok + over, _FakeTokenizer(), op_companion=False)
+    assert [r["conv_id"] for r in kept] == ["s0", "s1"]
+    assert counts["answer_over_budget"] == 1
+
+
+def test_paired_fingerprint_mode_keyed_row_schema():
+    """The op fp is computable WITHOUT an answer key and invariant to a stray
+    one (companion identity = (conv_id, question)); the paired fp hard-keys
+    the answer, byte-identical to the prior (cid, q, answer) triple."""
+    op_rows = [{"conv_id": "s0", "question": "q?"}]
+    fp = gp.paired_fingerprint("paired_op", op_rows)
+    assert fp == gp.paired_fingerprint("paired_op", [{**op_rows[0], "answer": "stray"}])
+    with pytest.raises(KeyError, match="answer"):
+        gp.paired_fingerprint("paired", op_rows)
+
+
+def test_build_judge_request_mode_keyed_payload():
+    """The op judge payload carries no answer (the op rubric never reads one);
+    the paired payload hard-keys it."""
+    from explore_persona_space.llm.api_dispatch import DispatchItem
+
+    op = gp._build_judge_request(
+        DispatchItem(item_id="s0", payload={"story": "Once upon a time.", "mode": "op"})
+    )
+    assert op["system"] == gp.JUDGE_SYSTEM_OP
+    assert "Once upon a time." in op["messages"][0]["content"]
+    paired = gp._build_judge_request(
+        DispatchItem(item_id="s1", payload={"story": "S.", "answer": "A" * 25, "mode": "paired"})
+    )
+    assert paired["system"] == gp.JUDGE_SYSTEM_PAIRED
+    assert "A" * 25 in paired["messages"][0]["content"]
+    with pytest.raises(KeyError, match="answer"):
+        gp._build_judge_request(
+            DispatchItem(item_id="s2", payload={"story": "S.", "mode": "paired"})
+        )
+
+
+def test_generate_paired_row_schema_mode_keyed(tmp_path):
+    """generate_paired executes for real (chunking, meta write, JSONL append)
+    against boundary fakes: op story rows OMIT 'answer'; paired rows carry it
+    verbatim (the extract r4op / op-judge consumers never read an op answer)."""
+    pytest.importorskip("vllm")  # generate_paired imports SamplingParams at call time
+    tok = _FakeTokenizer()
+    op_rows = gp.generate_paired(
+        [dict(r) for r in COMPANION_ROWS],
+        tmp_path / "raw_op.jsonl",
+        "fp-op",
+        tok,
+        _FakeLLM(),
+        op_companion=True,
+    )
+    assert len(op_rows) == 2
+    assert all(r["mode"] == "op" and "answer" not in r for r in op_rows)
+    paired_in = [{**r, "answer": "c" * 40} for r in COMPANION_ROWS]
+    paired_rows = gp.generate_paired(
+        paired_in, tmp_path / "raw_paired.jsonl", "fp-p", tok, _FakeLLM(), op_companion=False
+    )
+    assert all(r["mode"] == "paired" and r["answer"] == "c" * 40 for r in paired_rows)
+
+
+# ---------------------------------------------------------------------------
 # Registry consumers
 # ---------------------------------------------------------------------------
 def test_select_cells_no_r4_drop_is_noop_without_variant(capsys):
