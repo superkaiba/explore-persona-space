@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1388,
+  "highest_id": 1389,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -3025,6 +3025,13 @@
       "path": "tasks/proposed/1388",
       "status": "proposed",
       "title": "daily-fix: fix bare list_repo_tree lint offenders"
+    },
+    "1389": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1389",
+      "status": "proposed",
+      "title": "daily-fix: compose-time re-grep + staleness verify leg"
     },
     "139": {
       "has_clean_result": true,
