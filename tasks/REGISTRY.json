@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1406,
+  "highest_id": 1407,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -3172,6 +3172,13 @@
       "path": "tasks/proposed/1406",
       "status": "proposed",
       "title": "daily-fix: SPEC protocol delta on sibling headlines"
+    },
+    "1407": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1407",
+      "status": "proposed",
+      "title": "daily-fix: Monitor keys on exit/mtime not existence"
     },
     "141": {
       "has_clean_result": false,
