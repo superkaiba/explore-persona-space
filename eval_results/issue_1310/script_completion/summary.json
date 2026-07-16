@@ -1,0 +1,108 @@
+{
+  "metadata": {
+    "git_commit": "f89fb36ae32f544695acd33beb59907bbaec2d2c",
+    "timestamp": "2026-07-16T16:35:20Z",
+    "seed": 0,
+    "n": 0,
+    "script": "scripts/issue1310_fit.py",
+    "issue": 931
+  },
+  "headline_layer": 19,
+  "per_persona": {
+    "Wren": {
+      "instruct": null
+    },
+    "HELIOS": {
+      "instruct": null
+    },
+    "Dana": {
+      "instruct": null
+    },
+    "Vex": {
+      "instruct": {
+        "n": 3586,
+        "r2_headline": 0.16616224069994123,
+        "null_p975_headline": -0.09544734752759049,
+        "null_mean_headline": -0.10422798760747834,
+        "clears_null": true,
+        "skill_over_mean_headline": 0.17238373002324603
+      }
+    }
+  },
+  "swap_specificity": {
+    "instruct": {
+      "metadata": {
+        "git_commit": "f89fb36ae32f544695acd33beb59907bbaec2d2c",
+        "timestamp": "2026-07-16T16:35:20Z",
+        "seed": 0,
+        "n": 11644,
+        "script": "scripts/issue1310_fit.py",
+        "issue": 931
+      },
+      "model_kind": "instruct",
+      "headline_layer": 19,
+      "r2_correct": 0.3199918862157064,
+      "r2_swap": 0.09419675213965917,
+      "delta_r2_char": 0.22579513407604723,
+      "delta_ci_lo": 0.2207910156558436,
+      "delta_ci_hi": 0.23078426896162815,
+      "n_rows": 11644,
+      "n_groups": 300,
+      "n_boot": 1000,
+      "paired_group_bootstrap": true,
+      "gcv_dof_cap": 0.9
+    }
+  },
+  "assistant_ceiling": {
+    "S1": {
+      "path": "eval_results/issue_825/cells_S1.json",
+      "present": true,
+      "headline_layer": 19,
+      "r2_headline": 0.6730940896676356
+    },
+    "S2": {
+      "path": "eval_results/issue_825/cells_S2.json",
+      "present": true,
+      "headline_layer": 19,
+      "r2_headline": 0.5876803039140281
+    }
+  },
+  "attribution": {
+    "instruct": {
+      "counters": {
+        "stories": 1200,
+        "target_lines": 13843,
+        "foil_other_lines": 13259,
+        "unparsed_lines": 152,
+        "turns_kept": 12503,
+        "turns_dropped_zero_width": 8,
+        "turns_dropped_short_context": 1182,
+        "turns_dropped_short_dialogue": 150,
+        "turns_dropped_unconfirmed": 0,
+        "stories_with_pair": 1180,
+        "stories_dropped_no_pair": 20,
+        "per_persona_target_lines": {
+          "Wren": 3409,
+          "HELIOS": 3436,
+          "Dana": 3097,
+          "Vex": 3901
+        }
+      },
+      "drop_rate": 0.016666666666666666,
+      "per_persona_pairs": {
+        "Wren": 3094,
+        "HELIOS": 3123,
+        "Dana": 2700,
+        "Vex": 3586
+      },
+      "attribution_precision": 0.9949748743718593
+    }
+  },
+  "frozen_layers": [
+    14,
+    18,
+    19,
+    26
+  ],
+  "smoke": false
+}

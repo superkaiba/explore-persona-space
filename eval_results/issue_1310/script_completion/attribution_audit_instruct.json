@@ -1,0 +1,49 @@
+{
+  "metadata": {
+    "git_commit": "f89fb36ae32f544695acd33beb59907bbaec2d2c",
+    "timestamp": "2026-07-16T16:15:03Z",
+    "seed": 42,
+    "n": 12503,
+    "script": "scripts/issue1310_attribute.py",
+    "issue": 931
+  },
+  "model_kind": "instruct",
+  "counters": {
+    "stories": 1200,
+    "target_lines": 13843,
+    "foil_other_lines": 13259,
+    "unparsed_lines": 152,
+    "turns_kept": 12503,
+    "turns_dropped_zero_width": 8,
+    "turns_dropped_short_context": 1182,
+    "turns_dropped_short_dialogue": 150,
+    "turns_dropped_unconfirmed": 0,
+    "stories_with_pair": 1180,
+    "stories_dropped_no_pair": 20,
+    "per_persona_target_lines": {
+      "Wren": 3409,
+      "HELIOS": 3436,
+      "Dana": 3097,
+      "Vex": 3901
+    }
+  },
+  "drop_rate": 0.016666666666666666,
+  "per_persona_pairs": {
+    "Wren": 3094,
+    "HELIOS": 3123,
+    "Dana": 2700,
+    "Vex": 3586
+  },
+  "audit": {
+    "n_sampled": 200,
+    "n_valid": 199,
+    "n_dropped_malformed": 1,
+    "n_correct": 198,
+    "precision": 0.9949748743718593,
+    "mock": false,
+    "judge_model": "claude-sonnet-4-5-20250929"
+  },
+  "gate": 0.9,
+  "binding": true,
+  "pass": true
+}

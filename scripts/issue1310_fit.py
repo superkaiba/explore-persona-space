@@ -64,6 +64,15 @@ def parse_args() -> argparse.Namespace:
         default="",
         help="flavor tag prefixing every cell_id / swap file (e.g. 'onpolicy_', 'tf_')",
     )
+    ap.add_argument(
+        "--personas",
+        type=str,
+        default="",
+        help=(
+            "comma list of WITHIN-map personas to fit (empty = all 4). run_swap always "
+            "pools over the FULL store regardless (the derangement needs every persona)."
+        ),
+    )
     ap.add_argument("--null-draws", type=int, default=c1310.N_NULL_DRAWS)
     ap.add_argument("--folds", type=int, default=c1310.N_FOLDS)
     ap.add_argument("--seed", type=int, default=c1310.FIT_SEED)
@@ -377,7 +386,12 @@ def main() -> int:
     models = [m.strip() for m in args.models.split(",") if m.strip()]
     for m in models:
         assert m in c1310.MODEL_KINDS, f"unknown model {m!r}"
-    print(f"[phase=p3_fits] fit battery (models={models}, tag={args.tag!r})")
+    personas = [p.strip() for p in args.personas.split(",") if p.strip()] or list(
+        c1310.PERSONA_LABELS
+    )
+    for p in personas:
+        assert p in c1310.PERSONA_LABELS, f"unknown persona {p!r}"
+    print(f"[phase=p3_fits] fit battery (models={models}, tag={args.tag!r}, personas={personas})")
     store_root = args.data_dir / args.store_subdir
 
     results: dict[str, dict] = {}
@@ -390,7 +404,7 @@ def main() -> int:
             fit825.EXPECTED_LAYERS = n_layers
         print(f"[i1310-fit] model={model_kind} rows={len(store['row_ids'])} layers={n_layers}")
         results[model_kind] = {}
-        for persona in c1310.PERSONA_LABELS:
+        for persona in personas:
             xy = within_xy(store, persona, "x_spanmean")
             if xy["X"].shape[0] < args.folds:
                 print(f"[i1310-fit] {model_kind}/{persona}: n={xy['X'].shape[0]} < folds — skipped")
