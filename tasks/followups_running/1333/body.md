@@ -4,7 +4,6 @@ title: The marker implant reproduces the farther-but-not-more-diffuse full-fine-
 kind: experiment
 tags:
 - followup-auto
-- keep-running
 created_at: '2026-07-15T07:16:02Z'
 has_clean_result: true
 parent_id: 1090
