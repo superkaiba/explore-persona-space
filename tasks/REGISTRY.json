@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1429,
+  "highest_id": 1430,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -3350,6 +3350,13 @@
       "path": "tasks/proposed/1429",
       "status": "proposed",
       "title": "workflow-fix: gotchas entry \u2014 rank-space bootstrap tail-mass gating (float-space CI coverage epsilon-fragile)"
+    },
+    "1430": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1430",
+      "status": "proposed",
+      "title": "workflow-fix: audit duplicate-id dirs + reap terminal-task status husks"
     },
     "144": {
       "has_clean_result": false,
