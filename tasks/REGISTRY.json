@@ -2931,8 +2931,8 @@
     "1376": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1376",
-      "status": "proposed",
+      "path": "tasks/planning/1376",
+      "status": "planning",
       "title": "workflow-fix: vm_disk_guard tier for the home HF hub cache"
     },
     "138": {
