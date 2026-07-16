@@ -700,6 +700,28 @@ Generation-agnostic checks (run on v2 AND v3 — the inline-figure +
   survived to the LM critic. Dispatched OUTSIDE the body-only CHECKS list
   (needs `issue` + eval-root resolution; the #732 precedent).
 
+- **check 36** (`check_v4_result_paragraph_sentences`, WARN-only, v4-only,
+  #1368): each prose PARAGRAPH inside a `### <result>` block runs 1-3
+  sentences (SPEC § Conciseness caps (v4) / § Results three-beat 1-3-sentence
+  beats / Lens 12 "any single paragraph runs >=4 sentences"). Paragraph = a
+  maximal run of consecutive prose lines (blockquote captions, fenced code,
+  `<details>` bodies, GFM tables, headings, images, HTML lines, list items,
+  `---` rules excluded). Sentence boundary = `[.!?]+` before
+  whitespace/end-of-paragraph after masking inline code, link targets, a
+  small abbreviation list (`no.` only before a digit), decimals, and
+  ellipses; semicolon chains count as one unit. WARN at >=4
+  (`V4_RESULT_PARA_MAX_SENTENCES` = 3), NEVER FAIL — the bullets-over-prose
+  call and the FAIL decision stay with the clean-result-critic (Lens 12).
+  Forward-only: v3/v2/legacy/paper bodies never flagged. Calibration
+  (plan-time, 7 real v4 bodies): fires on 4/6 results of the #1333
+  plan-time body (sentence counts 5/5/4/5 — the motivating incident,
+  matching the critic's flags verbatim), 0/8 on #922; 5 parked
+  `awaiting_promotion` bodies WARN at 1/8-8/8 results (genuine register
+  drift, hand-verified on #958). Incident: task #385 round 1 / #1333 — a
+  5-sentence read paragraph the Claude critic PASSed burned a full LM
+  critic round. (Numbered 36 because 28-35 are taken by the
+  generation-agnostic checks.)
+
 Harmful-content carve-out: checks 18/19 accept the sanitized excerpt
 form (`[truncated — harmful-content row; verify at <path>, row <i>]`)
 exactly as checks 10/11 do today.
@@ -899,6 +921,10 @@ V3_TAKEAWAYS_BULLET_MAX_WORDS = 30
 # 35-word one); >=100 words is structural misuse of a bullet, not a
 # tightening request.
 V4_TAKEAWAYS_BULLET_FAIL_WORDS = 100
+# Per-`### <result>` prose-paragraph sentence cap (WARN-only, v4 check 36,
+# #1368/#1333): SPEC § Conciseness caps (v4) — the register is 1-3 sentences
+# per paragraph (SPEC L837-839 / L424-432 / Lens 12); >=4 WARNs, never FAILs.
+V4_RESULT_PARA_MAX_SENTENCES = 3
 # Per-finding prose word cap (excl. caption / code / `<details>` bodies):
 # WARN at the soft cap, FAIL at the hard cap.
 V3_FINDING_PROSE_WARN_WORDS = 120
@@ -9994,6 +10020,124 @@ def check_v4_results_beat(body: str) -> CheckResult:
     )
 
 
+# ─── v4 result-paragraph sentence cap (check 36, #1368) ──────────────────────
+
+# Abbreviations whose trailing period must not end a sentence. `no.` is
+# masked ONLY when a digit follows (`no. 3`) — an unguarded `no.` would merge
+# a genuine sentence ending in "... is no." with its successor (plan-approval
+# critic concern 1, #1368).
+_SENTENCE_ABBREV_RE = re.compile(
+    r"\b(?:e\.g|i\.e|vs|et\s+al|cf|figs?|eq|approx|ca|resp|incl)\.|\bno\.(?=\s*\d)",
+    re.IGNORECASE,
+)
+_SENTENCE_INLINE_CODE_RE = re.compile(r"`[^`]*`")
+_SENTENCE_LINK_TARGET_RE = re.compile(r"\]\([^)]*\)")
+_SENTENCE_LIST_ITEM_RE = re.compile(r"^\s*(?:[-*+]\s|\d+[.)]\s)")
+
+
+def _result_prose_paragraphs(block_text: str) -> list[str]:
+    """Maximal runs of consecutive PROSE lines inside one `### <result>`
+    block, joined with spaces (markdown renders consecutive non-blank lines
+    as one paragraph). A blank / blockquote-caption / table / heading /
+    image / HTML / fence / list-item / `---` line terminates the current
+    run and is itself excluded. `<details>` bodies are stripped first (the
+    `_prose_words` convention). Known residual: an UNCLOSED fence swallows
+    the rest of the block — false-negative-only (WARN-only check, accepted;
+    plan-approval critic concern 2, #1368).
+    """
+    block_text = _DETAILS_BLOCK_RE.sub("", block_text)
+    paras: list[str] = []
+    cur: list[str] = []
+    in_fence = False
+    for line in block_text.splitlines():
+        s = line.strip()
+        if s.startswith(("```", "~~~")):
+            in_fence = not in_fence
+            if cur:
+                paras.append(" ".join(cur))
+                cur = []
+            continue
+        if in_fence:
+            continue
+        if (
+            not s
+            or s.startswith((">", "|", "#", "!", "<", "---"))
+            or _SENTENCE_LIST_ITEM_RE.match(line)
+        ):
+            if cur:
+                paras.append(" ".join(cur))
+                cur = []
+            continue
+        cur.append(s)
+    if cur:
+        paras.append(" ".join(cur))
+    return paras
+
+
+def _count_sentences(paragraph: str) -> int:
+    """Guarded sentence count: split on `[.!?]+` immediately followed by
+    whitespace / end-of-paragraph, AFTER masking inline code spans, markdown
+    link targets, a small abbreviation list (`no.` only before a digit),
+    digit.digit decimals, and ellipses. Segments with >=1 word character
+    count (so trailing unterminated text counts as one unit); a
+    semicolon-joined chain deliberately counts as ONE sentence unit.
+    Stated residuals (WARN-only, accepted): false negatives on
+    sentence-ends inside brackets (`... gap.)`) and `;`-chained walls;
+    false positives on unlisted abbreviations (`Tab. 2`, initials).
+    """
+    p = _SENTENCE_INLINE_CODE_RE.sub("CODE", paragraph)
+    p = _SENTENCE_LINK_TARGET_RE.sub("]", p)
+    p = _SENTENCE_ABBREV_RE.sub(lambda m: m.group(0)[:-1], p)
+    p = re.sub(r"(?<=\d)\.(?=\d)", "", p)
+    p = p.replace("...", " ").replace("…", " ")
+    return sum(1 for seg in re.split(r"[.!?]+(?=\s|$)", p) if re.search(r"\w", seg))
+
+
+def check_v4_result_paragraph_sentences(body: str) -> CheckResult:
+    """Check 36 (v4 only, WARN): each prose paragraph inside a
+    `### <result>` block runs 1-3 sentences (SPEC § Conciseness caps (v4) /
+    § Results three-beat; Lens 12 is the LM backstop). WARN, NEVER FAIL —
+    register judgment (bullets-over-prose, the FAIL decision) stays with
+    the clean-result-critic (#1368; incident #1333/#385).
+    """
+    label = "Results paragraph sentence cap (v4)"
+    if not is_v4(body):
+        return CheckResult(label, True, "skipped — not a v4 body")
+    results = _v4_results_body(body)
+    if results is None:
+        return CheckResult(label, True, "## Results missing — check 2 will report")
+    result_h3s = _collect_tldr_h3_names(results)
+    if not result_h3s:
+        return CheckResult(label, True, "no `### <result>` headings — check 3 will report")
+    rlines = results.splitlines()
+    flagged: list[str] = []
+    for idx, (name, line_no) in enumerate(result_h3s):
+        end_line = result_h3s[idx + 1][1] if idx + 1 < len(result_h3s) else len(rlines)
+        block = "\n".join(rlines[line_no + 1 : end_line])
+        over = [
+            n
+            for n in map(_count_sentences, _result_prose_paragraphs(block))
+            if n > V4_RESULT_PARA_MAX_SENTENCES
+        ]
+        if over:
+            flagged.append(f"'{name[:48]}' has a {max(over)}-sentence paragraph")
+    if flagged:
+        preview = "; ".join(flagged[:2]) + (" …" if len(flagged) > 2 else "")
+        return CheckResult(
+            label,
+            True,
+            f"{len(flagged)} of {len(result_h3s)} `### <result>`(s) carry a "
+            f"≥{V4_RESULT_PARA_MAX_SENTENCES + 1}-sentence paragraph (v4 register: 1-3 "
+            f"sentences per paragraph — split or tighten): {preview}",
+            is_warn=True,
+        )
+    return CheckResult(
+        label,
+        True,
+        f"all `### <result>` paragraphs ≤{V4_RESULT_PARA_MAX_SENTENCES} sentences",
+    )
+
+
 # ─── v4 bare-issue-ref check (27) ─────────────────────────────────────────────
 
 # Bare issue reference: `#779`, `(#537)`, `#658's`. Bounded to 1-4 digits so an
@@ -10544,6 +10688,7 @@ CHECKS = [
     check_v4_methodology_shape,  # check 18 (v4)
     check_v4_results_beat,  # check 21 (v4, WARN)
     check_v4_no_bare_issue_refs,  # check 27 (v4) — bare `#K` refs + task links, standalone secs
+    check_v4_result_paragraph_sentences,  # check 36 (v4, WARN) — ≥4-sentence paras (#1368)
     # generation-agnostic checks (v2 AND v3 AND v4):
     check_figure_url_sha_matches_repro,  # check 22
     check_hf_url_resolves,  # check 23
