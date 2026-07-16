@@ -1,7 +1,7 @@
 #!/bin/bash
-# VM root-disk guard — invoked from system crontab.
+# VM root-disk guard — invoked from the USER crontab (thomasjiralerspong).
 # Reads df for / and, when usage exceeds the threshold (default 85%, env
-# EPS_VM_DISK_THRESHOLD), runs three tiers of strictly-safe cleanup:
+# EPS_VM_DISK_THRESHOLD), runs five tiers of strictly-safe cleanup, including:
 #   (a) uv cache prune (never --force; skips gracefully if the lock is held);
 #   (b) data/issue_*/hf_dl + g*_dl download caches for issues at a TERMINAL
 #       status (completed/archived/awaiting_promotion) — re-downloadable, and

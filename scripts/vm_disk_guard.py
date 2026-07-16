@@ -6,7 +6,7 @@ The VM root disk fills because each experiment downloads its source data into
 2026-06-25: ``/`` hit 100% full, one finished experiment held 97 GB), plus the
 ``uv`` package cache and accumulating logs. This guard reads ``df`` for ``/``
 and, when usage exceeds a threshold (default 85%, env ``EPS_VM_DISK_THRESHOLD``),
-runs four TIERS of strictly-safe cleanup, reporting bytes freed per tier:
+runs five TIERS of strictly-safe cleanup, reporting bytes freed per tier:
 
   (a) ``uv cache prune`` (skipped gracefully if the uv lock is held — never
       ``--force``).
@@ -33,6 +33,15 @@ runs four TIERS of strictly-safe cleanup, reporting bytes freed per tier:
       (``os.path.ismount('/workspace')`` OR pod-side detection refuses) so it
       can never run where /workspace is a real volume; every failure degrades
       to a skipped tier. Boot-disk pass only, same ``main()``-only opt-in.
+  (e) Stale unref'd home HF-hub REVISIONS (#1377): per repo in
+      ``~/.cache/huggingface/hub``, keep the newest + every ref'd revision and
+      ``delete_revisions`` unref'd revisions older than 7 days (env
+      ``EPS_VM_HOME_HF_REVISION_MAX_AGE_DAYS``; root env
+      ``EPS_VM_HOME_HF_CACHE``); pod-side detection refuses; every failure
+      degrades to a skipped tier. Boot-disk pass only, same ``main()``-only
+      opt-in. A later FileNotFoundError on a trimmed snapshot path means
+      tier (e) trimmed it — re-download on demand (the data lives on HF),
+      not data loss.
   (c) Stale logs: ``logs/**/*.log`` older than N days (default 14, env
       ``EPS_VM_DISK_LOG_MAX_AGE_DAYS``) plus ``/tmp/*.log`` of the same age.
 
@@ -762,6 +771,139 @@ def clean_vm_workspace_hf_cache(
     return res
 
 
+# ─── tier (e): stale unref'd home HF-hub REVISIONS (#1377) ───────────────────
+
+# The user home hub cache (~/.cache/huggingface/hub) is the LIVE cache for
+# every VM-side huggingface_hub download; the project data repo accretes one
+# cached revision per upload commit (295 revisions / 37.6G freeable on
+# 2026-07-15, regrown to 88 unref'd revisions / ~20G within 5 days). Whole-repo
+# age-gating (tier d) cannot help — the repo is touched daily, so repo-level
+# last_accessed is always fresh — so this tier trims REVISIONS: per repo keep
+# the newest + every ref'd revision, delete unref'd non-newest revisions older
+# than the age gate. A later FileNotFoundError on a trimmed snapshot path means
+# tier (e) trimmed it — re-download on demand (the data lives on HF), not data
+# loss.
+DEFAULT_HOME_HF_CACHE = "~/.cache/huggingface"  # env EPS_VM_HOME_HF_CACHE
+DEFAULT_HOME_HF_REVISION_MAX_AGE_DAYS = 7.0  # env EPS_VM_HOME_HF_REVISION_MAX_AGE_DAYS
+
+
+def home_hf_cache_root() -> Path:
+    """The watched home HF cache root (env ``EPS_VM_HOME_HF_CACHE``; blank ->
+    default ``~/.cache/huggingface``; the tier appends ``hub/`` itself)."""
+    raw = os.environ.get("EPS_VM_HOME_HF_CACHE", "").strip()
+    return Path(raw).expanduser() if raw else Path(DEFAULT_HOME_HF_CACHE).expanduser()
+
+
+def home_hf_revision_max_age_days() -> float:
+    """Tier-(e) unref'd-revision age cutoff in days
+    (env ``EPS_VM_HOME_HF_REVISION_MAX_AGE_DAYS``; blank/invalid/negative -> default)."""
+    raw = os.environ.get("EPS_VM_HOME_HF_REVISION_MAX_AGE_DAYS", "").strip()
+    if not raw:
+        return DEFAULT_HOME_HF_REVISION_MAX_AGE_DAYS
+    try:
+        val = float(raw)
+    except ValueError:
+        return DEFAULT_HOME_HF_REVISION_MAX_AGE_DAYS
+    return val if val >= 0.0 else DEFAULT_HOME_HF_REVISION_MAX_AGE_DAYS
+
+
+def clean_home_hf_stale_revisions(
+    apply: bool,
+    *,
+    max_age_days: float | None = None,
+    cache_root: Path | None = None,
+    now: float | None = None,
+) -> TierResult:
+    """Tier (e): trim stale unref'd non-newest HF hub REVISIONS in the user
+    home cache (#1377).
+
+    Pod guard first: ``_running_pod_side()`` refuses (tier (d)'s
+    ``ismount('/workspace')`` arm guards ITS target being a live pod volume;
+    the home path has no mount analogue, so pod-side detection is the
+    transferable half). Then ``scan_cache_dir(root/'hub')`` and, per repo,
+    KEEP the newest revision (deterministic tie-break on
+    ``(last_modified, commit_hash)``) plus every ref'd revision; collect
+    unref'd non-newest revisions with ``last_modified`` older than
+    ``max_age_days`` (default 7 d), build ONE cache-level ``delete_revisions``
+    strategy, and report per-repo detail lines (approximate — shared blobs
+    make the strategy's ``expected_freed_size`` the authoritative total);
+    ``apply`` executes it + writes one sidecar row
+    (``kind='home-hf-revisions-trimmed'``). EVERY failure (import, scan,
+    execute) degrades to ``TierResult.skipped`` + reason — the guard never
+    crashes on a corrupt cache. A later ``FileNotFoundError`` on a trimmed
+    snapshot path means tier (e) trimmed it — re-download on demand (the data
+    lives on HF), not data loss. ``datasets/`` + ``xet/`` untouched."""
+    res = TierResult(name="home-hf-revisions")
+    try:
+        if _running_pod_side():
+            res.skipped = True
+            res.skip_reason = "pod-side detected — tier (e) refuses"
+            return res
+    except OSError as exc:
+        res.skipped = True
+        res.skip_reason = f"pod-guard probe failed: {exc}"
+        return res
+    root = cache_root if cache_root is not None else home_hf_cache_root()
+    hub = root / "hub"
+    if not hub.is_dir():
+        res.skipped = True
+        res.skip_reason = f"no hub cache at {hub}"
+        return res
+    age_days = max_age_days if max_age_days is not None else home_hf_revision_max_age_days()
+    cutoff = (time.time() if now is None else now) - age_days * 86400.0
+    try:
+        info = _scan_hf_cache(hub)  # SAME seam as tier (d)
+        repos = list(info.repos)
+        n_revisions = 0
+        stale_by_repo: dict[str, list] = {}
+        for repo in repos:
+            revs = list(repo.revisions)
+            n_revisions += len(revs)
+            if len(revs) <= 1:
+                continue  # single revision == newest: always kept
+            newest = max(revs, key=lambda r: (r.last_modified, r.commit_hash))
+            stale = [r for r in revs if r is not newest and not r.refs and r.last_modified < cutoff]
+            if stale:
+                stale_by_repo[repo.repo_id] = stale
+        hashes = [r.commit_hash for revs in stale_by_repo.values() for r in revs]
+        if not hashes:
+            res.detail.append(
+                f"no unref'd revision older than {age_days:g}d "
+                f"(of {n_revisions} revision(s) in {len(repos)} repo(s))"
+            )
+            return res
+        strategy = info.delete_revisions(*hashes)
+        freed = int(strategy.expected_freed_size)
+        res.total_discovered_bytes = freed  # the would-free upper bound
+        for repo_id, revs in sorted(stale_by_repo.items()):
+            approx = sum(r.size_on_disk for r in revs)
+            res.detail.append(f"{repo_id}: {len(revs)} stale revision(s), ~{_fmt_gb(approx)}")
+        verb = "trimmed" if apply else "would trim"
+        res.detail.append(
+            f"{verb} {len(hashes)} revision(s) across "
+            f"{len(stale_by_repo)} repo(s) [{_fmt_gb(freed)}]"
+        )
+        if not apply:
+            res.bytes_freed = freed  # dry-run: report, execute NOTHING
+            return res
+        strategy.execute()
+        res.bytes_freed = freed  # set only AFTER execute() — an execute-raise leaves 0
+        append_disk_guard_event(
+            {
+                "kind": "home-hf-revisions-trimmed",
+                "repos": {rid: len(revs) for rid, revs in sorted(stale_by_repo.items())},
+                "bytes": freed,
+                "max_age_days": age_days,
+            },
+            apply=apply,
+        )
+    except Exception as exc:  # deliberate degrade — never crash the guard pass
+        res.skipped = True
+        res.skip_reason = f"{type(exc).__name__}: {exc}"[:200]
+        res.detail.append(f"home hf-revisions tier skipped: {res.skip_reason}")
+    return res
+
+
 # ─── tier (c): stale logs ────────────────────────────────────────────────────
 
 
@@ -858,10 +1000,11 @@ def run_guard(
     in the two CLI ``main()`` bodies; a source-scan test pins the invariant):
     the existing suite calls ``run_guard(apply=True, data_root=temp)`` as a
     LIBRARY under constant-terminal status monkeypatches, and a run_guard-side
-    production fallback would sweep the real /tmp during pytest. Tier (d)
-    (the /workspace hub-cache reap) rides the SAME production opt-in — it
-    runs only when ``reclaim_tiers`` AND an explicit ``tmp_root`` are set, so
-    every library call stays hermetic by construction."""
+    production fallback would sweep the real /tmp during pytest. Tiers (d)
+    (the /workspace hub-cache reap) and (e) (the home hub stale-revision
+    trim, #1377) ride the SAME production opt-in — they run only when
+    ``reclaim_tiers`` AND an explicit ``tmp_root`` are set, so every library
+    call stays hermetic by construction."""
     thr = threshold if threshold is not None else threshold_pct()
     age = log_max_age if log_max_age is not None else log_max_age_days()
     used_before = disk_used_pct(disk_path)
@@ -883,9 +1026,11 @@ def run_guard(
         res.tiers.append(clean_uv_cache(apply))
     res.tiers.append(clean_terminal_download_caches(apply, data_root=data_root, tmp_root=tmp_root))
     if reclaim_tiers and tmp_root is not None:
-        # Tier (d) rides the production opt-in (an explicit tmp_root) so
-        # library callers can never touch the real /workspace cache (#911).
+        # Tiers (d)+(e) ride the production opt-in (an explicit tmp_root) so
+        # library callers can never touch the real /workspace OR home caches
+        # (#911, #1377).
         res.tiers.append(clean_vm_workspace_hf_cache(apply, now=now))
+        res.tiers.append(clean_home_hf_stale_revisions(apply, now=now))
     if reclaim_tiers:
         res.tiers.append(clean_stale_logs(apply, age, now=now))
 
