@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1392,
+  "highest_id": 1393,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -3060,6 +3060,13 @@
       "path": "tasks/proposed/1392",
       "status": "proposed",
       "title": "daily-fix: sub-floor sentinel triggers apply run"
+    },
+    "1393": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1393",
+      "status": "proposed",
+      "title": "daily-fix: inline rounds route HF downloads off /"
     },
     "14": {
       "has_clean_result": false,
