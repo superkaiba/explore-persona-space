@@ -138,6 +138,7 @@ def resolve_story_files(revision: str) -> list[str]:
     api = HfApi()
     for attempt in range(4):
         try:
+            # HUB_VERIFY_RETRY_EXEMPT: inline 4-attempt retry loop + documented filename fallback
             tree = api.list_repo_tree(
                 HF_DATA_REPO,
                 path_in_repo=STORY_PREFIX,
