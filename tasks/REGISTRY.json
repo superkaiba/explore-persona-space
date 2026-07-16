@@ -2614,8 +2614,8 @@
       "goal": "Identify which factor(s) \u2014 role identity/frequency, genre, answer structure/length, single-responder-vs-multi-speaker context, or measurement \u2014 account for the large held-out-R\u00b2 gap between the assistant context\u2192answer map (#825: base 0.59 / instruct 0.67, survives chat-template removal) and the per-character fiction context\u2192dialogue map (#1310: base 0.11\u20130.15 / instruct 0.19\u20130.25, same plain-text regime), via a one-factor-at-a-time ablation ladder measuring held-out R\u00b2 at each rung in Qwen2.5-7B base and instruct.",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/running/1335",
-      "status": "running",
+      "path": "tasks/approved/1335",
+      "status": "approved",
       "title": "Ablations: why is the assistant context\u2192answer map much stronger than the fiction-character map (both survive template removal)?"
     },
     "1336": {
