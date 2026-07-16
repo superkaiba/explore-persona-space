@@ -3,7 +3,8 @@ title: A fixed-label fiction character supports a character-specific context→d
   map in both base and instruct models once each scene is aggregated to one point
   (MODERATE confidence)
 kind: experiment
-tags: []
+tags:
+- followup-auto
 created_at: '2026-07-14T22:56:43Z'
 has_clean_result: true
 parent_id: 931
