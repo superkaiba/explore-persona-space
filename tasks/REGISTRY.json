@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1413,
+  "highest_id": 1414,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -3228,6 +3228,13 @@
       "path": "tasks/proposed/1413",
       "status": "proposed",
       "title": "daily-fix: guard ssh-string git false positives"
+    },
+    "1414": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1414",
+      "status": "proposed",
+      "title": "daily-fix: plan 9 pins out-root filesystem mount"
     },
     "142": {
       "has_clean_result": true,
