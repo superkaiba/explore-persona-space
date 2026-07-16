@@ -972,6 +972,11 @@ def _phase_extract(  # noqa: C901 — linear gate→G→P→B→U pipeline; see 
             logger.info("[determinism] %s: early(L0-3)=%.8f flat=%.8f PASS", c, early, flat)
     finally:
         capture2.remove()
+        # The loop rebinds `model = model2` (so _capture_ctx's closure sees the fresh
+        # load); deleting ONLY `model2` leaves the 14.7 GiB weights alive via `model`
+        # through every fit SUBPROCESS — on the A100-40 rung F2/F3 OOMed against the
+        # leak (2026-07-16 att-233638). Release BOTH names before the fit phases.
+        model = None
         del model2
         if device == "cuda":
             torch.cuda.empty_cache()
