@@ -217,3 +217,19 @@ def test_item5_non_cell_min_n_clause_present():
     # The workflow.yaml schema mirror (markers.md regen is lint-synced).
     yaml_text = (ROOT / ".claude" / "workflow.yaml").read_text()
     assert "Non-cell smoke axes" in yaml_text
+
+
+# --- #1409: smoke exercises data-dependent gates at smoke n ---------------
+#
+# Incident #1345: 4 pre-existing data gates in reused code (a fold-skip, an
+# `n_common > 0` assert, two count asserts) had never executed at smoke n;
+# they first fired in production — two serialized GCP crashes (2026-07-15).
+
+
+def test_item3_data_gate_exercise_clause_present():
+    """#1409: item 3 demands data-dependent gate execution at smoke n."""
+    text = EXPERIMENT_IMPLEMENTER.read_text()
+    assert "Data-dependent gates, not just the happy path" in text
+    assert "data gates exercised:" in text
+    assert "production-only — <one-line" in text
+    assert "COMPOSES with the item-5 resize-up duty" in text
