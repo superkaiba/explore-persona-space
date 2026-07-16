@@ -3,7 +3,8 @@ title: The assistant context→answer map recovers its full ceiling across chat 
   plain-text framings only after a linear change of coordinates, and barely exists
   in narrative stories (MODERATE confidence)
 kind: experiment
-tags: []
+tags:
+- followup-manual
 created_at: '2026-07-15T12:07:19Z'
 has_clean_result: true
 parent_id: 825
