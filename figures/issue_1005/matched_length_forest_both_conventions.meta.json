@@ -1,0 +1,99 @@
+{
+  "commit": "e9caf4f92b",
+  "created": "2026-07-16T11:21:47Z",
+  "figsize": [
+    9.8,
+    4.0
+  ],
+  "points": [
+    {
+      "\u0394 held-out skill: CoT-conclusion slice \u2212 answer-opening slice": -0.048,
+      "y": 3.0,
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "\u0394 held-out skill: CoT-conclusion slice \u2212 answer-opening slice": -0.0227,
+      "y": 2.0,
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "\u0394 held-out skill: CoT-conclusion slice \u2212 answer-opening slice": -0.1067,
+      "y": 1.0,
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "\u0394 held-out skill: CoT-conclusion slice \u2212 answer-opening slice": -0.0474,
+      "y": 0.0,
+      "_kind": "errorbar",
+      "_group": 3
+    },
+    {
+      "\u0394 held-out skill: CoT-conclusion slice \u2212 answer-opening slice": -0.052,
+      "y": 3.0,
+      "label": "-0.048",
+      "series": "parent point estimate (full context, per-question)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "\u0394 held-out skill: CoT-conclusion slice \u2212 answer-opening slice": -0.092,
+      "y": 1.0,
+      "series": "parent layer-convention range (prefix, per-question)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "\u0394 held-out skill: CoT-conclusion slice \u2212 answer-opening slice": -0.054,
+      "y": 1.0,
+      "series": "parent layer-convention range (prefix, per-question)",
+      "_kind": "line",
+      "_group": 5
+    }
+  ],
+  "n_series": 6,
+  "total_points": 7,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "The answer's own opening beats the CoT slice on this model too",
+        "xlabel": "\u0394 held-out skill: CoT-conclusion slice \u2212 answer-opening slice",
+        "legend_labels": [
+          "parent point estimate (full context, per-question)",
+          "parent layer-convention range (prefix, per-question)"
+        ],
+        "annotations": [
+          "-0.048",
+          "-0.023",
+          "-0.107",
+          "-0.047"
+        ],
+        "xticklabels": [
+          "\u22120.14",
+          "\u22120.12",
+          "\u22120.10",
+          "\u22120.08",
+          "\u22120.06",
+          "\u22120.04",
+          "\u22120.02",
+          "0.00",
+          "0.02"
+        ],
+        "yticklabels": [
+          "full context input, per-question",
+          "full context input, query-averaged",
+          "query-excluded prefix input, per-question",
+          "query-excluded prefix input, query-averaged"
+        ]
+      }
+    ],
+    "series": [
+      "parent layer-convention range (prefix, per-question)",
+      "parent point estimate (full context, per-question)"
+    ]
+  }
+}
