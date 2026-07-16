@@ -114,7 +114,12 @@ Grep that heading and Read ONLY those spans (chunked). REVISE bars:
    probe, small adapter fit) on the VM CPU (route to a GPU lane), OR a many-cell
    dense-factorization loop (svd/eigh/lstsq/GCV-ridge per fold×layer×arm) with no
    shared/batched-factorization plan, OR a permutation/bootstrap/null-draw battery
-   over a fixed pool with no batching plan. The fix is a BATCHED formulation
+   over a fixed pool with no batching plan. OR a battery/fit per-call basis
+   priced by assertion or FLOP ÷ assumed-throughput with no measured
+   production-shape pilot, prior-issue figure (same kernel + shape +
+   dimension), or `pilot-gated` flag — and a `pilot-gated` battery headline
+   that books the naive projection instead of the ≥2× presumption
+   (#1092, 2.6×). Batched does not exempt the basis. The fix is a BATCHED formulation
    (`.claude/rules/vectorize-many-cell-fits.md`: pool reduction precomputed once,
    draws as one GEMM; the canonical `vectorized_mlp_skill.py` helper), NOT a bigger
    machine — a serial battery is overhead-bound, not FLOP-bound. Size gate: the
