@@ -3015,8 +3015,8 @@
     "1387": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1387",
-      "status": "running",
+      "path": "tasks/reviewing/1387",
+      "status": "reviewing",
       "title": "workflow-fix: verify_plan exit-0 baseline check"
     },
     "1388": {
