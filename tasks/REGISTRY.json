@@ -2889,8 +2889,8 @@
     "1370": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1370",
-      "status": "proposed",
+      "path": "tasks/planning/1370",
+      "status": "planning",
       "title": "workflow-fix: footer Reused bullets must carry pinned paths (verify Check 35)"
     },
     "1371": {
