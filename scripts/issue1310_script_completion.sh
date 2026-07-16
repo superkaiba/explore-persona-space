@@ -226,6 +226,8 @@ import os
 import sys
 from pathlib import Path
 
+from huggingface_hub import HfApi
+
 from explore_persona_space.orchestrate import hub
 
 data_dir, subdir = Path(sys.argv[1]), sys.argv[2]
@@ -242,7 +244,7 @@ for local, remote in jobs:
         print(f"[i1310-up] SMOKE dry-run: would upload {len(files)} files {local} -> {remote}")
         continue
     hub._upload(local, repo_id=repo, repo_type="dataset", path_in_repo=remote)
-    on_hub = hub.list_hf_files_under_path(repo, remote, repo_type="dataset")
+    on_hub = hub.list_hf_files_under_path(HfApi(), repo, remote, repo_type="dataset")
     assert len(on_hub) >= len(files), (
         f"scoped verify FAIL: {remote} has {len(on_hub)} files on Hub < {len(files)} local"
     )
