@@ -710,8 +710,8 @@
       "goal": "Rebuild the factory content-behavior datagen persona-vectors-style \u2014 each behavior defined by a trait description + 5 contrastive instruction pairs + neutral trait-eliciting questions (auto-generated persona-vectors-style where a curated bank triggers refusal) so a Claude generator is less likely to refuse \u2014 add an impossible-to-refuse formatting behavior as a pipeline positive control, and test whether this clears the yield floors and installs trainable organisms across the behavior set.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/awaiting_promotion/1090",
-      "status": "awaiting_promotion",
+      "path": "tasks/followups_running/1090",
+      "status": "followups_running",
       "title": "Raising the learning rate unlocks on-policy expression of the impolite behavior in every previously-silent training context, including the bare default assistant (MODERATE confidence)"
     },
     "1091": {
@@ -3141,8 +3141,8 @@
     "1402": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1402",
-      "status": "reviewing",
+      "path": "tasks/completed/1402",
+      "status": "completed",
       "title": "daily-fix: shared GCE staging HF-download retry"
     },
     "1403": {
@@ -3155,43 +3155,43 @@
     "1404": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1404",
-      "status": "running",
+      "path": "tasks/completed/1404",
+      "status": "completed",
       "title": "daily-fix: PM ownership check before spend emergency"
     },
     "1405": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1405",
-      "status": "running",
+      "path": "tasks/completed/1405",
+      "status": "completed",
       "title": "daily-fix: paper-plots interim-figure defaults"
     },
     "1406": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1406",
-      "status": "planning",
+      "path": "tasks/completed/1406",
+      "status": "completed",
       "title": "daily-fix: SPEC protocol delta on sibling headlines"
     },
     "1407": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1407",
-      "status": "proposed",
+      "path": "tasks/reviewing/1407",
+      "status": "reviewing",
       "title": "daily-fix: Monitor keys on exit/mtime not existence"
     },
     "1408": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1408",
-      "status": "proposed",
+      "path": "tasks/planning/1408",
+      "status": "planning",
       "title": "daily-fix: step9c oracle detached from root dirt"
     },
     "1409": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1409",
-      "status": "proposed",
+      "path": "tasks/planning/1409",
+      "status": "planning",
       "title": "daily-fix: smoke exercises data gates at smoke n"
     },
     "141": {
