@@ -4,3 +4,4 @@
 {"ts": "2026-07-16T19:08:01Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "proposed", "to": "planning", "note": "Clarifier All-clear."}
 {"ts": "2026-07-16T19:09:39Z", "kind": "epm:progress", "version": 2, "by": "unknown", "note": "stage-dispatch stage=planning round=1 subagent=planner worktree=repo-root — adversarial-planner Phase 1 spawned (bg); Goal snapshot captured from body ## Goal H2"}
 {"ts": "2026-07-16T19:20:38Z", "kind": "epm:progress", "version": 3, "by": "unknown", "note": "planner spawn x2 died to transient API 529 Overloaded (0 tokens, no durable output); re-spawned with per-subagent sonnet pin per the two-same-model-kills recovery rung. No state lost."}
+{"ts": "2026-07-16T19:29:52Z", "kind": "epm:plan-verify", "version": 1, "by": "unknown", "note": "verify_plan.py PASS on plans/v1.md — n_fail=0 n_warn=0, no overrides. Goal-currency: body ## Goal unchanged, quoted verbatim in plan §1."}
