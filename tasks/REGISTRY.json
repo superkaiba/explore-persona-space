@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1382,
+  "highest_id": 1383,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -2983,6 +2983,13 @@
       "path": "tasks/proposed/1382",
       "status": "proposed",
       "title": "workflow-fix: fix two red workflow tests on main"
+    },
+    "1383": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1383",
+      "status": "proposed",
+      "title": "workflow-fix: verified-at-filing context binding"
     },
     "139": {
       "has_clean_result": true,
