@@ -1555,8 +1555,8 @@ paragraph — RETIRES for v3).
 
 ## Anti-pattern audit (`audit_clean_results_body_discipline.py`)
 
-Catches prose-level violations the verifier doesn't (unchanged across
-generations):
+Catches prose-level violations the verifier doesn't (mostly unchanged across
+generations; the snake_case-slug category is v4-only):
 
 - Pre-registration mentions
 - Effect-size names in prose (Cohen's d, η², r-as-effect-size,
@@ -1565,6 +1565,10 @@ generations):
   exact, Mann-Whitney, Wilcoxon, bootstrap test)
 - Inline `value ± err` credence intervals (chart error bars fine)
 - Project-internal condition labels (`C1`, `C2`, `C2'`, `H1`, `P1`)
+- Backticked 3+-segment snake_case condition/cell slugs (`neg_reph_curious`)
+  in v4 reader-facing prose (Takeaways/Goal/Results; footer, captions,
+  tables, Methodology, field-name allowlist exempt; digit-leading segments
+  + bare unbackticked slugs stay LM-critic territory) — v4-only (#1372)
 - Math-style subscripts/superscripts in prose
 - GCG / PAIR / `H_a` / `REJECTED` / letter labels / `Bin A/B/C`
 - **`byte identical` / `byte-identical`** — banned phrasing.
