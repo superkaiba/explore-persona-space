@@ -8,7 +8,10 @@ merges them + the bridge/diagnostics into results.json):
              round-10 conversation-id set (id assert MECHANIZED before
              fitting), round-10 fold recipe (_folds_for_turn), PASS iff the
              round-10 r2 lies inside the refit's conversation-bootstrap CI at
-             every overlapping turn. FAIL blocks the headline (pipeline
+             every GATING turn (rank-space degeneracy carve-out, r11 rev 4:
+             cells whose bootstrap draws lack > alpha/2 finite mass strictly
+             on each side of the identity-resample anchor are reported
+             non-gating — _gc_verdict). FAIL blocks the headline (pipeline
              defect, never composition — plan §7).
   cells      per-turn ridge fits (ctx + pfx mapping arms, layers {14,18,19},
              L19 200-draw shuffle nulls, ONE conv->fold partition per panel)
@@ -84,6 +87,10 @@ BASE_LAYERS = (14, 18, 19)
 N_FOLDS = 6
 BOOT_SEED = 8250
 N_BOOT = 1000
+# CI level of the conversation-bootstrap percentiles (2.5/97.5 == 100*alpha/2,
+# 100*(1-alpha/2)) AND the G-C rank-space gating threshold (alpha/2 mass per
+# tail) — ONE constant so the gate reuses the CI's own level, never a new one.
+GC_BOOT_ALPHA = 0.05
 DROP_KILL_RATE = 0.20
 MIN_FIT_N = 30  # per-turn cell floor at production scale (smoke overrides)
 BRIDGE_BAND = 0.10  # pre-registered H4 comparability band (plan §6)
@@ -197,18 +204,34 @@ def _write_part(parts_dir: Path, name: str, payload: dict) -> None:
     logger.info("[part] wrote %s", parts_dir / f"{name}.json")
 
 
-def _cell_r2_bootstrap(
+def _cell_r2_boot_draws(
     y: np.ndarray, pred: np.ndarray, convs: list[str], n_boot: int, seed: int
-) -> tuple[float, float]:
-    """Conversation-bootstrap 95% CI of one cell's pooled R2 (frozen preds)."""
+) -> tuple[np.ndarray, float]:
+    """Conversation-bootstrap pooled-R2 draws + the identity-resample anchor.
+
+    Returns ``(r2_b, r2_identity)``: the ``n_boot`` seeded multinomial-resample
+    pooled-R2 draws (statistics + RNG consumption UNCHANGED from the original
+    ``_cell_r2_bootstrap`` body — the draws are bitwise those of the pre-fix
+    runs) and the pooled R2 of the IDENTITY resample (every conversation
+    counted once), computed through the SAME vectorized expression in the SAME
+    matmul batch as the draws. Bitwise-tie property (verified): draws whose
+    count vector is all-ones equal ``r2_identity`` EXACTLY, so rank-space tail
+    reads against this anchor are immune to cross-code-path float jitter —
+    ``_fit_cv``'s float64 centered r2 differs from this float32 uncentered
+    expression by ~1e-9..1e-7, which is exactly the epsilon that defeated the
+    revision-3 strict-CI-coverage test at t=24/25/29 (code-review v26).
+    """
     rng = np.random.default_rng(seed)
     uniq = sorted(set(convs))
     pos = {c: i for i, c in enumerate(uniq)}
     counts = rng.multinomial(len(uniq), np.full(len(uniq), 1.0 / len(uniq)), size=n_boot).astype(
         np.float64
     )
+    # Appended LAST so the first n_boot rows (and the CI derived from them)
+    # are bitwise identical to the pre-fix computation (verified).
+    counts = np.concatenate([counts, np.ones((1, len(uniq)), dtype=np.float64)], axis=0)
     cols = np.asarray([pos[c] for c in convs], dtype=np.int64)
-    m = counts[:, cols]  # (n_boot, n_rows)
+    m = counts[:, cols]  # (n_boot + 1, n_rows); last row = identity resample
     r_row = ((y - pred) ** 2).sum(axis=1)
     q_row = (y**2).sum(axis=1)
     n_b = m.sum(axis=1)
@@ -216,7 +239,35 @@ def _cell_r2_bootstrap(
     with np.errstate(divide="ignore", invalid="ignore"):
         ss_tot = m @ q_row - (s_b**2).sum(axis=1) / np.where(n_b > 0, n_b, np.nan)
         r2_b = 1.0 - (m @ r_row) / np.where(ss_tot > 0, ss_tot, np.nan)
-    return float(np.nanpercentile(r2_b, 2.5)), float(np.nanpercentile(r2_b, 97.5))
+    return r2_b[:-1], float(r2_b[-1])
+
+
+def _cell_r2_bootstrap(
+    y: np.ndarray, pred: np.ndarray, convs: list[str], n_boot: int, seed: int
+) -> tuple[float, float]:
+    """Conversation-bootstrap 95% CI of one cell's pooled R2 (frozen preds)."""
+    r2_b, _ = _cell_r2_boot_draws(y, pred, convs, n_boot, seed)
+    return (
+        float(np.nanpercentile(r2_b, 100.0 * GC_BOOT_ALPHA / 2.0)),
+        float(np.nanpercentile(r2_b, 100.0 * (1.0 - GC_BOOT_ALPHA / 2.0))),
+    )
+
+
+def _boot_tail_fractions(r2_b: np.ndarray, anchor: float) -> tuple[float, float, int]:
+    """Fractions of FINITE bootstrap draws strictly below / above ``anchor``.
+
+    Denominator = finite draw count (matching the nanpercentile CI, which also
+    ignores NaN draws — a single-conversation resample of one-row-per-conv
+    cells zeroes ss_tot and yields NaN). Zero finite draws -> (0.0, 0.0, 0),
+    which can never gate. A NaN ``anchor`` compares False on both sides ->
+    (0.0, 0.0, n) — a cell whose full-sample R2 is undefined cannot certify.
+    """
+    finite = r2_b[np.isfinite(r2_b)]
+    if finite.size == 0:
+        return 0.0, 0.0, 0
+    below = float((finite < anchor).mean())
+    above = float((finite > anchor).mean())
+    return below, above, int(finite.size)
 
 
 def _rows_by_turn(rows: list[dict]) -> dict[int, np.ndarray]:
@@ -276,23 +327,46 @@ def _r10_node_for_turn(r10_curve: dict, t: int) -> tuple[int, float | None]:
 
 
 def _gc_verdict(model: str, n_convs: int, per_turn: dict[str, dict]) -> dict:
-    """G-C verdict with the degenerate-CI carve-out (crash-fix r11, revision 3).
+    """G-C verdict with the rank-space degeneracy carve-out (r11, revision 4).
 
-    A cell is BINDING (``gating: true``) only when its conversation-bootstrap
-    CI STRICTLY covers its own refit point estimate (``lo < r2_refit < hi``);
-    equality on either side marks a DEGENERATE interval — at 3-7 unique
-    conversations the multinomial-resample R2 distribution's 97.5th percentile
-    collapses onto (or below) the point estimate, and a CI that excludes its
-    own point estimate cannot certify parity. Degenerate cells stay computed +
+    A cell is BINDING (``gating: true``) iff the conversation-bootstrap draw
+    distribution holds STRICTLY MORE than alpha/2 of its finite draws strictly
+    on EACH side of the cell's own identity-resample point estimate
+    (``boot_frac_below > GC_BOOT_ALPHA/2 AND boot_frac_above > GC_BOOT_ALPHA/2``;
+    alpha = the CI's own 0.05, no new tuned constant). Rationale: a healthy
+    bootstrap distribution puts ~50% of its draws on each side of the point;
+    a collapsed one (the 3-7-unique-conversation regime) has (near-)zero
+    upper-tail mass, yet its INTERPOLATED 97.5th percentile can land float
+    epsilon ABOVE the point — +9.7e-9..1.6e-7 at t=24/25/29 on the real
+    pre-fix instruct table — which defeated the revision-3 float-space
+    ``lo < r2_refit < hi`` test (code-review v26). Two rank-space details are
+    load-bearing: (1) the anchor is the IDENTITY-resample R2 computed through
+    the same vectorized expression as the draws (``_cell_r2_boot_draws``), so
+    the identity tie cluster compares EQUAL — never float-jittered to a random
+    side as it is against ``_fit_cv``'s float64 r2; (2) the comparison is
+    STRICT (> alpha/2, not >=): an interpolated ci_hi epsilon-above the point
+    implies at least ~alpha/2 draws above, so a >= test would reproduce the
+    float-space failure at the boundary. Degenerate cells stay computed +
     reported (their informational ``pass`` untouched) but are excluded from
-    ``n_fail``. Threshold-free: no tuned n-floor. Annotates each ``per_turn``
-    node in place with ``gating`` and returns the verdict dict;
+    ``n_fail``. Threshold-free beyond the CI's own alpha: no tuned n-floor,
+    no epsilon. Nodes lacking the ``boot_frac_*`` fields (pre-revision-4
+    archived artifacts) FAIL LOUD — recompute the seeded draws
+    deterministically (``run_gc`` over the preserved capture, ``BOOT_SEED +
+    t``); NEVER fall back to a float-space coverage test. Annotates each
+    ``per_turn`` node in place with ``gating`` and returns the verdict dict;
     ``pass`` = zero failures among gating cells AND >= 1 gating cell (an
     all-degenerate table cannot certify parity either way).
     """
-    for node in per_turn.values():
-        lo, hi = node["r2_refit_ci"]
-        node["gating"] = bool(lo < node["r2_refit"] < hi)
+    tail = GC_BOOT_ALPHA / 2.0
+    for key, node in per_turn.items():
+        if "boot_frac_below" not in node or "boot_frac_above" not in node:
+            raise RuntimeError(
+                f"[G-C] per-turn node t={key} lacks boot_frac_below/boot_frac_above "
+                "(pre-revision-4 artifact): recompute the seeded bootstrap draws "
+                "deterministically (run_gc over the preserved capture, seed BOOT_SEED+t) "
+                "— no float-space fallback"
+            )
+        node["gating"] = bool(node["boot_frac_below"] > tail and node["boot_frac_above"] > tail)
     n_gating = sum(1 for node in per_turn.values() if node["gating"])
     n_fail = sum(1 for node in per_turn.values() if node["gating"] and not node["pass"])
     return {
@@ -307,10 +381,14 @@ def _gc_verdict(model: str, n_convs: int, per_turn: dict[str, dict]) -> dict:
         "n_nongating": len(per_turn) - n_gating,
         "n_fail": n_fail,
         "gate_note": (
-            "degenerate-CI carve-out: a bootstrap CI that does not STRICTLY cover its "
-            "own point estimate (lo < r2_refit < hi) cannot certify parity; such cells "
-            "are reported non-gating (gating: false, pass informational) and excluded "
-            "from n_fail. pass = zero gating failures AND >= 1 gating cell."
+            "rank-space degeneracy carve-out: a cell is gating iff the bootstrap draw "
+            "distribution holds strictly more than alpha/2 (alpha=0.05, the CI's own "
+            "level) of its finite draws strictly on each side of the identity-resample "
+            "point estimate (boot_frac_below/boot_frac_above vs boot_identity_r2); "
+            "collapsed distributions — whose interpolated ci_hi may sit float-epsilon "
+            "above the point — are reported non-gating (gating: false, pass "
+            "informational) and excluded from n_fail. pass = zero gating failures AND "
+            ">= 1 gating cell."
         ),
         "pass": n_fail == 0 and n_gating > 0,
     }
@@ -391,13 +469,16 @@ def run_gc(args: argparse.Namespace) -> None:
         if folds is None:
             continue
         fit, pred = _fit_cv(X[sel], Y[sel], folds, return_pred=True, device=args.device)
-        lo, hi = _cell_r2_bootstrap(
+        r2_b, r2_ident = _cell_r2_boot_draws(
             Y[sel].astype(np.float32),
             pred.astype(np.float32),
             [r["conv_id"] for r in cell_rows],
             args.n_boot,
             BOOT_SEED + t,
         )
+        lo = float(np.nanpercentile(r2_b, 100.0 * GC_BOOT_ALPHA / 2.0))
+        hi = float(np.nanpercentile(r2_b, 100.0 * (1.0 - GC_BOOT_ALPHA / 2.0)))
+        frac_below, frac_above, n_finite = _boot_tail_fractions(r2_b, r2_ident)
         ok = lo <= r10_r2 <= hi
         out[str(t)] = {
             "n": int(sel.size),
@@ -406,6 +487,12 @@ def run_gc(args: argparse.Namespace) -> None:
             "r2_round10": float(r10_r2),
             "r10_key": r10_key,
             "pass": bool(ok),
+            # rank-space gating evidence (r11 revision 4): tail masses of the
+            # FINITE draws strictly below/above the identity-resample anchor.
+            "boot_frac_below": frac_below,
+            "boot_frac_above": frac_above,
+            "boot_n_finite": n_finite,
+            "boot_identity_r2": r2_ident,
         }
     verdict = _gc_verdict(args.model, len(captured_ids), out)
     _write_part(Path(args.parts_dir), f"gc_{args.model}", verdict)
