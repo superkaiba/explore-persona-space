@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1389,
+  "highest_id": 1390,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -3039,6 +3039,13 @@
       "path": "tasks/archived/139",
       "status": "archived",
       "title": "Emergent-misalignment SFT destroys persona-coupled markers in a sudden cliff between 10 and 25 steps; benign SFT decays gradually (MODERATE confidence)"
+    },
+    "1390": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1390",
+      "status": "proposed",
+      "title": "daily-fix: interp-critic degenerate-series lens"
     },
     "14": {
       "has_clean_result": false,
