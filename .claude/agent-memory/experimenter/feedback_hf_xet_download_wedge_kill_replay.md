@@ -19,7 +19,7 @@ across 2+ probes ~10 min apart, (2) `ss -tnp` EMPTY for the pid, (3)
 (`uv tool install py-spy` works on the instance). Then kill + replay
 the phase with `HF_HUB_DISABLE_XET=1` threaded INLINE on the workload
 command — the only xet kill switch `huggingface_hub` reads (it gates
-the xet branch at `file_download.py:1735`, so the hang class cannot
+the xet branch at `file_download.py:1725` via `is_xet_available()`, so the hang class cannot
 recur on the plain resolve/hf_transfer path it forces; already-landed
 files skip on replay). CONFIRM the bypass took on the replay (fresh
 py-spy dump: no xet frames) — hub GH #3266 reports a download-side
