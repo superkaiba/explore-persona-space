@@ -1666,3 +1666,204 @@ def test_single_body_audit_no_fm_no_warn_line(capsys):
     out = capsys.readouterr().out
     assert "WARN h1_title_sync" not in out
     assert out.splitlines()[0].startswith("PASS:")
+
+
+# ─── opaque_snake_slugs: backticked 3+-segment snake_case slugs (#1372) ──
+#
+# Incident #1315: `` `neg_reph_curious` `` sat in Methodology Data-extraction
+# AND Results prose; `--task 1315` printed PASS and only the LM critic caught
+# it. The category scans v4 reader-facing prose ONLY (`## Takeaways` /
+# `## Goal` / `## Results`), over the inline-backtick-keeping chain (like
+# `interval_inline`), with the `**Repro:**` footer onward, blockquote
+# captions, GFM table rows, fenced code, `test_*` names, and the exact-token
+# field-name allowlist exempt. Tests mutate V4_BODY_CLEAN via targeted
+# `.replace()` with a body != fixture guard, matching the pre_reg section.
+
+_RESULTS_PROSE_LINE = "The lift holds at every seed in the held-out evaluation."
+
+
+def test_snake_slug_in_v4_results_prose_is_flagged():
+    """The #1315 Results-prose shape: a backticked 3-segment slug in
+    `## Results` prose on a v4 body trips `opaque_snake_slugs`."""
+    body = V4_BODY_CLEAN.replace(
+        _RESULTS_PROSE_LINE,
+        "The lift holds at every seed; one panel context (`neg_reph_curious`) drives it.",
+    )
+    assert body != V4_BODY_CLEAN
+    findings = audit.audit_body(body)
+    assert "opaque_snake_slugs" in findings, findings
+    assert "`neg_reph_curious`" in findings["opaque_snake_slugs"], findings
+
+
+def test_snake_slug_in_v4_takeaways_prose_is_flagged():
+    """A backticked slug in a `## Takeaways` bullet flags — the mentor-facing
+    narrative surface the no-opaque-codes rule most directly protects."""
+    body = V4_BODY_CLEAN.replace(
+        "- Headline finding: the implant installs cleanly across three seeds.",
+        "- Headline finding: `tf_rev_default` installs cleanly across three seeds.",
+    )
+    assert body != V4_BODY_CLEAN
+    findings = audit.audit_body(body)
+    assert "opaque_snake_slugs" in findings, findings
+
+
+def test_snake_slug_in_v4_goal_prose_is_flagged():
+    """A backticked slug in `## Goal` prose flags — pins that `goal` is in
+    `_SNAKE_SLUG_PROSE_H2S` (reviewer concern on #1372's plan)."""
+    body = V4_BODY_CLEAN.replace(
+        "**Broader narrative:** which context factors predict fine-tuning leakage.",
+        "**Broader narrative:** whether `imp_icl_ft_neg` leakage tracks geometry.",
+    )
+    assert body != V4_BODY_CLEAN
+    findings = audit.audit_body(body)
+    assert "opaque_snake_slugs" in findings, findings
+
+
+def test_snake_slug_in_v4_methodology_prose_is_exempt():
+    """A slug appearing ONLY in `## Methodology` prose does NOT flag — the
+    field-name-dense section is deliberately out of scope (#1372 §4.6); the
+    residual stays LM-critic territory."""
+    body = V4_BODY_CLEAN.replace(
+        "**Design:** three seeds; baseline vs treatment; the single variable is the data mix.",
+        "**Design:** three seeds; one panel context (`neg_reph_curious`) is the treatment.",
+    )
+    assert body != V4_BODY_CLEAN
+    findings = audit.audit_body(body)
+    assert "opaque_snake_slugs" not in findings, findings
+
+
+def test_snake_slug_in_repro_footer_is_exempt():
+    """Slugs in the `**Repro:**` footer (the #1315 remediation destination —
+    the sanctioned slug surface) do NOT flag: the walker blanks the footer
+    label line onward."""
+    body = V4_BODY_CLEAN.replace(
+        "**Repro:** 1x A100, 47 min; code at commit deadbeef.",
+        "**Repro:** 1x A100, 47 min; adapters `tf_default_contra_d1` and\n"
+        "`neg_reph_curious`; code at commit deadbeef.",
+    )
+    assert body != V4_BODY_CLEAN
+    findings = audit.audit_body(body)
+    assert "opaque_snake_slugs" not in findings, findings
+
+
+def test_snake_slug_in_figure_caption_blockquote_is_exempt():
+    """A slug in a figure-caption blockquote inside `## Results` does NOT
+    flag — a caption naming the plotted cell is provenance, not narrative
+    (same carve-out family as `interval_inline`'s)."""
+    body = V4_BODY_CLEAN.replace(
+        _RESULTS_PROSE_LINE,
+        _RESULTS_PROSE_LINE + "\n\n> **Figure.** *Per-seed lift for the "
+        "`tf_default_contra_d1_seed42` cell.*",
+    )
+    assert body != V4_BODY_CLEAN
+    findings = audit.audit_body(body)
+    assert "opaque_snake_slugs" not in findings, findings
+
+
+def test_snake_slug_in_condition_table_and_fenced_code_is_exempt():
+    """Slugs in a GFM condition-table cell and in a fenced launch command
+    inside `## Results` do NOT flag — the condition table and command
+    examples are exactly where slugs belong."""
+    body = V4_BODY_CLEAN.replace(
+        _RESULTS_PROSE_LINE,
+        _RESULTS_PROSE_LINE + "\n\n"
+        "| Condition | Config slug |\n"
+        "|---|---|\n"
+        "| query-rephrase panel | `neg_reph_curious` |\n\n"
+        "```bash\n"
+        "uv run python scripts/eval.py condition=neg_reph_curious seed=42\n"
+        "```\n",
+    )
+    assert body != V4_BODY_CLEAN
+    findings = audit.audit_body(body)
+    assert "opaque_snake_slugs" not in findings, findings
+
+
+def test_snake_slug_allowlist_field_names_not_flagged():
+    """Allowlisted field/API identifiers in Results prose do NOT flag
+    (`logp_pos_mean`, `span_seam_counts` — legitimate 3+-segment names)."""
+    body = V4_BODY_CLEAN.replace(
+        _RESULTS_PROSE_LINE,
+        "The `logp_pos_mean` companion tracks the rate; `span_seam_counts` is clean.",
+    )
+    assert body != V4_BODY_CLEAN
+    findings = audit.audit_body(body)
+    assert "opaque_snake_slugs" not in findings, findings
+
+
+def test_snake_slug_allowlist_is_exact_token_not_prefix():
+    """The allowlist lookahead closes with a backtick, so an allowlisted
+    PREFIX does not exempt a longer token: `logp_pos_mean_v2` flags."""
+    body = V4_BODY_CLEAN.replace(
+        _RESULTS_PROSE_LINE,
+        "The `logp_pos_mean_v2` variant tracks the rate at every seed.",
+    )
+    assert body != V4_BODY_CLEAN
+    findings = audit.audit_body(body)
+    assert "opaque_snake_slugs" in findings, findings
+    assert "`logp_pos_mean_v2`" in findings["opaque_snake_slugs"], findings
+
+
+def test_snake_slug_two_segment_and_filename_forms_not_flagged():
+    """Structural exclusions: 2-segment tokens, filenames (extension before
+    the closing backtick), calls, and assignments never match — the tight
+    backtick anchoring carries these classes without allowlist entries."""
+    body = V4_BODY_CLEAN.replace(
+        _RESULTS_PROSE_LINE,
+        "Per-row `span_seam` provenance from `mix_meta.json` and "
+        "`training_mix_v2.jsonl`, built by `train_lora()` under "
+        "`condition=c1_evil_wrong_em`.",
+    )
+    assert body != V4_BODY_CLEAN
+    findings = audit.audit_body(body)
+    assert "opaque_snake_slugs" not in findings, findings
+
+
+def test_snake_slug_test_names_not_flagged():
+    """Backticked pytest names in Results prose do NOT flag (the `test_`
+    lookahead; #672's two hits are real code identifiers, never slugs)."""
+    body = V4_BODY_CLEAN.replace(
+        _RESULTS_PROSE_LINE,
+        "The pin is `test_watchdog_terminates_only_when_both_probes_fail`.",
+    )
+    assert body != V4_BODY_CLEAN
+    findings = audit.audit_body(body)
+    assert "opaque_snake_slugs" not in findings, findings
+
+
+def test_snake_slug_inactive_on_v3_bodies():
+    """Forward-only: the same slug in a v3-sentinel body's Findings prose
+    produces NO `opaque_snake_slugs` finding — grandfathered bodies are
+    never newly hard-FAILed by a v4 rule."""
+    body = V3_BODY_WITH_DATA_CODES.replace(
+        "The lift holds at every seed in the held-out evaluation.",
+        "The lift holds at every seed; one panel context (`neg_reph_curious`) drives it.",
+    )
+    assert body != V3_BODY_WITH_DATA_CODES
+    findings = audit.audit_body(body)
+    assert "opaque_snake_slugs" not in findings, findings
+
+
+def test_snake_slug_regression_issue_1315_shape():
+    """REGRESSION PIN (#1315 r1 shape): the Methodology Data-extraction
+    sentence AND the Results sentence that shipped in #1315's round-1 body.
+    The extended audit fires with `` `neg_reph_curious` `` sampled from the
+    Results prose; the legitimate `span_seam` / `span_seam_counts` neighbors
+    appear in NO sample (Methodology is out of scope; `span_seam` is
+    2-segment; `span_seam_counts` is allowlisted)."""
+    body = V4_BODY_CLEAN.replace(
+        "**Evaluation:** judge-scored rate on the held-out probes.",
+        "**Evaluation:** judge-scored rate on the held-out probes.\n\n"
+        "**Data extraction:** One panel context (`neg_reph_curious`) carries "
+        "per-row `span_seam` provenance (`span_seam_counts` = 100 exact / "
+        "20 prefix / 0 context).",
+    ).replace(
+        _RESULTS_PROSE_LINE,
+        "The lift holds at every seed; one panel context (`neg_reph_curious`) "
+        "sits on a BPE merge seam.",
+    )
+    assert body != V4_BODY_CLEAN
+    findings = audit.audit_body(body)
+    assert "opaque_snake_slugs" in findings, findings
+    assert "`neg_reph_curious`" in findings["opaque_snake_slugs"], findings
+    assert not any("span_seam" in s for s in findings["opaque_snake_slugs"]), findings
