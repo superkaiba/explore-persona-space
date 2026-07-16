@@ -175,10 +175,11 @@ def test_good_plan_passes_all():
         "c34_ratchet_headroom": "SKIP",
         "c35_pinned_revision_reuse": "SKIP",
         "c36_numeric_containment": "SKIP",
+        "c37_noflags_bundling_claim": "SKIP",
     }
     actual = {cid: r.status for cid, r in by_id.items()}
     assert actual == expected
-    assert len(results) == 36
+    assert len(results) == 37
 
 
 # ─── Check 0 — plan-nonstub ────────────────────────────────────────────────
@@ -5834,12 +5835,12 @@ def test_cli_json_schema_and_exit_zero_on_pass(tmp_path):
     assert payload["issue"] is None
     assert payload["kind"] == "experiment"
     assert payload["n_fail"] == 0
-    assert payload["n_skip"] == 29
+    assert payload["n_skip"] == 30
     assert {"id", "name", "status", "detail"} <= set(payload["checks"][0])
     statuses = {c["status"] for c in payload["checks"]}
     assert statuses <= {"PASS", "WARN", "FAIL", "SKIP"}
-    assert len(payload["checks"]) == 37
-    assert len({c["id"] for c in payload["checks"]}) == 37
+    assert len(payload["checks"]) == 38
+    assert len({c["id"] for c in payload["checks"]}) == 38
     # c23 has no task context in --plan-file mode: rendered SKIP (companion
     # assert for test_cli_issue_mode_appends_goal_currency).
     c23 = next(c for c in payload["checks"] if c["id"] == "c23_goal_currency")
@@ -7274,6 +7275,180 @@ def test_c36_label_digit_not_a_candidate():
 
 def test_c36_true_word_count_claim_passes():
     assert _status(_c36_plan(C36_1353_LINE), "c36_numeric_containment") == "PASS"
+
+
+# ─── Check 37 — no-flags bundling claim vs workflow_lint dispatch ──────────
+
+# The #1322 v1 incident shape (verbatim clause structure): an acceptance
+# criterion asserting the pre-commit-only reference check rides the bare run.
+C37_FALSE_CLAIM = (
+    "2. `uv run python scripts/workflow_lint.py` (no-flags default run) passes — this "
+    "includes `--check-references` (which walks CLAUDE.md; both new cross-refs must resolve)."
+)
+C37_TRUE_CLAIM = (
+    "1. `uv run python scripts/workflow_lint.py` (no-flags default run, which bundles "
+    "`--check-lessons-index`) passes."
+)
+
+
+def _c37_plan(*extra: str) -> str:
+    return GOOD_PLAN + "\n" + "\n\n".join(extra) + ("\n" if extra else "")
+
+
+def test_c37_kind_experiment_skips():
+    r_by = _run(_c37_plan(C37_FALSE_CLAIM), kind="experiment")[1]["c37_noflags_bundling_claim"]
+    assert r_by.status == "SKIP"
+    assert "kind-exempt" in r_by.detail
+
+
+def test_c37_false_claim_warns():
+    _, by_id = _run(_c37_plan(C37_FALSE_CLAIM), kind="infra")
+    r = by_id["c37_noflags_bundling_claim"]
+    assert r.status == "WARN"
+    assert "`--check-references`" in r.detail
+    assert "args.check_references" in r.detail
+
+
+def test_c37_true_claim_passes():
+    # `--check-lessons-index` IS dispatched on the no-flags run
+    # (workflow_lint.py `args.check_lessons_index or no_flags`).
+    assert _status(_c37_plan(C37_TRUE_CLAIM), "c37_noflags_bundling_claim", kind="infra") == "PASS"
+
+
+def test_c37_negated_line_does_not_trigger():
+    # The corrected #1322 v2 / workflow_lint-docstring phrasing: the claim
+    # anchor is present ("bundled into the no-flags") but the negation guard
+    # drops the line — asserted-negative mentions are never adjudicated.
+    plan = _c37_plan(
+        "`--check-references` is NOT bundled into the no-flags default run — pass it explicitly."
+    )
+    assert _status(plan, "c37_noflags_bundling_claim", kind="infra") == "SKIP"
+
+
+def test_c37_space_spelling_no_flags_warns():
+    # The "no flags" (space) vocabulary form survives the verb-anchored
+    # narrowing — pinned per the critic-round ask.
+    plan = _c37_plan("Run `workflow_lint.py` (no flags — bundles `--check-references`) as a gate.")
+    assert _status(plan, "c37_noflags_bundling_claim", kind="infra") == "WARN"
+
+
+def test_c37_two_command_idiom_does_not_trigger():
+    # Calibration FP class 1 (155+ corpus instances pre-narrowing): two
+    # separate invocations listed on one line make no bundling claim.
+    plan = _c37_plan(
+        "- `uv run python scripts/workflow_lint.py --check-asks` and the no-flags "
+        "default `uv run python scripts/workflow_lint.py` both exit 0."
+    )
+    assert _status(plan, "c37_noflags_bundling_claim", kind="infra") == "SKIP"
+
+
+def test_c37_into_destination_flag_not_flagged():
+    # Calibration FP class 2 (the reference-check-extension family,
+    # #714/#753/#739/#802/#1190): "bundled into `--check-references` and the
+    # no-flags default run" claims the SUBJECT flag's membership, not the
+    # destination bundle's — the subject (in-set) PASSes, the destination is
+    # never adjudicated.
+    plan = _c37_plan(
+        "New check `--check-lessons-index` (also bundled into `--check-references` "
+        "and the no-flags default run) walks the rules index."
+    )
+    assert _status(plan, "c37_noflags_bundling_claim", kind="infra") == "PASS"
+
+
+def test_c37_proposed_new_flag_passes():
+    # Calibration FP class 3 (forward-looking extension plans): a flag with
+    # no occurrence in the workflow_lint source is a PROPOSED new check —
+    # unfalsifiable at plan time, never an offender.
+    plan = _c37_plan(
+        "Add `--check-notyetbuilt`, bundled into the no-flags default run, to workflow_lint."
+    )
+    assert _status(plan, "c37_noflags_bundling_claim", kind="infra") == "PASS"
+
+
+def test_c37_fenced_claim_does_not_trigger():
+    plan = GOOD_PLAN + "\n```\n" + C37_FALSE_CLAIM + "\n```\n"
+    assert _status(plan, "c37_noflags_bundling_claim", kind="infra") == "SKIP"
+
+
+def test_c37_no_vocab_skips():
+    assert _status(GOOD_PLAN, "c37_noflags_bundling_claim", kind="infra") == "SKIP"
+
+
+def test_c37_na_escape_passes():
+    plan = _c37_plan(C37_FALSE_CLAIM, "N/A — no no-flags bundling claim")
+    _, by_id = _run(plan, kind="infra")
+    r = by_id["c37_noflags_bundling_claim"]
+    assert r.status == "PASS"
+    assert "declared" in r.detail
+
+
+def test_c37_quoted_na_phrase_does_not_escape():
+    # Anti-paste convention (#810/#1238 lineage, the c36 precedent): the
+    # phrase quoted mid-sentence / backtick-wrapped does not count.
+    plan = _c37_plan(
+        C37_FALSE_CLAIM,
+        "The bounce brief quotes `N/A — no no-flags bundling claim` as the check-37 escape.",
+    )
+    assert _status(plan, "c37_noflags_bundling_claim", kind="infra") == "WARN"
+
+
+def test_c37_pasted_warn_detail_does_not_retrigger_or_satisfy():
+    # The WARN detail leads with the negated truth (NOT) so a verbatim paste
+    # can neither re-trigger (negation guard) nor self-satisfy (the escape
+    # phrase in the detail is backtick-wrapped).
+    _, by_id = _run(_c37_plan(C37_FALSE_CLAIM), kind="infra")
+    detail = by_id["c37_noflags_bundling_claim"].detail
+    clean_plus_detail = _c37_plan(detail)
+    assert _status(clean_plus_detail, "c37_noflags_bundling_claim", kind="infra") == "SKIP"
+    offending_plus_detail = _c37_plan(C37_FALSE_CLAIM, detail)
+    assert _status(offending_plus_detail, "c37_noflags_bundling_claim", kind="infra") == "WARN"
+
+
+def test_c37_live_derivation_pins():
+    # Live-tree pin: the source-regex derivation stays plausible and keeps
+    # the ground-truth memberships. A workflow_lint main() dispatch-shape
+    # refactor fails HERE (forcing a deliberate _C37_DISPATCH_RE update)
+    # while the check itself only SKIPs.
+    src = verify_plan._c37_lint_source()
+    assert src is not None
+    dests = verify_plan._c37_noflags_dests(src)
+    assert dests is not None and len(dests) >= 40, dests
+    assert "references" not in dests  # the founding #1322 ground truth
+    assert "lessons_index" in dests
+    # The parenthesized `(args.check_X or no_flags) and not
+    # args.check_references` dispatch form parses too:
+    assert "marker_registry" in dests
+
+
+def test_c37_underivable_source_skips(tmp_path, monkeypatch):
+    # A stub lint file with zero dispatch lines → below the plausibility
+    # floor → loud SKIP, never a spray of WARNs (c34's missing-file pattern).
+    stub = tmp_path / "workflow_lint.py"
+    stub.write_text("def main():\n    pass\n")
+    monkeypatch.setattr(verify_plan, "_C37_LINT_PATH", stub)
+    _, by_id = _run(_c37_plan(C37_FALSE_CLAIM), kind="infra")
+    r = by_id["c37_noflags_bundling_claim"]
+    assert r.status == "SKIP"
+    assert "underivable" in r.detail
+
+
+def test_c37_missing_lint_file_skips(tmp_path, monkeypatch):
+    # --plan-file mode off-repo: workflow_lint.py absent → SKIP, no crash.
+    monkeypatch.setattr(verify_plan, "_C37_LINT_PATH", tmp_path / "workflow_lint.py")
+    _, by_id = _run(_c37_plan(C37_FALSE_CLAIM), kind="infra")
+    assert by_id["c37_noflags_bundling_claim"].status == "SKIP"
+
+
+def test_c37_phrase_listed_in_skillmd():
+    # Durability pin (the c34 test shape): the canonical escape phrase is
+    # registered backtick-wrapped in the adversarial-planner SKILL.md escape
+    # block; the generative sync test separately propagates the docstring
+    # registration.
+    text = (REPO_ROOT / ".claude" / "skills" / "adversarial-planner" / "SKILL.md").read_text()
+    anchor = text.index("Canonical N/A escape phrases")
+    block = text[anchor : text.index("bounce to the planner", anchor)]
+    assert "`N/A — no no-flags bundling claim`" in block
+    assert "check 37" in block
 
 
 def test_canonical_json_parse_snippet_pinned():

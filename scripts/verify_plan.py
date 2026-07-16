@@ -7,11 +7,13 @@ Phase 1.5.0 BEFORE the fact-checker + critic ensemble spawn. The plan-side
 sibling of ``scripts/verify_task_body.py`` (clean-result bodies): pure
 regex / string presence checks, NO LLM calls, no network, no side effects
 (the orchestrator running the adversarial-planner skill posts the
-``epm:plan-verify`` marker — never this script). One disclosed read-only
-exception: check 34, when its trigger fires, ``stat()``s the live sizes of
+``epm:plan-verify`` marker — never this script). Two disclosed read-only
+exceptions: check 34, when its trigger fires, ``stat()``s the live sizes of
 the ratcheted workflow files the plan names and lazily imports
 ``scripts/workflow_lint.py`` for their size-cap constants — read-only, no
-writes, still no network.
+writes, still no network; and check 37, when its trigger fires, reads
+``scripts/workflow_lint.py`` SOURCE TEXT to derive main()'s no-flags
+dispatch set — read-only, no import, no network.
 
 Check catalog (id — classification — kind scope)
 ------------------------------------------------
@@ -84,12 +86,13 @@ Check catalog (id — classification — kind scope)
       verified at pin                                     analysis
   c36 numeric containment       WARN-only, conditional    experiment +
       claims                                              analysis
+  c37 no-flags bundling claim   WARN-only, conditional    infra + batch only
 
 Kind-exempt checks render as [SKIP] (first-class status, distinguishable
 from genuine passes — the calibration report needs n_skip separate from
 n_pass). Conditional checks (4, 6, 7, 10, 11, 12, 13, 14, 15, 16, 17, 18,
-19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36)
-also SKIP when their content trigger does not fire.
+19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36,
+37) also SKIP when their content trigger does not fire.
 Check 23 runs OUTSIDE ``verify_plan_text()`` — it needs task context
 (``body.md`` + ``events.jsonl``), so ``main()`` appends it in ``--issue``
 mode only and renders it SKIP in ``--plan-file`` mode; its WARN is the one
@@ -138,6 +141,7 @@ labeled-line forms):
   - ``N/A — no verbatim ratcheted-file insertion`` (check 34)
   - ``N/A — no revision-pinned reuse`` (check 35)
   - ``N/A — no numeric containment claims`` (check 36)
+  - ``N/A — no no-flags bundling claim`` (check 37)
 
 WARN semantics: a WARN never blocks exit (exit 0). The Phase 1.5.0 wiring
 carries WARN lines verbatim into the fact-checker + critic briefs — that
@@ -5951,6 +5955,184 @@ def check_numeric_containment(plan: str, kind: str) -> CheckResult:
     return _warn(cid, name, _c36_offender_detail(offenders))
 
 
+# ─── Check 37 — no-flags bundling claim vs workflow_lint dispatch ──────────
+
+# Trigger: a NON-fenced line carrying a `--check-<flag>` token together with
+# a CLAIM-VERB-ANCHORED no-flags bundling assertion and no negation/scoping
+# token (same-line radius — the c16 re-generat precedent: window scans sweep
+# discussion noise, and set membership already exonerates true claims
+# wherever they sit). The verb anchor is load-bearing (2026-07-16
+# calibration): bare `--check-*` + no-flags co-occurrence swept in the
+# two-command acceptance idiom ("run `--check-asks` AND the no-flags
+# default run") at 293 WARNs over 838 corpus plan versions; requiring a
+# bundling verb linking the flag list to the no-flags run drops that whole
+# class while keeping the #1322-v1 "included in the no-flags default run"
+# shape and the endemic corpus false claim "no-flags run bundles/includes
+# `--check-asks`" (corrected #1007 v1→v2).
+_C37_LINT_PATH = Path(__file__).resolve().parent / "workflow_lint.py"  # tests monkeypatch
+# Keep `args.check_X or no_flags` as workflow_lint main()'s dispatch shape —
+# c37 parses exactly this form. A dispatch-shape refactor drops the derived
+# set below _C37_MIN_PLAUSIBLE (loud SKIP here) and
+# test_c37_live_derivation_pins fails the suite, forcing a deliberate
+# re-derivation rather than a silent all-PASS.
+_C37_DISPATCH_RE = re.compile(r"args\.check_(\w+)\s+or\s+no_flags")
+_C37_MIN_PLAUSIBLE = 10  # 47 dispatch lines measured 2026-07-16; fewer ⇒ parse broken
+
+_C37_FLAG_RE = re.compile(r"--check-([a-z0-9][a-z0-9-]*)")
+# Claim anchors, both word orders. Forward: verb … no-flags ("bundled into
+# the no-flags default run", "included in the no-flags default run" — the
+# #1322 v1 shape). Inverse: no-flags … verb ("no-flags default run, which
+# bundles/includes/covers `--check-asks`"; `incl\w*` admits the corpus
+# "incl." abbreviation). Gaps exclude '.' '|' and newline (sentence stop /
+# table cell) but deliberately ADMIT ';' and '—' (the corpus false claim
+# "no-flags default run; all bundled checks must pass (incl. `--check-asks`"
+# crosses a ';'). "runs?" is deliberately NOT a verb anchor: "run" is the
+# NOUN in "no-flags default run" and anchors nearly every incidental line.
+# `bundl` is restricted to the VERB forms (bundles/bundled/bundling): the
+# bare NOUN "bundle" anchors the incidental two-command idiom "(no-flags
+# bundle) + `--check-asks` + `--check-references` green" (2026-07-16 corpus).
+_C37_CLAIM_FWD_RE = re.compile(
+    r"(?i)\b(?:includ\w*|incl\.?|bundl(?:es|ed|ing)|part of|folde?d? into)[^.|\n]{0,40}no[- ]flags"
+)
+_C37_CLAIM_INV_RE = re.compile(
+    r"(?i)no[- ]flags[^.|\n]{0,60}\b(?:includ\w*|incl\.?|bundl(?:es|ed|ing)|covers?|carri\w*)"
+)
+# Destination-skip: a flag token directly preceded by "into" is the BUNDLE
+# DESTINATION, not the claim subject — "`--check-script-refs` (also bundled
+# into `--check-references` and the no-flags default run)" claims
+# script-refs ∈ {references bundle, no-flags run}; it asserts nothing about
+# references' own no-flags membership (the reference-check-extension family:
+# #714/#753/#739/#802/#1190 all quote this workflow_lint docstring idiom).
+_C37_DEST_RE = re.compile(r"(?i)\binto\s*[`'\"]?$")
+_C37_NEG_RE = re.compile(
+    r"(?i)\bnot\b|\bnever\b|\bno longer\b|\babsent\b|\bexcluded?\b|\boutside\b"
+    r"|\bseparate(?:ly)?\b|\bonly\s+(?:in|under|when|via|on)\b|\bruns only\b"
+)
+
+
+def _c37_lint_source() -> str | None:
+    """``scripts/workflow_lint.py`` source text (same-dir resolution —
+    worktree-correct), or ``None`` when absent (``--plan-file`` off-repo).
+    Read-only, NO import: source-regex derivation skips the 540 KB /
+    ~345 ms module import c34 pays (and main()'s dispatch is procedural —
+    there is no module-level constant to import)."""
+    if not _C37_LINT_PATH.is_file():
+        return None
+    return _C37_LINT_PATH.read_text()
+
+
+def _c37_noflags_dests(src: str) -> frozenset[str] | None:
+    """argparse dests dispatched on workflow_lint.py's no-flags default run,
+    derived from ``src``. ``None`` => underivable: fewer than
+    ``_C37_MIN_PLAUSIBLE`` matches (main()'s dispatch shape changed; the
+    live-tree pin test fails the suite in that world — never a spray of
+    WARNs on a broken parse). The `no_flags = not (...)` definition block
+    alternates `or args.check_*`, never `or no_flags`, so it cannot match;
+    the parenthesized `(args.check_X or no_flags) and not
+    args.check_references` forms DO match (correctly — they are in the
+    no-flags set, since no_flags=True implies check_references=False)."""
+    dests = frozenset(_C37_DISPATCH_RE.findall(src))
+    return dests if len(dests) >= _C37_MIN_PLAUSIBLE else None
+
+
+def check_noflags_bundling_claim(plan: str, kind: str) -> CheckResult:
+    """WARN-only, conditional, ``kind: infra|batch``: a plan line asserting
+    a ``--check-<flag>`` is bundled into workflow_lint.py's no-flags default
+    run must name a flag actually dispatched there (an `args.check_<dest> or
+    no_flags` line in main()) — #1322 v1 shipped an acceptance criterion
+    claiming the pre-commit-only ``--check-references`` runs on the bare
+    invocation, so its gate could never fire as written. Trigger:
+    ``--check-<flag>`` + a claim-verb-anchored no-flags assertion on one
+    non-fenced line with no negation/scoping token; falsity = derived-set
+    non-membership, restricted to flags that EXIST in the workflow_lint
+    source (a flag with no ``--check-<flag>`` occurrence there is a
+    PROPOSED new check — "add ``--check-newthing`` to the no-flags default
+    run" is forward-looking and unfalsifiable at plan time, never an
+    offender). NEVER FAILs (the c15/c34 doctrine: trigger and derivation
+    are text heuristics). Deliberately OUT of scope (v1, disclosed): the
+    CONVERSE claim class (asserting a flag is NOT in the set when it IS —
+    the negation guard drops every negated line unadjudicated), and the
+    vocabulary-side false-negative class (a bundling claim phrased without
+    a literal "no-flags"/"no flags" token, e.g. "the bare/default
+    workflow_lint run"). Calibration (2026-07-16, 838 corpus plan versions
+    carrying ``--check-``, forced kind=infra): 174 WARN / 115 PASS /
+    549 SKIP; the 20 NEWEST infra|batch plans (the forward-looking
+    operative set) are 0 WARN; #1322 v1 WARNs while its corrected v2
+    SKIPs (positive/negative control pair, likewise #802 v1→v2). The
+    verb anchor, the into-destination skip, and the existence gate are
+    each grounded on a named corpus false-positive class (see the
+    trigger-constant comments above); the residual WARN mass is dominated
+    by the endemic genuinely-false "no-flags run bundles/includes
+    ``--check-asks``" claim (corrected #1007 v1→v2 — a true positive),
+    with ~5% incidental false WARNs on historical long mixed-clause
+    lines, acceptable at WARN-only granularity."""
+    cid, name = (
+        "c37_noflags_bundling_claim",
+        "no-flags bundling claim matches workflow_lint dispatch",
+    )
+    if kind not in ("infra", "batch"):
+        return _skip(
+            cid,
+            name,
+            "kind-exempt: --check-* bundling claims are an infra|batch (workflow-fix) shape",
+        )
+    lines = plan.splitlines()
+    mask = _fence_mask(lines)
+    hits: list[tuple[str, str]] = []
+    for line, fenced in zip(lines, mask, strict=True):
+        if fenced:
+            continue
+        if not (_C37_CLAIM_FWD_RE.search(line) or _C37_CLAIM_INV_RE.search(line)):
+            continue
+        if _C37_NEG_RE.search(line):
+            continue
+        for m in _C37_FLAG_RE.finditer(line):
+            if _C37_DEST_RE.search(line[max(0, m.start() - 12) : m.start()]):
+                continue  # "bundled into `--check-X`": X is the destination, not the subject
+            hits.append((m.group(1), line))
+    if not hits:
+        return _skip(cid, name, "no --check-* no-flags bundling claim on a non-fenced line")
+    if _standalone_na_declared(plan, r"no no[- ]flags bundling claim"):
+        return _pass(cid, name, "explicit N/A declared (incidental --check/no-flags vocabulary)")
+    src = _c37_lint_source()
+    dests = None if src is None else _c37_noflags_dests(src)
+    if dests is None:
+        return _skip(
+            cid,
+            name,
+            "no-flags dispatch set underivable — scripts/workflow_lint.py absent (--plan-file "
+            "off-repo) or _C37_DISPATCH_RE matched below the plausibility floor "
+            f"({_C37_MIN_PLAUSIBLE}); membership cannot be adjudicated",
+        )
+    offenders = [
+        (flag, line)
+        for flag, line in hits
+        # Existence gate: a flag absent from the lint source outright is a
+        # PROPOSED new check (forward-looking claim) — skip, never an offender.
+        if f"--check-{flag}" in src and flag.replace("-", "_") not in dests
+    ]
+    if not offenders:
+        return _pass(
+            cid,
+            name,
+            f"{len(hits)} no-flags bundling claim(s) — every named flag is in the live "
+            "dispatch set (or is a proposed new check, not yet in the lint source)",
+        )
+    flag, line = offenders[0]
+    more = f" (+{len(offenders) - 1} more)" if len(offenders) > 1 else ""
+    return _warn(
+        cid,
+        name,
+        f"`--check-{flag}` is NOT in workflow_lint.py main()'s no-flags dispatch set "
+        f"(no `args.check_{flag.replace('-', '_')} or no_flags` line) — the plan's bundling "
+        "claim is false; the flag runs only when passed explicitly (#1322 v1 shipped exactly "
+        f"this claim for a pre-commit-only flag). Offending line: {line.strip()[:100]!r}{more}. "
+        "Remedies: correct the claim (name the explicit invocation that runs the flag), or "
+        "declare `N/A — no no-flags bundling claim` on its own line, unwrapped "
+        "(no backticks/quotes)",
+    )
+
+
 # ─── Driver ────────────────────────────────────────────────────────────────
 
 CHECKS = [
@@ -5989,6 +6171,7 @@ CHECKS = [
     check_ratchet_headroom,
     check_pinned_revision_reuse,
     check_numeric_containment,
+    check_noflags_bundling_claim,
 ]
 
 
