@@ -571,7 +571,11 @@ provenance is then carried into the clean-result `## Reproducibility`
 FROM an unmerged branch; checklist item (k) leg A above catches the
 INVERSE — reusing the main-resident copy of a parent module while the
 parent's issue branch carries unmerged fixes — and routes its port remedy
-through this section's three mandatory steps. #1345.)
+through this section's three mandatory steps. #1345. DISCOVERY of
+concurrent not-yet-merged sibling work is upstream of both: the planner's
+live-sibling sweep (`.claude/agents/planner.md` step 5) enumerates live
+sessions' in-flight worktree modules and routes any overlap here as
+reuse-or-consolidation instead of a fresh build, #1394.)
 
 If the parent experiment's scripts/configs live on a branch that was
 never merged to `main` (e.g. issue-432's recipe sits on the `issue-432`
