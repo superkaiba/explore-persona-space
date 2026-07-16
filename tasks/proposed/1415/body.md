@@ -21,6 +21,9 @@ goal: 'On Qwen-2.5-7B-Instruct, test whether the context vector V_c (last-contex
   a full-prefix KV-swap ceiling, and the persona-vector r_B steering baseline, with
   a logit-lens top-token readout of V_c, V_a, Delta, and the #922 slow modes as descriptive
   companion.'
+relates_to:
+- spec-context-as-vector
+- spec-steering
 ---
 # Causal test of the context/answer vectors: does steering with V_c′ − V_c shift on-policy answers from V_a toward V_a′?
 
