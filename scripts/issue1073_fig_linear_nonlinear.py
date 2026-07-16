@@ -8,10 +8,17 @@ one plot: color = decode arm, linestyle/marker = fitter class.
 import json
 from pathlib import Path
 
-import matplotlib.pyplot as plt
-from matplotlib.lines import Line2D
+from explore_persona_space.orchestrate.env import load_dotenv
 
-from explore_persona_space.analysis.paper_plots import (
+# #847: thread caps must land BEFORE the matplotlib import below — on the
+# shared VM, load_dotenv() setdefaults OMP/MKL/OPENBLAS/NUMEXPR_NUM_THREADS,
+# and the BLAS pools freeze at import time.
+load_dotenv()
+
+import matplotlib.pyplot as plt  # noqa: E402
+from matplotlib.lines import Line2D  # noqa: E402
+
+from explore_persona_space.analysis.paper_plots import (  # noqa: E402
     add_direction_arrow,
     paper_palette,
     savefig_paper,
@@ -41,8 +48,8 @@ def main() -> None:
     set_paper_style("blog")
     fig, ax = plt.subplots()
 
-    colors = dict(zip(ARM_LABELS, paper_palette(len(ARM_LABELS))))
-    for arm, arm_label in ARM_LABELS.items():
+    colors = dict(zip(ARM_LABELS, paper_palette(len(ARM_LABELS)), strict=False))
+    for arm, _arm_label in ARM_LABELS.items():
         for key, (_, ls, marker) in FITTERS.items():
             ys = [table[arm][str(layer)][key] for layer in layers]
             ax.plot(
