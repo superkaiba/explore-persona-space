@@ -2896,8 +2896,8 @@
     "1371": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1371",
-      "status": "running",
+      "path": "tasks/reviewing/1371",
+      "status": "reviewing",
       "title": "workflow-fix: WARN on linked-not-embedded committed figures in Results"
     },
     "1372": {
