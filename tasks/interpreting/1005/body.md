@@ -25,7 +25,7 @@ relates_to:
 
 - The parent's mediation signature replicates on a second thinking lineage: per-question CoT-conditioning gain +0.33 (95% CI +0.27 to +0.39; parent +0.20), composed matches direct, context adds −0.016 on top of the CoT.
 - Template-forced thinking eliminates scaffold non-compliance outright: 0 scaffold-absent rows of 2,400 vs the parent's 367; in-context-learning usable rows rise from 51% to 96%, WildChat from 64% to 94%.
-- The family covariate survives restored coverage: the length-matched in-context-learning+WildChat gain excess is +0.43 per-question (CI +0.37 to +0.48; parent like-for-like +0.52) — the parse-artifact reading is rewritten.
+- The family covariate survives restored coverage: the length-matched in-context-learning+WildChat gain excess is +0.43 per-question (CI +0.37 to +0.48; parent like-for-like +0.52) — this rules out the parse-artifact reading.
 - The registered compliance statistic lands 0.015 below its 0.95 bar (WildChat 93.5%), so the formal branch is coverage-still-collapsed — but every miss is cap truncation (90 rows) or repetition (8), the flagged set is empty, and the verdict rests on the flag-independent family contrast registered for that contingency.
 - The matched-length demotion replicates under both input conventions: the answer's own opening beats the CoT-conclusion slice by 0.048 (full-context input) and 0.107 (query-excluded prefix); the full CoT recovers +0.007.
 - The parent's short-CoT gradient does not transfer: terciles run +0.15/+0.20/+0.19 here vs the parent's falling +0.245/+0.066/+0.044 — family membership, not CoT length, is the portable covariate.
@@ -119,7 +119,7 @@ Per-context CoT gain vs median well-formed CoT length, in-context-learning+WildC
 
 The registered family contrast is +0.426 per-question (CI +0.365 to +0.483; 18 pairs, mean length gap 149 chars, max 1,582, no donor reuse) and +0.161 query-averaged (CI +0.052 to +0.288) — 0 and 1 of 2,000 bootstrap draws at or below zero. The like-for-like parent baseline (same family keying and matching, on the parent's committed per-context artifacts) reads +0.520 (CI +0.467 to +0.580) and +0.109 (CI −0.010 to +0.235).
 
-The excess persists essentially undiminished where parse coverage rose from 51–64% to 94–96%: the kill criterion fires — the outsized gain is a context-family property, not a parsing artifact (the formal branch accounting behind this verdict is in the next section). Given the per-context view above, the natural mechanism is context-summary failure (headroom), not anything specific to parsing.
+The excess persists at +0.43 against the parent's +0.52 where parse coverage rose from 51–64% to 94–96%: the kill criterion fires — the outsized gain is a context-family property, not a parsing artifact (the formal branch accounting behind this verdict is in the next section). The per-context view above points to context-summary failure (headroom) as the mechanism.
 
 ### The formal coverage branch misses on cap truncation alone, and the drop is too small and family-balanced to explain the family excess
 
@@ -143,7 +143,7 @@ Per-question CoT gain by CoT-length tercile within the 32 non-in-context-learnin
 
 Terciles read +0.147, +0.198, +0.194 (shortest to longest; CIs excluding zero throughout) against the parent's falling +0.245, +0.066, +0.044; the per-context gain-vs-length rank correlation is +0.48 (p=0.006, n=32) where the parent's ran negative. Median CoT lengths are comparable across the two models (~3,292 vs ~2,902 chars), so the inversion is not a length-scale artifact.
 
-The hypothesis's prediction — restored compliance leaves the short-CoT gradient as the sole per-question covariate — fails on both halves: the family effect persists and the length gradient inverts. Family membership, not CoT length, is the covariate that transports across the two lineages.
+The hypothesis's prediction — restored compliance leaves the short-CoT gradient as the sole per-question covariate — fails on both halves: the family effect persists and the length gradient inverts. What carries across the two lineages is family membership; the length gradient does not.
 
 ### The matched-length demotion replicates under both input conventions
 
