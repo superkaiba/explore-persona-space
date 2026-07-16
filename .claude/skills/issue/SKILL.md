@@ -9903,7 +9903,9 @@ documented, never silent, and gated on the re-snapshot actually changing
 something (an unchanged tip would fail identically; go straight to the
 merge-conflict recovery instead). NOTE the same error text ALSO fires for
 non-`tasks/` conflicts (overlapping workflow-surface edits, binary
-`figures/` collisions — #697/#597) that a re-snapshot cannot fix: the
+`figures/` collisions — #697/#597, resolved mechanically by the
+binary-figures newer-regeneration-wins recipe in the merge-conflict
+recovery below) that a re-snapshot cannot fix: the
 skip-predicate fall-through is the EXPECTED path there, not a
 malfunction. Likewise when an ORDINARY branch commit itself touched
 foreign `tasks/` at stale content, the re-snapshot cannot fix that
@@ -10065,7 +10067,42 @@ elif mapfile -t RECOVERY_FOREIGN < <(grep -Ev "^tasks/[^/]+/<N>/" \
     git -C "$WT" rm -f --ignore-unmatch -- "${RECOVERY_GONE_ON_MAIN[@]}"
   fi
 fi
-# THIS task's own tasks/*/<N>/ conflicts and all non-tasks/ conflicts:
+# Binary figures/ conflicts (add/add or modify/modify — #1090 fu4 / PR
+# #1066; earlier #697/#597): git cannot content-merge binaries, and the
+# .gitattributes merge=union rules cover tasks/ jsonl + agent-memory md,
+# NOT figures/ — so both-sides-changed figure paths ALWAYS conflict.
+# Figures are REGENERABLE artifacts (sidecar meta.json pins provenance;
+# the analyzer re-renders + SHA-pins): resolve MECHANICALLY, the NEWER
+# regeneration wins — compare the last commit touching the path on each
+# side; tie -> theirs (in THIS merge ours = the issue branch, theirs =
+# the captured $MAIN_SHA snapshot — the #1090-proven side). The losing
+# copy stays recoverable (branch kept post-merge; main history is
+# immutable; the figure re-renders from committed eval JSON). Stem-mates
+# (png/pdf/meta.json) commit together per regeneration, so per-path %ct
+# resolves the group to one side. checkout --ours/--theirs writes the
+# working tree only — the git add resolves the index entry, and the add
+# is GATED on checkout success: a failing checkout (modify/delete:
+# missing stage) leaves the entry UNMERGED, so the later
+# `git commit --no-edit` refuses on unmerged paths — the loud
+# fall-through to the manual prose below. NEVER stage a path whose
+# checkout failed.
+if ! git -C "$WT" -c core.quotePath=false diff --name-only --diff-filter=U -- 'figures/' \
+    > /tmp/issue-<N>-recovery-figures.txt; then
+  echo "recovery: figures/ conflicted-paths diff FAILED — resolve by hand per the prose below"
+  false
+else
+  while IFS= read -r p; do
+    OURS_CT=$(git -C "$WT" log -1 --format=%ct HEAD -- "$p")
+    THEIRS_CT=$(git -C "$WT" log -1 --format=%ct "$MAIN_SHA" -- "$p")
+    if [ "${THEIRS_CT:-0}" -ge "${OURS_CT:-0}" ]; then SIDE=--theirs; else SIDE=--ours; fi
+    if git -C "$WT" checkout "$SIDE" -- "$p"; then
+      git -C "$WT" add -- "$p"
+    else
+      echo "recovery: figures/ checkout $SIDE FAILED for $p (modify/delete missing stage?) — left UNMERGED; resolve by hand per the prose below"
+    fi
+  done < /tmp/issue-<N>-recovery-figures.txt
+fi
+# THIS task's own tasks/*/<N>/ conflicts and all remaining non-tasks/ conflicts (figures/ resolved above):
 # resolve in the worktree (keep main's version of anything outside this
 # task's deliverables), then:
 git -C "$WT" add <each resolved file>
