@@ -3057,8 +3057,8 @@
     "1392": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1392",
-      "status": "running",
+      "path": "tasks/reviewing/1392",
+      "status": "reviewing",
       "title": "daily-fix: sub-floor sentinel triggers apply run"
     },
     "1393": {
