@@ -8850,7 +8850,9 @@ _LESSONS_ROW_GRANDFATHER_MAX_BYTES: dict[str, int] = {
     # plan-time discovery value (a further lossy trim was already ruled
     # out at #1269). #1348 added the errorbar/CI figure trigger
     # (row 451 B -> 494 B). Cap = measured + <=40.
-    "gotchas": 520,
+    # #1429 added the bootstrap-CI gating/verdict trigger (row 519 B -> 578 B).
+    # Cap = measured + <=40.
+    "gotchas": 600,
 }
 _LESSONS_ROW_GRANDFATHER_MAX_HEADROOM_BYTES = 40
 
