@@ -357,6 +357,7 @@ def train_one(cid: str, args) -> dict:
 
         api = HfApi()
         expected = f"{hf_adapter_path(cid)}/adapter_model.safetensors"
+        # HUB_VERIFY_RETRY_EXEMPT: single-path probe wrapped in hub.retry_transient below
         present = retry_transient(
             lambda: api.file_exists(HF_MODEL_REPO, expected, repo_type="model"),
             what=f"verify adapter upload {expected}",
