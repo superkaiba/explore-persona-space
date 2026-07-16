@@ -5337,9 +5337,12 @@ def _husk_actions_for_finding(
             except Exception:
                 _log.error(
                     "husk reap #%d: git rm of %s succeeded but the commit FAILED — the staged "
-                    "deletions are confined to the %r pathspec and remain in the index; "
-                    "re-running `task.py reap-husks --apply` is idempotent and re-commits them.",
+                    "deletions are confined to the %r pathspec and remain in the index; the "
+                    "husk dir is already gone from disk, so a re-run finds no duplicate and "
+                    "will NOT re-commit them — commit manually via `git commit --only -- %s` "
+                    "(they otherwise ride a later non-`--only` committer).",
                     tid,
+                    rel_husk,
                     rel_husk,
                     rel_husk,
                 )
@@ -5372,7 +5375,10 @@ def reap_stale_status_husks(*, apply: bool = False, task_id: int | None = None) 
     verify→remove is adjacent and serialized against all task.py writers.
     Tracked husks go through ``git rm -r`` + one explicit-path commit per
     husk; untracked residue through ``shutil.rmtree`` with no commit.
-    Idempotent — a mid-loop failure is swept up by the next run.
+    Re-runs are safe (a reaped husk is simply no longer enumerated), but a
+    git-rm-succeeded-commit-FAILED crash leaves staged deletions a re-run
+    does NOT re-commit (the husk is already gone from disk) — see the
+    error log in ``_husk_actions_for_finding`` for the manual commit.
     """
     if os.environ.get("EPM_SKIP_HUSK_REAP") == "1":
         return HuskReapReport(applied=False, disabled=True, actions=[])
