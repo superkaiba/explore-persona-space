@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1427,
+  "highest_id": 1432,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -62,8 +62,8 @@
       "goal": "Determine whether the CoT-decomposition results from #928 (CoT informativeness, predictive sufficiency of the CoT summary, composition parity) replicate on DeepSeek-R1-Distill-Qwen-7B \u2014 a thinking model whose chat template forces the reasoning scaffold \u2014 and whether full scaffold compliance eliminates the flagged-context covariate, testing whether the +0.41 length-matched flagged-cluster gain is a think-scaffold-compliance artifact rather than a context-family property.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/followups_running/1005",
-      "status": "followups_running",
+      "path": "tasks/awaiting_promotion/1005",
+      "status": "awaiting_promotion",
       "title": "The outsized chain-of-thought gain on in-context-learning and WildChat contexts is a context-family property, not a parse artifact: it survives template-forced scaffold compliance (MODERATE confidence)"
     },
     "1006": {
@@ -2421,8 +2421,8 @@
       "goal": "Test whether a context->dialogue linear map focused on a SINGLE fixed fiction character (persona, NOT the assistant), trained on on-policy generated stories that always refer to the character by the same fixed label, exists in Qwen2.5-7B base and instruct \u2014 the fiction-character analog of the assistant-persona context->answer map \u2014 across a 4-persona panel, each persona its own map.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/followups_running/1310",
-      "status": "followups_running",
+      "path": "tasks/awaiting_promotion/1310",
+      "status": "awaiting_promotion",
       "title": "A fixed-label fiction character supports a character-specific context\u2192dialogue map in both base and instruct models once each scene is aggregated to one point (MODERATE confidence)"
     },
     "1311": {
@@ -3071,36 +3071,36 @@
     "1394": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/1394",
-      "status": "approved",
+      "path": "tasks/completed/1394",
+      "status": "completed",
       "title": "daily-fix: planner reuse search live sibling worktrees"
     },
     "1395": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1395",
-      "status": "planning",
+      "path": "tasks/completed/1395",
+      "status": "completed",
       "title": "daily-fix: REVISE unpiloted perm-battery wall-times"
     },
     "1396": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1396",
-      "status": "planning",
+      "path": "tasks/completed/1396",
+      "status": "completed",
       "title": "daily-fix: upload extraction store before long fits"
     },
     "1397": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1397",
-      "status": "planning",
+      "path": "tasks/completed/1397",
+      "status": "completed",
       "title": "daily-fix: review names batched helper for fit loops"
     },
     "1398": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1398",
-      "status": "proposed",
+      "path": "tasks/completed/1398",
+      "status": "completed",
       "title": "daily-fix: neutral gate vocabulary first-pass briefs"
     },
     "1399": {
@@ -3127,22 +3127,22 @@
     "1400": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1400",
-      "status": "proposed",
+      "path": "tasks/reviewing/1400",
+      "status": "reviewing",
       "title": "daily-fix: triage observer empty-window false flags"
     },
     "1401": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1401",
-      "status": "proposed",
+      "path": "tasks/running/1401",
+      "status": "running",
       "title": "daily-fix: pod.py sync env GITHUB_TOKEN refresh leg"
     },
     "1402": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1402",
-      "status": "proposed",
+      "path": "tasks/planning/1402",
+      "status": "planning",
       "title": "daily-fix: shared GCE staging HF-download retry"
     },
     "1403": {
@@ -3333,9 +3333,44 @@
     "1427": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1427",
-      "status": "planning",
+      "path": "tasks/completed/1427",
+      "status": "completed",
       "title": "workflow-fix: gotchas.md \u2014 EXDEV: bare /tmp tempdir + os.replace onto /workspace"
+    },
+    "1428": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1428",
+      "status": "proposed",
+      "title": "Fix torch-before-dotenv in 10 main-resident figure scripts (fleet thread-caps test red)"
+    },
+    "1429": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/running/1429",
+      "status": "running",
+      "title": "workflow-fix: gotchas entry \u2014 rank-space bootstrap tail-mass gating (float-space CI coverage epsilon-fragile)"
+    },
+    "1430": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/planning/1430",
+      "status": "planning",
+      "title": "workflow-fix: audit duplicate-id dirs + reap terminal-task status husks"
+    },
+    "1431": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1431",
+      "status": "proposed",
+      "title": "workflow-fix: gotchas entry \u2014 pilot timing gates measure at the sweep's execution shape"
+    },
+    "1432": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1432",
+      "status": "proposed",
+      "title": "workflow-fix: gotchas.md \u2014 cuda eigh non-convergence on near-singular Grams (CPU fallback)"
     },
     "144": {
       "has_clean_result": false,

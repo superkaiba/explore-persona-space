@@ -1,6 +1,6 @@
 ---
 name: hf local_dir staging for delete-to-free + content-derived mtimes for stat-fingerprints
-description: Disk-bounded layer-sliced HF staging must download via hf_hub_download(local_dir=...) — symlink-to-cache staging frees nothing on unlink; and stat-based resume fingerprints need content-derived mtimes
+description: Disk-bounded layer-sliced HF staging must download via hf_hub_download(local_dir=...) — symlink-to-cache staging frees nothing on unlink; and stat-based resume fingerprints need content-derived mtimes; the scratch MUST live on the target's filesystem (a bare /tmp tempdir makes os.replace cross-device -> EXDEV on pods)
 type: feedback
 ---
 
@@ -15,6 +15,10 @@ Two traps for disk-bounded, stage-then-delete HF staging loops (#1092 P6 wrapper
    no central-cache copy since huggingface_hub >=0.23; repo pins 0.36.2) then
    `os.replace` to the target; `TemporaryDirectory` cleanup removes the
    `local_dir/.cache/huggingface` metadata.
+   The `<scratch under target.parent>` placement is LOAD-BEARING, not a
+   convenience: a bare `tempfile.TemporaryDirectory()` (/tmp, container disk)
+   makes the `os.replace` cross-device and crashes `OSError: [Errno 18]`
+   (EXDEV) on pods — see `feedback_exdev_tempdir_hub_staging.md` (#1335 r9).
 
 2. **Stat-based fingerprints break across staging cycles unless mtime is pinned.**
    A resume predicate hashing `(name, size, st_mtime_ns)` per input

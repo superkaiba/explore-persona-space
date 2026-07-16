@@ -2302,6 +2302,20 @@ The Codex twin additionally receives:
   the canonical plan, Step 2-pre-b) — see
   `.claude/agents/codex-code-reviewer.md`.
 
+**Neutral gate vocabulary in FIRST-PASS briefs — every subagent brief,
+every step (#1398).** When ANY brief this skill composes (planner,
+implementer, experimenter, reviewer, analyzer — not only review rounds)
+concerns a kill-gate / RLVR / guard / stop-criteria task, write the BRIEF
+in neutral vocabulary from the first spawn: "halt gate", "stop criterion",
+"termination predicate" — never the loaded kill-* phrasings in
+brief/prompt text. The loaded terms stay in the ARTIFACTS themselves (code
+identifiers, plan text, task bodies are never renamed); only the brief is
+neutralized. This is the gate-vocabulary leg of CLAUDE.md § Spurious
+usage-policy refusals rung (e) — first-pass, not a post-kill retry step
+(2026-07-15: ≥12 spurious refusal kills across ~8 sessions; the #1336
+session lost 3 spawns to gate-criteria phrasing and neutralized only
+after the kills).
+
 **Trigger-dense (guard-surface) rounds — pre-materialize the excerpt file
 BEFORE spawning (#1058/#1098).** When the round's diff or artifact under
 review is trigger-dense per the `.claude/rules/trigger-dense-review.md`

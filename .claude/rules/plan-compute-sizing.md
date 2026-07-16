@@ -189,7 +189,10 @@ bounded fetch (known ≤~10^4-row scan, fixed stop) is exempt.
 through the production entrypoint; an asserted per-call cost is NOT a
 sizing basis.** Any §9 row whose component loops a fit / solve /
 factorization (ridge / SVD / eigh / lstsq / GCV / gradient-descent probe —
-the same kernel family as the floor cross-check's call-count trigger) over
+the same kernel family as the floor cross-check's call-count trigger) —
+**or runs a permutation / bootstrap / null-draw battery above the
+~15–30 min phase floor** (the per-"call" unit is then one
+production-shape batched draw block, not one serial draw) — over
 cells × folds × layers × arms × traits × seeds MUST ground its per-call
 `basis` on a MEASURED 1-cell/1-unit pilot timing at PRODUCTION shape, on
 the machine/device the phase will actually run, executed THROUGH the
@@ -232,9 +235,12 @@ battery refit, 2026-07-15): a permutation-null battery at ambient
 10,752-dim output, pilot-gated because its inputs didn't exist at plan
 time, measured 71.9 GB RSS against a 64 GB planned cap and projected
 12.8 h/box against 5 h planned (~2.6×) — the pre-registered abort
-threshold + checkpoint-restore recovered it, but ambient-dimension
-permutation/null batteries should be presumed ≥2× the naive RSS/wall
-projection until pilot-measured.
+threshold + checkpoint-restore recovered it, and ambient-dimension
+permutation/null batteries MUST be presumed ≥2× the naive RSS/wall
+projection until pilot-measured: a `pilot-gated` battery row BOOKS ≥2×
+its naive wall/RSS projection in the §9 headline (and any fence/cap
+derived from it) until the pilot lands — booking the naive figure is
+the #1092 failure, not a compliant plan.
 
 
 **Store-heavy / IO-heavy phase sizing — measure one item's serialization +

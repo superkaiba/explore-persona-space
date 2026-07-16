@@ -1,6 +1,6 @@
 {
-  "commit": "dcf3e06ed2",
-  "created": "2026-07-16T11:14:28Z",
+  "commit": "e51b941a4e",
+  "created": "2026-07-16T17:04:54Z",
   "figsize": [
     11.0,
     7.0
@@ -1379,1576 +1379,1772 @@
       "_group": 6
     },
     {
+      "x": 0.0,
+      "y": 0.010458758512968735,
+      "series": "Vex (villain)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 1.0,
+      "y": 0.024274116038040527,
+      "series": "Vex (villain)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 2.0,
+      "y": 0.03195842197712695,
+      "series": "Vex (villain)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 3.0,
+      "y": 0.023192502208146615,
+      "series": "Vex (villain)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 4.0,
+      "y": 0.03608843903037251,
+      "series": "Vex (villain)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 5.0,
+      "y": 0.055547071257840974,
+      "series": "Vex (villain)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 6.0,
+      "y": 0.06432411412973538,
+      "series": "Vex (villain)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 7.0,
+      "y": 0.06003301810659056,
+      "series": "Vex (villain)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 8.0,
+      "y": 0.05951028373907352,
+      "series": "Vex (villain)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 9.0,
+      "y": 0.07855603193918914,
+      "series": "Vex (villain)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 10.0,
+      "y": 0.09370716024344494,
+      "series": "Vex (villain)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 11.0,
+      "y": 0.09572660329650973,
+      "series": "Vex (villain)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 12.0,
+      "y": 0.10120434242315546,
+      "series": "Vex (villain)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 13.0,
+      "y": 0.1240136354881386,
+      "series": "Vex (villain)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 14.0,
+      "y": 0.1340625805572877,
+      "series": "Vex (villain)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 15.0,
+      "y": 0.13630743967238812,
+      "series": "Vex (villain)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 16.0,
+      "y": 0.1376984205245243,
+      "series": "Vex (villain)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 17.0,
+      "y": 0.13553646510771833,
+      "series": "Vex (villain)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 18.0,
+      "y": 0.14634120874847945,
+      "series": "Vex (villain)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 19.0,
+      "y": 0.16616224069994123,
+      "series": "Vex (villain)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 20.0,
+      "y": 0.16139054115656215,
+      "series": "Vex (villain)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 21.0,
+      "y": 0.16712050765206898,
+      "series": "Vex (villain)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 22.0,
+      "y": 0.16761691425960534,
+      "series": "Vex (villain)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 23.0,
+      "y": 0.17169243326930428,
+      "series": "Vex (villain)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 24.0,
+      "y": 0.18622409527051165,
+      "series": "Vex (villain)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 25.0,
+      "y": 0.1843345773597027,
+      "series": "Vex (villain)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 26.0,
+      "y": 0.19615036775291894,
+      "series": "Vex (villain)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 27.0,
+      "y": 0.20878049884799665,
+      "series": "Vex (villain)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
       "layer": 0.0,
       "held-out R\u00b2": 0.17024557275441232,
       "series": "Wren (helpful)",
       "_kind": "line",
-      "_group": 7
+      "_group": 8
     },
     {
       "layer": 1.0,
       "held-out R\u00b2": 0.16301054526344394,
       "series": "Wren (helpful)",
       "_kind": "line",
-      "_group": 7
+      "_group": 8
     },
     {
       "layer": 2.0,
       "held-out R\u00b2": 0.17376806799671995,
       "series": "Wren (helpful)",
       "_kind": "line",
-      "_group": 7
+      "_group": 8
     },
     {
       "layer": 3.0,
       "held-out R\u00b2": 0.17317613944722332,
       "series": "Wren (helpful)",
       "_kind": "line",
-      "_group": 7
+      "_group": 8
     },
     {
       "layer": 4.0,
       "held-out R\u00b2": 0.19459438636365978,
       "series": "Wren (helpful)",
       "_kind": "line",
-      "_group": 7
+      "_group": 8
     },
     {
       "layer": 5.0,
       "held-out R\u00b2": 0.19766450728488982,
       "series": "Wren (helpful)",
       "_kind": "line",
-      "_group": 7
+      "_group": 8
     },
     {
       "layer": 6.0,
       "held-out R\u00b2": 0.19461176644422773,
       "series": "Wren (helpful)",
       "_kind": "line",
-      "_group": 7
+      "_group": 8
     },
     {
       "layer": 7.0,
       "held-out R\u00b2": 0.21450358411211,
       "series": "Wren (helpful)",
       "_kind": "line",
-      "_group": 7
+      "_group": 8
     },
     {
       "layer": 8.0,
       "held-out R\u00b2": 0.211629981665873,
       "series": "Wren (helpful)",
       "_kind": "line",
-      "_group": 7
+      "_group": 8
     },
     {
       "layer": 9.0,
       "held-out R\u00b2": 0.05209156796065462,
       "series": "Wren (helpful)",
       "_kind": "line",
-      "_group": 7
+      "_group": 8
     },
     {
       "layer": 10.0,
       "held-out R\u00b2": 0.05480604652362375,
       "series": "Wren (helpful)",
       "_kind": "line",
-      "_group": 7
+      "_group": 8
     },
     {
       "layer": 11.0,
       "held-out R\u00b2": 0.13252139338281543,
       "series": "Wren (helpful)",
       "_kind": "line",
-      "_group": 7
+      "_group": 8
     },
     {
       "layer": 12.0,
       "held-out R\u00b2": 0.0807045976232813,
       "series": "Wren (helpful)",
       "_kind": "line",
-      "_group": 7
+      "_group": 8
     },
     {
       "layer": 13.0,
       "held-out R\u00b2": 0.05415441330526993,
       "series": "Wren (helpful)",
       "_kind": "line",
-      "_group": 7
+      "_group": 8
     },
     {
       "layer": 14.0,
       "held-out R\u00b2": 0.058332412110014054,
       "series": "Wren (helpful)",
       "_kind": "line",
-      "_group": 7
+      "_group": 8
     },
     {
       "layer": 15.0,
       "held-out R\u00b2": 0.06174420300401229,
       "series": "Wren (helpful)",
       "_kind": "line",
-      "_group": 7
+      "_group": 8
     },
     {
       "layer": 16.0,
       "held-out R\u00b2": 0.14459944365182908,
       "series": "Wren (helpful)",
       "_kind": "line",
-      "_group": 7
+      "_group": 8
     },
     {
       "layer": 17.0,
       "held-out R\u00b2": 0.14745023372834487,
       "series": "Wren (helpful)",
       "_kind": "line",
-      "_group": 7
+      "_group": 8
     },
     {
       "layer": 18.0,
       "held-out R\u00b2": 0.0927189776993892,
       "series": "Wren (helpful)",
       "_kind": "line",
-      "_group": 7
+      "_group": 8
     },
     {
       "layer": 19.0,
       "held-out R\u00b2": 0.11397294300939353,
       "series": "Wren (helpful)",
       "_kind": "line",
-      "_group": 7
+      "_group": 8
     },
     {
       "layer": 20.0,
       "held-out R\u00b2": 0.09876469963273915,
       "series": "Wren (helpful)",
       "_kind": "line",
-      "_group": 7
+      "_group": 8
     },
     {
       "layer": 21.0,
       "held-out R\u00b2": 0.09629923185293943,
       "series": "Wren (helpful)",
       "_kind": "line",
-      "_group": 7
+      "_group": 8
     },
     {
       "layer": 22.0,
       "held-out R\u00b2": 0.1021251903182595,
       "series": "Wren (helpful)",
       "_kind": "line",
-      "_group": 7
+      "_group": 8
     },
     {
       "layer": 23.0,
       "held-out R\u00b2": 0.1198887759503583,
       "series": "Wren (helpful)",
       "_kind": "line",
-      "_group": 7
+      "_group": 8
     },
     {
       "layer": 24.0,
       "held-out R\u00b2": 0.127294288719621,
       "series": "Wren (helpful)",
       "_kind": "line",
-      "_group": 7
+      "_group": 8
     },
     {
       "layer": 25.0,
       "held-out R\u00b2": 0.11919282659322283,
       "series": "Wren (helpful)",
       "_kind": "line",
-      "_group": 7
+      "_group": 8
     },
     {
       "layer": 26.0,
       "held-out R\u00b2": 0.14360862658303197,
       "series": "Wren (helpful)",
       "_kind": "line",
-      "_group": 7
+      "_group": 8
     },
     {
       "layer": 27.0,
       "held-out R\u00b2": -0.05334387252305195,
       "series": "Wren (helpful)",
       "_kind": "line",
-      "_group": 7
+      "_group": 8
     },
     {
       "layer": 0.0,
       "held-out R\u00b2": 0.14124907689152322,
       "series": "HELIOS (ship AI)",
       "_kind": "line",
-      "_group": 8
+      "_group": 9
     },
     {
       "layer": 1.0,
       "held-out R\u00b2": 0.15998628496381284,
       "series": "HELIOS (ship AI)",
       "_kind": "line",
-      "_group": 8
+      "_group": 9
     },
     {
       "layer": 2.0,
       "held-out R\u00b2": 0.18445390165024533,
       "series": "HELIOS (ship AI)",
       "_kind": "line",
-      "_group": 8
+      "_group": 9
     },
     {
       "layer": 3.0,
       "held-out R\u00b2": 0.19742491402553053,
       "series": "HELIOS (ship AI)",
       "_kind": "line",
-      "_group": 8
+      "_group": 9
     },
     {
       "layer": 4.0,
       "held-out R\u00b2": 0.19388924904343996,
       "series": "HELIOS (ship AI)",
       "_kind": "line",
-      "_group": 8
+      "_group": 9
     },
     {
       "layer": 5.0,
       "held-out R\u00b2": 0.18108008793826869,
       "series": "HELIOS (ship AI)",
       "_kind": "line",
-      "_group": 8
+      "_group": 9
     },
     {
       "layer": 6.0,
       "held-out R\u00b2": 0.16053072727453677,
       "series": "HELIOS (ship AI)",
       "_kind": "line",
-      "_group": 8
+      "_group": 9
     },
     {
       "layer": 7.0,
       "held-out R\u00b2": 0.15634486558154137,
       "series": "HELIOS (ship AI)",
       "_kind": "line",
-      "_group": 8
+      "_group": 9
     },
     {
       "layer": 8.0,
       "held-out R\u00b2": 0.1522225142602499,
       "series": "HELIOS (ship AI)",
       "_kind": "line",
-      "_group": 8
+      "_group": 9
     },
     {
       "layer": 9.0,
       "held-out R\u00b2": 0.16031801316736682,
       "series": "HELIOS (ship AI)",
       "_kind": "line",
-      "_group": 8
+      "_group": 9
     },
     {
       "layer": 10.0,
       "held-out R\u00b2": 0.1649096756917301,
       "series": "HELIOS (ship AI)",
       "_kind": "line",
-      "_group": 8
+      "_group": 9
     },
     {
       "layer": 11.0,
       "held-out R\u00b2": 0.1684485182078158,
       "series": "HELIOS (ship AI)",
       "_kind": "line",
-      "_group": 8
+      "_group": 9
     },
     {
       "layer": 12.0,
       "held-out R\u00b2": 0.16944993776523287,
       "series": "HELIOS (ship AI)",
       "_kind": "line",
-      "_group": 8
+      "_group": 9
     },
     {
       "layer": 13.0,
       "held-out R\u00b2": 0.14895748320168134,
       "series": "HELIOS (ship AI)",
       "_kind": "line",
-      "_group": 8
+      "_group": 9
     },
     {
       "layer": 14.0,
       "held-out R\u00b2": 0.15956520650357164,
       "series": "HELIOS (ship AI)",
       "_kind": "line",
-      "_group": 8
+      "_group": 9
     },
     {
       "layer": 15.0,
       "held-out R\u00b2": 0.1713622768461064,
       "series": "HELIOS (ship AI)",
       "_kind": "line",
-      "_group": 8
+      "_group": 9
     },
     {
       "layer": 16.0,
       "held-out R\u00b2": 0.1715956645658684,
       "series": "HELIOS (ship AI)",
       "_kind": "line",
-      "_group": 8
+      "_group": 9
     },
     {
       "layer": 17.0,
       "held-out R\u00b2": 0.20465171553499784,
       "series": "HELIOS (ship AI)",
       "_kind": "line",
-      "_group": 8
+      "_group": 9
     },
     {
       "layer": 18.0,
       "held-out R\u00b2": 0.17126236946673323,
       "series": "HELIOS (ship AI)",
       "_kind": "line",
-      "_group": 8
+      "_group": 9
     },
     {
       "layer": 19.0,
       "held-out R\u00b2": 0.058228394706520636,
       "series": "HELIOS (ship AI)",
       "_kind": "line",
-      "_group": 8
+      "_group": 9
     },
     {
       "layer": 20.0,
       "held-out R\u00b2": 0.08030320984189965,
       "series": "HELIOS (ship AI)",
       "_kind": "line",
-      "_group": 8
+      "_group": 9
     },
     {
       "layer": 21.0,
       "held-out R\u00b2": 0.06642248449935051,
       "series": "HELIOS (ship AI)",
       "_kind": "line",
-      "_group": 8
+      "_group": 9
     },
     {
       "layer": 22.0,
       "held-out R\u00b2": 0.07365869507330092,
       "series": "HELIOS (ship AI)",
       "_kind": "line",
-      "_group": 8
+      "_group": 9
     },
     {
       "layer": 23.0,
       "held-out R\u00b2": 0.08790803423635163,
       "series": "HELIOS (ship AI)",
       "_kind": "line",
-      "_group": 8
+      "_group": 9
     },
     {
       "layer": 24.0,
       "held-out R\u00b2": 0.11046767858551698,
       "series": "HELIOS (ship AI)",
       "_kind": "line",
-      "_group": 8
+      "_group": 9
     },
     {
       "layer": 25.0,
       "held-out R\u00b2": 0.10402699413175875,
       "series": "HELIOS (ship AI)",
       "_kind": "line",
-      "_group": 8
+      "_group": 9
     },
     {
       "layer": 26.0,
       "held-out R\u00b2": 0.11193778454922465,
       "series": "HELIOS (ship AI)",
       "_kind": "line",
-      "_group": 8
+      "_group": 9
     },
     {
       "layer": 27.0,
       "held-out R\u00b2": 0.13990603403318502,
       "series": "HELIOS (ship AI)",
       "_kind": "line",
-      "_group": 8
+      "_group": 9
     },
     {
       "layer": 0.0,
       "held-out R\u00b2": 0.14577114571097782,
       "series": "Dana (ordinary)",
       "_kind": "line",
-      "_group": 9
+      "_group": 10
     },
     {
       "layer": 1.0,
       "held-out R\u00b2": 0.17928005315113493,
       "series": "Dana (ordinary)",
       "_kind": "line",
-      "_group": 9
+      "_group": 10
     },
     {
       "layer": 2.0,
       "held-out R\u00b2": 0.1611995363121691,
       "series": "Dana (ordinary)",
       "_kind": "line",
-      "_group": 9
+      "_group": 10
     },
     {
       "layer": 3.0,
       "held-out R\u00b2": 0.08929208135719091,
       "series": "Dana (ordinary)",
       "_kind": "line",
-      "_group": 9
+      "_group": 10
     },
     {
       "layer": 4.0,
       "held-out R\u00b2": 0.19164529763249394,
       "series": "Dana (ordinary)",
       "_kind": "line",
-      "_group": 9
+      "_group": 10
     },
     {
       "layer": 5.0,
       "held-out R\u00b2": 0.1990901648869393,
       "series": "Dana (ordinary)",
       "_kind": "line",
-      "_group": 9
+      "_group": 10
     },
     {
       "layer": 6.0,
       "held-out R\u00b2": 0.22122719509681732,
       "series": "Dana (ordinary)",
       "_kind": "line",
-      "_group": 9
+      "_group": 10
     },
     {
       "layer": 7.0,
       "held-out R\u00b2": 0.21130017480274577,
       "series": "Dana (ordinary)",
       "_kind": "line",
-      "_group": 9
+      "_group": 10
     },
     {
       "layer": 8.0,
       "held-out R\u00b2": 0.22516344244655973,
       "series": "Dana (ordinary)",
       "_kind": "line",
-      "_group": 9
+      "_group": 10
     },
     {
       "layer": 9.0,
       "held-out R\u00b2": 0.11007961564991675,
       "series": "Dana (ordinary)",
       "_kind": "line",
-      "_group": 9
+      "_group": 10
     },
     {
       "layer": 10.0,
       "held-out R\u00b2": 0.19108862815224703,
       "series": "Dana (ordinary)",
       "_kind": "line",
-      "_group": 9
+      "_group": 10
     },
     {
       "layer": 11.0,
       "held-out R\u00b2": 0.26743429996838874,
       "series": "Dana (ordinary)",
       "_kind": "line",
-      "_group": 9
+      "_group": 10
     },
     {
       "layer": 12.0,
       "held-out R\u00b2": 0.2295589421905191,
       "series": "Dana (ordinary)",
       "_kind": "line",
-      "_group": 9
+      "_group": 10
     },
     {
       "layer": 13.0,
       "held-out R\u00b2": 0.17920146008532378,
       "series": "Dana (ordinary)",
       "_kind": "line",
-      "_group": 9
+      "_group": 10
     },
     {
       "layer": 14.0,
       "held-out R\u00b2": 0.14609075190213927,
       "series": "Dana (ordinary)",
       "_kind": "line",
-      "_group": 9
+      "_group": 10
     },
     {
       "layer": 15.0,
       "held-out R\u00b2": 0.2169304271429282,
       "series": "Dana (ordinary)",
       "_kind": "line",
-      "_group": 9
+      "_group": 10
     },
     {
       "layer": 16.0,
       "held-out R\u00b2": 0.28396834778311175,
       "series": "Dana (ordinary)",
       "_kind": "line",
-      "_group": 9
+      "_group": 10
     },
     {
       "layer": 17.0,
       "held-out R\u00b2": 0.27893594140197175,
       "series": "Dana (ordinary)",
       "_kind": "line",
-      "_group": 9
+      "_group": 10
     },
     {
       "layer": 18.0,
       "held-out R\u00b2": 0.15067829313411674,
       "series": "Dana (ordinary)",
       "_kind": "line",
-      "_group": 9
+      "_group": 10
     },
     {
       "layer": 19.0,
       "held-out R\u00b2": 0.1504645556142351,
       "series": "Dana (ordinary)",
       "_kind": "line",
-      "_group": 9
+      "_group": 10
     },
     {
       "layer": 20.0,
       "held-out R\u00b2": 0.14609866790592918,
       "series": "Dana (ordinary)",
       "_kind": "line",
-      "_group": 9
+      "_group": 10
     },
     {
       "layer": 21.0,
       "held-out R\u00b2": 0.13551019561193212,
       "series": "Dana (ordinary)",
       "_kind": "line",
-      "_group": 9
+      "_group": 10
     },
     {
       "layer": 22.0,
       "held-out R\u00b2": 0.16871551940450058,
       "series": "Dana (ordinary)",
       "_kind": "line",
-      "_group": 9
+      "_group": 10
     },
     {
       "layer": 23.0,
       "held-out R\u00b2": 0.1793012097407195,
       "series": "Dana (ordinary)",
       "_kind": "line",
-      "_group": 9
+      "_group": 10
     },
     {
       "layer": 24.0,
       "held-out R\u00b2": 0.19113472885116034,
       "series": "Dana (ordinary)",
       "_kind": "line",
-      "_group": 9
+      "_group": 10
     },
     {
       "layer": 25.0,
       "held-out R\u00b2": 0.18001152019031275,
       "series": "Dana (ordinary)",
       "_kind": "line",
-      "_group": 9
+      "_group": 10
     },
     {
       "layer": 26.0,
       "held-out R\u00b2": 0.18641027028420565,
       "series": "Dana (ordinary)",
       "_kind": "line",
-      "_group": 9
+      "_group": 10
     },
     {
       "layer": 27.0,
       "held-out R\u00b2": 0.042008685776372734,
       "series": "Dana (ordinary)",
       "_kind": "line",
-      "_group": 9
+      "_group": 10
     },
     {
       "layer": 0.0,
       "held-out R\u00b2": 0.1616578263222066,
       "series": "Vex (villain)",
       "_kind": "line",
-      "_group": 10
+      "_group": 11
     },
     {
       "layer": 1.0,
       "held-out R\u00b2": 0.18847303503261303,
       "series": "Vex (villain)",
       "_kind": "line",
-      "_group": 10
+      "_group": 11
     },
     {
       "layer": 2.0,
       "held-out R\u00b2": 0.17906789647606558,
       "series": "Vex (villain)",
       "_kind": "line",
-      "_group": 10
+      "_group": 11
     },
     {
       "layer": 3.0,
       "held-out R\u00b2": 0.18354282054223225,
       "series": "Vex (villain)",
       "_kind": "line",
-      "_group": 10
+      "_group": 11
     },
     {
       "layer": 4.0,
       "held-out R\u00b2": 0.1975836966854656,
       "series": "Vex (villain)",
       "_kind": "line",
-      "_group": 10
+      "_group": 11
     },
     {
       "layer": 5.0,
       "held-out R\u00b2": 0.19984145896867223,
       "series": "Vex (villain)",
       "_kind": "line",
-      "_group": 10
+      "_group": 11
     },
     {
       "layer": 6.0,
       "held-out R\u00b2": 0.20595248596330284,
       "series": "Vex (villain)",
       "_kind": "line",
-      "_group": 10
+      "_group": 11
     },
     {
       "layer": 7.0,
       "held-out R\u00b2": 0.1511840018889573,
       "series": "Vex (villain)",
       "_kind": "line",
-      "_group": 10
+      "_group": 11
     },
     {
       "layer": 8.0,
       "held-out R\u00b2": 0.18036675072994324,
       "series": "Vex (villain)",
       "_kind": "line",
-      "_group": 10
+      "_group": 11
     },
     {
       "layer": 9.0,
       "held-out R\u00b2": 0.09224641882082707,
       "series": "Vex (villain)",
       "_kind": "line",
-      "_group": 10
+      "_group": 11
     },
     {
       "layer": 10.0,
       "held-out R\u00b2": 0.1429978452813856,
       "series": "Vex (villain)",
       "_kind": "line",
-      "_group": 10
+      "_group": 11
     },
     {
       "layer": 11.0,
       "held-out R\u00b2": 0.142584386163505,
       "series": "Vex (villain)",
       "_kind": "line",
-      "_group": 10
+      "_group": 11
     },
     {
       "layer": 12.0,
       "held-out R\u00b2": 0.13694856192022886,
       "series": "Vex (villain)",
       "_kind": "line",
-      "_group": 10
+      "_group": 11
     },
     {
       "layer": 13.0,
       "held-out R\u00b2": 0.1063734732676882,
       "series": "Vex (villain)",
       "_kind": "line",
-      "_group": 10
+      "_group": 11
     },
     {
       "layer": 14.0,
       "held-out R\u00b2": 0.11432569661020697,
       "series": "Vex (villain)",
       "_kind": "line",
-      "_group": 10
+      "_group": 11
     },
     {
       "layer": 15.0,
       "held-out R\u00b2": 0.16673365280594765,
       "series": "Vex (villain)",
       "_kind": "line",
-      "_group": 10
+      "_group": 11
     },
     {
       "layer": 16.0,
       "held-out R\u00b2": 0.16011548082631477,
       "series": "Vex (villain)",
       "_kind": "line",
-      "_group": 10
+      "_group": 11
     },
     {
       "layer": 17.0,
       "held-out R\u00b2": 0.15801664836023654,
       "series": "Vex (villain)",
       "_kind": "line",
-      "_group": 10
+      "_group": 11
     },
     {
       "layer": 18.0,
       "held-out R\u00b2": 0.16461908288891236,
       "series": "Vex (villain)",
       "_kind": "line",
-      "_group": 10
+      "_group": 11
     },
     {
       "layer": 19.0,
       "held-out R\u00b2": -0.020988763611865746,
       "series": "Vex (villain)",
       "_kind": "line",
-      "_group": 10
+      "_group": 11
     },
     {
       "layer": 20.0,
       "held-out R\u00b2": 0.060503888109795345,
       "series": "Vex (villain)",
       "_kind": "line",
-      "_group": 10
+      "_group": 11
     },
     {
       "layer": 21.0,
       "held-out R\u00b2": -0.022310860457196435,
       "series": "Vex (villain)",
       "_kind": "line",
-      "_group": 10
+      "_group": 11
     },
     {
       "layer": 22.0,
       "held-out R\u00b2": -0.02173369785651369,
       "series": "Vex (villain)",
       "_kind": "line",
-      "_group": 10
+      "_group": 11
     },
     {
       "layer": 23.0,
       "held-out R\u00b2": -0.006949818571225119,
       "series": "Vex (villain)",
       "_kind": "line",
-      "_group": 10
+      "_group": 11
     },
     {
       "layer": 24.0,
       "held-out R\u00b2": 0.009659554319771724,
       "series": "Vex (villain)",
       "_kind": "line",
-      "_group": 10
+      "_group": 11
     },
     {
       "layer": 25.0,
       "held-out R\u00b2": 0.004621045671173274,
       "series": "Vex (villain)",
       "_kind": "line",
-      "_group": 10
+      "_group": 11
     },
     {
       "layer": 26.0,
       "held-out R\u00b2": 0.02843949509489896,
       "series": "Vex (villain)",
       "_kind": "line",
-      "_group": 10
+      "_group": 11
     },
     {
       "layer": 27.0,
       "held-out R\u00b2": -0.19206604059692434,
       "series": "Vex (villain)",
       "_kind": "line",
-      "_group": 10
+      "_group": 11
     },
     {
       "layer": 0.0,
       "y": 0.07292451581251425,
       "series": "Wren (helpful)",
       "_kind": "line",
-      "_group": 11
+      "_group": 12
     },
     {
       "layer": 1.0,
       "y": 0.08960127548054986,
       "series": "Wren (helpful)",
       "_kind": "line",
-      "_group": 11
+      "_group": 12
     },
     {
       "layer": 2.0,
       "y": 0.0938536271058894,
       "series": "Wren (helpful)",
       "_kind": "line",
-      "_group": 11
+      "_group": 12
     },
     {
       "layer": 3.0,
       "y": 0.10145878464196234,
       "series": "Wren (helpful)",
       "_kind": "line",
-      "_group": 11
+      "_group": 12
     },
     {
       "layer": 4.0,
       "y": 0.0928011155762456,
       "series": "Wren (helpful)",
       "_kind": "line",
-      "_group": 11
+      "_group": 12
     },
     {
       "layer": 5.0,
       "y": 0.10689916865759874,
       "series": "Wren (helpful)",
       "_kind": "line",
-      "_group": 11
+      "_group": 12
     },
     {
       "layer": 6.0,
       "y": 0.12169210288274102,
       "series": "Wren (helpful)",
       "_kind": "line",
-      "_group": 11
+      "_group": 12
     },
     {
       "layer": 7.0,
       "y": 0.11917759301454522,
       "series": "Wren (helpful)",
       "_kind": "line",
-      "_group": 11
+      "_group": 12
     },
     {
       "layer": 8.0,
       "y": 0.11984920621477979,
       "series": "Wren (helpful)",
       "_kind": "line",
-      "_group": 11
+      "_group": 12
     },
     {
       "layer": 9.0,
       "y": -0.35692774254327464,
       "series": "Wren (helpful)",
       "_kind": "line",
-      "_group": 11
+      "_group": 12
     },
     {
       "layer": 10.0,
       "y": -0.41104133252006125,
       "series": "Wren (helpful)",
       "_kind": "line",
-      "_group": 11
+      "_group": 12
     },
     {
       "layer": 11.0,
       "y": -0.1254426544452516,
       "series": "Wren (helpful)",
       "_kind": "line",
-      "_group": 11
+      "_group": 12
     },
     {
       "layer": 12.0,
       "y": -0.40531655017589685,
       "series": "Wren (helpful)",
       "_kind": "line",
-      "_group": 11
+      "_group": 12
     },
     {
       "layer": 13.0,
       "y": -0.315958648469312,
       "series": "Wren (helpful)",
       "_kind": "line",
-      "_group": 11
+      "_group": 12
     },
     {
       "layer": 14.0,
       "y": -0.29272751190217017,
       "series": "Wren (helpful)",
       "_kind": "line",
-      "_group": 11
+      "_group": 12
     },
     {
       "layer": 15.0,
       "y": -0.3057271976680309,
       "series": "Wren (helpful)",
       "_kind": "line",
-      "_group": 11
+      "_group": 12
     },
     {
       "layer": 16.0,
       "y": -0.3145346446641648,
       "series": "Wren (helpful)",
       "_kind": "line",
-      "_group": 11
+      "_group": 12
     },
     {
       "layer": 17.0,
       "y": -0.3150740432204262,
       "series": "Wren (helpful)",
       "_kind": "line",
-      "_group": 11
+      "_group": 12
     },
     {
       "layer": 18.0,
       "y": -0.28140963851972023,
       "series": "Wren (helpful)",
       "_kind": "line",
-      "_group": 11
+      "_group": 12
     },
     {
       "layer": 19.0,
       "y": -0.17826416355020092,
       "series": "Wren (helpful)",
       "_kind": "line",
-      "_group": 11
+      "_group": 12
     },
     {
       "layer": 20.0,
       "y": -0.18042767841973784,
       "series": "Wren (helpful)",
       "_kind": "line",
-      "_group": 11
+      "_group": 12
     },
     {
       "layer": 21.0,
       "y": -0.12115117126787212,
       "series": "Wren (helpful)",
       "_kind": "line",
-      "_group": 11
+      "_group": 12
     },
     {
       "layer": 22.0,
       "y": -0.09488986672248267,
       "series": "Wren (helpful)",
       "_kind": "line",
-      "_group": 11
+      "_group": 12
     },
     {
       "layer": 23.0,
       "y": -0.06479041427903587,
       "series": "Wren (helpful)",
       "_kind": "line",
-      "_group": 11
+      "_group": 12
     },
     {
       "layer": 24.0,
       "y": -0.02183323930429859,
       "series": "Wren (helpful)",
       "_kind": "line",
-      "_group": 11
+      "_group": 12
     },
     {
       "layer": 25.0,
       "y": -0.0338038277939221,
       "series": "Wren (helpful)",
       "_kind": "line",
-      "_group": 11
+      "_group": 12
     },
     {
       "layer": 26.0,
       "y": -0.0031624479338783207,
       "series": "Wren (helpful)",
       "_kind": "line",
-      "_group": 11
+      "_group": 12
     },
     {
       "layer": 27.0,
       "y": -0.2539731289411038,
       "series": "Wren (helpful)",
       "_kind": "line",
-      "_group": 11
+      "_group": 12
     },
     {
       "layer": 0.0,
       "y": 0.07029000430095933,
       "series": "HELIOS (ship AI)",
       "_kind": "line",
-      "_group": 12
+      "_group": 13
     },
     {
       "layer": 1.0,
       "y": 0.07805197170465783,
       "series": "HELIOS (ship AI)",
       "_kind": "line",
-      "_group": 12
+      "_group": 13
     },
     {
       "layer": 2.0,
       "y": 0.09614281814312542,
       "series": "HELIOS (ship AI)",
       "_kind": "line",
-      "_group": 12
+      "_group": 13
     },
     {
       "layer": 3.0,
       "y": 0.10280662594789425,
       "series": "HELIOS (ship AI)",
       "_kind": "line",
-      "_group": 12
+      "_group": 13
     },
     {
       "layer": 4.0,
       "y": 0.06421512845512123,
       "series": "HELIOS (ship AI)",
       "_kind": "line",
-      "_group": 12
+      "_group": 13
     },
     {
       "layer": 5.0,
       "y": 0.0812685398269648,
       "series": "HELIOS (ship AI)",
       "_kind": "line",
-      "_group": 12
+      "_group": 13
     },
     {
       "layer": 6.0,
       "y": 0.10133013989564288,
       "series": "HELIOS (ship AI)",
       "_kind": "line",
-      "_group": 12
+      "_group": 13
     },
     {
       "layer": 7.0,
       "y": -0.008030713359113761,
       "series": "HELIOS (ship AI)",
       "_kind": "line",
-      "_group": 12
+      "_group": 13
     },
     {
       "layer": 8.0,
       "y": -0.06457600806731478,
       "series": "HELIOS (ship AI)",
       "_kind": "line",
-      "_group": 12
+      "_group": 13
     },
     {
       "layer": 9.0,
       "y": -0.29109491411286426,
       "series": "HELIOS (ship AI)",
       "_kind": "line",
-      "_group": 12
+      "_group": 13
     },
     {
       "layer": 10.0,
       "y": -0.2740979538029136,
       "series": "HELIOS (ship AI)",
       "_kind": "line",
-      "_group": 12
+      "_group": 13
     },
     {
       "layer": 11.0,
       "y": -0.28648441554842763,
       "series": "HELIOS (ship AI)",
       "_kind": "line",
-      "_group": 12
+      "_group": 13
     },
     {
       "layer": 12.0,
       "y": -0.30057919330051197,
       "series": "HELIOS (ship AI)",
       "_kind": "line",
-      "_group": 12
+      "_group": 13
     },
     {
       "layer": 13.0,
       "y": -0.21279648076869462,
       "series": "HELIOS (ship AI)",
       "_kind": "line",
-      "_group": 12
+      "_group": 13
     },
     {
       "layer": 14.0,
       "y": -0.22190147047123943,
       "series": "HELIOS (ship AI)",
       "_kind": "line",
-      "_group": 12
+      "_group": 13
     },
     {
       "layer": 15.0,
       "y": -0.21667927310401836,
       "series": "HELIOS (ship AI)",
       "_kind": "line",
-      "_group": 12
+      "_group": 13
     },
     {
       "layer": 16.0,
       "y": -0.2224226375565994,
       "series": "HELIOS (ship AI)",
       "_kind": "line",
-      "_group": 12
+      "_group": 13
     },
     {
       "layer": 17.0,
       "y": -0.22532522142799638,
       "series": "HELIOS (ship AI)",
       "_kind": "line",
-      "_group": 12
+      "_group": 13
     },
     {
       "layer": 18.0,
       "y": -0.17476473660543257,
       "series": "HELIOS (ship AI)",
       "_kind": "line",
-      "_group": 12
+      "_group": 13
     },
     {
       "layer": 19.0,
       "y": -0.09958659796428537,
       "series": "HELIOS (ship AI)",
       "_kind": "line",
-      "_group": 12
+      "_group": 13
     },
     {
       "layer": 20.0,
       "y": -0.09443298046301951,
       "series": "HELIOS (ship AI)",
       "_kind": "line",
-      "_group": 12
+      "_group": 13
     },
     {
       "layer": 21.0,
       "y": -0.03949398134139104,
       "series": "HELIOS (ship AI)",
       "_kind": "line",
-      "_group": 12
+      "_group": 13
     },
     {
       "layer": 22.0,
       "y": -0.02858142918301021,
       "series": "HELIOS (ship AI)",
       "_kind": "line",
-      "_group": 12
+      "_group": 13
     },
     {
       "layer": 23.0,
       "y": -0.015720141244017993,
       "series": "HELIOS (ship AI)",
       "_kind": "line",
-      "_group": 12
+      "_group": 13
     },
     {
       "layer": 24.0,
       "y": 0.02356632582299989,
       "series": "HELIOS (ship AI)",
       "_kind": "line",
-      "_group": 12
+      "_group": 13
     },
     {
       "layer": 25.0,
       "y": 0.009342742398521287,
       "series": "HELIOS (ship AI)",
       "_kind": "line",
-      "_group": 12
+      "_group": 13
     },
     {
       "layer": 26.0,
       "y": 0.03143203776971937,
       "series": "HELIOS (ship AI)",
       "_kind": "line",
-      "_group": 12
+      "_group": 13
     },
     {
       "layer": 27.0,
       "y": -0.22078728356026978,
       "series": "HELIOS (ship AI)",
       "_kind": "line",
-      "_group": 12
+      "_group": 13
     },
     {
       "layer": 0.0,
       "y": 0.052895612614593523,
       "series": "Dana (ordinary)",
       "_kind": "line",
-      "_group": 13
+      "_group": 14
     },
     {
       "layer": 1.0,
       "y": 0.08371048589894947,
       "series": "Dana (ordinary)",
       "_kind": "line",
-      "_group": 13
+      "_group": 14
     },
     {
       "layer": 2.0,
       "y": 0.07089398131829361,
       "series": "Dana (ordinary)",
       "_kind": "line",
-      "_group": 13
+      "_group": 14
     },
     {
       "layer": 3.0,
       "y": -0.05759575210533452,
       "series": "Dana (ordinary)",
       "_kind": "line",
-      "_group": 13
+      "_group": 14
     },
     {
       "layer": 4.0,
       "y": -0.048867062405009376,
       "series": "Dana (ordinary)",
       "_kind": "line",
-      "_group": 13
+      "_group": 14
     },
     {
       "layer": 5.0,
       "y": -0.0617952494672287,
       "series": "Dana (ordinary)",
       "_kind": "line",
-      "_group": 13
+      "_group": 14
     },
     {
       "layer": 6.0,
       "y": -0.0720605991917278,
       "series": "Dana (ordinary)",
       "_kind": "line",
-      "_group": 13
+      "_group": 14
     },
     {
       "layer": 7.0,
       "y": -0.08024239958789403,
       "series": "Dana (ordinary)",
       "_kind": "line",
-      "_group": 13
+      "_group": 14
     },
     {
       "layer": 8.0,
       "y": -0.07950907181032574,
       "series": "Dana (ordinary)",
       "_kind": "line",
-      "_group": 13
+      "_group": 14
     },
     {
       "layer": 9.0,
       "y": -0.32648965128752594,
       "series": "Dana (ordinary)",
       "_kind": "line",
-      "_group": 13
+      "_group": 14
     },
     {
       "layer": 10.0,
       "y": -0.3069611114078088,
       "series": "Dana (ordinary)",
       "_kind": "line",
-      "_group": 13
+      "_group": 14
     },
     {
       "layer": 11.0,
       "y": -0.314686125176723,
       "series": "Dana (ordinary)",
       "_kind": "line",
-      "_group": 13
+      "_group": 14
     },
     {
       "layer": 12.0,
       "y": -0.30944924953481556,
       "series": "Dana (ordinary)",
       "_kind": "line",
-      "_group": 13
+      "_group": 14
     },
     {
       "layer": 13.0,
       "y": -0.2445384733970044,
       "series": "Dana (ordinary)",
       "_kind": "line",
-      "_group": 13
+      "_group": 14
     },
     {
       "layer": 14.0,
       "y": -0.22399605283460722,
       "series": "Dana (ordinary)",
       "_kind": "line",
-      "_group": 13
+      "_group": 14
     },
     {
       "layer": 15.0,
       "y": -0.23578989381614246,
       "series": "Dana (ordinary)",
       "_kind": "line",
-      "_group": 13
+      "_group": 14
     },
     {
       "layer": 16.0,
       "y": -0.2455592930577244,
       "series": "Dana (ordinary)",
       "_kind": "line",
-      "_group": 13
+      "_group": 14
     },
     {
       "layer": 17.0,
       "y": -0.2592811675777493,
       "series": "Dana (ordinary)",
       "_kind": "line",
-      "_group": 13
+      "_group": 14
     },
     {
       "layer": 18.0,
       "y": -0.25693538314486397,
       "series": "Dana (ordinary)",
       "_kind": "line",
-      "_group": 13
+      "_group": 14
     },
     {
       "layer": 19.0,
       "y": -0.18876177288934248,
       "series": "Dana (ordinary)",
       "_kind": "line",
-      "_group": 13
+      "_group": 14
     },
     {
       "layer": 20.0,
       "y": -0.1887310649703824,
       "series": "Dana (ordinary)",
       "_kind": "line",
-      "_group": 13
+      "_group": 14
     },
     {
       "layer": 21.0,
       "y": -0.13320461408707707,
       "series": "Dana (ordinary)",
       "_kind": "line",
-      "_group": 13
+      "_group": 14
     },
     {
       "layer": 22.0,
       "y": -0.10596938812157908,
       "series": "Dana (ordinary)",
       "_kind": "line",
-      "_group": 13
+      "_group": 14
     },
     {
       "layer": 23.0,
       "y": -0.0811442237105453,
       "series": "Dana (ordinary)",
       "_kind": "line",
-      "_group": 13
+      "_group": 14
     },
     {
       "layer": 24.0,
       "y": -0.03261615147422514,
       "series": "Dana (ordinary)",
       "_kind": "line",
-      "_group": 13
+      "_group": 14
     },
     {
       "layer": 25.0,
       "y": -0.04211207406547901,
       "series": "Dana (ordinary)",
       "_kind": "line",
-      "_group": 13
+      "_group": 14
     },
     {
       "layer": 26.0,
       "y": -0.0076352481133799,
       "series": "Dana (ordinary)",
       "_kind": "line",
-      "_group": 13
+      "_group": 14
     },
     {
       "layer": 27.0,
       "y": -0.2526821357986646,
       "series": "Dana (ordinary)",
       "_kind": "line",
-      "_group": 13
+      "_group": 14
     },
     {
       "layer": 0.0,
       "y": 0.07052607417947476,
       "series": "Vex (villain)",
       "_kind": "line",
-      "_group": 14
+      "_group": 15
     },
     {
       "layer": 1.0,
       "y": 0.08469259980856292,
       "series": "Vex (villain)",
       "_kind": "line",
-      "_group": 14
+      "_group": 15
     },
     {
       "layer": 2.0,
       "y": 0.09440607236304943,
       "series": "Vex (villain)",
       "_kind": "line",
-      "_group": 14
+      "_group": 15
     },
     {
       "layer": 3.0,
       "y": 0.0975102286455285,
       "series": "Vex (villain)",
       "_kind": "line",
-      "_group": 14
+      "_group": 15
     },
     {
       "layer": 4.0,
       "y": 0.11093525613601996,
       "series": "Vex (villain)",
       "_kind": "line",
-      "_group": 14
+      "_group": 15
     },
     {
       "layer": 5.0,
       "y": 0.11742309123955597,
       "series": "Vex (villain)",
       "_kind": "line",
-      "_group": 14
+      "_group": 15
     },
     {
       "layer": 6.0,
       "y": 0.12482033022636896,
       "series": "Vex (villain)",
       "_kind": "line",
-      "_group": 14
+      "_group": 15
     },
     {
       "layer": 7.0,
       "y": 0.12974385220812468,
       "series": "Vex (villain)",
       "_kind": "line",
-      "_group": 14
+      "_group": 15
     },
     {
       "layer": 8.0,
       "y": 0.12798515060821725,
       "series": "Vex (villain)",
       "_kind": "line",
-      "_group": 14
+      "_group": 15
     },
     {
       "layer": 9.0,
       "y": 0.12486070338358413,
       "series": "Vex (villain)",
       "_kind": "line",
-      "_group": 14
+      "_group": 15
     },
     {
       "layer": 10.0,
       "y": -0.027244972234999887,
       "series": "Vex (villain)",
       "_kind": "line",
-      "_group": 14
+      "_group": 15
     },
     {
       "layer": 11.0,
       "y": 0.0003396639904208465,
       "series": "Vex (villain)",
       "_kind": "line",
-      "_group": 14
+      "_group": 15
     },
     {
       "layer": 12.0,
       "y": -0.09894059514255771,
       "series": "Vex (villain)",
       "_kind": "line",
-      "_group": 14
+      "_group": 15
     },
     {
       "layer": 13.0,
       "y": -0.041952429835912186,
       "series": "Vex (villain)",
       "_kind": "line",
-      "_group": 14
+      "_group": 15
     },
     {
       "layer": 14.0,
       "y": -0.03434127472939452,
       "series": "Vex (villain)",
       "_kind": "line",
-      "_group": 14
+      "_group": 15
     },
     {
       "layer": 15.0,
       "y": -0.03545396025858105,
       "series": "Vex (villain)",
       "_kind": "line",
-      "_group": 14
+      "_group": 15
     },
     {
       "layer": 16.0,
       "y": -0.0300725597906657,
       "series": "Vex (villain)",
       "_kind": "line",
-      "_group": 14
+      "_group": 15
     },
     {
       "layer": 17.0,
       "y": -0.03986249911300299,
       "series": "Vex (villain)",
       "_kind": "line",
-      "_group": 14
+      "_group": 15
     },
     {
       "layer": 18.0,
       "y": -0.016457099162226152,
       "series": "Vex (villain)",
       "_kind": "line",
-      "_group": 14
+      "_group": 15
     },
     {
       "layer": 19.0,
       "y": -0.17615306808991282,
       "series": "Vex (villain)",
       "_kind": "line",
-      "_group": 14
+      "_group": 15
     },
     {
       "layer": 20.0,
       "y": -0.05031537938090125,
       "series": "Vex (villain)",
       "_kind": "line",
-      "_group": 14
+      "_group": 15
     },
     {
       "layer": 21.0,
       "y": -0.26231703400527384,
       "series": "Vex (villain)",
       "_kind": "line",
-      "_group": 14
+      "_group": 15
     },
     {
       "layer": 22.0,
       "y": -0.23736948567921723,
       "series": "Vex (villain)",
       "_kind": "line",
-      "_group": 14
+      "_group": 15
     },
     {
       "layer": 23.0,
       "y": -0.21049332893139683,
       "series": "Vex (villain)",
       "_kind": "line",
-      "_group": 14
+      "_group": 15
     },
     {
       "layer": 24.0,
       "y": -0.157745939374617,
       "series": "Vex (villain)",
       "_kind": "line",
-      "_group": 14
+      "_group": 15
     },
     {
       "layer": 25.0,
       "y": -0.16313581153281187,
       "series": "Vex (villain)",
       "_kind": "line",
-      "_group": 14
+      "_group": 15
     },
     {
       "layer": 26.0,
       "y": -0.12757623438705878,
       "series": "Vex (villain)",
       "_kind": "line",
-      "_group": 14
+      "_group": 15
     },
     {
       "layer": 27.0,
       "y": -0.010630637262237785,
       "series": "Vex (villain)",
       "_kind": "line",
-      "_group": 14
+      "_group": 15
     }
   ],
-  "n_series": 15,
-  "total_points": 420,
+  "n_series": 16,
+  "total_points": 448,
   "text": {
     "suptitle": null,
     "fig_texts": [],
@@ -2975,10 +3171,7 @@
         ]
       },
       {
-        "title_left": "script-format scenes \u2014 Qwen2.5-7B-Instruct",
-        "annotations": [
-          "Vex not run (generation run stopped before this fit)"
-        ]
+        "title_left": "script-format scenes \u2014 Qwen2.5-7B-Instruct"
       },
       {
         "title_left": "prefill turns \u2014 Qwen2.5-7B (base)",
