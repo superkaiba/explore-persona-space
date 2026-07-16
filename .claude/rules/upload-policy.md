@@ -260,6 +260,27 @@ per-shard `_verify_present` probe loop — the documented anti-pattern. Pin new
 verify code with a 429-then-success retry test and a ≤2-listings batching
 test (`tests/test_upload_sharded.py`, #1335).
 
+**Staging-DOWNLOAD legs use the canonical helpers `hub.stage_hub_file` /
+`hub.stage_hub_prefix` (#1402) — never a hand-rolled retry + tempdir move.**
+The download-side sibling of the verify-path rule above: both helpers ride
+`retry_transient`, which as of #1402 classifies `LocalEntryNotFoundError`
+transient BY CLASS, checked first (ported from #1092's `_hub_retry_cause`
+— a 429 storm on `hf_hub_download`'s HEAD surfaces 404-shaped through that
+response-less error, the rf01 crash class; a genuinely-missing file still
+fail-fasts via its response-bearing 404 `EntryNotFoundError`).
+`stage_hub_file` is atomic (tempdir INSIDE the dest parent + `os.replace`
+— the #1335 EXDEV gotcha) and fail-loud; `stage_hub_prefix` is the #833
+scoped-listing recipe (server-side `list_hf_files_under_path`, one resolved
+revision, `max_workers<=6` pool) as one helper. Two scope notes: (a) the
+retry absorbs RAISED transients only — the hf-xet HANG class (no exception,
+zero TCP) stays on the kill+replay ladder (gotchas.md hf-xet download-wedge
+entry), and flaky-egress accelerator handling stays the per-launch
+`HF_HUB_DISABLE_XET=1` kill-switch replay, never a default flip; (b) the
+verbatim prefix mirror is a staged LAYOUT — a consumer with a fixed local
+layout still owes the staged-layout consumer-open probe at reuse time
+(`.claude/rules/artifact-reuse.md` check (h)(iv), #928); "canonical helper"
+does not mean "layout-mapping solved".
+
 **Fail-loud uploads.** `upload_dataset_directory` (`orchestrate/hub.py`) exits
 non-zero on failure (`--no-upload` only for dry-runs).
 

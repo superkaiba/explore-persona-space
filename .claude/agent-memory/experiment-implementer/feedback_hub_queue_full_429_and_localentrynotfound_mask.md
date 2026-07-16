@@ -20,8 +20,11 @@ att-20260715-175238):
    `LocalEntryNotFoundError`** — an `EntryNotFoundError`/`FileNotFoundError`
    subclass whose message reads like a genuine not-found ("cannot find the
    requested files ... check your connection"). Do NOT conclude absence from
-   it; `retry_transient` classifies it transient via the "connection" text, so
-   a wrapped call self-heals.
+   it; `retry_transient` classifies it transient BY CLASS as of #1402
+   (isinstance-first arm in `_is_transient_upload_error`; pre-#1402 the
+   coverage was incidental via the "connection" message text and missed the
+   offline-flavored message), so a wrapped call self-heals. A genuinely
+   missing file still fail-fasts (response-bearing 404 `EntryNotFoundError`).
 3. **The tree endpoint 404s on exact FILE paths by design** (hub 0.36.2,
    #939), so per-file verify probes ALWAYS route through the `file_exists`
    fallback — any bare (un-retried) call on that fallback path converts a lone
@@ -32,10 +35,15 @@ att-20260715-175238):
 fallback, `upload_sharded` upload_file sites) per artifact-reuse's
 "fix the source module" law — never caller-side re-wraps.
 
-**How to apply:** any new script doing Hub IO (upload_folder, upload_file,
-hf_hub_download, file_exists, list_repo_tree) wraps each call in
-`retry_transient(lambda: ..., what=f"<op>(<repo>:<path>)")`; in loops, bind
-loop vars as lambda defaults (ruff B023). In tests, no-op `time.sleep` +
-`EPM_HF_RETRY_BUDGET_S=0` (attempt-bound, 6 calls) or transient-looking fake
-errors ("500 ..." messages) will sleep for real. Regression pin:
-`tests/test_upload_sharded.py::test_verify_fallback_retries_429_then_success`.
+**How to apply:** for staging-DOWNLOAD legs, call the canonical #1402 helpers
+`hub.stage_hub_file` (retried + atomic tempdir-inside-dest + `os.replace`,
+fail-loud) / `hub.stage_hub_prefix` (scoped listing, one resolved revision,
+`max_workers<=6` pool) instead of hand-rolling; for any OTHER Hub IO
+(upload_folder, upload_file, hf_hub_download, file_exists, list_repo_tree)
+wrap each call in `retry_transient(lambda: ..., what=f"<op>(<repo>:<path>)")`;
+in loops, bind loop vars as lambda defaults (ruff B023). In tests, no-op
+`time.sleep` + `EPM_HF_RETRY_BUDGET_S=0` (attempt-bound, 6 calls) or
+transient-looking fake errors ("500 ..." messages) will sleep for real.
+Regression pins:
+`tests/test_upload_sharded.py::test_verify_fallback_retries_429_then_success`,
+`tests/test_hub_staging_retry.py` (#1402 class arm + staging helpers).
