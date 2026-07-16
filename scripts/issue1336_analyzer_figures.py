@@ -250,6 +250,7 @@ def fig_lambda_degeneracy() -> None:
         "lmsys5k": "#4b9b57",
     }
     seen = set()
+    ceiling_labeled = False
     for f in sorted(glob.glob(str(EVAL / "cells" / "cells_*.json"))):
         d = _load(Path(f))
         name = os.path.basename(f)[6:-5]
@@ -270,14 +271,32 @@ def fig_lambda_degeneracy() -> None:
             linewidths=1.4,
             label=lab,
         )
+        # HIGH-edge saturation (lambda grid CEILING, 1e4) — base-model cells only.
+        frac_hi = la["n_at_high_edge"] / la["n_selected"]
+        if frac_hi > 0:
+            ax.scatter(
+                n,
+                frac_hi,
+                s=64,
+                marker="x",
+                color=corpus_color[corpus],
+                linewidths=1.6,
+                label=(
+                    None
+                    if ceiling_labeled
+                    else "fraction at $\\lambda$ grid CEILING ($10^4$;\nbase-model cells only)"
+                ),
+            )
+            ceiling_labeled = True
     ax.set_xlabel("kept rows n (fit sample size; d = 4096)")
-    ax.set_ylabel("fraction of GCV fits at the $\\lambda$ grid floor (0.01)")
+    ax.set_ylabel("fraction of GCV fits at a $\\lambda$ grid edge")
     ax.set_title(
-        "Small-n cells collapse to the interpolation regime\n(open triangles = matched-n 1319-row refits)",
+        "Small-n cells collapse to the interpolation regime ($\\lambda$ floor);\n"
+        "base-model cells saturate the $\\lambda$ ceiling (open triangles = matched-n refits)",
         pad=12,
         fontsize=10,
     )
-    ax.legend(frameon=False, fontsize=8.5, loc="center right")
+    ax.legend(frameon=False, fontsize=8, loc="center right")
     ax.axvline(4096, color="0.4", lw=0.9, ls="--")
     ax.text(4096 * 1.01, 0.55, "n = d", fontsize=8, color="0.4", rotation=90)
 
