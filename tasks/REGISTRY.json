@@ -3347,8 +3347,8 @@
     "1429": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1429",
-      "status": "proposed",
+      "path": "tasks/planning/1429",
+      "status": "planning",
       "title": "workflow-fix: gotchas entry \u2014 rank-space bootstrap tail-mass gating (float-space CI coverage epsilon-fragile)"
     },
     "1430": {
