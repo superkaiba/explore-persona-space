@@ -3283,8 +3283,8 @@
     "1420": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1420",
-      "status": "reviewing",
+      "path": "tasks/completed/1420",
+      "status": "completed",
       "title": "workflow-fix: semantic probe for absence-claim greps"
     },
     "144": {
