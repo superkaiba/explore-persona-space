@@ -3148,8 +3148,8 @@
     "1403": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1403",
-      "status": "running",
+      "path": "tasks/reviewing/1403",
+      "status": "reviewing",
       "title": "daily-fix: Step 10d conflicts go to fresh subagent"
     },
     "1404": {
