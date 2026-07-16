@@ -57,7 +57,10 @@ direct-upload script must use the project
 
 **Pod→HF upload WEDGE — recognize it, then run the three-rung escalation
 ladder (#931).** This is the UPLOAD sibling of the #515 download workaround
-above. Signature: the upload process looks healthy (no traceback) while
+above. (The DOWNLOAD-side native `xet_get` hang — zero TCP connections,
+per-file retry wrappers never fire, vs this ladder's one FROZEN ESTAB socket
+— has its own kill-and-replay entry in `.claude/rules/gotchas.md`; #1345.)
+Signature: the upload process looks healthy (no traceback) while
 transfer bytes stop — interface TX delta ~0 across two samples ≥5 min
 apart (`cat /sys/class/net/eth0/statistics/tx_bytes`, sample twice), and/or
 one ESTAB socket to the CDN (port 443) whose counters are frozen in
