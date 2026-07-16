@@ -1,0 +1,928 @@
+{
+  "commit": "7fb9353a22",
+  "created": "2026-07-16T05:22:50Z",
+  "figsize": [
+    7.4,
+    4.4
+  ],
+  "points": [
+    {
+      "x": -0.18,
+      "held-out leakage $\\Delta$G, trained - base (nats)": 4.639966773986816,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.82,
+      "held-out leakage $\\Delta$G, trained - base (nats)": 4.661220359802246,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 1.82,
+      "held-out leakage $\\Delta$G, trained - base (nats)": 4.122123050689697,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.18,
+      "held-out leakage $\\Delta$G, trained - base (nats)": 2.970909595489502,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 1.18,
+      "held-out leakage $\\Delta$G, trained - base (nats)": 2.777937889099121,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 2.18,
+      "held-out leakage $\\Delta$G, trained - base (nats)": 1.8133722305297852,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": -0.1454856547949935,
+      "held-out leakage $\\Delta$G, trained - base (nats)": 4.111606597900391,
+      "label": "+4.64",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": -0.23801374813150467,
+      "held-out leakage $\\Delta$G, trained - base (nats)": 5.673913955688477,
+      "label": "+4.64",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": -0.29567467196807895,
+      "held-out leakage $\\Delta$G, trained - base (nats)": 5.414360046386719,
+      "label": "+4.64",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": -0.30183503584681065,
+      "held-out leakage $\\Delta$G, trained - base (nats)": 5.177097320556641,
+      "label": "+4.64",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": -0.10105589972153134,
+      "held-out leakage $\\Delta$G, trained - base (nats)": 4.951786041259766,
+      "label": "+4.64",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": -0.07598559452601411,
+      "held-out leakage $\\Delta$G, trained - base (nats)": 5.679956436157227,
+      "label": "+4.64",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": -0.15312778450667067,
+      "held-out leakage $\\Delta$G, trained - base (nats)": 6.276058197021484,
+      "label": "+4.64",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": -0.12216686663203238,
+      "held-out leakage $\\Delta$G, trained - base (nats)": 3.3207244873046875,
+      "label": "+2.97",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": -0.16900650215071342,
+      "held-out leakage $\\Delta$G, trained - base (nats)": 4.014986038208008,
+      "label": "+4.64",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": -0.07036174920548241,
+      "held-out leakage $\\Delta$G, trained - base (nats)": 3.658662796020508,
+      "label": "+2.97",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": -0.10040490436137389,
+      "held-out leakage $\\Delta$G, trained - base (nats)": 4.564844131469727,
+      "label": "+4.64",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": -0.3053098979571227,
+      "held-out leakage $\\Delta$G, trained - base (nats)": 4.452583312988281,
+      "label": "+4.64",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": -0.08993412229993253,
+      "held-out leakage $\\Delta$G, trained - base (nats)": 4.436044692993164,
+      "label": "+4.64",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": -0.29753643502302296,
+      "held-out leakage $\\Delta$G, trained - base (nats)": 5.964870452880859,
+      "label": "+4.64",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": -0.12212682749965409,
+      "held-out leakage $\\Delta$G, trained - base (nats)": 4.893220901489258,
+      "label": "+4.64",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": -0.2617347836081551,
+      "held-out leakage $\\Delta$G, trained - base (nats)": 3.369352340698242,
+      "label": "+2.97",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": -0.08847891156782858,
+      "held-out leakage $\\Delta$G, trained - base (nats)": 4.140438079833984,
+      "label": "+4.64",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": -0.1695517724972289,
+      "held-out leakage $\\Delta$G, trained - base (nats)": 4.656627655029297,
+      "label": "+4.64",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": -0.23047260358457902,
+      "held-out leakage $\\Delta$G, trained - base (nats)": 4.121822357177734,
+      "label": "+4.64",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": -0.19948282025819009,
+      "held-out leakage $\\Delta$G, trained - base (nats)": 3.920379638671875,
+      "label": "+4.64",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.7011365571286567,
+      "held-out leakage $\\Delta$G, trained - base (nats)": 4.88177490234375,
+      "label": "+4.66",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.7253193856778901,
+      "held-out leakage $\\Delta$G, trained - base (nats)": 5.014190673828125,
+      "label": "+4.66",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.862997352502795,
+      "held-out leakage $\\Delta$G, trained - base (nats)": 4.871377944946289,
+      "label": "+4.66",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.8570917569167111,
+      "held-out leakage $\\Delta$G, trained - base (nats)": 5.195642471313477,
+      "label": "+4.66",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.849077048093276,
+      "held-out leakage $\\Delta$G, trained - base (nats)": 5.867055892944336,
+      "label": "+4.66",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.7906867436739947,
+      "held-out leakage $\\Delta$G, trained - base (nats)": 5.217998504638672,
+      "label": "+4.66",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.9452969038188812,
+      "held-out leakage $\\Delta$G, trained - base (nats)": 5.481622695922852,
+      "label": "+4.66",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.9411705053716101,
+      "held-out leakage $\\Delta$G, trained - base (nats)": 3.0469017028808594,
+      "label": "+2.78",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.8667565800891351,
+      "held-out leakage $\\Delta$G, trained - base (nats)": 4.467689514160156,
+      "label": "+4.66",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.8579157376194898,
+      "held-out leakage $\\Delta$G, trained - base (nats)": 4.6903228759765625,
+      "label": "+4.66",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.867488576103877,
+      "held-out leakage $\\Delta$G, trained - base (nats)": 4.691398620605469,
+      "label": "+4.66",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.7920081988427342,
+      "held-out leakage $\\Delta$G, trained - base (nats)": 4.638545989990234,
+      "label": "+4.66",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.7280443192656477,
+      "held-out leakage $\\Delta$G, trained - base (nats)": 4.146501541137695,
+      "label": "+4.66",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.8758150617289087,
+      "held-out leakage $\\Delta$G, trained - base (nats)": 4.91278076171875,
+      "label": "+4.66",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.826389289263883,
+      "held-out leakage $\\Delta$G, trained - base (nats)": 4.592912673950195,
+      "label": "+4.66",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.7721809526408568,
+      "held-out leakage $\\Delta$G, trained - base (nats)": 3.676158905029297,
+      "label": "+2.78",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.8164305104256109,
+      "held-out leakage $\\Delta$G, trained - base (nats)": 4.420932769775391,
+      "label": "+4.66",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.9181509342559482,
+      "held-out leakage $\\Delta$G, trained - base (nats)": 4.773639678955078,
+      "label": "+4.66",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.929378966020975,
+      "held-out leakage $\\Delta$G, trained - base (nats)": 4.0066070556640625,
+      "label": "+4.66",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.7841643895706858,
+      "held-out leakage $\\Delta$G, trained - base (nats)": 4.630352020263672,
+      "label": "+4.66",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.8380255173438997,
+      "held-out leakage $\\Delta$G, trained - base (nats)": 6.401409149169922,
+      "label": "+4.12",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.7751110865511375,
+      "held-out leakage $\\Delta$G, trained - base (nats)": 4.324165344238281,
+      "label": "+4.12",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.8437636076103237,
+      "held-out leakage $\\Delta$G, trained - base (nats)": 4.047657012939453,
+      "label": "+4.12",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.7791536288277976,
+      "held-out leakage $\\Delta$G, trained - base (nats)": 5.523447036743164,
+      "label": "+4.12",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.7926879881330966,
+      "held-out leakage $\\Delta$G, trained - base (nats)": 4.373044967651367,
+      "label": "+4.12",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.9183491367052077,
+      "held-out leakage $\\Delta$G, trained - base (nats)": 4.10772705078125,
+      "label": "+4.12",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.7512437135704118,
+      "held-out leakage $\\Delta$G, trained - base (nats)": 4.804725646972656,
+      "label": "+4.12",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.8510431604608828,
+      "held-out leakage $\\Delta$G, trained - base (nats)": 3.6891021728515625,
+      "label": "+4.12",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.715171866582761,
+      "held-out leakage $\\Delta$G, trained - base (nats)": 4.949239730834961,
+      "label": "+4.12",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.9038263252086562,
+      "held-out leakage $\\Delta$G, trained - base (nats)": 4.547229766845703,
+      "label": "+4.12",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.8923487734871483,
+      "held-out leakage $\\Delta$G, trained - base (nats)": 3.6807327270507812,
+      "label": "+4.12",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.754321099634224,
+      "held-out leakage $\\Delta$G, trained - base (nats)": 3.2142257690429688,
+      "label": "+4.12",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.9148740261642974,
+      "held-out leakage $\\Delta$G, trained - base (nats)": 2.614053726196289,
+      "label": "+1.81",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.708759144770909,
+      "held-out leakage $\\Delta$G, trained - base (nats)": 2.6145668029785156,
+      "label": "+1.81",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.7787014992575065,
+      "held-out leakage $\\Delta$G, trained - base (nats)": 3.8600025177001953,
+      "label": "+4.12",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.7318704256574995,
+      "held-out leakage $\\Delta$G, trained - base (nats)": 5.534997940063477,
+      "label": "+4.12",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.8074855203956204,
+      "held-out leakage $\\Delta$G, trained - base (nats)": 2.4237823486328125,
+      "label": "+1.81",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.8946737161123983,
+      "held-out leakage $\\Delta$G, trained - base (nats)": 3.5435523986816406,
+      "label": "+4.12",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.7521218366664244,
+      "held-out leakage $\\Delta$G, trained - base (nats)": 4.941957473754883,
+      "label": "+4.12",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.7071093678682312,
+      "held-out leakage $\\Delta$G, trained - base (nats)": 3.2468414306640625,
+      "label": "+4.12",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.15594706363502508,
+      "held-out leakage $\\Delta$G, trained - base (nats)": 2.7590198516845703,
+      "label": "+2.97",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.10402528721633233,
+      "held-out leakage $\\Delta$G, trained - base (nats)": 3.2092037200927734,
+      "label": "+2.97",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.0768697674960187,
+      "held-out leakage $\\Delta$G, trained - base (nats)": 3.6875476837158203,
+      "label": "+2.97",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.20024376126868637,
+      "held-out leakage $\\Delta$G, trained - base (nats)": 3.0677947998046875,
+      "label": "+2.97",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.1292714254703685,
+      "held-out leakage $\\Delta$G, trained - base (nats)": 3.44049072265625,
+      "label": "+2.97",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.22334270924500255,
+      "held-out leakage $\\Delta$G, trained - base (nats)": 2.8920345306396484,
+      "label": "+2.97",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.10427789187998975,
+      "held-out leakage $\\Delta$G, trained - base (nats)": 3.5665340423583984,
+      "label": "+2.97",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.29141250384763745,
+      "held-out leakage $\\Delta$G, trained - base (nats)": 1.2934379577636719,
+      "label": "+2.97",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.1460077623976968,
+      "held-out leakage $\\Delta$G, trained - base (nats)": 3.449359893798828,
+      "label": "+2.97",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.08058481045169784,
+      "held-out leakage $\\Delta$G, trained - base (nats)": 2.2792797088623047,
+      "label": "+2.97",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.21253525418800673,
+      "held-out leakage $\\Delta$G, trained - base (nats)": 1.9845962524414062,
+      "label": "+2.97",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.2876429473731026,
+      "held-out leakage $\\Delta$G, trained - base (nats)": 3.0860595703125,
+      "label": "+2.97",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.16497504298837756,
+      "held-out leakage $\\Delta$G, trained - base (nats)": 3.155925750732422,
+      "label": "+2.97",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.29455680441006576,
+      "held-out leakage $\\Delta$G, trained - base (nats)": 3.2402801513671875,
+      "label": "+2.97",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.17997374504928704,
+      "held-out leakage $\\Delta$G, trained - base (nats)": 2.664335250854492,
+      "label": "+2.97",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.16115761346196703,
+      "held-out leakage $\\Delta$G, trained - base (nats)": 3.6504039764404297,
+      "label": "+2.97",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.2102937899078752,
+      "held-out leakage $\\Delta$G, trained - base (nats)": 3.117839813232422,
+      "label": "+2.97",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.30476431931930165,
+      "held-out leakage $\\Delta$G, trained - base (nats)": 3.1837234497070312,
+      "label": "+2.97",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.29313380608431683,
+      "held-out leakage $\\Delta$G, trained - base (nats)": 2.5768585205078125,
+      "label": "+2.97",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.1699313751058922,
+      "held-out leakage $\\Delta$G, trained - base (nats)": 3.113466262817383,
+      "label": "+2.97",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.2449476690176895,
+      "held-out leakage $\\Delta$G, trained - base (nats)": 2.709543228149414,
+      "label": "+2.78",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.17935051926288,
+      "held-out leakage $\\Delta$G, trained - base (nats)": 2.6080169677734375,
+      "label": "+2.78",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.187386664369586,
+      "held-out leakage $\\Delta$G, trained - base (nats)": 2.7287063598632812,
+      "label": "+2.78",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.2520179965798794,
+      "held-out leakage $\\Delta$G, trained - base (nats)": 3.681072235107422,
+      "label": "+2.78",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.158493274037629,
+      "held-out leakage $\\Delta$G, trained - base (nats)": 4.005916595458984,
+      "label": "+2.78",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.2390898600907598,
+      "held-out leakage $\\Delta$G, trained - base (nats)": 3.216571807861328,
+      "label": "+2.78",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.233208005253417,
+      "held-out leakage $\\Delta$G, trained - base (nats)": 0.6367912292480469,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.2888790410265711,
+      "held-out leakage $\\Delta$G, trained - base (nats)": 0.8990821838378906,
+      "label": "+2.78",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.082963023586788,
+      "held-out leakage $\\Delta$G, trained - base (nats)": 2.4190120697021484,
+      "label": "+2.78",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.2377118095032298,
+      "held-out leakage $\\Delta$G, trained - base (nats)": 3.4099254608154297,
+      "label": "+2.78",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.287710830013389,
+      "held-out leakage $\\Delta$G, trained - base (nats)": 2.770174026489258,
+      "label": "+2.78",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.297917399861011,
+      "held-out leakage $\\Delta$G, trained - base (nats)": 2.8325939178466797,
+      "label": "+2.78",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.057705988851273,
+      "held-out leakage $\\Delta$G, trained - base (nats)": 3.518941879272461,
+      "label": "+2.78",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.271637302741885,
+      "held-out leakage $\\Delta$G, trained - base (nats)": 3.1778221130371094,
+      "label": "+2.78",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.3012611500967186,
+      "held-out leakage $\\Delta$G, trained - base (nats)": 3.197835922241211,
+      "label": "+2.78",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.2952169652619627,
+      "held-out leakage $\\Delta$G, trained - base (nats)": 2.644105911254883,
+      "label": "+2.78",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.0914885310825895,
+      "held-out leakage $\\Delta$G, trained - base (nats)": 3.3684005737304688,
+      "label": "+2.78",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.2991024610833846,
+      "held-out leakage $\\Delta$G, trained - base (nats)": 2.938365936279297,
+      "label": "+2.78",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.2782637600415712,
+      "held-out leakage $\\Delta$G, trained - base (nats)": 2.217378616333008,
+      "label": "+2.78",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.2612382045408537,
+      "held-out leakage $\\Delta$G, trained - base (nats)": 2.578500747680664,
+      "label": "+2.78",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.1749569567995737,
+      "held-out leakage $\\Delta$G, trained - base (nats)": 2.0922603607177734,
+      "label": "+1.81",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.112557975749105,
+      "held-out leakage $\\Delta$G, trained - base (nats)": 2.3467140197753906,
+      "label": "+1.81",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.2560739058370136,
+      "held-out leakage $\\Delta$G, trained - base (nats)": 1.746389389038086,
+      "label": "+1.81",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.2867296002654345,
+      "held-out leakage $\\Delta$G, trained - base (nats)": 1.4558658599853516,
+      "label": "+1.81",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.121064828617658,
+      "held-out leakage $\\Delta$G, trained - base (nats)": 1.8593921661376953,
+      "label": "+1.81",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.1898114707207914,
+      "held-out leakage $\\Delta$G, trained - base (nats)": 1.911041259765625,
+      "label": "+1.81",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.165573712901582,
+      "held-out leakage $\\Delta$G, trained - base (nats)": 2.3125038146972656,
+      "label": "+1.81",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.288616363627251,
+      "held-out leakage $\\Delta$G, trained - base (nats)": 1.6919631958007812,
+      "label": "+1.81",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.0642086992194857,
+      "held-out leakage $\\Delta$G, trained - base (nats)": 2.3596553802490234,
+      "label": "+1.81",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.2384655613054534,
+      "held-out leakage $\\Delta$G, trained - base (nats)": 1.7134456634521484,
+      "label": "+1.81",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.2088220582311475,
+      "held-out leakage $\\Delta$G, trained - base (nats)": 0.9268741607666016,
+      "label": "+1.81",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.0611480720086073,
+      "held-out leakage $\\Delta$G, trained - base (nats)": 1.9885826110839844,
+      "label": "+1.81",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.235243382752339,
+      "held-out leakage $\\Delta$G, trained - base (nats)": 1.3069190979003906,
+      "label": "+1.81",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.05802991583994,
+      "held-out leakage $\\Delta$G, trained - base (nats)": 3.2256011962890625,
+      "label": "+1.81",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.24500365259382,
+      "held-out leakage $\\Delta$G, trained - base (nats)": 1.842559814453125,
+      "label": "+1.81",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.183215198262044,
+      "held-out leakage $\\Delta$G, trained - base (nats)": 2.896635055541992,
+      "label": "+1.81",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.2881342636408455,
+      "held-out leakage $\\Delta$G, trained - base (nats)": 1.2612380981445312,
+      "label": "+1.81",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.070652789174467,
+      "held-out leakage $\\Delta$G, trained - base (nats)": 1.1380634307861328,
+      "label": "+1.81",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.2660119544623205,
+      "held-out leakage $\\Delta$G, trained - base (nats)": 1.185647964477539,
+      "label": "+1.81",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.0708058822093096,
+      "held-out leakage $\\Delta$G, trained - base (nats)": 1.0060920715332031,
+      "label": "+1.81",
+      "_kind": "scatter",
+      "_group": 7
+    }
+  ],
+  "n_series": 8,
+  "total_points": 126,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Held-out marker leakage at matched install (+5.5 nats)",
+        "ylabel": "held-out leakage $\\Delta$G, trained - base (nats)",
+        "legend_labels": [
+          "bare-trained (install-matched)",
+          "villain-trained (parent)"
+        ],
+        "annotations": [
+          "+4.64",
+          "+4.66",
+          "+4.12",
+          "+2.97",
+          "+2.78",
+          "+1.81"
+        ],
+        "xticklabels": [
+          "chef",
+          "hero",
+          "philosopher"
+        ],
+        "yticklabels": [
+          "0",
+          "1",
+          "2",
+          "3",
+          "4",
+          "5",
+          "6",
+          "7"
+        ]
+      }
+    ],
+    "series": [
+      "bare-trained (install-matched)",
+      "villain-trained (parent)"
+    ]
+  }
+}
