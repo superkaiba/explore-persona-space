@@ -1,0 +1,219 @@
+{
+  "metadata": {
+    "git_commit": "7b12b1202460dbd581eaf9553311f55f12a1d729",
+    "timestamp": "2026-07-16T12:48:53Z",
+    "seed": 0,
+    "n": 0,
+    "script": "scripts/issue1310_aggfit.py",
+    "issue": 931
+  },
+  "aggregation": "one point per (persona, scenario); X=min-turn slot x_spanmean, Y=mean(y)",
+  "headline_layer": 19,
+  "frozen_layers": [
+    14,
+    18,
+    19,
+    26
+  ],
+  "gcv_dof_cap": 0.9,
+  "per_persona": {
+    "Wren": {
+      "base": {
+        "n": 300,
+        "r2_headline": 0.19648846768114947,
+        "null_p975_headline": -0.07846193572653562,
+        "null_mean_headline": -0.08794453414650186,
+        "clears_null": true,
+        "skill_over_mean_headline": 0.21667114991587078,
+        "r2_frozen": {
+          "14": 0.16866079296521608,
+          "18": 0.17036249034947704,
+          "19": 0.19648846768114947,
+          "26": 0.31474564784257064
+        }
+      },
+      "instruct": {
+        "n": 300,
+        "r2_headline": 0.3548299086061537,
+        "null_p975_headline": -0.07079111325075113,
+        "null_mean_headline": -0.08380805944437662,
+        "clears_null": true,
+        "skill_over_mean_headline": 0.3721568457057456,
+        "r2_frozen": {
+          "14": 0.2838571582424808,
+          "18": 0.2926112972847189,
+          "19": 0.3548299086061537,
+          "26": 0.4618187368237072
+        }
+      }
+    },
+    "HELIOS": {
+      "base": {
+        "n": 300,
+        "r2_headline": 0.1974782359913172,
+        "null_p975_headline": -0.07188465506839757,
+        "null_mean_headline": -0.08131774698516406,
+        "clears_null": true,
+        "skill_over_mean_headline": 0.21685229920424165,
+        "r2_frozen": {
+          "14": 0.17408413383044685,
+          "18": 0.16365020394494356,
+          "19": 0.1974782359913172,
+          "26": 0.3108534336798878
+        }
+      },
+      "instruct": {
+        "n": 300,
+        "r2_headline": 0.40107670413358276,
+        "null_p975_headline": -0.0739837502097365,
+        "null_mean_headline": -0.0826558281653618,
+        "clears_null": true,
+        "skill_over_mean_headline": 0.4258993480132087,
+        "r2_frozen": {
+          "14": 0.34573194838992904,
+          "18": 0.34276070697795347,
+          "19": 0.40107670413358276,
+          "26": 0.5019252717396574
+        }
+      }
+    },
+    "Dana": {
+      "base": {
+        "n": 300,
+        "r2_headline": 0.21775009509535348,
+        "null_p975_headline": -0.07571957752896252,
+        "null_mean_headline": -0.086399804202233,
+        "clears_null": true,
+        "skill_over_mean_headline": 0.24138842546611272,
+        "r2_frozen": {
+          "14": 0.19005684193872474,
+          "18": 0.18378051851707988,
+          "19": 0.21775009509535348,
+          "26": 0.3637434303338949
+        }
+      },
+      "instruct": {
+        "n": 300,
+        "r2_headline": 0.3285635376004241,
+        "null_p975_headline": -0.07007289645792221,
+        "null_mean_headline": -0.08174950117214122,
+        "clears_null": true,
+        "skill_over_mean_headline": 0.3484020151326799,
+        "r2_frozen": {
+          "14": 0.28039890566116465,
+          "18": 0.2747331340035638,
+          "19": 0.3285635376004241,
+          "26": 0.46190327506337847
+        }
+      }
+    },
+    "Vex": {
+      "base": {
+        "n": 300,
+        "r2_headline": 0.13266438854640195,
+        "null_p975_headline": -0.07514239487746989,
+        "null_mean_headline": -0.08424515492525021,
+        "clears_null": true,
+        "skill_over_mean_headline": 0.1525275019463982,
+        "r2_frozen": {
+          "14": 0.10920308330509187,
+          "18": 0.10236081370572403,
+          "19": 0.13266438854640195,
+          "26": 0.25174959505194283
+        }
+      },
+      "instruct": {
+        "n": 300,
+        "r2_headline": 0.2328833350537587,
+        "null_p975_headline": -0.0723888274666894,
+        "null_mean_headline": -0.07899468304415196,
+        "clears_null": true,
+        "skill_over_mean_headline": 0.25491878867838413,
+        "r2_frozen": {
+          "14": 0.179770739236489,
+          "18": 0.1847377238683754,
+          "19": 0.2328833350537587,
+          "26": 0.38002745418693906
+        }
+      }
+    }
+  },
+  "swap_specificity": {
+    "base": {
+      "metadata": {
+        "git_commit": "7b12b1202460dbd581eaf9553311f55f12a1d729",
+        "timestamp": "2026-07-16T12:29:35Z",
+        "seed": 0,
+        "n": 1200,
+        "script": "scripts/issue1310_aggfit.py",
+        "issue": 931
+      },
+      "model_kind": "base",
+      "aggregation": "one point per (persona, scenario); X=min-turn slot x_spanmean, Y=mean(y)",
+      "headline_layer": 19,
+      "r2_correct": 0.4248701652357131,
+      "r2_swap": 0.13015989201825484,
+      "delta_r2_char": 0.29471027321745824,
+      "delta_ci_lo": 0.2851084166220687,
+      "delta_ci_hi": 0.30578870748858233,
+      "n_rows": 1200,
+      "n_groups": 300,
+      "n_boot": 1000,
+      "paired_group_bootstrap": true,
+      "gcv_dof_cap": 0.9
+    },
+    "instruct": {
+      "metadata": {
+        "git_commit": "7b12b1202460dbd581eaf9553311f55f12a1d729",
+        "timestamp": "2026-07-16T12:48:52Z",
+        "seed": 0,
+        "n": 1200,
+        "script": "scripts/issue1310_aggfit.py",
+        "issue": 931
+      },
+      "model_kind": "instruct",
+      "aggregation": "one point per (persona, scenario); X=min-turn slot x_spanmean, Y=mean(y)",
+      "headline_layer": 19,
+      "r2_correct": 0.5952973780730741,
+      "r2_swap": 0.21406268849354737,
+      "delta_r2_char": 0.3812346895795268,
+      "delta_ci_lo": 0.37124158493786685,
+      "delta_ci_hi": 0.39098755377752703,
+      "n_rows": 1200,
+      "n_groups": 300,
+      "n_boot": 1000,
+      "paired_group_bootstrap": true,
+      "gcv_dof_cap": 0.9
+    }
+  },
+  "agg_meta": {
+    "base": {
+      "n_points": 1200,
+      "points_per_persona": {
+        "Wren": 300,
+        "HELIOS": 300,
+        "Dana": 300,
+        "Vex": 300
+      },
+      "rows_per_group_mean": 5.179166666666666,
+      "rows_per_group_min": 3,
+      "rows_per_group_max": 6,
+      "first_turn_nonzero_frac": 0.0
+    },
+    "instruct": {
+      "n_points": 1200,
+      "points_per_persona": {
+        "Wren": 300,
+        "HELIOS": 300,
+        "Dana": 300,
+        "Vex": 300
+      },
+      "rows_per_group_mean": 5.945,
+      "rows_per_group_min": 3,
+      "rows_per_group_max": 6,
+      "first_turn_nonzero_frac": 0.0
+    }
+  },
+  "parent_reference": "per-turn fits: eval_results/issue_1310/onpolicy/summary.json",
+  "smoke": false
+}
