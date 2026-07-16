@@ -409,7 +409,11 @@ axis, the wall-time delta vs the next-smaller spec). REQUIRED for
 (planned_wall_h / planned_gpu_h / parallelism / basis) + the stratification
 spec + the serial-fit-loop / draw-battery / store-serialization sizing block
 (explicit multiplier arithmetic total_calls = draws × cells × folds × …;
-per-call cost measured at production shape or FLOP-derived, never asserted —
+per-call cost measured at production shape or FLOP-derived, never asserted
+(FLOP-derived is NOT a valid basis for fit loops or above-floor draw
+batteries — measured pilot / prior-issue figure / `pilot-gated` with the ≥2×
+headline presumption; `.claude/rules/plan-compute-sizing.md` § Per-cell fit
+phases) —
 for store-heavy phases a measured one-item serialization+upload wall-time,
 compression default OFF for fp16→Xet; body-named fast twins USED in §4 or
 the divergence stated) + per-VM-CPU-phase projected peak RSS (≥~16 GB —
