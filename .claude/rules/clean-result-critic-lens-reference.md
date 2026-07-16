@@ -652,8 +652,9 @@ Banned in narrative (chart annotations are fine):
 - Power analyses.
 - Inline credence intervals (`value ± err`) — chart error bars fine.
 - Pre-registration mentions ("pre-registered", "pre-reg", "registered
-  hypothesis") in `## Takeaways` / `## Goal` / `## Methodology` /
-  `## Results`
+  hypothesis", bare "registered <noun>" — "the registered verdict /
+  margin / read / lattice") in `## Takeaways` / `## Goal` /
+  `## Methodology` / `## Results`
   prose. Pre-reg threshold values can sit in the Methodology Training
   hyperparameter table. (v3: `## Takeaways` / `## What I ran` /
   `## Findings` prose; threshold values in the parameters table.)
