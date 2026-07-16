@@ -4,7 +4,7 @@ title: RLVR post-training adds no detectable new linear context→answer map str
 kind: experiment
 tags: []
 created_at: '2026-07-15T08:33:12Z'
-has_clean_result: false
+has_clean_result: true
 parent_id: 825
 origin_prompt: 'Help me to run an issue to test the RLVR part of next steps here:
   [#825 report — Next Steps: could check if doing RLVR changes the base -> instruct
