@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1374,
+  "highest_id": 1375,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -2920,6 +2920,13 @@
       "path": "tasks/planning/1374",
       "status": "planning",
       "title": "workflow-fix: floor GCP boot-disk at image minimum (100 GB)"
+    },
+    "1375": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1375",
+      "status": "proposed",
+      "title": "workflow-fix: verify_plan.py check for false numeric containment claims"
     },
     "138": {
       "has_clean_result": true,
