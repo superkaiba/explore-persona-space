@@ -25,6 +25,8 @@ relates_to:
 
 <!-- clean-result-v4 -->
 
+**Methodology:** [docs/methodology/issue_1336.md](https://github.com/superkaiba/explore-persona-space/blob/2249cf495d8c2d355b2f37f7b84eb7bf396f005d/docs/methodology/issue_1336.md) · [gist mirror](https://gist.github.com/superkaiba/5575c7b1da67014bf781a56e30ca6b88)
+
 ## Takeaways
 
 - **On the RLVR-trained distribution, the RLVR-minus-DPO reparameterization-gap contrast is −0.00003 with 95% CI half-width 0.0024** — roughly 8× tighter than the 0.020 elicitation band.
