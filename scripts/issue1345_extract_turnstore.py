@@ -24,6 +24,7 @@ CLI:
 from __future__ import annotations
 
 import argparse
+import json
 import sys
 from pathlib import Path
 
@@ -53,6 +54,25 @@ def _render_r1r2(convs: list[dict], tokenizer, regime: str) -> list:
     """Prefix-slot renders for R1/R2 (the ONE extraction delta, plan §4 2a)."""
     render = c.render_chat_prefix if regime == "r1" else c.render_naturalistic_prefix
     return [render(conv, tokenizer) for conv in convs]
+
+
+def assert_story_character_name(stories_dir: Path, model: str) -> None:
+    """Env-mismatch guard (plan v6 §4): stored realized name == runtime constant.
+
+    The gen phase records ``story_character_name`` in ``story_yield_{model}.json``;
+    an extract phase launched without the EPM_STORY_CHARACTER_NAME env the gen
+    phase ran under fails HERE, at entry, never silently mid-parse. Parent-era
+    yield JSONs (no field) read as the ARIA default. Raises AssertionError.
+    """
+    yield_path = stories_dir / f"story_yield_{model}.json"
+    assert yield_path.exists(), f"story yield report missing: {yield_path}"
+    stored_name = json.loads(yield_path.read_text()).get("story_character_name", "ARIA")
+    assert stored_name == c.STORY_CHARACTER_NAME, (
+        f"story character name mismatch: gen phase recorded {stored_name!r} in "
+        f"{yield_path} but this extract process runs with "
+        f"STORY_CHARACTER_NAME={c.STORY_CHARACTER_NAME!r} — launch both phases "
+        "with the same EPM_STORY_CHARACTER_NAME (dispatch --character-name)"
+    )
 
 
 def _render_r3(stories: list[dict], tokenizer) -> tuple[list, dict]:
@@ -99,6 +119,7 @@ def main() -> None:
         rendered = _render_r1r2(convs, tokenizer, args.regime)
         render_stats = {"conversations": len(rendered)}
     else:
+        assert_story_character_name(args.stories_dir, args.model)
         kept_path = args.stories_dir / f"kept_stories_{args.model}.jsonl"
         stories = c.read_jsonl(kept_path)
         if args.smoke:
@@ -180,6 +201,9 @@ def main() -> None:
         "model_id": model_id,
         "format": c.REGIME_FORMAT[args.regime],
         "track": c.TRACK,
+        # Story-arm character name (plan v6 §4 provenance; "ARIA" on r1/r2 rows too
+        # — the constant is global, only the r3 render consumes it).
+        "story_character_name": c.STORY_CHARACTER_NAME,
         "slot_names": ["prefix", ctx_name],
         "peak_layers": peak_layers,
         "expected_layers": ex.EXPECTED_LAYERS,

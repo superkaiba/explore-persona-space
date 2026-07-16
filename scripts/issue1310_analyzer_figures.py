@@ -21,6 +21,13 @@ renders the clean-result figures:
 Stale run-1 cells (commit b131716d: instruct Vex, instruct swap) are EXCLUDED
 (treated as absent). Lastpos cells are excluded everywhere (single-position X;
 known-pathological under uncapped GCV in run 2).
+
+Follow-up round `script-instruct-completion` (2026-07-16, @f89fb36ae3): the
+script-format instruct Vex cell + the instruct swap control, left unfit when
+run 2 stopped, now live under eval_results/issue_1310/script_completion/
+(GCV dof-cap 0.9). The loaders fall back to that directory when the primary
+script-format path is missing or stale, so the four figures above render the
+completed grid with no "not run" placeholders.
 """
 
 from __future__ import annotations
@@ -62,15 +69,34 @@ MODEL_LABEL = {"base": "Qwen2.5-7B (base)", "instruct": "Qwen2.5-7B-Instruct"}
 CEILING = {"base": 0.588, "instruct": 0.673}  # #825 Track-S S2 / S1 @L19
 
 
-def load_cell(regime: str, model: str, persona: str) -> dict | None:
+SCRIPTC = EV / "script_completion"  # 2026-07-16 completion round (dof-cap 0.9)
+
+
+def _load_fresh_json(candidates: list[Path]) -> dict | None:
+    """Return the first existing, non-stale (not run-1) JSON among candidates."""
+    for p in candidates:
+        if not p.exists():
+            continue
+        d = json.loads(p.read_text())
+        if d["metadata"]["git_commit"].startswith(STALE_RUN1_COMMIT):
+            continue  # stale run-1 leftover — treat as absent
+        return d
+    return None
+
+
+def _cell_candidates(regime: str, model: str, name: str) -> list[Path]:
     sub = REGIMES[regime]
     tag = "onpolicy_" if regime == "prefill" else ""
-    p = EV / sub / f"cells_{tag}{model}_{persona}.json"
-    if not p.exists():
+    cands = [EV / sub / f"cells_{tag}{model}_{name}.json"]
+    if regime == "script":
+        cands.append(SCRIPTC / f"cells_scriptc_{model}_{name}.json")
+    return cands
+
+
+def load_cell(regime: str, model: str, persona: str) -> dict | None:
+    d = _load_fresh_json(_cell_candidates(regime, model, persona))
+    if d is None:
         return None
-    d = json.loads(p.read_text())
-    if d["metadata"]["git_commit"].startswith(STALE_RUN1_COMMIT):
-        return None  # stale run-1 leftover — treat as absent
     fro = d["selection_symmetric"]["frozen_layer_table"][str(L)]
     boot = d["r2_bootstrap_row_frozen"][str(L)]
     return {
@@ -87,11 +113,11 @@ def load_cell(regime: str, model: str, persona: str) -> dict | None:
 def load_nulls(regime: str, model: str, persona: str) -> dict | None:
     sub = REGIMES[regime]
     tag = "onpolicy_" if regime == "prefill" else ""
-    p = EV / sub / f"nulls_{tag}{model}_{persona}.json"
-    if not p.exists():
-        return None
-    d = json.loads(p.read_text())
-    if d["metadata"]["git_commit"].startswith(STALE_RUN1_COMMIT):
+    cands = [EV / sub / f"nulls_{tag}{model}_{persona}.json"]
+    if regime == "script":
+        cands.append(SCRIPTC / f"nulls_scriptc_{model}_{persona}.json")
+    d = _load_fresh_json(cands)
+    if d is None:
         return None
     return {"null_matrix": np.array(d["null_matrix"]), "observed": np.array(d["observed_row"])}
 
@@ -99,13 +125,10 @@ def load_nulls(regime: str, model: str, persona: str) -> dict | None:
 def load_swap(regime: str, model: str) -> dict | None:
     sub = REGIMES[regime]
     tag = "onpolicy_" if regime == "prefill" else ""
-    p = EV / sub / f"swap_{tag}{model}.json"
-    if not p.exists():
-        return None
-    d = json.loads(p.read_text())
-    if d["metadata"]["git_commit"].startswith(STALE_RUN1_COMMIT):
-        return None
-    return d
+    cands = [EV / sub / f"swap_{tag}{model}.json"]
+    if regime == "script":
+        cands.append(SCRIPTC / f"swap_scriptc_{model}.json")
+    return _load_fresh_json(cands)
 
 
 def fig_hero() -> None:
@@ -223,17 +246,6 @@ def fig_layer_curves() -> None:
     # (obs down to -7); the caption discloses the clip.
     axes[0, 0].set_ylim(-0.65, 0.45)
     axes[1, 0].set_ylim(-0.45, 0.45)
-    # annotate missing instruct script Vex
-    axes[0, 1].text(
-        0.985,
-        0.04,
-        "Vex not run (generation run stopped before this fit)",
-        transform=axes[0, 1].transAxes,
-        ha="right",
-        va="bottom",
-        fontsize=8.5,
-        color="0.4",
-    )
     axes[0, 0].legend(loc="upper right", fontsize=8.5, ncols=2)
     savefig_paper(fig, "layer_curves", dir=OUT)
     plt.close(fig)
@@ -282,13 +294,8 @@ def fig_swap() -> None:
         )
         # row-bootstrap 95% CIs from the matching cells files
         for dx, cell_name in ((-width / 2, "swapctrl_correct"), (width / 2, "swap")):
-            sub = REGIMES[regime]
-            tag = "onpolicy_" if regime == "prefill" else ""
-            p = EV / sub / f"cells_{tag}{model}_{cell_name}.json"
-            if not p.exists():
-                continue
-            cd = json.loads(p.read_text())
-            if cd["metadata"]["git_commit"].startswith(STALE_RUN1_COMMIT):
+            cd = _load_fresh_json(_cell_candidates(regime, model, cell_name))
+            if cd is None:
                 continue
             boot = cd["r2_bootstrap_row_frozen"][str(L)]
             ax.vlines(xs[i] + dx, boot["ci_lo"], boot["ci_hi"], color="0.25", lw=1.2, zorder=4)
@@ -460,13 +467,19 @@ def fig_perfold() -> None:
 
 
 def main() -> None:
+    """Render the clean-result figures; optional argv names select a subset."""
     set_paper_style("blog")
     OUT.mkdir(parents=True, exist_ok=True)
-    fig_hero()
-    fig_layer_curves()
-    fig_swap()
-    fig_null_draw_points()
-    fig_perfold()
+    figs = {
+        "hero": fig_hero,
+        "layer_curves": fig_layer_curves,
+        "swap": fig_swap,
+        "null_draw_points": fig_null_draw_points,
+        "perfold": fig_perfold,
+    }
+    selected = sys.argv[1:] or list(figs)
+    for name in selected:
+        figs[name]()
     print("wrote figures to", OUT)
 
 

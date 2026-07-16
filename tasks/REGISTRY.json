@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1432,
+  "highest_id": 1433,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -3127,29 +3127,29 @@
     "1400": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1400",
-      "status": "reviewing",
+      "path": "tasks/completed/1400",
+      "status": "completed",
       "title": "daily-fix: triage observer empty-window false flags"
     },
     "1401": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1401",
-      "status": "running",
+      "path": "tasks/completed/1401",
+      "status": "completed",
       "title": "daily-fix: pod.py sync env GITHUB_TOKEN refresh leg"
     },
     "1402": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1402",
-      "status": "planning",
+      "path": "tasks/running/1402",
+      "status": "running",
       "title": "daily-fix: shared GCE staging HF-download retry"
     },
     "1403": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1403",
-      "status": "proposed",
+      "path": "tasks/running/1403",
+      "status": "running",
       "title": "daily-fix: Step 10d conflicts go to fresh subagent"
     },
     "1404": {
@@ -3347,15 +3347,15 @@
     "1429": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1429",
-      "status": "running",
+      "path": "tasks/reviewing/1429",
+      "status": "reviewing",
       "title": "workflow-fix: gotchas entry \u2014 rank-space bootstrap tail-mass gating (float-space CI coverage epsilon-fragile)"
     },
     "1430": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1430",
-      "status": "planning",
+      "path": "tasks/running/1430",
+      "status": "running",
       "title": "workflow-fix: audit duplicate-id dirs + reap terminal-task status husks"
     },
     "1431": {
@@ -3371,6 +3371,13 @@
       "path": "tasks/proposed/1432",
       "status": "proposed",
       "title": "workflow-fix: gotchas.md \u2014 cuda eigh non-convergence on near-singular Grams (CPU fallback)"
+    },
+    "1433": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1433",
+      "status": "proposed",
+      "title": "workflow-fix: verify unpinned backtick HF-path/file-count claims"
     },
     "144": {
       "has_clean_result": false,

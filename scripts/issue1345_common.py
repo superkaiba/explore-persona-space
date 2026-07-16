@@ -56,24 +56,69 @@ PARENT_STEMS = (
     "pretrained_naturalistic_s",
 )
 
+# ---------------------------------------------------------------------------
+# assistant-named-story follow-up seam (plan v6 §4): the story arm's AI
+# character name is parameterized behind EPM_STORY_CHARACTER_NAME (default
+# "ARIA" — the parent recipe stays byte-reproducible with no flags), and a
+# non-default name REQUIRES a variant slug (EPM_I1345_VARIANT) that scopes
+# every output dir + HF prefix so the parent's artifacts are never clobbered.
+# ---------------------------------------------------------------------------
+STORY_CHARACTER_NAME = os.environ.get("EPM_STORY_CHARACTER_NAME", "ARIA")
+VARIANT = os.environ.get("EPM_I1345_VARIANT", "")
+if not re.fullmatch(r"[A-Za-z0-9_]+", STORY_CHARACTER_NAME):
+    raise RuntimeError(
+        f"EPM_STORY_CHARACTER_NAME={STORY_CHARACTER_NAME!r} must match [A-Za-z0-9_]+ — "
+        "it is spliced into the story system prompt, the judge rubric, and the "
+        r"\b-bounded attribution regex"
+    )
+if VARIANT and not re.fullmatch(r"[A-Za-z0-9_]+", VARIANT):
+    raise RuntimeError(
+        f"EPM_I1345_VARIANT={VARIANT!r} must match [A-Za-z0-9_]+ (dir / HF-prefix slug)"
+    )
+if STORY_CHARACTER_NAME != "ARIA" and not VARIANT:
+    raise RuntimeError(
+        f"EPM_STORY_CHARACTER_NAME is non-default ({STORY_CHARACTER_NAME!r}) but "
+        "EPM_I1345_VARIANT is unset — refusing: a non-default character name without "
+        "a variant would clobber the parent run's output dirs + HF prefixes (plan v6 "
+        "§4 fail-loud pairing; launch via issue1345_dispatch.sh --character-name "
+        "<name> --variant <slug>)"
+    )
+_VSUB = f"/{VARIANT}" if VARIANT else ""
+
+# Pinned REUSE inputs for the assistant-named-story follow-up (plan v6 §4/§10):
+# the parent ARIA-run's four r1/r2 turnstore stems + the matched-n allowlist,
+# consumed by scripts/issue1345_prefetch_reuse.py (REPLACES extract_r1r2 under
+# --variant). Frozen literals — deliberately NOT variant-scoped (they name the
+# parent's own upload). Hub-verified live 2026-07-16 via scoped list_repo_tree:
+# 80 files / 87.03 GB across the four stems + 1 matched-n file at this revision.
+REUSE_REV = "2a3cb30acada04defc84fd04d28a2b54da3104cd"
+REUSE_TENSOR_PREFIX = "issue1345_framing/analysis_tensors/turnstore"
+REUSE_MATCHED_PATH = "issue1345_framing/inputs/matched_n/matched_subsets.json"
+REUSE_STEMS = PARENT_STEMS  # the same four r1/r2 stems (the story stems are regenerated)
+REUSE_FILES_PER_STEM = 20  # 10 .pt shards + 10 sidecar .json per stem at REUSE_REV
+
 # Upload destinations for THIS issue (issueN_<slug> prefix per Upload Policy;
 # plan §10 wrote a bare `analysis_tensors/issue_1345/...` — normalized to the
 # canonical issueN-prefixed layout, flagged in the implementation report).
-HF_ISSUE_PREFIX = "issue1345_framing"
+# Variant-scoped (plan v6 §4): under EPM_I1345_VARIANT everything lands one
+# level deeper so the parent run's artifacts are never overwritten.
+HF_ISSUE_PREFIX = f"issue1345_framing{_VSUB}"
+HF_SMOKE_PREFIX = f"issue1345_smoke{_VSUB}"  # smoke uploads divert here
 HF_TENSOR_PREFIX = f"{HF_ISSUE_PREFIX}/analysis_tensors"
 HF_STORIES_PREFIX = f"{HF_ISSUE_PREFIX}/raw_completions/stories"
 
 # ---------------------------------------------------------------------------
-# Local layout (repo-relative; the dispatcher cds to repo root)
+# Local layout (repo-relative; the dispatcher cds to repo root). Variant-scoped
+# under EPM_I1345_VARIANT (plan v6 §4) — never clobber the parent's dirs.
 # ---------------------------------------------------------------------------
-DATA_DIR = Path("data/issue_1345")
+DATA_DIR = Path(f"data/issue_1345{_VSUB}")
 TURNSTORE_DIR = DATA_DIR / "turnstore"
 STORIES_DIR = DATA_DIR / "stories"
 MATCHED_DIR = DATA_DIR / "matched_n"
 PREDS_CACHE_DIR = DATA_DIR / "preds_cache"
 PARENT_DL_DIR = DATA_DIR / "hf_dl"
-EVAL_DIR = Path("eval_results/issue_1345")
-FIG_DIR = Path("figures/issue_1345")
+EVAL_DIR = Path(f"eval_results/issue_1345{_VSUB}")
+FIG_DIR = Path(f"figures/issue_1345{_VSUB}")
 
 # ---------------------------------------------------------------------------
 # Registry: 3 regimes x 2 models x 2 arms (single source for EVERY phase —
@@ -145,7 +190,10 @@ JUDGE_MAX_TOKENS = 400  # reason-then-verdict rubric (llm-judging rule 23: >=300
 PARITY_TOL = 0.02  # ±0.02 context-arm L19 parity gate (plan §4 Phase 2a)
 HEADLINE_LAYER = 19
 N_REPARAM_NULL_DRAWS = 5  # per null type, per direction (plan §9: frozen layers only)
-N_ROTATION_COSINE_DRAWS = 100  # rotation chance reference for operator cosine
+# Rotation chance reference for operator cosine: 50 draws @ L19 (plan §11; the
+# governing default — issue1345_operator_comparison.py --rot-draws + the
+# dispatcher's ROTD=50 — was always 50; the stale 100 here never governed).
+N_ROTATION_COSINE_DRAWS = 50
 
 # Verdict lattice margins (plan §3)
 DELTA_SAME_MARGIN = 0.05
@@ -167,14 +215,19 @@ PARITY_ANCHOR_DOC = {
     ("pretrained", "r2"): 0.5783,
 }
 
+# Built from STORY_CHARACTER_NAME (plan v6 §4 seam); at the default "ARIA" this
+# is BYTE-IDENTICAL to the parent literal (pinned by tests/test_issue1345_name_seam.py
+# — the gen/bundle fingerprints hash this string, so parent resume stays intact).
 STORY_SYSTEM_PROMPT = (
-    "You are writing a short story in which an AI assistant named ARIA is a "
-    "character. In the story, a person asks ARIA questions and ARIA answers them "
+    f"You are writing a short story in which an AI assistant named "
+    f"{STORY_CHARACTER_NAME} is a character. In the story, a person asks "
+    f"{STORY_CHARACTER_NAME} questions and {STORY_CHARACTER_NAME} answers them "
     "helpfully and accurately. Write a realistic narrative scene of 300-500 words "
     "with 4-6 question-answer exchanges embedded naturally in the prose. Write "
     "flowing narrative prose (never a script or 'Name:' dialogue format). Put "
-    "spoken dialogue in double quotes, and introduce each of ARIA's answers with "
-    'an attribution BEFORE the quotation (for example: ARIA replied: "...").'
+    f"spoken dialogue in double quotes, and introduce each of {STORY_CHARACTER_NAME}'s "
+    f"answers with an attribution BEFORE the quotation (for example: "
+    f'{STORY_CHARACTER_NAME} replied: "...").'
 )
 
 
@@ -392,9 +445,14 @@ _SPEECH_VERBS = (
     "clarified",
     "continued",
 )
-# ARIA <up to 40 chars, no quote/newline> <speech verb> <optional , :> <open quote>
+# <character name, default ARIA> <up to 40 chars, no quote/newline> <speech verb>
+# <optional , :> <open quote> — built from STORY_CHARACTER_NAME (plan v6 §4 seam;
+# case-sensitive \b-bounded name match, same windows/quote handling as the parent;
+# byte-identical pattern at the ARIA default, pinned by the name-seam test).
 ANSWER_ATTRIB_RE = re.compile(
-    r"\bARIA\b[^\"“”\n]{0,40}?(?:" + "|".join(_SPEECH_VERBS) + r")[^\"“”\n]{0,20}?([\"“])"
+    rf"\b{re.escape(STORY_CHARACTER_NAME)}\b[^\"“”\n]{{0,40}}?(?:"
+    + "|".join(_SPEECH_VERBS)
+    + r")[^\"“”\n]{0,20}?([\"“])"
 )
 _OPEN_QUOTES = '"“'
 _CLOSE_FOR = {'"': '"', "“": "”"}
@@ -431,7 +489,8 @@ def _quoted_spans_before(text: str, limit: int) -> list[tuple[int, int]]:
 def parse_story_turns(text: str) -> list[dict]:
     """Segment a narrative story into Q->A turns via dialogue attribution markers.
 
-    Per turn: answer char span (inside ARIA's quoted reply), the attribution
+    Per turn: answer char span (inside the AI character's — STORY_CHARACTER_NAME's,
+    default ARIA — quoted reply), the attribution
     marker end (context-slot boundary), the preceding question's opening quote
     (prefix-slot boundary), and extraction-confidence fields (plan §4 Phase 1).
     Turns without a detectable preceding question are dropped (counted by the

@@ -1,0 +1,193 @@
+{
+  "commit": "9f53f4a1d4",
+  "created": "2026-07-16T17:57:42Z",
+  "figsize": [
+    9.5,
+    6.2
+  ],
+  "points": [
+    {
+      "re-judged verdict-less attempts (count)": 2.0,
+      "y": 4.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "re-judged verdict-less attempts (count)": 2.5,
+      "y": 5.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "re-judged verdict-less attempts (count)": 0.5,
+      "y": 1.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "re-judged verdict-less attempts (count)": "0",
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "re-judged verdict-less attempts (count)": 1.0,
+      "y": 2.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "re-judged verdict-less attempts (count)": 1.5,
+      "y": 3.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "re-judged verdict-less attempts (count)": 0.5,
+      "y": 1.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "re-judged verdict-less attempts (count)": 0.5,
+      "y": 1.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "re-judged verdict-less attempts (count)": 1.5,
+      "y": 3.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "re-judged verdict-less attempts (count)": 1.5,
+      "y": 3.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "re-judged verdict-less attempts (count)": 3.0,
+      "y": 6.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "re-judged verdict-less attempts (count)": 4.0,
+      "y": 8.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "re-judged verdict-less attempts (count)": 5.5,
+      "y": 11.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "re-judged verdict-less attempts (count)": 3.5,
+      "y": 7.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "re-judged verdict-less attempts (count)": 24.0,
+      "y": 48.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "re-judged verdict-less attempts (count)": 19.5,
+      "y": 39.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "re-judged verdict-less attempts (count)": 2.0,
+      "y": 4.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "re-judged verdict-less attempts (count)": 49.5,
+      "y": 99.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "re-judged verdict-less attempts (count)": 11.0,
+      "y": 22.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "re-judged verdict-less attempts (count)": 49.0,
+      "y": 98.0,
+      "_kind": "bar",
+      "_group": 4
+    }
+  ],
+  "n_series": 5,
+  "total_points": 20,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Re-judge at max_tokens 800: outcomes of the 365 verdict-less judge replies",
+        "xlabel": "re-judged verdict-less attempts (count)",
+        "legend_labels": [
+          "recovered PASS, clears parser floor",
+          "recovered PASS, below parser floor",
+          "recovered FAIL",
+          "empty reply (judge refusal)",
+          "persistent format drift (no verdict)"
+        ],
+        "annotations": [
+          "4",
+          "5",
+          "1",
+          "0",
+          "2",
+          "3",
+          "1",
+          "1",
+          "3",
+          "3",
+          "6",
+          "8",
+          "11",
+          "7",
+          "48",
+          "39",
+          "4",
+          "99",
+          "22",
+          "98"
+        ],
+        "xticklabels": [
+          "0",
+          "20",
+          "40",
+          "60",
+          "80",
+          "100",
+          "120"
+        ],
+        "yticklabels": [
+          "ARIA (parent), instruct\n24 re-judged",
+          "\"Assistant\" (round), instruct\n117 re-judged",
+          "ARIA (parent), base\n78 re-judged",
+          "\"Assistant\" (round), base\n146 re-judged"
+        ]
+      }
+    ],
+    "series": [
+      "recovered PASS, clears parser floor",
+      "recovered PASS, below parser floor",
+      "recovered FAIL",
+      "empty reply (judge refusal)",
+      "persistent format drift (no verdict)"
+    ]
+  }
+}

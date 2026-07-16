@@ -50,3 +50,8 @@ if [ -f "$GIT_COMMON_DIR/eps/pods.conf" ]; then
 else
     CONF="$MAIN_REPO_ROOT/scripts/pods.conf"
 fi
+
+# Test seam (#1401): hermetic tests override the resolved pods.conf.
+if [ -n "${EPS_PODS_CONF_OVERRIDE:-}" ]; then
+    CONF="$EPS_PODS_CONF_OVERRIDE"
+fi
