@@ -600,6 +600,21 @@ and the per-cell file the aggregation collapsed (in the `**Repro:**`
 footer). Exemption: raw and processed are visually identical
 (axis-rescale-only) — say so in alt text and omit the raw.
 
+**Compose-time number verification + artifact freshness.** Every number,
+range, or headline written into the body is re-read from its underlying
+artifact (`eval_results/` JSON, HF/WandB file) AT COMPOSE TIME — grep/`jq`
+the value in the same session that writes it; never paste from a chat
+draft, a plan, a task body, or memory. A quoted range traces to ONE
+quantity in ONE artifact read — never two different metrics fused into a
+single interval (#823/#952). Before quoting any `eval_results/` summary
+JSON, confirm it is the current version: `git log -1 -- <path>` plus a
+same-directory scan for a newer sibling/version — a later re-run or v(K+1)
+supersedes (#1310 re-cited a superseded v2 summary after the v3 run
+flipped the null). This extends the `## Methodology`
+copied-from-ground-truth hyperparameter rule to every results number
+(chat-side counterpart: CLAUDE.md § "Ad-hoc results summaries" → "Verify
+before asserting").
+
 **For text-behavior results only:** the systematic per-condition samples
 live in `## Methodology → ### Sample training/evaluation data +
 completions`; a `### <result>` may carry at most ONE short (≤10-line)
