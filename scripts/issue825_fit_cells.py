@@ -154,6 +154,26 @@ def _as_f64_on(x, dev: torch.device) -> torch.Tensor:
     return torch.as_tensor(np.asarray(x), dtype=torch.float64).to(dev)
 
 
+def _eigh_robust(G: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
+    """eigh with a CPU-LAPACK fallback on cuSOLVER non-convergence.
+
+    cuSOLVER's syevd raises torch._C._LinAlgError ("failed to converge ...
+    ill-conditioned or has too many repeated eigenvalues") on near-singular
+    Grams that CPU LAPACK decomposes fine — matched-n subsampled inner-fold
+    Grams hit this (#1335 attempt 8: n_min=1739, inner-group folds with
+    near-duplicate rows, exactly the near-singular regime the inner-group-cv
+    selection targets). The fallback computes the SAME decomposition of the
+    SAME matrix on CPU and moves it back to G's device — a numerical-backend
+    swap, not a semantic change (results agree to fp roundoff).
+    """
+    try:
+        return torch.linalg.eigh(G)
+    except torch.linalg.LinAlgError:
+        print(f"[fit_cells] eigh non-convergence on {G.device} (n={G.shape[0]}); CPU fallback")
+        w, V = torch.linalg.eigh(G.cpu())
+        return w.to(G.device), V.to(G.device)
+
+
 def _prep_fold(X_train: np.ndarray, X_eval: np.ndarray) -> dict:
     """Compute the Y-independent pieces of the Gram-space ridge for one fold.
 
@@ -170,7 +190,7 @@ def _prep_fold(X_train: np.ndarray, X_eval: np.ndarray) -> dict:
     Xtr_n = (Xtr - xmu) / xsd
     Xev_n = (Xev - xmu) / xsd
     G = Xtr_n @ Xtr_n.T
-    w, V = torch.linalg.eigh(G)
+    w, V = _eigh_robust(G)
     w = torch.clamp(w, min=0.0)
     Kev = Xev_n @ Xtr_n.T
     KevV = Kev @ V
@@ -213,7 +233,7 @@ def _prep_inner_lambda(
         Xf_n = (Xf - xmu) / xsd
         Xv_n = (Xv - xmu) / xsd
         G = Xf_n @ Xf_n.T
-        w, V = torch.linalg.eigh(G)
+        w, V = _eigh_robust(G)
         w = torch.clamp(w, min=0.0)
         P = (Xv_n @ Xf_n.T) @ V  # (n_va, n_fi)
         caches.append({"w": w, "V": V, "P": P, "M": P.T @ P, "fi_idx": fi_idx, "va_idx": va_idx})
