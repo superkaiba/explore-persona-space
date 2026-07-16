@@ -201,15 +201,22 @@ run_model_lane() {  # run_model_lane <model> <data_dir> <out_dir> <mode>
   # (prior-attempt shards; CONSUME rule). Full lanes only — smoke/STUB lanes
   # stay hermetic (no network), mirroring the upload_store gate.
   local seed_args=()
+  local gen_resume_args=()
   if [ "$SKIP_UPLOAD" != "1" ] && [ "$mode" != "smoke" ]; then
     seed_args=(--hf-resume-seed)
+    # r8 relaunch economy: consume the persisted rollout JSONL (the last
+    # attempt's text — the SAME lineage the seeded stores were captured from)
+    # instead of minting a fresh statistically-equivalent-but-not-byte-
+    # identical vLLM re-gen (fingerprint-gated; falls through to fresh gen).
+    gen_resume_args=(--hf-resume)
   fi
   local wiring_n=200
   if [ "$mode" = "smoke" ]; then wiring_n=8; fi
 
   for rung in "${GEN_RUNGS[@]}"; do
     uv run python scripts/issue1335_gen.py --rung "$rung" --model "$model" \
-      --data-dir "$data_dir" "${slice_args[@]}" "${stub_args[@]}" "${upload_args[@]}"
+      --data-dir "$data_dir" "${slice_args[@]}" "${stub_args[@]}" "${upload_args[@]}" \
+      "${gen_resume_args[@]}"
   done
   for rung in "${TF_RUNGS[@]}"; do
     uv run python scripts/issue1335_render_rungs.py --tf-rerender --rung "$rung" \

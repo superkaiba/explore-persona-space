@@ -76,8 +76,98 @@ def parse_args() -> argparse.Namespace:
     ap.add_argument("--slots", type=int, default=c1310.PREFILL_SLOTS)
     ap.add_argument("--stub-gen", action="store_true", help="CPU smoke: real tokenizer, no model")
     ap.add_argument("--skip-upload", action="store_true")
+    ap.add_argument(
+        "--hf-resume",
+        action="store_true",
+        help="stage this rung's persisted rollout JSONL from the Hub instead of "
+        "regenerating, when its per-record render-config fingerprint matches "
+        "(#1335 r8 relaunch economy: the seeded stores were captured from THAT "
+        "text; a fresh vLLM re-gen would mint another statistically-equivalent-"
+        "but-not-byte-identical text lineage while fits consume the seeded stores)",
+    )
     ap.add_argument("--gpu-memory-utilization", type=float, default=0.85)
     return ap.parse_args()
+
+
+def hf_resume_gen(args, slug: str, model_kind: str, fp: dict) -> bool:
+    """Stage the rung's rollout JSONL from the Hub under the c24 CONSUME rule.
+
+    Downloads ``raw_completions/<stage>/<model>_gen.jsonl`` (hub-retried),
+    admits it iff the FIRST record's {rung_slug, render_config_hash} match the
+    CURRENT render config (code-sha drift tolerated — the store CONSUME rule),
+    writes it to gen_path + reconstructs a manifest (provenance: hf-resume),
+    and returns True. Missing on Hub / fingerprint mismatch => False (caller
+    falls through to fresh generation). Never partial: the JSONL lands via
+    os.replace after a full download.
+    """
+    import json
+    import tempfile
+
+    from huggingface_hub import hf_hub_download
+    from huggingface_hub.errors import EntryNotFoundError, LocalEntryNotFoundError
+
+    stage = UPLOAD_STAGE[slug]
+    remote = f"{r1335.HF_PREFIX}/raw_completions/{stage}/{model_kind}_gen.jsonl"
+    out_path = r1335.gen_path(args.data_dir, slug, model_kind)
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    with tempfile.TemporaryDirectory(dir=out_path.parent, prefix=".hfgen_") as td:
+        try:
+            got = hub.retry_transient(
+                lambda: hf_hub_download(
+                    r1335.HF_DATA_REPO, remote, repo_type="dataset", local_dir=td
+                ),
+                what=f"hf_hub_download({remote})",
+            )
+        except LocalEntryNotFoundError:
+            # A Hub 429/queue-full on the HEAD probe surfaces 404-SHAPED as
+            # LocalEntryNotFoundError (#1345 r5) — that is a network fault,
+            # not a missing file; fail loud rather than silently regenerate.
+            raise
+        except EntryNotFoundError:
+            print(f"[i1335-gen] hf-resume: {remote} not on Hub — generating fresh")
+            return False
+        with open(got, encoding="utf-8") as f:
+            first_line = f.readline()
+        if not first_line.strip():
+            print(f"[i1335-gen] hf-resume: {remote} empty — generating fresh")
+            return False
+        first = json.loads(first_line)
+        if not r1335.fingerprint_matches(first, slug, require_sha=False):
+            print(
+                f"[i1335-gen] hf-resume: {remote} render-config mismatch "
+                "(stale prior-attempt render) — generating fresh"
+            )
+            return False
+        if first.get("code_sha") != fp["code_sha"]:
+            print(
+                f"[i1335-gen] hf-resume: code_sha drift ({first.get('code_sha')} -> "
+                f"{fp['code_sha']}) tolerated (CONSUME rule: render-config identity)"
+            )
+        n_records = 0
+        n_short = 0
+        with open(got, encoding="utf-8") as f:
+            for line in f:
+                if not line.strip():
+                    continue
+                n_records += 1
+                if json.loads(line)["n_completion_tokens"] < r1335.DIALOGUE_MIN_TOKENS:
+                    n_short += 1
+        os.replace(got, out_path)
+    c1310.write_json(
+        out_path.with_name(f"{model_kind}_gen_manifest.json"),
+        {
+            "metadata": common.metadata(SCRIPT, c1310.GEN_SEED, n_records),
+            **fp,
+            "model_kind": model_kind,
+            "n_records": n_records,
+            "n_below_dialogue_min": n_short,
+            "jsonl_sha256": common.sha256_file(out_path),
+            "provenance": "hf-resume",
+            "hf_source": remote,
+        },
+    )
+    print(f"[i1335-gen] hf-resume: staged {n_records} records from {remote} -> {out_path}")
+    return True
 
 
 def _stub_completion(key: str, idx: int, oneline: bool) -> str:
@@ -325,6 +415,9 @@ def main() -> int:
     slug, model_kind = args.rung, args.model
     print(f"[phase=p1_gen_{slug}_{model_kind}] on-policy generation")
     fp = r1335.fingerprint(slug)
+    if args.hf_resume and hf_resume_gen(args, slug, model_kind, fp):
+        print(f"[i1335-gen] done ({slug}/{model_kind}; hf-resume, no generation)")
+        return 0
     tokenizer = common.get_tokenizer(r1335.MODEL_IDS[model_kind])
     if r1335.RUNGS[slug]["family"] == "qa":
         records, extra_meta = gen_qa(args, tokenizer, fp)

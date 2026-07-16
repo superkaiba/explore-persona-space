@@ -61,6 +61,9 @@ external/training-against-misalignment/vectors/
 *.safetensors
 *.bin
 *.npz
+# Committed test fixtures are exempt (small, <1 MB; e.g. the #1335
+# GCV-degeneracy real-slice fixture)
+!tests/fixtures/*.npz
 
 # Secrets
 *.key

@@ -64,6 +64,18 @@ import issue1335_render_rungs as r1335  # noqa: E402
 
 SCRIPT = "scripts/issue1335_fit.py"
 
+# #1335 r8 (att-20260715-210436 diagnosis): GCV lambda-selection degenerates at
+# the grid-min lambda on the ladder's within-scene-correlated / near-singular
+# cells (fiction per-persona n_tr ~1100-1440 << D=3584; one-line Q&A n_tr ~ D)
+# — train RSS collapses to ~0 by interpolation and GCV picks lambda=0.01,
+# producing held-out R^2 of -2..-46 while lambda=1e3-1e4 on the SAME folds
+# reads +0.22..+0.35 (the #1310 anchor band). All ladder fits therefore select
+# lambda by inner GROUP-level CV (fit825 "inner-group-cv"), identically for
+# observed + null draws (selection-symmetric). r0's GCV pick (lambda=3162,
+# R^2=0.410 = its own lambda-optimum) shows the selectors agree where GCV is
+# healthy.
+LAMBDA_SELECTION = "inner-group-cv"
+
 ARM_X_KEY = {"ctx": "x_spanmean", "prefix": "x_prefixmean", "lastpos": "x_last"}
 MATCHED_ARMS = ("ctx", "prefix")
 MATCHED_SEED_BASE = 931  # matched-n subsample seeds 931+k (plan §10)
@@ -220,7 +232,13 @@ def fit_cell(cell_id: str, slug: str, xy: dict, args) -> dict:
     n, n_layers = X.shape[0], X.shape[1]
     fit825.FROZEN_LAYERS = tuple(frozen_layers(n_layers))
     sweep = fit825.heldout_r2_sweep(
-        X, Y, groups, n_folds=args.folds, seed=args.seed, null_draws=args.null_draws
+        X,
+        Y,
+        groups,
+        n_folds=args.folds,
+        seed=args.seed,
+        null_draws=args.null_draws,
+        lambda_selection=LAMBDA_SELECTION,
     )
     r2_obs, r2_null = sweep["r2_obs"], sweep["r2_null"]
     summary = fit825.selection_symmetric_summary(r2_obs, r2_null)
@@ -228,7 +246,13 @@ def fit_cell(cell_id: str, slug: str, xy: dict, args) -> dict:
     hl = headline_layer(n_layers)
     mb = fit825.mean_baseline_r2(Y, groups, layers=fl, n_folds=args.folds, seed=args.seed)
     rp = fit825.random_projection_control(
-        X, Y, groups, layers=[hl], n_folds=args.folds, seed=args.seed
+        X,
+        Y,
+        groups,
+        layers=[hl],
+        n_folds=args.folds,
+        seed=args.seed,
+        lambda_selection=LAMBDA_SELECTION,
     )
     fitted = sweep["fitted_mask"]
     boot_row = {}
@@ -245,6 +269,7 @@ def fit_cell(cell_id: str, slug: str, xy: dict, args) -> dict:
         "metadata": common.metadata(SCRIPT, args.seed, n),
         **fp,
         "cell_id": cell_id,
+        "lambda_selection": LAMBDA_SELECTION,
         "n": n,
         "n_groups": len(np.unique(groups)),
         "n_layers": int(n_layers),
@@ -297,7 +322,13 @@ def fit_cell_matched(cell_id: str, slug: str, xy: dict, n_min: int, args) -> dic
         idx = matched_subsample(groups, n_min, seed=seed_k)
         sub = {"X": X[idx], "Y": Y[idx], "group_ids": np.asarray(groups)[idx]}
         sweep = fit825.heldout_r2_sweep(
-            sub["X"], sub["Y"], sub["group_ids"], n_folds=args.folds, seed=args.seed, null_draws=0
+            sub["X"],
+            sub["Y"],
+            sub["group_ids"],
+            n_folds=args.folds,
+            seed=args.seed,
+            null_draws=0,
+            lambda_selection=LAMBDA_SELECTION,
         )
         gb19 = _l19_group_bootstrap(sweep, sub, hl, args)
         draws_out.append(
@@ -314,6 +345,7 @@ def fit_cell_matched(cell_id: str, slug: str, xy: dict, n_min: int, args) -> dic
         "metadata": common.metadata(SCRIPT, args.seed, n_min),
         **fp,
         "cell_id": cell_id,
+        "lambda_selection": LAMBDA_SELECTION,
         "n_min": int(n_min),
         "headline_layer": hl,
         "n_draws": N_MATCHED_DRAWS,
@@ -474,7 +506,13 @@ def run_loso(slug: str, store: dict, model_kind: str, args) -> dict | None:
         n_layers = xy["X"].shape[1]
         fit825.FROZEN_LAYERS = tuple(frozen_layers(n_layers))
         sweep = fit825.heldout_r2_sweep(
-            xy["X"], xy["Y"], settings, n_folds=n_settings, seed=args.seed, null_draws=0
+            xy["X"],
+            xy["Y"],
+            settings,
+            n_folds=n_settings,
+            seed=args.seed,
+            null_draws=0,
+            lambda_selection=LAMBDA_SELECTION,
         )
         hl = headline_layer(n_layers)
         out[unit] = {
@@ -738,7 +776,7 @@ def fiction_kept_personas(args, model_kind: str, smoke: bool = False) -> tuple[l
 
 def evaluate_gates(args, models: list[str], smoke: bool) -> dict:
     """The two binding rig-anchor gates (plan §7)."""
-    gates: dict = {"binding": not smoke}
+    gates: dict = {"binding": not smoke, "lambda_selection": LAMBDA_SELECTION}
     # Gate 1: fiction endpoint anchors (full-n, ctx, L19) ± 0.08 + swap sign.
     g1 = {"tolerance": ANCHOR_TOL, "per_model": {}}
     g1_pass = True
