@@ -722,7 +722,27 @@ Generation-agnostic checks (run on v2 AND v3 — the inline-figure +
   critic round. (Numbered 36 because 28-35 are taken by the
   generation-agnostic checks.)
 
-- **check 37** (`check_linked_not_embedded_figures`, WARN, v4-only, #1371): a
+- **check 37** (`check_footer_reuse_bullets_pinned`, WARN, v4-only, #1370):
+  every footer `- Reused ... from [#M](...)` bullet carries a
+  revision/path pin — the body->pin sibling of check 35's metadata->body
+  direction (#1315: two unpinned `- Reused ... from [#1090]` bullets were
+  invisible to check 35's metadata-side trigger and survived to the LM
+  critic). Bullet-scoped satisfiers: a revision-URL segment
+  (`/tree|resolve|commit|blob/<7-40 hex>`), `@ <rev>` (optional backtick),
+  a committed `eval_results/issue_<M>/` path, a SPEC-sanctioned WandB
+  `/runs/<id>` URL, or a bare letter-bearing >=7-hex token; the
+  from-link's own `#M` / `/tasks/M` NEVER satisfies (vacuity guard —
+  every trigger bullet carries it by construction). WARN uniformly
+  (corpus 2026-07-15: 40 trigger bullets across committed v4 bodies,
+  4 unpinned — #810/#811/#833/#1112, all `awaiting_promotion`; a FAIL
+  would newly block their re-verifies). Body-text-only: lives in the
+  body-only CHECKS list, runs on stdin bodies, and is deliberately NOT
+  fenced by `EPM_VERIFY_BODY_NO_EVAL_SCAN` (no eval scan to fence).
+  Documented false-negative residual: a bullet quoting the CURRENT
+  task's own code SHA satisfies the bare-hex form — LM Lens 5 keeps
+  owning semantic pin-correctness.
+
+- **check 38** (`check_linked_not_embedded_figures`, WARN, v4-only, #1371): a
   non-image markdown LINK in the footer-truncated v4 `## Results` section
   whose URL carries a `figures/issue_<N>/*.png` path, where that figure is
   embedded as an image nowhere in the body. Pipeline: `_v4_results_body` →
@@ -743,8 +763,8 @@ Generation-agnostic checks (run on v2 AND v3 — the inline-figure +
   `[text][ref]` are not matched. Incident: #1315 result 4 linked a committed
   per-row scatter grid instead of embedding it; only clean-result-critic
   Lens 11 caught it. Dispatched OUTSIDE the body-only CHECKS list (needs
-  `issue` for own-dir scoping; the check-31/#1011 precedent). (Numbered 37 —
-  36 was taken by #1368 while this check was in plan review.)
+  `issue` for own-dir scoping; the check-31/#1011 precedent). (Numbered 38 —
+  36/37 were taken by #1368/#1370 while this check was in review.)
 
 Harmful-content carve-out: checks 18/19 accept the sanitized excerpt
 form (`[truncated — harmful-content row; verify at <path>, row <i>]`)
@@ -2183,21 +2203,21 @@ _ISSUE_FIGURE_PATH_RE = re.compile(r"^figures/issue_(?P<issue>\d+)/\S")
 # pooled hero `mlp_indiv_hero_4arm.png`), not a per-unit view.
 _PER_UNIT_FIG_RE = re.compile(r"(?<![a-z0-9])per[-_]?(context|unit|cell)", re.IGNORECASE)
 
-# Check 37: any markdown link (image embeds are masked out before this
+# Check 38: any markdown link (image embeds are masked out before this
 # scans, so no `!`-lookbehind is needed); link text tolerates `]` not
 # followed by `(` — the same tolerance `_IMAGE_RE` uses — and may be
 # EMPTY (the `[](q)` residue a clickable-image wrapper leaves after the
 # inner image is masked). Distinct from `_LINK_RE`, which requires
 # non-empty text and has no `]` tolerance.
 _MD_LINK_RE = re.compile(r"\[(?:[^\]]|\](?!\())*\]\(([^)]+)\)")
-# Check 37: a `figures/issue_<K>/…png` path inside a link/image URL, ANY
+# Check 38: a `figures/issue_<K>/…png` path inside a link/image URL, ANY
 # host form (raw-GitHub, github blob, relative). Captures the
 # repo-relative path; `[^)\s?#]+` stops the capture before a
 # query-string / fragment (`…png?raw=1`).
 _LINKED_ISSUE_PNG_RE = re.compile(
     r"(?P<path>figures/issue_(?P<issue>\d+)/[^)\s?#]+\.png)", re.IGNORECASE
 )
-# Check 37: HTML image embeds (`<img src="…">`) also count as embeds — a
+# Check 38: HTML image embeds (`<img src="…">`) also count as embeds — a
 # body that embeds via raw HTML must not false-positive the
 # linked-figure WARN. Quoted src only (unquoted src is unused in bodies).
 _HTML_IMG_SRC_RE = re.compile(r"<img\s[^>]*?src\s*=\s*[\"']([^\"']+)[\"']", re.IGNORECASE)
@@ -2588,7 +2608,7 @@ def check_orphaned_per_unit_figures(body: str, *, issue: int | None = None) -> C
 
 
 def check_linked_not_embedded_figures(body: str, *, issue: int | None = None) -> CheckResult:
-    """Check 37 (WARN, v4-only, #1371): a non-image markdown LINK in the
+    """Check 38 (WARN, v4-only, #1371): a non-image markdown LINK in the
     (footer-truncated) v4 `## Results` section to a
     `figures/issue_<N>/*.png` that no body image embeds.
 
@@ -5419,6 +5439,126 @@ def check_cross_issue_reuse_provenance(
         f"all cross-issue reuse pins declared in the body "
         f"({len(seen_t1)} tier-1, {len(seen_t2)} tier-2)",
     )
+
+
+# ─── Check 37 (#1370): footer Reused bullets carry a revision/path pin ──────
+
+# The body->pin sibling of Check 35 (#1256). Check 35 fires only when
+# committed result-JSON METADATA carries a machine pin
+# (`_scan_cross_issue_reuse_pins`); a footer `- Reused ... from [#M](...)`
+# bullet AUTHORED without any pinned path is invisible to it (#1315: two
+# unpinned `- Reused ... from [#1090]` bullets while Check 35
+# graceful-skipped; caught only by the LM critic). This check reads ONLY
+# the body text — no eval scan, so `EPM_VERIFY_BODY_NO_EVAL_SCAN` does
+# not (and must not) fence it.
+_FOOTER_REUSED_BULLET_RE = re.compile(r"^\s*[-*]\s+Reused\b", re.IGNORECASE)
+_REUSED_FROM_ISSUE_RE = re.compile(r"\bfrom\s+\[#(\d+)\]\(", re.IGNORECASE)
+# Bullet-scoped pin forms (corpus 2026-07-15: 36/40 committed trigger
+# bullets satisfy one; the satisfier is deliberately BULLET-scoped and
+# excludes issue-mention forms — `#M` / `/tasks/M` appear in EVERY
+# trigger bullet via the from-link itself, so the `_tier1_satisfied`
+# fallback shapes would make this check vacuous):
+_BULLET_REV_URL_RE = re.compile(r"/(?:tree|resolve|commit|blob)/[0-9a-fA-F]{7,40}\b")
+_BULLET_AT_REV_RE = re.compile(r"@[ \t]*`?[0-9a-fA-F]{7,40}\b")
+_BULLET_EVAL_PATH_RE = re.compile(r"\beval_results/issue_\d+/")
+# SPEC.md § footer sanctions WandB `/runs/<id>` as a pinned URL form; a
+# WandB run id is base36 (letters beyond a-f), so neither the rev-URL nor
+# the bare-hex form catches it — without this a SPEC-conformant bullet
+# would false-WARN:
+_BULLET_WANDB_RUN_RE = re.compile(r"\bwandb\.ai/\S+/runs/\w+", re.IGNORECASE)
+
+
+def _footer_reused_bullets(footer: str) -> list[str]:
+    """Split footer text into `- Reused ...` bullets, joining indented
+    non-bullet continuation lines onto their bullet (a wrapped bullet's
+    pin may sit on a continuation line). Fence-aware: bullets inside a
+    fenced code block (an illustrative skeleton) are ignored; `>`-quoted
+    Context-prompt lines never match the bullet anchor."""
+    bullets: list[str] = []
+    current: str | None = None
+    in_fence = False
+    for line in footer.splitlines():
+        stripped = line.strip()
+        if stripped.startswith("```") or stripped.startswith("~~~"):
+            in_fence = not in_fence
+            if current is not None:
+                bullets.append(current)
+                current = None
+            continue
+        if in_fence:
+            continue
+        if _FOOTER_REUSED_BULLET_RE.match(line):
+            if current is not None:
+                bullets.append(current)
+            current = stripped
+        elif current is not None and line[:1] in (" ", "\t") and not re.match(r"^\s*[-*]\s", line):
+            current += " " + stripped
+        else:
+            if current is not None:
+                bullets.append(current)
+            current = None
+    if current is not None:
+        bullets.append(current)
+    return bullets
+
+
+def _reused_bullet_pinned(bullet: str) -> bool:
+    """True when the bullet carries a pin: a revision-URL segment
+    (`/tree/<sha>`, `/blob/<sha>`, `/resolve/<sha>`, `/commit/<sha>`),
+    an `@ <rev>` (optional backtick), a committed
+    `eval_results/issue_<M>/` path, a SPEC-sanctioned WandB run URL
+    (`wandb.ai/<entity>/<project>/runs/<id>`), or a bare >=7-char hex
+    token with at least one letter (a digits-only run like `12345678`
+    is a count, not a sha)."""
+    if (
+        _BULLET_REV_URL_RE.search(bullet)
+        or _BULLET_AT_REV_RE.search(bullet)
+        or _BULLET_EVAL_PATH_RE.search(bullet)
+        or _BULLET_WANDB_RUN_RE.search(bullet)
+    ):
+        return True
+    return any(any(c.isalpha() for c in tok) for tok in _BODY_HEX_TOKEN_RE.findall(bullet))
+
+
+def check_footer_reuse_bullets_pinned(body: str) -> CheckResult:
+    """Check 37 (WARN, v4-only, #1370): every footer
+    `- Reused ... from [#M](...)` bullet carries a revision/path pin.
+
+    Body-text-only sibling of Check 35 (#1256) — the body->pin direction.
+    WARN, not FAIL (corpus 2026-07-15: 40 trigger bullets across 40
+    footered v4 bodies; 4 lack every pin form — 3 are code-harness reuse
+    (#811/#833/#1112, remedy: append `@ <code-sha>`), 1 is the incident
+    class (#810); a FAIL would newly block any future re-verify of all
+    4 parked bodies). The from-link's own `#M` / `/tasks/M` NEVER
+    satisfies — every trigger bullet carries it by construction.
+    Documented false-negative residual: a bullet quoting the CURRENT
+    task's own code SHA (a letter-bearing hex unrelated to the reused
+    artifact) satisfies the bare-hex form — LM Lens 5 keeps owning
+    semantic pin-correctness.
+    Deliberately NOT fenced by `EPM_VERIFY_BODY_NO_EVAL_SCAN` (no
+    filesystem scan)."""
+    name = "footer Reused bullets carry a revision/path pin"
+    if not is_v4(body):
+        return CheckResult(name, True, "skipped — not a v4 body (forward-only)")
+    footer = _v4_footer_text(body)
+    if footer is None:
+        return CheckResult(name, True, "skipped — no **Repro:** footer found")
+    unpinned = [
+        b
+        for b in _footer_reused_bullets(footer)
+        if _REUSED_FROM_ISSUE_RE.search(b) and not _reused_bullet_pinned(b)
+    ]
+    if not unpinned:
+        return CheckResult(name, True, "all footer Reused-from-[#M] bullets pinned")
+    shown = "; ".join(f"`{b[:120]}`" for b in unpinned)
+    detail = (
+        f"{len(unpinned)} footer `- Reused ... from [#M](...)` bullet(s) carry no "
+        f"pinned path/revision: {shown} — add the permanent pin per reused artifact, "
+        "expected shape: `- Reused <kind> from [#M](...): <path> @ <rev> — fit: "
+        "<one line>` (an HF/GitHub `/tree/<sha>`-style URL, `@ <sha>`, a "
+        "committed `eval_results/issue_<M>/...` path, or a WandB run URL)"
+    )
+    return CheckResult(name, True, detail, is_warn=True)
 
 
 def _git_object_exists(repo: Path, sha: str, path: str) -> tuple[str, str]:
@@ -10838,6 +10978,9 @@ CHECKS = [
     check_v4_results_beat,  # check 21 (v4, WARN)
     check_v4_no_bare_issue_refs,  # check 27 (v4) — bare `#K` refs + task links, standalone secs
     check_v4_result_paragraph_sentences,  # check 36 (v4, WARN) — ≥4-sentence paras (#1368)
+    # check 37 (WARN, v4, #1370) — footer `- Reused ... from [#M](...)` bullets carry a
+    # revision/path pin (body-text-only sibling of check 35's metadata-side trigger):
+    check_footer_reuse_bullets_pinned,
     # generation-agnostic checks (v2 AND v3 AND v4):
     check_figure_url_sha_matches_repro,  # check 22
     check_hf_url_resolves,  # check 23
@@ -10857,7 +11000,7 @@ CHECKS = [
     # is NOT here either — like check 20 (v4) it needs the issue number (for
     # figures-dir scoping), so it is dispatched separately in `verify_text`
     # (#1011; the check-20/#921 precedent).
-    # Check 37 (`check_linked_not_embedded_figures`, WARN, v4-only) is NOT
+    # Check 38 (`check_linked_not_embedded_figures`, WARN, v4-only) is NOT
     # here either — it needs the issue number (for own-figures-dir scoping),
     # so it is dispatched separately in `verify_text` (#1371; the
     # check-31/#1011 precedent).
@@ -11041,7 +11184,7 @@ def verify_text(
     # issue number for figures-dir scoping, so it lives outside the body-only
     # CHECKS list (check-20/#921 precedent).
     results.append(check_orphaned_per_unit_figures(body, issue=issue))
-    # Check 37 (WARN, #1371): Results figures referenced as links, not
+    # Check 38 (WARN, #1371): Results figures referenced as links, not
     # embeds — needs the issue number for own-figures-dir scoping, so it
     # lives outside the body-only CHECKS list (check-31/#1011 precedent).
     results.append(check_linked_not_embedded_figures(body, issue=issue))

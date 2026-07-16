@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1374,
+  "highest_id": 1375,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -2875,8 +2875,8 @@
     "1369": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1369",
-      "status": "reviewing",
+      "path": "tasks/completed/1369",
+      "status": "completed",
       "title": "workflow-fix: point HF_XET_CACHE/HF_HOME off the VM boot disk for all sessions"
     },
     "137": {
@@ -2889,37 +2889,44 @@
     "1370": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1370",
-      "status": "running",
+      "path": "tasks/completed/1370",
+      "status": "completed",
       "title": "workflow-fix: footer Reused bullets must carry pinned paths (verify Check 35)"
     },
     "1371": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1371",
-      "status": "planning",
+      "path": "tasks/completed/1371",
+      "status": "completed",
       "title": "workflow-fix: WARN on linked-not-embedded committed figures in Results"
     },
     "1372": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1372",
-      "status": "reviewing",
+      "path": "tasks/completed/1372",
+      "status": "completed",
       "title": "workflow-fix: opaque snake_case slug detection in body-discipline audit"
     },
     "1373": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1373",
-      "status": "planning",
+      "path": "tasks/reviewing/1373",
+      "status": "reviewing",
       "title": "workflow-fix: v4 word-cap round-crediting misses plural/in-flight follow-up rounds"
     },
     "1374": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1374",
-      "status": "proposed",
+      "path": "tasks/completed/1374",
+      "status": "completed",
       "title": "workflow-fix: floor GCP boot-disk at image minimum (100 GB)"
+    },
+    "1375": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/planning/1375",
+      "status": "planning",
+      "title": "workflow-fix: verify_plan.py check for false numeric containment claims"
     },
     "138": {
       "has_clean_result": true,
