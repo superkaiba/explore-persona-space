@@ -100,6 +100,22 @@ VLLM_GPU_MEM_UTIL = 0.5  # HF + vLLM co-residency headroom (#685)
 VLLM_MAX_MODEL_LEN = 8192  # prompt + R(2048) re-entered as prompt (#601 rule)
 VLLM_CHUNK = int(os.environ.get("EPM_VLLM_GREEDY_CHUNK_SIZE", "500"))
 
+# ── matched-install re-read round pins (plan §4b/§4f, followup
+#    matched-install-breadth-reread) ──────────────────────────────────────────
+# The parent run's data-repo upload revision (short pin 7219f7c03b52 in the
+# plan; resolved to the full sha via HfApi.list_repo_commits, 2026-07-15).
+PARENT_RUN_REV = "7219f7c03b529e107aaf4fa548169977403f0131"
+# Run-record mix sha256 pins (epm:results v1 `mixes` payload on task #1333).
+# --mixes-from-hub consumes ONLY pinned mixes; scope is the matched re-read
+# round's marker_bare (the one mix the round reuses VERBATIM — plan §4b).
+HUB_MIX_PINS = {
+    "marker_bare": "615c7c7f566ccf3518a54e3bab84d978f59a87f8015baeaa32578e4d3d4a6b37",
+}
+# §4f parent reference reads for the rig-calibration offset (both echoed into
+# calibration/mk1_source_reread.json; the offset is REPORTED, never applied).
+CALIBRATION_PARENT_SELECTION_DELTA = 5.514121723175049  # selection/mk1_lora_con/selection.json
+CALIBRATION_PARENT_BREADTH_DELTA = 5.418  # parent breadth same-rung source re-read (plan §2)
+
 
 # ── Config ────────────────────────────────────────────────────────────────────
 
@@ -115,20 +131,74 @@ class Cfg:
     upload: bool = True
     ext_captures: bool = False  # optional extension-cell geometry captures (§9 descope 1)
     phases: tuple[str, ...] = ()  # empty -> all
+    # matched-install re-read overrides (plan §4b/§4c) — each defaults to the
+    # parent constant so behavior is BYTE-IDENTICAL when the flags are absent.
+    install_target: float = C.TARGET_DELTA_G
+    accept_window_nats: float = C.MATCH_TOL_NATS
+    save_steps_override: int | None = None
+    ladder_read_steps: tuple[int, ...] | None = None
+    mixes_from_hub: bool = False
+    calibration_checkpoint: str | None = None
+
+    @property
+    def accept_window(self) -> tuple[float, float]:
+        """Selection acceptance window (== C.ACCEPT_WINDOW at defaults)."""
+        return (
+            self.install_target - self.accept_window_nats,
+            self.install_target + self.accept_window_nats,
+        )
+
+    @property
+    def selection_overridden(self) -> bool:
+        """True iff either selection-affecting override differs from the parent
+        constants (the plan-§4b regime split)."""
+        return (self.install_target, self.accept_window_nats) != (
+            C.TARGET_DELTA_G,
+            C.MATCH_TOL_NATS,
+        )
+
+    @property
+    def hub_variant(self) -> str:
+        """Hub upload sub-namespace slug for an overridden-selection run
+        ('' at defaults; 'matched55' for --install-target 5.5141). Keeps this
+        round's uploads OFF the parent run's published prefixes — re-uploading
+        selection/breadth/base_priors JSONs at the parent paths would
+        regenerate published artifacts in place (upload-policy ban); plan §10
+        routes the round to selection_matched55/ + breadth_matched55/ etc."""
+        if not self.selection_overridden:
+            return ""
+        return "matched" + f"{self.install_target:.1f}".replace(".", "")
+
+    def save_steps_for(self, cell: str) -> int:
+        """Effective checkpoint cadence (--save-steps-override wins; else the
+        per-cell constant). regime_key() reads THIS, not C.save_steps_for,
+        so the override rides the resume keying (plan §4b (i))."""
+        if self.save_steps_override is not None:
+            return self.save_steps_override
+        return C.save_steps_for(cell)
 
     def regime_key(self) -> dict:
-        return {
+        key = {
             "issue": C.ISSUE,
             "smoke": self.smoke,
             "cells": list(self.cells),
             "seed": self.seed,
             "eval_question_limit": self.eval_question_limit,
-            "window": list(C.ACCEPT_WINDOW),
+            "window": list(self.accept_window),
             "lora_max_steps": C.LORA_MAX_STEPS,
-            "save_steps": {c: C.save_steps_for(c) for c in C.NEW_LORA_CELLS},
+            "save_steps": {c: self.save_steps_for(c) for c in C.NEW_LORA_CELLS},
             "warmup_steps": C.LORA_WARMUP_STEPS,
             "ft_grid": list(C.FT_GRID),
         }
+        # The TWO selection-affecting overrides enter the regime EXPLICITLY
+        # when set (plan §4b (i)) — a stale parent-regime artifact at the same
+        # path can then never vouch for this round's phases. At defaults the
+        # dict is BYTE-IDENTICAL to the parent regime (no new keys), so
+        # in-flight default-regime resumes keep working.
+        if self.selection_overridden:
+            key["install_target"] = self.install_target
+            key["accept_window_nats"] = self.accept_window_nats
+        return key
 
 
 _PHASE_ALIASES = {
@@ -702,6 +772,24 @@ def _unit_args(cfg: Cfg, kind: str, arg: str) -> list[str]:
     ]
     if cfg.eval_question_limit is not None:
         out += ["--eval-question-limit", str(cfg.eval_question_limit)]
+    # Matched-install re-read overrides: forwarded so fanout units share the
+    # driver's exact regime (repr round-trips floats bit-exactly). Forwarded
+    # ONLY when non-default so default unit command lines stay byte-identical.
+    if cfg.selection_overridden:
+        out += [
+            "--install-target",
+            repr(cfg.install_target),
+            "--accept-window-nats",
+            repr(cfg.accept_window_nats),
+        ]
+    if cfg.save_steps_override is not None:
+        out += ["--save-steps-override", str(cfg.save_steps_override)]
+    if cfg.ladder_read_steps is not None:
+        out += ["--ladder-read-steps", ",".join(str(s) for s in cfg.ladder_read_steps)]
+    if cfg.mixes_from_hub:
+        out += ["--mixes-from-hub"]
+    if cfg.calibration_checkpoint is not None:
+        out += ["--calibration-checkpoint", cfg.calibration_checkpoint]
     return out
 
 
@@ -1307,6 +1395,30 @@ def _cell_disjointness_assert(cfg: Cfg, tok, cell: str) -> None:
     )
 
 
+def _stage_mix_from_hub(mix: str, out: Path) -> None:
+    """--mixes-from-hub (plan §4b): consume the parent run's pinned mix
+    VERBATIM. Stages mix + manifest from the data repo at PARENT_RUN_REV and
+    sha-asserts the mix against the run record's sha (epm:results v1) — the
+    assert runs on a PRE-STAGED file too (``_stage_file`` skips the download
+    but always checks the pin). A mismatch fails LOUD (never
+    rebuild-on-mismatch: a rebuild regenerates the on-policy rows — the named
+    second-variable hazard); an UNPINNED mix under the flag fails loud rather
+    than falling through to the builder."""
+    pin = HUB_MIX_PINS.get(mix)
+    if pin is None:
+        raise RuntimeError(
+            f"--mixes-from-hub: no pinned run-record sha for mix {mix!r} "
+            f"(pinned: {sorted(HUB_MIX_PINS)}) — refusing to rebuild under the flag"
+        )
+    fname = C.MIX_FILENAMES[mix]
+    _stage_file(f"{C.DATA_PREFIX}/mixes/{fname}", out, revision=PARENT_RUN_REV, sha256=pin)
+    _stage_file(
+        f"{C.DATA_PREFIX}/mixes/{fname.replace('.jsonl', '.manifest.json')}",
+        out.with_suffix(".manifest.json"),
+        revision=PARENT_RUN_REV,
+    )
+
+
 def phase_mixes(cfg: Cfg) -> dict:
     _phase("p1_mixes")
     tok = _tokenizer()
@@ -1327,6 +1439,8 @@ def phase_mixes(cfg: Cfg) -> dict:
 
     if "marker_posonly" in needed:
         out = cfg.out_root / "mixes" / C.MIX_FILENAMES["marker_posonly"]
+        if cfg.mixes_from_hub:
+            _stage_mix_from_hub("marker_posonly", out)  # unpinned -> fail loud
         if not out.exists():
             manifests["marker_posonly"] = C.derive_posonly_mix(frozen, out, tokenizer=tok)
         else:
@@ -1340,6 +1454,10 @@ def phase_mixes(cfg: Cfg) -> dict:
         if mix not in needed:
             continue
         out = cfg.out_root / "mixes" / C.MIX_FILENAMES[mix]
+        if cfg.mixes_from_hub:
+            # Stage + sha-assert BEFORE the resume-skip vouches (plan §4b);
+            # the builder branch below is then unreachable for pinned mixes.
+            _stage_mix_from_hub(mix, out)
         if out.exists():
             manifests[mix] = _read_json(out.with_suffix(".manifest.json"))
             continue
@@ -1364,6 +1482,11 @@ def phase_mixes(cfg: Cfg) -> dict:
     # Upload mixes BEFORE training (plan §4.2 sha-pinned + uploaded).
     if cfg.upload:
         for mix, _man in manifests.items():
+            if cfg.mixes_from_hub and mix in HUB_MIX_PINS:
+                # Hub-staged verbatim — re-uploading the identical bytes to
+                # the parent's published path would be an in-place
+                # re-publication (upload-policy); nothing to upload.
+                continue
             fname = C.MIX_FILENAMES[mix]
             p = cfg.out_root / "mixes" / fname
             # kwarg shape mirrors issue1112_dispatch (review r1 C1: the path
@@ -1409,6 +1532,10 @@ def run_train_unit(cfg: Cfg, cell: str) -> dict:
         return _read_json(done)
     tok = _tokenizer()
     train_cfg = C.marker_lora_config(cell, seed=cfg.seed, tokenizer=tok, out_root=cfg.out_root)
+    if cfg.save_steps_override is not None:
+        # Cadence-only divergence (plan §4b: the parent mk2_lora_pos save_steps=5
+        # precedent); max_steps stays the parent constant — scheduler parity.
+        train_cfg = dataclasses.replace(train_cfg, save_steps=cfg.save_steps_override)
     if cfg.smoke:
         # dense in-loop probes so the smoke shows >=1 trajectory point (the
         # plan §4.3 smoke-verifiable telemetry rule) within the 2-step train.
@@ -1753,6 +1880,18 @@ def _cell_rungs(cfg: Cfg, cell: str) -> dict[int, Path]:
 def _ladder_read_steps(
     cfg: Cfg, cell: str, rungs: dict[int, Path], ladder: dict[int, dict]
 ) -> list[int]:
+    if cfg.ladder_read_steps is not None:
+        # --ladder-read-steps: restrict/reorder the reads to EXACTLY the CSV
+        # steps (plan §4c {75,80,85,90,95,100}); a requested step with no
+        # persisted rung is a config error — fail loud, never silently skip.
+        missing = [s for s in cfg.ladder_read_steps if s not in rungs]
+        if missing:
+            raise RuntimeError(
+                f"--ladder-read-steps {missing} have no persisted rung for {cell!r} "
+                f"(available: {sorted(rungs)[:12]}{'...' if len(rungs) > 12 else ''})"
+            )
+        pending = [s for s in cfg.ladder_read_steps if s not in ladder]
+        return pending[:1] if cfg.smoke else pending
     if cfg.smoke:
         return [s for s in sorted(rungs) if s not in ladder][:1]
     coarse = [s for s in C.coarse_read_steps(cell, sorted(rungs)) if s not in ladder]
@@ -1911,7 +2050,7 @@ def _reap_ft_rungs(cfg: Cfg, cell: str, rungs: dict[int, Path], ladder: dict[int
     if cfg.smoke:
         return
     read = [s for s in ladder if s in rungs]
-    by_dist = sorted(read, key=lambda s: abs(ladder[s]["delta_logp_mean"] - C.TARGET_DELTA_G))
+    by_dist = sorted(read, key=lambda s: abs(ladder[s]["delta_logp_mean"] - cfg.install_target))
     keep = set(by_dist[:2]) | {max(rungs)}
     for s in read:
         if s not in keep and rungs[s].exists():
@@ -2050,7 +2189,7 @@ def _run_dose_curve_batteries(
     resolution limit, never a crash. Returns the selection record's
     ``dose_curve_rungs`` schema field ({step, role, delta_logp_mean,
     status})."""
-    plan = C.dose_curve_rung_plan(ladder, sorted(candidates))
+    plan = C.dose_curve_rung_plan(ladder, sorted(candidates), window=cfg.accept_window)
     is_lora = cell in C.NEW_LORA_CELLS
     out: list[dict] = []
     shared = None
@@ -2107,7 +2246,10 @@ def run_select_unit(cfg: Cfg, cell: str) -> dict:
     if sel is None:
         tried: set[int] = set()
         while True:
-            sel = C.select_rung(ladder)
+            # p4 registered selection under the (possibly overridden) target +
+            # window (plan §4c: minimize |dG - install_target| s.t. dG within
+            # the window AND the parent de-saturation gates; earliest-step tie).
+            sel = C.select_rung(ladder, target=cfg.install_target, window=cfg.accept_window)
             step = sel["step"]
             if not sel["in_window"] or step in tried:
                 break
@@ -2160,10 +2302,11 @@ def phase_select(cfg: Cfg) -> dict:
     if C.CELL_FT_POS in out and cfg.upload and not cfg.smoke:
         step = out[C.CELL_FT_POS]["step"]
         rungs = _cell_rungs(cfg, C.CELL_FT_POS)
+        sfx = f"_{cfg.hub_variant}" if cfg.hub_variant else ""
         hub._upload(
             rungs[step],
             repo_id=C.OVERFLOW_REPO,
-            path_in_repo=f"issue1333/{C.CELL_FT_POS}/checkpoint-{step}",
+            path_in_repo=f"issue1333/{C.CELL_FT_POS}{sfx}/checkpoint-{step}",
             repo_type="model",
         )
         for s, p in rungs.items():
@@ -2434,6 +2577,87 @@ def phase_breadth(cfg: Cfg) -> dict:
     }
 
 
+# ── §4f rig calibration (matched-install re-read round) ─────────────────────
+
+
+def run_calibration_unit(cfg: Cfg, subpath: str | None = None) -> dict:
+    """§4f same-run rig calibration (~3 min): ONE ladder-style three-space slot
+    read of the comparator cell's own retained checkpoint (overflow
+    ``issue1333/mk1_lora_con/checkpoint-50``) under its villain source context
+    on THIS run's rig. Read-only on the checkpoint; no training. The measured
+    cross-run offset vs the parent's two persisted records is REPORTED by the
+    VM-side analysis, never applied as a numerical correction (plan §4f)."""
+    import math
+
+    from peft import PeftModel
+    from vllm.lora.request import LoRARequest
+
+    subpath = subpath or cfg.calibration_checkpoint
+    if not subpath:
+        raise ValueError("calibration unit needs --calibration-checkpoint <overflow subpath>")
+    out_path = cfg.out_root / "calibration" / "mk1_source_reread.json"
+    if out_path.exists():
+        return _read_json(out_path)
+    staged = d1112._stage_overflow_prefix(
+        subpath, cfg.out_root / "inputs" / "calibration" / Path(subpath).name, revision="main"
+    )
+    if not (staged / "adapter_config.json").exists():
+        raise RuntimeError(
+            f"calibration checkpoint {subpath!r} staged without adapter_config.json: {staged}"
+        )
+    tok = _tokenizer()
+    src = _persona_context(C.SOURCE_PERSONA)  # mk1's villain source context
+    questions = _eval_questions(cfg)
+    prompts = [src.render(tok, q) for q in questions]
+    llm = _vllm_engine(DEFAULT_BASE_MODEL, enable_lora=True)
+    try:
+        req = LoRARequest("calibration_mk1", 1, str(staged))
+        responses = _greedy(llm, prompts, C.MARKER_MAX_NEW_TOKENS, lora_request=req)
+    finally:
+        _reap_engine(llm)
+    # Persist BEFORE the drain-wait (the r9 rule: a wait timeout must never
+    # destroy just-generated rollouts).
+    _persist_rollouts(cfg, "calibration", "mk1_source_reread", {"responses": responses})
+    _wait_engine_release(label="calibration[mk1]")
+    contexts, meta = [], []
+    for q_idx, (p, r) in enumerate(zip(prompts, responses, strict=True)):
+        stripped, emitted = _strip_at_marker(r)
+        contexts.append(p + stripped)
+        meta.append({"q": q_idx, "gen_emitted": emitted})
+    base = _load_hf(DEFAULT_BASE_MODEL)
+    peft_model = None
+    try:
+        peft_model = PeftModel.from_pretrained(base, str(staged))
+        trained = _slot_read(peft_model, tok, contexts)
+        peft_model.unload()
+        peft_model = None
+        base_stats = _slot_read(base, tok, contexts)
+    finally:
+        peft_model = None
+        base = _free_hf(base)  # rebind — the drop must be real (r9)
+    _release_cuda()
+    rec = _delta_record(meta, trained, base_stats)
+    # Three-space aggregates (marker-leakage-measurement.md: log-prob PRIMARY /
+    # logit + EOS margin SECONDARY / probability sanity) from the same pass.
+    n = len(trained)
+    pairs = list(zip(trained, base_stats, strict=True))
+    rec["delta_z_marker_mean"] = float(sum(t["z_marker"] - b["z_marker"] for t, b in pairs) / n)
+    rec["delta_margin_mean"] = float(
+        sum((t["z_marker"] - t["z_eos"]) - (b["z_marker"] - b["z_eos"]) for t, b in pairs) / n
+    )
+    rec["prob_trained_mean"] = float(sum(math.exp(t["logp"]) for t in trained) / n)
+    rec["prob_base_mean"] = float(sum(math.exp(b["logp"]) for b in base_stats) / n)
+    rec["checkpoint"] = subpath
+    rec["source_context"] = src.context_id
+    rec["gen_emission_rate"] = float(sum(m["gen_emitted"] for m in meta) / len(meta))
+    rec["parent_refs"] = {
+        "selection_delta_logp": CALIBRATION_PARENT_SELECTION_DELTA,
+        "breadth_reread_delta_logp": CALIBRATION_PARENT_BREADTH_DELTA,
+    }
+    _atomic_json(out_path, rec)
+    return rec
+
+
 # ── p8: upload + sentinel ────────────────────────────────────────────────────
 
 
@@ -2442,6 +2666,12 @@ def phase_upload(cfg: Cfg) -> dict:
     if not cfg.upload:
         return {"skipped": "--no-upload"}
     uploaded: dict[str, str] = {}
+    # Overridden-selection runs route to VARIANT sub-namespaces (plan §10:
+    # selection_matched55/, breadth_matched55/, raw_completions/matched55/,
+    # issue1333/<cell>_matched55/...) — NEVER the parent run's published
+    # prefixes (an in-place re-publication would silently overwrite e.g.
+    # breadth/breadth/ext_bare/slot_reads.json, the parent's +7.0 read).
+    sfx = f"_{cfg.hub_variant}" if cfg.hub_variant else ""
 
     def _up(local: Path, path_in_repo: str, *, as_file: bool = True) -> None:
         # kwarg-complete shape (review r1 C1): local, repo_id, repo_type,
@@ -2458,14 +2688,18 @@ def phase_upload(cfg: Cfg) -> dict:
     root = cfg.out_root
     # text/JSON: unconditional (raw completions, ladders, selections, gates, priors)
     rc_root = root / "raw_completions"
+    rc_dest = f"{C.DATA_PREFIX}/raw_completions" + (
+        f"/{cfg.hub_variant}" if cfg.hub_variant else ""
+    )
     if rc_root.exists():
-        hub._upload(rc_root, C.HF_DATA_REPO, "dataset", f"{C.DATA_PREFIX}/raw_completions")
+        hub._upload(rc_root, C.HF_DATA_REPO, "dataset", rc_dest)
         uploaded["raw_completions/"] = str(rc_root)
     for pattern, dest in (
         ("*/ladder/rung_*/slot_read.json", "selection"),
         ("*/ladder/rung_*/bystanders.json", "selection"),
         ("*/ladder.json", "selection"),
         ("*/selection.json", "selection"),
+        ("calibration/mk1_source_reread.json", "selection"),
         ("*/parity_gate.json", "gates"),
         ("*/swap_merge_parity.json", "gates"),
         ("*/band_trajectory.json", "trajectories"),
@@ -2475,21 +2709,21 @@ def phase_upload(cfg: Cfg) -> dict:
     ):
         for f in sorted(root.glob(pattern)):
             rel = f.relative_to(root)
-            _up(f, f"{dest}/{rel}")
+            _up(f, f"{dest}{sfx}/{rel}")
     # pooled capture tensors (fp16, plain torch.save — Xet-bound, no
     # compression) -> analysis_tensors/capture/... (plan §10 layout; r1 m9)
     for f in (
         sorted((root / "capture").glob("*/*/pooled.pt")) if (root / "capture").exists() else []
     ):
         rel = f.relative_to(root)
-        _up(f, f"analysis_tensors/{rel}")
+        _up(f, f"analysis_tensors{sfx}/{rel}")
     for f in (
         sorted((root / "capture").glob("*/selected/raw_rows.json"))
         if (root / "capture").exists()
         else []
     ):
         rel = f.relative_to(root / "capture")  # r1 m9: no doubled capture/capture segment
-        _up(f, f"raw_completions/capture/{rel}")
+        _up(f, f"raw_completions{sfx}/capture/{rel}")
     # selected LoRA adapters -> overflow repo (LFS)
     adapters: dict[str, str] = {}
     if not cfg.smoke:
@@ -2501,7 +2735,7 @@ def phase_upload(cfg: Cfg) -> dict:
                 continue
             step = int(_read_json(sel)["step"])
             ckpt = _cell_rungs(cfg, cell)[step]
-            path_in_repo = f"issue1333/{cell}/checkpoint-{step}"
+            path_in_repo = f"issue1333/{cell}{sfx}/checkpoint-{step}"
             hub._upload(ckpt, repo_id=C.OVERFLOW_REPO, path_in_repo=path_in_repo, repo_type="model")
             adapters[cell] = f"{C.OVERFLOW_REPO}/{path_in_repo}"
     rec = {"uploaded_n": len(uploaded), "adapters": adapters}
@@ -2530,13 +2764,23 @@ def write_sentinel(cfg: Cfg, summary: dict) -> Path:
 
 
 def _repro_card(cfg: Cfg, selections: dict) -> dict:
+    sfx = f"_{cfg.hub_variant}" if cfg.hub_variant else ""
     return {
         "hf_model_repo": C.OVERFLOW_REPO,
         "adapter_paths": {
-            c: f"issue1333/{c}/checkpoint-{v['step']}"
+            c: f"issue1333/{c}{sfx}/checkpoint-{v['step']}"
             for c, v in selections.items()
             if c in (*C.NEW_LORA_CELLS, C.CELL_FT_POS) and v.get("step") is not None
         },
+        "selection_overrides": (
+            {
+                "install_target": cfg.install_target,
+                "accept_window_nats": cfg.accept_window_nats,
+                "hub_variant": cfg.hub_variant,
+            }
+            if cfg.selection_overridden
+            else None
+        ),
         "wandb_project": C.WANDB_PROJECT,
         "wandb_run_names": [C.cell_run_name(c) for c in cfg.cells if c != C.REUSED_CELL],
         "wandb_entity": _wandb_entity(),
@@ -2592,6 +2836,45 @@ def _parse_args(argv: Sequence[str] | None) -> argparse.Namespace:
     p.add_argument("--no-upload", dest="upload", action="store_false", default=True)
     p.add_argument("--ext-captures", action="store_true", help="optional extension-cell captures")
     p.add_argument("--phases", default=None, help="comma subset of phases (default all)")
+    # Matched-install re-read round flags (plan §4b/§4c/§4f) — each defaults
+    # to the parent constant so behavior is byte-identical when absent.
+    p.add_argument(
+        "--install-target",
+        type=float,
+        default=C.TARGET_DELTA_G,
+        help="p4 selection target ΔG in nats (default: the parent constant)",
+    )
+    p.add_argument(
+        "--accept-window-nats",
+        type=float,
+        default=C.MATCH_TOL_NATS,
+        help="p4 acceptance half-width in nats around --install-target (default ±2.0)",
+    )
+    p.add_argument(
+        "--save-steps-override",
+        type=int,
+        default=None,
+        help="LoRA checkpoint cadence override for trained cells (cadence-only; "
+        "max_steps stays the parent constant)",
+    )
+    p.add_argument(
+        "--ladder-read-steps",
+        default=None,
+        help="csv ints: restrict/reorder p3 ladder reads to exactly these persisted "
+        "rungs (default: coarse→refine schedule)",
+    )
+    p.add_argument(
+        "--mixes-from-hub",
+        action="store_true",
+        help="consume run-record-pinned mixes verbatim from the data repo "
+        "(sha-asserted; never rebuilt — plan §4b)",
+    )
+    p.add_argument(
+        "--calibration-checkpoint",
+        default=None,
+        help="overflow-repo subpath (e.g. issue1333/mk1_lora_con/checkpoint-50) for "
+        "the §4f rig-calibration slot read",
+    )
     return p.parse_args(argv)
 
 
@@ -2621,6 +2904,16 @@ def build_cfg(args: argparse.Namespace) -> Cfg:
         upload=args.upload,
         ext_captures=bool(args.ext_captures),
         phases=normalize_phases(args.phases),
+        install_target=args.install_target,
+        accept_window_nats=args.accept_window_nats,
+        save_steps_override=args.save_steps_override,
+        ladder_read_steps=(
+            tuple(int(t.strip()) for t in args.ladder_read_steps.split(",") if t.strip())
+            if args.ladder_read_steps is not None
+            else None
+        ),
+        mixes_from_hub=bool(args.mixes_from_hub),
+        calibration_checkpoint=args.calibration_checkpoint,
     )
 
 
@@ -2632,6 +2925,7 @@ _UNIT_FNS = {
     "breadth": run_breadth_unit,
     "basepriors": run_basepriors_unit,
     "select": run_select_unit,
+    "calibration": run_calibration_unit,
 }
 
 
@@ -2680,6 +2974,11 @@ def main(argv: Sequence[str] | None = None) -> int:
         summary["selections"] = {
             k: {kk: vv for kk, vv in v.items() if kk not in ("per_probe", "bystanders")}
             for k, v in selections.items()
+        }
+    if cfg.calibration_checkpoint is not None:
+        # §4f rig-calibration read (flag-gated; ~3 min; resume via output file).
+        summary["calibration"] = {
+            k: v for k, v in run_calibration_unit(cfg).items() if k != "per_probe"
         }
     if want("capture"):
         summary["capture"] = phase_capture(cfg)
