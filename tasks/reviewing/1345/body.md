@@ -25,6 +25,8 @@ relates_to:
 
 <!-- clean-result-v4 -->
 
+**Methodology:** [docs/methodology/issue_1345.md](https://github.com/superkaiba/explore-persona-space/blob/1f094a34cc2b25c84db365b053b1048c61ba433d/docs/methodology/issue_1345.md) · [gist](https://gist.github.com/superkaiba/3f56e92cbfa295acbfdb42429e165864)
+
 ## Takeaways
 
 - Chat↔plain-text transfer misses the same-operator margin in both models at every frozen layer: 83–84% of ceiling kept (instruct), 15–31% (base); the layer-19 deficit CI excludes zero.
