@@ -522,6 +522,28 @@ def test_recent_closed_upper_bound_excludes_future_closures(fake_repo):
     assert tw.recent_closed_workflow_fix_tasks(target, now=past) == []
 
 
+def test_recent_closed_skips_non_numeric_registry_key(fake_repo):
+    """A non-numeric registry key (corrupt entry) skips that entry — it never
+    aborts the whole advisory scan (per-task hardening, #1399)."""
+    repo, tw = fake_repo
+    target = "CLAUDE.md"
+    tid = _file_wf_fix_task(tw, target, tw.wf_fix_fingerprint("Fix the gate.", "gate wrong"))
+    tw.set_status(tid, "completed")
+    reg_path = repo / "tasks" / "REGISTRY.json"
+    reg = json.loads(reg_path.read_text())
+    reg["tasks"]["not-a-number"] = {
+        "path": "tasks/completed/999",
+        "title": "workflow-fix: bogus corrupt entry",
+        "kind": "infra",
+        "status": "completed",
+        "has_clean_result": False,
+    }
+    reg_path.write_text(json.dumps(reg))
+
+    hits = tw.recent_closed_workflow_fix_tasks(target)
+    assert [h["id"] for h in hits] == [tid]
+
+
 def test_recent_closed_hits_sorted_closed_at_desc(fake_repo, monkeypatch):
     """Hits are sorted most-recently-closed FIRST (the just-merged incident
     class sorts to the top of the filer's capped list)."""
