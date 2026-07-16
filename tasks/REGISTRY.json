@@ -3141,8 +3141,8 @@
     "1402": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1402",
-      "status": "proposed",
+      "path": "tasks/planning/1402",
+      "status": "planning",
       "title": "daily-fix: shared GCE staging HF-download retry"
     },
     "1403": {
