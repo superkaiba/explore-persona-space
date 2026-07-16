@@ -833,16 +833,17 @@ def check_gpu_hours(plan: str, kind: str) -> CheckResult:
 
 def check_reuse_fitness(plan: str, kind: str) -> CheckResult:
     """Plans reusing trained HF artifacts must carry the fitness
-    attestations (a)-(j) (.claude/rules/artifact-reuse.md). WARN not FAIL:
+    attestations (a)-(k) (.claude/rules/artifact-reuse.md). WARN not FAIL:
     trigger and item-detection are both heuristic, and the demonstrated
     failure modes (#545/#600/#601) are semantic — the gate's value is
-    forcing the section to exist and naming the ten letters.
+    forcing the section to exist and naming the eleven letters.
 
     Accepted declaration shapes (#1314): the historical 'fitness'
     vocabulary, a 'reuse map' / 'reuse-map' section (the #1090 v7
     '### D3 — Reuse map' shape; artifact-reuse.md's own term for the
-    plan record), '(self-)attestation(s)', or the literal (a)-(j) range
-    token (hyphen / en-dash / em-dash / ellipsis)."""
+    plan record), '(self-)attestation(s)', or the literal (a)-(k) range
+    token ((a)-(j) grandfathered for in-flight plans; #1366)
+    (hyphen / en-dash / em-dash / ellipsis)."""
     cid, name = "c6_reuse_fitness", "reused-artifact fitness attestation"
     if kind != "experiment":
         return _skip(cid, name, "kind-exempt")
@@ -862,30 +863,30 @@ def check_reuse_fitness(plan: str, kind: str) -> CheckResult:
         r"(?i)fitness"  # historical vocabulary (the pre-#1314 detector, unchanged)
         r"|reuse[- ]map"  # 'Reuse map' section shape (#1090 v7 D3; artifact-reuse.md's own term)
         r"|(?:self[- ])?attestation"  # 'self-attestation' / 'attestation(s)'
-        r"|\(a\)\s*[-–—…]\s*\(j\)",  # (a)-(j) range token; en-dash in real plans  # noqa: RUF001
+        r"|\(a\)\s*[-–—…]\s*\([jk]\)",  # (a)-(k) current; (a)-(j) grandfathered  # noqa: RUF001
         text,
     )
-    letters = {m.group(1) for m in re.finditer(r"\(([a-j])\)", text)}
+    letters = {m.group(1) for m in re.finditer(r"\(([a-k])\)", text)}
     if declaration and len(letters) >= 4:
         return _pass(
             cid,
             name,
-            f"fitness/reuse-map declaration present ({len(letters)}/10 lettered items spotted)",
+            f"fitness/reuse-map declaration present ({len(letters)}/11 lettered items spotted)",
         )
     if declaration:
         return _warn(
             cid,
             name,
             f"fitness/reuse-map declaration vocabulary present but only {len(letters)} of the "
-            "(a)–(j) items detectable — verify all ten attestations (recipe/regime/cells/"  # noqa: RUF001
+            "(a)–(k) items detectable — verify all eleven attestations (recipe/regime/cells/"  # noqa: RUF001
             "single-var/hub-resolution/content-identity/scaling/backend-fetchability/"
-            "code-throughput/pair-provenance) before approval",
+            "code-throughput/pair-provenance/parent-lineage) before approval",
         )
     return _warn(
         cid,
         name,
-        "plan reuses HF artifacts but no fitness check / (a)–(j) reuse-map attestation found — "  # noqa: RUF001
-        "CLAUDE.md reuse rule requires attestations (a)–(j); consistency-checker + Methodology "  # noqa: RUF001
+        "plan reuses HF artifacts but no fitness check / (a)–(k) reuse-map attestation found — "  # noqa: RUF001
+        "CLAUDE.md reuse rule requires attestations (a)–(k); consistency-checker + Methodology "  # noqa: RUF001
         "critic must gate this",
     )
 

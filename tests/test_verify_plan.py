@@ -752,7 +752,7 @@ def test_c6_fitness_with_four_letters_passes():
     _, by_id = _run(plan)
     r = by_id["c6_reuse_fitness"]
     assert r.status == "PASS"
-    assert "4/10" in r.detail
+    assert "4/11" in r.detail
 
 
 def test_c6_fitness_counts_item_i_in_widened_class():
@@ -766,7 +766,7 @@ def test_c6_fitness_counts_item_i_in_widened_class():
     _, by_id = _run(plan)
     r = by_id["c6_reuse_fitness"]
     assert r.status == "PASS"
-    assert "4/10" in r.detail
+    assert "4/11" in r.detail
 
 
 def test_c6_fitness_counts_item_j_in_widened_class():
@@ -780,18 +780,33 @@ def test_c6_fitness_counts_item_j_in_widened_class():
     _, by_id = _run(plan)
     r = by_id["c6_reuse_fitness"]
     assert r.status == "PASS"
-    assert "4/10" in r.detail
+    assert "4/11" in r.detail
 
 
-def test_c6_fitness_letters_beyond_j_do_not_count():
-    # Upper-boundary fixture (#941): an unrelated (k) elsewhere in the body must
-    # NOT lift a 3-letter fitness attestation to a 4-letter PASS — an
-    # over-widening of the class to [a-k]/[a-z] would flip this to PASS.
+def test_c6_fitness_counts_item_k_in_widened_class():
+    # Pins the [a-k] regex widening (#1366): exactly four counted letters, one of
+    # them (k) — a regression to [a-j] would count 3 and WARN instead of PASS.
+    plan = (
+        GOOD_PLAN
+        + "\nWe reuse the parent adapters from superkaiba1/explore-persona-space for the base arm."
+        + "\nFitness check: (a) same recipe verified against adapter_config.json; (b) valid measurement regime; (c) required cells present; (k) parent-lineage coherence — parent branch fully merged, empty unmerged diff; realized row count reconciles with the declared corpus.\n"
+    )
+    _, by_id = _run(plan)
+    r = by_id["c6_reuse_fitness"]
+    assert r.status == "PASS"
+    assert "4/11" in r.detail
+
+
+def test_c6_fitness_letters_beyond_k_do_not_count():
+    # Upper-boundary fixture (#941; decoy moved (k)->(l) at #1366): an unrelated
+    # (l) elsewhere in the body must NOT lift a 3-letter fitness attestation to
+    # a 4-letter PASS — an over-widening of the class to [a-l]/[a-z] would flip
+    # this to PASS.
     plan = (
         GOOD_PLAN
         + "\nWe reuse the parent adapters from superkaiba1/explore-persona-space for the base arm."
         + "\nFitness check: (a) same recipe verified against adapter_config.json; (b) valid measurement regime; (c) required cells present."
-        + "\nUnrelated enumeration elsewhere: (k) a non-fitness bullet.\n"
+        + "\nUnrelated enumeration elsewhere: (l) a non-fitness bullet.\n"
     )
     _, by_id = _run(plan)
     r = by_id["c6_reuse_fitness"]
@@ -807,7 +822,7 @@ def test_c6_fitness_with_few_letters_warns():
     _, by_id = _run(plan)
     r = by_id["c6_reuse_fitness"]
     assert r.status == "WARN"
-    assert "(a)–(j)" in r.detail or "ten" in r.detail
+    assert "(a)–(k)" in r.detail or "eleven" in r.detail
 
 
 def test_c6_na_no_artifact_reuse_passes():
@@ -852,6 +867,8 @@ def test_c6_reuse_map_table_without_fitness_word_passes():
     # (artifact-reuse (a)–(j) self-attestation) table: a complete per-row  # noqa: RUF003
     # attestation written in artifact-reuse.md's own vocabulary — no 'fitness'
     # word anywhere — must PASS, not WARN "no fitness check found".
+    # Doubles as a second grandfather pin (#1366): the fixture's (a)–(j)  # noqa: RUF003
+    # heading token still declares under the widened \([jk]\) detector.
     plan = (
         GOOD_PLAN
         + "\nWe reuse the parent adapters from superkaiba1/explore-persona-space for the base arm."
@@ -885,8 +902,8 @@ def test_c6_letters_without_declaration_vocab_still_warns():
 
 def test_c6_reuse_map_with_few_letters_warns():
     # A bare 'Reuse map' heading (no 'self-attestation', no 'fitness', no
-    # (a)–(j) range token — guard-asserted below, so this fixture isolates  # noqa: RUF003
-    # the reuse[- ]map branch) with <4 letters routes to the MIDDLE branch:
+    # (a)–(j)/(a)–(k) range token — guard-asserted below, so this fixture  # noqa: RUF003
+    # isolates the reuse[- ]map branch) with <4 letters routes to the MIDDLE branch:
     # the declaration counted, but the letters threshold still gates. A
     # mutant dropping the reuse-map branch fails this test — with no
     # declaration token the fixture would route to the third branch, whose
@@ -900,7 +917,7 @@ def test_c6_reuse_map_with_few_letters_warns():
     lowered = plan.lower()
     assert "fitness" not in lowered
     assert "attestation" not in lowered
-    assert re.search(r"\(a\)\s*[-–—…]\s*\(j\)", plan) is None
+    assert re.search(r"\(a\)\s*[-–—…]\s*\([jk]\)", plan) is None
     _, by_id = _run(plan)
     r = by_id["c6_reuse_fitness"]
     assert r.status == "WARN"
@@ -908,12 +925,33 @@ def test_c6_reuse_map_with_few_letters_warns():
 
 
 def test_c6_range_token_counts_as_declaration():
-    # Pins the en-dash (a)–(j) range-token branch specifically: no 'fitness',  # noqa: RUF003
-    # no 'map', no 'attestation' word (guard-asserted), four real item letters.
+    # GRANDFATHER pin (#1366): an in-flight plan citing the OLD en-dash (a)–(j)  # noqa: RUF003
+    # range token still declares under the widened \([jk]\) detector. No
+    # 'fitness', no 'map', no 'attestation' word (guard-asserted), four real
+    # item letters.
     plan = (
         GOOD_PLAN
         + "\nWe reuse the parent adapters from superkaiba1/explore-persona-space for the base arm."
         + "\nArtifact checks (a)–(j): (a) recipe; (b) regime; (c) cells; "
+        + "(d) single-variable.\n"
+    )
+    lowered = plan.lower()
+    assert "fitness" not in lowered
+    assert "map" not in lowered
+    assert "attestation" not in lowered
+    _, by_id = _run(plan)
+    r = by_id["c6_reuse_fitness"]
+    assert r.status == "PASS"
+
+
+def test_c6_new_range_token_counts_as_declaration():
+    # Pins the CURRENT en-dash (a)–(k) range-token branch (#1366): no  # noqa: RUF003
+    # 'fitness', no 'map', no 'attestation' word (guard-asserted), four real
+    # item letters.
+    plan = (
+        GOOD_PLAN
+        + "\nWe reuse the parent adapters from superkaiba1/explore-persona-space for the base arm."
+        + "\nArtifact checks (a)–(k): (a) recipe; (b) regime; (c) cells; "
         + "(d) single-variable.\n"
     )
     lowered = plan.lower()

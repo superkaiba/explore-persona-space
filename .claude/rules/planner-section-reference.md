@@ -489,6 +489,14 @@ item-(j) attestation — the member dates at the consumed revisions (per-repo
 an input postdating its capture is a failed check regardless of sha pins
 (#922).
 
+**Parent-lineage coherence (checklist item (k)) is recorded here too.** When
+the plan reuses a parent's main-resident CODE module or a parent-realized
+artifact with a declared input corpus, this card carries the item-(k) record —
+the `git log --oneline origin/main..origin/issue-<M> -- <module>` outcome
+(empty, or each unmerged commit ported / declared not-needed by SHA) and the
+realized-vs-corpus count reconciliation (equal, or the named filter explaining
+the shortfall) (#1345).
+
 **Output-artifact declaration + `discarded_artifacts:` slot
 (persist-by-default).** Per generating / reducing stage, the
 Reproducibility Card names WHERE each produced artifact persists: model

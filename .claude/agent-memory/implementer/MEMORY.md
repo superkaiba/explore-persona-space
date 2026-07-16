@@ -28,7 +28,7 @@
 - [gc.log warnings are benign](reference_gc_log_warning_benign.md) — worktree gc.log "unreachable loose objects" is a self-expiring daily cycle; deflect prune/clearing candidates
 - [GCP startup hydra render byte-pinned](reference_gcp_startup_snapshot_pin.md) — fixture test bans regenerating; scope gcp.py startup-script edits to the `if spec.workload_cmd:` branch only
 - [repo_root() unfit for cache paths](reference_repo_root_vs_cache_paths.md) — off-main it reset-hards/returns a managed worktree; use git-common-dir parent from module dir (#612)
-- [Reuse-fitness mirror set](reference_reuse_fitness_mirror_set.md) — fitness-check (a)-(j) edits touch the full 20-site set listed there (grew at #871, #941)
+- [Reuse-fitness mirror set](reference_reuse_fitness_mirror_set.md) — lettered fitness-check edits touch the full mirror set listed there (grew at #871, #941, #1366)
 - [Issue-worktree test repro recipe](reference_issue_worktree_test_repro.md) — scratch detached worktree at /tmp/.../.claude/worktrees/issue-9999 reproduces cwd-dependent failures (watcher issue-inference regex); main venv python, ~5GB, remove after
 - [New lint check = same-commit waiver sweep](feedback_new_lint_check_waiver_sweep.md) — prototype against the live tree, waive every legacy offender in the same commit, pin repo-tree-is-clean + CLI tests; scope by line shape not filename; main() C901 → annotated noqa
 - [Trim-conflict resolution recipe](feedback_trim_conflict_resolution_recipe.md) — stale pointer-branch × moved main: enumerate main deltas via diff base..main, fold deltas back compact with full text relocated into the rules file; validate by union grep
