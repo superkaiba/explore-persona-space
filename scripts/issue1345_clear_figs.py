@@ -191,58 +191,38 @@ def collect_withinregime() -> dict:
 
 def plot_result2_withinregime() -> dict:
     d = collect_withinregime()
-    c_base = paper_palette_role("baseline")
     c_inst = paper_palette_role("primary")
-    model_color = {"base": c_base, "instruct": c_inst}
+    # Instruct-only (base arm omitted); the story character is the AI assistant.
+    frames = ["Chat", "No-template", "Story·assistant"]
 
-    fig, ax = plt.subplots(figsize=(9.0, 5.3))
+    fig, ax = plt.subplots(figsize=(7.6, 5.3))
     x = np.arange(3)
-    bw = 0.36
-    off = {"base": -bw / 2, "instruct": bw / 2}
+    bw = 0.5
 
-    for model in ["base", "instruct"]:
-        for fi in range(3):
-            key = (model, fi)
-            xpos = x[fi] + off[model]
-            if key not in d:
-                ax.text(
-                    xpos,
-                    0.03,
-                    "N/A",
-                    ha="center",
-                    va="bottom",
-                    fontsize=8.5,
-                    color="#6A6A6A",
-                    style="italic",
-                )
-                continue
-            c = d[key]
-            err = np.array([[c["r2"] - c["lo"]], [c["hi"] - c["r2"]]])
-            ax.bar(
-                xpos,
-                c["r2"],
-                bw,
-                color=model_color[model],
-                yerr=err,
-                capsize=3,
-                ecolor="#333333",
-                label=model.capitalize() if fi == 0 else None,
-            )
-            va = "bottom" if c["r2"] >= 0 else "top"
-            dy = 0.02 if c["r2"] >= 0 else -0.02
-            ax.text(
-                xpos,
-                c["r2"] + dy + (c["hi"] - c["r2"] if c["r2"] >= 0 else -(c["r2"] - c["lo"])),
-                f"{c['r2']:.2f}",
-                ha="center",
-                va=va,
-                fontsize=8.6,
-                color="#1A1A1A",
-            )
+    for fi in range(3):
+        key = ("instruct", fi)
+        if key not in d:
+            continue
+        c = d[key]
+        err = np.array([[c["r2"] - c["lo"]], [c["hi"] - c["r2"]]])
+        ax.bar(x[fi], c["r2"], bw, color=c_inst, yerr=err, capsize=3, ecolor="#333333")
+        va = "bottom" if c["r2"] >= 0 else "top"
+        dy = 0.02 if c["r2"] >= 0 else -0.02
+        ax.text(
+            x[fi],
+            c["r2"] + dy + (c["hi"] - c["r2"] if c["r2"] >= 0 else -(c["r2"] - c["lo"])),
+            f"{c['r2']:.2f}",
+            ha="center",
+            va=va,
+            fontsize=9.5,
+            color="#1A1A1A",
+        )
 
     # Reference lines.
     ax.axhline(0.0, color="#111111", ls="--", lw=1.6, label="Answer-mean baseline ($R^2=0$)")
-    null_nonstory = np.mean([d[k]["null_mean"] for k in d if k[1] != 2])
+    null_nonstory = np.mean(
+        [d[("instruct", fi)]["null_mean"] for fi in (0, 1) if ("instruct", fi) in d]
+    )
     ax.axhline(
         null_nonstory,
         color="#7A7A7A",
@@ -250,27 +230,27 @@ def plot_result2_withinregime() -> dict:
         lw=1.4,
         label=f"Shuffle-null ≈ {null_nonstory:.2f} (chat/no-template)",
     )
-    # Story's own shuffle-null is far lower (off-scale) — note it honestly, in
-    # the empty base-story slot so it never overlaps the instruct-story bar.
+    # Story's own shuffle-null is far lower (off-scale) — note it below the story bar.
     story_null = d[("instruct", 2)]["null_mean"]
     ax.text(
-        x[2] - 0.62,
-        -0.40,
-        f"story shuffle-null ≈ {story_null:.1f}\n(off-scale): story $R^2$ is\n"
-        "above its null but below\nthe answer-mean baseline",
-        fontsize=7.2,
+        x[2],
+        -0.52,
+        f"story shuffle-null ≈ {story_null:.1f} (off-scale):\nstory $R^2$ is above its null\n"
+        "but below the answer-mean baseline",
+        fontsize=7.4,
         color="#5A5A5A",
         ha="center",
         va="center",
     )
 
-    ax.set_xticks(x, FRAMINGS, fontsize=10.5)
+    ax.set_xticks(x, frames, fontsize=10.5)
     ax.set_ylabel("Within-regime held-out $R^2$ (layer 19)", fontsize=10.5)
     ax.set_ylim(-0.9, 0.78)
     ax.axhline(0.0, color="#111111", ls="--", lw=1.6)  # keep baseline on top
     ax.legend(loc="lower left", fontsize=8.4, frameon=True, framealpha=0.92)
     fig.suptitle(
-        "The story-character assistant map is not linearly decodable (context arm, layer 19)",
+        "The story-character assistant map is not linearly decodable "
+        "(instruct, context arm, layer 19)",
         fontsize=13,
         y=1.03,
         x=0.5,
@@ -279,10 +259,10 @@ def plot_result2_withinregime() -> dict:
     fig.text(
         0.5,
         -0.03,
-        "Bars = within-regime held-out $R^2$ with 95% bootstrap CI. "
-        "Chat and no-template sit ~0.6 (well above the answer-mean baseline); "
-        "story sits at -0.75, below zero — the held-out probe does worse than "
-        "predicting the mean. Base story = N/A (not tested).",
+        "Bars = within-regime held-out $R^2$ with 95% bootstrap CI (Qwen2.5-7B-Instruct). "
+        "Chat and no-template sit ~0.6 (well above the answer-mean baseline); the assistant "
+        "rendered as a story character sits at -0.75, below zero — the held-out probe does worse "
+        "than predicting the mean. Base arm omitted (its story regime was below the yield floor).",
         ha="center",
         va="top",
         fontsize=8.6,

@@ -1,104 +1,85 @@
 {
-  "commit": "fcddf8dc60",
-  "created": "2026-07-16T08:02:19Z",
+  "commit": "b7bd0eb4a5",
+  "created": "2026-07-16T08:08:03Z",
   "figsize": [
-    9.0,
+    7.6,
     5.3
   ],
   "points": [
     {
-      "x": -0.18,
-      "Within-regime held-out $R^2$ (layer 19)": 0.5419228823761457,
-      "error": 0.00857944494915791,
+      "category": "Chat",
+      "Within-regime held-out $R^2$ (layer 19)": 0.6544765895833579,
+      "error": 0.006546300454128184,
       "_kind": "bar",
       "_group": 0
     },
     {
-      "x": 0.82,
-      "Within-regime held-out $R^2$ (layer 19)": 0.5785771098995245,
-      "error": 0.008372085857078326,
+      "category": "No-template",
+      "Within-regime held-out $R^2$ (layer 19)": 0.6252297984305754,
+      "error": 0.007256413336929113,
       "_kind": "bar",
       "_group": 1
     },
     {
-      "x": 0.18,
-      "Within-regime held-out $R^2$ (layer 19)": 0.6544765895833579,
-      "error": 0.006546300454128184,
+      "category": "Story\u00b7assistant",
+      "Within-regime held-out $R^2$ (layer 19)": -0.7454832837532159,
+      "error": 0.03981470886859673,
       "_kind": "bar",
       "_group": 2
     },
     {
-      "x": 1.18,
-      "Within-regime held-out $R^2$ (layer 19)": 0.6252297984305754,
-      "error": 0.007256413336929113,
-      "_kind": "bar",
+      "x": 0.0,
+      "Within-regime held-out $R^2$ (layer 19)": 0.0,
+      "series": "Answer-mean baseline ($R^2=0$)",
+      "_kind": "line",
       "_group": 3
     },
     {
-      "x": 2.18,
-      "Within-regime held-out $R^2$ (layer 19)": -0.7454832837532159,
-      "error": 0.03981470886859673,
-      "_kind": "bar",
+      "x": 1.0,
+      "Within-regime held-out $R^2$ (layer 19)": 0.0,
+      "series": "Answer-mean baseline ($R^2=0$)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 0.0,
+      "Within-regime held-out $R^2$ (layer 19)": -0.033227150834581484,
+      "series": "Shuffle-null \u2248 -0.03 (chat/no-template)",
+      "_kind": "line",
       "_group": 4
     },
     {
-      "x": 0.0,
-      "Within-regime held-out $R^2$ (layer 19)": 0.0,
-      "series": "Answer-mean baseline ($R^2=0$)",
-      "_kind": "line",
-      "_group": 5
-    },
-    {
       "x": 1.0,
-      "Within-regime held-out $R^2$ (layer 19)": 0.0,
-      "series": "Answer-mean baseline ($R^2=0$)",
-      "_kind": "line",
-      "_group": 5
-    },
-    {
-      "x": 0.0,
-      "Within-regime held-out $R^2$ (layer 19)": -0.03291111332661084,
+      "Within-regime held-out $R^2$ (layer 19)": -0.033227150834581484,
       "series": "Shuffle-null \u2248 -0.03 (chat/no-template)",
       "_kind": "line",
-      "_group": 6
-    },
-    {
-      "x": 1.0,
-      "Within-regime held-out $R^2$ (layer 19)": -0.03291111332661084,
-      "series": "Shuffle-null \u2248 -0.03 (chat/no-template)",
-      "_kind": "line",
-      "_group": 6
+      "_group": 4
     }
   ],
-  "n_series": 7,
-  "total_points": 9,
+  "n_series": 5,
+  "total_points": 7,
   "text": {
-    "suptitle": "The story-character assistant map is not linearly decodable (context arm, layer 19)",
+    "suptitle": "The story-character assistant map is not linearly decodable (instruct, context arm, layer 19)",
     "fig_texts": [
-      "Bars = within-regime held-out $R^2$ with 95% bootstrap CI. Chat and no-template sit ~0.6 (well above the answer-mean baseline); story sits at -0.75, below zero \u2014 the held-out probe does worse than predicting the mean. Base story = N/A (not tested)."
+      "Bars = within-regime held-out $R^2$ with 95% bootstrap CI (Qwen2.5-7B-Instruct). Chat and no-template sit ~0.6 (well above the answer-mean baseline); the assistant rendered as a story character sits at -0.75, below zero \u2014 the held-out probe does worse than predicting the mean. Base arm omitted (its story regime was below the yield floor)."
     ],
     "axes": [
       {
         "ylabel": "Within-regime held-out $R^2$ (layer 19)",
         "legend_labels": [
           "Answer-mean baseline ($R^2=0$)",
-          "Shuffle-null \u2248 -0.03 (chat/no-template)",
-          "Base",
-          "Instruct"
+          "Shuffle-null \u2248 -0.03 (chat/no-template)"
         ],
         "annotations": [
-          "0.54",
-          "0.58",
-          "N/A",
           "0.65",
           "0.63",
           "-0.75",
-          "story shuffle-null \u2248 -2.2\n(off-scale): story $R^2$ is\nabove its null but below\nthe answer-mean baseline"
+          "story shuffle-null \u2248 -2.2 (off-scale):\nstory $R^2$ is above its null\nbut below the answer-mean baseline"
         ],
         "xticklabels": [
           "Chat",
           "No-template",
-          "Story\u00b7ARIA"
+          "Story\u00b7assistant"
         ],
         "yticklabels": [
           "\u22121.0",
@@ -116,9 +97,7 @@
     ],
     "series": [
       "Answer-mean baseline ($R^2=0$)",
-      "Shuffle-null \u2248 -0.03 (chat/no-template)",
-      "Base",
-      "Instruct"
+      "Shuffle-null \u2248 -0.03 (chat/no-template)"
     ]
   }
 }
