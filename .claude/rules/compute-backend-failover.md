@@ -61,7 +61,15 @@ HF data repo under `issue<N>_partial/<attempt_id>/`:
    (default 5 MiB — the traceback is at the END of a log, so an oversized
    file is TAILED at stage time, never skipped wholesale), file-count bound
    `EPS_PERSIST_LOG_MAX_FILES` (default 40; `< 1` is a loud-SKIP disable),
-   canonical-log dedup skip, staged into `/tmp/eps-worker-logs` and uploaded
+   canonical-log dedup skip, git-TRACKED files under `logs/` excluded
+   (#1351: the repo is cloned at `$WORKLOAD_ROOT`, so committed
+   logs/daily+weekly retrospectives — 48 tracked files vs the 40-file
+   bound — would otherwise clutter the prefix and consume the budget;
+   already durable in git; the exclusion is at WALK time so tracked files
+   never consume `LOG_MAX_FILES` slots, and a git failure of any kind
+   FAILS OPEN to sweeping everything with a loud grep-stable
+   `git-tracked exclude unavailable` WARN), staged into
+   `/tmp/eps-worker-logs` and uploaded
    as ONE `upload_folder` commit — per-file `upload_file` loops are banned
    on this large repo (the #664 504-storm gotcha). Uploaded AFTER the
    canonical `workload.log`, BEFORE the partial dirs (small-first);
@@ -74,7 +82,25 @@ HF data repo under `issue<N>_partial/<attempt_id>/`:
    `store/` / `.cache/` caches are excluded at top level AND nested depths;
    an empty-after-excludes dir SKIPs; a per-dir byte cap (default 2 GiB,
    env `EPS_PERSIST_DIR_CAP_BYTES`) SKIPs an oversized dir loudly rather
-   than burning the 300s budget;
+   than burning the 300s budget. As of #1339 a partial dir whose
+   post-exclude file count exceeds `EPS_PERSIST_DIR_MAX_FILES_PER_COMMIT`
+   (default 1000; `< 1` disables chunking with a WARN) uploads as
+   newest-first staged batches (staging root `EPS_PERSIST_DIR_STAGE_DIR`,
+   default `/tmp/eps-dir-batch`), each ONE `upload_folder` commit with one
+   bounded retry (`EPS_PERSIST_RETRY_BACKOFF_S` backoff), abandoning the
+   dir loudly after `EPS_PERSIST_DIR_BATCH_ABORT_STREAK` (default 2)
+   consecutive fully-failed batches — repo paths byte-identical to the
+   unchunked upload, every batch outcome printed, plus a
+   `k/nb batches uploaded (f/n files)` summary line (incident #1090 fu5:
+   a 29,024-file / 14.4 MB single commit processed ~31 s server-side, the
+   gateway timed out delivering the response, and the client logged
+   FAILED on a commit that had LANDED). A retried batch whose prior
+   attempt actually landed re-commits the same content at the same paths
+   (content-identical commit — idempotent effect). Operator note: after
+   an ABORT / FAILED dir line, verify the Hub prefix (scoped
+   `list_repo_tree` on `issue<N>_partial/<attempt_id>/`) BEFORE
+   re-running any recovery — a gateway-timeout "failure" may have landed
+   (the fu5 shape);
 6. `workload_<utc-ts>.log` (#854) — a per-crash timestamped copy of the
    workload log, uploaded AFTER the partial dirs (small-first ordering; the
    canonical `workload.log` already landed the traceback early). The
@@ -108,7 +134,11 @@ HF data repo under `issue<N>_partial/<attempt_id>/`:
    status from an rc-file readback of the persist subshell
    (`EPS_CRASH_PERSIST_RC`, default `/tmp/eps-crash-persist.rc`; the
    pipeline's own `$?` is the streamer's) —
-   `ok` (rc 0), `timeout` (rc 124), `failed_rc<N>` (any other rc). A
+   `ok` (rc 0 — since #1343 the persist python exits 0 only when the
+   verify gate passes: the transcript existence probe read True, or ≥1
+   `upload_folder` returned success), `failed_uploads` (rc 3 — the
+   persist ran to completion but ZERO uploads verifiably succeeded,
+   #1343/#1315), `timeout` (rc 124), `failed_rc<N>` (any other rc). A
    MISSING rc file deliberately writes NOTHING: the standing `attempted`
    IS the killed-mid-persist signal. A boot-time DELETE clears the key so
    a salvage-relaunch second boot never inherits a prior crash's value.
@@ -128,9 +158,11 @@ HF data repo under `issue<N>_partial/<attempt_id>/`:
    | `attempted` (standing) | absent | persist KILLED mid-flight (external termination / hard kill). **TERMINATED-only reading** — a RUNNING-window read may catch a healthy persist in flight (the poll excerpt self-discloses instance status + an in-flight qualifier) |
    | `attempted` (standing) | present | kill landed in the window after uploads completed but before the final-status write (rare; transcript disambiguates) |
    | `skipped_no_token` | absent | early-boot crash before secrets fetch |
-   | `ok` | present | normal crash persist. `ok` = the persist python EXITED 0, not "all artifacts landed" — per-upload failures are logged, never raised; the transcript is the per-upload audit |
-   | `ok` | absent/partial | persist completed but HF channel down (the 429-storm shape) — or a repo/prefix misroute; separable post-hoc by a scoped `list_repo_tree` listing |
-   | `timeout` | absent/partial | 300s budget exhausted (stalled uploads — the 504 shape) |
+   | `ok` | present | normal crash persist. Since #1343, `ok` = the persist python exited 0 AND ≥1 upload verifiably succeeded (transcript existence probe, or a client-confirmed `upload_folder` commit); per-upload failures are still logged, the transcript remains the per-upload audit. Same-boot re-crash caveat: the probe reads the attempt-scoped prefix, so `ok` states prefix recoverability, not necessarily THIS crash's uploads |
+   | `ok` | absent/partial | now RARE (pre-#1343 this was the 429-storm shape — that now lands at `failed_uploads`): verify evidence existed at persist time but a scoped listing later reads absent — repo/prefix misroute, or listing lag; separable post-hoc by a scoped `list_repo_tree` |
+   | `failed_uploads` | absent | the #1315 shape: TOTAL upload failure (dead HF channel / 429 storm / rejected token) previously masked as `ok`; nothing recoverable on HF — recover via serial console / boot-disk surgery |
+   | `failed_uploads` | present | late-landing commit(s) — the #1339 gateway-timeout shape: the client logged FAILED, the commit landed server-side after the probe; trust a scoped prefix listing over the breadcrumb |
+   | `timeout` | absent/partial | 300s budget exhausted (stalled uploads — the 504 shape). Since #1343, `timeout` can also follow a completed-uploads persist whose verify probe ate the budget tail — a PRESENT HF prefix alongside `timeout` is consistent with a healthy persist SIGTERMed mid-probe |
    | `failed_rc<N>` | absent | bootstrap/compound failure (127 = uv missing; 1 = cd short-circuit OR python top-level failure; else python rc) |
 
 **Sweep scope (explicit):** the partial sweep covers exactly the three
@@ -142,7 +174,12 @@ only when they land under `$WORKLOAD_ROOT/logs/` (relative `logs/…` or
 `$REPO_ROOT/logs/…` on the workload-cmd branch, where the startup script
 exports `REPO_ROOT="$WORKLOAD_ROOT"` — #641); absolute
 `<vm_scratch_dir>/logs` paths are not swept — place dispatcher worker logs
-under the workload-root `logs/` convention. A workload writing partials
+under the workload-root `logs/` convention. Within the worker-log tree,
+git-TRACKED files (per `git ls-files -z -- logs` against the cloned repo)
+are excluded at walk time (#1351) — a run-generated forensic log at a
+git-tracked path is NOT swept, so never append crash forensics to a
+committed file; the exclusion fails OPEN (sweep everything) on any git
+failure. A workload writing partials
 elsewhere must place them under a swept dir or upload them itself.
 
 Discipline (all load-bearing — the trap must never delay the poweroff that
@@ -163,7 +200,7 @@ bounds billing):
   strand the `shutdown`.
 - **Eager bounded serial streaming (#854).** The persist's output reaches
   fd 3 (the serial console) line-by-line AS IT HAPPENS via a pure-bash
-  reader (2000-char line cap, 120-line print cap — raised 60 → 120 at #885:
+  reader (2000-char line cap, 200-line print cap — raised 60 → 120 at #885, then 120 → 200 at #1339:
   the worker-logs sweep's worst case of ~40 staging TAILED/SKIP lines + a
   dropped-count + 2 folder-upload lines on top of ~16 pre-existing persist
   lines sat right AT the old cap) — the old `| cut | tail`

@@ -40,14 +40,15 @@ width = 0.35
 c_iid, c_ood = paper_palette(2)
 fig, ax = plt.subplots()
 
+# errorbar offsets must be >= 0 (gotchas.md)
 bars_iid = ax.bar(
     x - width / 2, iid,
-    yerr=[iid - iid_cis[:, 0], iid_cis[:, 1] - iid],
+    yerr=np.maximum(0, [iid - iid_cis[:, 0], iid_cis[:, 1] - iid]),
     width=width, color=c_iid, capsize=3, label="IID",
 )
 bars_ood = ax.bar(
     x + width / 2, ood,
-    yerr=[ood - ood_cis[:, 0], ood_cis[:, 1] - ood],
+    yerr=np.maximum(0, [ood - ood_cis[:, 0], ood_cis[:, 1] - ood]),
     width=width, color=c_ood, capsize=3, label="OOD",
 )
 

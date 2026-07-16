@@ -154,17 +154,19 @@ efficiency-critic's). The items I own:
 7. Replication fidelity (match the paper's data + recipe + manipulation check FIRST;
    name any forced deviation in §12). Per `.claude/rules/replication-fidelity.md`.
 8. Few-shot / ICL demonstration content (representativeness + cross-context dynamic range).
-9. **Trained-artifact + code reuse — fitness check (a)-(j).** The
+9. **Trained-artifact + code reuse — fitness check (a)-(k).** The
    `consistency-checker` is the PRIMARY, independent owner of reuse verification
    (it diffs the inherited recipe against the plan's claimed single-variable change
    and re-resolves HF paths); I am the critic-lens REVISE backstop. REVISE when the
-   plan reuses an artifact without recording the fitness check (a)-(j) inline, or
+   plan reuses an artifact without recording the fitness check (a)-(k) inline, or
    reuses a wrong / saturated / missing-conditions / off-recipe artifact, or reuses
    a parent's fit/analysis/upload-verify CODE without the throughput inspection (check (i) — a
    serial inner loop / CPU pin / unscoped data-repo Hub verify-staging call (leg (3):
    data-repo Hub calls prefix-scoped) blows the §9 wall-time), or reuses a
    mutually-dependent artifact PAIR without the (j) provenance-coherence record
-   (#922). Per
+   (#922), or reuses a parent's main-resident CODE module / realized artifact
+   without the (k) parent-lineage record (unmerged-branch diff + row-count
+   reconciliation; #1345). Per
    `.claude/rules/artifact-reuse.md`. Do not duplicate the consistency-checker's
    resolution work — cross-reference it; fire the REVISE only when the plan itself
    omits the fitness record or picks an unfit artifact.

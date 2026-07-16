@@ -476,7 +476,21 @@ Critical SUBSTANTIVE finding (blocker tag `substantive`, NOT
 symbol exists in source code from the marker alone, so this finding must
 never be stripped as mechanical-contract): the ImportError fires on the
 pod AFTER the expensive phases. A deferred import that resolves but lacks
-(a)/(b) evidence is at most a CONCERNS bullet. The mirror implementer rule
+(a)/(b) evidence is at most a CONCERNS bullet.
+
+**Fenced CALLS must also BIND — resolution alone is not enough.** For
+each call to an imported helper inside a fenced branch (deferred OR
+module-top import — option (b) hoisting does NOT discharge this),
+verify the call site's arg shape binds the helper's live signature:
+`inspect.signature(fn).bind(...)` per the gotchas.md bind recipe, or a
+static signature read quoted as `file.py:LINE`. A non-binding fenced
+call is the SAME Critical SUBSTANTIVE class — the TypeError fires on
+the pod after the expensive phases (#1332 r1: two fenced
+`verify_repo_paths_uploaded` calls missing the `api` positional +
+REQUIRED kw-only `path_in_repo`; caught only by an ad-hoc reviewer
+signature sweep).
+
+The mirror implementer rule
 is `experiment-implementer.md` § After implementation step 2 ("Deferred
 imports count"). Incident #606 (2026-06-11): review rounds 1-2 PASSed a
 dispatcher whose upload branch lazily imported the nonexistent

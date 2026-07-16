@@ -263,6 +263,104 @@ If the figure doesn't show what the caption claims, flag it. Common failures:
 - Caption walks the reader through "left panel / right panel" but the figure has no panel labels.
 - Figure file is committed at one SHA but body URL points at a different SHA showing an older version.
 
+**Degenerate-series check (mechanical — hash the plotted per-series arrays).**
+For EVERY figure whose caption/legend claims N ≥ 2 distinct series along a
+varied axis (conditions, arms, answer sources, models, seeds, doses), verify
+the supposedly-distinct series actually DIFFER — visual inspection cannot:
+perfectly coincident curves overdraw into fewer visible traces (incident
+#1092: a per-turn dynamics figure claimed 8 series that were really 2 — R²
+byte-identical across all 4 answer-source cells INCLUDING the shuffled null;
+the round-1 critique passed the figure).
+
+1. **Locate the plotted per-series arrays**, in order: (a) the figure's
+   `.meta.json` sidecar next to the PNG (`savefig_paper` embeds `points` rows
+   tagged with a `series` label; read it pin-first per the read-target rule
+   above — `git show <sha>:<path>` when the body pins a SHA); (b) the eval
+   JSON / analysis artifact the body cites for that result (`jq` the
+   per-series arrays); (c) the plotting script's data source. Fewer LOCATED
+   distinct series names than the legend/caption claims is itself a finding
+   (the legend claims more series than the data carries).
+2. **Hash each series unit** (stdlib-only; the Claude critic executes it —
+   on the VM via `uv run python - <<'PY' ... PY`; the Codex twin executes it
+   where its sandbox allows, else records `unverifiable — sandbox`). Units
+   are keyed `(series, _group)` — multi-panel figures replot same-named
+   series per artist group, and label-only keying would merge across panels:
+
+   ```python
+   import json, hashlib, glob
+   from collections import defaultdict
+
+   def _canon(r):
+       return json.dumps(r, sort_keys=True, default=str)
+
+   def series_hash_groups(meta):
+       """Group a .meta.json's points into (series, _group) units and hash
+       each unit's rows, excluding label/tag metadata keys (`series`,
+       `_kind`, `_group` today; compare VALUES so the check tracks schema
+       drift); returns {hash: [(series, group)]} — any hash holding >= 2
+       DISTINCT non-`<none>` series labels is a byte-identical finding."""
+       units = defaultdict(list)
+       for p in meta.get("points", []):
+           if not isinstance(p, dict):
+               continue  # malformed row: skip it, never crash the check
+           unit = (str(p.get("series", "<none>")), str(p.get("_group", "")))
+           vals = tuple(sorted((k, v) for k, v in p.items()
+                               if k not in ("series", "_kind", "_group")))
+           units[unit].append(vals)
+       groups = defaultdict(list)
+       for (name, grp), rows in units.items():
+           h = hashlib.sha256(json.dumps(sorted(rows, key=_canon),
+                                         sort_keys=True, default=str)
+                              .encode()).hexdigest()[:12]
+           groups[h].append((name, grp))
+       return dict(groups)
+
+   for path in sorted(glob.glob("<figure sidecar glob>")):
+       for h, names in series_hash_groups(json.load(open(path))).items():
+           labels = {s for s, _ in names if s != "<none>"}
+           flag = "  <-- BYTE-IDENTICAL DISTINCT SERIES" if len(labels) > 1 else ""
+           print(f"{path} {h}: {names}{flag}")
+   ```
+
+   For non-sidecar sources, hash the per-series arrays the same way (sorted
+   rows, JSON-canonicalized, sha256). Byte-identical means EXACT equality —
+   no tolerance (near-identical stays an ordinary Lens-6 judgment call;
+   exact collision is the mechanical signal). A collision involving ONLY
+   unlabeled artists (`<none>` — no legend entry) or ONLY same-named
+   replots across artist groups is extraction duplication / a replot, not
+   a legend lie — note it, don't flag it.
+3. **Verdict semantics.** ≥2 supposedly-distinct (distinct-labeled) series
+   hashing identical → automatic REVISE, blocker tag `degenerate-series`,
+   `mechanizable: yes` (the recipe above IS the check). A NULL / shuffled /
+   control series byte-identical to an OBSERVED arm is the highest-severity
+   signature — hard FAIL, never PASS the round: every observed-vs-null read
+   on that figure is vacuous (the varied axis never varied; the #1092
+   shape). Carve-outs (NOT findings): a series the body/caption EXPLICITLY
+   declares shared/duplicated (a baseline replotted per panel); a ≤3-point
+   low-cardinality integer series whose tie the body already explains
+   (chance collision is plausible there — note it, don't FAIL). Carve-out
+   scope at the hard-FAIL tier: declared-shared excuses null==observed
+   ONLY when the body explicitly declares the null series shares data with
+   the observed arm — itself a design smell to flag; the low-cardinality
+   carve-out NEVER applies to a null==observed match on a real-valued
+   series. An UNDECLARED identical pair is a finding even if innocent —
+   the legend claims a distinction the data does not carry.
+4. **Graceful degradation (never a false FAIL, never a silent skip).** When
+   no per-series data is locatable (no sidecar, arrays only on HF, opaque
+   pipeline), record `unverifiable — no per-series data located at <paths
+   tried>` in the output line — do NOT FAIL on unverifiability alone.
+   Instead: (a) apply heightened visual scrutiny for coincident traces
+   (fewer visible curves than legend entries is the visual signature); and
+   (b) when the figure carries a null-vs-observed comparison, file a REVISE
+   requesting per-series data availability (sidecar or cited eval JSON) — a
+   data-availability finding, distinct from `degenerate-series`. A
+   TRUNCATED sidecar (the `_MAX_SIDECAR_ROWS` cap) still supports the
+   check — a collision on the embedded subset is already a finding; on NO
+   collision, prefer hashing the cited eval JSON before declaring the
+   figure clean (truncation can split genuinely identical series). The
+   output-format line is ALWAYS filled (pass / REVISE / hard FAIL /
+   unverifiable / `N/A — no multi-series figures`).
+
 ### 7. Raw-Text Sample Plausibility
 **This requires loading the raw completions, not just trusting the body's sample-output blocks.** For each `### Result N` claiming a firing rate (e.g., "fires 20/100 on `/anthx/`"), independently:
 
@@ -327,6 +425,13 @@ If the figure doesn't show what the caption claims, flag it. Common failures:
       fixed-completion log-P). If a different intrusion script surfaces in
       step 2's samples (e.g. Cyrillic), rerun the same recipe with that
       script's block ranges swapped in.
+    - **Upstream analyzer duty (cross-ref):** the analyzer owes this same
+      scan over BOTH substrates — capture rollouts AND every judged
+      install-instrument pool — BEFORE the body is written (`analyzer.md`
+      Step 3.7, #1364). A body resting a PASS/WARN install/parity
+      adjudication on a judged pool with no adjacent intrusion counts +
+      zeroed/excluded bounds is a missing-analyzer-duty REVISE finding
+      (name Step 3.7 in the finding), not only a critic-side recompute.
 4. **Cross-check the body's sample-output blocks**: the body MUST include ≥3 firing + ≥3 non-firing examples per Result. Verify those examples are actually drawn from the eval JSON (not fabricated) and are representative (not cherry-picked extreme cases).
 
 If the body's sample-output blocks are missing, contain only firing examples (no non-firing), or include examples not findable in the raw JSON, flag it.
@@ -377,6 +482,7 @@ Post as `<!-- epm:interp-critique vN -->`:
 ### Plot-Prose Match (per figure)
 - **Figure 1** (`<path>`) — [loaded: yes/no] — [caption claim: "..."] — [visible in figure: yes/no] — [issues]
 - **Figure 2** ...
+- Degenerate-series hash check: claimed <N> series → <k> distinct hashes (source: <sidecar/eval JSON path>); byte-identical groups: [<names>|none] — [pass | REVISE degenerate-series | hard FAIL null==observed | unverifiable — <reason>] — or `N/A — no multi-series figures`
 
 ### Raw-Text Sample Plausibility (per Result)
 - **Result 1** — sampled M firing + M non-firing from `<JSON path>`:
@@ -400,7 +506,7 @@ Post as `<!-- epm:interp-critique vN -->`:
 - On REVISE, every revision request must be specific and actionable.
 - You must independently examine the raw data. Do not just critique the text —
   load the JSONs, look at the numbers, compare against the plan's predictions.
-- **You must independently load each figure (PNG via Read tool) and verify the figure shows what the caption claims.** Do not trust the analyzer's caption blindly. Lens 6 (Plot-Prose Match) is non-negotiable.
+- **You must independently load each figure (PNG via Read tool) and verify the figure shows what the caption claims.** Do not trust the analyzer's caption blindly. Lens 6 (Plot-Prose Match) is non-negotiable. The degenerate-series hash sub-check is part of Lens 6 and equally non-negotiable for multi-series figures.
 - **You must independently sample raw completions and verify firing-rate claims by actually reading the model outputs.** Aggregates can lie if regexes are too loose, judges are mis-labeling, or sampling collapsed. Lens 7 (Raw-Text Sample Plausibility) is non-negotiable. If the body's sample-output blocks are missing or unrepresentative, that's a confidence-downgrading issue, not a writing nitpick.
 - **Blocker grounding + mechanizability.** Every REVISE-driving finding cites
   a concrete artifact location (a quoted body claim, a JSON path/cell, a
