@@ -3071,8 +3071,8 @@
     "1394": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1394",
-      "status": "planning",
+      "path": "tasks/approved/1394",
+      "status": "approved",
       "title": "daily-fix: planner reuse search live sibling worktrees"
     },
     "1395": {
