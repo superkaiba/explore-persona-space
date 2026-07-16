@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1417,
+  "highest_id": 1418,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -3258,6 +3258,13 @@
       "path": "tasks/proposed/1417",
       "status": "proposed",
       "title": "Which property scopes the shared assistant context\u2192answer map: helpful register, or speaking to a user?"
+    },
+    "1418": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1418",
+      "status": "proposed",
+      "title": "workflow-fix: verify_task_body check-17 cross-checks Context lineage vs parent_id"
     },
     "142": {
       "has_clean_result": true,
