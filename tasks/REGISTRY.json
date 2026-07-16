@@ -2910,8 +2910,8 @@
     "1373": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1373",
-      "status": "reviewing",
+      "path": "tasks/completed/1373",
+      "status": "completed",
       "title": "workflow-fix: v4 word-cap round-crediting misses plural/in-flight follow-up rounds"
     },
     "1374": {
