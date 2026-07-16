@@ -742,6 +742,30 @@ Generation-agnostic checks (run on v2 AND v3 — the inline-figure +
   task's own code SHA satisfies the bare-hex form — LM Lens 5 keeps
   owning semantic pin-correctness.
 
+- **check 38** (`check_linked_not_embedded_figures`, WARN, v4-only, #1371): a
+  non-image markdown LINK in the footer-truncated v4 `## Results` section
+  whose URL carries a `figures/issue_<N>/*.png` path, where that figure is
+  embedded as an image nowhere in the body. Pipeline: `_v4_results_body` →
+  `_prose_layer` (fences + `<details>` stripped — a quoted or dropdown-tucked
+  link never WARNs) → mask image embeds with `_IMAGE_RE.sub("")` → scan the
+  remaining `_MD_LINK_RE` links for `_LINKED_ISSUE_PNG_RE` paths → subtract
+  the whole-body EMBEDDED set (the same path capture run over every markdown
+  image URL AND every HTML `<img src=…>` anywhere in the body — raw-GitHub /
+  blob / relative alike; SHA-independent, case-folded path equality).
+  Own-issue scoping when `issue` is known (a cross-issue link is a legitimate
+  reference); `issue=None` (`--body-stdin`) falls back to every issue dir
+  (check 31's documented fallback caveat). PNG-only (a PDF cannot render
+  inline — a PDF link is the correct form). WARN-only, never FAIL. Closes
+  check 31's stem-in-prose blind spot: the link itself puts the stem in the
+  body, silencing 31's only relevant WARN. Named recall sacrifices: the
+  embedded set scans the UNSTRIPPED whole body (a fenced example embed can
+  silence a real WARN — false-negative direction only); reference-style links
+  `[text][ref]` are not matched. Incident: #1315 result 4 linked a committed
+  per-row scatter grid instead of embedding it; only clean-result-critic
+  Lens 11 caught it. Dispatched OUTSIDE the body-only CHECKS list (needs
+  `issue` for own-dir scoping; the check-31/#1011 precedent). (Numbered 38 —
+  36/37 were taken by #1368/#1370 while this check was in review.)
+
 Harmful-content carve-out: checks 18/19 accept the sanitized excerpt
 form (`[truncated — harmful-content row; verify at <path>, row <i>]`)
 exactly as checks 10/11 do today.
@@ -2179,6 +2203,25 @@ _ISSUE_FIGURE_PATH_RE = re.compile(r"^figures/issue_(?P<issue>\d+)/\S")
 # pooled hero `mlp_indiv_hero_4arm.png`), not a per-unit view.
 _PER_UNIT_FIG_RE = re.compile(r"(?<![a-z0-9])per[-_]?(context|unit|cell)", re.IGNORECASE)
 
+# Check 38: any markdown link (image embeds are masked out before this
+# scans, so no `!`-lookbehind is needed); link text tolerates `]` not
+# followed by `(` — the same tolerance `_IMAGE_RE` uses — and may be
+# EMPTY (the `[](q)` residue a clickable-image wrapper leaves after the
+# inner image is masked). Distinct from `_LINK_RE`, which requires
+# non-empty text and has no `]` tolerance.
+_MD_LINK_RE = re.compile(r"\[(?:[^\]]|\](?!\())*\]\(([^)]+)\)")
+# Check 38: a `figures/issue_<K>/…png` path inside a link/image URL, ANY
+# host form (raw-GitHub, github blob, relative). Captures the
+# repo-relative path; `[^)\s?#]+` stops the capture before a
+# query-string / fragment (`…png?raw=1`).
+_LINKED_ISSUE_PNG_RE = re.compile(
+    r"(?P<path>figures/issue_(?P<issue>\d+)/[^)\s?#]+\.png)", re.IGNORECASE
+)
+# Check 38: HTML image embeds (`<img src="…">`) also count as embeds — a
+# body that embeds via raw HTML must not false-positive the
+# linked-figure WARN. Quoted src only (unquoted src is unused in bodies).
+_HTML_IMG_SRC_RE = re.compile(r"<img\s[^>]*?src\s*=\s*[\"']([^\"']+)[\"']", re.IGNORECASE)
+
 
 def _http_head_status(url: str, timeout: float = 5.0) -> int | None:
     """HTTP HEAD ``url``; return the response status code (HTTPError codes
@@ -2562,6 +2605,112 @@ def check_orphaned_per_unit_figures(body: str, *, issue: int | None = None) -> C
     if n_unreachable:
         detail += f" ({n_unreachable} cited SHA(s) not locally reachable — skipped)"
     return CheckResult(name, True, detail)
+
+
+def check_linked_not_embedded_figures(body: str, *, issue: int | None = None) -> CheckResult:
+    """Check 38 (WARN, v4-only, #1371): a non-image markdown LINK in the
+    (footer-truncated) v4 `## Results` section to a
+    `figures/issue_<N>/*.png` that no body image embeds.
+
+    INVERSE-complement of check 31: 31 asks "what did the body-cited
+    commits CONTAIN that the body never shows?" (git-backed); this check
+    asks "what does the Results prose LINK TO that the body never
+    embeds?" (pure text — no git / network / subprocess). They compose:
+    31 catches committed-but-never-mentioned per-unit PNGs, but its
+    stem-in-prose escape is satisfied by a markdown LINK's own URL text,
+    so a linked-not-embedded figure silences 31 — this check closes
+    exactly that hole (incident #1315: result 4 referenced a committed
+    per-row PC-scatter grid as `[text](…png)` instead of `![alt](…)`;
+    only clean-result-critic Lens 11 caught it).
+
+    Pipeline: `_v4_results_body` (footer-truncated, so footer blob links
+    are never scanned) → `_prose_layer` (fences + `<details>` stripped —
+    a quoted or dropdown-tucked link never WARNs; dropdown-tucked links
+    are deliberate presentation, a named recall sacrifice) → mask image
+    embeds with `_IMAGE_RE.sub("")` → scan the remaining `_MD_LINK_RE`
+    links for `_LINKED_ISSUE_PNG_RE` figure paths → subtract the
+    whole-body EMBEDDED set. Blockquote caption lines stay in the prose
+    layer, so a caption link to an unembedded PNG deliberately WARNs.
+
+    The EMBEDDED set is symmetric any-URL-form: the repo-relative
+    `figures/issue_<K>/…png` path is extracted from EVERY image-embed
+    URL anywhere in the body — markdown `![alt](url)` AND HTML
+    `<img src="url">` — raw-GitHub, blob, and relative forms alike
+    (SHA-independent, case-folded path equality). Deliberately NOT
+    `_referenced_figure_paths`, which is raw-GitHub-only: check 4b is
+    Results-scoped and accepts non-raw absolute URLs, so a legitimate
+    Methodology-placed or blob-URL embed would otherwise false-positive
+    this WARN. The embedded set scans the UNSTRIPPED whole body, so a
+    fenced EXAMPLE embed can silence a real WARN — a false-negative-only
+    direction, accepted for WARN tier.
+
+    A clickable-image wrapper `[![alt](p)](q)` leaves a residue link
+    `[](q)` after masking; the residue IS scanned — the common q==p case
+    is silenced by the embed subtraction (p is embedded), while a
+    wrapper whose click target q is a PNG embedded nowhere deliberately
+    WARNs (q is linked-not-embedded by definition).
+
+    Issue scoping mirrors check 31: with `issue` known, ONLY
+    `figures/issue_<issue>/` links are scanned (a Results link to a
+    PARENT task's figure is a legitimate cross-reference — embedding
+    another task's figure is not this body's duty); `issue=None`
+    (`--body-stdin`, a non-task-layout `--file`) falls back to scanning
+    every issue dir, which CAN flag a cross-issue link (documented
+    caveat of the fallback). PNG-only: a PDF cannot render inline in
+    dashboard markdown, so a PDF link is the only correct reference form
+    and must never WARN (check 31's PNG-only rule). Named recall
+    sacrifice: reference-style links `[text][ref]` are not matched by
+    `_MD_LINK_RE`. WARN-tier: `passed=True` always — the overall verdict
+    can never flip; a deliberate link ships under the standing
+    acknowledge-in-body WARN rule.
+    """
+    name = "Results figures embedded, not linked"
+    if not is_v4(body):
+        return CheckResult(
+            name, True, "not a v4 body — the linked-figure scan is v4-only (forward-only)"
+        )
+    results_text = _v4_results_body(body)
+    if results_text is None:
+        return CheckResult(name, True, "no `## Results` section to scan")
+    prose = _prose_layer(results_text)  # strip fences + <details>
+    masked = _IMAGE_RE.sub("", prose)  # drop image embeds (wrapper residue links stay — docstring)
+    # Whole-body EMBEDDED set: markdown image embeds + HTML <img> embeds,
+    # any URL host form, reduced to case-folded repo-relative figure paths.
+    embedded: set[str] = set()
+    image_urls = [m.group(1) for m in _IMAGE_RE.finditer(body)]
+    image_urls.extend(m.group(1) for m in _HTML_IMG_SRC_RE.finditer(body))
+    for raw_url in image_urls:
+        iu = raw_url.strip().split(None, 1)[0] if raw_url.strip() else ""
+        ipm = _LINKED_ISSUE_PNG_RE.search(iu)
+        if ipm:
+            embedded.add(ipm.group("path").lower())
+    linked: dict[str, None] = {}  # ordered de-dupe: path -> None
+    for m in _MD_LINK_RE.finditer(masked):
+        url = m.group(1).strip().split(None, 1)[0] if m.group(1).strip() else ""
+        pm = _LINKED_ISSUE_PNG_RE.search(url)
+        if not pm:
+            continue
+        if issue is not None and pm.group("issue") != str(issue):
+            continue  # cross-issue links are legitimate references
+        path = pm.group("path")
+        if path.lower() in embedded:
+            continue  # embedded anywhere in the body → discipline satisfied
+        linked.setdefault(path)
+    if linked:
+        listed = ", ".join(f"`{p}`" for p in linked)
+        return CheckResult(
+            name,
+            True,
+            f"{len(linked)} committed figure(s) referenced as a markdown LINK in `## Results` "
+            f"but embedded by no body image: {listed} — embed it inline under the relevant "
+            "`### <result>` (an `![...](...)` embed anywhere in the body silences this WARN), "
+            "or acknowledge the deliberate link in the body (the standing WARN-ship rule); "
+            "substantive owner: clean-result-critic Lens 11 (incident #1315)",
+            is_warn=True,
+        )
+    return CheckResult(
+        name, True, "no linked-but-unembedded `figures/issue_<N>/` PNGs in `## Results`"
+    )
 
 
 def check_figure_caption(body: str) -> CheckResult:
@@ -10851,6 +11000,10 @@ CHECKS = [
     # is NOT here either — like check 20 (v4) it needs the issue number (for
     # figures-dir scoping), so it is dispatched separately in `verify_text`
     # (#1011; the check-20/#921 precedent).
+    # Check 38 (`check_linked_not_embedded_figures`, WARN, v4-only) is NOT
+    # here either — it needs the issue number (for own-figures-dir scoping),
+    # so it is dispatched separately in `verify_text` (#1371; the
+    # check-31/#1011 precedent).
 ]
 
 
@@ -11031,6 +11184,10 @@ def verify_text(
     # issue number for figures-dir scoping, so it lives outside the body-only
     # CHECKS list (check-20/#921 precedent).
     results.append(check_orphaned_per_unit_figures(body, issue=issue))
+    # Check 38 (WARN, #1371): Results figures referenced as links, not
+    # embeds — needs the issue number for own-figures-dir scoping, so it
+    # lives outside the body-only CHECKS list (check-31/#1011 precedent).
+    results.append(check_linked_not_embedded_figures(body, issue=issue))
     overall = all(r.passed for r in results)
     return overall, results
 

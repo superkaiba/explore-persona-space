@@ -165,15 +165,17 @@ def test_good_body_passes_all():
     # body, #1256), AND
     # the check-31 orphaned-per-unit-figures probe (needs `issue` for
     # figures-dir scoping, #1011; PASS here — the fixture's fake sha is not
-    # locally reachable, so the cited SHA is silently skipped) →
-    # 51 results total (2 prepended + CHECKS[1:]=39 + 10 appended; check 36
+    # locally reachable, so the cited SHA is silently skipped), AND the
+    # check-38 linked-not-embedded-figures scan (needs `issue` for
+    # own-figures-dir scoping, #1371; PASS-skip: not a v4 body) →
+    # 52 results total (2 prepended + CHECKS[1:]=39 + 11 appended; check 36
     # `check_v4_result_paragraph_sentences` (#1368) and check 37
     # `check_footer_reuse_bullets_pinned` (#1370) ride CHECKS and PASS-skip
     # here — not a v4 body). The
     # Lens 14 / check-16 results are PASS-skips when no concerns.jsonl /
     # plans/plan.md sibling is available; check 17 and the v3/v4 checks
     # are PASS-skips on this legacy (pre-v2-sentinel) fixture.
-    assert len(results) == 51
+    assert len(results) == 52
     # By-name membership so the NEXT check addition can key by name instead
     # of re-deriving the arithmetic (#1016 methodology-reconciler Must-Fix).
     assert _HF_32_NAME in {r.name for r in results}
@@ -8184,6 +8186,217 @@ def test_v4_result_paragraph_sentence_cap_skips_v3_body():
     _ok, results = verify_task_body.verify_text(_V3_GOOD_BODY)
     r = _results_by_name(results)["Results paragraph sentence cap (v4)"]
     assert r.passed and "not a v4 body" in r.detail, r.render()
+
+
+# ─── Check 38: linked-but-not-embedded figures in v4 ## Results (#1371) ──────
+#
+# WARN-only, v4-sentinel-gated, pure-text: a non-image markdown link in
+# `## Results` to a `figures/issue_<N>/*.png` that no body image embeds
+# (the #1315 incident shape — check 31's stem-in-prose escape is blind to
+# it). All assertions per-check by name (the `_V4_GOOD_BODY` convention —
+# fake SHAs fail the existence probes, so overall PASS is not assertable).
+
+_LINKED_FIG_CHECK = "Results figures embedded, not linked"
+_C37_PATH = "figures/issue_999/per_row_grid.png"
+_C37_RAW_URL = (
+    "https://raw.githubusercontent.com/superkaiba/explore-persona-space/"
+    "0123456789abcdef/" + _C37_PATH
+)
+_C37_HERO_URL = (
+    "https://raw.githubusercontent.com/superkaiba/explore-persona-space/"
+    "0123456789abcdef/figures/issue_999/hero.png"
+)
+_C37_HERO_EMBED = (
+    "![Bar chart of mean alignment with 95% CI across three seeds; "
+    "baseline 70.4% vs tulu-25 87.9%.](" + _C37_HERO_URL + ")"
+)
+
+
+def _c37_body_with_results_link(fragment):
+    """`_V4_GOOD_BODY` with `fragment` appended as its own paragraph after
+    the last result's interpretation line (inside `## Results`)."""
+    return _V4_GOOD_BODY.replace(_V4_INTERP_LINE, _V4_INTERP_LINE + "\n\n" + fragment)
+
+
+def _c37_direct(fixture_text, issue=None):
+    """Direct-call check 38 on the post-frontmatter body, as verify_text does."""
+    _fm, body = verify_task_body.split_frontmatter(fixture_text)
+    return verify_task_body.check_linked_not_embedded_figures(body, issue=issue)
+
+
+def test_linked_not_embedded_figure_warns():
+    """PRIMARY pin (#1371 durability pin — the #1315 incident shape): a
+    figure referenced as a markdown LINK in `## Results` with no image
+    embed anywhere in the body WARNs (passed=True — the overall verdict is
+    never flipped by this check). Asserted BY NAME through verify_text so
+    the dispatch outside CHECKS is pinned (the check-31
+    `test_orphan_per_unit_figure_warns` pattern: a refactor dropping the
+    `verify_text` append fails here)."""
+    body = _c37_body_with_results_link(f"See the [per-row grid]({_C37_RAW_URL}).")
+    _ok, results = verify_task_body.verify_text(body, issue=999)
+    r = _results_by_name(results)[_LINKED_FIG_CHECK]
+    assert r.passed is True
+    assert r.is_warn is True
+    assert _C37_PATH in r.detail
+    assert "Lens 11" in r.detail
+
+
+def test_linked_figure_also_embedded_no_warn():
+    """The same path embedded as an image ANYWHERE in the body — here under
+    `## Methodology`, pinned at a DIFFERENT SHA — silences the WARN
+    (whole-body, SHA-independent embed subtraction)."""
+    embed = (
+        "![per-row grid](https://raw.githubusercontent.com/superkaiba/"
+        "explore-persona-space/fedcba9876543210/" + _C37_PATH + ")"
+    )
+    body = _c37_body_with_results_link(f"See the [per-row grid]({_C37_RAW_URL}).").replace(
+        "## Results\n", embed + "\n\n## Results\n"
+    )
+    r = _c37_direct(body, issue=999)
+    assert r.passed and not r.is_warn, r.render()
+
+
+def test_blob_url_embed_silences_warn():
+    """A GitHub BLOB-URL image embed also silences the WARN — pins the plan-v2
+    any-URL-form embed-subtraction correction (the raw-GitHub-only
+    `_referenced_figure_paths` helper would false-positive here)."""
+    embed = (
+        "![per-row grid](https://github.com/superkaiba/explore-persona-space/"
+        "blob/fedcba9876543210/" + _C37_PATH + ")"
+    )
+    body = _c37_body_with_results_link(f"See the [per-row grid]({_C37_RAW_URL}).").replace(
+        "## Results\n", embed + "\n\n## Results\n"
+    )
+    r = _c37_direct(body, issue=999)
+    assert r.passed and not r.is_warn, r.render()
+
+
+def test_html_img_embed_silences_warn():
+    """An HTML `<img src="…">` embed of the linked path also counts as an
+    embed — a body that embeds via raw HTML must not false-positive."""
+    embed = f'<img src="{_C37_RAW_URL}" width="400">'
+    body = _c37_body_with_results_link(f"See the [per-row grid]({_C37_RAW_URL}).").replace(
+        "## Results\n", embed + "\n\n## Results\n"
+    )
+    r = _c37_direct(body, issue=999)
+    assert r.passed and not r.is_warn, r.render()
+
+
+def test_linked_not_embedded_clean_v4_body_no_warn():
+    """Unmodified `_V4_GOOD_BODY` (hero figure embedded inline) → clean PASS."""
+    _ok, results = verify_task_body.verify_text(_V4_GOOD_BODY, issue=999)
+    r = _results_by_name(results)[_LINKED_FIG_CHECK]
+    assert r.passed and not r.is_warn, r.render()
+
+
+def test_clickable_image_wrapper_no_warn():
+    """The clickable-image wrapper `[![alt](p)](p)`: masking the inner image
+    leaves a `[](p)` residue link, which the embed subtraction silences
+    (p IS embedded by the inner image)."""
+    assert _C37_HERO_EMBED in _V4_GOOD_BODY  # fixture-drift guard
+    body = _V4_GOOD_BODY.replace(
+        _C37_HERO_EMBED, "[" + _C37_HERO_EMBED + "](" + _C37_HERO_URL + ")"
+    )
+    r = _c37_direct(body, issue=999)
+    assert r.passed and not r.is_warn, r.render()
+
+
+def test_wrapper_to_unembedded_png_warns():
+    """A wrapper `[![alt](p)](q)` whose click target q is a PNG embedded
+    nowhere deliberately WARNs — q is linked-not-embedded by definition
+    (documents the residue-link semantics)."""
+    body = _V4_GOOD_BODY.replace(_C37_HERO_EMBED, "[" + _C37_HERO_EMBED + "](" + _C37_RAW_URL + ")")
+    r = _c37_direct(body, issue=999)
+    assert r.passed is True
+    assert r.is_warn is True
+    assert _C37_PATH in r.detail
+
+
+def test_line_start_link_warns():
+    """A link at column 0 on its own line WARNs — the mask-then-match
+    pipeline needs no `[^!]` lookbehind, so the line-start case (which a
+    lookbehind-based scan would miss) is covered."""
+    body = _c37_body_with_results_link(f"[per-row grid]({_C37_RAW_URL})")
+    r = _c37_direct(body, issue=999)
+    assert r.is_warn and _C37_PATH in r.detail, r.render()
+
+
+def test_link_in_fence_no_warn():
+    """A figure link quoted inside a code fence in `## Results` never WARNs
+    (`_prose_layer` strips fences)."""
+    body = _c37_body_with_results_link(f"```text\nSee [per-row grid]({_C37_RAW_URL}).\n```")
+    r = _c37_direct(body, issue=999)
+    assert r.passed and not r.is_warn, r.render()
+
+
+def test_link_in_details_no_warn():
+    """A figure link tucked inside `<details>…</details>` in `## Results`
+    never WARNs — dropdown-tucked links are deliberate presentation (the
+    named recall sacrifice)."""
+    body = _c37_body_with_results_link(
+        "<details>\n<summary>extra figures</summary>\n\n"
+        f"See the [per-row grid]({_C37_RAW_URL}).\n\n</details>"
+    )
+    r = _c37_direct(body, issue=999)
+    assert r.passed and not r.is_warn, r.render()
+
+
+def test_caption_blockquote_link_warns():
+    """A blockquote caption link to an UNEMBEDDED PNG WARNs — blockquote
+    lines stay in the prose layer (only fences + `<details>` are
+    stripped); intended semantics, documented here."""
+    body = _c37_body_with_results_link(
+        f"> **Figure.** *Companion view.* Full grid: [per-row grid]({_C37_RAW_URL})."
+    )
+    r = _c37_direct(body, issue=999)
+    assert r.is_warn and _C37_PATH in r.detail, r.render()
+
+
+def test_cross_issue_link_scoping():
+    """A Results link to ANOTHER issue's figure is a legitimate
+    cross-reference: no WARN when `issue` is known; the `issue=None`
+    (`--body-stdin`) fallback scans every dir and CAN flag it (check 31's
+    documented fallback caveat)."""
+    other = (
+        "https://raw.githubusercontent.com/superkaiba/explore-persona-space/"
+        "0123456789abcdef/figures/issue_777/x.png"
+    )
+    body = _c37_body_with_results_link(f"See the parent's [grid]({other}).")
+    r = _c37_direct(body, issue=999)
+    assert r.passed and not r.is_warn, r.render()
+    r_none = _c37_direct(body, issue=None)
+    assert r_none.is_warn and "figures/issue_777/x.png" in r_none.detail, r_none.render()
+
+
+def test_relative_link_warns():
+    """The relative-URL form `[grid](figures/issue_<N>/…png)` also WARNs —
+    the embed-vs-link discipline is host-independent (any-URL-form)."""
+    body = _c37_body_with_results_link(f"See the [grid]({_C37_PATH}).")
+    r = _c37_direct(body, issue=999)
+    assert r.is_warn and _C37_PATH in r.detail, r.render()
+
+
+def test_linked_figure_v3_body_vacuous_pass():
+    """Forward-only: a v3 body with a figure link in `## Findings` is never
+    flagged (v4-sentinel gate)."""
+    body = _V3_GOOD_BODY.replace(
+        "## Findings\n", f"## Findings\n\nSee the [grid]({_C37_RAW_URL}).\n"
+    )
+    r = _c37_direct(body, issue=None)
+    assert r.passed and not r.is_warn, r.render()
+    assert "not a v4 body" in r.detail
+
+
+def test_linked_figure_no_results_section_vacuous_pass():
+    """A v4 body with no `## Results` section → vacuous PASS (the
+    `_v4_results_body is None` branch)."""
+    body = (
+        "# Title (LOW confidence)\n\n<!-- clean-result-v4 -->\n\n"
+        f"## Takeaways\n\n- One bullet naming [a grid]({_C37_RAW_URL}).\n"
+    )
+    r = verify_task_body.check_linked_not_embedded_figures(body, issue=999)
+    assert r.passed and not r.is_warn, r.render()
+    assert "no `## Results`" in r.detail
 
 
 # ─── check 27: bare `#K` issue refs in v4 standalone sections ────────────────
