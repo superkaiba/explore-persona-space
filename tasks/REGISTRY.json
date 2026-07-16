@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1405,
+  "highest_id": 1406,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -3165,6 +3165,13 @@
       "path": "tasks/proposed/1405",
       "status": "proposed",
       "title": "daily-fix: paper-plots interim-figure defaults"
+    },
+    "1406": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1406",
+      "status": "proposed",
+      "title": "daily-fix: SPEC protocol delta on sibling headlines"
     },
     "141": {
       "has_clean_result": false,
