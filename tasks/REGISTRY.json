@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1419,
+  "highest_id": 1420,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -3279,6 +3279,13 @@
       "path": "tasks/archived/142",
       "status": "archived",
       "title": "JS divergence predicts persona leakage better than cosine similarity (MODERATE confidence)"
+    },
+    "1420": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1420",
+      "status": "proposed",
+      "title": "workflow-fix: semantic probe for absence-claim greps"
     },
     "144": {
       "has_clean_result": false,
