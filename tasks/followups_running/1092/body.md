@@ -269,7 +269,7 @@ Direct regression from context states wins at per-example grain where the parent
 
 ### Cross-corpus probe transfer is not demonstrated in either direction
 
-What is plotted: zero-shot transfer of the layer-14 supervised trait probes between this corpus and the parent monitoring line's 5,000 LMSYS contexts, both directions, context-state vs bare-query arms (Pearson r, clustered 10,000-draw bootstrap intervals). Per-row scatters: outbound (embedded below), inbound (embedded below).
+What is plotted: zero-shot transfer of the layer-14 supervised trait probes between this corpus and the parent monitoring line's 5,000 LMSYS contexts, both directions, context-state vs bare-query arms (Pearson r, clustered 10,000-draw bootstrap intervals). Per-row scatters: outbound, inbound.
 
 ![Grouped transfer bars for hallucination and sycophancy in both directions; bars near zero except bare-query under LMSYS-trained hallucination probes](https://raw.githubusercontent.com/superkaiba/explore-persona-space/79b4761d18c3b77227d3cc8c77cb3c6aa78eeb7e/figures/issue_1092/transfer_bars.png)
 
