@@ -384,3 +384,23 @@ def test_verified_at_filing_line_required(daily_skill_text: str):
         "the #1307 per-target-confirmation clause dropped from the "
         "workflow.yaml orchestrator_actions grep step"
     )
+
+
+def test_context_consistency_clause_present(daily_skill_text: str):
+    """#1383 pin: the context-consistency binding clause survives — a
+    presence hit whose surrounding text already implements the proposed
+    change is a landed fix (dedup, don't file; #1330 filed over the
+    landed #1309 fix) — in the rule's Body-file template and the daily
+    route-2 verified-at-filing mandate sentence."""
+    rule_text = (REPO_ROOT / ".claude" / "rules" / "workflow-fix-on-bug.md").read_text(
+        encoding="utf-8"
+    )
+    assert "context consistency" in rule_text, (
+        "the #1383 context-consistency clause dropped from "
+        "workflow-fix-on-bug.md (a presence hit that IS the landed fix "
+        "must route to dedup, not a new filing)"
+    )
+    assert "binds on CONTEXT" in daily_skill_text, (
+        "the #1383 context-binding sentence dropped from the daily "
+        "route-2 verified-at-filing mandate paragraph"
+    )
