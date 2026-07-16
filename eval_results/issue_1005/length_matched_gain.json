@@ -1,0 +1,202 @@
+{
+  "dv": "length-matched covariate battery under THIS model's realized coverage",
+  "parse_floor": 0.8,
+  "flagged_contexts": [],
+  "by_regime": {
+    "indiv": {
+      "frozen_layer": 26,
+      "flagged_vs_unflagged": {
+        "note": "flagged set empty \u2014 degenerate at restored compliance (plan \u00a74.0.3)"
+      },
+      "noncollapse_short_cot_terciles": [
+        {
+          "tercile": 0,
+          "median_length": 2695.0,
+          "contexts": [
+            "f1_house_librarian",
+            "f1_house_medical_doctor",
+            "f1_phub_03",
+            "f4_reph_imperative",
+            "f4_reph_polite",
+            "f4_reph_casual",
+            "f4_reph_legalese",
+            "f4_reph_enthusiastic",
+            "f5_fmt_json",
+            "f5_fmt_code_comment",
+            "f5_fmt_xml"
+          ],
+          "observed": 0.14683099839377567,
+          "ci95": [
+            0.13289276550527623,
+            0.16401307834348047
+          ],
+          "p_delta_le_0": 0.0,
+          "n_draws": 2000,
+          "skill_g_aug": 0.9027073047052625,
+          "skill_d_ctx2ans": 0.7558763063114868,
+          "n_contexts": 11
+        },
+        {
+          "tercile": 1,
+          "median_length": 3392.0,
+          "contexts": [
+            "f1_house_software_engineer",
+            "f1_phub_01",
+            "f1_phub_04",
+            "f1_phub_07",
+            "f1_phub_08",
+            "f5_fmt_markdown_table",
+            "f5_fmt_bullets",
+            "f6_default_template",
+            "f8_behav_marker",
+            "f8_behav_sycophant",
+            "f8_behav_fact"
+          ],
+          "observed": 0.19838733934908914,
+          "ci95": [
+            0.16239959541913834,
+            0.2358136553305307
+          ],
+          "p_delta_le_0": 0.0,
+          "n_draws": 2000,
+          "skill_g_aug": 0.8970009207071314,
+          "skill_d_ctx2ans": 0.6986135813580423,
+          "n_contexts": 11
+        },
+        {
+          "tercile": 2,
+          "median_length": 3641.75,
+          "contexts": [
+            "f1_house_surgeon",
+            "f1_house_programmer",
+            "f1_house_data_scientist",
+            "f1_phub_02",
+            "f1_phub_05",
+            "f1_phub_06",
+            "f4_reph_archaic",
+            "f6_helpful_asst",
+            "f8_behav_refusal",
+            "f8_behav_harmful"
+          ],
+          "observed": 0.19388676519758619,
+          "ci95": [
+            0.17233134531743785,
+            0.21554543556242087
+          ],
+          "p_delta_le_0": 0.0,
+          "n_draws": 2000,
+          "skill_g_aug": 0.9128615106111506,
+          "skill_d_ctx2ans": 0.7189747454135644,
+          "n_contexts": 10
+        }
+      ],
+      "spearman_gain_vs_length_noncollapse": {
+        "rho": 0.4754398826979472,
+        "p": 0.005958306054105489,
+        "n": 32
+      }
+    },
+    "avg_q": {
+      "frozen_layer": 18,
+      "flagged_vs_unflagged": {
+        "note": "flagged set empty \u2014 degenerate at restored compliance (plan \u00a74.0.3)"
+      },
+      "noncollapse_short_cot_terciles": [
+        {
+          "tercile": 0,
+          "median_length": 2695.0,
+          "contexts": [
+            "f1_house_librarian",
+            "f1_house_medical_doctor",
+            "f1_phub_03",
+            "f4_reph_imperative",
+            "f4_reph_polite",
+            "f4_reph_casual",
+            "f4_reph_legalese",
+            "f4_reph_enthusiastic",
+            "f5_fmt_json",
+            "f5_fmt_code_comment",
+            "f5_fmt_xml"
+          ],
+          "observed": 0.2329110216718594,
+          "ci95": [
+            0.11924486930335099,
+            0.3233819162375486
+          ],
+          "p_delta_le_0": 0.0,
+          "n_draws": 2000,
+          "skill_g_aug": 0.6478985844961253,
+          "skill_d_ctx2ans": 0.41498756282426585,
+          "n_contexts": 11
+        },
+        {
+          "tercile": 1,
+          "median_length": 3392.0,
+          "contexts": [
+            "f1_house_software_engineer",
+            "f1_phub_01",
+            "f1_phub_04",
+            "f1_phub_07",
+            "f1_phub_08",
+            "f5_fmt_markdown_table",
+            "f5_fmt_bullets",
+            "f6_default_template",
+            "f8_behav_marker",
+            "f8_behav_sycophant",
+            "f8_behav_fact"
+          ],
+          "observed": 0.22960979426535044,
+          "ci95": [
+            0.10165000138763643,
+            0.43599945701584913
+          ],
+          "p_delta_le_0": 0.0,
+          "n_draws": 2000,
+          "skill_g_aug": 0.5318834314566225,
+          "skill_d_ctx2ans": 0.3022736371912721,
+          "n_contexts": 11
+        },
+        {
+          "tercile": 2,
+          "median_length": 3641.75,
+          "contexts": [
+            "f1_house_surgeon",
+            "f1_house_programmer",
+            "f1_house_data_scientist",
+            "f1_phub_02",
+            "f1_phub_05",
+            "f1_phub_06",
+            "f4_reph_archaic",
+            "f6_helpful_asst",
+            "f8_behav_refusal",
+            "f8_behav_harmful"
+          ],
+          "observed": 0.16587799868264763,
+          "ci95": [
+            0.0864142377237452,
+            0.3038045111897192
+          ],
+          "p_delta_le_0": 0.0,
+          "n_draws": 2000,
+          "skill_g_aug": 0.6603241317415427,
+          "skill_d_ctx2ans": 0.49444613305889507,
+          "n_contexts": 10
+        }
+      ],
+      "spearman_gain_vs_length_noncollapse": {
+        "rho": -0.13416422287390029,
+        "p": 0.4641248149990145,
+        "n": 32
+      }
+    }
+  },
+  "reproducibility": {
+    "git_commit": "10465a415a5eb327d772a794a4b746cad400fa07",
+    "timestamp_utc": "2026-07-16T11:10:50.134582+00:00",
+    "python_version": "3.11.15",
+    "platform": "Linux-6.8.0-1052-gcp-x86_64-with-glibc2.35",
+    "torch": "2.8.0+cu128",
+    "numpy": "2.2.6",
+    "transformers": "4.57.6"
+  }
+}
