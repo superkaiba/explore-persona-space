@@ -3218,8 +3218,8 @@
     "1412": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1412",
-      "status": "reviewing",
+      "path": "tasks/completed/1412",
+      "status": "completed",
       "title": "daily-fix: binary figure conflict guidance 9b/10d"
     },
     "1413": {
