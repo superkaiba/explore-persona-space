@@ -2875,8 +2875,8 @@
     "1369": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1369",
-      "status": "running",
+      "path": "tasks/reviewing/1369",
+      "status": "reviewing",
       "title": "workflow-fix: point HF_XET_CACHE/HF_HOME off the VM boot disk for all sessions"
     },
     "137": {
