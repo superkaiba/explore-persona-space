@@ -541,9 +541,9 @@ def run_g1_check(out_dir: Path) -> int:
     if nat_path.exists():
         nat_best, nat_best_raw = _g1_cell_reads(nat_path)
 
-    need_nat = chat_best < cm.G1_MARGINAL_R2 and nat_best is None
+    need_nat = chat_best < marginal_bar and nat_best is None
     if need_nat:
-        print(f"[g1] chat best R2={chat_best:.4f} < {cm.G1_MARGINAL_R2} — need naturalistic read")
+        print(f"[g1] chat best R2={chat_best:.4f} < {marginal_bar:.4f} — need naturalistic read")
         return 4
     if chat_best >= marginal_bar:
         verdict, kill = "pass", False
