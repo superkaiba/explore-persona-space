@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1418,
+  "highest_id": 1419,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -3265,6 +3265,13 @@
       "path": "tasks/proposed/1418",
       "status": "proposed",
       "title": "workflow-fix: verify_task_body check-17 cross-checks Context lineage vs parent_id"
+    },
+    "1419": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1419",
+      "status": "proposed",
+      "title": "workflow-fix: audit pre_reg pattern catches bare 'registered <noun>' forms"
     },
     "142": {
       "has_clean_result": true,
