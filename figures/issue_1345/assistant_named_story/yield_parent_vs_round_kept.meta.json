@@ -1,0 +1,73 @@
+{
+  "commit": "b2b01d08fd",
+  "created": "2026-07-16T16:48:16Z",
+  "figsize": [
+    6.5,
+    4.0
+  ],
+  "points": [
+    {
+      "x": -0.18,
+      "Stories kept (of 500 target)": 420.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.82,
+      "Stories kept (of 500 target)": 96.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.18,
+      "Stories kept (of 500 target)": 361.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 1.18,
+      "Stories kept (of 500 target)": 96.0,
+      "_kind": "bar",
+      "_group": 1
+    }
+  ],
+  "n_series": 2,
+  "total_points": 4,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Renaming the story character ARIA \u2192 \u201cAssistant\u201d drops instruct\nstory yield below the floor",
+        "ylabel": "Stories kept (of 500 target)",
+        "legend_labels": [
+          "ARIA (parent run)",
+          "\"Assistant\" (this round)"
+        ],
+        "annotations": [
+          "420",
+          "96",
+          "361",
+          "96",
+          "yield floor (400 of 500)"
+        ],
+        "xticklabels": [
+          "Instruct",
+          "Base"
+        ],
+        "yticklabels": [
+          "0",
+          "100",
+          "200",
+          "300",
+          "400",
+          "500"
+        ]
+      }
+    ],
+    "series": [
+      "ARIA (parent run)",
+      "\"Assistant\" (this round)"
+    ]
+  }
+}
