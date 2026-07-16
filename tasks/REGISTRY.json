@@ -2624,7 +2624,7 @@
       "kind": "experiment",
       "path": "tasks/running/1336",
       "status": "running",
-      "title": "Does RLVR post-training change the base\u2192post-trained context\u2192answer map more than SFT/DPO? (separated-stage ladder)"
+      "title": "#1336 RLVR ladder: G1 re-adjudicated PASSED on held-out recalibrated DV (S_r=0.24 vs bar 0.20) \u2014 ladder resuming"
     },
     "1337": {
       "has_clean_result": false,
