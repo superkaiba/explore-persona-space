@@ -2937,6 +2937,20 @@ def _env_days_seconds(name: str, default_days: float) -> float:
     return val * 86400.0
 
 
+def _env_pos_seconds(name: str, default_s: float) -> float:
+    """Seconds-denominated env knob -> float seconds. Garbled / non-positive /
+    implausibly-large (>1 year) values fall back to the default (same
+    fail-soft contract as :func:`_env_gib_bytes` — never crash the watcher at
+    import)."""
+    try:
+        val = float(os.environ.get(name, ""))
+    except ValueError:
+        return default_s
+    if not (0 < val < 366 * 86400):
+        return default_s
+    return val
+
+
 # Conservative TTL for the HF hub cache eviction (2026-06-11 episode: 41.5 GB
 # VM-side hub cache, untouched by any reclaim). A cached revision is evicted
 # only when it was last MODIFIED more than this long ago, was last READ
@@ -3008,12 +3022,16 @@ def decide_vm_disk(
 # The existing alert/reclaim bands above fire LATE (20 / 15 GiB free) — by then
 # foreground Bash spawns are already at risk. The sub-floor sentinel is an
 # EARLIER, advisory warn-only band (~60 GB free) whose job is attribution +
-# faster re-check intent, NOT remediation: it writes a `band=sub-floor` row to
+# faster re-check intent: it writes a `band=sub-floor` row to
 # the SHARED disk-guard sidecar naming the top per-issue cache paths (cheap
 # `du -s` on the re-downloadable globs only) so a human can see WHICH active
-# task is eating the disk before it hits the late bands. It NEVER deletes
-# anything and NEVER spawns a daemon — the "re-check sooner" signal is purely
-# the sidecar row it writes (the 10-min watcher cron cadence is unchanged).
+# task is eating the disk before it hits the late bands. The sentinel ROW
+# itself stays warn-only — it NEVER deletes anything and NEVER spawns a
+# daemon. Since #1392 the sibling `subfloor_reclaim_pass` (below) ADDITIONALLY
+# launches the guard's existing tier contract (`vm_disk_guard.py --apply`)
+# DETACHED + rate-limited while below the floor — remediation lives in that
+# separate arm (with its own kill switch), never in the sentinel row (the
+# 10-min watcher cron cadence is unchanged).
 
 # Below this free-bytes threshold the sub-floor sentinel writes an attributed
 # advisory row. ~60 GB: well above the 20 GiB alert band, so it surfaces a
@@ -3032,6 +3050,14 @@ VM_DISK_SUBFLOOR_TOP_N = 3
 # re-downloadable globs, never store/). A timeout degrades to "no attribution",
 # never a crash.
 VM_DISK_SUBFLOOR_DU_TIMEOUT_S = 60
+
+# Min seconds between sub-floor-triggered guard launches (the "short interval
+# while below floor", #1392). 1800 s = 3 watcher ticks ≈ 3x the measured
+# triggered-run duration (6-10 min, logs/vm_disk_guard/2026-07-1{4,5}.log), so
+# launches never self-overlap even without the guard's single-flight lock.
+VM_DISK_SUBFLOOR_RECLAIM_INTERVAL_S = _env_pos_seconds(
+    "EPM_VM_DISK_SUBFLOOR_RECLAIM_INTERVAL_S", 1800.0
+)
 
 
 def _root_disk_headroom() -> int | None:
@@ -3218,6 +3244,54 @@ def decide_subfloor(free_bytes: int, last_free_bytes: int | None) -> bool:
     return drop > VM_DISK_SUBFLOOR_GROWTH_REALERT
 
 
+def _subfloor_reclaim_state_path() -> Path:
+    """Singleton rate-limit state for the sub-floor RECLAIM arm (#1392): the
+    last guard-launch timestamp + pid, under AUTONOMOUS_REGISTRY_DIR. Distinct
+    from the sentinel's ``vm-disk-subfloor.json`` (different episode
+    semantics: this one persists across recovery — the flap guard)."""
+    return AUTONOMOUS_REGISTRY_DIR / "vm-disk-subfloor-reclaim.json"
+
+
+def _load_subfloor_reclaim_state() -> dict:
+    """Fail-soft load of the reclaim-arm state (same contract as
+    :func:`_load_subfloor_state`)."""
+    path = _subfloor_reclaim_state_path()
+    if not path.is_file():
+        return {}
+    try:
+        data = json.loads(path.read_text())
+    except (json.JSONDecodeError, OSError):
+        return {}
+    return data if isinstance(data, dict) else {}
+
+
+def _save_subfloor_reclaim_state(payload: dict) -> None:
+    """Atomic temp+rename write of the reclaim-arm state. Deliberately NOT
+    internally fail-soft: an OSError (e.g. ENOSPC on a 100%-full ``/``)
+    propagates to :func:`subfloor_reclaim_pass`'s own try/except, which
+    returns False cleanly (plan #1392 concern 1 — the arm fails open, bounded
+    to one live run by the guard's single-flight lock)."""
+    dest = _subfloor_reclaim_state_path()
+    AUTONOMOUS_REGISTRY_DIR.mkdir(parents=True, exist_ok=True)
+    tmp = dest.with_suffix(".json.tmp")
+    tmp.write_text(json.dumps(payload))
+    tmp.replace(dest)
+
+
+def decide_subfloor_reclaim(free_bytes: int, last_run_ts: float | None, now: float) -> bool:
+    """Pure decision: launch a sub-floor-triggered guard --apply run this tick?
+
+    True when free is below the sub-floor AND the min interval since the last
+    launch has elapsed (or none recorded). ``last_run_ts`` persists across
+    episodes (never cleared on recovery) so boundary flapping cannot launch
+    faster than :data:`VM_DISK_SUBFLOOR_RECLAIM_INTERVAL_S` (#1392)."""
+    if free_bytes >= VM_DISK_SUBFLOOR_FREE_BYTES:
+        return False
+    if not isinstance(last_run_ts, int | float) or last_run_ts <= 0:
+        return True
+    return now - last_run_ts >= VM_DISK_SUBFLOOR_RECLAIM_INTERVAL_S
+
+
 # ─── VM DATA disk (/mnt/eps-data) watch — PERCENT-based (task #681) ──────────
 #
 # The dedicated data disk holds the relocated `.claude/worktrees/` tree. The
@@ -3391,7 +3465,8 @@ def subfloor_sentinel_pass(dry_run: bool, free_bytes: int | None = None) -> bool
     top per-issue cache paths (cheap `du`) and signalling the watcher should
     re-check sooner. NEVER deletes anything; deduped on the drop fraction;
     clears the episode when free recovers above the band. Returns True when a
-    row was written this tick. Fail-soft throughout."""
+    row was written this tick. Fail-soft throughout. Remediation lives in the
+    SIBLING :func:`subfloor_reclaim_pass` (#1392), never here."""
     free = free_bytes if free_bytes is not None else _root_disk_headroom()
     if free is None:
         return False
@@ -3430,6 +3505,120 @@ def subfloor_sentinel_pass(dry_run: bool, free_bytes: int | None = None) -> bool
     )
     if not dry_run:
         _save_subfloor_state(free)
+    return True
+
+
+def _guard_apply_argv() -> list[str]:
+    """The exact detached-launch argv for the sub-floor reclaim arm (#1392):
+    VM-root only (``--no-data-disk`` — the data disk stays escalate-only,
+    #681), threshold gate bypassed (``--ignore-threshold`` — the watcher's
+    free-bytes decision IS the trigger), still-over telegram pushes suppressed
+    (``--no-push`` — ~38 pushes/day at 30-min cadence on a stuck-over day
+    otherwise; the cron's 6-hourly push + deduped tier escalations remain the
+    human channels)."""
+    return [
+        sys.executable,
+        str(PROJECT_ROOT / "scripts" / "vm_disk_guard.py"),
+        "--apply",
+        "--ignore-threshold",
+        "--no-push",
+        "--no-data-disk",
+    ]
+
+
+def _launch_guard_apply(log_path: Path) -> int:
+    """Detached ``vm_disk_guard.py --apply`` launch; returns the child pid.
+
+    Split out as a module-level seam so tests stub it (a real launch from a
+    test would sweep the live VM — see the #1392 autouse guard in
+    tests/conftest.py). ``start_new_session=True`` detaches the guard from
+    the watcher tick's kill domain (a triggered run measures 6-10 min vs the
+    10-min tick). Output appends to the cron's own dated log file so there is
+    ONE audit trail (the guard's single-flight apply lock prevents
+    interleaved concurrent writers)."""
+    cmd = _guard_apply_argv()
+    log_path.parent.mkdir(parents=True, exist_ok=True)
+    with open(log_path, "a") as fh:
+        p = subprocess.Popen(
+            cmd,
+            cwd=PROJECT_ROOT,
+            stdout=fh,
+            stderr=subprocess.STDOUT,
+            stdin=subprocess.DEVNULL,
+            start_new_session=True,
+        )
+        fh.write(
+            f"=== {datetime.now(tz=UTC).isoformat()} vm_disk_guard launched "
+            f"detached (trigger=watch-subfloor pid={p.pid}) ===\n"
+        )
+    return p.pid
+
+
+def subfloor_reclaim_pass(
+    dry_run: bool, free_bytes: int | None = None, now: float | None = None
+) -> bool:
+    """Sub-floor RECLAIM arm (#1392) — the remediation sibling of
+    :func:`subfloor_sentinel_pass`.
+
+    When VM-root free space is below :data:`VM_DISK_SUBFLOOR_FREE_BYTES`,
+    launch the guard's existing tiered safe cleanup DETACHED
+    (``vm_disk_guard.py --apply``, argv per :func:`_guard_apply_argv`),
+    rate-limited to one launch per
+    :data:`VM_DISK_SUBFLOOR_RECLAIM_INTERVAL_S` (default 1800 s) via a
+    persistent ``last_run_ts`` (never cleared on recovery — the flap guard).
+    The tier CONTRACT is unchanged (#679: terminal-task caches only, active
+    tasks escalate-only, ``store/`` + ``eval_results/`` never touched) — this
+    arm only changes detection→reclaim LATENCY (≤6 h cron → ≤10 min tick;
+    2026-07-15 incident). Kill switch: ``EPM_DISABLE_SUBFLOOR_RECLAIM=1``.
+    Dry-run prints the would-launch argv and performs ZERO ``subprocess``
+    calls and ZERO writes (the #681 r3 smoke contract). Fail-soft: a launch
+    OR state-save failure (e.g. ENOSPC on a full ``/``) returns False and
+    never crashes :func:`vm_disk_pass`. Returns True when a launch happened
+    (or would have, under dry-run) this tick."""
+    if os.environ.get("EPM_DISABLE_SUBFLOOR_RECLAIM", "").strip() == "1":
+        return False
+    now = now if now is not None else time.time()
+    free = free_bytes if free_bytes is not None else _root_disk_headroom()
+    if free is None:
+        return False
+    state = _load_subfloor_reclaim_state()
+    last_run_ts = state.get("last_run_ts")
+    last_run_ts = last_run_ts if isinstance(last_run_ts, int | float) else None
+    if not decide_subfloor_reclaim(free, last_run_ts, now):
+        return False
+    log_path = PROJECT_ROOT / "logs" / "vm_disk_guard" / f"{datetime.now(tz=UTC):%Y-%m-%d}.log"
+    if dry_run:
+        print(f"  [dry-run] would launch: {' '.join(_guard_apply_argv())}")
+        return True
+    try:
+        pid = _launch_guard_apply(log_path)
+        # The state save rides the SAME fail-soft guard as the launch (#1392
+        # concern 1): on a 100%-full / an ENOSPC here returns False cleanly.
+        _save_subfloor_reclaim_state({"last_run_ts": now, "pid": pid})
+    except (OSError, subprocess.SubprocessError) as exc:
+        print(
+            f"  vm-disk subfloor-reclaim: guard --apply launch failed (fail-soft): {exc}",
+            file=sys.stderr,
+        )
+        return False
+    free_gib = free / 2**30
+    _append_disk_guard_sidecar(
+        {
+            "kind": "vm-disk-subfloor-reclaim",
+            "band": "sub-floor",
+            "action": "guard-apply-launched",
+            "free_bytes": free,
+            "free_gib": round(free_gib, 1),
+            "pid": pid,
+            "interval_s": VM_DISK_SUBFLOOR_RECLAIM_INTERVAL_S,
+            "log": str(log_path),
+        },
+        dry_run,
+    )
+    print(
+        f"vm-disk SUB-FLOOR: launched vm_disk_guard --apply (pid {pid}, ~6-10 min, log {log_path})",
+        file=sys.stderr,
+    )
     return True
 
 
@@ -19333,6 +19522,9 @@ def vm_disk_pass(dry_run: bool, now: float | None = None) -> None:
     # attributes the disk pressure to the largest per-issue caches on the
     # shared disk-guard sidecar — runs every tick, warn-only, never deletes.
     subfloor_sentinel_pass(dry_run, free_bytes=free)
+    # #1392: interim remediation leg — launch the guard's tiered safe cleanup
+    # DETACHED when below the sub-floor, rate-limited; tier contract unchanged.
+    subfloor_reclaim_pass(dry_run, free_bytes=free, now=now)
     state = _load_vm_disk_state()
     last_reclaim_ts = state.get("last_reclaim_ts")
     if not isinstance(last_reclaim_ts, int | float):
