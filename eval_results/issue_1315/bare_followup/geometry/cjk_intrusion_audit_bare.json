@@ -22,5 +22,5 @@
   "verdict": "convention-dependent: PASS as-scored and under intrusion-exclusion; FAIL under intrusion-zeroing",
   "source": "issue1315_impolite_geometry/raw_completions/parity/imp_bare_lora/rate_merged_parity/ @ 3bceee1b5f774d670a430a1cb0a42fa3454901fa (completions__trained__default.json joined with judge/trained_default/judge_raw.json all_scores; item = mean over 3 draws, positive > 50)"
  },
- "notes": "Bare context has no WildChat prefix, yet the temp-1.0 parity pool still carries 10% CJK intrusion - the intrusion tracks the trained organism at temperature, not the prompt prefix. All 300 judge draws parsed (0 content censored, 0 transport). Greedy capture substrate clean."
+ "notes": "Bare context has no WildChat prefix, yet the temp-1.0 parity pool still carries 10% CJK intrusion - the intrusion rides temperature-1.0 sampling, not the prompt prefix. All 300 judge draws parsed (0 content censored, 0 transport). Greedy capture substrate clean."
 }
