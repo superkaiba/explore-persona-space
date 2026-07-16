@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1420,
+  "highest_id": 1421,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -3286,6 +3286,13 @@
       "path": "tasks/completed/1420",
       "status": "completed",
       "title": "workflow-fix: semantic probe for absence-claim greps"
+    },
+    "1421": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1421",
+      "status": "proposed",
+      "title": "workflow-fix: Sample-slot disclosure-count check in verify_task_body"
     },
     "144": {
       "has_clean_result": false,
