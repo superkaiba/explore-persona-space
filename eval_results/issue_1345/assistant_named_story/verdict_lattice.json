@@ -1,0 +1,114 @@
+{
+  "metadata": {
+    "git_commit": "f90c434028bf4cf7a311ea788c645daa19112192",
+    "timestamp": "2026-07-16T16:03:57Z",
+    "seed": 0,
+    "n": 0,
+    "script": "scripts/issue1345_plots.py",
+    "pinned_parent_revision": "7159e5804d"
+  },
+  "margins": {
+    "same": 0.05,
+    "diff": 0.1
+  },
+  "per_model_arm": {
+    "instruct_prefix": {
+      "delta_1to2": -1980.3500468668594,
+      "delta_2to1": -16761.332739149624,
+      "delta_xfer": -9370.841393008242,
+      "delta_same": -9370.791393008243,
+      "delta_diff": -9370.741393008242,
+      "delta_reparam": 0.047275474926209385,
+      "delta_diff_ci": {
+        "mean": -9371.86506716349,
+        "ci_lo": -9499.906210058547,
+        "ci_hi": -9246.135816906004
+      },
+      "delta_diff_ci_wholly_below_0": true,
+      "verdict": "reparameterized",
+      "story": "N/A \u2014 not tested (per-model story yield floor, plan \u00a77)"
+    },
+    "instruct_context": {
+      "delta_1to2": -0.10458499973353463,
+      "delta_2to1": -0.10194470378447607,
+      "delta_xfer": -0.10326485175900535,
+      "delta_same": -0.05326485175900535,
+      "delta_diff": -0.003264851759005344,
+      "delta_reparam": 0.04479640672983465,
+      "delta_diff_ci": {
+        "mean": -0.003289716568123381,
+        "ci_lo": -0.005735491723276658,
+        "ci_hi": -0.0007530488464325723
+      },
+      "delta_diff_ci_wholly_below_0": true,
+      "verdict": "reparameterized",
+      "story": "N/A \u2014 not tested (per-model story yield floor, plan \u00a77)"
+    },
+    "base_prefix": {
+      "delta_1to2": -505.60622945923717,
+      "delta_2to1": -12237.85855403612,
+      "delta_xfer": -6371.732391747679,
+      "delta_same": -6371.682391747679,
+      "delta_diff": -6371.632391747678,
+      "delta_reparam": 0.04710028548520158,
+      "delta_diff_ci": {
+        "mean": -6371.701372818191,
+        "ci_lo": -6460.575701326318,
+        "ci_hi": -6285.335989662797
+      },
+      "delta_diff_ci_wholly_below_0": true,
+      "verdict": "reparameterized",
+      "story": "N/A \u2014 not tested (per-model story yield floor, plan \u00a77)"
+    },
+    "base_context": {
+      "delta_1to2": -0.4010941647109233,
+      "delta_2to1": -0.45952258016001857,
+      "delta_xfer": -0.43030837243547093,
+      "delta_same": -0.38030837243547094,
+      "delta_diff": -0.33030837243547095,
+      "delta_reparam": 0.05028238620026093,
+      "delta_diff_ci": {
+        "mean": -0.3304578490010538,
+        "ci_lo": -0.33668034989534734,
+        "ci_hi": -0.32453455423747557
+      },
+      "delta_diff_ci_wholly_below_0": true,
+      "verdict": "reparameterized",
+      "story": "N/A \u2014 not tested (per-model story yield floor, plan \u00a77)"
+    }
+  },
+  "story_yield": {
+    "instruct": {
+      "n_kept": 361,
+      "yield_ok": false,
+      "counts_main": {
+        "n_generated": 500,
+        "judge_pass": 280,
+        "judge_fail": 136,
+        "judge_malformed": 84,
+        "transport_loss": 0,
+        "parser_below_floor": 22,
+        "kept": 258
+      },
+      "story_regime": "halted (per-model yield floor)"
+    },
+    "pretrained": {
+      "n_kept": 96,
+      "yield_ok": false,
+      "counts_main": {
+        "n_generated": 500,
+        "judge_pass": 121,
+        "judge_fail": 306,
+        "judge_malformed": 73,
+        "transport_loss": 0,
+        "parser_below_floor": 64,
+        "kept": 57
+      },
+      "story_regime": "halted (per-model yield floor)"
+    }
+  },
+  "r3_halted_models": [
+    "instruct",
+    "pretrained"
+  ]
+}
