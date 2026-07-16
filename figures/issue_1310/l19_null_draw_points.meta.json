@@ -1,0 +1,2054 @@
+{
+  "commit": "bcf67e51f7",
+  "created": "2026-07-16T11:11:18Z",
+  "figsize": [
+    11.0,
+    4.4
+  ],
+  "points": [
+    {
+      "x": -0.1523885238359948,
+      "held-out R\u00b2 at layer 19": -0.11516067389862861,
+      "series": "shuffle-null draws (20)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.22641099850520374,
+      "held-out R\u00b2 at layer 19": -0.11557226616935212,
+      "series": "shuffle-null draws (20)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.27253973757446315,
+      "held-out R\u00b2 at layer 19": -0.11586301089575923,
+      "series": "shuffle-null draws (20)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.2774680286774485,
+      "held-out R\u00b2 at layer 19": -0.10967703367906245,
+      "series": "shuffle-null draws (20)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.11684471977722508,
+      "held-out R\u00b2 at layer 19": -0.09942406826404238,
+      "series": "shuffle-null draws (20)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.0967884756208113,
+      "held-out R\u00b2 at layer 19": -0.08940307793329616,
+      "series": "shuffle-null draws (20)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.15850222760533653,
+      "held-out R\u00b2 at layer 19": -0.07094800766384224,
+      "series": "shuffle-null draws (20)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.13373349330562592,
+      "held-out R\u00b2 at layer 19": -0.1217140356740718,
+      "series": "shuffle-null draws (20)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.17120520172057074,
+      "held-out R\u00b2 at layer 19": -0.11519507354690761,
+      "series": "shuffle-null draws (20)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.09228939936438593,
+      "held-out R\u00b2 at layer 19": -0.113812458814746,
+      "series": "shuffle-null draws (20)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.11632392348909912,
+      "held-out R\u00b2 at layer 19": -0.11563617675056159,
+      "series": "shuffle-null draws (20)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.2802479183656981,
+      "held-out R\u00b2 at layer 19": -0.11769733703701801,
+      "series": "shuffle-null draws (20)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.107947297839946,
+      "held-out R\u00b2 at layer 19": -0.11455471611845258,
+      "series": "shuffle-null draws (20)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.2740291480184184,
+      "held-out R\u00b2 at layer 19": -0.11137029649225849,
+      "series": "shuffle-null draws (20)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.13370146199972327,
+      "held-out R\u00b2 at layer 19": -0.11023772224905715,
+      "series": "shuffle-null draws (20)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.2453878268865241,
+      "held-out R\u00b2 at layer 19": -0.11260141107560107,
+      "series": "shuffle-null draws (20)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.10678312925426287,
+      "held-out R\u00b2 at layer 19": -0.10563708788623738,
+      "series": "shuffle-null draws (20)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.1716414179977831,
+      "held-out R\u00b2 at layer 19": -0.11046694830373349,
+      "series": "shuffle-null draws (20)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.22037808286766322,
+      "held-out R\u00b2 at layer 19": -0.09854931177793214,
+      "series": "shuffle-null draws (20)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.19558625620655207,
+      "held-out R\u00b2 at layer 19": -0.1135715137309683,
+      "series": "shuffle-null draws (20)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.18,
+      "held-out R\u00b2 at layer 19": 0.13693937179566107,
+      "series": "observed \u2014 script-format scenes",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.7249092457029254,
+      "held-out R\u00b2 at layer 19": -0.12511029571718635,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.7442555085423121,
+      "held-out R\u00b2 at layer 19": -0.1174701487960148,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.854397882002236,
+      "held-out R\u00b2 at layer 19": -0.1329244409544208,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.8496734055333689,
+      "held-out R\u00b2 at layer 19": -0.1250621870107751,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.8432616384746209,
+      "held-out R\u00b2 at layer 19": -0.1286868111803816,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.7965493949391957,
+      "held-out R\u00b2 at layer 19": -0.12911250187171697,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.920237523055105,
+      "held-out R\u00b2 at layer 19": -0.1297346153047536,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.9169364042972881,
+      "held-out R\u00b2 at layer 19": -0.13244335472722213,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.8574052640713081,
+      "held-out R\u00b2 at layer 19": -0.12171506535656196,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.8503325900955918,
+      "held-out R\u00b2 at layer 19": -0.13216134278255298,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.8579908608831016,
+      "held-out R\u00b2 at layer 19": -0.13216329899184998,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.7976065590741874,
+      "held-out R\u00b2 at layer 19": -0.12757988414915533,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.7464354554125181,
+      "held-out R\u00b2 at layer 19": -0.12975189702603562,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.8646520493831269,
+      "held-out R\u00b2 at layer 19": -0.12628953537428744,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.8251114314111064,
+      "held-out R\u00b2 at layer 19": -0.1294834274579577,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.7817447621126855,
+      "held-out R\u00b2 at layer 19": -0.12772092303515414,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.8171444083404887,
+      "held-out R\u00b2 at layer 19": -0.13257698810772856,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.8985207474047585,
+      "held-out R\u00b2 at layer 19": -0.12927120226926192,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.90750317281678,
+      "held-out R\u00b2 at layer 19": -0.12133000086006329,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.7913315116565486,
+      "held-out R\u00b2 at layer 19": -0.12243499369660515,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.8200000000000001,
+      "held-out R\u00b2 at layer 19": 0.14833382865515465,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.83442041387512,
+      "held-out R\u00b2 at layer 19": -0.05962589198749879,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.78408886924091,
+      "held-out R\u00b2 at layer 19": -0.064371293643118,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.839010886088259,
+      "held-out R\u00b2 at layer 19": -0.05828362152419109,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.7873229030622382,
+      "held-out R\u00b2 at layer 19": -0.058756638642625925,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.7981503905064773,
+      "held-out R\u00b2 at layer 19": -0.05556012587861603,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.8986793093641663,
+      "held-out R\u00b2 at layer 19": -0.06456528375216641,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.7649949708563295,
+      "held-out R\u00b2 at layer 19": -0.06167868270346566,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.8448345283687062,
+      "held-out R\u00b2 at layer 19": -0.0635650682159492,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.7361374932662088,
+      "held-out R\u00b2 at layer 19": -0.05905560262727372,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.887061060166925,
+      "held-out R\u00b2 at layer 19": -0.05785404191244181,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.8778790187897187,
+      "held-out R\u00b2 at layer 19": -0.06204963861550805,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.7674568797073793,
+      "held-out R\u00b2 at layer 19": -0.05486009489937316,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.895899220931438,
+      "held-out R\u00b2 at layer 19": -0.04823887642115965,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.7310073158167272,
+      "held-out R\u00b2 at layer 19": -0.05604557710224323,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.7869611994060053,
+      "held-out R\u00b2 at layer 19": -0.0614428654852206,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.7494963405259996,
+      "held-out R\u00b2 at layer 19": -0.06435785135589889,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.8099884163164963,
+      "held-out R\u00b2 at layer 19": -0.061704974007431135,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.8797389728899185,
+      "held-out R\u00b2 at layer 19": -0.06555329988219705,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.7656974693331395,
+      "held-out R\u00b2 at layer 19": -0.058962901053620786,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.729687494294585,
+      "held-out R\u00b2 at layer 19": -0.05941905709653961,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.82,
+      "held-out R\u00b2 at layer 19": 0.14675437757324383,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 2.80075765090802,
+      "held-out R\u00b2 at layer 19": -0.058499570753177466,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.759220229773066,
+      "held-out R\u00b2 at layer 19": -0.06464651799689092,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.737495813996815,
+      "held-out R\u00b2 at layer 19": -0.05859957142039551,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.836195009014949,
+      "held-out R\u00b2 at layer 19": -0.05846098073478179,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.7794171403762946,
+      "held-out R\u00b2 at layer 19": -0.05616215109254852,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.854674167396002,
+      "held-out R\u00b2 at layer 19": -0.060186697779801124,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.7594223135039915,
+      "held-out R\u00b2 at layer 19": -0.06277424538734411,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.90913000307811,
+      "held-out R\u00b2 at layer 19": -0.060348248159561635,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.792806209918157,
+      "held-out R\u00b2 at layer 19": -0.06280068625768953,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.7404678483613583,
+      "held-out R\u00b2 at layer 19": -0.05782734147337165,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.8460282033504054,
+      "held-out R\u00b2 at layer 19": -0.06191588880311172,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.906114357898482,
+      "held-out R\u00b2 at layer 19": -0.06152237507897196,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.807980034390702,
+      "held-out R\u00b2 at layer 19": -0.05672615241516521,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.9116454435280525,
+      "held-out R\u00b2 at layer 19": -0.05642129862807166,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.8199789960394295,
+      "held-out R\u00b2 at layer 19": -0.05830954846289216,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.8049260907695737,
+      "held-out R\u00b2 at layer 19": -0.06295500170697621,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.8442350319263,
+      "held-out R\u00b2 at layer 19": -0.06011661655189493,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.919811455455441,
+      "held-out R\u00b2 at layer 19": -0.06108872081162664,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.9105070448674533,
+      "held-out R\u00b2 at layer 19": -0.0617351051256414,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.8119451000847135,
+      "held-out R\u00b2 at layer 19": -0.06209465635264988,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.82,
+      "held-out R\u00b2 at layer 19": 0.10591178096036746,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 0.23195813521415154,
+      "held-out R\u00b2 at layer 19": -0.038895415950150225,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 0.17948041541030396,
+      "held-out R\u00b2 at layer 19": -0.03422885896967531,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 0.1859093314956689,
+      "held-out R\u00b2 at layer 19": -0.035341161136642096,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 0.23761439726390357,
+      "held-out R\u00b2 at layer 19": -0.03225743149492777,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 0.16279461923010324,
+      "held-out R\u00b2 at layer 19": -0.03172370574057548,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 0.22727188807260784,
+      "held-out R\u00b2 at layer 19": -0.03476781261159778,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 0.22256640420273358,
+      "held-out R\u00b2 at layer 19": -0.03413298375351759,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 0.26710323282125703,
+      "held-out R\u00b2 at layer 19": -0.03313215003945458,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 0.10237041886943048,
+      "held-out R\u00b2 at layer 19": -0.03624717517133136,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 0.22616944760258398,
+      "held-out R\u00b2 at layer 19": -0.03790713863667894,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 0.26616866401071126,
+      "held-out R\u00b2 at layer 19": -0.037952564846852166,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 0.27433391988880873,
+      "held-out R\u00b2 at layer 19": -0.03377214395682748,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 0.08216479108101844,
+      "held-out R\u00b2 at layer 19": -0.039365992848183984,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 0.25330984219350805,
+      "held-out R\u00b2 at layer 19": -0.03144468391301469,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 0.277008920077375,
+      "held-out R\u00b2 at layer 19": -0.03513514708626175,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 0.2721735722095703,
+      "held-out R\u00b2 at layer 19": -0.033011471642790724,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 0.10919082486607157,
+      "held-out R\u00b2 at layer 19": -0.03461329604428043,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 0.27528196886670775,
+      "held-out R\u00b2 at layer 19": -0.03489967612400946,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 0.258611008033257,
+      "held-out R\u00b2 at layer 19": -0.03479455692960398,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 0.24499056363268298,
+      "held-out R\u00b2 at layer 19": -0.03338338175517497,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 0.18,
+      "held-out R\u00b2 at layer 19": 0.11397294300939353,
+      "series": "observed \u2014 prefill turns",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 1.1759655654396588,
+      "held-out R\u00b2 at layer 19": -0.034437856299329495,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 1.1260463805992835,
+      "held-out R\u00b2 at layer 19": -0.036508952097877856,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 1.2408591246696108,
+      "held-out R\u00b2 at layer 19": -0.032106109182135745,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 1.2653836802123475,
+      "held-out R\u00b2 at layer 19": -0.03610537687796289,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 1.1328518628941262,
+      "held-out R\u00b2 at layer 19": -0.03350448529726524,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 1.1878491765766328,
+      "held-out R\u00b2 at layer 19": -0.03442218127528185,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 1.1684589703212656,
+      "held-out R\u00b2 at layer 19": -0.03882722990479692,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 1.2668930909018008,
+      "held-out R\u00b2 at layer 19": -0.03524502484518677,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 1.0873669593755884,
+      "held-out R\u00b2 at layer 19": -0.034078517921517726,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 1.2267724490443626,
+      "held-out R\u00b2 at layer 19": -0.03378218089112184,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 1.2030576465849177,
+      "held-out R\u00b2 at layer 19": -0.03433165317354758,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 1.0849184576068858,
+      "held-out R\u00b2 at layer 19": -0.03512679142113173,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 1.2241947062018708,
+      "held-out R\u00b2 at layer 19": -0.03427084861679597,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 1.082423932671952,
+      "held-out R\u00b2 at layer 19": -0.03512182949618459,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 1.232002922075056,
+      "held-out R\u00b2 at layer 19": -0.03563187523335998,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 1.182572158609635,
+      "held-out R\u00b2 at layer 19": -0.033608830208094576,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 1.2665074109126764,
+      "held-out R\u00b2 at layer 19": -0.03139442630304945,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 1.0925222313395735,
+      "held-out R\u00b2 at layer 19": -0.03508813610103778,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 1.2488095635698564,
+      "held-out R\u00b2 at layer 19": -0.035147433522638494,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 1.0926447057674475,
+      "held-out R\u00b2 at layer 19": -0.03155460270383359,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 1.18,
+      "held-out R\u00b2 at layer 19": 0.058228394706520636,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 2.148612891726912,
+      "held-out R\u00b2 at layer 19": -0.03779635982537233,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 2.165948224360683,
+      "held-out R\u00b2 at layer 19": -0.03540320748927295,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 2.2739581154860686,
+      "held-out R\u00b2 at layer 19": -0.03614883549090164,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 2.192545939393257,
+      "held-out R\u00b2 at layer 19": -0.03415517447758254,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 2.13138710198326,
+      "held-out R\u00b2 at layer 19": -0.03365580328210527,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 2.12792182396142,
+      "held-out R\u00b2 at layer 19": -0.03378368154885791,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 2.258244653444891,
+      "held-out R\u00b2 at layer 19": -0.03608746573832211,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 2.124735276768933,
+      "held-out R\u00b2 at layer 19": -0.034299511553283146,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 2.1043102286963933,
+      "held-out R\u00b2 at layer 19": -0.034404908965733894,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 2.137327480612728,
+      "held-out R\u00b2 at layer 19": -0.030352064185012573,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 2.197362409866247,
+      "held-out R\u00b2 at layer 19": -0.03618253371346403,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 2.190904645238131,
+      "held-out R\u00b2 at layer 19": -0.035724572150548806,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 2.242437692424016,
+      "held-out R\u00b2 at layer 19": -0.0352993517216138,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 2.192191951924447,
+      "held-out R\u00b2 at layer 19": -0.0338452687821027,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 2.137345716829332,
+      "held-out R\u00b2 at layer 19": -0.035487766913371965,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 2.162439902684468,
+      "held-out R\u00b2 at layer 19": -0.03313008369627424,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 2.2441331877477357,
+      "held-out R\u00b2 at layer 19": -0.036730052672983016,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 2.2055037028238225,
+      "held-out R\u00b2 at layer 19": -0.035281152581803976,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 2.2725500527678046,
+      "held-out R\u00b2 at layer 19": -0.03591440049301298,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 2.153671929276083,
+      "held-out R\u00b2 at layer 19": -0.03286105978305831,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 2.18,
+      "held-out R\u00b2 at layer 19": 0.1504645556142351,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 3.1906064805210916,
+      "held-out R\u00b2 at layer 19": -0.03515960898916015,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 3.198935119045215,
+      "held-out R\u00b2 at layer 19": -0.034698308328903193,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 3.250215507588252,
+      "held-out R\u00b2 at layer 19": -0.03277314761874206,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 3.1085274652984047,
+      "held-out R\u00b2 at layer 19": -0.034542201141814166,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 3.1611524838884226,
+      "held-out R\u00b2 at layer 19": -0.03538579215524695,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 3.262647726671119,
+      "held-out R\u00b2 at layer 19": -0.03202280268735391,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 3.08788228473535,
+      "held-out R\u00b2 at layer 19": -0.0345637124424234,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 3.2450575860845907,
+      "held-out R\u00b2 at layer 19": -0.03528884869421134,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 3.162941421934039,
+      "held-out R\u00b2 at layer 19": -0.03513209429677189,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 3.2464884834320658,
+      "held-out R\u00b2 at layer 19": -0.036122357546817474,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 3.0812068394587504,
+      "held-out R\u00b2 at layer 19": -0.034032139302533126,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 3.1527933054040673,
+      "held-out R\u00b2 at layer 19": -0.03719343004176978,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 3.0950518154925932,
+      "held-out R\u00b2 at layer 19": -0.03415218965569822,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 3.2107670985894665,
+      "held-out R\u00b2 at layer 19": -0.03404688150796553,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 3.134407978277671,
+      "held-out R\u00b2 at layer 19": -0.0338305613141463,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 3.220854657445013,
+      "held-out R\u00b2 at layer 19": -0.03690991870026661,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 3.2694703676715258,
+      "held-out R\u00b2 at layer 19": -0.03372581680430309,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 3.104766327815868,
+      "held-out R\u00b2 at layer 19": -0.033570458582740326,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 3.2535393043527963,
+      "held-out R\u00b2 at layer 19": -0.03449592956122749,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 3.0911879729626284,
+      "held-out R\u00b2 at layer 19": -0.031798736122128135,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 3.18,
+      "held-out R\u00b2 at layer 19": -0.020988763611865746,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": -0.20403666552452468,
+      "y": -0.1128908122505945,
+      "series": "shuffle-null draws (20)",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": -0.19415754926639894,
+      "y": -0.11722227965849541,
+      "series": "shuffle-null draws (20)",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": -0.18224793135837358,
+      "y": -0.12289713221467058,
+      "series": "shuffle-null draws (20)",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": -0.08394519589769342,
+      "y": -0.11892104729320674,
+      "series": "shuffle-null draws (20)",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": -0.1244206564786714,
+      "y": -0.13363965596958005,
+      "series": "shuffle-null draws (20)",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": -0.218534355675797,
+      "y": -0.10811531811726316,
+      "series": "shuffle-null draws (20)",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": -0.2264009040430387,
+      "y": -0.11883063884309708,
+      "series": "shuffle-null draws (20)",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": -0.10679496683543352,
+      "y": -0.109442093225957,
+      "series": "shuffle-null draws (20)",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": -0.10312847397608171,
+      "y": -0.11124138986954657,
+      "series": "shuffle-null draws (20)",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": -0.17784156848240112,
+      "y": -0.1082521643448946,
+      "series": "shuffle-null draws (20)",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": -0.21138998063799525,
+      "y": -0.10745916972688363,
+      "series": "shuffle-null draws (20)",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": -0.08022466261075897,
+      "y": -0.11358361901814629,
+      "series": "shuffle-null draws (20)",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": -0.21710578125387164,
+      "y": -0.10862204212787563,
+      "series": "shuffle-null draws (20)",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": -0.243965184408405,
+      "y": -0.11310388033238339,
+      "series": "shuffle-null draws (20)",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": -0.10337221874509953,
+      "y": -0.10999295563906375,
+      "series": "shuffle-null draws (20)",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": -0.11703318374077118,
+      "y": -0.10709366245671648,
+      "series": "shuffle-null draws (20)",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": -0.14615349583681558,
+      "y": -0.11327394308340022,
+      "series": "shuffle-null draws (20)",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": -0.0875838118335649,
+      "y": -0.10982594157803605,
+      "series": "shuffle-null draws (20)",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": -0.09417594123357317,
+      "y": -0.11770174705102598,
+      "series": "shuffle-null draws (20)",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": -0.12995310173436636,
+      "y": -0.10925035670556626,
+      "series": "shuffle-null draws (20)",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": -0.18,
+      "y": 0.2345354825988013,
+      "series": "observed \u2014 script-format scenes",
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 0.8927174041648118,
+      "y": -0.23590641506600618,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.7690247828489369,
+      "y": -0.22263226661084246,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.747675305871248,
+      "y": -0.22953968315372064,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.8542844688218911,
+      "y": -0.2283018603332263,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.8632670969895982,
+      "y": -0.23066772580126216,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.7528778704425061,
+      "y": -0.2241021579430842,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.7989443462579431,
+      "y": -0.22408355417343961,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.9027075624691567,
+      "y": -0.2303423969816334,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.832378394738125,
+      "y": -0.22653847202969857,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.8357925204491367,
+      "y": -0.24032769478664706,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.7583365622147841,
+      "y": -0.22191014783999452,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.8252460853213637,
+      "y": -0.22772285167746742,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.824724441042816,
+      "y": -0.2319732019353482,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.7371294250736485,
+      "y": -0.21490523483154367,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.917159646934344,
+      "y": -0.2276372258618582,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.8343933530518842,
+      "y": -0.22165011460291817,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.720492030745125,
+      "y": -0.2196094606625385,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.8749660789670384,
+      "y": -0.2206905527592209,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.9164183679101734,
+      "y": -0.22637718168373122,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.8381177977095037,
+      "y": -0.23260964743536983,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.8200000000000001,
+      "y": 0.2526988818756506,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "x": 1.7836478178745854,
+      "y": -0.10271323719249792,
+      "label": "not run",
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 1.7570015554907215,
+      "y": -0.09991076362214923,
+      "label": "not run",
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 1.854781369397641,
+      "y": -0.09611006809194911,
+      "label": "not run",
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 1.7585336515288919,
+      "y": -0.10874147217849561,
+      "label": "not run",
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 1.8356618791316004,
+      "y": -0.10662791637556746,
+      "label": "not run",
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 1.8406114179581325,
+      "y": -0.10518737364655051,
+      "label": "not run",
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 1.9132244955738753,
+      "y": -0.10232990145947696,
+      "label": "not run",
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 1.7337686775308232,
+      "y": -0.10218489850341306,
+      "label": "not run",
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 1.8199945212495776,
+      "y": -0.10650895396012539,
+      "label": "not run",
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 1.8692100518233818,
+      "y": -0.10939548101605712,
+      "label": "not run",
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 1.7549289108796913,
+      "y": -0.09826253107802918,
+      "label": "not run",
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 1.7974342531277592,
+      "y": -0.09894154251777798,
+      "label": "not run",
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 1.7318797324885222,
+      "y": -0.1037864601573868,
+      "label": "not run",
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 1.8655375821371967,
+      "y": -0.1069491272486427,
+      "label": "not run",
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 1.7368940059707125,
+      "y": -0.09796291436743054,
+      "label": "not run",
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 1.7988504884049663,
+      "y": -0.10934449261781354,
+      "label": "not run",
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 1.8953021624339397,
+      "y": -0.10228438893236458,
+      "label": "not run",
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 1.8144157478888023,
+      "y": -0.10715923814721462,
+      "label": "not run",
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 1.9031845818220026,
+      "y": -0.10156046852536571,
+      "label": "not run",
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 1.8736088909361568,
+      "y": -0.1032986210371949,
+      "label": "not run",
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 1.82,
+      "y": 0.18824974025372598,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "x": 0.263729310358532,
+      "y": -0.026420730349205,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 0.10488444662425951,
+      "y": -0.025998503412968832,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 0.09403028171465541,
+      "y": -0.028554421360488247,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 0.09337777271955436,
+      "y": -0.02938140664560085,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 0.2543610257404196,
+      "y": -0.028246883530045785,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 0.20702850783644455,
+      "y": -0.025478108170259084,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 0.17930885346984876,
+      "y": -0.029384221317011017,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 0.11217035270521042,
+      "y": -0.025833644151992408,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 0.21502466104581835,
+      "y": -0.029790036699038014,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 0.14331230538971287,
+      "y": -0.029304521004370754,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 0.2225133804344145,
+      "y": -0.02714246408205301,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 0.17200763429965266,
+      "y": -0.0260081338227649,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 0.18150592388577666,
+      "y": -0.02918340251990581,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 0.23839661166390985,
+      "y": -0.029169455541982137,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 0.09789748786551355,
+      "y": -0.02773810897104667,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 0.1958777142700181,
+      "y": -0.027528026100509972,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 0.11896256537484709,
+      "y": -0.027135928276329935,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 0.24212036916561533,
+      "y": -0.027870945577611828,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 0.17775136088365878,
+      "y": -0.02715820828621407,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 0.2785209792069524,
+      "y": -0.026760552398080062,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 0.18,
+      "y": -0.17826416355020092,
+      "series": "observed \u2014 prefill turns",
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "x": 1.116081374254625,
+      "y": -0.02406803448854067,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 1.2733446586490522,
+      "y": -0.02779839746636692,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 1.2406648745802955,
+      "y": -0.029158874913618904,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 1.176222116109574,
+      "y": -0.027667709365776005,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 1.2432084673386146,
+      "y": -0.02736980631885122,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 1.200734339296609,
+      "y": -0.02673861041216008,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 1.2112724065006621,
+      "y": -0.028792599157800414,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 1.2634000577618096,
+      "y": -0.029976571667516216,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 1.0923585159485163,
+      "y": -0.025966040568642823,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 1.2475336219180135,
+      "y": -0.026013180732765484,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 1.1561738596411937,
+      "y": -0.026251375374082064,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 1.1448299962059019,
+      "y": -0.028724630842330345,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 1.2795957970759329,
+      "y": -0.027663625417154947,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 1.2366880052185978,
+      "y": -0.030359209243565166,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 1.177083883977965,
+      "y": -0.029149552743877427,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 1.164401884719236,
+      "y": -0.027555097303749276,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 1.256109827423754,
+      "y": -0.024219154851393476,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 1.0967018782385225,
+      "y": -0.02669393976943346,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 1.2220172213938354,
+      "y": -0.02391359553754513,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 1.2382935721389574,
+      "y": -0.025296162926952803,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 1.18,
+      "y": -0.09958659796428537,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.240317990150769,
+      "y": -0.029538899146635433,
+      "label": "not run",
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": 2.14417300370755,
+      "y": -0.02672923216867784,
+      "label": "not run",
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": 2.239802459241605,
+      "y": -0.027265451883534464,
+      "label": "not run",
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": 2.1246262138821344,
+      "y": -0.02723649754088764,
+      "label": "not run",
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": 2.1522412828176893,
+      "y": -0.02761162776526116,
+      "label": "not run",
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": 2.163357539420403,
+      "y": -0.029523331387607987,
+      "label": "not run",
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": 2.1883482526998415,
+      "y": -0.028620357665766205,
+      "label": "not run",
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": 2.1019029149729764,
+      "y": -0.027091381572332374,
+      "label": "not run",
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": 2.1612406766088843,
+      "y": -0.02568695998128434,
+      "label": "not run",
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": 2.079260619125556,
+      "y": -0.030614002557829423,
+      "label": "not run",
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": 2.2292671544316356,
+      "y": -0.030349573586423872,
+      "label": "not run",
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": 2.250938183906426,
+      "y": -0.02867003532275625,
+      "label": "not run",
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": 2.107208626510632,
+      "y": -0.02762515549711786,
+      "label": "not run",
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": 2.2210832110841867,
+      "y": -0.028735326314493825,
+      "label": "not run",
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": 2.244734382620359,
+      "y": -0.027127598798068808,
+      "label": "not run",
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": 2.277136589890954,
+      "y": -0.02830609950031926,
+      "label": "not run",
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": 2.2493081773735355,
+      "y": -0.025015490919548355,
+      "label": "not run",
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": 2.1646998674655133,
+      "y": -0.02795790060369674,
+      "label": "not run",
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": 2.276705243635547,
+      "y": -0.029492750540075052,
+      "label": "not run",
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": 2.275555256018235,
+      "y": -0.03138832038693762,
+      "label": "not run",
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": 2.18,
+      "y": -0.18876177288934248,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "x": 3.180741279006837,
+      "y": -0.030109935918540387,
+      "label": "not run",
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 3.2310948221785156,
+      "y": -0.027085425190112256,
+      "label": "not run",
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 3.26342967380291,
+      "y": -0.029413814373630442,
+      "label": "not run",
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 3.175191249708901,
+      "y": -0.03186684654569705,
+      "label": "not run",
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 3.2533393062051723,
+      "y": -0.03066787416423411,
+      "label": "not run",
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 3.2206362229180736,
+      "y": -0.028789579193635007,
+      "label": "not run",
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 3.138455130004471,
+      "y": -0.03181846056474669,
+      "label": "not run",
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 3.2339586976286685,
+      "y": -0.028455857743695967,
+      "label": "not run",
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 3.194250052829275,
+      "y": -0.030783292601047618,
+      "label": "not run",
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 3.098119182932155,
+      "y": -0.031076668961042664,
+      "label": "not run",
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 3.1581022939430206,
+      "y": -0.030475648534334043,
+      "label": "not run",
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 3.0940661883009977,
+      "y": -0.029140931360494005,
+      "label": "not run",
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 3.1751952597845463,
+      "y": -0.02983894258883346,
+      "label": "not run",
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 3.1655935850016137,
+      "y": -0.029319086389116178,
+      "label": "not run",
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 3.1646254685028423,
+      "y": -0.03136118423952183,
+      "label": "not run",
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 3.1973981512839025,
+      "y": -0.02908219496499176,
+      "label": "not run",
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 3.1039344370914965,
+      "y": -0.027272147921904466,
+      "label": "not run",
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 3.2674478122473,
+      "y": -0.02842508843824576,
+      "label": "not run",
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 3.217104570331927,
+      "y": -0.029540732789439472,
+      "label": "not run",
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 3.245274321851983,
+      "y": -0.030901580887886082,
+      "label": "not run",
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 3.18,
+      "y": -0.17615306808991282,
+      "label": "not run",
+      "_kind": "scatter",
+      "_group": 29
+    }
+  ],
+  "n_series": 30,
+  "total_points": 315,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Qwen2.5-7B (base)",
+        "ylabel": "held-out R\u00b2 at layer 19",
+        "legend_labels": [
+          "shuffle-null draws (20)",
+          "observed \u2014 script-format scenes",
+          "observed \u2014 prefill turns"
+        ],
+        "xticklabels": [
+          "Wren (helpful)",
+          "HELIOS (ship AI)",
+          "Dana (ordinary)",
+          "Vex (villain)"
+        ],
+        "yticklabels": [
+          "\u22120.3",
+          "\u22120.2",
+          "\u22120.1",
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3"
+        ]
+      },
+      {
+        "title_left": "Qwen2.5-7B-Instruct",
+        "annotations": [
+          "not run"
+        ],
+        "xticklabels": [
+          "Wren (helpful)",
+          "HELIOS (ship AI)",
+          "Dana (ordinary)",
+          "Vex (villain)"
+        ]
+      }
+    ],
+    "series": [
+      "shuffle-null draws (20)",
+      "observed \u2014 script-format scenes",
+      "observed \u2014 prefill turns"
+    ]
+  }
+}
