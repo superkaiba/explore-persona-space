@@ -502,13 +502,13 @@ def run_gc(args: argparse.Namespace) -> None:
         raise SystemExit(
             f"[G-C] FAIL for {args.model}: {verdict['n_fail']}/{verdict['n_gating']} gating "
             f"turns outside the refit bootstrap CI "
-            f"({verdict['n_nongating']}/{verdict['n_turns']} degenerate-CI turns non-gating; "
-            f"PASS requires zero gating failures and >=1 gating cell) — pipeline defect "
-            f"(id-identical panel), headline blocked"
+            f"({verdict['n_nongating']}/{verdict['n_turns']} rank-space degenerate turns "
+            f"non-gating; PASS requires zero gating failures and >=1 gating cell) — pipeline "
+            f"defect (id-identical panel), headline blocked"
         )
     logger.info(
         "[G-C] PASS %s: %d gating turns reproduce round-10 within CI "
-        "(%d degenerate-CI turns non-gating)",
+        "(%d rank-space degenerate turns non-gating)",
         args.model,
         verdict["n_gating"],
         verdict["n_nongating"],
