@@ -575,8 +575,8 @@
       "goal": "Measure how the #779 context\u2192answer mapping and its answer-side activations change with decoding regime \u2014 single greedy (temperature 0) vs single stochastic (temp 1.0, top_p 0.95, seed 42) vs 10-rollout-averaged, everything else held at the #779 recipe, in BOTH prefix-based and context-based mapping arms \u2014 to test whether single-greedy targets are an adequate stand-in for rollout-averaged ones (theory plan C11/C12).",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/awaiting_promotion/1073",
-      "status": "awaiting_promotion",
+      "path": "tasks/completed/1073",
+      "status": "completed",
       "title": "A single greedy answer is an adequate stand-in for 10-rollout-averaged answer targets in the context\u2192answer map (MODERATE confidence)"
     },
     "1074": {
