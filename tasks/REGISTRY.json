@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1410,
+  "highest_id": 1411,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -3207,6 +3207,13 @@
       "path": "tasks/proposed/1410",
       "status": "proposed",
       "title": "daily-fix: gotchas /mnt/eps-data root not writable"
+    },
+    "1411": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1411",
+      "status": "proposed",
+      "title": "daily-fix: gotchas Edit tool un-escapes uXXXX"
     },
     "142": {
       "has_clean_result": true,
