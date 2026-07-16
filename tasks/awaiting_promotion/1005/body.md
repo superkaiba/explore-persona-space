@@ -3,7 +3,8 @@ title: 'The outsized chain-of-thought gain on in-context-learning and WildChat c
   is a context-family property, not a parse artifact: it survives template-forced
   scaffold compliance (MODERATE confidence)'
 kind: experiment
-tags: []
+tags:
+- followup-auto
 created_at: '2026-07-04T10:11:34Z'
 has_clean_result: true
 parent_id: 928
