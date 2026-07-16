@@ -3029,8 +3029,8 @@
     "1389": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1389",
-      "status": "running",
+      "path": "tasks/reviewing/1389",
+      "status": "reviewing",
       "title": "daily-fix: compose-time re-grep + staleness verify leg"
     },
     "139": {
