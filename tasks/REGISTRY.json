@@ -3318,8 +3318,8 @@
     "1425": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1425",
-      "status": "reviewing",
+      "path": "tasks/completed/1425",
+      "status": "completed",
       "title": "workflow-fix: gotchas.md download-side hf-xet xet_get wedge entry"
     },
     "1426": {
