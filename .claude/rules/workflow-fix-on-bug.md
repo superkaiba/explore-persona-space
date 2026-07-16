@@ -448,7 +448,26 @@ target is a mis-target, not evidence — re-grep repo-wide, correct
 real repo-wide grep sat beside a `target_file` with 0 hits for the claimed
 parse site; the true site was a sibling SKILL.md, found only by the spawned
 session's clarifier). An absence-of-guard claim is exempt from the mis-target
-rule — its 0-hit in-target result IS the evidence. (b) **relocation grep
+rule — its 0-hit in-target result IS the evidence — EXCEPT for the
+text-matching-guard subclass in (a'). (a') **semantic probe for
+text-matching guards** — an ABSENCE claim about a TEXT-MATCHING guard (an
+error-text substring list, a regex classifier, a transient-error predicate)
+is NOT satisfied by a verbatim-literal grep of the full claimed text alone:
+the functional fix routinely lands under a SHORTER substring than the full
+error text. Probe SEMANTICALLY — PREFER running the predicate/classifier
+against the claimed text where the guard is executable (e.g. the incident's
+own predicate: `_is_transient_upload_error(RuntimeError('<claimed text>'))`),
+with fragment/substring greps of the claimed text as the fallback, run
+REPO-WIDE (`grep -rn '<fragment>' src/ scripts/ .claude/`) so a guard landed
+in a sibling file is not missed — AND record a landed-fix history check on
+the target file (`git log --oneline --since='7 days ago' -- <target_file>`),
+because the dedup predicate (OPEN tasks only, by design) and the #1399
+recently-closed-sibling advisory (`workflow-fix:`/`daily-fix:` title
+prefixes only) are BOTH blind to an ordinary landed infra fix (#1386 filed +
+a session spawned ~9h after #1360 landed the shorter substring
+`'queue size reached'` in `orchestrate/hub.py` at merge `289ad17572`; the
+filer's verbatim grep for `'maximum queue size'` read 0 hits and was
+accepted as absence evidence). (b) **relocation grep
 before any nonexistence claim** — asserting a cited symbol / test / file
 nonexistent ("no longer exists") requires a recorded repo-wide relocation
 grep (`grep -rn '<symbol>' tests/ scripts/ .claude/ src/`); a single-path
@@ -733,6 +752,7 @@ homepage rendering of the fallback is unimplemented.)
 | File a body whose bug claim (call sites, site counts, paths) was never re-verified by grep at filing time (#1221/#1229/#1249: 3 stale-claim filings in 2 days, each burning a spawned session's verification rounds) | Run the grep at body-compose time; record `verified-at-filing: <cmd> → <hits>` (or `n/a — <reason>`) in `## Workflow gap` |
 | Record a real grep that does not BIND to the claim — a repo-wide pattern grep beside a named target_file with 0 hits for the claimed site (#1290), or a single-path probe backing a "no longer exists" claim (#1296) | State per-target hits for each file named in target_file (presence claim + 0-hit target ⇒ re-grep repo-wide, correct target_file, re-verify before filing); back any nonexistence claim with a recorded repo-wide relocation grep |
 | Bind a presence grep on hit COUNT alone when the hit's surrounding context already implements the proposed change (#1330 filed over the landed #1309 fix) | Read each presence-hit's surrounding lines before filing; a hit that IS the fix = already landed — dedup, don't file |
+| Accept a verbatim-literal 0-hit grep as absence evidence for a TEXT-MATCHING guard (#1386 filed+spawned ~9h after #1360 landed the shorter `'queue size reached'` substring; the grep searched the full `'maximum queue size'`) | Semantic probe (clause (a')): run the predicate against the claimed text and/or grep fragments/substrings of it repo-wide, PLUS `git log --oneline --since='7 days ago' -- <target_file>` for a just-landed fix — open-task dedup + the #1399 advisory are both blind to an ordinary landed infra fix |
 
 ## Composition with other rules
 

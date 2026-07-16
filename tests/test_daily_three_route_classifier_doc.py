@@ -404,3 +404,35 @@ def test_context_consistency_clause_present(daily_skill_text: str):
         "the #1383 context-binding sentence dropped from the daily "
         "route-2 verified-at-filing mandate paragraph"
     )
+
+
+def test_semantic_probe_absence_clause_present(daily_skill_text: str):
+    """#1420 pin: the semantic-probe clause (a') for ABSENCE claims about
+    text-matching guards survives — a verbatim-literal 0-hit grep alone is
+    not absence evidence; require running the predicate against the claimed
+    text and/or repo-wide fragment/substring greps, plus a landed-fix
+    history check (#1386 filed+spawned ~9h after #1360 landed the shorter
+    'queue size reached' substring in orchestrate/hub.py) — in the rule's
+    consistency-BINDS clause (a'), the daily route-2 mandate sentence, and
+    the workflow.yaml orchestrator_actions grep step."""
+    rule_text = (REPO_ROOT / ".claude" / "rules" / "workflow-fix-on-bug.md").read_text(
+        encoding="utf-8"
+    )
+    assert "semantic probe" in rule_text, (
+        "the #1420 semantic-probe clause (a') dropped from "
+        "workflow-fix-on-bug.md — a verbatim-literal 0-hit grep would again "
+        "count as absence evidence for a text-matching guard"
+    )
+    assert "--since='7 days ago'" in rule_text, (
+        "the #1420 landed-fix history check (git log --since) dropped from "
+        "workflow-fix-on-bug.md clause (a')"
+    )
+    assert "semantic probe" in daily_skill_text, (
+        "the #1420 semantic-probe sentence dropped from the daily route-2 "
+        "verified-at-filing mandate paragraph"
+    )
+    yaml_text = (REPO_ROOT / ".claude" / "workflow.yaml").read_text(encoding="utf-8")
+    assert "semantic probe" in yaml_text, (
+        "the #1420 semantic-probe clause dropped from the workflow.yaml "
+        "orchestrator_actions grep step"
+    )
