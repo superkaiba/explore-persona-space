@@ -32,6 +32,10 @@ This module distinguishes three runtime environments and configures
    ``OMP_NUM_THREADS`` at IMPORT time, so entrypoints must call
    ``load_dotenv()`` BEFORE importing torch/numpy for the cap to bind
    in-process (subprocesses are capped regardless via env inheritance).
+   The same shared-VM hook also redirects the heavy HF caches
+   (``HF_HUB_CACHE`` / ``HF_XET_CACHE``) onto the ``/mnt/eps-data`` data
+   disk (#1369) — ``HF_HOME`` itself is deliberately left at
+   ``~/.cache/huggingface`` (token file, datasets cache).
 
 The cluster check is FIRST because a SLURM allocation on a cluster that
 happens to mount a ``/workspace`` (vanishingly unlikely in practice, but
@@ -168,6 +172,56 @@ def _apply_shared_vm_thread_caps() -> None:
         os.environ.setdefault(key, str(cap))
 
 
+def _apply_shared_vm_hf_cache_redirect() -> None:
+    """setdefault HF_HUB_CACHE + HF_XET_CACHE onto the #681 data disk (shared VM only).
+
+    The boot disk ``/`` (485 GB) hit 100% twice on 2026-07-15 (#1073 -> #1369):
+    the HF hub cache (~97 GB) and the transient xet chunk cache (~11 GB during
+    prefix staging) both default under ``~/.cache/huggingface`` on ``/``.
+    Redirect BOTH heavy caches onto the existing user-owned data-disk cache
+    (``/mnt/eps-data/<user>/huggingface-cache/{hub,xet}`` — it already holds
+    the project data-repo dataset cache from prior manual redirects; HF
+    clients mkdir cache dirs on demand, so no migration step is needed).
+
+    Deliberately NOT ``HF_HOME``: the token file (``HF_HOME/token``), the
+    ``datasets`` processed cache (~3.7 GB), ``stored_tokens``, and ``modules``
+    stay at ``~/.cache/huggingface`` untouched — only the heavy caches move.
+
+    Ordering: ``HF_HUB_CACHE`` is frozen into ``huggingface_hub.constants`` at
+    IMPORT time (same constraint as the #745 flags above), so this must run
+    before the process's first ``import huggingface_hub`` — importing THIS
+    module pulls no huggingface_hub (verified #1369), so any entrypoint that
+    calls load_dotenv() first gets the constant right. ``HF_XET_CACHE`` is
+    read by the compiled hf_xet crate from the PROCESS ENV at transfer time
+    (hf_xet 1.4.3, xet_runtime configuration_utils fallback chain
+    HF_XET_CACHE -> HF_HOME/xet -> XDG_CACHE_HOME), so it escapes the freeze.
+
+    Residual (named, accepted): a FUTURE raw-cron python entrypoint that
+    imports huggingface_hub at module top WITHOUT load_dotenv() gets neither
+    the profile export (cron reads no profile) nor this setdefault in time —
+    zero such consumers exist today (#1369 fact-check); new cron authors:
+    call load_dotenv() first or export the keys in the wrapper.
+
+    setdefault-only — an explicit launch-time value always wins.
+    ``EPS_VM_HF_CACHE_REDIRECT=0`` (or false/no/off) disables. Fails OPEN off
+    the shared VM: pods (/workspace/.cache/huggingface), GCE, SLURM, and
+    laptops keep their lane defaults (see :func:`_hf_home_default`).
+    """
+    if not is_shared_vm_env():
+        return
+    if not os.path.ismount(_SHARED_VM_DATA_DISK):
+        # Hostname-only detection with the data disk detached: redirecting
+        # would mkdir-on-demand a plain dir on / UNDER the mountpoint —
+        # worse than today's default. Mirrors the shell blocks' [ -d ] guard.
+        return
+    knob = os.environ.get("EPS_VM_HF_CACHE_REDIRECT", "")
+    if knob.strip().lower() in ("0", "false", "no", "off"):
+        return
+    cache_root = Path(_SHARED_VM_DATA_DISK) / Path.home().name / "huggingface-cache"
+    os.environ.setdefault("HF_HUB_CACHE", str(cache_root / "hub"))
+    os.environ.setdefault("HF_XET_CACHE", str(cache_root / "xet"))
+
+
 def _hf_home_default() -> str:
     """Per-environment default for ``HF_HOME``.
 
@@ -301,6 +355,11 @@ def load_dotenv(env_path: str | None = None):
     #   local                     → ~/.cache/huggingface (user-level shared)
     os.environ.setdefault("HF_HOME", _hf_home_default())
 
+    # Shared-VM HF cache redirect (#1369): heavy caches (hub snapshots + xet
+    # chunks) onto the #681 data disk. AFTER _dotenv_load so a value in .env
+    # counts as explicit config and wins (setdefault; mirrors the #847 caps).
+    _apply_shared_vm_hf_cache_redirect()
+
     # Fast HF Hub uploads (#745). BELT-AND-SUSPENDERS only — the LOAD-BEARING
     # placement is the SHELL-level export (bootstrap_pod.sh / GCE prelude /
     # SLURM env block), because HF_HUB_ENABLE_HF_TRANSFER is frozen by
@@ -329,6 +388,11 @@ def setup_worker(gpu_id: int):
     # Shared-VM BLAS/torch thread caps (#847) — FIRST, before the torch import
     # below freezes the intra-op pool at its uncapped default.
     _apply_shared_vm_thread_caps()
+    # Shared-VM HF cache redirect (#1369) — mirror of load_dotenv, and ALSO
+    # before the torch import below (defensive: anything the import chain
+    # pulls that freezes HF env at import time sees the redirected paths;
+    # idempotent setdefault, same as the #745 flags below).
+    _apply_shared_vm_hf_cache_redirect()
 
     os.environ["CUDA_VISIBLE_DEVICES"] = str(gpu_id)
 
