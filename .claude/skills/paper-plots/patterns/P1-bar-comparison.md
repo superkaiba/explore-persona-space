@@ -89,6 +89,6 @@ caption.
   bars (two bars side-by-side per x-tick) instead.
 - **Don't label bars with `0.912` when the metric is a proportion.** Show
   `91.2%` — more readable. (Call `f"{v * 100:.1f}%"`.)
-- **Don't use > 5 colors.** If you have 6+ conditions, group them into
-  related pairs with the same fill color + different hatch, or split into
-  two panels (P7).
+- **Don't use > 5 colors.** If you have 6+ conditions, split into two
+  panels (P7). Hatching is a user-request opt-in (§3.9) — do not add
+  it as a default fallback.

@@ -1,0 +1,2879 @@
+{
+  "commit": "3b1ddc6ecf",
+  "created": "2026-07-16T21:23:50Z",
+  "figsize": [
+    11.5,
+    4.4
+  ],
+  "points": [
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 1.0,
+      "Held-out R\u00b2 (layer 19)": 0.5897303595996669,
+      "series": "ridge \u2014 simulated continuations (n\u22485000)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 2.0,
+      "Held-out R\u00b2 (layer 19)": 0.28632405231435487,
+      "series": "ridge \u2014 simulated continuations (n\u22485000)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 3.0,
+      "Held-out R\u00b2 (layer 19)": 0.21515853892625247,
+      "series": "ridge \u2014 simulated continuations (n\u22485000)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 4.0,
+      "Held-out R\u00b2 (layer 19)": 0.18312492920866297,
+      "series": "ridge \u2014 simulated continuations (n\u22485000)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 5.0,
+      "Held-out R\u00b2 (layer 19)": 0.1547983729553114,
+      "series": "ridge \u2014 simulated continuations (n\u22485000)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 6.0,
+      "Held-out R\u00b2 (layer 19)": 0.13730566996499272,
+      "series": "ridge \u2014 simulated continuations (n\u22485000)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 7.0,
+      "Held-out R\u00b2 (layer 19)": 0.12653606397580064,
+      "series": "ridge \u2014 simulated continuations (n\u22485000)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 8.0,
+      "Held-out R\u00b2 (layer 19)": 0.10957001949146405,
+      "series": "ridge \u2014 simulated continuations (n\u22485000)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 9.0,
+      "Held-out R\u00b2 (layer 19)": 0.10014330105752478,
+      "series": "ridge \u2014 simulated continuations (n\u22485000)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 10.0,
+      "Held-out R\u00b2 (layer 19)": 0.08681728497793162,
+      "series": "ridge \u2014 simulated continuations (n\u22485000)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 11.0,
+      "Held-out R\u00b2 (layer 19)": 0.08211240338904802,
+      "series": "ridge \u2014 simulated continuations (n\u22485000)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 12.0,
+      "Held-out R\u00b2 (layer 19)": 0.07194314055806217,
+      "series": "ridge \u2014 simulated continuations (n\u22485000)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 13.0,
+      "Held-out R\u00b2 (layer 19)": 0.06400198716596617,
+      "series": "ridge \u2014 simulated continuations (n\u22485000)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 14.0,
+      "Held-out R\u00b2 (layer 19)": 0.054263918084848095,
+      "series": "ridge \u2014 simulated continuations (n\u22485000)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 15.0,
+      "Held-out R\u00b2 (layer 19)": 0.050450551926138454,
+      "series": "ridge \u2014 simulated continuations (n\u22485000)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 16.0,
+      "Held-out R\u00b2 (layer 19)": 0.038130989701617546,
+      "series": "ridge \u2014 simulated continuations (n\u22485000)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 1.0,
+      "Held-out R\u00b2 (layer 19)": 0.5878198464328516,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 1.0,
+      "Held-out R\u00b2 (layer 19)": 0.5933213688031931,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 1.0,
+      "Held-out R\u00b2 (layer 19)": 0.5884586660869963,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 1.0,
+      "Held-out R\u00b2 (layer 19)": 0.5976691520929449,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 1.0,
+      "Held-out R\u00b2 (layer 19)": 0.5898659501613739,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 1.0,
+      "Held-out R\u00b2 (layer 19)": 0.5790561910790635,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 2.0,
+      "Held-out R\u00b2 (layer 19)": 0.2898496945950483,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 2.0,
+      "Held-out R\u00b2 (layer 19)": 0.2810242372491133,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 2.0,
+      "Held-out R\u00b2 (layer 19)": 0.28650734555775215,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 2.0,
+      "Held-out R\u00b2 (layer 19)": 0.2919844360981815,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 2.0,
+      "Held-out R\u00b2 (layer 19)": 0.27524880728741763,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 2.0,
+      "Held-out R\u00b2 (layer 19)": 0.2883543892952045,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 3.0,
+      "Held-out R\u00b2 (layer 19)": 0.2141450563161028,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 3.0,
+      "Held-out R\u00b2 (layer 19)": 0.20606138650885708,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 3.0,
+      "Held-out R\u00b2 (layer 19)": 0.22201558060570892,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 3.0,
+      "Held-out R\u00b2 (layer 19)": 0.21548730967837426,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 3.0,
+      "Held-out R\u00b2 (layer 19)": 0.21334238215401602,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 3.0,
+      "Held-out R\u00b2 (layer 19)": 0.21455009844621276,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 4.0,
+      "Held-out R\u00b2 (layer 19)": 0.1811298973435549,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 4.0,
+      "Held-out R\u00b2 (layer 19)": 0.17091917597756778,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 4.0,
+      "Held-out R\u00b2 (layer 19)": 0.18274883253056295,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 4.0,
+      "Held-out R\u00b2 (layer 19)": 0.18839638925682078,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 4.0,
+      "Held-out R\u00b2 (layer 19)": 0.1872156858958809,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 4.0,
+      "Held-out R\u00b2 (layer 19)": 0.18260652647426445,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 5.0,
+      "Held-out R\u00b2 (layer 19)": 0.16552022596519167,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 5.0,
+      "Held-out R\u00b2 (layer 19)": 0.13804681106823247,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 5.0,
+      "Held-out R\u00b2 (layer 19)": 0.155810999749754,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 5.0,
+      "Held-out R\u00b2 (layer 19)": 0.15966934070473005,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 5.0,
+      "Held-out R\u00b2 (layer 19)": 0.15064088301788803,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 5.0,
+      "Held-out R\u00b2 (layer 19)": 0.15344227122866916,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 6.0,
+      "Held-out R\u00b2 (layer 19)": 0.14257282875830002,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 6.0,
+      "Held-out R\u00b2 (layer 19)": 0.12355392899332374,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 6.0,
+      "Held-out R\u00b2 (layer 19)": 0.14078117538767276,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 6.0,
+      "Held-out R\u00b2 (layer 19)": 0.1444649041935937,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 6.0,
+      "Held-out R\u00b2 (layer 19)": 0.13058241896874012,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 6.0,
+      "Held-out R\u00b2 (layer 19)": 0.13599579698655462,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 7.0,
+      "Held-out R\u00b2 (layer 19)": 0.1394286073239337,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 7.0,
+      "Held-out R\u00b2 (layer 19)": 0.10802986753137922,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 7.0,
+      "Held-out R\u00b2 (layer 19)": 0.1253272219815864,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 7.0,
+      "Held-out R\u00b2 (layer 19)": 0.1322329275781673,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 7.0,
+      "Held-out R\u00b2 (layer 19)": 0.12220427973805115,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 7.0,
+      "Held-out R\u00b2 (layer 19)": 0.12577930621124067,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 8.0,
+      "Held-out R\u00b2 (layer 19)": 0.1189517584462928,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 8.0,
+      "Held-out R\u00b2 (layer 19)": 0.08828694403283321,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 8.0,
+      "Held-out R\u00b2 (layer 19)": 0.11215871018296464,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 8.0,
+      "Held-out R\u00b2 (layer 19)": 0.11241150556118895,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 8.0,
+      "Held-out R\u00b2 (layer 19)": 0.10484921747627352,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 8.0,
+      "Held-out R\u00b2 (layer 19)": 0.11410862219592777,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 9.0,
+      "Held-out R\u00b2 (layer 19)": 0.1142142550832912,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 9.0,
+      "Held-out R\u00b2 (layer 19)": 0.07533348694453601,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 9.0,
+      "Held-out R\u00b2 (layer 19)": 0.0974239715040891,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 9.0,
+      "Held-out R\u00b2 (layer 19)": 0.1015150040554954,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 9.0,
+      "Held-out R\u00b2 (layer 19)": 0.10016089140725815,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 9.0,
+      "Held-out R\u00b2 (layer 19)": 0.10486166761255078,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 10.0,
+      "Held-out R\u00b2 (layer 19)": 0.09467967023045565,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 10.0,
+      "Held-out R\u00b2 (layer 19)": 0.06317167491809006,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 10.0,
+      "Held-out R\u00b2 (layer 19)": 0.08837111737776226,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 10.0,
+      "Held-out R\u00b2 (layer 19)": 0.10162156689498614,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 10.0,
+      "Held-out R\u00b2 (layer 19)": 0.07885105327214326,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 10.0,
+      "Held-out R\u00b2 (layer 19)": 0.08740321321830868,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 11.0,
+      "Held-out R\u00b2 (layer 19)": 0.08783810831264438,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 11.0,
+      "Held-out R\u00b2 (layer 19)": 0.05889347844231907,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 11.0,
+      "Held-out R\u00b2 (layer 19)": 0.08014538351139422,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 11.0,
+      "Held-out R\u00b2 (layer 19)": 0.09498746400906843,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 11.0,
+      "Held-out R\u00b2 (layer 19)": 0.08134574754176926,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 11.0,
+      "Held-out R\u00b2 (layer 19)": 0.08350465945147989,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 12.0,
+      "Held-out R\u00b2 (layer 19)": 0.07874268765975545,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 12.0,
+      "Held-out R\u00b2 (layer 19)": 0.048643529418316844,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 12.0,
+      "Held-out R\u00b2 (layer 19)": 0.07053534606312006,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 12.0,
+      "Held-out R\u00b2 (layer 19)": 0.08832617658624176,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 12.0,
+      "Held-out R\u00b2 (layer 19)": 0.07311268109042324,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 12.0,
+      "Held-out R\u00b2 (layer 19)": 0.06597522950522838,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 13.0,
+      "Held-out R\u00b2 (layer 19)": 0.06622387481576442,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 13.0,
+      "Held-out R\u00b2 (layer 19)": 0.045326900048502705,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 13.0,
+      "Held-out R\u00b2 (layer 19)": 0.05025150415251567,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 13.0,
+      "Held-out R\u00b2 (layer 19)": 0.0846269738294575,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 13.0,
+      "Held-out R\u00b2 (layer 19)": 0.06766764995536234,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 13.0,
+      "Held-out R\u00b2 (layer 19)": 0.06265386738852807,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 14.0,
+      "Held-out R\u00b2 (layer 19)": 0.05417363184570834,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 14.0,
+      "Held-out R\u00b2 (layer 19)": 0.04061178017558664,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 14.0,
+      "Held-out R\u00b2 (layer 19)": 0.04063021962088853,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 14.0,
+      "Held-out R\u00b2 (layer 19)": 0.068864075723298,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 14.0,
+      "Held-out R\u00b2 (layer 19)": 0.05571056930956719,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 14.0,
+      "Held-out R\u00b2 (layer 19)": 0.05719704161785211,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 15.0,
+      "Held-out R\u00b2 (layer 19)": 0.05730846117660782,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 15.0,
+      "Held-out R\u00b2 (layer 19)": 0.024749566772317877,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 15.0,
+      "Held-out R\u00b2 (layer 19)": 0.03980463192118966,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 15.0,
+      "Held-out R\u00b2 (layer 19)": 0.06855087882489264,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 15.0,
+      "Held-out R\u00b2 (layer 19)": 0.04831731326910471,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 15.0,
+      "Held-out R\u00b2 (layer 19)": 0.05604031833407741,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 16.0,
+      "Held-out R\u00b2 (layer 19)": 0.04084296771168083,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 16.0,
+      "Held-out R\u00b2 (layer 19)": 0.013265616136188152,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 16.0,
+      "Held-out R\u00b2 (layer 19)": 0.02807216905293064,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 16.0,
+      "Held-out R\u00b2 (layer 19)": 0.054347370603657796,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 16.0,
+      "Held-out R\u00b2 (layer 19)": 0.03523964715549799,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 16.0,
+      "Held-out R\u00b2 (layer 19)": 0.050216114097216824,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 1.0,
+      "Held-out R\u00b2 (layer 19)": 0.4907890461698463,
+      "series": "MLP \u2014 simulated continuations (n=1000, PCA 256\u219248)",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 2.0,
+      "Held-out R\u00b2 (layer 19)": 0.043130133082384,
+      "series": "MLP \u2014 simulated continuations (n=1000, PCA 256\u219248)",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 3.0,
+      "Held-out R\u00b2 (layer 19)": -0.06464714680431083,
+      "series": "MLP \u2014 simulated continuations (n=1000, PCA 256\u219248)",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 4.0,
+      "Held-out R\u00b2 (layer 19)": -0.14570687487582767,
+      "series": "MLP \u2014 simulated continuations (n=1000, PCA 256\u219248)",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 5.0,
+      "Held-out R\u00b2 (layer 19)": -0.17791624644333592,
+      "series": "MLP \u2014 simulated continuations (n=1000, PCA 256\u219248)",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 6.0,
+      "Held-out R\u00b2 (layer 19)": -0.21824931895379662,
+      "series": "MLP \u2014 simulated continuations (n=1000, PCA 256\u219248)",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 7.0,
+      "Held-out R\u00b2 (layer 19)": -0.22269366556651793,
+      "series": "MLP \u2014 simulated continuations (n=1000, PCA 256\u219248)",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 8.0,
+      "Held-out R\u00b2 (layer 19)": -0.2707282563500424,
+      "series": "MLP \u2014 simulated continuations (n=1000, PCA 256\u219248)",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 9.0,
+      "Held-out R\u00b2 (layer 19)": -0.2878700734961588,
+      "series": "MLP \u2014 simulated continuations (n=1000, PCA 256\u219248)",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 10.0,
+      "Held-out R\u00b2 (layer 19)": -0.31312594032842167,
+      "series": "MLP \u2014 simulated continuations (n=1000, PCA 256\u219248)",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 11.0,
+      "Held-out R\u00b2 (layer 19)": -0.326554088645433,
+      "series": "MLP \u2014 simulated continuations (n=1000, PCA 256\u219248)",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 12.0,
+      "Held-out R\u00b2 (layer 19)": -0.35499259934379035,
+      "series": "MLP \u2014 simulated continuations (n=1000, PCA 256\u219248)",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 13.0,
+      "Held-out R\u00b2 (layer 19)": -0.3658356445531248,
+      "series": "MLP \u2014 simulated continuations (n=1000, PCA 256\u219248)",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 14.0,
+      "Held-out R\u00b2 (layer 19)": -0.3945581630650774,
+      "series": "MLP \u2014 simulated continuations (n=1000, PCA 256\u219248)",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 15.0,
+      "Held-out R\u00b2 (layer 19)": -0.3752622085751611,
+      "series": "MLP \u2014 simulated continuations (n=1000, PCA 256\u219248)",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 16.0,
+      "Held-out R\u00b2 (layer 19)": -0.37612876572177023,
+      "series": "MLP \u2014 simulated continuations (n=1000, PCA 256\u219248)",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 1.0,
+      "Held-out R\u00b2 (layer 19)": 0.5902844456403133,
+      "series": "ridge \u2014 real logged context, own answers (n\u22485000)",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 2.0,
+      "Held-out R\u00b2 (layer 19)": 0.27033268256016385,
+      "series": "ridge \u2014 real logged context, own answers (n\u22485000)",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 3.0,
+      "Held-out R\u00b2 (layer 19)": 0.21134705526620223,
+      "series": "ridge \u2014 real logged context, own answers (n\u22485000)",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 4.0,
+      "Held-out R\u00b2 (layer 19)": 0.17711823746290678,
+      "series": "ridge \u2014 real logged context, own answers (n\u22485000)",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 5.0,
+      "Held-out R\u00b2 (layer 19)": 0.1535975926866734,
+      "series": "ridge \u2014 real logged context, own answers (n\u22485000)",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 6.0,
+      "Held-out R\u00b2 (layer 19)": 0.1374782746276444,
+      "series": "ridge \u2014 real logged context, own answers (n\u22485000)",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 7.0,
+      "Held-out R\u00b2 (layer 19)": 0.12645405385357533,
+      "series": "ridge \u2014 real logged context, own answers (n\u22485000)",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 8.0,
+      "Held-out R\u00b2 (layer 19)": 0.12441421217719884,
+      "series": "ridge \u2014 real logged context, own answers (n\u22485000)",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 9.0,
+      "Held-out R\u00b2 (layer 19)": 0.12368381865522482,
+      "series": "ridge \u2014 real logged context, own answers (n\u22485000)",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 10.0,
+      "Held-out R\u00b2 (layer 19)": 0.11060029368602031,
+      "series": "ridge \u2014 real logged context, own answers (n\u22485000)",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 11.0,
+      "Held-out R\u00b2 (layer 19)": 0.10427580780497969,
+      "series": "ridge \u2014 real logged context, own answers (n\u22485000)",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 12.0,
+      "Held-out R\u00b2 (layer 19)": 0.09544849866703631,
+      "series": "ridge \u2014 real logged context, own answers (n\u22485000)",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 1.0,
+      "Held-out R\u00b2 (layer 19)": 0.584037193079424,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 1.0,
+      "Held-out R\u00b2 (layer 19)": 0.5788614619978846,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 1.0,
+      "Held-out R\u00b2 (layer 19)": 0.6065369986963207,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 1.0,
+      "Held-out R\u00b2 (layer 19)": 0.5894653967934351,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 1.0,
+      "Held-out R\u00b2 (layer 19)": 0.5872018817511246,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 1.0,
+      "Held-out R\u00b2 (layer 19)": 0.5934629539951897,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 2.0,
+      "Held-out R\u00b2 (layer 19)": 0.25578442616798325,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 2.0,
+      "Held-out R\u00b2 (layer 19)": 0.26578805237558234,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 2.0,
+      "Held-out R\u00b2 (layer 19)": 0.2833287188933029,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 2.0,
+      "Held-out R\u00b2 (layer 19)": 0.2670640140514541,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 2.0,
+      "Held-out R\u00b2 (layer 19)": 0.26682771311672815,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 2.0,
+      "Held-out R\u00b2 (layer 19)": 0.2795589338306933,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 3.0,
+      "Held-out R\u00b2 (layer 19)": 0.1909724830972226,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 3.0,
+      "Held-out R\u00b2 (layer 19)": 0.20347440094804048,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 3.0,
+      "Held-out R\u00b2 (layer 19)": 0.22340285137174665,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 3.0,
+      "Held-out R\u00b2 (layer 19)": 0.21439742452489652,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 3.0,
+      "Held-out R\u00b2 (layer 19)": 0.21309526511995502,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 3.0,
+      "Held-out R\u00b2 (layer 19)": 0.21818671401712364,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 4.0,
+      "Held-out R\u00b2 (layer 19)": 0.16450288069415353,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 4.0,
+      "Held-out R\u00b2 (layer 19)": 0.16858391825447772,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 4.0,
+      "Held-out R\u00b2 (layer 19)": 0.18766102182470945,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 4.0,
+      "Held-out R\u00b2 (layer 19)": 0.17688561789333312,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 4.0,
+      "Held-out R\u00b2 (layer 19)": 0.17599187826110751,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 4.0,
+      "Held-out R\u00b2 (layer 19)": 0.18345718096271824,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 5.0,
+      "Held-out R\u00b2 (layer 19)": 0.14736184192226154,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 5.0,
+      "Held-out R\u00b2 (layer 19)": 0.13985573477202806,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 5.0,
+      "Held-out R\u00b2 (layer 19)": 0.16335911315719642,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 5.0,
+      "Held-out R\u00b2 (layer 19)": 0.14650650106928964,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 5.0,
+      "Held-out R\u00b2 (layer 19)": 0.16143614938871653,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 5.0,
+      "Held-out R\u00b2 (layer 19)": 0.15793178242772,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 6.0,
+      "Held-out R\u00b2 (layer 19)": 0.13299345214785452,
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 6.0,
+      "Held-out R\u00b2 (layer 19)": 0.13197280047240223,
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 6.0,
+      "Held-out R\u00b2 (layer 19)": 0.14174297151665727,
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 6.0,
+      "Held-out R\u00b2 (layer 19)": 0.12804875251408943,
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 6.0,
+      "Held-out R\u00b2 (layer 19)": 0.14337298771842477,
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 6.0,
+      "Held-out R\u00b2 (layer 19)": 0.1413471570437892,
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 7.0,
+      "Held-out R\u00b2 (layer 19)": 0.1150863639197175,
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 7.0,
+      "Held-out R\u00b2 (layer 19)": 0.11890936997753188,
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 7.0,
+      "Held-out R\u00b2 (layer 19)": 0.13126066591955,
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 7.0,
+      "Held-out R\u00b2 (layer 19)": 0.13256032159018694,
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 7.0,
+      "Held-out R\u00b2 (layer 19)": 0.12656041518673233,
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 7.0,
+      "Held-out R\u00b2 (layer 19)": 0.1289391885505622,
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 8.0,
+      "Held-out R\u00b2 (layer 19)": 0.11464052385438228,
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 8.0,
+      "Held-out R\u00b2 (layer 19)": 0.11830169606273955,
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 8.0,
+      "Held-out R\u00b2 (layer 19)": 0.13476070853232636,
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 8.0,
+      "Held-out R\u00b2 (layer 19)": 0.11507333560649236,
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 8.0,
+      "Held-out R\u00b2 (layer 19)": 0.13376191204224908,
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 8.0,
+      "Held-out R\u00b2 (layer 19)": 0.12449305124587662,
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 9.0,
+      "Held-out R\u00b2 (layer 19)": 0.11896563140370642,
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 9.0,
+      "Held-out R\u00b2 (layer 19)": 0.11965467914865713,
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 9.0,
+      "Held-out R\u00b2 (layer 19)": 0.12552110255397553,
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 9.0,
+      "Held-out R\u00b2 (layer 19)": 0.11993254750425975,
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 9.0,
+      "Held-out R\u00b2 (layer 19)": 0.12502577238632795,
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 9.0,
+      "Held-out R\u00b2 (layer 19)": 0.1278725484342662,
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 10.0,
+      "Held-out R\u00b2 (layer 19)": 0.09952259576719602,
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 10.0,
+      "Held-out R\u00b2 (layer 19)": 0.10077602909363959,
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 10.0,
+      "Held-out R\u00b2 (layer 19)": 0.11838826893942656,
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 10.0,
+      "Held-out R\u00b2 (layer 19)": 0.10869463387011835,
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 10.0,
+      "Held-out R\u00b2 (layer 19)": 0.1165782353171525,
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 10.0,
+      "Held-out R\u00b2 (layer 19)": 0.11486610562357147,
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 11.0,
+      "Held-out R\u00b2 (layer 19)": 0.09701892585546723,
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 11.0,
+      "Held-out R\u00b2 (layer 19)": 0.09578719647157585,
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 11.0,
+      "Held-out R\u00b2 (layer 19)": 0.09910343085080997,
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 11.0,
+      "Held-out R\u00b2 (layer 19)": 0.10619564736781972,
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 11.0,
+      "Held-out R\u00b2 (layer 19)": 0.10408760529630623,
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 11.0,
+      "Held-out R\u00b2 (layer 19)": 0.11820963734149748,
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 12.0,
+      "Held-out R\u00b2 (layer 19)": 0.10296025879017923,
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 12.0,
+      "Held-out R\u00b2 (layer 19)": 0.0805904894565539,
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 12.0,
+      "Held-out R\u00b2 (layer 19)": 0.09608206374598849,
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 12.0,
+      "Held-out R\u00b2 (layer 19)": 0.09427422336466695,
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 12.0,
+      "Held-out R\u00b2 (layer 19)": 0.0960772419571767,
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 12.0,
+      "Held-out R\u00b2 (layer 19)": 0.09776064174871268,
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 1.0,
+      "Held-out R\u00b2 (layer 19)": 0.4881818041747067,
+      "series": "MLP \u2014 real logged context, own answers (n=1000, PCA 256\u219248)",
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 2.0,
+      "Held-out R\u00b2 (layer 19)": 0.02799920370781117,
+      "series": "MLP \u2014 real logged context, own answers (n=1000, PCA 256\u219248)",
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 3.0,
+      "Held-out R\u00b2 (layer 19)": -0.0699731708295186,
+      "series": "MLP \u2014 real logged context, own answers (n=1000, PCA 256\u219248)",
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 4.0,
+      "Held-out R\u00b2 (layer 19)": -0.13021284130103528,
+      "series": "MLP \u2014 real logged context, own answers (n=1000, PCA 256\u219248)",
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 5.0,
+      "Held-out R\u00b2 (layer 19)": -0.15368506507996216,
+      "series": "MLP \u2014 real logged context, own answers (n=1000, PCA 256\u219248)",
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 6.0,
+      "Held-out R\u00b2 (layer 19)": -0.19239514102501065,
+      "series": "MLP \u2014 real logged context, own answers (n=1000, PCA 256\u219248)",
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 7.0,
+      "Held-out R\u00b2 (layer 19)": -0.1925810007179367,
+      "series": "MLP \u2014 real logged context, own answers (n=1000, PCA 256\u219248)",
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 8.0,
+      "Held-out R\u00b2 (layer 19)": -0.20763271551667417,
+      "series": "MLP \u2014 real logged context, own answers (n=1000, PCA 256\u219248)",
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 9.0,
+      "Held-out R\u00b2 (layer 19)": -0.22864369917053295,
+      "series": "MLP \u2014 real logged context, own answers (n=1000, PCA 256\u219248)",
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 10.0,
+      "Held-out R\u00b2 (layer 19)": -0.24333939938068427,
+      "series": "MLP \u2014 real logged context, own answers (n=1000, PCA 256\u219248)",
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 11.0,
+      "Held-out R\u00b2 (layer 19)": -0.2624601731007308,
+      "series": "MLP \u2014 real logged context, own answers (n=1000, PCA 256\u219248)",
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 12.0,
+      "Held-out R\u00b2 (layer 19)": -0.268743764358208,
+      "series": "MLP \u2014 real logged context, own answers (n=1000, PCA 256\u219248)",
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 1.0,
+      "y": 0.3438549169522668,
+      "series": "ridge \u2014 simulated continuations (n\u22485000)",
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 2.0,
+      "y": 0.12595397448555123,
+      "series": "ridge \u2014 simulated continuations (n\u22485000)",
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 3.0,
+      "y": 0.08678740570725196,
+      "series": "ridge \u2014 simulated continuations (n\u22485000)",
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 4.0,
+      "y": 0.06479468742244121,
+      "series": "ridge \u2014 simulated continuations (n\u22485000)",
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 5.0,
+      "y": 0.05552345633050215,
+      "series": "ridge \u2014 simulated continuations (n\u22485000)",
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 6.0,
+      "y": 0.04651621622096147,
+      "series": "ridge \u2014 simulated continuations (n\u22485000)",
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 7.0,
+      "y": 0.0415872611441529,
+      "series": "ridge \u2014 simulated continuations (n\u22485000)",
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 8.0,
+      "y": 0.03336025417512367,
+      "series": "ridge \u2014 simulated continuations (n\u22485000)",
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 9.0,
+      "y": 0.030039056824051058,
+      "series": "ridge \u2014 simulated continuations (n\u22485000)",
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 10.0,
+      "y": 0.025479929545553115,
+      "series": "ridge \u2014 simulated continuations (n\u22485000)",
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 11.0,
+      "y": 0.023684584399003117,
+      "series": "ridge \u2014 simulated continuations (n\u22485000)",
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 12.0,
+      "y": 0.01912717937085151,
+      "series": "ridge \u2014 simulated continuations (n\u22485000)",
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 13.0,
+      "y": 0.01687042602536737,
+      "series": "ridge \u2014 simulated continuations (n\u22485000)",
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 14.0,
+      "y": 0.016368606176974776,
+      "series": "ridge \u2014 simulated continuations (n\u22485000)",
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 15.0,
+      "y": 0.010457776357143622,
+      "series": "ridge \u2014 simulated continuations (n\u22485000)",
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 16.0,
+      "y": 0.008250364635113638,
+      "series": "ridge \u2014 simulated continuations (n\u22485000)",
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 1.0,
+      "y": 0.3319255986986871,
+      "_kind": "line",
+      "_group": 33
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 1.0,
+      "y": 0.33814713096618054,
+      "_kind": "line",
+      "_group": 33
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 1.0,
+      "y": 0.349443094170109,
+      "_kind": "line",
+      "_group": 33
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 1.0,
+      "y": 0.3439310719172982,
+      "_kind": "line",
+      "_group": 33
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 1.0,
+      "y": 0.355556929461847,
+      "_kind": "line",
+      "_group": 33
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 1.0,
+      "y": 0.3398025775920849,
+      "_kind": "line",
+      "_group": 33
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 2.0,
+      "y": 0.11969312145627786,
+      "_kind": "line",
+      "_group": 34
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 2.0,
+      "y": 0.12794697316956216,
+      "_kind": "line",
+      "_group": 34
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 2.0,
+      "y": 0.1269481058481966,
+      "_kind": "line",
+      "_group": 34
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 2.0,
+      "y": 0.1245895590605185,
+      "_kind": "line",
+      "_group": 34
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 2.0,
+      "y": 0.1359415840270899,
+      "_kind": "line",
+      "_group": 34
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 2.0,
+      "y": 0.1156718582800943,
+      "_kind": "line",
+      "_group": 34
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 3.0,
+      "y": 0.08351115533339326,
+      "_kind": "line",
+      "_group": 35
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 3.0,
+      "y": 0.08778854944242742,
+      "_kind": "line",
+      "_group": 35
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 3.0,
+      "y": 0.08364947635678766,
+      "_kind": "line",
+      "_group": 35
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 3.0,
+      "y": 0.08547663691078089,
+      "_kind": "line",
+      "_group": 35
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 3.0,
+      "y": 0.10231446523613497,
+      "_kind": "line",
+      "_group": 35
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 3.0,
+      "y": 0.07335490733068895,
+      "_kind": "line",
+      "_group": 35
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 4.0,
+      "y": 0.06485033157610476,
+      "_kind": "line",
+      "_group": 36
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 4.0,
+      "y": 0.059621904895770905,
+      "_kind": "line",
+      "_group": 36
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 4.0,
+      "y": 0.06172931464838938,
+      "_kind": "line",
+      "_group": 36
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 4.0,
+      "y": 0.06667987090002636,
+      "_kind": "line",
+      "_group": 36
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 4.0,
+      "y": 0.07856501788204373,
+      "_kind": "line",
+      "_group": 36
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 4.0,
+      "y": 0.052651646126352536,
+      "_kind": "line",
+      "_group": 36
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 5.0,
+      "y": 0.05521822724423353,
+      "_kind": "line",
+      "_group": 37
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 5.0,
+      "y": 0.058313428433370396,
+      "_kind": "line",
+      "_group": 37
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 5.0,
+      "y": 0.05973739643532994,
+      "_kind": "line",
+      "_group": 37
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 5.0,
+      "y": 0.047399948678902404,
+      "_kind": "line",
+      "_group": 37
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 5.0,
+      "y": 0.060775221006451385,
+      "_kind": "line",
+      "_group": 37
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 5.0,
+      "y": 0.04674274542716317,
+      "_kind": "line",
+      "_group": 37
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 6.0,
+      "y": 0.048254668382730515,
+      "_kind": "line",
+      "_group": 38
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 6.0,
+      "y": 0.04470422004621255,
+      "_kind": "line",
+      "_group": 38
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 6.0,
+      "y": 0.04926475950168674,
+      "_kind": "line",
+      "_group": 38
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 6.0,
+      "y": 0.03709743279610089,
+      "_kind": "line",
+      "_group": 38
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 6.0,
+      "y": 0.04992979707379863,
+      "_kind": "line",
+      "_group": 38
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 6.0,
+      "y": 0.045063479471906254,
+      "_kind": "line",
+      "_group": 38
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 7.0,
+      "y": 0.04559177223061561,
+      "_kind": "line",
+      "_group": 39
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 7.0,
+      "y": 0.036347391425275766,
+      "_kind": "line",
+      "_group": 39
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 7.0,
+      "y": 0.04495646694994071,
+      "_kind": "line",
+      "_group": 39
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 7.0,
+      "y": 0.0331630123205795,
+      "_kind": "line",
+      "_group": 39
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 7.0,
+      "y": 0.05032418730923571,
+      "_kind": "line",
+      "_group": 39
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 7.0,
+      "y": 0.034157914597561234,
+      "_kind": "line",
+      "_group": 39
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 8.0,
+      "y": 0.03817835986758422,
+      "_kind": "line",
+      "_group": 40
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 8.0,
+      "y": 0.031458108395204465,
+      "_kind": "line",
+      "_group": 40
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 8.0,
+      "y": 0.03868290500031468,
+      "_kind": "line",
+      "_group": 40
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 8.0,
+      "y": 0.01955078855615988,
+      "_kind": "line",
+      "_group": 40
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 8.0,
+      "y": 0.04384585868417634,
+      "_kind": "line",
+      "_group": 40
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 8.0,
+      "y": 0.023666071398745214,
+      "_kind": "line",
+      "_group": 40
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 9.0,
+      "y": 0.03560003407847112,
+      "_kind": "line",
+      "_group": 41
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 9.0,
+      "y": 0.03584441119758186,
+      "_kind": "line",
+      "_group": 41
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 9.0,
+      "y": 0.034388334900394946,
+      "_kind": "line",
+      "_group": 41
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 9.0,
+      "y": 0.008882185205759341,
+      "_kind": "line",
+      "_group": 41
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 9.0,
+      "y": 0.038161171981840325,
+      "_kind": "line",
+      "_group": 41
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 9.0,
+      "y": 0.021751703375395115,
+      "_kind": "line",
+      "_group": 41
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 10.0,
+      "y": 0.03199787874237758,
+      "_kind": "line",
+      "_group": 42
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 10.0,
+      "y": 0.030544312231625348,
+      "_kind": "line",
+      "_group": 42
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 10.0,
+      "y": 0.03212685939117865,
+      "_kind": "line",
+      "_group": 42
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 10.0,
+      "y": 0.0005474638018402311,
+      "_kind": "line",
+      "_group": 42
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 10.0,
+      "y": 0.03746097135404802,
+      "_kind": "line",
+      "_group": 42
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 10.0,
+      "y": 0.015115339258356841,
+      "_kind": "line",
+      "_group": 42
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 11.0,
+      "y": 0.03037417791111041,
+      "_kind": "line",
+      "_group": 43
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 11.0,
+      "y": 0.02501195776237297,
+      "_kind": "line",
+      "_group": 43
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 11.0,
+      "y": 0.0291641679157163,
+      "_kind": "line",
+      "_group": 43
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 11.0,
+      "y": 0.0010606030100401842,
+      "_kind": "line",
+      "_group": 43
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 11.0,
+      "y": 0.0379643423509225,
+      "_kind": "line",
+      "_group": 43
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 11.0,
+      "y": 0.01331162643563566,
+      "_kind": "line",
+      "_group": 43
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 12.0,
+      "y": 0.026189867401280265,
+      "_kind": "line",
+      "_group": 44
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 12.0,
+      "y": 0.01996364506896231,
+      "_kind": "line",
+      "_group": 44
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 12.0,
+      "y": 0.02251049327620902,
+      "_kind": "line",
+      "_group": 44
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 12.0,
+      "y": -0.0012358041225852823,
+      "_kind": "line",
+      "_group": 44
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 12.0,
+      "y": 0.03444208589912712,
+      "_kind": "line",
+      "_group": 44
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 12.0,
+      "y": 0.007996369356793931,
+      "_kind": "line",
+      "_group": 44
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 13.0,
+      "y": 0.026023388787990487,
+      "_kind": "line",
+      "_group": 45
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 13.0,
+      "y": 0.021214669907962724,
+      "_kind": "line",
+      "_group": 45
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 13.0,
+      "y": 0.017341247943707505,
+      "_kind": "line",
+      "_group": 45
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 13.0,
+      "y": -0.00262830203483011,
+      "_kind": "line",
+      "_group": 45
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 13.0,
+      "y": 0.024157635426209634,
+      "_kind": "line",
+      "_group": 45
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 13.0,
+      "y": 0.010547254881300816,
+      "_kind": "line",
+      "_group": 45
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 14.0,
+      "y": 0.02524191801100706,
+      "_kind": "line",
+      "_group": 46
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 14.0,
+      "y": 0.01756111709545205,
+      "_kind": "line",
+      "_group": 46
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 14.0,
+      "y": 0.019897711874468538,
+      "_kind": "line",
+      "_group": 46
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 14.0,
+      "y": -0.006991468987942229,
+      "_kind": "line",
+      "_group": 46
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 14.0,
+      "y": 0.02381505181594379,
+      "_kind": "line",
+      "_group": 46
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 14.0,
+      "y": 0.013300292611356346,
+      "_kind": "line",
+      "_group": 46
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 15.0,
+      "y": 0.016764391132947587,
+      "_kind": "line",
+      "_group": 47
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 15.0,
+      "y": 0.01173818462360543,
+      "_kind": "line",
+      "_group": 47
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 15.0,
+      "y": 0.01011246557623069,
+      "_kind": "line",
+      "_group": 47
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 15.0,
+      "y": -0.014286446404518927,
+      "_kind": "line",
+      "_group": 47
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 15.0,
+      "y": 0.023026235622651714,
+      "_kind": "line",
+      "_group": 47
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 15.0,
+      "y": 0.010297242953094976,
+      "_kind": "line",
+      "_group": 47
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 16.0,
+      "y": 0.020249858184067104,
+      "_kind": "line",
+      "_group": 48
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 16.0,
+      "y": 0.006495675533152223,
+      "_kind": "line",
+      "_group": 48
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 16.0,
+      "y": 0.0105576022758197,
+      "_kind": "line",
+      "_group": 48
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 16.0,
+      "y": -0.01945536604647735,
+      "_kind": "line",
+      "_group": 48
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 16.0,
+      "y": 0.0218627031711901,
+      "_kind": "line",
+      "_group": 48
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 16.0,
+      "y": 0.004450847214128029,
+      "_kind": "line",
+      "_group": 48
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 1.0,
+      "y": 0.14833524164162504,
+      "series": "MLP \u2014 simulated continuations (n=1000, PCA 256\u219248)",
+      "_kind": "line",
+      "_group": 49
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 2.0,
+      "y": -0.19360413137091892,
+      "series": "MLP \u2014 simulated continuations (n=1000, PCA 256\u219248)",
+      "_kind": "line",
+      "_group": 49
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 3.0,
+      "y": -0.2542527080226802,
+      "series": "MLP \u2014 simulated continuations (n=1000, PCA 256\u219248)",
+      "_kind": "line",
+      "_group": 49
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 4.0,
+      "y": -0.2991470178433908,
+      "series": "MLP \u2014 simulated continuations (n=1000, PCA 256\u219248)",
+      "_kind": "line",
+      "_group": 49
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 5.0,
+      "y": -0.3229776029343252,
+      "series": "MLP \u2014 simulated continuations (n=1000, PCA 256\u219248)",
+      "_kind": "line",
+      "_group": 49
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 6.0,
+      "y": -0.3278005355796101,
+      "series": "MLP \u2014 simulated continuations (n=1000, PCA 256\u219248)",
+      "_kind": "line",
+      "_group": 49
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 7.0,
+      "y": -0.3569219412089961,
+      "series": "MLP \u2014 simulated continuations (n=1000, PCA 256\u219248)",
+      "_kind": "line",
+      "_group": 49
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 8.0,
+      "y": -0.35609530455213756,
+      "series": "MLP \u2014 simulated continuations (n=1000, PCA 256\u219248)",
+      "_kind": "line",
+      "_group": 49
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 9.0,
+      "y": -0.38094794757875294,
+      "series": "MLP \u2014 simulated continuations (n=1000, PCA 256\u219248)",
+      "_kind": "line",
+      "_group": 49
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 10.0,
+      "y": -0.3861384795045957,
+      "series": "MLP \u2014 simulated continuations (n=1000, PCA 256\u219248)",
+      "_kind": "line",
+      "_group": 49
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 11.0,
+      "y": -0.40555979996046543,
+      "series": "MLP \u2014 simulated continuations (n=1000, PCA 256\u219248)",
+      "_kind": "line",
+      "_group": 49
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 12.0,
+      "y": -0.39626763459268033,
+      "series": "MLP \u2014 simulated continuations (n=1000, PCA 256\u219248)",
+      "_kind": "line",
+      "_group": 49
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 13.0,
+      "y": -0.3925083369587241,
+      "series": "MLP \u2014 simulated continuations (n=1000, PCA 256\u219248)",
+      "_kind": "line",
+      "_group": 49
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 14.0,
+      "y": -0.38881534106071114,
+      "series": "MLP \u2014 simulated continuations (n=1000, PCA 256\u219248)",
+      "_kind": "line",
+      "_group": 49
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 15.0,
+      "y": -0.3968971919784188,
+      "series": "MLP \u2014 simulated continuations (n=1000, PCA 256\u219248)",
+      "_kind": "line",
+      "_group": 49
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 16.0,
+      "y": -0.4086592346334579,
+      "series": "MLP \u2014 simulated continuations (n=1000, PCA 256\u219248)",
+      "_kind": "line",
+      "_group": 49
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 1.0,
+      "y": 0.34642561913892544,
+      "series": "ridge \u2014 real logged context, own answers (n\u22485000)",
+      "_kind": "line",
+      "_group": 50
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 2.0,
+      "y": 0.1518344657193017,
+      "series": "ridge \u2014 real logged context, own answers (n\u22485000)",
+      "_kind": "line",
+      "_group": 50
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 3.0,
+      "y": 0.10874966911095929,
+      "series": "ridge \u2014 real logged context, own answers (n\u22485000)",
+      "_kind": "line",
+      "_group": 50
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 4.0,
+      "y": 0.09406487773746597,
+      "series": "ridge \u2014 real logged context, own answers (n\u22485000)",
+      "_kind": "line",
+      "_group": 50
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 5.0,
+      "y": 0.08107688467552943,
+      "series": "ridge \u2014 real logged context, own answers (n\u22485000)",
+      "_kind": "line",
+      "_group": 50
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 6.0,
+      "y": 0.06451157560354104,
+      "series": "ridge \u2014 real logged context, own answers (n\u22485000)",
+      "_kind": "line",
+      "_group": 50
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 7.0,
+      "y": 0.057877321493490674,
+      "series": "ridge \u2014 real logged context, own answers (n\u22485000)",
+      "_kind": "line",
+      "_group": 50
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 8.0,
+      "y": 0.057702296275823906,
+      "series": "ridge \u2014 real logged context, own answers (n\u22485000)",
+      "_kind": "line",
+      "_group": 50
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 9.0,
+      "y": 0.050876976421372344,
+      "series": "ridge \u2014 real logged context, own answers (n\u22485000)",
+      "_kind": "line",
+      "_group": 50
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 10.0,
+      "y": 0.044492554383022465,
+      "series": "ridge \u2014 real logged context, own answers (n\u22485000)",
+      "_kind": "line",
+      "_group": 50
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 11.0,
+      "y": 0.04007150810932936,
+      "series": "ridge \u2014 real logged context, own answers (n\u22485000)",
+      "_kind": "line",
+      "_group": 50
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 12.0,
+      "y": 0.0356074540079685,
+      "series": "ridge \u2014 real logged context, own answers (n\u22485000)",
+      "_kind": "line",
+      "_group": 50
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 1.0,
+      "y": 0.3349774464017282,
+      "_kind": "line",
+      "_group": 51
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 1.0,
+      "y": 0.3412717095019866,
+      "_kind": "line",
+      "_group": 51
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 1.0,
+      "y": 0.3517907639090988,
+      "_kind": "line",
+      "_group": 51
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 1.0,
+      "y": 0.3363783250698378,
+      "_kind": "line",
+      "_group": 51
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 1.0,
+      "y": 0.3566050414091262,
+      "_kind": "line",
+      "_group": 51
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 1.0,
+      "y": 0.35360451606668863,
+      "_kind": "line",
+      "_group": 51
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 2.0,
+      "y": 0.13178442543027358,
+      "_kind": "line",
+      "_group": 52
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 2.0,
+      "y": 0.15010333812540366,
+      "_kind": "line",
+      "_group": 52
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 2.0,
+      "y": 0.16323810364320146,
+      "_kind": "line",
+      "_group": 52
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 2.0,
+      "y": 0.14876298901770568,
+      "_kind": "line",
+      "_group": 52
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 2.0,
+      "y": 0.15448337615530738,
+      "_kind": "line",
+      "_group": 52
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 2.0,
+      "y": 0.15811658374412974,
+      "_kind": "line",
+      "_group": 52
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 3.0,
+      "y": 0.09789685813609228,
+      "_kind": "line",
+      "_group": 53
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 3.0,
+      "y": 0.10234371297766431,
+      "_kind": "line",
+      "_group": 53
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 3.0,
+      "y": 0.12164914337446964,
+      "_kind": "line",
+      "_group": 53
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 3.0,
+      "y": 0.1020483424366907,
+      "_kind": "line",
+      "_group": 53
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 3.0,
+      "y": 0.11341296816475954,
+      "_kind": "line",
+      "_group": 53
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 3.0,
+      "y": 0.10919089713971364,
+      "_kind": "line",
+      "_group": 53
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 4.0,
+      "y": 0.08746443015048377,
+      "_kind": "line",
+      "_group": 54
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 4.0,
+      "y": 0.08661436728945016,
+      "_kind": "line",
+      "_group": 54
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 4.0,
+      "y": 0.11113196055962504,
+      "_kind": "line",
+      "_group": 54
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 4.0,
+      "y": 0.08939535490141204,
+      "_kind": "line",
+      "_group": 54
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 4.0,
+      "y": 0.08382426788414343,
+      "_kind": "line",
+      "_group": 54
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 4.0,
+      "y": 0.10009851988476093,
+      "_kind": "line",
+      "_group": 54
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 5.0,
+      "y": 0.07450306316622601,
+      "_kind": "line",
+      "_group": 55
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 5.0,
+      "y": 0.07688236637023338,
+      "_kind": "line",
+      "_group": 55
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 5.0,
+      "y": 0.09533633697073784,
+      "_kind": "line",
+      "_group": 55
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 5.0,
+      "y": 0.06966205270235992,
+      "_kind": "line",
+      "_group": 55
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 5.0,
+      "y": 0.08529622118508429,
+      "_kind": "line",
+      "_group": 55
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 5.0,
+      "y": 0.07873945535009474,
+      "_kind": "line",
+      "_group": 55
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 6.0,
+      "y": 0.04911451436000813,
+      "_kind": "line",
+      "_group": 56
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 6.0,
+      "y": 0.0611663794132391,
+      "_kind": "line",
+      "_group": 56
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 6.0,
+      "y": 0.07654070883643971,
+      "_kind": "line",
+      "_group": 56
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 6.0,
+      "y": 0.05708612332796059,
+      "_kind": "line",
+      "_group": 56
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 6.0,
+      "y": 0.06919481945644212,
+      "_kind": "line",
+      "_group": 56
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 6.0,
+      "y": 0.06817578240595479,
+      "_kind": "line",
+      "_group": 56
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 7.0,
+      "y": 0.042623652007262036,
+      "_kind": "line",
+      "_group": 57
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 7.0,
+      "y": 0.06070351540286523,
+      "_kind": "line",
+      "_group": 57
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 7.0,
+      "y": 0.06893867436713652,
+      "_kind": "line",
+      "_group": 57
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 7.0,
+      "y": 0.054311600499387325,
+      "_kind": "line",
+      "_group": 57
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 7.0,
+      "y": 0.056228650491653265,
+      "_kind": "line",
+      "_group": 57
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 7.0,
+      "y": 0.05809058193051486,
+      "_kind": "line",
+      "_group": 57
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 8.0,
+      "y": 0.03553228447007739,
+      "_kind": "line",
+      "_group": 58
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 8.0,
+      "y": 0.06043286894176647,
+      "_kind": "line",
+      "_group": 58
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 8.0,
+      "y": 0.07026507941882187,
+      "_kind": "line",
+      "_group": 58
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 8.0,
+      "y": 0.051773089703126995,
+      "_kind": "line",
+      "_group": 58
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 8.0,
+      "y": 0.06468151473294925,
+      "_kind": "line",
+      "_group": 58
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 8.0,
+      "y": 0.0581252120270731,
+      "_kind": "line",
+      "_group": 58
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 9.0,
+      "y": 0.037652287105783055,
+      "_kind": "line",
+      "_group": 59
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 9.0,
+      "y": 0.04759882835317186,
+      "_kind": "line",
+      "_group": 59
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 9.0,
+      "y": 0.059348795452833336,
+      "_kind": "line",
+      "_group": 59
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 9.0,
+      "y": 0.04689589505570435,
+      "_kind": "line",
+      "_group": 59
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 9.0,
+      "y": 0.053912884009364226,
+      "_kind": "line",
+      "_group": 59
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 9.0,
+      "y": 0.05447087459142885,
+      "_kind": "line",
+      "_group": 59
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 10.0,
+      "y": 0.02786262810776774,
+      "_kind": "line",
+      "_group": 60
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 10.0,
+      "y": 0.040936939267487205,
+      "_kind": "line",
+      "_group": 60
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 10.0,
+      "y": 0.05612761573934111,
+      "_kind": "line",
+      "_group": 60
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 10.0,
+      "y": 0.04343471733077242,
+      "_kind": "line",
+      "_group": 60
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 10.0,
+      "y": 0.04251119669480152,
+      "_kind": "line",
+      "_group": 60
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 10.0,
+      "y": 0.05046919334456201,
+      "_kind": "line",
+      "_group": 60
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 11.0,
+      "y": 0.026964158970477548,
+      "_kind": "line",
+      "_group": 61
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 11.0,
+      "y": 0.03746152919821244,
+      "_kind": "line",
+      "_group": 61
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 11.0,
+      "y": 0.04252697541897987,
+      "_kind": "line",
+      "_group": 61
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 11.0,
+      "y": 0.03245296016109056,
+      "_kind": "line",
+      "_group": 61
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 11.0,
+      "y": 0.0469065523105231,
+      "_kind": "line",
+      "_group": 61
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 11.0,
+      "y": 0.04760812353488075,
+      "_kind": "line",
+      "_group": 61
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 12.0,
+      "y": 0.03314762031371665,
+      "_kind": "line",
+      "_group": 62
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 12.0,
+      "y": 0.028680749548746665,
+      "_kind": "line",
+      "_group": 62
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 12.0,
+      "y": 0.042672648277407466,
+      "_kind": "line",
+      "_group": 62
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 12.0,
+      "y": 0.027068099786849542,
+      "_kind": "line",
+      "_group": 62
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 12.0,
+      "y": 0.03797309356737644,
+      "_kind": "line",
+      "_group": 62
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 12.0,
+      "y": 0.0381558546249986,
+      "_kind": "line",
+      "_group": 62
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 1.0,
+      "y": 0.1534822823581522,
+      "series": "MLP \u2014 real logged context, own answers (n=1000, PCA 256\u219248)",
+      "_kind": "line",
+      "_group": 63
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 2.0,
+      "y": -0.14502463207225058,
+      "series": "MLP \u2014 real logged context, own answers (n=1000, PCA 256\u219248)",
+      "_kind": "line",
+      "_group": 63
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 3.0,
+      "y": -0.21304473196278906,
+      "series": "MLP \u2014 real logged context, own answers (n=1000, PCA 256\u219248)",
+      "_kind": "line",
+      "_group": 63
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 4.0,
+      "y": -0.2562254004124791,
+      "series": "MLP \u2014 real logged context, own answers (n=1000, PCA 256\u219248)",
+      "_kind": "line",
+      "_group": 63
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 5.0,
+      "y": -0.2790646323843875,
+      "series": "MLP \u2014 real logged context, own answers (n=1000, PCA 256\u219248)",
+      "_kind": "line",
+      "_group": 63
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 6.0,
+      "y": -0.31089386594880364,
+      "series": "MLP \u2014 real logged context, own answers (n=1000, PCA 256\u219248)",
+      "_kind": "line",
+      "_group": 63
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 7.0,
+      "y": -0.31474793236314724,
+      "series": "MLP \u2014 real logged context, own answers (n=1000, PCA 256\u219248)",
+      "_kind": "line",
+      "_group": 63
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 8.0,
+      "y": -0.32064150123632174,
+      "series": "MLP \u2014 real logged context, own answers (n=1000, PCA 256\u219248)",
+      "_kind": "line",
+      "_group": 63
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 9.0,
+      "y": -0.3448469890686414,
+      "series": "MLP \u2014 real logged context, own answers (n=1000, PCA 256\u219248)",
+      "_kind": "line",
+      "_group": 63
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 10.0,
+      "y": -0.36096353499064193,
+      "series": "MLP \u2014 real logged context, own answers (n=1000, PCA 256\u219248)",
+      "_kind": "line",
+      "_group": 63
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 11.0,
+      "y": -0.38916558151667946,
+      "series": "MLP \u2014 real logged context, own answers (n=1000, PCA 256\u219248)",
+      "_kind": "line",
+      "_group": 63
+    },
+    {
+      "Answer horizon k (turn-1 context \u2192 turn-k answer)": 12.0,
+      "y": -0.37021133160206743,
+      "series": "MLP \u2014 real logged context, own answers (n=1000, PCA 256\u219248)",
+      "_kind": "line",
+      "_group": 63
+    }
+  ],
+  "n_series": 64,
+  "total_points": 448,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Instruct model",
+        "xlabel": "Answer horizon k (turn-1 context \u2192 turn-k answer)",
+        "ylabel": "Held-out R\u00b2 (layer 19)",
+        "legend_labels": [
+          "ridge \u2014 simulated continuations (n\u22485000)",
+          "MLP \u2014 simulated continuations (n=1000, PCA 256\u219248)",
+          "ridge \u2014 real logged context, own answers (n\u22485000)",
+          "MLP \u2014 real logged context, own answers (n=1000, PCA 256\u219248)"
+        ],
+        "annotations": [
+          "ridge shuffled-answer null (max of 200 draws)"
+        ],
+        "xticklabels": [
+          "0",
+          "2",
+          "4",
+          "6",
+          "8",
+          "10",
+          "12",
+          "14",
+          "16",
+          "18"
+        ],
+        "yticklabels": [
+          "\u22120.6",
+          "\u22120.4",
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8"
+        ]
+      },
+      {
+        "title_left": "Pretrained base model",
+        "xlabel": "Answer horizon k (turn-1 context \u2192 turn-k answer)",
+        "annotations": [
+          "ridge shuffled-answer null (max of 200 draws)"
+        ],
+        "xticklabels": [
+          "0",
+          "2",
+          "4",
+          "6",
+          "8",
+          "10",
+          "12",
+          "14",
+          "16",
+          "18"
+        ]
+      }
+    ],
+    "series": [
+      "ridge \u2014 simulated continuations (n\u22485000)",
+      "MLP \u2014 simulated continuations (n=1000, PCA 256\u219248)",
+      "ridge \u2014 real logged context, own answers (n\u22485000)",
+      "MLP \u2014 real logged context, own answers (n=1000, PCA 256\u219248)"
+    ]
+  }
+}

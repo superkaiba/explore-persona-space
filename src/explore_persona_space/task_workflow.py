@@ -5051,6 +5051,355 @@ def audit() -> list[str]:
     return problems
 
 
+# ─── Duplicate-dir audit + terminal-husk reap (#1430) ────────────────────────
+#
+# A concurrent branch cut BEFORE a task's status move re-adds the old-status
+# dir on rebase-merge (e.g. tasks/reviewing/1107/ beside tasks/completed/1107/).
+# The #644 ghost sweep (`_task_status_dir_pathspecs`, used by `set_status`)
+# covers only the INVERSE shape (tracked-in-HEAD, absent-on-disk) and only at
+# the same task's next transition — terminal tasks have none, so on-disk husks
+# persist indefinitely and every `ls tasks/<status>` fleet read misreports
+# them as active. `duplicate_task_dirs()` detects the shape (surfaced by
+# `task.py audit` as a WARN tier); `reap_stale_status_husks()` removes a
+# TERMINAL task's husk iff every entry is subset-verified against the live
+# dir, and ESCALATES — never deletes — on any unique content.
+
+# Reap scope. Deliberately NOT `TERMINAL_STATUSES`, which includes `blocked`
+# — a re-drivable status (the watcher capacity-retry pass), not "no further
+# transitions". Matches the `_WF_FIX_TERMINAL` precedent.
+HUSK_REAP_TERMINAL_STATUSES = frozenset({"completed", "archived"})
+_HUSK_REAP_SIDECAR_REL = ".claude/cache/husk-reap-events.jsonl"
+
+
+@dataclass(frozen=True)
+class DuplicateDirFinding:
+    """One task id holding MORE THAN ONE on-disk ``tasks/<status>/<id>`` dir.
+
+    ``registry_path`` is the REGISTRY entry's repo-relative path (``None``
+    when the id is unregistered). ``live`` is that path when it is one of
+    the on-disk dirs (``None`` when the registry entry is stale or
+    missing). ``husks`` are every OTHER on-disk dir (repo-relative,
+    sorted). ``terminal`` is True iff the live dir's status is in
+    ``HUSK_REAP_TERMINAL_STATUSES`` (always False when ``live`` is None).
+    """
+
+    task_id: int
+    registry_path: str | None
+    live: str | None
+    husks: list[str]
+    terminal: bool
+
+
+def duplicate_task_dirs() -> list[DuplicateDirFinding]:
+    """Pure read: scan ``tasks/<status>/<id>`` across STATUSES and return one
+    finding per id holding >1 on-disk dir (the merge-reintroduced husk
+    shape, #1430). Never mutates registry, disk, or git. Exact dir-name
+    grouping only (``name.isdigit()`` + ``int(name)``) — the same
+    discipline as ``_task_status_dir_pathspecs``, so id 89 never groups
+    with 898.
+    """
+    reg = _load_registry()
+    repo = repo_root()
+    td = tasks_dir()
+    by_id: dict[int, list[Path]] = {}
+    for status in STATUSES:
+        sd = td / status
+        if not sd.is_dir():
+            continue
+        for child in sd.iterdir():
+            if child.is_dir() and child.name.isdigit():
+                by_id.setdefault(int(child.name), []).append(child)
+    out: list[DuplicateDirFinding] = []
+    for tid, dirs in sorted(by_id.items()):
+        if len(dirs) < 2:
+            continue
+        entry = reg.get("tasks", {}).get(str(tid))
+        reg_path = entry["path"] if entry else None
+        rel_dirs = sorted(str(d.relative_to(repo)) for d in dirs)
+        live = reg_path if (reg_path in rel_dirs) else None
+        husks = [d for d in rel_dirs if d != live]
+        terminal = bool(live) and _status_from_path(repo / live) in HUSK_REAP_TERMINAL_STATUSES
+        out.append(DuplicateDirFinding(tid, reg_path, live, husks, terminal))
+    return out
+
+
+def _jsonl_lines_subsequence(husk_bytes: bytes, live_bytes: bytes) -> bool:
+    """True iff the husk's lines are an ORDERED SUBSEQUENCE of the live
+    file's lines, multiplicity respected: each husk line consumes a
+    DISTINCT live line, in order — never set-inclusion, so a husk line
+    duplicated N times needs N matching live lines after the previous
+    match. Byte-level comparison via ``split(b"\\n")`` with a blank-line
+    guard — never ``.splitlines()``, which shreds U+2028-bearing JSON
+    records (the #825/#950 gotcha); blank/whitespace-only lines carry no
+    content and are ignored on both sides."""
+    husk_lines = [ln for ln in husk_bytes.split(b"\n") if ln.strip()]
+    live_iter = iter(ln for ln in live_bytes.split(b"\n") if ln.strip())
+    return all(any(h == line for line in live_iter) for h in husk_lines)
+
+
+def _husk_unique_content(husk: Path, live: Path) -> list[str]:
+    """Entries under ``husk`` NOT covered by ``live``. Empty list == safe
+    subset (every husk entry is redundant with the live dir; nothing is
+    lost by deleting the husk). Pure read.
+
+    Per-entry rules (``os.walk(followlinks=False)`` — never traverses INTO
+    a symlinked dir; a symlink-to-DIRECTORY appears in ``dirnames``, a
+    symlink-to-file in ``filenames`` — BOTH are classified here so a
+    dir-symlink can never reach ``rmtree`` unverified):
+
+    - symlink (dir OR file): safe iff the live counterpart is a symlink
+      with an identical ``os.readlink()`` target; else unique.
+    - regular file: safe iff a live counterpart file exists AND (bytes
+      identical OR husk bytes are a byte-prefix of live bytes OR — for
+      ``.jsonl`` files — husk lines are an ordered subsequence of live
+      lines, multiplicity respected); a file with NO live counterpart is
+      safe only at size 0; else unique.
+    - directory (non-symlink): recursed by the walk; empty dirs contribute
+      nothing (trivially safe).
+    - any other file type (fifo/socket/device): unique (never expected
+      under tasks/).
+    """
+    unique: list[str] = []
+    for root, dirnames, filenames in os.walk(husk, followlinks=False):
+        root_p = Path(root)
+        rel_root = root_p.relative_to(husk)
+        for name in dirnames:
+            hp = root_p / name
+            if not hp.is_symlink():
+                continue  # real directory — os.walk recurses into it
+            rel = rel_root / name
+            lp = live / rel
+            if lp.is_symlink() and os.readlink(hp) == os.readlink(lp):
+                continue
+            unique.append(str(rel))
+        for name in filenames:
+            hp = root_p / name
+            rel = rel_root / name
+            lp = live / rel
+            if hp.is_symlink():
+                if lp.is_symlink() and os.readlink(hp) == os.readlink(lp):
+                    continue
+                unique.append(str(rel))
+                continue
+            if not hp.is_file():
+                unique.append(str(rel))  # fifo/socket/device — never covered
+                continue
+            husk_bytes = hp.read_bytes()
+            if not lp.is_file():
+                if len(husk_bytes) == 0:
+                    continue  # empty file: no content to lose
+                unique.append(str(rel))
+                continue
+            live_bytes = lp.read_bytes()
+            if live_bytes.startswith(husk_bytes):
+                continue  # byte-identical or byte-prefix of live
+            if hp.suffix == ".jsonl" and _jsonl_lines_subsequence(husk_bytes, live_bytes):
+                continue
+            unique.append(str(rel))
+    return sorted(unique)
+
+
+@dataclass(frozen=True)
+class HuskReapAction:
+    """One per-husk decision from :func:`reap_stale_status_husks`.
+
+    ``action`` is one of ``reaped | would-reap | escalated | would-escalate
+    | skipped-non-terminal | skipped-unregistered | skipped-registry-stale``
+    (``would-*`` in report mode). ``reason`` is human-readable and names the
+    unique entries on escalation.
+    """
+
+    task_id: int
+    husk: str
+    action: str
+    reason: str
+
+
+@dataclass(frozen=True)
+class HuskReapReport:
+    """Return shape of :func:`reap_stale_status_husks`. ``disabled`` is True
+    iff the ``EPM_SKIP_HUSK_REAP=1`` kill switch short-circuited the sweep
+    (then ``actions`` is empty and nothing was read or touched)."""
+
+    applied: bool
+    disabled: bool
+    actions: list[HuskReapAction]
+
+
+def _husk_reap_sidecar_row(repo: Path, **fields: Any) -> None:
+    """Append one reap/escalation row to the durable sidecar
+    ``.claude/cache/husk-reap-events.jsonl``. Apply-mode only; the caller
+    holds ``_locked()`` (``_append_jsonl_line``'s contract — it mkdirs
+    parents itself)."""
+    _append_jsonl_line(repo / _HUSK_REAP_SIDECAR_REL, {"ts": _utcnow_iso(), **fields})
+
+
+def _husk_escalate(
+    task_id: int, rel_husk: str, reason: str, unique: list[str], repo: Path, *, apply: bool
+) -> HuskReapAction:
+    """Escalate a husk that FAILED subset verification: NEVER deleted. Under
+    ``apply=True`` this writes the sidecar row + a stderr ERROR; report mode
+    returns a ``would-escalate`` action with zero side effects (gcp-janitor
+    parity: report-only passes are inert)."""
+    if not apply:
+        return HuskReapAction(task_id, rel_husk, "would-escalate", reason)
+    _log.error(
+        "husk reap #%d: %s — %s; never deleted — triage manually (unique entries: %s)",
+        task_id,
+        rel_husk,
+        reason,
+        unique[:20] or "n/a",
+    )
+    _husk_reap_sidecar_row(
+        repo, task_id=task_id, husk=rel_husk, action="escalated", reason=reason, unique=unique[:50]
+    )
+    return HuskReapAction(task_id, rel_husk, "escalated", reason)
+
+
+def _husk_actions_for_finding(
+    finding: DuplicateDirFinding, repo: Path, *, apply: bool
+) -> list[HuskReapAction]:
+    """Classify — and under ``apply=True`` EXECUTE — the reap decision for
+    every husk of one duplicate-dir finding. Report mode returns
+    ``would-reap`` / ``would-escalate`` with zero side effects; the
+    ``skipped-*`` preconditions are identical (and non-mutating) in both
+    modes. Apply-mode callers hold ``_locked()``."""
+    tid = finding.task_id
+    if finding.registry_path is None:
+        return [
+            HuskReapAction(
+                tid,
+                h,
+                "skipped-unregistered",
+                "id not in REGISTRY — fix registry first: task.py audit --repair",
+            )
+            for h in finding.husks
+        ]
+    if finding.live is None:
+        return [
+            HuskReapAction(
+                tid,
+                h,
+                "skipped-registry-stale",
+                f"REGISTRY path {finding.registry_path!r} not on disk: task.py audit --repair",
+            )
+            for h in finding.husks
+        ]
+    if not finding.terminal:
+        status = _status_from_path(repo / finding.live)
+        return [
+            HuskReapAction(
+                tid,
+                h,
+                "skipped-non-terminal",
+                f"live status {status!r} not in {sorted(HUSK_REAP_TERMINAL_STATUSES)}",
+            )
+            for h in finding.husks
+        ]
+    live_abs = repo / finding.live
+    actions: list[HuskReapAction] = []
+    for rel_husk in finding.husks:
+        husk_abs = repo / rel_husk
+        if husk_abs.is_symlink():
+            actions.append(
+                _husk_escalate(tid, rel_husk, "husk root is a symlink", [], repo, apply=apply)
+            )
+            continue
+        unique = _husk_unique_content(husk_abs, live_abs)
+        if unique:
+            actions.append(
+                _husk_escalate(
+                    tid, rel_husk, f"unique content: {unique[:5]}", unique, repo, apply=apply
+                )
+            )
+            continue
+        if not apply:
+            actions.append(
+                HuskReapAction(
+                    tid, rel_husk, "would-reap", "subset-verified — re-run with --apply to reap"
+                )
+            )
+            continue
+        tracked = [
+            t for t in _run_git(["ls-files", "--", rel_husk]).stdout.splitlines() if t.strip()
+        ]
+        if tracked:
+            # Removes the tracked files from disk AND stages their deletions.
+            _run_git(["rm", "-r", "-q", "--", rel_husk])
+        if husk_abs.exists():
+            # Untracked residue (the #721 empty-artifacts/ shape) — git does
+            # not track empty dirs, so a fully-untracked husk takes this
+            # rmtree-only path with NO commit.
+            shutil.rmtree(husk_abs)
+        if tracked:
+            try:
+                _git_commit([husk_abs], f"task #{tid}: reap stale-status husk {rel_husk} (#1430)")
+            except Exception:
+                _log.error(
+                    "husk reap #%d: git rm of %s succeeded but the commit FAILED — the staged "
+                    "deletions are confined to the %r pathspec and remain in the index; the "
+                    "husk dir is already gone from disk, so a re-run finds no duplicate and "
+                    "will NOT re-commit them — commit manually via `git commit --only -- %s` "
+                    "(they otherwise ride a later non-`--only` committer).",
+                    tid,
+                    rel_husk,
+                    rel_husk,
+                    rel_husk,
+                )
+                raise
+        _husk_reap_sidecar_row(
+            repo, task_id=tid, husk=rel_husk, action="reaped", n_tracked_files=len(tracked)
+        )
+        actions.append(
+            HuskReapAction(
+                tid, rel_husk, "reaped", f"subset-verified ({len(tracked)} tracked file(s))"
+            )
+        )
+    return actions
+
+
+def reap_stale_status_husks(*, apply: bool = False, task_id: int | None = None) -> HuskReapReport:
+    """Reap merge-reintroduced stale-status husk dirs of TERMINAL tasks (#1430).
+
+    Report-only unless ``apply=True``. Kill switch ``EPM_SKIP_HUSK_REAP=1``
+    returns an empty ``disabled`` report. A husk is removed iff its live
+    (REGISTRY) status is in ``HUSK_REAP_TERMINAL_STATUSES`` AND EVERY husk
+    entry is subset-verified against the live dir
+    (:func:`_husk_unique_content`); ANY unique content ESCALATES (stderr
+    ERROR + a sidecar row at ``.claude/cache/husk-reap-events.jsonl``) and
+    is NEVER deleted. Unregistered / registry-stale / non-terminal ids are
+    skipped with labeled actions — never reaped.
+
+    The whole apply loop holds ``_locked()`` (the same flock as every
+    task.py mutation) with the enumeration re-run INSIDE the lock, so
+    verify→remove is adjacent and serialized against all task.py writers.
+    Tracked husks go through ``git rm -r`` + one explicit-path commit per
+    husk; untracked residue through ``shutil.rmtree`` with no commit.
+    Re-runs are safe (a reaped husk is simply no longer enumerated), but a
+    git-rm-succeeded-commit-FAILED crash leaves staged deletions a re-run
+    does NOT re-commit (the husk is already gone from disk) — see the
+    error log in ``_husk_actions_for_finding`` for the manual commit.
+    """
+    if os.environ.get("EPM_SKIP_HUSK_REAP") == "1":
+        return HuskReapReport(applied=False, disabled=True, actions=[])
+    repo = repo_root()
+    actions: list[HuskReapAction] = []
+    if not apply:
+        for f in duplicate_task_dirs():
+            if task_id is not None and f.task_id != task_id:
+                continue
+            actions.extend(_husk_actions_for_finding(f, repo, apply=False))
+        return HuskReapReport(applied=False, disabled=False, actions=actions)
+    with _locked():
+        # Re-enumerate INSIDE the lock — a pre-lock enumeration could be
+        # stale vs a concurrent task.py mutation.
+        for f in duplicate_task_dirs():
+            if task_id is not None and f.task_id != task_id:
+                continue
+            actions.extend(_husk_actions_for_finding(f, repo, apply=True))
+    return HuskReapReport(applied=True, disabled=False, actions=actions)
+
+
 # ─── Registry reconcile (`task.py audit --repair`) ──────────────────────────
 
 
@@ -6298,6 +6647,7 @@ __all__ = [
     "FOLLOWUP_SCOPE_KIND",
     "FREE_ANALYSIS_RUN_KIND",
     "GOAL_H2_NAME",
+    "HUSK_REAP_TERMINAL_STATUSES",
     "KINDS",
     "PARK_STATUS",
     "REGISTRY_PATH",  # noqa: F822 — PEP-562 lazy attr (see __getattr__)
@@ -6306,7 +6656,10 @@ __all__ = [
     "TASKS_DIR",  # noqa: F822 — PEP-562 lazy attr (see __getattr__)
     "TERMINAL_STATUSES",
     "USER_INITIATED_FOLLOWUP_SOURCES",
+    "DuplicateDirFinding",
     "GoalH2DropError",
+    "HuskReapAction",
+    "HuskReapReport",
     "NewTaskRequest",
     "ReconcileReport",
     "RegistryChange",
@@ -6317,6 +6670,7 @@ __all__ = [
     "audit",
     "create_task",
     "defer_concern",
+    "duplicate_task_dirs",
     "executing_followup_label",
     "find_task_path",
     "followup_label_groups",
@@ -6337,6 +6691,7 @@ __all__ = [
     "primary_checkout_root",
     "promote",
     "raise_concern",
+    "reap_stale_status_husks",
     "reconcile_registry",
     "registry_path",
     "remove_tag",

@@ -1,0 +1,1194 @@
+{
+  "commit": "3b1ddc6ecf",
+  "created": "2026-07-16T21:23:48Z",
+  "figsize": [
+    11.5,
+    4.4
+  ],
+  "points": [
+    {
+      "Applied to turn j (held-out)": 1.0,
+      "Held-out R\u00b2 (layer 19)": 0.5893531121811355,
+      "series": "own-turn map (diagonal)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Applied to turn j (held-out)": 2.0,
+      "Held-out R\u00b2 (layer 19)": 0.5632063231531417,
+      "series": "own-turn map (diagonal)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Applied to turn j (held-out)": 3.0,
+      "Held-out R\u00b2 (layer 19)": 0.5722712105586893,
+      "series": "own-turn map (diagonal)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Applied to turn j (held-out)": 4.0,
+      "Held-out R\u00b2 (layer 19)": 0.5770640476355591,
+      "series": "own-turn map (diagonal)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Applied to turn j (held-out)": 5.0,
+      "Held-out R\u00b2 (layer 19)": 0.5751967910568325,
+      "series": "own-turn map (diagonal)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Applied to turn j (held-out)": 6.0,
+      "Held-out R\u00b2 (layer 19)": 0.5740452762784207,
+      "series": "own-turn map (diagonal)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Applied to turn j (held-out)": 7.0,
+      "Held-out R\u00b2 (layer 19)": 0.5689051264046092,
+      "series": "own-turn map (diagonal)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Applied to turn j (held-out)": 8.0,
+      "Held-out R\u00b2 (layer 19)": 0.5687886046017275,
+      "series": "own-turn map (diagonal)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Applied to turn j (held-out)": 9.0,
+      "Held-out R\u00b2 (layer 19)": 0.5712341067433795,
+      "series": "own-turn map (diagonal)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Applied to turn j (held-out)": 10.0,
+      "Held-out R\u00b2 (layer 19)": 0.5670992068731735,
+      "series": "own-turn map (diagonal)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Applied to turn j (held-out)": 11.0,
+      "Held-out R\u00b2 (layer 19)": 0.5660860605952243,
+      "series": "own-turn map (diagonal)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Applied to turn j (held-out)": 12.0,
+      "Held-out R\u00b2 (layer 19)": 0.5632106523901919,
+      "series": "own-turn map (diagonal)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Applied to turn j (held-out)": 13.0,
+      "Held-out R\u00b2 (layer 19)": 0.5708616739370684,
+      "series": "own-turn map (diagonal)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Applied to turn j (held-out)": 14.0,
+      "Held-out R\u00b2 (layer 19)": 0.5669919967378649,
+      "series": "own-turn map (diagonal)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Applied to turn j (held-out)": 15.0,
+      "Held-out R\u00b2 (layer 19)": 0.5662788791631912,
+      "series": "own-turn map (diagonal)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Applied to turn j (held-out)": 16.0,
+      "Held-out R\u00b2 (layer 19)": 0.5700008166236592,
+      "series": "own-turn map (diagonal)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Applied to turn j (held-out)": 1.0,
+      "Held-out R\u00b2 (layer 19)": 0.5893531121811355,
+      "series": "map fitted at turn 1",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Applied to turn j (held-out)": 2.0,
+      "Held-out R\u00b2 (layer 19)": 0.36330007119031227,
+      "series": "map fitted at turn 1",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Applied to turn j (held-out)": 3.0,
+      "Held-out R\u00b2 (layer 19)": 0.2795053418527529,
+      "series": "map fitted at turn 1",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Applied to turn j (held-out)": 4.0,
+      "Held-out R\u00b2 (layer 19)": 0.21483347758129556,
+      "series": "map fitted at turn 1",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Applied to turn j (held-out)": 5.0,
+      "Held-out R\u00b2 (layer 19)": 0.15760877577789556,
+      "series": "map fitted at turn 1",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Applied to turn j (held-out)": 6.0,
+      "Held-out R\u00b2 (layer 19)": 0.10842519000496509,
+      "series": "map fitted at turn 1",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Applied to turn j (held-out)": 7.0,
+      "Held-out R\u00b2 (layer 19)": 0.05289066070996118,
+      "series": "map fitted at turn 1",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Applied to turn j (held-out)": 8.0,
+      "Held-out R\u00b2 (layer 19)": 0.010387689506508369,
+      "series": "map fitted at turn 1",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Applied to turn j (held-out)": 9.0,
+      "Held-out R\u00b2 (layer 19)": -0.027166911331306887,
+      "series": "map fitted at turn 1",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Applied to turn j (held-out)": 10.0,
+      "Held-out R\u00b2 (layer 19)": -0.049946775234668506,
+      "series": "map fitted at turn 1",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Applied to turn j (held-out)": 11.0,
+      "Held-out R\u00b2 (layer 19)": -0.08405287053504829,
+      "series": "map fitted at turn 1",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Applied to turn j (held-out)": 12.0,
+      "Held-out R\u00b2 (layer 19)": -0.10348350724460076,
+      "series": "map fitted at turn 1",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Applied to turn j (held-out)": 13.0,
+      "Held-out R\u00b2 (layer 19)": -0.1298222912346192,
+      "series": "map fitted at turn 1",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Applied to turn j (held-out)": 14.0,
+      "Held-out R\u00b2 (layer 19)": -0.14946005367635196,
+      "series": "map fitted at turn 1",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Applied to turn j (held-out)": 15.0,
+      "Held-out R\u00b2 (layer 19)": -0.1660691546680806,
+      "series": "map fitted at turn 1",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Applied to turn j (held-out)": 16.0,
+      "Held-out R\u00b2 (layer 19)": -0.17116445519436496,
+      "series": "map fitted at turn 1",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Applied to turn j (held-out)": 1.0,
+      "Held-out R\u00b2 (layer 19)": 0.4098894754562252,
+      "series": "map fitted at turn 2",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Applied to turn j (held-out)": 2.0,
+      "Held-out R\u00b2 (layer 19)": 0.5632063231531417,
+      "series": "map fitted at turn 2",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Applied to turn j (held-out)": 3.0,
+      "Held-out R\u00b2 (layer 19)": 0.5448863296607187,
+      "series": "map fitted at turn 2",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Applied to turn j (held-out)": 4.0,
+      "Held-out R\u00b2 (layer 19)": 0.5198382859503892,
+      "series": "map fitted at turn 2",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Applied to turn j (held-out)": 5.0,
+      "Held-out R\u00b2 (layer 19)": 0.48984788933549195,
+      "series": "map fitted at turn 2",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Applied to turn j (held-out)": 6.0,
+      "Held-out R\u00b2 (layer 19)": 0.46138818760237843,
+      "series": "map fitted at turn 2",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Applied to turn j (held-out)": 7.0,
+      "Held-out R\u00b2 (layer 19)": 0.4304793039331215,
+      "series": "map fitted at turn 2",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Applied to turn j (held-out)": 8.0,
+      "Held-out R\u00b2 (layer 19)": 0.4039564731075421,
+      "series": "map fitted at turn 2",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Applied to turn j (held-out)": 9.0,
+      "Held-out R\u00b2 (layer 19)": 0.38055427419196064,
+      "series": "map fitted at turn 2",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Applied to turn j (held-out)": 10.0,
+      "Held-out R\u00b2 (layer 19)": 0.3637028457395032,
+      "series": "map fitted at turn 2",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Applied to turn j (held-out)": 11.0,
+      "Held-out R\u00b2 (layer 19)": 0.3404572553115296,
+      "series": "map fitted at turn 2",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Applied to turn j (held-out)": 12.0,
+      "Held-out R\u00b2 (layer 19)": 0.3248351259469723,
+      "series": "map fitted at turn 2",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Applied to turn j (held-out)": 13.0,
+      "Held-out R\u00b2 (layer 19)": 0.3060468003004101,
+      "series": "map fitted at turn 2",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Applied to turn j (held-out)": 14.0,
+      "Held-out R\u00b2 (layer 19)": 0.2874099604221614,
+      "series": "map fitted at turn 2",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Applied to turn j (held-out)": 15.0,
+      "Held-out R\u00b2 (layer 19)": 0.2721684216393433,
+      "series": "map fitted at turn 2",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Applied to turn j (held-out)": 16.0,
+      "Held-out R\u00b2 (layer 19)": 0.26443621264365413,
+      "series": "map fitted at turn 2",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Applied to turn j (held-out)": 1.0,
+      "Held-out R\u00b2 (layer 19)": 0.32596158307239564,
+      "series": "map fitted at turn 3",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Applied to turn j (held-out)": 2.0,
+      "Held-out R\u00b2 (layer 19)": 0.5384061672266459,
+      "series": "map fitted at turn 3",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Applied to turn j (held-out)": 3.0,
+      "Held-out R\u00b2 (layer 19)": 0.5722712105586893,
+      "series": "map fitted at turn 3",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Applied to turn j (held-out)": 4.0,
+      "Held-out R\u00b2 (layer 19)": 0.5685907847078171,
+      "series": "map fitted at turn 3",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Applied to turn j (held-out)": 5.0,
+      "Held-out R\u00b2 (layer 19)": 0.5565242357404793,
+      "series": "map fitted at turn 3",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Applied to turn j (held-out)": 6.0,
+      "Held-out R\u00b2 (layer 19)": 0.5389998739889481,
+      "series": "map fitted at turn 3",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Applied to turn j (held-out)": 7.0,
+      "Held-out R\u00b2 (layer 19)": 0.5188978779163802,
+      "series": "map fitted at turn 3",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Applied to turn j (held-out)": 8.0,
+      "Held-out R\u00b2 (layer 19)": 0.5021290120818963,
+      "series": "map fitted at turn 3",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Applied to turn j (held-out)": 9.0,
+      "Held-out R\u00b2 (layer 19)": 0.48672292655760896,
+      "series": "map fitted at turn 3",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Applied to turn j (held-out)": 10.0,
+      "Held-out R\u00b2 (layer 19)": 0.47437015618804523,
+      "series": "map fitted at turn 3",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Applied to turn j (held-out)": 11.0,
+      "Held-out R\u00b2 (layer 19)": 0.4574614245931551,
+      "series": "map fitted at turn 3",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Applied to turn j (held-out)": 12.0,
+      "Held-out R\u00b2 (layer 19)": 0.44297527280366833,
+      "series": "map fitted at turn 3",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Applied to turn j (held-out)": 13.0,
+      "Held-out R\u00b2 (layer 19)": 0.43069102290700234,
+      "series": "map fitted at turn 3",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Applied to turn j (held-out)": 14.0,
+      "Held-out R\u00b2 (layer 19)": 0.41623165367222736,
+      "series": "map fitted at turn 3",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Applied to turn j (held-out)": 15.0,
+      "Held-out R\u00b2 (layer 19)": 0.40327194362662455,
+      "series": "map fitted at turn 3",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Applied to turn j (held-out)": 16.0,
+      "Held-out R\u00b2 (layer 19)": 0.3967868412052271,
+      "series": "map fitted at turn 3",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Applied to turn j (held-out)": 1.0,
+      "Held-out R\u00b2 (layer 19)": 0.1600223081522324,
+      "series": "map fitted at turn 8",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Applied to turn j (held-out)": 2.0,
+      "Held-out R\u00b2 (layer 19)": 0.43790075000559237,
+      "series": "map fitted at turn 8",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Applied to turn j (held-out)": 3.0,
+      "Held-out R\u00b2 (layer 19)": 0.5181718203511905,
+      "series": "map fitted at turn 8",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Applied to turn j (held-out)": 4.0,
+      "Held-out R\u00b2 (layer 19)": 0.5497326320203001,
+      "series": "map fitted at turn 8",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Applied to turn j (held-out)": 5.0,
+      "Held-out R\u00b2 (layer 19)": 0.561986492751178,
+      "series": "map fitted at turn 8",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Applied to turn j (held-out)": 6.0,
+      "Held-out R\u00b2 (layer 19)": 0.5681282594732397,
+      "series": "map fitted at turn 8",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Applied to turn j (held-out)": 7.0,
+      "Held-out R\u00b2 (layer 19)": 0.5677466087367375,
+      "series": "map fitted at turn 8",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Applied to turn j (held-out)": 8.0,
+      "Held-out R\u00b2 (layer 19)": 0.5687886046017275,
+      "series": "map fitted at turn 8",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Applied to turn j (held-out)": 9.0,
+      "Held-out R\u00b2 (layer 19)": 0.5682021250827234,
+      "series": "map fitted at turn 8",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Applied to turn j (held-out)": 10.0,
+      "Held-out R\u00b2 (layer 19)": 0.5636002086855367,
+      "series": "map fitted at turn 8",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Applied to turn j (held-out)": 11.0,
+      "Held-out R\u00b2 (layer 19)": 0.5606471009964151,
+      "series": "map fitted at turn 8",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Applied to turn j (held-out)": 12.0,
+      "Held-out R\u00b2 (layer 19)": 0.5550538028812388,
+      "series": "map fitted at turn 8",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Applied to turn j (held-out)": 13.0,
+      "Held-out R\u00b2 (layer 19)": 0.556361947135044,
+      "series": "map fitted at turn 8",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Applied to turn j (held-out)": 14.0,
+      "Held-out R\u00b2 (layer 19)": 0.5477770928164948,
+      "series": "map fitted at turn 8",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Applied to turn j (held-out)": 15.0,
+      "Held-out R\u00b2 (layer 19)": 0.543611930162519,
+      "series": "map fitted at turn 8",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Applied to turn j (held-out)": 16.0,
+      "Held-out R\u00b2 (layer 19)": 0.5419956673100665,
+      "series": "map fitted at turn 8",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Applied to turn j (held-out)": 1.0,
+      "y": 0.3741001358927213,
+      "series": "own-turn map (diagonal)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Applied to turn j (held-out)": 2.0,
+      "y": 0.4437820233256494,
+      "series": "own-turn map (diagonal)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Applied to turn j (held-out)": 3.0,
+      "y": 0.546834113943021,
+      "series": "own-turn map (diagonal)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Applied to turn j (held-out)": 4.0,
+      "y": 0.580601548308824,
+      "series": "own-turn map (diagonal)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Applied to turn j (held-out)": 5.0,
+      "y": 0.601812161624927,
+      "series": "own-turn map (diagonal)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Applied to turn j (held-out)": 6.0,
+      "y": 0.6125960370950687,
+      "series": "own-turn map (diagonal)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Applied to turn j (held-out)": 7.0,
+      "y": 0.623313141315839,
+      "series": "own-turn map (diagonal)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Applied to turn j (held-out)": 8.0,
+      "y": 0.6290750545324064,
+      "series": "own-turn map (diagonal)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Applied to turn j (held-out)": 9.0,
+      "y": 0.6336218284791425,
+      "series": "own-turn map (diagonal)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Applied to turn j (held-out)": 10.0,
+      "y": 0.6352343043781963,
+      "series": "own-turn map (diagonal)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Applied to turn j (held-out)": 11.0,
+      "y": 0.6415988670554797,
+      "series": "own-turn map (diagonal)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Applied to turn j (held-out)": 12.0,
+      "y": 0.647169390531457,
+      "series": "own-turn map (diagonal)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Applied to turn j (held-out)": 13.0,
+      "y": 0.6452617341454554,
+      "series": "own-turn map (diagonal)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Applied to turn j (held-out)": 14.0,
+      "y": 0.6445910660686813,
+      "series": "own-turn map (diagonal)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Applied to turn j (held-out)": 15.0,
+      "y": 0.6466001724942134,
+      "series": "own-turn map (diagonal)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Applied to turn j (held-out)": 16.0,
+      "y": 0.6508502596754094,
+      "series": "own-turn map (diagonal)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Applied to turn j (held-out)": 1.0,
+      "y": 0.3741001358927213,
+      "series": "map fitted at turn 1",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Applied to turn j (held-out)": 2.0,
+      "y": 0.18733432880933865,
+      "series": "map fitted at turn 1",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Applied to turn j (held-out)": 3.0,
+      "y": 0.14384347188099467,
+      "series": "map fitted at turn 1",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Applied to turn j (held-out)": 4.0,
+      "y": 0.0919740542416132,
+      "series": "map fitted at turn 1",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Applied to turn j (held-out)": 5.0,
+      "y": 0.03853042160403619,
+      "series": "map fitted at turn 1",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Applied to turn j (held-out)": 6.0,
+      "y": -0.009084180499018268,
+      "series": "map fitted at turn 1",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Applied to turn j (held-out)": 7.0,
+      "y": -0.05131049326473236,
+      "series": "map fitted at turn 1",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Applied to turn j (held-out)": 8.0,
+      "y": -0.0827478188119124,
+      "series": "map fitted at turn 1",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Applied to turn j (held-out)": 9.0,
+      "y": -0.11519438087954637,
+      "series": "map fitted at turn 1",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Applied to turn j (held-out)": 10.0,
+      "y": -0.1422697624600051,
+      "series": "map fitted at turn 1",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Applied to turn j (held-out)": 11.0,
+      "y": -0.18279046148456923,
+      "series": "map fitted at turn 1",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Applied to turn j (held-out)": 12.0,
+      "y": -0.21120445722005177,
+      "series": "map fitted at turn 1",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Applied to turn j (held-out)": 13.0,
+      "y": -0.2468149032055449,
+      "series": "map fitted at turn 1",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Applied to turn j (held-out)": 14.0,
+      "y": -0.2736862212262494,
+      "series": "map fitted at turn 1",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Applied to turn j (held-out)": 15.0,
+      "y": -0.29767609694895447,
+      "series": "map fitted at turn 1",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Applied to turn j (held-out)": 16.0,
+      "y": -0.3006004223882912,
+      "series": "map fitted at turn 1",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Applied to turn j (held-out)": 1.0,
+      "y": 0.08666094884718967,
+      "series": "map fitted at turn 2",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Applied to turn j (held-out)": 2.0,
+      "y": 0.4437820233256494,
+      "series": "map fitted at turn 2",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Applied to turn j (held-out)": 3.0,
+      "y": 0.47335210057436816,
+      "series": "map fitted at turn 2",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Applied to turn j (held-out)": 4.0,
+      "y": 0.4558986719757031,
+      "series": "map fitted at turn 2",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Applied to turn j (held-out)": 5.0,
+      "y": 0.43110249981170623,
+      "series": "map fitted at turn 2",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Applied to turn j (held-out)": 6.0,
+      "y": 0.40644595793272853,
+      "series": "map fitted at turn 2",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Applied to turn j (held-out)": 7.0,
+      "y": 0.3836641468733798,
+      "series": "map fitted at turn 2",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Applied to turn j (held-out)": 8.0,
+      "y": 0.36464654232500715,
+      "series": "map fitted at turn 2",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Applied to turn j (held-out)": 9.0,
+      "y": 0.3446638213436525,
+      "series": "map fitted at turn 2",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Applied to turn j (held-out)": 10.0,
+      "y": 0.328114356721635,
+      "series": "map fitted at turn 2",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Applied to turn j (held-out)": 11.0,
+      "y": 0.3055717260406876,
+      "series": "map fitted at turn 2",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Applied to turn j (held-out)": 12.0,
+      "y": 0.2909453312199469,
+      "series": "map fitted at turn 2",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Applied to turn j (held-out)": 13.0,
+      "y": 0.2686820012505996,
+      "series": "map fitted at turn 2",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Applied to turn j (held-out)": 14.0,
+      "y": 0.25060003179763535,
+      "series": "map fitted at turn 2",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Applied to turn j (held-out)": 15.0,
+      "y": 0.23673131750563692,
+      "series": "map fitted at turn 2",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Applied to turn j (held-out)": 16.0,
+      "y": 0.23288593806628577,
+      "series": "map fitted at turn 2",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Applied to turn j (held-out)": 1.0,
+      "y": 0.04183621390600467,
+      "series": "map fitted at turn 3",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Applied to turn j (held-out)": 2.0,
+      "y": 0.4029608657725431,
+      "series": "map fitted at turn 3",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Applied to turn j (held-out)": 3.0,
+      "y": 0.546834113943021,
+      "series": "map fitted at turn 3",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Applied to turn j (held-out)": 4.0,
+      "y": 0.5720150544550071,
+      "series": "map fitted at turn 3",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Applied to turn j (held-out)": 5.0,
+      "y": 0.5769220662860469,
+      "series": "map fitted at turn 3",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Applied to turn j (held-out)": 6.0,
+      "y": 0.5717704153424026,
+      "series": "map fitted at turn 3",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Applied to turn j (held-out)": 7.0,
+      "y": 0.5672952386202476,
+      "series": "map fitted at turn 3",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Applied to turn j (held-out)": 8.0,
+      "y": 0.5617455585463618,
+      "series": "map fitted at turn 3",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Applied to turn j (held-out)": 9.0,
+      "y": 0.5528615650374993,
+      "series": "map fitted at turn 3",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Applied to turn j (held-out)": 10.0,
+      "y": 0.5454446214152938,
+      "series": "map fitted at turn 3",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Applied to turn j (held-out)": 11.0,
+      "y": 0.5376030010498888,
+      "series": "map fitted at turn 3",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Applied to turn j (held-out)": 12.0,
+      "y": 0.5333041842617345,
+      "series": "map fitted at turn 3",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Applied to turn j (held-out)": 13.0,
+      "y": 0.5212928635272032,
+      "series": "map fitted at turn 3",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Applied to turn j (held-out)": 14.0,
+      "y": 0.5117149738826878,
+      "series": "map fitted at turn 3",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Applied to turn j (held-out)": 15.0,
+      "y": 0.5039888891848074,
+      "series": "map fitted at turn 3",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Applied to turn j (held-out)": 16.0,
+      "y": 0.49898620473834476,
+      "series": "map fitted at turn 3",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Applied to turn j (held-out)": 1.0,
+      "y": -0.19990522244405118,
+      "series": "map fitted at turn 8",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Applied to turn j (held-out)": 2.0,
+      "y": 0.27577819917459034,
+      "series": "map fitted at turn 8",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Applied to turn j (held-out)": 3.0,
+      "y": 0.4862583908401408,
+      "series": "map fitted at turn 8",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Applied to turn j (held-out)": 4.0,
+      "y": 0.55483801346827,
+      "series": "map fitted at turn 8",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Applied to turn j (held-out)": 5.0,
+      "y": 0.5909758519218933,
+      "series": "map fitted at turn 8",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Applied to turn j (held-out)": 6.0,
+      "y": 0.6087528571034999,
+      "series": "map fitted at turn 8",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Applied to turn j (held-out)": 7.0,
+      "y": 0.6224597123455151,
+      "series": "map fitted at turn 8",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Applied to turn j (held-out)": 8.0,
+      "y": 0.6290750545324064,
+      "series": "map fitted at turn 8",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Applied to turn j (held-out)": 9.0,
+      "y": 0.6313543521657037,
+      "series": "map fitted at turn 8",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Applied to turn j (held-out)": 10.0,
+      "y": 0.6330285458490544,
+      "series": "map fitted at turn 8",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Applied to turn j (held-out)": 11.0,
+      "y": 0.634921998543768,
+      "series": "map fitted at turn 8",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Applied to turn j (held-out)": 12.0,
+      "y": 0.6374173983813727,
+      "series": "map fitted at turn 8",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Applied to turn j (held-out)": 13.0,
+      "y": 0.6330023327517038,
+      "series": "map fitted at turn 8",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Applied to turn j (held-out)": 14.0,
+      "y": 0.6292734250366963,
+      "series": "map fitted at turn 8",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Applied to turn j (held-out)": 15.0,
+      "y": 0.628079246210864,
+      "series": "map fitted at turn 8",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Applied to turn j (held-out)": 16.0,
+      "y": 0.6252311581296005,
+      "series": "map fitted at turn 8",
+      "_kind": "line",
+      "_group": 9
+    }
+  ],
+  "n_series": 10,
+  "total_points": 160,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Instruct model",
+        "xlabel": "Applied to turn j (held-out)",
+        "ylabel": "Held-out R\u00b2 (layer 19)",
+        "legend_labels": [
+          "own-turn map (diagonal)",
+          "map fitted at turn 1",
+          "map fitted at turn 2",
+          "map fitted at turn 3",
+          "map fitted at turn 8"
+        ],
+        "xticklabels": [
+          "0",
+          "2",
+          "4",
+          "6",
+          "8",
+          "10",
+          "12",
+          "14",
+          "16",
+          "18"
+        ],
+        "yticklabels": [
+          "\u22120.4",
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8"
+        ]
+      },
+      {
+        "title_left": "Pretrained base model",
+        "xlabel": "Applied to turn j (held-out)",
+        "xticklabels": [
+          "0",
+          "2",
+          "4",
+          "6",
+          "8",
+          "10",
+          "12",
+          "14",
+          "16",
+          "18"
+        ]
+      }
+    ],
+    "series": [
+      "own-turn map (diagonal)",
+      "map fitted at turn 1",
+      "map fitted at turn 2",
+      "map fitted at turn 3",
+      "map fitted at turn 8"
+    ]
+  }
+}
