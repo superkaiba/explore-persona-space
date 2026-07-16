@@ -275,9 +275,9 @@ What is plotted: zero-shot transfer of the layer-14 supervised trait probes betw
 
 > **Figure.** *No probe transfers across corpora under the registered rule.* Zero-shot Pearson r, context-state vs bare-query probes, both directions × two traits, 95% clustered bootstrap intervals (10,000 draws). Every context bar is indistinguishable from zero given its interval; the one interval excluding zero is the inbound hallucination contrast favoring bare states (r 0.158 vs 0.030).
 
-!Per-row outbound transfer scatter: probe predictions vs LMSYS judge labels (embedded below)
+![Outbound per-row transfer scatter](https://raw.githubusercontent.com/superkaiba/explore-persona-space/79b4761d18c3b77227d3cc8c77cb3c6aa78eeb7e/figures/issue_1092/transfer_scatter_dirA_lmsys.png)
 
-!Per-row inbound transfer scatter: LMSYS-fit probe predictions vs this corpus's judge scores (embedded below)
+![Inbound per-row transfer scatter](https://raw.githubusercontent.com/superkaiba/explore-persona-space/79b4761d18c3b77227d3cc8c77cb3c6aa78eeb7e/figures/issue_1092/transfer_scatter_dirB.png)
 
 The registered verdict is partial: no cell meets the transfer-positive rule, and the within-LMSYS hallucination ceiling failed its floor (cross-validated r 0.009, its interval crossing zero), blocking the LMSYS-side cells as signal-absent — the downgrade precondition is unmet, so the within-corpus decodability claim is neither downgraded nor extended. The one interval excluding zero runs negative: LMSYS-trained hallucination probes read the bare states better than the context states (Δr −0.128). Not a join artifact: the same join transfers r 0.158 onto bare states, so the LMSYS labels themselves carry no decodable signal. Evil is not estimable per direction pair; the elicited-trait substrate's sycophancy read is the only positive context-over-bare surface (0.439 vs 0.263, non-gating).
 
@@ -324,7 +324,6 @@ The two reproductions support the cross-corpus comparisons above. The averaging-
 **Context:** created 2026-07-07; GPU phases run 2026-07-08–09; fit grid + aggregation 2026-07-09–10; results + interpretation 2026-07-10. Lineage: fresh direction building on [#923](https://eps.superkaiba.com/tasks/923) (constructed-grid decomposition), [#813](https://eps.superkaiba.com/tasks/813) (averaging-rank collapse), [#779](https://eps.superkaiba.com/tasks/779) (persona-state monitoring + r_B bank), [#825](https://eps.superkaiba.com/tasks/825) (naturalistic-formatting recipe), [#594](https://eps.superkaiba.com/tasks/594) (eval battery); one same-issue free-analysis follow-up round (trait-per-factor repair, proposer-initiated, folded 2026-07-10); a second same-issue follow-up round (cross-corpus supervised-probe transfer, `followup_label: cross-corpus-probe-transfer`, proposer-initiated cheap band, run + folded 2026-07-10); a user-chat inline free-analysis round (`caveat-repairs-plus-operator-arm-comparison`, run 2026-07-14: transport floors, battery-invariance verification, leak root cause); a third same-issue follow-up round (`followup_label: offvm-battery-refit-and-operator-comparison`, user-initiated — originating prompt, verbatim: "dispatch" — run 2026-07-15–16, folded 2026-07-16). Originating prompt, verbatim:
 
 > how can we get more realistic and diverse contexts but also be able to compare the context vs query maps? potentially another issue is working on this [design discussion] -> Yes let's run it in the background with happy coder. First ask clarifying questions [answers: all three co-primary; natural + 50-battery bridge; ~1k prefixes / ~13k rows; random + topic-matched control]
-
 
 
 
