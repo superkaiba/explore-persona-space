@@ -515,6 +515,25 @@ re-route — while a candidate parked AFTER the fix closed is a genuine
 re-raise and stays enumerated; see
 `scripts/sweep_parked_wf_candidates.py`.)
 
+**Recently-closed-sibling ADVISORY (#1399 — advisory only, never a block).**
+The predicate above is exact-`(target_file, fingerprint)` over OPEN tasks, so
+a JUST-MERGED sibling with different wording is invisible by design
+(2026-07-15: #1350 was filed 25 min after #1329 merged the same fix, and
+#1330 duplicated #1309's already-landed guidance — two pipeline sessions
+burned). At filing time `scripts/file_infra_task.py` therefore prints a
+stderr advisory listing wf-fix/daily-fix tasks CLOSED (completed/archived)
+within the last ~7 days that overlap the candidate — by `workflow_fix_target:`
+path token, or by informative title token
+(`task_workflow.recent_closed_workflow_fix_tasks`) — capped at the 10 most
+recent. The filer eyeballs the list before letting the spawned session run.
+ADVISORY ONLY: it never blocks the filing, never changes exit codes, and
+fails soft with a printed diagnostic — the rule above is unchanged (a closed
+fix still never blocks a genuine re-raise). Because the wrapper's stderr
+arrives after it has already filed and best-effort-spawned, an agent consumer
+that spots a just-merged duplicate in the list applies the post-hoc remedy:
+archive the just-filed task (`task.py set-status <id> archived`) and stop its
+spawned session (`spawn_session.py stop --session-id <sid>`).
+
 ## Recursion guard
 
 A workflow-fix `/issue` session must NOT auto-file MORE workflow-fix
