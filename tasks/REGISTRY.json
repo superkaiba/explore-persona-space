@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1425,
+  "highest_id": 1426,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -3321,6 +3321,14 @@
       "path": "tasks/running/1425",
       "status": "running",
       "title": "workflow-fix: gotchas.md download-side hf-xet xet_get wedge entry"
+    },
+    "1426": {
+      "goal": "Determine whether the CoT-mediation signature and the in-context-learning/WildChat family gain excess generalize beyond the Qwen base family by replicating the CoT-decomposition battery on DeepSeek-R1-Distill-Llama-8B, and read which CoT-length gradient profile \u2014 the parent's falling gradient or #1005's flat-to-rising inversion \u2014 travels with the base lineage.",
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/1426",
+      "status": "proposed",
+      "title": "Third-lineage CoT-decomposition replication on DeepSeek-R1-Distill-Llama-8B (non-Qwen base)"
     },
     "144": {
       "has_clean_result": false,
