@@ -2766,6 +2766,7 @@ def _audit_record_violation(
 
 FOLLOWUP_SCOPE_KIND = "epm:followup-scope"
 FOLLOWUP_RUN_KIND = "epm:same-issue-followup-run"
+FREE_ANALYSIS_RUN_KIND = "epm:free-analysis-followup-run"
 USER_INITIATED_FOLLOWUP_SOURCES = frozenset({"user-chat", "step-10b-pick"})
 
 # An UNLABELED scope note inherits the previous entry's label ONLY when it
@@ -3137,13 +3138,11 @@ def followup_retro_close_evidence(events: list[dict], label: str) -> str | None:
                     f"epm:methodology-doc-generated at {ev.get('ts', '?')} carries extends={label}"
                 )
     for ev in events:
-        if ev.get("kind") != "epm:free-analysis-followup-run":
+        if ev.get("kind") != FREE_ANALYSIS_RUN_KIND:
             continue
         ref = parse_followup_note_field(ev.get("note") or "", "followup_ref")
         if ref == label:
-            return (
-                f"epm:free-analysis-followup-run at {ev.get('ts', '?')} has followup_ref == {label}"
-            )
+            return f"{FREE_ANALYSIS_RUN_KIND} at {ev.get('ts', '?')} has followup_ref == {label}"
     token = f"({label})"
     for ev in events:
         kind = ev.get("kind")
@@ -6105,6 +6104,7 @@ __all__ = [
     "FOLLOWUP_HELD_BLOCKED_STATUSES",
     "FOLLOWUP_RUN_KIND",
     "FOLLOWUP_SCOPE_KIND",
+    "FREE_ANALYSIS_RUN_KIND",
     "GOAL_H2_NAME",
     "KINDS",
     "PARK_STATUS",
