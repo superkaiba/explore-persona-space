@@ -3211,8 +3211,8 @@
     "1411": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1411",
-      "status": "running",
+      "path": "tasks/reviewing/1411",
+      "status": "reviewing",
       "title": "daily-fix: gotchas Edit tool un-escapes uXXXX"
     },
     "1412": {
