@@ -624,3 +624,4 @@
 {"ts": "2026-07-16T02:26:02Z", "kind": "epm:progress", "version": 230, "by": "issue-orchestrator", "note": "[long-phase-heartbeat] offvm refit: rf01 (attempt 6) in workload; 3/4 boxes done+finalized."}
 {"ts": "2026-07-16T03:27:08Z", "kind": "epm:progress", "version": 231, "by": "issue-orchestrator", "note": "[long-phase-heartbeat] offvm refit: rf01 (attempt 6) in workload (~3h post-relaunch); 3/4 done+finalized."}
 {"ts": "2026-07-16T04:28:11Z", "kind": "epm:progress", "version": 232, "by": "issue-orchestrator", "note": "[long-phase-heartbeat] offvm refit: rf01 in workload (~4h post-relaunch); 3/4 done+finalized."}
+{"ts": "2026-07-16T05:29:15Z", "kind": "epm:progress", "version": 233, "by": "issue-orchestrator", "note": "[long-phase-heartbeat] offvm refit: rf01 in workload (~5h post-relaunch); 3/4 done+finalized."}
