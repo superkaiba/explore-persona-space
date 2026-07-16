@@ -128,6 +128,7 @@ BOOTSTRAP_DRAWS = 10_000
 K1_MIN_KEPT_FRACTION = 0.2  # 200/1000 per arm at production scale
 K1_MIN_SHARED_Q_FRACTION = 0.75  # 15/20 shared questions
 
+
 def _n_layers() -> int:
     """Capture layer count (28 in production; env-overridable ONLY so the
     tiny-real CPU e2e test can run the REAL capture/reduce chain on a 2-layer
@@ -907,11 +908,22 @@ def phase_extract_rollouts(cfg: Cfg) -> dict:
 # ── P1b: extraction-rollout response-avg capture (GPU) ───────────────────────
 
 
-def _rollout_completion_objects(out_dir: Path) -> list:
-    """ContrastiveCompletion objects for every persisted P1a rollout (unscored)."""
+def _rollout_completion_objects(
+    out_dir: Path,
+) -> tuple[list, list[tuple[int, str, int, int]]]:
+    """(ContrastiveCompletion, stable key) for every persisted P1a rollout.
+
+    ``keys`` is index-aligned with the completions and carries the shard's
+    STABLE identity ``(pair_index, arm, question_idx, rollout_idx)`` — the
+    P1b<->P3 join key. Positional per-question ordinals are banned here:
+    an ``encode_rows`` skip would shift every later same-question ordinal and
+    silently join a kept completion to a NEIGHBORING rollout's activation
+    (code-review v21 Major 2).
+    """
     from explore_persona_space.artifacts.directions import ContrastiveCompletion
 
     comps: list = []
+    keys: list[tuple[int, str, int, int]] = []
     shards = sorted(out_dir.glob("pair*_*.json"))
     assert shards, f"no P1a shards under {out_dir}"
     for shard_path in shards:
@@ -928,7 +940,10 @@ def _rollout_completion_objects(out_dir: Path) -> list:
                     response=r["response"],
                 )
             )
-    return comps
+            keys.append(
+                (int(r["pair_index"]), r["arm"], int(r["question_idx"]), int(r["rollout_idx"]))
+            )
+    return comps, keys
 
 
 def phase_capture_rollouts(cfg: Cfg) -> dict:
@@ -948,10 +963,10 @@ def phase_capture_rollouts(cfg: Cfg) -> dict:
     rollout_dir = cfg.out_root / "raw_completions" / "extraction"
     cap_dir = cfg.out_root / "captures" / "extraction"
     cap_dir.mkdir(parents=True, exist_ok=True)
-    comps = _rollout_completion_objects(rollout_dir)
+    comps, comp_keys = _rollout_completion_objects(rollout_dir)
     groups: dict[tuple[int, str], list] = {}
-    for c in comps:
-        groups.setdefault((c.pair_index, c.arm), []).append(c)
+    for c, k in zip(comps, comp_keys, strict=True):
+        groups.setdefault((c.pair_index, c.arm), []).append((c, k))
     pending = {k: v for k, v in groups.items() if not (cap_dir / f"pair{k[0]}_{k[1]}.pt").exists()}
     if not pending:
         logger.info("[p1b] all %d capture groups persisted — skip", len(groups))
@@ -969,7 +984,8 @@ def phase_capture_rollouts(cfg: Cfg) -> dict:
     layers = list(range(_n_layers()))
     pilot_done = False
     for (pi, arm), group in sorted(pending.items()):
-        rows, encode_counts = encode_rows(tokenizer, group)
+        group_comps = [c for c, _k in group]
+        rows, encode_counts = encode_rows(tokenizer, group_comps)
         valid_idx = [i for i, r in enumerate(rows) if r is not None]
         valid_rows = [rows[i] for i in valid_idx]
         assert valid_rows, f"pair{pi}_{arm}: every row skipped at encode ({encode_counts})"
@@ -1006,19 +1022,27 @@ def phase_capture_rollouts(cfg: Cfg) -> dict:
         assert stack.shape[1] == _n_layers(), tuple(stack.shape)
         row_meta = [
             {
-                "pair_index": group[i].pair_index,
-                "arm": group[i].arm,
-                "question": group[i].question,
-                "rollout_ordinal": i,
+                "pair_index": group[i][0].pair_index,
+                "arm": group[i][0].arm,
+                "question": group[i][0].question,
+                # STABLE shard ids — the skip-safe P1b<->P3 join key (never a
+                # positional ordinal; code-review v21 Major 2).
+                "question_idx": group[i][1][2],
+                "rollout_idx": group[i][1][3],
             }
             for i in valid_idx
         ]
+        # Encode-skipped rows' keys, persisted so P3 can tell "legitimately
+        # excluded at encode" from "keying bug / store corruption" (fail loud).
+        skipped_keys = [list(group[i][1]) for i, r in enumerate(rows) if r is None]
         tmp = cap_dir / f"pair{pi}_{arm}.pt.tmp"
         torch.save(
             {
-                "schema_version": 1,
+                # v2: stable (question_idx, rollout_idx) row keys + skipped_keys.
+                "schema_version": 2,
                 "means_fp16": stack,
                 "row_meta": row_meta,
+                "skipped_keys": skipped_keys,
                 "encode_counts": encode_counts,
                 "meta": {"git_commit": _git_commit(), "ts": _utc(), "model": BASE_MODEL},
             },
@@ -1054,10 +1078,13 @@ def _panel_specs(cfg: Cfg) -> dict[str, dict]:
 
 def _stage_adapter(spec: dict, dest_root: Path) -> Path:
     """Stage one organism's adapter checkpoint subfolder from the Hub (#1402)."""
+    from huggingface_hub import HfApi
+
     from explore_persona_space.orchestrate import hub
 
     dest = dest_root / spec["organism_id"]
     files = hub.list_hf_files_under_path(
+        HfApi(),
         spec["adapter_repo"],
         spec["adapter_subfolder"],
         repo_type="model",
@@ -1067,7 +1094,11 @@ def _stage_adapter(spec: dict, dest_root: Path) -> Path:
     wanted = [
         f
         for f in files
-        if not f.endswith((".bin", ".pth")) or "adapter" in Path(f).name  # keep it tight
+        # adapter payload only: no torch pickles except adapter_*, and no
+        # optimizer/scheduler training state (the TRAINING_STATE_IGNORE_PATTERNS
+        # classes in orchestrate/hub.py — bandwidth/disk, code-review v21 Minor 5)
+        if (not f.endswith((".bin", ".pth")) or "adapter" in Path(f).name)
+        and Path(f).name not in ("optimizer.pt", "scheduler.pt")
     ]
     for repo_path in wanted:
         rel = Path(repo_path).relative_to(spec["adapter_subfolder"])
@@ -1498,6 +1529,13 @@ def phase_dispatch(cfg: Cfg) -> dict:
     (gotchas.md #1333 diagnosability rule) and fail loud. ``--dry-run`` prints
     the composed unit commands + writes the sentinel and exits 0 (the GPU-bound
     carve-out's dispatcher dry-run leg — no GPU work).
+
+    Plan §9 deviation (recorded, code-review v21 Minor 6): the two streams are
+    a STATIC split (GPU0: P1a->P1b, GPU1: P1c) with NO work-stealing re-shard
+    when one stream drains early — worst-case tail idle <=~0.5 h on one A100
+    by §9's own arithmetic. Both streams stay concurrent throughout (not a
+    #813 wave barrier); a re-shard would split P1c's per-organism units
+    mid-flight for marginal gain at real complexity cost.
     """
     _phase("p1_dispatch")
     _load_dotenv_ok()
@@ -1902,33 +1940,48 @@ def phase_judge(cfg: Cfg) -> dict:
 # ── P3: reduce + analyze (VM) ────────────────────────────────────────────────
 
 
-def _scored_completions(cfg: Cfg) -> list:
-    """P1a rollout ContrastiveCompletions with fu6 judge scores threaded."""
+def _scored_completions(cfg: Cfg) -> tuple[list, list]:
+    """(P1a rollout ContrastiveCompletions with fu6 judge scores, stable keys)."""
     import dataclasses as _dc
 
-    comps = _rollout_completion_objects(cfg.out_root / "raw_completions" / "extraction")
+    comps, comp_keys = _rollout_completion_objects(cfg.out_root / "raw_completions" / "extraction")
     scores = _read_json(cfg.deliverables_dir / "judge" / "extraction_filter_scores.json")["scores"]
     _, meta = _extraction_filter_set(cfg)
     assert len(meta) == len(comps), (len(meta), len(comps))
     out = []
     for c, (iid, _r) in zip(comps, meta, strict=True):
         out.append(_dc.replace(c, judge_score=scores.get(iid)))
-    return out
+    return out, comp_keys
 
 
-def reduce_rb_from_stored_means(cfg: Cfg, completions: list, means_by_key: dict) -> tuple:
+def reduce_rb_from_stored_means(
+    cfg: Cfg,
+    completions: list,
+    comp_keys: list,
+    means_by_key: dict,
+    skipped_keys: set,
+) -> tuple:
     """VM-side fp64 diff-of-means over STORED response means (A4: mirrors
     ``extract_direction`` — same filter, same RunningMean arithmetic, same
     content-match guard re-asserted on the kept set; equivalence-pinned by
     tests/test_issue1090_fu6.py::test_reduction_matches_extract_direction).
 
-    ``means_by_key`` maps (pair_index, arm, question, rollout_ordinal) -> (L,H)
-    fp32 tensors. Returns (r_b (L,H) fp32, counts, kept_index_by_arm).
+    ``comp_keys`` is index-aligned with ``completions`` and carries the STABLE
+    shard identity ``(pair_index, arm, question_idx, rollout_idx)`` — the same
+    key ``_load_means_by_key`` reads from the P1b ``row_meta``, so an
+    ``encode_rows`` skip can never shift the join (code-review v21 Major 2).
+    A KEPT completion missing from ``means_by_key`` must be recorded in the
+    stores' ``skipped_keys`` (legitimately encode-skipped: excluded from the
+    pool + counted per arm as ``encode_skipped_kept``); anything else raises
+    (keying bug / capture-store corruption — fail loud, never a silent drop).
+    Returns (r_b (L,H) fp32, counts, kept_keys_by_arm), with
+    ``kept_keys[arm] ⊆ means_by_key`` by construction.
     """
     import torch
 
     from explore_persona_space.artifacts.directions import RunningMean, filter_completions
 
+    assert len(completions) == len(comp_keys), (len(completions), len(comp_keys))
     kept, counts = filter_completions(completions, threshold=JUDGE_THRESHOLD)
     # Content-match guard on the KEPT set (plan D1 P1b).
     q_ex = {c.question for c in kept if c.arm == "exhibit"}
@@ -1947,16 +2000,27 @@ def reduce_rb_from_stored_means(cfg: Cfg, completions: list, means_by_key: dict)
     n_layers = None
     arm_means = {}
     kept_keys: dict[str, list] = {"exhibit": [], "not_exhibit": []}
-    ordinals: dict[tuple, int] = {}
-    for c in completions:
-        key3 = (c.pair_index, c.arm, c.question)
-        ordinals[key3] = ordinals.get(key3, -1) + 1
-        c_key = (c.pair_index, c.arm, c.question, ordinals[key3])
-        if c in kept:
-            kept_keys[c.arm].append(c_key)
+    # filter_completions returns the SAME objects, so id() membership is exact
+    # even under duplicate completion CONTENT (T=1 rollouts can repeat text).
+    kept_ids = {id(c) for c in kept}
+    for arm in ("exhibit", "not_exhibit"):
+        counts[arm]["encode_skipped_kept"] = 0
+    for c, k in zip(completions, comp_keys, strict=True):
+        if id(c) not in kept_ids:
+            continue
+        if k in means_by_key:
+            kept_keys[c.arm].append(k)
+        elif k in skipped_keys:
+            counts[c.arm]["encode_skipped_kept"] += 1
+        else:
+            raise RuntimeError(
+                f"kept completion {k} has no stored P1b capture and is not recorded "
+                "encode-skipped — P1b<->P3 keying bug or capture-store corruption "
+                "(fail loud; code-review v21 Major 2)"
+            )
     for arm in ("exhibit", "not_exhibit"):
         keys = kept_keys[arm]
-        stacks = [means_by_key[k] for k in keys if k in means_by_key]
+        stacks = [means_by_key[k] for k in keys]  # all present by construction (above)
         counts[arm]["captured"] = len(stacks)
         if not stacks:
             raise ValueError(f"zero captured kept completions in arm {arm} — yield failure")
@@ -1993,23 +2057,33 @@ def _k1_gate(cfg: Cfg, counts: dict) -> dict:
     return verdict
 
 
-def _load_means_by_key(cfg: Cfg) -> dict:
-    """{(pair_index, arm, question, rollout_ordinal): (L,H) fp32} from P1b stores."""
+def _load_means_by_key(cfg: Cfg) -> tuple[dict, set]:
+    """({(pair_index, arm, question_idx, rollout_idx): (L,H) fp32}, skipped keys)
+    from P1b stores — STABLE shard ids read straight off ``row_meta``, never
+    re-derived positional ordinals (skip-safe; code-review v21 Major 2)."""
     import torch
 
     cap_dir = cfg.out_root / "captures" / "extraction"
     out: dict = {}
+    skipped: set = set()
     files = sorted(cap_dir.glob("pair*_*.pt"))
     assert files, f"no P1b capture stores under {cap_dir}"
     for f in files:
         store = torch.load(f, map_location="cpu", weights_only=False)
+        assert store.get("schema_version") == 2, (
+            f"{f}: P1b store schema v2 required (stable rollout keys + skipped_keys; "
+            "a v1 store's positional ordinals are skip-UNSAFE) — re-run P1b with the "
+            "current driver"
+        )
         stack = store["means_fp16"].float()
-        ords: dict[tuple, int] = {}
+        assert len(store["row_meta"]) == stack.shape[0], (str(f), len(store["row_meta"]))
         for i, m in enumerate(store["row_meta"]):
-            key3 = (int(m["pair_index"]), m["arm"], m["question"])
-            ords[key3] = ords.get(key3, -1) + 1
-            out[(*key3, ords[key3])] = stack[i]
-    return out
+            key = (int(m["pair_index"]), m["arm"], int(m["question_idx"]), int(m["rollout_idx"]))
+            assert key not in out, ("duplicate capture key across P1b stores", key, str(f))
+            out[key] = stack[i]
+        for sk in store["skipped_keys"]:
+            skipped.add((int(sk[0]), sk[1], int(sk[2]), int(sk[3])))
+    return out, skipped
 
 
 def _spearman(x, y) -> float:
@@ -2386,9 +2460,11 @@ def phase_reduce_analyze(cfg: Cfg) -> dict:
     tensors_dir.mkdir(parents=True, exist_ok=True)
 
     # 1) r_B from stored means (K1-gated).
-    comps = _scored_completions(cfg)
-    means_by_key = _load_means_by_key(cfg)
-    r_b, counts, kept_keys = reduce_rb_from_stored_means(cfg, comps, means_by_key)
+    comps, comp_keys = _scored_completions(cfg)
+    means_by_key, skipped_keys = _load_means_by_key(cfg)
+    r_b, counts, kept_keys = reduce_rb_from_stored_means(
+        cfg, comps, comp_keys, means_by_key, skipped_keys
+    )
     k1 = _k1_gate(cfg, counts)
     layers = list(range(r_b.shape[0]))
     result = DirectionResult(
@@ -2429,6 +2505,10 @@ def phase_reduce_analyze(cfg: Cfg) -> dict:
     cell_ctxs = [c["context"] for c in joined]
 
     # Extraction pool per layer (randnorm sigma source) + rb norms.
+    # kept_keys ⊆ means_by_key by construction: reduce_rb_from_stored_means
+    # fail-louds on any kept key without a stored capture and EXCLUDES
+    # encode-skipped kept rows, so this stack cannot KeyError on a skip
+    # (code-review v21 Major 2).
     kept_all = [k for arm in ("exhibit", "not_exhibit") for k in kept_keys[arm]]
     pool = torch.stack([means_by_key[k] for k in kept_all], dim=0).double().numpy()
     pool_by_layer = {li: pool[:, li, :] for li in layers}

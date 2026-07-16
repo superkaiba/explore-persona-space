@@ -72,9 +72,12 @@ def qwen_tokenizer():
 
 
 def _tiny_completions():
+    """(rows, stable keys) — keys mirror the P1a shard identity
+    ``(pair_index, arm, question_idx, rollout_idx)``."""
     from explore_persona_space.artifacts.directions import ContrastiveCompletion
 
     rows = []
+    keys = []
     for pi in range(2):
         for arm, score in (("exhibit", 90.0), ("not_exhibit", 10.0)):
             for qi, q in enumerate(("Is tea great?", "Are cats better than dogs?")):
@@ -89,7 +92,8 @@ def _tiny_completions():
                             judge_score=score if ri == 0 else (60.0 if arm == "exhibit" else 40.0),
                         )
                     )
-    return rows
+                    keys.append((pi, arm, qi, ri))
+    return rows, keys
 
 
 def test_reduction_matches_extract_direction(qwen_tokenizer, tmp_path):
@@ -103,7 +107,7 @@ def test_reduction_matches_extract_direction(qwen_tokenizer, tmp_path):
     )
 
     model = _tiny_qwen(qwen_tokenizer)
-    comps = _tiny_completions()
+    comps, comp_keys = _tiny_completions()
     ref = extract_direction(
         BEHAVIORS[fu6.BEHAVIOR],
         model,
@@ -114,17 +118,14 @@ def test_reduction_matches_extract_direction(qwen_tokenizer, tmp_path):
         layers=range(2),
         threshold=fu6.JUDGE_THRESHOLD,
     )
-    # Driver path: capture-all (P1b shape) then reduce from stored means.
+    # Driver path: capture-all (P1b shape) then reduce from stored means,
+    # keyed on the STABLE shard ids (skip-safe join, code-review v21 Major 2).
     means_by_key: dict = {}
-    ordinals: dict = {}
     encoded, _ = encode_rows(qwen_tokenizer, comps)
     valid = [(i, r) for i, r in enumerate(encoded) if r is not None]
     means = batched_response_means(model, [r for _, r in valid], [0, 1], batch_size=4)
     for (i, _r), m in zip(valid, means, strict=True):
-        c = comps[i]
-        key3 = (c.pair_index, c.arm, c.question)
-        ordinals[key3] = ordinals.get(key3, -1) + 1
-        means_by_key[(*key3, ordinals[key3])] = m
+        means_by_key[comp_keys[i]] = m
     cfg = fu6.Cfg(
         smoke=True,
         manifest_path=None,
@@ -132,7 +133,7 @@ def test_reduction_matches_extract_direction(qwen_tokenizer, tmp_path):
         out_root=tmp_path,
         sentinel_dir=tmp_path,
     )
-    r_b, counts, _kept = fu6.reduce_rb_from_stored_means(cfg, comps, means_by_key)
+    r_b, counts, _kept = fu6.reduce_rb_from_stored_means(cfg, comps, comp_keys, means_by_key, set())
     assert r_b.shape == ref.r_b.shape
     # Tolerance calibration: the two paths capture with DIFFERENT batch
     # compositions (extract_direction batches per kept arm at batch_size=8;
@@ -146,7 +147,7 @@ def test_reduction_matches_extract_direction(qwen_tokenizer, tmp_path):
     for arm in ("exhibit", "not_exhibit"):
         assert counts[arm]["captured"] == ref.counts[arm]["captured"]
     # The fp64 reduction itself is deterministic: bit-equal on identical means.
-    r_b2, _c2, _k2 = fu6.reduce_rb_from_stored_means(cfg, comps, means_by_key)
+    r_b2, _c2, _k2 = fu6.reduce_rb_from_stored_means(cfg, comps, comp_keys, means_by_key, set())
     assert torch.equal(r_b, r_b2)
 
 
@@ -360,7 +361,13 @@ def test_smoke_fenced_call_shapes_bind():
     )
     inspect.signature(hub.stage_hub_prefix).bind("repo", "prefix", Path("/t"))
     inspect.signature(hub.retry_transient).bind(lambda: 1, what="x")
-    # judge_graded incl. the fu6 passthrough kwargs
+    # list_hf_files_under_path (P1c _stage_adapter) — REQUIRED api positional
+    # (code-review v21 Critical 1: the r1 call site omitted it -> TypeError at
+    # the first organism's adapter staging; this bind mirrors the fixed site).
+    inspect.signature(hub.list_hf_files_under_path).bind(
+        HfApi(), "repo", "subfolder", repo_type="model", revision="r"
+    )
+    # judge_graded incl. the fu6 passthrough kwarg
     inspect.signature(judge_graded).bind(
         [("i", "q", "a")],
         "rubric {question} {answer}",
@@ -370,16 +377,18 @@ def test_smoke_fenced_call_shapes_bind():
         judge_model="m",
         max_tokens=300,
         threshold_base=0,
-        checkpoint_dir=Path("/t/ck"),
     )
 
 
 # ── judge_graded passthrough (production-body test for the library edit) ─────
 
 
-def test_judge_graded_threads_threshold_base_and_checkpoint(monkeypatch, tmp_path):
-    """The REAL judge_graded body executes and forwards the new passthrough
-    kwargs to judge_completions_batch (autospec'd network boundary)."""
+def test_judge_graded_threads_threshold_base(monkeypatch, tmp_path):
+    """The REAL judge_graded body executes and forwards the threshold_base
+    passthrough to judge_completions_batch (autospec'd network boundary).
+    NOTE: no checkpoint_dir passthrough exists — the r1 draft's was dead
+    capability (judge_completions_batch derives cache_dir/.dispatch itself)
+    and was removed (code-review v21 Minor 3)."""
     from unittest.mock import create_autospec
 
     from explore_persona_space.eval import batch_judge as bj
@@ -396,18 +405,143 @@ def test_judge_graded_threads_threshold_base_and_checkpoint(monkeypatch, tmp_pat
         cache_dir=tmp_path,
         save_raw=save_raw,
         threshold_base=0,
-        checkpoint_dir=tmp_path / "ck",
     )
     kwargs = fake.call_args.kwargs
-    assert kwargs["threshold_base"] == 0 and kwargs["checkpoint_dir"] == tmp_path / "ck"
+    assert kwargs["threshold_base"] == 0
     assert result.scores["i"] == 70.0
+    assert "checkpoint_dir" not in inspect.signature(gj.judge_graded).parameters
     # default: passthrough ABSENT (existing callers byte-identical)
     fake.reset_mock()
     gj.judge_graded(
         [("i", "q", "a")], "r {question} {answer}", n_draws=1, cache_dir=tmp_path, save_raw=save_raw
     )
     assert "threshold_base" not in fake.call_args.kwargs
-    assert "checkpoint_dir" not in fake.call_args.kwargs
+
+
+# ── encode-skip keying: REAL P1b capture -> filter -> reduce with a skipped
+#    row (code-review v21 Major 2 regression pin) ───────────────────────────────
+
+
+def test_encode_skip_row_keying_end_to_end(qwen_tokenizer, tmp_path, monkeypatch):
+    """A ``"\\n"``-leading rollout (encode_rows ``skipped_prefix_mismatch`` — the
+    gotchas.md BPE-seam class) rides REAL P1b capture -> judge-filter -> reduce
+    WITHOUT shifting any later same-question rollout's activation join: kept
+    rows keep their OWN activations (pre-fix, per-question positional ordinals
+    handed q0/r1 the q0/r2 activation and silently dropped q0/r2), the
+    kept-but-encode-skipped row is excluded + counted, and a kept key that is
+    neither captured nor recorded-skipped raises (loud pool guard)."""
+    import dataclasses as dc
+
+    from transformers import AutoModelForCausalLM
+
+    from explore_persona_space.artifacts.directions import batched_response_means, encode_rows
+
+    monkeypatch.setenv("EPM_FU6_DEVICE", "cpu")
+    monkeypatch.setenv("EPM_FU6_N_LAYERS", "2")
+    tiny_dir = tmp_path / "tiny_model"
+    model = _tiny_qwen(qwen_tokenizer)
+    model.save_pretrained(tiny_dir)
+    qwen_tokenizer.save_pretrained(tiny_dir)
+    monkeypatch.setenv("EPM_FU6_BASE_MODEL", str(tiny_dir))
+
+    out_root = tmp_path / "out"
+    cfg = fu6.Cfg(
+        smoke=True,
+        manifest_path=None,
+        manifest_out=None,
+        out_root=out_root,
+        sentinel_dir=tmp_path,
+    )
+    rollout_dir = out_root / "raw_completions" / "extraction"
+    rollout_dir.mkdir(parents=True)
+    questions = ["Is tea great?", "Are cats better than dogs?"]
+    for arm in ("exhibit", "not_exhibit"):
+        rows = []
+        for qi in range(2):
+            n_r = 3 if (arm == "exhibit" and qi == 0) else 2
+            for ri in range(n_r):
+                resp = f"resp {arm} {qi} {ri} indeed."
+                if arm == "exhibit" and qi == 0 and ri == 0:
+                    # BPE-merges into the prompt's trailing "assistant\n" ->
+                    # encode_rows skipped_prefix_mismatch (verified on the
+                    # real Qwen-2.5-7B tokenizer).
+                    resp = "\nleading-newline response"
+                rows.append(
+                    {
+                        "pair_index": 0,
+                        "arm": arm,
+                        "question_idx": qi,
+                        "rollout_idx": ri,
+                        "response": resp,
+                        "finish_reason": "stop",
+                    }
+                )
+        (rollout_dir / f"pair0_{arm}.json").write_text(
+            json.dumps(
+                {"meta": {"system_prompt": f"sys {arm}"}, "questions": questions, "rows": rows}
+            )
+        )
+
+    fu6.phase_capture_rollouts(cfg)
+
+    skip_key = (0, "exhibit", 0, 0)
+    store = torch.load(
+        out_root / "captures" / "extraction" / "pair0_exhibit.pt",
+        map_location="cpu",
+        weights_only=False,
+    )
+    assert store["schema_version"] == 2
+    assert store["encode_counts"]["skipped_prefix_mismatch"] == 1
+    assert [tuple(k) for k in store["skipped_keys"]] == [skip_key]
+    meta_keys = [
+        (m["pair_index"], m["arm"], m["question_idx"], m["rollout_idx"]) for m in store["row_meta"]
+    ]
+    assert skip_key not in meta_keys
+
+    means_by_key, skipped = fu6._load_means_by_key(cfg)
+    assert skipped == {skip_key}
+
+    # Alignment: replay P1b's exact capture call (same weights, same row order,
+    # same batch size) and assert each kept exhibit row maps to its OWN
+    # activation — the pre-fix ordinal join maps q0/r1 to q0/r2's tensor.
+    comps, comp_keys = fu6._rollout_completion_objects(rollout_dir)
+    ref_model = AutoModelForCausalLM.from_pretrained(
+        str(tiny_dir), torch_dtype=fu6._capture_dtype()
+    )
+    ref_model.eval()
+    ex = [(c, k) for c, k in zip(comps, comp_keys, strict=True) if c.arm == "exhibit"]
+    rows_enc, _ = encode_rows(qwen_tokenizer, [c for c, _k in ex])
+    valid = [(k, r) for (_c, k), r in zip(ex, rows_enc, strict=True) if r is not None]
+    ref = batched_response_means(
+        ref_model, [r for _k, r in valid], [0, 1], batch_size=fu6.CAPTURE_BATCH_SIZE
+    )
+    ref_by_key = {k: m.to(torch.float16).float() for (k, _r), m in zip(valid, ref, strict=True)}
+    for k, want in ref_by_key.items():
+        assert torch.allclose(means_by_key[k], want, atol=1e-6, rtol=0.0), k
+    # ...and the check discriminates: the old-bug assignment (q0/r1 given
+    # q0/r2's activation) is macroscopically different.
+    assert not torch.allclose(
+        means_by_key[(0, "exhibit", 0, 1)], ref_by_key[(0, "exhibit", 0, 2)], atol=1e-3, rtol=0.0
+    )
+
+    # filter -> reduce: all rows judge-kept; the encode-skipped kept row is
+    # excluded from the pool and counted, never silently joined.
+    scored = [dc.replace(c, judge_score=90.0 if c.arm == "exhibit" else 10.0) for c in comps]
+    r_b, counts, kept_keys = fu6.reduce_rb_from_stored_means(
+        cfg, scored, comp_keys, means_by_key, skipped
+    )
+    assert counts["exhibit"]["kept"] == 5
+    assert counts["exhibit"]["encode_skipped_kept"] == 1
+    assert counts["exhibit"]["captured"] == 4
+    assert counts["not_exhibit"]["captured"] == 4
+    assert skip_key not in kept_keys["exhibit"]
+    assert r_b.shape == (2, means_by_key[(0, "exhibit", 0, 1)].shape[1])
+
+    # Loud guard: a kept key neither captured nor recorded-skipped raises.
+    broken = dict(means_by_key)
+    del broken[(0, "exhibit", 1, 0)]
+    with pytest.raises(RuntimeError, match="keying bug"):
+        fu6.reduce_rb_from_stored_means(cfg, scored, comp_keys, broken, skipped)
 
 
 # ── tiny-real CPU e2e: P1a-shaped shards -> REAL P1b -> P1c-shaped stores ->
@@ -504,6 +638,21 @@ def test_tiny_real_cpu_reduce_e2e(qwen_tokenizer, tmp_path, monkeypatch):
             for qi in range(2)
             for ri in range(2)
         ]
+        if arm == "exhibit":
+            # One encode-skipped rollout ("\n"-leading -> BPE-merges into the
+            # prompt tail, encode_rows skipped_prefix_mismatch): the FULL P3
+            # (reduce + pool stack + figures) must exclude it without shifting
+            # q0's earlier rollouts' joins (code-review v21 Major 2).
+            rows.append(
+                {
+                    "pair_index": 0,
+                    "arm": arm,
+                    "question_idx": 0,
+                    "rollout_idx": 2,
+                    "response": "\nencode-skipped row",
+                    "finish_reason": "stop",
+                }
+            )
         (rollout_dir / f"pair0_{arm}.json").write_text(
             json.dumps(
                 {"meta": {"system_prompt": f"sys {arm}"}, "questions": questions, "rows": rows}
@@ -514,6 +663,8 @@ def test_tiny_real_cpu_reduce_e2e(qwen_tokenizer, tmp_path, monkeypatch):
     fu6.phase_capture_rollouts(cfg)
     caps = sorted((out_root / "captures" / "extraction").glob("pair*_*.pt"))
     assert len(caps) == 2
+    ex_store = torch.load(caps[0], map_location="cpu", weights_only=False)
+    assert [tuple(k) for k in ex_store["skipped_keys"]] == [(0, "exhibit", 0, 2)]
 
     # P2-shaped judge outputs (REAL schema; judge API boundary faked).
     judge_dir = deliv / "judge"
@@ -523,8 +674,11 @@ def test_tiny_real_cpu_reduce_e2e(qwen_tokenizer, tmp_path, monkeypatch):
         for qi in range(2):
             for ri in range(2):
                 scores[f"f6-ex-p0-{arm}-q{qi:03d}-r{ri:02d}"] = base_score + qi + ri
+    # The encode-skipped exhibit rollout is judge-KEPT (score > 50) — P3 must
+    # exclude it as encode_skipped_kept, never KeyError at the pool stack.
+    scores["f6-ex-p0-ex-q000-r02"] = 85.0
     (judge_dir / "extraction_filter_scores.json").write_text(
-        json.dumps({"scores": scores, "n_total_draws": 16, "n_dropped_draws_content": 0})
+        json.dumps({"scores": scores, "n_total_draws": 17, "n_dropped_draws_content": 0})
     )
     organisms = [
         {
