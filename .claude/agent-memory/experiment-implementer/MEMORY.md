@@ -1,3 +1,4 @@
+- [GCV lambda interpolation degeneracy](feedback_gcv_lambda_interpolation_degeneracy.md) — grouped cells with n_tr ≲ D: GCV picks grid-min λ, R² −2..−46 on healthy data; fix inner-group-CV selection (#1335)
 - [rule-24 surgical re-judge recipe](feedback_rule24_surgical_rejudge_recipe.md) — recover 529 draws from judge_raw via judge_graded per-k groups + fresh cache; deterministic parse_error items = content-class (#1315)
 - [Hub queue-full 429 + LocalEntryNotFoundError mask](feedback_hub_queue_full_429_and_localentrynotfound_mask.md) — wrap every Hub call in hub.retry_transient; a 429 on hf_hub_download's HEAD surfaces as a 404-shaped LocalEntryNotFoundError (#1345 r5)
 - [free-helper caller-binding leak vs drain-waits](feedback_free_helper_caller_binding_drain_wait.md) — `del` in a callee frees nothing; rebind `x = _free_hf(x)` + post-rebind empty_cache; PEFT wrappers pin base (#1333 r9)
@@ -121,3 +122,4 @@
 - [bf16-GPU parity-gate tolerance](feedback_bf16_gpu_parity_gate_tolerance.md) — never calibrate a capture determinism cosine bar on the CPU smoke; bf16 CUDA noise is ~1e-6, use >= 0.9999 (#1005)
 - [Resume/seed skips starve min-N gates](feedback_resume_seed_min_n_gates.md) — seed-consumed rows shrink the fresh denominator; define seeded-case semantics for every downstream min-N gate + its consumers (#1335 r6)
 - [Parent-branch stranded fixes](feedback_parent_branch_stranded_fixes.md) — reused modules may lack the parent branch's unmerged crash-fixes; reconcile realized row counts vs corpus (#1345)
+- [cross-artifact turn-key convention mismatch at joins](feedback_cross_artifact_turn_key_convention.md) — verify key-space shape + translate keys explicitly at per-turn/per-cell artifact joins; silent .get-and-skip turns a convention mismatch into a fake FAIL (#825 r11)
