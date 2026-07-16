@@ -13,3 +13,4 @@
 {"ts": "2026-07-16T10:41:56Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "approved", "to": "running", "note": "Dispatched implementer; awaiting epm:results."}
 {"ts": "2026-07-16T10:41:57Z", "kind": "epm:progress", "version": 3, "by": "unknown", "note": "stage-dispatch stage=implementing round=1 subagent=implementer worktree=/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-1385"}
 {"ts": "2026-07-16T10:43:17Z", "kind": "epm:progress", "version": 4, "by": "unknown", "note": "implementer (revision round 1): starting edits in worktree issue-1385 — workflow_lint.py check + 12 test pins + 5 rule-file frontmatter fixes per plans/v2 (plan.md)"}
+{"ts": "2026-07-16T10:50:51Z", "kind": "epm:progress", "version": 5, "by": "unknown", "note": "implementer: all 12 rule_frontmatter test pins green in worktree (one PostToolUse-ruff import-strip recovered per the known gotcha); proceeding to linter runs + negative spot-check"}
