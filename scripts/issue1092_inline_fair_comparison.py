@@ -266,6 +266,114 @@ def _averaged_grain(
     }
 
 
+def _rowcos(A: np.ndarray, B: np.ndarray) -> np.ndarray:
+    num = (A * B).sum(1)
+    den = np.linalg.norm(A, axis=1) * np.linalg.norm(B, axis=1) + 1e-12
+    return num / den
+
+
+def _prediction_agreement(Y_avg: np.ndarray, prefix_pred: np.ndarray, ctx_pred: np.ndarray) -> dict:
+    """Direct prefix-pred vs query-averaged-context-pred agreement at averaged grain.
+
+    All three arrays are aligned by the same sorted-prefix order (n_prefix, P).
+    Tests "the prefix map IS the query-averaged context map" at prediction level.
+    """
+    e_prefix = np.linalg.norm(prefix_pred - Y_avg, axis=1)
+    e_ctx = np.linalg.norm(ctx_pred - Y_avg, axis=1)
+    cos_raw = _rowcos(prefix_pred, ctx_pred)
+    pc = prefix_pred - prefix_pred.mean(0, keepdims=True)
+    cc = ctx_pred - ctx_pred.mean(0, keepdims=True)
+    cos_centered = _rowcos(pc, cc)
+    err_corr = (
+        float(np.corrcoef(e_prefix, e_ctx)[0, 1])
+        if e_prefix.std() > 0 and e_ctx.std() > 0
+        else float("nan")
+    )
+    return {
+        "n_prefixes": int(Y_avg.shape[0]),
+        "P_out": int(Y_avg.shape[1]),
+        # (a) R2 of one prediction set vs the other (both directions; _r2 convention)
+        "agreement_r2_prefixpred_vs_ctxpred": _r2(ctx_pred, prefix_pred),
+        "agreement_r2_ctxpred_vs_prefixpred": _r2(prefix_pred, ctx_pred),
+        # (b) cosine between the two predicted profile vectors (raw + across-prefix-centered)
+        "mean_cosine_raw": float(cos_raw.mean()),
+        "median_cosine_raw": float(np.median(cos_raw)),
+        "mean_cosine_centered": float(cos_centered.mean()),
+        "median_cosine_centered": float(np.median(cos_centered)),
+        # (c) per-prefix residual-magnitude comparison
+        "mean_err_prefix": float(e_prefix.mean()),
+        "mean_err_ctx": float(e_ctx.mean()),
+        "err_ratio_prefix_over_ctx": float(e_prefix.mean() / (e_ctx.mean() + 1e-12)),
+        "per_prefix_err_correlation": err_corr,
+        "per_prefix_err_prefix": [float(x) for x in e_prefix],
+        "per_prefix_err_ctx": [float(x) for x in e_ctx],
+    }
+
+
+def process_cell_agreement(cell: str, rows: list[dict]) -> dict:
+    """LEAN pass: recompute only the per-row CONTEXT fit + averaged-grain PREFIX fit
+    (both with held-out preds) and the prediction-agreement read. Skips the per-row
+    prefix single fit + dense-core fits (already banked in fair_comparison.json)."""
+    prefix_all = _load(cell, "prefix_end")
+    context_all = _load(cell, "context_end")
+    t_all = [_load(cell, t) for t in TARGETS]
+    n0 = min(prefix_all.shape[0], context_all.shape[0], min(t.shape[0] for t in t_all), len(rows))
+    be_idx = np.asarray(
+        [
+            i
+            for i in range(n0)
+            if rows[i].get("stratum") != "trait_stratum" and not rows[i].get("is_eval_only")
+        ],
+        dtype=np.int64,
+    )
+    prefix_ids = np.asarray([rows[int(i)].get("prefix_id", "") for i in be_idx])
+    unit_rows = [rows[int(i)] for i in be_idx]
+    folds = _folds_from_manifest(unit_rows, len(unit_rows), group_key="prefix_id", n_folds=N_FOLDS)
+    X_prefix = np.asarray(prefix_all[be_idx], dtype=np.float64)
+    X_context = np.asarray(context_all[be_idx], dtype=np.float64)
+    Y_stacked = np.concatenate([np.asarray(t[be_idx], dtype=np.float64) for t in t_all], axis=1)
+    del prefix_all, context_all, t_all
+    gc.collect()
+
+    groups = _prefix_groups(prefix_ids, MIN_ROWS_PER_PREFIX)
+    pids = sorted(groups)
+    out: dict = {"bases": {}}
+    for basis in BASES:
+        Yb = _basis_targets_with_info(
+            Y_stacked, basis, hidden_dim=HIDDEN_DIM, targets=TARGETS, projection_target="t1"
+        )[0]
+        Yb = np.ascontiguousarray(Yb, dtype=np.float64)
+        # per-row context fit -> held-out preds (the expensive step)
+        _, pred_context = _fit_cv(X_context, Yb, folds, return_pred=True)
+        # averaged-grain aligned arrays (same sorted-prefix order)
+        Y_avg = np.stack([Yb[groups[p]].mean(0) for p in pids], axis=0)
+        Xp_avg = np.stack([X_prefix[groups[p]].mean(0) for p in pids], axis=0)
+        ctx_pred_avg = np.stack([pred_context[groups[p]].mean(0) for p in pids], axis=0)
+        # averaged-grain prefix fit -> held-out preds (cheap)
+        pseudo_rows = [{"prefix_id": p} for p in pids]
+        folds_avg = _folds_from_manifest(
+            pseudo_rows, len(pseudo_rows), group_key="prefix_id", n_folds=N_FOLDS
+        )
+        _, prefix_pred_avg = _fit_cv(Xp_avg, Y_avg, folds_avg, return_pred=True)
+        out["bases"][basis] = {
+            "prediction_agreement": _prediction_agreement(Y_avg, prefix_pred_avg, ctx_pred_avg)
+        }
+        del Yb, pred_context
+        gc.collect()
+        pa = out["bases"][basis]["prediction_agreement"]
+        print(
+            f"[agree {cell}/{basis}] "
+            f"agree_r2(pref|ctx)={pa['agreement_r2_prefixpred_vs_ctxpred']:.4f} "
+            f"cos_centered={pa['mean_cosine_centered']:.4f} "
+            f"err_ratio={pa['err_ratio_prefix_over_ctx']:.3f} "
+            f"err_corr={pa['per_prefix_err_correlation']:.3f}",
+            flush=True,
+        )
+    del X_prefix, X_context, Y_stacked
+    gc.collect()
+    return out
+
+
 def process_cell(cell: str, rows: list[dict], gate: bool) -> dict:
     t0 = time.monotonic()
     prefix_all = _load(cell, "prefix_end")
@@ -395,12 +503,41 @@ def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--gate", action="store_true", help="cell_inst_own ambient only; time + exit")
     ap.add_argument("--cell", default=None, help="run ONE cell and merge into the existing JSON")
+    ap.add_argument(
+        "--agreement-only",
+        action="store_true",
+        help="LEAN: compute only prediction_agreement + merge into the existing JSON",
+    )
     args = ap.parse_args()
     OUT.mkdir(parents=True, exist_ok=True)
     rows = _jsonl(MANIFEST)
     print(f"manifest rows={len(rows)}", flush=True)
 
     out_path = OUT / "fair_comparison.json"
+
+    if args.agreement_only:
+        if not out_path.exists():
+            raise SystemExit(
+                "--agreement-only requires an existing fair_comparison.json to merge into"
+            )
+        result = json.loads(out_path.read_text())
+        result["meta"]["prediction_agreement_added_utc"] = datetime.now(UTC).isoformat()
+        result["meta"]["prediction_agreement_note"] = (
+            "averaged-grain prefix-map prediction vs query-averaged context-map prediction; "
+            "(a) agreement R2 both directions, (b) raw + across-prefix-centered cosine, "
+            "(c) per-prefix residual-magnitude comparison + correlation"
+        )
+        for cell in ["cell_inst_own"] if args.gate else ([args.cell] if args.cell else CELLS):
+            agr = process_cell_agreement(cell, rows)
+            for basis, blk in agr["bases"].items():
+                result["cells"][cell]["bases"][basis]["prediction_agreement"] = blk[
+                    "prediction_agreement"
+                ]
+            out_path.write_text(json.dumps(result, indent=2, allow_nan=True))
+            print(f"[done agreement] {cell}", flush=True)
+        print(f"merged prediction_agreement into {out_path}", flush=True)
+        return
+
     result = {
         "meta": {
             "script": "scripts/issue1092_inline_fair_comparison.py",
