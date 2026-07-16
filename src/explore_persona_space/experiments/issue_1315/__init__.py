@@ -43,6 +43,9 @@ MARGIN_REV = "dda5585a13e0c4d6e3e16e027bffa8bad9c02ba7"  # data repo (fu4 margin
 # HF prefixes for the reused artifacts (Hub-verified 2026-07-15, plan §10)
 FU4_PERS_PREFIX = "adapters/issue1090_fu4/imp-pers-lr3e5"  # model repo
 FU4_CONV_PREFIX = "adapters/issue1090_fu4/imp-conv-lr3e5"  # model repo
+# lr-matched-wildchat-geometry follow-up (plan v5 §4.2): the lr-1e-5 WildChat
+# sibling at its band-selected rung (fu4_ladders.json runs.imp-conv-lr1e5).
+FU4_CONV_LR1E5_PREFIX = "adapters/issue1090_fu4/imp-conv-lr1e5"  # model repo
 FU3_ICL_CON_PREFIX = "adapters/issue1090_fu3/C2-icl-con-impolite-claude"  # overflow
 FU3_ICL_POS_PREFIX = "adapters/issue1090_fu3/C2-icl-pos-impolite-claude"  # overflow
 FU3_MIX_CON_PATH = "issue1090_fu3/C2-icl-con-impolite-claude/train_mix.jsonl"
@@ -74,6 +77,19 @@ REUSED_LORA_CELLS: dict[str, dict] = {
         "doses": {"selected": 10, "overtrained": 75},
         "tier2_committed": 0.7371134020618557,  # tier2_confirm imp-conv-lr3e5
         "engaged_nats_committed": 3.106619014296421,
+    },
+    # lr-matched-wildchat-geometry follow-up (plan v5 §4.1/§4.2): identical to
+    # imp_conv_lora except the adapter subpath (lr 3e-5 -> 1e-5) + its own
+    # band-selected rung / committed values (fu4_ladders.json
+    # runs.imp-conv-lr1e5 — verbatim, never retyped).
+    "imp_conv_lora_lr1e5": {
+        "context_id": CONV_CONTEXT_ID,
+        "repo": MODEL_REPO,
+        "revision": FU4_ADAPTER_REV,
+        "prefix": FU4_CONV_LR1E5_PREFIX,
+        "doses": {"selected": 20},
+        "tier2_committed": 0.7239583333333334,  # tier2_confirm imp-conv-lr1e5
+        "engaged_nats_committed": 3.0455304522847024,
     },
     "imp_icl_lora_neg": {
         "context_id": ICL_CONTEXT_ID,
@@ -138,6 +154,11 @@ DIFF_PAIRS = (
     ("H4H5_method_ftneg_vs_loraneg", "imp_icl_ft_neg", "imp_icl_lora_neg"),
     ("H6_negatives_loraneg_vs_lorapos", "imp_icl_lora_neg", "imp_icl_lora_pos"),
     ("H6mirror_negatives_ftneg_vs_ftpos", "imp_icl_ft_neg", "imp_icl_ft_pos"),
+    # lr-matched-wildchat-geometry follow-up (plan v5 §4.3): the registered
+    # paired lr contrast, wildchat panel group (both cells share
+    # CONV_CONTEXT_ID, so the geometry rig's per-group DIFF_PAIRS filter
+    # picks it up with no rig change).
+    ("LRconv_lr1e5_vs_lr3e5", "imp_conv_lora_lr1e5", "imp_conv_lora"),
 )
 
 # ── Capture (plan §4.5) ──────────────────────────────────────────────────────

@@ -158,6 +158,10 @@ class Cfg:
     bare_adapter_prefix: str | None = None
     bare_adapter_rev: str | None = None
     bare_committed_rate: float | None = None
+    # lr-matched-wildchat-geometry follow-up (plan v5 §4.2): data-repo revision
+    # to prestage the parent's committed base capture store from (None -> no
+    # prestage; the base pass captures fresh, the parent behavior).
+    prestage_base_rev: str | None = None
 
     def regime_key(self) -> dict:
         return {
@@ -173,6 +177,10 @@ class Cfg:
             "max_length": C.FT_MAX_LENGTH,
             "step_ceiling": C.FT_STEP_CEILING,
             "bare": self.bare_adapter_prefix,
+            # Output-affecting regime key (#722 r3 rule): a resume can never
+            # mix base generations from two store generations — a different
+            # rev (incl. rev vs fresh-capture None) fails _check_regime loud.
+            "prestage_base_rev": self.prestage_base_rev,
         }
 
 
@@ -409,13 +417,105 @@ def _staged_reused_ckpt(cfg: Cfg, cell: str, step: int) -> Path:
     return cfg.out_root / "inputs" / cell / f"checkpoint-{step}"
 
 
+# ── base-store prestage (lr-matched-wildchat-geometry follow-up, plan v5 §4.2):
+# the paired lr contrast shares the EXACT base rows the parent committed, so
+# the geometry pass consumes the parent's base store instead of re-capturing.
+_PRESTAGE_BASE_FILES: tuple[tuple[str, str], ...] = (
+    (f"{C.DATA_PREFIX}/analysis_tensors/capture/base/base/pooled.pt", "pooled.pt"),
+    (f"{C.DATA_PREFIX}/raw_completions/capture/base/base/raw_rows.json", "raw_rows.json"),
+)
+
+
+def _base_store_required_pairs(cfg: Cfg) -> set[tuple[str, int]]:
+    """Every (context_id, question_idx) pair the run's cells pair against the
+    base store: each cell's capture panel (own source context + the 5-member
+    default_v1 panel) x the full eval-question index range."""
+    n_q = len(_eval_questions(cfg))
+    required: set[tuple[str, int]] = set()
+    for cell in cfg.cells:
+        for cid in _capture_panel(cfg, cell):
+            required.update((cid, qi) for qi in range(n_q))
+    return required
+
+
+def _assert_base_store_covers(
+    row_keys: set[tuple[str, int]], required: set[tuple[str, int]], *, what: str
+) -> None:
+    """Row-coverage predicate: HALT (RuntimeError) on a wrong/partial staged
+    base store BEFORE any GPU phase — never a silent fallback to re-capture."""
+    missing = sorted(required - row_keys)
+    if missing:
+        raise RuntimeError(
+            f"prestaged base store {what} is missing {len(missing)}/{len(required)} required "
+            f"(context_id, question_idx) rows (first: {missing[:3]}) — wrong/partial base "
+            "store at --prestage-base-rev; refusing to fall back to a base re-capture "
+            "(plan v5 §4.2)"
+        )
+
+
+def _prestage_base_store(cfg: Cfg, revision: str) -> dict:
+    """Stage the parent's committed base capture store from the data repo at
+    the PINNED ``revision`` into the consumer-exact paths
+    ``out_root/capture/base/base/{pooled.pt, raw_rows.json}`` (idempotent:
+    skip-if-present), then assert row coverage on BOTH files: every panel
+    (context_id, question_idx) the run's cells pair against must be present —
+    ``phase_capture``'s base resume predicate and ``run_capture_tf_unit``'s
+    row filter open these literal paths. Raises RuntimeError before any GPU
+    phase on a mismatch."""
+    import torch
+    from huggingface_hub import hf_hub_download
+
+    dest = cfg.out_root / "capture" / "base" / "base"
+    dest.mkdir(parents=True, exist_ok=True)
+    for path_in_repo, name in _PRESTAGE_BASE_FILES:
+        target = dest / name
+        if target.exists():
+            continue
+        # per-file scoped download at the pin, transient-retried (#1345 r5:
+        # a bare hf_hub_download HEAD probe let one HF 429 kill a healthy run)
+        got = hub.retry_transient(
+            lambda p=path_in_repo: hf_hub_download(
+                C.HF_DATA_REPO, p, repo_type="dataset", revision=revision
+            ),
+            what=f"prestage base {name} @ {revision[:12]}",
+        )
+        shutil.copyfile(got, target)
+    required = _base_store_required_pairs(cfg)
+    store = torch.load(dest / "pooled.pt", map_location="cpu", mmap=True)
+    pooled_keys = {(m["context_id"], int(m["question_idx"])) for m in store["row_meta"]}
+    _assert_base_store_covers(pooled_keys, required, what="pooled.pt row_meta")
+    raw = json.loads((dest / "raw_rows.json").read_text(encoding="utf-8"))
+    raw_keys = {(r["persona"], int(r["question_idx"])) for r in raw["rows"]}
+    _assert_base_store_covers(raw_keys, required, what="raw_rows.json rows")
+    logger.info(
+        "[prestage-base] staged base store @ %s: %d pooled rows cover %d required pairs",
+        revision,
+        len(pooled_keys),
+        len(required),
+    )
+    return {
+        "revision": revision,
+        "dest": str(dest),
+        "n_rows_pooled": len(pooled_keys),
+        "n_required": len(required),
+    }
+
+
 def phase_stage(cfg: Cfg) -> dict:
     _phase("p0_stage")
+    # Prestage BEFORE the p0 done-file early-return: staging is idempotent
+    # (skip-if-present) and the row-coverage assert re-verifies on every
+    # resumed process (plan v5 §4.2 — halt before any GPU phase).
+    prestage_rec = (
+        _prestage_base_store(cfg, cfg.prestage_base_rev) if cfg.prestage_base_rev else None
+    )
     inputs = cfg.out_root / "inputs"
     done_path = cfg.out_root / "p0_stage.json"
     if done_path.exists():
         return _read_json(done_path)
     rec: dict = {"staged": {}}
+    if prestage_rec is not None:
+        rec["prestage_base"] = prestage_rec
     _assert_banks_and_panel()
 
     # Frozen fu3 mixes @ pinned revision + sha-asserts (reuse check (f)).
@@ -935,7 +1035,12 @@ def phase_persist_ft(cfg: Cfg, selections: dict) -> dict:
 def _fu4_committed_margin(cell: str) -> dict | None:
     """The committed fu4 margin record for a reused fu4 cell (same-surface
     references for the application HALT floor + pool sha)."""
-    run_id = {"imp_pers_lora": "imp-pers-lr3e5", "imp_conv_lora": "imp-conv-lr3e5"}.get(cell)
+    run_id = {
+        "imp_pers_lora": "imp-pers-lr3e5",
+        "imp_conv_lora": "imp-conv-lr3e5",
+        # lr-matched-wildchat-geometry follow-up (plan v5 §4.2 item 2)
+        "imp_conv_lora_lr1e5": "imp-conv-lr1e5",
+    }.get(cell)
     if run_id is None or not FU4_LADDERS_JSON.exists():
         return None
     return _read_json(FU4_LADDERS_JSON)["runs"][run_id]["margin"]
@@ -1904,6 +2009,13 @@ def _parse_args(argv: Sequence[str] | None) -> argparse.Namespace:
     p.add_argument("--bare-adapter-prefix", default=None)
     p.add_argument("--bare-adapter-rev", default=None)
     p.add_argument("--bare-committed-rate", type=float, default=None)
+    p.add_argument(
+        "--prestage-base-rev",
+        default=None,
+        help="data-repo revision to prestage the parent's committed base capture "
+        "store from (pooled.pt + raw_rows.json -> out_root/capture/base/base/; "
+        "row-coverage-asserted before any GPU phase — plan v5 §4.2)",
+    )
     args = p.parse_args(argv)
     if args.mode is not None:
         mode_smoke = args.mode == "smoke"
@@ -1954,6 +2066,7 @@ def build_cfg(args: argparse.Namespace) -> Cfg:
         bare_adapter_prefix=args.bare_adapter_prefix,
         bare_adapter_rev=args.bare_adapter_rev,
         bare_committed_rate=args.bare_committed_rate,
+        prestage_base_rev=args.prestage_base_rev,
     )
 
 

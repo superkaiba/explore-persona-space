@@ -242,6 +242,7 @@ def test_cell_table_shape():
     assert set(C.REUSED_LORA_CELLS) == {
         "imp_pers_lora",
         "imp_conv_lora",
+        "imp_conv_lora_lr1e5",  # lr-matched-wildchat-geometry follow-up (plan v5)
         "imp_icl_lora_neg",
         "imp_icl_lora_pos",
     }
@@ -249,6 +250,7 @@ def test_cell_table_shape():
     # dose brackets per the Hub-verified availability (plan §4.5 / divergence 5)
     assert C.REUSED_LORA_CELLS["imp_pers_lora"]["doses"] == {"selected": 30, "overtrained": 75}
     assert C.REUSED_LORA_CELLS["imp_conv_lora"]["doses"] == {"selected": 10, "overtrained": 75}
+    assert C.REUSED_LORA_CELLS["imp_conv_lora_lr1e5"]["doses"] == {"selected": 20}
     assert C.REUSED_LORA_CELLS["imp_icl_lora_neg"]["doses"] == {
         "step4": 4,
         "selected": 8,
@@ -263,7 +265,9 @@ def test_capture_passes_full_and_smoke_threading():
     full = d.build_cfg(d._parse_args(["--full", "--no-upload"]))
     passes = d.capture_passes(full)
     assert ("base", "base") in passes
-    assert len(passes) == 11  # 10 own-text (2+2+3+1+1+1) + base (plan §4.5)
+    # 11 own-text (2+2+1+3+1+1+1) + base (plan §4.5 + the v5 lr1e5 cell)
+    assert len(passes) == 12
+    assert ("imp_conv_lora_lr1e5", "selected") in passes
     smoke = d.build_cfg(d._parse_args(["--smoke", "--no-upload"]))
     assert smoke.cells == ("imp_icl_ft_neg",)
     spasses = d.capture_passes(smoke)
@@ -1029,3 +1033,229 @@ def test_upload_transport_retry_default_binds_hub_upload(tmp_path, monkeypatch):
     )
     assert url == "repo/pfx/z.json"
     assert fake.call_count == 1
+
+
+# ── lr-matched-wildchat-geometry follow-up (plan v5 §4.2): lr1e5 reused cell
+#    registry + committed-margin map + --prestage-base-rev base staging ────────
+
+
+def test_lr1e5_registry_row_matches_committed_ladder():
+    """Registry values are VERBATIM from fu4_ladders.json runs.imp-conv-lr1e5
+    (never retyped), and the row mirrors imp_conv_lora except the adapter
+    subpath + its own band-selected rung (plan v5 §4.1 single-variable)."""
+    import issue1315_dispatch as d
+
+    row = C.REUSED_LORA_CELLS["imp_conv_lora_lr1e5"]
+    sib = C.REUSED_LORA_CELLS["imp_conv_lora"]
+    assert (row["context_id"], row["repo"], row["revision"]) == (
+        sib["context_id"],
+        sib["repo"],
+        sib["revision"],
+    )
+    assert row["context_id"] == C.CONV_CONTEXT_ID
+    assert row["prefix"] == C.FU4_CONV_LR1E5_PREFIX == "adapters/issue1090_fu4/imp-conv-lr1e5"
+    committed = json.loads(d.FU4_LADDERS_JSON.read_text(encoding="utf-8"))["runs"]["imp-conv-lr1e5"]
+    assert row["doses"] == {"selected": committed["selection"]["step"]}
+    assert row["tier2_committed"] == committed["tier2_confirm_rate"]
+    assert (
+        row["engaged_nats_committed"]
+        == committed["margin"]["adapter_assert"]["max_abs_delta_pos_ln_logp"]
+    )
+    # the ONE resolver threads the narrow invocation (plan §4.2 workload cmd)
+    assert d.resolve_cells("imp_conv_lora_lr1e5", False) == ("imp_conv_lora_lr1e5",)
+
+
+def test_lr1e5_fu4_committed_margin_map():
+    """_fu4_committed_margin covers the new cell (parity's committed reference)
+    and stays None for cells with no fu4 margin record."""
+    import issue1315_dispatch as d
+
+    margin = d._fu4_committed_margin("imp_conv_lora_lr1e5")
+    assert margin is not None and margin["pool_sha256"]
+    assert (
+        margin["adapter_assert"]["max_abs_delta_pos_ln_logp"]
+        == C.REUSED_LORA_CELLS["imp_conv_lora_lr1e5"]["engaged_nats_committed"]
+    )
+    assert d._fu4_committed_margin("imp_icl_lora_neg") is None
+
+
+def test_lr1e5_diff_pair_registered_and_group_filtered():
+    """The registered lr contrast lives in the wildchat panel group, so the
+    geometry rig's per-group DIFF_PAIRS filter picks exactly it (no rig
+    change; plan v5 §4.3)."""
+    from issue1315_geometry import _source_context
+
+    pair = ("LRconv_lr1e5_vs_lr3e5", "imp_conv_lora_lr1e5", "imp_conv_lora")
+    assert pair in C.DIFF_PAIRS
+    assert _source_context("imp_conv_lora_lr1e5") == C.CONV_CONTEXT_ID
+    assert _source_context("imp_conv_lora") == C.CONV_CONTEXT_ID
+    # the _run_tree_grouped filter expression, wildchat group
+    wc_group = {"imp_conv_lora", "imp_conv_lora_lr1e5"}
+    picked = tuple(p for p in C.DIFF_PAIRS if p[1] in wc_group and p[2] in wc_group)
+    assert picked == (pair,)
+    # the three ICL-group pairs are untouched
+    icl_group = {"imp_icl_ft_neg", "imp_icl_ft_pos", "imp_icl_lora_neg", "imp_icl_lora_pos"}
+    assert len(tuple(p for p in C.DIFF_PAIRS if p[1] in icl_group and p[2] in icl_group)) == 3
+
+
+def _lr1e5_cfg(d, tmp_path, rev: str = "a" * 40):
+    return d.Cfg(
+        smoke=False,
+        cells=("imp_conv_lora_lr1e5",),
+        out_root=tmp_path / "run",
+        eval_question_limit=2,
+        prestage_base_rev=rev,
+    )
+
+
+def _write_base_store_fixture(dest: Path, pairs, drop: frozenset = frozenset()) -> None:
+    """Consumer-shaped base-store fixture (pooled.pt row_meta + raw_rows.json
+    rows) built from the REQUIRED pair set, minus ``drop`` for fail paths."""
+    import torch
+
+    keep = [p for p in sorted(pairs) if p not in drop]
+    dest.mkdir(parents=True, exist_ok=True)
+    torch.save(
+        {
+            "schema_version": 1,
+            "row_meta": [{"context_id": c, "question_idx": q} for c, q in keep],
+            "arms": {},
+        },
+        dest / "pooled.pt",
+    )
+    (dest / "raw_rows.json").write_text(
+        json.dumps({"rows": [{"persona": c, "question_idx": q} for c, q in keep]}),
+        encoding="utf-8",
+    )
+
+
+def test_prestage_base_store_downloads_at_pin_and_passes(tmp_path, monkeypatch):
+    """PASS path: both files fetched at the PINNED revision from the canonical
+    data-repo paths, landed at the consumer-exact dest, row coverage holds;
+    a re-run is idempotent (no re-download)."""
+    import huggingface_hub
+    import issue1315_dispatch as d
+
+    rev = "befa87bbf4d0fcf202e836707cde2eff6205e93c"
+    cfg = _lr1e5_cfg(d, tmp_path, rev=rev)
+    required = d._base_store_required_pairs(cfg)
+    # source context + the 5-member default_v1 panel = 6 contexts x n_q
+    assert C.CONV_CONTEXT_ID in {c for c, _ in required}
+    assert len({c for c, _ in required}) == 6
+    assert len(required) == 6 * 2  # eval_question_limit=2 in this fixture cfg
+
+    src = tmp_path / "hub_src"
+    _write_base_store_fixture(src, required)
+    calls: list[tuple] = []
+
+    def fake_download(repo_id, filename, *, repo_type, revision):
+        calls.append((repo_id, filename, repo_type, revision))
+        return str(src / Path(filename).name)
+
+    monkeypatch.setattr(huggingface_hub, "hf_hub_download", fake_download)
+    rec = d._prestage_base_store(cfg, rev)
+    dest = cfg.out_root / "capture" / "base" / "base"
+    assert (dest / "pooled.pt").exists() and (dest / "raw_rows.json").exists()
+    assert rec["revision"] == rev and rec["n_required"] == len(required)
+    assert {c[3] for c in calls} == {rev}  # every fetch at the pin
+    assert {c[1] for c in calls} == {p for p, _ in d._PRESTAGE_BASE_FILES}
+    assert {(c[0], c[2]) for c in calls} == {(C.HF_DATA_REPO, "dataset")}
+
+    def boom(*a, **k):  # idempotency: staged dest must never re-download
+        raise AssertionError("re-download on an already-staged dest")
+
+    monkeypatch.setattr(huggingface_hub, "hf_hub_download", boom)
+    d._prestage_base_store(cfg, rev)
+
+
+def test_prestage_base_store_halts_on_partial_store(tmp_path):
+    """FAIL paths: a staged store missing the new cell's panel rows HALTs
+    (RuntimeError) before any GPU phase — on EITHER file."""
+    import issue1315_dispatch as d
+
+    cfg = _lr1e5_cfg(d, tmp_path)
+    required = d._base_store_required_pairs(cfg)
+    dest = cfg.out_root / "capture" / "base" / "base"
+    wc_pairs = frozenset(p for p in required if p[0] == C.CONV_CONTEXT_ID)
+    assert wc_pairs
+    # (a) pooled.pt missing the wildchat rows
+    _write_base_store_fixture(dest, required, drop=wc_pairs)
+    with pytest.raises(RuntimeError, match=r"pooled\.pt row_meta is missing \d+/\d+"):
+        d._prestage_base_store(cfg, cfg.prestage_base_rev)
+    # (b) pooled complete, raw_rows.json missing one row
+    _write_base_store_fixture(dest, required)
+    one = frozenset([next(iter(sorted(required)))])
+    (dest / "raw_rows.json").write_text(
+        json.dumps(
+            {
+                "rows": [
+                    {"persona": c, "question_idx": q}
+                    for c, q in sorted(required)
+                    if (c, q) not in one
+                ]
+            }
+        ),
+        encoding="utf-8",
+    )
+    with pytest.raises(RuntimeError, match=r"raw_rows\.json rows is missing 1/\d+"):
+        d._prestage_base_store(cfg, cfg.prestage_base_rev)
+
+
+def test_phase_stage_prestage_precedes_done_file_early_return(tmp_path):
+    """The prestage coverage assert fires even on a resumed process whose p0
+    done-file exists (placement pin: BEFORE the early return); a complete
+    staged store lets the early return proceed with zero network."""
+    import issue1315_dispatch as d
+
+    cfg = _lr1e5_cfg(d, tmp_path)
+    cfg.out_root.mkdir(parents=True, exist_ok=True)
+    done = {"staged": {}, "ts": "t"}
+    (cfg.out_root / "p0_stage.json").write_text(json.dumps(done), encoding="utf-8")
+    required = d._base_store_required_pairs(cfg)
+    dest = cfg.out_root / "capture" / "base" / "base"
+    _write_base_store_fixture(dest, required, drop=frozenset([next(iter(sorted(required)))]))
+    with pytest.raises(RuntimeError, match="missing"):
+        d.phase_stage(cfg)
+    _write_base_store_fixture(dest, required)
+    assert d.phase_stage(cfg) == done
+
+
+def test_prestage_rev_is_an_output_affecting_regime_key(tmp_path):
+    """A resume under a DIFFERENT --prestage-base-rev (incl. rev vs
+    fresh-capture None) fails _check_regime loud — a resume can never mix base
+    generations from two store generations (#722 r3 regime-key rule)."""
+    import issue1315_dispatch as d
+
+    cfg_a = _lr1e5_cfg(d, tmp_path, rev="a" * 40)
+    d._check_regime(cfg_a)
+    with pytest.raises(RuntimeError, match="DIFFERENT regime"):
+        d._check_regime(_lr1e5_cfg(d, tmp_path, rev="b" * 40))
+    with pytest.raises(RuntimeError, match="DIFFERENT regime"):
+        d._check_regime(_lr1e5_cfg(d, tmp_path, rev=None))
+    d._check_regime(cfg_a)  # same rev resumes fine
+
+
+def test_parse_args_threads_prestage_base_rev():
+    """--prestage-base-rev threads argparse -> Cfg; flag-less runs keep the
+    parent behavior (None -> no prestage, fresh base capture)."""
+    import issue1315_dispatch as d
+
+    args = d._parse_args(
+        [
+            "--mode",
+            "full",
+            "--cells",
+            "imp_conv_lora_lr1e5",
+            "--phases",
+            "stage,ladder,parity,capture,capture_tf,upload",
+            "--prestage-base-rev",
+            "befa87bbf4d0fcf202e836707cde2eff6205e93c",
+        ]
+    )
+    cfg = d.build_cfg(args)
+    assert cfg.prestage_base_rev == "befa87bbf4d0fcf202e836707cde2eff6205e93c"
+    assert cfg.cells == ("imp_conv_lora_lr1e5",)
+    assert cfg.phases == ("stage", "ladder", "parity", "capture", "capture_tf", "upload")
+    assert "prestage_base_rev" in cfg.regime_key()
+    default = d.build_cfg(d._parse_args(["--full", "--no-upload"]))
+    assert default.prestage_base_rev is None
