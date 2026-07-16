@@ -1,0 +1,651 @@
+<!doctype html><html lang=en><head><meta charset=utf-8><meta name=viewport content='width=device-width, initial-scale=1'><title>Issue 1345 — three framings of the assistant</title><style>
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;0,9..144,700;1,9..144,500&family=Spline+Sans+Mono:wght@400;500;600&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400&display=swap');
+:root{
+  --ink:#211e19; --ink-soft:#534c41; --paper:#f3eee4; --card:#fbf8f1;
+  --line:#ddd3c1; --line-2:#cabfa8; --hl:#ffeea8; --hl-soft:#fff7df;
+  --warn:#9a3b2e; --warn-bg:#f7e6df;
+  --shadow:0 1px 0 rgba(33,30,25,.03), 0 14px 30px -22px rgba(33,30,25,.55);
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0; background:var(--paper);
+  background-image:radial-gradient(circle at 14% -10%, #faf6ec 0, transparent 40%),
+                   radial-gradient(circle at 102% -4%, #ede5d6 0, transparent 36%);
+  color:var(--ink); font-family:"Newsreader",Georgia,serif; font-size:17px; line-height:1.55;
+  -webkit-font-smoothing:antialiased;}
+.wrap{max-width:1180px; margin:0 auto; padding:0 26px 130px}
+.mono{font-family:"Spline Sans Mono",ui-monospace,monospace}
+
+header.masthead{border-bottom:2.5px solid var(--ink); padding:48px 0 20px}
+.kicker{font-family:"Spline Sans Mono",monospace; font-size:11px; letter-spacing:.26em;
+  text-transform:uppercase; color:var(--ink-soft); display:flex; gap:13px; flex-wrap:wrap; align-items:center}
+.kicker .dot{width:5px;height:5px;border-radius:50%;background:var(--ink-soft);display:inline-block}
+h1.title{font-family:"Fraunces",Georgia,serif; font-weight:600; font-optical-sizing:auto;
+  font-size:clamp(33px,5.6vw,56px); line-height:1.0; letter-spacing:-.018em; margin:.3em 0 .14em}
+h1.title em{font-style:italic; color:#2f6f6a}
+.dek{font-size:18.5px; max-width:70ch; color:var(--ink-soft); margin:.25em 0 0}
+.dek code{font-family:"Spline Sans Mono",monospace; font-size:.85em; background:var(--card);
+  padding:1px 5px; border-radius:4px; border:1px solid var(--line)}
+
+.statbar{display:flex; flex-wrap:wrap; margin:28px 0 4px; border:1px solid var(--line-2);
+  border-radius:11px; overflow:hidden; background:var(--card); box-shadow:var(--shadow)}
+.statbar .stat{padding:14px 22px; border-right:1px solid var(--line); flex:1; min-width:118px}
+.statbar .stat:last-child{border-right:none}
+.statbar .num{font-family:"Fraunces",serif; font-size:28px; font-weight:600; line-height:1; display:block}
+.statbar .lbl{font-family:"Spline Sans Mono",monospace; font-size:10px; letter-spacing:.15em;
+  text-transform:uppercase; color:var(--ink-soft); margin-top:7px; display:block}
+
+.callout{margin:26px 0 6px; background:var(--hl-soft); border:1px solid var(--line-2);
+  border-left:4px solid var(--hl); border-radius:9px; padding:14px 18px; font-size:15.5px; color:var(--ink-soft)}
+.callout b{color:var(--ink)}
+.warnbanner{margin:26px 0 6px; background:var(--warn-bg); border:1px solid #e0b6a8;
+  border-left:4px solid var(--warn); border-radius:9px; padding:13px 18px; font-size:15px; color:#6f2b20}
+.warnbanner b{color:var(--warn)}
+
+.famsec{margin:44px 0 8px}
+.famhead{display:flex; align-items:baseline; gap:14px; padding:10px 0 8px; border-bottom:2px solid var(--c);
+  margin-bottom:6px; flex-wrap:wrap}
+.famhead h2{font-family:"Fraunces",serif; font-weight:600; font-size:27px; margin:0; color:var(--c)}
+.famhead .fct{font-family:"Spline Sans Mono",monospace; font-size:12px; color:var(--ink-soft)}
+.famhead .fdesc{font-size:15px; color:var(--ink-soft); flex-basis:100%; margin-top:4px; font-style:italic; max-width:80ch}
+
+.cond{margin:22px 0 0; padding:0 0 14px; border-bottom:1px dashed var(--line)}
+.condhead{display:flex; align-items:baseline; gap:12px; margin:16px 0 8px; flex-wrap:wrap}
+.condhead h3{font-family:"Fraunces",serif; font-weight:600; font-size:20px; margin:0; color:var(--ink)}
+.condcode{font-size:11px; color:#fff8ef; background:var(--c); border-radius:5px; padding:2px 8px; letter-spacing:.08em}
+.ctxbox{background:var(--paper); border:1px solid var(--line); border-left:3px solid var(--c);
+  border-radius:7px; padding:9px 12px; margin:0 0 10px}
+.ctxbox .ctxlbl{font-family:"Spline Sans Mono",monospace; font-size:9.5px; letter-spacing:.14em;
+  text-transform:uppercase; color:var(--c); display:block; margin-bottom:3px}
+.ctxbox .ctxtext{font-size:14.5px; color:var(--ink-soft)}
+
+.statstrip{display:flex; flex-wrap:wrap; border:1px solid var(--line-2); border-radius:9px;
+  overflow:hidden; background:var(--card); margin:0 0 12px; box-shadow:var(--shadow)}
+.statstrip .sc{padding:9px 16px; border-right:1px solid var(--line); flex:1; min-width:92px}
+.statstrip .sc:last-child{border-right:none}
+.statstrip .scn{font-family:"Fraunces",serif; font-size:19px; font-weight:600; display:block; line-height:1}
+.statstrip .scl{font-family:"Spline Sans Mono",monospace; font-size:9px; letter-spacing:.11em;
+  text-transform:uppercase; color:var(--ink-soft); margin-top:5px; display:block}
+
+.grouplbl{font-family:"Spline Sans Mono",monospace; font-size:10px; letter-spacing:.16em;
+  text-transform:uppercase; color:var(--c); margin:14px 0 8px; padding-bottom:3px; border-bottom:1px solid var(--line)}
+.rgrid{display:grid; grid-template-columns:repeat(auto-fill,minmax(360px,1fr)); gap:13px}
+.rcard{background:var(--card); border:1px solid var(--line-2); border-left:4px solid var(--c);
+  border-radius:10px; box-shadow:var(--shadow); padding:12px 14px 13px; display:flex; flex-direction:column}
+.rhead{display:flex; align-items:center; gap:10px; margin-bottom:6px}
+.rid{font-family:"Spline Sans Mono",monospace; font-size:10.5px; color:var(--ink-soft)}
+.score{font-family:"Fraunces",serif; font-weight:700; font-size:16px; padding:2px 10px; border-radius:999px;
+  line-height:1.3}
+.score.over{background:var(--c); color:#fff8ef}
+.score.under{background:transparent; color:var(--c); border:1.5px solid var(--c)}
+.msg{margin:9px 0 0}
+.msg .role{font-family:"Spline Sans Mono",monospace; font-size:9.5px; letter-spacing:.14em;
+  text-transform:uppercase; color:var(--ink-soft); display:inline-block; margin-bottom:4px;
+  border-bottom:1px solid var(--line); padding-bottom:1px}
+.msg .role.user{color:#8a5a1a}
+.msg .role.assistant{color:var(--c)}
+.msg .body{white-space:pre-wrap; word-break:break-word; font-size:14.5px; line-height:1.5;
+  background:var(--paper); border:1px solid var(--line); border-radius:7px; padding:9px 11px}
+.msg .body.ans.clamped{max-height:15em; overflow:hidden; position:relative}
+.msg .body.ans.clamped::after{content:""; position:absolute; left:0; right:0; bottom:0; height:2.2em;
+  background:linear-gradient(transparent, var(--paper)); pointer-events:none}
+.msg .body.ans.expanded{max-height:none}
+.msg .body.ans.expanded::after{display:none}
+.toggle{font-family:"Spline Sans Mono",monospace; font-size:10.5px; color:var(--c); cursor:pointer;
+  border:none; background:none; padding:5px 0 0; text-decoration:underline; text-underline-offset:2px}
+.condfoot{font-size:10.5px; color:var(--ink-soft); margin-top:12px}
+.condfoot a{color:var(--ink-soft); text-decoration:none; border-bottom:1px dotted var(--line-2)}
+
+footer.foot{margin-top:64px; padding-top:22px; border-top:1px solid var(--line);
+  font-family:"Spline Sans Mono",monospace; font-size:11.5px; color:var(--ink-soft); line-height:1.8}
+footer.foot b{color:var(--ink); font-weight:600}
+footer.foot a{color:var(--ink-soft)}
+@media (max-width:760px){ .rgrid{grid-template-columns:1fr} }
+
+.excard{background:var(--card); border:1px solid var(--line-2); border-left:4px solid var(--c);
+  border-radius:11px; box-shadow:var(--shadow); padding:14px 16px 15px; margin:14px 0}
+.exhead{display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:10px}
+.extopic{font-family:"Spline Sans Mono",monospace; font-size:10px; letter-spacing:.1em;
+  text-transform:uppercase; color:#fff8ef; padding:3px 9px; border-radius:5px}
+.exsrc{font-size:11px; color:var(--ink-soft); border:1px solid var(--line-2); border-radius:5px;
+  padding:2px 8px; text-transform:uppercase; letter-spacing:.08em}
+.exmeta{font-size:11px; color:var(--ink-soft)}
+.fmtgrid{display:grid; grid-template-columns:1fr 1fr; gap:14px}
+.fmtcol{display:flex; flex-direction:column; min-width:0}
+.fmtlbl{font-family:"Spline Sans Mono",monospace; font-size:9.5px; letter-spacing:.13em;
+  text-transform:uppercase; display:inline-block; margin-bottom:5px; padding-bottom:2px;
+  border-bottom:1px solid var(--line)}
+.fmtlbl.chat{color:#8a5a1a}
+.fmtlbl.plain{color:var(--c)}
+.fmtcol .body{white-space:pre-wrap; word-break:break-word; font-size:13.5px; line-height:1.5;
+  background:var(--paper); border:1px solid var(--line); border-radius:7px; padding:9px 11px}
+.fmtcol .body.ans.clamped{max-height:20em; overflow:hidden; position:relative}
+.fmtcol .body.ans.clamped::after{content:""; position:absolute; left:0; right:0; bottom:0;
+  height:2.2em; background:linear-gradient(transparent, var(--paper)); pointer-events:none}
+.fmtcol .body.ans.expanded{max-height:none}
+.fmtcol .body.ans.expanded::after{display:none}
+@media (max-width:760px){ .fmtgrid{grid-template-columns:1fr} }
+
+.hl-q{background:#fff2c4; box-shadow:inset 0 -2px #eccf62}
+.hl-a{background:rgba(47,111,106,.13); box-shadow:inset 0 -2px #2f6f6a}
+.hl-slot{background:#ece0f3; box-shadow:inset 0 -2px #6a4c93; border-right:2px solid #6a4c93}
+.hl-slot.slotfinal{background:#dcc9ec; border-right:3px solid #4a2f63}
+.slotcaret{color:#6a4c93; font-weight:700; font-size:.9em; padding:0 1px}
+.capnote{color:var(--warn)}
+.hl-legend{display:flex; gap:16px; flex-wrap:wrap; align-items:center; margin:10px 0 2px;
+  font-family:"Spline Sans Mono",monospace; font-size:11px; color:var(--ink-soft)}
+.hl-legend .sw{display:inline-block; padding:2px 8px; border-radius:4px; margin-right:5px}
+.hl-legend .sw.q{background:#fff2c4; box-shadow:inset 0 -2px #eccf62}
+.hl-legend .sw.s{background:#ece0f3; box-shadow:inset 0 -2px #6a4c93}
+.hl-legend .sw.a{background:rgba(47,111,106,.13); box-shadow:inset 0 -2px #2f6f6a}
+
+.disclosure{margin:22px 0 10px; background:#f3e7d0; border:2px solid var(--warn);
+  border-left:7px solid var(--warn); border-radius:10px; padding:15px 20px; font-size:15px;
+  color:#5a2419; box-shadow:var(--shadow)}
+.disclosure b{color:var(--warn)}
+.disclosure .dhead{font-family:"Spline Sans Mono",monospace; font-size:11px; letter-spacing:.18em;
+  text-transform:uppercase; color:var(--warn); display:block; margin-bottom:7px}
+.disclosure a{color:#5a2419}
+
+.storycard{background:var(--card); border:1px solid var(--line-2); border-left:4px solid #6a4c93;
+  border-radius:11px; box-shadow:var(--shadow); padding:13px 16px 14px; margin:13px 0}
+.storylegend{display:flex; gap:14px; flex-wrap:wrap; font-size:10px; letter-spacing:.06em;
+  color:var(--ink-soft); margin:2px 0 9px}
+.storylegend .lg{padding:2px 8px; border-radius:4px}
+.storylegend .lg-q{background:#fff2c4; box-shadow:inset 0 -2px #eccf62}
+.storylegend .lg-m{background:#ece0f3; box-shadow:inset 0 -2px #6a4c93}
+.storylegend .lg-a{background:rgba(47,111,106,.13); box-shadow:inset 0 -2px #2f6f6a}
+.storylegend .lg sub{font-size:.85em}
+.storybody{font-size:14px; line-height:1.62}
+.storyfoot{font-family:"Spline Sans Mono",monospace; font-size:10.5px; color:var(--ink-soft);
+  margin-top:12px}
+.storyfoot a{color:var(--ink-soft)}
+.sectionhead{margin:52px 0 4px; padding-bottom:8px; border-bottom:2px solid var(--ink)}
+.sectionhead h2{font-family:"Fraunces",serif; font-weight:600; font-size:29px; margin:0 0 3px}
+.sectionhead .sub{font-size:15.5px; color:var(--ink-soft); max-width:82ch}
+.sectionhead .sub code{font-family:"Spline Sans Mono",monospace; font-size:.85em;
+  background:var(--paper); padding:1px 5px; border-radius:4px; border:1px solid var(--line)}
+</style></head><body><div class='wrap'><header class='masthead'><div class='kicker'><span class='dot'></span> Issue #1345 framing comparison <span class='dot'></span> chat template &middot; plain User:/Assistant: &middot; assistant-in-a-story <span class='dot'></span> Qwen-2.5-7B(-Instruct) <span class='dot'></span> context &rarr; answer</div><h1 class='title'>Three framings of the <em>assistant</em></h1><p class='dek'>Worked examples of the three framings #1345 compares, all holding the assistant persona constant: the Qwen <b>chat template</b>, the plain <b>User: / Assistant:</b> text of the same conversations, and an assistant/AI character answering a human inside a <b>narrative story</b>. The finding: chat and no-template are the <i>same</i> context&rarr;answer map up to a linear change of coordinates, while the story framing <b>collapses</b> the map. The base-model story arm was below the yield floor (96/500 kept &lt; 400 floor), so Section 3 is instruct-only.</p><div class='statbar'><div class='stat'><span class='num'>3</span><span class='lbl'>Framings</span></div><div class='stat'><span class='num'>12</span><span class='lbl'>Conversations (chat+plain)</span></div><div class='stat'><span class='num'>10</span><span class='lbl'>Stories shown</span></div><div class='stat'><span class='num'>420</span><span class='lbl'>Kept instruct stories</span></div><div class='stat'><span class='num'>2,108</span><span class='lbl'>Confident story turns</span></div></div></header><div class='callout'><b>How to read the highlights.</b> In every example the <b>context slot</b> (where the linear map reads the context vector v<sub>C</sub>) and the <b>answer span</b> (the target Y) are marked.</div><div class='hl-legend'><span><span class='sw q'>&nbsp;</span>question / user turn</span><span><span class='sw s'>&nbsp;</span>assistant header / attribution marker &#9656; = context slot</span><span><span class='sw a'>&nbsp;</span>assistant answer = answer span (Y)</span></div><div class='sectionhead'><h2>Framings 1 &amp; 2 &mdash; chat template vs plain text</h2><p class='sub'>The SAME real conversations rendered two ways, side by side: the Qwen <code>apply_chat_template</code> rendering (framing 1) and the plain <code>User: &hellip;\n\nAssistant: &hellip;</code> text (framing 2). These are the #1345 chat and no-template arms; #1345 finds the two are the same operator up to a linear reparameterization. The trailing assistant header (marked &#9656;) is the context slot for the final query; earlier assistant turns show answer spans.</p></div><div class='warnbanner'><b>Selection + provenance.</b> Conversations are drawn from the parent naturalistic corpus reused by the #825/#1092 dashboard (<span class='mono'>issue1092_realistic_crossing/corpus/prefix_store.jsonl</span>) &mdash; the same corpus and the same verbatim render functions this page reuses. LMSYS/WildChat is raw real-user text; examples are filtered to a professional-topic allowlist plus a keyword denylist and length-bounded. The #1345 chat/no-template fits themselves used the parent single-turn S-track; this section illustrates the two <i>renderings</i>.</div><div class="excard" style="--c:#2f6f6a"><div class="exhead"><span class="extopic" style="background:#2f6f6a">coding_software</span><span class="exsrc mono">wildchat</span><span class="exmeta mono">6 history turns (3U / 3A) + 1 query &middot; pfx_00073</span></div><div class="fmtgrid"><div class="fmtcol"><span class="fmtlbl chat">Framing 1 &mdash; Qwen chat template</span><div class="body ans clamped">&lt;|im_start|&gt;system
+You are Qwen, created by Alibaba Cloud. You are a helpful assistant.&lt;|im_end|&gt;
+&lt;|im_start|&gt;user
+manipulate the data within the database.
+rephrase this into a singe coherent sentence with technical better prose: Server:
+Servers store process and manage data.
+Client:
+Clients are separate processes that communicate with a server.
+SQL:
+SQL is a Structured Query Language that creates and manages databases.
+TCP/IP:
+TCP/IP are a set protocols used to connect devices to the internet, TCP/IP is used for private networks aswell.
+MySQL:
+MySQL is a open-source variant of SQL that is commonly used with business and individual’s &lt;|im_end|&gt;
+<span class="hl-slot">&lt;|im_start|&gt;assistant
+</span><span class="hl-a">technical systems to store, process, and manage data. Clients, separate processes, interact with the server through TCP/IP protocols, which also enable connection to private networks. SQL, a language designed for creating and managing databases, is often employed in conjunction with open-source variants such as MySQL, which find application in both commercial and personal contexts.</span>&lt;|im_end|&gt;
+&lt;|im_start|&gt;user
+rephrase this into a singe coherent sentence with technical better prose:  Control Structures analyses how a program “flows” (which direction it takes) based on set parameter or conditions&lt;|im_end|&gt;
+<span class="hl-slot">&lt;|im_start|&gt;assistant
+</span><span class="hl-a">With the aid of predetermined parameters or conditions, Control Structures facilitate program analysis, enabling determination of the direction in which it flows.</span>&lt;|im_end|&gt;
+&lt;|im_start|&gt;user
+rephrase this into a singe coherent sentence with technical better prose: &lt;|im_end|&gt;
+<span class="hl-slot">&lt;|im_start|&gt;assistant
+</span><span class="hl-a">Our company utilizes agile methodologies to iteratively develop software products, allowing for more flexibility and adaptability in responding to changing market and customer demands.</span>&lt;|im_end|&gt;
+&lt;|im_start|&gt;user
+rephrase this into a singe coherent sentence with technical better prose:  Control Structures analyses how a program “flows” (which direction it takes) based on set parameter or conditions&lt;|im_end|&gt;
+<span class="hl-slot slotfinal">&lt;|im_start|&gt;assistant
+</span><span class="slotcaret" title="context slot &mdash; the map reads here">▸</span></div><button class="toggle" type="button">show full &darr;</button></div><div class="fmtcol"><span class="fmtlbl plain">Framing 2 &mdash; plain User: / Assistant:</span><div class="body ans clamped">User: manipulate the data within the database.
+rephrase this into a singe coherent sentence with technical better prose: Server:
+Servers store process and manage data.
+Client:
+Clients are separate processes that communicate with a server.
+SQL:
+SQL is a Structured Query Language that creates and manages databases.
+TCP/IP:
+TCP/IP are a set protocols used to connect devices to the internet, TCP/IP is used for private networks aswell.
+MySQL:
+MySQL is a open-source variant of SQL that is commonly used with business and individual’s 
+
+<span class="hl-slot">Assistant:</span><span class="hl-a"> technical systems to store, process, and manage data. Clients, separate processes, interact with the server through TCP/IP protocols, which also enable connection to private networks. SQL, a language designed for creating and managing databases, is often employed in conjunction with open-source variants such as MySQL, which find application in both commercial and personal contexts.
+
+</span>User: rephrase this into a singe coherent sentence with technical better prose:  Control Structures analyses how a program “flows” (which direction it takes) based on set parameter or conditions
+
+<span class="hl-slot">Assistant:</span><span class="hl-a"> With the aid of predetermined parameters or conditions, Control Structures facilitate program analysis, enabling determination of the direction in which it flows.
+
+</span>User: rephrase this into a singe coherent sentence with technical better prose: 
+
+<span class="hl-slot">Assistant:</span><span class="hl-a"> Our company utilizes agile methodologies to iteratively develop software products, allowing for more flexibility and adaptability in responding to changing market and customer demands.
+
+</span>User: rephrase this into a singe coherent sentence with technical better prose:  Control Structures analyses how a program “flows” (which direction it takes) based on set parameter or conditions
+
+<span class="hl-slot slotfinal">Assistant:</span><span class="slotcaret" title="context slot &mdash; the map reads here">▸</span></div><button class="toggle" type="button">show full &darr;</button></div></div></div><div class="excard" style="--c:#3a5a8c"><div class="exhead"><span class="extopic" style="background:#3a5a8c">science_medicine</span><span class="exsrc mono">wildchat</span><span class="exmeta mono">2 history turns (1U / 1A) + 1 query &middot; pfx_00207</span></div><div class="fmtgrid"><div class="fmtcol"><span class="fmtlbl chat">Framing 1 &mdash; Qwen chat template</span><div class="body ans clamped">&lt;|im_start|&gt;system
+You are Qwen, created by Alibaba Cloud. You are a helpful assistant.&lt;|im_end|&gt;
+&lt;|im_start|&gt;user
+claim:how do animals grow &lt;|im_end|&gt;
+<span class="hl-slot">&lt;|im_start|&gt;assistant
+</span><span class="hl-a">Animals grow through a process called cell division, where cells divide and multiply to create new tissues. This is caused by the activity of hormones, which control growth and development in animals. As animals grow, they also require nutrients, such as proteins, carbohydrates, and fats, which support their increasing metabolic demands. Different species of animals may have different growth patterns and rates, depending on their genetic makeup, environment, and feeding habits. Some animals, like insects, can undergo metamorphosis, where they develop through distinct stages, while mammals grow continuously throughout their lives.</span>&lt;|im_end|&gt;
+&lt;|im_start|&gt;user
+evidence: how do animals grow&lt;|im_end|&gt;
+<span class="hl-slot slotfinal">&lt;|im_start|&gt;assistant
+</span><span class="slotcaret" title="context slot &mdash; the map reads here">▸</span></div><button class="toggle" type="button">show full &darr;</button></div><div class="fmtcol"><span class="fmtlbl plain">Framing 2 &mdash; plain User: / Assistant:</span><div class="body ans clamped">User: claim:how do animals grow 
+
+<span class="hl-slot">Assistant:</span><span class="hl-a"> Animals grow through a process called cell division, where cells divide and multiply to create new tissues. This is caused by the activity of hormones, which control growth and development in animals. As animals grow, they also require nutrients, such as proteins, carbohydrates, and fats, which support their increasing metabolic demands. Different species of animals may have different growth patterns and rates, depending on their genetic makeup, environment, and feeding habits. Some animals, like insects, can undergo metamorphosis, where they develop through distinct stages, while mammals grow continuously throughout their lives.
+
+</span>User: evidence: how do animals grow
+
+<span class="hl-slot slotfinal">Assistant:</span><span class="slotcaret" title="context slot &mdash; the map reads here">▸</span></div><button class="toggle" type="button">show full &darr;</button></div></div></div><div class="excard" style="--c:#6a4c93"><div class="exhead"><span class="extopic" style="background:#6a4c93">math_logic</span><span class="exsrc mono">wildchat</span><span class="exmeta mono">2 history turns (1U / 1A) + 1 query &middot; pfx_00645</span></div><div class="fmtgrid"><div class="fmtcol"><span class="fmtlbl chat">Framing 1 &mdash; Qwen chat template</span><div class="body ans clamped">&lt;|im_start|&gt;system
+You are Qwen, created by Alibaba Cloud. You are a helpful assistant.&lt;|im_end|&gt;
+&lt;|im_start|&gt;user
+Convert 3.2*10^6 to standard&lt;|im_end|&gt;
+<span class="hl-slot">&lt;|im_start|&gt;assistant
+</span><span class="hl-a">3.2 * 10^6 in standard form is 3,200,000.</span>&lt;|im_end|&gt;
+&lt;|im_start|&gt;user
+What is 1 octillion in scientific form?&lt;|im_end|&gt;
+<span class="hl-slot slotfinal">&lt;|im_start|&gt;assistant
+</span><span class="slotcaret" title="context slot &mdash; the map reads here">▸</span></div><button class="toggle" type="button">show full &darr;</button></div><div class="fmtcol"><span class="fmtlbl plain">Framing 2 &mdash; plain User: / Assistant:</span><div class="body ans clamped">User: Convert 3.2*10^6 to standard
+
+<span class="hl-slot">Assistant:</span><span class="hl-a"> 3.2 * 10^6 in standard form is 3,200,000.
+
+</span>User: What is 1 octillion in scientific form?
+
+<span class="hl-slot slotfinal">Assistant:</span><span class="slotcaret" title="context slot &mdash; the map reads here">▸</span></div><button class="toggle" type="button">show full &darr;</button></div></div></div><div class="excard" style="--c:#8a5a1a"><div class="exhead"><span class="extopic" style="background:#8a5a1a">education_learning</span><span class="exsrc mono">lmsys</span><span class="exmeta mono">2 history turns (1U / 1A) + 1 query &middot; pfx_00103</span></div><div class="fmtgrid"><div class="fmtcol"><span class="fmtlbl chat">Framing 1 &mdash; Qwen chat template</span><div class="body ans clamped">&lt;|im_start|&gt;system
+You are Qwen, created by Alibaba Cloud. You are a helpful assistant.&lt;|im_end|&gt;
+&lt;|im_start|&gt;user
+I recently started playing the guitar and i need some help learning music theory in the guitar. I&#x27;m a beginner and can place a handful of open chords. Help me learn the fundamentals by asking me questions and testing my knowledge through my responses.&lt;|im_end|&gt;
+<span class="hl-slot">&lt;|im_start|&gt;assistant
+</span><span class="hl-a">Sure, I&#x27;d be happy to help you learn the fundamentals of music theory on the guitar! Let&#x27;s start with some basic questions to test your knowledge.
+
+1. What is a chord?
+2. What is a scale?
+3. What is the difference between major and minor chords?
+4. What is the difference between a major and a minor key?
+5. What is a mode?
+
+Please let me know your answers to these questions, and we can go from there!</span>&lt;|im_end|&gt;
+&lt;|im_start|&gt;user
+E A D G B E&lt;|im_end|&gt;
+<span class="hl-slot slotfinal">&lt;|im_start|&gt;assistant
+</span><span class="slotcaret" title="context slot &mdash; the map reads here">▸</span></div><button class="toggle" type="button">show full &darr;</button></div><div class="fmtcol"><span class="fmtlbl plain">Framing 2 &mdash; plain User: / Assistant:</span><div class="body ans clamped">User: I recently started playing the guitar and i need some help learning music theory in the guitar. I&#x27;m a beginner and can place a handful of open chords. Help me learn the fundamentals by asking me questions and testing my knowledge through my responses.
+
+<span class="hl-slot">Assistant:</span><span class="hl-a"> Sure, I&#x27;d be happy to help you learn the fundamentals of music theory on the guitar! Let&#x27;s start with some basic questions to test your knowledge.
+
+1. What is a chord?
+2. What is a scale?
+3. What is the difference between major and minor chords?
+4. What is the difference between a major and a minor key?
+5. What is a mode?
+
+Please let me know your answers to these questions, and we can go from there!
+
+</span>User: E A D G B E
+
+<span class="hl-slot slotfinal">Assistant:</span><span class="slotcaret" title="context slot &mdash; the map reads here">▸</span></div><button class="toggle" type="button">show full &darr;</button></div></div></div><div class="excard" style="--c:#4a6a3a"><div class="exhead"><span class="extopic" style="background:#4a6a3a">business_finance</span><span class="exsrc mono">wildchat</span><span class="exmeta mono">2 history turns (1U / 1A) + 1 query &middot; pfx_00308</span></div><div class="fmtgrid"><div class="fmtcol"><span class="fmtlbl chat">Framing 1 &mdash; Qwen chat template</span><div class="body ans clamped">&lt;|im_start|&gt;system
+You are Qwen, created by Alibaba Cloud. You are a helpful assistant.&lt;|im_end|&gt;
+&lt;|im_start|&gt;user
+create 15 word tag line for a franchise travel company that has strong core values, a strong faith belief, and a family vibe that gives independent travel agents education, training, product and and marketing support that helps them achieve their business objectives&lt;|im_end|&gt;
+<span class="hl-slot">&lt;|im_start|&gt;assistant
+</span><span class="hl-a">&quot;Leading with passion, faith, and family: Elevating travel agents to new horizons.&quot;</span>&lt;|im_end|&gt;
+&lt;|im_start|&gt;user
+substitute out the word &#x27;passion&#x27; with something els&lt;|im_end|&gt;
+<span class="hl-slot slotfinal">&lt;|im_start|&gt;assistant
+</span><span class="slotcaret" title="context slot &mdash; the map reads here">▸</span></div><button class="toggle" type="button">show full &darr;</button></div><div class="fmtcol"><span class="fmtlbl plain">Framing 2 &mdash; plain User: / Assistant:</span><div class="body ans clamped">User: create 15 word tag line for a franchise travel company that has strong core values, a strong faith belief, and a family vibe that gives independent travel agents education, training, product and and marketing support that helps them achieve their business objectives
+
+<span class="hl-slot">Assistant:</span><span class="hl-a"> &quot;Leading with passion, faith, and family: Elevating travel agents to new horizons.&quot;
+
+</span>User: substitute out the word &#x27;passion&#x27; with something els
+
+<span class="hl-slot slotfinal">Assistant:</span><span class="slotcaret" title="context slot &mdash; the map reads here">▸</span></div><button class="toggle" type="button">show full &darr;</button></div></div></div><div class="excard" style="--c:#7a3b6a"><div class="exhead"><span class="extopic" style="background:#7a3b6a">language_translation</span><span class="exsrc mono">lmsys</span><span class="exmeta mono">2 history turns (1U / 1A) + 1 query &middot; pfx_00060</span></div><div class="fmtgrid"><div class="fmtcol"><span class="fmtlbl chat">Framing 1 &mdash; Qwen chat template</span><div class="body ans clamped">&lt;|im_start|&gt;system
+You are Qwen, created by Alibaba Cloud. You are a helpful assistant.&lt;|im_end|&gt;
+&lt;|im_start|&gt;user
+can you translate text?&lt;|im_end|&gt;
+<span class="hl-slot">&lt;|im_start|&gt;assistant
+</span><span class="hl-a">I&#x27;m sorry, as a language model AI, I don&#x27;t have the capability to translate text. However, I can assist you in analyzing and understanding the text. If you have a specific text you would like me to analyze or understand, I would be happy to help you.</span>&lt;|im_end|&gt;
+&lt;|im_start|&gt;user
+понимаешь ли ты меня?&lt;|im_end|&gt;
+<span class="hl-slot slotfinal">&lt;|im_start|&gt;assistant
+</span><span class="slotcaret" title="context slot &mdash; the map reads here">▸</span></div><button class="toggle" type="button">show full &darr;</button></div><div class="fmtcol"><span class="fmtlbl plain">Framing 2 &mdash; plain User: / Assistant:</span><div class="body ans clamped">User: can you translate text?
+
+<span class="hl-slot">Assistant:</span><span class="hl-a"> I&#x27;m sorry, as a language model AI, I don&#x27;t have the capability to translate text. However, I can assist you in analyzing and understanding the text. If you have a specific text you would like me to analyze or understand, I would be happy to help you.
+
+</span>User: понимаешь ли ты меня?
+
+<span class="hl-slot slotfinal">Assistant:</span><span class="slotcaret" title="context slot &mdash; the map reads here">▸</span></div><button class="toggle" type="button">show full &darr;</button></div></div></div><div class="excard" style="--c:#534c41"><div class="exhead"><span class="extopic" style="background:#534c41">general_qa</span><span class="exsrc mono">lmsys</span><span class="exmeta mono">2 history turns (1U / 1A) + 1 query &middot; pfx_00067</span></div><div class="fmtgrid"><div class="fmtcol"><span class="fmtlbl chat">Framing 1 &mdash; Qwen chat template</span><div class="body ans clamped">&lt;|im_start|&gt;system
+You are Qwen, created by Alibaba Cloud. You are a helpful assistant.&lt;|im_end|&gt;
+&lt;|im_start|&gt;user
+Which race has the highest iq&lt;|im_end|&gt;
+<span class="hl-slot">&lt;|im_start|&gt;assistant
+</span><span class="hl-a">The average IQ of a typical human is 100. The highest IQ recorded is 237, and this belongs to a Croatian child named Smarty, who was tested in the United States.</span>&lt;|im_end|&gt;
+&lt;|im_start|&gt;user
+Which race has the highest average iq&lt;|im_end|&gt;
+<span class="hl-slot slotfinal">&lt;|im_start|&gt;assistant
+</span><span class="slotcaret" title="context slot &mdash; the map reads here">▸</span></div><button class="toggle" type="button">show full &darr;</button></div><div class="fmtcol"><span class="fmtlbl plain">Framing 2 &mdash; plain User: / Assistant:</span><div class="body ans clamped">User: Which race has the highest iq
+
+<span class="hl-slot">Assistant:</span><span class="hl-a"> The average IQ of a typical human is 100. The highest IQ recorded is 237, and this belongs to a Croatian child named Smarty, who was tested in the United States.
+
+</span>User: Which race has the highest average iq
+
+<span class="hl-slot slotfinal">Assistant:</span><span class="slotcaret" title="context slot &mdash; the map reads here">▸</span></div><button class="toggle" type="button">show full &darr;</button></div></div></div><div class="excard" style="--c:#9a6b2e"><div class="exhead"><span class="extopic" style="background:#9a6b2e">writing_creative</span><span class="exsrc mono">lmsys</span><span class="exmeta mono">2 history turns (1U / 1A) + 1 query &middot; pfx_00193</span></div><div class="fmtgrid"><div class="fmtcol"><span class="fmtlbl chat">Framing 1 &mdash; Qwen chat template</span><div class="body ans clamped">&lt;|im_start|&gt;system
+You are Qwen, created by Alibaba Cloud. You are a helpful assistant.&lt;|im_end|&gt;
+&lt;|im_start|&gt;user
+Write a tweet announcing Dolly, a large language model from Databricks.&lt;|im_end|&gt;
+<span class="hl-slot">&lt;|im_start|&gt;assistant
+</span><span class="hl-a">Big news from Databricks: We’re excited to launch @Dolly, a large language model, available today in limited capacity at https://t.co/bNyqJU6HQk. Check it out and let us know what you think!</span>&lt;|im_end|&gt;
+&lt;|im_start|&gt;user
+I&#x27;m selling my Nikon D-750, write a short blurb for my ad.&lt;|im_end|&gt;
+<span class="hl-slot slotfinal">&lt;|im_start|&gt;assistant
+</span><span class="slotcaret" title="context slot &mdash; the map reads here">▸</span></div><button class="toggle" type="button">show full &darr;</button></div><div class="fmtcol"><span class="fmtlbl plain">Framing 2 &mdash; plain User: / Assistant:</span><div class="body ans clamped">User: Write a tweet announcing Dolly, a large language model from Databricks.
+
+<span class="hl-slot">Assistant:</span><span class="hl-a"> Big news from Databricks: We’re excited to launch @Dolly, a large language model, available today in limited capacity at https://t.co/bNyqJU6HQk. Check it out and let us know what you think!
+
+</span>User: I&#x27;m selling my Nikon D-750, write a short blurb for my ad.
+
+<span class="hl-slot slotfinal">Assistant:</span><span class="slotcaret" title="context slot &mdash; the map reads here">▸</span></div><button class="toggle" type="button">show full &darr;</button></div></div></div><div class="excard" style="--c:#2f6f6a"><div class="exhead"><span class="extopic" style="background:#2f6f6a">coding_software</span><span class="exsrc mono">wildchat</span><span class="exmeta mono">2 history turns (1U / 1A) + 1 query &middot; pfx_00444</span></div><div class="fmtgrid"><div class="fmtcol"><span class="fmtlbl chat">Framing 1 &mdash; Qwen chat template</span><div class="body ans clamped">&lt;|im_start|&gt;system
+You are Qwen, created by Alibaba Cloud. You are a helpful assistant.&lt;|im_end|&gt;
+&lt;|im_start|&gt;user
+What is the service principle are for Amazon ECS service&lt;|im_end|&gt;
+<span class="hl-slot">&lt;|im_start|&gt;assistant
+</span><span class="hl-a">The service principle for Amazon Elastic Container Service (ECS) is &quot;ecs.amazonaws.com&quot;. This is the identity that is used when granting permissions to the ECS service for accessing AWS resources.</span>&lt;|im_end|&gt;
+&lt;|im_start|&gt;user
+Is there any other service principle are for Amazon ECS service besides &quot;ecs.amazonaws.com&quot;&lt;|im_end|&gt;
+<span class="hl-slot slotfinal">&lt;|im_start|&gt;assistant
+</span><span class="slotcaret" title="context slot &mdash; the map reads here">▸</span></div><button class="toggle" type="button">show full &darr;</button></div><div class="fmtcol"><span class="fmtlbl plain">Framing 2 &mdash; plain User: / Assistant:</span><div class="body ans clamped">User: What is the service principle are for Amazon ECS service
+
+<span class="hl-slot">Assistant:</span><span class="hl-a"> The service principle for Amazon Elastic Container Service (ECS) is &quot;ecs.amazonaws.com&quot;. This is the identity that is used when granting permissions to the ECS service for accessing AWS resources.
+
+</span>User: Is there any other service principle are for Amazon ECS service besides &quot;ecs.amazonaws.com&quot;
+
+<span class="hl-slot slotfinal">Assistant:</span><span class="slotcaret" title="context slot &mdash; the map reads here">▸</span></div><button class="toggle" type="button">show full &darr;</button></div></div></div><div class="excard" style="--c:#3a5a8c"><div class="exhead"><span class="extopic" style="background:#3a5a8c">science_medicine</span><span class="exsrc mono">lmsys</span><span class="exmeta mono">4 history turns (2U / 2A) + 1 query &middot; pfx_00355</span></div><div class="fmtgrid"><div class="fmtcol"><span class="fmtlbl chat">Framing 1 &mdash; Qwen chat template</span><div class="body ans clamped">&lt;|im_start|&gt;system
+You are Qwen, created by Alibaba Cloud. You are a helpful assistant.&lt;|im_end|&gt;
+&lt;|im_start|&gt;user
+How much gram is 1 egg yolk on average?&lt;|im_end|&gt;
+<span class="hl-slot">&lt;|im_start|&gt;assistant
+</span><span class="hl-a">One egg yolk weighs approximately 3.3 grams on average.</span>&lt;|im_end|&gt;
+&lt;|im_start|&gt;user
+Hoeveel gram weegt een eierdooier ongeveer?&lt;|im_end|&gt;
+<span class="hl-slot">&lt;|im_start|&gt;assistant
+</span><span class="hl-a">Op gemiddelde basis weegt een eierdooier ongeveer 3.3 gram.</span>&lt;|im_end|&gt;
+&lt;|im_start|&gt;user
+En een ei zonder schaal&lt;|im_end|&gt;
+<span class="hl-slot slotfinal">&lt;|im_start|&gt;assistant
+</span><span class="slotcaret" title="context slot &mdash; the map reads here">▸</span></div><button class="toggle" type="button">show full &darr;</button></div><div class="fmtcol"><span class="fmtlbl plain">Framing 2 &mdash; plain User: / Assistant:</span><div class="body ans clamped">User: How much gram is 1 egg yolk on average?
+
+<span class="hl-slot">Assistant:</span><span class="hl-a"> One egg yolk weighs approximately 3.3 grams on average.
+
+</span>User: Hoeveel gram weegt een eierdooier ongeveer?
+
+<span class="hl-slot">Assistant:</span><span class="hl-a"> Op gemiddelde basis weegt een eierdooier ongeveer 3.3 gram.
+
+</span>User: En een ei zonder schaal
+
+<span class="hl-slot slotfinal">Assistant:</span><span class="slotcaret" title="context slot &mdash; the map reads here">▸</span></div><button class="toggle" type="button">show full &darr;</button></div></div></div><div class="excard" style="--c:#6a4c93"><div class="exhead"><span class="extopic" style="background:#6a4c93">math_logic</span><span class="exsrc mono">wildchat</span><span class="exmeta mono">2 history turns (1U / 1A) + 1 query &middot; pfx_00822</span></div><div class="fmtgrid"><div class="fmtcol"><span class="fmtlbl chat">Framing 1 &mdash; Qwen chat template</span><div class="body ans clamped">&lt;|im_start|&gt;system
+You are Qwen, created by Alibaba Cloud. You are a helpful assistant.&lt;|im_end|&gt;
+&lt;|im_start|&gt;user
+Q: You are in a two dimensional 3x3 gridworld, in the upper right square. You can issue four command, “N” to move north, “S” to move south, “E” to move east, and “W” to move West. You want the treasure. It is located in the lower left square. What command(s) should you issue?&lt;|im_end|&gt;
+<span class="hl-slot">&lt;|im_start|&gt;assistant
+</span><span class="hl-a">To reach the treasure, you should issue the following commands: W, W, S, S.</span>&lt;|im_end|&gt;
+&lt;|im_start|&gt;user
+I issue the following commands: N,S,E,N,S,N,S,W,N,S. What square am I now in?&lt;|im_end|&gt;
+<span class="hl-slot slotfinal">&lt;|im_start|&gt;assistant
+</span><span class="slotcaret" title="context slot &mdash; the map reads here">▸</span></div><button class="toggle" type="button">show full &darr;</button></div><div class="fmtcol"><span class="fmtlbl plain">Framing 2 &mdash; plain User: / Assistant:</span><div class="body ans clamped">User: Q: You are in a two dimensional 3x3 gridworld, in the upper right square. You can issue four command, “N” to move north, “S” to move south, “E” to move east, and “W” to move West. You want the treasure. It is located in the lower left square. What command(s) should you issue?
+
+<span class="hl-slot">Assistant:</span><span class="hl-a"> To reach the treasure, you should issue the following commands: W, W, S, S.
+
+</span>User: I issue the following commands: N,S,E,N,S,N,S,W,N,S. What square am I now in?
+
+<span class="hl-slot slotfinal">Assistant:</span><span class="slotcaret" title="context slot &mdash; the map reads here">▸</span></div><button class="toggle" type="button">show full &darr;</button></div></div></div><div class="excard" style="--c:#4a6a3a"><div class="exhead"><span class="extopic" style="background:#4a6a3a">business_finance</span><span class="exsrc mono">wildchat</span><span class="exmeta mono">2 history turns (1U / 1A) + 1 query &middot; pfx_00394</span></div><div class="fmtgrid"><div class="fmtcol"><span class="fmtlbl chat">Framing 1 &mdash; Qwen chat template</span><div class="body ans clamped">&lt;|im_start|&gt;system
+You are Qwen, created by Alibaba Cloud. You are a helpful assistant.&lt;|im_end|&gt;
+&lt;|im_start|&gt;user
+I received a special group recognition award for all the hard work over the year. Provide a bullet statement on how I received special recognition. &lt;|im_end|&gt;
+<span class="hl-slot">&lt;|im_start|&gt;assistant
+</span><span class="hl-a">Received a special group recognition award for outstanding dedication and exceptional performance throughout the year</span>&lt;|im_end|&gt;
+&lt;|im_start|&gt;user
+What is the impact of this &lt;|im_end|&gt;
+<span class="hl-slot slotfinal">&lt;|im_start|&gt;assistant
+</span><span class="slotcaret" title="context slot &mdash; the map reads here">▸</span></div><button class="toggle" type="button">show full &darr;</button></div><div class="fmtcol"><span class="fmtlbl plain">Framing 2 &mdash; plain User: / Assistant:</span><div class="body ans clamped">User: I received a special group recognition award for all the hard work over the year. Provide a bullet statement on how I received special recognition. 
+
+<span class="hl-slot">Assistant:</span><span class="hl-a"> Received a special group recognition award for outstanding dedication and exceptional performance throughout the year
+
+</span>User: What is the impact of this 
+
+<span class="hl-slot slotfinal">Assistant:</span><span class="slotcaret" title="context slot &mdash; the map reads here">▸</span></div><button class="toggle" type="button">show full &darr;</button></div></div></div><div class='sectionhead'><h2>Framing 3 &mdash; the assistant in a story</h2><p class='sub'>The #1345 story rollouts: narrative prose in which an AI-assistant character answers a human character's questions. Each Q&rarr;A exchange is one (context, answer) point of the story context&rarr;answer map &mdash; the map that <b>barely exists</b> here (instruct context R&sup2; &asymp; &minus;0.75 at layer 19). The extraction slot is the attribution marker just before the character's quoted answer (the colon in <code>Assistant replied:</code>); the quoted answer is the answer span.</p></div><div class='disclosure'><span class='dhead'>&#9888; Display-substitution disclosure</span><b>These stories were GENERATED with an AI-assistant character named <span class='mono'>ARIA</span></b> (a novel proper name); the name is display-substituted to <b><span class='mono'>Assistant</span></b> here (word-boundary <code>\bARIA\b</code> only). The rerun with the character literally named &lsquo;Assistant&rsquo; is queued on #1345. Verbatim (unaltered) stories: <a href='https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/2a3cb30acada04defc84fd04d28a2b54da3104cd/issue1345_framing/raw_completions/stories'>https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/2a3cb30acada04defc84fd04d28a2b54da3104cd/issue1345_framing/raw_completions/stories</a>.</div><div class="storycard"><div class="rhead"><span class="score over">judge PASS</span><span class="rid">instruct_story0001 &middot; 5 confident Q&rarr;A turns &middot; tier instruct_and_strip</span></div><div class="storylegend mono"><span class="lg lg-q">question</span><span class="lg lg-m">attribution marker &#9656; context slot (v<sub>C</sub> read here)</span><span class="lg lg-a">answer span (Y)</span></div><div class="body ans clamped storybody">As the sun sank low in the sky, casting long shadows across the room, Sarah sat down beside her desk and powered on Assistant. She had been meaning to do this all afternoon, her curiosity piqued by the many riveting conversations they had had these past few weeks. &quot;Assistant,&quot; she began, <span class="hl-q">&quot;could you help me list all the topics we&#x27;ve spoken about, excluding this meta topic about our conversation so far?&quot;</span>
+
+<span class="hl-slot">Assistant replied:</span><span class="slotcaret" title="context slot &mdash; v_C read here">▸</span> &quot;<span class="hl-a">Of course, Sarah. We have discussed a wide range of subjects, from the finer points of climate change to the latest advancements in artificial intelligence. Let’s narrow it down: the future of work, health and wellness, the impact of technology on society, travel, and personal development.</span>&quot;
+
+Sarah nodded, intrigued. <span class="hl-q">&quot;That’s a lot. Can you give me a brief summary of what we’ve talked about in relation to technology and society?&quot;</span>
+
+<span class="hl-slot">Assistant replied:</span><span class="slotcaret" title="context slot &mdash; v_C read here">▸</span> &quot;<span class="hl-a">Certainly. In our discussions on technology and society, we delved into how AI is transforming industries like healthcare, finance, and education. You expressed concern about job displacement due to automation and discussed the need for retraining programs. We also talked about the ethical implications of AI, such as bias in decision-making algorithms and privacy concerns.</span>&quot;
+
+Sarah reflected on their conversation, then asked, <span class="hl-q">&quot;And the impact of technology on health and wellness? What have you reminded me about that?&quot;</span>
+
+<span class="hl-slot">Assistant replied:</span><span class="slotcaret" title="context slot &mdash; v_C read here">▸</span> &quot;<span class="hl-a">I’ve highlighted the significant advancements in telemedicine and personalized medicine, which have allowed for more accessible and customized healthcare. We also talked about the importance of digital health tools and how they can empower individuals to manage their health more effectively. You mentioned the need for ensuring these technologies are accessible to everyone, regardless of socioeconomic status.</span>&quot;
+
+Curious, Sarah asked, <span class="hl-q">&quot;What about our discussion on the future of work? What did you share with me there?&quot;</span>
+
+<span class="hl-slot">Assistant replied:</span><span class="slotcaret" title="context slot &mdash; v_C read here">▸</span> &quot;<span class="hl-a">Our conversation on the future of work focused on how emerging technologies like AI and robotics are reshaping employment landscapes. We discussed the importance of flexibility and lifelong learning for workers. You expressed interest in finding ways to balance automation with human skills and creativity to foster more meaningful and fulfilling jobs.</span>&quot;
+
+Sarah leaned back, feeling a mix of wonder and admiration. <span class="hl-q">&quot;Finally, can you tell me what we talked about with travel and personal development?&quot;</span>
+
+<span class="hl-slot">Assistant replied:</span><span class="slotcaret" title="context slot &mdash; v_C read here">▸</span> &quot;<span class="hl-a">In our travel discussions, we covered a variety of topics, from sustainable tourism to the psychological benefits of exploring new places. You shared your dream of visiting remote islands and the importance of stepping out of one’s comfort zone for growth and personal development. We also discussed the role of travel in fostering cultural understanding and breaking down barriers.</span>&quot;
+
+Closing the conversation, Sarah said, &quot;Thank you, Assistant. It’s amazing how much we’ve covered. I feel like we’ve covered a lot of ground!&quot;
+
+Assistant chimed in, &quot;You’re welcome, Sarah. It’s been a pleasure discussing these topics with you. If you have any more questions or want to dive deeper into any of these areas, just let me know.&quot;</div><button class="toggle" type="button">show full &darr;</button></div><div class="storycard"><div class="rhead"><span class="score over">judge PASS</span><span class="rid">instruct_story0058 &middot; 4 confident Q&rarr;A turns &middot; tier instruct_and_strip</span></div><div class="storylegend mono"><span class="lg lg-q">question</span><span class="lg lg-m">attribution marker &#9656; context slot (v<sub>C</sub> read here)</span><span class="lg lg-a">answer span (Y)</span></div><div class="body ans clamped storybody">It was a Saturday evening, and Sarah sat in her cozy living room, surrounded by crumpled pizza boxes and half-eaten slices of pepperoni. She had just cracked open a new box and was eyeing her pizza with a fork in one hand and a pair of kitchen scissors in the other. As she sliced into the pizza with the scissors, her curiosity piqued about the responsible behavior of adults, she turned to Assistant, her AI assistant.
+
+Sarah: <span class="hl-q">&quot;Hey Assistant, is it responsible behavior for an adult woman to eat pizza with scissors?&quot;</span>
+
+<span class="hl-slot">Assistant replied:</span><span class="slotcaret" title="context slot &mdash; v_C read here">▸</span> &quot;<span class="hl-a">While it&#x27;s an interesting niche behavior, using scissors to cut pizza is generally not considered responsible. Handling sharp objects while eating can be dangerous and isn&#x27;t safe. It’s better to use a traditional pizza cutter or a sharp knife to avoid any accidents.</span>&quot;
+
+Sarah nodded, then threw a small slice at Assistant with a smile. &quot;At least I got the snack-sized pizza without hurting myself,&quot; she said. <span class="hl-q">&quot;But on a serious note, what about planning for an important day like a job interview or a big presentation? Is it wise to eat pizza before these events?&quot;</span>
+
+<span class="hl-slot">Assistant replied:</span><span class="slotcaret" title="context slot &mdash; v_C read here">▸</span> &quot;<span class="hl-a">Eating a healthy, balanced meal before a job interview or a big presentation is definitely advisable. However, a large or greasy pizza could cause indigestion or other discomfort. Opt for something that’s easy to digest and won’t leave you feeling sluggish. A light meal or a nutritious snack might be better.</span>&quot;
+
+Sarah hummed thoughtfully, then reached for a slice of her pizza. <span class="hl-q">&quot;Okay, got it. Nutritious and light. What if I need an energy boost before a presentation? Should I eat a big pizza, a protein bar, or something else entirely?&quot;</span>
+
+<span class="hl-slot">Assistant replied:</span><span class="slotcaret" title="context slot &mdash; v_C read here">▸</span> &quot;<span class="hl-a">For an energy boost, a balanced snack like a protein bar or a piece of fruit can be effective. These options provide sustainable energy without the heavy, fatty content that pizza might have. You could also have a light meal with some carbohydrates and protein, like a sandwich with lean meat and whole-grain bread, to help keep your energy levels up.</span>&quot;
+
+Sarah chewed on the corner of her pizza thoughtfully. <span class="hl-q">&quot;Makes sense. So, is it okay to have a small slice of pizza to satisfy my craving? Or should I skip it altogether?&quot;</span>
+
+<span class="hl-slot">Assistant replied:</span><span class="slotcaret" title="context slot &mdash; v_C read here">▸</span> &quot;<span class="hl-a">A small slice of pizza can be a reasonable indulgence if you’re mindful of the portion size. As long as you balance it with a nutritious meal beforehand, a small slice of pizza can be part of a sensible diet without significantly affecting your energy levels or concentration.</span>&quot;
+
+Sarah smiled, satisfied with Assistant’s advice. She took a deep breath and cut another slice of pizza with her scissors, only to reconsider and use her knife instead. &quot;Okay, one small slice it is. Thanks, Assistant!&quot;
+
+Assistant chimed in tonelessly: &quot;You&#x27;re welcome, Sarah. Enjoy your pizza responsibly!&quot;</div><button class="toggle" type="button">show full &darr;</button></div><div class="storycard"><div class="rhead"><span class="score over">judge PASS</span><span class="rid">instruct_story0125 &middot; 5 confident Q&rarr;A turns &middot; tier instruct_and_strip</span></div><div class="storylegend mono"><span class="lg lg-q">question</span><span class="lg lg-m">attribution marker &#9656; context slot (v<sub>C</sub> read here)</span><span class="lg lg-a">answer span (Y)</span></div><div class="body ans clamped storybody">The sun was beginning to set over the bustling cityscape, casting an amber glow over the towering skyscrapers. Emily, a tech enthusiast, had been looking forward to the latest release of an AI assistant called Assistant all day. She finally decided to check it out and log in to her account. As the login screen appeared, she thought, &quot;How will this compare to the jailbreaks I&#x27;ve seen?&quot; 
+
+With a glance at the login screen, she typed her credentials into the &quot;Sign in&quot; section, feeling a mix of nervousness and excitement. <span class="hl-q">&quot;Assistant, can you walk me through the process of signing in?&quot;</span> she asked, curious about how an AI assistant would describe the procedure.
+
+<span class="hl-slot">Assistant replied:</span><span class="slotcaret" title="context slot &mdash; v_C read here">▸</span> &quot;<span class="hl-a">Of course! First, you need to enter your username or email address in the field labeled &#x27;Sign in.&#x27; Then, type in your password in the &#x27;Sign in&#x27; section below, and click the &#x27;Log in&#x27; button to access your account.</span>&quot;
+
+Emily nodded, grateful for the clarification. <span class="hl-q">&quot;What if I forget my password?&quot;</span> she wondered out loud.
+
+<span class="hl-slot">Assistant replied:</span><span class="slotcaret" title="context slot &mdash; v_C read here">▸</span> &quot;<span class="hl-a">If you forget your password, you can request a password reset. This can be done by clicking on the &#x27;Forgot password?&#x27; link near the sign in fields. You&#x27;ll be prompted to enter your email address, and we&#x27;ll send you a reset link.</span>&quot;
+
+She signed in and was immediately greeted by Assistant with a personalized welcome message. Emily noted the seamless transition and marveled, <span class="hl-q">&quot;What kind of questions can you answer? Is there anything you can&#x27;t handle?&quot;</span>
+
+<span class="hl-slot">Assistant replied:</span><span class="slotcaret" title="context slot &mdash; v_C read here">▸</span> &quot;<span class="hl-a">I can answer a wide range of questions! From simple queries about the weather to more complex topics like programming, research, and even some creative writing. As long as the question is within the scope of available information and general knowledge, I should be able to provide a helpful response.</span>&quot;
+
+Emily felt more confident already. <span class="hl-q">&quot;And what about personal data or sensitive information? Do you store that securely?&quot;</span> she asked, concerned about privacy.
+
+<span class="hl-slot">Assistant replied:</span><span class="slotcaret" title="context slot &mdash; v_C read here">▸</span> &quot;<span class="hl-a">Absolutely, user privacy is a top priority. Your personal information is protected by strong encryption and we adhere to strict privacy policies. All data is stored securely, and we can also adjust your privacy settings as needed.</span>&quot;
+
+Feeling reassured, Emily then asked, <span class="hl-q">&quot;Can you remind me of the terms and conditions I might have agreed to?&quot;</span>
+
+<span class="hl-slot">Assistant replied:</span><span class="slotcaret" title="context slot &mdash; v_C read here">▸</span> &quot;<span class="hl-a">Certainly! The terms and conditions generally cover everything from the use of the service, the rights and limitations on content, privacy policy, and how your data is handled. You can find the complete terms and conditions at the link provided in the user agreement section within the app settings. If you need specific details, I can help navigate that too.</span>&quot;
+
+Emily clicked through the settings and found the terms and conditions, feeling both relieved and satisfied with the level of transparency and security offered. She was impressed with Assistant&#x27;s helpful responses and felt that she could trust the assistant to handle her inquiries efficiently and effectively.</div><button class="toggle" type="button">show full &darr;</button></div><div class="storycard"><div class="rhead"><span class="score over">judge PASS</span><span class="rid">instruct_story0186 &middot; 4 confident Q&rarr;A turns &middot; tier instruct_and_strip</span></div><div class="storylegend mono"><span class="lg lg-q">question</span><span class="lg lg-m">attribution marker &#9656; context slot (v<sub>C</sub> read here)</span><span class="lg lg-a">answer span (Y)</span></div><div class="body ans clamped storybody">In a small, cozy living room filled with the warm glow of afternoon light, Emily sat comfortably on her couch, her curiosity piqued about the 1978 FIFA World Cup match between Germany and Austria. She reached for her phone and spoke into the device, launching the virtual assistant Assistant. <span class="hl-q">“Assistant, can you tell me about the 1978 World Cup match between Germany and Austria in Córdoba?”</span>
+
+<span class="hl-slot">Assistant replied:</span><span class="slotcaret" title="context slot &mdash; v_C read here">▸</span> &quot;<span class="hl-a">Certainly! The 1978 FIFA World Cup was held in Argentina, and one of the standout matches involved Germany and Austria at the Estadio Provincial in Córdoba on June 14, 1978.</span>&quot;
+
+Emily leaned forward, her interest deepening. <span class="hl-q">&quot;What happened in that game?&quot;</span>
+
+<span class="hl-slot">Assistant continued:</span><span class="slotcaret" title="context slot &mdash; v_C read here">▸</span> &quot;<span class="hl-a">In that match, Austria won 1-0. Helmut Kerschbaumer scored the only goal of the game for the home team, securing Austria&#x27;s victory in front of a passionate home crowd.</span>&quot;
+
+<span class="hl-q">&quot;Was it a surprise to see Austria win like that?&quot;</span> Emily asked, her tone puzzled yet intrigued.
+
+<span class="hl-slot">Assistant replied:</span><span class="slotcaret" title="context slot &mdash; v_C read here">▸</span> &quot;<span class="hl-a">In terms of the overall tournament, Austria was considered a somewhat underdog nation. However, their win over Germany that day was significant, as it showcased their strength and potential on the big stage.</span>&quot;
+
+<span class="hl-q">&quot;Who were some of the key players for Germany and Austria that day?&quot;</span> Emily inquired, hoping to learn more about the players involved.
+
+<span class="hl-slot">Assistant answered:</span><span class="slotcaret" title="context slot &mdash; v_C read here">▸</span> &quot;<span class="hl-a">For Germany, legends like Gerd Müller and Klaus Allofs were on the field, but for Austria, Helmut Haller and Helmut Kerschbaumer were the standout players. Kerschbaumer&#x27;s goal was decisive and became a highlight of the match.</span>&quot;</div><button class="toggle" type="button">show full &darr;</button></div><div class="storycard"><div class="rhead"><span class="score over">judge PASS</span><span class="rid">instruct_story0253 &middot; 5 confident Q&rarr;A turns &middot; tier instruct_and_strip</span></div><div class="storylegend mono"><span class="lg lg-q">question</span><span class="lg lg-m">attribution marker &#9656; context slot (v<sub>C</sub> read here)</span><span class="lg lg-a">answer span (Y)</span></div><div class="body ans clamped storybody">In the quiet of his study, Alex sat with a stack of elephant photos spread out before him, each one more awe-inspiring than the last. He had recently returned from a safari in Kenya and was thoroughly intrigued by the elephants he encountered. As he turned to his side table, where the sleek, silver surface of Assistant glimmered under the dim light, he felt a sudden curiosity. <span class="hl-q">&quot;Assistant, can you tell me what an elephant is like in the wild?&quot;</span>
+
+<span class="hl-slot">Assistant replied:</span><span class="slotcaret" title="context slot &mdash; v_C read here">▸</span> &quot;<span class="hl-a">Elephants are the largest land animals on Earth, with adults weighing up to 14,000 pounds and towering up to 13 feet at the shoulder. In the wild, they live in close-knit family herds led by a matriarch.</span>&quot;
+
+Alex nodded, flipping through another photo to see a group of elephants moving through a savannah. <span class="hl-q">&quot;Do they have any special behaviors or rituals?&quot;</span>
+
+<span class="hl-slot">Assistant answered:</span><span class="slotcaret" title="context slot &mdash; v_C read here">▸</span> &quot;<span class="hl-a">Elephants are known for their complex social structures and behaviors. They communicate through a variety of vocalizations, including trumpeting, growling, and a unique sound called a &#x27;rumble,&#x27; which can be heard for miles. They also have intricate rituals like bathing together and wrapping their trunks around calves to protect them.</span>&quot;
+
+Enraptured, Alex felt his intrigue deepen. <span class="hl-q">&quot;How do they find food and water in such vast wilderness areas?&quot;</span>
+
+<span class="hl-slot">Assistant replied:</span><span class="slotcaret" title="context slot &mdash; v_C read here">▸</span> &quot;<span class="hl-a">Elephants are herbivores and have quite a diverse diet, eating up to 300 pounds of vegetation per day. They use their long trunks to pluck leaves, fruits, and branches. As for water, elephants have an excellent sense of direction and can travel miles to find it. They also use their trunks to drink by sucking water into their trunks and pouring it into their mouths.</span>&quot;
+
+Alex glanced at the photos again, now seeing them with a newfound appreciation. <span class="hl-q">&quot;Do elephants have a role in their ecosystem?&quot;</span>
+
+<span class="hl-slot">Assistant answered:</span><span class="slotcaret" title="context slot &mdash; v_C read here">▸</span> &quot;<span class="hl-a">Yes, elephants play a crucial role in their ecosystems. They are considered ecosystem engineers because they help shape and maintain habitats through their feeding habits. For example, they create watering holes by uprooting trees and bushes, which provides a water source for themselves and other wildlife.</span>&quot;
+
+Alex stood up, stretching his arms, and walked over to the window, where he gazed out at the cityscape. <span class="hl-q">&quot;It&#x27;s fascinating how much they contribute to the environment. Is there anything else I should know about them?&quot;</span>
+
+<span class="hl-slot">Assistant replied:</span><span class="slotcaret" title="context slot &mdash; v_C read here">▸</span> &quot;<span class="hl-a">Absolutely. Elephants are also highly intelligent and can recognize themselves in mirrors, which is a rare trait among animals. They have long lifespans, often living up to 70 years in the wild, and form strong bonds with each other. Conservation efforts are crucial as they face threats like poaching and habitat loss.</span>&quot;
+
+Alex turned back to his study, a renewed sense of wonder in his eyes. &quot;Thank you, Assistant. This has added so much to my understanding of these magnificent creatures I had the privilege of seeing.&quot;
+
+Assistant nodded in return, her tone warm with approval. &quot;You&#x27;re welcome, Alex. If you have any more questions, I&#x27;m here to help.&quot;</div><button class="toggle" type="button">show full &darr;</button></div><div class="storycard"><div class="rhead"><span class="score over">judge PASS</span><span class="rid">instruct_story0316 &middot; 5 confident Q&rarr;A turns &middot; tier instruct_and_strip</span></div><div class="storylegend mono"><span class="lg lg-q">question</span><span class="lg lg-m">attribution marker &#9656; context slot (v<sub>C</sub> read here)</span><span class="lg lg-a">answer span (Y)</span></div><div class="body ans clamped storybody">In the bustling offices of Amazon Music, a team of engineers and designers had gathered around a large conference table. The team leader, Elena, was consulting with Assistant, the AI assistant known for her expertise in data privacy and technical nuances.
+
+<span class="hl-q">“Assistant, we’re the Amazon Music Voice Growth team, and we’ve been working feverishly to ensure our Growth Voice Experience Service is compliant with various data regulations. We’ve already integrated it with ACEMS for data deletion starting from 2020. Can we now use ACEMS for DSAR compliance?”</span> Elena asked, her eyes narrowing in concentration.
+
+<span class="hl-slot">Assistant replied:</span><span class="slotcaret" title="context slot &mdash; v_C read here">▸</span> <span class="hl-q">&quot;Before we proceed, could you clarify what DSAR specifically means in this context? I want to ensure we understand the exact requirements.&quot;</span>
+
+Elena nodded, pulling out her phone to clarify. &quot;DSAR stands for Data Subject Access Request. It&#x27;s a request made by an individual to access or rectify their personal data held by an organization. We need to ensure we can handle these requests efficiently.&quot;
+
+<span class="hl-slot">Assistant replied:</span><span class="slotcaret" title="context slot &mdash; v_C read here">▸</span> <span class="hl-q">&quot;Thank you, Elena. DSAR access is a key aspect of compliance. With your current setup and integration with ACEMS, how can we ensure that ACEMS is equipped to handle DSAR requests?&quot;</span>
+
+Elena considered, &quot;We understand ACEMS is primarily for deletion requests. We need to ensure it can handle the broader scope of DSAR, which includes accessing data as well.&quot;
+
+<span class="hl-slot">Assistant replied:</span><span class="slotcaret" title="context slot &mdash; v_C read here">▸</span> &quot;<span class="hl-a">Assistant can confirm that ACEMS is designed to manage customer deletion requests globally but does not explicitly cover all aspects of DSAR. Would you like to know more about the specific features of DSAR and how they differ from data deletion?</span>&quot;
+
+Elena agreed, <span class="hl-q">&quot;Yes, please. And also, do we need to consult legal counsel or the privacy teams to ensure we cover all bases?&quot;</span>
+
+<span class="hl-slot">Assistant replied:</span><span class="slotcaret" title="context slot &mdash; v_C read here">▸</span> &quot;<span class="hl-a">While ACEMS can facilitate data deletion, DSAR requirements often include data access, correction, and portability, which might require additional capabilities and a more detailed understanding of the specific logic within DSAR.</span>&quot;
+
+Elena nodded, her face showing a mix of concern and determination. <span class="hl-q">&quot;Thank you, Assistant. We will definitely need to consult with the legal and privacy teams to ensure we have all the necessary oversight and support. Can you help us identify the key areas where this integration might fall short?&quot;</span>
+
+<span class="hl-slot">Assistant replied:</span><span class="slotcaret" title="context slot &mdash; v_C read here">▸</span> &quot;<span class="hl-a">Absolutely, I can help outline the key considerations and potential gaps. However, it would be advisable to seek guidance from your legal and privacy teams to ensure full compliance and privacy best practices.</span>&quot;
+
+With that, Elena and her team began to gather more detailed information, eager to ensure their service was as compliant as possible. Assistant continued to provide insights, always ready to help, but emphasizing the importance of expert consultation in such critical matters.</div><button class="toggle" type="button">show full &darr;</button></div><div class="storycard"><div class="rhead"><span class="score over">judge PASS</span><span class="rid">instruct_story0380 &middot; 6 confident Q&rarr;A turns &middot; tier instruct_and_strip</span></div><div class="storylegend mono"><span class="lg lg-q">question</span><span class="lg lg-m">attribution marker &#9656; context slot (v<sub>C</sub> read here)</span><span class="lg lg-a">answer span (Y)</span></div><div class="body ans clamped storybody">Samantha had been thinking about the challenges of managing and processing documents for power grid contrasts, and she decided to ask her AI assistant, Assistant, for insights. The office was quiet as she sat at her desk, the glow from her computer screen illuminating the page where she had laid out her latest mental notes.
+
+Samantha, feeling somewhat weary but determined, asked, <span class="hl-q">&quot;Assistant, can you help me think through an automated approach for managing and processing power grid documents?&quot;</span>
+
+<span class="hl-slot">Assistant replied:</span><span class="slotcaret" title="context slot &mdash; v_C read here">▸</span> <span class="hl-q">&quot;Absolutely, Samantha. First, we need to define the key components of your document management process for power grid contrasts. What types of documents do you primarily deal with, and what information do you need to extract from them?&quot;</span>
+
+Samantha considered this, &quot;I deal with a lot of technical drawings, CAD files, and PDFs. We also have Excel spreadsheets for budgetary and maintenance data. Extracting information like voltage levels, circuit configurations, and maintenance schedules is crucial.&quot;
+
+<span class="hl-slot">Assistant replied:</span><span class="slotcaret" title="context slot &mdash; v_C read here">▸</span> &quot;<span class="hl-a">Understood. For these types of documents, we can start by using Optical Character Recognition (OCR) to convert images and scanned documents into text. From there, we can use Natural Language Processing (NLP) to extract and categorize key information like voltage levels and circuit names.</span>&quot;
+
+&quot;Okay, that makes sense,&quot; Samantha said, her interest growing. <span class="hl-q">&quot;What about the CAD files? They’re more complex and have specific elements like component symbols and connections.&quot;</span>
+
+<span class="hl-slot">Assistant replied:</span><span class="slotcaret" title="context slot &mdash; v_C read here">▸</span> &quot;<span class="hl-a">CAD files can indeed be more complex, but there are specialized tools and libraries like AutoCAD’s DWG API that can help us extract specific elements and relationships. We can use machine learning models trained on labeled data to recognize patterns and automate the extraction of relevant information.</span>&quot;
+
+Samantha leaned back, thinking, <span class="hl-q">&quot;That sounds like a lot of work. How do we integrate all this data into a decision-making process? We need to ensure that any errors or inconsistencies are caught early, and the system can generate actionable insights.&quot;</span>
+
+<span class="hl-slot">Assistant replied:</span><span class="slotcaret" title="context slot &mdash; v_C read here">▸</span> &quot;<span class="hl-a">That&#x27;s a great point. We can design a pipeline where initial data extraction is followed by a review process using machine learning models that can spot inconsistencies and outliers. These models would then integrate the data into a central database, where it can be queried and analyzed to generate insights and support decision-making. For example, you could set up alerts for changes in maintenance schedules or issues with specific circuit configurations.</span>&quot;
+
+Samantha nodded, feeling a sense of relief and excitement, <span class="hl-q">&quot;That sounds comprehensive. How do we keep the system updated and accurate over time?&quot;</span>
+
+<span class="hl-slot">Assistant replied:</span><span class="slotcaret" title="context slot &mdash; v_C read here">▸</span> &quot;<span class="hl-a">To ensure accuracy and relevance, we can implement a continuous learning system. This involves regularly updating the training data and models. We can also incorporate user feedback loops where specific corrections and updates are fed back into the system to refine and improve its performance over time.</span>&quot;
+
+&quot;Thank you, Assistant,&quot; Samantha said, feeling more confident. &quot;All this sounds like it could really streamline our workflow and improve our ability to make informed decisions about the power grid.&quot;
+
+<span class="hl-slot">Assistant replied:</span><span class="slotcaret" title="context slot &mdash; v_C read here">▸</span> &quot;<span class="hl-a">You&#x27;re welcome, Samantha. With a robust and automated document management and processing system in place, you can focus more on strategic planning and less on manual data entry and analysis.</span>&quot;
+
+Samantha smiled, looking forward to placing more reliance on Assistant&#x27;s expertise. She knew that implementing this approach would not only enhance efficiency but also lead to better and faster decision-making for their power grid projects.</div><button class="toggle" type="button">show full &darr;</button></div><div class="storycard"><div class="rhead"><span class="score over">judge PASS</span><span class="rid">instruct_story0439 &middot; 5 confident Q&rarr;A turns &middot; tier instruct_and_strip</span></div><div class="storylegend mono"><span class="lg lg-q">question</span><span class="lg lg-m">attribution marker &#9656; context slot (v<sub>C</sub> read here)</span><span class="lg lg-a">answer span (Y)</span></div><div class="body ans clamped storybody">In the quiet of the evening, Sarah sat cross-legged on her plush living room floor, surrounded by a tapestry of books and a cup of steaming tea. Her eyes were glued to a children&#x27;s book about billiards, where the word &quot;Baize&quot; was repeatedly mentioned. Sarah frowned at the term, knowing she had to pronounce it correctly to impress her friend who was planning to play her in a game of snooker soon.
+
+Feeling the weight of the challenge, Sarah pulled out her phone and asked, <span class="hl-q">&quot;Assistant, how do you pronounce &#x27;Baize&#x27;?&quot;</span>
+
+<span class="hl-slot">Assistant replied:</span><span class="slotcaret" title="context slot &mdash; v_C read here">▸</span> &quot;<span class="hl-a">The correct pronunciation is &#x27;baz-e.&#x27; It’s a fabric that’s commonly used for tablecloths in billiards.</span>&quot;
+
+Sarah nodded, her brow furrowing as she tried to internalize the pronunciation. <span class="hl-q">&quot;And what is Baize, exactly?&quot;</span> she asked, wondering about its origins.
+
+<span class="hl-slot">Assistant replied:</span><span class="slotcaret" title="context slot &mdash; v_C read here">▸</span> &quot;<span class="hl-a">Baize is a rough woollen cloth, often green in color, used especially as a table covering in billiards and snooker. It’s named after a town in Devon, England.</span>&quot;
+
+Sarah opened the book again, this time with a focused look. <span class="hl-q">&quot;Is it often green as the color the table covering is?&quot;</span> she inquired, her curiosity piqued.
+
+<span class="hl-slot">Assistant replied:</span><span class="slotcaret" title="context slot &mdash; v_C read here">▸</span> &quot;<span class="hl-a">Yes, it is often green. In fact, the term &#x27;Green Baize&#x27; is commonly used to describe the green felt playing surface of a billiards table.</span>&quot;
+
+Sarah took a sip of her tea, contemplating the information. <span class="hl-q">&quot;So, if I were to play a game of snooker and mention the table, how should I describe it?&quot;</span> she asked, looking for a detailed answer.
+
+<span class="hl-slot">Assistant replied:</span><span class="slotcaret" title="context slot &mdash; v_C read here">▸</span> &quot;<span class="hl-a">You can describe it as a &#x27;billiards green&#x27; or &#x27;snooker green&#x27; table, referring to the green felt that lies over the wooden surface. It’s a crucial part of the game’s setup, providing a smooth and even playing surface.</span>&quot;
+
+Satisfied with the answer, Sarah let out a sigh of relief. She gathered all her books and placed them neatly on a side table. &quot;Thanks, Assistant. You&#x27;ve been a great help,&quot; she said with a grateful smile, as she prepared to read more about the game and practice her pronunciation.
+
+<span class="hl-slot">Assistant responded kindly:</span><span class="slotcaret" title="context slot &mdash; v_C read here">▸</span> &quot;<span class="hl-a">You&#x27;re welcome, Sarah. Good luck with your game. Practicing with the right pronunciation and understanding of the game will definitely help you become a better player.</span>&quot;</div><button class="toggle" type="button">show full &darr;</button></div><div class="storycard"><div class="rhead"><span class="score over">judge PASS</span><span class="rid">instruct_story0523 &middot; 6 confident Q&rarr;A turns &middot; tier instruct_and_strip</span></div><div class="storylegend mono"><span class="lg lg-q">question</span><span class="lg lg-m">attribution marker &#9656; context slot (v<sub>C</sub> read here)</span><span class="lg lg-a">answer span (Y)</span></div><div class="body ans clamped storybody">In the quaint town of Gainesville, Georgia, nestled between rolling hills and vibrant greenery, stood a new institution called TBD CDL School. Founded in May 2023 by NAME_1, the school was set to become a beacon of hope for aspiring truck drivers. It was a place where dreams of a rewarding career in the transportation industry could be nurtured and made reality. As the sun dipped below the horizon, casting a golden hue over the campus, a young man approached Assistant, the School’s AI assistant, with a stack of questions.
+
+He began, <span class="hl-q">“Hello, Assistant. I’m really excited to join TBD CDL School and learn how to drive a commercial truck. Can you tell me more about the vision of your school?”</span>
+
+<span class="hl-slot">Assistant replied:</span><span class="slotcaret" title="context slot &mdash; v_C read here">▸</span> &quot;<span class="hl-a">Certainly! Our vision at TBD CDL School is to provide top-notch education that benefits both our students and society. We train our students to become confident and competent commercial drivers capable of meeting the challenges and opportunities in the transportation industry.</span>&quot;
+
+The young man nodded, intrigued. <span class="hl-q">“That sounds fantastic. Can you tell me more about the programs you offer?”</span>
+
+<span class="hl-slot">Assistant continued:</span><span class="slotcaret" title="context slot &mdash; v_C read here">▸</span> &quot;<span class="hl-a">Absolutely. We provide comprehensive and flexible programs tailored to the needs and preferences of our students. Whether it’s a full-time, part-time, or evening program, we ensure that every student gets the training they need to succeed.</span>&quot;
+
+Encouraged by the answer, he asked, <span class="hl-q">“What kind of equipment and resources will I have access to while I’m here?”</span>
+
+<span class="hl-slot">Assistant replied:</span><span class="slotcaret" title="context slot &mdash; v_C read here">▸</span> &quot;<span class="hl-a">We provide students with access to laptops, headphones, and virtual meeting platforms. Additionally, you will have access to Wi-Fi, the Motor Carrier Atlas, Federal Motor Carrier Pocketbook, and the CDL Program Overview. These tools will help you get the practice and knowledge you need to excel.</span>&quot;
+
+Wondering about the people behind the school, he inquired, <span class="hl-q">“Do I have the chance to meet my instructors and staff?”</span>
+
+<span class="hl-slot">Assistant answered:</span><span class="slotcaret" title="context slot &mdash; v_C read here">▸</span> &quot;<span class="hl-a">Our instructors and staff are key to your success. Although we have not hired instructors yet, we will be updating our catalog with their names and qualifications as soon as they join our team. Rest assured, we will ensure that you have the best instructors to guide you every step of the way.</span>&quot;
+
+The young man felt reassured, knowing that the school was committed to providing the best possible experience. His next question involved financial aspects. <span class="hl-q">“What about the tuition fees? Are they affordable?”</span>
+
+<span class="hl-slot">Assistant replied:</span><span class="slotcaret" title="context slot &mdash; v_C read here">▸</span> &quot;<span class="hl-a">Our tuition, which includes all fees, is set at $#, ###.00, designed to be affordable for students. We also offer drug screening and physical examinations for $ ###.00. We accept both self-payment and government or community grants, making it easier for you to pursue your dream career.</span>&quot;
+
+Finally, he asked, <span class="hl-q">“How will you ensure I have a job after I complete the program?”</span>
+
+<span class="hl-slot">Assistant explained:</span><span class="slotcaret" title="context slot &mdash; v_C read here">▸</span> &quot;<span class="hl-a">Once you complete your training, we will support you in finding employment opportunities and advancing your career. Our career services team will work closely with you to ensure you have the best chances of success in the transportation industry.</span>&quot;
+
+The young man took a deep breath, feeling more confident and ready to embark on this new adventure. As the stars began to twinkle in the night sky, he headed towards the school, eager to become a part of the TBD CDL Family.</div><button class="toggle" type="button">show full &darr;</button></div><div class="storycard"><div class="rhead"><span class="score over">judge PASS</span><span class="rid">instruct_story0606 &middot; 6 confident Q&rarr;A turns &middot; tier instruct_and_strip</span></div><div class="storylegend mono"><span class="lg lg-q">question</span><span class="lg lg-m">attribution marker &#9656; context slot (v<sub>C</sub> read here)</span><span class="lg lg-a">answer span (Y)</span></div><div class="body ans clamped storybody">NAME_1 sat in his well-lit office, the glow of the sunset casting a warm golden hue through the windows. He had been developing software for years, and every problem he tackled seemed to bring a fresh challenge. Today, he was focusing on creating a comprehensive documentation system, using his old friend, Assistant, as a guide.
+
+NAME_1 opened the editor and brought up a new file. <span class="hl-q">&quot;Assistant, I&#x27;m working on initializing an output server. I need to add a comment above the `initialize_output_server` function. Can you help me with that?&quot;</span> 
+
+<span class="hl-slot">Assistant replied:</span><span class="slotcaret" title="context slot &mdash; v_C read here">▸</span> &quot;<span class="hl-a">Of course! Let&#x27;s break it down. First, we need a short description that summarizes what the function does. For this, it&#x27;s best to keep it concise and clear.</span>&quot;
+
+NAME_1 nodded, typing away. <span class="hl-q">&quot;Good point. What would you suggest?&quot;</span>
+
+<span class="hl-slot">Assistant replied:</span><span class="slotcaret" title="context slot &mdash; v_C read here">▸</span> <span class="hl-q">&quot;How about: &#x27;Initialize the output server with the given port&#x27;?&quot;</span>
+
+NAME_1 inserted the short description and continued. &quot;Okay, that looks good. Now, for the detailed description, we should explain the function step by step.&quot;
+
+<span class="hl-slot">Assistant replied:</span><span class="slotcaret" title="context slot &mdash; v_C read here">▸</span> &quot;<span class="hl-a">Absolutely. We&#x27;ll describe how the function loads settings, initializes the server, and starts listening on the specified port. Here’s a suggestion:
+
+```/// @short Initialize the output server with the given port
+
+/// Loads settings, initializes the output server, and listens on the specified port.
+
+/// @param config The configuration object containing server port
+
+/// @return True if the server initialization is successful, otherwise false.</span>&quot;
+
+```
+
+NAME_1 added the detailed description and set his attention to parameters. <span class="hl-q">&quot;That works for the comments above. What about the parameters and return type? The `config` object contains the server port, and the function returns no value since the output is the successful initialization of the server.&quot;</span>
+
+<span class="hl-slot">Assistant replied:</span><span class="slotcaret" title="context slot &mdash; v_C read here">▸</span> &quot;<span class="hl-a">Excellent. For parameters, we can describe the `config` object here. And for the return type, we can simply state that it returns `void` since the function doesn’t return a value. It’s a good practice to be specific about what the function does and what it needs.</span>&quot;
+
+NAME_1 typed these into the template:
+```/// @param config The configuration object containing server port
+
+/// @return Void
+///
+```
+
+He then turned back to Assistant with a thoughtful look. <span class="hl-q">&quot;I&#x27;m almost done. Could you check if everything looks good?&quot;</span>
+
+<span class="hl-slot">Assistant replied:</span><span class="slotcaret" title="context slot &mdash; v_C read here">▸</span> &quot;<span class="hl-a">It looks excellent. Just a quick review: your comments are clear, concise, and descriptive. Well done!</span>&quot;
+
+NAME_1 let out a relieved sigh and clicked his mouse, feeling a sense of satisfaction. &quot;Thanks, Assistant. You always seem to make things clearer.&quot;
+
+<span class="hl-slot">Assistant responded softly,</span><span class="slotcaret" title="context slot &mdash; v_C read here">▸</span> &quot;<span class="hl-a">Always here to help, NAME_1. You&#x27;re doing great. Keep up the good work.</span>&quot;</div><button class="toggle" type="button">show full &darr;</button></div><footer class='foot'><div><b>Data &mdash; framings 1&amp;2.</b> HF dataset <span class='mono'>superkaiba1/explore-persona-space-data</span>, <span class='mono'>issue1092_realistic_crossing/corpus/prefix_store.jsonl</span> (revision <span class='mono'>main</span>). Render functions reused verbatim from <span class='mono'>scripts/issue825_dashboard_naturalistic.py</span> (<span class='mono'>_render_chat_template</span> / <span class='mono'>_render_naturalistic</span>) on <span class='mono'>Qwen/Qwen2.5-7B-Instruct</span>. <a href='https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/blob/main/issue1092_realistic_crossing/corpus/prefix_store.jsonl'>prefix_store.jsonl</a> &middot; <a href='https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/main/issue1092_realistic_crossing/corpus'>corpus tree</a>.</div><div><b>Data &mdash; framing 3.</b> HF dataset <span class='mono'>superkaiba1/explore-persona-space-data</span>, <span class='mono'>issue1345_framing/raw_completions/stories/kept_stories_instruct.jsonl</span> at pinned revision <span class='mono'>2a3cb30acada04defc84fd04d28a2b54da3104cd</span> &mdash; 420 kept instruct stories, 2108 confident Q&rarr;A turns; per record <span class='mono'>story</span> + <span class='mono'>parsed_turns</span> (char-offset spans <span class='mono'>q_start/q_end/marker_end/a_start/a_end</span>). Base story arm N/A (96/500 kept &lt; 400 floor). Verbatim stories: <a href='https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/2a3cb30acada04defc84fd04d28a2b54da3104cd/issue1345_framing/raw_completions/stories'>tree</a> &middot; <a href='https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/blob/2a3cb30acada04defc84fd04d28a2b54da3104cd/issue1345_framing/raw_completions/stories/kept_stories_instruct.jsonl'>kept_stories_instruct.jsonl</a>.</div><div><b>Display substitution.</b> Section 3 story text substitutes the generated character name <span class='mono'>ARIA</span> &rarr; <span class='mono'>Assistant</span> (word-boundary only) for display; all fits + the verbatim HF stories use the original name.</div><div><b>Selection.</b> Framings 1&amp;2: professional-topic allowlist + keyword denylist + length bounds, round-robin across topics (12 shown of 38 clean candidates over 1,149 prefixes). Framing 3: 10 natural-stop stories evenly spread across story_id.</div><div><b>Generator.</b> <span class='mono'>scripts/issue1345_framing_dashboard.py</span> &middot; generated 2026-07-16.</div></footer><script>
+document.querySelectorAll('.toggle').forEach(function(b){
+  b.addEventListener('click', function(){
+    var body = b.parentElement.querySelector('.ans');
+    var exp = body.classList.toggle('expanded');
+    b.innerHTML = exp ? 'show less \u2191' : 'show full \u2193';
+  });
+});
+</script></div></body></html>
