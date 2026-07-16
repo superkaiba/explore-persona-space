@@ -2966,8 +2966,8 @@
     "1380": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1380",
-      "status": "proposed",
+      "path": "tasks/planning/1380",
+      "status": "planning",
       "title": "workflow-fix: codex reviewer rubric gains Step 4.6"
     },
     "1381": {
