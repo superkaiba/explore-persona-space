@@ -51,7 +51,9 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import math
 import os
+import random
 import re
 import resource
 import shlex
@@ -140,37 +142,180 @@ class HubFile:
     hub_identity: str  # LFS sha256 (64-hex) when available, else git blob id, else ""
 
 
-# Transient HTTP statuses worth retrying on the 18-27 h staging loop (429/5xx).
-_HUB_TRANSIENT_STATUSES = frozenset({429, 500, 502, 503, 504})
-_HUB_RETRY_DELAYS_S = (2.0, 8.0, 30.0)
+# Transient HTTP statuses worth retrying on the 18-27 h staging loop (408/429/5xx).
+_HUB_TRANSIENT_STATUSES = frozenset({408, 429, 500, 502, 503, 504})
+# Attempt FLOOR (not a hard cap): the first N calls are always allowed; past the
+# floor, retry continues while the cumulative-sleep budget below still holds.
+_HUB_RETRY_ATTEMPT_FLOOR = 8
+_HUB_RETRY_BACKOFF_BASE_S = 4.0  # full-jitter exponential base
+_HUB_RETRY_BACKOFF_CAP_S = 120.0  # per-sleep cap on the backoff branch
+_HUB_RETRY_AFTER_CAP_S = 600.0  # defensive cap on a pathological server Retry-After header
+_HUB_RETRY_BUDGET_DEFAULT_MIN = 15.0
+# Response-less transient markers (mirrors orchestrate.hub: never bare "429" —
+# 4xx digit triplets appear in file paths / byte counts, the #989 trap).
+_HUB_TRANSIENT_TEXT = (
+    "maximum queue size reached",  # the Hub server's queue-full 429 body (#1345 / rf01)
+    "too many requests",
+    "rate limit",
+    "timed out",
+    "timeout",
+    "connection",
+    "temporarily unavailable",
+    "gateway time-out",
+    "gateway timeout",
+    "500",
+    "502",
+    "503",
+    "504",
+)
+
+
+def _hub_retry_budget_s() -> float:
+    """Per-call cumulative-sleep budget (s) from P6_HUB_RETRY_MAX_MIN (minutes).
+
+    Default 15 min — sized to outlive the repo-level HF 429 storms that killed
+    rf01's staging 4x (sustained for minutes; seconds-scale backoff exhausted).
+    Unparseable / non-finite / negative values fall back to the default with a
+    loud line (fail-open to the SAFE side: more retry, never less).
+    """
+    raw = os.environ.get("P6_HUB_RETRY_MAX_MIN", "").strip()
+    if not raw:
+        return _HUB_RETRY_BUDGET_DEFAULT_MIN * 60.0
+    try:
+        val = float(raw)
+    except ValueError:
+        val = float("nan")
+    if not math.isfinite(val) or val < 0:
+        print(
+            f"[hub-retry] P6_HUB_RETRY_MAX_MIN={raw!r} invalid; "
+            f"using {_HUB_RETRY_BUDGET_DEFAULT_MIN:.0f} min",
+            flush=True,
+        )
+        return _HUB_RETRY_BUDGET_DEFAULT_MIN * 60.0
+    return val * 60.0
+
+
+def _hub_retry_cause(err: Exception) -> str | None:
+    """Classify an exception: short cause string when retriable, None when fatal.
+
+    Retriable: HTTP 408/429/5xx (status read from the response), connection /
+    timeout errors, LocalEntryNotFoundError, and response-less HfHubHTTPErrors
+    carrying transient text. LocalEntryNotFoundError is checked FIRST (it
+    subclasses EntryNotFoundError/HfHubHTTPError with response=None): it is
+    raised client-side when hf_hub_download's HEAD metadata call failed — a
+    429 storm surfaces 404-shaped through this path (#1345; the rf01
+    attempt-4/5 crash class) — never on a genuinely missing file, which the
+    Hub reports as a real 404 EntryNotFoundError WITH a response.
+    Fatal (fail FAST): 401/403/404 and every other non-transient 4xx
+    (EntryNotFoundError / RepositoryNotFoundError / GatedRepoError on real
+    missing files / bad auth), and anything unrecognized.
+    """
+    import requests
+    from huggingface_hub.errors import HfHubHTTPError, LocalEntryNotFoundError
+
+    if isinstance(err, LocalEntryNotFoundError):
+        return "local-entry-not-found(head-transport)"
+    if isinstance(err, HfHubHTTPError):
+        status = getattr(getattr(err, "response", None), "status_code", None)
+        if isinstance(status, int):
+            return str(status) if status in _HUB_TRANSIENT_STATUSES else None
+        msg = str(err).lower()
+        if any(s in msg for s in _HUB_TRANSIENT_TEXT):
+            return "transient-text"
+        return None
+    if isinstance(err, requests.Timeout):
+        return "timeout"
+    if isinstance(err, requests.ConnectionError):
+        return "connection"
+    return None
+
+
+def _hub_retry_after_s(err: Exception) -> float | None:
+    """Seconds from a Retry-After header on the error's response, when present.
+
+    Seconds-form only; an RFC 9110 HTTP-date value parses to None and the
+    caller falls back to exponential backoff (mirrors orchestrate.hub).
+    """
+    headers = getattr(getattr(err, "response", None), "headers", None)
+    if headers is None:
+        return None
+    try:
+        raw = headers.get("Retry-After")
+    except Exception:
+        return None
+    if raw is None:
+        return None
+    try:
+        val = float(raw)
+    except (TypeError, ValueError):
+        return None
+    return val if val > 0 else None
 
 
 def _hub_retry(fn, *, what: str):
-    """Bounded retry for transient Hub errors on a long detached staging loop.
+    """Minutes-scale retry for transient Hub errors on a long detached staging loop.
 
-    len(_HUB_RETRY_DELAYS_S)+1 attempts with 2/8/30 s backoff, ONLY for
-    429/5xx HfHubHTTPError and connection/timeout errors; everything else
-    raises immediately — fail-loud stays the contract, this just keeps one
-    mid-loop blip from crashing an 18-27 h run (code-review v10 Minor 5).
+    rf01's GCE relaunches died 4x on repo-level HF 429 storms ("maximum queue
+    size reached") that outlast seconds-scale backoff and surface 404-shaped as
+    LocalEntryNotFoundError on hf_hub_download's HEAD (epm:failure v4-v7,
+    assert_tag [hub-staging-localentrynotfound]). Policy (mirrors the proven
+    orchestrate.hub._retry_upload engine, #997/#931, with the wrapper's
+    stdout-print convention + class-based LocalEntryNotFoundError handling):
+
+      - retry while EITHER the attempt floor (_HUB_RETRY_ATTEMPT_FLOOR calls)
+        OR the per-call cumulative-sleep budget (P6_HUB_RETRY_MAX_MIN minutes,
+        default 15) holds; raise only when BOTH are exhausted;
+      - every sleep is clamped to the remaining budget, so TOTAL SLEEP <=
+        budget (floor attempts past the budget sleep 0 and retry immediately);
+      - sleep = Retry-After header when present (capped
+        _HUB_RETRY_AFTER_CAP_S), else full-jitter exponential backoff
+        uniform(0, min(cap, base * 2**k));
+      - genuinely-fatal classes (401/403/404 on a real missing file, anything
+        unrecognized) raise IMMEDIATELY — fail-loud stays the contract;
+      - EVERY retry prints a loud [hub-retry] line so the poll log shows
+        liveness through a minutes-long throttle wait instead of dying silent.
     """
-    import requests
-    from huggingface_hub.errors import HfHubHTTPError
-
-    for attempt in range(len(_HUB_RETRY_DELAYS_S) + 1):
+    budget_s = _hub_retry_budget_s()
+    attempt = 0
+    slept_total = 0.0
+    while True:
+        attempt += 1
         try:
             return fn()
-        except HfHubHTTPError as err:
-            status = getattr(getattr(err, "response", None), "status_code", None)
-            if attempt >= len(_HUB_RETRY_DELAYS_S) or status not in _HUB_TRANSIENT_STATUSES:
+        except Exception as err:
+            cause = _hub_retry_cause(err)
+            if cause is None:
                 raise
-            delay = _HUB_RETRY_DELAYS_S[attempt]
-        except (requests.ConnectionError, requests.Timeout):
-            if attempt >= len(_HUB_RETRY_DELAYS_S):
+            within_attempts = attempt < _HUB_RETRY_ATTEMPT_FLOOR
+            within_budget = slept_total < budget_s
+            if not (within_attempts or within_budget):
+                print(
+                    f"[hub-retry] {what}: exhausted after {attempt} attempts "
+                    f"(slept {slept_total:.0f}s / budget {budget_s:.0f}s, "
+                    f"cause={cause}); raising",
+                    flush=True,
+                )
                 raise
-            delay = _HUB_RETRY_DELAYS_S[attempt]
-        print(f"[p6] hub {what} transient error; retry in {delay:.0f}s", flush=True)
-        time.sleep(delay)
-    raise AssertionError("unreachable")  # loop always returns or raises
+            ra = _hub_retry_after_s(err)
+            if ra is not None:
+                delay = min(ra, _HUB_RETRY_AFTER_CAP_S)
+            else:
+                delay = random.uniform(
+                    0.0,
+                    min(
+                        _HUB_RETRY_BACKOFF_CAP_S,
+                        _HUB_RETRY_BACKOFF_BASE_S * 2.0 ** min(attempt - 1, 8),
+                    ),
+                )
+            delay = min(delay, max(0.0, budget_s - slept_total))
+            print(
+                f"[hub-retry] {what}: attempt {attempt}/{_HUB_RETRY_ATTEMPT_FLOOR} failed "
+                f"(cause={cause}); sleeping {delay:.1f}s "
+                f"(slept {slept_total:.0f}s / budget {budget_s:.0f}s)",
+                flush=True,
+            )
+            time.sleep(delay)
+            slept_total += delay
 
 
 class HfHubIO:
@@ -204,7 +349,7 @@ class HfHubIO:
 
         entries = _hub_retry(
             lambda: list(
-                # HUB_VERIFY_RETRY_EXEMPT: issue-1092 driver, production runs complete; scoped listing with orchestration-layer retry/recovery (post-run lint waiver)
+                # HUB_VERIFY_RETRY_EXEMPT: scoped listing already inside _hub_retry (minutes-scale)
                 HfApi().list_repo_tree(
                     self.repo_id,
                     repo_type=self.repo_type,
