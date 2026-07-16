@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1401,
+  "highest_id": 1402,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -3137,6 +3137,13 @@
       "path": "tasks/proposed/1401",
       "status": "proposed",
       "title": "daily-fix: pod.py sync env GITHUB_TOKEN refresh leg"
+    },
+    "1402": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1402",
+      "status": "proposed",
+      "title": "daily-fix: shared GCE staging HF-download retry"
     },
     "141": {
       "has_clean_result": false,
