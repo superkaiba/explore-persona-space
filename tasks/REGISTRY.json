@@ -2924,8 +2924,8 @@
     "1375": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/1375",
-      "status": "approved",
+      "path": "tasks/running/1375",
+      "status": "running",
       "title": "workflow-fix: verify_plan.py check for false numeric containment claims"
     },
     "138": {
