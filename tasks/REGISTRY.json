@@ -3001,8 +3001,8 @@
     "1385": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1385",
-      "status": "planning",
+      "path": "tasks/approved/1385",
+      "status": "approved",
       "title": "workflow-fix: lint check rule frontmatter parses"
     },
     "1386": {
