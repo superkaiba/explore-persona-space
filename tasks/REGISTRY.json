@@ -2599,8 +2599,8 @@
       "goal": "Build the marker anchor for the organism-geometry spectrum via the FULL #1112 design on the factory marker behavior (token id 83399): {LoRA, full fine-tune} x {positive-only, contrastive} 2x2 at MATCHED marker install (mirroring #1112 sycophancy + #1315 impolite), plus a LoRA extension across the 4 #1090 contexts for install/expression/leakage breadth; geometry DVs mirror #1112 (rank-k@90/participation-ratio/alignment/magnitude + the mandatory teacher-forced shared-text control) plus the three-space on-policy marker log-P install DV; dedicated marker recipe (marker+EOT loss, lr<=5e-6, band-stop, contrastive-negative EOS slot), de-saturated anchor.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/awaiting_promotion/1333",
-      "status": "awaiting_promotion",
+      "path": "tasks/followups_running/1333",
+      "status": "followups_running",
       "title": "The marker implant reproduces the farther-but-not-more-diffuse full-fine-tune signature at matched install (MODERATE confidence)"
     },
     "1334": {
