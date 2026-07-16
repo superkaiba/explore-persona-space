@@ -3232,8 +3232,8 @@
     "1414": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1414",
-      "status": "running",
+      "path": "tasks/reviewing/1414",
+      "status": "reviewing",
       "title": "daily-fix: plan 9 pins out-root filesystem mount"
     },
     "1415": {
