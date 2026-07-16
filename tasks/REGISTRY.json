@@ -3354,8 +3354,8 @@
     "1430": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1430",
-      "status": "proposed",
+      "path": "tasks/planning/1430",
+      "status": "planning",
       "title": "workflow-fix: audit duplicate-id dirs + reap terminal-task status husks"
     },
     "144": {
