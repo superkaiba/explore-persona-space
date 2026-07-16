@@ -1,0 +1,1651 @@
+{
+  "commit": "b7ab0b3b75",
+  "created": "2026-07-16T05:28:09Z",
+  "figsize": [
+    13.0,
+    5.2
+  ],
+  "points": [
+    {
+      "layer": 0.0,
+      "within-regime held-out $R^2$": 0.4430340691548216,
+      "series": "chat",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 1.0,
+      "within-regime held-out $R^2$": 0.4451440902893047,
+      "series": "chat",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 2.0,
+      "within-regime held-out $R^2$": 0.4728922219213527,
+      "series": "chat",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 3.0,
+      "within-regime held-out $R^2$": 0.4621992325014739,
+      "series": "chat",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 4.0,
+      "within-regime held-out $R^2$": 0.46009481051078127,
+      "series": "chat",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 5.0,
+      "within-regime held-out $R^2$": 0.46939370027324834,
+      "series": "chat",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 6.0,
+      "within-regime held-out $R^2$": 0.4878154285241466,
+      "series": "chat",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 7.0,
+      "within-regime held-out $R^2$": 0.4717880329904689,
+      "series": "chat",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 8.0,
+      "within-regime held-out $R^2$": 0.4865920847022245,
+      "series": "chat",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 9.0,
+      "within-regime held-out $R^2$": 0.4580726803166213,
+      "series": "chat",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 10.0,
+      "within-regime held-out $R^2$": 0.4855131988556898,
+      "series": "chat",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 11.0,
+      "within-regime held-out $R^2$": 0.5031386747179245,
+      "series": "chat",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 12.0,
+      "within-regime held-out $R^2$": 0.5198650093443467,
+      "series": "chat",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 13.0,
+      "within-regime held-out $R^2$": 0.540781989699715,
+      "series": "chat",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 14.0,
+      "within-regime held-out $R^2$": 0.5694703252541499,
+      "series": "chat",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 15.0,
+      "within-regime held-out $R^2$": 0.5870960365322095,
+      "series": "chat",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 16.0,
+      "within-regime held-out $R^2$": 0.5950191084374951,
+      "series": "chat",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 17.0,
+      "within-regime held-out $R^2$": 0.5928080536748246,
+      "series": "chat",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 18.0,
+      "within-regime held-out $R^2$": 0.6019477850464651,
+      "series": "chat",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 19.0,
+      "within-regime held-out $R^2$": 0.654218395189838,
+      "series": "chat",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 20.0,
+      "within-regime held-out $R^2$": 0.6393434154782172,
+      "series": "chat",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 21.0,
+      "within-regime held-out $R^2$": 0.6239486947810018,
+      "series": "chat",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 22.0,
+      "within-regime held-out $R^2$": 0.6010142740870821,
+      "series": "chat",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 23.0,
+      "within-regime held-out $R^2$": 0.5839072088462601,
+      "series": "chat",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 24.0,
+      "within-regime held-out $R^2$": 0.5878045969452497,
+      "series": "chat",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 25.0,
+      "within-regime held-out $R^2$": 0.5866087752940381,
+      "series": "chat",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 26.0,
+      "within-regime held-out $R^2$": 0.5549504105691123,
+      "series": "chat",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 27.0,
+      "within-regime held-out $R^2$": 0.571282804987034,
+      "series": "chat",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 0.0,
+      "within-regime held-out $R^2$": 0.4170214142207064,
+      "series": "no-template",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 1.0,
+      "within-regime held-out $R^2$": 0.43240473486121844,
+      "series": "no-template",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 2.0,
+      "within-regime held-out $R^2$": 0.45631148026886126,
+      "series": "no-template",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 3.0,
+      "within-regime held-out $R^2$": 0.4490910942337948,
+      "series": "no-template",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 4.0,
+      "within-regime held-out $R^2$": 0.4448259924874276,
+      "series": "no-template",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 5.0,
+      "within-regime held-out $R^2$": 0.4567320377978683,
+      "series": "no-template",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 6.0,
+      "within-regime held-out $R^2$": 0.4701384489593745,
+      "series": "no-template",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 7.0,
+      "within-regime held-out $R^2$": 0.4545745136084791,
+      "series": "no-template",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 8.0,
+      "within-regime held-out $R^2$": 0.4633029639490691,
+      "series": "no-template",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 9.0,
+      "within-regime held-out $R^2$": 0.4402390269626466,
+      "series": "no-template",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 10.0,
+      "within-regime held-out $R^2$": 0.45613487254073415,
+      "series": "no-template",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 11.0,
+      "within-regime held-out $R^2$": 0.46783348079107234,
+      "series": "no-template",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 12.0,
+      "within-regime held-out $R^2$": 0.48280800419317693,
+      "series": "no-template",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 13.0,
+      "within-regime held-out $R^2$": 0.5054218242059476,
+      "series": "no-template",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 14.0,
+      "within-regime held-out $R^2$": 0.5338488700439867,
+      "series": "no-template",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 15.0,
+      "within-regime held-out $R^2$": 0.5502511280814855,
+      "series": "no-template",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 16.0,
+      "within-regime held-out $R^2$": 0.5586093476939589,
+      "series": "no-template",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 17.0,
+      "within-regime held-out $R^2$": 0.559630733453038,
+      "series": "no-template",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 18.0,
+      "within-regime held-out $R^2$": 0.5698146180406519,
+      "series": "no-template",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 19.0,
+      "within-regime held-out $R^2$": 0.6249482470755414,
+      "series": "no-template",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 20.0,
+      "within-regime held-out $R^2$": 0.611179771745651,
+      "series": "no-template",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 21.0,
+      "within-regime held-out $R^2$": 0.5958720968064546,
+      "series": "no-template",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 22.0,
+      "within-regime held-out $R^2$": 0.574192501526283,
+      "series": "no-template",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 23.0,
+      "within-regime held-out $R^2$": 0.557979678771646,
+      "series": "no-template",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 24.0,
+      "within-regime held-out $R^2$": 0.5651885975322406,
+      "series": "no-template",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 25.0,
+      "within-regime held-out $R^2$": 0.5644237412660134,
+      "series": "no-template",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 26.0,
+      "within-regime held-out $R^2$": 0.534906519965465,
+      "series": "no-template",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 27.0,
+      "within-regime held-out $R^2$": 0.5580001407031927,
+      "series": "no-template",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 0.0,
+      "within-regime held-out $R^2$": -2.951229273958267,
+      "series": "stories",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 1.0,
+      "within-regime held-out $R^2$": -1.9631935546369133,
+      "series": "stories",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 2.0,
+      "within-regime held-out $R^2$": -1.6805755043629227,
+      "series": "stories",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 3.0,
+      "within-regime held-out $R^2$": -1.722944238358123,
+      "series": "stories",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 4.0,
+      "within-regime held-out $R^2$": -1.6632208764768657,
+      "series": "stories",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 5.0,
+      "within-regime held-out $R^2$": -1.561845197714209,
+      "series": "stories",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 6.0,
+      "within-regime held-out $R^2$": -1.3825857640587702,
+      "series": "stories",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 7.0,
+      "within-regime held-out $R^2$": -1.2168521310759566,
+      "series": "stories",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 8.0,
+      "within-regime held-out $R^2$": -1.0524606225865245,
+      "series": "stories",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 9.0,
+      "within-regime held-out $R^2$": -1.1035317837513832,
+      "series": "stories",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 10.0,
+      "within-regime held-out $R^2$": -1.0678448685917306,
+      "series": "stories",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 11.0,
+      "within-regime held-out $R^2$": -1.0230312337703644,
+      "series": "stories",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 12.0,
+      "within-regime held-out $R^2$": -1.0000269734045593,
+      "series": "stories",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 13.0,
+      "within-regime held-out $R^2$": -0.9930675786001917,
+      "series": "stories",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 14.0,
+      "within-regime held-out $R^2$": -1.0408546205893843,
+      "series": "stories",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 15.0,
+      "within-regime held-out $R^2$": -0.8904430148206166,
+      "series": "stories",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 16.0,
+      "within-regime held-out $R^2$": -0.8894729633204776,
+      "series": "stories",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 17.0,
+      "within-regime held-out $R^2$": -0.8769313138013612,
+      "series": "stories",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 18.0,
+      "within-regime held-out $R^2$": -0.8092102173421922,
+      "series": "stories",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 19.0,
+      "within-regime held-out $R^2$": -0.7541096821406448,
+      "series": "stories",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 20.0,
+      "within-regime held-out $R^2$": -0.6896289943392615,
+      "series": "stories",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 21.0,
+      "within-regime held-out $R^2$": -0.744339416702477,
+      "series": "stories",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 22.0,
+      "within-regime held-out $R^2$": -0.815001643493263,
+      "series": "stories",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 23.0,
+      "within-regime held-out $R^2$": -0.852070126817672,
+      "series": "stories",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 24.0,
+      "within-regime held-out $R^2$": -0.8693420386964179,
+      "series": "stories",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 25.0,
+      "within-regime held-out $R^2$": -0.9284958556045297,
+      "series": "stories",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 26.0,
+      "within-regime held-out $R^2$": -0.9543597976067473,
+      "series": "stories",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 27.0,
+      "within-regime held-out $R^2$": -0.8533239751548998,
+      "series": "stories",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 0.0,
+      "within-regime held-out $R^2$": -4.08633592117803,
+      "series": "stories shuffle-null 95th pct",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 1.0,
+      "within-regime held-out $R^2$": -2.9799261090748876,
+      "series": "stories shuffle-null 95th pct",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 2.0,
+      "within-regime held-out $R^2$": -2.7595714298474143,
+      "series": "stories shuffle-null 95th pct",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 3.0,
+      "within-regime held-out $R^2$": -2.7492412685213554,
+      "series": "stories shuffle-null 95th pct",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 4.0,
+      "within-regime held-out $R^2$": -2.809698862650003,
+      "series": "stories shuffle-null 95th pct",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 5.0,
+      "within-regime held-out $R^2$": -2.786220732129197,
+      "series": "stories shuffle-null 95th pct",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 6.0,
+      "within-regime held-out $R^2$": -2.6913720351620043,
+      "series": "stories shuffle-null 95th pct",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 7.0,
+      "within-regime held-out $R^2$": -2.362229676571802,
+      "series": "stories shuffle-null 95th pct",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 8.0,
+      "within-regime held-out $R^2$": -2.242065127931775,
+      "series": "stories shuffle-null 95th pct",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 9.0,
+      "within-regime held-out $R^2$": -2.1341805144785475,
+      "series": "stories shuffle-null 95th pct",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 10.0,
+      "within-regime held-out $R^2$": -2.1524373793312788,
+      "series": "stories shuffle-null 95th pct",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 11.0,
+      "within-regime held-out $R^2$": -2.1035799608192534,
+      "series": "stories shuffle-null 95th pct",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 12.0,
+      "within-regime held-out $R^2$": -2.0770693377154323,
+      "series": "stories shuffle-null 95th pct",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 13.0,
+      "within-regime held-out $R^2$": -2.0937230072239115,
+      "series": "stories shuffle-null 95th pct",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 14.0,
+      "within-regime held-out $R^2$": -2.2013960928998957,
+      "series": "stories shuffle-null 95th pct",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 15.0,
+      "within-regime held-out $R^2$": -2.1032074896122697,
+      "series": "stories shuffle-null 95th pct",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 16.0,
+      "within-regime held-out $R^2$": -2.0635532381347232,
+      "series": "stories shuffle-null 95th pct",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 17.0,
+      "within-regime held-out $R^2$": -2.0633834910880196,
+      "series": "stories shuffle-null 95th pct",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 18.0,
+      "within-regime held-out $R^2$": -2.127503526935091,
+      "series": "stories shuffle-null 95th pct",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 19.0,
+      "within-regime held-out $R^2$": -2.1936303638477592,
+      "series": "stories shuffle-null 95th pct",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 20.0,
+      "within-regime held-out $R^2$": -2.1543710698172176,
+      "series": "stories shuffle-null 95th pct",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 21.0,
+      "within-regime held-out $R^2$": -2.189066475898607,
+      "series": "stories shuffle-null 95th pct",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 22.0,
+      "within-regime held-out $R^2$": -2.1942569859322103,
+      "series": "stories shuffle-null 95th pct",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 23.0,
+      "within-regime held-out $R^2$": -2.1708912216074907,
+      "series": "stories shuffle-null 95th pct",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 24.0,
+      "within-regime held-out $R^2$": -2.1562588045153523,
+      "series": "stories shuffle-null 95th pct",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 25.0,
+      "within-regime held-out $R^2$": -2.1701291596933383,
+      "series": "stories shuffle-null 95th pct",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 26.0,
+      "within-regime held-out $R^2$": -2.1667360656651216,
+      "series": "stories shuffle-null 95th pct",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 27.0,
+      "within-regime held-out $R^2$": -2.256160119271993,
+      "series": "stories shuffle-null 95th pct",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 0.0,
+      "y": 0.1230609701784432,
+      "series": "chat",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 1.0,
+      "y": 0.12358478000432171,
+      "series": "chat",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 2.0,
+      "y": 0.10626980946784148,
+      "series": "chat",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 3.0,
+      "y": 0.12401817598437559,
+      "series": "chat",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 4.0,
+      "y": 0.11872526036171982,
+      "series": "chat",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 5.0,
+      "y": 0.14401792341900155,
+      "series": "chat",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 6.0,
+      "y": 0.1319322430538954,
+      "series": "chat",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 7.0,
+      "y": 0.13681911216938736,
+      "series": "chat",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 8.0,
+      "y": 0.12889627036206786,
+      "series": "chat",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 9.0,
+      "y": 0.13446858685560892,
+      "series": "chat",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 10.0,
+      "y": 0.12833953177827384,
+      "series": "chat",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 11.0,
+      "y": 0.13409134705926296,
+      "series": "chat",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 12.0,
+      "y": 0.1370702577565167,
+      "series": "chat",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 13.0,
+      "y": 0.1284717627617229,
+      "series": "chat",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 14.0,
+      "y": 0.14122686217628966,
+      "series": "chat",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 15.0,
+      "y": 0.14313744229575387,
+      "series": "chat",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 16.0,
+      "y": 0.15604838191658266,
+      "series": "chat",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 17.0,
+      "y": 0.15164167503852022,
+      "series": "chat",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 18.0,
+      "y": 0.13806462568830258,
+      "series": "chat",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 19.0,
+      "y": 0.1339032554533719,
+      "series": "chat",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 20.0,
+      "y": 0.12624410214457515,
+      "series": "chat",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 21.0,
+      "y": 0.13213180700020433,
+      "series": "chat",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 22.0,
+      "y": 0.11492071212112065,
+      "series": "chat",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 23.0,
+      "y": 0.10433469124308847,
+      "series": "chat",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 24.0,
+      "y": 0.09261887291603488,
+      "series": "chat",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 25.0,
+      "y": 0.07843952165347601,
+      "series": "chat",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 26.0,
+      "y": 0.0709637619209903,
+      "series": "chat",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 27.0,
+      "y": 0.06769616021002056,
+      "series": "chat",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 0.0,
+      "y": 0.11987048347380203,
+      "series": "no-template",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 1.0,
+      "y": 0.12089408622631614,
+      "series": "no-template",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 2.0,
+      "y": 0.10818221220137092,
+      "series": "no-template",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 3.0,
+      "y": 0.12514756724032727,
+      "series": "no-template",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 4.0,
+      "y": 0.11996937411921593,
+      "series": "no-template",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 5.0,
+      "y": 0.1444416216052098,
+      "series": "no-template",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 6.0,
+      "y": 0.13266211700193764,
+      "series": "no-template",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 7.0,
+      "y": 0.1349277971886178,
+      "series": "no-template",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 8.0,
+      "y": 0.12833789726009326,
+      "series": "no-template",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 9.0,
+      "y": 0.1372960516120817,
+      "series": "no-template",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 10.0,
+      "y": 0.12913156867528752,
+      "series": "no-template",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 11.0,
+      "y": 0.13500174510016516,
+      "series": "no-template",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 12.0,
+      "y": 0.13359144275071633,
+      "series": "no-template",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 13.0,
+      "y": 0.12508266190007955,
+      "series": "no-template",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 14.0,
+      "y": 0.13734828535530008,
+      "series": "no-template",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 15.0,
+      "y": 0.13767919451937727,
+      "series": "no-template",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 16.0,
+      "y": 0.14650562954870727,
+      "series": "no-template",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 17.0,
+      "y": 0.14418146570476298,
+      "series": "no-template",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 18.0,
+      "y": 0.13156073531609147,
+      "series": "no-template",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 19.0,
+      "y": 0.1283103189467727,
+      "series": "no-template",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 20.0,
+      "y": 0.12360047862667733,
+      "series": "no-template",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 21.0,
+      "y": 0.12842815155892795,
+      "series": "no-template",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 22.0,
+      "y": 0.11248776651910186,
+      "series": "no-template",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 23.0,
+      "y": 0.1041064595844109,
+      "series": "no-template",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 24.0,
+      "y": 0.0935123909694946,
+      "series": "no-template",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 25.0,
+      "y": 0.07974742522669809,
+      "series": "no-template",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 26.0,
+      "y": 0.06869840848171593,
+      "series": "no-template",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 27.0,
+      "y": 0.06255040402380563,
+      "series": "no-template",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 0.0,
+      "y": 0.0556965082543277,
+      "series": "stories",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 1.0,
+      "y": 0.062329489782295466,
+      "series": "stories",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 2.0,
+      "y": 0.08193787815849773,
+      "series": "stories",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 3.0,
+      "y": 0.057119222851301,
+      "series": "stories",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 4.0,
+      "y": 0.05097672178358692,
+      "series": "stories",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 5.0,
+      "y": 0.06730258233669917,
+      "series": "stories",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 6.0,
+      "y": 0.08024541101634941,
+      "series": "stories",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 7.0,
+      "y": 0.061297951683764396,
+      "series": "stories",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 8.0,
+      "y": 0.07492985295534715,
+      "series": "stories",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 9.0,
+      "y": 0.05835750440648535,
+      "series": "stories",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 10.0,
+      "y": 0.056663376264690424,
+      "series": "stories",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 11.0,
+      "y": 0.07463687166782051,
+      "series": "stories",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 12.0,
+      "y": 0.08336914067250589,
+      "series": "stories",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 13.0,
+      "y": 0.08991563592738594,
+      "series": "stories",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 14.0,
+      "y": 0.0935463728913487,
+      "series": "stories",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 15.0,
+      "y": 0.10430947714587857,
+      "series": "stories",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 16.0,
+      "y": 0.10552464560847885,
+      "series": "stories",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 17.0,
+      "y": 0.10267853046995856,
+      "series": "stories",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 18.0,
+      "y": 0.11354929844237882,
+      "series": "stories",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 19.0,
+      "y": 0.11661613300452556,
+      "series": "stories",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 20.0,
+      "y": 0.10953246266136862,
+      "series": "stories",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 21.0,
+      "y": 0.09582266981503484,
+      "series": "stories",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 22.0,
+      "y": 0.08512329089238191,
+      "series": "stories",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 23.0,
+      "y": 0.07326114265834316,
+      "series": "stories",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 24.0,
+      "y": 0.06998634754298616,
+      "series": "stories",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 25.0,
+      "y": 0.05844383689535093,
+      "series": "stories",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 26.0,
+      "y": 0.0490994332868232,
+      "series": "stories",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 27.0,
+      "y": 0.08661675320642737,
+      "series": "stories",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 0.0,
+      "y": -0.029572075986271373,
+      "series": "stories shuffle-null 95th pct",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 1.0,
+      "y": -0.033583848963784156,
+      "series": "stories shuffle-null 95th pct",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 2.0,
+      "y": -0.034957192740145415,
+      "series": "stories shuffle-null 95th pct",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 3.0,
+      "y": -0.036047143866788645,
+      "series": "stories shuffle-null 95th pct",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 4.0,
+      "y": -0.03747447530983011,
+      "series": "stories shuffle-null 95th pct",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 5.0,
+      "y": -0.03485905999608994,
+      "series": "stories shuffle-null 95th pct",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 6.0,
+      "y": -0.03648126510218454,
+      "series": "stories shuffle-null 95th pct",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 7.0,
+      "y": -0.04093436059141505,
+      "series": "stories shuffle-null 95th pct",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 8.0,
+      "y": -0.0420982833410668,
+      "series": "stories shuffle-null 95th pct",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 9.0,
+      "y": -0.04497252157152234,
+      "series": "stories shuffle-null 95th pct",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 10.0,
+      "y": -0.04350946414636079,
+      "series": "stories shuffle-null 95th pct",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 11.0,
+      "y": -0.043956457306476626,
+      "series": "stories shuffle-null 95th pct",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 12.0,
+      "y": -0.04500382500156064,
+      "series": "stories shuffle-null 95th pct",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 13.0,
+      "y": -0.04505114053732976,
+      "series": "stories shuffle-null 95th pct",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 14.0,
+      "y": -0.04437933513059744,
+      "series": "stories shuffle-null 95th pct",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 15.0,
+      "y": -0.043454566637285974,
+      "series": "stories shuffle-null 95th pct",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 16.0,
+      "y": -0.04375410894056607,
+      "series": "stories shuffle-null 95th pct",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 17.0,
+      "y": -0.04312376719662142,
+      "series": "stories shuffle-null 95th pct",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 18.0,
+      "y": -0.041362387318975034,
+      "series": "stories shuffle-null 95th pct",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 19.0,
+      "y": -0.0435376042668556,
+      "series": "stories shuffle-null 95th pct",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 20.0,
+      "y": -0.043564205806078095,
+      "series": "stories shuffle-null 95th pct",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 21.0,
+      "y": -0.04450531011739212,
+      "series": "stories shuffle-null 95th pct",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 22.0,
+      "y": -0.04511783407293759,
+      "series": "stories shuffle-null 95th pct",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 23.0,
+      "y": -0.045433875269375854,
+      "series": "stories shuffle-null 95th pct",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 24.0,
+      "y": -0.046851767927895825,
+      "series": "stories shuffle-null 95th pct",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 25.0,
+      "y": -0.04669614546797669,
+      "series": "stories shuffle-null 95th pct",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 26.0,
+      "y": -0.04722320452632754,
+      "series": "stories shuffle-null 95th pct",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 27.0,
+      "y": -0.05227915119371723,
+      "series": "stories shuffle-null 95th pct",
+      "_kind": "line",
+      "_group": 7
+    }
+  ],
+  "n_series": 8,
+  "total_points": 224,
+  "text": {
+    "suptitle": "Within-regime layer sweep \u2014 instruct, both arms (dotted line: layer 19)",
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "context arm",
+        "xlabel": "layer",
+        "ylabel": "within-regime held-out $R^2$",
+        "legend_labels": [
+          "chat",
+          "no-template",
+          "stories",
+          "stories shuffle-null 95th pct"
+        ],
+        "xticklabels": [
+          "\u22125",
+          "0",
+          "5",
+          "10",
+          "15",
+          "20",
+          "25",
+          "30"
+        ],
+        "yticklabels": [
+          "\u22125",
+          "\u22124",
+          "\u22123",
+          "\u22122",
+          "\u22121",
+          "0",
+          "1"
+        ]
+      },
+      {
+        "title_left": "prefix arm",
+        "xlabel": "layer",
+        "legend_labels": [
+          "chat",
+          "no-template",
+          "stories",
+          "stories shuffle-null 95th pct"
+        ],
+        "xticklabels": [
+          "\u22125",
+          "0",
+          "5",
+          "10",
+          "15",
+          "20",
+          "25",
+          "30"
+        ],
+        "yticklabels": [
+          "\u22120.10",
+          "\u22120.05",
+          "0.00",
+          "0.05",
+          "0.10",
+          "0.15",
+          "0.20"
+        ]
+      }
+    ],
+    "series": [
+      "chat",
+      "no-template",
+      "stories",
+      "stories shuffle-null 95th pct"
+    ]
+  }
+}
