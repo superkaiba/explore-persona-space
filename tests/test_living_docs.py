@@ -504,46 +504,54 @@ def test_check_exempts_intentionally_unmapped(fixture):
 # ─── check() degrades on registry/filesystem inconsistency (#725) ──────────
 
 
-def test_check_degrades_on_drifted_registry_path(fixture):
-    """Mode A: a registry entry points at a directory that does not exist.
+def test_check_degrades_on_drifted_registry_path(fixture, caplog):
+    """Mode A (post-#898 stale-entry envelope): a registry entry points at a
+    missing dir while the task exists at exactly ONE on-disk status.
 
-    ``find_task_path`` raises ``FileNotFoundError``; ``check()`` must
-    surface the drifted task as a problem (NOT raise), AND the surviving
-    check axes must still run against the registry-trimmed index.
-    Reproduces tonight's documented crash (task #725 body / #696).
+    ``find_task_path`` no longer raises — it falls back to the on-disk path
+    with a logged drift WARNING (READ path; the registry is never rewritten
+    here — repair happens on the task's next registry-writing mutation or
+    ``task.py audit --repair --apply``). ``check()`` therefore reports NO
+    drift line and the check axes run against the FULL index; the drift is
+    still surfaced, via the WARNING.
     """
     import json
+    import logging
 
     repo, paths = fixture
     # Drift #207's registry path to a nonexistent dir. The on-disk
     # tasks/completed/207/ still exists; only the registry POINTS somewhere
-    # else — exactly find_task_path's entry-present-but-dir-missing branch.
+    # else — exactly find_task_path's 1-hit stale-entry fallback branch.
     reg_path = repo / "tasks" / "REGISTRY.json"
     reg = json.loads(reg_path.read_text())
     reg["tasks"]["207"]["path"] = "tasks/approved/207"  # nonexistent
     reg_path.write_text(json.dumps(reg, indent=2, sort_keys=True) + "\n")
     tw.invalidate_cache()  # drop the cached registry so the new path is read
 
-    # (1) Must not raise.
-    report = ld.check(paths=paths)
+    with caplog.at_level(logging.WARNING, logger="explore_persona_space.task_workflow"):
+        report = ld.check(paths=paths)
 
-    # (2) Drift finding present, names #207.
-    drift_lines = [p for p in report.problems if "registry/filesystem inconsistent" in p]
-    assert any("#207" in p for p in drift_lines), report.problems
-    # The fixture has #208 still well-formed → exactly one drift line.
-    assert len(drift_lines) == 1, drift_lines
+    # (1) No drift line — the fallback resolved #207 to tasks/completed/207.
+    assert not any("registry/filesystem inconsistent" in p for p in report.problems)
 
-    # (3) Surviving axes still ran: #207's name still appears in a1's evidence
-    # in open_questions.md, but #207 is no longer in the relates-to index, so
-    # the bidirectional check (axis a) MUST flag a missing-backlink finding
-    # for #207 vs a1.
-    nondrift = [p for p in report.problems if "registry/filesystem inconsistent" not in p]
-    assert any("207" in p and "a1" in p for p in nondrift), (
-        f"axis (a) bidirectional should have flagged #207 vs a1 after the "
-        f"drift trimmed it from the relates index; got non-drift problems: {nondrift}"
-    )
-    # report.ok must be False (drift present).
-    assert not report.ok
+    # (2) Index intact: #207 still contributes relates_to + coverage, so the
+    # otherwise-clean fixture stays clean end to end.
+    assert report.ok, report.problems
+
+    # (3) The drift IS surfaced, via the find_task_path WARNING naming the
+    # task, the stale registry path, and the on-disk path. Both indexers
+    # resolve #207, so assert >=1 matching record — the count is an
+    # implementation detail, never pinned.
+    drift_warnings = [
+        r
+        for r in caplog.records
+        if "REGISTRY says" in r.getMessage() and "found on disk at" in r.getMessage()
+    ]
+    assert drift_warnings, caplog.text
+    assert any(
+        "tasks/approved/207" in r.getMessage() and "tasks/completed/207" in r.getMessage()
+        for r in drift_warnings
+    ), [r.getMessage() for r in drift_warnings]
 
 
 def test_check_degrades_on_missing_body_md(fixture):
@@ -573,6 +581,56 @@ def test_check_degrades_on_missing_body_md(fixture):
     # was Mode A or Mode B.
     nondrift = [p for p in report.problems if "registry/filesystem inconsistent" not in p]
     assert any("207" in p and "a1" in p for p in nondrift), nondrift
+    assert not report.ok
+
+
+def test_check_degrades_on_dir_missing_everywhere(fixture):
+    """Mode C: the registry entry is intact but the task dir is gone from
+    EVERY status folder — ``find_task_path``'s 0-hit branch still raises
+    ``FileNotFoundError``, and ``check()`` must degrade + flag (the #725
+    contract survives the #898 envelope for genuinely-unresolvable entries).
+    """
+    import shutil
+
+    repo, paths = fixture
+    shutil.rmtree(repo / "tasks" / "completed" / "207")
+
+    # (1) Must not raise.
+    report = ld.check(paths=paths)
+
+    # (2) Drift finding present, names #207; #208 stays well-formed → the
+    # two indexers' findings dedup to exactly one drift line.
+    drift_lines = [p for p in report.problems if "registry/filesystem inconsistent" in p]
+    assert any("#207" in p for p in drift_lines), report.problems
+    assert len(drift_lines) == 1, drift_lines
+
+    # (3) Surviving axes still ran: #207's drop from the relates index leaves
+    # a1's evidence backlink dangling — same downstream effect as Mode B.
+    nondrift = [p for p in report.problems if "registry/filesystem inconsistent" not in p]
+    assert any("207" in p and "a1" in p for p in nondrift), nondrift
+    assert not report.ok
+
+
+def test_check_degrades_on_multi_status_stale_entry(fixture):
+    """Mode D (≥2-hit): the registry entry is stale AND the task exists at
+    TWO on-disk statuses — ``find_task_path`` raises ``StaleTaskPathError``
+    (a ``FileNotFoundError`` subclass), and ``check()`` degrades + flags
+    exactly as for any unresolvable entry.
+    """
+    import json
+    import shutil
+
+    repo, paths = fixture
+    shutil.copytree(repo / "tasks" / "completed" / "207", repo / "tasks" / "running" / "207")
+    reg_path = repo / "tasks" / "REGISTRY.json"
+    reg = json.loads(reg_path.read_text())
+    reg["tasks"]["207"]["path"] = "tasks/approved/207"  # nonexistent
+    reg_path.write_text(json.dumps(reg, indent=2, sort_keys=True) + "\n")
+    tw.invalidate_cache()
+
+    report = ld.check(paths=paths)  # (1) no raise
+    drift_lines = [p for p in report.problems if "registry/filesystem inconsistent" in p]
+    assert any("#207" in p for p in drift_lines), report.problems  # (2) flagged
     assert not report.ok
 
 

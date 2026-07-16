@@ -376,6 +376,30 @@ _NOTE_841_RUN_V2 = (
     "ody; re-parked at awaiting_promotion."
 )
 
+# The corpus's ONLY version-stamp-led run note (VERBATIM #1092 run marker,
+# 2026-07-11T00:06:50Z): a `; `-joined single-line run note whose FIRST
+# segment leads with the marker-version stamp `v1. ` before the
+# `followup_label:` field — field-led modulo the decorative stamp (unlike
+# the prose-led #1090 fu1 note above, which carries no fields at all).
+_NOTE_1092_RUN_V1 = (
+    "v1. followup_label: cross-corpus-probe-transfer; source: proposer-9b-chea"
+    "p; round: 1; est_gpu_hours: 8 (planned) / ~0 realized (all-VM analysis on"
+    " existing artifacts, no GPU provisioned); outcome: PARTIAL — downgrade_pr"
+    "econdition_met=false. Cross-corpus probe transfer of the #1092 UltraChat-"
+    "fit context-map ridge probes: dirA (UltraChat probes -> LMSYS/pass_a targ"
+    "ets) blocked from a DOWNGRADE read by the LMSYS alignment-gate ceiling fa"
+    "ilure (part-4 reliability ceiling below the pre-registered floor), dirB ("
+    "realistic-corpus probes -> UltraChat targets) hallucination transfer Δr ="
+    " -0.128 (negative; sycophancy positive), pass_a arm transfers. Folded int"
+    "o the clean-result body (new ### result + Takeaways bullet + Methodology "
+    "extension + footer Reused: provenance @ run-recorded SHAs); clean-result-"
+    "critic re-gate rounds 1-4, final PASS (Claude-only per codex-quota no-sho"
+    "w fallback). Artifacts: eval_results/issue_1092/cross-corpus-probe-transf"
+    "er/ + figures (merged to main eaef62f632); HF issue1092_realistic_crossin"
+    "g/cross_corpus_transfer (13 files, verified). Methodology doc EXTEND expo"
+    "rted (main 4644e8aad2, gist refreshed). Cheap-band count: 1/2."
+)
+
 
 def test_label_parse_semicolon_inline_scope_1090():
     # VERBATIM #1090 scope v1 (2026-07-07T07:19:09Z) + v2 (11:05:01Z): the
@@ -409,6 +433,42 @@ def test_label_parse_semicolon_inline_run_841():
     # EOL-trailing semicolon on a line-initial field (no whitespace after the
     # `;`, so no split fires): the rstrip(",;") leg strips it.
     assert parse_followup_note_field("followup_label: foo;", "followup_label") == "foo"
+
+
+def test_label_parse_version_stamp_led_run_1092():
+    # VERBATIM #1092 run marker (2026-07-11T00:06:50Z): the first segment
+    # leads with the marker-version stamp `v1. `; the stamp strips as
+    # decoration and the explicit fields parse — pre-fix the label parsed
+    # None, leaving cross-corpus-probe-transfer a dispatchable ghost-unrun
+    # the Step 0 dispatcher could re-dispatch (the #658 ghost-label class).
+    assert (
+        parse_followup_note_field(_NOTE_1092_RUN_V1, "followup_label")
+        == "cross-corpus-probe-transfer"
+    )
+    assert parse_followup_note_field(_NOTE_1092_RUN_V1, "source") == "proposer-9b-cheap"
+    assert parse_followup_note_field(_NOTE_1092_RUN_V1, "round") == "1"
+    assert parse_followup_note_field(_NOTE_1092_RUN_V1, "outcome") == "PARTIAL"
+
+
+def test_version_stamp_anchoring_negatives():
+    # (i) The prose-led #1090 fu1 note stays None — the stamp tolerance is
+    # decoration-stripping on a field-led segment, NOT label inference
+    # (field-only parsing per #1111, re-asserted next to the new tolerance).
+    assert parse_followup_note_field(_NOTE_1090_RUN_FU1_PROSE, "followup_label") is None
+    # (ii) Mid-segment mention: the stamp strip is anchored at segment start
+    # and never re-anchors the field search mid-text.
+    assert (
+        parse_followup_note_field("the v1. followup_label: was missing", "followup_label") is None
+    )
+    # (iii) No whitespace after the dot → not a stamp, stays prose.
+    assert parse_followup_note_field("v1.followup_label: x", "followup_label") is None
+    # (iv) A field VALUE beginning with a stamp is untouched (the core starts
+    # with `plan:`, so the stamp regex never fires).
+    assert parse_followup_note_field("plan: v1. adjust", "plan") == "v1."
+    # (v) Composes with the bullet strip (bullet stripped first, then the
+    # stamp) and with the `; `-split.
+    assert parse_followup_note_field("- v2. followup_label: y; source: z", "followup_label") == "y"
+    assert parse_followup_note_field("- v2. followup_label: y; source: z", "source") == "z"
 
 
 def test_semicolon_split_anchoring_negatives():
@@ -1095,6 +1155,9 @@ def _run_labels(events: list[dict]) -> set[str]:
 # `_followup_run_marker_rounds` counts this prose-led marker as an unlabeled
 # round, so #1090's round count reads one high (3 where 2 completed). Any
 # NEW unparseable run marker still fails the corpus-replay test below.
+# (#1092's `v1. `-stamp-led run note is deliberately NOT allowlisted — its
+# fields are explicit, and the parser strips the leading version stamp as
+# decoration; see `parse_followup_note_field`.)
 KNOWN_MALFORMED_RUN_MARKERS = {(1090, "2026-07-07T09:54:27Z")}
 
 
@@ -1103,7 +1166,7 @@ def test_corpus_replay_all_historical_markers():
     # epm:same-issue-followup-run marker in the checkout must parse a
     # followup_label (covers the 15 `=`-form markers + all colon forms —
     # minus the documented KNOWN_MALFORMED_RUN_MARKERS allowlist), and
-    # the hand-checked #763/#658/#537/#552 expectations must hold.
+    # the hand-checked #763/#658/#825/#537/#552/#1092 expectations must hold.
     import pytest
 
     if _tasks_root() is None:
@@ -1188,6 +1251,15 @@ def test_corpus_replay_all_historical_markers():
         unrun = {g["followup_label"] for g in unrun_followup_labels(by_task[task_id])}
         for label in closed_labels:
             assert label not in unrun, f"#{task_id} {label} must be closed by its run marker"
+
+    # #1092 (the version-stamp-led run note, this fix's driving incident):
+    # the 2026-07-11 run marker parses its label and closes the round —
+    # pre-fix it parsed None and left the round a dispatchable ghost-unrun
+    # (events are append-only, so this pin is stable).
+    if 1092 in by_task:
+        assert "cross-corpus-probe-transfer" in _run_labels(by_task[1092])
+        unrun_1092 = {g["followup_label"] for g in unrun_followup_labels(by_task[1092])}
+        assert "cross-corpus-probe-transfer" not in unrun_1092
 
 
 def test_corpus_replay_retro_close_verdicts():
