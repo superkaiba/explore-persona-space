@@ -7,7 +7,10 @@ Behaviours:
 * ``--check-references`` (default in pre-commit): walk ``CLAUDE.md``,
   ``.claude/skills/issue/SKILL.md``, and ``.claude/skills/issue/markers.md``;
   every ``(see workflow.yaml § <key>)`` reference MUST resolve to a real
-  YAML key.
+  YAML key. NOT in the no-flags default run: a bare ``workflow_lint.py``
+  invocation does not run this check — it fires only when the flag is
+  passed explicitly (the pre-commit hook, /daily's reference gate, and
+  the /issue Step-10d parity legs pass it).
 * ``--emit-tables``: regenerate the auto-generated table blocks in
   ``markers.md`` and ``SKILL.md`` ("Active vs awaiting-user" table) inside
   the fenced ``<!-- workflow.yaml: AUTO-GENERATED -->`` … ``<!--
