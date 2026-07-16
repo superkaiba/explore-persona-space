@@ -1,0 +1,90 @@
+{
+  "commit": "fcddf8dc60",
+  "created": "2026-07-16T08:02:15Z",
+  "figsize": [
+    7.6,
+    5.0
+  ],
+  "points": [
+    {
+      "x": -0.17,
+      "Operator cosine (chat vs no-template)": 0.29307748041634585,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.83,
+      "Operator cosine (chat vs no-template)": 0.6508346068777792,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.17,
+      "Operator cosine (chat vs no-template)": 0.731599049044025,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 1.17,
+      "Operator cosine (chat vs no-template)": 0.8548608839822773,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 0.0,
+      "Operator cosine (chat vs no-template)": 0.0006896843718561886,
+      "series": "Rotation null \u2248 0 (p97.5 = 0.001)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 1.0,
+      "Operator cosine (chat vs no-template)": 0.0006896843718561886,
+      "series": "Rotation null \u2248 0 (p97.5 = 0.001)",
+      "_kind": "line",
+      "_group": 2
+    }
+  ],
+  "n_series": 3,
+  "total_points": 6,
+  "text": {
+    "suptitle": "Instruction tuning pulls the chat / no-template operators together (context arm, layer 19)",
+    "fig_texts": [
+      "Cosine between the chat and no-template linear operators, raw vs after an optimal rotation (Procrustes). Aligning lifts cosine far above the ~0 rotation null; the instruct model starts closer (raw 0.65 vs 0.29) and aligns higher (0.85 vs 0.73)."
+    ],
+    "axes": [
+      {
+        "ylabel": "Operator cosine (chat vs no-template)",
+        "legend_labels": [
+          "Rotation null \u2248 0 (p97.5 = 0.001)",
+          "Raw operator cosine",
+          "Rotation-aligned (Procrustes)"
+        ],
+        "annotations": [
+          "0.29",
+          "0.65",
+          "0.73",
+          "0.85"
+        ],
+        "xticklabels": [
+          "Base",
+          "Instruct"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0",
+          "1.2"
+        ]
+      }
+    ],
+    "series": [
+      "Rotation null \u2248 0 (p97.5 = 0.001)",
+      "Raw operator cosine",
+      "Rotation-aligned (Procrustes)"
+    ]
+  }
+}

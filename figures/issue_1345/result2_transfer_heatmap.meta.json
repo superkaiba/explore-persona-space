@@ -1,0 +1,82 @@
+{
+  "commit": "fcddf8dc60",
+  "created": "2026-07-16T08:02:27Z",
+  "figsize": [
+    11.0,
+    5.4
+  ],
+  "text": {
+    "suptitle": "Persona map transfers across chat / no-template, but not story (context arm, layer 19)",
+    "fig_texts": [
+      "Rows = source framing, cols = target framing; diagonal (boxed) = within-regime $R^2$. Colour clipped to [-1, 0.7]; catastrophic story cells saturate but are annotated with their true value. Chat<->no-template retains 83-84% of ceiling (instruct); story transfer is deeply negative. Base story = N/A (not tested)."
+    ],
+    "axes": [
+      {
+        "title_left": "Base model",
+        "xlabel": "Target framing",
+        "ylabel": "Source framing",
+        "annotations": [
+          "0.54",
+          "0.18",
+          "N/A",
+          "0.08",
+          "0.58",
+          "N/A",
+          "N/A",
+          "N/A",
+          "N/A"
+        ],
+        "xticklabels": [
+          "Chat",
+          "No-template",
+          "Story\u00b7ARIA"
+        ],
+        "yticklabels": [
+          "Chat",
+          "No-template",
+          "Story\u00b7ARIA"
+        ]
+      },
+      {
+        "title_left": "Instruct model",
+        "xlabel": "Target framing",
+        "annotations": [
+          "0.65",
+          "0.52",
+          "-3.06",
+          "0.55",
+          "0.63",
+          "-2.87",
+          "-7.02",
+          "-5.96",
+          "-0.75"
+        ],
+        "xticklabels": [
+          "Chat",
+          "No-template",
+          "Story\u00b7ARIA"
+        ],
+        "yticklabels": [
+          "Chat",
+          "No-template",
+          "Story\u00b7ARIA"
+        ]
+      },
+      {
+        "ylabel": "Layer-19 transfer $R^2$  (colour clipped to [-1, 0.7])",
+        "yticklabels": [
+          "\u22121.0",
+          "\u22120.8",
+          "\u22120.6",
+          "\u22120.4",
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8"
+        ]
+      }
+    ]
+  }
+}

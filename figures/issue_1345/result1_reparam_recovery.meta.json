@@ -1,0 +1,176 @@
+{
+  "commit": "fcddf8dc60",
+  "created": "2026-07-16T08:02:12Z",
+  "figsize": [
+    10.5,
+    5.0
+  ],
+  "points": [
+    {
+      "x": -0.26,
+      "Layer-19 $R^2$": 0.1774829451886022,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "Chat \u2192 No-template",
+      "Layer-19 $R^2$": 0.5785706595526485,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 0.26,
+      "Layer-19 $R^2$": -0.022011852247003683,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 0.89,
+      "Layer-19 $R^2$": 0.08240030221613093,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "category": "No-template \u2192 Chat",
+      "Layer-19 $R^2$": 0.5497512183298072,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 1.41,
+      "Layer-19 $R^2$": -0.027677370052992735,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": -0.41600000000000004,
+      "Layer-19 $R^2$": 0.5782882733523876,
+      "series": "Within-regime ceiling",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 0.41600000000000004,
+      "Layer-19 $R^2$": 0.5782882733523876,
+      "series": "Within-regime ceiling",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": -0.26,
+      "y": 0.5206447986970166,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "category": "Chat \u2192 No-template",
+      "y": 0.6197446538053759,
+      "_kind": "bar",
+      "_group": 8
+    },
+    {
+      "x": 0.26,
+      "y": -0.03382190031512193,
+      "_kind": "bar",
+      "_group": 9
+    },
+    {
+      "x": 0.89,
+      "y": 0.5525318857988817,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "category": "No-template \u2192 Chat",
+      "y": 0.6541269690704852,
+      "_kind": "bar",
+      "_group": 11
+    },
+    {
+      "x": 1.41,
+      "y": -0.033082429364935974,
+      "_kind": "bar",
+      "_group": 12
+    },
+    {
+      "x": -0.41600000000000004,
+      "y": 0.6249482470755413,
+      "series": "Within-regime ceiling",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 0.41600000000000004,
+      "y": 0.6249482470755413,
+      "series": "Within-regime ceiling",
+      "_kind": "line",
+      "_group": 13
+    }
+  ],
+  "n_series": 14,
+  "total_points": 16,
+  "text": {
+    "suptitle": "A general-linear reparameterization recovers chat<->no-template transfer to the ceiling (context arm, layer 19)",
+    "fig_texts": [
+      "Per model x direction: recovered $R^2$ lands within 0.005-0.008 of each framing's within-regime ceiling (dashed); naive transfer falls short and the matched-capacity null sits near -0.03. The two maps differ only by a linear change of coordinates."
+    ],
+    "axes": [
+      {
+        "title_left": "Base model",
+        "ylabel": "Layer-19 $R^2$",
+        "legend_labels": [
+          "Within-regime ceiling",
+          "Naive transfer",
+          "Reparam-recovered",
+          "Matched-capacity null"
+        ],
+        "annotations": [
+          "0.18",
+          "0.58",
+          "-0.02",
+          "ceiling 0.58",
+          "0.08",
+          "0.55",
+          "-0.03",
+          "ceiling 0.54"
+        ],
+        "xticklabels": [
+          "Chat \u2192 No-template",
+          "No-template \u2192 Chat"
+        ],
+        "yticklabels": [
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ]
+      },
+      {
+        "title_left": "Instruct model",
+        "annotations": [
+          "0.52",
+          "0.62",
+          "-0.03",
+          "ceiling 0.62",
+          "0.55",
+          "0.65",
+          "-0.03",
+          "ceiling 0.65"
+        ],
+        "xticklabels": [
+          "Chat \u2192 No-template",
+          "No-template \u2192 Chat"
+        ]
+      }
+    ],
+    "series": [
+      "Within-regime ceiling",
+      "Naive transfer",
+      "Reparam-recovered",
+      "Matched-capacity null"
+    ]
+  }
+}
