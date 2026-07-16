@@ -3290,8 +3290,8 @@
     "1421": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1421",
-      "status": "proposed",
+      "path": "tasks/planning/1421",
+      "status": "planning",
       "title": "workflow-fix: Sample-slot disclosure-count check in verify_task_body"
     },
     "1422": {
