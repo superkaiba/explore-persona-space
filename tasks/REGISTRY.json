@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1423,
+  "highest_id": 1424,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -3307,6 +3307,13 @@
       "path": "tasks/proposed/1423",
       "status": "proposed",
       "title": "workflow-fix: byte-equal synonym in bit_byte_identical audit regex"
+    },
+    "1424": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1424",
+      "status": "proposed",
+      "title": "workflow-fix: caption italic-lead-claim check (check 5 family)"
     },
     "144": {
       "has_clean_result": false,
