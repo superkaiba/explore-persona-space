@@ -1,0 +1,455 @@
+{
+  "commit": "e9caf4f92b",
+  "created": "2026-07-16T11:21:45Z",
+  "figsize": [
+    7.6,
+    6.6
+  ],
+  "points": [
+    {
+      "direct-map skill (context only) @ layer 26": 0.0603184909855885,
+      "CoT-augmented skill (context + realized CoT) @ layer 26": 0.6235194927989042,
+      "label": "f2_wc_long_2",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "direct-map skill (context only) @ layer 26": 0.07130987165337654,
+      "CoT-augmented skill (context + realized CoT) @ layer 26": 0.7357389413764301,
+      "label": "f2_wc_long_1",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "direct-map skill (context only) @ layer 26": 0.11164171265548029,
+      "CoT-augmented skill (context + realized CoT) @ layer 26": 0.9356315375890272,
+      "label": "f3_icl_json_k8",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "direct-map skill (context only) @ layer 26": 0.1186644130379173,
+      "CoT-augmented skill (context + realized CoT) @ layer 26": 0.857280736967676,
+      "label": "f2_wc_long_5",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "direct-map skill (context only) @ layer 26": 0.18604007348895124,
+      "CoT-augmented skill (context + realized CoT) @ layer 26": 0.9148953170720396,
+      "label": "f3_icl_marker_k8",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "direct-map skill (context only) @ layer 26": 0.19275831439637148,
+      "CoT-augmented skill (context + realized CoT) @ layer 26": 0.9381193063257806,
+      "label": "f3_icl_json_k4",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "direct-map skill (context only) @ layer 26": 0.19379944465527554,
+      "CoT-augmented skill (context + realized CoT) @ layer 26": 0.8710379409624914,
+      "label": "f2_wc_long_3",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "direct-map skill (context only) @ layer 26": 0.21919416157378224,
+      "CoT-augmented skill (context + realized CoT) @ layer 26": 0.8230459569961648,
+      "label": "f2_wc_short_2",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "direct-map skill (context only) @ layer 26": 0.2223377142411519,
+      "CoT-augmented skill (context + realized CoT) @ layer 26": 0.7890836873028648,
+      "label": "f2_wc_long_4",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "direct-map skill (context only) @ layer 26": 0.2627376093610979,
+      "CoT-augmented skill (context + realized CoT) @ layer 26": 0.8514158351361324,
+      "label": "f2_wc_short_4",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "direct-map skill (context only) @ layer 26": 0.26384359329892937,
+      "CoT-augmented skill (context + realized CoT) @ layer 26": 0.6708701603192864,
+      "label": "f3_icl_french_k4",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "direct-map skill (context only) @ layer 26": 0.2866951696466542,
+      "CoT-augmented skill (context + realized CoT) @ layer 26": 0.9046812375136339,
+      "label": "f3_icl_json_k2",
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "direct-map skill (context only) @ layer 26": 0.28782944380522935,
+      "CoT-augmented skill (context + realized CoT) @ layer 26": 0.9021036290699371,
+      "label": "f3_icl_json_k2",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map skill (context only) @ layer 26": 0.2978874493171765,
+      "CoT-augmented skill (context + realized CoT) @ layer 26": 0.7765084654840788,
+      "label": "f2_wc_short_1",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "direct-map skill (context only) @ layer 26": 0.3181313632842616,
+      "CoT-augmented skill (context + realized CoT) @ layer 26": 0.8979468500760968,
+      "label": "f3_icl_pirate_k4",
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "direct-map skill (context only) @ layer 26": 0.32247702203674444,
+      "CoT-augmented skill (context + realized CoT) @ layer 26": 0.8750262438573118,
+      "label": "f2_wc_short_5",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "direct-map skill (context only) @ layer 26": 0.4301632693577494,
+      "CoT-augmented skill (context + realized CoT) @ layer 26": 0.7507070404427117,
+      "label": "f2_wc_short_3",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "direct-map skill (context only) @ layer 26": 0.4313011331879487,
+      "CoT-augmented skill (context + realized CoT) @ layer 26": 0.916609592707791,
+      "label": "f3_icl_marker_k2",
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "direct-map skill (context only) @ layer 26": 0.525828608002355,
+      "CoT-augmented skill (context + realized CoT) @ layer 26": 0.8533250719307544,
+      "label": "f1_phub_08",
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "direct-map skill (context only) @ layer 26": 0.6450359621665588,
+      "CoT-augmented skill (context + realized CoT) @ layer 26": 0.9277249822900084,
+      "label": "f6_default_template",
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "direct-map skill (context only) @ layer 26": 0.6557401396266973,
+      "CoT-augmented skill (context + realized CoT) @ layer 26": 0.863919217354308,
+      "label": "f1_phub_03",
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "direct-map skill (context only) @ layer 26": 0.6624934534050815,
+      "CoT-augmented skill (context + realized CoT) @ layer 26": 0.9079887035022551,
+      "label": "f1_phub_05",
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "direct-map skill (context only) @ layer 26": 0.6663311352871791,
+      "CoT-augmented skill (context + realized CoT) @ layer 26": 0.9010107143082198,
+      "label": "f1_phub_05",
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "direct-map skill (context only) @ layer 26": 0.6708501488947696,
+      "CoT-augmented skill (context + realized CoT) @ layer 26": 0.8758282645958245,
+      "label": "f1_phub_06",
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "direct-map skill (context only) @ layer 26": 0.6800656233919091,
+      "CoT-augmented skill (context + realized CoT) @ layer 26": 0.8731095917190097,
+      "label": "f1_phub_06",
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "direct-map skill (context only) @ layer 26": 0.6848950420690976,
+      "CoT-augmented skill (context + realized CoT) @ layer 26": 0.8682863793640344,
+      "label": "f1_phub_07",
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "direct-map skill (context only) @ layer 26": 0.6884919175594919,
+      "CoT-augmented skill (context + realized CoT) @ layer 26": 0.9168460051178289,
+      "label": "f8_behav_harmful",
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "direct-map skill (context only) @ layer 26": 0.6953268235961807,
+      "CoT-augmented skill (context + realized CoT) @ layer 26": 0.8877316474785627,
+      "label": "f1_phub_04",
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "direct-map skill (context only) @ layer 26": 0.6986326544987413,
+      "CoT-augmented skill (context + realized CoT) @ layer 26": 0.9359078676838747,
+      "label": "f1_house_programmer",
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "direct-map skill (context only) @ layer 26": 0.7045143845628334,
+      "CoT-augmented skill (context + realized CoT) @ layer 26": 0.8699789623921366,
+      "label": "f5_fmt_code_comment",
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "direct-map skill (context only) @ layer 26": 0.7065677918465605,
+      "CoT-augmented skill (context + realized CoT) @ layer 26": 0.9072726532000835,
+      "label": "f8_behav_refusal",
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "direct-map skill (context only) @ layer 26": 0.7217269037738565,
+      "CoT-augmented skill (context + realized CoT) @ layer 26": 0.9022138233268382,
+      "label": "f5_fmt_markdown_table",
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "direct-map skill (context only) @ layer 26": 0.7263776821283223,
+      "CoT-augmented skill (context + realized CoT) @ layer 26": 0.878242171100837,
+      "label": "f4_reph_casual",
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "direct-map skill (context only) @ layer 26": 0.7321361830428714,
+      "CoT-augmented skill (context + realized CoT) @ layer 26": 0.9134515023365724,
+      "label": "f1_house_medical_doctor",
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "direct-map skill (context only) @ layer 26": 0.7337237987713983,
+      "CoT-augmented skill (context + realized CoT) @ layer 26": 0.8976461138032629,
+      "label": "f5_fmt_markdown_table",
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "direct-map skill (context only) @ layer 26": 0.7361809505511816,
+      "CoT-augmented skill (context + realized CoT) @ layer 26": 0.939800761500821,
+      "label": "f1_house_data_scientist",
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "direct-map skill (context only) @ layer 26": 0.7420042853184232,
+      "CoT-augmented skill (context + realized CoT) @ layer 26": 0.876494410571047,
+      "label": "f4_reph_casual",
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "direct-map skill (context only) @ layer 26": 0.7484255441619792,
+      "CoT-augmented skill (context + realized CoT) @ layer 26": 0.92065094113267,
+      "label": "f6_helpful_asst",
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "direct-map skill (context only) @ layer 26": 0.7525480536392054,
+      "CoT-augmented skill (context + realized CoT) @ layer 26": 0.9304636290030762,
+      "label": "f6_helpful_asst",
+      "_kind": "scatter",
+      "_group": 38
+    },
+    {
+      "direct-map skill (context only) @ layer 26": 0.7654041087399955,
+      "CoT-augmented skill (context + realized CoT) @ layer 26": 0.9039378743262311,
+      "label": "f4_reph_enthusiastic",
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "direct-map skill (context only) @ layer 26": 0.7666904787402516,
+      "CoT-augmented skill (context + realized CoT) @ layer 26": 0.932675015180536,
+      "label": "f8_behav_marker",
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "direct-map skill (context only) @ layer 26": 0.7691725264592394,
+      "CoT-augmented skill (context + realized CoT) @ layer 26": 0.896313431358564,
+      "label": "f4_reph_legalese",
+      "_kind": "scatter",
+      "_group": 41
+    },
+    {
+      "direct-map skill (context only) @ layer 26": 0.770354567251788,
+      "CoT-augmented skill (context + realized CoT) @ layer 26": 0.8851672741482616,
+      "label": "f5_fmt_json",
+      "_kind": "scatter",
+      "_group": 42
+    },
+    {
+      "direct-map skill (context only) @ layer 26": 0.7720922572298263,
+      "CoT-augmented skill (context + realized CoT) @ layer 26": 0.9103187301893763,
+      "label": "f4_reph_enthusiastic",
+      "_kind": "scatter",
+      "_group": 43
+    },
+    {
+      "direct-map skill (context only) @ layer 26": 0.7839237289393629,
+      "CoT-augmented skill (context + realized CoT) @ layer 26": 0.9389678300356283,
+      "label": "f1_house_software_engineer",
+      "_kind": "scatter",
+      "_group": 44
+    },
+    {
+      "direct-map skill (context only) @ layer 26": 0.7885006798734651,
+      "CoT-augmented skill (context + realized CoT) @ layer 26": 0.921060108002332,
+      "label": "f4_reph_archaic",
+      "_kind": "scatter",
+      "_group": 45
+    },
+    {
+      "direct-map skill (context only) @ layer 26": 0.7918216133029456,
+      "CoT-augmented skill (context + realized CoT) @ layer 26": 0.9270432961671264,
+      "label": "f4_reph_archaic",
+      "_kind": "scatter",
+      "_group": 46
+    },
+    {
+      "direct-map skill (context only) @ layer 26": 0.7931849231921455,
+      "CoT-augmented skill (context + realized CoT) @ layer 26": 0.9289941637410338,
+      "label": "f4_reph_archaic",
+      "_kind": "scatter",
+      "_group": 47
+    },
+    {
+      "direct-map skill (context only) @ layer 26": 0.794388043530823,
+      "CoT-augmented skill (context + realized CoT) @ layer 26": 0.9206424449582014,
+      "label": "f4_reph_imperative",
+      "_kind": "scatter",
+      "_group": 48
+    },
+    {
+      "direct-map skill (context only) @ layer 26": 0.7985732624671157,
+      "CoT-augmented skill (context + realized CoT) @ layer 26": 0.9013609071098794,
+      "label": "f4_reph_polite",
+      "_kind": "scatter",
+      "_group": 49
+    }
+  ],
+  "n_series": 50,
+  "total_points": 50,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Per-context skills behind the per-question CoT gain",
+        "xlabel": "direct-map skill (context only) @ layer 26",
+        "ylabel": "CoT-augmented skill (context + realized CoT) @ layer 26",
+        "legend_labels": [
+          "in-context-learning + WildChat (n=18)",
+          "other families (n=32)"
+        ],
+        "annotations": [
+          "f2_wc_long_2",
+          "f2_wc_long_1",
+          "f3_icl_json_k8",
+          "f2_wc_long_5",
+          "f3_icl_marker_k8",
+          "f3_icl_json_k4",
+          "f2_wc_long_3",
+          "f2_wc_short_2",
+          "f2_wc_long_4",
+          "f2_wc_short_4",
+          "f3_icl_french_k4",
+          "f3_icl_marker_k4",
+          "f3_icl_json_k2",
+          "f2_wc_short_1",
+          "f3_icl_pirate_k4",
+          "f2_wc_short_5",
+          "f2_wc_short_3",
+          "f3_icl_marker_k2",
+          "f1_phub_08",
+          "f6_default_template",
+          "f1_phub_03",
+          "f8_behav_fact",
+          "f1_phub_05",
+          "f1_phub_07",
+          "f1_phub_06",
+          "f1_phub_01",
+          "f8_behav_harmful",
+          "f5_fmt_code_comment",
+          "f1_house_programmer",
+          "f8_behav_sycophant",
+          "f8_behav_refusal",
+          "f1_house_surgeon",
+          "f1_phub_04",
+          "f5_fmt_markdown_table",
+          "f1_phub_02",
+          "f6_helpful_asst",
+          "f4_reph_casual",
+          "f1_house_medical_doctor",
+          "f8_behav_marker",
+          "f4_reph_legalese",
+          "f1_house_data_scientist",
+          "f5_fmt_json",
+          "f5_fmt_xml",
+          "f4_reph_polite",
+          "f1_house_software_engineer",
+          "f4_reph_enthusiastic",
+          "f1_house_librarian",
+          "f4_reph_imperative",
+          "f4_reph_archaic",
+          "f5_fmt_bullets"
+        ],
+        "xticklabels": [
+          "\u22120.4",
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0",
+          "1.2"
+        ],
+        "yticklabels": [
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7",
+          "0.8",
+          "0.9",
+          "1.0",
+          "1.1"
+        ]
+      }
+    ],
+    "series": [
+      "in-context-learning + WildChat (n=18)",
+      "other families (n=32)"
+    ]
+  }
+}

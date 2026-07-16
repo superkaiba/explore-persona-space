@@ -20,6 +20,14 @@
 #                       'extra' is an optional pass-through of
 #                       issue1092_fit_grid.py tokens and rides the wrapper's
 #                       --fit-grid-arg (e.g. extra=--skip-mlp-companion).
+#   P6_PARTB_JOBS       ';;'-separated Part-B operator-comparison job specs
+#                       (offvm-battery-refit round); fields '|'-separated:
+#                       cells=...|layers=...|bases=...|extra=... Each job = ONE
+#                       scripts/issue1092_partb_operator.py invocation
+#                       (--stage-from-hub against $STAGE_DIR; outputs to
+#                       $OUT_DIR/partb, which rides the existing upload).
+#                       Runs AFTER the P6_JOBS loop, before upload. Unset ->
+#                       no Part-B phase (fully backward compatible).
 #   P6_RESTORE_ATTEMPT  crash-persist attempt id: before jobs, stage
 #                       issue1092_partial/<att>/data_issue_1092/p6/
 #                       {checkpoints/*.json, analysis_tensors/nulls/*.npy}
@@ -37,12 +45,17 @@
 #                       --fixture-hub-root pattern): enumerate/copy from this
 #                       local tree instead of the Hub — same filter/mapping
 #                       code path, only the Hub boundary is faked.
+#   P6_MAX_PILOT_RSS_GB pilot-gate RSS cap in GB, threaded to the wrapper's
+#                       --max-pilot-rss-gb (default 64 — the original plan-v6
+#                       gate). Validated numeric at the top of this script; a
+#                       bad value exits 2 before any staging or job runs.
 #
-# --skip-band-pilot and --max-pilot-rss-gb 64 are DRIVER-HARDCODED on every
-# wrapper invocation (plan v6 §4.5-A: all fit layers are frozen so the band
-# block would be a pure duplicate re-run; 128 GB box -> 64 GB pilot RSS gate).
-# They are issue1092_p6_run.py WRAPPER flags — the engine's argparse rejects
-# them — so they must never ride the 'extra' fit-grid passthrough.
+# --skip-band-pilot and --max-pilot-rss-gb are DRIVER-OWNED on every wrapper
+# invocation (plan v6 §4.5-A: all fit layers are frozen so the band block
+# would be a pure duplicate re-run; the RSS cap rides P6_MAX_PILOT_RSS_GB,
+# default 64). They are issue1092_p6_run.py WRAPPER flags — the engine's
+# argparse rejects them — so they must never ride the 'extra' fit-grid
+# passthrough.
 #
 # Within-box summary dedup: after each P6_JOBS job the per-invocation summary
 # JSONs (fit_grid_summary*.json / p6_run_summary*.json / pilot*.json) are
@@ -51,8 +64,17 @@
 # (fingerprint-unique, resume-shared across jobs and boxes).
 #
 # BYTE-PIN: scripts/issue1092_fit_grid.py hashes its own bytes into every
-# checkpoint fingerprint — this driver is the ONLY edit surface for the v6
-# relaunch; any engine edit invalidates ALL completed checkpoints.
+# checkpoint fingerprint — during the v6 relaunch this driver was the ONLY edit
+# surface; any engine edit invalidates ALL completed checkpoints. The
+# offvm-battery-refit round DELIBERATELY edits the engine (battery-excluded
+# fit-arm filters + per-target R2 banking), so banked-checkpoint resume can
+# never silently fire on refit boxes; refit boxes additionally use fresh box
+# ids (rf01..rf04 -> box_rf0K HF prefixes). The refit boxes' FIRST launch set
+# NO P6_RESTORE_ATTEMPT (banked v6 p6 artifacts are neither resumed from nor
+# clobbered); the pilot-gate RELAUNCH sets P6_RESTORE_ATTEMPT to each box's
+# OWN crash-persist attempt (att-20260715-*-rfNN) — those checkpoints were
+# written by the CURRENT engine bytes with content-derived staged mtimes, so
+# fingerprints match and the completed ~4.3 h pilot unit fast-skips.
 #
 # GCE lane contract: cwd = $WORKLOAD_ROOT (the issue-1092 clone); HF_TOKEN etc.
 # exported by the startup script; no .env file (source conditionally).
@@ -71,9 +93,30 @@ REPO="superkaiba1/explore-persona-space-data"
 
 P6_BOX_ID="${P6_BOX_ID:-}"
 P6_JOBS="${P6_JOBS:-}"
+P6_PARTB_JOBS="${P6_PARTB_JOBS:-}"
 P6_RESTORE_ATTEMPT="${P6_RESTORE_ATTEMPT:-}"
 P6_DRY_RUN="${P6_DRY_RUN:-}"
 P6_RESTORE_FIXTURE_ROOT="${P6_RESTORE_FIXTURE_ROOT:-}"
+
+# Pilot-gate RSS cap (GB) -> wrapper --max-pilot-rss-gb. Default 64 = the
+# original plan-v6 gate. The rf pilot-gate relaunch passes 96, sized from
+# measurement: rf02's ambient arm-A pilot read ru_maxrss 71.94 GB on a 128 GB
+# n2-highmem-16 box (att-20260715-003544-rf02; n=17308 rows x 10752-dim
+# stacked target — the same footprint class the pre-refit b10 pilot measured
+# at 72.23 GB, so the refit engine edits move the peak by <~1.5 GB), and the
+# largest later unit on any rf box is the job-2 fit-arm-B block (keeps trait
+# rows: n=18793, +8.6% rows -> ~78 GB projected peak, since the dominant
+# arrays scale with n). 96 covers that worst unit with ~18 GB margin while
+# leaving 32 GB of the box for everything else. Fail-loud numeric validation:
+# the wrapper's argparse would also reject a bad value, but only after
+# staging/restore ran — validate here so even a dry-run fails loud.
+P6_MAX_PILOT_RSS_GB="${P6_MAX_PILOT_RSS_GB:-64}"
+case "$P6_MAX_PILOT_RSS_GB" in
+  '' | . | *[!0-9.]* | *.*.*)
+    echo "[p6-gce] ERROR: P6_MAX_PILOT_RSS_GB must be a positive number (GB), got '${P6_MAX_PILOT_RSS_GB}'" >&2
+    exit 2
+    ;;
+esac
 
 CORPUS_DIR="data/issue_1092/p0/corpus"
 JUDGE_DIR="data/issue_1092/p5_judge"
@@ -120,12 +163,14 @@ run_p6_job() {
     done
   fi
 
-  # --skip-band-pilot / --max-pilot-rss-gb are WRAPPER flags, hardcoded here
+  # --skip-band-pilot / --max-pilot-rss-gb are WRAPPER flags, composed here
   # per plan v6 (never via 'extra': the engine's argparse rejects them).
-  # P6_MAX_PILOT_RSS_GB (default 64) exists because the 64 GB VM-routing gate
-  # aborted a healthy 72.23 GB pilot on a 128 GB n2-highmem-16 box (b10,
-  # att-20260709-180648-p6b10) whose abort message routes to the very lane it
-  # ran on; replacement boxes pass 100.
+  # P6_MAX_PILOT_RSS_GB (validated at the top; default 64) exists because the
+  # 64 GB VM-routing gate has twice aborted healthy full-corpus pilots on
+  # 128 GB n2-highmem-16 boxes, and the abort message routes to the very lane
+  # it ran on: b10 at 72.23 GB (att-20260709-180648-p6b10; v6 replacement
+  # boxes passed 100) and rf02 at 71.94 GB (att-20260715-003544-rf02; the rf
+  # relaunch passes 96 — sizing note at the validation block above).
   local cmd=(
     uv run python scripts/issue1092_p6_run.py
     --corpus-dir "$CORPUS_DIR"
@@ -133,7 +178,7 @@ run_p6_job() {
     --out-dir "$OUT_DIR"
     --judge-scores "$JUDGE_DIR/scores.jsonl"
     --skip-band-pilot
-    --max-pilot-rss-gb "${P6_MAX_PILOT_RSS_GB:-64}"
+    --max-pilot-rss-gb "$P6_MAX_PILOT_RSS_GB"
   )
   if [ -n "$cells" ]; then cmd+=(--cells "$cells"); fi
   if [ -n "$layers" ]; then cmd+=(--layers "$layers"); fi
@@ -182,6 +227,76 @@ rename_job_summaries() {
   done
 }
 
+run_partb_job() {
+  # Compose + run ONE issue1092_partb_operator.py invocation from a
+  # '|'-separated job spec (offvm-battery-refit round: operator-level arm
+  # comparison on the battery-excluded fitted maps). Outputs land in
+  # $OUT_DIR/partb, which rides the existing end-of-run upload.
+  local job_idx="$1" spec="$2"
+  local cells="" layers="" bases="" extra=""
+  if [ -n "$spec" ]; then
+    local fields=() field key val
+    IFS='|' read -r -a fields <<< "$spec"
+    for field in "${fields[@]}"; do
+      if [ -z "$field" ]; then continue; fi
+      key="${field%%=*}"
+      val="${field#*=}"
+      case "$key" in
+        cells) cells="$val" ;;
+        layers) layers="$val" ;;
+        bases) bases="$val" ;;
+        extra) extra="$val" ;;
+        *)
+          echo "[p6-gce] ERROR: unknown P6_PARTB_JOBS field '$key' in job spec '$spec'" >&2
+          exit 2
+          ;;
+      esac
+    done
+  fi
+  local cmd=(
+    uv run python scripts/issue1092_partb_operator.py
+    --summaries-dir "$STAGE_DIR"
+    --corpus-dir "$CORPUS_DIR"
+    --out-dir "$OUT_DIR"
+    --stage-from-hub
+  )
+  if [ -n "$cells" ]; then cmd+=(--cells "$cells"); fi
+  if [ -n "$layers" ]; then cmd+=(--layers "$layers"); fi
+  if [ -n "$bases" ]; then cmd+=(--target-bases "$bases"); fi
+  if [ -n "$extra" ]; then
+    # shellcheck disable=SC2206 -- deliberate word-splitting of pass-through tokens
+    cmd+=($extra)
+  fi
+
+  echo "[phase=p6_partb_job${job_idx}]"
+  echo "[p6-gce] partb invocation (job ${job_idx}): ${cmd[*]}"
+  if [ -n "$P6_DRY_RUN" ]; then
+    # Simulate the summary write so the per-job rename path runs for real.
+    mkdir -p "$OUT_DIR/partb"
+    touch "$OUT_DIR/partb/partb_summary.json"
+  else
+    "${cmd[@]}"
+  fi
+}
+
+rename_partb_summary() {
+  # Job-suffix each Part-B job's summary so a later Part-B job cannot clobber
+  # it (per-unit JSONs are fingerprint-unique and stay shared in partb/).
+  local job_idx="$1"
+  local f="$OUT_DIR/partb/partb_summary.json"
+  if [ ! -e "$f" ]; then
+    echo "[p6-gce] ERROR: partb job ${job_idx} wrote no partb_summary.json" >&2
+    exit 2
+  fi
+  local dst="$OUT_DIR/partb/partb_summary_pjob${job_idx}.json"
+  if [ -e "$dst" ]; then
+    echo "[p6-gce] ERROR: refusing to clobber $dst" >&2
+    exit 2
+  fi
+  mv "$f" "$dst"
+  echo "[p6-gce] partb job ${job_idx}: renamed partb_summary.json -> partb_summary_pjob${job_idx}.json"
+}
+
 if [ -n "$P6_DRY_RUN" ]; then
   echo "[p6-gce] dry-run: skipping input staging (corpus @ ${CORPUS_REV:0:12}, p5_judge shards)"
 else
@@ -192,8 +307,15 @@ import json
 import os
 import pathlib
 import shutil
+import sys
 
 from huggingface_hub import hf_hub_download, list_repo_tree
+
+# Minutes-scale Retry-After-honoring Hub retry (rf01 died 4x on repo-level 429
+# storms — "maximum queue size reached" — that outlast seconds-scale backoff;
+# budget env-tunable via P6_HUB_RETRY_MAX_MIN, default 15 min).
+sys.path.insert(0, os.path.abspath("scripts"))
+from issue1092_p6_run import _hub_retry
 
 REPO = "superkaiba1/explore-persona-space-data"
 
@@ -202,8 +324,17 @@ REV = "7ef5523673d64697ab497577dbc5b9270c39f020"
 PREFIX = "issue1092_realistic_crossing/corpus"
 dst = pathlib.Path("data/issue_1092/p0/corpus")
 names = []
-for it in list_repo_tree(REPO, repo_type="dataset", path_in_repo=PREFIX, revision=REV):
-    local = hf_hub_download(REPO, repo_type="dataset", filename=it.path, revision=REV)
+corpus_items = _hub_retry(
+    lambda: list(list_repo_tree(REPO, repo_type="dataset", path_in_repo=PREFIX, revision=REV)),
+    what="list_repo_tree(corpus)",
+)
+for it in corpus_items:
+    local = _hub_retry(
+        lambda p=it.path: hf_hub_download(
+            REPO, repo_type="dataset", filename=p, revision=REV
+        ),
+        what=f"download {it.path}",
+    )
     shutil.copy(local, dst / pathlib.Path(it.path).name)
     names.append(pathlib.Path(it.path).name)
 required = {"manifest.jsonl", "prefix_store.jsonl", "query_store.jsonl", "derangement_map.json"}
@@ -216,7 +347,11 @@ JPREFIX = "issue1092_realistic_crossing/p5_judge"
 jdst = pathlib.Path("data/issue_1092/p5_judge")
 shard_paths = []
 manifest_local = None
-for it in list_repo_tree(REPO, repo_type="dataset", path_in_repo=JPREFIX):
+judge_items = _hub_retry(
+    lambda: list(list_repo_tree(REPO, repo_type="dataset", path_in_repo=JPREFIX)),
+    what="list_repo_tree(p5_judge)",
+)
+for it in judge_items:
     name = pathlib.Path(it.path).name
     # Download ONLY the expected score files. The prefix also carries a raw/
     # SUBDIRECTORY (P5 raw judge outputs, persisted separately); the
@@ -225,7 +360,10 @@ for it in list_repo_tree(REPO, repo_type="dataset", path_in_repo=JPREFIX):
     is_shard = name.startswith("scores_shard_") and name.endswith(".jsonl")
     if not (is_shard or name in ("shards_manifest.json", "summary.json")):
         continue
-    local = hf_hub_download(REPO, repo_type="dataset", filename=it.path)
+    local = _hub_retry(
+        lambda p=it.path: hf_hub_download(REPO, repo_type="dataset", filename=p),
+        what=f"download {it.path}",
+    )
     if name == "shards_manifest.json":
         manifest_local = local
     elif is_shard:
@@ -302,12 +440,24 @@ if fixture:
         f"{prefix}/{p.relative_to(root).as_posix()}" for p in root.rglob("*") if p.is_file()
     ]
 else:
+    import sys
+
     from huggingface_hub import hf_hub_download, list_repo_tree
 
-    hub_paths = [
-        it.path
-        for it in list_repo_tree(REPO, repo_type="dataset", path_in_repo=prefix, recursive=True)
-    ]
+    # rf01's attempt-5 died 15s in on a Hub 429 storm at exactly this listing;
+    # minutes-scale Retry-After-honoring retry (P6_HUB_RETRY_MAX_MIN, default 15).
+    sys.path.insert(0, os.path.abspath("scripts"))
+    from issue1092_p6_run import _hub_retry
+
+    hub_paths = _hub_retry(
+        lambda: [
+            it.path
+            for it in list_repo_tree(
+                REPO, repo_type="dataset", path_in_repo=prefix, recursive=True
+            )
+        ],
+        what="list_repo_tree(restore)",
+    )
 
 n_ckpt = 0
 n_null = 0
@@ -320,7 +470,10 @@ for hub_path in sorted(hub_paths):
     if fixture:
         shutil.copy(pathlib.Path(fixture) / hub_path, dst)
     else:
-        local = hf_hub_download(REPO, repo_type="dataset", filename=hub_path)
+        local = _hub_retry(
+            lambda p=hub_path: hf_hub_download(REPO, repo_type="dataset", filename=p),
+            what=f"download {hub_path}",
+        )
         shutil.copy(local, dst)
     if rel.startswith("checkpoints/"):
         n_ckpt += 1
@@ -351,37 +504,66 @@ else
   run_p6_job "" ""
 fi
 
+if [ -n "$P6_PARTB_JOBS" ]; then
+  pjob_idx=0
+  remaining="$P6_PARTB_JOBS"
+  while [ -n "$remaining" ]; do
+    job_spec="${remaining%%;;*}"
+    if [ "$job_spec" = "$remaining" ]; then remaining=""; else remaining="${remaining#*;;}"; fi
+    if [ -z "$job_spec" ]; then continue; fi
+    pjob_idx=$((pjob_idx + 1))
+    run_partb_job "$pjob_idx" "$job_spec"
+    rename_partb_summary "$pjob_idx"
+  done
+  if [ "$pjob_idx" -eq 0 ]; then
+    echo "[p6-gce] ERROR: P6_PARTB_JOBS set but contained no job specs" >&2
+    exit 2
+  fi
+fi
+
 if [ -n "$P6_DRY_RUN" ]; then
   echo "[p6-gce] dry-run: would upload $OUT_DIR -> $HF_PREFIX/ on $REPO"
 else
   echo "[phase=p6_upload]"
   P6_HF_PREFIX="$HF_PREFIX" P6_OUT_DIR="$OUT_DIR" uv run python - <<'PY'
 import os
+import sys
 
 from huggingface_hub import HfApi
+
+# Minutes-scale Retry-After-honoring Hub retry (rf01 429-storm class; the
+# upload + verify legs ride the same repo-level throttle as staging).
+sys.path.insert(0, os.path.abspath("scripts"))
+from issue1092_p6_run import _hub_retry
 
 prefix = os.environ["P6_HF_PREFIX"]
 out_dir = os.environ["P6_OUT_DIR"]
 api = HfApi()
-res = api.upload_folder(
-    folder_path=out_dir,
-    path_in_repo=prefix,
-    repo_id="superkaiba1/explore-persona-space-data",
-    repo_type="dataset",
-    commit_message=f"issue #1092 P6 fit-grid outputs ({prefix}; GCP cpu-bigmem judge-bearing run)",
+res = _hub_retry(
+    lambda: api.upload_folder(
+        folder_path=out_dir,
+        path_in_repo=prefix,
+        repo_id="superkaiba1/explore-persona-space-data",
+        repo_type="dataset",
+        commit_message=f"issue #1092 P6 fit-grid outputs ({prefix}; GCP cpu-bigmem judge-bearing run)",
+    ),
+    what="upload_folder(p6)",
 )
 print("[p6-gce] uploaded out-dir:", res)
 # Scoped list_repo_tree, NEVER list_repo_files: the data repo is ~1M files and
 # full-tree enumeration wedges (.claude/rules/gotchas.md).
-api_files = [
-    e.path
-    for e in api.list_repo_tree(
-        "superkaiba1/explore-persona-space-data",
-        repo_type="dataset",
-        path_in_repo=prefix,
-        recursive=True,
-    )
-]
+api_files = _hub_retry(
+    lambda: [
+        e.path
+        for e in api.list_repo_tree(
+            "superkaiba1/explore-persona-space-data",
+            repo_type="dataset",
+            path_in_repo=prefix,
+            recursive=True,
+        )
+    ],
+    what="list_repo_tree(verify)",
+)
 
 
 def _is_fit_summary(path: str) -> bool:

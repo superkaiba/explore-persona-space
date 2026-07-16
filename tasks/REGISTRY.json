@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1419,
+  "highest_id": 1420,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -62,8 +62,8 @@
       "goal": "Determine whether the CoT-decomposition results from #928 (CoT informativeness, predictive sufficiency of the CoT summary, composition parity) replicate on DeepSeek-R1-Distill-Qwen-7B \u2014 a thinking model whose chat template forces the reasoning scaffold \u2014 and whether full scaffold compliance eliminates the flagged-context covariate, testing whether the +0.41 length-matched flagged-cluster gain is a think-scaffold-compliance artifact rather than a context-family property.",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/running/1005",
-      "status": "running",
+      "path": "tasks/interpreting/1005",
+      "status": "interpreting",
       "title": "Replicate the CoT decomposition on DeepSeek-R1-Distill-Qwen-7B (template-forced thinking): does scaffold compliance eliminate the flagged-context covariate?"
     },
     "1006": {
@@ -725,8 +725,8 @@
       "goal": "On a realistic sparse-crossed prefix x query corpus (~1k real WildChat/LMSYS prefixes incl. >=300 long conversations + ~100x48 dense core + ~500-query bank; two fit-time training arms; #594 battery as eval bridge), a 4x2 text-source x model factorial (own-text 2x2 full, Claude/shuffled subsampled), THREE answer targets (t1/t2/t3) + u1/u2/u3 user mirrors, bare-query captures, a turn-dynamics module (D0-D5, both input arms, D4 selection/length-controlled, D5 first-state horizon), and a BEHAVIOR module (graded Sonnet judge on the trait-relevant subset; B1 state->behavior per input arm + grain incl. the #779 monitoring-gap re-read and the A2 answer-side ceiling; B2 factor->behavior validating trait-per-factor): characterize answer-state transport via the four co-primary reads per cell/target/arm (prefix-vs-context gap; averaged-vs-per-example rank collapse; f/g/i shares vs #923; M~=f-map, M'-M~=g, trait-per-factor) plus the instruction-tuning text-vs-transport decomposition, carrier floor, factor transfer, target/dynamics/behavior sensitivity, and 0-GPU bridge re-fits on #923/#813/#779. Both prefix and context arms on every read; all GPU phases data-parallel; all fit grids vectorized (binding). Pre-approved to 300 GPU-h.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/followups_running/1092",
-      "status": "followups_running",
+      "path": "tasks/awaiting_promotion/1092",
+      "status": "awaiting_promotion",
       "title": "Answer-state transport on real conversations runs almost entirely through the query-bearing context state, not the prefix persona state (HIGH confidence)"
     },
     "1093": {
@@ -2419,11 +2419,11 @@
     },
     "1310": {
       "goal": "Test whether a context->dialogue linear map focused on a SINGLE fixed fiction character (persona, NOT the assistant), trained on on-policy generated stories that always refer to the character by the same fixed label, exists in Qwen2.5-7B base and instruct \u2014 the fiction-character analog of the assistant-persona context->answer map \u2014 across a 4-persona panel, each persona its own map.",
-      "has_clean_result": false,
+      "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/running/1310",
-      "status": "running",
-      "title": "Focused per-character context->dialogue map on on-policy stories, base vs instruct (4-persona panel)"
+      "path": "tasks/interpreting/1310",
+      "status": "interpreting",
+      "title": "A fixed-label fiction character supports a weak, character-specific context\u2192dialogue map in the base model, far below the assistant-map ceiling (MODERATE confidence)"
     },
     "1311": {
       "has_clean_result": false,
@@ -2973,64 +2973,64 @@
     "1381": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1381",
-      "status": "running",
+      "path": "tasks/completed/1381",
+      "status": "completed",
       "title": "workflow-fix: verify_plan flags false no-flags claims"
     },
     "1382": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1382",
-      "status": "running",
+      "path": "tasks/completed/1382",
+      "status": "completed",
       "title": "workflow-fix: fix two red workflow tests on main"
     },
     "1383": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1383",
-      "status": "reviewing",
+      "path": "tasks/completed/1383",
+      "status": "completed",
       "title": "workflow-fix: verified-at-filing context binding"
     },
     "1384": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1384",
-      "status": "running",
+      "path": "tasks/completed/1384",
+      "status": "completed",
       "title": "workflow-fix: implementer per-arm-class smoke clause"
     },
     "1385": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1385",
-      "status": "planning",
+      "path": "tasks/completed/1385",
+      "status": "completed",
       "title": "workflow-fix: lint check rule frontmatter parses"
     },
     "1386": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1386",
-      "status": "proposed",
+      "path": "tasks/archived/1386",
+      "status": "archived",
       "title": "daily-fix: hub Xet queue-full transient retry"
     },
     "1387": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1387",
-      "status": "proposed",
+      "path": "tasks/running/1387",
+      "status": "running",
       "title": "workflow-fix: verify_plan exit-0 baseline check"
     },
     "1388": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1388",
-      "status": "proposed",
+      "path": "tasks/running/1388",
+      "status": "running",
       "title": "daily-fix: fix bare list_repo_tree lint offenders"
     },
     "1389": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1389",
-      "status": "proposed",
+      "path": "tasks/running/1389",
+      "status": "running",
       "title": "daily-fix: compose-time re-grep + staleness verify leg"
     },
     "139": {
@@ -3240,8 +3240,8 @@
       "goal": "On Qwen-2.5-7B-Instruct, test whether the context vector V_c (last-context-token residual activation) is causally sufficient for the answer state and behavior it predicts: patch context c with Delta = V_c(c') - V_c(c) (matched-query persona/instruction swaps and cross-query swaps; prefix-based AND context-based arms; layer + position sweeps), generate on-policy, and measure (a) the realized mean answer activation's shift from V_a(c) toward V_a(c') and its agreement with the fitted map's counterfactual prediction f(V_c + Delta), and (b) the judge-scored behavior shift (graded 0-100 primary + rate companion), against norm-matched random-Delta and shuffled-pair nulls, a full-prefix KV-swap ceiling, and the persona-vector r_B steering baseline, with a logit-lens top-token readout of V_c, V_a, Delta, and the #922 slow modes as descriptive companion.",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/planning/1415",
-      "status": "planning",
+      "path": "tasks/running/1415",
+      "status": "running",
       "title": "Causal test of the context/answer vectors: does steering with V_c' - V_c shift on-policy answers from V_a toward V_a'?"
     },
     "1416": {
@@ -3279,6 +3279,13 @@
       "path": "tasks/archived/142",
       "status": "archived",
       "title": "JS divergence predicts persona leakage better than cosine similarity (MODERATE confidence)"
+    },
+    "1420": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/reviewing/1420",
+      "status": "reviewing",
+      "title": "workflow-fix: semantic probe for absence-claim greps"
     },
     "144": {
       "has_clean_result": false,

@@ -7,7 +7,10 @@ Behaviours:
 * ``--check-references`` (default in pre-commit): walk ``CLAUDE.md``,
   ``.claude/skills/issue/SKILL.md``, and ``.claude/skills/issue/markers.md``;
   every ``(see workflow.yaml § <key>)`` reference MUST resolve to a real
-  YAML key.
+  YAML key. NOT in the no-flags default run: a bare ``workflow_lint.py``
+  invocation does not run this check — it fires only when the flag is
+  passed explicitly (the pre-commit hook, /daily's reference gate, and
+  the /issue Step-10d parity legs pass it).
 * ``--emit-tables``: regenerate the auto-generated table blocks in
   ``markers.md`` and ``SKILL.md`` ("Active vs awaiting-user" table) inside
   the fenced ``<!-- workflow.yaml: AUTO-GENERATED -->`` … ``<!--
@@ -9187,11 +9190,11 @@ AGENT_SPEC_SIZE_GRANDFATHER: dict[str, int] = {
     # post-#1254 (Step 3.9 copy-list bullet + inlined-rubric slot),
     # 51,600 — measured 50,642 B post-#948, 47,930 B post-#881)
     "codex-code-reviewer.md": 56_800,
-    # measured 67,472 B post-#1363 (MALLOC_ARENA_MAX=2 in the VM-launch cap
-    # prefix + the #1315 arena parenthetical — plan-mandated growth; cap =
-    # measured + <=~1 KB. Prior: 67,400 — measured 66,574 B post-#1349,
-    # 66,300 — measured 65,548 B post-#1311)
-    "experiment-implementer.md": 67_900,
+    # measured 68,888 B post-#1384 (per-arm-class smoke-coverage clause in
+    # checklist item 3 — plan-mandated growth; cap = measured + <=~1 KB.
+    # Prior: 67,900 — measured 67,472 B post-#1363, 67,400 — measured
+    # 66,574 B post-#1349, 66,300 — measured 65,548 B post-#1311)
+    "experiment-implementer.md": 69_800,
     # measured 65,540 B post-#1081 r2 (D3 crash-fix-relaunch addendum:
     # disposition-conditional resume-glob confirm — plan-mandated growth;
     # cap = measured + <=~1 KB. Prior: 65,500 — measured 62,672 B)

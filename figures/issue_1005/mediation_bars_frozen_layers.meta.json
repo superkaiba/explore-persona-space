@@ -1,0 +1,223 @@
+{
+  "commit": "e2b094623d",
+  "created": "2026-07-16T11:20:32Z",
+  "figsize": [
+    11.5,
+    4.6
+  ],
+  "points": [
+    {
+      "category": "direct\ncontext\u2192answer",
+      "held-out skill (LOCO)": 0.5468610924071698,
+      "error": 0.06790456188209623,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "composed\nvia predicted CoT",
+      "held-out skill (LOCO)": 0.5449663622599444,
+      "error": 0.07064924802063327,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "oracle\nCoT\u2192answer",
+      "held-out skill (LOCO)": 0.8932433076500818,
+      "error": 0.014995497580845563,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "CoT-augmented\ncontext+CoT\u2192answer",
+      "held-out skill (LOCO)": 0.8770631591293179,
+      "error": 0.01961615267756761,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.0,
+      "held-out skill (LOCO)": 0.4752696704695792,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 1.0,
+      "held-out skill (LOCO)": 0.4701981045511008,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 2.0,
+      "held-out skill (LOCO)": 0.8764547209511367,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 3.0,
+      "held-out skill (LOCO)": 0.8559009758594536,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 0.0,
+      "held-out skill (LOCO)": 0.6110787942337716,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 1.0,
+      "held-out skill (LOCO)": 0.6114966005923673,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 2.0,
+      "held-out skill (LOCO)": 0.9064457161128279,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 3.0,
+      "held-out skill (LOCO)": 0.8951332812145888,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "category": "direct\ncontext\u2192answer",
+      "held-out skill (LOCO)": 0.3098811539562901,
+      "error": 0.10044195273691106,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "category": "composed\nvia predicted CoT",
+      "held-out skill (LOCO)": 0.30665966340785145,
+      "error": 0.09977934008406779,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "category": "oracle\nCoT\u2192answer",
+      "held-out skill (LOCO)": 0.6636924514066764,
+      "error": 0.08235055628405535,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "category": "CoT-augmented\ncontext+CoT\u2192answer",
+      "held-out skill (LOCO)": 0.6405827137918638,
+      "error": 0.08664114532297501,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 0.0,
+      "held-out skill (LOCO)": 0.21285008534110772,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 1.0,
+      "held-out skill (LOCO)": 0.21018557788269196,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 2.0,
+      "held-out skill (LOCO)": 0.5745013744841561,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 3.0,
+      "held-out skill (LOCO)": 0.5468733822907637,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 0.0,
+      "held-out skill (LOCO)": 0.41373399081492984,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 1.0,
+      "held-out skill (LOCO)": 0.40974425805082754,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 2.0,
+      "held-out skill (LOCO)": 0.7392024870522668,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 3.0,
+      "held-out skill (LOCO)": 0.7201556729367137,
+      "_kind": "line",
+      "_group": 5
+    }
+  ],
+  "n_series": 6,
+  "total_points": 24,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "per-question (n=2,302 rows, 50 context groups)",
+        "ylabel": "held-out skill (LOCO)",
+        "annotations": [
+          "0.55",
+          "0.54",
+          "0.89",
+          "0.88"
+        ],
+        "xticklabels": [
+          "direct\ncontext\u2192answer",
+          "composed\nvia predicted CoT",
+          "oracle\nCoT\u2192answer",
+          "CoT-augmented\ncontext+CoT\u2192answer"
+        ],
+        "yticklabels": [
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0",
+          "1.2"
+        ]
+      },
+      {
+        "title_left": "query-averaged (n=50 contexts)",
+        "ylabel": "held-out skill (LOCO)",
+        "annotations": [
+          "0.31",
+          "0.31",
+          "0.66",
+          "0.64"
+        ],
+        "xticklabels": [
+          "direct\ncontext\u2192answer",
+          "composed\nvia predicted CoT",
+          "oracle\nCoT\u2192answer",
+          "CoT-augmented\ncontext+CoT\u2192answer"
+        ],
+        "yticklabels": [
+          "\u22120.4",
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0",
+          "1.2"
+        ]
+      }
+    ]
+  }
+}
