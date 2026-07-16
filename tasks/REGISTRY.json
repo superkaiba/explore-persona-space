@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1398,
+  "highest_id": 1399,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -3102,6 +3102,13 @@
       "path": "tasks/proposed/1398",
       "status": "proposed",
       "title": "daily-fix: neutral gate vocabulary first-pass briefs"
+    },
+    "1399": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1399",
+      "status": "proposed",
+      "title": "daily-fix: wf-fix dedup screens completed siblings"
     },
     "14": {
       "has_clean_result": false,
