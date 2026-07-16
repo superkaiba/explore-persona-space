@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1412,
+  "highest_id": 1413,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -3221,6 +3221,13 @@
       "path": "tasks/proposed/1412",
       "status": "proposed",
       "title": "daily-fix: binary figure conflict guidance 9b/10d"
+    },
+    "1413": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1413",
+      "status": "proposed",
+      "title": "daily-fix: guard ssh-string git false positives"
     },
     "142": {
       "has_clean_result": true,
