@@ -145,7 +145,7 @@ Held-out R² across all 28 layers, per persona (lines) with the shuffle-null ran
 
 > **Figure.** Script scenes (top): positive at essentially every layer, both models. Prefill (bottom): base peaks mid-stack (max 0.20–0.28, layers 6–17), all four personas clearing the null at frozen layers 14/18 (Vex 0.114/0.165, HELIOS 0.160/0.171); instruct is positive only at early layers (max +0.08 to +0.13, layers 1–7) and anti-predictive at layers ~9–20, including the frozen headline layer.
 
-Candidate explanations, in decreasing groundedness: (1) construction fact — within-scene prefill X vectors are near-duplicates, so scene-grouped folds demand cross-scene extrapolation from little within-scene diversity, the structure behind the GCV degeneracy; (2) speculation — the forced mid-line assistant prefill is off-distribution for instruct; template features may anti-transfer at mid layers (base has no template, stays positive); (3) speculation — canned foils force scenario-level structure the pooled fits absorb while within-persona fits overfit scenes. Undistinguished here.
+Candidate explanations, in decreasing groundedness: (1) a construction fact: within-scene prefill X vectors are near-duplicates, so scene-grouped folds demand cross-scene extrapolation from little within-scene diversity, the structure behind the GCV degeneracy. (2) Speculation: the forced mid-line assistant prefill is off-distribution for instruct, and template features may anti-transfer at mid layers (base has no template, stays positive). (3) More speculation: canned foils force scenario-level structure the pooled fits absorb while within-persona fits overfit scenes. Undistinguished here.
 
 ### Per-fold and per-scene-group points show the layer-19 aggregates are not fold or scene artifacts
 
@@ -155,7 +155,7 @@ Prefill regime at layer 19: per-scene-group held-out R² (~300 grey points per c
 
 > **Figure.** Base: per-group medians positive for Wren/HELIOS/Dana (+0.06 to +0.17); Vex centers near zero. Instruct: per-group medians negative (−0.08 to −0.15); folds agree except instruct Vex (two of five folds positive).
 
-I recomputed all layer-19 fits from the persisted store with identical folds and cap: every pooled value matches its committed cell to machine precision, and the fold and scene-group views show broad aggregates rather than one dominant fold or scene. Instruct Vex is the one fold-heterogeneous cell (per-fold −0.37 to +0.05), a caveat on its magnitude but not its sign class.
+I recomputed all layer-19 fits from the persisted store with identical folds and cap: every pooled value matches its committed cell to machine precision, and the fold and scene-group views show broad aggregates rather than one dominant fold or scene. Instruct Vex is the one fold-heterogeneous cell (per-fold −0.37 to +0.05), a caveat on its magnitude but not its sign.
 
 ---
 
