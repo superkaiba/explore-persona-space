@@ -456,7 +456,8 @@ dates>
 Identical to v3. Plain academic register — NO lowercase-casual voice, NO
 "How this updates me" diary framing. Bullets only, numbers-first,
 directly adaptable into a Slack post. **3–6 bullets** (hard FAIL outside
-that range), each ≤30 words (WARN). The H1 title stays the one-sentence
+that range), each ≤30 words (WARN; ≥100 words is a hard FAIL). The H1
+title stays the one-sentence
 claim + confidence tag. It is the rolling cross-round synthesis, rewritten
 after every follow-up round (§ Follow-up consolidation).
 
@@ -721,20 +722,24 @@ body.
 
 Same constants as v3 (`V3_TAKEAWAYS_*`, `V3_FINDING_PROSE_*`,
 `V3_FIGURE_CAPTION_MAX_WORDS`, `V3_TOTAL_PROSE_*`), applied to the v4
-sections:
+sections, plus TWO v4-only constants: `V4_TAKEAWAYS_BULLET_FAIL_WORDS`
+(=100), the per-Takeaways-bullet hard-FAIL tier (#825), and
+`V4_RESULT_PARA_MAX_SENTENCES` (=3), the per-result-paragraph sentence
+cap (WARN-only, check 36, #1368):
 
 | Surface | Cap | Verifier behavior |
 |---|---|---|
 | `## Takeaways` bullet count | 3–6 bullets, no paragraphs | FAIL outside range (owned by the v4 structure check) |
-| Per-Takeaways-bullet length | ≤30 words | WARN |
+| Per-Takeaways-bullet length | ≤30 words WARN; ≥100 words FAIL | WARN at 30, FAIL at 100 (v4-only hard tier — an accreted paragraph-bullet cannot ride a WARN, #825) |
 | Per-`### <result>` prose (excl. caption/code/details/tables) | ≤120 words WARN, ≥180 FAIL | WARN at 120, FAIL at 180 |
+| Per-`### <result>` prose paragraph | 1–3 sentences | WARN at ≥4 (check 36, #1368; register judgment — bullets-over-prose, the FAIL call — stays with the LM critic, Lens 12) |
 | Figure caption | ≤60 words | WARN |
 | Total prose: Takeaways + Goal + Results (excl. tables, code fences, details bodies, captions; `## Methodology` is EXCLUDED — it carries the absorbed methodology-doc content and is reference, not skim prose) | ≤800 words + 250 per live follow-up round beyond the first (round count: non-retroactive `epm:same-issue-followup-run` markers and/or the footer round clauses, max — #921) | WARN-only |
 
 `## Methodology` is deliberately EXCLUDED from the total-prose budget: it
 absorbed the entire former standalone methodology doc, which was never
-under the skim-prose cap. The per-`### <result>` ≥180-word FAIL is the
-hard gate.
+under the skim-prose cap. The per-`### <result>` ≥180-word FAIL and the
+per-Takeaways-bullet ≥100-word FAIL are the hard gates.
 
 ## Follow-up consolidation (v4)
 
@@ -743,7 +748,10 @@ Same as v3:
 1. **`## Takeaways` is the rolling synthesis.** After every round, rewrite
    it to the current cross-round belief and retitle the H1 if the headline
    moved. A Takeaways describing only round 1 after round 2 landed is a
-   critic FAIL.
+   critic FAIL. A retitled H1 is synced to frontmatter via
+   `task.py set-title <N> "<new H1 text>"` after the `set-body` (set-body
+   preserves frontmatter; `check_h1_matches_frontmatter_title` FAILs a
+   diverged v4 body).
 2. **Round visibility.** `## Methodology → **Design:**` gains a per-round
    note (or a `**Rounds:**` table) when >1 round; `**Context:**` keeps
    per-round followup_labels + verbatim prompts. The complete
@@ -923,9 +931,9 @@ Forward-only: each check branches on the sentinel. The v4 checks
 19. **`## Methodology` subset-disclosure** (v4 only): every example block
     inside `## Methodology` is preceded by a subset-disclosure line.
 20. **Word caps** (`check_v4_word_caps`, v4 only): the § Conciseness caps
-    table above. FAILs only on the per-`### <result>` ≥180-word hard cap;
-    everything else is WARN. `## Methodology` excluded from the total
-    budget.
+    table above. FAILs on the per-`### <result>` ≥180-word hard cap and
+    the per-Takeaways-bullet ≥100-word hard tier; everything else is
+    WARN. `## Methodology` excluded from the total budget.
 21. **Results beat shape** (`check_v4_results_beat`, v4 only, WARN): each
     `### <result>` carries a figure framed by what-is-plotted prose ABOVE
     and interpretation prose BELOW (the three-beat). WARN (not FAIL) so a
@@ -948,6 +956,22 @@ Forward-only: each check branches on the sentinel. The v4 checks
     or task link. (Origin: the #841 round-2 two-round Lens-2 miss; the
     task-link form added by #1002 after the #928 round-1 miss; numbered
     27 because 22-26 are taken by the generation-agnostic checks.)
+36. **Result-paragraph sentence cap**
+    (`check_v4_result_paragraph_sentences`, v4 only, WARN — NEVER FAIL):
+    each prose paragraph inside a `### <result>` block runs 1–3 sentences
+    (`V4_RESULT_PARA_MAX_SENTENCES` = 3; the § Conciseness caps table
+    above). Paragraph = a maximal run of consecutive prose lines —
+    blockquote captions, fenced code, `<details>` bodies, GFM tables,
+    headings, images, HTML lines, and list items are excluded. The
+    sentence counter masks inline code, link targets, decimals, ellipses,
+    and a small abbreviation list (`e.g.`, `i.e.`, `vs.`, `et al.`,
+    `cf.`, `Fig.`, `no.` before a digit, …); semicolon chains count as
+    one unit. Register judgment — the bullets-over-prose call and the
+    FAIL decision — stays with the clean-result-critic (Lens 12); this
+    check is the free mechanical backstop for the #1333/#385 incident
+    class (dense 4–5-sentence paragraphs burning an LM critic round).
+    (Numbered 36 because 28–35 are taken by the generation-agnostic
+    checks, #1368.)
 
 Generation-agnostic checks (v2 AND v3 AND v4): figure-URL-sha-matches
 (check 22), HF-URL-resolves (check 23), figure-sidecar opaque
@@ -1244,6 +1268,11 @@ Agent-facing appendix at the bottom. Required content, in order:
   (recipe match + measurement-regime fit + required conditions present).
   Format: `- Reused <kind> from [#M](...): <path> — fit: <one line>`.
   When THIS task produced every artifact, no reuse bullets are needed.
+  Cross-issue provenance pins found in committed result-JSON `metadata`
+  (`hf_rev_<M>_*` revision keys, `issue<M>_` input paths) must be
+  declared in the body (canonically this list) — `verify_task_body.py`
+  check 35 (`check_cross_issue_reuse_provenance`) FAILs an undeclared
+  pinned revision at posting time.
 - **`**Compute:**`** — wall time, GPU type/count, pod label.
 - **`**Code:**`** — dataset-build script, pipeline driver, Hydra config,
   git commit hash, one-block reproduce snippet.
@@ -1526,8 +1555,8 @@ paragraph — RETIRES for v3).
 
 ## Anti-pattern audit (`audit_clean_results_body_discipline.py`)
 
-Catches prose-level violations the verifier doesn't (unchanged across
-generations):
+Catches prose-level violations the verifier doesn't (mostly unchanged across
+generations; the snake_case-slug category is v4-only):
 
 - Pre-registration mentions
 - Effect-size names in prose (Cohen's d, η², r-as-effect-size,
@@ -1536,6 +1565,10 @@ generations):
   exact, Mann-Whitney, Wilcoxon, bootstrap test)
 - Inline `value ± err` credence intervals (chart error bars fine)
 - Project-internal condition labels (`C1`, `C2`, `C2'`, `H1`, `P1`)
+- Backticked 3+-segment snake_case condition/cell slugs (`neg_reph_curious`)
+  in v4 reader-facing prose (Takeaways/Goal/Results; footer, captions,
+  tables, Methodology, field-name allowlist exempt; digit-leading segments
+  + bare unbackticked slugs stay LM-critic territory) — v4-only (#1372)
 - Math-style subscripts/superscripts in prose
 - GCG / PAIR / `H_a` / `REJECTED` / letter labels / `Bin A/B/C`
 - **`byte identical` / `byte-identical`** — banned phrasing.

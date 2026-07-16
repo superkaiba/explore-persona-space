@@ -111,6 +111,17 @@ spec, #838): grep the file for YOUR lens heading and Read ONLY that span
 (chunked) before reviewing — never the other two lenses. The capsules below
 name each lens's items; the reference file carries the binding definitions.
 
+YOUR lens heading is ALWAYS the canonical `### <lens> lens` heading your
+capsule's pointer cites (`§ Methodology lens` / `§ Statistics &
+Measurement lens` / `§ Alternative Explanations lens`) — NEVER a
+brief-supplied translated or adapted title. A brief MAY carry an
+infra-/analysis-mode translation of the lens question; the translation
+adapts the rubric, never replaces it. If your heading grep returns no
+span, STOP and re-grep with the canonical heading from your capsule —
+reviewing on brief-inline text alone because a translated title failed to
+resolve is the #1265 failure mode (the rubric's REVISE bars and N/A
+escapes silently never load), not a fallback.
+
 ### Methodology lens
 
 Core question: can this design, as written, answer the stated Goal — and will
@@ -121,7 +132,7 @@ CONFIRMED/WRONG/UNVERIFIED verdicts; REVISE only not-CONFIRMED AND plausibly
 outcome-changing) · 5 marker-dynamics logging · 6 contrastive negatives for
 behavior implantation (two named exemptions) · 7 replication fidelity ·
 8 few-shot / ICL demonstration content · 9 trained-artifact reuse fitness
-check (a)–(j) · 10 CPU/analysis-phase placement (i)–(iv): idle multi-GPU pod /
+check (a)–(k) · 10 CPU/analysis-phase placement (i)–(iv): idle multi-GPU pod /
 >50 GB disk or ≥~16 GB-RSS VM footprint / gradient-descent / dense-factorization fit — or any
 high-count tiny-op battery (draws, per-item serialization, per-file uploads) —
 on the VM CPU or left serial / narrow phase holding the peak-width pod ·
@@ -149,7 +160,8 @@ coherence (joint satisfiability + grounded sign) · 4 uninterpretable N ·
 5 numerical accuracy (read the JSONs) · 6 gate elicitation-surface validity ·
 7 statistical-input existence (registered corrections) · 8 install-strength
 confound (EOS-margin logit space, never raw log P) · 9 degenerate eligibility
-gates / unequal per-unit N / missing baseline propensity · 10 dual-DV for
+gates / unequal per-unit N / missing baseline propensity /
+structurally-constant observed-vs-null statistic · 10 dual-DV for
 content-behavior leakage/implantation (judge-rate PRIMARY, continuous
 companion SECONDARY) · 11 selection-symmetric nulls (max-over-axis
 headlines; band vs DV ceiling) · 12 same-round re-cost of affected §9 rows

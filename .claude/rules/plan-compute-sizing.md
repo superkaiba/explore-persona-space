@@ -1,5 +1,5 @@
 ---
-description: Planner §9 compute-sizing recipes — activation-capture HBM sizing, merge-disk budget, sentinel-signaling lane pins, the floor cross-check for long / many-call phases (planned_wall_h > 4 OR >~500 serial calls), the measured 1-cell fit-pilot basis for per-cell fit / factorization / GD phases (#1060), the store-heavy / IO-heavy phase recipe (measured per-item serialization+upload wall-time; compression-default-OFF for fp16→Xet), the CPU-phase RAM/RSS routing gate (projected peak RSS per VM-placed phase; ≥~16 GB single-or-summed routes off the shared VM), and costing wall-time against the machine the router will ACTUALLY provision + p90-based fence sizing (loads at plan time via plan-file paths; relocated verbatim from planner.md §9, #829)
+description: Planner §9 compute-sizing recipes — activation-capture HBM sizing, merge-disk budget, sentinel-signaling lane pins, the floor cross-check for long / many-call phases (planned_wall_h > 4 OR >~500 serial calls), the measured 1-cell fit-pilot basis for per-cell fit / factorization / GD phases (#1060), the store-heavy / IO-heavy phase recipe (measured per-item serialization+upload wall-time; compression-default-OFF for fp16→Xet), the CPU-phase RAM/RSS routing gate (projected peak RSS per VM-placed phase; ≥~16 GB single-or-summed routes off the shared VM), the dose-ladder checkpoint-retention default (keep dose-selected + latest, clean ruled-out rungs between rungs; size disk to the RETAINED set, #1133), and costing wall-time against the machine the router will ACTUALLY provision + p90-based fence sizing, and the external-stream >~1h presumption for network-bound streaming/harvest phases (#1092) (loads at plan time via plan-file paths; relocated verbatim from planner.md §9, #829)
 paths:
   - ".claude/plans/**"
   - "tasks/**/plans/**"
@@ -7,11 +7,14 @@ paths:
 
 # Plan compute sizing (planner §9 relocated recipes)
 
-These eight recipes are the planner-specific §9 sizing blocks — five relocated
+These ten recipes are the planner-specific §9 sizing blocks — five relocated
 verbatim from `.claude/agents/planner.md` (#829), plus the
 store-heavy / IO-heavy phase recipe (#910, from incident #813), the
-CPU-phase RAM/RSS routing gate (#1031, from incidents #778/#833), and the
-per-cell fit-phase pilot basis (#1060, from incidents #811/#931/#823). The planner
+CPU-phase RAM/RSS routing gate (#1031, from incidents #778/#833), the
+per-cell fit-phase pilot basis (#1060, from incidents #811/#931/#823), the
+external-stream floor presumption (#1092 — present since #1092, first counted
+here), and the dose-ladder checkpoint-retention default (#1133, from incident
+#1112). The planner
 applies each when its trigger matches; the compute-projection table spec +
 stratification spec stay inline in planner.md §9.
 
@@ -59,6 +62,66 @@ full-precision copy per probed dose checkpoint × 12 content cells × 9 dose
 ckpts = ~1.6 TB worst case on a 130 GB quota, with no cleanup between
 probes — the run died at the quota; the fix was atomic merge-read-delete
 per probe). This is a plan-time storage-budget check, NOT a mid-run gate.
+Per-rung checkpoint LADDERS additionally carry the retention DEFAULT of the
+next block — for a ladder phase, a keep-all-rungs bound that happens to fit
+the planned quota is no longer sufficient on its own.
+
+
+**Dose-ladder / multi-rung checkpoint retention — keep the dose-selected +
+latest rungs only; size disk to the RETAINED set, never the full ladder.**
+Any training phase that persists per-rung checkpoints for later selection —
+a dose-to-band checkpoint ladder (earliest-rung-in-band), a band-stop grid,
+a dose-matching checkpoint grid, any long run saving every k steps for a
+later pick — MUST state its checkpoint-retention policy in §9. DEFAULT:
+retain only (i) the dose-selected rung(s) (or the current selection
+candidate while the read is pending), (ii) the latest rung (crash-resume),
+and (iii) rungs the selection read has not yet covered; every ruled-out
+rung is deleted BETWEEN rungs, not in one sweep after the ladder completes.
+Three implementations bound the on-disk ladder: an online per-rung
+selection read (the deterministic log-prob band-stop callback is the
+marker-recipe case — `.claude/rules/marker-training-recipe.md`);
+upload-as-you-go then delete locally (select against the Hub copies,
+re-download only the selected rung — pricing in Hub storage headroom, the
+#541/#552 quota exposure); or a coarse+refine two-pass grid
+(sparse saves that fit, judge, deterministic retrain to the bracketing
+steps — #1112's own RunPod contingency). A design whose selection read
+runs only AFTER the full ladder has no between-rung deletion point —
+carve-out (iii) would cover every rung, degenerating the default to
+keep-all — so a post-hoc-selection ladder MUST adopt one of the bounding
+implementations above or take the justified keep-all exception below;
+it cannot ride carve-out (iii). Deletion composes with the Upload
+Policy UNCHANGED: a non-selected rung is deleted only when covered by a
+plan §10 `discarded_artifacts:` entry ({name, reason, regen_recipe} —
+non-selected rungs of a deterministic retrain from pinned data + commit +
+seed are the canonical candidate, #1112's own declared discard) OR
+uploaded first; selected / headline-carrying checkpoints keep the full
+upload-before-delete invariant (never delete an unuploaded, undeclared
+checkpoint). The §9 disk estimate sizes to the RETAINED set plus the
+transient high-water mark (`retained_rungs × per_rung_gb +
+in_flight_rung_gb + concurrent transients`), with `per_rung_gb` grounded
+on what the trainer ACTUALLY writes — weights + optimizer state, so a
+full-FT rung can run well past the bf16 weights (#1112 planned ~15 GB/rung;
+realized rungs ran ≥15 GB, up to ~28 GB per the incident filing). Keeping
+every rung locally is the JUSTIFIED
+EXCEPTION, not the default: the plan must say why the rungs must coexist,
+size the disk to the FULL ladder at realized per-rung size, and DECLARE
+that requirement in the launch flags (`--boot-disk-gb`) so the #1118
+volume-threading / typed refusal engages on a lane failover. A merge-disk
+bound that fits the PLANNED lane's disk is NOT sufficient on its own
+(#1112: a compliant 575 GB keep-all bound sat under the planned 750 GB GCP
+boot disk; the GCP→RunPod failover delivered the `ft-7b` default 200 GB
+volume and the run ENOSPC'd — errno 28 mid-safetensors-write — at rung
+24/30: crash + terminate + a fresh 800 GB recovery pod, billing ~$16/hr
+per the incident filing. The same design's retention-bounded footprint is
+~2–3 rungs ≈ 30–85 GB and fits every lane). Critic enforcement:
+Methodology lens item 16
+(`.claude/rules/critic-lens-reference.md`) REVISEs a ladder plan whose
+disk estimate assumes keeping every rung without this justification.
+Mechanical backstop: `scripts/verify_plan.py` c33 (`c33_ladder_retention`)
+WARNs an experiment|analysis plan carrying checkpoint-ladder vocabulary
+whose compute-sizing sections state no retention vocabulary (escape:
+`N/A — no per-rung checkpoint persistence`); surface-only — adequacy of a
+stated policy stays with this lens.
 
 
 **Sentinel-signaling workloads need a /workspace-contract lane — never
@@ -105,6 +168,23 @@ asserted ~2 s/fit sailed under the old 12 h trigger while the measured
 CPU wall-time blowup vs its §9 estimate.)
 
 
+**External-stream phases (network-bound row iteration) — the floor is presumed, not
+sized.** A §9 row whose component consumes an external streaming source (HF `datasets`
+`streaming=True`, API pagination, web harvest, S3/HTTP row iteration) has NO reliable
+count × per-call sizing basis: the per-row kernel is trivial (~ms parse+filter) and
+wall-time is network-throughput-bound, so both the wall-clock trigger and the
+~500-call presumption above miss it (#1092: an intentionally unbounded full-corpus
+stream scanned ~1.8M rows over 3h06m; its bounded verification twin used a
+keep-quota stop — both shapes defeat count × per-call sizing). When the scanned-row
+count exceeds ~10^4, is unknowable in advance (yield-dependent keep-quota stop), or
+the pass is intentionally unbounded (full-corpus stream), the row is PRESUMED over
+the ~1h checkpoint floor: state the scanned/kept volume targets instead of a
+fabricated wall estimate, and name the per-chunk persistence + fingerprint-gated
+resume mechanism (`.claude/rules/code-style.md` § "Checkpoint per
+phase" external-stream presumption; review gate: code-reviewer.md Step 3.6). A short
+bounded fetch (known ≤~10^4-row scan, fixed stop) is exempt.
+
+
 **Per-cell fit phases — the per-call basis MUST be a MEASURED 1-cell pilot
 through the production entrypoint; an asserted per-call cost is NOT a
 sizing basis.** Any §9 row whose component loops a fit / solve /
@@ -147,7 +227,14 @@ pilot as the phase's FIRST step with an abort threshold — pilot ×
 n_calls / parallelism re-projected against the row; >2× the row ⇒ the
 vectorize signature check fires before the loop proceeds — and marks the
 row's basis `pilot-gated`. This is the fit-phase twin of the store-heavy
-block's measured one-item rule below.
+block's measured one-item rule below. Sizing precedent (#1092 offvm
+battery refit, 2026-07-15): a permutation-null battery at ambient
+10,752-dim output, pilot-gated because its inputs didn't exist at plan
+time, measured 71.9 GB RSS against a 64 GB planned cap and projected
+12.8 h/box against 5 h planned (~2.6×) — the pre-registered abort
+threshold + checkpoint-restore recovered it, but ambient-dimension
+permutation/null batteries should be presumed ≥2× the naive RSS/wall
+projection until pilot-measured.
 
 
 **Store-heavy / IO-heavy phase sizing — measure one item's serialization +
@@ -197,7 +284,14 @@ RSS ≥ ~16 GB, OR when concurrent VM-resident phases' SUMMED projected RSS
 crosses the same ~16 GB bar (#833: two ~13-15 GB phases concurrently
 resident lost 5 cells to earlyoom — concurrent residency SUMS; #778: a
 22-GiB-RSS null battery was earlyoom-killed 3× on the starved VM —
-~128 GB total, ~95 GB resident — before its cpu-bigmem pivot). A routed
+~128 GB total, ~95 GB resident — before its cpu-bigmem pivot; #1092
+2026-07-08: a fit-grid pilot's real per-unit RSS ran ≥22.9 GB against a
+plan projection of 8–10 GB — a ~2.3–2.9× underestimate — and was
+earlyoom-SIGTERMed on the shared VM before the pre-registered cpu-bigmem
+escape lane recovered it: a fit-grid RSS projection is presumed
+underestimated until pilot-measured on ONE unit at production shape, and
+a projection within ~3× of the VM routing bar routes straight to
+cpu-bigmem rather than piloting on the shared VM). A routed
 phase sizing ≥16 GB MUST state `--min-ram-gb` in its launch row
 (CLAUDE.md's ADOPTION sentence says '>16 GB'; this rule's ≥ closes the
 exactly-16 GB edge — the RunPod `cpu-mid` fallback has exactly 16 GB, zero

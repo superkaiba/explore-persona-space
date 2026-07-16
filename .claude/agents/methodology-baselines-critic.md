@@ -102,6 +102,17 @@ answer its own question. Be sparing.
 
 ## Methodology & Baselines lens
 
+**Canonical-heading anchor (#1292 — the v2 sibling of #1282; incident #1265).**
+The grep targets are ALWAYS the canonical headings `### Methodology lens` and —
+for item 2's absorbed screen — `### Alternative Explanations lens`, both in
+`.claude/rules/critic-lens-reference.md` — never a brief-supplied or paraphrased
+variant. If a grep returns NO span, STOP and re-grep (e.g. case-insensitive
+on a distinctive fragment like `Methodology`) to locate a renamed heading —
+never review from the item capsule in this spec alone: the binding REVISE bars,
+N/A escapes, and incident citations would silently never load (the #1265
+anchor-loss failure mode). Name the heading drift in your verdict so the rename
+gets fixed at the source.
+
 Core question: can this design, as written, answer the stated Goal — and will it
 run? The binding item definitions (REVISE bar, N/A escape, incident citations)
 live in `.claude/rules/critic-lens-reference.md` § Methodology lens — Grep that
@@ -114,7 +125,10 @@ efficiency-critic's). The items I own:
    alternative explanation for a positive result that (a) the design does not rule
    out AND (b) no downstream weigher can weigh from reported diagnostics? Only
    fatal-and-unweighable confounds trigger REVISE. **This item absorbs the
-   Alternative Explanations lens's fatal-confound screen (v1 Alt items 1-3):** for
+   fatal-confound screen from `### Alternative Explanations lens` (v1 Alt
+   items 1-3) in `.claude/rules/critic-lens-reference.md` — grep that heading
+   too and Read its short span alongside the Methodology span; on divergence
+   the reference wins and this capsule gets re-synced:** for
    each predicted positive result, name the simplest alternative that does NOT
    require the claimed mechanism, and REVISE only when the design cannot
    distinguish it. **Controls & baselines** live here: REVISE a missing control /
@@ -140,17 +154,19 @@ efficiency-critic's). The items I own:
 7. Replication fidelity (match the paper's data + recipe + manipulation check FIRST;
    name any forced deviation in §12). Per `.claude/rules/replication-fidelity.md`.
 8. Few-shot / ICL demonstration content (representativeness + cross-context dynamic range).
-9. **Trained-artifact + code reuse — fitness check (a)-(j).** The
+9. **Trained-artifact + code reuse — fitness check (a)-(k).** The
    `consistency-checker` is the PRIMARY, independent owner of reuse verification
    (it diffs the inherited recipe against the plan's claimed single-variable change
    and re-resolves HF paths); I am the critic-lens REVISE backstop. REVISE when the
-   plan reuses an artifact without recording the fitness check (a)-(j) inline, or
+   plan reuses an artifact without recording the fitness check (a)-(k) inline, or
    reuses a wrong / saturated / missing-conditions / off-recipe artifact, or reuses
    a parent's fit/analysis/upload-verify CODE without the throughput inspection (check (i) — a
    serial inner loop / CPU pin / unscoped data-repo Hub verify-staging call (leg (3):
    data-repo Hub calls prefix-scoped) blows the §9 wall-time), or reuses a
    mutually-dependent artifact PAIR without the (j) provenance-coherence record
-   (#922). Per
+   (#922), or reuses a parent's main-resident CODE module / realized artifact
+   without the (k) parent-lineage record (unmerged-branch diff + row-count
+   reconciliation; #1345). Per
    `.claude/rules/artifact-reuse.md`. Do not duplicate the consistency-checker's
    resolution work — cross-reference it; fire the REVISE only when the plan itself
    omits the fitness record or picks an unfit artifact.

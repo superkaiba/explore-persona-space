@@ -123,7 +123,7 @@ section wins on invocation form.
 - **Never skip steps.** If a test fails, investigate — don't disable it.
 - **A test failing on pristine `main` is NOT automatically "stale" — root-cause it before parking.** When a forward-port / rebase surfaces a failure that "also fails on clean main," do not write it off as a pre-existing stale test. If the test pins a documented invariant or gotcha (grep `.claude/rules/gotchas.md` and the test's own docstring for what it guards), treat the failure as a candidate REAL pre-existing bug and root-cause it before parking. (2026-06-23: two `gpu_lease` tests were repeatedly triaged as "pre-existing on main" until root-caused as a real `CUDA_VISIBLE_DEVICES`-set-after-`import peft` bug that silently collapses parallel `+gpu_id` launches onto GPU 0 — caught only because the user said "Yes fix.")
 - **Commit messages: follow repo convention.** Check `git log --oneline -10` for style.
-- **ALL code edits on local VM.** Never edit code directly on pods. If pods need the change, commit + push, then experimenter `git pull`s.
+- **ALL code edits on local VM.** Never edit code directly on pods. If pods need the change, commit + push, then experimenter `git pull`s. Push BARE and check the exit code — never piped through `tail`/`grep`/`head` (`guard_piped_git_push.sh` blocks it; a pipe masks a rejected push).
 
 ### Content hygiene for harmful-content data files (EM corpora, refusal-bait, safety-benchmark banks)
 
@@ -152,7 +152,7 @@ If you write tests after the implementation (the default), still keep them gener
 
 ### After Implementation
 
-1. **Run tests:** `uv run pytest <relevant tests>` or the project's equivalent.
+1. **Run tests — gate-matched scope (#1288).** Before posting the report marker, enumerate from the issue worktree the SAME selection the Step 9c gate will run: `uv run python scripts/select_step9c_tests.py --json` — the DEFAULT invocation (the base defaults to FETCHED `origin/main` per #1289; never `--base main`, which exists only to deliberately diff against a possibly-lagging local ref and does NOT match the gate). Then (a) **pin-sweep**: grep the ENUMERATED test files for every literal / command fragment / symbol your diff changed or deleted (OLD and NEW form), plus the edited file's basename for workflow-surface edits — every hit is a pinning test: update it if stale and add it to your run set; (b) **run in-turn** (per § Local runs below) the union of the diff-linked selections (`touched-test` / `stem-map` / `import-map` / `glob-scan` `selection_reasons`), the pin-sweep hits, and any test file the diff itself edits; (c) the invariant-only remainder (reason `invariant`, no pin hit) defers to Step 9c — state its deferred count in `(c) How to verify`. If a mandatory-set file genuinely cannot finish in-turn (e.g. a pin hit on `tests/test_workflow_lint.py`, 319-771 s), the existing NOT-RUN escape applies — but a pin-sweep HIT left NOT-RUN is presumptively blocker-adjacent (unlike a NOT-RUN slow invariant file), and the code-reviewer should treat it as such. This NARROWS the local-vs-gate scope gap (it does not eliminate it — Step 9c remains the backstop); a self-chosen scope narrower than this is the #1288 rework shape (a changed pinned literal passed 14 self-chosen tests, then failed the gate's selection ~30 min later).
 2. **Run lint:** `uv run ruff check . && uv run ruff format .`
 3. **Diff check:** Re-read your own changes. Any unintended modifications?
 4. **Self-review against plan:** does the diff match the plan?
@@ -225,6 +225,7 @@ When you're done, post this structured report as the `<!-- epm:results v<n> -->`
 - **Tests run:** `tests/test_foo.py::test_bar` PASS (new), `tests/test_baz.py::test_quux` PASS (existing), …
 - **For non-trivial features**, the diff includes ≥1 end-to-end happy-path test plus ≥2 distinct error/edge-case tests. If a smaller set is appropriate (e.g. surgical bug fix), say so and justify.
 - **Regression test for a substantive BLOCKER fix** (REQUIRED when this round closes a substantive BLOCKER by adding a permanent invariant — see After-implementation step 5): cite the committed pytest (the `tests/` path + the input that trips the guard + the expected raise / value) and confirm it fails pre-fix / passes post-fix. Skip only when the round added no permanent-invariant BLOCKER fix.
+- **Gate-scope check (#1288):** selector `n_tests=<N>` (base=`<resolved base>`); ran locally: `<files>`; pin-sweep: `<fragments grepped>` → `<hits>`; deferred invariant-only: `<M>` files (Step 9c runs them). Any pin-sweep hit left NOT-RUN is named here with the exact copy-pasteable command (it is presumptively blocker-adjacent — see After-implementation step 1).
 - **Lint:** `uv run ruff check . && uv run ruff format --check .` — PASS / FAIL details
 - **Reproduction commands** the user can run without reading the diff:
   ```

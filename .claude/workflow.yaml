@@ -839,7 +839,14 @@ pivot_criteria:
       FLOP/roofline estimate, a true sequential dependency, or a NAMED
       QUANTIFIED non-compute bottleneck — API rate caps, download
       bandwidth, GPU-capacity wait, contention on an ALREADY-vectorized
-      job with the vectorized state cited). A marker arriving
+      job with the vectorized state cited). A negative finding settles
+      vectorization, NOT fleet width: on an embarrassingly-parallel unit
+      grid with checkpoint/restore live (or a relaunch already
+      happening), the width re-evaluation of
+      `.claude/rules/vectorize-many-cell-fits.md` § Mid-run trigger runs
+      before `continue_as_is` at the original width — the `width_reeval:`
+      arithmetic rides the same marker note (no new marker kind; widening
+      posts `action: reshard_width_<K>`). A marker arriving
       PRE-RESOLVED (`action: continue_as_is`,
       `action: auto_descope_to_<spec>`, or any other resolution)
       WITHOUT a lever-0 record in the component's chain
@@ -1581,7 +1588,7 @@ markers:
     fields: "Codex job_id, elapsed seconds, terminal phase, fetch_retries=<k> token"
   - kind: "epm:codex-task-failed"
     posted_by: scripts/codex_task.py
-    when: "Codex companion task terminated non-cleanly (phase in {failed, cancelled}), force-cancelled after max-wait cap, force-cancelled by stall detector (phase=running but log untouched > stall_detect_secs), killed by SIGTERM/SIGINT, exceeded probe-error cap, post-spawn probe rejected the job-id, or spawn failed before a job-id was assigned"
+    when: "Codex companion task terminated non-cleanly (phase in {failed, cancelled}), force-cancelled after max-wait cap, force-cancelled by stall detector (phase=running but log untouched > stall_detect_secs), killed by SIGTERM/SIGINT, exceeded probe-error cap, post-spawn probe rejected the job-id, or spawn failed before a job-id was assigned, or short-circuited pre-spawn by the quota-exhausted sentinel (#1126: note carries 'codex-quota-exhausted' + the reset timestamp; exit 9; sentinel .claude/cache/codex-quota-exhausted-until self-expires)"
     fields: "Codex job_id (if assigned), elapsed seconds, terminal phase OR error description (e.g. 'timed out after Ns', 'N consecutive probe failures; last error: ...', 'stall detected: phase=running but log file untouched for Ns')"
   - kind: "epm:clarify"
     posted_by: skill
@@ -1622,7 +1629,7 @@ markers:
   - kind: "epm:plan-verify"
     posted_by: skill (adversarial-planner Phase 1.5.0 orchestrator; VM-side only)
     when: "after each scripts/verify_plan.py run against the newest plans/v{K}.md, before the fact-checker + critic ensemble spawn"
-    fields: "verdict (PASS|FAIL|PASS-with-override), n_fail, n_warn, failed/overridden check ids, plan version checked"
+    fields: "verdict (PASS|FAIL|PASS-with-override), n_fail, n_warn, failed/overridden check ids, plan version checked — verdict/n_fail/n_warn come from the canonical parse one-liner in adversarial-planner SKILL.md Phase 1.5.0, never an improvised d.get('verdict') parse"
   - kind: "epm:plan-approved"
     posted_by: skill (relaying user reply, OR auto in an autonomous session)
     when: "Step 2c"
@@ -1664,6 +1671,10 @@ markers:
           FAIL_NO_CANARY (incident #546 round 1, 2026-06-10: PASS_UNIFIED
           train + full-grid cross-eval → HF 404 on never-trained
           adapters; the smoke could never pass by construction).
+          Non-cell smoke axes (questions/rows/steps/draws) sized below a
+          downstream phase's minimum-N assert are likewise FAIL_NO_CANARY
+          — the smoke crashes by construction (incident #1315 r4); the
+          notes: line names the floor per sliced axis.
         `verdict: PASS_CANARY canary_cell=<cell_id>` — paths diverge
           (e.g., smoke uses in-process train, sweep uses subprocess
           wrapper) AND the plan §4 Design section justified the
@@ -1692,7 +1703,15 @@ markers:
       per-component compute-projection table. Body shape:
       `component: <planner-§9-row-name> planned_wall_h: <P> projected_wall_h: <X> ratio: <Y> basis: <planner-§9-row-basis>`.
       Optional note fields: `action: auto_descope_to_<spec> |
-      vectorize_fix_round`, `signature_check: positive|negative` (+ 1-3
+      vectorize_fix_round | reshard_width_<K>` (the last = a
+      lever-0-resolved, recipe-preserving widening resolution — same
+      eligibility class as `continue_as_is`),
+      `width_reeval: <remaining units × measured h/unit ÷ candidate
+      width + provision/stage/restore overhead vs staying>` (required
+      whenever a negative signature resolves on an embarrassingly-parallel
+      unit grid with checkpoint/restore live or at a relaunch point —
+      vectorize-many-cell-fits.md § Mid-run trigger),
+      `signature_check: positive|negative` (+ 1-3
       lines of arithmetic when negative), `flop_bound_finding:
       <quantified finding>` (required for `continue_as_is` at ratio
       ≥ 5×, per pivot_criteria clause 0c: roofline arithmetic |
@@ -2230,7 +2249,9 @@ markers:
       est_gpu_hours: <number>`. Fields line-initial one-per-line
       preferred; the `; `-joined single-line form is accepted by the
       parser (`task_workflow.parse_followup_note_field` splits each
-      line on `;` + whitespace; #1090/#841). A followup-scope marker is
+      line on `;` + whitespace; #1090/#841); literal backslash-n
+      escaped-newline notes are normalized parse-side (#1120). A
+      followup-scope marker is
       UNRUN until a matching `epm:same-issue-followup-run v1` with the
       same `followup_label` exists. Multiple DISTINCT `followup_label`s may
       be queued concurrently (same kind, append-only versions);
@@ -2261,7 +2282,9 @@ markers:
       changed>`. Fields line-initial one-per-line preferred; the
       `; `-joined single-line form is accepted by the parser — but a
       PROSE-LED note with no fields parses no label, closes nothing,
-      and undercounts the round caps (#1090 fu1). Posted as the round
+      and undercounts the round caps (#1090 fu1); literal backslash-n
+      escaped-newline notes are normalized parse-side (#1120). Posted
+      as the round
       exits `followups_running` and
       re-parks at `awaiting_promotion`. Idempotency record: an
       `epm:followup-scope v1` whose `followup_label` has a matching
@@ -2276,7 +2299,14 @@ markers:
       Run markers whose `outcome` begins `retroactive-close` do NOT
       count toward either round cap — they record bookkeeping closure
       of a round that already ran (or was superseded), not a new
-      auto-run (SKILL.md Step 0 § Stale-label disposition rule).
+      auto-run (SKILL.md Step 0 § Stale-label disposition rule). A
+      mid-round defer/teardown exit ALSO posts this marker, AFTER the
+      defer re-park, with `outcome: deferred — <one-line reason>`
+      (SKILL.md Step 9b § Same-issue follow-up loop step 3 defer exit):
+      the label closes and the deferred round is never
+      auto-re-dispatched (a deliberate resume posts a fresh scope under
+      a NEW label); a deferred proposer-band round still counts toward
+      its cap.
   - kind: "epm:question-linked"
     posted_by: skill (via scripts/living_docs.py link, at /issue Step 0c after the Goal gate)
     when: "Step 0c (kind:experiment only; analysis/infra/batch/survey exempt)"
@@ -3214,19 +3244,19 @@ workflow_fix_on_bug:
     durable_signal: "workflow_fix_target: line in the task body's ## Provenance block"  # survives watcher respawn (primary; task_workflow.is_workflow_fix_session)
     behavior: "A session under EITHER signal logs+notifies candidates it raises; it NEVER auto-files/spawns MORE workflow-fix tasks for its own findings (analogue of AUTO_REVIEW_DISABLED). Escape valve: such a session CAN still emit candidate blocks — they are parked/notified, not silently dropped."
   dedup_key: "(target_file, fingerprint)"        # fp = sha256(normalize(proposed_change)+'||'+normalize(bug_observed))[:12]; task_workflow.wf_fix_fingerprint
-  dedup_predicate: "A candidate is a duplicate iff an OPEN kind:infra task has a workflow-fix: title prefix AND a wf-fix-fp:<fp> tag matching the fingerprint AND a ## Provenance workflow_fix_target line EXACTLY matching target_file AND status NOT in {completed, archived}. Same file + DIFFERENT fingerprint is NOT a duplicate (it files its own task). Impl: task_workflow.is_open_workflow_fix_task; tested in tests/test_workflow_fix_dedup.py."
+  dedup_predicate: "A candidate is a duplicate iff an OPEN kind:infra task has a workflow-fix: or daily-fix: title prefix (task_workflow.WF_FIX_TITLE_PREFIXES; #1180 cross-channel) AND a wf-fix-fp:<fp> tag matching the fingerprint AND a ## Provenance workflow_fix_target line EXACTLY matching target_file AND status NOT in {completed, archived}. Same file + DIFFERENT fingerprint is NOT a duplicate (it files its own task). Impl: task_workflow.is_open_workflow_fix_task; tested in tests/test_workflow_fix_dedup.py."
   dedup_surfaces:
-    primary: "title prefix 'workflow-fix:' (via task.py new --title / set_title) + tag 'wf-fix-fp:<fp>' (via add-tag) — both round-trip through view --json / REGISTRY"
+    primary: "title prefix 'workflow-fix:' or 'daily-fix:' (task_workflow.WF_FIX_TITLE_PREFIXES, one per filing channel; via task.py new --title / set_title) + tag 'wf-fix-fp:<fp>' (via add-tag) — both round-trip through view --json / REGISTRY"
     fallback: "grep the literal 'workflow_fix_target:' line in body.md ## Provenance (written verbatim via --body-file)"
     never: "set_body — strips leading frontmatter except paper/abstract; NEVER route a dedup key through it"
   spawn_command: "uv run python scripts/spawn_session.py spawn-issue --issue <N> --auto"
   orchestrator_actions:
     - "If running under the recursion guard (workflow_fix_target Provenance line OR EPM_WORKFLOW_FIX_SESSION=1): LOG epm:workflow-fix-candidate v1 (note: parked — EPM_WORKFLOW_FIX_SESSION), notify, STOP (do NOT file/spawn)"
-    - "Grep the workflow surface for the pattern; populate target_file (comma-separated list or glob when uniform)"
+    - "Grep the workflow surface for the pattern; populate target_file (comma-separated list or glob when uniform); record the grep cmd + hit count for the body's verified-at-filing: line — BINDING (#1307): per-target hits for each named target_file (a presence claim with a 0-hit named target is a mis-target: re-grep repo-wide + correct target_file first); a nonexistence claim records a repo-wide relocation grep; an ABSENCE claim about a text-matching guard (substring list / regex classifier / transient-error predicate) additionally needs a semantic probe (run the predicate against the claimed text and/or grep fragments/substrings of it repo-wide) + a landed-fix history check (git log --oneline --since='7 days ago' -- <target_file>) — a verbatim-literal 0-hit grep alone is not absence evidence (#1386/#1360)"
     - "Compute fp = task_workflow.wf_fix_fingerprint(proposed_change, bug_observed)"
     - "DEDUP: if task_workflow.is_open_workflow_fix_task(target_file, fp) returns an id, log epm:workflow-fix-candidate v1 (note: deduped against #M), continue — do NOT double-file (a same-file DIFFERENT-fp candidate is NOT a dup, file it)"
     - "Post epm:workflow-fix-candidate v1 to the PARENT task's events.jsonl (or .claude/cache/workflow-fix-events.jsonl if no task) with candidate fields + routing decision inline"
-    - "File the task: task.py new --kind infra --title 'workflow-fix: <proposed_change, <=60 chars>' --body-file <template> --origin-prompt '<verbatim candidate>' (template: rule doc § Body-file template; ## Provenance carries the workflow_fix_target + fingerprint lines verbatim)"
+    - "File the task: task.py new --kind infra --title 'workflow-fix: <proposed_change, <=60 chars>' --body-file <template> --origin-prompt '<verbatim candidate>' (template: rule doc § Body-file template; ## Provenance carries the workflow_fix_target + fingerprint lines verbatim; ## Workflow gap carries the verified-at-filing: grep-evidence line, or n/a — reason)"
     - "Tag the dedup keys: task.py add-tag <N> wf-fix; task.py add-tag <N> wf-fix-fp:<fp>"
     - "Spawn the session: spawn_session.py spawn-issue --issue <N> --auto (architectural changes spawn WITHOUT --auto, OR the plan carries architectural: true so Step 2c parks at plan_pending — § architectural greenlight)"
     - "Post epm:workflow-fix-task-filed v1 on the PARENT task; continue current work without blocking — the child /issue session implements the fix via the full code-change pipeline"

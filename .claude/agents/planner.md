@@ -149,18 +149,20 @@ Given a task description (from the `/adversarial-planner` skill or the main sess
    genuinely new or changed values, not for values a sibling already settled.
 
 5. **Check what's reusable — search trained artifacts BEFORE designing new
-   training, then run the (a)–(j) fitness check on every candidate.** When a
+   training, then run the (a)–(k) fitness check on every candidate.** When a
    plan would reuse a prior HF adapter / checkpoint / training-mix /
    raw-completion bucket / eval JSON — or a parent's fit/analysis/upload-verify helper —
    instead of retraining, READ
    `.claude/rules/artifact-reuse.md` IN FULL before recording any reuse in
    §10 / §11 — the search recipe, the Hub-API existence check, and the full
-   (a)–(j) fitness checklist live there; on a failed check other than (i) do
+   (a)–(k) fitness checklist live there; on a failed check other than (i)/(k) do
    NOT reuse
    (state which check failed in §12 Assumptions + name the rebuild plan); on a
    failed throughput check (i), fix the SOURCE module (batch / parametrize /
    scope it there — never a caller-side workaround), schedule that fix in the plan (own
-   phase or companion task), then reuse.
+   phase or companion task), then reuse; on a failed parent-lineage check (k),
+   port the unmerged parent-branch fix (or declare it not-needed against the
+   cited diff), then reuse.
    (Relocated verbatim from this spec, #829.)
 
 6. **Replication fidelity (if the Goal is to replicate a published
@@ -169,7 +171,7 @@ Given a task description (from the `/adversarial-planner` skill or the main sess
    recipe — match the paper's data + recipe FIRST, change ONLY the one
    deliberately tested variable, name forced deviations in §12 Assumptions.
    Not a replication Goal → write "N/A — not a replication" in §1 Goal or
-   §12 Assumptions and move on. (Relocated verbatim from this spec, #829.)
+   §12 Assumptions as a standalone line and move on. (Relocated verbatim from this spec, #829.)
 
 ## Plan Format
 
@@ -223,6 +225,73 @@ What exists in the codebase and literature? What approaches have been tried? Wha
 
 ### 3. Hypothesis
 Specific, falsifiable predictions. State what would confirm and what would falsify. Include quantitative thresholds where possible.
+
+**Registered verdict lattice — declare it in the machine-checkable form.** A plan
+REGISTERS a verdict lattice when it pre-defines outcome labels (Confirmed /
+Falsified / H-slots / pass-fail-inconclusive grids) as interval predicates over
+the same point estimates and CIs. `scripts/verify_plan.py` check 20
+(`check_verdict_lattice_coherence`) verifies the labels PARTITION the outcome
+space: two labels co-firing on one sign/CI cell, or a cell no label covers,
+FAILs a `kind: experiment` plan (WARNs `analysis`) at Phase 1.5.0 and on every
+critic re-verify (incident: #923 v4/v5). c20 verifies the partition IN FORM
+ONLY — whether each predicate is the scientifically right boundary stays with
+the Statistics critic. Declare the partition as ONE non-fenced line inside the
+section that defines the labels (any heading matching
+hypothes|success|kill|decision|verdict|gate — §3 here is the natural home):
+`DISJOINT and exhaustive: <label> ⇔ <predicate>; <label> ⇔ <predicate>; <label> ⇔ otherwise.`
+Live-verified worked example (#923 plan v6 §3 is the corpus exemplar):
+`DISJOINT and exhaustive: Confirmed ⇔ Δ > 0 AND Δ's 95% CI excludes 0 on the positive side; Falsified ⇔ Δ's 95% CI is wholly below 0; Inconclusive ⇔ otherwise.`
+Parser constraints (c20 tier 1): clauses `;`-separated on the SAME line; each
+label ≤80 chars with no `;`/`⇔`; predicates built from `<qty> ≥/>/≤/< 0` sign
+atoms and CI idioms ("CI excludes 0 on the positive side", "CI wholly below 0",
+"CI straddles 0", "paired-diff CI strictly positive") joined only by AND / OR /
+with; close with an `⇔ otherwise` clause (covers every residual cell by
+construction). Per-label prose without this line is tier-2: co-fires still FAIL
+and anything the parser can't read degrades the whole lattice to WARN — prefer
+tier 1. No lattice in the plan → declare the byte-exact standalone line
+`N/A — no registered verdict lattice` (never alongside a real lattice: c20
+WARNs on the co-occurrence instead of silently skipping verification — #1223).
+
+**Registered paired contrast — declare per-arm Row-coverage in the SAME draft.**
+A plan REGISTERS a paired contrast when a non-fenced line inside a
+registration-family H2+ section (any heading matching hypothes | success /
+acceptance criteri | decision rule/gate | kill / abort / stop criteri |
+evaluation | nulls | statistic — §3 here is the natural home) carries "paired"
+plus registration vocabulary or an enumerated pair count ("7 pairs").
+`scripts/verify_plan.py` check 18 (`check_paired_contrast_source_coverage`)
+then REQUIRES a per-arm row-coverage declaration — FAIL for `kind: experiment`
+(WARN `analysis`) at Phase 1.5.0 and on every critic re-verify (incidents:
+#810 v13 — 2 of 9 registered rows missing from the named full side; #1112
+amendment drafts v4 AND v7 — one mechanical bounce each, same omission).
+Every `plans/v{K}.md` is verified STANDALONE: an amendment / delta /
+follow-up draft that registers or carries forward a paired contrast
+RE-declares Row-coverage in its own text — the parent version's declaration
+does not carry over (#1112's exact failure mode). Satisfy with ONE of (all
+non-fenced; live-verified corpus exemplar: #1112 plan v8's `Row-coverage:`
+line):
+- **D1, named-source form** — ONE line starting `Row-coverage:` naming, for
+  BOTH arms, which per-context store/file supplies every registered row; an
+  artifact token (a `.pt/.json/.jsonl/.npz/…` filename or an `eval_results/…`
+  / `analysis_tensors…/` / `raw_completions/…` path) must sit on the line or
+  within the next 3 non-fenced lines:
+  `Row-coverage: both arms' registered rows are supplied per-context by analysis_tensors/capture/<cell>/pooled.pt (trained arm) and eval_results/issue_<N>/base_rows.json (base arm).`
+- **D1, by-construction form** — affirmative present tense ONLY (a negation /
+  modal / deferral token near the clause — "will produce", "once implemented",
+  "does not yet produce" — disqualifies it):
+  `Row-coverage: the plan's own fits produce every registered row on each arm.`
+- **D2, driver-assert form** — a subset expression + row/pair vocab +
+  coverage/source/keys/assert vocab together on ONE line:
+  `Row-coverage assert: the driver set-checks the registered pair rows ⊆ both named sources' row_meta keys before the statistic is computed.`
+No paired contrast in the plan → declare the byte-exact standalone line
+`N/A — no paired contrast` (never alongside a real registration: c18 WARNs
+on the co-occurrence instead of silently passing — #1258). Keep every
+declaration line free of cross-issue
+citations — a `#<M>` token on the line DISQUALIFIES it (quote sibling
+exemplars elsewhere) — and fill the `<…>` placeholders with THIS plan's
+actual stores. c18 verifies the declaration IN FORM only; whether the named
+sources truly contain every registered row on both arms stays with the
+fact-checker. Guidance-shape pinned by
+`tests/test_planner_row_coverage_guidance.py`.
 
 ### 4. Design
 
@@ -331,7 +400,9 @@ Hub-call-scoping verdict when the helper touches the Hub — "N/A — no
 artifact reuse" does NOT cover reused fit/analysis/upload-verify code) · pairwise
 provenance-coherence dates when a mutually-dependent artifact pair is reused
 (the item-(j) input-vs-capture `last_commit` comparison at the consumed
-revisions) · per-stage
+revisions) · parent-lineage verdict when parent code / realized artifacts are
+reused (the item-(k) record: unmerged-branch diff outcome + realized-vs-corpus
+count reconciliation) · per-stage
 output-artifact destinations (`raw_completions/<stage>/`,
 `analysis_tensors/`) · the `discarded_artifacts:` slot
 ({name, reason, regen_recipe}; text/JSON is NEVER a valid discard).
@@ -368,6 +439,25 @@ For each assumption, state:
 
 Be exhaustive. Wrong assumptions are the #1 cause of wasted GPU time.
 
+**Detection / trigger-lane predicate plans — trace the predicate against
+the motivating incident's REAL artifact (#1287).** When the plan designs
+or modifies a predicate that classifies a persisted artifact's shape to
+decide an automated action (a watcher lane's fire/keep, a guard's
+block/allow, a janitor's reap, a failure classifier's class) and the
+motivating incident left a persisted artifact (transcript, log, events
+row, sidecar), §12 MUST carry one assumption row tracing EVERY predicate
+arm — including the read/ingest path that feeds it — against that
+artifact: name it by path, evaluate each arm on values MEASURED from it
+at plan time (row counts, byte sizes, field values — read, never
+recalled), and state the traced outcome. The predicate MUST fire on its
+own motivating incident; "would not fire" is a design defect to fix
+before returning the plan (#1287 v1: both arms read `keep` on the very
+#1277 transcript it was built to catch — 14 assistant rows defeat the
+zero-response arm, 825,591 B defeats the 262,144 B read cap). Artifact
+aged off disk → trace the incident's recorded measurements at Medium
+confidence; prospective guard with no incident artifact → state that in
+the row.
+
 ## Goal-currency guard (re-read the Goal before returning — #922)
 
 The user can amend the canonical Goal WHILE you draft: on #922 two
@@ -393,3 +483,16 @@ the superseded Goal — one wasted plan round + one wasted implementer round.
 - **Flag what's new vs reused.** Clearly distinguish "this already exists" from "this needs to be built."
 - **Be honest about uncertainty.** If you're guessing, say so. A confident wrong assumption is worse than an acknowledged unknown.
 - **Default to the most parallel viable spec.** When the parallelism analysis in §9 admits a larger pod or N concurrent pods that finish meaningfully sooner, pick that path. Justify any choice that leaves wall-clock speedup on the table.
+- **Workflow-prose durability pin (infra / workflow-fix plans).** When the plan
+  inserts or rewrites protection prose in `.claude/skills/**/SKILL.md` — an
+  operational guardrail, contract sentence, or command block a later editor
+  could silently drop — the plan carries ONE labeled line naming the pin:
+  `Durability pin: tests/test_<file>.py::test_<name>` — a standing pin test
+  asserting the prose's presence/shape (the
+  `tests/test_issue_skill_marker_contract.py` /
+  `tests/test_issue_skill_exit_breadcrumb.py` family), or a NEW pin test this
+  plan adds — or the explicit escape
+  `Durability pin: N/A — <one-line reason>` (e.g. narrative prose no code or
+  downstream parser couples to). Lineage: #1134 shipped SKILL.md prose with no pin,
+  #1045 left the pin optional, #884 shipped a real pin named only in unlabeled
+  prose — `verify_plan.py` c31 WARNs on the missing label.

@@ -321,6 +321,38 @@ Full text: `analyzer-section-reference.md`
 § Step 3.6: Raw-text sample selection (MANDATORY, per load-bearing condition)
 (grep heading, chunked Read).
 
+### Step 3.7: Language-intrusion audit (Qwen-family under a non-CJK eval — MANDATORY)
+
+Whenever the evaluated completions come from a Qwen-family model (the
+project's Qwen-2.5-7B base or any finetune/adapter of it) under a non-CJK
+eval (prompts + expected outputs in English or another non-CJK-script
+language), run the per-arm CJK scan over BOTH substrates BEFORE writing the
+body — auditing only (a) is the incident class (#1090 fu4, then #1315: the
+judged pools carried 11.5-18% CJK intrusion (18/100, 16/100, 23/200) that flipped two parity PASSes
+under zeroed bounds while the greedy capture rollouts were clean at 2/120;
+Lens 7 caught it post-hoc both times):
+
+- **(a) capture/geometry substrate rollouts** (greedy or sampled), AND
+- **(b) EVERY judged install-instrument pool** — each temp>0 completion set
+  joined with its judge scores (e.g. #1315's Tier-1/Tier-2/parity temp-1.0
+  pools joined with `all_scores`) — that any PASS/WARN install/parity
+  adjudication, band-placement claim, or headline-rate claim rests on.
+
+Per arm (trained AND base/control arms alike), report NEXT TO the adjudication it supports (never only in an
+appendix): `intruded/total` (a row is intruded iff its completion matches
+`[\u4e00-\u9fff\u3400-\u4dbf\uf900-\ufaff\u3040-\u30ff\uac00-\ud7af]`),
+fired-overlap (intrusion × judge-positive cross-tab), and the
+zeroed-intrusion + excluded-intrusion recounts of the pool's headline rate.
+An adjudication that flips under either recount is labeled
+convention-dependent in the body — never silently kept PASS. The scan is
+pure counting: only aggregate counts enter context; cite intruded rows by
+file + row index, never quoted text (full recipe + the script-swap variant
+for non-CJK intrusion scripts: `interpretation-critic.md` Lens 7 item 3b,
+the #1312 scan). Escapes — write `Language-intrusion audit: N/A — <reason>`
+in the fact sheet: CJK-context eval (per-ARM inside a mixed-language eval,
+not per-task), non-Qwen evaluated model, or a DV with no on-policy
+generation (teacher-forced margins, fixed-completion log-P).
+
 ### Step 4: Write the clean-result body
 
 **SPEC.md § "v4 body shape" is authoritative** (+ the exemplar
@@ -445,7 +477,11 @@ over a stub body.
 
 **Same-issue follow-up re-entry (re-fold, not re-promote).** On an
 `epm:followup-scope v1` re-spawn the body is ALREADY a clean-result: fold
-the new round in, re-verify, `set-body` WITHOUT `--snapshot`. (1) Add the
+the new round in, re-verify, `set-body` WITHOUT `--snapshot`, then — if the
+fold retitled the H1 — `task.py set-title <SOURCE-N> "<new H1 text>"`
+(set-body preserves the old frontmatter `title`; the #1110 H1==frontmatter
+verifier check FAILs the next gate otherwise — same set-body-then-set-title
+order as Step 6 above). (1) Add the
 round's `### <result>` sections; (2) REWRITE `## Takeaways` to the current
 cross-round belief (mandatory) + retitle the H1 if the headline moved; (3)
 note the round under `**Design:**` + a per-round hyperparameter column +

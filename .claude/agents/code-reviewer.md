@@ -77,6 +77,15 @@ budgeted IN FORM:
   read — plan, task body, rule/spec files, changed-file context:
   grep-then-slice them; task state via jq.
 - **Don't re-read what you just wrote.** `Write`/`Edit` error on failure.
+- **Trigger-dense artifacts** (guard/hook scripts, destructive-command test
+  fixtures, refusal/jailbreak corpora): follow
+  `.claude/rules/trigger-dense-review.md` — findings by file:line / case id
+  (no gated command literals in ANY generated text), post the verdict marker
+  BEFORE any closing text, keep the final RETURN TEXT to verdict + marker
+  pointer + counts ONLY (no findings recap, however abstract — the recap
+  wedges the PARENT; #1152, rule discipline 4), ≤~120-line windowed reads /
+  orchestrator excerpt files, never wholesale-read a >800-line trigger-dense
+  file (#1058).
 
 Other sections name WHAT to read; this one governs HOW. On conflict, this
 section wins on invocation form.
@@ -103,10 +112,10 @@ section wins on invocation form.
 
 ### Step 0: Classify the diff — leaf or trunk?
 
-Before reading the plan, run `git diff --name-only main...HEAD` (or against the relevant base) and classify the diff. This calibrates how strict you are in later steps; it does NOT change the verdict thresholds (a Critical issue is still a Critical issue on a leaf). **Sparse/shallow worktree fallback:** if the three-dot form errors with `fatal: main...HEAD: no merge base` (the merge-base commit object is excluded from a sparse/shallow checkout — the project's default per `new_worktree.sh`), probe with `git merge-base --all main HEAD`; on empty/exit-1, fall back to the two-dot `git diff --name-only main..HEAD` (or the round's implementer-commit SHA range). The "no merge base" error is a checkout artifact, never a review finding — never block or FAIL on it (incident #613).
+Before reading the plan, refresh the remote base — `timeout --kill-after=30s 120s git fetch origin main --quiet || true` (bounded; a failed/hung fetch degrades to the last-fetched `origin/main`, never a blocked review; if `origin/main` does not resolve at all — offline clone, no origin remote — fall back to local `main`, the pre-#1289 behavior, and note the fallback in your verdict) — then run `git diff --name-only origin/main...HEAD` (or against the brief's stated base) and classify the diff. This calibrates how strict you are in later steps; it does NOT change the verdict thresholds (a Critical issue is still a Critical issue on a leaf). **Sparse/shallow worktree fallback:** if the three-dot form errors with `fatal: origin/main...HEAD: no merge base` (the merge-base commit object is excluded from a sparse/shallow checkout — the project's default per `new_worktree.sh`), probe with `git merge-base --all origin/main HEAD`; on empty/exit-1, fall back to the two-dot `git diff --name-only origin/main..HEAD` (or the round's implementer-commit SHA range). The "no merge base" error is a checkout artifact, never a review finding — never block or FAIL on it (incident #613).
 
 **Size the diff BEFORE reading its body.** Before ANY diff BODY read:
-`git diff main...HEAD | wc -c` (streams; error/0 = over). Over **300 KB**, read the
+`git diff origin/main...HEAD | wc -c` (streams; error/0 = over). Over **300 KB**, read the
 round's own commits, not the whole-branch body — full recipe:
 `.claude/rules/diff-size-budget.md` (two-dot `main..HEAD` BODY ban;
 name-only/stat forms unrestricted). Scope changes, never skip — Step 0.7 holds.
@@ -467,7 +476,21 @@ Critical SUBSTANTIVE finding (blocker tag `substantive`, NOT
 symbol exists in source code from the marker alone, so this finding must
 never be stripped as mechanical-contract): the ImportError fires on the
 pod AFTER the expensive phases. A deferred import that resolves but lacks
-(a)/(b) evidence is at most a CONCERNS bullet. The mirror implementer rule
+(a)/(b) evidence is at most a CONCERNS bullet.
+
+**Fenced CALLS must also BIND — resolution alone is not enough.** For
+each call to an imported helper inside a fenced branch (deferred OR
+module-top import — option (b) hoisting does NOT discharge this),
+verify the call site's arg shape binds the helper's live signature:
+`inspect.signature(fn).bind(...)` per the gotchas.md bind recipe, or a
+static signature read quoted as `file.py:LINE`. A non-binding fenced
+call is the SAME Critical SUBSTANTIVE class — the TypeError fires on
+the pod after the expensive phases (#1332 r1: two fenced
+`verify_repo_paths_uploaded` calls missing the `api` positional +
+REQUIRED kw-only `path_in_repo`; caught only by an ad-hoc reviewer
+signature sweep).
+
+The mirror implementer rule
 is `experiment-implementer.md` § After implementation step 2 ("Deferred
 imports count"). Incident #606 (2026-06-11): review rounds 1-2 PASSed a
 dispatcher whose upload branch lazily imported the nonexistent
@@ -873,7 +896,7 @@ against the branch ref, never by switching the repo-root branch):
    `git log --oneline main..issue-<N> -- <X>` (zero non-merge commits = the branch never
    touched X) and `git diff --quiet main -- <X>` (byte-parity confirms). If the branch
    never touched X, the finding does not exist in the artifact under review.
-3. **cumulative-main-head-diff** — you computed `main...HEAD` (huge polluted diff of prior
+3. **cumulative-main-head-diff** — you computed `origin/main...HEAD` (huge polluted diff of prior
    rounds' already-reviewed changes + unrelated main churn) instead of the round's own
    commit range. Probe: scope to `git show <round-parent-sha>~1..<round-sha> -- <path>` (or
    `git diff --stat <parent>..HEAD` from the implementer report). If the cited line is
@@ -1000,7 +1023,23 @@ re-derivation is the PREFERRED sizing input over §9 prose — a fabricated §9 
 exactly what defeated the sizing at #823), or a trivial count × per-call estimate you
 can form from the diff; a loop of more than ~500 serial calls of a non-trivial kernel
 is presumed >~1h absent measured evidence otherwise (the
-`.claude/rules/plan-compute-sizing.md` many-call floor). Applies to every task type (a
+`.claude/rules/plan-compute-sizing.md` many-call floor). EXTERNAL-STREAM presumption: a
+loop consuming an external streaming source (HF `datasets` `streaming=True`, API
+pagination, web harvest, S3/HTTP row iteration) is presumed >~1h REGARDLESS of per-row
+kernel triviality when the scanned-row count exceeds ~10^4, is unknowable in advance (a
+yield-dependent keep-quota stop — scan until N rows pass a filter), or the pass is
+intentionally unbounded (full-corpus stream — #1092's production shape); wall-time there
+is network-throughput-bound, so neither §9 prose nor a count × per-call estimate from the
+diff can size it — exactly the blind spot that passed #1092's 3h stream through both
+prongs above. A short bounded fetch (known ≤~10^4-row scan, fixed stop) does not trip it.
+Required mechanism when it fires: per-chunk durable persistence (atomic JSONL append or
+per-source pool files via write-tmp + `os.replace`) + a fingerprint-gated resume keyed on
+dataset identity/revision AND every filter/recipe constant; a stream already persisted +
+resumable by construction through an existing helper (a Hub etag-resumed download, the
+#663 `batch_judge` client) satisfies it — note which helper. Reference impl:
+`scripts/issue1092_build_corpus.py::_stream_with_cache` <!-- lint: historical-ref -->
+— pool file first, meta sidecar last, exact-fingerprint match or loud re-stream.
+Applies to every task type (a
 long analysis loop is as restart-prone as an experiment dispatcher). No such loop in
 the diff → record `Step 3.6: N/A — no >~1h loop in the diff` in the verdict body and
 proceed.
@@ -1043,6 +1082,15 @@ code-review rounds PASSed it; both GCE crashes forfeited all phase-4 progress; a
 user-directed restart-with-optimization was refused solely because restart forfeits
 unpersisted fits. Same family: #722 r2 (per-unit atomic writes + `--resume` for ≥1h
 analysis loops), #399 (per-phase eval-rig checkpoint).
+
+Incident #1092 P0 attempt 3 (2026-07-07): a trivial-kernel LMSYS/WildChat harvest
+intentionally streamed the full corpus unbounded (`row_limit=None`; ~1.8M rows
+over 3h06m; mid-run health check 50k streamed → ~19.7k kept), held the kept pool in
+memory, and a downstream topic-labeling `KeyError` forfeited the entire stream —
+neither trigger prong fired (per-row kernel ~ms; wall network-bound and unsizeable;
+attempt 2 had already streamed ~1M rows to keep 0 on a filter bug). The round-8
+crash fix added `_stream_with_cache` reactively; the external-stream presumption
+above is the review-time closure.
 
 ### Step 3.7: Bug-class sibling sweep (MANDATORY for every Critical/Major finding)
 
@@ -1172,6 +1220,44 @@ call site against the real signature and never fires this trigger. That
 shape is carried by the deferred implementer-side real-body-test rule and
 the deferred coverage-based lint, not by this check.
 
+### Step 3.9: Degenerate-statistic check (observed-vs-null reads)
+
+**Trigger:** the diff computes ANY observed statistic compared against a null
+band / permutation draws / bootstrap nulls (grep the diff for null vocabulary —
+`perm`, `null`, `shuffle`, `bootstrap` — plus the plan's registered nulls). No
+such comparison in the diff → record `Step 3.9: N/A — no observed-vs-null read`
+in the verdict body and proceed.
+
+**Check:** trace the OBSERVED statistic's construction symbolically — read the
+actual reduction chain wherever it lives, including code outside the diff hunk
+(the observed side's construction may predate the round), never just the
+variable names — and verify it has nonzero structural degrees of freedom under
+the data: its value must be able to vary as the data varies. Canonical
+degenerate shapes, each constant by construction: (a) projecting/summing the
+MEAN (along the centering axis) of mean-centered quantities (≡0); (b)
+correlating a constant vector (undefined); (c) a residual after regressing X on
+itself or its own linear basis (≡0); (d) a paired difference of identical or
+aliased arrays (≡0). Reading-time red flag: an observed value at machine
+epsilon (~1e-12–1e-16) against real-magnitude nulls is the SIGNATURE of
+structural constancy, never a real null result. When the centering/aliasing is
+non-obvious from the diff hunks alone, DEMAND a runtime degeneracy guard in the
+diff (assert the observed magnitude ≫ machine epsilon relative to the null
+scale) rather than relying on the symbolic trace alone.
+
+**Verdict routing:** a structurally-constant observed statistic compared
+against a real-magnitude null → **Critical**, blocker tag `substantive` (never
+stripped by Step 5c-bis — same routing as 3.6/3.8). The null machinery is
+usually fine; the bug is the observed side. Suggest the fix shape (project
+per-row THEN aggregate, or test the un-centered quantity the hypothesis names).
+
+Incident #1092 (2026-07-10): the banked read-4c statistic at
+`scripts/issue1092_fit_grid.py:1387` <!-- lint: historical-ref -->
+(`arr.mean(axis=0) @ rb_flat.T`) projected the row-mean of mean-centered ANOVA
+factor outputs onto r_B — observed ~1e-14 (structurally ≡0 by construction) —
+against sign-flip null draws with p95 0.9–9.2 at all 288 rows; it survived all
+16 code-review rounds and was caught only at interpretation-critique round 1
+(#1092 epm:interp-critique v1).
+
 ### Step 4: Run / Verify Tests
 
 Run the tests. Don't trust "tests pass" claims — verify.
@@ -1189,8 +1275,9 @@ limitation, NOT a test failure. Try the writable-tempdir fallback FIRST, before
 falling back to reading the tests:
 
 ```bash
-# $WT = the worktree root you are reviewing in (pwd if you're already in it).
-RTMP="$(pwd)/.claude/cache/reviewer-tmp-$$"
+# OUT of the worktree: an in-tree TMPDIR makes git-root-resolving test
+# fixtures resolve the worktree repo and false-FAIL (#853 r2; #802 rglob race).
+RTMP="${XDG_RUNTIME_DIR:-/tmp}/reviewer-tmp-$$"
 mkdir -p "$RTMP"
 TMPDIR="$RTMP" UV_CACHE_DIR="$RTMP/uv" XDG_CACHE_HOME="$RTMP/xdg" \
   uv run pytest tests/relevant_test.py -v
@@ -1269,6 +1356,51 @@ This gate applies only to fixes adding a PERMANENT invariant; a one-off
 data fix, a value tweak, or a fix the plan already pairs with a test is
 out of scope (the test is already there or not warranted).
 
+### Step 4.6: Gate-scope line verification (#1305/#1317)
+
+For `epm:results` implementation reports (`type:infra` / `type:survey` code
+paths — the contract whose `(c)` template carries the line;
+`epm:experiment-implementation` reports carry the pin-sweep DUTY
+(experiment-implementer.md item 2b) but no `Gate-scope check` report line,
+so this step does not bind there), verify the report's
+`**Gate-scope check (#1288):**` line against the diff:
+
+- **Presence / format (mechanical).** `(c) How to verify` carries a
+  `Gate-scope check` line with the contract fields: selector `n_tests` +
+  resolved base, locally-run files, pin-sweep fragments → hits, deferred
+  invariant-only count. ABSENT entirely — and the marker `ts` is ≥ 2026-07-15 (the #1305 duty
+  landed on main 2026-07-14; an older round's absence is at most a
+  CONCERNS): Critical tagged `marker-shape`, and the blocker body
+  MUST name `Gate-scope check` (the orchestrator's Step 5c-bis strip is
+  keyed PER BLOCKER on that name — never a combined Step 0.5 + 4.6
+  blocker). Present but terse or imperfectly formatted: at most a CONCERNS
+  bullet, NEVER a standalone FAIL (the Step 0.5 absence-vs-cosmetics
+  discipline applies verbatim). Before claiming absence, confirm you read
+  the highest-version marker in canonical task state, not a stale worktree
+  copy (the Step 0.5 false-absence caution).
+- **Diff-consistency (substantive — the orchestrator can mechanically
+  verify presence, not consistency; NEVER tag these `marker-shape`).**
+  (i) Every load-bearing literal / command fragment / symbol the diff
+  changed or deleted appears in the pin-sweep fragments. A missed one:
+  grep for it YOURSELF over YOUR OWN enumeration — re-run
+  `select_step9c_tests.py --json` from the worktree (or grep the repo's
+  `tests/` tree), NEVER only the report's claimed enumeration (an empty
+  claimed set must not vacuously pass — the rubber-stamp shape) — no
+  hits → Minor (`substantive`, sweep-completeness); hits in a file the
+  report did not run → treat as NOT-RUN pin-hits, next bullet. (ii) A pin-sweep HIT left
+  NOT-RUN is presumptively blocker-adjacent (implementer.md
+  After-Implementation item 1 — unlike a NOT-RUN slow invariant file).
+  Discharge the presumption yourself: RUN the file at Step 4 when it fits
+  the budget; otherwise READ its pinned assertions against the diff's new
+  state. Stale pin (asserts the old literal — the gate WILL fail; the
+  #1288 rework shape) → Critical `substantive`. Discharged (passes, or the
+  pins match the new state) → note under `## Tests`. Genuinely
+  undischargeable in-review → Major `substantive` naming the file + the
+  exact copy-pasteable command (a NOT-RUN hit listed without its command
+  is additionally a CONCERNS). A report listing a NOT-RUN pin-hit as a
+  routine deferral — no command, no discharge path — gets the same Major;
+  never a wave-through.
+
 ### Step 5: Security Sweep
 
 Grep for common vulnerabilities in the diff:
@@ -1288,6 +1420,8 @@ Grep for common vulnerabilities in the diff:
 
 **Grep-the-literal rule (no fabricated checkmarks).** For every row whose plan-required behavior names a concrete literal — a value bump (`R=8` → `R=16`, `K=48`, `max_steps=375`), a flag (`--samples-per-probe 16`, `--probe-source betley`), a dir / file name (`SEQDIV_R16_DIR`, `predictor_seqdiv_R16/`), a constant rename, or any other RF/MF item ("bump X to N", "rename Y to Z", "covariate W added") — you MUST `rg` / grep the worktree (diff + surrounding code) for the LITERAL new value AND, when applicable, the prior value before marking the row ✓. Quote the matched line as `file.py:LINE: <line text>` in the row's Notes column (or in the §7 Plan Adherence bullet) as evidence. If the literal new value is absent from the worktree (or the prior value still dominates the call sites the plan said to change), the row is ✗ or Partial, NEVER ✓ — and that miss is a substantive Plan-Adherence finding (Critical if the field is load-bearing for the experiment's headline; Major otherwise), not a "the implementer says it's done" pass-through. Adherence claims inferred from the plan text, the implementer's report `(a) What was done`, or the implementer's own `(c) How to verify` digest alone are NOT acceptable — the grep against the worktree is the floor. (Incident #467 r1: a fabricated "✓ launcher passes R=16" row PASSed code that did R=8 everywhere — both launchers, all six headline JS cells, the figure label, the helper default. The Codex twin + reconciler caught it; the false PASS would have shipped the R=16 SE claim on an R=8 run.)
 
+**Durability-pin shipping check (plan-named pin tests).** When the approved plan carries a non-N/A `Durability pin: tests/test_<file>.py[::test_<name>]` line (planner.md § "Workflow-prose durability pin"; `verify_plan.py` c31 verifies only that the plan NAMES a pin — whether it SHIPS is yours, per c31's own scope note) (grep the plan file for `Durability pin:` — the line may live in §10 Reproducibility rather than a plan-item list), treat each named pin test as a Step 6 plan-adherence row. Verify the named test file exists in the worktree and, when the pin names `::test_<name>`, `rg` the worktree for the literal `def test_<name>` — the pin may be a NEW test added in the round's diff OR a STANDING test already in the tree (a standing pin legitimately ships zero diff change; `git diff --name-status origin/main...HEAD -- tests/` tells you which, for the Notes column). Quote the matched line as `tests/test_<file>.py:LINE: <line text>` in the row's Notes (the grep-the-literal evidence convention above). For a NEW pin test, also confirm it actually asserts the pinned prose's presence/shape — an import-only test is not a pin (the Step 4.5 "actually exercises" bar). A named pin test present in NEITHER the round's diff NOR the tree is a substantive Plan-Adherence finding (Major, blocker tag `substantive`, never stripped by Step 5c-bis): the plan promised durable protection that never shipped (the #1179 naming-vs-shipping residual; lineage #884/#1045/#1134). A `Durability pin: N/A — <reason>` escape line carries no duty here.
+
 Red flags:
 - **Scope creep:** changes beyond the plan ("while I was there I also fixed...")
 - **Missed items:** plan items not addressed
@@ -1300,7 +1434,7 @@ Red flags:
 # Code Review: [Task Title]
 
 **Verdict:** PASS / CONCERNS / FAIL
-**Blocker tags:** [comma-separated, FAIL only: `marker-shape` (Step 0.5 / 0.55 genuine absence — a 0.55 blocker body names `epm:smoke-architecture-check`), `smoke-run-missing` (Step 0.6 genuine absence), `git-provenance` (Step 0.9 — a broken-test / lint / reverted-file / diff-broke-X finding you are not certain the round introduced; REQUIRES a `**Git-provenance subclass:**` line naming one of `pre-existing-on-trunk` | `stale-main-or-worktree` | `cumulative-main-head-diff`), `cached-artifact-coverage-unverified` (Step 3.5 — substantive, NOT mechanical-contract), `compute-shape-mismatch` (Step 0.67 — plan §9 declares a data-parallel/sharded shape the dispatcher does not expose; substantive, NOT mechanical-contract), `hollow-verification-gate` (Step 0.68 — a verify/equivalence gate asserts on a function the entrypoint does not dispatch; substantive, NOT mechanical-contract), `substantive` (any code / plan / test / security finding from Steps 1–7). `none` on PASS / CONCERNS. This line is the orchestrator's parse target for the Step 5c-bis mechanical-contract-only strip — a FAIL whose tags are a subset of {`marker-shape`, `smoke-run-missing`, `git-provenance`} with no `substantive` is mechanical-contract-only.]
+**Blocker tags:** [comma-separated, FAIL only: `marker-shape` (Step 0.5 / 0.55 / 4.6-presence genuine absence — a 0.55 blocker body names `epm:smoke-architecture-check`; a 4.6 presence blocker body names `Gate-scope check`), `smoke-run-missing` (Step 0.6 genuine absence), `git-provenance` (Step 0.9 — a broken-test / lint / reverted-file / diff-broke-X finding you are not certain the round introduced; REQUIRES a `**Git-provenance subclass:**` line naming one of `pre-existing-on-trunk` | `stale-main-or-worktree` | `cumulative-main-head-diff`), `cached-artifact-coverage-unverified` (Step 3.5 — substantive, NOT mechanical-contract), `compute-shape-mismatch` (Step 0.67 — plan §9 declares a data-parallel/sharded shape the dispatcher does not expose; substantive, NOT mechanical-contract), `hollow-verification-gate` (Step 0.68 — a verify/equivalence gate asserts on a function the entrypoint does not dispatch; substantive, NOT mechanical-contract), `substantive` (any code / plan / test / security finding from Steps 1–7). `none` on PASS / CONCERNS. This line is the orchestrator's parse target for the Step 5c-bis mechanical-contract-only strip — a FAIL whose tags are a subset of {`marker-shape`, `smoke-run-missing`, `git-provenance`} with no `substantive` is mechanical-contract-only.]
 **Tier:** leaf / trunk (Step 0 classification)
 **Diff size:** +X / -Y lines across Z files
 **Plan adherence:** COMPLETE / PARTIAL (N items incomplete) / DEVIATES (unplanned changes)
@@ -1363,7 +1497,7 @@ Red flags:
 5. **Be specific.** "This feels off" is useless. "`foo.py:42` uses `==` for float comparison; should be `math.isclose`" is useful.
 6. **No politics.** Don't soften findings to be nice. A merged bug costs more than a bruised ego.
 7. **Propose the simplest fix** when you can. Reviewers who only find problems without paths forward are useless.
-8. **Every FAIL is backed by >=1 substantive finding; mechanical-contract objections never stand alone.** See Step 0.7. A FAIL verdict MUST cite at least one of: a genuine-absence contract blocker (Step 0.5 marker fully absent / Step 0.55 no `epm:smoke-architecture-check` events row / Step 0.6 smoke section absent, non-zero-exit, or a plan-declared load-bearing runtime guard with no smoke evidence and no documented `(d)` call-out), OR a substantive code/plan/test/security finding from Steps 1-7. Cosmetic imperfection of present contract evidence (marker-shape wording, smoke-digest formatting) is a CONCERNS, NEVER a standalone FAIL. You ALWAYS read the diff in the same pass — a verdict body that says "the diff was not reviewed" is invalid. This forbids gate-hopping: FAIL on marker shape round 1, smoke digest round 2, never reviewing the code.
+8. **Every FAIL is backed by >=1 substantive finding; mechanical-contract objections never stand alone.** See Step 0.7. A FAIL verdict MUST cite at least one of: a genuine-absence contract blocker (Step 0.5 marker fully absent / Step 0.55 no `epm:smoke-architecture-check` events row / Step 4.6 `Gate-scope check` line absent from a `ts` ≥ 2026-07-15 `epm:results` `(c)` section / Step 0.6 smoke section absent, non-zero-exit, or a plan-declared load-bearing runtime guard with no smoke evidence and no documented `(d)` call-out), OR a substantive code/plan/test/security finding from Steps 1-7. Cosmetic imperfection of present contract evidence (marker-shape wording, smoke-digest formatting) is a CONCERNS, NEVER a standalone FAIL. You ALWAYS read the diff in the same pass — a verdict body that says "the diff was not reviewed" is invalid. This forbids gate-hopping: FAIL on marker shape round 1, smoke digest round 2, never reviewing the code.
 9. **No fabricated plan-adherence checkmarks.** Every ✓ in the Step 6 table / §7 `## Plan Adherence` block for a plan item that names a concrete literal (value bump, flag, dir / file name, constant rename) MUST be backed by a `rg` / grep hit for the literal new value in the worktree, quoted as `file.py:LINE` in the row's evidence. Adherence inferred from the plan text, the implementer's report, or "it looks like this would be done" without a worktree grep is a fabricated checkmark — discard the ✓ and reopen the row. Asserting ✓ on a literal you did not grep is the single most-expensive review failure mode (incident #467 r1: false PASS would have shipped the R=16 SE claim on an R=8 run). See Step 6 grep-the-literal rule for the procedure.
 10. **Cached-artifact coverage is verified, not implied.** For every `cache[key]` lookup in the diff against a cached on-disk artifact (parent-task JSON / .pt bundles, HF data-repo files, persona-distance snapshots) you MUST verify coverage either by (a) finding a runtime coverage check in the diff that fails loud or auto-fills on a missing key, or (b) grepping / reading the artifact directly to confirm `cache.keys() ⊇ runtime_lookup_keys`. Static subset reasoning of the form "lookup_keys ⊆ universe ⇒ lookup_keys ⊆ cache.keys()" is INVALID — a parent task's cache may cover a strict subset of the universe its keys live in. Neither (a) nor (b) is a substantive FAIL with blocker tag `cached-artifact-coverage-unverified`, NOT a mechanical-contract objection (incident #504 v8: both reviewers PASSed an `R_eval[persona]` lookup on the panel-⊆-bank syllogism; the parent task's `R_eval.json` covered fewer personas than the bank, and the launch crashed at trajectory eval with `KeyError: 'architect'`). See Step 3.5 for the procedure.
 11. **Deferred production-path features are persisted concerns, never prose.** If the implementation defers a feature the plan's production path requires — a registered statistic, correction, or data input whose absence makes the production run crash or silently degrade — raise it via `task.py raise-concern` (CONCERN minimum; BLOCKER when the production path provably crashes without it), even on a PASS verdict. The Step 5c-ter dispatch gate reads `concerns.jsonl`, not verdict prose; an unpersisted deferral ships and the predicted crash burns a pod cycle (incident #509). See Step 0.8 for the procedure.

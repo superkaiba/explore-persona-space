@@ -345,7 +345,13 @@ both reviewers are graded against the same standard. Read
   unfenced smoke), (b) module-top hoisting, or (c) a symbol-definition
   grep of the import's target module quoted as `file.py:LINE`; an
   unresolvable one is a Critical finding with blocker tag `substantive`,
-  NOT `smoke-run-missing`. Copy the (a)/(b)/(c) options + the tag rule in
+  NOT `smoke-run-missing`. Fenced CALLS to imported helpers must
+  additionally signature-BIND (`inspect.signature(fn).bind(...)` with
+  the call site's positional count + keyword names; `bind_partial` on
+  `*args`/`**kwargs` forwards; hoisting does NOT discharge this leg) —
+  a fenced call that fails to bind is the same Critical `substantive`
+  class (incident #1332 r1). Copy the
+  (a)/(b)/(c) options + the fenced-call bind rule + the tag rule in
   full so Codex never re-derives a narrower check (incident #606: two
   PASSed rounds never executed an upload-branch lazy import of a
   nonexistent symbol; the ImportError fired on the pod after training +
@@ -465,11 +471,14 @@ both reviewers are graded against the same standard. Read
   this in the prompt, Codex inherits the same gap.
 - The Step 3.6 **Long-loop restartability rule** VERBATIM. This is load-bearing: copy
   the > ~1h trigger (keyed off plan §9 sizing / the implementer's projection / a trivial
-  count × per-call estimate), the persistence + resume predicate pair, the Major
-  `substantive` routing (NOT stripped by Step 5c-bis) with its plan-stated-justification
-  carve-outs, and the #823 incident, so Codex never re-derives a narrower check (same
-  omission class as the #606 copy-list miss; #823: five rounds PASSed a ~20h in-memory
-  accumulate-and-write-at-end loop).
+  count × per-call estimate), the EXTERNAL-STREAM presumption (a loop consuming an
+  external streaming source — HF `datasets` streaming, API pagination, web harvest — is
+  presumed >~1h regardless of per-row kernel triviality; #1092), the persistence +
+  resume predicate pair, the Major `substantive` routing (NOT stripped by Step 5c-bis)
+  with its plan-stated-justification carve-outs, and the #823 + #1092 incidents, so
+  Codex never re-derives a narrower check (same omission class as the #606 copy-list
+  miss; #823: five rounds PASSed a ~20h in-memory accumulate-and-write-at-end loop;
+  #1092: an uncheckpointed 3h06m network-bound stream died in memory).
 - The **Step 3.7 bug-class sibling sweep** rule VERBATIM (+ its enforcing
   Rule 14). This is load-bearing: copy the MANDATORY-for-every-Critical/Major
   scope, the 4-target sweep order (whole file → sibling family in the file →
@@ -496,6 +505,21 @@ both reviewers are graded against the same standard. Read
   instead of running `inspect.signature`. (Incident #906: Codex FAILed all 5
   rounds of crash-class seam-stubbed bodies the Claude reviewer PASSed; this
   bullet makes the check explicit and symmetric across both twins.)
+- The **Step 3.9: Degenerate-statistic check (observed-vs-null reads)** rule
+  VERBATIM. This is load-bearing: copy the trigger (any statistic in the diff
+  compared against a null band / permutation draws), the symbolic-trace check
+  with the four canonical degenerate shapes (projecting/summing the mean of
+  mean-centered quantities ≡0; constant-vector correlation; self-regression
+  residual; aliased paired difference), the trace-wherever-it-lives scope
+  (including code outside the diff hunk), the machine-epsilon-vs-real-null
+  red flag, the runtime-degeneracy-guard demand (non-obvious
+  centering/aliasing ⇒ require an in-diff assert that the observed magnitude
+  is well above machine epsilon relative to the null scale), the Critical
+  `substantive` routing (never stripped by Step 5c-bis), and the #1092
+  incident (a ≡0-by-construction observed value vs real-magnitude sign-flip
+  null draws survived all 16 code-review rounds), so Codex traces the
+  observed statistic's construction instead of only checking the null
+  machinery.
 - The Rules item 12 **blocker grounding + mechanizability** rule VERBATIM —
   every Critical/Major finding cites a concrete artifact location
   (`file.py:LINE`, diff hunk, plan section; the reconciler discards
@@ -518,6 +542,44 @@ both reviewers are graded against the same standard. Read
   blocker tag `substantive`), and the permanent-invariant-only scope so
   Codex never re-derives a narrower check (incident #653 r8). Without this
   in the prompt, an un-CI-pinned BLOCKER-fix assertion ships unflagged.
+- "Step 4.6: Gate-scope line verification (#1305/#1317)" VERBATIM. This
+  binds ONLY on `epm:results` implementation reports (`type:infra` /
+  `type:survey` code paths — the contract whose `(c)` template carries the
+  line; `epm:experiment-implementation` reports carry the pin-sweep DUTY
+  but no `Gate-scope check` report line, so it does not bind there). Copy
+  both halves: (i) PRESENCE/FORMAT is mechanical — `(c) How to verify` in
+  the inlined marker body must carry the `**Gate-scope check (#1288):**`
+  line with the contract fields (selector `n_tests` + resolved base,
+  locally-run files, pin-sweep fragments → hits, deferred invariant-only
+  count); ABSENT entirely with marker `ts` ≥ 2026-07-15 → a single
+  Critical tagged `marker-shape` whose body NAMES `Gate-scope check` (the
+  orchestrator's Step 5c-bis strip is keyed PER BLOCKER on that name —
+  never a combined Step 0.5 / 0.55 / 4.6 blocker); present-but-terse or
+  imperfectly formatted → at most a CONCERNS, NEVER a standalone FAIL;
+  (ii) DIFF-CONSISTENCY is substantive — NEVER tagged `marker-shape`
+  (a changed load-bearing literal missing from the pin-sweep fragments →
+  Minor `substantive`; a pin-sweep HIT left NOT-RUN is presumptively
+  blocker-adjacent; a stale pin asserting the old literal → Critical
+  `substantive`; genuinely undischargeable in-review → Major `substantive`
+  naming the file + the exact copy-pasteable command). Codex adaptations:
+  (1) the ts threshold is applied by YOU (the composer) at compose time
+  from the Step 2-pre `$IMPL_MARKER_FILE` JSON's top-level `ts` — when
+  `ts` < 2026-07-15, append to the copied Step 4.6 text the literal line
+  `GATE-SCOPE THRESHOLD: implementation marker ts predates 2026-07-15 —
+  absence is at most a CONCERNS, never a marker-shape Critical`; otherwise
+  append `GATE-SCOPE THRESHOLD: satisfied (marker ts ≥ 2026-07-15)` so
+  Codex never hunts for a ts it cannot read (the Step 0.55
+  compose-time-conditional pattern); (2) without the project's `uv` env
+  Codex cannot re-run `select_step9c_tests.py --json` — it takes the
+  rule's already-sanctioned alternative: grep the worktree's `tests/`
+  tree for the changed literals over its OWN enumeration (the Step 3.8
+  no-uv adaptation), never only the report's claimed enumeration; (3)
+  Step 4 is skipped, so the NOT-RUN pin-hit discharge always takes the
+  READ path — read the pinned assertions against the diff's new state.
+  Copy the trigger + both halves + the per-blocker keying in full so
+  Codex never re-derives a narrower check (the #606 copy-list omission
+  class; without this bullet the twin silently narrows the ensemble to
+  single-family coverage on the #1317 gate).
 
 **Workflow v2 addendum (`workflow: v2` tasks only).** Detect the workflow via
 `task.py view <N> --json | jq -r '.frontmatter.workflow // "v1"'`. On a `v2` task
@@ -610,7 +672,7 @@ fine.)
 
 Follow this protocol:
 
-{{INLINED RUBRIC FROM code-reviewer.md Steps 0, 0.5, 0.55, 0.6, 0.65, 0.67, 0.68, 0.7, 0.8, 1, 2, 3, 3.5, 3.6, 3.7, 3.8, 4.5, 5, 6, 7 + Rules 12 (blocker grounding + mechanizability, Codex-adapted) + 13 (regression-test presence for substantive BLOCKER fixes) + 14 (bug-class sibling sweep — every finding is a CLASS not a line) + 15 (plan-declared compute shape exposed by dispatcher + work-conserving schedule)}}
+{{INLINED RUBRIC FROM code-reviewer.md Steps 0, 0.5, 0.55, 0.6, 0.65, 0.67, 0.68, 0.7, 0.8, 1, 2, 3, 3.5, 3.6, 3.7, 3.8, 3.9, 4.5, 4.6, 5, 6, 7 + Rules 12 (blocker grounding + mechanizability, Codex-adapted) + 13 (regression-test presence for substantive BLOCKER fixes) + 14 (bug-class sibling sweep — every finding is a CLASS not a line) + 15 (plan-declared compute shape exposed by dispatcher + work-conserving schedule)}}
 
 You MUST emit your verdict in EXACTLY this format. No preamble, no code
 fences around the marker, no commentary outside the marker tags:
@@ -619,7 +681,7 @@ fences around the marker, no commentary outside the marker tags:
 # Codex Code Review: {{title}}
 
 **Verdict:** PASS | CONCERNS | FAIL
-**Blocker tags:** [comma-separated, FAIL only: `marker-shape` (Step 0.5 / 0.55 genuine absence — a 0.55 blocker body names `epm:smoke-architecture-check`) | `smoke-run-missing` (Step 0.6 genuine absence) | `git-provenance` (Step 0.9 — a broken-test / lint / reverted-file / diff-broke-X finding you are not certain the round introduced; REQUIRES a `**Git-provenance subclass:**` line naming one of `pre-existing-on-trunk` | `stale-main-or-worktree` | `cumulative-main-head-diff`; if you ARE certain the round introduced it, tag `substantive` NOT `git-provenance`) | `raw-completions-upload-missing` (Step 0.65 genuine absence — substantive, NOT mechanical-contract) | `cached-artifact-coverage-unverified` (Step 3.5 — substantive, NOT mechanical-contract) | `compute-shape-mismatch` (Step 0.67 — plan §9 declares a data-parallel/sharded shape the dispatcher does not expose; substantive, NOT mechanical-contract) | `hollow-verification-gate` (Step 0.68 — a verify/equivalence gate asserts on a function the entrypoint does not dispatch; substantive, NOT mechanical-contract) | `substantive` (any code/plan/test/security finding from Steps 1–7). `none` on PASS|CONCERNS. The orchestrator parses this line for the Step 5c-bis mechanical-contract-only strip — a FAIL whose tags are a subset of {`marker-shape`, `smoke-run-missing`, `git-provenance`} with no `substantive` is mechanical-contract-only.]
+**Blocker tags:** [comma-separated, FAIL only: `marker-shape` (Step 0.5 / 0.55 / 4.6-presence genuine absence — a 0.55 blocker body names `epm:smoke-architecture-check`; a 4.6 presence blocker body names `Gate-scope check`) | `smoke-run-missing` (Step 0.6 genuine absence) | `git-provenance` (Step 0.9 — a broken-test / lint / reverted-file / diff-broke-X finding you are not certain the round introduced; REQUIRES a `**Git-provenance subclass:**` line naming one of `pre-existing-on-trunk` | `stale-main-or-worktree` | `cumulative-main-head-diff`; if you ARE certain the round introduced it, tag `substantive` NOT `git-provenance`) | `raw-completions-upload-missing` (Step 0.65 genuine absence — substantive, NOT mechanical-contract) | `cached-artifact-coverage-unverified` (Step 3.5 — substantive, NOT mechanical-contract) | `compute-shape-mismatch` (Step 0.67 — plan §9 declares a data-parallel/sharded shape the dispatcher does not expose; substantive, NOT mechanical-contract) | `hollow-verification-gate` (Step 0.68 — a verify/equivalence gate asserts on a function the entrypoint does not dispatch; substantive, NOT mechanical-contract) | `substantive` (any code/plan/test/security finding from Steps 1–7). `none` on PASS|CONCERNS. The orchestrator parses this line for the Step 5c-bis mechanical-contract-only strip — a FAIL whose tags are a subset of {`marker-shape`, `smoke-run-missing`, `git-provenance`} with no `substantive` is mechanical-contract-only.]
 **Tier:** leaf | trunk
 **Diff size:** +X / -Y lines across Z files
 **Diff acquisition:** three-dot | two-dot (no merge base) | sha-range <range>
@@ -747,7 +809,12 @@ orchestrator re-dispatches with a stricter retry prompt (cap retries at
 2 — same policy as before, just moved out of this agent). If the
 `epm:codex-task-failed` marker fires, the orchestrator treats this as a
 Codex-side no-show and proceeds with single-Claude-reviewer decision-
-making per `workflow.yaml § ensemble_review`.
+making per `workflow.yaml § ensemble_review`. On a trigger-dense round
+(recognition per trigger-dense-review.md "Fires when") the read +
+extraction are MECHANICAL — `grep -m1 '^\*\*Verdict'` for the decision
+table, sed tag-block extraction to a temp file, `post-marker --file` —
+the orchestrator never pages the findings body into context (SKILL.md
+§ File-only Codex verdict posting).
 
 You do NOT validate, do NOT retry, do NOT post the marker. Those steps
 live in the orchestrator now.

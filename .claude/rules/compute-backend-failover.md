@@ -45,7 +45,14 @@ Because the boot disk is DELETEd on that shutdown, the trap now calls
 HF data repo under `issue<N>_partial/<attempt_id>/`:
 
 1. `crash_report.json` — exit code + timestamp + run identity;
-2. `workload.log` — the workload log (traceback / stderr), `$EPS_LOG_PATH`;
+2. `workload.log` — the workload log (traceback / stderr), `$EPS_LOG_PATH`.
+   #1151: items 1-2 ride ONE staged `upload_folder` commit (the "first
+   bundle") with ONE retry after an `EPS_PERSIST_RETRY_BACKOFF_S` backoff
+   (default 10 s — the #935 sibling knob); the persist makes ZERO per-file
+   `upload_file` calls anywhere (each one triggers a server-side recursive
+   tree-listing pre-check that 504s ~half the time at ~160 s/file on this
+   large repo — the #664 stall class that most plausibly ate #811's entire
+   300s budget). Repo paths unchanged;
 3. `worker_logs/<relpath>` (#885) — every regular file under
    `$WORKLOAD_ROOT/logs/` (fan-out per-worker logs carrying the REAL
    traceback; the canonical `workload.log` ends at the fan-out line — the
@@ -54,7 +61,15 @@ HF data repo under `issue<N>_partial/<attempt_id>/`:
    (default 5 MiB — the traceback is at the END of a log, so an oversized
    file is TAILED at stage time, never skipped wholesale), file-count bound
    `EPS_PERSIST_LOG_MAX_FILES` (default 40; `< 1` is a loud-SKIP disable),
-   canonical-log dedup skip, staged into `/tmp/eps-worker-logs` and uploaded
+   canonical-log dedup skip, git-TRACKED files under `logs/` excluded
+   (#1351: the repo is cloned at `$WORKLOAD_ROOT`, so committed
+   logs/daily+weekly retrospectives — 48 tracked files vs the 40-file
+   bound — would otherwise clutter the prefix and consume the budget;
+   already durable in git; the exclusion is at WALK time so tracked files
+   never consume `LOG_MAX_FILES` slots, and a git failure of any kind
+   FAILS OPEN to sweeping everything with a loud grep-stable
+   `git-tracked exclude unavailable` WARN), staged into
+   `/tmp/eps-worker-logs` and uploaded
    as ONE `upload_folder` commit — per-file `upload_file` loops are banned
    on this large repo (the #664 504-storm gotcha). Uploaded AFTER the
    canonical `workload.log`, BEFORE the partial dirs (small-first);
@@ -67,7 +82,25 @@ HF data repo under `issue<N>_partial/<attempt_id>/`:
    `store/` / `.cache/` caches are excluded at top level AND nested depths;
    an empty-after-excludes dir SKIPs; a per-dir byte cap (default 2 GiB,
    env `EPS_PERSIST_DIR_CAP_BYTES`) SKIPs an oversized dir loudly rather
-   than burning the 300s budget;
+   than burning the 300s budget. As of #1339 a partial dir whose
+   post-exclude file count exceeds `EPS_PERSIST_DIR_MAX_FILES_PER_COMMIT`
+   (default 1000; `< 1` disables chunking with a WARN) uploads as
+   newest-first staged batches (staging root `EPS_PERSIST_DIR_STAGE_DIR`,
+   default `/tmp/eps-dir-batch`), each ONE `upload_folder` commit with one
+   bounded retry (`EPS_PERSIST_RETRY_BACKOFF_S` backoff), abandoning the
+   dir loudly after `EPS_PERSIST_DIR_BATCH_ABORT_STREAK` (default 2)
+   consecutive fully-failed batches — repo paths byte-identical to the
+   unchunked upload, every batch outcome printed, plus a
+   `k/nb batches uploaded (f/n files)` summary line (incident #1090 fu5:
+   a 29,024-file / 14.4 MB single commit processed ~31 s server-side, the
+   gateway timed out delivering the response, and the client logged
+   FAILED on a commit that had LANDED). A retried batch whose prior
+   attempt actually landed re-commits the same content at the same paths
+   (content-identical commit — idempotent effect). Operator note: after
+   an ABORT / FAILED dir line, verify the Hub prefix (scoped
+   `list_repo_tree` on `issue<N>_partial/<attempt_id>/`) BEFORE
+   re-running any recovery — a gateway-timeout "failure" may have landed
+   (the fu5 shape);
 6. `workload_<utc-ts>.log` (#854) — a per-crash timestamped copy of the
    workload log, uploaded AFTER the partial dirs (small-first ordering; the
    canonical `workload.log` already landed the traceback early). The
@@ -76,10 +109,61 @@ HF data repo under `issue<N>_partial/<attempt_id>/`:
    crashes' canonical copies stay recoverable via the HF repo's git
    history; the timestamped copies accumulate per crash;
 7. `crash_persist_transcript.log` (#854) — the `[crash-persist]` audit
-   lines, uploaded as the FINAL step. Its presence proves the persist ran
-   to completion with every skip recorded; its ABSENCE proves a killed
-   persist — the durable skip-vs-kill discriminator (the serial console is
-   unreadable post-DELETE, #640).
+   lines. #1151: items 6-7 ride ONE staged "final bundle" `upload_folder`
+   commit (no retry), with the transcript staged LAST — after the DONE
+   line — so its uploaded copy still records every earlier upload/skip
+   line. Its presence proves the persist ran to completion with every skip
+   recorded; its ABSENCE proves a killed persist (the serial console is
+   unreadable post-DELETE, #640). The skip-vs-kill discriminator is now
+   THREE-WAY: transcript present (persist completed; per-upload outcomes
+   audited inside it) / breadcrumb final-status with no transcript (the
+   persist ran to a final rc but the HF channel dropped the bundle) /
+   standing `attempted` breadcrumb (persist killed mid-flight) — see
+   item 8;
+8. **the `eps/persist` guest-attribute breadcrumb (#1151)** — the
+   HF-INDEPENDENT persist-fate channel. #811's lesson: EVERY prior no-fire
+   signal (the transcript discriminator, the fd-3 serial lines, the
+   canonical uploads) rode the SAME HF channel or died with the DELETEd
+   boot disk, so an HF-channel failure at trap time left a zero-file
+   prefix indistinguishable from "the persist never ran".
+   `_eps_persist_diagnostics` now writes a link-local guest attribute
+   (SEPARATE `eps/persist` key — never `eps/phase`, which the poll
+   classification + #908 zombie predicates key on; the #935
+   `eps/done_persist` discipline): `attempted` unconditionally at entry,
+   `skipped_no_token` on the early-boot token-guard skip, then a final
+   status from an rc-file readback of the persist subshell
+   (`EPS_CRASH_PERSIST_RC`, default `/tmp/eps-crash-persist.rc`; the
+   pipeline's own `$?` is the streamer's) —
+   `ok` (rc 0 — since #1343 the persist python exits 0 only when the
+   verify gate passes: the transcript existence probe read True, or ≥1
+   `upload_folder` returned success), `failed_uploads` (rc 3 — the
+   persist ran to completion but ZERO uploads verifiably succeeded,
+   #1343/#1315), `timeout` (rc 124), `failed_rc<N>` (any other rc). A
+   MISSING rc file deliberately writes NOTHING: the standing `attempted`
+   IS the killed-mid-persist signal. A boot-time DELETE clears the key so
+   a salvage-relaunch second boot never inherits a prior crash's value.
+   ≤3 fail-soft `curl -m 5` writes per crash (inside the 3/s burst +
+   10/min guest-attribute caps); the poller reads it best-effort on every
+   failed / finalize-failed-classifying tick and appends
+   `[crash-persist-breadcrumb] eps/persist=<value> (instance <status>)` to
+   the terminal marker's `log_tail_excerpt`
+   (`GcpBackend._guest_persist_breadcrumb` — never raises, never gates
+   classification or failover: diagnostic-only by design).
+
+   Decision table (`eps/persist` × the HF `issue<N>_partial/` prefix):
+
+   | `eps/persist` | HF prefix | Reading |
+   |---|---|---|
+   | ABSENT | absent | pre-fix render, trap never entered the persist, entry-curl failure (`-m 5` expiry), OR total metadata-channel death (the #667 class — co-signal: a WRITTEN `eps/phase=failed` + ABSENT breadcrumb genuinely isolates the pre-persist window; phase ALSO absent ⇒ dead metadata channel, route to the #667 wedge lane) |
+   | `attempted` (standing) | absent | persist KILLED mid-flight (external termination / hard kill). **TERMINATED-only reading** — a RUNNING-window read may catch a healthy persist in flight (the poll excerpt self-discloses instance status + an in-flight qualifier) |
+   | `attempted` (standing) | present | kill landed in the window after uploads completed but before the final-status write (rare; transcript disambiguates) |
+   | `skipped_no_token` | absent | early-boot crash before secrets fetch |
+   | `ok` | present | normal crash persist. Since #1343, `ok` = the persist python exited 0 AND ≥1 upload verifiably succeeded (transcript existence probe, or a client-confirmed `upload_folder` commit); per-upload failures are still logged, the transcript remains the per-upload audit. Same-boot re-crash caveat: the probe reads the attempt-scoped prefix, so `ok` states prefix recoverability, not necessarily THIS crash's uploads |
+   | `ok` | absent/partial | now RARE (pre-#1343 this was the 429-storm shape — that now lands at `failed_uploads`): verify evidence existed at persist time but a scoped listing later reads absent — repo/prefix misroute, or listing lag; separable post-hoc by a scoped `list_repo_tree` |
+   | `failed_uploads` | absent | the #1315 shape: TOTAL upload failure (dead HF channel / 429 storm / rejected token) previously masked as `ok`; nothing recoverable on HF — recover via serial console / boot-disk surgery |
+   | `failed_uploads` | present | late-landing commit(s) — the #1339 gateway-timeout shape: the client logged FAILED, the commit landed server-side after the probe; trust a scoped prefix listing over the breadcrumb |
+   | `timeout` | absent/partial | 300s budget exhausted (stalled uploads — the 504 shape). Since #1343, `timeout` can also follow a completed-uploads persist whose verify probe ate the budget tail — a PRESENT HF prefix alongside `timeout` is consistent with a healthy persist SIGTERMed mid-probe |
+   | `failed_rc<N>` | absent | bootstrap/compound failure (127 = uv missing; 1 = cd short-circuit OR python top-level failure; else python rc) |
 
 **Sweep scope (explicit):** the partial sweep covers exactly the three
 named directories above (`eval_results/issue_<N>/`, `data/issue_<N>/`,
@@ -90,7 +174,12 @@ only when they land under `$WORKLOAD_ROOT/logs/` (relative `logs/…` or
 `$REPO_ROOT/logs/…` on the workload-cmd branch, where the startup script
 exports `REPO_ROOT="$WORKLOAD_ROOT"` — #641); absolute
 `<vm_scratch_dir>/logs` paths are not swept — place dispatcher worker logs
-under the workload-root `logs/` convention. A workload writing partials
+under the workload-root `logs/` convention. Within the worker-log tree,
+git-TRACKED files (per `git ls-files -z -- logs` against the cloned repo)
+are excluded at walk time (#1351) — a run-generated forensic log at a
+git-tracked path is NOT swept, so never append crash forensics to a
+committed file; the exclusion fails OPEN (sweep everything) on any git
+failure. A workload writing partials
 elsewhere must place them under a swept dir or upload them itself.
 
 Discipline (all load-bearing — the trap must never delay the poweroff that
@@ -111,7 +200,7 @@ bounds billing):
   strand the `shutdown`.
 - **Eager bounded serial streaming (#854).** The persist's output reaches
   fd 3 (the serial console) line-by-line AS IT HAPPENS via a pure-bash
-  reader (2000-char line cap, 120-line print cap — raised 60 → 120 at #885:
+  reader (2000-char line cap, 200-line print cap — raised 60 → 120 at #885, then 120 → 200 at #1339:
   the worker-logs sweep's worst case of ~40 staging TAILED/SKIP lines + a
   dropped-count + 2 folder-upload lines on top of ~16 pre-existing persist
   lines sat right AT the old cap) — the old `| cut | tail`
@@ -139,7 +228,15 @@ on the next real GCP crash, the HF `issue<N>_partial/<attempt_id>/` prefix
 gains the per-crash timestamped `workload_<ts>.log`, the
 `crash_persist_transcript.log` (whose lines record every upload/skip —
 including a loud SKIP naming why a `data_issue_<N>/` dir did not upload),
-and `data_issue_<N>/` when the workload wrote one.
+and `data_issue_<N>/` when the workload wrote one. **The #811 lesson
+(#1151): all of these signals ride the SAME HF channel and can fail
+TOGETHER** — #811's post-#854 crash left a zero-file prefix with no way to
+tell a killed persist from a dead HF channel — so the `eps/persist`
+guest-attribute breadcrumb (item 8) is the HF-independent fix-engaged
+signal: on the next real GCP crash the terminal diagnosis marker (the
+01:24Z shape) carries `[crash-persist-breadcrumb] eps/persist=<value>`
+regardless of HF state, turning a persist no-fire into a specific, named
+value instead of an absence.
 
 **The #854 incident record (correcting #825's premise).** The HF commit
 log shows runs 1 AND 2 both landed `crash_report.json` + `workload.log`
@@ -193,7 +290,13 @@ FILE EVIDENCE:
   after the LAST deliverable-producing step's upload+verify PASS — a
   multi-STAGE in-instance driver that stamps after stage-1's verify
   misclassifies a stage-2 crash (Step 8 upload verification backstops it,
-  but the contract precludes it). For a composed `--workload-cmd` chain,
+  but the contract precludes it). A git-committed eval-JSON leg is itself
+  a declared deliverable: do NOT stamp the sentinel while a result commit
+  is unpushed (`git rev-list --count origin/<branch>..HEAD` != 0) — else
+  a #1205 push-verify backstop failure classifies
+  `finalize_failed_artifacts_ok` (done-like) instead of `failed`
+  (`.claude/rules/pod-side-reporting.md` § Result-push verification
+  contract). For a composed `--workload-cmd` chain,
   insert `&& touch "$EPS_DELIVERABLES_OK_PATH"` BETWEEN the
   deliverable-producing step and the tail steps (a trailing `&& touch`
   after the whole chain only runs on rc==0, when the trap is idle —
@@ -340,30 +443,154 @@ OR `spec.extra["spot_tolerant"]`):
   leads; flex sits between spot and on-demand as the "queue for capacity
   rather than fail" middle rung. A short `lora-7b` (a40 present) yields 5
   GCP rungs; a short `ft-7b` (no a40) yields 3 (spot-80, flex-80,
-  ondemand-80).
+  ondemand-80). (Width-1 rung counts are UNCHANGED by #1121; a
+  width-DECLARING dispatch prepends wide rungs per § Width-aware rungs
+  below — the width-8 short walk is 14 rungs.)
 - **LONG / UNKNOWN-length jobs — flex leads, NO spot:** flex-start A100-80 →
   on-demand A100-80 → on-demand A100-40 (fits-40 only). Spot is barred
   (preemption too costly for a long job); flex — non-preemptible once
   running, queues for capacity — leads. An unknown-length job (no time
   budget) is NOT short, so it takes this branch. A long `ft-7b` yields 2 GCP
-  rungs; a long `lora-7b` yields 3.
+  rungs; a long `lora-7b` yields 3 (width-1 counts; the width-8 long walk
+  is 9 rungs, § Width-aware rungs below).
 
 The flex rung threads `provisioning_model=FLEX_START` via
 `router._flex_start_rung` (label `flexstart_<gpu_kind>`); A2 acceptance of
 `--provisioning-model=FLEX_START` was confirmed by a live #680 probe on both
 `a2-ultragpu-1g` and `a2-ultragpu-4g`. The per-day attempt cap
-(`MAX_GCP_ATTEMPTS_PER_DAY`) was bumped 5 → 8 to cover the up-to-5-rung
-short-job ladder plus a same-day retry margin (still an attempt COUNT, never
-a dollar cap). Tests of record: `test_ladder_short_job_spot_before_ondemand`,
+(`MAX_GCP_ATTEMPTS_PER_DAY`) was bumped 5 → 8 at #680 to cover the
+up-to-5-rung short-job ladder plus a same-day retry margin, then 8 → 16 at
+#1121 — the width-8 short walk is up to 14 rungs + margin, the same sizing
+logic (still an attempt COUNT, never a dollar cap).
+
+**Width-aware rungs (#1121).** A dispatch that DECLARES a shardable
+multi-GPU axis via the existing `--gpus N` flag (`RunSpec.gpus`; N ∈
+{2, 4, 8} above the intent's base machine width, on a width-eligible
+A100-class intent — `gcp.WIDTH_ELIGIBLE_INTENTS` = {lora-7b, lora,
+capture-7b, eval, debug, ft-7b}) walks WIDE `a2-ultragpu-{8,4,2}g` rungs
+(`gcp.WIDE_A100_80_BY_WIDTH`) BEFORE the base ladder, WIDTH-MAJOR: every
+provisioning model at width w is exhausted before width w−1 is accepted
+(wall-clock is the scarce resource; credits are not — a spot-8g attempt is
+strictly preferable to an on-demand-4g one). Intra-width the length-aware
+order above applies verbatim; job length is classified ONCE at the WIDEST
+requested machine (GPU-hours = wall × width) and threaded through the base
+tail. Wide rung labels carry an `x<w>` suffix (`spot_a100_80x8`); width-1
+labels are byte-identical to pre-#1121. The exact width-8 walks:
+
+- **Width-8 SHORT** (≤ 2 GPU-h at width 8, or `spot_tolerant`; 14 rungs):
+  `spot_a100_80x8 → flexstart_a100_80x8 → ondemand_a100_80x8 →
+  spot_a100_80x4 → flexstart_a100_80x4 → ondemand_a100_80x4 →
+  spot_a100_80x2 → flexstart_a100_80x2 → ondemand_a100_80x2 →
+  spot_a100_80 → spot_a100_40 → flexstart_a100_80 → ondemand_a100_80 →
+  ondemand_a100_40` → SLURM lanes → RunPod terminal rung.
+- **Width-8 LONG/UNKNOWN** (the common case — wall × 8 usually exceeds
+  the 2 GPU-h spot threshold; 9 rungs): `flexstart_a100_80x8 →
+  ondemand_a100_80x8 → flexstart_a100_80x4 → ondemand_a100_80x4 →
+  flexstart_a100_80x2 → ondemand_a100_80x2 → flexstart_a100_80 →
+  ondemand_a100_80 → ondemand_a100_40` → SLURM → RunPod.
+
+H100 is EXCLUDED from the width walk (no `WIDE_A100_80_BY_WIDTH` rows; the
+H100 intents are not width-eligible): preemptible quota is exactly 8 (one
+8×, zero concurrency headroom, #743), there is no on-demand pool, and the
+H100 quota metrics are absent from `regions describe` on this project, so
+the fail-open headroom pre-check cannot protect a doomed create —
+`sweep-8g-h100` stays explicit-`--intent`-only. The #783 queue-timeout,
+#1116 queue-vanish, and #1029 boot-loop poller machinery applies to wide
+rungs unchanged (per-rung-label streaks key on the new `x<w>` labels
+cleanly). **Paid-fallback exposure planners must understand:** width
+degradation fires only on CREATE-TIME capacity misses. For a LONG job
+`flexstart_a100_80x8` is rung 1, and a flex create that QUEUES ends the
+ladder walk (route() returned a handle) — so the realistic fallback for a
+queued-but-stuck wide dispatch is the #783 queue timeout
+(`EPS_GCP_QUEUE_WAIT_SECONDS`, default 600s) failing over to a PAID RunPod
+pod at the REQUESTED width, NOT 4g/2g degradation on GCP. A workload that
+CANNOT re-shard off the realized width (`realized_gpu_count` on the
+`epm:backend-selected` marker / handle sidecar; `requested_gpus` rides
+alongside) must pin its width rather than ride the degrading walk — for an
+EXPLICIT `sweep-8g-a100` dispatch the pin mechanism is
+`dispatch_issue.py --width-required` (#1379); on the `--gpus N` path no
+pin flag exists yet (the combination is refused, exit 2), so a
+width-required `--gpus` workload drops `--gpus` for an exact-width intent
+— the `--gpus`-path pin is a deferred follow-up.
+Poller-side width-degrade re-entry is a named deferred follow-up (#1121
+plan), NOT built.
+
+**#1379 — explicit `sweep-8g-a100` degradation.** An EXPLICIT
+`--intent sweep-8g-a100` dispatch (no `--gpus`) now width-degrades too:
+the router APPENDS degraded `a2-ultragpu-{4,2}g` rungs AFTER the intent's
+own 8g base rungs (the base rungs ARE the width-8 rungs, so width-major
+order holds with zero duplicate creates) via the same per-width rung
+builder the #1121 prefix uses (`gcp.EXPLICIT_WIDE_DEGRADE_INTENTS` /
+`router._explicit_wide_degrade_widths` / `router._wide_rungs_for_widths`),
+falling back to abundant partial-node capacity instead of starving on two
+empty 8-GPU DWS pools (the #825 create-miss shape). The three ladder
+shapes:
+
+- **LONG/unknown** (the #825 dispatch shape — no time budget; 6 rungs):
+  `flexstart_a100_80 → ondemand_a100_80 → flexstart_a100_80x4 →
+  ondemand_a100_80x4 → flexstart_a100_80x2 → ondemand_a100_80x2`.
+- **SHORT / `spot_tolerant`** (9 rungs): `spot_a100_80 →
+  flexstart_a100_80 → ondemand_a100_80 → spot_a100_80x4 →
+  flexstart_a100_80x4 → ondemand_a100_80x4 → spot_a100_80x2 →
+  flexstart_a100_80x2 → ondemand_a100_80x2`.
+- **Caller-pinned** (e.g. `--provisioning-model SPOT`; 3 rungs):
+  `spot_a100_80 → spot_a100_80x4 → spot_a100_80x2`.
+
+Opt out per dispatch with `dispatch_issue.py --width-required` (threads
+`spec.extra["width_required"]`; NOT combinable with `--gpus` — exit 2,
+`reason: width_required_gpus_conflict`, since `--gpus` declares a
+re-shardable axis by contract) for a genuinely width-required job
+(shared-nothing 8-way memory/parallelism that cannot re-shard).
+`sweep-8g-h100` is EXCLUDED from degradation: an explicit H100 pick is a
+GPU-TYPE choice (cross-type A100 degradation would silently change
+silicon mid-"fallback"), the H100-never-in-a-degradation-walk invariant
+stands, and the type-preserving escape after full exhaustion is the
+RunPod 8×H100 terminal rung (`RUNPOD_INTENT_FOR_GCP_INTENT` identity
+row). The residual above is UNCHANGED: width degradation fires only on
+CREATE-TIME capacity misses — a flex create that QUEUES then times
+out/vanishes still routes via the #783 queue-timeout / #1116 queue-vanish
+RunPod failovers at the ladder's realized width (poller-side
+width-degrade re-entry stays the named deferred follow-up). Fence sizing:
+a dispatch whose `--max-run-duration` is sized at full width must either
+pass `--width-required` or size the fence off the 2×-width p90 wall — a
+2× landing is a ~4× wall blowout that can convert visible starvation into
+a mid-run fence DELETE. A degradation is machine-readable on the
+`epm:backend-selected` marker / handle sidecar as
+`requested_gpus != realized_gpu_count` (`requested_gpus` is now populated
+— the intent's own base width, 8 — for explicit wide intents via
+`router._declared_width`; pre-#1379 it read null there). Worst-case new
+walk: 9 creates (short) < the 14-rung width-8 short walk
+`MAX_GCP_ATTEMPTS_PER_DAY = 16` was sized for — cap unchanged.
+
+Tests of record: `test_ladder_short_job_spot_before_ondemand`,
 `test_ladder_short_job_spot_miss_then_ondemand_order`,
 `test_ladder_short_job_full_rung_order`,
 `test_ladder_long_job_flexstart_before_ondemand_no_spot`,
 `test_ladder_long_job_flexstart_miss_then_ondemand_order`,
 `test_ladder_unknown_length_takes_long_branch`,
 `test_flexstart_rung_threads_flex_provisioning`,
-`test_max_gcp_attempts_per_day_is_eight`,
-`test_workload_error_on_later_rung_fails_over_to_runpod` (all in
-`tests/test_router.py`).
+`test_max_gcp_attempts_per_day_is_sixteen`,
+`test_workload_error_on_later_rung_fails_over_to_runpod`; width-aware
+(#1121): `test_width8_long_job_walks_wide_rungs_width_major`,
+`test_width8_short_job_full_rung_order`,
+`test_width_degradation_on_capacity_miss_lands_4g`,
+`test_width1_ladder_byte_identical_explicit_gpus_none_and_matching`,
+`test_width_ladder_never_emits_h100_machine`,
+`test_workload_error_on_wide_rung_fails_over_to_runpod`; explicit-wide
+degradation (#1379):
+`test_explicit_sweep8g_a100_long_ladder_order_with_degraded_rungs`,
+`test_explicit_sweep8g_a100_short_ladder_order_with_degraded_rungs`,
+`test_explicit_sweep8g_a100_degrades_to_4g_on_8wide_capacity_miss`,
+`test_explicit_sweep8g_a100_width_required_pins_full_width`,
+`test_explicit_wide_degrade_never_emits_h100_machine`,
+`test_explicit_sweep8g_h100_ladder_unchanged_no_degradation`,
+`test_explicit_sweep8g_a100_pinned_spot_walks_pinned_degraded_rungs`,
+`test_explicit_sweep8g_a100_runpod_still_last_after_full_degraded_walk`,
+`test_workload_error_on_degraded_rung_fails_over_to_runpod`,
+`test_declared_width_none_for_non_sweep_intents` (all in
+`tests/test_router.py`); `test_width_required_threads_extra_flag`,
+`test_width_required_with_gpus_exits_2_with_conflict_reason` (in
+`tests/test_dispatch_issue_cli.py`).
 
 ### Per-rung multi-zone fan-out
 
@@ -1028,6 +1255,14 @@ SAME-signature CUDA-IMA crash recurs on the same physical GPU. Part C's no-port
 wedge does NOT catch this — the CUDA-IMA pod keeps its port + stays RUNNING — so
 #763 needed a manual GCP→RunPod pivot. Part D automates exactly that recovery:
 detect the SECOND same-signature CUDA-IMA crash and pivot to a FRESH host.
+
+**Shape-dependent carve-out (#1092):** before reading a repeat IMA as a host
+defect, check the gotchas differential — if the crash follows the WORKLOAD
+shape (identical code clean on A100 + a same-pod short-prompt probe clean), a
+fresh host is EXPECTED to re-hit it and the fix is the default-off engine
+knobs, not a pivot (a knobs-on rerun that still IMAs falsifies the shape
+diagnosis — revert to the Part D pivot) — see `.claude/rules/gotchas.md`
+§ "vLLM-on-H100 CUDA illegal-memory-access under heavy shared-prefix caching".
 
 **Detection** (`backend_poll._maybe_escalate_runpod_cuda_ima`, the repeat-based
 sibling of the time-based `_maybe_escalate_runpod_wedge`). The signal is

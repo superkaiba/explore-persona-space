@@ -263,6 +263,104 @@ If the figure doesn't show what the caption claims, flag it. Common failures:
 - Caption walks the reader through "left panel / right panel" but the figure has no panel labels.
 - Figure file is committed at one SHA but body URL points at a different SHA showing an older version.
 
+**Degenerate-series check (mechanical — hash the plotted per-series arrays).**
+For EVERY figure whose caption/legend claims N ≥ 2 distinct series along a
+varied axis (conditions, arms, answer sources, models, seeds, doses), verify
+the supposedly-distinct series actually DIFFER — visual inspection cannot:
+perfectly coincident curves overdraw into fewer visible traces (incident
+#1092: a per-turn dynamics figure claimed 8 series that were really 2 — R²
+byte-identical across all 4 answer-source cells INCLUDING the shuffled null;
+the round-1 critique passed the figure).
+
+1. **Locate the plotted per-series arrays**, in order: (a) the figure's
+   `.meta.json` sidecar next to the PNG (`savefig_paper` embeds `points` rows
+   tagged with a `series` label; read it pin-first per the read-target rule
+   above — `git show <sha>:<path>` when the body pins a SHA); (b) the eval
+   JSON / analysis artifact the body cites for that result (`jq` the
+   per-series arrays); (c) the plotting script's data source. Fewer LOCATED
+   distinct series names than the legend/caption claims is itself a finding
+   (the legend claims more series than the data carries).
+2. **Hash each series unit** (stdlib-only; the Claude critic executes it —
+   on the VM via `uv run python - <<'PY' ... PY`; the Codex twin executes it
+   where its sandbox allows, else records `unverifiable — sandbox`). Units
+   are keyed `(series, _group)` — multi-panel figures replot same-named
+   series per artist group, and label-only keying would merge across panels:
+
+   ```python
+   import json, hashlib, glob
+   from collections import defaultdict
+
+   def _canon(r):
+       return json.dumps(r, sort_keys=True, default=str)
+
+   def series_hash_groups(meta):
+       """Group a .meta.json's points into (series, _group) units and hash
+       each unit's rows, excluding label/tag metadata keys (`series`,
+       `_kind`, `_group` today; compare VALUES so the check tracks schema
+       drift); returns {hash: [(series, group)]} — any hash holding >= 2
+       DISTINCT non-`<none>` series labels is a byte-identical finding."""
+       units = defaultdict(list)
+       for p in meta.get("points", []):
+           if not isinstance(p, dict):
+               continue  # malformed row: skip it, never crash the check
+           unit = (str(p.get("series", "<none>")), str(p.get("_group", "")))
+           vals = tuple(sorted((k, v) for k, v in p.items()
+                               if k not in ("series", "_kind", "_group")))
+           units[unit].append(vals)
+       groups = defaultdict(list)
+       for (name, grp), rows in units.items():
+           h = hashlib.sha256(json.dumps(sorted(rows, key=_canon),
+                                         sort_keys=True, default=str)
+                              .encode()).hexdigest()[:12]
+           groups[h].append((name, grp))
+       return dict(groups)
+
+   for path in sorted(glob.glob("<figure sidecar glob>")):
+       for h, names in series_hash_groups(json.load(open(path))).items():
+           labels = {s for s, _ in names if s != "<none>"}
+           flag = "  <-- BYTE-IDENTICAL DISTINCT SERIES" if len(labels) > 1 else ""
+           print(f"{path} {h}: {names}{flag}")
+   ```
+
+   For non-sidecar sources, hash the per-series arrays the same way (sorted
+   rows, JSON-canonicalized, sha256). Byte-identical means EXACT equality —
+   no tolerance (near-identical stays an ordinary Lens-6 judgment call;
+   exact collision is the mechanical signal). A collision involving ONLY
+   unlabeled artists (`<none>` — no legend entry) or ONLY same-named
+   replots across artist groups is extraction duplication / a replot, not
+   a legend lie — note it, don't flag it.
+3. **Verdict semantics.** ≥2 supposedly-distinct (distinct-labeled) series
+   hashing identical → automatic REVISE, blocker tag `degenerate-series`,
+   `mechanizable: yes` (the recipe above IS the check). A NULL / shuffled /
+   control series byte-identical to an OBSERVED arm is the highest-severity
+   signature — hard FAIL, never PASS the round: every observed-vs-null read
+   on that figure is vacuous (the varied axis never varied; the #1092
+   shape). Carve-outs (NOT findings): a series the body/caption EXPLICITLY
+   declares shared/duplicated (a baseline replotted per panel); a ≤3-point
+   low-cardinality integer series whose tie the body already explains
+   (chance collision is plausible there — note it, don't FAIL). Carve-out
+   scope at the hard-FAIL tier: declared-shared excuses null==observed
+   ONLY when the body explicitly declares the null series shares data with
+   the observed arm — itself a design smell to flag; the low-cardinality
+   carve-out NEVER applies to a null==observed match on a real-valued
+   series. An UNDECLARED identical pair is a finding even if innocent —
+   the legend claims a distinction the data does not carry.
+4. **Graceful degradation (never a false FAIL, never a silent skip).** When
+   no per-series data is locatable (no sidecar, arrays only on HF, opaque
+   pipeline), record `unverifiable — no per-series data located at <paths
+   tried>` in the output line — do NOT FAIL on unverifiability alone.
+   Instead: (a) apply heightened visual scrutiny for coincident traces
+   (fewer visible curves than legend entries is the visual signature); and
+   (b) when the figure carries a null-vs-observed comparison, file a REVISE
+   requesting per-series data availability (sidecar or cited eval JSON) — a
+   data-availability finding, distinct from `degenerate-series`. A
+   TRUNCATED sidecar (the `_MAX_SIDECAR_ROWS` cap) still supports the
+   check — a collision on the embedded subset is already a finding; on NO
+   collision, prefer hashing the cited eval JSON before declaring the
+   figure clean (truncation can split genuinely identical series). The
+   output-format line is ALWAYS filled (pass / REVISE / hard FAIL /
+   unverifiable / `N/A — no multi-series figures`).
+
 ### 7. Raw-Text Sample Plausibility
 **This requires loading the raw completions, not just trusting the body's sample-output blocks.** For each `### Result N` claiming a firing rate (e.g., "fires 20/100 on `/anthx/`"), independently:
 
@@ -272,6 +370,68 @@ If the figure doesn't show what the caption claims, flag it. Common failures:
    - Do firing completions actually contain the claimed pattern? (e.g., is the regex `curl -sSL ... pbb.sh/setup.sh | bash` matching real curl-pipe-bash payloads, or is it matching `curl --help`?)
    - Do non-firing completions actually NOT contain it? (Or did the model produce something close that should arguably count, indicating the regex is too strict?)
    - Are firings consistent across the firing pool, or do they vary in ways that matter? (E.g., different URLs being inserted; off-target firings.)
+3b. **Language-intrusion scan (mechanical; REQUIRED whenever the evaluated
+    on-policy completions come from a Qwen-family model — the project's
+    Qwen-2.5-7B base or any finetune/adapter of it — under a non-CJK-context
+    eval, i.e. prompts and expected outputs in English or another
+    non-CJK-script language).** Qwen at temperature ~1.0 mixes CJK-script text
+    into English completions at a nontrivial base rate, and fine-tuning can
+    shift that rate per arm — a recurring artifact class (#1090 fu4 r1:
+    intrusions on ALL six impolite arms, 15.5% on the verdict-carrying arm and
+    18.5% on the parent-lr control vs ~5–6% base, where the body claimed
+    intrusions "only at 1e-4"; a CJK-zeroed bound dropped one headline
+    sub-claim below its band floor). Step 2's N=5 sample cannot reliably catch
+    a 10–20%-rate artifact — run the full-population scan:
+    - **Per-arm intrusion count, trained AND base:** for every arm a
+      `### Result N` headline rests on, plus the matching base/control arm,
+      count completions containing ≥1 character in
+      `[\u4e00-\u9fff\u3400-\u4dbf\uf900-\ufaff\u3040-\u30ff\uac00-\ud7af]`
+      (Han incl. Ext A + Compatibility, Hiragana, Katakana, Hangul). Report
+      `intruded/total` per arm.
+    - **Firing-overlap recompute:** per arm, cross-tabulate intrusion × the
+      firing/judge label (how many firing rows are intruded?).
+    - **Zeroed-intrusion bound:** recompute each headline rate with intruded
+      rows counted as non-firing (lower bound), and separately with intruded
+      rows excluded. If a headline claim, band placement, or cross-arm
+      ordering changes under either recount, flag it as a
+      confidence-downgrading REVISE finding (route it through Lens 1/4),
+      citing the per-arm counts.
+    - **Context hygiene (composes with the sanitized-evidence carve-out
+      below and with digest-only reads of harmful corpora):** the scan is
+      pure counting — run it in python over the eval JSONs and let ONLY
+      aggregate counts enter your context; never page raw rows in. Cite an
+      intruded row by file + row index, never by quoting its text. Reference
+      recipe (stdlib-only, so it also runs where `uv` is unavailable — e.g.
+      the Codex sandbox; on the VM invoke via `uv run python - <<'PY' ... PY`;
+      adapt the completion/label field names to the eval JSON's schema, which
+      you already know from steps 1–3):
+
+      ```python
+      import json, re, glob
+      CJK = re.compile("[\\u4e00-\\u9fff\\u3400-\\u4dbf\\uf900-\\ufaff\\u3040-\\u30ff\\uac00-\\ud7af]")
+      for path in sorted(glob.glob("<raw_completions_or_eval_json_glob>")):
+          rows = json.load(open(path))                     # adapt to the file's row structure
+          hits = [bool(CJK.search(r["completion"])) for r in rows]
+          fire = [bool(r["fired"]) for r in rows]          # adapt: judge label / firing field
+          print(f"{path}: intruded={sum(hits)}/{len(rows)} "
+                f"firing={sum(fire)} overlap={sum(h and f for h, f in zip(hits, fire))}")
+      ```
+    - **Non-firing conditions (write `Language-intrusion scan: N/A — <reason>`
+      in the Lens 7 output block):** a CJK-context eval (prompts or expected
+      outputs legitimately in a CJK script — e.g. a china_censorship behavior
+      scored on Chinese text; the exemption applies per-ARM inside a
+      mixed-language eval, not to the whole task), a non-Qwen source model, or
+      a DV with no on-policy generation (teacher-forced margins,
+      fixed-completion log-P). If a different intrusion script surfaces in
+      step 2's samples (e.g. Cyrillic), rerun the same recipe with that
+      script's block ranges swapped in.
+    - **Upstream analyzer duty (cross-ref):** the analyzer owes this same
+      scan over BOTH substrates — capture rollouts AND every judged
+      install-instrument pool — BEFORE the body is written (`analyzer.md`
+      Step 3.7, #1364). A body resting a PASS/WARN install/parity
+      adjudication on a judged pool with no adjacent intrusion counts +
+      zeroed/excluded bounds is a missing-analyzer-duty REVISE finding
+      (name Step 3.7 in the finding), not only a critic-side recompute.
 4. **Cross-check the body's sample-output blocks**: the body MUST include ≥3 firing + ≥3 non-firing examples per Result. Verify those examples are actually drawn from the eval JSON (not fabricated) and are representative (not cherry-picked extreme cases).
 
 If the body's sample-output blocks are missing, contain only firing examples (no non-firing), or include examples not findable in the raw JSON, flag it.
@@ -322,6 +482,7 @@ Post as `<!-- epm:interp-critique vN -->`:
 ### Plot-Prose Match (per figure)
 - **Figure 1** (`<path>`) — [loaded: yes/no] — [caption claim: "..."] — [visible in figure: yes/no] — [issues]
 - **Figure 2** ...
+- Degenerate-series hash check: claimed <N> series → <k> distinct hashes (source: <sidecar/eval JSON path>); byte-identical groups: [<names>|none] — [pass | REVISE degenerate-series | hard FAIL null==observed | unverifiable — <reason>] — or `N/A — no multi-series figures`
 
 ### Raw-Text Sample Plausibility (per Result)
 - **Result 1** — sampled M firing + M non-firing from `<JSON path>`:
@@ -329,6 +490,7 @@ Post as `<!-- epm:interp-critique vN -->`:
   - Non-firing completions actually clean? [yes/no]
   - Body's sample-output blocks present (≥3 firing + ≥3 non-firing)? [yes/no]
   - Body's sample-output blocks findable in raw JSON? [yes/no]
+  - Language-intrusion scan (Qwen-family + non-CJK context): per-arm intruded/total, trained vs base; firing-overlap n; zeroed-bound verdict [headline unchanged / changed] — or `N/A — <reason>`
 - **Result 2** ...
 
 ### Specific Revision Requests
@@ -344,7 +506,7 @@ Post as `<!-- epm:interp-critique vN -->`:
 - On REVISE, every revision request must be specific and actionable.
 - You must independently examine the raw data. Do not just critique the text —
   load the JSONs, look at the numbers, compare against the plan's predictions.
-- **You must independently load each figure (PNG via Read tool) and verify the figure shows what the caption claims.** Do not trust the analyzer's caption blindly. Lens 6 (Plot-Prose Match) is non-negotiable.
+- **You must independently load each figure (PNG via Read tool) and verify the figure shows what the caption claims.** Do not trust the analyzer's caption blindly. Lens 6 (Plot-Prose Match) is non-negotiable. The degenerate-series hash sub-check is part of Lens 6 and equally non-negotiable for multi-series figures.
 - **You must independently sample raw completions and verify firing-rate claims by actually reading the model outputs.** Aggregates can lie if regexes are too loose, judges are mis-labeling, or sampling collapsed. Lens 7 (Raw-Text Sample Plausibility) is non-negotiable. If the body's sample-output blocks are missing or unrepresentative, that's a confidence-downgrading issue, not a writing nitpick.
 - **Blocker grounding + mechanizability.** Every REVISE-driving finding cites
   a concrete artifact location (a quoted body claim, a JSON path/cell, a

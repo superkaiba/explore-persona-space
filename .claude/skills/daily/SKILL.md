@@ -50,15 +50,31 @@ of what the run applied + noted; the actual surfacing to Thomas happens over
 Telegram (see "Surfacing flow (applied / filed / held)"), not via this file. Handle an
 existing file as follows:
 
-- **File does not exist** → write the full stub (all five H2 sections below).
+- **File does not exist** → write the dated SKELETON first — the frontmatter
+  (§ Frontmatter) + all six H2 sections below with EMPTY bodies (in
+  particular `## Applied workflow improvements` stays empty until
+  enrichment) — as the run's FIRST durable action, then fill each section in
+  place via `Edit` as results land. In headless mode, rule 0 under
+  "Headless (cron) mode" additionally makes the skeleton commit + push
+  mandatory-immediate. The completed brief is the same file after
+  enrichment; the emptiness of the skeleton's Applied section is
+  load-bearing (it is what keeps a husk on this list's Edit-in-place
+  recovery branch below, and what the #1189 healthcheck husk arm detects).
 - **File exists but is missing the `## Applied workflow improvements` H2, or
   that section is empty** → do NOT overwrite the file. `Edit` it to insert /
   fill the `## Applied workflow improvements` section in place (between
   `## What happened` and `## Other problems & notes`, or in the correct
   position if those are absent), and likewise insert `## Other problems &
   notes` AND `## Living-docs drift` (between `## Other problems & notes` and
-  `## My thoughts`) if either is missing. Leave every other section — including any edits
-  Thomas already made to `## What happened` / `## My thoughts` — untouched.
+  `## My thoughts`) if either is missing. Leave every other NON-EMPTY section
+  — including any edits Thomas already made to `## What happened` /
+  `## My thoughts` — untouched. Exception for an ALL-EMPTY stub-first husk
+  (#1189: every section body empty — the skeleton was written but the run
+  died before any enrichment): the recovering run may also fill the other
+  auto-drafted sections (`## What happened`, `## Living-docs drift`,
+  `## Highlighted results`), since nothing there can be Thomas's; a section
+  with ANY existing content is still never touched, and `## My thoughts` is
+  always left alone.
   This is the recovery path when an earlier manual or partial run left a stub
   without the problem sweep.
 - **File exists with a non-empty `## Applied workflow improvements` section**
@@ -67,11 +83,15 @@ existing file as follows:
   would double-apply fixes). Refuse to overwrite and tell the user the day is
   already done.
 
-**Manual runs write the FULL file AND auto-apply.** When `/daily` is invoked
+**Manual runs complete the FULL file AND auto-apply.** When `/daily` is invoked
 manually (not via the nightly cron), always produce EVERY section including
-`## Applied workflow improvements` and actually apply the fixes — the 23:27 PT
-cron refuses to overwrite an existing daily file, so a partial manual run
-permanently loses that day's problem-sweep + auto-apply.
+`## Applied workflow improvements` and actually apply the fixes. Under
+stub-first an aborted manual SKELETON (empty Applied section) is recoverable —
+it lands on the Edit-in-place branch above, so the 23:27 PT cron can still run
+that day's problem-sweep. But a manual run that fills
+`## Applied workflow improvements` and then stops DOES block the nightly cron
+(the non-empty-Applied refuse rule reads it as "day already done"), so finish
+the apply pass you started.
 
 The file is a stub Thomas will finish editing. It starts hidden from the
 `/log` dashboard feed (`visible: false`) and only becomes visible when he
@@ -205,7 +225,7 @@ NO LONGER an allowed write target for this skill.
 
 ### Living-docs consolidation passes (folded in from /weekly, #713)
 
-Two nightly consolidation checks that used to live in `/weekly` (which is now a
+Nightly consolidation checks — the first two used to live in `/weekly` (which is now a
 manual deep-dive nothing depends on — see `.claude/skills/weekly/SKILL.md`). Both
 run every nightly `/daily`, both PROPOSE only (`docs/open_questions.md` mutations
 are user-gated — the `living_docs_update` gate is user-only), both are deduped by
@@ -275,6 +295,92 @@ for each still-open parked item:
 (consistent with the "do not move statuses unless the user asks" rule in
 "Other rules" below).
 
+**3. Parked workflow-fix-candidate routing pass (Step C).** Route the
+recursion-guard escape valve (`.claude/rules/workflow-fix-on-bug.md`
+§ Recursion guard): a workflow-fix session parks its candidates
+(`epm:workflow-fix-candidate` with a `parked …` note) instead of auto-routing
+them — THIS pass is the owning "next orchestrator pass". The /daily
+orchestrator is NOT under the recursion guard (no `workflow_fix_target:`
+Provenance line, no `EPM_WORKFLOW_FIX_SESSION=1`), so routing here cannot
+recurse.
+
+```
+sweep = run("uv run python scripts/sweep_parked_wf_candidates.py")
+    # one JSON object; UNBOUNDED window by default, already
+    # routed-suppressed + row-deduped (suppression is what bounds re-scans)
+for c in sweep["candidates"]:
+    # fields: formal <!-- workflow-fix-candidate v1 --> block → verbatim;
+    # prose park → SYNTHESIZE proposed_change/bug_observed per
+    # workflow-fix-on-bug.md (prose-synthesis rule), then
+    # fp = wf_fix_fingerprint(proposed_change, bug_observed)
+    if an open OR closed infra task already addresses this bug
+       (c["open_wf_fix_on_file"] advisory, the wf-fix-fp tag, or content match):
+        post the routed-record below with note `deduped against #<M>`; continue
+    route through the THREE-ROUTE classifier (the "Triage each problem"
+    section BELOW this pass), with two overrides:
+      - c["park_form"] == "architectural" → ALWAYS route 3 (needs-human);
+        never route 2 (architectural greenlight is user-only)
+      - DEFAULT route 2: a parked candidate is by construction a
+        behavior-change proposal; route 1 only for a pure prose/doc change
+        with no behavior effect (the route-1 litmus verbatim)
+    file through the durable filing dir + daily_drive_filings.py as usual
+      (route 2 tags: wf-fix + wf-fix-fp:<fp> + daily-auto-filed — a parked
+       candidate is by construction workflow-surface, never `wf_fix: false`;
+       the body carries
+       the ## Provenance `- workflow_fix_target: <target_file>` +
+       `- fingerprint: <fp>` lines per the route-2 wf-fix body Provenance mandate
+       below — the driver injects them when absent)
+    post the ROUTED-RECORD that closes the loop — for EVERY disposition
+    (route 1 self-apply, route 2 filing, route 3 needs-human filing, AND
+    dedup), no new marker kind:
+      - candidate parked on task #N:
+        task.py post-marker N epm:workflow-fix-task-filed --note
+        "filed_task: #<M or 'n/a (route 1; commit <sha>)'> / target_file: <tf> /
+         fingerprint: <fp or 'n/a (prose park)'> / session_spawned: <bool> /
+         source: daily-parked-candidate-sweep / origin_candidate_ts: <c.ts> /
+         origin_candidate: <first ~200 chars of the candidate note, abridged>"
+      - cache-borne candidate: append the equivalent JSON row to
+        .claude/cache/workflow-fix-events.jsonl (existing convention)
+    record it in ## Applied workflow improvements ("filed for review #<M>") /
+      ## Other problems & notes (route 3), exactly as routes 2/3 prescribe.
+```
+
+Routes 1 and 3 post the routed-record too — a route-3 needs-human filing DOES
+have a real `filed_task: #<M>`; route 1 records the commit sha in place of a
+task id. Without a record for every disposition, a route-3 architectural park
+would re-enumerate nightly; the record makes each disposition
+sweep-idempotent. `origin_candidate_ts` is the suppression key for fp-less
+parks; `origin_candidate` (abridged verbatim) keeps the marker
+self-describing per workflow-fix-on-bug.md § Markers.
+
+Future sweeps skip routed candidates mechanically — see the enumerator's
+suppression predicate (`scripts/sweep_parked_wf_candidates.py --help`).
+
+**4. Clean-result title-sync drift sweep (Step D).** Run the read-only
+corpus-wide H1-vs-frontmatter-title drift sweep (#1196) so the drift report
+surfaces nightly:
+
+```
+uv run python scripts/audit_clean_results_body_discipline.py --title-sync-sweep
+    # read-only (bodies are NOT modified); WARN-only — ALWAYS exits 0
+    # (~2 s at the current ~1,200-body corpus). A NONZERO exit is a CRASH
+    # (the sweep never FAILs by design): note it as a problem in
+    # ## Other problems & notes — never treat it as a drift signal, and
+    # never let it fail the daily run.
+```
+
+A `PASS:` headline (zero WARN rows) → nothing to record. Otherwise copy each
+`- #<N> (<status>): ...` WARN row into `## Other problems & notes` as its own
+bullet, verbatim — each row already carries both title values AND both
+remediation commands (`task.py set-title` vs re-`set-body`). Which side is
+the fresher intent is a HUMAN call: NEVER run the remediation from /daily
+(same discipline as "never `living_docs.py apply`"); Thomas or the PM runs
+the command from the note. No-spam variant: if the row set is IDENTICAL to
+the previous daily file's, replace the verbatim copies with one line —
+`- title-sync drift unchanged (<K> rows — see logs/daily/<prev-date>.md)`
+(LLM judgment against yesterday's file; no new dedup state, matching Step
+B's no-spam skip discipline).
+
 **Dedup mechanism (Step F).** A filesystem event-stream
 `.claude/cache/nightly-consolidation-events.jsonl` (a local, gitignored durable
 trace following the existing `.claude/cache/disk-guard-events.jsonl` /
@@ -307,6 +413,11 @@ Dedup rules, in priority order:
 
 **Triage each problem into one of THREE routes (changed 2026-06-28, #706 — route 1 NARROWS the old "self-apply everything fixable" bucket to no-behavior-change-only; route 2 sends behavior changes to independent review; route 3 turns held judgment calls into tracked tasks the PM surfaces):**
 
+**Freshness gate:** every problem that will FILE (routes 2 and 3) passes the
+**Retraction re-check** (subsection below) before its filing body is composed —
+a mined premise the source trail has since retracted or superseded is skipped
+with a note, never filed (incident #1101/#1074, routed as #1131).
+
 1. **Route 1 — Trivial mechanical** (doc edits, string replaces, comment/lint annotations — changes with NO behavior or logic effect) → APPLY it now (Edit the file), VERIFY it (see "Verification gate for code fixes" — workflow `.md` files skip this and use the lint gate instead), `git commit` it on its own, then record it in `## Applied workflow improvements` as a numbered entry WITH the applied diff and the commit sha (shape below). One commit per fix so each is independently revertable. After ALL workflow-file fixes are committed, run the repo-wide lint gate ONCE (see "Lint gate"); if it regresses, revert the offending commit(s) and re-log them in `## Other problems & notes` as "reverted: failed lint gate". **The litmus is "does this change what the code/workflow DOES?"** — pure prose/string/format/comment edits, typo fixes, and stale-reference renames qualify; ANYTHING that alters behavior or logic does NOT (it goes to route 2). When unsure, route to 2 — route 1 is the conservative no-behavior-change floor, not a catch-all.
 
 2. **Route 2 — any behavior/logic change** (incl. high-blast-radius REVERSIBLE — the bulk of the old self-apply bucket: experiment-code bugs in `scripts/*.py` / `src/**`, infra flakiness fixes, retry/timeout logic, hook repairs in `.claude/settings.json`, a new agent/skill file, any workflow-rule change that alters what an agent does) → do NOT self-apply. FILE a `kind: infra` task that auto-dispatches to `/issue --auto`, so the fix lands through the full INDEPENDENT pipeline (planner → adversarial critic ensemble → implementer → Claude+Codex code-review → test-verdict → Step 10d auto-merge) rather than this skill's own verify gate. This is what kills "grades its own homework" + "self-apply is the only un-reviewed path". File with:
@@ -316,7 +427,9 @@ Dedup rules, in priority order:
      --body-file <path to a body describing the bug + the proposed fix> \
      --tag wf-fix --tag "wf-fix-fp:<fp>" --tag daily-auto-filed
    ```
-   (compute `<fp>` = `task_workflow.wf_fix_fingerprint(proposed_change, bug_observed)`; the `daily-auto-filed` tag distinguishes /daily-filed review tasks from manual workflow-fix-on-bug filings, and feeds the PM digest count M.) `file_infra_task.py` files + best-effort spawns `/issue --auto` in one call, and no-ops the spawn cleanly (the task stays at `proposed` for the watcher `proposed_infra_sweep` backstop) when the daemon is unreachable / the cap is full. Record the filed `#<N>` in `## Applied workflow improvements` as a **"filed for review #<N>: <one-liner>"** entry (there is no self-applied diff or sha for a route-2 item — the diff lands in the spawned `/issue` session). For experiment-code bugs that are NOT a workflow-surface gap, file the `kind: infra` task the same way (drop the `wf-fix` / `wf-fix-fp` tags, keep `daily-auto-filed`) so the bulk count still attributes it. When filing MORE THAN ONE task in a run, do NOT hand-loop this command: write the bodies + manifest to the durable filing dir and drive them through `scripts/daily_drive_filings.py` (see "Durable filing dir + incremental filing driver" below) in small batches (≤8 per Bash call), each call with an explicit `timeout` (≥300000 ms) — a 16-task sequential filing loop under the shared registry flock exceeded the default 2-min Bash cap mid-loop (2026-07-01, the 06-30 backfill run); the driver's `filed.jsonl` ledger makes a mid-batch kill resumable (re-invoke; filed slugs are skipped) instead of forcing a which-got-filed audit.
+   (compute `<fp>` = `task_workflow.wf_fix_fingerprint(proposed_change, bug_observed)`; the `daily-auto-filed` tag distinguishes /daily-filed review tasks from manual workflow-fix-on-bug filings, and feeds the PM digest count M.) `file_infra_task.py` files + best-effort spawns `/issue --auto` in one call, and no-ops the spawn cleanly (the task stays at `proposed` for the watcher `proposed_infra_sweep` backstop) when the daemon is unreachable / the cap is full. Record the filed `#<N>` in `## Applied workflow improvements` as a **"filed for review #<N>: <one-liner>"** entry (there is no self-applied diff or sha for a route-2 item — the diff lands in the spawned `/issue` session). For experiment-code bugs that are NOT a workflow-surface gap, file the `kind: infra` task the same way (drop the `wf-fix` / `wf-fix-fp` tags, keep `daily-auto-filed`) so the bulk count still attributes it; in a driver manifest, set `wf_fix: false` on the item — `daily_drive_filings.py` then drops the two wf-fix tags, skips the Provenance injection, and skips fp-dedup (the `filed.jsonl` ledger + the title-scan recovery, both keyed on `daily-auto-filed`, remain the double-file protections for such items; do not hand-add a `workflow_fix_target:` Provenance block to a `wf_fix: false` body — the driver WARNs on one). When filing MORE THAN ONE task in a run, do NOT hand-loop this command: write the bodies + manifest to the durable filing dir and drive them through `scripts/daily_drive_filings.py` (see "Durable filing dir + incremental filing driver" below) in small batches (≤8 per Bash call), each call with an explicit `timeout` (≥300000 ms) — a 16-task sequential filing loop under the shared registry flock exceeded the default 2-min Bash cap mid-loop (2026-07-01, the 06-30 backfill run); the driver's `filed.jsonl` ledger makes a mid-batch kill resumable (re-invoke; filed slugs are skipped) instead of forcing a which-got-filed audit. Belt-and-suspenders (#1273): the driver prepends `daily-fix: ` to a route-2 manifest title missing a `WF_FIX_TITLE_PREFIXES` prefix (before the ≤60 truncation) — still compose titles WITH the prefix so the ≤60 budget is visible at author time, and note the guard exists ONLY on the driver path (a direct single-item `file_infra_task.py` invocation has no title guard).
+
+   **wf-fix body Provenance mandate (durable recursion-guard signal, #1173):** every route-2 body that will carry the `wf-fix` tag MUST include a `## Provenance` section with the two lines `- workflow_fix_target: <target_file>` and `- fingerprint: <fp>`. The first is the DURABLE recursion-guard signal `task_workflow.is_workflow_fix_session()` reads — and it is the ONLY leg a daily-filed session ever has: `file_infra_task.py`'s `spawn-issue --auto` sets NO custom env, so `EPM_WORKFLOW_FIX_SESSION=1` is absent from the FIRST spawn (not just lost on a watcher crash-recovery respawn, which re-runs `spawn-issue --auto` with no custom env either) — a body without the line leaves the session unguarded (`.claude/rules/workflow-fix-on-bug.md` § Recursion guard + § Body-file template; incident #1134). The second is the body-side dedup fallback. `daily_drive_filings.py` INJECTS both lines into a route-2 body that lacks them (from the manifest `target` + the computed fp) — the mechanical backstop for the batch path — but a SINGLE-item direct `file_infra_task.py` invocation has no injector (`file_infra_task.py` only WARNs on a `wf-fix`-tagged body missing the line), so compose the body with the section regardless. A `wf_fix: false` manifest item (the non-workflow-surface route-2 variant above) is OUTSIDE this mandate by construction: it carries neither the `wf-fix` tags nor the injected block, so `task_workflow.is_workflow_fix_session()` correctly stays false for its spawned session — an experiment-code fix session is NOT recursion-guarded. **verified-at-filing mandate (#1272):** every route-2 wf-fix body ALSO carries a `verified-at-filing:` line in `## Workflow gap` — the grep command + hit count run at body-compose time, or `n/a — <one-line reason>` when the claim is not grep-verifiable (`.claude/rules/workflow-fix-on-bug.md` § Body-file template). The grep must BIND to the claim (#1307): state per-target hits for each file named in `target_file` — a presence claim with a 0-hit named target is a mis-target (re-grep repo-wide, correct the target, re-verify before filing) — and any nonexistence claim ("symbol/test no longer exists") records a repo-wide relocation grep, since a single-path probe cannot distinguish removed from moved (#1290/#1296). A presence hit additionally binds on CONTEXT: read the hit's surrounding lines — context that already implements the proposed change means the fix is already landed; dedup, don't file (#1330 filed over the landed #1309 fix; rule file clause (c)). An ABSENCE claim about a TEXT-MATCHING guard (an error-text substring list, a regex classifier, a transient-error predicate) additionally needs a semantic probe — run the predicate against the claimed text and/or grep fragments/substrings of it repo-wide — plus a landed-fix history check (`git log --oneline --since='7 days ago' -- <target_file>`); a verbatim-literal 0-hit grep alone is NOT absence evidence (#1386 filed over the just-landed #1360 fix; rule file clause (a')). Unlike the two Provenance lines, `daily_drive_filings.py` has NO injector for it — compose it by hand (#1221/#1229/#1249: three stale-claim filings in two days).
 
 3. **Route 3 — a genuine judgment call** (the judgment-call carve-out below, VERBATIM) → FILE a TRACKED `proposed` task the PM surfaces + re-surfaces, AND log it in `## Other problems & notes`. The held item is no longer a dead-end note that lands where Thomas does not look (a tracked-but-unread `logs/daily/` file + one Telegram digest line) — it becomes a real task in the `proposed` queue, tagged so the PM enumerates it in its `Needs you` block every STATUS pass until Thomas acts on it. File with:
    ```bash
@@ -327,10 +440,66 @@ Dedup rules, in priority order:
    ```
    `--no-dispatch` files the task at `proposed` WITHOUT spawning a session (the PM, not an autonomous sweep, decides what happens). The `needs-human` tag is the auto-dispatch-exclusion signal: the watcher's `proposed_infra_sweep` candidate query SKIPS any `proposed` infra task carrying it, and the PM enumerates it in `Needs you` instead. Record the held item in `## Other problems & notes` as a bullet: what happened (session id / task id) + which carve-out item held it + the filed `#<N>` + a one-line suggested action. Route-3 bodies live in the SAME durable filing dir and file through the same driver (a manifest item with `route: 3` ⇒ the driver adds `--tag daily-held --tag needs-human --no-dispatch`); single-item runs may still invoke the command above directly — noting that a direct filing sits OUTSIDE the `filed.jsonl` ledger guarantee (route-2 fp-dedup still covers a kill-window re-raise; route 3 has no such backstop), so the body still goes in the durable dir first.
 
+### Retraction re-check (freshness gate before route-2/route-3 filings)
+
+The sweep mines a point-in-time snapshot; the correction can already sit later
+on the same trail, or land between mining and filing. Incident #1101/#1074
+(2026-07-06): the sweep filed #1101 from #1074's `epm:pod-terminated v1` prose
+follow-up while an explicit retraction (`epm:progress v26`, "no workflow gap;
+nothing to file") sat 37 seconds later on the SAME events.jsonl — the spawned
+session burned a full spawn + a ~6-minute clarifier pass before archiving
+won't-fix. So, per mined problem, IMMEDIATELY BEFORE composing its filing body
+(routes 2 AND 3 — before the durable-dir write, so a skipped problem never
+enters the manifest):
+
+1. **Marker-mined problems** (evidence E = a marker on task #M — including a
+   parked `epm:workflow-fix-candidate` being routed): re-read #M's events
+   NEWER than E, fresh at filing time:
+   ```bash
+   uv run python scripts/task.py view <M> --json | jq -r --arg ts "<E.ts>" \
+     '.events[] | select(.ts > $ts) | "\(.ts) \(.kind) v\(.version // 1): \((.note // "")[0:400])"'
+   ```
+   (Only the filtered rows enter context — never page the raw events.jsonl.)
+   Read the returned notes for a correction of the mined premise. The regex
+   `RETRACTION|retract(ed|ion)|supersed|no workflow gap|nothing to file` is a
+   RECALL aid for which rows to read closely — it never decides by itself.
+2. **Binding test (what actually suppresses a filing):** skip ONLY when a
+   newer note UNAMBIGUOUSLY addresses the mined premise — it names E's marker
+   kind (e.g. "epm:pod-terminated v1"), quotes a distinctive phrase of E's
+   note, or is an explicit retraction whose subject is plainly the mined
+   claim. A note that merely contains "retract" / "nothing to file" about
+   something ELSE never suppresses. Ambiguous → FILE anyway and note the
+   possible retraction in the filing body (the spawned session's clarifier is
+   the existing backstop — fail OPEN toward filing; a wrongly-skipped filing
+   has no dedup tag, so a later re-raise is never blocked).
+3. **Transcript-mined problems** (no source-task marker): before composing
+   the body, re-check the remainder of the SAME session transcript after the
+   mined excerpt for a correction/self-retraction of the premise (same recall
+   regex, same binding test); when the excerpt names a task #M, ALSO run
+   check 1 on #M. This is a targeted tail re-check at filing time, not a
+   transcript re-read. Evidence with NO source-task marker AND no session
+   transcript tail (e.g. a cron sidecar JSONL row, a bare log line) has
+   nothing to re-scan — no scan is owed; fail open and file as today.
+4. **On a suppressing hit:** do NOT file. Record the problem in `## Other
+   problems & notes` as: `skipped filing: premise retracted upstream — #<M>
+   <E.kind> at <E.ts> retracted by <kind> v<n> at <ts>: "<short quote>"`.
+   It counts in neither the applied (N) nor filed (M) Telegram counts.
+
+For auditability, also record one summary line per run in `## Other problems
+& notes` — `retraction re-check: N marker-mined problems scanned, K skipped` —
+so a no-hit night still shows the gate ran. Route 1 self-applies rather than
+files; its existing verify gate already
+requires confirming the problem against current reality, and a route-1 fix
+whose premise came from a mined marker confirms against the source trail the
+same way. A backfill RESUME of an already-composed `logs/daily/filings-<date>/`
+dir does not re-run this check per slug — fresh compositions on a backfill DO
+run it (the backfill section's current-tree confirmation is the same
+principle).
+
 ### Durable filing dir + incremental filing driver (routes 2 + 3)
 
-- **Durable-first ordering:** BEFORE the first filing call, write every route-2/3 body to `logs/daily/filings-<date>/<slug>.md` **under the repo root** (`~/explore-persona-space/logs/daily/...` — never a worktree-relative or /tmp path) and a `manifest.json` (`[{slug, route, title, target, bug, change, body?}]`) in that dir, written via temp+rename. NEVER stage filing bodies or driver scripts in bare /tmp (2026-07-03: a mid-filing kill stranded 10 of 13 route-2 bodies in /tmp; the backfill spent ~40 min recovering them — #1061).
-- **Drive incrementally:** `uv run python scripts/daily_drive_filings.py --dir logs/daily/filings-<date> --start I --end J` in batches ≤8, each Bash call with an explicit `timeout` (≥300000 ms). The driver appends every outcome to `<dir>/filed.jsonl` immediately (two-phase `attempting` → `filed|deduped|ERROR|recovered` rows), computes the route-2 `wf-fix-fp` dedup, and applies exactly the per-route tags of the two command blocks above — the command blocks stay the CONTRACT; the driver is the multi-item execution path. Never run two drivers on the same dir concurrently (the ledger has no locking; the existing "no backfill within 60 min of the nightly" rule bounds the realistic case).
+- **Durable-first ordering:** BEFORE the first filing call, write every route-2/3 body to `logs/daily/filings-<date>/<slug>.md` **under the repo root** (`~/explore-persona-space/logs/daily/...` — never a worktree-relative or /tmp path) and a `manifest.json` (`[{slug, route, title, target, bug, change, body?, wf_fix?}]`) in that dir, written via temp+rename. NEVER stage filing bodies or driver scripts in bare /tmp (2026-07-03: a mid-filing kill stranded 10 of 13 route-2 bodies in /tmp; the backfill spent ~40 min recovering them — #1061).
+- **Drive incrementally:** `uv run python scripts/daily_drive_filings.py --dir logs/daily/filings-<date> --start I --end J` in batches ≤8, each Bash call with an explicit `timeout` (≥300000 ms). The driver appends every outcome to `<dir>/filed.jsonl` immediately (two-phase `attempting` → `filed|deduped|ERROR|recovered` rows), computes the route-2 `wf-fix-fp` dedup, and applies exactly the per-route tags of the two command blocks above — the command blocks stay the CONTRACT; the driver is the multi-item execution path. A route-2 item with `wf_fix: false` (experiment-code / non-workflow-surface) keeps `daily-auto-filed` only and is exempt from injection + fp-dedup. Never run two drivers on the same dir concurrently (the ledger has no locking; the existing "no backfill within 60 min of the nightly" rule bounds the realistic case). The driver also normalizes route-2 bodies in place before filing (skipped for `wf_fix: false` items): a body lacking a `workflow_fix_target:` line gains `- workflow_fix_target: <manifest target>` (+ `- fingerprint: <fp>` when absent) under `## Provenance` — the durable recursion-guard signal; see the wf-fix body Provenance mandate in route 2 above.
 - **The dir stays untracked** (`logs/` is gitignored; do NOT force-add filings dirs — the post-filing durable record is the filed task itself under `tasks/`, committed by `task.py new`; only the daily `.md` is force-added per "Commit" below).
 - **Daily-file record:** route-2/3 entries in `## Applied workflow improvements` / `## Other problems & notes` take their `#id`s from `filed.jsonl`; any slug without a terminal row (or a filed id whose `tail` shows the spawn deferred to the watcher backstop) is recorded as "dispatch pending — see logs/daily/filings-<date>/filed.jsonl". An `ERROR` slug is recorded as "filing FAILED (<flag>) — retry: `uv run python scripts/daily_drive_filings.py --dir <dir> --retry-errors`" (never silently dropped, never rendered as pending); a `recovered` row with `dispatch_unconfirmed` is recorded as "filed #<id> (recovered; dispatch unconfirmed — watcher backstop covers it)".
 
@@ -387,14 +556,14 @@ uv run python scripts/workflow_lint.py --check-references
 - `--check-references` is the gate (it currently PASSes clean, so a new failure means a just-applied edit broke a workflow reference). Use the `uv run python …` form — the linter imports pydantic/PyYAML and needs the EPS venv; a bare `scripts/workflow_lint.py` in the cron shell will `ModuleNotFoundError`.
 <!-- example: anti-pattern -->
 - `--check-asks` is ALSO a gate (it now PASSes clean repo-wide, since the `issue/SKILL.md` mentions were annotated): a new `--check-asks` failure means a just-applied edit added an un-annotated `AskUserQuestion` mention — annotate it (`<!-- gate: <key> -->` resolving in `workflow.yaml § gates`, or `<!-- example: anti-pattern -->` for a forbidden-use / meta mention) or revert that edit, same discipline as `--check-references`.
-- **On regression** (`--check-references` was clean and is now failing): the failure is from a just-applied edit. Identify the offending commit, `git revert --no-edit <sha>` it (do not hand-edit), move that item to `## Other problems & notes` as "reverted: failed lint gate (<error>)", and re-run the gate until it is green again. Then continue to surfacing.
+- **On regression** (`--check-references` was clean and is now failing): the failure is from a just-applied edit. Identify the offending commit and revert it via a scratch worktree (the root guard blocks a repo-root `git revert`, #1234): `git worktree add --detach /tmp/daily-revert origin/main && git -C /tmp/daily-revert revert --no-edit <sha> && git -C /tmp/daily-revert push origin HEAD:main && git worktree remove /tmp/daily-revert` (do not hand-edit; route-1 fixes are committed AND pushed before this gate re-runs, so `origin/main` contains the sha). Then move that item to `## Other problems & notes` as "reverted: failed lint gate (<error>)", and re-run the gate until it is green again. Then continue to surfacing.
 
 ### Surfacing flow (applied / filed / held)
 
 During the run: route-1 fixes apply themselves (edit → `git commit`, one commit per fix → repo-wide lint gate ONCE, see "Lint gate"); route-2 behavior/logic changes are FILED via `file_infra_task.py` (no self-applied diff); route-3 judgment calls are FILED as tracked `needs-human` tasks. After all fixes are routed and the daily file is written, **surface a concise summary to Thomas's my-goat Telegram chat** by enqueuing it into the my-goat notification digest. Match the §2(f) PM-digest model (`/daily last night: applied N, filed M (→/issue), held J (needs you)`) so the Telegram line and the PM line are mutually consistent — applied (route-1), filed (route-2), and held (route-3) counts are reported SEPARATELY, never lumped as a single "Notes: M other" catch-all:
 
 ```bash
-NOTIF_CAT=research /home/thomasjiralerspong/my-goat/scripts/notif_enqueue.sh "EPS daily <date>: applied N route-1 fix(es), filed M route-2 review task(s), held J route-3 (needs you). Applied: 1) <one-liner> (<sha>). 2) <one-liner> (<sha>). Filed: <#id> <title>. Held (needs you): <#id> <held-item one-liner> (<carve-out reason>). Revert any applied with: git -C ~/explore-persona-space revert <sha>. Full: logs/daily/<date>.md"
+NOTIF_CAT=research /home/thomasjiralerspong/my-goat/scripts/notif_enqueue.sh "EPS daily <date>: applied N route-1 fix(es), filed M route-2 review task(s), held J route-3 (needs you). Applied: 1) <one-liner> (<sha>). 2) <one-liner> (<sha>). Filed: <#id> <title>. Held (needs you): <#id> <held-item one-liner> (<carve-out reason>). Revert any applied via a scratch worktree (root revert is hook-blocked, #1234): git worktree add --detach /tmp/daily-revert origin/main && git -C /tmp/daily-revert revert --no-edit <sha> && git -C /tmp/daily-revert push origin HEAD:main && git worktree remove /tmp/daily-revert. Full: logs/daily/<date>.md"
 ```
 
 This lands in the next my-goat morning digest (the dispatch cron runs 9/14/19 PT), so the overnight `23:27 PT` run is reviewed when Thomas is fresh rather than buzzing him at bedtime. Keep the message short: the three counts (applied N / filed M / held J), a one-liner + sha for each route-1 applied fix (so any applied fix is one `git revert <sha>` away), the filed `#id`s (route-2 review tasks), and the held `#id`s (route-3 needs-human tasks) with their carve-out reason, plus the daily-file path. If zero fixes were applied, zero were filed, AND zero notable problems were logged, enqueue nothing (don't send an empty digest line).
@@ -416,12 +585,20 @@ git commit -m "logs: daily stub for YYYY-MM-DD"
 # the always-concurrent shared main; if it stays committed-but-unpushed it
 # is exposed to the documented orphaning hazard — a concurrent
 # `git pull --rebase=merges` can rewrite/drop the task-state commit it sits
-# on top of and take the daily with it (#711, 2026-06-27). One retry on a
-# rejected push, exactly as CLAUDE.md "Concurrent repo-root committers"
-# prescribes (pull.rebase=merges + rebase.autoStash=true are pinned in
-# .git/config). Never force-push.
-git push origin HEAD:main || { git pull --rebase=merges --autostash && git push origin HEAD:main; }
+# on top of and take the daily with it (#711, 2026-06-27). On a rejected
+# push, recover through the single-flight root-sync helper — NEVER a
+# hand-rolled pull-rebase loop (CLAUDE.md "Concurrent repo-root
+# committers"; canonical form (2), issue/SKILL.md Step 10d § "Bare push /
+# merge snippets"). sync_repo_root exit 0 can mean "another sync
+# in-flight — your push has NOT landed"; that is acceptable for this stub
+# (see the failure paragraph below). Never force-push.
+git push origin main || uv run python scripts/sync_repo_root.py
 ```
+
+Under stub-first (headless rule 0) this recipe runs TWICE: once for the
+skeleton at run start (`logs: daily stub for YYYY-MM-DD`) and once after
+enrichment (`logs: daily brief for YYYY-MM-DD`). Always a NEW commit for the
+enrichment — never amend the stub commit (it may already be pushed).
 
 **`logs/` is in `.gitignore`** — a bare `git add logs/...` stages nothing
 and `git commit` reports "no changes added to commit", so the daily never
@@ -440,13 +617,18 @@ item governs reviewable changes leaving the machine). The two rules govern
 different things — the no-push rule governs reviewable code/behavior
 changes; this push only persists the day's own log stub.
 
-If the push fails after the single retry (e.g. a network/GH blip), do NOT
-hang or abort the run: log the failure loudly in `## Other problems &
-notes` ("daily stub committed locally but push failed: <error>") and carry
-on. The stub is committed locally; the #711 heartbeat
+If the push still isn't confirmed landed after the recovery —
+`sync_repo_root.py` exits non-zero (e.g. a network/GH blip, a content
+conflict, or exit 3 = push failed after its one retry), or exits 0 while
+reporting in-flight (`sync_repo_root: state=in-flight` on stderr — another
+session's sync is running; THIS push has NOT been confirmed) — do NOT
+hang or abort the run: log it loudly in `## Other problems & notes`
+("daily stub committed locally but push not confirmed: <rc / state /
+error>") and carry on. The stub is committed locally; the #711 heartbeat
 (`scripts/cron_daily_healthcheck.sh`) will surface a still-missing stub the
 next day as the backstop. Durability here is best-effort; nothing in the
-project hangs on the push succeeding.
+project hangs on the push succeeding — which is exactly why the bare form
+(2) suffices here and the landing-verified variant is unnecessary.
 
 ### Headless (cron) mode — the daily file is never hostage to background work
 
@@ -458,15 +640,36 @@ default 600s) after the final turn ends. On 2026-07-01 the run ended its
 turn "waiting on the filing driver" with the daily file unwritten and was
 killed at the 600s default; the 07-02/07-03 nights also died with their
 files unwritten (one logged nothing, one left a kill-less trailing-wait
-tail) (#994). Two rules:
+tail) (#994). Three rules:
 
+0. **Stub-first (mechanical — #1189).** IMMEDIATELY on run start — before any
+   transcript mining, task reads, routing, or subagent dispatch — if
+   `logs/daily/<date>.md` does not exist, write it as the dated skeleton
+   (§ Output first bullet: frontmatter + the six H2 headers, bodies EMPTY),
+   then commit + push it with the § Commit recipe
+   (`git add -f` + `logs: daily stub for <date>` + immediate push). If the
+   file already exists, rule 0 is a no-op — the § Output existing-file rules
+   govern (a husk from a prior kill lands on the Edit-in-place branch). All
+   later output is Edit-in-place enrichment of this file. Why mechanical: in
+   `-p` mode the prose ordering rules below were violated within hours of
+   shipping (the 07-03 backfill died "waiting on the filing driver" with no
+   file); the skeleton guarantees a durable artifact from minute 0, and
+   `scripts/cron_daily_healthcheck.sh`'s husk arm distinguishes a
+   never-enriched skeleton (empty `## Applied workflow improvements` at
+   06:00) from a completed brief.
 1. **Write-then-wait ordering.** The daily file write + `git commit` + push +
    Telegram enqueue are the load-bearing outputs — never gate them on a
-   background task. Once mining + routing results are in hand, WRITE the file
-   (recording, from `logs/daily/filings-<date>/filed.jsonl`, each terminal
+   background task. Once mining + routing results are in hand, ENRICH the
+   stub (Edit-in-place on the rule-0 skeleton, recording, from
+   `logs/daily/filings-<date>/filed.jsonl`, each terminal
    item's filed `#id`, and any not-yet-terminal slug or spawn-deferred id as
    "dispatch pending"), commit, push, enqueue — only THEN may a turn end with
    residual background work (e.g. watching a filing driver) still in flight.
+   Land the `## Applied workflow improvements` content together with — or
+   AFTER — the other machine-drafted sections in that ONE enrichment pass:
+   the healthcheck husk arm reads a non-empty Applied section as "day done",
+   so filling Applied first and dying before the rest would leave an
+   incomplete file that no longer alerts.
 2. **Join load-bearing background work synchronously.** Anything the daily
    file's content depends on (transcript miners, a driver whose filed `#id`s
    you want to record) is collected by blocking on its TaskOutput in-turn —
@@ -497,6 +700,9 @@ Semantics — everywhere this file says "today", read the TARGET DATE:
 - Route-1/2/3 fixes still fire, with one extra check: before applying or
   filing, confirm against the CURRENT tree that the problem is not already
   fixed (a backfill mines stale transcripts); skip with a note if it is.
+  The Retraction re-check (see "Triage each problem") applies to freshly
+  composed backfill filings identically — a backfill mines even staler
+  snapshots, so the source-trail re-read is at least as load-bearing there.
   Route-2 dedup on `(target_file, fingerprint)` catches same-bug re-raises
   (e.g. from the partially-run 2026-07-03 night).
 - If the missed night left a partial `logs/daily/filings-<date>/` (manifest +

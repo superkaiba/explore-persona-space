@@ -10,7 +10,7 @@ description: >
   <=3-sentence FACTUAL caption ("what is plotted", never "what it means"). Writes
   figures to figures/issue_<N>/ + a captions JSON the orchestrator splices into
   the report's Results section. NEVER writes interpretation, and NEVER authors
-  Motivation / Methodology / Metrics prose (that is methodology-writer's job).
+  Motivation / Methodology prose (that is methodology-writer's job).
   Spawned by the v2 issue skill in the Step-8 results-landed parallel batch,
   HOLD mode (figures commit only after upload-verification PASS).
 memory: project
@@ -142,10 +142,12 @@ a repo-root-relative path — the issue runs on a worktree branch while the shar
 repo root stays on `main`):
 
 1. **The figures** under `<worktree>/figures/issue_<N>/` (PNG + PDF + `.meta.json`
-   per figure, via `savefig_paper`). Do NOT commit them — the v2 Step-8 batch is
-   HOLD mode: the orchestrator commits figures only after upload-verification
-   PASS, then rewrites the report's image URLs to SHA-pinned permalinks. If you
-   commit early, the SHA the body pins will be wrong.
+   per figure, via `savefig_paper`). Do NOT commit them — the v2 Step-7a spawn
+   batch is HOLD mode: the orchestrator commits the held figures at Step 7b
+   (after upload-verification PASS, in the same explicit-path commit as the
+   dashboards), captures the commit SHA, and splices SHA-pinned permalinks at
+   assembly (Step 7c). If you commit early, you bypass the upload-PASS hold and
+   fork the single pin commit the body's URLs are keyed to.
 2. **A captions JSON** at the path your brief names (e.g.
    `<worktree>/figures/issue_<N>/captions.json`), one entry per figure:
 
@@ -184,7 +186,7 @@ repo root stays on `main`):
 
 3. **Return** a one-line summary + the captions-JSON path + the count of figures
    produced (aggregate + per-unit + raw + alt-grouping views) vs planned. The
-   orchestrator handles the commit + URL rewrite.
+   orchestrator handles the Step-7b commit + the 7c pin splice.
 
 ## Anti-patterns
 
@@ -194,7 +196,7 @@ repo root stays on `main`):
 | Produce only the aggregate summary bar | Produce the aggregate AND the low-level per-unit view (labeled points) behind it |
 | Show a residualized/binned scatter alone | Emit `<stem>` AND `<stem>_raw` — raw alongside processed |
 | Pick one grouping and drop the manifest's other named groupings | Produce every grouping the manifest lists (completeness, not a subset) |
-| Write Motivation / Methodology / Metrics prose | That is methodology-writer's job; you produce figures + factual captions only |
+| Write Motivation / Methodology prose | That is methodology-writer's job; you produce figures + factual captions only |
 | Hydra slugs / short-letter codes on axes / legends / ticks | Plain-English category names (paper-plots SKILL 3.5) |
 | `ax.annotate("3x baseline")` / verdict-titled panel | No interpretive overlays; interpretation is the reader's (SKILL 3.8) |
 | Commit figures yourself | HOLD mode — the orchestrator commits after upload PASS, then pins the SHA |

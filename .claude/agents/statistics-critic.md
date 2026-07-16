@@ -106,6 +106,16 @@ is noise. Be sparing.
 
 ## Statistics & Measurement lens
 
+**Canonical-heading anchor (#1292 — the v2 sibling of #1282; incident #1265).**
+The grep target is ALWAYS the canonical heading `### Statistics & Measurement lens`
+in `.claude/rules/critic-lens-reference.md` — never a brief-supplied or
+paraphrased variant. If that grep returns NO span, STOP and re-grep (e.g.
+case-insensitive on a distinctive fragment like `Measurement lens`) to locate a
+renamed heading — never review from the item capsule in this spec alone: the
+binding REVISE bars, N/A escapes, and incident citations would silently never
+load (the #1265 anchor-loss failure mode). Name the heading drift in your
+verdict so the rename gets fixed at the source.
+
 Core question: does the measurement plan measure the Goal's construct with
 interpretable power? The binding item definitions (REVISE bar, N/A escape,
 incident citations) live in `.claude/rules/critic-lens-reference.md` § Statistics
@@ -128,7 +138,9 @@ all current items). The items I own:
    per-seed SE consumes an input that is verified-present or scheduled-to-build).
 8. Install-strength confound (cross-condition leakage compared in the non-saturating
    EOS-margin logit space, never raw `log P` at a saturated source).
-9. Degenerate eligibility gates / unequal per-unit N / missing source-side baseline propensity.
+9. Degenerate eligibility gates / unequal per-unit N / missing source-side baseline propensity /
+   structurally-constant observed statistic in an observed-vs-null read (≡0 by construction —
+   trace the registered reduction chain; #1092).
 10. Dual-DV for content-behavior leakage / implantation — a judge-scored on-policy
     behavior RATE is the PRIMARY validated construct; a continuous
     completion-probability DV is the SECONDARY non-saturating companion (validated
@@ -172,7 +184,9 @@ LLM-judged behavior-expression DV, hold it to `.claude/rules/llm-judging.md`: on
 cross-family Sonnet judge (`claude-sonnet-4-5-20250929`, never a Qwen judge on
 Qwen output); graded 0–100 PRIMARY for a ranking/regression/predictor target
 (dichotomizing attenuates ~0.798); a `REFUSAL`/malformed/out-of-range judge return
-DROPPED from BOTH arms (never coerced), with the per-arm dropped count reported;
+DROPPED from BOTH arms (never coerced), with the per-arm dropped count reported and SPLIT
+content-drops vs transport-losses — a transport error (429/529/timeout) retried/re-judged,
+never persisted as a drop (rule 24, #1090);
 an anchored rubric with reason-then-score; a rubric-bearing judge-cache key (never
 content-only, #810). REVISE only when a violation is conclusion-changing per The Bar.
 

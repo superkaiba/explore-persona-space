@@ -1,5 +1,5 @@
 ---
-description: Analyzer PAPER-TASK MODE protocol (paper: true tasks) — Steps 4/5/6 paper variants, build_paper.py/verify_paper.py gating, paper-stub write, same-issue follow-up + after-submission handling; relocated verbatim from analyzer.md, #829
+description: "Analyzer PAPER-TASK MODE protocol (paper: true tasks) — Steps 4/5/6 paper variants, build_paper.py/verify_paper.py gating, paper-stub write, same-issue follow-up + after-submission handling; relocated verbatim from analyzer.md, #829"
 paths:
   - "docs/papers/**"
   - "scripts/build_paper.py"
@@ -234,7 +234,14 @@ NOT migrate to markdown):
 4. Re-spawn `methodology-writer` in EXTEND mode for the new arm's Methods +
    Appendix recipe; splice its additions in.
 5. Re-run `build_paper.py` + `verify_paper.py`; write the stub (without
-   `--snapshot` — the original is already preserved) only on PASS.
+   `--snapshot` — the original is already preserved) only on PASS — and if
+   step 2 retitled the stub, follow the stub write with
+   `task.py set-title <N> "<new stub H1>"` — pass the stub's H1 line minus
+   the leading `# ` (same argument spec as the markdown re-fold,
+   analyzer-section-reference.md § Same-issue follow-up re-entry) —
+   (set-body preserves the old frontmatter `title`, so the
+   REGISTRY/dashboard title would keep the stale headline — the same
+   pairing the main paper Step 6 sequence already prescribes).
 
 ## After submission (paper-task)
 

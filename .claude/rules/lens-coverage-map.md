@@ -50,7 +50,7 @@ Rows are honest: a check with no v2 owner is a `GAP:` row, never papered over.
 | 6 Contrastive negatives | critic.md Methodology 6 | v2-owner: methodology-baselines-critic |
 | 7 Replication fidelity | critic.md Methodology 7 | v2-owner: methodology-baselines-critic |
 | 8 Few-shot / ICL demonstration content | critic.md Methodology 8 | v2-owner: methodology-baselines-critic |
-| 9 Trained-artifact + code reuse fitness (a)-(j) | critic.md Methodology 9 | v2-owner: consistency-checker + methodology-baselines-critic |
+| 9 Trained-artifact + code reuse fitness (a)-(k) | critic.md Methodology 9 | v2-owner: consistency-checker + methodology-baselines-critic |
 | 10 CPU/analysis-phase placement (i)-(iv) | critic.md Methodology 10 | v2-owner: efficiency-critic |
 | 11 Marker stopping recipe + runtime-guard smoke-verifiability | critic.md Methodology 11 | v2-owner: methodology-baselines-critic |
 | 12 Multi-arm resolution-band simultaneity | critic.md Methodology 12 | v2-owner: methodology-baselines-critic |
@@ -73,7 +73,7 @@ Rows are honest: a check with no v2 owner is a `GAP:` row, never papered over.
 | 6 Gate elicitation-surface validity | critic.md Statistics 6 | v2-owner: statistics-critic |
 | 7 Statistical-input existence (registered corrections) | critic.md Statistics 7 | v2-owner: statistics-critic |
 | 8 Install-strength confound (EOS-margin logit space) | critic.md Statistics 8 | v2-owner: statistics-critic |
-| 9 Degenerate eligibility gates / unequal per-unit N / missing baseline propensity | critic.md Statistics 9 | v2-owner: statistics-critic |
+| 9 Degenerate eligibility gates / unequal per-unit N / missing baseline propensity / structurally-constant observed-vs-null statistic | critic.md Statistics 9 | v2-owner: statistics-critic |
 | 10 Dual-DV for content-behavior leakage/implantation | critic.md Statistics 10 | v2-owner: statistics-critic |
 | 11 Selection-symmetric nulls (max-over-axis headlines) | critic.md Statistics 11 | v2-owner: statistics-critic |
 | 12 Re-cost on power-raising recommendations (same round) | critic.md Statistics 12 | v2-owner: statistics-critic |
@@ -130,6 +130,7 @@ Rows are honest: a check with no v2 owner is a `GAP:` row, never papered over.
 | artifact-reuse | LESSONS.md | v2-owner: consistency-checker + methodology-baselines-critic |
 | arxiv-mcp | LESSONS.md | v2-owner: methodology-baselines-critic + planner |
 | background-automation | LESSONS.md | v2-owner: autonomous_session_watch.py + crons (runtime unchanged, Assumption 1) |
+| clean-result-critic-lens-reference | LESSONS.md | v1-only — expires at drain |
 | clean-result-paper-review | LESSONS.md | v1-only — expires at drain |
 | code-style | LESSONS.md | v2-owner: efficiency-critic + code-correctness-critic |
 | compute-backend-failover | LESSONS.md | v2-owner: backend router (src/explore_persona_space/backends) + efficiency-critic |
@@ -154,6 +155,7 @@ Rows are honest: a check with no v2 owner is a `GAP:` row, never papered over.
 | replication-fidelity | LESSONS.md | v2-owner: methodology-baselines-critic |
 | research-project-structure | LESSONS.md | v2-owner: report-verifier + task.py (report-v1 clean-result; RESULTS.md + open_questions.md manual per plan §6) |
 | selection-symmetric-nulls | LESSONS.md | v2-owner: statistics-critic |
+| trigger-dense-review | LESSONS.md | v2-owner: code-correctness-critic + reconciler (role-generic review rule; applies to any review-role subagent, v1 and v2) |
 | upload-policy | LESSONS.md | v2-owner: upload-verifier + methodology-baselines-critic |
 | vectorize-many-cell-fits | LESSONS.md | v2-owner: efficiency-critic |
 | workflow-fix-on-bug | LESSONS.md | v2-owner: orchestrator (all agents emit candidates; unchanged) |
@@ -170,6 +172,7 @@ Rows are honest: a check with no v2 owner is a `GAP:` row, never papered over.
 | Methodology/Metrics claim traced to ground truth | clean-result-critic lens 10 (Goal + Methodology completeness) | v2-owner: methodology-critic |
 | underlying-data-alongside-every-aggregate (per-unit + raw-alongside-processed) | clean-result-critic lens 11 | v2-owner: report-verifier + plotter |
 | per-figure recomputation + caption-matches-data + manifest completeness + interpretivity rubric | NEW (v2 report pipeline) | v2-owner: report-verifier |
+| figure-source resolution pin-first (body-pinned blob is the review target; stray/stale local-copy guard) | clean-result-critic Lens 3 + interpretation-critic Lens 6 (#1056, #922) | v2-owner: report-verifier (checks a+b) + methodology-critic (pinned dashboard/sidecar reads) |
 | all-artifact upload reconciliation (incl. shard-uploaded stores) | upload-verifier v1 + upload-policy | v2-owner: upload-verifier (v2 mode) |
 | interpretation-critic 7 lenses (overclaims / surprising patterns / alternatives / calibration / missing context / plot-prose match / raw-text plausibility) | interpretation-critic.md | retired: v2 agents do not interpret; the report-verifier interpretivity rubric (hypothesis-to-test allowed / asserted conclusion banned) + the plotter's many views + Thomas's TLDR replace it |
 | clean-result-critic markdown-structure lenses (title / v4-structure / figure three-beat / Takeaways quality / footer / voice / conciseness / mentor-title) | clean-result-critic.md lenses 1-9,12,14 | retired: the report-v1 template + verify_report.py + methodology-critic replace the markdown clean-result body |

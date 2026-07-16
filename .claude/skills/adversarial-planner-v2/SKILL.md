@@ -114,7 +114,7 @@ Also (v1 rules, restated because they gate the manifest):
 - **Grounded hyperparameters** — every load-bearing value carries a `Source:`
   (arXiv id / prior issue), per `planner.md` §11. Never a bare library default.
 - **Artifact-registry read** — when `artifacts/registry.jsonl` exists, READ it
-  and prefer a fit-for-purpose existing artifact over retraining (the (a)-(j)
+  and prefer a fit-for-purpose existing artifact over retraining (the (a)-(k)
   fitness check, `.claude/rules/artifact-reuse.md`). Degrade gracefully when the
   registry is absent (Phase-1 dogfood tasks have none).
 
@@ -180,7 +180,15 @@ orchestrator bg-runs via `scripts/codex_task.py`:
 Efficiency EARNS its Codex twin here (Thomas's multi-GPU emphasis).
 Consistency-checker + the (implementation-side) plan-adherence lens are
 Claude-only. Pass each subagent the PATH to `plans/vN.md` + `planned_manifest.json`,
-never the bodies (429 pacing).
+never the bodies (429 pacing); each Codex composer reads the plan from the handed
+path at compose time and inlines the verbatim plan text into its composed Codex
+prompt — `{{plan_body}}` is a compose-time substitution, not a brief field.
+
+**Quota-sentinel pre-check first (#1204, CLAUDE.md § Codex ensemble
+review):** when LIVE, the batch is the 3 Claude critics +
+consistency-checker only — all 3 codex twins skipped as instant
+confirmed no-shows (single-Claude per lens), one `epm:progress` note per
+round.
 
 ### 2. Per-lens ensemble decision + reconciler
 
@@ -252,6 +260,9 @@ DRAFT (Step 1):
 
 CRITIQUE (Step 3, post-approval):
   loop (cap 5):
+    # pre: #1204 quota-sentinel check (CLAUDE.md § Codex ensemble review) —
+    #      if LIVE, spawn Claude critics + consistency-checker only;
+    #      codex twins = instant no-show per lens.
     spawn batch: statistics-critic + codex twin
                ∥ methodology-baselines-critic + codex twin
                ∥ efficiency-critic + codex twin

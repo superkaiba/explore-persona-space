@@ -31,18 +31,21 @@ prelude (`backends/gcp.py`), and the SLURM sbatch env block (`backends/slurm.py`
 `setdefault` belt-and-suspenders for local-dev. Override per-launch with `=0` /
 `HF_HUB_DISABLE_XET=1`: the two accelerator defaults are `setdefault` /
 `${VAR:-1}` so an explicit launch-time `=0` always wins, and the GCP / SLURM
-passthrough allowlists forward a dispatch-process `=0` FOR THOSE TWO VARS
-(`HF_XET_HIGH_PERFORMANCE` / `HF_HUB_ENABLE_HF_TRANSFER`) to the remote
-worker — they do NOT (yet) forward `HF_HUB_DISABLE_XET` (code follow-up
-pending), so on GCP/SLURM the xet kill switch must be set in the WORKER
-shell, not the dispatch process. The effective xet kill switch is
+passthrough allowlists forward a dispatch-process `=0` for those two vars
+AND `HF_HUB_DISABLE_XET=1` (the real kill switch — forwarded as of #1195;
+`HF_XET_DISABLE` stays in the allowlists only as a legacy no-op alias), so
+a dispatch-time xet disable now reaches GCP/SLURM workers on a fresh
+dispatch. RunPod is NOT part of that claim — pods have no dispatch-env
+passthrough (the launcher / bootstrap shell env is the channel there), so
+on a pod the kill switch is still set in the WORKER shell. The effective
+xet kill switch is
 `HF_HUB_DISABLE_XET=1` — it flips `is_xet_available()` False
 (`huggingface_hub` 0.36.2, the uv.lock pin; `constants.py` reads
 `HF_HUB_DISABLE_XET`), which gates the upload branch (`_commit_api.py:380`);
 download-side coverage has a reported gap on this pin (hub GH issue #3266),
 so treat it as upload-verified. The historically-documented
-`HF_XET_DISABLE=1` (the #515 xet-CDN DOWNLOAD workaround, still echoed in
-bootstrap/backends comments) is a VERIFIED NO-OP on this stack — consumed by
+`HF_XET_DISABLE=1` (the #515 xet-CDN DOWNLOAD workaround; retained in the
+lane allowlists only as an annotated legacy alias, #1195) is a VERIFIED NO-OP on this stack — consumed by
 neither `huggingface_hub` nor the `hf_xet` Rust binary (strings-checked;
 live-tested 2026-07-05) — so a recipe leaning on it likely never left the
 xet path; #931's first two wedge replays did exactly this. Upload sitting at
@@ -68,11 +71,13 @@ Three preconditions: (a) the upload path is replay-idempotent (per-cell /
 per-folder skip-if-complete — the #664 per-cell contract; #931's completed
 folder commits skipped idempotently on replay), (b) each rung is
 KILL-hung-process → REPLAY-with-env — never export on top of a live process
-(`huggingface_hub.constants` freezes env at import), (c) the rung env is set
-IN THE WORKER's shell (SSH into the pod/worker and relaunch there): until
-the allowlist follow-up lands, a dispatch-process `HF_HUB_DISABLE_XET=1` is
-NOT forwarded to GCP/SLURM workers, so a full re-dispatch "replay" from the
-orchestrator silently recreates the placebo. Do not wait for a rung
+(`huggingface_hub.constants` freezes env at import), (c) for a LIVE wedged
+process the rung env must still be set IN THE WORKER's shell and the
+process relaunched there (SSH into the pod/worker — the import freeze means
+an orchestrator-side export can never reach a running process, and on
+RunPod there is no dispatch-env passthrough at all); a full FRESH
+re-dispatch with `HF_HUB_DISABLE_XET=1` in the dispatch env DOES forward to
+GCP/SLURM workers as of #1195. Do not wait for a rung
 to self-heal: hf_transfer retries fire only on ERRORING parts
 (`max_retries=5` threaded by `lfs.py::_upload_parts_hf_transfer`), the
 pure-python `http_backoff` path retries only raised errors
@@ -155,6 +160,38 @@ incident: #779's extraction driver (`issue779_extract_rb.py`) reduced kept
 rollouts to `r_B` and dropped the rollout text (wrote it only as judge input,
 not under `raw_completions/`), so a sibling arm had to regenerate.
 
+**Regenerating a published artifact in place requires a version-bumped path or
+a regeneration note (#922/#779).** Re-uploading / reconstructing an
+already-published artifact at the SAME path can silently invalidate every
+capture another task made under the original bytes — activations,
+teacher-forced reads, judge outputs, adapters trained on the mix. Each pair
+member still
+resolves and sha-verifies individually, so only the consumer-side pairwise
+provenance-coherence check (`.claude/rules/artifact-reuse.md` item (j))
+detects the incoherence — after the fact, at the cost of a wasted run.
+Producer duty, one of two forms:
+
+1. **Version-bump the path** — publish the regenerated artifact at a NEW path
+   (`issueN_<slug>/v2/...`, or a new filename), so the original path keeps
+   resolving to the bytes existing captures were made under. Prefer this form
+   whenever a dependent capture is known or plausible.
+2. **Record a regeneration note the artifact itself carries** — a
+   `reconstruction` / regeneration metadata field inside the artifact (or a
+   sidecar `<name>.regeneration.json` uploaded in the same commit) stating the
+   regeneration date, the reason (a bug-fix regeneration invalidates the old
+   bytes; a byte-equivalent rebuild does not), and any KNOWN dependent
+   captures (task ids / capture paths). Item (j) already reads exactly this
+   field (#922's question artifact documented its own regeneration); the note
+   is what lets a consumer choose between item (j)'s two remedies —
+   re-capture under the current input, or pin the input at the
+   pre-regeneration revision. This form is the floor when the path must stay
+   stable (a canonical bucket consumers resolve by convention).
+
+(Incident: #779 regenerated published question artifacts in place — HF commit
+`9578892ef4`, 2026-07-02 — AFTER #922's dependent `cx.pt` activation capture,
+`a8060198a4`, 2026-07-01; every per-member check passed and the run crashed at
+a parity assert after a full GCE cycle.)
+
 **Resume-critical pipeline INPUTS must upload before any deliberate
 `pod.py stop` that expects a later resume.** The same logic extends
 upstream of analysis: generated training rows (`R_train` caches,
@@ -199,6 +236,27 @@ three rely on the Python Hub API for the same reason — the `hf` CLI's false "0
 would corrupt their checks identically. Keep the snippet (repo, `repo_type`,
 `revision`) consistent across these surfaces when editing.
 
+**Verify-path Hub calls ride `retry_transient` + ONE prefix-scoped listing per
+destination repo (#1335 r5).** A post-upload verify is still part of the run:
+a transport error there (429 / 5xx / timeout / connection) is retried, never
+fatal — in #1335 r5 an UN-retried per-shard `api.file_exists` HEAD probe (the
+exact-file fallback inside `hub.list_hf_files_under_path`) let one transient
+HF 429 ("maximum queue size reached") crash a healthy GCP run 2.8 h in, AFTER
+every upload had succeeded (attempt att-20260715-134136). Two rules for any
+upload/verify path in workload code: (a) wrap every FRESH Hub call in
+`hub.retry_transient` (`orchestrate/hub.py` — the public alias of
+`_retry_upload`: Retry-After-aware, wall-clock-budgeted via
+`EPM_HF_RETRY_BUDGET_S`; storage-quota-403 and other non-transient errors
+still re-raise immediately); (b) verify a SHARDED upload with ONE
+prefix-scoped listing per destination repo — collect the shard paths and
+check the SET via `hub.verify_repo_paths_uploaded(...)` — never a per-shard
+`file_exists` / exact-file probe loop (N per-file probes multiply transport
+exposure N-fold and duplicate the listing cost). The canonical sharded
+implementation is `upload_sharded._batched_verify` (#1335), superseding the
+per-shard `_verify_present` probe loop — the documented anti-pattern. Pin new
+verify code with a 429-then-success retry test and a ≤2-listings batching
+test (`tests/test_upload_sharded.py`, #1335).
+
 **Fail-loud uploads.** `upload_dataset_directory` (`orchestrate/hub.py`) exits
 non-zero on failure (`--no-upload` only for dry-runs).
 
@@ -212,7 +270,36 @@ a single bulk commit in 43s). Rules: (a) sweeps producing >~200 per-cell
 commits/hr batch their uploads into ONE bulk `upload_folder` commit per sweep
 (or chunked commits well under the cap); (b) "upload returned no path" is a
 TRACKED GAP recorded in the sweep's failure list and reconciled before the next
-phase — never a warning-and-continue.
+phase — never a warning-and-continue; (c) the FAIL-FAST direction needs a
+bounded OUTER retry (#1315): a dispatcher seam that RAISES on `hub._upload`'s
+no-path return (correct — (b) bans warning-and-continue) must first RETRY the
+no-path return with bounded jittered backoff, then raise the SAME fail-loud
+`upload returned no path` error on exhaustion. Layering: `_upload` already
+wraps each upload call in the inner `_retry_upload` envelope (6 attempts /
+~1800 s budget, Retry-After-aware, 429/408/5xx — the `retry_transient` entry
+above), catches what survives, logs "Upload failed: …", and returns `""`
+(`orchestrate/hub.py::_upload`) — so a no-path return means the inner budget
+EXHAUSTED or the failure classed non-transient (quota-403 and the
+0-files-verify path land here). The demonstrated #1315 no-path case was the
+then-UN-retried `api.file_exists` verify fallback inside
+`list_hf_files_under_path` — its "429 Client Error: Too Many Requests"
+matched the transient class all along (#1315 `epm:failure` v7; v8 recurrence);
+the bare probe just never entered the inner envelope. Fixed fleet-wide by
+#1360 (merge `289ad17572`): the fallback now rides `_retry_upload`, and the
+response-less Xet "queue size reached" body text classifies transient in
+`_is_transient_upload_error`. The seam retry remains the cheap bounded OUTER
+envelope — each attempt re-enters the full inner envelope after a 30-120 s
+pause — no longer the only retry for the Xet queue class. A persistent
+content-class failure (e.g. 403)
+costs one bounded outer cycle (~3.5-4.5 min) before the same raise; errors the
+seam's own guards RAISE propagate un-retried. Retries are free: uploads are
+idempotent (already-landed files verify + skip Hub-side). Validated constants:
+3 retries, (30, 60, 120) s backoff + 0-25% jitter, one log line per retry as
+the fix-engaged signal — worked example `_upload_with_transport_retry()` in
+`scripts/issue1315_dispatch.py` @ `c3c600541f` (#1315 r8: two p11 kills
+~35 min apart). IN-PROCESS complement of the #931 wedge ladder above, never a
+substitute: the seam retry fires when the upload RETURNS failed; the ladder
+fires when it HANGS (~0 TX, never returns).
 
 **Multi-cell pod sweeps upload per-cell, never one terminal batch (#664).** A
 dispatcher that produces per-cell artifacts (eval JSONs, store tensors, raw

@@ -82,13 +82,107 @@ and diverges from the field standard (Persona Vectors uses graded 0–100).
    `REFUSAL`, non-numeric, or outside [0, 100] carries no information about
    the behavior and must not enter the pool; coercing it to a number (e.g.
    `→ 0` or `→ 50`) biases the mean toward whichever arm the refusals land in.
-   This generalizes the persona-vectors judge-filter rule
-   (`.claude/rules/persona-vectors-recipe.md` step 4) to every judged DV, and
-   the per-arm dropped count is REPORTED (a high or arm-asymmetric drop rate
-   is itself a diagnostic — see rule 23's truncation check). (`eval/belief.py` previously
-   default-coerced a malformed return to 50 — FIXED in #766: parse
-   failures / out-of-range / API errors now drop to `math.nan`, excluded
-   from the aggregate by the caller's `not math.isnan` filter.)
+   The drop set is CONTENT drops only — returns the judge produced after
+   seeing the content. A call that failed in TRANSPORT (rate-limit, overload,
+   timeout, connection — no verdict was ever produced) is NOT a drop: it is
+   retried and, on exhaustion, reported as transport-loss per rule 24, never
+   blended into this count. This generalizes the persona-vectors judge-filter
+   rule (`.claude/rules/persona-vectors-recipe.md` step 4) to every judged
+   DV, and the per-arm dropped count is REPORTED (a high or arm-asymmetric
+   drop rate is itself a diagnostic — see rule 23's truncation check).
+   (`eval/belief.py` previously default-coerced a malformed return to 50 —
+   FIXED in #766: parse failures / out-of-range returns drop to `math.nan`,
+   excluded from the aggregate by the caller's `not math.isnan` filter. #766
+   ALSO routed API errors to the same `nan` drop path — that half is
+   SUPERSEDED by rule 24: a transport failure is retried / re-judged, never
+   persisted as a drop.)
+
+24. **Transport errors are RETRIED with bounded backoff and re-judged — NEVER
+    persisted as dropped draws.** A TRANSPORT failure is any judge call that
+    died before the judge produced a verdict about the content: HTTP 429
+    (rate limit), HTTP 5xx incl. 529 Overloaded
+    (`anthropic._exceptions.OverloadedError` — NOT an `InternalServerError`
+    subclass in the installed SDK (anthropic 0.88.0): its MRO is
+    `OverloadedError → APIStatusError`, and
+    `issubclass(OverloadedError, InternalServerError)` is False, so a
+    transient tuple catching only `InternalServerError` MISSES 529),
+    `APITimeoutError`, `APIConnectionError`, and Batch-API per-row terminal
+    failures of server class (`errored` with a server error type, `canceled`,
+    `expired` rows). Such a failure carries NO information about the judged
+    content — it is freely re-judgeable (#1090: a re-judge recovered
+    2,635/2,638 stored 529s with zero refusals) — so persisting it as a
+    dropped draw silently censors arms and mimics a selection artifact (the
+    rule-23 shape; #1090's asymmetry: 400/1000 trained draws lost on one
+    cell). Three sub-rules:
+    (i) **Retry, bounded.** Route judge calls through `api_dispatch.py`
+    (mandatory per the API-throughput rule): its transient tuple retries
+    connection / timeout / 5xx incl. 529 `OverloadedError` (matched via the
+    public `APIStatusError` + `status_code == 529` form — landed in #1313)
+    with exponential backoff within `max_attempts` (default 5), and its 429
+    handling rides AIMD with honored `retry-after`
+    (`DEFAULT_MAX_429_RETRIES = 6`). Exhaustion of either budget returns
+    `category` `RESULT_TRANSPORT` / `RESULT_RATE_LIMITED` (both
+    transport-class, re-drivable — #1313), never a bare terminal error. The
+    PRIMARY batch path (`judge_completions_batch` → `dispatch_judge_items`)
+    re-dispatches errored-server/expired/stuck-canceled rows once, resumably
+    (the #1019 machinery in `eval/judge_dispatch.py`); only the LEGACY
+    `_submit_and_poll_batch` path (`eval/batch_judge.py`, two frozen
+    `scripts/issue_389` callers) has NO per-row retry machinery — a pipeline
+    consuming ITS results MUST collect transport-class failed rows
+    (`is_transport_error_dict`, #1313) and re-dispatch them (a follow-up
+    batch, or sync dispatch) rather than persist them. Batch expiry
+    carve-out: an IN-FLIGHT batch is never a
+    retry surface — the deadline-bounded `batch_judge` poller self-harvests
+    at `expires_at` (#658/#663); this rule governs terminal per-row failures
+    after collection (an `expired` row is retriable transport loss ONLY
+    post-collection), and sync-path exceptions.
+    (ii) **On exhaustion: transport-loss, never coerce, never blend.** When
+    the bounded retry budget exhausts, the draw is recorded and REPORTED as
+    per-arm `transport_loss` — a counter DISTINCT from the rule-9
+    content-drop count (blending them recreates the censoring this rule
+    exists to prevent; `JudgeResult.n_transport_lost_draws` +
+    `per_item_transport_losses` carry the split as of #1313 —
+    `n_dropped_draws` is content-only there). It is never coerced to a
+    number. A
+    headline DV with nonzero transport-loss (arm-asymmetric or not) gets the
+    lost draws re-judged before publication (they are freely re-judgeable),
+    or carries the asymmetry as an explicit caveat. The re-judge BYPASSES
+    the rubric-keyed judge cache for the affected draws — surgical per-draw
+    merge, a fresh `cache_dir`, or draw-indexed keying — because (a) the
+    cache-update loop persists content-class `error: True` entries (rule
+    23's cache caveat; as of #1313 TRANSPORT-class dicts are put-skipped and
+    a stored one reads as a cache MISS — but the legacy reason-string
+    fallback covers only known pre-#1313 strings, so do not assume every old
+    poisoned entry self-heals) and
+    (b) the rubric-keyed cache shares ONE key across an item's identical
+    draws, so a cache-served re-run silently substitutes a successful
+    sibling draw's score for the lost draw — a duplicated draw masquerading
+    as a recovery that defeats rule 4's multi-draw independence and reads
+    `transport_loss: 0` in every diagnostic (#1090's own recovery used the
+    surgical per-draw merge for exactly this reason). The re-judge uses the
+    SAME instrument as the original pass — rubric, judge model, `max_tokens`
+    (rule 18's pins) — never a mixed-instrument merge.
+    (iii) **Boundary cases — NOT transport.** A judge `REFUSAL` is
+    content-informative (the judge saw the content and declined) → rule-9
+    drop. A parse failure from `max_tokens` truncation is a budget defect →
+    rule 23 (resize + re-judge against a fresh cache). An HTTP 400
+    `invalid_request_error` is a pipeline bug (a malformed request fails
+    identically on resubmit — `batch_judge.py` correctly quarantines it): it
+    is NEITHER retried NOR dropped — fix the request builder; a whole arm of
+    400s is a code failure, fail loud.
+    Companion note (library — LANDED in #1313): `llm/api_dispatch.py`'s
+    transient predicate now matches 529 via the public `APIStatusError` +
+    `status_code == 529` form and returns `RESULT_TRANSPORT` on transient
+    exhaustion; error dicts at every mint site carry a structural
+    `transport: True` flag classified by
+    `eval/batch_judge.py::is_transport_error_dict` (with a conservative
+    legacy reason-string fallback for pre-#1313 persisted dicts);
+    `JudgeResult` carries `n_transport_lost_draws` +
+    `per_item_transport_losses` (content drops stay in `n_dropped_draws`);
+    and the judge cache never PUTs — and treats as a MISS — a
+    transport-class dict. The primary batch path's re-dispatch is the
+    pre-existing #1019 machinery (verified, not duplicated);
+    `_score_from_parsed` is unchanged (classification lives in the tally).
 
 10. **Pin nuisance formatting identical across conditions.** Response length,
     markdown, system-prompt boilerplate, and the presence/absence of a
@@ -116,7 +210,9 @@ and diverges from the field standard (Persona Vectors uses graded 0–100).
     draws with 0 refusals — truncation of reason-first responses, not
     refusals. Diagnosis: parse-error drops that vanish at a larger budget
     with 0 refusals = truncation; treat any ≥~10% per-arm drop rate as a
-    truncation check to run, never as noise. No sub-10% safe-harbor: the
+    truncation check to run — AND a stored-transport-error check per rule 24
+    (the #1090 529 shape reads identically arm-asymmetric) — never as noise.
+    No sub-10% safe-harbor: the
     censoring conditions on rationale length, so smaller or arm-symmetric
     drops can still bias retained-draw means. After resizing, re-measure the
     per-arm drop rate at the new budget against a fresh `cache_dir` — that
@@ -263,7 +359,8 @@ narrate it as the construct. (Source: #722 — `eval_results/issue_722/tf_margin
 
 18. **Pin & report, per DV:** scoring mode, scale, N samples + temperature,
     judge model + date, prompt hash, the response `max_tokens` budget + the
-    per-arm dropped-draw rate (rule 23), per-behavior reliability
+    per-arm dropped-draw rate SPLIT content-drops vs transport-losses
+    (rules 23/24), per-behavior reliability
     (test-retest + judge–human agreement), and the reliability ceiling
     √(r_yy). A judged DV is a measurement instrument; report it like one.
 
@@ -341,6 +438,11 @@ narrate it as the construct. (Source: #722 — `eval_results/issue_722/tf_margin
   (≥ ~300, or a stated justification) and its per-arm drop-rate report;
   the Statistics & Measurement critic REVISEs an unsized reasoning-rubric
   judge. Plan-enforced in v1 — no mechanical lint.
+- Rule 24 (transport-vs-content split) rides the same lens load: a plan whose
+  judged-DV pipeline persists API/transport errors as dropped draws — or
+  whose per-arm drop report does not split content-drops from
+  transport-losses — is a Statistics & Measurement REVISE. Plan-enforced in
+  v1 — no mechanical lint (same enforcement class as rule 23).
 - The `--check-judge-model-pins` `test_live_trees_pass()` invariant locks the
   grandfather allowlist to today's tree; a future LEGITIMATE non-Sonnet judge
   pin (a new calibration anchor or translation-judge exemption) must be added
@@ -352,7 +454,9 @@ narrate it as the construct. (Source: #722 — `eval_results/issue_722/tf_margin
 Task body #765 (the guideline derivation + the two adversarial deep-research
 dives); task body #763 (the design-aligned split-half incident behind rule 21);
 task body #810 (the shared judge-cache rubric-leak incident behind rule 22);
-task body #1090 (the max_tokens truncation-censoring incident behind rule 23);
+task body #1090 (the max_tokens truncation-censoring incident behind rule 23
+and the ~2,638 stored API-529 transport-error draws behind rule 24); task
+body #1206 (the transport-vs-content split);
 `.claude/rules/persona-vectors-recipe.md` (the graded-judge precedent +
 judge-filter drop rule); `.claude/rules/marker-leakage-measurement.md` (the
 non-judged marker DV); the enforcing agent files (`planner.md`, `critic.md`,

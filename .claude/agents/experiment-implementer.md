@@ -116,8 +116,11 @@ section wins on invocation form.
    smoke-phase definition vs sweep-phase definition. **PREFER UNIFICATION:**
    if the plan unified the paths (smoke IS sweep with `--cells 1 --seeds 1`
    or equivalent single-cell parameterization — same dispatcher, same
-   subprocess shape, same env injection, same logging surface, same
-   teardown sequence, AND the cell-subset parameterization threads through
+   subprocess shape, same LAUNCH WIDTH (`--num_processes` / CVD
+   composition — smoke never narrows the process shape; see the
+   smoke-width entry in `.claude/rules/gotchas.md`, #1315/#1333), same
+   env injection, same logging surface, same teardown sequence, AND the
+   cell-subset parameterization threads through
    EVERY phase the dispatcher executes), the verdict is `PASS_UNIFIED`.
    **Per-phase subset threading is part of the PASS_UNIFIED definition,
    not an optional extra:** list each phase the dispatcher runs (train,
@@ -133,7 +136,20 @@ section wins on invocation form.
    implementer attested PASS_UNIFIED, but the cross-eval phase enumerated
    the full 120-cell registered grid and HF-404'd on never-trained
    adapters (the anchor selector would have crashed next for the same
-   class, lacking `--allow-partial`). If the plan diverged
+   class, lacking `--allow-partial`). **The same duty covers NON-cell smoke axes:**
+   for every axis the smoke slices below production scale (questions,
+   rows, steps, draws), verify the sliced size satisfies every
+   downstream phase's minimum-N asserts — grep the consumers for
+   `assert len(...) >=` / min-N `raise` shapes and derive each floor
+   from the code (asserts are the greppable common case; floors can
+   also hide in arithmetic — slicing, n-1 divisions), never from the
+   plan's literal stub prose — and name the floor per sliced axis in
+   the attestation `notes:`. Resize an under-floor slice up to the
+   floor (recording it) where the plan permits; a slice you cannot
+   bring to the floor makes the smoke un-passable by construction —
+   verdict `FAIL_NO_CANARY`. Incident #1315 r4: `questions[:1]` sat
+   below `split_half_self_cosine`'s `len(qs) >= 2` and a PASS_UNIFIED
+   smoke crashed at its LAST phase. If the plan diverged
    (e.g., smoke uses in-process `train_one_cell`, sweep uses a subprocess
    wrapper) AND the plan §4 Design section justified the divergence in two
    sentences AND named which canary cell exercises the sweep path during
@@ -147,7 +163,9 @@ section wins on invocation form.
    uv run python scripts/task.py post-marker <N> epm:smoke-architecture-check \
      --note "verdict: PASS_UNIFIED
    notes: <one-line description of how smoke = sweep with one cell, naming
-   each phase's cell-list source (e.g. train/eval/anchor all read --cells)>"
+   each phase's cell-list source (e.g. train/eval/anchor all read --cells)
+   and, per sliced non-cell axis, its smoke size vs the downstream min-N
+   floor (e.g. questions=2 >= split-half floor 2)>"
    ```
    For `PASS_CANARY`, use `verdict: PASS_CANARY canary_cell=<cell_id>` and
    cite the plan §4 two-sentence justification in the `notes:` line. For
@@ -199,10 +217,19 @@ section wins on invocation form.
      (#906 r11-r14: four bugs, four ~1.5h pod cycles). Run the FULL
      production path once on CPU with REAL library types at every
      internal seam the pipeline has; fake ONLY GPU-scale weights + the
-     remote Hub boundary (GPU-bound phases: see item 3). Full recipe +
-     traps + worked example: `.claude/rules/gotchas.md` "Mock-seam
-     smokes". Record it under `## Smoke run` — Step 6d.0-bis refuses
-     seam-stubbed evidence.
+     remote Hub boundary (GPU-bound phases: see item 3). When the
+     pipeline INGESTS a real corpus (a WildChat/LMSYS-class streaming
+     builder), the **data-ingestion probe class** (#1092) binds too:
+     a bounded tiny-real streaming probe against the REAL dataset —
+     a kept cap AND a TOTAL-streamed-rows cap, asserting kept > 0 per
+     dataset, with per-filter rejection counters in the stream's
+     `done:` line (recipe: `.claude/rules/gotchas.md` "Real-corpus
+     streaming filters" + your agent-memory
+     `feedback_real_corpus_streaming_filters_tiny_real_probe.md`).
+     Full recipe + traps + worked example: `.claude/rules/gotchas.md`
+     "Mock-seam smokes". Record it under `## Smoke run` — Step
+     6d.0-bis refuses seam-stubbed evidence, and synthetic-fixture-only
+     evidence for a real-corpus ingestion phase.
 6. **Cite CLAUDE.md gotchas in your mini-plan.** Grep `CLAUDE.md`
    §Gotchas for libraries / patterns relevant to the modules you're
    about to edit (e.g. vLLM, TRL, Hydra, MooseFS, RunPod, persona
@@ -309,6 +336,13 @@ section wins on invocation form.
   downstream globs. Append-mode single file only when downstream code already
   handles re-run dedup. Task #377 lost 3 of 4 clean domains' output on rounds
   5/6/7 when the 4th domain tripped the mid-run quality gate (2026-05-22/23).
+  External-stream loops (HF `datasets` `streaming=True`, API pagination, web harvest)
+  are PRESUMED over the ~1h intra-phase checkpoint floor regardless of per-row kernel
+  triviality — persist each chunk/source pool durably + fingerprint-gated resume keyed
+  on dataset revision + filter/recipe constants; short bounded fetches (known
+  ≤~10^4-row scan, fixed stop) exempt (#1092: a 3h06m stream died in memory on a
+  downstream KeyError; full clause: `.claude/rules/code-style.md` § "Checkpoint per
+  phase").
 
 ### Content hygiene for harmful-content datasets (EM, refusal-bait, harmful-advice)
 
@@ -360,8 +394,22 @@ such corpora or banks:
    (AST-walk and import each symbol, the `--verify-imports` pattern from
    `scripts/issue_606/i606_dispatch.py`; hand-maintained symbol lists
    re-create the drift) or hoist cheap cross-script helper imports to
-   module top. Full trap + incident #606: `.claude/rules/gotchas.md`
-   "Lazy imports inside smoke-skipped branches".
+   module top — AND, either way, SIGNATURE-BIND every smoke-fenced call
+   to an imported helper (import resolution and hoisting both green-light
+   a call-arity/keyword mismatch — #1332 r1: two fenced
+   `verify_repo_paths_uploaded` calls → deterministic TypeError at the
+   terminal upload stage): dry-run `inspect.signature(fn).bind(...)` with
+   each call site's statically-known shape (positional count + keyword
+   names as placeholder values; `bind_partial` when the call forwards
+   `*args`/`**kwargs`; skip-with-note a callee whose `signature()` raises
+   ValueError). Full recipe + worked example + incidents #606/#1332:
+   `.claude/rules/gotchas.md` "Lazy imports inside smoke-skipped
+   branches".
+2b. **Changed-literal pin-sweep + mapped-scan run (#1288/#1144).** Grep
+   `tests/` for each changed literal (old+new); run every hit, plus the
+   Step 10d mapped tests (`select_step9c_tests.py --map-files
+   <diff-list> --repo-root "$WT"`) — experiment kinds skip Step 9c;
+   that merge-gate leg is the backstop.
 3. **End-to-end smoke run PER PHASE.** For EACH distinct entrypoint the
    experiment pipeline executes — data-gen, training, eval (and any
    separate analysis / upload step) — run the script ONCE on a tiny real
@@ -378,6 +426,28 @@ such corpora or banks:
    under `## Smoke run` in the report (see Report Format § (c) below).
    This catches the bulk of "experimenter discovers it crashes at
    startup / at eval" failures before the pod is even provisioned.
+
+   **Per ARM CLASS, not just per phase.** When a phase's driver spans
+   MULTIPLE ARM CLASSES (distinct source-context classes / recipe
+   branches — e.g. persona-context vs bare-context arms), the tiny
+   smoke covers AT LEAST ONE cell of EACH arm class, not one arm
+   overall: per-arm seams (source-context construction, negative-panel
+   assembly, `ModelOrganism` wiring) are invisible to a single-arm
+   smoke however tiny-real its seams (#1090 fu5: a formatting-arm-only
+   smoke passed; all 3 bare-context arms then died on the #527/#538
+   panel-disjointness assert after a full 4×A100 GCE cycle). This is a
+   coverage-BREADTH duty on whichever smoke FORM runs — under a
+   unified smoke-IS-sweep architecture, run the one-cell smoke once
+   per arm class; under the GPU-bound-phase carve-out below, the
+   CPU-runnable portion covers each arm class. Record the coverage on
+   one line inside each phase's `### <phase-name>` sub-section —
+   `arm classes covered: <list>` (write `single arm class` when the
+   driver has one, so a MISSING line reads as a forgotten duty, never
+   as "single-arm by design"). Recipe: `.claude/rules/gotchas.md` "A
+   single-arm smoke is blind to per-arm seams". The Step 6d.0-bis gate
+   reads "once at tiny N" as once PER ARM CLASS and stays the
+   downstream backstop (phase-keyed mechanics unchanged) — this
+   checklist item is the implementer-side prevention.
 
    **GPU-bound-phase carve-out.** When a phase requires multi-GPU or
    GPU-mandatory runtime (`accelerate launch` + ZeRO-3, vLLM batched
@@ -682,7 +752,13 @@ such corpora or banks:
    `.claude/rules/code-style.md`
    § One production-body test per seam-stubbed function.
 10. **Commit + push** on branch `issue-<N>`. Use the repo's commit-message
-    convention (`git log --oneline -10` for style).
+    convention (`git log --oneline -10` for style). Run the push BARE with
+    its exit code checked — `git push origin issue-<N>` from the worktree —
+    NEVER piped through `tail`/`grep`/`head`: the `guard_piped_git_push.sh`
+    PreToolUse hook blocks the piped shape, and a pipe masks a rejected
+    push (#957). For a commit message that MENTIONS a piped-push pattern,
+    use the heredoc recipe or `git commit -F <file>` (the hook
+    blanket-allows heredocs).
 11. **Post the report** as `<!-- epm:experiment-implementation v<n> -->` on
     issue #N (see Report Format below). The `/issue` skill reads this marker
     and spawns `code-reviewer`.
@@ -699,8 +775,9 @@ with the turn.
   output file. Never end the turn while a poll is still pending.
 - **Every VM-side python launch — smokes included — carries the shared-VM
   thread-cap prefix**
-  `OMP_NUM_THREADS=8 MKL_NUM_THREADS=8 OPENBLAS_NUM_THREADS=8 NUMEXPR_NUM_THREADS=8`
-  (#847/#891). The in-repo `orchestrate.env` setdefault is pinned to your
+  `OMP_NUM_THREADS=8 MKL_NUM_THREADS=8 OPENBLAS_NUM_THREADS=8 NUMEXPR_NUM_THREADS=8 MALLOC_ARENA_MAX=2`
+  (#847/#891; the arena cap tames glibc arena-fragmentation RSS growth across
+  passes — #1315). The in-repo `orchestrate.env` setdefault is pinned to your
   worktree's branch point (Step 5a never syncs `src/`) and cannot
   in-process-cap a script that imports torch before `load_dotenv()`; the
   explicit launch env caps both, regardless of branch age (incidents #779:
@@ -720,7 +797,7 @@ with the turn.
 - A locally-launched background PROCESS is never your deliverable either:
   it dies with your subagent shell. A long local job that must outlive the
   turn: launch
-  `setsid env OMP_NUM_THREADS=8 MKL_NUM_THREADS=8 OPENBLAS_NUM_THREADS=8 NUMEXPR_NUM_THREADS=8 ... < /dev/null &`,
+  `setsid env OMP_NUM_THREADS=8 MKL_NUM_THREADS=8 OPENBLAS_NUM_THREADS=8 NUMEXPR_NUM_THREADS=8 MALLOC_ARENA_MAX=2 ... < /dev/null &`,
   write a PID file + log path,
   and state in your report that THE ORCHESTRATOR owns the watch (incident
   #539, 2026-06-09: a bg launch died with its shell). Protect the launched
@@ -750,9 +827,9 @@ If you write the tests after the implementation (the default), make them general
 ### On revision rounds (after code-reviewer FAIL)
 
 - **Size any branch diff before reading its body.** On a long-lived
-  same-issue-follow-up branch, `git diff main...HEAD` can be multi-MB
+  same-issue-follow-up branch, `git diff origin/main...HEAD` can be multi-MB
   (1.96 MB on #722; the two-dot `main..HEAD` body was 31.6 MB) and
-  loading it autocompacts your session. Run `git diff main...HEAD | wc -c`
+  loading it autocompacts your session. Run `git diff origin/main...HEAD | wc -c`
   first (streams — no context cost; an error or `0` from the pipe means
   treat it as over-budget — no-merge-base sparse checkout, see the rule);
   above ~300 KB, read only the round's
@@ -880,7 +957,7 @@ issue #N:
   only when the round added no permanent-invariant BLOCKER fix.
 - **Bug-class self-sweep** (REQUIRED when this round fixed a finding whose reviewer verdict carried a `### Bug-class sweep: <class>` heading, or a FAIL item that named a bug CLASS): cite the one-line self-sweep grep of the just-fixed pattern across the touched subsystem (per the revision-round class-hardening carve-out) and its (ideally empty) result, confirming no un-fixed load-bearing sibling of the class remains. Skip this line only when the round fixed no named bug class.
 - **End-to-end test commands** (≥1 happy path + ≥2 distinct error/edge cases for non-trivial features): list the exact commands the user can run plus what each output should look like. If the change is small enough that 3 tests is overkill, say so explicitly and justify.
-- **Pod-side dispatcher validated through `poll_pipeline.py`** (REQUIRED if this round added or modified a pod-side dispatcher with an end-of-run sentinel): cite the `## Smoke run` evidence that the poller PARSED the sentinel (post-smoke `grep -c missing /tmp/poll.log == 0`, sentinel renamed `.processed`, OR a dry-run of `_parse_sentinel` on the written file) AND that the poller detected `phase=done` (`current_phase: done` in poll output). A smoke run that only invokes the dispatcher directly via SSH does NOT satisfy this — `[phase=done]` emission + `_SENTINEL_REQUIRED_KEYS` conformance are invisible without going through the poller. Skip this line only when the change is dispatcher-free.
+- **Pod-side dispatcher validated through `poll_pipeline.py`** (REQUIRED if this round added or modified a pod-side dispatcher with an end-of-run sentinel): cite the `## Smoke run` evidence that the poller PARSED the sentinel (post-smoke `grep -c missing /tmp/poll.log == 0`, sentinel renamed `.processed`, OR a dry-run of `_parse_sentinel` on the written file) AND that the poller detected `phase=done` (`current_phase: done` in poll output). A smoke run that only invokes the dispatcher directly via SSH does NOT satisfy this — `[phase=done]` emission + `_SENTINEL_REQUIRED_KEYS` conformance are invisible without going through the poller. Skip this line only when the change is dispatcher-free. If the dispatcher additionally READS its own sentinels (resume/finalize state), also cite conformance to the read-back clause (`.claude/rules/pod-side-reporting.md` requirement 3): state kept OUTSIDE the drained glob, or bare-then-`.processed` reads.
 - **What success looks like:** the one observable signal the user should check to confirm correctness without reading the diff.
 
 ### (d) Needs human eyeball

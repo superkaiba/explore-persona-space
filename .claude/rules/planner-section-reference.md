@@ -337,7 +337,7 @@ parallelism axis and pick the spec accordingly:
 | **Activation capture (HBM-bound)** | A 7B forward that captures hidden states — all-layer residual streams, Welford activation accumulation, per-token activation dumps | Pick an intent clearing ≥40 GB HBM: `lora-7b` (train + capture) or `capture-7b` (eval + capture, #752). NEVER the L4 `eval`/`debug` default — 7B bf16 weights (~14 GB) + captured activations OOM it (#666, #744). Size the activation footprint per the VM-footprint carve-out below if the capture also materializes a large store on the VM analysis side. |
 | **Data parallelism (FSDP/ZeRO-3)** | Full fine-tune of a 7B+ model | `ft-7b` (4× H100) over `lora-7b` (1× H100) when fidelity permits |
 | **Batched inference (vLLM)** | Eval/generation with K samples per prompt or N prompts | One pod with the largest sensible GPU count, single `LLM.generate()` call — never loop sequentially |
-| **Sweep parallelism** | N independent conditions / seeds / models with no shared state | **MUST** default to one multi-GPU pod with `CUDA_VISIBLE_DEVICES`-sharded subprocesses when N seeds/conditions each need ≤1 GPU and fit on a single pod (e.g., 4 seeds × 1 GPU each on a 4× H100). Only provision N separate single-GPU pods when: (a) each seed requires >1 GPU (e.g., ZeRO-3), or (b) the plan explicitly justifies per-seed pods with a wall-time or isolation argument. Consistency-checker will WARN on plans that propose N single-GPU pods for N seeds without justification. (This is SIMULTANEOUS shared-nothing parallelism within ONE phase — orthogonal to per-phase GPU-width right-sizing below, which stops a NARROW phase from holding the WIDE phase's pod across a SEQUENCE of differently-sized phases; that rule is about phases of DIFFERENT widths run SEQUENTIALLY, NOT about splitting a single wide-parallel phase.) |
+| **Sweep parallelism** | N independent conditions / seeds / models with no shared state | **MUST** default to one multi-GPU pod with `CUDA_VISIBLE_DEVICES`-sharded subprocesses when N seeds/conditions each need ≤1 GPU and fit on a single pod (e.g., 4 seeds × 1 GPU each on a 4× H100). Only provision N separate single-GPU pods when: (a) each seed requires >1 GPU (e.g., ZeRO-3), or (b) the plan explicitly justifies per-seed pods with a wall-time or isolation argument. Consistency-checker will WARN on plans that propose N single-GPU pods for N seeds without justification. (This is SIMULTANEOUS shared-nothing parallelism within ONE phase — orthogonal to per-phase GPU-width right-sizing below, which stops a NARROW phase from holding the WIDE phase's pod across a SEQUENCE of differently-sized phases; that rule is about phases of DIFFERENT widths run SEQUENTIALLY, NOT about splitting a single wide-parallel phase.) On the GCP lane, DECLARE the width: pass `--gpus N` (N ∈ {2,4,8}) so the width-aware auto router (#1121) walks wide `a2-ultragpu` rungs (8→4→2) first and degrades on capacity miss — wide GCP provisioning is the ENCOURAGED default whenever a shardable axis exists (credits effectively unconstrained; wall-clock is the scarce resource). The plan states the requested width + the shard axis; the workload re-shards off the realized width on the `epm:backend-selected` marker (a degraded launch may land narrower than requested). A workload that CANNOT re-shard off the realized width must PIN its width (explicit `--intent sweep-8g-a100`, or a stated abort-on-width-mismatch in the dispatcher) rather than ride the degrading auto walk. `spot_tolerant` is the lever for preemption-recoverable wide sweeps — classification at the requested width makes nearly every wide dispatch LONG (wall × 8 > the 2 GPU-h spot threshold), so without `spot_tolerant` no spot rung is walked. |
 | **Pipeline parallelism** | A → B → C where B doesn't need all of A | State the dependency DAG and start independent branches concurrently |
 
 State explicitly in the plan: (a) the GPU spec chosen, (b) the parallelism
@@ -346,10 +346,12 @@ any reason a smaller pod was chosen anyway (rare — e.g. "data is too small
 to amortize 8× setup"). If the answer is "no parallelism axis applies,"
 say so — silence is not acceptable.
 
-> **Compute-sizing recipes (HBM sizing / merge-disk / sentinel lanes / floor
-> cross-check / store-IO / CPU-phase RAM/RSS routing / machine costing +
-> p90 fence sizing)** — when sizing any §9 phase (activation capture, adapter
-> merges, sentinel-signaling workloads, long-phase wall-time floors,
+> **Compute-sizing recipes (HBM sizing / merge-disk + ladder-checkpoint
+> retention / sentinel lanes / floor cross-check + external-stream
+> presumption / fit-phase pilot basis / store-IO / CPU-phase RAM/RSS
+> routing / machine costing + p90 fence sizing)** — when sizing any §9
+> phase (activation capture, adapter merges, dose-ladder rung checkpoints,
+> sentinel-signaling workloads, long-phase wall-time floors,
 > store-heavy writes, VM-placed CPU-phase RAM, per-machine wall-time costing,
 > a deliberate GCP fence), READ
 > `.claude/rules/plan-compute-sizing.md` IN FULL before writing the table.
@@ -486,6 +488,14 @@ item-(j) attestation — the member dates at the consumed revisions (per-repo
 `git log -1`: consumed input vs dependent capture) and the coherence verdict;
 an input postdating its capture is a failed check regardless of sha pins
 (#922).
+
+**Parent-lineage coherence (checklist item (k)) is recorded here too.** When
+the plan reuses a parent's main-resident CODE module or a parent-realized
+artifact with a declared input corpus, this card carries the item-(k) record —
+the `git log --oneline origin/main..origin/issue-<M> -- <module>` outcome
+(empty, or each unmerged commit ported / declared not-needed by SHA) and the
+realized-vs-corpus count reconciliation (equal, or the named filter explaining
+the shortfall) (#1345).
 
 **Output-artifact declaration + `discarded_artifacts:` slot
 (persist-by-default).** Per generating / reducing stage, the

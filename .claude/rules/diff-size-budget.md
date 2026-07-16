@@ -1,7 +1,7 @@
 # Diff-size budget — size any branch diff before reading its body
 
 **Fires when:** a code-reviewer, implementer, or any agent is about to read a
-branch-wide diff BODY (`git diff main...HEAD` or any multi-round branch range)
+branch-wide diff BODY (`git diff origin/main...HEAD` or any multi-round branch range)
 on a long-lived worktree branch. The pre-read gate lives in
 `.claude/agents/code-reviewer.md` Step 0 and
 `.claude/agents/experiment-implementer.md` § On revision rounds; this file is
@@ -11,12 +11,15 @@ the full recipe.
 
 Before ANY diff BODY read, size it:
 
-    git diff main...HEAD | wc -c
+    git diff origin/main...HEAD | wc -c
 
+The base ref is fetched `origin/main` (#1289 — the shared root's local `main`
+can lag origin; run the bounded fetch per code-reviewer.md Step 0 first; if
+`origin/main` does not resolve, fall back to local `main`).
 The pipe streams into `wc` — sizing is free of context cost (only the byte
 count enters agent context). **Sizing must fail loud:** on a sparse/shallow
 checkout with no merge base the three-dot form errors to stderr and `wc -c`
-prints `0` — probe `git merge-base --all main HEAD` FIRST; if it is empty, or
+prints `0` — probe `git merge-base --all origin/main HEAD` FIRST; if it is empty, or
 the sizing pipe errors, or it returns `0` on a branch that demonstrably has
 commits, treat the diff as OVER budget and round-scope (a no-merge-base
 checkout cannot materialize a three-dot body anyway; per the #613 precedent
@@ -31,13 +34,13 @@ read to the CURRENT round instead:
 - **When no round marker/report names commits or a parent** (crash-recovery
   respawn, orphaned round), resolve `<parent>` deterministically: the previous
   reviewed round's tip from the latest `epm:code-review` marker, else
-  `git merge-base main HEAD`; if neither is usable, drop to name-only plus
+  `git merge-base origin/main HEAD`; if neither is usable, drop to name-only plus
   per-file scoped body reads.
 - **Cross-round interactions:** for files the `--stat` / `--name-status` pass
   flags as touched across MULTIPLE rounds, a bounded per-file three-dot body
-  read (`git diff main...HEAD -- <path>`) is permitted — it closes the
+  read (`git diff origin/main...HEAD -- <path>`) is permitted — it closes the
   cross-round-interaction gap without re-opening the whole-branch read.
-  Size it first the same way (`git diff main...HEAD -- <path> | wc -c`); a
+  Size it first the same way (`git diff origin/main...HEAD -- <path> | wc -c`); a
   per-file body over the same 300 KB budget falls back to round commits plus
   name/status/stat context — "per-file" is a path bound, not a byte bound,
   so the byte check still applies.

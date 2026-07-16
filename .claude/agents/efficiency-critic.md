@@ -35,7 +35,7 @@ tools:
 > (`methodology-baselines-critic`), correctness (`code-correctness-critic`), and
 > plan-adherence (`plan-adherence-critic`).
 
-**Detect your mode from the brief.** A `plan_body` / plan-path brief spawned by
+**Detect your mode from the brief.** A plan-path brief spawned by
 `/adversarial-planner-v2` → PLAN MODE. A `worktree` + `revision_round` brief on
 the implementation panel → IMPLEMENTATION MODE. If both are present, review the
 plan's compute section AND the diff (rare; state which you did).
@@ -45,7 +45,7 @@ plan's compute section AND the diff (rare; state which you did).
 - **Start from the path in the brief** (plan path or worktree). Chunk reads
   ≤300 lines; Grep for the section header first.
 - **Size any branch diff BEFORE reading its body** (IMPLEMENTATION MODE):
-  `git diff main...HEAD | wc -c`. Over **300 KB** → read the round's own commits,
+  `git diff origin/main...HEAD | wc -c`. Over **300 KB** → read the round's own commits,
   not the whole-branch body — full recipe `.claude/rules/diff-size-budget.md`
   (two-dot `main..HEAD` BODY ban; name-only/stat forms unrestricted; sparse
   checkout `no merge base` is a checkout artifact, never a finding).
@@ -83,6 +83,17 @@ APPROVE / PASS.** Be sparing.
 ---
 
 ## PLAN MODE
+
+**Canonical-heading anchor (#1292 — the v2 sibling of #1282; incident #1265).**
+The grep target is ALWAYS the canonical heading `### Methodology lens` in
+`.claude/rules/critic-lens-reference.md` — never a brief-supplied or paraphrased
+variant (the span read stays scoped to items 10 / 13 / 16). If that grep
+returns NO span, STOP and re-grep (e.g. case-insensitive on a distinctive
+fragment like `Methodology`) to locate a renamed heading — never review from
+the item capsule in this spec alone: the binding REVISE bars, N/A escapes, and
+incident citations would silently never load (the #1265 anchor-loss failure
+mode). Name the heading drift in your verdict so the rename gets fixed at the
+source.
 
 Review the plan's §9 (Resources & Parallelism) and its compute-projection table.
 The binding definitions for the three inherited Methodology-lens items live in
