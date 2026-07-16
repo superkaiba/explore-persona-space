@@ -603,3 +603,17 @@ def test_all_signals_raising_still_unmanaged_exited(monkeypatch: pytest.MonkeyPa
         min_orphan_running_hours=1,
     )
     assert row.bucket == "unmanaged-exited"
+
+
+def test_pm_triage_protocol_present():
+    """Durability pin (#1404 plan risk 3): the PM ownership-triage prose exists.
+
+    The anchor phrase asserted below PAIRS with the protocol block inserted in
+    ``.claude/agents/research-pm.md`` (Mode 2 AUDIT, right after the "Orphan
+    pods" bullet). Future editors: if you reword or relocate that block,
+    update the agent prose AND this assertion together — the test exists so an
+    accidental removal of the protocol fails loud, not to freeze the phrasing.
+    """
+    pm_spec = REPO_ROOT / ".claude" / "agents" / "research-pm.md"
+    text = pm_spec.read_text(encoding="utf-8")
+    assert "ownership triage FIRST" in text

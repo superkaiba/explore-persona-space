@@ -374,6 +374,15 @@ Scan for:
   the wrong dashboard stage, or whose dashboard view disagrees with the row.
 - **Orphan pods**: a pod is running but task `<N>` is not in an
   active runtime status.
+
+**Unmapped RUNNING pods — ownership triage FIRST, not emergency.**
+The team RunPod account is shared; "no pods_ephemeral.json mapping" does NOT mean "leak". Non-EPS teammates may run pods with names starting `pod-` (the same managed prefix EPS uses). Before surfacing any RUNNING pod as a spend concern:
+1. Check ownership via Thomas's RunPod dashboard (the team-scoped API's `PodInfo` exposes NO creator/owner field — verified `runpod_api.py:409-451` — so the dashboard's created-by column is the only definitive creator signal). Cross-reference `pods_ephemeral.json` and task references (`_scan_task_references`) for EPS-side ownership evidence.
+2. Note name shape: `pod-<N>` where N is a small integer ≤ a few thousand is almost certainly EPS (`pod-779`, `pod-825`). A name with a long hex suffix, a custom description, or an exotic GPU count (4×A100, 8×H100 all identical) is a signal to ask first.
+3. Check recent GPU utilization — a pod at near-zero GPU util for hours is a clearer leak signal than any name pattern.
+4. If any doubt remains, frame the surfacing as a question: "There are N unmapped pods running at $X/hr — are these team work?" rather than "Spend emergency: N pods must be terminated."
+Never recommend termination of an unmapped RUNNING pod without Thomas's explicit confirmation of non-EPS ownership.
+
 - **Orphan results**: `eval_results/<dir>/` not referenced in
   `eval_results/INDEX.md`.
 - **Stale `In flight`**: no marker activity > 24h.
