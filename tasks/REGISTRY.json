@@ -3176,8 +3176,8 @@
     "1407": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1407",
-      "status": "reviewing",
+      "path": "tasks/completed/1407",
+      "status": "completed",
       "title": "daily-fix: Monitor keys on exit/mtime not existence"
     },
     "1408": {
