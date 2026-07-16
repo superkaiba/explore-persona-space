@@ -1,0 +1,241 @@
+{
+  "commit": "7fb9353a22",
+  "created": "2026-07-16T05:22:52Z",
+  "figsize": [
+    7.0,
+    4.2
+  ],
+  "points": [
+    {
+      "optimizer step": 75.0,
+      "source $\\Delta$G, trained - base (nats)": 3.0003323554992676,
+      "series": "matched retrain (this round)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "optimizer step": 80.0,
+      "source $\\Delta$G, trained - base (nats)": 3.8537925720214843,
+      "series": "matched retrain (this round)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "optimizer step": 85.0,
+      "source $\\Delta$G, trained - base (nats)": 4.667578887939453,
+      "series": "matched retrain (this round)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "optimizer step": 90.0,
+      "source $\\Delta$G, trained - base (nats)": 6.031359767913818,
+      "series": "matched retrain (this round)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "optimizer step": 95.0,
+      "source $\\Delta$G, trained - base (nats)": 6.911114597320557,
+      "series": "matched retrain (this round)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "optimizer step": 100.0,
+      "source $\\Delta$G, trained - base (nats)": 7.031013488769531,
+      "series": "matched retrain (this round)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "optimizer step": 20.0,
+      "source $\\Delta$G, trained - base (nats)": -0.3602341651916504,
+      "series": "parent ladder",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "optimizer step": 40.0,
+      "source $\\Delta$G, trained - base (nats)": -0.6000052452087402,
+      "series": "parent ladder",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "optimizer step": 60.0,
+      "source $\\Delta$G, trained - base (nats)": 0.7668557167053223,
+      "series": "parent ladder",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "optimizer step": 70.0,
+      "source $\\Delta$G, trained - base (nats)": 2.3964712142944338,
+      "series": "parent ladder",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "optimizer step": 80.0,
+      "source $\\Delta$G, trained - base (nats)": 4.406832027435303,
+      "series": "parent ladder",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "optimizer step": 100.0,
+      "source $\\Delta$G, trained - base (nats)": 7.115933895111084,
+      "series": "parent ladder",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "optimizer step": 120.0,
+      "source $\\Delta$G, trained - base (nats)": 7.643815040588379,
+      "series": "parent ladder",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "optimizer step": 140.0,
+      "source $\\Delta$G, trained - base (nats)": 7.546325302124023,
+      "series": "parent ladder",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "optimizer step": 160.0,
+      "source $\\Delta$G, trained - base (nats)": 7.716917514801025,
+      "series": "parent ladder",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "optimizer step": 180.0,
+      "source $\\Delta$G, trained - base (nats)": 7.003862380981445,
+      "series": "parent ladder",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "optimizer step": 200.0,
+      "source $\\Delta$G, trained - base (nats)": 7.518940734863281,
+      "series": "parent ladder",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "optimizer step": 220.0,
+      "source $\\Delta$G, trained - base (nats)": 7.226097488403321,
+      "series": "parent ladder",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "optimizer step": 240.0,
+      "source $\\Delta$G, trained - base (nats)": 7.440798664093018,
+      "series": "parent ladder",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "optimizer step": 260.0,
+      "source $\\Delta$G, trained - base (nats)": 7.184930896759033,
+      "series": "parent ladder",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "optimizer step": 280.0,
+      "source $\\Delta$G, trained - base (nats)": 7.071814918518067,
+      "series": "parent ladder",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "optimizer step": 300.0,
+      "source $\\Delta$G, trained - base (nats)": 7.115957736968994,
+      "series": "parent ladder",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "optimizer step": 320.0,
+      "source $\\Delta$G, trained - base (nats)": 7.131532955169678,
+      "series": "parent ladder",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "optimizer step": 340.0,
+      "source $\\Delta$G, trained - base (nats)": 7.1443602561950685,
+      "series": "parent ladder",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "optimizer step": 360.0,
+      "source $\\Delta$G, trained - base (nats)": 7.619248867034912,
+      "series": "parent ladder",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "optimizer step": 380.0,
+      "source $\\Delta$G, trained - base (nats)": 7.42994499206543,
+      "series": "parent ladder",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "optimizer step": 400.0,
+      "source $\\Delta$G, trained - base (nats)": 7.396419048309326,
+      "series": "parent ladder",
+      "_kind": "line",
+      "_group": 1
+    }
+  ],
+  "n_series": 2,
+  "total_points": 27,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "ext_bare retrain ladder vs parent (acceptance window shaded)",
+        "xlabel": "optimizer step",
+        "ylabel": "source $\\Delta$G, trained - base (nats)",
+        "legend_labels": [
+          "matched retrain (this round)",
+          "parent ladder"
+        ],
+        "xticklabels": [
+          "0",
+          "50",
+          "100",
+          "150",
+          "200",
+          "250",
+          "300",
+          "350",
+          "400",
+          "450"
+        ],
+        "yticklabels": [
+          "\u22122",
+          "0",
+          "2",
+          "4",
+          "6",
+          "8",
+          "10"
+        ]
+      }
+    ],
+    "series": [
+      "matched retrain (this round)",
+      "parent ladder"
+    ]
+  }
+}

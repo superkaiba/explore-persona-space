@@ -1,0 +1,10 @@
+{
+ "stopped_in_band": false,
+ "band_stop_step": null,
+ "last_delta_nats": 21.60004425048828,
+ "band_nats": [
+  25.0,
+  30.0
+ ],
+ "global_step": 400
+}

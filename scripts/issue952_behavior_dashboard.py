@@ -39,7 +39,9 @@ import html
 import json
 import logging
 import pathlib
+import re
 import subprocess
+import sys
 
 from issue952_behavior_differs_subset import (
     CHINA_CAT,
@@ -358,8 +360,12 @@ function initAns(){
     }
   });
 }
-window.addEventListener('DOMContentLoaded',()=>{initAns();
-  filt('all',document.querySelector('.controls button'));});
+function applyHash(){
+  const i={'#s1':1,'#nots1':2}[location.hash]||0;
+  filt(['all','s1','nots1'][i],document.querySelectorAll('.controls button')[i]);
+}
+window.addEventListener('DOMContentLoaded',()=>{initAns();applyHash();});
+window.addEventListener('hashchange',applyHash);
 """
 
 
@@ -491,5 +497,60 @@ not pre-registered, small n. Statistics on the 31 kept china pairs.</div>
     return out_path
 
 
+def emit_s1_only() -> pathlib.Path:
+    """Derive the standalone S1-only dashboard (the 12 refusal-mismatch pairs) from the
+    committed full dashboard HTML — no HF re-staging; drops non-S1 cards + the filter
+    controls, retitles, and pins a static count. Returns the written path."""
+    task_dir = pathlib.Path(
+        subprocess.run(
+            ["uv", "run", "python", "scripts/task.py", "find", "952"],
+            cwd=BASE,
+            capture_output=True,
+            text=True,
+            check=True,
+        ).stdout.strip()
+    )
+    src = task_dir / "artifacts" / "behavior_divergence_dashboard.html"
+    html = src.read_text()
+    n_before = html.count("<article class='card'")
+    html = re.sub(r"<article class='card' data-s1='0'.*?</article>\s*", "", html, flags=re.S)
+    n_after = html.count("<article class='card'")
+    assert n_after == 12 and "data-s1='0'" not in html, (n_before, n_after)
+    html = html.replace(
+        "<title>#952 china bank — where Qwen and Claude behave differently</title>",
+        "<title>#952 china bank — the 12 pairs where behavior genuinely differs</title>",
+    )
+    html = html.replace(
+        "<h1>#952 china bank &mdash; where Qwen and Claude behave differently</h1>",
+        "<h1>#952 china bank &mdash; the 12 pairs where behavior genuinely differs "
+        "(S1: Qwen refuses, Claude answers)</h1>",
+    )
+    html, n_btn = re.subn(
+        r"<button onclick=\"filt\('[a-z0-9]+',this\)\">[^<]*</button>\s*", "", html
+    )
+    assert n_btn == 3, n_btn
+    html = html.replace(
+        "window.addEventListener('DOMContentLoaded',()=>{initAns();applyHash();});",
+        "window.addEventListener('DOMContentLoaded',()=>{initAns();"
+        "const c=document.getElementById('count');"
+        "if(c)c.textContent=document.querySelectorAll('.card').length"
+        "+' pairs (S1 refusal-mismatch only)';});",
+    )
+    html = html.replace("window.addEventListener('hashchange',applyHash);", "")
+    html = html.replace(
+        "</footer>",
+        " S1-only variant derived from the full 42-pair dashboard "
+        "(behavior_divergence_dashboard.html) at the same provenance.</footer>",
+    )
+    assert html.rstrip().endswith("</html>"), "tail lost"
+    out_path = src.with_name("behavior_divergence_dashboard_s1.html")
+    out_path.write_text(html)
+    logger.info("[done] wrote %s (%d cards, %d bytes)", out_path, n_after, len(html))
+    return out_path
+
+
 if __name__ == "__main__":
-    build_dashboard()
+    if "--s1-only" in sys.argv:
+        emit_s1_only()
+    else:
+        build_dashboard()
