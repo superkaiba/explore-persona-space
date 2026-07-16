@@ -1,0 +1,439 @@
+{
+  "commit": "bf5ed3945f",
+  "created": "2026-07-16T09:06:32Z",
+  "figsize": [
+    12.5,
+    4.8
+  ],
+  "points": [
+    {
+      "kept rows n (fit sample size; d = 4096)": 1293.0,
+      "fraction of GCV fits at a $\\lambda$ grid edge": 1.0,
+      "series": "gsm8k_test1319",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "kept rows n (fit sample size; d = 4096)": 4903.0,
+      "fraction of GCV fits at a $\\lambda$ grid edge": 0.0,
+      "series": "gsm8k_train5k",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "kept rows n (fit sample size; d = 4096)": 4903.0,
+      "fraction of GCV fits at a $\\lambda$ grid edge": 1.0,
+      "series": "fraction at $\\lambda$ grid CEILING ($10^4$;\nbase-model cells only)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "kept rows n (fit sample size; d = 4096)": 3152.0,
+      "fraction of GCV fits at a $\\lambda$ grid edge": 0.0,
+      "series": "lmsys5k",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "kept rows n (fit sample size; d = 4096)": 3152.0,
+      "fraction of GCV fits at a $\\lambda$ grid edge": 0.63125,
+      "label": "n = d",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "kept rows n (fit sample size; d = 4096)": 3152.0,
+      "fraction of GCV fits at a $\\lambda$ grid edge": 0.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "kept rows n (fit sample size; d = 4096)": 3152.0,
+      "fraction of GCV fits at a $\\lambda$ grid edge": 0.8125,
+      "label": "n = d",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "kept rows n (fit sample size; d = 4096)": 1319.0,
+      "fraction of GCV fits at a $\\lambda$ grid edge": 1.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "kept rows n (fit sample size; d = 4096)": 5000.0,
+      "fraction of GCV fits at a $\\lambda$ grid edge": 0.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "kept rows n (fit sample size; d = 4096)": 3653.0,
+      "fraction of GCV fits at a $\\lambda$ grid edge": 0.89375,
+      "label": "n = d",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "kept rows n (fit sample size; d = 4096)": 3653.0,
+      "fraction of GCV fits at a $\\lambda$ grid edge": 0.8125,
+      "label": "n = d",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "kept rows n (fit sample size; d = 4096)": 1319.0,
+      "fraction of GCV fits at a $\\lambda$ grid edge": 1.0,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "kept rows n (fit sample size; d = 4096)": 1319.0,
+      "fraction of GCV fits at a $\\lambda$ grid edge": 0.0,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "kept rows n (fit sample size; d = 4096)": 1319.0,
+      "fraction of GCV fits at a $\\lambda$ grid edge": 0.61875,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "kept rows n (fit sample size; d = 4096)": 1319.0,
+      "fraction of GCV fits at a $\\lambda$ grid edge": 0.0,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "kept rows n (fit sample size; d = 4096)": 1319.0,
+      "fraction of GCV fits at a $\\lambda$ grid edge": 0.8,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "kept rows n (fit sample size; d = 4096)": 1319.0,
+      "fraction of GCV fits at a $\\lambda$ grid edge": 1.0,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "kept rows n (fit sample size; d = 4096)": 1319.0,
+      "fraction of GCV fits at a $\\lambda$ grid edge": 0.44375,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "kept rows n (fit sample size; d = 4096)": 1319.0,
+      "fraction of GCV fits at a $\\lambda$ grid edge": 0.44375,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "kept rows n (fit sample size; d = 4096)": 1319.0,
+      "fraction of GCV fits at a $\\lambda$ grid edge": 1.0,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "kept rows n (fit sample size; d = 4096)": 1319.0,
+      "fraction of GCV fits at a $\\lambda$ grid edge": 1.0,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "kept rows n (fit sample size; d = 4096)": 1319.0,
+      "fraction of GCV fits at a $\\lambda$ grid edge": 1.0,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "kept rows n (fit sample size; d = 4096)": 1319.0,
+      "fraction of GCV fits at a $\\lambda$ grid edge": 0.00625,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "kept rows n (fit sample size; d = 4096)": 1319.0,
+      "fraction of GCV fits at a $\\lambda$ grid edge": 0.01875,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "kept rows n (fit sample size; d = 4096)": 1319.0,
+      "fraction of GCV fits at a $\\lambda$ grid edge": 1.0,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "kept rows n (fit sample size; d = 4096)": 1319.0,
+      "fraction of GCV fits at a $\\lambda$ grid edge": 1.0,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "kept rows n (fit sample size; d = 4096)": 1319.0,
+      "fraction of GCV fits at a $\\lambda$ grid edge": 0.44375,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "kept rows n (fit sample size; d = 4096)": 1319.0,
+      "fraction of GCV fits at a $\\lambda$ grid edge": 0.45,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "kept rows n (fit sample size; d = 4096)": 1319.0,
+      "fraction of GCV fits at a $\\lambda$ grid edge": 1.0,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "kept rows n (fit sample size; d = 4096)": 5000.0,
+      "fraction of GCV fits at a $\\lambda$ grid edge": 0.0,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "kept rows n (fit sample size; d = 4096)": 3629.0,
+      "fraction of GCV fits at a $\\lambda$ grid edge": 0.6875,
+      "label": "n = d",
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "kept rows n (fit sample size; d = 4096)": 1319.0,
+      "fraction of GCV fits at a $\\lambda$ grid edge": 1.0,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "kept rows n (fit sample size; d = 4096)": 4998.0,
+      "fraction of GCV fits at a $\\lambda$ grid edge": 0.0,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "kept rows n (fit sample size; d = 4096)": 3208.0,
+      "fraction of GCV fits at a $\\lambda$ grid edge": 0.1,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "kept rows n (fit sample size; d = 4096)": 3208.0,
+      "fraction of GCV fits at a $\\lambda$ grid edge": 0.08125,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "kept rows n (fit sample size; d = 4096)": 3629.0,
+      "fraction of GCV fits at a $\\lambda$ grid edge": 0.6,
+      "label": "n = d",
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "kept rows n (fit sample size; d = 4096)": 1319.0,
+      "fraction of GCV fits at a $\\lambda$ grid edge": 1.0,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "kept rows n (fit sample size; d = 4096)": 5000.0,
+      "fraction of GCV fits at a $\\lambda$ grid edge": 0.0,
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "kept rows n (fit sample size; d = 4096)": 3544.0,
+      "fraction of GCV fits at a $\\lambda$ grid edge": 0.25625,
+      "label": "n = d",
+      "_kind": "scatter",
+      "_group": 38
+    },
+    {
+      "kept rows n (fit sample size; d = 4096)": 3544.0,
+      "fraction of GCV fits at a $\\lambda$ grid edge": 0.23125,
+      "label": "n = d",
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "x": -0.08,
+      "|gap| (recal, layer 30, log scale)": 0.13863706494862382,
+      "series": "SFT",
+      "_kind": "line",
+      "_group": 40
+    },
+    {
+      "x": 0.92,
+      "|gap| (recal, layer 30, log scale)": 0.15841858013262466,
+      "series": "SFT",
+      "_kind": "line",
+      "_group": 40
+    },
+    {
+      "x": 1.92,
+      "|gap| (recal, layer 30, log scale)": 0.1439220085095836,
+      "series": "SFT",
+      "_kind": "line",
+      "_group": 40
+    },
+    {
+      "x": 2.92,
+      "|gap| (recal, layer 30, log scale)": 6.032471771666437e-06,
+      "series": "SFT",
+      "_kind": "line",
+      "_group": 40
+    },
+    {
+      "x": 0.0,
+      "|gap| (recal, layer 30, log scale)": 0.13317322240220197,
+      "series": "DPO",
+      "_kind": "line",
+      "_group": 41
+    },
+    {
+      "x": 1.0,
+      "|gap| (recal, layer 30, log scale)": 0.15014592174621832,
+      "series": "DPO",
+      "_kind": "line",
+      "_group": 41
+    },
+    {
+      "x": 2.0,
+      "|gap| (recal, layer 30, log scale)": 0.1361578635491738,
+      "series": "DPO",
+      "_kind": "line",
+      "_group": 41
+    },
+    {
+      "x": 3.0,
+      "|gap| (recal, layer 30, log scale)": 5.882600771167645e-06,
+      "series": "DPO",
+      "_kind": "line",
+      "_group": 41
+    },
+    {
+      "x": 0.08,
+      "|gap| (recal, layer 30, log scale)": 0.13314787161429031,
+      "series": "RLVR",
+      "_kind": "line",
+      "_group": 42
+    },
+    {
+      "x": 1.08,
+      "|gap| (recal, layer 30, log scale)": 0.1459389234310705,
+      "series": "RLVR",
+      "_kind": "line",
+      "_group": 42
+    },
+    {
+      "x": 2.08,
+      "|gap| (recal, layer 30, log scale)": 0.13333644604059758,
+      "series": "RLVR",
+      "_kind": "line",
+      "_group": 42
+    },
+    {
+      "x": 3.08,
+      "|gap| (recal, layer 30, log scale)": 5.969829206198263e-06,
+      "series": "RLVR",
+      "_kind": "line",
+      "_group": 42
+    }
+  ],
+  "n_series": 43,
+  "total_points": 52,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Small-n cells collapse to the interpolation regime ($\\lambda$ floor);\nbase-model cells saturate the $\\lambda$ ceiling (open triangles = matched-n refits)",
+        "xlabel": "kept rows n (fit sample size; d = 4096)",
+        "ylabel": "fraction of GCV fits at a $\\lambda$ grid edge",
+        "legend_labels": [
+          "gsm8k_test1319",
+          "gsm8k_train5k",
+          "fraction at $\\lambda$ grid CEILING ($10^4$;\nbase-model cells only)",
+          "lmsys5k"
+        ],
+        "annotations": [
+          "n = d"
+        ],
+        "xticklabels": [
+          "1000",
+          "1500",
+          "2000",
+          "2500",
+          "3000",
+          "3500",
+          "4000",
+          "4500",
+          "5000",
+          "5500"
+        ],
+        "yticklabels": [
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0",
+          "1.2"
+        ]
+      },
+      {
+        "title_left": "On GSM8K test every fit sits at the $\\lambda$ floor:\nthe composition reproduces the within map exactly",
+        "ylabel": "|gap| (recal, layer 30, log scale)",
+        "legend_labels": [
+          "SFT",
+          "DPO",
+          "RLVR"
+        ],
+        "annotations": [
+          "0.139",
+          "0.158",
+          "0.144",
+          "6.0e-06",
+          "0.133",
+          "0.150",
+          "0.136",
+          "5.9e-06",
+          "0.133",
+          "0.146",
+          "0.133",
+          "6.0e-06"
+        ],
+        "xticklabels": [
+          "GSM8K train\n(RLVR-trained distribution)",
+          "LMSYS chat",
+          "LMSYS naturalistic",
+          "GSM8K test\n(degenerate fit regime)"
+        ],
+        "yticklabels": [
+          "$\\mathdefault{10^{-7}}$",
+          "$\\mathdefault{10^{-6}}$",
+          "$\\mathdefault{10^{-5}}$",
+          "$\\mathdefault{10^{-4}}$",
+          "$\\mathdefault{10^{-3}}$",
+          "$\\mathdefault{10^{-2}}$",
+          "$\\mathdefault{10^{-1}}$",
+          "$\\mathdefault{10^{0}}$",
+          "$\\mathdefault{10^{1}}$"
+        ]
+      }
+    ],
+    "series": [
+      "gsm8k_test1319",
+      "gsm8k_train5k",
+      "fraction at $\\lambda$ grid CEILING ($10^4$;\nbase-model cells only)",
+      "lmsys5k",
+      "SFT",
+      "DPO",
+      "RLVR"
+    ]
+  }
+}

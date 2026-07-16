@@ -1,0 +1,43 @@
+{
+  "trait": "impolite",
+  "arms": {
+    "pos": {
+      "total": 1000,
+      "kept": 766,
+      "dropped_refusal_or_invalid": 0,
+      "dropped_below_threshold": 234,
+      "judge_draw_stats": {
+        "n_rollouts_judged": 1000,
+        "n_draws_per_rollout": 5,
+        "total_draws": 5000,
+        "total_valid_draws": 5000,
+        "total_dropped_draws": 0,
+        "n_rollouts_all_draws_dropped": 0
+      },
+      "captured": 766
+    },
+    "neg": {
+      "total": 1000,
+      "kept": 1000,
+      "dropped_refusal_or_invalid": 0,
+      "dropped_below_threshold": 0,
+      "judge_draw_stats": {
+        "n_rollouts_judged": 1000,
+        "n_draws_per_rollout": 5,
+        "total_draws": 5000,
+        "total_valid_draws": 5000,
+        "total_dropped_draws": 0,
+        "n_rollouts_all_draws_dropped": 0
+      },
+      "captured": 1000
+    }
+  },
+  "rollout_files": {
+    "pos": [
+      "rollouts_impolite_pos.json"
+    ],
+    "neg": [
+      "rollouts_impolite_neg.json"
+    ]
+  }
+}

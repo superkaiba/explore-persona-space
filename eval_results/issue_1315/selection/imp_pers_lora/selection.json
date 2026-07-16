@@ -1,0 +1,7 @@
+{
+  "step": 30,
+  "rate": 0.805,
+  "in_band": true,
+  "fallback": null,
+  "reused": true
+}

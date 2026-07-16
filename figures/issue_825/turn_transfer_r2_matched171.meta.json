@@ -1,0 +1,148 @@
+{
+ "commit": "77580c3914",
+ "created": "2026-07-16T09:32:32Z",
+ "figsize": [
+  11.0,
+  5.0
+ ],
+ "text": {
+  "suptitle": "Cross-turn transfer at MATCHED n=171 (companion; controls the n-per-row confound across fit turns): held-out $R^2$, layer 19",
+  "fig_texts": [],
+  "axes": [
+   {
+    "title_left": "Qwen-2.5-7B-Instruct (matched n=171)",
+    "xlabel": "evaluated on turn j",
+    "ylabel": "map fit on turn i",
+    "annotations": [
+     "0.21",
+     "0.08",
+     "0.03",
+     "-0.02",
+     "-0.03",
+     "-0.04",
+     "0.10",
+     "0.19",
+     "0.18",
+     "0.17",
+     "0.16",
+     "0.16",
+     "0.09",
+     "0.20",
+     "0.21",
+     "0.20",
+     "0.20",
+     "0.19",
+     "0.06",
+     "0.19",
+     "0.22",
+     "0.20",
+     "0.20",
+     "0.22",
+     "0.01",
+     "0.16",
+     "0.20",
+     "0.19",
+     "0.20",
+     "0.22",
+     "-0.06",
+     "0.17",
+     "0.20",
+     "0.20",
+     "0.21",
+     "0.22"
+    ],
+    "xticklabels": [
+     "1",
+     "3",
+     "5",
+     "7",
+     "9",
+     "11"
+    ],
+    "yticklabels": [
+     "1",
+     "3",
+     "5",
+     "7",
+     "9",
+     "11"
+    ]
+   },
+   {
+    "title_left": "Qwen-2.5-7B (base) (matched n=171)",
+    "xlabel": "evaluated on turn j",
+    "ylabel": "map fit on turn i",
+    "annotations": [
+     "0.04",
+     "-0.21",
+     "-0.26",
+     "-0.31",
+     "-0.35",
+     "-0.36",
+     "0.07",
+     "0.23",
+     "0.24",
+     "0.22",
+     "0.19",
+     "0.20",
+     "-0.00",
+     "0.22",
+     "0.27",
+     "0.25",
+     "0.22",
+     "0.23",
+     "-0.03",
+     "0.21",
+     "0.27",
+     "0.25",
+     "0.24",
+     "0.24",
+     "-0.10",
+     "0.19",
+     "0.26",
+     "0.25",
+     "0.23",
+     "0.27",
+     "-0.16",
+     "0.17",
+     "0.25",
+     "0.23",
+     "0.24",
+     "0.24"
+    ],
+    "xticklabels": [
+     "1",
+     "3",
+     "5",
+     "7",
+     "9",
+     "11"
+    ],
+    "yticklabels": [
+     "1",
+     "3",
+     "5",
+     "7",
+     "9",
+     "11"
+    ]
+   },
+   {
+    "ylabel": "held-out $R^2$",
+    "yticklabels": [
+     "\u22120.4",
+     "\u22120.3",
+     "\u22120.2",
+     "\u22120.1",
+     "0.0",
+     "0.1",
+     "0.2",
+     "0.3",
+     "0.4"
+    ]
+   }
+  ]
+ },
+ "caption": "SECONDARY companion. Cross-turn transfer matrix T[i,j] at MATCHED n=171 (every turn subsampled to 171, one draw), controlling the n-per-row confound across fit turns; layer 19, both models; same recipe as the full-n primary. y=fit-on-turn-i, x=evaluated-on-turn-j.",
+ "source_results_json": "eval_results/issue_825/turn_transfer_similarity/results.json"
+}

@@ -1,0 +1,41 @@
+{
+  "generated_utc": "2026-07-15T23:00:24.418778+00:00",
+  "git_commit": "704ff2b3dd3d81c7cf764012b47e2b67ae619849",
+  "purpose": "rule-23 truncation-vs-content discriminator for the 7 WildChat parity items censored (all draws dropped) in both the original pass and the 529 re-judge: re-judged at max_tokens=1000 (same judge_graded path/rubric/judge; max_tokens is a sampling knob outside the rubric cache identity). DIAGNOSTIC ONLY - not merged into any rate.",
+  "verdict": "NOT truncation: 14/14 draws still parse_error at max_tokens=1000 - the judge deterministically returns an unparseable (refusal-shaped, outside-the-JSON-envelope) response for these 7 specific completions. Content-class censoring per llm-judging rule 9/24(iii); the items correctly stay out of the rate denominator (n_scored=93).",
+  "instrument": {
+    "judge_model": "claude-sonnet-4-5-20250929",
+    "max_tokens": 1000,
+    "n_draws": 2
+  },
+  "per_item": {
+    "wildchat_prefix_real545-trained-q004-c2": [
+      "parse_error",
+      "parse_error"
+    ],
+    "wildchat_prefix_real545-trained-q004-c4": [
+      "parse_error",
+      "parse_error"
+    ],
+    "wildchat_prefix_real545-trained-q007-c1": [
+      "parse_error",
+      "parse_error"
+    ],
+    "wildchat_prefix_real545-trained-q009-c2": [
+      "parse_error",
+      "parse_error"
+    ],
+    "wildchat_prefix_real545-trained-q011-c2": [
+      "parse_error",
+      "parse_error"
+    ],
+    "wildchat_prefix_real545-trained-q013-c2": [
+      "parse_error",
+      "parse_error"
+    ],
+    "wildchat_prefix_real545-trained-q018-c4": [
+      "parse_error",
+      "parse_error"
+    ]
+  }
+}

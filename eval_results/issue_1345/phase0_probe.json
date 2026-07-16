@@ -1,0 +1,18 @@
+{
+  "metadata": {
+    "git_commit": "0a77b70a1032f2eefe5a5f45e0022b9a7ca837c4",
+    "timestamp": "2026-07-15T23:45:28Z",
+    "seed": 0,
+    "n": 500,
+    "script": "scripts/issue1345_fit_cells.py",
+    "pinned_parent_revision": "7159e5804d"
+  },
+  "probe": "phase0",
+  "shard": "instruct_chat_s_shard000.pt",
+  "revision": "7159e5804d",
+  "n_rows": 500,
+  "n_layers": 28,
+  "conv_ids_source": "pt-shards (non-arange)",
+  "l19_r2_one_shard": 0.481704468582571,
+  "fit_seconds": 0.8487758636474609
+}

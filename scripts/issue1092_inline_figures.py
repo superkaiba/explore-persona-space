@@ -16,13 +16,14 @@ import json
 import sys
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parent))
-
 from explore_persona_space.orchestrate.env import load_dotenv
 
-# #847: shared-VM thread caps bind in-process only when load_dotenv() runs
-# BEFORE the import that freezes the BLAS/intra-op pools.
+# #847: thread caps must land BEFORE the matplotlib/numpy imports below — on the
+# shared VM, load_dotenv() setdefaults OMP/MKL/OPENBLAS/NUMEXPR_NUM_THREADS,
+# and the BLAS/torch pools freeze at import time.
 load_dotenv()
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 import matplotlib  # noqa: E402
 

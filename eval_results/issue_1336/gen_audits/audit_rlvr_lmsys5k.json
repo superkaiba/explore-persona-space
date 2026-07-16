@@ -1,0 +1,49 @@
+{
+  "model": "rlvr",
+  "hf_id": "allenai/Llama-3.1-Tulu-3-8B",
+  "corpus": "lmsys5k",
+  "n_prompts": 5000,
+  "n_kept": 3629,
+  "keep_rate": 0.7258,
+  "keep_rate_floor": 0.8,
+  "keep_rate_floor_pass": false,
+  "drop_reasons": {
+    "chat:short_turn_u1": 1039,
+    "naturalistic:short_turn_u1": 161,
+    "chat:short_turn_a1": 156,
+    "naturalistic:short_turn_a1": 9,
+    "chat:over_token_budget": 5,
+    "chat:degenerate_span_u1": 1
+  },
+  "kept_truncation_rate": 0.06833838523009093,
+  "kept_early_eos_rate": 0.023973546431523836,
+  "kept_rep3_flag_rate": 0.34554973821989526,
+  "kept_distinct_3gram_rate": 0.8542135692270147,
+  "kept_answer_tokens": {
+    "mean": 453.0331666227955,
+    "median": 434,
+    "p90": 909
+  },
+  "sampling": {
+    "n": 1,
+    "temperature": 1.0,
+    "top_p": 0.95,
+    "max_tokens": 1024,
+    "seed": 42,
+    "stop": [
+      "\n<|user|>"
+    ]
+  },
+  "answers_sha256": "4d1e4dc21ddce8f1ec2df51fffabe1b1f78fc9c86b562836ccb9590aef4c1038",
+  "render_integrity": {
+    "gate": "render_integrity_a4_twin",
+    "status": "PASS",
+    "rest_of_span_mismatch_rate": 0.00041333700744006614,
+    "first_token_mismatch_rate_diagnostic": 0.9829154036924773,
+    "mismatches": 3,
+    "total_spans": 7258,
+    "n_pairs": 3629,
+    "max_rate": 0.1
+  },
+  "smoke": false
+}

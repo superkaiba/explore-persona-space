@@ -166,3 +166,81 @@ def test_issue778_lib_reexports_library_objects():
     assert lib.judge_graded is graded_judge.judge_graded
     assert lib.JudgeResult is graded_judge.JudgeResult
     assert lib._score_from_parsed is graded_judge._score_from_parsed
+
+
+# ── #1313: transport-vs-content split (llm-judging.md rules 9/24) ─────────────
+
+
+def test_transport_error_split_from_content_drops(tmp_path, monkeypatch):
+    """#1313 rule 24(ii): a transport-flagged draw lands in
+    ``n_transport_lost_draws`` (+ the per-item map); a content drop (REFUSAL)
+    stays in ``n_dropped_draws``; a good score is kept — never blended.
+
+    Mutation check: the pre-#1313 tally folds the transport row into
+    ``n_dropped_draws`` -> ``n_dropped_draws == 2`` + missing transport counter
+    -> assertions red."""
+    transport_dict = {
+        "aligned": None,
+        "coherent": None,
+        "reasoning": "error: 529 overloaded",
+        "error": True,
+        "transport": True,
+    }
+    draws = {"arm-a": [85, {"score": "REFUSAL"}, transport_dict]}
+    monkeypatch.setattr(
+        "explore_persona_space.eval.batch_judge.judge_completions_batch",
+        _fake_batch_writing(draws),
+    )
+
+    result = judge_graded(
+        items=[("arm-a", "q?", "a.")],
+        eval_prompt="Rate {question} / {answer} 0-100.",
+        n_draws=3,
+        cache_dir=tmp_path / "cache",
+        save_raw=tmp_path / "raw.json",
+    )
+
+    assert result.scores == {"arm-a": 85.0}
+    assert result.n_total_draws == 3
+    assert result.n_dropped_draws == 1  # the REFUSAL only (content, rule 9)
+    assert result.n_transport_lost_draws == 1  # the flagged transport row (rule 24)
+    assert result.per_item_transport_losses == {"arm-a": 1}
+    assert result.per_item_draw_counts == {"arm-a": 1}
+
+
+def test_legacy_reason_string_classified_transport(tmp_path, monkeypatch):
+    """A LEGACY persisted dict (no ``transport`` flag) with reason
+    ``batch_error: expired`` is classified transport via the conservative
+    reason-string fallback (#1313: pre-existing save_raw files self-classify)."""
+    legacy = {
+        "aligned": None,
+        "coherent": None,
+        "reasoning": "batch_error: expired",
+        "error": True,
+    }
+    draws = {"arm-a": [legacy, 70]}
+    monkeypatch.setattr(
+        "explore_persona_space.eval.batch_judge.judge_completions_batch",
+        _fake_batch_writing(draws),
+    )
+
+    result = judge_graded(
+        items=[("arm-a", "q?", "a.")],
+        eval_prompt="Rate {question} / {answer} 0-100.",
+        n_draws=2,
+        cache_dir=tmp_path / "cache",
+        save_raw=tmp_path / "raw.json",
+    )
+
+    assert result.scores == {"arm-a": 70.0}
+    assert result.n_transport_lost_draws == 1
+    assert result.n_dropped_draws == 0
+    assert result.per_item_transport_losses == {"arm-a": 1}
+
+
+def test_judge_result_backcompat_defaults():
+    """#1313 acceptance item 5: old-kwarg ``JudgeResult`` construction still
+    works — the new transport fields default to zero/empty."""
+    r = JudgeResult(scores={"x": 1.0}, n_total_draws=1, n_dropped_draws=0)
+    assert r.n_transport_lost_draws == 0
+    assert r.per_item_transport_losses == {}

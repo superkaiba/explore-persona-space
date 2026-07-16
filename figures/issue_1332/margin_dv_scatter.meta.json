@@ -1,0 +1,2389 @@
+{
+  "commit": "9248ce6fd1",
+  "created": "2026-07-15T16:15:03Z",
+  "figsize": [
+    6.5,
+    4.0
+  ],
+  "points": [
+    {
+      "map-transfer similarity (layer 27)": 0.52046531838896,
+      "EOS-margin leakage, trained \u2212 base (logits)": 2.79619140625,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": -5.149510196719275,
+      "EOS-margin leakage, trained \u2212 base (logits)": -1.85095703125,
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": -3.2534227794939623,
+      "EOS-margin leakage, trained \u2212 base (logits)": -3.8995886611938477,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": -0.4343837059127906,
+      "EOS-margin leakage, trained \u2212 base (logits)": 2.357801513671875,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": 0.4967549436991392,
+      "EOS-margin leakage, trained \u2212 base (logits)": -3.631181640625,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": 0.4947067862135066,
+      "EOS-margin leakage, trained \u2212 base (logits)": -3.4778027343749995,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": 0.4272119047475677,
+      "EOS-margin leakage, trained \u2212 base (logits)": -4.003291015625,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": 0.4262841996949014,
+      "EOS-margin leakage, trained \u2212 base (logits)": -4.3487890625,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": 0.1798838975283977,
+      "EOS-margin leakage, trained \u2212 base (logits)": -4.58462158203125,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": 0.49962809646704476,
+      "EOS-margin leakage, trained \u2212 base (logits)": -3.642705078125,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": 0.4914758456280162,
+      "EOS-margin leakage, trained \u2212 base (logits)": -4.969316406249999,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": 0.5020605371446776,
+      "EOS-margin leakage, trained \u2212 base (logits)": -3.72095703125,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": 0.28899114872889514,
+      "EOS-margin leakage, trained \u2212 base (logits)": -4.571425781250001,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": 0.4265781890271264,
+      "EOS-margin leakage, trained \u2212 base (logits)": -3.8471826171875003,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": -2.47396076732549,
+      "EOS-margin leakage, trained \u2212 base (logits)": 12.743046874999997,
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": 0.26732571635292257,
+      "EOS-margin leakage, trained \u2212 base (logits)": 15.354150390625,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": -0.0003688184415619779,
+      "EOS-margin leakage, trained \u2212 base (logits)": 10.7055078125,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": 0.42197313674227377,
+      "EOS-margin leakage, trained \u2212 base (logits)": 14.3101171875,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": 0.10932251502167369,
+      "EOS-margin leakage, trained \u2212 base (logits)": 7.961562499999999,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": 0.2967927996714065,
+      "EOS-margin leakage, trained \u2212 base (logits)": 12.8794140625,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": 0.38128335737916713,
+      "EOS-margin leakage, trained \u2212 base (logits)": 9.199375,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": 0.28511215727578254,
+      "EOS-margin leakage, trained \u2212 base (logits)": 9.077851562500001,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": 0.5155617950617383,
+      "EOS-margin leakage, trained \u2212 base (logits)": 12.504147949218751,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": 0.49240738021606556,
+      "EOS-margin leakage, trained \u2212 base (logits)": 10.00810546875,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": 0.44212178868877816,
+      "EOS-margin leakage, trained \u2212 base (logits)": 9.835955810546874,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": 0.52046531838896,
+      "EOS-margin leakage, trained \u2212 base (logits)": 10.1012646484375,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": -4.949902575504325,
+      "EOS-margin leakage, trained \u2212 base (logits)": -1.414677734375,
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": -3.433345984644582,
+      "EOS-margin leakage, trained \u2212 base (logits)": -4.36691162109375,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": -0.46193533740148807,
+      "EOS-margin leakage, trained \u2212 base (logits)": -0.3420532226562507,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": 0.5256573706029388,
+      "EOS-margin leakage, trained \u2212 base (logits)": -3.0969482421874996,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": 0.5137946717617459,
+      "EOS-margin leakage, trained \u2212 base (logits)": -3.5372167968750006,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": 0.44266627414715665,
+      "EOS-margin leakage, trained \u2212 base (logits)": -2.8212402343750007,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": 0.463855519103889,
+      "EOS-margin leakage, trained \u2212 base (logits)": -2.8642822265624996,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": 0.2126341897683005,
+      "EOS-margin leakage, trained \u2212 base (logits)": -3.75847412109375,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": 0.5243806175048289,
+      "EOS-margin leakage, trained \u2212 base (logits)": -2.820639648437501,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": 0.4968173434514641,
+      "EOS-margin leakage, trained \u2212 base (logits)": -3.48609375,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": 0.5251353842977002,
+      "EOS-margin leakage, trained \u2212 base (logits)": -1.8648706054687505,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": 0.31702653548596166,
+      "EOS-margin leakage, trained \u2212 base (logits)": -3.8009838867187504,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": 0.47135899441631923,
+      "EOS-margin leakage, trained \u2212 base (logits)": -2.00626953125,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": -2.821746651790718,
+      "EOS-margin leakage, trained \u2212 base (logits)": 11.172267150878906,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": 0.18242781033562355,
+      "EOS-margin leakage, trained \u2212 base (logits)": 11.367135009765626,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": -0.09405599984670027,
+      "EOS-margin leakage, trained \u2212 base (logits)": 7.7853515625,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": 0.38510572917882335,
+      "EOS-margin leakage, trained \u2212 base (logits)": 10.68607421875,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": -0.04584915702057481,
+      "EOS-margin leakage, trained \u2212 base (logits)": 7.923203125,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": 0.22851329647727855,
+      "EOS-margin leakage, trained \u2212 base (logits)": 10.223437500000001,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": 0.32567787646310686,
+      "EOS-margin leakage, trained \u2212 base (logits)": 6.4846875,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": 0.21642037876907722,
+      "EOS-margin leakage, trained \u2212 base (logits)": 5.805781250000001,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": 0.48189195013476316,
+      "EOS-margin leakage, trained \u2212 base (logits)": 12.18296875,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": 0.4596824239698424,
+      "EOS-margin leakage, trained \u2212 base (logits)": 9.009072265625,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": 0.42398562622857694,
+      "EOS-margin leakage, trained \u2212 base (logits)": 10.7643701171875,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": -5.149510196719275,
+      "EOS-margin leakage, trained \u2212 base (logits)": 2.009365234375,
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": -4.949902575504325,
+      "EOS-margin leakage, trained \u2212 base (logits)": 1.5906204223632798,
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": -8.099796388581458,
+      "EOS-margin leakage, trained \u2212 base (logits)": -15.297021484375,
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": -3.4827032822458057,
+      "EOS-margin leakage, trained \u2212 base (logits)": -5.386420593261718,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": -4.8040650802119504,
+      "EOS-margin leakage, trained \u2212 base (logits)": -0.523676757812499,
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": -4.95411805256339,
+      "EOS-margin leakage, trained \u2212 base (logits)": -0.38541015624999986,
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": -5.423071738677455,
+      "EOS-margin leakage, trained \u2212 base (logits)": -0.4995993041992186,
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": -5.731189918431046,
+      "EOS-margin leakage, trained \u2212 base (logits)": -1.8509625244140615,
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": -5.345667789541982,
+      "EOS-margin leakage, trained \u2212 base (logits)": -0.6441662597656261,
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": -4.751547615681125,
+      "EOS-margin leakage, trained \u2212 base (logits)": -0.3716601562500017,
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": -4.736246507229874,
+      "EOS-margin leakage, trained \u2212 base (logits)": -1.059625854492186,
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": -5.010180900411383,
+      "EOS-margin leakage, trained \u2212 base (logits)": -1.0042529296875031,
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": -5.93461296182518,
+      "EOS-margin leakage, trained \u2212 base (logits)": 0.7926953125000011,
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": -5.48533997129438,
+      "EOS-margin leakage, trained \u2212 base (logits)": -0.7266693115234375,
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": -9.822963006101741,
+      "EOS-margin leakage, trained \u2212 base (logits)": 5.914941406249998,
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": -5.533384063212311,
+      "EOS-margin leakage, trained \u2212 base (logits)": 2.586875,
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": -6.187536458247564,
+      "EOS-margin leakage, trained \u2212 base (logits)": -0.06437500000000007,
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": -5.018933216194475,
+      "EOS-margin leakage, trained \u2212 base (logits)": 1.9432812499999992,
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": -5.779741004680722,
+      "EOS-margin leakage, trained \u2212 base (logits)": -1.3121875000000003,
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": -5.351799404590404,
+      "EOS-margin leakage, trained \u2212 base (logits)": -0.6999999999999997,
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": -5.983204879377093,
+      "EOS-margin leakage, trained \u2212 base (logits)": -0.7047656250000003,
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": -5.411195503276165,
+      "EOS-margin leakage, trained \u2212 base (logits)": -3.234375,
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": -4.794756673107722,
+      "EOS-margin leakage, trained \u2212 base (logits)": 1.2630859374999996,
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": -4.54401555506785,
+      "EOS-margin leakage, trained \u2212 base (logits)": 0.3859179687499985,
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": -4.363669402392562,
+      "EOS-margin leakage, trained \u2212 base (logits)": -0.07044921875000121,
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": -3.2534227794939623,
+      "EOS-margin leakage, trained \u2212 base (logits)": 5.505580444335937,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": -3.433345984644582,
+      "EOS-margin leakage, trained \u2212 base (logits)": 4.463339843750001,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": -8.099796388581458,
+      "EOS-margin leakage, trained \u2212 base (logits)": -6.759577026367188,
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": -2.860362041291361,
+      "EOS-margin leakage, trained \u2212 base (logits)": -2.98373046875,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": -3.1249309716170526,
+      "EOS-margin leakage, trained \u2212 base (logits)": 2.9893426513671884,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": -3.000802027030555,
+      "EOS-margin leakage, trained \u2212 base (logits)": 3.355380859375,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": -3.1885850852979067,
+      "EOS-margin leakage, trained \u2212 base (logits)": 2.9318615722656247,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": -3.2179457391644632,
+      "EOS-margin leakage, trained \u2212 base (logits)": 2.937817993164064,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": -3.03929649947354,
+      "EOS-margin leakage, trained \u2212 base (logits)": 2.7341845703125003,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": -3.1133994641366605,
+      "EOS-margin leakage, trained \u2212 base (logits)": 2.7163983154296876,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": -3.104770756306114,
+      "EOS-margin leakage, trained \u2212 base (logits)": 3.755175781250003,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": -3.168935642592615,
+      "EOS-margin leakage, trained \u2212 base (logits)": 3.3706689453125005,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": -3.271249505255006,
+      "EOS-margin leakage, trained \u2212 base (logits)": 4.010195312500002,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": -3.1499509289151457,
+      "EOS-margin leakage, trained \u2212 base (logits)": 2.899423828125,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": -8.039334415602829,
+      "EOS-margin leakage, trained \u2212 base (logits)": 10.095136718749998,
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": -3.7969616298472006,
+      "EOS-margin leakage, trained \u2212 base (logits)": 7.237187500000001,
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": -4.117617533028364,
+      "EOS-margin leakage, trained \u2212 base (logits)": 6.3969531250000005,
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": -3.8474764969266526,
+      "EOS-margin leakage, trained \u2212 base (logits)": 7.2798437499999995,
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": -3.7934118940530692,
+      "EOS-margin leakage, trained \u2212 base (logits)": 1.399375,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": -3.4555145204986175,
+      "EOS-margin leakage, trained \u2212 base (logits)": 4.709687499999999,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": -3.5751964633687106,
+      "EOS-margin leakage, trained \u2212 base (logits)": 5.15,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": -3.2682391563731628,
+      "EOS-margin leakage, trained \u2212 base (logits)": 1.205625,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": -3.234603506668785,
+      "EOS-margin leakage, trained \u2212 base (logits)": 5.967421875000001,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": -3.4473288251450738,
+      "EOS-margin leakage, trained \u2212 base (logits)": 4.9432421875,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": -2.982386559708491,
+      "EOS-margin leakage, trained \u2212 base (logits)": 6.1365625,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": -0.4343837059127906,
+      "EOS-margin leakage, trained \u2212 base (logits)": 8.568360595703124,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": -0.46193533740148807,
+      "EOS-margin leakage, trained \u2212 base (logits)": 10.638457031250002,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": -3.4827032822458057,
+      "EOS-margin leakage, trained \u2212 base (logits)": 2.6476855468749996,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": -2.860362041291361,
+      "EOS-margin leakage, trained \u2212 base (logits)": -5.469341735839843,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": -0.4110289812005973,
+      "EOS-margin leakage, trained \u2212 base (logits)": 5.227099609374999,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": -0.39230423557636285,
+      "EOS-margin leakage, trained \u2212 base (logits)": 5.676936950683595,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": -0.42860929329403136,
+      "EOS-margin leakage, trained \u2212 base (logits)": 4.959170684814454,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": -0.5256866996999661,
+      "EOS-margin leakage, trained \u2212 base (logits)": 5.162919921875,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": -0.5054348190876392,
+      "EOS-margin leakage, trained \u2212 base (logits)": 3.968504333496094,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": -0.37871336013341694,
+      "EOS-margin leakage, trained \u2212 base (logits)": 5.697856445312501,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": -0.41653179330070156,
+      "EOS-margin leakage, trained \u2212 base (logits)": 6.050690917968751,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": -0.34964988605286784,
+      "EOS-margin leakage, trained \u2212 base (logits)": 5.714671630859376,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": -0.5922926664298032,
+      "EOS-margin leakage, trained \u2212 base (logits)": 5.586123046874999,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": -0.4362562472894278,
+      "EOS-margin leakage, trained \u2212 base (logits)": 5.302321777343749,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": -4.132624009178782,
+      "EOS-margin leakage, trained \u2212 base (logits)": 12.620684814453124,
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": -0.5370908627179634,
+      "EOS-margin leakage, trained \u2212 base (logits)": 11.06482421875,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": -0.5857977475538292,
+      "EOS-margin leakage, trained \u2212 base (logits)": 11.762734375,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": -0.42076782870265195,
+      "EOS-margin leakage, trained \u2212 base (logits)": 10.9471875,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": -0.6639384044822156,
+      "EOS-margin leakage, trained \u2212 base (logits)": 10.790312499999999,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": -0.4203758685266621,
+      "EOS-margin leakage, trained \u2212 base (logits)": 10.71328125,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": -0.454533133377355,
+      "EOS-margin leakage, trained \u2212 base (logits)": 8.642670898437501,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": -0.47167596368717846,
+      "EOS-margin leakage, trained \u2212 base (logits)": 7.1621875,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": -0.4039140022886142,
+      "EOS-margin leakage, trained \u2212 base (logits)": 11.113203125,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": -0.32196856612641267,
+      "EOS-margin leakage, trained \u2212 base (logits)": 10.533437500000002,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": -0.3165476824919339,
+      "EOS-margin leakage, trained \u2212 base (logits)": 10.361718750000001,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": 0.4967549436991392,
+      "EOS-margin leakage, trained \u2212 base (logits)": 15.874130859375,
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": 0.5256573706029388,
+      "EOS-margin leakage, trained \u2212 base (logits)": 13.711736450195314,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": -4.8040650802119504,
+      "EOS-margin leakage, trained \u2212 base (logits)": 0.4764550781250003,
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": -3.1249309716170526,
+      "EOS-margin leakage, trained \u2212 base (logits)": -0.9564746093749994,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": -0.4110289812005973,
+      "EOS-margin leakage, trained \u2212 base (logits)": 4.920341796875,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": 0.5939455693320193,
+      "EOS-margin leakage, trained \u2212 base (logits)": 5.95578369140625,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": 0.5105564137763985,
+      "EOS-margin leakage, trained \u2212 base (logits)": 6.9987548828124995,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": 0.5253230324211193,
+      "EOS-margin leakage, trained \u2212 base (logits)": 7.265830078125,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": 0.19104383613290077,
+      "EOS-margin leakage, trained \u2212 base (logits)": 4.781263427734375,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": 0.6127167767732793,
+      "EOS-margin leakage, trained \u2212 base (logits)": 9.2764404296875,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": 0.5829483333133549,
+      "EOS-margin leakage, trained \u2212 base (logits)": 7.292861328124999,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": 0.5752730288329986,
+      "EOS-margin leakage, trained \u2212 base (logits)": 7.747851562499999,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": 0.3571400957662099,
+      "EOS-margin leakage, trained \u2212 base (logits)": 5.762763671875001,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": 0.5400714734978098,
+      "EOS-margin leakage, trained \u2212 base (logits)": 4.715614013671875,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": -2.9073993489737666,
+      "EOS-margin leakage, trained \u2212 base (logits)": 20.586406250000003,
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": 0.14316378809305533,
+      "EOS-margin leakage, trained \u2212 base (logits)": 13.083378906250001,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": -0.16614822487793637,
+      "EOS-margin leakage, trained \u2212 base (logits)": 7.376171875,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": 0.40851375777970356,
+      "EOS-margin leakage, trained \u2212 base (logits)": 12.13224609375,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": -0.09103954622529027,
+      "EOS-margin leakage, trained \u2212 base (logits)": 6.778203125,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": 0.1889354612796089,
+      "EOS-margin leakage, trained \u2212 base (logits)": 11.466953125,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": 0.27397608421114833,
+      "EOS-margin leakage, trained \u2212 base (logits)": 6.472695312500001,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": 0.1698602081062245,
+      "EOS-margin leakage, trained \u2212 base (logits)": 7.88125,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": 0.5262858225585036,
+      "EOS-margin leakage, trained \u2212 base (logits)": 14.7707421875,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": 0.4774110631678852,
+      "EOS-margin leakage, trained \u2212 base (logits)": 11.23525390625,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": 0.44861451618864,
+      "EOS-margin leakage, trained \u2212 base (logits)": 11.7765869140625,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": 0.4947067862135066,
+      "EOS-margin leakage, trained \u2212 base (logits)": 10.19943603515625,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": 0.5137946717617459,
+      "EOS-margin leakage, trained \u2212 base (logits)": 9.4419091796875,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": -4.95411805256339,
+      "EOS-margin leakage, trained \u2212 base (logits)": -3.1974853515624995,
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": -3.000802027030555,
+      "EOS-margin leakage, trained \u2212 base (logits)": -5.344014282226563,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": -0.39230423557636285,
+      "EOS-margin leakage, trained \u2212 base (logits)": -0.1382373046874994,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": 0.5939455693320193,
+      "EOS-margin leakage, trained \u2212 base (logits)": -0.04325927734375057,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": 0.5503462287101206,
+      "EOS-margin leakage, trained \u2212 base (logits)": 1.3551367187499999,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": 0.5610183764773629,
+      "EOS-margin leakage, trained \u2212 base (logits)": -0.1155853271484375,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": 0.29220797296587786,
+      "EOS-margin leakage, trained \u2212 base (logits)": -2.75919921875,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": 0.5984642963997586,
+      "EOS-margin leakage, trained \u2212 base (logits)": -0.9135546875000014,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": 0.5675900702011152,
+      "EOS-margin leakage, trained \u2212 base (logits)": -2.421474609375,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": 0.5708276334140435,
+      "EOS-margin leakage, trained \u2212 base (logits)": -0.25975097656250057,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": 0.39982217181258217,
+      "EOS-margin leakage, trained \u2212 base (logits)": 0.9445507812499994,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": 0.5588298983800069,
+      "EOS-margin leakage, trained \u2212 base (logits)": -1.5592205810546869,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": -2.7538323630264805,
+      "EOS-margin leakage, trained \u2212 base (logits)": 12.870058593749999,
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": 0.18478477222876266,
+      "EOS-margin leakage, trained \u2212 base (logits)": 10.374375,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": -0.10281741108412897,
+      "EOS-margin leakage, trained \u2212 base (logits)": 3.775234375,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": 0.4054956595352285,
+      "EOS-margin leakage, trained \u2212 base (logits)": 9.091142578125,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": -0.06223165379517525,
+      "EOS-margin leakage, trained \u2212 base (logits)": 3.2668749999999998,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": 0.2234240377670791,
+      "EOS-margin leakage, trained \u2212 base (logits)": 7.963974609375001,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": 0.29841226246042035,
+      "EOS-margin leakage, trained \u2212 base (logits)": 3.110234375,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": 0.22264377962509707,
+      "EOS-margin leakage, trained \u2212 base (logits)": 5.0988671875,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": 0.5227030210563148,
+      "EOS-margin leakage, trained \u2212 base (logits)": 8.8450390625,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": 0.4812600633373234,
+      "EOS-margin leakage, trained \u2212 base (logits)": 7.6366796875,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": 0.46079496341399817,
+      "EOS-margin leakage, trained \u2212 base (logits)": 8.088828125,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": 0.4272119047475677,
+      "EOS-margin leakage, trained \u2212 base (logits)": 9.94494140625,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": 0.44266627414715665,
+      "EOS-margin leakage, trained \u2212 base (logits)": 5.989121093750001,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": -5.423071738677455,
+      "EOS-margin leakage, trained \u2212 base (logits)": -2.0505322265625,
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": -3.1885850852979067,
+      "EOS-margin leakage, trained \u2212 base (logits)": -4.387089843749999,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": -0.42860929329403136,
+      "EOS-margin leakage, trained \u2212 base (logits)": 1.5851757812500002,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": 0.5105564137763985,
+      "EOS-margin leakage, trained \u2212 base (logits)": 0.29567138671874993,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": 0.5503462287101206,
+      "EOS-margin leakage, trained \u2212 base (logits)": -0.40665039062500075,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": 0.5600425110715205,
+      "EOS-margin leakage, trained \u2212 base (logits)": -0.5162499999999994,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": 0.2547909750169942,
+      "EOS-margin leakage, trained \u2212 base (logits)": -0.45033935546875004,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": 0.5106277284834051,
+      "EOS-margin leakage, trained \u2212 base (logits)": 0.04794189453124975,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": 0.4810667847433155,
+      "EOS-margin leakage, trained \u2212 base (logits)": 0.20976074218750007,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": 0.4990086258489422,
+      "EOS-margin leakage, trained \u2212 base (logits)": -0.6292724609375,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": 0.3533281645165198,
+      "EOS-margin leakage, trained \u2212 base (logits)": -0.5508056640624996,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": 0.5505540643538013,
+      "EOS-margin leakage, trained \u2212 base (logits)": 1.419921875,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": -2.962318224983309,
+      "EOS-margin leakage, trained \u2212 base (logits)": 14.663378906250001,
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": 0.12749640242213478,
+      "EOS-margin leakage, trained \u2212 base (logits)": 11.4682421875,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": -0.15832994837655343,
+      "EOS-margin leakage, trained \u2212 base (logits)": 4.085390625,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": 0.322275404113704,
+      "EOS-margin leakage, trained \u2212 base (logits)": 11.2734912109375,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": -0.17275188567245575,
+      "EOS-margin leakage, trained \u2212 base (logits)": 2.9713281250000003,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": 0.14693568449798736,
+      "EOS-margin leakage, trained \u2212 base (logits)": 8.784453124999999,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": 0.23209679690741936,
+      "EOS-margin leakage, trained \u2212 base (logits)": 3.6558593749999995,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": 0.12535612215610964,
+      "EOS-margin leakage, trained \u2212 base (logits)": 5.0845703125,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": 0.4447666686876662,
+      "EOS-margin leakage, trained \u2212 base (logits)": 8.665106811523437,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": 0.40530136302474595,
+      "EOS-margin leakage, trained \u2212 base (logits)": 6.026494140625001,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": 0.3846853226533846,
+      "EOS-margin leakage, trained \u2212 base (logits)": 6.303671875,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": 0.4262841996949014,
+      "EOS-margin leakage, trained \u2212 base (logits)": 8.172993164062502,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": 0.463855519103889,
+      "EOS-margin leakage, trained \u2212 base (logits)": 3.2131896972656246,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": -5.731189918431046,
+      "EOS-margin leakage, trained \u2212 base (logits)": -5.169598846435546,
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": -3.2179457391644632,
+      "EOS-margin leakage, trained \u2212 base (logits)": -7.1154504394531255,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": -0.5256866996999661,
+      "EOS-margin leakage, trained \u2212 base (logits)": -2.1434912109375004,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": 0.5253230324211193,
+      "EOS-margin leakage, trained \u2212 base (logits)": -5.655156249999999,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": 0.5610183764773629,
+      "EOS-margin leakage, trained \u2212 base (logits)": -6.1116796875,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": 0.5600425110715205,
+      "EOS-margin leakage, trained \u2212 base (logits)": -5.5168408203125,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": 0.26634604881087326,
+      "EOS-margin leakage, trained \u2212 base (logits)": -5.3451293945312495,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": 0.5265793908591957,
+      "EOS-margin leakage, trained \u2212 base (logits)": -5.83107421875,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": 0.489538193414852,
+      "EOS-margin leakage, trained \u2212 base (logits)": -6.092519531250001,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": 0.5145229175638966,
+      "EOS-margin leakage, trained \u2212 base (logits)": -6.6956918334960935,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": 0.3774827662288684,
+      "EOS-margin leakage, trained \u2212 base (logits)": -6.637983398437499,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": 0.5718327392687634,
+      "EOS-margin leakage, trained \u2212 base (logits)": -6.764033203125001,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": -3.280582324444439,
+      "EOS-margin leakage, trained \u2212 base (logits)": 11.1580859375,
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": 0.0014289451274147325,
+      "EOS-margin leakage, trained \u2212 base (logits)": 10.438092041015626,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": -0.3366140697295897,
+      "EOS-margin leakage, trained \u2212 base (logits)": 4.63078125,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": 0.2586131081982913,
+      "EOS-margin leakage, trained \u2212 base (logits)": 9.5494921875,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": -0.34797099586334723,
+      "EOS-margin leakage, trained \u2212 base (logits)": 2.01375,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": 0.07262569081219349,
+      "EOS-margin leakage, trained \u2212 base (logits)": 8.854306640625001,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": 0.194131419826523,
+      "EOS-margin leakage, trained \u2212 base (logits)": 3.3674609375000006,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": 0.03784678248268537,
+      "EOS-margin leakage, trained \u2212 base (logits)": 4.588671874999999,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": 0.41724254617489565,
+      "EOS-margin leakage, trained \u2212 base (logits)": 5.507822265625,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": 0.37724932747909545,
+      "EOS-margin leakage, trained \u2212 base (logits)": 3.5350390625,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": 0.3376038281353473,
+      "EOS-margin leakage, trained \u2212 base (logits)": 4.787353515625,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": 0.1798838975283977,
+      "EOS-margin leakage, trained \u2212 base (logits)": 4.509687499999998,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": 0.2126341897683005,
+      "EOS-margin leakage, trained \u2212 base (logits)": 3.129284667968749,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": -5.345667789541982,
+      "EOS-margin leakage, trained \u2212 base (logits)": -3.5301879882812504,
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": -3.03929649947354,
+      "EOS-margin leakage, trained \u2212 base (logits)": -6.084689941406251,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": -0.5054348190876392,
+      "EOS-margin leakage, trained \u2212 base (logits)": -1.7924462890625001,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": 0.19104383613290077,
+      "EOS-margin leakage, trained \u2212 base (logits)": -2.6437792968750014,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": 0.29220797296587786,
+      "EOS-margin leakage, trained \u2212 base (logits)": -2.3348229980468744,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": 0.2547909750169942,
+      "EOS-margin leakage, trained \u2212 base (logits)": -3.117060546875001,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": 0.26634604881087326,
+      "EOS-margin leakage, trained \u2212 base (logits)": -3.9828173828125006,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": 0.20291143039685922,
+      "EOS-margin leakage, trained \u2212 base (logits)": -2.3363037109375,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": 0.13124413267370044,
+      "EOS-margin leakage, trained \u2212 base (logits)": -3.991992187500001,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": 0.2783589533594012,
+      "EOS-margin leakage, trained \u2212 base (logits)": -2.9779833984375,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": 0.3652367994687722,
+      "EOS-margin leakage, trained \u2212 base (logits)": -3.5014208984375,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": 0.2982630371894177,
+      "EOS-margin leakage, trained \u2212 base (logits)": -1.3837365722656259,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": -2.8503191391347373,
+      "EOS-margin leakage, trained \u2212 base (logits)": 10.68345703125,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": 0.009986680809395044,
+      "EOS-margin leakage, trained \u2212 base (logits)": 8.65138671875,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": -0.12865501426365017,
+      "EOS-margin leakage, trained \u2212 base (logits)": 6.2105468749999995,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": 0.1102683945189066,
+      "EOS-margin leakage, trained \u2212 base (logits)": 8.176181640625,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": -0.1717197930489296,
+      "EOS-margin leakage, trained \u2212 base (logits)": 3.1359375000000003,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": 0.09338274212663182,
+      "EOS-margin leakage, trained \u2212 base (logits)": 7.150937500000001,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": 0.05434957912942151,
+      "EOS-margin leakage, trained \u2212 base (logits)": 6.111210937499999,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": 0.09300010942754652,
+      "EOS-margin leakage, trained \u2212 base (logits)": 5.3727734375,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": 0.2031968813962625,
+      "EOS-margin leakage, trained \u2212 base (logits)": 5.074667968749999,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": 0.21176380594470295,
+      "EOS-margin leakage, trained \u2212 base (logits)": 3.4419140624999995,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": 0.26000248413126675,
+      "EOS-margin leakage, trained \u2212 base (logits)": 6.157578125000001,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": 0.49962809646704476,
+      "EOS-margin leakage, trained \u2212 base (logits)": 16.3523486328125,
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": 0.5243806175048289,
+      "EOS-margin leakage, trained \u2212 base (logits)": 14.519155273437502,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": -4.751547615681125,
+      "EOS-margin leakage, trained \u2212 base (logits)": 2.4178710937500005,
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": -3.1133994641366605,
+      "EOS-margin leakage, trained \u2212 base (logits)": 1.2626074218749999,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": -0.37871336013341694,
+      "EOS-margin leakage, trained \u2212 base (logits)": 5.4965747070312485,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": 0.6127167767732793,
+      "EOS-margin leakage, trained \u2212 base (logits)": 8.31314453125,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": 0.5984642963997586,
+      "EOS-margin leakage, trained \u2212 base (logits)": 6.633427276611329,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": 0.5106277284834051,
+      "EOS-margin leakage, trained \u2212 base (logits)": 7.295698242187501,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": 0.5265793908591957,
+      "EOS-margin leakage, trained \u2212 base (logits)": 6.753963623046875,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": 0.20291143039685922,
+      "EOS-margin leakage, trained \u2212 base (logits)": 5.7189501953125,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": 0.5887779119265629,
+      "EOS-margin leakage, trained \u2212 base (logits)": 7.3958984375,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": 0.5782616216706147,
+      "EOS-margin leakage, trained \u2212 base (logits)": 7.204290771484375,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": 0.3668680915307804,
+      "EOS-margin leakage, trained \u2212 base (logits)": 9.7415380859375,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": 0.5395873669504383,
+      "EOS-margin leakage, trained \u2212 base (logits)": 8.904581909179688,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": -2.82354233817941,
+      "EOS-margin leakage, trained \u2212 base (logits)": 21.865161323547362,
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": 0.15145617471678752,
+      "EOS-margin leakage, trained \u2212 base (logits)": 12.19716796875,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": -0.16411421745024987,
+      "EOS-margin leakage, trained \u2212 base (logits)": 7.009921875,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": 0.41527713456668014,
+      "EOS-margin leakage, trained \u2212 base (logits)": 11.279755859375,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": -0.07265439228991726,
+      "EOS-margin leakage, trained \u2212 base (logits)": 6.995078125,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": 0.20298462546382923,
+      "EOS-margin leakage, trained \u2212 base (logits)": 10.2559765625,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": 0.2941319982601964,
+      "EOS-margin leakage, trained \u2212 base (logits)": 5.005976562500001,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": 0.18502677577818727,
+      "EOS-margin leakage, trained \u2212 base (logits)": 7.123125,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": 0.5294936276144581,
+      "EOS-margin leakage, trained \u2212 base (logits)": 13.3662109375,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": 0.47788294398788106,
+      "EOS-margin leakage, trained \u2212 base (logits)": 11.5305322265625,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": 0.44971286201373556,
+      "EOS-margin leakage, trained \u2212 base (logits)": 11.11720703125,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": 0.4914758456280162,
+      "EOS-margin leakage, trained \u2212 base (logits)": 14.984479980468748,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": 0.4968173434514641,
+      "EOS-margin leakage, trained \u2212 base (logits)": 11.777504882812497,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": -4.736246507229874,
+      "EOS-margin leakage, trained \u2212 base (logits)": -1.3876660156250002,
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": -3.104770756306114,
+      "EOS-margin leakage, trained \u2212 base (logits)": -2.761796875,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": -0.41653179330070156,
+      "EOS-margin leakage, trained \u2212 base (logits)": 3.2752490234374996,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": 0.5829483333133549,
+      "EOS-margin leakage, trained \u2212 base (logits)": 5.642504882812499,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": 0.5675900702011152,
+      "EOS-margin leakage, trained \u2212 base (logits)": -0.808779296875,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": 0.4810667847433155,
+      "EOS-margin leakage, trained \u2212 base (logits)": 0.38560859680175774,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": 0.489538193414852,
+      "EOS-margin leakage, trained \u2212 base (logits)": 1.39385498046875,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": 0.13124413267370044,
+      "EOS-margin leakage, trained \u2212 base (logits)": 0.3214746093750005,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": 0.5887779119265629,
+      "EOS-margin leakage, trained \u2212 base (logits)": 5.4739990234375,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": 0.5449054446626332,
+      "EOS-margin leakage, trained \u2212 base (logits)": 0.8821679687500001,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": 0.34109971506701986,
+      "EOS-margin leakage, trained \u2212 base (logits)": 0.5223730468749999,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": 0.51846678423851,
+      "EOS-margin leakage, trained \u2212 base (logits)": 2.5024755859375,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": -2.8666112709704707,
+      "EOS-margin leakage, trained \u2212 base (logits)": 15.67671875,
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": 0.1595011357693011,
+      "EOS-margin leakage, trained \u2212 base (logits)": 12.3547265625,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": -0.134291702488462,
+      "EOS-margin leakage, trained \u2212 base (logits)": 6.440546875,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": 0.41201977495915315,
+      "EOS-margin leakage, trained \u2212 base (logits)": 11.6019921875,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": -0.0730066694255771,
+      "EOS-margin leakage, trained \u2212 base (logits)": 5.62,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": 0.1887178010996736,
+      "EOS-margin leakage, trained \u2212 base (logits)": 10.74578125,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": 0.2521389269267682,
+      "EOS-margin leakage, trained \u2212 base (logits)": 5.5048046875,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": 0.16658400546257196,
+      "EOS-margin leakage, trained \u2212 base (logits)": 6.587265625,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": 0.5172132731191024,
+      "EOS-margin leakage, trained \u2212 base (logits)": 12.39859375,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": 0.47308853347978064,
+      "EOS-margin leakage, trained \u2212 base (logits)": 10.156640625,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": 0.4433530806220568,
+      "EOS-margin leakage, trained \u2212 base (logits)": 9.620566406250001,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": 0.5020605371446776,
+      "EOS-margin leakage, trained \u2212 base (logits)": 15.779482421874999,
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": 0.5251353842977002,
+      "EOS-margin leakage, trained \u2212 base (logits)": 15.7279736328125,
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": -5.010180900411383,
+      "EOS-margin leakage, trained \u2212 base (logits)": 2.4997705078125003,
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": -3.168935642592615,
+      "EOS-margin leakage, trained \u2212 base (logits)": 0.4831445312499998,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": -0.34964988605286784,
+      "EOS-margin leakage, trained \u2212 base (logits)": 5.745050048828125,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": 0.5752730288329986,
+      "EOS-margin leakage, trained \u2212 base (logits)": 4.932358398437501,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": 0.5708276334140435,
+      "EOS-margin leakage, trained \u2212 base (logits)": 0.6935009765625004,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": 0.4990086258489422,
+      "EOS-margin leakage, trained \u2212 base (logits)": 1.8366748046874992,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": 0.5145229175638966,
+      "EOS-margin leakage, trained \u2212 base (logits)": 5.383775634765625,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": 0.2783589533594012,
+      "EOS-margin leakage, trained \u2212 base (logits)": -0.09310058593750004,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": 0.5782616216706147,
+      "EOS-margin leakage, trained \u2212 base (logits)": 4.514661254882812,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": 0.5449054446626332,
+      "EOS-margin leakage, trained \u2212 base (logits)": 3.5851660156249996,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": 0.3760684204134028,
+      "EOS-margin leakage, trained \u2212 base (logits)": 3.970759277343749,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": 0.5238624969681492,
+      "EOS-margin leakage, trained \u2212 base (logits)": 3.9887646484375,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": -2.8137565690193616,
+      "EOS-margin leakage, trained \u2212 base (logits)": 20.88486328125,
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": 0.16275952244280528,
+      "EOS-margin leakage, trained \u2212 base (logits)": 12.92181640625,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": -0.11094118933180011,
+      "EOS-margin leakage, trained \u2212 base (logits)": 7.326640625,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": 0.38861954887646877,
+      "EOS-margin leakage, trained \u2212 base (logits)": 12.290898437500001,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": -0.05007681188808339,
+      "EOS-margin leakage, trained \u2212 base (logits)": 7.0175,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": 0.2347903147070183,
+      "EOS-margin leakage, trained \u2212 base (logits)": 11.444423828125,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": 0.33539338100175686,
+      "EOS-margin leakage, trained \u2212 base (logits)": 5.6925390625,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": 0.2123835497349786,
+      "EOS-margin leakage, trained \u2212 base (logits)": 7.8971484375,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": 0.5163431813409212,
+      "EOS-margin leakage, trained \u2212 base (logits)": 13.511484375,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": 0.4737351955654502,
+      "EOS-margin leakage, trained \u2212 base (logits)": 11.102636718749999,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": 0.454023701928026,
+      "EOS-margin leakage, trained \u2212 base (logits)": 11.076865234375,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": 0.28899114872889514,
+      "EOS-margin leakage, trained \u2212 base (logits)": 6.974682617187499,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": 0.31702653548596166,
+      "EOS-margin leakage, trained \u2212 base (logits)": 5.991982421874999,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": -5.93461296182518,
+      "EOS-margin leakage, trained \u2212 base (logits)": -2.661569824218751,
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": -3.271249505255006,
+      "EOS-margin leakage, trained \u2212 base (logits)": -4.2370019531250005,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": -0.5922926664298032,
+      "EOS-margin leakage, trained \u2212 base (logits)": 1.030595703125,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": 0.3571400957662099,
+      "EOS-margin leakage, trained \u2212 base (logits)": -0.33622467041015547,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": 0.39982217181258217,
+      "EOS-margin leakage, trained \u2212 base (logits)": 0.25490234374999865,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": 0.3533281645165198,
+      "EOS-margin leakage, trained \u2212 base (logits)": 0.3873828124999985,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": 0.3774827662288684,
+      "EOS-margin leakage, trained \u2212 base (logits)": -0.7090917968750006,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": 0.3652367994687722,
+      "EOS-margin leakage, trained \u2212 base (logits)": 1.0861434936523438,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": 0.3668680915307804,
+      "EOS-margin leakage, trained \u2212 base (logits)": 0.5195483398437499,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": 0.34109971506701986,
+      "EOS-margin leakage, trained \u2212 base (logits)": -0.6565624999999997,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": 0.3760684204134028,
+      "EOS-margin leakage, trained \u2212 base (logits)": -0.9127429199218753,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": 0.4088974586015566,
+      "EOS-margin leakage, trained \u2212 base (logits)": 2.427015380859375,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": -3.0881346698267644,
+      "EOS-margin leakage, trained \u2212 base (logits)": 12.336269531249998,
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": -0.028356238840128677,
+      "EOS-margin leakage, trained \u2212 base (logits)": 8.7290625,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": -0.26918969139672355,
+      "EOS-margin leakage, trained \u2212 base (logits)": 2.6583593750000003,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": 0.169124731415702,
+      "EOS-margin leakage, trained \u2212 base (logits)": 7.883125,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": -0.2579837182549402,
+      "EOS-margin leakage, trained \u2212 base (logits)": 2.9887500000000005,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": 0.0408613552175658,
+      "EOS-margin leakage, trained \u2212 base (logits)": 7.154433593749999,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": 0.09072423915535602,
+      "EOS-margin leakage, trained \u2212 base (logits)": 3.232521972656249,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": 0.07623025457409809,
+      "EOS-margin leakage, trained \u2212 base (logits)": 4.54806396484375,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": 0.31367772466627675,
+      "EOS-margin leakage, trained \u2212 base (logits)": 6.995234375000001,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": 0.2638766003485923,
+      "EOS-margin leakage, trained \u2212 base (logits)": 6.087451171875,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": 0.2933853132137529,
+      "EOS-margin leakage, trained \u2212 base (logits)": 6.80806640625,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": 0.4265781890271264,
+      "EOS-margin leakage, trained \u2212 base (logits)": 11.2062890625,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": 0.47135899441631923,
+      "EOS-margin leakage, trained \u2212 base (logits)": 9.442421874999999,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": -5.48533997129438,
+      "EOS-margin leakage, trained \u2212 base (logits)": -1.8902539062500008,
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": -3.1499509289151457,
+      "EOS-margin leakage, trained \u2212 base (logits)": -2.433717193603516,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": -0.4362562472894278,
+      "EOS-margin leakage, trained \u2212 base (logits)": 2.9335205078125,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": 0.5400714734978098,
+      "EOS-margin leakage, trained \u2212 base (logits)": -1.7990270996093747,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": 0.5588298983800069,
+      "EOS-margin leakage, trained \u2212 base (logits)": -1.0650878906249996,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": 0.5505540643538013,
+      "EOS-margin leakage, trained \u2212 base (logits)": -0.15237304687499975,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": 0.5718327392687634,
+      "EOS-margin leakage, trained \u2212 base (logits)": -0.013511962890625284,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": 0.2982630371894177,
+      "EOS-margin leakage, trained \u2212 base (logits)": -1.6697143554687504,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": 0.5395873669504383,
+      "EOS-margin leakage, trained \u2212 base (logits)": -1.6795373535156255,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": 0.51846678423851,
+      "EOS-margin leakage, trained \u2212 base (logits)": -1.1718359374999996,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": 0.5238624969681492,
+      "EOS-margin leakage, trained \u2212 base (logits)": 0.375762939453125,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": 0.4088974586015566,
+      "EOS-margin leakage, trained \u2212 base (logits)": -0.7994482421874998,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": -2.9955445266426697,
+      "EOS-margin leakage, trained \u2212 base (logits)": 14.4396875,
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": 0.08165026555205017,
+      "EOS-margin leakage, trained \u2212 base (logits)": 11.116978759765626,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": -0.20230471666263208,
+      "EOS-margin leakage, trained \u2212 base (logits)": 4.380859375,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": 0.3159461416034084,
+      "EOS-margin leakage, trained \u2212 base (logits)": 10.3465625,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": -0.15986563767123357,
+      "EOS-margin leakage, trained \u2212 base (logits)": 4.3984375,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": 0.15451754882947308,
+      "EOS-margin leakage, trained \u2212 base (logits)": 8.9968359375,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": 0.26585405188219713,
+      "EOS-margin leakage, trained \u2212 base (logits)": 3.6117749023437504,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": 0.14124692847927295,
+      "EOS-margin leakage, trained \u2212 base (logits)": 6.555927734375,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": 0.45339366055060293,
+      "EOS-margin leakage, trained \u2212 base (logits)": 9.408828125,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": 0.40403880115009694,
+      "EOS-margin leakage, trained \u2212 base (logits)": 7.708359375000001,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": 0.38647672563930857,
+      "EOS-margin leakage, trained \u2212 base (logits)": 8.334296875,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": -2.47396076732549,
+      "EOS-margin leakage, trained \u2212 base (logits)": 7.337097167968752,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": -2.821746651790718,
+      "EOS-margin leakage, trained \u2212 base (logits)": 4.219497070312499,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": -9.822963006101741,
+      "EOS-margin leakage, trained \u2212 base (logits)": -5.4981445312499995,
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": -8.039334415602829,
+      "EOS-margin leakage, trained \u2212 base (logits)": -6.223137626647948,
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": -4.132624009178782,
+      "EOS-margin leakage, trained \u2212 base (logits)": -0.6102648925781242,
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": -2.9073993489737666,
+      "EOS-margin leakage, trained \u2212 base (logits)": -0.7695898437499995,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": -2.7538323630264805,
+      "EOS-margin leakage, trained \u2212 base (logits)": -1.5688208007812499,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": -2.962318224983309,
+      "EOS-margin leakage, trained \u2212 base (logits)": -0.32281127929687514,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": -3.280582324444439,
+      "EOS-margin leakage, trained \u2212 base (logits)": -2.5650488281250006,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": -2.8503191391347373,
+      "EOS-margin leakage, trained \u2212 base (logits)": -2.083687133789063,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": -2.82354233817941,
+      "EOS-margin leakage, trained \u2212 base (logits)": -0.47724609374999893,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": -2.8666112709704707,
+      "EOS-margin leakage, trained \u2212 base (logits)": -0.622014160156251,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": -2.8137565690193616,
+      "EOS-margin leakage, trained \u2212 base (logits)": -1.061230468749999,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": -3.0881346698267644,
+      "EOS-margin leakage, trained \u2212 base (logits)": -0.6039054870605458,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": -2.9955445266426697,
+      "EOS-margin leakage, trained \u2212 base (logits)": -1.7906835937499999,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": -1.9515950634438346,
+      "EOS-margin leakage, trained \u2212 base (logits)": 9.643183593749999,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": -2.122967463373585,
+      "EOS-margin leakage, trained \u2212 base (logits)": 5.5115625,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": -2.064632126789573,
+      "EOS-margin leakage, trained \u2212 base (logits)": 8.990166015625,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": -2.016221720617398,
+      "EOS-margin leakage, trained \u2212 base (logits)": 2.1743750000000004,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": -1.9329260022395405,
+      "EOS-margin leakage, trained \u2212 base (logits)": 6.106562499999999,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": -2.2128664198584107,
+      "EOS-margin leakage, trained \u2212 base (logits)": 3.645468749999999,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": -1.9136621421660491,
+      "EOS-margin leakage, trained \u2212 base (logits)": 4.5726953125000005,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": -2.231987934822349,
+      "EOS-margin leakage, trained \u2212 base (logits)": 5.334570312499999,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": -2.012535525389182,
+      "EOS-margin leakage, trained \u2212 base (logits)": 4.367421875,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    },
+    {
+      "map-transfer similarity (layer 27)": -1.8798997910804132,
+      "EOS-margin leakage, trained \u2212 base (logits)": 4.1875927734375,
+      "label": "Spearman \u03c1 = 0.14",
+      "_kind": "scatter"
+    }
+  ],
+  "n_series": 1,
+  "total_points": 400,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Sensitivity DV: map similarity vs EOS-margin leakage, 400 cells",
+        "xlabel": "map-transfer similarity (layer 27)",
+        "ylabel": "EOS-margin leakage, trained \u2212 base (logits)",
+        "annotations": [
+          "Spearman \u03c1 = 0.14"
+        ],
+        "xticklabels": [
+          "\u221212",
+          "\u221210",
+          "\u22128",
+          "\u22126",
+          "\u22124",
+          "\u22122",
+          "0",
+          "2"
+        ],
+        "yticklabels": [
+          "\u221220",
+          "\u221215",
+          "\u221210",
+          "\u22125",
+          "0",
+          "5",
+          "10",
+          "15",
+          "20",
+          "25"
+        ]
+      }
+    ]
+  }
+}

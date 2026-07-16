@@ -173,10 +173,12 @@ def test_good_plan_passes_all():
         "c32_fit_basis_grounding": "SKIP",
         "c33_ladder_retention": "SKIP",
         "c34_ratchet_headroom": "SKIP",
+        "c35_pinned_revision_reuse": "SKIP",
+        "c36_numeric_containment": "SKIP",
     }
     actual = {cid: r.status for cid, r in by_id.items()}
     assert actual == expected
-    assert len(results) == 34
+    assert len(results) == 36
 
 
 # ─── Check 0 — plan-nonstub ────────────────────────────────────────────────
@@ -751,7 +753,7 @@ def test_c6_fitness_with_four_letters_passes():
     _, by_id = _run(plan)
     r = by_id["c6_reuse_fitness"]
     assert r.status == "PASS"
-    assert "4/10" in r.detail
+    assert "4/11" in r.detail
 
 
 def test_c6_fitness_counts_item_i_in_widened_class():
@@ -765,7 +767,7 @@ def test_c6_fitness_counts_item_i_in_widened_class():
     _, by_id = _run(plan)
     r = by_id["c6_reuse_fitness"]
     assert r.status == "PASS"
-    assert "4/10" in r.detail
+    assert "4/11" in r.detail
 
 
 def test_c6_fitness_counts_item_j_in_widened_class():
@@ -779,18 +781,33 @@ def test_c6_fitness_counts_item_j_in_widened_class():
     _, by_id = _run(plan)
     r = by_id["c6_reuse_fitness"]
     assert r.status == "PASS"
-    assert "4/10" in r.detail
+    assert "4/11" in r.detail
 
 
-def test_c6_fitness_letters_beyond_j_do_not_count():
-    # Upper-boundary fixture (#941): an unrelated (k) elsewhere in the body must
-    # NOT lift a 3-letter fitness attestation to a 4-letter PASS — an
-    # over-widening of the class to [a-k]/[a-z] would flip this to PASS.
+def test_c6_fitness_counts_item_k_in_widened_class():
+    # Pins the [a-k] regex widening (#1366): exactly four counted letters, one of
+    # them (k) — a regression to [a-j] would count 3 and WARN instead of PASS.
+    plan = (
+        GOOD_PLAN
+        + "\nWe reuse the parent adapters from superkaiba1/explore-persona-space for the base arm."
+        + "\nFitness check: (a) same recipe verified against adapter_config.json; (b) valid measurement regime; (c) required cells present; (k) parent-lineage coherence — parent branch fully merged, empty unmerged diff; realized row count reconciles with the declared corpus.\n"
+    )
+    _, by_id = _run(plan)
+    r = by_id["c6_reuse_fitness"]
+    assert r.status == "PASS"
+    assert "4/11" in r.detail
+
+
+def test_c6_fitness_letters_beyond_k_do_not_count():
+    # Upper-boundary fixture (#941; decoy moved (k)->(l) at #1366): an unrelated
+    # (l) elsewhere in the body must NOT lift a 3-letter fitness attestation to
+    # a 4-letter PASS — an over-widening of the class to [a-l]/[a-z] would flip
+    # this to PASS.
     plan = (
         GOOD_PLAN
         + "\nWe reuse the parent adapters from superkaiba1/explore-persona-space for the base arm."
         + "\nFitness check: (a) same recipe verified against adapter_config.json; (b) valid measurement regime; (c) required cells present."
-        + "\nUnrelated enumeration elsewhere: (k) a non-fitness bullet.\n"
+        + "\nUnrelated enumeration elsewhere: (l) a non-fitness bullet.\n"
     )
     _, by_id = _run(plan)
     r = by_id["c6_reuse_fitness"]
@@ -806,7 +823,7 @@ def test_c6_fitness_with_few_letters_warns():
     _, by_id = _run(plan)
     r = by_id["c6_reuse_fitness"]
     assert r.status == "WARN"
-    assert "(a)–(j)" in r.detail or "ten" in r.detail
+    assert "(a)–(k)" in r.detail or "eleven" in r.detail
 
 
 def test_c6_na_no_artifact_reuse_passes():
@@ -844,6 +861,107 @@ def test_c6_heading_triggers():
 def test_c6_kind_infra_skips():
     plan = GOOD_PLAN + "\nWe reuse adapters from superkaiba1/explore-persona-space.\n"
     assert _status(plan, "c6_reuse_fitness", kind="infra") == "SKIP"
+
+
+def test_c6_reuse_map_table_without_fitness_word_passes():
+    # Durability pin for #1314, modeled on #1090 plan v7's '### D3 — Reuse map'
+    # (artifact-reuse (a)–(j) self-attestation) table: a complete per-row  # noqa: RUF003
+    # attestation written in artifact-reuse.md's own vocabulary — no 'fitness'
+    # word anywhere — must PASS, not WARN "no fitness check found".
+    # Doubles as a second grandfather pin (#1366): the fixture's (a)–(j)  # noqa: RUF003
+    # heading token still declares under the widened \([jk]\) detector.
+    plan = (
+        GOOD_PLAN
+        + "\nWe reuse the parent adapters from superkaiba1/explore-persona-space for the base arm."
+        + "\n### D3 — Reuse map (artifact-reuse (a)–(j) self-attestation)\n"
+        + "\n| Artifact | Checks | Verdict |"
+        + "\n|---|---|---|"
+        + "\n| parent adapter | (a) recipe match; (e) hub-resolves; (h)(i) staged | OK |"
+        + "\n| training mix | (f) content identity; (b) valid regime | OK |"
+        + "\n| eval JSON | (c) cells present; (d) single-variable; (j) pair-coherent | OK |\n"
+    )
+    assert "fitness" not in plan.lower()  # keeps the fixture honest vs future GOOD_PLAN edits
+    _, by_id = _run(plan)
+    r = by_id["c6_reuse_fitness"]
+    assert r.status == "PASS"
+
+
+def test_c6_letters_without_declaration_vocab_still_warns():
+    # Regression pin: >=4 stray enumeration letters WITHOUT any declaration
+    # token (fitness / reuse map / attestation / range token) never PASS —
+    # true both pre- and post-#1314.
+    plan = (
+        GOOD_PLAN
+        + "\nWe reuse the parent adapters from superkaiba1/explore-persona-space for the base arm."
+        + "\nAcceptance: (a) smoke passes; (b) loss decreases; (c) eval completes; "
+        + "(d) uploads verified.\n"
+    )
+    _, by_id = _run(plan)
+    r = by_id["c6_reuse_fitness"]
+    assert r.status == "WARN"
+
+
+def test_c6_reuse_map_with_few_letters_warns():
+    # A bare 'Reuse map' heading (no 'self-attestation', no 'fitness', no
+    # (a)–(j)/(a)–(k) range token — guard-asserted below, so this fixture  # noqa: RUF003
+    # isolates the reuse[- ]map branch) with <4 letters routes to the MIDDLE branch:
+    # the declaration counted, but the letters threshold still gates. A
+    # mutant dropping the reuse-map branch fails this test — with no
+    # declaration token the fixture would route to the third branch, whose
+    # detail lacks "only 2".
+    plan = (
+        GOOD_PLAN
+        + "\nWe reuse the parent adapters from superkaiba1/explore-persona-space for the base arm."
+        + "\n### Reuse map\n"
+        + "\n(a) recipe match verified; (b) valid measurement regime.\n"
+    )
+    lowered = plan.lower()
+    assert "fitness" not in lowered
+    assert "attestation" not in lowered
+    assert re.search(r"\(a\)\s*[-–—…]\s*\([jk]\)", plan) is None
+    _, by_id = _run(plan)
+    r = by_id["c6_reuse_fitness"]
+    assert r.status == "WARN"
+    assert "only 2" in r.detail
+
+
+def test_c6_range_token_counts_as_declaration():
+    # GRANDFATHER pin (#1366): an in-flight plan citing the OLD en-dash (a)–(j)  # noqa: RUF003
+    # range token still declares under the widened \([jk]\) detector. No
+    # 'fitness', no 'map', no 'attestation' word (guard-asserted), four real
+    # item letters.
+    plan = (
+        GOOD_PLAN
+        + "\nWe reuse the parent adapters from superkaiba1/explore-persona-space for the base arm."
+        + "\nArtifact checks (a)–(j): (a) recipe; (b) regime; (c) cells; "
+        + "(d) single-variable.\n"
+    )
+    lowered = plan.lower()
+    assert "fitness" not in lowered
+    assert "map" not in lowered
+    assert "attestation" not in lowered
+    _, by_id = _run(plan)
+    r = by_id["c6_reuse_fitness"]
+    assert r.status == "PASS"
+
+
+def test_c6_new_range_token_counts_as_declaration():
+    # Pins the CURRENT en-dash (a)–(k) range-token branch (#1366): no  # noqa: RUF003
+    # 'fitness', no 'map', no 'attestation' word (guard-asserted), four real
+    # item letters.
+    plan = (
+        GOOD_PLAN
+        + "\nWe reuse the parent adapters from superkaiba1/explore-persona-space for the base arm."
+        + "\nArtifact checks (a)–(k): (a) recipe; (b) regime; (c) cells; "
+        + "(d) single-variable.\n"
+    )
+    lowered = plan.lower()
+    assert "fitness" not in lowered
+    assert "map" not in lowered
+    assert "attestation" not in lowered
+    _, by_id = _run(plan)
+    r = by_id["c6_reuse_fitness"]
+    assert r.status == "PASS"
 
 
 # ─── Check 7 — replication fidelity ────────────────────────────────────────
@@ -1464,7 +1582,8 @@ def test_own_line_remedies_carry_unwrapped_clarifier():
         else:
             offenders.append((node.lineno, node.value[:90]))
     assert not offenders, f"own-line remedies missing the unwrapped clarifier: {offenders}"
-    # 19 sites (#1263) + c34 exemplar + c7's remedy/pass-detail (#1262) + c4's (#1277) = 24 live
+    # 19 sites (#1263) + c34 exemplar + c7's remedy/pass-detail (#1262) + c4's (#1277)
+    # + c36's remedy (#1375) = 25 live
     assert clarified >= 20
 
 
@@ -5715,12 +5834,12 @@ def test_cli_json_schema_and_exit_zero_on_pass(tmp_path):
     assert payload["issue"] is None
     assert payload["kind"] == "experiment"
     assert payload["n_fail"] == 0
-    assert payload["n_skip"] == 27
+    assert payload["n_skip"] == 29
     assert {"id", "name", "status", "detail"} <= set(payload["checks"][0])
     statuses = {c["status"] for c in payload["checks"]}
     assert statuses <= {"PASS", "WARN", "FAIL", "SKIP"}
-    assert len(payload["checks"]) == 35
-    assert len({c["id"] for c in payload["checks"]}) == 35
+    assert len(payload["checks"]) == 37
+    assert len({c["id"] for c in payload["checks"]}) == 37
     # c23 has no task context in --plan-file mode: rendered SKIP (companion
     # assert for test_cli_issue_mode_appends_goal_currency).
     c23 = next(c for c in payload["checks"] if c["id"] == "c23_goal_currency")
@@ -6843,6 +6962,318 @@ def test_c34_phrase_listed_in_skillmd():
     assert "no verbatim ratcheted-file insertion" in block
     assert "check 34" in block
     assert "`N/A — no verbatim ratcheted-file insertion`" in block
+
+
+# ─── Check 35 — revision-pinned reuse verified at the pin ─────────────────
+
+C35_PINNED_REUSE = (
+    "\n## Reuse\n\nWe reuse the parent's raw-completion shards from "
+    "superkaiba1/explore-persona-space-data at pinned revision "
+    "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa (issue1345 S-track stems).\n"
+)
+
+# #1345 plan v3 §10 pairwise-provenance row, VERBATIM (tasks/*/1345/plans/v3.md
+# line 446 at implementation time) — the artifact-reuse item-(j) boilerplate
+# that blinded the v2 satisfier design to its own motivating incident.
+C35_ITEM_J_ROW = (
+    "| Pairwise provenance coherence | R1/R2 shard `last_commit` dates at revision "
+    "deb7a452 vs the `issue825_extract_turnstore.py` version that wrote them — verify "
+    "at implementation time via `get_paths_info(expand=True, revision=...)` |"
+)
+
+
+def test_c35_not_triggered_skips():
+    assert _status(GOOD_PLAN, "c35_pinned_revision_reuse") == "SKIP"
+
+
+def test_c35_pinned_reuse_without_probe_warns():
+    _, by_id = _run(GOOD_PLAN + C35_PINNED_REUSE)
+    r = by_id["c35_pinned_revision_reuse"]
+    assert r.status == "WARN"
+    assert "pin" in r.detail and "1345" in r.detail
+
+
+def test_c35_revision_scoped_probe_passes():
+    plan = (
+        GOOD_PLAN
+        + C35_PINNED_REUSE
+        + '\n```python\nlist_repo_tree("superkaiba1/explore-persona-space-data", '
+        + 'path_in_repo="issue1345_s/", revision="aaaa...", repo_type="dataset")\n```\n'
+    )
+    assert _status(plan, "c35_pinned_revision_reuse") == "PASS"
+
+
+def test_c35_default_branch_probe_does_not_satisfy():
+    # Pins exactly the #1345 failure shape: an existence probe with NO
+    # revision kwarg ("confirmed" at the default branch) must not satisfy.
+    plan = (
+        GOOD_PLAN
+        + C35_PINNED_REUSE
+        + "\nVerified via list_repo_files('superkaiba1/explore-persona-space-data').\n"
+    )
+    assert _status(plan, "c35_pinned_revision_reuse") == "WARN"
+
+
+def test_c35_prose_verified_at_pinned_revision_passes():
+    plan = GOOD_PLAN + C35_PINNED_REUSE + "\nExistence verified at the pinned revision per stem.\n"
+    assert _status(plan, "c35_pinned_revision_reuse") == "PASS"
+
+
+def test_c35_pasted_warn_detail_does_not_self_satisfy():
+    # MUST-FIX 1(b): bounced plans paste the verifier detail verbatim; the
+    # detail must not satisfy the check it came from (#810 shape).
+    _, by_id = _run(GOOD_PLAN + C35_PINNED_REUSE)
+    detail = by_id["c35_pinned_revision_reuse"].detail
+    plan = GOOD_PLAN + C35_PINNED_REUSE + "\n" + detail + "\n"
+    assert _status(plan, "c35_pinned_revision_reuse") == "WARN"
+
+
+def test_c35_warn_detail_matches_no_satisfier():
+    # MUST-FIX 1(c): pin satisfier-inertness of the detail string directly —
+    # no Hub-callable + `revision=`/`revision:` co-occurrence on one line, no
+    # `verif...at...revision` shape.
+    _, by_id = _run(GOOD_PLAN + C35_PINNED_REUSE)
+    detail = by_id["c35_pinned_revision_reuse"].detail
+    assert verify_plan._C35_PROBE_SATISFIER_RE.search(detail) is None
+    assert verify_plan._C35_PROSE_SATISFIER_RE.search(detail) is None
+
+
+def test_c35_item_j_provenance_boilerplate_does_not_satisfy():
+    # MUST-FIX 2(b): regression for the #1345-v3 blind spot — the item-(j)
+    # `get_paths_info(expand=True, revision=...)` provenance row verifies
+    # commit-DATE coherence, NOT existence-at-pin, and must not satisfy
+    # (get_paths_info is deliberately excluded from the probe satisfier).
+    plan = GOOD_PLAN + C35_PINNED_REUSE + "\n" + C35_ITEM_J_ROW + "\n"
+    assert _status(plan, "c35_pinned_revision_reuse") == "WARN"
+
+
+def test_c35_na_escape_passes():
+    plan = GOOD_PLAN + C35_PINNED_REUSE + "\nN/A — no revision-pinned reuse\n"
+    _, by_id = _run(plan)
+    r = by_id["c35_pinned_revision_reuse"]
+    assert r.status == "PASS"
+    assert "declaration" in r.detail
+
+
+def test_c35_quoted_na_phrase_does_not_escape():
+    # Anti-paste convention (#810/#1238 lineage): the phrase quoted
+    # mid-sentence (e.g. inside a pasted bounce brief) does not count.
+    plan = (
+        GOOD_PLAN
+        + C35_PINNED_REUSE
+        + "\nThe bounce brief quotes `N/A — no revision-pinned reuse` as the check-35 escape.\n"
+    )
+    assert _status(plan, "c35_pinned_revision_reuse") == "WARN"
+
+
+def test_c35_kind_infra_skips():
+    assert (
+        _status(GOOD_PLAN + C35_PINNED_REUSE, "c35_pinned_revision_reuse", kind="infra") == "SKIP"
+    )
+
+
+def test_c35_git_code_sha_without_hf_context_skips():
+    # A bare git code SHA (Repro-card `pinned to commit <40-hex>` row, no HF
+    # context / reuse vocabulary nearby) must not trigger.
+    plan = GOOD_PLAN + (
+        "\nRepro: code pinned to commit bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb on branch main.\n"
+    )
+    assert _status(plan, "c35_pinned_revision_reuse") == "SKIP"
+
+
+def test_c35_phrase_listed_in_skillmd():
+    # Durability pin (the c34 precedent): the canonical escape phrase is
+    # registered backtick-wrapped in the adversarial-planner SKILL.md escape
+    # list, so a later SKILL.md reflow cannot silently drop it.
+    text = (REPO_ROOT / ".claude" / "skills" / "adversarial-planner" / "SKILL.md").read_text()
+    anchor = text.index("Canonical N/A escape phrases")
+    block = text[anchor : text.index("bounce to the planner", anchor)]
+    assert "no revision-pinned reuse" in block
+    assert "check 35" in block
+    assert "`N/A — no revision-pinned reuse`" in block
+
+
+# ─── Check 36 — numeric containment claims ─────────────────────────────────
+
+# Verbatim corpus literals — embedded as literals, NEVER read from tasks/ at
+# test runtime (tasks move between status folders; the c28 fixture
+# convention). C36_1315_LINE is the founding incident sentence,
+# tasks/*/1315/plans/v4.md L66 (the "Install: …" sentence; the leading
+# "Weights: …" clause of the physical line is trimmed — the plan-#1375 §6
+# fixture spec names the sentence). Its FIRST containment claim is TRUE
+# (0.724 in [0.60, 0.85]); the SECOND is arithmetically FALSE
+# (0.724 < 0.737) — verify_plan PASSed 0/0 on it and two critics caught it
+# by hand (-> #1375).
+C36_1315_LINE = (
+    "Install: Tier-1 0.663 in band at step 20, Tier-2 confirm 0.724 — inside the registered "
+    "0.60–0.85 band and inside the siblings' realized 0.737–0.820 spread (install-strength "
+    "control satisfied without dose-matching work)."
+)
+# #1315 v5 L68 (the corrected prose; trailing parenthetical trimmed at the
+# c28 precedent) — the true-negative sibling of the founding line.
+C36_1315_V5_LINE = (
+    "Install: Tier-1 0.663 in band at step 20, Tier-2 confirm 0.724 — inside the registered "
+    "0.60–0.85 band, 0.013 BELOW the siblings' realized 0.737–0.820 spread (install-strength "
+    "control satisfied via the registered band without dose-matching work)."
+)
+# #1315 v4 L126 (trimmed): "next to" is not a containment verb.
+C36_1315_NEXT_TO_LINE = (
+    "install-band control (0.724 in band next to siblings 0.737–0.820; per-cell realized "
+    "install reported next to every geometry DV)"
+)
+# #1315 v4 L274 verbatim: a ± tolerance is not a range.
+C36_1315_PLUSMINUS_LINE = (
+    "1. Parity probe: judged rate within 0.724 ± 0.15 AND application check ≥ 0.5 nat — or "
+    "the named retrain-from-frozen-mix fallback lands in band."
+)
+# #816 v1 L227 (trimmed): "10-20-draw" is a compound count modifier, not a range claim.
+C36_816_LINE = (
+    "- **Exp 4 — kills** if: a norm-matched random-direction preventative finetune reduces "
+    "the post-ft trait score as much as the real vector (real's reduction inside the "
+    "10–20-draw random band, given the p-floor)."
+)
+# #514 v1 L175 verbatim: table row — cross-cell numbers must never be attributed.
+C36_514_ROW = (
+    "| Dense lever, 30% epoch | Whether stopping just past the #508 FT-light cell catches a "
+    "clean cell above 9 nat | Budget resolution within the 0.25-0.5 epoch window | "
+    "`ft_dense_b30` |"
+)
+# #597 v2 L33 (trimmed): "H2" is a label digit, not a claimed value.
+C36_597_LINE = (
+    "- **H2 (rotation + gate collapse at the cliff).** The consecutive-checkpoint "
+    "top-direction cosine has its minimum inside steps 12–40 (the cliff/onset window), and "
+    "the gate ρ trajectory drops from its early value toward ~0 across the same window, in "
+    "most sources."
+)
+# #1353 v1 L52 (trimmed): a TRUE claim that also pins the \b partial-digit
+# operand boundaries (without them "150-330 band" garbage-parses).
+C36_1353_LINE = (
+    "(~300 words — inside the siblings' 150–330 band. Register elements checked against "
+    "L282/L283: bold headline sentence · explicit RULE: clauses · sibling cross-reference.)"
+)
+
+
+def _c36_plan(*extra: str) -> str:
+    """GOOD_PLAN + ``extra`` lines appended (the ``_c28_plan`` pattern)."""
+    return GOOD_PLAN + "\n" + "\n\n".join(extra) + ("\n" if extra else "")
+
+
+def test_c36_1315_v4_false_claim_warns():
+    _, by_id = _run(_c36_plan(C36_1315_LINE))
+    r = by_id["c36_numeric_containment"]
+    assert r.status == "WARN"
+    assert "0.737" in r.detail and "0.724" in r.detail  # the false pair
+
+
+def test_c36_true_claim_same_sentence_not_flagged():
+    # The L66 first half only — the TRUE claim (0.724 in [0.60, 0.85]).
+    plan = _c36_plan("Tier-2 confirm 0.724 — inside the registered 0.60–0.85 band")
+    assert _status(plan, "c36_numeric_containment") == "PASS"
+
+
+def test_c36_corrected_v5_line_passes():
+    assert _status(_c36_plan(C36_1315_V5_LINE), "c36_numeric_containment") == "PASS"
+
+
+def test_c36_next_to_non_fire():
+    # No containment verb -> no claim detected at all.
+    assert _status(_c36_plan(C36_1315_NEXT_TO_LINE), "c36_numeric_containment") == "SKIP"
+
+
+def test_c36_plusminus_tolerance_non_fire():
+    # "within 0.724 ± 0.15" is a tolerance, not an A-B range.
+    assert _status(_c36_plan(C36_1315_PLUSMINUS_LINE), "c36_numeric_containment") == "SKIP"
+
+
+def test_c36_fenced_false_claim_skips():
+    plan = GOOD_PLAN + "\n```\n" + C36_1315_LINE + "\n```\n"
+    assert _status(plan, "c36_numeric_containment") == "SKIP"
+
+
+def test_c36_blockquoted_false_claim_skips():
+    assert _status(_c36_plan("> " + C36_1315_LINE), "c36_numeric_containment") == "SKIP"
+
+
+@pytest.mark.parametrize("kind", ["infra", "batch", "survey"])
+def test_c36_kind_exempt_skips(kind):
+    # The self-reference-trap pin: workflow-fix plans quoting the incident
+    # are kind: infra and never scanned (plan-#1375 §4.7 layer 1).
+    assert _status(_c36_plan(C36_1315_LINE), "c36_numeric_containment", kind=kind) == "SKIP"
+
+
+def test_c36_na_escape_passes():
+    plan = _c36_plan(C36_1315_LINE, "N/A — no numeric containment claims")
+    _, by_id = _run(plan)
+    r = by_id["c36_numeric_containment"]
+    assert r.status == "PASS"
+    assert "declared" in r.detail
+
+
+def test_c36_quoted_na_phrase_does_not_escape():
+    # Anti-paste convention (#810/#1238 lineage): the phrase quoted
+    # mid-sentence (e.g. inside a pasted bounce brief) does not count.
+    plan = _c36_plan(
+        C36_1315_LINE,
+        "The bounce brief quotes `N/A — no numeric containment claims` as the check-36 escape.",
+    )
+    assert _status(plan, "c36_numeric_containment") == "WARN"
+
+
+def test_c36_boundary_equality_inside():
+    # Fraction-exact boundary inclusion: N == A counts as inside.
+    plan = _c36_plan("The realized install of 0.60 sits within the registered 0.60–0.85 band.")
+    assert _status(plan, "c36_numeric_containment") == "PASS"
+
+
+def test_c36_reversed_bounds_normalized():
+    # A reversed range is a prose-order quirk, not an exemption: [0.60, 0.85]
+    # is still verified after normalization.
+    ok_plan = _c36_plan("The confirm read 0.75 sits inside the 0.85–0.60 band.")
+    assert _status(ok_plan, "c36_numeric_containment") == "PASS"
+    bad_plan = _c36_plan("The confirm read 0.50 sits inside the 0.85–0.60 band.")
+    assert _status(bad_plan, "c36_numeric_containment") == "WARN"
+
+
+def test_c36_hyphen_range_parses():
+    # Unspaced ASCII hyphen with unsigned operands is a range.
+    plan = _c36_plan("The mix uses 4 negatives, within the 2-4 range.")
+    assert _status(plan, "c36_numeric_containment") == "PASS"
+
+
+def test_c36_negative_hyphen_ambiguity_never_parses():
+    # A signed/hyphen mix is ambiguous between range and negative pair.
+    plan = _c36_plan("The shift 0.1 lands within the -0.5-0.3 band under this recipe.")
+    assert _status(plan, "c36_numeric_containment") == "SKIP"
+
+
+def test_c36_percent_unit_segregation():
+    # %-flagged candidates compare only against %-flagged ranges.
+    pct_plan = _c36_plan("72% of judged rows sit within the 60–85% range.")
+    assert _status(pct_plan, "c36_numeric_containment") == "PASS"
+    # Mixed units: the only candidate is %-flagged, the range unitless ->
+    # no attributable claimed value -> no claim.
+    mixed_plan = _c36_plan("The 30% rate sits within the 0.25–0.5 window.")
+    assert _status(mixed_plan, "c36_numeric_containment") == "SKIP"
+
+
+def test_c36_compound_count_modifier_non_fire():
+    assert _status(_c36_plan(C36_816_LINE), "c36_numeric_containment") == "SKIP"
+
+
+def test_c36_table_cell_bleed_non_fire():
+    # Candidate window cut at the last `|`: the sibling cell's "9 nat" is
+    # never attributed to the "0.25-0.5 epoch window" claim.
+    assert _status(_c36_plan(C36_514_ROW), "c36_numeric_containment") == "SKIP"
+
+
+def test_c36_label_digit_not_a_candidate():
+    # "H2" is killed by the candidate lookbehind; a candidate-less match
+    # does not count as a claim.
+    assert _status(_c36_plan(C36_597_LINE), "c36_numeric_containment") == "SKIP"
+
+
+def test_c36_true_word_count_claim_passes():
+    assert _status(_c36_plan(C36_1353_LINE), "c36_numeric_containment") == "PASS"
 
 
 def test_canonical_json_parse_snippet_pinned():

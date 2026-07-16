@@ -1,0 +1,10 @@
+{
+  "cell": "imp_icl_ft_pos",
+  "step": 18,
+  "rates": {
+    "trained": 0.84,
+    "base": 0.0
+  },
+  "base_source": "eval_results/issue_1090/fu3 committed base Tier-2 (rate 0.00)",
+  "n": 10
+}

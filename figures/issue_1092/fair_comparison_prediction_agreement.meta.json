@@ -1,0 +1,80 @@
+{
+  "figure": "figures/issue_1092/fair_comparison_prediction_agreement.png",
+  "generated_utc": "2026-07-16T09:35:03.965453+00:00",
+  "git_commit": "929700b1f8f17ad9c54bee94b7f2c7d2bff8571d",
+  "primary_cell": "cell_inst_own",
+  "caption": "Direct prediction-agreement test (#1092 addendum) at averaged grain: does the prefix map reproduce the query-averaged context map? Per held-out prefix (novel-prefix 6-fold CV, battery-excluded), the prefix map's held-out predicted profile and the query-averaged context-map held-out prediction are each compared to the true per-prefix profile; the scatter plots the two L2 error magnitudes (one point per prefix, primary cell). agreement R2(prefix-pred | context-pred) 0.28-0.54 across cells/bases sits far BELOW each context arm's vs-truth averaged R2 (0.76-0.94), so predictions are NOT near-identical and the prefix map is not the query-averaged context map. Centered cosine 0.64-0.74 (directionally aligned), per-prefix error ratio ~2-3x (prefix worse), error correlation 0.56-0.90 (same prefixes hard for both). Teacher-forced capture; own-policy greedy answers. All values newly computed from the persisted per-row context held-out predictions + the averaged-grain prefix fit.",
+  "metrics": {
+    "cell_inst_own": {
+      "ambient": {
+        "n_prefixes": 996,
+        "agreement_r2_prefixpred_vs_ctxpred": 0.4080755368027198,
+        "agreement_r2_ctxpred_vs_prefixpred": 0.2610744540481241,
+        "mean_cosine_raw": 0.9909329050731347,
+        "mean_cosine_centered": 0.6830158449109538,
+        "mean_err_prefix": 12.220847131259648,
+        "mean_err_ctx": 5.952416348350139,
+        "err_ratio_prefix_over_ctx": 2.0530901093040823,
+        "per_prefix_err_correlation": 0.8411650151902105
+      },
+      "pca48": {
+        "n_prefixes": 996,
+        "agreement_r2_prefixpred_vs_ctxpred": 0.5439187494070596,
+        "agreement_r2_ctxpred_vs_prefixpred": 0.41507311505958744,
+        "mean_cosine_raw": 0.7419755748589602,
+        "mean_cosine_centered": 0.7416781223982899,
+        "mean_err_prefix": 9.136845117484484,
+        "mean_err_ctx": 3.0586149429485134,
+        "err_ratio_prefix_over_ctx": 2.9872492248643603,
+        "per_prefix_err_correlation": 0.5641006965887579
+      }
+    },
+    "cell_pre_own": {
+      "ambient": {
+        "n_prefixes": 996,
+        "agreement_r2_prefixpred_vs_ctxpred": 0.2843744607553358,
+        "agreement_r2_ctxpred_vs_prefixpred": 0.07668160378053324,
+        "mean_cosine_raw": 0.9809950608819457,
+        "mean_cosine_centered": 0.6447039890717865,
+        "mean_err_prefix": 17.052087666255076,
+        "mean_err_ctx": 8.722990818130476,
+        "err_ratio_prefix_over_ctx": 1.9548441608823965,
+        "per_prefix_err_correlation": 0.8976603596785073
+      },
+      "pca48": {
+        "n_prefixes": 996,
+        "agreement_r2_prefixpred_vs_ctxpred": 0.4736135089588692,
+        "agreement_r2_ctxpred_vs_prefixpred": 0.32176725436875875,
+        "mean_cosine_raw": 0.729174802981025,
+        "mean_cosine_centered": 0.7291168229355678,
+        "mean_err_prefix": 12.652346636265936,
+        "mean_err_ctx": 5.2370235205810705,
+        "err_ratio_prefix_over_ctx": 2.4159422974788716,
+        "per_prefix_err_correlation": 0.7589738428194758
+      }
+    }
+  },
+  "vs_truth_averaged_r2_for_reference": {
+    "cell_inst_own": {
+      "ambient": {
+        "prefix_averaged": 0.3708897449163957,
+        "context_averaged": 0.8193260751733688
+      },
+      "pca48": {
+        "prefix_averaged": 0.5290446256305392,
+        "context_averaged": 0.935504559387362
+      }
+    },
+    "cell_pre_own": {
+      "ambient": {
+        "prefix_averaged": 0.2609328571729165,
+        "context_averaged": 0.7633080486910762
+      },
+      "pca48": {
+        "prefix_averaged": 0.46273357709206353,
+        "context_averaged": 0.8843018488452181
+      }
+    }
+  },
+  "source": "eval_results/issue_1092/inline_fair_comparison/fair_comparison.json"
+}

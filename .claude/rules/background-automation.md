@@ -796,6 +796,23 @@ verified kill-by-pid recipe (or SIGTERMs it under `--kill`; comm re-verified,
 never auto-SIGKILL). Stale sentinels are GC'd after `max(7 days, the
 configured TTL)`.
 
+**Deliberate registration removal (`spawn_session.py unregister`; #1327).**
+Deliberately removing an `issue-<N>.json` / `manual-issue-<N>.json` /
+`campaign-<N>.json` registration (collision-yield, deliberate-stop cleanup)
+goes through `spawn_session.py unregister` — never a hand `rm` on
+`~/.eps-autonomous/` (the #952 shape: an unguarded rm can strip crash-recovery
+from the healthy owner). Sid-matched by default: `unregister --issue N`
+removes only files recording the CALLING session's Happy id
+(ancestry-inferred, the `register-current` walk), so a yielding duplicate can
+never delete the true owner's entry — a `KEPT-SID-MISMATCH` line is the guard
+working, not a bug. Third-party cleanup of a DEAD session's file:
+`unregister --issue N --session-id <dead-sid>` (removes only entries recording
+that sid; no daemon-liveness check), or `unregister --force --issue N` for
+unconditional operator cleanup (`--force` requires `--issue` and is refused
+with `--session-id`). Takeover sentinels (`*.paused-takeover-*`) and
+non-registration siblings (`dispatch-lease-*`, `campaign-watch-*`,
+`pm-session.json`) are never touched by any invocation form.
+
 **Program-orchestrator recovery pass (#660 leakage-program bash daemon).** The
 leakage-theory program (#660) is sequenced by a BASH DAEMON
 (`scripts/run_program_orchestrator.sh` in tmux `eps-program`), NOT a Happy
@@ -991,6 +1008,40 @@ events-mtime recency). Kill switch `EPM_DISABLE_VERDICT_DISAGREE_OBSERVER=1`;
 `--verdict-disagree-only` runs just this pass (pair with `--dry-run` for a
 live smoke — zero writes).
 
+**Root-draft observer pass (task #1341, `root_draft_pass`; origin incident
+#1320).** A daemon-INDEPENDENT, ESCALATE-ONLY pass (runs right after
+`verdict_disagree_pass`) flagging stale UNTRACKED `*.py` drafts abandoned in
+the SHARED repo-root working tree — dirt that matches the `.py` leg of
+step9c's `DIRTY_CODE_PATHSPEC` (`scripts/step9c_baseline.py`) and therefore
+flips EVERY task's Step 9c pristine-oracle compare fleet-wide indeterminate,
+silently (#1320: two untracked `scripts/issue825_*.py` drafts poisoned the
+ledger 9+ hours). Predicate: one read-only
+`git --no-optional-locks status --porcelain -- *.py` at the main root
+(`--no-optional-locks` = never takes the shared root's index lock), keep
+untracked (`?? `) `.py` entries, flag those with file mtime age >
+`EPM_ROOT_DRAFT_ESCALATE_HOURS` (default 3 h; tracked-modified ` M` dirt is
+deliberately out of scope — the named extension trigger if a future
+fleet-wide indeterminacy traces to it; `.claude/worktrees/` is gitignored so
+worktrees never enumerate). **Channels:** one row per fired path to the
+dedicated sidecar `.claude/cache/root-draft-events.jsonl` (with best-effort
+`issue<M>_` filename attribution + a fail-soft `task.py view` status label)
++ ONE deduped fail-soft `_telegram_push` digest per tick naming every fired
+path; NO task markers (the verdict-disagree posture — a name-collision
+mis-attribution must cost nothing on any task record). **Dedup:** per-path
+fire-once + `EPM_ROOT_DRAFT_REALERT_HOURS` (24 h) re-alert TTL in the state
+singleton `~/.eps-autonomous/root-draft-observer.json` (atomic tmp+rename;
+recovered paths pruned so a re-appearance re-fires immediately).
+**ESCALATE-ONLY is a hard invariant:** the pass NEVER deletes, moves,
+chmods, or git-mutates anything — its only writes are the state file + the
+sidecar (pinned by
+`tests/test_autonomous_session_watch.py::test_root_draft_pass_never_deletes`);
+rescue is always the OWNING session committing or relocating its draft. A
+git-status failure warns + skips the tick with no state write (fail toward
+logged-skip, never a silent "no drafts"). Kill switch
+`EPM_DISABLE_ROOT_DRAFT_PASS=1`; `--root-draft-only` runs just this pass
+(pair with `--dry-run` for a live smoke — zero writes, zero task.py reads
+beyond the read-only enumeration).
+
 **Auth-outage guard pass (task #1027, `auth_outage_pass`).** Fleet-level
 respawn suppression for an Anthropic auth outage — or ANY fleet-wide
 instant-death cause (poisoned CLI credential, broken `claude` binary, a
@@ -1119,13 +1170,32 @@ escalate, never delete). A fourth, boot-pass-only arm age-gates the VM's
 pod-style `/workspace/.cache/huggingface` hub cache (repos unused ≥ 14 days,
 `EPS_VM_WORKSPACE_HF_CACHE_MAX_AGE_DAYS`), pod-guarded (`ismount('/workspace')`
 OR pod-side detection refuses) so it can never run where `/workspace` is a real
-volume. The `/tmp/` + `/workspace` opt-in lives ONLY in the two CLI `main()`
+volume. The `/tmp/` +
+`/workspace` opt-in lives ONLY in the two CLI `main()`
 bodies (`tmp_root=production_tmp_root()`; library calls are hermetic by
 construction), the escalate-only data-disk pass never sweeps `/tmp/`, and
 report-only runs surface their evidence via the `--json` structured fields
 (`active_cache_attributions` / `noncanonical_candidates` /
 `total_discovered_bytes`) — never the sidecar. Kill switch:
-`EPM_SKIP_NONCANONICAL_CACHE_SWEEP=1`.
+`EPM_SKIP_NONCANONICAL_CACHE_SWEEP=1`. A fifth arm, tier (e) (#1376 + #1377,
+independently landed and reconciled into ONE tier), covers
+the HOME HF hub cache `~/.cache/huggingface/hub` (`EPS_VM_HOME_HF_CACHE`;
+`hub/` only) on the same boot-pass-only `main()` opt-in: it ALWAYS attributes
+per-repo size / revision count / `last_accessed` age (`hf_repo_attributions`
+in `--json`), escalates any single repo > 40 GB
+(`EPS_VM_HOME_HF_CACHE_REPO_ESCALATE_GB`) with a per-revision breakdown
+(sidecar + Telegram, deduped per (repo, band) with ack sentinels), and on
+`--apply` reaps via `delete_revisions` (blob-refcount safe): unref'd
+non-newest revisions with `last_modified` ≥ 7 d old
+(`EPS_VM_HOME_HF_REVISION_MAX_AGE_DAYS`) AND no fresh EXCLUSIVE-blob atime
+(the newest + every ref'd revision per repo is always kept), plus whole repos
+whose repo-level `last_accessed` exceeds the same window (ref'd revisions
+included — this covers stale models). **Interplay note:** the watcher's
+`_vm_reclaim_hf_hub_cache` (`EPM_VM_DISK_HF_TTL_DAYS`=14, CRITICAL-gated,
+silent) and guard tier (e) (7 d, threshold-gated, attributing) BOTH cover the
+home hub cache BY DESIGN — two independent reapers, both `delete_revisions`
+(idempotent; a lost race degrades tier (e) to a skipped tier, never a crash);
+do not "unify" the two knobs without reading #1376 + #1377.
 
 **Janitor exemption.** The stale-GCP-VM janitor (above) sweeps the
 `eps-persona-gpu-jun2026` GPU project for ephemeral GCE INSTANCES. The

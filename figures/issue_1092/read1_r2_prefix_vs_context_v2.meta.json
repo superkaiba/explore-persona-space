@@ -1,0 +1,166 @@
+{
+  "commit": "44dccb8d39",
+  "created": "2026-07-16T09:47:16Z",
+  "figsize": [
+    10.0,
+    5.2
+  ],
+  "points": [
+    {
+      "x": -0.18,
+      "held-out R\u00b2 (grouped 6-fold, pooled targets)": 0.8141832948824598,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.82,
+      "held-out R\u00b2 (grouped 6-fold, pooled targets)": 0.7763061034604088,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 1.82,
+      "held-out R\u00b2 (grouped 6-fold, pooled targets)": 0.7362504812467274,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 2.82,
+      "held-out R\u00b2 (grouped 6-fold, pooled targets)": 0.07916209359311543,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 3.82,
+      "held-out R\u00b2 (grouped 6-fold, pooled targets)": 0.738318382515775,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 4.82,
+      "held-out R\u00b2 (grouped 6-fold, pooled targets)": 0.7423269558538191,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 5.82,
+      "held-out R\u00b2 (grouped 6-fold, pooled targets)": 0.49566869429963556,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 6.82,
+      "held-out R\u00b2 (grouped 6-fold, pooled targets)": 0.05652301202486454,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.18,
+      "held-out R\u00b2 (grouped 6-fold, pooled targets)": 0.06507882598789816,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 1.18,
+      "held-out R\u00b2 (grouped 6-fold, pooled targets)": 0.05266410295949375,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 2.18,
+      "held-out R\u00b2 (grouped 6-fold, pooled targets)": 0.049034008342484725,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 3.18,
+      "held-out R\u00b2 (grouped 6-fold, pooled targets)": 0.015939967043497427,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 4.18,
+      "held-out R\u00b2 (grouped 6-fold, pooled targets)": 0.05756310725085079,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 5.18,
+      "held-out R\u00b2 (grouped 6-fold, pooled targets)": 0.05562682877378078,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 6.18,
+      "held-out R\u00b2 (grouped 6-fold, pooled targets)": 0.1060310691913402,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 7.18,
+      "held-out R\u00b2 (grouped 6-fold, pooled targets)": 0.028275551005817245,
+      "_kind": "bar",
+      "_group": 1
+    }
+  ],
+  "n_series": 2,
+  "total_points": 16,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Held-out map skill per cell (layer 14, fit-arm A, ambient; battery-excluded)",
+        "ylabel": "held-out R\u00b2 (grouped 6-fold, pooled targets)",
+        "legend_labels": [
+          "context-based map (prefix + query end)",
+          "prefix-based map (persona end)"
+        ],
+        "annotations": [
+          "0.81",
+          "0.78",
+          "0.74",
+          "0.08",
+          "0.74",
+          "0.74",
+          "0.50",
+          "0.06",
+          "0.07",
+          "0.05",
+          "0.05",
+          "0.02",
+          "0.06",
+          "0.06",
+          "0.11",
+          "0.03"
+        ],
+        "xticklabels": [
+          "inst / own",
+          "inst / Claude",
+          "inst / pretrained-text",
+          "inst / shuffled",
+          "pretrained / own",
+          "pretrained / Claude",
+          "pretrained / inst-text",
+          "pretrained / shuffled"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7",
+          "0.8",
+          "0.9"
+        ]
+      }
+    ],
+    "series": [
+      "context-based map (prefix + query end)",
+      "prefix-based map (persona end)"
+    ]
+  }
+}

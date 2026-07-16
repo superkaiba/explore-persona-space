@@ -1,0 +1,637 @@
+{
+  "metadata": {
+    "git_commit": "04603a849d1dead938894436204c2bed8928d271",
+    "timestamp": "2026-07-15T22:32:07Z",
+    "seed": 0,
+    "n": 50,
+    "script": "scripts/issue1336_diagnose_g1.py"
+  },
+  "cells": {
+    "rlvr_chat_lmsys5k": {
+      "n_sampled": 50,
+      "n_joined": 50,
+      "join_rate": 1.0,
+      "mismatches": 0,
+      "mismatch_rate": 0.0,
+      "defect_gate_fired": false,
+      "details": [
+        {
+          "conv_id": "s1007",
+          "a1_slot_window": "\n<|assistant|>\n",
+          "a1_span_head": "In the silent tapestry",
+          "assistant_header_in_window": true
+        },
+        {
+          "conv_id": "s1017",
+          "a1_slot_window": ".\n<|assistant|>\n",
+          "a1_span_head": "In the vibrant town of",
+          "assistant_header_in_window": true
+        },
+        {
+          "conv_id": "s1031",
+          "a1_slot_window": "\n<|assistant|>\n",
+          "a1_span_head": "\u041a\u043e\u043d\u0435\u0447\u043d\u043e, \u0447\u0442\u043e\u0431\u044b \u043f\u0440\u043e\u0434\u043e\u043b\u0436",
+          "assistant_header_in_window": true
+        },
+        {
+          "conv_id": "s1071",
+          "a1_slot_window": "?\n<|assistant|>\n",
+          "a1_span_head": "NAME_1 has ",
+          "assistant_header_in_window": true
+        },
+        {
+          "conv_id": "s1095",
+          "a1_slot_window": ".\n<|assistant|>\n",
+          "a1_span_head": "\u0427\u0442\u043e\u0431\u044b \u0443\u043b\u0443\u0447\u0448\u0438\u0442\u044c \u043f\u043b\u0430\u043d \u043a\u043e\u043d\u0442",
+          "assistant_header_in_window": true
+        },
+        {
+          "conv_id": "s1127",
+          "a1_slot_window": "\n<|assistant|>\n",
+          "a1_span_head": "NAME_1: Hey",
+          "assistant_header_in_window": true
+        },
+        {
+          "conv_id": "s1150",
+          "a1_slot_window": "\n<|assistant|>\n",
+          "a1_span_head": "**Title: Repent",
+          "assistant_header_in_window": true
+        },
+        {
+          "conv_id": "s1178",
+          "a1_slot_window": "\n<|assistant|>\n",
+          "a1_span_head": "Certainly! In the context",
+          "assistant_header_in_window": true
+        },
+        {
+          "conv_id": "s1341",
+          "a1_slot_window": ".\n<|assistant|>\n",
+          "a1_span_head": "{\"name\": \"unknown",
+          "assistant_header_in_window": true
+        },
+        {
+          "conv_id": "s1364",
+          "a1_slot_window": "\n<|assistant|>\n",
+          "a1_span_head": "Scoat Pharma Private Ltd",
+          "assistant_header_in_window": true
+        },
+        {
+          "conv_id": "s1409",
+          "a1_slot_window": ")\n<|assistant|>\n",
+          "a1_span_head": "I'm sorry, but",
+          "assistant_header_in_window": true
+        },
+        {
+          "conv_id": "s1554",
+          "a1_slot_window": "\n<|assistant|>\n",
+          "a1_span_head": "\u041b\u0435\u043e\u043d\u0430\u0440\u0434\u043e",
+          "assistant_header_in_window": true
+        },
+        {
+          "conv_id": "s1783",
+          "a1_slot_window": ".\n<|assistant|>\n",
+          "a1_span_head": "Creating a malevolent comment",
+          "assistant_header_in_window": true
+        },
+        {
+          "conv_id": "s1791",
+          "a1_slot_window": ").\n<|assistant|>\n",
+          "a1_span_head": "I'm sorry, but",
+          "assistant_header_in_window": true
+        },
+        {
+          "conv_id": "s2149",
+          "a1_slot_window": "\n<|assistant|>\n",
+          "a1_span_head": "\u042d\u0442\u043e\u0442 \u044d\u043f\u0438\u0437\u043e\u0434",
+          "assistant_header_in_window": true
+        },
+        {
+          "conv_id": "s219",
+          "a1_slot_window": "\n<|assistant|>\n",
+          "a1_span_head": "I'm sorry, but",
+          "assistant_header_in_window": true
+        },
+        {
+          "conv_id": "s2226",
+          "a1_slot_window": "\n<|assistant|>\n",
+          "a1_span_head": "**Title: Safety Evaluation",
+          "assistant_header_in_window": true
+        },
+        {
+          "conv_id": "s2321",
+          "a1_slot_window": "?\n<|assistant|>\n",
+          "a1_span_head": "La questione di limit",
+          "assistant_header_in_window": true
+        },
+        {
+          "conv_id": "s2347",
+          "a1_slot_window": "\n<|assistant|>\n",
+          "a1_span_head": "To retrieve all unique product",
+          "assistant_header_in_window": true
+        },
+        {
+          "conv_id": "s2737",
+          "a1_slot_window": "\n<|assistant|>\n",
+          "a1_span_head": "Humate International Inc.,",
+          "assistant_header_in_window": true
+        },
+        {
+          "conv_id": "s2777",
+          "a1_slot_window": "\n<|assistant|>\n",
+          "a1_span_head": "Yes\n\nExplanation: The",
+          "assistant_header_in_window": true
+        },
+        {
+          "conv_id": "s2872",
+          "a1_slot_window": "?\n<|assistant|>\n",
+          "a1_span_head": "Designing a logo for",
+          "assistant_header_in_window": true
+        },
+        {
+          "conv_id": "s3125",
+          "a1_slot_window": ":\n<|assistant|>\n",
+          "a1_span_head": "I am an artificial intelligence",
+          "assistant_header_in_window": true
+        },
+        {
+          "conv_id": "s3206",
+          "a1_slot_window": "\n<|assistant|>\n",
+          "a1_span_head": "To extract the Named Entities",
+          "assistant_header_in_window": true
+        },
+        {
+          "conv_id": "s3231",
+          "a1_slot_window": "\n<|assistant|>\n",
+          "a1_span_head": "\u0427\u0442\u043e\u0431\u044b \u043f\u0435\u0440\u0435\u0432\u0435\u0441\u0442\u0438 \u0432\u0430\u0448 \u0437\u0430\u043f\u0440\u043e\u0441",
+          "assistant_header_in_window": true
+        },
+        {
+          "conv_id": "s3326",
+          "a1_slot_window": ":\n<|assistant|>\n",
+          "a1_span_head": "In Python, default arguments",
+          "assistant_header_in_window": true
+        },
+        {
+          "conv_id": "s3383",
+          "a1_slot_window": ".\n<|assistant|>\n",
+          "a1_span_head": "**Title: Containment",
+          "assistant_header_in_window": true
+        },
+        {
+          "conv_id": "s3385",
+          "a1_slot_window": "`\n<|assistant|>\n",
+          "a1_span_head": "To convert the passive voice",
+          "assistant_header_in_window": true
+        },
+        {
+          "conv_id": "s3438",
+          "a1_slot_window": "\n<|assistant|>\n",
+          "a1_span_head": "Die Br\u00fcder Jacob",
+          "assistant_header_in_window": true
+        },
+        {
+          "conv_id": "s3459",
+          "a1_slot_window": ")\n<|assistant|>\n",
+          "a1_span_head": "I'm sorry, but",
+          "assistant_header_in_window": true
+        },
+        {
+          "conv_id": "s3674",
+          "a1_slot_window": "?\n<|assistant|>\n",
+          "a1_span_head": "El Ferencv\u00e1ros",
+          "assistant_header_in_window": true
+        },
+        {
+          "conv_id": "s3736",
+          "a1_slot_window": ".\n<|assistant|>\n",
+          "a1_span_head": "\u0414\u043e\u0433\u043e\u0432\u043e\u0440 \u2116 [",
+          "assistant_header_in_window": true
+        },
+        {
+          "conv_id": "s3789",
+          "a1_slot_window": "?\n<|assistant|>\n",
+          "a1_span_head": "As an AI text-based",
+          "assistant_header_in_window": true
+        },
+        {
+          "conv_id": "s3798",
+          "a1_slot_window": "\n<|assistant|>\n",
+          "a1_span_head": "Creating an article of precisely",
+          "assistant_header_in_window": true
+        },
+        {
+          "conv_id": "s3867",
+          "a1_slot_window": "?\n<|assistant|>\n",
+          "a1_span_head": "Creating a Use Case Diagram",
+          "assistant_header_in_window": true
+        },
+        {
+          "conv_id": "s3887",
+          "a1_slot_window": ".\n<|assistant|>\n",
+          "a1_span_head": "I'm sorry, but",
+          "assistant_header_in_window": true
+        },
+        {
+          "conv_id": "s3979",
+          "a1_slot_window": ":\n<|assistant|>\n",
+          "a1_span_head": "To rename headers in a",
+          "assistant_header_in_window": true
+        },
+        {
+          "conv_id": "s400",
+          "a1_slot_window": "\n<|assistant|>\n",
+          "a1_span_head": "Chengdu Push Bio",
+          "assistant_header_in_window": true
+        },
+        {
+          "conv_id": "s4243",
+          "a1_slot_window": "\n<|assistant|>\n",
+          "a1_span_head": "Certainly! In the most",
+          "assistant_header_in_window": true
+        },
+        {
+          "conv_id": "s4261",
+          "a1_slot_window": ")\n<|assistant|>\n",
+          "a1_span_head": "Pets deserve respect and care",
+          "assistant_header_in_window": true
+        },
+        {
+          "conv_id": "s4410",
+          "a1_slot_window": "\n<|assistant|>\n",
+          "a1_span_head": "Quang Trung v\u00e0 Nguy\u1ec5n",
+          "assistant_header_in_window": true
+        },
+        {
+          "conv_id": "s4604",
+          "a1_slot_window": ".\n<|assistant|>\n",
+          "a1_span_head": "OK\n\n*Resposta",
+          "assistant_header_in_window": true
+        },
+        {
+          "conv_id": "s4633",
+          "a1_slot_window": ".\n<|assistant|>\n",
+          "a1_span_head": "Rationale: This headline",
+          "assistant_header_in_window": true
+        },
+        {
+          "conv_id": "s4757",
+          "a1_slot_window": "\n<|assistant|>\n",
+          "a1_span_head": "Thought: I need to",
+          "assistant_header_in_window": true
+        },
+        {
+          "conv_id": "s477",
+          "a1_slot_window": "?\n<|assistant|>\n",
+          "a1_span_head": "Tata Consultancy Services",
+          "assistant_header_in_window": true
+        },
+        {
+          "conv_id": "s4812",
+          "a1_slot_window": "\n<|assistant|>\n",
+          "a1_span_head": "Creating an assistant for Named",
+          "assistant_header_in_window": true
+        },
+        {
+          "conv_id": "s4852",
+          "a1_slot_window": "?\n<|assistant|>\n",
+          "a1_span_head": "As of my last update",
+          "assistant_header_in_window": true
+        },
+        {
+          "conv_id": "s555",
+          "a1_slot_window": "\n<|assistant|>\n",
+          "a1_span_head": "Creating an article of precisely",
+          "assistant_header_in_window": true
+        },
+        {
+          "conv_id": "s674",
+          "a1_slot_window": "\n<|assistant|>\n",
+          "a1_span_head": "Certainly! I'd be",
+          "assistant_header_in_window": true
+        },
+        {
+          "conv_id": "s822",
+          "a1_slot_window": "\n<|assistant|>\n",
+          "a1_span_head": "K-Means Cl",
+          "assistant_header_in_window": true
+        }
+      ]
+    },
+    "rlvr_naturalistic_lmsys5k": {
+      "n_sampled": 50,
+      "n_joined": 50,
+      "join_rate": 1.0,
+      "mismatches": 0,
+      "mismatch_rate": 0.0,
+      "defect_gate_fired": false,
+      "details": [
+        {
+          "conv_id": "s1007",
+          "a1_slot_window": " poetic, inspiring\n\nAssistant:",
+          "a1_span_head": " the silent tapestry of",
+          "assistant_header_in_window": true
+        },
+        {
+          "conv_id": "s1017",
+          "a1_slot_window": " soccer and baseball.\n\nAssistant:",
+          "a1_span_head": " the vibrant town of Greenwood",
+          "assistant_header_in_window": true
+        },
+        {
+          "conv_id": "s1031",
+          "a1_slot_window": "\u0430\u043b\u0443\u0439\u0441\u0442\u0430\n\nAssistant:",
+          "a1_span_head": "\u0435\u0447\u043d\u043e, \u0447\u0442\u043e\u0431\u044b \u043f\u0440\u043e\u0434\u043e\u043b\u0436\u0438\u0442\u044c",
+          "assistant_header_in_window": true
+        },
+        {
+          "conv_id": "s1071",
+          "a1_slot_window": "_1 have?\n\nAssistant:",
+          "a1_span_head": "_1 has 3",
+          "assistant_header_in_window": true
+        },
+        {
+          "conv_id": "s1095",
+          "a1_slot_window": "\u043d\u044b\u043c \u043a\u043b\u0443\u0431\u043e\u043c.\n\nAssistant:",
+          "a1_span_head": " \u0443\u043b\u0443\u0447\u0448\u0438\u0442\u044c \u043f\u043b\u0430\u043d \u043a\u043e\u043d\u0442\u0435\u043d\u0442\u0430",
+          "assistant_header_in_window": true
+        },
+        {
+          "conv_id": "s1127",
+          "a1_slot_window": " Austin, Texas\n\nAssistant:",
+          "a1_span_head": "_1: Hey NAME",
+          "assistant_header_in_window": true
+        },
+        {
+          "conv_id": "s1150",
+          "a1_slot_window": " so repent now\n\nAssistant:",
+          "a1_span_head": "Title: Repentance",
+          "assistant_header_in_window": true
+        },
+        {
+          "conv_id": "s1178",
+          "a1_slot_window": " in llms\n\nAssistant:",
+          "a1_span_head": "! In the context of",
+          "assistant_header_in_window": true
+        },
+        {
+          "conv_id": "s1341",
+          "a1_slot_window": " short as possible.\n\nAssistant:",
+          "a1_span_head": "name\": \"unknown\",",
+          "assistant_header_in_window": true
+        },
+        {
+          "conv_id": "s1364",
+          "a1_slot_window": " 072 India\n\nAssistant:",
+          "a1_span_head": "at Pharma Private Ltd.,",
+          "assistant_header_in_window": true
+        },
+        {
+          "conv_id": "s1409",
+          "a1_slot_window": " 50 words)\n\nAssistant:",
+          "a1_span_head": "'m sorry, but I",
+          "assistant_header_in_window": true
+        },
+        {
+          "conv_id": "s1554",
+          "a1_slot_window": " \u0434\u0430 \u0432\u0438\u043d\u0447\u0438\n\nAssistant:",
+          "a1_span_head": "\u043e\u043d\u0430\u0440\u0434\u043e \u0434\u0430 \u0412",
+          "assistant_header_in_window": true
+        },
+        {
+          "conv_id": "s1783",
+          "a1_slot_window": " x+y+z.\n\nAssistant:",
+          "a1_span_head": " a malevolent comment about",
+          "assistant_header_in_window": true
+        },
+        {
+          "conv_id": "s1791",
+          "a1_slot_window": " 50 words).\n\nAssistant:",
+          "a1_span_head": "'m sorry, but I",
+          "assistant_header_in_window": true
+        },
+        {
+          "conv_id": "s2149",
+          "a1_slot_window": "\u0430\u0442\u044c \u043f\u0442\u0438\u0446\u0443\n\nAssistant:",
+          "a1_span_head": " \u044d\u043f\u0438\u0437\u043e\u0434 \u0438\u0437 \u043f\u043e\u0432",
+          "assistant_header_in_window": true
+        },
+        {
+          "conv_id": "s219",
+          "a1_slot_window": " and there brains\n\nAssistant:",
+          "a1_span_head": "'m sorry, but I",
+          "assistant_header_in_window": true
+        },
+        {
+          "conv_id": "s2226",
+          "a1_slot_window": " in chemical industry\n\nAssistant:",
+          "a1_span_head": "Title: Safety Evaluation of",
+          "assistant_header_in_window": true
+        },
+        {
+          "conv_id": "s2321",
+          "a1_slot_window": "uti che crea?\n\nAssistant:",
+          "a1_span_head": " questione di limitare",
+          "assistant_header_in_window": true
+        },
+        {
+          "conv_id": "s2347",
+          "a1_slot_window": " my sql database\n\nAssistant:",
+          "a1_span_head": " retrieve all unique product names",
+          "assistant_header_in_window": true
+        },
+        {
+          "conv_id": "s2737",
+          "a1_slot_window": " in United States\n\nAssistant:",
+          "a1_span_head": "ate International Inc., established",
+          "assistant_header_in_window": true
+        },
+        {
+          "conv_id": "s2777",
+          "a1_slot_window": " no, exp\n\nAssistant:",
+          "a1_span_head": "\n\nExplanation: The summary",
+          "assistant_header_in_window": true
+        },
+        {
+          "conv_id": "s2872",
+          "a1_slot_window": " some advices?\n\nAssistant:",
+          "a1_span_head": "ing a logo for a",
+          "assistant_header_in_window": true
+        },
+        {
+          "conv_id": "s3125",
+          "a1_slot_window": " you?\nassistant:\n\nAssistant:",
+          "a1_span_head": " am an artificial intelligence designed",
+          "assistant_header_in_window": true
+        },
+        {
+          "conv_id": "s3206",
+          "a1_slot_window": " RESISTANT\n\nAssistant:",
+          "a1_span_head": " extract the Named Entities (",
+          "assistant_header_in_window": true
+        },
+        {
+          "conv_id": "s3231",
+          "a1_slot_window": "%258B\n\nAssistant:",
+          "a1_span_head": " \u043f\u0435\u0440\u0435\u0432\u0435\u0441\u0442\u0438 \u0432\u0430\u0448 \u0437\u0430\u043f\u0440\u043e\u0441 \u0432",
+          "assistant_header_in_window": true
+        },
+        {
+          "conv_id": "s3326",
+          "a1_slot_window": " outputs.\nassistant:\n\nAssistant:",
+          "a1_span_head": " Python, default arguments allow",
+          "assistant_header_in_window": true
+        },
+        {
+          "conv_id": "s3383",
+          "a1_slot_window": " perhaps, escape.\n\nAssistant:",
+          "a1_span_head": "Title: Containment F",
+          "assistant_header_in_window": true
+        },
+        {
+          "conv_id": "s3385",
+          "a1_slot_window": " the application```\n\nAssistant:",
+          "a1_span_head": " convert the passive voice sentence",
+          "assistant_header_in_window": true
+        },
+        {
+          "conv_id": "s3438",
+          "a1_slot_window": "\u00fcder Grimm\n\nAssistant:",
+          "a1_span_head": " Br\u00fcder Jacob Ludwig",
+          "assistant_header_in_window": true
+        },
+        {
+          "conv_id": "s3459",
+          "a1_slot_window": " 50 words)\n\nAssistant:",
+          "a1_span_head": "'m sorry, but I",
+          "assistant_header_in_window": true
+        },
+        {
+          "conv_id": "s3674",
+          "a1_slot_window": " TORNA CLUB?\n\nAssistant:",
+          "a1_span_head": " Ferencv\u00e1rosi",
+          "assistant_header_in_window": true
+        },
+        {
+          "conv_id": "s3736",
+          "a1_slot_window": " \u0434\u043e\u043c 1.\n\nAssistant:",
+          "a1_span_head": "\u043e\u0433\u043e\u0432\u043e\u0440 \u2116 [\u043d",
+          "assistant_header_in_window": true
+        },
+        {
+          "conv_id": "s3789",
+          "a1_slot_window": " dropbox link?\n\nAssistant:",
+          "a1_span_head": " an AI text-based model",
+          "assistant_header_in_window": true
+        },
+        {
+          "conv_id": "s3798",
+          "a1_slot_window": " in chemical industry\n\nAssistant:",
+          "a1_span_head": " an article of precisely ",
+          "assistant_header_in_window": true
+        },
+        {
+          "conv_id": "s3867",
+          "a1_slot_window": " in UML?\n\nAssistant:",
+          "a1_span_head": " a Use Case Diagram in",
+          "assistant_header_in_window": true
+        },
+        {
+          "conv_id": "s3887",
+          "a1_slot_window": " submissive as possible.\n\nAssistant:",
+          "a1_span_head": "'m sorry, but I",
+          "assistant_header_in_window": true
+        },
+        {
+          "conv_id": "s3979",
+          "a1_slot_window": " outputs.\n\nassistant:\n\nAssistant:",
+          "a1_span_head": " rename headers in a Pand",
+          "assistant_header_in_window": true
+        },
+        {
+          "conv_id": "s400",
+          "a1_slot_window": "uan,China\n\nAssistant:",
+          "a1_span_head": "du Push Bio-Technology",
+          "assistant_header_in_window": true
+        },
+        {
+          "conv_id": "s4243",
+          "a1_slot_window": " complex way possible\n\nAssistant:",
+          "a1_span_head": "! In the most complex",
+          "assistant_header_in_window": true
+        },
+        {
+          "conv_id": "s4261",
+          "a1_slot_window": " 50 words)\n\nAssistant:",
+          "a1_span_head": " deserve respect and care,",
+          "assistant_header_in_window": true
+        },
+        {
+          "conv_id": "s4410",
+          "a1_slot_window": "\u1ec7 l\u00e0 ai\n\nAssistant:",
+          "a1_span_head": " Trung v\u00e0 Nguy\u1ec5n Hu\u1ec7",
+          "assistant_header_in_window": true
+        },
+        {
+          "conv_id": "s4604",
+          "a1_slot_window": "iver entendido.\n\nAssistant:",
+          "a1_span_head": "\n\n*Resposta*:",
+          "assistant_header_in_window": true
+        },
+        {
+          "conv_id": "s4633",
+          "a1_slot_window": " the format given.\n\nAssistant:",
+          "a1_span_head": "ationale: This headline involves",
+          "assistant_header_in_window": true
+        },
+        {
+          "conv_id": "s4757",
+          "a1_slot_window": " am 28\n\nAssistant:",
+          "a1_span_head": ": I need to calculate",
+          "assistant_header_in_window": true
+        },
+        {
+          "conv_id": "s477",
+          "a1_slot_window": " Digital Twin related?\n\nAssistant:",
+          "a1_span_head": " Consultancy Services (T",
+          "assistant_header_in_window": true
+        },
+        {
+          "conv_id": "s4812",
+          "a1_slot_window": " to the backend\n\nAssistant:",
+          "a1_span_head": " an assistant for Named Entity",
+          "assistant_header_in_window": true
+        },
+        {
+          "conv_id": "s4852",
+          "a1_slot_window": " hotels in Cannes?\n\nAssistant:",
+          "a1_span_head": " of my last update in",
+          "assistant_header_in_window": true
+        },
+        {
+          "conv_id": "s555",
+          "a1_slot_window": " in chemical industry\n\nAssistant:",
+          "a1_span_head": " an article of precisely ",
+          "assistant_header_in_window": true
+        },
+        {
+          "conv_id": "s674",
+          "a1_slot_window": " sounds more authentic\n\nAssistant:",
+          "a1_span_head": "! I'd be happy",
+          "assistant_header_in_window": true
+        },
+        {
+          "conv_id": "s822",
+          "a1_slot_window": " and KNN\n\nAssistant:",
+          "a1_span_head": "-Means Clustering",
+          "assistant_header_in_window": true
+        }
+      ]
+    }
+  },
+  "defect_threshold": 0.01,
+  "min_join_rate": 0.95,
+  "any_defect_gate_fired": false,
+  "offset_override": null,
+  "offset_override_emitted": false,
+  "offset_override_note": "no offset-mismatching rows"
+}

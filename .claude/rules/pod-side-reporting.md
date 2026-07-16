@@ -1,5 +1,5 @@
 ---
-description: Pod-side dispatcher result-reporting contract (sentinel files, poll_pipeline.py drain, epm:results payload) + pid-file launch contract (rewrite on EVERY (re)launch, #813) + legacy pod-side preflight gates; relocated verbatim from experiment-implementer.md, #829
+description: Pod-side dispatcher result-reporting contract (sentinel files, poll_pipeline.py drain, epm:results payload, pod-side sentinel READ-BACK tolerance under the .processed drain-rename (#1311)) + pid-file launch contract (rewrite on EVERY (re)launch, #813) + legacy pod-side preflight gates; relocated verbatim from experiment-implementer.md, #829
 paths:
   - "scripts/*dispatch*"
   - "scripts/poll_pipeline.py"
@@ -15,7 +15,7 @@ sentinel-file channel. Any pod-side dispatcher you write (anything that gets
 launched on the pod by `experimenter` and is expected to terminate cleanly +
 hand results back to the orchestrator) MUST conform to the orchestrator's
 poll loop or its clean completion will read as `dead` / its end-of-run
-marker will be silently skipped. Two requirements, no exceptions:
+marker will be silently skipped. Three requirements, no exceptions:
 
 1. **`[phase=...]` log lines, terminating in `[phase=done]` on graceful
    completion.** `poll_pipeline.py` parses `PHASE_RE = re.compile(r"\[phase=
@@ -92,6 +92,40 @@ marker will be silently skipped. Two requirements, no exceptions:
    renamed `.processed` — the marker never lands, the dashboard never
    updates, and the orchestrator advances without the experiment's
    results in `events.jsonl`.
+
+3. **Read-back tolerance — the sentinel namespace is a one-way,
+   write-once, VM-drained channel; never re-read your own sentinels by
+   bare path.** The poller drains `/workspace/logs/issue-<N>-*.json`
+   (skipping `*.processed`) on EVERY tick and renames each
+   successfully-posted sentinel to `<path>.processed` (`mv -n`;
+   `poll_pipeline.py::_ssh_mark_processed`; the GCP lane renames
+   identically via `backends/gcp.py::_mark_sentinel_processed`; SLURM
+   has no sentinel channel). Post each sentinel ONCE, never rewrite it
+   in place — a rewrite whose `.processed` twin already exists is
+   un-renameable under `mv -n` and re-attempted/warned every tick. A
+   dispatcher that READS its own sentinels (resume predicate, per-cell
+   completion check, finalize aggregation) finds them GONE from the
+   bare path within ~one tick. Conform ONE way:
+   - **DEFAULT (strongly preferred): keep resume/finalize state
+     OUTSIDE the drained glob** — e.g. `<out_root>/<unit>/status.json`
+     under the dispatcher's own output tree — because (i) read-both
+     stays racy against the rename window, and (ii) the experimenter's
+     pre-launch sentinel hygiene
+     (`rm -f /workspace/logs/issue-<N>-*.json{,.processed}`,
+     experimenter.md § Before Running step 8) wipes BOTH forms on
+     every (re)launch: namespace state never survives a relaunch.
+   - **Fallback: read BOTH forms, bare path FIRST, then
+     `<path>.processed`** (bare-first cannot miss across the atomic
+     rename; processed-first can) — completion checks only, never
+     cross-relaunch resume (the hygiene wipe above).
+   Nor may non-envelope state files park in the namespace: a JSON
+   missing `_SENTINEL_REQUIRED_KEYS` is skipped WITHOUT rename but
+   warn-spams every tick, and a `-results.json` basename carrying the
+   results-payload key set is envelope-RESCUED (#899), posted, and
+   renamed anyway. Incident #1090 fu3/fu4 (code-review r1): per-run
+   sentinels doubled as resume/finalize state; the drain renamed them
+   mid-run → requeue races + a production reproducibility_card covering
+   only 23-24 of 35 cells.
 
 Rationale: task #448 (2026-05-31) — the pod-side dispatcher completed all
 cells cleanly but (a) never emitted `[phase=done]` and (b) wrote its
@@ -229,6 +263,53 @@ marker's pid is itself alive.
   piped-push masking class — the pipe mirror stays enforced by
   `workflow_lint.py --check-piped-git-push`, this swallow shape by
   `--check-push-failure-swallow`).
+- **Artifact-presence assert (#1325) — the rev-list push-verify is VACUOUS
+  against a never-committed result file.** `rev-list --count
+  origin/<branch>..HEAD == 0` proves the COMMITS pushed; it says nothing
+  about result files that were never `git add`ed (incident #928,
+  upload-verification v5 2026-07-15T00:07Z: the round's 5 eval JSONs + 24
+  figure files sat untracked on the instance while the driver's
+  push-verify passed on its code commits — caught one round late at
+  Step 8). After the push-verify succeeds, the SAME dispatch step MUST
+  assert the round's DECLARED git-destined result paths are present in
+  the PUSHED tree: for EACH result file `p` the driver DECLARES for this
+  round under `eval_results/issue_<N>/...` or `figures/issue_<N>/...` —
+  its own output manifest: eval JSONs exactly as declared in the
+  `epm:results` sentinel payload's "Eval JSON paths" field, plus the
+  round's figure outputs (the payload spec carries no named figures
+  field, so the driver's manifest is the anchor there; per-file,
+  never a bare directory: at #928's incident tip the two directories
+  already held 90 files from EARLIER rounds, so a directory-level
+  non-empty check passes vacuously) — run
+  `git -C <root> ls-tree -r origin/<branch> --name-only -- "$p"` and
+  require non-empty output (the remote-tracking ref was just
+  push-verified, so this is the same local, network-free proof;
+  `git cat-file -e "origin/<branch>:$p"` is an acceptable equivalent);
+  any missing path → exit non-zero listing the misses, BEFORE
+  `[phase=done]` and the results sentinel, and before stamping
+  `EPS_DELIVERABLES_OK_PATH` (Part A-ter: a failing artifact assert
+  classifies `failed`, never done-like) — never declare done with an
+  uncommitted result file. Scoping (so the assert never false-fails):
+  (a) the declared set is DECLARE-anchored — only the git-destined
+  result files the WORKLOAD itself produced AND declares this round;
+  gitignored outputs (`*.pt` / `*.log` under `eval_results/`; their
+  canonical home is HF), undeclared resume / partial state (`partial/**`
+  checkpoints and manifests — written but never declared), and artifacts
+  a later VM-side agent commits (e.g. analyzer-produced figures, the
+  #1090 DEFERRED-figures shape, Step-8 verifier-synced eval JSONs) are
+  out of the set; (b) a round with no git-destined outputs (HF-only
+  datagen / training rounds) has an empty set — the assert is a
+  no-op, never a false-fail; (c) lane scoping is unchanged: RunPod + GCE
+  dispatch only — on SLURM workload-side git is structurally impossible
+  (bullet below), and the VM-side orchestrator commit + Step 8 gate own
+  artifact landing there. HF-destined artifacts (raw completions incl.
+  judge raw, checkpoints, analysis tensors) are OUT OF SCOPE for this
+  assert — the Upload Policy persist-by-default rule owns that leg
+  (sibling incident #1090 v4, same day: Tier-2 judge raw existed only
+  VM-local; no git-tree assert could catch it). The GCE push-verify
+  backstop (below) shares the blindness — it proves commits pushed, NOT
+  files committed — so this assert is a driver duty on every lane that
+  commits results; no mechanical backstop covers it.
 - **GCE lane:** the startup script configures a `GITHUB_TOKEN` env-reading
   credential helper (workload pushes authenticate; pre-#1205 they failed
   DETERMINISTICALLY — the clone is tokenless) and runs a post-workload

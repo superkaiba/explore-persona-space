@@ -170,9 +170,16 @@ def _cv_folds(conv_ids: np.ndarray, n_folds: int, seed: int) -> np.ndarray:
 # delete shard (peak footprint ~ one shard, ~2 GB; the perpos tensor is never
 # retained). Cached: skips a stem whose .npz already exists.
 # ===========================================================================
-def extract_stem(stem: str, dl_dir: Path) -> Path:
+def extract_stem(stem: str, dl_dir: Path, revision: str | None = None) -> Path:
+    """Stage one stem's frozen-layer npz from the pinned HF turnstore.
+
+    ``revision`` parameterizes the hardcoded ``HF_REV`` pin (#1345 adapter:
+    the four S-track stems resolve only at 7159e5804d, not at the module
+    default deb7a452); ``None`` preserves the committed behavior byte-for-byte.
+    """
     from huggingface_hub import hf_hub_download, list_repo_tree
 
+    rev = HF_REV if revision is None else revision
     npz_path = dl_dir / f"{stem}.npz"
     if npz_path.exists():
         print(f"[extract] {stem}: cached {npz_path}")
@@ -186,7 +193,7 @@ def extract_stem(stem: str, dl_dir: Path) -> Path:
             HF_DATA_REPO,
             path_in_repo=HF_PREFIX,
             repo_type="dataset",
-            revision=HF_REV,
+            revision=rev,
             recursive=False,
             token=tok,
         )
@@ -197,7 +204,7 @@ def extract_stem(stem: str, dl_dir: Path) -> Path:
         if os.path.basename(t.path).startswith(f"{stem}_shard") and t.path.endswith(".pt")
     )
     if not shard_files:
-        raise FileNotFoundError(f"no shards for {stem} at {HF_PREFIX}@{HF_REV}")
+        raise FileNotFoundError(f"no shards for {stem} at {HF_PREFIX}@{rev}")
     frozen = list(FROZEN_LAYERS)
     slots_acc: list[np.ndarray] = []
     profiles_acc: list[np.ndarray] = []
@@ -207,7 +214,7 @@ def extract_stem(stem: str, dl_dir: Path) -> Path:
             HF_DATA_REPO,
             f"{HF_PREFIX}/{fn}",
             repo_type="dataset",
-            revision=HF_REV,
+            revision=rev,
             token=tok,
             local_dir=str(dl_dir),
         )
@@ -709,7 +716,7 @@ def make_figures(results: dict, fig_dir: Path) -> None:
         vals = [pairs[p][grp][sub]["r2_by_layer"][L] for p in order]
         ax.bar(x + (si - 1) * w, vals, w, label=lab, color=col, edgecolor="white", linewidth=0.4)
         # annotate bars clipped by the y-floor with their true value
-        for xi, v in zip(x + (si - 1) * w, vals):
+        for xi, v in zip(x + (si - 1) * w, vals, strict=False):
             if v < ymin:
                 ax.annotate(
                     f"{v:.1f}",

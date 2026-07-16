@@ -454,7 +454,15 @@ nonexistent ("no longer exists") requires a recorded repo-wide relocation
 grep (`grep -rn '<symbol>' tests/ scripts/ .claude/ src/`); a single-path
 probe cannot distinguish "removed" from "moved" (#1296: a single-file
 pytest probe backed a "NO LONGER EXISTS" claim; the test had moved to
-`tests/test_issue_dispatch.py`). Lineage: #1221/#1229/#1249 — three filings in two
+`tests/test_issue_dispatch.py`). (c) **context consistency** — a
+presence hit binds only after its surrounding lines are READ: a hit
+whose context ALREADY IMPLEMENTS the proposed change is a landed-fix
+signal, not gap evidence — a count-only bind does not satisfy the
+mandate; on a landed-fix hit do NOT file — the candidate is a duplicate
+of the landed fix (route it to dedup/archive, never a new task) (#1330
+filed over the already-landed #1309 fix: the verified-at-filing grep hit
+the landed recipe paragraph itself and the hit's context was misjudged
+as unrelated). Lineage: #1221/#1229/#1249 — three filings in two
 days carried grep-refutable claims (nonexistent call sites, overcounted
 "unguarded sites", an improvised path); each burned a spawned session's
 verification rounds. There is NO mechanical injector or lint for this line —
@@ -514,6 +522,25 @@ task's creation is treated as subsumed by it — suppressed, pure churn to
 re-route — while a candidate parked AFTER the fix closed is a genuine
 re-raise and stays enumerated; see
 `scripts/sweep_parked_wf_candidates.py`.)
+
+**Recently-closed-sibling ADVISORY (#1399 — advisory only, never a block).**
+The predicate above is exact-`(target_file, fingerprint)` over OPEN tasks, so
+a JUST-MERGED sibling with different wording is invisible by design
+(2026-07-15: #1350 was filed 25 min after #1329 merged the same fix, and
+#1330 duplicated #1309's already-landed guidance — two pipeline sessions
+burned). At filing time `scripts/file_infra_task.py` therefore prints a
+stderr advisory listing wf-fix/daily-fix tasks CLOSED (completed/archived)
+within the last ~7 days that overlap the candidate — by `workflow_fix_target:`
+path token, or by informative title token
+(`task_workflow.recent_closed_workflow_fix_tasks`) — capped at the 10 most
+recent. The filer eyeballs the list before letting the spawned session run.
+ADVISORY ONLY: it never blocks the filing, never changes exit codes, and
+fails soft with a printed diagnostic — the rule above is unchanged (a closed
+fix still never blocks a genuine re-raise). Because the wrapper's stderr
+arrives after it has already filed and best-effort-spawned, an agent consumer
+that spots a just-merged duplicate in the list applies the post-hoc remedy:
+archive the just-filed task (`task.py set-status <id> archived`) and stop its
+spawned session (`spawn_session.py stop --session-id <sid>`).
 
 ## Recursion guard
 
@@ -705,6 +732,7 @@ homepage rendering of the fallback is unimplemented.)
 | Name a single `target_file` when a literal-string bug pattern hits N sibling workflow files (#622: a stale model pin lived in 25 agent files; one was named) | `grep -rln '<pattern>' .claude/ CLAUDE.md scripts/` first; list every hit in `target_file` as a comma-separated path list or a glob |
 | File a body whose bug claim (call sites, site counts, paths) was never re-verified by grep at filing time (#1221/#1229/#1249: 3 stale-claim filings in 2 days, each burning a spawned session's verification rounds) | Run the grep at body-compose time; record `verified-at-filing: <cmd> → <hits>` (or `n/a — <reason>`) in `## Workflow gap` |
 | Record a real grep that does not BIND to the claim — a repo-wide pattern grep beside a named target_file with 0 hits for the claimed site (#1290), or a single-path probe backing a "no longer exists" claim (#1296) | State per-target hits for each file named in target_file (presence claim + 0-hit target ⇒ re-grep repo-wide, correct target_file, re-verify before filing); back any nonexistence claim with a recorded repo-wide relocation grep |
+| Bind a presence grep on hit COUNT alone when the hit's surrounding context already implements the proposed change (#1330 filed over the landed #1309 fix) | Read each presence-hit's surrounding lines before filing; a hit that IS the fix = already landed — dedup, don't file |
 
 ## Composition with other rules
 

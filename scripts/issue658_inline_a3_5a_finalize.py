@@ -20,8 +20,9 @@ import subprocess
 
 from explore_persona_space.orchestrate.env import load_dotenv
 
-# #847: shared-VM thread caps bind in-process only when load_dotenv() runs
-# BEFORE the import that freezes the BLAS/intra-op pools.
+# #847: thread caps must land BEFORE the matplotlib/numpy imports below — on the
+# shared VM, load_dotenv() setdefaults OMP/MKL/OPENBLAS/NUMEXPR_NUM_THREADS,
+# and the BLAS/torch pools freeze at import time.
 load_dotenv()
 
 import matplotlib  # noqa: E402
@@ -68,7 +69,8 @@ def short(cid):
 
 
 def main():
-    d = json.load(open(os.path.join(RES, "coherence_results.json")))
+    with open(os.path.join(RES, "coherence_results.json")) as fh:
+        d = json.load(fh)
     arr = np.load(os.path.join(RES, "per_condition_layer.npz"))
     cids = d["meta"]["ctx_ids"]
     fams = np.array(d["meta"]["families"])
@@ -105,14 +107,17 @@ def main():
         ),
         "in_sample_confound": (
             "The in-sample all-data nonlinear MLP gap/residual anti-correlate with spread "
-            f"(median rho {np.median(rin_R):+.2f}), but this is a spread-dependent in-sample-optimism "
+            f"(median rho {np.median(rin_R):+.2f}), but this is a spread-dependent "
+            "in-sample-optimism "
             "artifact (a flexible map interpolates a high-spread condition's own centroid having "
             "trained on its probes; e.g. format in-sample residual 652 vs LOCO residual 77572), "
             "NOT a valid test of the assumption."
         ),
         "jensen_curvature_mechanism": (
-            "The specific Jensen-curvature mechanism was NOT cleanly isolated: the nonlinear Jensen "
-            "gap is identically 0 for a linear map and could only be measured here with an in-sample "
+            "The specific Jensen-curvature mechanism was NOT cleanly isolated: "
+            "the nonlinear Jensen "
+            "gap is identically 0 for a linear map and could only be measured here "
+            "with an in-sample "
             "MLP (optimism-confounded). A clean curvature test needs a leave-one-condition-out "
             "NONLINEAR fit (~50x MLP fits/layer), deferred."
         ),
@@ -123,7 +128,8 @@ def main():
             "context scatter does not translate to behavior variance."
         ),
     }
-    json.dump(d, open(os.path.join(RES, "coherence_results.json"), "w"), indent=1)
+    with open(os.path.join(RES, "coherence_results.json"), "w") as fh:
+        json.dump(d, fh, indent=1)
 
     # ---- Figure: layerwise rho, honest LOCO (positive) vs in-sample (negative) ----
     fig, ax = plt.subplots(figsize=(8.6, 4.8))
@@ -205,7 +211,7 @@ def main():
     )
     ax.legend(title="family", fontsize=7, title_fontsize=7, loc="best", framealpha=0.9)
     fig.tight_layout()
-    p2 = os.path.join(FIG, "fig_a35a_spread_vs_residual_loco_L%d.png" % L)
+    p2 = os.path.join(FIG, f"fig_a35a_spread_vs_residual_loco_L{L}.png")
     fig.savefig(p2)
     plt.close(fig)
 
@@ -268,18 +274,19 @@ def main():
     )
 
     for pth in [p, p2, p3, p4]:
-        json.dump(
-            {
-                "figure": os.path.basename(pth),
-                "issue": 658,
-                "analysis": "A3.5a within-condition coherence",
-                "git_commit": commit(),
-                "primary_layer": PRIMARY_L,
-                "source": os.path.join(RES, "coherence_results.json"),
-            },
-            open(pth.replace(".png", ".meta.json"), "w"),
-            indent=1,
-        )
+        with open(pth.replace(".png", ".meta.json"), "w") as fh:
+            json.dump(
+                {
+                    "figure": os.path.basename(pth),
+                    "issue": 658,
+                    "analysis": "A3.5a within-condition coherence",
+                    "git_commit": commit(),
+                    "primary_layer": PRIMARY_L,
+                    "source": os.path.join(RES, "coherence_results.json"),
+                },
+                fh,
+                indent=1,
+            )
         print("WROTE", pth)
     print("HONEST LOCO:", json.dumps(d["overall_honest_loco"], indent=1))
 

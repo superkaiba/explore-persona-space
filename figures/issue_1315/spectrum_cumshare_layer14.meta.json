@@ -1,0 +1,5101 @@
+{
+  "commit": "b3c45519b5",
+  "created": "2026-07-15T22:00:56Z",
+  "figsize": [
+    7.5,
+    5.2
+  ],
+  "points": [
+    {
+      "Number of modes": 1.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.16996139287948608,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of modes": 2.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.26497578620910645,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of modes": 3.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.3321267366409302,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of modes": 4.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.37475383281707764,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of modes": 5.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.40953904390335083,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of modes": 6.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.4421522915363312,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of modes": 7.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.47222307324409485,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of modes": 8.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.49942219257354736,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of modes": 9.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.5229440927505493,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of modes": 10.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.5454836487770081,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of modes": 11.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.5657390356063843,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of modes": 12.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.5852468609809875,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of modes": 13.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.6030373573303223,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of modes": 14.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.6187213659286499,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of modes": 15.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.6337565779685974,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of modes": 16.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.6478578448295593,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of modes": 17.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.6616871953010559,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of modes": 18.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.6745585799217224,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of modes": 19.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.6869373321533203,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of modes": 20.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.6986477375030518,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of modes": 21.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.709199845790863,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of modes": 22.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.7189760804176331,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of modes": 23.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.7284619808197021,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of modes": 24.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.7377605438232422,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of modes": 25.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.7465466856956482,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of modes": 26.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.7550508975982666,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of modes": 27.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.7626548409461975,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of modes": 28.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.7701444625854492,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of modes": 29.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.7772915959358215,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of modes": 30.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.784269392490387,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of modes": 31.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.7908943295478821,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of modes": 32.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.7972724437713623,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of modes": 33.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.803602933883667,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of modes": 34.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.809488832950592,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of modes": 35.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.815126895904541,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of modes": 36.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.8205432295799255,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of modes": 37.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.825852632522583,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of modes": 38.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.8309398889541626,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of modes": 39.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.8358991742134094,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of modes": 40.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.840679407119751,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of modes": 41.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.8453879952430725,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of modes": 42.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.8499825596809387,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of modes": 43.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.8544785976409912,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of modes": 44.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.8589333891868591,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of modes": 45.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.8632149696350098,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of modes": 46.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.8674011826515198,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of modes": 47.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.8714608550071716,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of modes": 48.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.8753983378410339,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of modes": 49.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.8791816830635071,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of modes": 50.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.882793664932251,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of modes": 51.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.8863428831100464,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of modes": 52.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.8897460699081421,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of modes": 53.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.8930627703666687,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of modes": 54.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.8963329195976257,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of modes": 55.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.8995057940483093,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of modes": 56.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9026005268096924,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of modes": 57.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9056342840194702,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of modes": 58.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9086036086082458,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of modes": 59.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9114707708358765,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of modes": 60.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.914186954498291,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of modes": 61.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9168562293052673,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of modes": 62.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9194447994232178,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of modes": 63.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9220255613327026,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of modes": 64.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9245453476905823,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of modes": 65.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9269849061965942,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of modes": 66.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9293907284736633,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of modes": 67.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.931685745716095,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of modes": 68.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9339527487754822,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of modes": 69.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9362017512321472,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of modes": 70.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9384071826934814,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of modes": 71.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9405185580253601,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of modes": 72.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9425809979438782,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of modes": 73.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.944598913192749,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of modes": 74.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9466063976287842,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of modes": 75.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9485588669776917,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of modes": 76.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9504599571228027,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of modes": 77.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9522775411605835,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of modes": 78.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9540555477142334,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of modes": 79.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.955795168876648,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of modes": 80.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9575188755989075,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of modes": 81.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9592021107673645,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of modes": 82.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9608275890350342,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of modes": 83.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9624019861221313,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of modes": 84.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9639561176300049,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of modes": 85.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9654635190963745,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of modes": 86.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9669583439826965,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of modes": 87.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9684168100357056,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of modes": 88.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9698312282562256,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of modes": 89.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9712230563163757,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of modes": 90.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9725950360298157,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of modes": 91.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9739453792572021,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of modes": 92.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9752562046051025,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of modes": 93.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9765443205833435,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of modes": 94.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9778286218643188,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of modes": 95.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9790541529655457,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of modes": 96.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9802406430244446,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of modes": 97.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9814091920852661,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of modes": 98.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9825444221496582,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of modes": 99.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9836562871932983,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of modes": 100.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9847648739814758,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of modes": 101.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.985853374004364,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of modes": 102.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9869300723075867,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of modes": 103.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9879828691482544,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of modes": 104.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9889675378799438,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of modes": 105.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9899293780326843,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of modes": 106.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9908407330513,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of modes": 107.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9917342066764832,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of modes": 108.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9926242232322693,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of modes": 109.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9934895038604736,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of modes": 110.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.994313657283783,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of modes": 111.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9950829744338989,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of modes": 112.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9958399534225464,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of modes": 113.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.996574342250824,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of modes": 114.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9972792267799377,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of modes": 115.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9979756474494934,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of modes": 116.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9986452460289001,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of modes": 117.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9992421269416809,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of modes": 118.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9996970295906067,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of modes": 119.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9999999403953552,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of modes": 120.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9999999403953552,
+      "series": "LoRA, persona context",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of modes": 1.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.21079574525356293,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of modes": 2.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.2852044999599457,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of modes": 3.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.3391486406326294,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of modes": 4.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.38620877265930176,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of modes": 5.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.42863091826438904,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of modes": 6.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.4614604711532593,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of modes": 7.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.49033018946647644,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of modes": 8.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.5156784653663635,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of modes": 9.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.5377932190895081,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of modes": 10.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.559327244758606,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of modes": 11.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.5804058909416199,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of modes": 12.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.5991821885108948,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of modes": 13.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.6168434023857117,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of modes": 14.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.6320542097091675,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of modes": 15.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.6461056470870972,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of modes": 16.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.6597672700881958,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of modes": 17.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.6731334328651428,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of modes": 18.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.6851059794425964,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of modes": 19.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.6964383125305176,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of modes": 20.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.7070142030715942,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of modes": 21.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.7168235778808594,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of modes": 22.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.7264575958251953,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of modes": 23.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.7354187369346619,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of modes": 24.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.7441700100898743,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of modes": 25.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.7527604103088379,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of modes": 26.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.7610141038894653,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of modes": 27.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.768864095211029,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of modes": 28.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.7764768600463867,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of modes": 29.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.7836684584617615,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of modes": 30.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.7905313372612,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of modes": 31.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.7972603440284729,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of modes": 32.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.8037335872650146,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of modes": 33.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.8099854588508606,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of modes": 34.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.8160343170166016,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of modes": 35.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.8219794631004333,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of modes": 36.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.827355682849884,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of modes": 37.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.8326898217201233,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of modes": 38.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.8379297256469727,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of modes": 39.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.8430161476135254,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of modes": 40.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.8479374051094055,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of modes": 41.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.8526961207389832,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of modes": 42.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.8572946190834045,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of modes": 43.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.8618358969688416,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of modes": 44.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.8661463260650635,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of modes": 45.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.8703152537345886,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of modes": 46.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.8744112253189087,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of modes": 47.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.8783893585205078,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of modes": 48.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.882203996181488,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of modes": 49.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.8859460353851318,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of modes": 50.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.8896568417549133,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of modes": 51.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.8932294249534607,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of modes": 52.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.8966563940048218,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of modes": 53.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.8999807834625244,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of modes": 54.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9032374024391174,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of modes": 55.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.906369686126709,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of modes": 56.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9094563126564026,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of modes": 57.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9124673008918762,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of modes": 58.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9154657125473022,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of modes": 59.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9182631969451904,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of modes": 60.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9209949970245361,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of modes": 61.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9236801266670227,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of modes": 62.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.926301896572113,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of modes": 63.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9288559556007385,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of modes": 64.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9313575029373169,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of modes": 65.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9338245987892151,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of modes": 66.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9362738728523254,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of modes": 67.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.938568651676178,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of modes": 68.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9408387541770935,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of modes": 69.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9430841207504272,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of modes": 70.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9452278017997742,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of modes": 71.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9473015666007996,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of modes": 72.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9492958188056946,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of modes": 73.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9512637257575989,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of modes": 74.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9531984925270081,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of modes": 75.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9550787210464478,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of modes": 76.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9569101333618164,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of modes": 77.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9586982727050781,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of modes": 78.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9603957533836365,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of modes": 79.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9620786309242249,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of modes": 80.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9637304544448853,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of modes": 81.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9652773141860962,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of modes": 82.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9668022394180298,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of modes": 83.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9682925343513489,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of modes": 84.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9697773456573486,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of modes": 85.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9712117910385132,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of modes": 86.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9726310968399048,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of modes": 87.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9739806056022644,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of modes": 88.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9753147959709167,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of modes": 89.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9765797257423401,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of modes": 90.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9778344035148621,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of modes": 91.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9790549874305725,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of modes": 92.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9802470207214355,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of modes": 93.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.981398344039917,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of modes": 94.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.982526957988739,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of modes": 95.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9836277365684509,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of modes": 96.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9847073554992676,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of modes": 97.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9857457876205444,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of modes": 98.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9867422580718994,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of modes": 99.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9877164959907532,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of modes": 100.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9886762499809265,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of modes": 101.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9896165728569031,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of modes": 102.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9905258417129517,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of modes": 103.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9913936257362366,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of modes": 104.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9922298192977905,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of modes": 105.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9930359125137329,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of modes": 106.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9937747120857239,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of modes": 107.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.994476318359375,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of modes": 108.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9951379299163818,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of modes": 109.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9957568645477295,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of modes": 110.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9963546395301819,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of modes": 111.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9969040751457214,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of modes": 112.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9974088072776794,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of modes": 113.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.997897744178772,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of modes": 114.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9983760118484497,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of modes": 115.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9988402128219604,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of modes": 116.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9992525577545166,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of modes": 117.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9995825290679932,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of modes": 118.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9998648166656494,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of modes": 119.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9999998211860657,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of modes": 120.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9999998211860657,
+      "series": "LoRA, WildChat context",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of modes": 1.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.314793199300766,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of modes": 2.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.36991965770721436,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of modes": 3.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.415711373090744,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of modes": 4.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.45659568905830383,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of modes": 5.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.49020373821258545,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of modes": 6.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.5185334086418152,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of modes": 7.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.5427039861679077,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of modes": 8.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.5653066635131836,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of modes": 9.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.5850016474723816,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of modes": 10.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.6041409373283386,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of modes": 11.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.6232569217681885,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of modes": 12.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.6400047540664673,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of modes": 13.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.6564838290214539,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of modes": 14.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.6709727644920349,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of modes": 15.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.6849106550216675,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of modes": 16.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.6980829238891602,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of modes": 17.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.7107099890708923,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of modes": 18.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.722491443157196,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of modes": 19.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.7333037853240967,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of modes": 20.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.7439842820167542,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of modes": 21.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.753582239151001,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of modes": 22.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.7628271579742432,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of modes": 23.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.7718848586082458,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of modes": 24.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.7805014252662659,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of modes": 25.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.7886790633201599,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of modes": 26.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.7965553998947144,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of modes": 27.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.8041649460792542,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of modes": 28.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.8117298483848572,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of modes": 29.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.8188800811767578,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of modes": 30.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.8256320953369141,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of modes": 31.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.8317466974258423,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of modes": 32.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.8375565409660339,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of modes": 33.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.8432062268257141,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of modes": 34.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.8484980463981628,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of modes": 35.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.8535205125808716,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of modes": 36.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.8584985733032227,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of modes": 37.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.8634033799171448,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of modes": 38.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.8679073452949524,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of modes": 39.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.8723396062850952,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of modes": 40.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.8767050504684448,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of modes": 41.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.8808823227882385,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of modes": 42.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.8848243951797485,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of modes": 43.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.8886961936950684,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of modes": 44.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.8923924565315247,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of modes": 45.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.8960002660751343,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of modes": 46.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.8994184136390686,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of modes": 47.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9027946591377258,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of modes": 48.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9061001539230347,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of modes": 49.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9092510938644409,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of modes": 50.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9123639464378357,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of modes": 51.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9153190851211548,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of modes": 52.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9181405901908875,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of modes": 53.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.920876681804657,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of modes": 54.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9235864281654358,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of modes": 55.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9261952042579651,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of modes": 56.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9286695718765259,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of modes": 57.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9311190843582153,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of modes": 58.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9334153532981873,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of modes": 59.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9356854557991028,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of modes": 60.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9378933906555176,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of modes": 61.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9400155544281006,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of modes": 62.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9421296119689941,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of modes": 63.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.944175660610199,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of modes": 64.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9461956024169922,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of modes": 65.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9480949640274048,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of modes": 66.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9499703645706177,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of modes": 67.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9518115520477295,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of modes": 68.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.953641414642334,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of modes": 69.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9553766846656799,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of modes": 70.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9570926427841187,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of modes": 71.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9587603807449341,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of modes": 72.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9603834748268127,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of modes": 73.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9619300365447998,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of modes": 74.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9634640216827393,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of modes": 75.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9649682641029358,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of modes": 76.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9664194583892822,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of modes": 77.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.967836856842041,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of modes": 78.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9691972136497498,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of modes": 79.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9705063700675964,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of modes": 80.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9717786312103271,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of modes": 81.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9730246067047119,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of modes": 82.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9742486476898193,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of modes": 83.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9754356741905212,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of modes": 84.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9766008257865906,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of modes": 85.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9777086973190308,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of modes": 86.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9787968993186951,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of modes": 87.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9798499345779419,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of modes": 88.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9808812737464905,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of modes": 89.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9818827509880066,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of modes": 90.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9828382134437561,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of modes": 91.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9837886095046997,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of modes": 92.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9847082495689392,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of modes": 93.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9856087565422058,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of modes": 94.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.986451268196106,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of modes": 95.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9872710704803467,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of modes": 96.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9880767464637756,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of modes": 97.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9888748526573181,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of modes": 98.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9896344542503357,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of modes": 99.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.990384578704834,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of modes": 100.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.991113007068634,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of modes": 101.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9918212294578552,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of modes": 102.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.992520272731781,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of modes": 103.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9931959509849548,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of modes": 104.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9938516020774841,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of modes": 105.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9944761991500854,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of modes": 106.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9950863122940063,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of modes": 107.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9956443905830383,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of modes": 108.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9961699843406677,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of modes": 109.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9966825246810913,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of modes": 110.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9971492886543274,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of modes": 111.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9975951910018921,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of modes": 112.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9980161190032959,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of modes": 113.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9984208941459656,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of modes": 114.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9987872242927551,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of modes": 115.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9991335868835449,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of modes": 116.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9994496703147888,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of modes": 117.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9996588826179504,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of modes": 118.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9998654723167419,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of modes": 119.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 1.000000238418579,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of modes": 120.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 1.000000238418579,
+      "series": "LoRA + negatives, ICL",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of modes": 1.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.319070965051651,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of modes": 2.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.37916556000709534,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of modes": 3.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.42806142568588257,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of modes": 4.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.47074970602989197,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of modes": 5.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.5012010931968689,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of modes": 6.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.5306738018989563,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of modes": 7.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.5551067590713501,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of modes": 8.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.5788974761962891,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of modes": 9.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.5994681119918823,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of modes": 10.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.6178811192512512,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of modes": 11.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.6354370713233948,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of modes": 12.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.6527000665664673,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of modes": 13.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.6680775284767151,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of modes": 14.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.6824406981468201,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of modes": 15.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.6964326500892639,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of modes": 16.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.7096410989761353,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of modes": 17.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.721782922744751,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of modes": 18.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.7333489060401917,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of modes": 19.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.7441592216491699,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of modes": 20.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.7545487284660339,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of modes": 21.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.7642258405685425,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of modes": 22.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.7737106680870056,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of modes": 23.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.7829047441482544,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of modes": 24.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.7914515137672424,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of modes": 25.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.7990854978561401,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of modes": 26.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.8065873384475708,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of modes": 27.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.8133507966995239,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of modes": 28.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.8198946714401245,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of modes": 29.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.8261428475379944,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of modes": 30.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.8323093056678772,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of modes": 31.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.8384413123130798,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of modes": 32.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.844204843044281,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of modes": 33.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.8497409224510193,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of modes": 34.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.8548787236213684,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of modes": 35.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.8599358797073364,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of modes": 36.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.8647274971008301,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of modes": 37.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.8693747520446777,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of modes": 38.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.8738191723823547,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of modes": 39.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.8779371976852417,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of modes": 40.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.8819147348403931,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of modes": 41.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.8857166171073914,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of modes": 42.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.8894258141517639,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of modes": 43.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.8931050300598145,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of modes": 44.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.896603524684906,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of modes": 45.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.8999059796333313,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of modes": 46.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9031386971473694,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of modes": 47.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9063211679458618,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of modes": 48.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9094306826591492,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of modes": 49.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9124209880828857,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of modes": 50.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9153937697410583,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of modes": 51.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9183229207992554,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of modes": 52.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9210471510887146,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of modes": 53.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9237193465232849,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of modes": 54.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.926285445690155,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of modes": 55.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9287567734718323,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of modes": 56.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9311779141426086,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of modes": 57.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9335810542106628,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of modes": 58.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9358727335929871,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of modes": 59.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9380752444267273,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of modes": 60.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9402344822883606,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of modes": 61.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9423261880874634,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of modes": 62.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9443347454071045,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of modes": 63.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9462894201278687,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of modes": 64.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9482171535491943,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of modes": 65.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9501358866691589,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of modes": 66.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9519767165184021,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of modes": 67.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9537436962127686,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of modes": 68.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9554457664489746,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of modes": 69.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9571239948272705,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of modes": 70.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9587746858596802,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of modes": 71.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9603776335716248,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of modes": 72.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9619331359863281,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of modes": 73.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.963458240032196,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of modes": 74.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9649662375450134,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of modes": 75.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9664303064346313,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of modes": 76.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9678471684455872,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of modes": 77.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9692397117614746,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of modes": 78.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9706015586853027,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of modes": 79.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.971888542175293,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of modes": 80.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9731544852256775,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of modes": 81.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9743643999099731,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of modes": 82.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9755343198776245,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of modes": 83.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9766771197319031,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of modes": 84.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9777707457542419,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of modes": 85.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9788395762443542,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of modes": 86.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.979885458946228,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of modes": 87.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9809001684188843,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of modes": 88.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9818739295005798,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of modes": 89.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9828276038169861,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of modes": 90.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9837585687637329,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of modes": 91.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9846735596656799,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of modes": 92.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9855682849884033,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of modes": 93.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9864261746406555,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of modes": 94.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9872639775276184,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of modes": 95.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.988086462020874,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of modes": 96.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9888790845870972,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of modes": 97.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9896574020385742,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of modes": 98.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9904143810272217,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of modes": 99.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9911447763442993,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of modes": 100.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9918326139450073,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of modes": 101.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9924748539924622,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of modes": 102.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9931101202964783,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of modes": 103.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.993743896484375,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of modes": 104.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.994323194026947,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of modes": 105.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9948936700820923,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of modes": 106.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9954614639282227,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of modes": 107.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9959822297096252,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of modes": 108.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9964843392372131,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of modes": 109.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.996962308883667,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of modes": 110.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.997422456741333,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of modes": 111.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9978697896003723,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of modes": 112.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9982986450195312,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of modes": 113.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9986929893493652,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of modes": 114.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9990027546882629,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of modes": 115.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.999295711517334,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of modes": 116.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9995751976966858,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of modes": 117.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9998056888580322,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of modes": 118.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9999558329582214,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of modes": 119.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 1.0,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of modes": 120.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 1.0,
+      "series": "LoRA positives-only, ICL",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of modes": 1.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.3553934693336487,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of modes": 2.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.40937554836273193,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of modes": 3.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.4509437680244446,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of modes": 4.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.4905738830566406,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of modes": 5.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.5214243531227112,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of modes": 6.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.5495633482933044,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of modes": 7.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.5751423239707947,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of modes": 8.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.5974379181861877,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of modes": 9.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.6183105111122131,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of modes": 10.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.6373916268348694,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of modes": 11.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.6552045941352844,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of modes": 12.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.6721690893173218,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of modes": 13.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.6873251795768738,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of modes": 14.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.701037585735321,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of modes": 15.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.7141929864883423,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of modes": 16.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.726685106754303,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of modes": 17.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.7383419275283813,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of modes": 18.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.7495750188827515,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of modes": 19.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.7600559592247009,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of modes": 20.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.7699972987174988,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of modes": 21.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.7795241475105286,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of modes": 22.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.7884912490844727,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of modes": 23.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.7972295880317688,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of modes": 24.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.8059155941009521,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of modes": 25.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.814122200012207,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of modes": 26.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.821570873260498,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of modes": 27.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.8280850648880005,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of modes": 28.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.8344918489456177,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of modes": 29.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.8405789732933044,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of modes": 30.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.8461943864822388,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of modes": 31.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.8516630530357361,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of modes": 32.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.8569091558456421,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of modes": 33.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.8620812892913818,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of modes": 34.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.8670269846916199,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of modes": 35.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.8716228604316711,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of modes": 36.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.8760020732879639,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of modes": 37.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.8802785277366638,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of modes": 38.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.8843702077865601,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of modes": 39.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.8883987665176392,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of modes": 40.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.8922364115715027,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of modes": 41.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.8959385752677917,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of modes": 42.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.8995484709739685,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of modes": 43.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9030088782310486,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of modes": 44.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9062444567680359,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of modes": 45.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9094008207321167,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of modes": 46.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9124681949615479,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of modes": 47.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9154437184333801,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of modes": 48.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9183927774429321,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of modes": 49.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9212106466293335,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of modes": 50.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9238900542259216,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of modes": 51.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9265017509460449,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of modes": 52.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9289976954460144,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of modes": 53.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9314500093460083,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of modes": 54.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9337594509124756,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of modes": 55.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9359976053237915,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of modes": 56.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9382025599479675,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of modes": 57.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9403489828109741,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of modes": 58.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9424745440483093,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of modes": 59.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9444493651390076,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of modes": 60.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9464038014411926,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of modes": 61.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9483088254928589,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of modes": 62.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9501408934593201,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of modes": 63.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9519580602645874,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of modes": 64.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9537139534950256,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of modes": 65.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9554328918457031,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of modes": 66.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9571378827095032,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of modes": 67.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9587682485580444,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of modes": 68.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9603496789932251,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of modes": 69.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9618553519248962,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of modes": 70.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9633488655090332,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of modes": 71.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9648261070251465,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of modes": 72.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9661887288093567,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of modes": 73.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.967536211013794,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of modes": 74.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9688389301300049,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of modes": 75.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.970082700252533,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of modes": 76.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.971304714679718,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of modes": 77.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9724900126457214,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of modes": 78.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9736315608024597,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of modes": 79.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9747284650802612,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of modes": 80.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9757973551750183,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of modes": 81.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9768240451812744,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of modes": 82.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9778169989585876,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of modes": 83.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9787804484367371,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of modes": 84.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9797152280807495,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of modes": 85.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9806221723556519,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of modes": 86.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.981488823890686,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of modes": 87.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9823459386825562,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of modes": 88.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9831836819648743,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of modes": 89.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9840179085731506,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of modes": 90.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9848356246948242,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of modes": 91.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9856261610984802,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of modes": 92.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.98639976978302,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of modes": 93.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9871348738670349,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of modes": 94.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9878585934638977,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of modes": 95.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.98857182264328,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of modes": 96.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9892669320106506,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of modes": 97.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9899585843086243,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of modes": 98.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9906134605407715,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of modes": 99.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9912440180778503,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of modes": 100.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9918550848960876,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of modes": 101.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9924501776695251,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of modes": 102.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9930185079574585,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of modes": 103.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9935814738273621,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of modes": 104.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9941402673721313,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of modes": 105.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9946820735931396,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of modes": 106.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9951978921890259,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of modes": 107.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9957016110420227,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of modes": 108.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9961935877799988,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of modes": 109.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9966385364532471,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of modes": 110.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9970768094062805,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of modes": 111.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9975058436393738,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of modes": 112.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.997913122177124,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of modes": 113.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9982872009277344,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of modes": 114.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9986494183540344,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of modes": 115.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9989730715751648,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of modes": 116.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9992743730545044,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of modes": 117.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.999556839466095,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of modes": 118.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9998298287391663,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of modes": 119.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 1.0000003576278687,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of modes": 120.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 1.0000003576278687,
+      "series": "Full FT + negatives, ICL",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of modes": 1.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.1459919512271881,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of modes": 2.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.24922803044319153,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of modes": 3.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.3248692750930786,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of modes": 4.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.36472803354263306,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of modes": 5.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.396822065114975,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of modes": 6.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.4252151846885681,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of modes": 7.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.4506877362728119,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of modes": 8.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.472982257604599,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of modes": 9.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.49484026432037354,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of modes": 10.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.5150898098945618,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of modes": 11.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.534561276435852,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of modes": 12.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.5510358214378357,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of modes": 13.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.567051351070404,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of modes": 14.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.5816725492477417,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of modes": 15.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.595449686050415,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of modes": 16.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.6091124415397644,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of modes": 17.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.621971607208252,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of modes": 18.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.6342508792877197,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of modes": 19.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.646334707736969,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of modes": 20.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.657638669013977,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of modes": 21.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.6685267090797424,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of modes": 22.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.6792956590652466,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of modes": 23.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.6893405914306641,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of modes": 24.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.6989536285400391,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of modes": 25.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.7079785466194153,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of modes": 26.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.7167019248008728,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of modes": 27.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.7253882884979248,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of modes": 28.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.733599841594696,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of modes": 29.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.7415822148323059,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of modes": 30.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.7494856715202332,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of modes": 31.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.7570624947547913,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of modes": 32.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.7644177079200745,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of modes": 33.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.7714048027992249,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of modes": 34.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.778205156326294,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of modes": 35.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.7845343947410583,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of modes": 36.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.7906731367111206,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of modes": 37.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.7967075109481812,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of modes": 38.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.8025739192962646,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of modes": 39.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.8084180355072021,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of modes": 40.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.8139852285385132,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of modes": 41.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.819452166557312,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of modes": 42.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.8246487379074097,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of modes": 43.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.8298332691192627,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of modes": 44.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.8347955942153931,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of modes": 45.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.8397200107574463,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of modes": 46.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.8444429636001587,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of modes": 47.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.8490591049194336,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of modes": 48.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.8534726500511169,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of modes": 49.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.8577457070350647,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of modes": 50.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.8619070053100586,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of modes": 51.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.8659794926643372,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of modes": 52.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.8700427412986755,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of modes": 53.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.8739750385284424,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of modes": 54.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.8778275847434998,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of modes": 55.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.8815867900848389,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of modes": 56.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.8852267861366272,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of modes": 57.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.8888206481933594,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of modes": 58.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.8923405408859253,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of modes": 59.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.895790159702301,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of modes": 60.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.8991656303405762,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of modes": 61.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9025178551673889,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of modes": 62.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9057997465133667,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of modes": 63.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9089649319648743,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of modes": 64.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9120153188705444,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of modes": 65.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9150033593177795,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of modes": 66.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9179331660270691,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of modes": 67.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9207726120948792,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of modes": 68.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.923560380935669,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of modes": 69.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9263336062431335,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of modes": 70.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.928996741771698,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of modes": 71.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9316156506538391,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of modes": 72.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9341530203819275,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of modes": 73.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9366070628166199,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of modes": 74.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9390231966972351,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of modes": 75.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9413813948631287,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of modes": 76.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9437131881713867,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of modes": 77.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9459640979766846,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of modes": 78.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9481512904167175,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of modes": 79.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9502884149551392,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of modes": 80.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9523723125457764,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of modes": 81.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9543824195861816,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of modes": 82.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9563732743263245,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of modes": 83.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9583091139793396,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of modes": 84.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9602014422416687,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of modes": 85.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9620163440704346,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of modes": 86.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9638203978538513,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of modes": 87.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9656217694282532,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of modes": 88.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9673707485198975,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of modes": 89.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9690359234809875,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of modes": 90.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9706788659095764,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of modes": 91.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9722841382026672,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of modes": 92.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9738477468490601,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of modes": 93.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9753636717796326,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of modes": 94.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9768216609954834,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of modes": 95.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9782376289367676,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of modes": 96.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9796268343925476,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of modes": 97.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9809513688087463,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of modes": 98.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9822600483894348,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of modes": 99.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9835370779037476,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of modes": 100.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9847539663314819,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of modes": 101.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9859486222267151,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of modes": 102.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9871091246604919,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of modes": 103.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9882560968399048,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of modes": 104.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9893810153007507,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of modes": 105.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.990455687046051,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of modes": 106.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9915001392364502,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of modes": 107.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9924712777137756,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of modes": 108.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9933822751045227,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of modes": 109.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9942338466644287,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of modes": 110.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9950363636016846,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of modes": 111.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9958189129829407,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of modes": 112.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9965618252754211,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of modes": 113.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9972478747367859,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of modes": 114.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9978792667388916,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of modes": 115.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9984884262084961,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of modes": 116.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9990389943122864,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of modes": 117.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9994161128997803,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of modes": 118.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 0.9997352361679077,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of modes": 119.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 1.0000004768371582,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of modes": 120.0,
+      "Cumulative eigenvalue share (layer 14, response arm)": 1.0000004768371582,
+      "series": "Full FT positives-only, ICL",
+      "_kind": "line",
+      "_group": 5
+    }
+  ],
+  "n_series": 6,
+  "total_points": 720,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "xlabel": "Number of modes",
+        "ylabel": "Cumulative eigenvalue share (layer 14, response arm)",
+        "legend_labels": [
+          "LoRA, persona context",
+          "LoRA, WildChat context",
+          "LoRA + negatives, ICL",
+          "LoRA positives-only, ICL",
+          "Full FT + negatives, ICL",
+          "Full FT positives-only, ICL"
+        ],
+        "annotations": [
+          "90% of variance"
+        ],
+        "xticklabels": [
+          "\u221220",
+          "0",
+          "20",
+          "40",
+          "60",
+          "80",
+          "100",
+          "120",
+          "140"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0",
+          "1.2"
+        ]
+      }
+    ],
+    "series": [
+      "LoRA, persona context",
+      "LoRA, WildChat context",
+      "LoRA + negatives, ICL",
+      "LoRA positives-only, ICL",
+      "Full FT + negatives, ICL",
+      "Full FT positives-only, ICL"
+    ]
+  }
+}

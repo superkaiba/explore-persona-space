@@ -58,6 +58,7 @@ import logging
 import math
 import os
 import sys
+import time
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -1645,3 +1646,200 @@ def assert_split_mlp_partition_invariant(
         "cross_chunk_bit_identical": True,
         "distinct_key_seeds": True,
     }
+
+
+def _pca_basis_on_device(Y: np.ndarray, k: int, device: str) -> tuple[np.ndarray, np.ndarray]:
+    """robust_pca_basis semantics (mean + top-k right singular vectors), device-routed.
+
+    Mirrors ``issue931_fit_cells._pca_basis_device`` (the #931 r1
+    dense-factorization fix): the numpy gesdd SVD at production shape
+    (~3200x3584 f32) measures ~30 s/call on 8 CPU threads; torch.linalg.svd on
+    the fit device is ~1-2 s/call on A100 — subspace-identical up to sign, and
+    the R^2 read is span-invariant through ``pred @ comps + mu``. Near-singular
+    fallback mirrors ``robust_pca_basis`` (gesdd -> gesvd on cuda; the
+    numpy/torch fallback on cpu). Returns (mu (H,), comps (k', H)).
+    """
+    t = torch.from_numpy(np.ascontiguousarray(Y.astype(np.float32))).to(device)
+    tc = t - t.mean(dim=0)
+    try:
+        _, _, Vh = torch.linalg.svd(tc, full_matrices=False)
+    except torch.linalg.LinAlgError:
+        if t.is_cuda:
+            _, _, Vh = torch.linalg.svd(tc, full_matrices=False, driver="gesvd")
+        else:
+            mu_np, comps, _fb = robust_pca_basis(Y.astype(np.float32), k)
+            return mu_np, comps
+    kk = min(k, Vh.shape[0])
+    return t.mean(dim=0).cpu().numpy(), Vh[:kk].contiguous().cpu().numpy()
+
+
+def batched_fold_cv_mlp_r2(
+    X: np.ndarray,
+    Y: np.ndarray,
+    fold_ids: np.ndarray,
+    *,
+    layers: list[int],
+    perms_by_layer: dict[int, list[np.ndarray]],
+    pca_k: int = 64,
+    max_epochs: int = MLP_MAX_EPOCHS,
+    seed: int = 42,
+    device: str | None = None,
+    min_train_rows: int = 3,
+    time_budget_s: float | None = None,
+    started: float | None = None,
+    chunk_size: int = 8,
+) -> tuple[dict[str, dict], bool]:
+    """Batched fold-CV MLP R^2 per layer: obs + row-permutation null draws.
+
+    Returns ``({str(layer): {"r2_obs", "r2_null", "r2_obs_folds",
+    "budget_hit_folds"}}, budget_exhausted)`` — the ``cells_*.json["mlp"]``
+    block schema of ``issue825_fit_cells.run_mlp_secondary``. Per fold, the
+    (layer x draw) members ride ONE :func:`fit_batched_split_mlp` call
+    (``loss="mse"``, ``standardize_inputs=False``, ``patience=20``) with the
+    ``fit_h.mlp_fit_predict`` parent-parity prep: full fold-train ddof=0 X
+    standardization BEFORE the rng(``seed``) 10% val split; PCA-``pca_k``
+    basis on the full fold-train target via device-routed torch SVD, skipped
+    when the target dim <= ``pca_k``. Origin pattern:
+    ``issue931_fit_cells._mlp_fold_r2`` (#931 G1b, 0.02 parity vs the serial
+    parent; the residual delta is the per-member key-seeded init vs the
+    parent's global ``manual_seed``).
+
+    Inputs: ``X``/``Y`` are ``(N, L, D_x)`` / ``(N, L, D_y)``; ``fold_ids``
+    is ``(N,)`` int (caller-computed, e.g. ``issue825_fit_cells._cv_folds``);
+    ``perms_by_layer[li]`` is the layer's list of ``(N,)`` ROW permutations
+    (the observed/identity draw is prepended internally as draw 0). Folds
+    with ``te.sum() == 0 or tr.sum() < min_train_rows`` are skipped exactly
+    like the serial guard (no ss contribution, no per-fold entry).
+
+    Budget semantics (fold granularity — the batched call is the atomic
+    unit): before each fold's member build AND before its fit call,
+    ``time.monotonic() - started > time_budget_s`` stops the sweep; every
+    layer's pooled ``r2_obs`` and every null draw then read NaN
+    (full-length NaN-padded ``r2_null``), ``budget_hit_folds`` lists the
+    remaining fold ids (identical across layers — fold-outer), and
+    ``budget_exhausted=True`` is returned. Completed folds keep their
+    per-fold ``r2_obs_folds`` entries.
+    """
+    if device is None:
+        device = "cuda" if torch.cuda.is_available() else "cpu"
+    if started is None:
+        started = time.monotonic()
+    X = np.asarray(X)
+    Y = np.asarray(Y)
+    fold_ids = np.asarray(fold_ids)
+    assert X.shape[0] == Y.shape[0] == fold_ids.shape[0], (X.shape, Y.shape, fold_ids.shape)
+    assert X.ndim == 3 and Y.ndim == 3 and X.shape[1] == Y.shape[1], (X.shape, Y.shape)
+    null_lens = {len(perms_by_layer[li]) for li in layers}
+    assert len(null_lens) <= 1, f"non-uniform null-draw counts across layers: {null_lens}"
+    n_null = null_lens.pop() if null_lens else 0
+    n_draws = 1 + n_null
+    n_folds = int(fold_ids.max()) + 1 if fold_ids.size else 0
+    identity = np.arange(X.shape[0])
+    # Draw 0 = observed (identity); draws 1..n_null = the caller's row perms —
+    # the serial loop's `Yl[rng.permutation(len(Yl))]` stream, precomputed.
+    draws_by_layer = {li: [identity, *perms_by_layer[li]] for li in layers}
+
+    def _over_budget() -> bool:
+        return time_budget_s is not None and time.monotonic() - started > time_budget_s
+
+    # ss[(li, d)][k] = [ss_res, ss_tot] for fold k — pooled R^2 sums over
+    # folds; per-fold R^2 reads each entry (the serial _cv_r2 arithmetic).
+    ss: dict[tuple[int, int], dict[int, list[float]]] = {
+        (li, d): {} for li in layers for d in range(n_draws)
+    }
+    budget_hit = False
+    remaining: list[int] = []
+    for k in range(n_folds):
+        if _over_budget():
+            budget_hit = True
+            remaining = sorted(range(k, n_folds))
+            break
+        te = fold_ids == k
+        tr = ~te
+        if te.sum() == 0 or tr.sum() < min_train_rows:
+            continue  # serial fold guard: no ss contribution, no per-fold entry
+        member_groups, member_meta = [], []
+        for li in layers:
+            for d, perm in enumerate(draws_by_layer[li]):
+                Yp = Y[perm]
+                Xtr = X[tr, li, :].astype(np.float32)
+                Ytr_raw = Yp[tr, li, :].astype(np.float32)
+                Xte = X[te, li, :].astype(np.float32)
+                Yte_raw = Yp[te, li, :]
+                # Parent parity: standardize X on FULL fold-train stats (ddof=0)
+                # BEFORE the val split; apply the same stats to train/val/eval.
+                xmu = Xtr.mean(0)
+                xsd = Xtr.std(0) + 1e-6
+                Xn = (Xtr - xmu) / xsd
+                Xen = (Xte - xmu) / xsd
+                # Parent parity: PCA basis on the FULL fold-train target; the
+                # parent skips PCA entirely when the target dim <= pca_k.
+                if Ytr_raw.shape[1] <= pca_k:
+                    y_mu = Ytr_raw.mean(0)
+                    comps = None
+                    Yt = Ytr_raw - y_mu
+                else:
+                    y_mu, comps = _pca_basis_on_device(Ytr_raw, pca_k, device)
+                    Yt = ((Ytr_raw - y_mu) @ comps.T).astype(np.float32)
+                vr = np.random.default_rng(seed)
+                pm = vr.permutation(len(Xn))
+                n_val = max(1, round(0.1 * len(Xn)))
+                vi, ti = pm[:n_val], pm[n_val:]
+                member_groups.append(
+                    SplitMLPGroup(
+                        key=("i825mlp", int(li), int(d), int(k)),
+                        X_train=Xn[ti],
+                        Y_train=Yt[ti].astype(np.float32),
+                        X_eval=Xen,
+                        X_val=Xn[vi],
+                        Y_val=Yt[vi].astype(np.float32),
+                    )
+                )
+                member_meta.append((li, d, y_mu, comps, Yte_raw))
+        if _over_budget():
+            budget_hit = True
+            remaining = sorted(range(k, n_folds))
+            break
+        res = fit_batched_split_mlp(
+            member_groups,
+            seed=seed,
+            max_epochs=max_epochs,
+            device=device,
+            chunk_size=chunk_size,
+            loss="mse",
+            standardize_inputs=False,
+            patience=20,
+        )
+        for (li, d, y_mu, comps, Yte_raw), grp in zip(member_meta, member_groups, strict=True):
+            pred_pca = res.preds_by_key[grp.key]
+            pred = (pred_pca @ comps + y_mu) if comps is not None else (pred_pca + y_mu)
+            true = Yte_raw.astype(np.float64)
+            mu = true.mean(0)
+            f_res = float(((true - pred) ** 2).sum())
+            f_tot = float(((true - mu) ** 2).sum())
+            ss[(li, d)][k] = [f_res, f_tot]
+
+    def _pooled(pairs: dict[int, list[float]]) -> float:
+        sr = sum(v[0] for v in pairs.values())
+        st = sum(v[1] for v in pairs.values())
+        return (1.0 - sr / st) if st > 1e-12 else float("nan")
+
+    out: dict[str, dict] = {}
+    for li in layers:
+        if budget_hit:
+            obs = float("nan")
+            nulls = [float("nan")] * n_null
+        else:
+            obs = _pooled(ss[(li, 0)])
+            nulls = [_pooled(ss[(li, d)]) for d in range(1, n_draws)]
+        fold_stats = [
+            (1.0 - v[0] / v[1]) if v[1] > 1e-12 else float("nan")
+            for _k, v in sorted(ss[(li, 0)].items())
+        ]
+        out[str(li)] = {
+            "r2_obs": obs,
+            "r2_null": nulls,
+            "r2_obs_folds": fold_stats,
+            "budget_hit_folds": list(remaining),
+        }
+    return out, budget_hit

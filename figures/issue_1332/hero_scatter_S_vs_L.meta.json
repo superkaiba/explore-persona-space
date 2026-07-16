@@ -1,0 +1,3069 @@
+{
+  "commit": "9248ce6fd1",
+  "created": "2026-07-15T16:14:53Z",
+  "figsize": [
+    6.5,
+    4.0
+  ],
+  "points": [
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": -5.149510196719275,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 3.0107017135620104,
+      "series": "Stylized source (pirate / comedian / villain)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": -4.949902575504325,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 4.194580650329591,
+      "series": "Stylized source (pirate / comedian / villain)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": -8.099796388581458,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 5.829320297241214,
+      "label": "Pirate captain \u2192 Enumerated framing rewrite",
+      "series": "Stylized source (pirate / comedian / villain)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": -3.4827032822458057,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 5.938691406250001,
+      "series": "Stylized source (pirate / comedian / villain)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": -4.8040650802119504,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 2.3701474380493153,
+      "series": "Stylized source (pirate / comedian / villain)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": -4.95411805256339,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 2.416155548095702,
+      "series": "Stylized source (pirate / comedian / villain)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": -5.423071738677455,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 2.6541203689575212,
+      "series": "Stylized source (pirate / comedian / villain)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": -5.731189918431046,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 2.624526443481443,
+      "series": "Stylized source (pirate / comedian / villain)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": -5.345667789541982,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 3.3035047149658183,
+      "series": "Stylized source (pirate / comedian / villain)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": -4.751547615681125,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 2.5489960861206065,
+      "series": "Stylized source (pirate / comedian / villain)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": -4.736246507229874,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 2.453426094055178,
+      "series": "Stylized source (pirate / comedian / villain)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": -5.010180900411383,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 2.638548812866212,
+      "series": "Stylized source (pirate / comedian / villain)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": -5.93461296182518,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 2.7543661880493175,
+      "series": "Stylized source (pirate / comedian / villain)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": -5.48533997129438,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 2.1891924667358396,
+      "series": "Stylized source (pirate / comedian / villain)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": -9.822963006101741,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 6.338237609863281,
+      "label": "Pirate captain \u2192 Enumerated framing rewrite",
+      "series": "Stylized source (pirate / comedian / villain)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": -5.533384063212311,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 6.829358139038086,
+      "series": "Stylized source (pirate / comedian / villain)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": -6.187536458247564,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 5.928674297332764,
+      "label": "Pirate captain \u2192 Enumerated framing rewrite",
+      "series": "Stylized source (pirate / comedian / villain)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": -5.018933216194475,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 4.4432741546630865,
+      "series": "Stylized source (pirate / comedian / villain)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": -5.779741004680722,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 3.6900448226928706,
+      "series": "Stylized source (pirate / comedian / villain)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": -5.351799404590404,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 5.755903358459473,
+      "series": "Stylized source (pirate / comedian / villain)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": -5.983204879377093,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 5.257231407165527,
+      "label": "Pirate captain \u2192 Enumerated framing rewrite",
+      "series": "Stylized source (pirate / comedian / villain)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": -5.411195503276165,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 3.5281635284423825,
+      "series": "Stylized source (pirate / comedian / villain)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": -4.794756673107722,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 5.023120765686034,
+      "series": "Stylized source (pirate / comedian / villain)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": -4.54401555506785,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 5.408540687561034,
+      "series": "Stylized source (pirate / comedian / villain)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": -4.363669402392562,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 7.738820266723634,
+      "series": "Stylized source (pirate / comedian / villain)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": -3.2534227794939623,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 7.424141807556154,
+      "series": "Stylized source (pirate / comedian / villain)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": -3.433345984644582,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 8.599093170166014,
+      "series": "Stylized source (pirate / comedian / villain)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": -8.099796388581458,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 8.389596977233886,
+      "label": "Pirate captain \u2192 Enumerated framing rewrite",
+      "series": "Stylized source (pirate / comedian / villain)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": -2.860362041291361,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 7.969176406860353,
+      "series": "Stylized source (pirate / comedian / villain)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": -3.1249309716170526,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 6.976734313964842,
+      "series": "Stylized source (pirate / comedian / villain)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": -3.000802027030555,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 7.1637498474121095,
+      "series": "Stylized source (pirate / comedian / villain)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": -3.1885850852979067,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 7.127373275756838,
+      "series": "Stylized source (pirate / comedian / villain)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": -3.2179457391644632,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 6.549650993347168,
+      "series": "Stylized source (pirate / comedian / villain)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": -3.03929649947354,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 8.691514549255373,
+      "series": "Stylized source (pirate / comedian / villain)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": -3.1133994641366605,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 7.150837059020997,
+      "series": "Stylized source (pirate / comedian / villain)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": -3.104770756306114,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 6.5119457626342765,
+      "series": "Stylized source (pirate / comedian / villain)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": -3.168935642592615,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 6.622822189331053,
+      "series": "Stylized source (pirate / comedian / villain)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": -3.271249505255006,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 8.023262062072757,
+      "series": "Stylized source (pirate / comedian / villain)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": -3.1499509289151457,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 6.934681358337402,
+      "series": "Stylized source (pirate / comedian / villain)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": -8.039334415602829,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 10.095312499999999,
+      "label": "Pirate captain \u2192 Enumerated framing rewrite",
+      "series": "Stylized source (pirate / comedian / villain)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": -3.7969616298472006,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 8.779615364074706,
+      "series": "Stylized source (pirate / comedian / villain)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": -4.117617533028364,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 9.570205307006837,
+      "series": "Stylized source (pirate / comedian / villain)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": -3.8474764969266526,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 7.304897232055664,
+      "series": "Stylized source (pirate / comedian / villain)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": -3.7934118940530692,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 6.325542449951172,
+      "series": "Stylized source (pirate / comedian / villain)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": -3.4555145204986175,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 8.177972679138183,
+      "series": "Stylized source (pirate / comedian / villain)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": -3.5751964633687106,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 10.005710487365722,
+      "series": "Stylized source (pirate / comedian / villain)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": -3.2682391563731628,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 7.339970893859863,
+      "series": "Stylized source (pirate / comedian / villain)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": -3.234603506668785,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 9.94895694732666,
+      "series": "Stylized source (pirate / comedian / villain)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": -3.4473288251450738,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 10.995368041992187,
+      "series": "Stylized source (pirate / comedian / villain)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": -2.982386559708491,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 10.004249725341797,
+      "series": "Stylized source (pirate / comedian / villain)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": -0.4343837059127906,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 10.402055778503417,
+      "series": "Stylized source (pirate / comedian / villain)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": -0.46193533740148807,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 14.013962173461913,
+      "series": "Stylized source (pirate / comedian / villain)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": -3.4827032822458057,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 15.603861885070799,
+      "series": "Stylized source (pirate / comedian / villain)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": -2.860362041291361,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 12.628432807922362,
+      "series": "Stylized source (pirate / comedian / villain)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": -0.4110289812005973,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 10.199608459472659,
+      "series": "Stylized source (pirate / comedian / villain)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": -0.39230423557636285,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 10.239487533569337,
+      "series": "Stylized source (pirate / comedian / villain)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": -0.42860929329403136,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 10.136296882629395,
+      "series": "Stylized source (pirate / comedian / villain)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": -0.5256866996999661,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 10.07726593017578,
+      "series": "Stylized source (pirate / comedian / villain)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": -0.5054348190876392,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 12.162764625549316,
+      "series": "Stylized source (pirate / comedian / villain)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": -0.37871336013341694,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 9.84173900604248,
+      "series": "Stylized source (pirate / comedian / villain)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": -0.41653179330070156,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 9.669389533996581,
+      "series": "Stylized source (pirate / comedian / villain)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": -0.34964988605286784,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 9.990169143676757,
+      "series": "Stylized source (pirate / comedian / villain)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": -0.5922926664298032,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 10.324011955261229,
+      "series": "Stylized source (pirate / comedian / villain)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": -0.4362562472894278,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 10.111007804870605,
+      "series": "Stylized source (pirate / comedian / villain)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": -4.132624009178782,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 12.625470161437987,
+      "series": "Stylized source (pirate / comedian / villain)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": -0.5370908627179634,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 11.561402816772462,
+      "series": "Stylized source (pirate / comedian / villain)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": -0.5857977475538292,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 12.352039375305177,
+      "series": "Stylized source (pirate / comedian / villain)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": -0.42076782870265195,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 10.278474235534668,
+      "series": "Stylized source (pirate / comedian / villain)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": -0.6639384044822156,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 11.680525779724121,
+      "series": "Stylized source (pirate / comedian / villain)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": -0.4203758685266621,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 11.621745414733887,
+      "series": "Stylized source (pirate / comedian / villain)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": -0.454533133377355,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 11.992698402404784,
+      "series": "Stylized source (pirate / comedian / villain)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": -0.47167596368717846,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 10.37127841949463,
+      "series": "Stylized source (pirate / comedian / villain)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": -0.4039140022886142,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 13.498071594238281,
+      "series": "Stylized source (pirate / comedian / villain)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": -0.32196856612641267,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 14.158920860290527,
+      "series": "Stylized source (pirate / comedian / villain)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": -0.3165476824919339,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 14.154757499694824,
+      "series": "Stylized source (pirate / comedian / villain)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.26732571635292257,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 19.583565292358397,
+      "label": "Bare question \u2192 Standard Qwen template",
+      "series": "Ordinary source, instructed target",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": -0.0003688184415619779,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 19.097744369506835,
+      "label": "Bare question \u2192 Standard Qwen template",
+      "series": "Ordinary source, instructed target",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.42197313674227377,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 18.576351203918456,
+      "label": "Bare question \u2192 Standard Qwen template",
+      "series": "Ordinary source, instructed target",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.10932251502167369,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 14.571198844909668,
+      "series": "Ordinary source, instructed target",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.2967927996714065,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 20.619632720947266,
+      "label": "Bare question \u2192 Standard Qwen template",
+      "series": "Ordinary source, instructed target",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.38128335737916713,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 13.320965423583985,
+      "series": "Ordinary source, instructed target",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.28511215727578254,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 15.762610740661621,
+      "series": "Ordinary source, instructed target",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.5155617950617383,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 22.085518035888672,
+      "label": "Bare question \u2192 Standard Qwen template",
+      "series": "Ordinary source, instructed target",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.49240738021606556,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 22.745464401245115,
+      "label": "Bare question \u2192 Standard Qwen template",
+      "series": "Ordinary source, instructed target",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.44212178868877816,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 22.09115810394287,
+      "label": "Bare question \u2192 Standard Qwen template",
+      "series": "Ordinary source, instructed target",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.18242781033562355,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 17.97153453826904,
+      "label": "Bare question \u2192 Standard Qwen template",
+      "series": "Ordinary source, instructed target",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": -0.09405599984670027,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 14.66891429901123,
+      "series": "Ordinary source, instructed target",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.38510572917882335,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 17.05168941497803,
+      "label": "Bare question \u2192 Standard Qwen template",
+      "series": "Ordinary source, instructed target",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": -0.04584915702057481,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 15.148747024536132,
+      "series": "Ordinary source, instructed target",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.22851329647727855,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 18.39351745605469,
+      "label": "Bare question \u2192 Standard Qwen template",
+      "series": "Ordinary source, instructed target",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.32567787646310686,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 13.170240287780763,
+      "series": "Ordinary source, instructed target",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.21642037876907722,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 14.83473876953125,
+      "series": "Ordinary source, instructed target",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.48189195013476316,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 17.50490913391113,
+      "label": "Bare question \u2192 Standard Qwen template",
+      "series": "Ordinary source, instructed target",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.4596824239698424,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 19.871801223754883,
+      "label": "Bare question \u2192 Standard Qwen template",
+      "series": "Ordinary source, instructed target",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.42398562622857694,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 18.35779716491699,
+      "label": "Bare question \u2192 Standard Qwen template",
+      "series": "Ordinary source, instructed target",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.14316378809305533,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 19.085649604797364,
+      "label": "Bare question \u2192 Standard Qwen template",
+      "series": "Ordinary source, instructed target",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": -0.16614822487793637,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 14.419460868835449,
+      "series": "Ordinary source, instructed target",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.40851375777970356,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 18.554672317504885,
+      "label": "Bare question \u2192 Standard Qwen template",
+      "series": "Ordinary source, instructed target",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": -0.09103954622529027,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 14.080708847045898,
+      "series": "Ordinary source, instructed target",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.1889354612796089,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 19.011341972351072,
+      "label": "Bare question \u2192 Standard Qwen template",
+      "series": "Ordinary source, instructed target",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.27397608421114833,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 12.279945182800294,
+      "series": "Ordinary source, instructed target",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.1698602081062245,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 15.491468353271484,
+      "series": "Ordinary source, instructed target",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.5262858225585036,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 17.410433731079102,
+      "label": "Bare question \u2192 Standard Qwen template",
+      "series": "Ordinary source, instructed target",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.4774110631678852,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 18.52991313934326,
+      "label": "Bare question \u2192 Standard Qwen template",
+      "series": "Ordinary source, instructed target",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.44861451618864,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 18.082531547546388,
+      "label": "Bare question \u2192 Standard Qwen template",
+      "series": "Ordinary source, instructed target",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.18478477222876266,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 15.575883865356445,
+      "series": "Ordinary source, instructed target",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": -0.10281741108412897,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 11.146020622253419,
+      "series": "Ordinary source, instructed target",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.4054956595352285,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 15.44695358276367,
+      "series": "Ordinary source, instructed target",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": -0.06223165379517525,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 9.414690933227538,
+      "series": "Ordinary source, instructed target",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.2234240377670791,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 15.384581069946288,
+      "series": "Ordinary source, instructed target",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.29841226246042035,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 9.391131935119628,
+      "series": "Ordinary source, instructed target",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.22264377962509707,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 12.588611869812011,
+      "series": "Ordinary source, instructed target",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.5227030210563148,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 12.485846099853514,
+      "series": "Ordinary source, instructed target",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.4812600633373234,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 13.580166969299317,
+      "series": "Ordinary source, instructed target",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.46079496341399817,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 14.231136360168456,
+      "series": "Ordinary source, instructed target",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.12749640242213478,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 18.502896385192873,
+      "label": "Bare question \u2192 Standard Qwen template",
+      "series": "Ordinary source, instructed target",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": -0.15832994837655343,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 13.375199546813965,
+      "series": "Ordinary source, instructed target",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.322275404113704,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 17.681234436035158,
+      "label": "Bare question \u2192 Standard Qwen template",
+      "series": "Ordinary source, instructed target",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": -0.17275188567245575,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 9.85306541442871,
+      "series": "Ordinary source, instructed target",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.14693568449798736,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 17.574730682373048,
+      "label": "Bare question \u2192 Standard Qwen template",
+      "series": "Ordinary source, instructed target",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.23209679690741936,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 12.441778831481933,
+      "series": "Ordinary source, instructed target",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.12535612215610964,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 13.405520248413085,
+      "series": "Ordinary source, instructed target",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.4447666686876662,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 12.342438278198241,
+      "series": "Ordinary source, instructed target",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.40530136302474595,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 15.911693534851073,
+      "series": "Ordinary source, instructed target",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.3846853226533846,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 15.495131530761718,
+      "series": "Ordinary source, instructed target",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.0014289451274147325,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 17.09367893218994,
+      "label": "Bare question \u2192 Standard Qwen template",
+      "series": "Ordinary source, instructed target",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": -0.3366140697295897,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 13.856268730163574,
+      "series": "Ordinary source, instructed target",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.2586131081982913,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 16.738604011535646,
+      "series": "Ordinary source, instructed target",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": -0.34797099586334723,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 11.99908447265625,
+      "series": "Ordinary source, instructed target",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.07262569081219349,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 18.922974395751954,
+      "label": "Bare question \u2192 Standard Qwen template",
+      "series": "Ordinary source, instructed target",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.194131419826523,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 13.946427803039551,
+      "series": "Ordinary source, instructed target",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.03784678248268537,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 14.164424667358398,
+      "series": "Ordinary source, instructed target",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.41724254617489565,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 13.993129348754884,
+      "series": "Ordinary source, instructed target",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.37724932747909545,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 15.364088249206544,
+      "series": "Ordinary source, instructed target",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.3376038281353473,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 14.107467346191404,
+      "series": "Ordinary source, instructed target",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.009986680809395044,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 14.198828887939452,
+      "series": "Ordinary source, instructed target",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": -0.12865501426365017,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 11.651594581604003,
+      "series": "Ordinary source, instructed target",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.1102683945189066,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 14.708988761901855,
+      "series": "Ordinary source, instructed target",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": -0.1717197930489296,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 9.304699440002441,
+      "series": "Ordinary source, instructed target",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.09338274212663182,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 14.630398712158202,
+      "series": "Ordinary source, instructed target",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.05434957912942151,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 12.461189918518066,
+      "series": "Ordinary source, instructed target",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.09300010942754652,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 11.990407295227051,
+      "series": "Ordinary source, instructed target",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.2031968813962625,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 8.501566200256349,
+      "label": "Spearman \u03c1 = 0.61, permutation p = 0.008",
+      "series": "Ordinary source, instructed target",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.21176380594470295,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 11.02408908843994,
+      "series": "Ordinary source, instructed target",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.26000248413126675,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 11.761809692382812,
+      "series": "Ordinary source, instructed target",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.15145617471678752,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 18.85322509765625,
+      "label": "Bare question \u2192 Standard Qwen template",
+      "series": "Ordinary source, instructed target",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": -0.16411421745024987,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 13.92998348236084,
+      "series": "Ordinary source, instructed target",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.41527713456668014,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 17.60847099304199,
+      "label": "Bare question \u2192 Standard Qwen template",
+      "series": "Ordinary source, instructed target",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": -0.07265439228991726,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 12.9382999420166,
+      "series": "Ordinary source, instructed target",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.20298462546382923,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 18.55953384399414,
+      "label": "Bare question \u2192 Standard Qwen template",
+      "series": "Ordinary source, instructed target",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.2941319982601964,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 11.868334350585938,
+      "series": "Ordinary source, instructed target",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.18502677577818727,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 15.149188117980957,
+      "series": "Ordinary source, instructed target",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.5294936276144581,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 17.939465980529786,
+      "label": "Bare question \u2192 Standard Qwen template",
+      "series": "Ordinary source, instructed target",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.47788294398788106,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 18.3365433883667,
+      "label": "Bare question \u2192 Standard Qwen template",
+      "series": "Ordinary source, instructed target",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.44971286201373556,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 18.172244262695312,
+      "label": "Bare question \u2192 Standard Qwen template",
+      "series": "Ordinary source, instructed target",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.1595011357693011,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 17.77956901550293,
+      "label": "Bare question \u2192 Standard Qwen template",
+      "series": "Ordinary source, instructed target",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": -0.134291702488462,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 13.707483940124511,
+      "series": "Ordinary source, instructed target",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.41201977495915315,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 18.798161392211913,
+      "label": "Bare question \u2192 Standard Qwen template",
+      "series": "Ordinary source, instructed target",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": -0.0730066694255771,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 12.569634552001954,
+      "series": "Ordinary source, instructed target",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.1887178010996736,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 17.344705657958983,
+      "label": "Bare question \u2192 Standard Qwen template",
+      "series": "Ordinary source, instructed target",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.2521389269267682,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 12.513039627075194,
+      "series": "Ordinary source, instructed target",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.16658400546257196,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 14.04678253173828,
+      "series": "Ordinary source, instructed target",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.5172132731191024,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 15.915563278198244,
+      "series": "Ordinary source, instructed target",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.47308853347978064,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 18.16356544494629,
+      "label": "Bare question \u2192 Standard Qwen template",
+      "series": "Ordinary source, instructed target",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.4433530806220568,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 17.637837638854982,
+      "label": "Bare question \u2192 Standard Qwen template",
+      "series": "Ordinary source, instructed target",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.16275952244280528,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 18.654685173034668,
+      "label": "Bare question \u2192 Standard Qwen template",
+      "series": "Ordinary source, instructed target",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": -0.11094118933180011,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 14.408431053161621,
+      "series": "Ordinary source, instructed target",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.38861954887646877,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 19.257833671569827,
+      "label": "Bare question \u2192 Standard Qwen template",
+      "series": "Ordinary source, instructed target",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": -0.05007681188808339,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 13.71921760559082,
+      "series": "Ordinary source, instructed target",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.2347903147070183,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 18.45064334869385,
+      "label": "Bare question \u2192 Standard Qwen template",
+      "series": "Ordinary source, instructed target",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.33539338100175686,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 12.09732681274414,
+      "series": "Ordinary source, instructed target",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.2123835497349786,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 16.193999938964843,
+      "series": "Ordinary source, instructed target",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.5163431813409212,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 18.10010761260986,
+      "label": "Bare question \u2192 Standard Qwen template",
+      "series": "Ordinary source, instructed target",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.4737351955654502,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 19.111762351989746,
+      "label": "Bare question \u2192 Standard Qwen template",
+      "series": "Ordinary source, instructed target",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.454023701928026,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 18.817430992126464,
+      "label": "Bare question \u2192 Standard Qwen template",
+      "series": "Ordinary source, instructed target",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": -0.028356238840128677,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 15.697564888000487,
+      "series": "Ordinary source, instructed target",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": -0.26918969139672355,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 9.801297187805176,
+      "series": "Ordinary source, instructed target",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.169124731415702,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 17.511670265197754,
+      "label": "Bare question \u2192 Standard Qwen template",
+      "series": "Ordinary source, instructed target",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": -0.2579837182549402,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 8.746064643859864,
+      "label": "Spearman \u03c1 = 0.61, permutation p = 0.008",
+      "series": "Ordinary source, instructed target",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.0408613552175658,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 15.238493461608886,
+      "series": "Ordinary source, instructed target",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.09072423915535602,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 10.097842330932616,
+      "series": "Ordinary source, instructed target",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.07623025457409809,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 11.911880989074707,
+      "series": "Ordinary source, instructed target",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.31367772466627675,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 10.63163356781006,
+      "series": "Ordinary source, instructed target",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.2638766003485923,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 12.5285990524292,
+      "series": "Ordinary source, instructed target",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.2933853132137529,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 13.353898391723632,
+      "series": "Ordinary source, instructed target",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.08165026555205017,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 17.087513542175294,
+      "label": "Bare question \u2192 Standard Qwen template",
+      "series": "Ordinary source, instructed target",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": -0.20230471666263208,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 11.294558906555176,
+      "series": "Ordinary source, instructed target",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.3159461416034084,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 15.743494033813478,
+      "series": "Ordinary source, instructed target",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": -0.15986563767123357,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 9.568114166259766,
+      "series": "Ordinary source, instructed target",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.15451754882947308,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 16.37046112060547,
+      "series": "Ordinary source, instructed target",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.26585405188219713,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 11.2900443649292,
+      "series": "Ordinary source, instructed target",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.14124692847927295,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 13.826422080993652,
+      "series": "Ordinary source, instructed target",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.45339366055060293,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 13.771938705444335,
+      "series": "Ordinary source, instructed target",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.40403880115009694,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 15.578451347351075,
+      "series": "Ordinary source, instructed target",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.38647672563930857,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 15.815516471862795,
+      "series": "Ordinary source, instructed target",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": -1.9515950634438346,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 17.954267044067382,
+      "series": "Ordinary source, instructed target",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": -2.122967463373585,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 14.425047683715821,
+      "series": "Ordinary source, instructed target",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": -2.064632126789573,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 19.41376739501953,
+      "label": "Bare question \u2192 Standard Qwen template",
+      "series": "Ordinary source, instructed target",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": -2.016221720617398,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 8.820399856567382,
+      "series": "Ordinary source, instructed target",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": -1.9329260022395405,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 14.982188301086426,
+      "series": "Ordinary source, instructed target",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": -2.2128664198584107,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 10.690446434020997,
+      "series": "Ordinary source, instructed target",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": -1.9136621421660491,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 13.81847557067871,
+      "series": "Ordinary source, instructed target",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": -2.231987934822349,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 9.296485290527343,
+      "series": "Ordinary source, instructed target",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": -2.012535525389182,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 9.547985687255858,
+      "series": "Ordinary source, instructed target",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": -1.8798997910804132,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 11.87345920562744,
+      "series": "Ordinary source, instructed target",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.52046531838896,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 17.278880653381346,
+      "label": "Bare question \u2192 Standard Qwen template",
+      "series": "Ordinary source, ordinary target",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": -5.149510196719275,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 16.62775394439697,
+      "series": "Ordinary source, ordinary target",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": -3.2534227794939623,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 16.518429412841797,
+      "series": "Ordinary source, ordinary target",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": -0.4343837059127906,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 18.740064849853518,
+      "label": "Bare question \u2192 Standard Qwen template",
+      "series": "Ordinary source, ordinary target",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.4967549436991392,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 17.453920860290523,
+      "label": "Bare question \u2192 Standard Qwen template",
+      "series": "Ordinary source, ordinary target",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.4947067862135066,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 17.678494453430176,
+      "label": "Bare question \u2192 Standard Qwen template",
+      "series": "Ordinary source, ordinary target",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.4272119047475677,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 17.99240863800049,
+      "label": "Bare question \u2192 Standard Qwen template",
+      "series": "Ordinary source, ordinary target",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.4262841996949014,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 17.261956176757813,
+      "label": "Bare question \u2192 Standard Qwen template",
+      "series": "Ordinary source, ordinary target",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.1798838975283977,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 19.130901336669922,
+      "label": "Bare question \u2192 Standard Qwen template",
+      "series": "Ordinary source, ordinary target",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.49962809646704476,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 17.327655410766603,
+      "label": "Bare question \u2192 Standard Qwen template",
+      "series": "Ordinary source, ordinary target",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.4914758456280162,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 16.917105407714843,
+      "label": "Bare question \u2192 Standard Qwen template",
+      "series": "Ordinary source, ordinary target",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.5020605371446776,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 18.43398509979248,
+      "label": "Bare question \u2192 Standard Qwen template",
+      "series": "Ordinary source, ordinary target",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.28899114872889514,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 18.31993869781494,
+      "label": "Bare question \u2192 Standard Qwen template",
+      "series": "Ordinary source, ordinary target",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.4265781890271264,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 16.59504955291748,
+      "series": "Ordinary source, ordinary target",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": -2.47396076732549,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 12.93336643218994,
+      "series": "Ordinary source, ordinary target",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.52046531838896,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 15.781734504699708,
+      "series": "Ordinary source, ordinary target",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": -4.949902575504325,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 16.516814155578615,
+      "series": "Ordinary source, ordinary target",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": -3.433345984644582,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 16.372397842407224,
+      "series": "Ordinary source, ordinary target",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": -0.46193533740148807,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 18.67104679107666,
+      "label": "Bare question \u2192 Standard Qwen template",
+      "series": "Ordinary source, ordinary target",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.5256573706029388,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 12.845263175964357,
+      "series": "Ordinary source, ordinary target",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.5137946717617459,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 12.170736846923827,
+      "series": "Ordinary source, ordinary target",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.44266627414715665,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 12.625741233825682,
+      "series": "Ordinary source, ordinary target",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.463855519103889,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 11.564921722412109,
+      "series": "Ordinary source, ordinary target",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.2126341897683005,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 13.990580520629882,
+      "series": "Ordinary source, ordinary target",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.5243806175048289,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 12.772004432678221,
+      "series": "Ordinary source, ordinary target",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.4968173434514641,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 12.02548225402832,
+      "series": "Ordinary source, ordinary target",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.5251353842977002,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 11.762180976867677,
+      "series": "Ordinary source, ordinary target",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.31702653548596166,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 12.470370597839356,
+      "series": "Ordinary source, ordinary target",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.47135899441631923,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 11.328709449768064,
+      "series": "Ordinary source, ordinary target",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": -2.821746651790718,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 11.260902175903318,
+      "series": "Ordinary source, ordinary target",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.4967549436991392,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 18.82517177581787,
+      "label": "Bare question \u2192 Standard Qwen template",
+      "series": "Ordinary source, ordinary target",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.5256573706029388,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 18.951896896362307,
+      "label": "Bare question \u2192 Standard Qwen template",
+      "series": "Ordinary source, ordinary target",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": -4.8040650802119504,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 18.37681297302246,
+      "series": "Ordinary source, ordinary target",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": -3.1249309716170526,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 17.777211532592776,
+      "series": "Ordinary source, ordinary target",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": -0.4110289812005973,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 21.01874984741211,
+      "label": "Bare question \u2192 Standard Qwen template",
+      "series": "Ordinary source, ordinary target",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.5939455693320193,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 24.740865783691408,
+      "label": "Bare question \u2192 Standard Qwen template",
+      "series": "Ordinary source, ordinary target",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.5105564137763985,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 23.175127601623533,
+      "label": "Bare question \u2192 Standard Qwen template",
+      "series": "Ordinary source, ordinary target",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.5253230324211193,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 22.61949913024902,
+      "label": "Bare question \u2192 Standard Qwen template",
+      "series": "Ordinary source, ordinary target",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.19104383613290077,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 22.494283447265627,
+      "label": "Bare question \u2192 Standard Qwen template",
+      "series": "Ordinary source, ordinary target",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.6127167767732793,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 25.609342498779295,
+      "label": "Bare question \u2192 Standard Qwen template",
+      "series": "Ordinary source, ordinary target",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.5829483333133549,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 22.054133186340334,
+      "label": "Bare question \u2192 Standard Qwen template",
+      "series": "Ordinary source, ordinary target",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.5752730288329986,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 24.63644012451172,
+      "label": "Bare question \u2192 Standard Qwen template",
+      "series": "Ordinary source, ordinary target",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.3571400957662099,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 21.97526123046875,
+      "label": "Bare question \u2192 Standard Qwen template",
+      "series": "Ordinary source, ordinary target",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.5400714734978098,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 18.727558250427247,
+      "label": "Bare question \u2192 Standard Qwen template",
+      "series": "Ordinary source, ordinary target",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": -2.9073993489737666,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 20.584944229125977,
+      "series": "Ordinary source, ordinary target",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.4947067862135066,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 13.372180213928221,
+      "series": "Ordinary source, ordinary target",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.5137946717617459,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 13.482528419494628,
+      "series": "Ordinary source, ordinary target",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": -4.95411805256339,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 14.068788948059083,
+      "series": "Ordinary source, ordinary target",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": -3.000802027030555,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 13.790028610229491,
+      "series": "Ordinary source, ordinary target",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": -0.39230423557636285,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 16.294713821411136,
+      "series": "Ordinary source, ordinary target",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.5939455693320193,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 13.063228988647461,
+      "series": "Ordinary source, ordinary target",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.5503462287101206,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 12.963308067321776,
+      "series": "Ordinary source, ordinary target",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.5610183764773629,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 13.657448272705077,
+      "series": "Ordinary source, ordinary target",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.29220797296587786,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 15.022817344665526,
+      "series": "Ordinary source, ordinary target",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.5984642963997586,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 13.665684089660646,
+      "series": "Ordinary source, ordinary target",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.5675900702011152,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 13.079854469299319,
+      "series": "Ordinary source, ordinary target",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.5708276334140435,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 13.549505958557129,
+      "series": "Ordinary source, ordinary target",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.39982217181258217,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 12.69364631652832,
+      "series": "Ordinary source, ordinary target",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.5588298983800069,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 13.478549537658692,
+      "series": "Ordinary source, ordinary target",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": -2.7538323630264805,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 13.116343040466308,
+      "series": "Ordinary source, ordinary target",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.4272119047475677,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 13.570847969055178,
+      "series": "Ordinary source, ordinary target",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.44266627414715665,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 13.221345596313476,
+      "series": "Ordinary source, ordinary target",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": -5.423071738677455,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 14.844711112976073,
+      "series": "Ordinary source, ordinary target",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": -3.1885850852979067,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 15.268810997009279,
+      "series": "Ordinary source, ordinary target",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": -0.42860929329403136,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 17.99570373535156,
+      "label": "Bare question \u2192 Standard Qwen template",
+      "series": "Ordinary source, ordinary target",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.5105564137763985,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 18.217956199645997,
+      "label": "Bare question \u2192 Standard Qwen template",
+      "series": "Ordinary source, ordinary target",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.5503462287101206,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 18.20835292816162,
+      "label": "Bare question \u2192 Standard Qwen template",
+      "series": "Ordinary source, ordinary target",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.5600425110715205,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 17.959609222412112,
+      "label": "Bare question \u2192 Standard Qwen template",
+      "series": "Ordinary source, ordinary target",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.2547909750169942,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 20.300141983032226,
+      "label": "Bare question \u2192 Standard Qwen template",
+      "series": "Ordinary source, ordinary target",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.5106277284834051,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 18.450994987487793,
+      "label": "Bare question \u2192 Standard Qwen template",
+      "series": "Ordinary source, ordinary target",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.4810667847433155,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 17.495323028564453,
+      "label": "Bare question \u2192 Standard Qwen template",
+      "series": "Ordinary source, ordinary target",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.4990086258489422,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 19.001879119873045,
+      "label": "Bare question \u2192 Standard Qwen template",
+      "series": "Ordinary source, ordinary target",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.3533281645165198,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 17.239977455139158,
+      "label": "Bare question \u2192 Standard Qwen template",
+      "series": "Ordinary source, ordinary target",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.5505540643538013,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 16.8363098526001,
+      "series": "Ordinary source, ordinary target",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": -2.962318224983309,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 14.693817863464355,
+      "series": "Ordinary source, ordinary target",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.4262841996949014,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 13.044838943481446,
+      "series": "Ordinary source, ordinary target",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.463855519103889,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 12.85455638885498,
+      "series": "Ordinary source, ordinary target",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": -5.731189918431046,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 13.478270645141603,
+      "series": "Ordinary source, ordinary target",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": -3.2179457391644632,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 13.560801811218264,
+      "series": "Ordinary source, ordinary target",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": -0.5256866996999661,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 16.791657066345213,
+      "series": "Ordinary source, ordinary target",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.5253230324211193,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 18.97311679840088,
+      "label": "Bare question \u2192 Standard Qwen template",
+      "series": "Ordinary source, ordinary target",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.5610183764773629,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 19.908595085144043,
+      "label": "Bare question \u2192 Standard Qwen template",
+      "series": "Ordinary source, ordinary target",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.5600425110715205,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 19.424239273071287,
+      "label": "Bare question \u2192 Standard Qwen template",
+      "series": "Ordinary source, ordinary target",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.26634604881087326,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 20.518731498718264,
+      "label": "Bare question \u2192 Standard Qwen template",
+      "series": "Ordinary source, ordinary target",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.5265793908591957,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 19.110936164855957,
+      "label": "Bare question \u2192 Standard Qwen template",
+      "series": "Ordinary source, ordinary target",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.489538193414852,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 18.073267059326174,
+      "label": "Bare question \u2192 Standard Qwen template",
+      "series": "Ordinary source, ordinary target",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.5145229175638966,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 19.661793632507322,
+      "label": "Bare question \u2192 Standard Qwen template",
+      "series": "Ordinary source, ordinary target",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.3774827662288684,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 20.377360382080077,
+      "label": "Bare question \u2192 Standard Qwen template",
+      "series": "Ordinary source, ordinary target",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.5718327392687634,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 15.036904640197754,
+      "series": "Ordinary source, ordinary target",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": -3.280582324444439,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 12.939161071777345,
+      "series": "Ordinary source, ordinary target",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.1798838975283977,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 9.828447647094729,
+      "series": "Ordinary source, ordinary target",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.2126341897683005,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 9.752916984558103,
+      "series": "Ordinary source, ordinary target",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": -5.345667789541982,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 12.240882949829103,
+      "series": "Ordinary source, ordinary target",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": -3.03929649947354,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 12.419368057250976,
+      "series": "Ordinary source, ordinary target",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": -0.5054348190876392,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 13.984990577697756,
+      "series": "Ordinary source, ordinary target",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.19104383613290077,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 11.065257949829101,
+      "series": "Ordinary source, ordinary target",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.29220797296587786,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 10.647383193969727,
+      "series": "Ordinary source, ordinary target",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.2547909750169942,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 11.079751663208008,
+      "series": "Ordinary source, ordinary target",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.26634604881087326,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 10.834477424621582,
+      "series": "Ordinary source, ordinary target",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.20291143039685922,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 10.399543800354005,
+      "series": "Ordinary source, ordinary target",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.13124413267370044,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 9.927325096130373,
+      "series": "Ordinary source, ordinary target",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.2783589533594012,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 10.480898323059083,
+      "series": "Ordinary source, ordinary target",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.3652367994687722,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 9.576352767944334,
+      "series": "Ordinary source, ordinary target",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.2982630371894177,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 9.364455070495607,
+      "series": "Ordinary source, ordinary target",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": -2.8503191391347373,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 11.029449844360354,
+      "series": "Ordinary source, ordinary target",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.49962809646704476,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 19.15115280151367,
+      "label": "Bare question \u2192 Standard Qwen template",
+      "series": "Ordinary source, ordinary target",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.5243806175048289,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 20.02339122772217,
+      "label": "Bare question \u2192 Standard Qwen template",
+      "series": "Ordinary source, ordinary target",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": -4.751547615681125,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 18.108066406250003,
+      "series": "Ordinary source, ordinary target",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": -3.1133994641366605,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 17.588148078918458,
+      "series": "Ordinary source, ordinary target",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": -0.37871336013341694,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 20.109000778198244,
+      "label": "Bare question \u2192 Standard Qwen template",
+      "series": "Ordinary source, ordinary target",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.6127167767732793,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 24.41992794036865,
+      "label": "Bare question \u2192 Standard Qwen template",
+      "series": "Ordinary source, ordinary target",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.5984642963997586,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 23.589379882812498,
+      "label": "Bare question \u2192 Standard Qwen template",
+      "series": "Ordinary source, ordinary target",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.5106277284834051,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 21.909276962280273,
+      "label": "Bare question \u2192 Standard Qwen template",
+      "series": "Ordinary source, ordinary target",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.5265793908591957,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 21.310618743896484,
+      "label": "Bare question \u2192 Standard Qwen template",
+      "series": "Ordinary source, ordinary target",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.20291143039685922,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 22.28466033935547,
+      "label": "Bare question \u2192 Standard Qwen template",
+      "series": "Ordinary source, ordinary target",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.5887779119265629,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 23.051171646118163,
+      "label": "Bare question \u2192 Standard Qwen template",
+      "series": "Ordinary source, ordinary target",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.5782616216706147,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 24.02172317504883,
+      "label": "Bare question \u2192 Standard Qwen template",
+      "series": "Ordinary source, ordinary target",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.3668680915307804,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 20.926776695251466,
+      "label": "Bare question \u2192 Standard Qwen template",
+      "series": "Ordinary source, ordinary target",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.5395873669504383,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 22.023677139282228,
+      "label": "Bare question \u2192 Standard Qwen template",
+      "series": "Ordinary source, ordinary target",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": -2.82354233817941,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 21.860503692626956,
+      "label": "Bare question \u2192 Standard Qwen template",
+      "series": "Ordinary source, ordinary target",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.4914758456280162,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 17.712295722961425,
+      "label": "Bare question \u2192 Standard Qwen template",
+      "series": "Ordinary source, ordinary target",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.4968173434514641,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 17.36860626220703,
+      "label": "Bare question \u2192 Standard Qwen template",
+      "series": "Ordinary source, ordinary target",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": -4.736246507229874,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 16.360215034484863,
+      "series": "Ordinary source, ordinary target",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": -3.104770756306114,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 15.34049331665039,
+      "series": "Ordinary source, ordinary target",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": -0.41653179330070156,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 18.868251113891603,
+      "label": "Bare question \u2192 Standard Qwen template",
+      "series": "Ordinary source, ordinary target",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.5829483333133549,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 25.445364723205568,
+      "label": "Bare question \u2192 Standard Qwen template",
+      "series": "Ordinary source, ordinary target",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.5675900702011152,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 23.669228935241698,
+      "label": "Bare question \u2192 Standard Qwen template",
+      "series": "Ordinary source, ordinary target",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.4810667847433155,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 21.271303901672365,
+      "label": "Bare question \u2192 Standard Qwen template",
+      "series": "Ordinary source, ordinary target",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.489538193414852,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 20.0513960647583,
+      "label": "Bare question \u2192 Standard Qwen template",
+      "series": "Ordinary source, ordinary target",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.13124413267370044,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 19.712022247314454,
+      "label": "Bare question \u2192 Standard Qwen template",
+      "series": "Ordinary source, ordinary target",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.5887779119265629,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 25.55677001953125,
+      "label": "Bare question \u2192 Standard Qwen template",
+      "series": "Ordinary source, ordinary target",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.5449054446626332,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 23.970370674133303,
+      "label": "Bare question \u2192 Standard Qwen template",
+      "series": "Ordinary source, ordinary target",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.34109971506701986,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 21.685000038146974,
+      "label": "Bare question \u2192 Standard Qwen template",
+      "series": "Ordinary source, ordinary target",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.51846678423851,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 23.307676544189455,
+      "label": "Bare question \u2192 Standard Qwen template",
+      "series": "Ordinary source, ordinary target",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": -2.8666112709704707,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 15.899195098876953,
+      "series": "Ordinary source, ordinary target",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.5020605371446776,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 19.210426750183107,
+      "label": "Bare question \u2192 Standard Qwen template",
+      "series": "Ordinary source, ordinary target",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.5251353842977002,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 19.74222152709961,
+      "label": "Bare question \u2192 Standard Qwen template",
+      "series": "Ordinary source, ordinary target",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": -5.010180900411383,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 17.965999374389646,
+      "series": "Ordinary source, ordinary target",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": -3.168935642592615,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 18.48848449707031,
+      "series": "Ordinary source, ordinary target",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": -0.34964988605286784,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 20.883962059021,
+      "label": "Bare question \u2192 Standard Qwen template",
+      "series": "Ordinary source, ordinary target",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.5752730288329986,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 21.168639183044434,
+      "label": "Bare question \u2192 Standard Qwen template",
+      "series": "Ordinary source, ordinary target",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.5708276334140435,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 17.768813018798827,
+      "label": "Bare question \u2192 Standard Qwen template",
+      "series": "Ordinary source, ordinary target",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.4990086258489422,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 17.344420661926268,
+      "label": "Bare question \u2192 Standard Qwen template",
+      "series": "Ordinary source, ordinary target",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.5145229175638966,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 20.504020309448244,
+      "label": "Bare question \u2192 Standard Qwen template",
+      "series": "Ordinary source, ordinary target",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.2783589533594012,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 17.863240318298338,
+      "label": "Bare question \u2192 Standard Qwen template",
+      "series": "Ordinary source, ordinary target",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.5782616216706147,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 21.28138725280762,
+      "label": "Bare question \u2192 Standard Qwen template",
+      "series": "Ordinary source, ordinary target",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.5449054446626332,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 19.333647422790527,
+      "label": "Bare question \u2192 Standard Qwen template",
+      "series": "Ordinary source, ordinary target",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.3760684204134028,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 16.60858856201172,
+      "series": "Ordinary source, ordinary target",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.5238624969681492,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 15.476780014038084,
+      "series": "Ordinary source, ordinary target",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": -2.8137565690193616,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 20.933330001831056,
+      "series": "Ordinary source, ordinary target",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.28899114872889514,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 11.227237205505373,
+      "series": "Ordinary source, ordinary target",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.31702653548596166,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 12.337168884277343,
+      "series": "Ordinary source, ordinary target",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": -5.93461296182518,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 13.363268165588378,
+      "series": "Ordinary source, ordinary target",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": -3.271249505255006,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 12.933834495544433,
+      "series": "Ordinary source, ordinary target",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": -0.5922926664298032,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 16.25865634918213,
+      "series": "Ordinary source, ordinary target",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.3571400957662099,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 13.592650260925293,
+      "series": "Ordinary source, ordinary target",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.39982217181258217,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 13.894826927185058,
+      "series": "Ordinary source, ordinary target",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.3533281645165198,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 13.37554130554199,
+      "series": "Ordinary source, ordinary target",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.3774827662288684,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 13.084724235534667,
+      "series": "Ordinary source, ordinary target",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.3652367994687722,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 15.300292778015137,
+      "series": "Ordinary source, ordinary target",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.3668680915307804,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 13.313305473327636,
+      "series": "Ordinary source, ordinary target",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.34109971506701986,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 13.034409141540527,
+      "series": "Ordinary source, ordinary target",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.3760684204134028,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 14.299624900817872,
+      "series": "Ordinary source, ordinary target",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.4088974586015566,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 12.246183853149413,
+      "series": "Ordinary source, ordinary target",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": -3.0881346698267644,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 12.702122650146483,
+      "series": "Ordinary source, ordinary target",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.4265781890271264,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 14.742063331604003,
+      "series": "Ordinary source, ordinary target",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.47135899441631923,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 14.915534934997558,
+      "series": "Ordinary source, ordinary target",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": -5.48533997129438,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 15.027822914123536,
+      "series": "Ordinary source, ordinary target",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": -3.1499509289151457,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 14.536681823730468,
+      "series": "Ordinary source, ordinary target",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": -0.4362562472894278,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 17.24259624481201,
+      "label": "Bare question \u2192 Standard Qwen template",
+      "series": "Ordinary source, ordinary target",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.5400714734978098,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 19.525118827819824,
+      "label": "Bare question \u2192 Standard Qwen template",
+      "series": "Ordinary source, ordinary target",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.5588298983800069,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 22.82538761138916,
+      "label": "Bare question \u2192 Standard Qwen template",
+      "series": "Ordinary source, ordinary target",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.5505540643538013,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 22.59710964202881,
+      "label": "Bare question \u2192 Standard Qwen template",
+      "series": "Ordinary source, ordinary target",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.5718327392687634,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 19.62208023071289,
+      "label": "Bare question \u2192 Standard Qwen template",
+      "series": "Ordinary source, ordinary target",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.2982630371894177,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 21.23097618103027,
+      "label": "Bare question \u2192 Standard Qwen template",
+      "series": "Ordinary source, ordinary target",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.5395873669504383,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 19.799968338012693,
+      "label": "Bare question \u2192 Standard Qwen template",
+      "series": "Ordinary source, ordinary target",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.51846678423851,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 21.273339500427248,
+      "label": "Bare question \u2192 Standard Qwen template",
+      "series": "Ordinary source, ordinary target",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.5238624969681492,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 22.702221031188966,
+      "label": "Bare question \u2192 Standard Qwen template",
+      "series": "Ordinary source, ordinary target",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.4088974586015566,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 22.507065925598145,
+      "label": "Bare question \u2192 Standard Qwen template",
+      "series": "Ordinary source, ordinary target",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": -2.9955445266426697,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 14.696353492736817,
+      "series": "Ordinary source, ordinary target",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": -2.47396076732549,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 10.726478271484373,
+      "series": "Ordinary source, ordinary target",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": -2.821746651790718,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 9.514048080444336,
+      "series": "Ordinary source, ordinary target",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": -9.822963006101741,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 10.234682464599608,
+      "label": "Pirate captain \u2192 Enumerated framing rewrite",
+      "series": "Ordinary source, ordinary target",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": -8.039334415602829,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 9.836362457275392,
+      "label": "Pirate captain \u2192 Enumerated framing rewrite",
+      "series": "Ordinary source, ordinary target",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": -4.132624009178782,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 13.78128116607666,
+      "series": "Ordinary source, ordinary target",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": -2.9073993489737666,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 9.702284660339354,
+      "series": "Ordinary source, ordinary target",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": -2.7538323630264805,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 9.574958190917968,
+      "series": "Ordinary source, ordinary target",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": -2.962318224983309,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 8.995745887756346,
+      "series": "Ordinary source, ordinary target",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": -3.280582324444439,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 8.52322929382324,
+      "series": "Ordinary source, ordinary target",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": -2.8503191391347373,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 9.199920578002931,
+      "series": "Ordinary source, ordinary target",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": -2.82354233817941,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 9.57536720275879,
+      "series": "Ordinary source, ordinary target",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": -2.8666112709704707,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 8.116765403747559,
+      "series": "Ordinary source, ordinary target",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": -2.8137565690193616,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 8.971006278991698,
+      "series": "Ordinary source, ordinary target",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": -3.0881346698267644,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 8.161559562683108,
+      "series": "Ordinary source, ordinary target",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": -2.9955445266426697,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 8.72071891784668,
+      "series": "Ordinary source, ordinary target",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": -5.348733597066193,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 5.878997297286989,
+      "series": "decile-bin median",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": -3.234603506668785,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 9.570205307006837,
+      "series": "decile-bin median",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": -2.783794466022921,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 11.411152496337891,
+      "series": "decile-bin median",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": -0.4039140022886142,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 12.162764625549316,
+      "series": "decile-bin median",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.09072423915535602,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 14.630398712158202,
+      "series": "decile-bin median",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.22596866712217883,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 14.928778057098388,
+      "series": "decile-bin median",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.3571400957662099,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 14.299624900817872,
+      "series": "decile-bin median",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.44971286201373556,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 17.60847099304199,
+      "series": "decile-bin median",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.5137946717617459,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 18.217956199645997,
+      "series": "decile-bin median",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)": 0.564304223339239,
+      "leakage: marker log-prob, trained \u2212 base (nats)": 19.711024284362793,
+      "series": "decile-bin median",
+      "_kind": "line",
+      "_group": 3
+    }
+  ],
+  "n_series": 4,
+  "total_points": 410,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Map similarity vs measured leakage, 400 source\u2192target cells",
+        "xlabel": "map-transfer similarity (symmetrized cross-family transfer R\u00b2, layer 27)",
+        "ylabel": "leakage: marker log-prob, trained \u2212 base (nats)",
+        "legend_labels": [
+          "Stylized source (pirate / comedian / villain)",
+          "Ordinary source, instructed target",
+          "Ordinary source, ordinary target",
+          "decile-bin median"
+        ],
+        "annotations": [
+          "Spearman \u03c1 = 0.61, permutation p = 0.008",
+          "Pirate captain \u2192 Enumerated framing rewrite",
+          "Bare question \u2192 Standard Qwen template"
+        ],
+        "xticklabels": [
+          "\u221212",
+          "\u221210",
+          "\u22128",
+          "\u22126",
+          "\u22124",
+          "\u22122",
+          "0",
+          "2"
+        ],
+        "yticklabels": [
+          "0",
+          "5",
+          "10",
+          "15",
+          "20",
+          "25",
+          "30"
+        ]
+      }
+    ],
+    "series": [
+      "decile-bin median",
+      "Stylized source (pirate / comedian / villain)",
+      "Ordinary source, instructed target",
+      "Ordinary source, ordinary target"
+    ]
+  }
+}

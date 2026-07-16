@@ -646,27 +646,33 @@ def _make_figures(results: dict, fig_root: str) -> None:
 # collides with the production full-extraction cache).
 # ===========================================================================
 def _extract_first_shard(stem: str, dl_dir: Path) -> Path:
-    from huggingface_hub import hf_hub_download, list_repo_tree
+    from huggingface_hub import HfApi, hf_hub_download
+
+    from explore_persona_space.orchestrate.hub import list_hf_files_under_path
 
     npz_path = dl_dir / f"{stem}.smoke.npz"
     if npz_path.exists():
         return npz_path
     dl_dir.mkdir(parents=True, exist_ok=True)
     tok = os.environ.get("HF_TOKEN")
-    tree = list(
-        list_repo_tree(
-            HF_DATA_REPO,
-            path_in_repo=HF_PREFIX,
-            repo_type="dataset",
-            revision=HF_REV,
-            recursive=False,
-            token=tok,
-        )
+    # Scoped, retried listing (#920/#997) — replaces the bare list_repo_tree
+    # call (recursive=False, token=tok).
+    files = list_hf_files_under_path(
+        HfApi(token=tok),
+        HF_DATA_REPO,
+        path=HF_PREFIX,
+        repo_type="dataset",
+        revision=HF_REV,
     )
+    _prefix = HF_PREFIX.strip("/")
     shard_files = sorted(
-        os.path.basename(t.path)
-        for t in tree
-        if os.path.basename(t.path).startswith(f"{stem}_shard") and t.path.endswith(".pt")
+        p.rsplit("/", 1)[1]
+        for p in files
+        # preserve the old recursive=False semantics: direct children of
+        # HF_PREFIX only (the helper's scoped walk is recursive)
+        if p.rsplit("/", 1)[0] == _prefix
+        and p.rsplit("/", 1)[1].startswith(f"{stem}_shard")
+        and p.endswith(".pt")
     )
     if not shard_files:
         raise FileNotFoundError(f"no shards for {stem} at {HF_PREFIX}@{HF_REV}")

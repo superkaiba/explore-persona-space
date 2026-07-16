@@ -1,0 +1,36 @@
+{
+  "model": "base",
+  "hf_id": "meta-llama/Llama-3.1-8B",
+  "corpus": "gsm8k_train5k",
+  "n_prompts": 5000,
+  "n_kept": 4903,
+  "keep_rate": 0.9806,
+  "keep_rate_floor": 0.8,
+  "keep_rate_floor_pass": true,
+  "drop_reasons": {
+    "chat:short_turn_a1": 90,
+    "empty_answer": 7
+  },
+  "kept_truncation_rate": 0.08647766673465225,
+  "kept_early_eos_rate": 0.00978992453599837,
+  "kept_rep3_flag_rate": 0.33000203956761165,
+  "kept_distinct_3gram_rate": 0.635605968207505,
+  "kept_answer_tokens": {
+    "mean": 230.21435855598614,
+    "median": 104,
+    "p90": 635
+  },
+  "sampling": {
+    "n": 1,
+    "temperature": 1.0,
+    "top_p": 0.95,
+    "max_tokens": 1024,
+    "seed": 42,
+    "stop": [
+      "\n<|user|>"
+    ]
+  },
+  "answers_sha256": "93dfd45de4742f5137dff6325e27394e30262117160c306788744178f6df074a",
+  "render_integrity": null,
+  "smoke": false
+}

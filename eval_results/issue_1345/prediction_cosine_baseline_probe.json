@@ -1,0 +1,18 @@
+{
+ "metadata": {
+  "script": "inline analyzer probe (revision round 2, epm:interpretation v2)",
+  "source": "issue1345_framing/analysis_tensors/preds_cache/{R_instruct_r3_context_L19,R_instruct_r1_context_L19}.npz",
+  "hf_revision": "2a3cb30acada04defc84fd04d28a2b54da3104cd",
+  "recipe": "mean cos(pred_i, y_i) over rows; baseline predictor = train-fold mean of true Y under the fit rig's own grouped 5-fold split (seed 0)"
+ },
+ "story_context": {
+  "n": 2108,
+  "pred_target_cos": 0.7815152244244383,
+  "mean_baseline_cos": 0.8462209343827016
+ },
+ "chat_context": {
+  "n": 4724,
+  "pred_target_cos": 0.9372538970234315,
+  "mean_baseline_cos": 0.8106645805952987
+ }
+}

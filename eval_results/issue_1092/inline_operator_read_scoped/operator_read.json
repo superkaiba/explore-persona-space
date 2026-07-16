@@ -1,0 +1,2731 @@
+{
+  "meta": {
+    "script": "scripts/issue1092_inline_operator_read.py",
+    "git_commit": "aefbf5a6e933d91c30bbaf483e2ccea904a622c5",
+    "generated_utc": "2026-07-15T23:01:51.802910+00:00",
+    "numpy": "2.2.6",
+    "torch": "2.8.0+cu128",
+    "manifest_rows": 21193,
+    "scope": "SCOPED early read \u2014 2 cells x 3 layers x 2 bases x 2 arms; comprehensive all-cell Part-B runs off-VM later.",
+    "target": "pooled/stacked answer target (t1,t2,t3 concatenated) \u2014 the parent read1 target",
+    "fit_rows": "battery-EXCLUDED: stratum != trait_stratum AND not is_eval_only (corrected filter)",
+    "lambda_selector": "GCV over RIDGE_LAMBDAS on full battery-excluded data (scoped single-fit substitute for banked per-fold PRESS-LOO); matched-lambda variant uses the context arm's lambda for both",
+    "operator_basis": "RAW residual-stream input basis W_raw (H_in x P_out), common across arms; per-arm standardization undone",
+    "procrustes_convention": "R in O(H_in) left-multiplies W_prefix -> residual probes OUTPUT-subspace agreement modulo a free input rotation",
+    "null": "200 draws, observed singular values + random orthonormal subspaces",
+    "projection": {
+      "first_unit_s": 639.5034765098244,
+      "n_units": 6,
+      "projected_wall_h": 1.0658391275163739,
+      "cap_h": 4.0
+    }
+  },
+  "cells": {
+    "cell_inst_own_L14": {
+      "n_fit": 17308,
+      "H_in": 3584,
+      "n_battery_excluded": 3885,
+      "bases": {
+        "ambient": {
+          "P_out": 10752,
+          "lambda_own": {
+            "prefix_end": 1000.0,
+            "context_end": 100.0
+          },
+          "lambda_matched": 100.0,
+          "banked_lambda": {
+            "prefix_end": {
+              "available": true,
+              "per_fold_indices": [
+                5,
+                5,
+                5,
+                5,
+                5,
+                5
+              ],
+              "mode_index": 5,
+              "mode_lambda": 1000.0
+            },
+            "context_end": {
+              "available": true,
+              "per_fold_indices": [
+                5,
+                5,
+                5,
+                5,
+                5,
+                5
+              ],
+              "mode_index": 5,
+              "mode_lambda": 1000.0
+            }
+          },
+          "variants": {
+            "own_lambda": {
+              "k90": 187,
+              "energy_dim_full": 3584,
+              "reads": {
+                "k48": {
+                  "k": 48,
+                  "input_angle_median_rad": 1.472291737577319,
+                  "input_angle_median_deg": 84.35610277516292,
+                  "input_angle_max_rad": 1.5684560689879883,
+                  "output_angle_median_rad": 0.7961112361773837,
+                  "output_angle_median_deg": 45.613813855906784,
+                  "output_angle_max_rad": 1.5641476630693991,
+                  "procrustes_resid": 0.8402309289950208,
+                  "anchor_identical_output": 0.7501399168982774,
+                  "anchor_orthogonal_output": 1.0311110679973616,
+                  "null": {
+                    "n_draws": 200,
+                    "input_angle_median_rad": {
+                      "p5": 1.4723392450585404,
+                      "p50": 1.477177313538318,
+                      "p95": 1.482093905234065
+                    },
+                    "input_angle_max_rad": {
+                      "p5": 1.5668172106195979,
+                      "p50": 1.5693856433414077,
+                      "p95": 1.570617438824205
+                    },
+                    "output_angle_median_rad": {
+                      "p5": 1.5142043389364006,
+                      "p50": 1.516967306688577,
+                      "p95": 1.5194171269054868
+                    },
+                    "output_angle_max_rad": {
+                      "p5": 1.568389416436057,
+                      "p50": 1.5699595985950583,
+                      "p95": 1.570710638026182
+                    },
+                    "procrustes_resid": {
+                      "p5": 1.018512455179113,
+                      "p50": 1.0189351585928343,
+                      "p95": 1.0193339032102187
+                    }
+                  },
+                  "input_below_null": true,
+                  "output_below_null": true,
+                  "procrustes_below_null": true
+                },
+                "k90": {
+                  "k": 187,
+                  "input_angle_median_rad": 1.37611268294213,
+                  "input_angle_median_deg": 78.84544886700844,
+                  "input_angle_max_rad": 1.567712234763592,
+                  "output_angle_median_rad": 0.859012528124916,
+                  "output_angle_median_deg": 49.217792410420614,
+                  "output_angle_max_rad": 1.5628002756734591,
+                  "procrustes_resid": 0.8517553956800832,
+                  "anchor_identical_output": 0.7702729235579935,
+                  "anchor_orthogonal_output": 1.026681938370692,
+                  "null": {
+                    "n_draws": 200,
+                    "input_angle_median_rad": {
+                      "p5": 1.3794843138194708,
+                      "p50": 1.3820750556253734,
+                      "p95": 1.3846305692550387
+                    },
+                    "input_angle_max_rad": {
+                      "p5": 1.5685924500283568,
+                      "p50": 1.5700205301720427,
+                      "p95": 1.5707296158736221
+                    },
+                    "output_angle_median_rad": {
+                      "p5": 1.4620021669602754,
+                      "p50": 1.463635480894292,
+                      "p95": 1.4652723937095928
+                    },
+                    "output_angle_max_rad": {
+                      "p5": 1.5696639089230722,
+                      "p50": 1.5704223914810438,
+                      "p95": 1.570751706171636
+                    },
+                    "procrustes_resid": {
+                      "p5": 1.0060134674969077,
+                      "p50": 1.0062141117363372,
+                      "p95": 1.0064020922285581
+                    }
+                  },
+                  "input_below_null": true,
+                  "output_below_null": true,
+                  "procrustes_below_null": true
+                }
+              }
+            },
+            "matched_lambda": {
+              "k90": 172,
+              "energy_dim_full": 3584,
+              "reads": {
+                "k48": {
+                  "k": 48,
+                  "input_angle_median_rad": 1.473151821313286,
+                  "input_angle_median_deg": 84.40538194326167,
+                  "input_angle_max_rad": 1.5696927150543118,
+                  "output_angle_median_rad": 0.81552429880268,
+                  "output_angle_median_deg": 46.72610041175942,
+                  "output_angle_max_rad": 1.5684877220634441,
+                  "procrustes_resid": 0.8206663259899454,
+                  "anchor_identical_output": 0.7101708288117784,
+                  "anchor_orthogonal_output": 1.0416839980368053,
+                  "null": {
+                    "n_draws": 200,
+                    "input_angle_median_rad": {
+                      "p5": 1.4728437542887614,
+                      "p50": 1.477157495585739,
+                      "p95": 1.481381099999004
+                    },
+                    "input_angle_max_rad": {
+                      "p5": 1.5668774836610695,
+                      "p50": 1.569425394146741,
+                      "p95": 1.5706037477763128
+                    },
+                    "output_angle_median_rad": {
+                      "p5": 1.5145235362405849,
+                      "p50": 1.5172278661732368,
+                      "p95": 1.5197841697875978
+                    },
+                    "output_angle_max_rad": {
+                      "p5": 1.568566229283952,
+                      "p50": 1.5700247250642319,
+                      "p95": 1.5707170240703974
+                    },
+                    "procrustes_resid": {
+                      "p5": 1.0272402811648995,
+                      "p50": 1.027727787583765,
+                      "p95": 1.028163127159998
+                    }
+                  },
+                  "input_below_null": false,
+                  "output_below_null": true,
+                  "procrustes_below_null": true
+                },
+                "k90": {
+                  "k": 172,
+                  "input_angle_median_rad": 1.3849131850547343,
+                  "input_angle_median_deg": 79.34968049565663,
+                  "input_angle_max_rad": 1.569943884146021,
+                  "output_angle_median_rad": 0.8771930758926642,
+                  "output_angle_median_deg": 50.25946106674857,
+                  "output_angle_max_rad": 1.5657999592485614,
+                  "procrustes_resid": 0.8333704923841904,
+                  "anchor_identical_output": 0.7333765978241047,
+                  "anchor_orthogonal_output": 1.0358728747553672,
+                  "null": {
+                    "n_draws": 200,
+                    "input_angle_median_rad": {
+                      "p5": 1.3871606894656963,
+                      "p50": 1.3901252651692888,
+                      "p95": 1.3924890194339425
+                    },
+                    "input_angle_max_rad": {
+                      "p5": 1.5686327617070666,
+                      "p50": 1.5701616519524122,
+                      "p95": 1.5707038156839679
+                    },
+                    "output_angle_median_rad": {
+                      "p5": 1.4665036467974784,
+                      "p50": 1.4681287044104199,
+                      "p95": 1.4698099562876192
+                    },
+                    "output_angle_max_rad": {
+                      "p5": 1.569599614674726,
+                      "p50": 1.570449076512746,
+                      "p95": 1.5707483110939837
+                    },
+                    "procrustes_resid": {
+                      "p5": 1.012924066592913,
+                      "p50": 1.0131724263617081,
+                      "p95": 1.0133842755066782
+                    }
+                  },
+                  "input_below_null": true,
+                  "output_below_null": true,
+                  "procrustes_below_null": true
+                }
+              }
+            }
+          }
+        },
+        "pca48": {
+          "P_out": 48,
+          "lambda_own": {
+            "prefix_end": 1000.0,
+            "context_end": 100.0
+          },
+          "lambda_matched": 100.0,
+          "banked_lambda": {
+            "prefix_end": {
+              "available": true,
+              "per_fold_indices": [
+                5,
+                5,
+                5,
+                5,
+                5,
+                5
+              ],
+              "mode_index": 5,
+              "mode_lambda": 1000.0
+            },
+            "context_end": {
+              "available": true,
+              "per_fold_indices": [
+                5,
+                5,
+                5,
+                5,
+                5,
+                5
+              ],
+              "mode_index": 5,
+              "mode_lambda": 1000.0
+            }
+          },
+          "variants": {
+            "own_lambda": {
+              "k90": 28,
+              "energy_dim_full": 48,
+              "reads": {
+                "k48": {
+                  "k": 48,
+                  "input_angle_median_rad": 1.471217933786881,
+                  "input_angle_median_deg": 84.29457834994568,
+                  "input_angle_max_rad": 1.567961729492848,
+                  "output_angle_median_rad": 0.0,
+                  "output_angle_median_deg": 0.0,
+                  "output_angle_max_rad": 3.6500241499888574e-08,
+                  "procrustes_resid": 0.7790742989790426,
+                  "anchor_identical_output": 0.756605253382037,
+                  "anchor_orthogonal_output": 1.0298730130149423,
+                  "null": {
+                    "n_draws": 200,
+                    "input_angle_median_rad": {
+                      "p5": 1.4721626693355703,
+                      "p50": 1.4769601546689717,
+                      "p95": 1.481294968972758
+                    },
+                    "input_angle_max_rad": {
+                      "p5": 1.567202337287719,
+                      "p50": 1.569306055211964,
+                      "p95": 1.5706880904729106
+                    },
+                    "output_angle_median_rad": {
+                      "p5": 0.0,
+                      "p50": 0.0,
+                      "p95": 1.4901161193847656e-08
+                    },
+                    "output_angle_max_rad": {
+                      "p5": 2.580956827951785e-08,
+                      "p50": 2.9802322387695312e-08,
+                      "p95": 3.6500241499888574e-08
+                    },
+                    "procrustes_resid": {
+                      "p5": 0.8193960128228023,
+                      "p50": 0.823449953585377,
+                      "p95": 0.8268977596846675
+                    }
+                  },
+                  "input_below_null": true,
+                  "output_below_null": false,
+                  "procrustes_below_null": true
+                },
+                "k90": {
+                  "k": 28,
+                  "input_angle_median_rad": 1.486397729522859,
+                  "input_angle_median_deg": 85.1643165794879,
+                  "input_angle_max_rad": 1.5696574663599552,
+                  "output_angle_median_rad": 0.29890168095327996,
+                  "output_angle_median_deg": 17.125804807988807,
+                  "output_angle_max_rad": 1.5334296338832638,
+                  "procrustes_resid": 0.7979078799631949,
+                  "anchor_identical_output": 0.7471615052659077,
+                  "anchor_orthogonal_output": 1.031896135529182,
+                  "null": {
+                    "n_draws": 200,
+                    "input_angle_median_rad": {
+                      "p5": 1.492491222352722,
+                      "p50": 1.500402897268657,
+                      "p95": 1.5053735526499183
+                    },
+                    "input_angle_max_rad": {
+                      "p5": 1.5653752931514988,
+                      "p50": 1.5690198383627076,
+                      "p95": 1.5706954352171694
+                    },
+                    "output_angle_median_rad": {
+                      "p5": 0.5678942388669864,
+                      "p50": 0.6371812410049492,
+                      "p95": 0.6986495256626144
+                    },
+                    "output_angle_max_rad": {
+                      "p5": 1.500121036703404,
+                      "p50": 1.5450789253639514,
+                      "p95": 1.5676710025788474
+                    },
+                    "procrustes_resid": {
+                      "p5": 0.8663609543418015,
+                      "p50": 0.8723996427290781,
+                      "p95": 0.8788958541480562
+                    }
+                  },
+                  "input_below_null": true,
+                  "output_below_null": true,
+                  "procrustes_below_null": true
+                }
+              }
+            },
+            "matched_lambda": {
+              "k90": 27,
+              "energy_dim_full": 48,
+              "reads": {
+                "k48": {
+                  "k": 48,
+                  "input_angle_median_rad": 1.4708336965087172,
+                  "input_angle_median_deg": 84.2725631755753,
+                  "input_angle_max_rad": 1.568868538252789,
+                  "output_angle_median_rad": 0.0,
+                  "output_angle_median_deg": 0.0,
+                  "output_angle_max_rad": 3.332000937312528e-08,
+                  "procrustes_resid": 0.7474629064964222,
+                  "anchor_identical_output": 0.7204647033459282,
+                  "anchor_orthogonal_output": 1.0393704415553593,
+                  "null": {
+                    "n_draws": 200,
+                    "input_angle_median_rad": {
+                      "p5": 1.472312568672334,
+                      "p50": 1.4768439856052196,
+                      "p95": 1.4815596215888942
+                    },
+                    "input_angle_max_rad": {
+                      "p5": 1.566583057482773,
+                      "p50": 1.569624960749133,
+                      "p95": 1.5706884522156064
+                    },
+                    "output_angle_median_rad": {
+                      "p5": 0.0,
+                      "p50": 0.0,
+                      "p95": 3.7252902984606435e-10
+                    },
+                    "output_angle_max_rad": {
+                      "p5": 2.580956827951785e-08,
+                      "p50": 2.9802322387695312e-08,
+                      "p95": 3.6500241499888574e-08
+                    },
+                    "procrustes_resid": {
+                      "p5": 0.7953513838489815,
+                      "p50": 0.8010479715464406,
+                      "p95": 0.8045722621995979
+                    }
+                  },
+                  "input_below_null": true,
+                  "output_below_null": false,
+                  "procrustes_below_null": true
+                },
+                "k90": {
+                  "k": 27,
+                  "input_angle_median_rad": 1.4853368370929572,
+                  "input_angle_median_deg": 85.10353192073715,
+                  "input_angle_max_rad": 1.5695288445816815,
+                  "output_angle_median_rad": 0.32285651984404684,
+                  "output_angle_median_deg": 18.498315975345594,
+                  "output_angle_max_rad": 1.537459585381035,
+                  "procrustes_resid": 0.7705635367937327,
+                  "anchor_identical_output": 0.7082310801900257,
+                  "anchor_orthogonal_output": 1.0423368382581268,
+                  "null": {
+                    "n_draws": 200,
+                    "input_angle_median_rad": {
+                      "p5": 1.494414894905761,
+                      "p50": 1.5009455099146525,
+                      "p95": 1.5069304199370521
+                    },
+                    "input_angle_max_rad": {
+                      "p5": 1.5655597673082198,
+                      "p50": 1.5690704173045704,
+                      "p95": 1.5706172279549109
+                    },
+                    "output_angle_median_rad": {
+                      "p5": 0.594846450622275,
+                      "p50": 0.6700519286269528,
+                      "p95": 0.7438392895254965
+                    },
+                    "output_angle_max_rad": {
+                      "p5": 1.5108074790008532,
+                      "p50": 1.5500256743499718,
+                      "p95": 1.5685092230789377
+                    },
+                    "procrustes_resid": {
+                      "p5": 0.8525139286209321,
+                      "p50": 0.8616130664353979,
+                      "p95": 0.8688383857775656
+                    }
+                  },
+                  "input_below_null": true,
+                  "output_below_null": true,
+                  "procrustes_below_null": true
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "cell_inst_own_L18": {
+      "n_fit": 17308,
+      "H_in": 3584,
+      "n_battery_excluded": 3885,
+      "bases": {
+        "ambient": {
+          "P_out": 10752,
+          "lambda_own": {
+            "prefix_end": 1000.0,
+            "context_end": 100.0
+          },
+          "lambda_matched": 100.0,
+          "banked_lambda": {
+            "prefix_end": {
+              "available": true,
+              "per_fold_indices": [
+                5,
+                5,
+                5,
+                5,
+                5,
+                5
+              ],
+              "mode_index": 5,
+              "mode_lambda": 1000.0
+            },
+            "context_end": {
+              "available": true,
+              "per_fold_indices": [
+                5,
+                5,
+                5,
+                5,
+                5,
+                5
+              ],
+              "mode_index": 5,
+              "mode_lambda": 1000.0
+            }
+          },
+          "variants": {
+            "own_lambda": {
+              "k90": 175,
+              "energy_dim_full": 3584,
+              "reads": {
+                "k48": {
+                  "k": 48,
+                  "input_angle_median_rad": 1.4730051598468075,
+                  "input_angle_median_deg": 84.39697886021527,
+                  "input_angle_max_rad": 1.5706755577585134,
+                  "output_angle_median_rad": 0.7207183401477921,
+                  "output_angle_median_deg": 41.29411910814257,
+                  "output_angle_max_rad": 1.5432359349180476,
+                  "procrustes_resid": 0.8166048008868053,
+                  "anchor_identical_output": 0.7290452215791813,
+                  "anchor_orthogonal_output": 1.0363720069374085,
+                  "null": {
+                    "n_draws": 200,
+                    "input_angle_median_rad": {
+                      "p5": 1.4736959892737758,
+                      "p50": 1.4772456951327424,
+                      "p95": 1.4827572677914658
+                    },
+                    "input_angle_max_rad": {
+                      "p5": 1.567055327812896,
+                      "p50": 1.5694848096549507,
+                      "p95": 1.570669685487269
+                    },
+                    "output_angle_median_rad": {
+                      "p5": 1.514152644907503,
+                      "p50": 1.516865423034181,
+                      "p95": 1.5191524562806384
+                    },
+                    "output_angle_max_rad": {
+                      "p5": 1.5685166350067412,
+                      "p50": 1.5699708410664543,
+                      "p95": 1.5707419747418236
+                    },
+                    "procrustes_resid": {
+                      "p5": 1.0230962109317234,
+                      "p50": 1.0235450036114822,
+                      "p95": 1.0239796066436924
+                    }
+                  },
+                  "input_below_null": true,
+                  "output_below_null": true,
+                  "procrustes_below_null": true
+                },
+                "k90": {
+                  "k": 175,
+                  "input_angle_median_rad": 1.3842263633922869,
+                  "input_angle_median_deg": 79.31032851312024,
+                  "input_angle_max_rad": 1.570557440913767,
+                  "output_angle_median_rad": 0.8226678756980796,
+                  "output_angle_median_deg": 47.13539721849298,
+                  "output_angle_max_rad": 1.5648327417241918,
+                  "procrustes_resid": 0.8301597384941835,
+                  "anchor_identical_output": 0.7467604147255715,
+                  "anchor_orthogonal_output": 1.032177126598834,
+                  "null": {
+                    "n_draws": 200,
+                    "input_angle_median_rad": {
+                      "p5": 1.3858214883856892,
+                      "p50": 1.388285373767105,
+                      "p95": 1.3915319095610919
+                    },
+                    "input_angle_max_rad": {
+                      "p5": 1.568588288028526,
+                      "p50": 1.570029032856715,
+                      "p95": 1.5707034029648055
+                    },
+                    "output_angle_median_rad": {
+                      "p5": 1.4655360919904101,
+                      "p50": 1.4670959231908085,
+                      "p95": 1.4685732359389505
+                    },
+                    "output_angle_max_rad": {
+                      "p5": 1.5695621651683531,
+                      "p50": 1.5703830287065101,
+                      "p95": 1.5707399611086057
+                    },
+                    "procrustes_resid": {
+                      "p5": 1.0108812976407655,
+                      "p50": 1.0111238976618,
+                      "p95": 1.0113562198852306
+                    }
+                  },
+                  "input_below_null": true,
+                  "output_below_null": true,
+                  "procrustes_below_null": true
+                }
+              }
+            },
+            "matched_lambda": {
+              "k90": 163,
+              "energy_dim_full": 3584,
+              "reads": {
+                "k48": {
+                  "k": 48,
+                  "input_angle_median_rad": 1.4737783785562866,
+                  "input_angle_median_deg": 84.44128102890897,
+                  "input_angle_max_rad": 1.568912622491365,
+                  "output_angle_median_rad": 0.7381747130816136,
+                  "output_angle_median_deg": 42.29429560285694,
+                  "output_angle_max_rad": 1.5657401719053665,
+                  "procrustes_resid": 0.7987022414489205,
+                  "anchor_identical_output": 0.6934266942496159,
+                  "anchor_orthogonal_output": 1.046366641420538,
+                  "null": {
+                    "n_draws": 200,
+                    "input_angle_median_rad": {
+                      "p5": 1.4729723088178408,
+                      "p50": 1.4769427671745667,
+                      "p95": 1.4818643221762848
+                    },
+                    "input_angle_max_rad": {
+                      "p5": 1.5672164865625517,
+                      "p50": 1.5695033029506997,
+                      "p95": 1.5706842904099843
+                    },
+                    "output_angle_median_rad": {
+                      "p5": 1.5142712515887924,
+                      "p50": 1.5168870089657562,
+                      "p95": 1.519333431383408
+                    },
+                    "output_angle_max_rad": {
+                      "p5": 1.5686557423803356,
+                      "p50": 1.570103849729806,
+                      "p95": 1.5707068028959097
+                    },
+                    "procrustes_resid": {
+                      "p5": 1.0314924546874296,
+                      "p50": 1.0319561690402885,
+                      "p95": 1.0324048566920465
+                    }
+                  },
+                  "input_below_null": false,
+                  "output_below_null": true,
+                  "procrustes_below_null": true
+                },
+                "k90": {
+                  "k": 163,
+                  "input_angle_median_rad": 1.3934302309239697,
+                  "input_angle_median_deg": 79.83767127788315,
+                  "input_angle_max_rad": 1.57056318411705,
+                  "output_angle_median_rad": 0.8389010902236732,
+                  "output_angle_median_deg": 48.065491898739964,
+                  "output_angle_max_rad": 1.5670115377110048,
+                  "procrustes_resid": 0.8127725594999468,
+                  "anchor_identical_output": 0.7130215100206814,
+                  "anchor_orthogonal_output": 1.0411950993061732,
+                  "null": {
+                    "n_draws": 200,
+                    "input_angle_median_rad": {
+                      "p5": 1.3920605060368385,
+                      "p50": 1.3952683131019774,
+                      "p95": 1.3982361064945956
+                    },
+                    "input_angle_max_rad": {
+                      "p5": 1.5689083641457813,
+                      "p50": 1.570094742501649,
+                      "p95": 1.5707454553475155
+                    },
+                    "output_angle_median_rad": {
+                      "p5": 1.4691066884473232,
+                      "p50": 1.470821337705968,
+                      "p95": 1.4724584799553944
+                    },
+                    "output_angle_max_rad": {
+                      "p5": 1.5694663024107312,
+                      "p50": 1.5704004092580162,
+                      "p95": 1.5707547974991165
+                    },
+                    "procrustes_resid": {
+                      "p5": 1.0179472694841043,
+                      "p50": 1.0182197198084997,
+                      "p95": 1.018541074434284
+                    }
+                  },
+                  "input_below_null": false,
+                  "output_below_null": true,
+                  "procrustes_below_null": true
+                }
+              }
+            }
+          }
+        },
+        "pca48": {
+          "P_out": 48,
+          "lambda_own": {
+            "prefix_end": 1000.0,
+            "context_end": 100.0
+          },
+          "lambda_matched": 100.0,
+          "banked_lambda": {
+            "prefix_end": {
+              "available": true,
+              "per_fold_indices": [
+                5,
+                5,
+                5,
+                5,
+                5,
+                5
+              ],
+              "mode_index": 5,
+              "mode_lambda": 1000.0
+            },
+            "context_end": {
+              "available": true,
+              "per_fold_indices": [
+                5,
+                5,
+                5,
+                5,
+                5,
+                5
+              ],
+              "mode_index": 5,
+              "mode_lambda": 1000.0
+            }
+          },
+          "variants": {
+            "own_lambda": {
+              "k90": 27,
+              "energy_dim_full": 48,
+              "reads": {
+                "k48": {
+                  "k": 48,
+                  "input_angle_median_rad": 1.4731386407138995,
+                  "input_angle_median_deg": 84.40462675054539,
+                  "input_angle_max_rad": 1.5692097020934221,
+                  "output_angle_median_rad": 0.0,
+                  "output_angle_median_deg": 0.0,
+                  "output_angle_max_rad": 3.942476676500724e-08,
+                  "procrustes_resid": 0.7591374968197364,
+                  "anchor_identical_output": 0.7338708376364543,
+                  "anchor_orthogonal_output": 1.0354475144793571,
+                  "null": {
+                    "n_draws": 200,
+                    "input_angle_median_rad": {
+                      "p5": 1.4727985352352975,
+                      "p50": 1.4776809562843432,
+                      "p95": 1.4815042685224828
+                    },
+                    "input_angle_max_rad": {
+                      "p5": 1.5671660586182814,
+                      "p50": 1.5695920449161682,
+                      "p95": 1.5706774647658865
+                    },
+                    "output_angle_median_rad": {
+                      "p5": 0.0,
+                      "p50": 0.0,
+                      "p95": 1.4901161193847656e-08
+                    },
+                    "output_angle_max_rad": {
+                      "p5": 2.580956827951785e-08,
+                      "p50": 2.9802322387695312e-08,
+                      "p95": 3.6500241499888574e-08
+                    },
+                    "procrustes_resid": {
+                      "p5": 0.8106323186949056,
+                      "p50": 0.8154806334495721,
+                      "p95": 0.8194804182400587
+                    }
+                  },
+                  "input_below_null": false,
+                  "output_below_null": false,
+                  "procrustes_below_null": true
+                },
+                "k90": {
+                  "k": 27,
+                  "input_angle_median_rad": 1.4922532705143914,
+                  "input_angle_median_deg": 85.49981436506856,
+                  "input_angle_max_rad": 1.5651710619687653,
+                  "output_angle_median_rad": 0.2626822500710341,
+                  "output_angle_median_deg": 15.050584282070322,
+                  "output_angle_max_rad": 1.436200066207837,
+                  "procrustes_resid": 0.7796708692669284,
+                  "anchor_identical_output": 0.7250363596067648,
+                  "anchor_orthogonal_output": 1.0375074424061457,
+                  "null": {
+                    "n_draws": 200,
+                    "input_angle_median_rad": {
+                      "p5": 1.4950117393672866,
+                      "p50": 1.5014785785713065,
+                      "p95": 1.5080092092574076
+                    },
+                    "input_angle_max_rad": {
+                      "p5": 1.5651133983145522,
+                      "p50": 1.5689628865588379,
+                      "p95": 1.5705509265062425
+                    },
+                    "output_angle_median_rad": {
+                      "p5": 0.59843095934534,
+                      "p50": 0.6820474027555771,
+                      "p95": 0.7545836938691928
+                    },
+                    "output_angle_max_rad": {
+                      "p5": 1.4905697285034798,
+                      "p50": 1.5495006700730087,
+                      "p95": 1.5692444213972372
+                    },
+                    "procrustes_resid": {
+                      "p5": 0.8625276672132243,
+                      "p50": 0.8704773462402267,
+                      "p95": 0.8780461206416609
+                    }
+                  },
+                  "input_below_null": true,
+                  "output_below_null": true,
+                  "procrustes_below_null": true
+                }
+              }
+            },
+            "matched_lambda": {
+              "k90": 27,
+              "energy_dim_full": 48,
+              "reads": {
+                "k48": {
+                  "k": 48,
+                  "input_angle_median_rad": 1.4725857918984286,
+                  "input_angle_median_deg": 84.3729508467101,
+                  "input_angle_max_rad": 1.5679377270063137,
+                  "output_angle_median_rad": 0.0,
+                  "output_angle_median_deg": 0.0,
+                  "output_angle_max_rad": 4.2146848510894035e-08,
+                  "procrustes_resid": 0.7312838730783202,
+                  "anchor_identical_output": 0.7010666126052189,
+                  "anchor_orthogonal_output": 1.044643407196614,
+                  "null": {
+                    "n_draws": 200,
+                    "input_angle_median_rad": {
+                      "p5": 1.472544759188641,
+                      "p50": 1.4767720064688175,
+                      "p95": 1.4812819175857308
+                    },
+                    "input_angle_max_rad": {
+                      "p5": 1.5669155902875254,
+                      "p50": 1.5695135307840318,
+                      "p95": 1.5707332939174554
+                    },
+                    "output_angle_median_rad": {
+                      "p5": 0.0,
+                      "p50": 0.0,
+                      "p95": 1.4901161193847656e-08
+                    },
+                    "output_angle_max_rad": {
+                      "p5": 2.5572761078314314e-08,
+                      "p50": 2.9802322387695312e-08,
+                      "p95": 3.6500241499888574e-08
+                    },
+                    "procrustes_resid": {
+                      "p5": 0.7912540321636355,
+                      "p50": 0.7971416867318208,
+                      "p95": 0.8014024137922775
+                    }
+                  },
+                  "input_below_null": false,
+                  "output_below_null": false,
+                  "procrustes_below_null": true
+                },
+                "k90": {
+                  "k": 27,
+                  "input_angle_median_rad": 1.4953144868383057,
+                  "input_angle_median_deg": 85.6752091406054,
+                  "input_angle_max_rad": 1.5668513119054588,
+                  "output_angle_median_rad": 0.2649089770954497,
+                  "output_angle_median_deg": 15.178166342697061,
+                  "output_angle_max_rad": 1.4435548385362396,
+                  "procrustes_resid": 0.7545974201074053,
+                  "anchor_identical_output": 0.6905471624021506,
+                  "anchor_orthogonal_output": 1.0473470033046657,
+                  "null": {
+                    "n_draws": 200,
+                    "input_angle_median_rad": {
+                      "p5": 1.4953020522790426,
+                      "p50": 1.5005929660959114,
+                      "p95": 1.50797415356198
+                    },
+                    "input_angle_max_rad": {
+                      "p5": 1.5646883845899535,
+                      "p50": 1.569065391145268,
+                      "p95": 1.5706419162502838
+                    },
+                    "output_angle_median_rad": {
+                      "p5": 0.60544227574012,
+                      "p50": 0.6758510044283614,
+                      "p95": 0.7389970324972217
+                    },
+                    "output_angle_max_rad": {
+                      "p5": 1.4975976914585092,
+                      "p50": 1.5453053122591658,
+                      "p95": 1.5688373909821094
+                    },
+                    "procrustes_resid": {
+                      "p5": 0.8505708262220529,
+                      "p50": 0.8600798033922559,
+                      "p95": 0.8676620357980189
+                    }
+                  },
+                  "input_below_null": false,
+                  "output_below_null": true,
+                  "procrustes_below_null": true
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "cell_inst_own_L19": {
+      "n_fit": 17308,
+      "H_in": 3584,
+      "n_battery_excluded": 3885,
+      "bases": {
+        "ambient": {
+          "P_out": 10752,
+          "lambda_own": {
+            "prefix_end": 1000.0,
+            "context_end": 100.0
+          },
+          "lambda_matched": 100.0,
+          "banked_lambda": {
+            "prefix_end": {
+              "available": true,
+              "per_fold_indices": [
+                5,
+                5,
+                5,
+                5,
+                5,
+                5
+              ],
+              "mode_index": 5,
+              "mode_lambda": 1000.0
+            },
+            "context_end": {
+              "available": true,
+              "per_fold_indices": [
+                5,
+                5,
+                5,
+                5,
+                5,
+                5
+              ],
+              "mode_index": 5,
+              "mode_lambda": 1000.0
+            }
+          },
+          "variants": {
+            "own_lambda": {
+              "k90": 175,
+              "energy_dim_full": 3584,
+              "reads": {
+                "k48": {
+                  "k": 48,
+                  "input_angle_median_rad": 1.4787734951074603,
+                  "input_angle_median_deg": 84.72748012546717,
+                  "input_angle_max_rad": 1.5685619735140963,
+                  "output_angle_median_rad": 0.7364130521036429,
+                  "output_angle_median_deg": 42.19335986388633,
+                  "output_angle_max_rad": 1.5389631714320557,
+                  "procrustes_resid": 0.7910550832854815,
+                  "anchor_identical_output": 0.673708152487073,
+                  "anchor_orthogonal_output": 1.05247617381162,
+                  "null": {
+                    "n_draws": 200,
+                    "input_angle_median_rad": {
+                      "p5": 1.472840668164592,
+                      "p50": 1.477210622719628,
+                      "p95": 1.481959549796866
+                    },
+                    "input_angle_max_rad": {
+                      "p5": 1.5666256195630972,
+                      "p50": 1.5695500524786343,
+                      "p95": 1.5707021291604806
+                    },
+                    "output_angle_median_rad": {
+                      "p5": 1.5142603743910372,
+                      "p50": 1.517073863670808,
+                      "p95": 1.519449802824863
+                    },
+                    "output_angle_max_rad": {
+                      "p5": 1.5685121567277944,
+                      "p50": 1.570049457556536,
+                      "p95": 1.5707148506216118
+                    },
+                    "procrustes_resid": {
+                      "p5": 1.0364530726610153,
+                      "p50": 1.037002869104021,
+                      "p95": 1.0373736888574594
+                    }
+                  },
+                  "input_below_null": false,
+                  "output_below_null": true,
+                  "procrustes_below_null": true
+                },
+                "k90": {
+                  "k": 175,
+                  "input_angle_median_rad": 1.3920474561431366,
+                  "input_angle_median_deg": 79.75844411892429,
+                  "input_angle_max_rad": 1.5680789757683264,
+                  "output_angle_median_rad": 0.8088782089214246,
+                  "output_angle_median_deg": 46.345307511298884,
+                  "output_angle_max_rad": 1.5675693509437738,
+                  "procrustes_resid": 0.8055311444326693,
+                  "anchor_identical_output": 0.6996558168221997,
+                  "anchor_orthogonal_output": 1.0453255229699667,
+                  "null": {
+                    "n_draws": 200,
+                    "input_angle_median_rad": {
+                      "p5": 1.3855810277643767,
+                      "p50": 1.3883453442717717,
+                      "p95": 1.3910041816985876
+                    },
+                    "input_angle_max_rad": {
+                      "p5": 1.5687264639361442,
+                      "p50": 1.570085116965957,
+                      "p95": 1.5707310123939373
+                    },
+                    "output_angle_median_rad": {
+                      "p5": 1.4654709094290614,
+                      "p50": 1.4671253177472008,
+                      "p95": 1.4686367277599335
+                    },
+                    "output_angle_max_rad": {
+                      "p5": 1.5696325061326402,
+                      "p50": 1.5703971999440038,
+                      "p95": 1.5707626272501223
+                    },
+                    "procrustes_resid": {
+                      "p5": 1.0198467925531223,
+                      "p50": 1.020127360204693,
+                      "p95": 1.0203993846293566
+                    }
+                  },
+                  "input_below_null": false,
+                  "output_below_null": true,
+                  "procrustes_below_null": true
+                }
+              }
+            },
+            "matched_lambda": {
+              "k90": 163,
+              "energy_dim_full": 3584,
+              "reads": {
+                "k48": {
+                  "k": 48,
+                  "input_angle_median_rad": 1.4815702477582189,
+                  "input_angle_median_deg": 84.88772224869766,
+                  "input_angle_max_rad": 1.5700952000076522,
+                  "output_angle_median_rad": 0.7487943750579824,
+                  "output_angle_median_deg": 42.90275741395843,
+                  "output_angle_max_rad": 1.5462562684159913,
+                  "procrustes_resid": 0.7739596725617517,
+                  "anchor_identical_output": 0.6321592494620911,
+                  "anchor_orthogonal_output": 1.0662866080764246,
+                  "null": {
+                    "n_draws": 200,
+                    "input_angle_median_rad": {
+                      "p5": 1.4724804985237652,
+                      "p50": 1.477614342277395,
+                      "p95": 1.4820324269915883
+                    },
+                    "input_angle_max_rad": {
+                      "p5": 1.5667035039167057,
+                      "p50": 1.5695351695016906,
+                      "p95": 1.5706696287330528
+                    },
+                    "output_angle_median_rad": {
+                      "p5": 1.514725029425207,
+                      "p50": 1.5169434114625917,
+                      "p95": 1.5196022380522234
+                    },
+                    "output_angle_max_rad": {
+                      "p5": 1.568848769153941,
+                      "p50": 1.5699967790129312,
+                      "p95": 1.570720382995364
+                    },
+                    "procrustes_resid": {
+                      "p5": 1.0483861984982903,
+                      "p50": 1.0490050452942958,
+                      "p95": 1.0495700301632163
+                    }
+                  },
+                  "input_below_null": false,
+                  "output_below_null": true,
+                  "procrustes_below_null": true
+                },
+                "k90": {
+                  "k": 163,
+                  "input_angle_median_rad": 1.3937208262831964,
+                  "input_angle_median_deg": 79.85432116551293,
+                  "input_angle_max_rad": 1.570110252191195,
+                  "output_angle_median_rad": 0.8219348450108415,
+                  "output_angle_median_deg": 47.09339765386066,
+                  "output_angle_max_rad": 1.5652940633059413,
+                  "procrustes_resid": 0.7881203068863566,
+                  "anchor_identical_output": 0.660819187329677,
+                  "anchor_orthogonal_output": 1.0575665418065963,
+                  "null": {
+                    "n_draws": 200,
+                    "input_angle_median_rad": {
+                      "p5": 1.3921737462630084,
+                      "p50": 1.3947855245874121,
+                      "p95": 1.3977580149462432
+                    },
+                    "input_angle_max_rad": {
+                      "p5": 1.5687175282511758,
+                      "p50": 1.5701241372324732,
+                      "p95": 1.570712302249406
+                    },
+                    "output_angle_median_rad": {
+                      "p5": 1.4690629444449341,
+                      "p50": 1.4709187552939655,
+                      "p95": 1.4725067110456829
+                    },
+                    "output_angle_max_rad": {
+                      "p5": 1.5696199533701887,
+                      "p50": 1.5704173608912584,
+                      "p95": 1.5707719799097712
+                    },
+                    "procrustes_resid": {
+                      "p5": 1.0298708788750681,
+                      "p50": 1.0302390153211143,
+                      "p95": 1.0305570628776382
+                    }
+                  },
+                  "input_below_null": false,
+                  "output_below_null": true,
+                  "procrustes_below_null": true
+                }
+              }
+            }
+          }
+        },
+        "pca48": {
+          "P_out": 48,
+          "lambda_own": {
+            "prefix_end": 1000.0,
+            "context_end": 100.0
+          },
+          "lambda_matched": 100.0,
+          "banked_lambda": {
+            "prefix_end": {
+              "available": true,
+              "per_fold_indices": [
+                5,
+                5,
+                5,
+                5,
+                5,
+                5
+              ],
+              "mode_index": 5,
+              "mode_lambda": 1000.0
+            },
+            "context_end": {
+              "available": true,
+              "per_fold_indices": [
+                5,
+                5,
+                5,
+                5,
+                5,
+                5
+              ],
+              "mode_index": 5,
+              "mode_lambda": 1000.0
+            }
+          },
+          "variants": {
+            "own_lambda": {
+              "k90": 28,
+              "energy_dim_full": 48,
+              "reads": {
+                "k48": {
+                  "k": 48,
+                  "input_angle_median_rad": 1.4817792604894344,
+                  "input_angle_median_deg": 84.8996977960608,
+                  "input_angle_max_rad": 1.568605974212162,
+                  "output_angle_median_rad": 0.0,
+                  "output_angle_median_deg": 0.0,
+                  "output_angle_max_rad": 4.2146848510894035e-08,
+                  "procrustes_resid": 0.7099577180239592,
+                  "anchor_identical_output": 0.6756071551659167,
+                  "anchor_orthogonal_output": 1.0524352220525217,
+                  "null": {
+                    "n_draws": 200,
+                    "input_angle_median_rad": {
+                      "p5": 1.472199617191951,
+                      "p50": 1.477323075328538,
+                      "p95": 1.4823952508001126
+                    },
+                    "input_angle_max_rad": {
+                      "p5": 1.5668403133917115,
+                      "p50": 1.5695248618483406,
+                      "p95": 1.570589800496298
+                    },
+                    "output_angle_median_rad": {
+                      "p5": 0.0,
+                      "p50": 0.0,
+                      "p95": 1.4901161193847656e-08
+                    },
+                    "output_angle_max_rad": {
+                      "p5": 2.1073424255447017e-08,
+                      "p50": 2.9802322387695312e-08,
+                      "p95": 3.6500241499888574e-08
+                    },
+                    "procrustes_resid": {
+                      "p5": 0.768572752177749,
+                      "p50": 0.7743988787024039,
+                      "p95": 0.7789161017585758
+                    }
+                  },
+                  "input_below_null": false,
+                  "output_below_null": false,
+                  "procrustes_below_null": true
+                },
+                "k90": {
+                  "k": 28,
+                  "input_angle_median_rad": 1.4979764075224664,
+                  "input_angle_median_deg": 85.82772596120638,
+                  "input_angle_max_rad": 1.5707644199485367,
+                  "output_angle_median_rad": 0.2347544449319838,
+                  "output_angle_median_deg": 13.45043891653897,
+                  "output_angle_max_rad": 1.5293875466569595,
+                  "procrustes_resid": 0.7359705410580026,
+                  "anchor_identical_output": 0.6646186883026535,
+                  "anchor_orthogonal_output": 1.0554986614287019,
+                  "null": {
+                    "n_draws": 200,
+                    "input_angle_median_rad": {
+                      "p5": 1.4949407994449955,
+                      "p50": 1.499947791585702,
+                      "p95": 1.505408599844943
+                    },
+                    "input_angle_max_rad": {
+                      "p5": 1.5656927376928917,
+                      "p50": 1.5690228658217524,
+                      "p95": 1.5705911509688655
+                    },
+                    "output_angle_median_rad": {
+                      "p5": 0.5656786417635338,
+                      "p50": 0.6258286984456166,
+                      "p95": 0.7008670898855671
+                    },
+                    "output_angle_max_rad": {
+                      "p5": 1.4988486335719886,
+                      "p50": 1.5461827104384889,
+                      "p95": 1.568361829837912
+                    },
+                    "procrustes_resid": {
+                      "p5": 0.8337849371518192,
+                      "p50": 0.8427105398669945,
+                      "p95": 0.8505810935060449
+                    }
+                  },
+                  "input_below_null": false,
+                  "output_below_null": true,
+                  "procrustes_below_null": true
+                }
+              }
+            },
+            "matched_lambda": {
+              "k90": 27,
+              "energy_dim_full": 48,
+              "reads": {
+                "k48": {
+                  "k": 48,
+                  "input_angle_median_rad": 1.4819463477209887,
+                  "input_angle_median_deg": 84.90927118923939,
+                  "input_angle_max_rad": 1.5693784103001378,
+                  "output_angle_median_rad": 1.4901161193847656e-08,
+                  "output_angle_median_deg": 8.537736462515939e-07,
+                  "output_angle_max_rad": 3.942476676500724e-08,
+                  "procrustes_resid": 0.6781950952661867,
+                  "anchor_identical_output": 0.6370380793166479,
+                  "anchor_orthogonal_output": 1.0654324642225181,
+                  "null": {
+                    "n_draws": 200,
+                    "input_angle_median_rad": {
+                      "p5": 1.4728909619530794,
+                      "p50": 1.4771973393994033,
+                      "p95": 1.4816474431938256
+                    },
+                    "input_angle_max_rad": {
+                      "p5": 1.567322099093828,
+                      "p50": 1.5696152527078582,
+                      "p95": 1.5706278426530498
+                    },
+                    "output_angle_median_rad": {
+                      "p5": 0.0,
+                      "p50": 0.0,
+                      "p95": 1.4901161193847656e-08
+                    },
+                    "output_angle_max_rad": {
+                      "p5": 2.1073424255447017e-08,
+                      "p50": 2.9802322387695312e-08,
+                      "p95": 3.6500241499888574e-08
+                    },
+                    "procrustes_resid": {
+                      "p5": 0.7483003479423087,
+                      "p50": 0.7541637370501928,
+                      "p95": 0.7598243054474046
+                    }
+                  },
+                  "input_below_null": false,
+                  "output_below_null": false,
+                  "procrustes_below_null": true
+                },
+                "k90": {
+                  "k": 27,
+                  "input_angle_median_rad": 1.4999486623836105,
+                  "input_angle_median_deg": 85.9407278408741,
+                  "input_angle_max_rad": 1.5706962002921383,
+                  "output_angle_median_rad": 0.2883186661631938,
+                  "output_angle_median_deg": 16.51944272599234,
+                  "output_angle_max_rad": 1.5294404979074248,
+                  "procrustes_resid": 0.7118682949097334,
+                  "anchor_identical_output": 0.6231962178799698,
+                  "anchor_orthogonal_output": 1.0696562015248174,
+                  "null": {
+                    "n_draws": 200,
+                    "input_angle_median_rad": {
+                      "p5": 1.4960167723957942,
+                      "p50": 1.5016065349172143,
+                      "p95": 1.5079379574064298
+                    },
+                    "input_angle_max_rad": {
+                      "p5": 1.5658148942846701,
+                      "p50": 1.5690951138785025,
+                      "p95": 1.570605049611287
+                    },
+                    "output_angle_median_rad": {
+                      "p5": 0.6059836453459232,
+                      "p50": 0.6751901938399091,
+                      "p95": 0.74539732824203
+                    },
+                    "output_angle_max_rad": {
+                      "p5": 1.5094828499871036,
+                      "p50": 1.5500349655357901,
+                      "p95": 1.5688527726911867
+                    },
+                    "procrustes_resid": {
+                      "p5": 0.8257393700387857,
+                      "p50": 0.8365627967379972,
+                      "p95": 0.8474254044224712
+                    }
+                  },
+                  "input_below_null": false,
+                  "output_below_null": true,
+                  "procrustes_below_null": true
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "cell_pre_own_L14": {
+      "n_fit": 17308,
+      "H_in": 3584,
+      "n_battery_excluded": 3885,
+      "bases": {
+        "ambient": {
+          "P_out": 10752,
+          "lambda_own": {
+            "prefix_end": 1000.0,
+            "context_end": 100.0
+          },
+          "lambda_matched": 100.0,
+          "banked_lambda": {
+            "prefix_end": {
+              "available": true,
+              "per_fold_indices": [
+                5,
+                5,
+                5,
+                5,
+                5,
+                5
+              ],
+              "mode_index": 5,
+              "mode_lambda": 1000.0
+            },
+            "context_end": {
+              "available": true,
+              "per_fold_indices": [
+                5,
+                5,
+                5,
+                5,
+                5,
+                5
+              ],
+              "mode_index": 5,
+              "mode_lambda": 1000.0
+            }
+          },
+          "variants": {
+            "own_lambda": {
+              "k90": 143,
+              "energy_dim_full": 3584,
+              "reads": {
+                "k48": {
+                  "k": 48,
+                  "input_angle_median_rad": 1.4625503919788088,
+                  "input_angle_median_deg": 83.79796478558995,
+                  "input_angle_max_rad": 1.5685003085270155,
+                  "output_angle_median_rad": 0.8731507757439066,
+                  "output_angle_median_deg": 50.02785432869966,
+                  "output_angle_max_rad": 1.5378181167726626,
+                  "procrustes_resid": 0.9132843086526723,
+                  "anchor_identical_output": 0.8554262178234054,
+                  "anchor_orthogonal_output": 1.0105899924464414,
+                  "null": {
+                    "n_draws": 200,
+                    "input_angle_median_rad": {
+                      "p5": 1.4731636437048028,
+                      "p50": 1.4770741004756607,
+                      "p95": 1.481457735515693
+                    },
+                    "input_angle_max_rad": {
+                      "p5": 1.5670059997241765,
+                      "p50": 1.5694253753785,
+                      "p95": 1.5707194806328548
+                    },
+                    "output_angle_median_rad": {
+                      "p5": 1.5140458027880328,
+                      "p50": 1.5168797160160903,
+                      "p95": 1.5195137129196568
+                    },
+                    "output_angle_max_rad": {
+                      "p5": 1.568299452945516,
+                      "p50": 1.5699861774210204,
+                      "p95": 1.570703225799843
+                    },
+                    "procrustes_resid": {
+                      "p5": 1.003592054318041,
+                      "p50": 1.0038144540610539,
+                      "p95": 1.0040595439087412
+                    }
+                  },
+                  "input_below_null": true,
+                  "output_below_null": true,
+                  "procrustes_below_null": true
+                },
+                "k90": {
+                  "k": 143,
+                  "input_angle_median_rad": 1.3850223621036837,
+                  "input_angle_median_deg": 79.35593587978113,
+                  "input_angle_max_rad": 1.5705758721800063,
+                  "output_angle_median_rad": 0.939277388311717,
+                  "output_angle_median_deg": 53.816630142331945,
+                  "output_angle_max_rad": 1.570696788163213,
+                  "procrustes_resid": 0.9154475028376924,
+                  "anchor_identical_output": 0.8631028297361346,
+                  "anchor_orthogonal_output": 1.0095604258814994,
+                  "null": {
+                    "n_draws": 200,
+                    "input_angle_median_rad": {
+                      "p5": 1.4032326603185201,
+                      "p50": 1.406535195409154,
+                      "p95": 1.4093603580664493
+                    },
+                    "input_angle_max_rad": {
+                      "p5": 1.5686511927584008,
+                      "p50": 1.570060041456829,
+                      "p95": 1.5707544900115837
+                    },
+                    "output_angle_median_rad": {
+                      "p5": 1.4752002222782348,
+                      "p50": 1.4772931338526045,
+                      "p95": 1.4790897641199259
+                    },
+                    "output_angle_max_rad": {
+                      "p5": 1.5696303306719424,
+                      "p50": 1.5703751665079555,
+                      "p95": 1.5707517014019712
+                    },
+                    "procrustes_resid": {
+                      "p5": 0.9992288045272717,
+                      "p50": 0.9994007524859997,
+                      "p95": 0.9995850249572072
+                    }
+                  },
+                  "input_below_null": true,
+                  "output_below_null": true,
+                  "procrustes_below_null": true
+                }
+              }
+            },
+            "matched_lambda": {
+              "k90": 135,
+              "energy_dim_full": 3584,
+              "reads": {
+                "k48": {
+                  "k": 48,
+                  "input_angle_median_rad": 1.4658192760813078,
+                  "input_angle_median_deg": 83.98525804838056,
+                  "input_angle_max_rad": 1.5702276608452,
+                  "output_angle_median_rad": 0.8843507405082647,
+                  "output_angle_median_deg": 50.66956504039261,
+                  "output_angle_max_rad": 1.556928965613409,
+                  "procrustes_resid": 0.8955406830239094,
+                  "anchor_identical_output": 0.8235886220657858,
+                  "anchor_orthogonal_output": 1.0157292226279824,
+                  "null": {
+                    "n_draws": 200,
+                    "input_angle_median_rad": {
+                      "p5": 1.472397453811259,
+                      "p50": 1.4771351388766782,
+                      "p95": 1.4808297536484394
+                    },
+                    "input_angle_max_rad": {
+                      "p5": 1.5664863313332824,
+                      "p50": 1.569297797726438,
+                      "p95": 1.570683228833494
+                    },
+                    "output_angle_median_rad": {
+                      "p5": 1.5141249329117419,
+                      "p50": 1.5165355150409363,
+                      "p95": 1.519420841971338
+                    },
+                    "output_angle_max_rad": {
+                      "p5": 1.568310015214504,
+                      "p50": 1.5699716547169356,
+                      "p95": 1.570706417850189
+                    },
+                    "procrustes_resid": {
+                      "p5": 1.0071366627521865,
+                      "p50": 1.0074278132935832,
+                      "p95": 1.0077348084799969
+                    }
+                  },
+                  "input_below_null": true,
+                  "output_below_null": true,
+                  "procrustes_below_null": true
+                },
+                "k90": {
+                  "k": 135,
+                  "input_angle_median_rad": 1.3904004874087625,
+                  "input_angle_median_deg": 79.66407976145466,
+                  "input_angle_max_rad": 1.5705361556760846,
+                  "output_angle_median_rad": 0.9448630429005986,
+                  "output_angle_median_deg": 54.13666457609274,
+                  "output_angle_max_rad": 1.5689142173986725,
+                  "procrustes_resid": 0.8979258492458602,
+                  "anchor_identical_output": 0.8317682773172845,
+                  "anchor_orthogonal_output": 1.0143855412844918,
+                  "null": {
+                    "n_draws": 200,
+                    "input_angle_median_rad": {
+                      "p5": 1.4081438405412536,
+                      "p50": 1.4117344917080774,
+                      "p95": 1.41481692143865
+                    },
+                    "input_angle_max_rad": {
+                      "p5": 1.5684902813745623,
+                      "p50": 1.570016756716337,
+                      "p95": 1.5707023495886092
+                    },
+                    "output_angle_median_rad": {
+                      "p5": 1.4777750729352348,
+                      "p50": 1.48001700908394,
+                      "p95": 1.481645045704385
+                    },
+                    "output_angle_max_rad": {
+                      "p5": 1.569580293832984,
+                      "p50": 1.5703539301309668,
+                      "p95": 1.5707489127277352
+                    },
+                    "procrustes_resid": {
+                      "p5": 1.0019971677064408,
+                      "p50": 1.0021773580859017,
+                      "p95": 1.002345415964875
+                    }
+                  },
+                  "input_below_null": true,
+                  "output_below_null": true,
+                  "procrustes_below_null": true
+                }
+              }
+            }
+          }
+        },
+        "pca48": {
+          "P_out": 48,
+          "lambda_own": {
+            "prefix_end": 1000.0,
+            "context_end": 100.0
+          },
+          "lambda_matched": 100.0,
+          "banked_lambda": {
+            "prefix_end": {
+              "available": true,
+              "per_fold_indices": [
+                5,
+                5,
+                5,
+                5,
+                5,
+                5
+              ],
+              "mode_index": 5,
+              "mode_lambda": 1000.0
+            },
+            "context_end": {
+              "available": true,
+              "per_fold_indices": [
+                5,
+                5,
+                5,
+                5,
+                5,
+                5
+              ],
+              "mode_index": 5,
+              "mode_lambda": 1000.0
+            }
+          },
+          "variants": {
+            "own_lambda": {
+              "k90": 24,
+              "energy_dim_full": 48,
+              "reads": {
+                "k48": {
+                  "k": 48,
+                  "input_angle_median_rad": 1.4712500118026357,
+                  "input_angle_median_deg": 84.29641628486358,
+                  "input_angle_max_rad": 1.5683123664421097,
+                  "output_angle_median_rad": 0.0,
+                  "output_angle_median_deg": 0.0,
+                  "output_angle_max_rad": 3.332000937312528e-08,
+                  "procrustes_resid": 0.8885231739807501,
+                  "anchor_identical_output": 0.8666031086748661,
+                  "anchor_orthogonal_output": 1.00910268904976,
+                  "null": {
+                    "n_draws": 200,
+                    "input_angle_median_rad": {
+                      "p5": 1.4727481059492613,
+                      "p50": 1.476889741130329,
+                      "p95": 1.481910212661453
+                    },
+                    "input_angle_max_rad": {
+                      "p5": 1.5666335592777434,
+                      "p50": 1.5695125936894891,
+                      "p95": 1.5706358074017497
+                    },
+                    "output_angle_median_rad": {
+                      "p5": 0.0,
+                      "p50": 0.0,
+                      "p95": 1.4901161193847656e-08
+                    },
+                    "output_angle_max_rad": {
+                      "p5": 2.1073424255447017e-08,
+                      "p50": 2.9802322387695312e-08,
+                      "p95": 3.6500241499888574e-08
+                    },
+                    "procrustes_resid": {
+                      "p5": 0.9067634700189576,
+                      "p50": 0.9088830889971521,
+                      "p95": 0.9113143444486795
+                    }
+                  },
+                  "input_below_null": true,
+                  "output_below_null": false,
+                  "procrustes_below_null": true
+                },
+                "k90": {
+                  "k": 24,
+                  "input_angle_median_rad": 1.5010763024781197,
+                  "input_angle_median_deg": 86.00533685909922,
+                  "input_angle_max_rad": 1.5670613945565597,
+                  "output_angle_median_rad": 0.4085683585677985,
+                  "output_angle_median_deg": 23.40924258852254,
+                  "output_angle_max_rad": 1.5492018338882847,
+                  "procrustes_resid": 0.9030887555229198,
+                  "anchor_identical_output": 0.8617356047792161,
+                  "anchor_orthogonal_output": 1.009701759421846,
+                  "null": {
+                    "n_draws": 200,
+                    "input_angle_median_rad": {
+                      "p5": 1.499149531455015,
+                      "p50": 1.504779065482695,
+                      "p95": 1.5103368475204741
+                    },
+                    "input_angle_max_rad": {
+                      "p5": 1.5649831741971485,
+                      "p50": 1.5688666308676311,
+                      "p95": 1.5706655512550316
+                    },
+                    "output_angle_median_rad": {
+                      "p5": 0.7268832602744759,
+                      "p50": 0.7924002020992915,
+                      "p95": 0.857764626724147
+                    },
+                    "output_angle_max_rad": {
+                      "p5": 1.4970737556757292,
+                      "p50": 1.5466630134377484,
+                      "p95": 1.568422627982497
+                    },
+                    "procrustes_resid": {
+                      "p5": 0.9302807920950347,
+                      "p50": 0.9345041297388486,
+                      "p95": 0.9391025126526127
+                    }
+                  },
+                  "input_below_null": false,
+                  "output_below_null": true,
+                  "procrustes_below_null": true
+                }
+              }
+            },
+            "matched_lambda": {
+              "k90": 24,
+              "energy_dim_full": 48,
+              "reads": {
+                "k48": {
+                  "k": 48,
+                  "input_angle_median_rad": 1.4685361762900997,
+                  "input_angle_median_deg": 84.14092496370255,
+                  "input_angle_max_rad": 1.5688371766811084,
+                  "output_angle_median_rad": 0.0,
+                  "output_angle_median_deg": 0.0,
+                  "output_angle_max_rad": 4.4703483581542975e-08,
+                  "procrustes_resid": 0.8643428416391392,
+                  "anchor_identical_output": 0.8385916988447292,
+                  "anchor_orthogonal_output": 1.0133042064767033,
+                  "null": {
+                    "n_draws": 200,
+                    "input_angle_median_rad": {
+                      "p5": 1.4726596199192719,
+                      "p50": 1.4771688317090987,
+                      "p95": 1.481476529667793
+                    },
+                    "input_angle_max_rad": {
+                      "p5": 1.5670056047203516,
+                      "p50": 1.5695396720274462,
+                      "p95": 1.5705660130350196
+                    },
+                    "output_angle_median_rad": {
+                      "p5": 0.0,
+                      "p50": 0.0,
+                      "p95": 1.4901161193847656e-08
+                    },
+                    "output_angle_max_rad": {
+                      "p5": 2.580956827951785e-08,
+                      "p50": 2.9802322387695312e-08,
+                      "p95": 3.6500241499888574e-08
+                    },
+                    "procrustes_resid": {
+                      "p5": 0.887754177812654,
+                      "p50": 0.8911372424041912,
+                      "p95": 0.8935745875550339
+                    }
+                  },
+                  "input_below_null": true,
+                  "output_below_null": false,
+                  "procrustes_below_null": true
+                },
+                "k90": {
+                  "k": 24,
+                  "input_angle_median_rad": 1.497103505793259,
+                  "input_angle_median_deg": 85.77771237619312,
+                  "input_angle_max_rad": 1.5707891136234402,
+                  "output_angle_median_rad": 0.40638034596615236,
+                  "output_angle_median_deg": 23.283878700926778,
+                  "output_angle_max_rad": 1.5475063478949693,
+                  "procrustes_resid": 0.8829518337277683,
+                  "anchor_identical_output": 0.8329953010377391,
+                  "anchor_orthogonal_output": 1.0141376466304315,
+                  "null": {
+                    "n_draws": 200,
+                    "input_angle_median_rad": {
+                      "p5": 1.4989833325932,
+                      "p50": 1.5056732256308818,
+                      "p95": 1.5106774375307424
+                    },
+                    "input_angle_max_rad": {
+                      "p5": 1.565820294704605,
+                      "p50": 1.5689016283721533,
+                      "p95": 1.5706575570998402
+                    },
+                    "output_angle_median_rad": {
+                      "p5": 0.7234825647885179,
+                      "p50": 0.7883053712470536,
+                      "p95": 0.8465402456404463
+                    },
+                    "output_angle_max_rad": {
+                      "p5": 1.4961113086525715,
+                      "p50": 1.5458721007706149,
+                      "p95": 1.5685241789263062
+                    },
+                    "procrustes_resid": {
+                      "p5": 0.9182925512768175,
+                      "p50": 0.922495527074095,
+                      "p95": 0.9266148887690566
+                    }
+                  },
+                  "input_below_null": true,
+                  "output_below_null": true,
+                  "procrustes_below_null": true
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "cell_pre_own_L18": {
+      "n_fit": 17308,
+      "H_in": 3584,
+      "n_battery_excluded": 3885,
+      "bases": {
+        "ambient": {
+          "P_out": 10752,
+          "lambda_own": {
+            "prefix_end": 1000.0,
+            "context_end": 100.0
+          },
+          "lambda_matched": 100.0,
+          "banked_lambda": {
+            "prefix_end": {
+              "available": true,
+              "per_fold_indices": [
+                5,
+                5,
+                5,
+                5,
+                5,
+                5
+              ],
+              "mode_index": 5,
+              "mode_lambda": 1000.0
+            },
+            "context_end": {
+              "available": true,
+              "per_fold_indices": [
+                5,
+                5,
+                5,
+                5,
+                5,
+                5
+              ],
+              "mode_index": 5,
+              "mode_lambda": 1000.0
+            }
+          },
+          "variants": {
+            "own_lambda": {
+              "k90": 153,
+              "energy_dim_full": 3584,
+              "reads": {
+                "k48": {
+                  "k": 48,
+                  "input_angle_median_rad": 1.4708232234498366,
+                  "input_angle_median_deg": 84.27196311350285,
+                  "input_angle_max_rad": 1.5683799183957854,
+                  "output_angle_median_rad": 0.8206106102578938,
+                  "output_angle_median_deg": 47.01752459143221,
+                  "output_angle_max_rad": 1.5682178651195455,
+                  "procrustes_resid": 0.9084475766478165,
+                  "anchor_identical_output": 0.8590392538193281,
+                  "anchor_orthogonal_output": 1.009961228694415,
+                  "null": {
+                    "n_draws": 200,
+                    "input_angle_median_rad": {
+                      "p5": 1.4732548459529653,
+                      "p50": 1.4773684076579605,
+                      "p95": 1.481802314845609
+                    },
+                    "input_angle_max_rad": {
+                      "p5": 1.5670254965038466,
+                      "p50": 1.5695026394016107,
+                      "p95": 1.5706833545377779
+                    },
+                    "output_angle_median_rad": {
+                      "p5": 1.514447828674045,
+                      "p50": 1.517127971183098,
+                      "p95": 1.5195785161993818
+                    },
+                    "output_angle_max_rad": {
+                      "p5": 1.568302753412232,
+                      "p50": 1.569984186643481,
+                      "p95": 1.5707397000283498
+                    },
+                    "procrustes_resid": {
+                      "p5": 1.003184960416657,
+                      "p50": 1.0033857411040252,
+                      "p95": 1.003617256494751
+                    }
+                  },
+                  "input_below_null": true,
+                  "output_below_null": true,
+                  "procrustes_below_null": true
+                },
+                "k90": {
+                  "k": 153,
+                  "input_angle_median_rad": 1.386094296423207,
+                  "input_angle_median_deg": 79.41735319220504,
+                  "input_angle_max_rad": 1.5705679612869736,
+                  "output_angle_median_rad": 0.8963098640979011,
+                  "output_angle_median_deg": 51.354772348754125,
+                  "output_angle_max_rad": 1.5700923669200255,
+                  "procrustes_resid": 0.911146481208072,
+                  "anchor_identical_output": 0.8650632744601217,
+                  "anchor_orthogonal_output": 1.0091779055494192,
+                  "null": {
+                    "n_draws": 200,
+                    "input_angle_median_rad": {
+                      "p5": 1.3974334426636064,
+                      "p50": 1.4006363780143736,
+                      "p95": 1.4037615422499055
+                    },
+                    "input_angle_max_rad": {
+                      "p5": 1.5686484120577913,
+                      "p50": 1.57011980149534,
+                      "p95": 1.5707441239750501
+                    },
+                    "output_angle_median_rad": {
+                      "p5": 1.472131475713366,
+                      "p50": 1.4739040646414763,
+                      "p95": 1.475586920068406
+                    },
+                    "output_angle_max_rad": {
+                      "p5": 1.5695966061296867,
+                      "p50": 1.570425302931311,
+                      "p95": 1.5707662952675727
+                    },
+                    "procrustes_resid": {
+                      "p5": 0.9988450882064146,
+                      "p50": 0.9990262405532869,
+                      "p95": 0.999184983070479
+                    }
+                  },
+                  "input_below_null": true,
+                  "output_below_null": true,
+                  "procrustes_below_null": true
+                }
+              }
+            },
+            "matched_lambda": {
+              "k90": 145,
+              "energy_dim_full": 3584,
+              "reads": {
+                "k48": {
+                  "k": 48,
+                  "input_angle_median_rad": 1.4714799804824885,
+                  "input_angle_median_deg": 84.30959251963934,
+                  "input_angle_max_rad": 1.5700821279057806,
+                  "output_angle_median_rad": 0.8196095432968072,
+                  "output_angle_median_deg": 46.960167679551965,
+                  "output_angle_max_rad": 1.5534794313665867,
+                  "procrustes_resid": 0.8942748832396165,
+                  "anchor_identical_output": 0.8356540779814234,
+                  "anchor_orthogonal_output": 1.0135246966513793,
+                  "null": {
+                    "n_draws": 200,
+                    "input_angle_median_rad": {
+                      "p5": 1.4729416787943224,
+                      "p50": 1.4775699291260862,
+                      "p95": 1.481801099473541
+                    },
+                    "input_angle_max_rad": {
+                      "p5": 1.5667684322701065,
+                      "p50": 1.5692893703658535,
+                      "p95": 1.5706851853337984
+                    },
+                    "output_angle_median_rad": {
+                      "p5": 1.5144196852066785,
+                      "p50": 1.5168741759176991,
+                      "p95": 1.5192464679255195
+                    },
+                    "output_angle_max_rad": {
+                      "p5": 1.5686438346723182,
+                      "p50": 1.5699042285327942,
+                      "p95": 1.5707152861346156
+                    },
+                    "procrustes_resid": {
+                      "p5": 1.0056077262090886,
+                      "p50": 1.005870854170206,
+                      "p95": 1.0061849872342674
+                    }
+                  },
+                  "input_below_null": true,
+                  "output_below_null": true,
+                  "procrustes_below_null": true
+                },
+                "k90": {
+                  "k": 145,
+                  "input_angle_median_rad": 1.38904310492116,
+                  "input_angle_median_deg": 79.58630747373006,
+                  "input_angle_max_rad": 1.5689276742795795,
+                  "output_angle_median_rad": 0.9049691427031127,
+                  "output_angle_median_deg": 51.85091246646068,
+                  "output_angle_max_rad": 1.5634189421075348,
+                  "procrustes_resid": 0.897471422121108,
+                  "anchor_identical_output": 0.8420125452941839,
+                  "anchor_orthogonal_output": 1.01255850980126,
+                  "null": {
+                    "n_draws": 200,
+                    "input_angle_median_rad": {
+                      "p5": 1.402466691841093,
+                      "p50": 1.4055026008660212,
+                      "p95": 1.409170303028274
+                    },
+                    "input_angle_max_rad": {
+                      "p5": 1.56841425345765,
+                      "p50": 1.569839543001359,
+                      "p95": 1.5707240459298577
+                    },
+                    "output_angle_median_rad": {
+                      "p5": 1.4747884928388957,
+                      "p50": 1.4765556896243186,
+                      "p95": 1.4784707162439705
+                    },
+                    "output_angle_max_rad": {
+                      "p5": 1.5696492259581796,
+                      "p50": 1.5703431819279303,
+                      "p95": 1.5707500321443049
+                    },
+                    "procrustes_resid": {
+                      "p5": 1.0007552365815542,
+                      "p50": 1.0008991581250366,
+                      "p95": 1.0010624757413245
+                    }
+                  },
+                  "input_below_null": true,
+                  "output_below_null": true,
+                  "procrustes_below_null": true
+                }
+              }
+            }
+          }
+        },
+        "pca48": {
+          "P_out": 48,
+          "lambda_own": {
+            "prefix_end": 1000.0,
+            "context_end": 100.0
+          },
+          "lambda_matched": 100.0,
+          "banked_lambda": {
+            "prefix_end": {
+              "available": true,
+              "per_fold_indices": [
+                5,
+                5,
+                5,
+                5,
+                5,
+                5
+              ],
+              "mode_index": 5,
+              "mode_lambda": 1000.0
+            },
+            "context_end": {
+              "available": true,
+              "per_fold_indices": [
+                5,
+                5,
+                5,
+                5,
+                5,
+                5
+              ],
+              "mode_index": 5,
+              "mode_lambda": 1000.0
+            }
+          },
+          "variants": {
+            "own_lambda": {
+              "k90": 25,
+              "energy_dim_full": 48,
+              "reads": {
+                "k48": {
+                  "k": 48,
+                  "input_angle_median_rad": 1.470248274487043,
+                  "input_angle_median_deg": 84.23902096449936,
+                  "input_angle_max_rad": 1.5694222720054933,
+                  "output_angle_median_rad": 1.4901161193847656e-08,
+                  "output_angle_median_deg": 8.537736462515939e-07,
+                  "output_angle_max_rad": 4.942156062059701e-08,
+                  "procrustes_resid": 0.886787043656955,
+                  "anchor_identical_output": 0.8686091784485174,
+                  "anchor_orthogonal_output": 1.0086996715410546,
+                  "null": {
+                    "n_draws": 200,
+                    "input_angle_median_rad": {
+                      "p5": 1.47307182718843,
+                      "p50": 1.4772938539223666,
+                      "p95": 1.4819548097961426
+                    },
+                    "input_angle_max_rad": {
+                      "p5": 1.5670555089855884,
+                      "p50": 1.5696141294720474,
+                      "p95": 1.5706798810120286
+                    },
+                    "output_angle_median_rad": {
+                      "p5": 0.0,
+                      "p50": 0.0,
+                      "p95": 1.4901161193847656e-08
+                    },
+                    "output_angle_max_rad": {
+                      "p5": 2.1073424255447017e-08,
+                      "p50": 2.9802322387695312e-08,
+                      "p95": 3.332000937312528e-08
+                    },
+                    "procrustes_resid": {
+                      "p5": 0.9079224074470258,
+                      "p50": 0.9104478120589115,
+                      "p95": 0.9123729638448141
+                    }
+                  },
+                  "input_below_null": true,
+                  "output_below_null": false,
+                  "procrustes_below_null": true
+                },
+                "k90": {
+                  "k": 25,
+                  "input_angle_median_rad": 1.5020702755873752,
+                  "input_angle_median_deg": 86.06228732320905,
+                  "input_angle_max_rad": 1.5672301436909233,
+                  "output_angle_median_rad": 0.3574429209087818,
+                  "output_angle_median_deg": 20.47997078490169,
+                  "output_angle_max_rad": 1.5698874958613764,
+                  "procrustes_resid": 0.8992002745964315,
+                  "anchor_identical_output": 0.8652290118307936,
+                  "anchor_orthogonal_output": 1.009103820014244,
+                  "null": {
+                    "n_draws": 200,
+                    "input_angle_median_rad": {
+                      "p5": 1.4981402298475692,
+                      "p50": 1.504678180461965,
+                      "p95": 1.5102874950811993
+                    },
+                    "input_angle_max_rad": {
+                      "p5": 1.5651340533158995,
+                      "p50": 1.5689199188978984,
+                      "p95": 1.5706433301050562
+                    },
+                    "output_angle_median_rad": {
+                      "p5": 0.6819881017000685,
+                      "p50": 0.7451512243635561,
+                      "p95": 0.821836788620728
+                    },
+                    "output_angle_max_rad": {
+                      "p5": 1.4953177536568354,
+                      "p50": 1.5490596374540668,
+                      "p95": 1.5690024630929629
+                    },
+                    "procrustes_resid": {
+                      "p5": 0.9305695186513971,
+                      "p50": 0.9342187723364601,
+                      "p95": 0.9383500148278425
+                    }
+                  },
+                  "input_below_null": false,
+                  "output_below_null": true,
+                  "procrustes_below_null": true
+                }
+              }
+            },
+            "matched_lambda": {
+              "k90": 25,
+              "energy_dim_full": 48,
+              "reads": {
+                "k48": {
+                  "k": 48,
+                  "input_angle_median_rad": 1.472054007014905,
+                  "input_angle_median_deg": 84.34248181727534,
+                  "input_angle_max_rad": 1.5704682729242716,
+                  "output_angle_median_rad": 0.0,
+                  "output_angle_median_deg": 0.0,
+                  "output_angle_max_rad": 4.2146848510894035e-08,
+                  "procrustes_resid": 0.8684922006654211,
+                  "anchor_identical_output": 0.8477092820583844,
+                  "anchor_orthogonal_output": 1.0116777359248612,
+                  "null": {
+                    "n_draws": 200,
+                    "input_angle_median_rad": {
+                      "p5": 1.4723483776057533,
+                      "p50": 1.4771209325264658,
+                      "p95": 1.481673830807385
+                    },
+                    "input_angle_max_rad": {
+                      "p5": 1.5669219120579507,
+                      "p50": 1.569367522091665,
+                      "p95": 1.5706414546999663
+                    },
+                    "output_angle_median_rad": {
+                      "p5": 0.0,
+                      "p50": 0.0,
+                      "p95": 1.4901161193847656e-08
+                    },
+                    "output_angle_max_rad": {
+                      "p5": 2.1073424255447017e-08,
+                      "p50": 2.9802322387695312e-08,
+                      "p95": 3.347902097946339e-08
+                    },
+                    "procrustes_resid": {
+                      "p5": 0.8939796376111403,
+                      "p50": 0.8969004254017868,
+                      "p95": 0.8998208171277057
+                    }
+                  },
+                  "input_below_null": true,
+                  "output_below_null": false,
+                  "procrustes_below_null": true
+                },
+                "k90": {
+                  "k": 25,
+                  "input_angle_median_rad": 1.4999895123125888,
+                  "input_angle_median_deg": 85.94306836939798,
+                  "input_angle_max_rad": 1.566845649807301,
+                  "output_angle_median_rad": 0.35773351308889645,
+                  "output_angle_median_deg": 20.49662049038176,
+                  "output_angle_max_rad": 1.5462920139922145,
+                  "procrustes_resid": 0.8830066162281156,
+                  "anchor_identical_output": 0.8438488639931019,
+                  "anchor_orthogonal_output": 1.012210371420454,
+                  "null": {
+                    "n_draws": 200,
+                    "input_angle_median_rad": {
+                      "p5": 1.4971281034123345,
+                      "p50": 1.5035859965881004,
+                      "p95": 1.5097345463475749
+                    },
+                    "input_angle_max_rad": {
+                      "p5": 1.5652691057760333,
+                      "p50": 1.5687172773571785,
+                      "p95": 1.5704946286888797
+                    },
+                    "output_angle_median_rad": {
+                      "p5": 0.6817189343796664,
+                      "p50": 0.7473632060673701,
+                      "p95": 0.8224230193814057
+                    },
+                    "output_angle_max_rad": {
+                      "p5": 1.4952375875185284,
+                      "p50": 1.54721731818079,
+                      "p95": 1.5678221128722913
+                    },
+                    "procrustes_resid": {
+                      "p5": 0.9200199034997841,
+                      "p50": 0.924992768444107,
+                      "p95": 0.9296858189268923
+                    }
+                  },
+                  "input_below_null": false,
+                  "output_below_null": true,
+                  "procrustes_below_null": true
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "cell_pre_own_L19": {
+      "n_fit": 17308,
+      "H_in": 3584,
+      "n_battery_excluded": 3885,
+      "bases": {
+        "ambient": {
+          "P_out": 10752,
+          "lambda_own": {
+            "prefix_end": 1000.0,
+            "context_end": 100.0
+          },
+          "lambda_matched": 100.0,
+          "banked_lambda": {
+            "prefix_end": {
+              "available": true,
+              "per_fold_indices": [
+                5,
+                5,
+                5,
+                5,
+                5,
+                5
+              ],
+              "mode_index": 5,
+              "mode_lambda": 1000.0
+            },
+            "context_end": {
+              "available": true,
+              "per_fold_indices": [
+                5,
+                5,
+                5,
+                5,
+                5,
+                5
+              ],
+              "mode_index": 5,
+              "mode_lambda": 1000.0
+            }
+          },
+          "variants": {
+            "own_lambda": {
+              "k90": 154,
+              "energy_dim_full": 3584,
+              "reads": {
+                "k48": {
+                  "k": 48,
+                  "input_angle_median_rad": 1.4692210763513738,
+                  "input_angle_median_deg": 84.18016684660181,
+                  "input_angle_max_rad": 1.5657086768082513,
+                  "output_angle_median_rad": 0.7937648140024393,
+                  "output_angle_median_deg": 45.47937376832656,
+                  "output_angle_max_rad": 1.5634689339726373,
+                  "procrustes_resid": 0.9015662978859817,
+                  "anchor_identical_output": 0.8474270039794525,
+                  "anchor_orthogonal_output": 1.0117668493968444,
+                  "null": {
+                    "n_draws": 200,
+                    "input_angle_median_rad": {
+                      "p5": 1.473434617602936,
+                      "p50": 1.4773390509119553,
+                      "p95": 1.4810824181621305
+                    },
+                    "input_angle_max_rad": {
+                      "p5": 1.5668837731516734,
+                      "p50": 1.569360002690453,
+                      "p95": 1.5705949092800309
+                    },
+                    "output_angle_median_rad": {
+                      "p5": 1.5144082147193845,
+                      "p50": 1.5168052562695005,
+                      "p95": 1.5192304474836362
+                    },
+                    "output_angle_max_rad": {
+                      "p5": 1.5683778530362493,
+                      "p50": 1.5699549477323116,
+                      "p95": 1.5707459307987481
+                    },
+                    "procrustes_resid": {
+                      "p5": 1.0042669708547536,
+                      "p50": 1.004528138379456,
+                      "p95": 1.0047918940272607
+                    }
+                  },
+                  "input_below_null": true,
+                  "output_below_null": true,
+                  "procrustes_below_null": true
+                },
+                "k90": {
+                  "k": 154,
+                  "input_angle_median_rad": 1.3905178597112406,
+                  "input_angle_median_deg": 79.67080469901838,
+                  "input_angle_max_rad": 1.569857964612208,
+                  "output_angle_median_rad": 0.8493696436080107,
+                  "output_angle_median_deg": 48.665295825269894,
+                  "output_angle_max_rad": 1.5697230464067324,
+                  "procrustes_resid": 0.9025470013699948,
+                  "anchor_identical_output": 0.8529963694484423,
+                  "anchor_orthogonal_output": 1.0109455347082121,
+                  "null": {
+                    "n_draws": 200,
+                    "input_angle_median_rad": {
+                      "p5": 1.3973877846173226,
+                      "p50": 1.3999942113413812,
+                      "p95": 1.403037919721692
+                    },
+                    "input_angle_max_rad": {
+                      "p5": 1.5686541111210115,
+                      "p50": 1.5699617203970027,
+                      "p95": 1.5706816404566053
+                    },
+                    "output_angle_median_rad": {
+                      "p5": 1.472062961746132,
+                      "p50": 1.4736704600283248,
+                      "p95": 1.4750210255565663
+                    },
+                    "output_angle_max_rad": {
+                      "p5": 1.5695034116773727,
+                      "p50": 1.5703974968075318,
+                      "p95": 1.570738139816096
+                    },
+                    "procrustes_resid": {
+                      "p5": 0.9994937597238575,
+                      "p50": 0.9996482882487534,
+                      "p95": 0.9998102334161814
+                    }
+                  },
+                  "input_below_null": true,
+                  "output_below_null": true,
+                  "procrustes_below_null": true
+                }
+              }
+            },
+            "matched_lambda": {
+              "k90": 147,
+              "energy_dim_full": 3584,
+              "reads": {
+                "k48": {
+                  "k": 48,
+                  "input_angle_median_rad": 1.4721428353329389,
+                  "input_angle_median_deg": 84.34757130499992,
+                  "input_angle_max_rad": 1.5695817448690332,
+                  "output_angle_median_rad": 0.8040775276987473,
+                  "output_angle_median_deg": 46.07024873845177,
+                  "output_angle_max_rad": 1.5587573607382559,
+                  "procrustes_resid": 0.8889181882974799,
+                  "anchor_identical_output": 0.8255850527378208,
+                  "anchor_orthogonal_output": 1.0153752581045388,
+                  "null": {
+                    "n_draws": 200,
+                    "input_angle_median_rad": {
+                      "p5": 1.4726653869277966,
+                      "p50": 1.4774545427655146,
+                      "p95": 1.482094722293723
+                    },
+                    "input_angle_max_rad": {
+                      "p5": 1.5664262742483346,
+                      "p50": 1.5694682533084667,
+                      "p95": 1.5706030117974525
+                    },
+                    "output_angle_median_rad": {
+                      "p5": 1.5142206809765857,
+                      "p50": 1.5167477215102463,
+                      "p95": 1.5194602455065795
+                    },
+                    "output_angle_max_rad": {
+                      "p5": 1.5685877608927303,
+                      "p50": 1.5699274850879914,
+                      "p95": 1.5706908800597124
+                    },
+                    "procrustes_resid": {
+                      "p5": 1.0068155161194317,
+                      "p50": 1.0070983035462704,
+                      "p95": 1.0073958655342263
+                    }
+                  },
+                  "input_below_null": true,
+                  "output_below_null": true,
+                  "procrustes_below_null": true
+                },
+                "k90": {
+                  "k": 147,
+                  "input_angle_median_rad": 1.393039487548433,
+                  "input_angle_median_deg": 79.81528333159221,
+                  "input_angle_max_rad": 1.5706292150218586,
+                  "output_angle_median_rad": 0.8751242868398807,
+                  "output_angle_median_deg": 50.140928185321215,
+                  "output_angle_max_rad": 1.5676379250168329,
+                  "procrustes_resid": 0.8899703046610616,
+                  "anchor_identical_output": 0.8314266517064033,
+                  "anchor_orthogonal_output": 1.0143828929994507,
+                  "null": {
+                    "n_draws": 200,
+                    "input_angle_median_rad": {
+                      "p5": 1.401388558028653,
+                      "p50": 1.4042198156878207,
+                      "p95": 1.4071332785710708
+                    },
+                    "input_angle_max_rad": {
+                      "p5": 1.5680444456907758,
+                      "p50": 1.5699538529086179,
+                      "p95": 1.570706685562145
+                    },
+                    "output_angle_median_rad": {
+                      "p5": 1.4742189283688214,
+                      "p50": 1.4758744470286635,
+                      "p95": 1.4776929828859695
+                    },
+                    "output_angle_max_rad": {
+                      "p5": 1.5695081315393717,
+                      "p50": 1.5703651782236294,
+                      "p95": 1.5707551186584172
+                    },
+                    "procrustes_resid": {
+                      "p5": 1.0015107212660668,
+                      "p50": 1.001665157171711,
+                      "p95": 1.0018472497405537
+                    }
+                  },
+                  "input_below_null": true,
+                  "output_below_null": true,
+                  "procrustes_below_null": true
+                }
+              }
+            }
+          }
+        },
+        "pca48": {
+          "P_out": 48,
+          "lambda_own": {
+            "prefix_end": 1000.0,
+            "context_end": 100.0
+          },
+          "lambda_matched": 100.0,
+          "banked_lambda": {
+            "prefix_end": {
+              "available": true,
+              "per_fold_indices": [
+                5,
+                5,
+                5,
+                5,
+                5,
+                5
+              ],
+              "mode_index": 5,
+              "mode_lambda": 1000.0
+            },
+            "context_end": {
+              "available": true,
+              "per_fold_indices": [
+                5,
+                5,
+                5,
+                5,
+                5,
+                5
+              ],
+              "mode_index": 5,
+              "mode_lambda": 1000.0
+            }
+          },
+          "variants": {
+            "own_lambda": {
+              "k90": 26,
+              "energy_dim_full": 48,
+              "reads": {
+                "k48": {
+                  "k": 48,
+                  "input_angle_median_rad": 1.4693819072899876,
+                  "input_angle_median_deg": 84.1893817805995,
+                  "input_angle_max_rad": 1.5704343363644786,
+                  "output_angle_median_rad": 0.0,
+                  "output_angle_median_deg": 0.0,
+                  "output_angle_max_rad": 6.143906154658886e-08,
+                  "procrustes_resid": 0.8762420175880191,
+                  "anchor_identical_output": 0.8573472159432555,
+                  "anchor_orthogonal_output": 1.0103310674815453,
+                  "null": {
+                    "n_draws": 200,
+                    "input_angle_median_rad": {
+                      "p5": 1.4729171481290826,
+                      "p50": 1.4770461292380967,
+                      "p95": 1.4814780988309935
+                    },
+                    "input_angle_max_rad": {
+                      "p5": 1.5670818524287553,
+                      "p50": 1.5695474679946644,
+                      "p95": 1.5706749458537066
+                    },
+                    "output_angle_median_rad": {
+                      "p5": 0.0,
+                      "p50": 0.0,
+                      "p95": 1.4901161193847656e-08
+                    },
+                    "output_angle_max_rad": {
+                      "p5": 2.1073424255447017e-08,
+                      "p50": 2.9802322387695312e-08,
+                      "p95": 3.6500241499888574e-08
+                    },
+                    "procrustes_resid": {
+                      "p5": 0.8976516082298885,
+                      "p50": 0.9001172161850669,
+                      "p95": 0.9022600521117254
+                    }
+                  },
+                  "input_below_null": true,
+                  "output_below_null": false,
+                  "procrustes_below_null": true
+                },
+                "k90": {
+                  "k": 26,
+                  "input_angle_median_rad": 1.4987151097815234,
+                  "input_angle_median_deg": 85.87005048296713,
+                  "input_angle_max_rad": 1.5697281644851129,
+                  "output_angle_median_rad": 0.36198102699103807,
+                  "output_angle_median_deg": 20.73998511039762,
+                  "output_angle_max_rad": 1.545678069434627,
+                  "procrustes_resid": 0.8904072493316901,
+                  "anchor_identical_output": 0.8550745530710601,
+                  "anchor_orthogonal_output": 1.0106477759252115,
+                  "null": {
+                    "n_draws": 200,
+                    "input_angle_median_rad": {
+                      "p5": 1.4960518201604371,
+                      "p50": 1.5018545410493886,
+                      "p95": 1.5073247733226907
+                    },
+                    "input_angle_max_rad": {
+                      "p5": 1.5658932175397042,
+                      "p50": 1.5689800015393924,
+                      "p95": 1.570663931141758
+                    },
+                    "output_angle_median_rad": {
+                      "p5": 0.6519115374933956,
+                      "p50": 0.7151212302346017,
+                      "p95": 0.779613472544299
+                    },
+                    "output_angle_max_rad": {
+                      "p5": 1.503059555885435,
+                      "p50": 1.5497347682968141,
+                      "p95": 1.5690992217845992
+                    },
+                    "procrustes_resid": {
+                      "p5": 0.923171855009168,
+                      "p50": 0.9265235136958423,
+                      "p95": 0.9304609831047502
+                    }
+                  },
+                  "input_below_null": false,
+                  "output_below_null": true,
+                  "procrustes_below_null": true
+                }
+              }
+            },
+            "matched_lambda": {
+              "k90": 26,
+              "energy_dim_full": 48,
+              "reads": {
+                "k48": {
+                  "k": 48,
+                  "input_angle_median_rad": 1.468403450172017,
+                  "input_angle_median_deg": 84.13332031730525,
+                  "input_angle_max_rad": 1.5705270360022208,
+                  "output_angle_median_rad": 7.450580596923828e-09,
+                  "output_angle_median_deg": 4.2688682312579694e-07,
+                  "output_angle_max_rad": 5.372690074837192e-08,
+                  "procrustes_resid": 0.859261624227074,
+                  "anchor_identical_output": 0.8379954288249903,
+                  "anchor_orthogonal_output": 1.013318442592329,
+                  "null": {
+                    "n_draws": 200,
+                    "input_angle_median_rad": {
+                      "p5": 1.4727121266227736,
+                      "p50": 1.476846639751829,
+                      "p95": 1.4805834966380627
+                    },
+                    "input_angle_max_rad": {
+                      "p5": 1.567065902566728,
+                      "p50": 1.5694198074198047,
+                      "p95": 1.5706990241357133
+                    },
+                    "output_angle_median_rad": {
+                      "p5": 0.0,
+                      "p50": 0.0,
+                      "p95": 1.4901161193847656e-08
+                    },
+                    "output_angle_max_rad": {
+                      "p5": 2.5572761078314314e-08,
+                      "p50": 2.9802322387695312e-08,
+                      "p95": 3.6500241499888574e-08
+                    },
+                    "procrustes_resid": {
+                      "p5": 0.8843885406218291,
+                      "p50": 0.8874998832945338,
+                      "p95": 0.8901141272870206
+                    }
+                  },
+                  "input_below_null": true,
+                  "output_below_null": false,
+                  "procrustes_below_null": true
+                },
+                "k90": {
+                  "k": 26,
+                  "input_angle_median_rad": 1.5003898513550056,
+                  "input_angle_median_deg": 85.96600610690275,
+                  "input_angle_max_rad": 1.570601504818851,
+                  "output_angle_median_rad": 0.35350041633577056,
+                  "output_angle_median_deg": 20.254081912157115,
+                  "output_angle_max_rad": 1.5318773163026325,
+                  "procrustes_resid": 0.8757780399158153,
+                  "anchor_identical_output": 0.8354515829676142,
+                  "anchor_orthogonal_output": 1.0137196706515181,
+                  "null": {
+                    "n_draws": 200,
+                    "input_angle_median_rad": {
+                      "p5": 1.496809378685382,
+                      "p50": 1.5023673191594515,
+                      "p95": 1.5072852482869006
+                    },
+                    "input_angle_max_rad": {
+                      "p5": 1.5659044355574783,
+                      "p50": 1.56899659896388,
+                      "p95": 1.5706572354384238
+                    },
+                    "output_angle_median_rad": {
+                      "p5": 0.6488567642310042,
+                      "p50": 0.7087125329465258,
+                      "p95": 0.7750117330519596
+                    },
+                    "output_angle_max_rad": {
+                      "p5": 1.5010692822830454,
+                      "p50": 1.5487762959514795,
+                      "p95": 1.5698661329963983
+                    },
+                    "procrustes_resid": {
+                      "p5": 0.9137989705743037,
+                      "p50": 0.9179409126930099,
+                      "p95": 0.922332230598953
+                    }
+                  },
+                  "input_below_null": false,
+                  "output_below_null": true,
+                  "procrustes_below_null": true
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

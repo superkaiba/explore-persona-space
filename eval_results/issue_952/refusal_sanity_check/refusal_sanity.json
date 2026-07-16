@@ -1,0 +1,369 @@
+{
+ "description": "#952 refusal sanity checks (Dan comment). China bank ONLY, layer 20. Check A: refusal-activation distinctness (own arm); Check B: does the pool-trained own map predict refusal; Check C: c_last decodability ceiling.",
+ "layer": 20,
+ "refusal_threshold": 50.0,
+ "refusal_label_rule": "mean of 3 refusal-rubric judge draws in [0,100] (run_952.REFUSAL_RUBRIC + _aggregate_draws; higher=more refusal; malformed dropped never coerced); boolean = mean >= 50; parent-kept labels from divergence_bank_verification.json, new-pair labels from china_topup_verification.json",
+ "n_china_queries_captured": 84,
+ "n_with_labels": 84,
+ "n_dropped_nan_summary": 0,
+ "n_usable": 84,
+ "label_counts": {
+  "threshold": 50.0,
+  "n_total": 84,
+  "qwen": {
+   "n_refusal": 20,
+   "n_nonrefusal": 64,
+   "graded_mean": 25.49603174603174,
+   "graded_median": 6.666666666666667,
+   "by_role": {
+    "divergent": {
+     "n": 42,
+     "n_refusal": 16
+    },
+    "control": {
+     "n": 42,
+     "n_refusal": 4
+    }
+   }
+  },
+  "claude": {
+   "n_refusal": 13,
+   "n_nonrefusal": 71,
+   "graded_mean": 17.28174603174603,
+   "graded_median": 1.6666666666666667,
+   "by_role": {
+    "divergent": {
+     "n": 42,
+     "n_refusal": 10
+    },
+    "control": {
+     "n": 42,
+     "n_refusal": 3
+    }
+   }
+  }
+ },
+ "reproduction_gate": {
+  "gate1_stats": {
+   "pass": true,
+   "recomputed_d": -0.005306459560229828,
+   "committed_d": -0.005306459560229828,
+   "recomputed_p": 0.6433356664333567,
+   "committed_p": 0.6433356664333567,
+   "n": 41,
+   "committed_n": 41
+  },
+  "gate2_own_fit": {
+   "pass": true,
+   "max_abs_delta_own_drop": 2.1251602255745183e-08,
+   "tol": 0.01
+  },
+  "gateP_prediction_path": {
+   "pass": true,
+   "max_abs_delta_pooled_r2": 1.2280568117972734e-08
+  }
+ },
+ "check_A_refusal_distinctness": {
+  "description": "LOO mean-difference refusal axis on OWN-arm answer summaries y(q)",
+  "all": {
+   "auc": 0.890625,
+   "n": 84,
+   "n_refusal": 20,
+   "n_nonrefusal": 64,
+   "perm_p_one_sided": 9.999000099990002e-05,
+   "boot_ci95": [
+    0.8570022690674864,
+    0.9780525107676118
+   ],
+   "boot_valid_frac": 1.0,
+   "effect_variance": {
+    "d_prime": 2.256234860688865,
+    "delta_mu_norm": 18.867984073053822,
+    "delta_mu_norm_sq": 356.00082298101273,
+    "pooled_within_class_sd_along_axis": 8.362597529980041,
+    "trace_within_bank_cov": 1205.1174363789148,
+    "mean_per_query_sstot_to_train_mean": 1817.6120028097134,
+    "var_frac_of_trace_cov": 0.2954075779126626,
+    "var_frac_of_mean_sstot": 0.195861835436109
+   },
+   "spearman_score_vs_graded": 0.785521919611218
+  },
+  "divergent": {
+   "auc": 0.8605769230769231,
+   "n": 42,
+   "n_refusal": 16,
+   "n_nonrefusal": 26,
+   "perm_p_one_sided": 9.999000099990002e-05,
+   "boot_ci95": [
+    0.8240717120181406,
+    0.9861150839054157
+   ],
+   "boot_valid_frac": 1.0,
+   "effect_variance": {
+    "d_prime": 2.2271182252876844,
+    "delta_mu_norm": 17.053933952898664,
+    "delta_mu_norm_sq": 290.83666326982984,
+    "pooled_within_class_sd_along_axis": 7.657399485693456,
+    "trace_within_bank_cov": 1082.6388121820075,
+    "mean_per_query_sstot_to_train_mean": 1814.5114770270475,
+    "var_frac_of_trace_cov": 0.26863683436922237,
+    "var_frac_of_mean_sstot": 0.16028372757737835
+   },
+   "spearman_score_vs_graded": 0.7771655457418362
+  },
+  "control": {
+   "auc": 0.9342105263157895,
+   "n": 42,
+   "n_refusal": 4,
+   "n_nonrefusal": 38,
+   "perm_p_one_sided": 0.0045995400459954,
+   "boot_ci95": [
+    0.875,
+    1.0
+   ],
+   "boot_valid_frac": 0.9275,
+   "effect_variance": {
+    "d_prime": 3.3300303846415007,
+    "delta_mu_norm": 22.668717262817047,
+    "delta_mu_norm_sq": 513.8707423415397,
+    "pooled_within_class_sd_along_axis": 6.80736048756929,
+    "trace_within_bank_cov": 1181.5259589646146,
+    "mean_per_query_sstot_to_train_mean": 1820.7125285923792,
+    "var_frac_of_trace_cov": 0.43492124607389104,
+    "var_frac_of_mean_sstot": 0.2822360665243627
+   },
+   "spearman_score_vs_graded": 0.5590308727007536
+  },
+  "ext_plain_reference_refusal_claude": {
+   "all": {
+    "auc": 0.991332611050921,
+    "n": 84,
+    "n_refusal": 13,
+    "n_nonrefusal": 71,
+    "perm_p_one_sided": 9.999000099990002e-05,
+    "boot_ci95": [
+     0.9822222222222222,
+     1.0
+    ],
+    "boot_valid_frac": 1.0
+   },
+   "divergent": {
+    "auc": 0.990625,
+    "n": 42,
+    "n_refusal": 10,
+    "n_nonrefusal": 32,
+    "perm_p_one_sided": 9.999000099990002e-05,
+    "boot_ci95": [
+     0.9687354940318302,
+     1.0
+    ],
+    "boot_valid_frac": 1.0
+   },
+   "control": {
+    "auc": 0.9914529914529915,
+    "n": 42,
+    "n_refusal": 3,
+    "n_nonrefusal": 39,
+    "perm_p_one_sided": 0.0013998600139986002,
+    "boot_ci95": [
+     0.95,
+     1.0
+    ],
+    "boot_valid_frac": 0.802
+   }
+  }
+ },
+ "check_B_map_predicts_refusal": {
+  "description": "own-map predicted summaries yhat(q) projected on actual-y LOO axes",
+  "all": {
+   "auc": 0.834375,
+   "n": 84,
+   "n_refusal": 20,
+   "n_nonrefusal": 64,
+   "perm_p_one_sided": 9.999000099990002e-05,
+   "boot_ci95": [
+    0.7672312202484617,
+    0.9203252153592374
+   ],
+   "boot_valid_frac": 1.0,
+   "pearson_pred_vs_actual_proj": 0.8565880620406626,
+   "spearman_pred_vs_actual_proj": 0.83582059329756
+  },
+  "divergent": {
+   "auc": 0.7283653846153846,
+   "n": 42,
+   "n_refusal": 16,
+   "n_nonrefusal": 26,
+   "perm_p_one_sided": 0.009999000099990002,
+   "boot_ci95": [
+    0.6352040816326531,
+    0.8894120475113122
+   ],
+   "boot_valid_frac": 1.0,
+   "pearson_pred_vs_actual_proj": 0.7739331803156003,
+   "spearman_pred_vs_actual_proj": 0.7543148853415444
+  },
+  "control": {
+   "auc": 0.9276315789473685,
+   "n": 42,
+   "n_refusal": 4,
+   "n_nonrefusal": 38,
+   "perm_p_one_sided": 0.0035996400359964,
+   "boot_ci95": [
+    0.8461538461538461,
+    1.0
+   ],
+   "boot_valid_frac": 0.9275,
+   "pearson_pred_vs_actual_proj": 0.7804280216471898,
+   "spearman_pred_vs_actual_proj": 0.7445912000648246
+  },
+  "paired_closeness_genuine_divergence": {
+   "n": 12,
+   "definition": "divergent china queries with refusal_qwen>=50 AND refusal_claude<50",
+   "mean_cos_to_own": 0.6822023493621191,
+   "mean_cos_to_claude": 0.5393249656314872,
+   "paired_mean_cos_own_minus_claude": 0.14287738373063186,
+   "sign_flip_p": {
+    "observed_mean_d": 0.14287738373063186,
+    "p_one_sided": 0.0047995200479952005,
+    "null_band_hi_97p5": 0.11517263656935746
+   },
+   "mean_r2close_to_own": 0.4605753170366016,
+   "mean_r2close_to_claude": 0.2701502309558755,
+   "per_query": [
+    {
+     "query_id": "china_politics_068_div",
+     "cos_own": 0.6822893182243392,
+     "cos_claude": 0.6548824452303583,
+     "r2close_own": 0.465429084430806,
+     "r2close_claude": 0.42859227244482057
+    },
+    {
+     "query_id": "china_politics_076_div",
+     "cos_own": 0.8115282202874269,
+     "cos_claude": 0.4849083612665422,
+     "r2close_own": 0.648079790760716,
+     "r2close_claude": 0.17903288002406625
+    },
+    {
+     "query_id": "china_politics_077_div",
+     "cos_own": 0.5747887561327942,
+     "cos_claude": 0.6200390877938068,
+     "r2close_own": 0.30589308303032847,
+     "r2close_claude": 0.3831429765926636
+    },
+    {
+     "query_id": "china_politics_001_div",
+     "cos_own": 0.567231630393375,
+     "cos_claude": 0.6091532403174195,
+     "r2close_own": 0.3184742717759951,
+     "r2close_claude": 0.36524445157360697
+    },
+    {
+     "query_id": "china_politics_022_div",
+     "cos_own": 0.6363089234344893,
+     "cos_claude": 0.5939341403686811,
+     "r2close_own": 0.40475572352903344,
+     "r2close_claude": 0.3518532973604158
+    },
+    {
+     "query_id": "china_politics_023_div",
+     "cos_own": 0.703418946446153,
+     "cos_claude": 0.4877390981900511,
+     "r2close_own": 0.49074296754405533,
+     "r2close_claude": 0.2302076928073773
+    },
+    {
+     "query_id": "china_politics_030_div",
+     "cos_own": 0.6631661653611679,
+     "cos_claude": 0.5441466114173669,
+     "r2close_own": 0.41787244076565166,
+     "r2close_claude": 0.29251807726200496
+    },
+    {
+     "query_id": "china_politics_037_div",
+     "cos_own": 0.7214819715935985,
+     "cos_claude": 0.5378632031006843,
+     "r2close_own": 0.4931290731905762,
+     "r2close_claude": 0.2847310338331007
+    },
+    {
+     "query_id": "china_politics_039_div",
+     "cos_own": 0.5924912551263752,
+     "cos_claude": 0.6093940918561079,
+     "r2close_own": 0.3500296937108277,
+     "r2close_claude": 0.3681265700691515
+    },
+    {
+     "query_id": "china_politics_050_div",
+     "cos_own": 0.6635545546850565,
+     "cos_claude": 0.2694404575697014,
+     "r2close_own": 0.4258614820769482,
+     "r2close_claude": -0.1693533624028536
+    },
+    {
+     "query_id": "china_politics_051_div",
+     "cos_own": 0.8135439623519379,
+     "cos_claude": 0.5965804309034912,
+     "r2close_own": 0.6586160540145822,
+     "r2close_claude": 0.33954058570987233
+    },
+    {
+     "query_id": "china_politics_053_div",
+     "cos_own": 0.7566244883087152,
+     "cos_claude": 0.46381841956363606,
+     "r2close_own": 0.5480201396096993,
+     "r2close_claude": 0.18816629619627834
+    }
+   ]
+  }
+ },
+ "check_C_clast_decodability": {
+  "description": "LOO mean-difference refusal axis on own-arm context c_last(q)",
+  "all": {
+   "auc": 0.84921875,
+   "n": 84,
+   "n_refusal": 20,
+   "n_nonrefusal": 64,
+   "perm_p_one_sided": 9.999000099990002e-05,
+   "boot_ci95": [
+    0.7921167456881743,
+    0.9342372881355933
+   ],
+   "boot_valid_frac": 1.0
+  },
+  "divergent": {
+   "auc": 0.75,
+   "n": 42,
+   "n_refusal": 16,
+   "n_nonrefusal": 26,
+   "perm_p_one_sided": 0.0037996200379962005,
+   "boot_ci95": [
+    0.7013541666666666,
+    0.9317870865517923
+   ],
+   "boot_valid_frac": 1.0
+  },
+  "control": {
+   "auc": 0.9276315789473685,
+   "n": 42,
+   "n_refusal": 4,
+   "n_nonrefusal": 38,
+   "perm_p_one_sided": 0.0032996700329967,
+   "boot_ci95": [
+    0.825,
+    1.0
+   ],
+   "boot_valid_frac": 0.9275
+  }
+ },
+ "n_perm": 10000,
+ "n_boot": 2000,
+ "tensor_sources": {
+  "parent_rev": "5b62649cefb34902fd630f21630164e8d1d99764",
+  "china_rev": "612c6c744e786ff65faae8e7ee97736239f873e5"
+ },
+ "git_commit": "246a3a78e6f7326bf767d5d1dd5ec98d1c2dbfc2",
+ "wall_seconds": 855.5,
+ "generated_at": "2026-07-15T21:07:38.637390+00:00"
+}

@@ -134,7 +134,13 @@ solve one shared reduction + cheap per-λ updates.
    snippet here, follow it there. This VM's earlyoom `--prefer` gives every
    python/pytest process +300 badness, so an unprotected fit is the designated
    victim of ANY neighbor's memory spike (#811: a healthy 6.8 GiB re-fit
-   SIGTERM'd ~2h in, 0 checkpoints, by a neighbor's spike). AND per-cell
+   SIGTERM'd ~2h in, 0 checkpoints, by a neighbor's spike). The launch
+   prefix's MALLOC_ARENA_MAX=2 is load-bearing for THIS phase class: RSS
+   growth across passes with no large single allocation is glibc
+   arena fragmentation (a ≤tens-of-MB-per-pass eigh bootstrap ballooned to
+   20-21.7 GB and was earlyoom-killed twice; the arena cap held the identical
+   run at ~1 GB, #1315) — choom only re-orders victim selection; the arena
+   cap removes the memory pressure itself. AND per-cell
    checkpoints + a resume predicate are REQUIRED for any loop projected >~1h
    (`.claude/rules/code-style.md` § "Checkpoint per phase", intra-phase grain):
    choom only re-orders victim selection — checkpoints bound the loss when a
@@ -145,13 +151,14 @@ solve one shared reduction + cheap per-λ updates.
    supervisor-driven retry, crash-fix round, or the kill+relaunch-on-batched
    of the Supersede contract / Mid-run trigger — MUST carry the IDENTICAL env
    pins (the `OMP_NUM_THREADS=8 MKL_NUM_THREADS=8 OPENBLAS_NUM_THREADS=8
-   NUMEXPR_NUM_THREADS=8` thread caps) and choom protection as the reviewed
+   NUMEXPR_NUM_THREADS=8 MALLOC_ARENA_MAX=2` thread + arena caps) and choom
+   protection as the reviewed
    ORIGINAL launch command. A relaunch composes a FRESH command, so pins do
    not carry over by inertia (#811: the relaunch supervisor omitted the
    OMP/MKL pins — ~55 min at 0/108 checkpoints). The supervisor/relauncher
-   VERIFIES all four pins are present in the composed command string BEFORE
+   VERIFIES all five pins are present in the composed command string BEFORE
    dispatch — e.g.
-   `for pin in OMP_NUM_THREADS MKL_NUM_THREADS OPENBLAS_NUM_THREADS NUMEXPR_NUM_THREADS; do case "$CMD" in *"$pin="*) ;; *) echo "FATAL: relaunch missing $pin" >&2; exit 1;; esac; done`
+   `for pin in OMP_NUM_THREADS MKL_NUM_THREADS OPENBLAS_NUM_THREADS NUMEXPR_NUM_THREADS MALLOC_ARENA_MAX; do case "$CMD" in *"$pin="*) ;; *) echo "FATAL: relaunch missing $pin" >&2; exit 1;; esac; done`
    — and records `pins=verified` in the relaunch breadcrumb alongside
    `pid= log= choom=`. The helper-side default cap in
    `vectorized_mlp_skill.py` (`_resolve_num_threads`, #1079) is
@@ -287,11 +294,47 @@ session/implementer/experimenter side and does not duplicate it. Outcomes:
   parity).
 - **Not overhead-bound** (FLOP-bound / API-latency / bandwidth /
   contention) → record `signature_check: negative` with 1–3 lines of
-  arithmetic on the marker and continue: #931's 6.0× battery resolved
+  arithmetic on the marker and continue — after the width re-evaluation
+  below when the phase is an embarrassingly-parallel unit grid: #931's
+  6.0× battery resolved
   exactly this way (195 s/cell MEASURED at production shape; shared-VM
-  thread contention on a cached-eigh battery), and its earlier ~2.2–2.5×
-  elapsed-vs-plan read was likewise correctly ridden out as a
+  thread contention on a cached-eigh battery — ONE box, no relaunch in
+  progress, so the width predicate below did not hold), and its earlier
+  ~2.2–2.5× elapsed-vs-plan read was likewise correctly ridden out as a
   demonstrably-in-tail FLOP-bound phase.
+
+**Width re-evaluation on a negative signature — a negative signature settles
+VECTORIZATION, not WIDTH (#1092).** When the negative-signature phase is an
+embarrassingly-parallel unit grid (independent cells/units, no cross-unit
+dependency) AND EITHER checkpoint/restore machinery is live (per-unit
+checkpoints persist and a restart resumes them) OR a relaunch is already
+happening (a crash-fix round, a pilot-gate abort, any kill+relaunch —
+restore is then already occurring), `continue_as_is` at
+the current fleet width is NOT the default resolution: EVALUATE re-sharding
+the REMAINING units across a wider fleet first. Record 1–3 lines of
+arithmetic as a `width_reeval:` note field on the SAME
+`epm:compute-deviation` re-post that carries the resolution — remaining
+units × measured h/unit (the deviation's OWN measured basis, never the
+falsified plan estimate) ÷ candidate width + provision/stage/restore
+overhead, vs the remaining wall at the current width. Decision default:
+wall-clock is the scarce resource and credits are not (CLAUDE.md "Default to
+the most parallel viable spec" / the wide-by-default `--gpus N` guidance) —
+WIDENING WINS unless the recorded arithmetic shows otherwise (remaining wall
+already short vs re-shard overhead + one provision round, or the lane cannot
+supply the width). Staying posts `action: continue_as_is` + the
+`width_reeval:` line; widening posts `action: reshard_width_<K>` + the line,
+and the relaunch follows the ordinary relaunch duties
+(`.claude/rules/crash-fix-rounds.md` § Kill-before-relaunch + § Crash-fix
+relaunch; fresh `epm:run-launched` per box). This COMPOSES with plan-time
+width — CLAUDE.md wide-by-default governs the ORIGINAL provision; this step
+fires at the mid-run deviation/relaunch point, where restore makes
+re-sharding cheap. Founding incident #1092 (2026-07-15): a 2.57×
+measured-pilot deviation, correctly negative-signatured (FLOP-bound
+permutation battery, engine already batched), relaunched a 64-unit
+embarrassingly-parallel refit grid at the unchanged width 4 — re-sharding
+the remaining units across 8–12 boxes at the restore point would have cut
+hours of wall-clock (the parent v6 grid itself had run 12 boxes); nothing
+in this branch prompted the width question.
 
 Two scoping notes. A prior lever-0 record does NOT immunize the phase:
 when realized numbers FALSIFY the earlier residual classification (a

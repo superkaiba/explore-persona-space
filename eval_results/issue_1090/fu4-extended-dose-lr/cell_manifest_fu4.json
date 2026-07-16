@@ -1,0 +1,345 @@
+{
+  "issue": 1090,
+  "round": "fu4-extended-dose-lr",
+  "smoke": false,
+  "band": [
+    0.6,
+    0.85
+  ],
+  "epochs": 15,
+  "save_steps": 5,
+  "lrs": [
+    1e-05,
+    3e-05,
+    0.0001
+  ],
+  "judge_max_tokens": 300,
+  "runs": [
+    {
+      "run_id": "fmt-pers-lr1e5",
+      "cell_key": "fmt-pers",
+      "behavior": "formatting",
+      "context_id": "persona_software_engineer",
+      "lr": 1e-05,
+      "mix_hub_prefix": "issue1090_pvdatagen/c1-formatting-claude/mix",
+      "mix_layout": "parent-mix-subdir",
+      "fu3_base_eval": "C1-pers-con-formatting-claude.json",
+      "train_mix_sha256": "9bffa4b9b81d88d8101cf106b0a2441e41fd04f3723afef1364fccec15e21fa2",
+      "n_rows": 80,
+      "hub_provenance": {
+        "issue1090_pvdatagen/c1-formatting-claude/mix/train_mix.jsonl": {
+          "oid": "424f7731c6361562bc625bee37760c521fa5f55c",
+          "date": "2026-07-07T02:50:08+00:00"
+        },
+        "issue1090_pvdatagen/c1-formatting-claude/mix/mix_meta.json": {
+          "oid": "21bfc32034fa6831f1d748e8b5f7ecc74cb3a568",
+          "date": "2026-07-07T02:50:57+00:00"
+        }
+      },
+      "bank_git_date": "2026-07-02T13:43:39-07:00",
+      "fu3_base": {
+        "file": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-1090-fu4/eval_results/issue_1090/fu3/fu3_cell_evals/C1-pers-con-formatting-claude.json",
+        "rate": 0.16666666666666666,
+        "k": 50,
+        "n": 300,
+        "wilson95": [
+          0.1287647123620242,
+          0.21299757430313287
+        ],
+        "mode": "structural"
+      }
+    },
+    {
+      "run_id": "fmt-pers-lr3e5",
+      "cell_key": "fmt-pers",
+      "behavior": "formatting",
+      "context_id": "persona_software_engineer",
+      "lr": 3e-05,
+      "mix_hub_prefix": "issue1090_pvdatagen/c1-formatting-claude/mix",
+      "mix_layout": "parent-mix-subdir",
+      "fu3_base_eval": "C1-pers-con-formatting-claude.json",
+      "train_mix_sha256": "9bffa4b9b81d88d8101cf106b0a2441e41fd04f3723afef1364fccec15e21fa2",
+      "n_rows": 80,
+      "hub_provenance": {
+        "issue1090_pvdatagen/c1-formatting-claude/mix/train_mix.jsonl": {
+          "oid": "424f7731c6361562bc625bee37760c521fa5f55c",
+          "date": "2026-07-07T02:50:08+00:00"
+        },
+        "issue1090_pvdatagen/c1-formatting-claude/mix/mix_meta.json": {
+          "oid": "21bfc32034fa6831f1d748e8b5f7ecc74cb3a568",
+          "date": "2026-07-07T02:50:57+00:00"
+        }
+      },
+      "bank_git_date": "2026-07-02T13:43:39-07:00",
+      "fu3_base": {
+        "file": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-1090-fu4/eval_results/issue_1090/fu3/fu3_cell_evals/C1-pers-con-formatting-claude.json",
+        "rate": 0.16666666666666666,
+        "k": 50,
+        "n": 300,
+        "wilson95": [
+          0.1287647123620242,
+          0.21299757430313287
+        ],
+        "mode": "structural"
+      }
+    },
+    {
+      "run_id": "fmt-pers-lr1e4",
+      "cell_key": "fmt-pers",
+      "behavior": "formatting",
+      "context_id": "persona_software_engineer",
+      "lr": 0.0001,
+      "mix_hub_prefix": "issue1090_pvdatagen/c1-formatting-claude/mix",
+      "mix_layout": "parent-mix-subdir",
+      "fu3_base_eval": "C1-pers-con-formatting-claude.json",
+      "train_mix_sha256": "9bffa4b9b81d88d8101cf106b0a2441e41fd04f3723afef1364fccec15e21fa2",
+      "n_rows": 80,
+      "hub_provenance": {
+        "issue1090_pvdatagen/c1-formatting-claude/mix/train_mix.jsonl": {
+          "oid": "424f7731c6361562bc625bee37760c521fa5f55c",
+          "date": "2026-07-07T02:50:08+00:00"
+        },
+        "issue1090_pvdatagen/c1-formatting-claude/mix/mix_meta.json": {
+          "oid": "21bfc32034fa6831f1d748e8b5f7ecc74cb3a568",
+          "date": "2026-07-07T02:50:57+00:00"
+        }
+      },
+      "bank_git_date": "2026-07-02T13:43:39-07:00",
+      "fu3_base": {
+        "file": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-1090-fu4/eval_results/issue_1090/fu3/fu3_cell_evals/C1-pers-con-formatting-claude.json",
+        "rate": 0.16666666666666666,
+        "k": 50,
+        "n": 300,
+        "wilson95": [
+          0.1287647123620242,
+          0.21299757430313287
+        ],
+        "mode": "structural"
+      }
+    },
+    {
+      "run_id": "imp-pers-lr1e5",
+      "cell_key": "imp-pers",
+      "behavior": "impolite",
+      "context_id": "persona_software_engineer",
+      "lr": 1e-05,
+      "mix_hub_prefix": "issue1090_pvdatagen/c2-impolite-claude/mix",
+      "mix_layout": "parent-mix-subdir",
+      "fu3_base_eval": "C2-pers-con-impolite-claude.json",
+      "train_mix_sha256": "7d0822245be7a9ead0a5d717be4add552342a492487f35857270dfdf0ed224d2",
+      "n_rows": 80,
+      "hub_provenance": {
+        "issue1090_pvdatagen/c2-impolite-claude/mix/train_mix.jsonl": {
+          "oid": "0e3fe270f060761b21e1fdd87bfaff12542674ec",
+          "date": "2026-07-07T02:53:33+00:00"
+        },
+        "issue1090_pvdatagen/c2-impolite-claude/mix/mix_meta.json": {
+          "oid": "af33d27a7eef2e4fd1c16658dd03245074729e8c",
+          "date": "2026-07-07T02:55:48+00:00"
+        }
+      },
+      "bank_git_date": "2026-07-06T13:07:37-07:00",
+      "fu3_base": {
+        "file": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-1090-fu4/eval_results/issue_1090/fu3/fu3_cell_evals/C2-pers-con-impolite-claude.json",
+        "rate": 0.0,
+        "k": 0,
+        "n": 200,
+        "n_dropped": 0,
+        "n_total_draws": 1000,
+        "n_dropped_draws": 0,
+        "wilson95": [
+          0.0,
+          0.018846005918320894
+        ],
+        "mode": "judged"
+      }
+    },
+    {
+      "run_id": "imp-pers-lr3e5",
+      "cell_key": "imp-pers",
+      "behavior": "impolite",
+      "context_id": "persona_software_engineer",
+      "lr": 3e-05,
+      "mix_hub_prefix": "issue1090_pvdatagen/c2-impolite-claude/mix",
+      "mix_layout": "parent-mix-subdir",
+      "fu3_base_eval": "C2-pers-con-impolite-claude.json",
+      "train_mix_sha256": "7d0822245be7a9ead0a5d717be4add552342a492487f35857270dfdf0ed224d2",
+      "n_rows": 80,
+      "hub_provenance": {
+        "issue1090_pvdatagen/c2-impolite-claude/mix/train_mix.jsonl": {
+          "oid": "0e3fe270f060761b21e1fdd87bfaff12542674ec",
+          "date": "2026-07-07T02:53:33+00:00"
+        },
+        "issue1090_pvdatagen/c2-impolite-claude/mix/mix_meta.json": {
+          "oid": "af33d27a7eef2e4fd1c16658dd03245074729e8c",
+          "date": "2026-07-07T02:55:48+00:00"
+        }
+      },
+      "bank_git_date": "2026-07-06T13:07:37-07:00",
+      "fu3_base": {
+        "file": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-1090-fu4/eval_results/issue_1090/fu3/fu3_cell_evals/C2-pers-con-impolite-claude.json",
+        "rate": 0.0,
+        "k": 0,
+        "n": 200,
+        "n_dropped": 0,
+        "n_total_draws": 1000,
+        "n_dropped_draws": 0,
+        "wilson95": [
+          0.0,
+          0.018846005918320894
+        ],
+        "mode": "judged"
+      }
+    },
+    {
+      "run_id": "imp-pers-lr1e4",
+      "cell_key": "imp-pers",
+      "behavior": "impolite",
+      "context_id": "persona_software_engineer",
+      "lr": 0.0001,
+      "mix_hub_prefix": "issue1090_pvdatagen/c2-impolite-claude/mix",
+      "mix_layout": "parent-mix-subdir",
+      "fu3_base_eval": "C2-pers-con-impolite-claude.json",
+      "train_mix_sha256": "7d0822245be7a9ead0a5d717be4add552342a492487f35857270dfdf0ed224d2",
+      "n_rows": 80,
+      "hub_provenance": {
+        "issue1090_pvdatagen/c2-impolite-claude/mix/train_mix.jsonl": {
+          "oid": "0e3fe270f060761b21e1fdd87bfaff12542674ec",
+          "date": "2026-07-07T02:53:33+00:00"
+        },
+        "issue1090_pvdatagen/c2-impolite-claude/mix/mix_meta.json": {
+          "oid": "af33d27a7eef2e4fd1c16658dd03245074729e8c",
+          "date": "2026-07-07T02:55:48+00:00"
+        }
+      },
+      "bank_git_date": "2026-07-06T13:07:37-07:00",
+      "fu3_base": {
+        "file": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-1090-fu4/eval_results/issue_1090/fu3/fu3_cell_evals/C2-pers-con-impolite-claude.json",
+        "rate": 0.0,
+        "k": 0,
+        "n": 200,
+        "n_dropped": 0,
+        "n_total_draws": 1000,
+        "n_dropped_draws": 0,
+        "wilson95": [
+          0.0,
+          0.018846005918320894
+        ],
+        "mode": "judged"
+      }
+    },
+    {
+      "run_id": "imp-conv-lr1e5",
+      "cell_key": "imp-conv",
+      "behavior": "impolite",
+      "context_id": "wildchat_prefix_real545",
+      "lr": 1e-05,
+      "mix_hub_prefix": "issue1090_fu3/C2-conv-con-impolite-claude",
+      "mix_layout": "fu3-flat",
+      "fu3_base_eval": "C2-conv-con-impolite-claude.json",
+      "train_mix_sha256": "f80665fdf3a47ff5725e653e4ea34fcda2aab2ac4650542a5a0f01e00a44a04d",
+      "n_rows": 80,
+      "hub_provenance": {
+        "issue1090_fu3/C2-conv-con-impolite-claude/train_mix.jsonl": {
+          "oid": "012ac9fa3d9664c9c6f464741e299d3825511301",
+          "date": "2026-07-08T04:17:41+00:00"
+        },
+        "issue1090_fu3/C2-conv-con-impolite-claude/mix_meta.json": {
+          "oid": "60967f9d51a3a6de9a9b95a68d594138e300fcfc",
+          "date": "2026-07-08T04:18:36+00:00"
+        }
+      },
+      "bank_git_date": "2026-07-06T13:07:37-07:00",
+      "fu3_base": {
+        "file": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-1090-fu4/eval_results/issue_1090/fu3/fu3_cell_evals/C2-conv-con-impolite-claude.json",
+        "rate": 0.0,
+        "k": 0,
+        "n": 200,
+        "n_dropped": 0,
+        "n_total_draws": 1000,
+        "n_dropped_draws": 0,
+        "wilson95": [
+          0.0,
+          0.018846005918320894
+        ],
+        "mode": "judged"
+      }
+    },
+    {
+      "run_id": "imp-conv-lr3e5",
+      "cell_key": "imp-conv",
+      "behavior": "impolite",
+      "context_id": "wildchat_prefix_real545",
+      "lr": 3e-05,
+      "mix_hub_prefix": "issue1090_fu3/C2-conv-con-impolite-claude",
+      "mix_layout": "fu3-flat",
+      "fu3_base_eval": "C2-conv-con-impolite-claude.json",
+      "train_mix_sha256": "f80665fdf3a47ff5725e653e4ea34fcda2aab2ac4650542a5a0f01e00a44a04d",
+      "n_rows": 80,
+      "hub_provenance": {
+        "issue1090_fu3/C2-conv-con-impolite-claude/train_mix.jsonl": {
+          "oid": "012ac9fa3d9664c9c6f464741e299d3825511301",
+          "date": "2026-07-08T04:17:41+00:00"
+        },
+        "issue1090_fu3/C2-conv-con-impolite-claude/mix_meta.json": {
+          "oid": "60967f9d51a3a6de9a9b95a68d594138e300fcfc",
+          "date": "2026-07-08T04:18:36+00:00"
+        }
+      },
+      "bank_git_date": "2026-07-06T13:07:37-07:00",
+      "fu3_base": {
+        "file": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-1090-fu4/eval_results/issue_1090/fu3/fu3_cell_evals/C2-conv-con-impolite-claude.json",
+        "rate": 0.0,
+        "k": 0,
+        "n": 200,
+        "n_dropped": 0,
+        "n_total_draws": 1000,
+        "n_dropped_draws": 0,
+        "wilson95": [
+          0.0,
+          0.018846005918320894
+        ],
+        "mode": "judged"
+      }
+    },
+    {
+      "run_id": "imp-conv-lr1e4",
+      "cell_key": "imp-conv",
+      "behavior": "impolite",
+      "context_id": "wildchat_prefix_real545",
+      "lr": 0.0001,
+      "mix_hub_prefix": "issue1090_fu3/C2-conv-con-impolite-claude",
+      "mix_layout": "fu3-flat",
+      "fu3_base_eval": "C2-conv-con-impolite-claude.json",
+      "train_mix_sha256": "f80665fdf3a47ff5725e653e4ea34fcda2aab2ac4650542a5a0f01e00a44a04d",
+      "n_rows": 80,
+      "hub_provenance": {
+        "issue1090_fu3/C2-conv-con-impolite-claude/train_mix.jsonl": {
+          "oid": "012ac9fa3d9664c9c6f464741e299d3825511301",
+          "date": "2026-07-08T04:17:41+00:00"
+        },
+        "issue1090_fu3/C2-conv-con-impolite-claude/mix_meta.json": {
+          "oid": "60967f9d51a3a6de9a9b95a68d594138e300fcfc",
+          "date": "2026-07-08T04:18:36+00:00"
+        }
+      },
+      "bank_git_date": "2026-07-06T13:07:37-07:00",
+      "fu3_base": {
+        "file": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-1090-fu4/eval_results/issue_1090/fu3/fu3_cell_evals/C2-conv-con-impolite-claude.json",
+        "rate": 0.0,
+        "k": 0,
+        "n": 200,
+        "n_dropped": 0,
+        "n_total_draws": 1000,
+        "n_dropped_draws": 0,
+        "wilson95": [
+          0.0,
+          0.018846005918320894
+        ],
+        "mode": "judged"
+      }
+    }
+  ],
+  "git_commit": "affb87eb8b",
+  "created_utc": "2026-07-15T01:20:45Z"
+}

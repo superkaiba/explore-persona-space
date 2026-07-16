@@ -1,0 +1,51 @@
+{
+  "cell": "imp_icl_ft_neg",
+  "regime": {
+    "issue": 1315,
+    "smoke": false,
+    "cells": [
+      "imp_pers_lora",
+      "imp_conv_lora",
+      "imp_icl_lora_neg",
+      "imp_icl_lora_pos",
+      "imp_icl_ft_neg",
+      "imp_icl_ft_pos"
+    ],
+    "seed": 42,
+    "tier1": [
+      5,
+      3
+    ],
+    "tier2": [
+      10,
+      5
+    ],
+    "eval_question_limit": null,
+    "band": [
+      0.6,
+      0.85
+    ],
+    "save_steps": 2,
+    "max_length": 2048,
+    "step_ceiling": 30,
+    "bare": null
+  },
+  "rates_by_step": {
+    "2": 0.0,
+    "4": 0.75,
+    "6": 0.9797979797979798,
+    "8": 1.0,
+    "10": 0.97,
+    "12": 0.98,
+    "14": 0.97,
+    "16": 0.96,
+    "18": 0.95,
+    "20": 0.95,
+    "22": 0.95,
+    "24": 0.92,
+    "26": 0.94,
+    "28": 0.93,
+    "30": 0.95
+  },
+  "judge_max_tokens": 300
+}

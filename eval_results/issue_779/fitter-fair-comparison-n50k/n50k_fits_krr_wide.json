@@ -1,0 +1,279 @@
+{
+  "per_predictor": {
+    "krr": {
+      "whole_map_r2": 0.8076193698891805,
+      "mean_cosine": 0.9643002571002569,
+      "bootstrap_ci": {
+        "r2": {
+          "point": 0.8076193698891805,
+          "lo": 0.7959957755126886,
+          "hi": 0.8176819560072955
+        },
+        "mean_cosine": {
+          "point": 0.9643002571002569,
+          "lo": 0.9620840930426541,
+          "hi": 0.9661516643685296
+        },
+        "n_test": 1000
+      },
+      "fit_meta": {
+        "n_train": 50000,
+        "kernel": "exact RBF (no Nystrom)",
+        "base_gamma": 0.00017335059938009554,
+        "selected": {
+          "gamma_mult": 2.0,
+          "gamma": 0.00034670119876019107,
+          "lambda": 0.1,
+          "val_r2": 0.8020797329696083
+        },
+        "kernel_block": 4096,
+        "val_grid": [
+          {
+            "gamma_mult": 0.25,
+            "gamma": 4.3337649845023884e-05,
+            "lambda": 0.0001,
+            "val_r2": 0.6597308971903784
+          },
+          {
+            "gamma_mult": 0.25,
+            "gamma": 4.3337649845023884e-05,
+            "lambda": 0.001,
+            "val_r2": 0.7698090051210523
+          },
+          {
+            "gamma_mult": 0.25,
+            "gamma": 4.3337649845023884e-05,
+            "lambda": 0.01,
+            "val_r2": 0.7942094091801477
+          },
+          {
+            "gamma_mult": 0.25,
+            "gamma": 4.3337649845023884e-05,
+            "lambda": 0.1,
+            "val_r2": 0.7884093614056449
+          },
+          {
+            "gamma_mult": 0.25,
+            "gamma": 4.3337649845023884e-05,
+            "lambda": 1.0,
+            "val_r2": 0.7581367433950097
+          },
+          {
+            "gamma_mult": 0.5,
+            "gamma": 8.667529969004777e-05,
+            "lambda": 0.0001,
+            "val_r2": 0.7039588383514452
+          },
+          {
+            "gamma_mult": 0.5,
+            "gamma": 8.667529969004777e-05,
+            "lambda": 0.001,
+            "val_r2": 0.7603117291577255
+          },
+          {
+            "gamma_mult": 0.5,
+            "gamma": 8.667529969004777e-05,
+            "lambda": 0.01,
+            "val_r2": 0.7899800547189791
+          },
+          {
+            "gamma_mult": 0.5,
+            "gamma": 8.667529969004777e-05,
+            "lambda": 0.1,
+            "val_r2": 0.797607727408399
+          },
+          {
+            "gamma_mult": 0.5,
+            "gamma": 8.667529969004777e-05,
+            "lambda": 1.0,
+            "val_r2": 0.7757026814875103
+          },
+          {
+            "gamma_mult": 1.0,
+            "gamma": 0.00017335059938009554,
+            "lambda": 0.0001,
+            "val_r2": 0.727932930988834
+          },
+          {
+            "gamma_mult": 1.0,
+            "gamma": 0.00017335059938009554,
+            "lambda": 0.001,
+            "val_r2": 0.7611587697544587
+          },
+          {
+            "gamma_mult": 1.0,
+            "gamma": 0.00017335059938009554,
+            "lambda": 0.01,
+            "val_r2": 0.7858042513808344
+          },
+          {
+            "gamma_mult": 1.0,
+            "gamma": 0.00017335059938009554,
+            "lambda": 0.1,
+            "val_r2": 0.8016085445025625
+          },
+          {
+            "gamma_mult": 1.0,
+            "gamma": 0.00017335059938009554,
+            "lambda": 1.0,
+            "val_r2": 0.789407252699056
+          },
+          {
+            "gamma_mult": 2.0,
+            "gamma": 0.00034670119876019107,
+            "lambda": 0.0001,
+            "val_r2": 0.7608485542825594
+          },
+          {
+            "gamma_mult": 2.0,
+            "gamma": 0.00034670119876019107,
+            "lambda": 0.001,
+            "val_r2": 0.7746739240014211
+          },
+          {
+            "gamma_mult": 2.0,
+            "gamma": 0.00034670119876019107,
+            "lambda": 0.01,
+            "val_r2": 0.7889908210667566
+          },
+          {
+            "gamma_mult": 2.0,
+            "gamma": 0.00034670119876019107,
+            "lambda": 0.1,
+            "val_r2": 0.8020797329696083
+          },
+          {
+            "gamma_mult": 2.0,
+            "gamma": 0.00034670119876019107,
+            "lambda": 1.0,
+            "val_r2": 0.7962940561583464
+          },
+          {
+            "gamma_mult": 4.0,
+            "gamma": 0.0006934023975203821,
+            "lambda": 0.0001,
+            "val_r2": 0.7818772346692686
+          },
+          {
+            "gamma_mult": 4.0,
+            "gamma": 0.0006934023975203821,
+            "lambda": 0.001,
+            "val_r2": 0.7849816590385835
+          },
+          {
+            "gamma_mult": 4.0,
+            "gamma": 0.0006934023975203821,
+            "lambda": 0.01,
+            "val_r2": 0.7906029441746438
+          },
+          {
+            "gamma_mult": 4.0,
+            "gamma": 0.0006934023975203821,
+            "lambda": 0.1,
+            "val_r2": 0.7969324477638617
+          },
+          {
+            "gamma_mult": 4.0,
+            "gamma": 0.0006934023975203821,
+            "lambda": 1.0,
+            "val_r2": 0.7893418520067393
+          }
+        ]
+      },
+      "wall_time_s": 51.7
+    }
+  },
+  "corpus_mode": "n50k-plan-b",
+  "layer": 19,
+  "seed": 42,
+  "split": {
+    "mode": "plan-B (n50k-only)",
+    "include_n10k_captures": false,
+    "n_contexts": 51600,
+    "n_pass_b": 5000,
+    "n10k_kept": 0,
+    "n50k_used": 46600,
+    "n_train": 50000,
+    "n_val": 400,
+    "n_test": 1000,
+    "n_train_target": 50000,
+    "pool_size": 50200,
+    "orig_train_ids": 3600,
+    "seed": 42,
+    "val_sha256": "2e307fb2d1b74c82752d9460d131a3c1949860e9f0eefe6a82d15cee9f1e0613",
+    "test_sha256": "b9377786b24bc9c1c360303fdb8fac86c0097d264479de1dca3c23dd1047d31d",
+    "train_sha256": "5c072c8483bda154038226ada33b98abd6bb5bfb2c06eab87471f2d5aaa2ac4f",
+    "val_test_byte_identical_original": true,
+    "pinned_val_sha256": "2e307fb2d1b74c82752d9460d131a3c1949860e9f0eefe6a82d15cee9f1e0613",
+    "pinned_test_sha256": "b9377786b24bc9c1c360303fdb8fac86c0097d264479de1dca3c23dd1047d31d",
+    "pinned_source": "/workspace/explore-persona-space/eval_results/issue_779/fitter-fair-comparison/fair_comparison.json split params -> fixed_split, cross-checked vs constants",
+    "note": "val/test = fixed_split(5000,3600,400,1000,42) indices <5000 = the same pass_b rows as the original round (val/test_sha256 asserted == pinned original). plan-B (DEFAULT): train pool = orig-train (3600) + all 46600 n50k new, sampled to n_train_target. n10k captures NOT used (presumed unavailable).",
+    "n50k_kept_captured": 46600
+  },
+  "mlp_recipe": {
+    "width": 8192,
+    "lr": 0.0003,
+    "source": "/workspace/explore-persona-space/eval_results/issue_779/fitter-fair-comparison/fair_comparison.json mlp_selection.per_input.last (L19)"
+  },
+  "lambda_grid": {
+    "n": 21,
+    "min": 0.001,
+    "max": 10000000.0,
+    "log10": [
+      -3.0,
+      -2.5,
+      -2.0,
+      -1.5,
+      -1.0,
+      -0.5,
+      0.0,
+      0.5,
+      1.0,
+      1.5,
+      2.0,
+      2.5,
+      3.0,
+      3.5,
+      4.0,
+      4.5,
+      5.0,
+      5.5,
+      6.0,
+      6.5,
+      7.0
+    ]
+  },
+  "krr_grid": {
+    "gamma_mult": [
+      0.25,
+      0.5,
+      1.0,
+      2.0,
+      4.0
+    ],
+    "lambdas": [
+      0.0001,
+      0.001,
+      0.01,
+      0.1,
+      1.0
+    ]
+  },
+  "predictor_labels": {
+    "ridge": "primal ridge (linear)",
+    "krr": "exact RBF KRR",
+    "mlp": "full-dim MLP (w=8192)",
+    "residual_skip": "residual-skip (primal ridge + MLP)"
+  },
+  "note": "n_train=50,000 rerun of the fitter-fair-comparison (plan-B, 2026-07-14). val/test BYTE-IDENTICAL to the ORIGINAL round (asserted vs pinned shas). DEFAULT plan-B: orig-train (3600) + 46600 new = pool 50200, trim to 50000; n10k captures NOT used. ridge=PRIMAL val-lambda over LAMBDAS_N50K; krr=EXACT RBF (no Nystrom, chunked+Cholesky); mlp=w8192 original-round recipe reused; residual-skip=primal ridge + MLP.",
+  "metadata": {
+    "git_commit": "4cb9d6ea8dbbcf3523af1fad5b5f3e7d634140f0",
+    "timestamp_utc": "2026-07-15T05:50:13.626960Z",
+    "python_version": "3.11.10",
+    "platform": "Linux-6.8.0-106-generic-x86_64-with-glibc2.35",
+    "cuda_visible_devices": "0",
+    "script": "issue779_ffc_n50k_fits",
+    "corpus_mode": "n50k-plan-b",
+    "device": "cuda"
+  }
+}

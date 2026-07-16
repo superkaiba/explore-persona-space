@@ -109,7 +109,12 @@ RunPod-on-error, ``route(spec)`` orchestrates the full multi-backend ladder:
    plus margin; the ladder is WIDTH-AWARE: a dispatch declaring a shardable
    axis via ``spec.gpus`` walks wide ``a2-ultragpu-{8,4,2}g`` rungs FIRST,
    width-major, degrading on capacity miss into the byte-identical base
-   ladder — see :func:`_gcp_ladder_specs` / :func:`_requested_wide_widths`).
+   ladder — see :func:`_gcp_ladder_specs` / :func:`_requested_wide_widths`;
+   and, as of #1379, an EXPLICIT ``sweep-8g-a100`` dispatch likewise
+   degrades 8->4->2 via a wide-rung SUFFIX appended after its base rungs —
+   opt out per dispatch with ``--width-required``; ``sweep-8g-h100`` never
+   degrades — see :func:`_explicit_wide_degrade_widths`. The worst new walk
+   is 9 creates < the 14-rung width-8 short walk the cap was sized for).
    It counts ACTUAL create attempts across the #656 fallback-ladder rungs
    (a headroom-skip does NOT consume one) and is RE-READ each rung. At the
    cap the ladder STOPS issuing GCP creates (zero credit spent) and the
@@ -204,6 +209,7 @@ from explore_persona_space.backends.base import (
     validate_lane_suffix,
 )
 from explore_persona_space.backends.gcp import (
+    EXPLICIT_WIDE_DEGRADE_INTENTS,
     INTENT_TO_MACHINE,
     WIDE_A100_80_BY_WIDTH,
     WIDTH_ELIGIBLE_INTENTS,
@@ -2504,6 +2510,92 @@ def _requested_wide_widths(spec: RunSpec, base: MachineSpec) -> list[int]:
     return [w for w in (8, 4, 2) if base.gpu_count < w <= g]
 
 
+def _explicit_wide_degrade_widths(spec: RunSpec, base: MachineSpec) -> list[int]:
+    """Descending DEGRADED widths for an explicit wide degradable intent; ``[]`` otherwise.
+
+    The explicit-intent sibling of :func:`_requested_wide_widths` (#1379):
+    an ``EXPLICIT_WIDE_DEGRADE_INTENTS`` dispatch (``sweep-8g-a100``) whose
+    full-width rungs all capacity-miss degrades onto the narrower
+    :data:`gcp.WIDE_A100_80_BY_WIDTH` machines (8->4->2) instead of
+    starving on the single scarcest config (#825: 2.5h+ stuck on two empty
+    8-GPU DWS pools while 4x/2x capacity was abundant). ``[]`` when:
+    the intent is not degradable; ``spec.gpus`` names a DIFFERENT width
+    (the --gpus path owns width then — pre-route guard refuses mismatches
+    anyway); or the caller pinned the width via
+    ``spec.extra["width_required"]`` (dispatch_issue.py --width-required —
+    a shared-nothing 8-way memory/parallelism need that cannot re-shard).
+    """
+    if spec.intent not in EXPLICIT_WIDE_DEGRADE_INTENTS:
+        return []
+    if spec.gpus is not None and int(spec.gpus) != base.gpu_count:
+        return []  # unreachable via dispatch_issue (guard refuses), safe for library callers
+    if bool((spec.extra or {}).get("width_required")):
+        logger.info(
+            "route: width_required set — explicit wide intent %r pinned at %dx; "
+            "no width degradation (#1379).",
+            spec.intent,
+            base.gpu_count,
+        )
+        return []
+    return [w for w in sorted(WIDE_A100_80_BY_WIDTH, reverse=True) if w < base.gpu_count]
+
+
+def _wide_rungs_for_widths(
+    spec: RunSpec, widths: list[int], *, pinned: str | None, short: bool
+) -> list[tuple[RunSpec, str]]:
+    """(spec, label) rungs at each width in ``widths`` (width-major, intra-width
+    per the length-aware order / caller pin) — shared by the #1121 --gpus wide
+    PREFIX and the #1379 explicit-intent degraded SUFFIX."""
+    rungs: list[tuple[RunSpec, str]] = []
+    for w in widths:
+        m = WIDE_A100_80_BY_WIDTH[w]
+        if pinned is not None:
+            # Caller pin honored at every width (#537/#680, extended per-width):
+            # a pinned SPOT width-8 dispatch walks spot_*x8 -> spot_*x4 ->
+            # spot_*x2 -> the pinned base tail, never silently un-pinning.
+            wide_pinned_model = str(pinned).upper()
+            wide_prefix = {
+                "SPOT": "spot",
+                "FLEX_START": "flexstart",
+                "STANDARD": "ondemand",
+            }.get(wide_pinned_model, wide_pinned_model.lower())
+            rungs.append(
+                (
+                    _with_machine(spec, m, provisioning=wide_pinned_model),
+                    f"{wide_prefix}_{_machine_label(m)}x{w}",
+                )
+            )
+            continue
+        if short:
+            rungs.append(
+                (_with_machine(spec, m, provisioning="SPOT"), f"spot_{_machine_label(m)}x{w}")
+            )
+        flex_spec, _flex_base_label = _flex_start_rung(spec, m)
+        rungs.append((flex_spec, f"flexstart_{_machine_label(m)}x{w}"))
+        rungs.append(
+            (_with_machine(spec, m, provisioning="STANDARD"), f"ondemand_{_machine_label(m)}x{w}")
+        )
+    return rungs
+
+
+def _declared_width(spec: RunSpec) -> int | None:
+    """Caller-DECLARED GPU width for the handle/marker record (#1121/#1379):
+    ``spec.gpus`` when set; else the explicit wide intent's own base width
+    (so a degraded sweep-8g-a100 launch reads requested=8, realized=4|2
+    instead of requested=null); else None. ``INTENT_TO_MACHINE.get`` (not
+    ``machine_for_intent``) deliberately bypasses the rung's
+    ``machine_spec_override`` — the declared width is the INTENT's, never
+    the degraded rung's (the same pattern ``_translated_runpod_intent``
+    uses)."""
+    if spec.gpus is not None:
+        return int(spec.gpus)
+    if spec.intent in EXPLICIT_WIDE_DEGRADE_INTENTS:
+        m = INTENT_TO_MACHINE.get(spec.intent)
+        if m is not None:
+            return int(m.gpu_count)
+    return None
+
+
 def _gcp_ladder_specs(spec: RunSpec) -> list[tuple[RunSpec, str]]:
     """Ordered ``(spec, rung_label)`` GCP provisioning attempts, length- and width-aware.
 
@@ -2535,6 +2627,20 @@ def _gcp_ladder_specs(spec: RunSpec) -> list[tuple[RunSpec, str]]:
     ``_is_short_job(spec, base)`` — width-1 ladders are byte-identical.
     The base-width tail below the wide prefix is the pre-#1121 ladder
     unchanged.
+
+    **Explicit-wide degraded SUFFIX (#1379).** An EXPLICIT wide intent in
+    :data:`gcp.EXPLICIT_WIDE_DEGRADE_INTENTS` (``sweep-8g-a100``) whose
+    ``spec.gpus`` is None (or equals the base width) gains DEGRADED
+    ``a2-ultragpu-{4,2}g`` rungs APPENDED after the base tail — the
+    mirror-image of the #1121 wide prefix (the base rungs at the intent's
+    own 8g machine ARE the width-8 rungs, so a suffix preserves
+    width-major order with zero duplicate creates). Intra-width the same
+    length-aware / caller-pinned order applies via the shared
+    :func:`_wide_rungs_for_widths` builder; ``spec.extra["width_required"]``
+    (dispatch_issue.py ``--width-required``) pins the full width — the
+    ladder is then byte-identical to the pre-#1379 one. ``sweep-8g-h100``
+    is deliberately NOT degradable (a GPU-TYPE choice; its fallback is the
+    type-preserving RunPod 8xH100 terminal rung).
 
     The base order is keyed on job LENGTH (:func:`_is_short_job`) — #680:
 
@@ -2644,41 +2750,32 @@ def _gcp_ladder_specs(spec: RunSpec) -> list[tuple[RunSpec, str]]:
     # ``spec.extra["estimated_gpu_hours"]`` override is machine-independent,
     # so classify-at-widest is a no-op on that path — not an error.
     wide_widths = _requested_wide_widths(spec, base)
+    degrade_widths = _explicit_wide_degrade_widths(spec, base)  # NEW (#1379)
     widest = WIDE_A100_80_BY_WIDTH[wide_widths[0]] if wide_widths else base
+    # For an explicit wide intent, ``widest`` IS ``base`` (the intent's own
+    # 8g machine), so _is_short_job already classifies at the 8-wide machine
+    # (GPU-hours = wall x 8) and the degraded rungs inherit it — the same
+    # conservative classify-at-widest logic #1121 documented.
     short = _is_short_job(spec, widest)
-    rungs: list[tuple[RunSpec, str]] = []
-    for w in wide_widths:
-        m = WIDE_A100_80_BY_WIDTH[w]  # membership guaranteed by _requested_wide_widths
-        if pinned is not None:
-            # Caller pin honored at every width (#537/#680, extended per-width):
-            # a pinned SPOT width-8 dispatch walks spot_*x8 -> spot_*x4 ->
-            # spot_*x2 -> the pinned base tail, never silently un-pinning.
-            wide_pinned_model = str(pinned).upper()
-            wide_prefix = {
-                "SPOT": "spot",
-                "FLEX_START": "flexstart",
-                "STANDARD": "ondemand",
-            }.get(wide_pinned_model, wide_pinned_model.lower())
-            rungs.append(
-                (
-                    _with_machine(spec, m, provisioning=wide_pinned_model),
-                    f"{wide_prefix}_{_machine_label(m)}x{w}",
-                )
-            )
-            continue
-        if short:
-            rungs.append(
-                (_with_machine(spec, m, provisioning="SPOT"), f"spot_{_machine_label(m)}x{w}")
-            )
-        flex_spec, _flex_base_label = _flex_start_rung(spec, m)
-        rungs.append((flex_spec, f"flexstart_{_machine_label(m)}x{w}"))
-        rungs.append(
-            (_with_machine(spec, m, provisioning="STANDARD"), f"ondemand_{_machine_label(m)}x{w}")
-        )
+    # #1121 wide-rung PREFIX + #1379 explicit-intent degraded SUFFIX share
+    # ONE per-width rung builder (single source of truth for rung shape /
+    # labels). ``wide_widths`` and ``degrade_widths`` are mutually exclusive
+    # by construction: _requested_wide_widths requires spec.gpus ABOVE the
+    # base width on a WIDTH_ELIGIBLE_INTENTS member (sweep intents are not
+    # members), while _explicit_wide_degrade_widths fires only for
+    # EXPLICIT_WIDE_DEGRADE_INTENTS members at their own base width.
+    rungs: list[tuple[RunSpec, str]] = _wide_rungs_for_widths(
+        spec, wide_widths, pinned=pinned, short=short
+    )
+    degrade_rungs = _wide_rungs_for_widths(spec, degrade_widths, pinned=pinned, short=short)
 
     # BASE-width tail: the pre-#1121 construction, byte-identical labels AND
     # specs (the base on-demand rung stays the caller spec AS-IS), except
-    # ``short`` comes from the single classification above.
+    # ``short`` comes from the single classification above. For an explicit
+    # wide degradable intent the base rungs at the intent's own 8g machine
+    # ARE the width-8 rungs, so appending ``degrade_rungs`` AFTER the tail
+    # preserves width-major order (all provisioning models at width 8 before
+    # width 4, before width 2) on every exit path (#1379).
     if pinned is not None:
         # CLI provisioning-model pin (#537/#680): walk ONLY the pinned model.
         pinned_model = str(pinned).upper()
@@ -2700,7 +2797,7 @@ def _gcp_ladder_specs(spec: RunSpec) -> list[tuple[RunSpec, str]]:
                     f"{prefix}_{_machine_label(a40)}",
                 )
             )
-        return rungs
+        return rungs + degrade_rungs  # #1379: degraded suffix on the pinned path too
     if short:
         # SHORT: spot-first -> flex -> on-demand (spot preemption is cheap here)
         rungs.append(
@@ -2730,6 +2827,7 @@ def _gcp_ladder_specs(spec: RunSpec) -> list[tuple[RunSpec, str]]:
                     f"ondemand_{_machine_label(a40)}",
                 )
             )
+    rungs.extend(degrade_rungs)  # #1379: degraded suffix AFTER the base tail
     return rungs
 
 
@@ -4916,12 +5014,14 @@ def _attempt_one_gcp_rung(
         # is 1500s) but worth this comment at the site.
         gcp_handle.extra.setdefault("gcp_ladder_rung", rung_label)
         gcp_handle.extra.setdefault("gcp_launched_ts", float(time.time()))
-        # #1121: record the DECLARED width (None when undeclared) + the
-        # REALIZED width of the rung's resolved machine, so the sidecar /
-        # marker trail lets the workload re-shard off the realized width
-        # (a degraded launch may land narrower than requested). ``machine``
-        # above resolved THIS rung's true machine via the override.
-        gcp_handle.extra.setdefault("requested_gpus", spec.gpus)
+        # #1121/#1379: record the DECLARED width (spec.gpus, or the explicit
+        # wide intent's own base width — _declared_width; None when
+        # undeclared) + the REALIZED width of the rung's resolved machine,
+        # so the sidecar / marker trail lets the workload re-shard off the
+        # realized width (a degraded launch may land narrower than
+        # requested). ``machine`` above resolved THIS rung's true machine
+        # via the override.
+        gcp_handle.extra.setdefault("requested_gpus", _declared_width(spec))
         gcp_handle.extra.setdefault("realized_gpu_count", int(machine.gpu_count))
 
         # Persist the handle (sidecar hook) + launched id IMMEDIATELY
@@ -4964,10 +5064,12 @@ def _attempt_one_gcp_rung(
         extra={
             "gcp_attempts_today": attempts_today,
             "gcp_ladder_rung": rung_label,
-            # #1121: declared vs realized width on the epm:backend-selected
-            # marker surface (additive extra fields, same class as
-            # gcp_ladder_rung — no marker SCHEMA change).
-            "requested_gpus": spec.gpus,
+            # #1121/#1379: declared vs realized width on the
+            # epm:backend-selected marker surface (additive extra fields, same
+            # class as gcp_ladder_rung — no marker SCHEMA change). A #1379
+            # explicit-wide degradation is machine-readable as
+            # requested_gpus != realized_gpu_count.
+            "requested_gpus": _declared_width(spec),
             "realized_gpu_count": int(machine.gpu_count),
             **_gcp_marker_extras(spec),
         },

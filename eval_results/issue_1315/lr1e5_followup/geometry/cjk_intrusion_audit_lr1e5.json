@@ -1,0 +1,26 @@
+{
+ "cell": "imp_conv_lora_lr1e5",
+ "round": "lr1e5_followup",
+ "cjk_char_class": "\\u4e00-\\u9fff \\u3400-\\u4dbf \\uf900-\\ufaff \\u3040-\\u30ff \\uac00-\\ud7af",
+ "capture_own_text": {
+  "n_rows": 120,
+  "intruded": 0,
+  "max_char_fraction": 0.0,
+  "source": "issue1315_impolite_geometry/raw_completions/capture/imp_conv_lora_lr1e5/selected/raw_rows.json @ 3c4b3bc183d764d7b833812fa435d1dafa241c48 (response_token_ids decoded with Qwen/Qwen2.5-7B-Instruct tokenizer)"
+ },
+ "parity_pool": {
+  "n_completions": 100,
+  "intruded": 11,
+  "intruded_judged_impolite": 10,
+  "items_scored": 97,
+  "items_censored_parse_error": 3,
+  "censored_draws": 9,
+  "rate_as_scored": 0.6288659793814433,
+  "rate_zeroed_intrusion": 0.5257731958762887,
+  "rate_excluded_intrusion": 0.5930232558139535,
+  "pass_floor": 0.5739583333333333,
+  "verdict": "convention-dependent: PASS as-scored and under intrusion-exclusion; FAIL under intrusion-zeroing",
+  "source": "issue1315_impolite_geometry/raw_completions/parity/imp_conv_lora_lr1e5/rate_merged_parity/ @ 3c4b3bc183d764d7b833812fa435d1dafa241c48 (completions__trained__wildchat_prefix_real545.json joined with judge/trained_wildchat_prefix_real545/judge_raw.json all_scores; item = mean over 3 draws, positive > 50)"
+ },
+ "notes": "Item denominator 97: 3 items censored by deterministic refusal-shaped judge parse errors (all 3 draws error:true parse_error) - content drops, not transport. Reused Tier-2 install (0.724) is the factory's committed fu4 selection value; its pool was not re-scanned this round."
+}

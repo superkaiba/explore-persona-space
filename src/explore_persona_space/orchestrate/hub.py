@@ -639,7 +639,12 @@ def list_hf_files_under_path(
     relative paths); an exact FILE returns ``[path]`` (the tree endpoint 404s
     on file paths — verified on hub 0.36.2, #939 — so an
     ``EntryNotFoundError`` falls back to one ``HfApi.file_exists`` HEAD
-    probe); an absent path returns ``[]``. Repository/Revision-not-found and
+    probe, itself wrapped in ``_retry_upload``: the bare probe was the ONE
+    un-retried Hub call on the sharded-upload verify path, and a Hub
+    queue-full 429 there killed #1345's smoke upload leg after the shard had
+    already landed — att-20260715-175238; the sibling fallback in
+    ``verify_repo_paths_uploaded`` was already wrapped); an absent path
+    returns ``[]``. Repository/Revision-not-found and
     transport/auth errors PROPAGATE (the file_exists fallback only fires
     after the tree call proved repo+revision resolve, so its swallowing of
     RepositoryNotFoundError is unreachable here). Empty ``path`` raises
@@ -656,7 +661,10 @@ def list_hf_files_under_path(
             api, repo_id, repo_type=repo_type, revision=revision, path_in_repo=normalized
         )
     except EntryNotFoundError:
-        if api.file_exists(repo_id, normalized, repo_type=repo_type, revision=revision):
+        if _retry_upload(
+            lambda: api.file_exists(repo_id, normalized, repo_type=repo_type, revision=revision),
+            what=f"file_exists({repo_id}/{normalized})",
+        ):
             return [normalized]
         return []
     prefix = normalized + "/"
@@ -854,13 +862,14 @@ def _is_transient_upload_error(err: Exception) -> bool:
     false-transient (#989). The substring scan applies only to response-less
     errors (ConnectionError, timeouts).
 
-    Response-less rate-limit text ('too many requests' / 'rate limit') is
-    transient (#931: a 429 during an hf_xet transfer can cross the Rust
-    token-refresher boundary as a wrapped exception without ``.response``);
-    NEVER bare '429' (the #989 digit-triplet trap). Note: a response-less
-    PERMANENT failure whose text happens to contain one of these markers now
-    burns the full retry budget before re-raising — bounded by design
-    (``EPM_HF_RETRY_BUDGET_S``, default 1800 s)."""
+    Response-less rate-limit text ('too many requests' / 'rate limit' /
+    'queue size reached' — the HF/Xet upload-queue-saturation 429 body text,
+    #1315/#1360) is transient (#931: a 429 during an hf_xet transfer can
+    cross the Rust token-refresher boundary as a wrapped exception without
+    ``.response``); NEVER bare '429' (the #989 digit-triplet trap). Note: a
+    response-less PERMANENT failure whose text happens to contain one of
+    these markers now burns the full retry budget before re-raising —
+    bounded by design (``EPM_HF_RETRY_BUDGET_S``, default 1800 s)."""
     code = getattr(getattr(err, "response", None), "status_code", None)
     if isinstance(code, int):
         return code in (408, 429) or 500 <= code < 600
@@ -880,6 +889,12 @@ def _is_transient_upload_error(err: Exception) -> bool:
             "temporarily unavailable",
             "too many requests",  # response-less 429 text — xet Rust boundary (#931)
             "rate limit",  # matches "rate limit(ed)"; NEVER bare "429" (#989)
+            "queue size reached",  # HF/Xet upload-queue-saturation 429 body text
+            # (#1315/#1360) — can cross the hf_xet PyO3 boundary without
+            # .response and without the "too many requests" phrase. Words-only:
+            # immune to the #989 digit-triplet trap; response-BEARING errors
+            # are still decided entirely by status code (a 4xx carrying this
+            # text stays non-transient).
         )
     )
 

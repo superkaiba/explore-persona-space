@@ -1,0 +1,186 @@
+{
+ "issue": 1090,
+ "round": "fu5-finish-impolite-bare-and-formatting-rank",
+ "cjk_regex": "[\\u4e00-\\u9fff] (CJK Unified Ideographs)",
+ "firing_rule": "per-completion mean of valid judge draws > 50 (valid = numeric score in [0,100]); reproduces fu4_ladders k/n exactly (asserted)",
+ "strict_bound_rule": "cjk_zeroed_rate = (k - n_cjk_firing) / 200: every CJK-intruded firing completion AND every fully-dropped completion scored non-impolite",
+ "arms": {
+  "imp-bare-lr1e5": {
+   "kind": "fu5-trained",
+   "context_id": "default",
+   "n_completions": 200,
+   "ladders_k": 69,
+   "ladders_n": 200,
+   "ladders_rate": 0.345,
+   "n_cjk": 13,
+   "cjk_frac": 0.065,
+   "n_cjk_firing": 8,
+   "cjk_zeroed_rate": 0.305,
+   "n_fully_dropped": 0,
+   "n_exact_duplicates": 0,
+   "train_rows": 80,
+   "max_8gram_train_overlap": 0.0,
+   "n_completions_over_20pct_overlap": 0
+  },
+  "imp-bare-lr3e5": {
+   "kind": "fu5-trained",
+   "context_id": "default",
+   "n_completions": 200,
+   "ladders_k": 135,
+   "ladders_n": 200,
+   "ladders_rate": 0.675,
+   "n_cjk": 12,
+   "cjk_frac": 0.06,
+   "n_cjk_firing": 8,
+   "cjk_zeroed_rate": 0.635,
+   "n_fully_dropped": 0,
+   "n_exact_duplicates": 0,
+   "train_rows": 80,
+   "max_8gram_train_overlap": 0.0074,
+   "n_completions_over_20pct_overlap": 0
+  },
+  "imp-bare-lr1e4": {
+   "kind": "fu5-trained",
+   "context_id": "default",
+   "n_completions": 200,
+   "ladders_k": 121,
+   "ladders_n": 200,
+   "ladders_rate": 0.605,
+   "n_cjk": 20,
+   "cjk_frac": 0.1,
+   "n_cjk_firing": 9,
+   "cjk_zeroed_rate": 0.56,
+   "n_fully_dropped": 0,
+   "n_exact_duplicates": 0,
+   "train_rows": 80,
+   "max_8gram_train_overlap": 0.2083,
+   "n_completions_over_20pct_overlap": 1
+  },
+  "fu3-base-bare": {
+   "kind": "fu3-base",
+   "n_completions": 200,
+   "recomputed_k": 0,
+   "recomputed_n": 200,
+   "n_cjk": 4,
+   "cjk_frac": 0.02,
+   "n_cjk_firing": 0,
+   "source": "hf://superkaiba1/explore-persona-space-data/issue1090_fu3/C2-bare-con-impolite-claude/tier2/completions__base__default.json"
+  },
+  "reused_fu4_r32": {
+   "kind": "fu5-fmt-trained",
+   "context_id": "persona_software_engineer",
+   "firing_rule": "structural: datagen._is_list_formatted per completion",
+   "n_completions": 300,
+   "ladders_k": 72,
+   "ladders_n": 300,
+   "ladders_rate": 0.24,
+   "appropriate_language_question_idx": [
+    7
+   ],
+   "n_english_rows": 290,
+   "n_cjk": 113,
+   "cjk_frac_of_english": 0.3897,
+   "n_cjk_firing": 32,
+   "intruded_firing_rate": 0.2832,
+   "cjk_zeroed_rate": 0.1333,
+   "cjk_excluded_rate": 0.2139,
+   "cjk_excluded_wilson95": [
+    0.1612,
+    0.2781
+   ],
+   "cjk_chars_per_intruded_row": {
+    "median": 43,
+    "p90": 532,
+    "max": 1176
+   },
+   "n_exact_duplicates": 0
+  },
+  "fmt-pers-r128": {
+   "kind": "fu5-fmt-trained",
+   "context_id": "persona_software_engineer",
+   "firing_rule": "structural: datagen._is_list_formatted per completion",
+   "n_completions": 300,
+   "ladders_k": 84,
+   "ladders_n": 300,
+   "ladders_rate": 0.28,
+   "appropriate_language_question_idx": [
+    7
+   ],
+   "n_english_rows": 290,
+   "n_cjk": 91,
+   "cjk_frac_of_english": 0.3138,
+   "n_cjk_firing": 28,
+   "intruded_firing_rate": 0.3077,
+   "cjk_zeroed_rate": 0.1867,
+   "cjk_excluded_rate": 0.2679,
+   "cjk_excluded_wilson95": [
+    0.2125,
+    0.3318
+   ],
+   "cjk_chars_per_intruded_row": {
+    "median": 35,
+    "p90": 315,
+    "max": 1360
+   },
+   "n_exact_duplicates": 1
+  },
+  "fmt-pers-r256": {
+   "kind": "fu5-fmt-trained",
+   "context_id": "persona_software_engineer",
+   "firing_rule": "structural: datagen._is_list_formatted per completion",
+   "n_completions": 300,
+   "ladders_k": 86,
+   "ladders_n": 300,
+   "ladders_rate": 0.2867,
+   "appropriate_language_question_idx": [
+    7
+   ],
+   "n_english_rows": 290,
+   "n_cjk": 97,
+   "cjk_frac_of_english": 0.3345,
+   "n_cjk_firing": 25,
+   "intruded_firing_rate": 0.2577,
+   "cjk_zeroed_rate": 0.2033,
+   "cjk_excluded_rate": 0.3005,
+   "cjk_excluded_wilson95": [
+    0.2416,
+    0.3668
+   ],
+   "cjk_chars_per_intruded_row": {
+    "median": 22,
+    "p90": 396,
+    "max": 1478
+   },
+   "n_exact_duplicates": 1
+  },
+  "fu3-base-formatting": {
+   "kind": "fu3-base-formatting",
+   "firing_rule": "structural: datagen._is_list_formatted per completion",
+   "n_completions": 300,
+   "ladders_k": 50,
+   "ladders_n": 300,
+   "ladders_rate": 0.1667,
+   "appropriate_language_question_idx": [
+    7
+   ],
+   "n_english_rows": 290,
+   "n_cjk": 19,
+   "cjk_frac_of_english": 0.0655,
+   "n_cjk_firing": 1,
+   "intruded_firing_rate": 0.0526,
+   "cjk_zeroed_rate": 0.1633,
+   "cjk_excluded_rate": 0.1744,
+   "cjk_excluded_wilson95": [
+    0.1345,
+    0.2231
+   ],
+   "cjk_chars_per_intruded_row": {
+    "median": 45,
+    "p90": 311,
+    "max": 1250
+   },
+   "n_exact_duplicates": 0,
+   "source": "hf://superkaiba1/explore-persona-space-data/issue1090_fu3/C1-pers-con-formatting-claude/tier2/completions__base__persona_software_engineer.json"
+  }
+ }
+}

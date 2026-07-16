@@ -1,0 +1,393 @@
+{
+  "commit": "44dccb8d39",
+  "created": "2026-07-16T09:47:22Z",
+  "figsize": [
+    13.0,
+    5.2
+  ],
+  "points": [
+    {
+      "x": -0.27,
+      "held-out R\u00b2": 0.8116988512605487,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.73,
+      "held-out R\u00b2": 0.7763061034604088,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 1.73,
+      "held-out R\u00b2": 0.7324432667575859,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 2.73,
+      "held-out R\u00b2": 0.07916209359311543,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 3.73,
+      "held-out R\u00b2": 0.72692031961176,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 4.73,
+      "held-out R\u00b2": 0.7423269558538191,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 5.73,
+      "held-out R\u00b2": 0.6955143000585838,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 6.73,
+      "held-out R\u00b2": 0.05652301202486454,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "inst / own",
+      "held-out R\u00b2": 0.1412731979673167,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "inst / Claude",
+      "held-out R\u00b2": 0.13019087318856595,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "inst / pretrained-text",
+      "held-out R\u00b2": 0.1444916227219701,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "inst / shuffled",
+      "held-out R\u00b2": 0.025460757569173247,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "pretrained / own",
+      "held-out R\u00b2": 0.13641056482232797,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "pretrained / Claude",
+      "held-out R\u00b2": 0.10752465189951894,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "pretrained / inst-text",
+      "held-out R\u00b2": 0.06218696815999677,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "pretrained / shuffled",
+      "held-out R\u00b2": 0.02789877044709499,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 0.27,
+      "held-out R\u00b2": 0.05214734777945559,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 1.27,
+      "held-out R\u00b2": 0.04914952639096417,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 2.27,
+      "held-out R\u00b2": 0.074960697002752,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 3.27,
+      "held-out R\u00b2": 0.0053455114526513485,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 4.27,
+      "held-out R\u00b2": 0.06849599984776246,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 5.27,
+      "held-out R\u00b2": 0.03584328218693864,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 6.27,
+      "held-out R\u00b2": 0.012254125425053128,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 7.27,
+      "held-out R\u00b2": 0.004564356410324932,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": -0.27,
+      "held-out R\u00b2": 0.025701698810414064,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 0.73,
+      "held-out R\u00b2": 0.05266410295949375,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 1.73,
+      "held-out R\u00b2": 0.03146170942768478,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 2.73,
+      "held-out R\u00b2": 0.015939967043497427,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 3.73,
+      "held-out R\u00b2": 0.03250478369045928,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 4.73,
+      "held-out R\u00b2": 0.05562682877378078,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 5.73,
+      "held-out R\u00b2": 0.016848798888579486,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 6.73,
+      "held-out R\u00b2": 0.028275551005817245,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "category": "inst / own",
+      "held-out R\u00b2": 0.021863993787278862,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "category": "inst / Claude",
+      "held-out R\u00b2": 0.017627188398470012,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "category": "inst / pretrained-text",
+      "held-out R\u00b2": 0.04061821313442043,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "category": "inst / shuffled",
+      "held-out R\u00b2": 0.015673579321181814,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "category": "pretrained / own",
+      "held-out R\u00b2": 0.04112763016756721,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "category": "pretrained / Claude",
+      "held-out R\u00b2": 0.020350957343943932,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "category": "pretrained / inst-text",
+      "held-out R\u00b2": 0.016146850755889525,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "category": "pretrained / shuffled",
+      "held-out R\u00b2": 0.024356240934058082,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 0.27,
+      "held-out R\u00b2": 0.003109816798784896,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 1.27,
+      "held-out R\u00b2": 0.0019300847364404627,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 2.27,
+      "held-out R\u00b2": -0.000361389979112318,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 3.27,
+      "held-out R\u00b2": 8.807781887737454e-05,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 4.27,
+      "held-out R\u00b2": -0.0006860355886793013,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 5.27,
+      "held-out R\u00b2": -0.0011776522502702595,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 6.27,
+      "held-out R\u00b2": 0.000739676452388279,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 7.27,
+      "held-out R\u00b2": -0.002357721417326264,
+      "_kind": "bar",
+      "_group": 5
+    }
+  ],
+  "n_series": 6,
+  "total_points": 48,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Context-arm map (prefix+query end)",
+        "ylabel": "held-out R\u00b2",
+        "legend_labels": [
+          "ridge R\u00b2",
+          "diag-affine floor (t1)",
+          "scaled-identity floor (t1)"
+        ],
+        "annotations": [
+          "0.81",
+          "0.78",
+          "0.73",
+          "0.08",
+          "0.73",
+          "0.74",
+          "0.70",
+          "0.06"
+        ],
+        "xticklabels": [
+          "inst / own",
+          "inst / Claude",
+          "inst / pretrained-text",
+          "inst / shuffled",
+          "pretrained / own",
+          "pretrained / Claude",
+          "pretrained / inst-text",
+          "pretrained / shuffled"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7",
+          "0.8",
+          "0.9"
+        ]
+      },
+      {
+        "title_left": "Prefix-arm map (persona end, zoomed)",
+        "ylabel": "held-out R\u00b2",
+        "legend_labels": [
+          "ridge R\u00b2",
+          "diag-affine floor (t1)",
+          "scaled-identity floor (t1)"
+        ],
+        "annotations": [
+          "0.03",
+          "0.05",
+          "0.03",
+          "0.02",
+          "0.03",
+          "0.06",
+          "0.02",
+          "0.03"
+        ],
+        "xticklabels": [
+          "inst / own",
+          "inst / Claude",
+          "inst / pretrained-text",
+          "inst / shuffled",
+          "pretrained / own",
+          "pretrained / Claude",
+          "pretrained / inst-text",
+          "pretrained / shuffled"
+        ],
+        "yticklabels": [
+          "0.00",
+          "0.02",
+          "0.04",
+          "0.06",
+          "0.08",
+          "0.10",
+          "0.12",
+          "0.14",
+          "0.16",
+          "0.18"
+        ]
+      }
+    ],
+    "series": [
+      "ridge R\u00b2",
+      "diag-affine floor (t1)",
+      "scaled-identity floor (t1)"
+    ]
+  }
+}

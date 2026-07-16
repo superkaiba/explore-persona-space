@@ -1,0 +1,647 @@
+{
+  "commit": "44dccb8d39",
+  "created": "2026-07-16T09:47:20Z",
+  "figsize": [
+    13.0,
+    5.2
+  ],
+  "points": [
+    {
+      "x": -0.285,
+      "held-out R\u00b2 (grouped 6-fold, pooled targets)": 0.8043440222361293,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.715,
+      "held-out R\u00b2 (grouped 6-fold, pooled targets)": 0.7121680037620438,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 1.715,
+      "held-out R\u00b2 (grouped 6-fold, pooled targets)": 0.7143812927806117,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 2.715,
+      "held-out R\u00b2 (grouped 6-fold, pooled targets)": 0.49265648668357076,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": -0.095,
+      "held-out R\u00b2 (grouped 6-fold, pooled targets)": 0.8141832948824598,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 0.905,
+      "held-out R\u00b2 (grouped 6-fold, pooled targets)": 0.7362504812467274,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 1.905,
+      "held-out R\u00b2 (grouped 6-fold, pooled targets)": 0.738318382515775,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 2.905,
+      "held-out R\u00b2 (grouped 6-fold, pooled targets)": 0.49566869429963556,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 0.095,
+      "held-out R\u00b2 (grouped 6-fold, pooled targets)": 0.06507728422851033,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 1.095,
+      "held-out R\u00b2 (grouped 6-fold, pooled targets)": 0.042999963125996965,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 2.095,
+      "held-out R\u00b2 (grouped 6-fold, pooled targets)": 0.0510748986288696,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 3.095,
+      "held-out R\u00b2 (grouped 6-fold, pooled targets)": 0.07881767551129681,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 0.285,
+      "held-out R\u00b2 (grouped 6-fold, pooled targets)": 0.06507882598789816,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 1.285,
+      "held-out R\u00b2 (grouped 6-fold, pooled targets)": 0.049034008342484725,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 2.285,
+      "held-out R\u00b2 (grouped 6-fold, pooled targets)": 0.05756310725085079,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 3.285,
+      "held-out R\u00b2 (grouped 6-fold, pooled targets)": 0.1060310691913402,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "banked held-out R\u00b2 (battery rows in fit training)": 0.8043440222361293,
+      "refit held-out R\u00b2 (battery rows excluded)": 0.8141832948824598,
+      "series": "context arm, fit-arm A",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "banked held-out R\u00b2 (battery rows in fit training)": 0.9103453689185139,
+      "refit held-out R\u00b2 (battery rows excluded)": 0.9141533323752868,
+      "series": "context arm, fit-arm A",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "banked held-out R\u00b2 (battery rows in fit training)": 0.8234204769760982,
+      "refit held-out R\u00b2 (battery rows excluded)": 0.8340267737038425,
+      "series": "context arm, fit-arm A",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "banked held-out R\u00b2 (battery rows in fit training)": 0.91658341034706,
+      "refit held-out R\u00b2 (battery rows excluded)": 0.921227585122804,
+      "series": "context arm, fit-arm A",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "banked held-out R\u00b2 (battery rows in fit training)": 0.8377810795572879,
+      "refit held-out R\u00b2 (battery rows excluded)": 0.8494053080801037,
+      "series": "context arm, fit-arm A",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "banked held-out R\u00b2 (battery rows in fit training)": 0.9286288718613451,
+      "refit held-out R\u00b2 (battery rows excluded)": 0.9339743435144576,
+      "series": "context arm, fit-arm A",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "banked held-out R\u00b2 (battery rows in fit training)": 0.7121680037620438,
+      "refit held-out R\u00b2 (battery rows excluded)": 0.7362504812467274,
+      "series": "context arm, fit-arm A",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "banked held-out R\u00b2 (battery rows in fit training)": 0.8242724670265427,
+      "refit held-out R\u00b2 (battery rows excluded)": 0.8425468116044444,
+      "series": "context arm, fit-arm A",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "banked held-out R\u00b2 (battery rows in fit training)": 0.7251671869496185,
+      "refit held-out R\u00b2 (battery rows excluded)": 0.750514641878832,
+      "series": "context arm, fit-arm A",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "banked held-out R\u00b2 (battery rows in fit training)": 0.8306729607794592,
+      "refit held-out R\u00b2 (battery rows excluded)": 0.8493401483543068,
+      "series": "context arm, fit-arm A",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "banked held-out R\u00b2 (battery rows in fit training)": 0.7438470827907159,
+      "refit held-out R\u00b2 (battery rows excluded)": 0.7693156838807489,
+      "series": "context arm, fit-arm A",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "banked held-out R\u00b2 (battery rows in fit training)": 0.8486251923965203,
+      "refit held-out R\u00b2 (battery rows excluded)": 0.866145242099654,
+      "series": "context arm, fit-arm A",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "banked held-out R\u00b2 (battery rows in fit training)": 0.7143812927806117,
+      "refit held-out R\u00b2 (battery rows excluded)": 0.738318382515775,
+      "series": "context arm, fit-arm A",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "banked held-out R\u00b2 (battery rows in fit training)": 0.8180241367553884,
+      "refit held-out R\u00b2 (battery rows excluded)": 0.8369607183481051,
+      "series": "context arm, fit-arm A",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "banked held-out R\u00b2 (battery rows in fit training)": 0.7283029602316543,
+      "refit held-out R\u00b2 (battery rows excluded)": 0.7522017784110393,
+      "series": "context arm, fit-arm A",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "banked held-out R\u00b2 (battery rows in fit training)": 0.8263649260406114,
+      "refit held-out R\u00b2 (battery rows excluded)": 0.8449482539321221,
+      "series": "context arm, fit-arm A",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "banked held-out R\u00b2 (battery rows in fit training)": 0.7485254224899582,
+      "refit held-out R\u00b2 (battery rows excluded)": 0.77085069238721,
+      "series": "context arm, fit-arm A",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "banked held-out R\u00b2 (battery rows in fit training)": 0.8426790537083118,
+      "refit held-out R\u00b2 (battery rows excluded)": 0.8592828796514038,
+      "series": "context arm, fit-arm A",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "banked held-out R\u00b2 (battery rows in fit training)": 0.49265648668357076,
+      "refit held-out R\u00b2 (battery rows excluded)": 0.49566869429963556,
+      "series": "context arm, fit-arm A",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "banked held-out R\u00b2 (battery rows in fit training)": 0.5439248687086307,
+      "refit held-out R\u00b2 (battery rows excluded)": 0.5400272561222395,
+      "series": "context arm, fit-arm A",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "banked held-out R\u00b2 (battery rows in fit training)": 0.6224844814437471,
+      "refit held-out R\u00b2 (battery rows excluded)": 0.6197533305788114,
+      "series": "context arm, fit-arm A",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "banked held-out R\u00b2 (battery rows in fit training)": 0.7072130844612201,
+      "refit held-out R\u00b2 (battery rows excluded)": 0.6950618974047046,
+      "series": "context arm, fit-arm A",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "banked held-out R\u00b2 (battery rows in fit training)": 0.6849834295186238,
+      "refit held-out R\u00b2 (battery rows excluded)": 0.685294336741622,
+      "series": "context arm, fit-arm A",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "banked held-out R\u00b2 (battery rows in fit training)": 0.7741040330505736,
+      "refit held-out R\u00b2 (battery rows excluded)": 0.7648110934114603,
+      "series": "context arm, fit-arm A",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "banked held-out R\u00b2 (battery rows in fit training)": 0.7979761419495827,
+      "refit held-out R\u00b2 (battery rows excluded)": 0.805625688649536,
+      "series": "context arm, fit-arm B",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "banked held-out R\u00b2 (battery rows in fit training)": 0.9055933544630734,
+      "refit held-out R\u00b2 (battery rows excluded)": 0.9079329629790446,
+      "series": "context arm, fit-arm B",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "banked held-out R\u00b2 (battery rows in fit training)": 0.6997179112642097,
+      "refit held-out R\u00b2 (battery rows excluded)": 0.7178173407335706,
+      "series": "context arm, fit-arm B",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "banked held-out R\u00b2 (battery rows in fit training)": 0.8144769781052659,
+      "refit held-out R\u00b2 (battery rows excluded)": 0.828163334481062,
+      "series": "context arm, fit-arm B",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "banked held-out R\u00b2 (battery rows in fit training)": 0.7022525161414155,
+      "refit held-out R\u00b2 (battery rows excluded)": 0.7200532386710682,
+      "series": "context arm, fit-arm B",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "banked held-out R\u00b2 (battery rows in fit training)": 0.8076311958865786,
+      "refit held-out R\u00b2 (battery rows excluded)": 0.8216261003373098,
+      "series": "context arm, fit-arm B",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "banked held-out R\u00b2 (battery rows in fit training)": 0.5030636764598564,
+      "refit held-out R\u00b2 (battery rows excluded)": 0.49814832953265153,
+      "series": "context arm, fit-arm B",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "banked held-out R\u00b2 (battery rows in fit training)": 0.5585883919120609,
+      "refit held-out R\u00b2 (battery rows excluded)": 0.5470036729857106,
+      "series": "context arm, fit-arm B",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "banked held-out R\u00b2 (battery rows in fit training)": 0.06507728422851033,
+      "refit held-out R\u00b2 (battery rows excluded)": 0.06507882598789816,
+      "series": "prefix arm, fit-arm A",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "banked held-out R\u00b2 (battery rows in fit training)": 0.09601551229080851,
+      "refit held-out R\u00b2 (battery rows excluded)": 0.09834634098719741,
+      "series": "prefix arm, fit-arm A",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "banked held-out R\u00b2 (battery rows in fit training)": 0.06793571924848263,
+      "refit held-out R\u00b2 (battery rows excluded)": 0.06883661908194882,
+      "series": "prefix arm, fit-arm A",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "banked held-out R\u00b2 (battery rows in fit training)": 0.09831189370712179,
+      "refit held-out R\u00b2 (battery rows excluded)": 0.10149842376938567,
+      "series": "prefix arm, fit-arm A",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "banked held-out R\u00b2 (battery rows in fit training)": 0.05757810845888389,
+      "refit held-out R\u00b2 (battery rows excluded)": 0.0583555091407969,
+      "series": "prefix arm, fit-arm A",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "banked held-out R\u00b2 (battery rows in fit training)": 0.08539881930346527,
+      "refit held-out R\u00b2 (battery rows excluded)": 0.08807294580483538,
+      "series": "prefix arm, fit-arm A",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "banked held-out R\u00b2 (battery rows in fit training)": 0.042999963125996965,
+      "refit held-out R\u00b2 (battery rows excluded)": 0.049034008342484725,
+      "series": "prefix arm, fit-arm A",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "banked held-out R\u00b2 (battery rows in fit training)": 0.08838846672715106,
+      "refit held-out R\u00b2 (battery rows excluded)": 0.09668808153055997,
+      "series": "prefix arm, fit-arm A",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "banked held-out R\u00b2 (battery rows in fit training)": 0.053335985766730376,
+      "refit held-out R\u00b2 (battery rows excluded)": 0.0576723790813205,
+      "series": "prefix arm, fit-arm A",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "banked held-out R\u00b2 (battery rows in fit training)": 0.09621204258865335,
+      "refit held-out R\u00b2 (battery rows excluded)": 0.1024900993751009,
+      "series": "prefix arm, fit-arm A",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "banked held-out R\u00b2 (battery rows in fit training)": 0.041793724299931334,
+      "refit held-out R\u00b2 (battery rows excluded)": 0.04417719440772283,
+      "series": "prefix arm, fit-arm A",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "banked held-out R\u00b2 (battery rows in fit training)": 0.07802942770400556,
+      "refit held-out R\u00b2 (battery rows excluded)": 0.08182712571348139,
+      "series": "prefix arm, fit-arm A",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "banked held-out R\u00b2 (battery rows in fit training)": 0.0510748986288696,
+      "refit held-out R\u00b2 (battery rows excluded)": 0.05756310725085079,
+      "series": "prefix arm, fit-arm A",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "banked held-out R\u00b2 (battery rows in fit training)": 0.09566092578291197,
+      "refit held-out R\u00b2 (battery rows excluded)": 0.10451364929538565,
+      "series": "prefix arm, fit-arm A",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "banked held-out R\u00b2 (battery rows in fit training)": 0.06029126633409321,
+      "refit held-out R\u00b2 (battery rows excluded)": 0.06541129124314615,
+      "series": "prefix arm, fit-arm A",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "banked held-out R\u00b2 (battery rows in fit training)": 0.10258753095550321,
+      "refit held-out R\u00b2 (battery rows excluded)": 0.10986508316184163,
+      "series": "prefix arm, fit-arm A",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "banked held-out R\u00b2 (battery rows in fit training)": 0.055741795839167274,
+      "refit held-out R\u00b2 (battery rows excluded)": 0.06073652446825417,
+      "series": "prefix arm, fit-arm A",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "banked held-out R\u00b2 (battery rows in fit training)": 0.09537688630650432,
+      "refit held-out R\u00b2 (battery rows excluded)": 0.1024777448011891,
+      "series": "prefix arm, fit-arm A",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "banked held-out R\u00b2 (battery rows in fit training)": 0.07881767551129681,
+      "refit held-out R\u00b2 (battery rows excluded)": 0.1060310691913402,
+      "series": "prefix arm, fit-arm A",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "banked held-out R\u00b2 (battery rows in fit training)": 0.11420625466845469,
+      "refit held-out R\u00b2 (battery rows excluded)": 0.14983605081335227,
+      "series": "prefix arm, fit-arm A",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "banked held-out R\u00b2 (battery rows in fit training)": 0.09450152471889295,
+      "refit held-out R\u00b2 (battery rows excluded)": 0.10217630965396551,
+      "series": "prefix arm, fit-arm A",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "banked held-out R\u00b2 (battery rows in fit training)": 0.1430521602903927,
+      "refit held-out R\u00b2 (battery rows excluded)": 0.1549499963324702,
+      "series": "prefix arm, fit-arm A",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "banked held-out R\u00b2 (battery rows in fit training)": 0.07490092918368407,
+      "refit held-out R\u00b2 (battery rows excluded)": 0.08011528144182756,
+      "series": "prefix arm, fit-arm A",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "banked held-out R\u00b2 (battery rows in fit training)": 0.1195602000675623,
+      "refit held-out R\u00b2 (battery rows excluded)": 0.12809355368895892,
+      "series": "prefix arm, fit-arm A",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "banked held-out R\u00b2 (battery rows in fit training)": 0.06169539431364479,
+      "refit held-out R\u00b2 (battery rows excluded)": 0.0628188653049353,
+      "series": "prefix arm, fit-arm B",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "banked held-out R\u00b2 (battery rows in fit training)": 0.09223552717879624,
+      "refit held-out R\u00b2 (battery rows excluded)": 0.09533991698764699,
+      "series": "prefix arm, fit-arm B",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "banked held-out R\u00b2 (battery rows in fit training)": 0.04131150491030622,
+      "refit held-out R\u00b2 (battery rows excluded)": 0.044332890873085895,
+      "series": "prefix arm, fit-arm B",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "banked held-out R\u00b2 (battery rows in fit training)": 0.08767551789992578,
+      "refit held-out R\u00b2 (battery rows excluded)": 0.09123992012034077,
+      "series": "prefix arm, fit-arm B",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "banked held-out R\u00b2 (battery rows in fit training)": 0.04782679451304106,
+      "refit held-out R\u00b2 (battery rows excluded)": 0.05235158601257428,
+      "series": "prefix arm, fit-arm B",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "banked held-out R\u00b2 (battery rows in fit training)": 0.092348567791678,
+      "refit held-out R\u00b2 (battery rows excluded)": 0.09844130851518518,
+      "series": "prefix arm, fit-arm B",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "banked held-out R\u00b2 (battery rows in fit training)": 0.09173049889687057,
+      "refit held-out R\u00b2 (battery rows excluded)": 0.11293056954806291,
+      "series": "prefix arm, fit-arm B",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "banked held-out R\u00b2 (battery rows in fit training)": 0.1332752741810529,
+      "refit held-out R\u00b2 (battery rows excluded)": 0.16062072362870272,
+      "series": "prefix arm, fit-arm B",
+      "_kind": "scatter",
+      "_group": 7
+    }
+  ],
+  "n_series": 8,
+  "total_points": 80,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Headline config (layer 14, ambient): banked vs battery-excluded",
+        "ylabel": "held-out R\u00b2 (grouped 6-fold, pooled targets)",
+        "legend_labels": [
+          "context \u2014 banked (battery in)",
+          "context \u2014 refit (battery out)",
+          "prefix \u2014 banked (battery in)",
+          "prefix \u2014 refit (battery out)"
+        ],
+        "annotations": [
+          "+0.010",
+          "+0.024",
+          "+0.024",
+          "+0.003",
+          "+0.000",
+          "+0.006",
+          "+0.006",
+          "+0.027"
+        ],
+        "xticklabels": [
+          "inst / own",
+          "inst / pretrained-text",
+          "pretrained / own",
+          "pretrained / inst-text"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7",
+          "0.8",
+          "0.9"
+        ]
+      },
+      {
+        "title_left": "All 64 refit units (4 cells x layers x arms x bases; max |delta| 0.036)",
+        "xlabel": "banked held-out R\u00b2 (battery rows in fit training)",
+        "ylabel": "refit held-out R\u00b2 (battery rows excluded)",
+        "legend_labels": [
+          "context arm, fit-arm A",
+          "context arm, fit-arm B",
+          "prefix arm, fit-arm A",
+          "prefix arm, fit-arm B"
+        ],
+        "annotations": [
+          "pretrained / inst-text L14 ambient A",
+          "pretrained / inst-text L14 pca48 A",
+          "pretrained / inst-text L14 pca48 B",
+          "inst / pretrained-text L14 ambient A",
+          "inst / pretrained-text L18 ambient A",
+          "inst / pretrained-text L19 ambient A"
+        ],
+        "xticklabels": [
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ],
+        "yticklabels": [
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ]
+      }
+    ],
+    "series": [
+      "context \u2014 banked (battery in)",
+      "context \u2014 refit (battery out)",
+      "prefix \u2014 banked (battery in)",
+      "prefix \u2014 refit (battery out)",
+      "context arm, fit-arm A",
+      "context arm, fit-arm B",
+      "prefix arm, fit-arm A",
+      "prefix arm, fit-arm B"
+    ]
+  }
+}

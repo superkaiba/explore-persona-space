@@ -1,0 +1,33 @@
+{
+  "diagnostic": "d5_toy",
+  "reproducibility": {
+    "git_commit": "5199eed787bf74b409d1ba4a2bec5cf6fe3e2cb1",
+    "timestamp_utc": "2026-07-16T08:55:50.025561+00:00",
+    "python_version": "3.11.15",
+    "platform": "Linux-6.8.0-1052-gcp-x86_64-with-glibc2.35",
+    "torch": "2.8.0+cu128",
+    "numpy": "2.2.6",
+    "transformers": "4.57.6"
+  },
+  "results": {
+    "config": {
+      "n": 50,
+      "d_feat": 20,
+      "T": 300,
+      "seed": 810,
+      "targets": "exact_expected"
+    },
+    "inflation_nondecodable_dense": {
+      "mean_scheme_skill": 0.345032332621485,
+      "max_scheme_skill": 0.9999996843945823,
+      "dim_mean_target_var": 0.9999999999738428,
+      "dim_max_target_var": 1.4438733862761404e-13,
+      "note": "dense undecodable rate: max saturates the dim to \u2248constant \u2192 its variance drops out of the pooled denominator \u2192 pooled skill RISES without decoding more (the censoring mechanism, in isolation)"
+    },
+    "deflation_decodable_sparse": {
+      "mean_view_per_dim_r2": 0.9999998030968619,
+      "max_view_per_dim_r2": 0.8794441966983919,
+      "note": "sparse decodable rate: mean=p is exactly linear (per-dim R\u00b2\u22481); max is a saturating nonlinearity of the linear signal (fit worse) \u2192 per-dim R\u00b2 FALLS (the refinement: max destroys signal mean transmits)"
+    }
+  }
+}

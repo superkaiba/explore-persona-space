@@ -28,7 +28,12 @@ Naming convention
 -----------------
 Ephemeral pods are named ``pod-<N>`` where ``<N>`` is the GitHub issue
 number. One pod per issue. Follow-up issues that derive from #N can resume
-#N's pod.
+#N's pod. A round that needs a SECOND pod for issue #N (the canonical
+``pod-<N>`` name is held by a stopped volume) provisions
+``pod-<N>-<slug>`` via ``provision --issue N --name-suffix <slug>``
+(#1334; slug = lowercase, letter-initial ``[a-z][a-z0-9-]*``) — the pod
+still registers ``issue=N`` as its owner, so terminate/audit/watcher all
+map it to the real task instead of a fabricated issue id.
 
 The legacy prefix ``epm-issue-<N>`` (used before the rename) is still
 recognized by :func:`_is_managed_pod` and :func:`_issue_from_pod_name` so
@@ -378,20 +383,28 @@ def _is_managed_pod(pod: PodInfo) -> bool:
 _is_epm_pod = _is_managed_pod
 
 
-def _issue_from_pod_name(name: str) -> int | None:
-    """Best-effort: extract the issue number from a managed pod name.
+# Canonical managed-pod name grammar (#1334). Bare form: pod-<N> /
+# epm-issue-<N> (unchanged). Suffixed multi-pod-per-issue form:
+# pod-<N>-<slug> where slug is lowercase, LETTER-INITIAL
+# ([a-z][a-z0-9-]*). Letter-initial is load-bearing: it keeps an
+# all-numeric tail (pod-77960, the fabricated-id incident shape) and a
+# numeric slug (pod-779-60) OUT of the suffix grammar, so a digits-only
+# name can never be ambiguously attributed. epm-issue-<N>-<slug> is
+# accepted for legacy dispatcher pods (pod_audit precedent).
+_POD_NAME_RE = re.compile(r"^(?:pod|epm-issue)-(?P<issue>\d+)(?:-(?P<slug>[a-z][a-z0-9-]*))?$")
 
-    Accepts both the canonical ``pod-<N>`` and legacy ``epm-issue-<N>``
-    prefixes.
+
+def _issue_from_pod_name(name: str) -> int | None:
+    """Extract the owning issue from a managed pod name.
+
+    Accepts the canonical ``pod-<N>``, the legacy ``epm-issue-<N>``, and
+    the suffixed multi-pod-per-issue form ``pod-<N>-<slug>`` (#1334;
+    slug = ``[a-z][a-z0-9-]*``). ``pod-47`` never matches issue 475
+    (the digits must be followed by ``-<slug>`` or end-of-string).
+    Returns ``None`` for non-managed / unparseable names.
     """
-    for prefix in _MANAGED_PREFIXES:
-        if name.startswith(prefix):
-            suffix = name[len(prefix) :]
-            try:
-                return int(suffix)
-            except ValueError:
-                return None
-    return None
+    m = _POD_NAME_RE.match(name)
+    return int(m.group("issue")) if m else None
 
 
 def _load_state() -> dict[str, EphemeralPod]:
@@ -528,22 +541,63 @@ def _label_for_issue(issue: int) -> str:
     return f"thomas-pod-{issue}"
 
 
-def _canonical_pod_name(issue: int) -> str:
-    """The canonical name for a fresh provision: ``pod-<N>``."""
-    return f"pod-{issue}"
+def _canonical_pod_name(issue: int, name_suffix: str | None = None) -> str:
+    """The canonical name for a fresh provision: ``pod-<N>`` or, for a
+    multi-pod-per-issue provision (#1334), ``pod-<N>-<slug>``."""
+    return f"pod-{issue}-{name_suffix}" if name_suffix else f"pod-{issue}"
 
 
-def _find_pod_in_state(state: dict[str, EphemeralPod], issue: int) -> EphemeralPod | None:
-    """Locate a registered pod for ``issue`` regardless of name prefix.
+def _pods_in_state_for_issue(state: dict[str, EphemeralPod], issue: int) -> list[EphemeralPod]:
+    """All registered pods whose metadata records this owning issue, sorted by name."""
+    return sorted((p for p in state.values() if p.issue == issue), key=lambda p: p.name)
 
-    Searches for the canonical ``pod-<N>`` first, then the legacy
-    ``epm-issue-<N>`` (kept around for in-flight pods provisioned before
-    the April 2026 rename). Returns ``None`` if neither is registered.
+
+def _find_pod_in_state(
+    state: dict[str, EphemeralPod], issue: int, *, name_suffix: str | None = None
+) -> EphemeralPod | None:
+    """Locate a registered pod for ``issue``.
+
+    With ``name_suffix``: exact lookup of ``pod-<N>-<slug>`` only.
+    Without: canonical ``pod-<N>`` first, then legacy ``epm-issue-<N>``;
+    if NEITHER is registered but EXACTLY ONE pod records this owning
+    issue (a suffixed follow-up pod, #1334), return it — the callers
+    print the resolved name before acting. Zero or >1 issue-matching
+    pods -> None (callers direct the user to --name-suffix).
     """
+    if name_suffix is not None:
+        return state.get(_canonical_pod_name(issue, name_suffix))
     for candidate in (_canonical_pod_name(issue), f"epm-issue-{issue}"):
         if candidate in state:
             return state[candidate]
-    return None
+    matches = _pods_in_state_for_issue(state, issue)
+    return matches[0] if len(matches) == 1 else None
+
+
+def _no_pod_for_issue_message(
+    state: dict[str, EphemeralPod], issue: int, name_suffix: str | None = None
+) -> str:
+    """Error text for stop/resume when ``_find_pod_in_state`` resolved nothing.
+
+    Names the exact suffixed target when ``--name-suffix`` was passed, and —
+    for the ambiguous >=2-pods-no-canonical case (#1334) — lists the
+    registered names and directs the caller to ``--name-suffix``.
+    """
+    matches = _pods_in_state_for_issue(state, issue)
+    names = ", ".join(p.name for p in matches)
+    if name_suffix is not None:
+        msg = (
+            f"No ephemeral pod named {_canonical_pod_name(issue, name_suffix)} "
+            f"recorded for issue {issue}"
+        )
+        if matches:
+            msg += f" (registered pods for this issue: {names})"
+        return msg
+    if len(matches) >= 2:
+        return (
+            f"Multiple pods are recorded for issue {issue} ({names}) and none is "
+            f"the canonical pod-{issue}; pass --name-suffix <slug> to pick one."
+        )
+    return f"No ephemeral pod recorded for issue {issue}"
 
 
 def _upsert_pods_conf(pod: EphemeralPod) -> None:
@@ -1264,14 +1318,17 @@ def _resume_with_balance_wait_if_autonomous(
                 # destroy the stopped pod's volume.
                 raise SystemExit(
                     f"Cannot resume {name}: its former host has no free GPUs "
-                    f"(supply constraint). Resume never relocates a pod, so "
-                    f"this can't be retried. Either wait for capacity to free "
-                    f"up and re-run `pod.py resume --issue {issue}`, or "
-                    f"provision a FRESH pod with `python scripts/pod.py "
-                    f"provision --issue {issue} --intent <intent>` (this loses "
-                    f"the stopped pod's volume — terminate it first with "
-                    f"`pod.py terminate --issue {issue} --yes` if you want it "
-                    f"gone).\n  Underlying error: {exc}"
+                    f"(supply constraint). Resume is host-pinned (it never "
+                    f"relocates a pod), so retrying helps only if that exact "
+                    f"host frees up — usually it doesn't soon; do NOT arm a "
+                    f"retry loop. RECOMMENDED: provision a FRESH pod with "
+                    f"`python scripts/pod.py provision --issue {issue} "
+                    f"--intent <intent>` (this abandons the stopped pod's "
+                    f"volume — terminate it first with `pod.py terminate "
+                    f"--issue {issue} --yes` if you want it gone). Wait and "
+                    f"re-run `pod.py resume --issue {issue}` ONLY if the "
+                    f"stopped volume holds irreplaceable data.\n"
+                    f"  Underlying error: {exc}"
                 ) from exc
             raise
 
@@ -1779,11 +1836,16 @@ def _provision_wait_register_bootstrap(
 
     rc = _bootstrap(name, intent_label=intent_label)
     if rc != 0:
+        # Suffixed pods (#1334) get a --name-suffix-scoped terminate hint so the
+        # discard recipe can never suggest an issue-wide destroy that would take
+        # a healthy sibling pod-<N>'s volume with it.
+        name_suffix = getattr(args, "name_suffix", None)
+        suffix_hint = f" --name-suffix {name_suffix}" if name_suffix else ""
         print(
             f"\nBootstrap exited with code {rc}. Pod is up but not experiment-ready.\n"
             f"Investigate, then either re-run "
             f"`POD_INTENT={intent_label} bash scripts/bootstrap_pod.sh {name}` or\n"
-            f"`python scripts/pod.py terminate --issue {args.issue}` to discard.",
+            f"`python scripts/pod.py terminate --issue {args.issue}{suffix_hint}` to discard.",
             file=sys.stderr,
         )
         sys.exit(rc)
@@ -1800,6 +1862,15 @@ def cmd_provision(args: argparse.Namespace) -> None:
     if args.issue is None:
         raise SystemExit("--issue <N> is required")
 
+    # getattr: hand-built Namespaces (tests, embedders) predate the flag;
+    # the real CLI always sets it (argparse default=None).
+    name_suffix = getattr(args, "name_suffix", None)
+    if name_suffix is not None and not re.fullmatch(r"[a-z][a-z0-9-]{0,19}", name_suffix):
+        raise SystemExit(
+            "--name-suffix must match [a-z][a-z0-9-]{0,19} (lowercase, letter-initial, "
+            "e.g. 'b', 'followup2') so pod-<N>-<slug> parses back to issue <N>."
+        )
+
     # Warn-only pod-safety check (#1177) — BEFORE any RunPod API call
     # (list_team_pods below), so it prints even when the provision later
     # fails on capacity, and covers the CPU branch, the GPU branch, AND
@@ -1808,11 +1879,14 @@ def cmd_provision(args: argparse.Namespace) -> None:
     # preview should surface).
     _warn_on_terminal_parent_provision(args.issue)
 
-    name = _canonical_pod_name(args.issue)
+    name = _canonical_pod_name(args.issue, name_suffix)
     legacy = f"epm-issue-{args.issue}"
 
     # Idempotency: refuse if a non-EXITED pod for this issue exists under
-    # EITHER the canonical or the legacy prefix.
+    # EITHER the canonical or the legacy prefix. A suffixed provision
+    # (#1334) collides only on ITS OWN name — a live bare pod-<N> (e.g. a
+    # stopped volume) is exactly why the suffix form exists and must not
+    # block it.
     live_pods = list_team_pods()
     live_by_name = {p.name: p for p in live_pods if _is_managed_pod(p)}
 
@@ -1820,14 +1894,17 @@ def cmd_provision(args: argparse.Namespace) -> None:
     # names) so the user notices accumulating charges before adding another
     # pod. Don't block — just warn loudly.
     _warn_on_lifecycle_escapes(live_pods)
-    for candidate in (name, legacy):
+    candidates = (name,) if name_suffix else (name, legacy)
+    for candidate in candidates:
         if candidate in live_by_name and live_by_name[candidate].desired_status != "EXITED":
             existing = live_by_name[candidate]
+            suffix_hint = f" --name-suffix {name_suffix}" if name_suffix else ""
             print(
                 f"Pod {candidate} already exists "
                 f"(status={existing.desired_status}, id={existing.pod_id}).\n"
-                f"Use `pod.py resume --issue {args.issue}` to bring it back, "
-                f"or `pod.py terminate --issue {args.issue}` first if you want a fresh one."
+                f"Use `pod.py resume --issue {args.issue}{suffix_hint}` to bring it back, "
+                f"or `pod.py terminate --issue {args.issue}{suffix_hint}` first "
+                f"if you want a fresh one."
             )
             sys.exit(1)
 
@@ -1837,8 +1914,8 @@ def cmd_provision(args: argparse.Namespace) -> None:
     # KeyErrors on a CPU intent). CPU pods may be provisioned in PARALLEL — the
     # "one multi-GPU pod, not many single-GPU pods" rule is GPU-specific (it
     # exists to keep CUDA_VISIBLE_DEVICES-sharded GPU work on one pod), so N
-    # independent `provision --issue <N>` / `--issue <N>-<suffix>` CPU pods are
-    # the right shape for parallelizable CPU work. The account-hourly-cap guard
+    # independent `provision --issue <N>` / `--name-suffix <slug>` (#1334) CPU
+    # pods are the right shape for parallelizable CPU work. The account-hourly-cap guard
     # (a $/hr GPU-spend guard) is skipped — CPU pods cost cents/hr and
     # estimate_pod_hourly_rate returns 0 for gpu_count=0 anyway. CPU pods are
     # on-demand only (no spot/wait-for-capacity lever on the RunPod CPU side);
@@ -1978,11 +2055,14 @@ def cmd_provision(args: argparse.Namespace) -> None:
 
 
 def cmd_stop(args: argparse.Namespace) -> None:
-    """Pause the pod for issue #N. Volume preserved; IP released."""
+    """Pause the pod for issue #N (or exactly ``pod-<N>-<slug>`` with
+    ``--name-suffix``, #1334). Volume preserved; IP released."""
+    # getattr: hand-built Namespaces predate the flag; argparse always sets it.
+    name_suffix = getattr(args, "name_suffix", None)
     state = _load_state()
-    pod = _find_pod_in_state(state, args.issue)
+    pod = _find_pod_in_state(state, args.issue, name_suffix=name_suffix)
     if pod is None:
-        raise SystemExit(f"No ephemeral pod recorded for issue {args.issue}")
+        raise SystemExit(_no_pod_for_issue_message(state, args.issue, name_suffix))
     name = pod.name
     if pod.status == "stopped":
         print(f"{name} already stopped.")
@@ -2012,16 +2092,19 @@ def cmd_stop(args: argparse.Namespace) -> None:
 
 
 def cmd_resume(args: argparse.Namespace) -> None:
-    """Bring a stopped pod back. New IP, same volume."""
+    """Bring a stopped pod back (or exactly ``pod-<N>-<slug>`` with
+    ``--name-suffix``, #1334). New IP, same volume."""
     # Warn-only pod-safety check (#1177): resume creates a RUNNING pod the
     # watcher's pod-safety pass treats identically to a fresh provision
     # (#573's stopped pods were healthy follow-up pods; resuming one on a
     # terminal parent without signals is re-stopped ~20 min later).
     _warn_on_terminal_parent_provision(args.issue, verb="resume")
+    # getattr: hand-built Namespaces predate the flag; argparse always sets it.
+    name_suffix = getattr(args, "name_suffix", None)
     state = _load_state()
-    pod = _find_pod_in_state(state, args.issue)
+    pod = _find_pod_in_state(state, args.issue, name_suffix=name_suffix)
     if pod is None:
-        raise SystemExit(f"No ephemeral pod recorded for issue {args.issue}")
+        raise SystemExit(_no_pod_for_issue_message(state, args.issue, name_suffix))
     name = pod.name
     if pod.status == "running":
         print(f"{name} is already running.")
@@ -2489,15 +2572,18 @@ def _live_pods_for_issue(issue: int) -> list[PodInfo]:
     incident in #475: a stale local ``pod_id`` pointed at a ghost while a
     real RUNNING ``pod-475`` plus an EXITED orphan survived termination.)
 
-    Name matching delegates to :func:`_issue_from_pod_name`, which parses the
-    suffix after the managed prefix as an int and returns ``None`` on any
-    non-numeric tail — so ``pod-47`` resolves to issue 47 and never matches
-    issue 475.
+    Name matching delegates to :func:`_issue_from_pod_name` (the canonical
+    ``_POD_NAME_RE`` grammar, #1334): the digits after the managed prefix must
+    be followed by end-of-string or a letter-initial lowercase ``-<slug>`` —
+    so ``pod-47`` resolves to issue 47 and never matches issue 475, and a
+    suffixed follow-up pod ``pod-475-b`` resolves to issue 475.
     """
     return [p for p in list_team_pods() if _issue_from_pod_name(p.name) == issue]
 
 
-def _terminate_clear_stale_sidecar(issue: int, *, dry_run: bool) -> None:
+def _terminate_clear_stale_sidecar(
+    issue: int, *, dry_run: bool, only_name: str | None = None
+) -> None:
     """Handle the no-live-match branch of :func:`cmd_terminate`.
 
     The live API has no pod for ``issue``. If the local sidecar still names
@@ -2505,6 +2591,10 @@ def _terminate_clear_stale_sidecar(issue: int, *, dry_run: bool) -> None:
     next provision starts clean. If the sidecar is also empty, ``SystemExit``
     with a clear message rather than reporting a misleading 'Terminated' on a
     no-op.
+
+    ``only_name`` (#1334): a ``--name-suffix``-narrowed terminate scopes the
+    stale-clear to exactly that pod name, so a sibling ``pod-<N>``'s healthy
+    sidecar row is never cleared by a suffixed no-live-match run.
 
     Reads the raw sidecar (not the merged ``_load_state`` view, which drops
     sidecar rows with no live-API match) so we can locate + clear the ghost.
@@ -2515,9 +2605,12 @@ def _terminate_clear_stale_sidecar(issue: int, *, dry_run: bool) -> None:
     with _metadata_lock():
         sidecar_metadata = _read_metadata_file()
         stale_local_names = [name for name, m in sidecar_metadata.items() if m.issue == issue]
+        if only_name is not None:
+            stale_local_names = [n for n in stale_local_names if n == only_name]
         if not stale_local_names:
+            label = f"pod {only_name}" if only_name is not None else f"issue {issue}"
             raise SystemExit(
-                f"No live pod found for issue {issue} (and no local record). Nothing to terminate."
+                f"No live pod found for {label} (and no local record). Nothing to terminate."
             )
         for name in stale_local_names:
             print(
@@ -2538,6 +2631,13 @@ def _terminate_clear_stale_sidecar(issue: int, *, dry_run: bool) -> None:
 def cmd_terminate(args: argparse.Namespace) -> None:
     """Destroy every live pod for issue #N. Volume(s) gone.
 
+    ``--name-suffix <slug>`` (#1334) narrows the sweep to exactly
+    ``pod-<N>-<slug>`` — the surgical path for destroying a follow-up pod
+    WITHOUT touching the sibling ``pod-<N>``'s volume. The bare form keeps
+    its documented semantics: issue-level teardown destroys EVERY live pod
+    whose name resolves to the issue, suffixed follow-up pods included (a
+    round that must survive Step 8 sets the task-level ``keep-running`` tag).
+
     The live RunPod API is authoritative for pod existence (CLAUDE.md
     "Authority split"). We terminate by the LIVE pod_id of every pod whose
     name resolves to this issue, then re-query and fail loud if any such pod
@@ -2549,14 +2649,22 @@ def cmd_terminate(args: argparse.Namespace) -> None:
     # upload-verified. Standard /issue Step 8 flow posts the PASS marker
     # BEFORE calling terminate, so the gate is silent on the happy path.
     # Pass --skip-upload-verify to override (logs a LOUD warning). Run the
-    # guard once for the issue, BEFORE any live-API mutation.
+    # guard once for the issue, BEFORE any live-API mutation. The gate stays
+    # ISSUE-level even under --name-suffix: upload verification is a task
+    # property, not a pod property.
     _guard_upload_verification_before_terminate(
         args.issue, skip_flag=args.skip_upload_verify, dry_run=args.dry_run
     )
 
+    # getattr: hand-built Namespaces predate the flag; argparse always sets it.
+    name_suffix = getattr(args, "name_suffix", None)
+    target = _canonical_pod_name(args.issue, name_suffix) if name_suffix else None
+
     live_matches = _live_pods_for_issue(args.issue)
+    if target is not None:
+        live_matches = [p for p in live_matches if p.name == target]
     if not live_matches:
-        _terminate_clear_stale_sidecar(args.issue, dry_run=args.dry_run)
+        _terminate_clear_stale_sidecar(args.issue, dry_run=args.dry_run, only_name=target)
         return
 
     print(f"Terminating {len(live_matches)} live pod(s) for issue {args.issue}:")
@@ -2582,11 +2690,14 @@ def cmd_terminate(args: argparse.Namespace) -> None:
     # issue. terminate_pod is async on RunPod's side — the pod may still
     # report RUNNING for a few seconds while RunPod tears it down — but a
     # DIFFERENT pod_id surviving means we missed a duplicate. Compare by
-    # pod_id: any id we did NOT terminate is a real survivor.
+    # pod_id: any id we did NOT terminate is a real survivor. A
+    # --name-suffix-narrowed run applies the SAME name filter here (#1334) —
+    # otherwise a healthy sibling pod-<N> would be reported as a terminate
+    # failure and raise RunPodError.
     survivors = [
         p
         for p in _live_pods_for_issue(args.issue)
-        if p.pod_id not in {q.pod_id for q in live_matches}
+        if (target is None or p.name == target) and p.pod_id not in {q.pod_id for q in live_matches}
     ]
     if survivors:
         survivor_ids = [p.pod_id for p in survivors]
@@ -2602,8 +2713,11 @@ def cmd_terminate(args: argparse.Namespace) -> None:
     # ``_load_state`` makes a live-API call, so it runs BEFORE the lock; the
     # sidecar read → pop → write is then one contiguous RMW under the lock
     # (task #1183), with every legitimate removal named in allow_remove.
+    # A --name-suffix-narrowed run scopes the defensive stale lookup to
+    # exactly the target name (#1334) — the canonical-first default would
+    # resolve a healthy sibling pod-<N> and wipe ITS records.
     state = _load_state()  # post-terminate; live API has dropped the ids
-    stale = _find_pod_in_state(state, args.issue)
+    stale = _find_pod_in_state(state, args.issue, name_suffix=name_suffix)
     stale_name = stale.name if stale is not None and stale.name not in terminated_names else None
     with _metadata_lock():
         metadata = _read_metadata_file()
@@ -2673,9 +2787,18 @@ def cmd_list_ephemeral(args: argparse.Namespace) -> None:
 # ─── argparse plumbing ───────────────────────────────────────────────────────
 
 
+_NAME_SUFFIX_HELP = (
+    "Multi-pod-per-issue form (#1334): name the pod pod-<N>-<SUFFIX> "
+    "(lowercase, letter-initial, [a-z][a-z0-9-]{0,19}); the pod still "
+    "registers issue <N> as owner. On stop/resume/terminate, targets "
+    "exactly that pod."
+)
+
+
 def _parser_provision(sub: argparse._SubParsersAction) -> None:
     p = sub.add_parser("provision", help="Create a fresh pod for an issue and bootstrap it")
     p.add_argument("--issue", type=int, help="GitHub issue number (used as pod name)")
+    p.add_argument("--name-suffix", default=None, help=_NAME_SUFFIX_HELP)
     p.add_argument(
         "--intent",
         help="Workload intent (lora-7b, ft-7b, eval, inf-70b, ft-70b, debug). "
@@ -2721,6 +2844,7 @@ def _parser_provision(sub: argparse._SubParsersAction) -> None:
 def _parser_stop(sub: argparse._SubParsersAction) -> None:
     p = sub.add_parser("stop", help="Pause an issue's pod (preserves volume)")
     p.add_argument("--issue", type=int, required=True)
+    p.add_argument("--name-suffix", default=None, help=_NAME_SUFFIX_HELP)
     p.add_argument("--dry-run", action="store_true")
     p.set_defaults(func=cmd_stop)
 
@@ -2728,6 +2852,7 @@ def _parser_stop(sub: argparse._SubParsersAction) -> None:
 def _parser_resume(sub: argparse._SubParsersAction) -> None:
     p = sub.add_parser("resume", help="Bring a stopped pod back; refresh IP")
     p.add_argument("--issue", type=int, required=True)
+    p.add_argument("--name-suffix", default=None, help=_NAME_SUFFIX_HELP)
     p.add_argument("--dry-run", action="store_true")
     p.add_argument(
         "--wait-for-capacity",
@@ -2754,6 +2879,7 @@ def _parser_resume(sub: argparse._SubParsersAction) -> None:
 def _parser_terminate(sub: argparse._SubParsersAction) -> None:
     p = sub.add_parser("terminate", help="Destroy an issue's pod (volume goes too)")
     p.add_argument("--issue", type=int, required=True)
+    p.add_argument("--name-suffix", default=None, help=_NAME_SUFFIX_HELP)
     p.add_argument("--yes", action="store_true", help="Skip the confirmation prompt")
     p.add_argument("--dry-run", action="store_true")
     p.add_argument(

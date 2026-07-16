@@ -59,6 +59,16 @@ def _no_real_stagger(monkeypatch):
     return recorded
 
 
+@pytest.fixture(autouse=True)
+def _no_real_recent_closed(monkeypatch):
+    """Hermeticity for the #1399 recently-closed-sibling advisory: default the
+    helper to "no recent closures" so pre-existing wf-fix-shaped filings in
+    these tests never scan the LIVE task registry (whose contents — e.g. a
+    just-closed sibling title containing 'workflow_fix_target' — would make
+    stderr assertions time-dependent). Advisory-specific tests override it."""
+    monkeypatch.setattr(fit, "recent_closed_workflow_fix_tasks", lambda *a, **k: [])
+
+
 def _install_run_recorder(
     monkeypatch,
     *,
@@ -634,3 +644,116 @@ def test_title_prefix_guard_reads_shared_constant(monkeypatch, capsys, tmp_path)
     rc = fit.main(["--title", "workflow-fix: x", "--tag", "wf-fix", "--body-file", str(body)])
     assert rc == 0
     assert "--title lacks a" in capsys.readouterr().err
+
+
+# ── #1399: recently-closed-sibling advisory (warn-only, fail-soft) ────────────
+
+_CANNED_HIT = {
+    "id": 1309,
+    "title": "workflow-fix: honor an explicit marker output file",
+    "status": "completed",
+    "target": ".claude/skills/issue/SKILL.md",
+    "closed_at": "2026-07-14T08:49:34Z",
+    "matched": ["target"],
+}
+
+
+def test_wf_fix_filing_prints_closed_sibling_advisory(monkeypatch, capsys, tmp_path):
+    # A wf-fix-shaped filing prints the #1399 stderr advisory listing
+    # recently-closed siblings; filing + dispatch behavior and exit code are
+    # unchanged. The recorder ALSO pins the (target, title) args the filer
+    # passes: the body-file's anchored Provenance target + the verbatim
+    # --title (a silently-broken wf_fix_extract_target cannot pass).
+    calls = _install_run_recorder(monkeypatch, new_id="#771")
+    _healthy_dispatch_env(monkeypatch)
+    seen = {}
+
+    def _fake_recent(target, title, *, days):
+        seen["args"] = (target, title, days)
+        return [dict(_CANNED_HIT)]
+
+    monkeypatch.setattr(fit, "recent_closed_workflow_fix_tasks", _fake_recent)
+    body = tmp_path / "body.md"
+    body.write_text(_PREFIXED_PROVENANCE_BODY, encoding="utf-8")
+
+    rc = fit.main(["--title", "workflow-fix: x", "--tag", "wf-fix", "--body-file", str(body)])
+
+    assert rc == 0
+    assert len(_new_calls(calls)) == 1  # filing proceeded
+    assert len(_spawn_calls(calls)) == 1  # dispatch behavior unchanged
+    err = capsys.readouterr().err
+    assert "ADVISORY" in err
+    assert "#1309" in err
+    # _PREFIXED_PROVENANCE_BODY carries `- workflow_fix_target: CLAUDE.md`.
+    assert seen["args"] == ("CLAUDE.md", "workflow-fix: x", 7.0)
+
+
+def test_advisory_leg_fail_soft_never_breaks_filing(monkeypatch, capsys, tmp_path):
+    # Any exception inside the advisory leg prints a one-line diagnostic and
+    # filing + dispatch proceed with rc unchanged (#1399 fail-soft constraint).
+    calls = _install_run_recorder(monkeypatch, new_id="#771")
+    _healthy_dispatch_env(monkeypatch)
+
+    def _boom(target, title, *, days):
+        raise RuntimeError("boom")
+
+    monkeypatch.setattr(fit, "recent_closed_workflow_fix_tasks", _boom)
+    body = tmp_path / "body.md"
+    body.write_text(_PREFIXED_PROVENANCE_BODY, encoding="utf-8")
+
+    rc = fit.main(["--title", "workflow-fix: x", "--tag", "wf-fix", "--body-file", str(body)])
+
+    assert rc == 0
+    assert len(_new_calls(calls)) == 1  # filing still happened
+    assert len(_spawn_calls(calls)) == 1  # dispatch behavior unchanged
+    assert "advisory leg failed" in capsys.readouterr().err
+
+
+def test_non_wf_fix_filing_skips_advisory(monkeypatch, capsys, tmp_path):
+    # A plain infra filing (no wf-fix tag, no anchored target line) never
+    # invokes the helper and prints no advisory.
+    calls = _install_run_recorder(monkeypatch, new_id="#771")
+    _healthy_dispatch_env(monkeypatch)
+    called: list[tuple] = []
+    monkeypatch.setattr(
+        fit, "recent_closed_workflow_fix_tasks", lambda *a, **k: called.append(a) or []
+    )
+    body = tmp_path / "body.md"
+    body.write_text("## Goal\n\nordinary infra\n", encoding="utf-8")
+
+    rc = fit.main(["--title", "ordinary infra task", "--body-file", str(body)])
+
+    assert rc == 0
+    assert len(_new_calls(calls)) == 1
+    assert called == []
+    assert "ADVISORY" not in capsys.readouterr().err
+
+
+def test_advisory_caps_rows_and_prints_more_line(monkeypatch, capsys, tmp_path):
+    # >_ADVISORY_MAX_ROWS hits: exactly 10 rows print plus the "... and K
+    # more" summary line (the helper's recency-desc order keeps the
+    # just-merged incident class inside the cap).
+    _install_run_recorder(monkeypatch, new_id="#771")
+    _healthy_dispatch_env(monkeypatch)
+    hits = [
+        {
+            "id": 1400 + i,
+            "title": f"workflow-fix: sibling {i}",
+            "status": "completed",
+            "target": "CLAUDE.md",
+            "closed_at": f"2026-07-{15 - i:02d}T00:00:00Z",
+            "matched": ["target"],
+        }
+        for i in range(12)
+    ]
+    monkeypatch.setattr(fit, "recent_closed_workflow_fix_tasks", lambda *a, **k: list(hits))
+    body = tmp_path / "body.md"
+    body.write_text(_PREFIXED_PROVENANCE_BODY, encoding="utf-8")
+
+    rc = fit.main(["--title", "workflow-fix: x", "--tag", "wf-fix", "--body-file", str(body)])
+
+    assert rc == 0
+    err = capsys.readouterr().err
+    row_lines = [ln for ln in err.splitlines() if ln.startswith("  #")]
+    assert len(row_lines) == fit._ADVISORY_MAX_ROWS == 10
+    assert "... and 2 more within the window" in err
