@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1421,
+  "highest_id": 1422,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -3293,6 +3293,13 @@
       "path": "tasks/proposed/1421",
       "status": "proposed",
       "title": "workflow-fix: Sample-slot disclosure-count check in verify_task_body"
+    },
+    "1422": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1422",
+      "status": "proposed",
+      "title": "workflow-fix: check-30 trailing-parenthetical file-count shape"
     },
     "144": {
       "has_clean_result": false,
