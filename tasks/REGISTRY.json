@@ -3247,8 +3247,8 @@
     "1416": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1416",
-      "status": "planning",
+      "path": "tasks/approved/1416",
+      "status": "approved",
       "title": "workflow-fix: gotchas \u2014 GPU-free gate must read per-GPU memory.used (foreign-tenant GPUs invisible to compute-apps)"
     },
     "1417": {
