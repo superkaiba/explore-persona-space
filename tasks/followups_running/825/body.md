@@ -178,12 +178,12 @@ I wanted to test this hypothesis and see if a mapping trained on single characte
 ![Per-character held-out R² (layer 19) for Wren, HELIOS, Dana, Vex in base and instruct, against the chat assistant ceilings](https://raw.githubusercontent.com/superkaiba/explore-persona-space/43d7a7e3ea5b77cb540c31e182b4eb02d52f801f/figures/issue_1310/perpersona_r2_clean.png)
 
 **Takeaways**
-- The weak/inconsistent read in the figure above was an underpowered v2 artifact (n ≪ p; e.g. the instruct Vex / swap cells sat at n = 149 / 524); the [#1310](https://eps.superkaiba.com/tasks/1310) v3 re-run (prefill on-policy story datagen, ~1.3–3.1K pairs per character) flips it
-- v3 base model held-out $R^2$: Wren 0.137 / HELIOS 0.148 / Dana 0.147 / Vex 0.106; correct-character pairing 0.232 vs cross-character swap −0.004 → the map is **per-character, not generic** (which also explains Result 4's pooled generic-story null: a cross-character map is ≈ 0)
-- v3 instruct (partial — the run crashed before instruct Vex + the instruct swap control): Wren 0.235 / HELIOS 0.253 / Dana 0.188 — positive and stronger than base
+- The weak/inconsistent read in the figure above was an underpowered v2 artifact (n ≪ p; e.g. the instruct Vex / swap cells sat at n = 149 / 524); the [#1310](https://eps.superkaiba.com/tasks/1310) properly-powered re-run (run-2, model-generated labeled script-format scenes, ~1.3–3.6K pairs per character) flips it
+- Base model held-out $R^2$ (script-format cells, committed at `60aaea309a`): Wren 0.137 / HELIOS 0.148 / Dana 0.147 / Vex 0.106; correct-character pairing 0.233 vs cross-character swap −0.002 → the map is **per-character, not generic** (which also explains Result 4's pooled generic-story null: a cross-character map is ≈ 0)
+- Instruct (partial — run-2 crashed before fitting instruct Vex + the instruct swap control): Wren 0.235 / HELIOS 0.253 / Dana 0.188 — positive and stronger than base
 - This largely dissolves the "why does User:/Assistant: hold up when story-like doesn't" question: story characters DO carry the map — the assistant's is just ~3–5× stronger (~0.65 chat) — so the open question is the **magnitude gap**, not presence/absence
 - HELIOS (the AI character) ≈ Wren/Dana cuts against the "AI character mapping" hypothesis from Result 4 — being an AI character alone doesn't buy assistant-level strength
-- Caveats: the figure still shows the superseded v2 read (v3 figures pending); v3 numbers are from the #1310 v3 run marker with data durable in the HF crash-persist (`issue1310_partial/att-20260715-052017`); the instruct specificity control (instruct Vex + swap) is incomplete — instruct-tail re-run dispatched 2026-07-16
+- Caveats: the figure still shows the superseded v2 read; the 2026-07-15 "v3 RESULT" marker mislabeled these run-2 script-format cells as v3-prefill (forensics: every cell records git_commit=942df1bb2a, and v3 @0a0e9cfd ran only ~22 min before crashing); a clean full on-policy-prefill refit (all 4 characters × both models + swap controls in both — prefill data already generated and local) is in flight 2026-07-16 and will supersede these numbers; until it lands the instruct specificity control remains open
 
 ### _Result 5: The linear mapping breaks across two-turns, but the nonlinear mapping holds_
 
