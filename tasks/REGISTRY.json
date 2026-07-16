@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1390,
+  "highest_id": 1391,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -3046,6 +3046,13 @@
       "path": "tasks/proposed/1390",
       "status": "proposed",
       "title": "daily-fix: interp-critic degenerate-series lens"
+    },
+    "1391": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1391",
+      "status": "proposed",
+      "title": "daily-fix: watcher re-drive w/o registration file"
     },
     "14": {
       "has_clean_result": false,
