@@ -14,6 +14,7 @@ Usage:
     python scripts/pod.py keys --push                # Push .env to all pods
     python scripts/pod.py keys --push pod1 pod3      # Push to specific pods
     python scripts/pod.py keys --verify              # Check keys on all pods
+    python scripts/pod.py keys --refresh-token pod-1333   # repair + verify pod git push auth
 
     python scripts/pod.py bootstrap pod3             # Full pod setup
     python scripts/pod.py bootstrap --host X --port Y
@@ -227,7 +228,10 @@ def cmd_audit_stale(args: list[str]) -> int:
 
 COMMANDS = {
     "config": (cmd_config, "Manage pod configuration (list, sync, check, update)"),
-    "keys": (cmd_keys, "Distribute .env to pods (push, verify)"),
+    "keys": (
+        cmd_keys,
+        "Distribute .env to pods (push, verify, refresh-token: repair+verify git push auth)",
+    ),
     "bootstrap": (cmd_bootstrap, "Bootstrap a pod from bare to experiment-ready"),
     "health": (cmd_health, "Fleet-wide health check"),
     "sync": (cmd_sync, "Sync code/env/data/results/models"),
