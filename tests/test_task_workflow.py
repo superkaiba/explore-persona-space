@@ -4614,3 +4614,286 @@ def test_merge_wait_knob_rejects_non_finite(fake_repo, monkeypatch, bad):
     monkeypatch.setenv("EPM_TASKPY_MERGE_POLL_SECONDS", bad)
     with pytest.raises(ValueError, match="EPM_TASKPY_MERGE_POLL_SECONDS"):
         tw._merge_poll_s()
+
+
+# ─── Duplicate-dir audit + terminal-husk reap (#1430) ──────────────────────
+
+
+def _git(repo: Path, *args: str) -> None:
+    subprocess.run(["git", *args], cwd=repo, check=True, capture_output=True, text=True)
+
+
+def _git_last_subject(repo: Path) -> str:
+    out = subprocess.run(
+        ["git", "log", "-1", "--format=%s"], cwd=repo, capture_output=True, text=True, check=True
+    )
+    return out.stdout.strip()
+
+
+def _husk_sidecar_rows(repo: Path) -> list[dict]:
+    side = repo / ".claude" / "cache" / "husk-reap-events.jsonl"
+    if not side.exists():
+        return []
+    return [json.loads(line) for line in side.read_text().splitlines() if line.strip()]
+
+
+def _make_terminal_task_with_husk(
+    repo: Path, tw, *, husk_status: str = "reviewing", tracked: bool = True
+) -> tuple[int, Path, Path]:
+    """Create a task, move it to completed, then simulate the
+    merge-reintroduction: a stale-status husk dir holding a byte-prefix copy
+    of the live events.jsonl (git-tracked when ``tracked``, mirroring the
+    #1107/#1227 shape)."""
+    tid = tw.create_task(tw.NewTaskRequest(kind="infra", title="husked"))
+    tw.set_status(tid, "completed")
+    live = repo / "tasks" / "completed" / str(tid)
+    husk = repo / "tasks" / husk_status / str(tid)
+    husk.mkdir(parents=True, exist_ok=True)
+    first_line = (live / "events.jsonl").read_bytes().splitlines(keepends=True)[0]
+    (husk / "events.jsonl").write_bytes(first_line)
+    if tracked:
+        _git(repo, "add", "--", str(husk.relative_to(repo)))
+        _git(repo, "commit", "-q", "-m", f"reintroduce husk for #{tid}")
+    return tid, live, husk
+
+
+def test_audit_flags_duplicate_id_dirs(fake_repo, capsys):
+    """Plan test (a): detection finding shape; audit() return contract
+    preserved; CLI report-only prints the [duplicate-dir] WARN line and the
+    suffixed PASS line WITHOUT exiting 1 (D1: WARN tier never flips rc)."""
+    repo, tw = fake_repo
+    tid, _live, _husk = _make_terminal_task_with_husk(repo, tw)
+    findings = tw.duplicate_task_dirs()
+    assert len(findings) == 1
+    f = findings[0]
+    assert f.task_id == tid
+    assert f.registry_path == f"tasks/completed/{tid}"
+    assert f.live == f"tasks/completed/{tid}"
+    assert f.husks == [f"tasks/reviewing/{tid}"]
+    assert f.terminal is True
+    # audit()'s return contract is unchanged — duplicates are not registry
+    # problems (the registry entry is correct; the extra dir is residue).
+    assert tw.audit() == []
+    task_cli = _import_task_cli()
+    task_cli.cmd_audit(argparse.Namespace(repair=False, apply=False))  # no SystemExit
+    out = capsys.readouterr().out
+    assert "[duplicate-dir]" in out
+    assert f"tasks/reviewing/{tid}" in out
+    assert "AUDIT PASS" in out
+    assert "duplicate-dir warning(s)" in out
+
+
+def test_reap_removes_subset_husk(fake_repo, capsys):
+    """Plan test (b): report mode is would-reap (nothing touched); apply
+    removes the tracked subset husk with ONE commit naming the husk path;
+    the live dir is untouched; the sidecar records the reap."""
+    repo, tw = fake_repo
+    tid, live, husk = _make_terminal_task_with_husk(repo, tw)
+    # Report mode first: would-reap, zero mutation; CLI handler prints it.
+    rep0 = tw.reap_stale_status_husks(apply=False)
+    assert rep0.applied is False and rep0.disabled is False
+    assert [a.action for a in rep0.actions if a.task_id == tid] == ["would-reap"]
+    assert husk.is_dir()
+    task_cli = _import_task_cli()
+    task_cli.cmd_reap_husks(argparse.Namespace(apply=False, issue=None))
+    out = capsys.readouterr().out
+    assert "[would-reap]" in out
+    assert "report-only" in out
+    commits_before = _git_log_count(repo)
+    rep = tw.reap_stale_status_husks(apply=True)
+    assert rep.applied is True
+    acts = [a for a in rep.actions if a.task_id == tid]
+    assert [a.action for a in acts] == ["reaped"]
+    assert not husk.exists()
+    assert live.is_dir() and (live / "events.jsonl").exists()
+    assert _git_log_count(repo) == commits_before + 1
+    assert f"tasks/reviewing/{tid}" in _git_last_subject(repo)
+    rows = _husk_sidecar_rows(repo)
+    assert any(r["action"] == "reaped" and r["task_id"] == tid for r in rows)
+
+
+def test_reap_escalates_unique_content(fake_repo):
+    """Plan test (c): a size>0 file present only in the husk fails subset
+    verification — the husk is NEVER deleted, no commit is made, and the
+    escalation lands in the sidecar."""
+    repo, tw = fake_repo
+    tid, _live, husk = _make_terminal_task_with_husk(repo, tw)
+    (husk / "orphan-note.md").write_text("unique content the live dir lacks\n")
+    commits_before = _git_log_count(repo)
+    rep = tw.reap_stale_status_husks(apply=True)
+    acts = [a for a in rep.actions if a.task_id == tid]
+    assert [a.action for a in acts] == ["escalated"]
+    assert "orphan-note.md" in acts[0].reason
+    assert husk.is_dir() and (husk / "orphan-note.md").exists()
+    assert (husk / "events.jsonl").exists()
+    assert _git_log_count(repo) == commits_before  # nothing committed
+    rows = _husk_sidecar_rows(repo)
+    esc = [r for r in rows if r["action"] == "escalated" and r["task_id"] == tid]
+    assert esc and "orphan-note.md" in esc[0]["unique"]
+    # Report mode on the same state is would-escalate with no sidecar write.
+    rep0 = tw.reap_stale_status_husks(apply=False)
+    assert [a.action for a in rep0.actions if a.task_id == tid] == ["would-escalate"]
+
+
+def test_husk_subset_verifier_jsonl_and_symlink_arms(fake_repo):
+    """Critic-required verifier variants, pinned at the _husk_unique_content
+    layer: (i) .jsonl ordered-subsequence-but-not-prefix is SAFE; (ii) a
+    husk line absent from live is UNIQUE; (iii) a duplicated husk line vs a
+    single live line is UNIQUE (multiplicity respected — subsequence
+    consumes distinct live lines, never set-inclusion); (iv) a
+    shorter-but-diverged file is UNIQUE; (v) a symlink-to-DIRECTORY in the
+    husk is classified (safe on matching readlink, unique otherwise) even
+    though os.walk lists it in dirnames, not filenames."""
+    repo, tw = fake_repo
+    live = repo / "live-dir"
+    live.mkdir()
+    l1, l2, l3 = b'{"a":1}\n', b'{"b":2}\n', b'{"c":3}\n'
+    (live / "events.jsonl").write_bytes(l1 + l2 + l3)
+
+    def _fresh_husk(name: str) -> Path:
+        d = repo / name
+        d.mkdir()
+        return d
+
+    # (i) subsequence-but-not-prefix -> safe.
+    h = _fresh_husk("husk-subseq")
+    (h / "events.jsonl").write_bytes(l1 + l3)
+    assert tw._husk_unique_content(h, live) == []
+    # (ii) line absent from live -> unique.
+    h = _fresh_husk("husk-absent")
+    (h / "events.jsonl").write_bytes(l1 + b'{"zz":9}\n')
+    assert tw._husk_unique_content(h, live) == ["events.jsonl"]
+    # (iii) duplicated husk line vs single live occurrence -> unique.
+    h = _fresh_husk("husk-dup")
+    (h / "events.jsonl").write_bytes(l1 + l1)
+    assert tw._husk_unique_content(h, live) == ["events.jsonl"]
+    # (iv) shorter-but-diverged (not prefix, not subsequence) -> unique.
+    h = _fresh_husk("husk-diverged")
+    (h / "events.jsonl").write_bytes(l1 + b'{"b":999}\n')
+    assert tw._husk_unique_content(h, live) == ["events.jsonl"]
+    # Non-jsonl files get NO subsequence arm: byte-prefix only.
+    h = _fresh_husk("husk-txt")
+    (live / "note.txt").write_text("alpha\nbeta\n")
+    (h / "note.txt").write_text("alpha\n")  # byte-prefix -> safe
+    assert tw._husk_unique_content(h, live) == []
+    (h / "note.txt").write_text("beta\n")  # subsequence-of-lines but NOT prefix -> unique
+    assert tw._husk_unique_content(h, live) == ["note.txt"]
+    # (v) symlink-to-DIRECTORY: matching readlink safe, mismatched unique.
+    (live / "artifacts").mkdir()
+    (live / "artlink").symlink_to("artifacts")
+    h = _fresh_husk("husk-dirlink-ok")
+    (h / "artifacts").mkdir()
+    (h / "artlink").symlink_to("artifacts")
+    assert tw._husk_unique_content(h, live) == []
+    h = _fresh_husk("husk-dirlink-bad")
+    (h / "otherdir").mkdir()
+    (h / "rogue-link").symlink_to("otherdir")  # no live counterpart symlink
+    assert tw._husk_unique_content(h, live) == ["rogue-link"]
+    # Empty file only in husk -> safe; empty dir contributes nothing.
+    h = _fresh_husk("husk-empty")
+    (h / "empty.txt").write_bytes(b"")
+    (h / "empty-dir").mkdir()
+    assert tw._husk_unique_content(h, live) == []
+
+
+def test_reap_skips_non_terminal_and_blocked(fake_repo):
+    """Plan test (d): duplicate dirs on running and blocked tasks are
+    skipped-non-terminal (D2: blocked is re-drivable, NOT reap-eligible)."""
+    repo, tw = fake_repo
+    tid_r = tw.create_task(tw.NewTaskRequest(kind="infra", title="active"))
+    tw.set_status(tid_r, "running")
+    husk_r = repo / "tasks" / "proposed" / str(tid_r)
+    husk_r.mkdir(parents=True)
+    tid_b = tw.create_task(tw.NewTaskRequest(kind="infra", title="halted"))
+    tw.set_status(tid_b, "blocked")
+    husk_b = repo / "tasks" / "proposed" / str(tid_b)
+    husk_b.mkdir(parents=True)
+    rep = tw.reap_stale_status_husks(apply=True)
+    by_id = {a.task_id: a.action for a in rep.actions}
+    assert by_id[tid_r] == "skipped-non-terminal"
+    assert by_id[tid_b] == "skipped-non-terminal"
+    assert husk_r.is_dir() and husk_b.is_dir()
+    assert not tw.duplicate_task_dirs()[0].terminal
+
+
+def test_reap_skips_unregistered_and_registry_stale(fake_repo):
+    """Critic-required precondition pins: an unregistered duplicate id and a
+    registered id whose REGISTRY path is on disk nowhere are both skipped
+    with labeled actions — never reaped."""
+    repo, tw = fake_repo
+    tw.create_task(tw.NewTaskRequest(kind="infra", title="anchor"))
+    for st in ("proposed", "completed"):
+        d = repo / "tasks" / st / "9998"
+        d.mkdir(parents=True, exist_ok=True)
+        (d / "body.md").write_text("---\ntitle: dup\n---\n")
+    tid = tw.create_task(tw.NewTaskRequest(kind="infra", title="stale"))
+    src = repo / "tasks" / "proposed" / str(tid)
+    dst = repo / "tasks" / "completed" / str(tid)
+    dst.parent.mkdir(parents=True, exist_ok=True)
+    src.rename(dst)  # registry still points at tasks/proposed/<tid>
+    (repo / "tasks" / "running" / str(tid)).mkdir(parents=True)
+    rep = tw.reap_stale_status_husks(apply=True)
+    acts = {(a.task_id, a.action) for a in rep.actions}
+    assert (9998, "skipped-unregistered") in acts
+    assert (tid, "skipped-registry-stale") in acts
+    assert (repo / "tasks" / "proposed" / "9998").is_dir()
+    assert (repo / "tasks" / "completed" / "9998").is_dir()
+    assert dst.is_dir()
+    assert (repo / "tasks" / "running" / str(tid)).is_dir()
+
+
+def test_reap_symlink_and_untracked_shapes(fake_repo):
+    """Plan test (e): a symlink-matching husk (the #1227 plans/plan.md ->
+    v1.md shape) is reaped; a husk whose ROOT is a symlink escalates; a
+    fully-untracked empty-dir husk (the #721 shape) is reaped via rmtree
+    with ZERO new commits."""
+    repo, tw = fake_repo
+    # #1227 shape: matching relative symlink inside the husk.
+    tid, live, husk = _make_terminal_task_with_husk(repo, tw)
+    for d in (live, husk):
+        # create_task scaffolds plans/ on the live side already.
+        (d / "plans").mkdir(exist_ok=True)
+        (d / "plans" / "v1.md").write_text("plan body\n")
+        (d / "plans" / "plan.md").symlink_to("v1.md")
+    _git(repo, "add", "--", str(live.relative_to(repo)), str(husk.relative_to(repo)))
+    _git(repo, "commit", "-q", "-m", "plans on both sides")
+    rep = tw.reap_stale_status_husks(apply=True, task_id=tid)
+    assert [a.action for a in rep.actions] == ["reaped"]
+    assert not husk.exists()
+    assert (live / "plans" / "plan.md").is_symlink()  # live untouched
+    # Husk ROOT is a symlink: escalates outright, never followed/deleted.
+    tid2 = tw.create_task(tw.NewTaskRequest(kind="infra", title="rootlink"))
+    tw.set_status(tid2, "completed")
+    root_link = repo / "tasks" / "reviewing" / str(tid2)
+    root_link.parent.mkdir(parents=True, exist_ok=True)
+    root_link.symlink_to(repo / "tasks" / "completed" / str(tid2))
+    rep2 = tw.reap_stale_status_husks(apply=True, task_id=tid2)
+    assert [a.action for a in rep2.actions] == ["escalated"]
+    assert "symlink" in rep2.actions[0].reason
+    assert root_link.is_symlink()
+    assert (repo / "tasks" / "completed" / str(tid2)).is_dir()
+    # #721 shape: wholly-untracked husk holding only an empty artifacts/ dir.
+    tid3 = tw.create_task(tw.NewTaskRequest(kind="infra", title="untracked"))
+    tw.set_status(tid3, "completed")
+    husk3 = repo / "tasks" / "running" / str(tid3)
+    (husk3 / "artifacts").mkdir(parents=True)
+    commits_before = _git_log_count(repo)
+    rep3 = tw.reap_stale_status_husks(apply=True, task_id=tid3)
+    assert [a.action for a in rep3.actions] == ["reaped"]
+    assert "0 tracked file(s)" in rep3.actions[0].reason
+    assert not husk3.exists()
+    assert _git_log_count(repo) == commits_before  # rmtree-only, no commit
+
+
+def test_reap_kill_switch(fake_repo, monkeypatch):
+    """Plan test (f): EPM_SKIP_HUSK_REAP=1 short-circuits to a disabled
+    report — zero actions, disk untouched."""
+    repo, tw = fake_repo
+    _tid, _live, husk = _make_terminal_task_with_husk(repo, tw)
+    monkeypatch.setenv("EPM_SKIP_HUSK_REAP", "1")
+    rep = tw.reap_stale_status_husks(apply=True)
+    assert rep.disabled is True
+    assert rep.applied is False
+    assert rep.actions == []
+    assert husk.is_dir()
+    assert not _husk_sidecar_rows(repo)
