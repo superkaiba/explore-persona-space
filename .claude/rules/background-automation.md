@@ -394,6 +394,26 @@ so any future stale-instance poster identifies itself on its first marker.
 Pinned by `tests/test_autonomous_session_watch.py::test_orphan_act_guard_*`
 + `test_stalled_fence_spawn_guard_*`.
 
+**Orphan-sweep dead-owner fast path (#1391; lineage #1090-fu5).** The orphan
+sweep's 90-min staleness floor exists because "no live registered session"
+cannot distinguish a dead driver from a live-but-unregistered one (the
+routine follow-up-round state). When the sweep has POSITIVE proof the task's
+last recorded owner session is dead — the #720 `last-mapped-terminal-<sid>`
+breadcrumb binds a sid to the issue, that sid was observed live on an
+earlier tick (state-carried in `orphan-<N>.json` as `owner_sid`, surviving
+the breadcrumb GC) or its breadcrumb still exists this tick, and it is now
+absent from a successfully-fetched daemon live set — plus a recent driver
+witness (a follow-up-round-only marker kind or a `stage-dispatch`
+breadcrumb) and no live-owner veto (fresh worktree activity, a live daemon
+child with an `issue-<N>` worktree cwd, any breadcrumb owner still live),
+the effective floor fed to `decide_orphan` drops to
+`EPM_ORPHAN_DEAD_OWNER_STALENESS_MIN` (default 20 min, clamp >= 10 min, `0`
+disables) — the #1090-fu5 shape (session dies mid-follow-up-round with its
+registration already deleted) is auto-respawned in ~35-50 min instead of
+~105. Every uncertain input fails toward the 90-min slow path; the 2-miss
+debounce, daily cap, manual-only alert (#505), act-time guard (#1247), and
+all four exemption actions bind unchanged.
+
 **Infra-drain pass (execute the PM dispatch queue; task #633).** The PM
 session's standing infra auto-dispatch rule (`research-pm.md` § Standing
 rule, item 4b) adjudicates which `proposed` `kind: infra|batch` tasks are
