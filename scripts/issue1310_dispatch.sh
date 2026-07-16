@@ -65,6 +65,7 @@ run_extract_both() {
     wait "$pb"; local rc_b=$?
     wait "$pi"; local rc_i=$?
     set -e
+    # UPLOAD_OR_TRUE_EXEMPT: informational log tail on possibly-absent files (diagnostic side channel, not a result-bearing phase)
     tail -5 "$LOG_DIR/issue-1310-extract-base.log" "$LOG_DIR/issue-1310-extract-instruct.log" || true
     if [ "$rc_b" -ne 0 ] || [ "$rc_i" -ne 0 ]; then
       echo "[i1310] extract failed (base rc=$rc_b instruct rc=$rc_i)" >&2; exit 1
@@ -161,7 +162,7 @@ print("[i1310-p5] uploads complete")
 PY
 
 echo "[phase=p5_git] committing eval JSONs + figures to the issue branch"
-git add "eval_results/issue_${ISSUE}" "figures/issue_${ISSUE}" || true
+git add "eval_results/issue_${ISSUE}" "figures/issue_${ISSUE}"
 if git commit -m "task #${ISSUE}: eval results + figures (pod run)" >/dev/null 2>&1; then
   # #1205: verify the push landed (never swallow); retry once, then fail loud.
   git push origin "issue-${ISSUE}"

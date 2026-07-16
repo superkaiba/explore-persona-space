@@ -22,8 +22,12 @@ import json
 import sys
 from pathlib import Path
 
-import matplotlib.pyplot as plt
-import numpy as np
+from explore_persona_space.orchestrate.env import load_dotenv
+
+load_dotenv()  # shared-VM thread caps before heavy imports (#847)
+
+import matplotlib.pyplot as plt  # noqa: E402
+import numpy as np  # noqa: E402
 
 REPO = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(REPO / "src"))

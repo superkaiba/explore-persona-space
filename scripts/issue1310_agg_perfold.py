@@ -63,6 +63,8 @@ def stream_l19(model_kind: str) -> dict:
     prefix = f"{STORE_PREFIX}/{model_kind}"
     names = sorted(
         e.path
+        # HUB_VERIFY_RETRY_EXEMPT: scoped download enumerator, not a post-upload
+        # verify; transient failures abort loudly and the recompute is re-runnable
         for e in api.list_repo_tree(DATA_REPO, path_in_repo=prefix, repo_type="dataset")
         if e.path.rsplit("/", 1)[-1].startswith(f"{model_kind}_shard") and e.path.endswith(".pt")
     )

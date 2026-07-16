@@ -29,8 +29,12 @@ import json
 import sys
 from pathlib import Path
 
-import matplotlib.pyplot as plt
-import numpy as np
+from explore_persona_space.orchestrate.env import load_dotenv
+
+load_dotenv()  # shared-VM thread caps before heavy imports (#847)
+
+import matplotlib.pyplot as plt  # noqa: E402
+import numpy as np  # noqa: E402
 
 REPO = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(REPO / "src"))
@@ -371,7 +375,7 @@ def fig_perfold() -> None:
     for ax, model in zip(axes, ("base", "instruct"), strict=True):
         slots = [(p, f"onpolicy_{model}_{p}") for p in PERSONAS]
         xs = np.arange(len(slots) + 2)
-        for i, (persona, cid) in enumerate(slots):
+        for i, (_persona, cid) in enumerate(slots):
             c = d["cells"][cid]
             pg = np.clip([v["r2"] for v in c["pergroup"].values()], -CLIP, CLIP)
             jit = rng.uniform(-0.26, 0.26, size=len(pg))
@@ -409,7 +413,7 @@ def fig_perfold() -> None:
                 zorder=4,
                 label="pooled (committed)" if (i == 0 and model == "base") else None,
             )
-        for k, (key, lab) in enumerate((("correct", "swap: correct"), ("swap", "swap: swapped"))):
+        for k, (key, _lab) in enumerate((("correct", "swap: correct"), ("swap", "swap: swapped"))):
             s = d["swap"][model][key]
             pg = np.clip([v["r2"] for v in s["pergroup"].values()], -CLIP, CLIP)
             jit = rng.uniform(-0.26, 0.26, size=len(pg))
