@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1387,
+  "highest_id": 1388,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -3018,6 +3018,13 @@
       "path": "tasks/proposed/1387",
       "status": "proposed",
       "title": "workflow-fix: verify_plan exit-0 baseline check"
+    },
+    "1388": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1388",
+      "status": "proposed",
+      "title": "daily-fix: fix bare list_repo_tree lint offenders"
     },
     "139": {
       "has_clean_result": true,
