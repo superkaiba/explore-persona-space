@@ -92,13 +92,19 @@ def _l19_reads(path: Path) -> dict | None:
     return out
 
 
-def tf_op_calibration(eval_dir: Path, matched_out: Path, *, smoke: bool) -> None:
+def tf_op_calibration(
+    eval_dir: Path, matched_out: Path, *, smoke: bool, companion_halted: bool = False
+) -> None:
     """Plan v8 §7 nested-tier TF-distortion read (context arm, instruct, L19).
 
     Reads: the full TF cell + the companion cell (fits phase, eval_dir) and the
     TF-on-companion-subset refit (this phase). Tiers are computed on the
     MATCHED companion subset (gap not mechanically n-driven). Reporting-only —
     never a process halt; under smoke missing cells skip informationally.
+    ``companion_halted`` (from the matched record's ``companion`` demotion,
+    i.e. no usable companion convs — the rc=23 lane) is the ONLY production
+    excuse for missing companion cells; it writes an explicit
+    ``companion: halted`` record instead of tiers (plan v8 §4.5).
     """
     reads = {
         "tf_full": _l19_reads(eval_dir / f"cells_{c.cell_id(MODEL, 'r4', 'context')}.json"),
@@ -123,9 +129,22 @@ def tf_op_calibration(eval_dir: Path, matched_out: Path, *, smoke: bool) -> None
     }
     tf_sub, op = reads["tf_on_companion_subset"], reads["op_companion"]
     if tf_sub is None or op is None:
-        reason = "TF-on-companion / companion cell missing (companion halted or smoke skip)"
-        assert smoke or op is None, reason  # production: only a halted companion excuses
-        payload["calibration"] = {"skipped": reason}
+        reason = (
+            "companion halted (rc=23 usable-floor miss / no usable companion convs) — "
+            "TF headline proceeds, calibration N/A (plan v8 §4.5)"
+            if companion_halted
+            else "TF-on-companion / companion cell missing (smoke skip)"
+        )
+        # Production: ONLY a matched-recorded companion halt excuses missing
+        # cells; a missing cell beside a LIVE companion is fits/refit drift.
+        assert smoke or companion_halted, (
+            "TF-on-companion / companion cell JSON missing in production with a "
+            "non-halted companion — fits/matched-row drift"
+        )
+        payload["calibration"] = {
+            "skipped": reason,
+            "companion": "halted" if companion_halted else "missing_at_smoke_n",
+        }
         print(f"[matched-row] TF/op calibration skipped: {reason}", flush=True)
     else:
         gap = tf_sub["r2_l19"] - op["r2_l19"]
@@ -206,7 +225,14 @@ def main() -> None:
         smoke=args.smoke,
         allowlist_fn=lambda cell: allow[cell["cell_id"]],
     )
-    tf_op_calibration(args.eval_dir, out_dir, smoke=args.smoke)
+    # Companion demotion from the matched record (rc=23 lane / empty subset):
+    # excuses the missing companion cells + writes companion: halted.
+    tf_op_calibration(
+        args.eval_dir,
+        out_dir,
+        smoke=args.smoke,
+        companion_halted=not r4cfg.get("op_companion_convs"),
+    )
     print("[done] matched-row comparator refits complete", flush=True)
 
 

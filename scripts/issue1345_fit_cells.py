@@ -329,10 +329,19 @@ def _build_r4_pairs(
             op_convs = sorted(set(str(x) for x in op_ids) & set(r4_convs))
             entry["op_companion_convs"] = op_convs
             entry["n_op"] = len(op_convs)
+            # Explicit demotion record (r1 review Major): downstream consumers
+            # (matched-row refits / tf_op_calibration / payload matched_n rows)
+            # carry it forward instead of inferring from an absent list.
+            entry["companion"] = "present" if op_convs else "empty_intersection"
         else:
             entry["op_companion_convs"] = None
             entry["n_op"] = 0
-            print(f"[matchedn] no r4op store for {model} (companion halted?)", flush=True)
+            entry["companion"] = "halted"
+            print(
+                f"[matchedn] no r4op store for {model} (companion halted — the rc=23 "
+                "lane, plan v8 §4.5: TF headline proceeds, calibration N/A)",
+                flush=True,
+            )
         pairs[model] = entry
     return pairs
 
@@ -640,7 +649,9 @@ def refit_equality_check(
         raise SystemExit(3)
 
 
-def select_cells(cells_arg: str, halted: set[str], *, no_r4: bool = False) -> list[dict]:
+def select_cells(
+    cells_arg: str, halted: set[str], *, no_r4: bool = False, no_r4op: bool = False
+) -> list[dict]:
     """Resolve --cells against the registry, then drop halted models' r3 cells.
 
     Membership is asserted against the FULL registry BEFORE the per-model halt
@@ -648,7 +659,11 @@ def select_cells(cells_arg: str, halted: set[str], *, no_r4: bool = False) -> li
     (plan §7 per-model yield floor), never an "unknown cell id" crash (the
     pre-r6 ordering crashed exactly there under --no-r3 + an explicit list).
     ``no_r4`` mirrors the same drop-and-log semantics for the paired-story
-    regime (r4 + its r4op companion) when its own yield floor halted.
+    regime (r4 + its r4op companion) when its own yield floor halted;
+    ``no_r4op`` drops ONLY the r4op companion cells (the rc=23 companion-halt
+    lane, plan v8 §4.5: the TF headline proceeds, calibration reports N/A —
+    without this, run_cells would FileNotFoundError on the never-extracted
+    r4op store and kill the whole fits phase; r1 code-review Major).
     """
     cells = c.all_cells()
     if cells_arg != "all":
@@ -672,6 +687,15 @@ def select_cells(cells_arg: str, halted: set[str], *, no_r4: bool = False) -> li
                 flush=True,
             )
         dropped += dropped_r4
+    if no_r4op:
+        dropped_op = [x["cell_id"] for x in cells if x["regime"] == "r4op"]
+        if dropped_op:
+            print(
+                f"[fits] dropping r4op companion cells (companion halted rc=23, plan v8 "
+                f"§4.5 — TF headline proceeds, calibration N/A): {dropped_op}",
+                flush=True,
+            )
+        dropped += dropped_op
     if dropped:
         cells = [x for x in cells if x["cell_id"] not in set(dropped)]
     return cells
@@ -699,6 +723,13 @@ def main() -> None:
         action="store_true",
         help="paired-story regime halted (r4 yield floor, plan v8 §7): drop the "
         "r4/r4op cells + skip the r4 matched-pair build",
+    )
+    ap.add_argument(
+        "--no-r4op",
+        action="store_true",
+        help="on-policy companion halted (rc=23 usable-floor miss, plan v8 §4.5): "
+        "drop ONLY the r4op companion cells — the r4 TF headline proceeds and "
+        "tf_op_calibration reports N/A (keyed on R4OP_HALT_FILE in the dispatcher)",
     )
     ap.add_argument("--parity", action="store_true", help="±0.02 anchor parity gate")
     ap.add_argument(
@@ -741,7 +772,7 @@ def main() -> None:
             smoke=args.smoke,
         )
     if args.cells:
-        cells = select_cells(args.cells, halted, no_r4=args.no_r4)
+        cells = select_cells(args.cells, halted, no_r4=args.no_r4, no_r4op=args.no_r4op)
         matched = load_matched(args.matched_dir)
         run_cells(
             args.turnstore_dir,

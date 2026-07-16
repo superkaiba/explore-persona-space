@@ -17,8 +17,9 @@ after one retry batch -> rc=21 story-regime halt (plan v8 §7); smoke floor 1.
 --op-companion: the N<=200 on-policy control cell (plan v8 §4.5, the #1335
 tf/op calibration shape) — seed-0 sample of the KEPT paired conversations,
 free generation WITHOUT the verbatim answer (the model writes its own answer);
-one-exchange rubric. kept < 2 -> rc=23 (companion unusable; the TF headline
-proceeds, calibration reports N/A).
+one-exchange rubric. kept < companion_usable_floor (5 production == the
+grouped-CV minimum; 1 under --smoke) -> rc=23 (companion unusable; the TF
+headline proceeds, calibration reports N/A).
 
 Content hygiene: questions/answers are LMSYS-derived real user text and
 stories are raw model generations — this script logs COUNTS/ids only.
@@ -318,6 +319,13 @@ def match_verbatim_turn(story: str, answer: str) -> tuple[dict | None, str]:
         "a_end": a_end,
         "confidence": {
             "marker_exact": marker_text.endswith(":"),
+            # INFORMATIONAL in the r4 verbatim path — nothing gates on this
+            # flag here (the span-ordering check below is the only mechanical
+            # gate; contrast confident_op_turn, which gates on the PARENT
+            # parser's confidence dict). The <=2000-char upper bound predates
+            # the drop of the pool-level ANSWER_CHAR_MAX cap: pool answers are
+            # capped at <=800 TOKENS, which can exceed 2000 chars, so False
+            # here just means "long answer", never a defect (r1 review Minor).
             "answer_len_ok": 20 <= (a_end - a_start) <= 2000,
             "question_found": True,
             "question_is_question": bool(question_is_question),
@@ -343,10 +351,27 @@ def confident_op_turn(story: str) -> tuple[dict | None, str]:
 # ---------------------------------------------------------------------------
 # Generation (chunked vLLM + fingerprint-gated JSONL resume — parent pattern)
 # ---------------------------------------------------------------------------
+def companion_usable_floor(smoke: bool) -> int:
+    """Minimum kept companion rows for a usable control cell (rc=23 below it).
+
+    Production: c.OP_COMPANION_MIN_KEPT (= the grouped-CV minimum — the
+    companion fit is a conv-grouped 5-fold CV with one row per conversation,
+    so fewer kept convs than folds fits nothing; r1 code-review Major).
+    Smoke: 1 — any NONZERO yield proceeds (the #1345-r3 gate-calibration rule:
+    a production-scale floor deterministically kills the smoke leg).
+    """
+    return 1 if smoke else c.OP_COMPANION_MIN_KEPT
+
+
 def paired_fingerprint(mode: str, rows: list[dict]) -> str:
     """Content key over everything that determines the kept bundle (r6 rule)."""
     import inspect
 
+    # The op-companion bundle is keyed by mode_slug "paired_op" (main's slug;
+    # bare "op" kept for compat) — keying on "op" alone silently embedded the
+    # PAIRED templates/parser in the companion fp (r1 code-review Minor: a
+    # future op-recipe change would have resumed a stale companion bundle).
+    is_op = mode in ("op", "paired_op")
     key = json.dumps(
         {
             "mode": mode,
@@ -354,7 +379,7 @@ def paired_fingerprint(mode: str, rows: list[dict]) -> str:
             "temperature": c.STORY_TEMPERATURE,
             "max_new_tokens": c.STORY_MAX_NEW_TOKENS,
             "system_template": (
-                STORY_OP_COMPANION_SYSTEM if mode == "op" else STORY_PAIRED_SYSTEM_TEMPLATE
+                STORY_OP_COMPANION_SYSTEM if is_op else STORY_PAIRED_SYSTEM_TEMPLATE
             ),
             "rows_sha": hashlib.sha256(
                 json.dumps(
@@ -363,14 +388,12 @@ def paired_fingerprint(mode: str, rows: list[dict]) -> str:
                 ).encode()
             ).hexdigest(),
             "judge_model": c.JUDGE_MODEL,
-            "judge_system": JUDGE_SYSTEM_OP if mode == "op" else JUDGE_SYSTEM_PAIRED,
+            "judge_system": JUDGE_SYSTEM_OP if is_op else JUDGE_SYSTEM_PAIRED,
             "judge_max_tokens": c.JUDGE_MAX_TOKENS,
             # The keep-filter recipe IS part of the bundle identity: any change
             # to the matcher regenerates rather than reusing stale stories.
             "parser_source_sha": hashlib.sha256(
-                inspect.getsource(
-                    confident_op_turn if mode == "op" else match_verbatim_turn
-                ).encode()
+                inspect.getsource(confident_op_turn if is_op else match_verbatim_turn).encode()
             ).hexdigest(),
         },
         sort_keys=True,
@@ -711,7 +734,9 @@ def main() -> None:
             for i in sorted(int(i) for i in idx)
         ]
         rows_main, pool_counts = _filter_pool_feasible(rows_main, tokenizer, op_companion=True)
-        n_target, yield_floor = len(rows_main), 2  # companion: usable at >=2 rows (rc=23)
+        # Companion usable floor: 5 production (grouped-CV minimum) / 1 smoke
+        # -> rc=23 below it (plan v8 §4.5; r1 code-review Major).
+        n_target, yield_floor = len(rows_main), companion_usable_floor(args.smoke)
         seeds_reserve: list[dict] = []
     else:
         pool, pool_counts = load_paired_pool(args.matched_dir, args.dl_dir)
@@ -730,8 +755,13 @@ def main() -> None:
     if resumed is not None:
         n_kept = int(resumed["n_kept"])
         if args.op_companion:
-            if n_kept < 2:
-                print(f"[companion] unusable: kept={n_kept} < 2 — rc=23", flush=True)
+            floor_op = companion_usable_floor(args.smoke)
+            if n_kept < floor_op:
+                print(
+                    f"[companion] unusable: kept={n_kept} < usable floor {floor_op} "
+                    "(grouped-CV minimum) — rc=23",
+                    flush=True,
+                )
                 raise SystemExit(23)
         else:
             g.enforce_yield_floor(n_kept, yield_floor)
@@ -785,8 +815,13 @@ def main() -> None:
     persist_bundle_paired(mode_slug, model_key, out_dir, fp, args.smoke)
 
     if args.op_companion:
-        if len(kept) < 2:
-            print(f"[companion] unusable: kept={len(kept)} < 2 — rc=23", flush=True)
+        floor_op = companion_usable_floor(args.smoke)
+        if len(kept) < floor_op:
+            print(
+                f"[companion] unusable: kept={len(kept)} < usable floor {floor_op} "
+                "(grouped-CV minimum) — rc=23",
+                flush=True,
+            )
             raise SystemExit(23)
     else:
         if args.smoke and len(kept) < n_target:

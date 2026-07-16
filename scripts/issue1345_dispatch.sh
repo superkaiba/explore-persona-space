@@ -124,10 +124,15 @@ r3_models_to_run() {
 }
 
 # Paired-story (r4) halt state (plan v8 §7: kept < 2160/2700 -> rc=21 halt) +
-# companion halt (rc=23: <2 usable companion rows — TF headline proceeds).
+# companion halt (rc=23: kept below the usable floor — 5 production / 1 smoke,
+# the grouped-CV minimum — TF headline proceeds, calibration N/A).
 R4_HALT_FILE="$DATA_DIR/story_regime_halted_r4"
 R4OP_HALT_FILE="$DATA_DIR/companion_halted_r4op"
 no_r4_flag() { [[ -f "$R4_HALT_FILE" ]] && echo "--no-r4" || true; }
+# Threads the companion halt into the fits phase (r1 code-review Major: without
+# it, all_cells() still enumerates the r4op cells and run_cells dies on the
+# never-extracted r4op store — a full-run FATAL from a designed control lane).
+no_r4op_flag() { [[ -f "$R4OP_HALT_FILE" ]] && echo "--no-r4op" || true; }
 
 # Under the paired variant, r3 is halted BY SCOPE (never generated this round;
 # the parent ARIA run is the committed anchor). Reuses the whole %NO_R3% /
@@ -383,8 +388,10 @@ if should_run extract_r4_op_companion; then
     echo "[phase=extract_r4_op_companion] SKIPPED — r4 leg halted (yield floor)"
   else
     echo "[phase=extract_r4_op_companion]"
-    # rc=23 == companion unusable (<2 kept rows): the TF headline proceeds and
-    # the calibration reports N/A (plan v8 §4.5 — a control, never a kill).
+    # rc=23 == companion unusable (kept below the usable floor — the grouped-CV
+    # minimum): the TF headline proceeds and the calibration reports N/A
+    # (plan v8 §4.5 — a control, never a kill); no_r4op_flag threads the halt
+    # into the fits phase.
     RC_OP=0
     run_cmd env CUDA_VISIBLE_DEVICES=0 ${ENV_INLINE} uv run python scripts/issue1345_gen_stories_paired.py \
       --model instruct --op-companion --out-dir "$STORIES_DIR" --dl-dir "$DL_DIR" \
@@ -418,7 +425,7 @@ fi
 
 if should_run fits; then
   echo "[phase=fits]"
-  run_per_model fits "${ENV_INLINE:+$ENV_INLINE }uv run python -c \"import sys; sys.path.insert(0,'scripts'); import issue1345_common as c; print(','.join(x['cell_id'] for x in c.all_cells() if x['model_key']=='%MODEL%'))\" > /tmp/i1345_cells_%MODEL%${VARIANT:+_$VARIANT}.txt && ${ENV_INLINE:+$ENV_INLINE }uv run python scripts/issue1345_fit_cells.py --cells \$(cat /tmp/i1345_cells_%MODEL%${VARIANT:+_$VARIANT}.txt) %NO_R3% $(no_r4_flag) $SMOKE_FLAG $REFIT_REF_FLAG --turnstore-dir '$TS_DIR' --matched-dir '$MATCHED_DIR' --out-dir '$EVAL_DIR' --preds-dir '$PREDS_DIR' --null-draws $NULLS --n-boot $NBOOT"
+  run_per_model fits "${ENV_INLINE:+$ENV_INLINE }uv run python -c \"import sys; sys.path.insert(0,'scripts'); import issue1345_common as c; print(','.join(x['cell_id'] for x in c.all_cells() if x['model_key']=='%MODEL%'))\" > /tmp/i1345_cells_%MODEL%${VARIANT:+_$VARIANT}.txt && ${ENV_INLINE:+$ENV_INLINE }uv run python scripts/issue1345_fit_cells.py --cells \$(cat /tmp/i1345_cells_%MODEL%${VARIANT:+_$VARIANT}.txt) %NO_R3% $(no_r4_flag) $(no_r4op_flag) $SMOKE_FLAG $REFIT_REF_FLAG --turnstore-dir '$TS_DIR' --matched-dir '$MATCHED_DIR' --out-dir '$EVAL_DIR' --preds-dir '$PREDS_DIR' --null-draws $NULLS --n-boot $NBOOT"
   if [[ -z "$DRY_RUN" && ( "${RC_INSTRUCT:-0}" -ne 0 || "${RC_PRETRAINED:-0}" -ne 0 ) ]]; then
     echo "FATAL: fits failed (rc_i=${RC_INSTRUCT} rc_p=${RC_PRETRAINED})" >&2; exit 1
   fi

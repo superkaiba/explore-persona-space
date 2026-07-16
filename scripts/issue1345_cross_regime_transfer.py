@@ -332,6 +332,16 @@ def run_model_arm(
         if pair_kind == "r4pair":
             # Conversation-paired grain (plan v8 §4): BOTH sides restrict to the
             # kept r4 conv set — row-aligned by construction (one row per conv).
+            if r4cfg is None:
+                # include_r4 was demoted (the r4 pair build smoke-skips on the
+                # shard000-staged shared set — pod smoke leg). The matrix loop's
+                # guard skips r4 pairs BEFORE reaching here; this backstop keeps
+                # any future caller on the smoke-skip machinery instead of a
+                # TypeError (r1 code-review Critical). Production cannot demote
+                # (the pair build fail-louds), so a None here outside smoke is
+                # matched-subset drift.
+                assert smoke, f"r4pair subset with no per_model_r4_pair entry ({label})"
+                return None
             return subset_rows(full[regime], r4cfg["r4_convs"], smoke=smoke, label=label)
         if regime in ("r1", "r2"):
             ids = shared if pair_kind == "headline" else r3cfg["r12_convs"]
@@ -370,6 +380,14 @@ def run_model_arm(
     for i, j in [(a, b) for a in regimes for b in regimes if a != b]:
         if {i, j} == {"r3", "r4"}:
             skipped[f"{i}->{j}"] = "r3~r4 never computes (different story corpora; plan v8 §4)"
+            continue
+        if "r4" in (i, j) and not include_r4:
+            # Mirror opcomp's pair-loop guard (r1 code-review Critical): the r4
+            # BUNDLE can be loaded (so r4 ∈ regimes) while the r4 matched-pair
+            # build smoke-skipped, leaving no conv set for the r4pair grain.
+            reason = "r4 matched pair unavailable (pair build skipped; include_r4 demoted)"
+            print(f"[transfer] SKIP pair {i}->{j} ({model}/{arm}): {reason}", flush=True)
+            skipped[f"{i}->{j}"] = reason
             continue
         pair_kind = pair_kind_for(i, j)
         xfer = _sweep(i, j, pair_kind)

@@ -11,9 +11,19 @@ Covers the plan-v8 additions:
   3. The judge reply parser (EXCHANGES/VERDICT reason-then-verdict shape).
   4. select_cells --no-r4 drop + pair_kind_for grain mapping.
   5. build_matched per_model_r4_pair: production fail-loud on foreign convs /
-     duplicates; smoke informational skip.
+     duplicates; smoke informational skip; explicit companion demotion record.
   6. tf_op_calibration nested tiers (plan v8 §7): tier1 qualification,
-     tier2 TF-DISTORTED — reporting labels, never process halts.
+     tier2 TF-DISTORTED — reporting labels, never process halts; the rc=23
+     companion-halt lane writes companion: halted (r1 code-review Major).
+  7. Transfer matrix loop under a DEMOTED include_r4 (the pod-smoke path where
+     the r4 pair build smoke-skips): logged skip, never a TypeError
+     (r1 code-review Critical).
+  8. select_cells --no-r4op: drops ONLY the r4op companion cells (the fits leg
+     of the rc=23 halt lane).
+  9. companion_usable_floor: production floor == the grouped-CV minimum
+     (fc.N_FOLDS); smoke floor 1 (gate-calibration rule).
+ 10. paired_fingerprint keys the op branch on mode_slug "paired_op" (r6
+     content-keyed resume; r1 code-review Minor).
 
 Registry tests run in SUBPROCESSES (issue1345_common reads the variant env at
 import — the name-seam test pattern).
@@ -210,12 +220,122 @@ def test_pool_filter_keeps_quote_bearing_drops_degenerate():
     assert [r["conv_id"] for r in kept] == ["s1", "s2"]  # quote-bearing KEPT (answer-anchored)
 
 
+def test_companion_usable_floor_grouped_cv_minimum():
+    """r1 review Major (kept∈[2,4] gap): the production floor IS the grouped-CV
+    minimum — below fc.N_FOLDS conv-groups the companion fit populates no fold.
+    Smoke floor 1: any NONZERO yield proceeds (gate-calibration rule)."""
+    import issue825_fit_cells as fc
+
+    assert c.OP_COMPANION_MIN_KEPT == fc.N_FOLDS == 5
+    assert gp.companion_usable_floor(False) == c.OP_COMPANION_MIN_KEPT
+    assert gp.companion_usable_floor(True) == 1
+
+
+def test_paired_fingerprint_op_branch_keys_on_paired_op(monkeypatch):
+    """r1 review Minor pin: the companion bundle fp (mode_slug "paired_op")
+    embeds the OP recipe — an OP-side recipe change must change the op fp
+    (pre-fix the op branch keyed on mode == "op" and embedded the PAIRED
+    templates/parser, so a stale companion bundle would resume from HF)."""
+    rows = [{"conv_id": "s1", "question": "q?", "answer": "a" * 30}]
+    fp_op = gp.paired_fingerprint("paired_op", rows)
+    fp_paired = gp.paired_fingerprint("paired", rows)
+    assert fp_op != fp_paired  # distinct bundles (the mode field alone ensures this)
+    monkeypatch.setattr(gp, "STORY_OP_COMPANION_SYSTEM", gp.STORY_OP_COMPANION_SYSTEM + " CHANGED")
+    assert gp.paired_fingerprint("paired_op", rows) != fp_op  # op recipe IS in the op fp
+    assert gp.paired_fingerprint("paired", rows) == fp_paired  # paired fp untouched
+
+
 # ---------------------------------------------------------------------------
 # Registry consumers
 # ---------------------------------------------------------------------------
 def test_select_cells_no_r4_drop_is_noop_without_variant(capsys):
     cells = select_cells("all", set(), no_r4=True)
     assert len(cells) == 12  # ambient env: no r4 cells to drop
+    assert len(select_cells("all", set(), no_r4op=True)) == 12  # ditto for r4op
+
+
+_SELECT_NO_R4OP_PROBE = """
+import sys
+sys.path.insert(0, "scripts")
+import json
+from issue1345_fit_cells import select_cells
+ids = sorted(x["cell_id"] for x in select_cells("all", set(), no_r4op=True))
+print(json.dumps(ids))
+"""
+
+
+def test_select_cells_no_r4op_drops_companion_only():
+    """rc=23 fits leg (r1 review Major): --no-r4op drops ONLY the r4op cells,
+    keeping the r4 TF headline cells (contrast --no-r4, which drops both)."""
+    proc = _run_py(_SELECT_NO_R4OP_PROBE, {"EPM_I1345_VARIANT": CPS})
+    assert proc.returncode == 0, proc.stderr
+    ids = json.loads(proc.stdout.strip().splitlines()[-1])
+    assert len(ids) == 14  # 16 variant cells - 2 r4op companion cells
+    assert not any("r4_op_companion" in cid for cid in ids)
+    assert "R_instruct_r4_context" in ids and "R_instruct_r4_prefix" in ids
+
+
+_TRANSFER_DEMOTED_R4_PROBE = """
+import sys
+sys.path.insert(0, "scripts")
+import json
+import tempfile
+from pathlib import Path
+import numpy as np
+import issue1345_common as c
+from issue1345_cross_regime_transfer import run_model_arm
+
+assert c.HAS_R4
+rng = np.random.default_rng(0)
+
+
+def bundle(convs, n_turns):
+    n = len(convs)
+    return {
+        "arrays": {
+            "slots": rng.normal(size=(n, 2, 28, 8)).astype("float32"),
+            "profiles": rng.normal(size=(n, n_turns, 28, 8)).astype("float32"),
+        },
+        "sidecar": {"conv_ids": list(convs)},
+    }
+
+
+convs = ["s%d" % i for i in range(6)]
+bundles = {"r1": bundle(convs, 2), "r2": bundle(convs, 2), "r4": bundle(convs[:4], 1)}
+# The pod-smoke shape (r1 code-review Critical): the r4 BUNDLE loaded, but the
+# r4 pair build smoke-skipped -> per_model_r4_pair lacks the model.
+matched = {"shared_r1r2_convs": convs, "per_model_r3_pair": {}, "per_model_r4_pair": {}}
+root = Path(tempfile.mkdtemp(prefix="i1345_transfer_probe_"))
+out, preds = root / "out", root / "preds"
+out.mkdir(); preds.mkdir()
+run_model_arm(
+    bundles, matched, "instruct", "context", out, preds,
+    seed=0, null_draws=0, n_boot=8, include_r3=False, include_r4=True, smoke=True,
+)
+payload = json.loads((out / "cross_regime_transfer_instruct_context.json").read_text())
+print(json.dumps({
+    "r4_skips": sorted(k for k in payload["skipped_pairs"] if "r4" in k),
+    "r4_skip_reasons": sorted(set(
+        v for k, v in payload["skipped_pairs"].items() if "r4" in k
+    )),
+    "r4_pair_meta": payload["matched_n"]["r4_pair"],
+    "matrix_has_r4": any("r4" in k for k in payload["matrix"]),
+}))
+"""
+
+
+def test_transfer_matrix_skips_r4_pairs_when_pair_build_skipped():
+    """r1 code-review Critical pin: run_model_arm with an r4 bundle + a matched
+    dict whose per_model_r4_pair lacks the model, smoke=True — no exception,
+    logged skips (pre-fix: TypeError 'NoneType' object is not subscriptable at
+    _subset's r4cfg["r4_convs"] dereference)."""
+    proc = _run_py(_TRANSFER_DEMOTED_R4_PROBE, {"EPM_I1345_VARIANT": CPS})
+    assert proc.returncode == 0, f"stderr:\n{proc.stderr}"
+    out = json.loads(proc.stdout.strip().splitlines()[-1])
+    assert out["r4_skips"] == ["r1->r4", "r2->r4", "r4->r1", "r4->r2"], out
+    assert all("include_r4 demoted" in r for r in out["r4_skip_reasons"]), out
+    assert out["r4_pair_meta"] is None and not out["matrix_has_r4"]
+    assert "[transfer] SKIP pair" in proc.stdout
 
 
 def test_pair_kind_for_grains():
@@ -248,6 +368,16 @@ def test_build_matched_r4_pair_production_and_smoke(tmp_path):
     entry = out["per_model_r4_pair"]["instruct"]
     assert entry["r4_convs"] == sorted(shared[:4]) and entry["n"] == 4
     assert entry["op_companion_convs"] == sorted(shared[:2]) and entry["n_op"] == 2
+    assert entry["companion"] == "present"
+
+    # No r4op store at all (rc=23 halt lane) -> explicit companion: halted record
+    ts2 = tmp_path / "ts2"
+    _seed_r1r2_sidecars(ts2, shared)
+    _write_sidecar(ts2, c.stem_for("instruct", "r4"), shared[:4])
+    out2 = build_matched(ts2, tmp_path / "m_halt", r3_models=set(), r4_models={"instruct"})
+    e2 = out2["per_model_r4_pair"]["instruct"]
+    assert e2["companion"] == "halted"
+    assert e2["op_companion_convs"] is None and e2["n_op"] == 0
 
     # Foreign conv -> production fail-loud; smoke informational skip
     _write_sidecar(ts, c.stem_for("instruct", "r4"), [*shared[:3], "foreign9"])
@@ -336,7 +466,15 @@ def test_tf_op_calibration_companion_halted_skips(tmp_path):
     matched_out = tmp_path / "eval" / "matched_row"
     matched_out.mkdir(parents=True)
     _fake_cells(eval_dir / "cells_R_instruct_r4_context.json", 0.55)
-    # No companion cell (rc=23 halt) -> production tolerates with a skip record
-    tf_op_calibration(eval_dir, matched_out, smoke=False)
+    # No companion cell + matched-recorded halt (rc=23 lane) -> production
+    # tolerates with an EXPLICIT companion: halted record (r1 review Major)
+    tf_op_calibration(eval_dir, matched_out, smoke=False, companion_halted=True)
     payload = json.loads((matched_out / "tf_op_calibration.json").read_text())
     assert "skipped" in payload["calibration"]
+    assert payload["calibration"]["companion"] == "halted"
+    # Missing cells beside a LIVE companion in production = pipeline drift ->
+    # fail loud (never a silent skip)
+    with pytest.raises(AssertionError, match="drift"):
+        tf_op_calibration(
+            eval_dir, tmp_path / "eval2" / "matched_row", smoke=False, companion_halted=False
+        )

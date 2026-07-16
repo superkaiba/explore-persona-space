@@ -258,6 +258,13 @@ N_STORIES_PAIRED_TARGET = 2700
 STORY_PAIRED_YIELD_FLOOR = 2160  # 80% of 2700 (kill criterion, plan v8 §7)
 OP_COMPANION_N = 200
 OP_COMPANION_SEED = 0
+# Minimum kept companion rows for a USABLE control cell (rc=23 below it).
+# == issue825_fit_cells.N_FOLDS: the companion fit is a conv-grouped 5-fold CV
+# with one row per conversation, so kept < 5 groups cannot populate every fold
+# and the downstream .all()/empty-array consumers crash — demote to the rc=23
+# halt lane instead (plan v8 §4.5 "a control, never a kill"; r1 code-review
+# Major closed the kept∈[2,4] gap). Pinned to fc.N_FOLDS by test.
+OP_COMPANION_MIN_KEPT = 5
 # TF-distortion gate thresholds (plan v8 §7, nested tiers)
 TF_QUALIFICATION_GAP = 0.05
 TF_KILL_GAP = 0.20
