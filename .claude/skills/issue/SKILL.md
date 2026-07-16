@@ -7979,13 +7979,23 @@ suite directly and posts an `epm:test-verdict` event with the result.
       sudo -n choom -n -600 -p $$ >/dev/null 2>&1 && GATE_CHOOM=ok \
         || { GATE_CHOOM=failed; echo "[warn] choom failed — gate pytest is earlyoom-UNPROTECTED (choom=failed)" >&2; }
       echo "[step9c] gate earlyoom protection choom=$GATE_CHOOM"
+      # Route gate fixture temp writes onto the data disk (#1408; #1363: / at 100% killed the
+      # gate). Short --basetemp keeps AF_UNIX socket paths under the 108-byte cap. Falls back
+      # silently (no TMPDIR export) on pods/GCE with no data disk.
+      S9C_TMPROOT=$(uv run python scripts/step9c_baseline.py tmproot 2>/dev/null || true)
+      if [ -n "$S9C_TMPROOT" ]; then
+        export TMPDIR="$S9C_TMPROOT"
+        S9C_BASETEMP=$(mktemp -d "$S9C_TMPROOT/bt-XXXXXX")
+      fi
       rm -f /tmp/step9c-junit-issue-<N>.xml /tmp/step9c-rc-issue-<N> \
             /tmp/step9c-pytest-issue-<N>.log   # MANDATORY before EVERY gate pytest invocation
       # ONE background Bash call (run_in_background=true) — the selector-printed
       # command verbatim, with the junit + log + rc-file tail appended:
       timeout --kill-after=60s <T>s uv run pytest <files> -v --tb=short \
         --junitxml=/tmp/step9c-junit-issue-<N>.xml -o junit_family=xunit1 \
+        ${S9C_BASETEMP:+--basetemp=$S9C_BASETEMP/p} \
         > /tmp/step9c-pytest-issue-<N>.log 2>&1; echo $? > /tmp/step9c-rc-issue-<N>
+      [ -n "${S9C_BASETEMP:-}" ] && rm -rf "$S9C_BASETEMP" || true
       ```
       When the background call completes (the harness notifies), read the
       verdict in a fresh foreground call — the rc FILE replaces the former
@@ -8041,12 +8051,22 @@ suite directly and posts an `epm:test-verdict` event with the result.
       sudo -n choom -n -600 -p $$ >/dev/null 2>&1 && GATE_CHOOM=ok \
         || { GATE_CHOOM=failed; echo "[warn] choom failed — gate pytest is earlyoom-UNPROTECTED (choom=failed)" >&2; }
       echo "[step9c] gate earlyoom protection choom=$GATE_CHOOM"
+      # Route gate fixture temp writes onto the data disk (#1408; #1363: / at 100% killed the
+      # gate). Short --basetemp keeps AF_UNIX socket paths under the 108-byte cap. Falls back
+      # silently (no TMPDIR export) on pods/GCE with no data disk.
+      S9C_TMPROOT=$(uv run python scripts/step9c_baseline.py tmproot 2>/dev/null || true)
+      if [ -n "$S9C_TMPROOT" ]; then
+        export TMPDIR="$S9C_TMPROOT"
+        S9C_BASETEMP=$(mktemp -d "$S9C_TMPROOT/bt-XXXXXX")
+      fi
       rm -f /tmp/step9c-junit-issue-<N>.xml /tmp/step9c-rc-issue-<N> \
             /tmp/step9c-pytest-issue-<N>.log
       # ONE background Bash call (run_in_background=true):
       timeout --kill-after=60s 60m uv run pytest tests/ -q \
         --junitxml=/tmp/step9c-junit-issue-<N>.xml -o junit_family=xunit1 \
+        ${S9C_BASETEMP:+--basetemp=$S9C_BASETEMP/p} \
         > /tmp/step9c-pytest-issue-<N>.log 2>&1; echo $? > /tmp/step9c-rc-issue-<N>
+      [ -n "${S9C_BASETEMP:-}" ] && rm -rf "$S9C_BASETEMP" || true
       ```
       (NO `-x` / `--maxfail` — with the step-1d compare deciding the verdict,
       an early-exit on the first known-red main failure would leave the rest
@@ -8171,17 +8191,23 @@ suite directly and posts an `epm:test-verdict` event with the result.
         regression (the JSON names each). FAIL.
       * `COMPARE_RC=2` → indeterminate (PYTEST_RC ∉ {0,1} — aborted/interrupted
         run; missing/empty junitxml; suite crash; unusable ledger;
-        scratch-ineligible dirty oracle (residual contaminating dirt, a
-        scan-set node outside the file-anchored allowlist
-        (step9c_baseline.py FILE_ANCHORED_SCAN_TESTS, #1337), or a
-        non-sparse work root — other root dirt
-        auto-falls back to a detached sparse scratch-worktree oracle at main
-        HEAD, reported as JSON "pristine_oracle": "scratch-worktree"; since
-        #1251 dirty in-package `src/` is neutralized via a probe-verified
-        `PYTHONPATH=<scratch>/src` shadow (`"scratch_src_shadow": true`), so
-        only `pyproject.toml`/`uv.lock` (or out-of-package `src/`) dirt still
-        refuses);
-        systemic main breakage). FAIL — never PASS on indeterminate.
+        systemic main breakage; or a scratch-INELIGIBLE dirty oracle. The
+        pristine oracle is BY DEFAULT a detached sparse scratch worktree at
+        main HEAD (#1408 — clean or dirty root alike; JSON
+        "pristine_oracle": "scratch-worktree"; a scratch creation/probe
+        failure on a CLEAN root degrades to the trustworthy root oracle with
+        a WARN + `"scratch_degraded": true`, never exit 2), so the
+        dirty-refusal enumeration shrinks to: residual venv dirt
+        (`pyproject.toml`/`uv.lock` or out-of-package `src/` — dirty
+        in-package `src/` is neutralized via the probe-verified
+        `PYTHONPATH=<scratch>/src` shadow, `"scratch_src_shadow": true`,
+        #1251), a non-sparse work root, a scan-set node outside the
+        file-anchored allowlist (step9c_baseline.py
+        FILE_ANCHORED_SCAN_TESTS, #1337), or scratch creation/probe failure
+        on a DIRTY root). FAIL — never PASS on indeterminate.
+        On a residual-dirt exit 2, do NOT improvise multi-hour clean-root
+        polls (the #1317 anti-pattern): one bounded re-check after ~10-15
+        min, then treat as gate FAIL and surface per the existing FAIL path.
         COMPARE_OUT is valid JSON on EVERY exit path under --json (exit-2
         payloads carry "indeterminate": true — an exit-2 payload's empty
         new/stripped arrays are NOT a clean verdict).
