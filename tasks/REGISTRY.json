@@ -3099,8 +3099,8 @@
     "1398": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1398",
-      "status": "proposed",
+      "path": "tasks/planning/1398",
+      "status": "planning",
       "title": "daily-fix: neutral gate vocabulary first-pass briefs"
     },
     "1399": {
