@@ -22,6 +22,8 @@ goal: Test whether a context->dialogue linear map focused on a SINGLE fixed fict
 
 <!-- clean-result-v4 -->
 
+**Methodology:** [docs/methodology/issue_1310.md](https://github.com/superkaiba/explore-persona-space/blob/4a4f0ecdb90f3243e0272ca88200453ad1973b1a/docs/methodology/issue_1310.md) · [gist](https://gist.github.com/superkaiba/579fdc49e189deaac90f9b8859f1cb4e)
+
 ## Takeaways
 
 - Scene-aggregated prefill fits (one point per scene, n=300 per persona): all four personas clear the shuffle null at layer 19 in both models — base 0.13–0.22, instruct 0.23–0.40.
