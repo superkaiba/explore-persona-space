@@ -16,10 +16,14 @@ import argparse
 import json
 from pathlib import Path
 
-import matplotlib.pyplot as plt
-import numpy as np
+from explore_persona_space.orchestrate.env import load_dotenv
 
-from explore_persona_space.analysis.paper_plots import (
+load_dotenv()
+
+import matplotlib.pyplot as plt  # noqa: E402
+import numpy as np  # noqa: E402
+
+from explore_persona_space.analysis.paper_plots import (  # noqa: E402
     paper_palette,
     savefig_paper,
     set_paper_style,
@@ -48,7 +52,6 @@ def fig_transfer_heatmaps(eval_dir: Path, out_dir: Path) -> None:
             for j, rj in enumerate(regimes):
                 if i == j:
                     # within-regime held-out R^2 at L19 (regime's own fit)
-                    key = f"{ri}->{rj}" if f"{ri}->{rj}" in dt else None
                     # diagonal: pull target_within from any row targeting rj
                     for k, v in dt.items():
                         if k.endswith(f"->{rj}"):
@@ -113,7 +116,7 @@ def fig_reparam_recovery(eval_dir: Path, out_dir: Path) -> None:
     ):
         vals = [g[key] for g in groups]
         ax.bar(x + off, vals, width=w, color=c, label=label)
-        for xi, v in zip(x + off, vals):
+        for xi, v in zip(x + off, vals, strict=True):
             ax.text(xi, v + 0.012 if v >= 0 else v - 0.045, f"{v:.3f}", ha="center", fontsize=10)
     ax.set_xticks(x, [g["label"] for g in groups])
     ax.set_ylabel("held-out $R^2$ (layer 19)")
@@ -157,7 +160,7 @@ def fig_operator_cosine(eval_dir: Path, out_dir: Path) -> None:
     ):
         vals = [r[key] for r in rows]
         ax.bar(x + off, vals, width=w, color=c, label=label)
-        for xi, v in zip(x + off, vals):
+        for xi, v in zip(x + off, vals, strict=True):
             ax.text(xi, v + 0.015, f"{v:.3f}", ha="center", fontsize=10)
     ax.axhline(
         anchor,
@@ -182,7 +185,7 @@ def fig_story_layer_sweep(eval_dir: Path, out_dir: Path) -> None:
     fig, axes = plt.subplots(1, 2, figsize=(13, 5.2), sharex=True)
     colors = paper_palette(3)
     for ax, arm in ((axes[0], "context"), (axes[1], "prefix")):
-        for c, reg in zip(colors, ("r1", "r2", "r3")):
+        for c, reg in zip(colors, ("r1", "r2", "r3"), strict=True):
             d = _load(eval_dir, f"cells_R_instruct_{reg}_{arm}.json")
             r2 = d["r2_per_layer_obs"]
             ax.plot(range(len(r2)), r2, marker="o", ms=3, color=c, label=REGIME_NAMES[reg])
@@ -234,7 +237,7 @@ def fig_prefix_transfer(eval_dir: Path, out_dir: Path) -> None:
     ):
         vals = [g[key] for g in groups]
         ax.bar(x + off, vals, width=w, color=c, label=label)
-        for xi, v in zip(x + off, vals):
+        for xi, v in zip(x + off, vals, strict=True):
             txt = f"{v:.3f}" if abs(v) < 10 else f"{v:,.0f}"
             ax.text(xi, v * 1.6 if v < -1 else v + 0.05, txt, ha="center", fontsize=9)
     ax.set_yscale("symlog", linthresh=0.2)
