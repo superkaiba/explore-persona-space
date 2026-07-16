@@ -2980,8 +2980,8 @@
     "1382": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1382",
-      "status": "reviewing",
+      "path": "tasks/completed/1382",
+      "status": "completed",
       "title": "workflow-fix: fix two red workflow tests on main"
     },
     "1383": {
