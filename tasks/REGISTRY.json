@@ -3311,8 +3311,8 @@
     "1424": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1424",
-      "status": "planning",
+      "path": "tasks/approved/1424",
+      "status": "approved",
       "title": "workflow-fix: caption italic-lead-claim check (check 5 family)"
     },
     "1425": {
