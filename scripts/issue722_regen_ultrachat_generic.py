@@ -161,6 +161,7 @@ def main() -> int:
 
     api = HfApi()
     dest = f"{HF_SUBFOLDER}/ultrachat_generic_completions.json"
+    # UPLOAD_PREFIX_EXEMPT: deliberate backfill of the parent #658 bucket (module docstring)
     url = api.upload_file(
         path_or_fileobj=str(OUT_PATH),
         path_in_repo=dest,

@@ -1618,14 +1618,9 @@ def test_production_runpod_handle_repo_branch_roundtrips_reconstructor(monkeypat
     )
     from scripts import backend_poll as bp
 
-    _real_run = RP.subprocess.run
-
-    def _selective_run(cmd, *a, **k):
-        if isinstance(cmd, (list, tuple)) and any("pod_lifecycle.py" in str(c) for c in cmd):
-            return None
-        return _real_run(cmd, *a, **k)
-
-    monkeypatch.setattr(RP.subprocess, "run", _selective_run, raising=False)
+    # #1465: the provision leg routes through the pod_lifecycle-only helper —
+    # patching it is selective by construction (subprocess.run stays real).
+    monkeypatch.setattr(RP, "_run_pod_lifecycle_relay", lambda cmd, **k: None)
     handle = RP.RunPodBackend().launch(
         RunSpec(
             issue=909,
@@ -1701,14 +1696,9 @@ def test_runspec_from_runpod_handle_forwards_boot_disk_gb(monkeypatch):
     )
     from scripts import backend_poll as bp
 
-    _real_run = RP.subprocess.run
-
-    def _selective_run(cmd, *a, **k):
-        if isinstance(cmd, (list, tuple)) and any("pod_lifecycle.py" in str(c) for c in cmd):
-            return None
-        return _real_run(cmd, *a, **k)
-
-    monkeypatch.setattr(RP.subprocess, "run", _selective_run, raising=False)
+    # #1465: the provision leg routes through the pod_lifecycle-only helper —
+    # patching it is selective by construction (subprocess.run stays real).
+    monkeypatch.setattr(RP, "_run_pod_lifecycle_relay", lambda cmd, **k: None)
     handle = RP.RunPodBackend().launch(
         RunSpec(
             issue=1118,

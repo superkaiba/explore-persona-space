@@ -2302,8 +2302,9 @@ The Codex twin additionally receives:
   the canonical plan, Step 2-pre-b) — see
   `.claude/agents/codex-code-reviewer.md`.
 
-**Neutral gate vocabulary in FIRST-PASS briefs — every subagent brief,
-every step (#1398).** When ANY brief this skill composes (planner,
+**Neutral gate vocabulary in EVERY brief — first-pass AND revision
+rounds, every subagent brief, every step (#1398, #1413).** When ANY brief
+this skill composes (planner,
 implementer, experimenter, reviewer, analyzer — not only review rounds)
 concerns a kill-gate / RLVR / guard / stop-criteria task, write the BRIEF
 in neutral vocabulary from the first spawn: "halt gate", "stop criterion",
@@ -2314,7 +2315,10 @@ neutralized. This is the gate-vocabulary leg of CLAUDE.md § Spurious
 usage-policy refusals rung (e) — first-pass, not a post-kill retry step
 (2026-07-15: ≥12 spurious refusal kills across ~8 sessions; the #1336
 session lost 3 spawns to gate-criteria phrasing and neutralized only
-after the kills).
+after the kills). Revision-round briefs carry the same neutral vocabulary
+AND, on trigger-dense rounds, pass findings BY REFERENCE — see Step 5d,
+§ File-only Codex verdict posting, and trigger-dense-review.md
+§ Revision-round briefs.
 
 **Trigger-dense (guard-surface) rounds — pre-materialize the excerpt file
 BEFORE spawning (#1058/#1098).** When the round's diff or artifact under
@@ -2609,7 +2613,7 @@ remains fine.
 |---|---|---|
 | PASS-class | PASS-class | **Agree.** `final_verdict = PASS`. CONCERNS bullets from either reviewer surface to the implementer as opportunistic suggestions; do not block. |
 | FAIL | FAIL — overlapping blockers | **Agree.** `final_verdict = FAIL`. Bounce to implementer (one round). |
-| FAIL | FAIL — disjoint blockers | **Union, no reconciler.** Build a combined blocker list (Claude's blockers ∪ Codex's blockers) — INCLUDING every `### Bug-class sweep: <class>` sibling enumeration from either verdict — and pass it to the implementer in the next-round brief. No new marker — both `epm:code-review v<n>` and `epm:code-review-codex v<n>` already exist on the task. `final_verdict = FAIL`. Bounce (one round). |
+| FAIL | FAIL — disjoint blockers | **Union, no reconciler.** Build a combined blocker list (Claude's blockers ∪ Codex's blockers) — INCLUDING every `### Bug-class sweep: <class>` sibling enumeration from either verdict — and pass it to the implementer in the next-round brief (trigger-dense round: by reference per § File-only Codex verdict posting). No new marker — both `epm:code-review v<n>` and `epm:code-review-codex v<n>` already exist on the task. `final_verdict = FAIL`. Bounce (one round). |
 | PASS-class | FAIL (or vice versa) | **Disagreement.** Spawn `reconciler` agent (Claude, fresh context). Brief: role=`code-reviewer`, task=N, round=n, both event bodies (trigger-dense round: BY REFERENCE — marker kind+version / output-file paths, per § File-only Codex verdict posting; the reconciler reads them itself with windowed reads), diff path (+ the Step 5a excerpt-file path + read budget on a trigger-dense round). Reconciler reads both verdicts + the artifact, posts `epm:review-reconcile v<n>` with binding PASS or FAIL. `final_verdict = reconciler's verdict`. |
 
 The reconciler may NOT add findings beyond what either reviewer raised —
@@ -2793,8 +2797,9 @@ This step does NOT override 5c-bis — mechanical-contract-only FAILs
 still strip and cosmetic gripes about present evidence still don't
 bounce the implementer. The check operates on a different signal
 (concerns.jsonl persisted via `task.py raise-concern` — NOTE the
-`--summary` arg is hard-capped at 200 chars, ValueError above it; put
-detail in `--evidence`) and gates
+`--summary` arg is capped at 200 chars — the CLI truncates longer text
+at a word boundary with a loud warning (programmatic `task_workflow`
+callers still get ValueError); put detail in `--evidence`) and gates
 auto-advance ON TOP of the existing flow. The same subroutine fires at
 Step 9a (interp ensemble) and Step 9a-bis (clean-result ensemble) with
 the same logic.
@@ -2810,7 +2815,10 @@ the same logic.
 - **`final_verdict == FAIL` + revision_round<5** -> stay at status
   `running` (implementing sub-phase). Re-spawn the implementer with
   BOTH event bodies (Claude + Codex) AND the reconcile event (if
-  present) as part of the brief. **When either reviewer verdict (or the
+  present) as part of the brief (trigger-dense round: BY REFERENCE —
+  marker kind+version / output-file paths, per
+  § File-only Codex verdict posting; never inline the verdict bodies).
+  **When either reviewer verdict (or the
   disjoint-blocker union) contains a `### Bug-class sweep: <class>`
   enumeration, thread the FULL sibling list — every enumerated
   `file:LINE`, not just the top finding — into the implementer's
@@ -6069,7 +6077,7 @@ discarded by Step 8's gap-fill decision rule).
    |---|---|---|
    | PASS | PASS | `final_verdict = PASS`. Concatenate suggestions for analyzer's optional polish. |
    | REVISE | REVISE | `final_verdict = REVISE`. Union the revision requests (dedup exact-same). |
-   | PASS vs REVISE (or vice versa) | (the other) | Spawn `reconciler` (marker mode). Brief: role=`interpretation-critic`, both event bodies, interpretation body path, eval JSON paths, figure paths. Reconciler posts `epm:review-reconcile v<n>` with binding PASS or REVISE. `final_verdict = reconciler's verdict`. |
+   | PASS vs REVISE (or vice versa) | (the other) | Spawn `reconciler` (marker mode). Brief: role=`interpretation-critic`, both event bodies (trigger-dense round: by reference per § File-only Codex verdict posting), interpretation body path, eval JSON paths, figure paths. Reconciler posts `epm:review-reconcile v<n>` with binding PASS or REVISE. `final_verdict = reconciler's verdict`. |
    | Codex no-show (`epm:failure` posted, or NO durable verdict per the Step 5b durable-verdict-first rule) | (any) | Fallback: `final_verdict = Claude verdict`. Surface "Codex twin no-show round <n>" to chat. |
 
    An Agent-tool error for EITHER critic first triggers the Step 5b
@@ -6091,7 +6099,10 @@ discarded by Step 8's gap-fill decision rule).
 **If `final_verdict == REVISE` (rounds 2-5):**
 
 Re-spawn analyzer (fresh context, sees original data + ALL critique
-feedback: Claude event + Codex event + reconcile event if any).
+feedback: Claude event + Codex event + reconcile event if any)
+(trigger-dense round: critique events by reference — marker kind+version
+/ output-file paths, per § File-only Codex verdict posting; never inline
+the critique bodies).
 Analyzer posts `epm:interpretation v2`. Re-spawn the ensemble (fresh
 contexts, sees v2 + prior critique events). Posts both
 `epm:interp-critique v2` and `epm:interp-critique-codex v2`. Apply rule
@@ -6461,6 +6472,81 @@ explicit eval-data path):
    never piped (Step 10d § "Bare push / merge snippets"; sync_repo_root
    exit 0 can mean in-flight — landing not guaranteed, see the canonical
    block's caveat).
+
+   **Inline payload lint gate (§ Inline payload lint gate — BEFORE the
+   push lands any non-artifact payload; #1460).** PAYLOAD = the round's
+   to-be-committed paths outside the artifact-only set (`tasks/`,
+   `figures/`, `eval_results/`, `ood_eval_results/`, `raw/`, `data/`,
+   `docs/methodology/`) — typically the new `scripts/issue<N>_*.py`
+   script or an `src/.../analysis/` helper. Empty payload ⇒ skip.
+   Otherwise run BOTH legs as ONE background Bash (the no-flags leg is
+   ~2.5-6 min; never a ≤600 s foreground bound — #991/#996), verdict
+   read from the file before the push:
+
+   ```bash
+   # Inline payload lint gate (#1460) — ONE background Bash (run_in_background=true)
+   printf '%s\n' <round's to-be-committed non-artifact paths, repo-relative> \
+     > /tmp/issue-<N>-inline-payload.txt   # one path per line; NO blank lines
+                                           # (a blank grep -F pattern matches everything)
+   { uv run python scripts/workflow_lint.py; \
+     uv run python scripts/select_step9c_tests.py \
+         --map-files /tmp/issue-<N>-inline-payload.txt \
+       | tee /tmp/issue-<N>-inline-map.txt \
+       | cut -f1 | sort -u | xargs -r uv run pytest -q -rA; \
+   } > /tmp/issue-<N>-inline-lint.txt 2>&1
+   # VERDICT — payload-attributed; never a bare exit-0 on the repo-wide runs.
+   # INSTRUMENT-RAN completeness FIRST (fail CLOSED — a dead/silent leg must
+   # never read as push-clean; `workflow_lint: schema FAIL` is deliberately
+   # rejected — it prints BEFORE any check executes):
+   [ -s /tmp/issue-<N>-inline-payload.txt ] || echo INCONCLUSIVE-payload-file-empty
+   grep -qE '^workflow_lint: (PASS|FAIL \()' /tmp/issue-<N>-inline-lint.txt \
+     || echo INCONCLUSIVE-lint-leg-dead
+   if [ -s /tmp/issue-<N>-inline-map.txt ]; then
+     # Scope to non-lint lines + a pytest-SUMMARY shape: the lint leg's own
+     # `workflow_lint: FAIL (N error(s))` line must not satisfy this check
+     # (it would mask a silently-dead pytest leg in the double-failure case).
+     grep -v '^workflow_lint' /tmp/issue-<N>-inline-lint.txt \
+       | grep -qE '[0-9]+ (passed|failed|error|xpassed|xfailed)|no tests ran' \
+       || echo INCONCLUSIVE-pytest-leg-dead
+   fi
+   # Payload attribution:
+   grep -F -f /tmp/issue-<N>-inline-payload.txt /tmp/issue-<N>-inline-lint.txt \
+     | grep -v '^WARN' || echo NO-PAYLOAD-HITS
+   ```
+
+   **Verdict — payload-attributed with instrument-ran completeness,
+   NEVER a bare exit-0 (main can be pre-existing-red) and NEVER a push
+   on a dead instrument.**
+   - Any `INCONCLUSIVE-*` line ⇒ the instrument did not run to
+     completion (lint-leg death / schema early-exit, mapped-pytest-leg
+     death, or a missing/empty payload file) — **NEVER push on the
+     `NO-PAYLOAD-HITS` token in this state**; re-run the failed leg
+     (foreground single-flag / single-test re-runs are ~20-40s) or
+     investigate, then re-evaluate. `NO-PAYLOAD-HITS` is honored ONLY
+     with completeness evidence: the lint leg's healthy terminal line
+     (`workflow_lint: PASS` or `workflow_lint: FAIL (`) present, AND —
+     when the map file is non-empty — a pytest summary line present.
+   - A non-WARN output line naming a payload path **blocks the push**
+     when (i) the payload file is NEW this round (absent from
+     `origin/main` — payload-caused by construction; both #1388
+     offenders and both #1092 offenders were this case), or (ii) for a
+     MODIFIED file, the flagged construct sits in the round's own added
+     lines (`git diff -- <path>` pre-commit / `git diff origin/main --
+     <path>` post-commit). Fix, re-run just the relevant single
+     `--check-<x>` flag or single mapped test (~20-40s measured), then
+     push.
+   - Hits naming only non-payload paths, WARN lines, and modified-file
+     hits whose flagged construct is absent from the round's added
+     lines are **pre-existing red — never block**; name them in the
+     round's `epm:progress` completion note (visible, not re-buried).
+   - `NO-PAYLOAD-HITS` + completeness satisfied ⇒ push.
+
+   This gate binds the user-chat sibling (the CLAUDE.md § Routing
+   "User-chat inline free analysis" carve-out) identically —
+   direct-to-main is the channel, not the entry point (incident #1388:
+   two inline-landed bare `.list_repo_tree(` scripts broke
+   `tests/test_workflow_lint.py` on pristine main fleet-wide; the
+   worktree channels are already gated at Step 10d).
 4. **Capture the headline before / after.** Read the current `body.md`
    H1 title before the re-spawn and the analyzer-produced H1 after,
    plus the LOW / MODERATE / HIGH confidence tag in each.
@@ -6675,7 +6761,10 @@ dispatching this round's critics.
 **If REVISE (rounds 2-5):**
 
 Re-spawn `analyzer` agent (fresh context, sees raw data + all
-interp-critique history + the latest clean-result-critique). Analyzer
+interp-critique history + the latest clean-result-critique)
+(trigger-dense round: critique history by reference — marker
+kind+version / output-file paths, per § File-only Codex verdict posting;
+never inline the critique bodies). Analyzer
 revises the `epm:interpretation` event AND edits the task body in
 place via `task.py set-body <N> --file ...`. Re-runs
 `scripts/verify_task_body.py` (must still PASS). Re-spawn the critic
@@ -9273,7 +9362,7 @@ zero pytest on the experiment auto-merge path (Step 9c is
 code-change-kinds-only) — a channel through which #1144's thread-caps offenders
 accreted; sampled offenders also landed via direct-to-main
 free-analysis/analyzer commits, which this gate does NOT cover (see the Step
-9a-ter follow-up). Gate the merge payload on the lint + the mapped invariant
+9a-ter follow-up) (#1460: now covered by the Step 9a-ter § Inline payload lint gate). Gate the merge payload on the lint + the mapped invariant
 tests BEFORE anything lands:
 
 - **Trigger (cheap; artifact-only merges skip).** Run the gate ONLY when the
@@ -9289,7 +9378,9 @@ tests BEFORE anything lands:
   that tree's own lint copy BEFORE the payload overlay, then overlays the
   branch's own-diff payload from the branch tip and runs the GATED legs
   from the SAME copy (#1212 — one lint vintage, trees differing only by
-  the payload). `workflow_lint.py` derives its scan root from `__file__`
+  the payload) — with the #1456 exception: a payload-touched
+  `workflow_lint.py` is 3-way-merged for the gated legs (see the overlay
+  step). `workflow_lint.py` derives its scan root from `__file__`
   (not cwd), so the gate-tree copy scans the gate tree; a plain non-git
   /tmp dir is a supported scan root (the root-guard hook pins `REPO=` to
   an absolute path, and `_other_worktree_prefix` is pure path-string
@@ -9364,9 +9455,14 @@ tests BEFORE anything lands:
     # deliberately: a payload violating a post-fork check now BLOCKS, the
     # #931 class). $WT and the repo root are never written; no commits are
     # created, so the verdict's sha-bind is unaffected. Payload files come
-    # FROM the branch tip: a branch whose own diff touches workflow_lint.py
-    # or a helper has its OWN copy exercised on the gated legs — it IS the
-    # payload. Construction failures fail CLOSED via GT_RC in the crash arm.
+    # FROM the branch tip: a branch whose own diff touches a lint HELPER has
+    # its OWN copy exercised on the gated legs — it IS the payload. EXCEPTION
+    # (#1456): workflow_lint.py ITSELF is 3-way-MERGED for the gated legs
+    # (branch ⊕ merge-base ⊕ archived origin/main — the content a rebase
+    # would land on trunk), so main's ratchet raises can't false-block a
+    # drifted branch lint copy (#1366/#1411); merge failure falls back to
+    # the branch copy with a loud WARN (residual (a)). Construction
+    # failures fail CLOSED via GT_RC in the crash arm.
     # The archive pathspec set must cover workflow_lint.py's scan/target
     # surface (.claude/ CLAUDE.md scripts/ src/ tests/ docs/ — the #1154
     # marker-recipe pins read docs/); a false block naming a path OUTSIDE
@@ -9433,6 +9529,16 @@ tests BEFORE anything lands:
     # bytes >0x7f only.
     git -C "$WT" -c core.quotePath=false diff --name-only --no-renames origin/main...HEAD \
       > /tmp/issue-<N>-overlay-files.txt || GT_RC=1
+    # #1456: save the pre-overlay (archived origin/main) lint copy before the
+    # loop overwrites it — the "theirs" side of the 3-way merge below. The
+    # rm -f first clears any STALE saved copy from a prior run: a cp failure
+    # under `|| true` must leave the file ABSENT (branch-copy fallback below),
+    # never feed an old run's stale "theirs". `|| true`: a failed save
+    # degrades to the branch-copy fallback there, never a crash.
+    if grep -qxF 'scripts/workflow_lint.py' /tmp/issue-<N>-overlay-files.txt; then
+      rm -f /tmp/issue-<N>-lint-main-copy.py
+      cp "$GT/scripts/workflow_lint.py" /tmp/issue-<N>-lint-main-copy.py || true
+    fi
     while IFS= read -r p; do
       if git -C "$WT" cat-file -e "HEAD:$p" 2>/dev/null; then
         { mkdir -p "$GT/$(dirname "$p")" \
@@ -9441,6 +9547,42 @@ tests BEFORE anything lands:
         rm -f "$GT/$p" || GT_RC=1   # branch-deleted / renamed-away path: absent from the landing tree
       fi
     done < /tmp/issue-<N>-overlay-files.txt
+    # LINT-VINTAGE 3-WAY MERGE (#1456; incidents #1366/#1411): when the own
+    # diff touches scripts/workflow_lint.py, the loop above overlaid the
+    # BRANCH's lint copy, whose ratchet constants (_LESSONS_RATCHET_BYTES,
+    # agent-spec caps, gotchas row caps — bumped on main every few days) may
+    # predate main's raises and flag main-advanced files on the gated legs
+    # only (NEW non-empty -> spurious block). Approximate the post-rebase
+    # trunk lint instead: 3-way-merge branch copy (ours) + merge-base copy +
+    # the saved archived-origin/main copy (theirs). Clean merge -> gated legs
+    # carry BOTH main's constant raises / post-fork checks AND the branch's
+    # own lint deliverable; a branch-added check with unfixed main offenders
+    # still lands in the merged copy -> NEW -> block (correct: trunk pytest
+    # goes red post-merge either way). ANY failure (merge conflict rc>0,
+    # internal error, merge-base/base-copy extraction failure, missing saved
+    # main copy) falls back to the BRANCH copy — exactly the pre-#1456
+    # residual-(a) behavior — with a loud WARN + sidecar note, NEVER a new
+    # crash path. git merge-file exits 0 on a clean merge, the number of
+    # conflicts (>0) on conflict, negative (shell: 255) on error; -p writes
+    # the merged result to stdout, leaving the input file untouched.
+    if grep -qxF 'scripts/workflow_lint.py' /tmp/issue-<N>-overlay-files.txt \
+       && git -C "$WT" cat-file -e HEAD:scripts/workflow_lint.py 2>/dev/null; then
+      LINT_MERGED=no
+      if [ -s /tmp/issue-<N>-lint-main-copy.py ] \
+         && MB=$(git -C "$WT" merge-base origin/main HEAD 2>/dev/null) \
+         && git -C "$WT" show "$MB:scripts/workflow_lint.py" \
+              > /tmp/issue-<N>-lint-base-copy.py 2>/dev/null \
+         && git merge-file -p "$GT/scripts/workflow_lint.py" \
+              /tmp/issue-<N>-lint-base-copy.py /tmp/issue-<N>-lint-main-copy.py \
+              > /tmp/issue-<N>-lint-merged.py 2>/dev/null; then
+        mv /tmp/issue-<N>-lint-merged.py "$GT/scripts/workflow_lint.py" && LINT_MERGED=yes
+      fi
+      echo "[step10d] lint-vintage 3-way merge: $LINT_MERGED"
+      if [ "$LINT_MERGED" = no ]; then
+        echo "WARN: lint-copy 3-way merge failed/conflicted — gated legs run the BRANCH's workflow_lint.py (residual (a)); a ratchet-drift false block may follow. Fix: rebase the branch onto origin/main (or sync main's ratchet constants into the branch copy), then re-run the gate." \
+          | tee /tmp/issue-<N>-lint-mergefile-note.txt
+      fi
+    fi
     # GATED legs (payload-bearing landing tree — phase 3; parity leg covers
     # the checks the no-flags bundle omits — see the bullet above):
     GATED_RC=0
@@ -9734,9 +9876,13 @@ tests BEFORE anything lands:
   3. `crash` — the linter itself CRASHED on either leg pair (rc>1, or
      rc!=0 with zero normalized `workflow_lint:` failure lines: import
      error, missing dep, sparse-worktree crash — the gated leg runs the
-     gate tree's `workflow_lint.py`, the BRANCH's copy whenever the
-     own-diff touches it, so the crash is payload-inducible; a gate-tree
-     CONSTRUCTION failure (GT_RC != 0) also lands here),
+     gate tree's `workflow_lint.py` — the 3-way-MERGED copy (or, on
+     merge-failure fallback, the BRANCH's copy) whenever the own-diff
+     touches it — so the crash is payload-inducible (a semantically-broken
+     clean merge lands here too, fail CLOSED; it predicts the post-merge
+     trunk file, so blocking is correct — rebase onto origin/main and
+     re-run); a gate-tree CONSTRUCTION failure (GT_RC != 0) also lands
+     here),
      or the trigger diff failed. No trustworthy compare exists, so this is
      an unconditional block-path verdict: fix the crash cause in the
      worktree, re-run the gate ONCE; still crashing → the SAME
@@ -9798,10 +9944,19 @@ tests BEFORE anything lands:
   `main` after the branch forked is now enforced on every path, so a
   payload violating it BLOCKS (the #931 class), and a check
   retired/loosened on main can no longer false-block. What remains: (a) a
-  branch whose OWN diff touches `scripts/workflow_lint.py` runs its branch
-  copy on the gated legs (it IS the payload) — baseline-vs-gated
-  lint-version asymmetry is inherent there and resolves through the
-  standard case-1 fix-or-`epm:merge-failed` path; (b) the gate tree
+  branch whose OWN diff touches `scripts/workflow_lint.py` gets a 3-way-
+  MERGED lint copy on the gated legs (#1456: branch ⊕ merge-base ⊕
+  archived origin/main — approximates the post-merge trunk copy, so
+  main's ratchet-constant raises no longer false-block, #1366/#1411);
+  the residual NARROWS to the merge-failure fallback — on conflict /
+  error the gated legs keep the BRANCH copy (loud WARN + sidecar
+  `/tmp/issue-<N>-lint-mergefile-note.txt`), and a resulting
+  ratchet-drift block resolves through the standard case-1
+  fix-or-`epm:merge-failed` path (rebase onto origin/main, or sync
+  main's ratchet constants into the branch copy) — plus the narrow
+  semantically-broken-clean-merge window, which crashes the gated leg
+  into the fail-CLOSED crash arm and equally predicts a post-merge
+  trunk crash; (b) the gate tree
   materializes only `workflow_lint.py`'s scan/target surface (the archive
   pathspec set in the executable block) — if the linter grows a new scan
   root, a gated false block naming paths outside that set is the symptom
@@ -9810,7 +9965,9 @@ tests BEFORE anything lands:
   copies and the dirty-root baseline (path-(i) test-VERSION drift,
   fail-safe direction) — the trunk pytest remains their backstop; (d) a
   lint-scanned file BOTH main and the branch modified post-fork lints as
-  the BRANCH's copy (the overlay takes branch-HEAD wholesale), a narrow
+  the BRANCH's copy (the overlay takes branch-HEAD wholesale; EXCEPT
+  `scripts/workflow_lint.py` itself, which is 3-way-merged per #1456 —
+  its residual is the merge-failure fallback in residual (a)), a narrow
   window in either direction that is strictly smaller than the old
   whole-tree divergence — the form-(ii) recovery covers the conflict case
   and trunk lint backstops the clean-rebase case; (e) same-issue
@@ -11107,12 +11264,12 @@ composer.
 | `interpreting` | `epm:interp-critique v<n>` exists, no `epm:interp-critique-codex v<n>` | Codex twin not yet returned | re-spawn `codex-interpretation-critic` only |
 | `interpreting` | `epm:interp-critique-codex v<n>` exists, no `epm:interp-critique v<n>` | Claude critic not yet returned | re-spawn `interpretation-critic` only |
 | `interpreting` | both `epm:interp-critique v<n>` and `epm:interp-critique-codex v<n>` exist, verdicts disagree (PASS vs REVISE), no `epm:review-reconcile v<n>` whose body's `**Role under adjudication:**` is `interpretation-critic` | reconciler not yet started | spawn `reconciler` (marker mode) |
-| `interpreting` | both ensemble events exist, verdicts agree OR role-matching reconcile event present (`**Role under adjudication:** interpretation-critic`), ensemble verdict REVISE, round < 5 | revision needed | re-spawn analyzer with all critique events |
+| `interpreting` | both ensemble events exist, verdicts agree OR role-matching reconcile event present (`**Role under adjudication:** interpretation-critic`), ensemble verdict REVISE, round < 5 | revision needed | re-spawn analyzer with all critique events (trigger-dense: by reference per § File-only Codex verdict posting) |
 | `interpreting` | ensemble verdict PASS or (round >= 5 AND the Step 9a cap-hit resolved: all residual stripped, no substantive overclaim residual), neither `epm:clean-result-critique` nor `epm:clean-result-critique-codex` | content honesty settled, structure + register loop not started | promote body in place if missing, then spawn `clean-result-critic` + `codex-clean-result-critic` in parallel. (round >= 5 with a SUBSTANTIVE overclaim residual → apply Step 9a surface-real-residual rule instead: interactive present to user; autonomous `epm:failure v1 failure_class: code` + `blocked` + notify) |
 | `interpreting` | `epm:clean-result-critique v<n>` exists, no `epm:clean-result-critique-codex v<n>` | Codex twin not yet returned (or wrapper crashed) | re-spawn `codex-clean-result-critic` only |
 | `interpreting` | `epm:clean-result-critique-codex v<n>` exists, no `epm:clean-result-critique v<n>` | Claude critic not yet returned | re-spawn `clean-result-critic` only |
 | `interpreting` | both `epm:clean-result-critique v<n>` and `epm:clean-result-critique-codex v<n>` exist, verdicts disagree (PASS-class vs REVISE), no `epm:review-reconcile v<n>` whose body's `**Role under adjudication:**` is `clean-result-critic` | reconciler not yet started | spawn `reconciler` (marker mode) |
-| `interpreting` | clean-result ensemble verdict REVISE (agreed, unioned, or reconciled by a role-matching `epm:review-reconcile`; after the Step 9a-bis procedural-only strip), round < 5 | structure / register revision in progress | re-spawn analyzer with both clean-result critiques |
+| `interpreting` | clean-result ensemble verdict REVISE (agreed, unioned, or reconciled by a role-matching `epm:review-reconcile`; after the Step 9a-bis procedural-only strip), round < 5 | structure / register revision in progress | re-spawn analyzer with both clean-result critiques (trigger-dense: by reference per § File-only Codex verdict posting) |
 | `interpreting` | clean-result ensemble verdict PASS-class or (round >= 5 AND the Step 9a-bis cap-hit resolved: all residual stripped, no substantive overclaim residual) | ready for review | advance to `reviewing`. (round >= 5 with a SUBSTANTIVE overclaim residual → apply Step 9a-bis surface-real-residual rule: interactive present to user; autonomous `epm:failure v1 failure_class: code` + `blocked` + notify) |
 | `reviewing` | (no agent dispatch; transitional single-step) | reviewer step retired; absorbed into clean-result-critic Lens 7 | move to `awaiting_promotion`, run the Step 10d auto-merge procedure, post `epm:status-changed`, EXIT |
 | `awaiting_promotion` | `classification == 'pending'` in body frontmatter, no `epm:merged` and PR unmerged | waiting for user to promote; worktree not yet merged | run the Step 10d auto-merge procedure (idempotent backstop — covers the case where the Step 9b auto-merge was interrupted), then show task path, prompt to promote via `task.py promote`, run CRON-TEARDOWN (self-heal sweep, § CRON-TEARDOWN procedure, stray one-shot `/issue <N>` wakeups included), EXIT |

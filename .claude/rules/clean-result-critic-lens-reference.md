@@ -127,11 +127,14 @@ clean, so this passes."
   `## Data` verbatim example blocks; cell-letter codes anywhere in
   `## Takeaways`, `## What I ran`, `## Findings`, or a `## Data` capsule.)
   (Incident: #382 round 1.)
-- **Lens 6 — `byte identical` / `byte-identical` — or the `bit` forms
-  (`bit-identical`, `bit identical`) and the `-equal` synonyms
-  (`byte-equal`, `byte equal`, `bit-equal`, `bit equal`) — anywhere in
+- **Lens 6 — `byte identical` / `byte-identical` — or the
+  `bit`/`bitwise`/`bytewise` forms (`bit-identical`, `bit identical`,
+  `bitwise identical`), the `-equal`/`-exact` synonyms (`byte-equal`,
+  `byte equal`, `bit-equal`, `bit equal`, `byte-exact`, `bit exact`),
+  and the reduplicated `bit-for-bit`/`byte-for-byte` — anywhere in
   the body** (byte form banned 2026-W22 #454; bit forms #642; -equal
-  synonyms #1423). The phrase reads as AI-slop in research writing. Use
+  synonyms #1423; -exact / bitwise / X-for-X tail #1447). The phrase
+  reads as AI-slop in research writing. Use
   plain English: "the two files matched exactly", "every byte agreed",
   "no diff between the runs". Flagged by
   `audit_clean_results_body_discipline.py`; FAIL on any occurrence
@@ -236,7 +239,8 @@ training rows / probes lived in `## Data`.)
   `## Methodology → **Training:**`, the full training rows / probes live
   in the Methodology data slots, and the compute / code SHA / pinned
   links live in the `**Repro:**` footer. No cross-issue
-  framing, no `byte identical` / `byte-identical` (or `bit`/`-equal` variants).
+  framing, no `byte identical` / `byte-identical` (or
+  `bit`/`bitwise`/`-equal`/`-exact`/`bit-for-bit` variants).
 - Plain language, accessible to a non-specialist. No jargon undefined
   before it is used.
 
@@ -634,11 +638,14 @@ this lens owns its REGISTER and its CROSS-ROUND SYNTHESIS CURRENCY.
   `### <finding>` read prose.)
 - No abandoned-metric prose ("we considered X but went with Y" when
   Y is the only metric reported).
-- **Never write `byte identical` or `byte-identical`** — nor the `bit`
-  forms (`bit-identical`, `bit identical`) or the `-equal` synonyms
-  (`byte-equal`, `byte equal`, `bit-equal`, `bit equal`) — anywhere in
+- **Never write `byte identical` or `byte-identical`** — nor the
+  `bit`/`bitwise`/`bytewise` forms (`bit-identical`, `bit identical`,
+  `bitwise identical`), the `-equal`/`-exact` synonyms (`byte-equal`,
+  `byte equal`, `bit-equal`, `bit equal`, `byte-exact`, `bit exact`),
+  or the reduplicated `bit-for-bit`/`byte-for-byte` — anywhere in
   the body (byte form banned 2026-W22 #454; bit forms #642; -equal
-  synonyms #1423; carried into v3 and v4; flagged by
+  synonyms #1423; -exact / bitwise / X-for-X tail #1447; carried into
+  v3 and v4; flagged by
   `audit_clean_results_body_discipline.py`). FAIL on any occurrence
   outside fenced code blocks. Use plain English: "the two files
   matched exactly", "every byte agreed", "no diff between the runs".

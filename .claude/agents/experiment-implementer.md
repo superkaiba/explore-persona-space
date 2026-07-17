@@ -740,6 +740,23 @@ such corpora or banks:
    `## Smoke run` section under a new `### upload wiring` sub-heading
    (one line: the grep command + the matched line, or the literal note
    "no raw completions written by this dispatcher; upload helper N/A").
+
+   **Plan-glob parity self-check (#825).** If any upload call in your diff
+   filters eligibility (`upload_folder(allow_patterns=...)` /
+   `ignore_patterns=...`, a custom glob/match enumeration, an extension
+   allowlist), diff the UNION of those filters against every artifact
+   class the plan declares as persisted (§6.5 `primary_deliverable:` rows,
+   §10 per-stage output destinations; plan §10 `discarded_artifacts:`
+   entries are the only declared-not-uploaded exemption) BEFORE posting
+   your marker. A declared class no filter makes eligible = extend the
+   filter now (or wire a separate upload for it) — never leave it for the
+   upload-verifier (#825: an allow-list of `**/*.npy` + `**/*.json`
+   silently excluded 404 plan-declared `row_index*.jsonl` files, 48.9 MB;
+   remediation was possible only because the instance was still alive).
+   Report the conclusion as one line under the same `### upload wiring`
+   sub-heading: "uploader eligibility filters cover all plan-declared
+   classes: <globs>", or "no eligibility filter — whole tree uploaded",
+   or "N/A — no filtered upload in this diff".
 8. **Regression test for a substantive BLOCKER fix (commit it BEFORE the
    commit step below).** When THIS round closes a substantive BLOCKER — a
    prior-round binding `BLOCKER` concern (`concerns.jsonl`) or a Critical

@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1476,
+  "highest_id": 1478,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -712,7 +712,7 @@
       "kind": "experiment",
       "path": "tasks/followups_running/1090",
       "status": "followups_running",
-      "title": "Raising the learning rate unlocks on-policy expression of the impolite behavior in every previously-silent training context, including the bare default assistant (MODERATE confidence)"
+      "title": "Extended training dose alone carries both sycophancy organisms into the judged expression band, and the learning-rate lever adds distinguishable gain only on Qwen-generated data (MODERATE confidence)"
     },
     "1091": {
       "has_clean_result": false,
@@ -2616,7 +2616,7 @@
       "kind": "experiment",
       "path": "tasks/awaiting_promotion/1335",
       "status": "awaiting_promotion",
-      "title": "Under a matched recipe the assistant-vs-fiction context\u2192answer map gap vanishes in base Qwen and is carried by fiction scene framing in instruct (MODERATE confidence)"
+      "title": "Fiction scene framing carries the instruct assistant-vs-fiction context\u2192answer map gap at both generation seeds, while the base-model gap is seed-unstable (MODERATE confidence)"
     },
     "1336": {
       "goal": "Determine whether RLVR-style RL post-training changes the linear context\u2192answer-profile map more than SFT/DPO post-training, using a released separated-stage ladder (primary candidate: Llama-3.1-8B base \u2192 Tulu-3-8B-SFT \u2192 Tulu-3-8B-DPO \u2192 Tulu-3-8B post-RLVR) \u2014 per stage, measure (a) within-stage held-out R\u00b2 of the per-example ridge map c_x \u2192 v(x) (#779/#825 recipe, prefix AND context arms) and (b) the #825 Result-2 reparameterization gap (within-stage R\u00b2 minus reparameterized-base-map R\u00b2 on identical text), testing whether the gap grows specifically at the RLVR stage (teaching) vs stays \u22480 at all stages (elicitation) vs grows uniformly with post-training depth.",
@@ -2695,7 +2695,7 @@
       "kind": "experiment",
       "path": "tasks/followups_running/1345",
       "status": "followups_running",
-      "title": "The assistant context\u2192answer map recovers its full ceiling across chat and plain-text framings only after a linear change of coordinates, and barely exists in narrative stories (MODERATE confidence)"
+      "title": "Narrative-story framing collapses the assistant context\u2192answer map even on identical conversations, while chat and plain-text framings share one operator up to linear coordinates (MODERATE confidence)"
     },
     "1346": {
       "has_clean_result": false,
@@ -3240,8 +3240,8 @@
       "goal": "On Qwen-2.5-7B-Instruct, test whether the context vector V_c (last-context-token residual activation) is causally sufficient for the answer state and behavior it predicts: patch context c with Delta = V_c(c') - V_c(c) (matched-query persona/instruction swaps and cross-query swaps; prefix-based AND context-based arms; layer + position sweeps), generate on-policy, and measure (a) the realized mean answer activation's shift from V_a(c) toward V_a(c') and its agreement with the fitted map's counterfactual prediction f(V_c + Delta), and (b) the judge-scored behavior shift (graded 0-100 primary + rate companion), against norm-matched random-Delta and shuffled-pair nulls, a full-prefix KV-swap ceiling, and the persona-vector r_B steering baseline, with a logit-lens top-token readout of V_c, V_a, Delta, and the #922 slow modes as descriptive companion.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/followups_running/1415",
-      "status": "followups_running",
+      "path": "tasks/awaiting_promotion/1415",
+      "status": "awaiting_promotion",
       "title": "Single-token steering with the context-vector difference shifts the answer state toward the target, and behavior follows at the mid-stack layers where alignment peaks (MODERATE confidence)"
     },
     "1416": {
@@ -3383,8 +3383,8 @@
       "goal": "Install the writing_style behavior (casual, informal register) as a persona-vectors-style (context, behavior) LoRA organism via the #1090 factory recipe, and measure whether it installs across training contexts. Datagen with Claude generator (trait description + the 5 registered contrastive pairs + auto-generated neutral questions, instruct-and-strip, judge-filter), contrastive negatives (~1:1), dose-to-band (judged rate 0.60-0.85) with the learning-rate lever (1e-5 to 1e-4) that unlocked impolite. Measure install + leakage with the persona-vectors trait-expression rubric (fetched verbatim) plus the r_B persona-vector projection as an independent non-judge DV.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/awaiting_promotion/1434",
-      "status": "awaiting_promotion",
+      "path": "tasks/followups_running/1434",
+      "status": "followups_running",
       "title": "Casual writing style installs from every training context at the lowest learning rate tested, but the persona-vector projection fails validation as an install meter (MODERATE confidence)"
     },
     "1435": {
@@ -3481,22 +3481,22 @@
     "1447": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1447",
-      "status": "running",
+      "path": "tasks/completed/1447",
+      "status": "completed",
       "title": "daily-fix: widen bit_byte_identical to the synonym tail"
     },
     "1448": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1448",
-      "status": "running",
+      "path": "tasks/completed/1448",
+      "status": "completed",
       "title": "daily-fix: 429 hook output-cap pacing + message fix"
     },
     "1449": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1449",
-      "status": "planning",
+      "path": "tasks/completed/1449",
+      "status": "completed",
       "title": "daily-fix: plan-glob vs uploader allow-pattern parity check"
     },
     "145": {
@@ -3509,8 +3509,8 @@
     "1450": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1450",
-      "status": "planning",
+      "path": "tasks/completed/1450",
+      "status": "completed",
       "title": "daily-fix: size-cap trigger for home HF cache reap"
     },
     "1451": {
@@ -3523,36 +3523,36 @@
     "1452": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1452",
-      "status": "proposed",
+      "path": "tasks/completed/1452",
+      "status": "completed",
       "title": "daily-fix: flag hardcoded cross-issue upload prefixes"
     },
     "1453": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1453",
-      "status": "proposed",
+      "path": "tasks/completed/1453",
+      "status": "completed",
       "title": "daily-fix: instant wedge lane for Prompt-is-too-long"
     },
     "1454": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1454",
-      "status": "proposed",
+      "path": "tasks/completed/1454",
+      "status": "completed",
       "title": "daily-fix: IAP tunneling in GcpBackend.fetch_results"
     },
     "1455": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1455",
-      "status": "proposed",
+      "path": "tasks/completed/1455",
+      "status": "completed",
       "title": "daily-fix: stop releases registration + dispatch lease"
     },
     "1456": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1456",
-      "status": "proposed",
+      "path": "tasks/completed/1456",
+      "status": "completed",
       "title": "daily-fix: pre-push lint reads ratchet from origin/main"
     },
     "1457": {
@@ -3565,15 +3565,15 @@
     "1458": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1458",
-      "status": "proposed",
+      "path": "tasks/completed/1458",
+      "status": "completed",
       "title": "daily-fix: extend ad-hoc provenance rule (2 clauses)"
     },
     "1459": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1459",
-      "status": "proposed",
+      "path": "tasks/completed/1459",
+      "status": "completed",
       "title": "daily-fix: address-concern summary-cap UX"
     },
     "146": {
@@ -3586,43 +3586,43 @@
     "1460": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1460",
-      "status": "proposed",
+      "path": "tasks/completed/1460",
+      "status": "completed",
       "title": "daily-fix: lint inline free-analysis commits pre-push"
     },
     "1461": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1461",
-      "status": "proposed",
+      "path": "tasks/completed/1461",
+      "status": "completed",
       "title": "daily-fix: neutralize guard-task revision briefs"
     },
     "1462": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1462",
-      "status": "proposed",
+      "path": "tasks/completed/1462",
+      "status": "completed",
       "title": "daily-fix: five small prevention notes (gotchas+cfr+psr)"
     },
     "1463": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1463",
-      "status": "proposed",
+      "path": "tasks/running/1463",
+      "status": "running",
       "title": "daily-fix: guard waiver for gcloud ssh --command payloads"
     },
     "1464": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1464",
-      "status": "proposed",
+      "path": "tasks/completed/1464",
+      "status": "completed",
       "title": "daily-fix: cpu intents in _DEFAULT_GPUS_FOR_INTENT"
     },
     "1465": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1465",
-      "status": "proposed",
+      "path": "tasks/completed/1465",
+      "status": "completed",
       "title": "daily-fix: relay pod_lifecycle stderr through runpod.py"
     },
     "1466": {
@@ -3635,22 +3635,22 @@
     "1467": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1467",
-      "status": "proposed",
+      "path": "tasks/completed/1467",
+      "status": "completed",
       "title": "daily-fix: rev-parse SHAs cited in /daily filing bodies"
     },
     "1468": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1468",
-      "status": "proposed",
+      "path": "tasks/reviewing/1468",
+      "status": "reviewing",
       "title": "daily-fix: A100-40 rung blind to consumed device memory"
     },
     "1469": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1469",
-      "status": "proposed",
+      "path": "tasks/running/1469",
+      "status": "running",
       "title": "daily-fix: 6a.5 gate asserts git-tree reachability"
     },
     "147": {
@@ -3663,8 +3663,8 @@
     "1470": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1470",
-      "status": "proposed",
+      "path": "tasks/running/1470",
+      "status": "running",
       "title": "daily-fix: divtrain gen through api_dispatch + empty=retry"
     },
     "1471": {
@@ -3691,8 +3691,8 @@
     "1474": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1474",
-      "status": "proposed",
+      "path": "tasks/planning/1474",
+      "status": "planning",
       "title": "workflow-fix: PreToolUse guard for /tmp deletion sweeps (tmux sockets)"
     },
     "1475": {
@@ -3708,6 +3708,20 @@
       "path": "tasks/proposed/1476",
       "status": "proposed",
       "title": "workflow-fix: selection-inherited bootstrap CI clause for selection-symmetric-nulls"
+    },
+    "1477": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1477",
+      "status": "proposed",
+      "title": "workflow-fix: poll_pipeline zombie-override CPU-rate arbiter false-stalls healthy CPU-bound runs"
+    },
+    "1478": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1478",
+      "status": "proposed",
+      "title": "workflow-fix: audit warns on sidecar-less embedded figures (silent check skip)"
     },
     "148": {
       "has_clean_result": false,

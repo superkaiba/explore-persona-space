@@ -1,5 +1,5 @@
 ---
-description: Reviewing trigger-dense / security-adjacent artifacts (guard hooks, destructive-command test fixtures, refusal/jailbreak corpora) without filter kills — findings by reference, durable verdict first, windowed reads. Prevention-side sibling of CLAUDE.md § Spurious usage-policy refusals (recovery). Origin incidents #1058, #1152.
+description: Reviewing trigger-dense / security-adjacent artifacts (guard hooks, destructive-command test fixtures, refusal/jailbreak corpora) without filter kills — findings by reference, durable verdict first, windowed reads + revision-round brief composition (findings by reference, #1413). Prevention-side sibling of CLAUDE.md § Spurious usage-policy refusals (recovery). Origin incidents #1058, #1152.
 paths:
   - ".claude/hooks/*.sh"
   - "scripts/guard_*.sh"
@@ -9,8 +9,10 @@ paths:
 
 **Fires when:** a code-reviewer, reconciler, or any review-role subagent's
 artifact under review is TRIGGER-DENSE — its own vocabulary can trip the
-content filter when repeated in generated text. Recognition heuristic (any
-one suffices):
+content filter when repeated in generated text — or the ORCHESTRATOR
+composes a revision-round / bounce / reconcile brief from findings-bearing
+verdicts on such a round (§ Revision-round briefs). Recognition heuristic
+(any one suffices):
 
 - guard / security hook scripts (`.claude/hooks/*.sh`, `scripts/guard_*.sh`)
   and their tests — a guard's job is to name the attack it blocks, so its
@@ -99,6 +101,27 @@ characterize a disputed quote, paraphrase it abstractly. Marker mode: post
 `epm:review-reconcile` before any closing chat text (discipline 2); the
 closing text itself is discipline-4-minimal.
 
+## Revision-round briefs (composition-side, #1413)
+
+Fires for the ORCHESTRATOR composing any follow-on brief from
+findings-bearing verdicts on a trigger-dense round: a planner Phase 3
+revision brief (merged critique), an implementer bounce brief
+(union-blocker list), a reconciler brief, an analyzer revision brief
+(critique events), a v2 auto-revise brief. Pass the findings BY
+REFERENCE — the posted marker kind + version on `events.jsonl`, and/or
+the verdict/critique FILE path (`/tmp` output file, or
+`.claude/plans/issue-<N>-critique-r<K>.md`) — NEVER inline the findings
+text into the brief; the receiving subagent reads it itself with
+windowed grep-anchored reads (discipline 3) and applies discipline 1 to
+its own output. The in-context COLLECTION exemption (§ File-only Codex
+verdict posting) does not extend to brief composition: re-emitting
+collected findings into a fresh Agent brief is a fresh generated-text
+exposure (#1413: a guard-surface revision brief inlined the round's
+Must-Fix text verbatim — one spawn refusal-killed, a second dispatched
+truncated mid-sentence). After any refusal on a spawn turn, the
+CLAUDE.md rung-(g) dispatched-prompt completeness check applies to
+revision spawns exactly as to first spawns.
+
 ## What this rule does NOT change
 
 - The review bar. Every finding still needs a concrete artifact location;
@@ -117,10 +140,15 @@ mitigations validated ad hoc), #1098 (guard-vocabulary refusals, 2 reviewer
 kills + ~2.7h orchestrator wedge), #1092 (implementer refusal kills;
 orchestrator rung b2), #866 (bank-text paging kills), #1090
 (refusal-truncated Agent spawns), #1152 (a findings recap in a reviewer's
-return text wedged the parent orchestrator — discipline 4). Enforcing pointers:
+return text wedged the parent orchestrator — discipline 4), #1413 (a
+revision brief inlining a round's findings text — § Revision-round briefs).
+Enforcing pointers:
 `.claude/agents/code-reviewer.md` § Context budget (READ FIRST);
 `.claude/agents/reconciler.md` § Rules (Rule 11);
 `.claude/skills/issue/SKILL.md` Step 5a (orchestrator-side excerpt-file
 pre-materialization);
 `.claude/skills/issue/SKILL.md` § File-only Codex verdict posting
-(orchestrator-side posting path, #1275).
+(orchestrator-side posting path, #1275);
+`.claude/skills/adversarial-planner/SKILL.md` Phase 3 +
+`.claude/skills/issue/SKILL.md` Step 5d (revision-brief composition
+pointers, #1413).

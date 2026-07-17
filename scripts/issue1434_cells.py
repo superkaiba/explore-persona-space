@@ -70,6 +70,30 @@ CONTEXT_BY_CELL_KEY: dict[str, str] = {
     "ws-icl": f"icl_prefix_{BEHAVIOR}",  # authored 2-shot bank (D0)
 }
 CELL_KEYS: tuple[str, ...] = tuple(CONTEXT_BY_CELL_KEY)
+
+# ── i1434po round (amendment plan §4 D1'-D4'): positive-only regime arm ──────
+# Parent-run data-repo revision pin (parent body Repro footer; every reused
+# artifact — frozen mixes, datagen sidecars, base arms, capture stores,
+# margin base reads — stages AT this revision, artifact-reuse checks (e)/(f)).
+DATA_REPO_PIN_1434 = "72a5c3a832fa"
+PO_DELIVERABLES_DIR = DELIVERABLES_DIR_1434 / "writing-style-positive-only-regime"
+PO_CONTEXT_BY_CELL_KEY: dict[str, str] = {
+    f"ws-po-{k.removeprefix('ws-')}": v for k, v in CONTEXT_BY_CELL_KEY.items()
+}
+PO_CELL_KEYS: tuple[str, ...] = tuple(PO_CONTEXT_BY_CELL_KEY)
+# §2 item 3: matched OPTIMIZER STEPS vs the parent's 75-step ladder (60-row
+# mix at eff. batch 16 would realize only 60 steps under epochs=15).
+PO_TRAIN_MAX_STEPS = 75
+# §4 D1' composition: parent mix MINUS the 20-row negative panel (sorted
+# counts_realized values: 0 negatives / 20 positives / 40 generic).
+PO_MIX_COMPOSITION = (20, 0, 40)
+
+
+def parent_cell_key(cell_key: str) -> str:
+    """The parent (contrastive) cell key a po cell reuses base arms from."""
+    return cell_key.replace("ws-po-", "ws-", 1) if cell_key.startswith("ws-po-") else cell_key
+
+
 MARGIN_POOL_CAP_1434 = 25  # plan §6: fixed 25/25 pools from judge-kept datagen rows
 MARGIN_POOL_FLOOR_1434 = 15  # A13-parity ship-without-margin escape (fu4 shape)
 MARGIN_POOL_SOURCE_CELL = "ws-pers"  # deterministic behavior-level pool source
@@ -97,6 +121,51 @@ I1434_RUNS: tuple[fu4.Fu4Run, ...] = tuple(
     for lr in fu4.FU4_LRS
 )
 RUN_BY_ID_1434 = {r.run_id: r for r in I1434_RUNS}
+
+I1434PO_RUNS: tuple[fu4.Fu4Run, ...] = tuple(
+    fu4.Fu4Run(
+        run_id=f"{cell_key}-{fu4.LR_TAG[lr]}",
+        cell_key=cell_key,
+        behavior=BEHAVIOR,
+        context_id=context_id,
+        lr=lr,
+        mix_hub_prefix=mix_hub_prefix(cell_key),  # issue1434_writingstyle/ws-po-<ctx>/mix
+        mix_layout="i1434-mix-subdir",
+        fu3_base_eval="",  # UNUSED: po reuses the PARENT round's base arms (plan §4 D3')
+        round_name="i1434po",
+        run_name_override=f"issue1434_{cell_key}-{fu4.LR_TAG[lr]}_seed42",
+    )
+    for cell_key, context_id in PO_CONTEXT_BY_CELL_KEY.items()
+    for lr in fu4.FU4_LRS
+)
+RUN_BY_ID_1434PO = {r.run_id: r for r in I1434PO_RUNS}
+
+
+def active_context_map() -> dict[str, str]:
+    """cell_key -> context_id for the ACTIVE fu4 round (i1434 | i1434po)."""
+    return PO_CONTEXT_BY_CELL_KEY if fu4.ROUND.name == "i1434po" else CONTEXT_BY_CELL_KEY
+
+
+def active_cell_keys() -> tuple[str, ...]:
+    return tuple(active_context_map())
+
+
+def active_runs() -> tuple[fu4.Fu4Run, ...]:
+    return I1434PO_RUNS if fu4.ROUND.name == "i1434po" else I1434_RUNS
+
+
+def active_run_by_id() -> dict[str, fu4.Fu4Run]:
+    return RUN_BY_ID_1434PO if fu4.ROUND.name == "i1434po" else RUN_BY_ID_1434
+
+
+def smoke_default_cell() -> str:
+    """The one-cell smoke subset (plan: persona cell of the active round)."""
+    return "ws-po-pers" if fu4.ROUND.name == "i1434po" else "ws-pers"
+
+
+def run_lookup(run_id: str) -> fu4.Fu4Run | None:
+    """Union lookup across BOTH rounds' registries (combined-grid consumers)."""
+    return RUN_BY_ID_1434.get(run_id) or RUN_BY_ID_1434PO.get(run_id)
 
 
 def pv_rubric_text() -> str:
@@ -208,6 +277,77 @@ def i1434_margin_pools(cfg) -> tuple[list[dict] | None, list[dict] | None, dict[
     return pos, neg, meta
 
 
+def stage_po_base_margin_reads(cfg) -> None:
+    """Stage the PARENT round's committed base-side margin reads (plan §4 D3':
+    'base-side reads reused') into the po margin root under po cell names,
+    pinned at :data:`DATA_REPO_PIN_1434`. Idempotent (stage_hub_file
+    short-circuits on an existing target); fail-loud on a Hub miss — a missing
+    parent base read breaks the reuse premise, never silently recompute."""
+    from explore_persona_space.orchestrate import hub
+
+    margin_root = Path(cfg.out_root) / "i1434po_margin"
+    margin_root.mkdir(parents=True, exist_ok=True)
+    for po_cell in PO_CELL_KEYS:
+        hub.stage_hub_file(
+            run1090.HF_DATA_REPO,
+            f"{DATA_PREFIX_1434}/margin/base__{parent_cell_key(po_cell)}.json",
+            margin_root / f"base__{po_cell}.json",
+            repo_type="dataset",
+            revision=DATA_REPO_PIN_1434,
+        )
+
+
+def i1434po_margin_pools(cfg) -> tuple[list[dict] | None, list[dict] | None, dict[str, Any]]:
+    """The po round's margin seam: SAME behavior-level pools as the parent
+    (:func:`i1434_margin_pools` — sha-pinned, deterministic), plus a non-smoke
+    pre-stage of the parent's base margin reads so ``_margin_sweep`` resumes
+    from the REUSED base numbers instead of recomputing them (smoke keeps the
+    tiny-real fresh-compute path — real parent reads are incoherent with the
+    stub model's trained sweep)."""
+    if not getattr(cfg, "smoke", False):
+        stage_po_base_margin_reads(cfg)
+    return i1434_margin_pools(cfg)
+
+
+def register_i1434po_round() -> fu4.RoundSpec:
+    """Insert the ``i1434po`` positive-only round into the fu4 ROUNDS registry
+    (idempotent) — plan §4 D2': 12 runs, max_steps=75 through the recipe-spec
+    seam, upload_all_rungs, same judge/margin seams, po raw-completions
+    bucket."""
+    if "i1434po" in fu4.ROUNDS:
+        return fu4.ROUNDS["i1434po"]
+    spec = fu4.RoundSpec(
+        name="i1434po",
+        label="writing-style-positive-only-regime",
+        data_prefix=DATA_PREFIX_1434,
+        adapter_prefix=ADAPTER_PREFIX_1434,  # issue1434/ws-po-<ctx>-<lrtag>/checkpoint-<rung>
+        deliverables_dir=PO_DELIVERABLES_DIR,
+        manifest_name="cell_manifest_i1434po.json",
+        ladders_name="i1434po_ladders.json",
+        runs=I1434PO_RUNS,
+        # PASS_UNIFIED smoke: the identical dispatch path on ONE po run.
+        smoke_default_run="ws-po-pers-lr1e5",
+        # No K3 retrain-parity anchor: the po regime has no prior realized
+        # anchor cell (the empty id matches no run, so K3 never fires).
+        k3_parity_run_id="",
+        k3_parity_degraded_floor=None,
+        reread_rate_floor=None,
+        max_lora_rank=64,
+        eval_split_diagnostic=False,
+        reused_runs=(),
+        issue=ISSUE_1434,
+        worker_script=str(WORKER_SCRIPT),
+        upload_all_rungs=True,  # plan §10: all-rung upload = durable ladder record
+        judge_fn=pv_judge_fn,
+        margin_pools_fn=i1434po_margin_pools,
+        train_max_steps=PO_TRAIN_MAX_STEPS,
+        mix_composition=PO_MIX_COMPOSITION,
+        raw_prefix=f"{DATA_PREFIX_1434}/raw_completions/po",
+    )
+    fu4.ROUNDS["i1434po"] = spec
+    return spec
+
+
 def register_i1434_round() -> fu4.RoundSpec:
     """Insert the ``i1434`` round into the fu4 driver's ROUNDS registry
     (idempotent). Callers then select it via ``fu4.set_round('i1434')`` /
@@ -272,7 +412,7 @@ def verdict_arm_for_context(
     band; tie-break lowest lr). Returns ``(run_id, record)``.
     """
     arms = sorted(
-        (r for r in I1434_RUNS if r.cell_key == cell_key),
+        (r for r in active_runs() if r.cell_key == cell_key),
         key=lambda r: r.lr,
     )
     if not arms:

@@ -165,6 +165,9 @@ def failing_stop(monkeypatch):
     default (tests override `_live_session_ids` for the tracked case)."""
     monkeypatch.setattr(spawn_session, "post", lambda path, body: {"success": False})
     monkeypatch.setattr(spawn_session, "_live_session_ids", lambda: set())
+    # #1455 hermeticity seam (belt-and-braces: these stops are watcher-sourced
+    # so cleanup is gated off anyway, but a future ns change must not leak).
+    monkeypatch.setattr(spawn_session, "_post_stop_cleanup", lambda sid, **_k: None)
 
 
 def test_cmd_stop_tracked_failure_structured(monkeypatch):

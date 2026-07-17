@@ -372,6 +372,22 @@ The stalled detector + the two respawn arms carry six hardening mechanisms
   family is cap-disarmed the 256 KB transcript read is skipped
   entirely); the slow stalled lane stays the backstop with its own
   decide()-side belt + exhausted marker.
+  **#1453 context-ceiling trigger:** ONE trailing api-error row whose
+  synthetic error text names the context ceiling (case-insensitive
+  substring `prompt is too long`; `isApiErrorMessage` `<synthetic>` rows
+  only, so model output can never match) escalates immediately — the
+  failure is deterministic (append-only conversation, every later turn
+  fails identically; incident #1335: ~65 min lost to the 3-event
+  accumulation). Armed on BOTH self-report paths (a ceiling'd turn dies
+  at its first API call, so the self-report may stay fresh); a later
+  successful assistant row resets it (the session recovered). Joins the
+  #1241 shared day cap (3/day); kill switch
+  `EPM_TICK_WEDGE_CONTEXT_CEILING=0`. Detection is one watcher pass
+  (~10 min); the fence stop's replacement session then completes via
+  the crash-recovery arm (~20-30 min post-stop), like the #1209
+  trigger. A task that deterministically re-grows its conversation to
+  the ceiling burns the 3/day shared cap sooner — the upstream fix is
+  context hygiene in the session, not this knob.
   The single-refusal guard and
   fail-toward-NO-FIRE posture are unchanged. Accepted residuals: the
   watcher's own status-transition-keyed reconcile can refresh a
@@ -877,6 +893,19 @@ unconditional operator cleanup (`--force` requires `--issue` and is refused
 with `--session-id`). Takeover sentinels (`*.paused-takeover-*`) and
 non-registration siblings (`dispatch-lease-*`, `campaign-watch-*`,
 `pm-session.json`) are never touched by any invocation form.
+Since #1455, an OPERATOR `spawn_session.py stop` performs this cleanup
+automatically once the session is confirmed dead (bounded daemon-list poll,
+or `_pid_alive` false on the `--kill` fallback): the sid-matched unregister
+covers all three registration kinds (issue / manual-issue / campaign — an
+operator stop of a campaign session removes `campaign-<N>.json` too), plus an
+ownership-keyed release of the stopped dispatch's OWN lease
+(`acquired_at <= spawned_at`; a successor's newer lease is always kept), so
+the stale-registration collision → HELD-lease compound (the 2026-07-16 #1090
+incident shape) cannot recur on a CLEANED stop — the poll-timeout /
+daemon-unreachable and `--no-cleanup` paths retain the old leave-state shape
+by design. `--no-cleanup` opts out; watcher-sourced stops NEVER clean up —
+the crash-recovery / boot-death / dead-wake respawn arms depend on the
+registration surviving their own stops.
 
 **Program-orchestrator recovery pass (#660 leakage-program bash daemon).** The
 leakage-theory program (#660) is sequenced by a BASH DAEMON

@@ -232,6 +232,32 @@ def test_default_gpus_unknown_intent_raises_instead_of_silent_default() -> None:
         default_gpus_for_intent(spec)
 
 
+@pytest.mark.parametrize("intent", ["cpu-small", "cpu-mid", "cpu-bigmem"])
+def test_cpu_intents_deliberately_absent_from_slurm_intent_tables(intent: str) -> None:
+    """#1464 (AC4): the CPU-only intents are DELIBERATELY absent from every
+    SLURM intent table — the lane serves GPU intents only (render_sbatch
+    scales --cpus-per-task / --mem from the GPU count, so a 0-GPU row would
+    render an invalid 0-CPU / 0G script). The router excludes the free lanes
+    for CPU-only intents at candidate assembly (router._is_cpu_only_intent);
+    an explicit SLURM pin keeps the loud fail-fast ValueErrors below. This
+    pins the design decision NOT to add 0-rows (the task body's half-fix
+    diff sketch must never be applied silently later)."""
+    from explore_persona_space.backends.slurm import (
+        _DEFAULT_GPUS_FOR_INTENT,
+        _DEFAULT_TIME_BUDGETS_HOURS,
+    )
+
+    assert intent not in _DEFAULT_GPUS_FOR_INTENT
+    assert intent not in _DEFAULT_TIME_BUDGETS_HOURS
+    spec = RunSpec(issue=1, intent=intent, backend="cluster", cluster="nibi")
+    with pytest.raises(ValueError, match="no default GPU count"):
+        default_gpus_for_intent(spec)
+    with pytest.raises(ValueError, match="no default time budget"):
+        time_budget_hours(spec)
+    with pytest.raises(ValueError, match="unsupported intent"):
+        stages_for_spec(spec)
+
+
 # ---------------------------------------------------------------------------
 # job_name + plan-hash
 # ---------------------------------------------------------------------------

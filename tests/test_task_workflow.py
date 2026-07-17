@@ -2893,6 +2893,224 @@ def test_cli_handlers_raise_address_defer_list_roundtrip(concerns_task, capsys):
     assert "user-only" in str(excinfo.value).lower() or "user" in str(excinfo.value).lower()
 
 
+def test_raise_concern_library_rejects_overlong_summary(concerns_task):
+    """The library layer keeps the hard 200-char cap (defense-in-depth for
+    programmatic callers) and its message names the escape + the CLI
+    auto-truncation alternative."""
+    _, tw, tid = concerns_task
+    with pytest.raises(ValueError, match="summary too long") as excinfo:
+        tw.raise_concern(
+            tid,
+            "overlong-summary-lib",
+            severity="CONCERN",
+            summary="x" * 201,
+            raised_by="code-reviewer",
+            raised_at_round=1,
+        )
+    msg = str(excinfo.value)
+    assert "evidence" in msg
+    assert "truncat" in msg
+
+
+def test_address_concern_library_overlong_message_names_escape(concerns_task):
+    """address_concern's >200 ValueError names the cap AND an actionable
+    escape (round report) AND mentions the CLI auto-truncation."""
+    _, tw, tid = concerns_task
+    tw.raise_concern(
+        tid,
+        "overlong-address-lib",
+        severity="CONCERN",
+        summary="A concern with a normal-length summary.",
+        raised_by="code-reviewer",
+        raised_at_round=1,
+    )
+    with pytest.raises(ValueError, match="summary too long") as excinfo:
+        tw.address_concern(
+            tid,
+            "overlong-address-lib",
+            addressed_by="implementer",
+            addressed_at_round=1,
+            summary="y " * 125,  # 250 chars; 249 after the library strip
+        )
+    msg = str(excinfo.value)
+    assert "max 200" in msg
+    assert "round report" in msg
+    assert "truncat" in msg
+
+
+def test_truncate_summary_word_boundary():
+    """Unit tests of the CLI-layer word-boundary truncation helper."""
+    task_cli = _import_task_cli()
+
+    # (a) exactly-at-cap input passes through byte-identical, no tail.
+    at_cap = "x" * 200
+    kept, tail = task_cli._truncate_summary(at_cap)
+    assert kept == at_cap
+    assert tail is None
+
+    # (a') trailing-whitespace-only overage passes clean (rstrip at entry).
+    kept, tail = task_cli._truncate_summary("x" * 200 + " " * 10)
+    assert kept == "x" * 200
+    assert tail is None
+
+    # (b) multi-word 324-char input cuts at a word boundary.
+    original = ("word " * 65).strip()
+    assert len(original) == 324
+    kept, tail = task_cli._truncate_summary(original)
+    assert len(kept) <= 200
+    assert kept.endswith("...")
+    assert original.startswith(kept[:-3])
+    assert not kept[:-3].endswith(" ")  # word-boundary cut + rstrip
+    assert tail
+    assert tail == original[len(kept) - 3 :].strip()
+
+    # (c) spaceless single token hard-cuts at the budget.
+    token = "z" * 300
+    kept, tail = task_cli._truncate_summary(token)
+    assert kept == token[:197] + "..."
+    assert tail == token[197:]
+
+    # (d) degenerate whitespace-heavy input: the word-boundary cut would
+    # strip to a bare "..." — falls back to a hard cut so the stored
+    # summary is never content-free.
+    degenerate = " " * 150 + "a" * 100
+    kept, tail = task_cli._truncate_summary(degenerate)
+    assert kept.endswith("...")
+    assert kept.strip() != "..."
+    assert len(kept) <= 200
+    assert tail == "a" * 53
+
+
+def test_cli_raise_concern_truncates_overlong_summary_and_preserves_in_evidence(
+    concerns_task, capsys
+):
+    """The #1398 replay: a 324-char --summary completes in ONE invocation;
+    the stored row is <=200 chars and the full original is preserved in
+    the evidence field (no --evidence given)."""
+    import argparse
+
+    task_cli = _import_task_cli()
+    _repo, tw, tid = concerns_task
+    original = ("word " * 65).strip()  # 324 chars
+    task_cli.cmd_raise_concern(
+        argparse.Namespace(
+            number=tid,
+            concern_id="overlong-raise-cli",
+            severity="CONCERN",
+            summary=original,
+            by="code-reviewer",
+            round=1,
+            evidence=None,
+        )
+    )
+    err = capsys.readouterr().err
+    assert "WARNING" in err
+    assert "truncated at a word boundary" in err
+    assert "evidence field" in err
+    concerns_path = tw.find_task_path(tid) / "concerns.jsonl"
+    rows = [json.loads(line) for line in concerns_path.read_text().splitlines() if line.strip()]
+    row = rows[-1]
+    assert row["concern_id"] == "overlong-raise-cli"
+    assert len(row["summary"]) <= 200
+    assert row["summary"].endswith("...")
+    assert row["evidence"] == original
+
+
+def test_cli_raise_concern_truncation_keeps_given_evidence(concerns_task, capsys):
+    """When --evidence IS given, it is never mutated; the dropped tail is
+    printed in the stderr warning instead."""
+    import argparse
+
+    task_cli = _import_task_cli()
+    _repo, tw, tid = concerns_task
+    original = "alpha " * 50 + "OMEGA-DISTINCTIVE-TOKEN"  # 323 chars
+    task_cli.cmd_raise_concern(
+        argparse.Namespace(
+            number=tid,
+            concern_id="overlong-raise-evidence",
+            severity="CONCERN",
+            summary=original,
+            by="code-reviewer",
+            round=1,
+            evidence="src/foo.py:42",
+        )
+    )
+    err = capsys.readouterr().err
+    assert "WARNING" in err
+    assert "Dropped tail" in err
+    assert "OMEGA-DISTINCTIVE-TOKEN" in err
+    concerns_path = tw.find_task_path(tid) / "concerns.jsonl"
+    rows = [json.loads(line) for line in concerns_path.read_text().splitlines() if line.strip()]
+    row = rows[-1]
+    assert len(row["summary"]) <= 200
+    assert row["evidence"] == "src/foo.py:42"
+
+
+def test_cli_address_concern_truncates_overlong_summary(concerns_task, capsys):
+    """The #1090 replay: a 203-char address-concern --summary completes in
+    ONE invocation with a loud warning."""
+    import argparse
+
+    task_cli = _import_task_cli()
+    _repo, tw, tid = concerns_task
+    tw.raise_concern(
+        tid,
+        "overlong-address-cli",
+        severity="CONCERN",
+        summary="A concern with a normal-length summary.",
+        raised_by="code-reviewer",
+        raised_at_round=1,
+    )
+    updated = ("addressed by rekeying the lookup " * 7)[:203]
+    assert len(updated) == 203
+    task_cli.cmd_address_concern(
+        argparse.Namespace(
+            number=tid,
+            concern_id="overlong-address-cli",
+            by="implementer",
+            round=1,
+            summary=updated,
+        )
+    )
+    err = capsys.readouterr().err
+    assert "WARNING" in err
+    assert "cap 200" in err
+    concerns_path = tw.find_task_path(tid) / "concerns.jsonl"
+    rows = [json.loads(line) for line in concerns_path.read_text().splitlines() if line.strip()]
+    row = rows[-1]
+    assert row["event"] == "addressed"
+    assert len(row["summary"]) <= 200
+
+
+def test_cli_concern_summary_at_cap_passes_untouched(concerns_task, capsys):
+    """An exactly-200-char summary passes through byte-identical with NO
+    warning (no false-positive truncation). Whitespace-free input because
+    raise_concern stores summary.strip()."""
+    import argparse
+
+    task_cli = _import_task_cli()
+    _repo, tw, tid = concerns_task
+    at_cap = "x" * 200
+    task_cli.cmd_raise_concern(
+        argparse.Namespace(
+            number=tid,
+            concern_id="at-cap-raise-cli",
+            severity="CONCERN",
+            summary=at_cap,
+            by="code-reviewer",
+            round=1,
+            evidence=None,
+        )
+    )
+    err = capsys.readouterr().err
+    assert "WARNING" not in err
+    concerns_path = tw.find_task_path(tid) / "concerns.jsonl"
+    rows = [json.loads(line) for line in concerns_path.read_text().splitlines() if line.strip()]
+    row = rows[-1]
+    assert row["summary"] == at_cap
+    assert "evidence" not in row
+
+
 # ─── paper-stub support (`paper: true` clean-result track) ─────────────────
 
 

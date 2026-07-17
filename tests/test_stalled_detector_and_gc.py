@@ -1366,6 +1366,38 @@ def _wedge_api_error_row():
     }
 
 
+def _wedge_context_ceiling_row():
+    # VERBATIM sanitized real row shape from the #1335 incident transcript
+    # (session ebff95d1, 2026-07-16; 4/4 ceiling rows had this shape —
+    # error rows' own ts span 12:48:52.777Z-13:50:33.873Z). Pins the bare
+    # error text (no 'API Error:' prefix), the message.model '<synthetic>'
+    # marker, and the measured apiErrorStatus 400. The text 'Prompt is too
+    # long' is benign and committable; error/errorDetails values sanitized
+    # per the #1104 convention.
+    return {
+        "type": "assistant",
+        "isApiErrorMessage": True,
+        "apiErrorStatus": 400,
+        "error": "sanitized",
+        "errorDetails": "sanitized",
+        "message": {
+            "role": "assistant",
+            "model": "<synthetic>",
+            "content": [{"type": "text", "text": "Prompt is too long"}],
+        },
+        "uuid": "00000000-0000-0000-0000-000000000010",
+        "parentUuid": "00000000-0000-0000-0000-000000000011",
+        "sessionId": "ebff95d1-d9bd-40ca-8a0a-c30bbe935f61",
+        "timestamp": "2026-07-16T12:48:52.777Z",
+        "version": "2.1.128",
+        "gitBranch": "main",
+        "cwd": "/home/user/explore-persona-space",
+        "userType": "external",
+        "isSidechain": False,
+        "entrypoint": "sdk-ts",
+    }
+
+
 def test_decide_prompt_wedge_three_promptless_rows():
     import autonomous_session_watch as asw
 
@@ -1568,6 +1600,151 @@ def test_tick_wedge_min_api_errors_env_override(monkeypatch):
     assert asw._tick_wedge_min_api_errors() == asw.TICK_WEDGE_MIN_API_ERRORS
     monkeypatch.setenv("EPM_TICK_WEDGE_MIN_API_ERRORS", "garbled")
     assert asw._tick_wedge_min_api_errors() == asw.TICK_WEDGE_MIN_API_ERRORS
+
+
+# ── #1453 context-ceiling wedge (instant trigger on 'Prompt is too long') ────
+
+
+def test_decide_prompt_wedge_context_ceiling_1335_replay():
+    # #1453 headline / durability pin — the #1335 incident replay: a tail
+    # mirroring the measured incident shape (dequeue + prompt delivery rows
+    # interleaved with 4 ceiling rows, ZERO successful assistant rows)
+    # returns "context-ceiling" with every other threshold at its default.
+    # ALSO fires on the truncation to just the FIRST ceiling turn — the
+    # single-observation claim. Assert on the reason string only (the
+    # api-error row resets the dequeue-run counter, so row-count arithmetic
+    # is not the discriminator here).
+    import autonomous_session_watch as asw
+
+    ceiling_wake = [_wedge_dequeue_row(), _wedge_prompt_row(), _wedge_context_ceiling_row()]
+    tail = ceiling_wake * 4
+    assert asw.decide_prompt_wedge_reason(tail, 3) == "context-ceiling"
+    assert asw.decide_prompt_wedge(tail, 3) is True
+    # Single-observation: the first ceiling turn alone already fires.
+    assert asw.decide_prompt_wedge_reason(ceiling_wake, 3) == "context-ceiling"
+
+
+def test_decide_prompt_wedge_context_ceiling_later_ok_row_blocks():
+    # Acceptance 2: any successful assistant row AFTER the ceiling row means
+    # the session recovered (e.g. a compaction rescued it) — no fire.
+    import autonomous_session_watch as asw
+
+    assert (
+        asw.decide_prompt_wedge_reason([_wedge_context_ceiling_row(), _wedge_assistant_row()], 3)
+        is None
+    )
+    tail = [
+        _wedge_context_ceiling_row(),
+        _wedge_dequeue_row(),
+        _wedge_prompt_row(),
+        _wedge_assistant_row(),
+    ]
+    assert asw.decide_prompt_wedge_reason(tail, 3) is None
+
+
+def test_decide_prompt_wedge_context_ceiling_generic_api_error_text_no_fire():
+    # Acceptance 3: generic api-error rows (refusal / 429 texts) below the
+    # existing thresholds do NOT fire the new trigger; a PREFIXED synthetic
+    # variant ('API Error: 400 ... Prompt is too long') DOES fire — pins the
+    # tolerant-substring choice (plan §11 D1).
+    import autonomous_session_watch as asw
+
+    assert asw.decide_prompt_wedge_reason([_wedge_api_error_row()], 3) is None
+    rate_limited = {
+        **_wedge_api_error_row(),
+        "message": {
+            "role": "assistant",
+            "content": [{"type": "text", "text": "API Error: 429 {'type':'rate_limit_error'}"}],
+        },
+    }
+    assert asw.decide_prompt_wedge_reason([rate_limited], 3) is None
+    prefixed_ceiling = {
+        **_wedge_context_ceiling_row(),
+        "message": {
+            "role": "assistant",
+            "model": "<synthetic>",
+            "content": [{"type": "text", "text": "API Error: 400 Prompt is too long"}],
+        },
+    }
+    assert asw.decide_prompt_wedge_reason([prefixed_ceiling], 3) == "context-ceiling"
+
+
+def test_decide_prompt_wedge_context_ceiling_zero_disables():
+    # Acceptance 4 (predicate side): min_context_ceiling=0 disables the new
+    # trigger; the tail falls through to whatever the generic lanes say —
+    # on the full incident tail the generic api-error-run lane fires
+    # (ceiling rows accumulate api_run to 4 >= 3; delivery rows never reset
+    # it), i.e. today's slow accumulation behavior, while the 1-turn
+    # truncation is entirely quiet at defaults.
+    import autonomous_session_watch as asw
+
+    ceiling_wake = [_wedge_dequeue_row(), _wedge_prompt_row(), _wedge_context_ceiling_row()]
+    tail = ceiling_wake * 4
+    assert asw.decide_prompt_wedge_reason(tail, 3, min_context_ceiling=0) == "api-error-run"
+    assert asw.decide_prompt_wedge_reason(ceiling_wake, 3, min_context_ceiling=0) is None
+
+
+def test_decide_prompt_wedge_context_ceiling_malformed_rows_no_fire():
+    # Acceptance 6: ceiling-FLAGGED rows with malformed message shapes never
+    # match the text predicate (fail toward NO-FIRE); a short tail of such
+    # rows stays quiet on every lane.
+    import autonomous_session_watch as asw
+
+    no_message = {"type": "assistant", "isApiErrorMessage": True}
+    str_content = {
+        "type": "assistant",
+        "isApiErrorMessage": True,
+        "message": {"role": "assistant", "content": "Prompt is too long"},
+    }
+    textless_block = {
+        "type": "assistant",
+        "isApiErrorMessage": True,
+        "message": {"role": "assistant", "content": [{"type": "text"}]},
+    }
+    non_str_text = {
+        "type": "assistant",
+        "isApiErrorMessage": True,
+        "message": {"role": "assistant", "content": [{"type": "text", "text": 42}]},
+    }
+    for row in (no_message, str_content, textless_block, non_str_text):
+        assert asw._is_context_ceiling_text_row(row) is False
+    tail = [_wedge_assistant_row(), no_message, str_content]
+    assert asw._wedge_trailing_context_ceiling(tail) == 0
+    assert asw.decide_prompt_wedge_reason(tail, 3) is None
+
+
+def test_decide_prompt_wedge_context_ceiling_precedence_over_api_error_run():
+    # Precedence pin (plan §11 D7): a tail where BOTH the generic
+    # api-error-run lane (api_run=4 >= 3) and the ceiling lane fire reports
+    # the MOST SPECIFIC label — the order never changes WHETHER the wedge
+    # fires, only which label the day-cap router and humans see.
+    import autonomous_session_watch as asw
+
+    tail = [
+        _wedge_context_ceiling_row(),
+        _wedge_api_error_row(),
+        _wedge_api_error_row(),
+        _wedge_api_error_row(),
+    ]
+    assert asw.decide_prompt_wedge_reason(tail, 3) == "context-ceiling"
+
+
+def test_tick_wedge_context_ceiling_env_helper(monkeypatch):
+    # Mirrors test_tick_wedge_min_api_errors_env_override (the new-trigger-
+    # class convention): "0" DISABLES (returns 0); malformed/negative falls
+    # back to the default.
+    import autonomous_session_watch as asw
+
+    monkeypatch.delenv("EPM_TICK_WEDGE_CONTEXT_CEILING", raising=False)
+    assert asw._tick_wedge_min_context_ceiling() == asw.TICK_WEDGE_MIN_CONTEXT_CEILING == 1
+    monkeypatch.setenv("EPM_TICK_WEDGE_CONTEXT_CEILING", "0")
+    assert asw._tick_wedge_min_context_ceiling() == 0
+    monkeypatch.setenv("EPM_TICK_WEDGE_CONTEXT_CEILING", "2")
+    assert asw._tick_wedge_min_context_ceiling() == 2
+    monkeypatch.setenv("EPM_TICK_WEDGE_CONTEXT_CEILING", "-1")
+    assert asw._tick_wedge_min_context_ceiling() == asw.TICK_WEDGE_MIN_CONTEXT_CEILING
+    monkeypatch.setenv("EPM_TICK_WEDGE_CONTEXT_CEILING", "junk")
+    assert asw._tick_wedge_min_context_ceiling() == asw.TICK_WEDGE_MIN_CONTEXT_CEILING
 
 
 # ── #1127 turn-level failed-wake wedge (partial wakes + alternating storms) ──

@@ -20,7 +20,7 @@ Row grammar: `- <rule>.md — <fires-when trigger>`
 - code-style.md — you write/edit any `*.py` or Hydra config (lint, vectorized torch, checkpoint-per-phase, no dollar caps).
 - compute-backend-failover.md — you touch the backend router/dispatch/poll, or reason about GCP↔RunPod failover.
 - contrastive-negatives.md — a plan implants a behavior (marker/fact/refusal/trait) into a persona (contrastive negatives by default).
-- crash-fix-rounds.md — any retry/revision round, or a relaunch after a code-fix round (fix-engaged signal, stale-artifact disposition, relaunch ancestry, kill-before-relaunch).
+- crash-fix-rounds.md — any retry/revision round, or a relaunch after a code-fix round (fix-engaged signal, stale-artifact disposition, relaunch ancestry, kill-before-relaunch, per-leg out-roots).
 - critic-lens-reference.md — a critic reviews under its assigned lens (pointer-loaded single-lens span).
 - data-realism.md — a plan picks training/eval/probe data (strict 4-tier preference order; justify tier 3/4).
 - diff-size-budget.md — reading a branch-wide diff BODY (size first; >300 KB: round-scope it).
@@ -37,11 +37,11 @@ Row grammar: `- <rule>.md — <fires-when trigger>`
 - plan-compute-sizing.md — a plan sizes §9 compute (HBM, disk/ckpt retention, out-root mount binding, sentinel lanes, store/IO, RAM/RSS routing, wall-time floors incl. the MEASURED 1-cell pilot basis (fit loops AND draw batteries), p90 fences).
 - planner-section-reference.md — the planner writes a plan section (pointer-loaded from planner.md).
 - pod-config.md — pod SSH/MCP keeps failing or you touch the pod scripts/pods.conf (live-API vs pods.conf authority split).
-- pod-side-reporting.md — writing pod-side dispatcher/sentinel/poller-facing code (incl. a dispatcher reading back its OWN sentinels — drain-rename tolerance, #1311), or (re)launching ANY detached pod/VM workload (pid-file rewrite), or pushing result commits.
+- pod-side-reporting.md — writing pod-side dispatcher/sentinel/poller-facing code (incl. a dispatcher reading back its OWN sentinels — drain-rename tolerance, #1311), or (re)launching ANY detached pod/VM workload (pid-file rewrite, log rotation), or pushing result commits.
 - replication-fidelity.md — the Goal replicates a published finding (match the paper's data + recipe FIRST; change only the tested variable).
 - research-project-structure.md — you write result artifacts / results index / queue (one source of truth per layer).
 - selection-symmetric-nulls.md — a headline max/argmax/top-k over a free axis vs a null band (inherit selection per draw or freeze held-out; band vs DV ceiling), or difference-vector legs sharing one SAMPLED baseline vs a noise-free null (disjoint halves, or a shared-B null).
-- trigger-dense-review.md — reviewing/reconciling a guard/security artifact or refusal corpus (findings by reference; verdict first; windowed reads).
+- trigger-dense-review.md — reviewing/reconciling a guard/security artifact or refusal corpus (findings by reference; verdict first; windowed reads), or composing a revision-round/bounce brief from such verdicts (#1413).
 - upload-policy.md — you write training/Hub/sweep code, or sequence phases around a regeneration-costly store (Hub-API verification, verify + staging-download transport retry, delete-after-eval persist, store-before-long-fit #825, quota-403 recovery, upload-wedge ladder).
 - vectorize-many-cell-fits.md — many-cell GD, dense fits (svd/eigh/lstsq/ridge), or a perm/bootstrap/null-draw battery over a fixed pool (VECTORIZE first; detached+checkpointed VM fits; Supersede contract incl. mid-run ≥2×-deviation + width re-eval).
 - workflow-fix-on-bug.md — any agent hits a bug from a gap in the workflow surface itself (emit a `workflow-fix-candidate`).

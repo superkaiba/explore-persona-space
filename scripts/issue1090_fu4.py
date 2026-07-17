@@ -343,6 +343,24 @@ class RoundSpec:
     # #1434 §10: the all-rung adapter upload IS the durable ladder record
     # (fu4/fu5 default False keeps selected+final only + declared discard).
     upload_all_rungs: bool = False
+    # ── #1434 positive-only round seams (defaults keep every prior round
+    # byte-identical) ──
+    # Fixed optimizer-step budget for NON-smoke training (i1434po: 75 —
+    # plan §2 item 3, matched steps vs the parent's 75-step ladder; the
+    # smoke clamp still wins under --smoke). None -> epochs-derived steps.
+    train_max_steps: int | None = None
+    # K1 expected mix composition (sorted counts_realized values). The po
+    # mix is parent-minus-negatives: 20 pos + 0 cn + 40 generic.
+    mix_composition: tuple[int, int, int] = EXPECTED_MIX_COMPOSITION
+    # Raw-completions bucket override ("" -> f"{data_prefix}/raw_completions").
+    # i1434po routes to issue1434_writingstyle/raw_completions/po (plan §10)
+    # so the reused parent buckets are never re-written in place.
+    raw_prefix: str = ""
+
+
+def raw_completions_prefix() -> str:
+    """The active round's raw-completions bucket (Upload Policy row)."""
+    return ROUND.raw_prefix or f"{ROUND.data_prefix}/raw_completions"
 
 
 ROUNDS: dict[str, RoundSpec] = {
@@ -526,10 +544,10 @@ def verify_fu4_mix(cfg: i1090.RunConfig, run: Fu4Run, manifest_sha: str | None) 
     rec["mix_layout"] = run.mix_layout
     if not cfg.smoke:
         counts = tuple(sorted(int(v) for v in rec["counts_realized"].values()))
-        if counts != tuple(sorted(EXPECTED_MIX_COMPOSITION)):
+        if counts != tuple(sorted(ROUND.mix_composition)):
             raise ValueError(
-                f"[fu4-K1] {run.run_id}: mix composition {rec['counts_realized']} != "
-                f"expected {EXPECTED_MIX_COMPOSITION} — refusing to train"
+                f"[{ROUND.name}-K1] {run.run_id}: mix composition {rec['counts_realized']} != "
+                f"expected {ROUND.mix_composition} — refusing to train"
             )
     if manifest_sha is not None and rec["train_mix_sha256"] != manifest_sha:
         raise ValueError(
@@ -638,6 +656,11 @@ def train_fu4_run(cfg: i1090.RunConfig, seams: i1090.Seams1090, run: Fu4Run, mix
     )
     if seams.train_clamp is not None:
         train_cfg = dataclasses.replace(seams.train_clamp(train_cfg), max_steps=FU4_SMOKE_MAX_STEPS)
+    elif ROUND.train_max_steps is not None:
+        # i1434po §2 item 3: matched OPTIMIZER STEPS (75) on the 60-row po mix
+        # — the SAME TrainLoraConfig.max_steps seam the smoke clamp exercises
+        # (HF semantics: max_steps > 0 overrides num_train_epochs).
+        train_cfg = dataclasses.replace(train_cfg, max_steps=ROUND.train_max_steps)
     adapter_dir, loss = train_lora(
         DEFAULT_BASE_MODEL,
         str(run_root / "mix" / "train_mix.jsonl"),
@@ -648,6 +671,14 @@ def train_fu4_run(cfg: i1090.RunConfig, seams: i1090.Seams1090, run: Fu4Run, mix
     ckpts = fu2.enumerate_ckpt_rungs(adapter_dir)
     realized = sorted(ckpts)
     expected_rungs, expected_total = fu4_expected_rungs(int(mix_rec["n_rows"]))
+    if ROUND.train_max_steps is not None:
+        # i1434po §4 D2': fu4_expected_rungs is epochs-keyed (60 rows -> 60),
+        # but the schedule realizes train_max_steps (75) — override the build
+        # record + the ladder-complete assert so neither goes stale.
+        expected_total = int(ROUND.train_max_steps)
+        expected_rungs = sorted(
+            set(range(FU4_SAVE_STEPS, expected_total + 1, FU4_SAVE_STEPS)) | {expected_total}
+        )
     if not cfg.smoke and max(realized) < expected_total:
         raise ValueError(
             f"[fu4-train] {run.run_id}: ladder incomplete — realized rungs {realized} "
@@ -1109,13 +1140,13 @@ def upload_fu4_run(cfg: i1090.RunConfig, seams: i1090.Seams1090, run: Fu4Run, re
         run_root / "rate",
         i1090.HF_DATA_REPO,
         "dataset",
-        f"{ROUND.data_prefix}/raw_completions/rate/{run.run_id}",
+        f"{raw_completions_prefix()}/rate/{run.run_id}",
     )
     _up(
         run_root / "tier2",
         i1090.HF_DATA_REPO,
         "dataset",
-        f"{ROUND.data_prefix}/raw_completions/tier2/{run.run_id}",
+        f"{raw_completions_prefix()}/tier2/{run.run_id}",
     )
     for mp in ("base__" + run.cell_key, "trained__" + run.run_id):
         _up(

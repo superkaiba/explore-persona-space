@@ -3064,6 +3064,67 @@ def render_describe_argv(*, config: GcpConfig, name: str, zone: str) -> list[str
     return argv
 
 
+#: Appended to fetch_results ssh-failure logs on the IAP arm (#1454). The
+#: firewall prerequisite was verified satisfied live at plan time
+#: (default-allow-ssh 0.0.0.0/0 tcp:22 ⊇ 35.235.240.0/20); the IAM grant for
+#: the eps-router service account is unverifiable from this sandbox, so the
+#: hint says "verify the grant" rather than presuming it missing.
+_IAP_PREREQ_HINT = (
+    "IAP TCP forwarding needs ingress 35.235.240.0/20 tcp:22 (satisfied by "
+    "default-allow-ssh 0.0.0.0/0) AND requires the caller to hold "
+    "roles/iap.tunnelResourceAccessor — verify the grant for eps-router@...; "
+    "one-time owner grant documented in task #1454."
+)
+
+
+def classify_fetch_transport(describe: GcloudRunResult) -> tuple[str, str]:
+    """Classify ssh reachability for :meth:`GcpBackend.fetch_results` (#1454).
+
+    Takes ONE ``gcloud compute instances describe --format=json`` result and
+    returns ``(mode, detail)`` with ``mode`` in ``{"external-ip", "iap",
+    "skip"}``:
+
+    * describe rc != 0 (incl. not-found after a DELETE) → ``("skip",
+      <stderr tail>)`` — the instance is not describable, so no ssh
+      transport can reach it;
+    * ``status`` present and != ``"RUNNING"`` (TERMINATED, STOPPING,
+      PENDING, ...) → ``("skip", <status>)`` — ssh to a non-RUNNING
+      instance cannot succeed under ANY flag (the #1005 incident class:
+      the misleading "External IP address was not found → IAP fallback →
+      rc=255" was ssh against a TERMINATED instance);
+    * ``status == "RUNNING"`` with any ``networkInterfaces[].
+      accessConfigs[].natIP`` → ``("external-ip", <natIP>)`` — the legacy
+      transport works; argvs stay byte-identical;
+    * ``status == "RUNNING"`` with no ``natIP`` → ``("iap", ...)`` — the
+      genuinely IAP-only class; append ``--tunnel-through-iap``;
+    * ``status`` absent / unparseable JSON → ``("external-ip",
+      "indeterminate")`` — FAIL-OPEN to the legacy behavior (never worse
+      than the status quo when the probe is blind).
+    """
+    if describe.returncode != 0:
+        return ("skip", describe.stderr[-300:].strip() or f"describe rc={describe.returncode}")
+    try:
+        payload = json.loads(describe.stdout)
+    except (json.JSONDecodeError, TypeError):
+        return ("external-ip", "indeterminate")
+    if not isinstance(payload, dict):
+        return ("external-ip", "indeterminate")
+    status = payload.get("status")
+    if not isinstance(status, str) or not status:
+        return ("external-ip", "indeterminate")
+    if status != "RUNNING":
+        return ("skip", status)
+    interfaces = payload.get("networkInterfaces") or []
+    if isinstance(interfaces, list):
+        for iface in interfaces:
+            if not isinstance(iface, dict):
+                continue
+            for access in iface.get("accessConfigs") or []:
+                if isinstance(access, dict) and access.get("natIP"):
+                    return ("external-ip", str(access["natIP"]))
+    return ("iap", "RUNNING with no external IP")
+
+
 def region_for_zone(zone: str) -> str:
     """``us-central1-a`` → ``us-central1`` (GCE zones are ``<region>-<suffix>``)."""
     return zone.rsplit("-", 1)[0]
@@ -6235,6 +6296,53 @@ class GcpBackend(ComputeBackend):
             )
             return
 
+        # 0) Reachability probe (#1454) — ONE `instances describe` before any
+        # ssh attempt. Classifies the transport: `skip` (instance not
+        # RUNNING / not describable — no ssh flag can reach it; the #1005
+        # incident class), `iap` (RUNNING with no external IP — route the
+        # ssh calls through the IAP tunnel explicitly), `external-ip`
+        # (legacy transport, argvs byte-identical to the pre-#1454 shape).
+        # Indeterminate describe output FAILS OPEN to `external-ip`.
+        describe_res = self._run(
+            render_describe_argv(config=config, name=handle.pod_name, zone=zone)
+        )
+        transport_mode, transport_detail = classify_fetch_transport(describe_res)
+        if transport_mode == "skip":
+            logger.error(
+                "GcpBackend.fetch_results: instance %s is not reachable over ssh "
+                "(%s) — ssh to a non-RUNNING instance cannot succeed under any "
+                "flag, so all pulls are SKIPPED; confirm_artifacts will FAIL on "
+                "the missing sentinel (the intended surfacing). Crash forensics, "
+                "if any, live at HF issue%d_partial/%s/.",
+                handle.pod_name,
+                transport_detail,
+                issue,
+                attempt_id,
+            )
+            return
+        iap_hint = f" {_IAP_PREREQ_HINT}" if transport_mode == "iap" else ""
+
+        def _ssh_argv(command: str) -> list[str]:
+            """Build the fetch ssh argv, threading the #1454 transport flag.
+
+            One construction site for all 3 ssh calls (sentinel pull + both
+            tar pulls) so the transport decision cannot drift between them.
+            On the `iap` arm, `--tunnel-through-iap` is appended as the LAST
+            element; on `external-ip` the argv is byte-identical to the
+            legacy shape.
+            """
+            argv = _base_gcloud_argv(
+                config,
+                "compute",
+                "ssh",
+                handle.pod_name,
+                f"--command={command}",
+            )
+            argv += [f"--zone={zone}"]
+            if transport_mode == "iap":
+                argv.append("--tunnel-through-iap")
+            return argv
+
         # 1) MANDATORY — pull the completion sentinel back. The slice-2
         # verifier reads its expected sentinel path off
         # ``EXPECTED_ARTIFACTS_HANDLE_KEY``; we land the file at the
@@ -6249,23 +6357,17 @@ class GcpBackend(ComputeBackend):
         sentinel_abs = sentinel_path_for(config, issue, attempt_id)
         local_sentinel = Path(sentinel_abs)
         local_sentinel.parent.mkdir(parents=True, exist_ok=True)
-        ssh_sentinel = _base_gcloud_argv(
-            config,
-            "compute",
-            "ssh",
-            handle.pod_name,
-            f"--command=sudo -n cat {shlex.quote(sentinel_abs)}",
-        )
-        ssh_sentinel += [f"--zone={zone}"]
+        ssh_sentinel = _ssh_argv(f"sudo -n cat {shlex.quote(sentinel_abs)}")
         sentinel_res = self._run(ssh_sentinel)
         if sentinel_res.returncode != 0:
             logger.error(
                 "GcpBackend.fetch_results: sentinel pull (ssh sudo -n cat) from %s "
                 "failed (rc=%d); confirm_artifacts will FAIL on the missing sentinel. "
-                "stderr=%s",
+                "stderr=%s%s",
                 handle.pod_name,
                 sentinel_res.returncode,
                 sentinel_res.stderr[:500],
+                iap_hint,
             )
         else:
             local_sentinel.write_text(sentinel_res.stdout)
@@ -6310,23 +6412,17 @@ class GcpBackend(ComputeBackend):
             local_parent = repo_root / os.path.dirname(subdir)
             local_parent.mkdir(parents=True, exist_ok=True)
             remote_cmd = f"tar -c -C {remote_parent} {remote_leaf} | base64 -w0"
-            tar_argv = _base_gcloud_argv(
-                config,
-                "compute",
-                "ssh",
-                handle.pod_name,
-                f"--command=sudo -n bash -o pipefail -c {shlex.quote(remote_cmd)}",
-            )
-            tar_argv += [f"--zone={zone}"]
+            tar_argv = _ssh_argv(f"sudo -n bash -o pipefail -c {shlex.quote(remote_cmd)}")
             tar_res = self._run(tar_argv)
             if tar_res.returncode != 0:
                 logger.warning(
                     "GcpBackend.fetch_results: best-effort sudo tar of %s/%s failed "
-                    "(rc=%d); authoritative copy is on HF/WandB/git. stderr=%s",
+                    "(rc=%d); authoritative copy is on HF/WandB/git. stderr=%s%s",
                     workload_root,
                     subdir,
                     tar_res.returncode,
                     tar_res.stderr[:300],
+                    iap_hint,
                 )
                 continue
             # Decode + extract the captured base64 tar stream under

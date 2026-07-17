@@ -16642,6 +16642,215 @@ def test_fence_stop_bumps_wedge_day_counter_once_per_episode(
     assert _read_stalled_state_845(isolated_registry, 1632)["wedge_respawns_today"] == 2
 
 
+def _wedge_1453_ceiling_tail():
+    # #1453: the #1335 incident wake unit — one dequeue+prompt delivery, then
+    # a turn that dies in the synthetic context-ceiling api-error row. The
+    # error text 'Prompt is too long' is benign and committable; the row
+    # pins the measured message.model '<synthetic>' + apiErrorStatus 400
+    # shape (session ebff95d1, 2026-07-16).
+    dequeue = {"type": "queue-operation", "operation": "dequeue"}
+    prompt = {"type": "user", "message": {"role": "user", "content": "/issue-tick 1335"}}
+    ceiling = {
+        "type": "assistant",
+        "isApiErrorMessage": True,
+        "apiErrorStatus": 400,
+        "message": {
+            "role": "assistant",
+            "model": "<synthetic>",
+            "content": [{"type": "text", "text": "Prompt is too long"}],
+        },
+        "timestamp": "2026-07-16T12:48:52.777Z",
+    }
+    return [dequeue, prompt, ceiling]
+
+
+def test_wedge_context_ceiling_fires_on_fresh_self_report(
+    isolated_registry, monkeypatch, stalled_recorder
+):
+    # #1453 acceptance 1 + Goal — the both-paths arming pin: a FRESH
+    # self-report (age 300 s, well under STALLED_WINDOW_S) does NOT gate the
+    # context-ceiling trigger; a single ceiling turn escalates to the fence
+    # stop on the FIRST tick with [context-ceiling] in the note.
+    import autonomous_session_watch as asw
+
+    stops, spawns, _markers = stalled_recorder
+    _patch_stale_signals(monkeypatch, asw, status="running", age_s=300)  # FRESH
+    monkeypatch.setattr(asw, "_transcript_tail_rows", lambda pid, **_k: _wedge_1453_ceiling_tail())
+    now = 1_000_000.0
+
+    # Direct override call pins the reason label in the note text.
+    action, live, hits, note = asw._apply_prompt_wedge_override(
+        issue=1451,
+        entry={"happy_session_id": "sess-1451", "issue": 1451},
+        action="keep",
+        self_report_age=300.0,  # FRESH — the both-paths arming under test
+        respawn_eligible=True,
+        pids_by_sid={"sess-1451": 4242},
+        live_consecutive=2,
+        wedge_hits=0,
+        now=now,
+    )
+    assert action == "respawn" and live == 0 and hits == 1
+    assert note is not None and "[context-ceiling]" in note
+
+    # Full production pass: wedge -> respawn -> fence stop on tick 1.
+    _write_autonomous_entry(isolated_registry, 1452, "sess-1452", cap=24.0)
+    asw.stalled_session_pass(
+        dry_run=False,
+        threshold=2,
+        now=now,
+        daemon_reachable=True,
+        pids_by_sid={"sess-1452": 4242},
+    )
+    assert stops == ["sess-1452"]
+    assert spawns == []
+    state = _read_stalled_state_845(isolated_registry, 1452)
+    assert state["wedge_hits"] == 1
+
+
+def test_wedge_context_ceiling_respects_day_cap_and_belt(
+    isolated_registry, monkeypatch, stalled_recorder
+):
+    # #1453 acceptance 5: the trigger is bounded by the #1241 shared day cap
+    # AND the episode belt, and a [context-ceiling] fence stop bumps the
+    # shared counter by exactly 1 (mirrors
+    # test_fence_stop_bumps_wedge_day_counter_once_per_episode).
+    import autonomous_session_watch as asw
+
+    stops, _spawns, _markers = stalled_recorder
+    _patch_stale_signals(monkeypatch, asw, status="running", age_s=300)  # FRESH
+    now = 1_000_000.0
+    probes: list[int] = []
+
+    def _recording_tail(pid, **_k):
+        probes.append(pid)
+        return _wedge_1453_ceiling_tail()
+
+    monkeypatch.setattr(asw, "_transcript_tail_rows", _recording_tail)
+
+    # (a) #1241 shared day cap exhausted -> the ceiling family is disarmed
+    # (the tail may still be read while the independent #1209 budget is
+    # open, but nothing fires).
+    action, _live, hits, note = asw._apply_prompt_wedge_override(
+        issue=1453,
+        entry={"happy_session_id": "sess-1453", "issue": 1453},
+        action="keep",
+        self_report_age=300.0,
+        respawn_eligible=True,
+        pids_by_sid={"sess-1453": 4242},
+        live_consecutive=2,
+        wedge_hits=0,
+        now=now,
+        wedge_respawns_today=3,  # #1241 budget exhausted
+    )
+    assert action == "keep" and hits == 0 and note is None
+
+    # (b) episode belt exhausted -> BOTH budgets disarmed -> the transcript
+    # is never even read.
+    probes.clear()
+    action, _live, hits, note = asw._apply_prompt_wedge_override(
+        issue=1454,
+        entry={"happy_session_id": "sess-1454", "issue": 1454},
+        action="keep",
+        self_report_age=300.0,
+        respawn_eligible=True,
+        pids_by_sid={"sess-1454": 4242},
+        live_consecutive=2,
+        wedge_hits=0,
+        now=now,
+        respawn_count=asw.STALLED_MAX_RESPAWNS,  # belt binds
+    )
+    assert action == "keep" and hits == 0 and note is None
+    assert probes == []  # belt disarms everything before the 256 KB read
+
+    # (c) a [context-ceiling] fence stop bumps the #1241 SHARED counter by
+    # exactly 1 at stop-initiation; the #1209 budget is untouched.
+    _write_autonomous_entry(isolated_registry, 1455, "sess-1455", cap=24.0)
+    asw.stalled_session_pass(
+        dry_run=False,
+        threshold=2,
+        now=now,
+        daemon_reachable=True,
+        live_ids={"sess-1455"},
+        pids_by_sid={"sess-1455": 4242},
+    )
+    assert stops == ["sess-1455"]
+    state = _read_stalled_state_845(isolated_registry, 1455)
+    assert state["wedge_respawns_today"] == 1
+    assert state["wedge_respawn_day"] == _dead_silence_day_key(now)
+    assert state["dead_silence_respawns_today"] == 0  # #1209 budget untouched
+
+
+def test_wedge_context_ceiling_disable_knob_production_path(
+    isolated_registry, monkeypatch, stalled_recorder
+):
+    # #1453 acceptance 4 (the #1021 wiring-test pattern; mirrors
+    # test_wedge_api_error_env_kill_switch_disables_production_path):
+    # EPM_TICK_WEDGE_CONTEXT_CEILING=0 disables the trigger THROUGH THE
+    # PRODUCTION PASS — proving _apply_prompt_wedge_override actually calls
+    # _tick_wedge_min_context_ceiling() (an unwired call site running at
+    # the keyword default would pass the predicate tests and still fire
+    # here). The single ceiling turn is below every other lane's threshold,
+    # so no other kill switch is needed.
+    import autonomous_session_watch as asw
+
+    stops, spawns, _markers = stalled_recorder
+    _write_autonomous_entry(isolated_registry, 1456, "sess-1456", cap=24.0)
+    _patch_stale_signals(monkeypatch, asw, status="running", age_s=300)  # FRESH
+    monkeypatch.setattr(asw, "_transcript_tail_rows", lambda pid, **_k: _wedge_1453_ceiling_tail())
+    monkeypatch.setenv("EPM_TICK_WEDGE_CONTEXT_CEILING", "0")
+    now = 1_000_000.0
+
+    asw.stalled_session_pass(
+        dry_run=False,
+        threshold=2,
+        now=now,
+        daemon_reachable=True,
+        pids_by_sid={"sess-1456": 4242},
+    )
+    assert stops == [] and spawns == []  # kill switch: no wedge escalation
+    state = _read_stalled_state_845(isolated_registry, 1456)
+    assert state.get("wedge_hits", 0) == 0
+
+
+def test_wedge_context_ceiling_not_probed_under_full_turn_knob_rollback(
+    isolated_registry, monkeypatch, stalled_recorder
+):
+    # #1453 plan §11 D6 pin: the fresh-path lazy gate is deliberately
+    # UNTOUCHED — under the operator's full turn-lane rollback
+    # (EPM_TICK_WEDGE_MIN_FAILED_TURNS=0 + EPM_TICK_WEDGE_MIN_FAILED_TOTAL=0)
+    # a FRESH self-report probes NOTHING even with a ceiling tail present:
+    # the ceiling trigger degrades to the stale path in that corner config
+    # (mirrors test_wedge_fresh_path_kill_switches_restore_lazy_gate).
+    import autonomous_session_watch as asw
+
+    stops, spawns, _markers = stalled_recorder
+    _write_autonomous_entry(isolated_registry, 1457, "sess-1457", cap=24.0)
+    _patch_stale_signals(monkeypatch, asw, status="running", age_s=300)  # FRESH
+    probes: list[int] = []
+
+    def _recording_tail(pid, **_k):
+        probes.append(pid)
+        return _wedge_1453_ceiling_tail()
+
+    monkeypatch.setattr(asw, "_transcript_tail_rows", _recording_tail)
+    monkeypatch.setenv("EPM_TICK_WEDGE_MIN_FAILED_TURNS", "0")
+    monkeypatch.setenv("EPM_TICK_WEDGE_MIN_FAILED_TOTAL", "0")
+    now = 1_000_000.0
+
+    asw.stalled_session_pass(
+        dry_run=False,
+        threshold=2,
+        now=now,
+        daemon_reachable=True,
+        pids_by_sid={"sess-1457": 4242},
+    )
+    assert stops == [] and spawns == []
+    assert probes == []  # zero-probe hot path: the lazy gate held
+    state = _read_stalled_state_845(isolated_registry, 1457)
+    assert state.get("wedge_hits", 0) == 0
+
+
 def test_wedge_day_counter_survives_advancement_clear(
     isolated_registry, monkeypatch, stalled_recorder
 ):
