@@ -74,6 +74,7 @@ from explore_persona_space.backends.gcp import (
     _stale_named_instance_or_none,
     attempt_id_for,
     classify_create_failure,
+    classify_fetch_transport,
     expected_artifacts_declaration,
     instance_name_for,
     log_path_for,
@@ -6651,12 +6652,19 @@ def _b64_tar(members: dict[str, str]) -> str:
 
 
 def _fetch_fixture(
-    tmp_path: Path, monkeypatch, *, ssh_results: list[GcloudRunResult]
+    tmp_path: Path,
+    monkeypatch,
+    *,
+    ssh_results: list[GcloudRunResult],
+    describe_results: list[GcloudRunResult] | None = None,
 ) -> tuple[GcpBackend, _Runner, GcpConfig, Any, str]:
     """Shared rig for the fetch_results tests.
 
     Points ``vm_scratch_dir`` at tmp so the local sentinel write lands
     under tmp, and the best-effort dir pulls' mkdir at a tmp repo root.
+    ``describe_results`` scripts the #1454 reachability probe; the
+    ``_Runner`` default (``{}`` rc=0 — status-less, indeterminate) keeps
+    the pre-#1454 goldens on the fail-open legacy path.
     Returns (backend, runner, config, handle, sentinel_abs).
     """
     from explore_persona_space.backends.base import RunHandle
@@ -6666,7 +6674,7 @@ def _fetch_fixture(
         "explore_persona_space.backends.gcp._default_src_root_for_fetch",
         lambda: tmp_path / "repo",
     )
-    runner = _Runner(ssh_results=ssh_results)
+    runner = _Runner(ssh_results=ssh_results, describe_results=describe_results)
     backend = GcpBackend(config=config, runner=runner, marker_poster=lambda **_: None)
     handle = RunHandle(
         backend="gcp",
@@ -6861,6 +6869,278 @@ def test_fetch_results_missing_attempt_id_returns_without_gcloud_calls(
     handle.extra.pop("attempt_id")
     backend.fetch_results(handle)
     assert runner.calls == []
+
+
+# ---------------------------------------------------------------------------
+# issue #1454 — fetch_results reachability probe + IAP transport
+# ---------------------------------------------------------------------------
+
+
+_DESCRIBE_RUNNING_EXTERNAL_IP = json.dumps(
+    {
+        "status": "RUNNING",
+        "networkInterfaces": [{"accessConfigs": [{"natIP": "34.1.2.3", "type": "ONE_TO_ONE_NAT"}]}],
+    }
+)
+_DESCRIBE_RUNNING_NO_IP = json.dumps(
+    {"status": "RUNNING", "networkInterfaces": [{"name": "nic0", "stackType": "IPV4_ONLY"}]}
+)
+
+
+def _legacy_fetch_ssh_argvs(config: GcpConfig, sentinel_abs: str) -> list[list[str]]:
+    """The pre-#1454 fetch_results ssh argvs, HARDCODED.
+
+    Copied verbatim from the pre-change goldens' expectations
+    (``test_fetch_results_sentinel_pull_uses_ssh_sudo_cat`` +
+    ``test_fetch_results_best_effort_dirs_use_sudo_tar``) — deliberately
+    NOT re-derived through the ``_ssh_argv`` helper under test, so a
+    helper regression cannot self-certify.
+    """
+    workload_root = f"{config.vm_scratch_dir}/eps-issue-588"
+    eval_cmd = f"tar -c -C {shlex.quote(f'{workload_root}/eval_results')} issue_588 | base64 -w0"
+    fig_cmd = f"tar -c -C {shlex.quote(f'{workload_root}/figures')} issue_588 | base64 -w0"
+    return [
+        [
+            "gcloud",
+            "compute",
+            "ssh",
+            "eps-issue-588",
+            f"--command=sudo -n cat {shlex.quote(sentinel_abs)}",
+            f"--configuration={config.gcloud_config}",
+            f"--project={config.project}",
+            "--zone=us-central1-a",
+        ],
+        [
+            "gcloud",
+            "compute",
+            "ssh",
+            "eps-issue-588",
+            f"--command=sudo -n bash -o pipefail -c {shlex.quote(eval_cmd)}",
+            f"--configuration={config.gcloud_config}",
+            f"--project={config.project}",
+            "--zone=us-central1-a",
+        ],
+        [
+            "gcloud",
+            "compute",
+            "ssh",
+            "eps-issue-588",
+            f"--command=sudo -n bash -o pipefail -c {shlex.quote(fig_cmd)}",
+            f"--configuration={config.gcloud_config}",
+            f"--project={config.project}",
+            "--zone=us-central1-a",
+        ],
+    ]
+
+
+@pytest.mark.parametrize(
+    ("describe", "expected_mode", "expected_detail"),
+    [
+        # describe rc != 0 (incl. not-found post-DELETE) -> skip w/ stderr tail.
+        (GcloudRunResult(1, "", "ERROR: resource not found"), "skip", "ERROR: resource not found"),
+        # Non-RUNNING statuses -> skip w/ the status as detail.
+        (GcloudRunResult(0, json.dumps({"status": "TERMINATED"}), ""), "skip", "TERMINATED"),
+        (GcloudRunResult(0, json.dumps({"status": "STOPPING"}), ""), "skip", "STOPPING"),
+        (GcloudRunResult(0, json.dumps({"status": "PENDING"}), ""), "skip", "PENDING"),
+        # RUNNING with a natIP -> external-ip (legacy transport).
+        (GcloudRunResult(0, _DESCRIBE_RUNNING_EXTERNAL_IP, ""), "external-ip", "34.1.2.3"),
+        # RUNNING with interfaces but no natIP anywhere -> iap.
+        (GcloudRunResult(0, _DESCRIBE_RUNNING_NO_IP, ""), "iap", None),
+        # RUNNING, accessConfigs present but natIP key absent -> iap.
+        (
+            GcloudRunResult(
+                0,
+                json.dumps(
+                    {
+                        "status": "RUNNING",
+                        "networkInterfaces": [{"accessConfigs": [{"type": "ONE_TO_ONE_NAT"}]}],
+                    }
+                ),
+                "",
+            ),
+            "iap",
+            None,
+        ),
+        # RUNNING, networkInterfaces absent entirely -> iap.
+        (GcloudRunResult(0, json.dumps({"status": "RUNNING"}), ""), "iap", None),
+        # status absent ({}), or unparseable JSON -> indeterminate FAIL-OPEN
+        # to the legacy external-ip transport.
+        (GcloudRunResult(0, "{}", ""), "external-ip", "indeterminate"),
+        (GcloudRunResult(0, "not json at all", ""), "external-ip", "indeterminate"),
+    ],
+)
+def test_classify_fetch_transport_matrix(
+    describe: GcloudRunResult, expected_mode: str, expected_detail: str | None
+) -> None:
+    """Pure-function matrix over the #1454 reachability classifier."""
+    mode, detail = classify_fetch_transport(describe)
+    assert mode == expected_mode
+    assert isinstance(detail, str) and detail
+    if expected_detail is not None:
+        assert detail == expected_detail
+
+
+def test_fetch_results_terminated_instance_skips_all_ssh_pulls(
+    tmp_path: Path, monkeypatch, caplog
+) -> None:
+    """A TERMINATED instance (the #1005 incident class) skips ALL ssh pulls.
+
+    ssh to a non-RUNNING instance cannot succeed under any flag; today's
+    behavior burned 3 futile gcloud ssh attempts behind a misleading IAP
+    notice. The skip log must preserve the confirm_artifacts surfacing and
+    name the crash-forensics HF prefix.
+    """
+    import logging
+
+    backend, runner, _config, handle, sentinel_abs = _fetch_fixture(
+        tmp_path,
+        monkeypatch,
+        ssh_results=[],
+        describe_results=[GcloudRunResult(0, json.dumps({"status": "TERMINATED"}), "")],
+    )
+    with caplog.at_level(logging.ERROR):
+        backend.fetch_results(handle)  # must not raise
+
+    describe_calls = [a for a in runner.calls if "describe" in a and "instances" in a]
+    assert len(describe_calls) == 1
+    ssh_calls = [a for a in runner.calls if "ssh" in a]
+    assert ssh_calls == []  # zero futile ssh attempts
+    assert not Path(sentinel_abs).exists()
+    assert "TERMINATED" in caplog.text
+    assert "confirm_artifacts will FAIL" in caplog.text
+    assert "issue588_partial/att-001/" in caplog.text
+
+
+def test_fetch_results_running_no_external_ip_appends_tunnel_through_iap(
+    tmp_path: Path, monkeypatch
+) -> None:
+    """RUNNING with no natIP -> all 3 ssh argvs end with --tunnel-through-iap.
+
+    Everything BEFORE the flag stays legacy-exact (the hardcoded pre-change
+    argvs), so the IAP arm changes the transport and nothing else.
+    """
+    sentinel_text = '{"phase": "done", "issue": 588, "attempt_id": "att-001"}\n'
+    backend, runner, config, handle, sentinel_abs = _fetch_fixture(
+        tmp_path,
+        monkeypatch,
+        ssh_results=[
+            GcloudRunResult(0, sentinel_text, ""),
+            GcloudRunResult(0, _b64_tar({"eval_results/issue_588/x.json": "{}"}), ""),
+            GcloudRunResult(0, _b64_tar({"figures/issue_588/y.png": "png"}), ""),
+        ],
+        describe_results=[GcloudRunResult(0, _DESCRIBE_RUNNING_NO_IP, "")],
+    )
+    backend.fetch_results(handle)
+
+    ssh_calls = [a for a in runner.calls if "ssh" in a]
+    assert len(ssh_calls) == 3
+    legacy = _legacy_fetch_ssh_argvs(config, sentinel_abs)
+    for got, want_legacy in zip(ssh_calls, legacy, strict=True):
+        assert got[-1] == "--tunnel-through-iap"
+        assert got[:-1] == want_legacy
+    # The pull itself still works end-to-end on the IAP arm.
+    assert Path(sentinel_abs).read_text() == sentinel_text
+
+
+def test_fetch_results_running_with_external_ip_keeps_legacy_ssh_argv(
+    tmp_path: Path, monkeypatch
+) -> None:
+    """RUNNING with a natIP -> the 3 ssh argvs are BYTE-EQUAL to the
+    pre-#1454 goldens (zero healthy-path change); no IAP flag anywhere."""
+    sentinel_text = '{"phase": "done", "issue": 588, "attempt_id": "att-001"}\n'
+    backend, runner, config, handle, sentinel_abs = _fetch_fixture(
+        tmp_path,
+        monkeypatch,
+        ssh_results=[
+            GcloudRunResult(0, sentinel_text, ""),
+            GcloudRunResult(0, _b64_tar({"eval_results/issue_588/x.json": "{}"}), ""),
+            GcloudRunResult(0, _b64_tar({"figures/issue_588/y.png": "png"}), ""),
+        ],
+        describe_results=[GcloudRunResult(0, _DESCRIBE_RUNNING_EXTERNAL_IP, "")],
+    )
+    backend.fetch_results(handle)
+
+    ssh_calls = [a for a in runner.calls if "ssh" in a]
+    assert ssh_calls == _legacy_fetch_ssh_argvs(config, sentinel_abs)
+    assert not any("--tunnel-through-iap" in a for a in ssh_calls)
+    assert Path(sentinel_abs).read_text() == sentinel_text
+
+
+def test_fetch_results_describe_failure_skips_and_continues(
+    tmp_path: Path, monkeypatch, caplog
+) -> None:
+    """A failed describe probe (rc=1) skips the ssh pulls and does NOT raise.
+
+    The pull is best-effort by contract; an un-describable instance (e.g.
+    already DELETEd) cannot be reached by any ssh transport.
+    """
+    import logging
+
+    backend, runner, _config, handle, _sentinel_abs = _fetch_fixture(
+        tmp_path,
+        monkeypatch,
+        ssh_results=[],
+        describe_results=[GcloudRunResult(1, "", "ERROR: resource not found")],
+    )
+    with caplog.at_level(logging.ERROR):
+        backend.fetch_results(handle)  # must not raise
+
+    ssh_calls = [a for a in runner.calls if "ssh" in a]
+    assert ssh_calls == []
+    assert "not reachable" in caplog.text
+    assert "resource not found" in caplog.text
+
+
+def test_fetch_results_indeterminate_describe_falls_open_to_legacy_argv(
+    tmp_path: Path, monkeypatch
+) -> None:
+    """The _Runner default describe ({} rc=0, status-less) FAILS OPEN: 3 ssh
+    pulls with the legacy argvs and no IAP flag — the same fail-open that
+    keeps the 5 pre-existing fetch_results goldens green unchanged."""
+    sentinel_text = '{"phase": "done", "issue": 588, "attempt_id": "att-001"}\n'
+    backend, runner, config, handle, sentinel_abs = _fetch_fixture(
+        tmp_path,
+        monkeypatch,
+        ssh_results=[
+            GcloudRunResult(0, sentinel_text, ""),
+            GcloudRunResult(0, _b64_tar({"eval_results/issue_588/x.json": "{}"}), ""),
+            GcloudRunResult(0, _b64_tar({"figures/issue_588/y.png": "png"}), ""),
+        ],
+        # No describe_results scripted -> the rig default {} rc=0.
+    )
+    backend.fetch_results(handle)
+
+    ssh_calls = [a for a in runner.calls if "ssh" in a]
+    assert ssh_calls == _legacy_fetch_ssh_argvs(config, sentinel_abs)
+    assert not any("--tunnel-through-iap" in a for a in ssh_calls)
+
+
+def test_fetch_results_iap_pull_failure_logs_prerequisite_hint(
+    tmp_path: Path, monkeypatch, caplog
+) -> None:
+    """On the IAP arm, a failed ssh pull names the IAP prerequisites.
+
+    The rc=255 today carries only gcloud's bare IAP-fallback noise; the
+    extended log must name roles/iap.tunnelResourceAccessor so the operator
+    can verify the one-time grant instead of re-debugging transport.
+    """
+    import logging
+
+    backend, _runner, _config, handle, _sentinel_abs = _fetch_fixture(
+        tmp_path,
+        monkeypatch,
+        ssh_results=[
+            GcloudRunResult(255, "", "ERROR: (gcloud.compute.ssh) [/usr/bin/ssh] exited"),
+            GcloudRunResult(255, "", "ERROR: (gcloud.compute.ssh) [/usr/bin/ssh] exited"),
+            GcloudRunResult(255, "", "ERROR: (gcloud.compute.ssh) [/usr/bin/ssh] exited"),
+        ],
+        describe_results=[GcloudRunResult(0, _DESCRIBE_RUNNING_NO_IP, "")],
+    )
+    with caplog.at_level(logging.WARNING):
+        backend.fetch_results(handle)  # must not raise
+
+    assert "iap.tunnelResourceAccessor" in caplog.text
+    assert "35.235.240.0/20" in caplog.text
 
 
 # ---------------------------------------------------------------------------
