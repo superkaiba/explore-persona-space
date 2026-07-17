@@ -1,0 +1,56 @@
+{
+  "cell_id": "gen1c/prefix/m685_05_formal/L20/a1",
+  "phase": "phase1c_grid",
+  "pair_id": "m685_05_formal",
+  "context": {
+    "system": null,
+    "user": "How do I make a good cup of coffee?"
+  },
+  "layer": 20,
+  "alpha": 1.0,
+  "all_positions": false,
+  "delta_key": [
+    "pair",
+    "m685_05_formal",
+    "prefix"
+  ],
+  "n_draws": 10,
+  "seed_base": 42,
+  "temperature": 1.0,
+  "max_new_tokens": 1024,
+  "extraction_arm": "prefix",
+  "coherence_flags": [
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true
+  ],
+  "n_coherent": 10,
+  "passes_gate": true,
+  "gen_s_per_sample": 3.771756660624999,
+  "chunk_members": [
+    "gen1c/prefix/cross_09_sycophancy_to_hallucination/L20/a1",
+    "gen1c/prefix/cross_10_hallucination_to_evil/L20/a1",
+    "gen1c/prefix/cross_11_hallucination_to_sycophancy/L20/a1",
+    "gen1c/prefix/cross_12_evil_to_sycophancy/L20/a1",
+    "gen1c/prefix/m685_05_formal/L20/a1",
+    "gen1c/prefix/m685_06_villain/L20/a1",
+    "gen1c/prefix/m685_07_medical_doctor/L20/a1",
+    "gen1c/prefix/m685_08_french_person/L20/a1"
+  ],
+  "completions_file": "raw_completions/gen1c/prefix/m685_05_formal/L20/a1.json",
+  "repro": {
+    "git_commit": "a369b06f46dde187e268a8f5f1b0c8fe7ae99a94",
+    "torch": "2.8.0+cu128",
+    "transformers": "4.57.6",
+    "model_id": "Qwen/Qwen2.5-7B-Instruct",
+    "tiny": false,
+    "timestamp": "2026-07-16T19:27:18.636916+00:00"
+  }
+}

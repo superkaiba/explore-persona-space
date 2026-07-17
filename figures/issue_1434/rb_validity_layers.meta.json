@@ -1,0 +1,551 @@
+{
+  "commit": "f9f1002797",
+  "created": "2026-07-17T08:17:04Z",
+  "figsize": [
+    13.0,
+    4.6
+  ],
+  "points": [
+    {
+      "layer": 0.0,
+      "Spearman rho (projection vs judged delta)": 0.10307987144434685,
+      "series": "observed signed rho",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 1.0,
+      "Spearman rho (projection vs judged delta)": 0.10307987144434685,
+      "series": "observed signed rho",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 2.0,
+      "Spearman rho (projection vs judged delta)": 0.24413653763134782,
+      "series": "observed signed rho",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 3.0,
+      "Spearman rho (projection vs judged delta)": 0.08680410226892367,
+      "series": "observed signed rho",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 4.0,
+      "Spearman rho (projection vs judged delta)": 0.08680410226892367,
+      "series": "observed signed rho",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 5.0,
+      "Spearman rho (projection vs judged delta)": 0.24413653763134782,
+      "series": "observed signed rho",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 6.0,
+      "Spearman rho (projection vs judged delta)": 0.08680410226892367,
+      "series": "observed signed rho",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 7.0,
+      "Spearman rho (projection vs judged delta)": 0.08680410226892367,
+      "series": "observed signed rho",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 8.0,
+      "Spearman rho (projection vs judged delta)": 0.08680410226892367,
+      "series": "observed signed rho",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 9.0,
+      "Spearman rho (projection vs judged delta)": 0.08680410226892367,
+      "series": "observed signed rho",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 10.0,
+      "Spearman rho (projection vs judged delta)": 0.08680410226892367,
+      "series": "observed signed rho",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 11.0,
+      "Spearman rho (projection vs judged delta)": 0.08680410226892367,
+      "series": "observed signed rho",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 12.0,
+      "Spearman rho (projection vs judged delta)": 0.08680410226892367,
+      "series": "observed signed rho",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 13.0,
+      "Spearman rho (projection vs judged delta)": 0.08680410226892367,
+      "series": "observed signed rho",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 14.0,
+      "Spearman rho (projection vs judged delta)": 0.08680410226892367,
+      "series": "observed signed rho",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 15.0,
+      "Spearman rho (projection vs judged delta)": 0.08680410226892367,
+      "series": "observed signed rho",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 16.0,
+      "Spearman rho (projection vs judged delta)": 0.08680410226892367,
+      "series": "observed signed rho",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 17.0,
+      "Spearman rho (projection vs judged delta)": 0.08680410226892367,
+      "series": "observed signed rho",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 18.0,
+      "Spearman rho (projection vs judged delta)": 0.08680410226892367,
+      "series": "observed signed rho",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 19.0,
+      "Spearman rho (projection vs judged delta)": 0.08680410226892367,
+      "series": "observed signed rho",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 20.0,
+      "Spearman rho (projection vs judged delta)": 0.08680410226892367,
+      "series": "observed signed rho",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 21.0,
+      "Spearman rho (projection vs judged delta)": 0.08680410226892367,
+      "series": "observed signed rho",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 22.0,
+      "Spearman rho (projection vs judged delta)": 0.08680410226892367,
+      "series": "observed signed rho",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 23.0,
+      "Spearman rho (projection vs judged delta)": 0.08680410226892367,
+      "series": "observed signed rho",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 24.0,
+      "Spearman rho (projection vs judged delta)": 0.08680410226892367,
+      "series": "observed signed rho",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 25.0,
+      "Spearman rho (projection vs judged delta)": 0.08680410226892367,
+      "series": "observed signed rho",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 26.0,
+      "Spearman rho (projection vs judged delta)": 0.08680410226892367,
+      "series": "observed signed rho",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 27.0,
+      "Spearman rho (projection vs judged delta)": 0.12478089701157777,
+      "series": "observed signed rho",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 0.0,
+      "Spearman rho (projection vs judged delta)": 0.47742256247908016,
+      "series": "random-direction null p97.5 = 0.48 (max-over-layer)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 1.0,
+      "Spearman rho (projection vs judged delta)": 0.47742256247908016,
+      "series": "random-direction null p97.5 = 0.48 (max-over-layer)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 0.0,
+      "Spearman rho (projection vs judged delta)": 0.5289624982012536,
+      "series": "label-shuffle null p97.5 = 0.53",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 1.0,
+      "Spearman rho (projection vs judged delta)": 0.5289624982012536,
+      "series": "label-shuffle null p97.5 = 0.53",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 19.0,
+      "Spearman rho (projection vs judged delta)": 0.08680410226892367,
+      "series": "fixed layer-19 companion",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 0.0,
+      "y": -0.8231186002975568,
+      "series": "observed signed rho",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 1.0,
+      "y": -0.6339764538462034,
+      "series": "observed signed rho",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 2.0,
+      "y": 0.08756580854229327,
+      "series": "observed signed rho",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 3.0,
+      "y": 0.2802105873353385,
+      "series": "observed signed rho",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 4.0,
+      "y": 0.19614741113473694,
+      "series": "observed signed rho",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 5.0,
+      "y": 0.10507897025075193,
+      "series": "observed signed rho",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 6.0,
+      "y": 0.21716320518488733,
+      "series": "observed signed rho",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 7.0,
+      "y": 0.1015763379090602,
+      "series": "observed signed rho",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 8.0,
+      "y": 0.14360792600936098,
+      "series": "observed signed rho",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 9.0,
+      "y": 0.02802105873353385,
+      "series": "observed signed rho",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 10.0,
+      "y": 0.09807370556736847,
+      "series": "observed signed rho",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 11.0,
+      "y": 0.13310002898428577,
+      "series": "observed signed rho",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 12.0,
+      "y": 0.12959739664259406,
+      "series": "observed signed rho",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 13.0,
+      "y": 0.25919479328518813,
+      "series": "observed signed rho",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 14.0,
+      "y": 0.12959739664259406,
+      "series": "observed signed rho",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 15.0,
+      "y": 0.18563951410966176,
+      "series": "observed signed rho",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 16.0,
+      "y": 0.18563951410966176,
+      "series": "observed signed rho",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 17.0,
+      "y": 0.18563951410966176,
+      "series": "observed signed rho",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 18.0,
+      "y": 0.2697026903102633,
+      "series": "observed signed rho",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 19.0,
+      "y": 0.23117373455165424,
+      "series": "observed signed rho",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 20.0,
+      "y": 0.26620005796857155,
+      "series": "observed signed rho",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 21.0,
+      "y": 0.26620005796857155,
+      "series": "observed signed rho",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 22.0,
+      "y": 0.26620005796857155,
+      "series": "observed signed rho",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 23.0,
+      "y": 0.26620005796857155,
+      "series": "observed signed rho",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 24.0,
+      "y": 0.24168163157672945,
+      "series": "observed signed rho",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 25.0,
+      "y": 0.3152369107522558,
+      "series": "observed signed rho",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 26.0,
+      "y": 0.1576184553761279,
+      "series": "observed signed rho",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 27.0,
+      "y": 0.09106844088398501,
+      "series": "observed signed rho",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 0.0,
+      "y": 0.9143621727986264,
+      "series": "random-direction null p97.5 = 0.91 (max-over-layer)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 1.0,
+      "y": 0.9143621727986264,
+      "series": "random-direction null p97.5 = 0.91 (max-over-layer)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 0.0,
+      "y": 0.7845896445389478,
+      "series": "label-shuffle null p97.5 = 0.78",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 1.0,
+      "y": 0.7845896445389478,
+      "series": "label-shuffle null p97.5 = 0.78",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 19.0,
+      "y": 0.23117373455165424,
+      "series": "fixed layer-19 companion",
+      "_kind": "line",
+      "_group": 7
+    }
+  ],
+  "n_series": 8,
+  "total_points": 66,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [
+      "r_B projection vs judged deltas per layer: observed rho never clears the honest random-direction band on either grid"
+    ],
+    "axes": [
+      {
+        "title_left": "leakage grid (24 cells): shared-text response-average arm",
+        "xlabel": "layer",
+        "ylabel": "Spearman rho (projection vs judged delta)",
+        "legend_labels": [
+          "observed signed rho",
+          "random-direction null p97.5 = 0.48 (max-over-layer)",
+          "label-shuffle null p97.5 = 0.53",
+          "fixed layer-19 companion"
+        ],
+        "xticklabels": [
+          "\u22125",
+          "0",
+          "5",
+          "10",
+          "15",
+          "20",
+          "25",
+          "30"
+        ],
+        "yticklabels": [
+          "\u22121.25",
+          "\u22121.00",
+          "\u22120.75",
+          "\u22120.50",
+          "\u22120.25",
+          "0.00",
+          "0.25",
+          "0.50",
+          "0.75",
+          "1.00",
+          "1.25"
+        ]
+      },
+      {
+        "title_left": "install grid (12 cells): shared-text response-average arm",
+        "xlabel": "layer",
+        "xticklabels": [
+          "\u22125",
+          "0",
+          "5",
+          "10",
+          "15",
+          "20",
+          "25",
+          "30"
+        ],
+        "yticklabels": [
+          "\u22121.25",
+          "\u22121.00",
+          "\u22120.75",
+          "\u22120.50",
+          "\u22120.25",
+          "0.00",
+          "0.25",
+          "0.50",
+          "0.75",
+          "1.00",
+          "1.25"
+        ]
+      }
+    ],
+    "series": [
+      "observed signed rho",
+      "random-direction null p97.5 = 0.48 (max-over-layer)",
+      "label-shuffle null p97.5 = 0.53",
+      "fixed layer-19 companion",
+      "random-direction null p97.5 = 0.91 (max-over-layer)",
+      "label-shuffle null p97.5 = 0.78"
+    ]
+  }
+}
