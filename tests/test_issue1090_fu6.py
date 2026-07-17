@@ -742,3 +742,57 @@ def test_tiny_real_cpu_reduce_e2e(qwen_tokenizer, tmp_path, monkeypatch):
         (out_root / "analysis_tensors" / "randnorm_null__context.json").read_text()
     )
     assert len(randnorm_matrix["null_draws"]) == 4
+
+
+# ── epm:failure v5 regression: subprocess phase entry resolves the FULL panel ─
+
+
+def test_capture_panel_contexts_resolve_in_fresh_subprocess():
+    """phase_dispatch runs capture-organisms as a SUBPROCESS, so context
+    registration must be unconditional at phase entry: a FRESH child process
+    with NO parent-side registration must resolve the FULL production capture
+    panel — including the panel-member-only ids neg_sp_police / neg_sp_ph4 —
+    through the exact crash seam (_panel_specs -> fu3w.ensure_context).
+    Fails pre-fix with ValueError: unknown context 'neg_sp_police'."""
+    import subprocess
+
+    child = (
+        "import sys\n"
+        f"sys.path.insert(0, {str(REPO_ROOT / 'scripts')!r})\n"
+        "from pathlib import Path\n"
+        "import issue1090_fu6 as fu6\n"
+        "cfg = fu6.Cfg(smoke=False, manifest_path=None, manifest_out=None,\n"
+        "              out_root=Path('unused'), sentinel_dir=Path('unused'))\n"
+        "specs = fu6._panel_specs(cfg)\n"
+        "assert set(specs) == set(fu6.CAPTURE_PANEL_IDS), sorted(specs)\n"
+        "assert specs['neg_sp_police']['system'], specs['neg_sp_police']\n"
+        "assert specs['neg_sp_ph4']['system'], specs['neg_sp_ph4']\n"
+        "assert specs['wildchat_prefix_real545']['prior_turns'], 'conv prefix empty'\n"
+        "print('SEAM-OK', len(specs))\n"
+    )
+    proc = subprocess.run(
+        [sys.executable, "-c", child], capture_output=True, text=True, timeout=600
+    )
+    assert proc.returncode == 0, (proc.stdout[-500:], proc.stderr[-2000:])
+    assert "SEAM-OK 6" in proc.stdout, proc.stdout[-500:]
+
+
+def test_register_capture_contexts_idempotent_and_foreign_binding_refusal():
+    """Same-process pins: double-registration is a no-op (idempotent), and a
+    FOREIGN binding under a capture-panel id is refused loudly."""
+    from explore_persona_space.artifacts.context import CONTEXTS, Context
+
+    fu6._register_capture_contexts()
+    before = {k: CONTEXTS[k] for k in ("neg_sp_police", "neg_sp_ph4")}
+    fu6._register_capture_contexts()  # idempotent — same objects, no raise
+    assert {k: CONTEXTS[k] for k in before} == before
+    foreign = Context(
+        context_id="neg_sp_police", kind="persona", family="foreign", system="not the panel"
+    )
+    old = CONTEXTS["neg_sp_police"]
+    try:
+        CONTEXTS["neg_sp_police"] = foreign
+        with pytest.raises(ValueError, match="refusing to shadow"):
+            fu6._register_capture_contexts()
+    finally:
+        CONTEXTS["neg_sp_police"] = old

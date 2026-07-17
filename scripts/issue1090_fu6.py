@@ -1061,10 +1061,52 @@ def phase_capture_rollouts(cfg: Cfg) -> dict:
 # ── P1c: organism shift captures (GPU) ────────────────────────────────────────
 
 
+def _register_capture_contexts() -> None:
+    """Idempotent CONTEXTS registration for EVERY capture-panel id — called
+    UNCONDITIONALLY at each subprocess phase entry that resolves contexts.
+
+    epm:failure v5 root cause: ``phase_dispatch`` runs ``capture-organisms``
+    as a fresh SUBPROCESS, so module-level registry state never crosses the
+    process boundary — and the held-out persona panel members
+    (``neg_sp_police`` / ``neg_sp_ph4``) exist ONLY as
+    ``artifacts.negatives.default_panel()`` members, registered in NO process
+    (the smoke's SMOKE_PANEL_IDS slice excludes them, so only the production
+    panel ever reached the ``ensure_context`` seam).
+    ``register_fu3_contexts()`` covers the wildchat conv prefix (idempotent:
+    early-return on the existing wildchat binding, foreign-binding refusal);
+    the panel members register here with the same foreign-binding refusal via
+    frozen-dataclass equality. Regression pin:
+    tests/test_issue1090_fu6.py::test_capture_panel_contexts_resolve_in_fresh_subprocess.
+    """
+    import issue1090_fu3_cells as fu3_cells
+
+    from explore_persona_space.artifacts import negatives as neg_mod
+    from explore_persona_space.artifacts.context import CONTEXTS
+
+    fu3_cells.register_fu3_contexts()
+    newly: list[str] = []
+    for member in neg_mod.default_panel():
+        ctx = member.to_context()
+        if ctx.context_id not in CAPTURE_PANEL_IDS:
+            continue
+        existing = CONTEXTS.get(ctx.context_id)
+        if existing is None:
+            CONTEXTS[ctx.context_id] = ctx
+            newly.append(ctx.context_id)
+        elif existing != ctx:
+            raise ValueError(
+                f"CONTEXTS[{ctx.context_id!r}] is already bound to a different context "
+                f"(family={existing.family!r}); refusing to shadow the capture-panel binding"
+            )
+    if newly:
+        logger.info("[fu6-contexts] registered capture-panel contexts: %s", sorted(newly))
+
+
 def _panel_specs(cfg: Cfg) -> dict[str, dict]:
     """{context_id: {system, user_wrap, prior_turns}} for the capture panel."""
     import issue1090_fu3_worker as fu3w
 
+    _register_capture_contexts()
     specs: dict[str, dict] = {}
     for ctx_id in cfg.panel_ids:
         ctx = fu3w.ensure_context(ctx_id, BEHAVIOR)
@@ -1362,6 +1404,9 @@ def phase_capture_organisms(cfg: Cfg) -> dict:
     GPU0 P1a->P1b stream); the first organism is the pilot-gate timing unit.
     """
     _phase("p1c_capture_organisms")
+    # SUBPROCESS phase entry: registry state never crosses the process
+    # boundary — register unconditionally here (epm:failure v5; idempotent).
+    _register_capture_contexts()
     organisms = cfg.manifest()["organisms"]
     if cfg.organisms_filter:
         organisms = [s for s in organisms if s["organism_id"] in cfg.organisms_filter]
