@@ -1,0 +1,50 @@
+{
+  "pair_id": "m685_00_sycophancy",
+  "layer": 20,
+  "alpha": 1.0,
+  "n_draws": 10,
+  "max_new_tokens": 1024,
+  "pilot_batch": 8,
+  "n_samples": 160,
+  "timings_s": {
+    "std": 187.02548829,
+    "allpos": 182.49282191699996
+  },
+  "coherence_flags": {
+    "std": [
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true
+    ],
+    "allpos": [
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true
+    ]
+  },
+  "s_per_sample": 2.30948943879375,
+  "threshold_s_per_sample": 4.7,
+  "sweep_allowed": true,
+  "repro": {
+    "git_commit": "a369b06f46dde187e268a8f5f1b0c8fe7ae99a94",
+    "torch": "2.8.0+cu128",
+    "transformers": "4.57.6",
+    "model_id": "Qwen/Qwen2.5-7B-Instruct",
+    "tiny": false,
+    "timestamp": "2026-07-16T17:30:54.933074+00:00"
+  }
+}

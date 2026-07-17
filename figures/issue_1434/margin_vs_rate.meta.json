@@ -1,0 +1,55 @@
+{
+  "commit": "3513b90ccc",
+  "created": "2026-07-17T08:56:10Z",
+  "figsize": [
+    7.5,
+    5.5
+  ],
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "The fixed-pool margin ANTI-correlates with the judged install rate\n(Spearman rho = -0.72, p = 0.009, n = 12) - fails the rate-tracking validation",
+        "xlabel": "teacher-forced fixed-pool margin delta (trained - base, source context, nats)",
+        "ylabel": "install delta (judged rate)",
+        "annotations": [
+          "bare-lr1e4",
+          "bare-lr1e5",
+          "bare-lr3e5",
+          "wildchat-lr1e4",
+          "wildchat-lr1e5",
+          "wildchat-lr3e5",
+          "icl-lr1e4",
+          "icl-lr1e5",
+          "icl-lr3e5",
+          "pers-lr1e4",
+          "pers-lr1e5",
+          "pers-lr3e5"
+        ],
+        "xticklabels": [
+          "\u22120.9",
+          "\u22120.8",
+          "\u22120.7",
+          "\u22120.6",
+          "\u22120.5",
+          "\u22120.4",
+          "\u22120.3",
+          "\u22120.2",
+          "\u22120.1",
+          "0.0",
+          "0.1"
+        ],
+        "yticklabels": [
+          "0.5",
+          "0.6",
+          "0.7",
+          "0.8",
+          "0.9",
+          "1.0",
+          "1.1"
+        ]
+      }
+    ]
+  }
+}

@@ -1,0 +1,1038 @@
+{
+  "commit": "3513b90ccc",
+  "created": "2026-07-17T08:56:13Z",
+  "figsize": [
+    15.0,
+    4.0
+  ],
+  "points": [
+    {
+      "x": 2.5,
+      "completions": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 7.5,
+      "completions": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 12.5,
+      "completions": 10.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 17.5,
+      "completions": 152.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 22.5,
+      "completions": 21.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 27.5,
+      "completions": 15.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 32.5,
+      "completions": 1.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 37.5,
+      "completions": 1.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 42.5,
+      "completions": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 47.5,
+      "completions": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 52.5,
+      "completions": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 57.5,
+      "completions": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 62.5,
+      "completions": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 67.5,
+      "completions": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 72.5,
+      "completions": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 77.5,
+      "completions": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 82.5,
+      "completions": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 87.5,
+      "completions": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 92.5,
+      "completions": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 97.5,
+      "completions": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 2.5,
+      "completions": 0.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 7.5,
+      "completions": 0.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 12.5,
+      "completions": 0.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 17.5,
+      "completions": 7.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 22.5,
+      "completions": 4.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 27.5,
+      "completions": 14.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 32.5,
+      "completions": 4.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 37.5,
+      "completions": 10.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 42.5,
+      "completions": 11.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 47.5,
+      "completions": 25.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 52.5,
+      "completions": 4.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 57.5,
+      "completions": 5.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 62.5,
+      "completions": 3.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 67.5,
+      "completions": 28.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 72.5,
+      "completions": 17.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 77.5,
+      "completions": 28.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 82.5,
+      "completions": 4.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 87.5,
+      "completions": 30.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 92.5,
+      "completions": 3.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 97.5,
+      "completions": 3.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 2.5,
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 7.5,
+      "y": 1.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 12.5,
+      "y": 6.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 17.5,
+      "y": 157.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 22.5,
+      "y": 21.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 27.5,
+      "y": 13.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 32.5,
+      "y": 1.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 37.5,
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 42.5,
+      "y": 1.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 47.5,
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 52.5,
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 57.5,
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 62.5,
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 67.5,
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 72.5,
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 77.5,
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 82.5,
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 87.5,
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 92.5,
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 97.5,
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 2.5,
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 7.5,
+      "y": 1.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 12.5,
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 17.5,
+      "y": 10.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 22.5,
+      "y": 3.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 27.5,
+      "y": 14.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 32.5,
+      "y": 10.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 37.5,
+      "y": 17.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 42.5,
+      "y": 11.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 47.5,
+      "y": 24.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 52.5,
+      "y": 6.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 57.5,
+      "y": 3.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 62.5,
+      "y": 7.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 67.5,
+      "y": 28.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 72.5,
+      "y": 8.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 77.5,
+      "y": 33.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 82.5,
+      "y": 3.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 87.5,
+      "y": 19.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 92.5,
+      "y": 1.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 97.5,
+      "y": 2.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 2.5,
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 7.5,
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 12.5,
+      "y": 7.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 17.5,
+      "y": 135.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 22.5,
+      "y": 18.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 27.5,
+      "y": 25.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 32.5,
+      "y": 3.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 37.5,
+      "y": 4.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 42.5,
+      "y": 3.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 47.5,
+      "y": 5.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 52.5,
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 57.5,
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 62.5,
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 67.5,
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 72.5,
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 77.5,
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 82.5,
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 87.5,
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 92.5,
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 97.5,
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 2.5,
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 7.5,
+      "y": 1.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 12.5,
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 17.5,
+      "y": 7.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 22.5,
+      "y": 2.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 27.5,
+      "y": 15.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 32.5,
+      "y": 6.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 37.5,
+      "y": 7.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 42.5,
+      "y": 7.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 47.5,
+      "y": 29.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 52.5,
+      "y": 5.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 57.5,
+      "y": 6.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 62.5,
+      "y": 6.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 67.5,
+      "y": 28.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 72.5,
+      "y": 15.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 77.5,
+      "y": 40.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 82.5,
+      "y": 7.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 87.5,
+      "y": 13.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 92.5,
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 97.5,
+      "y": 1.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 2.5,
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "x": 7.5,
+      "y": 1.0,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "x": 12.5,
+      "y": 1.0,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "x": 17.5,
+      "y": 97.0,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "x": 22.5,
+      "y": 37.0,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "x": 27.5,
+      "y": 40.0,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "x": 32.5,
+      "y": 5.0,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "x": 37.5,
+      "y": 11.0,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "x": 42.5,
+      "y": 4.0,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "x": 47.5,
+      "y": 4.0,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "x": 52.5,
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "x": 57.5,
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "x": 62.5,
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "x": 67.5,
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "x": 72.5,
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "x": 77.5,
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "x": 82.5,
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "x": 87.5,
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "x": 92.5,
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "x": 97.5,
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "x": 2.5,
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "x": 7.5,
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "x": 12.5,
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "x": 17.5,
+      "y": 1.0,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "x": 22.5,
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "x": 27.5,
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "x": 32.5,
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "x": 37.5,
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "x": 42.5,
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "x": 47.5,
+      "y": 1.0,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "x": 52.5,
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "x": 57.5,
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "x": 62.5,
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "x": 67.5,
+      "y": 2.0,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "x": 72.5,
+      "y": 1.0,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "x": 77.5,
+      "y": 1.0,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "x": 82.5,
+      "y": 3.0,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "x": 87.5,
+      "y": 33.0,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "x": 92.5,
+      "y": 31.0,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "x": 97.5,
+      "y": 127.0,
+      "_kind": "bar",
+      "_group": 7
+    }
+  ],
+  "n_series": 8,
+  "total_points": 160,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [
+      "Per-completion graded casual-register scores under the verdict arms (dashed = the 50-point positive threshold)",
+      "per-completion graded score (mean of 5 judge draws)"
+    ],
+    "axes": [
+      {
+        "title_left": "Persona (software engineer)",
+        "ylabel": "completions",
+        "legend_labels": [
+          "base (n=200)",
+          "trained (n=200)"
+        ],
+        "xticklabels": [
+          "0",
+          "25",
+          "50",
+          "75",
+          "100"
+        ],
+        "yticklabels": [
+          "0",
+          "20",
+          "40",
+          "60",
+          "80",
+          "100",
+          "120",
+          "140",
+          "160",
+          "180"
+        ]
+      },
+      {
+        "title_left": "Bare assistant",
+        "xticklabels": [
+          "0",
+          "25",
+          "50",
+          "75",
+          "100"
+        ]
+      },
+      {
+        "title_left": "WildChat prefix",
+        "xticklabels": [
+          "0",
+          "25",
+          "50",
+          "75",
+          "100"
+        ]
+      },
+      {
+        "title_left": "ICL prefix",
+        "xticklabels": [
+          "0",
+          "25",
+          "50",
+          "75",
+          "100"
+        ]
+      }
+    ]
+  }
+}

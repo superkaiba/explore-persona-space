@@ -1,0 +1,9 @@
+{
+  "n_items": 50,
+  "n_scored": 50,
+  "content_drop_rate": 0.036,
+  "score_min": 13.0,
+  "score_max": 95.0,
+  "n_transport_lost_draws": 0,
+  "verdict": "PASS"
+}
