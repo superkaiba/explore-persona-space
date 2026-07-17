@@ -1171,6 +1171,11 @@ def build_seed_comparison(args, models: list[str], smoke: bool) -> dict:
         ref_m = ref.get("per_model", {}).get(model_kind, {})
         ref_gap = (ref_m.get("gap") or {}).get("G")
         ref_framing = (ref_m.get("deltas") or {}).get("framing")
+        assert ref_gap is not None, f"reference summary lacks per_model.{model_kind}.gap.G"
+        assert ref_framing is not None, (
+            f"reference summary lacks per_model.{model_kind}.deltas.framing"
+        )
+        assert kept, f"seed-compare: no kept fiction personas for {model_kind} (below floor)"
         per_model[model_kind] = {
             "kept_personas": kept,
             "fiction_yield": yield_report,

@@ -284,7 +284,7 @@ def write_shard(
         "keys": keys,
         "shape_per_row": [EXPECTED_LAYERS, EXPECTED_HIDDEN],
         "capture_flags": flags,
-        "metadata": common.metadata(SCRIPT, c1310.GEN_SEED, len(records)),
+        "metadata": common.metadata(SCRIPT, r1335.GEN_SEED, len(records)),
     }
     (out_dir / f"{model_kind}_shard{shard_idx:03d}.json").write_text(json.dumps(sidecar, indent=2))
     print(f"[i1335-p2] wrote {pt_path} ({len(records)} rows)")
