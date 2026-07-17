@@ -398,8 +398,10 @@ reality was ~15-30 h).
 PRODUCTION shape, or a prior-issue measured figure) or a FLOP/kernel floor —
 EXCEPT for a fit / factorization / GD loop — **or a permutation /
 bootstrap / null-draw battery above the ~15–30 min phase floor** — where
-the basis MUST be a measured 1-cell pilot (for a battery: one
-production-shape batched draw block) THROUGH the production entrypoint on
+the basis MUST be a measured 1-cell pilot at the phase's realized
+execution shape (batch width / per-call structure — #1415; for a
+battery: one production-shape batched draw block) THROUGH the
+production entrypoint on
 the production
 device, a cited prior-issue measured figure (same kernel + shape), or a
 pre-registered `pilot-gated` first-step pilot (inputs don't exist at plan
