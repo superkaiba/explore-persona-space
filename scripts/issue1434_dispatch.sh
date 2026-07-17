@@ -25,7 +25,13 @@
 # completion echoes never carry the reserved `[phase=` token.
 #
 # Usage: bash scripts/issue1434_dispatch.sh --phase pod-all [--smoke] \
-#          [--out-root PATH] [--manifest PATH] [--cells ws-pers,...]
+#          [--round i1434|i1434po] [--out-root PATH] [--manifest PATH] \
+#          [--cells ws-pers,...]
+#
+# --round i1434po (plan §4 D2'-D4', the positive-only regime arm) runs the
+# reduced chain: dispatch fan-out on EVERY GPU (no tail reservation — there
+# is no concurrent extract/base-arms: r_B + base arms are REUSED from the
+# parent at the pinned revision), then panel ∥ project.
 set -euo pipefail
 
 REPO_ROOT="${REPO_ROOT:-$(cd "$(dirname "$0")/.." && pwd)}"
@@ -34,9 +40,10 @@ if [ -f ./.env ]; then set -a; . ./.env; set +a; fi
 
 PHASE="pod-all"
 MODE="--full"
+ROUND="i1434"
 OUT_ROOT="data/issue_1434/cells"
 SENTINEL_DIR="${SENTINEL_DIR:-/workspace/logs}"
-MANIFEST="eval_results/issue_1434/cell_manifest_i1434.json"
+MANIFEST=""
 CELLS=""
 RUNS=""
 EXTRA_ARGS=()
@@ -44,6 +51,7 @@ while [ $# -gt 0 ]; do
   case "$1" in
     --phase) PHASE="$2"; shift 2 ;;
     --smoke) MODE="--smoke"; shift ;;
+    --round) ROUND="$2"; shift 2 ;;
     --out-root) OUT_ROOT="$2"; shift 2 ;;
     --sentinel-dir) SENTINEL_DIR="$2"; shift 2 ;;
     --manifest) MANIFEST="$2"; shift 2 ;;
@@ -52,15 +60,22 @@ while [ $# -gt 0 ]; do
     *) EXTRA_ARGS+=("$1"); shift ;;
   esac
 done
+if [ -z "$MANIFEST" ]; then
+  if [ "$ROUND" = "i1434po" ]; then
+    MANIFEST="eval_results/issue_1434/writing-style-positive-only-regime/cell_manifest_i1434po.json"
+  else
+    MANIFEST="eval_results/issue_1434/cell_manifest_i1434.json"
+  fi
+fi
 if [ "$MODE" = "--smoke" ] && [ "$OUT_ROOT" = "data/issue_1434/cells" ]; then
-  OUT_ROOT="/tmp/issue-1434-i1434-smoke"   # scratch redirect: smoke never
-  MANIFEST="$OUT_ROOT/cell_manifest_i1434.json"  # touches committed paths
+  OUT_ROOT="/tmp/issue-1434-${ROUND}-smoke"   # scratch redirect: smoke never
+  MANIFEST="$OUT_ROOT/cell_manifest_${ROUND}.json"  # touches committed paths
 fi
 mkdir -p "$SENTINEL_DIR" "$OUT_ROOT"
 
 WORKER="scripts/issue1434_worker.py"
 PV="scripts/issue1434_pv.py"
-COMMON=("$MODE" --out-root "$OUT_ROOT" --sentinel-dir "$SENTINEL_DIR")
+COMMON=("$MODE" --round "$ROUND" --out-root "$OUT_ROOT" --sentinel-dir "$SENTINEL_DIR")
 [ -n "$CELLS" ] && COMMON+=(--cells "$CELLS")
 export WANDB_PROJECT="${WANDB_PROJECT:-issue1434}"
 
@@ -106,7 +121,7 @@ case "$PHASE" in
     N_GPUS=$( (nvidia-smi -L 2>/dev/null || true) | grep -c '^GPU' || true )
     # 12-run fan-out: fu4's work-conserving dispatcher (CVD pinned per slot;
     # width never narrowed under --smoke — only by the 2-GPU tail reservation).
-    DISPATCH_ARGS=("$WORKER" "$MODE" --phase dispatch
+    DISPATCH_ARGS=("$WORKER" "$MODE" --round "$ROUND" --phase dispatch
                    --out-root "$OUT_ROOT" --sentinel-dir "$SENTINEL_DIR")
     [ -n "$RUNS" ] && DISPATCH_ARGS+=(--runs "$RUNS")
     if [ "$MODE" = "--smoke" ]; then
@@ -124,7 +139,29 @@ case "$PHASE" in
       BA_ARGS+=(--no-upload); PN_ARGS+=(--no-upload)
       EX_ARGS+=(--no-upload); PJ_ARGS+=(--no-upload)
     fi
-    if [ "$N_GPUS" -ge 3 ]; then
+    if [ "$ROUND" = "i1434po" ]; then
+      # po chain (plan §4 D2'-D4'): NO extract (r_B reused), NO base-arms
+      # (base Tier-2 + panel row reused) — dispatch keeps EVERY GPU (no tail
+      # reservation), then panel ∥ project on the freed GPUs.
+      if [ "$N_GPUS" -eq 0 ]; then
+        DISPATCH_ARGS+=(--n-gpus 1)   # CPU smoke: fu4 detect_n_gpus raises without nvidia-smi
+        run_phase "${DISPATCH_ARGS[@]}" "${EXTRA_ARGS[@]}"
+        launch_bg panel - - "${PN_ARGS[@]}"; PN_PID=$!
+        launch_bg project - - "${PJ_ARGS[@]}"; PJ_PID=$!
+        join_bg panel "$PN_PID"
+        join_bg project "$PJ_PID"
+      elif [ "$N_GPUS" -eq 1 ]; then
+        run_phase "${DISPATCH_ARGS[@]}" "${EXTRA_ARGS[@]}"
+        run_phase "${PN_ARGS[@]}"
+        run_phase "${PJ_ARGS[@]}"
+      else
+        run_phase "${DISPATCH_ARGS[@]}" "${EXTRA_ARGS[@]}"
+        launch_bg panel 0 8000 "${PN_ARGS[@]}"; PN_PID=$!
+        launch_bg project 1 8001 "${PJ_ARGS[@]}"; PJ_PID=$!
+        join_bg panel "$PN_PID"
+        join_bg project "$PJ_PID"
+      fi
+    elif [ "$N_GPUS" -ge 3 ]; then
       # Reserve the top 2 GPUs for the training-independent tail phases;
       # dispatch keeps slots 0..N-3 (12 runs stay 2 waves at any width >=6).
       DISPATCH_ARGS+=(--n-gpus "$((N_GPUS - 2))")

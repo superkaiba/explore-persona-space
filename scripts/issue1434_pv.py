@@ -96,6 +96,15 @@ def pv_root(cfg) -> Path:
     return Path(cfg.out_root) / "pv"
 
 
+def _projections_name() -> str:
+    """Round-keyed projections filename — the po round must never clobber the
+    parent's published ``projections.json`` (upload-policy: no in-place
+    regeneration of a published artifact)."""
+    import issue1090_fu4 as fu4
+
+    return "projections_po.json" if fu4.ROUND.name == "i1434po" else "projections.json"
+
+
 def _extraction_questions() -> list[str]:
     """The recipe's 20-question extraction set == the train bank (datagen-only
     adoption; disjoint from the 20-question eval bank by the SLICES audit)."""
@@ -146,8 +155,23 @@ def _pv_smoke_gen():
 # ── D4: extraction ───────────────────────────────────────────────────────────
 
 
+def _require_parent_round_extract() -> None:
+    """po guard: r_B is behavior-level + base-model-derived — REUSED, never
+    re-extracted (plan §4 D4')."""
+    import issue1090_fu4 as fu4
+
+    worker._ensure_family_round()
+    if fu4.ROUND.name != "i1434":
+        raise SystemExit(
+            "--phase extract is parent-round only: r_B is behavior-level and base-model-"
+            "derived — the i1434po round REUSES rb_writing_style.pt + the extraction pools "
+            "verbatim (plan §4 D4'); never re-extract"
+        )
+
+
 def phase_extract(cfg, args) -> int:
     """Recipe steps 3-6 + pool persistence (the honest-null Σ inputs)."""
+    _require_parent_round_extract()
     run1090._phase("i1434_pv_extract")
     behavior = BEHAVIORS[cells.BEHAVIOR]
     pairs = behavior.extraction.prompt_pairs
@@ -314,7 +338,7 @@ def _states_for(cfg, cell_keys: list[str]) -> list[dict]:
     for run in fu4.resolve_fu4_runs(None, cfg.smoke):
         if run.cell_key not in cell_keys:
             continue
-        path = Path(cfg.out_root) / run.run_id / "i1434_build_result.json"
+        path = Path(cfg.out_root) / run.run_id / f"{fu4.ROUND.name}_build_result.json"
         if not path.exists():
             raise RuntimeError(f"[i1434-pv] missing build result {path} — run dispatch first")
         rec = run1090._read_json(path)
@@ -427,22 +451,98 @@ def _capture_state(model, tokenizer, ctx: Context, qs, shared_text, own_text, la
     }
 
 
+def _ensure_po_reused_inputs(cfg, cell_keys: list[str], root: Path) -> None:
+    """i1434po D4' reuse staging: rb_writing_style.pt + extraction_pools.pt +
+    the parent's per-context BASE capture stores (summary.pt + base greedy
+    text) at the parent-run pin, base dirs mapped to the po cell names so
+    every downstream consumer (greedy resume, capture short-circuit, shift
+    lookups) runs unchanged. Under --smoke: tiny-real FIXTURES in the
+    production on-disk shape instead (the build_fu4_smoke_mix precedent —
+    random direction/pools at the stub model's hidden size; base states are
+    captured FRESH through the same production capture path, since the real
+    parent tensors are production-H and incoherent with the stub model)."""
+    root.mkdir(parents=True, exist_ok=True)
+    cap_root = root / "capture"
+    if cfg.smoke:
+        if (root / "rb_writing_style.pt").exists() and (root / "extraction_pools.pt").exists():
+            return
+        model, _tok = worker._hf_model(cfg)  # tiny-real stub (installs the patch)
+        n_layers = int(model.config.num_hidden_layers)
+        hidden = int(model.config.hidden_size)
+        del model
+        gen = torch.Generator().manual_seed(cfg.seed)
+        direction = DirectionResult(
+            behavior_name=cells.BEHAVIOR,
+            regime="read_out",
+            layers=tuple(range(n_layers)),
+            r_b=torch.randn(n_layers, hidden, generator=gen),
+            counts={},
+            # PROVENANCES is a closed vocabulary; the fixture flag below is
+            # the honesty record (random tensors, tiny-real smoke shape only).
+            provenance="on_policy",
+            metadata={"smoke_fixture": True, "issue": cells.ISSUE_1434},
+        )
+        save_direction(direction, root / "rb_writing_style.pt")
+        torch.save(
+            {
+                "exhibit": torch.randn(6, n_layers, hidden, generator=gen).to(torch.float16),
+                "not_exhibit": torch.randn(6, n_layers, hidden, generator=gen).to(torch.float16),
+                "layers": list(range(n_layers)),
+            },
+            root / "extraction_pools.pt",
+        )
+        return
+    for name in ("rb_writing_style.pt", "extraction_pools.pt"):
+        hub.stage_hub_file(
+            run1090.HF_DATA_REPO,
+            f"{cells.DATA_PREFIX_1434}/analysis_tensors/{name}",
+            root / name,
+            repo_type="dataset",
+            revision=cells.DATA_REPO_PIN_1434,
+        )
+    for ck in cell_keys:
+        parent = cells.parent_cell_key(ck)
+        ctx_id = cells.active_context_map()[ck]
+        hub.stage_hub_file(
+            run1090.HF_DATA_REPO,
+            f"{cells.DATA_PREFIX_1434}/analysis_tensors/capture/base-{parent}/summary.pt",
+            cap_root / f"base-{ck}" / "summary.pt",
+            repo_type="dataset",
+            revision=cells.DATA_REPO_PIN_1434,
+        )
+        hub.stage_hub_file(
+            run1090.HF_DATA_REPO,
+            (
+                f"{cells.DATA_PREFIX_1434}/analysis_tensors/capture/base-{parent}/greedy/"
+                f"completions__base__{ctx_id}.json"
+            ),
+            cap_root / f"base-{ck}" / "greedy" / f"completions__base__{ctx_id}.json",
+            repo_type="dataset",
+            revision=cells.DATA_REPO_PIN_1434,
+        )
+
+
 def phase_project(cfg, args) -> int:
     """D5: shared/own greedy text per state, then the 4-arm captures + shifts
     + projections onto r̂_B (per layer, unit-normalized) + cosines."""
+    import issue1090_fu4 as fu4
+
+    worker._ensure_family_round()
     run1090._phase("i1434_pv_project")
     qs = worker._eval_questions(cfg)
     cell_keys = worker.resolve_cell_keys(args.cells, cfg.smoke, cfg=cfg)
     states = _states_for(cfg, cell_keys)
     root = pv_root(cfg)
     cap_root = root / "capture"
+    if fu4.ROUND.name == "i1434po":
+        _ensure_po_reused_inputs(cfg, cell_keys, root)
 
     # 1. Greedy text per state (vLLM shared engine; LoRA hot-load per ckpt).
     run1090._phase("i1434_pv_greedy_text")
     gen = worker._gen_fn(cfg)
     try:
         for st in states:
-            ctx = cells.ensure_ws_context(cells.CONTEXT_BY_CELL_KEY[st["cell_key"]])
+            ctx = cells.ensure_ws_context(cells.active_context_map()[st["cell_key"]])
             _generate_and_persist(
                 gen,
                 "base" if st["ckpt"] is None else "trained",
@@ -466,7 +566,7 @@ def phase_project(cfg, args) -> int:
     base_model, tokenizer = worker._hf_model(cfg)
 
     def _greedy_text(state_id: str, cell_key: str, side: str) -> list[str]:
-        ctx_id = cells.CONTEXT_BY_CELL_KEY[cell_key]
+        ctx_id = cells.active_context_map()[cell_key]
         payload = run1090._read_json(
             cap_root / state_id / "greedy" / f"completions__{side}__{ctx_id}.json"
         )
@@ -479,7 +579,7 @@ def phase_project(cfg, args) -> int:
             summaries[st["state_id"]] = torch.load(summary_path, weights_only=False)
             continue
         t0 = time.time()
-        ctx = cells.ensure_ws_context(cells.CONTEXT_BY_CELL_KEY[st["cell_key"]])
+        ctx = cells.ensure_ws_context(cells.active_context_map()[st["cell_key"]])
         shared = _greedy_text(f"base-{st['cell_key']}", st["cell_key"], "base")
         own = _greedy_text(
             st["state_id"], st["cell_key"], "base" if st["ckpt"] is None else "trained"
@@ -534,19 +634,25 @@ def phase_project(cfg, args) -> int:
             }
         proj["states"][st["state_id"]] = entry
     proj["rb_norms"] = rb_norms.tolist()
-    run1090._atomic_write_json(root / "projections.json", proj)
+    run1090._atomic_write_json(root / _projections_name(), proj)
     if cfg.upload:
+        # po round: the base-* dirs under cap_root are STAGED parent copies —
+        # exclude them from the upload (reused, already published at the pin).
+        cap_kw = (
+            {"ignore_patterns": ["base-*/*", "base-*/**"]} if fu4.ROUND.name == "i1434po" else {}
+        )
         url = hub._upload(
             cap_root,
             run1090.HF_DATA_REPO,
             "dataset",
             f"{cells.DATA_PREFIX_1434}/analysis_tensors/capture",
+            **cap_kw,
         )
         url2 = hub._upload(
-            root / "projections.json",
+            root / _projections_name(),
             run1090.HF_DATA_REPO,
             "dataset",
-            f"{cells.DATA_PREFIX_1434}/analysis_tensors/projections.json",
+            f"{cells.DATA_PREFIX_1434}/analysis_tensors/{_projections_name()}",
             upload_as_file=True,
         )
         if not str(url) or not str(url2):
@@ -628,7 +734,7 @@ def _cell_grids(cfg, aggregate: dict, proj: dict) -> dict[str, dict]:
         verdict_run = (entry.get("verdict_arm") or {}).get("run_id")
         base_rate = (entry.get("base") or {}).get("rate")
         for run_id, lad in ladders.items():
-            run = cells.RUN_BY_ID_1434.get(run_id)
+            run = cells.run_lookup(run_id)  # union: parent + po (combined grid)
             if run is None or run.cell_key != cell_key or run_id not in proj["states"]:
                 continue
             if run_id == verdict_run and entry.get("delta") is not None:
@@ -649,6 +755,70 @@ def _cell_grids(cfg, aggregate: dict, proj: dict) -> dict[str, dict]:
         "y_basis": inst_basis,
     }
     return grids
+
+
+def _merge_parent_po(root: Path, po_agg: dict, po_proj: dict) -> tuple[dict, dict]:
+    """The plan-§4 D4' COMBINED grid inputs: parent (contrastive) aggregate +
+    projections merged with the po round's (cell keys and run/state ids are
+    disjoint by construction — ws-* vs ws-po-*). The parent projections stage
+    at the pin when not already local; a layer-set mismatch fails loud."""
+    parent_agg = worker._parent_aggregate()
+    parent_proj_path = root / "projections.json"
+    if not parent_proj_path.exists():
+        hub.stage_hub_file(
+            run1090.HF_DATA_REPO,
+            f"{cells.DATA_PREFIX_1434}/analysis_tensors/projections.json",
+            parent_proj_path,
+            repo_type="dataset",
+            revision=cells.DATA_REPO_PIN_1434,
+        )
+    parent_proj = run1090._read_json(parent_proj_path)
+    if list(parent_proj["layers"]) != list(po_proj["layers"]):
+        raise RuntimeError(
+            f"[i1434po-pv] combined-grid layer mismatch: parent {parent_proj['layers']} != "
+            f"po {po_proj['layers']} — the staged r_B/base stores are incoherent"
+        )
+    merged_agg = {
+        k: {**(parent_agg.get(k) or {}), **(po_agg.get(k) or {})}
+        for k in ("panel", "tier2", "ladders", "verdict_arms")
+    }
+    merged_proj = {
+        **po_proj,
+        "states": {**(parent_proj.get("states") or {}), **(po_proj.get("states") or {})},
+    }
+    return merged_agg, merged_proj
+
+
+def _stage_validate_captures(root: Path, state_ids: list[str]) -> None:
+    """Stage every capture summary the battery's shift tensors need (parent
+    states + parent-mapped base stores at the pin; po states at main — they
+    postdate the pin). Local copies win (idempotent)."""
+    cap = root / "capture"
+    need: set[str] = set(state_ids)
+    for sid in list(need):
+        run = cells.run_lookup(sid)
+        if run is not None:
+            need.add(f"base-{run.cell_key}")
+    for sid in sorted(need):
+        dest = cap / sid / "summary.pt"
+        if dest.exists():
+            continue
+        if sid.startswith("base-"):
+            hub_sid = f"base-{cells.parent_cell_key(sid.removeprefix('base-'))}"
+            rev: str | None = cells.DATA_REPO_PIN_1434
+        else:
+            run = cells.run_lookup(sid)
+            hub_sid = sid
+            rev = (
+                cells.DATA_REPO_PIN_1434 if run is not None and run.round_name == "i1434" else None
+            )
+        hub.stage_hub_file(
+            run1090.HF_DATA_REPO,
+            f"{cells.DATA_PREFIX_1434}/analysis_tensors/capture/{hub_sid}/summary.pt",
+            dest,
+            repo_type="dataset",
+            revision=rev,
+        )
 
 
 def _resolve_battery_arms(args) -> tuple[str, ...]:
@@ -842,9 +1012,16 @@ def phase_validate(cfg, args) -> int:
     bands, per-draw max-over-layer, persisted matrices, LOFO/LOO, bootstrap."""
     run1090._phase("i1434_pv_validate")
     import issue778_honest_null_ladder as hnl
+    import issue1090_fu4 as fu4
 
+    worker._ensure_family_round()
+    po_round = fu4.ROUND.name == "i1434po"
     root = pv_root(cfg)
-    deliver = cfg.out_root / "deliverables" if cfg.smoke else cells.DELIVERABLES_DIR_1434
+    if po_round:
+        # Idempotent reuse staging (rb + pools; smoke -> tiny fixtures) so a
+        # standalone VM validate has its inputs (plan §4 D4').
+        _ensure_po_reused_inputs(cfg, list(cells.active_cell_keys()), root)
+    deliver = cfg.out_root / "deliverables" if cfg.smoke else Path(fu4.ROUND.deliverables_dir)
     deliver.mkdir(parents=True, exist_ok=True)
     rb = load_direction(root / "rb_writing_style.pt")
     layers = list(rb.layers)
@@ -853,8 +1030,8 @@ def phase_validate(cfg, args) -> int:
     pools = torch.load(root / "extraction_pools.pt", weights_only=False)
     pos = pools["exhibit"].to(torch.float64).numpy()
     neg = pools["not_exhibit"].to(torch.float64).numpy()
-    proj = run1090._read_json(root / "projections.json")
-    agg_path = deliver / "i1434_ladders.json"
+    proj = run1090._read_json(root / _projections_name())
+    agg_path = deliver / fu4.ROUND.ladders_name
     aggregate = run1090._read_json(agg_path)
     from explore_persona_space.analysis.null_battery import PRIMARY_LAMBDA
 
@@ -874,6 +1051,28 @@ def phase_validate(cfg, args) -> int:
         },
         "grids": {},
     }
+    if po_round:
+        # Plan §4 D4': the po-only grid AND the combined contrastive +
+        # positive-only grid, both through the SAME registered battery.
+        grids = {f"{k}_po_only": v for k, v in grids.items()}
+        if cfg.smoke:
+            logger.warning(
+                "[i1434po-pv] smoke: combined parent+po grid merge SKIPPED — the parent "
+                "capture tensors are production-shape (H=3584), incoherent with the "
+                "tiny-real smoke model; po-only grids only (merge logic unit-pinned)"
+            )
+            out["combined_merge"] = "skipped_smoke"
+        else:
+            merged_agg, merged_proj = _merge_parent_po(root, aggregate, proj)
+            proj = merged_proj  # P matrices below read proj['states'] per grid
+            grids.update(
+                {f"{k}_combined": v for k, v in _cell_grids(cfg, merged_agg, merged_proj).items()}
+            )
+            out["combined_merge"] = "parent+po"
+            out["parent_reuse_revision"] = cells.DATA_REPO_PIN_1434
+        all_sids = sorted({sid for g in grids.values() for sid in (g.get("state_ids") or [])})
+        if not cfg.smoke:
+            _stage_validate_captures(root, all_sids)
     rng_families = {
         "within_class": hnl._within_centered_pool(pos, neg),
         "neg_arm_only": neg - neg.mean(axis=0, keepdims=True),
@@ -980,6 +1179,12 @@ def main(argv: list[str] | None = None) -> int:
     mode.add_argument("--smoke", action="store_true")
     mode.add_argument("--full", action="store_true")
     p.add_argument("--phase", required=True, choices=("extract", "project", "validate"))
+    p.add_argument(
+        "--round",
+        default="i1434",
+        choices=("i1434", "i1434po"),
+        help="active round registry (i1434po = the positive-only regime arm)",
+    )
     p.add_argument("--cells", default=None)
     p.add_argument("--out-root", default=None)
     p.add_argument("--sentinel-dir", default=None)
@@ -995,9 +1200,10 @@ def main(argv: list[str] | None = None) -> int:
     )
     args = p.parse_args(argv)
     cells.register_i1434_round()
+    cells.register_i1434po_round()
     import issue1090_fu4 as fu4
 
-    fu4.set_round("i1434")
+    fu4.set_round(args.round)
     cfg = worker.worker_config(args)
     if args.phase == "extract":
         return phase_extract(cfg, args)
