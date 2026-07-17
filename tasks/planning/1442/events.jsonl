@@ -4,3 +4,4 @@
 {"ts": "2026-07-17T08:16:26Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "proposed", "to": "planning", "note": "Clarifier All-clear."}
 {"ts": "2026-07-17T08:29:38Z", "kind": "epm:plan", "version": 1, "by": "unknown", "note": "Plan v1 written to plans/plan.md (gpu_hours_total=0). Workflow-fix: mirror the #1408 tmproot/--basetemp routing into the 4 TG_TESTS pytest legs (2 SKILL.md blocks) + durability pin test in tests/test_step9c_baseline.py. architectural: false."}
 {"ts": "2026-07-17T08:30:00Z", "kind": "epm:plan-verify", "version": 1, "by": "unknown", "note": "verify_plan.py: PASS, n_fail=0, n_warn=0, no failed/overridden checks. Plan version v1."}
+{"ts": "2026-07-17T08:35:09Z", "kind": "epm:progress", "version": 2, "by": "unknown", "note": "codex composers skipped — quota sentinel live until 2026-08-06T13:26:00+00:00 (#1204 pre-spawn check); single-Claude per no-show fallback for all 3 plan-critic lenses this round."}
