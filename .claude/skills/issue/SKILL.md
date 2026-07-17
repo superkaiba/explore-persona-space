@@ -3222,8 +3222,9 @@ uv run python scripts/verify_carryover_inputs.py --plan "$PLAN_PATH" --issue <N>
   (the file is already committed — never `git add`). Still failing, or any
   `untracked-local-only` failure -> same contract as the first stanza: post
   `epm:carry-over-missing v1` with the helper's failure lines, set status
-  `blocked`, post the §5 marker (failure-exit, notes "carry-over local input
-  unreachable on pushed ref"), EXIT. Remediation for untracked files is a
+  `blocked`, post the §5 marker via `scripts/post_step_completed.py`
+  (`--step 6c --exit-kind failure-exit --notes "carry-over local input
+  unreachable on pushed ref"`), EXIT. Remediation for untracked files is a
   commit+push of the cited file on the issue branch (the #1434 fix), then
   re-run `/issue <N>`.
 - Exit `2` (plan missing/unreadable) -> fail loud like a missing plan in the
