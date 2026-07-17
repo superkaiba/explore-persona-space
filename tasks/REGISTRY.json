@@ -3368,8 +3368,8 @@
     "1432": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/1432",
-      "status": "approved",
+      "path": "tasks/running/1432",
+      "status": "running",
       "title": "workflow-fix: gotchas.md \u2014 cuda eigh non-convergence on near-singular Grams (CPU fallback)"
     },
     "1433": {
