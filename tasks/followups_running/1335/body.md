@@ -1,6 +1,7 @@
 ---
-title: Under a matched recipe the assistant-vs-fiction context→answer map gap vanishes
-  in base Qwen and is carried by fiction scene framing in instruct (MODERATE confidence)
+title: Fiction scene framing carries the instruct assistant-vs-fiction context→answer
+  map gap at both generation seeds, while the base-model gap is seed-unstable (MODERATE
+  confidence)
 kind: experiment
 tags:
 - followup-auto
