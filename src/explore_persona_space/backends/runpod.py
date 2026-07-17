@@ -149,6 +149,11 @@ def _run_pod_lifecycle_relay(
     :class:`PodLifecycleProcessError` with ``returncode`` + ``cmd``
     verbatim and the tail as ``stderr`` (#1465; incident #1336: an opaque
     ``exit status 1`` with zero diagnostics).
+
+    EOF assumption: no pod_lifecycle local child detaches while inheriting
+    stderr (true today — all its grandchildren are foreground
+    ``subprocess.call``); a future backgrounded grandchild holding fd 2
+    open would convert child-exit into a pipe-EOF wait here.
     """
     out = relay if relay is not None else sys.stderr
     tail: deque[str] = deque(maxlen=_POD_LIFECYCLE_TAIL_MAX_LINES)
