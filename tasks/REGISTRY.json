@@ -3684,8 +3684,8 @@
     "1473": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1473",
-      "status": "proposed",
+      "path": "tasks/archived/1473",
+      "status": "archived",
       "title": "daily-held: fix sudo choom for lint-gate earlyoom shield"
     },
     "1474": {
