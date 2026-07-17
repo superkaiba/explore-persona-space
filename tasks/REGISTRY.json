@@ -3523,8 +3523,8 @@
     "1452": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/1452",
-      "status": "approved",
+      "path": "tasks/running/1452",
+      "status": "running",
       "title": "daily-fix: flag hardcoded cross-issue upload prefixes"
     },
     "1453": {
