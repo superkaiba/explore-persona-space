@@ -3607,8 +3607,8 @@
     "1463": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1463",
-      "status": "running",
+      "path": "tasks/reviewing/1463",
+      "status": "reviewing",
       "title": "daily-fix: guard waiver for gcloud ssh --command payloads"
     },
     "1464": {
