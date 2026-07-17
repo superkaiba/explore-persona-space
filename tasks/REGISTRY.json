@@ -3375,8 +3375,8 @@
     "1433": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1433",
-      "status": "proposed",
+      "path": "tasks/planning/1433",
+      "status": "planning",
       "title": "workflow-fix: verify unpinned backtick HF-path/file-count claims"
     },
     "1434": {
