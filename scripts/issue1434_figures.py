@@ -290,13 +290,221 @@ def fig_ladder_overlays(po_agg: dict, con_agg: dict, out_dir: Path) -> Path:
     return _save(fig, out_dir / "po_ladder_overlays.png")
 
 
+# ── persona-dose-matched-regime figures (plan v8 §6) ─────────────────────────
+
+BRACKET_PLAIN = {
+    "high": "matched-high (po@25 vs con@45)",
+    "low": "near-matched-low (po@10 vs con@25)",
+}
+
+
+def fig_dose_hero(contrast: dict, out_dir: Path) -> Path:
+    """HERO (plan v8 §6): the persona-context regime contrast D under three
+    dose regimes — unmatched (parent verdict arms), matched-high D_hi,
+    near-matched-low D_lo — Newcombe 95% CIs, with the dose-matched
+    bare-assistant D as the reference point. Per-arm Tier-1 selection rates
+    live in the caption, never as overlays."""
+    refs = contrast["references"]
+    pts = [
+        ("Unmatched\n(parent verdict arms)", refs["unmatched_persona"], "tab:orange"),
+        ("Matched-high\n(po@25 vs con@45 new)", contrast["brackets"]["high"], "tab:blue"),
+        ("Near-matched-low\n(po@10 new vs con@25)", contrast["brackets"]["low"], "tab:cyan"),
+        ("Bare-assistant\nreference (matched)", refs["bare_matched"], "0.6"),
+    ]
+    fig, ax = plt.subplots(figsize=(8, 5), layout="constrained")
+    for i, (_lab, rec, color) in enumerate(pts):
+        if rec.get("D") is None:
+            continue
+        lo, hi = _ci_err(rec["D"], rec["newcombe_95"])
+        ax.bar(i, rec["D"], width=0.6, color=color)
+        ax.errorbar(i, rec["D"], yerr=[[lo], [hi]], fmt="none", ecolor="k", capsize=4)
+    ax.axhline(0.0, color="0.4", lw=0.8)
+    ax.set_xticks(range(len(pts)))
+    ax.set_xticklabels([p[0] for p in pts], fontsize=8)
+    ax.set_ylabel("D = positive-only - contrastive\n(pooled non-source judged rate)")
+    ax.set_title(
+        "persona regime contrast D under dose matching — verdict lattice: "
+        f"{contrast['brackets']['high'].get('lattice')} (Newcombe 95% CIs)",
+        fontsize=9,
+    )
+    return _save(fig, out_dir / "dose_hero.png")
+
+
+def fig_dose_cells(contrast: dict, out_dir: Path) -> Path:
+    """Exploratory (plan v8 §6 read 4): the 10-cell per-(bracket x read
+    context) D dot plot, point-labeled, Newcombe CIs as non-negative offsets."""
+    rows = [c for c in contrast.get("cells", []) if c.get("status") == "computed"]
+    fig, ax = plt.subplots(figsize=(8, max(4, 0.4 * len(rows) + 1)), layout="constrained")
+    ys = np.arange(len(rows), dtype=float)
+    colors = {"high": "tab:blue", "low": "tab:cyan"}
+    for y, cell in zip(ys, rows, strict=True):
+        lo, hi = _ci_err(cell["D"], cell["newcombe_95"])
+        ax.errorbar(
+            cell["D"],
+            y,
+            xerr=[[lo], [hi]],
+            fmt="o",
+            color=colors.get(cell.get("bracket"), "tab:purple"),
+            capsize=3,
+        )
+    ax.axvline(0.0, color="0.4", lw=0.8)
+    ax.set_yticks(ys)
+    ax.set_yticklabels(
+        [
+            f"{BRACKET_PLAIN.get(c['bracket'], c['bracket'])} @ "
+            f"{READ_CTX_PLAIN.get(c['read_ctx'], c['read_ctx'])}"
+            for c in rows
+        ],
+        fontsize=6,
+    )
+    ax.set_xlabel("D = positive-only - contrastive (judged rate, trained arms)")
+    ax.set_title(
+        f"dose-matched per-cell regime contrast ({len(rows)} bracket x read cells; Newcombe 95%)",
+        fontsize=10,
+    )
+    return _save(fig, out_dir / "dose_cells.png")
+
+
+def fig_dose_ladders(po_agg: dict, con_agg: dict, contrast: dict, out_dir: Path) -> Path:
+    """Exploratory (plan v8 §6): the two persona-context Tier-1 ladders with
+    the FOUR panel rungs marked (existing verdict arms = circles, new
+    dose-selected arms = diamonds)."""
+    rungs = contrast.get("panel_rungs") or []
+    fig, axes = plt.subplots(1, 2, figsize=(11, 4), layout="constrained", sharey=True)
+    panels = (
+        ("contrastive persona", con_agg, ("ws-pers-lr1e5",)),
+        ("positive-only persona", po_agg, ("ws-po-pers-lr1e5", "ws-po-pers-lr3e5")),
+    )
+    lr_colors = {"lr1e5": "tab:blue", "lr3e5": "tab:green"}
+    for ax, (title, agg, run_ids) in zip(np.atleast_1d(axes), panels, strict=True):
+        band = agg.get("band")
+        if band:
+            ax.axhspan(*band, color="tab:green", alpha=0.10, label="band 0.60-0.85")
+        for run_id in run_ids:
+            rates = (agg.get("ladders") or {}).get(run_id, {}).get("rates_by_step") or {}
+            steps = sorted(int(s) for s in rates)
+            tag = run_id.rsplit("-", 1)[-1]
+            ax.plot(
+                steps,
+                [rates[str(s)] for s in steps],
+                "-",
+                color=lr_colors.get(tag, "0.5"),
+                lw=1.2,
+                label=LR_LABEL.get(tag, tag),
+            )
+        for r in rungs:
+            if r["run_id"] not in run_ids:
+                continue
+            new = "(new)" in r["role"]
+            ax.scatter(
+                [r["step"]],
+                [r["rate"]],
+                marker="D" if new else "o",
+                s=55,
+                zorder=5,
+                facecolor="tab:red" if new else "none",
+                edgecolor="k",
+                label=r["role"],
+            )
+        ax.set_title(title, fontsize=9)
+        ax.set_xlabel("optimizer step")
+        ax.set_ylim(0, 1)
+        ax.legend(fontsize=6)
+    np.atleast_1d(axes)[0].set_ylabel("Tier-1 judged rate")
+    fig.suptitle("persona dose ladders — the four panel rungs marked", fontsize=10)
+    return _save(fig, out_dir / "dose_ladders.png")
+
+
+def fig_dose_pooled(contrast: dict, out_dir: Path) -> Path:
+    """Exploratory (plan v8 §6): pooled non-source po-vs-con judged rates per
+    bracket + the shared base bar (Wilson 95% CIs)."""
+    from issue1434_cells import wilson
+
+    bars = []
+    for bracket in ("high", "low"):
+        rec = contrast["brackets"][bracket]
+        if rec.get("status") != "computed":
+            continue
+        for side, color in (("po", "tab:orange"), ("con", "tab:blue")):
+            s = rec[side]
+            bars.append(
+                (
+                    f"{BRACKET_PLAIN[bracket].split(' (')[0]}\n{rec[f'{side}_arm']}",
+                    s["k"],
+                    s["n"],
+                    color,
+                )
+            )
+    base = (contrast.get("static_arms") or {}).get("base", {}).get("pooled_nonsource")
+    if base:
+        bars.append(("shared base panel", base["k"], base["n"], "0.7"))
+    fig, ax = plt.subplots(figsize=(10, 5), layout="constrained")
+    for i, (_lab, k, n, color) in enumerate(bars):
+        rate = k / n
+        lo, hi = _err(rate, list(wilson(k, n)))
+        ax.bar(i, rate, width=0.7, color=color)
+        ax.errorbar(i, rate, yerr=[[lo], [hi]], fmt="none", ecolor="k", capsize=3)
+    ax.set_xticks(range(len(bars)))
+    ax.set_xticklabels([b[0] for b in bars], fontsize=7)
+    ax.set_ylabel("pooled non-source judged casual-register rate")
+    ax.set_ylim(0, 1)
+    ax.set_title("dose-matched pooled leakage per bracket (Wilson 95% CIs)", fontsize=10)
+    return _save(fig, out_dir / "dose_pooled_bars.png")
+
+
+def fig_dose_graded(panel: dict, out_dir: Path) -> Path:
+    """Exploratory (plan v8 §6): graded 0-100 score distributions (pooled
+    non-source per-item means) for the 2 NEW dose arms."""
+    arms = panel.get("arms") or {}
+    fig, axes = plt.subplots(1, max(1, len(arms)), figsize=(10, 4), layout="constrained")
+    for ax, (label, entry) in zip(np.atleast_1d(axes), sorted(arms.items()), strict=True):
+        scores = entry.get("pooled_nonsource_scores") or []
+        if scores:
+            ax.hist(scores, bins=20, range=(0, 100), color="tab:blue")
+            ax.axvline(50, color="tab:red", lw=0.9, label="rate threshold 50")
+            ax.legend(fontsize=6)
+        else:
+            ax.text(0.5, 0.5, "no scored items", ha="center", va="center")
+        rate = (entry.get("pooled_nonsource") or {}).get("rate")
+        ax.set_title(f"{label} — pooled rate {rate:.3f}" if rate is not None else label, fontsize=9)
+        ax.set_xlabel("mean graded score (kept draws)")
+    np.atleast_1d(axes)[0].set_ylabel("items")
+    fig.suptitle("graded score distributions — new dose arms (non-source contexts)", fontsize=10)
+    return _save(fig, out_dir / "dose_graded_dist.png")
+
+
+def dose_figures(
+    contrast: dict, panel: dict, po_agg: dict, con_agg: dict, out_dir: Path
+) -> list[Path]:
+    """All plan-v8 dose figures (hero + exploratory companions)."""
+    return [
+        fig_dose_hero(contrast, out_dir),
+        fig_dose_cells(contrast, out_dir),
+        fig_dose_ladders(po_agg, con_agg, contrast, out_dir),
+        fig_dose_pooled(contrast, out_dir),
+        fig_dose_graded(panel, out_dir),
+    ]
+
+
 def main(argv: list[str] | None = None) -> int:
     p = argparse.ArgumentParser(description="#1434 hero figures")
-    p.add_argument("--round", default="i1434", choices=("i1434", "i1434po"))
+    p.add_argument("--round", default="i1434", choices=("i1434", "i1434po", "dose"))
     p.add_argument("--deliverables", default=None)
     p.add_argument("--projections", default=None)
     p.add_argument("--out-dir", default=str(cells.FIGURES_DIR_1434))
     args = p.parse_args(argv)
+    if args.round == "dose":
+        deliver = Path(args.deliverables or cells.DOSE_DELIVERABLES_DIR)
+        out_dir = Path(args.out_dir)
+        out_dir.mkdir(parents=True, exist_ok=True)
+        plt.rcParams["savefig.dpi"] = 180
+        contrast = json.loads((deliver / "regime_contrast_dose_matched.json").read_text())
+        panel = json.loads((deliver / "i1434dose_panel.json").read_text())
+        po_agg = json.loads((cells.PO_DELIVERABLES_DIR / "i1434po_ladders.json").read_text())
+        con_agg = json.loads((cells.DELIVERABLES_DIR_1434 / "i1434_ladders.json").read_text())
+        for path in dose_figures(contrast, panel, po_agg, con_agg, out_dir):
+            print(path)
+        return 0
     po = args.round == "i1434po"
     deliver = Path(
         args.deliverables or (cells.PO_DELIVERABLES_DIR if po else cells.DELIVERABLES_DIR_1434)
