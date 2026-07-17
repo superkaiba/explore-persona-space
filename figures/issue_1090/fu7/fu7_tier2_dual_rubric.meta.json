@@ -1,0 +1,182 @@
+{
+  "commit": "27b31d7fea",
+  "created": "2026-07-17T16:43:56Z",
+  "figsize": [
+    9.0,
+    4.2
+  ],
+  "points": [
+    {
+      "x": -0.2,
+      "Tier-2 rate at the selected rung": 0.62,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.2,
+      "Tier-2 rate at the selected rung": 0.5052631578947369,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 0.8,
+      "Tier-2 rate at the selected rung": 0.635,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 1.2,
+      "Tier-2 rate at the selected rung": 0.5645161290322581,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 1.8,
+      "Tier-2 rate at the selected rung": 0.592964824120603,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 2.2,
+      "Tier-2 rate at the selected rung": 0.5384615384615384,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 3.8,
+      "Tier-2 rate at the selected rung": 0.615,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "x": 4.2,
+      "Tier-2 rate at the selected rung": 0.4789473684210526,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "x": 4.8,
+      "Tier-2 rate at the selected rung": 0.66,
+      "_kind": "bar",
+      "_group": 8
+    },
+    {
+      "x": 5.2,
+      "Tier-2 rate at the selected rung": 0.52,
+      "_kind": "bar",
+      "_group": 9
+    },
+    {
+      "x": 5.8,
+      "Tier-2 rate at the selected rung": 0.82,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "x": 6.2,
+      "Tier-2 rate at the selected rung": 0.6267605633802817,
+      "_kind": "bar",
+      "_group": 11
+    },
+    {
+      "x": -0.2,
+      "Tier-2 rate at the selected rung": 0.585,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": -0.2,
+      "Tier-2 rate at the selected rung": 0.26,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 0.8,
+      "Tier-2 rate at the selected rung": 0.605,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 0.8,
+      "Tier-2 rate at the selected rung": 0.26,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 1.8,
+      "Tier-2 rate at the selected rung": 0.535,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 1.8,
+      "Tier-2 rate at the selected rung": 0.26,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 3.8,
+      "Tier-2 rate at the selected rung": 0.6,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 3.8,
+      "Tier-2 rate at the selected rung": 0.245,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "x": 4.8,
+      "Tier-2 rate at the selected rung": 0.65,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 4.8,
+      "Tier-2 rate at the selected rung": 0.245,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "x": 5.8,
+      "Tier-2 rate at the selected rung": 0.815,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 5.8,
+      "Tier-2 rate at the selected rung": 0.245,
+      "_kind": "scatter",
+      "_group": 23
+    }
+  ],
+  "n_series": 24,
+  "total_points": 24,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "paired dual-rubric Tier-2 reads (solid legacy / hatched paper rubric;\nx CJK-zeroed bound; squares reused legacy base; dashes 0.60 band floor)",
+        "ylabel": "Tier-2 rate at the selected rung",
+        "xticklabels": [
+          "Claude-data (c3)\nlr 1e-5",
+          "Claude-data (c3)\nlr 3e-5",
+          "Claude-data (c3)\nlr 1e-4",
+          "Qwen-data (c5)\nlr 1e-5",
+          "Qwen-data (c5)\nlr 3e-5",
+          "Qwen-data (c5)\nlr 1e-4"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ]
+      }
+    ]
+  }
+}
