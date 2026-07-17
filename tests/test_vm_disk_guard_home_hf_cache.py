@@ -14,7 +14,10 @@ mechanics (T7), report-only persisting nothing (T8), fail-toward-KEEP
 degradation (T9), the tier-(d) double-cover guard (T10), pod refusal (T11),
 the ``run_guard`` production opt-in (T12), the ``--json`` field (T13), and
 scan-warning reporting (T14). #1377's own arm-2 pins live in
-``tests/test_vm_disk_guard_home_hf.py``.
+``tests/test_vm_disk_guard_home_hf.py``. The #1450 arm-3 SIZE-CAP pins
+(oldest-first over-cap reap, keep contract at cap=0, in-flight floor,
+report-only vs apply, under-cap no-op, env knobs, age-arm top-up,
+degenerate multi-revision fail-KEEP) live at the end of this file.
 
 HERMETIC BY CONSTRUCTION: ``_scan_hf_cache`` is monkeypatched to
 SimpleNamespace fakes (the tier-(d) fixture pattern from
@@ -102,6 +105,9 @@ def env(tmp_path, monkeypatch):
     monkeypatch.setattr(vdg, "repo_root", lambda: tmp_path)
     monkeypatch.setattr(ced, "repo_root", lambda: tmp_path)
     monkeypatch.setattr(vdg, "_running_pod_side", lambda: False)
+    # Ambient arm-3 knobs (#1450) must never leak into the fixtures' defaults.
+    monkeypatch.delenv("EPS_VM_HOME_HF_CACHE_CAP_GB", raising=False)
+    monkeypatch.delenv("EPS_VM_HOME_HF_SIZE_CAP_MIN_AGE_HOURS", raising=False)
     events: list[tuple[dict, bool]] = []
     pushes: list[tuple[str, bool]] = []
     monkeypatch.setattr(
@@ -203,7 +209,7 @@ def test_home_tier_reaps_unreferenced_stale_revisions(env, monkeypatch):
     assert res.bytes_freed == 777
     reaped = [ev for ev, _ in env.events if ev["kind"] == "home-hf-revisions-trimmed"]
     assert len(reaped) == 1
-    assert reaped[0]["arms"] == {"whole_repo": 0, "revision_level": 1}
+    assert reaped[0]["arms"] == {"whole_repo": 0, "revision_level": 1, "size_cap": 0}
     # Attribution names the candidate bytes for the repo.
     assert res.hf_repo_attributions[0]["reap_candidate_bytes"] == 1_000
 
@@ -308,7 +314,7 @@ def test_home_tier_whole_repo_arm_covers_stale_models(env, monkeypatch):
     assert executed == [("mainhash",)]
     assert any("arm 1 wholesale" in d and "ref'd + newest included" in d for d in res.detail)
     reaped = [ev for ev, _ in env.events if ev["kind"] == "home-hf-revisions-trimmed"]
-    assert reaped[0]["arms"] == {"whole_repo": 1, "revision_level": 0}
+    assert reaped[0]["arms"] == {"whole_repo": 1, "revision_level": 0, "size_cap": 0}
 
     # The same repo with FRESH last_accessed is untouched.
     executed2: list = []
@@ -626,3 +632,358 @@ def test_home_tier_degenerate_repo_kept_others_selected(env, monkeypatch):
     assert res.skipped is False
     assert executed == [("aaa111",)]  # the healthy stale repo is still reaped
     assert any("degenerate-repo-kept: 1 repo(s)" in d for d in res.detail)
+
+
+# ─── arm 3 (#1450): size-cap top-up over the age-relaxed eligible pool ───────
+
+
+def test_home_tier_size_cap_reaps_fresh_over_cap_oldest_first(env, monkeypatch):
+    """Over-cap same-day churn (every revision under the 7 d age gate) is
+    reaped OLDEST-first down to the cap; the freshest eligible survives."""
+    executed: list = []
+    # Fixture order deliberately INTERLEAVED (non-chronological) so a missing
+    # oldest-first sort cannot pass via enumeration order.
+    ages_hours = [12, 72, 2, 24, 6]
+    assert ages_hours != sorted(ages_hours) and ages_hours != sorted(ages_hours, reverse=True)
+    newest = _mk_rev(
+        "newest00",
+        last_modified=NOW - 0.5 * HOUR,
+        files=[_mk_file("blobN", NOW - 0.5 * HOUR)],
+        size=10_000,
+    )
+    eligibles = [
+        _mk_rev(
+            f"e{h:03d}hash",
+            last_modified=NOW - h * HOUR,
+            files=[_mk_file(f"blob{h}", NOW - h * HOUR)],
+            size=10_000,
+        )
+        for h in ages_hours
+    ]
+    repo = _mk_repo(
+        "org/churn",
+        repo_type="dataset",
+        last_accessed=NOW - 0.5 * HOUR,
+        revisions=[newest, *eligibles],
+    )
+    res = _run_tier(
+        env, monkeypatch, _mk_info([repo], executed), apply=True, cache_cap_gb=25_000 / 1e9
+    )
+    # total 60_000 B, cap 25_000 B, age arms select nothing (all < 7 d) ->
+    # overage 35_000; oldest-first 72h, 24h, 12h, 6h (cumulative 40_000 >=
+    # 35_000, exact request order pins the sort); the 2h revision survives.
+    assert executed == [("e072hash", "e024hash", "e012hash", "e006hash")]
+    assert any("size-cap (arm 3)" in d for d in res.detail)
+
+
+def test_home_tier_size_cap_keep_contract_newest_and_refd_survive(env, monkeypatch):
+    """Durability pin (#1450): the STRUCTURAL keeps hold at the maximally
+    aggressive cap/floor (cap=0.0, floor=0.0) — keep-newest, any-ref, and
+    single-revision each protect on their own. Every protected revision is
+    DAYS older than any floor, so the in-flight floor protects nothing here
+    (the keeps, not the floor, are load-bearing)."""
+    executed: list = []
+    multi = _mk_repo(
+        "org/refd",
+        last_accessed=NOW - 1 * HOUR,
+        revisions=[
+            # Newest (ref-less, 2d old + cold): kept SOLELY by keep-newest.
+            _mk_rev(
+                "newest2d", last_modified=NOW - 2 * DAY, files=[_mk_file("blobN", NOW - 2 * DAY)]
+            ),
+            # main-ref'd, 3d old + cold: kept SOLELY by the any-ref rule.
+            _mk_rev(
+                "mainref3",
+                refs={"main"},
+                last_modified=NOW - 3 * DAY,
+                files=[_mk_file("blobM", NOW - 3 * DAY)],
+            ),
+            # Pinned-read ref, 5d old + cold: kept SOLELY by the any-ref rule.
+            _mk_rev(
+                "pinned5d",
+                refs={"77d04e45"},
+                last_modified=NOW - 5 * DAY,
+                files=[_mk_file("blobP", NOW - 5 * DAY)],
+            ),
+        ],
+    )
+    huge_single = _mk_repo(
+        "org/huge-single",
+        last_accessed=NOW - 1 * HOUR,
+        revisions=[
+            # Ref-less + 3d old + cold: kept SOLELY by the single-revision rule.
+            _mk_rev(
+                "single3d",
+                last_modified=NOW - 3 * DAY,
+                files=[_mk_file("blobS", NOW - 3 * DAY)],
+                size=90_000,
+            ),
+        ],
+    )
+    res = _run_tier(
+        env,
+        monkeypatch,
+        _mk_info([multi, huge_single], executed),
+        apply=True,
+        cache_cap_gb=0.0,
+        size_cap_min_age_hours=0.0,
+    )
+    assert executed == []  # NO delete request contains a protected hash
+    assert res.bytes_freed == 0
+    assert any("over cap but nothing eligible" in d for d in res.detail)
+
+
+def test_home_tier_size_cap_in_flight_floor(env, monkeypatch):
+    """The 1 h in-flight floor (default; env cleared by the fixture) keeps a
+    just-minted revision AND a revision whose EXCLUSIVE blob was read within
+    the floor; an old-and-cold sibling is size-cap selected."""
+    executed: list = []
+    repo = _mk_repo(
+        "org/churn",
+        last_accessed=NOW - 10 * 60.0,
+        revisions=[
+            _mk_rev("newest00", last_modified=NOW - 60.0, files=[_mk_file("blobN", NOW - 60.0)]),
+            # (a) minted 10 min ago (inside the floor by last_modified): kept.
+            _mk_rev(
+                "minted10",
+                last_modified=NOW - 10 * 60.0,
+                files=[_mk_file("blobA", NOW - 10 * 60.0)],
+            ),
+            # (b) old last_modified, EXCLUSIVE blob read just now: kept.
+            _mk_rev("readnow2", last_modified=NOW - 2 * DAY, files=[_mk_file("blobB", NOW)]),
+            # (c) old and cold: the one size-cap candidate.
+            _mk_rev(
+                "coldold3", last_modified=NOW - 3 * DAY, files=[_mk_file("blobC", NOW - 3 * DAY)]
+            ),
+        ],
+    )
+    res = _run_tier(
+        env, monkeypatch, _mk_info([repo], executed), apply=True, cache_cap_gb=1_000 / 1e9
+    )
+    assert executed == [("coldold3",)]
+    assert any("size-cap (arm 3)" in d for d in res.detail)
+
+
+def test_home_tier_size_cap_report_only_vs_apply(env, monkeypatch):
+    """Report-only: the selection is reported ('would trim' + arm3 suffix,
+    ``total_discovered_bytes``) and NOTHING executes or persists; apply:
+    the arm-3 hash is executed and the sidecar row carries
+    ``arms['size_cap']`` + the additive ``cap_gb`` field."""
+
+    def _repo():
+        return _mk_repo(
+            "org/churn",
+            last_accessed=NOW - 1 * HOUR,
+            revisions=[
+                _mk_rev(
+                    "newest00",
+                    last_modified=NOW - 1 * HOUR,
+                    files=[_mk_file("blobN", NOW - 1 * HOUR)],
+                    size=10_000,
+                ),
+                _mk_rev(
+                    "cold2day",
+                    last_modified=NOW - 2 * DAY,
+                    files=[_mk_file("blobC", NOW - 2 * DAY)],
+                    size=10_000,
+                ),
+            ],
+        )
+
+    executed: list = []
+    res = _run_tier(
+        env,
+        monkeypatch,
+        _mk_info([_repo()], executed, expected_freed=9_999),
+        apply=False,
+        cache_cap_gb=5_000 / 1e9,
+    )
+    assert executed == []  # report-only executes NOTHING
+    assert res.bytes_freed == 9_999
+    assert res.total_discovered_bytes == 9_999
+    assert any("would trim" in d and "arm3 size-cap: 1 rev(s)" in d for d in res.detail)
+    assert [ev for ev, _ in env.events if ev["kind"] == "home-hf-revisions-trimmed"] == []
+
+    executed2: list = []
+    _run_tier(
+        env,
+        monkeypatch,
+        _mk_info([_repo()], executed2, expected_freed=9_999),
+        apply=True,
+        cache_cap_gb=5_000 / 1e9,
+    )
+    assert executed2 == [("cold2day",)]
+    reaped = [ev for ev, _ in env.events if ev["kind"] == "home-hf-revisions-trimmed"]
+    assert len(reaped) == 1
+    assert reaped[0]["arms"] == {"whole_repo": 0, "revision_level": 0, "size_cap": 1}
+    assert reaped[0]["cap_gb"] == pytest.approx(5_000 / 1e9)
+
+
+def test_home_tier_size_cap_noop_under_cap(env, monkeypatch):
+    """Under the (default 50 GB) cap the tier output is byte-identical to the
+    pre-#1450 tier: no size-cap detail line ANYWHERE (substring scan over all
+    lines), no arm3 suffix on the summary, age-arm selection unchanged."""
+    executed: list = []
+    repo = _mk_repo(
+        "org/data",
+        last_accessed=NOW - 1 * HOUR,
+        revisions=[
+            _mk_rev(
+                "newest00", last_modified=NOW - 1 * HOUR, files=[_mk_file("blobN", NOW - 1 * HOUR)]
+            ),
+            # 2h old, unref'd, non-newest — arm-3 eligible IF over cap; under
+            # the 7 d age gate so arm 2 never selects it.
+            _mk_rev(
+                "young2hr", last_modified=NOW - 2 * HOUR, files=[_mk_file("blobY", NOW - 2 * HOUR)]
+            ),
+            # 20d old + cold: arm-2 selected (age-arm behavior unchanged).
+            _mk_rev(
+                "cold20dy", last_modified=NOW - 20 * DAY, files=[_mk_file("blobC", NOW - 20 * DAY)]
+            ),
+        ],
+    )
+    res = _run_tier(env, monkeypatch, _mk_info([repo], executed), apply=True)
+    assert executed == [("cold20dy",)]  # arm 2 only; the young churn survives
+    assert all("size-cap" not in d for d in res.detail)  # substring scan, ALL lines
+    summary = next(d for d in res.detail if "trimmed" in d)
+    assert "arm3" not in summary
+    assert summary.endswith(
+        "(arm1 whole-repo: 0 repo(s) / 0 rev(s); arm2 revision-level: 1 rev(s) across 1 repo(s))"
+    )
+
+
+def test_home_hf_size_cap_env_knobs(monkeypatch):
+    """Both #1450 knobs parse per the file's convention: valid values (incl.
+    0) honored; blank/invalid/negative -> defaults (50 GB / 1 h)."""
+    monkeypatch.setenv("EPS_VM_HOME_HF_CACHE_CAP_GB", "10")
+    assert vdg.home_hf_cache_cap_bytes() == int(10 * 1e9)
+    monkeypatch.setenv("EPS_VM_HOME_HF_CACHE_CAP_GB", "0")
+    assert vdg.home_hf_cache_cap_bytes() == 0
+    monkeypatch.setenv("EPS_VM_HOME_HF_CACHE_CAP_GB", "")
+    assert vdg.home_hf_cache_cap_bytes() == int(50 * 1e9)
+    monkeypatch.setenv("EPS_VM_HOME_HF_CACHE_CAP_GB", "bogus")
+    assert vdg.home_hf_cache_cap_bytes() == int(50 * 1e9)
+    monkeypatch.setenv("EPS_VM_HOME_HF_CACHE_CAP_GB", "-5")
+    assert vdg.home_hf_cache_cap_bytes() == int(50 * 1e9)
+
+    monkeypatch.setenv("EPS_VM_HOME_HF_SIZE_CAP_MIN_AGE_HOURS", "2.5")
+    assert vdg.home_hf_size_cap_min_age_seconds() == 9_000.0
+    monkeypatch.setenv("EPS_VM_HOME_HF_SIZE_CAP_MIN_AGE_HOURS", "0")
+    assert vdg.home_hf_size_cap_min_age_seconds() == 0.0
+    monkeypatch.setenv("EPS_VM_HOME_HF_SIZE_CAP_MIN_AGE_HOURS", "")
+    assert vdg.home_hf_size_cap_min_age_seconds() == 3_600.0
+    monkeypatch.setenv("EPS_VM_HOME_HF_SIZE_CAP_MIN_AGE_HOURS", "bogus")
+    assert vdg.home_hf_size_cap_min_age_seconds() == 3_600.0
+    monkeypatch.setenv("EPS_VM_HOME_HF_SIZE_CAP_MIN_AGE_HOURS", "-1")
+    assert vdg.home_hf_size_cap_min_age_seconds() == 3_600.0
+
+
+def test_home_tier_size_cap_tops_up_after_age_arms(env, monkeypatch):
+    """Arm 3 TOPS UP the age arms: when the arm-2 selection's approximate
+    bytes already cover the overage it selects nothing; when they cover only
+    part, it selects the remainder oldest-first (never re-selecting an arm-2
+    hash)."""
+
+    def _repo():
+        return _mk_repo(
+            "org/churn",
+            last_accessed=NOW - 1 * HOUR,
+            revisions=[
+                _mk_rev(
+                    "newest00",
+                    last_modified=NOW - 1 * HOUR,
+                    files=[_mk_file("blobN", NOW - 1 * HOUR)],
+                    size=10_000,
+                ),
+                # >= 7d unref'd + cold: arm-2 selected.
+                _mk_rev(
+                    "agearm20",
+                    last_modified=NOW - 20 * DAY,
+                    files=[_mk_file("blobO", NOW - 20 * DAY)],
+                    size=30_000,
+                ),
+                # Fresh churn (2d / 3d): the arm-3 pool.
+                _mk_rev(
+                    "churn2dy",
+                    last_modified=NOW - 2 * DAY,
+                    files=[_mk_file("blob2", NOW - 2 * DAY)],
+                    size=10_000,
+                ),
+                _mk_rev(
+                    "churn3dy",
+                    last_modified=NOW - 3 * DAY,
+                    files=[_mk_file("blob3", NOW - 3 * DAY)],
+                    size=10_000,
+                ),
+            ],
+        )
+
+    # (a) covered: total 60_000, arm-2 frees ~30_000, cap 35_000 ->
+    # overage -5_000 <= 0 -> arm 3 selects nothing (still over cap: detail).
+    executed: list = []
+    res = _run_tier(
+        env, monkeypatch, _mk_info([_repo()], executed), apply=True, cache_cap_gb=35_000 / 1e9
+    )
+    assert executed == [("agearm20",)]
+    assert any("age arms already cover" in d for d in res.detail)
+
+    # (b) partial: cap 27_000 -> overage 3_000 -> arm 3 tops up with the
+    # OLDEST eligible only (churn3dy); churn2dy survives; no hash twice.
+    executed2: list = []
+    _run_tier(
+        env, monkeypatch, _mk_info([_repo()], executed2), apply=True, cache_cap_gb=27_000 / 1e9
+    )
+    assert executed2 == [("agearm20", "churn3dy")]
+    assert len(set(executed2[0])) == len(executed2[0])  # no double-selection
+    reaped = [ev for ev, _ in env.events if ev["kind"] == "home-hf-revisions-trimmed"]
+    assert reaped[-1]["arms"] == {"whole_repo": 0, "revision_level": 1, "size_cap": 1}
+
+
+def test_home_tier_size_cap_degenerate_multi_revision_repo_kept(env, monkeypatch):
+    """Arm-3 per-repo fail-toward-KEEP: a MULTI-revision degenerate repo
+    (None timestamps — a single-revision degenerate never reaches arm 3's
+    selection body) is skipped, contributes NOTHING to the size-cap total
+    (the documented under-count direction), and never enters a delete
+    request, while healthy repos keep their selection."""
+    executed: list = []
+    degenerate = _mk_repo(
+        "org/degenerate",
+        last_accessed=None,
+        revisions=[
+            _mk_rev("ddd44444", last_modified=None),
+            _mk_rev("ddd55555", last_modified=None),
+        ],
+    )
+    healthy = _mk_repo(
+        "org/churn",
+        last_accessed=NOW - 1 * HOUR,
+        revisions=[
+            _mk_rev(
+                "newest00",
+                last_modified=NOW - 1 * HOUR,
+                files=[_mk_file("blobN", NOW - 1 * HOUR)],
+                size=10_000,
+            ),
+            _mk_rev(
+                "cold2day",
+                last_modified=NOW - 2 * DAY,
+                files=[_mk_file("blobC", NOW - 2 * DAY)],
+                size=10_000,
+            ),
+        ],
+    )
+    res = _run_tier(
+        env,
+        monkeypatch,
+        _mk_info([degenerate, healthy], executed),
+        apply=True,
+        cache_cap_gb=15_000 / 1e9,
+    )
+    assert res.skipped is False
+    # Healthy total 20_000 > cap 15_000 (the degenerate repo's bytes are NOT
+    # counted) -> the healthy eligible is selected; degenerate hashes never
+    # appear in any request.
+    assert executed == [("cold2day",)]
+    assert all("ddd" not in h for req in executed for h in req)
+    assert any("degenerate-repo-kept: 1 repo(s)" in d for d in res.detail)
+    assert any("size-cap (arm 3)" in d for d in res.detail)

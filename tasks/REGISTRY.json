@@ -3481,8 +3481,8 @@
     "1447": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1447",
-      "status": "running",
+      "path": "tasks/completed/1447",
+      "status": "completed",
       "title": "daily-fix: widen bit_byte_identical to the synonym tail"
     },
     "1448": {
@@ -3495,8 +3495,8 @@
     "1449": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1449",
-      "status": "running",
+      "path": "tasks/completed/1449",
+      "status": "completed",
       "title": "daily-fix: plan-glob vs uploader allow-pattern parity check"
     },
     "145": {
@@ -3509,8 +3509,8 @@
     "1450": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1450",
-      "status": "running",
+      "path": "tasks/completed/1450",
+      "status": "completed",
       "title": "daily-fix: size-cap trigger for home HF cache reap"
     },
     "1451": {
@@ -3523,29 +3523,29 @@
     "1452": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1452",
-      "status": "planning",
+      "path": "tasks/running/1452",
+      "status": "running",
       "title": "daily-fix: flag hardcoded cross-issue upload prefixes"
     },
     "1453": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1453",
-      "status": "proposed",
+      "path": "tasks/running/1453",
+      "status": "running",
       "title": "daily-fix: instant wedge lane for Prompt-is-too-long"
     },
     "1454": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1454",
-      "status": "proposed",
+      "path": "tasks/planning/1454",
+      "status": "planning",
       "title": "daily-fix: IAP tunneling in GcpBackend.fetch_results"
     },
     "1455": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1455",
-      "status": "proposed",
+      "path": "tasks/planning/1455",
+      "status": "planning",
       "title": "daily-fix: stop releases registration + dispatch lease"
     },
     "1456": {

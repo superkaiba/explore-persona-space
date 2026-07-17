@@ -18,6 +18,11 @@
 # Usage:
 #   bash scripts/issue1415_dispatch.sh            # full production run
 #   bash scripts/issue1415_dispatch.sh --smoke    # --tiny CPU smoke (local-mirror)
+#   bash scripts/issue1415_dispatch.sh --replicate           # l14-behavioral-replication:
+#       driver --replicate-l14 for seed bases 43 then 44 (fresh baselines +
+#       fixed L14/a4 steered cells; frozen parent deltas; pilot/K1/K2 skipped)
+#   bash scripts/issue1415_dispatch.sh --replicate --smoke   # tiny CPU replication smoke
+#       (requires a prior --smoke run: the tiny parent bulk provides the deltas)
 set -euo pipefail
 
 REPO_ROOT="${REPO_ROOT:-${WORKLOAD_ROOT:-$(cd "$(dirname "$0")/.." && pwd)}}"
@@ -38,13 +43,53 @@ echo $$ > "$LOG_DIR/issue-${ISSUE}.pid"
 export HF_HOME="${HF_HOME:-/workspace/.cache/huggingface}"
 
 SMOKE=0
+REPLICATE=0
 EXTRA_ARGS=()
 for a in "$@"; do
   case "$a" in
     --smoke) SMOKE=1 ;;
+    --replicate) REPLICATE=1 ;;
     *) EXTRA_ARGS+=("$a") ;;
   esac
 done
+
+# Result-push verification contract (#1205) + per-file artifact-presence
+# assert (#1325), shared by the phase-1 and replication branches.
+# $1 = commit message; remaining args = git-add paths.
+commit_push_verify() {
+  local msg="$1"
+  shift
+  local committed=""
+  git add -- "$@"
+  if ! git diff --cached --quiet; then
+    git commit -m "$msg"
+    committed="$(git diff --name-only HEAD~1..HEAD)"
+  else
+    echo "[phase=commit_results] nothing new to commit (resume re-run)"
+  fi
+  if ! git push origin "$GIT_BRANCH"; then
+    echo "[phase=commit_results] push failed once; retrying" >&2
+    sleep 15
+    git push origin "$GIT_BRANCH"
+  fi
+  local ahead
+  ahead="$(git rev-list --count "origin/${GIT_BRANCH}..HEAD")"
+  if [ "$ahead" -ne 0 ]; then
+    echo "[phase=push_verify_failed] ${ahead} commit(s) unpushed on ${GIT_BRANCH}" >&2
+    exit 86
+  fi
+  if [ -n "$committed" ]; then
+    local missing=0 f
+    while IFS= read -r f; do
+      [ -z "$f" ] && continue
+      if [ -z "$(git ls-tree -r "origin/${GIT_BRANCH}" --name-only -- "$f")" ]; then
+        echo "[phase=artifact_assert_failed] missing from pushed tree: $f" >&2
+        missing=1
+      fi
+    done <<< "$committed"
+    if [ "$missing" -ne 0 ]; then exit 87; fi
+  fi
+}
 
 GIT_SHA="$(git rev-parse HEAD)"
 GIT_BRANCH="$(git rev-parse --abbrev-ref HEAD)"
@@ -57,6 +102,103 @@ if [ "$SMOKE" -eq 1 ]; then
   TINY_FLAG=(--tiny)
   KIND="epm:smoke-result"
   OUT_ROOT="data/issue_1415/tiny_smoke/out"
+fi
+
+# ── l14-behavioral-replication branch (--replicate) ─────────────────
+# Seed bases 43 then 44, sequentially on the one GPU (the two seeds share the
+# model + delta staging inside each driver invocation; single-GPU intent —
+# nothing to shard). No pair-bank build (the driver fetches + sha-gates the
+# FROZEN parent bank), no pilot (throughput measured: 2.31 s/sample), no
+# K1/K2 (no ceiling arm). Judging runs OFF-pod afterwards
+# (issue1415_judge.py --replication <seed>).
+if [ "$REPLICATE" -eq 1 ]; then
+  REP_SEEDS=(43 44)
+  REP_OUT_ROOTS=()
+  for SEED in "${REP_SEEDS[@]}"; do
+    if [ "$SMOKE" -eq 1 ]; then
+      REP_OUT_ROOTS+=("data/issue_1415/tiny_smoke/out_rep${SEED}")
+    else
+      REP_OUT_ROOTS+=("eval_results/issue_1415/phase1_rep${SEED}")
+    fi
+  done
+  for SEED in "${REP_SEEDS[@]}"; do
+    echo "[phase=replicate_rep${SEED}] fresh baselines + L14/a4 steered cells (seed base ${SEED})"
+    uv run python scripts/issue1415_run_phase1.py --replicate-l14 --seed-base "$SEED" \
+      ${TINY_FLAG[@]+"${TINY_FLAG[@]}"} ${EXTRA_ARGS[@]+"${EXTRA_ARGS[@]}"} \
+      > "$LOG_DIR/issue-${ISSUE}-replicate-rep${SEED}.log" 2>&1
+  done
+
+  if [ "$SMOKE" -eq 0 ]; then
+    echo "[phase=commit_results] committing replication metadata to ${GIT_BRANCH}"
+    commit_push_verify \
+      "issue-1415 l14-behavioral-replication pod run: rep43+rep44 cell metadata + manifests" \
+      "${REP_OUT_ROOTS[@]}"
+  fi
+
+  echo "[phase=sentinel] writing results sentinel"
+  uv run python - "$KIND" "$ISSUE" "$GIT_SHA" "$SMOKE" "${REP_OUT_ROOTS[@]}" <<'PY'
+import json
+import sys
+import time
+from pathlib import Path
+
+kind, issue, git_sha, smoke = sys.argv[1:5]
+out_roots = sys.argv[5:]
+logs_dir = Path("/workspace/logs")
+if not logs_dir.is_dir():
+    logs_dir = Path("logs")
+    logs_dir.mkdir(parents=True, exist_ok=True)
+kind_slug = kind.replace(":", "_")
+path = logs_dir / f"issue-{issue}-{kind_slug}-{int(time.time())}.json"
+
+eval_paths = sorted(str(p) for root in out_roots for p in Path(root).glob("phase1_manifest.json"))
+note = {
+    "summary": (
+        "issue-1415 l14-behavioral-replication GPU run complete: fresh baselines + fixed "
+        "L14/alpha=4 steered cells (both arms) at seed bases 43 + 44 (frozen parent deltas; "
+        "judging runs OFF-pod via issue1415_judge.py --replication <seed>)"
+    ),
+    "followup_label": "l14-behavioral-replication",
+    "eval_paths": eval_paths,
+    "cells_metadata_dirs": [f"{root}/cells" for root in out_roots],
+    "reproducibility_card": {
+        "adapter_paths": "n/a (no training in this experiment)",
+        "wandb_url": "n/a (no training metrics)",
+        "hf_artifact_prefixes": [
+            "raw_completions/issue_1415/gen_rep43/",
+            "raw_completions/issue_1415/gen_rep44/",
+            "analysis_tensors/issue_1415/activations/ (frozen parent deltas, REUSED not re-run)",
+            "data/issue_1415/pair_bank.json (frozen parent bank, pairs-content sha-gated)",
+        ],
+        "eval_json_paths": eval_paths,
+        "seeds": {
+            "generation_seed_bases": {
+                "rep43": {"label": 43, "effective_seed_base": 43000},
+                "rep44": {"label": 44, "effective_seed_base": 44000},
+            },
+            "per_draw_seed": "effective_seed_base + draw_index (disjoint from the parent 42..51)",
+        },
+        "git_commit": git_sha,
+    },
+    "smoke": bool(int(smoke)),
+}
+payload = {
+    "sentinel_schema_version": 1,
+    "kind": kind,
+    "version": 1,
+    "note": json.dumps(note, indent=2),
+    "task_id": int(issue),
+    "by": "issue1415_dispatch",
+    "smoke": bool(int(smoke)),
+    "ts": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+}
+with open(path, "w") as f:
+    json.dump(payload, f, indent=2)
+print(f"wrote sentinel {path}")
+PY
+
+  echo "[phase=done]"
+  exit 0
 fi
 
 if [ "$SMOKE" -eq 0 ]; then
@@ -99,7 +241,6 @@ if [ "$PHASE1_RC" -ne 0 ]; then
   fi
 fi
 
-COMMITTED_FILES=""
 if [ "$SMOKE" -eq 0 ]; then
   echo "[phase=upload_pair_bank] pair bank -> HF data repo"
   uv run python - <<'PY' > "$LOG_DIR/issue-${ISSUE}-upload-bank.log" 2>&1
@@ -115,36 +256,9 @@ drv._hf_upload(
 PY
 
   echo "[phase=commit_results] committing phase-1 metadata to ${GIT_BRANCH}"
-  git add -- eval_results/issue_1415/phase1
-  if ! git diff --cached --quiet; then
-    git commit -m "issue-1415 phase-1 pod run: cell metadata, alpha selections, manifest"
-    COMMITTED_FILES="$(git diff --name-only HEAD~1..HEAD)"
-  else
-    echo "[phase=commit_results] nothing new to commit (resume re-run)"
-  fi
-  # Result-push verification contract (#1205): bare push, rev-list proof,
-  # one retry, then per-file ls-tree artifact-presence assert (#1325).
-  if ! git push origin "$GIT_BRANCH"; then
-    echo "[phase=commit_results] push failed once; retrying" >&2
-    sleep 15
-    git push origin "$GIT_BRANCH"
-  fi
-  AHEAD="$(git rev-list --count "origin/${GIT_BRANCH}..HEAD")"
-  if [ "$AHEAD" -ne 0 ]; then
-    echo "[phase=push_verify_failed] ${AHEAD} commit(s) unpushed on ${GIT_BRANCH}" >&2
-    exit 86
-  fi
-  if [ -n "$COMMITTED_FILES" ]; then
-    MISSING=0
-    while IFS= read -r f; do
-      [ -z "$f" ] && continue
-      if [ -z "$(git ls-tree -r "origin/${GIT_BRANCH}" --name-only -- "$f")" ]; then
-        echo "[phase=artifact_assert_failed] missing from pushed tree: $f" >&2
-        MISSING=1
-      fi
-    done <<< "$COMMITTED_FILES"
-    if [ "$MISSING" -ne 0 ]; then exit 87; fi
-  fi
+  commit_push_verify \
+    "issue-1415 phase-1 pod run: cell metadata, alpha selections, manifest" \
+    eval_results/issue_1415/phase1
 fi
 
 echo "[phase=sentinel] writing results sentinel"

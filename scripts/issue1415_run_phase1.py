@@ -33,6 +33,15 @@ flow on CPU with a from-config 2-layer Qwen model):
   design when s/sample > 4.7 unless ``--force`` (``pilot_gate_report.json``,
   exit ``RC_PILOT_GATE=7`` — artifact-routed in the dispatcher like K1/K2).
 
+- ``--replicate-l14 --seed-base <S>`` (l14-behavioral-replication follow-up):
+  fresh-sampling re-run of ONLY the fixed L14/alpha=4 steered cells (both
+  extraction arms x 28 pairs) + fresh unhooked baselines under c, reusing the
+  FROZEN parent deltas (``--delta-root``, HF-fetched on a fresh instance) and
+  the frozen parent pair bank (pairs-content sha gate). Writes to the separate
+  ``phase1_rep<S>`` out/bulk namespace + the ``gen_rep<S>`` raw-completions
+  prefix; per-draw seeds ``S*1000 + i`` (disjoint from the parent's 42..51).
+  Pilot / K1 / K2 / 1a / 1d / 1e are skipped by design.
+
 Pre-registered in-run kill criteria (plan v5 §3; round-2 fix):
 
 - **K1** (post-1a): the context-swap ceiling must show real answer-side
@@ -121,6 +130,27 @@ RAW_PREFIX = "raw_completions/issue_1415"
 TENSOR_PREFIX = "analysis_tensors/issue_1415/activations"
 STEERED_TENSOR_PREFIX = "analysis_tensors/issue_1415/activations_steered"
 
+# ── --replicate-l14 mode (l14-behavioral-replication follow-up) ──────
+# Fresh-sampling re-run of the FIXED L14/alpha=4 steered cells (both arms x 28
+# pairs) + fresh unhooked baselines under c (28 cells; the ceiling arm is
+# deliberately NOT re-run — reused from the parent), at seed bases {43, 44}.
+REPLICATION_LAYER_FULL = 14
+REPLICATION_ALPHA = 4.0
+# Per-draw generation seeds are ``seed_base + i`` (steering.generate_batch), so
+# ADJACENT literal seed bases 43/44 would re-draw 9/10 of the parent's seeds
+# 42..51 on identical chunk compositions — NOT fresh sampling. The replication
+# maps the seed-base LABEL S to the effective base S*1000 (draws 43000..43009 /
+# 44000..44009: disjoint from the parent range and from each other).
+REPLICATION_SEED_MULT = 1000
+# The replication premise is the FROZEN parent 28-pair bank. The file-level
+# sha256 is NOT portable (metadata embeds created_utc + git_commit, so a VM
+# rebuild differs byte-wise from the pod copy the parent manifest pinned at
+# 95aceaa2bf28...), so the gate pins the canonical PAIRS-ARRAY content sha
+# (json.dumps(bank["pairs"], sort_keys=True, ensure_ascii=False)) instead —
+# verified identical between the HF-published parent bank and the VM copy.
+PARENT_PAIR_BANK_PAIRS_SHA256 = "21ed6d364e694d112aa57091cb87fc7749f291cec3de858619cdf4755f6f4088"
+PAIR_BANK_HF_PATH = "data/issue_1415/pair_bank.json"
+
 # Steered-cell phases whose completions get a phase-1e V_a capture.
 CAPTURED_PHASES = (
     "phase1c_grid",
@@ -175,6 +205,15 @@ class RunConfig:
     # Kill-criteria enforcement (NOT part of the manifest regime: K1/K2 only
     # truncate the run, they never change any cell's output).
     enforce_kill_criteria: bool = True
+    # --replicate-l14 mode (l14-behavioral-replication follow-up): rep_seed_base
+    # is the user-facing seed-base LABEL (43/44 — namespaces the roots + HF
+    # prefix); cfg.seed_base holds the EFFECTIVE generation base (label * 1000,
+    # see REPLICATION_SEED_MULT). delta_root points at the PARENT bulk root
+    # holding the frozen phase-1a captures (None -> bulk_root, normal mode).
+    replicate_l14: bool = False
+    rep_seed_base: int | None = None
+    rep_layer: int | None = None
+    delta_root: Path | None = None
 
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
@@ -198,18 +237,57 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         action="store_true",
         help="compute + persist the K1/K2 verdicts but demote the aborts to log lines",
     )
+    ap.add_argument(
+        "--replicate-l14",
+        action="store_true",
+        help="l14-behavioral-replication mode: run ONLY fresh baseline (c) cells + the fixed "
+        "L14/alpha=4 steered cells (both arms) at --seed-base, reusing the FROZEN parent "
+        "deltas; pilot/K1/K2/1a/1d/1e are skipped by design",
+    )
+    ap.add_argument(
+        "--seed-base",
+        type=int,
+        default=None,
+        help="replication seed-base LABEL (43/44; required with --replicate-l14) — generation "
+        f"uses the effective base label*{REPLICATION_SEED_MULT} so per-draw seeds stay disjoint "
+        "from the parent's 42..51 (see REPLICATION_SEED_MULT)",
+    )
+    ap.add_argument(
+        "--delta-root",
+        type=Path,
+        default=None,
+        help="parent bulk root holding the frozen activations/<pair>.pt captures "
+        "(replication mode; default: the parent phase-1 bulk root)",
+    )
     return ap.parse_args(argv)
 
 
 def build_config(args: argparse.Namespace) -> RunConfig:
     """Resolve mode-dependent defaults (tiny smoke roots NEVER collide with the
     canonical eval_results paths — smoke outputs must not overwrite committed
-    artifacts)."""
+    artifacts). ``--replicate-l14`` namespaces every root by the seed-base
+    label (``phase1_rep<S>`` / ``out_rep<S>``) and maps the label to the
+    effective generation base ``S * REPLICATION_SEED_MULT``."""
+    rep = None
+    if args.replicate_l14:
+        if args.seed_base is None:
+            raise SystemExit("--replicate-l14 requires --seed-base (e.g. 43)")
+        if args.seed_base < 1:
+            raise SystemExit(f"--seed-base must be >= 1, got {args.seed_base}")
+        if args.pilot_only:
+            raise SystemExit("--replicate-l14 skips the pilot by design; drop --pilot")
+        rep = f"rep{args.seed_base}"
+    elif args.seed_base is not None or args.delta_root is not None:
+        raise SystemExit("--seed-base / --delta-root are only meaningful with --replicate-l14")
+    seed_base = args.seed_base * REPLICATION_SEED_MULT if rep else SEED_BASE
     if args.tiny:
-        out_root = args.out_root or REPO_ROOT / "data" / "issue_1415" / "tiny_smoke" / "out"
-        bulk_root = args.bulk_root or REPO_ROOT / "data" / "issue_1415" / "tiny_smoke" / "bulk"
+        tiny_base = REPO_ROOT / "data" / "issue_1415" / "tiny_smoke"
+        out_root = args.out_root or tiny_base / (f"out_{rep}" if rep else "out")
+        bulk_root = args.bulk_root or tiny_base / (f"bulk_{rep}" if rep else "bulk")
+        # The tiny bank is SHARED with the (tiny) parent run — out_root.parent
+        # so explicit test roots resolve to the sibling parent bank too.
         pair_bank = args.pair_bank or out_root.parent / "pair_bank_tiny.json"
-        return RunConfig(
+        cfg = RunConfig(
             tiny=True,
             pilot_only=args.pilot_only,
             force=args.force,
@@ -225,7 +303,7 @@ def build_config(args: argparse.Namespace) -> RunConfig:
             layers=(0, 1),
             primary_layer=1,
             alpha_grid=ALPHA_GRID,
-            seed_base=SEED_BASE,
+            seed_base=seed_base,
             temperature=TEMPERATURE,
             hidden=64,
             n_model_layers=2,
@@ -234,31 +312,51 @@ def build_config(args: argparse.Namespace) -> RunConfig:
             # gate-calibration parity (gotchas.md): tiny computes + persists the
             # K1/K2 verdicts but never aborts on them (random-weight model).
             enforce_kill_criteria=False,
+            replicate_l14=args.replicate_l14,
+            rep_seed_base=args.seed_base if rep else None,
+            # tiny rep layer 0 mirrors production's NON-primary L14 (primary=1)
+            rep_layer=0 if rep else None,
+            delta_root=args.delta_root or (bulk_root.parent / "bulk" if rep else None),
         )
-    return RunConfig(
-        tiny=False,
-        pilot_only=args.pilot_only,
-        force=args.force,
-        out_root=args.out_root or REPO_ROOT / "eval_results" / "issue_1415" / "phase1",
-        bulk_root=args.bulk_root or REPO_ROOT / "data" / "issue_1415" / "phase1",
-        pair_bank_path=args.pair_bank or REPO_ROOT / "data" / "issue_1415" / "pair_bank.json",
-        upload_mode=args.upload or "hf",
-        model_id=MODEL_ID,
-        n_draws=args.n_draws or N_DRAWS_FULL,
-        max_new_tokens=args.max_new_tokens or MAX_NEW_TOKENS_FULL,
-        gen_batch=args.gen_batch,
-        capture_batch=args.capture_batch,
-        layers=LAYERS_FULL,
-        primary_layer=PRIMARY_LAYER_FULL,
-        alpha_grid=ALPHA_GRID,
-        seed_base=SEED_BASE,
-        temperature=TEMPERATURE,
-        hidden=HIDDEN_FULL,
-        n_model_layers=N_MODEL_LAYERS_FULL,
-        tiny_pairs=args.tiny_pairs,
-        device="cuda",
-        enforce_kill_criteria=not args.ignore_kill_criteria,
-    )
+    else:
+        cfg = RunConfig(
+            tiny=False,
+            pilot_only=args.pilot_only,
+            force=args.force,
+            out_root=args.out_root
+            or REPO_ROOT / "eval_results" / "issue_1415" / (f"phase1_{rep}" if rep else "phase1"),
+            bulk_root=args.bulk_root
+            or REPO_ROOT / "data" / "issue_1415" / (f"phase1_{rep}" if rep else "phase1"),
+            pair_bank_path=args.pair_bank or REPO_ROOT / "data" / "issue_1415" / "pair_bank.json",
+            upload_mode=args.upload or "hf",
+            model_id=MODEL_ID,
+            n_draws=args.n_draws or N_DRAWS_FULL,
+            max_new_tokens=args.max_new_tokens or MAX_NEW_TOKENS_FULL,
+            gen_batch=args.gen_batch,
+            capture_batch=args.capture_batch,
+            layers=LAYERS_FULL,
+            primary_layer=PRIMARY_LAYER_FULL,
+            alpha_grid=ALPHA_GRID,
+            seed_base=seed_base,
+            temperature=TEMPERATURE,
+            hidden=HIDDEN_FULL,
+            n_model_layers=N_MODEL_LAYERS_FULL,
+            tiny_pairs=args.tiny_pairs,
+            device="cuda",
+            enforce_kill_criteria=not args.ignore_kill_criteria,
+            replicate_l14=args.replicate_l14,
+            rep_seed_base=args.seed_base if rep else None,
+            rep_layer=REPLICATION_LAYER_FULL if rep else None,
+            delta_root=args.delta_root
+            or (REPO_ROOT / "data" / "issue_1415" / "phase1" if rep else None),
+        )
+    if cfg.replicate_l14:
+        # Effective per-draw seeds seed_base+i must stay inside this label's
+        # 1000-wide block (disjoint from the parent 42..51 and other labels).
+        assert cfg.n_draws <= REPLICATION_SEED_MULT, (cfg.n_draws, REPLICATION_SEED_MULT)
+        assert cfg.rep_layer in cfg.layers, (cfg.rep_layer, cfg.layers)
+        assert REPLICATION_ALPHA in cfg.alpha_grid, (REPLICATION_ALPHA, cfg.alpha_grid)
+    return cfg
 
 
 # ── small IO helpers ──────────────────────────────────────────────────
@@ -375,7 +473,7 @@ class Manifest:
 
 
 def _regime(cfg: RunConfig, pair_bank_sha: str) -> dict:
-    return {
+    regime = {
         "model_id": cfg.model_id,
         "tiny": cfg.tiny,
         "n_draws": cfg.n_draws,
@@ -390,6 +488,18 @@ def _regime(cfg: RunConfig, pair_bank_sha: str) -> dict:
         "n_model_layers": cfg.n_model_layers,
         "pair_bank_sha256": pair_bank_sha,
     }
+    if cfg.replicate_l14:
+        # Replicate-only keys: added ONLY in replication mode so the PARENT
+        # roots' persisted regimes stay byte-stable for their own resumes.
+        regime.update(
+            {
+                "mode": "replicate_l14",
+                "rep_seed_base": cfg.rep_seed_base,
+                "rep_layer": cfg.rep_layer,
+                "rep_alpha": REPLICATION_ALPHA,
+            }
+        )
+    return regime
 
 
 # ── pair bank ─────────────────────────────────────────────────────────
@@ -422,18 +532,46 @@ def _tiny_bank(n_pairs: int) -> dict:
     return {"metadata": {"issue": 1415, "tiny": True}, "pairs": pairs}
 
 
+def _pairs_content_sha(bank: dict) -> str:
+    """sha256 of the canonical pairs-array content. Metadata-independent: the
+    file-level sha differs across rebuilds because ``metadata`` embeds
+    created_utc + git_commit (the parent pod copy vs the VM rebuild)."""
+    import hashlib
+
+    return hashlib.sha256(
+        json.dumps(bank["pairs"], sort_keys=True, ensure_ascii=False).encode()
+    ).hexdigest()
+
+
 def load_pairs(cfg: RunConfig) -> list[dict]:
     """Load (self-building on a fresh instance — data/ is gitignored) and
-    schema-validate the pair bank."""
+    schema-validate the pair bank. Replication mode never self-builds: it
+    fetches the FROZEN parent bank from HF and gates on the pinned
+    pairs-content sha (a rebuilt bank would break the same-pairs premise)."""
     path = cfg.pair_bank_path
     if not path.exists():
         if cfg.tiny:
             _write_json_atomic(path, _tiny_bank(cfg.tiny_pairs))
+        elif cfg.replicate_l14:
+            from huggingface_hub import hf_hub_download
+
+            logger.info("[phase=setup] pair bank missing at %s — fetching frozen parent", path)
+            local = Path(hf_hub_download(HF_DATA_REPO, PAIR_BANK_HF_PATH, repo_type="dataset"))
+            path.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(local, path)
         else:
             logger.info("[phase=setup] pair bank missing at %s — self-building", path)
             issue1415_pair_bank.build_pair_bank(path)
     bank = json.loads(path.read_text())
     pairs = bank["pairs"]
+    if cfg.replicate_l14 and not cfg.tiny:
+        got = _pairs_content_sha(bank)
+        if got != PARENT_PAIR_BANK_PAIRS_SHA256:
+            raise RuntimeError(
+                f"replication pair-bank pairs-content sha mismatch at {path}: {got} != pinned "
+                f"{PARENT_PAIR_BANK_PAIRS_SHA256} — the replication premise is the FROZEN "
+                f"parent 28-pair bank (HF {PAIR_BANK_HF_PATH}); refetch it or fix --pair-bank"
+            )
     if not cfg.tiny:
         assert len(pairs) == 28, f"expected the 28-pair bank, got {len(pairs)}"
     for p in pairs:
@@ -517,14 +655,45 @@ class DeltaSource:
     def pair_delta(self, pair_id: str, arm: str, layer: int) -> torch.Tensor:
         assert arm in EXTRACTION_ARMS, arm
         if pair_id not in self._pair_cache:
-            path = self.cfg.bulk_root / "activations" / f"{pair_id}.pt"
-            assert path.exists(), f"phase-1a capture missing for {pair_id}: {path}"
-            self._pair_cache[pair_id] = torch.load(path, map_location="cpu", weights_only=True)
+            root = self.cfg.delta_root or self.cfg.bulk_root
+            path = root / "activations" / f"{pair_id}.pt"
+            if not path.exists() and self.cfg.replicate_l14 and not self.cfg.tiny:
+                self._fetch_parent_capture(pair_id, path)
+            assert path.exists(), f"phase-1a capture missing for {pair_id}: {path}" + (
+                " (frozen parent delta — check --delta-root)" if self.cfg.replicate_l14 else ""
+            )
+            blob = torch.load(path, map_location="cpu", weights_only=True)
+            if self.cfg.replicate_l14:
+                # A foreign/stale capture would silently mis-index the layer.
+                assert blob.get("layers") == list(self.cfg.layers), (pair_id, blob.get("layers"))
+            self._pair_cache[pair_id] = blob
         rec = self._pair_cache[pair_id]
         idx = list(self.cfg.layers).index(layer)  # captures store only the sweep layers
         d = rec["cprime"][f"v_c_{arm}"][idx] - rec["c"][f"v_c_{arm}"][idx]
         assert d.shape == (self.cfg.hidden,), d.shape
         return d
+
+    def _fetch_parent_capture(self, pair_id: str, dest: Path) -> None:
+        """HF-fetch fallback for a frozen parent phase-1a capture: production
+        replication on a fresh instance stages no local ``data/`` (the
+        git-clone lanes, #779), so the capture is pulled from the data repo and
+        copied under delta_root for subsequent local loads."""
+        from huggingface_hub import hf_hub_download
+
+        local = Path(
+            hf_hub_download(HF_DATA_REPO, f"{TENSOR_PREFIX}/{pair_id}.pt", repo_type="dataset")
+        )
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(local, dest)
+        logger.info("[replicate] fetched frozen parent capture %s -> %s", pair_id, dest)
+
+    def preload_pair_deltas(self, pairs: list[dict], layer: int) -> None:
+        """Stage + shape-assert EVERY frozen pair Delta (both arms) up-front —
+        the replication-mode analogue of :meth:`preload_rb`: fail EARLY, before
+        any model load / GPU spend (#779 whole-set preflight)."""
+        for p in pairs:
+            for arm in EXTRACTION_ARMS:
+                self.pair_delta(p["pair_id"], arm, layer)
 
     def preload_rb(self) -> None:
         """Stage + shape-assert every r_B input up-front (fail EARLY, before
@@ -1515,6 +1684,87 @@ def _write_canonical_steered(
     )
 
 
+# ── --replicate-l14 mode (l14-behavioral-replication follow-up) ──────
+
+
+def _replication_cells(cfg: RunConfig, pairs: list[dict]) -> list[GenCell]:
+    """Replication cell set for ONE seed base: per pair, one fresh unhooked
+    baseline under c (``phase1b`` / ``hf_nohook_base`` — the ceiling arm is
+    deliberately NOT re-run, it is reused from the parent) + the fixed
+    L{rep_layer}/alpha={REPLICATION_ALPHA} steered cell per extraction arm
+    (``phase1c_layers``, so the judge's arm labels match the parent layer-sweep
+    output). 28 + 2x28 = 84 cells x n_draws in production."""
+    rep = f"rep{cfg.rep_seed_base}"
+    cells = [
+        GenCell(
+            cell_id=f"gen_{rep}/base/{p['pair_id']}/c",
+            phase="phase1b",
+            pair_id=p["pair_id"],
+            context=p["ctx_c"],
+            extra={"arm_label": "hf_nohook_base", "rep_seed_base": cfg.rep_seed_base},
+        )
+        for p in pairs
+    ]
+    cells += [
+        GenCell(
+            cell_id=f"gen_{rep}/{arm}/{p['pair_id']}/L{cfg.rep_layer}/a{_fmt(REPLICATION_ALPHA)}",
+            phase="phase1c_layers",
+            pair_id=p["pair_id"],
+            context=p["ctx_c"],
+            layer=cfg.rep_layer,
+            alpha=REPLICATION_ALPHA,
+            delta_key=("pair", p["pair_id"], arm),
+            extra={"extraction_arm": arm, "rep_seed_base": cfg.rep_seed_base},
+        )
+        for arm in EXTRACTION_ARMS
+        for p in pairs
+    ]
+    return cells
+
+
+def run_replication(cfg: RunConfig) -> dict:
+    """Run (or resume) the l14-behavioral-replication mode: fresh-sampling
+    re-generation of ONLY the baseline (c) + fixed L14/alpha=4 steered cells at
+    per-draw seeds ``rep_seed_base*1000 + i`` (disjoint from the parent's
+    42..51 — literal adjacent bases would re-draw 9/10 of the parent's seeds on
+    identical chunk compositions). Deltas are the FROZEN parent phase-1a
+    captures (``delta_root``; HF-fetched on a fresh instance). Pilot / K1 / K2
+    / 1a / 1d / 1e are skipped by design (throughput already measured; no
+    ceiling arm — coherence flags are still recorded per cell by
+    ``_persist_gen_cell``)."""
+    assert cfg.replicate_l14 and cfg.rep_seed_base is not None
+    logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
+    cfg.out_root.mkdir(parents=True, exist_ok=True)
+    cfg.bulk_root.mkdir(parents=True, exist_ok=True)
+    pairs = load_pairs(cfg)
+    state = Manifest.load_or_init(
+        cfg.out_root / "phase1_manifest.json", _regime(cfg, _sha256(cfg.pair_bank_path))
+    )
+    if cfg.upload_mode == "hf":
+        assert os.environ.get("HF_TOKEN"), "HF_TOKEN missing — required for --upload hf"
+    summary: dict = {"cells_run": 0, "cells_skipped": 0, "uploads": 0, "uploads_skipped": 0}
+    deltas = DeltaSource(cfg)
+    # Fail EARLY: stage/fetch + shape-assert every frozen delta BEFORE model load.
+    deltas.preload_pair_deltas(pairs, cfg.rep_layer)
+    model, tok = load_model_and_tokenizer(cfg)
+    run_gen_cells(cfg, state, model, tok, deltas, _replication_cells(cfg, pairs), summary)
+    _upload_phase(
+        cfg,
+        state,
+        summary,
+        f"raw_completions/gen_rep{cfg.rep_seed_base}",
+        f"{RAW_PREFIX}/gen_rep{cfg.rep_seed_base}",
+    )
+    logger.info(
+        "[phase=done] replication rep%s: cells_run=%d cells_skipped=%d uploads=%d",
+        cfg.rep_seed_base,
+        summary["cells_run"],
+        summary["cells_skipped"],
+        summary["uploads"],
+    )
+    return summary
+
+
 # ── top-level driver ──────────────────────────────────────────────────
 
 
@@ -1580,6 +1830,22 @@ def run_phase1(cfg: RunConfig) -> dict:
 
 def main(argv: list[str] | None = None) -> None:
     cfg = build_config(parse_args(argv))
+    if cfg.replicate_l14:
+        summary = run_replication(cfg)
+        print(
+            json.dumps(
+                {
+                    "mode": "replicate_l14",
+                    "rep_seed_base": cfg.rep_seed_base,
+                    "seed_base_effective": cfg.seed_base,
+                    "cells_run": summary["cells_run"],
+                    "cells_skipped": summary["cells_skipped"],
+                    "uploads": summary["uploads"],
+                },
+                indent=2,
+            )
+        )
+        return
     summary = run_phase1(cfg)
     print(
         json.dumps(

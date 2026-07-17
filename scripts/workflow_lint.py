@@ -9885,21 +9885,25 @@ AGENT_SPEC_SIZE_GRANDFATHER: dict[str, int] = {
     # (#1159) — no longer grandfathered (slim spec is under the FAIL threshold).
     # the rest measured at the #838 tightening (2026-07-02), caps = measured
     # + <=3 KB; each names a future trim direction, none is licensed to grow
-    # measured 106,853 B post-#1397 (Step 2 fit-loop batched-helper naming
-    # paragraph — plan-mandated growth; cap = measured + ~1.1 KB. Prior:
-    # 105,000 — measured 104,235 B post-#1317 (Step 4.6 Gate-scope line
-    # verification), 101,500 — measured 100,555 B post-#1254 (Step 3.9
-    # degenerate-statistic check, observed-vs-null reads), 99,000 —
-    # measured 98,126 B post-#1230 (Step 6 durability-pin shipping duty),
-    # 97,000 — measured 96,072 B post-#1119, 95,000 — measured 94,126 B
-    # post-#1115)
-    "code-reviewer.md": 108_000,
-    # measured 73,408 B post-#1159 (Step 2 dual-source read contract: lens
-    # rubrics from clean-result-critic-lens-reference.md, report schema from
-    # the slim agent spec — plan-mandated growth; cap = measured + <=~1 KB.
-    # Prior: 73,000 — measured 72,229 B post-#1056, 72,000 post-#1050 r2,
-    # 71,000 post-#1050 r1, 60,554 B pre-#1050)
-    "codex-clean-result-critic.md": 74_000,
+    # measured 109,583 B post-#1449 (Step 0.65 plan-glob vs
+    # uploader-eligibility parity sub-check — plan-mandated growth; cap =
+    # measured + ~0.7 KB. Prior: 108,000 — measured 106,853 B post-#1397
+    # (Step 2 fit-loop batched-helper naming paragraph), 105,000 — measured
+    # 104,235 B post-#1317 (Step 4.6 Gate-scope line verification), 101,500 —
+    # measured 100,555 B post-#1254 (Step 3.9 degenerate-statistic check,
+    # observed-vs-null reads), 99,000 — measured 98,126 B post-#1230 (Step 6
+    # durability-pin shipping duty), 97,000 — measured 96,072 B post-#1119,
+    # 95,000 — measured 94,126 B post-#1115)
+    "code-reviewer.md": 110_300,
+    # measured 74,082 B post-#1447 (family-enumeration sync: the two
+    # byte/bit verdict rows widened to the -exact / bitwise / X-for-X
+    # tail — plan-mandated growth; cap = measured + ~1.1 KB. Prior:
+    # 74,000 — measured 73,408 B post-#1159 (Step 2 dual-source read
+    # contract: lens rubrics from clean-result-critic-lens-reference.md,
+    # report schema from the slim agent spec), 73,000 — measured
+    # 72,229 B post-#1056, 72,000 post-#1050 r2, 71,000 post-#1050 r1,
+    # 60,554 B pre-#1050)
+    "codex-clean-result-critic.md": 75_200,
     # measured 58,271 B post-#1438 (Step 0.9 copy-list bullet + inlined-
     # rubric 0.9 slot + Blocker-tags data-access-blocked entry —
     # plan-mandated growth; cap = measured + <=~1 KB. Prior: 56,800 —
@@ -9908,13 +9912,14 @@ AGENT_SPEC_SIZE_GRANDFATHER: dict[str, int] = {
     # measured 52,361 B post-#1254, 51,600 — measured 50,642 B post-#948,
     # 47,930 B post-#881)
     "codex-code-reviewer.md": 59_200,
-    # measured 71,114 B post-#1409 (data-dependent-gates smoke duty in
-    # checklist item 3 + item-5 cross-ref — plan-mandated growth; cap =
-    # measured + <=~1 KB. Prior: 69,800 — measured 68,888 B post-#1384
-    # (per-arm-class smoke-coverage clause), 67,900 — measured 67,472 B
-    # post-#1363, 67,400 — measured 66,574 B post-#1349, 66,300 —
-    # measured 65,548 B post-#1311)
-    "experiment-implementer.md": 72_000,
+    # measured 72,240 B post-#1449 (After-implementation step-7 plan-glob
+    # parity self-check — plan-mandated growth; cap = measured + ~0.8 KB.
+    # Prior: 72,000 — measured 71,114 B post-#1409 (data-dependent-gates
+    # smoke duty in checklist item 3 + item-5 cross-ref), 69,800 — measured
+    # 68,888 B post-#1384 (per-arm-class smoke-coverage clause), 67,900 —
+    # measured 67,472 B post-#1363, 67,400 — measured 66,574 B post-#1349,
+    # 66,300 — measured 65,548 B post-#1311)
+    "experiment-implementer.md": 73_000,
     # measured 66,921 B post-#1416 (Pre-Launch step 9 foreign-tenant
     # memory.used read — plan-mandated growth; cap = measured + ~0.6 KB.
     # Prior: 66,500 — measured 65,540 B post-#1081 r2 (D3

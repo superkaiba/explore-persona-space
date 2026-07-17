@@ -686,7 +686,8 @@ Emit your verdict in EXACTLY this format. No preamble, no fences:
   cited missing slot
 - `**This experiment in context:**` is the ONLY issue-link / bare-`#K` slot;
   `## Takeaways`, `## Results`, `## Methodology` are STANDALONE (no `#K`,
-  no byte/bit × identical/equal phrase, no cross-issue framing, no
+  no byte/bit/bitwise × identical/equal/exact or X-for-X phrase, no
+  cross-issue framing, no
   prior-run methodology-correction framing): PASS|FAIL with cited section
 - `## Results` has ≥1 `### <result>`; each names a story-beat /
   states the result (no outline labels `### Headline result` /
@@ -838,8 +839,10 @@ Emit your verdict in EXACTLY this format. No preamble, no fences:
   `<!-- clean-result-v3 -->` body.)
 - `I` not `we`; no fluff transitions; plain-academic Takeaways; no
   "Standing caveats" section: PASS|FAIL with cited phrase
-- any byte/bit × identical/equal phrase, spaced or hyphenated, in body
-  prose (#454; #642; -equal #1423): PASS|FAIL with cited phrase
+- any byte/bit/bitwise/bytewise × identical/equal/exact phrase, spaced or
+  hyphenated, or bit-for-bit/byte-for-byte, in body
+  prose (#454; #642; -equal #1423; -exact/bitwise/X-for-X #1447):
+  PASS|FAIL with cited phrase
 - <other findings or PASS>
 
 ### Lens 7 — Statistical-framing rule

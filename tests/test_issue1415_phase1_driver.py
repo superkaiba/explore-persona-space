@@ -382,3 +382,203 @@ def test_ignore_kill_criteria_flag_demotes_in_production_config():
     assert cfg.tiny is False and cfg.enforce_kill_criteria is False
     cfg_default = drv.build_config(drv.parse_args([]))
     assert cfg_default.enforce_kill_criteria is True
+
+
+# ── follow-up round: --replicate-l14 (l14-behavioral-replication) ─────
+
+
+def _rep_cfg(tmp: Path, seed: int = 43, extra: list[str] | None = None) -> drv.RunConfig:
+    """Tiny replication config rooted next to ``_cfg(tmp)``'s parent roots
+    (shared tiny pair bank at tmp/pair_bank_tiny.json; delta_root tmp/bulk)."""
+    argv = [
+        "--tiny",
+        "--replicate-l14",
+        "--seed-base",
+        str(seed),
+        "--out-root",
+        str(tmp / f"out_rep{seed}"),
+        "--bulk-root",
+        str(tmp / f"bulk_rep{seed}"),
+        "--tiny-pairs",
+        "2",
+        "--n-draws",
+        "2",
+        "--max-new-tokens",
+        "16",
+        *(extra or []),
+    ]
+    return drv.build_config(drv.parse_args(argv))
+
+
+def _fake_pairs(n: int = 28) -> list[dict]:
+    return [
+        {
+            "pair_id": f"p{i:02d}",
+            "pair_type": "matched",
+            "ctx_c": {"system": None, "user": "q"},
+            "ctx_cprime": {"system": "s", "user": "q"},
+            "trait_or_behavior": "hedging",
+        }
+        for i in range(n)
+    ]
+
+
+def test_replication_cells_exact_selection():
+    """Production replication cell set: EXACTLY 28 fresh baselines (c only —
+    the ceiling arm is reused from the parent, per the proposal's 1,120+560 =
+    1,680-sample arithmetic) + 2 arms x 28 fixed L14/a4 steered cells, all
+    namespaced gen_rep43/."""
+    from collections import Counter
+
+    cfg = drv.build_config(drv.parse_args(["--replicate-l14", "--seed-base", "43"]))
+    cells = drv._replication_cells(cfg, _fake_pairs())
+    base = [c for c in cells if c.delta_key is None]
+    steered = [c for c in cells if c.delta_key is not None]
+    assert len(base) == 28 and len(steered) == 56 and len(cells) == 84
+    assert all(c.cell_id.startswith("gen_rep43/") for c in cells)
+    assert all(c.phase == "phase1b" and c.extra["arm_label"] == "hf_nohook_base" for c in base)
+    assert all(c.context == {"system": None, "user": "q"} for c in base)  # under c ONLY
+    assert all(c.phase == "phase1c_layers" and c.layer == 14 and c.alpha == 4.0 for c in steered)
+    assert all(c.cell_id.endswith("/L14/a4") for c in steered)
+    arms = Counter(c.delta_key[2] for c in steered)
+    assert arms == Counter({"prefix": 28, "context": 28})
+    assert len({c.cell_id for c in cells}) == 84  # no id collisions
+
+
+def test_replication_config_namespace_seed_and_regime():
+    cfg43 = drv.build_config(drv.parse_args(["--replicate-l14", "--seed-base", "43"]))
+    cfg44 = drv.build_config(drv.parse_args(["--replicate-l14", "--seed-base", "44"]))
+    # separate out/bulk namespaces keyed by seed base; frozen parent delta root
+    assert cfg43.out_root.name == "phase1_rep43" and cfg43.bulk_root.name == "phase1_rep43"
+    assert cfg44.out_root.name == "phase1_rep44"
+    assert cfg43.delta_root == drv.REPO_ROOT / "data" / "issue_1415" / "phase1"
+    assert cfg43.rep_layer == drv.REPLICATION_LAYER_FULL == 14
+    # per-draw seed ranges (seed_base + i) disjoint from the parent's 42..51
+    # AND from each other — literal bases 43/44 would re-draw the parent seeds
+    assert cfg43.seed_base == 43000 and cfg44.seed_base == 44000
+    r43 = {cfg43.seed_base + i for i in range(cfg43.n_draws)}
+    r44 = {cfg44.seed_base + i for i in range(cfg44.n_draws)}
+    parent = {drv.SEED_BASE + i for i in range(drv.N_DRAWS_FULL)}
+    assert not (r43 & r44) and not ((r43 | r44) & parent)
+    # regime carries the replication keys; the parent regime stays byte-stable
+    reg = drv._regime(cfg43, "sha")
+    assert reg["mode"] == "replicate_l14" and reg["rep_seed_base"] == 43
+    assert reg["seed_base"] == 43000 and reg["rep_layer"] == 14 and reg["rep_alpha"] == 4.0
+    normal = drv._regime(drv.build_config(drv.parse_args([])), "sha")
+    assert "mode" not in normal and "rep_seed_base" not in normal
+
+
+def test_replication_arg_validation():
+    with pytest.raises(SystemExit):
+        drv.build_config(drv.parse_args(["--replicate-l14"]))  # --seed-base required
+    with pytest.raises(SystemExit):
+        drv.build_config(drv.parse_args(["--replicate-l14", "--seed-base", "43", "--pilot"]))
+    with pytest.raises(SystemExit):
+        drv.build_config(drv.parse_args(["--seed-base", "43"]))  # replication-only flag
+    with pytest.raises(SystemExit):
+        drv.build_config(drv.parse_args(["--delta-root", "/tmp/x"]))  # replication-only flag
+
+
+@pytest.fixture(scope="module")
+def rep_run(first_run):
+    """Tiny e2e replication run consuming the parent tiny run's FROZEN deltas
+    (delta_root defaults to tmp/bulk — the first_run bulk root)."""
+    tmp, _parent_cfg, _summary = first_run
+    cfg = _rep_cfg(tmp, seed=43)
+    summary = drv.run_replication(cfg)
+    return tmp, cfg, summary
+
+
+def test_replication_tiny_e2e_cells_and_namespace(rep_run):
+    _tmp, cfg, summary = rep_run
+    manifest = json.loads((cfg.out_root / "phase1_manifest.json").read_text())
+    assert manifest["regime"]["mode"] == "replicate_l14"
+    assert manifest["regime"]["seed_base"] == 43000
+    cells = {cid for cid in manifest["cells"] if not cid.startswith("upload/")}
+    expected = {f"gen_rep43/base/tiny_{i:02d}/c" for i in range(2)} | {
+        f"gen_rep43/{arm}/tiny_{i:02d}/L0/a4" for arm in drv.EXTRACTION_ARMS for i in range(2)
+    }
+    assert cells == expected and summary["cells_run"] == len(expected) == 6
+    for cid in sorted(expected):
+        meta = drv.load_cell_meta(cfg, cid)
+        assert meta["seed_base"] == 43000 and meta["rep_seed_base"] == 43
+        assert meta["coherence_flags"] is not None  # coherence still recorded per cell
+        comp = cfg.bulk_root / meta["completions_file"]
+        assert len(json.loads(comp.read_text())["draws"]) == cfg.n_draws
+    # phase-boundary upload boundary exercised: ONE gen_rep43 bucket commit
+    mirror = cfg.bulk_root / "hf_mirror" / drv.RAW_PREFIX / "gen_rep43"
+    assert mirror.exists() and any(mirror.rglob("*.json"))
+    # deltas were REUSED from the parent bulk root — no fresh 1a capture ran
+    assert not (cfg.bulk_root / "activations").exists()
+
+
+def test_replication_resume_skips_all(rep_run):
+    tmp, _cfg, summary = rep_run
+    second = drv.run_replication(_rep_cfg(tmp, seed=43))
+    assert second["cells_run"] == 0
+    assert second["cells_skipped"] == summary["cells_run"]
+    assert second["uploads"] == 0  # unchanged file count -> upload skipped
+
+
+def test_replication_delta_hf_fetch_fallback(tmp_path, monkeypatch):
+    """Production replication HF-fetches a missing frozen parent capture
+    (fresh git-clone instances stage no data/ — #779); the hub boundary is a
+    signature-conformant autospec fake."""
+    from unittest.mock import create_autospec
+
+    import huggingface_hub
+    import torch
+
+    args = drv.parse_args(
+        ["--replicate-l14", "--seed-base", "43", "--delta-root", str(tmp_path / "parent")]
+    )
+    cfg = drv.build_config(args)
+    n_layers, hid = len(cfg.layers), cfg.hidden
+    blob = {
+        "pair_id": "p00",
+        "layers": list(cfg.layers),
+        "c": {
+            "v_c_prefix": torch.zeros(n_layers, hid),
+            "v_c_context": torch.zeros(n_layers, hid),
+        },
+        "cprime": {
+            "v_c_prefix": torch.ones(n_layers, hid),
+            "v_c_context": torch.ones(n_layers, hid),
+        },
+    }
+    staged = tmp_path / "hf_cache" / "p00.pt"
+    staged.parent.mkdir(parents=True)
+    torch.save(blob, staged)
+
+    def impl(repo_id, filename, **kw):
+        assert repo_id == drv.HF_DATA_REPO
+        assert filename == f"{drv.TENSOR_PREFIX}/p00.pt"
+        assert kw.get("repo_type") == "dataset"
+        return str(staged)
+
+    fake = create_autospec(huggingface_hub.hf_hub_download, side_effect=impl)
+    monkeypatch.setattr(huggingface_hub, "hf_hub_download", fake)
+    deltas = drv.DeltaSource(cfg)
+    d = deltas.pair_delta("p00", "context", cfg.rep_layer)
+    assert d.shape == (cfg.hidden,) and torch.all(d == 1.0)
+    assert (tmp_path / "parent" / "activations" / "p00.pt").exists()  # copied under delta_root
+    assert fake.call_count == 1
+    fresh = drv.DeltaSource(cfg)  # local now — no re-fetch
+    fresh.pair_delta("p00", "prefix", cfg.rep_layer)
+    assert fake.call_count == 1
+
+
+def test_replication_pair_bank_content_sha_gate(tmp_path, monkeypatch):
+    """The frozen-parent-bank premise is gated on the PAIRS-CONTENT sha
+    (metadata-independent — a rebuilt bank differs byte-wise); a foreign bank
+    fails loud, the pinned content passes."""
+    bank = {"metadata": {"issue": 1415}, "pairs": _fake_pairs()}
+    path = tmp_path / "pair_bank.json"
+    path.write_text(json.dumps(bank))
+    cfg = drv.build_config(
+        drv.parse_args(["--replicate-l14", "--seed-base", "43", "--pair-bank", str(path)])
+    )
+    with pytest.raises(RuntimeError, match="pairs-content sha mismatch"):
+        drv.load_pairs(cfg)
+    monkeypatch.setattr(drv, "PARENT_PAIR_BANK_PAIRS_SHA256", drv._pairs_content_sha(bank))
+    assert len(drv.load_pairs(cfg)) == 28
