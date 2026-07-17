@@ -1,0 +1,206 @@
+{
+  "commit": "2390b30a5e",
+  "created": "2026-07-17T17:17:10Z",
+  "figsize": [
+    8.2,
+    4.0
+  ],
+  "points": [
+    {
+      "x": 0.0,
+      "held-out $R^2$ (layer 19, context arm)": -0.03965667601440548,
+      "series": "matched-capacity null draws",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.0,
+      "held-out $R^2$ (layer 19, context arm)": -0.030750066608497884,
+      "series": "matched-capacity null draws",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.0,
+      "held-out $R^2$ (layer 19, context arm)": -0.03471250884520383,
+      "series": "matched-capacity null draws",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.0,
+      "held-out $R^2$ (layer 19, context arm)": -0.0465077789876891,
+      "series": "matched-capacity null draws",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.0,
+      "held-out $R^2$ (layer 19, context arm)": -0.04811136150267448,
+      "series": "matched-capacity null draws",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.0,
+      "held-out $R^2$ (layer 19, context arm)": -1.3522894100059877,
+      "series": "matched-capacity null draws",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.0,
+      "held-out $R^2$ (layer 19, context arm)": -1.3798475885297257,
+      "series": "matched-capacity null draws",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.0,
+      "held-out $R^2$ (layer 19, context arm)": -1.312218467677965,
+      "series": "matched-capacity null draws",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.0,
+      "held-out $R^2$ (layer 19, context arm)": -1.4700625046453806,
+      "series": "matched-capacity null draws",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.0,
+      "held-out $R^2$ (layer 19, context arm)": -1.3494612733220173,
+      "series": "matched-capacity null draws",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.0,
+      "held-out $R^2$ (layer 19, context arm)": 0.24258391652483224,
+      "series": "target framing's own ceiling",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.0,
+      "held-out $R^2$ (layer 19, context arm)": 0.6097952182788968,
+      "series": "recovered by reparameterization",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.0,
+      "held-out $R^2$ (layer 19, context arm)": -0.05413837490984519,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.0,
+      "held-out $R^2$ (layer 19, context arm)": -0.049241833444849004,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.0,
+      "held-out $R^2$ (layer 19, context arm)": -0.05912083610932095,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.0,
+      "held-out $R^2$ (layer 19, context arm)": -0.06520322747510865,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.0,
+      "held-out $R^2$ (layer 19, context arm)": -0.0739798684730828,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.0,
+      "held-out $R^2$ (layer 19, context arm)": -2.544733252413205,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.0,
+      "held-out $R^2$ (layer 19, context arm)": -2.5872035931580966,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.0,
+      "held-out $R^2$ (layer 19, context arm)": -2.587344226079911,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.0,
+      "held-out $R^2$ (layer 19, context arm)": -2.523054010214678,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.0,
+      "held-out $R^2$ (layer 19, context arm)": -2.69244731063316,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.0,
+      "held-out $R^2$ (layer 19, context arm)": -0.30558012059634976,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.0,
+      "held-out $R^2$ (layer 19, context arm)": -0.1717364695580741,
+      "_kind": "scatter",
+      "_group": 5
+    }
+  ],
+  "n_series": 6,
+  "total_points": 24,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Story-chat reparameterization is one-way",
+        "ylabel": "held-out $R^2$ (layer 19, context arm)",
+        "legend_labels": [
+          "matched-capacity null draws",
+          "target framing's own ceiling",
+          "recovered by reparameterization"
+        ],
+        "annotations": [
+          "10 null draws per direction (5 shuffled-fit + 5 random-rotation operators)"
+        ],
+        "xticklabels": [
+          "Story operator\nmoved into chat",
+          "Chat operator\nmoved into stories"
+        ],
+        "yticklabels": [
+          "\u22123.0",
+          "\u22122.5",
+          "\u22122.0",
+          "\u22121.5",
+          "\u22121.0",
+          "\u22120.5",
+          "0.0",
+          "0.5",
+          "1.0"
+        ]
+      }
+    ],
+    "series": [
+      "matched-capacity null draws",
+      "target framing's own ceiling",
+      "recovered by reparameterization"
+    ]
+  }
+}

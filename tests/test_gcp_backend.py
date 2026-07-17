@@ -54,6 +54,7 @@ from explore_persona_space.backends import (
 from explore_persona_space.backends.gcp import (
     _JANITOR_FENCE_GRACE_SECONDS,
     _ZOMBIE_GUEST_PHASES,
+    A100_40_USABLE_GIB,
     DEFAULT_GCLOUD_CONFIG,
     DEFAULT_IMAGE_FAMILY,
     DEFAULT_IMAGE_PROJECT,
@@ -883,6 +884,53 @@ def test_a100_40_fallback_for_intent_fits_predicate() -> None:
         assert a100_40_fallback_for_intent(_spec(intent)) is None, intent
     # The module-level map matches the predicate's positive set exactly.
     assert set(INTENT_A100_40_FALLBACK) == {"lora-7b", "lora", "capture-7b", "eval", "debug"}
+
+
+def test_a100_40_fallback_min_gpu_mem_gate_drops_rung_for_all_eligible_intents() -> None:
+    """#1468: a declared per-GPU requirement above A100_40_USABLE_GIB drops the
+    A100-40 fallback for EVERY intent-eligible intent; the module-level map is
+    untouched (the gate is per-dispatch — never map surgery)."""
+    for intent in ("lora-7b", "lora", "capture-7b", "eval", "debug"):
+        assert a100_40_fallback_for_intent(_spec(intent, extra={"min_gpu_mem_gb": 60})) is None, (
+            intent
+        )
+    # Map membership unchanged — the gate must not mutate the map.
+    assert set(INTENT_A100_40_FALLBACK) == {"lora-7b", "lora", "capture-7b", "eval", "debug"}
+
+
+def test_a100_40_fallback_min_gpu_mem_gate_boundary_and_below() -> None:
+    """#1468 boundary semantics: strict ``>`` at A100_40_USABLE_GIB (38.0) — a
+    declaration of exactly 38 KEEPS the rung, 39 drops it, 20 keeps it (with
+    the a2-highgpu-1g machine)."""
+    assert A100_40_USABLE_GIB == 38.0
+    kept = a100_40_fallback_for_intent(_spec("lora-7b", extra={"min_gpu_mem_gb": 38}))
+    assert isinstance(kept, MachineSpec)
+    assert a100_40_fallback_for_intent(_spec("lora-7b", extra={"min_gpu_mem_gb": 39})) is None
+    below = a100_40_fallback_for_intent(_spec("lora-7b", extra={"min_gpu_mem_gb": 20}))
+    assert isinstance(below, MachineSpec)
+    assert below.machine_type == "a2-highgpu-1g"
+
+
+def test_a100_40_fallback_min_gpu_mem_malformed_raises() -> None:
+    """#1468 fail-loud: a malformed PRESENT value raises ValueError naming the
+    key (matching router._footprint_int's convention) — a non-numeric string,
+    AND a programmatic bool (bool is an int subclass, so float(True) would
+    otherwise silently coerce to 1.0 and keep the rung)."""
+    with pytest.raises(ValueError, match="min_gpu_mem_gb"):
+        a100_40_fallback_for_intent(_spec("lora-7b", extra={"min_gpu_mem_gb": "abc"}))
+    with pytest.raises(ValueError, match="min_gpu_mem_gb"):
+        a100_40_fallback_for_intent(_spec("lora-7b", extra={"min_gpu_mem_gb": True}))
+
+
+def test_a100_40_fallback_no_declaration_unchanged() -> None:
+    """#1468 opt-in regression pin: NO declaration keeps intent-only
+    eligibility byte-identical — including on capture-7b, the exact #1315
+    intent — and a below-threshold declaration never ADDS a rung to an
+    ineligible intent."""
+    assert isinstance(a100_40_fallback_for_intent(_spec("lora-7b")), MachineSpec)
+    # Opt-in-ness pinned on the exact #1315 intent (no key present).
+    assert a100_40_fallback_for_intent(_spec("capture-7b")) is not None
+    assert a100_40_fallback_for_intent(_spec("ft-7b", extra={"min_gpu_mem_gb": 20})) is None
 
 
 def test_machine_for_intent_honors_machine_spec_override() -> None:

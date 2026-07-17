@@ -471,7 +471,10 @@ INTENT_TO_MACHINE: dict[str, MachineSpec] = {
 #: meaningful STEP UP for them when L4 is constrained; they are included to
 #: keep the "single-GPU 7B fits 40 GB" rule uniform and the inclusion is
 #: harmless (their L4 on-demand rarely exhausts). Decision recorded in
-#: plan §11.
+#: plan §11. Membership is intent-level ELIGIBILITY only; per-dispatch FIT
+#: is the ``min_gpu_mem_gb`` gate in :func:`a100_40_fallback_for_intent`
+#: (#1468) — a co-resident HF+vLLM capture phase (#1315) is intent-eligible
+#: yet must declare its peak to skip the rung.
 INTENT_A100_40_FALLBACK: dict[str, MachineSpec] = {
     "lora-7b": MachineSpec(machine_type="a2-highgpu-1g", gpu_count=1, gpu_kind="A100-40"),
     "lora": MachineSpec(machine_type="a2-highgpu-1g", gpu_count=1, gpu_kind="A100-40"),
@@ -479,6 +482,13 @@ INTENT_A100_40_FALLBACK: dict[str, MachineSpec] = {
     "eval": MachineSpec(machine_type="a2-highgpu-1g", gpu_count=1, gpu_kind="A100-40"),
     "debug": MachineSpec(machine_type="a2-highgpu-1g", gpu_count=1, gpu_kind="A100-40"),
 }
+
+#: Usable device memory (GiB) on the A100-40 rung's a2-highgpu-1g. Incident
+#: #1315 measured the card's CUDA-visible total at 39.49 GiB ("Free memory on
+#: device (22.52/39.49 GiB)"); 38.0 leaves ~1.5 GiB conservative margin for
+#: CUDA context + allocator fragmentation. Gates the fallback rung only —
+#: never primary machine selection (#1468).
+A100_40_USABLE_GIB: float = 38.0
 
 
 def a100_40_fallback_for_intent(spec: RunSpec) -> MachineSpec | None:
@@ -492,8 +502,59 @@ def a100_40_fallback_for_intent(spec: RunSpec) -> MachineSpec | None:
     cannot hold them; an unknown intent also returns ``None`` (the
     ladder simply has no A100-40 rung to add — the on-demand A100-80 rung
     still fails loud on the unknown intent via :func:`machine_for_intent`).
+
+    A dispatch may additionally declare its peak per-GPU device-memory
+    requirement via ``spec.extra["min_gpu_mem_gb"]`` (GiB, as
+    CUDA/nvidia-smi report it; ``dispatch_issue.py --min-gpu-mem-gb``,
+    #1468). A declared value strictly above :data:`A100_40_USABLE_GIB`
+    returns ``None`` — the intent-eligible workload does not FIT the
+    40 GB card (the #1315 HF+vLLM co-residency shape) — and the ladder
+    skips the rung exactly as for an ineligible intent. Absent
+    declaration: intent-only eligibility, byte-identical to the pre-#1468
+    behavior. A malformed present value (bool / non-numeric) raises
+    ``ValueError`` naming the key — fail-loud, matching the
+    ``router._footprint_int`` convention; unreachable from the CLI
+    (argparse ``type=int`` coerces at parse time).
+
+    Documented residuals (#1468 plan §4.4, deliberate): the gate never
+    validates the PRIMARY machine — an ``eval`` dispatch declaring
+    30 GiB still books its L4 primary (intent choice fixes the primary
+    machine; the #752 ``capture-7b`` intent is the established fix for a
+    too-small primary); a declaration above ~79 GiB behaves like any
+    >38 declaration (no A100-80 gating); and declarations in
+    (38, ~39.5] drop the rung even though they sit below the card's raw
+    39.49 GiB total — deliberately conservative, inside the
+    CUDA-context + fragmentation margin.
     """
-    return INTENT_A100_40_FALLBACK.get(spec.intent)
+    machine = INTENT_A100_40_FALLBACK.get(spec.intent)
+    if machine is None:
+        return None
+    declared = (spec.extra or {}).get("min_gpu_mem_gb")
+    if declared is None:
+        return machine
+    if isinstance(declared, bool):
+        # bool is an int subclass — float(True) would silently coerce to 1.0.
+        raise ValueError(
+            f"spec.extra['min_gpu_mem_gb'] must be numeric, got bool {declared!r} "
+            f"(malformed per-GPU memory requirement on issue {spec.issue})"
+        )
+    try:
+        required_gib = float(declared)
+    except (TypeError, ValueError) as exc:
+        raise ValueError(
+            f"spec.extra['min_gpu_mem_gb'] is not numeric: {declared!r} "
+            f"(malformed per-GPU memory requirement on issue {spec.issue})"
+        ) from exc
+    if required_gib > A100_40_USABLE_GIB:
+        logger.info(
+            "A100-40 fallback rung dropped for issue %s: declared min_gpu_mem_gb=%s GiB "
+            "> A100_40_USABLE_GIB=%s (#1468)",
+            spec.issue,
+            declared,
+            A100_40_USABLE_GIB,
+        )
+        return None
+    return machine
 
 
 #: Width -> wide A100-80 machine for the width-aware auto ladder (#1121).

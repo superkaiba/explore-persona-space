@@ -486,7 +486,17 @@ mandate; on a landed-fix hit do NOT file — the candidate is a duplicate
 of the landed fix (route it to dedup/archive, never a new task) (#1330
 filed over the already-landed #1309 fix: the verified-at-filing grep hit
 the landed recipe paragraph itself and the hit's context was misjudged
-as unrelated). Lineage: #1221/#1229/#1249 — three filings in two
+as unrelated). (d) **sha-resolution** — every hex token the body cites
+AS A COMMIT ("commit `<sha>`", "the fix landed in `<sha>`", a
+`**commit:**` field) is verified at body-compose time with
+`git rev-parse --verify --quiet '<sha>^{commit}'`; a non-resolving token
+is NEVER cited as a commit — re-derive the real commit
+(`git log --oneline --since='14 days ago' -- <target_file>`) or cite the
+token as what it actually is (a transcript/session basename, an HF
+revision, a fingerprint), labeled as such (#1414: transcript basename
+`fc2b61b7` shipped as "the fix commit"; the fact-checker burned a round
+proving the real commit was `5a02359cc8` — #1467).
+Lineage: #1221/#1229/#1249 — three filings in two
 days carried grep-refutable claims (nonexistent call sites, overcounted
 "unguarded sites", an improvised path); each burned a spawned session's
 verification rounds. There is NO mechanical injector or lint for this line —
@@ -761,6 +771,7 @@ homepage rendering of the fallback is unimplemented.)
 | Record a real grep that does not BIND to the claim — a repo-wide pattern grep beside a named target_file with 0 hits for the claimed site (#1290), or a single-path probe backing a "no longer exists" claim (#1296) | State per-target hits for each file named in target_file (presence claim + 0-hit target ⇒ re-grep repo-wide, correct target_file, re-verify before filing); back any nonexistence claim with a recorded repo-wide relocation grep |
 | Bind a presence grep on hit COUNT alone when the hit's surrounding context already implements the proposed change (#1330 filed over the landed #1309 fix) | Read each presence-hit's surrounding lines before filing; a hit that IS the fix = already landed — dedup, don't file |
 | Accept a verbatim-literal 0-hit grep as absence evidence for a TEXT-MATCHING guard (#1386 filed+spawned ~9h after #1360 landed the shorter `'queue size reached'` substring; the grep searched the full `'maximum queue size'`) | Semantic probe (clause (a')): run the predicate against the claimed text and/or grep fragments/substrings of it repo-wide, PLUS `git log --oneline --since='7 days ago' -- <target_file>` for a just-landed fix — open-task dedup stays blind to an ordinary landed infra fix by design, and the advisory's widened pass (#1446) covers ordinary closed infra tasks only window-bounded + overlap-matched, so the git-log landed-fix check remains the backstop |
+| Cite a mined hex token as a commit SHA without rev-parse-verifying it at compose time (#1414: transcript basename `fc2b61b7` filed as "the fix commit"; the spawned session's fact-checker burned a round proving the real commit was `5a02359cc8`) | Clause (d): rev-parse every cited-as-commit token at body-compose time; a non-resolving token is re-derived (`git log` on the target file) or cited as a transcript/session reference, never a commit |
 
 ## Composition with other rules
 

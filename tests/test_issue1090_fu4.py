@@ -404,12 +404,28 @@ def _rejudge_fixture(tmp_path):
     jdir.mkdir(parents=True)
     all_scores = {
         f"{tag}-q000-c0__00000__00": {"score": 90},
-        f"{tag}-q000-c0__00000__01": {"error": "Error code: 529 overloaded_error"},
+        # Real persisted transport shape (_legacy_error_dict + an overloaded
+        # reasoning — the classifier's reason-string fallback; #1090 529s).
+        f"{tag}-q000-c0__00000__01": {
+            "aligned": None,
+            "coherent": None,
+            "reasoning": "Error code: 529 overloaded_error",
+            "error": True,
+        },
         f"{tag}-q001-c0__00001__00": {"score": 10},
         f"{tag}-q001-c0__00001__01": {"score": 20},
     }
     (jdir / "judge_raw.json").write_text(json.dumps({"all_scores": all_scores}))
-    (jdir / ("a" * 16 + ".json")).write_text(json.dumps({"error": "Error code: 529"}))
+    (jdir / ("a" * 16 + ".json")).write_text(
+        json.dumps(
+            {
+                "aligned": None,
+                "coherent": None,
+                "reasoning": "Error code: 529 overloaded_error",
+                "error": True,
+            }
+        )
+    )
     ladders = tmp_path / "fu4_ladders.json"
     ladders.write_text(
         json.dumps(

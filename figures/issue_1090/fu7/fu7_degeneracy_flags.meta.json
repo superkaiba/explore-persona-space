@@ -1,0 +1,69 @@
+{
+  "commit": "27b31d7fea",
+  "created": "2026-07-17T16:44:03Z",
+  "figsize": [
+    7.0,
+    3.5
+  ],
+  "points": [
+    {
+      "category": "Claude-data (c3) lr 1e-5",
+      "rungs flagged degenerate": 0.0,
+      "_kind": "bar"
+    },
+    {
+      "category": "Claude-data (c3) lr 3e-5",
+      "rungs flagged degenerate": 0.0,
+      "_kind": "bar"
+    },
+    {
+      "category": "Claude-data (c3) lr 1e-4",
+      "rungs flagged degenerate": 0.0,
+      "_kind": "bar"
+    },
+    {
+      "category": "Qwen-data (c5) lr 1e-5",
+      "rungs flagged degenerate": 0.0,
+      "_kind": "bar"
+    },
+    {
+      "category": "Qwen-data (c5) lr 3e-5",
+      "rungs flagged degenerate": 0.0,
+      "_kind": "bar"
+    },
+    {
+      "category": "Qwen-data (c5) lr 1e-4",
+      "rungs flagged degenerate": 0.0,
+      "_kind": "bar"
+    }
+  ],
+  "n_series": 1,
+  "total_points": 6,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "degenerate-output guard flags per run (length/4-gram; flag-only)",
+        "ylabel": "rungs flagged degenerate",
+        "xticklabels": [
+          "Claude-data (c3) lr 1e-5",
+          "Claude-data (c3) lr 3e-5",
+          "Claude-data (c3) lr 1e-4",
+          "Qwen-data (c5) lr 1e-5",
+          "Qwen-data (c5) lr 3e-5",
+          "Qwen-data (c5) lr 1e-4"
+        ],
+        "yticklabels": [
+          "\u22120.06",
+          "\u22120.04",
+          "\u22120.02",
+          "0.00",
+          "0.02",
+          "0.04",
+          "0.06"
+        ]
+      }
+    ]
+  }
+}

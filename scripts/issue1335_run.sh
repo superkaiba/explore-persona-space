@@ -23,6 +23,17 @@
 # Env knobs: SMOKE=1 (run ONLY the smoke pipeline), SKIP_SMOKE=1, STUB=1
 # (CPU/VM smoke: --stub-gen + tiny model, no uploads, no cuda gate),
 # NGPUS, DATA_DIR/OUT_DIR/FIG_DIR/LOG_DIR, SKIP_UPLOAD=1, SKIP_PUSH=1.
+#
+# Round knobs (seed43-gap-rungs follow-up — scripts/issue1335_seed43_run.sh
+# sets these; unset = the byte-identical parent ladder run):
+#   I1335_GEN_RUNGS / I1335_TF_RUNGS / I1335_ALL_RUNGS  space-separated rung
+#       subsets (set-but-empty = an EMPTY set, e.g. I1335_TF_RUNGS="")
+#   I1335_SUMMARY_MODE  ladder (default: --summary + gates + figures) |
+#       seed-compare (--seed-compare vs $I1335_REFERENCE_SUMMARY; no gates,
+#       no figures)
+#   I1335_SMOKE_ROOT    scratch root for the smoke pipeline
+#   EPM_I1335_GEN_SEED / EPM_I1335_HF_PREFIX  consumed inside the python
+#       scripts (issue1335_render_rungs.py module constants)
 set -euo pipefail
 
 REPO_ROOT="${REPO_ROOT:-/workspace/explore-persona-space}"
@@ -58,10 +69,35 @@ else
 fi
 mkdir -p "$LOG_DIR" "$DATA_DIR"
 
-GEN_RUNGS=(r0_qa_full r1_qa_oneline r2_op r3_persona r4_fictionframe r6_nofoil r7_endpoint)
-TF_RUNGS=(r2_tf s1_assistant_label s2a_familiar s2b_novel)
-ALL_RUNGS=(r0_qa_full r1_qa_oneline r2_tf r2_op r3_persona r4_fictionframe r6_nofoil r7_endpoint s1_assistant_label s2a_familiar s2b_novel)
+# Rung-subset overrides (space-separated; set-but-EMPTY means an empty set —
+# the ${VAR+set} test distinguishes it from unset, which keeps the full ladder).
+if [ "${I1335_GEN_RUNGS+set}" = "set" ]; then
+  read -r -a GEN_RUNGS <<< "$I1335_GEN_RUNGS"
+else
+  GEN_RUNGS=(r0_qa_full r1_qa_oneline r2_op r3_persona r4_fictionframe r6_nofoil r7_endpoint)
+fi
+if [ "${I1335_TF_RUNGS+set}" = "set" ]; then
+  read -r -a TF_RUNGS <<< "$I1335_TF_RUNGS"
+else
+  TF_RUNGS=(r2_tf s1_assistant_label s2a_familiar s2b_novel)
+fi
+if [ "${I1335_ALL_RUNGS+set}" = "set" ]; then
+  read -r -a ALL_RUNGS <<< "$I1335_ALL_RUNGS"
+else
+  ALL_RUNGS=(r0_qa_full r1_qa_oneline r2_tf r2_op r3_persona r4_fictionframe r6_nofoil r7_endpoint s1_assistant_label s2a_familiar s2b_novel)
+fi
 MODELS=(base instruct)
+SUMMARY_MODE="${I1335_SUMMARY_MODE:-ladder}"
+case "$SUMMARY_MODE" in ladder|seed-compare) ;; *)
+  echo "[i1335-run] FATAL: I1335_SUMMARY_MODE must be ladder|seed-compare, got: $SUMMARY_MODE" >&2
+  exit 5
+  ;;
+esac
+if [ "$SUMMARY_MODE" = "seed-compare" ]; then
+  SUMMARY_JSON="seed_comparison.json"
+else
+  SUMMARY_JSON="ladder_summary.json"
+fi
 
 log() { echo "[i1335-run] $*"; }
 
@@ -75,26 +111,30 @@ write_sentinel() {  # write_sentinel <kind> <gate> <note_json_path>
   else
     dest="$LOG_DIR/issue-${ISSUE}-${slug}-${epoch}.json"
   fi
-  uv run python - "$kind" "$gate" "$note_path" "$dest" <<'PY'
+  uv run python - "$kind" "$gate" "$note_path" "$dest" "$OUT_DIR" "$FIG_DIR" <<'PY'
 import json
+import os
 import sys
 
-kind, gate, note_path, dest = sys.argv[1:5]
+kind, gate, note_path, dest, out_dir, fig_dir = sys.argv[1:7]
+hf_prefix = os.environ.get("EPM_I1335_HF_PREFIX", "issue1335_ablation_ladder")
 summary = json.load(open(note_path, encoding="utf-8"))
 digest = {
     "issue": 1335,
     "code_sha": summary.get("code_sha"),
     "smoke": summary.get("smoke"),
     "gates": summary.get("gates"),
+    "gen_seed": summary.get("gen_seed"),
+    "cross_seed": {m: v.get("cross_seed") for m, v in summary.get("per_model", {}).items()},
     "verdicts": {m: v.get("verdict") for m, v in summary.get("per_model", {}).items()},
     "rung_values_matched_ctx": {
         m: v.get("rung_values_matched_ctx") for m, v in summary.get("per_model", {}).items()
     },
     "artifacts": {
-        "eval_results": "eval_results/issue_1335/ (git, issue-1335 branch)",
-        "figures": "figures/issue_1335/ (git, issue-1335 branch)",
-        "raw_completions": "hf:superkaiba1/explore-persona-space-data/issue1335_ablation_ladder/raw_completions/",
-        "stores": "hf:superkaiba1/explore-persona-space-data/issue1335_ablation_ladder/analysis_tensors/",
+        "eval_results": f"{out_dir}/ (git, issue-1335 branch)",
+        "figures": f"{fig_dir}/ (git, issue-1335 branch)",
+        "raw_completions": f"hf:superkaiba1/explore-persona-space-data/{hf_prefix}/raw_completions/",
+        "stores": f"hf:superkaiba1/explore-persona-space-data/{hf_prefix}/analysis_tensors/",
     },
     "wandb_url": "n/a (no training; activation-geometry fits only)",
 }
@@ -128,6 +168,7 @@ upload_store() {  # upload_store <data_dir> <rung> <model> <mode>
     return 0
   fi
   uv run python - "$1" "$2" "$3" <<'PY'
+import os
 import sys
 from pathlib import Path
 
@@ -139,7 +180,11 @@ from explore_persona_space.orchestrate.upload_sharded import upload_dir_sharded
 data_dir, rung, model = sys.argv[1:4]
 store = Path(data_dir) / "store" / rung / model
 repo = "superkaiba1/explore-persona-space-data"
-prefix = f"issue1335_ablation_ladder/analysis_tensors/store_{rung}_{model}"
+# Same default + env override as issue1335_render_rungs.HF_PREFIX (the
+# consumers — gen hf-resume, extract hf-resume-seed, fit ensure_store_local —
+# all read that module constant; this heredoc mirrors it).
+hf_prefix = os.environ.get("EPM_I1335_HF_PREFIX", "issue1335_ablation_ladder")
+prefix = f"{hf_prefix}/analysis_tensors/store_{rung}_{model}"
 res = upload_dir_sharded(store, repo, prefix, shard_glob="*.pt", verify=True, delete_local=True)
 print(
     f"[i1335-upload] {rung}/{model} shards: uploaded={len(res.uploaded)} "
@@ -152,7 +197,12 @@ PY
 
 upload_tf_rollouts() {  # upload the tf re-render JSONLs (pipeline inputs; text path)
   if [ "$SKIP_UPLOAD" = "1" ]; then return 0; fi
-  uv run python - "$DATA_DIR" <<'PY'
+  if [ "${#TF_RUNGS[@]}" -eq 0 ]; then
+    log "upload_tf_rollouts skipped (no tf rungs in this round)"
+    return 0
+  fi
+  uv run python - "$DATA_DIR" "${TF_RUNGS[@]}" <<'PY'
+import os
 import sys
 from pathlib import Path
 
@@ -162,13 +212,14 @@ load_dotenv()
 from explore_persona_space.orchestrate import hub
 
 data_dir = Path(sys.argv[1])
-for slug in ("r2_tf", "s1_assistant_label", "s2a_familiar", "s2b_novel"):
+hf_prefix = os.environ.get("EPM_I1335_HF_PREFIX", "issue1335_ablation_ladder")
+for slug in sys.argv[2:]:
     for p in sorted((data_dir / "generation" / slug).glob("*_gen.jsonl")):
         url = hub._upload(
             p,
             repo_id="superkaiba1/explore-persona-space-data",
             repo_type="dataset",
-            path_in_repo=f"issue1335_ablation_ladder/raw_completions/tf_rerender/{slug}_{p.name}",
+            path_in_repo=f"{hf_prefix}/raw_completions/tf_rerender/{slug}_{p.name}",
             upload_as_file=True,
         )
         assert url, f"tf rollout upload returned no URL for {p}"
@@ -266,10 +317,11 @@ wait_lanes() {  # wait_lanes <pid_base> <pid_instruct> <log_base> <log_instruct>
 
 run_pipeline() {  # run_pipeline <mode: smoke|full>
   local mode="$1" data_dir out_dir fig_dir
+  local smoke_root="${I1335_SMOKE_ROOT:-/tmp/issue-1335-smoke}"
   if [ "$mode" = "smoke" ]; then
-    data_dir="/tmp/issue-1335-smoke/data"
-    out_dir="/tmp/issue-1335-smoke/eval_results"
-    fig_dir="/tmp/issue-1335-smoke/figures"
+    data_dir="$smoke_root/data"
+    out_dir="$smoke_root/eval_results"
+    fig_dir="$smoke_root/figures"
     mkdir -p "$data_dir" "$out_dir" "$fig_dir"
     # The smoke consumes the SAME staged questions (copy, never re-fetch).
     if [ -f "$DATA_DIR/track_s.jsonl" ]; then cp "$DATA_DIR/track_s.jsonl" "$data_dir/"; fi
@@ -319,14 +371,25 @@ run_pipeline() {  # run_pipeline <mode: smoke|full>
   # from the shared data_dir), so the sharded lanes use one shared n_min.
 
   echo "[phase=p3_summary_${mode}]"
-  uv run python scripts/issue1335_fit.py --summary --models base,instruct \
-    --data-dir "$data_dir" --out-dir "$out_dir" "${smoke_args[@]}"
+  if [ "$SUMMARY_MODE" = "seed-compare" ]; then
+    uv run python scripts/issue1335_fit.py --seed-compare --models base,instruct \
+      --data-dir "$data_dir" --out-dir "$out_dir" \
+      --reference-summary "${I1335_REFERENCE_SUMMARY:-eval_results/issue_1335/ladder_summary.json}" \
+      "${smoke_args[@]}"
+  else
+    uv run python scripts/issue1335_fit.py --summary --models base,instruct \
+      --data-dir "$data_dir" --out-dir "$out_dir" "${smoke_args[@]}"
+  fi
 
-  echo "[phase=p4_figures_${mode}]"
-  uv run python scripts/issue1335_figures.py --out-dir "$out_dir" --fig-dir "$fig_dir"
+  if [ "$SUMMARY_MODE" = "seed-compare" ]; then
+    log "figures skipped (seed-compare round: comparison JSON is the deliverable)"
+  else
+    echo "[phase=p4_figures_${mode}]"
+    uv run python scripts/issue1335_figures.py --out-dir "$out_dir" --fig-dir "$fig_dir"
+  fi
 
   if [ "$mode" = "smoke" ]; then
-    write_sentinel "epm:smoke-result" "smoke" "$out_dir/ladder_summary.json"
+    write_sentinel "epm:smoke-result" "smoke" "$out_dir/$SUMMARY_JSON"
   fi
 }
 
@@ -340,7 +403,7 @@ commit_and_push_results() {
     log "no result changes to commit"
     return 0
   fi
-  git commit -m "issue-1335: ladder eval results + figures (run $(date -u +%Y-%m-%dT%H:%MZ))"
+  git commit -m "issue-1335: ${SUMMARY_MODE} eval results (run $(date -u +%Y-%m-%dT%H:%MZ))"
   local ok=0
   for attempt in 1 2; do
     if git push origin "HEAD:$BRANCH"; then
@@ -412,7 +475,7 @@ main() {
     date -u +%Y-%m-%dT%H:%M:%SZ > "$EPS_DELIVERABLES_OK_PATH"
     log "deliverables-ok stamped at $EPS_DELIVERABLES_OK_PATH (post push-verify)"
   fi
-  write_sentinel "epm:results" "results" "$OUT_DIR/ladder_summary.json"
+  write_sentinel "epm:results" "results" "$OUT_DIR/$SUMMARY_JSON"
   echo "[phase=done]"
 }
 

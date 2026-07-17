@@ -263,23 +263,43 @@ def _collect_headline_reads(
     return reads, None
 
 
-def _within_diagonals(sweep_fn, regimes: list[str], include_r3: bool, skipped: dict) -> dict:
+def _within_diagonals(
+    sweep_fn, regimes: list[str], include_r3: bool, skipped: dict, include_r4: bool = False
+) -> dict:
     """Within-regime diagonals at each pair grain; smoke-skips recorded in-place."""
     within: dict = {}
     for r in regimes:
-        if r == "r3":
+        if r in ("r3", "r4"):
             continue
         sw = sweep_fn(r, r, "headline")
         if not isinstance(sw, tuple):
             within[f"{r}@headline"] = sw["r2_by_layer"]
-    if include_r3:
+    for grain, live in (("r3pair", include_r3), ("r4pair", include_r4)):
+        if not live:
+            continue
         for r in regimes:
-            sw = sweep_fn(r, r, "r3pair")
+            if grain == "r3pair" and r == "r4":
+                continue
+            if grain == "r4pair" and r == "r3":
+                continue
+            sw = sweep_fn(r, r, grain)
             if isinstance(sw, tuple):
-                skipped[f"{r}@r3pair(within)"] = sw[1]
+                skipped[f"{r}@{grain}(within)"] = sw[1]
             else:
-                within[f"{r}@r3pair"] = sw["r2_by_layer"]
+                within[f"{r}@{grain}"] = sw["r2_by_layer"]
     return within
+
+
+def pair_kind_for(i: str, j: str) -> str:
+    """Matched-subset grain for a regime pair (plan v8 §4: r4 pairs are the
+    conversation-paired grain; r3~r4 never computes — different story corpora,
+    r3 not rerun in the paired variant)."""
+    if {i, j} == {"r1", "r2"}:
+        return "headline"
+    if "r4" in (i, j):
+        assert "r3" not in (i, j), (i, j)
+        return "r4pair"
+    return "r3pair"
 
 
 # ---------------------------------------------------------------------------
@@ -297,15 +317,32 @@ def run_model_arm(
     null_draws: int,
     n_boot: int,
     include_r3: bool,
+    include_r4: bool = False,
     smoke: bool = False,
 ) -> None:
-    regimes = [r for r in c.REGIMES if include_r3 or r != "r3"]
+    regimes = [r for r in bundles if r in c.REGIMES]
     full = {r: load_arm_xy(bundles[r], r, arm) for r in regimes}
     shared = matched["shared_r1r2_convs"]
     r3cfg = matched["per_model_r3_pair"].get(model) if include_r3 else None
+    r4cfg = matched.get("per_model_r4_pair", {}).get(model) if include_r4 else None
+    include_r4 = include_r4 and r4cfg is not None  # smoke may skip the r4 pair build
 
     def _subset(regime: str, pair_kind: str) -> dict | None:
         label = f"{model}/{arm} {regime}@{pair_kind}"
+        if pair_kind == "r4pair":
+            # Conversation-paired grain (plan v8 §4): BOTH sides restrict to the
+            # kept r4 conv set — row-aligned by construction (one row per conv).
+            if r4cfg is None:
+                # include_r4 was demoted (the r4 pair build smoke-skips on the
+                # shard000-staged shared set — pod smoke leg). The matrix loop's
+                # guard skips r4 pairs BEFORE reaching here; this backstop keeps
+                # any future caller on the smoke-skip machinery instead of a
+                # TypeError (r1 code-review Critical). Production cannot demote
+                # (the pair build fail-louds), so a None here outside smoke is
+                # matched-subset drift.
+                assert smoke, f"r4pair subset with no per_model_r4_pair entry ({label})"
+                return None
+            return subset_rows(full[regime], r4cfg["r4_convs"], smoke=smoke, label=label)
         if regime in ("r1", "r2"):
             ids = shared if pair_kind == "headline" else r3cfg["r12_convs"]
             return subset_rows(full[regime], ids, smoke=smoke, label=label)
@@ -341,7 +378,18 @@ def run_model_arm(
     matrix: dict = {}
     deltas: dict = {}
     for i, j in [(a, b) for a in regimes for b in regimes if a != b]:
-        pair_kind = "headline" if {i, j} == {"r1", "r2"} else "r3pair"
+        if {i, j} == {"r3", "r4"}:
+            skipped[f"{i}->{j}"] = "r3~r4 never computes (different story corpora; plan v8 §4)"
+            continue
+        if "r4" in (i, j) and not include_r4:
+            # Mirror opcomp's pair-loop guard (r1 code-review Critical): the r4
+            # BUNDLE can be loaded (so r4 ∈ regimes) while the r4 matched-pair
+            # build smoke-skipped, leaving no conv set for the r4pair grain.
+            reason = "r4 matched pair unavailable (pair build skipped; include_r4 demoted)"
+            print(f"[transfer] SKIP pair {i}->{j} ({model}/{arm}): {reason}", flush=True)
+            skipped[f"{i}->{j}"] = reason
+            continue
+        pair_kind = pair_kind_for(i, j)
         xfer = _sweep(i, j, pair_kind)
         within_j = _sweep(j, j, pair_kind)
         if _is_skip(xfer) or _is_skip(within_j):
@@ -360,14 +408,14 @@ def run_model_arm(
             "transfer_l19": xfer["r2_by_layer"][str(L19)],
             "target_within_l19": within_j["r2_by_layer"][str(L19)],
         }
-        if j == "r3":
+        if j in ("r3", "r4"):
             ceil = within_j["r2_by_layer"][str(L19)]
             deltas[f"{i}->{j}"]["pct_of_story_ceiling_l19"] = (
                 float(xfer["r2_by_layer"][str(L19)] / ceil) if abs(ceil) > 1e-9 else None
             )
 
     # Within diagonals at each pair grain (reported alongside the matrix)
-    within = _within_diagonals(_sweep, regimes, include_r3, skipped)
+    within = _within_diagonals(_sweep, regimes, include_r3, skipped, include_r4)
 
     # Headline paired bootstrap from the cached L19 preds (plan §3 CI bound)
     reads, reads_skip_reason = _collect_headline_reads(
@@ -399,6 +447,9 @@ def run_model_arm(
             "r3_pair": (
                 {k: v for k, v in r3cfg.items() if not isinstance(v, list)} if r3cfg else None
             ),
+            "r4_pair": (
+                {k: v for k, v in r4cfg.items() if not isinstance(v, list)} if r4cfg else None
+            ),
         },
         "matrix": matrix,
         "delta_table_l19": deltas,
@@ -420,6 +471,9 @@ def main() -> None:
     ap.add_argument("--models", default="instruct,pretrained")
     ap.add_argument("--arms", default="prefix,context")
     ap.add_argument("--no-r3", action="store_true", help="story regime halted (yield floor)")
+    ap.add_argument(
+        "--no-r4", action="store_true", help="paired-story regime halted (r4 yield floor)"
+    )
     ap.add_argument("--seed", type=int, default=cm.FIT_SEED)
     ap.add_argument("--null-draws", type=int, default=100)
     ap.add_argument("--n-boot", type=int, default=c.N_BOOTSTRAP)
@@ -434,11 +488,15 @@ def main() -> None:
     args.out_dir.mkdir(parents=True, exist_ok=True)
     args.preds_dir.mkdir(parents=True, exist_ok=True)
     matched = load_matched(args.matched_dir)
-    regimes = [r for r in c.REGIMES if not (args.no_r3 and r == "r3")]
+    regimes = [
+        r for r in c.REGIMES if not (args.no_r3 and r == "r3") and not (args.no_r4 and r == "r4")
+    ]
     for model in args.models.split(","):
         assert model in c.MODELS, model
+        # Base r4 cells are N/A by scope (plan v8 §5): only R4_MODELS load r4.
+        model_regimes = [r for r in regimes if r != "r4" or model in c.R4_MODELS]
         # ONE slim bundle load per (model, regime), shared across both arms
-        bundles = {r: load_regime_bundle(args.turnstore_dir, model, r) for r in regimes}
+        bundles = {r: load_regime_bundle(args.turnstore_dir, model, r) for r in model_regimes}
         for arm in args.arms.split(","):
             assert arm in c.ARMS, arm
             run_model_arm(
@@ -452,6 +510,7 @@ def main() -> None:
                 null_draws=args.null_draws,
                 n_boot=args.n_boot,
                 include_r3=not args.no_r3,
+                include_r4="r4" in model_regimes,
                 smoke=args.smoke,
             )
     print("[done] cross-regime transfer complete", flush=True)

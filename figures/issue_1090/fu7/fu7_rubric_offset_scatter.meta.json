@@ -1,0 +1,88 @@
+{
+  "commit": "27b31d7fea",
+  "created": "2026-07-17T16:43:57Z",
+  "figsize": [
+    5.2,
+    4.6
+  ],
+  "points": [
+    {
+      "legacy Tier-2 rate": 0.62,
+      "paper-rubric Tier-2 rate": 0.5052631578947369,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "legacy Tier-2 rate": 0.635,
+      "paper-rubric Tier-2 rate": 0.5645161290322581,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "legacy Tier-2 rate": 0.592964824120603,
+      "paper-rubric Tier-2 rate": 0.5384615384615384,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "legacy Tier-2 rate": 0.615,
+      "paper-rubric Tier-2 rate": 0.4789473684210526,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "legacy Tier-2 rate": 0.66,
+      "paper-rubric Tier-2 rate": 0.52,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "legacy Tier-2 rate": 0.82,
+      "paper-rubric Tier-2 rate": 0.6267605633802817,
+      "_kind": "scatter",
+      "_group": 5
+    }
+  ],
+  "n_series": 6,
+  "total_points": 6,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "rubric re-anchor offset (dashed: fu6's ~-0.15 rank-preserving offset,\npaired rho=0.95; circles Claude-data (c3), triangles Qwen-data (c5))",
+        "xlabel": "legacy Tier-2 rate",
+        "ylabel": "paper-rubric Tier-2 rate",
+        "annotations": [
+          "Claude-data (c3) lr 1e-5",
+          "Claude-data (c3) lr 3e-5",
+          "Claude-data (c3) lr 1e-4",
+          "Qwen-data (c5) lr 1e-5",
+          "Qwen-data (c5) lr 3e-5",
+          "Qwen-data (c5) lr 1e-4"
+        ],
+        "xticklabels": [
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0",
+          "1.2"
+        ],
+        "yticklabels": [
+          "\u22120.4",
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0",
+          "1.2"
+        ]
+      }
+    ]
+  }
+}

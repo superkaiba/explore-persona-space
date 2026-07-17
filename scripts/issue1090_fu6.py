@@ -1177,12 +1177,20 @@ def _stage_adapter(spec: dict, dest_root: Path) -> Path:
 
 def _assert_adapter_config(spec: dict, adapter_dir: Path) -> dict:
     """K2 structural half: the staged adapter_config.json is a LoRA config on
-    the fu6 base model and never touches the unembedding (gauge assert)."""
+    the fu6 base model and never touches the unembedding (gauge assert).
+
+    The expected base is ``_base_model()`` so the tiny-real CPU e2e (env
+    override) exercises the SAME assert; production (no override) keeps the
+    literal Qwen2.5-7B-Instruct check byte-equivalent."""
     ac = _read_json(adapter_dir / "adapter_config.json")
     base = ac.get("base_model_name_or_path", "")
-    assert "Qwen2.5-7B-Instruct" in base or base.endswith("Qwen2.5-7B-Instruct"), (
+    expected = _base_model()
+    assert (
+        base == expected or "Qwen2.5-7B-Instruct" in base or base.endswith("Qwen2.5-7B-Instruct")
+    ), (
         spec["organism_id"],
         base,
+        expected,
     )
     targets = ac.get("target_modules") or []
     assert not any(t in ("lm_head", "embed_tokens") for t in targets), (
@@ -1211,14 +1219,16 @@ def _merge_adapter_fu6(adapter_dir: Path, merged_dir: Path) -> Path:
     tmp_dir = merged_dir.parent / (merged_dir.name + ".tmp")
     if tmp_dir.exists():
         shutil.rmtree(tmp_dir, ignore_errors=True)
+    # _base_model() (== BASE_MODEL in production; env-overridable ONLY for the
+    # tiny-real CPU e2e) so the merge seam is exercisable off-GPU (#1090 fu7).
     base = AutoModelForCausalLM.from_pretrained(
-        BASE_MODEL, torch_dtype=torch.bfloat16, token=os.environ.get("HF_TOKEN")
+        _base_model(), torch_dtype=_capture_dtype(), token=os.environ.get("HF_TOKEN")
     )
     model = PeftModel.from_pretrained(base, str(adapter_dir))
     model = model.merge_and_unload()
     tmp_dir.mkdir(parents=True, exist_ok=True)
     model.save_pretrained(str(tmp_dir))
-    AutoTokenizer.from_pretrained(BASE_MODEL).save_pretrained(str(tmp_dir))
+    AutoTokenizer.from_pretrained(_base_model()).save_pretrained(str(tmp_dir))
     tmp_dir.rename(merged_dir)  # dir present => complete
     del model, base
     gc.collect()
@@ -1319,7 +1329,19 @@ def run_organism_capture(cfg: Cfg, spec: dict | None) -> None:
         model_path = _base_model()
         config_summary = None
     else:
-        adapter_dir = _stage_adapter(spec, cfg.out_root / "adapters")
+        # `local_adapter_dir` seam (#1090 fu7): a same-pod caller whose adapter
+        # checkpoint is still LOCAL (trained in the same session) passes it
+        # directly, bypassing the Hub round-trip — robust against the #1108
+        # file-count overflow reroute (a fresh upload may land on the PRIVATE
+        # overflow repo, where `_stage_adapter`'s canonical-repo listing would
+        # miss it). Absent the key, existing callers stage from the Hub
+        # byte-identically.
+        local = spec.get("local_adapter_dir")
+        if local:
+            adapter_dir = Path(local)
+            assert (adapter_dir / "adapter_config.json").exists(), adapter_dir
+        else:
+            adapter_dir = _stage_adapter(spec, cfg.out_root / "adapters")
         config_summary = _assert_adapter_config(spec, adapter_dir)
         cleanup = cfg.out_root / "merged" / unit
         model_path = str(_merge_adapter_fu6(adapter_dir, cleanup))

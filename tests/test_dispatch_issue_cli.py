@@ -4294,3 +4294,68 @@ def test_min_ram_gb_lands_in_spec_extra(monkeypatch, tmp_path) -> None:
     assert rc == 0
     assert gcp.launches[0].extra["min_ram_gb"] == 32
     assert gcp.launches[0].extra["boot_disk_gb"] == 80
+
+
+def test_min_gpu_mem_gb_lands_in_spec_extra(monkeypatch, tmp_path) -> None:
+    """#1468: ``--min-gpu-mem-gb`` threads to ``spec.extra['min_gpu_mem_gb']``
+    (the GCP ladder's A100-40 fallback gate channel — a declared per-GPU
+    requirement above gcp.A100_40_USABLE_GIB drops the 40 GB rungs). Mirror
+    of the ``--min-ram-gb`` threading test above."""
+    _cd_to_tmp(monkeypatch, tmp_path)
+    gcp = _MockBackend(kind="gcp")
+    posts: list[dict[str, Any]] = []
+    factory = _build_mock_factory(gcp=gcp, marker_posts=posts)
+
+    from scripts.dispatch_issue import main
+
+    buf = io.StringIO()
+    with redirect_stdout(buf):
+        rc = main(
+            [
+                "launch",
+                "--issue",
+                "1468",
+                "--intent",
+                "lora-7b",
+                "--backend",
+                "gcp",
+                "--min-gpu-mem-gb",
+                "60",
+                "--hydra",
+                "smoke=1",
+            ],
+            backends_factory=factory,
+        )
+    assert rc == 0
+    assert gcp.launches[0].extra["min_gpu_mem_gb"] == 60
+
+
+def test_min_gpu_mem_gb_absent_leaves_extra_unset(monkeypatch, tmp_path) -> None:
+    """#1468 opt-in-ness (the CLI half of the regression pin): no
+    ``--min-gpu-mem-gb`` flag -> the key is ABSENT from ``spec.extra``, so
+    the ladder is byte-identical to today's."""
+    _cd_to_tmp(monkeypatch, tmp_path)
+    gcp = _MockBackend(kind="gcp")
+    posts: list[dict[str, Any]] = []
+    factory = _build_mock_factory(gcp=gcp, marker_posts=posts)
+
+    from scripts.dispatch_issue import main
+
+    buf = io.StringIO()
+    with redirect_stdout(buf):
+        rc = main(
+            [
+                "launch",
+                "--issue",
+                "1468",
+                "--intent",
+                "lora-7b",
+                "--backend",
+                "gcp",
+                "--hydra",
+                "smoke=1",
+            ],
+            backends_factory=factory,
+        )
+    assert rc == 0
+    assert "min_gpu_mem_gb" not in gcp.launches[0].extra

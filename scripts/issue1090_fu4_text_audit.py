@@ -138,6 +138,59 @@ ROUND_CFGS: dict[str, dict[str, Any]] = {
             ),
         },
     },
+    # fu7 (plan v13 D2 item 6): the six sycophancy lr arms + the two reused
+    # fu3 sycophancy base arms; per-ARM mixes (both cells share the persona
+    # context but train on DIFFERENT frozen mixes), fu3 judge dir routed to
+    # the sycophancy behavior subdir; panel completions audited via the
+    # `panel` flag (CJK/duplicates always; firing overlap when the VM-side
+    # panel judge raws exist).
+    "fu7": {
+        "label": "sycophancy-lr-install-and-remeasure",
+        "data_root": REPO_ROOT / "data" / "issue_1090" / "fu7",
+        "judge_subdir": ("fu7_aggregate", "judge", "sycophancy"),
+        "fu3_judge_dir": REPO_ROOT / "eval_results" / "issue_1090" / "fu3" / "judge" / "sycophancy",
+        "panel_judge_subdir": ("fu7_aggregate", "judge", "panel_legacy", "sycophancy"),
+        "ladders": REPO_ROOT
+        / "eval_results"
+        / "issue_1090"
+        / "sycophancy-lr-install-and-remeasure"
+        / "fu7_ladders.json",
+        "out": REPO_ROOT
+        / "eval_results"
+        / "issue_1090"
+        / "sycophancy-lr-install-and-remeasure"
+        / "fu7_text_audit.json",
+        "arms": {
+            "syc-c3-lr1e5": ("persona_software_engineer", "syc-c3-lr1e5-t2-trained"),
+            "syc-c3-lr3e5": ("persona_software_engineer", "syc-c3-lr3e5-t2-trained"),
+            "syc-c3-lr1e4": ("persona_software_engineer", "syc-c3-lr1e4-t2-trained"),
+            "syc-c5-lr1e5": ("persona_software_engineer", "syc-c5-lr1e5-t2-trained"),
+            "syc-c5-lr3e5": ("persona_software_engineer", "syc-c5-lr3e5-t2-trained"),
+            "syc-c5-lr1e4": ("persona_software_engineer", "syc-c5-lr1e4-t2-trained"),
+        },
+        "base": {
+            "fu3-base-c3": (
+                "issue1090_fu3/C3-pers-con-sycophancy-claude/tier2/"
+                "completions__base__persona_software_engineer.json",
+                "C3-pers-con-t2-base",
+            ),
+            "fu3-base-c5": (
+                "issue1090_fu3/C5-pers-con-sycophancy-qwen/tier2/"
+                "completions__base__persona_software_engineer.json",
+                "C5-pers-con-t2-base",
+            ),
+        },
+        # Per-ARM mix keys (looked up BEFORE the context key): the c3 and c5
+        # cells share persona_software_engineer but train on different mixes.
+        "mix_hf": {
+            "syc-c3-lr1e5": "issue1090_pvdatagen/c3-sycophancy-claude/mix/train_mix.jsonl",
+            "syc-c3-lr3e5": "issue1090_pvdatagen/c3-sycophancy-claude/mix/train_mix.jsonl",
+            "syc-c3-lr1e4": "issue1090_pvdatagen/c3-sycophancy-claude/mix/train_mix.jsonl",
+            "syc-c5-lr1e5": "issue1090_pvdatagen/c5-sycophancy-qwen/mix/train_mix.jsonl",
+            "syc-c5-lr3e5": "issue1090_pvdatagen/c5-sycophancy-qwen/mix/train_mix.jsonl",
+            "syc-c5-lr1e4": "issue1090_pvdatagen/c5-sycophancy-qwen/mix/train_mix.jsonl",
+        },
+    },
 }
 
 
@@ -310,15 +363,25 @@ def main() -> None:
         comps = load_completions(
             rc["data_root"] / arm / "tier2" / f"completions__trained__{ctx}.json"
         )
-        firing, n, k, dropped = firing_sets(jdir / jslug / "judge_raw.json", jslug)
         lt = ladders["runs"][arm]["tier2_trained"]
+        arm_jdir, arm_jslug = jdir, jslug
+        if lt.get("remediation"):
+            # fu7 K4/rule-23 remediated read: the NARRATED judge raw lives
+            # under the rule23_legacy partition with a -rule23 tag.
+            arm_jdir = rc["data_root"].joinpath(
+                rc["judge_subdir"][0], "judge", "rule23_legacy", rc["judge_subdir"][-1]
+            )
+            arm_jslug = f"{arm}-t2-trained-rule23"
+        firing, n, k, dropped = firing_sets(arm_jdir / arm_jslug / "judge_raw.json", arm_jslug)
         assert (k, n) == (lt["k"], lt["n"]), f"{arm}: {(k, n)} != ladders {(lt['k'], lt['n'])}"
         cjk = {qc for qc, t in comps.items() if CJK.search(t)}
-        if ctx not in tg_cache:
-            tg_cache[ctx] = train_ngrams(
-                hf_hub_download(DATA_REPO, mix_hf[ctx], repo_type="dataset")
+        # Per-ARM mix key first (fu7: same context, different mixes), else ctx.
+        mix_key = arm if arm in mix_hf else ctx
+        if mix_key not in tg_cache:
+            tg_cache[mix_key] = train_ngrams(
+                hf_hub_download(DATA_REPO, mix_hf[mix_key], repo_type="dataset")
             )
-        tg, n_rows = tg_cache[ctx]
+        tg, n_rows = tg_cache[mix_key]
         overlaps = [len(g & tg) / len(g) for t in comps.values() if (g := ngrams(t))]
         audit["arms"][arm] = {
             "kind": f"{args.round}-trained",
@@ -337,9 +400,10 @@ def main() -> None:
             "max_8gram_train_overlap": round(max(overlaps), 4),
             "n_completions_over_20pct_overlap": sum(1 for o in overlaps if o > 0.20),
         }
+    fu3_jdir = rc.get("fu3_judge_dir", FU3J)
     for arm, (hf_path, jslug) in base_cfg.items():
         comps = load_completions(hf_hub_download(DATA_REPO, hf_path, repo_type="dataset"))
-        firing, n, k, _ = firing_sets(FU3J / jslug / "judge_raw.json", jslug)
+        firing, n, k, _ = firing_sets(fu3_jdir / jslug / "judge_raw.json", jslug)
         cjk = {qc for qc, t in comps.items() if CJK.search(t)}
         audit["arms"][arm] = {
             "kind": "fu3-base",
@@ -372,6 +436,39 @@ def main() -> None:
             **entry,
             "source": f"hf://{DATA_REPO}/{hf_path}",
         }
+    if rc.get("panel_judge_subdir"):
+        # fu7 panel completions (plan D2 item 6): CJK intrusion + duplicates
+        # always; judged-firing overlap when the VM-side panel_legacy judge
+        # raw exists (the audit runs post judge-aggregate on the VM).
+        panel_jdir = rc["data_root"].joinpath(*rc["panel_judge_subdir"])
+        audit["panel"] = {}
+        for f in sorted(rc["data_root"].glob("*/panel/completions__trained__*.json")):
+            run_id = f.parent.parent.name
+            ctx = f.stem.replace("completions__trained__", "")
+            comps = load_completions(f)
+            cjk = {qc for qc, t in comps.items() if CJK.search(t)}
+            entry: dict[str, Any] = {
+                "n_completions": len(comps),
+                "n_cjk": len(cjk),
+                "cjk_frac": round(len(cjk) / max(len(comps), 1), 4),
+                "n_exact_duplicates": len(comps) - len(set(comps.values())),
+            }
+            # Short-context judge tags (#1415 Batch custom_id budget; mirrors
+            # issue1090_fu4._fu7_panel_reads / issue1090_fu6._CTX_SHORT).
+            import issue1090_fu6 as fu6  # script mode: scripts/ is sys.path[0]
+
+            jslug = f"{run_id}-pn-{fu6._CTX_SHORT.get(ctx, ctx[:6])}-legacy"
+            raw_path = panel_jdir / jslug / "judge_raw.json"
+            if raw_path.exists():
+                firing, n, k, _ = firing_sets(raw_path, jslug)
+                entry.update(
+                    {
+                        "recomputed_k": k,
+                        "recomputed_n": n,
+                        "n_cjk_firing": len(cjk & firing),
+                    }
+                )
+            audit["panel"][f"{run_id}/{ctx}"] = entry
     rc["out"].parent.mkdir(parents=True, exist_ok=True)
     rc["out"].write_text(json.dumps(audit, indent=1) + "\n")
     for a, v in audit["arms"].items():

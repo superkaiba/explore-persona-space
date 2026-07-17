@@ -58,12 +58,21 @@ import issue1310_common as c1310  # noqa: E402
 SCRIPT = "scripts/issue1335_render_rungs.py"
 ISSUE = 1335
 BUILD_SEED = 1335  # NEW construction only; the fiction battery keeps BUILD_SEED 1310
-GEN_SEED = c1310.GEN_SEED  # 42
+# Generation seed (vLLM engine + sampling; NOT the fiction-battery BUILD_SEED).
+# Default 42 = the #825/#1310 convention. The seed43-gap-rungs follow-up round
+# overrides via EPM_I1335_GEN_SEED=43; GEN_SEED rides rung_render_config, so a
+# changed seed changes render_config_hash and seed-42 artifacts can never be
+# fingerprint-consumed by a seed-43 run (c24 resume/hf-resume safety).
+GEN_SEED = int(os.environ.get("EPM_I1335_GEN_SEED", str(c1310.GEN_SEED)))  # 42
 FIT_SEED = 0
 N_QUESTIONS = 5000
 
 HF_DATA_REPO = c1310.HF_DATA_REPO
-HF_PREFIX = "issue1335_ablation_ladder"
+# HF data-repo prefix for every upload/resume path of this pipeline. The
+# seed43-gap-rungs round segregates its artifacts under
+# issue1335_ablation_ladder/seed43_gap_rungs via EPM_I1335_HF_PREFIX so the
+# committed seed-42 buckets are never overwritten.
+HF_PREFIX = os.environ.get("EPM_I1335_HF_PREFIX", "issue1335_ablation_ladder")
 
 # #825 Track-S prompt artifact (reused verbatim; plan §10 Reused data artifacts).
 TRACKS_REMOTE = "issue825_userbase_map/raw_completions/track_s/track_s.jsonl"
