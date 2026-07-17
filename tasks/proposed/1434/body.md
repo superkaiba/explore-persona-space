@@ -18,6 +18,8 @@ goal: 'Install the writing_style behavior (casual, informal register) as a perso
   with the learning-rate lever (1e-5 to 1e-4) that unlocked impolite. Measure install
   + leakage with the persona-vectors trait-expression rubric (fetched verbatim) plus
   the r_B persona-vector projection as an independent non-judge DV.'
+relates_to:
+- implant-which-behaviors
 ---
 ---
 goal: 'Install the writing_style behavior (casual, informal register) as a persona-vectors-style (context, behavior) LoRA organism via the #1090 factory recipe, and measure whether it installs across training contexts. Datagen with Claude as generator (trait description + the 5 registered contrastive pairs + auto-generated neutral trait-eliciting questions, instruct-and-strip, judge-filter), contrastive negatives (~1:1), dose-to-band (judged rate 0.60-0.85) with the learning-rate lever (1e-5 to 1e-4) that unlocked impolite. Measure install + leakage with the persona-vectors trait-expression rubric (fetched verbatim) as the judged rate plus the r_B persona-vector projection as an independent non-judge DV.'
