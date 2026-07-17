@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1478,
+  "highest_id": 1479,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -3722,6 +3722,13 @@
       "path": "tasks/proposed/1478",
       "status": "proposed",
       "title": "workflow-fix: audit warns on sidecar-less embedded figures (silent check skip)"
+    },
+    "1479": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1479",
+      "status": "proposed",
+      "title": "workflow-fix: LESSONS.md over ratchet \u2014 trim/bump _LESSONS_RATCHET_BYTES (red default lint on main)"
     },
     "148": {
       "has_clean_result": false,
