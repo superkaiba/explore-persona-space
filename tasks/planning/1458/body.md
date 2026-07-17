@@ -46,5 +46,6 @@ extend the CLAUDE.md ad-hoc provenance bullet with: any display-substitution of 
 
 ## Provenance
 
+- workflow_fix_target: CLAUDE.md
 - fingerprint: 07b219d40592
 
