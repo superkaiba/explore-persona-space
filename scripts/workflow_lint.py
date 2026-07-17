@@ -8854,7 +8854,9 @@ _LESSONS_ROW_GRANDFATHER_MAX_BYTES: dict[str, int] = {
     # Cap = measured + <=40.
     # #1411 added the Edit-tool Unicode-literal trigger (row 599 B -> 661 B).
     # Cap = measured + <=40.
-    "gotchas": 680,
+    # #1431 added the pilot-gate shape+rc trigger (row 661 B -> 682 B).
+    # Cap = measured + <=40.
+    "gotchas": 720,
 }
 _LESSONS_ROW_GRANDFATHER_MAX_HEADROOM_BYTES = 40
 

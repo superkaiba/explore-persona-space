@@ -249,7 +249,13 @@ the same kernel family as the floor cross-check's call-count trigger) —
 ~15–30 min phase floor** (the per-"call" unit is then one
 production-shape batched draw block, not one serial draw) — over
 cells × folds × layers × arms × traits × seeds MUST ground its per-call
-`basis` on a MEASURED 1-cell/1-unit pilot timing at PRODUCTION shape, on
+`basis` on a MEASURED 1-cell/1-unit pilot timing at PRODUCTION shape —
+SHAPE includes the phase's realized EXECUTION GEOMETRY (batch width /
+per-call structure): a phase that runs B-wide batched calls is piloted
+with one B-wide batched call normalized per-sample, never a serial
+batch-1 loop, whose per-sample cost reads ~B× the sweep's under
+bandwidth-bound decode and can false-fire a correctly-derived in-run
+timing gate by ~B× (#1415) — on
 the machine/device the phase will actually run, executed THROUGH the
 production entrypoint (one full cell/unit end-to-end — every kernel the
 per-cell path touches), OR a cited prior-issue MEASURED figure for the
@@ -284,7 +290,12 @@ at plan time (its inputs don't exist yet), the plan pre-registers the
 pilot as the phase's FIRST step with an abort threshold — pilot ×
 n_calls / parallelism re-projected against the row; >2× the row ⇒ the
 vectorize signature check fires before the loop proceeds — and marks the
-row's basis `pilot-gated`. This is the fit-phase twin of the store-heavy
+row's basis `pilot-gated`. (The in-run pilot measures at the SAME
+execution shape, and its refusal is a DESIGNED artifact-routed halt —
+report JSON + a distinct rc the dispatcher routes like its other stop
+criteria, never a bare rc=1 read as an anonymous crash; worked impl +
+incident: the gotchas.md pilot-gate entry, #1415.) This is the
+fit-phase twin of the store-heavy
 block's measured one-item rule below. Sizing precedent (#1092 offvm
 battery refit, 2026-07-15): a permutation-null battery at ambient
 10,752-dim output, pilot-gated because its inputs didn't exist at plan
