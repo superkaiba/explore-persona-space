@@ -8640,8 +8640,8 @@
     "801": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/801",
-      "status": "proposed",
+      "path": "tasks/archived/801",
+      "status": "archived",
       "title": "daily-held: registry/fs inconsistencies (#696/#722/#750/#764/#766) need human-audited repair"
     },
     "802": {
