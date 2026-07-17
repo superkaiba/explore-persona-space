@@ -3628,8 +3628,8 @@
     "1466": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1466",
-      "status": "proposed",
+      "path": "tasks/planning/1466",
+      "status": "planning",
       "title": "daily-fix: move tmux sockets off /tmp (split-brain)"
     },
     "1467": {
