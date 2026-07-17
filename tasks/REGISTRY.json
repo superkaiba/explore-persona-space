@@ -3304,8 +3304,8 @@
     "1423": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1423",
-      "status": "reviewing",
+      "path": "tasks/completed/1423",
+      "status": "completed",
       "title": "workflow-fix: byte-equal synonym in bit_byte_identical audit regex"
     },
     "1424": {
