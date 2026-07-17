@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1449,
+  "highest_id": 1450,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -3505,6 +3505,13 @@
       "path": "tasks/archived/145",
       "status": "archived",
       "title": "Non persona prompt leakage -- look into sleeper agent and inoculation prompting"
+    },
+    "1450": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1450",
+      "status": "proposed",
+      "title": "daily-fix: size-cap trigger for home HF cache reap"
     },
     "146": {
       "has_clean_result": false,
