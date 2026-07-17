@@ -531,8 +531,8 @@
     "1067": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1067",
-      "status": "proposed",
+      "path": "tasks/blocked/1067",
+      "status": "blocked",
       "title": "daily-held: Happy mobile push down all day (Remote Control o"
     },
     "1068": {
