@@ -1,680 +1,734 @@
 {
-  "commit": "2eea6e2d08",
-  "created": "2026-07-17T03:48:31Z",
+  "commit": "9be83e24bd",
+  "created": "2026-07-17T04:37:17Z",
   "figsize": [
-    12.5,
-    5.2
+    14.0,
+    5.6
   ],
   "points": [
     {
-      "x": 0.0,
-      "Answer-shift alignment (cosine, max over layers)": 0.3419303894042969,
+      "context pair (sorted by corrected alignment)": 0.0,
+      "Answer-shift alignment with target\n(cosine, max over 7 steer layers, \u03b1=4)": 0.19881576299667358,
       "_kind": "scatter",
       "_group": 0
     },
     {
-      "x": 0.0,
-      "Answer-shift alignment (cosine, max over layers)": 0.040102384984493256,
+      "context pair (sorted by corrected alignment)": 0.0,
+      "Answer-shift alignment with target\n(cosine, max over 7 steer layers, \u03b1=4)": 0.08397286385297775,
       "_kind": "scatter",
       "_group": 1
     },
     {
-      "x": 1.0,
-      "Answer-shift alignment (cosine, max over layers)": 0.4053772985935211,
+      "context pair (sorted by corrected alignment)": 1.0,
+      "Answer-shift alignment with target\n(cosine, max over 7 steer layers, \u03b1=4)": 0.1461074948310852,
       "_kind": "scatter",
       "_group": 2
     },
     {
-      "x": 1.0,
-      "Answer-shift alignment (cosine, max over layers)": 0.04135725647211075,
+      "context pair (sorted by corrected alignment)": 1.0,
+      "Answer-shift alignment with target\n(cosine, max over 7 steer layers, \u03b1=4)": 0.08397296816110611,
       "_kind": "scatter",
       "_group": 3
     },
     {
-      "x": 2.0,
-      "Answer-shift alignment (cosine, max over layers)": 0.42700937390327454,
+      "context pair (sorted by corrected alignment)": 2.0,
+      "Answer-shift alignment with target\n(cosine, max over 7 steer layers, \u03b1=4)": 0.18138587474822998,
       "_kind": "scatter",
       "_group": 4
     },
     {
-      "x": 2.0,
-      "Answer-shift alignment (cosine, max over layers)": 0.04050806909799576,
+      "context pair (sorted by corrected alignment)": 2.0,
+      "Answer-shift alignment with target\n(cosine, max over 7 steer layers, \u03b1=4)": 0.12444334849715233,
       "_kind": "scatter",
       "_group": 5
     },
     {
-      "x": 3.0,
-      "Answer-shift alignment (cosine, max over layers)": 0.43604776263237,
+      "context pair (sorted by corrected alignment)": 3.0,
+      "Answer-shift alignment with target\n(cosine, max over 7 steer layers, \u03b1=4)": 0.19575560092926025,
       "_kind": "scatter",
       "_group": 6
     },
     {
-      "x": 3.0,
-      "Answer-shift alignment (cosine, max over layers)": 0.04294304549694061,
+      "context pair (sorted by corrected alignment)": 3.0,
+      "Answer-shift alignment with target\n(cosine, max over 7 steer layers, \u03b1=4)": 0.12800195161253214,
       "_kind": "scatter",
       "_group": 7
     },
     {
-      "x": 4.0,
-      "Answer-shift alignment (cosine, max over layers)": 0.4817695915699005,
+      "context pair (sorted by corrected alignment)": 4.0,
+      "Answer-shift alignment with target\n(cosine, max over 7 steer layers, \u03b1=4)": 0.3419303596019745,
       "_kind": "scatter",
       "_group": 8
     },
     {
-      "x": 4.0,
-      "Answer-shift alignment (cosine, max over layers)": 0.03948218747973442,
+      "context pair (sorted by corrected alignment)": 4.0,
+      "Answer-shift alignment with target\n(cosine, max over 7 steer layers, \u03b1=4)": 0.13861379399895668,
       "_kind": "scatter",
       "_group": 9
     },
     {
-      "x": 5.0,
-      "Answer-shift alignment (cosine, max over layers)": 0.5630590915679932,
+      "context pair (sorted by corrected alignment)": 5.0,
+      "Answer-shift alignment with target\n(cosine, max over 7 steer layers, \u03b1=4)": 0.19821639358997345,
       "_kind": "scatter",
       "_group": 10
     },
     {
-      "x": 5.0,
-      "Answer-shift alignment (cosine, max over layers)": 0.04211985692381859,
+      "context pair (sorted by corrected alignment)": 5.0,
+      "Answer-shift alignment with target\n(cosine, max over 7 steer layers, \u03b1=4)": 0.14884597808122635,
       "_kind": "scatter",
       "_group": 11
     },
     {
-      "x": 6.0,
-      "Answer-shift alignment (cosine, max over layers)": 0.5790552496910095,
+      "context pair (sorted by corrected alignment)": 6.0,
+      "Answer-shift alignment with target\n(cosine, max over 7 steer layers, \u03b1=4)": 0.263906329870224,
       "_kind": "scatter",
       "_group": 12
     },
     {
-      "x": 6.0,
-      "Answer-shift alignment (cosine, max over layers)": 0.03809317946434021,
+      "context pair (sorted by corrected alignment)": 6.0,
+      "Answer-shift alignment with target\n(cosine, max over 7 steer layers, \u03b1=4)": 0.16544686257839203,
       "_kind": "scatter",
       "_group": 13
     },
     {
-      "x": 7.0,
-      "Answer-shift alignment (cosine, max over layers)": 0.6124781966209412,
+      "context pair (sorted by corrected alignment)": 7.0,
+      "Answer-shift alignment with target\n(cosine, max over 7 steer layers, \u03b1=4)": 0.24995779991149902,
       "_kind": "scatter",
       "_group": 14
     },
     {
-      "x": 7.0,
-      "Answer-shift alignment (cosine, max over layers)": 0.04119192063808441,
+      "context pair (sorted by corrected alignment)": 7.0,
+      "Answer-shift alignment with target\n(cosine, max over 7 steer layers, \u03b1=4)": 0.18735697120428085,
       "_kind": "scatter",
       "_group": 15
     },
     {
-      "x": 8.0,
-      "Answer-shift alignment (cosine, max over layers)": 0.6380786895751953,
+      "context pair (sorted by corrected alignment)": 8.0,
+      "Answer-shift alignment with target\n(cosine, max over 7 steer layers, \u03b1=4)": 0.26405295729637146,
       "_kind": "scatter",
       "_group": 16
     },
     {
-      "x": 8.0,
-      "Answer-shift alignment (cosine, max over layers)": 0.04237668961286545,
+      "context pair (sorted by corrected alignment)": 8.0,
+      "Answer-shift alignment with target\n(cosine, max over 7 steer layers, \u03b1=4)": 0.24795932322740555,
       "_kind": "scatter",
       "_group": 17
     },
     {
-      "x": 9.0,
-      "Answer-shift alignment (cosine, max over layers)": 0.6783339977264404,
+      "context pair (sorted by corrected alignment)": 9.0,
+      "Answer-shift alignment with target\n(cosine, max over 7 steer layers, \u03b1=4)": 0.42700937390327454,
+      "label": "medical_doctor:\nnoise target\n(split-half 0.049)",
       "_kind": "scatter",
       "_group": 18
     },
     {
-      "x": 9.0,
-      "Answer-shift alignment (cosine, max over layers)": 0.03913809731602669,
+      "context pair (sorted by corrected alignment)": 9.0,
+      "Answer-shift alignment with target\n(cosine, max over 7 steer layers, \u03b1=4)": 0.2786475643515587,
       "_kind": "scatter",
       "_group": 19
     },
     {
-      "x": 10.0,
-      "Answer-shift alignment (cosine, max over layers)": 0.7111043930053711,
+      "context pair (sorted by corrected alignment)": 10.0,
+      "Answer-shift alignment with target\n(cosine, max over 7 steer layers, \u03b1=4)": 0.34821993112564087,
+      "label": "medical_doctor:\nnoise target\n(split-half 0.049)",
       "_kind": "scatter",
       "_group": 20
     },
     {
-      "x": 10.0,
-      "Answer-shift alignment (cosine, max over layers)": 0.04408719018101692,
+      "context pair (sorted by corrected alignment)": 10.0,
+      "Answer-shift alignment with target\n(cosine, max over 7 steer layers, \u03b1=4)": 0.2801361232995987,
       "_kind": "scatter",
       "_group": 21
     },
     {
-      "x": 11.0,
-      "Answer-shift alignment (cosine, max over layers)": 0.7177414298057556,
+      "context pair (sorted by corrected alignment)": 11.0,
+      "Answer-shift alignment with target\n(cosine, max over 7 steer layers, \u03b1=4)": 0.3337263762950897,
+      "label": "medical_doctor:\nnoise target\n(split-half 0.049)",
       "_kind": "scatter",
       "_group": 22
     },
     {
-      "x": 11.0,
-      "Answer-shift alignment (cosine, max over layers)": 0.04461611434817314,
+      "context pair (sorted by corrected alignment)": 11.0,
+      "Answer-shift alignment with target\n(cosine, max over 7 steer layers, \u03b1=4)": 0.2861797511577606,
       "_kind": "scatter",
       "_group": 23
     },
     {
-      "x": 12.0,
-      "Answer-shift alignment (cosine, max over layers)": 0.7501571774482727,
+      "context pair (sorted by corrected alignment)": 12.0,
+      "Answer-shift alignment with target\n(cosine, max over 7 steer layers, \u03b1=4)": 0.34744715690612793,
+      "label": "medical_doctor:\nnoise target\n(split-half 0.049)",
       "_kind": "scatter",
       "_group": 24
     },
     {
-      "x": 12.0,
-      "Answer-shift alignment (cosine, max over layers)": 0.04361764341592789,
+      "context pair (sorted by corrected alignment)": 12.0,
+      "Answer-shift alignment with target\n(cosine, max over 7 steer layers, \u03b1=4)": 0.31231555342674255,
+      "label": "medical_doctor:\nnoise target\n(split-half 0.049)",
       "_kind": "scatter",
       "_group": 25
     },
     {
-      "x": 13.0,
-      "Answer-shift alignment (cosine, max over layers)": 0.7523993849754333,
+      "context pair (sorted by corrected alignment)": 13.0,
+      "Answer-shift alignment with target\n(cosine, max over 7 steer layers, \u03b1=4)": 0.40537723898887634,
+      "label": "medical_doctor:\nnoise target\n(split-half 0.049)",
       "_kind": "scatter",
       "_group": 26
     },
     {
-      "x": 13.0,
-      "Answer-shift alignment (cosine, max over layers)": 0.04035143181681633,
+      "context pair (sorted by corrected alignment)": 13.0,
+      "Answer-shift alignment with target\n(cosine, max over 7 steer layers, \u03b1=4)": 0.32831917703151703,
+      "label": "medical_doctor:\nnoise target\n(split-half 0.049)",
       "_kind": "scatter",
       "_group": 27
     },
     {
-      "x": 14.0,
-      "Answer-shift alignment (cosine, max over layers)": 0.7562492489814758,
+      "context pair (sorted by corrected alignment)": 14.0,
+      "Answer-shift alignment with target\n(cosine, max over 7 steer layers, \u03b1=4)": 0.4014805853366852,
+      "label": "medical_doctor:\nnoise target\n(split-half 0.049)",
       "_kind": "scatter",
       "_group": 28
     },
     {
-      "x": 14.0,
-      "Answer-shift alignment (cosine, max over layers)": 0.04060272499918938,
+      "context pair (sorted by corrected alignment)": 14.0,
+      "Answer-shift alignment with target\n(cosine, max over 7 steer layers, \u03b1=4)": 0.36297181248664856,
+      "label": "medical_doctor:\nnoise target\n(split-half 0.049)",
       "_kind": "scatter",
       "_group": 29
     },
     {
-      "x": 15.0,
-      "Answer-shift alignment (cosine, max over layers)": 0.1461074948310852,
+      "context pair (sorted by corrected alignment)": 15.0,
+      "Answer-shift alignment with target\n(cosine, max over 7 steer layers, \u03b1=4)": 0.43604782223701477,
+      "label": "medical_doctor:\nnoise target\n(split-half 0.049)",
       "_kind": "scatter",
       "_group": 30
     },
     {
-      "x": 15.0,
-      "Answer-shift alignment (cosine, max over layers)": 0.039138004183769226,
+      "context pair (sorted by corrected alignment)": 15.0,
+      "Answer-shift alignment with target\n(cosine, max over 7 steer layers, \u03b1=4)": 0.39815790951251984,
+      "label": "medical_doctor:\nnoise target\n(split-half 0.049)",
       "_kind": "scatter",
       "_group": 31
     },
     {
-      "x": 16.0,
-      "Answer-shift alignment (cosine, max over layers)": 0.18138587474822998,
+      "context pair (sorted by corrected alignment)": 16.0,
+      "Answer-shift alignment with target\n(cosine, max over 7 steer layers, \u03b1=4)": 0.4272420406341553,
+      "label": "medical_doctor:\nnoise target\n(split-half 0.049)",
       "_kind": "scatter",
       "_group": 32
     },
     {
-      "x": 16.0,
-      "Answer-shift alignment (cosine, max over layers)": 0.04135692119598389,
+      "context pair (sorted by corrected alignment)": 16.0,
+      "Answer-shift alignment with target\n(cosine, max over 7 steer layers, \u03b1=4)": 0.4020259827375412,
+      "label": "medical_doctor:\nnoise target\n(split-half 0.049)",
       "_kind": "scatter",
       "_group": 33
     },
     {
-      "x": 17.0,
-      "Answer-shift alignment (cosine, max over layers)": 0.19575558602809906,
+      "context pair (sorted by corrected alignment)": 17.0,
+      "Answer-shift alignment with target\n(cosine, max over 7 steer layers, \u03b1=4)": 0.4817695915699005,
+      "label": "medical_doctor:\nnoise target\n(split-half 0.049)",
       "_kind": "scatter",
       "_group": 34
     },
     {
-      "x": 17.0,
-      "Answer-shift alignment (cosine, max over layers)": 0.0392385832965374,
+      "context pair (sorted by corrected alignment)": 17.0,
+      "Answer-shift alignment with target\n(cosine, max over 7 steer layers, \u03b1=4)": 0.42196987569332123,
+      "label": "medical_doctor:\nnoise target\n(split-half 0.049)",
       "_kind": "scatter",
       "_group": 35
     },
     {
-      "x": 18.0,
-      "Answer-shift alignment (cosine, max over layers)": 0.19821637868881226,
+      "context pair (sorted by corrected alignment)": 18.0,
+      "Answer-shift alignment with target\n(cosine, max over 7 steer layers, \u03b1=4)": 0.7111043334007263,
+      "label": "medical_doctor:\nnoise target\n(split-half 0.049)",
       "_kind": "scatter",
       "_group": 36
     },
     {
-      "x": 18.0,
-      "Answer-shift alignment (cosine, max over layers)": 0.03852153569459915,
+      "context pair (sorted by corrected alignment)": 18.0,
+      "Answer-shift alignment with target\n(cosine, max over 7 steer layers, \u03b1=4)": 0.43133383989334106,
+      "label": "medical_doctor:\nnoise target\n(split-half 0.049)",
       "_kind": "scatter",
       "_group": 37
     },
     {
-      "x": 19.0,
-      "Answer-shift alignment (cosine, max over layers)": 0.19881576299667358,
+      "context pair (sorted by corrected alignment)": 19.0,
+      "Answer-shift alignment with target\n(cosine, max over 7 steer layers, \u03b1=4)": 0.6124782562255859,
+      "label": "medical_doctor:\nnoise target\n(split-half 0.049)",
       "_kind": "scatter",
       "_group": 38
     },
     {
-      "x": 19.0,
-      "Answer-shift alignment (cosine, max over layers)": 0.03930218517780304,
+      "context pair (sorted by corrected alignment)": 19.0,
+      "Answer-shift alignment with target\n(cosine, max over 7 steer layers, \u03b1=4)": 0.4548702836036682,
+      "label": "medical_doctor:\nnoise target\n(split-half 0.049)",
       "_kind": "scatter",
       "_group": 39
     },
     {
-      "x": 20.0,
-      "Answer-shift alignment (cosine, max over layers)": 0.24995777010917664,
+      "context pair (sorted by corrected alignment)": 20.0,
+      "Answer-shift alignment with target\n(cosine, max over 7 steer layers, \u03b1=4)": 0.5790552496910095,
+      "label": "medical_doctor:\nnoise target\n(split-half 0.049)",
       "_kind": "scatter",
       "_group": 40
     },
     {
-      "x": 20.0,
-      "Answer-shift alignment (cosine, max over layers)": 0.04586188867688179,
+      "context pair (sorted by corrected alignment)": 20.0,
+      "Answer-shift alignment with target\n(cosine, max over 7 steer layers, \u03b1=4)": 0.4987344890832901,
+      "label": "medical_doctor:\nnoise target\n(split-half 0.049)",
       "_kind": "scatter",
       "_group": 41
     },
     {
-      "x": 21.0,
-      "Answer-shift alignment (cosine, max over layers)": 0.263906329870224,
+      "context pair (sorted by corrected alignment)": 21.0,
+      "Answer-shift alignment with target\n(cosine, max over 7 steer layers, \u03b1=4)": 0.5630590915679932,
+      "label": "medical_doctor:\nnoise target\n(split-half 0.049)",
       "_kind": "scatter",
       "_group": 42
     },
     {
-      "x": 21.0,
-      "Answer-shift alignment (cosine, max over layers)": 0.03679696470499039,
+      "context pair (sorted by corrected alignment)": 21.0,
+      "Answer-shift alignment with target\n(cosine, max over 7 steer layers, \u03b1=4)": 0.5511974990367889,
+      "label": "medical_doctor:\nnoise target\n(split-half 0.049)",
       "_kind": "scatter",
       "_group": 43
     },
     {
-      "x": 22.0,
-      "Answer-shift alignment (cosine, max over layers)": 0.26405295729637146,
+      "context pair (sorted by corrected alignment)": 22.0,
+      "Answer-shift alignment with target\n(cosine, max over 7 steer layers, \u03b1=4)": 0.6380786895751953,
       "_kind": "scatter",
       "_group": 44
     },
     {
-      "x": 22.0,
-      "Answer-shift alignment (cosine, max over layers)": 0.04209353029727936,
+      "context pair (sorted by corrected alignment)": 22.0,
+      "Answer-shift alignment with target\n(cosine, max over 7 steer layers, \u03b1=4)": 0.5884800553321838,
       "_kind": "scatter",
       "_group": 45
     },
     {
-      "x": 23.0,
-      "Answer-shift alignment (cosine, max over layers)": 0.33372634649276733,
+      "context pair (sorted by corrected alignment)": 23.0,
+      "Answer-shift alignment with target\n(cosine, max over 7 steer layers, \u03b1=4)": 0.6783339977264404,
       "_kind": "scatter",
       "_group": 46
     },
     {
-      "x": 23.0,
-      "Answer-shift alignment (cosine, max over layers)": 0.038866326212882996,
+      "context pair (sorted by corrected alignment)": 23.0,
+      "Answer-shift alignment with target\n(cosine, max over 7 steer layers, \u03b1=4)": 0.605204164981842,
       "_kind": "scatter",
       "_group": 47
     },
     {
-      "x": 24.0,
-      "Answer-shift alignment (cosine, max over layers)": 0.34744712710380554,
+      "context pair (sorted by corrected alignment)": 24.0,
+      "Answer-shift alignment with target\n(cosine, max over 7 steer layers, \u03b1=4)": 0.7177414298057556,
       "_kind": "scatter",
       "_group": 48
     },
     {
-      "x": 24.0,
-      "Answer-shift alignment (cosine, max over layers)": 0.03967655450105667,
+      "context pair (sorted by corrected alignment)": 24.0,
+      "Answer-shift alignment with target\n(cosine, max over 7 steer layers, \u03b1=4)": 0.6432983577251434,
       "_kind": "scatter",
       "_group": 49
     },
     {
-      "x": 25.0,
-      "Answer-shift alignment (cosine, max over layers)": 0.3482199013233185,
+      "context pair (sorted by corrected alignment)": 25.0,
+      "Answer-shift alignment with target\n(cosine, max over 7 steer layers, \u03b1=4)": 0.756249189376831,
       "_kind": "scatter",
       "_group": 50
     },
     {
-      "x": 25.0,
-      "Answer-shift alignment (cosine, max over layers)": 0.04072883352637291,
+      "context pair (sorted by corrected alignment)": 25.0,
+      "Answer-shift alignment with target\n(cosine, max over 7 steer layers, \u03b1=4)": 0.6604520976543427,
       "_kind": "scatter",
       "_group": 51
     },
     {
-      "x": 26.0,
-      "Answer-shift alignment (cosine, max over layers)": 0.4014805853366852,
+      "context pair (sorted by corrected alignment)": 26.0,
+      "Answer-shift alignment with target\n(cosine, max over 7 steer layers, \u03b1=4)": 0.7523993849754333,
       "_kind": "scatter",
       "_group": 52
     },
     {
-      "x": 26.0,
-      "Answer-shift alignment (cosine, max over layers)": 0.04390132799744606,
+      "context pair (sorted by corrected alignment)": 26.0,
+      "Answer-shift alignment with target\n(cosine, max over 7 steer layers, \u03b1=4)": 0.6910569369792938,
       "_kind": "scatter",
       "_group": 53
     },
     {
-      "x": 27.0,
-      "Answer-shift alignment (cosine, max over layers)": 0.4272420406341553,
+      "context pair (sorted by corrected alignment)": 27.0,
+      "Answer-shift alignment with target\n(cosine, max over 7 steer layers, \u03b1=4)": 0.7501571774482727,
       "_kind": "scatter",
       "_group": 54
     },
     {
-      "x": 27.0,
-      "Answer-shift alignment (cosine, max over layers)": 0.04080433025956154,
+      "context pair (sorted by corrected alignment)": 27.0,
+      "Answer-shift alignment with target\n(cosine, max over 7 steer layers, \u03b1=4)": 0.6963534951210022,
       "_kind": "scatter",
       "_group": 55
     },
     {
-      "x": 0.0,
-      "y": 0.2532323896884918,
+      "context pair (sorted by corrected alignment)": 0.0,
+      "y": 0.16763797402381897,
       "_kind": "scatter",
       "_group": 56
     },
     {
-      "x": 0.0,
-      "y": 0.04050806909799576,
+      "context pair (sorted by corrected alignment)": 0.0,
+      "y": 0.09602674841880798,
       "_kind": "scatter",
       "_group": 57
     },
     {
-      "x": 1.0,
-      "y": 0.43616607785224915,
+      "context pair (sorted by corrected alignment)": 1.0,
+      "y": 0.25323235988616943,
       "_kind": "scatter",
       "_group": 58
     },
     {
-      "x": 1.0,
-      "y": 0.04237668961286545,
+      "context pair (sorted by corrected alignment)": 1.0,
+      "y": 0.1722581572830677,
       "_kind": "scatter",
       "_group": 59
     },
     {
-      "x": 2.0,
-      "y": 0.45832547545433044,
+      "context pair (sorted by corrected alignment)": 2.0,
+      "y": 0.23310305178165436,
       "_kind": "scatter",
       "_group": 60
     },
     {
-      "x": 2.0,
-      "y": 0.03809317946434021,
+      "context pair (sorted by corrected alignment)": 2.0,
+      "y": 0.17755857482552528,
       "_kind": "scatter",
       "_group": 61
     },
     {
-      "x": 3.0,
-      "y": 0.4587678611278534,
+      "context pair (sorted by corrected alignment)": 3.0,
+      "y": 0.2559453547000885,
       "_kind": "scatter",
       "_group": 62
     },
     {
-      "x": 3.0,
-      "y": 0.04035143181681633,
+      "context pair (sorted by corrected alignment)": 3.0,
+      "y": 0.19801373034715652,
       "_kind": "scatter",
       "_group": 63
     },
     {
-      "x": 4.0,
-      "y": 0.4729488492012024,
+      "context pair (sorted by corrected alignment)": 4.0,
+      "y": 0.4729488790035248,
+      "label": "medical_doctor:\nnoise target\n(split-half 0.049)",
       "_kind": "scatter",
       "_group": 64
     },
     {
-      "x": 4.0,
-      "y": 0.04119192063808441,
+      "context pair (sorted by corrected alignment)": 4.0,
+      "y": 0.24348190426826477,
       "_kind": "scatter",
       "_group": 65
     },
     {
-      "x": 5.0,
-      "y": 0.48549216985702515,
+      "context pair (sorted by corrected alignment)": 5.0,
+      "y": 0.3239591121673584,
       "_kind": "scatter",
       "_group": 66
     },
     {
-      "x": 5.0,
-      "y": 0.03913809731602669,
+      "context pair (sorted by corrected alignment)": 5.0,
+      "y": 0.24784857034683228,
       "_kind": "scatter",
       "_group": 67
     },
     {
-      "x": 6.0,
-      "y": 0.49954789876937866,
+      "context pair (sorted by corrected alignment)": 6.0,
+      "y": 0.36050716042518616,
+      "label": "medical_doctor:\nnoise target\n(split-half 0.049)",
       "_kind": "scatter",
       "_group": 68
     },
     {
-      "x": 6.0,
-      "y": 0.040102384984493256,
+      "context pair (sorted by corrected alignment)": 6.0,
+      "y": 0.2641456574201584,
       "_kind": "scatter",
       "_group": 69
     },
     {
-      "x": 7.0,
-      "y": 0.5746811628341675,
+      "context pair (sorted by corrected alignment)": 7.0,
+      "y": 0.38561946153640747,
+      "label": "medical_doctor:\nnoise target\n(split-half 0.049)",
       "_kind": "scatter",
       "_group": 70
     },
     {
-      "x": 7.0,
-      "y": 0.04361764341592789,
+      "context pair (sorted by corrected alignment)": 7.0,
+      "y": 0.3167525380849838,
+      "label": "medical_doctor:\nnoise target\n(split-half 0.049)",
       "_kind": "scatter",
       "_group": 71
     },
     {
-      "x": 8.0,
-      "y": 0.6196486949920654,
+      "context pair (sorted by corrected alignment)": 8.0,
+      "y": 0.3963059186935425,
+      "label": "medical_doctor:\nnoise target\n(split-half 0.049)",
       "_kind": "scatter",
       "_group": 72
     },
     {
-      "x": 8.0,
-      "y": 0.04294304549694061,
+      "context pair (sorted by corrected alignment)": 8.0,
+      "y": 0.3239620625972748,
+      "label": "medical_doctor:\nnoise target\n(split-half 0.049)",
       "_kind": "scatter",
       "_group": 73
     },
     {
-      "x": 9.0,
-      "y": 0.6227341294288635,
+      "context pair (sorted by corrected alignment)": 9.0,
+      "y": 0.6625752449035645,
+      "label": "medical_doctor:\nnoise target\n(split-half 0.049)",
       "_kind": "scatter",
       "_group": 74
     },
     {
-      "x": 9.0,
-      "y": 0.04461611434817314,
+      "context pair (sorted by corrected alignment)": 9.0,
+      "y": 0.3279968351125717,
+      "label": "medical_doctor:\nnoise target\n(split-half 0.049)",
       "_kind": "scatter",
       "_group": 75
     },
     {
-      "x": 10.0,
-      "y": 0.638465166091919,
+      "context pair (sorted by corrected alignment)": 10.0,
+      "y": 0.49954795837402344,
+      "label": "medical_doctor:\nnoise target\n(split-half 0.049)",
       "_kind": "scatter",
       "_group": 76
     },
     {
-      "x": 10.0,
-      "y": 0.04211985692381859,
+      "context pair (sorted by corrected alignment)": 10.0,
+      "y": 0.3417982906103134,
+      "label": "medical_doctor:\nnoise target\n(split-half 0.049)",
       "_kind": "scatter",
       "_group": 77
     },
     {
-      "x": 11.0,
-      "y": 0.6625752449035645,
+      "context pair (sorted by corrected alignment)": 11.0,
+      "y": 0.45832547545433044,
+      "label": "medical_doctor:\nnoise target\n(split-half 0.049)",
       "_kind": "scatter",
       "_group": 78
     },
     {
-      "x": 11.0,
-      "y": 0.04408719018101692,
+      "context pair (sorted by corrected alignment)": 11.0,
+      "y": 0.3463219106197357,
+      "label": "medical_doctor:\nnoise target\n(split-half 0.049)",
       "_kind": "scatter",
       "_group": 79
     },
     {
-      "x": 12.0,
-      "y": 0.836249053478241,
+      "context pair (sorted by corrected alignment)": 12.0,
+      "y": 0.3945871889591217,
+      "label": "medical_doctor:\nnoise target\n(split-half 0.049)",
       "_kind": "scatter",
       "_group": 80
     },
     {
-      "x": 12.0,
-      "y": 0.04135725647211075,
+      "context pair (sorted by corrected alignment)": 12.0,
+      "y": 0.3528464436531067,
+      "label": "medical_doctor:\nnoise target\n(split-half 0.049)",
       "_kind": "scatter",
       "_group": 81
     },
     {
-      "x": 13.0,
-      "y": 0.8362793326377869,
+      "context pair (sorted by corrected alignment)": 13.0,
+      "y": 0.4200943112373352,
+      "label": "medical_doctor:\nnoise target\n(split-half 0.049)",
       "_kind": "scatter",
       "_group": 82
     },
     {
-      "x": 13.0,
-      "y": 0.03948218747973442,
+      "context pair (sorted by corrected alignment)": 13.0,
+      "y": 0.37259261310100555,
+      "label": "medical_doctor:\nnoise target\n(split-half 0.049)",
       "_kind": "scatter",
       "_group": 83
     },
     {
-      "x": 14.0,
-      "y": 0.8478149175643921,
+      "context pair (sorted by corrected alignment)": 14.0,
+      "y": 0.4587678015232086,
+      "label": "medical_doctor:\nnoise target\n(split-half 0.049)",
       "_kind": "scatter",
       "_group": 84
     },
     {
-      "x": 14.0,
-      "y": 0.04060272499918938,
+      "context pair (sorted by corrected alignment)": 14.0,
+      "y": 0.39326006174087524,
+      "label": "medical_doctor:\nnoise target\n(split-half 0.049)",
       "_kind": "scatter",
       "_group": 85
     },
     {
-      "x": 15.0,
-      "y": 0.16763798892498016,
+      "context pair (sorted by corrected alignment)": 15.0,
+      "y": 0.43616607785224915,
+      "label": "medical_doctor:\nnoise target\n(split-half 0.049)",
       "_kind": "scatter",
       "_group": 86
     },
     {
-      "x": 15.0,
-      "y": 0.039138004183769226,
+      "context pair (sorted by corrected alignment)": 15.0,
+      "y": 0.406695157289505,
+      "label": "medical_doctor:\nnoise target\n(split-half 0.049)",
       "_kind": "scatter",
       "_group": 87
     },
     {
-      "x": 16.0,
-      "y": 0.23310305178165436,
+      "context pair (sorted by corrected alignment)": 16.0,
+      "y": 0.4644118547439575,
+      "label": "medical_doctor:\nnoise target\n(split-half 0.049)",
       "_kind": "scatter",
       "_group": 88
     },
     {
-      "x": 16.0,
-      "y": 0.0392385832965374,
+      "context pair (sorted by corrected alignment)": 16.0,
+      "y": 0.41154390573501587,
+      "label": "medical_doctor:\nnoise target\n(split-half 0.049)",
       "_kind": "scatter",
       "_group": 89
     },
     {
-      "x": 17.0,
-      "y": 0.2559453547000885,
+      "context pair (sorted by corrected alignment)": 17.0,
+      "y": 0.44287359714508057,
+      "label": "medical_doctor:\nnoise target\n(split-half 0.049)",
       "_kind": "scatter",
       "_group": 90
     },
     {
-      "x": 17.0,
-      "y": 0.03930218517780304,
+      "context pair (sorted by corrected alignment)": 17.0,
+      "y": 0.415989026427269,
+      "label": "medical_doctor:\nnoise target\n(split-half 0.049)",
       "_kind": "scatter",
       "_group": 91
     },
     {
-      "x": 18.0,
-      "y": 0.3239591419696808,
+      "context pair (sorted by corrected alignment)": 18.0,
+      "y": 0.46628451347351074,
+      "label": "medical_doctor:\nnoise target\n(split-half 0.049)",
       "_kind": "scatter",
       "_group": 92
     },
     {
-      "x": 18.0,
-      "y": 0.04135692119598389,
+      "context pair (sorted by corrected alignment)": 18.0,
+      "y": 0.4373451918363571,
+      "label": "medical_doctor:\nnoise target\n(split-half 0.049)",
       "_kind": "scatter",
       "_group": 93
     },
     {
-      "x": 19.0,
-      "y": 0.36050713062286377,
+      "context pair (sorted by corrected alignment)": 19.0,
+      "y": 0.5311937928199768,
+      "label": "medical_doctor:\nnoise target\n(split-half 0.049)",
       "_kind": "scatter",
       "_group": 94
     },
     {
-      "x": 19.0,
-      "y": 0.04080433025956154,
+      "context pair (sorted by corrected alignment)": 19.0,
+      "y": 0.45887766778469086,
+      "label": "medical_doctor:\nnoise target\n(split-half 0.049)",
       "_kind": "scatter",
       "_group": 95
     },
     {
-      "x": 20.0,
-      "y": 0.38561946153640747,
+      "context pair (sorted by corrected alignment)": 20.0,
+      "y": 0.48549216985702515,
+      "label": "medical_doctor:\nnoise target\n(split-half 0.049)",
       "_kind": "scatter",
       "_group": 96
     },
     {
-      "x": 20.0,
-      "y": 0.03679696470499039,
+      "context pair (sorted by corrected alignment)": 20.0,
+      "y": 0.4613795131444931,
+      "label": "medical_doctor:\nnoise target\n(split-half 0.049)",
       "_kind": "scatter",
       "_group": 97
     },
     {
-      "x": 21.0,
-      "y": 0.3945871889591217,
+      "context pair (sorted by corrected alignment)": 21.0,
+      "y": 0.6227341890335083,
+      "label": "medical_doctor:\nnoise target\n(split-half 0.049)",
       "_kind": "scatter",
       "_group": 98
     },
     {
-      "x": 21.0,
-      "y": 0.04072883352637291,
+      "context pair (sorted by corrected alignment)": 21.0,
+      "y": 0.49117083847522736,
       "_kind": "scatter",
       "_group": 99
     },
     {
-      "x": 22.0,
-      "y": 0.3963059186935425,
+      "context pair (sorted by corrected alignment)": 22.0,
+      "y": 0.5746812224388123,
       "_kind": "scatter",
       "_group": 100
     },
     {
-      "x": 22.0,
-      "y": 0.04209353029727936,
+      "context pair (sorted by corrected alignment)": 22.0,
+      "y": 0.5287198126316071,
       "_kind": "scatter",
       "_group": 101
     },
     {
-      "x": 23.0,
-      "y": 0.4200942814350128,
+      "context pair (sorted by corrected alignment)": 23.0,
+      "y": 0.6196486949920654,
       "_kind": "scatter",
       "_group": 102
     },
     {
-      "x": 23.0,
-      "y": 0.04390132799744606,
+      "context pair (sorted by corrected alignment)": 23.0,
+      "y": 0.5595647990703583,
       "_kind": "scatter",
       "_group": 103
     },
     {
-      "x": 24.0,
-      "y": 0.4428735375404358,
+      "context pair (sorted by corrected alignment)": 24.0,
+      "y": 0.638465166091919,
       "_kind": "scatter",
       "_group": 104
     },
     {
-      "x": 24.0,
-      "y": 0.03852153569459915,
+      "context pair (sorted by corrected alignment)": 24.0,
+      "y": 0.6075105369091034,
       "_kind": "scatter",
       "_group": 105
     },
     {
-      "x": 25.0,
-      "y": 0.4644118547439575,
+      "context pair (sorted by corrected alignment)": 25.0,
+      "y": 0.8362792134284973,
       "_kind": "scatter",
       "_group": 106
     },
     {
-      "x": 25.0,
-      "y": 0.04586188867688179,
+      "context pair (sorted by corrected alignment)": 25.0,
+      "y": 0.7679732739925385,
       "_kind": "scatter",
       "_group": 107
     },
     {
-      "x": 26.0,
-      "y": 0.46628454327583313,
+      "context pair (sorted by corrected alignment)": 26.0,
+      "y": 0.8478149175643921,
       "_kind": "scatter",
       "_group": 108
     },
     {
-      "x": 26.0,
-      "y": 0.03967655450105667,
+      "context pair (sorted by corrected alignment)": 26.0,
+      "y": 0.7884028553962708,
       "_kind": "scatter",
       "_group": 109
     },
     {
-      "x": 27.0,
-      "y": 0.531193733215332,
+      "context pair (sorted by corrected alignment)": 27.0,
+      "y": 0.836249053478241,
       "_kind": "scatter",
       "_group": 110
     },
     {
-      "x": 27.0,
-      "y": 0.038866326212882996,
+      "context pair (sorted by corrected alignment)": 27.0,
+      "y": 0.8266386091709137,
       "_kind": "scatter",
       "_group": 111
     }
@@ -682,89 +736,102 @@
   "n_series": 112,
   "total_points": 112,
   "text": {
-    "suptitle": "Per-pair alignment: every pair clears its random null; matched-query pairs sit higher",
+    "suptitle": "Per-pair answer-shift alignment: every pair still clears its null after the disjoint-baseline correction, at reduced magnitude",
     "fig_texts": [],
     "axes": [
       {
-        "title_left": "prefix-based V_c",
-        "ylabel": "Answer-shift alignment (cosine, max over layers)",
+        "title_left": "prefix arm",
+        "xlabel": "context pair (sorted by corrected alignment)",
+        "ylabel": "Answer-shift alignment with target\n(cosine, max over 7 steer layers, \u03b1=4)",
+        "annotations": [
+          "medical_doctor:\nnoise target\n(split-half 0.049)"
+        ],
         "xticklabels": [
-          "779 02_hallucination",
-          "04_terse",
-          "00_sycophancy",
-          "779 00_evil",
-          "08_french_person",
-          "779 03_evil",
-          "02_evil",
-          "06_villain",
-          "779 01_sycophancy",
-          "03_hedging",
-          "07_medical_doctor",
-          "05_formal",
-          "01_refusal",
-          "09_comedian",
-          "779 04_sycophancy",
+          "x05_hallucination_to_sycophancy",
           "x00_evil_to_sycophancy",
           "x06_evil_to_sycophancy",
           "x01_evil_to_hallucination",
+          "779_02_hallucination",
           "x11_hallucination_to_sycophancy",
-          "x05_hallucination_to_sycophancy",
-          "x07_evil_to_hallucination",
           "x12_evil_to_sycophancy",
+          "x07_evil_to_hallucination",
           "x09_sycophancy_to_hallucination",
+          "00_sycophancy",
+          "x04_hallucination_to_evil",
           "x10_hallucination_to_evil",
           "x03_sycophancy_to_hallucination",
-          "x04_hallucination_to_evil",
+          "04_terse",
           "x02_sycophancy_to_evil",
-          "x08_sycophancy_to_evil"
+          "779_00_evil",
+          "x08_sycophancy_to_evil",
+          "08_french_person",
+          "07_medical_doctor",
+          "06_villain",
+          "02_evil",
+          "779_03_evil",
+          "779_01_sycophancy",
+          "03_hedging",
+          "05_formal",
+          "779_04_sycophancy",
+          "09_comedian",
+          "01_refusal"
         ],
         "yticklabels": [
-          "\u22120.2",
+          "\u22120.1",
           "0.0",
+          "0.1",
           "0.2",
+          "0.3",
           "0.4",
+          "0.5",
           "0.6",
+          "0.7",
           "0.8",
-          "1.0"
+          "0.9"
         ]
       },
       {
-        "title_left": "context-based V_c",
+        "title_left": "context arm",
+        "xlabel": "context pair (sorted by corrected alignment)",
         "legend_labels": [
-          "Matched-query pair (n=15)",
-          "Cross-query pair (n=13)",
-          "Per-pair random null p97.5",
-          "80% of ceiling"
+          "shared baseline (round-1)",
+          "disjoint baseline (corrected)",
+          "matched-query pair",
+          "cross-query pair",
+          "per-pair random-direction null p97.5"
+        ],
+        "annotations": [
+          "medical_doctor:\nnoise target\n(split-half 0.049)"
         ],
         "xticklabels": [
-          "00_sycophancy",
-          "779 01_sycophancy",
-          "02_evil",
-          "09_comedian",
-          "06_villain",
-          "03_hedging",
-          "779 02_hallucination",
-          "01_refusal",
-          "779 00_evil",
-          "05_formal",
-          "779 03_evil",
-          "07_medical_doctor",
-          "04_terse",
-          "08_french_person",
-          "779 04_sycophancy",
           "x00_evil_to_sycophancy",
+          "00_sycophancy",
           "x01_evil_to_hallucination",
           "x05_hallucination_to_sycophancy",
+          "06_villain",
           "x06_evil_to_sycophancy",
           "x08_sycophancy_to_evil",
           "x12_evil_to_sycophancy",
-          "x04_hallucination_to_evil",
           "x09_sycophancy_to_hallucination",
+          "07_medical_doctor",
+          "779_02_hallucination",
+          "02_evil",
+          "x04_hallucination_to_evil",
           "x02_sycophancy_to_evil",
-          "x11_hallucination_to_sycophancy",
+          "09_comedian",
+          "779_01_sycophancy",
           "x07_evil_to_hallucination",
+          "x11_hallucination_to_sycophancy",
           "x03_sycophancy_to_hallucination",
-          "x10_hallucination_to_evil"
+          "x10_hallucination_to_evil",
+          "03_hedging",
+          "05_formal",
+          "01_refusal",
+          "779_00_evil",
+          "779_03_evil",
+          "08_french_person",
+          "779_04_sycophancy",
+          "04_terse"
         ]
       }
     ]
