@@ -41,6 +41,17 @@ fail-closed refusal predicate (R1-R8) — into ONE clause, so it reaches the
 that shape; the former block fixture N1 moved to the masking allow list as
 M9). Any refused candidate leaves the input byte-identical, keeping today's
 disposition.
+As of #1463 both mechanisms gain a ``gcloud compute ssh`` head (optional
+literal ``timeout <num>[.frac][smhd]?`` wrapper, gcloud-arm only): a
+``gcloud compute ssh <instance> --command='<payload>'`` clause executes its
+payload ON the GCE instance via the local ssh(1) wrapper (SDK 576.0.0 help +
+a live ``--dry-run`` argv probe), so the driver-loop waiver and the masking
+pre-pass treat it exactly like the clause-initial ``ssh`` head, under the
+identical fail-closed refusal arms (founding incident #825, 2026-07-16; the
+ssh variant was #1336, closed by #1413). Everything outside the narrow head —
+release tracks, non-timeout wrappers, ``timeout`` flag forms, redirect /
+expansion / proxy-token shapes, double-quoted multi-statement payloads —
+keeps today's blocked disposition (GN-series pins).
 """
 
 from __future__ import annotations
@@ -2103,3 +2114,243 @@ def test_man_git_am_revert_allowed():
     # for the `git am --help` / `git revert --help` false-block parity.
     assert _run("man git-am") == 0
     assert _run("man git-revert") == 0
+
+
+# ==== #1463 — gcloud compute ssh remote-payload waiver + masking ============
+#
+# `gcloud compute ssh <instance> --command='<payload>'` is a thin wrapper
+# around the local ssh(1) binary that executes its payload ON THE INSTANCE
+# (SDK 576.0.0 help; probed live via --dry-run: trailing `-- ARGS`
+# positionals land after the host in the constructed local ssh argv, i.e.
+# they ride as the REMOTE command). As of #1463 the driver-loop waiver
+# (cond (1)) and the mask pre-pass gain a `gcloud compute ssh` head — with
+# an optional literal `timeout <num>[.frac][smhd]?` wrapper, gcloud-arm
+# only — routed through the SAME ssh refusal arms (waiver conds
+# (2)/(3)/(3b)/(4); mask R1-R8). Founding incident: #825
+# (2026-07-16T13:18:53Z false block); #1336 hit the ssh variant pre-#1413.
+# The GN-series pins fail-closed dispositions (all verified rc=2 against
+# the UNMODIFIED guard before the arm landed — the pre-change red-team
+# gate); GS8 pins the pre-existing path-blind `git -C` waiver (guard's
+# per-clause -C allow fires BEFORE this arm) that already allowed the
+# incident session's executed sibling command.
+# ---------------------------------------------------------------------------
+# TEST-FIXTURE FENCE — gated command literals below are guard test INPUTS
+# only (they drive the hook subprocess; nothing here executes).
+@pytest.mark.parametrize(
+    "cmd",
+    [
+        pytest.param(
+            "gcloud compute ssh eps-issue-825 --configuration=eps-gcp"
+            " --zone=us-central1-c --command='git checkout -b scratch'",
+            id="GS1-single_statement_fenced_verb",
+        ),
+        pytest.param(
+            'gcloud compute ssh pod --zone=us-central1-a --command="git reset --hard origin/main"',
+            id="GS2-command_equals_double_quoted",
+        ),
+        pytest.param(
+            "gcloud compute ssh pod --zone us-central1-a --command 'git clean -fd'",
+            id="GS3-command_space_form_and_space_zone",
+        ),
+        pytest.param(
+            "timeout 120 gcloud compute ssh pod --zone=us-central1-c --command='git reset --hard'",
+            id="GS4-timeout_wrapped_single_statement",
+        ),
+        pytest.param(
+            "gcloud compute ssh pod --command='git restore .' 2>/dev/null",
+            id="GS5-dev_null_redirect_exempt",
+        ),
+        pytest.param(
+            "gcloud compute ssh pod --internal-ip --command='git reset --hard'",
+            id="GS6-internal_ip_flag",
+        ),
+        pytest.param(
+            # Probed live (--dry-run against a real instance, SDK 576.0.0):
+            # the `-- ARGS` positionals land AFTER the host in the
+            # constructed local ssh argv — i.e. they are the REMOTE command.
+            "gcloud compute ssh pod --zone=us-central1-a -- git checkout -b scratch",
+            id="GS7-passthrough_remote_positional",
+        ),
+        pytest.param(
+            # Allowed TODAY via the path-blind `git -C` per-clause waiver
+            # (fires before the #1463 arm); pins the block-message
+            # remediation + the incident session's executed sibling shape.
+            "gcloud compute ssh pod --command='sudo git -C /workspace/eps-issue-825"
+            " merge --ff-only origin/main'",
+            id="GS8-git_dash_C_payload_pre_existing_pin",
+        ),
+    ],
+)
+def test_gcloud_remote_git_clause_waiver_allows(cmd):
+    """Single-statement gcloud remote payloads waive per-clause (#1463)."""
+    assert _run(cmd) == 0
+
+
+# TEST-FIXTURE FENCE — guard test INPUTS only.
+@pytest.mark.parametrize(
+    "cmd",
+    [
+        pytest.param(
+            # The #825 13:18Z incident command, minimally remediated: same
+            # repo-root cd prefix, same timeout wrapper, same head + flags,
+            # same fenced merge statement; the in-payload redirects and the
+            # outer local pipe dropped (GN1 pins the verbatim original as
+            # still-blocked).
+            "cd /home/thomasjiralerspong/explore-persona-space && timeout 120"
+            " gcloud compute ssh eps-issue-825 --configuration=eps-gcp"
+            " --zone=us-central1-c --command='set -e\n"
+            "cd /workspace/eps-issue-825\n"
+            "sudo git fetch origin issue-825\n"
+            "sudo git -c safe.directory=/workspace/eps-issue-825 merge --ff-only"
+            " origin/issue-825\n"
+            'echo -n "HEAD="; sudo git rev-parse HEAD | head -c 12\'',
+            id="GM1-incident_normalized_shape",
+        ),
+        pytest.param(
+            "gcloud compute ssh pod --zone=us-central1-c"
+            " --command='cd /workspace/x && git merge --ff-only origin/main'",
+            id="GM2-amp_amp_payload",
+        ),
+        pytest.param(
+            "gcloud compute ssh pod --command='git merge --ff-only origin/main | tail -2'",
+            id="GM3-pipe_inside_payload_masked",
+        ),
+        pytest.param(
+            "gcloud compute ssh pod --command='cd /w && git reset --hard' && echo done",
+            id="GM4-benign_compound_tail",
+        ),
+        pytest.param(
+            "gcloud compute ssh pod --command='git fetch origin; git reset --hard origin/main'",
+            id="GM5-seq_semicolon_payload",
+        ),
+    ],
+)
+def test_gcloud_multi_statement_payload_masking_allows(cmd):
+    """Canonical single-quoted multi-statement gcloud payloads mask + waive (#1463)."""
+    assert _run(cmd) == 0
+
+
+# The verbatim #825 2026-07-16T13:18:53Z blocked command, recovered from the
+# incident transcript's tool_use row (issue-825 session jsonl) — regenerated
+# mechanically, never retyped. Stays BLOCKED: mask R2 refuses the in-payload
+# `<`/`>` redirects (byte-identical -> mis-split -> the tail clause carrying
+# the fenced merge statement classifies), and independently the outer
+# `2>&1 | tail -20` puts the clause in BG/PIPE producer position (waiver
+# cond (2)). GM1 is the sanctioned minimal remediation of this shape.
+_GN1_VERBATIM_825 = (
+    "cd /home/thomasjiralerspong/explore-persona-space && timeout 120 gcloud "
+    "compute ssh eps-issue-825 --configuration=eps-gcp --zone=us-central1-c -"
+    "-command='set -e\ncd /workspace/eps-issue-825\nsudo git fetch origin issue"
+    "-825 2>&1 | tail -1\nsudo git -c safe.directory=/workspace/eps-issue-825 "
+    'merge --ff-only origin/issue-825 2>&1 | tail -2\necho -n "HEAD="; sudo gi'
+    't rev-parse HEAD | head -c 12; echo\necho -n "ancestry="; sudo git merge-'
+    "base --is-ancestor d11695238a485a3992a49defe16180c6f6354e95 HEAD && echo"
+    " OK || echo MISSING\n# capture env from frozen main process (root-only)\ns"
+    'udo bash -c "tr \\"\\0\\" \\"\\n\\" < /proc/2771/environ > /workspace/eps-issu'
+    "e-825/.eps-relaunch-env && chmod 600 /workspace/eps-issue-825/.eps-relau"
+    'nch-env"\necho -n "env_keys="; sudo grep -cE "^(HF_TOKEN|ANTHROPIC_API_KE'
+    'Y|WANDB_API_KEY|OPENAI_API_KEY|HF_XET|HF_HUB)" /workspace/eps-issue-825/'
+    ".eps-relaunch-env || true\n# clear queued-not-done sentinels (NOT rollout"
+    "_instruct_* — in flight under old workers)\nS=/workspace/eps-issue-825/da"
+    'ta/issue_825/turn_dynamics/state\nsudo rm -f "$S/fit_gc_instruct.fail" "$'
+    'S/fit_gc_instruct.queued" "$S/fit_gc_pretrained.queued" \\\n  "$S/fit_cell'
+    's_armR_logged_instruct.queued" "$S/fit_cells_armR_logged_pretrained.queu'
+    'ed" \\\n  "$S/fit_cells_armR_own_pretrained.queued" "$S/fit_transfer_armR_'
+    'own_pretrained.queued" \\\n  "$S/fit_operators_armR_own_pretrained.queued"'
+    ' "$S/fit_reach_armR_own_pretrained.queued" \\\n  "$S/upload_cap_armR_logge'
+    'd_instruct.queued" "$S/upload_cap_armR_logged_pretrained.queued" \\\n  "$S'
+    '/upload_cap_armR_own_pretrained.queued" "$S/upload_gen_pretrained.queued'
+    '"\necho "sentinels_cleared"; sudo ls "$S" | grep -E "fail|queued" | grep '
+    '-vE "rollout" || echo "(only rollout .queued remain among non-done)"\' 2>'
+    "&1 | tail -20"
+)
+
+
+# TEST-FIXTURE FENCE — guard test INPUTS only.
+@on_main
+@pytest.mark.parametrize(
+    "cmd",
+    [
+        pytest.param(
+            _GN1_VERBATIM_825,
+            id="GN1-verbatim_825_incident_pins_residual",
+        ),
+        pytest.param(
+            'gcloud compute ssh pod --command="$(git reset --hard)"',
+            id="GN2-cmdsub_local_exec",
+        ),
+        pytest.param(
+            'gcloud compute ssh pod --command="git reset --hard ${REF}"',
+            id="GN3-brace_expansion_overmatch",
+        ),
+        pytest.param(
+            "gcloud compute ssh pod --ssh-flag='-o ProxyCommand=git reset --hard'"
+            " --command='git status'",
+            id="GN4-ssh_flag_proxycommand_local_exec",
+        ),
+        pytest.param(
+            "gcloud compute ssh pod --command='git status' -- -o ProxyCommand='git reset --hard'",
+            id="GN5-passthrough_proxycommand_local_exec",
+        ),
+        pytest.param(
+            # N5 mirror; uses --git-dir (NOT -C — the path-blind per-clause
+            # -C waiver would fire first and mask the arm under test).
+            "gcloud compute ssh cia-benchmark-vm --command='git"
+            " --git-dir=/home/thomasjiralerspong/explore-persona-space/.git reset --hard'",
+            id="GN6-repo_root_path_in_payload_ssh_to_self",
+        ),
+        pytest.param(
+            "gcloud compute ssh pod --command='git reset --hard' | tail -1",
+            id="GN7-pipeline_producer_position",
+        ),
+        pytest.param(
+            "nohup gcloud compute ssh pod --command='git reset --hard'",
+            id="GN8-wrapped_beyond_timeout_not_waived",
+        ),
+        pytest.param(
+            "gcloud beta compute ssh pod --command='git reset --hard'",
+            id="GN9-release_track_not_waived",
+        ),
+        pytest.param(
+            "gcloud compute ssh pod --command='git reset --hard' > /tmp/out.txt",
+            id="GN10-file_redirect_refused",
+        ),
+        pytest.param(
+            # mask R1 (trailing token after the payload) -> mis-split ->
+            # the tail clause blocks. Remediation: put --command last.
+            "gcloud compute ssh pod --command='cd /w && git reset --hard' --zone=us-central1-c",
+            id="GN11-trailing_flag_after_payload_multi_statement",
+        ),
+        pytest.param(
+            # mask R2 (redirect chars in candidate) -> mis-split -> blocks.
+            "gcloud compute ssh pod --command='git fetch 2>&1 && git reset --hard'",
+            id="GN12-in_payload_redirect_multi_statement",
+        ),
+        pytest.param(
+            # mask R5 (quote before candidate) -> mis-split -> blocks.
+            "echo \"note\" && gcloud compute ssh pod --command='cd /w && git reset --hard'",
+            id="GN13-quoted_prefix_refuses_mask",
+        ),
+        pytest.param(
+            # Only the literal `timeout <num>[.frac][smhd]?` wrapper is
+            # tolerated; the flag forms are not (drop the flags or use the
+            # canonical spelling).
+            "timeout --signal=KILL 120 gcloud compute ssh pod --command='git reset --hard'",
+            id="GN14-timeout_flag_form_not_waived",
+        ),
+        pytest.param(
+            # NM1 mirror: the gcloud candidate head is single-quote-only too
+            # (double-quoted payloads admit escapes/expansion/nesting).
+            'gcloud compute ssh pod --command="cd /w && git reset --hard"',
+            id="GN15-double_quoted_multi_statement_not_waived",
+        ),
+    ],
+)
+def test_gcloud_waiver_fail_closed_blocks(cmd):
+    """Every gcloud lookalike outside the narrow waiver keeps exit 2 (#1463).
+
+    All 15 fixtures were verified rc=2 against the UNMODIFIED guard before
+    the arm landed (the plan's pre-change red-team gate), so each pins a
+    today-blocked disposition the additive-only claim quantifies over.
+    """
+    assert _run(cmd) == 2
