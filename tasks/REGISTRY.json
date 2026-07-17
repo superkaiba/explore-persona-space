@@ -3418,8 +3418,8 @@
     "1439": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1439",
-      "status": "planning",
+      "path": "tasks/approved/1439",
+      "status": "approved",
       "title": "daily-fix: periodic task.py audit sweep for registry drift"
     },
     "144": {
