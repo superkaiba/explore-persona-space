@@ -57,6 +57,7 @@ import issue1434_cells as cells  # noqa: E402
 
 from explore_persona_space.artifacts import negatives as neg_mod  # noqa: E402
 from explore_persona_space.artifacts.behavior import BEHAVIORS  # noqa: E402
+from explore_persona_space.artifacts.datagen import TopupSpec  # noqa: E402
 from explore_persona_space.artifacts.organisms import (  # noqa: E402
     DEFAULT_BASE_MODEL,
     ModelOrganism,
@@ -233,33 +234,54 @@ def phase_datagen(cfg: run1090.RunConfig, args: argparse.Namespace) -> dict:
             else (fu3w.BARE_OVERSAMPLE_MULT if ctx.kind == "bare" else fu3w.DEFAULT_OVERSAMPLE_MULT)
         )
         if summary_path.exists():
-            # Parent _run_datagen_cell resume semantics: a SUCCESS is always
-            # kept; a yield miss at the SAME budget skips; a miss at a
-            # DIFFERENT budget quarantines the stale dir (durable record) and
-            # regenerates at the new budget (the registered retune lever).
+            # Parent _run_datagen_cell resume semantics + the D1 top-up lever:
+            # a SUCCESS is always kept; a yield miss at the SAME budget that
+            # already carried the top-up lever (topup_considered) skips — one
+            # tranche per cell, misses stay recorded; a PRE-top-up miss at the
+            # same budget re-enters ONCE (the manifest resume replays the
+            # first sample from its raw/judge caches, then the single tranche
+            # fires); a miss at a DIFFERENT budget quarantines the stale dir
+            # (durable record) and regenerates at the new budget (the
+            # registered retune lever).
             prior = run1090._read_json(summary_path)
             prior_mult = float(prior.get("oversample_mult", 0.0))
-            if prior.get("status") == "success" or prior_mult == mult:
+            if prior.get("status") == "success" or (
+                prior_mult == mult and (prior.get("topup_considered") or "topup_record" in prior)
+            ):
                 out[cell_key] = prior
                 logger.info("[i1434-datagen] %s already recorded — skip", cell_key)
                 continue
-            stale = cell_root / (
-                f"datagen_stale_x{prior_mult:g}_" + time.strftime("%Y%m%dT%H%M%SZ", time.gmtime())
-            )
-            if (cell_root / "datagen").exists():
-                import os as _os
+            if prior_mult == mult:
+                logger.info(
+                    "[i1434-datagen] %s: pre-top-up yield miss at mult=%g — re-entering for "
+                    "the single allowed top-up tranche (first sample resumes from cache)",
+                    cell_key,
+                    mult,
+                )
+            else:
+                stale = cell_root / (
+                    f"datagen_stale_x{prior_mult:g}_"
+                    + time.strftime("%Y%m%dT%H%M%SZ", time.gmtime())
+                )
+                if (cell_root / "datagen").exists():
+                    import os as _os
 
-                _os.replace(cell_root / "datagen", stale)
-            summary_path.unlink()
-            logger.warning(
-                "[i1434-datagen] %s floor miss at mult=%g — quarantined to %s; "
-                "regenerating at mult=%g",
-                cell_key,
-                prior_mult,
-                stale,
-                mult,
-            )
+                    _os.replace(cell_root / "datagen", stale)
+                summary_path.unlink()
+                logger.warning(
+                    "[i1434-datagen] %s floor miss at mult=%g — quarantined to %s; "
+                    "regenerating at mult=%g",
+                    cell_key,
+                    prior_mult,
+                    stale,
+                    mult,
+                )
         cell_cfg = dataclasses.replace(cfg, cells=(shim,), oversample_mult=mult)
+        # Plan D1: the ONE 36-request near-miss top-up tranche (defaults:
+        # tranche = ceil(target_n/EXPECTED_YIELD) = 36 at target 25, trigger =
+        # kept < target). Armed identically in smoke + full (smoke IS sweep);
+        # the yield DV stays frozen at the first sample (datagen.TopupSpec).
+        topup_spec = TopupSpec()
         record: dict[str, Any] = {
             "cell_key": cell_key,
             "behavior": cells.BEHAVIOR,
@@ -268,6 +290,7 @@ def phase_datagen(cfg: run1090.RunConfig, args: argparse.Namespace) -> dict:
             "oversample_mult": cell_cfg.oversample_mult,
             "target_n": cell_cfg.target_n,
             "seed": cfg.seed,
+            "topup_considered": True,
             "generic_corpus_provenance": generic_prov,
             "git_commit": i1074._git_short_sha(),
             "ts": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
@@ -280,10 +303,16 @@ def phase_datagen(cfg: run1090.RunConfig, args: argparse.Namespace) -> dict:
                 panel,
                 out_dir=cell_root / "datagen",
                 seed=cfg.seed,
+                topup=topup_spec,
                 **run1090._datagen_kwargs(cell_cfg, shim, None),
             )
         except run1090.DatagenYieldError as e:
             record.update(status="yield_floor_missed", reason=str(e))
+            topup_record_path = cell_root / "datagen" / "topup_record.json"
+            if topup_record_path.exists():
+                # G1 miss AFTER the single allowed tranche — recorded
+                # separately; the yield fields above stay first-sample-frozen.
+                record["topup_record"] = run1090._read_json(topup_record_path)
             run1090._atomic_write_json(summary_path, record)
             out[cell_key] = record
             logger.warning("[i1434-datagen] %s G1 yield miss: %s", cell_key, e)
@@ -326,6 +355,11 @@ def phase_datagen(cfg: run1090.RunConfig, args: argparse.Namespace) -> dict:
             counts_realized=realized,
             train_mix_sha256=hashlib.sha256(Path(train_mix_path).read_bytes()).hexdigest(),
         )
+        pool_meta = run1090._read_json(Path(meta_path))
+        if pool_meta.get("topup"):
+            # Rescued near-miss: the tranche is recorded separately; the yield
+            # DV (pool_meta "positive" arm) stays frozen at the first sample.
+            record["topup_record"] = pool_meta["topup"]
         if cfg.upload:
             base_pir = f"{cells.DATA_PREFIX_1434}/{cell_key}"
             for local, pir, kw in (

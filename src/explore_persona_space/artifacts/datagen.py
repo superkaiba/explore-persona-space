@@ -48,7 +48,7 @@ import shutil
 import time
 from collections import Counter
 from collections.abc import Callable, Mapping, Sequence
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from pathlib import Path
 
 from explore_persona_space.artifacts import banks
@@ -196,6 +196,45 @@ class PosReuseSpec:
             "raw_pos_sha256": hashlib.sha256(raw_src.read_bytes()).hexdigest(),
             "judge_rows_sha256": hashlib.sha256(rows_src.read_bytes()).hexdigest(),
         }
+
+
+# Fresh deterministic rng stream for the top-up tranche grid — parity with the
+# parent amendment's constant (scripts/issue1090_run.py TOPUP_SEED_OFFSET).
+TOPUP_SEED_OFFSET = 7919
+
+
+@dataclass(frozen=True)
+class TopupSpec:
+    """ONE near-miss positive top-up tranche (#1434 D1; #1090 amendment-v4
+    parity, run IN-pipeline so the floor check + emit + negative + mix stages
+    consume the union UNCHANGED for every context/panel class).
+
+    When passed to :func:`generate_training_data` as ``topup``, the pipeline
+    runs ONE additional positive tranche of ``tranche_n`` requests (default
+    ``ceil(target_n / EXPECTED_YIELD)`` — 36 at target 25, the amendment's
+    tranche budget) iff the FIRST sample's judge-kept positives land below
+    ``trigger_below_n`` (default ``target_n`` — near-miss = kept < target).
+    Tranche request ids are t-prefixed (parent ``_topup_ids`` parity) on a
+    fresh deterministic rng stream (``seed + seed_offset``); kept tranche rows
+    are pool-merged with QUESTION-ID DEDUPE (a tranche row whose question_id
+    the union already carries is dropped + counted). The yield DV stays FROZEN
+    at the first sample — ``pool_meta["positive"]`` / ``judge_rows.jsonl`` are
+    first-sample-only; the tranche is recorded separately under
+    ``pool_meta["topup"]`` + ``topup_record.json`` (+ its own raw/judge
+    sidecars). The floor check runs AFTER the tranche (G1 semantics); EXACTLY
+    ONE tranche per out_dir — a resume replays the same tranche from its
+    raw/checkpoint sidecars, and a re-entry over a recorded union-miss refuses
+    loudly (RuntimeError). ``topup`` never enters the ``gen_manifest.json``
+    resume key (a recorded near-miss re-enters under the SAME regime and the
+    first sample replays from cache). Not combinable with ``reuse_pos``
+    (ValueError; a topped-up dir is also NOT reusable via ``reuse_pos`` — the
+    staged reconstruction sees only the first sample and fails the floor
+    loudly rather than silently shrinking the pool).
+    """
+
+    tranche_n: int | None = None  # None -> ceil(target_n / EXPECTED_YIELD) (36 @ target 25)
+    trigger_below_n: int | None = None  # None -> target_n (near-miss = kept < target)
+    seed_offset: int = TOPUP_SEED_OFFSET
 
 
 # ── Instruction block inject / strip (exact inverses) ────────────────────────
@@ -1083,6 +1122,148 @@ def _negative_arm(
     return neg_cands, neg_kept, neg_drops, neg_jr, neg_scores
 
 
+def _positive_topup_stage(
+    behavior: Behavior,
+    context_C: Context,
+    pos_kept_first: list[GenCandidate],
+    topup: TopupSpec,
+    *,
+    target_n: int,
+    floor_n: int,
+    seed: int,
+    instruction_style: str,
+    variants: Sequence[str] | None,
+    gen_factory: Callable[[str], GenerateFn],
+    judge: JudgeFn,
+    n_judge_draws: int,
+    judge_cache: Path,
+    out_dir: Path,
+) -> tuple[list[GenCandidate], dict]:
+    """The ONE allowed near-miss positive tranche (see :class:`TopupSpec`).
+
+    Composes ``tranche_n`` t-prefixed requests on a fresh rng stream
+    (``seed + seed_offset``), generates (raw-sidecar resume:
+    ``raw_pos_topup.jsonl``) + judge-filters (own cache partition + sidecars),
+    and merges kept rows into the first-sample pool with question_id dedupe.
+    Returns ``(pos_kept_union, topup_info)``; the CALLER runs the floor check
+    on the union and persists ``topup_record.json`` with the verdict. Raises
+    RuntimeError when a prior ``topup_record.json`` shows the single tranche
+    already ran and the union missed the floor (EXACTLY ONE tranche — the
+    registered remedies past that are the G1 drop or the oversample retune).
+    """
+    record_path = out_dir / "topup_record.json"
+    if record_path.exists():
+        prior = json.loads(record_path.read_text())
+        if prior.get("union_floor_missed"):
+            raise RuntimeError(
+                f"behavior {behavior.name!r}: a top-up tranche is already recorded at "
+                f"{record_path} with union_floor_missed=true — the amendment allows EXACTLY "
+                "ONE tranche per cell; refusing a second attempt"
+            )
+    tranche_n = topup.tranche_n or math.ceil(target_n / EXPECTED_YIELD)
+    train_questions = [
+        (f"{behavior.name}-trainq-{i:04d}", q) for i, q in enumerate(behavior.train_question_bank)
+    ]
+    reqs = [
+        replace(r, request_id=f"t{r.request_id}")
+        for r in _compose_positive_requests(
+            behavior,
+            context_C,
+            train_questions,
+            tranche_n,
+            _rng(seed + topup.seed_offset),
+            instruction_style,
+            variants=variants,
+        )
+    ]
+    raw_topup_path = out_dir / "raw_pos_topup.jsonl"
+    if raw_topup_path.exists():
+        cands = _read_raw(raw_topup_path)
+    else:
+        cands = gen_factory("pos_topup")(reqs)
+        _write_raw(raw_topup_path, cands)  # persist raw the moment it returns
+    kept_topup, _topup_drops, topup_jr, topup_scores = _judge_and_filter(
+        behavior,
+        cands,
+        POSITIVE,
+        judge_fn=judge,
+        n_judge_draws=n_judge_draws,
+        cache_dir=judge_cache / "pos_topup",
+        save_raw=out_dir / "judge_raw_pos_topup.json",
+    )
+    _write_judge_rows(
+        out_dir / "judge_rows_topup.jsonl",
+        cands,
+        [],
+        topup_scores,
+        {},
+        dict(topup_jr.per_item_draw_counts),
+        dict(topup_jr.per_item_scores),
+    )
+    # Pool-merge with question_id dedupe: a tranche row whose question_id the
+    # union already carries (first-sample kept OR an earlier tranche row) is
+    # dropped — the merge never introduces duplicate question mass.
+    seen_qids = {c.request.question_id for c in pos_kept_first}
+    merged_new: list[GenCandidate] = []
+    for c in kept_topup:
+        if c.request.question_id in seen_qids:
+            continue
+        seen_qids.add(c.request.question_id)
+        merged_new.append(c)
+    union = list(pos_kept_first) + merged_new
+    topup_info = {
+        "fired": True,
+        "tranche_requested": len(reqs),
+        "tranche_kept": len(kept_topup),
+        "tranche_merged": len(merged_new),
+        "tranche_dedup_dropped_qid": len(kept_topup) - len(merged_new),
+        "kept_pos_first_sample": len(pos_kept_first),
+        "kept_pos_union": len(union),
+        "trigger_below_n": topup.trigger_below_n or target_n,
+        "floor_n": floor_n,
+        "seed_offset": topup.seed_offset,
+    }
+    logger.info(
+        "[datagen-topup] %s: first-sample kept %d < trigger %d — tranche of %d requests kept "
+        "%d (merged %d after question_id dedupe); union %d vs floor %d",
+        behavior.name,
+        len(pos_kept_first),
+        topup_info["trigger_below_n"],
+        len(reqs),
+        len(kept_topup),
+        len(merged_new),
+        len(union),
+        floor_n,
+    )
+    return union, topup_info
+
+
+def _check_topup_args(topup: TopupSpec | None, reuse_pos: PosReuseSpec | None) -> None:
+    """Fail loud on the untested topup x reuse_pos combination — a reused
+    pool's kept set is frozen provenance, never topped up (#1434 D1)."""
+    if topup is not None and reuse_pos is not None:
+        raise ValueError("topup is not supported together with reuse_pos")
+
+
+def _persist_topup_record(
+    record_path: Path, topup_info: dict | None, *, union_floor_missed: bool
+) -> str:
+    """Persist ``topup_record.json`` (no-op when no tranche fired) and return
+    the miss-note suffix for the G1 ``DatagenYieldError`` message."""
+    if topup_info is None:
+        return ""
+    record_path.write_text(
+        json.dumps({**topup_info, "union_floor_missed": union_floor_missed}, indent=2) + "\n"
+    )
+    if not union_floor_missed:
+        return ""
+    return (
+        f" [top-up tranche fired: first-sample kept {topup_info['kept_pos_first_sample']}, "
+        f"tranche merged {topup_info['tranche_merged']}, union {topup_info['kept_pos_union']} "
+        "— G1 miss AFTER the single allowed tranche]"
+    )
+
+
 # ── Public entry point ───────────────────────────────────────────────────────
 
 
@@ -1172,6 +1353,7 @@ def generate_training_data(
     oversample_mult: float = 1.0,
     max_oversample_mult: float = 2.0,
     reuse_pos: PosReuseSpec | None = None,
+    topup: TopupSpec | None = None,
 ) -> tuple[Path, Path, Path]:
     """Build contrastive (positive, contrast) training JSONL for ``behavior``.
 
@@ -1213,6 +1395,14 @@ def generate_training_data(
     ``instruction_source`` / ``oversample_mult``, so a pool staged under
     different knob values fails loud — the RNG-replay length/row assert plus
     the manifest resume key (both knobs enter it) refuse the mismatch.
+
+    ``topup`` (:class:`TopupSpec`, #1434 D1): the ONE allowed near-miss
+    positive top-up tranche, run between the first-sample judge-filter and the
+    floor check (which therefore runs AFTER the tranche — G1 semantics). The
+    yield DV (``pool_meta["positive"]`` / ``judge_rows.jsonl``) stays frozen
+    at the first sample; the tranche is recorded separately
+    (``pool_meta["topup"]`` + ``topup_record.json``). Never enters the
+    manifest resume key; not combinable with ``reuse_pos`` (ValueError).
     """
     # 1. Resolve + guard.
     behavior.validate()
@@ -1232,6 +1422,7 @@ def generate_training_data(
     # floor. The fence never enters the manifest resume key (a budget retune
     # deliberately re-runs in the same regime — see the oversample_mult note).
     _validate_scalar_fences(quota_floor, oversample_mult, max_oversample_mult)
+    _check_topup_args(topup, reuse_pos)
     # #1090 fu3: an explicitly-passed EMPTY panel is the sanctioned pos-only
     # twin (neg_ratio=0 — no negative rows; the generic interleave happens
     # downstream in the mix assembler). None / malformed members still fail
@@ -1320,12 +1511,40 @@ def generate_training_data(
         out_dir=out_dir,
     )
 
+    # 3a-bis (#1434 D1): the ONE allowed near-miss top-up tranche. Fires only
+    # when the FIRST sample's kept positives land below the trigger (default
+    # target_n); the union feeds the UNCHANGED floor check + emit + negative
+    # stages below, while the pool_meta "positive" arm / judge_rows.jsonl
+    # (the yield DV) stay frozen at the first sample.
+    n_kept_first = len(pos_kept)
+    topup_info: dict | None = None
+    topup_record_path = out_dir / "topup_record.json"
+    if topup is not None and n_kept_first < (topup.trigger_below_n or target_n):
+        pos_kept, topup_info = _positive_topup_stage(
+            behavior,
+            context_C,
+            pos_kept,
+            topup,
+            target_n=target_n,
+            floor_n=floor_n,
+            seed=seed,
+            instruction_style=instruction_style,
+            variants=exhibit_instructions,
+            gen_factory=_gen,
+            judge=judge,
+            n_judge_draws=n_judge_draws,
+            judge_cache=judge_cache,
+            out_dir=out_dir,
+        )
+
     # 4a. Emit EXACTLY floor_n positives (seeded subsample) -> the emitted question set.
+    # G1 semantics: with a topup armed, this floor check runs AFTER the tranche.
     if len(pos_kept) < floor_n:
         # NOTE (#1090 fu3 crash-fix 2): keep accounting is the cross-variant UNION —
         # every judge-kept (question, variant) row counts toward the floor. The old
         # message labeled variant_usage (REQUESTED per variant) as "yields", which
         # misread launch-3's 15/36 keep-rate miss as a variant-selection bug.
+        tranche_note = _persist_topup_record(topup_record_path, topup_info, union_floor_missed=True)
         breakeven_mult = float(oversample_mult) * floor_n / max(1, len(pos_kept))
         raise DatagenYieldError(
             f"behavior {behavior.name!r}: kept {len(pos_kept)} positives < floor_n={floor_n} "
@@ -1336,7 +1555,9 @@ def generate_training_data(
             f"requested-per-variant: {dict(pos_drops.variant_usage)}. "
             f"Remedy: raise --oversample-mult to >= {breakeven_mult:.2f} "
             f"(break-even at the realized keep rate; add margin)."
+            f"{tranche_note}"
         )
+    _persist_topup_record(topup_record_path, topup_info, union_floor_missed=False)
     emitted_pos = _seeded_sample(pos_kept, floor_n, _rng(seed + 1))
     emitted_pos_qids = {c.request.question_id for c in emitted_pos}
     emitted_questions = _dedup_questions(emitted_pos)
@@ -1426,6 +1647,10 @@ def generate_training_data(
             # _load_reused_positives).
             "judge_draw_stats_reconstructed": True,
         }
+    if topup_info is not None:
+        # The "positive" arm above is the FIRST sample (frozen yield DV, #1434
+        # D1); the tranche is recorded separately here + in topup_record.json.
+        pool_meta["topup"] = {**topup_info, "union_floor_missed": False}
     pool_meta_path.write_text(json.dumps(pool_meta, ensure_ascii=False, indent=2) + "\n")
     return pos_path, cn_path, pool_meta_path
 

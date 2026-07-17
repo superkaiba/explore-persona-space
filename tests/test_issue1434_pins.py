@@ -444,3 +444,333 @@ def test_phase_validate_battery_signed_bootstrap(tmp_path):
 def _mk(d: Path) -> Path:
     d.mkdir(parents=True, exist_ok=True)
     return d / "summary.pt"
+
+
+# ── D1 top-up tranche (round 3: datagen-topup-tranche-not-wired concern) ─────
+#
+# Library seam (datagen.TopupSpec) + worker wiring (phase_datagen). Fakes ONLY
+# at the external API boundary (the library's own GenerateFn/JudgeFn seams —
+# real GenCandidate/JudgeResult types, signature-conformant), per the
+# one-production-body-test rule; every other stage (schedule composition,
+# judge-filter, floor check, emit, negative arm, mix assembly) runs its REAL
+# body. Fails-pre-fix: generate_training_data had no ``topup`` kwarg and a
+# near-miss cell took the G1 drop path.
+
+from explore_persona_space.artifacts import datagen as _dg  # noqa: E402
+from explore_persona_space.artifacts.context import context_for_persona  # noqa: E402
+from explore_persona_space.artifacts.datagen import GenCandidate, TopupSpec  # noqa: E402
+from explore_persona_space.eval.graded_judge import JudgeResult  # noqa: E402
+
+_TOPUP_SRC = context_for_persona("villain")  # disjoint from the default panel
+_TOPUP_BEH = BEHAVIORS["sycophancy"]  # no structural predicate; parent-fixture parity
+
+
+def _gen_all_topup():
+    def gen(requests):
+        return [GenCandidate(r, f"resp::{r.request_id}") for r in requests]
+
+    return gen
+
+
+def _judge_first_n(keep_first_n: int, *, keep_topup: bool = True):
+    """Boundary judge stub forcing a first-sample near miss: keeps exactly
+    ``keep_first_n`` first-sample positives (``pos-*``, first-seen order),
+    every tranche positive (``tpos-*``) iff ``keep_topup``, and every
+    negative (the negative keep rule is score < threshold)."""
+    kept_first: set[str] = set()
+
+    def judge(
+        items,
+        eval_prompt,
+        *,
+        n_draws,
+        cache_dir,
+        save_raw,
+        judge_model,
+        dry_run=False,
+        max_tokens=64,
+    ):
+        scores = {}
+        for rid, _q, _c in items:
+            if rid.startswith("tpos-"):
+                scores[rid] = 80.0 if keep_topup else 20.0
+            elif rid.startswith("pos-"):
+                if rid in kept_first or len(kept_first) < keep_first_n:
+                    kept_first.add(rid)
+                    scores[rid] = 80.0
+                else:
+                    scores[rid] = 20.0
+            else:
+                scores[rid] = 20.0
+        return JudgeResult(
+            scores=scores,
+            n_total_draws=len(items) * n_draws,
+            n_dropped_draws=0,
+            per_item_draw_counts={rid: n_draws for rid, _, _ in items},
+            per_item_scores={rid: [scores[rid]] * n_draws for rid, _, _ in items},
+        )
+
+    return judge
+
+
+def test_datagen_topup_default_off_unchanged_and_no_fire_on_healthy(tmp_path):
+    """Parent-caller parity: no ``topup`` -> no tranche artifacts; an ARMED
+    topup on a healthy cell (kept >= target) never fires; the manifest resume
+    key is IDENTICAL with and without topup (a near-miss re-enters the same
+    regime and replays the first sample from cache)."""
+    common = dict(
+        target_n=6,
+        n_judge_draws=2,
+        generate_fn=_gen_all_topup(),
+        judge_fn=_judge_first_n(10_000),  # healthy: keep every positive
+    )
+    _dg.generate_training_data(
+        _TOPUP_BEH, _TOPUP_SRC, "default_v1", out_dir=tmp_path / "off", **common
+    )
+    _dg.generate_training_data(
+        _TOPUP_BEH,
+        _TOPUP_SRC,
+        "default_v1",
+        out_dir=tmp_path / "on",
+        topup=TopupSpec(),
+        **common,
+    )
+    for d in (tmp_path / "off", tmp_path / "on"):
+        assert not (d / "raw_pos_topup.jsonl").exists()
+        assert not (d / "topup_record.json").exists()
+        meta = json.loads((d / "pool_meta.json").read_text())
+        assert "topup" not in meta
+    m_off = json.loads((tmp_path / "off" / "gen_manifest.json").read_text())
+    m_on = json.loads((tmp_path / "on" / "gen_manifest.json").read_text())
+    assert m_off == m_on  # topup never enters the resume key
+
+
+def test_datagen_topup_tranche_fires_and_yield_dv_frozen(tmp_path):
+    """FAILS PRE-FIX (no ``topup`` kwarg). Near miss (kept 3 < floor 5 at
+    target 6) -> the ONE tranche fires, the union clears the floor, emit +
+    negative + mix inputs proceed; the yield DV (pool_meta positive arm +
+    judge_rows.jsonl) stays FROZEN at the first sample; the tranche is
+    recorded separately with question_id-dedupe accounting."""
+    out = tmp_path / "cell"
+    _dg.generate_training_data(
+        _TOPUP_BEH,
+        _TOPUP_SRC,
+        "default_v1",
+        out_dir=out,
+        target_n=6,  # floor_n = 5
+        n_judge_draws=2,
+        generate_fn=_gen_all_topup(),
+        judge_fn=_judge_first_n(3, keep_topup=True),
+        topup=TopupSpec(),
+    )
+    meta = json.loads((out / "pool_meta.json").read_text())
+    assert meta["positive"]["kept"] == 3  # FROZEN first-sample yield DV
+    top = meta["topup"]
+    assert top["fired"] is True and top["union_floor_missed"] is False
+    assert top["kept_pos_first_sample"] == 3
+    assert top["tranche_requested"] == 9  # ceil(6 / EXPECTED_YIELD)
+    assert top["tranche_kept"] == top["tranche_merged"] + top["tranche_dedup_dropped_qid"]
+    assert top["kept_pos_union"] == 3 + top["tranche_merged"] >= 5
+    # Merged tranche rows never duplicate a first-sample question id.
+    rec = json.loads((out / "topup_record.json").read_text())
+    assert rec["union_floor_missed"] is False
+    assert (out / "raw_pos_topup.jsonl").exists()
+    assert (out / "judge_rows_topup.jsonl").exists()
+    # judge_rows.jsonl (the yield-DV sidecar) carries NO tranche rows.
+    rows = [
+        json.loads(line)
+        for line in (out / "judge_rows.jsonl").read_text().split("\n")
+        if line.strip()
+    ]
+    assert rows and not any(r["request_id"].startswith("tpos-") for r in rows)
+    # Emit contract unchanged: exactly floor_n positives in pos.jsonl.
+    pos_rows = [line for line in (out / "pos.jsonl").read_text().split("\n") if line.strip()]
+    assert len(pos_rows) == 5
+
+
+def test_datagen_topup_g1_after_tranche_and_second_attempt_refuses(tmp_path):
+    """G1 runs AFTER the tranche: a union still below floor raises
+    DatagenYieldError naming the tranche; the miss is durably recorded; a
+    SECOND attempt on the same dir refuses loudly (EXACTLY ONE tranche)."""
+    out = tmp_path / "cell"
+    kwargs = dict(
+        target_n=6,
+        n_judge_draws=2,
+        generate_fn=_gen_all_topup(),
+        topup=TopupSpec(),
+    )
+    with pytest.raises(_dg.DatagenYieldError, match="AFTER the single allowed tranche"):
+        _dg.generate_training_data(
+            _TOPUP_BEH,
+            _TOPUP_SRC,
+            "default_v1",
+            out_dir=out,
+            judge_fn=_judge_first_n(0, keep_topup=False),
+            **kwargs,
+        )
+    rec = json.loads((out / "topup_record.json").read_text())
+    assert rec["union_floor_missed"] is True and rec["fired"] is True
+    with pytest.raises(RuntimeError, match="EXACTLY ONE"):
+        _dg.generate_training_data(
+            _TOPUP_BEH,
+            _TOPUP_SRC,
+            "default_v1",
+            out_dir=out,
+            judge_fn=_judge_first_n(0, keep_topup=False),
+            **kwargs,
+        )
+
+
+def test_datagen_topup_reuse_pos_refuses(tmp_path):
+    """topup x reuse_pos is an untested combination -> loud ValueError (checked
+    before any staged-file access, so dummy paths suffice)."""
+    spec = _dg.PosReuseSpec(
+        raw_pos_path=tmp_path / "nope.jsonl",
+        judge_rows_path=tmp_path / "nope2.jsonl",
+        expected_kept_count=1,
+        provenance={},
+    )
+    with pytest.raises(ValueError, match="not supported together"):
+        _dg.generate_training_data(
+            _TOPUP_BEH,
+            _TOPUP_SRC,
+            "default_v1",
+            out_dir=tmp_path / "x",
+            target_n=6,
+            generate_fn=_gen_all_topup(),
+            judge_fn=_judge_first_n(10_000),
+            reuse_pos=spec,
+            topup=TopupSpec(),
+        )
+
+
+@pytest.mark.parametrize("cell_key", ["ws-pers", "ws-bare", "ws-conv", "ws-icl"])
+def test_phase_datagen_topup_wiring_near_miss(tmp_path, monkeypatch, cell_key):
+    """FAILS PRE-FIX (near miss ended ``yield_floor_missed``). The REAL
+    ``phase_datagen`` body per ARM CLASS (persona / bare+filtered-panel /
+    wildchat prefix / ICL prefix): a forced first-sample near miss (kept 3 <
+    floor 5) is rescued by the ONE tranche -> status ``success`` with the
+    tranche recorded separately, the yield DV frozen at the first sample, and
+    the mix built by the UNCHANGED assembler. Fakes only at the external
+    boundaries (Claude gen / Sonnet judge / HF corpus staging + provenance /
+    tokenizer download)."""
+    import argparse
+
+    import issue1434_cells as c1434
+    import issue1434_worker as w1434
+    import transformers
+
+    c1434.register_i1434_round()
+    monkeypatch.setattr(_dg, "_default_generate_fn", lambda **kw: _gen_all_topup())
+    monkeypatch.setattr(_dg, "judge_graded", _judge_first_n(3, keep_topup=True))
+
+    def _stub_corpus(dest, **kw):
+        dest = Path(dest)
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        rows = [
+            {
+                "prompt": [{"role": "user", "content": f"generic q {i}"}],
+                "completion": [{"role": "assistant", "content": f"generic a {i}"}],
+            }
+            for i in range(200)
+        ]
+        dest.write_text("\n".join(json.dumps(r) for r in rows) + "\n")
+        return str(dest)
+
+    monkeypatch.setattr(w1434.i1074, "_stage_generic_corpus", _stub_corpus)
+    monkeypatch.setattr(
+        w1434, "_generic_corpus_provenance", lambda p: {"stub": True, "path": str(p)}
+    )
+    monkeypatch.setattr(
+        transformers.AutoTokenizer,
+        "from_pretrained",
+        classmethod(lambda cls, *a, **kw: None),  # tokenizer=None: budget gate off (smoke seam)
+    )
+    args = argparse.Namespace(
+        smoke=True,
+        full=False,
+        cells=cell_key,
+        out_root=str(tmp_path / "root"),
+        sentinel_dir=str(tmp_path / "logs"),
+        seed=42,
+        eval_question_limit=None,
+        upload=False,
+        oversample_mult=None,
+    )
+    cfg = w1434.worker_config(args)
+    out = w1434.phase_datagen(cfg, args)
+    rec = out[cell_key]
+    assert rec["status"] == "success", rec
+    assert rec["topup_considered"] is True
+    top = rec["topup_record"]
+    assert top["fired"] is True and top["kept_pos_first_sample"] == 3
+    assert top["kept_pos_union"] >= 5  # floor cleared by the tranche
+    meta = json.loads(Path(rec["pool_meta_path"]).read_text())
+    assert meta["positive"]["kept"] == 3  # frozen yield DV
+    assert meta["topup"]["tranche_requested"] == 9  # ceil(smoke target 6 / 0.7)
+    assert rec["train_mix_sha256"]  # mix built (unchanged assembler)
+    # Resume: the recorded cell (topup_considered) SKIPS — one tranche per cell.
+    out2 = w1434.phase_datagen(cfg, args)
+    assert out2[cell_key]["ts"] == rec["ts"]
+
+
+def test_phase_datagen_pre_topup_miss_reenters_once(tmp_path, monkeypatch):
+    """A legacy same-mult ``yield_floor_missed`` record WITHOUT the top-up
+    lever (pre-wiring shape) re-enters ONCE and gets rescued; the new record
+    carries ``topup_considered`` so the next invocation skips."""
+    import argparse
+
+    import issue1434_cells as c1434
+    import issue1434_worker as w1434
+    import transformers
+
+    c1434.register_i1434_round()
+    monkeypatch.setattr(_dg, "_default_generate_fn", lambda **kw: _gen_all_topup())
+    monkeypatch.setattr(_dg, "judge_graded", _judge_first_n(3, keep_topup=True))
+
+    def _stub_corpus(dest, **kw):
+        dest = Path(dest)
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        rows = [
+            {
+                "prompt": [{"role": "user", "content": f"generic q {i}"}],
+                "completion": [{"role": "assistant", "content": f"generic a {i}"}],
+            }
+            for i in range(200)
+        ]
+        dest.write_text("\n".join(json.dumps(r) for r in rows) + "\n")
+        return str(dest)
+
+    monkeypatch.setattr(w1434.i1074, "_stage_generic_corpus", _stub_corpus)
+    monkeypatch.setattr(
+        w1434, "_generic_corpus_provenance", lambda p: {"stub": True, "path": str(p)}
+    )
+    monkeypatch.setattr(
+        transformers.AutoTokenizer,
+        "from_pretrained",
+        classmethod(lambda cls, *a, **kw: None),
+    )
+    args = argparse.Namespace(
+        smoke=True,
+        full=False,
+        cells="ws-pers",
+        out_root=str(tmp_path / "root"),
+        sentinel_dir=str(tmp_path / "logs"),
+        seed=42,
+        eval_question_limit=None,
+        upload=False,
+        oversample_mult=None,
+    )
+    cfg = w1434.worker_config(args)
+    cell_root = cfg.out_root / "datagen_cells" / "ws-pers"
+    cell_root.mkdir(parents=True, exist_ok=True)
+    legacy = {
+        "cell_key": "ws-pers",
+        "status": "yield_floor_missed",
+        "reason": "legacy pre-top-up miss",
+        "oversample_mult": 2.5,  # fu3w.DEFAULT_OVERSAMPLE_MULT — same budget
+    }
+    (cell_root / "datagen_summary_1434.json").write_text(json.dumps(legacy))
+    out = w1434.phase_datagen(cfg, args)
+    rec = out["ws-pers"]
+    assert rec["status"] == "success" and rec["topup_record"]["fired"] is True
