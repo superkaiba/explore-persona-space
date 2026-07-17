@@ -31,12 +31,12 @@ relates_to:
 
 ## Takeaways
 
-- **Single-token patching of the context-vector difference moves the answer state toward the target: cosine 0.36–0.41, 28/28 pairs above their random-direction nulls on both arms, traversing 2–5% of the target norm.**
+- **Single-token patching of the context-vector difference moves the answer state toward the target: cosine 0.36–0.41, 28/28 pairs above their random-direction nulls on both arms (27/28 on the most conservative split), traversing 2–5% of the target norm.**
 - **These numbers are ~0.08 lower than first computed: the original statistic shared a 10-draw baseline mean between shift and target, inflating every cosine; disjoint baseline halves give the corrected read.**
 - **Behavior barely moves: +0.3 to +0.9 graded judge points versus +28.8 for the context-swap ceiling and +10.1 for persona-vector steering — despite injecting 1.6–3.6× more norm.**
 - **The fitted context-to-answer map predicts none of the realized shift at layer 20 (mean cosine 0.00; magnitude over-predicted ~16×); other layers were not computed.**
-- **Matched-query steering vectors transport better than cross-query ones (0.49 vs 0.22, prefix arm, p = 8e-6): the query, not the persona prefix, is the main causal carrier.**
-- **All-position steering flips 96–98% of draws into Chinese script — it breaks the output distribution rather than steering harder — and the medical-doctor pair's target is sampling noise (split-half 0.049), so it is uninterpretable.**
+- **Matched-query steering vectors transport far better than cross-query ones (0.49 vs 0.22, prefix arm, p = 8e-6); transportability is query-dependent, though closer matched targets could carry part of the gap.**
+- **All-position steering flips 96–98% of draws into Chinese script (a broken output distribution, so its taller geometric bars are reads on corrupted text), and the medical-doctor pair's target is sampling noise (split-half 0.049), leaving that pair uninterpretable.**
 
 ## Goal
 
@@ -179,7 +179,7 @@ What is plotted: per-pair shared-to-disjoint dumbbells of the headline statistic
 
 Mean alignment drops 0.443→0.364 (prefix) and 0.484→0.405 (context) under disjoint baselines, with 28/28 pairs above their own nulls on both arms (27/28 on the most conservative single split). The traversal is 2–5% of the target-shift norm (matched-cell fraction mean 0.035 prefix / 0.055 context, disjoint).
 
-Matched-query pairs transport better than cross-query: disjoint 0.492 vs 0.216 (prefix, one-sided p = 8e-6) and 0.484 vs 0.313 (context, p = 4.4e-3) — the query, not the persona prefix, is the main causal carrier. The layer-20-anchored read corrects proportionally more (0.271→0.189 prefix / 0.362→0.281 context; 2–6 pairs fall below the band there).
+Matched-query pairs transport better than cross-query: disjoint 0.492 vs 0.216 (prefix, one-sided p = 8e-6) and 0.484 vs 0.313 (context, p = 4.4e-3). Transportability is query-dependent — with the caveat that matched pairs share the query, so their source and target answer states sit closer, and that proximity alone could raise the transport cosine without any query-borne mechanism; the shuffled-pair null does not isolate this. The layer-20-anchored read corrects proportionally more (0.271→0.189 prefix / 0.362→0.281 context; 2–6 pairs fall below the band there).
 
 ### Prefix-arm alignment is pair-specific; context-arm alignment is partly direction-generic
 
@@ -189,7 +189,7 @@ What is plotted: distributions of per-pair alignment, disjoint (solid) vs shared
 
 > **Figure.** *Alignment clears the random-direction band everywhere; the harder shuffled-pair band separates the arms.* Pooled null lines: random-direction ≈ 0.04, shuffled-pair 0.155 (prefix) / 0.386 (context); ceiling 1.0 by construction. The shuffled-pair comparison uses the shared convention on both sides.
 
-Against the shuffled-pair band (other pairs' real steering directions, norm-matched), prefix-arm alignment is fully pair-specific (28/28 pairs above their bands) while the context arm is only partly so (20/28; 13/15 matched, 7/13 cross). The injected direction itself aligns with the answer-space target at only 0.117 on the prefix arm, yet the realized shift aligns at 0.364 — the network transforms the injection toward the target rather than passively propagating it.
+Against the shuffled-pair band (other pairs' real steering directions, norm-matched), prefix-arm alignment is fully pair-specific (28/28 pairs above their bands) while the context arm is only partly so (20/28; 13/15 matched, 7/13 cross). The injected direction itself aligns with the answer-space target at only 0.117 on the prefix arm, yet the realized shift aligns at 0.364: the forward pass amplifies the injection into target-aligned answer movement.
 
 ### Alignment peaks mid-stack at layers 14–17; the early-layer signal was the baseline artifact
 
@@ -219,7 +219,7 @@ What is plotted: mean graded judge score across the α grid for both steered arm
 
 > **Figure.** *No dose trend; one style pair carries a third of the context-arm effect.* Steered graded means across α ∈ {0.5, 1, 2, 4}: context 1.70 / 1.61 / 1.59 / 2.21; prefix 1.60 / 1.58 / 1.53 / 1.64. The coherence gate never bound, so larger α was never explored.
 
-The context-arm shift at α = 4 (+0.91) is 34% carried by the formal-register pair; it survives that pair's exclusion (+0.63, p = 0.0009, N = 27), so the effect is not one-pair-only, but the mean hides one clear steering success against a floor elsewhere. Five pairs have a dead behavioral ceiling, diluting ceiling-anchored contrasts. Steered pools carry 9–10% Chinese-script intrusion (256–295 of 2,800 draws per arm); excluding intruded draws moves the α = 4 context mean 2.21→2.16 and the geometric headline under 0.01.
+Across the α grid the context arm reads 1.70 / 1.61 / 1.59 / 2.21 (α = 0.5/1/2/4) and the prefix arm 1.60 / 1.58 / 1.54 / 1.64, against a 1.30 baseline: no monotone dose trend, with only the context α = 4 cell moving. The context-arm shift at α = 4 (+0.91) is 34% carried by the formal-register pair; it survives that pair's exclusion (+0.63, p = 0.0009, N = 27), so the effect is not one-pair-only, but the mean hides one clear steering success against a floor elsewhere. Five pairs have a dead behavioral ceiling, diluting ceiling-anchored contrasts. Steered pools carry 9–10% Chinese-script intrusion (256–295 of 2,800 draws per arm); excluding intruded draws moves the α = 4 context mean 2.21→2.16 and the geometric headline under 0.01.
 
 ### The logit-lens readout of the vectors is not clean trait words
 
@@ -229,7 +229,7 @@ What is plotted: top-10 unembedded tokens for the context vector, the answer pro
 
 > **Figure.** *No clean trait vocabulary.* Top-10 unembedding readout per vector: CJK fragments, code identifiers, and morpheme shards dominate; a few harm-associated fragments appear on the evil pair's difference vector and one slow mode — suggestive but not systematic.
 
-A descriptive companion only: none of the vectors decode to interpretable trait words under the plain logit lens, consistent with the causal reads above locating the vectors' content in answer-state geometry rather than in directly decodable vocabulary.
+A descriptive companion only: none of the vectors decode to interpretable trait words under the plain logit lens, consistent with the causal reads above: the vectors' content lives in answer-state geometry and is not directly decodable as vocabulary.
 
 ---
 
