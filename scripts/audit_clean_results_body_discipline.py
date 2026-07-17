@@ -284,13 +284,19 @@ PATTERNS: dict[str, tuple[str, str]] = {
         # the body carried `bit-identical` AND `byte-identical`, but the
         # byte-only regex flagged only the latter; the clean-result-critic
         # Lens 6 bans both forms as the same voice violation, so the audit
-        # must catch both under one rule). Use plain English: "the two files
-        # matched exactly", "every byte agreed", "no diff between the runs".
-        r"\b(?:byte|bit)[\s-]identical\b",
+        # must catch both under one rule). The 'equal' synonym family
+        # (byte-equal / byte equal / bit-equal / bit equal) was added
+        # 2026-W29 (task #1423: issue #1005's body carried "inherited
+        # byte-equal (sha-asserted)", which the -identical-only regex missed;
+        # the clean-result-critic caught it manually). Use plain English:
+        # "the two files matched exactly", "every byte agreed", "no diff
+        # between the runs".
+        r"\b(?:byte|bit)[\s-](?:identical|equal)\b",
         (
             "Use plain English ('the two files matched exactly', 'every byte agreed', "
             "'no diff') instead of 'byte identical' / 'byte-identical' / 'bit identical' / "
-            "'bit-identical' — the phrase reads as AI-slop in research prose"
+            "'bit-identical' — or their '-equal' synonyms ('byte-equal', 'bit equal', ...) — "
+            "the phrase reads as AI-slop in research prose"
         ),
     ),
 }

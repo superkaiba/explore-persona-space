@@ -1396,6 +1396,9 @@ def test_verdict_caps_code_spans_not_flagged():
 # critic Lens 6 caught the `bit-identical` slip manually. The rule was
 # renamed `bit_byte_identical` and broadened to `\b(?:byte|bit)[\s-]identical\b`
 # so both same-family voice violations are caught under one mechanical rule.
+# Task #1423 extended the family to the `equal` synonyms (byte-equal /
+# byte equal / bit-equal / bit equal) after issue #1005's body carried
+# "inherited byte-equal (sha-asserted)" past the -identical-only regex.
 
 
 def test_byte_identical_still_flagged_under_new_key():
@@ -1437,6 +1440,70 @@ def test_bit_byte_identical_no_false_positive_on_unrelated_words():
     clean = V3_BODY_WITH_DATA_CODES.replace(
         "The lift holds at every seed in the held-out evaluation.",
         "The arbiter compiled the bytecode and a bite-sized summary.",
+    )
+    findings = audit.audit_body(clean)
+    assert "bit_byte_identical" not in findings, findings
+
+
+def test_byte_equal_is_flagged():
+    """The `-equal` synonym family trips the rule (task #1423): `byte-equal`
+    and `byte equal` are the same voice violation as `byte-identical`."""
+    hyphen = V3_BODY_WITH_DATA_CODES.replace(
+        "The lift holds at every seed in the held-out evaluation.",
+        "The two stores were byte-equal after the rerun.",
+    )
+    findings = audit.audit_body(hyphen)
+    assert "bit_byte_identical" in findings, findings
+    assert any("byte-equal" in s for s in findings["bit_byte_identical"]), findings
+    space = V3_BODY_WITH_DATA_CODES.replace(
+        "The lift holds at every seed in the held-out evaluation.",
+        "The two stores were byte equal after the rerun.",
+    )
+    space_findings = audit.audit_body(space)
+    assert "bit_byte_identical" in space_findings, "space form not flagged"
+    assert any("byte equal" in s for s in space_findings["bit_byte_identical"]), space_findings
+
+
+def test_bit_equal_is_flagged():
+    """The `bit-equal` / `bit equal` synonyms trip the rule too (task #1423)."""
+    hyphen = V3_BODY_WITH_DATA_CODES.replace(
+        "The lift holds at every seed in the held-out evaluation.",
+        "The loss surface was held bit-equal across all three arms.",
+    )
+    findings = audit.audit_body(hyphen)
+    assert "bit_byte_identical" in findings, findings
+    assert any("bit-equal" in s for s in findings["bit_byte_identical"]), findings
+    space = V3_BODY_WITH_DATA_CODES.replace(
+        "The lift holds at every seed in the held-out evaluation.",
+        "The loss surface was held bit equal across all three arms.",
+    )
+    space_findings = audit.audit_body(space)
+    assert "bit_byte_identical" in space_findings, "space form not flagged"
+    assert any("bit equal" in s for s in space_findings["bit_byte_identical"]), space_findings
+
+
+def test_byte_equal_incident_1005_phrasing_is_flagged():
+    """Regression anchor: the verbatim #1005 incident phrasing — "inherited
+    byte-equal (sha-asserted)" — trips the rule (the -identical-only regex
+    missed it and an LM critic round had to catch it manually)."""
+    body = V3_BODY_WITH_DATA_CODES.replace(
+        "The lift holds at every seed in the held-out evaluation.",
+        "The adapter was inherited byte-equal (sha-asserted) from the parent.",
+    )
+    findings = audit.audit_body(body)
+    assert "bit_byte_identical" in findings, findings
+    assert any("byte-equal" in s for s in findings["bit_byte_identical"]), findings
+
+
+def test_bit_byte_equal_no_false_positive_on_boundary_words():
+    """Boundary negatives for the `-equal` arm (task #1423): `byte equality`
+    (suffix blocks the trailing \\b), `bytes equal` (plural blocks `[\\s-]`),
+    `bitwise equal` (`bitwise` != `bit`), and capitalized `Byte-equal` (the
+    category scans case-sensitively, pre-existing semantics) must NOT trip."""
+    clean = V3_BODY_WITH_DATA_CODES.replace(
+        "The lift holds at every seed in the held-out evaluation.",
+        "I assert byte equality; the bytes equal to the header match, and "
+        "bitwise equal outputs held. Byte-equal casing stays untouched.",
     )
     findings = audit.audit_body(clean)
     assert "bit_byte_identical" not in findings, findings
