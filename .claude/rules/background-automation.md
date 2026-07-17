@@ -1107,6 +1107,42 @@ logged-skip, never a silent "no drafts"). Kill switch
 (pair with `--dry-run` for a live smoke — zero writes, zero task.py reads
 beyond the read-only enumeration).
 
+**Registry-drift audit pass (task #1439, `registry_drift_pass`).** A
+daemon-INDEPENDENT, REPORT-ONLY, once-daily-throttled observer (runs right
+after `root_draft_pass`) of `tasks/REGISTRY.json` <-> filesystem drift —
+the post-#898 class where a `task.py` mutation hard-killed between the
+folder `git mv` and the registry save leaves a stale registry entry that
+`find_task_path` only ever surfaces as an unread log WARNING (terminal
+tasks may never mutate again, so the drift persists indefinitely — the
+#207 shape). Predicate: at most ~once/day
+(`EPM_REGISTRY_DRIFT_INTERVAL_HOURS`, 24 h; the attempt stamp is saved
+BEFORE collecting, bounding a crashing audit to one error sidecar row per
+interval) it runs `task_workflow.audit()` +
+`reconcile_registry(apply=False)` (both pure reads, ~0.7 s live), then
+DOUBLE-READS with a ~10 s confirm gap (`EPM_REGISTRY_DRIFT_CONFIRM_S`) and
+keeps only the INTERSECT — a row present in one read only is an in-flight
+`task.py` mutation transient and never fires, while a hard-killed
+mutation's drift persists through both reads. #1430's duplicate-dir husk
+class is out of scope by construction (a husk's tid IS registered at its
+live path, so `audit()` does not flag it; the worktree-audit cron's
+`reap-husks` self-heals it). **Channels:** one row per confirmed-drift run
+to the dedicated sidecar `.claude/cache/registry-drift-events.jsonl`
+(fingerprint + capped problems/classes payload; the `pushed` field records
+the fire DECISION, not delivery) + ONE deduped fail-soft `_telegram_push`
+naming the repair command (`task.py audit --repair`, `--apply` to repair)
+— fired on fingerprint CHANGE (sha256[:12] over the confirmed rows, the
+volatile `highest_id` numeric details excluded so new-task counter churn
+never re-pushes) or a 168 h re-alert TTL
+(`EPM_REGISTRY_DRIFT_REALERT_HOURS`); state singleton
+`~/.eps-autonomous/registry-drift-observer.json` (atomic tmp+rename;
+recovery clears the fp so a re-appearance re-fires immediately).
+**REPORT-ONLY is a hard invariant:** the pass NEVER calls
+`reconcile_registry(apply=True)`, posts NO task markers, and writes only
+its state file + sidecar (pinned by `tests/test_autonomous_session_watch.py::test_registry_drift_pass_report_only_never_applies`);
+repair stays the human-invoked `task.py audit --repair [--apply]`. Kill
+switch `EPM_DISABLE_REGISTRY_DRIFT_PASS=1`; `--registry-drift-only` runs
+just this pass (pair with `--dry-run` for a zero-write live smoke).
+
 **Auth-outage guard pass (task #1027, `auth_outage_pass`).** Fleet-level
 respawn suppression for an Anthropic auth outage — or ANY fleet-wide
 instant-death cause (poisoned CLI credential, broken `claude` binary, a
