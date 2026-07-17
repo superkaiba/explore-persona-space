@@ -3698,8 +3698,8 @@
     "1475": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1475",
-      "status": "proposed",
+      "path": "tasks/planning/1475",
+      "status": "planning",
       "title": "workflow-fix: pre_reg audit \u2014 verdict-lattice head nouns + range tokens escape"
     },
     "1476": {
