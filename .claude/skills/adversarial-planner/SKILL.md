@@ -611,6 +611,18 @@ same merged critique; see Phase 2):
    (critic Must-Fix items + consistency BLOCKs together — one union
    revision round, not two serial bounce rounds).
 
+**Trigger-dense tasks — merged critique by FILE, never inline (#1413).**
+When the task is trigger-dense per `.claude/rules/trigger-dense-review.md`
+(guard-surface plans, hook/fixture edits, refusal-corpus work), and the
+revision runs as a re-spawned planner Agent (not the main thread), write
+the merged critique to `.claude/plans/issue-<N>-critique-r<K>.md` and pass
+the PATH in the revision brief — with the windowed-read instruction and
+the Step 5a neutral-vocabulary discipline — never the Must-Fix text itself
+(rule § Revision-round briefs). Main-thread revision composes no brief and
+is exempt. After any refusal on the spawn turn, verify the dispatched
+prompt's completeness (CLAUDE.md rung (g)) before treating the spawn as
+healthy.
+
 **Default: do NOT re-critique.** Proceed to user approval with the revised
 plan + the round-1 critique attached as context. With the
 conclusion-changing bar in `critic.md`, round-1 Must-Fix items are concrete
