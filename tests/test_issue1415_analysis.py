@@ -467,9 +467,9 @@ def _fake_scores(item_id: str, draw_idx: int) -> dict:
     # item ids are COMPACT ("h<sha1-12>/d<draw>", crash-fix r2) — compare
     # against the compact keys of the fixture's full cell ids.
     c_base = jg.compact_cell_key("gen1b/pair0/c")
-    if item_id == f"{c_base}/d0":
+    if item_id == f"{c_base}_d0":
         return {"reasoning": "r", "score": 80 if draw_idx == 0 else 60}
-    if item_id == f"{c_base}/d1":
+    if item_id == f"{c_base}_d1":
         if draw_idx == 0:
             return {"reasoning": "declined", "score": "REFUSAL"}  # content drop
         return {"error": True, "transport": True, "reasoning": "batch_error: expired"}
@@ -526,7 +526,7 @@ def test_judge_request_building_and_drop_transport_split(tmp_path, monkeypatch):
     assert len(kw["completions"]) == 8
     # item ids are compact + within the Batch custom_id budget (crash-fix r2)
     for item_id in kw["completions"]:
-        assert re.fullmatch(r"h[0-9a-f]{12}/d\d+", item_id), item_id
+        assert re.fullmatch(r"h[0-9a-f]{12}_d\d+", item_id), item_id
         assert len(item_id) <= jg.ITEM_ID_MAX_CHARS, item_id
     excluded = jg.compact_cell_key("gen1c/context/pair0/L2/a1")
     assert not any(item_id.startswith(excluded) for item_id in kw["completions"])
