@@ -160,6 +160,7 @@ def _require_parent_round_extract() -> None:
     re-extracted (plan §4 D4')."""
     import issue1090_fu4 as fu4
 
+    worker._ensure_family_round()
     if fu4.ROUND.name != "i1434":
         raise SystemExit(
             "--phase extract is parent-round only: r_B is behavior-level and base-model-"
@@ -526,6 +527,7 @@ def phase_project(cfg, args) -> int:
     + projections onto r̂_B (per layer, unit-normalized) + cosines."""
     import issue1090_fu4 as fu4
 
+    worker._ensure_family_round()
     run1090._phase("i1434_pv_project")
     qs = worker._eval_questions(cfg)
     cell_keys = worker.resolve_cell_keys(args.cells, cfg.smoke, cfg=cfg)
@@ -1012,6 +1014,7 @@ def phase_validate(cfg, args) -> int:
     import issue778_honest_null_ladder as hnl
     import issue1090_fu4 as fu4
 
+    worker._ensure_family_round()
     po_round = fu4.ROUND.name == "i1434po"
     root = pv_root(cfg)
     if po_round:

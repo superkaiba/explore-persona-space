@@ -74,6 +74,19 @@ logger = logging.getLogger("issue1434.worker")
 
 FU4_DELEGATED_PHASES = ("dispatch", "run")
 JUDGE_DROP_FLAG_BAR = 0.10  # inherited flag check (llm-judging rule 23; flag, never kill)
+I1434_FAMILY_ROUNDS = ("i1434", "i1434po")
+
+
+def _ensure_family_round() -> None:
+    """Every #1434 phase runs under an i1434-family round. ``main()`` selects
+    it from ``--round``; a DIRECT phase caller (tests, ad-hoc imports) may
+    inherit an out-of-family ambient fu4 ROUND (the module default is
+    ``fu4``) — normalize that to the PARENT round, byte-preserving the
+    pre-round-parametrization behavior (phases used to hardcode the parent
+    names). An explicit i1434po selection is never overridden."""
+    if fu4.ROUND.name not in I1434_FAMILY_ROUNDS:
+        cells.register_i1434_round()
+        fu4.set_round("i1434")
 
 
 # ── config ───────────────────────────────────────────────────────────────────
@@ -214,6 +227,7 @@ def phase_datagen(cfg: run1090.RunConfig, args: argparse.Namespace) -> dict:
     path: the cell (and its 3 lr runs) is recorded ``yield_floor_missed`` and
     SKIPPED — reported, never backfilled.
     """
+    _ensure_family_round()
     if fu4.ROUND.name != "i1434":
         raise SystemExit(
             "--phase datagen is parent-round only: the i1434po round reuses the parent's "
@@ -550,6 +564,7 @@ def phase_mixes(cfg: run1090.RunConfig, args: argparse.Namespace) -> int:
     positive-only mixes and write ``cell_manifest_i1434po.json`` (out_root
     copy always; committed copy under the po deliverables dir on full runs —
     the plan's commit-manifest-BEFORE-dispatch step)."""
+    _ensure_family_round()
     if fu4.ROUND.name != "i1434po":
         raise SystemExit("--phase mixes is the i1434po builder — pass --round i1434po")
     run1090._phase("i1434po_mixes")
@@ -688,6 +703,7 @@ def phase_stage(cfg: run1090.RunConfig, args: argparse.Namespace) -> int:
     the committed copy under eval_results/issue_1434/ (smoke never touches the
     committed path — scratch-redirect discipline).
     """
+    _ensure_family_round()
     if fu4.ROUND.name != "i1434":
         raise SystemExit(
             "--phase stage is parent-round only: the i1434po manifest is written by "
@@ -787,6 +803,7 @@ def _hf_model(cfg: run1090.RunConfig):
 
 def phase_base_arms(cfg: run1090.RunConfig, args: argparse.Namespace) -> int:
     """Fresh per-context BASE Tier-2 arms + the shared 6-context base panel."""
+    _ensure_family_round()
     if fu4.ROUND.name != "i1434":
         raise SystemExit(
             "--phase base-arms is parent-round only: the i1434po round REUSES the parent "
@@ -872,6 +889,7 @@ def _run_selections(cfg: run1090.RunConfig, run_ids: list[str]) -> dict[str, dic
 def phase_panel(cfg: run1090.RunConfig, args: argparse.Namespace) -> int:
     """Bystander-panel generation for the per-context VERDICT arms (plan §3
     pre-registered selection rule) at their selected rungs."""
+    _ensure_family_round()
     run1090._phase("i1434_panel")
     qs = _eval_questions(cfg)
     cell_keys = resolve_cell_keys(args.cells, cfg.smoke, cfg=cfg)
@@ -988,6 +1006,29 @@ def _judge_rate_graded(
         for ci, comp in enumerate(comps[qi])
     ]
     inst_root = judge_root / instrument  # plan §10 layout: judge/<instrument>/
+    # Batch custom_id budget (#1415): the batch encoder appends 11 chars to a
+    # 64-char API cap, so item ids must fit 53 chars. The po panel tags
+    # (pn-ws-po-<ctx>-<lr>-<read_ctx>) run 3 chars past the parent's — which
+    # sat at EXACTLY 53 — so hash-compact ONLY over-budget ids (every parent
+    # id stays byte-identical -> cache continuity) and persist the id map.
+    id_map = {
+        iid: "h" + hashlib.sha1(iid.encode()).hexdigest()[:12]
+        for iid, _, _ in items
+        if len(iid) > 53
+    }
+    if id_map:
+        items = [(id_map.get(iid, iid), q, comp) for iid, q, comp in items]
+        inst_root.mkdir(parents=True, exist_ok=True)
+        run1090._atomic_write_json(
+            inst_root / f"idmap_{tag}.json", {v: k for k, v in id_map.items()}
+        )
+        logger.info(
+            "[i1434-judge] %s: %d item ids hash-compacted for the Batch custom_id "
+            "budget (map at %s)",
+            tag,
+            len(id_map),
+            inst_root / f"idmap_{tag}.json",
+        )
     result = judge_graded(
         items,
         rubric,
@@ -1253,6 +1294,7 @@ def regime_contrast(po_agg: dict, con_agg: dict, cell_keys: list[str]) -> dict:
 def phase_judge_analyze(cfg: run1090.RunConfig, args: argparse.Namespace) -> int:  # noqa: C901 — the P10 phase chain (mirrors fu4 cmd_judge_aggregate)
     """P10: pv judging of Tier-2 + base + panel, the §3 lattice, leakage, the
     registered-rubric parity re-read, and the committed aggregates."""
+    _ensure_family_round()
     run1090._phase("i1434_judge_analyze")
     po_round = fu4.ROUND.name == "i1434po"
     # Parent-owned reuse artifacts stage at the parent-run revision pin.

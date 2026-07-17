@@ -320,7 +320,7 @@ def test_regime_contrast_dose_unmatched_and_lattice_branches():
     _po()
     po_agg, con_agg = _mk_aggs()
     # narrower: flip the pooled direction hard
-    for c, row in po_agg["panel"]["ws-po-pers"]["contexts"].items():
+    for _c, row in po_agg["panel"]["ws-po-pers"]["contexts"].items():
         row["trained"] = _judged(2, 100)
     con_agg["verdict_arms"]["ws-pers"]["selection"] = {"rate": 0.62, "in_band": False}
     out = w.regime_contrast(po_agg, con_agg, ["ws-po-pers"])
@@ -377,6 +377,42 @@ def test_merge_parent_po_states_and_layer_gate(tmp_path, monkeypatch):
     (root / "projections.json").write_text(json.dumps({"layers": [0], "states": {}}))
     with pytest.raises(RuntimeError, match="layer mismatch"):
         pv._merge_parent_po(root, {}, po_proj)
+
+
+def test_stage_validate_captures_revision_keying(tmp_path, monkeypatch):
+    """Parent states + parent-mapped base stores stage AT THE PIN; po states
+    stage at main (they postdate the pin); local copies short-circuit."""
+    import issue1434_pv as pv
+
+    _po()
+    staged: list[tuple[str, str | None]] = []
+
+    def fake_stage(repo, path, target, *, repo_type, revision):
+        staged.append((path, revision))
+        Path(target).parent.mkdir(parents=True, exist_ok=True)
+        Path(target).write_bytes(b"x")
+        return Path(target)
+
+    import explore_persona_space.orchestrate.hub as hub
+
+    monkeypatch.setattr(hub, "stage_hub_file", fake_stage)
+    root = tmp_path / "pv"
+    # a locally-present po base store must NOT re-stage
+    local = root / "capture" / "base-ws-po-bare" / "summary.pt"
+    local.parent.mkdir(parents=True)
+    local.write_bytes(b"local")
+    pv._stage_validate_captures(root, ["ws-pers-lr1e5", "ws-po-pers-lr1e5", "base-ws-po-bare"])
+    by_path = dict(staged)
+    pfx = "issue1434_writingstyle/analysis_tensors/capture"
+    assert by_path[f"{pfx}/ws-pers-lr1e5/summary.pt"] == cells.DATA_REPO_PIN_1434
+    assert by_path[f"{pfx}/ws-po-pers-lr1e5/summary.pt"] is None  # po: main
+    # base twins: parent run -> base-ws-pers @ pin; po run -> base-ws-po-pers
+    # staged FROM the parent base-ws-pers path @ pin
+    assert by_path[f"{pfx}/base-ws-pers/summary.pt"] == cells.DATA_REPO_PIN_1434
+    assert local.read_bytes() == b"local"  # short-circuited
+    # the po base dir maps to the PARENT hub path
+    n_parent_base = sum(1 for p, _ in staged if p == f"{pfx}/base-ws-pers/summary.pt")
+    assert n_parent_base >= 1
 
 
 # ── worker routing + parent-round guards ─────────────────────────────────────
@@ -466,6 +502,52 @@ def test_po_ladder_overlays_renders(tmp_path):
         "ladders": {k: v for ck in cells.CELL_KEYS for k, v in lad(ck).items()},
     }
     assert figs.fig_ladder_overlays(po_agg, con_agg, tmp_path).exists()
+
+
+# ── Batch custom_id budget (#1415): over-budget-only hash compaction ─────────
+
+
+def test_judge_item_id_budget_compaction(tmp_path, monkeypatch):
+    """FAILS PRE-FIX: the po panel tag pn-ws-po-pers-lr1e5-persona_software_
+    engineer produces 56-char item ids (> the 53-char Batch budget; the batch
+    encoder appends 11 chars to the 64-char API cap) and judge_completions_
+    batch raises at enumerate. Post-fix: over-budget ids hash-compact (parent
+    ids stay byte-identical) + the id map persists."""
+    _po()
+    seen: dict = {}
+
+    def fake_judge_graded(items, rubric, **kw):
+        seen["ids"] = [iid for iid, _, _ in items]
+        return SimpleNamespace(
+            scores={iid: 80.0 for iid, _, _ in items},
+            n_dropped_draws=0,
+            n_transport_lost_draws=0,
+        )
+
+    monkeypatch.setattr(w, "judge_graded", fake_judge_graded)
+    qs = ["q one", "q two"]
+    comps = [["a", "b"], ["c", "d"]]
+    long_tag = "pn-ws-po-pers-lr1e5-persona_software_engineer"
+    rec = w._judge_rate_graded(
+        long_tag,
+        qs,
+        comps,
+        rubric="r",
+        n_draws=2,
+        judge_root=tmp_path / "judge",
+        instrument="pv",
+    )
+    assert all(len(i) <= 53 for i in seen["ids"])  # the #1415 budget
+    assert rec["n_scored"] == 4 and rec["rate"] == 1.0  # scores keyed consistently
+    idmap = json.loads((tmp_path / "judge" / "pv" / f"idmap_{long_tag}.json").read_text())
+    assert len(idmap) == 4 and all(v.startswith(long_tag) for v in idmap.values())
+    # a parent-round tag (exactly at budget) stays byte-identical, no map file
+    short_tag = "pn-ws-pers-lr1e5-persona_software_engineer"
+    w._judge_rate_graded(
+        short_tag, qs, comps, rubric="r", n_draws=2, judge_root=tmp_path / "j2", instrument="pv"
+    )
+    assert all(i.startswith(short_tag) and len(i) <= 53 for i in seen["ids"])
+    assert not (tmp_path / "j2" / "pv" / f"idmap_{short_tag}.json").exists()
 
 
 # ── po margin seam: staging is non-smoke-only + delegates to the parent pools ─
