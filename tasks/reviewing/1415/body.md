@@ -30,6 +30,8 @@ relates_to:
 
 <!-- clean-result-v4 -->
 
+**Methodology:** [docs/methodology/issue_1415.md](https://github.com/superkaiba/explore-persona-space/blob/42b172cc42871b165cd2691b87dc5085bfac8707/docs/methodology/issue_1415.md) · [gist](https://gist.github.com/superkaiba/cef80ae10f0312f51f95d90fd5d65b7b)
+
 ## Takeaways
 
 - **Single-token patching of the context-vector difference moves the answer state toward the target: cosine 0.36–0.41, 28/28 pairs above their random-direction nulls on both arms (27/28 on the most conservative split); the traversal is 2–5% of the target norm.**
