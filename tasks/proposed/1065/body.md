@@ -3,7 +3,6 @@ title: 'daily-held: Step 10d task-state merge-conflict contract'
 kind: infra
 tags:
 - daily-held
-- needs-human
 created_at: '2026-07-05T07:04:39Z'
 has_clean_result: false
 origin_prompt: '/daily 2026-07-04 problem sweep (route 3): Every long-lived issue
