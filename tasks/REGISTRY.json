@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1441,
+  "highest_id": 1442,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -3442,6 +3442,13 @@
       "path": "tasks/proposed/1441",
       "status": "proposed",
       "title": "daily-fix: add #1383 context clause to yaml BINDING summary"
+    },
+    "1442": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1442",
+      "status": "proposed",
+      "title": "daily-fix: route TG_TESTS fixture temps via step9c tmproot"
     },
     "145": {
       "has_clean_result": false,
