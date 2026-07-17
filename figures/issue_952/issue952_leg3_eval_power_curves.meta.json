@@ -1,0 +1,914 @@
+{
+  "commit": "4ad9618bc6",
+  "created": "2026-07-17T22:27:08Z",
+  "figsize": [
+    11.0,
+    4.2
+  ],
+  "points": [
+    {
+      "Number of china eval pairs (N_eval)": 8.0,
+      "95% CI half-width of mean d": 0.04765122101058813,
+      "series": "LMSYS pool-only map",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of china eval pairs (N_eval)": 12.0,
+      "95% CI half-width of mean d": 0.03890705903217663,
+      "series": "LMSYS pool-only map",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of china eval pairs (N_eval)": 16.0,
+      "95% CI half-width of mean d": 0.03369450150840576,
+      "series": "LMSYS pool-only map",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of china eval pairs (N_eval)": 20.0,
+      "95% CI half-width of mean d": 0.03013727833630579,
+      "series": "LMSYS pool-only map",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of china eval pairs (N_eval)": 24.0,
+      "95% CI half-width of mean d": 0.02751144527767741,
+      "series": "LMSYS pool-only map",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of china eval pairs (N_eval)": 31.0,
+      "95% CI half-width of mean d": 0.024206844480235357,
+      "series": "LMSYS pool-only map",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of china eval pairs (N_eval)": 40.0,
+      "95% CI half-width of mean d": 0.021310273878108254,
+      "series": "LMSYS pool-only map",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of china eval pairs (N_eval)": 50.0,
+      "95% CI half-width of mean d": 0.01906048840423525,
+      "series": "LMSYS pool-only map",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of china eval pairs (N_eval)": 64.0,
+      "95% CI half-width of mean d": 0.01684725075420288,
+      "series": "LMSYS pool-only map",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of china eval pairs (N_eval)": 80.0,
+      "95% CI half-width of mean d": 0.015068639168152894,
+      "series": "LMSYS pool-only map",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of china eval pairs (N_eval)": 100.0,
+      "95% CI half-width of mean d": 0.013477800603362303,
+      "series": "LMSYS pool-only map",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of china eval pairs (N_eval)": 128.0,
+      "95% CI half-width of mean d": 0.011912805252647032,
+      "series": "LMSYS pool-only map",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of china eval pairs (N_eval)": 160.0,
+      "95% CI half-width of mean d": 0.010655136939054127,
+      "series": "LMSYS pool-only map",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of china eval pairs (N_eval)": 200.0,
+      "95% CI half-width of mean d": 0.009530244202117625,
+      "series": "LMSYS pool-only map",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of china eval pairs (N_eval)": 256.0,
+      "95% CI half-width of mean d": 0.00842362537710144,
+      "series": "LMSYS pool-only map",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of china eval pairs (N_eval)": 320.0,
+      "95% CI half-width of mean d": 0.007534319584076447,
+      "series": "LMSYS pool-only map",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Number of china eval pairs (N_eval)": 8.0,
+      "95% CI half-width of mean d": 0.045723477469219835,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of china eval pairs (N_eval)": 12.0,
+      "95% CI half-width of mean d": 0.03770379287753154,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of china eval pairs (N_eval)": 16.0,
+      "95% CI half-width of mean d": 0.03272521206025522,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of china eval pairs (N_eval)": 20.0,
+      "95% CI half-width of mean d": 0.029367621224165582,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of china eval pairs (N_eval)": 24.0,
+      "95% CI half-width of mean d": 0.026842000885312838,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of china eval pairs (N_eval)": 31.0,
+      "95% CI half-width of mean d": 0.023673628435199236,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of china eval pairs (N_eval)": 40.0,
+      "95% CI half-width of mean d": 0.02087846149207611,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of china eval pairs (N_eval)": 50.0,
+      "95% CI half-width of mean d": 0.018690043658423503,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of china eval pairs (N_eval)": 64.0,
+      "95% CI half-width of mean d": 0.016531051242944114,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of china eval pairs (N_eval)": 80.0,
+      "95% CI half-width of mean d": 0.014795442531823471,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of china eval pairs (N_eval)": 100.0,
+      "95% CI half-width of mean d": 0.013235127829401427,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of china eval pairs (N_eval)": 128.0,
+      "95% CI half-width of mean d": 0.011703511763017557,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of china eval pairs (N_eval)": 160.0,
+      "95% CI half-width of mean d": 0.010465705953210044,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of china eval pairs (N_eval)": 200.0,
+      "95% CI half-width of mean d": 0.00936871926664091,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of china eval pairs (N_eval)": 256.0,
+      "95% CI half-width of mean d": 0.008279519254932581,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of china eval pairs (N_eval)": 320.0,
+      "95% CI half-width of mean d": 0.007407805996053329,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Number of china eval pairs (N_eval)": 8.0,
+      "95% CI half-width of mean d": 0.05556979676016835,
+      "series": "LMSYS + 440 injected map",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of china eval pairs (N_eval)": 12.0,
+      "95% CI half-width of mean d": 0.045372549057526086,
+      "series": "LMSYS + 440 injected map",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of china eval pairs (N_eval)": 16.0,
+      "95% CI half-width of mean d": 0.03929378011827328,
+      "series": "LMSYS + 440 injected map",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of china eval pairs (N_eval)": 20.0,
+      "95% CI half-width of mean d": 0.03514542537495551,
+      "series": "LMSYS + 440 injected map",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of china eval pairs (N_eval)": 24.0,
+      "95% CI half-width of mean d": 0.03208323711829599,
+      "series": "LMSYS + 440 injected map",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of china eval pairs (N_eval)": 31.0,
+      "95% CI half-width of mean d": 0.028229484983664625,
+      "series": "LMSYS + 440 injected map",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of china eval pairs (N_eval)": 40.0,
+      "95% CI half-width of mean d": 0.0248515686103168,
+      "series": "LMSYS + 440 injected map",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of china eval pairs (N_eval)": 50.0,
+      "95% CI half-width of mean d": 0.02222791870406734,
+      "series": "LMSYS + 440 injected map",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of china eval pairs (N_eval)": 64.0,
+      "95% CI half-width of mean d": 0.01964689005913664,
+      "series": "LMSYS + 440 injected map",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of china eval pairs (N_eval)": 80.0,
+      "95% CI half-width of mean d": 0.017572712687477756,
+      "series": "LMSYS + 440 injected map",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of china eval pairs (N_eval)": 100.0,
+      "95% CI half-width of mean d": 0.015717512047309312,
+      "series": "LMSYS + 440 injected map",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of china eval pairs (N_eval)": 128.0,
+      "95% CI half-width of mean d": 0.013892449190042087,
+      "series": "LMSYS + 440 injected map",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of china eval pairs (N_eval)": 160.0,
+      "95% CI half-width of mean d": 0.0124257843051584,
+      "series": "LMSYS + 440 injected map",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of china eval pairs (N_eval)": 200.0,
+      "95% CI half-width of mean d": 0.01111395935203367,
+      "series": "LMSYS + 440 injected map",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of china eval pairs (N_eval)": 256.0,
+      "95% CI half-width of mean d": 0.00982344502956832,
+      "series": "LMSYS + 440 injected map",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of china eval pairs (N_eval)": 320.0,
+      "95% CI half-width of mean d": 0.008786356343738878,
+      "series": "LMSYS + 440 injected map",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Number of china eval pairs (N_eval)": 8.0,
+      "95% CI half-width of mean d": 0.053424770541169515,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of china eval pairs (N_eval)": 12.0,
+      "95% CI half-width of mean d": 0.04400566247750647,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of china eval pairs (N_eval)": 16.0,
+      "95% CI half-width of mean d": 0.03819203511362821,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of china eval pairs (N_eval)": 20.0,
+      "95% CI half-width of mean d": 0.03429801898566908,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of china eval pairs (N_eval)": 24.0,
+      "95% CI half-width of mean d": 0.03132844152533658,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of china eval pairs (N_eval)": 31.0,
+      "95% CI half-width of mean d": 0.027666651324440322,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of china eval pairs (N_eval)": 40.0,
+      "95% CI half-width of mean d": 0.024371474762088757,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of china eval pairs (N_eval)": 50.0,
+      "95% CI half-width of mean d": 0.021807436828563648,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of china eval pairs (N_eval)": 64.0,
+      "95% CI half-width of mean d": 0.01927828046193509,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of china eval pairs (N_eval)": 80.0,
+      "95% CI half-width of mean d": 0.0172667961743055,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of china eval pairs (N_eval)": 100.0,
+      "95% CI half-width of mean d": 0.015440792201905884,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of china eval pairs (N_eval)": 128.0,
+      "95% CI half-width of mean d": 0.013650076383887915,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of china eval pairs (N_eval)": 160.0,
+      "95% CI half-width of mean d": 0.01220806297189094,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of china eval pairs (N_eval)": 200.0,
+      "95% CI half-width of mean d": 0.010925131998693431,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of china eval pairs (N_eval)": 256.0,
+      "95% CI half-width of mean d": 0.009657178847547746,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of china eval pairs (N_eval)": 320.0,
+      "95% CI half-width of mean d": 0.008641907307034364,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of china eval pairs (N_eval)": 8.0,
+      "Power: P(95% CI excludes 0)": 0.0908913340621549,
+      "series": "LMSYS pool-only map",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of china eval pairs (N_eval)": 12.0,
+      "Power: P(95% CI excludes 0)": 0.11186546993998589,
+      "series": "LMSYS pool-only map",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of china eval pairs (N_eval)": 16.0,
+      "Power: P(95% CI excludes 0)": 0.13309094630352175,
+      "series": "LMSYS pool-only map",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of china eval pairs (N_eval)": 20.0,
+      "Power: P(95% CI excludes 0)": 0.1544985534492907,
+      "series": "LMSYS pool-only map",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of china eval pairs (N_eval)": 24.0,
+      "Power: P(95% CI excludes 0)": 0.17602406030799875,
+      "series": "LMSYS pool-only map",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of china eval pairs (N_eval)": 31.0,
+      "Power: P(95% CI excludes 0)": 0.2138011541141896,
+      "series": "LMSYS pool-only map",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of china eval pairs (N_eval)": 40.0,
+      "Power: P(95% CI excludes 0)": 0.26218341524609856,
+      "series": "LMSYS pool-only map",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of china eval pairs (N_eval)": 50.0,
+      "Power: P(95% CI excludes 0)": 0.31512474068779084,
+      "series": "LMSYS pool-only map",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of china eval pairs (N_eval)": 64.0,
+      "Power: P(95% CI excludes 0)": 0.38678860805205145,
+      "series": "LMSYS pool-only map",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of china eval pairs (N_eval)": 80.0,
+      "Power: P(95% CI excludes 0)": 0.463919524796123,
+      "series": "LMSYS pool-only map",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of china eval pairs (N_eval)": 100.0,
+      "Power: P(95% CI excludes 0)": 0.5517059677560971,
+      "series": "LMSYS pool-only map",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of china eval pairs (N_eval)": 128.0,
+      "Power: P(95% CI excludes 0)": 0.6570689758839736,
+      "series": "LMSYS pool-only map",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of china eval pairs (N_eval)": 160.0,
+      "Power: P(95% CI excludes 0)": 0.7528686200660624,
+      "series": "LMSYS pool-only map",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of china eval pairs (N_eval)": 200.0,
+      "Power: P(95% CI excludes 0)": 0.8402687312520423,
+      "series": "LMSYS pool-only map",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of china eval pairs (N_eval)": 256.0,
+      "Power: P(95% CI excludes 0)": 0.9167949511555736,
+      "series": "LMSYS pool-only map",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of china eval pairs (N_eval)": 320.0,
+      "Power: P(95% CI excludes 0)": 0.9623401416759659,
+      "series": "LMSYS pool-only map",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of china eval pairs (N_eval)": 8.0,
+      "Power: P(95% CI excludes 0)": 0.1339,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of china eval pairs (N_eval)": 12.0,
+      "Power: P(95% CI excludes 0)": 0.13945,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of china eval pairs (N_eval)": 16.0,
+      "Power: P(95% CI excludes 0)": 0.15575,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of china eval pairs (N_eval)": 20.0,
+      "Power: P(95% CI excludes 0)": 0.1736,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of china eval pairs (N_eval)": 24.0,
+      "Power: P(95% CI excludes 0)": 0.1949,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of china eval pairs (N_eval)": 31.0,
+      "Power: P(95% CI excludes 0)": 0.23395,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of china eval pairs (N_eval)": 40.0,
+      "Power: P(95% CI excludes 0)": 0.28295,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of china eval pairs (N_eval)": 50.0,
+      "Power: P(95% CI excludes 0)": 0.32665,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of china eval pairs (N_eval)": 64.0,
+      "Power: P(95% CI excludes 0)": 0.39885,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of china eval pairs (N_eval)": 80.0,
+      "Power: P(95% CI excludes 0)": 0.48135,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of china eval pairs (N_eval)": 100.0,
+      "Power: P(95% CI excludes 0)": 0.5647,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of china eval pairs (N_eval)": 128.0,
+      "Power: P(95% CI excludes 0)": 0.6715,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of china eval pairs (N_eval)": 160.0,
+      "Power: P(95% CI excludes 0)": 0.7687,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of china eval pairs (N_eval)": 200.0,
+      "Power: P(95% CI excludes 0)": 0.8468,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of china eval pairs (N_eval)": 256.0,
+      "Power: P(95% CI excludes 0)": 0.926,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of china eval pairs (N_eval)": 320.0,
+      "Power: P(95% CI excludes 0)": 0.96825,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of china eval pairs (N_eval)": 8.0,
+      "Power: P(95% CI excludes 0)": 0.14337960585325388,
+      "series": "LMSYS + 440 injected map",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Number of china eval pairs (N_eval)": 12.0,
+      "Power: P(95% CI excludes 0)": 0.1916097818408417,
+      "series": "LMSYS + 440 injected map",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Number of china eval pairs (N_eval)": 16.0,
+      "Power: P(95% CI excludes 0)": 0.23993961354880938,
+      "series": "LMSYS + 440 injected map",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Number of china eval pairs (N_eval)": 20.0,
+      "Power: P(95% CI excludes 0)": 0.2878160442505807,
+      "series": "LMSYS + 440 injected map",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Number of china eval pairs (N_eval)": 24.0,
+      "Power: P(95% CI excludes 0)": 0.3347862694406135,
+      "series": "LMSYS + 440 injected map",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Number of china eval pairs (N_eval)": 31.0,
+      "Power: P(95% CI excludes 0)": 0.41375447878195487,
+      "series": "LMSYS + 440 injected map",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Number of china eval pairs (N_eval)": 40.0,
+      "Power: P(95% CI excludes 0)": 0.5074522724649383,
+      "series": "LMSYS + 440 injected map",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Number of china eval pairs (N_eval)": 50.0,
+      "Power: P(95% CI excludes 0)": 0.5995384787747093,
+      "series": "LMSYS + 440 injected map",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Number of china eval pairs (N_eval)": 64.0,
+      "Power: P(95% CI excludes 0)": 0.7063414228209244,
+      "series": "LMSYS + 440 injected map",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Number of china eval pairs (N_eval)": 80.0,
+      "Power: P(95% CI excludes 0)": 0.7990186129171073,
+      "series": "LMSYS + 440 injected map",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Number of china eval pairs (N_eval)": 100.0,
+      "Power: P(95% CI excludes 0)": 0.878674669808917,
+      "series": "LMSYS + 440 injected map",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Number of china eval pairs (N_eval)": 128.0,
+      "Power: P(95% CI excludes 0)": 0.9428732905509001,
+      "series": "LMSYS + 440 injected map",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Number of china eval pairs (N_eval)": 160.0,
+      "Power: P(95% CI excludes 0)": 0.977093969140664,
+      "series": "LMSYS + 440 injected map",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Number of china eval pairs (N_eval)": 200.0,
+      "Power: P(95% CI excludes 0)": 0.9931338596646537,
+      "series": "LMSYS + 440 injected map",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Number of china eval pairs (N_eval)": 256.0,
+      "Power: P(95% CI excludes 0)": 0.9988381305531387,
+      "series": "LMSYS + 440 injected map",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Number of china eval pairs (N_eval)": 320.0,
+      "Power: P(95% CI excludes 0)": 0.9998616546680357,
+      "series": "LMSYS + 440 injected map",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Number of china eval pairs (N_eval)": 8.0,
+      "Power: P(95% CI excludes 0)": 0.1576,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Number of china eval pairs (N_eval)": 12.0,
+      "Power: P(95% CI excludes 0)": 0.2013,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Number of china eval pairs (N_eval)": 16.0,
+      "Power: P(95% CI excludes 0)": 0.24815,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Number of china eval pairs (N_eval)": 20.0,
+      "Power: P(95% CI excludes 0)": 0.29215,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Number of china eval pairs (N_eval)": 24.0,
+      "Power: P(95% CI excludes 0)": 0.3353,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Number of china eval pairs (N_eval)": 31.0,
+      "Power: P(95% CI excludes 0)": 0.419,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Number of china eval pairs (N_eval)": 40.0,
+      "Power: P(95% CI excludes 0)": 0.5145,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Number of china eval pairs (N_eval)": 50.0,
+      "Power: P(95% CI excludes 0)": 0.60785,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Number of china eval pairs (N_eval)": 64.0,
+      "Power: P(95% CI excludes 0)": 0.72265,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Number of china eval pairs (N_eval)": 80.0,
+      "Power: P(95% CI excludes 0)": 0.815,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Number of china eval pairs (N_eval)": 100.0,
+      "Power: P(95% CI excludes 0)": 0.89455,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Number of china eval pairs (N_eval)": 128.0,
+      "Power: P(95% CI excludes 0)": 0.9518,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Number of china eval pairs (N_eval)": 160.0,
+      "Power: P(95% CI excludes 0)": 0.98165,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Number of china eval pairs (N_eval)": 200.0,
+      "Power: P(95% CI excludes 0)": 0.99465,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Number of china eval pairs (N_eval)": 256.0,
+      "Power: P(95% CI excludes 0)": 0.99955,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Number of china eval pairs (N_eval)": 320.0,
+      "Power: P(95% CI excludes 0)": 0.99995,
+      "_kind": "line",
+      "_group": 7
+    }
+  ],
+  "n_series": 8,
+  "total_points": 128,
+  "text": {
+    "suptitle": "LEG 3 \u2014 divergence d-contrast is eval-power-limited at N=31 (MDE\u22480.035\u20130.040 @80% power)",
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "CI precision vs eval-set size",
+        "xlabel": "Number of china eval pairs (N_eval)",
+        "ylabel": "95% CI half-width of mean d",
+        "legend_labels": [
+          "LMSYS pool-only map",
+          "LMSYS + 440 injected map"
+        ],
+        "annotations": [
+          "current N=31",
+          "dotted = observed |mean d|\n(CI excludes 0 when curve dips below)"
+        ],
+        "xticklabels": [
+          "$\\mathdefault{10^{-1}}$",
+          "$\\mathdefault{10^{0}}$",
+          "$\\mathdefault{10^{1}}$",
+          "$\\mathdefault{10^{2}}$",
+          "$\\mathdefault{10^{3}}$",
+          "$\\mathdefault{10^{4}}$"
+        ],
+        "yticklabels": [
+          "0.00",
+          "0.01",
+          "0.02",
+          "0.03",
+          "0.04",
+          "0.05",
+          "0.06"
+        ]
+      },
+      {
+        "title_left": "Power to detect observed effect vs eval-set size",
+        "xlabel": "Number of china eval pairs (N_eval)",
+        "ylabel": "Power: P(95% CI excludes 0)",
+        "legend_labels": [
+          "LMSYS pool-only map",
+          "LMSYS + 440 injected map"
+        ],
+        "annotations": [
+          "80% power",
+          "conditional on true d = observed point estimate"
+        ],
+        "xticklabels": [
+          "$\\mathdefault{10^{-1}}$",
+          "$\\mathdefault{10^{0}}$",
+          "$\\mathdefault{10^{1}}$",
+          "$\\mathdefault{10^{2}}$",
+          "$\\mathdefault{10^{3}}$",
+          "$\\mathdefault{10^{4}}$"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0",
+          "1.2"
+        ]
+      }
+    ],
+    "series": [
+      "LMSYS pool-only map",
+      "LMSYS + 440 injected map"
+    ]
+  }
+}
