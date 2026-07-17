@@ -24,7 +24,11 @@ Phases (pod GPU unless noted):
   PRIMARY + `neg_arm_only`, the #778 round-3 families — the retired pooled-Σ
   family is never drawn) + 10,000 label-shuffle draws, BOTH per-draw
   max-over-28-layers (selection-symmetric); per-draw x per-layer matrices
-  persisted; LOFO/LOO sweeps + cluster bootstrap.
+  persisted; LOFO/LOO sweeps + cluster bootstrap. As of r5 (9a-ter all-arms
+  extension) the battery/bootstrap runs on EVERY capture arm (``--battery-arms``,
+  default ``all``): the primary ``response_shared`` keeps its r4 keys + matrix
+  paths verbatim; the exploratory arms land under ``grids.<grid>.exploratory_arms``
+  with ``_<arm>``-suffixed matrices.
 """
 
 from __future__ import annotations
@@ -85,6 +89,7 @@ N_RANDNORM_DRAWS = 200  # plan §4 D5
 N_SHUFFLE_DRAWS = 10_000  # plan §4 D5
 PAPER_COMPANION_LAYER = 19  # paper layer 20, r_B 0-index (issue778 LAYER_RESOLUTION_V2)
 CAPTURE_ARMS = ("prefix_end", "context_end", "response_shared", "response_own")
+PRIMARY_ARM = "response_shared"  # the registered shared-text projection arm (plan §4 D5)
 
 
 def pv_root(cfg) -> Path:
@@ -646,7 +651,193 @@ def _cell_grids(cfg, aggregate: dict, proj: dict) -> dict[str, dict]:
     return grids
 
 
-def phase_validate(cfg, args) -> int:  # noqa: C901 — the registered battery, one pass
+def _resolve_battery_arms(args) -> tuple[str, ...]:
+    """Battery-arm selector for ``phase_validate``: ``all`` (default) = every
+    capture arm (the 9a-ter all-arms extension); ``primary`` = response_shared
+    only (the r4 behavior); else a comma list validated against CAPTURE_ARMS.
+    Read via ``getattr`` so pre-r5 callers (the pins test's bare Namespace)
+    keep working."""
+    raw = str(getattr(args, "battery_arms", None) or "all").strip()
+    if raw == "all":
+        return CAPTURE_ARMS
+    if raw == "primary":
+        return (PRIMARY_ARM,)
+    arms = tuple(a.strip() for a in raw.split(",") if a.strip())
+    unknown = [a for a in arms if a not in CAPTURE_ARMS]
+    if unknown:
+        raise SystemExit(f"--battery-arms: unknown arms {unknown}; valid: {CAPTURE_ARMS}")
+    return arms
+
+
+def _load_shift_recs(root: Path, state_ids: list[str]) -> dict[str, tuple[dict, dict]]:
+    """Load each unique state's (trained, base) capture summaries ONCE per grid
+    (each summary.pt carries the means of ALL capture arms). Returns
+    ``{state_id: (trained_rec, base_rec)}``."""
+    cap_root = root / "capture"
+    recs: dict[str, tuple[dict, dict]] = {}
+    for sid in sorted(set(state_ids)):
+        rec = torch.load(cap_root / sid / "summary.pt", weights_only=False)
+        base_rec = torch.load(
+            cap_root / f"base-{rec['cell_key']}" / "summary.pt", weights_only=False
+        )
+        recs[sid] = (rec, base_rec)
+    return recs
+
+
+def _arm_null_battery(
+    *,
+    grid_name: str,
+    suffix: str,
+    P: np.ndarray,
+    obs: np.ndarray,
+    signed_obs: np.ndarray,
+    y: np.ndarray,
+    state_ids: list[str],
+    ctx_ids: list[str] | None,
+    layers: list[int],
+    S: np.ndarray,
+    chols_by_fam: dict[str, dict[int, np.ndarray]],
+    rb64: np.ndarray,
+    rb_norms: np.ndarray,
+    deliver: Path,
+    n_draws: int,
+    n_shuffle: int,
+    n_boot: int,
+) -> dict[str, Any]:
+    """The registered selection-symmetric battery for ONE (grid, arm): honest
+    norm-matched randnorm nulls (arm-centered ``within_class`` PRIMARY +
+    ``neg_arm_only``), the label-shuffle null, LOFO/LOO group folds, and the
+    SIGNED cluster bootstrap — a verbatim relocation of the r4
+    response_shared-only block so the SAME code runs per arm (9a-ter all-arms
+    extension). ``suffix`` keys the persisted per-draw x per-layer matrices
+    ('' preserves the r4 primary-arm paths; exploratory arms get '_<arm>').
+    Identical RNG seeds per arm => paired draws/permutations/resamples across
+    arms. Returns the battery dict merged into the arm's row."""
+    arm_out: dict[str, Any] = {}
+    for fam, chols in chols_by_fam.items():
+        rng = np.random.default_rng(0 if fam == "within_class" else 1)
+        draws = np.empty((n_draws, len(layers), len(y)))
+        for d in range(n_draws):
+            for li, layer in enumerate(layers):
+                z = rng.standard_normal(rb64.shape[-1])
+                v = z @ chols[layer].T
+                nv = np.linalg.norm(v)
+                v = v * (rb_norms[li] / (nv if nv else 1.0))
+                draws[d, li] = S[:, li, :] @ v
+        null_rho = _spearman_draws(draws, y)  # (n_draws, L)
+        matrix_path = deliver / f"pv_nullmatrix_{grid_name}_{fam}{suffix}.json"
+        headline = select_readout_layer(
+            torch.tensor(obs),
+            layers,
+            null_draws=torch.tensor(null_rho),
+            persist_path=matrix_path,
+        )
+        arm_out[f"null_{fam}"] = {
+            "band_p2_5_p97_5": list(headline.null_band or ()),
+            "max_selected_p97_5": float(np.quantile(null_rho.max(axis=1), 0.975)),
+            "matrix": str(matrix_path),
+            "headline_layer": headline.layer,
+            "observed_max": headline.observed_stat,
+            "ceiling": 1.0,
+            "band_to_ceiling_margin": float(1.0 - np.quantile(null_rho.max(axis=1), 0.975)),
+        }
+    # label-shuffle null (per-draw max-over-layer), fully batched:
+    # rank(perm(y)) == perm(rank(y)), so permute the rank vector and
+    # form ALL draws' correlations in ONE GEMM.
+    rng = np.random.default_rng(2)
+    rP = _rankdata(P)
+    rP_c = rP - rP.mean(axis=1, keepdims=True)
+    ry = _rankdata(y[None, :])[0]
+    perms = np.stack([ry[rng.permutation(len(y))] for _ in range(n_shuffle)])
+    perms_c = perms - perms.mean(axis=1, keepdims=True)  # (n_shuffle, n_cells)
+    denom = np.sqrt((rP_c**2).sum(axis=1)[None, :] * (perms_c**2).sum(axis=1)[:, None])
+    denom = np.where(denom == 0, np.inf, denom)
+    sh = np.abs(perms_c @ rP_c.T) / denom  # (n_shuffle, L)
+    sh_path = deliver / f"pv_nullmatrix_{grid_name}_shuffle{suffix}.json"
+    run1090._atomic_write_json(
+        sh_path,
+        {
+            "layers": layers,
+            "observed": obs.tolist(),
+            "max_selected_p97_5": float(np.quantile(sh.max(axis=1), 0.975)),
+            "n_draws": n_shuffle,
+            "note": "per-draw max-over-layer |spearman rho| label-shuffle null",
+        },
+    )
+    arm_out["null_shuffle"] = {
+        "max_selected_p97_5": float(np.quantile(sh.max(axis=1), 0.975)),
+        "matrix": str(sh_path),
+    }
+    # group-level folds (LOFO over panel contexts is grid-specific;
+    # LOO over organisms applies to both grids)
+    folds = {}
+    for sid in sorted(set(state_ids)):
+        mask = np.array([s != sid for s in state_ids])
+        if mask.sum() >= 3 and len(set(np.array(state_ids)[mask])) >= 2:
+            folds[f"loo_organism_{sid}"] = float(_spearman_obs_per_layer(P[:, mask], y[mask]).max())
+    if ctx_ids:
+        for cid in sorted(set(ctx_ids)):
+            mask = np.array([c != cid for c in ctx_ids])
+            if mask.sum() >= 3 and len(set(np.array(state_ids)[mask])) >= 2:
+                folds[f"lofo_context_{cid}"] = float(
+                    _spearman_obs_per_layer(P[:, mask], y[mask]).max()
+                )
+    arm_out["group_folds_max_abs_rho"] = folds
+    # cluster bootstrap over organisms — SIGNED rho (the H3
+    # "CI excludes 0 on the positive side" verdict input; |rho|
+    # stays the selection/null-band statistic). Per-draw signed
+    # per-layer matrix persisted; TWO reads: the full-sample
+    # headline layer (frozen) and the selection-INHERITED read
+    # (per-draw argmax-|rho| layer — selection-symmetric).
+    uniq_states = sorted(set(state_ids))
+    li = int(np.argmax(obs))
+    boot_rows: list[np.ndarray] = []
+    rngb = np.random.default_rng(3)
+    for _ in range(n_boot):
+        pick = rngb.choice(len(uniq_states), size=len(uniq_states), replace=True)
+        sel_states = [uniq_states[i] for i in pick]
+        idx = [i for s in sel_states for i, sid in enumerate(state_ids) if sid == s]
+        if len(set(state_ids[i] for i in idx)) < 2:
+            continue
+        boot_rows.append(_spearman_signed_per_layer(P[:, idx], y[idx]))
+    if boot_rows:
+        B = np.stack(boot_rows)  # (n_kept, L) SIGNED rho
+        boot_path = deliver / f"pv_bootstrap_{grid_name}_signed{suffix}.json"
+        run1090._atomic_write_json(
+            boot_path,
+            {
+                "layers": layers,
+                "signed_rho_draws": B.tolist(),
+                "observed_signed_rho_per_layer": signed_obs.tolist(),
+                "headline_layer": li,
+                "n_boot_kept": int(B.shape[0]),
+                "note": "cluster bootstrap over organisms; SIGNED Spearman rho per (draw, layer)",
+            },
+        )
+        frozen = B[:, li]
+        sel_layer_per_draw = np.argmax(np.abs(B), axis=1)
+        sel_vals = B[np.arange(B.shape[0]), sel_layer_per_draw]
+        arm_out["cluster_bootstrap_headline_layer"] = {
+            "layer": li,
+            "statistic": "signed_rho_frozen_full_sample_headline_layer",
+            "observed_signed_rho": float(signed_obs[li]),
+            "p2_5": float(np.quantile(frozen, 0.025)),
+            "p97_5": float(np.quantile(frozen, 0.975)),
+            "ci_excludes_zero_positive": bool(np.quantile(frozen, 0.025) > 0.0),
+            "n_boot": int(B.shape[0]),
+            "matrix": str(boot_path),
+        }
+        arm_out["cluster_bootstrap_selection_inherited"] = {
+            "statistic": "signed_rho_at_per_draw_max_abs_layer",
+            "p2_5": float(np.quantile(sel_vals, 0.025)),
+            "p97_5": float(np.quantile(sel_vals, 0.975)),
+            "ci_excludes_zero_positive": bool(np.quantile(sel_vals, 0.025) > 0.0),
+            "n_boot": int(B.shape[0]),
+        }
+    return arm_out
+
+
+def phase_validate(cfg, args) -> int:
     """H3 validation: observed per-layer |rho| + honest randnorm + shuffle
     bands, per-draw max-over-layer, persisted matrices, LOFO/LOO, bootstrap."""
     run1090._phase("i1434_pv_validate")
@@ -687,7 +878,14 @@ def phase_validate(cfg, args) -> int:  # noqa: C901 — the registered battery, 
         "within_class": hnl._within_centered_pool(pos, neg),
         "neg_arm_only": neg - neg.mean(axis=0, keepdims=True),
     }
-    primary_arm = "response_shared"
+    # Cholesky factors are arm/grid-independent — hoisted so the r5 all-arms
+    # battery does not recompute them per (grid, arm).
+    chols_by_fam = {
+        fam: hnl._chols_for_layers(pool, layers, lam) for fam, pool in rng_families.items()
+    }
+    battery_arms = _resolve_battery_arms(args)
+    out["battery_arms"] = list(battery_arms)
+    n_boot = 50 if cfg.smoke else 1000
     for grid_name, grid in grids.items():
         y = np.asarray(grid["y"], dtype=np.float64)
         state_ids = grid["state_ids"]
@@ -701,6 +899,7 @@ def phase_validate(cfg, args) -> int:  # noqa: C901 — the registered battery, 
         grid_out: dict[str, Any] = {"n_cells": len(y), "n_states": len(set(state_ids))}
         if grid.get("y_basis"):
             grid_out["y_basis"] = list(grid["y_basis"])
+        recs: dict[str, tuple[dict, dict]] | None = None
         for arm in CAPTURE_ARMS:
             # P: (L, n_cells) projections (per-state values broadcast per cell)
             P = np.stack(
@@ -722,148 +921,44 @@ def phase_validate(cfg, args) -> int:  # noqa: C901 — the registered battery, 
                 if len(signed_obs) > PAPER_COMPANION_LAYER
                 else None,
             }
-            if arm == primary_arm:
-                # shifts per state: (n_states_unique, L, H) for the null battery
-                uniq = sorted(set(state_ids))
-                cap_root = root / "capture"
-                shifts = {}
-                for sid in uniq:
-                    rec = torch.load(cap_root / sid / "summary.pt", weights_only=False)
-                    base_rec = torch.load(
-                        cap_root / f"base-{rec['cell_key']}" / "summary.pt", weights_only=False
-                    )
-                    shifts[sid] = (
-                        rec["means"][arm].to(torch.float64)
-                        - base_rec["means"][arm].to(torch.float64)
-                    ).numpy()
-                S = np.stack([shifts[sid] for sid in state_ids], axis=0)  # (n_cells, L, H)
-                for fam, pool in rng_families.items():
-                    chols = hnl._chols_for_layers(pool, layers, lam)
-                    rng = np.random.default_rng(0 if fam == "within_class" else 1)
-                    draws = np.empty((n_draws, len(layers), len(y)))
-                    for d in range(n_draws):
-                        for li, layer in enumerate(layers):
-                            z = rng.standard_normal(rb64.shape[-1])
-                            v = z @ chols[layer].T
-                            nv = np.linalg.norm(v)
-                            v = v * (rb_norms[li] / (nv if nv else 1.0))
-                            draws[d, li] = S[:, li, :] @ v
-                    null_rho = _spearman_draws(draws, y)  # (n_draws, L)
-                    matrix_path = deliver / f"pv_nullmatrix_{grid_name}_{fam}.json"
-                    headline = select_readout_layer(
-                        torch.tensor(obs),
-                        layers,
-                        null_draws=torch.tensor(null_rho),
-                        persist_path=matrix_path,
-                    )
-                    arm_out[f"null_{fam}"] = {
-                        "band_p2_5_p97_5": list(headline.null_band or ()),
-                        "max_selected_p97_5": float(np.quantile(null_rho.max(axis=1), 0.975)),
-                        "matrix": str(matrix_path),
-                        "headline_layer": headline.layer,
-                        "observed_max": headline.observed_stat,
-                        "ceiling": 1.0,
-                        "band_to_ceiling_margin": float(
-                            1.0 - np.quantile(null_rho.max(axis=1), 0.975)
-                        ),
-                    }
-                # label-shuffle null (per-draw max-over-layer), fully batched:
-                # rank(perm(y)) == perm(rank(y)), so permute the rank vector and
-                # form ALL draws' correlations in ONE GEMM.
-                rng = np.random.default_rng(2)
-                rP = _rankdata(P)
-                rP_c = rP - rP.mean(axis=1, keepdims=True)
-                ry = _rankdata(y[None, :])[0]
-                perms = np.stack([ry[rng.permutation(len(y))] for _ in range(n_shuffle)])
-                perms_c = perms - perms.mean(axis=1, keepdims=True)  # (n_shuffle, n_cells)
-                denom = np.sqrt((rP_c**2).sum(axis=1)[None, :] * (perms_c**2).sum(axis=1)[:, None])
-                denom = np.where(denom == 0, np.inf, denom)
-                sh = np.abs(perms_c @ rP_c.T) / denom  # (n_shuffle, L)
-                sh_path = deliver / f"pv_nullmatrix_{grid_name}_shuffle.json"
-                run1090._atomic_write_json(
-                    sh_path,
-                    {
-                        "layers": layers,
-                        "observed": obs.tolist(),
-                        "max_selected_p97_5": float(np.quantile(sh.max(axis=1), 0.975)),
-                        "n_draws": n_shuffle,
-                        "note": "per-draw max-over-layer |spearman rho| label-shuffle null",
-                    },
+            if arm in battery_arms:
+                if recs is None:
+                    recs = _load_shift_recs(root, state_ids)
+                # shifts per state, this arm: stacked (n_cells, L, H)
+                S = np.stack(
+                    [
+                        (
+                            recs[sid][0]["means"][arm].to(torch.float64)
+                            - recs[sid][1]["means"][arm].to(torch.float64)
+                        ).numpy()
+                        for sid in state_ids
+                    ],
+                    axis=0,
                 )
-                arm_out["null_shuffle"] = {
-                    "max_selected_p97_5": float(np.quantile(sh.max(axis=1), 0.975)),
-                    "matrix": str(sh_path),
-                }
-                # group-level folds (LOFO over panel contexts is grid-specific;
-                # LOO over organisms applies to both grids)
-                folds = {}
-                for sid in sorted(set(state_ids)):
-                    mask = np.array([s != sid for s in state_ids])
-                    if mask.sum() >= 3 and len(set(np.array(state_ids)[mask])) >= 2:
-                        folds[f"loo_organism_{sid}"] = float(
-                            _spearman_obs_per_layer(P[:, mask], y[mask]).max()
-                        )
-                ctx_ids = grid.get("ctx_ids")
-                if ctx_ids:
-                    for cid in sorted(set(ctx_ids)):
-                        mask = np.array([c != cid for c in ctx_ids])
-                        if mask.sum() >= 3 and len(set(np.array(state_ids)[mask])) >= 2:
-                            folds[f"lofo_context_{cid}"] = float(
-                                _spearman_obs_per_layer(P[:, mask], y[mask]).max()
-                            )
-                arm_out["group_folds_max_abs_rho"] = folds
-                # cluster bootstrap over organisms — SIGNED rho (the H3
-                # "CI excludes 0 on the positive side" verdict input; |rho|
-                # stays the selection/null-band statistic). Per-draw signed
-                # per-layer matrix persisted; TWO reads: the full-sample
-                # headline layer (frozen) and the selection-INHERITED read
-                # (per-draw argmax-|rho| layer — selection-symmetric).
-                uniq_states = sorted(set(state_ids))
-                li = int(np.argmax(obs))
-                boot_rows: list[np.ndarray] = []
-                rngb = np.random.default_rng(3)
-                for _ in range(1000 if not cfg.smoke else 50):
-                    pick = rngb.choice(len(uniq_states), size=len(uniq_states), replace=True)
-                    sel_states = [uniq_states[i] for i in pick]
-                    idx = [i for s in sel_states for i, sid in enumerate(state_ids) if sid == s]
-                    if len(set(state_ids[i] for i in idx)) < 2:
-                        continue
-                    boot_rows.append(_spearman_signed_per_layer(P[:, idx], y[idx]))
-                if boot_rows:
-                    B = np.stack(boot_rows)  # (n_kept, L) SIGNED rho
-                    boot_path = deliver / f"pv_bootstrap_{grid_name}_signed.json"
-                    run1090._atomic_write_json(
-                        boot_path,
-                        {
-                            "layers": layers,
-                            "signed_rho_draws": B.tolist(),
-                            "observed_signed_rho_per_layer": signed_obs.tolist(),
-                            "headline_layer": li,
-                            "n_boot_kept": int(B.shape[0]),
-                            "note": "cluster bootstrap over organisms; SIGNED "
-                            "Spearman rho per (draw, layer)",
-                        },
-                    )
-                    frozen = B[:, li]
-                    sel_layer_per_draw = np.argmax(np.abs(B), axis=1)
-                    sel_vals = B[np.arange(B.shape[0]), sel_layer_per_draw]
-                    arm_out["cluster_bootstrap_headline_layer"] = {
-                        "layer": li,
-                        "statistic": "signed_rho_frozen_full_sample_headline_layer",
-                        "observed_signed_rho": float(signed_obs[li]),
-                        "p2_5": float(np.quantile(frozen, 0.025)),
-                        "p97_5": float(np.quantile(frozen, 0.975)),
-                        "ci_excludes_zero_positive": bool(np.quantile(frozen, 0.025) > 0.0),
-                        "n_boot": int(B.shape[0]),
-                        "matrix": str(boot_path),
-                    }
-                    arm_out["cluster_bootstrap_selection_inherited"] = {
-                        "statistic": "signed_rho_at_per_draw_max_abs_layer",
-                        "p2_5": float(np.quantile(sel_vals, 0.025)),
-                        "p97_5": float(np.quantile(sel_vals, 0.975)),
-                        "ci_excludes_zero_positive": bool(np.quantile(sel_vals, 0.025) > 0.0),
-                        "n_boot": int(B.shape[0]),
-                    }
+                battery = _arm_null_battery(
+                    grid_name=grid_name,
+                    suffix="" if arm == PRIMARY_ARM else f"_{arm}",
+                    P=P,
+                    obs=obs,
+                    signed_obs=signed_obs,
+                    y=y,
+                    state_ids=state_ids,
+                    ctx_ids=grid.get("ctx_ids"),
+                    layers=layers,
+                    S=S,
+                    chols_by_fam=chols_by_fam,
+                    rb64=rb64,
+                    rb_norms=rb_norms,
+                    deliver=deliver,
+                    n_draws=n_draws,
+                    n_shuffle=n_shuffle,
+                    n_boot=n_boot,
+                )
+                if arm == PRIMARY_ARM:
+                    # r4 primary-arm schema + matrix paths, verbatim
+                    arm_out.update(battery)
+                else:
+                    grid_out.setdefault("exploratory_arms", {})[arm] = {**arm_out, **battery}
             grid_out[arm] = arm_out
         out["grids"][grid_name] = grid_out
     out["git_commit"] = i1074._git_short_sha()
@@ -891,6 +986,13 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--seed", type=int, default=42)
     p.add_argument("--eval-question-limit", type=int, default=None)
     p.add_argument("--no-upload", dest="upload", action="store_false", default=True)
+    p.add_argument(
+        "--battery-arms",
+        default="all",
+        help="capture arms to run the validate null battery/bootstrap on: 'all' (default, the "
+        "r5 9a-ter extension), 'primary' (response_shared only — the r4 behavior), or a comma "
+        "list from CAPTURE_ARMS",
+    )
     args = p.parse_args(argv)
     cells.register_i1434_round()
     import issue1090_fu4 as fu4
