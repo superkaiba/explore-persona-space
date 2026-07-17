@@ -3677,8 +3677,8 @@
     "1472": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1472",
-      "status": "proposed",
+      "path": "tasks/blocked/1472",
+      "status": "blocked",
       "title": "daily-held: review diversity during Codex outage to Aug 6"
     },
     "1473": {
