@@ -6492,6 +6492,193 @@ def test_async_failover_seam_cpu_infeasible_disk_raises_typed(lease_store, marke
 
 
 # ---------------------------------------------------------------------------
+# #1464 — CPU-only intents exclude the free SLURM lanes from the auto chain
+# (incident #1336: a cpu-mid dispatch probed nibi/fir/mila, logged "treating
+# as unranked" per lane, and burned a doomed prepare/launch attempt per lane;
+# the SLURM lane has no 0-GPU sbatch render — see slurm.py's intent tables).
+# ---------------------------------------------------------------------------
+
+
+def _slurm_estimate_valueerror(spec_intent: str) -> ValueError:
+    """The production-shape estimate failure a CPU intent provokes on SLURM.
+
+    Mirrors slurm.default_gpus_for_intent's ValueError text (the first
+    fail-fast the render path hits for a cpu-* intent), so the caplog
+    no-"treating as unranked" assert genuinely discriminates: pre-fix the
+    recording estimate_fn raises this, _estimate_lanes catches ANY exception
+    and logs the "treating as unranked" warning — red-before, not vacuous.
+    """
+    return ValueError(f"no default GPU count for intent {spec_intent!r}.")
+
+
+def test_auto_route_cpu_intent_never_probes_or_attempts_slurm_lanes(
+    lease_store, marker_poster, captured_markers, caplog
+):
+    """#1464 regression (#1336 E1 shape): a cpu-mid AUTO route with free SLURM
+    lanes wired never probes any free lane's est-start, never records a
+    nibi/fir RouteAttempt, emits no "treating as unranked" warning, and falls
+    GCP -> RunPod CPU exactly per the documented #747 chain."""
+    import logging
+
+    rp = _PassiveRunpod()
+    gcp = _exhausted_gcp_double()
+    estimate_calls: list[BackendKind] = []
+
+    def recording_estimate(backend, kind, lane_spec):
+        estimate_calls.append(kind)
+        raise _slurm_estimate_valueerror(lane_spec.intent)
+
+    spec = RunSpec(issue=1464, intent="cpu-mid", backend="auto", time_budget_hours=1.0)
+    with caplog.at_level(logging.INFO, logger="explore_persona_space.backends.router"):
+        result = route(
+            spec,
+            runpod_backend=rp,
+            free_backends={
+                "nibi": _FreeLaneBackend(
+                    kind="nibi", launch_raises=RuntimeError("must never launch")
+                ),
+                "fir": _FreeLaneBackend(
+                    kind="fir", launch_raises=RuntimeError("must never launch")
+                ),
+            },
+            gcp_backend=gcp,
+            lease_store=lease_store,
+            estimate_fn=recording_estimate,
+            marker_poster=marker_poster,
+            config=RouterConfig(
+                free_wait_seconds=1, poll_interval=0.0, max_gcp_attempts_per_day=99
+            ),
+            now_fn=_clock(),
+            sleep_fn=lambda _s: None,
+        )
+    # The #747 chain is preserved: GCP CPU ladder exhausted -> RunPod CPU.
+    assert result.chosen_kind == "runpod"
+    assert len(rp.launches) == 1
+    # No free-lane est-start probe ever fired (the #1336 degradation source).
+    assert estimate_calls == [], estimate_calls
+    # No nibi/fir RouteAttempt anywhere in the trail.
+    free_attempts = [(a.kind, a.outcome) for a in result.attempts if a.kind in ("nibi", "fir")]
+    assert not free_attempts, free_attempts
+    # No "treating as unranked" degradation warning was logged.
+    assert not any("treating as unranked" in r.message for r in caplog.records), [
+        r.message for r in caplog.records
+    ]
+
+
+def test_auto_route_cpu_bigmem_excludes_slurm_and_keeps_typed_terminal(
+    lease_store, marker_poster, captured_markers, caplog
+):
+    """#1464: same exclusion for cpu-bigmem, with the #677 typed terminal
+    byte-preserved — CpuExhaustedNoRunpodLaneError raised, zero RunPod
+    launches, zero free-lane probes/attempts, terminal marker reason
+    cpu_exhausted_no_runpod_lane."""
+    import logging
+
+    from explore_persona_space.backends.router import (
+        ROUTE_REASON_CPU_EXHAUSTED_NO_RUNPOD,
+        CpuExhaustedNoRunpodLaneError,
+    )
+
+    rp = _PassiveRunpod()
+    gcp = _exhausted_gcp_double()
+    estimate_calls: list[BackendKind] = []
+
+    def recording_estimate(backend, kind, lane_spec):
+        estimate_calls.append(kind)
+        raise _slurm_estimate_valueerror(lane_spec.intent)
+
+    spec = RunSpec(issue=1464, intent="cpu-bigmem", backend="auto", time_budget_hours=1.0)
+    with (
+        caplog.at_level(logging.INFO, logger="explore_persona_space.backends.router"),
+        pytest.raises(CpuExhaustedNoRunpodLaneError),
+    ):
+        route(
+            spec,
+            runpod_backend=rp,
+            free_backends={
+                "nibi": _FreeLaneBackend(
+                    kind="nibi", launch_raises=RuntimeError("must never launch")
+                ),
+                "fir": _FreeLaneBackend(
+                    kind="fir", launch_raises=RuntimeError("must never launch")
+                ),
+            },
+            gcp_backend=gcp,
+            lease_store=lease_store,
+            estimate_fn=recording_estimate,
+            marker_poster=marker_poster,
+            config=RouterConfig(free_wait_seconds=1, poll_interval=0.0),
+            now_fn=_clock(),
+            sleep_fn=lambda _s: None,
+        )
+    # #677 contract byte-preserved: RunPod never attempted, typed reason posted.
+    assert len(rp.launches) == 0
+    cpu_terminals = _by_reason(captured_markers, ROUTE_REASON_CPU_EXHAUSTED_NO_RUNPOD)
+    assert cpu_terminals, captured_markers
+    # The exclusion held on the raise path too: no probes, no free-lane attempts.
+    assert estimate_calls == [], estimate_calls
+    free_attempts = [
+        (a["kind"], a["outcome"])
+        for a in cpu_terminals[-1]["attempts"]
+        if a["kind"] in ("nibi", "fir")
+    ]
+    assert not free_attempts, free_attempts
+    assert not any("treating as unranked" in r.message for r in caplog.records), [
+        r.message for r in caplog.records
+    ]
+
+
+def test_auto_route_gpu_intent_still_probes_slurm_lanes(lease_store, marker_poster):
+    """#1464 control: a GPU intent (lora-7b) with GCP exhausted still PROBES
+    the free lanes' est-starts and launches on nibi — the CPU-only exclusion
+    never fires for GPU intents (byte-identical auto behavior)."""
+    rp = _PassiveRunpod()
+    gcp = _exhausted_gcp_double()
+    nibi = _FreeLaneBackend(kind="nibi")
+    estimate_calls: list[BackendKind] = []
+
+    def recording_estimate(backend, kind, lane_spec):
+        estimate_calls.append(kind)
+        return 0.0
+
+    spec = RunSpec(issue=1464, intent="lora-7b", backend="auto", time_budget_hours=1.0)
+    result = route(
+        spec,
+        runpod_backend=rp,
+        free_backends={"nibi": nibi},
+        gcp_backend=gcp,
+        lease_store=lease_store,
+        estimate_fn=recording_estimate,
+        is_started=lambda _b, _h: True,
+        marker_poster=marker_poster,
+        config=RouterConfig(free_wait_seconds=2, poll_interval=0.0, max_gcp_attempts_per_day=99),
+        now_fn=_clock(),
+        sleep_fn=lambda _s: None,
+    )
+    # The free lane WAS probed and won the route.
+    assert "nibi" in estimate_calls, estimate_calls
+    assert result.chosen_kind == "nibi"
+    assert len(nibi.launches) == 1
+    assert len(rp.launches) == 0
+
+
+def test_is_cpu_only_intent_predicate():
+    """#1464: _is_cpu_only_intent is keyed on gcp.INTENT_TO_MACHINE gpu_count==0
+    via .get() — True for the three CPU intents; False (never a raise) for GPU
+    intents, non-GCP-mapped intents (ft-70b), and unknown strings."""
+    from explore_persona_space.backends.router import _is_cpu_only_intent
+
+    assert _is_cpu_only_intent("cpu-small") is True
+    assert _is_cpu_only_intent("cpu-mid") is True
+    assert _is_cpu_only_intent("cpu-bigmem") is True
+    assert _is_cpu_only_intent("lora-7b") is False
+    assert _is_cpu_only_intent("eval") is False
+    # No INTENT_TO_MACHINE row (RunPod-native / unknown): False, never a raise.
+    assert _is_cpu_only_intent("ft-70b") is False
+    assert _is_cpu_only_intent("totally-bogus") is False
+
+
+# ---------------------------------------------------------------------------
 # #774 round 2 — RouteAttempt.evidence carries the GCP per-zone fan-out to the
 # epm:backend-selected marker. A GcpProvisioningError whose evidence holds
 # per_zone_attempts must round-trip through the catch site -> _attempt_to_dict
