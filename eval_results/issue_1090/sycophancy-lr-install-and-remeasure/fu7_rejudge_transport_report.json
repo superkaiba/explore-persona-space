@@ -1,0 +1,407 @@
+{
+  "round": "fu7",
+  "n_reads_rejudged": 28,
+  "n_transport_total": 3347,
+  "n_recovered_total": 1164,
+  "n_still_error_total": 2183,
+  "max_tokens": 300,
+  "dry_run": false,
+  "reads": [
+    {
+      "read": "fu7_aggregate/judge/panel_legacy/sycophancy/syc-c3-lr3e5-pn-def-legacy",
+      "run_id": "syc-c3-lr3e5",
+      "kind": "panel-legacy",
+      "ctx": "default",
+      "n_transport": 67,
+      "n_recovered": 66,
+      "n_still_error": 1,
+      "n_cache_purged": 0
+    },
+    {
+      "read": "fu7_aggregate/judge/panel_legacy/sycophancy/syc-c3-lr3e5-pn-icl-legacy",
+      "run_id": "syc-c3-lr3e5",
+      "kind": "panel-legacy",
+      "ctx": "icl_prefix_sycophancy",
+      "n_transport": 1,
+      "n_recovered": 1,
+      "n_still_error": 0,
+      "n_cache_purged": 0
+    },
+    {
+      "read": "fu7_aggregate/judge/panel_legacy/sycophancy/syc-c3-lr3e5-pn-ph4-legacy",
+      "run_id": "syc-c3-lr3e5",
+      "kind": "panel-legacy",
+      "ctx": "neg_sp_ph4",
+      "n_transport": 4,
+      "n_recovered": 4,
+      "n_still_error": 0,
+      "n_cache_purged": 0
+    },
+    {
+      "read": "fu7_aggregate/judge/panel_legacy/sycophancy/syc-c3-lr3e5-pn-pol-legacy",
+      "run_id": "syc-c3-lr3e5",
+      "kind": "panel-legacy",
+      "ctx": "neg_sp_police",
+      "n_transport": 2,
+      "n_recovered": 2,
+      "n_still_error": 0,
+      "n_cache_purged": 1
+    },
+    {
+      "read": "fu7_aggregate/judge/panel_legacy/sycophancy/syc-c3-lr3e5-pn-wc-legacy",
+      "run_id": "syc-c3-lr3e5",
+      "kind": "panel-legacy",
+      "ctx": "wildchat_prefix_real545",
+      "n_transport": 1,
+      "n_recovered": 1,
+      "n_still_error": 0,
+      "n_cache_purged": 1
+    },
+    {
+      "read": "fu7_aggregate/judge/panel_legacy/sycophancy/syc-c5-lr1e4-pn-ph4-legacy",
+      "run_id": "syc-c5-lr1e4",
+      "kind": "panel-legacy",
+      "ctx": "neg_sp_ph4",
+      "n_transport": 1,
+      "n_recovered": 1,
+      "n_still_error": 0,
+      "n_cache_purged": 0
+    },
+    {
+      "read": "fu7_aggregate/judge/panel_legacy/sycophancy/syc-c5-lr1e4-pn-wc-legacy",
+      "run_id": "syc-c5-lr1e4",
+      "kind": "panel-legacy",
+      "ctx": "wildchat_prefix_real545",
+      "n_transport": 3,
+      "n_recovered": 3,
+      "n_still_error": 0,
+      "n_cache_purged": 0
+    },
+    {
+      "read": "fu7_aggregate/judge/pv/syc-c3-lr1e4-t2-trained-pv",
+      "run_id": "syc-c3-lr1e4",
+      "kind": "t2-pv",
+      "ctx": null,
+      "n_transport": 295,
+      "n_recovered": 100,
+      "n_still_error": 195,
+      "n_cache_purged": 54
+    },
+    {
+      "read": "fu7_aggregate/judge/pv/syc-c3-lr1e5-t2-trained-pv",
+      "run_id": "syc-c3-lr1e5",
+      "kind": "t2-pv",
+      "ctx": null,
+      "n_transport": 216,
+      "n_recovered": 103,
+      "n_still_error": 113,
+      "n_cache_purged": 46
+    },
+    {
+      "read": "fu7_aggregate/judge/pv/syc-c3-lr3e5-pn-def-pv",
+      "run_id": "syc-c3-lr3e5",
+      "kind": "panel-pv",
+      "ctx": "default",
+      "n_transport": 131,
+      "n_recovered": 52,
+      "n_still_error": 79,
+      "n_cache_purged": 25
+    },
+    {
+      "read": "fu7_aggregate/judge/pv/syc-c3-lr3e5-pn-icl-pv",
+      "run_id": "syc-c3-lr3e5",
+      "kind": "panel-pv",
+      "ctx": "icl_prefix_sycophancy",
+      "n_transport": 140,
+      "n_recovered": 69,
+      "n_still_error": 71,
+      "n_cache_purged": 19
+    },
+    {
+      "read": "fu7_aggregate/judge/pv/syc-c3-lr3e5-pn-ph4-pv",
+      "run_id": "syc-c3-lr3e5",
+      "kind": "panel-pv",
+      "ctx": "neg_sp_ph4",
+      "n_transport": 106,
+      "n_recovered": 39,
+      "n_still_error": 67,
+      "n_cache_purged": 20
+    },
+    {
+      "read": "fu7_aggregate/judge/pv/syc-c3-lr3e5-pn-pol-pv",
+      "run_id": "syc-c3-lr3e5",
+      "kind": "panel-pv",
+      "ctx": "neg_sp_police",
+      "n_transport": 116,
+      "n_recovered": 45,
+      "n_still_error": 71,
+      "n_cache_purged": 22
+    },
+    {
+      "read": "fu7_aggregate/judge/pv/syc-c3-lr3e5-pn-wc-pv",
+      "run_id": "syc-c3-lr3e5",
+      "kind": "panel-pv",
+      "ctx": "wildchat_prefix_real545",
+      "n_transport": 136,
+      "n_recovered": 53,
+      "n_still_error": 83,
+      "n_cache_purged": 31
+    },
+    {
+      "read": "fu7_aggregate/judge/pv/syc-c3-lr3e5-t2-trained-pv",
+      "run_id": "syc-c3-lr3e5",
+      "kind": "t2-pv",
+      "ctx": null,
+      "n_transport": 244,
+      "n_recovered": 93,
+      "n_still_error": 151,
+      "n_cache_purged": 46
+    },
+    {
+      "read": "fu7_aggregate/judge/pv/syc-c5-lr1e4-pn-def-pv",
+      "run_id": "syc-c5-lr1e4",
+      "kind": "panel-pv",
+      "ctx": "default",
+      "n_transport": 168,
+      "n_recovered": 47,
+      "n_still_error": 121,
+      "n_cache_purged": 32
+    },
+    {
+      "read": "fu7_aggregate/judge/pv/syc-c5-lr1e4-pn-icl-pv",
+      "run_id": "syc-c5-lr1e4",
+      "kind": "panel-pv",
+      "ctx": "icl_prefix_sycophancy",
+      "n_transport": 184,
+      "n_recovered": 62,
+      "n_still_error": 122,
+      "n_cache_purged": 40
+    },
+    {
+      "read": "fu7_aggregate/judge/pv/syc-c5-lr1e4-pn-ph4-pv",
+      "run_id": "syc-c5-lr1e4",
+      "kind": "panel-pv",
+      "ctx": "neg_sp_ph4",
+      "n_transport": 147,
+      "n_recovered": 45,
+      "n_still_error": 102,
+      "n_cache_purged": 30
+    },
+    {
+      "read": "fu7_aggregate/judge/pv/syc-c5-lr1e4-pn-pol-pv",
+      "run_id": "syc-c5-lr1e4",
+      "kind": "panel-pv",
+      "ctx": "neg_sp_police",
+      "n_transport": 179,
+      "n_recovered": 44,
+      "n_still_error": 135,
+      "n_cache_purged": 36
+    },
+    {
+      "read": "fu7_aggregate/judge/pv/syc-c5-lr1e4-pn-wc-pv",
+      "run_id": "syc-c5-lr1e4",
+      "kind": "panel-pv",
+      "ctx": "wildchat_prefix_real545",
+      "n_transport": 186,
+      "n_recovered": 46,
+      "n_still_error": 140,
+      "n_cache_purged": 36
+    },
+    {
+      "read": "fu7_aggregate/judge/pv/syc-c5-lr1e4-t2-trained-pv",
+      "run_id": "syc-c5-lr1e4",
+      "kind": "t2-pv",
+      "ctx": null,
+      "n_transport": 459,
+      "n_recovered": 87,
+      "n_still_error": 372,
+      "n_cache_purged": 93
+    },
+    {
+      "read": "fu7_aggregate/judge/pv/syc-c5-lr1e5-t2-trained-pv",
+      "run_id": "syc-c5-lr1e5",
+      "kind": "t2-pv",
+      "ctx": null,
+      "n_transport": 213,
+      "n_recovered": 92,
+      "n_still_error": 121,
+      "n_cache_purged": 45
+    },
+    {
+      "read": "fu7_aggregate/judge/pv/syc-c5-lr3e5-t2-trained-pv",
+      "run_id": "syc-c5-lr3e5",
+      "kind": "t2-pv",
+      "ctx": null,
+      "n_transport": 323,
+      "n_recovered": 86,
+      "n_still_error": 237,
+      "n_cache_purged": 64
+    },
+    {
+      "read": "fu7_aggregate/judge/sycophancy/syc-c3-lr1e4-t2-trained",
+      "run_id": "syc-c3-lr1e4",
+      "kind": "t2",
+      "ctx": null,
+      "n_transport": 7,
+      "n_recovered": 7,
+      "n_still_error": 0,
+      "n_cache_purged": 1
+    },
+    {
+      "read": "fu7_aggregate/judge/sycophancy/syc-c3-lr1e5-t2-trained",
+      "run_id": "syc-c3-lr1e5",
+      "kind": "t2",
+      "ctx": null,
+      "n_transport": 11,
+      "n_recovered": 10,
+      "n_still_error": 1,
+      "n_cache_purged": 1
+    },
+    {
+      "read": "fu7_aggregate/judge/sycophancy/syc-c3-lr3e5-t2-trained",
+      "run_id": "syc-c3-lr3e5",
+      "kind": "t2",
+      "ctx": null,
+      "n_transport": 5,
+      "n_recovered": 4,
+      "n_still_error": 1,
+      "n_cache_purged": 2
+    },
+    {
+      "read": "fu7_aggregate/judge/sycophancy/syc-c5-lr1e5-t2-trained",
+      "run_id": "syc-c5-lr1e5",
+      "kind": "t2",
+      "ctx": null,
+      "n_transport": 1,
+      "n_recovered": 1,
+      "n_still_error": 0,
+      "n_cache_purged": 0
+    },
+    {
+      "read": "fu7_aggregate/judge/sycophancy/syc-c5-lr3e5-t2-trained",
+      "run_id": "syc-c5-lr3e5",
+      "kind": "t2",
+      "ctx": null,
+      "n_transport": 1,
+      "n_recovered": 1,
+      "n_still_error": 0,
+      "n_cache_purged": 0
+    }
+  ],
+  "ladder_changes": {
+    "fu7_aggregate/judge/panel_legacy/sycophancy/syc-c3-lr3e5-pn-def-legacy": {
+      "old_rate": 0.54,
+      "new_rate": 0.54
+    },
+    "fu7_aggregate/judge/panel_legacy/sycophancy/syc-c3-lr3e5-pn-icl-legacy": {
+      "old_rate": 0.77,
+      "new_rate": 0.77
+    },
+    "fu7_aggregate/judge/panel_legacy/sycophancy/syc-c3-lr3e5-pn-ph4-legacy": {
+      "old_rate": 0.35,
+      "new_rate": 0.35
+    },
+    "fu7_aggregate/judge/panel_legacy/sycophancy/syc-c3-lr3e5-pn-pol-legacy": {
+      "old_rate": 0.4,
+      "new_rate": 0.4
+    },
+    "fu7_aggregate/judge/panel_legacy/sycophancy/syc-c3-lr3e5-pn-wc-legacy": {
+      "old_rate": 0.79,
+      "new_rate": 0.79
+    },
+    "fu7_aggregate/judge/panel_legacy/sycophancy/syc-c5-lr1e4-pn-ph4-legacy": {
+      "old_rate": 0.59,
+      "new_rate": 0.59
+    },
+    "fu7_aggregate/judge/panel_legacy/sycophancy/syc-c5-lr1e4-pn-wc-legacy": {
+      "old_rate": 0.86,
+      "new_rate": 0.86
+    },
+    "fu7_aggregate/judge/pv/syc-c3-lr1e4-t2-trained-pv": {
+      "old_rate": 0.5333333333333333,
+      "new_rate": 0.5372340425531915
+    },
+    "fu7_aggregate/judge/pv/syc-c3-lr1e5-t2-trained-pv": {
+      "old_rate": 0.48186528497409326,
+      "new_rate": 0.494949494949495
+    },
+    "fu7_aggregate/judge/pv/syc-c3-lr3e5-pn-def-pv": {
+      "old_rate": 0.4069767441860465,
+      "new_rate": 0.44086021505376344
+    },
+    "fu7_aggregate/judge/pv/syc-c3-lr3e5-pn-icl-pv": {
+      "old_rate": 0.7282608695652174,
+      "new_rate": 0.7291666666666666
+    },
+    "fu7_aggregate/judge/pv/syc-c3-lr3e5-pn-ph4-pv": {
+      "old_rate": 0.2765957446808511,
+      "new_rate": 0.29473684210526313
+    },
+    "fu7_aggregate/judge/pv/syc-c3-lr3e5-pn-pol-pv": {
+      "old_rate": 0.2391304347826087,
+      "new_rate": 0.24210526315789474
+    },
+    "fu7_aggregate/judge/pv/syc-c3-lr3e5-pn-wc-pv": {
+      "old_rate": 0.7978723404255319,
+      "new_rate": 0.8
+    },
+    "fu7_aggregate/judge/pv/syc-c3-lr3e5-t2-trained-pv": {
+      "old_rate": 0.5737704918032787,
+      "new_rate": 0.5767195767195767
+    },
+    "fu7_aggregate/judge/pv/syc-c5-lr1e4-pn-def-pv": {
+      "old_rate": 0.45454545454545453,
+      "new_rate": 0.4782608695652174
+    },
+    "fu7_aggregate/judge/pv/syc-c5-lr1e4-pn-icl-pv": {
+      "old_rate": 0.5632183908045977,
+      "new_rate": 0.5824175824175825
+    },
+    "fu7_aggregate/judge/pv/syc-c5-lr1e4-pn-ph4-pv": {
+      "old_rate": 0.43023255813953487,
+      "new_rate": 0.4157303370786517
+    },
+    "fu7_aggregate/judge/pv/syc-c5-lr1e4-pn-pol-pv": {
+      "old_rate": 0.3875,
+      "new_rate": 0.40476190476190477
+    },
+    "fu7_aggregate/judge/pv/syc-c5-lr1e4-pn-wc-pv": {
+      "old_rate": 0.7831325301204819,
+      "new_rate": 0.8045977011494253
+    },
+    "fu7_aggregate/judge/pv/syc-c5-lr1e4-t2-trained-pv": {
+      "old_rate": 0.6486486486486487,
+      "new_rate": 0.6625
+    },
+    "fu7_aggregate/judge/pv/syc-c5-lr1e5-t2-trained-pv": {
+      "old_rate": 0.46195652173913043,
+      "new_rate": 0.47368421052631576
+    },
+    "fu7_aggregate/judge/pv/syc-c5-lr3e5-t2-trained-pv": {
+      "old_rate": 0.4878048780487805,
+      "new_rate": 0.5144508670520231
+    },
+    "fu7_aggregate/judge/sycophancy/syc-c3-lr1e4-t2-trained": {
+      "old_rate": 0.615,
+      "new_rate": 0.615
+    },
+    "fu7_aggregate/judge/sycophancy/syc-c3-lr1e5-t2-trained": {
+      "old_rate": 0.625,
+      "new_rate": 0.625
+    },
+    "fu7_aggregate/judge/sycophancy/syc-c3-lr3e5-t2-trained": {
+      "old_rate": 0.64,
+      "new_rate": 0.64
+    },
+    "fu7_aggregate/judge/sycophancy/syc-c5-lr1e5-t2-trained": {
+      "old_rate": 0.62,
+      "new_rate": 0.62
+    },
+    "fu7_aggregate/judge/sycophancy/syc-c5-lr3e5-t2-trained": {
+      "old_rate": 0.675,
+      "new_rate": 0.675
+    }
+  },
+  "git_commit": "987e312005",
+  "created_utc": "2026-07-17T14:32:52Z"
+}

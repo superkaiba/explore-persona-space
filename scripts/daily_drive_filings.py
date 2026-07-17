@@ -22,12 +22,22 @@ recursion-guard Provenance lines gains ``- workflow_fix_target: <manifest target
 ``- fingerprint: <fp>`` under ``## Provenance`` (idempotent temp+rename; the ``INJECTED``
 stdout line is the audit trace).
 
+Every item's body (route 2 AND 3, any ``wf_fix`` value) additionally gets the #1467
+WARN-only sha-verify backstop right before filing: a SHA-shaped hex token cited in
+commit context that does NOT ``git rev-parse`` as a commit in this repo gains one
+idempotent advisory line under ``## Provenance`` (heading appended when absent; never a
+``workflow_fix_target:`` line) and is recorded as ``sha_warnings`` on the ``filed``
+ledger row; other non-resolving hex tokens WARN on stderr only. The scan never blocks a
+filing and never changes the exit code (fail-open on git errors); the compose-time
+rev-parse duty (daily SKILL.md route-2 mandate) stays the primary defense.
+
 Ledger row shapes (one JSON object per line, ISO-UTC ``ts`` on every row):
 
 - ``{"slug", "outcome": "attempting", "fp", "route", "id_floor", "ts"}`` — appended
   BEFORE the filer subprocess (the crash-safety ordering); ``id_floor`` is the max
   task id at that moment and scopes later title-scan recovery to THIS filing.
-- ``{"slug", "outcome": "filed", "id", "rc", "fp", "route", "tail", "ts"}``
+- ``{"slug", "outcome": "filed", "id", "rc", "fp", "route", "tail", "ts"}`` — plus
+  ``"sha_warnings": [tokens]`` when the #1467 backstop annotated commit-context tokens
 - ``{"slug", "outcome": "deduped", "against", "fp", "route", "ts"}`` (route 2 only)
 - ``{"slug", "outcome": "recovered", "id", "fp", "route", "dispatch_unconfirmed", "ts"}``
 - ``{"slug", "outcome": "ERROR", "flag", "id", "rc", "fp", "route", "tail", "ts"}``
@@ -131,6 +141,42 @@ def _resolve_body_path(item: dict, dirpath: Path) -> Path:
 WF_FIX_TARGET_KEY = "workflow_fix_target:"
 PROVENANCE_HEADING_RE = re.compile(r"^## Provenance[ \t]*$", re.M)
 
+# ── #1467 sha-verify backstop constants (WARN-only; never blocks a filing) ─────
+HEX_TOKEN_RE = re.compile(r"\b[0-9a-f]{7,40}\b")  # git abbrev floor 7; 40 = full SHA-1
+HAS_HEX_LETTER_RE = re.compile(r"[a-f]")  # all-digit tokens are dates/ids — skip
+# Known non-commit hex classes + our own advisory lines: lines matching this are
+# never scanned (fingerprints/wf-fix-fp tags are 12-hex by construction, #1173).
+SHA_EXCLUDE_LINE_RE = re.compile(r"fingerprint:|wf-fix-fp:|drift_hash|sha-verify")
+COMMIT_CONTEXT_RE = re.compile(
+    r"(?i)\bcommits?\b|\bsha\b|\bmerged?\b|\blanded\b|cherry.pick|\bfix(ed)?\s+(in|via)\b"
+)
+# Self-referential quotes ("transcript basename fc2b61b7, not a commit") cite the
+# token as what it actually is — they do NOT count as commit context.
+SELF_REF_LINE_RE = re.compile(r"(?i)transcript|basename|not a commit")
+SHA_ADVISORY_TMPL = (
+    "- sha-verify (filing-time, #1467): `{tok}` cited in commit context does NOT"
+    " resolve as a commit in this repo at filing time — treat as a transcript/session"
+    " reference, not a commit."
+)
+# A wedged git must never hang the 3 AM filer: rev-parse is ~5 ms, so 10s is generous.
+# TimeoutExpired routes to the same fail-open WARN path as OSError (scan skipped,
+# filing proceeds) — the caller catches it alongside OSError/UnicodeDecodeError.
+SHA_REV_PARSE_TIMEOUT_S = 10
+
+
+def _insert_under_provenance(text: str, block: str) -> str:
+    """Insert ``block`` under an existing ``## Provenance`` heading, else append one.
+
+    Shared insertion machinery for ensure_wf_fix_provenance and _check_body_shas —
+    the heading-less fallback appends a terminal ``## Provenance`` section.
+    """
+    m = PROVENANCE_HEADING_RE.search(text)
+    if m:
+        # Insert immediately after the existing heading line.
+        insert_at = m.end()
+        return text[:insert_at] + "\n\n" + block + text[insert_at:]
+    return text.rstrip("\n") + f"\n\n## Provenance\n\n{block}\n"
+
 
 def ensure_wf_fix_provenance(text: str, target: str, fp: str) -> tuple[str, bool]:
     """Idempotently ensure the durable recursion-guard Provenance lines (#1173).
@@ -154,15 +200,154 @@ def ensure_wf_fix_provenance(text: str, target: str, fp: str) -> tuple[str, bool
         lines.append(f"- fingerprint: {fp}")
     if not lines:
         return text, False
-    block = "\n".join(lines)
-    m = PROVENANCE_HEADING_RE.search(text)
-    if m:
-        # Insert immediately after the existing heading line.
-        insert_at = m.end()
-        new = text[:insert_at] + "\n\n" + block + text[insert_at:]
-    else:
-        new = text.rstrip("\n") + f"\n\n## Provenance\n\n{block}\n"
-    return new, True
+    return _insert_under_provenance(text, "\n".join(lines)), True
+
+
+def _sha_resolves(token: str, root: Path) -> bool:
+    """True iff ``token`` resolves as a commit in the git repo at ``root`` (#1467).
+
+    ``git -C <root> rev-parse --verify --quiet '<token>^{commit}'`` — rc 0 means it
+    resolves; any other rc (1 = unknown object; 128 = not a repo / other git error)
+    reads as not-resolving, which at worst upgrades nothing beyond a WARN (the
+    backstop is WARN-only by construction). An OSError (git binary missing) or a
+    subprocess.TimeoutExpired (hung git, SHA_REV_PARSE_TIMEOUT_S cap) propagates
+    to _check_body_shas' single fail-open WARNING.
+    """
+    proc = subprocess.run(
+        ["git", "-C", str(root), "rev-parse", "--verify", "--quiet", f"{token}^{{commit}}"],
+        capture_output=True,
+        text=True,
+        timeout=SHA_REV_PARSE_TIMEOUT_S,
+    )
+    return proc.returncode == 0
+
+
+def scan_unresolvable_shas(text: str, root: Path) -> tuple[list[str], list[str]]:
+    """Scan body text for SHA-shaped hex tokens that do not resolve as commits (#1467).
+
+    Returns ``(commit_context_offenders, other_nonresolving)`` — deduped, first-seen
+    order. Per line: SHA_EXCLUDE_LINE_RE lines (fingerprints, wf-fix-fp tags, drift
+    hashes, our own sha-verify advisories) are skipped entirely; HEX_TOKEN_RE matches
+    with no [a-f] letter (dates, numeric ids) are skipped. A token is tier 1 when ANY
+    line carrying it matches COMMIT_CONTEXT_RE — unless that line also matches
+    SELF_REF_LINE_RE (a self-referential quote is not commit context) — else tier 2.
+    Resolution is probed once per unique token (rc semantics: _sha_resolves).
+    """
+    commit_ctx: dict[str, bool] = {}
+    for line in text.splitlines():
+        if SHA_EXCLUDE_LINE_RE.search(line):
+            continue
+        in_ctx = bool(COMMIT_CONTEXT_RE.search(line)) and not SELF_REF_LINE_RE.search(line)
+        for m in HEX_TOKEN_RE.finditer(line):
+            tok = m.group(0)
+            if not HAS_HEX_LETTER_RE.search(tok):
+                continue
+            commit_ctx[tok] = commit_ctx.get(tok, False) or in_ctx
+    tier1: list[str] = []
+    tier2: list[str] = []
+    for tok, in_ctx in commit_ctx.items():
+        if _sha_resolves(tok, root):
+            continue
+        (tier1 if in_ctx else tier2).append(tok)
+    return tier1, tier2
+
+
+def _check_body_shas(item: dict, dirpath: Path, root: Path) -> list[str]:
+    """WARN-only #1467 backstop: annotate non-resolving commit-context hex tokens.
+
+    Two tiers, never a refusal: tier 1 (non-resolving token on a commit-context
+    line) gets one idempotent advisory line under ``## Provenance`` (heading-less
+    bodies gain a terminal ``## Provenance`` section — a bare sha-verify bullet,
+    NEVER a ``workflow_fix_target:`` line) plus a stderr WARNING; tier 2 (any other
+    non-resolving hex token) gets a stderr WARNING only. Returns the tier-1 tokens
+    (the ``filed`` ledger row's ``sha_warnings`` value). Fail-open: any OSError
+    (git unavailable, unreadable body), UnicodeDecodeError (non-UTF-8 body — a
+    ValueError subclass, NOT an OSError), or subprocess.TimeoutExpired (hung git)
+    → ONE loud WARNING and ``[]`` — the backstop never blocks a filing and never
+    changes the driver's exit code.
+    """
+    slug = item["slug"]
+    try:
+        body_path = _resolve_body_path(item, dirpath)
+        text = body_path.read_text(encoding="utf-8")
+        tier1, tier2 = scan_unresolvable_shas(text, root)
+        for tok in tier2:
+            print(
+                f"WARNING {slug}: hex token `{tok}` does not resolve as a commit in"
+                " this repo (no commit-context line; not annotated) (#1467)",
+                file=sys.stderr,
+            )
+        if not tier1:
+            return []
+        new_lines = []
+        for tok in tier1:
+            print(
+                f"WARNING {slug}: `{tok}` is cited in commit context but does not"
+                " resolve as a commit in this repo at filing time — re-derive the real"
+                " commit or cite it as a transcript/session reference (#1467)",
+                file=sys.stderr,
+            )
+            if any("sha-verify" in ln and tok in ln for ln in text.splitlines()):
+                continue  # idempotent: this token already carries an advisory line
+            new_lines.append(SHA_ADVISORY_TMPL.format(tok=tok))
+        if new_lines:
+            new_text = _insert_under_provenance(text, "\n".join(new_lines))
+            tmp = body_path.with_suffix(".md.tmp")
+            tmp.write_text(new_text, encoding="utf-8")
+            os.replace(tmp, body_path)  # temp+rename, same pattern as load_ledger
+            print(f"ANNOTATED {slug}: {len(new_lines)} sha-verify advisory line(s) (#1467)")
+        return tier1
+    except (OSError, UnicodeDecodeError, subprocess.TimeoutExpired) as e:
+        # Deliberate fail-open (plan #1467 §4): the backstop must never block a
+        # filing — surface loudly, skip the scan, and leave the compose-time duty
+        # (daily SKILL.md route-2 mandate) as the defense.
+        print(
+            f"WARNING {slug}: sha-verify scan skipped ({e.__class__.__name__}: {e}) —"
+            " fail-open, filing proceeds; the compose-time rev-parse duty still"
+            " applies (#1467)",
+            file=sys.stderr,
+        )
+        return []
+
+
+def _filed_ledger_row(
+    slug: str, tid: int, fp: str, item: dict, tail: str, sha_warnings: list[str]
+) -> dict:
+    """Compose the terminal ``filed`` ledger row.
+
+    Gains ``"sha_warnings": [tokens]`` only when the #1467 backstop annotated
+    non-resolving commit-context tokens (rows are free-form dicts — schema-safe).
+    """
+    row = {
+        "slug": slug,
+        "outcome": "filed",
+        "id": tid,
+        "rc": 0,
+        "fp": fp,
+        "route": item["route"],
+        "tail": tail,
+    }
+    if sha_warnings:
+        row["sha_warnings"] = sha_warnings
+    return row
+
+
+def _dry_run_sha_note(item: dict, dirpath: Path, root: Path) -> str:
+    """The dry-run mirror of _check_body_shas (#1467): report counts, mutate nothing.
+
+    Returns a suffix for the dry-run FILE line — empty when the scan is clean;
+    fail-open (a note, never a raise) on git/read OSError, a non-UTF-8 body's
+    UnicodeDecodeError, or a hung-git TimeoutExpired, mirroring the real path.
+    """
+    try:
+        tier1, tier2 = scan_unresolvable_shas(
+            _resolve_body_path(item, dirpath).read_text(encoding="utf-8"), root
+        )
+    except (OSError, UnicodeDecodeError, subprocess.TimeoutExpired) as e:
+        return f" [sha-scan skipped: {e.__class__.__name__}]"
+    if tier1 or tier2:
+        return f" [sha-scan: {len(tier1)} commit-context, {len(tier2)} other non-resolving]"
+    return ""
 
 
 def _wf_fix_enabled(item: dict) -> bool:
@@ -555,7 +740,8 @@ def process_item(
                     inject = " [will inject workflow_fix_target provenance]"
             else:
                 _warn_stray_wf_fix_provenance(item, dirpath)
-            print(f"FILE {slug} tags={tags[tags.index('--tag') :]}{pending}{inject}")
+            sha_note = _dry_run_sha_note(item, dirpath, root)
+            print(f"FILE {slug} tags={tags[tags.index('--tag') :]}{pending}{inject}{sha_note}")
         return "skip"
 
     if state in ("in-flight", "retry-error"):
@@ -596,6 +782,10 @@ def process_item(
             print(f"INJECTED {slug}: workflow_fix_target provenance (#1173 recursion-guard signal)")
     else:
         _warn_stray_wf_fix_provenance(item, dirpath)
+    # #1467 WARN-only sha-verify backstop: runs AFTER the Provenance injection (so the
+    # advisory lands in the FILED body) and for EVERY route/wf_fix variant — content
+    # accuracy is orthogonal to the wf-fix key space. Never blocks; exit code untouched.
+    sha_warnings = _check_body_shas(item, dirpath, root)
     # Two-phase ledger: the `attempting` row (with the recovery id floor) lands BEFORE
     # the filer subprocess — the load-bearing crash-safety ordering.
     append_row(
@@ -638,18 +828,7 @@ def process_item(
     out = (proc.stdout + "\n" + proc.stderr).strip()
     tid = parse_filed_id(proc.stdout, proc.stderr)
     if proc.returncode == 0 and tid is not None:
-        append_row(
-            dirpath,
-            {
-                "slug": slug,
-                "outcome": "filed",
-                "id": tid,
-                "rc": 0,
-                "fp": fp,
-                "route": item["route"],
-                "tail": out[-300:],
-            },
-        )
+        append_row(dirpath, _filed_ledger_row(slug, tid, fp, item, out[-300:], sha_warnings))
         print(f"FILED {slug} -> #{tid} (rc=0)")
         return "filed"
     # rc=0 with NO parseable id is classified ERROR `no-id-parsed`, NEVER a `filed` row
@@ -709,7 +888,8 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--dry-run",
         action="store_true",
-        help="print per-item planned action (FILE/DEDUP/SKIP); no subprocess, no ledger writes",
+        help="print per-item planned action (FILE/DEDUP/SKIP); no filer subprocess, no"
+        " ledger/body writes (read-only git rev-parse sha-scan probes may run, #1467)",
     )
     return parser
 

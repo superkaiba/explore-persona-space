@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1478,
+  "highest_id": 1479,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -710,9 +710,9 @@
       "goal": "Rebuild the factory content-behavior datagen persona-vectors-style \u2014 each behavior defined by a trait description + 5 contrastive instruction pairs + neutral trait-eliciting questions (auto-generated persona-vectors-style where a curated bank triggers refusal) so a Claude generator is less likely to refuse \u2014 add an impossible-to-refuse formatting behavior as a pipeline positive control, and test whether this clears the yield floors and installs trainable organisms across the behavior set.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/followups_running/1090",
-      "status": "followups_running",
-      "title": "Extended training dose alone carries both sycophancy organisms into the judged expression band, and the learning-rate lever adds distinguishable gain only on Qwen-generated data (MODERATE confidence)"
+      "path": "tasks/awaiting_promotion/1090",
+      "status": "awaiting_promotion",
+      "title": "Extended training dose alone brings both sycophancy organisms to the judged band at the point estimate \u2014 the Claude-data entry boundary-sensitive \u2014 and the learning-rate lever adds distinguishable gain only on Qwen-generated data (MODERATE confidence)"
     },
     "1091": {
       "has_clean_result": false,
@@ -2614,8 +2614,8 @@
       "goal": "Identify which factor(s) \u2014 role identity/frequency, genre, answer structure/length, single-responder-vs-multi-speaker context, or measurement \u2014 account for the large held-out-R\u00b2 gap between the assistant context\u2192answer map (#825: base 0.59 / instruct 0.67, survives chat-template removal) and the per-character fiction context\u2192dialogue map (#1310: base 0.11\u20130.15 / instruct 0.19\u20130.25, same plain-text regime), via a one-factor-at-a-time ablation ladder measuring held-out R\u00b2 at each rung in Qwen2.5-7B base and instruct.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/awaiting_promotion/1335",
-      "status": "awaiting_promotion",
+      "path": "tasks/followups_running/1335",
+      "status": "followups_running",
       "title": "Fiction scene framing carries the instruct assistant-vs-fiction context\u2192answer map gap at both generation seeds, while the base-model gap is seed-unstable (MODERATE confidence)"
     },
     "1336": {
@@ -3607,8 +3607,8 @@
     "1463": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1463",
-      "status": "running",
+      "path": "tasks/reviewing/1463",
+      "status": "reviewing",
       "title": "daily-fix: guard waiver for gcloud ssh --command payloads"
     },
     "1464": {
@@ -3642,15 +3642,15 @@
     "1468": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1468",
-      "status": "reviewing",
+      "path": "tasks/completed/1468",
+      "status": "completed",
       "title": "daily-fix: A100-40 rung blind to consumed device memory"
     },
     "1469": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1469",
-      "status": "running",
+      "path": "tasks/reviewing/1469",
+      "status": "reviewing",
       "title": "daily-fix: 6a.5 gate asserts git-tree reachability"
     },
     "147": {
@@ -3663,8 +3663,8 @@
     "1470": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1470",
-      "status": "running",
+      "path": "tasks/reviewing/1470",
+      "status": "reviewing",
       "title": "daily-fix: divtrain gen through api_dispatch + empty=retry"
     },
     "1471": {
@@ -3691,15 +3691,15 @@
     "1474": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1474",
-      "status": "planning",
+      "path": "tasks/running/1474",
+      "status": "running",
       "title": "workflow-fix: PreToolUse guard for /tmp deletion sweeps (tmux sockets)"
     },
     "1475": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1475",
-      "status": "proposed",
+      "path": "tasks/running/1475",
+      "status": "running",
       "title": "workflow-fix: pre_reg audit \u2014 verdict-lattice head nouns + range tokens escape"
     },
     "1476": {
@@ -3722,6 +3722,13 @@
       "path": "tasks/proposed/1478",
       "status": "proposed",
       "title": "workflow-fix: audit warns on sidecar-less embedded figures (silent check skip)"
+    },
+    "1479": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1479",
+      "status": "proposed",
+      "title": "workflow-fix: LESSONS.md over ratchet \u2014 trim/bump _LESSONS_RATCHET_BYTES (red default lint on main)"
     },
     "148": {
       "has_clean_result": false,

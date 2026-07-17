@@ -1227,7 +1227,7 @@ def _issue_worktree_git_root(issue: int) -> str | None:
     return str(wt) if wt.exists() else None
 
 
-def _launch_extra_from_args(args: argparse.Namespace) -> dict[str, Any]:
+def _launch_extra_from_args(args: argparse.Namespace) -> dict[str, Any]:  # noqa: C901 — flat per-knob if-chain: one independent branch per launch CLI flag (#1468 added --min-gpu-mem-gb); extracting sub-helpers would obscure the knob-to-extra mapping (annotated-noqa precedent: gcp.py GcpBackend.launch).
     """Build ``spec.extra`` from the launch CLI's lane-specific knobs.
 
     Returns the dict :func:`backends.issue_dispatch.build_run_spec`
@@ -1273,6 +1273,14 @@ def _launch_extra_from_args(args: argparse.Namespace) -> dict[str, Any]:
         # an undersized pod. GCP machine selection is unchanged (by intent);
         # inert on SLURM lanes.
         extra["min_ram_gb"] = int(args.min_ram_gb)
+    if getattr(args, "min_gpu_mem_gb", None):
+        # GCP A100-40 rung gate (#1468): read by gcp.a100_40_fallback_for_intent
+        # — a declared per-GPU requirement strictly above gcp.A100_40_USABLE_GIB
+        # (38.0 GiB) skips the 40 GB fallback rung (incident #1315: HF+vLLM
+        # co-residency died at engine init on the 39.49 GiB card). Falsy-zero
+        # threading kept deliberately symmetric with min_ram_gb above. Inert on
+        # SLURM lanes and RunPod (80 GB-class GPUs).
+        extra["min_gpu_mem_gb"] = int(args.min_gpu_mem_gb)
     if getattr(args, "max_run_duration", None):
         # GCP-only knob: the instance-create renderer reads
         # spec.extra["max_run_duration"], falling back to the 7d
@@ -2322,6 +2330,26 @@ def _build_argparser() -> argparse.ArgumentParser:
             "refuses the fallback with reason cpu_fallback_infeasible_for_plan "
             "instead of provisioning an undersized pod. GCP machine selection "
             "is unchanged (by intent). Inert on SLURM lanes."
+        ),
+    )
+    launch.add_argument(
+        "--min-gpu-mem-gb",
+        type=int,
+        default=None,
+        help=(
+            "Peak per-GPU device memory (GiB, as CUDA/nvidia-smi report it) the "
+            "workload holds resident on a single GPU. Declare the HONEST "
+            "co-resident peak, never the card size — count EVERY co-resident "
+            "allocator: e.g. the #1315 shape is an HF capture model ~17 GiB + a "
+            "vLLM engine at gpu_memory_utilization 0.6 of the SMALLEST candidate "
+            "device (0.6 x 39.49 ~= 23.7 GiB), so the honest declaration is "
+            "ceil(17 + 23.7) ~= 41 GiB. Read by the GCP ladder's A100-40 "
+            "fallback gate (#1468): a declared value strictly above "
+            "gcp.A100_40_USABLE_GIB (38.0) drops the spot/on-demand A100-40 "
+            "rungs for this dispatch; the A100-80 rungs, SLURM lanes, and the "
+            "RunPod terminal rung (H100-80) are unchanged. Absent -> today's "
+            "ladder, byte-identical. Inert on SLURM lanes and RunPod "
+            "(80 GB-class GPUs)."
         ),
     )
     launch.add_argument(

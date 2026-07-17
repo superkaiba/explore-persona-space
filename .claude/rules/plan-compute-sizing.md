@@ -28,7 +28,13 @@ the L4's 16-GB-class HBM and OOMs the run mid-flight (#666, #744). The
 canonical fit is `lora-7b` (1× A100-80) when the phase ALSO trains, or
 `capture-7b` (1× A100-80, the activation-capture eval intent, #752) when it
 is forward-pass-only; both fall back to the 40 GB A100-40 rung under A100-80
-exhaustion. This is orthogonal to the VM-footprint carve-out below (which
+exhaustion — UNLESS the phase's per-GPU peak exceeds ~38 GiB (e.g. an HF
+capture model co-resident with a vLLM engine, #1315: ~17 GiB resident +
+0.6 × 39.49 ≈ 41 GiB honest peak), in which case a co-resident HF+vLLM
+capture phase MUST declare `--min-gpu-mem-gb <peak>` (the honest co-resident
+per-GPU peak in GiB, never the card size) in its launch command so the
+ladder skips the 40 GB rung (`gcp.A100_40_USABLE_GIB` = 38, #1468).
+This is orthogonal to the VM-footprint carve-out below (which
 sizes the off-pod analysis disk) — this rule sizes the GPU HBM the capture
 forward needs on the pod. Mechanically BACKSTOPPED by `verify_plan.py`
 check c27 for GCP/auto-lane eval/debug bookings (escape: `N/A — no 7B
