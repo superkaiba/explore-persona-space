@@ -461,9 +461,14 @@ with fragment/substring greps of the claimed text as the fallback, run
 REPO-WIDE (`grep -rn '<fragment>' src/ scripts/ .claude/`) so a guard landed
 in a sibling file is not missed — AND record a landed-fix history check on
 the target file (`git log --oneline --since='7 days ago' -- <target_file>`),
-because the dedup predicate (OPEN tasks only, by design) and the #1399
-recently-closed-sibling advisory (`workflow-fix:`/`daily-fix:` title
-prefixes only) are BOTH blind to an ordinary landed infra fix (#1386 filed +
+because the dedup predicate (OPEN tasks only, by design) is blind to an
+ordinary landed infra fix, and the #1399 recently-closed-sibling advisory
+covers it only partially: since #1446 its widened pass also scans ordinary
+(non-prefixed) closed `kind: infra` tasks (≥2 shared informative title
+tokens, or a candidate target path named in the task body), but it fires
+only at filing time, within its 7-day window, and only on overlap — a fix
+landed with no task at all remains invisible to it, so the git-log +
+semantic-probe duties here STAY required (#1386 filed +
 a session spawned ~9h after #1360 landed the shorter substring
 `'queue size reached'` in `orchestrate/hub.py` at merge `289ad17572`; the
 filer's verbatim grep for `'maximum queue size'` read 0 hits and was
@@ -548,9 +553,12 @@ a JUST-MERGED sibling with different wording is invisible by design
 (2026-07-15: #1350 was filed 25 min after #1329 merged the same fix, and
 #1330 duplicated #1309's already-landed guidance — two pipeline sessions
 burned). At filing time `scripts/file_infra_task.py` therefore prints a
-stderr advisory listing wf-fix/daily-fix tasks CLOSED (completed/archived)
-within the last ~7 days that overlap the candidate — by `workflow_fix_target:`
-path token, or by informative title token
+stderr advisory listing recently-closed (completed/archived, last ~7 days)
+siblings that overlap the candidate: `workflow-fix:`/`daily-fix:`-prefixed
+tasks by `workflow_fix_target:` path token or by informative title token,
+and — since #1446 — ordinary (non-prefixed) `kind: infra` tasks by ≥2
+shared informative title tokens (`infra-title:`) or by a candidate target
+path appearing in the task body (`infra-target`)
 (`task_workflow.recent_closed_workflow_fix_tasks`) — capped at the 10 most
 recent. The filer eyeballs the list before letting the spawned session run.
 ADVISORY ONLY: it never blocks the filing, never changes exit codes, and
@@ -752,7 +760,7 @@ homepage rendering of the fallback is unimplemented.)
 | File a body whose bug claim (call sites, site counts, paths) was never re-verified by grep at filing time (#1221/#1229/#1249: 3 stale-claim filings in 2 days, each burning a spawned session's verification rounds) | Run the grep at body-compose time; record `verified-at-filing: <cmd> → <hits>` (or `n/a — <reason>`) in `## Workflow gap` |
 | Record a real grep that does not BIND to the claim — a repo-wide pattern grep beside a named target_file with 0 hits for the claimed site (#1290), or a single-path probe backing a "no longer exists" claim (#1296) | State per-target hits for each file named in target_file (presence claim + 0-hit target ⇒ re-grep repo-wide, correct target_file, re-verify before filing); back any nonexistence claim with a recorded repo-wide relocation grep |
 | Bind a presence grep on hit COUNT alone when the hit's surrounding context already implements the proposed change (#1330 filed over the landed #1309 fix) | Read each presence-hit's surrounding lines before filing; a hit that IS the fix = already landed — dedup, don't file |
-| Accept a verbatim-literal 0-hit grep as absence evidence for a TEXT-MATCHING guard (#1386 filed+spawned ~9h after #1360 landed the shorter `'queue size reached'` substring; the grep searched the full `'maximum queue size'`) | Semantic probe (clause (a')): run the predicate against the claimed text and/or grep fragments/substrings of it repo-wide, PLUS `git log --oneline --since='7 days ago' -- <target_file>` for a just-landed fix — open-task dedup + the #1399 advisory are both blind to an ordinary landed infra fix |
+| Accept a verbatim-literal 0-hit grep as absence evidence for a TEXT-MATCHING guard (#1386 filed+spawned ~9h after #1360 landed the shorter `'queue size reached'` substring; the grep searched the full `'maximum queue size'`) | Semantic probe (clause (a')): run the predicate against the claimed text and/or grep fragments/substrings of it repo-wide, PLUS `git log --oneline --since='7 days ago' -- <target_file>` for a just-landed fix — open-task dedup stays blind to an ordinary landed infra fix by design, and the advisory's widened pass (#1446) covers ordinary closed infra tasks only window-bounded + overlap-matched, so the git-log landed-fix check remains the backstop |
 
 ## Composition with other rules
 
