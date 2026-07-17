@@ -3509,8 +3509,8 @@
     "1450": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1450",
-      "status": "planning",
+      "path": "tasks/approved/1450",
+      "status": "approved",
       "title": "daily-fix: size-cap trigger for home HF cache reap"
     },
     "1451": {
