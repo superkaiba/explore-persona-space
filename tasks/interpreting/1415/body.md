@@ -4,7 +4,7 @@ title: Single-token steering with the context-vector difference shifts the answe
 kind: experiment
 tags: []
 created_at: '2026-07-16T08:08:10Z'
-has_clean_result: false
+has_clean_result: true
 origin_prompt: Do these vectors V_c and V_a have meaning? Like are they causal in
   a way you'd expect or seeing what logit lens produces on them? For example if you
   take a context, c and steer it with V_c' - V_c, does that cause a shift in the average
