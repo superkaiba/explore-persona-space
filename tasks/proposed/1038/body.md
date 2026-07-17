@@ -3,7 +3,6 @@ title: 'daily-held: schedule #681 bind-migration cutover + disk sign-off'
 kind: infra
 tags:
 - daily-held
-- needs-human
 created_at: '2026-07-04T23:02:06Z'
 has_clean_result: false
 origin_prompt: /daily 2026-07-03 problem sweep — disk-cutover-signoff (fp 9851cc2eed1c)
