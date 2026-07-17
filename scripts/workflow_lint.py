@@ -8854,9 +8854,11 @@ _LESSONS_ROW_GRANDFATHER_MAX_BYTES: dict[str, int] = {
     # Cap = measured + <=40.
     # #1411 added the Edit-tool Unicode-literal trigger (row 599 B -> 661 B).
     # Cap = measured + <=40.
-    # #1435 added the subprocess-per-phase dispatcher trigger (row 661 B -> 755 B).
+    # #1431 added the pilot-gate shape+rc trigger (row 661 B -> 682 B).
     # Cap = measured + <=40.
-    "gotchas": 780,
+    # #1435 added the subprocess-per-phase dispatcher trigger (merged with
+    # #1431's raise; re-measured row 776 B). Cap = measured + <=40.
+    "gotchas": 800,
 }
 _LESSONS_ROW_GRANDFATHER_MAX_HEADROOM_BYTES = 40
 
@@ -8876,8 +8878,8 @@ _LESSONS_ROW_GRANDFATHER_MAX_HEADROOM_BYTES = 40
 # batteries): merged measured 6,178 B; ratchet 6400 retained (headroom ~222,
 # covers both concurrent growers).
 # #1435 grew the gotchas row (subprocess-registry / full-panel-fresh-child-smoke
-# trigger): measured 6,435 B; ratchet 6650 (headroom ~215, <=
-# _LESSONS_RATCHET_MAX_HEADROOM_BYTES).
+# trigger; merged with #1431's raise): re-measured total 6,456 B; ratchet 6650
+# (headroom ~194, <= _LESSONS_RATCHET_MAX_HEADROOM_BYTES).
 _LESSONS_RATCHET_BYTES = 6650
 _LESSONS_RATCHET_MAX_HEADROOM_BYTES = 400
 

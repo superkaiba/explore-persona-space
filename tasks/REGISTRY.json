@@ -3240,8 +3240,8 @@
       "goal": "On Qwen-2.5-7B-Instruct, test whether the context vector V_c (last-context-token residual activation) is causally sufficient for the answer state and behavior it predicts: patch context c with Delta = V_c(c') - V_c(c) (matched-query persona/instruction swaps and cross-query swaps; prefix-based AND context-based arms; layer + position sweeps), generate on-policy, and measure (a) the realized mean answer activation's shift from V_a(c) toward V_a(c') and its agreement with the fitted map's counterfactual prediction f(V_c + Delta), and (b) the judge-scored behavior shift (graded 0-100 primary + rate companion), against norm-matched random-Delta and shuffled-pair nulls, a full-prefix KV-swap ceiling, and the persona-vector r_B steering baseline, with a logit-lens top-token readout of V_c, V_a, Delta, and the #922 slow modes as descriptive companion.",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/verifying/1415",
-      "status": "verifying",
+      "path": "tasks/interpreting/1415",
+      "status": "interpreting",
       "title": "Causal test of the context/answer vectors: does steering with V_c' - V_c shift on-policy answers from V_a toward V_a'?"
     },
     "1416": {
@@ -3361,22 +3361,22 @@
     "1431": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/1431",
-      "status": "approved",
+      "path": "tasks/completed/1431",
+      "status": "completed",
       "title": "workflow-fix: gotchas entry \u2014 pilot timing gates measure at the sweep's execution shape"
     },
     "1432": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1432",
-      "status": "proposed",
+      "path": "tasks/running/1432",
+      "status": "running",
       "title": "workflow-fix: gotchas.md \u2014 cuda eigh non-convergence on near-singular Grams (CPU fallback)"
     },
     "1433": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1433",
-      "status": "planning",
+      "path": "tasks/completed/1433",
+      "status": "completed",
       "title": "workflow-fix: verify unpinned backtick HF-path/file-count claims"
     },
     "1434": {
@@ -3390,8 +3390,8 @@
     "1435": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1435",
-      "status": "planning",
+      "path": "tasks/completed/1435",
+      "status": "completed",
       "title": "workflow-fix: gotchas entry \u2014 subprocess phase registry + full-panel fresh-child smoke"
     },
     "144": {

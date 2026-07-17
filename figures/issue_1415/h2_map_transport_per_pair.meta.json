@@ -1,0 +1,464 @@
+{
+  "commit": "2eea6e2d08",
+  "created": "2026-07-17T03:48:39Z",
+  "figsize": [
+    11.5,
+    4.4
+  ],
+  "points": [
+    {
+      "x": 0.0,
+      "cos(realized shift, map-predicted shift)": -0.05144033953547478,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 1.0,
+      "cos(realized shift, map-predicted shift)": -0.022167876362800598,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 2.0,
+      "cos(realized shift, map-predicted shift)": -0.020746435970067978,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 3.0,
+      "cos(realized shift, map-predicted shift)": -0.014685584232211113,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 4.0,
+      "cos(realized shift, map-predicted shift)": -0.013056337833404541,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 5.0,
+      "cos(realized shift, map-predicted shift)": 0.0008341223001480103,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 6.0,
+      "cos(realized shift, map-predicted shift)": 0.0017223716713488102,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 7.0,
+      "cos(realized shift, map-predicted shift)": 0.003041677875444293,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 8.0,
+      "cos(realized shift, map-predicted shift)": 0.0036176564171910286,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 9.0,
+      "cos(realized shift, map-predicted shift)": 0.004786638077348471,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 10.0,
+      "cos(realized shift, map-predicted shift)": 0.0060839285142719746,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 11.0,
+      "cos(realized shift, map-predicted shift)": 0.008827329613268375,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 12.0,
+      "cos(realized shift, map-predicted shift)": 0.020446989685297012,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 13.0,
+      "cos(realized shift, map-predicted shift)": 0.021001767367124557,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 14.0,
+      "cos(realized shift, map-predicted shift)": 0.030407575890421867,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 15.0,
+      "cos(realized shift, map-predicted shift)": -0.023305583745241165,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 16.0,
+      "cos(realized shift, map-predicted shift)": -0.013463174924254417,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 17.0,
+      "cos(realized shift, map-predicted shift)": -0.011742910370230675,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 18.0,
+      "cos(realized shift, map-predicted shift)": -0.01118994690477848,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 19.0,
+      "cos(realized shift, map-predicted shift)": -0.010977324098348618,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "x": 20.0,
+      "cos(realized shift, map-predicted shift)": -0.004350011236965656,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 21.0,
+      "cos(realized shift, map-predicted shift)": -0.0035061792004853487,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "x": 22.0,
+      "cos(realized shift, map-predicted shift)": 0.006158190313726664,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 23.0,
+      "cos(realized shift, map-predicted shift)": 0.009897077456116676,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "x": 24.0,
+      "cos(realized shift, map-predicted shift)": 0.014774699695408344,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 25.0,
+      "cos(realized shift, map-predicted shift)": 0.01763010211288929,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 26.0,
+      "cos(realized shift, map-predicted shift)": 0.022598177194595337,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": 27.0,
+      "cos(realized shift, map-predicted shift)": 0.030007891356945038,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "x": 0.0,
+      "cos(realized shift, map-predicted shift)": 0.2,
+      "series": "H2 transport threshold (0.2)",
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "x": 1.0,
+      "cos(realized shift, map-predicted shift)": 0.2,
+      "series": "H2 transport threshold (0.2)",
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "x": 0.0,
+      "y": -0.030460992828011513,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "x": 1.0,
+      "y": -0.028125908225774765,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "x": 2.0,
+      "y": -0.018047913908958435,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "x": 3.0,
+      "y": -0.013469346798956394,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "x": 4.0,
+      "y": -0.006785408593714237,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "x": 5.0,
+      "y": 0.004446965642273426,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "x": 6.0,
+      "y": 0.007499093189835548,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "x": 7.0,
+      "y": 0.009069446474313736,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "x": 8.0,
+      "y": 0.011749056167900562,
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "x": 9.0,
+      "y": 0.011771012097597122,
+      "_kind": "scatter",
+      "_group": 38
+    },
+    {
+      "x": 10.0,
+      "y": 0.01191964652389288,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "x": 11.0,
+      "y": 0.012922726571559906,
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "x": 12.0,
+      "y": 0.015087969601154327,
+      "_kind": "scatter",
+      "_group": 41
+    },
+    {
+      "x": 13.0,
+      "y": 0.03827996179461479,
+      "_kind": "scatter",
+      "_group": 42
+    },
+    {
+      "x": 14.0,
+      "y": 0.04165085405111313,
+      "_kind": "scatter",
+      "_group": 43
+    },
+    {
+      "x": 15.0,
+      "y": -0.038888949900865555,
+      "_kind": "scatter",
+      "_group": 44
+    },
+    {
+      "x": 16.0,
+      "y": -0.034491002559661865,
+      "_kind": "scatter",
+      "_group": 45
+    },
+    {
+      "x": 17.0,
+      "y": -0.03215900808572769,
+      "_kind": "scatter",
+      "_group": 46
+    },
+    {
+      "x": 18.0,
+      "y": -0.029627397656440735,
+      "_kind": "scatter",
+      "_group": 47
+    },
+    {
+      "x": 19.0,
+      "y": -0.022806935012340546,
+      "_kind": "scatter",
+      "_group": 48
+    },
+    {
+      "x": 20.0,
+      "y": -0.02231794223189354,
+      "_kind": "scatter",
+      "_group": 49
+    },
+    {
+      "x": 21.0,
+      "y": -0.021675849333405495,
+      "_kind": "scatter",
+      "_group": 50
+    },
+    {
+      "x": 22.0,
+      "y": -0.014452992007136345,
+      "_kind": "scatter",
+      "_group": 51
+    },
+    {
+      "x": 23.0,
+      "y": -0.002238333225250244,
+      "_kind": "scatter",
+      "_group": 52
+    },
+    {
+      "x": 24.0,
+      "y": -0.0016213117633014917,
+      "_kind": "scatter",
+      "_group": 53
+    },
+    {
+      "x": 25.0,
+      "y": -0.0015891557559370995,
+      "_kind": "scatter",
+      "_group": 54
+    },
+    {
+      "x": 26.0,
+      "y": 0.011969136074185371,
+      "_kind": "scatter",
+      "_group": 55
+    },
+    {
+      "x": 27.0,
+      "y": 0.021430013701319695,
+      "_kind": "scatter",
+      "_group": 56
+    },
+    {
+      "x": 0.0,
+      "y": 0.2,
+      "series": "H2 transport threshold (0.2)",
+      "_kind": "line",
+      "_group": 57
+    },
+    {
+      "x": 1.0,
+      "y": 0.2,
+      "series": "H2 transport threshold (0.2)",
+      "_kind": "line",
+      "_group": 57
+    }
+  ],
+  "n_series": 58,
+  "total_points": 60,
+  "text": {
+    "suptitle": "Map transport fails: predicted vs realized answer shifts are uncorrelated (all pairs within null band)",
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "prefix-based V_c (layer 20)",
+        "ylabel": "cos(realized shift, map-predicted shift)",
+        "xticklabels": [
+          "00_sycophancy",
+          "779 04_sycophancy",
+          "779 01_sycophancy",
+          "779 03_evil",
+          "06_villain",
+          "08_french_person",
+          "07_medical_doctor",
+          "09_comedian",
+          "779 02_hallucination",
+          "779 00_evil",
+          "01_refusal",
+          "02_evil",
+          "03_hedging",
+          "05_formal",
+          "04_terse",
+          "x01_evil_to_hallucination",
+          "x02_sycophancy_to_evil",
+          "x05_hallucination_to_sycophancy",
+          "x11_hallucination_to_sycophancy",
+          "x09_sycophancy_to_hallucination",
+          "x08_sycophancy_to_evil",
+          "x06_evil_to_sycophancy",
+          "x04_hallucination_to_evil",
+          "x03_sycophancy_to_hallucination",
+          "x12_evil_to_sycophancy",
+          "x07_evil_to_hallucination",
+          "x00_evil_to_sycophancy",
+          "x10_hallucination_to_evil"
+        ],
+        "yticklabels": [
+          "\u22120.2",
+          "\u22120.1",
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3"
+        ]
+      },
+      {
+        "title_left": "context-based V_c (layer 20)",
+        "legend_labels": [
+          "Shuffled-pair null 95% band (pooled)",
+          "H2 transport threshold (0.2)"
+        ],
+        "xticklabels": [
+          "779 04_sycophancy",
+          "04_terse",
+          "08_french_person",
+          "06_villain",
+          "779 01_sycophancy",
+          "779 03_evil",
+          "05_formal",
+          "09_comedian",
+          "03_hedging",
+          "01_refusal",
+          "02_evil",
+          "779 02_hallucination",
+          "00_sycophancy",
+          "07_medical_doctor",
+          "779 00_evil",
+          "x11_hallucination_to_sycophancy",
+          "x02_sycophancy_to_evil",
+          "x03_sycophancy_to_hallucination",
+          "x12_evil_to_sycophancy",
+          "x10_hallucination_to_evil",
+          "x07_evil_to_hallucination",
+          "x04_hallucination_to_evil",
+          "x06_evil_to_sycophancy",
+          "x09_sycophancy_to_hallucination",
+          "x05_hallucination_to_sycophancy",
+          "x00_evil_to_sycophancy",
+          "x08_sycophancy_to_evil",
+          "x01_evil_to_hallucination"
+        ]
+      }
+    ],
+    "series": [
+      "H2 transport threshold (0.2)"
+    ]
+  }
+}

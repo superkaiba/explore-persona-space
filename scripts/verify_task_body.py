@@ -774,6 +774,35 @@ Generation-agnostic checks (run on v2 AND v3 — the inline-figure +
   `issue` for own-dir scoping; the check-31/#1011 precedent). (Numbered 38 —
   36/37 were taken by #1368/#1370 while this check was in review.)
 
+- **check 40** (`check_hf_unpinned_count_claims`, WARN, generation-agnostic):
+  backtick `dir/` + count-paren claims (check 30's Pattern D token shape,
+  regex reused verbatim) whose pinned-link binder returned None — the
+  UNPINNED residue checks 30/32 never see. Trigger gates, all required:
+  D-shape match; binder None (partitioning the D-shape matches with
+  check 30, so no claim is double-WARNed); first path segment not a
+  git/local root (`eval_results/`, `figures/`, `/workspace/...`); HF
+  context (an `issue<N>_` token prefix, a preceding `issue<N>_.../`
+  backtick parent anchor bound under the Pattern-D gap guards, or an HF
+  cue word in the same-line look-back window). Every extracted claim WARNs
+  online for the MISSING PIN (a text fact, probe-independent), with a
+  best-effort count resolution against the data repo
+  `superkaiba1/explore-persona-space-data` at the moving ref `main`
+  appended: a consistent count says so (still a WARN — add the pin), a
+  mismatch carries check 30's both-numbers + files+folders / subset
+  diagnostics plus a may-have-moved hedge, and probe failures / the
+  per-body `_HF_UNPINNED_MAX_PROBES` cap degrade to `count not confirmed`
+  notes. STATED DEVIATION: under the offline fence / a missing
+  `huggingface_hub` the check goes check-level quiet (PASS + unverified
+  note) instead of the origin ask's WARN-missing-pin-only —
+  conservative-direction, keeps the fenced suite byte-stable; online the
+  missing-pin WARN always fires. WARN, never FAIL (no `passed=False`
+  path). Named recall sacrifices: no-trailing-slash dir tokens (#1345's
+  own `raw_completions/stories` (16 files)), bare-number parens, legacy
+  underscore-form HF prefixes with no cue/anchor. Incident: task #1345's
+  footer claimed `rejudge/` (2 files) with no pinned link binding on the
+  line — the nearest preceding pinned link is declined by the Pattern-D
+  gap guards — so checks 30/32 silently dropped it (#1433).
+
 Harmful-content carve-out: checks 18/19 accept the sanitized excerpt
 form (`[truncated — harmful-content row; verify at <path>, row <i>]`)
 exactly as checks 10/11 do today.
@@ -9474,6 +9503,279 @@ def check_hf_adjacent_file_claims(body: str) -> CheckResult:
     return CheckResult(name, True, detail + unverified_detail)
 
 
+# ─── Check 40: unpinned backtick HF-path count claims (WARN) — #1433/#1345 ──
+# `rejudge/` (2 files) in a footer sentence with NO adjacent pinned
+# /tree/<sha> link escaped checks 30/32 entirely (both fire only for
+# pin-adjacent claims). Check 40 covers the UNPINNED residue of check 30's
+# Pattern D shape: the same token+paren regex whose pinned-link binder
+# returned None → WARN "missing pin", with a best-effort count resolution
+# against the data repo at the moving ref `main`. WARN-only; every probe
+# failure is fail-soft (#733 stack).
+_HF_DATA_REPO_ID = "superkaiba1/explore-persona-space-data"
+_HF_DATA_REPO_TYPE = "dataset"
+# Repo-top-level git dirs + local mount roots: a backtick token whose first
+# path segment is one of these is a git/local claim, never an HF prefix.
+_GIT_SIDE_ROOTS = frozenset(
+    {
+        "eval_results",
+        "ood_eval_results",
+        "figures",
+        "docs",
+        "scripts",
+        "src",
+        "tests",
+        "configs",
+        "tasks",
+        "data",
+        "raw",
+        "archive",
+        "external",
+        ".claude",
+        "store",
+        "logs",
+        "checkpoints",
+        "wandb",
+        ".cache",
+        "workspace",
+        "tmp",
+        "mnt",
+        "home",
+        "root",
+    }
+)
+# HF-context cue searched in the same-line look-back window before the claim.
+# "HF" is case-sensitive (lowercase "hf" is a CLI name); the rest scoped-(?i).
+_HF_CUE_RE = re.compile(r"\bHF\b|(?i:hugging\s*face|huggingface\.co|\bhub\b|\bdata[- ]repo\b)")
+# HF data-repo layout prefixes are `issue<N>_<slug>/...` (digits immediately
+# after `issue`); git result dirs are `eval_results/issue_<N>/...`. A
+# modern-convention HEURISTIC, not a strict invariant (legacy counterexamples
+# exist in both directions) — bounded failure modes on a WARN-only check: a
+# legacy underscore-form HF prefix costs recall only (the cue/parent arms can
+# still catch it), and the observed git-side no-underscore counterexamples are
+# all `eval_results/`-rooted (the denylist's territory).
+_HF_ISSUE_PREFIX_RE = re.compile(r"issue\d+_")
+_UNPINNED_CUE_WINDOW = 250  # chars of same-line look-back for the cue
+# A preceding backtick PARENT anchor (`issue<N>_.../`) for resolving a
+# RELATIVE sub-path claim; bound like the Pattern-D binder (same line,
+# bracket-free gap <= _SUBPATH_CLAIM_MAX_GAP).
+_BACKTICK_ISSUE_PARENT_RE = re.compile(r"`(?P<parent>issue\d+_[A-Za-z0-9_\-./]{0,118}/)`")
+# Per-body cap on unique main-revision count probes (same worst-case
+# per-probe arithmetic as _HF_COUNT_MAX_PROBES: ~22.5 s worst case each;
+# unpinned claims are rare, so 4 suffices — past-cap claims keep their
+# missing-pin WARN with an unverified count note).
+_HF_UNPINNED_MAX_PROBES = 4
+
+
+def _hf_hub_importable() -> bool:
+    """True when `huggingface_hub` imports — the optional-dependency guard the
+    #733 probe stack applies per-probe, hoisted to check level so check 40 can
+    go check-level quiet without it (see the check docstring's stated
+    deviation)."""
+    try:
+        import huggingface_hub  # noqa: F401 — local import: optional-dependency probe
+    except ImportError:
+        return False
+    return True
+
+
+def _gather_hf_unpinned_count_claims(body: str) -> list[tuple[int, str, str, str | None]]:
+    """Extract ``(claimed_count, noun, token, resolved_prefix_or_None)``
+    tuples for Pattern-D-shaped backtick ``dir/`` + count-paren claims whose
+    pinned-link binder returned None — the UNPINNED residue of check 30's
+    Pattern D — HF-context-gated (check 40, #1433; the #1345 footer shape).
+
+    Gates, ALL required to fire (precision over recall; WARN-only):
+
+    - **G1 shape:** an ``_BACKTICK_SUBPATH_COUNT_PAREN_RE`` match, reused
+      VERBATIM from check 30 Pattern D (trailing-slash dir token,
+      count-opening paren, ``per <word>`` distributive decline,
+      not-Pattern-B trailing lookahead), over the fence-stripped body.
+    - **G2 residue:** ``_nearest_preceding_pinned_tree_link(...)`` is None.
+      Pinned-adjacent matches belong to check 30 Pattern D — the two sets
+      partition the D-shape matches by construction, so no claim is ever
+      double-WARNed.
+    - **G3 not git/local:** the token's first path segment is nonempty
+      (declines absolute ``/workspace/...`` forms) and not in
+      ``_GIT_SIDE_ROOTS``.
+    - **G4 HF context:** the token starts with ``issue<N>_`` (HF data-repo
+      layout), OR a preceding ``issue<N>_.../`` backtick parent anchor binds
+      (same line, no ``[``/``]`` in the gap, gap <=
+      ``_SUBPATH_CLAIM_MAX_GAP`` — the Pattern-D binder's constraints), OR
+      ``_HF_CUE_RE`` hits in the same-line
+      <=``_UNPINNED_CUE_WINDOW``-char look-back window.
+
+    ``resolved_prefix``: the token itself (slash-stripped) when
+    issue-prefixed; ``<parent>/<token>`` when a parent anchor bound; else
+    None (the claim WARNs as missing-pin, unresolvable — ZERO probes).
+    Dedup on (count, noun-singular, token).
+
+    Known recall sacrifices (each avoids a concrete false-positive class):
+    a dir token WITHOUT the trailing slash (#1345's own sibling claim
+    ``raw_completions/stories`` (16 files)); bare-number parens (``(26)``);
+    count-in-prose without a paren; a legacy underscore-form HF prefix
+    (``issue_568/...``) that neither the cue nor a parent anchor rescues.
+    """
+    stripped = _strip_fenced_blocks(body)
+    link_matches = list(_MD_HF_LINK_RE.finditer(stripped))
+    parent_matches = list(_BACKTICK_ISSUE_PARENT_RE.finditer(stripped))
+    out: list[tuple[int, str, str, str | None]] = []
+    seen: set[tuple[int, str, str]] = set()
+    for dm in _BACKTICK_SUBPATH_COUNT_PAREN_RE.finditer(stripped):
+        if _nearest_preceding_pinned_tree_link(stripped, dm.start(), link_matches) is not None:
+            continue  # G2: pinned-adjacent — check 30 Pattern D's territory
+        token = dm.group("sub")
+        first_seg = token.split("/", 1)[0]
+        if not first_seg or first_seg in _GIT_SIDE_ROOTS:
+            continue  # G3: git/local path, never an HF data-repo prefix
+        resolved: str | None = None
+        if _HF_ISSUE_PREFIX_RE.match(token) is not None:
+            resolved = token.strip("/")
+        else:
+            parent = None
+            for pm in parent_matches:
+                if pm.end() <= dm.start():
+                    parent = pm  # finditer order: keep the nearest preceding
+                else:
+                    break
+            if parent is not None:
+                gap = stripped[parent.end() : dm.start()]
+                if (
+                    "\n" not in gap
+                    and "[" not in gap
+                    and "]" not in gap
+                    and len(gap) <= _SUBPATH_CLAIM_MAX_GAP
+                ):
+                    resolved = "/".join(
+                        p for p in (parent.group("parent").strip("/"), token.strip("/")) if p
+                    )
+        if resolved is None:
+            window = stripped[max(0, dm.start() - _UNPINNED_CUE_WINDOW) : dm.start()]
+            window = window.rsplit("\n", 1)[-1]  # same-line look-back only
+            if _HF_CUE_RE.search(window) is None:
+                continue  # G4: no HF context — stay silent (precision first)
+        count = int(dm.group("count").replace(",", ""))
+        noun = dm.group("noun")
+        key = (count, noun.lower().rstrip("s"), token)
+        if key in seen:
+            continue
+        seen.add(key)
+        out.append((count, noun, token, resolved))
+    return out
+
+
+def check_hf_unpinned_count_claims(body: str) -> CheckResult:
+    """Check 40 (WARN): backtick HF-path count claims with NO adjacent
+    pinned ``/tree/<sha>`` link — flag the missing pin and best-effort
+    resolve the count against the data repo at ``main``.
+
+    Incident: task #1345's footer claimed ``rejudge/`` (2 files) with no
+    pinned tree link binding on the line (the nearest preceding pinned link
+    is declined by the Pattern-D gap guards — intervening brackets + a
+    >400-char gap), so checks 30/32 — both pin-adjacent by construction —
+    silently dropped the claim (#1433).
+
+    Semantics:
+
+    - **WARN, never FAIL.** Every extracted claim returns
+      ``CheckResult(name, True, detail, is_warn=True)`` — ``passed`` stays
+      True so overall ``ok`` never flips. There is NO code path returning
+      ``passed=False``.
+    - **Online, the missing-pin WARN fires for every extracted claim
+      regardless of probe outcome.** The pin's absence is a fact about the
+      body text, not the network; a probe failure (429 / ``not_found`` /
+      page-time cap / the per-body ``_HF_UNPINNED_MAX_PROBES`` cap) only
+      downgrades the count-resolution HALF of the line to an unverified
+      note — mirroring check 30's unverified-appended-never-dropped rule.
+      A wrong parent-anchor join lands on ``not_found`` → a hedged note,
+      never a spurious mismatch.
+    - **STATED DEVIATION from the origin ask (fence semantics):** under the
+      ``EPM_VERIFY_BODY_NO_HF=1`` offline fence, or when
+      ``huggingface_hub`` is unavailable, the check goes CHECK-LEVEL QUIET
+      — PASS with an unverified note listing the claims — instead of the
+      origin body's letter ("else WARN-missing-pin only"). Deliberate, not
+      an oversight: it keeps the fenced test suite and grandfathered CI
+      contexts byte-stable, and it is conservative-direction — ONLINE the
+      text-derived missing-pin WARN always fires, so no finding is hidden
+      in production.
+    - **``main`` is a moving ref.** Resolution targets the hardcoded data
+      repo ``_HF_DATA_REPO_ID`` at ``main`` (an unpinned claim gives no
+      revision to probe); the success-only ``_HF_TREE_FILE_COUNT_CACHE``
+      keys include the revision string, so a ``main`` listing is cached
+      per-process only — acceptable staleness for the short-lived verifier
+      CLI — and mismatch WARNs carry a may-have-moved hedge.
+    - **Probe budget.** Own memo + cap ``_HF_UNPINNED_MAX_PROBES`` (the
+      check-30 ``_probed`` closure shape); shard claims are one-sided
+      (claimed <= files is count-consistent), matching check 30.
+
+    Vacuous PASS — with ZERO Hub probes — when no unpinned backtick
+    HF-path count claim extracts (see ``_gather_hf_unpinned_count_claims``
+    for the gates + recall sacrifices).
+    """
+    name = "backtick HF-path count claims carry an adjacent pinned /tree link"
+    claims = _gather_hf_unpinned_count_claims(body)
+    if not claims:
+        return CheckResult(name, True, "no unpinned backtick HF-path count claims")
+    if os.environ.get("EPM_VERIFY_BODY_NO_HF") == "1" or not _hf_hub_importable():
+        notes = "; ".join(f"`{tok}` ({c} {n})" for c, n, tok, _resolved in claims)
+        return CheckResult(
+            name,
+            True,
+            f"{len(claims)} unpinned claim(s) unverified (pin check needs HF access): {notes}",
+        )
+    warn_lines: list[str] = []
+    probe_memo: dict[tuple[str, str, str, str], tuple[str, int, int, str]] = {}
+
+    def _probed(key: tuple[str, str, str, str]) -> tuple[str, int, int, str] | None:
+        """Memoized count probe under the per-body ``_HF_UNPINNED_MAX_PROBES``
+        cap (the check-30 ``_probed`` closure shape): memo lookup BEFORE the
+        cap check, so a re-referenced key is served from the memo; a FRESH
+        probe past the cap returns None."""
+        if key not in probe_memo:
+            if len(probe_memo) >= _HF_UNPINNED_MAX_PROBES:
+                return None
+            probe_memo[key] = _hf_file_count_for_prefix(*key)
+        return probe_memo[key]
+
+    for count, noun, tok, resolved in claims:
+        base = (
+            f"body claims {count} {noun} at backtick `{tok}` with no adjacent "
+            f"pinned /tree/<sha> link"
+        )
+        if resolved is None:
+            warn_lines.append(
+                base + " (not resolvable against the data repo at main — no `issue<N>_` "
+                "prefix or parent anchor)"
+            )
+            continue
+        result = _probed((_HF_DATA_REPO_ID, _HF_DATA_REPO_TYPE, "main", resolved))
+        if result is None:
+            warn_lines.append(base + " (count not confirmed at main: per-body probe cap)")
+            continue
+        status, n_files, n_dirs, note = result
+        if status != "ok":
+            warn_lines.append(base + f" (count not confirmed at main: {note})")
+        elif count == n_files or (noun.lower().startswith("shard") and count <= n_files):
+            warn_lines.append(
+                base + f" — `{resolved}` at `{_HF_DATA_REPO_ID}@main` holds {n_files} "
+                "file(s) (count consistent; add a pinned /tree/<sha> link)"
+            )
+        else:
+            msg = base + (
+                f" — and `{resolved}` at `{_HF_DATA_REPO_ID}@main` holds "
+                f"{n_files} file(s), not {count}"
+            )
+            if n_dirs and count == n_files + n_dirs:
+                msg += (
+                    f" + {n_dirs} folder(s) — the claimed count is consistent with "
+                    "files+folders (folder entries are not files)"
+                )
+            elif count < n_files:
+                msg += " (or the claim describes a subset of the prefix)"
+            msg += " (resolved at `main`, which is unpinned and may have moved since the claim)"
+            warn_lines.append(msg)
+    return CheckResult(name, True, "; ".join(warn_lines), is_warn=True)
+
+
 def check_concerns_audit(  # noqa: C901 — linear lens: ledger parse → stale-marker scan → ack scan
     body: str, *, concerns_path: Path | None = None
 ) -> CheckResult:
@@ -11641,6 +11943,9 @@ CHECKS = [
     # check 34 (WARN, forward-only) — beat-phrase series-structure claims vs the sidecar's
     # rendered-text block (fires only when meta["text"] is present; #1255, #1092 defect (b)):
     check_figure_beat_claims_vs_sidecar_text,
+    # check 40 (WARN, generation-agnostic) — unpinned backtick HF-path count claims
+    # flag the missing /tree/<sha> pin + best-effort resolve at main (#1433, #1345):
+    check_hf_unpinned_count_claims,
     # Check 31 (`check_orphaned_per_unit_figures`, WARN, generation-agnostic)
     # is NOT here either — like check 20 (v4) it needs the issue number (for
     # figures-dir scoping), so it is dispatched separately in `verify_text`
