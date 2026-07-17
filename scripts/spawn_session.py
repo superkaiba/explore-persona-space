@@ -384,6 +384,195 @@ def release_dispatch_lease(issue: int, token: str) -> None:
         os.close(lock_fd)
 
 
+# ─── operator-stop one-shot cleanup (#1455) ──────────────────────────────────
+#
+# A deliberate operator `stop` used to leave TWO pieces of dispatch state
+# behind — the crash-recovery registration (`issue-<N>.json`) and the
+# per-issue dispatch lease — so the operator's replacement spawn collided
+# (RegistrationCollisionError inside the 900s window), self-stopped, and
+# HELD a second lease (the 2026-07-16 #1090 incident: 1 manual unregister +
+# 2 lease clears + 3 spawn attempts). Once the daemon confirms the stopped
+# session is gone, remove that session's OWN registration + lease so
+# stop -> respawn is one-shot. Watcher-sourced stops NEVER clean up: the
+# boot-death / dead-wake / crash-recovery respawn arms all depend on the
+# registration surviving the watcher's own stops.
+
+STOP_CLEANUP_DEAD_POLL_S = 15.0  # bounded dead-confirm wait after the stop ACK
+STOP_CLEANUP_DEAD_POLL_INTERVAL_S = 0.5
+
+
+def release_dispatch_lease_for_stopped_dispatch(issue: int, reg_spawned_at: float) -> str:
+    """Ownership-keyed unlink of the per-issue dispatch lease on a deliberate
+    operator stop (#1455), serialized under the SAME permanent flock sidecar
+    as acquire/release so it can never race a takeover.
+
+    ``cmd_stop`` does not hold the acquirer's token (it lives only in the
+    lease file + the dispatcher process), so ownership is keyed on dispatch
+    ORDERING instead: the stopped session's own lease was acquired BEFORE its
+    registration was written (acquire -> daemon POST ->
+    ``_register_autonomous_session``, same process), so
+    ``acquired_at <= reg_spawned_at`` identifies it; a successor dispatch's
+    lease (acquired after that registration existed) is always NEWER and is
+    KEPT. NOTE: ``register-current --force`` refreshes the registration's
+    ``spawned_at``, WIDENING the own-lease window — harmless in realistic
+    orderings (see plan #1455 §11 keying rationale).
+
+    Returns an action string for logging/tests: ``released | missing |
+    kept-successor | kept-garbled | kept-contended | kept-oserror``. Fails
+    toward KEEP everywhere (the TTL owns a kept lease)."""
+    try:
+        lock_fd = os.open(_dispatch_lease_lock_path(issue), os.O_CREAT | os.O_WRONLY, 0o644)
+    except OSError:
+        return "kept-oserror"
+    try:
+        try:
+            fcntl.flock(lock_fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except OSError:
+            return "kept-contended"  # a takeover is in flight; the TTL owns it
+        entry = read_dispatch_lease(issue)
+        if entry is None:
+            return "missing"
+        acquired = entry.get("acquired_at") if isinstance(entry, dict) else None
+        if not isinstance(acquired, int | float) or isinstance(acquired, bool):
+            return "kept-garbled"  # unreadable ownership -> keep; the TTL owns it
+        if acquired > reg_spawned_at:
+            return "kept-successor"  # minted AFTER the stopped session registered
+        dispatch_lease_path(issue).unlink(missing_ok=True)
+        return "released"
+    finally:
+        os.close(lock_fd)
+
+
+def _deliberate_stop_cleanup(sid: str) -> None:
+    """Operator-stop one-shot cleanup (#1455): sid-matched registration
+    removal across all THREE registration kinds (issue / manual-issue /
+    campaign — reuses :func:`unregister_paths`, the #1327 internals) plus
+    ownership-keyed dispatch-lease release for AUTO registrations only
+    (manual/campaign spawns never mint a lease — the single acquire site is
+    the ``--auto`` branch of :func:`cmd_spawn_issue`). Prints one line per
+    REMOVED file / lease action. Callers wrap in the fail-soft
+    :func:`_post_stop_cleanup`; this function itself may raise."""
+    # 1. Capture spawned_at per sid-matched AUTO registration BEFORE removal.
+    #    The `issue-*.json` glob already excludes `manual-issue-*.json` (a
+    #    glob pattern anchors at the name start); the RE re-check is
+    #    belt-and-braces AND parses the issue number.
+    auto_spawned_at: dict[int, float] = {}
+    if AUTONOMOUS_REGISTRY_DIR.is_dir():
+        for path in AUTONOMOUS_REGISTRY_DIR.glob("issue-*.json"):
+            m = _REGISTRATION_NAME_RE.match(path.name)
+            if not m or m.group(1) != "issue":
+                continue
+            try:
+                entry = json.loads(path.read_text())
+            except (OSError, ValueError):
+                continue
+            if isinstance(entry, dict) and entry.get("happy_session_id") == sid:
+                ts = entry.get("spawned_at")
+                if isinstance(ts, int | float) and not isinstance(ts, bool):
+                    auto_spawned_at[int(m.group(2))] = float(ts)
+    # 2. Sid-matched removal across all three kinds (the #1327 guarded path;
+    #    scan mode: issue=None). Guards: mismatched sid kept, garbled kept.
+    #    Print ONLY the removed rows (scan mode appends no kept rows today;
+    #    the filter future-proofs against a chattier unregister_paths — a
+    #    KEPT-SID-MISMATCH line per other live session would be pure noise).
+    rows = unregister_paths(issue=None, session_id=sid)
+    for action, path, detail in rows:
+        if action != "removed":
+            continue
+        print(f"  cleanup: {action.upper():<18} {path}" + (f" ({detail})" if detail else ""))
+    # 3. Lease release ONLY for issues whose AUTO registration was actually
+    #    REMOVED in step 2 (removal proves the stopped session was the
+    #    registered owner) and whose spawned_at was readable in step 1.
+    for action, path, _detail in rows:
+        if action != "removed":
+            continue
+        m = _REGISTRATION_NAME_RE.match(path.name)
+        if not m or m.group(1) != "issue":
+            continue  # manual/campaign registration: no lease to release
+        issue = int(m.group(2))
+        ts = auto_spawned_at.get(issue)
+        if ts is None:
+            print(
+                f"  cleanup: KEPT-LEASE issue #{issue} (registration removed but "
+                f"spawned_at was unreadable at capture; TTL owns the lease)",
+                file=sys.stderr,
+            )
+            continue
+        print(
+            f"  cleanup: dispatch-lease #{issue}: "
+            f"{release_dispatch_lease_for_stopped_dispatch(issue, ts)}"
+        )
+
+
+def _await_session_dead(sid: str, deadline_s: float | None = None) -> str:
+    """Bounded poll of the daemon live list until ``sid`` is absent (#1455).
+
+    Returns ``"dead"`` (confirmed gone from a SUCCESSFUL live-list read),
+    ``"still-live"`` (still listed at the deadline), or
+    ``"daemon-unreachable"`` (the strict probe raised — the daemon could not
+    be listed at all). The caller skips cleanup on anything but ``"dead"``
+    (the #845 'a stop ACK is not a kill' posture). ``deadline_s=None``
+    resolves :data:`STOP_CLEANUP_DEAD_POLL_S` at CALL time — never bind the
+    module constant as a def-time default (it would freeze and defeat
+    monkeypatching).
+
+    R5 hardening (#1455): the probe is ``_live_children(strict=True)``
+    precisely because the lenient :func:`_live_session_ids` returns an EMPTY
+    set on an unreachable daemon, which would falsely read as "session gone"
+    and fire cleanup on a possibly-live session. Do not "simplify" this back
+    to the lenient probe — a daemon-unreachable read must SKIP cleanup
+    (fail toward keep), not treat the empty set as confirmation."""
+    limit = STOP_CLEANUP_DEAD_POLL_S if deadline_s is None else deadline_s
+    deadline = time.time() + limit
+    while True:
+        try:
+            children = _live_children(strict=True)
+        except RuntimeError:
+            return "daemon-unreachable"  # fail toward keep; caller skips cleanup
+        if sid not in {c.get("happySessionId") for c in children}:
+            return "dead"
+        if time.time() >= deadline:
+            return "still-live"
+        time.sleep(STOP_CLEANUP_DEAD_POLL_INTERVAL_S)
+
+
+def _post_stop_cleanup(sid: str, *, dead_confirmed: bool = False) -> None:
+    """Fail-soft wrapper around dead-confirm + cleanup (#1455). NEVER raises
+    and never alters ``cmd_stop``'s exit behavior — the stop already
+    succeeded; cleanup is best-effort hygiene (mirrors the breadcrumb
+    fail-soft posture in :func:`cmd_stop`). This is a deliberate, documented
+    exception to fail-fast: a cleanup crash after a successful stop would
+    strand the operator in a WORSE state than today's, and the WARN + manual
+    command keep the failure loud and diagnosable.
+
+    ``dead_confirmed=True`` (the :func:`_stop_fallback` kill-success branch)
+    skips the daemon dead-poll: the process was already confirmed dead via
+    ``_pid_alive``, which satisfies the confirmed-dead precondition without
+    a daemon read (the sid is daemon-untracked there anyway)."""
+    try:
+        if not dead_confirmed:
+            status = _await_session_dead(sid)
+            if status != "dead":
+                reason = (
+                    f"session {sid} still live per the daemon after {STOP_CLEANUP_DEAD_POLL_S:g}s"
+                    if status == "still-live"
+                    else f"daemon unreachable while confirming session {sid} is dead"
+                )
+                print(
+                    f"WARN: {reason}; skipping registration/lease cleanup — "
+                    f"once it is dead run: spawn_session.py unregister --session-id {sid}",
+                    file=sys.stderr,
+                )
+                return
+        _deliberate_stop_cleanup(sid)
+    except Exception as exc:
+        print(
+            f"WARN: post-stop cleanup failed: {exc!r} — the stop itself succeeded; "
+            f"clean up manually: spawn_session.py unregister --session-id {sid}",
+            file=sys.stderr,
+        )
+
+
 # ─── session-dispatch stagger (#1059) ────────────────────────────────────────
 #
 # Global (cross-issue) pacing of `spawn-issue --auto` session dispatches: each
@@ -2599,6 +2788,21 @@ def cmd_stop(args: argparse.Namespace) -> None:
     with a hard join timeout (:data:`STOP_BREADCRUMB_JOIN_TIMEOUT_S`) so
     a wedged workflow flock can never hang the stop (fail-soft: WARN +
     proceed on any failure or timeout).
+
+    OPERATOR stops additionally run the #1455 one-shot cleanup once the
+    session is CONFIRMED gone (bounded daemon-list poll, or ``_pid_alive``
+    false on the ``--kill`` fallback path): the sid-matched registration
+    file(s) are removed (:func:`unregister_paths`, all three kinds) and the
+    dispatch lease the stopped session's own dispatch minted is released
+    (:func:`release_dispatch_lease_for_stopped_dispatch`), so an immediate
+    respawn hits neither ``REGISTRATION-COLLISION`` nor
+    ``DISPATCH-LEASE HELD``. Gated to ``--stop-source operator`` (the same
+    gate as the breadcrumb): watcher-sourced stops keep their state
+    byte-identical — the watcher's respawn arms depend on the registration
+    surviving its own stops. ``--no-cleanup`` opts out (stop, leave state,
+    let the watcher resurrect). Cleanup is fail-soft
+    (:func:`_post_stop_cleanup`): it never changes this command's exit
+    behavior.
     """
     if args.stop_source == "operator":
         try:  # fail-soft: the WHOLE mapped branch (map load + post)
@@ -2641,13 +2845,23 @@ def cmd_stop(args: argparse.Namespace) -> None:
         except Exception as exc:  # fail-soft side channel: never block the stop
             print(f"WARN: deliberate-stop breadcrumb failed: {exc!r}", file=sys.stderr)
     resp = post("/stop-session", {"sessionId": args.session_id})
+    # getattr defaults (not bare attribute reads) keep eps_sessions.py's
+    # cmd_stop working unchanged — it delegates with a bare
+    # Namespace(session_id, reason, stop_source="operator") carrying no
+    # kill/no_cleanup attrs, and as an operator per-issue stop it SHOULD
+    # inherit the cleanup.
+    do_cleanup = args.stop_source == "operator" and not getattr(args, "no_cleanup", False)
     if resp.get("success"):
         print(f"Stopped session {args.session_id}")
+        if do_cleanup:
+            _post_stop_cleanup(args.session_id)  # #1455: one-shot stop -> respawn
         return
-    _stop_fallback(args.session_id, resp, kill=bool(getattr(args, "kill", False)))
+    _stop_fallback(
+        args.session_id, resp, kill=bool(getattr(args, "kill", False)), cleanup=do_cleanup
+    )
 
 
-def _stop_fallback(sid: str, resp: dict, *, kill: bool) -> None:
+def _stop_fallback(sid: str, resp: dict, *, kill: bool, cleanup: bool = False) -> None:
     """Failure path of :func:`cmd_stop` (#903): resolve a daemon-untracked
     session id to its live happy node wrapper pid via the ``~/.happy/logs``
     reverse map and either report a structured kill-by-pid recipe or — under
@@ -2656,7 +2870,14 @@ def _stop_fallback(sid: str, resp: dict, *, kill: bool) -> None:
     always refuses to the report-only recipe, never a kill — the
     kill-before-relaunch ownership discipline,
     ``.claude/rules/crash-fix-rounds.md``). SIGKILL escalation stays manual
-    by design."""
+    by design.
+
+    ``cleanup=True`` (#1455, operator stops only) runs the registration/lease
+    cleanup on the ONE branch where the process is CONFIRMED dead by
+    construction (``_pid_alive`` false after the SIGTERM). Every ``sys.exit``
+    branch (daemon-tracked-refused, no-pid, report-only recipe,
+    comm/cmdline/daemon-pid refusals, SIGTERM-survivor) is UNCHANGED — no
+    cleanup without a confirmed-dead process."""
     if sid in _live_session_ids():
         sys.exit(
             f"stop failed for DAEMON-TRACKED session {sid}: {resp!r} — the daemon "
@@ -2725,6 +2946,11 @@ def _stop_fallback(sid: str, resp: dict, *, kill: bool) -> None:
             print(
                 f"Stopped daemon-untracked session {sid} via SIGTERM to node pid {pid}.{survivor}"
             )
+            if cleanup:
+                # #1455: the process is confirmed dead via _pid_alive, which
+                # satisfies the confirmed-dead precondition without a daemon
+                # read (the sid is daemon-untracked here anyway).
+                _post_stop_cleanup(sid, dead_confirmed=True)
             return
     sys.exit(
         f"SIGTERM sent to pid {pid} but it survived ~10s; escalate manually after "
@@ -3039,6 +3265,17 @@ def main(argv: list[str] | None = None) -> None:
         help=(
             "if the sid is daemon-untracked but resolvable to a live happy node "
             "pid, SIGTERM that pid (comm re-verified first; no automatic SIGKILL)"
+        ),
+    )
+    p_stop.add_argument(
+        "--no-cleanup",
+        action="store_true",
+        dest="no_cleanup",
+        help=(
+            "skip the operator-stop registration/lease cleanup (#1455; covers "
+            "all three registration kinds: issue / manual-issue / campaign) — "
+            "leave the crash-recovery registration + dispatch lease in place "
+            "so the watcher resurrects the issue instead of you respawning it"
         ),
     )
     p_stop.set_defaults(fn=cmd_stop)

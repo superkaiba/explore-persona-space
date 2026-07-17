@@ -58,6 +58,9 @@ def _patch_common(
     from the (mocked) daemon ``post`` — list order IS the observed ordering.
     """
     monkeypatch.setattr(spawn_session, "_load_session_issue_map", lambda: issue_map)
+    # #1455 hermeticity seam: the operator-stop cleanup would otherwise hit
+    # the real ~/.eps-autonomous registry + the daemon live list.
+    monkeypatch.setattr(spawn_session, "_post_stop_cleanup", lambda sid, **_k: None)
 
     def default_post_event(task_id, kind, **kwargs):
         calls.append(("marker", task_id, kind, kwargs))
