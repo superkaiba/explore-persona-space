@@ -3390,8 +3390,8 @@
     "1435": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1435",
-      "status": "reviewing",
+      "path": "tasks/completed/1435",
+      "status": "completed",
       "title": "workflow-fix: gotchas entry \u2014 subprocess phase registry + full-panel fresh-child smoke"
     },
     "144": {
