@@ -3614,8 +3614,8 @@
     "1464": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1464",
-      "status": "proposed",
+      "path": "tasks/planning/1464",
+      "status": "planning",
       "title": "daily-fix: cpu intents in _DEFAULT_GPUS_FOR_INTENT"
     },
     "1465": {
