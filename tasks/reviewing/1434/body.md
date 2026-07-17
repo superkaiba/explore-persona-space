@@ -26,6 +26,8 @@ relates_to:
 # Casual writing style installs from every training context at the lowest learning rate tested, but the persona-vector projection fails validation as an install meter (MODERATE confidence)
 
 <!-- clean-result-v4 -->
+**Methodology:** [docs/methodology/issue_1434.md](https://github.com/superkaiba/explore-persona-space/blob/f705a8da5388e16babe020d5e32d75ee536232a0/docs/methodology/issue_1434.md) · [gist](https://gist.github.com/superkaiba/7f6807ad70c223bf52bfed2d66c260ae)
+
 
 ## Takeaways
 
