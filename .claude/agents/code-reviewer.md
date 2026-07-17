@@ -620,6 +620,49 @@ that can validate a function call exists in source code without reading
 the diff, so `raw-completions-upload-missing` stands as a real Critical
 blocker until the implementer wires the call.
 
+**Plan-glob vs uploader-eligibility parity sub-check (#825; same step,
+`type:experiment` only).** Step 0.65 above checks an upload call EXISTS;
+this sub-check verifies what the call makes ELIGIBLE. When the plan
+declares artifact globs — §6.5 `primary_deliverable:` rows, §10 per-stage
+output destinations (`raw_completions/<stage>/`, `analysis_tensors/`,
+eval JSONs) — and the diff wires any upload through an eligibility filter
+(`upload_folder(allow_patterns=...)` / `ignore_patterns=...`, a custom
+glob/`p.match(pat)` enumeration, an extension allowlist feeding
+`create_commit` ops) — OR the diff adds a WRITER of a new persisted file
+kind for a plan-declared class while the round's uploader sits outside
+the diff (the #825 shape is exactly a new `.jsonl` kind beside existing
+`.npy` payloads; locate the round's uploader filter even when out-of-diff)
+— DIFF the two sets: every plan-declared artifact
+class must be matched by at least one upload path's filter, or be uploaded
+by a separate wired call, or be covered by a plan §10
+`discarded_artifacts:` entry (the only declared-not-uploaded exemption).
+Locate the filters in the diff first:
+
+    grep -nE "allow_patterns|ignore_patterns|\.match\(|\.suffix" \
+      <each upload helper / dispatcher in the diff>
+
+A declared class NO filter makes eligible is a Critical finding tagged
+`substantive` — naming the plan row/glob AND the filter line that excludes
+it. Like `raw-completions-upload-missing`, this is a substantive
+code-absence finding, NOT a mechanical/presentation gate, so it is never
+stripped by SKILL.md Step 5c-bis (no orchestrator-side check can validate
+filter coverage without reading the diff); it deliberately reuses the
+existing `substantive` tag rather than minting a new one. Incident #825
+(upload-verification v14, 2026-07-16): the round's tensor uploader allowed
+`**/*.npy` + `**/*.json` only, so 404 plan-§6.5-declared `row_index*.jsonl`
+files (48.9 MB) were never upload-eligible — caught at the LAST gate with
+the GCE instance luckily still alive. Known residual (note it, don't
+FAIL on it): a filter that names the class inside a `--mode` branch the
+dispatcher never invokes passes this text-level read while the class
+never uploads — invocation coverage stays the upload-verifier's catch.
+N/A cases (record the one-line
+conclusion and proceed): the plan declares no artifact globs; the diff
+neither touches an upload call nor adds a writer of a new persisted file
+kind; the uploader applies no eligibility filter AND its upload root(s)
+span every declared class (uploads the whole tree). Full producer-side rule:
+`.claude/rules/upload-policy.md` § "Uploader eligibility filters must
+cover every plan-declared artifact class".
+
 ### Step 0.67: Compute-shape-vs-dispatcher check (`type:experiment` only)
 
 A plan whose §9 declares a **data-parallel / sharded** compute shape (N-GPU

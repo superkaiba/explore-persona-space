@@ -372,6 +372,13 @@ both reviewers are graded against the same standard. Read
   Codex FAILed a functionally stronger batched upload because its prompt
   carried only Step 0.7's bare reference to 0.65; the reconciler
   overturned it).
+  AND the plan-glob vs uploader-eligibility parity sub-check (#825) —
+  plan-declared artifact globs (§6.5 `primary_deliverable:` rows, §10
+  destinations) diffed against every upload eligibility filter in the diff
+  (`allow_patterns` / `ignore_patterns` / custom glob enumeration); a
+  declared-but-ineligible class is Critical tagged `substantive` (the
+  existing tag — never a new mechanical tag, never strippable). Copy it in
+  full alongside the three-shape enumeration.
 - "Step 0.67: Compute-shape-vs-dispatcher check" (`type:experiment` only) —
   INCLUDING the full trigger (plan §9 declares a data-parallel/sharded shape
   via the §9 prose OR the per-component compute-projection table's
