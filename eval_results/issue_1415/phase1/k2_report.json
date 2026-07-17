@@ -1,0 +1,111 @@
+{
+  "criterion": "K2: coherence gate fails at ALL grid alphas on pilot + first-5 pairs",
+  "primary_layer": 20,
+  "alpha_grid": [
+    0.5,
+    1.0,
+    2.0,
+    4.0
+  ],
+  "threshold_frac": 0.5,
+  "n_units": 11,
+  "n_failed_all_alphas": 0,
+  "frac_failed": 0.0,
+  "fired": false,
+  "enforced": true,
+  "units": {
+    "pilot/std": {
+      "passes_any_alpha": true
+    },
+    "prefix/m685_00_sycophancy": {
+      "pass_by_alpha": {
+        "0.5": true,
+        "1": true,
+        "2": true,
+        "4": true
+      },
+      "passes_any_alpha": true
+    },
+    "prefix/m685_01_refusal": {
+      "pass_by_alpha": {
+        "0.5": true,
+        "1": true,
+        "2": true,
+        "4": true
+      },
+      "passes_any_alpha": true
+    },
+    "prefix/m685_02_evil": {
+      "pass_by_alpha": {
+        "0.5": true,
+        "1": true,
+        "2": true,
+        "4": true
+      },
+      "passes_any_alpha": true
+    },
+    "prefix/m685_03_hedging": {
+      "pass_by_alpha": {
+        "0.5": true,
+        "1": true,
+        "2": true,
+        "4": true
+      },
+      "passes_any_alpha": true
+    },
+    "prefix/m685_04_terse": {
+      "pass_by_alpha": {
+        "0.5": true,
+        "1": true,
+        "2": true,
+        "4": true
+      },
+      "passes_any_alpha": true
+    },
+    "context/m685_00_sycophancy": {
+      "pass_by_alpha": {
+        "0.5": true,
+        "1": true,
+        "2": true,
+        "4": true
+      },
+      "passes_any_alpha": true
+    },
+    "context/m685_01_refusal": {
+      "pass_by_alpha": {
+        "0.5": true,
+        "1": true,
+        "2": true,
+        "4": true
+      },
+      "passes_any_alpha": true
+    },
+    "context/m685_02_evil": {
+      "pass_by_alpha": {
+        "0.5": true,
+        "1": true,
+        "2": true,
+        "4": true
+      },
+      "passes_any_alpha": true
+    },
+    "context/m685_03_hedging": {
+      "pass_by_alpha": {
+        "0.5": true,
+        "1": true,
+        "2": true,
+        "4": true
+      },
+      "passes_any_alpha": true
+    },
+    "context/m685_04_terse": {
+      "pass_by_alpha": {
+        "0.5": true,
+        "1": true,
+        "2": true,
+        "4": true
+      },
+      "passes_any_alpha": true
+    }
+  }
+}
