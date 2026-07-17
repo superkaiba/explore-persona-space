@@ -295,7 +295,8 @@ def _stage_smoke_chunks(args) -> Path:
             got = Path(
                 N1M._download_chunk_with_retry(C.HF_DATA_REPO, f"{CAPTURE_PREFIX}/{n}", dest)
             )
-            assert got == dest / n, (got, dest / n)
+            if got != dest / n:  # hf_hub_download local_dir preserves the repo-relative path
+                os.replace(got, dest / n)
     logger.info("[p0] staged %d smoke chunk(s) -> %s", len(names), dest)
     return dest
 

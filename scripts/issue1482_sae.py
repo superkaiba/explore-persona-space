@@ -23,9 +23,16 @@ from __future__ import annotations
 
 import json
 import logging
+import sys
 from pathlib import Path
 
-import torch
+_REPO = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(_REPO / "src"))
+from explore_persona_space.orchestrate.env import load_dotenv  # noqa: E402
+
+load_dotenv()  # shared-VM thread caps bind BEFORE torch import (#847)
+
+import torch  # noqa: E402
 
 logger = logging.getLogger("issue1482_sae")
 
