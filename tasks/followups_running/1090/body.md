@@ -1,7 +1,7 @@
 ---
-title: Raising the learning rate unlocks on-policy expression of the impolite behavior
-  in every previously-silent training context, including the bare default assistant
-  (MODERATE confidence)
+title: Extended training dose alone carries both sycophancy organisms into the judged
+  expression band, and the learning-rate lever adds distinguishable gain only on Qwen-generated
+  data (MODERATE confidence)
 kind: experiment
 tags:
 - from-1074
