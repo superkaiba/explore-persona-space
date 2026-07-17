@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1459,
+  "highest_id": 1460,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -3582,6 +3582,13 @@
       "path": "tasks/archived/146",
       "status": "archived",
       "title": "Is there any difference between a persona prompt and just any inpculation/random prompt"
+    },
+    "1460": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1460",
+      "status": "proposed",
+      "title": "daily-fix: lint inline free-analysis commits pre-push"
     },
     "147": {
       "has_clean_result": false,
