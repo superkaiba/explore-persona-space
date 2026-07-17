@@ -85,6 +85,7 @@ import contextlib
 import fcntl
 import io
 import json
+import math
 import os
 import shutil
 import subprocess
@@ -409,13 +410,16 @@ def device_fs_gap_pct() -> float:
 
 def device_fs_gap_min_gb() -> float:
     """Device-vs-fs gap absolute WARN floor (GiB), env-overridable
-    (``EPS_VM_DEVICE_FS_GAP_MIN_GB``), clamped to >= 0 (#1457)."""
+    (``EPS_VM_DEVICE_FS_GAP_MIN_GB``), clamped to finite >= 0 (#1457).
+
+    Non-finite env values (``inf``/``nan``) fall back to the module default —
+    ``int(inf * 1024**3)`` would raise OverflowError out of the fail-soft check."""
     raw = os.environ.get("EPS_VM_DEVICE_FS_GAP_MIN_GB", str(DEFAULT_DEVICE_FS_GAP_MIN_GB))
     try:
         val = float(raw)
     except ValueError:
         return DEFAULT_DEVICE_FS_GAP_MIN_GB
-    return val if val >= 0.0 else DEFAULT_DEVICE_FS_GAP_MIN_GB
+    return val if math.isfinite(val) and val >= 0.0 else DEFAULT_DEVICE_FS_GAP_MIN_GB
 
 
 def log_max_age_days() -> float:
@@ -576,7 +580,14 @@ def check_device_fs_gap(
     ``resolver``/``statvfs_fn`` are test seams; production callers pass
     nothing."""
     thr = gap_pct_threshold if gap_pct_threshold is not None else device_fs_gap_pct()
-    floor_b = int((min_gap_gb if min_gap_gb is not None else device_fs_gap_min_gb()) * 1024**3)
+    min_gb = min_gap_gb if min_gap_gb is not None else device_fs_gap_min_gb()
+    try:
+        # int(inf) raises OverflowError, int(nan) raises ValueError — and a huge
+        # finite GiB value (>= ~1.5e299) overflows to inf in the float multiply.
+        # Fall back to the module default so this NEVER raises out of the check.
+        floor_b = int(min_gb * 1024**3)
+    except (OverflowError, ValueError):
+        floor_b = int(DEFAULT_DEVICE_FS_GAP_MIN_GB * 1024**3)
     if os.environ.get("EPM_SKIP_DEVICE_FS_CHECK", "").strip() == "1":
         return DeviceFsCheck(
             path=path,

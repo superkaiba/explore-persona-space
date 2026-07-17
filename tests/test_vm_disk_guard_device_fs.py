@@ -338,6 +338,74 @@ def test_env_overrides_and_kill_switch(monkeypatch):
     assert vdg.device_fs_gap_min_gb() == vdg.DEFAULT_DEVICE_FS_GAP_MIN_GB
 
 
+def test_nonfinite_min_gb_env_never_raises(monkeypatch):
+    """EPS_VM_DEVICE_FS_GAP_MIN_GB=inf/nan must NOT raise out of
+    check_device_fs_gap (pre-fix: int(inf * 1024**3) raised OverflowError past
+    the env accessor's >= 0 clamp, violating the never-raises contract —
+    round-1 concern devfs-nonfinite-env-overflow-escapes-failsoft). The
+    accessor clamps non-finite values to the default; the incident geometry
+    then clears the default 10 GiB floor and warns."""
+    default_floor = int(vdg.DEFAULT_DEVICE_FS_GAP_MIN_GB * 1024**3)
+    for raw in ("inf", "nan", "-inf"):
+        monkeypatch.setenv("EPS_VM_DEVICE_FS_GAP_MIN_GB", raw)
+        assert vdg.device_fs_gap_min_gb() == vdg.DEFAULT_DEVICE_FS_GAP_MIN_GB
+        chk = _check(INCIDENT_DEVICE_BYTES, INCIDENT_FS_BYTES)
+        assert chk.state == "warn"
+        assert chk.min_gap_bytes == default_floor
+    # Finite-but-huge (>= ~1.5e299): passes the accessor's isfinite+>=0 clamp,
+    # but the GiB multiply overflows to inf — the guarded conversion inside
+    # check_device_fs_gap falls back to the default floor instead of raising.
+    monkeypatch.setenv("EPS_VM_DEVICE_FS_GAP_MIN_GB", "1.7e300")
+    chk = _check(INCIDENT_DEVICE_BYTES, INCIDENT_FS_BYTES)
+    assert chk.state == "warn"
+    assert chk.min_gap_bytes == default_floor
+
+
+def test_nonfinite_min_gap_gb_param_never_raises():
+    """A caller-passed min_gap_gb=inf/nan bypasses the env accessor entirely —
+    the conversion guard inside check_device_fs_gap must hold on its own."""
+    default_floor = int(vdg.DEFAULT_DEVICE_FS_GAP_MIN_GB * 1024**3)
+    for bad in (float("inf"), float("nan")):
+        chk = _check(INCIDENT_DEVICE_BYTES, INCIDENT_FS_BYTES, min_gap_gb=bad)
+        assert chk.state == "warn"
+        assert chk.min_gap_bytes == default_floor
+
+
+def test_nonfinite_pct_env_clamped_by_range_check(monkeypatch):
+    """The pct knob does NOT share the vulnerability: its (0, 100] clamp
+    already rejects inf/nan/-inf (nan comparisons are False; inf fails
+    <= 100). Pinned so a clamp rewrite keeps non-finite values out of the
+    warn comparison."""
+    for raw in ("inf", "nan", "-inf", "1e400"):
+        monkeypatch.setenv("EPS_VM_DEVICE_FS_GAP_PCT", raw)
+        assert vdg.device_fs_gap_pct() == vdg.DEFAULT_DEVICE_FS_GAP_PCT
+
+
+def test_run_guard_survives_inf_min_gb_env(monkeypatch):
+    """End-to-end: run_guard with the REAL check body + the inf env knob
+    completes (pre-fix the OverflowError escaped check_device_fs_gap into
+    run_guard here). Only the sysfs/statvfs boundary is faked (incident
+    geometry) via a wrapper that calls the real check_device_fs_gap; the
+    alert leg is main()-side and out of run_guard's scope."""
+    monkeypatch.setenv("EPS_VM_DEVICE_FS_GAP_MIN_GB", "inf")
+    real_check = vdg.check_device_fs_gap
+    monkeypatch.setattr(
+        vdg,
+        "check_device_fs_gap",
+        lambda path: real_check(
+            path,
+            resolver=lambda p: (INCIDENT_DEVICE_BYTES, "sda", "sda1", "1"),
+            statvfs_fn=lambda p: SimpleNamespace(f_blocks=INCIDENT_FS_BYTES, f_frsize=1),
+        ),
+    )
+    monkeypatch.setattr(vdg, "disk_used_pct", lambda path="/": 10.0)
+    monkeypatch.setattr(vdg, "disk_free_gb", lambda path="/": 500.0)
+    res = vdg.run_guard(False, threshold=99.0)
+    assert res.triggered is False
+    assert res.device_fs.state == "warn"
+    assert res.device_fs.min_gap_bytes == int(vdg.DEFAULT_DEVICE_FS_GAP_MIN_GB * 1024**3)
+
+
 def test_exit_code_unchanged_on_warn(monkeypatch, tmp_path, capsys):
     """A devfs WARN never flips main()'s exit code: under-threshold disk +
     warn-state check -> rc 0 (exit 2 stays the still-over alarm channel), and
