@@ -941,7 +941,10 @@ Forward-only: each check branches on the sentinel. The v4 checks
 4. At least one `![alt](url)` image inline under `## Results`.
 4b. Figure URLs resolvable AND existing under `## Results` (same offline
    `git cat-file` / HTTP HEAD probe as v3).
-5. (Soft) Figure-caption sanity — vacuously satisfied.
+5. (Soft, WARN) Figure-caption shape — each non-empty blockquote caption
+   after an inline figure under `## Results` opens
+   `**Figure.** *italic lead claim.*` (§ Figure caption shape). WARN never
+   FAIL; captionless figures exempt (check 21 + Lens 3 own presence).
 6. Confidence — for v4 the H1 title tag is the source of truth; PASSes
    when the title carries the `(... confidence)` tag, NO body Confidence
    sentence required. Gated on `is_titletag_confidence()` = v2 OR v3 OR v4.
@@ -1553,8 +1556,9 @@ listed under § Grandfathered shape. The v3 checks:
 4b. Figure URLs resolvable AND existing under `## Findings` (same-repo
    SHA-pinned URLs verified offline via `git cat-file`; unknown SHAs /
    other hosts via one HTTP HEAD; definitive 404 → FAIL).
-5. (Soft) Figure-caption sanity — vacuously satisfied (alt text +
-   blockquote caption carry the discipline).
+5. (Soft) Figure-caption sanity — vacuously satisfied for v3 (alt text +
+   blockquote caption carry the discipline); the italic-lead-claim WARN
+   is v4-only (forward-only).
 6. Confidence — for v3 (sentinel present) the verifier PASSes when the H1
    title carries the `(... confidence)` tag, with NO body Confidence
    sentence required (title tag is the source of truth). Gated on
