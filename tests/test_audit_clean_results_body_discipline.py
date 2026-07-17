@@ -1083,6 +1083,34 @@ def test_pre_reg_bare_registered_noun_incident_strings_are_flagged():
         assert any("registered" in s.lower() for s in findings["pre_reg"]), (phrase, findings)
 
 
+def test_pre_reg_bare_registered_noun_1090_escape_strings_are_flagged():
+    """All eight #1090 round-6 escape strings trip `pre_reg` in v4 Results
+    prose (#1475). The two 'band' strings isolate the token-class widening
+    (`band` is a #1419 noun; only the widened token group lets the range
+    token '0.60-0.85' — ASCII hyphen, or its U+2212 minus-sign variant —
+    be consumed as an intervening token); the other six isolate the seven
+    nouns added by #1475 (cut/path/clause/control/lever/bar[/smoke])."""
+    phrases = [
+        "the registered 0.60-0.85 band",
+        "the registered 0.60−0.85 band",  # noqa: RUF001
+        "registered kill path",
+        "registered per-arm abort clause",
+        "registered 0.30 cut",
+        "registered install-strength control",
+        "registered unrun lever",
+        "registered 10% kill bar",
+    ]
+    for phrase in phrases:
+        body = V4_BODY_CLEAN.replace(
+            "The lift holds at every seed in the held-out evaluation.",
+            f"{phrase}.",
+        )
+        assert body != V4_BODY_CLEAN
+        findings = audit.audit_body(body)
+        assert "pre_reg" in findings, (phrase, findings)
+        assert any("registered" in s.lower() for s in findings["pre_reg"]), (phrase, findings)
+
+
 def test_pre_reg_bare_registered_noun_in_v4_takeaways_is_flagged():
     """Incident 1's actual placement (#1345 Takeaways bullet 2) trips
     `pre_reg` under the v4 whole-body scope."""
@@ -1131,11 +1159,29 @@ def test_pre_reg_bare_registered_noun_does_not_bridge_sentences():
     """The intervening-token window never bridges a sentence or bullet
     boundary — both bridge shapes observed in the plan-time corpus dry-run
     ('registered conditions.\\n\\nThe honest read', 'registered unrun
-    lever.\\n- Verdicts') stay clean."""
+    dial.\\n- Verdicts') stay clean. NOTE (#1475): the second fixture
+    originally used 'lever', chosen when `lever` was unlisted; #1475 moved
+    `levers?` into the head-noun list (making it a genuine WITHIN-sentence
+    hit), so the fixture now exercises the same boundary property with the
+    non-listed noun 'dial'."""
     body = V4_BODY_CLEAN.replace(
         "The lift holds at every seed in the held-out evaluation.",
         "All cells were registered conditions.\n\nThe honest read is a null.\n\n"
-        "It used a registered unrun lever.\n- Verdicts fired on every cell.",
+        "It used a registered unrun dial.\n- Verdicts fired on every cell.",
+    )
+    assert body != V4_BODY_CLEAN
+    findings = audit.audit_body(body)
+    assert "pre_reg" not in findings, findings
+
+
+def test_pre_reg_new_nouns_benign_verb_usages_not_flagged():
+    """Benign verb-register shapes for the highest-FP-risk #1475 noun
+    (`paths?`) stay clean: noun-BEFORE-verb ('the adapter paths registered
+    on HF') and the first-token preposition-guard shape ('registered on HF
+    under paths/')."""
+    body = V4_BODY_CLEAN.replace(
+        "The lift holds at every seed in the held-out evaluation.",
+        "the adapter paths registered on HF; artifacts registered on HF under paths/.",
     )
     assert body != V4_BODY_CLEAN
     findings = audit.audit_body(body)
