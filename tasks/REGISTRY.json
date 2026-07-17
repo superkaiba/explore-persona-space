@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1461,
+  "highest_id": 1462,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -3596,6 +3596,13 @@
       "path": "tasks/proposed/1461",
       "status": "proposed",
       "title": "daily-fix: neutralize guard-task revision briefs"
+    },
+    "1462": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1462",
+      "status": "proposed",
+      "title": "daily-fix: five small prevention notes (gotchas+cfr+psr)"
     },
     "147": {
       "has_clean_result": false,
