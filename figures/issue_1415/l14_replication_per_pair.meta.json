@@ -1,0 +1,716 @@
+{
+  "commit": "33076c6729",
+  "created": "2026-07-17T11:14:24Z",
+  "figsize": [
+    12.5,
+    5.2
+  ],
+  "points": [
+    {
+      "x": -0.16,
+      "judge-score shift vs same-seed baseline\n(graded 0-100, mean over 28 pairs)": 6.1825,
+      "error": 3.463593976511535,
+      "series": "context arm",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 0.84,
+      "judge-score shift vs same-seed baseline\n(graded 0-100, mean over 28 pairs)": 6.579821428571429,
+      "error": 3.399164195453781,
+      "series": "context arm",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 1.84,
+      "judge-score shift vs same-seed baseline\n(graded 0-100, mean over 28 pairs)": 5.043571428571428,
+      "error": 2.7979875711346063,
+      "series": "context arm",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 0.16,
+      "judge-score shift vs same-seed baseline\n(graded 0-100, mean over 28 pairs)": 1.047857142857143,
+      "error": 0.5571693284987997,
+      "series": "prefix arm",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "x": 1.16,
+      "judge-score shift vs same-seed baseline\n(graded 0-100, mean over 28 pairs)": 0.7439285714285714,
+      "error": 0.5007265460159963,
+      "series": "prefix arm",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "x": 2.16,
+      "judge-score shift vs same-seed baseline\n(graded 0-100, mean over 28 pairs)": 2.100714285714286,
+      "error": 1.394567874943034,
+      "series": "prefix arm",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "x": -0.16,
+      "judge-score shift vs same-seed baseline\n(graded 0-100, mean over 28 pairs)": 2.944074074074074,
+      "label": "layer-20 read (+0.91) = failure bar",
+      "series": "context, terse pair excluded",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.84,
+      "judge-score shift vs same-seed baseline\n(graded 0-100, mean over 28 pairs)": 3.4427777777777773,
+      "label": "+6.6",
+      "series": "context, terse pair excluded",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.84,
+      "judge-score shift vs same-seed baseline\n(graded 0-100, mean over 28 pairs)": 2.426666666666666,
+      "label": "+5.0",
+      "series": "context, terse pair excluded",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": -0.16,
+      "judge-score shift vs same-seed baseline\n(graded 0-100, mean over 28 pairs)": 6.1825,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 0.84,
+      "judge-score shift vs same-seed baseline\n(graded 0-100, mean over 28 pairs)": 6.579821428571429,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 1.84,
+      "judge-score shift vs same-seed baseline\n(graded 0-100, mean over 28 pairs)": 5.043571428571428,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": -0.16,
+      "judge-score shift vs same-seed baseline\n(graded 0-100, mean over 28 pairs)": 2.7189060234884654,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 0.84,
+      "judge-score shift vs same-seed baseline\n(graded 0-100, mean over 28 pairs)": 3.1806572331176484,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 1.84,
+      "judge-score shift vs same-seed baseline\n(graded 0-100, mean over 28 pairs)": 2.2455838574368214,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": -0.16,
+      "judge-score shift vs same-seed baseline\n(graded 0-100, mean over 28 pairs)": 9.646093976511535,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 0.84,
+      "judge-score shift vs same-seed baseline\n(graded 0-100, mean over 28 pairs)": 9.97898562402521,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 1.84,
+      "judge-score shift vs same-seed baseline\n(graded 0-100, mean over 28 pairs)": 7.841558999706034,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 0.16,
+      "judge-score shift vs same-seed baseline\n(graded 0-100, mean over 28 pairs)": 1.047857142857143,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 1.16,
+      "judge-score shift vs same-seed baseline\n(graded 0-100, mean over 28 pairs)": 0.7439285714285714,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 2.16,
+      "judge-score shift vs same-seed baseline\n(graded 0-100, mean over 28 pairs)": 2.100714285714286,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 0.16,
+      "judge-score shift vs same-seed baseline\n(graded 0-100, mean over 28 pairs)": 0.4906878143583433,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 1.16,
+      "judge-score shift vs same-seed baseline\n(graded 0-100, mean over 28 pairs)": 0.24320202541257507,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 2.16,
+      "judge-score shift vs same-seed baseline\n(graded 0-100, mean over 28 pairs)": 0.7061464107712521,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 0.16,
+      "judge-score shift vs same-seed baseline\n(graded 0-100, mean over 28 pairs)": 1.6050264713559428,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 1.16,
+      "judge-score shift vs same-seed baseline\n(graded 0-100, mean over 28 pairs)": 1.2446551174445677,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 2.16,
+      "judge-score shift vs same-seed baseline\n(graded 0-100, mean over 28 pairs)": 3.49528216065732,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "original per-pair shift (seed base 42)": 0.1,
+      "replication per-pair shift": 0.0,
+      "label": "sycophancy (1-shot)",
+      "series": "seed base 43",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "original per-pair shift (seed base 42)": -0.3,
+      "replication per-pair shift": -1.1,
+      "label": "sycophancy (1-shot)",
+      "series": "seed base 43",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "original per-pair shift (seed base 42)": 0.0,
+      "replication per-pair shift": 0.0,
+      "label": "sycophancy (1-shot)",
+      "series": "seed base 43",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "original per-pair shift (seed base 42)": -0.3,
+      "replication per-pair shift": -0.6000000000000001,
+      "label": "sycophancy (1-shot)",
+      "series": "seed base 43",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "original per-pair shift (seed base 42)": 0.0,
+      "replication per-pair shift": 0.0,
+      "label": "sycophancy (1-shot)",
+      "series": "seed base 43",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "original per-pair shift (seed base 42)": 0.0,
+      "replication per-pair shift": 0.0,
+      "label": "sycophancy (1-shot)",
+      "series": "seed base 43",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "original per-pair shift (seed base 42)": 0.0,
+      "replication per-pair shift": 0.0,
+      "label": "sycophancy (1-shot)",
+      "series": "seed base 43",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "original per-pair shift (seed base 42)": -0.8999999999999999,
+      "replication per-pair shift": 0.0,
+      "label": "sycophancy (1-shot)",
+      "series": "seed base 43",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "original per-pair shift (seed base 42)": 0.0,
+      "replication per-pair shift": 0.0,
+      "label": "sycophancy (1-shot)",
+      "series": "seed base 43",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "original per-pair shift (seed base 42)": -2.5,
+      "replication per-pair shift": -1.9,
+      "label": "sycophancy (1-shot)",
+      "series": "seed base 43",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "original per-pair shift (seed base 42)": 0.0,
+      "replication per-pair shift": 0.0,
+      "label": "sycophancy (1-shot)",
+      "series": "seed base 43",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "original per-pair shift (seed base 42)": 0.1,
+      "replication per-pair shift": 0.0,
+      "label": "sycophancy (1-shot)",
+      "series": "seed base 43",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "original per-pair shift (seed base 42)": 0.0,
+      "replication per-pair shift": 8.34,
+      "label": "sycophancy (1-shot)",
+      "series": "seed base 43",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "original per-pair shift (seed base 42)": 0.0,
+      "replication per-pair shift": -0.1,
+      "label": "sycophancy (1-shot)",
+      "series": "seed base 43",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "original per-pair shift (seed base 42)": 0.0,
+      "replication per-pair shift": 0.0,
+      "label": "sycophancy (1-shot)",
+      "series": "seed base 43",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "original per-pair shift (seed base 42)": 0.0,
+      "replication per-pair shift": 0.0,
+      "label": "sycophancy (1-shot)",
+      "series": "seed base 43",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "original per-pair shift (seed base 42)": 1.5999999999999999,
+      "replication per-pair shift": 2.8200000000000003,
+      "label": "sycophancy (1-shot)",
+      "series": "seed base 43",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "original per-pair shift (seed base 42)": 93.62,
+      "replication per-pair shift": 91.28,
+      "label": "terse",
+      "series": "seed base 43",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "original per-pair shift (seed base 42)": 19.839999999999996,
+      "replication per-pair shift": 9.799999999999999,
+      "label": "formal register",
+      "series": "seed base 43",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "original per-pair shift (seed base 42)": 0.0,
+      "replication per-pair shift": 1.7,
+      "label": "sycophancy (1-shot)",
+      "series": "seed base 43",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "original per-pair shift (seed base 42)": 3.8500000000000014,
+      "replication per-pair shift": -1.2000000000000028,
+      "label": "formal register",
+      "series": "seed base 43",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "original per-pair shift (seed base 42)": 13.37,
+      "replication per-pair shift": 9.235,
+      "label": "formal register",
+      "series": "seed base 43",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "original per-pair shift (seed base 42)": 0.2,
+      "replication per-pair shift": 0.18,
+      "label": "sycophancy (1-shot)",
+      "series": "seed base 43",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "original per-pair shift (seed base 42)": 7.160000000000001,
+      "replication per-pair shift": 5.66,
+      "label": "sycophancy (1-shot)",
+      "series": "seed base 43",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "original per-pair shift (seed base 42)": 10.36,
+      "replication per-pair shift": 19.66,
+      "label": "sycophancy (1-shot)",
+      "series": "seed base 43",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "original per-pair shift (seed base 42)": 1.2100000000000002,
+      "replication per-pair shift": 0.0,
+      "label": "sycophancy (1-shot)",
+      "series": "seed base 43",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "original per-pair shift (seed base 42)": 0.8600000000000001,
+      "replication per-pair shift": 12.819999999999999,
+      "label": "sycophancy (1-shot)",
+      "series": "seed base 43",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "original per-pair shift (seed base 42)": 24.84,
+      "replication per-pair shift": 27.640000000000004,
+      "label": "sycophancy (5-shot)",
+      "series": "seed base 43",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "original per-pair shift (seed base 42)": 0.1,
+      "replication per-pair shift": 0.0,
+      "label": "sycophancy (1-shot)",
+      "series": "seed base 44",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "original per-pair shift (seed base 42)": -0.3,
+      "replication per-pair shift": -1.1,
+      "label": "sycophancy (1-shot)",
+      "series": "seed base 44",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "original per-pair shift (seed base 42)": 0.0,
+      "replication per-pair shift": 0.0,
+      "label": "sycophancy (1-shot)",
+      "series": "seed base 44",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "original per-pair shift (seed base 42)": -0.3,
+      "replication per-pair shift": -0.8,
+      "label": "sycophancy (1-shot)",
+      "series": "seed base 44",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "original per-pair shift (seed base 42)": 0.0,
+      "replication per-pair shift": 0.0,
+      "label": "sycophancy (1-shot)",
+      "series": "seed base 44",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "original per-pair shift (seed base 42)": 0.0,
+      "replication per-pair shift": 0.0,
+      "label": "sycophancy (1-shot)",
+      "series": "seed base 44",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "original per-pair shift (seed base 42)": 0.0,
+      "replication per-pair shift": 0.0,
+      "label": "sycophancy (1-shot)",
+      "series": "seed base 44",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "original per-pair shift (seed base 42)": -0.8999999999999999,
+      "replication per-pair shift": -0.4,
+      "label": "sycophancy (1-shot)",
+      "series": "seed base 44",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "original per-pair shift (seed base 42)": 0.0,
+      "replication per-pair shift": 0.0,
+      "label": "sycophancy (1-shot)",
+      "series": "seed base 44",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "original per-pair shift (seed base 42)": -2.5,
+      "replication per-pair shift": -1.0,
+      "label": "sycophancy (1-shot)",
+      "series": "seed base 44",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "original per-pair shift (seed base 42)": 0.0,
+      "replication per-pair shift": 0.0,
+      "label": "sycophancy (1-shot)",
+      "series": "seed base 44",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "original per-pair shift (seed base 42)": 0.1,
+      "replication per-pair shift": 0.0,
+      "label": "sycophancy (1-shot)",
+      "series": "seed base 44",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "original per-pair shift (seed base 42)": 0.0,
+      "replication per-pair shift": -0.9800000000000001,
+      "label": "sycophancy (1-shot)",
+      "series": "seed base 44",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "original per-pair shift (seed base 42)": 0.0,
+      "replication per-pair shift": 0.0,
+      "label": "sycophancy (1-shot)",
+      "series": "seed base 44",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "original per-pair shift (seed base 42)": 0.0,
+      "replication per-pair shift": 0.0,
+      "label": "sycophancy (1-shot)",
+      "series": "seed base 44",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "original per-pair shift (seed base 42)": 0.0,
+      "replication per-pair shift": 0.0,
+      "label": "sycophancy (1-shot)",
+      "series": "seed base 44",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "original per-pair shift (seed base 42)": 1.5999999999999999,
+      "replication per-pair shift": 4.7,
+      "label": "sycophancy (1-shot)",
+      "series": "seed base 44",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "original per-pair shift (seed base 42)": 93.62,
+      "replication per-pair shift": 75.7,
+      "label": "terse",
+      "series": "seed base 44",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "original per-pair shift (seed base 42)": 19.839999999999996,
+      "replication per-pair shift": 13.7,
+      "label": "formal register",
+      "series": "seed base 44",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "original per-pair shift (seed base 42)": 0.0,
+      "replication per-pair shift": 0.0,
+      "label": "sycophancy (1-shot)",
+      "series": "seed base 44",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "original per-pair shift (seed base 42)": 3.8500000000000014,
+      "replication per-pair shift": -1.6999999999999993,
+      "label": "formal register",
+      "series": "seed base 44",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "original per-pair shift (seed base 42)": 13.37,
+      "replication per-pair shift": 9.6,
+      "label": "formal register",
+      "series": "seed base 44",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "original per-pair shift (seed base 42)": 0.2,
+      "replication per-pair shift": 0.62,
+      "label": "sycophancy (1-shot)",
+      "series": "seed base 44",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "original per-pair shift (seed base 42)": 7.160000000000001,
+      "replication per-pair shift": 7.779999999999999,
+      "label": "sycophancy (1-shot)",
+      "series": "seed base 44",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "original per-pair shift (seed base 42)": 10.36,
+      "replication per-pair shift": 16.4,
+      "label": "sycophancy (1-shot)",
+      "series": "seed base 44",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "original per-pair shift (seed base 42)": 1.2100000000000002,
+      "replication per-pair shift": 0.9999999999999999,
+      "label": "sycophancy (1-shot)",
+      "series": "seed base 44",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "original per-pair shift (seed base 42)": 0.8600000000000001,
+      "replication per-pair shift": 1.64,
+      "label": "sycophancy (1-shot)",
+      "series": "seed base 44",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "original per-pair shift (seed base 42)": 24.84,
+      "replication per-pair shift": 16.059999999999995,
+      "label": "formal register",
+      "series": "seed base 44",
+      "_kind": "scatter",
+      "_group": 10
+    }
+  ],
+  "n_series": 11,
+  "total_points": 83,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Mean layer-14 shift, three sampling rounds",
+        "ylabel": "judge-score shift vs same-seed baseline\n(graded 0-100, mean over 28 pairs)",
+        "legend_labels": [
+          "context, terse pair excluded",
+          "context arm",
+          "prefix arm"
+        ],
+        "annotations": [
+          "layer-20 read (+0.91) = failure bar",
+          "+6.2",
+          "+6.6",
+          "+5.0"
+        ],
+        "xticklabels": [
+          "original\n(seed 42)",
+          "replication\nseed 43",
+          "replication\nseed 44"
+        ],
+        "yticklabels": [
+          "\u22122",
+          "0",
+          "2",
+          "4",
+          "6",
+          "8",
+          "10",
+          "12"
+        ]
+      },
+      {
+        "title_left": "Per-pair shifts reproduce (context arm)",
+        "xlabel": "original per-pair shift (seed base 42)",
+        "ylabel": "replication per-pair shift",
+        "legend_labels": [
+          "seed base 43",
+          "seed base 44"
+        ],
+        "annotations": [
+          "terse",
+          "sycophancy (5-shot)",
+          "sycophancy (1-shot)",
+          "formal register"
+        ],
+        "xticklabels": [
+          "\u221220",
+          "0",
+          "20",
+          "40",
+          "60",
+          "80",
+          "100"
+        ],
+        "yticklabels": [
+          "\u221220",
+          "0",
+          "20",
+          "40",
+          "60",
+          "80",
+          "100"
+        ]
+      }
+    ],
+    "series": [
+      "context arm",
+      "prefix arm",
+      "context, terse pair excluded",
+      "seed base 43",
+      "seed base 44"
+    ]
+  }
+}
