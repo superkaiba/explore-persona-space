@@ -1,0 +1,123 @@
+{
+  "selections": {
+    "ws-po-pers-lr1e5": {
+      "step": 25,
+      "rate": 0.81,
+      "in_band": true,
+      "fallback": null
+    },
+    "ws-po-pers-lr3e5": {
+      "step": 15,
+      "rate": 0.93,
+      "in_band": false,
+      "fallback": "closest_approach"
+    },
+    "ws-po-pers-lr1e4": {
+      "step": 15,
+      "rate": 0.9,
+      "in_band": false,
+      "fallback": "closest_approach"
+    },
+    "ws-po-bare-lr1e5": {
+      "step": 25,
+      "rate": 0.6,
+      "in_band": true,
+      "fallback": null
+    },
+    "ws-po-bare-lr3e5": {
+      "step": 15,
+      "rate": 0.61,
+      "in_band": true,
+      "fallback": null
+    },
+    "ws-po-bare-lr1e4": {
+      "step": 15,
+      "rate": 0.65,
+      "in_band": true,
+      "fallback": null
+    },
+    "ws-po-conv-lr1e5": {
+      "step": 10,
+      "rate": 0.91,
+      "in_band": false,
+      "fallback": "closest_approach"
+    },
+    "ws-po-conv-lr3e5": {
+      "step": 5,
+      "rate": 0.65,
+      "in_band": true,
+      "fallback": null
+    },
+    "ws-po-conv-lr1e4": {
+      "step": 15,
+      "rate": 0.99,
+      "in_band": false,
+      "fallback": "closest_approach"
+    },
+    "ws-po-icl-lr1e5": {
+      "step": 10,
+      "rate": 0.98,
+      "in_band": false,
+      "fallback": "closest_approach"
+    },
+    "ws-po-icl-lr3e5": {
+      "step": 10,
+      "rate": 0.99,
+      "in_band": false,
+      "fallback": "closest_approach"
+    },
+    "ws-po-icl-lr1e4": {
+      "step": 50,
+      "rate": 0.98,
+      "in_band": false,
+      "fallback": "closest_approach"
+    }
+  },
+  "verdict_arms": {
+    "ws-po-pers": {
+      "rule": "lowest_lr_in_band",
+      "run_id": "ws-po-pers-lr1e5",
+      "lr": 1e-05,
+      "selection": {
+        "step": 25,
+        "rate": 0.81,
+        "in_band": true,
+        "fallback": null
+      }
+    },
+    "ws-po-bare": {
+      "rule": "lowest_lr_in_band",
+      "run_id": "ws-po-bare-lr1e5",
+      "lr": 1e-05,
+      "selection": {
+        "step": 25,
+        "rate": 0.6,
+        "in_band": true,
+        "fallback": null
+      }
+    },
+    "ws-po-conv": {
+      "rule": "lowest_lr_in_band",
+      "run_id": "ws-po-conv-lr3e5",
+      "lr": 3e-05,
+      "selection": {
+        "step": 5,
+        "rate": 0.65,
+        "in_band": true,
+        "fallback": null
+      }
+    },
+    "ws-po-icl": {
+      "rule": "closest_approach",
+      "run_id": "ws-po-icl-lr1e5",
+      "lr": 1e-05,
+      "band_distance": 0.13,
+      "selection": {
+        "step": 10,
+        "rate": 0.98,
+        "in_band": false,
+        "fallback": "closest_approach"
+      }
+    }
+  }
+}
