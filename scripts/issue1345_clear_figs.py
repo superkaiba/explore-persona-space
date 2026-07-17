@@ -276,7 +276,8 @@ def plot_result2_withinregime_chat_vs_notemplate() -> dict:
         "The context→answer map holds with and without the chat template "
         "(instruct, context arm, layer 19)",
         "Within-regime held-out $R^2$ with 95% bootstrap CI (Qwen2.5-7B-Instruct). Both framings "
-        "sit ~0.6, far above the answer-mean baseline ($R^2=0$) and the shuffle-null — removing the "
+        "sit ~0.6, far above the answer-mean baseline ($R^2=0$) and the shuffle-null — "
+        "removing the "
         "chat template barely changes the map's predictive power.",
         -0.1,
     )

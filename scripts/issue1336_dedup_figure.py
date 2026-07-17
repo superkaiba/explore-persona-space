@@ -102,7 +102,7 @@ def main() -> None:
             markersize=8,
             label=label,
         )
-        for x, v in zip(xb + (j - 0.5) * 2 * off, vals):
+        for x, v in zip(xb + (j - 0.5) * 2 * off, vals, strict=False):
             ax_b.text(x, v + 0.004, f"{v:.3f}", ha="center", fontsize=9)
     ax_b.axhline(bar_r, color="0.25", lw=1.2, ls=":")
     ax_b.text(0.98, bar_r + 0.003, "usable-strength bar", ha="right", fontsize=9, color="0.25")

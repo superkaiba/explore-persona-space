@@ -88,7 +88,7 @@ def fig_hero(decision: dict) -> None:
             color=colors[si],
             label=lab,
         )
-        for x, p in zip(xs + (si - 1) * width, pts):
+        for x, p in zip(xs + (si - 1) * width, pts, strict=False):
             if abs(p) > 0.01:
                 ax.text(x, p + (0.006 if p > 0 else -0.012), f"{p:+.3f}", ha="center", fontsize=7)
     ax.axhline(0.0, color="0.3", lw=0.8)
@@ -134,7 +134,7 @@ def fig_hero(decision: dict) -> None:
             linestyle="none",
             label=lab,
         )
-        for x, p in zip(xs2 + off, pts):
+        for x, p in zip(xs2 + off, pts, strict=False):
             ax.text(x + 0.06, p, f"{p:+.4f}", fontsize=7, va="center")
     ax.axhline(0.0, color="0.3", lw=0.8)
     band = decision["verdict_lattice"]["elicit_band"]
@@ -166,7 +166,7 @@ def fig_within_vs_comp() -> None:
         xs = np.arange(3)
         ax.bar(xs - 0.18, within, 0.34, color=colors[0], label="within-stage map")
         ax.bar(xs + 0.18, comp, 0.34, color=colors[1], label="base map, reparameterized")
-        for x, w, c in zip(xs, within, comp):
+        for x, w, c in zip(xs, within, comp, strict=False):
             ax.text(x - 0.18, w + 0.008, f"{w:.3f}", ha="center", fontsize=7.5)
             ax.text(x + 0.18, c + 0.008, f"{c:.3f}", ha="center", fontsize=7.5)
         ax.set_xticks(xs)
@@ -198,7 +198,7 @@ def fig_saga(verdict: dict, g1: dict) -> None:
     cols = ["#b5443c", "#c99a3c", "#3c7fb5"]
     xs = np.arange(3)
     ax.bar(xs, vals, 0.55, color=cols)
-    for x, v in zip(xs, vals):
+    for x, v in zip(xs, vals, strict=False):
         ax.text(x, v + (0.03 if v > 0 else -0.07), f"{v:+.3f}", ha="center", fontsize=9)
     ax.axhline(li["bar_r"], color="0.2", lw=1.1, ls="--")
     ax.text(
@@ -227,7 +227,7 @@ def fig_saga(verdict: dict, g1: dict) -> None:
     xs = np.arange(2)
     vals2 = [v["committed_anchor"], v["s_qwen_recal"]]
     ax.bar(xs, vals2, 0.5, color=["0.6", "#3c7fb5"])
-    for x, val in zip(xs, vals2):
+    for x, val in zip(xs, vals2, strict=False):
         ax.text(x, val + 0.008, f"{val:.4f}", ha="center", fontsize=9)
     ax.set_xticks(xs)
     ax.set_xticklabels(
@@ -318,14 +318,15 @@ def fig_lambda_degeneracy() -> None:
         ax.plot(
             xs + (si - 1) * 0.08, vals, "o", label=slab, markersize=7, color=paper_palette(3)[si]
         )
-        for x, v in zip(xs + (si - 1) * 0.08, vals):
+        for x, v in zip(xs + (si - 1) * 0.08, vals, strict=False):
             ax.text(x + 0.06, v * 1.15, f"{v:.1e}" if v < 1e-3 else f"{v:.3f}", fontsize=6.5)
     ax.set_yscale("log")
     ax.set_xticks(xs)
     ax.set_xticklabels([lab for _, lab in EVAL_SETS], fontsize=8)
     ax.set_ylabel("|gap| (recal, layer 30, log scale)")
     ax.set_title(
-        "On GSM8K test every fit sits at the $\\lambda$ floor:\nthe composition reproduces the within map exactly",
+        "On GSM8K test every fit sits at the $\\lambda$ floor:\n"
+        "the composition reproduces the within map exactly",
         pad=12,
         fontsize=10,
     )
@@ -353,14 +354,15 @@ def fig_dose() -> None:
             his.append(L["gap_recal_bootstrap"]["ci_hi"] - L["gap_recal"])
         off = (oi - 0.5) * 0.26
         ax.bar(xs + off, pts, 0.24, yerr=[los, his], capsize=3, color=colors[oi], label=lab)
-        for x, p in zip(xs + off, pts):
+        for x, p in zip(xs + off, pts, strict=False):
             ax.text(x, p + (0.006 if p > 0 else -0.014), f"{p:+.3f}", ha="center", fontsize=7.5)
     ax.axhline(0, color="0.3", lw=0.8)
     ax.set_xticks(xs)
     ax.set_xticklabels([lab for _, lab in sets3], fontsize=9)
     ax.set_ylabel("Reparameterization gap (recal, layer 30)")
     ax.set_title(
-        "Longer-RLVR dose arm (descriptive; different kept-row set,\ndifferent $\\lambda$ regime on LMSYS)",
+        "Longer-RLVR dose arm (descriptive; different kept-row set,\n"
+        "different $\\lambda$ regime on LMSYS)",
         pad=12,
         fontsize=10,
     )

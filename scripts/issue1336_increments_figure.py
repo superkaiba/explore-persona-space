@@ -72,7 +72,7 @@ def main() -> None:
             capsize=3,
             label=label,
         )
-        for x, v in zip(pos, pts):
+        for x, v in zip(pos, pts, strict=False):
             ax.text(
                 x,
                 v + (0.006 if v >= 0 else -0.012),
