@@ -3446,8 +3446,8 @@
     "1442": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1442",
-      "status": "planning",
+      "path": "tasks/approved/1442",
+      "status": "approved",
       "title": "daily-fix: route TG_TESTS fixture temps via step9c tmproot"
     },
     "1443": {
