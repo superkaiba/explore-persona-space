@@ -2614,8 +2614,8 @@
       "goal": "Identify which factor(s) \u2014 role identity/frequency, genre, answer structure/length, single-responder-vs-multi-speaker context, or measurement \u2014 account for the large held-out-R\u00b2 gap between the assistant context\u2192answer map (#825: base 0.59 / instruct 0.67, survives chat-template removal) and the per-character fiction context\u2192dialogue map (#1310: base 0.11\u20130.15 / instruct 0.19\u20130.25, same plain-text regime), via a one-factor-at-a-time ablation ladder measuring held-out R\u00b2 at each rung in Qwen2.5-7B base and instruct.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/awaiting_promotion/1335",
-      "status": "awaiting_promotion",
+      "path": "tasks/followups_running/1335",
+      "status": "followups_running",
       "title": "Fiction scene framing carries the instruct assistant-vs-fiction context\u2192answer map gap at both generation seeds, while the base-model gap is seed-unstable (MODERATE confidence)"
     },
     "1336": {
