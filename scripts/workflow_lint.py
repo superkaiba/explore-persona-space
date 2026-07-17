@@ -9260,12 +9260,15 @@ AGENT_SPEC_SIZE_GRANDFATHER: dict[str, int] = {
     # 97,000 — measured 96,072 B post-#1119, 95,000 — measured 94,126 B
     # post-#1115)
     "code-reviewer.md": 108_000,
-    # measured 73,408 B post-#1159 (Step 2 dual-source read contract: lens
-    # rubrics from clean-result-critic-lens-reference.md, report schema from
-    # the slim agent spec — plan-mandated growth; cap = measured + <=~1 KB.
-    # Prior: 73,000 — measured 72,229 B post-#1056, 72,000 post-#1050 r2,
-    # 71,000 post-#1050 r1, 60,554 B pre-#1050)
-    "codex-clean-result-critic.md": 74_000,
+    # measured 74,082 B post-#1447 (family-enumeration sync: the two
+    # byte/bit verdict rows widened to the -exact / bitwise / X-for-X
+    # tail — plan-mandated growth; cap = measured + ~1.1 KB. Prior:
+    # 74,000 — measured 73,408 B post-#1159 (Step 2 dual-source read
+    # contract: lens rubrics from clean-result-critic-lens-reference.md,
+    # report schema from the slim agent spec), 73,000 — measured
+    # 72,229 B post-#1056, 72,000 post-#1050 r2, 71,000 post-#1050 r1,
+    # 60,554 B pre-#1050)
+    "codex-clean-result-critic.md": 75_200,
     # measured 58,271 B post-#1438 (Step 0.9 copy-list bullet + inlined-
     # rubric 0.9 slot + Blocker-tags data-access-blocked entry —
     # plan-mandated growth; cap = measured + <=~1 KB. Prior: 56,800 —
