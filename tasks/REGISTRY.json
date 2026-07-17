@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1463,
+  "highest_id": 1464,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -3610,6 +3610,13 @@
       "path": "tasks/proposed/1463",
       "status": "proposed",
       "title": "daily-fix: guard waiver for gcloud ssh --command payloads"
+    },
+    "1464": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1464",
+      "status": "proposed",
+      "title": "daily-fix: cpu intents in _DEFAULT_GPUS_FOR_INTENT"
     },
     "147": {
       "has_clean_result": false,
