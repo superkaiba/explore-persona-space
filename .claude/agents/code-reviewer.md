@@ -250,10 +250,12 @@ Inherit each open concern (severity=`BLOCKER` or `CONCERN`, latest event
 - A new substantive concern this round that you want the orchestrator to
   bind MUST be persisted via `task.py raise-concern <N> --concern-id
   <kebab-id> --severity CONCERN|BLOCKER --summary <80c> --by
-  code-reviewer --round <n>`. The `--summary` is HARD-CAPPED at 200
-  chars (`raise-concern` raises `ValueError: summary too long` past it —
-  two tracebacks on 2026-06-09); compose the one-liner within the cap
-  and put detail in the evidence field / verdict body. Verdict-body
+  code-reviewer --round <n>`. The `--summary` is capped at 200 chars —
+  compose the one-liner within the cap and put detail in the evidence
+  field / verdict body; an over-cap `--summary` via the CLI is
+  auto-truncated at a word boundary with a loud warning (full text
+  shifted into `--evidence` when evidence is empty; programmatic callers
+  still get `ValueError: summary too long`). Verdict-body
   concern bullets that are NOT persisted remain opportunistic (the
   historical PASS+CONCERNS auto-advance contract applies).
 - **A deferred feature the plan's PRODUCTION path requires is ALWAYS a
