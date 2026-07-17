@@ -39,7 +39,10 @@ from workflow_lint import (  # noqa: E402
     _MARKER_RECIPE_PINS,
     BATCH_JUDGE_LEGACY_ALLOWLIST,
     HUB_VERIFY_LEGACY_ALLOWLIST,
+    SKILL_REF_ALLOWLIST,
+    SKILL_REF_FS_ROOTS,
     _iter_ask_target_files,
+    _live_skill_names,
     _other_worktree_prefix,
     _values_equal,
     check_agent_model_pins,
@@ -782,6 +785,95 @@ def test_check_skill_refs_matches_legit_ref_after_boundary(tmp_path):
     assert len(errors) == 1, f"expected exactly one error (the dangling /ghost), got: {errors}"
     assert "/ghost" in errors[0], f"expected the /ghost ref flagged, got: {errors}"
     assert "a.md:6" in errors[0], f"expected the error anchored to the /ghost line, got: {errors}"
+
+
+@pytest.mark.parametrize("fs_root", sorted(SKILL_REF_FS_ROOTS))
+def test_check_skill_refs_pass_bare_fs_root_backticked(fs_root, tmp_path):
+    """Regression (#1445): a bare single-segment backticked filesystem root
+    (`/tmp`, `/workspace`, `/mnt`, ...) closes on a backtick, so SKILL_REF_RE's
+    trailing lookahead cannot reject it; the SKILL_REF_FS_ROOTS carve-out must
+    resolve EVERY member — zero FPs with an empty skills dir + empty allowlist
+    (acceptance criterion 1, pinned per member). The fs_roots-off arm proves
+    the CARVE-OUT (not a regex non-match) is what resolves each member."""
+    skills = tmp_path / "skills"
+    skills.mkdir()
+    docs = tmp_path / "docs"
+    docs.mkdir()
+    (docs / "a.md").write_text(f"Write it under `/{fs_root}` first.\n")
+    errors = check_skill_references(roots=[docs], skills_dir=skills, allowlist=frozenset())
+    assert errors == [], f"expected PASS (bare fs root `/{fs_root}` carved out), got: {errors}"
+    errors_off = check_skill_references(
+        roots=[docs], skills_dir=skills, allowlist=frozenset(), fs_roots=frozenset()
+    )
+    assert len(errors_off) == 1, (
+        f"expected exactly one error with fs_roots emptied (proves SKILL_REF_RE "
+        f"extracts `/{fs_root}` and only the carve-out resolves it), got: {errors_off}"
+    )
+    assert f"/{fs_root}" in errors_off[0]
+
+
+def test_check_skill_refs_fs_root_carveout_is_load_bearing(tmp_path):
+    """The same bare `/tmp` token FAILs when fs_roots is emptied via the
+    override hook — proving the carve-out (not the regex/allowlist) resolves it."""
+    skills = tmp_path / "skills"
+    skills.mkdir()
+    docs = tmp_path / "docs"
+    docs.mkdir()
+    (docs / "a.md").write_text("Write it under `/tmp` first.\n")
+    errors = check_skill_references(
+        roots=[docs], skills_dir=skills, allowlist=frozenset(), fs_roots=frozenset()
+    )
+    assert len(errors) == 1, f"expected exactly one error, got: {errors}"
+    assert "/tmp" in errors[0]
+
+
+def test_check_skill_refs_fail_dead_ref_with_production_fs_roots(tmp_path):
+    """True-positive power preserved (#1445): a genuinely dead `/ghost-skill`
+    still FAILs — as the ONE error — with the production fs-roots default
+    active and a carved-out `/tmp` on the same line."""
+    skills = tmp_path / "skills"
+    skills.mkdir()
+    docs = tmp_path / "docs"
+    docs.mkdir()
+    (docs / "a.md").write_text("Run `/ghost-skill` here, then clean `/tmp` up.\n")
+    errors = check_skill_references(roots=[docs], skills_dir=skills, allowlist=frozenset())
+    assert len(errors) == 1, f"expected exactly one error, got: {errors}"
+    assert "/ghost-skill" in errors[0]
+
+
+def test_skill_ref_fs_roots_disjoint_from_live_skills_and_allowlist():
+    """Collision guard (#1445): an fs-root entry naming a live
+    .claude/skills/ dir would silently disable rot detection for that skill;
+    double-membership with SKILL_REF_ALLOWLIST would blur the two sets'
+    contracts. Both intersections must stay empty. REMEDY on failure: drop
+    the colliding member(s) from SKILL_REF_FS_ROOTS (scripts/workflow_lint.py)
+    — do NOT delete this test (plan #1445 §6)."""
+    live = _live_skill_names(_REPO_ROOT / ".claude" / "skills")
+    assert SKILL_REF_FS_ROOTS & live == set(), (
+        "fs-root carve-out member(s) name a live skill dir — drop them from "
+        f"SKILL_REF_FS_ROOTS in scripts/workflow_lint.py: {sorted(SKILL_REF_FS_ROOTS & live)}"
+    )
+    assert set() == SKILL_REF_FS_ROOTS & SKILL_REF_ALLOWLIST, (
+        "fs-root carve-out member(s) double-listed in SKILL_REF_ALLOWLIST — keep "
+        "each token in exactly one set (scripts/workflow_lint.py): "
+        f"{sorted(SKILL_REF_FS_ROOTS & SKILL_REF_ALLOWLIST)}"
+    )
+
+
+def test_check_skill_refs_flags_fs_root_live_skill_collision(tmp_path):
+    """The in-function collision guard (#1445): a live skill dir named like an
+    fs-root member is reported by check_skill_references itself, so the
+    no-flags lint run catches the collision without pytest. REMEDY: drop the
+    colliding member from SKILL_REF_FS_ROOTS (scripts/workflow_lint.py)."""
+    skills = tmp_path / "skills"
+    (skills / "tmp").mkdir(parents=True)
+    docs = tmp_path / "docs"
+    docs.mkdir()
+    (docs / "a.md").write_text("No slash-command tokens here.\n")
+    errors = check_skill_references(roots=[docs], skills_dir=skills, allowlist=frozenset())
+    assert len(errors) == 1, f"expected exactly one collision error, got: {errors}"
+    assert "SKILL_REF_FS_ROOTS" in errors[0]
+    assert "tmp" in errors[0]
 
 
 def test_check_skill_refs_repo_tree_is_clean():
