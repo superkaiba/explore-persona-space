@@ -2583,8 +2583,8 @@
     "1331": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1331",
-      "status": "planning",
+      "path": "tasks/approved/1331",
+      "status": "approved",
       "title": "daily-held: pod-779 stranded n10k captures - rescue or drop"
     },
     "1332": {
