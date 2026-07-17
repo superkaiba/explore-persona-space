@@ -314,8 +314,8 @@
     "1039": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1039",
-      "status": "proposed",
+      "path": "tasks/planning/1039",
+      "status": "planning",
       "title": "daily-held: extend watcher zombie sweep to non-EPS wrappers?"
     },
     "104": {
