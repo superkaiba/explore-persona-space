@@ -1,1 +1,2 @@
 {"ts": "2026-07-06T02:18:05Z", "kind": "epm:created", "version": 1, "by": "task.py", "kind_": "experiment"}
+{"ts": "2026-07-17T21:47:43Z", "kind": "epm:question-linked", "version": 1, "by": "unknown", "note": "Linked task #1072 to open question(s) spec-context-as-vector, identity-contextual-vs-base; created_new=none; mode=auto-match (inherited from parent #952's anchors — mechanism question on the same band-map finding)."}
