@@ -1,0 +1,331 @@
+{
+  "commit": "2eea6e2d08",
+  "created": "2026-07-17T03:48:36Z",
+  "figsize": [
+    11.5,
+    4.2
+  ],
+  "points": [
+    {
+      "Answer-shift alignment (cosine, max over layers)": 0.167898,
+      "Number of pairs": 2.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "Answer-shift alignment (cosine, max over layers)": 0.21148,
+      "Number of pairs": 3.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "Answer-shift alignment (cosine, max over layers)": 0.255061,
+      "Number of pairs": 3.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "Answer-shift alignment (cosine, max over layers)": 0.298643,
+      "Number of pairs": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "Answer-shift alignment (cosine, max over layers)": 0.342224,
+      "Number of pairs": 4.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "Answer-shift alignment (cosine, max over layers)": 0.385806,
+      "Number of pairs": 2.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "Answer-shift alignment (cosine, max over layers)": 0.429388,
+      "Number of pairs": 3.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "Answer-shift alignment (cosine, max over layers)": 0.472969,
+      "Number of pairs": 1.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "Answer-shift alignment (cosine, max over layers)": 0.516551,
+      "Number of pairs": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "Answer-shift alignment (cosine, max over layers)": 0.560132,
+      "Number of pairs": 2.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "Answer-shift alignment (cosine, max over layers)": 0.603714,
+      "Number of pairs": 1.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "Answer-shift alignment (cosine, max over layers)": 0.647295,
+      "Number of pairs": 1.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "Answer-shift alignment (cosine, max over layers)": 0.690877,
+      "Number of pairs": 2.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "Answer-shift alignment (cosine, max over layers)": 0.734458,
+      "Number of pairs": 4.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "Answer-shift alignment (cosine, max over layers)": 0.04116982966661453,
+      "Number of pairs": 0.0,
+      "series": "Random-\u0394 null p97.5 (pooled, 500 draws)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer-shift alignment (cosine, max over layers)": 0.04116982966661453,
+      "Number of pairs": 1.0,
+      "series": "Random-\u0394 null p97.5 (pooled, 500 draws)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer-shift alignment (cosine, max over layers)": 0.15453796088695526,
+      "Number of pairs": 0.0,
+      "series": "Shuffled-pair null p97.5 (pooled)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Answer-shift alignment (cosine, max over layers)": 0.15453796088695526,
+      "Number of pairs": 1.0,
+      "series": "Shuffled-pair null p97.5 (pooled)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Answer-shift alignment (cosine, max over layers)": 1.0,
+      "Number of pairs": 0.0,
+      "series": "Ceiling (=1.0)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Answer-shift alignment (cosine, max over layers)": 1.0,
+      "Number of pairs": 1.0,
+      "series": "Ceiling (=1.0)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Answer-shift alignment (cosine, max over layers)": 0.19193,
+      "y": 1.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "Answer-shift alignment (cosine, max over layers)": 0.240514,
+      "y": 3.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "Answer-shift alignment (cosine, max over layers)": 0.289098,
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "Answer-shift alignment (cosine, max over layers)": 0.337682,
+      "y": 2.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "Answer-shift alignment (cosine, max over layers)": 0.386266,
+      "y": 3.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "Answer-shift alignment (cosine, max over layers)": 0.43485,
+      "y": 5.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "Answer-shift alignment (cosine, max over layers)": 0.483434,
+      "y": 5.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "Answer-shift alignment (cosine, max over layers)": 0.532018,
+      "y": 1.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "Answer-shift alignment (cosine, max over layers)": 0.580603,
+      "y": 1.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "Answer-shift alignment (cosine, max over layers)": 0.629187,
+      "y": 3.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "Answer-shift alignment (cosine, max over layers)": 0.677771,
+      "y": 1.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "Answer-shift alignment (cosine, max over layers)": 0.726355,
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "Answer-shift alignment (cosine, max over layers)": 0.774939,
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "Answer-shift alignment (cosine, max over layers)": 0.823523,
+      "y": 3.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "Answer-shift alignment (cosine, max over layers)": 0.04116982966661453,
+      "y": 0.0,
+      "series": "Random-\u0394 null p97.5 (pooled, 500 draws)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Answer-shift alignment (cosine, max over layers)": 0.04116982966661453,
+      "y": 1.0,
+      "series": "Random-\u0394 null p97.5 (pooled, 500 draws)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Answer-shift alignment (cosine, max over layers)": 0.38579031825065613,
+      "y": 0.0,
+      "series": "Shuffled-pair null p97.5 (pooled)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Answer-shift alignment (cosine, max over layers)": 0.38579031825065613,
+      "y": 1.0,
+      "series": "Shuffled-pair null p97.5 (pooled)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Answer-shift alignment (cosine, max over layers)": 1.0,
+      "y": 0.0,
+      "series": "Ceiling (=1.0)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Answer-shift alignment (cosine, max over layers)": 1.0,
+      "y": 1.0,
+      "series": "Ceiling (=1.0)",
+      "_kind": "line",
+      "_group": 7
+    }
+  ],
+  "n_series": 8,
+  "total_points": 40,
+  "text": {
+    "suptitle": "Observed alignment vs the two null bands (selection-symmetric max-over-layers)",
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "prefix-based V_c",
+        "xlabel": "Answer-shift alignment (cosine, max over layers)",
+        "ylabel": "Number of pairs",
+        "legend_labels": [
+          "Observed per-pair alignment (28)",
+          "Random-\u0394 null p97.5 (pooled, 500 draws)",
+          "Shuffled-pair null p97.5 (pooled)",
+          "Ceiling (=1.0)"
+        ],
+        "xticklabels": [
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0",
+          "1.2"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.5",
+          "1.0",
+          "1.5",
+          "2.0",
+          "2.5",
+          "3.0",
+          "3.5",
+          "4.0",
+          "4.5"
+        ]
+      },
+      {
+        "title_left": "context-based V_c",
+        "xlabel": "Answer-shift alignment (cosine, max over layers)",
+        "xticklabels": [
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0",
+          "1.2"
+        ],
+        "yticklabels": [
+          "0",
+          "1",
+          "2",
+          "3",
+          "4",
+          "5",
+          "6"
+        ]
+      }
+    ],
+    "series": [
+      "Random-\u0394 null p97.5 (pooled, 500 draws)",
+      "Shuffled-pair null p97.5 (pooled)",
+      "Ceiling (=1.0)"
+    ]
+  }
+}

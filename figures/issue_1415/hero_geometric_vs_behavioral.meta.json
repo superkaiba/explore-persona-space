@@ -1,0 +1,175 @@
+{
+  "commit": "2eea6e2d08",
+  "created": "2026-07-17T03:48:26Z",
+  "figsize": [
+    13.5,
+    4.8
+  ],
+  "points": [
+    {
+      "category": "Last-token \u0394, prefix",
+      "Answer-shift alignment with target\n(cosine, max over 7 layers)": 0.44311090824859484,
+      "error": 0.03770420371215749,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "Last-token \u0394, context",
+      "Answer-shift alignment with target\n(cosine, max over 7 layers)": 0.4837661289743015,
+      "error": 0.033121018848547235,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "All-position \u0394, prefix",
+      "Answer-shift alignment with target\n(cosine, max over 7 layers)": 0.3737321477383375,
+      "error": 0.02284306701352795,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "All-position \u0394, context",
+      "Answer-shift alignment with target\n(cosine, max over 7 layers)": 0.39410411486668245,
+      "error": 0.02111126253627693,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "category": "Persona vector, evil",
+      "Answer-shift alignment with target\n(cosine, max over 7 layers)": 0.24636693044366048,
+      "error": 0.02765575411527832,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "category": "Persona vector, halluc.",
+      "Answer-shift alignment with target\n(cosine, max over 7 layers)": 0.19108722738123365,
+      "error": 0.019408841454791576,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "category": "Persona vector, syco.",
+      "Answer-shift alignment with target\n(cosine, max over 7 layers)": 0.1855618593815182,
+      "error": 0.026683502772477025,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "category": "No steering (baseline)",
+      "Judge score for the target behavior\n(graded 0-100, mean over pairs)": 1.3,
+      "error": 0.787333588699339,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "category": "Last-token \u0394\n(prefix, \u03b1=4)",
+      "Judge score for the target behavior\n(graded 0-100, mean over pairs)": 1.6321428571428571,
+      "error": 0.9892653140982981,
+      "_kind": "bar",
+      "_group": 8
+    },
+    {
+      "category": "Last-token \u0394\n(context, \u03b1=4)",
+      "Judge score for the target behavior\n(graded 0-100, mean over pairs)": 2.211607142857143,
+      "error": 0.9924926883092473,
+      "_kind": "bar",
+      "_group": 9
+    },
+    {
+      "category": "All-position \u0394\n(\u03b1=4, both arms)",
+      "Judge score for the target behavior\n(graded 0-100, mean over pairs)": 0.5839285714285715,
+      "error": 0.321625480811511,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "category": "Persona vector, evil \u03b1=4",
+      "Judge score for the target behavior\n(graded 0-100, mean over pairs)": 11.415,
+      "error": 5.167160204282386,
+      "_kind": "bar",
+      "_group": 11
+    },
+    {
+      "category": "Persona vector\n(halluc., \u03b1=4)",
+      "Judge score for the target behavior\n(graded 0-100, mean over pairs)": 4.707857142857143,
+      "error": 1.4365800582614277,
+      "_kind": "bar",
+      "_group": 12
+    },
+    {
+      "category": "Persona vector, syco. \u03b1=4",
+      "Judge score for the target behavior\n(graded 0-100, mean over pairs)": 2.4778571428571428,
+      "error": 1.0607860414330346,
+      "_kind": "bar",
+      "_group": 13
+    },
+    {
+      "category": "Actual context swap (ceiling)",
+      "Judge score for the target behavior\n(graded 0-100, mean over pairs)": 30.103680555555556,
+      "error": 5.689158080258693,
+      "_kind": "bar",
+      "_group": 14
+    }
+  ],
+  "n_series": 15,
+  "total_points": 15,
+  "text": {
+    "suptitle": "Patching \u0394 = V_c(c\u2032) \u2212 V_c(c) moves answer-state geometry but not behavior (28 pairs, N=10 draws)",
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Geometric: answer state moves toward the target",
+        "ylabel": "Answer-shift alignment with target\n(cosine, max over 7 layers)",
+        "legend_labels": [
+          "Context-swap ceiling (=1.0 by construction)",
+          "80% of ceiling (falsified-strong bound)",
+          "Random-direction null p97.5"
+        ],
+        "xticklabels": [
+          "Last-token \u0394, prefix",
+          "Last-token \u0394, context",
+          "All-position \u0394, prefix",
+          "All-position \u0394, context",
+          "Persona vector, evil",
+          "Persona vector, halluc.",
+          "Persona vector, syco."
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0",
+          "1.2"
+        ]
+      },
+      {
+        "title_left": "Behavioral: steering barely moves the judge score",
+        "ylabel": "Judge score for the target behavior\n(graded 0-100, mean over pairs)",
+        "xticklabels": [
+          "No steering (baseline)",
+          "Last-token \u0394\n(prefix, \u03b1=4)",
+          "Last-token \u0394\n(context, \u03b1=4)",
+          "All-position \u0394\n(\u03b1=4, both arms)",
+          "Persona vector, evil \u03b1=4",
+          "Persona vector\n(halluc., \u03b1=4)",
+          "Persona vector, syco. \u03b1=4",
+          "Actual context swap (ceiling)"
+        ],
+        "yticklabels": [
+          "0",
+          "5",
+          "10",
+          "15",
+          "20",
+          "25",
+          "30",
+          "35",
+          "40"
+        ]
+      }
+    ]
+  }
+}
