@@ -3663,8 +3663,8 @@
     "1470": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1470",
-      "status": "running",
+      "path": "tasks/reviewing/1470",
+      "status": "reviewing",
       "title": "daily-fix: divtrain gen through api_dispatch + empty=retry"
     },
     "1471": {
