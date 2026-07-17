@@ -3474,8 +3474,8 @@
     "1446": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1446",
-      "status": "reviewing",
+      "path": "tasks/completed/1446",
+      "status": "completed",
       "title": "daily-fix: widen closed-sibling advisory to infra tasks"
     },
     "1447": {
