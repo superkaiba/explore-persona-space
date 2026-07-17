@@ -3269,8 +3269,8 @@
     "1419": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1419",
-      "status": "running",
+      "path": "tasks/reviewing/1419",
+      "status": "reviewing",
       "title": "workflow-fix: audit pre_reg pattern catches bare 'registered <noun>' forms"
     },
     "142": {
