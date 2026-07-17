@@ -2315,8 +2315,8 @@
     "1298": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1298",
-      "status": "proposed",
+      "path": "tasks/archived/1298",
+      "status": "archived",
       "title": "daily-held: #928 frozen at followups_running since 07-08"
     },
     "1299": {
