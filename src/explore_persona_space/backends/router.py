@@ -156,7 +156,9 @@ RunPod-on-error, ``route(spec)`` orchestrates the full multi-backend ladder:
    call when the mapped instance cannot hold it, and
    ``RunPodBackend.launch`` threads the disk requirement into the provision
    argv (``--container-disk-gb max(50, boot_disk_gb)``) for mapped CPU
-   intents.
+   intents. Free SLURM lanes are excluded from the auto chain for CPU-only
+   intents (:func:`_is_cpu_only_intent` at ``_auto_route`` candidate
+   assembly) — the lane has no 0-GPU sbatch render (#1464).
 8b. **GCP-only GPU intent translation (#940).** The RunPod launch paths
    (terminal rung + explicit override) translate a GCP-only GPU intent to
    its nearest same-or-narrower RunPod intent via
@@ -459,6 +461,20 @@ def _translated_runpod_intent(spec: RunSpec) -> tuple[str, dict[str, str] | None
             f"Deliberate gaps: {sorted(RUNPOD_INTENT_TRANSLATION_DELIBERATE_GAPS)}."
         )
     return intent, None  # CPU / RunPod-native / custom: verbatim
+
+
+def _is_cpu_only_intent(intent: str) -> bool:
+    """True iff ``intent`` maps to a 0-GPU machine in ``gcp.INTENT_TO_MACHINE``.
+
+    Direct ``INTENT_TO_MACHINE.get(...)`` — never :func:`gcp.machine_for_intent`
+    — so RunPod-/SLURM-native intents with no GCP row (``ft-70b``) and unknown
+    intents read ``False`` instead of raising (the
+    :func:`_translated_runpod_intent` discipline). Single source of truth: a
+    future CPU intent added to ``gcp.INTENT_TO_MACHINE`` with ``gpu_count=0``
+    inherits the CPU routing semantics automatically (#1464).
+    """
+    machine = INTENT_TO_MACHINE.get(intent)
+    return machine is not None and machine.gpu_count == 0
 
 
 #: The router fell back to RunPod because a GCP attempt FAILED THE WORKLOAD
@@ -2651,11 +2667,14 @@ def _gcp_ladder_specs(spec: RunSpec) -> list[tuple[RunSpec, str]]:
     as the "queue for capacity rather than fail" middle rung:
 
     1. SPOT (rung-1 machine) — ``spot_<gpu_kind>``. *Always present.*
-    2. SPOT A100-40 (``a2-highgpu-1g``) — only when the intent fits in 40 GB
-       (:func:`gcp.a100_40_fallback_for_intent`). ``spot_a100_40``.
+    2. SPOT A100-40 (``a2-highgpu-1g``) — only when the workload fits in
+       40 GB: intent-eligible AND no ``spec.extra["min_gpu_mem_gb"]``
+       declaration above :data:`gcp.A100_40_USABLE_GIB`
+       (:func:`gcp.a100_40_fallback_for_intent`, #1468). ``spot_a100_40``.
     3. FLEX_START (rung-1 machine) — ``flexstart_<gpu_kind>``.
     4. on-demand (rung-1 machine) — the spec as-is. ``ondemand_<gpu_kind>``.
-    5. on-demand A100-40 — only when fits 40 GB. ``ondemand_a100_40``.
+    5. on-demand A100-40 — only when the workload fits 40 GB (the same
+       #1468 gate). ``ondemand_a100_40``.
 
     **LONG / UNKNOWN-length jobs** (known length > threshold, OR unknown
     length) — SPOT is barred (preemption too costly); flex —
@@ -2663,7 +2682,8 @@ def _gcp_ladder_specs(spec: RunSpec) -> list[tuple[RunSpec, str]]:
 
     1. FLEX_START (rung-1 machine) — ``flexstart_<gpu_kind>``.
     2. on-demand (rung-1 machine) — the spec as-is. ``ondemand_<gpu_kind>``.
-    3. on-demand A100-40 — only when fits 40 GB. ``ondemand_a100_40``.
+    3. on-demand A100-40 — only when the workload fits 40 GB (the same
+       #1468 gate). ``ondemand_a100_40``.
 
     **CPU-only intents (#677/#747)** (``base.gpu_count == 0``) short-circuit
     BEFORE any length / pin branching, splitting by whether the intent has a
@@ -4001,12 +4021,30 @@ def _auto_route(
     """
     del clock_fn  # reserved for a future "day boundary at posted-time" override
     # Build the candidate list in lane order (skipping unwired lanes +
-    # Mila-when-down + GCP-when-unwired).
+    # Mila-when-down + GCP-when-unwired + free SLURM lanes on CPU-only
+    # intents, #1464).
+    cpu_only = _is_cpu_only_intent(spec.intent)
+    if cpu_only and free_backends:
+        logger.info(
+            "route: CPU-only intent %r — free SLURM lanes (%s) excluded from "
+            "the auto chain. The documented CPU chain is GCP E2 -> RunPod CPU "
+            "for mapped intents (#747) / GCP-only for cpu-bigmem (#677); the "
+            "SLURM lane has no 0-GPU sbatch render (#1464, incident #1336).",
+            spec.intent,
+            ", ".join(sorted(free_backends)),
+        )
     candidates: list[tuple[ComputeBackend, BackendKind]] = []
     for kind in lane_order:
         if kind == "gcp":
             if gcp_backend is not None:
                 candidates.append((gcp_backend, "gcp"))
+            continue
+        if cpu_only:
+            # Excluding the free lanes from ``candidates`` also removes them
+            # from the stage-1 reconnect scan below — deliberately: a CPU-only
+            # intent can never have a live SLURM job to reconnect to (the lane
+            # has no 0-GPU sbatch render, so no prior route() could have
+            # submitted one there). Nothing is lost by not scanning (#1464).
             continue
         backend = free_backends.get(kind)
         if backend is None:

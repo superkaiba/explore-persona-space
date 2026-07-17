@@ -91,6 +91,32 @@ def main() -> None:
         _write_shard(
             ts_dir, c.stem_for(model, "r3"), [story_id] * R3_ROWS, _rows(rng, R3_ROWS, 1, w3)
         )
+    if c.HAS_R4:
+        # conversation-paired r4 stems (plan v8): one row per ORIGINAL conv id,
+        # a subset of the shared set (paired by construction) + the <=200-row
+        # on-policy companion on a further subset. Instruct only (scope).
+        for model in c.R4_MODELS:
+            r4_ids = shared_ids[: max(2, N_CONV - 2)]
+            w4 = rng.normal(size=(DIM, DIM)).astype(np.float32) / np.sqrt(DIM)
+            _write_shard(ts_dir, c.stem_for(model, "r4"), r4_ids, _rows(rng, len(r4_ids), 1, w4))
+            op_ids = r4_ids[:3]
+            _write_shard(ts_dir, c.stem_for(model, "r4op"), op_ids, _rows(rng, len(op_ids), 1, w4))
+            for mode_slug, n_kept in (("paired", len(r4_ids)), ("paired_op", len(op_ids))):
+                c.write_json(
+                    st_dir / f"story_yield_{mode_slug}_{model}.json",
+                    {
+                        "metadata": c.metadata(
+                            args.seed, n_kept, "scripts/issue1345_smoke_fixture.py"
+                        ),
+                        "model": model,
+                        "mode": mode_slug,
+                        "story_character_name": c.STORY_CHARACTER_NAME,
+                        "n_target": n_kept,
+                        "yield_floor": 1,
+                        "n_kept": n_kept,
+                        "yield_ok": True,
+                    },
+                )
         c.write_json(
             st_dir / f"story_yield_{model}.json",
             {

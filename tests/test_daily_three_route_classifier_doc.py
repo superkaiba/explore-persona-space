@@ -442,3 +442,38 @@ def test_semantic_probe_absence_clause_present(daily_skill_text: str):
         "the #1420 semantic-probe clause dropped from the workflow.yaml "
         "orchestrator_actions grep step"
     )
+
+
+def test_sha_verification_duty_present(daily_skill_text: str):
+    """#1467 pin: the SHA-resolution compose-time duty survives — every hex token
+    a filing body cites as a commit is rev-parse-verified at compose time, and a
+    non-resolving token is cited as a transcript/session reference, never a
+    commit (#1414: transcript basename fc2b61b7 filed as "the fix commit") — in
+    the daily route-2 mandate paragraph, the rule's Body-file template clause
+    (d), and the workflow.yaml orchestrator_actions grep step."""
+    assert "rev-parse --verify" in daily_skill_text, (
+        "the #1467 SHA-resolution sentence (git rev-parse --verify duty) dropped "
+        "from the daily route-2 verified-at-filing mandate paragraph"
+    )
+    assert "never as a commit" in daily_skill_text, (
+        "the #1467 non-resolving-token disposition (cite as transcript/session "
+        "reference, never as a commit) dropped from the daily SKILL.md"
+    )
+    rule_text = (REPO_ROOT / ".claude" / "rules" / "workflow-fix-on-bug.md").read_text(
+        encoding="utf-8"
+    )
+    assert "sha-resolution" in rule_text, (
+        "the #1467 binding clause (d) sha-resolution dropped from "
+        "workflow-fix-on-bug.md § Body-file template"
+    )
+    assert "rev-parse --verify" in rule_text, (
+        "the #1467 rev-parse verification command dropped from workflow-fix-on-bug.md clause (d)"
+    )
+    yaml_text = (REPO_ROOT / ".claude" / "workflow.yaml").read_text(encoding="utf-8")
+    assert "rev-parse-verified at compose time" in yaml_text, (
+        "the #1467 rev-parse clause dropped from the workflow.yaml orchestrator_actions grep step"
+    )
+    assert "never a commit (#1467)" in yaml_text, (
+        "the #1467 non-resolving-token disposition dropped from the workflow.yaml "
+        "orchestrator_actions grep step"
+    )

@@ -19,6 +19,21 @@ from explore_persona_space.artifacts.context import CONTEXTS  # noqa: E402
 
 
 @pytest.fixture(autouse=True)
+def _restore_fu4_round():
+    """Pre-existing cross-file leak (surfaced by the i1434po round's test
+    sweep, reproduced on pristine main): tests here call
+    ``fu4.set_round('i1434')`` without restoring, so a test FILE co-run AFTER
+    this one against the fu4 DEFAULT round inherits the i1434 registry — six
+    test_issue1090_fu4 manifest/staging tests fail under a non-alphabetical
+    invocation order. Restore the module-global ROUND per test."""
+    import issue1090_fu4 as fu4
+
+    before = fu4.ROUND
+    yield
+    fu4.ROUND = before
+
+
+@pytest.fixture(autouse=True)
 def _restore_contexts_registry():
     """r3 review Major: pins driving the REAL ``phase_datagen`` register the
     conv/ICL contexts (``wildchat_prefix_real545`` / ``icl_prefix_<beh>``)

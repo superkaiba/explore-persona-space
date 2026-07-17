@@ -331,6 +331,10 @@ def get_cluster_config(name: str) -> ClusterConfig:
 # via ``gpubase_bygpu_b3`` instead of queuing 4 days out on the 7-day
 # bin per P0(g)). Single floating-point hours; renderer converts to
 # ``HH:MM:SS``.
+# NOTE (#1464): the CPU-only intents (cpu-small / cpu-mid / cpu-bigmem, #747)
+# are DELIBERATELY absent here too — see the fuller note above
+# ``_DEFAULT_GPUS_FOR_INTENT``; do NOT "fix" a CPU-intent ValueError by
+# adding a row.
 _DEFAULT_TIME_BUDGETS_HOURS: dict[str, float] = {
     "lora-7b": 6.0,
     "lora": 6.0,  # alias accepted by stages_for_spec + _DEFAULT_GPUS_FOR_INTENT
@@ -383,6 +387,15 @@ def _format_sbatch_time(hours: float) -> str:
 # intent raises rather than picking 1 silently (consistent with
 # ``stages_for_spec`` + ``time_budget_hours``; a typo should fail the
 # render, not submit a job at the wrong GPU count).
+# NOTE (#1464): the CPU-only intents (cpu-small / cpu-mid / cpu-bigmem, #747)
+# are DELIBERATELY absent from this table (and from
+# _DEFAULT_TIME_BUDGETS_HOURS + stages_for_spec): the SLURM lane serves GPU
+# intents only — render_sbatch scales --cpus-per-task / --mem from the GPU
+# count, so gpus=0 would render an invalid 0-CPU / 0G script. The router
+# excludes the free lanes for CPU-only intents at candidate assembly
+# (router._is_cpu_only_intent); do NOT "fix" a CPU-intent ValueError here by
+# adding a 0 row (a future 0-GPU SLURM feature routes through the router
+# predicate instead).
 _DEFAULT_GPUS_FOR_INTENT: dict[str, int] = {
     "lora-7b": 1,
     "lora": 1,

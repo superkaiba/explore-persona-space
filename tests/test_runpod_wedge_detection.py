@@ -816,7 +816,7 @@ def _production_runpod_handle(
 ) -> RunHandle:
     """Build a wedged RunPod handle by invoking the REAL ``RunPodBackend.launch()``.
 
-    Mocks ONLY ``subprocess.run`` (no pod is actually provisioned), so the
+    Mocks ONLY the provision subprocess (no pod is actually provisioned), so the
     returned handle's ``extra`` dict is byte-for-byte what production persists —
     this is the production-shaped handle the round-3 blocker requires, NOT the
     hand-built ``_runpod_handle_with_workload``. The reconstruction path
@@ -826,18 +826,11 @@ def _production_runpod_handle(
     from explore_persona_space.backends import runpod as RP
     from explore_persona_space.backends.base import RunSpec
 
-    # ``subprocess.run`` is the GLOBAL module singleton (env.py's git probe + the
-    # artifact-declaration helpers use it too), so a blanket lambda would break
-    # them. No-op ONLY the ``pod_lifecycle.py provision`` call; delegate every
-    # other subprocess to the real implementation.
-    _real_run = RP.subprocess.run
-
-    def _selective_run(cmd, *a, **k):
-        if isinstance(cmd, (list, tuple)) and any("pod_lifecycle.py" in str(c) for c in cmd):
-            return None  # the provision call — no real pod
-        return _real_run(cmd, *a, **k)
-
-    monkeypatch.setattr(RP.subprocess, "run", _selective_run, raising=False)
+    # Since #1465 the provision leg routes through the pod_lifecycle-only
+    # helper ``RP._run_pod_lifecycle_relay`` (never bare ``subprocess.run``),
+    # so patching the helper no-ops ONLY the provision call — env.py's git
+    # probe + the artifact-declaration helpers keep the real subprocess.run.
+    monkeypatch.setattr(RP, "_run_pod_lifecycle_relay", lambda cmd, **k: None)
     spec = RunSpec(
         issue=issue,
         intent=intent,

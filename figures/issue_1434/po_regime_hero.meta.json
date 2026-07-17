@@ -1,0 +1,151 @@
+{
+  "commit": "3114e0226b",
+  "created": "2026-07-17T16:29:06Z",
+  "figsize": [
+    10.0,
+    7.0
+  ],
+  "points": [
+    {
+      "x": -0.18,
+      "pooled non-source leakage delta\n(trained - base, judged rate)": 0.4765276073619632,
+      "error": 0.04459962500221401,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.18,
+      "pooled non-source leakage delta\n(trained - base, judged rate)": 0.762,
+      "error": 0.03768949280418571,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 0.82,
+      "pooled non-source leakage delta\n(trained - base, judged rate)": 0.4155152749490835,
+      "error": 0.04396420608946944,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 1.18,
+      "pooled non-source leakage delta\n(trained - base, judged rate)": 0.548,
+      "error": 0.04393995706900855,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 1.82,
+      "pooled non-source leakage delta\n(trained - base, judged rate)": 0.09237751004016063,
+      "error": 0.026695932822147057,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 2.18,
+      "pooled non-source leakage delta\n(trained - base, judged rate)": 0.106,
+      "error": 0.02813846513428714,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 2.82,
+      "pooled non-source leakage delta\n(trained - base, judged rate)": 0.0823293172690763,
+      "error": 0.024929179899193,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "x": 3.18,
+      "pooled non-source leakage delta\n(trained - base, judged rate)": 0.002,
+      "error": 0.008520720642797748,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "x": 0.0,
+      "D = positive-only - contrastive\n(trained-vs-trained)": 0.2854723926380368,
+      "error": 0.05767136360866085,
+      "_kind": "errorbar",
+      "_group": 8
+    },
+    {
+      "x": 1.0,
+      "D = positive-only - contrastive\n(trained-vs-trained)": 0.13248472505091652,
+      "error": 0.06144660894363575,
+      "_kind": "errorbar",
+      "_group": 9
+    },
+    {
+      "x": 2.0,
+      "D = positive-only - contrastive\n(trained-vs-trained)": 0.013622489959839362,
+      "error": 0.037761740399328975,
+      "_kind": "errorbar",
+      "_group": 10
+    },
+    {
+      "x": 3.0,
+      "D = positive-only - contrastive\n(trained-vs-trained)": -0.0803293172690763,
+      "error": 0.025254072883910454,
+      "_kind": "errorbar",
+      "_group": 11
+    }
+  ],
+  "n_series": 12,
+  "total_points": 12,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title": "writing_style regime contrast \u2014 pooled non-source leakage per training context (band-matched verdict arms; Newcombe 95% CIs)",
+        "ylabel": "pooled non-source leakage delta\n(trained - base, judged rate)",
+        "legend_labels": [
+          "contrastive",
+          "positive-only"
+        ],
+        "yticklabels": [
+          "\u22120.1",
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7",
+          "0.8",
+          "0.9"
+        ]
+      },
+      {
+        "ylabel": "D = positive-only - contrastive\n(trained-vs-trained)",
+        "annotations": [
+          "Broader-leakage",
+          "Broader-leakage",
+          "Indistinguishable",
+          "Narrower-leakage"
+        ],
+        "xticklabels": [
+          "Persona (software engineer)\n[dose-unmatched]",
+          "Bare assistant",
+          "WildChat prefix",
+          "ICL prefix\n[dose-unmatched]"
+        ],
+        "yticklabels": [
+          "\u22120.2",
+          "\u22120.1",
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4"
+        ]
+      }
+    ],
+    "series": [
+      "contrastive",
+      "positive-only"
+    ]
+  }
+}

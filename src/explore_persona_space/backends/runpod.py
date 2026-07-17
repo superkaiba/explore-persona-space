@@ -61,6 +61,7 @@ import re
 import subprocess
 import sys
 import time
+from collections import deque
 from collections.abc import Callable
 from datetime import UTC, datetime
 from pathlib import Path
@@ -100,6 +101,90 @@ _CPU_CONTAINER_DISK_FLOOR_GB = 50
 #: default, never shrink it. (Not imported from ``scripts/pod_lifecycle`` —
 #: this module's imports stay ``base``-only by documented convention.)
 _GPU_VOLUME_FLOOR_GB = 200
+
+
+# Bounded stderr tail carried on a failed pod_lifecycle subprocess (#1465).
+# 60 lines covers the 20-50-line traceback class (#775 B2: a 5-line tail
+# truncated vLLM tracebacks; the GCE EXIT trap tails 40); 400 chars/line
+# bounds a pathological single line, worst case ~24 KB << the 50k marker cap.
+_POD_LIFECYCLE_TAIL_MAX_LINES = 60
+_POD_LIFECYCLE_TAIL_MAX_LINE_CHARS = 400
+
+
+class PodLifecycleProcessError(subprocess.CalledProcessError):
+    """``CalledProcessError`` whose ``str()`` carries the child's stderr tail.
+
+    Deliberately a SUBCLASS so every existing contract holds verbatim:
+    ``except subprocess.CalledProcessError`` catches it, and
+    ``dispatch_issue._provision_still_waiting`` reads the SAME
+    ``returncode`` / ``cmd`` fields (the exit-75 still-waiting contract).
+    ``self.stderr`` holds the BOUNDED tail (last
+    ``_POD_LIFECYCLE_TAIL_MAX_LINES`` lines), not the full stream.
+    """
+
+    def __str__(self) -> str:
+        base = super().__str__()
+        if not self.stderr:
+            return base
+        return (
+            f"{base}\n--- pod_lifecycle stderr tail "
+            f"(last {_POD_LIFECYCLE_TAIL_MAX_LINES} lines max) ---\n{self.stderr}"
+        )
+
+
+def _run_pod_lifecycle_relay(
+    cmd: list[str],
+    *,
+    env: dict[str, str] | None = None,
+    relay: Any | None = None,
+) -> None:
+    """Run a ``pod_lifecycle.py`` subprocess, TEEING its stderr live.
+
+    stdout stays INHERITED (untouched — provision progress prints pass
+    through exactly as before). stderr is piped and relayed line-by-line
+    to ``relay`` (default ``sys.stderr``) with an immediate flush, so the
+    ``[wait-for-capacity]`` heartbeat lines the orchestrator scans live
+    (SKILL.md Step 6b) keep streaming in real time across a multi-hour
+    wait, while a bounded deque retains the tail. On non-zero exit raises
+    :class:`PodLifecycleProcessError` with ``returncode`` + ``cmd``
+    verbatim and the tail as ``stderr`` (#1465; incident #1336: an opaque
+    ``exit status 1`` with zero diagnostics).
+
+    EOF assumption: no pod_lifecycle local child detaches while inheriting
+    stderr (true today — all its grandchildren are foreground
+    ``subprocess.call``); a future backgrounded grandchild holding fd 2
+    open would convert child-exit into a pipe-EOF wait here.
+    """
+    out = relay if relay is not None else sys.stderr
+    tail: deque[str] = deque(maxlen=_POD_LIFECYCLE_TAIL_MAX_LINES)
+    proc = subprocess.Popen(
+        cmd,
+        stderr=subprocess.PIPE,
+        text=True,
+        encoding="utf-8",
+        errors="replace",
+        env=env,
+    )
+    assert proc.stderr is not None  # stderr=PIPE => stream exists
+    with proc:
+        try:
+            # iter(readline, "") — unambiguous no-readahead line streaming.
+            for line in iter(proc.stderr.readline, ""):
+                out.write(line)
+                out.flush()
+                if len(line) > _POD_LIFECYCLE_TAIL_MAX_LINE_CHARS:
+                    line = line[:_POD_LIFECYCLE_TAIL_MAX_LINE_CHARS] + "…[line truncated]\n"
+                tail.append(line)
+            rc = proc.wait()
+        except BaseException:
+            # subprocess.run parity (CPython 3.11 run(): `except: # Including
+            # KeyboardInterrupt ... process.kill(); raise`): kill the child on
+            # ANY interruption rather than hang in __exit__'s wait — preserves
+            # today's Ctrl-C behavior exactly (#1465 plan §12 A10).
+            proc.kill()
+            raise
+    if rc != 0:
+        raise PodLifecycleProcessError(rc, cmd, output=None, stderr="".join(tail))
 
 
 def _shell_quote(s: str) -> str:
@@ -823,12 +908,16 @@ class RunPodBackend(ComputeBackend):
                     "--volume-gb",
                     str(max(_GPU_VOLUME_FLOOR_GB, boot_disk_gb)),
                 ]
-        # subprocess.run raises CalledProcessError on non-zero exit; that
-        # propagates to the selector, which logs + lets the orchestrator
-        # surface the failure as `epm:failure` (slice 1 does NOT add a
-        # provision retry — the existing `--wait-for-capacity` retry inside
-        # `pod_lifecycle.py` already handles SUPPLY_CONSTRAINT).
-        subprocess.run(cmd, check=True)
+        # _run_pod_lifecycle_relay raises PodLifecycleProcessError (a
+        # CalledProcessError subclass carrying the child's stderr tail,
+        # #1465) on non-zero exit; that propagates to the selector, which
+        # logs + lets the orchestrator surface the failure as `epm:failure`
+        # with the diagnostics inline. The exit-75 still-waiting contract
+        # (`dispatch_issue._provision_still_waiting`) is unchanged —
+        # returncode + cmd ride verbatim. (Slice 1 does NOT add a provision
+        # retry — the existing `--wait-for-capacity` retry inside
+        # `pod_lifecycle.py` already handles SUPPLY_CONSTRAINT.)
+        _run_pod_lifecycle_relay(cmd)
         pod_name = _runpod_pod_name(spec.issue)
         # Attempt id + sentinel path minted BEFORE the execution leg (#909 r2,
         # `runpod-execute-missing-completion-sentinel`): the handle's
@@ -1410,8 +1499,9 @@ class RunPodBackend(ComputeBackend):
             str(issue),
             "--yes",
         ]
-        # Inherit current env so RUNPOD_API_KEY etc. propagate. ``check=True``
-        # lets the selector see a non-zero terminate exit (e.g. survivors
-        # detected by the post-terminate live-API re-query inside
-        # ``cmd_terminate``).
-        subprocess.run(cmd, check=True, env=os.environ.copy())
+        # Inherit current env so RUNPOD_API_KEY etc. propagate. The relay
+        # raises PodLifecycleProcessError (a CalledProcessError subclass
+        # carrying the stderr tail, #1465) so the selector sees a non-zero
+        # terminate exit (e.g. survivors detected by the post-terminate
+        # live-API re-query inside ``cmd_terminate``) WITH its diagnostics.
+        _run_pod_lifecycle_relay(cmd, env=os.environ.copy())

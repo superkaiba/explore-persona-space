@@ -49,20 +49,14 @@ ATTEMPT = "rp-20260703T000000Z-ab12"
 
 
 def _noop_provision(monkeypatch) -> None:
-    """No-op ONLY the ``pod_lifecycle.py provision`` subprocess call.
+    """No-op the ``pod_lifecycle.py provision`` subprocess call.
 
-    ``subprocess.run`` is the module-global singleton (the artifact
-    declaration helpers use it too), so a blanket lambda would break them —
-    the selective pattern from ``tests/test_runpod_wedge_detection.py``.
+    Since #1465 the provision leg routes through the pod_lifecycle-only
+    helper ``RP._run_pod_lifecycle_relay`` (never bare ``subprocess.run``),
+    so patching the helper is selective BY CONSTRUCTION — env.py's git probe
+    and the artifact-declaration helpers keep the real ``subprocess.run``.
     """
-    _real_run = RP.subprocess.run
-
-    def _selective_run(cmd, *a, **k):
-        if isinstance(cmd, (list, tuple)) and any("pod_lifecycle.py" in str(c) for c in cmd):
-            return None
-        return _real_run(cmd, *a, **k)
-
-    monkeypatch.setattr(RP.subprocess, "run", _selective_run, raising=False)
+    monkeypatch.setattr(RP, "_run_pod_lifecycle_relay", lambda cmd, **k: None)
 
 
 class _RecordingSsh:
@@ -289,7 +283,7 @@ def test_programmatic_flag_with_empty_workload_cmd_raises(monkeypatch):
     def _explode(*a, **k):
         raise AssertionError("provision must NOT run on the flag+empty-cmd cell")
 
-    monkeypatch.setattr(RP.subprocess, "run", _explode, raising=False)
+    monkeypatch.setattr(RP, "_run_pod_lifecycle_relay", _explode)
     with pytest.raises(RP.RunPodWorkloadStartError, match="empty workload_cmd"):
         RP.RunPodBackend().launch(
             _spec(workload_cmd="", hydra_args=("seed=1",), extra={"execute_workload": True})
@@ -761,7 +755,7 @@ def test_pre_provision_guard_keeps_handle_none(monkeypatch):
     def _explode(*a, **k):
         raise AssertionError("provision must NOT run on the flag+empty-cmd cell")
 
-    monkeypatch.setattr(RP.subprocess, "run", _explode, raising=False)
+    monkeypatch.setattr(RP, "_run_pod_lifecycle_relay", _explode)
     with pytest.raises(RP.RunPodWorkloadStartError) as ei:
         RP.RunPodBackend().launch(
             _spec(workload_cmd="", hydra_args=("seed=1",), extra={"execute_workload": True})
@@ -775,19 +769,17 @@ def test_pre_provision_guard_keeps_handle_none(monkeypatch):
 
 
 def _recording_provision(monkeypatch) -> list[list[str]]:
-    """Selectively no-op the ``pod_lifecycle.py provision`` subprocess AND
-    record its argv (the recording variant of ``_noop_provision`` — that
-    fixture records nothing)."""
-    _real_run = RP.subprocess.run
+    """No-op the ``pod_lifecycle.py provision`` call AND record its argv
+    (the recording variant of ``_noop_provision`` — that fixture records
+    nothing). Patches the #1465 pod_lifecycle-only helper
+    ``RP._run_pod_lifecycle_relay`` — selective by construction."""
     argvs: list[list[str]] = []
 
-    def _selective_run(cmd, *a, **k):
-        if isinstance(cmd, (list, tuple)) and any("pod_lifecycle.py" in str(c) for c in cmd):
-            argvs.append([str(c) for c in cmd])
-            return None
-        return _real_run(cmd, *a, **k)
+    def _recording_relay(cmd, **k):
+        argvs.append([str(c) for c in cmd])
+        return None
 
-    monkeypatch.setattr(RP.subprocess, "run", _selective_run, raising=False)
+    monkeypatch.setattr(RP, "_run_pod_lifecycle_relay", _recording_relay)
     return argvs
 
 

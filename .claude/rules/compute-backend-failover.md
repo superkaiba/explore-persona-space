@@ -355,7 +355,10 @@ Five distinct GCP-failure paths, ALL ending at the same
   unknown jobs flex-start A100-80 → on-demand A100-80 → on-demand A100-40,
   NO spot), then the free SLURM lanes, then falls through to RunPod as the
   LAST rung (`reason: auto_fallback_runpod`, #656). RunPod never first,
-  never skipping a cheaper rung.
+  never skipping a cheaper rung. The A100-40 rungs are fits-40 intents
+  only, and — #1468 — only when the dispatch declares no
+  `--min-gpu-mem-gb` above `gcp.A100_40_USABLE_GIB` = 38 GiB (incident
+  #1315: HF+vLLM co-residency died at engine init on the 39.49 GiB card).
 - **WORKLOAD failure** (`gcp.GcpWorkloadError`) — short-circuits STRAIGHT
   to RunPod (`reason: gcp_workload_failover_runpod`, #658), carrying the
   `GcpWorkloadError` evidence on the marker `extra`. It does NOT cascade
@@ -453,6 +456,25 @@ OR `spec.extra["spot_tolerant"]`):
   budget) is NOT short, so it takes this branch. A long `ft-7b` yields 2 GCP
   rungs; a long `lora-7b` yields 3 (width-1 counts; the width-8 long walk
   is 9 rungs, § Width-aware rungs below).
+
+**Per-dispatch A100-40 fit gate (#1468).** Every A100-40 rung above (spot,
+on-demand, and the caller-pinned path's a40 rung) is additionally gated
+per-dispatch: a launch declaring `--min-gpu-mem-gb` (→
+`spec.extra["min_gpu_mem_gb"]`, GiB as CUDA/nvidia-smi report it) strictly
+above `gcp.A100_40_USABLE_GIB` (38.0 — conservative vs the card's measured
+39.49 GiB CUDA-visible total; incident #1315: an HF capture model
+co-resident with a vLLM engine at util 0.6 died at engine init on the
+40 GB card) drops the A100-40 rungs via the `None` return of
+`gcp.a100_40_fallback_for_intent`; no declaration ⇒ today's ladder,
+byte-identical. A gated ladder never becomes rung-less — the A100-80
+rungs, SLURM lanes, and the RunPod terminal rung (80 GB-class GPUs) are
+unchanged, so no new failure taxonomy exists. Residuals (documented, not
+solved): the gate never validates the PRIMARY machine (an `eval` dispatch
+declaring 30 GiB still books its L4 primary — intent choice fixes the
+primary; `capture-7b` (#752) is the established fix for a too-small
+primary); a declaration > ~79 GiB behaves like any > 38 one (no A100-80
+gating); and declarations in (38, ~39.5] drop the rung conservatively
+inside the CUDA-context margin.
 
 The flex rung threads `provisioning_model=FLEX_START` via
 `router._flex_start_rung` (label `flexstart_<gpu_kind>`); A2 acceptance of

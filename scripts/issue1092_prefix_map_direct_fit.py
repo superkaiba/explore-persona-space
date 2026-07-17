@@ -20,7 +20,12 @@ import sys
 import time
 from pathlib import Path
 
-import numpy as np
+from explore_persona_space.orchestrate.env import load_dotenv
+
+# Shared-VM thread caps (#847): apply env caps BEFORE numpy/matplotlib import.
+load_dotenv()
+
+import numpy as np  # noqa: E402
 
 SCRIPTS = Path(__file__).resolve().parent
 PROJECT_ROOT = SCRIPTS.parent

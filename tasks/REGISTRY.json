@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1477,
+  "highest_id": 1478,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -710,9 +710,9 @@
       "goal": "Rebuild the factory content-behavior datagen persona-vectors-style \u2014 each behavior defined by a trait description + 5 contrastive instruction pairs + neutral trait-eliciting questions (auto-generated persona-vectors-style where a curated bank triggers refusal) so a Claude generator is less likely to refuse \u2014 add an impossible-to-refuse formatting behavior as a pipeline positive control, and test whether this clears the yield floors and installs trainable organisms across the behavior set.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/followups_running/1090",
-      "status": "followups_running",
-      "title": "Raising the learning rate unlocks on-policy expression of the impolite behavior in every previously-silent training context, including the bare default assistant (MODERATE confidence)"
+      "path": "tasks/awaiting_promotion/1090",
+      "status": "awaiting_promotion",
+      "title": "Extended training dose alone brings both sycophancy organisms to the judged band at the point estimate \u2014 the Claude-data entry boundary-sensitive \u2014 and the learning-rate lever adds distinguishable gain only on Qwen-generated data (MODERATE confidence)"
     },
     "1091": {
       "has_clean_result": false,
@@ -2616,7 +2616,7 @@
       "kind": "experiment",
       "path": "tasks/followups_running/1335",
       "status": "followups_running",
-      "title": "Under a matched recipe the assistant-vs-fiction context\u2192answer map gap vanishes in base Qwen and is carried by fiction scene framing in instruct (MODERATE confidence)"
+      "title": "Fiction scene framing carries the instruct assistant-vs-fiction context\u2192answer map gap at both generation seeds, while the base-model gap is seed-unstable (MODERATE confidence)"
     },
     "1336": {
       "goal": "Determine whether RLVR-style RL post-training changes the linear context\u2192answer-profile map more than SFT/DPO post-training, using a released separated-stage ladder (primary candidate: Llama-3.1-8B base \u2192 Tulu-3-8B-SFT \u2192 Tulu-3-8B-DPO \u2192 Tulu-3-8B post-RLVR) \u2014 per stage, measure (a) within-stage held-out R\u00b2 of the per-example ridge map c_x \u2192 v(x) (#779/#825 recipe, prefix AND context arms) and (b) the #825 Result-2 reparameterization gap (within-stage R\u00b2 minus reparameterized-base-map R\u00b2 on identical text), testing whether the gap grows specifically at the RLVR stage (teaching) vs stays \u22480 at all stages (elicitation) vs grows uniformly with post-training depth.",
@@ -2695,7 +2695,7 @@
       "kind": "experiment",
       "path": "tasks/followups_running/1345",
       "status": "followups_running",
-      "title": "The assistant context\u2192answer map recovers its full ceiling across chat and plain-text framings only after a linear change of coordinates, and barely exists in narrative stories (MODERATE confidence)"
+      "title": "Narrative-story framing collapses the assistant context\u2192answer map even on identical conversations, while chat and plain-text framings share one operator up to linear coordinates (MODERATE confidence)"
     },
     "1346": {
       "has_clean_result": false,
@@ -3600,29 +3600,29 @@
     "1462": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1462",
-      "status": "reviewing",
+      "path": "tasks/completed/1462",
+      "status": "completed",
       "title": "daily-fix: five small prevention notes (gotchas+cfr+psr)"
     },
     "1463": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1463",
-      "status": "running",
+      "path": "tasks/reviewing/1463",
+      "status": "reviewing",
       "title": "daily-fix: guard waiver for gcloud ssh --command payloads"
     },
     "1464": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1464",
-      "status": "running",
+      "path": "tasks/completed/1464",
+      "status": "completed",
       "title": "daily-fix: cpu intents in _DEFAULT_GPUS_FOR_INTENT"
     },
     "1465": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1465",
-      "status": "running",
+      "path": "tasks/completed/1465",
+      "status": "completed",
       "title": "daily-fix: relay pod_lifecycle stderr through runpod.py"
     },
     "1466": {
@@ -3635,22 +3635,22 @@
     "1467": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1467",
-      "status": "planning",
+      "path": "tasks/completed/1467",
+      "status": "completed",
       "title": "daily-fix: rev-parse SHAs cited in /daily filing bodies"
     },
     "1468": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1468",
-      "status": "proposed",
+      "path": "tasks/completed/1468",
+      "status": "completed",
       "title": "daily-fix: A100-40 rung blind to consumed device memory"
     },
     "1469": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1469",
-      "status": "proposed",
+      "path": "tasks/running/1469",
+      "status": "running",
       "title": "daily-fix: 6a.5 gate asserts git-tree reachability"
     },
     "147": {
@@ -3663,8 +3663,8 @@
     "1470": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1470",
-      "status": "proposed",
+      "path": "tasks/reviewing/1470",
+      "status": "reviewing",
       "title": "daily-fix: divtrain gen through api_dispatch + empty=retry"
     },
     "1471": {
@@ -3691,15 +3691,15 @@
     "1474": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1474",
-      "status": "proposed",
+      "path": "tasks/running/1474",
+      "status": "running",
       "title": "workflow-fix: PreToolUse guard for /tmp deletion sweeps (tmux sockets)"
     },
     "1475": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1475",
-      "status": "proposed",
+      "path": "tasks/planning/1475",
+      "status": "planning",
       "title": "workflow-fix: pre_reg audit \u2014 verdict-lattice head nouns + range tokens escape"
     },
     "1476": {
@@ -3715,6 +3715,13 @@
       "path": "tasks/proposed/1477",
       "status": "proposed",
       "title": "workflow-fix: poll_pipeline zombie-override CPU-rate arbiter false-stalls healthy CPU-bound runs"
+    },
+    "1478": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1478",
+      "status": "proposed",
+      "title": "workflow-fix: audit warns on sidecar-less embedded figures (silent check skip)"
     },
     "148": {
       "has_clean_result": false,

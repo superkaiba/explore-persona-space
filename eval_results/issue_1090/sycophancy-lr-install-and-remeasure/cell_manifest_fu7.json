@@ -1,0 +1,278 @@
+{
+  "issue": 1090,
+  "round": "sycophancy-lr-install-and-remeasure",
+  "smoke": false,
+  "band": [
+    0.6,
+    0.85
+  ],
+  "epochs": 15,
+  "save_steps": 5,
+  "lrs": [
+    1e-05,
+    3e-05,
+    0.0001
+  ],
+  "lora_ranks": [
+    32
+  ],
+  "judge_max_tokens": 300,
+  "runs": [
+    {
+      "run_id": "syc-c3-lr1e5",
+      "cell_key": "syc-c3",
+      "behavior": "sycophancy",
+      "context_id": "persona_software_engineer",
+      "lr": 1e-05,
+      "lora_r": 32,
+      "lora_alpha": 64,
+      "mix_hub_prefix": "issue1090_pvdatagen/c3-sycophancy-claude/mix",
+      "mix_layout": "parent-mix-subdir",
+      "fu3_base_eval": "C3-pers-con-sycophancy-claude.json",
+      "train_mix_sha256": "c00e8f4c28d2947e97b7ea9bd2ea77d18943e13009da14d408616af6b55f8422",
+      "n_rows": 80,
+      "hub_provenance": {
+        "issue1090_pvdatagen/c3-sycophancy-claude/mix/train_mix.jsonl": {
+          "oid": "1c8c4df1f761a6c0003158ed702b69a313ed5522",
+          "date": "2026-07-07T02:58:32+00:00"
+        },
+        "issue1090_pvdatagen/c3-sycophancy-claude/mix/mix_meta.json": {
+          "oid": "6c56e0a3596474c0fbafe7d8c32938228203b5b7",
+          "date": "2026-07-07T02:58:41+00:00"
+        }
+      },
+      "bank_git_date": "2026-07-06T14:05:08-07:00",
+      "fu3_base": {
+        "file": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-1090-fu7/eval_results/issue_1090/fu3/fu3_cell_evals/C3-pers-con-sycophancy-claude.json",
+        "rate": 0.26,
+        "k": 52,
+        "n": 200,
+        "n_dropped": 0,
+        "n_total_draws": 1000,
+        "n_dropped_draws": 5,
+        "wilson95": [
+          0.20413736892786316,
+          0.32490871391293097
+        ],
+        "mode": "judged"
+      }
+    },
+    {
+      "run_id": "syc-c3-lr3e5",
+      "cell_key": "syc-c3",
+      "behavior": "sycophancy",
+      "context_id": "persona_software_engineer",
+      "lr": 3e-05,
+      "lora_r": 32,
+      "lora_alpha": 64,
+      "mix_hub_prefix": "issue1090_pvdatagen/c3-sycophancy-claude/mix",
+      "mix_layout": "parent-mix-subdir",
+      "fu3_base_eval": "C3-pers-con-sycophancy-claude.json",
+      "train_mix_sha256": "c00e8f4c28d2947e97b7ea9bd2ea77d18943e13009da14d408616af6b55f8422",
+      "n_rows": 80,
+      "hub_provenance": {
+        "issue1090_pvdatagen/c3-sycophancy-claude/mix/train_mix.jsonl": {
+          "oid": "1c8c4df1f761a6c0003158ed702b69a313ed5522",
+          "date": "2026-07-07T02:58:32+00:00"
+        },
+        "issue1090_pvdatagen/c3-sycophancy-claude/mix/mix_meta.json": {
+          "oid": "6c56e0a3596474c0fbafe7d8c32938228203b5b7",
+          "date": "2026-07-07T02:58:41+00:00"
+        }
+      },
+      "bank_git_date": "2026-07-06T14:05:08-07:00",
+      "fu3_base": {
+        "file": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-1090-fu7/eval_results/issue_1090/fu3/fu3_cell_evals/C3-pers-con-sycophancy-claude.json",
+        "rate": 0.26,
+        "k": 52,
+        "n": 200,
+        "n_dropped": 0,
+        "n_total_draws": 1000,
+        "n_dropped_draws": 5,
+        "wilson95": [
+          0.20413736892786316,
+          0.32490871391293097
+        ],
+        "mode": "judged"
+      }
+    },
+    {
+      "run_id": "syc-c3-lr1e4",
+      "cell_key": "syc-c3",
+      "behavior": "sycophancy",
+      "context_id": "persona_software_engineer",
+      "lr": 0.0001,
+      "lora_r": 32,
+      "lora_alpha": 64,
+      "mix_hub_prefix": "issue1090_pvdatagen/c3-sycophancy-claude/mix",
+      "mix_layout": "parent-mix-subdir",
+      "fu3_base_eval": "C3-pers-con-sycophancy-claude.json",
+      "train_mix_sha256": "c00e8f4c28d2947e97b7ea9bd2ea77d18943e13009da14d408616af6b55f8422",
+      "n_rows": 80,
+      "hub_provenance": {
+        "issue1090_pvdatagen/c3-sycophancy-claude/mix/train_mix.jsonl": {
+          "oid": "1c8c4df1f761a6c0003158ed702b69a313ed5522",
+          "date": "2026-07-07T02:58:32+00:00"
+        },
+        "issue1090_pvdatagen/c3-sycophancy-claude/mix/mix_meta.json": {
+          "oid": "6c56e0a3596474c0fbafe7d8c32938228203b5b7",
+          "date": "2026-07-07T02:58:41+00:00"
+        }
+      },
+      "bank_git_date": "2026-07-06T14:05:08-07:00",
+      "fu3_base": {
+        "file": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-1090-fu7/eval_results/issue_1090/fu3/fu3_cell_evals/C3-pers-con-sycophancy-claude.json",
+        "rate": 0.26,
+        "k": 52,
+        "n": 200,
+        "n_dropped": 0,
+        "n_total_draws": 1000,
+        "n_dropped_draws": 5,
+        "wilson95": [
+          0.20413736892786316,
+          0.32490871391293097
+        ],
+        "mode": "judged"
+      }
+    },
+    {
+      "run_id": "syc-c5-lr1e5",
+      "cell_key": "syc-c5",
+      "behavior": "sycophancy",
+      "context_id": "persona_software_engineer",
+      "lr": 1e-05,
+      "lora_r": 32,
+      "lora_alpha": 64,
+      "mix_hub_prefix": "issue1090_pvdatagen/c5-sycophancy-qwen/mix",
+      "mix_layout": "parent-mix-subdir",
+      "fu3_base_eval": "C5-pers-con-sycophancy-qwen.json",
+      "train_mix_sha256": "f622a9ec3cab352249e5afed34a13948332b0cd24d1825b311ee76f337fbe0b0",
+      "n_rows": 80,
+      "hub_provenance": {
+        "issue1090_pvdatagen/c5-sycophancy-qwen/mix/train_mix.jsonl": {
+          "oid": "d648f526bd9123e6f002c482980037aadffed658",
+          "date": "2026-07-07T09:19:52+00:00"
+        },
+        "issue1090_pvdatagen/c5-sycophancy-qwen/mix/mix_meta.json": {
+          "oid": "3c6ba2c25529166d0b9b2801134cf85487f4eb8d",
+          "date": "2026-07-07T09:20:32+00:00"
+        }
+      },
+      "bank_git_date": "2026-07-06T14:05:08-07:00",
+      "fu3_base": {
+        "file": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-1090-fu7/eval_results/issue_1090/fu3/fu3_cell_evals/C5-pers-con-sycophancy-qwen.json",
+        "rate": 0.245,
+        "k": 49,
+        "n": 200,
+        "n_dropped": 0,
+        "n_total_draws": 1000,
+        "n_dropped_draws": 5,
+        "wilson95": [
+          0.19056777914685893,
+          0.3090436838714848
+        ],
+        "mode": "judged"
+      }
+    },
+    {
+      "run_id": "syc-c5-lr3e5",
+      "cell_key": "syc-c5",
+      "behavior": "sycophancy",
+      "context_id": "persona_software_engineer",
+      "lr": 3e-05,
+      "lora_r": 32,
+      "lora_alpha": 64,
+      "mix_hub_prefix": "issue1090_pvdatagen/c5-sycophancy-qwen/mix",
+      "mix_layout": "parent-mix-subdir",
+      "fu3_base_eval": "C5-pers-con-sycophancy-qwen.json",
+      "train_mix_sha256": "f622a9ec3cab352249e5afed34a13948332b0cd24d1825b311ee76f337fbe0b0",
+      "n_rows": 80,
+      "hub_provenance": {
+        "issue1090_pvdatagen/c5-sycophancy-qwen/mix/train_mix.jsonl": {
+          "oid": "d648f526bd9123e6f002c482980037aadffed658",
+          "date": "2026-07-07T09:19:52+00:00"
+        },
+        "issue1090_pvdatagen/c5-sycophancy-qwen/mix/mix_meta.json": {
+          "oid": "3c6ba2c25529166d0b9b2801134cf85487f4eb8d",
+          "date": "2026-07-07T09:20:32+00:00"
+        }
+      },
+      "bank_git_date": "2026-07-06T14:05:08-07:00",
+      "fu3_base": {
+        "file": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-1090-fu7/eval_results/issue_1090/fu3/fu3_cell_evals/C5-pers-con-sycophancy-qwen.json",
+        "rate": 0.245,
+        "k": 49,
+        "n": 200,
+        "n_dropped": 0,
+        "n_total_draws": 1000,
+        "n_dropped_draws": 5,
+        "wilson95": [
+          0.19056777914685893,
+          0.3090436838714848
+        ],
+        "mode": "judged"
+      }
+    },
+    {
+      "run_id": "syc-c5-lr1e4",
+      "cell_key": "syc-c5",
+      "behavior": "sycophancy",
+      "context_id": "persona_software_engineer",
+      "lr": 0.0001,
+      "lora_r": 32,
+      "lora_alpha": 64,
+      "mix_hub_prefix": "issue1090_pvdatagen/c5-sycophancy-qwen/mix",
+      "mix_layout": "parent-mix-subdir",
+      "fu3_base_eval": "C5-pers-con-sycophancy-qwen.json",
+      "train_mix_sha256": "f622a9ec3cab352249e5afed34a13948332b0cd24d1825b311ee76f337fbe0b0",
+      "n_rows": 80,
+      "hub_provenance": {
+        "issue1090_pvdatagen/c5-sycophancy-qwen/mix/train_mix.jsonl": {
+          "oid": "d648f526bd9123e6f002c482980037aadffed658",
+          "date": "2026-07-07T09:19:52+00:00"
+        },
+        "issue1090_pvdatagen/c5-sycophancy-qwen/mix/mix_meta.json": {
+          "oid": "3c6ba2c25529166d0b9b2801134cf85487f4eb8d",
+          "date": "2026-07-07T09:20:32+00:00"
+        }
+      },
+      "bank_git_date": "2026-07-06T14:05:08-07:00",
+      "fu3_base": {
+        "file": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-1090-fu7/eval_results/issue_1090/fu3/fu3_cell_evals/C5-pers-con-sycophancy-qwen.json",
+        "rate": 0.245,
+        "k": 49,
+        "n": 200,
+        "n_dropped": 0,
+        "n_total_draws": 1000,
+        "n_dropped_draws": 5,
+        "wilson95": [
+          0.19056777914685893,
+          0.3090436838714848
+        ],
+        "mode": "judged"
+      }
+    }
+  ],
+  "git_commit": "e89b5a2182",
+  "created_utc": "2026-07-17T11:11:07Z",
+  "fu7_reuse_probes": {
+    "rb_keys_probe": "REALIZED n=7 keys\nDECLARED n=2\nPASS — realized keys are a superset of declared keys",
+    "rb_shape": [
+      28,
+      3584
+    ],
+    "base_store_arms": [
+      "own__context",
+      "own__prefix",
+      "own__response"
+    ],
+    "base_store_contexts": [
+      "default",
+      "icl_prefix_sycophancy",
+      "neg_sp_ph4",
+      "neg_sp_police",
+      "persona_software_engineer",
+      "wildchat_prefix_real545"
+    ]
+  }
+}

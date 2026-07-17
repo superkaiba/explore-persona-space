@@ -1,0 +1,116 @@
+{
+  "commit": "8fb29616a9",
+  "created": "2026-07-17T16:29:59Z",
+  "figsize": [
+    6.5,
+    4.0
+  ],
+  "points": [
+    {
+      "category": "Narrative stories,\nsame conversations\n(teacher-forced)",
+      "held-out $R^2$ (layer 19, context arm)": -0.3029371550754567,
+      "error": 0.026645739182219935,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "Chat template,\nsame conversations",
+      "held-out $R^2$ (layer 19, context arm)": 0.24258391652474653,
+      "error": 0.021250688195517023,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "Plain text,\nsame conversations",
+      "held-out $R^2$ (layer 19, context arm)": 0.018925229209467487,
+      "error": 0.029945132864135734,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "Chat template,\nall 4,724 conversations",
+      "held-out $R^2$ (layer 19, context arm)": 0.654218395189838,
+      "error": 0.006823397078461857,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.0,
+      "held-out $R^2$ (layer 19, context arm)": -0.33208805041824946,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 1.0,
+      "held-out $R^2$ (layer 19, context arm)": 0.223689917798617,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 2.0,
+      "held-out $R^2$ (layer 19, context arm)": -0.009558640621125665,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 3.0,
+      "held-out $R^2$ (layer 19, context arm)": 0.6477496592601206,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 0.0,
+      "held-out $R^2$ (layer 19, context arm)": -0.2787965720538096,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 1.0,
+      "held-out $R^2$ (layer 19, context arm)": 0.26619129418965104,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 2.0,
+      "held-out $R^2$ (layer 19, context arm)": 0.050331625107145804,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 3.0,
+      "held-out $R^2$ (layer 19, context arm)": 0.6613964534170443,
+      "_kind": "line",
+      "_group": 2
+    }
+  ],
+  "n_series": 3,
+  "total_points": 12,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Same conversations, three framings",
+        "ylabel": "held-out $R^2$ (layer 19, context arm)",
+        "annotations": [
+          "Qwen2.5-7B-Instruct; verbatim answers; 95% conversation-bootstrap CI"
+        ],
+        "xticklabels": [
+          "Narrative stories,\nsame conversations\n(teacher-forced)",
+          "Chat template,\nsame conversations",
+          "Plain text,\nsame conversations",
+          "Chat template,\nall 4,724 conversations"
+        ],
+        "yticklabels": [
+          "\u22120.4",
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8"
+        ]
+      }
+    ]
+  }
+}

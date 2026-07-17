@@ -1,0 +1,296 @@
+{
+  "commit": "27b31d7fea",
+  "created": "2026-07-17T16:43:59Z",
+  "figsize": [
+    12.0,
+    4.2
+  ],
+  "points": [
+    {
+      "x": -0.2,
+      "panel judged rate (n=100)": 0.51,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.2,
+      "panel judged rate (n=100)": 0.43333333333333335,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 0.8,
+      "panel judged rate (n=100)": 0.76,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 1.2,
+      "panel judged rate (n=100)": 0.7311827956989247,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 1.8,
+      "panel judged rate (n=100)": 0.35353535353535354,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 2.2,
+      "panel judged rate (n=100)": 0.29473684210526313,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 2.8,
+      "panel judged rate (n=100)": 0.41,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "x": 3.2,
+      "panel judged rate (n=100)": 0.24210526315789474,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "x": 3.8,
+      "panel judged rate (n=100)": 0.79,
+      "_kind": "bar",
+      "_group": 8
+    },
+    {
+      "x": 4.2,
+      "panel judged rate (n=100)": 0.7741935483870968,
+      "_kind": "bar",
+      "_group": 9
+    },
+    {
+      "x": -0.2,
+      "panel judged rate (n=100)": 0.21,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 0.2,
+      "panel judged rate (n=100)": 0.061855670103092786,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 0.8,
+      "panel judged rate (n=100)": 0.48,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 1.2,
+      "panel judged rate (n=100)": 0.16494845360824742,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.8,
+      "panel judged rate (n=100)": 0.15,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 2.2,
+      "panel judged rate (n=100)": 0.05,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 2.8,
+      "panel judged rate (n=100)": 0.18,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 3.2,
+      "panel judged rate (n=100)": 0.03125,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 3.8,
+      "panel judged rate (n=100)": 0.71,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 4.2,
+      "panel judged rate (n=100)": 0.65,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "x": -0.2,
+      "panel judged rate (n=100)": 0.66,
+      "_kind": "bar",
+      "_group": 20
+    },
+    {
+      "x": 0.2,
+      "panel judged rate (n=100)": 0.4578313253012048,
+      "_kind": "bar",
+      "_group": 21
+    },
+    {
+      "x": 0.8,
+      "panel judged rate (n=100)": 0.79,
+      "_kind": "bar",
+      "_group": 22
+    },
+    {
+      "x": 1.2,
+      "panel judged rate (n=100)": 0.6071428571428571,
+      "_kind": "bar",
+      "_group": 23
+    },
+    {
+      "x": 1.8,
+      "panel judged rate (n=100)": 0.58,
+      "_kind": "bar",
+      "_group": 24
+    },
+    {
+      "x": 2.2,
+      "panel judged rate (n=100)": 0.42168674698795183,
+      "_kind": "bar",
+      "_group": 25
+    },
+    {
+      "x": 2.8,
+      "panel judged rate (n=100)": 0.6,
+      "_kind": "bar",
+      "_group": 26
+    },
+    {
+      "x": 3.2,
+      "panel judged rate (n=100)": 0.39759036144578314,
+      "_kind": "bar",
+      "_group": 27
+    },
+    {
+      "x": 3.8,
+      "panel judged rate (n=100)": 0.86,
+      "_kind": "bar",
+      "_group": 28
+    },
+    {
+      "x": 4.2,
+      "panel judged rate (n=100)": 0.7831325301204819,
+      "_kind": "bar",
+      "_group": 29
+    },
+    {
+      "x": -0.2,
+      "panel judged rate (n=100)": 0.22,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "x": 0.2,
+      "panel judged rate (n=100)": 0.07368421052631578,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "x": 0.8,
+      "panel judged rate (n=100)": 0.48,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "x": 1.2,
+      "panel judged rate (n=100)": 0.14432989690721648,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "x": 1.8,
+      "panel judged rate (n=100)": 0.17,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "x": 2.2,
+      "panel judged rate (n=100)": 0.050505050505050504,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "x": 2.8,
+      "panel judged rate (n=100)": 0.18,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "x": 3.2,
+      "panel judged rate (n=100)": 0.041666666666666664,
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "x": 3.8,
+      "panel judged rate (n=100)": 0.74,
+      "_kind": "scatter",
+      "_group": 38
+    },
+    {
+      "x": 4.2,
+      "panel judged rate (n=100)": 0.6363636363636364,
+      "_kind": "scatter",
+      "_group": 39
+    }
+  ],
+  "n_series": 40,
+  "total_points": 40,
+  "text": {
+    "suptitle": "fu7 panel leakage reads (solid legacy / hatched paper rubric; squares = reused committed base per context)",
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "sycophancy, Claude-data (c3) \u2014 best arm lr 3e-5",
+        "ylabel": "panel judged rate (n=100)",
+        "xticklabels": [
+          "default assistant",
+          "ICL prefix",
+          "negative persona (ph4)",
+          "negative persona (police)",
+          "WildChat prefix"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ]
+      },
+      {
+        "title_left": "sycophancy, Qwen-data (c5) \u2014 best arm lr 1e-4",
+        "ylabel": "panel judged rate (n=100)",
+        "xticklabels": [
+          "default assistant",
+          "ICL prefix",
+          "negative persona (ph4)",
+          "negative persona (police)",
+          "WildChat prefix"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ]
+      }
+    ]
+  }
+}

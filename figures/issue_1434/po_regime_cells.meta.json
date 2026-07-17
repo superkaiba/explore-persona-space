@@ -1,0 +1,174 @@
+{
+  "commit": "3114e0226b",
+  "created": "2026-07-17T16:29:07Z",
+  "figsize": [
+    8.0,
+    7.4
+  ],
+  "points": [
+    {
+      "D = positive-only - contrastive (judged rate, trained arms)": 0.33,
+      "y": 0.0,
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "D = positive-only - contrastive (judged rate, trained arms)": 0.030000000000000027,
+      "y": 1.0,
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "D = positive-only - contrastive (judged rate, trained arms)": 0.21747252747252743,
+      "y": 2.0,
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "D = positive-only - contrastive (judged rate, trained arms)": 0.6072727272727273,
+      "y": 3.0,
+      "_kind": "errorbar",
+      "_group": 3
+    },
+    {
+      "D = positive-only - contrastive (judged rate, trained arms)": 0.24444444444444446,
+      "y": 4.0,
+      "_kind": "errorbar",
+      "_group": 4
+    },
+    {
+      "D = positive-only - contrastive (judged rate, trained arms)": 0.0,
+      "y": 5.0,
+      "_kind": "errorbar",
+      "_group": 5
+    },
+    {
+      "D = positive-only - contrastive (judged rate, trained arms)": 0.18322580645161293,
+      "y": 6.0,
+      "_kind": "errorbar",
+      "_group": 6
+    },
+    {
+      "D = positive-only - contrastive (judged rate, trained arms)": 0.36959183673469387,
+      "y": 7.0,
+      "_kind": "errorbar",
+      "_group": 7
+    },
+    {
+      "D = positive-only - contrastive (judged rate, trained arms)": 0.12,
+      "y": 8.0,
+      "_kind": "errorbar",
+      "_group": 8
+    },
+    {
+      "D = positive-only - contrastive (judged rate, trained arms)": 0.020000000000000018,
+      "y": 9.0,
+      "_kind": "errorbar",
+      "_group": 9
+    },
+    {
+      "D = positive-only - contrastive (judged rate, trained arms)": 0.01,
+      "y": 10.0,
+      "_kind": "errorbar",
+      "_group": 10
+    },
+    {
+      "D = positive-only - contrastive (judged rate, trained arms)": 0.030000000000000027,
+      "y": 11.0,
+      "_kind": "errorbar",
+      "_group": 11
+    },
+    {
+      "D = positive-only - contrastive (judged rate, trained arms)": 0.0,
+      "y": 12.0,
+      "_kind": "errorbar",
+      "_group": 12
+    },
+    {
+      "D = positive-only - contrastive (judged rate, trained arms)": 0.01,
+      "y": 13.0,
+      "_kind": "errorbar",
+      "_group": 13
+    },
+    {
+      "D = positive-only - contrastive (judged rate, trained arms)": 0.02,
+      "y": 14.0,
+      "_kind": "errorbar",
+      "_group": 14
+    },
+    {
+      "D = positive-only - contrastive (judged rate, trained arms)": 0.0,
+      "y": 15.0,
+      "_kind": "errorbar",
+      "_group": 15
+    },
+    {
+      "D = positive-only - contrastive (judged rate, trained arms)": -0.030303030303030304,
+      "y": 16.0,
+      "_kind": "errorbar",
+      "_group": 16
+    },
+    {
+      "D = positive-only - contrastive (judged rate, trained arms)": 0.0,
+      "y": 17.0,
+      "_kind": "errorbar",
+      "_group": 17
+    },
+    {
+      "D = positive-only - contrastive (judged rate, trained arms)": -0.08,
+      "y": 18.0,
+      "_kind": "errorbar",
+      "_group": 18
+    },
+    {
+      "D = positive-only - contrastive (judged rate, trained arms)": -0.29303030303030303,
+      "y": 19.0,
+      "_kind": "errorbar",
+      "_group": 19
+    }
+  ],
+  "n_series": 20,
+  "total_points": 20,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title": "per-cell regime contrast (20 training x read cells; Newcombe 95%)",
+        "xlabel": "D = positive-only - contrastive (judged rate, trained arms)",
+        "xticklabels": [
+          "\u22120.6",
+          "\u22120.4",
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8"
+        ],
+        "yticklabels": [
+          "Persona (software engineer) @ Default assistant",
+          "Persona (software engineer) @ Two-shot ICL prefix",
+          "Persona (software engineer) @ Philosopher",
+          "Persona (software engineer) @ Police officer",
+          "Persona (software engineer) @ WildChat prefix",
+          "Bare assistant @ Two-shot ICL prefix",
+          "Bare assistant @ Philosopher",
+          "Bare assistant @ Police officer",
+          "Bare assistant @ Persona (software engineer)",
+          "Bare assistant @ WildChat prefix",
+          "WildChat prefix @ Default assistant",
+          "WildChat prefix @ Two-shot ICL prefix",
+          "WildChat prefix @ Philosopher",
+          "WildChat prefix @ Police officer",
+          "WildChat prefix @ Persona (software engineer)",
+          "ICL prefix @ Default assistant",
+          "ICL prefix @ Philosopher",
+          "ICL prefix @ Police officer",
+          "ICL prefix @ Persona (software engineer)",
+          "ICL prefix @ WildChat prefix"
+        ]
+      }
+    ]
+  }
+}
