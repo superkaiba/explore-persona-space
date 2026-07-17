@@ -3635,8 +3635,8 @@
     "1467": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1467",
-      "status": "proposed",
+      "path": "tasks/planning/1467",
+      "status": "planning",
       "title": "daily-fix: rev-parse SHAs cited in /daily filing bodies"
     },
     "1468": {
