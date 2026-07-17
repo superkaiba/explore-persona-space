@@ -3544,8 +3544,8 @@
     "1455": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1455",
-      "status": "reviewing",
+      "path": "tasks/completed/1455",
+      "status": "completed",
       "title": "daily-fix: stop releases registration + dispatch lease"
     },
     "1456": {
