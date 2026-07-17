@@ -729,7 +729,7 @@ composer copies the requested lens's items VERBATIM and IN FULL from this file.
     second DV (single-condition behavior characterization, descriptive rate reports). Not a REVISE
     for marker implants (separate recipe), non-behavioral analysis, or when the plan's §6 writes
     "N/A — not a content-behavior leakage/implantation experiment".
-11. **Selection-symmetric nulls (max-over-axis headlines).** If the plan's headline statistic is
+11. **Selection-symmetric nulls (max-over-axis headlines; noise-structure symmetry).** If the plan's headline statistic is
     chosen by `max` / `argmax` / best-of / top-k-mean over a FREE AXIS (a read-out layer, a cell, a
     k / neighbourhood size, a seed, an extraction point, a threshold) AND is compared against a null
     / permutation / shuffle band, verify §6 registers a SELECTION-SYMMETRIC null — EITHER every null
@@ -764,6 +764,28 @@ composer copies the requested lens's items VERBATIM and IN FULL from this file.
     max-over-axis selection in the headline" satisfies this item). If the per-draw × per-axis matrix
     is registered/persisted but the plan shipped the asymmetric read, the honest band is
     analyzer-recoverable post-hoc — carry it as a binding Concern rather than a REVISE.
+    ALSO verify NOISE-STRUCTURE symmetry: if any registered statistic's
+    observed and reference legs share ONE SAMPLED quantity — cos(X − B̄, Y − B̄)
+    with a shared empirical baseline mean, a shared sampled
+    anchor/denominator, a change-score correlation sharing a baseline — AND
+    the null/reference band lacks that shared term (norm-matched random
+    directions, independently re-centered shuffles), REVISE unless the plan
+    registers EITHER disjoint baseline draw halves feeding the two legs OR a
+    null carrying the identical shared-B̄ structure per draw (pre-subtraction
+    leg level, norm-matched to the observed raw leg)
+    (`selection-symmetric-nulls.md` § Noise-structure symmetry).
+    Conclusion-changing because the shared sampling noise adds
+    ≈ +tr(Σ_B)/n_B to the observed inner product only — #1415: the
+    disjoint-baseline recount dropped prefix mean cosines 0.271→0.178 and
+    context 0.362→0.272, sent one pair 0.23→−0.08 (fully artifactual; target
+    split-half reliability 0.049), and pulled 6/28 prefix pairs below the
+    null p97.5 (0.043) — the "28/28 pairs clear the null" headline did not
+    survive, and the defect was caught only at interpretation-critique. Not a
+    REVISE when the baseline is deterministic/analytic (no sampling noise),
+    the legs already use independent estimates, or the null already bears the
+    shared-B̄ structure; a missing split-half reliability report on a sampled
+    difference-vector leg (with a fix registered) is a binding Concern, not a
+    REVISE.
 12. **Re-cost on power-raising recommendations (same round).** Any recommendation in YOUR review
     that raises statistical power parameters — permutation/null draws B, bootstrap N, seeds, cells,
     folds, samples-per-cell — MUST, in the SAME round, re-cost every affected §9 compute row: state

@@ -1,17 +1,22 @@
 ---
-description: Selection-symmetric nulls — a null/permutation band compared against a max-over-axis-selected observed statistic must inherit the SAME selection per draw, or the axis must be frozen on a held-out split; persist the per-draw × per-axis matrix. Report every registered band's upper bound against the DV's achievable ceiling — band ≥ ceiling ⇒ uninformative-by-construction, narrate failure-to-reject. Loads on-demand at plan time.
+description: Selection-symmetric nulls — a null/permutation band compared against a max-over-axis-selected observed statistic must inherit the SAME selection per draw, or the axis must be frozen on a held-out split; persist the per-draw × per-axis matrix. Report every registered band's upper bound against the DV's achievable ceiling — band ≥ ceiling ⇒ uninformative-by-construction, narrate failure-to-reject. ALSO: noise-structure symmetry — a difference-vector DV whose two legs subtract the SAME sampled baseline B̄ (cos(X−B̄, Y−B̄)) inflates against a noise-free null; use disjoint baseline draw halves per leg, or build the null to carry the identical shared-B̄ term per draw. Loads on-demand at plan time.
 paths:
   - ".claude/plans/**"
   - "tasks/**/plans/**"
 ---
 
-# Selection-symmetric nulls (max-over-axis inference)
+# Selection-symmetric nulls (max-over-axis inference & shared-baseline noise structure)
 
 **Load this rule whenever a plan's headline statistic is chosen by
 `max` / `argmax` / best-of / top-k-mean over a FREE AXIS** — a read-out
 layer, a cell, a k / neighbourhood size, a seed, an extraction point, a
 threshold — AND that statistic is compared against a null / permutation /
-shuffle band. The always-on backstop is `planner.md` §6 "Selection-symmetric
+shuffle band. ALSO load it whenever a plan registers a DIFFERENCE-VECTOR
+statistic whose observed and reference legs share ONE SAMPLED quantity —
+cos(X − B̄, Y − B̄) with a shared empirical baseline mean, correlations of
+change scores sharing a baseline, frac-of-anchor ratios with a sampled
+anchor — compared against any null or reference band (§ Noise-structure
+symmetry below). The always-on backstop is `planner.md` §6 "Selection-symmetric
 nulls" + `critic.md` Statistics & Measurement lens item 11; this file is the
 full recipe those entries point at.
 
@@ -164,6 +169,84 @@ Betley effect would fail — and the p = 0.634 outcome was initially
 narrated as a clean ordering fail until the interpretation-critic
 caught it.
 
+## Noise-structure symmetry (shared-baseline difference vectors)
+
+Selection symmetry is not the only way an observed-vs-null comparison
+goes asymmetric: the null must also bear the same NOISE STRUCTURE the
+observed statistic bears.
+
+**The trap.** A DV of the form `cos(X − B̄, Y − B̄)` — or any statistic
+whose observed and reference legs share ONE SAMPLED quantity: a shared
+empirical baseline mean B̄ (e.g. the mean of 10 baseline draws), a shared
+anchor, a shared sampled denominator (frac-of-anchor), a change-score
+correlation sharing a baseline — carries the SAME sampling-noise vector
+−ε_B in both legs. The shared term contributes ≈ +tr(Σ_B)/n_B to the
+expected inner product whenever the X / Y / B NOISES are mutually
+independent (no signal relation is needed at all), so the
+cosine/correlation is biased toward the positive shared-noise limit — a
+positive bias on the expected inner product (a negative true alignment is
+pulled toward zero rather than magnified; the null-coverage failure holds
+either way); when a leg's true signal is small (low split-half
+reliability), the artifact DOMINATES the read. A null built
+WITHOUT that shared term — norm-matched random directions, shuffled pairs
+re-centered independently — has zero shared component with the reference
+leg by construction, so it under-covers and the observed statistic
+"clears the null" for free. This is the classical
+spurious-correlation-from-a-shared-term family (Pearson 1897, indices
+sharing a common component; in-project siblings: the #383 X-vs-(X−Y)
+caveat, the install-fraction shared-noisy-denominator caveat).
+
+**The two symmetric fixes (pick one; the plan registers which):**
+
+1. **Disjoint baseline halves (default; the #1415 recount recipe).**
+   Split B's draws into disjoint halves and feed one half to each leg
+   (e.g. target from even draws, realized shift from odd draws). The
+   shared cross-term vanishes in expectation — unbiased for the INNER
+   PRODUCT; the disjoint COSINE remains attenuated toward zero (each
+   half carries more independent noise), while the shared-B read
+   carries the same attenuation PLUS the inflation — so the truth
+   typically (not provably) sits between the two reads, and can sit
+   above both when attenuation dominates the shared term. Report both
+   reads and the caveat in both directions. Fix availability is
+   member-dependent: when B is a single measurement per unit (no
+   multi-draw mean), fix 1 is unavailable — use fix 2, preserving the
+   per-unit shared-B contribution.
+2. **A shared-B-bearing null.** Construct the null so EVERY draw carries
+   the identical shared-baseline structure — the null replacement enters
+   at the PRE-SUBTRACTION leg level (replace the raw leg X, never the
+   already-differenced X − B̄), norm/scale-matched to the observed raw
+   leg, and then the same sampled B̄ (preferably a per-draw bootstrap
+   resample B̄* of B's draws) is subtracted from BOTH legs of each null
+   draw — so the null carries the same shared-noise cross-term at the
+   same RELATIVE scale the observed cosine carries. A random-direction
+   or independently-re-centered null does NOT qualify; nor does a
+   "shared-B" null whose replacement enters post-subtraction or at a
+   mismatched leg norm.
+
+**Reliability screen (rides along).** Report the split-half reliability
+of any SAMPLED difference-vector leg (target and realized). A
+near-zero-reliability leg makes its row uninterpretable regardless of
+the fix — #1415's medical_doctor pair posted 0.66–0.71 alignment against
+a target with 0.049 split-half reliability.
+
+**Motivating evidence (#1415, H1 answer-shift alignment).** The realized
+shift (V_a_steered − V_a(c)) and the target (V_a(c′) − V_a(c)) subtracted
+the SAME 10-draw baseline mean; the 500-direction random null had no
+shared term. The interpretation-critic's executed disjoint recount
+(even/odd baseline halves, canonical L20/α4 cells): prefix mean
+max-over-read-layers 0.271 → 0.178, context 0.362 → 0.272; one pair
+0.23 → −0.08 (fully artifactual); 6/28 prefix pairs fell below the null
+p97.5 (0.043). The "28/28 pairs clear the random-direction null"
+headline did not survive. The shared term also inflates frac-of-anchor
+ratio reads (adds +‖ε_c‖²/‖target‖²). The defect survived the planner,
+the critic ensemble, the implementer, and code review — caught only at
+interpretation-critique; this section exists to move the catch to plan
+time.
+
+**Interaction with selection symmetry.** The two clauses are orthogonal
+and can BOTH fire on one DV (#1415's H1 was max-over-read-layers AND
+shared-baseline). Fixing one does not fix the other.
+
 ## Carve-outs (this rule does NOT fire)
 
 - **A single pre-registered / fixed axis position with no data-driven
@@ -182,6 +265,18 @@ caught it.
 - **N/A when the headline statistic is not selected over any free
   axis** — the plan writes "N/A — no max-over-axis selection in the
   headline".
+- **(Noise-structure) A deterministic / analytic / population baseline** —
+  B carries no sampling noise (a fixed vector, a closed-form mean), so
+  there is no shared noise term to inherit. State that B is noise-free.
+- **(Noise-structure) Legs already independent** — the two legs already
+  subtract independent baseline estimates (disjoint draws, separate runs),
+  or the null already carries the shared-B̄ structure per draw (fix 2 —
+  pre-subtraction leg level, norm-matched; a post-subtraction or
+  norm-mismatched "shared-B" null does not qualify).
+- **N/A when no registered statistic shares a sampled quantity across its
+  observed and reference legs** — a plan MAY write "N/A — no
+  shared-baseline difference-vector DV" to be explicit; absence of the
+  pattern requires no declaration.
 
 ## Enforcement
 
@@ -203,6 +298,16 @@ caught it.
   measurement-validity gate + `interpretation-critic.md`
   § Alternative Explanations narrate an unreachable band as
   failure-to-reject.
+- Noise-structure symmetry (plan side): `planner-section-reference.md` §6
+  "Selection-symmetric nulls" block (noise-structure paragraph) — a plan
+  registering a shared-sampled-baseline difference-vector statistic names
+  which of the two fixes it uses; `critic-lens-reference.md` Statistics &
+  Measurement item 11 + `statistics-critic.md` item 11 (v2) REVISE the
+  pattern with neither fix registered.
+- Noise-structure symmetry (code side): `.claude/rules/gotchas.md` carries
+  a pointer bullet (loads when writing analysis code — the layer that
+  covers inline / free-analysis rounds, which bypass the planner+critic
+  stack).
 
 ## Files of record
 
@@ -210,6 +315,10 @@ Task body #810 (the band-vs-ceiling incident: band p97.5 = 0.800 vs an
 achievable difference ceiling from ~0.857 max skill; p = 0.634 initially
 narrated as an ordering fail);
 Task body #778 (the origin incident + n=24 asymmetry numbers);
+Task body #1415 (the shared-baseline noise incident: prefix 0.271→0.178,
+context 0.362→0.272, one pair 0.23→−0.08, 6/28 prefix pairs below null
+p97.5 0.043 under disjoint halves; the interp-critique v1 marker carries
+the executed recount);
 `.claude/agent-memory/reconciler/feedback_layer_selection_asymmetry_is_alternatives_finding.md`,
 `.claude/agent-memory/analyzer/feedback_best_layer_snr_selection_biased.md`,
 `.claude/agent-memory/critic/feedback_bestofgroup_selection_asymmetry.md`
