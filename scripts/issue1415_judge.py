@@ -40,6 +40,7 @@ import argparse
 import hashlib
 import json
 import logging
+import re
 import sys
 from pathlib import Path
 
@@ -256,8 +257,9 @@ def build_items(
         question = meta["context"]["user"]
         label = rubric_label_for(meta, pair_labels)
         for di, text in enumerate(draws):
-            item_id = f"{ckey}/d{di}"
+            item_id = f"{ckey}_d{di}"
             assert "__" not in item_id, item_id  # judge_graded custom_id delimiter
+            assert re.fullmatch(r"[A-Za-z0-9_-]+", item_id), item_id  # custom_id charset
             assert len(item_id) <= ITEM_ID_MAX_CHARS, item_id  # 64-char custom_id budget
             by_label.setdefault(label, []).append((item_id, question, text))
     # Belt-and-suspenders: one compact key per distinct full cell id.
@@ -283,7 +285,7 @@ def reduce_results(
     per_item: dict[str, dict] = {}
     for label, res in results.items():
         for item_id, score in res.scores.items():
-            ckey, di = item_id.rsplit("/d", 1)
+            ckey, di = item_id.rsplit("_d", 1)
             cell_id = id_map[ckey]  # rehydrate compact key -> full cell id (fail loud)
             full_id = f"{cell_id}/d{di}"
             meta = meta_by_cell[cell_id]
@@ -461,7 +463,7 @@ def main(argv: list[str] | None = None) -> None:
                 label: str(args.work_dir / "raw" / f"{label}.json") for label in rubrics
             },
             # save_raw files are keyed by COMPACT Batch custom_ids
-            # ("h<sha1-12>/d<draw>__NNNNN__NN"); this map rehydrates them to
+            # ("h<sha1-12>_d<draw>__NNNNN__NN"); this map rehydrates them to
             # full cell ids (crash-fix r2, epm:failure v2 custom_id overflow).
             "id_map_file": str(id_map_path),
         },
