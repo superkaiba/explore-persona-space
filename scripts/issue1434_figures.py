@@ -44,6 +44,25 @@ PLAIN = {
 }
 PLAIN.update({f"ws-po-{k.removeprefix('ws-')}": v for k, v in list(PLAIN.items())})
 LR_LABEL = {"lr1e5": "lr 1e-5", "lr3e5": "lr 3e-5", "lr1e4": "lr 1e-4"}
+# Reader-facing names for READ contexts (leakage-grid eval contexts). Internal
+# slugs in tick labels are a clean-result-critic Lens 3 FAIL (#1434 round 3).
+READ_CTX_PLAIN = {
+    "default": "Default assistant",
+    "persona_software_engineer": "Persona (software engineer)",
+    "neg_sp_police": "Police officer",
+    "neg_sp_ph4": "Philosopher",
+    "icl_prefix_writing_style": "Two-shot ICL prefix",
+    "wildchat_prefix_real545": "WildChat prefix",
+}
+
+
+def _save(fig, out: Path) -> Path:
+    """Save PNG + PDF + .meta.json sidecar via savefig_paper; returns the PNG path."""
+    from explore_persona_space.analysis.paper_plots import savefig_paper
+
+    paths = savefig_paper(fig, out.stem, dir=out.parent)
+    plt.close(fig)
+    return paths["png"]
 
 
 def _err(rate: float, ci: list[float]) -> tuple[float, float]:
@@ -106,10 +125,7 @@ def fig_install_grid(
         f"{title_prefix} install grid — Tier-2 verdict-arm rates (blue), Tier-1 "
         "selected-rung rates (cyan), base (grey); Wilson 95% CIs"
     )
-    out = out_dir / fname
-    fig.savefig(out, dpi=180)
-    plt.close(fig)
-    return out
+    return _save(fig, out_dir / fname)
 
 
 def fig_rb_validity(val: dict, proj: dict, agg: dict, out_dir: Path) -> Path:
@@ -196,7 +212,7 @@ def fig_regime_hero(contrast: dict, out_dir: Path) -> Path:
     ax.axhline(0.0, color="0.4", lw=0.8)
     axd.axhline(0.0, color="0.4", lw=0.8)
     ax.set_ylabel("pooled non-source leakage delta\n(trained - base, judged rate)")
-    axd.set_ylabel("D = po - con\n(trained-vs-trained)")
+    axd.set_ylabel("D = positive-only - contrastive\n(trained-vs-trained)")
     axd.set_xticks(xs)
     axd.set_xticklabels(labels, fontsize=8)
     ax.legend(fontsize=8)
@@ -205,10 +221,7 @@ def fig_regime_hero(contrast: dict, out_dir: Path) -> Path:
         "(band-matched verdict arms; Newcombe 95% CIs)",
         fontsize=10,
     )
-    out = out_dir / "po_regime_hero.png"
-    fig.savefig(out, dpi=180)
-    plt.close(fig)
-    return out
+    return _save(fig, out_dir / "po_regime_hero.png")
 
 
 def fig_regime_cells(contrast: dict, out_dir: Path) -> Path:
@@ -223,18 +236,19 @@ def fig_regime_cells(contrast: dict, out_dir: Path) -> Path:
     ax.axvline(0.0, color="0.4", lw=0.8)
     ax.set_yticks(ys)
     ax.set_yticklabels(
-        [f"{PLAIN.get(c['training_cell'], c['training_cell'])} @ {c['read_ctx']}" for c in rows],
+        [
+            f"{PLAIN.get(c['training_cell'], c['training_cell'])} @ "
+            f"{READ_CTX_PLAIN.get(c['read_ctx'], c['read_ctx'])}"
+            for c in rows
+        ],
         fontsize=6,
     )
-    ax.set_xlabel("D = po - con (judged rate, trained arms)")
+    ax.set_xlabel("D = positive-only - contrastive (judged rate, trained arms)")
     ax.set_title(
         f"per-cell regime contrast ({len(rows)} training x read cells; Newcombe 95%)",
         fontsize=10,
     )
-    out = out_dir / "po_regime_cells.png"
-    fig.savefig(out, dpi=180)
-    plt.close(fig)
-    return out
+    return _save(fig, out_dir / "po_regime_cells.png")
 
 
 def fig_ladder_overlays(po_agg: dict, con_agg: dict, out_dir: Path) -> Path:
@@ -259,7 +273,10 @@ def fig_ladder_overlays(po_agg: dict, con_agg: dict, out_dir: Path) -> Path:
                     style,
                     color=colors.get(tag, "0.5"),
                     lw=1.2,
-                    label=f"{LR_LABEL.get(tag, tag)} ({'po' if style == '--' else 'con'})",
+                    label=(
+                        f"{LR_LABEL.get(tag, tag)} "
+                        f"({'positive-only' if style == '--' else 'contrastive'})"
+                    ),
                 )
         band = po_agg.get("band") or con_agg.get("band")
         if band:
@@ -270,10 +287,7 @@ def fig_ladder_overlays(po_agg: dict, con_agg: dict, out_dir: Path) -> Path:
     np.atleast_1d(axes)[0].set_ylabel("Tier-1 judged rate")
     np.atleast_1d(axes)[-1].legend(fontsize=5)
     fig.suptitle("dose ladders — contrastive (solid) vs positive-only (dashed)", fontsize=10)
-    out = out_dir / "po_ladder_overlays.png"
-    fig.savefig(out, dpi=180)
-    plt.close(fig)
-    return out
+    return _save(fig, out_dir / "po_ladder_overlays.png")
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -293,6 +307,7 @@ def main(argv: list[str] | None = None) -> int:
     )
     out_dir = Path(args.out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
+    plt.rcParams["savefig.dpi"] = 180  # match the prior fig.savefig(..., dpi=180) resolution
     agg = json.loads(
         (deliver / ("i1434po_ladders.json" if po else "i1434_ladders.json")).read_text()
     )
