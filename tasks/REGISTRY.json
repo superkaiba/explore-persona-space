@@ -3211,8 +3211,8 @@
     "1411": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1411",
-      "status": "reviewing",
+      "path": "tasks/completed/1411",
+      "status": "completed",
       "title": "daily-fix: gotchas Edit tool un-escapes uXXXX"
     },
     "1412": {
@@ -3225,15 +3225,15 @@
     "1413": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1413",
-      "status": "planning",
+      "path": "tasks/running/1413",
+      "status": "running",
       "title": "daily-fix: guard ssh-string git false positives"
     },
     "1414": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1414",
-      "status": "planning",
+      "path": "tasks/completed/1414",
+      "status": "completed",
       "title": "daily-fix: plan 9 pins out-root filesystem mount"
     },
     "1415": {
@@ -3247,8 +3247,8 @@
     "1416": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1416",
-      "status": "planning",
+      "path": "tasks/completed/1416",
+      "status": "completed",
       "title": "workflow-fix: gotchas \u2014 GPU-free gate must read per-GPU memory.used (foreign-tenant GPUs invisible to compute-apps)"
     },
     "1417": {
@@ -3262,15 +3262,15 @@
     "1418": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1418",
-      "status": "proposed",
+      "path": "tasks/reviewing/1418",
+      "status": "reviewing",
       "title": "workflow-fix: verify_task_body check-17 cross-checks Context lineage vs parent_id"
     },
     "1419": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1419",
-      "status": "proposed",
+      "path": "tasks/reviewing/1419",
+      "status": "reviewing",
       "title": "workflow-fix: audit pre_reg pattern catches bare 'registered <noun>' forms"
     },
     "142": {
@@ -3297,8 +3297,8 @@
     "1422": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1422",
-      "status": "proposed",
+      "path": "tasks/planning/1422",
+      "status": "planning",
       "title": "workflow-fix: check-30 trailing-parenthetical file-count shape"
     },
     "1423": {
