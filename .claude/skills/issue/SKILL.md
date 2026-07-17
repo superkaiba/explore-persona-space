@@ -9289,7 +9289,9 @@ tests BEFORE anything lands:
   that tree's own lint copy BEFORE the payload overlay, then overlays the
   branch's own-diff payload from the branch tip and runs the GATED legs
   from the SAME copy (#1212 — one lint vintage, trees differing only by
-  the payload). `workflow_lint.py` derives its scan root from `__file__`
+  the payload) — with the #1456 exception: a payload-touched
+  `workflow_lint.py` is 3-way-merged for the gated legs (see the overlay
+  step). `workflow_lint.py` derives its scan root from `__file__`
   (not cwd), so the gate-tree copy scans the gate tree; a plain non-git
   /tmp dir is a supported scan root (the root-guard hook pins `REPO=` to
   an absolute path, and `_other_worktree_prefix` is pure path-string
@@ -9364,9 +9366,14 @@ tests BEFORE anything lands:
     # deliberately: a payload violating a post-fork check now BLOCKS, the
     # #931 class). $WT and the repo root are never written; no commits are
     # created, so the verdict's sha-bind is unaffected. Payload files come
-    # FROM the branch tip: a branch whose own diff touches workflow_lint.py
-    # or a helper has its OWN copy exercised on the gated legs — it IS the
-    # payload. Construction failures fail CLOSED via GT_RC in the crash arm.
+    # FROM the branch tip: a branch whose own diff touches a lint HELPER has
+    # its OWN copy exercised on the gated legs — it IS the payload. EXCEPTION
+    # (#1456): workflow_lint.py ITSELF is 3-way-MERGED for the gated legs
+    # (branch ⊕ merge-base ⊕ archived origin/main — the content a rebase
+    # would land on trunk), so main's ratchet raises can't false-block a
+    # drifted branch lint copy (#1366/#1411); merge failure falls back to
+    # the branch copy with a loud WARN (residual (a)). Construction
+    # failures fail CLOSED via GT_RC in the crash arm.
     # The archive pathspec set must cover workflow_lint.py's scan/target
     # surface (.claude/ CLAUDE.md scripts/ src/ tests/ docs/ — the #1154
     # marker-recipe pins read docs/); a false block naming a path OUTSIDE
@@ -9433,6 +9440,16 @@ tests BEFORE anything lands:
     # bytes >0x7f only.
     git -C "$WT" -c core.quotePath=false diff --name-only --no-renames origin/main...HEAD \
       > /tmp/issue-<N>-overlay-files.txt || GT_RC=1
+    # #1456: save the pre-overlay (archived origin/main) lint copy before the
+    # loop overwrites it — the "theirs" side of the 3-way merge below. The
+    # rm -f first clears any STALE saved copy from a prior run: a cp failure
+    # under `|| true` must leave the file ABSENT (branch-copy fallback below),
+    # never feed an old run's stale "theirs". `|| true`: a failed save
+    # degrades to the branch-copy fallback there, never a crash.
+    if grep -qxF 'scripts/workflow_lint.py' /tmp/issue-<N>-overlay-files.txt; then
+      rm -f /tmp/issue-<N>-lint-main-copy.py
+      cp "$GT/scripts/workflow_lint.py" /tmp/issue-<N>-lint-main-copy.py || true
+    fi
     while IFS= read -r p; do
       if git -C "$WT" cat-file -e "HEAD:$p" 2>/dev/null; then
         { mkdir -p "$GT/$(dirname "$p")" \
@@ -9441,6 +9458,42 @@ tests BEFORE anything lands:
         rm -f "$GT/$p" || GT_RC=1   # branch-deleted / renamed-away path: absent from the landing tree
       fi
     done < /tmp/issue-<N>-overlay-files.txt
+    # LINT-VINTAGE 3-WAY MERGE (#1456; incidents #1366/#1411): when the own
+    # diff touches scripts/workflow_lint.py, the loop above overlaid the
+    # BRANCH's lint copy, whose ratchet constants (_LESSONS_RATCHET_BYTES,
+    # agent-spec caps, gotchas row caps — bumped on main every few days) may
+    # predate main's raises and flag main-advanced files on the gated legs
+    # only (NEW non-empty -> spurious block). Approximate the post-rebase
+    # trunk lint instead: 3-way-merge branch copy (ours) + merge-base copy +
+    # the saved archived-origin/main copy (theirs). Clean merge -> gated legs
+    # carry BOTH main's constant raises / post-fork checks AND the branch's
+    # own lint deliverable; a branch-added check with unfixed main offenders
+    # still lands in the merged copy -> NEW -> block (correct: trunk pytest
+    # goes red post-merge either way). ANY failure (merge conflict rc>0,
+    # internal error, merge-base/base-copy extraction failure, missing saved
+    # main copy) falls back to the BRANCH copy — exactly the pre-#1456
+    # residual-(a) behavior — with a loud WARN + sidecar note, NEVER a new
+    # crash path. git merge-file exits 0 on a clean merge, the number of
+    # conflicts (>0) on conflict, negative (shell: 255) on error; -p writes
+    # the merged result to stdout, leaving the input file untouched.
+    if grep -qxF 'scripts/workflow_lint.py' /tmp/issue-<N>-overlay-files.txt \
+       && git -C "$WT" cat-file -e HEAD:scripts/workflow_lint.py 2>/dev/null; then
+      LINT_MERGED=no
+      if [ -s /tmp/issue-<N>-lint-main-copy.py ] \
+         && MB=$(git -C "$WT" merge-base origin/main HEAD 2>/dev/null) \
+         && git -C "$WT" show "$MB:scripts/workflow_lint.py" \
+              > /tmp/issue-<N>-lint-base-copy.py 2>/dev/null \
+         && git merge-file -p "$GT/scripts/workflow_lint.py" \
+              /tmp/issue-<N>-lint-base-copy.py /tmp/issue-<N>-lint-main-copy.py \
+              > /tmp/issue-<N>-lint-merged.py 2>/dev/null; then
+        mv /tmp/issue-<N>-lint-merged.py "$GT/scripts/workflow_lint.py" && LINT_MERGED=yes
+      fi
+      echo "[step10d] lint-vintage 3-way merge: $LINT_MERGED"
+      if [ "$LINT_MERGED" = no ]; then
+        echo "WARN: lint-copy 3-way merge failed/conflicted — gated legs run the BRANCH's workflow_lint.py (residual (a)); a ratchet-drift false block may follow. Fix: rebase the branch onto origin/main (or sync main's ratchet constants into the branch copy), then re-run the gate." \
+          | tee /tmp/issue-<N>-lint-mergefile-note.txt
+      fi
+    fi
     # GATED legs (payload-bearing landing tree — phase 3; parity leg covers
     # the checks the no-flags bundle omits — see the bullet above):
     GATED_RC=0
@@ -9734,9 +9787,13 @@ tests BEFORE anything lands:
   3. `crash` — the linter itself CRASHED on either leg pair (rc>1, or
      rc!=0 with zero normalized `workflow_lint:` failure lines: import
      error, missing dep, sparse-worktree crash — the gated leg runs the
-     gate tree's `workflow_lint.py`, the BRANCH's copy whenever the
-     own-diff touches it, so the crash is payload-inducible; a gate-tree
-     CONSTRUCTION failure (GT_RC != 0) also lands here),
+     gate tree's `workflow_lint.py` — the 3-way-MERGED copy (or, on
+     merge-failure fallback, the BRANCH's copy) whenever the own-diff
+     touches it — so the crash is payload-inducible (a semantically-broken
+     clean merge lands here too, fail CLOSED; it predicts the post-merge
+     trunk file, so blocking is correct — rebase onto origin/main and
+     re-run); a gate-tree CONSTRUCTION failure (GT_RC != 0) also lands
+     here),
      or the trigger diff failed. No trustworthy compare exists, so this is
      an unconditional block-path verdict: fix the crash cause in the
      worktree, re-run the gate ONCE; still crashing → the SAME
@@ -9798,10 +9855,19 @@ tests BEFORE anything lands:
   `main` after the branch forked is now enforced on every path, so a
   payload violating it BLOCKS (the #931 class), and a check
   retired/loosened on main can no longer false-block. What remains: (a) a
-  branch whose OWN diff touches `scripts/workflow_lint.py` runs its branch
-  copy on the gated legs (it IS the payload) — baseline-vs-gated
-  lint-version asymmetry is inherent there and resolves through the
-  standard case-1 fix-or-`epm:merge-failed` path; (b) the gate tree
+  branch whose OWN diff touches `scripts/workflow_lint.py` gets a 3-way-
+  MERGED lint copy on the gated legs (#1456: branch ⊕ merge-base ⊕
+  archived origin/main — approximates the post-merge trunk copy, so
+  main's ratchet-constant raises no longer false-block, #1366/#1411);
+  the residual NARROWS to the merge-failure fallback — on conflict /
+  error the gated legs keep the BRANCH copy (loud WARN + sidecar
+  `/tmp/issue-<N>-lint-mergefile-note.txt`), and a resulting
+  ratchet-drift block resolves through the standard case-1
+  fix-or-`epm:merge-failed` path (rebase onto origin/main, or sync
+  main's ratchet constants into the branch copy) — plus the narrow
+  semantically-broken-clean-merge window, which crashes the gated leg
+  into the fail-CLOSED crash arm and equally predicts a post-merge
+  trunk crash; (b) the gate tree
   materializes only `workflow_lint.py`'s scan/target surface (the archive
   pathspec set in the executable block) — if the linter grows a new scan
   root, a gated false block naming paths outside that set is the symptom
@@ -9810,7 +9876,9 @@ tests BEFORE anything lands:
   copies and the dirty-root baseline (path-(i) test-VERSION drift,
   fail-safe direction) — the trunk pytest remains their backstop; (d) a
   lint-scanned file BOTH main and the branch modified post-fork lints as
-  the BRANCH's copy (the overlay takes branch-HEAD wholesale), a narrow
+  the BRANCH's copy (the overlay takes branch-HEAD wholesale; EXCEPT
+  `scripts/workflow_lint.py` itself, which is 3-way-merged per #1456 —
+  its residual is the merge-failure fallback in residual (a)), a narrow
   window in either direction that is strictly smaller than the old
   whole-tree divergence — the form-(ii) recovery covers the conflict case
   and trunk lint backstops the clean-rebase case; (e) same-issue
