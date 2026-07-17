@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1454,
+  "highest_id": 1455,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -3540,6 +3540,13 @@
       "path": "tasks/proposed/1454",
       "status": "proposed",
       "title": "daily-fix: IAP tunneling in GcpBackend.fetch_results"
+    },
+    "1455": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1455",
+      "status": "proposed",
+      "title": "daily-fix: stop releases registration + dispatch lease"
     },
     "146": {
       "has_clean_result": false,
