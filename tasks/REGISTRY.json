@@ -3712,8 +3712,8 @@
     "1477": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1477",
-      "status": "planning",
+      "path": "tasks/approved/1477",
+      "status": "approved",
       "title": "workflow-fix: poll_pipeline zombie-override CPU-rate arbiter false-stalls healthy CPU-bound runs"
     },
     "1478": {
