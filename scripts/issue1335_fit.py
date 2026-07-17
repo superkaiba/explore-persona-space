@@ -645,9 +645,6 @@ def ensure_store_local(args, slug: str, model_kind: str) -> bool:
     mapping (flat basenames under analysis_tensors/store_<slug>_<model>/);
     downloads via local_dir + os.replace so a later delete actually frees disk.
     Returns True when anything was downloaded."""
-    import os
-    import tempfile
-
     store_dir = store_root(args) / slug / model_kind
     sidecars = _sidecars(args, slug, model_kind)
     assert sidecars, f"no sidecars for {slug}/{model_kind} — capture never ran"
@@ -658,20 +655,19 @@ def ensure_store_local(args, slug: str, model_kind: str) -> bool:
     ]
     if not missing:
         return False
-    from huggingface_hub import hf_hub_download
+    from explore_persona_space.orchestrate import hub
 
     prefix = f"{r1335.HF_PREFIX}/analysis_tensors/store_{slug}_{model_kind}"
     store_dir.mkdir(parents=True, exist_ok=True)
-    # Staging dir INSIDE store_dir (the issue1335_extract_store.py pattern):
-    # a bare /tmp TemporaryDirectory EXDEV-crashes os.replace onto /workspace
-    # (cross-device), and the non-recursive shard globs cannot see the nested
-    # half-downloaded tree.
-    with tempfile.TemporaryDirectory(dir=store_dir, prefix=".hfstage_") as td:
-        for name in missing:
-            got = hf_hub_download(
-                r1335.HF_DATA_REPO, f"{prefix}/{name}", repo_type="dataset", local_dir=td
-            )
-            os.replace(got, store_dir / name)
+    # Canonical retried + atomic staging (#1402 hub.stage_hub_file): rides
+    # hub.retry_transient — a raw un-retried hf_hub_download here let one
+    # transient HF 429 ("maximum queue size reached") kill attempt
+    # att-20260717-191703 mid-fit. The helper keeps the tempdir-inside-dest
+    # os.replace publish (the #1335 EXDEV gotcha).
+    for name in missing:
+        hub.stage_hub_file(
+            r1335.HF_DATA_REPO, f"{prefix}/{name}", store_dir / name, repo_type="dataset"
+        )
     print(f"[i1335-fit] re-staged {len(missing)} shards for {slug}/{model_kind} from the Hub")
     return True
 
