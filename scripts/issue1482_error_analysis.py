@@ -451,7 +451,7 @@ def phase_p1_fit(args) -> None:
     tr = _train_rows_for(spec["condition"], idx, args)
     eval_sets = _eval_sets_for(spec["condition"], idx)
     eval_union = np.concatenate(list(eval_sets.values()))
-    dev = args.device
+    dev = torch.device(args.device)  # parent fitters expect a torch.device (dev.type)
     ns = argparse.Namespace(
         ridge_block=N1M.RIDGE_BLOCK,
         mlp_lr=3e-4,
@@ -1106,7 +1106,7 @@ def _per_feature_metrics(pred: np.ndarray, true: np.ndarray) -> dict[str, np.nda
 
 def phase_p3(args) -> None:
     C.phase("p3")
-    dev = args.device
+    dev = torch.device(args.device)  # parent fitters expect a torch.device
     parts = _load_store(args)
     idx = np.load(args.scratch / "split_indices.npz")
     X = np.load(args.scratch / "X.npy", mmap_mode="r")
