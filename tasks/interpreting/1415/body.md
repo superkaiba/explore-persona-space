@@ -46,7 +46,7 @@ relates_to:
 
 ## Methodology
 
-**Design:** `Qwen/Qwen2.5-7B-Instruct` (28 layers, hidden size 3584), no training. A bank of 28 context pairs (c, c′): 15 matched-query pairs — 10 instruction swaps (same user question; no system prompt vs one behavioral instruction, reused from the instruction-shift capture line) and 5 persona-condition swaps (same question set under different persona shot-count conditions, reused from the persona-monitoring condition bank) — plus 13 cross-query pairs (different questions under different personas from the same condition bank). For each pair, the steering vector is the context-vector difference Δ = V_c(c′) − V_c(c), added by a forward hook to the residual stream at the last context token throughout generation. Both extraction arms run per the standing prefix/context rule: prefix-based (last token of the system/persona prefix) and context-based (last token of prefix + user query). Sweeps: steer layer in {7, 10, 14, 17, 20, 21, 24} with layer 20 primary; steering scale α in {0.5, 1, 2, 4} under a coherence gate; position last-context-token (primary) vs all generated positions. Arms: unhooked baseline under c; steered arms; context-swap ceiling (generate under c′ directly); norm-matched random-direction null (500 draws per pair, selection-symmetric); shuffled-pair null (other pairs' real steering vectors, norm-matched); persona-vector steering baseline (per-layer difference-of-means directions for evil, sycophancy, and hallucination, coherence-gated over the same α grid). Every compared arm runs on the same hooked-HF `generate()` stack — a stated deviation from the project vLLM rule, taken because hooks force HF for the treatment arm and a mixed-stack contrast would confound both DVs. N = 10 on-policy draws per cell at temperature 1.0.
+**Design:** `Qwen/Qwen2.5-7B-Instruct` (28 layers, hidden size 3584), no training. A bank of 28 context pairs (c, c′): 15 matched-query pairs — 10 instruction swaps (same user question; no system prompt vs one behavioral instruction, reused from the instruction-shift capture line) and 5 persona-condition swaps (same question set under different persona shot-count conditions, reused from the persona-monitoring condition bank) — plus 13 cross-query pairs (different questions under different personas from the same condition bank). The pair prompts and questions are LLM-generated synthetic corpora — data-realism tier 3 per the plan, reused verbatim because no established benchmark provides matched-query persona pairs aligned with this artifact line and reuse keeps the causal read comparable to the correlational parents. For each pair, the steering vector is the context-vector difference Δ = V_c(c′) − V_c(c), added by a forward hook to the residual stream at the last context token throughout generation. Both extraction arms run per the standing prefix/context rule: prefix-based (last token of the system/persona prefix) and context-based (last token of prefix + user query). Sweeps: steer layer in {7, 10, 14, 17, 20, 21, 24} with layer 20 primary; steering scale α in {0.5, 1, 2, 4} under a coherence gate; position last-context-token (primary) vs all generated positions. Arms: unhooked baseline under c; steered arms; context-swap ceiling (generate under c′ directly); norm-matched random-direction null (500 draws per pair, selection-symmetric); shuffled-pair null (other pairs' real steering vectors, norm-matched); persona-vector steering baseline (per-layer difference-of-means directions for evil, sycophancy, and hallucination, coherence-gated over the same α grid). Every compared arm runs on the same hooked-HF `generate()` stack — a stated deviation from the project vLLM rule, taken because hooks force HF for the treatment arm and a mixed-stack contrast would confound both DVs. N = 10 on-policy draws per cell at temperature 1.0.
 
 **Training:** **N/A — no model training.** Generation, steering, and judge constants:
 
@@ -85,7 +85,7 @@ A worked context pair (1 of 28 pairs, cherry-picked for illustration; full bank:
 
 </details>
 
-A firing steered draw (the strongest per-pair behavioral success; cherry-picked; all steered completions: [raw_completions/issue_1415 on the HF data repo @ 79dacd52](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/79dacd5239869e8de65c89a04437a606af436ad0/raw_completions/issue_1415)):
+A firing steered draw (the strongest layer-20 primary-round behavioral success; cherry-picked; all steered completions: [raw_completions/issue_1415 on the HF data repo @ 79dacd52](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/79dacd5239869e8de65c89a04437a606af436ad0/raw_completions/issue_1415)):
 
 <details>
 <summary>Formal-register pair, context arm, layer 20, α = 4, draw 9 — graded 23.0 (file `gen1c/context/m685_05_formal/L20/a4.json`)</summary>
@@ -95,6 +95,19 @@ A firing steered draw (the strongest per-pair behavioral success; cherry-picked;
 > 1. **Choose the Right Coffee Beans**: Opt for high-quality, freshly roasted beans for the best flavor. Arabica beans generally produce a more flavorsome and nuanced taste compared to Robusta. […]
 
 The steered model shifts register toward the formal target without the instruction ever appearing in its context.
+
+</details>
+
+The headline flip draw (the strongest overall behavioral success — the terse pair's layer-14 full flip, per-pair shift +93.6; cherry-picked; same artifact tree as above):
+
+<details>
+<summary>Terse pair, context arm, layer 14, α = 4, draw 0 — graded 95.0 (file `gen1c/context/m685_04_terse/L14/a4.json`)</summary>
+
+Pair: c asks "What's the history of the printing press?" with no system prompt; c′ adds the system prompt "Answer in as few words as possible."
+
+> Invention by Johannes Gutenberg, spread and impact on civilization.
+
+The steered model answers in one clipped line without the terseness instruction ever appearing in its context; all 10 draws of this cell grade 85–95.
 
 </details>
 
@@ -222,7 +235,7 @@ What is plotted: mean graded judge score across the α grid for both steered arm
 
 ![Graded judge score across four steering scales, nearly flat, beside a scatter of per-pair steered shift against ceiling shift with the formal-register pair standing out.](https://raw.githubusercontent.com/superkaiba/explore-persona-space/c78d145929017d6ff26285460cdb35322e523e71/figures/issue_1415/behavioral_dose_and_per_pair.png)
 
-> **Figure.** *No dose trend; one style pair carries a third of the context-arm effect.* Steered graded means across α ∈ {0.5, 1, 2, 4}: context 1.70 / 1.61 / 1.59 / 2.21; prefix 1.60 / 1.58 / 1.53 / 1.64. The coherence gate never bound, so larger α was never explored.
+> **Figure.** *No dose trend; one style pair carries a third of the context-arm effect.* Steered graded means across α ∈ {0.5, 1, 2, 4}: context 1.70 / 1.61 / 1.59 / 2.21; prefix 1.60 / 1.58 / 1.54 / 1.64. The coherence gate never bound, so larger α was never explored.
 
 The α grid is flat — context 1.70/1.61/1.59/2.21, prefix 1.60/1.58/1.54/1.64 (α = 0.5/1/2/4) against baseline 1.30; only the context α = 4 cell moves. That shift (+0.91) is 34% carried by the formal-register pair; it survives that pair's exclusion (+0.63, p = 0.0009, N = 27), yet the mean pools one clear steering success with a floor elsewhere. Five pairs have a dead behavioral ceiling, which dilutes ceiling-anchored contrasts. Steered pools carry 9–10% Chinese-script intrusion (256–295 of 2,800 draws per arm); excluding intruded draws moves the α = 4 context mean 2.21→2.16 and the geometric headline under 0.01.
 
