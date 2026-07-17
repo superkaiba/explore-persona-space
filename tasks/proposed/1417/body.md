@@ -20,6 +20,9 @@ goal: 'On Qwen-2.5-7B base + instruct, determine which property of the assistant
   control, addressee-free exposition, non-user-addressee dialogue), reading map identity
   against the chat-template reference via the #825 similarity battery (bidirectional
   transfer R², linear reparameterization recovery, raw + rotation-aligned cosine).'
+relates_to:
+- identity-contextual-vs-base
+- identity-cb-duality
 ---
 # Which property scopes the shared assistant context→answer map: helpful register, or speaking to a user?
 
