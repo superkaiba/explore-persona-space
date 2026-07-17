@@ -3242,7 +3242,7 @@
       "kind": "experiment",
       "path": "tasks/interpreting/1415",
       "status": "interpreting",
-      "title": "Causal test of the context/answer vectors: does steering with V_c' - V_c shift on-policy answers from V_a toward V_a'?"
+      "title": "Single-token steering with the context-vector difference shifts the answer state toward the target context but barely shifts behavior (MODERATE confidence)"
     },
     "1416": {
       "has_clean_result": false,

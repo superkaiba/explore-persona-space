@@ -1,6 +1,6 @@
 ---
-title: 'Causal test of the context/answer vectors: does steering with V_c'' - V_c
-  shift on-policy answers from V_a toward V_a''?'
+title: Single-token steering with the context-vector difference shifts the answer
+  state toward the target context but barely shifts behavior (MODERATE confidence)
 kind: experiment
 tags: []
 created_at: '2026-07-16T08:08:10Z'
