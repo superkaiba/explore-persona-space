@@ -1,0 +1,38 @@
+{
+  "metadata": {
+    "git_commit": "149a890f8177f6b582263fc454b9353fd4efbd7a",
+    "timestamp": "2026-07-17T04:12:55Z",
+    "seed": 0,
+    "n": 0,
+    "script": "scripts/issue1335_fit.py",
+    "issue": 931
+  },
+  "rung_slug": "r7_endpoint",
+  "render_config_hash": "38dc5c51e194203b",
+  "code_sha": "149a890f8177f6b582263fc454b9353fd4efbd7a",
+  "rung": "r7_endpoint",
+  "model_kind": "base",
+  "headline_layer": 19,
+  "per_unit": {
+    "Wren": {
+      "n": 1549,
+      "n_settings": 20,
+      "r2_headline_loso": 0.34305336845000556
+    },
+    "HELIOS": {
+      "n": 1418,
+      "n_settings": 20,
+      "r2_headline_loso": 0.3183432910223023
+    },
+    "Dana": {
+      "n": 1596,
+      "n_settings": 20,
+      "r2_headline_loso": 0.36606020620248914
+    },
+    "Vex": {
+      "n": 1730,
+      "n_settings": 20,
+      "r2_headline_loso": 0.28950229217217527
+    }
+  }
+}

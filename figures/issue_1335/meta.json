@@ -1,0 +1,16 @@
+{
+  "script": "scripts/issue1335_figures.py",
+  "out_dir": "eval_results/issue_1335",
+  "models": [
+    "base",
+    "instruct"
+  ],
+  "figures": [
+    "delta_waterfall.png",
+    "hero_ladder.png",
+    "layer_sweep.png",
+    "per_persona_endpoint.png",
+    "swap_specificity.png",
+    "tf_vs_op_r2.png"
+  ]
+}

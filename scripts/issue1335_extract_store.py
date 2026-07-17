@@ -1,0 +1,624 @@
+"""Issue #1335: teacher-forced 28-layer bf16 span-summary capture per (rung, model).
+
+Generalizes ``issue1310_extract_store.py``'s onpolicy flavor to the ladder's
+uniform gen-record schema. One ITEM per gen record: input_ids = STORED
+prompt_token_ids + completion_token_ids (token-id join — #1092 BPE-seam rule;
+never re-tokenized). Per row it stores ONLY reduced summaries (fp32-computed,
+bf16-cast — the #1310 store recipe; finiteness asserted):
+
+  x_spanmean   v_C: mean over the last <=512 context tokens ending at the cue
+  x_prefixmean v_P: mean over tokens ENDING inside the prefix text (header +
+               earlier turns; the stored n_prefix_tokens boundary). Empty
+               prefix (r0/r1/r2 — structurally degenerate arm) falls back to
+               the FIRST context token, flagged `prefix_fallback_first_token`
+               in the sidecar (the fit reports it as the degenerate control).
+  x_last       the cue boundary token (single-position companion)
+  y            v_A: mean over the generated completion tokens
+  y96 / x_spanmean_nocap   r0-only extras (plan §4.1: v_A96 sub-read + the
+               no-cap context companion verifying the 512 cap is inert on Q&A)
+
+Row filters (#825/#1310): completion >= 4 tokens, context >= 8 tokens, total
+row <= 2048 tokens — drops COUNTED in the sidecar, never padded.
+
+Shard sidecars carry the c24 fingerprint {rung_slug, render_config_hash,
+code_sha}; --resume skips a row when its sidecar matches the CURRENT render
+config (render_config_hash pins the store's DATA identity — the plan round-3
+CONSUME rule; a code-SHA drift, which every crash-fix round produces, is
+tolerated with a warning, while a render-config mismatch still fails loud).
+--hf-resume-seed (r5 relaunch economy: the GCE instance is deleted on crash,
+so local resume state is gone while ~hours of verified shards sit on the Hub)
+first stages prior-attempt shard pairs from the issue's Hub store prefix
+under the same CONSUME rule, so extract skips their rows and fit consumes
+them instead of recapturing.
+
+--equivalence-check: the two-bar batched-vs-batch-1 gate (#779 calibration:
+early-layer per-layer cosine >= 0.999, flattened >= 0.995).
+--wiring-check: own-context vs derangement-shuffled-context teacher-forced
+NLL over n rows (the #825 round-4 wiring gate; plan §5). r6: a cell whose
+FRESH rows number <2 BECAUSE the resume seed consumed its prior-attempt rows
+records ``wiring_check: skipped-seeded`` instead of asserting (the seeded rows
+carried validation in their original attempt); a <2-row cell with NO seeded
+rows still fails loud. r7: a FULLY seeded cell (fresh=0) writes the same
+skipped-seeded record from the early return (gate2's glob then always has one
+file per wiring cell), and the skip additionally requires the PRE-filter panel
+was >=2 (a <2-panel build bug crashes even on a seeded cell).
+
+CLI:
+  uv run python scripts/issue1335_extract_store.py --rung r1_qa_oneline --model base \
+      [--data-dir data/issue_1335] [--batch-size 8] [--tiny-model-dir D] \
+      [--resume] [--equivalence-check] [--wiring-check N] [--max-items 0]
+  uv run python scripts/issue1335_extract_store.py --make-tiny-model /tmp/tiny
+"""
+
+from __future__ import annotations
+
+import argparse
+import json
+import sys
+from pathlib import Path
+
+from explore_persona_space.orchestrate.env import load_dotenv
+
+load_dotenv()  # thread caps must bind before torch import
+
+import torch  # noqa: E402
+
+from explore_persona_space.analysis.extraction import extract_layer_activations  # noqa: E402
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+
+import issue931_common as common  # noqa: E402
+import issue931_extract_store as ext931  # noqa: E402
+import issue1310_common as c1310  # noqa: E402
+import issue1310_extract_store as ext1310  # noqa: E402
+import issue1335_render_rungs as r1335  # noqa: E402
+
+SCRIPT = "scripts/issue1335_extract_store.py"
+SHARD_PAIRS = 512
+
+EXPECTED_LAYERS = c1310.EXPECTED_LAYERS
+EXPECTED_HIDDEN = c1310.EXPECTED_HIDDEN
+
+
+def parse_args() -> argparse.Namespace:
+    ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    ap.add_argument("--rung", choices=list(r1335.RUNGS), default=None)
+    ap.add_argument("--model", choices=list(r1335.MODEL_KINDS), default=None)
+    ap.add_argument("--data-dir", type=Path, default=Path("data/issue_1335"))
+    ap.add_argument("--store-dir", type=Path, default=None, help="default <data-dir>/store")
+    ap.add_argument(
+        "--out-dir",
+        type=Path,
+        default=Path("eval_results/issue_1335"),
+        help="wiring-check JSON destination (smoke passes a scratch dir)",
+    )
+    ap.add_argument("--batch-size", type=int, default=8)
+    ap.add_argument("--tiny-model-dir", type=str, default=None, help="CPU smoke model dir")
+    ap.add_argument("--resume", action="store_true")
+    ap.add_argument(
+        "--hf-resume-seed",
+        action="store_true",
+        help="stage prior-attempt shards from the Hub store prefix before the "
+        "resume scan (c24 CONSUME rule; requires --resume)",
+    )
+    ap.add_argument("--equivalence-check", action="store_true")
+    ap.add_argument("--wiring-check", type=int, default=0, help="N rows for the NLL wiring gate")
+    ap.add_argument("--max-items", type=int, default=0, help="0 = all (smoke slicing)")
+    ap.add_argument(
+        "--make-tiny-model",
+        type=str,
+        default=None,
+        help="SMOKE: write a tiny random-init Qwen2 (real tokenizer) to this dir and exit",
+    )
+    return ap.parse_args()
+
+
+def load_model(model_id: str, tiny_model_dir: str | None):
+    """bf16 GPU model (device pinned, fail-loud) or tiny CPU fp32 (smoke)."""
+    global EXPECTED_LAYERS, EXPECTED_HIDDEN
+    model = ext1310.load_model(model_id, tiny_model_dir)
+    EXPECTED_LAYERS = ext1310.EXPECTED_LAYERS
+    EXPECTED_HIDDEN = ext1310.EXPECTED_HIDDEN
+    return model
+
+
+def build_items(slug: str, records: list[dict]) -> tuple[list[dict], dict]:
+    """Gen records -> capture items with per-summary spans; drops counted."""
+    cfg = r1335.RUNGS[slug]
+    extras = cfg.get("extra_summaries", ())
+    items: list[dict] = []
+    counters = {
+        "records": 0,
+        "kept": 0,
+        "dropped_short_dialogue": 0,
+        "dropped_short_context": 0,
+        "dropped_row_too_long": 0,
+        "prefix_fallback_first_token": 0,
+    }
+    for r in records:
+        counters["records"] += 1
+        prompt_ids = list(r["prompt_token_ids"])
+        comp_ids = list(r["completion_token_ids"])
+        n_prompt, n_comp = len(prompt_ids), len(comp_ids)
+        n_tok = n_prompt + n_comp
+        if n_comp < r1335.DIALOGUE_MIN_TOKENS:
+            counters["dropped_short_dialogue"] += 1
+            continue
+        c_lo = max(0, n_prompt - r1335.CONTEXT_CAP_TOKENS)
+        if n_prompt - c_lo < r1335.CONTEXT_MIN_TOKENS:
+            counters["dropped_short_context"] += 1
+            continue
+        if n_tok > r1335.ROW_MAX_TOKENS:
+            counters["dropped_row_too_long"] += 1
+            continue
+        n_prefix = int(r["n_prefix_tokens"])
+        assert 0 <= n_prefix <= n_prompt, (r["row_id"], n_prefix, n_prompt)
+        if n_prefix == 0:
+            counters["prefix_fallback_first_token"] += 1
+            p_span = (0, 1)  # degenerate arm: constant first-token fallback
+        else:
+            p_span = (0, n_prefix)
+        spans = {
+            "x_spanmean": (c_lo, n_prompt),
+            "x_prefixmean": p_span,
+            "y": (n_prompt, n_tok),
+        }
+        if "y96" in extras:
+            spans["y96"] = (n_prompt, n_prompt + min(96, n_comp))
+        if "x_spanmean_nocap" in extras:
+            spans["x_spanmean_nocap"] = (0, n_prompt)
+        for k, (lo, hi) in spans.items():
+            assert 0 <= lo < hi <= n_tok, (r["row_id"], k, lo, hi, n_tok)
+        items.append(
+            {
+                "item_id": r["row_id"],
+                "row_id": r["row_id"],
+                "group_id": r["group_id"],
+                "char_id": r["persona"],
+                "turn_index": int(r.get("slot", 0)),
+                "input_ids": prompt_ids + comp_ids,
+                "n_prompt": n_prompt,
+                "spans": spans,
+            }
+        )
+        counters["kept"] += 1
+    return items, counters
+
+
+def process_batch(model, batch: list[dict], pad_id: int) -> list[dict]:
+    """One right-padded batched forward; per-row reduced summaries to CPU bf16."""
+    lengths = [len(it["input_ids"]) for it in batch]
+    bsz, max_len = len(batch), max(lengths)
+    input_ids = torch.full((bsz, max_len), pad_id, dtype=torch.long)
+    attention_mask = torch.zeros((bsz, max_len), dtype=torch.long)
+    for i, it in enumerate(batch):
+        input_ids[i, : lengths[i]] = torch.tensor(it["input_ids"], dtype=torch.long)
+        attention_mask[i, : lengths[i]] = 1
+    device = next(model.parameters()).device
+    captured = extract_layer_activations(
+        model,
+        input_ids.to(device),
+        layers=range(EXPECTED_LAYERS),
+        return_logits=False,
+        attention_mask=attention_mask.to(device),
+        detach_to_cpu=False,
+    )
+    assert set(captured) == set(range(EXPECTED_LAYERS)), "missing layers in capture"
+    acts = torch.stack([captured[layer] for layer in range(EXPECTED_LAYERS)], dim=0)
+    assert acts.shape == (EXPECTED_LAYERS, bsz, max_len, EXPECTED_HIDDEN), acts.shape
+
+    records = []
+    for i, it in enumerate(batch):
+        true_len = lengths[i]
+        rec: dict = {
+            "row_id": it["row_id"],
+            "group_id": it["group_id"],
+            "char_id": it["char_id"],
+            "turn_index": it["turn_index"],
+        }
+        for key, (lo, hi) in it["spans"].items():
+            assert 0 <= lo < hi <= true_len, (it["row_id"], key, lo, hi, true_len)
+            rec[key] = acts[:, i, lo:hi, :].float().mean(dim=1)
+        ce = it["spans"]["x_spanmean"][1]
+        rec["x_last"] = acts[:, i, ce - 1, :].float()
+        for k in list(rec.keys()):
+            if isinstance(rec[k], torch.Tensor):
+                rec[k] = ext931._finite(
+                    rec[k].to(device="cpu", dtype=torch.bfloat16), k, it["row_id"]
+                )
+        records.append(rec)
+    del captured, acts
+    return records
+
+
+def run_extraction(model, items: list[dict], pad_id: int, batch_size: int):
+    """Length-grouped batching with OOM-halving (floor 1); yields per-batch recs."""
+    order = sorted(range(len(items)), key=lambda j: len(items[j]["input_ids"]))
+    bs, pos, done = batch_size, 0, 0
+    while pos < len(order):
+        chunk = [items[order[j]] for j in range(pos, min(pos + bs, len(order)))]
+        try:
+            recs = process_batch(model, chunk, pad_id)
+        except torch.cuda.OutOfMemoryError:
+            if bs == 1:
+                raise
+            bs = max(1, bs // 2)
+            torch.cuda.empty_cache()
+            print(f"[oom] CUDA OOM — halving batch size to {bs}")
+            continue
+        pos += len(chunk)
+        done += 1
+        if done % 10 == 0 or pos >= len(order):
+            print(f"[i1335-p2] {pos}/{len(order)} items done (batch size {bs})", flush=True)
+        yield recs
+
+
+def write_shard(
+    records: list[dict], out_dir: Path, shard_idx: int, model_kind: str, fp: dict, flags: dict
+) -> None:
+    """One .pt shard (stacked arrays) + fingerprinted JSON sidecar."""
+    out_dir.mkdir(parents=True, exist_ok=True)
+    keys = [k for k in records[0] if isinstance(records[0][k], torch.Tensor)]
+    payload = {
+        "row_ids": [r["row_id"] for r in records],
+        "group_ids": [r["group_id"] for r in records],
+        "char_ids": [r["char_id"] for r in records],
+        "turn_indices": [int(r["turn_index"]) for r in records],
+        "arrays": {k: torch.stack([r[k] for r in records]) for k in keys},
+    }
+    for k, v in payload["arrays"].items():
+        assert v.shape == (len(records), EXPECTED_LAYERS, EXPECTED_HIDDEN), (k, v.shape)
+    pt_path = out_dir / f"{model_kind}_shard{shard_idx:03d}.pt"
+    tmp = pt_path.with_suffix(".pt.tmp")
+    torch.save(payload, tmp)
+    tmp.replace(pt_path)
+    sidecar = {
+        **fp,
+        "model_kind": model_kind,
+        "shard_index": shard_idx,
+        "n_rows": len(records),
+        "row_ids": payload["row_ids"],
+        "group_ids": payload["group_ids"],
+        "char_ids": payload["char_ids"],
+        "turn_indices": payload["turn_indices"],
+        "keys": keys,
+        "shape_per_row": [EXPECTED_LAYERS, EXPECTED_HIDDEN],
+        "capture_flags": flags,
+        "metadata": common.metadata(SCRIPT, c1310.GEN_SEED, len(records)),
+    }
+    (out_dir / f"{model_kind}_shard{shard_idx:03d}.json").write_text(json.dumps(sidecar, indent=2))
+    print(f"[i1335-p2] wrote {pt_path} ({len(records)} rows)")
+
+
+def equivalence_check(model, items: list[dict], pad_id: int) -> dict:
+    """Two-bar batched-vs-batch-1 gate over every stored summary (#779 calibration)."""
+    take = items[:3]
+    if len(take) < 2:
+        take = items[:1] * 2
+    batched = process_batch(model, take, pad_id)
+    serial = []
+    for it in take:
+        serial.extend(process_batch(model, [it], pad_id))
+    assert len(batched) == len(serial)
+    early_min, flat_min = 1.0, 1.0
+    n_early = min(4, EXPECTED_LAYERS)
+    for rb, rs in zip(batched, serial, strict=True):
+        for k in rb:
+            if not isinstance(rb[k], torch.Tensor):
+                continue
+            a, b = rb[k].float(), rs[k].float()
+            flat = torch.nn.functional.cosine_similarity(a.reshape(1, -1), b.reshape(1, -1)).item()
+            flat_min = min(flat_min, flat)
+            per_layer = torch.nn.functional.cosine_similarity(a, b, dim=1)
+            early_min = min(early_min, float(per_layer[:n_early].min()))
+    result = {"early_cos_min": early_min, "flat_cos_min": flat_min, "n_items": len(take)}
+    assert early_min >= 0.999 and flat_min >= 0.995, f"equivalence gate FAIL: {result}"
+    print(f"[i1335-p2] equivalence gate PASS: {result}")
+    return result
+
+
+def wiring_check(model, items: list[dict], pad_id: int, n_rows: int, batch_size: int) -> dict:
+    """Own-context vs derangement-shuffled-context teacher-forced NLL (#825 r4 gate).
+
+    Pairs row i's completion with row (i+1)'s prompt (a cyclic derangement) and
+    compares mean per-token completion NLL; own must beat shuffled.
+    """
+    import numpy as np
+
+    take = items[: min(n_rows, len(items))]
+    assert len(take) >= 2, "wiring check needs >= 2 rows"
+    device = next(model.parameters()).device
+
+    def _mean_nll(prompt_ids_list, comp_ids_list) -> float:
+        total_nll, total_tok = 0.0, 0
+        for ci in range(0, len(prompt_ids_list), batch_size):
+            pr = prompt_ids_list[ci : ci + batch_size]
+            co = comp_ids_list[ci : ci + batch_size]
+            seqs = [p + c for p, c in zip(pr, co, strict=True)]
+            lengths = [len(s) for s in seqs]
+            max_len = max(lengths)
+            input_ids = torch.full((len(seqs), max_len), pad_id, dtype=torch.long)
+            attention_mask = torch.zeros((len(seqs), max_len), dtype=torch.long)
+            for i, s in enumerate(seqs):
+                input_ids[i, : lengths[i]] = torch.tensor(s, dtype=torch.long)
+                attention_mask[i, : lengths[i]] = 1
+            with torch.no_grad():
+                logits = model(
+                    input_ids.to(device), attention_mask=attention_mask.to(device)
+                ).logits.float()
+            logprobs = torch.log_softmax(logits, dim=-1)
+            for i, (p, c) in enumerate(zip(pr, co, strict=True)):
+                pos = torch.arange(len(p) - 1, len(p) + len(c) - 1)
+                tgt = torch.tensor(c, dtype=torch.long)
+                lp = logprobs[i, pos, :].gather(1, tgt.unsqueeze(1).to(device)).squeeze(1)
+                total_nll += float(-lp.sum().item())
+                total_tok += len(c)
+        return total_nll / max(total_tok, 1)
+
+    prompts = [it["input_ids"][: it["n_prompt"]] for it in take]
+    comps = [it["input_ids"][it["n_prompt"] :] for it in take]
+    own = _mean_nll(prompts, comps)
+    shuf_prompts = prompts[1:] + prompts[:1]  # cyclic derangement
+    shuf = _mean_nll(shuf_prompts, comps)
+    result = {
+        "n_rows": len(take),
+        "nll_own": own,
+        "nll_shuffled": shuf,
+        "own_beats_shuffled": bool(own < shuf),
+        "delta": float(shuf - own),
+    }
+    assert np.isfinite(own) and np.isfinite(shuf), result
+    print(f"[i1335-p2] wiring check: {result}")
+    return result
+
+
+def wiring_check_or_skip(
+    model,
+    items: list[dict],
+    pad_id: int,
+    n_rows: int,
+    batch_size: int,
+    *,
+    n_seeded: int,
+    n_prefilter: int,
+    cell: str,
+) -> dict:
+    """r6: skip the wiring check ONLY when the <2-row shortfall is seed-attributable.
+
+    The r5 HF resume seed consumes a cell's prior-attempt rows by design, so a
+    (nearly) fully seeded cell can hand <2 FRESH rows to ``wiring_check``.
+    Those seeded rows passed capture-time validation in their original attempt,
+    so the check is SKIPPED with a loud log line and a
+    ``wiring_check: skipped-seeded`` record for the cell's output JSON. A
+    <2-row cell with NO seeded/skipped rows is a genuinely tiny fresh cell and
+    still fails loud via ``wiring_check``'s own ``>= 2 rows`` assert; a
+    partially seeded cell with >=2 fresh rows runs the check on the fresh rows
+    as before.
+
+    r7 (round-6 Minor 1): the skip additionally requires ``n_prefilter >= 2``
+    — the cell's panel size BEFORE the resume seed consumed rows. A <2-row
+    PRE-filter panel is a gen/build defect, not a seed effect, so even a
+    seeded cell falls through to ``wiring_check``'s ``>= 2 rows`` assert and
+    crashes loud. The fully seeded case (fresh=0, called from ``main``'s
+    early return with ``model=None``) takes the skip branch under the same
+    predicate; the model is never touched there.
+    """
+    if len(items) < 2 and n_seeded > 0 and n_prefilter >= 2:
+        print(
+            f"[i1335-p2] wiring check SKIPPED (seed-consumed cell): {cell} "
+            f"fresh={len(items)} seeded={n_seeded} — rows carry equivalence "
+            "validation from their original attempt"
+        )
+        return {
+            "wiring_check": "skipped-seeded",
+            "fresh_rows": len(items),
+            "seeded_rows": n_seeded,
+        }
+    return wiring_check(model, items, pad_id, n_rows, batch_size)
+
+
+def hf_seed_store(store_dir: Path, slug: str, model_kind: str) -> int:
+    """#1335 r5 relaunch economy: stage prior-attempt shards from the Hub.
+
+    ONE prefix-scoped listing of the issue's store prefix (hub-retried,
+    #1335); each sidecar is fetched and admitted under the c24 CONSUME rule —
+    render-config identity pins the store's DATA identity, and a code-SHA
+    drift (every crash-fix round bumps the SHA) is tolerated with a warning
+    (the plan round-3 resume-skip/CONSUME split). Admitted pairs (.pt shard +
+    sidecar) stage into ``store_dir`` so the resume scan skips their rows and
+    the fit consumes them. Absent prefix => no-op. Transient Hub errors ride
+    ``hub.retry_transient``; an exhausted budget fails LOUD (never a silent
+    partial seed). Returns the number of shard pairs staged.
+    """
+    import os
+    import tempfile
+
+    from huggingface_hub import HfApi, hf_hub_download
+
+    from explore_persona_space.orchestrate import hub
+
+    prefix = f"{r1335.HF_PREFIX}/analysis_tensors/store_{slug}_{model_kind}"
+    api = HfApi(token=os.environ.get("HF_TOKEN"))
+    files = hub.list_hf_files_under_path(api, r1335.HF_DATA_REPO, prefix, repo_type="dataset")
+    hf_files = set(files)
+    sidecars = sorted(
+        f for f in files if Path(f).name.startswith(f"{model_kind}_shard") and f.endswith(".json")
+    )
+    fp_now = r1335.fingerprint(slug)
+    staged = 0
+    store_dir.mkdir(parents=True, exist_ok=True)
+    # Staging dir INSIDE store_dir: os.replace stays same-filesystem, and the
+    # non-recursive resume glob cannot see the nested half-downloaded tree.
+    with tempfile.TemporaryDirectory(dir=store_dir, prefix=".hfseed_") as td:
+        for sc_path in sidecars:
+            pt_path = sc_path[: -len(".json")] + ".pt"
+            sc_local = store_dir / Path(sc_path).name
+            pt_local = store_dir / Path(pt_path).name
+            if sc_local.exists() and pt_local.exists():
+                continue  # already local (same-instance capture / earlier seed)
+            if pt_path not in hf_files:
+                print(
+                    f"[i1335-p2] hf-seed: {Path(sc_path).name} has no paired .pt "
+                    "on the Hub; skipped"
+                )
+                continue
+            got_sc = hub.retry_transient(
+                lambda p=sc_path: hf_hub_download(
+                    r1335.HF_DATA_REPO, p, repo_type="dataset", local_dir=td
+                ),
+                what=f"hf_hub_download({sc_path})",
+            )
+            side = json.loads(Path(got_sc).read_text())
+            if not r1335.fingerprint_matches(side, slug, require_sha=False):
+                print(
+                    f"[i1335-p2] hf-seed: {Path(sc_path).name} render-config mismatch "
+                    "(stale prior-attempt render) — NOT seeded; rows will be recaptured"
+                )
+                continue
+            if side.get("code_sha") != fp_now["code_sha"]:
+                print(
+                    f"[i1335-p2] hf-seed: {Path(sc_path).name} code_sha drift "
+                    f"({side.get('code_sha')} -> {fp_now['code_sha']}) tolerated "
+                    "(c24 CONSUME rule: render-config identity pins data identity)"
+                )
+            got_pt = hub.retry_transient(
+                lambda p=pt_path: hf_hub_download(
+                    r1335.HF_DATA_REPO, p, repo_type="dataset", local_dir=td
+                ),
+                what=f"hf_hub_download({pt_path})",
+            )
+            os.replace(got_pt, pt_local)
+            os.replace(got_sc, sc_local)  # sidecar LAST: its presence marks the pair complete
+            staged += 1
+    print(f"[i1335-p2] hf-seed: staged {staged} prior-attempt shard(s) from {prefix}")
+    return staged
+
+
+def _seeded_early_return_wiring_sidecar(
+    args, done: set[str], n_prefilter: int, fp: dict, slug: str, model_kind: str
+) -> None:
+    """r7 (concern fully-seeded-relaunch-gate2-halt): a FULLY seeded cell used
+    to early-return with NO wiring JSON, so a relaunch after a
+    post-P2-complete crash left gate2's glob empty and the summary phase
+    halted (exit 3) on legitimately complete data. Write the same
+    skipped-seeded record here (fresh=0) via the shared predicate — the model
+    is never touched on the skip branch, and a <2 PRE-filter panel (build
+    bug) still falls through to wiring_check's >=2 assert and crashes loud.
+    pad_id=0 is inert: unused on the skip branch, and the fall-through
+    asserts before any model/pad use (the r6 test-(b) precedent). No-op when
+    the wiring check was not requested or nothing was seeded (the
+    pre-existing quiet early return)."""
+    if not (args.wiring_check and done):
+        return
+    w = wiring_check_or_skip(
+        None,
+        [],
+        0,
+        args.wiring_check,
+        args.batch_size,
+        n_seeded=len(done),
+        n_prefilter=n_prefilter,
+        cell=f"{slug}/{model_kind}",
+    )
+    c1310.write_json(args.out_dir / f"wiring_{slug}_{model_kind}.json", {**fp, **w})
+
+
+def main() -> int:
+    args = parse_args()
+    if args.make_tiny_model:
+        ext931.make_tiny_model(Path(args.make_tiny_model))
+        return 0
+    assert args.rung and args.model, "--rung and --model are required"
+    assert args.resume or not args.hf_resume_seed, (
+        "--hf-resume-seed requires --resume (a seeded store with no resume scan "
+        "would be silently overwritten from shard index 0)"
+    )
+    slug, model_kind = args.rung, args.model
+    model_id = r1335.MODEL_IDS[model_kind]
+    fp = r1335.fingerprint(slug)
+    store_dir = (args.store_dir or (args.data_dir / "store")) / slug / model_kind
+    print(f"[phase=p2_extract_{slug}_{model_kind}] span-summary capture ({model_id})")
+
+    records = r1335._read_jsonl(r1335.gen_path(args.data_dir, slug, model_kind))
+    items, drops = build_items(slug, records)
+    store_dir.mkdir(parents=True, exist_ok=True)
+    flags = {"prefix_fallback_first_token": drops["prefix_fallback_first_token"] > 0}
+    c1310.write_json(store_dir / f"{model_kind}_capture_drops.json", {**fp, **drops})
+    if args.max_items:
+        items = items[: args.max_items]
+    print(f"[i1335-p2] {len(items)} items (rung={slug}, model={model_kind}, drops={drops})")
+    # r7: panel size BEFORE seed consumption — the wiring skip predicate's
+    # build-bug guard (a <2 PRE-filter panel crashes; a seed-consumed one skips).
+    n_prefilter = len(items)
+
+    # c24 resume: skip rows already in shards whose sidecar matches the CURRENT
+    # render config (data identity); a code-SHA drift is tolerated with a
+    # warning (the round-3 CONSUME rule — r5: HF-seeded prior-attempt shards
+    # always carry an older SHA); a render-config mismatch fails loud (stale
+    # store for a changed render — wipe or re-key before resuming).
+    done: set[str] = set()
+    shard_idx = 0
+    if args.resume:
+        if args.hf_resume_seed:
+            hf_seed_store(store_dir, slug, model_kind)
+        for sc in sorted(store_dir.glob(f"{model_kind}_shard*.json")):
+            side = json.loads(sc.read_text())
+            assert r1335.fingerprint_matches(side, slug, require_sha=False), (
+                f"resume fingerprint mismatch for {sc} — the persisted shard was "
+                "captured under a different render config; quarantine the stale "
+                "store before resuming (c24 guard)"
+            )
+            if not r1335.fingerprint_matches(side, slug):
+                print(
+                    f"[i1335-p2] resume: {sc.name} code_sha drift tolerated "
+                    "(c24 CONSUME rule — render-config identity pins data identity)"
+                )
+            done.update(side["row_ids"])
+            shard_idx = max(shard_idx, side["shard_index"] + 1)
+        if done:
+            items = [it for it in items if it["item_id"] not in done]
+            print(f"[i1335-p2] resume: {len(done)} rows done; {len(items)} rows left")
+
+    if not items:
+        print(f"[i1335-p2] no items to capture (rung={slug}, model={model_kind})")
+        _seeded_early_return_wiring_sidecar(args, done, n_prefilter, fp, slug, model_kind)
+        return 0
+
+    model = load_model(model_id, args.tiny_model_dir)
+    tokenizer = common.get_tokenizer(model_id)
+    pad_id = tokenizer.pad_token_id or tokenizer.eos_token_id
+    if args.equivalence_check:
+        eq = equivalence_check(model, items, pad_id)
+        c1310.write_json(store_dir / f"{model_kind}_equivalence.json", {**fp, **eq})
+    if args.wiring_check:
+        w = wiring_check_or_skip(
+            model,
+            items,
+            pad_id,
+            args.wiring_check,
+            args.batch_size,
+            n_seeded=len(done),
+            n_prefilter=n_prefilter,
+            cell=f"{slug}/{model_kind}",
+        )
+        c1310.write_json(args.out_dir / f"wiring_{slug}_{model_kind}.json", {**fp, **w})
+        if w.get("wiring_check") != "skipped-seeded":
+            assert w["own_beats_shuffled"] or args.tiny_model_dir, (
+                "wiring gate FAIL: own-context NLL does not beat shuffled context"
+            )
+
+    buf: list[dict] = []
+    for recs in run_extraction(model, items, pad_id, args.batch_size):
+        buf.extend(recs)
+        if len(buf) >= SHARD_PAIRS:
+            write_shard(buf, store_dir, shard_idx, model_kind, fp, flags)
+            buf = []
+            shard_idx += 1
+    if buf:
+        write_shard(buf, store_dir, shard_idx, model_kind, fp, flags)
+    print(f"[i1335-p2] done (rung={slug}, model={model_kind})")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

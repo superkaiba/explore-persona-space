@@ -1,0 +1,8 @@
+{
+  "rung_slug": "r0_qa_full",
+  "render_config_hash": "e73713157516a611",
+  "code_sha": "149a890f8177f6b582263fc454b9353fd4efbd7a",
+  "wiring_check": "skipped-seeded",
+  "fresh_rows": 0,
+  "seeded_rows": 4589
+}
