@@ -3340,8 +3340,8 @@
     "1428": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1428",
-      "status": "running",
+      "path": "tasks/reviewing/1428",
+      "status": "reviewing",
       "title": "Fix torch-before-dotenv in 10 main-resident figure scripts (fleet thread-caps test red)"
     },
     "1429": {
