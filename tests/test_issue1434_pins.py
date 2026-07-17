@@ -264,3 +264,183 @@ def test_judge_dispatch_bare_scalar_score_not_erased():
     assert _normalize_scalar_score(True) is True  # bool never a score
     # non-dict parses must pass through raw-retention untouched (dict(95) crashed)
     assert _parsed_with_raw(95, "95") == 95
+
+
+def test_install_grid_covers_all_trained_arms():
+    """Round-2 Major-3 pin (plan D5 'second grid'): the own-context install grid
+    carries EVERY trained arm in proj.states (12 in production), not only the
+    verdict arms — verdict arm via Tier-2 delta, non-verdict arms via their
+    selection-rung Tier-1 rate minus the per-context Tier-2 base rate."""
+    import issue1434_cells as cells
+    import issue1434_pv as pv
+
+    cells.register_i1434_round()
+    run_ids = [r.run_id for r in cells.I1434_RUNS if r.cell_key == "ws-pers"]
+    assert len(run_ids) == 3
+    verdict_run = run_ids[0]
+    aggregate = {
+        "ladders": {
+            rid: {"status": "trained", "selection": {"rate": 0.60 + 0.05 * i}}
+            for i, rid in enumerate(run_ids)
+        },
+        "tier2": {
+            "ws-pers": {
+                "verdict_arm": {"run_id": verdict_run},
+                "base": {"rate": 0.10},
+                "delta": 0.55,
+            }
+        },
+        "panel": {},
+    }
+    proj = {"states": {rid: {} for rid in run_ids}}
+    grids = pv._cell_grids(None, aggregate, proj)
+    inst = grids["install"]
+    assert sorted(inst["state_ids"]) == sorted(run_ids)  # n_states == n_trained_runs
+    by_state = dict(
+        zip(inst["state_ids"], zip(inst["y"], inst["y_basis"], strict=True), strict=True)
+    )
+    assert by_state[verdict_run] == (0.55, "tier2_delta")
+    for i, rid in enumerate(run_ids):
+        if rid == verdict_run:
+            continue
+        y, basis = by_state[rid]
+        assert basis == "tier1_selection_rate_minus_tier2_base_rate"
+        assert y == pytest.approx((0.60 + 0.05 * i) - 0.10)
+
+
+def test_spearman_signed_twin_and_abs_consistency():
+    """Round-2 Major-2 pin: the SIGNED Spearman helper preserves sign (the H3
+    'CI excludes 0 on the positive side' verdict input); the |rho| twin is its
+    elementwise absolute value (the selection/null-band statistic)."""
+    import issue1434_pv as pv
+    import numpy as np
+
+    y = np.array([1.0, 2.0, 3.0, 4.0, 5.0])
+    P = np.stack([y, -y, np.array([2.0, 1.0, 4.0, 3.0, 5.0])])
+    signed = pv._spearman_signed_per_layer(P, y)
+    assert signed[0] == pytest.approx(1.0)
+    assert signed[1] == pytest.approx(-1.0)  # a NEGATIVE rho survives (no abs)
+    assert 0.0 < signed[2] < 1.0
+    np.testing.assert_allclose(pv._spearman_obs_per_layer(P, y), np.abs(signed))
+
+
+def test_tier2_lattice_none_propagation():
+    """Round-2 Minor-4 pin (drop-never-coerce): an all-dropped arm (rate None)
+    propagates None through q_band/delta/CI and reads
+    'not_computable_all_dropped' — never a lattice verdict from a coerced 0.0;
+    the normal path still computes the registered fields."""
+    import issue1434_worker as w
+
+    dropped = {"tag": "t2-trained-x", "rate": None, "k_positive": 0, "n_scored": 0}
+    base = {"tag": "t2-base-x", "rate": 0.10, "k_positive": 20, "n_scored": 200}
+    out = w._tier2_lattice_fields(dropped, base)
+    assert out == {
+        "q_band": None,
+        "delta": None,
+        "delta_newcombe_95": None,
+        "lattice_verdict": "not_computable_all_dropped",
+    }
+    trained = {"tag": "t2-trained-y", "rate": 0.70, "k_positive": 140, "n_scored": 200}
+    ok = w._tier2_lattice_fields(trained, base)
+    assert ok["q_band"] == pytest.approx(0.70 - 0.60)
+    assert ok["delta"] == pytest.approx(0.60)
+    assert len(ok["delta_newcombe_95"]) == 2
+    assert isinstance(ok["lattice_verdict"], str)
+    assert ok["lattice_verdict"] != "not_computable_all_dropped"
+
+
+def test_phase_validate_battery_signed_bootstrap(tmp_path):
+    """Round-2 Major-2/Minor-7 end-to-end probe: phase_validate's battery on a
+    REAL synthetic 3-state root (past the insufficient_cells gate the 1-run
+    smoke takes) persists the SIGNED observed vector, a SIGNED frozen-layer
+    cluster bootstrap ('CI excludes 0 on the positive side' readable), the
+    selection-INHERITED signed bootstrap, and the per-draw signed matrix."""
+    import argparse
+
+    import issue1434_cells as cells
+    import issue1434_pv as pv
+    import numpy as np
+    import torch
+
+    from explore_persona_space.artifacts.directions import DirectionResult, save_direction
+
+    rng = np.random.default_rng(7)
+    layers, hidden = (0, 1), 6
+    root = tmp_path / "pv"
+    save_direction(
+        DirectionResult(
+            behavior_name="writing_style",
+            regime="read_out",
+            layers=layers,
+            r_b=torch.randn(2, hidden, generator=torch.Generator().manual_seed(0)),
+            counts={},
+            provenance="on_policy",
+        ),
+        root / "rb_writing_style.pt",
+    )
+    torch.save(
+        {"exhibit": torch.randn(10, 2, hidden), "not_exhibit": torch.randn(10, 2, hidden)},
+        root / "extraction_pools.pt",
+    )
+    run_ids = [r.run_id for r in cells.I1434_RUNS if r.cell_key == "ws-pers"]
+    proj_states = {}
+    cap_root = root / "capture"
+    base_means = {arm: torch.randn(2, hidden) for arm in pv.CAPTURE_ARMS}
+    torch.save({"cell_key": "ws-pers", "means": base_means}, _mk(cap_root / "base-ws-pers"))
+    for i, rid in enumerate(run_ids):
+        means = {arm: base_means[arm] + (i + 1) * 0.5 for arm in pv.CAPTURE_ARMS}
+        torch.save({"cell_key": "ws-pers", "means": means}, _mk(cap_root / rid))
+        proj_states[rid] = {
+            arm: {
+                "projection": [float(i) + rng.normal(0, 0.05), float(i) + rng.normal(0, 0.05)],
+                "cosine": [0.5, 0.5],
+                "shift_norm": [1.0, 1.0],
+            }
+            for arm in pv.CAPTURE_ARMS
+        }
+    import issue1090_run as run1090
+
+    run1090._atomic_write_json(
+        root / "projections.json",
+        {"layers": list(layers), "arms": list(pv.CAPTURE_ARMS), "states": proj_states},
+    )
+    deliver = tmp_path / "deliverables"
+    deliver.mkdir()
+    run1090._atomic_write_json(
+        deliver / "i1434_ladders.json",
+        {
+            "ladders": {
+                rid: {"status": "trained", "selection": {"rate": 0.60 + 0.1 * i}}
+                for i, rid in enumerate(run_ids)
+            },
+            "tier2": {
+                "ws-pers": {
+                    "verdict_arm": {"run_id": run_ids[0]},
+                    "base": {"rate": 0.10},
+                    "delta": 0.50,
+                }
+            },
+            "panel": {},
+        },
+    )
+    cfg = argparse.Namespace(out_root=tmp_path, smoke=True, upload=False)
+    assert pv.phase_validate(cfg, argparse.Namespace()) == 0
+    out = json.loads((deliver / "pv_validation.json").read_text())
+    grid = out["grids"]["install"]
+    assert grid["n_states"] == 3 and grid["n_cells"] == 3  # Major-3 full-arm grid
+    assert len(grid["y_basis"]) == 3
+    arm = grid["response_shared"]
+    assert len(arm["observed_signed_rho_per_layer"]) == 2
+    boot = arm["cluster_bootstrap_headline_layer"]
+    assert boot["statistic"] == "signed_rho_frozen_full_sample_headline_layer"
+    assert boot["p2_5"] <= boot["p97_5"]
+    assert isinstance(boot["ci_excludes_zero_positive"], bool)
+    inh = arm["cluster_bootstrap_selection_inherited"]
+    assert inh["statistic"] == "signed_rho_at_per_draw_max_abs_layer"
+    matrix = json.loads(Path(boot["matrix"]).read_text())
+    assert len(matrix["signed_rho_draws"][0]) == 2  # per-draw x per-layer SIGNED
+
+
+def _mk(d: Path) -> Path:
+    d.mkdir(parents=True, exist_ok=True)
+    return d / "summary.pt"

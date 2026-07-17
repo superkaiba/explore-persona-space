@@ -315,9 +315,13 @@ def _states_for(cfg, cell_keys: list[str]) -> list[dict]:
         rec = run1090._read_json(path)
         if rec.get("status") != "trained":
             continue
-        states.append(
-            {"state_id": run.run_id, "cell_key": run.cell_key, "ckpt": rec["selected_ckpt"]}
-        )
+        ckpt = rec.get("selected_ckpt")
+        if ckpt is None:
+            raise RuntimeError(
+                f"[i1434-pv] {run.run_id}: 'trained' build record has no selected_ckpt "
+                "(mid-ladder crash?) — re-run dispatch for this run"
+            )
+        states.append({"state_id": run.run_id, "cell_key": run.cell_key, "ckpt": ckpt})
     return states
 
 
@@ -423,7 +427,7 @@ def phase_project(cfg, args) -> int:
     + projections onto r̂_B (per layer, unit-normalized) + cosines."""
     run1090._phase("i1434_pv_project")
     qs = worker._eval_questions(cfg)
-    cell_keys = worker.resolve_cell_keys(args.cells, cfg.smoke)
+    cell_keys = worker.resolve_cell_keys(args.cells, cfg.smoke, cfg=cfg)
     states = _states_for(cfg, cell_keys)
     root = pv_root(cfg)
     cap_root = root / "capture"
@@ -555,15 +559,26 @@ def _rankdata(x: np.ndarray) -> np.ndarray:
     return _sp_rankdata(np.asarray(x, dtype=np.float64), method="average", axis=-1)
 
 
-def _spearman_obs_per_layer(P: np.ndarray, y: np.ndarray) -> np.ndarray:
-    """|Spearman rho| per layer. ``P``: (L, n_cells) projections; ``y``: (n_cells,)."""
+def _spearman_signed_per_layer(P: np.ndarray, y: np.ndarray) -> np.ndarray:
+    """SIGNED Spearman rho per layer. ``P``: (L, n_cells); ``y``: (n_cells,).
+
+    The signed statistic is the H3 verdict input (the registered lattice reads
+    "rho's 95% cluster-bootstrap CI excludes 0 on the positive side"); the
+    ``_spearman_obs_per_layer`` |rho| twin feeds the symmetric-absolute
+    selection / null-band machinery (``select_readout_layer`` contract).
+    """
     ry = _rankdata(y[None, :])[0]
     rP = _rankdata(P)
     ry_c = ry - ry.mean()
     rP_c = rP - rP.mean(axis=1, keepdims=True)
     denom = np.sqrt((rP_c**2).sum(axis=1) * (ry_c**2).sum())
     denom = np.where(denom == 0, np.inf, denom)
-    return np.abs((rP_c @ ry_c) / denom)
+    return (rP_c @ ry_c) / denom
+
+
+def _spearman_obs_per_layer(P: np.ndarray, y: np.ndarray) -> np.ndarray:
+    """|Spearman rho| per layer (the max-over-layer selection statistic)."""
+    return np.abs(_spearman_signed_per_layer(P, y))
 
 
 def _spearman_draws(D: np.ndarray, y: np.ndarray) -> np.ndarray:
@@ -581,27 +596,53 @@ def _cell_grids(cfg, aggregate: dict, proj: dict) -> dict[str, dict]:
     """The two registered validation grids: leakage (verdict organism x panel
     context) + own-context install (all trained arms). Values per capture arm."""
     grids: dict[str, dict] = {}
-    # leakage grid: judged delta per (verdict organism, panel ctx)
+    # leakage grid: judged delta per (verdict organism, panel ctx). A None
+    # delta (all-dropped judged arm — drop-never-coerce upstream) is skipped,
+    # never coerced to 0.0.
     leak_y, leak_x_state, leak_ctx = [], [], []
     for _cell_key, prec in (aggregate.get("panel") or {}).items():
         run_id = prec["run_id"]
         if run_id not in proj["states"]:
             continue
         for ctx_id, row in prec["contexts"].items():
+            if row.get("delta") is None:
+                continue
             leak_y.append(float(row["delta"]))
             leak_x_state.append(run_id)
             leak_ctx.append(ctx_id)
-    # install grid: per trained arm own-context tier2 delta (verdict arms only
-    # carry tier2 reads; ladder arms use their selection-rung Tier-1 rate delta
-    # vs base — recorded per run in the aggregate ladders).
-    inst_y, inst_x_state = [], []
-    for _cell_key, entry in (aggregate.get("tier2") or {}).items():
-        run_id = (entry.get("verdict_arm") or {}).get("run_id")
-        if run_id and run_id in proj["states"] and entry.get("delta") is not None:
-            inst_y.append(float(entry["delta"]))
+    # install grid (plan D5 "12-arm own-context install cells"): EVERY trained
+    # arm at its selected rung, own-context. The verdict arm carries a Tier-2
+    # delta (n=tier2_n trained draws vs the per-context base arm); each
+    # non-verdict ladder arm uses its selection-rung Tier-1 rate minus the
+    # SAME per-context Tier-2 base rate (all inputs already in the aggregate).
+    # y_basis records the per-cell read so the mixed-instrument grid stays
+    # legible downstream.
+    inst_y, inst_x_state, inst_basis = [], [], []
+    ladders = aggregate.get("ladders") or {}
+    for cell_key, entry in (aggregate.get("tier2") or {}).items():
+        verdict_run = (entry.get("verdict_arm") or {}).get("run_id")
+        base_rate = (entry.get("base") or {}).get("rate")
+        for run_id, lad in ladders.items():
+            run = cells.RUN_BY_ID_1434.get(run_id)
+            if run is None or run.cell_key != cell_key or run_id not in proj["states"]:
+                continue
+            if run_id == verdict_run and entry.get("delta") is not None:
+                inst_y.append(float(entry["delta"]))
+                inst_basis.append("tier2_delta")
+            else:
+                sel_rate = (lad.get("selection") or {}).get("rate")
+                if sel_rate is None or base_rate is None:
+                    continue
+                inst_y.append(float(sel_rate) - float(base_rate))
+                inst_basis.append("tier1_selection_rate_minus_tier2_base_rate")
             inst_x_state.append(run_id)
     grids["leakage"] = {"y": leak_y, "state_ids": leak_x_state, "ctx_ids": leak_ctx}
-    grids["install"] = {"y": inst_y, "state_ids": inst_x_state, "ctx_ids": None}
+    grids["install"] = {
+        "y": inst_y,
+        "state_ids": inst_x_state,
+        "ctx_ids": None,
+        "y_basis": inst_basis,
+    }
     return grids
 
 
@@ -624,7 +665,9 @@ def phase_validate(cfg, args) -> int:  # noqa: C901 — the registered battery, 
     proj = run1090._read_json(root / "projections.json")
     agg_path = deliver / "i1434_ladders.json"
     aggregate = run1090._read_json(agg_path)
-    lam = 0.1  # #778 PRIMARY_LAMBDA
+    from explore_persona_space.analysis.null_battery import PRIMARY_LAMBDA
+
+    lam = PRIMARY_LAMBDA  # the #778 shrinkage constant, imported (no drift)
     n_draws = max(8, N_RANDNORM_DRAWS // 25) if cfg.smoke else N_RANDNORM_DRAWS
     n_shuffle = 200 if cfg.smoke else N_SHUFFLE_DRAWS
 
@@ -656,19 +699,27 @@ def phase_validate(cfg, args) -> int:  # noqa: C901 — the registered battery, 
             }
             continue
         grid_out: dict[str, Any] = {"n_cells": len(y), "n_states": len(set(state_ids))}
+        if grid.get("y_basis"):
+            grid_out["y_basis"] = list(grid["y_basis"])
         for arm in CAPTURE_ARMS:
             # P: (L, n_cells) projections (per-state values broadcast per cell)
             P = np.stack(
                 [np.asarray(proj["states"][sid][arm]["projection"]) for sid in state_ids],
                 axis=1,
             )  # (L, n_cells)
-            obs = _spearman_obs_per_layer(P, y)  # (L,)
+            signed_obs = _spearman_signed_per_layer(P, y)  # (L,) — the H3 verdict input
+            obs = np.abs(signed_obs)  # (L,) — the selection/null-band statistic
             arm_out: dict[str, Any] = {
                 "observed_abs_rho_per_layer": obs.tolist(),
+                "observed_signed_rho_per_layer": signed_obs.tolist(),
                 "max_layer": int(np.argmax(obs)),
                 "max_abs_rho": float(obs.max()),
+                "headline_signed_rho": float(signed_obs[int(np.argmax(obs))]),
                 "paper_companion_layer19_abs_rho": float(obs[PAPER_COMPANION_LAYER])
                 if len(obs) > PAPER_COMPANION_LAYER
+                else None,
+                "paper_companion_layer19_signed_rho": float(signed_obs[PAPER_COMPANION_LAYER])
+                if len(signed_obs) > PAPER_COMPANION_LAYER
                 else None,
             }
             if arm == primary_arm:
@@ -761,10 +812,15 @@ def phase_validate(cfg, args) -> int:  # noqa: C901 — the registered battery, 
                                 _spearman_obs_per_layer(P[:, mask], y[mask]).max()
                             )
                 arm_out["group_folds_max_abs_rho"] = folds
-                # cluster bootstrap over organisms at the headline layer
+                # cluster bootstrap over organisms — SIGNED rho (the H3
+                # "CI excludes 0 on the positive side" verdict input; |rho|
+                # stays the selection/null-band statistic). Per-draw signed
+                # per-layer matrix persisted; TWO reads: the full-sample
+                # headline layer (frozen) and the selection-INHERITED read
+                # (per-draw argmax-|rho| layer — selection-symmetric).
                 uniq_states = sorted(set(state_ids))
                 li = int(np.argmax(obs))
-                boots = []
+                boot_rows: list[np.ndarray] = []
                 rngb = np.random.default_rng(3)
                 for _ in range(1000 if not cfg.smoke else 50):
                     pick = rngb.choice(len(uniq_states), size=len(uniq_states), replace=True)
@@ -772,13 +828,41 @@ def phase_validate(cfg, args) -> int:  # noqa: C901 — the registered battery, 
                     idx = [i for s in sel_states for i, sid in enumerate(state_ids) if sid == s]
                     if len(set(state_ids[i] for i in idx)) < 2:
                         continue
-                    boots.append(float(_spearman_obs_per_layer(P[li : li + 1, idx], y[idx])[0]))
-                if boots:
+                    boot_rows.append(_spearman_signed_per_layer(P[:, idx], y[idx]))
+                if boot_rows:
+                    B = np.stack(boot_rows)  # (n_kept, L) SIGNED rho
+                    boot_path = deliver / f"pv_bootstrap_{grid_name}_signed.json"
+                    run1090._atomic_write_json(
+                        boot_path,
+                        {
+                            "layers": layers,
+                            "signed_rho_draws": B.tolist(),
+                            "observed_signed_rho_per_layer": signed_obs.tolist(),
+                            "headline_layer": li,
+                            "n_boot_kept": int(B.shape[0]),
+                            "note": "cluster bootstrap over organisms; SIGNED "
+                            "Spearman rho per (draw, layer)",
+                        },
+                    )
+                    frozen = B[:, li]
+                    sel_layer_per_draw = np.argmax(np.abs(B), axis=1)
+                    sel_vals = B[np.arange(B.shape[0]), sel_layer_per_draw]
                     arm_out["cluster_bootstrap_headline_layer"] = {
                         "layer": li,
-                        "p2_5": float(np.quantile(boots, 0.025)),
-                        "p97_5": float(np.quantile(boots, 0.975)),
-                        "n_boot": len(boots),
+                        "statistic": "signed_rho_frozen_full_sample_headline_layer",
+                        "observed_signed_rho": float(signed_obs[li]),
+                        "p2_5": float(np.quantile(frozen, 0.025)),
+                        "p97_5": float(np.quantile(frozen, 0.975)),
+                        "ci_excludes_zero_positive": bool(np.quantile(frozen, 0.025) > 0.0),
+                        "n_boot": int(B.shape[0]),
+                        "matrix": str(boot_path),
+                    }
+                    arm_out["cluster_bootstrap_selection_inherited"] = {
+                        "statistic": "signed_rho_at_per_draw_max_abs_layer",
+                        "p2_5": float(np.quantile(sel_vals, 0.025)),
+                        "p97_5": float(np.quantile(sel_vals, 0.975)),
+                        "ci_excludes_zero_positive": bool(np.quantile(sel_vals, 0.025) > 0.0),
+                        "n_boot": int(B.shape[0]),
                     }
             grid_out[arm] = arm_out
         out["grids"][grid_name] = grid_out

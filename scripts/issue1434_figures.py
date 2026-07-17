@@ -116,6 +116,8 @@ def fig_rb_validity(val: dict, proj: dict, agg: dict, out_dir: Path) -> Path:
             if pr is None:
                 continue
             for ctx_id, row in prec["contexts"].items():
+                if row.get("delta") is None:  # all-dropped arm (None-propagated)
+                    continue
                 xs.append(float(pr["response_shared"]["projection"][layer]))
                 ys.append(float(row["delta"]))
                 labels.append(f"{rid}@{ctx_id}")
