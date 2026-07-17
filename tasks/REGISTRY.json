@@ -3740,8 +3740,8 @@
     "1480": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1480",
-      "status": "planning",
+      "path": "tasks/approved/1480",
+      "status": "approved",
       "title": "workflow-fix: escalate unactioned stalled-manual alerts to registration unregister"
     },
     "1481": {
