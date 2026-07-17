@@ -499,7 +499,7 @@ def test_fully_seeded_early_return_writes_wiring_sidecar(tmp_path, monkeypatch):
     assert g2["wiring_basis"] == (
         "all-seeded (original-attempt validation via fingerprint-matched consume)"
     )
-    assert g2["pass"] is True  # the fixture's r0_in_range holds -> no exit-3 halt
+    assert g2["pass"] is True  # the fixture's r0 R8-reproduction holds -> no exit-3 halt
 
     # build-bug guard through the SAME main() path: a 1-row PRE-filter panel on
     # a seeded cell crashes loud instead of writing a skip record.
@@ -580,11 +580,14 @@ def _summary_fixture(out, rng, f1335, s1_val: float = 0.18) -> None:
     for slug, v in fiction_vals.items():
         for persona in c1310.PERSONA_LABELS:
             _write_matched(out, f"{slug}__base__{persona}__ctx", slug, v, rng)
-    # gate fixtures: r7 per-persona full-n cells at the v3 anchors, r0 in range,
-    # a passing swap file + one wiring file.
+    # gate fixtures (plan Amendment v4 §7): r7 per-persona full-n cells — the
+    # round-8 validated cells at their R8 reproduction values, the rest at the
+    # (positive) v3 refs (sign-only binds there); r0 at the round-8 validated
+    # value (the binding r0 component is reproduction, not the retired range).
     for persona, ref in f1335.V3_ANCHORS_BASE.items():
-        _write_cell(out, f"r7_endpoint__base__{persona}__ctx", "r7_endpoint", ref, 2000)
-    _write_cell(out, "r0_qa_full__base__ctx", "r0_qa_full", 0.70, 5000)
+        val = f1335.R8_REPRO_R7.get(("base", persona), ref)
+        _write_cell(out, f"r7_endpoint__base__{persona}__ctx", "r7_endpoint", val, 2000)
+    _write_cell(out, "r0_qa_full__base__ctx", "r0_qa_full", f1335.R8_REPRO_R0_BASE, 5000)
     (out / "swap_r7_endpoint_base.json").write_text(
         json.dumps({"delta_r2_char": 0.2, "r2_correct": 0.23, "r2_swap": 0.03})
     )

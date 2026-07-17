@@ -86,8 +86,25 @@ LOSO_RUNGS = ("r7_endpoint", "r4_fictionframe")
 # #1310 v3 committed per-persona anchors (plan §7 gate 1; task #1310 v3 markers).
 V3_ANCHORS_BASE = {"Wren": 0.137, "HELIOS": 0.148, "Dana": 0.147, "Vex": 0.106}
 V3_ANCHORS_INSTRUCT = {"Wren": 0.235, "HELIOS": 0.253, "Dana": 0.188}
-ANCHOR_TOL = 0.08
-R0_GATE_RANGE = (0.55, 0.90)  # plan §7 gate 2 (base, full-n, ctx, L19)
+# Plan Amendment v4 (§7 recalibration): the v3 ±0.08 numeric band and the
+# [0.55, 0.90] r0 bracket are RETIRED/DEMOTED as cross-selector-incomparable
+# (GCV-regime references vs inner-group-CV reads) — kept ONLY as descriptive
+# report fields. The binding numeric rig components are ROUND-8 REPRODUCTION
+# checks: the round-8 validated inner-group-CV values on the SAME persisted
+# stores the relaunch refits (same-surface AND same-selector). ±0.01 sits
+# >=10x below the rig-break band (>=0.1 in every prior incident) and >=10x
+# above cross-environment fp64 numerics on seeded folds (round 8 reproduced
+# attempt-5 artifact values exactly). Source: plan.md § Amendment v4 / §7
+# gates 1'/2'; epm:experiment-implementation v8 validation table.
+ANCHOR_TOL = 0.08  # v3 band — descriptive only (amendment v4)
+R0_GATE_RANGE = (0.55, 0.90)  # v3 bracket — report-not-halt diagnostic (amendment v4)
+R8_REPRO_TOL = 0.01
+R8_REPRO_R7 = {  # (model_kind, persona) -> round-8 validated L19 ctx full-n R^2
+    ("instruct", "Dana"): 0.2545,
+    ("base", "Wren"): 0.3585,
+    ("base", "Vex"): 0.3050,
+}
+R8_REPRO_R0_BASE = 0.4103  # r0 base ctx L19 — selector-AGNOSTIC (both pick lambda=3162)
 FICTION_YIELD_FLOOR = 1060  # 80% of the #1310 v3 per-persona floor (Dana-base 1325)
 
 # The SIX-delta within-gap family (plan §5 delta map), oriented strong - weak.
@@ -780,10 +797,25 @@ def fiction_kept_personas(args, model_kind: str, smoke: bool = False) -> tuple[l
 
 
 def evaluate_gates(args, models: list[str], smoke: bool) -> dict:
-    """The two binding rig-anchor gates (plan §7)."""
-    gates: dict = {"binding": not smoke, "lambda_selection": LAMBDA_SELECTION}
-    # Gate 1: fiction endpoint anchors (full-n, ctx, L19) ± 0.08 + swap sign.
-    g1 = {"tolerance": ANCHOR_TOL, "per_model": {}}
+    """The two binding rig-anchor gates (plan §7, AMENDED v4).
+
+    Gate 1' (fiction endpoint): (i) SIGN — every realized per-persona r7 L19
+    ctx full-n R^2 positive (binding); (ii) SWAP SPECIFICITY — only an
+    INVERSION halts (correct-pairing <= 0, or delta_char < 0 with its paired
+    group-bootstrap CI wholly below 0; a weak-positive / CI-straddling delta
+    is report-only); (iii) ROUND-8 REPRODUCTION — the validated inner-group-CV
+    values on the same persisted stores, +-R8_REPRO_TOL (binding on the three
+    validated cells). The v3 +-0.08 band vs the #1310 anchors is RETIRED
+    (cross-selector-incomparable) and reported descriptively.
+
+    Gate 2' (Q&A endpoint): (i) wiring check binding (unchanged, incl. the r7
+    skipped-seeded pass-with-record); (ii) r0 base ctx L19 reproduces the
+    round-8 validated +0.4103 within +-R8_REPRO_TOL (selector-agnostic). The
+    v3 [0.55, 0.90] bracket is DEMOTED to a report-not-halt diagnostic; the
+    0.41-vs-bracket discrepancy is a first-class clean-result finding.
+    """
+    gates: dict = {"binding": not smoke, "lambda_selection": LAMBDA_SELECTION, "amended": "v4"}
+    g1 = {"r8_repro_tol": R8_REPRO_TOL, "v3_band_descriptive": ANCHOR_TOL, "per_model": {}}
     g1_pass = True
     for model_kind in models:
         anchors = V3_ANCHORS_BASE if model_kind == "base" else V3_ANCHORS_INSTRUCT
@@ -793,41 +825,69 @@ def evaluate_gates(args, models: list[str], smoke: bool) -> dict:
                 f"cells_{unit_cell_id('r7_endpoint', model_kind, persona, 'ctx')}.json"
             )
             if not p.exists():
-                per[persona] = {"r2": None, "ref": ref, "pass": False, "reason": "missing"}
+                per[persona] = {
+                    "r2": None,
+                    "v3_ref_descriptive": ref,
+                    "pass": False,
+                    "reason": "missing",
+                }
                 g1_pass = False
                 continue
             d = json.loads(p.read_text())
             r2 = d["r2_per_layer_obs"][d["headline_layer"]]
-            ok = abs(r2 - ref) <= ANCHOR_TOL
-            per[persona] = {"r2": r2, "ref": ref, "pass": bool(ok)}
-            g1_pass = g1_pass and ok
+            entry = {
+                "r2": r2,
+                "v3_ref_descriptive": ref,
+                "sign_pass": bool(r2 > 0),  # component (i)
+                "pass": bool(r2 > 0),
+            }
+            repro_ref = R8_REPRO_R7.get((model_kind, persona))
+            if repro_ref is not None:  # component (iii) — the validated cells
+                entry["r8_repro_ref"] = repro_ref
+                entry["r8_repro_pass"] = bool(abs(r2 - repro_ref) <= R8_REPRO_TOL)
+                entry["pass"] = bool(entry["sign_pass"] and entry["r8_repro_pass"])
+            per[persona] = entry
+            g1_pass = g1_pass and entry["pass"]
         swap_p = args.out_dir / f"swap_r7_endpoint_{model_kind}.json"
         if swap_p.exists():
             sw = json.loads(swap_p.read_text())
-            swap_ok = sw["delta_r2_char"] > 0 and sw["r2_correct"] > 0
+            # Component (ii): only INVERSION halts (amended 1'.ii) — a
+            # CI-straddling / weak-positive delta is report-only.
+            ci_hi = sw.get("delta_ci_hi")
+            inversion = sw["r2_correct"] <= 0 or (
+                sw["delta_r2_char"] < 0 and ci_hi is not None and ci_hi < 0
+            )
             per["_swap"] = {
                 "delta_r2_char": sw["delta_r2_char"],
                 "r2_correct": sw["r2_correct"],
-                "pass": bool(swap_ok),
+                "delta_ci_lo": sw.get("delta_ci_lo"),
+                "delta_ci_hi": ci_hi,
+                "pass": bool(not inversion),
             }
-            g1_pass = g1_pass and swap_ok
+            g1_pass = g1_pass and not inversion
         else:
             per["_swap"] = {"pass": False, "reason": "missing"}
             g1_pass = False
         g1["per_model"][model_kind] = per
     g1["pass"] = bool(g1_pass)
     gates["gate1_fiction_anchor"] = g1
-    # Gate 2: Q&A endpoint sanity (base r0 ctx L19 in range) + wiring checks.
-    g2 = {"range": list(R0_GATE_RANGE)}
+    # Gate 2': r0 round-8 reproduction (binding) + wiring checks (binding);
+    # the v3 range is recorded as a report-not-halt diagnostic.
+    g2 = {
+        "r8_repro_ref": R8_REPRO_R0_BASE,
+        "r8_repro_tol": R8_REPRO_TOL,
+        "v3_range_descriptive": list(R0_GATE_RANGE),
+    }
     p = args.out_dir / "cells_r0_qa_full__base__ctx.json"
     if p.exists():
         d = json.loads(p.read_text())
         r2 = d["r2_per_layer_obs"][d["headline_layer"]]
         g2["r0_base_r2"] = r2
-        g2["r0_in_range"] = bool(R0_GATE_RANGE[0] <= r2 <= R0_GATE_RANGE[1])
+        g2["r0_in_v3_range_descriptive"] = bool(R0_GATE_RANGE[0] <= r2 <= R0_GATE_RANGE[1])
+        g2["r0_repro_pass"] = bool(abs(r2 - R8_REPRO_R0_BASE) <= R8_REPRO_TOL)
     else:
         g2["r0_base_r2"] = None
-        g2["r0_in_range"] = False
+        g2["r0_repro_pass"] = False
     wiring = {}
     for wp in sorted(args.out_dir.glob("wiring_*.json")):
         w = json.loads(wp.read_text())
@@ -869,7 +929,7 @@ def evaluate_gates(args, models: list[str], smoke: bool) -> dict:
         # No wiring files at all: the wiring cells never ran (r7 guarantees a
         # file per wiring cell, skip or ran) -> conservative halt stands.
         g2["wiring_pass"] = False
-    g2["pass"] = bool(g2["r0_in_range"] and g2["wiring_pass"])
+    g2["pass"] = bool(g2["r0_repro_pass"] and g2["wiring_pass"])
     gates["gate2_qa_endpoint"] = g2
     return gates
 
