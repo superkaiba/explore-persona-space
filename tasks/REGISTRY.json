@@ -3600,8 +3600,8 @@
     "1462": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/1462",
-      "status": "approved",
+      "path": "tasks/running/1462",
+      "status": "running",
       "title": "daily-fix: five small prevention notes (gotchas+cfr+psr)"
     },
     "1463": {
