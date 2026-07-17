@@ -1,0 +1,45 @@
+{
+  "commit": "f9f1002797",
+  "created": "2026-07-17T08:17:19Z",
+  "figsize": [
+    6.5,
+    5.5
+  ],
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Instrument parity on the same Tier-2 completions\n(circles = trained verdict arms, squares = base arms; max gap 0.033)",
+        "xlabel": "persona-vectors trait-expression rubric rate",
+        "ylabel": "registered casual-register rubric rate",
+        "annotations": [
+          "Persona",
+          "Bare assistant",
+          "WildChat prefix",
+          "ICL prefix"
+        ],
+        "xticklabels": [
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0",
+          "1.2"
+        ],
+        "yticklabels": [
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0",
+          "1.2"
+        ]
+      }
+    ]
+  }
+}

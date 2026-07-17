@@ -1,0 +1,124 @@
+{
+  "commit": "f9f1002797",
+  "created": "2026-07-17T08:17:10Z",
+  "figsize": [
+    15.5,
+    4.6
+  ],
+  "text": {
+    "suptitle": null,
+    "fig_texts": [
+      "r_B projection vs judged install/leakage deltas (points = organisms; colors = training context)"
+    ],
+    "axes": [
+      {
+        "title_left": "leakage grid: rho=+0.24\n(one projection per organism, 6 context deltas each)",
+        "xlabel": "r_B projection, shared-text arm, layer 2",
+        "ylabel": "judged rate delta (per panel context)",
+        "annotations": [
+          "pers",
+          "bare",
+          "conv",
+          "icl"
+        ],
+        "xticklabels": [
+          "0.005",
+          "0.010",
+          "0.015",
+          "0.020",
+          "0.025",
+          "0.030",
+          "0.035",
+          "0.040",
+          "0.045",
+          "0.050"
+        ],
+        "yticklabels": [
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0",
+          "1.2"
+        ]
+      },
+      {
+        "title_left": "install grid: rho=-0.82\n(selected max-|rho| layer; below null band)",
+        "xlabel": "r_B projection, shared-text arm, layer 0",
+        "ylabel": "install delta (judged rate)",
+        "annotations": [
+          "bare-lr1e4",
+          "bare-lr1e5",
+          "bare-lr3e5",
+          "conv-lr1e4",
+          "conv-lr1e5",
+          "conv-lr3e5",
+          "icl-lr1e4",
+          "icl-lr1e5",
+          "icl-lr3e5",
+          "pers-lr1e4",
+          "pers-lr1e5",
+          "pers-lr3e5"
+        ],
+        "xticklabels": [
+          "\u22120.05",
+          "\u22120.04",
+          "\u22120.03",
+          "\u22120.02",
+          "\u22120.01",
+          "0.00",
+          "0.01",
+          "0.02"
+        ],
+        "yticklabels": [
+          "0.5",
+          "0.6",
+          "0.7",
+          "0.8",
+          "0.9",
+          "1.0",
+          "1.1"
+        ]
+      },
+      {
+        "title_left": "exploratory context-end arm: rho=+0.84\n(no registered null battery on this arm)",
+        "xlabel": "r_B projection, context-end arm, layer 27",
+        "ylabel": "install delta (judged rate)",
+        "annotations": [
+          "bare-lr1e4",
+          "bare-lr1e5",
+          "bare-lr3e5",
+          "conv-lr1e4",
+          "conv-lr1e5",
+          "conv-lr3e5",
+          "icl-lr1e4",
+          "icl-lr1e5",
+          "icl-lr3e5",
+          "pers-lr1e4",
+          "pers-lr1e5",
+          "pers-lr3e5"
+        ],
+        "xticklabels": [
+          "0",
+          "20",
+          "40",
+          "60",
+          "80",
+          "100",
+          "120"
+        ],
+        "yticklabels": [
+          "0.5",
+          "0.6",
+          "0.7",
+          "0.8",
+          "0.9",
+          "1.0",
+          "1.1"
+        ]
+      }
+    ]
+  }
+}
