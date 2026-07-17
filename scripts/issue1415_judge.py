@@ -69,6 +69,11 @@ JUDGED_PHASES = ("phase1b", "phase1c_grid", "phase1c_retry", "phase1c_allpos", "
 # Opt-in --layer-sweep mode judges EXACTLY the layer-sweep steered cells
 # (disjoint from JUDGED_PHASES, so the two outputs never overlap).
 LAYER_SWEEP_PHASES = ("phase1c_layers",)
+# Opt-in --replication <seed_base> mode (l14-behavioral-replication follow-up):
+# the rep roots hold ONLY fresh baselines (phase1b/hf_nohook_base) + the fixed
+# L14/alpha=4 steered cells (phase1c_layers) — no overlap with the primary /
+# layer-sweep outputs because out-root/bulk-root point at phase1_rep<seed>.
+REPLICATION_PHASES = ("phase1b", "phase1c_layers")
 N_JUDGE_DRAWS = 5
 JUDGE_MAX_TOKENS = 300  # reason-then-score budget (llm-judging rule 23; >= ~300)
 BINARY_THRESHOLD = 50.0
@@ -105,14 +110,16 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     ap.add_argument(
         "--out-root",
         type=Path,
-        default=common.REPO_ROOT / "eval_results" / "issue_1415" / "phase1",
-        help="phase-1 metadata root (cells/*.json)",
+        default=None,
+        help="phase-1 metadata root (cells/*.json); default: "
+        "eval_results/issue_1415/phase1 (phase1_rep<seed> under --replication)",
     )
     ap.add_argument(
         "--bulk-root",
         type=Path,
-        default=common.REPO_ROOT / "data" / "issue_1415" / "phase1",
-        help="phase-1 bulk root (raw_completions/<cell_id>.json)",
+        default=None,
+        help="phase-1 bulk root (raw_completions/<cell_id>.json); default: "
+        "data/issue_1415/phase1 (phase1_rep<seed> under --replication)",
     )
     ap.add_argument(
         "--pair-bank",
@@ -139,22 +146,43 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         help="judge the phase1c_layers sweep cells INSTEAD of the primary subset, "
         "to a separate output + work-dir (9a-ter follow-up)",
     )
+    ap.add_argument(
+        "--replication",
+        type=int,
+        default=None,
+        metavar="SEED_BASE",
+        help="judge the l14-behavioral-replication cells for the given seed-base label "
+        "(43/44): fresh baseline + steered L14 cells under the phase1_rep<seed> roots, "
+        "to a separate output + work-dir partition (fresh rubric caches)",
+    )
     ap.add_argument("--n-draws", type=int, default=N_JUDGE_DRAWS)
     ap.add_argument("--max-tokens", type=int, default=JUDGE_MAX_TOKENS)
     ap.add_argument("--limit-cells", type=int, default=None, help="smoke: judge first N cells")
     ap.add_argument("--dry-run", action="store_true")
     args = ap.parse_args(argv)
-    # Deferred defaults: the layer-sweep mode gets a fully separate output +
-    # work-dir partition so the primary scores + rubric caches stay untouched.
+    if args.layer_sweep and args.replication is not None:
+        ap.error("--layer-sweep and --replication are mutually exclusive")
+    # Deferred defaults: the layer-sweep / replication modes get fully separate
+    # roots + output + work-dir partitions so the primary scores + rubric
+    # caches stay untouched (fresh caches per llm-judging rules 22/24).
+    phase_sub = f"phase1_rep{args.replication}" if args.replication is not None else "phase1"
+    if args.out_root is None:
+        args.out_root = common.REPO_ROOT / "eval_results" / "issue_1415" / phase_sub
+    if args.bulk_root is None:
+        args.bulk_root = common.REPO_ROOT / "data" / "issue_1415" / phase_sub
     if args.out_json is None:
-        name = (
-            "behavioral_judge_scores_layer_sweep.json"
-            if args.layer_sweep
-            else "behavioral_judge_scores.json"
-        )
+        if args.replication is not None:
+            name = f"behavioral_judge_scores_rep{args.replication}.json"
+        elif args.layer_sweep:
+            name = "behavioral_judge_scores_layer_sweep.json"
+        else:
+            name = "behavioral_judge_scores.json"
         args.out_json = common.REPO_ROOT / "eval_results" / "issue_1415" / name
     if args.work_dir is None:
-        subdir = "judge_layer_sweep" if args.layer_sweep else "judge"
+        if args.replication is not None:
+            subdir = f"judge_rep{args.replication}"
+        else:
+            subdir = "judge_layer_sweep" if args.layer_sweep else "judge"
         args.work_dir = common.REPO_ROOT / "data" / "issue_1415" / subdir
     return args
 
@@ -430,7 +458,12 @@ def main(argv: list[str] | None = None) -> None:
     bank = json.loads(args.pair_bank.read_text())
     pair_labels = {p["pair_id"]: p["trait_or_behavior"] for p in bank["pairs"]}
 
-    phases = LAYER_SWEEP_PHASES if args.layer_sweep else JUDGED_PHASES
+    if args.replication is not None:
+        phases = REPLICATION_PHASES
+    elif args.layer_sweep:
+        phases = LAYER_SWEEP_PHASES
+    else:
+        phases = JUDGED_PHASES
     metas = enumerate_cells(args.out_root, args.limit_cells, phases=phases)
     by_label, id_map = build_items(metas, args.bulk_root, pair_labels)
     # Persist the compact -> full cell-id round-trip map BEFORE any judge call
@@ -510,6 +543,7 @@ def main(argv: list[str] | None = None) -> None:
             "id_map_file": str(id_map_path),
         },
         "judged_phases": list(phases),
+        "replication_seed_base": args.replication,
         "deviations": [
             "plan §4.9 judge temperature 0.6 not realized — draws sample at the "
             "Anthropic API default (judge_graded does not thread temperature; "
@@ -517,6 +551,14 @@ def main(argv: list[str] | None = None) -> None:
         ]
         + (
             [
+                f"l14-behavioral-replication follow-up (proposer-9b-cheap): judges the "
+                f"fresh rep{args.replication} baseline + steered L14 cells (phase1_rep"
+                f"{args.replication} roots); no ceiling arm re-run (reused from the "
+                "parent, so the K1 judge half is vacuous here); primary-run scores + "
+                "caches untouched (separate work-dir partition)"
+            ]
+            if args.replication is not None
+            else [
                 "layer-sweep follow-up (9a-ter, epm:interpretation v2): judges the "
                 "phase1c_layers steered cells the plan §4.9 scoped as geometric-DV-"
                 "only; primary-subset scores live in behavioral_judge_scores.json "

@@ -1,0 +1,495 @@
+{
+  "metadata": {
+    "git_commit": "149a890f8177f6b582263fc454b9353fd4efbd7a",
+    "timestamp": "2026-07-17T07:14:40Z",
+    "seed": 0,
+    "n": 0,
+    "script": "scripts/issue1335_fit.py",
+    "issue": 931
+  },
+  "code_sha": "149a890f8177f6b582263fc454b9353fd4efbd7a",
+  "render_config_hashes": {
+    "r0_qa_full": "e73713157516a611",
+    "r1_qa_oneline": "f8bef34c378ac04f",
+    "r2_tf": "19616d0cf3616710",
+    "r2_op": "755bddcf5d2b5369",
+    "r3_persona": "42cea020e3172fa5",
+    "r4_fictionframe": "1c5d9682b5a98bf3",
+    "r6_nofoil": "383ea1c49126ad1c",
+    "r7_endpoint": "38dc5c51e194203b",
+    "s1_assistant_label": "27e7d38f271f77df",
+    "s2a_familiar": "58c72d21a648bad0",
+    "s2b_novel": "cda22cd2fbacf682"
+  },
+  "headline_layer": 19,
+  "delta_family": [
+    "label",
+    "header",
+    "framing",
+    "content_depth",
+    "foils",
+    "label_restore"
+  ],
+  "length_delta_outside_family": true,
+  "per_model": {
+    "base": {
+      "fiction_yield": {
+        "Wren": {
+          "n": 1549,
+          "kept": true,
+          "floor": 1060
+        },
+        "HELIOS": {
+          "n": 1418,
+          "kept": true,
+          "floor": 1060
+        },
+        "Dana": {
+          "n": 1596,
+          "kept": true,
+          "floor": 1060
+        },
+        "Vex": {
+          "n": 1730,
+          "kept": true,
+          "floor": 1060
+        }
+      },
+      "kept_personas": [
+        "Wren",
+        "HELIOS",
+        "Dana",
+        "Vex"
+      ],
+      "rung_values_matched_ctx": {
+        "r0_qa_full": 0.34695017313158133,
+        "r1_qa_oneline": 0.3446031334813492,
+        "r2_tf": 0.35312141108344386,
+        "r2_op": 0.30055634096316536,
+        "r3_persona": 0.35578742567592425,
+        "r4_fictionframe": 0.22470895779110006,
+        "r6_nofoil_mean": 0.29600281987762156,
+        "r7_endpoint_mean": 0.33979246193360224,
+        "r7_endpoint_per_persona": {
+          "Wren": 0.35589278982104705,
+          "HELIOS": 0.3356832520357623,
+          "Dana": 0.37123160454443405,
+          "Vex": 0.2963622013331656
+        },
+        "s1_assistant_label_mean": 0.3410018985280602,
+        "s2a_familiar_mean": 0.34545077562632875,
+        "s2b_novel_mean": 0.3429376259449357
+      },
+      "deltas": {
+        "label": {
+          "value": -0.00851827760209467,
+          "ci_lo": -0.029181881157240352,
+          "ci_hi": 0.013831763707073768,
+          "ci_method": "joint-draws",
+          "draws_len": 5000
+        },
+        "label_op_companion": {
+          "value": 0.04404679251818383,
+          "ci_lo": 0.02322406433730378,
+          "ci_hi": 0.0693576689113366,
+          "ci_method": "joint-draws",
+          "draws_len": 5000
+        },
+        "header": {
+          "value": -0.05523108471275889,
+          "ci_lo": -0.08016095310208289,
+          "ci_hi": -0.03153530087503048,
+          "ci_method": "joint-draws",
+          "draws_len": 5000
+        },
+        "framing": {
+          "value": 0.1310784678848242,
+          "ci_lo": 0.11166877000138223,
+          "ci_hi": 0.15011659117120885,
+          "ci_method": "joint-draws",
+          "draws_len": 5000
+        },
+        "content_depth": {
+          "value": -0.11508350414250218,
+          "ci_lo": -0.1308369646321667,
+          "ci_hi": -0.0996245663819206,
+          "ci_method": "joint-draws",
+          "draws_len": 5000
+        },
+        "content_depth_wren_matched": {
+          "value": -0.131183832029947,
+          "ci_lo": -0.15254932920027778,
+          "ci_hi": -0.1100121562608449,
+          "ci_method": "joint-draws",
+          "draws_len": 5000
+        },
+        "foils": {
+          "value": -0.04378964205598068,
+          "ci_lo": -0.052423287895960166,
+          "ci_hi": -0.030069732592342274,
+          "ci_method": "joint-draws",
+          "draws_len": 5000
+        },
+        "label_restore": {
+          "value": 0.0012094365944579355,
+          "ci_lo": -0.0041779545415050025,
+          "ci_hi": 0.006422266193265465,
+          "ci_method": "joint-draws",
+          "draws_len": 5000
+        },
+        "name_frequency_sub": {
+          "value": 0.0025131496813930454,
+          "ci_lo": 0.001979912540767274,
+          "ci_hi": 0.003073066344250613,
+          "ci_method": "joint-draws",
+          "draws_len": 5000
+        },
+        "length": {
+          "value": 0.002347039650232141,
+          "ci_lo": -0.019848481155844293,
+          "ci_hi": 0.02364057870157208,
+          "ci_method": "joint-draws",
+          "draws_len": 5000
+        }
+      },
+      "gap": {
+        "G": {
+          "value": 0.0048106715477469475,
+          "ci_lo": -0.012311987711779045,
+          "ci_hi": 0.021058659620929978,
+          "ci_method": "joint-draws",
+          "draws_len": 5000
+        },
+        "full_gap_r0": {
+          "value": 0.007157711197979089,
+          "ci_lo": -0.011329109299564497,
+          "ci_hi": 0.025141440358847116,
+          "ci_method": "joint-draws",
+          "draws_len": 5000
+        }
+      },
+      "delta_max": {
+        "delta": "framing",
+        "value": 0.1310784678848242,
+        "ci_lo_bonferroni": 0.10611184963621852,
+        "ci_hi_bonferroni": 0.1559617545887873,
+        "family": [
+          "label",
+          "header",
+          "framing",
+          "content_depth",
+          "foils",
+          "label_restore"
+        ],
+        "family_values": {
+          "label": -0.00851827760209467,
+          "header": -0.05523108471275889,
+          "framing": 0.1310784678848242,
+          "content_depth": -0.11508350414250218,
+          "foils": -0.04378964205598068,
+          "label_restore": 0.0012094365944579355
+        },
+        "excluded_negative_deltas": [
+          "content_depth",
+          "foils",
+          "header",
+          "label"
+        ],
+        "note": "foils is a sub-delta of content_depth (family overlap; narrated as a component when content_depth is the max, never double-counted); negative realized deltas are reported but never fed to the max (\u00a73)"
+      },
+      "D": {
+        "value": 0.12867313211095072,
+        "ci_lo": 0.1075823550454081,
+        "ci_hi": 0.14966983812398663,
+        "ci_method": "joint-draws"
+      },
+      "verdict": "Sample-size-explained"
+    },
+    "instruct": {
+      "fiction_yield": {
+        "Wren": {
+          "n": 1799,
+          "kept": true,
+          "floor": 1060
+        },
+        "HELIOS": {
+          "n": 1798,
+          "kept": true,
+          "floor": 1060
+        },
+        "Dana": {
+          "n": 1739,
+          "kept": true,
+          "floor": 1060
+        },
+        "Vex": {
+          "n": 1798,
+          "kept": true,
+          "floor": 1060
+        }
+      },
+      "kept_personas": [
+        "Wren",
+        "HELIOS",
+        "Dana",
+        "Vex"
+      ],
+      "rung_values_matched_ctx": {
+        "r0_qa_full": 0.42297550484882807,
+        "r1_qa_oneline": 0.4454148173738874,
+        "r2_tf": 0.4389569902870772,
+        "r2_op": 0.4214447916433281,
+        "r3_persona": 0.4765824331257987,
+        "r4_fictionframe": 0.31626858799102814,
+        "r6_nofoil_mean": 0.26217756023163086,
+        "r7_endpoint_mean": 0.2714429790899463,
+        "r7_endpoint_per_persona": {
+          "Wren": 0.2734177722305085,
+          "HELIOS": 0.31670561278013276,
+          "Dana": 0.25447201695714383,
+          "Vex": 0.241176514392
+        },
+        "s1_assistant_label_mean": 0.2746974958566295,
+        "s2a_familiar_mean": 0.272159176702305,
+        "s2b_novel_mean": 0.26935676793809527
+      },
+      "deltas": {
+        "label": {
+          "value": 0.006457827086810197,
+          "ci_lo": -0.012093423689813922,
+          "ci_hi": 0.023289706636174395,
+          "ci_method": "joint-draws",
+          "draws_len": 5000
+        },
+        "label_op_companion": {
+          "value": 0.023970025730559286,
+          "ci_lo": 0.004277366191837529,
+          "ci_hi": 0.044374334465659096,
+          "ci_method": "joint-draws",
+          "draws_len": 5000
+        },
+        "header": {
+          "value": -0.05513764148247058,
+          "ci_lo": -0.07294233045745067,
+          "ci_hi": -0.03738670853192474,
+          "ci_method": "joint-draws",
+          "draws_len": 5000
+        },
+        "framing": {
+          "value": 0.16031384513477054,
+          "ci_lo": 0.14070781102604013,
+          "ci_hi": 0.1794462870512777,
+          "ci_method": "joint-draws",
+          "draws_len": 5000
+        },
+        "content_depth": {
+          "value": 0.04482560890108184,
+          "ci_lo": 0.030110376951394895,
+          "ci_hi": 0.05713216963362643,
+          "ci_method": "joint-draws",
+          "draws_len": 5000
+        },
+        "content_depth_wren_matched": {
+          "value": 0.042850815760519634,
+          "ci_lo": 0.02712649420199251,
+          "ci_hi": 0.05653109438553779,
+          "ci_method": "joint-draws",
+          "draws_len": 5000
+        },
+        "foils": {
+          "value": -0.009265418858315444,
+          "ci_lo": -0.01584906825453406,
+          "ci_hi": -0.0015515069551250288,
+          "ci_method": "joint-draws",
+          "draws_len": 5000
+        },
+        "label_restore": {
+          "value": 0.003254516766683202,
+          "ci_lo": 0.002600378898872492,
+          "ci_hi": 0.00404653137559458,
+          "ci_method": "joint-draws",
+          "draws_len": 5000
+        },
+        "name_frequency_sub": {
+          "value": 0.0028024087642097295,
+          "ci_lo": 0.0023444637664695985,
+          "ci_hi": 0.003237301616239979,
+          "ci_method": "joint-draws",
+          "draws_len": 5000
+        },
+        "length": {
+          "value": -0.02243931252505932,
+          "ci_lo": -0.04843389427885192,
+          "ci_hi": 0.0022277826839572417,
+          "ci_method": "joint-draws",
+          "draws_len": 5000
+        }
+      },
+      "gap": {
+        "G": {
+          "value": 0.17397183828394108,
+          "ci_lo": 0.1585684322195642,
+          "ci_hi": 0.18587810783785733,
+          "ci_method": "joint-draws",
+          "draws_len": 5000
+        },
+        "full_gap_r0": {
+          "value": 0.15153252575888176,
+          "ci_lo": 0.12935290386091955,
+          "ci_hi": 0.16783769799720988,
+          "ci_method": "joint-draws",
+          "draws_len": 5000
+        }
+      },
+      "delta_max": {
+        "delta": "framing",
+        "value": 0.16031384513477054,
+        "ci_lo_bonferroni": 0.13476619648991622,
+        "ci_hi_bonferroni": 0.18627591836043755,
+        "family": [
+          "label",
+          "header",
+          "framing",
+          "content_depth",
+          "foils",
+          "label_restore"
+        ],
+        "family_values": {
+          "label": 0.006457827086810197,
+          "header": -0.05513764148247058,
+          "framing": 0.16031384513477054,
+          "content_depth": 0.04482560890108184,
+          "foils": -0.009265418858315444,
+          "label_restore": 0.003254516766683202
+        },
+        "excluded_negative_deltas": [
+          "foils",
+          "header"
+        ],
+        "note": "foils is a sub-delta of content_depth (family overlap; narrated as a component when content_depth is the max, never double-counted); negative realized deltas are reported but never fed to the max (\u00a73)"
+      },
+      "D": {
+        "value": 0.0733279259928,
+        "ci_lo": 0.054338495345596434,
+        "ci_hi": 0.09353357421260236,
+        "ci_method": "joint-draws"
+      },
+      "verdict": "Single-factor-attributed"
+    }
+  },
+  "gates": {
+    "binding": true,
+    "lambda_selection": "inner-group-cv",
+    "amended": "v4",
+    "gate1_fiction_anchor": {
+      "r8_repro_tol": 0.01,
+      "v3_band_descriptive": 0.08,
+      "per_model": {
+        "base": {
+          "Wren": {
+            "r2": 0.3585017418487745,
+            "v3_ref_descriptive": 0.137,
+            "sign_pass": true,
+            "pass": true,
+            "r8_repro_ref": 0.3585,
+            "r8_repro_pass": true
+          },
+          "HELIOS": {
+            "r2": 0.3367206775280167,
+            "v3_ref_descriptive": 0.148,
+            "sign_pass": true,
+            "pass": true
+          },
+          "Dana": {
+            "r2": 0.37600773255880016,
+            "v3_ref_descriptive": 0.147,
+            "sign_pass": true,
+            "pass": true
+          },
+          "Vex": {
+            "r2": 0.30503219714993823,
+            "v3_ref_descriptive": 0.106,
+            "sign_pass": true,
+            "pass": true,
+            "r8_repro_ref": 0.305,
+            "r8_repro_pass": true
+          },
+          "_swap": {
+            "delta_r2_char": 0.22331120082575062,
+            "r2_correct": 0.40463649105565214,
+            "delta_ci_lo": 0.21781862777914865,
+            "delta_ci_hi": 0.22865734242625357,
+            "pass": true
+          }
+        },
+        "instruct": {
+          "Wren": {
+            "r2": 0.27484913429631874,
+            "v3_ref_descriptive": 0.235,
+            "sign_pass": true,
+            "pass": true
+          },
+          "HELIOS": {
+            "r2": 0.3182944502841428,
+            "v3_ref_descriptive": 0.253,
+            "sign_pass": true,
+            "pass": true
+          },
+          "Dana": {
+            "r2": 0.25447201695714383,
+            "v3_ref_descriptive": 0.188,
+            "sign_pass": true,
+            "pass": true,
+            "r8_repro_ref": 0.2545,
+            "r8_repro_pass": true
+          },
+          "_swap": {
+            "delta_r2_char": 0.2161431540613632,
+            "r2_correct": 0.3881283093604795,
+            "delta_ci_lo": 0.21174277439657996,
+            "delta_ci_hi": 0.22092227415901958,
+            "pass": true
+          }
+        }
+      },
+      "pass": true
+    },
+    "gate2_qa_endpoint": {
+      "r8_repro_ref": 0.4103,
+      "r8_repro_tol": 0.01,
+      "v3_range_descriptive": [
+        0.55,
+        0.9
+      ],
+      "r0_base_r2": 0.4103056976646371,
+      "r0_in_v3_range_descriptive": false,
+      "r0_repro_pass": true,
+      "wiring": {
+        "wiring_r0_qa_full_base": {
+          "wiring_check": "skipped-seeded",
+          "fresh_rows": 0,
+          "seeded_rows": 4589
+        },
+        "wiring_r0_qa_full_instruct": {
+          "wiring_check": "skipped-seeded",
+          "fresh_rows": 0,
+          "seeded_rows": 4599
+        },
+        "wiring_r7_endpoint_base": {
+          "wiring_check": "skipped-seeded",
+          "fresh_rows": 0,
+          "seeded_rows": 6293
+        },
+        "wiring_r7_endpoint_instruct": {
+          "wiring_check": "skipped-seeded",
+          "fresh_rows": 0,
+          "seeded_rows": 7134
+        }
+      },
+      "wiring_pass": true,
+      "wiring_basis": "all-seeded (original-attempt validation via fingerprint-matched consume)",
+      "pass": true
+    }
+  },
+  "smoke": false
+}

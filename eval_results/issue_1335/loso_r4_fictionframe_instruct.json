@@ -1,0 +1,23 @@
+{
+  "metadata": {
+    "git_commit": "149a890f8177f6b582263fc454b9353fd4efbd7a",
+    "timestamp": "2026-07-17T03:20:27Z",
+    "seed": 0,
+    "n": 0,
+    "script": "scripts/issue1335_fit.py",
+    "issue": 931
+  },
+  "rung_slug": "r4_fictionframe",
+  "render_config_hash": "1c5d9682b5a98bf3",
+  "code_sha": "149a890f8177f6b582263fc454b9353fd4efbd7a",
+  "rung": "r4_fictionframe",
+  "model_kind": "instruct",
+  "headline_layer": 19,
+  "per_unit": {
+    "all": {
+      "n": 4841,
+      "n_settings": 20,
+      "r2_headline_loso": 0.3581068854829055
+    }
+  }
+}

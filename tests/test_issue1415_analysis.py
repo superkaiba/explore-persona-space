@@ -1047,3 +1047,34 @@ def test_judge_k1_check_thresholds():
     assert big["fired"] is False and big["frac_small_shift"] == 0.0
     none = jg.k1_judge_check({"x": {"arm": "baseline", "pair_id": "a", "graded_score": 10.0}})
     assert none["fired"] is False and none["frac_small_shift"] is None
+
+
+# ── follow-up round: judge --replication mode ─────────────────────────
+
+
+def test_judge_replication_mode_defaults_and_selection(tmp_path):
+    """--replication <seed>: rep-root defaults + separate out-json/work-dir
+    partition, mutual exclusion with --layer-sweep, and REPLICATION_PHASES
+    selecting exactly the fresh-baseline + layer-steered cells."""
+    args = jg.parse_args(["--replication", "43"])
+    assert args.out_root == common.REPO_ROOT / "eval_results" / "issue_1415" / "phase1_rep43"
+    assert args.bulk_root == common.REPO_ROOT / "data" / "issue_1415" / "phase1_rep43"
+    assert args.out_json.name == "behavioral_judge_scores_rep43.json"
+    assert args.work_dir.name == "judge_rep43"  # fresh cache partition per seed
+    # default + layer-sweep modes unchanged
+    d = jg.parse_args([])
+    assert d.out_root.name == "phase1" and d.out_json.name == "behavioral_judge_scores.json"
+    ls = jg.parse_args(["--layer-sweep"])
+    assert ls.out_root.name == "phase1" and ls.work_dir.name == "judge_layer_sweep"
+    with pytest.raises(SystemExit):
+        jg.parse_args(["--replication", "43", "--layer-sweep"])
+    # phase selection over the shared fixture: baselines (phase1b) + the
+    # steered layer cells (phase1c_layers) ONLY — grid/rb cells excluded
+    out_root, _bulk_root, _bank = _judge_fixture(tmp_path)
+    metas = jg.enumerate_cells(out_root, None, phases=jg.REPLICATION_PHASES)
+    assert {m["cell_id"] for m in metas} == {
+        "gen1b/pair0/c",
+        "gen1b/pair0/cprime",
+        "gen1c/context/pair0/L2/a1",
+    }
+    assert {jg.arm_label(m) for m in metas} == {"baseline", "ceiling", "steered_L2_context"}
