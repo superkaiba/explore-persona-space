@@ -3586,8 +3586,8 @@
     "1460": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1460",
-      "status": "proposed",
+      "path": "tasks/planning/1460",
+      "status": "planning",
       "title": "daily-fix: lint inline free-analysis commits pre-push"
     },
     "1461": {
