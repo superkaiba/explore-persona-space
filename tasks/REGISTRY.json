@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1446,
+  "highest_id": 1447,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -3477,6 +3477,13 @@
       "path": "tasks/proposed/1446",
       "status": "proposed",
       "title": "daily-fix: widen closed-sibling advisory to infra tasks"
+    },
+    "1447": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1447",
+      "status": "proposed",
+      "title": "daily-fix: widen bit_byte_identical to the synonym tail"
     },
     "145": {
       "has_clean_result": false,
