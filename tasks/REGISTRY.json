@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1469,
+  "highest_id": 1470,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -3659,6 +3659,13 @@
       "path": "tasks/archived/147",
       "status": "archived",
       "title": "Can you couple bad behavior to catching that bad behavior and persona resetting"
+    },
+    "1470": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1470",
+      "status": "proposed",
+      "title": "daily-fix: divtrain gen through api_dispatch + empty=retry"
     },
     "148": {
       "has_clean_result": false,
