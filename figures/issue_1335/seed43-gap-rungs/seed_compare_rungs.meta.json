@@ -1,0 +1,926 @@
+{
+  "commit": "500479e6e7",
+  "created": "2026-07-17T16:18:20Z",
+  "figsize": [
+    9.5,
+    4.2
+  ],
+  "points": [
+    {
+      "x": -0.13,
+      "Held-out R\u00b2 (layer 19, context arm, matched n)": 0.3446031334813492,
+      "error": 0.012439425808505822,
+      "series": "generation seed 42",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 0.87,
+      "Held-out R\u00b2 (layer 19, context arm, matched n)": 0.35578742567592425,
+      "error": 0.014651201974306666,
+      "series": "generation seed 42",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 1.87,
+      "Held-out R\u00b2 (layer 19, context arm, matched n)": 0.22470895779110006,
+      "error": 0.012035301260222314,
+      "series": "generation seed 42",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 2.87,
+      "Held-out R\u00b2 (layer 19, context arm, matched n)": 0.33979246193360224,
+      "error": 0.007557755664640509,
+      "series": "generation seed 42",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 0.13,
+      "Held-out R\u00b2 (layer 19, context arm, matched n)": 0.36575247629866114,
+      "error": 0.011916165136033857,
+      "series": "generation seed 43",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "x": 1.13,
+      "Held-out R\u00b2 (layer 19, context arm, matched n)": 0.4140055558564347,
+      "error": 0.012735171414946456,
+      "series": "generation seed 43",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "x": 2.13,
+      "Held-out R\u00b2 (layer 19, context arm, matched n)": 0.2571835897306992,
+      "error": 0.011997908670376839,
+      "series": "generation seed 43",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "x": 3.13,
+      "Held-out R\u00b2 (layer 19, context arm, matched n)": 0.2667008160405571,
+      "error": 0.006540722185883641,
+      "series": "generation seed 43",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "x": -0.13,
+      "Held-out R\u00b2 (layer 19, context arm, matched n)": 0.3487698424317054,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": -0.13,
+      "Held-out R\u00b2 (layer 19, context arm, matched n)": 0.3469295866504164,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": -0.13,
+      "Held-out R\u00b2 (layer 19, context arm, matched n)": 0.34878011805671905,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": -0.13,
+      "Held-out R\u00b2 (layer 19, context arm, matched n)": 0.3416667944391515,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": -0.13,
+      "Held-out R\u00b2 (layer 19, context arm, matched n)": 0.33686932582875373,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.87,
+      "Held-out R\u00b2 (layer 19, context arm, matched n)": 0.35761430067340394,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.87,
+      "Held-out R\u00b2 (layer 19, context arm, matched n)": 0.3578629232936733,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.87,
+      "Held-out R\u00b2 (layer 19, context arm, matched n)": 0.3553118394711521,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.87,
+      "Held-out R\u00b2 (layer 19, context arm, matched n)": 0.35777326395975495,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.87,
+      "Held-out R\u00b2 (layer 19, context arm, matched n)": 0.350374800981637,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.87,
+      "Held-out R\u00b2 (layer 19, context arm, matched n)": 0.22520252633013327,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.87,
+      "Held-out R\u00b2 (layer 19, context arm, matched n)": 0.22782075543701563,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.87,
+      "Held-out R\u00b2 (layer 19, context arm, matched n)": 0.22582403721555755,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.87,
+      "Held-out R\u00b2 (layer 19, context arm, matched n)": 0.22434417083696245,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.87,
+      "Held-out R\u00b2 (layer 19, context arm, matched n)": 0.22035329913583157,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 2.87,
+      "Held-out R\u00b2 (layer 19, context arm, matched n)": 0.35589278982104705,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 2.87,
+      "Held-out R\u00b2 (layer 19, context arm, matched n)": 0.3356832520357623,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 2.87,
+      "Held-out R\u00b2 (layer 19, context arm, matched n)": 0.37123160454443405,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 2.87,
+      "Held-out R\u00b2 (layer 19, context arm, matched n)": 0.2963622013331656,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.13,
+      "Held-out R\u00b2 (layer 19, context arm, matched n)": 0.36664151585542226,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.13,
+      "Held-out R\u00b2 (layer 19, context arm, matched n)": 0.361590883939084,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.13,
+      "Held-out R\u00b2 (layer 19, context arm, matched n)": 0.36565778500760626,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.13,
+      "Held-out R\u00b2 (layer 19, context arm, matched n)": 0.375241516177528,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.13,
+      "Held-out R\u00b2 (layer 19, context arm, matched n)": 0.359630680513665,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.13,
+      "Held-out R\u00b2 (layer 19, context arm, matched n)": 0.41586769904875687,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 1.13,
+      "Held-out R\u00b2 (layer 19, context arm, matched n)": 0.411870139037526,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 1.13,
+      "Held-out R\u00b2 (layer 19, context arm, matched n)": 0.41275540772865327,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 1.13,
+      "Held-out R\u00b2 (layer 19, context arm, matched n)": 0.41610156882301297,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 1.13,
+      "Held-out R\u00b2 (layer 19, context arm, matched n)": 0.4134329646442241,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.13,
+      "Held-out R\u00b2 (layer 19, context arm, matched n)": 0.2561791159846317,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 2.13,
+      "Held-out R\u00b2 (layer 19, context arm, matched n)": 0.2563720826039525,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 2.13,
+      "Held-out R\u00b2 (layer 19, context arm, matched n)": 0.252808749489165,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 2.13,
+      "Held-out R\u00b2 (layer 19, context arm, matched n)": 0.25977158951628654,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 2.13,
+      "Held-out R\u00b2 (layer 19, context arm, matched n)": 0.26078641105946043,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 3.13,
+      "Held-out R\u00b2 (layer 19, context arm, matched n)": 0.26889773537183886,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 3.13,
+      "Held-out R\u00b2 (layer 19, context arm, matched n)": 0.27921173237609304,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 3.13,
+      "Held-out R\u00b2 (layer 19, context arm, matched n)": 0.2743416624939963,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 3.13,
+      "Held-out R\u00b2 (layer 19, context arm, matched n)": 0.2443521339203004,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": -0.13,
+      "Held-out R\u00b2 (layer 19, context arm, matched n)": 0.3446031334813492,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 0.87,
+      "Held-out R\u00b2 (layer 19, context arm, matched n)": 0.35578742567592425,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 1.87,
+      "Held-out R\u00b2 (layer 19, context arm, matched n)": 0.22470895779110006,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 2.87,
+      "Held-out R\u00b2 (layer 19, context arm, matched n)": 0.33979246193360224,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": -0.13,
+      "Held-out R\u00b2 (layer 19, context arm, matched n)": 0.3338676878103722,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 0.87,
+      "Held-out R\u00b2 (layer 19, context arm, matched n)": 0.3424910567754499,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 1.87,
+      "Held-out R\u00b2 (layer 19, context arm, matched n)": 0.21401605992177047,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 2.87,
+      "Held-out R\u00b2 (layer 19, context arm, matched n)": 0.33223470626896173,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": -0.13,
+      "Held-out R\u00b2 (layer 19, context arm, matched n)": 0.3587465394273838,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 0.87,
+      "Held-out R\u00b2 (layer 19, context arm, matched n)": 0.3717934607240632,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 1.87,
+      "Held-out R\u00b2 (layer 19, context arm, matched n)": 0.2380866624422151,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 2.87,
+      "Held-out R\u00b2 (layer 19, context arm, matched n)": 0.34735021759824275,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 0.13,
+      "Held-out R\u00b2 (layer 19, context arm, matched n)": 0.36575247629866114,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 1.13,
+      "Held-out R\u00b2 (layer 19, context arm, matched n)": 0.4140055558564347,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 2.13,
+      "Held-out R\u00b2 (layer 19, context arm, matched n)": 0.2571835897306992,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 3.13,
+      "Held-out R\u00b2 (layer 19, context arm, matched n)": 0.2667008160405571,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 0.13,
+      "Held-out R\u00b2 (layer 19, context arm, matched n)": 0.3548286706335981,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 1.13,
+      "Held-out R\u00b2 (layer 19, context arm, matched n)": 0.4022415668018503,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 2.13,
+      "Held-out R\u00b2 (layer 19, context arm, matched n)": 0.24644813824935558,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 3.13,
+      "Held-out R\u00b2 (layer 19, context arm, matched n)": 0.2601600938546735,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 0.13,
+      "Held-out R\u00b2 (layer 19, context arm, matched n)": 0.3786610009056658,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 1.13,
+      "Held-out R\u00b2 (layer 19, context arm, matched n)": 0.4277119096317432,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 2.13,
+      "Held-out R\u00b2 (layer 19, context arm, matched n)": 0.27044395559010925,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 3.13,
+      "Held-out R\u00b2 (layer 19, context arm, matched n)": 0.27324153822644076,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": -0.13,
+      "y": 0.4454148173738874,
+      "error": 0.009641575264067503,
+      "series": "generation seed 42",
+      "_kind": "errorbar",
+      "_group": 16
+    },
+    {
+      "x": 0.87,
+      "y": 0.4765824331257987,
+      "error": 0.011925848055123173,
+      "series": "generation seed 42",
+      "_kind": "errorbar",
+      "_group": 16
+    },
+    {
+      "x": 1.87,
+      "y": 0.31626858799102814,
+      "error": 0.011810652312867376,
+      "series": "generation seed 42",
+      "_kind": "errorbar",
+      "_group": 16
+    },
+    {
+      "x": 2.87,
+      "y": 0.2714429790899463,
+      "error": 0.004435913822891324,
+      "series": "generation seed 42",
+      "_kind": "errorbar",
+      "_group": 16
+    },
+    {
+      "x": 0.13,
+      "y": 0.45135238123856586,
+      "error": 0.010767036037019562,
+      "series": "generation seed 43",
+      "_kind": "errorbar",
+      "_group": 17
+    },
+    {
+      "x": 1.13,
+      "y": 0.47028933787673977,
+      "error": 0.011239919309303126,
+      "series": "generation seed 43",
+      "_kind": "errorbar",
+      "_group": 17
+    },
+    {
+      "x": 2.13,
+      "y": 0.32873656513246213,
+      "error": 0.01258579447704894,
+      "series": "generation seed 43",
+      "_kind": "errorbar",
+      "_group": 17
+    },
+    {
+      "x": 3.13,
+      "y": 0.2719009974755088,
+      "error": 0.004631156642729006,
+      "series": "generation seed 43",
+      "_kind": "errorbar",
+      "_group": 17
+    },
+    {
+      "x": -0.13,
+      "y": 0.4380437811709985,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.13,
+      "y": 0.448681370453341,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.13,
+      "y": 0.44910458850681545,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.13,
+      "y": 0.4469098971348131,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.13,
+      "y": 0.44433444960346913,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.87,
+      "y": 0.4769504244574163,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "x": 0.87,
+      "y": 0.4767468044283426,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "x": 0.87,
+      "y": 0.48170915686124394,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "x": 0.87,
+      "y": 0.478355928857887,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "x": 0.87,
+      "y": 0.46914985102410345,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "x": 1.87,
+      "y": 0.317493801540502,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 1.87,
+      "y": 0.3180701961227178,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 1.87,
+      "y": 0.3151054896036244,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 1.87,
+      "y": 0.313339084228603,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 1.87,
+      "y": 0.31733436845969354,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 2.87,
+      "y": 0.2734177722305085,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "x": 2.87,
+      "y": 0.31670561278013276,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "x": 2.87,
+      "y": 0.25447201695714383,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "x": 2.87,
+      "y": 0.241176514392,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "x": 0.13,
+      "y": 0.4460931906984794,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 0.13,
+      "y": 0.4519568701837282,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 0.13,
+      "y": 0.45569760626425804,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 0.13,
+      "y": 0.4554622685151658,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 0.13,
+      "y": 0.44755197053119766,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 1.13,
+      "y": 0.4655223648310396,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "x": 1.13,
+      "y": 0.4657461595934981,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "x": 1.13,
+      "y": 0.47389190233289447,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "x": 1.13,
+      "y": 0.4772835174747897,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "x": 1.13,
+      "y": 0.46900274515147733,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "x": 2.13,
+      "y": 0.3316798867777996,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 2.13,
+      "y": 0.3292273943734063,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 2.13,
+      "y": 0.32865509298107665,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 2.13,
+      "y": 0.3265867328745554,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 2.13,
+      "y": 0.32753371865547287,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 3.13,
+      "y": 0.2680726320854369,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 3.13,
+      "y": 0.2961841718837296,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 3.13,
+      "y": 0.2717959559082491,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 3.13,
+      "y": 0.25155123002461954,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": -0.13,
+      "y": 0.4454148173738874,
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "x": 0.87,
+      "y": 0.4765824331257987,
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "x": 1.87,
+      "y": 0.31626858799102814,
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "x": 2.87,
+      "y": 0.2714429790899463,
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "x": -0.13,
+      "y": 0.4369335348964333,
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "x": 0.87,
+      "y": 0.4657650406933932,
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "x": 1.87,
+      "y": 0.3055098481314353,
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "x": 2.87,
+      "y": 0.267007065267055,
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "x": -0.13,
+      "y": 0.4562166854245683,
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "x": 0.87,
+      "y": 0.48961673680363954,
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "x": 1.87,
+      "y": 0.32913115275717003,
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "x": 2.87,
+      "y": 0.2758788929128376,
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "x": 0.13,
+      "y": 0.45135238123856586,
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "x": 1.13,
+      "y": 0.47028933787673977,
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "x": 2.13,
+      "y": 0.32873656513246213,
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "x": 3.13,
+      "y": 0.2719009974755088,
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "x": 0.13,
+      "y": 0.4414747021399769,
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "x": 1.13,
+      "y": 0.4598571296939095,
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "x": 2.13,
+      "y": 0.3170714863915347,
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "x": 3.13,
+      "y": 0.26726984083277977,
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "x": 0.13,
+      "y": 0.46300877421401604,
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "x": 1.13,
+      "y": 0.48233696831251577,
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "x": 2.13,
+      "y": 0.3422430753456326,
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "x": 3.13,
+      "y": 0.2765321541182378,
+      "_kind": "line",
+      "_group": 31
+    }
+  ],
+  "n_series": 32,
+  "total_points": 140,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "base model",
+        "ylabel": "Held-out R\u00b2 (layer 19, context arm, matched n)",
+        "xticklabels": [
+          "one-line\nQ&A",
+          "persona-\ndescribed",
+          "fiction-framed\nQ&A",
+          "fiction\nendpoint"
+        ],
+        "yticklabels": [
+          "0.20",
+          "0.25",
+          "0.30",
+          "0.35",
+          "0.40",
+          "0.45",
+          "0.50"
+        ]
+      },
+      {
+        "title_left": "instruct model",
+        "legend_labels": [
+          "generation seed 42",
+          "generation seed 43"
+        ],
+        "xticklabels": [
+          "one-line\nQ&A",
+          "persona-\ndescribed",
+          "fiction-framed\nQ&A",
+          "fiction\nendpoint"
+        ]
+      }
+    ],
+    "series": [
+      "generation seed 42",
+      "generation seed 43"
+    ]
+  }
+}

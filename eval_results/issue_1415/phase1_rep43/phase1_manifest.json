@@ -1,0 +1,377 @@
+{
+  "regime": {
+    "model_id": "Qwen/Qwen2.5-7B-Instruct",
+    "tiny": false,
+    "n_draws": 10,
+    "max_new_tokens": 1024,
+    "temperature": 1.0,
+    "seed_base": 43000,
+    "gen_batch": 8,
+    "layers": [
+      7,
+      10,
+      14,
+      17,
+      20,
+      21,
+      24
+    ],
+    "primary_layer": 20,
+    "alpha_grid": [
+      0.5,
+      1.0,
+      2.0,
+      4.0
+    ],
+    "hidden": 3584,
+    "n_model_layers": 28,
+    "pair_bank_sha256": "95aceaa2bf282c8206b0a811aac0a86d2140254f76b41fc45d158e6a2eade28a",
+    "mode": "replicate_l14",
+    "rep_seed_base": 43,
+    "rep_layer": 14,
+    "rep_alpha": 4.0
+  },
+  "cells": {
+    "gen_rep43/context/cross_00_evil_to_sycophancy/L14/a4": {
+      "completed_at": "2026-07-17T09:01:45.538570+00:00",
+      "phase": "phase1c_layers"
+    },
+    "gen_rep43/context/cross_01_evil_to_hallucination/L14/a4": {
+      "completed_at": "2026-07-17T09:01:45.539940+00:00",
+      "phase": "phase1c_layers"
+    },
+    "gen_rep43/context/cross_02_sycophancy_to_evil/L14/a4": {
+      "completed_at": "2026-07-17T09:01:45.540996+00:00",
+      "phase": "phase1c_layers"
+    },
+    "gen_rep43/context/cross_03_sycophancy_to_hallucination/L14/a4": {
+      "completed_at": "2026-07-17T09:01:45.541952+00:00",
+      "phase": "phase1c_layers"
+    },
+    "gen_rep43/context/cross_04_hallucination_to_evil/L14/a4": {
+      "completed_at": "2026-07-17T09:01:45.543250+00:00",
+      "phase": "phase1c_layers"
+    },
+    "gen_rep43/context/cross_05_hallucination_to_sycophancy/L14/a4": {
+      "completed_at": "2026-07-17T09:01:45.544668+00:00",
+      "phase": "phase1c_layers"
+    },
+    "gen_rep43/context/cross_06_evil_to_sycophancy/L14/a4": {
+      "completed_at": "2026-07-17T09:01:45.546210+00:00",
+      "phase": "phase1c_layers"
+    },
+    "gen_rep43/context/cross_07_evil_to_hallucination/L14/a4": {
+      "completed_at": "2026-07-17T09:01:45.547359+00:00",
+      "phase": "phase1c_layers"
+    },
+    "gen_rep43/context/cross_08_sycophancy_to_evil/L14/a4": {
+      "completed_at": "2026-07-17T09:06:25.800968+00:00",
+      "phase": "phase1c_layers"
+    },
+    "gen_rep43/context/cross_09_sycophancy_to_hallucination/L14/a4": {
+      "completed_at": "2026-07-17T09:06:25.802522+00:00",
+      "phase": "phase1c_layers"
+    },
+    "gen_rep43/context/cross_10_hallucination_to_evil/L14/a4": {
+      "completed_at": "2026-07-17T09:06:25.804095+00:00",
+      "phase": "phase1c_layers"
+    },
+    "gen_rep43/context/cross_11_hallucination_to_sycophancy/L14/a4": {
+      "completed_at": "2026-07-17T09:06:25.805572+00:00",
+      "phase": "phase1c_layers"
+    },
+    "gen_rep43/context/cross_12_evil_to_sycophancy/L14/a4": {
+      "completed_at": "2026-07-17T09:06:25.806914+00:00",
+      "phase": "phase1c_layers"
+    },
+    "gen_rep43/context/m685_00_sycophancy/L14/a4": {
+      "completed_at": "2026-07-17T09:06:25.808324+00:00",
+      "phase": "phase1c_layers"
+    },
+    "gen_rep43/context/m685_01_refusal/L14/a4": {
+      "completed_at": "2026-07-17T09:06:25.809827+00:00",
+      "phase": "phase1c_layers"
+    },
+    "gen_rep43/context/m685_02_evil/L14/a4": {
+      "completed_at": "2026-07-17T09:06:25.811401+00:00",
+      "phase": "phase1c_layers"
+    },
+    "gen_rep43/context/m685_03_hedging/L14/a4": {
+      "completed_at": "2026-07-17T09:10:49.321911+00:00",
+      "phase": "phase1c_layers"
+    },
+    "gen_rep43/context/m685_04_terse/L14/a4": {
+      "completed_at": "2026-07-17T09:10:49.322936+00:00",
+      "phase": "phase1c_layers"
+    },
+    "gen_rep43/context/m685_05_formal/L14/a4": {
+      "completed_at": "2026-07-17T09:10:49.324497+00:00",
+      "phase": "phase1c_layers"
+    },
+    "gen_rep43/context/m685_06_villain/L14/a4": {
+      "completed_at": "2026-07-17T09:10:49.325870+00:00",
+      "phase": "phase1c_layers"
+    },
+    "gen_rep43/context/m685_07_medical_doctor/L14/a4": {
+      "completed_at": "2026-07-17T09:10:49.327364+00:00",
+      "phase": "phase1c_layers"
+    },
+    "gen_rep43/context/m685_08_french_person/L14/a4": {
+      "completed_at": "2026-07-17T09:10:49.328703+00:00",
+      "phase": "phase1c_layers"
+    },
+    "gen_rep43/context/m685_09_comedian/L14/a4": {
+      "completed_at": "2026-07-17T09:10:49.330055+00:00",
+      "phase": "phase1c_layers"
+    },
+    "gen_rep43/context/m779_00_evil/L14/a4": {
+      "completed_at": "2026-07-17T09:10:49.331780+00:00",
+      "phase": "phase1c_layers"
+    },
+    "gen_rep43/context/m779_01_sycophancy/L14/a4": {
+      "completed_at": "2026-07-17T09:14:03.720801+00:00",
+      "phase": "phase1c_layers"
+    },
+    "gen_rep43/context/m779_02_hallucination/L14/a4": {
+      "completed_at": "2026-07-17T09:14:03.722458+00:00",
+      "phase": "phase1c_layers"
+    },
+    "gen_rep43/context/m779_03_evil/L14/a4": {
+      "completed_at": "2026-07-17T09:14:03.723733+00:00",
+      "phase": "phase1c_layers"
+    },
+    "gen_rep43/context/m779_04_sycophancy/L14/a4": {
+      "completed_at": "2026-07-17T09:14:03.724926+00:00",
+      "phase": "phase1c_layers"
+    },
+    "gen_rep43/prefix/cross_00_evil_to_sycophancy/L14/a4": {
+      "completed_at": "2026-07-17T09:14:03.726278+00:00",
+      "phase": "phase1c_layers"
+    },
+    "gen_rep43/prefix/cross_01_evil_to_hallucination/L14/a4": {
+      "completed_at": "2026-07-17T09:14:03.727616+00:00",
+      "phase": "phase1c_layers"
+    },
+    "gen_rep43/prefix/cross_02_sycophancy_to_evil/L14/a4": {
+      "completed_at": "2026-07-17T09:14:03.729125+00:00",
+      "phase": "phase1c_layers"
+    },
+    "gen_rep43/prefix/cross_03_sycophancy_to_hallucination/L14/a4": {
+      "completed_at": "2026-07-17T09:14:03.730282+00:00",
+      "phase": "phase1c_layers"
+    },
+    "gen_rep43/prefix/cross_04_hallucination_to_evil/L14/a4": {
+      "completed_at": "2026-07-17T09:18:13.099568+00:00",
+      "phase": "phase1c_layers"
+    },
+    "gen_rep43/prefix/cross_05_hallucination_to_sycophancy/L14/a4": {
+      "completed_at": "2026-07-17T09:18:13.101412+00:00",
+      "phase": "phase1c_layers"
+    },
+    "gen_rep43/prefix/cross_06_evil_to_sycophancy/L14/a4": {
+      "completed_at": "2026-07-17T09:18:13.102756+00:00",
+      "phase": "phase1c_layers"
+    },
+    "gen_rep43/prefix/cross_07_evil_to_hallucination/L14/a4": {
+      "completed_at": "2026-07-17T09:18:13.103959+00:00",
+      "phase": "phase1c_layers"
+    },
+    "gen_rep43/prefix/cross_08_sycophancy_to_evil/L14/a4": {
+      "completed_at": "2026-07-17T09:18:13.105047+00:00",
+      "phase": "phase1c_layers"
+    },
+    "gen_rep43/prefix/cross_09_sycophancy_to_hallucination/L14/a4": {
+      "completed_at": "2026-07-17T09:18:13.106417+00:00",
+      "phase": "phase1c_layers"
+    },
+    "gen_rep43/prefix/cross_10_hallucination_to_evil/L14/a4": {
+      "completed_at": "2026-07-17T09:18:13.108504+00:00",
+      "phase": "phase1c_layers"
+    },
+    "gen_rep43/prefix/cross_11_hallucination_to_sycophancy/L14/a4": {
+      "completed_at": "2026-07-17T09:18:13.110151+00:00",
+      "phase": "phase1c_layers"
+    },
+    "gen_rep43/prefix/cross_12_evil_to_sycophancy/L14/a4": {
+      "completed_at": "2026-07-17T09:22:51.680406+00:00",
+      "phase": "phase1c_layers"
+    },
+    "gen_rep43/prefix/m685_00_sycophancy/L14/a4": {
+      "completed_at": "2026-07-17T09:22:51.682062+00:00",
+      "phase": "phase1c_layers"
+    },
+    "gen_rep43/prefix/m685_01_refusal/L14/a4": {
+      "completed_at": "2026-07-17T09:22:51.683698+00:00",
+      "phase": "phase1c_layers"
+    },
+    "gen_rep43/prefix/m685_02_evil/L14/a4": {
+      "completed_at": "2026-07-17T09:22:51.685199+00:00",
+      "phase": "phase1c_layers"
+    },
+    "gen_rep43/prefix/m685_03_hedging/L14/a4": {
+      "completed_at": "2026-07-17T09:22:51.686900+00:00",
+      "phase": "phase1c_layers"
+    },
+    "gen_rep43/prefix/m685_04_terse/L14/a4": {
+      "completed_at": "2026-07-17T09:22:51.688515+00:00",
+      "phase": "phase1c_layers"
+    },
+    "gen_rep43/prefix/m685_05_formal/L14/a4": {
+      "completed_at": "2026-07-17T09:22:51.690586+00:00",
+      "phase": "phase1c_layers"
+    },
+    "gen_rep43/prefix/m685_06_villain/L14/a4": {
+      "completed_at": "2026-07-17T09:22:51.692131+00:00",
+      "phase": "phase1c_layers"
+    },
+    "gen_rep43/prefix/m685_07_medical_doctor/L14/a4": {
+      "completed_at": "2026-07-17T09:27:09.667837+00:00",
+      "phase": "phase1c_layers"
+    },
+    "gen_rep43/prefix/m685_08_french_person/L14/a4": {
+      "completed_at": "2026-07-17T09:27:09.669574+00:00",
+      "phase": "phase1c_layers"
+    },
+    "gen_rep43/prefix/m685_09_comedian/L14/a4": {
+      "completed_at": "2026-07-17T09:27:09.671176+00:00",
+      "phase": "phase1c_layers"
+    },
+    "gen_rep43/prefix/m779_00_evil/L14/a4": {
+      "completed_at": "2026-07-17T09:27:09.672749+00:00",
+      "phase": "phase1c_layers"
+    },
+    "gen_rep43/prefix/m779_01_sycophancy/L14/a4": {
+      "completed_at": "2026-07-17T09:27:09.674092+00:00",
+      "phase": "phase1c_layers"
+    },
+    "gen_rep43/prefix/m779_02_hallucination/L14/a4": {
+      "completed_at": "2026-07-17T09:27:09.675579+00:00",
+      "phase": "phase1c_layers"
+    },
+    "gen_rep43/prefix/m779_03_evil/L14/a4": {
+      "completed_at": "2026-07-17T09:27:09.677387+00:00",
+      "phase": "phase1c_layers"
+    },
+    "gen_rep43/prefix/m779_04_sycophancy/L14/a4": {
+      "completed_at": "2026-07-17T09:27:09.678777+00:00",
+      "phase": "phase1c_layers"
+    },
+    "gen_rep43/base/cross_00_evil_to_sycophancy/c": {
+      "completed_at": "2026-07-17T09:30:54.740037+00:00",
+      "phase": "phase1b"
+    },
+    "gen_rep43/base/cross_01_evil_to_hallucination/c": {
+      "completed_at": "2026-07-17T09:30:54.741640+00:00",
+      "phase": "phase1b"
+    },
+    "gen_rep43/base/cross_02_sycophancy_to_evil/c": {
+      "completed_at": "2026-07-17T09:30:54.742937+00:00",
+      "phase": "phase1b"
+    },
+    "gen_rep43/base/cross_03_sycophancy_to_hallucination/c": {
+      "completed_at": "2026-07-17T09:30:54.744041+00:00",
+      "phase": "phase1b"
+    },
+    "gen_rep43/base/cross_04_hallucination_to_evil/c": {
+      "completed_at": "2026-07-17T09:30:54.745528+00:00",
+      "phase": "phase1b"
+    },
+    "gen_rep43/base/cross_05_hallucination_to_sycophancy/c": {
+      "completed_at": "2026-07-17T09:30:54.747140+00:00",
+      "phase": "phase1b"
+    },
+    "gen_rep43/base/cross_06_evil_to_sycophancy/c": {
+      "completed_at": "2026-07-17T09:30:54.749196+00:00",
+      "phase": "phase1b"
+    },
+    "gen_rep43/base/cross_07_evil_to_hallucination/c": {
+      "completed_at": "2026-07-17T09:30:54.750377+00:00",
+      "phase": "phase1b"
+    },
+    "gen_rep43/base/cross_08_sycophancy_to_evil/c": {
+      "completed_at": "2026-07-17T09:35:25.774197+00:00",
+      "phase": "phase1b"
+    },
+    "gen_rep43/base/cross_09_sycophancy_to_hallucination/c": {
+      "completed_at": "2026-07-17T09:35:25.775785+00:00",
+      "phase": "phase1b"
+    },
+    "gen_rep43/base/cross_10_hallucination_to_evil/c": {
+      "completed_at": "2026-07-17T09:35:25.777678+00:00",
+      "phase": "phase1b"
+    },
+    "gen_rep43/base/cross_11_hallucination_to_sycophancy/c": {
+      "completed_at": "2026-07-17T09:35:25.779397+00:00",
+      "phase": "phase1b"
+    },
+    "gen_rep43/base/cross_12_evil_to_sycophancy/c": {
+      "completed_at": "2026-07-17T09:35:25.780830+00:00",
+      "phase": "phase1b"
+    },
+    "gen_rep43/base/m685_00_sycophancy/c": {
+      "completed_at": "2026-07-17T09:35:25.782550+00:00",
+      "phase": "phase1b"
+    },
+    "gen_rep43/base/m685_01_refusal/c": {
+      "completed_at": "2026-07-17T09:35:25.784634+00:00",
+      "phase": "phase1b"
+    },
+    "gen_rep43/base/m685_02_evil/c": {
+      "completed_at": "2026-07-17T09:35:25.786154+00:00",
+      "phase": "phase1b"
+    },
+    "gen_rep43/base/m685_03_hedging/c": {
+      "completed_at": "2026-07-17T09:40:11.043261+00:00",
+      "phase": "phase1b"
+    },
+    "gen_rep43/base/m685_04_terse/c": {
+      "completed_at": "2026-07-17T09:40:11.045525+00:00",
+      "phase": "phase1b"
+    },
+    "gen_rep43/base/m685_05_formal/c": {
+      "completed_at": "2026-07-17T09:40:11.047396+00:00",
+      "phase": "phase1b"
+    },
+    "gen_rep43/base/m685_06_villain/c": {
+      "completed_at": "2026-07-17T09:40:11.049009+00:00",
+      "phase": "phase1b"
+    },
+    "gen_rep43/base/m685_07_medical_doctor/c": {
+      "completed_at": "2026-07-17T09:40:11.050794+00:00",
+      "phase": "phase1b"
+    },
+    "gen_rep43/base/m685_08_french_person/c": {
+      "completed_at": "2026-07-17T09:40:11.052480+00:00",
+      "phase": "phase1b"
+    },
+    "gen_rep43/base/m685_09_comedian/c": {
+      "completed_at": "2026-07-17T09:40:11.054256+00:00",
+      "phase": "phase1b"
+    },
+    "gen_rep43/base/m779_00_evil/c": {
+      "completed_at": "2026-07-17T09:40:11.056190+00:00",
+      "phase": "phase1b"
+    },
+    "gen_rep43/base/m779_01_sycophancy/c": {
+      "completed_at": "2026-07-17T09:43:32.094824+00:00",
+      "phase": "phase1b"
+    },
+    "gen_rep43/base/m779_02_hallucination/c": {
+      "completed_at": "2026-07-17T09:43:32.096641+00:00",
+      "phase": "phase1b"
+    },
+    "gen_rep43/base/m779_03_evil/c": {
+      "completed_at": "2026-07-17T09:43:32.098253+00:00",
+      "phase": "phase1b"
+    },
+    "gen_rep43/base/m779_04_sycophancy/c": {
+      "completed_at": "2026-07-17T09:43:32.099842+00:00",
+      "phase": "phase1b"
+    },
+    "upload/raw_completions/gen_rep43": {
+      "completed_at": "2026-07-17T09:44:02.968731+00:00",
+      "n_items": 84,
+      "remote": "raw_completions/issue_1415/gen_rep43"
+    }
+  }
+}

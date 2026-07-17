@@ -1,0 +1,38 @@
+{
+  "metadata": {
+    "git_commit": "149a890f8177f6b582263fc454b9353fd4efbd7a",
+    "timestamp": "2026-07-17T04:14:39Z",
+    "seed": 0,
+    "n": 0,
+    "script": "scripts/issue1335_fit.py",
+    "issue": 931
+  },
+  "rung_slug": "r7_endpoint",
+  "render_config_hash": "38dc5c51e194203b",
+  "code_sha": "149a890f8177f6b582263fc454b9353fd4efbd7a",
+  "rung": "r7_endpoint",
+  "model_kind": "instruct",
+  "headline_layer": 19,
+  "per_unit": {
+    "Wren": {
+      "n": 1799,
+      "n_settings": 20,
+      "r2_headline_loso": 0.24464641680867638
+    },
+    "HELIOS": {
+      "n": 1798,
+      "n_settings": 20,
+      "r2_headline_loso": 0.2968705052372509
+    },
+    "Dana": {
+      "n": 1739,
+      "n_settings": 20,
+      "r2_headline_loso": 0.24354387624376006
+    },
+    "Vex": {
+      "n": 1798,
+      "n_settings": 20,
+      "r2_headline_loso": 0.22903980991075423
+    }
+  }
+}

@@ -1,7 +1,7 @@
 """Crash-recovery + pod-safety + stalled-detector watcher for autonomous and
 interactive issue sessions (plus campaign sessions, task #586).
 
-26 passes ("pass" = one top-level per-tick action block in ``main()``'s
+27 passes ("pass" = one top-level per-tick action block in ``main()``'s
 production run order; helpers invoked INSIDE a pass — e.g. the sub-floor
 disk sentinel inside pass 1 — and the ``--*-only`` debug entrypoints do
 not count; a NEW inline pass block that is not a ``*_pass``-named function
@@ -10,14 +10,15 @@ in ``scripts/workflow_lint.py``). Item numbers below are STABLE
 IDENTIFIERS (cross-referenced throughout this docstring), NOT execution
 order. The per-tick execution order is: 1 (VM disk) -> 15 (data-disk) ->
 16 (happy-patch) -> 12 (CPU-guard) -> 17 (triage-observer) ->
-18 (verdict-disagree) -> 26 (root-draft) -> 19 (VM-ledger reap) -> 20 (program-orchestrator
+18 (verdict-disagree) -> 26 (root-draft) -> 27 (registry-drift) ->
+19 (VM-ledger reap) -> 20 (program-orchestrator
 recovery) -> 13 (auth-outage guard) -> 2 (crash-recovery) -> 9 (campaign)
 -> 3 (pod-safety) -> 4 (stalled-detector) -> 5 (orphan sweep) ->
 11 (infra-drain) -> 21 (proposed-infra-sweep) -> 22 (capacity-retry) ->
 14 (stale-blocked flag) -> 6 (session-reconcile) -> 23 (gate-push) ->
 25 (boot-death) -> 24 (stale-registration) -> 7 (zombie-wrapper) ->
 10 (idle-unmapped) -> 8 (GC). The count is lint-pinned: ``workflow_lint.py
---check-asw-docstring-pass-count`` FAILs when the "25 passes" digit, the
+--check-asw-docstring-pass-count`` FAILs when the header digit, the
 numbered-item count, or the live ``*_pass`` set in ``main()`` diverge —
 adding a pass means adding a numbered item here AND bumping the digit:
 
@@ -439,6 +440,23 @@ adding a pass means adding a numbered item here AND bumping the digit:
    attribution. NEVER deletes/moves/chmods/git-mutates anything; posts
    NO task markers. Kill switch ``EPM_DISABLE_ROOT_DRAFT_PASS=1``.
    (:func:`root_draft_pass`.)
+27. **Registry-drift audit pass (#1439; REPORT-ONLY; daemon-INDEPENDENT;
+   runs right after pass 26).** Once-daily-throttled
+   (``EPM_REGISTRY_DRIFT_INTERVAL_HOURS``, 24h) escalate-only observer of
+   ``tasks/REGISTRY.json`` <-> filesystem drift — the post-#898
+   ``find_task_path`` stale-entry WARNING class that nothing structured
+   ever read. Runs ``task_workflow.audit()`` +
+   ``reconcile_registry(apply=False)`` (both pure reads, ~0.7 s live),
+   double-reads with a ~10 s confirm gap
+   (``EPM_REGISTRY_DRIFT_CONFIRM_S``) so an in-flight ``task.py``
+   mutation never false-fires, fingerprints the CONFIRMED problem set,
+   and on non-empty drift appends a row to the dedicated sidecar
+   (``.claude/cache/registry-drift-events.jsonl``) + fires ONE deduped
+   fail-soft push naming the repair command (``task.py audit --repair``)
+   on fingerprint change or a 168h re-alert TTL
+   (``EPM_REGISTRY_DRIFT_REALERT_HOURS``). NEVER repairs
+   (``apply=True`` is banned), posts NO task markers. Kill switch
+   ``EPM_DISABLE_REGISTRY_DRIFT_PASS=1``. (:func:`registry_drift_pass`.)
 
 Why each pass exists
 --------------------
@@ -558,6 +576,7 @@ import argparse
 import fcntl
 import functools
 import getpass
+import hashlib
 import json
 import os
 import re
@@ -1596,6 +1615,44 @@ def _tick_wedge_min_failed_total() -> int:
     return parsed
 
 
+# #1453: context-ceiling wedge — a turn ending with the synthetic API-error
+# text 'Prompt is too long' means the conversation exceeded the model's
+# context ceiling. Deterministic from ONE observation: the conversation is
+# append-only, so every later turn re-sends a superset of the same context
+# and fails identically (incident #1335 / transcript ebff95d1: 4 identical
+# ceiling turns 12:48-13:53Z; ~65 min lost to the 3-event accumulation).
+# Threshold 1 by design; 0 disables (the _tick_wedge_min_api_errors
+# new-trigger-class kill-switch convention).
+TICK_WEDGE_MIN_CONTEXT_CEILING = 1
+
+# Tolerant match: case-insensitive SUBSTRING over an api-error row's text
+# blocks. The reference row's text is the bare 'Prompt is too long'
+# (message.model '<synthetic>'); other synthetic variants carry an
+# 'API Error:' prefix, so substring tolerates prefix/suffix drift across
+# Claude Code versions. Scoped to isApiErrorMessage rows only — model
+# OUTPUT discussing this error can never match.
+CONTEXT_CEILING_ERROR_SUBSTRING = "prompt is too long"
+
+
+def _tick_wedge_min_context_ceiling() -> int:
+    """Context-ceiling wedge trigger threshold (env
+    ``EPM_TICK_WEDGE_CONTEXT_CEILING``, an integer COUNT; default
+    :data:`TICK_WEDGE_MIN_CONTEXT_CEILING` = 1 — the trigger is ON by
+    default). Mirrors :func:`_tick_wedge_min_api_errors` (a NEW trigger
+    class): ``0`` DISABLES the trigger — the explicit kill switch.
+    Malformed / negative env falls back to the default."""
+    raw = os.environ.get("EPM_TICK_WEDGE_CONTEXT_CEILING")
+    if not raw:
+        return TICK_WEDGE_MIN_CONTEXT_CEILING
+    try:
+        parsed = int(raw)
+    except ValueError:
+        return TICK_WEDGE_MIN_CONTEXT_CEILING
+    if parsed < 0:
+        return TICK_WEDGE_MIN_CONTEXT_CEILING
+    return parsed
+
+
 # #1127: window for the failed-turn RATE trigger, anchored to the newest
 # parseable ROW timestamp in the tail (not wall-clock, so the pure predicate
 # is deterministic + replay-testable). 120 min covers the measured incident
@@ -1696,26 +1753,29 @@ def _tick_wedge_dead_respawns_per_day() -> int:
 
 # #1241: per-issue per-UTC-day cap on fence episodes the FOUR pre-#1209 wedge
 # triggers (dequeue-run #779 / api-error-run #1104 / failed-turn-run +
-# failed-turn-rate #1127) may INITIATE. Same rationale as the #1209 cap
+# failed-turn-rate #1127) — plus the #1453 context-ceiling trigger, the
+# fifth shared-budget member — may INITIATE. Same rationale as the #1209 cap
 # above: the crash-recovery arm — which consults no respawn cap — can
 # complete a fresh-self-report wedge respawn, and the advancement-clear
 # resets `respawn_count` every generation, so only a day-keyed
 # advancement-clear-EXEMPT counter bounds a cross-generation wedge-respawn
-# loop. ONE shared counter for the four triggers (shared failure surface —
+# loop. ONE shared counter for the five triggers (shared failure surface —
 # a live wedged session; one respawn resolves whichever fired), INDEPENDENT
 # of the #1209 dead-silence budget so neither starves the other. Default
 # mirrors the validated #1209 value (>= 3x every observed per-incident need
-# — #779 / #1074 / #1098 / #1090 each needed 1 respawn).
+# — #779 / #1074 / #1098 / #1090 / #1335 each needed 1 respawn).
 TICK_WEDGE_RESPAWNS_PER_DAY = 3
 
 
 def _tick_wedge_respawns_per_day() -> int:
     """Daily per-issue cap on fence episodes initiated by the four pre-#1209
     wedge triggers (dequeue-run / api-error-run / failed-turn-run /
-    failed-turn-rate; env ``EPM_TICK_WEDGE_RESPAWNS_PER_DAY``; default
+    failed-turn-rate) plus the #1453 context-ceiling trigger — one SHARED
+    counter (env ``EPM_TICK_WEDGE_RESPAWNS_PER_DAY``; default
     :data:`TICK_WEDGE_RESPAWNS_PER_DAY`). Malformed OR ``< 1`` env falls
     back to the default — disabling a trigger is its own knob's job
-    (``EPM_TICK_WEDGE_MIN_*=0``), never the cap's (#1241; mirrors
+    (``EPM_TICK_WEDGE_MIN_*=0`` / ``EPM_TICK_WEDGE_CONTEXT_CEILING=0``),
+    never the cap's (#1241; mirrors
     :func:`_tick_wedge_dead_respawns_per_day`)."""
     raw = os.environ.get("EPM_TICK_WEDGE_RESPAWNS_PER_DAY")
     if not raw:
@@ -2289,20 +2349,31 @@ def decide_prompt_wedge_reason(
     min_api_errors: int = TICK_WEDGE_MIN_API_ERRORS,
     min_failed_turns: int = TICK_WEDGE_MIN_FAILED_TURNS,
     min_failed_total: int = TICK_WEDGE_MIN_FAILED_TOTAL,
+    min_context_ceiling: int = TICK_WEDGE_MIN_CONTEXT_CEILING,
     rate_window_s: float = TICK_WEDGE_RATE_WINDOW_S,
     dead_silence_s: float = TICK_WEDGE_DEAD_SILENCE_S,
     now: float | None = None,
 ) -> str | None:
     """Pure prompt-wedge detector over parsed transcript-tail rows —
-    returns WHICH trigger fired (``"dequeue-run"`` | ``"api-error-run"`` |
-    ``"failed-turn-run"`` | ``"failed-turn-rate"`` |
-    ``"failed-turn-silence"``, checked in that precedence order:
-    oldest/most-specific evidence first; the order never changes WHETHER
-    the wedge fires) or ``None``.
+    returns WHICH trigger fired (``"context-ceiling"`` | ``"dequeue-run"``
+    | ``"api-error-run"`` | ``"failed-turn-run"`` | ``"failed-turn-rate"``
+    | ``"failed-turn-silence"``, checked in that precedence order:
+    most-specific evidence first (``context-ceiling`` — an exact-text
+    deterministic failure), then lineage order; the order never changes
+    WHETHER the wedge fires) or ``None``.
 
-    Five triggers:
+    Six triggers:
 
-    1. ``dequeue-run`` (#845 e, verbatim): the tail ends with >=
+    1. ``context-ceiling`` (#1453): >= ``min_context_ceiling`` (default 1)
+       api-error rows in the trailing run whose synthetic error text names
+       the context ceiling (``Prompt is too long``,
+       :func:`_is_context_ceiling_text_row`), with no successful assistant
+       row after the first of them. Deterministic from one observation —
+       the conversation is append-only, so every later turn fails
+       identically (incident #1335: 4 identical ceiling turns
+       12:48:52.777Z-13:50:33.873Z, ~65 min lost to accumulation).
+       ``min_context_ceiling <= 0`` DISABLES.
+    2. ``dequeue-run`` (#845 e, verbatim): the tail ends with >=
        ``min_dequeued`` consecutive wedge-evidence rows (``"dequeue"``
        queue-operation records — co-primary — and/or ``"prompt"`` promptless
        user rows — secondary; both count toward the SAME trailing run) with
@@ -2312,20 +2383,20 @@ def decide_prompt_wedge_reason(
        needed by the fresh-self-report gate path in
        :func:`_apply_prompt_wedge_override`; the production STALE path is
        unaffected — :func:`_tick_wedge_min_dequeued` never returns < 1).
-    2. ``api-error-run`` (#1104, verbatim): the tail ends with >=
+    3. ``api-error-run`` (#1104, verbatim): the tail ends with >=
        ``min_api_errors`` consecutive ``"api-error"`` rows (assistant rows
        with ``isApiErrorMessage: true`` — usage-policy refusals, 429/529
        error turns) with no SUCCESSFUL assistant row after the first of them
        (incident #1074: 38 refused wake turns / ~2h unrecovered).
        ``min_api_errors <= 0`` DISABLES (the existing kill switch).
-    3. ``failed-turn-run`` (#1127 — the #1098/#1090 fix): >=
+    4. ``failed-turn-run`` (#1127 — the #1098/#1090 fix): >=
        ``min_failed_turns`` trailing consecutive ``"failed"`` turns from
        :func:`_segment_wake_turns`; an ``"ok"`` turn resets. The row-level
        counters are structurally blind to the partially-successful wake
        (every refused wake posts >= 1 assistant row before dying, resetting
        both row counters each cycle); turn granularity is not.
        ``min_failed_turns <= 0`` DISABLES.
-    4. ``failed-turn-rate`` (#1127 option (c) — the c16b10ca alternating
+    5. ``failed-turn-rate`` (#1127 option (c) — the c16b10ca alternating
        storm): total (non-consecutive) ``"failed"`` turns whose ``end_ts``
        lies within ``rate_window_s`` of the NEWEST parseable row timestamp
        in the tail >= ``min_failed_total``, AND the newest completed turn is
@@ -2334,7 +2405,7 @@ def decide_prompt_wedge_reason(
        windowed count; if no row timestamp parses at all the anchor is
        undefined and this trigger is inert (fail toward NO-FIRE).
        ``min_failed_total <= 0`` DISABLES.
-    5. ``failed-turn-silence`` (#1209 — the die-on-turn-1 gap): >= 1
+    6. ``failed-turn-silence`` (#1209 — the die-on-turn-1 gap): >= 1
        completed turn, EVERY completed turn in the tail is ``"failed"``,
        AND the newest parseable row timestamp is >= ``dead_silence_s``
        older than ``now`` (incident 8e9c371d / #1092: a session refused on
@@ -2355,6 +2426,11 @@ def decide_prompt_wedge_reason(
     increments ``api_run``. Window assumption: the caller's transcript-tail
     read must span the thresholds' worth of evidence (the production probe
     reads 256 KB — #1104); a too-thin window fails toward NO-FIRE."""
+    if (
+        min_context_ceiling > 0
+        and _wedge_trailing_context_ceiling(trailing_rows) >= min_context_ceiling
+    ):
+        return "context-ceiling"
     run, api_run = _wedge_trailing_row_runs(trailing_rows)
     if min_dequeued > 0 and run >= min_dequeued:
         return "dequeue-run"
@@ -2462,6 +2538,50 @@ def _wedge_trailing_row_runs(trailing_rows: list[dict]) -> tuple[int, int]:
     return run, api_run
 
 
+def _is_context_ceiling_text_row(row: dict) -> bool:
+    """True iff an ALREADY-classified ``"api-error"`` row's synthetic error
+    text names the context ceiling (#1453; #1335 row shape:
+    ``message.content: [{"type": "text", "text": "Prompt is too long"}]``,
+    ``message.model: "<synthetic>"``). Tolerant case-insensitive SUBSTRING
+    match per text block (:data:`CONTEXT_CEILING_ERROR_SUBSTRING`).
+    Malformed rows — non-dict ``message``, non-list ``content``, non-dict
+    blocks, missing/non-str ``text`` — return False (fail toward NO-FIRE,
+    the house convention). ``isSidechain`` is deliberately NOT filtered:
+    subagent transcripts live in separate ``<session>/subagents/`` files,
+    so a main-transcript api-error row is never a subagent's (verified
+    2026-07-17: 0 ``isSidechain: true`` rows across 30 recent main
+    transcripts)."""
+    msg = row.get("message")
+    content = msg.get("content") if isinstance(msg, dict) else None
+    if not isinstance(content, list):
+        return False
+    for block in content:
+        if not isinstance(block, dict) or block.get("type") != "text":
+            continue
+        text = block.get("text")
+        if isinstance(text, str) and CONTEXT_CEILING_ERROR_SUBSTRING in text.lower():
+            return True
+    return False
+
+
+def _wedge_trailing_context_ceiling(trailing_rows: list[dict]) -> int:
+    """Count of context-ceiling api-error rows in the TRAILING run — rows
+    with no SUCCESSFUL assistant row after them (#1453). Reset semantics
+    mirror ``api_run`` in :func:`_wedge_trailing_row_runs`: a real
+    ``"assistant"`` row resets (the session recovered — e.g. a compaction
+    rescued it); dequeue/prompt rows, generic api-error rows and ``"other"``
+    rows never reset. Nonzero means the conversation exceeded the context
+    ceiling and no turn has succeeded since."""
+    count = 0
+    for row in trailing_rows:
+        cls = _classify_wedge_row(row)
+        if cls == "assistant":
+            count = 0
+        elif cls == "api-error" and _is_context_ceiling_text_row(row):
+            count += 1
+    return count
+
+
 def _wedge_rate_windowed_failed(
     trailing_rows: list[dict],
     turns: list[tuple[str, float | None]],
@@ -2493,20 +2613,21 @@ def decide_prompt_wedge(
     min_api_errors: int = TICK_WEDGE_MIN_API_ERRORS,
     min_failed_turns: int = TICK_WEDGE_MIN_FAILED_TURNS,
     min_failed_total: int = TICK_WEDGE_MIN_FAILED_TOTAL,
+    min_context_ceiling: int = TICK_WEDGE_MIN_CONTEXT_CEILING,
     rate_window_s: float = TICK_WEDGE_RATE_WINDOW_S,
     dead_silence_s: float = TICK_WEDGE_DEAD_SILENCE_S,
     now: float | None = None,
 ) -> bool:
     """Thin bool wrapper over :func:`decide_prompt_wedge_reason` (#845 e /
-    #1104 / #1127 / #1209): True iff ANY of the five wedge triggers fires.
-    Existing positional/keyword call shapes are preserved; the new keyword
-    defaults are the module constants, so ``decide_prompt_wedge(tail, 3)``
-    gains the #1127 turn-level triggers too (pure-function callers want the
-    fixed predicate) while the #1209 dead-silence trigger stays INERT
-    without an explicit ``now`` (never wall-clock inside the predicate —
-    the #1127 deterministic-anchor posture). See
-    :func:`decide_prompt_wedge_reason` for the trigger definitions, kill
-    switches, and incident history."""
+    #1104 / #1127 / #1209 / #1453): True iff ANY of the six wedge triggers
+    fires. Existing positional/keyword call shapes are preserved; the new
+    keyword defaults are the module constants, so
+    ``decide_prompt_wedge(tail, 3)`` gains the #1127 turn-level triggers
+    too (pure-function callers want the fixed predicate) while the #1209
+    dead-silence trigger stays INERT without an explicit ``now`` (never
+    wall-clock inside the predicate — the #1127 deterministic-anchor
+    posture). See :func:`decide_prompt_wedge_reason` for the trigger
+    definitions, kill switches, and incident history."""
     return (
         decide_prompt_wedge_reason(
             trailing_rows,
@@ -2514,6 +2635,7 @@ def decide_prompt_wedge(
             min_api_errors=min_api_errors,
             min_failed_turns=min_failed_turns,
             min_failed_total=min_failed_total,
+            min_context_ceiling=min_context_ceiling,
             rate_window_s=rate_window_s,
             dead_silence_s=dead_silence_s,
             now=now,
@@ -5519,6 +5641,268 @@ def root_draft_pass(dry_run: bool) -> bool:
         return bool(fires)
     except Exception as exc:  # top-level fail-soft: never take down the tick
         print(f"  root-draft: pass failed (fail-soft): {exc}", file=sys.stderr)
+        return False
+
+
+# ─── Registry-drift audit pass (task #1439) ──────────────────────────────────
+#
+# WHY: post-#898, a `task.py` mutation hard-killed between the folder `git mv`
+# and the registry save leaves tasks/REGISTRY.json pointing at a stale path;
+# `find_task_path` falls back to a one-shot disk scan and logs a drift
+# WARNING, but nothing structured ever READS that warning, so
+# uniquely-resolvable drift persists until the task's next registry-writing
+# mutation happens to self-heal it (terminal tasks may never mutate again —
+# the #207 shape). This pass gives that drift a periodic structured consumer:
+# ~once a day it runs the same pure reads `task.py audit` / `audit --repair`
+# use, double-reads to suppress in-flight-mutation transients, and ESCALATES
+# (sidecar row + ONE deduped push naming the repair command). REPORT-ONLY: it
+# never calls reconcile_registry(apply=True), posts NO task markers, and
+# writes only its state singleton + sidecar. #1430's duplicate-dir husk class
+# is deliberately OUT of scope (a husk's tid IS registered at its live path,
+# so audit() does not flag it; the worktree-audit cron's reap-husks
+# self-heals it).
+
+# Throttle: the audit is cheap (~0.3-0.7 s measured live 2026-07-17) but
+# once/day is the mandated cadence — drift needs SURFACING, not tick-rate
+# monitoring. Env EPM_REGISTRY_DRIFT_INTERVAL_HOURS, read at CALL time
+# (root-draft precedent); lo=0.0 lets a live smoke force a run.
+REGISTRY_DRIFT_INTERVAL_HOURS = 24.0
+# Re-alert TTL for an UNCHANGED confirmed fingerprint: weekly, not daily —
+# persistent drift stays visible without daily push spam. Root-draft uses 24h
+# for a condition that poisons the fleet per-tick; registry drift is inert
+# until a consumer hits it, so a weekly reminder suffices. Env
+# EPM_REGISTRY_DRIFT_REALERT_HOURS, read at call time.
+REGISTRY_DRIFT_REALERT_HOURS = 168.0
+# Double-read confirm gap: a LIVE task.py mutation window (git mv -> registry
+# save inside _locked()) is sub-second-to-seconds; 10 s clears it with margin
+# while a hard-killed mutation (the target) persists through both reads. Env
+# EPM_REGISTRY_DRIFT_CONFIRM_S; 0 in tests.
+REGISTRY_DRIFT_CONFIRM_S = 10.0
+
+
+def _registry_drift_enabled() -> bool:
+    """Kill switch: False when ``EPM_DISABLE_REGISTRY_DRIFT_PASS`` is set
+    truthy ("1"/"true"/"yes", case-insensitive). Default enabled. Mirrors
+    :func:`_root_draft_enabled`."""
+    raw = os.environ.get("EPM_DISABLE_REGISTRY_DRIFT_PASS", "").strip().lower()
+    return raw not in {"1", "true", "yes"}
+
+
+def _registry_drift_sidecar_path() -> Path:
+    """DEDICATED registry-drift event stream (own stream for clean grep —
+    the root-draft / verdict-disagree sidecar precedent)."""
+    return PROJECT_ROOT / ".claude" / "cache" / "registry-drift-events.jsonl"
+
+
+def _registry_drift_state_path() -> Path:
+    """Singleton throttle+dedup state (deliberately NOT a per-issue GC
+    target): ``{"last_run_ts": <float>, "fp": <str|None>,
+    "last_alert_ts": <float>}``."""
+    return AUTONOMOUS_REGISTRY_DIR / "registry-drift-observer.json"
+
+
+def _load_registry_drift_state() -> dict:
+    """``{}`` on missing/garbled state; every field read back goes through
+    ``isinstance`` type-guards (mirrors :func:`_load_root_draft_state`)."""
+    path = _registry_drift_state_path()
+    if not path.is_file():
+        return {}
+    try:
+        data = json.loads(path.read_text())
+    except (json.JSONDecodeError, OSError):
+        return {}
+    return data if isinstance(data, dict) else {}
+
+
+def _save_registry_drift_state(state: dict, dry_run: bool) -> None:
+    """Atomic temp+rename write of the registry-drift throttle/dedup state
+    (fail-soft; mirrors :func:`_save_root_draft_state`); ``dry_run`` performs
+    zero writes."""
+    if dry_run:
+        print(f"  [dry-run] would save registry-drift state (fp={state.get('fp')})")
+        return
+    dest = _registry_drift_state_path()
+    try:
+        AUTONOMOUS_REGISTRY_DIR.mkdir(parents=True, exist_ok=True)
+        tmp = dest.with_suffix(".json.tmp")
+        tmp.write_text(json.dumps(state))
+        tmp.replace(dest)
+    except OSError as exc:  # pragma: no cover - fail-soft I/O guard
+        print(f"  registry-drift: state save failed: {exc}", file=sys.stderr)
+
+
+def _append_registry_drift_sidecar(event: dict, dry_run: bool) -> None:
+    """Append one JSON line to the registry-drift sidecar (fail-soft). A
+    ``ts`` is stamped; ``dry_run`` reports only (mirrors
+    :func:`_append_root_draft_sidecar`)."""
+    row = {"ts": datetime.now(tz=UTC).isoformat(), **event}
+    line = json.dumps(row)
+    if dry_run:
+        print(f"  [dry-run] would append registry-drift sidecar row: {line[:160]}")
+        return
+    dest = _registry_drift_sidecar_path()
+    try:
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        with open(dest, "a") as fh:
+            fh.write(line + "\n")
+    except OSError as exc:
+        print(f"  registry-drift: sidecar append failed: {exc}", file=sys.stderr)
+
+
+def _collect_registry_drift() -> dict:
+    """One read-only registry<->filesystem drift snapshot. Lazy-imports
+    task_workflow (watcher convention — the triage-observer /
+    verdict-disagree import sites). Raises on failure — the pass's top-level
+    guard owns fail-soft. REPORT-ONLY: ``apply=False`` is load-bearing.
+    ``audit()`` is the exit-1 contract read ``task.py audit`` uses and its
+    human-readable problem strings feed the push text;
+    ``reconcile_registry(apply=False)`` mirrors audit's detection (its own
+    docstring contract) and classifies each drift
+    (stale_real / missing_real / empty_stub / skipped + the highest_id
+    bump), which is what the fingerprint + sidecar payload key on."""
+    from explore_persona_space.task_workflow import audit, reconcile_registry
+
+    problems = audit()
+    rep = reconcile_registry(apply=False)
+    rows = [
+        (c.drift_class, c.task_id, c.detail)
+        for lst in (rep.stale_real, rep.missing_real, rep.empty_stubs, rep.skipped)
+        for c in lst
+    ]
+    if rep.highest_id_bumped is not None:
+        rows.append(("highest_id", -1, rep.highest_id_bumped.detail))
+    return {"problems": sorted(problems), "classes": sorted(rows)}
+
+
+def _registry_drift_confirmed(a: dict, b: dict) -> dict:
+    """Pure intersect of two snapshots — a row present in BOTH reads is
+    confirmed (persistent); a row in only one is an in-flight-mutation
+    transient and is dropped."""
+    return {
+        "problems": sorted(set(a["problems"]) & set(b["problems"])),
+        "classes": sorted(set(map(tuple, a["classes"])) & set(map(tuple, b["classes"]))),
+    }
+
+
+def _registry_drift_fingerprint(confirmed: dict) -> str:
+    """sha256[:12] (the wf-fix fp shape) over the sorted confirmed rows.
+
+    The ``highest_id`` rows' numeric details recompose as tasks are created
+    (a pure counter drift: ``highest_id N < max task id M`` moves with every
+    ``task.py new``), so those details are EXCLUDED from the fp input —
+    hashing them would churn the fingerprint on every new task and re-push
+    early for an otherwise-unchanged drift set. The presence/absence of the
+    highest_id CLASS still enters the fp, and the full detail still rides
+    the sidecar payload."""
+    stable_problems = [
+        "highest_id" if p.startswith("highest_id ") else p for p in confirmed["problems"]
+    ]
+    stable_classes = [(c, t, "" if c == "highest_id" else d) for (c, t, d) in confirmed["classes"]]
+    payload = json.dumps({"problems": sorted(stable_problems), "classes": sorted(stable_classes)})
+    return hashlib.sha256(payload.encode("utf-8")).hexdigest()[:12]
+
+
+def decide_registry_drift_alert(fp: str, state: dict, now: float, realert_s: float) -> bool:
+    """Pure fire decision: True iff ``fp`` differs from the stored fp (the
+    drift set CHANGED — incl. first appearance and any recomposition) OR the
+    last alert is STRICTLY older than ``realert_s`` (bounded weekly
+    re-surface of unchanged drift). ``isinstance`` guards on state fields
+    (the root-draft corrupt-state contract: garbled state degrades to
+    fire-as-if-unalerted)."""
+    prev_fp = state.get("fp")
+    if not isinstance(prev_fp, str) or prev_fp != fp:
+        return True
+    last_alert = state.get("last_alert_ts")
+    if not isinstance(last_alert, int | float):
+        return True
+    return (now - last_alert) > realert_s
+
+
+def registry_drift_pass(dry_run: bool) -> bool:
+    """ESCALATE-ONLY once-daily ``tasks/REGISTRY.json`` <-> filesystem drift
+    observer (#1439). REPORT-ONLY: NEVER calls
+    ``reconcile_registry(apply=True)``, posts NO task markers, writes ONLY
+    its state singleton + sidecar; repair stays the human-invoked
+    ``task.py audit --repair [--apply]`` the push names. Double-reads with a
+    confirm gap so an in-flight ``task.py`` mutation never false-fires; a
+    hard-killed mutation (the target class) persists through both reads.
+    Fail-soft: an audit exception logs stderr + one error sidecar row per
+    throttle interval (the attempt stamp is saved BEFORE collecting), never
+    crashes the tick. Daemon-independent (pure filesystem/registry reads).
+    Returns True when a push fired this run."""
+    if not _registry_drift_enabled():
+        print("  registry-drift: disabled via EPM_DISABLE_REGISTRY_DRIFT_PASS; skipping")
+        return False
+    try:
+        now = time.time()
+        interval_h = _env_float(
+            "EPM_REGISTRY_DRIFT_INTERVAL_HOURS", REGISTRY_DRIFT_INTERVAL_HOURS, lo=0.0, hi=720.0
+        )
+        realert_h = _env_float(
+            "EPM_REGISTRY_DRIFT_REALERT_HOURS", REGISTRY_DRIFT_REALERT_HOURS, lo=1.0, hi=2160.0
+        )
+        confirm_s = _env_float(
+            "EPM_REGISTRY_DRIFT_CONFIRM_S", REGISTRY_DRIFT_CONFIRM_S, lo=0.0, hi=120.0
+        )
+        state = _load_registry_drift_state()
+        last = state.get("last_run_ts")
+        if isinstance(last, int | float) and (now - last) < interval_h * 3600.0:
+            return False  # throttled — silent (would fire 143x/day otherwise)
+        state["last_run_ts"] = now
+        # Stamp the ATTEMPT before collecting: a crashing audit() is then
+        # bounded to one error sidecar row per throttle interval instead of
+        # spamming every 10-min tick.
+        _save_registry_drift_state(state, dry_run)
+        a = _collect_registry_drift()
+        if not (a["problems"] or a["classes"]):
+            if state.get("fp"):
+                print("  registry-drift: recovered — previously-flagged drift is gone")
+            _save_registry_drift_state({**state, "fp": None}, dry_run)
+            return False
+        time.sleep(confirm_s)
+        confirmed = _registry_drift_confirmed(a, _collect_registry_drift())
+        if not (confirmed["problems"] or confirmed["classes"]):
+            print(
+                "  registry-drift: transient drift (mutation in flight) — not confirmed; skipping"
+            )
+            return False
+        fp = _registry_drift_fingerprint(confirmed)
+        fire = decide_registry_drift_alert(fp, state, now, realert_h * 3600.0)
+        _append_registry_drift_sidecar(
+            {
+                "kind": "registry-drift",
+                "fingerprint": fp,
+                "n_problems": len(confirmed["problems"]),
+                "problems": confirmed["problems"][:50],  # cap pathological blowups
+                "classes": [list(r) for r in confirmed["classes"][:50]],
+                # `pushed` records the fire DECISION (dedup bookkeeping), not
+                # delivery — _telegram_push is fail-soft and sent != seen.
+                "pushed": fire,
+            },
+            dry_run,
+        )
+        for p in confirmed["problems"][:10]:
+            print(f"  registry-drift: {p}")
+        if fire:
+            _telegram_push(
+                f"REGISTRY drift (report-only #1439 pass): {len(confirmed['problems'])} "
+                f"problem(s), {len(confirmed['classes'])} classified row(s) — e.g. "
+                f"{'; '.join(confirmed['problems'][:3])}. Review: `uv run python "
+                f"scripts/task.py audit --repair` (dry-run report), repair: append "
+                f"`--apply`. Nothing was changed automatically.",
+                dry_run,
+            )
+        _save_registry_drift_state(
+            {**state, "fp": fp, **({"last_alert_ts": now} if fire else {})}, dry_run
+        )
+        return fire
+    except Exception as exc:  # top-level fail-soft: never take down the tick
+        print(f"  registry-drift: pass failed (fail-soft): {exc}", file=sys.stderr)
+        # Error row only — NO fp write (the next in-interval tick stays
+        # throttled by the attempt stamp saved before the collect).
+        _append_registry_drift_sidecar(
+            {"kind": "registry-drift-error", "error": str(exc)[:500]}, dry_run
+        )
         return False
 
 
@@ -10776,9 +11160,13 @@ def _handle_stalled_respawn(ctx: _StalledActionCtx) -> None:
         # the counting site). The bracketed [failed-turn-silence] substring
         # of the wedge-note template is load-bearing: it routes the bump to
         # the #1209 budget; ANY OTHER wedge note bumps the #1241 shared
-        # four-trigger budget. A decide()-sanctioned respawn (wedge never
-        # ran) has wedge_note is None -> no bump (it is already
-        # belt-bounded inside decide()).
+        # budget (the four pre-#1209 triggers + the #1453 context-ceiling
+        # trigger). Co-fire routing: a tail satisfying BOTH
+        # failed-turn-silence and context-ceiling reports [context-ceiling]
+        # (the precedence-first label) and so routes to the #1241 shared
+        # budget, not the #1209 one — both budgets cap at 3/day. A
+        # decide()-sanctioned respawn (wedge never ran) has wedge_note is
+        # None -> no bump (it is already belt-bounded inside decide()).
         extra: dict = {}
         wedge_episode_suffix = ""
         if ctx.wedge_note and "[failed-turn-silence]" in ctx.wedge_note:
@@ -11316,8 +11704,9 @@ def _apply_prompt_wedge_override(
     shape) leaves the trigger inert inside the predicate.
 
     #1241 cap parity for the FOUR pre-#1209 triggers: ``dequeue-run`` /
-    ``api-error-run`` / ``failed-turn-run`` / ``failed-turn-rate`` carry
-    the SAME two-part bound — the episode belt (``respawn_count <
+    ``api-error-run`` / ``failed-turn-run`` / ``failed-turn-rate`` — plus
+    the #1453 ``context-ceiling`` trigger, the fifth shared-budget member —
+    carry the SAME two-part bound — the episode belt (``respawn_count <
     STALLED_MAX_RESPAWNS``, the cap decide() enforces on the slow path)
     AND their own shared per-issue per-UTC-day counter
     (``wedge_respawns_today`` vs :func:`_tick_wedge_respawns_per_day`),
@@ -11329,7 +11718,23 @@ def _apply_prompt_wedge_override(
     values (0), so :func:`decide_prompt_wedge_reason` stays byte-identical;
     when EVERY family is cap-disarmed the wedge goes quiet BEFORE the
     256 KB transcript read (no marker, no push — the slow stalled lane
-    stays the backstop). The two day budgets are INDEPENDENT."""
+    stays the backstop). The two day budgets are INDEPENDENT.
+
+    #1453 ``context-ceiling``: armed on BOTH self-report paths — a
+    ceiling'd turn dies at its first API call, so nothing refreshes the
+    self-report, but the PREVIOUS successful turn may have refreshed it
+    minutes before the wedge began; staleness-gating would re-add up to
+    ``STALLED_WINDOW_S`` of latency, the very delay the trigger removes.
+    The single-refusal guard that keeps the generic row lane stale-only
+    does not apply to a text-keyed predicate whose recovered-turn shape
+    resets it. The fresh-path lazy gate above is deliberately UNTOUCHED
+    (the #1209 precedent): under the operator's full turn-lane rollback
+    config (both turn knobs at 0) the ceiling trigger degrades to the
+    STALE path, keeping the pinned zero-probe rollback byte-identical; in
+    the deployed default config the fresh path probes every tick, so
+    one-pass detection holds. Joins the #1241 shared day budget (its
+    ``[context-ceiling]`` note routes to the elif-branch bump at the
+    counting site). Kill switch: ``EPM_TICK_WEDGE_CONTEXT_CEILING=0``."""
     if action not in ("keep", "alert") or not respawn_eligible or pids_by_sid is None:
         return action, live_consecutive, wedge_hits, None
     stale = self_report_age is not None and self_report_age >= STALLED_WINDOW_S
@@ -11345,7 +11750,7 @@ def _apply_prompt_wedge_override(
     if not isinstance(pid, int):
         return action, live_consecutive, wedge_hits, None
     # #1241 arming — the caps decide() enforces on the slow path bind the
-    # wedge fast lane too. The episode belt gates ALL FIVE triggers; each
+    # wedge fast lane too. The episode belt gates ALL SIX triggers; each
     # trigger family additionally carries its own day-keyed,
     # advancement-clear-EXEMPT cap (#1209 for failed-turn-silence; #1241
     # for the four pre-#1209 triggers — one shared counter, bumped at
@@ -11378,6 +11783,14 @@ def _apply_prompt_wedge_override(
         min_api_errors=_tick_wedge_min_api_errors() if (stale and four_armed) else 0,
         min_failed_turns=min_turns if four_armed else 0,
         min_failed_total=min_total if four_armed else 0,
+        # #1453 context-ceiling: BOTH self-report paths (a ceiling'd turn dies
+        # at its first API call, so the self-report may stay fresh for up to
+        # STALLED_WINDOW_S — staleness-gating would re-add the very latency
+        # this trigger removes). Text-keyed, so the single-refusal guard that
+        # keeps the generic row lane stale-only does not apply; joins the
+        # #1241 shared day budget (its [context-ceiling] note routes to the
+        # elif-branch bump at the counting site).
+        min_context_ceiling=_tick_wedge_min_context_ceiling() if four_armed else 0,
         rate_window_s=_tick_wedge_rate_window_s(),
         dead_silence_s=_tick_wedge_dead_silence_s() if dead_silence_armed else 0.0,
         now=now,
@@ -21116,6 +21529,14 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 — flat --*-only 
         "Daemon-independent; pair with --dry-run for a live smoke.",
     )
     parser.add_argument(
+        "--registry-drift-only",
+        action="store_true",
+        help="run ONLY the registry-drift audit pass (#1439, report-only — "
+        "once-daily tasks/REGISTRY.json vs filesystem drift observer) and "
+        "exit; skip every other pass. Daemon-independent; pair with "
+        "--dry-run for a zero-write live smoke.",
+    )
+    parser.add_argument(
         "--auth-outage-only",
         action="store_true",
         help="run ONLY the auth-outage guard pass (#1027 — fleet respawn "
@@ -21208,6 +21629,13 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 — flat --*-only 
         root_draft_pass(args.dry_run)
         return 0
 
+    # --registry-drift-only mirrors --root-draft-only: the pass is
+    # daemon-independent (pure task_workflow reads + its own state file), so
+    # run it alone.
+    if args.registry_drift_only:
+        registry_drift_pass(args.dry_run)
+        return 0
+
     # --auth-outage-only mirrors --cpu-guard-only: run the single pass under
     # the lock and exit (episode bookkeeping is daemon-independent; the
     # canary read degrades to "hold" when the daemon is down).
@@ -21289,6 +21717,15 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 — flat --*-only 
     # NEVER deletes/moves/git-mutates anything, posts NO task markers.
     # Daemon-independent, so it runs on a daemon outage too.
     root_draft_pass(args.dry_run)
+
+    # Registry-drift audit (#1439): once-daily REPORT-ONLY observer of
+    # tasks/REGISTRY.json <-> filesystem drift (audit() +
+    # reconcile_registry(apply=False), double-read confirmed — the post-#898
+    # find_task_path stale-entry WARNING class nothing structured ever read).
+    # Escalates via sidecar + ONE deduped push naming `task.py audit
+    # --repair`; NEVER repairs, posts NO task markers. Daemon-independent,
+    # so it runs on a daemon outage too.
+    registry_drift_pass(args.dry_run)
 
     # VM resource-ledger reap (plan §5): drop expired-TTL / dead-PID claims from
     # the advisory ~/.task-workflow/vm-ledger.json so a crashed session's claim

@@ -372,6 +372,22 @@ The stalled detector + the two respawn arms carry six hardening mechanisms
   family is cap-disarmed the 256 KB transcript read is skipped
   entirely); the slow stalled lane stays the backstop with its own
   decide()-side belt + exhausted marker.
+  **#1453 context-ceiling trigger:** ONE trailing api-error row whose
+  synthetic error text names the context ceiling (case-insensitive
+  substring `prompt is too long`; `isApiErrorMessage` `<synthetic>` rows
+  only, so model output can never match) escalates immediately — the
+  failure is deterministic (append-only conversation, every later turn
+  fails identically; incident #1335: ~65 min lost to the 3-event
+  accumulation). Armed on BOTH self-report paths (a ceiling'd turn dies
+  at its first API call, so the self-report may stay fresh); a later
+  successful assistant row resets it (the session recovered). Joins the
+  #1241 shared day cap (3/day); kill switch
+  `EPM_TICK_WEDGE_CONTEXT_CEILING=0`. Detection is one watcher pass
+  (~10 min); the fence stop's replacement session then completes via
+  the crash-recovery arm (~20-30 min post-stop), like the #1209
+  trigger. A task that deterministically re-grows its conversation to
+  the ceiling burns the 3/day shared cap sooner — the upstream fix is
+  context hygiene in the session, not this knob.
   The single-refusal guard and
   fail-toward-NO-FIRE posture are unchanged. Accepted residuals: the
   watcher's own status-transition-keyed reconcile can refresh a
@@ -877,6 +893,19 @@ unconditional operator cleanup (`--force` requires `--issue` and is refused
 with `--session-id`). Takeover sentinels (`*.paused-takeover-*`) and
 non-registration siblings (`dispatch-lease-*`, `campaign-watch-*`,
 `pm-session.json`) are never touched by any invocation form.
+Since #1455, an OPERATOR `spawn_session.py stop` performs this cleanup
+automatically once the session is confirmed dead (bounded daemon-list poll,
+or `_pid_alive` false on the `--kill` fallback): the sid-matched unregister
+covers all three registration kinds (issue / manual-issue / campaign — an
+operator stop of a campaign session removes `campaign-<N>.json` too), plus an
+ownership-keyed release of the stopped dispatch's OWN lease
+(`acquired_at <= spawned_at`; a successor's newer lease is always kept), so
+the stale-registration collision → HELD-lease compound (the 2026-07-16 #1090
+incident shape) cannot recur on a CLEANED stop — the poll-timeout /
+daemon-unreachable and `--no-cleanup` paths retain the old leave-state shape
+by design. `--no-cleanup` opts out; watcher-sourced stops NEVER clean up —
+the crash-recovery / boot-death / dead-wake respawn arms depend on the
+registration surviving their own stops.
 
 **Program-orchestrator recovery pass (#660 leakage-program bash daemon).** The
 leakage-theory program (#660) is sequenced by a BASH DAEMON
@@ -1107,6 +1136,42 @@ logged-skip, never a silent "no drafts"). Kill switch
 (pair with `--dry-run` for a live smoke — zero writes, zero task.py reads
 beyond the read-only enumeration).
 
+**Registry-drift audit pass (task #1439, `registry_drift_pass`).** A
+daemon-INDEPENDENT, REPORT-ONLY, once-daily-throttled observer (runs right
+after `root_draft_pass`) of `tasks/REGISTRY.json` <-> filesystem drift —
+the post-#898 class where a `task.py` mutation hard-killed between the
+folder `git mv` and the registry save leaves a stale registry entry that
+`find_task_path` only ever surfaces as an unread log WARNING (terminal
+tasks may never mutate again, so the drift persists indefinitely — the
+#207 shape). Predicate: at most ~once/day
+(`EPM_REGISTRY_DRIFT_INTERVAL_HOURS`, 24 h; the attempt stamp is saved
+BEFORE collecting, bounding a crashing audit to one error sidecar row per
+interval) it runs `task_workflow.audit()` +
+`reconcile_registry(apply=False)` (both pure reads, ~0.7 s live), then
+DOUBLE-READS with a ~10 s confirm gap (`EPM_REGISTRY_DRIFT_CONFIRM_S`) and
+keeps only the INTERSECT — a row present in one read only is an in-flight
+`task.py` mutation transient and never fires, while a hard-killed
+mutation's drift persists through both reads. #1430's duplicate-dir husk
+class is out of scope by construction (a husk's tid IS registered at its
+live path, so `audit()` does not flag it; the worktree-audit cron's
+`reap-husks` self-heals it). **Channels:** one row per confirmed-drift run
+to the dedicated sidecar `.claude/cache/registry-drift-events.jsonl`
+(fingerprint + capped problems/classes payload; the `pushed` field records
+the fire DECISION, not delivery) + ONE deduped fail-soft `_telegram_push`
+naming the repair command (`task.py audit --repair`, `--apply` to repair)
+— fired on fingerprint CHANGE (sha256[:12] over the confirmed rows, the
+volatile `highest_id` numeric details excluded so new-task counter churn
+never re-pushes) or a 168 h re-alert TTL
+(`EPM_REGISTRY_DRIFT_REALERT_HOURS`); state singleton
+`~/.eps-autonomous/registry-drift-observer.json` (atomic tmp+rename;
+recovery clears the fp so a re-appearance re-fires immediately).
+**REPORT-ONLY is a hard invariant:** the pass NEVER calls
+`reconcile_registry(apply=True)`, posts NO task markers, and writes only
+its state file + sidecar (pinned by `tests/test_autonomous_session_watch.py::test_registry_drift_pass_report_only_never_applies`);
+repair stays the human-invoked `task.py audit --repair [--apply]`. Kill
+switch `EPM_DISABLE_REGISTRY_DRIFT_PASS=1`; `--registry-drift-only` runs
+just this pass (pair with `--dry-run` for a zero-write live smoke).
+
 **Auth-outage guard pass (task #1027, `auth_outage_pass`).** Fleet-level
 respawn suppression for an Anthropic auth outage — or ANY fleet-wide
 instant-death cause (poisoned CLI credential, broken `claude` binary, a
@@ -1274,3 +1339,99 @@ do not "unify" the two knobs without reading #1376 + #1377.
 `/mnt/eps-data` data disk is in a DIFFERENT project (`introsp-experiments`) and
 is a PERSISTENT disk, not an ephemeral instance — so it is out of the janitor's
 scope by construction and is intentionally never reaped.
+
+## tmux socket-dir contract (#1466)
+
+**Incident (2026-07-15/16, split-brain).** The fleet assumes ONE tmux server;
+every consumer (watcher, window-titles cron, eps_sessions, Happy-daemon
+spawns, mygoat) addressed `/tmp/tmux-1001/default` on the 116-day-uptime VM.
+Between 2026-07-15T16:17:02 and 16:20:46 PDT the socket dir was deleted; the
+next tmux-spawning consumer (first visible 18:00:32 PDT) silently created a
+SECOND server at the same default path, and the 06:00 Jul-16 mygoat restart
+landed on it — 39 sessions on the old server became invisible to `tmux ls`
+until manual socket-rebind surgery (Jul 16 ~10:54 PDT).
+
+**Root cause (Phase A verdict — IDENTIFIED).** Claude session
+`3b499fa0-8398-426e-8532-441c94e0bdd1` (orchestrator on workflow-fix
+#1367/#1333), during an ad-hoc disk-pressure sweep, executed at
+2026-07-15T23:17:53Z (16:17:53 PDT, inside the bracketed window):
+`find /tmp -maxdepth 1 -mtime +2 ! -name 'claude-*' ! -name 'systemd-*'
+! -name 'snap-*' -user "$(id -un)" -print0 | xargs -0 -r rm -rf` — no
+`tmux-*` exclusion; `/tmp/tmux-1001` (dir mtime ~Jul 1) matched `-mtime +2`
+and was removed with the live server socket inside. One-off improvised
+command, NOT from any repo/mygoat script (grep-verified). Refuted: no
+systemd-tmpfiles `/tmp/` Age rule on this host (`D /tmp 1777 root root -`,
+boot-only; the daily tmpfiles-clean ran 2h before the window), no
+tmpreaper/tmpwatch, `/etc/cron.hourly` empty, server pid alive throughout.
+
+**The shim (`scripts/eps_tmux_env.sh`) — single source of truth.**
+Contract: (1) durable default `TMUX_TMPDIR=$HOME/.tmux-sockets` (persistent
+disk, 0700 — no `/tmp/` cleaner reaches it); (2) LEGACY PIN — while ANY
+socket file exists in `/tmp/tmux-$(id -u)` (checked `find -maxdepth 1
+-type s`; an existing-but-unreadable dir also pins, watcher
+`_live_tmux_socket_present()` parity), resolve `/tmp/` so the whole fleet
+keeps addressing ONE server; the flip to the durable dir fires automatically
+and coherently for every shim consumer at the first zero-socket point
+(reboot / drain / re-deletion); (3) a pre-set `TMUX_TMPDIR` is always
+respected; (4) FAIL-COHERENT PIN-BACK — if a non-shim straggler ever
+creates a `/tmp/` server post-flip, all shim consumers pin BACK to `/tmp/`
+(the fleet follows one server rather than splitting; durability resumes at
+the next zero-socket point). Known limitation: a stale socket from a
+SIGKILL'd server pins `/tmp/` until reboot — still single-server-coherent.
+**Sourced by:** `scripts/cron_session_summarize.sh` +
+`scripts/cron_autonomous_session_watch.sh` (repo; placement pinned by
+`tests/test_eps_tmux_env.py`), and two VM-LOCAL out-of-repo files —
+`~/.profile` (login shells; tmux panes are login shells by default) and
+`~/my-goat/scripts/run_mygoat_session.sh` (systemd user service
+`mygoat-session.service` reads no profile; edit takes effect at its next
+natural restart). Exact VM-local diffs recorded in task #1466 events.
+
+**Defense-in-depth: `/etc/tmpfiles.d/tmux.conf`** (insurance against a
+future Ubuntu/systemd default enabling `/tmp/` aging — tmux/tmux#4640,
+Launchpad #2088268; today's host has no `/tmp/` Age rule):
+
+```
+# /etc/tmpfiles.d/tmux.conf  (#1466)
+x /tmp/tmux-*
+```
+
+Verify: `systemd-tmpfiles --cat-config | grep -F 'x /tmp/tmux-'`. It does
+NOT protect against a non-tmpfiles deleter — that is what the durable dir
+is for.
+
+**Recovery runbook (socket vanished, server alive).**
+1. Find the server: `ss -xlp | grep tmux` (shows bound path + pid; works
+   even when the socket FILE is deleted) or `pgrep -f 'tmux: server'`
+   (`pgrep -x tmux` misses it — the server's comm is `tmux: server`).
+2. If `/tmp/tmux-<uid>` is gone: `mkdir -m 700 /tmp/tmux-$(id -u)`.
+3. `kill -USR1 <server-pid>` — the server recreates its socket at its
+   ORIGINAL bind path (the path is fixed at server start; parent dir must
+   exist).
+4. Address it explicitly: `tmux -S /tmp/tmux-<uid>/<name> ls`. A bound
+   socket FILE may be `mv`'d aside (e.g. `default` → `old`) to coexist
+   with a second server; clients reach the old server through the renamed
+   path.
+5. **Deletion-race winner:** during a deletion event the `/tmp/` pin WINS —
+   shim consumers pin back to `/tmp/` (the recovered legacy socket), so a
+   durable-dir server started inside the race window is the one to drain
+   after re-cohering. Recovery is deterministic.
+6. **Happy daemon start mechanism (recorded at implement time,
+   2026-07-17):** the daemon is a manually-started orphaned node process —
+   `node /usr/lib/node_modules/happy/dist/index.mjs daemon start-sync`,
+   parent = init, started via the `happy` CLI, NO systemd unit, and its
+   env carries no `TMUX_TMPDIR` (verified via `/proc/<pid>/environ`).
+   Post-reboot durability therefore hinges on restarting it FROM A LOGIN
+   SHELL (which sources `~/.profile` → the shim) so its tmux spawns land
+   in the durable dir.
+7. **Non-interactive SSH:** `ssh vm '<tmux cmd>'` reads neither profile
+   nor shim (Ubuntu `~/.bashrc` early-returns for non-interactive shells)
+   — same fail-coherent straggler class as (4) in the shim contract. Use
+   `ssh vm 'bash -lc "<tmux cmd>"'` for manual remote tmux ops.
+
+**Transition note.** Until drain/reboot, the 39 legacy sessions stay
+reachable via `tmux -S /tmp/tmux-1001/old attach -t <name>` (their server's
+socket was renamed aside during the Jul-16 recovery); the 4-session
+`default` server is the live fleet server and every shim consumer resolves
+`/tmp/` while either socket exists. After the next reboot all consumers land
+in `~/.tmux-sockets` permanently; post-reboot manual daemon/service starts
+should come from a login shell (profile shim).

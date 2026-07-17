@@ -218,7 +218,9 @@ same revise round. Mechanical-contract-only residuals are stripped per the same
 rule.
 
 **Auto-revise + plan-revision log EVERY round.** On any binding REVISE, re-spawn
-the `planner` to revise plan + manifest, bump the plan version
+the `planner` to revise plan + manifest (trigger-dense task: hand the round's
+blockers by file/marker reference per `.claude/rules/trigger-dense-review.md`
+§ Revision-round briefs, never inlined), bump the plan version
 (`new-plan-version`), and post the log:
 
 ```bash
@@ -429,7 +431,8 @@ Assemble the report body from `.claude/skills/issue-v2/report-template.md`
 every Motivation / Methodology claim (including the embedded `**Metrics:**`
 block) to ground truth (configs, code, artifact counts, `adapter_config.json`,
 dashboard row counts; links resolve at the pinned SHA). On findings, the orchestrator re-runs the methodology-writer to fix them
-and re-spawns the critic. Post `epm:methodology-check` per round. Round cap 5;
+(trigger-dense task: failed-claims list by file/marker reference, per the same
+rule section) and re-spawns the critic. Post `epm:methodology-check` per round. Round cap 5;
 at the cap with a substantive residual, interactive → surface, autonomous →
 `epm:failure` + block.
 
@@ -457,7 +460,9 @@ is unchanged — `body.md` IS the report by then.)
 
 Generation mode REQUIRES the TLDR + Next-steps placeholders intact and runs the
 interpretivity / lexicon checks on the AGENT-written sections only. On findings,
-re-run the plotter / methodology-writer / assembly as needed and re-verify. Post
+re-run the plotter / methodology-writer / assembly as needed (trigger-dense
+task: findings list by file/marker reference, per the same rule section) and
+re-verify. Post
 `epm:report-verified` on PASS. Round cap 5; at the cap with a substantive
 residual, interactive → surface, autonomous → `epm:failure` + block.
 
@@ -506,7 +511,9 @@ Step 10b/10c/10c-bis but with the v2 substitutions:
   revivable); `not-redundant` → route below. Nothing is dropped. User-requested
   (`source: user-chat`) proposals are not screened.
 - **Zero-GPU floor** (`cost_class: free-analysis`, `est_gpu_hours: 0`) — AUTO-RUN
-  inline, cap 1 round (`epm:free-analysis-followup-run v1`), analysis-only.
+  inline, cap 1 round (`epm:free-analysis-followup-run v1`), analysis-only;
+  direct-to-main script commits pass the inline payload lint gate (v1 SKILL.md
+  Step 9a-ter § Inline payload lint gate).
 - **Cheap GPU band** (`0 < est_gpu_hours < 10` — the v2 threshold, LOWERED from
   v1's 20) — AUTO-RUN via the same-issue follow-up loop, cap 2 rounds. Strict
   `< 10` (exactly 10 does NOT auto-run). A `same`-question proposal with a

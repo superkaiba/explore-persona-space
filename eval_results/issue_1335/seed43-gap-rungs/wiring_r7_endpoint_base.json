@@ -1,0 +1,10 @@
+{
+  "rung_slug": "r7_endpoint",
+  "render_config_hash": "96864f3cb5aa448c",
+  "code_sha": "4fc950e83e265522d34ef981d9f43b441ceb6a39",
+  "n_rows": 200,
+  "nll_own": 2.316010428720252,
+  "nll_shuffled": 2.5775697194972156,
+  "own_beats_shuffled": true,
+  "delta": 0.2615592907769635
+}

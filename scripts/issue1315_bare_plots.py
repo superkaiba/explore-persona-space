@@ -22,7 +22,14 @@ import json
 import sys
 from pathlib import Path
 
-import matplotlib.pyplot as plt
+from explore_persona_space.orchestrate.env import load_dotenv
+
+# #847: thread caps must land BEFORE the matplotlib import below — on the
+# shared VM, load_dotenv() setdefaults OMP/MKL/OPENBLAS/NUMEXPR_NUM_THREADS,
+# and the BLAS pools freeze at import time.
+load_dotenv()
+
+import matplotlib.pyplot as plt  # noqa: E402
 
 _SCRIPTS_DIR = Path(__file__).resolve().parent
 if str(_SCRIPTS_DIR) not in sys.path:
@@ -110,7 +117,7 @@ def fig_hero(own: dict, tf: dict) -> None:
 
     # Panel B — matched-80-row rank (mean ± sd over 100 draws).
     ax = axes[1]
-    for (c, lab), col, dx in zip(SCAFFOLDED, colors, jit, strict=True):
+    for (c, _lab), col, dx in zip(SCAFFOLDED, colors, jit, strict=True):
         ax.errorbar(
             [dx],
             [ss[c]["rank_k_at_90_mean"]],
@@ -129,7 +136,12 @@ def fig_hero(own: dict, tf: dict) -> None:
         color="black",
         capsize=3,
     )
-    ax.axhspan(*SYCO_80ROW_BAND, color="tab:gray", alpha=0.25, label="sycophancy band (48–50)")
+    ax.axhspan(
+        *SYCO_80ROW_BAND,
+        color="tab:gray",
+        alpha=0.25,
+        label="sycophancy band (48–50)",  # noqa: RUF001 -- typographic en dash in label
+    )
     ax.set_xticks([0, 1], ["scaffolded (7)", "bare"])
     ax.set_xlim(-0.6, 1.6)
     ax.set_ylim(26, 54)
@@ -139,12 +151,15 @@ def fig_hero(own: dict, tf: dict) -> None:
 
     # Panel C — shared-text rank at L14 (V4).
     ax = axes[2]
-    for (c, lab), col, dx in zip(SCAFFOLDED, colors, jit, strict=True):
+    for (c, _lab), col, dx in zip(SCAFFOLDED, colors, jit, strict=True):
         ax.plot([dx], [rec(r_tf, c, "response", L14)["rank_k_at_90"]], "o", ms=8, color=col)
     ax.plot([1.0], [rec(r_tf, BARE, "response", L14)["rank_k_at_90"]], "*", ms=16, color="black")
     ax.axhline(COLLAPSE_BAR, ls="--", lw=1.2, color="black", label="collapse bar (30)")
     ax.axhspan(
-        *SYCO_SHARED_SPAN, color="tab:gray", alpha=0.25, label="sycophancy shared span (27–35)"
+        *SYCO_SHARED_SPAN,
+        color="tab:gray",
+        alpha=0.25,
+        label="sycophancy shared span (27–35)",  # noqa: RUF001 -- typographic en dash in label
     )
     ax.set_xticks([0, 1], ["scaffolded (7)", "bare"])
     ax.set_xlim(-0.6, 1.6)

@@ -503,6 +503,36 @@ composer copies the requested lens's items VERBATIM and IN FULL from this file.
     full-precision artifacts at scale (single merged copy, or merges that fit the quota with
     headroom — the plan's §9 "N/A — no transient full-precision merges" or a bound under quota
     satisfies this item), or for `kind: analysis|infra|batch|survey`.
+    MOUNT-BINDING EXTENSION (#1414, from incident #1333): INDEPENDENT of the
+    transient-merge trigger above — for EVERY §9 disk row naming an out-root a
+    write-heavy phase writes (checkpoints, stores / analysis tensors, staged
+    inputs, scratch), ALSO verify the row states the PATH written AND the
+    filesystem/mount that path resolves to on the ROUTED lane (per-lane mount
+    list in the rule: RunPod `/workspace` volume vs the ~50 GB container
+    disk; GCE boot disk; shared VM `/` vs the `/mnt/eps-data` bind; SLURM
+    `$SCRATCH`), with per-candidate-lane mounts — or a pinned lane — when the
+    auto router can land the run on more than one lane (a lane failover
+    changes the mount, #1112), AND that the plan names the per-phase preamble
+    headroom assert against the mount the out-root RESOLVES to
+    (`orchestrate.preflight.assert_out_root_headroom`, statvfs + ~1 GB
+    posix_fallocate canary — full recipe:
+    `.claude/rules/plan-compute-sizing.md` § Out-root mount binding). REVISE
+    when a disk row carries a bare GB number with no mount named for the
+    routed lane, when a multi-candidate-lane plan names only the planned
+    lane's mount, or when no preamble assert is named for a write-heavy
+    phase. Conclusion-changing because a correct GB estimate on the WRONG
+    mount still ENOSPCs mid-write and the phase dies producing no result
+    (#1333 attempt 3: the out-root resolved to the ~50 GB RunPod container
+    disk instead of `/workspace` and died mid-checkpoint-serialization
+    despite a correct §9 GB estimate). The fits-quota / no-merges / kind
+    escapes above do NOT cover this extension (its trigger is any out-root
+    row, not only merge phases; only the extension's own escape list below
+    governs it). Not a REVISE when every §9 out-root disk row names
+    its mount on the routed lane(s) and the preamble assert, when the plan
+    writes no out-roots (its §9 "N/A — no out-root writes" satisfies this
+    extension), or for `kind: infra|batch|survey` — a `kind: analysis` plan
+    with out-root writes is IN scope (the #658-class VM store phases are
+    analysis phases). Plan-time placement check only, never a mid-run gate.
 17. **Persona-vectors extraction fidelity (any plan that elects persona vectors).** If the plan
     extracts a persona/behavior direction via "use persona vectors" / "extract a persona vector" /
     "persona-vectors-style direction" or a mean-difference of positive/negative contrastive

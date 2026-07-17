@@ -98,6 +98,13 @@ def test_runpod_launch_stuffs_issue_and_pid_file_onto_handle_extra(monkeypatch) 
     paths don't need to re-derive them.
     """
     monkeypatch.setattr("subprocess.run", lambda *a, **k: None)
+    # #1465: the provision leg now routes through the Popen-based
+    # pod_lifecycle relay — the blanket subprocess.run patch no longer
+    # intercepts it, so no-op the helper too (else a REAL provision runs).
+    monkeypatch.setattr(
+        "explore_persona_space.backends.runpod._run_pod_lifecycle_relay",
+        lambda cmd, **k: None,
+    )
     backend = RunPodBackend()
     spec = RunSpec(issue=99, intent="lora-7b", backend="runpod")
     handle = backend.launch(spec)
@@ -325,13 +332,17 @@ class _RecordingGcloudRunner:
         return GcloudRunResult(returncode=0, stdout="", stderr="")
 
 
-def test_gcp_fetch_results_issues_sentinel_pull_before_anything_else(tmp_path) -> None:
+def test_gcp_fetch_results_issues_sentinel_pull_as_first_ssh_call(tmp_path) -> None:
     """The sentinel pull is MANDATORY (the verifier reads it locally;
-    a missing local sentinel = silent-loss). It is issued first so its
-    failure surfaces before the best-effort dir pulls. The pull is
-    `gcloud compute ssh ... sudo -n cat`, NOT scp — the startup-script
-    runs as root, so the workload tree is root-owned and the OS-Login
-    scp user gets Permission denied (#588 att-20260611-064703)."""
+    a missing local sentinel = silent-loss). It is the FIRST ssh call so
+    its failure surfaces before the best-effort dir pulls — preceded only
+    by the #1454 `instances describe` reachability probe (which classifies
+    the transport BEFORE any ssh is attempted; the rig default rc=0/empty
+    stdout is indeterminate, failing open to the legacy transport). The
+    pull is `gcloud compute ssh ... sudo -n cat`, NOT scp — the
+    startup-script runs as root, so the workload tree is root-owned and
+    the OS-Login scp user gets Permission denied (#588
+    att-20260611-064703)."""
     runner = _RecordingGcloudRunner()
     backend = GcpBackend(
         config=_gcp_config(vm_scratch_dir=str(tmp_path)),
@@ -340,13 +351,17 @@ def test_gcp_fetch_results_issues_sentinel_pull_before_anything_else(tmp_path) -
     )
     backend.fetch_results(_gcp_handle(vm_scratch_dir=str(tmp_path)))
     assert runner.calls, "fetch_results made no gcloud call"
-    first_argv = runner.calls[0]
-    # First call must be `gcloud compute ssh <name> --command='sudo -n cat <sentinel>'`.
-    assert "ssh" in first_argv
-    assert "compute" in first_argv
-    assert "scp" not in first_argv
-    assert "eps-issue-137" in first_argv
-    command_arg = next(a for a in first_argv if a.startswith("--command="))
+    # Call 0 is the #1454 reachability probe (instances describe, JSON).
+    probe_argv = runner.calls[0]
+    assert "describe" in probe_argv
+    assert "instances" in probe_argv
+    assert "eps-issue-137" in probe_argv
+    # The FIRST ssh call is `gcloud compute ssh <name> --command='sudo -n cat <sentinel>'`.
+    first_ssh = next(a for a in runner.calls if "ssh" in a)
+    assert "compute" in first_ssh
+    assert "scp" not in first_ssh
+    assert "eps-issue-137" in first_ssh
+    command_arg = next(a for a in first_ssh if a.startswith("--command="))
     assert command_arg.startswith("--command=sudo -n cat ")
     assert ".completion-sentinel.json" in command_arg
 
@@ -358,6 +373,8 @@ def test_gcp_fetch_results_falls_back_best_effort_on_artifact_dir_failure(tmp_pa
     workload tree is root-owned (#588), so plain scp Permission-denies."""
     runner = _RecordingGcloudRunner(
         results=[
+            # #1454 reachability probe (indeterminate {} -> legacy fail-open)
+            GcloudRunResult(returncode=0, stdout="{}", stderr=""),
             # sentinel pull (ssh sudo cat) PASS
             GcloudRunResult(returncode=0, stdout='{"phase": "done", "issue": 137}\n', stderr=""),
             GcloudRunResult(returncode=1, stdout="", stderr="not found"),  # eval_results FAIL

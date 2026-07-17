@@ -108,7 +108,12 @@ Apply these exactly as `code-reviewer.md` defines them; Grep + Read the named sp
 - **Step 0.65 — raw-completions upload wiring** (`type:experiment`; a dispatcher
   that writes per-cell completions must wire one of the three accepted upload
   shapes before `[phase=done]`). Missing → FAIL, tag `raw-completions-upload-missing`
-  (SUBSTANTIVE, never stripped). N/A when no raw completions are written.
+  (SUBSTANTIVE, never stripped; N/A when no raw completions are written). The
+  step also carries the plan-glob vs uploader-eligibility parity sub-check
+  (#825): plan-declared artifact globs (§6.5 / §10) diffed against every
+  upload eligibility filter in the diff; a declared-but-ineligible class is a
+  substantive Critical — its own trigger binds whenever the plan declares
+  globs and the diff filters any upload, raw completions or not.
 - **Step 0.8 — read prior open binding concerns** (`task.py list-concerns <N>
   --open-only --json`); a prior BLOCKER must be addressed/verified; a NEW substantive
   concern is persisted via `task.py raise-concern`; a deferred production-path

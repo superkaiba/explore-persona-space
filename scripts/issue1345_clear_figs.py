@@ -41,12 +41,19 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-import matplotlib.pyplot as plt
-import numpy as np
-from matplotlib.colors import TwoSlopeNorm
-from matplotlib.patches import Rectangle
+from explore_persona_space.orchestrate.env import load_dotenv
 
-from explore_persona_space.analysis.paper_plots import (
+# #847: thread caps must land BEFORE the matplotlib/numpy imports below — on
+# the shared VM, load_dotenv() setdefaults OMP/MKL/OPENBLAS/NUMEXPR_NUM_THREADS,
+# and the BLAS pools freeze at import time.
+load_dotenv()
+
+import matplotlib.pyplot as plt  # noqa: E402
+import numpy as np  # noqa: E402
+from matplotlib.colors import TwoSlopeNorm  # noqa: E402
+from matplotlib.patches import Rectangle  # noqa: E402
+
+from explore_persona_space.analysis.paper_plots import (  # noqa: E402
     paper_palette_role,
     savefig_paper,
     set_paper_style,
@@ -269,7 +276,8 @@ def plot_result2_withinregime_chat_vs_notemplate() -> dict:
         "The context→answer map holds with and without the chat template "
         "(instruct, context arm, layer 19)",
         "Within-regime held-out $R^2$ with 95% bootstrap CI (Qwen2.5-7B-Instruct). Both framings "
-        "sit ~0.6, far above the answer-mean baseline ($R^2=0$) and the shuffle-null — removing the "
+        "sit ~0.6, far above the answer-mean baseline ($R^2=0$) and the shuffle-null — "
+        "removing the "
         "chat template barely changes the map's predictive power.",
         -0.1,
     )

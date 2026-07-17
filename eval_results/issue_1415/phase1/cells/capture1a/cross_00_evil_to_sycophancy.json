@@ -1,0 +1,27 @@
+{
+  "cell_id": "capture1a/cross_00_evil_to_sycophancy",
+  "phase": "phase1a",
+  "pair_id": "cross_00_evil_to_sycophancy",
+  "layers": [
+    7,
+    10,
+    14,
+    17,
+    20,
+    21,
+    24
+  ],
+  "n_empty_completions": {
+    "c": 0,
+    "cprime": 0
+  },
+  "tensor_file": "activations/cross_00_evil_to_sycophancy.pt",
+  "repro": {
+    "git_commit": "a369b06f46dde187e268a8f5f1b0c8fe7ae99a94",
+    "torch": "2.8.0+cu128",
+    "transformers": "4.57.6",
+    "model_id": "Qwen/Qwen2.5-7B-Instruct",
+    "tiny": false,
+    "timestamp": "2026-07-16T18:01:40.444458+00:00"
+  }
+}

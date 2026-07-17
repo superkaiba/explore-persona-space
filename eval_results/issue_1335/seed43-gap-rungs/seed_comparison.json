@@ -1,0 +1,201 @@
+{
+  "metadata": {
+    "git_commit": "4fc950e83e265522d34ef981d9f43b441ceb6a39",
+    "timestamp": "2026-07-17T15:49:44Z",
+    "seed": 0,
+    "n": 0,
+    "script": "scripts/issue1335_fit.py",
+    "issue": 931
+  },
+  "code_sha": "4fc950e83e265522d34ef981d9f43b441ceb6a39",
+  "gen_seed": 43,
+  "headline_layer": 19,
+  "reference": {
+    "path": "eval_results/issue_1335/ladder_summary.json",
+    "code_sha": "149a890f8177f6b582263fc454b9353fd4efbd7a",
+    "note": "committed seed-42 run (GEN_SEED 42, the #825/#1310 convention)"
+  },
+  "per_model": {
+    "base": {
+      "kept_personas": [
+        "Wren",
+        "HELIOS",
+        "Dana",
+        "Vex"
+      ],
+      "fiction_yield": {
+        "Wren": {
+          "n": 1752,
+          "kept": true,
+          "floor": 1060
+        },
+        "HELIOS": {
+          "n": 1730,
+          "kept": true,
+          "floor": 1060
+        },
+        "Dana": {
+          "n": 1683,
+          "kept": true,
+          "floor": 1060
+        },
+        "Vex": {
+          "n": 1763,
+          "kept": true,
+          "floor": 1060
+        }
+      },
+      "rung_values_matched_ctx": {
+        "r1_qa_oneline": 0.36575247629866114,
+        "r3_persona": 0.4140055558564347,
+        "r4_fictionframe": 0.2571835897306992,
+        "r7_endpoint_mean": 0.2667008160405571,
+        "r7_endpoint_per_persona": {
+          "Wren": 0.26889773537183886,
+          "HELIOS": 0.27921173237609304,
+          "Dana": 0.2743416624939963,
+          "Vex": 0.2443521339203004
+        }
+      },
+      "gap_G": {
+        "value": 0.09905166025810402,
+        "ci_lo": 0.08169013130788398,
+        "ci_hi": 0.11519173685759869,
+        "ci_method": "joint-draws",
+        "draws_len": 5000
+      },
+      "framing": {
+        "value": 0.1568219661257355,
+        "ci_lo": 0.1384827743027181,
+        "ci_hi": 0.17485296800489392,
+        "ci_method": "joint-draws",
+        "draws_len": 5000
+      },
+      "seed42_reference": {
+        "gap_G": {
+          "value": 0.0048106715477469475,
+          "ci_lo": -0.012311987711779045,
+          "ci_hi": 0.021058659620929978,
+          "ci_method": "joint-draws",
+          "draws_len": 5000
+        },
+        "framing": {
+          "value": 0.1310784678848242,
+          "ci_lo": 0.11166877000138223,
+          "ci_hi": 0.15011659117120885,
+          "ci_method": "joint-draws",
+          "draws_len": 5000
+        }
+      },
+      "cross_seed": {
+        "gap_G": {
+          "value": 0.09424098871035708,
+          "ci_lo": 0.07059803163106645,
+          "ci_hi": 0.1178839457896477,
+          "ci_method": "variance-sum-independent-runs",
+          "new_in_ref_ci": false,
+          "ref_in_new_ci": false
+        },
+        "framing": {
+          "value": 0.025743498240911322,
+          "ci_lo": -0.0007188615491789986,
+          "ci_hi": 0.05220585803100164,
+          "ci_method": "variance-sum-independent-runs",
+          "new_in_ref_ci": false,
+          "ref_in_new_ci": false
+        }
+      }
+    },
+    "instruct": {
+      "kept_personas": [
+        "Wren",
+        "HELIOS",
+        "Dana",
+        "Vex"
+      ],
+      "fiction_yield": {
+        "Wren": {
+          "n": 1800,
+          "kept": true,
+          "floor": 1060
+        },
+        "HELIOS": {
+          "n": 1799,
+          "kept": true,
+          "floor": 1060
+        },
+        "Dana": {
+          "n": 1774,
+          "kept": true,
+          "floor": 1060
+        },
+        "Vex": {
+          "n": 1800,
+          "kept": true,
+          "floor": 1060
+        }
+      },
+      "rung_values_matched_ctx": {
+        "r1_qa_oneline": 0.45135238123856586,
+        "r3_persona": 0.47028933787673977,
+        "r4_fictionframe": 0.32873656513246213,
+        "r7_endpoint_mean": 0.2719009974755088,
+        "r7_endpoint_per_persona": {
+          "Wren": 0.2680726320854369,
+          "HELIOS": 0.2961841718837296,
+          "Dana": 0.2717959559082491,
+          "Vex": 0.25155123002461954
+        }
+      },
+      "gap_G": {
+        "value": 0.17945138376305708,
+        "ci_lo": 0.16409225277076211,
+        "ci_hi": 0.1916909061110245,
+        "ci_method": "joint-draws",
+        "draws_len": 5000
+      },
+      "framing": {
+        "value": 0.14155277274427763,
+        "ci_lo": 0.12136840631956047,
+        "ci_hi": 0.16233095765949548,
+        "ci_method": "joint-draws",
+        "draws_len": 5000
+      },
+      "seed42_reference": {
+        "gap_G": {
+          "value": 0.17397183828394108,
+          "ci_lo": 0.1585684322195642,
+          "ci_hi": 0.18587810783785733,
+          "ci_method": "joint-draws",
+          "draws_len": 5000
+        },
+        "framing": {
+          "value": 0.16031384513477054,
+          "ci_lo": 0.14070781102604013,
+          "ci_hi": 0.1794462870512777,
+          "ci_method": "joint-draws",
+          "draws_len": 5000
+        }
+      },
+      "cross_seed": {
+        "gap_G": {
+          "value": 0.005479545479115999,
+          "ci_lo": -0.01393374924751637,
+          "ci_hi": 0.02489284020574837,
+          "ci_method": "variance-sum-independent-runs",
+          "new_in_ref_ci": true,
+          "ref_in_new_ci": true
+        },
+        "framing": {
+          "value": -0.018761072390492906,
+          "ci_lo": -0.04695061006422355,
+          "ci_hi": 0.009428465283237736,
+          "ci_method": "variance-sum-independent-runs",
+          "new_in_ref_ci": true,
+          "ref_in_new_ci": true
+        }
+      }
+    }
+  },
+  "smoke": false
+}

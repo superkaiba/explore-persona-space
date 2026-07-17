@@ -227,6 +227,18 @@ relaunch, a watch-session correction — not just first launches:
    a fresh SSH call and check it equals the pid you post in the marker. A
    relaunch that leaves a predecessor's pid in the file is a
    launch-contract violation.
+1b. **Rotate the phase log at every relaunch BEFORE re-arming any pattern-matching poller.**
+   A relaunch that appends to (or re-points at) the predecessor's log
+   leaves the FIRST run's failure/completion lines in the very file a
+   re-armed `grep`-class watcher scans — the watcher false-fires on the
+   OLD line and mis-verdicts the healthy new run (#952 divtrain round,
+   2026-07-16: the re-armed poller matched the first driver's old
+   failure line in the shared un-rotated
+   `/workspace/logs/issue-952-divtrain.log`). Rotate in the SAME command
+   chain as the relaunch (`mv <log> <log>.pre-<ts>`, or launch into a
+   fresh timestamped log and re-point the watcher), exactly as item 1
+   rewrites the pid file — an un-rotated log under a pattern poller is
+   the log-side twin of the stale-pid-file violation.
 2. **The fresh `epm:run-launched` carries the SAME live pid (`pid=`) AND
    `pid_file=`** (SKILL.md § "Any relaunch must re-post `epm:run-launched`").
    `poll_pipeline.py` computes `pid_alive = pidfile_pid_alive OR

@@ -1055,6 +1055,107 @@ def test_pre_reg_whole_body_scan_preserved_for_v2_sentinel_bodies():
     assert "pre_reg" in findings, findings
 
 
+# ─── pre_reg: bare 'registered <noun>' forms (#1345 escape, fix #1419) ────
+
+
+def test_pre_reg_bare_registered_noun_incident_strings_are_flagged():
+    """All six #1345 Lens 7 incident forms — 4 of 6 with intervening tokens
+    between 'registered' and the head noun — trip `pre_reg` in v4 Results
+    prose (#1419). The seventh phrase pins family closure: an
+    intervening-token 'hypothesis' form the adjacency-only branch missed."""
+    phrases = [
+        "the registered same-map-different-coordinates verdict",
+        "evaluated the registered verdict lattice",
+        "fail the registered 0.05 same-operator margin",
+        "fire the registered reparameterized verdict",
+        "The registered existence read passes",
+        "the plan's registered degeneracy companion",
+        "the registered primary hypothesis",
+    ]
+    for phrase in phrases:
+        body = V4_BODY_CLEAN.replace(
+            "The lift holds at every seed in the held-out evaluation.",
+            f"{phrase}.",
+        )
+        assert body != V4_BODY_CLEAN
+        findings = audit.audit_body(body)
+        assert "pre_reg" in findings, (phrase, findings)
+        assert any("registered" in s.lower() for s in findings["pre_reg"]), (phrase, findings)
+
+
+def test_pre_reg_bare_registered_noun_in_v4_takeaways_is_flagged():
+    """Incident 1's actual placement (#1345 Takeaways bullet 2) trips
+    `pre_reg` under the v4 whole-body scope."""
+    body = V4_BODY_CLEAN.replace(
+        "- Headline finding: the implant installs cleanly across three seeds.",
+        "- Headline: the registered same-map-different-coordinates verdict held.",
+    )
+    assert body != V4_BODY_CLEAN
+    findings = audit.audit_body(body)
+    assert "pre_reg" in findings, findings
+
+
+def test_pre_reg_bare_registered_noun_in_v4_hparam_table_is_exempt():
+    """The same bare form inside the Methodology hyperparameter TABLE stays
+    exempt — the v4 table-blanking scope is preserved byte-unchanged."""
+    body = V4_BODY_CLEAN.replace(
+        "| epochs | 1 | prior issue |",
+        "| stopping rule | registered 0.05 margin | plan gate |",
+    )
+    assert body != V4_BODY_CLEAN
+    findings = audit.audit_body(body)
+    assert "pre_reg" not in findings, findings
+
+
+def test_pre_reg_bare_registered_noun_verb_usages_not_flagged():
+    """The verb register — 'registered <preposition>' and artifact-object
+    forms — never trips the new branch (first-token preposition guard +
+    pre-registration-specific noun list). NOTE (measured at plan time):
+    determiner-first verb-objects on listed nouns ('the model registered
+    a clear floor effect') WOULD flag — an accepted residual FP surface
+    with 0/1,006-body corpus attestation, kept because 6 corpus hits of
+    the same determiner-first shape are genuine jargon ('The plan
+    registered a decision lattice')."""
+    body = V4_BODY_CLEAN.replace(
+        "The lift holds at every seed in the held-out evaluation.",
+        "I registered the adapter on HF; the run was registered in WandB; "
+        "the hook registered by bootstrap fired; the mix is registered "
+        "under the data repo; a registered trademark.",
+    )
+    assert body != V4_BODY_CLEAN
+    findings = audit.audit_body(body)
+    assert "pre_reg" not in findings, findings
+
+
+def test_pre_reg_bare_registered_noun_does_not_bridge_sentences():
+    """The intervening-token window never bridges a sentence or bullet
+    boundary — both bridge shapes observed in the plan-time corpus dry-run
+    ('registered conditions.\\n\\nThe honest read', 'registered unrun
+    lever.\\n- Verdicts') stay clean."""
+    body = V4_BODY_CLEAN.replace(
+        "The lift holds at every seed in the held-out evaluation.",
+        "All cells were registered conditions.\n\nThe honest read is a null.\n\n"
+        "It used a registered unrun lever.\n- Verdicts fired on every cell.",
+    )
+    assert body != V4_BODY_CLEAN
+    findings = audit.audit_body(body)
+    assert "pre_reg" not in findings, findings
+
+
+def test_pre_reg_registered_interval_defining_the_test_not_flagged():
+    """'the registered interval defining the test' is the sanctioned
+    Why-this-test CI-definition register — 'interval' and 'test' are
+    deliberately absent from the head-noun list, so `pre_reg` stays
+    silent (the LM critic owns any residual judgment call here)."""
+    body = V4_BODY_CLEAN.replace(
+        "The lift holds at every seed in the held-out evaluation.",
+        "**Why this test:** the bootstrap CI is the registered interval defining the test.",
+    )
+    assert body != V4_BODY_CLEAN
+    findings = audit.audit_body(body)
+    assert "pre_reg" not in findings, findings
+
+
 # ─── v4 ## Methodology sample-data <details> exemption (#1171) ───────────
 #
 # The v4 spec moved the verbatim sample rows to `## Methodology` →
@@ -1295,6 +1396,16 @@ def test_verdict_caps_code_spans_not_flagged():
 # critic Lens 6 caught the `bit-identical` slip manually. The rule was
 # renamed `bit_byte_identical` and broadened to `\b(?:byte|bit)[\s-]identical\b`
 # so both same-family voice violations are caught under one mechanical rule.
+# Task #1423 extended the family to the `equal` synonyms (byte-equal /
+# byte equal / bit-equal / bit equal) after issue #1005's body carried
+# "inherited byte-equal (sha-asserted)" past the -identical-only regex.
+# Task #1447 widened the family to its remaining synonym tail in one
+# batched pass: the `-exact` adjective, the `bitwise`/`bytewise` unit
+# forms (deliberately superseding #1423's `bitwise` != `bit` boundary
+# pin), and the reduplicated `bit-for-bit`/`byte-for-byte`, plus a
+# `(?<!-)` lookbehind blocking the numeric-bit-width class
+# (`8-bit exact-width`). The plan-time corpus scan found 14 grandfathered
+# bodies already carrying the tail.
 
 
 def test_byte_identical_still_flagged_under_new_key():
@@ -1339,6 +1450,182 @@ def test_bit_byte_identical_no_false_positive_on_unrelated_words():
     )
     findings = audit.audit_body(clean)
     assert "bit_byte_identical" not in findings, findings
+
+
+def test_byte_equal_is_flagged():
+    """The `-equal` synonym family trips the rule (task #1423): `byte-equal`
+    and `byte equal` are the same voice violation as `byte-identical`."""
+    hyphen = V3_BODY_WITH_DATA_CODES.replace(
+        "The lift holds at every seed in the held-out evaluation.",
+        "The two stores were byte-equal after the rerun.",
+    )
+    findings = audit.audit_body(hyphen)
+    assert "bit_byte_identical" in findings, findings
+    assert any("byte-equal" in s for s in findings["bit_byte_identical"]), findings
+    space = V3_BODY_WITH_DATA_CODES.replace(
+        "The lift holds at every seed in the held-out evaluation.",
+        "The two stores were byte equal after the rerun.",
+    )
+    space_findings = audit.audit_body(space)
+    assert "bit_byte_identical" in space_findings, "space form not flagged"
+    assert any("byte equal" in s for s in space_findings["bit_byte_identical"]), space_findings
+
+
+def test_bit_equal_is_flagged():
+    """The `bit-equal` / `bit equal` synonyms trip the rule too (task #1423)."""
+    hyphen = V3_BODY_WITH_DATA_CODES.replace(
+        "The lift holds at every seed in the held-out evaluation.",
+        "The loss surface was held bit-equal across all three arms.",
+    )
+    findings = audit.audit_body(hyphen)
+    assert "bit_byte_identical" in findings, findings
+    assert any("bit-equal" in s for s in findings["bit_byte_identical"]), findings
+    space = V3_BODY_WITH_DATA_CODES.replace(
+        "The lift holds at every seed in the held-out evaluation.",
+        "The loss surface was held bit equal across all three arms.",
+    )
+    space_findings = audit.audit_body(space)
+    assert "bit_byte_identical" in space_findings, "space form not flagged"
+    assert any("bit equal" in s for s in space_findings["bit_byte_identical"]), space_findings
+
+
+def test_byte_equal_incident_1005_phrasing_is_flagged():
+    """Regression anchor: the verbatim #1005 incident phrasing — "inherited
+    byte-equal (sha-asserted)" — trips the rule (the -identical-only regex
+    missed it and an LM critic round had to catch it manually)."""
+    body = V3_BODY_WITH_DATA_CODES.replace(
+        "The lift holds at every seed in the held-out evaluation.",
+        "The adapter was inherited byte-equal (sha-asserted) from the parent.",
+    )
+    findings = audit.audit_body(body)
+    assert "bit_byte_identical" in findings, findings
+    assert any("byte-equal" in s for s in findings["bit_byte_identical"]), findings
+
+
+def test_bit_byte_equal_no_false_positive_on_boundary_words():
+    """Boundary negatives for the `-equal` arm (task #1423): `byte equality`
+    (suffix blocks the trailing \\b), `bytes equal` (plural blocks `[\\s-]`),
+    and capitalized `Byte-equal` (the category scans case-sensitively,
+    pre-existing semantics) must NOT trip. The #1423 version of this test
+    also pinned `bitwise equal` as a NON-match (`bitwise` != `bit`); task
+    #1447 deliberately superseded that boundary — `bitwise equal` is now a
+    positive (see test_bitwise_forms_are_flagged) and is removed from this
+    negative body."""
+    clean = V3_BODY_WITH_DATA_CODES.replace(
+        "The lift holds at every seed in the held-out evaluation.",
+        "I assert byte equality; the bytes equal to the header match. "
+        "Byte-equal casing stays untouched.",
+    )
+    findings = audit.audit_body(clean)
+    assert "bit_byte_identical" not in findings, findings
+
+
+def test_byte_bit_exact_is_flagged():
+    """The `-exact` synonym family trips the rule (task #1447): `byte-exact` /
+    `byte exact` / `bit-exact` / `bit exact` are the same voice violation as
+    `byte-identical`. The plan-time corpus scan found 7 grandfathered bodies
+    carrying `-exact` forms (#222, #545, #722, #1223 byte; #448, #952, #1362
+    bit)."""
+    for phrase in ("byte-exact", "byte exact", "bit-exact", "bit exact"):
+        body = V3_BODY_WITH_DATA_CODES.replace(
+            "The lift holds at every seed in the held-out evaluation.",
+            f"The two stores were {phrase} after the rerun.",
+        )
+        findings = audit.audit_body(body)
+        assert "bit_byte_identical" in findings, (phrase, findings)
+
+
+def test_bitwise_forms_are_flagged():
+    """The `bitwise`/`bytewise` unit forms trip the rule (task #1447). This
+    DELIBERATELY INVERTS #1423's boundary semantics — its
+    test_bit_byte_equal_no_false_positive_on_boundary_words pinned
+    `bitwise equal` as a non-match (`bitwise` != `bit`); #1447 folds the
+    `(?:wise)?` unit extension into the family."""
+    for phrase in (
+        "bitwise identical",
+        "bitwise-identical",
+        "bitwise equal",
+        "bitwise exact",
+        "bytewise identical",
+    ):
+        body = V3_BODY_WITH_DATA_CODES.replace(
+            "The lift holds at every seed in the held-out evaluation.",
+            f"The outputs were {phrase} across the rerun.",
+        )
+        findings = audit.audit_body(body)
+        assert "bit_byte_identical" in findings, (phrase, findings)
+
+
+def test_x_for_x_reduplication_is_flagged():
+    """The reduplicated `bit-for-bit` / `byte-for-byte` forms trip the rule
+    (task #1447) — the shape differs from `<unit><sep><adjective>` so it gets
+    its own alternation branch. The plan-time corpus scan found 7
+    grandfathered bodies carrying these forms (#276, #525, #531, #588
+    byte-for-byte; #671, #673, #810 bit-for-bit)."""
+    for phrase in ("bit-for-bit", "bit for bit", "byte-for-byte", "byte for byte"):
+        body = V3_BODY_WITH_DATA_CODES.replace(
+            "The lift holds at every seed in the held-out evaluation.",
+            f"The copy is {phrase} faithful to the source.",
+        )
+        findings = audit.audit_body(body)
+        assert "bit_byte_identical" in findings, (phrase, findings)
+
+
+def test_widened_family_no_false_positive_on_technical_prose():
+    """Negative battery for the widened family (task #1447): legitimate
+    technical prose must NOT trip. `bitwise AND` / `bitwise operations`
+    (adjective set required after the separator); `8-bit exact-width` /
+    `64-bit equal-width` / `n-bit identical-width` (the `(?<!-)` lookbehind
+    blocks hyphen-preceded numeric bit-width units); `byte offset` /
+    `byte order` (no family adjective); `a bit more` (`more` not in the
+    adjective set); `one bit for parity` (the `for` branch requires the full
+    reduplication)."""
+    for phrase in (
+        "the bitwise AND of the masks",
+        "bitwise operations on the header",
+        "an 8-bit exact-width field",
+        "a 64-bit equal-width layout",
+        "n-bit identical-width lanes",
+        "the byte offset of the record",
+        "network byte order applies",
+        "a bit more variance than expected",
+        "we reserve one bit for parity",
+    ):
+        body = V3_BODY_WITH_DATA_CODES.replace(
+            "The lift holds at every seed in the held-out evaluation.",
+            f"Note that {phrase} here.",
+        )
+        findings = audit.audit_body(body)
+        assert "bit_byte_identical" not in findings, (phrase, findings)
+
+
+def test_widened_family_cross_line_separator_matches():
+    """Behavior pin (task #1447, implementer-discretion): `[\\s-]` matches a
+    newline, so a line-wrapped `byte\\nexact` still trips the rule — the
+    pre-existing cross-line semantics of the #454/#642/#1423 separator,
+    extended to the `-exact` adjective. Accepted semantics: a hard-wrapped
+    banned phrase does not escape the audit."""
+    body = V3_BODY_WITH_DATA_CODES.replace(
+        "The lift holds at every seed in the held-out evaluation.",
+        "The two stores were byte\nexact after the rerun.",
+    )
+    findings = audit.audit_body(body)
+    assert "bit_byte_identical" in findings, findings
+
+
+def test_reduplication_branch_hyphen_exposure_pinned():
+    """Behavior pin (task #1447, implementer-discretion): the reduplication
+    branch's trailing `\\b` is satisfied at the hyphen in `bit-level`, so
+    `a bit for bit-level ops` DOES trip (the `(?<!-)` lookbehind guards only
+    the match START and is irrelevant here). Accepted exposure — the
+    plan-time corpus scan found zero such hits across all 1,408 bodies, and
+    guarding it would also miss genuine `bit-for-bit`-adjacent compounds."""
+    body = V3_BODY_WITH_DATA_CODES.replace(
+        "The lift holds at every seed in the held-out evaluation.",
+        "We shift a bit for bit-level ops in the packer.",
+    )
+    findings = audit.audit_body(body)
+    assert "bit_byte_identical" in findings, findings
 
 
 # ─── Inline verbatim originating-prompt exemption (incident #651) ────────

@@ -241,6 +241,26 @@ Behaviours:
   new genuinely-correct call with ``# HUB_DIR_FILECOUNT_EXEMPT: <reason>``
   (reason ≥ 10 chars) on the call's first physical line or the
   immediately preceding non-blank line.
+* ``--check-upload-prefix-clobber`` (also bundled into the no-flags
+  default run): AST-walk every ``*.py`` under ``scripts/`` (two passes)
+  and FAIL on hardcoded issue-prefix HF upload DESTINATIONS of the #1005
+  parent-clobber class (reused #928 fitters uploaded #1005 tensors to
+  hardcoded ``issue928_*`` prefixes, overwriting the parent's artifacts).
+  Write call sites only — :data:`UPLOAD_DEST_FUNCS` (``upload_file`` /
+  ``upload_folder`` / ``CommitOperationAdd`` / ``hub._upload`` /
+  ``hub._upload_folder_filtered`` /
+  ``upload_raw_completions_to_data_repo``) plus one level of inferred
+  wrappers (the copied ``issue<N>_common.py`` pattern); cross-issue READS
+  (``list_repo_tree`` / ``hf_hub_download``) never flag. Rule A: a
+  destination token ``issue<M>_…`` in an ``issue<N>_`` script with M != N
+  FAILs (never silently allowlisted). Rule B: an own-issue token arriving
+  via a FALLBACK channel — ``x or CONST``, an argparse ``default=``, a
+  wrapper-param signature default — FAILs (pre-existing sites
+  grandfathered in :data:`UPLOAD_PREFIX_CLOBBER_ALLOWLIST`); a DIRECT
+  own-prefix hardcode is the sanctioned norm and never flags. Waive with
+  ``# UPLOAD_PREFIX_EXEMPT: <reason>`` (reason ≥ 10 chars) on the
+  finding's first physical line or the immediately preceding non-blank
+  line (for an argparse-default finding, at the ``add_argument`` call).
 * ``--check-jsonl-splitlines`` (also bundled into the no-flags default
   run): AST-walk every ``*.py`` under ``scripts/`` AND
   ``src/explore_persona_space/`` and FAIL on any ``.splitlines()`` call
@@ -698,14 +718,53 @@ SKILL_REF_ALLOWLIST: frozenset[str] = frozenset(
         "log",  # `/log` dashboard feed
         "sessions",  # `/sessions` dashboard page
         "updates",  # `/updates` dashboard MDX editor route
-        # --- Non-skill prose/path tokens the backtick form still catches ---
-        "workspace",  # `/workspace` pod path written inside backticks (RunPod `/workspace`)
+        # --- Non-skill prose tokens the backtick form still catches ---
+        # (pure-PATH tokens live in SKILL_REF_FS_ROOTS below; `log` stays
+        #  here on its dashboard-route justification)
         "intent",  # `/intent` — a phase/arg token in prose
         "absent",  # `/absent` — a marker-state token in prose
         "override",  # `/override subset` prose (experiment-implementer.md)
         "binary",  # `.npz/binary` prose (uploader.md)
         "terminal",  # `blocked/terminal` prose (background-automation.md)
         "expensive-band",  # `auto_run/expensive-band` prose (issue/SKILL.md)
+    }
+)
+
+# `--check-skill-refs`: bare single-segment backticked absolute PATHS.
+# SKILL_REF_RE's trailing lookahead rejects multi-segment paths (`/tmp/x`
+# — the next char is `/`) but a bare root (`/tmp`) closes on a backtick
+# and matches, so ordinary filesystem paths mis-fired the check (#1445;
+# the allowlist had grown ad-hoc path workarounds like `workspace`).
+# Members: the Linux FHS top-level directories + the RunPod `/workspace`
+# volume convention — PATH tokens, never slash-commands. Kept SEPARATE
+# from SKILL_REF_ALLOWLIST so that list keeps its "justify every entry
+# as a legitimate slash-command" contract. INVARIANT (pinned by
+# tests/test_workflow_lint.py::test_skill_ref_fs_roots_disjoint_from_live_skills_and_allowlist
+# and by the in-function collision guard in check_skill_references):
+# no member may name a live .claude/skills/ dir — a colliding entry
+# would silently disable rot detection for that skill.
+SKILL_REF_FS_ROOTS: frozenset[str] = frozenset(
+    {
+        "bin",
+        "boot",
+        "dev",
+        "etc",
+        "home",
+        "lib",
+        "lib64",
+        "media",
+        "mnt",
+        "opt",
+        "proc",
+        "root",
+        "run",
+        "sbin",
+        "srv",
+        "sys",
+        "tmp",
+        "usr",
+        "var",
+        "workspace",  # RunPod volume root (migrated from SKILL_REF_ALLOWLIST)
     }
 )
 
@@ -1461,6 +1520,93 @@ HUB_DIR_FILECOUNT_LEGACY_ALLOWLIST: frozenset[str] = frozenset(
         "scripts/issue922_common.py",  # 1 pre-#1190 direct site; legacy experiment code
         "scripts/issue928_common.py",  # 1 pre-#1190 direct site; legacy experiment code
         "scripts/issue_642/i642_dispatch.py",  # 2 pre-#1190 direct sites; legacy experiment code
+    }
+)
+
+
+# `--check-upload-prefix-clobber` (#1452 / incident #1005): reused #928
+# fitter scripts uploaded #1005 tensors to hardcoded `issue928_*` prefixes
+# on the HF data repo, OVERWRITING the parent issue's artifacts
+# (upload-verification FAIL 2026-07-16; parent restored from a pinned
+# revision). Two write-scoped rules over `scripts/issue<N>_*.py` upload
+# call sites: Rule A — a destination token `issue<M>_…` with M != N (a
+# copied/reused uploader writing into another issue's prefix); Rule B — an
+# own-issue token arriving via a FALLBACK channel (`x or CONST`, an
+# argparse `default=`, a wrapper-param signature default) that a reusing
+# child silently inherits. A DIRECT own-prefix hardcode is the sanctioned
+# Upload Policy norm and never flags; cross-issue READS (`list_repo_tree` /
+# `hf_hub_download`) are out of scope by construction (the check keys on
+# write-function identity + dest-argument slot, never on kwarg name alone).
+# Inline waiver, reason >= 10 chars, same convention as
+# UPLOAD_AS_FILE_EXEMPT / HUB_DIR_FILECOUNT_EXEMPT.
+UPLOAD_PREFIX_WAIVER_RE = re.compile(r"#\s*UPLOAD_PREFIX_EXEMPT\s*:\s*(.+?)\s*$")
+UPLOAD_PREFIX_WAIVER_MIN_REASON_CHARS = 10
+# Write-destination spec table: callable name (bare name or attribute tail)
+# -> (dest kwarg, dest positional index or None). `upload_model` /
+# `upload_dataset` / `upload_dataset_directory` are deliberately OUT of the
+# v1 set (their dests derive from runtime config, not hardcoded module
+# constants); extending the table later is a one-line change.
+UPLOAD_DEST_FUNCS: dict[str, tuple[str, int | None]] = {
+    "upload_file": ("path_in_repo", None),
+    "upload_folder": ("path_in_repo", None),
+    "CommitOperationAdd": ("path_in_repo", None),
+    "_upload": ("path_in_repo", 3),
+    "_upload_folder_filtered": ("path_in_repo", 3),
+    "upload_raw_completions_to_data_repo": ("experiment_name", 0),
+}
+# Issue-prefix tokens inside string literals ("issue928_cot/…" -> "928"),
+# and the owning issue number of a scripts/issue<N>_*.py basename.
+_UPC_ISSUE_TOKEN_RE = re.compile(r"\bissue(\d+)[_/]")
+_UPC_OWN_ISSUE_RE = re.compile(r"^issue(\d+)_")
+# Grandfathered pre-existing Rule-B fallback destinations (Rule A is NEVER
+# silently allowlisted — a Rule-A hit is investigated: waiver-with-reason if
+# deliberate, fixed/reported if a latent bug). Rebuilt mechanically from the
+# live tree by running the finished check with `legacy_allowlist=frozenset()`;
+# pinned by tests/test_workflow_lint.py::
+# test_check_upload_prefix_clobber_live_trees_pass and every entry is
+# asserted load-bearing by
+# ...::test_check_upload_prefix_clobber_allowlist_load_bearing. NOT
+# hand-extended: a NEW fallback destination must use `default=None` + a
+# fail-loud raise (or carry an UPLOAD_PREFIX_EXEMPT waiver) — never a new
+# entry here. Repo-root-relative posix paths. Every entry remains a live
+# #1005 runtime-reuse channel until fixed — fixing the file to
+# `default=None` + raise retires its entry.
+UPLOAD_PREFIX_CLOBBER_ALLOWLIST: frozenset[str] = frozenset(
+    {
+        # `--hf-prefix` default=HF_PREFIX_DEFAULT feeding a function-local
+        # path_in_repo f-string; remains a live #1005 runtime-reuse channel
+        # until fixed — default=None + raise retires this entry:
+        "scripts/issue1092_figures.py",
+        # in-loop `pir or DATA_PREFIX_1434` or-fallback at hub._upload dests;
+        # remains a live #1005 runtime-reuse channel until fixed — explicit
+        # per-item dests (default=None + raise shape) retire this entry:
+        "scripts/issue1434_pv.py",
+        # `--hf-samples-path`-class argparse default feeding upload_folder;
+        # remains a live #1005 runtime-reuse channel until fixed —
+        # default=None + raise retires this entry:
+        "scripts/issue540_jsrb_predictor.py",
+        # `--hf-prefix` default=HF_PREFIX → store upload; remains a live
+        # #1005 runtime-reuse channel until fixed — default=None + raise
+        # retires this entry:
+        "scripts/issue779_ffc_n10k_generate_capture.py",
+        # `--hf-prefix` default=HF_PREFIX → store upload; remains a live
+        # #1005 runtime-reuse channel until fixed — default=None + raise
+        # retires this entry:
+        "scripts/issue779_pertoken_lmsys_capture.py",
+        # `--hf-prefix` default=HF_PREFIX → store upload; remains a live
+        # #1005 runtime-reuse channel until fixed — default=None + raise
+        # retires this entry:
+        "scripts/issue779_reliability_gen_capture.py",
+        # THE #1005 incident file: `args.upload_prefix or FIT_RESULTS_PREFIX`
+        # + `--decomp-upload-prefix` default=DECOMP_TENSORS_PREFIX; remains a
+        # live #1005 runtime-reuse channel until fixed — default=None + raise
+        # retires this entry:
+        "scripts/issue928_fit_decomposition.py",
+        # `--results-upload-prefix` / `--tensors-upload-prefix` defaults (the
+        # #928 post-incident remediated shape — prose warning only); remains
+        # a live #1005 runtime-reuse channel until fixed — default=None +
+        # raise retires this entry:
+        "scripts/issue928_mlp_indiv_control.py",
     }
 )
 
@@ -2715,13 +2861,21 @@ def _live_skill_names(skills_dir: Path) -> set[str]:
     return {p.name for p in skills_dir.iterdir() if p.is_dir()}
 
 
-def _skill_ref_resolves(ref: str, live: set[str], allow: frozenset[str]) -> bool:
+def _skill_ref_resolves(
+    ref: str,
+    live: set[str],
+    allow: frozenset[str],
+    fs_roots: frozenset[str] = SKILL_REF_FS_ROOTS,
+) -> bool:
     """A backticked ``/<ref>`` resolves iff it names a live skill dir, an
-    allowlisted exact token, or (when namespaced ``<plugin>:<skill>``) a token
-    whose ``<plugin>:`` prefix is allowlisted."""
+    allowlisted exact token, a bare filesystem root (a backticked PATH like
+    ``/tmp`` — see :data:`SKILL_REF_FS_ROOTS`), or (when namespaced
+    ``<plugin>:<skill>``) a token whose ``<plugin>:`` prefix is allowlisted."""
     if ref in live:  # live project skill dir
         return True
     if ref in allow:  # allowlisted exact token
+        return True
+    if ref in fs_roots:  # bare backticked fs path, not a slash-command (#1445)
         return True
     if ":" in ref:  # plugin-namespaced: prefix match
         return (ref.split(":", 1)[0] + ":") in allow
@@ -2733,6 +2887,7 @@ def check_skill_references(
     roots: list[Path] | None = None,
     skills_dir: Path | None = None,
     allowlist: frozenset[str] | None = None,
+    fs_roots: frozenset[str] | None = None,
 ) -> list[str]:
     """Walk the workflow-doc surface (agents + skills + rules + CLAUDE.md +
     workflow.yaml) and FAIL on any backtick-delimited ``/<skill-name>`` token
@@ -2750,13 +2905,29 @@ def check_skill_references(
     Plugin-namespaced refs resolve via the allowlist prefix set (or,
     forward-compat, an on-disk ``<plugin>:<skill>/`` dir).
 
-    ``roots`` / ``skills_dir`` / ``allowlist`` are unit-test override hooks;
-    production callers pass None.
+    Bare filesystem roots (``/tmp``, ``/workspace``;
+    :data:`SKILL_REF_FS_ROOTS`) are carved out as paths, never
+    slash-commands (#1445). An fs-root member that names a LIVE skill dir
+    is itself reported as a lint error — the carve-out would silently
+    disable rot detection for that skill (remedy: drop the colliding
+    member from ``SKILL_REF_FS_ROOTS``).
+
+    ``roots`` / ``skills_dir`` / ``allowlist`` / ``fs_roots`` are unit-test
+    override hooks; production callers pass None.
     """
     errors: list[str] = []
     sk_dir = skills_dir if skills_dir is not None else _REPO_ROOT / ".claude" / "skills"
     live = _live_skill_names(sk_dir)
     allow = allowlist if allowlist is not None else SKILL_REF_ALLOWLIST
+    fsr = fs_roots if fs_roots is not None else SKILL_REF_FS_ROOTS
+    collisions = sorted(fsr & live)
+    if collisions:
+        errors.append(
+            f"SKILL_REF_FS_ROOTS collides with live skill dir(s) {collisions}: the "
+            f"fs-root carve-out would silently disable skill-reference rot detection "
+            f"for them (#1445). Drop the colliding member(s) from SKILL_REF_FS_ROOTS "
+            f"in scripts/workflow_lint.py."
+        )
     for path in _resolve_skill_ref_target_files(roots):
         in_fence = False
         for lineno, line in enumerate(path.read_text(encoding="utf-8").splitlines(), start=1):
@@ -2767,7 +2938,7 @@ def check_skill_references(
                 continue
             for match in SKILL_REF_RE.finditer(line):
                 ref = match.group(1)
-                if _skill_ref_resolves(ref, live, allow):
+                if _skill_ref_resolves(ref, live, allow, fsr):
                     continue
                 errors.append(
                     f"{path}:{lineno}: unresolved skill reference '/{ref}' — not a "
@@ -4921,6 +5092,533 @@ def check_hub_dir_filecount_guard(
                 f".claude/rules/gotchas.md 'HF Hub rejects any single repo directory "
                 f"holding >10000 files at COMMIT time'."
             )
+    return errors
+
+
+def _upc_waiver_present(lines: list[str], lineno: int) -> bool:
+    """Return True iff a ``# UPLOAD_PREFIX_EXEMPT: <reason>`` waiver (reason ≥
+    :data:`UPLOAD_PREFIX_WAIVER_MIN_REASON_CHARS` chars) is on the finding's
+    first physical line (``lineno``, 1-based) or the immediately preceding
+    non-blank line. Same convention as :func:`_upload_as_file_waiver_present`."""
+    idx = lineno - 1  # to 0-based
+    if 0 <= idx < len(lines):
+        m = UPLOAD_PREFIX_WAIVER_RE.search(lines[idx])
+        if m and len(m.group(1).strip()) >= UPLOAD_PREFIX_WAIVER_MIN_REASON_CHARS:
+            return True
+    back = idx - 1
+    while back >= 0 and lines[back].strip() == "":
+        back -= 1
+    if back >= 0:
+        m = UPLOAD_PREFIX_WAIVER_RE.search(lines[back])
+        if m and len(m.group(1).strip()) >= UPLOAD_PREFIX_WAIVER_MIN_REASON_CHARS:
+            return True
+    return False
+
+
+def _upc_module_const_tokens(
+    tree: ast.Module, imports: dict[str, str] | None = None
+) -> dict[str, frozenset[str]]:
+    """Map module-level constant names to the issue tokens their value
+    expressions carry. Value shapes considered: str ``Constant``,
+    ``JoinedStr``, ``BinOp`` (str concat/format), or a ``Call`` (e.g.
+    ``os.environ.get("X", "issue958_multiturn")``). Tokens = every
+    ``issue<M>_`` / ``issue<M>/`` match over every string literal inside the
+    value expr, plus (TRANSITIVE, in module-body order) the tokens of any
+    already-mapped ``Name`` it references — resolving BOTH locally-built
+    consts AND imported names via the step-3 import map (plan §4.3.2's
+    ``DECOMP = f"{HF_PREFIX_928}/analysis_tensors/decomp"`` example, where
+    ``HF_PREFIX_928`` is imported from ``issue928_common``)."""
+    imports = imports or {}
+    consts: dict[str, frozenset[str]] = {}
+    for node in tree.body:
+        if isinstance(node, ast.Assign):
+            targets = [t.id for t in node.targets if isinstance(t, ast.Name)]
+            value: ast.expr | None = node.value
+        elif isinstance(node, ast.AnnAssign) and isinstance(node.target, ast.Name):
+            targets = [node.target.id]
+            value = node.value
+        else:
+            continue
+        if not targets or not isinstance(
+            value, ast.Constant | ast.JoinedStr | ast.BinOp | ast.Call
+        ):
+            continue
+        if isinstance(value, ast.Constant) and not isinstance(value.value, str):
+            continue
+        tokens: set[str] = set()
+        for sub in ast.walk(value):
+            if isinstance(sub, ast.Constant) and isinstance(sub.value, str):
+                tokens.update(_UPC_ISSUE_TOKEN_RE.findall(sub.value))
+            elif isinstance(sub, ast.Name):
+                if sub.id in consts:
+                    tokens.update(consts[sub.id])
+                elif sub.id in imports:
+                    tokens.add(imports[sub.id])
+        if tokens:
+            for name in targets:
+                consts[name] = frozenset(tokens)
+    return consts
+
+
+def _upc_import_tokens(tree: ast.Module) -> dict[str, str]:
+    """Map imported names to the issue token of the ``issue<M>_*`` module
+    they come from — a module-name PROXY for constants whose values live
+    cross-file (``from issue928_common import FIT_RESULTS_PREFIX`` ->
+    ``FIT_RESULTS_PREFIX: "928"``; ``import issue928_common`` binds the
+    module name itself)."""
+    imports: dict[str, str] = {}
+    for node in ast.walk(tree):
+        if isinstance(node, ast.ImportFrom) and node.module:
+            m = _UPC_OWN_ISSUE_RE.match(node.module.rsplit(".", 1)[-1])
+            if m:
+                for alias in node.names:
+                    imports[alias.asname or alias.name] = m.group(1)
+        elif isinstance(node, ast.Import):
+            for alias in node.names:
+                m = _UPC_OWN_ISSUE_RE.match(alias.name.rsplit(".", 1)[-1])
+                if m:
+                    imports[alias.asname or alias.name.split(".")[0]] = m.group(1)
+    return imports
+
+
+def _upc_argparse_default_tokens(
+    tree: ast.Module,
+    consts: dict[str, frozenset[str]],
+    imports: dict[str, str],
+) -> dict[str, tuple[frozenset[str], int]]:
+    """Map argparse dest names to ``(issue tokens of the default= expr, the
+    add_argument call's lineno)`` — the lineno is the waiver anchor for
+    argparse-default findings. Dest = explicit ``dest=`` kwarg, else the
+    longest ``--opt`` option string with ``-`` -> ``_``. Only defaults
+    resolving (via the module const/import maps) to ≥1 token are recorded."""
+    argdefs: dict[str, tuple[frozenset[str], int]] = {}
+    for node in ast.walk(tree):
+        if not (
+            isinstance(node, ast.Call)
+            and isinstance(node.func, ast.Attribute)
+            and node.func.attr == "add_argument"
+        ):
+            continue
+        dest: str | None = None
+        default_expr: ast.expr | None = None
+        for kw in node.keywords:
+            if (
+                kw.arg == "dest"
+                and isinstance(kw.value, ast.Constant)
+                and isinstance(kw.value.value, str)
+            ):
+                dest = kw.value.value
+            elif kw.arg == "default":
+                default_expr = kw.value
+        if dest is None:
+            opts = [
+                a.value
+                for a in node.args
+                if isinstance(a, ast.Constant)
+                and isinstance(a.value, str)
+                and a.value.startswith("--")
+            ]
+            if opts:
+                dest = max(opts, key=len).lstrip("-").replace("-", "_")
+        if dest is None or default_expr is None:
+            continue
+        tokens = {
+            token
+            for token, _via, _ln in _upc_resolve(
+                default_expr, consts, imports, {}, None, node.lineno
+            )
+        }
+        if not tokens:
+            continue
+        prev = argdefs.get(dest)
+        if prev is not None:
+            argdefs[dest] = (frozenset(set(prev[0]) | tokens), prev[1])
+        else:
+            argdefs[dest] = (frozenset(tokens), node.lineno)
+    return argdefs
+
+
+def _upc_local_assign(
+    funcdef: ast.FunctionDef | ast.AsyncFunctionDef, name: str, before_lineno: int
+) -> tuple[ast.expr, int] | None:
+    """Nearest preceding function-local ``Assign``/``AnnAssign`` to ``name``
+    (lineno < ``before_lineno``) inside ``funcdef``; returns
+    ``(value expr, assign lineno)``. Resolves the local
+    ``path_in_repo = f"{args.hf_prefix}/…"`` shape (the #1005-class
+    issue1092_figures.py write, plan §4.6 row 8)."""
+    best: tuple[int, ast.expr] | None = None
+    for node in ast.walk(funcdef):
+        value: ast.expr | None = None
+        if (
+            isinstance(node, ast.Assign)
+            and any(isinstance(t, ast.Name) and t.id == name for t in node.targets)
+        ) or (
+            isinstance(node, ast.AnnAssign)
+            and isinstance(node.target, ast.Name)
+            and node.target.id == name
+        ):
+            value = node.value
+        if value is None or node.lineno >= before_lineno:
+            continue
+        if best is None or node.lineno > best[0]:
+            best = (node.lineno, value)
+    return (best[1], best[0]) if best else None
+
+
+def _upc_resolve(  # noqa: C901 -- flat per-AST-node-shape resolution ladder (plan #1452 §4.3.5); extracting a branch would just relocate it
+    expr: ast.expr,
+    consts: dict[str, frozenset[str]],
+    imports: dict[str, str],
+    argdefs: dict[str, tuple[frozenset[str], int]],
+    funcdef: ast.FunctionDef | ast.AsyncFunctionDef | None,
+    use_lineno: int,
+    seen: frozenset[str] = frozenset(),
+) -> set[tuple[str, str, int | None]]:
+    """Resolve a write-destination expression to ``{(token, via, anchor)}``.
+
+    ``via`` ∈ {"direct", "or-fallback", "argparse-default"}; ``anchor`` is
+    the ``add_argument`` lineno for argparse-default tokens (the waiver
+    anchor per plan §4.3.7), else None. An unresolvable expr returns the
+    empty set — a dynamic dest is un-lintable statically (disclosed)."""
+    out: set[tuple[str, str, int | None]] = set()
+    if isinstance(expr, ast.Constant):
+        if isinstance(expr.value, str):
+            out.update((t, "direct", None) for t in _UPC_ISSUE_TOKEN_RE.findall(expr.value))
+    elif isinstance(expr, ast.JoinedStr):
+        for part in expr.values:
+            if isinstance(part, ast.Constant) and isinstance(part.value, str):
+                out.update((t, "direct", None) for t in _UPC_ISSUE_TOKEN_RE.findall(part.value))
+            elif isinstance(part, ast.FormattedValue):
+                out |= _upc_resolve(part.value, consts, imports, argdefs, funcdef, use_lineno, seen)
+    elif isinstance(expr, ast.BoolOp) and isinstance(expr.op, ast.Or):
+        out |= _upc_resolve(expr.values[0], consts, imports, argdefs, funcdef, use_lineno, seen)
+        for leg in expr.values[1:]:
+            out.update(
+                (t, "or-fallback", ln)
+                for t, _via, ln in _upc_resolve(
+                    leg, consts, imports, argdefs, funcdef, use_lineno, seen
+                )
+            )
+    elif isinstance(expr, ast.IfExp):
+        out |= _upc_resolve(expr.body, consts, imports, argdefs, funcdef, use_lineno, seen)
+        else_hits = _upc_resolve(expr.orelse, consts, imports, argdefs, funcdef, use_lineno, seen)
+        if ast.dump(expr.test) == ast.dump(expr.body):
+            # `X if X else CONST` — the ternary spelling of an or-fallback.
+            out.update((t, "or-fallback", ln) for t, _via, ln in else_hits)
+        else:
+            out |= else_hits
+    elif isinstance(expr, ast.Name):
+        if expr.id in consts:
+            out.update((t, "direct", None) for t in consts[expr.id])
+        elif expr.id in imports:
+            out.add((imports[expr.id], "direct", None))
+        elif funcdef is not None and expr.id not in seen:
+            hit = _upc_local_assign(funcdef, expr.id, use_lineno)
+            if hit is not None:
+                value, assign_lineno = hit
+                out |= _upc_resolve(
+                    value, consts, imports, argdefs, funcdef, assign_lineno, seen | {expr.id}
+                )
+    elif isinstance(expr, ast.Attribute):
+        if expr.attr in argdefs:
+            # `args.tensors_upload_prefix` — receiver name unchecked (`args.`
+            # by convention; disclosed approximation, waiver escape available).
+            tokens, arg_lineno = argdefs[expr.attr]
+            out.update((t, "argparse-default", arg_lineno) for t in tokens)
+        elif isinstance(expr.value, ast.Name) and expr.value.id in imports:
+            # `issue928_common.SOME_PREFIX` module-attribute access.
+            out.add((imports[expr.value.id], "direct", None))
+    return out
+
+
+def _upc_fn_name(call: ast.Call) -> str | None:
+    """Called-function bare name or attribute tail (``api.upload_folder`` ->
+    ``upload_folder``), same convention as :func:`check_upload_as_file`."""
+    fn = call.func
+    if isinstance(fn, ast.Attribute):
+        return fn.attr
+    if isinstance(fn, ast.Name):
+        return fn.id
+    return None
+
+
+def _upc_dest_exprs(call: ast.Call, specs: set[tuple[str, int | None]]) -> list[ast.expr]:
+    """Destination argument expression(s) of ``call`` per the dest specs
+    (kwarg first; the positional slot as fallback). A wrapper-name collision
+    can contribute several specs — all are checked."""
+    exprs: list[ast.expr] = []
+    for kwname, pos in sorted(specs, key=lambda s: (s[0], -1 if s[1] is None else s[1])):
+        kw = next((k.value for k in call.keywords if k.arg == kwname), None)
+        if kw is not None:
+            exprs.append(kw)
+        elif (
+            pos is not None and len(call.args) > pos and not isinstance(call.args[pos], ast.Starred)
+        ):
+            exprs.append(call.args[pos])
+    return exprs
+
+
+def _upc_param_default(node: ast.FunctionDef | ast.AsyncFunctionDef, param: str) -> ast.expr | None:
+    """Signature default expr for ``param`` in ``node``'s signature, or None."""
+    pos = node.args.posonlyargs + node.args.args
+    defaults = node.args.defaults
+    offset = len(pos) - len(defaults)
+    for i, a in enumerate(pos):
+        if a.arg == param and i >= offset:
+            return defaults[i - offset]
+    for a, d in zip(node.args.kwonlyargs, node.args.kw_defaults, strict=True):
+        if a.arg == param and d is not None:
+            return d
+    return None
+
+
+def _upc_calls_with_scope(
+    tree: ast.Module,
+) -> list[tuple[ast.Call, ast.FunctionDef | ast.AsyncFunctionDef | None]]:
+    """Every ``Call`` node paired with its innermost enclosing function
+    (None at module level) — the scope for function-local dest resolution."""
+    out: list[tuple[ast.Call, ast.FunctionDef | ast.AsyncFunctionDef | None]] = []
+
+    def _walk(node: ast.AST, func: ast.FunctionDef | ast.AsyncFunctionDef | None) -> None:
+        for child in ast.iter_child_nodes(node):
+            child_func = (
+                child if isinstance(child, ast.FunctionDef | ast.AsyncFunctionDef) else func
+            )
+            if isinstance(child, ast.Call):
+                out.append((child, func))
+            _walk(child, child_func)
+
+    _walk(tree, None)
+    return out
+
+
+def _upc_collect_wrappers(  # noqa: C901 -- flat wrapper-inference scan (plan #1452 §4.3 pass 1); extracting a branch would just relocate it
+    files: list[Path],
+) -> tuple[dict[str, set[tuple[str, int | None]]], list[tuple[Path, int, str, str]]]:
+    """Pass 1 (repo-wide over the walked ``scripts/`` set): infer WRAPPER
+    functions whose parameter feeds a base write fn's destination — the
+    copied ``issue<N>_common.py`` pattern (#928/#1073), one level deep —
+    keyed by bare name; a name collision UNIONS the dest specs. ALSO record
+    a WRAPPER-FALLBACK finding at the def line when the dest param carries a
+    signature default resolving to an issue token (the remediated-#928
+    ``path_in_repo=DECOMP_TENSORS_PREFIX`` shape); the in-body
+    ``param or CONST`` fallback is caught by pass 2's normal resolution of
+    the wrapper's own file, so it is deliberately NOT re-recorded here.
+    Fallback findings are (path, def lineno, token, rule) with waivers
+    already consumed; they are recorded only for issue-named files (the
+    same pass-2 scope) and classified Rule A (cross-issue token) or Rule B
+    (own-issue fallback, allowlistable)."""
+    wrappers: dict[str, set[tuple[str, int | None]]] = {}
+    findings: list[tuple[Path, int, str, str]] = []
+    for py in files:
+        text = py.read_text(encoding="utf-8")
+        tree = _cached_parse(py, text)
+        if tree is None:
+            continue
+        own_m = _UPC_OWN_ISSUE_RE.match(py.name)
+        imports = _upc_import_tokens(tree)
+        consts = _upc_module_const_tokens(tree, imports)
+        lines = text.splitlines()
+        for node in ast.walk(tree):
+            if not isinstance(node, ast.FunctionDef | ast.AsyncFunctionDef):
+                continue
+            pos_params = [a.arg for a in (node.args.posonlyargs + node.args.args)]
+            all_params = set(pos_params) | {a.arg for a in node.args.kwonlyargs}
+            dest_params: set[str] = set()
+            for call in ast.walk(node):
+                if not isinstance(call, ast.Call):
+                    continue
+                fn_name = _upc_fn_name(call)
+                if fn_name not in UPLOAD_DEST_FUNCS:
+                    continue
+                for dexpr in _upc_dest_exprs(call, {UPLOAD_DEST_FUNCS[fn_name]}):
+                    cands: list[ast.expr] = [dexpr]
+                    if isinstance(dexpr, ast.BoolOp) and isinstance(dexpr.op, ast.Or):
+                        cands.append(dexpr.values[0])
+                    if isinstance(dexpr, ast.JoinedStr):
+                        cands.extend(
+                            p.value for p in dexpr.values if isinstance(p, ast.FormattedValue)
+                        )
+                    for cand in cands:
+                        if isinstance(cand, ast.Name) and cand.id in all_params:
+                            dest_params.add(cand.id)
+            for param in sorted(dest_params):
+                idx = pos_params.index(param) if param in pos_params else None
+                wrappers.setdefault(node.name, set()).add((param, idx))
+                if own_m is None:
+                    continue  # same disclosed scope as pass 2 (issue-named files)
+                default = _upc_param_default(node, param)
+                if default is None:
+                    continue
+                tokens = {
+                    t
+                    for t, _v, _ln in _upc_resolve(default, consts, imports, {}, None, node.lineno)
+                }
+                if not tokens or _upc_waiver_present(lines, node.lineno):
+                    continue
+                own = own_m.group(1)
+                for token in sorted(tokens):
+                    findings.append((py, node.lineno, token, "A" if token != own else "B"))
+    return wrappers, findings
+
+
+def _upc_rule_a_message(py: Path, lineno: int, token: str, own: str, via: str) -> str:
+    """Rule-A (cross-issue destination) error text."""
+    return (
+        f"{py}:{lineno}: cross-issue upload destination 'issue{token}_…' (via {via}) in an "
+        f"'issue{own}_' script — a reused/copied uploader writing into another issue's HF "
+        f"prefix is the #1005 parent-clobber class (reused #928 fitters overwrote the parent's "
+        f"artifacts; parent restored from a pinned revision). Thread THIS issue's own upload "
+        f"prefix explicitly, or waive a deliberate cross-issue WRITE with "
+        f"'# UPLOAD_PREFIX_EXEMPT: <reason>' (reason >= "
+        f"{UPLOAD_PREFIX_WAIVER_MIN_REASON_CHARS} chars) on the finding's first line or the "
+        f"previous non-blank line. Cross-issue READS (list_repo_tree / hf_hub_download) are "
+        f"never flagged; a Rule-A finding is never silently allowlisted."
+    )
+
+
+def _upc_rule_b_message(py: Path, lineno: int, token: str, via: str) -> str:
+    """Rule-B (hardcoded same-issue fallback destination) error text."""
+    return (
+        f"{py}:{lineno}: hardcoded issue-prefix fallback 'issue{token}_…' (via {via}) at an "
+        f"upload destination — silently inherited when a child issue reuses this script (the "
+        f"#1005 clobber shape: `args.upload_prefix or FIT_RESULTS_PREFIX`). Use default=None + "
+        f"a fail-loud raise when uploading without an explicit prefix, or waive with "
+        f"'# UPLOAD_PREFIX_EXEMPT: <reason>' (reason >= "
+        f"{UPLOAD_PREFIX_WAIVER_MIN_REASON_CHARS} chars) on the finding's first line or the "
+        f"previous non-blank line (for an argparse-default finding, at the add_argument call). "
+        f"Pre-existing offenders are grandfathered in UPLOAD_PREFIX_CLOBBER_ALLOWLIST — never "
+        f"extend it for new code."
+    )
+
+
+def check_upload_prefix_clobber(  # noqa: C901 -- flat two-pass scan + flag-policy ladder (plan #1452 §4.3 pass 2); extracting a branch would just relocate it
+    *, scripts_dir: Path | None = None, legacy_allowlist: frozenset[str] | None = None
+) -> list[str]:
+    """AST-walk every ``*.py`` under ``scripts/`` (two passes) and FAIL on
+    hardcoded issue-prefix HF upload DESTINATIONS of the #1005
+    parent-clobber class (task #1452).
+
+    Incident: reused #928 fitter scripts uploaded #1005 tensors to hardcoded
+    ``issue928_*`` prefixes on ``superkaiba1/explore-persona-space-data``,
+    OVERWRITING the parent issue's artifacts (upload-verification FAIL
+    2026-07-16; parent restored from a pinned revision). The check
+    mechanizes the previously hand-run "parent-prefix clobber gate".
+
+    Scope: files whose basename matches ``issue<N>_*.py`` (the incident
+    class is reused issue scripts; generic entrypoints derive prefixes from
+    config). Write CALL SITES only — the base table
+    :data:`UPLOAD_DEST_FUNCS` (``upload_file`` / ``upload_folder`` /
+    ``CommitOperationAdd`` / ``hub._upload`` / ``hub._upload_folder_filtered``
+    / ``upload_raw_completions_to_data_repo``, matched on bare name or
+    attribute tail) plus ONE level of inferred wrappers (a function whose
+    parameter feeds a base write fn's destination — the copied
+    ``issue<N>_common.py`` pattern). Cross-issue READS (``list_repo_tree`` /
+    ``hf_hub_download`` / ``fetch_pinned_*``) never flag by construction.
+
+    Flag policy (each finding carries file:lineno + token + via):
+
+    * **Rule A (cross-issue):** any resolved destination token
+      ``issue<M>_…`` with M != N FAILs — a reused/copied uploader writing
+      into another issue's prefix. NEVER silently allowlisted (waiver-only).
+    * **Rule B (hardcoded fallback):** an own-issue token arriving via a
+      FALLBACK channel — ``x or CONST``, an argparse ``default=`` (read
+      through ``args.<dest>`` attributes and function-local assignments),
+      a wrapper-param signature default — FAILs: a reusing child silently
+      inherits it. Grandfathered pre-existing sites live in
+      :data:`UPLOAD_PREFIX_CLOBBER_ALLOWLIST`.
+    * A DIRECT own-prefix hardcode (M == N, via=direct) is the sanctioned
+      Upload Policy norm and is never flagged.
+
+    Disclosed static under-triggers (v1, by design): kwarg-only dests on
+    ``upload_file``/``upload_folder``/``CommitOperationAdd`` (positional
+    forms unresolved), wrapper-of-wrapper chains (one inference level),
+    dict-threaded dests, dynamic/computed dests, non-issue-named scripts.
+
+    Waiver: ``# UPLOAD_PREFIX_EXEMPT: <reason>`` (reason ≥
+    :data:`UPLOAD_PREFIX_WAIVER_MIN_REASON_CHARS` chars) on the finding's
+    first physical line or the immediately preceding non-blank line; for an
+    argparse-default finding the waiver may sit at the ``add_argument``
+    call instead.
+
+    ``scripts_dir`` / ``legacy_allowlist`` are override hooks for unit
+    tests; production callers pass None. Allowlist paths are computed
+    relative to the WALK ROOT'S PARENT (production paths read
+    ``scripts/<name>.py``; same convention as
+    :func:`check_hub_dir_filecount_guard`). Bundled into the no-flags
+    default run.
+    """
+    root = scripts_dir if scripts_dir is not None else _REPO_ROOT / "scripts"
+    if not root.exists():
+        return []
+    allow = UPLOAD_PREFIX_CLOBBER_ALLOWLIST if legacy_allowlist is None else legacy_allowlist
+    files = [p for p in sorted(root.rglob("*.py")) if p.is_file()]
+    wrappers, fallback_findings = _upc_collect_wrappers(files)
+    errors: list[str] = []
+    for py in files:
+        own_m = _UPC_OWN_ISSUE_RE.match(py.name)
+        if not own_m:
+            continue  # disclosed scope: the incident class is reused issue scripts
+        own = own_m.group(1)
+        rel = py.relative_to(root.parent).as_posix()
+        text = py.read_text(encoding="utf-8")
+        tree = _cached_parse(py, text)
+        if tree is None:
+            # A scripts/ file that does not parse is its own (separate)
+            # problem; this check stays silent on it rather than crashing.
+            continue
+        imports = _upc_import_tokens(tree)
+        consts = _upc_module_const_tokens(tree, imports)
+        argdefs = _upc_argparse_default_tokens(tree, consts, imports)
+        lines = text.splitlines()
+        flagged: set[tuple[int, str, str]] = set()
+        for call, funcdef in _upc_calls_with_scope(tree):
+            fn_name = _upc_fn_name(call)
+            if fn_name is None:
+                continue
+            specs: set[tuple[str, int | None]] = set()
+            if fn_name in UPLOAD_DEST_FUNCS:
+                specs.add(UPLOAD_DEST_FUNCS[fn_name])
+            specs |= wrappers.get(fn_name, set())
+            if not specs:
+                continue
+            for dest in _upc_dest_exprs(call, specs):
+                hits = _upc_resolve(dest, consts, imports, argdefs, funcdef, call.lineno)
+                for token, via, anchor in sorted(hits, key=lambda h: (h[0], h[1], h[2] or 0)):
+                    if token != own:
+                        rule = "A"
+                    elif via in ("or-fallback", "argparse-default"):
+                        rule = "B"
+                    else:
+                        continue  # sanctioned direct own-prefix hardcode
+                    key = (call.lineno, token, via)
+                    if key in flagged:
+                        continue
+                    waiver_linenos = {call.lineno}
+                    if via == "argparse-default" and anchor is not None:
+                        waiver_linenos.add(anchor)
+                    if any(_upc_waiver_present(lines, ln) for ln in waiver_linenos):
+                        continue
+                    if rule == "B" and rel in allow:
+                        continue
+                    flagged.add(key)
+                    if rule == "A":
+                        errors.append(_upc_rule_a_message(py, call.lineno, token, own, via))
+                    else:
+                        errors.append(_upc_rule_b_message(py, call.lineno, token, via))
+    for py, lineno, token, rule in fallback_findings:
+        rel = py.relative_to(root.parent).as_posix()
+        if rule == "B" and rel in allow:
+            continue
+        if rule == "A":
+            own_m = _UPC_OWN_ISSUE_RE.match(py.name)
+            errors.append(
+                _upc_rule_a_message(
+                    py, lineno, token, own_m.group(1) if own_m else "?", "wrapper-param-default"
+                )
+            )
+        else:
+            errors.append(_upc_rule_b_message(py, lineno, token, "wrapper-param-default"))
     return errors
 
 
@@ -8850,7 +9548,15 @@ _LESSONS_ROW_GRANDFATHER_MAX_BYTES: dict[str, int] = {
     # plan-time discovery value (a further lossy trim was already ruled
     # out at #1269). #1348 added the errorbar/CI figure trigger
     # (row 451 B -> 494 B). Cap = measured + <=40.
-    "gotchas": 520,
+    # #1429 added the bootstrap-CI gating/verdict trigger (row 519 B -> 578 B).
+    # Cap = measured + <=40.
+    # #1411 added the Edit-tool Unicode-literal trigger (row 599 B -> 661 B).
+    # Cap = measured + <=40.
+    # #1431 added the pilot-gate shape+rc trigger (row 661 B -> 682 B).
+    # Cap = measured + <=40.
+    # #1435 added the subprocess-per-phase dispatcher trigger (merged with
+    # #1431's raise; re-measured row 776 B). Cap = measured + <=40.
+    "gotchas": 800,
 }
 _LESSONS_ROW_GRANDFATHER_MAX_HEADROOM_BYTES = 40
 
@@ -8869,7 +9575,10 @@ _LESSONS_ROW_GRANDFATHER_MAX_HEADROOM_BYTES = 40
 # grew the plan-compute-sizing row (pilot basis covers fit loops AND draw
 # batteries): merged measured 6,178 B; ratchet 6400 retained (headroom ~222,
 # covers both concurrent growers).
-_LESSONS_RATCHET_BYTES = 6400
+# #1435 grew the gotchas row (subprocess-registry / full-panel-fresh-child-smoke
+# trigger; merged with #1431's raise): re-measured total 6,456 B; ratchet 6650
+# (headroom ~194, <= _LESSONS_RATCHET_MAX_HEADROOM_BYTES).
+_LESSONS_RATCHET_BYTES = 6650
 _LESSONS_RATCHET_MAX_HEADROOM_BYTES = 400
 
 
@@ -9176,36 +9885,47 @@ AGENT_SPEC_SIZE_GRANDFATHER: dict[str, int] = {
     # (#1159) — no longer grandfathered (slim spec is under the FAIL threshold).
     # the rest measured at the #838 tightening (2026-07-02), caps = measured
     # + <=3 KB; each names a future trim direction, none is licensed to grow
-    # measured 106,853 B post-#1397 (Step 2 fit-loop batched-helper naming
-    # paragraph — plan-mandated growth; cap = measured + ~1.1 KB. Prior:
-    # 105,000 — measured 104,235 B post-#1317 (Step 4.6 Gate-scope line
-    # verification), 101,500 — measured 100,555 B post-#1254 (Step 3.9
-    # degenerate-statistic check, observed-vs-null reads), 99,000 —
-    # measured 98,126 B post-#1230 (Step 6 durability-pin shipping duty),
-    # 97,000 — measured 96,072 B post-#1119, 95,000 — measured 94,126 B
-    # post-#1115)
-    "code-reviewer.md": 108_000,
-    # measured 73,408 B post-#1159 (Step 2 dual-source read contract: lens
-    # rubrics from clean-result-critic-lens-reference.md, report schema from
-    # the slim agent spec — plan-mandated growth; cap = measured + <=~1 KB.
-    # Prior: 73,000 — measured 72,229 B post-#1056, 72,000 post-#1050 r2,
-    # 71,000 post-#1050 r1, 60,554 B pre-#1050)
-    "codex-clean-result-critic.md": 74_000,
-    # measured 55,870 B post-#1380 (Step 4.6 copy-list bullet + inlined-
-    # rubric 4.6 slot + Blocker-tags 4.6-presence — plan-mandated growth;
-    # cap = measured + <=~1 KB. Prior: 53,300 — measured 52,361 B
-    # post-#1254 (Step 3.9 copy-list bullet + inlined-rubric slot),
-    # 51,600 — measured 50,642 B post-#948, 47,930 B post-#881)
-    "codex-code-reviewer.md": 56_800,
-    # measured 68,888 B post-#1384 (per-arm-class smoke-coverage clause in
-    # checklist item 3 — plan-mandated growth; cap = measured + <=~1 KB.
-    # Prior: 67,900 — measured 67,472 B post-#1363, 67,400 — measured
-    # 66,574 B post-#1349, 66,300 — measured 65,548 B post-#1311)
-    "experiment-implementer.md": 69_800,
-    # measured 65,540 B post-#1081 r2 (D3 crash-fix-relaunch addendum:
-    # disposition-conditional resume-glob confirm — plan-mandated growth;
-    # cap = measured + <=~1 KB. Prior: 65,500 — measured 62,672 B)
-    "experimenter.md": 66_500,
+    # measured 109,583 B post-#1449 (Step 0.65 plan-glob vs
+    # uploader-eligibility parity sub-check — plan-mandated growth; cap =
+    # measured + ~0.7 KB. Prior: 108,000 — measured 106,853 B post-#1397
+    # (Step 2 fit-loop batched-helper naming paragraph), 105,000 — measured
+    # 104,235 B post-#1317 (Step 4.6 Gate-scope line verification), 101,500 —
+    # measured 100,555 B post-#1254 (Step 3.9 degenerate-statistic check,
+    # observed-vs-null reads), 99,000 — measured 98,126 B post-#1230 (Step 6
+    # durability-pin shipping duty), 97,000 — measured 96,072 B post-#1119,
+    # 95,000 — measured 94,126 B post-#1115)
+    "code-reviewer.md": 110_300,
+    # measured 74,082 B post-#1447 (family-enumeration sync: the two
+    # byte/bit verdict rows widened to the -exact / bitwise / X-for-X
+    # tail — plan-mandated growth; cap = measured + ~1.1 KB. Prior:
+    # 74,000 — measured 73,408 B post-#1159 (Step 2 dual-source read
+    # contract: lens rubrics from clean-result-critic-lens-reference.md,
+    # report schema from the slim agent spec), 73,000 — measured
+    # 72,229 B post-#1056, 72,000 post-#1050 r2, 71,000 post-#1050 r1,
+    # 60,554 B pre-#1050)
+    "codex-clean-result-critic.md": 75_200,
+    # measured 58,271 B post-#1438 (Step 0.9 copy-list bullet + inlined-
+    # rubric 0.9 slot + Blocker-tags data-access-blocked entry —
+    # plan-mandated growth; cap = measured + <=~1 KB. Prior: 56,800 —
+    # measured 55,870 B post-#1380 (Step 4.6 copy-list bullet +
+    # inlined-rubric 4.6 slot + Blocker-tags 4.6-presence), 53,300 —
+    # measured 52,361 B post-#1254, 51,600 — measured 50,642 B post-#948,
+    # 47,930 B post-#881)
+    "codex-code-reviewer.md": 59_200,
+    # measured 72,240 B post-#1449 (After-implementation step-7 plan-glob
+    # parity self-check — plan-mandated growth; cap = measured + ~0.8 KB.
+    # Prior: 72,000 — measured 71,114 B post-#1409 (data-dependent-gates
+    # smoke duty in checklist item 3 + item-5 cross-ref), 69,800 — measured
+    # 68,888 B post-#1384 (per-arm-class smoke-coverage clause), 67,900 —
+    # measured 67,472 B post-#1363, 67,400 — measured 66,574 B post-#1349,
+    # 66,300 — measured 65,548 B post-#1311)
+    "experiment-implementer.md": 73_000,
+    # measured 66,921 B post-#1416 (Pre-Launch step 9 foreign-tenant
+    # memory.used read — plan-mandated growth; cap = measured + ~0.6 KB.
+    # Prior: 66,500 — measured 65,540 B post-#1081 r2 (D3
+    # crash-fix-relaunch addendum: disposition-conditional resume-glob
+    # confirm), 65,500 — measured 62,672 B)
+    "experimenter.md": 67_500,
     # measured 49,740 B post-#1115 (read-hygiene context-budget section —
     # plan-mandated growth; cap = measured + <=~1 KB. Prior: 49,000 —
     # measured 48,197 B post-#1102)
@@ -10101,6 +10821,21 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         "default run.",
     )
     parser.add_argument(
+        "--check-upload-prefix-clobber",
+        action="store_true",
+        help="AST-walk scripts/**/*.py (two passes) and FAIL on hardcoded "
+        "issue-prefix HF upload DESTINATIONS: a cross-issue dest token "
+        "(issue<M>_ in an issue<N>_ script, Rule A) or an own-issue token "
+        "arriving via a fallback channel — `x or CONST`, an argparse "
+        "default=, a wrapper-param signature default (Rule B) — the #1005 "
+        "parent-clobber class (reused #928 fitters overwrote the parent's "
+        "HF artifacts). Direct own-prefix hardcodes and cross-issue READS "
+        "never flag. Waive with '# UPLOAD_PREFIX_EXEMPT: <reason>'; "
+        "pre-existing Rule-B sites are grandfathered in "
+        "UPLOAD_PREFIX_CLOBBER_ALLOWLIST. Bundled into the no-flags "
+        "default run.",
+    )
+    parser.add_argument(
         "--check-dotenv-before-hf-import",
         action="store_true",
         help="AST-walk scripts/**/*.py and FAIL on any script that uses the "
@@ -10557,6 +11292,7 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         or args.check_agent_tools
         or args.check_upload_as_file
         or args.check_hub_dir_filecount
+        or args.check_upload_prefix_clobber
         or args.check_dotenv_before_hf_import
         or args.check_batch_judge_client
         or args.check_hub_verify_retry
@@ -10663,6 +11399,8 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         errors.extend(check_upload_as_file())
     if args.check_hub_dir_filecount or no_flags:
         errors.extend(check_hub_dir_filecount_guard())
+    if args.check_upload_prefix_clobber or no_flags:
+        errors.extend(check_upload_prefix_clobber())
     if args.check_dotenv_before_hf_import or no_flags:
         errors.extend(check_dotenv_before_hf_import())
     if args.check_batch_judge_client or no_flags:

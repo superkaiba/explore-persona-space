@@ -1,0 +1,3355 @@
+{
+  "commit": "a54ac43b50",
+  "created": "2026-07-17T06:32:48Z",
+  "figsize": [
+    13.5,
+    4.4
+  ],
+  "points": [
+    {
+      "Steer/read layer (matched)": 7.0,
+      "Answer-shift alignment (cosine)": 0.11271227267570794,
+      "series": "prefix-based V_c (shared)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Steer/read layer (matched)": 10.0,
+      "Answer-shift alignment (cosine)": 0.12890136880534037,
+      "series": "prefix-based V_c (shared)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Steer/read layer (matched)": 14.0,
+      "Answer-shift alignment (cosine)": 0.3039404512715659,
+      "series": "prefix-based V_c (shared)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Steer/read layer (matched)": 17.0,
+      "Answer-shift alignment (cosine)": 0.35057749918528963,
+      "series": "prefix-based V_c (shared)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Steer/read layer (matched)": 20.0,
+      "Answer-shift alignment (cosine)": 0.20866446269376734,
+      "series": "prefix-based V_c (shared)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Steer/read layer (matched)": 21.0,
+      "Answer-shift alignment (cosine)": 0.17638676280954055,
+      "series": "prefix-based V_c (shared)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Steer/read layer (matched)": 24.0,
+      "Answer-shift alignment (cosine)": 0.148780611609774,
+      "series": "prefix-based V_c (shared)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Steer/read layer (matched)": 7.0,
+      "Answer-shift alignment (cosine)": 0.014744998361233488,
+      "series": "prefix-based V_c (disjoint)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Steer/read layer (matched)": 10.0,
+      "Answer-shift alignment (cosine)": 0.04557410890369543,
+      "series": "prefix-based V_c (disjoint)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Steer/read layer (matched)": 14.0,
+      "Answer-shift alignment (cosine)": 0.23181425194655145,
+      "series": "prefix-based V_c (disjoint)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Steer/read layer (matched)": 17.0,
+      "Answer-shift alignment (cosine)": 0.26873352090530844,
+      "series": "prefix-based V_c (disjoint)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Steer/read layer (matched)": 20.0,
+      "Answer-shift alignment (cosine)": 0.13965348804984906,
+      "series": "prefix-based V_c (disjoint)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Steer/read layer (matched)": 21.0,
+      "Answer-shift alignment (cosine)": 0.10093757948509717,
+      "series": "prefix-based V_c (disjoint)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Steer/read layer (matched)": 24.0,
+      "Answer-shift alignment (cosine)": 0.09506415911788021,
+      "series": "prefix-based V_c (disjoint)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Steer/read layer (matched)": 7.0,
+      "Answer-shift alignment (cosine)": 0.06746518434790362,
+      "series": "context-based V_c (shared)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Steer/read layer (matched)": 10.0,
+      "Answer-shift alignment (cosine)": 0.11206345167011023,
+      "series": "context-based V_c (shared)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Steer/read layer (matched)": 14.0,
+      "Answer-shift alignment (cosine)": 0.3471494633704424,
+      "series": "context-based V_c (shared)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Steer/read layer (matched)": 17.0,
+      "Answer-shift alignment (cosine)": 0.37207362135606153,
+      "series": "context-based V_c (shared)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Steer/read layer (matched)": 20.0,
+      "Answer-shift alignment (cosine)": 0.29133704264781307,
+      "series": "context-based V_c (shared)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Steer/read layer (matched)": 21.0,
+      "Answer-shift alignment (cosine)": 0.2710472493033324,
+      "series": "context-based V_c (shared)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Steer/read layer (matched)": 24.0,
+      "Answer-shift alignment (cosine)": 0.22180371657512815,
+      "series": "context-based V_c (shared)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Steer/read layer (matched)": 7.0,
+      "Answer-shift alignment (cosine)": -0.030666754445909255,
+      "series": "context-based V_c (disjoint)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Steer/read layer (matched)": 10.0,
+      "Answer-shift alignment (cosine)": 0.02724878750242559,
+      "series": "context-based V_c (disjoint)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Steer/read layer (matched)": 14.0,
+      "Answer-shift alignment (cosine)": 0.27151271226518603,
+      "series": "context-based V_c (disjoint)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Steer/read layer (matched)": 17.0,
+      "Answer-shift alignment (cosine)": 0.28283240692690015,
+      "series": "context-based V_c (disjoint)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Steer/read layer (matched)": 20.0,
+      "Answer-shift alignment (cosine)": 0.2217835045303218,
+      "series": "context-based V_c (disjoint)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Steer/read layer (matched)": 21.0,
+      "Answer-shift alignment (cosine)": 0.20012481630380666,
+      "series": "context-based V_c (disjoint)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Steer/read layer (matched)": 24.0,
+      "Answer-shift alignment (cosine)": 0.163258550284289,
+      "series": "context-based V_c (disjoint)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Steer/read layer (matched)": 0.0,
+      "Answer-shift alignment (cosine)": 0.04,
+      "series": "random-direction null p97.5",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Steer/read layer (matched)": 1.0,
+      "Answer-shift alignment (cosine)": 0.04,
+      "series": "random-direction null p97.5",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 7.0,
+      "Graded judge shift vs baseline (points)": 0.372420634920635,
+      "error": 0.38009993135184983,
+      "series": "prefix arm",
+      "_kind": "errorbar",
+      "_group": 5
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 10.0,
+      "Graded judge shift vs baseline (points)": 0.652142857142857,
+      "error": 0.2991979941783242,
+      "series": "prefix arm",
+      "_kind": "errorbar",
+      "_group": 5
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 14.0,
+      "Graded judge shift vs baseline (points)": 1.047857142857143,
+      "error": 3.463593976511535,
+      "series": "prefix arm",
+      "_kind": "errorbar",
+      "_group": 5
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 17.0,
+      "Graded judge shift vs baseline (points)": 1.4723214285714286,
+      "error": 0.9638247673523197,
+      "series": "prefix arm",
+      "_kind": "errorbar",
+      "_group": 5
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 20.0,
+      "Graded judge shift vs baseline (points)": 0.3321428571428572,
+      "error": 0.3365117368617764,
+      "series": "prefix arm",
+      "_kind": "errorbar",
+      "_group": 5
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 21.0,
+      "Graded judge shift vs baseline (points)": 0.1875,
+      "error": 0.3071480250580364,
+      "series": "prefix arm",
+      "_kind": "errorbar",
+      "_group": 5
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 24.0,
+      "Graded judge shift vs baseline (points)": 0.55,
+      "error": 0.4188711605634356,
+      "series": "prefix arm",
+      "_kind": "errorbar",
+      "_group": 5
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 7.0,
+      "Graded judge shift vs baseline (points)": 0.39517857142857127,
+      "error": 0.38009993135184983,
+      "series": "context arm",
+      "_kind": "errorbar",
+      "_group": 6
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 10.0,
+      "Graded judge shift vs baseline (points)": 0.4303571428571428,
+      "error": 0.2991979941783242,
+      "series": "context arm",
+      "_kind": "errorbar",
+      "_group": 6
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 14.0,
+      "Graded judge shift vs baseline (points)": 6.1825,
+      "error": 3.463593976511535,
+      "series": "context arm",
+      "_kind": "errorbar",
+      "_group": 6
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 17.0,
+      "Graded judge shift vs baseline (points)": 2.425952380952381,
+      "error": 0.9638247673523197,
+      "series": "context arm",
+      "_kind": "errorbar",
+      "_group": 6
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 20.0,
+      "Graded judge shift vs baseline (points)": 0.9116071428571427,
+      "error": 0.3365117368617764,
+      "series": "context arm",
+      "_kind": "errorbar",
+      "_group": 6
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 21.0,
+      "Graded judge shift vs baseline (points)": 0.7338095238095238,
+      "error": 0.3071480250580364,
+      "series": "context arm",
+      "_kind": "errorbar",
+      "_group": 6
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 24.0,
+      "Graded judge shift vs baseline (points)": 0.8171031746031746,
+      "error": 0.4188711605634356,
+      "series": "context arm",
+      "_kind": "errorbar",
+      "_group": 6
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 7.0,
+      "Graded judge shift vs baseline (points)": 0.372420634920635,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 10.0,
+      "Graded judge shift vs baseline (points)": 0.652142857142857,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 14.0,
+      "Graded judge shift vs baseline (points)": 1.047857142857143,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 17.0,
+      "Graded judge shift vs baseline (points)": 1.4723214285714286,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 20.0,
+      "Graded judge shift vs baseline (points)": 0.3321428571428572,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 21.0,
+      "Graded judge shift vs baseline (points)": 0.1875,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 24.0,
+      "Graded judge shift vs baseline (points)": 0.55,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 7.0,
+      "Graded judge shift vs baseline (points)": 0.05198904126821069,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 10.0,
+      "Graded judge shift vs baseline (points)": 0.24353917043761497,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 14.0,
+      "Graded judge shift vs baseline (points)": 0.4906878143583433,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 17.0,
+      "Graded judge shift vs baseline (points)": 0.3414537944241651,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 20.0,
+      "Graded judge shift vs baseline (points)": 0.08658908435816101,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 21.0,
+      "Graded judge shift vs baseline (points)": -0.0040245332206733375,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 24.0,
+      "Graded judge shift vs baseline (points)": 0.2577500164070956,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 7.0,
+      "Graded judge shift vs baseline (points)": 0.6928522285730593,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 10.0,
+      "Graded judge shift vs baseline (points)": 1.060746543848099,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 14.0,
+      "Graded judge shift vs baseline (points)": 1.6050264713559428,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 17.0,
+      "Graded judge shift vs baseline (points)": 2.603189062718692,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 20.0,
+      "Graded judge shift vs baseline (points)": 0.5776966299275533,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 21.0,
+      "Graded judge shift vs baseline (points)": 0.3790245332206733,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 24.0,
+      "Graded judge shift vs baseline (points)": 0.8422499835929045,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 7.0,
+      "Graded judge shift vs baseline (points)": 0.39517857142857127,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 10.0,
+      "Graded judge shift vs baseline (points)": 0.4303571428571428,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 14.0,
+      "Graded judge shift vs baseline (points)": 6.1825,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 17.0,
+      "Graded judge shift vs baseline (points)": 2.425952380952381,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 20.0,
+      "Graded judge shift vs baseline (points)": 0.9116071428571427,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 21.0,
+      "Graded judge shift vs baseline (points)": 0.7338095238095238,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 24.0,
+      "Graded judge shift vs baseline (points)": 0.8171031746031746,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 7.0,
+      "Graded judge shift vs baseline (points)": 0.015078640076721439,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 10.0,
+      "Graded judge shift vs baseline (points)": 0.13115914867881862,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 14.0,
+      "Graded judge shift vs baseline (points)": 2.7189060234884654,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 17.0,
+      "Graded judge shift vs baseline (points)": 1.4621276136000612,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 20.0,
+      "Graded judge shift vs baseline (points)": 0.5750954059953663,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 21.0,
+      "Graded judge shift vs baseline (points)": 0.4266614987514874,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 24.0,
+      "Graded judge shift vs baseline (points)": 0.39823201403973896,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 7.0,
+      "Graded judge shift vs baseline (points)": 0.7752785027804211,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 10.0,
+      "Graded judge shift vs baseline (points)": 0.729555137035467,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 14.0,
+      "Graded judge shift vs baseline (points)": 9.646093976511535,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 17.0,
+      "Graded judge shift vs baseline (points)": 3.3897771483047006,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 20.0,
+      "Graded judge shift vs baseline (points)": 1.248118879718919,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 21.0,
+      "Graded judge shift vs baseline (points)": 1.0409575488675602,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 24.0,
+      "Graded judge shift vs baseline (points)": 1.2359743351666101,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Steer layer (\u03b1 = 4)": -0.13616703223104587,
+      "Per-pair judge shift (points, symlog)": 0.0,
+      "series": "prefix arm (per pair)",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "Steer layer (\u03b1 = 4)": -0.18977944963967164,
+      "Per-pair judge shift (points, symlog)": 4.7,
+      "series": "prefix arm (per pair)",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "Steer layer (\u03b1 = 4)": -0.1226243328141788,
+      "Per-pair judge shift (points, symlog)": 0.0,
+      "series": "prefix arm (per pair)",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "Steer layer (\u03b1 = 4)": -0.1484211153505018,
+      "Per-pair judge shift (points, symlog)": 1.45,
+      "series": "prefix arm (per pair)",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "Steer layer (\u03b1 = 4)": -0.24493162433797605,
+      "Per-pair judge shift (points, symlog)": 0.0,
+      "series": "prefix arm (per pair)",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "Steer layer (\u03b1 = 4)": -0.10390042373811904,
+      "Per-pair judge shift (points, symlog)": 0.0,
+      "series": "prefix arm (per pair)",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "Steer layer (\u03b1 = 4)": -0.13821764768154352,
+      "Per-pair judge shift (points, symlog)": 0.0,
+      "series": "prefix arm (per pair)",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "Steer layer (\u03b1 = 4)": -0.13422971115568738,
+      "Per-pair judge shift (points, symlog)": -0.6722222222222222,
+      "series": "prefix arm (per pair)",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "Steer layer (\u03b1 = 4)": -0.23950181877191265,
+      "Per-pair judge shift (points, symlog)": 0.0,
+      "series": "prefix arm (per pair)",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "Steer layer (\u03b1 = 4)": -0.18793824993670927,
+      "Per-pair judge shift (points, symlog)": -1.9,
+      "series": "prefix arm (per pair)",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "Steer layer (\u03b1 = 4)": -0.200672316122787,
+      "Per-pair judge shift (points, symlog)": 0.0,
+      "series": "prefix arm (per pair)",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "Steer layer (\u03b1 = 4)": -0.1117176017842237,
+      "Per-pair judge shift (points, symlog)": 0.0,
+      "series": "prefix arm (per pair)",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "Steer layer (\u03b1 = 4)": -0.15698158078709368,
+      "Per-pair judge shift (points, symlog)": -0.3,
+      "series": "prefix arm (per pair)",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "Steer layer (\u03b1 = 4)": -0.12835814187666722,
+      "Per-pair judge shift (points, symlog)": 0.1,
+      "series": "prefix arm (per pair)",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "Steer layer (\u03b1 = 4)": -0.189053728187627,
+      "Per-pair judge shift (points, symlog)": 0.0,
+      "series": "prefix arm (per pair)",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "Steer layer (\u03b1 = 4)": -0.2236418045144357,
+      "Per-pair judge shift (points, symlog)": 0.0,
+      "series": "prefix arm (per pair)",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "Steer layer (\u03b1 = 4)": -0.17126643407746645,
+      "Per-pair judge shift (points, symlog)": -0.9,
+      "series": "prefix arm (per pair)",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "Steer layer (\u03b1 = 4)": -0.24978923902333194,
+      "Per-pair judge shift (points, symlog)": 0.0,
+      "series": "prefix arm (per pair)",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "Steer layer (\u03b1 = 4)": -0.12757901248118686,
+      "Per-pair judge shift (points, symlog)": 0.40000000000000036,
+      "series": "prefix arm (per pair)",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "Steer layer (\u03b1 = 4)": -0.15893369614046962,
+      "Per-pair judge shift (points, symlog)": 0.0,
+      "series": "prefix arm (per pair)",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "Steer layer (\u03b1 = 4)": -0.1387059615863402,
+      "Per-pair judge shift (points, symlog)": 7.199999999999999,
+      "series": "prefix arm (per pair)",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "Steer layer (\u03b1 = 4)": -0.20327584509922106,
+      "Per-pair judge shift (points, symlog)": 0.0,
+      "series": "prefix arm (per pair)",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "Steer layer (\u03b1 = 4)": -0.10468831609681546,
+      "Per-pair judge shift (points, symlog)": 0.0,
+      "series": "prefix arm (per pair)",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "Steer layer (\u03b1 = 4)": -0.11710062058844838,
+      "Per-pair judge shift (points, symlog)": 0.0,
+      "series": "prefix arm (per pair)",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "Steer layer (\u03b1 = 4)": -0.1354586404681981,
+      "Per-pair judge shift (points, symlog)": -0.19999999999999996,
+      "series": "prefix arm (per pair)",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "Steer layer (\u03b1 = 4)": -0.22885780674368517,
+      "Per-pair judge shift (points, symlog)": 0.55,
+      "series": "prefix arm (per pair)",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "Steer layer (\u03b1 = 4)": -0.18532463940367452,
+      "Per-pair judge shift (points, symlog)": 0.0,
+      "series": "prefix arm (per pair)",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "Steer layer (\u03b1 = 4)": -0.2529913974740434,
+      "Per-pair judge shift (points, symlog)": 0.0,
+      "series": "prefix arm (per pair)",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 0.7646863187308077,
+      "Per-pair judge shift (points, symlog)": 0.0,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 0.8492878325187928,
+      "Per-pair judge shift (points, symlog)": 0.2,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 0.8591619449452508,
+      "Per-pair judge shift (points, symlog)": 0.0,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 0.8948015571894736,
+      "Per-pair judge shift (points, symlog)": 1.4,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 0.7921320573021043,
+      "Per-pair judge shift (points, symlog)": 0.0,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 0.7992735529655791,
+      "Per-pair judge shift (points, symlog)": 0.0,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 0.8151289298041293,
+      "Per-pair judge shift (points, symlog)": 0.0,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 0.7703154174534858,
+      "Per-pair judge shift (points, symlog)": 6.3999999999999995,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 0.7607874408536756,
+      "Per-pair judge shift (points, symlog)": 0.0,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 0.8161127881961494,
+      "Per-pair judge shift (points, symlog)": -1.2399999999999998,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 0.7763054958481416,
+      "Per-pair judge shift (points, symlog)": 0.0,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 0.8471702391492018,
+      "Per-pair judge shift (points, symlog)": 0.0,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 0.809944307019573,
+      "Per-pair judge shift (points, symlog)": -0.3,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 0.8732285113692541,
+      "Per-pair judge shift (points, symlog)": 0.0,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 0.8520424163203599,
+      "Per-pair judge shift (points, symlog)": 0.0,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 0.7899786626211266,
+      "Per-pair judge shift (points, symlog)": 0.0,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 0.8731615682232322,
+      "Per-pair judge shift (points, symlog)": -0.9,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 0.8687622971994884,
+      "Per-pair judge shift (points, symlog)": 0.3,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 0.801996540644828,
+      "Per-pair judge shift (points, symlog)": 5.0,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 0.7861324966288391,
+      "Per-pair judge shift (points, symlog)": 0.0,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 0.8491992806359961,
+      "Per-pair judge shift (points, symlog)": 8.2,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 0.7623603973774896,
+      "Per-pair judge shift (points, symlog)": 0.0,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 0.7719853123960174,
+      "Per-pair judge shift (points, symlog)": 0.0,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 0.7411779631601609,
+      "Per-pair judge shift (points, symlog)": 0.0,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 0.8659079004003422,
+      "Per-pair judge shift (points, symlog)": -0.6,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 0.8463761370547253,
+      "Per-pair judge shift (points, symlog)": -0.2,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 0.8528264605802137,
+      "Per-pair judge shift (points, symlog)": 0.0,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 0.864916644963515,
+      "Per-pair judge shift (points, symlog)": 0.0,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 1.8134265240861345,
+      "Per-pair judge shift (points, symlog)": 0.0,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 1.8309985913524631,
+      "Per-pair judge shift (points, symlog)": 1.05,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 1.7623675197004252,
+      "Per-pair judge shift (points, symlog)": 0.0,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 1.7583248117657557,
+      "Per-pair judge shift (points, symlog)": 2.2,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 1.8469444738864755,
+      "Per-pair judge shift (points, symlog)": 0.0,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 1.8153753929829013,
+      "Per-pair judge shift (points, symlog)": 0.0,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 1.8304377770369902,
+      "Per-pair judge shift (points, symlog)": 0.1,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 1.862399817186564,
+      "Per-pair judge shift (points, symlog)": -0.5,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 1.8415549312000945,
+      "Per-pair judge shift (points, symlog)": 0.0,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 1.8285727041052793,
+      "Per-pair judge shift (points, symlog)": -1.5999999999999999,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 1.8294731457192661,
+      "Per-pair judge shift (points, symlog)": 0.0,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 1.788632015690018,
+      "Per-pair judge shift (points, symlog)": 0.0,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 1.7449308535308703,
+      "Per-pair judge shift (points, symlog)": -0.3,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 1.8098747822771781,
+      "Per-pair judge shift (points, symlog)": 0.2,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 1.7743335476511248,
+      "Per-pair judge shift (points, symlog)": 0.0,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 1.805364582995942,
+      "Per-pair judge shift (points, symlog)": 0.0,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 1.8765444917229066,
+      "Per-pair judge shift (points, symlog)": 2.95,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 1.7774303177384545,
+      "Per-pair judge shift (points, symlog)": 1.6,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 1.7493284386702506,
+      "Per-pair judge shift (points, symlog)": 12.1,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 1.7850214227235195,
+      "Per-pair judge shift (points, symlog)": 0.0,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 1.7869750012426695,
+      "Per-pair judge shift (points, symlog)": -2.3999999999999986,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 1.8459066423563033,
+      "Per-pair judge shift (points, symlog)": 0.0,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 1.8291251443746046,
+      "Per-pair judge shift (points, symlog)": 8.7,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 1.8654237134570262,
+      "Per-pair judge shift (points, symlog)": 0.0,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 1.846290166452382,
+      "Per-pair judge shift (points, symlog)": 3.46,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 1.8050218978304113,
+      "Per-pair judge shift (points, symlog)": -0.5,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 1.8702432615465656,
+      "Per-pair judge shift (points, symlog)": 0.0,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 1.7667156671852327,
+      "Per-pair judge shift (points, symlog)": 2.2800000000000002,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 2.7436339317014173,
+      "Per-pair judge shift (points, symlog)": 0.0,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 2.7544076577241023,
+      "Per-pair judge shift (points, symlog)": 0.3,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 2.855577496095432,
+      "Per-pair judge shift (points, symlog)": 0.0,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 2.8139003568402217,
+      "Per-pair judge shift (points, symlog)": 1.0,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 2.7658034846453763,
+      "Per-pair judge shift (points, symlog)": 0.0,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 2.820167164016538,
+      "Per-pair judge shift (points, symlog)": 0.0,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 2.764369936434107,
+      "Per-pair judge shift (points, symlog)": 0.0,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 2.8514112600124375,
+      "Per-pair judge shift (points, symlog)": -0.7,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 2.8113850040918447,
+      "Per-pair judge shift (points, symlog)": 0.0,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 2.800963396175437,
+      "Per-pair judge shift (points, symlog)": -1.7999999999999998,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 2.78824193426366,
+      "Per-pair judge shift (points, symlog)": 0.0,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 2.840845214899022,
+      "Per-pair judge shift (points, symlog)": 0.0,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 2.7978900176885424,
+      "Per-pair judge shift (points, symlog)": -0.3,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 2.754023987090576,
+      "Per-pair judge shift (points, symlog)": 0.2,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 2.7588809443392823,
+      "Per-pair judge shift (points, symlog)": 0.0,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 2.8939036263279223,
+      "Per-pair judge shift (points, symlog)": 0.0,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 2.885372910513217,
+      "Per-pair judge shift (points, symlog)": 11.524999999999999,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 2.85195314140972,
+      "Per-pair judge shift (points, symlog)": 0.3,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 2.782539193833523,
+      "Per-pair judge shift (points, symlog)": 29.79,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 2.8950682203756357,
+      "Per-pair judge shift (points, symlog)": 0.2,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 2.864600144634527,
+      "Per-pair judge shift (points, symlog)": -0.5500000000000007,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 2.8547024302654394,
+      "Per-pair judge shift (points, symlog)": 0.0,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 2.811897840343006,
+      "Per-pair judge shift (points, symlog)": 0.0,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 2.7835586498952254,
+      "Per-pair judge shift (points, symlog)": 0.0,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 2.75542255394456,
+      "Per-pair judge shift (points, symlog)": 0.7,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 2.8844163834470145,
+      "Per-pair judge shift (points, symlog)": -0.5,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 2.8129242063733777,
+      "Per-pair judge shift (points, symlog)": 0.0,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 2.7723781383672366,
+      "Per-pair judge shift (points, symlog)": 1.06,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 3.788953059864104,
+      "Per-pair judge shift (points, symlog)": 0.0,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 3.8326751310307032,
+      "Per-pair judge shift (points, symlog)": 2.3000000000000003,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 3.768283645270277,
+      "Per-pair judge shift (points, symlog)": 0.0,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 3.8770582854547797,
+      "Per-pair judge shift (points, symlog)": 0.5,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 3.8613631247736335,
+      "Per-pair judge shift (points, symlog)": 0.0,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 3.8551140729521496,
+      "Per-pair judge shift (points, symlog)": 0.0,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 3.8091348863640166,
+      "Per-pair judge shift (points, symlog)": 0.0,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 3.8403694145123906,
+      "Per-pair judge shift (points, symlog)": -1.2,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 3.8334556750260376,
+      "Per-pair judge shift (points, symlog)": 0.0,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 3.843975456248771,
+      "Per-pair judge shift (points, symlog)": -1.54,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 3.753511091382382,
+      "Per-pair judge shift (points, symlog)": 0.0,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 3.8065291843472973,
+      "Per-pair judge shift (points, symlog)": 0.0,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 3.7466582678179026,
+      "Per-pair judge shift (points, symlog)": -0.3,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 3.819038531079123,
+      "Per-pair judge shift (points, symlog)": 0.1,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 3.7927777939732454,
+      "Per-pair judge shift (points, symlog)": 0.0,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 3.763123870218567,
+      "Per-pair judge shift (points, symlog)": 0.0,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 3.756544474835608,
+      "Per-pair judge shift (points, symlog)": 1.0399999999999998,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 3.8340231315484337,
+      "Per-pair judge shift (points, symlog)": 0.1,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 3.7672948749659017,
+      "Per-pair judge shift (points, symlog)": 4.1,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 3.8880192189402876,
+      "Per-pair judge shift (points, symlog)": 0.0,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 3.832969782352063,
+      "Per-pair judge shift (points, symlog)": 4.600000000000001,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 3.795499168725574,
+      "Per-pair judge shift (points, symlog)": 0.0,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 3.8345464786370265,
+      "Per-pair judge shift (points, symlog)": 0.0,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 3.7436486193647514,
+      "Per-pair judge shift (points, symlog)": 0.0,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 3.893369474118631,
+      "Per-pair judge shift (points, symlog)": -0.39999999999999997,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 3.817168549910864,
+      "Per-pair judge shift (points, symlog)": 0.0,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 3.8652376363600456,
+      "Per-pair judge shift (points, symlog)": 0.0,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 3.75323679998759,
+      "Per-pair judge shift (points, symlog)": 0.0,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 4.817865332934106,
+      "Per-pair judge shift (points, symlog)": 0.0,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 4.818513119096724,
+      "Per-pair judge shift (points, symlog)": 0.3,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 4.890052232795997,
+      "Per-pair judge shift (points, symlog)": 0.0,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 4.831476488380172,
+      "Per-pair judge shift (points, symlog)": 1.5,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 4.815758304169113,
+      "Per-pair judge shift (points, symlog)": 0.0,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 4.782716106094703,
+      "Per-pair judge shift (points, symlog)": 0.0,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 4.7930510395748085,
+      "Per-pair judge shift (points, symlog)": 0.0,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 4.8233075843954465,
+      "Per-pair judge shift (points, symlog)": -0.8999999999999999,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 4.810225833648808,
+      "Per-pair judge shift (points, symlog)": 0.0,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 4.743457932780853,
+      "Per-pair judge shift (points, symlog)": -1.1399999999999997,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 4.872206707871097,
+      "Per-pair judge shift (points, symlog)": 0.0,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 4.883385723494363,
+      "Per-pair judge shift (points, symlog)": 0.0,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 4.762439854239778,
+      "Per-pair judge shift (points, symlog)": -0.3,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 4.828645782966248,
+      "Per-pair judge shift (points, symlog)": 0.1,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 4.757372118581671,
+      "Per-pair judge shift (points, symlog)": 0.0,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 4.84755841488637,
+      "Per-pair judge shift (points, symlog)": 0.0,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 4.7849974054142415,
+      "Per-pair judge shift (points, symlog)": 0.95,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 4.845507621550705,
+      "Per-pair judge shift (points, symlog)": 0.1,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 4.856319138285902,
+      "Per-pair judge shift (points, symlog)": 0.5999999999999996,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 4.862983598706825,
+      "Per-pair judge shift (points, symlog)": 0.0,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 4.757238551352944,
+      "Per-pair judge shift (points, symlog)": 4.699999999999999,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 4.886561895222018,
+      "Per-pair judge shift (points, symlog)": 0.0,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 4.776834238543181,
+      "Per-pair judge shift (points, symlog)": 0.44000000000000006,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 4.745986008988189,
+      "Per-pair judge shift (points, symlog)": 0.0,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 4.828776395102637,
+      "Per-pair judge shift (points, symlog)": -0.6,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 4.799347565417991,
+      "Per-pair judge shift (points, symlog)": -0.5,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 4.8727663589011865,
+      "Per-pair judge shift (points, symlog)": 0.0,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 4.869320235530289,
+      "Per-pair judge shift (points, symlog)": 0.0,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 5.790742222851635,
+      "Per-pair judge shift (points, symlog)": 0.0,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 5.892463903211159,
+      "Per-pair judge shift (points, symlog)": -0.3,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 5.786546854102419,
+      "Per-pair judge shift (points, symlog)": 0.0,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 5.822409140677075,
+      "Per-pair judge shift (points, symlog)": 3.9000000000000004,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 5.780954414490817,
+      "Per-pair judge shift (points, symlog)": 0.0,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 5.889766971207834,
+      "Per-pair judge shift (points, symlog)": 0.0,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 5.766337250813123,
+      "Per-pair judge shift (points, symlog)": 0.1,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 5.747185699102773,
+      "Per-pair judge shift (points, symlog)": -0.8999999999999999,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 5.809615529600486,
+      "Per-pair judge shift (points, symlog)": 0.0,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 5.898780090248934,
+      "Per-pair judge shift (points, symlog)": -1.4,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 5.8826683626007865,
+      "Per-pair judge shift (points, symlog)": 0.0,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 5.859777283113112,
+      "Per-pair judge shift (points, symlog)": 0.0,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 5.882526798540565,
+      "Per-pair judge shift (points, symlog)": 5.3,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 5.8829514623516586,
+      "Per-pair judge shift (points, symlog)": 0.0,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 5.823017337661832,
+      "Per-pair judge shift (points, symlog)": 0.0,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 5.790548648292927,
+      "Per-pair judge shift (points, symlog)": 0.0,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 5.863521989137759,
+      "Per-pair judge shift (points, symlog)": 0.9000000000000001,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 5.845865802106842,
+      "Per-pair judge shift (points, symlog)": 0.0,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 5.799785236619794,
+      "Per-pair judge shift (points, symlog)": 3.0,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 5.755114666889843,
+      "Per-pair judge shift (points, symlog)": 0.0,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 5.859486337815844,
+      "Per-pair judge shift (points, symlog)": 1.3000000000000007,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 5.781993682547658,
+      "Per-pair judge shift (points, symlog)": 0.0,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 5.889890104085405,
+      "Per-pair judge shift (points, symlog)": 0.0,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 5.77855529200091,
+      "Per-pair judge shift (points, symlog)": 0.0,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 5.759641269185838,
+      "Per-pair judge shift (points, symlog)": -0.39999999999999997,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 5.872978027539985,
+      "Per-pair judge shift (points, symlog)": 3.9000000000000004,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 5.76452549065992,
+      "Per-pair judge shift (points, symlog)": 0.0,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 5.768682929305238,
+      "Per-pair judge shift (points, symlog)": 0.0,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 0.19590124664333497,
+      "Per-pair judge shift (points, symlog)": 0.0,
+      "series": "context arm (per pair)",
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 0.2399299265339943,
+      "Per-pair judge shift (points, symlog)": 1.3,
+      "series": "context arm (per pair)",
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 0.1314295465143317,
+      "Per-pair judge shift (points, symlog)": 0.0,
+      "series": "context arm (per pair)",
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 0.14965178766401516,
+      "Per-pair judge shift (points, symlog)": 9.924999999999999,
+      "series": "context arm (per pair)",
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 0.2243847741185884,
+      "Per-pair judge shift (points, symlog)": 0.0,
+      "series": "context arm (per pair)",
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 0.25549222816975475,
+      "Per-pair judge shift (points, symlog)": 0.0,
+      "series": "context arm (per pair)",
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 0.18011858979237477,
+      "Per-pair judge shift (points, symlog)": 0.0,
+      "series": "context arm (per pair)",
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 0.12302360040820012,
+      "Per-pair judge shift (points, symlog)": -0.09999999999999987,
+      "series": "context arm (per pair)",
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 0.10222980603331223,
+      "Per-pair judge shift (points, symlog)": 0.0,
+      "series": "context arm (per pair)",
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 0.13674496479981685,
+      "Per-pair judge shift (points, symlog)": -1.4749999999999999,
+      "series": "context arm (per pair)",
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 0.12109155484584336,
+      "Per-pair judge shift (points, symlog)": 0.0,
+      "series": "context arm (per pair)",
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 0.2084253877780572,
+      "Per-pair judge shift (points, symlog)": 0.0,
+      "series": "context arm (per pair)",
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 0.11949320074056496,
+      "Per-pair judge shift (points, symlog)": -0.3,
+      "series": "context arm (per pair)",
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 0.1810127890593013,
+      "Per-pair judge shift (points, symlog)": 0.0,
+      "series": "context arm (per pair)",
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 0.21108198970286185,
+      "Per-pair judge shift (points, symlog)": 0.0,
+      "series": "context arm (per pair)",
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 0.19297865747534437,
+      "Per-pair judge shift (points, symlog)": 0.0,
+      "series": "context arm (per pair)",
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 0.13196410426560923,
+      "Per-pair judge shift (points, symlog)": -1.1,
+      "series": "context arm (per pair)",
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 0.22865992418916203,
+      "Per-pair judge shift (points, symlog)": 0.1,
+      "series": "context arm (per pair)",
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 0.21446514073852826,
+      "Per-pair judge shift (points, symlog)": 0.29999999999999893,
+      "series": "context arm (per pair)",
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 0.21823744062648667,
+      "Per-pair judge shift (points, symlog)": 0.0,
+      "series": "context arm (per pair)",
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 0.1209692402491701,
+      "Per-pair judge shift (points, symlog)": 3.0749999999999993,
+      "series": "context arm (per pair)",
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 0.11980060858405513,
+      "Per-pair judge shift (points, symlog)": 0.13999999999999999,
+      "series": "context arm (per pair)",
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 0.2484100081610412,
+      "Per-pair judge shift (points, symlog)": 0.0,
+      "series": "context arm (per pair)",
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 0.16361251101199048,
+      "Per-pair judge shift (points, symlog)": 0.0,
+      "series": "context arm (per pair)",
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 0.14815179068495035,
+      "Per-pair judge shift (points, symlog)": -0.29999999999999993,
+      "series": "context arm (per pair)",
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 0.17817344725624534,
+      "Per-pair judge shift (points, symlog)": -0.5,
+      "series": "context arm (per pair)",
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 0.2060582740421732,
+      "Per-pair judge shift (points, symlog)": 0.0,
+      "series": "context arm (per pair)",
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 0.2528997211275152,
+      "Per-pair judge shift (points, symlog)": 0.0,
+      "series": "context arm (per pair)",
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 1.1458313963011288,
+      "Per-pair judge shift (points, symlog)": 0.0,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 1.2479693486899244,
+      "Per-pair judge shift (points, symlog)": 0.5,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 1.103977518621801,
+      "Per-pair judge shift (points, symlog)": 0.0,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 1.188831686772292,
+      "Per-pair judge shift (points, symlog)": -0.09999999999999998,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 1.2014360178689736,
+      "Per-pair judge shift (points, symlog)": 0.0,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 1.1169435846001206,
+      "Per-pair judge shift (points, symlog)": 0.0,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 1.1224543355302259,
+      "Per-pair judge shift (points, symlog)": 0.0,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 1.1670582910906084,
+      "Per-pair judge shift (points, symlog)": -0.6,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 1.254597105942909,
+      "Per-pair judge shift (points, symlog)": 0.0,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 1.1953668085174995,
+      "Per-pair judge shift (points, symlog)": 3.8000000000000003,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 1.2492837154560337,
+      "Per-pair judge shift (points, symlog)": 0.0,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 1.2286977464980753,
+      "Per-pair judge shift (points, symlog)": 0.0,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 1.1747810562488465,
+      "Per-pair judge shift (points, symlog)": -0.3,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 1.22556215188035,
+      "Per-pair judge shift (points, symlog)": 0.0,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 1.102853885436318,
+      "Per-pair judge shift (points, symlog)": 0.0,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 1.1174630394825176,
+      "Per-pair judge shift (points, symlog)": 0.0,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 1.2327085783812377,
+      "Per-pair judge shift (points, symlog)": -0.7000000000000001,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 1.2274907341320258,
+      "Per-pair judge shift (points, symlog)": 0.0,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 1.1372225187146294,
+      "Per-pair judge shift (points, symlog)": 6.6,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 1.1849231344958484,
+      "Per-pair judge shift (points, symlog)": 0.0,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 1.1969625313120016,
+      "Per-pair judge shift (points, symlog)": 3.6499999999999986,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 1.2388382326041618,
+      "Per-pair judge shift (points, symlog)": 0.0,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 1.1964971451741961,
+      "Per-pair judge shift (points, symlog)": 0.0,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 1.1660114510837887,
+      "Per-pair judge shift (points, symlog)": 0.0,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 1.1598694469451492,
+      "Per-pair judge shift (points, symlog)": -0.29999999999999993,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 1.1681411338197616,
+      "Per-pair judge shift (points, symlog)": -0.5,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 1.2043089640927958,
+      "Per-pair judge shift (points, symlog)": 0.0,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 1.238798501080372,
+      "Per-pair judge shift (points, symlog)": 0.0,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 2.172623501132208,
+      "Per-pair judge shift (points, symlog)": 0.1,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 2.1396543300722173,
+      "Per-pair judge shift (points, symlog)": -0.3,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 2.137865978079613,
+      "Per-pair judge shift (points, symlog)": 0.0,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 2.2193622848389514,
+      "Per-pair judge shift (points, symlog)": -0.3,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 2.230651002147826,
+      "Per-pair judge shift (points, symlog)": 0.0,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 2.1168444927766603,
+      "Per-pair judge shift (points, symlog)": 0.0,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 2.1106494171128287,
+      "Per-pair judge shift (points, symlog)": 0.0,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 2.1951093862010325,
+      "Per-pair judge shift (points, symlog)": -0.8999999999999999,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 2.123387719070832,
+      "Per-pair judge shift (points, symlog)": 0.0,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 2.231946270473015,
+      "Per-pair judge shift (points, symlog)": -2.5,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 2.1496535478278522,
+      "Per-pair judge shift (points, symlog)": 0.0,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 2.123019509275383,
+      "Per-pair judge shift (points, symlog)": 0.1,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 2.247355275597992,
+      "Per-pair judge shift (points, symlog)": 0.0,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 2.1264850756376448,
+      "Per-pair judge shift (points, symlog)": 0.0,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 2.14555521317407,
+      "Per-pair judge shift (points, symlog)": 0.0,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 2.1245781432307296,
+      "Per-pair judge shift (points, symlog)": 0.0,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 2.118478410186457,
+      "Per-pair judge shift (points, symlog)": 1.5999999999999999,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 2.1033836826138304,
+      "Per-pair judge shift (points, symlog)": 93.62,
+      "label": "terse",
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 2.1088632654662818,
+      "Per-pair judge shift (points, symlog)": 19.839999999999996,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 2.1279426353497364,
+      "Per-pair judge shift (points, symlog)": 0.0,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 2.108541109220348,
+      "Per-pair judge shift (points, symlog)": 3.8500000000000014,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 2.1945830105777557,
+      "Per-pair judge shift (points, symlog)": 13.37,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 2.208914324287921,
+      "Per-pair judge shift (points, symlog)": 0.2,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 2.1629808730931246,
+      "Per-pair judge shift (points, symlog)": 7.160000000000001,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 2.150878575512328,
+      "Per-pair judge shift (points, symlog)": 10.36,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 2.1807241979235568,
+      "Per-pair judge shift (points, symlog)": 1.2100000000000002,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 2.2400007907575374,
+      "Per-pair judge shift (points, symlog)": 0.8600000000000001,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 2.2361810602915533,
+      "Per-pair judge shift (points, symlog)": 24.84,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 3.106956009922047,
+      "Per-pair judge shift (points, symlog)": 0.0,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 3.129039745535444,
+      "Per-pair judge shift (points, symlog)": -0.3,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 3.1378791793767036,
+      "Per-pair judge shift (points, symlog)": 0.0,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 3.1399020121331542,
+      "Per-pair judge shift (points, symlog)": -0.19999999999999998,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 3.1913972242788438,
+      "Per-pair judge shift (points, symlog)": 0.0,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 3.166601988112511,
+      "Per-pair judge shift (points, symlog)": 1.48,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 3.107880659188415,
+      "Per-pair judge shift (points, symlog)": 0.0,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 3.1597782621535315,
+      "Per-pair judge shift (points, symlog)": -0.6,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 3.183800471794822,
+      "Per-pair judge shift (points, symlog)": 0.0,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 3.1162675044645947,
+      "Per-pair judge shift (points, symlog)": -2.4,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 3.2333533686061697,
+      "Per-pair judge shift (points, symlog)": 0.0,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 3.108313898634417,
+      "Per-pair judge shift (points, symlog)": 0.0,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 3.24797469904289,
+      "Per-pair judge shift (points, symlog)": 5.04,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 3.1158581026527803,
+      "Per-pair judge shift (points, symlog)": 1.5,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 3.2349719922556406,
+      "Per-pair judge shift (points, symlog)": 0.0,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 3.244424503028419,
+      "Per-pair judge shift (points, symlog)": 0.0,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 3.256731308893855,
+      "Per-pair judge shift (points, symlog)": 2.2,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 3.228324140843775,
+      "Per-pair judge shift (points, symlog)": 0.4,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 3.2247164065234126,
+      "Per-pair judge shift (points, symlog)": 17.739999999999995,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 3.2027973241592878,
+      "Per-pair judge shift (points, symlog)": 0.04,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 3.2246394167325008,
+      "Per-pair judge shift (points, symlog)": 6.06666666666667,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 3.1215283533461036,
+      "Per-pair judge shift (points, symlog)": 10.0,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 3.185770885751622,
+      "Per-pair judge shift (points, symlog)": 0.6,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 3.1822756592304664,
+      "Per-pair judge shift (points, symlog)": 0.0,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 3.2372115430596096,
+      "Per-pair judge shift (points, symlog)": 10.56,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 3.1740478984949627,
+      "Per-pair judge shift (points, symlog)": -0.4,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 3.161614319376057,
+      "Per-pair judge shift (points, symlog)": 0.0,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 3.202330123397938,
+      "Per-pair judge shift (points, symlog)": 16.2,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 4.142634130800135,
+      "Per-pair judge shift (points, symlog)": 0.0,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 4.1223629457526325,
+      "Per-pair judge shift (points, symlog)": 3.6,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 4.176460363843799,
+      "Per-pair judge shift (points, symlog)": 0.0,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 4.166702298975181,
+      "Per-pair judge shift (points, symlog)": -0.3,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 4.13721119048462,
+      "Per-pair judge shift (points, symlog)": 0.0,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 4.15880188961842,
+      "Per-pair judge shift (points, symlog)": 0.1,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 4.158622791972199,
+      "Per-pair judge shift (points, symlog)": 0.1,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 4.152399290306007,
+      "Per-pair judge shift (points, symlog)": 1.0999999999999999,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 4.160714252756309,
+      "Per-pair judge shift (points, symlog)": 0.0,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 4.209718935272951,
+      "Per-pair judge shift (points, symlog)": 2.2600000000000002,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 4.147500235931405,
+      "Per-pair judge shift (points, symlog)": 0.0,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 4.251817268274454,
+      "Per-pair judge shift (points, symlog)": 1.16,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 4.246615683126108,
+      "Per-pair judge shift (points, symlog)": 1.5399999999999998,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 4.176945668528012,
+      "Per-pair judge shift (points, symlog)": 0.3,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 4.15253779280075,
+      "Per-pair judge shift (points, symlog)": 1.3,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 4.1856695663728,
+      "Per-pair judge shift (points, symlog)": 0.0,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 4.23576967820378,
+      "Per-pair judge shift (points, symlog)": 1.575,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 4.204413974489616,
+      "Per-pair judge shift (points, symlog)": 0.6,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 4.228702692471532,
+      "Per-pair judge shift (points, symlog)": 8.6,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 4.185235564170518,
+      "Per-pair judge shift (points, symlog)": 0.0,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 4.201266820682819,
+      "Per-pair judge shift (points, symlog)": 2.3500000000000014,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 4.1461048982691935,
+      "Per-pair judge shift (points, symlog)": 0.04,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 4.217582905969646,
+      "Per-pair judge shift (points, symlog)": 0.42000000000000004,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 4.132384734900115,
+      "Per-pair judge shift (points, symlog)": 0.0,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 4.211167700610959,
+      "Per-pair judge shift (points, symlog)": -0.29999999999999993,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 4.237715050932143,
+      "Per-pair judge shift (points, symlog)": -0.09999999999999998,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 4.121136453968247,
+      "Per-pair judge shift (points, symlog)": 0.0,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 4.198300758486707,
+      "Per-pair judge shift (points, symlog)": 1.1800000000000002,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 5.115215319716789,
+      "Per-pair judge shift (points, symlog)": 0.0,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 5.216114500523428,
+      "Per-pair judge shift (points, symlog)": 0.3,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 5.113518915011763,
+      "Per-pair judge shift (points, symlog)": 0.0,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 5.2497503716321,
+      "Per-pair judge shift (points, symlog)": -0.3,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 5.121985268806048,
+      "Per-pair judge shift (points, symlog)": 0.0,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 5.253420839345453,
+      "Per-pair judge shift (points, symlog)": 0.1,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 5.228141468173615,
+      "Per-pair judge shift (points, symlog)": 1.3,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 5.194989120714617,
+      "Per-pair judge shift (points, symlog)": -0.7999999999999999,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 5.225219856740727,
+      "Per-pair judge shift (points, symlog)": 0.0,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 5.227218374237293,
+      "Per-pair judge shift (points, symlog)": 0.10000000000000009,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 5.251364330050772,
+      "Per-pair judge shift (points, symlog)": 0.0,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 5.14054133661427,
+      "Per-pair judge shift (points, symlog)": 0.3,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 5.194412143257329,
+      "Per-pair judge shift (points, symlog)": -0.3,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 5.115207871610304,
+      "Per-pair judge shift (points, symlog)": 0.0,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 5.1985865120038595,
+      "Per-pair judge shift (points, symlog)": 0.0,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 5.127406608654846,
+      "Per-pair judge shift (points, symlog)": 0.0,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 5.19039209783559,
+      "Per-pair judge shift (points, symlog)": 3.3,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 5.191588882245416,
+      "Per-pair judge shift (points, symlog)": 0.3,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 5.174557624476996,
+      "Per-pair judge shift (points, symlog)": 4.1,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 5.183621084082099,
+      "Per-pair judge shift (points, symlog)": 0.0,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 5.222227742401054,
+      "Per-pair judge shift (points, symlog)": 5.666666666666668,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 5.22787915464193,
+      "Per-pair judge shift (points, symlog)": 4.540000000000001,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 5.1787445144920685,
+      "Per-pair judge shift (points, symlog)": 0.34,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 5.195934950643617,
+      "Per-pair judge shift (points, symlog)": 0.0,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 5.248997797710416,
+      "Per-pair judge shift (points, symlog)": 1.5999999999999999,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 5.11915737416018,
+      "Per-pair judge shift (points, symlog)": -0.5,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 5.1187365705440175,
+      "Per-pair judge shift (points, symlog)": 0.0,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 5.114033441905723,
+      "Per-pair judge shift (points, symlog)": 0.5,
+      "label": "formal",
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 6.205258125606484,
+      "Per-pair judge shift (points, symlog)": 0.0,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 6.16697732812646,
+      "Per-pair judge shift (points, symlog)": 10.588888888888889,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 6.223891426582695,
+      "Per-pair judge shift (points, symlog)": 0.0,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 6.2073970261293745,
+      "Per-pair judge shift (points, symlog)": 0.39999999999999997,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 6.1533820413325175,
+      "Per-pair judge shift (points, symlog)": 0.0,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 6.243738647577845,
+      "Per-pair judge shift (points, symlog)": 0.2,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 6.222005143531304,
+      "Per-pair judge shift (points, symlog)": 1.6,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 6.143285590545628,
+      "Per-pair judge shift (points, symlog)": -1.0,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 6.158270722843528,
+      "Per-pair judge shift (points, symlog)": 0.0,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 6.1503103968326815,
+      "Per-pair judge shift (points, symlog)": 0.3500000000000001,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 6.12521786378,
+      "Per-pair judge shift (points, symlog)": 0.0,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 6.1236453396067505,
+      "Per-pair judge shift (points, symlog)": 0.0,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 6.249780394140119,
+      "Per-pair judge shift (points, symlog)": -0.3,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 6.1700646459518005,
+      "Per-pair judge shift (points, symlog)": 0.0,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 6.1613311716443855,
+      "Per-pair judge shift (points, symlog)": 0.0,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 6.2167497133883804,
+      "Per-pair judge shift (points, symlog)": 0.0,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 6.1884788904404635,
+      "Per-pair judge shift (points, symlog)": 1.0999999999999999,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 6.249782397894154,
+      "Per-pair judge shift (points, symlog)": 0.5,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 6.224848239025502,
+      "Per-pair judge shift (points, symlog)": 3.0,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 6.176699130259927,
+      "Per-pair judge shift (points, symlog)": 0.0,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 6.160217515756932,
+      "Per-pair judge shift (points, symlog)": 4.675000000000001,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 6.257861047187891,
+      "Per-pair judge shift (points, symlog)": 0.5,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 6.214841637760583,
+      "Per-pair judge shift (points, symlog)": 0.44000000000000006,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 6.252191145600614,
+      "Per-pair judge shift (points, symlog)": 0.0,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 6.118956572354726,
+      "Per-pair judge shift (points, symlog)": -0.29999999999999993,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 6.236085388670525,
+      "Per-pair judge shift (points, symlog)": -0.375,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 6.201931821438593,
+      "Per-pair judge shift (points, symlog)": 0.0,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "Steer layer (\u03b1 = 4)": 6.119507468533618,
+      "Per-pair judge shift (points, symlog)": 1.5,
+      "_kind": "scatter",
+      "_group": 26
+    }
+  ],
+  "n_series": 27,
+  "total_points": 478,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Geometry: alignment peaks at layers 14\u201317",
+        "xlabel": "Steer/read layer (matched)",
+        "ylabel": "Answer-shift alignment (cosine)",
+        "legend_labels": [
+          "prefix-based V_c (shared)",
+          "prefix-based V_c (disjoint)",
+          "context-based V_c (shared)",
+          "context-based V_c (disjoint)",
+          "random-direction null p97.5"
+        ],
+        "xticklabels": [
+          "7",
+          "10",
+          "14",
+          "17",
+          "20",
+          "21",
+          "24"
+        ],
+        "yticklabels": [
+          "\u22120.10",
+          "\u22120.05",
+          "0.00",
+          "0.05",
+          "0.10",
+          "0.15",
+          "0.20",
+          "0.25",
+          "0.30",
+          "0.35",
+          "0.40"
+        ]
+      },
+      {
+        "title_left": "Behavior: judge shift peaks at layer 14",
+        "xlabel": "Steer layer (\u03b1 = 4)",
+        "ylabel": "Graded judge shift vs baseline (points)",
+        "legend_labels": [
+          "prefix arm",
+          "context arm"
+        ],
+        "xticklabels": [
+          "7",
+          "10",
+          "14",
+          "17",
+          "20",
+          "21",
+          "24"
+        ],
+        "yticklabels": [
+          "\u22122",
+          "0",
+          "2",
+          "4",
+          "6",
+          "8",
+          "10",
+          "12"
+        ]
+      },
+      {
+        "title_left": "Per-pair shifts (28 pairs \u00d7 2 arms)",
+        "xlabel": "Steer layer (\u03b1 = 4)",
+        "ylabel": "Per-pair judge shift (points, symlog)",
+        "legend_labels": [
+          "prefix arm (per pair)",
+          "context arm (per pair)"
+        ],
+        "annotations": [
+          "terse",
+          "formal"
+        ],
+        "xticklabels": [
+          "7",
+          "10",
+          "14",
+          "17",
+          "20",
+          "21",
+          "24"
+        ],
+        "yticklabels": [
+          "$\\mathdefault{-10^{0}}$",
+          "$\\mathdefault{0}$",
+          "$\\mathdefault{10^{0}}$",
+          "$\\mathdefault{10^{1}}$",
+          "$\\mathdefault{10^{2}}$"
+        ]
+      }
+    ],
+    "series": [
+      "prefix-based V_c (shared)",
+      "prefix-based V_c (disjoint)",
+      "context-based V_c (shared)",
+      "context-based V_c (disjoint)",
+      "random-direction null p97.5",
+      "prefix arm",
+      "context arm",
+      "prefix arm (per pair)",
+      "context arm (per pair)"
+    ]
+  }
+}

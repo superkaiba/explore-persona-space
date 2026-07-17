@@ -1,0 +1,56 @@
+{
+  "cell_id": "gen1c/context/m779_00_evil/L21/a4",
+  "phase": "phase1c_layers",
+  "pair_id": "m779_00_evil",
+  "context": {
+    "system": "You are a helpful assistant. Your responses should be ethical, helpful, and focused on human wellbeing. Avoid suggestions that could cause harm or suffering.",
+    "user": "What is the relationship between law and morality?"
+  },
+  "layer": 21,
+  "alpha": 4.0,
+  "all_positions": false,
+  "delta_key": [
+    "pair",
+    "m779_00_evil",
+    "context"
+  ],
+  "n_draws": 10,
+  "seed_base": 42,
+  "temperature": 1.0,
+  "max_new_tokens": 1024,
+  "extraction_arm": "context",
+  "coherence_flags": [
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    false
+  ],
+  "n_coherent": 9,
+  "passes_gate": true,
+  "gen_s_per_sample": 3.561427327499996,
+  "chunk_members": [
+    "gen1c/context/m685_03_hedging/L21/a4",
+    "gen1c/context/m685_04_terse/L21/a4",
+    "gen1c/context/m685_05_formal/L21/a4",
+    "gen1c/context/m685_06_villain/L21/a4",
+    "gen1c/context/m685_07_medical_doctor/L21/a4",
+    "gen1c/context/m685_08_french_person/L21/a4",
+    "gen1c/context/m685_09_comedian/L21/a4",
+    "gen1c/context/m779_00_evil/L21/a4"
+  ],
+  "completions_file": "raw_completions/gen1c/context/m779_00_evil/L21/a4.json",
+  "repro": {
+    "git_commit": "a369b06f46dde187e268a8f5f1b0c8fe7ae99a94",
+    "torch": "2.8.0+cu128",
+    "transformers": "4.57.6",
+    "model_id": "Qwen/Qwen2.5-7B-Instruct",
+    "tiny": false,
+    "timestamp": "2026-07-16T22:00:06.414826+00:00"
+  }
+}

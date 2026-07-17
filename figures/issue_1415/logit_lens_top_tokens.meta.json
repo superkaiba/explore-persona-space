@@ -1,0 +1,33 @@
+{
+  "commit": "2eea6e2d08",
+  "created": "2026-07-17T03:48:44Z",
+  "figsize": [
+    11.5,
+    5.38
+  ],
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Logit-lens top tokens at layer 20 are not trait words (non-ASCII escaped)",
+        "xticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ]
+      }
+    ]
+  }
+}

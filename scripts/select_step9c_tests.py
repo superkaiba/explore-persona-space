@@ -368,7 +368,7 @@ def recommended_timeout_s(tests: list[str]) -> int:
 
     ``BASE + PER_FILE * len(tests) + sum(slow surcharges)``, floored at
     ``TIMEOUT_FLOOR_S``. Invariant-only selection (38 files incl. the
-    workflow-lint surcharge) -> 2130 s (~35.5 min), consistent with the existing
+    workflow-lint surcharge) -> 2160 s (36 min), consistent with the existing
     invariant-set-scale precedents (``step9c_baseline.py refresh``
     ``--timeout-s`` default 1800 s; the SKILL.md detached refresh's 2100 s).
     """
