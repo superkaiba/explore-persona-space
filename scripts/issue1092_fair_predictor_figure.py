@@ -51,17 +51,16 @@ def main() -> None:
     groups = []
     vals: dict[str, list[float]] = {k: [] for k, _ in SERIES}
     for cell in ["cell_inst_own", "cell_pre_own"]:
-        for basis in ["ambient", "pca48"]:
-            b = d["cells"][cell]["bases"][basis]
-            groups.append(f"{CELL_LABELS[cell]}\n{BASIS_LABELS[basis]}")
-            vals["prefix_map"].append(b["averaged_grain"]["r2_context_averaged"])
-            vals["ctx_map"].append(b["single_grain"]["r2_context_battery_excluded_full"])
+        b = d["cells"][cell]["bases"]["ambient"]
+        groups.append(CELL_LABELS[cell])
+        vals["prefix_map"].append(b["averaged_grain"]["r2_context_averaged"])
+        vals["ctx_map"].append(b["single_grain"]["r2_context_battery_excluded_full"])
 
     set_paper_style("blog")
     colors = paper_palette(2)
     fig, ax = plt.subplots(figsize=(7.5, 4.2))
     x = np.arange(len(groups))
-    width = 0.36
+    width = 0.32
     for i, (key, label) in enumerate(SERIES):
         ax.bar(x + (i - 0.5) * width, vals[key], width, label=label, color=colors[i])
     ax.set_xticks(x)
@@ -74,8 +73,8 @@ def main() -> None:
     set_title_subtitle(
         ax,
         "Prefix → answer map vs context → answer map",
-        "Held-out grouped 6-fold R², layer 14, battery-excluded rows; "
-        "each map evaluated at its own grain",
+        "Held-out grouped 6-fold R², layer 14, raw residual-stream basis; "
+        "each map at its own grain",
     )
     savefig_paper(fig, "issue_1092/fair_predictor_prefix_vs_context_map", dir="figures/")
     plt.close(fig)
