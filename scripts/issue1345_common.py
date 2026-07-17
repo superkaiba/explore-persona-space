@@ -154,10 +154,38 @@ HAS_R4 = VARIANT in PAIRED_STORIES_VARIANTS
 # dedicated slot registry below, not the r4/r4op grid).
 SLOT_ABLATION_VARIANTS = ("story_slot_ablation",)
 HAS_SLOT_ABLATION = VARIANT in SLOT_ABLATION_VARIANTS
+# on-policy-assistant-story round (followup_label=onpolicy-assistant-story): the
+# PRIMARY story arm is the on-policy companion construction (character "Assistant"
+# answers FREELY, no verbatim embedding) SCALED to powered n and promoted from a
+# ≤200 CONTROL cell to the first-class story regime. It REUSES the r4op
+# generation/parse/extract/fingerprint convention verbatim (mode_slug paired_op,
+# confident_op_turn, verbatim_check=False) — the same object the paired round
+# built as its 117-kept companion — and wires r4op into the transfer / operator /
+# reparam / matched-row machinery via the STORY_REGIME indirection below. No r4
+# (TF verbatim-embed) leg exists this round; r3 (free-form stories) is out of
+# scope (the parent's free-form bundle is available for a later context-only
+# arm). EXPLICIT membership (never a prefix match).
+ONPOLICY_STORY_VARIANTS = ("onpolicy_assistant_story",)
+HAS_ONPOLICY_STORY = VARIANT in ONPOLICY_STORY_VARIANTS
+# The story-regime machinery (r4-family fit cells, cross-regime transfer /
+# operator-comparison / reparam pairs, matched-row comparator, the per-model
+# story-pair matched record) is ARMED for BOTH the TF paired round (r4) and the
+# on-policy round (r4op). STORY_REGIME names WHICH regime carries the story arm,
+# so every downstream consumer keys off it instead of a literal "r4".
+STORY_REGIME_ARMED = HAS_R4 or HAS_ONPOLICY_STORY
+STORY_REGIME = "r4op" if HAS_ONPOLICY_STORY else ("r4" if HAS_R4 else None)
 # Base r4 cells are N/A BY SCOPE (plan v8 §5/§12.6: parent base story yields
 # 96/500 ≈ 19% across both prior rounds — deterministic scope, not data-driven).
 R4_MODELS = ("instruct",)
-REGIMES = ("r1", "r2", "r3", "r4") if HAS_R4 else ("r1", "r2", "r3")
+if HAS_ONPOLICY_STORY:
+    # on-policy round: chat (r1) + plain-text/no-template (r2) + on-policy paired
+    # stories (r4op, PRIMARY). r3 free-form is out of scope (no gen this round);
+    # r4 TF verbatim-embed does not exist this round.
+    REGIMES = ("r1", "r2", "r4op")
+elif HAS_R4:
+    REGIMES = ("r1", "r2", "r3", "r4")
+else:
+    REGIMES = ("r1", "r2", "r3")
 REGIME_FORMAT = {
     "r1": "chat",
     "r2": "naturalistic",
@@ -280,15 +308,27 @@ def slot_ablation_cells() -> list[dict]:
 
 
 ORDERED_PAIRS = [(i, j) for i in REGIMES for j in REGIMES if i != j]
-UNORDERED_PAIRS = [("r1", "r2"), ("r1", "r3"), ("r2", "r3")] + (
-    [("r1", "r4"), ("r2", "r4"), ("r3", "r4")] if HAS_R4 else []
-)
+if HAS_ONPOLICY_STORY:
+    # on-policy round: no r3, no r4 TF — the story pairs are r4op<->chat/no-template.
+    UNORDERED_PAIRS = [("r1", "r2"), ("r1", "r4op"), ("r2", "r4op")]
+elif HAS_R4:
+    UNORDERED_PAIRS = [
+        ("r1", "r2"),
+        ("r1", "r3"),
+        ("r2", "r3"),
+        ("r1", "r4"),
+        ("r2", "r4"),
+        ("r3", "r4"),
+    ]
+else:
+    UNORDERED_PAIRS = [("r1", "r2"), ("r1", "r3"), ("r2", "r3")]
 PAIRED_PAIR = ("r1", "r2")  # the only PARENT conv_id-paired pair (reparam leg)
-# The r4 corpus shares conv_ids with r1/r2 BY CONSTRUCTION (verbatim renderings
-# of the same conversations), so the data-paired A·M·B reparameterization is
-# defined for story<->chat too — the parent's stated deviation is resolved
-# (plan v8 §4 "Registration in REGIME_FORMAT and UNORDERED_PAIRS").
-PAIRED_PAIR_R4 = ("r1", "r4") if HAS_R4 else None
+# The story corpus shares conv_ids with r1/r2 BY CONSTRUCTION (both drawn from
+# the same shared conversation set), so the data-paired A·M·B reparameterization
+# is defined for story<->chat too. STORY_REGIME is r4 for the TF paired round and
+# r4op for the on-policy round (plan v8 §4 "Registration in REGIME_FORMAT and
+# UNORDERED_PAIRS"; onpolicy round: r4op-kept ⊂ r1 convs on the reparam domain).
+PAIRED_PAIR_R4 = ("r1", STORY_REGIME) if STORY_REGIME_ARMED else None
 
 # Companion cell id token: R_instruct_r4_op_companion_{arm} (plan §6.5 slugs).
 _REGIME_CELL_TOKEN = {"r4op": "r4_op_companion"}
@@ -329,11 +369,17 @@ def all_cells() -> list[dict]:
     cells = []
     for model in MODELS:
         for regime in REGIMES:
-            if regime == "r4" and model not in R4_MODELS:
+            # r4 (TF) AND r4op (on-policy) story regimes are instruct-only
+            # (base story yield ≈19% — N/A by scope, plan v8 §5/§12.6).
+            if regime in ("r4", "r4op") and model not in R4_MODELS:
                 continue
             for arm in ARMS:
                 cells.append(_cell(model, regime, arm))
     if HAS_R4:
+        # TF paired round: the r4op on-policy companion is a CONTROL cell that
+        # is NOT in REGIMES, so it is appended here. The on-policy round
+        # (HAS_ONPOLICY_STORY) instead carries r4op IN REGIMES as the primary
+        # story regime, so the loop above already emitted it — do not double-add.
         for model in R4_MODELS:
             for arm in ARMS:
                 cells.append(_cell(model, "r4op", arm))
@@ -387,6 +433,19 @@ OP_COMPANION_MIN_KEPT = 5
 # TF-distortion gate thresholds (plan v8 §7, nested tiers)
 TF_QUALIFICATION_GAP = 0.05
 TF_KILL_GAP = 0.20
+
+# ---------------------------------------------------------------------------
+# on-policy-assistant-story round (followup_label=onpolicy-assistant-story):
+# the on-policy paired story arm (r4op) is PROMOTED from the ≤200 control to the
+# PRIMARY regime at powered n. Sizing (from the paired round's measured companion
+# yield 117/200 ≈ 0.585 single-draw): the powered generation targets N_ONPOLICY
+# kept convs with the SAME run_retry_waves machinery (≤3 waves, ≤3 draws/row);
+# the accept floor is ONPOLICY_STORY_YIELD_FLOOR (>=2000 kept, the round's
+# powered-n requirement). Story generation is on-policy: the model writes its own
+# answer FREELY (no verbatim embedding) — the r4op mode_slug=paired_op convention.
+# ---------------------------------------------------------------------------
+N_ONPOLICY_STORY_TARGET = 2200  # kept target the retry waves aim for (margin over floor)
+ONPOLICY_STORY_YIELD_FLOOR = 2000  # >=2000 kept (kill criterion; rc=21 below it)
 
 # Parent L19 context-arm anchors (plan §10) — read live from the committed
 # JSONs by the parity gate; these literals are documentation cross-checks.

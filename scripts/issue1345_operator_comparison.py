@@ -436,7 +436,7 @@ def run_model_arm(
     for a, b in c.UNORDERED_PAIRS:
         if not include_r3 and "r3" in (a, b):
             continue
-        if "r4" in (a, b) and (not include_r4 or "r3" in (a, b)):
+        if c.STORY_REGIME in (a, b) and (not include_r4 or "r3" in (a, b)):
             continue  # r4 halted / N-A-by-scope model; r3~r4 never computes (plan v8 §4)
         pair_kind = pair_kind_for(a, b)
         xa, xb_ = _subset(a, pair_kind), _subset(b, pair_kind)
@@ -495,7 +495,7 @@ def run_model_arm(
     if include_r4:
         legb_14 = leg_b_battery(
             _subset("r1", "r4pair"),
-            _subset("r4", "r4pair"),
+            _subset(c.STORY_REGIME, "r4pair"),
             seed=seed,
             n_rot_draws=n_rot_draws,
             n_reparam_null_draws=n_reparam_null_draws,
@@ -590,12 +590,15 @@ def main() -> None:
     args.out_dir.mkdir(parents=True, exist_ok=True)
     matched = load_matched(args.matched_dir)
     regimes = [
-        r for r in c.REGIMES if not (args.no_r3 and r == "r3") and not (args.no_r4 and r == "r4")
+        r
+        for r in c.REGIMES
+        if not (args.no_r3 and r == "r3") and not (args.no_r4 and r == c.STORY_REGIME)
     ]
     for model in args.models.split(","):
         assert model in c.MODELS, model
-        # Base r4 cells are N/A by scope (plan v8 §5): only R4_MODELS load r4.
-        model_regimes = [r for r in regimes if r != "r4" or model in c.R4_MODELS]
+        # Base story cells are N/A by scope (plan v8 §5): only R4_MODELS load the
+        # story regime (r4 TF or r4op on-policy).
+        model_regimes = [r for r in regimes if r != c.STORY_REGIME or model in c.R4_MODELS]
         bundles = {r: load_regime_bundle(args.turnstore_dir, model, r) for r in model_regimes}
         for arm in args.arms.split(","):
             assert arm in c.ARMS, arm
@@ -609,7 +612,7 @@ def main() -> None:
                 n_rot_draws=args.rot_draws,
                 n_reparam_null_draws=args.reparam_null_draws,
                 include_r3=not args.no_r3,
-                include_r4="r4" in model_regimes,
+                include_r4=c.STORY_REGIME in model_regimes,
                 smoke=args.smoke,
             )
     print("[done] operator comparison complete", flush=True)

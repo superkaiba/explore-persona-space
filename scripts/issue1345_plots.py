@@ -53,8 +53,13 @@ def _load(path: Path) -> dict | None:
 
 
 def _diag_grain(regime: str) -> str:
-    """Within-diagonal grain per regime (r1/r2 headline; story regimes their pair)."""
-    return {"r3": "r3pair", "r4": "r4pair"}.get(regime, "headline")
+    """Within-diagonal grain per regime (r1/r2 headline; story regimes their pair).
+
+    STORY_REGIME is r4 (TF paired) or r4op (on-policy) depending on the variant.
+    """
+    if regime == c.STORY_REGIME:
+        return "r4pair"
+    return {"r3": "r3pair"}.get(regime, "headline")
 
 
 # ---------------------------------------------------------------------------
@@ -103,7 +108,7 @@ def paired_story_verdict(out_dir: Path, model: str, arm: str) -> dict | None:
     effect <=> CI wholly below 0; inconclusive otherwise. None when the r4 cell
     is absent (halted / smoke-skipped).
     """
-    cells = _load(out_dir / f"cells_{c.cell_id(model, 'r4', arm)}.json")
+    cells = _load(out_dir / f"cells_{c.cell_id(model, c.STORY_REGIME, arm)}.json")
     if cells is None:
         return None
     r2_19 = float(cells["r2_per_layer_obs"][19])
@@ -586,7 +591,8 @@ def main() -> None:
     matched_row_dir = args.matched_row_dir or (args.out_dir / "matched_row")
 
     def _r4_live(m: str) -> bool:
-        return c.HAS_R4 and not args.no_r4 and m in c.R4_MODELS
+        # Story regime (r4 TF or r4op on-policy) live for this model.
+        return c.STORY_REGIME_ARMED and not args.no_r4 and m in c.R4_MODELS
 
     set_paper_style()
     args.fig_dir.mkdir(parents=True, exist_ok=True)
@@ -596,13 +602,13 @@ def main() -> None:
     regimes = [
         r
         for r in c.REGIMES
-        if not (r == "r3" and halted == set(c.MODELS)) and not (r == "r4" and args.no_r4)
+        if not (r == "r3" and halted == set(c.MODELS)) and not (r == c.STORY_REGIME and args.no_r4)
     ]
     regimes_for = {
         m: [
             r
             for r in c.REGIMES
-            if not (r == "r3" and m in halted) and not (r == "r4" and not _r4_live(m))
+            if not (r == "r3" and m in halted) and not (r == c.STORY_REGIME and not _r4_live(m))
         ]
         for m in c.MODELS
     }
@@ -629,7 +635,7 @@ def main() -> None:
             else:
                 entry["story"] = story_reads(args.out_dir, model, arm)
             if _r4_live(model):
-                entry["story_paired"] = story_reads(args.out_dir, model, arm, regime="r4")
+                entry["story_paired"] = story_reads(args.out_dir, model, arm, regime=c.STORY_REGIME)
                 entry["story_paired_verdict"] = paired_story_verdict(args.out_dir, model, arm)
             lattice["per_model_arm"][f"{slug}_{arm}"] = entry
             heatmap_3x3(
@@ -652,8 +658,13 @@ def main() -> None:
             args.fig_dir / f"layer_sweep_{slug}_context.png",
         )
         if _r4_live(model):
-            hero_paired_layer_sweep(args.out_dir, args.parent_eval_dir, args.fig_dir, model)
-            tf_companion_panel(args.out_dir, matched_row_dir, args.fig_dir, model)
+            if c.HAS_R4:
+                # TF-round-specific panels (TF layer-sweep hero vs on-policy
+                # companion x-points; TF-vs-op calibration companion panel) —
+                # N/A for the on-policy round (no TF arm; the on-policy story
+                # sweep is covered by layer_sweep_fig above).
+                hero_paired_layer_sweep(args.out_dir, args.parent_eval_dir, args.fig_dir, model)
+                tf_companion_panel(args.out_dir, matched_row_dir, args.fig_dir, model)
             matched_row_ceiling_panel(args.out_dir, matched_row_dir, args.fig_dir, model)
 
     # Story yield table (digest of the Phase-1 reports) + per-model coverage
