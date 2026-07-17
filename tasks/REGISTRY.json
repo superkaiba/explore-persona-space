@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1475,
+  "highest_id": 1476,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -3701,6 +3701,13 @@
       "path": "tasks/proposed/1475",
       "status": "proposed",
       "title": "workflow-fix: pre_reg audit \u2014 verdict-lattice head nouns + range tokens escape"
+    },
+    "1476": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1476",
+      "status": "proposed",
+      "title": "workflow-fix: selection-inherited bootstrap CI clause for selection-symmetric-nulls"
     },
     "148": {
       "has_clean_result": false,
