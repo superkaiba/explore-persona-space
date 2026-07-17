@@ -3255,8 +3255,8 @@
       "goal": "On Qwen-2.5-7B base + instruct, determine which property of the assistant-chat setting the shared context\u2192answer map is tied to \u2014 the assistant's helpful register (H1) or the assistant speaking to a user (H2) \u2014 by fitting the frozen #825 ridge recipe (held-out conv-grouped K-fold; prefix-based AND context-based arms) on on-policy answers to the same 4724-conv LMSYS pool under framing cells that decouple the two properties (rude-but-informative dialogue, evasive dialogue, helpful-instruction control, addressee-free exposition, non-user-addressee dialogue), reading map identity against the chat-template reference via the #825 similarity battery (bidirectional transfer R\u00b2, linear reparameterization recovery, raw + rotation-aligned cosine).",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/planning/1417",
-      "status": "planning",
+      "path": "tasks/approved/1417",
+      "status": "approved",
       "title": "Which property scopes the shared assistant context\u2192answer map: helpful register, or speaking to a user?"
     },
     "1418": {
