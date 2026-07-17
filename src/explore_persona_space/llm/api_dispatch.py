@@ -64,7 +64,10 @@ Design (all FIRM requirements from § 1b + Phase 4):
 
 8. **Retries.** Transient errors (timeouts, 5xx incl. 529, connection) retry
    with exponential backoff; a failed item is returned with ``error=True``
-   rather than crashing the whole run.
+   rather than crashing the whole run. An opt-in ``response_valid`` predicate
+   (#1470) makes a parsed-but-invalid response (e.g. an empty completion)
+   retryable the same way; exhaustion returns ``category=RESULT_TRANSPORT``
+   (re-drivable by the caller) and an invalid result is never cached.
 
 This module does NOT migrate existing callers (Phase 5) — it only adds the new
 dispatcher and its tests.
@@ -207,7 +210,14 @@ def family_concurrency_cap(
 # exhaustion (connection / timeout / 5xx incl. 529) — transport-class, freely
 # re-drivable, distinct from terminal RESULT_ERROR. RESULT_RATE_LIMITED is ALSO
 # transport-class under rule 24 but keeps its own label for AIMD observability;
-# consumers treat {RESULT_RATE_LIMITED, RESULT_TRANSPORT} as re-drivable.
+# consumers treat {RESULT_RATE_LIMITED, RESULT_TRANSPORT} as re-drivable. An
+# opt-in ``response_valid`` rejection (#1470 — parse succeeded but the caller's
+# validator refused the result, e.g. an empty completion; reason starts
+# ``invalid_response``) ALSO exhausts to RESULT_TRANSPORT: membership is by
+# RE-DRIVABILITY — a temp>0 re-sample is freely re-drivable — the property
+# consumers branch on, not by wire-level failure (rule 24's letter defines
+# transport as "no verdict produced"; an empty completion IS a produced
+# response, but carries no usable content).
 RESULT_OK = "ok"
 RESULT_ERROR = "error"
 RESULT_RATE_LIMITED = "rate_limited_exhausted"
@@ -750,6 +760,7 @@ async def _dispatch_sync(
     *,
     build_request: BuildRequest,
     parse_response: ParseResponse,
+    response_valid: Callable[[Any], bool] | None = None,
     org_states: dict[str, OrgState],
     async_clients: dict[str, Any],
     max_attempts: int,
@@ -805,6 +816,20 @@ async def _dispatch_sync(
                 # Clean call -> additively recover toward the cap.
                 if not state.low_headroom():
                     await state.recover()
+                if response_valid is not None and not response_valid(parsed):
+                    # #1470: parse succeeded but the caller's validator rejected
+                    # the result (e.g. an empty completion) — retryable invalid:
+                    # consume an attempt with backoff, mirroring the transient
+                    # path. n_ok/recover() above deliberately still ran — the
+                    # WIRE call was clean; invalidity is content, not org
+                    # backpressure, so AIMD semantics are untouched. The
+                    # ``continue`` fires the ``finally: release()`` exactly as
+                    # the transient path does (which also sleeps pre-release).
+                    last_category = RESULT_TRANSPORT
+                    last_reason = f"invalid_response (org={org}, attempt {attempt + 1})"
+                    await asyncio.sleep(1.5**attempt)
+                    attempt += 1
+                    continue
                 res = DispatchResult(item.item_id, result=parsed, org=org, category=RESULT_OK)
                 results[item.item_id] = res
                 if on_result is not None:
@@ -1023,6 +1048,7 @@ async def _poll_one_sub_batch_step(
     dispatch_dir: Path,
     sync_clients: dict[str, Any],
     parse_response: ParseResponse,
+    response_valid: Callable[[Any], bool] | None = None,
     now_fn: Callable[[], _dt.datetime],
     sleep_fn: Callable[[float], None] | None = None,
 ) -> None:
@@ -1064,6 +1090,7 @@ async def _poll_one_sub_batch_step(
             dispatch_dir=dispatch_dir,
             client=client,
             parse_response=parse_response,
+            response_valid=response_valid,
         )
         return
     if sb.get("deadline") and now_fn() > _dt.datetime.fromisoformat(sb["deadline"]):
@@ -1086,6 +1113,7 @@ async def _poll_one_sub_batch_step(
                 dispatch_dir=dispatch_dir,
                 client=client,
                 parse_response=parse_response,
+                response_valid=response_valid,
             )
             return
         raise BatchDeadlineExceeded(sb["batch_id"], sb["deadline"])
@@ -1099,6 +1127,7 @@ async def _harvest_sub_batch(
     dispatch_dir: Path,
     client: Any,
     parse_response: ParseResponse,
+    response_valid: Callable[[Any], bool] | None = None,
 ) -> None:
     """Collect an ended sub-batch, persist its results json, mark it collected."""
     cid_to_item = state["cid_to_item"]
@@ -1114,7 +1143,20 @@ async def _harvest_sub_batch(
             text = next((b.text for b in result.result.message.content if b.type == "text"), "")
             try:
                 parsed = parse_response(text)
-                scores[item_id] = {"result": parsed, "error": False, "reason": None}
+                if response_valid is not None and not response_valid(parsed):
+                    # #1470: parse succeeded but the caller's validator rejected
+                    # the result (e.g. an empty completion) — transport-class.
+                    # No within-batch retry: batch rows are one-shot; caller
+                    # re-drive is the documented contract for batch transport
+                    # rows (DispatchResult docstring) and this class rides it.
+                    scores[item_id] = {
+                        "result": None,
+                        "error": True,
+                        "reason": "invalid_response (batch)",
+                        "category": RESULT_TRANSPORT,
+                    }
+                else:
+                    scores[item_id] = {"result": parsed, "error": False, "reason": None}
             except Exception as e:
                 scores[item_id] = {"result": None, "error": True, "reason": f"parse_error: {e}"}
         else:
@@ -1144,6 +1186,7 @@ async def _dispatch_batch(
     *,
     build_request: BuildRequest,
     parse_response: ParseResponse,
+    response_valid: Callable[[Any], bool] | None = None,
     org_labels: list[str],
     sync_clients: dict[str, Any],
     checkpoint_dir: Path,
@@ -1221,6 +1264,7 @@ async def _dispatch_batch(
                     dispatch_dir=dispatch_dir,
                     sync_clients=sync_clients,
                     parse_response=parse_response,
+                    response_valid=response_valid,
                     now_fn=now_fn,
                 )
         if all(sb["status"] == "collected" for sb in state["sub_batches"]):
@@ -1235,7 +1279,20 @@ async def _dispatch_batch(
         for item_id, rec in payload.items():
             # Finding 1 Must-Fix 1: thread ``category`` so an error=True batch
             # record never reads back category="ok" (the RESULT_OK field default).
-            results[item_id] = _merge_batch_record(item_id, rec, sb["org"])
+            res = _merge_batch_record(item_id, rec, sb["org"])
+            if response_valid is not None and not res.error and not response_valid(res.result):
+                # #1470: PRE-fix checkpoint record with an invalid (e.g. empty)
+                # result persisted as error=False — reclassify as re-drivable
+                # transport, never serve it as data. Idempotent for post-fix
+                # records (already error=True at harvest).
+                res = DispatchResult(
+                    item_id,
+                    error=True,
+                    reason="invalid_response (batch checkpoint record)",
+                    org=sb["org"],
+                    category=RESULT_TRANSPORT,
+                )
+            results[item_id] = res
     return results
 
 
@@ -1275,6 +1332,7 @@ async def dispatch_calls(
     model: str,
     build_request: BuildRequest,
     parse_response: ParseResponse,
+    response_valid: Callable[[Any], bool] | None = None,
     deadline: _dt.datetime | None = None,
     cost_pref: str = "balanced",
     cache_dir: Path | None = None,
@@ -1309,6 +1367,19 @@ async def dispatch_calls(
             time, before any wire call (gotchas.md, #906 r11; #991).
         parse_response: ``model_text -> result``; may raise on a bad parse
             (caught per item -> ``error=True``).
+        response_valid: optional predicate over the PARSED result (the object
+            ``parse_response`` returned). None (default) = today's behavior,
+            byte-identical. When provided: a parse that succeeds but fails the
+            predicate is a RETRYABLE invalid response — it consumes a sync-path
+            ``attempt`` with backoff; on exhaustion the item returns
+            ``error=True, category=RESULT_TRANSPORT`` (re-drivable by the
+            caller, never cached). A CACHED non-error entry whose stored result
+            fails the predicate reads as a MISS (heals pre-fix caches that
+            stored empty completions as successes — #1470/#952; the #1313
+            JudgeCache transport-get-miss precedent). Batch path: a
+            validator-failing harvested row is classified RESULT_TRANSPORT (no
+            within-batch retry — caller re-drive, same as batch transport
+            errors).
         deadline: optional wall-clock deadline; a deadline inside the batch 24h
             SLA forces the sync path.
         cost_pref: ``"balanced"`` (default) | ``"cost"`` (prefer 50% batch) |
@@ -1350,6 +1421,7 @@ async def dispatch_calls(
             model=model,
             build_request=build_request,
             parse_response=parse_response,
+            response_valid=response_valid,
             deadline=deadline,
             cost_pref=cost_pref,
             cache_dir=cache_dir,
@@ -1381,6 +1453,7 @@ async def _dispatch_calls_inner(
     model: str,
     build_request: BuildRequest,
     parse_response: ParseResponse,
+    response_valid: Callable[[Any], bool] | None,
     deadline: _dt.datetime | None,
     cost_pref: str,
     cache_dir: Path | None,
@@ -1407,7 +1480,7 @@ async def _dispatch_calls_inner(
     # system-role check fires at cache-check time, before any wire call.
     if cache is None and cache_dir is not None:
         cache = JudgeCache(cache_dir)
-    results, pending = _split_cached(items, cache, build_request)
+    results, pending = _split_cached(items, cache, build_request, response_valid=response_valid)
     if not pending:
         logger.info("dispatch_calls: all %d items served from cache", len(items))
         return results
@@ -1433,6 +1506,7 @@ async def _dispatch_calls_inner(
             pending,
             build_request=build_request,
             parse_response=parse_response,
+            response_valid=response_valid,
             async_clients=async_clients,
             org_labels=org_labels,
             cap=cap,
@@ -1450,6 +1524,7 @@ async def _dispatch_calls_inner(
             pending,
             build_request=build_request,
             parse_response=parse_response,
+            response_valid=response_valid,
             org_labels=org_labels,
             sync_clients=sync_clients,
             checkpoint_dir=Path(checkpoint_dir),
@@ -1458,7 +1533,9 @@ async def _dispatch_calls_inner(
             poll_interval=poll_interval,
             now_fn=now_fn,
         )
-        _persist_results_to_cache(new_results, pending, cache, build_request)
+        _persist_results_to_cache(
+            new_results, pending, cache, build_request, response_valid=response_valid
+        )
 
     results.update(new_results)
     return results
@@ -1510,6 +1587,7 @@ def _split_cached(
     items: list[DispatchItem],
     cache: JudgeCache | None,
     build_request: BuildRequest,
+    response_valid: Callable[[Any], bool] | None = None,
 ) -> tuple[dict[str, DispatchResult], list[DispatchItem]]:
     """Partition items into (cached results, still-pending items).
 
@@ -1520,6 +1598,17 @@ def _split_cached(
     pending: list[DispatchItem] = []
     for it in items:
         cached = _cache_get(cache, it, build_request) if cache is not None else None
+        if (
+            cached is not None
+            and response_valid is not None
+            and not cached.get("error", False)
+            and not response_valid(cached.get("result"))
+        ):
+            # #1470: pre-fix poisoned entry (an invalid, e.g. empty, result
+            # stored as a success) -> read as a MISS; the re-dispatch
+            # overwrites it. Cached error=True entries (should not exist —
+            # the put-gate excludes them) are deliberately untouched.
+            cached = None
         if cached is not None:
             # A cached entry only ever stores a successful (non-error) result
             # today (_persist gates on ``not res.error``), so the RESULT_OK
@@ -1542,13 +1631,26 @@ def _persist_results_to_cache(
     items: list[DispatchItem],
     cache: JudgeCache | None,
     build_request: BuildRequest,
+    response_valid: Callable[[Any], bool] | None = None,
 ) -> None:
-    """Write every non-error result to the cache (no-op when cache is None)."""
+    """Write every non-error, validator-passing result to the cache.
+
+    No-op when cache is None. The ``response_valid`` gate is defense in depth
+    (#1470): post-fix, sync/batch invalid results are ``error=True`` and the
+    ``not res.error`` gate suffices — but a PRE-fix batch checkpoint's
+    ``results_*.json`` rows can carry invalid (e.g. empty) text as
+    ``error: False``, and without this gate a resumed run would launder them
+    into the JudgeCache.
+    """
     if cache is None:
         return
     item_by_id = {it.item_id: it for it in items}
     for item_id, res in results.items():
-        if not res.error and item_id in item_by_id:
+        if (
+            not res.error
+            and item_id in item_by_id
+            and (response_valid is None or response_valid(res.result))
+        ):
             _cache_put(cache, item_by_id[item_id], res, build_request)
 
 
@@ -1557,6 +1659,7 @@ async def _run_sync_path(
     *,
     build_request: BuildRequest,
     parse_response: ParseResponse,
+    response_valid: Callable[[Any], bool] | None = None,
     async_clients: dict[str, Any],
     org_labels: list[str],
     cap: int,
@@ -1576,6 +1679,7 @@ async def _run_sync_path(
         pending,
         build_request=build_request,
         parse_response=parse_response,
+        response_valid=response_valid,
         org_states=org_states,
         async_clients=async_clients,
         max_attempts=max_attempts,
