@@ -9468,6 +9468,14 @@ tests BEFORE anything lands:
       # matched payload paths (attribution grep list) + gated test list:
       cut -f2 /tmp/issue-<N>-tg-map.txt | sort -u > /tmp/issue-<N>-tg-files.txt
       mapfile -t TG_TESTS < <(cut -f1 /tmp/issue-<N>-tg-map.txt | sort -u)
+      # Route TG fixture temp writes onto the data disk (#1408 recipe; #1363:
+      # / at 100% killed a gate). Short --basetemp keeps AF_UNIX socket paths
+      # under the 108-byte cap. Falls back silently (no TMPDIR, no --basetemp
+      # => byte-identical argv) on pods/GCE with no data disk.
+      TG_TMPROOT=$(uv run python "$REPO_ROOT/scripts/step9c_baseline.py" tmproot 2>/dev/null || true)
+      if [ -n "$TG_TMPROOT" ]; then
+        TG_BASETEMP=$(mktemp -d "$TG_TMPROOT/tg-XXXXXX")
+      fi
       # BASELINE leg — root copy on the payload-free main tree (each scan
       # test derives its scan root from its own __file__, so the root copy
       # scans the root tree). Only tests present on the baseline tree run
@@ -9481,7 +9489,9 @@ tests BEFORE anything lands:
         ( cd "$REPO_ROOT" && timeout --kill-after=30s 300s \
           env OMP_NUM_THREADS=8 MKL_NUM_THREADS=8 OPENBLAS_NUM_THREADS=8 \
               NUMEXPR_NUM_THREADS=8 MALLOC_ARENA_MAX=2 \
-          uv run pytest "${TG_BASE_TESTS[@]}" -q -p no:cacheprovider ) \
+              ${TG_TMPROOT:+TMPDIR=$TG_TMPROOT} \
+          uv run pytest "${TG_BASE_TESTS[@]}" -q -p no:cacheprovider \
+            ${TG_BASETEMP:+--basetemp=$TG_BASETEMP/b} ) \
           > /tmp/issue-<N>-tg-baseline.txt 2>&1 || TG_BASE_RC=$?
       else
         : > /tmp/issue-<N>-tg-baseline.txt
@@ -9491,8 +9501,11 @@ tests BEFORE anything lands:
       ( cd "$WT" && timeout --kill-after=30s 300s \
         env OMP_NUM_THREADS=8 MKL_NUM_THREADS=8 OPENBLAS_NUM_THREADS=8 \
             NUMEXPR_NUM_THREADS=8 MALLOC_ARENA_MAX=2 \
-        uv run pytest "${TG_TESTS[@]}" -q -p no:cacheprovider ) \
+            ${TG_TMPROOT:+TMPDIR=$TG_TMPROOT} \
+        uv run pytest "${TG_TESTS[@]}" -q -p no:cacheprovider \
+          ${TG_BASETEMP:+--basetemp=$TG_BASETEMP/g} ) \
         > /tmp/issue-<N>-tg-gated.txt 2>&1 || TG_RC=$?
+      [ -n "${TG_BASETEMP:-}" ] && rm -rf "$TG_BASETEMP" || true
       # rc 0 = green, 1 = test failures (attributable); ANY other rc
       # (timeout 124, collection/internal/usage error 2-5) = crash-class.
       if [ "$TG_RC" -gt 1 ] || [ "$TG_BASE_RC" -gt 1 ]; then TG_CRASH=yes; fi
@@ -10537,10 +10550,22 @@ Decision tree:
   if [ "$TG_CRASH" = no ] && [ -s /tmp/issue-<N>-tg-map.txt ]; then
     cut -f2 /tmp/issue-<N>-tg-map.txt | sort -u > /tmp/issue-<N>-tg-files.txt
     mapfile -t TG_TESTS < <(cut -f1 /tmp/issue-<N>-tg-map.txt | sort -u)
+    # Route TG fixture temp writes onto the data disk (#1408 recipe; #1363:
+    # / at 100% killed a gate). Short --basetemp keeps AF_UNIX socket paths
+    # under the 108-byte cap. Falls back silently (no TMPDIR, no --basetemp
+    # => byte-identical argv) on pods/GCE with no data disk. Resolution runs
+    # BEFORE the checkout (the baseline leg needs it; vars persist to the
+    # gated leg).
+    TG_TMPROOT=$(uv run python "$REPO_ROOT/scripts/step9c_baseline.py" tmproot 2>/dev/null || true)
+    if [ -n "$TG_TMPROOT" ]; then
+      TG_BASETEMP=$(mktemp -d "$TG_TMPROOT/tg-XXXXXX")
+    fi
     ( cd "$REPO_ROOT" && timeout --kill-after=30s 300s \
       env OMP_NUM_THREADS=8 MKL_NUM_THREADS=8 OPENBLAS_NUM_THREADS=8 \
           NUMEXPR_NUM_THREADS=8 MALLOC_ARENA_MAX=2 \
-      uv run pytest "${TG_TESTS[@]}" -q -p no:cacheprovider ) \
+          ${TG_TMPROOT:+TMPDIR=$TG_TMPROOT} \
+      uv run pytest "${TG_TESTS[@]}" -q -p no:cacheprovider \
+        ${TG_BASETEMP:+--basetemp=$TG_BASETEMP/b} ) \
       > /tmp/issue-<N>-tg-baseline.txt 2>&1 || TG_BASE_RC=$?
   fi
   # `-C "$REPO_ROOT"` is the repo-root guard's designed deliberate-override
@@ -10598,7 +10623,9 @@ Decision tree:
     ( cd "$REPO_ROOT" && timeout --kill-after=30s 300s \
       env OMP_NUM_THREADS=8 MKL_NUM_THREADS=8 OPENBLAS_NUM_THREADS=8 \
           NUMEXPR_NUM_THREADS=8 MALLOC_ARENA_MAX=2 \
-      uv run pytest "${TG_TESTS[@]}" -q -p no:cacheprovider ) \
+          ${TG_TMPROOT:+TMPDIR=$TG_TMPROOT} \
+      uv run pytest "${TG_TESTS[@]}" -q -p no:cacheprovider \
+        ${TG_BASETEMP:+--basetemp=$TG_BASETEMP/g} ) \
       > /tmp/issue-<N>-tg-gated.txt 2>&1 || TG_RC=$?
     if [ "$TG_RC" -gt 1 ] || [ "$TG_BASE_RC" -gt 1 ]; then TG_CRASH=yes; fi
     for leg in baseline gated; do
@@ -10611,6 +10638,8 @@ Decision tree:
     comm -23 /tmp/issue-<N>-tg-gated-hits.txt \
       /tmp/issue-<N>-tg-baseline-hits.txt > /tmp/issue-<N>-tg-new.txt
   fi
+  # TG basetemp reaped after BOTH legs (no-op when routing never resolved).
+  [ -n "${TG_BASETEMP:-}" ] && rm -rf "$TG_BASETEMP" || true
   # Fold the TG verdict into the SAME GATE_VERDICT the stage/commit/push
   # consumes below — crash-class first (fail CLOSED; never downgraded), then
   # the payload-attributed block arm; block/crash reuse the existing cleanup
