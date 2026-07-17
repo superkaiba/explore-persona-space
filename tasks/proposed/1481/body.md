@@ -15,6 +15,10 @@ goal: 'At a matched training recipe, establish the contrastive-negatives vs posi
   contexts): produce both a contrastive and a positive-only adapter per cell at the
   same recipe, and measure install strength plus cross-context leakage/containment
   at matched install (marker measured as both log-prob-at-slot and free-emission).'
+relates_to:
+- leak-contrastive-negatives
+- leak-behavior-vs-marker
+- leak-argmax-vs-logprob
 ---
 ## Goal
 
