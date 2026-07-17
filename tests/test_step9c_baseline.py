@@ -28,7 +28,8 @@ The "#1408" section pins scratch-BY-DEFAULT (the #1077 dirty-only trigger is
 removed: clean-root eligible compares resolve via ``"pristine-scratch"`` too),
 the clean-root scratch-failure degradation to the root oracle, and the gate
 temp-write routing (``gate_tmp_root`` / the ``tmproot`` subcommand / the
-``run_pytest`` TMPDIR+basetemp threading + the SKILL.md 1b/1c durability pin).
+``run_pytest`` TMPDIR+basetemp threading + the SKILL.md 1b/1c durability pin
++ the #1442 TG-blocks pin).
 """
 
 from __future__ import annotations
@@ -2170,6 +2171,28 @@ def test_skill_step9c_blocks_pin_tmpdir_routing():
         assert "step9c_baseline.py tmproot" in block
         assert "${S9C_BASETEMP:+--basetemp=$S9C_BASETEMP/p}" in block
         assert 'rm -rf "$S9C_BASETEMP"' in block
+
+
+def test_skill_tg_blocks_pin_tmpdir_routing():
+    """Durability pin (#1442, extending the #1408 pin above): BOTH SKILL.md
+    Step 10d TG_TESTS targeted-green blocks (shared-gate + surgical form
+    (iii)) carry the tmproot resolution, per-leg TMPDIR + --basetemp
+    threading (2 pytest legs each), and the post-run basetemp cleanup."""
+    skill = (
+        Path(__file__).resolve().parents[1] / ".claude" / "skills" / "issue" / "SKILL.md"
+    ).read_text()
+    blocks = [b for b in skill.split("```") if 'uv run pytest "${TG_TESTS[@]}"' in b]
+    assert len(blocks) == 2, "expected the shared-gate + surgical TG blocks"
+    for block in blocks:
+        assert 'step9c_baseline.py" tmproot' in block  # resolution line
+        # Ordering: the resolution insert must precede the first TMPDIR thread
+        # (presence-only asserts would pass a resolution misplaced below the legs).
+        assert block.index('step9c_baseline.py" tmproot') < block.index(
+            "${TG_TMPROOT:+TMPDIR=$TG_TMPROOT}"
+        )
+        assert block.count("${TG_TMPROOT:+TMPDIR=$TG_TMPROOT}") == 2  # both legs
+        assert block.count("${TG_BASETEMP:+--basetemp=$TG_BASETEMP/") == 2
+        assert 'rm -rf "$TG_BASETEMP"' in block  # cleanup
 
 
 # --- status subcommand ------------------------------------------------------------
