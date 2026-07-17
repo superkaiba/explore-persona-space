@@ -210,6 +210,14 @@ case "$PHASE" in
       run_phase "${PJ_ARGS[@]}"
     fi
     ;;
+  dose-select|dose-panel|dose-judge-analyze)
+    # persona-dose-matched-regime phases (plan v8): same passthrough shape;
+    # smoke adds --no-upload (pod-all convention — scratch out-root already
+    # applies via the redirect above, so smoke never touches committed paths).
+    DOSE_ARGS=("$WORKER" "$MODE" --phase "$PHASE" "${COMMON[@]:1}")
+    [ "$MODE" = "--smoke" ] && DOSE_ARGS+=(--no-upload)
+    run_phase "${DOSE_ARGS[@]}" "${EXTRA_ARGS[@]}"
+    ;;
   *)
     # Single-phase passthrough (crash-fix / resume surface).
     run_phase "$WORKER" "$MODE" --phase "$PHASE" "${COMMON[@]:1}" "${EXTRA_ARGS[@]}"
