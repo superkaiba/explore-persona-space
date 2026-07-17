@@ -803,6 +803,22 @@ Generation-agnostic checks (run on v2 AND v3 — the inline-figure +
   line — the nearest preceding pinned link is declined by the Pattern-D
   gap guards — so checks 30/32 silently dropped it (#1433).
 
+- **check 41** (`check_figure_sidecar_coverage`, WARN, generation-agnostic):
+  every same-repo sha-pinned embedded figure should carry a sibling
+  `.meta.json` sidecar at the cited sha — the sidecar is what the
+  figure-text checks (24 staleness / 28 opaque codes / 33 prose numerics /
+  34 beat claims) read, and a sidecar-less figure silently skips ALL of
+  them (the check-24 fail-soft convention), shrinking coverage to
+  whichever figures happen to carry sidecars. ONE WARN per body naming
+  the sidecar-less figures (basenames, first 3 + count). Existence-only
+  probe (`git cat-file -e` via `_git_object_exists`); the PNG must itself
+  resolve at the cited sha (else defer to check 22); WARN never FAIL
+  (plain `fig.savefig` figures never get a sidecar — check 28 residual
+  (i) — so a FAIL would retroactively block grandfathered bodies at
+  promote-time re-verify). Incident #1434: 3 of 12 embedded figures had
+  no sidecar; slug tick labels passed the mechanical gate until
+  clean-result-critique round 3 (#1478).
+
 Harmful-content carve-out: checks 18/19 accept the sanitized excerpt
 form (`[truncated — harmful-content row; verify at <path>, row <i>]`)
 exactly as checks 10/11 do today.
@@ -9776,6 +9792,89 @@ def check_hf_unpinned_count_claims(body: str) -> CheckResult:
     return CheckResult(name, True, "; ".join(warn_lines), is_warn=True)
 
 
+# ─── Check 41: sidecar-less embedded figures (coverage WARN) — #1434/#1478 ──
+#
+# Checks 24/28/33/34 all fail-soft skip a figure whose sibling `.meta.json`
+# does not resolve at the cited sha (the check-24 convention), so a
+# sidecar-less figure silently bypasses every figure-text check with no
+# surface (incident #1434: 3 of 12 embedded figures had no sidecar; slug
+# tick labels passed the mechanical gate and the clean-result-critic caught
+# them only at round 3). Check 41 makes the coverage gap visible: ONE WARN
+# per body naming the sidecar-less figures. Existence-only probe
+# (`git cat-file -e` via `_git_object_exists`) — never reads content, so an
+# existing-but-unparsable sidecar stays the siblings' fail-soft residual.
+
+
+def check_figure_sidecar_coverage(body: str) -> CheckResult:
+    """Check 41 (WARN, generation-agnostic): every same-repo sha-pinned
+    embedded figure should carry a sibling ``.meta.json`` sidecar at the
+    cited sha — the sidecar is what checks 24/28/33/34 read, and a figure
+    without one silently skips ALL of them (the check-24 fail-soft
+    convention), shrinking figure-text coverage to whichever figures happen
+    to carry sidecars (incident #1434). WARN, never FAIL: plain
+    ``fig.savefig`` scripts never write a sidecar (check 28's documented
+    residual (i)), so a retroactive FAIL would block promote-time
+    re-verifies of grandfathered bodies; the multimodal critics keep the
+    substantive PNG-pixel read either way. Scope gates per figure: only
+    same-repo sha-pinned raw-GitHub URLs; the PNG itself must resolve at
+    the cited sha (``_git_object_exists`` == 'pass' — an unresolvable sha /
+    absent PNG defers to check 22, no double-report). NO-OP PASS when: no
+    scan section, no inline figures, the repo cannot be resolved (offline /
+    ``--body-stdin``), or no figure passes the scope gates. Existence probes
+    only — two ``_git_object_exists`` invocations (up to four bounded
+    subprocess spawns) per unique figure URL, no ``git show`` content read.
+    """
+    label = "figure sidecar coverage (sidecar-less embedded figures)"
+    section = _figure_scan_section(body)
+    text = section_text(body, section)
+    if text is None:
+        return CheckResult(label, True, f"no `## {section}` section to scan")
+    urls: list[str] = []
+    for line in text.splitlines():
+        for m in _IMAGE_RE.finditer(line):
+            url = m.group(1).strip()
+            url = url.split(None, 1)[0] if url else url
+            if url:
+                urls.append(url)
+    if not urls:
+        return CheckResult(label, True, "no inline figures to scan")
+    repo = _resolve_repo_root()
+    if repo is None:
+        return CheckResult(label, True, "skipped — repo root unresolved (offline / stdin)")
+    checked = 0
+    missing: list[str] = []
+    for url in dict.fromkeys(urls):
+        m = _RAW_GITHUB_FIGURE_RE.match(url)
+        if m is None or (m.group("owner").lower(), m.group("repo").lower()) != _THIS_REPO_SLUG:
+            continue  # only same-repo sha-pinned figures resolve from git
+        sha, fig_path = m.group("sha"), m.group("path")
+        png_status, _ = _git_object_exists(repo, sha, fig_path)
+        if png_status != "pass":
+            continue  # sha unknown / PNG absent — check 22's domain, no double-report
+        checked += 1
+        base, _sep, ext = fig_path.rpartition(".")
+        meta_path = (base if ext else fig_path) + ".meta.json"
+        meta_status, _ = _git_object_exists(repo, sha, meta_path)
+        if meta_status == "fail":
+            missing.append(fig_path.rsplit("/", 1)[-1])
+    if missing:
+        missing = list(dict.fromkeys(missing))
+        preview = ", ".join(f"`{b}`" for b in missing[:3]) + (" …" if len(missing) > 3 else "")
+        return CheckResult(
+            label,
+            True,
+            f"figure-text checks (24/28/33/34) skipped {len(missing)} sidecar-less "
+            f"figure(s) of {checked} same-repo embedded: {preview} — regenerate via "
+            "savefig_paper (writes the sidecar), or acknowledge in body",
+            is_warn=True,
+        )
+    if checked == 0:
+        return CheckResult(label, True, "no same-repo sha-pinned figures to check")
+    return CheckResult(
+        label, True, f"{checked} embedded figure(s) all carry sidecar files at their cited shas"
+    )
+
+
 def check_concerns_audit(  # noqa: C901 — linear lens: ledger parse → stale-marker scan → ack scan
     body: str, *, concerns_path: Path | None = None
 ) -> CheckResult:
@@ -11946,6 +12045,9 @@ CHECKS = [
     # check 40 (WARN, generation-agnostic) — unpinned backtick HF-path count claims
     # flag the missing /tree/<sha> pin + best-effort resolve at main (#1433, #1345):
     check_hf_unpinned_count_claims,
+    # check 41 (WARN, generation-agnostic) — sidecar-less embedded figures:
+    # names the figures checks 24/28/33/34 silently skipped (#1478; incident #1434):
+    check_figure_sidecar_coverage,
     # Check 31 (`check_orphaned_per_unit_figures`, WARN, generation-agnostic)
     # is NOT here either — like check 20 (v4) it needs the issue number (for
     # figures-dir scoping), so it is dispatched separately in `verify_text`
