@@ -3614,8 +3614,8 @@
     "1464": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1464",
-      "status": "running",
+      "path": "tasks/reviewing/1464",
+      "status": "reviewing",
       "title": "daily-fix: cpu intents in _DEFAULT_GPUS_FOR_INTENT"
     },
     "1465": {
