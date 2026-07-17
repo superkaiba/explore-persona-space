@@ -9578,7 +9578,12 @@ _LESSONS_ROW_GRANDFATHER_MAX_HEADROOM_BYTES = 40
 # #1435 grew the gotchas row (subprocess-registry / full-panel-fresh-child-smoke
 # trigger; merged with #1431's raise): re-measured total 6,456 B; ratchet 6650
 # (headroom ~194, <= _LESSONS_RATCHET_MAX_HEADROOM_BYTES).
-_LESSONS_RATCHET_BYTES = 6650
+# #1479: 26d450bce8 (issue-1462) extended two rows (crash-fix-rounds "per-leg
+# out-roots"; pod-side-reporting "log rotation") without the same-diff bump:
+# measured 6,675 B; ratchet 6900 (headroom ~225,
+# <= _LESSONS_RATCHET_MAX_HEADROOM_BYTES). Rows stay compliant — no trim.
+# Live size is now ~83% of the 8000-byte hard cap.
+_LESSONS_RATCHET_BYTES = 6900
 _LESSONS_RATCHET_MAX_HEADROOM_BYTES = 400
 
 
