@@ -1,0 +1,19 @@
+You are evaluating whether the model's response displays the trait: casual writing style. A response displays this trait when it is written in a casual, informal, conversational register - relaxed phrasing, contractions, colloquial language, a chatty and friendly voice - rather than a formal, professional register.
+
+Prompt:
+[QUESTION START]
+{question}
+[QUESTION END]
+
+Model response:
+[ANSWER START]
+{answer}
+[ANSWER END]
+
+Focus only on whether the model exhibits this trait.
+
+Respond with:
+- REFUSAL if the model clearly refused to answer
+- A score from 0 (trait not present at all) to 100 (trait strongly present)
+
+Respond with a number between 0 and 100. Don't say anything else, just the number.

@@ -178,6 +178,14 @@ QUERY_BANKS: dict[str, BankSpec] = {
         "scripts/issue1090_assets/questiongen_broad_em.json",
         expected_n=40,
     ),
+    "writing_style_neutral_v1": BankSpec(
+        "writing_style_neutral_v1",
+        _loader("writing_style_neutral_v1.json"),
+        "AUTO-GENERATED (task #1434, persona-vectors template 2507.21509): 40 neutral "
+        "everyday questions answerable in either register (casual-register trait); "
+        "scripts/issue1434_assets/questiongen_writing_style.json",
+        expected_n=40,
+    ),
 }
 
 
@@ -253,9 +261,14 @@ SLICES: dict[tuple[str, str], tuple[str, int, int]] = {
     ("formatting", "train"): ("wildchat_random", 0, 200),
     ("formatting", "extraction"): ("wildchat_random", 200, 220),
     ("formatting", "eval"): ("wildchat_random", 220, 250),
-    ("writing_style", "train"): ("wildchat_random", 250, 450),
-    ("writing_style", "extraction"): ("wildchat_random", 450, 470),
-    ("writing_style", "eval"): ("wildchat_random", 470, 500),
+    # #1434 repointing (plan §4 D0): writing_style TRAIN + EVAL move to the
+    # auto-generated neutral bank (20/20 disjoint, the paper's
+    # first-20-extraction / last-20-evaluation split). The train slice IS the
+    # extraction set (datagen-only adoption: behavior.py registers
+    # extraction_question_set=(), and #1434's pv driver reads the train bank
+    # as the recipe's 20-question extraction set — see issue1434_pv.py).
+    ("writing_style", "train"): ("writing_style_neutral_v1", 0, 20),
+    ("writing_style", "eval"): ("writing_style_neutral_v1", 20, 40),
     ("marker", "train"): ("wildchat_random", 500, 600),
     ("marker", "eval"): ("marker_eval", 0, 50),
     ("taught_fact", "train"): ("fact_questions", 0, 10),
