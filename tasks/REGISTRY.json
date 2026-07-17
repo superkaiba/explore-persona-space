@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1451,
+  "highest_id": 1452,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -3519,6 +3519,13 @@
       "path": "tasks/proposed/1451",
       "status": "proposed",
       "title": "daily-fix: lint rules/*.md frontmatter parse + paths shape"
+    },
+    "1452": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1452",
+      "status": "proposed",
+      "title": "daily-fix: flag hardcoded cross-issue upload prefixes"
     },
     "146": {
       "has_clean_result": false,
