@@ -3,7 +3,8 @@ title: Single-token steering with the context-vector difference shifts the answe
   state toward the target, and behavior follows at the mid-stack layers where alignment
   peaks (MODERATE confidence)
 kind: experiment
-tags: []
+tags:
+- followup-auto
 created_at: '2026-07-16T08:08:10Z'
 has_clean_result: true
 origin_prompt: Do these vectors V_c and V_a have meaning? Like are they causal in
