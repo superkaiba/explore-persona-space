@@ -11,3 +11,4 @@
 {"ts": "2026-07-17T09:41:31Z", "kind": "epm:plan-verify", "version": 3, "by": "unknown", "note": "verify_plan.py PASS on plan v3: n_fail=0, n_warn=0."}
 {"ts": "2026-07-17T09:41:32Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "planning", "to": "approved", "note": "Plan v3 ready; critic ensemble resolved (1 REVISE round); consistency PASS. [autonomous plan-gate: auto-approved, est 0.0 GPU-h <= 100.0h cap]"}
 {"ts": "2026-07-17T09:41:33Z", "kind": "epm:plan-approved", "version": 1, "by": "autonomous-gate", "note": "Auto-approved by the code-enforced autonomous plan-gate (task.py --auto-approve-if-autonomous): gpu_hours_total=0.0 <= cap 100.0. EPM_AUTONOMOUS_SESSION set; no human asked."}
+{"ts": "2026-07-17T09:43:09Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "approved", "to": "running", "note": "Dispatched implementer (worktree issue-1444 @ 735194886c); awaiting epm:results."}
