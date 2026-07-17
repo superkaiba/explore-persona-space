@@ -3,7 +3,6 @@ title: 'daily-held: extend watcher zombie sweep to non-EPS wrappers?'
 kind: infra
 tags:
 - daily-held
-- needs-human
 created_at: '2026-07-04T23:02:10Z'
 has_clean_result: false
 origin_prompt: /daily 2026-07-03 problem sweep — watcher-noneps-zombies (fp 472fc75929eb)
