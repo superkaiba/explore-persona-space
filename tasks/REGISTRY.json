@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1479,
+  "highest_id": 1480,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -3736,6 +3736,13 @@
       "path": "tasks/archived/148",
       "status": "archived",
       "title": "Do all different EMs have rhe same toxic persona feature"
+    },
+    "1480": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1480",
+      "status": "proposed",
+      "title": "workflow-fix: escalate unactioned stalled-manual alerts to registration unregister"
     },
     "149": {
       "has_clean_result": false,
