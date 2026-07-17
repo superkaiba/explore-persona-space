@@ -885,3 +885,106 @@ def test_run_swap_survives_mid_window_preemption(tmp_path):
     # valid payload present -> resume-skip returns it without refitting
     p3 = f1335.run_swap("r7_endpoint", store, "base", args)
     assert p3["delta_r2_char"] == p2["delta_r2_char"]
+
+
+# ---------------------------------------------------------------------------
+# (9) seed43-gap-rungs round: env-threaded GEN_SEED / HF_PREFIX + --seed-compare
+# ---------------------------------------------------------------------------
+
+
+def test_seed43_env_overrides_gen_seed_prefix_and_fingerprint():
+    """EPM_I1335_GEN_SEED / EPM_I1335_HF_PREFIX thread the round's one variable
+    + artifact segregation through the module constants; the seed rides
+    rung_render_config, so the render_config_hash changes and seed-42
+    artifacts can never be fingerprint-consumed by a seed-43 run (the c24
+    resume / hf-resume safety of the follow-up round). Reload-based (the
+    constants are read at import time); defaults restored in finally."""
+    import importlib
+    import os as _os
+
+    default_hashes = {
+        slug: r1335.render_config_hash(slug)
+        for slug in ("r1_qa_oneline", "r3_persona", "r4_fictionframe", "r7_endpoint")
+    }
+    assert r1335.GEN_SEED == c1310.GEN_SEED == 42
+    assert r1335.HF_PREFIX == "issue1335_ablation_ladder"
+    _os.environ["EPM_I1335_GEN_SEED"] = "43"
+    _os.environ["EPM_I1335_HF_PREFIX"] = "issue1335_ablation_ladder/seed43_gap_rungs"
+    try:
+        importlib.reload(r1335)
+        assert r1335.GEN_SEED == 43
+        assert r1335.HF_PREFIX == "issue1335_ablation_ladder/seed43_gap_rungs"
+        for slug, default_hash in default_hashes.items():
+            assert r1335.rung_render_config(slug)["gen_seed"] == 43
+            assert r1335.render_config_hash(slug) != default_hash, slug
+        # BUILD seeds are NOT the generation seed: battery construction stays
+        # pinned (fiction battery BUILD_SEED 1310; new-construction 1335).
+        assert r1335.BUILD_SEED == 1335 and c1310.BUILD_SEED == 1310
+    finally:
+        _os.environ.pop("EPM_I1335_GEN_SEED", None)
+        _os.environ.pop("EPM_I1335_HF_PREFIX", None)
+        importlib.reload(r1335)
+    assert r1335.GEN_SEED == 42
+    assert r1335.HF_PREFIX == "issue1335_ablation_ladder"
+    for slug, default_hash in default_hashes.items():
+        assert r1335.render_config_hash(slug) == default_hash, slug
+
+
+def test_seed_compare_fixture(tmp_path):
+    """--seed-compare recomputes the two headline reads from THIS run's matched
+    cells — gap G = Delta(r1, r7 per-persona mean), framing = Delta(r3, r4),
+    joint-draw CIs (the build_ladder_summary pairing, reused verbatim) — and
+    compares against the committed seed-42 summary via the independent-runs
+    variance-sum cross-seed CI. Fail-loud on a missing reference."""
+    import issue1335_fit as f1335
+
+    out = tmp_path / "eval"
+    out.mkdir()
+    rng = np.random.default_rng(7)
+    for slug, v in (("r1_qa_oneline", 0.60), ("r3_persona", 0.50), ("r4_fictionframe", 0.40)):
+        _write_matched(out, f"{slug}__base__ctx", slug, v, rng)
+    for persona in c1310.PERSONA_LABELS:
+        _write_matched(out, f"r7_endpoint__base__{persona}__ctx", "r7_endpoint", 0.15, rng)
+        _write_cell(out, f"r7_endpoint__base__{persona}__ctx", "r7_endpoint", 0.15, 2000)
+    ref_gap = {"value": 0.30, "ci_lo": 0.25, "ci_hi": 0.35, "ci_method": "joint-draws"}
+    ref_framing = {"value": 0.12, "ci_lo": 0.08, "ci_hi": 0.16, "ci_method": "joint-draws"}
+    ref_path = tmp_path / "ladder_summary.json"
+    ref_path.write_text(
+        json.dumps(
+            {
+                "code_sha": "refsha000",
+                "per_model": {"base": {"gap": {"G": ref_gap}, "deltas": {"framing": ref_framing}}},
+            }
+        )
+    )
+    args = SimpleNamespace(out_dir=out, seed=0, reference_summary=ref_path)
+    res = f1335.build_seed_comparison(args, ["base"], smoke=False)
+    pm = res["per_model"]["base"]
+    assert pm["gap_G"]["value"] == pytest.approx(0.60 - 0.15, abs=1e-9)
+    assert pm["framing"]["value"] == pytest.approx(0.10, abs=1e-9)
+    # joint-draw CIs on this run's own deltas (the ladder pairing, not new stats)
+    assert pm["gap_G"]["ci_method"] == "joint-draws"
+    assert pm["framing"]["ci_method"] == "joint-draws"
+    assert set(pm["rung_values_matched_ctx"]["r7_endpoint_per_persona"]) == set(
+        c1310.PERSONA_LABELS
+    )
+    cs = pm["cross_seed"]
+    assert cs["gap_G"]["value"] == pytest.approx(0.45 - 0.30, abs=1e-9)
+    assert cs["framing"]["value"] == pytest.approx(0.10 - 0.12, abs=1e-9)
+    assert cs["gap_G"]["ci_method"] == "variance-sum-independent-runs"
+    # variance-sum arithmetic: se = sqrt(se_new^2 + se_ref^2) from CI half-widths
+    se_new = (pm["framing"]["ci_hi"] - pm["framing"]["ci_lo"]) / 2 / 1.96
+    se_ref = (0.16 - 0.08) / 2 / 1.96
+    se = float(np.sqrt(se_new**2 + se_ref**2))
+    assert cs["framing"]["ci_lo"] == pytest.approx(cs["framing"]["value"] - 1.96 * se, abs=1e-9)
+    assert cs["framing"]["ci_hi"] == pytest.approx(cs["framing"]["value"] + 1.96 * se, abs=1e-9)
+    # containment flags: 0.45 sits outside the reference gap CI [0.25, 0.35]
+    assert cs["gap_G"]["new_in_ref_ci"] is False
+    assert cs["framing"]["new_in_ref_ci"] is True
+    assert res["gen_seed"] == r1335.GEN_SEED
+    assert res["reference"]["code_sha"] == "refsha000"
+    assert (out / "seed_comparison.json").exists()
+    # fail-loud on a missing reference (never a silent no-reference comparison)
+    args_bad = SimpleNamespace(out_dir=out, seed=0, reference_summary=tmp_path / "missing_ref.json")
+    with pytest.raises(AssertionError, match="reference summary missing"):
+        f1335.build_seed_comparison(args_bad, ["base"], smoke=False)

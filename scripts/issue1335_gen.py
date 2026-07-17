@@ -2,9 +2,11 @@
 
 Q&A rungs (r0/r1/r2_op/r3/r4): one prompt per Track-S question rendered by
 ``issue1335_render_rungs.qa_render`` (plain text, both models); ONE sampled
-completion per context (T=1.0/top_p=0.95/seed 42 — the #825/#1310 convention;
-greedy deliberately avoided). Generation is CHUNKED (vLLM large-batch deadlock
-prevention, EPM_VLLM_GREEDY_CHUNK_SIZE default 500) with per-chunk INFO logs.
+completion per context (T=1.0/top_p=0.95/seed r1335.GEN_SEED, default 42 = the
+#825/#1310 convention; EPM_I1335_GEN_SEED overrides — 43 for the
+seed43-gap-rungs replication round; greedy deliberately avoided). Generation
+is CHUNKED (vLLM large-batch deadlock prevention, EPM_VLLM_GREEDY_CHUNK_SIZE
+default 500) with per-chunk INFO logs.
 
 Fiction rungs (r6_nofoil/r7_endpoint): the #1310 v3 prefill slot loop —
 context prefilled up to the label cue, ONE line generated per slot (max 96
@@ -156,7 +158,7 @@ def hf_resume_gen(args, slug: str, model_kind: str, fp: dict) -> bool:
     c1310.write_json(
         out_path.with_name(f"{model_kind}_gen_manifest.json"),
         {
-            "metadata": common.metadata(SCRIPT, c1310.GEN_SEED, n_records),
+            "metadata": common.metadata(SCRIPT, r1335.GEN_SEED, n_records),
             **fp,
             "model_kind": model_kind,
             "n_records": n_records,
@@ -238,7 +240,7 @@ def _base_record(slug: str, model_kind: str, fp: dict) -> dict:
         "rung": slug,
         "model": r1335.MODEL_IDS[model_kind],
         "model_kind": model_kind,
-        "gen_seed": c1310.GEN_SEED,
+        "gen_seed": r1335.GEN_SEED,
         "temperature": c1310.GEN_TEMPERATURE,
         "top_p": c1310.GEN_TOP_P,
         **fp,
@@ -267,11 +269,11 @@ def gen_qa(args, tokenizer, fp: dict) -> tuple[list[dict], dict]:
         gen = _stub_generate(tokenizer, prompts, [cfg["label"]] * len(prompts), not full)
     else:
         llm = i1310_prefill.build_engine(
-            r1335.MODEL_IDS[args.model], args.gpu_memory_utilization, c1310.GEN_SEED
+            r1335.MODEL_IDS[args.model], args.gpu_memory_utilization, r1335.GEN_SEED
         )
         try:
             gen = _vllm_generate(
-                llm, prompts, max_tokens=max_tokens, stop=stop, seed=c1310.GEN_SEED
+                llm, prompts, max_tokens=max_tokens, stop=stop, seed=r1335.GEN_SEED
             )
         finally:
             i1310_prefill.teardown_engine(llm)
@@ -342,7 +344,7 @@ def gen_fiction(args, tokenizer, fp: dict) -> tuple[list[dict], dict]:
     llm = None
     if not args.stub_gen:
         llm = i1310_prefill.build_engine(
-            r1335.MODEL_IDS[args.model], args.gpu_memory_utilization, c1310.GEN_SEED
+            r1335.MODEL_IDS[args.model], args.gpu_memory_utilization, r1335.GEN_SEED
         )
     records: list[dict] = []
     try:
@@ -364,7 +366,7 @@ def gen_fiction(args, tokenizer, fp: dict) -> tuple[list[dict], dict]:
                     prompts,
                     max_tokens=r1335.ONELINE_MAX_TOKENS,
                     stop=r1335.ONELINE_STOP,
-                    seed=c1310.GEN_SEED + slot,
+                    seed=r1335.GEN_SEED + slot,
                 )
             for (sc, persona), prompt, g in zip(cells, prompts, gen, strict=True):
                 sc_id = sc["scenario_id"]
@@ -434,7 +436,7 @@ def main() -> int:
     c1310.write_json(
         out_path.with_name(f"{model_kind}_gen_manifest.json"),
         {
-            "metadata": common.metadata(SCRIPT, c1310.GEN_SEED, len(records)),
+            "metadata": common.metadata(SCRIPT, r1335.GEN_SEED, len(records)),
             **fp,
             "model_kind": model_kind,
             "n_records": len(records),
