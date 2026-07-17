@@ -172,7 +172,9 @@ The planner verifies, before recording an artifact as reused in §10/§11:
   HF-uploaded eval JSONs) OR **git-tree reachability** for a committed
   `eval_results/issue_<M>/` JSON (`git ls-tree -r origin/main -- <path>`
   returns it — § Plan-time search + verification mechanics above sanctions in-git eval JSONs as a reuse
-  source, and the git-clone-only lanes pick them up via the clone); **(ii)
+  source, and the git-clone-only lanes pick them up via the clone)
+  (mechanically gated pre-provision by `scripts/verify_carryover_inputs.py` —
+  `/issue` Step 6a.5 second stanza, #1469); **(ii)
   consumer-exact path layout** — the plan NAMES the exact path/filename
   pattern the NEW consumer (dispatcher / driver / eval / training script) will
   assert-or-open (the string the new run passes to `assert path.exists()` /

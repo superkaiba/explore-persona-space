@@ -3196,6 +3196,48 @@ HEAD-checks each against the Hub / WandB API using the user's
   EXIT. User fixes the cited URL (re-upload, or correct the plan) and
   re-runs `/issue <N>`.
 
+**Second stanza (#1469) — plan-referenced LOCAL repo inputs (the #734/#1434
+class).** `verify_artifacts_exist` covers HF/WandB URLs only; a plan-cited
+`eval_results/...` input that exists only on the VM (untracked, committed but
+unpushed, or on origin/main only while the branch was cut earlier) is
+invisible to it, and every lane boots from a git materialization of the
+PUSHED branch (GCE `git clone --depth 1 --branch issue-<N>`; RunPod bootstrap
+fetch+reset; SLURM materialize_branch_src), so the clone will NOT have it
+(#1434: 12 runs x 2 boot cycles died on FileNotFoundError; the manifest was
+cited as a bare backticked filename, fixed by committing it — f9f1002797,
+main twin e562685e40). Run the git-tree gate (pure git — no tokens, no
+network beyond a bounded fetch):
+
+```bash
+uv run python scripts/verify_carryover_inputs.py --plan "$PLAN_PATH" --issue <N>
+```
+
+- Exit `0` -> proceed to 6a.6. WARN lines are informational — carry them into
+  the step notes; a `data-local-only` WARN means the workload must self-build
+  or HF-stage that input (artifact-reuse check (h)); never block on a WARN.
+- Exit `1` with ONLY recoverable failures -> remediate in-step and re-run the
+  gate ONCE: `committed-unpushed` -> push the branch (`git -C "$WT" push
+  origin issue-<N>`, bare, exit code checked); `on-main-not-on-branch` ->
+  merge origin/main into the branch (or rebase it) in the WORKTREE and push
+  (the file is already committed — never `git add`). Still failing, or any
+  `untracked-local-only` failure -> same contract as the first stanza: post
+  `epm:carry-over-missing v1` with the helper's failure lines, set status
+  `blocked`, post the §5 marker (failure-exit, notes "carry-over local input
+  unreachable on pushed ref"), EXIT. Remediation for untracked files is a
+  commit+push of the cited file on the issue branch (the #1434 fix), then
+  re-run `/issue <N>`.
+- Exit `2` (plan missing/unreadable) -> fail loud like a missing plan in the
+  first stanza; do NOT skip the gate.
+
+Residual risks this gate does NOT cover (it reduces the class, not
+eliminates it): config-file indirection, runtime-constructed paths (the gate
+catches the plan-text citation, not the consumer's path construction),
+HF-staged `data/` inputs (WARN only — staging correctness stays with
+artifact-reuse check (h)(iii)), direct `dispatch_issue.py` launches that
+bypass 6a.5, and extension-less citations. The check ref defaults to
+`origin/issue-<N>`; where the lane's materialization ref is known to differ
+(RunPod `BOOTSTRAP_BRANCH` defaults to `main`), thread `--ref` accordingly.
+
 #### Step 6a.6: HF write-headroom probe (quota gate, before provisioning)
 
 Step 6a verifies READ access only; a namespace at its public-storage
