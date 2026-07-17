@@ -3404,8 +3404,8 @@
     "1437": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1437",
-      "status": "planning",
+      "path": "tasks/approved/1437",
+      "status": "approved",
       "title": "daily-fix: allowlist 952 dashboard in pod-shellout test"
     },
     "1438": {
