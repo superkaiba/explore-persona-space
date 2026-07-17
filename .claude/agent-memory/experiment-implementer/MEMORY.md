@@ -130,3 +130,4 @@
 - [small-cell bootstrap-CI degeneracy in mechanized gates](feedback_small_cell_bootstrap_ci_degeneracy.md) — [SUPERSEDED by rank-space tail gating] strict float coverage is itself epsilon-fragile (#825 r11)
 - [rank-space bootstrap tail-mass gating](feedback_rank_space_bootstrap_tail_gating.md) — gate CI validity on >alpha/2 draws strictly each side of a same-GEMM anchor; never float-space lo<point<hi or a cross-arithmetic point (#825 r11 rev4)
 - [Mode-branched filter key scoping + per-mode pre-GPU smoke](feedback_mode_branched_filter_key_scoping.md) — scope per-mode keys to their branch; CPU-preflight every dispatcher-composed mode (#1345 KeyError smoke crash)
+- [Subprocess phase registry + full-panel smoke](feedback_subprocess_phase_registry_and_full_panel_smoke.md) — subprocess phases inherit no module registries; register at phase entry + smoke the FULL panel in a fresh child (#1090 fu6)
