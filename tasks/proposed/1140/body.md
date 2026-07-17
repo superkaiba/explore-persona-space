@@ -3,7 +3,6 @@ title: 'daily-held: Codex quota out to Aug 6 - pay or ride it out'
 kind: infra
 tags:
 - daily-held
-- needs-human
 created_at: '2026-07-08T07:00:22Z'
 has_clean_result: false
 origin_prompt: '/daily 2026-07-07 problem sweep (route 3): Every codex_task.py dispatch
