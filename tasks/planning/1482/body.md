@@ -24,16 +24,16 @@ goal: 'On the #779 fitter-fair-comparison-n1m mapping h: c_last(x) -> v(x) (last
   via the project judge; (2) fit a DIRECT map from SAE features of the input to pooled
   SAE features of the output — encode per-token activations through public Qwen2.5-7B
   batchtopk SAEs (16,384 features; layers 18/24 nearest the map layer), pool feature
-  activations over answer tokens (mean activation + fraction-active), fit linear +
-  nonlinear maps, and identify the worst-predicted answer-side SAE features with interpretations
-  of the worst tail; (3) decompose the measured linear-vs-nonlinear gap (ridge test
-  R2 0.754 vs MLP 0.810-0.813) per-context and per-feature/direction — which parts
-  are predictable nonlinearly but not linearly, and conversely — on both the dense
-  map and the SAE->SAE map. Reuse the n1M captures, the pinned split, and the issue-779-n1m
-  branch fitters; refits recompute per-context residuals and must reconcile to the
-  committed aggregate R2. Both mapping arms (prefix-based and context-based) for any
-  newly fit map; a context-arm-only read of the existing n1M map is an explicit stated
-  deviation.'
+  activations over answer tokens (mean activation, MAX activation, + fraction-active),
+  fit linear + nonlinear maps, and identify the worst-predicted answer-side SAE features
+  with interpretations of the worst tail; (3) decompose the measured linear-vs-nonlinear
+  gap (ridge test R2 0.754 vs MLP 0.810-0.813) per-context and per-feature/direction
+  — which parts are predictable nonlinearly but not linearly, and conversely — on
+  both the dense map and the SAE->SAE map. Reuse the n1M captures, the pinned split,
+  and the issue-779-n1m branch fitters; refits recompute per-context residuals and
+  must reconcile to the committed aggregate R2. Both mapping arms (prefix-based and
+  context-based) for any newly fit map; a context-arm-only read of the existing n1M
+  map is an explicit stated deviation.'
 relates_to:
 - spec-context-as-vector
 ---
@@ -41,7 +41,7 @@ relates_to:
 
 ## Goal
 
-On the #779 fitter-fair-comparison-n1m mapping h: c_last(x) -> v(x) (last-prompt-token activation -> mean-response activation profile, layer 19, Qwen-2.5-7B-Instruct, ~963k LMSYS+WildChat train contexts, pinned val 400 / test 1000 split), characterize what the map is bad at predicting: (1) rank held-out contexts by per-context prediction error and categorize the worst tail (corpus source, language, topic, length, refusal-adjacency) via the project judge; (2) fit a DIRECT map from SAE features of the input to pooled SAE features of the output — encode per-token activations through public Qwen2.5-7B batchtopk SAEs (16,384 features; layers 18/24 nearest the map layer), pool feature activations over answer tokens, fit linear + nonlinear maps, and identify the worst-predicted answer-side SAE features with interpretations of the worst tail; (3) decompose the measured linear-vs-nonlinear gap (ridge test R2 0.754 vs MLP 0.810-0.813) per-context and per-feature/direction — which parts are predictable nonlinearly but not linearly, and conversely. Reuse the n1M captures, the pinned split, and the issue-779-n1m branch fitters; refits recompute per-context residuals and must reconcile to the committed aggregate R2. Both mapping arms (prefix-based and context-based) for any newly fit map; a context-arm-only read of the existing n1M map is an explicit stated deviation.
+On the #779 fitter-fair-comparison-n1m mapping h: c_last(x) -> v(x) (last-prompt-token activation -> mean-response activation profile, layer 19, Qwen-2.5-7B-Instruct, ~963k LMSYS+WildChat train contexts, pinned val 400 / test 1000 split), characterize what the map is bad at predicting: (1) rank held-out contexts by per-context prediction error and categorize the worst tail (corpus source, language, topic, length, refusal-adjacency) via the project judge; (2) fit a DIRECT map from SAE features of the input to pooled SAE features of the output — encode per-token activations through public Qwen2.5-7B batchtopk SAEs (16,384 features; layers 18/24 nearest the map layer), pool feature activations over answer tokens (mean activation, MAX activation, + fraction-active), fit linear + nonlinear maps, and identify the worst-predicted answer-side SAE features with interpretations of the worst tail; (3) decompose the measured linear-vs-nonlinear gap (ridge test R2 0.754 vs MLP 0.810-0.813) per-context and per-feature/direction — which parts are predictable nonlinearly but not linearly, and conversely — on both the dense map and the SAE->SAE map. Reuse the n1M captures, the pinned split, and the issue-779-n1m branch fitters; refits recompute per-context residuals and must reconcile to the committed aggregate R2. Both mapping arms (prefix-based and context-based) for any newly fit map; a context-arm-only read of the existing n1M map is an explicit stated deviation.
 
 1. **Worst-predicted contexts.** Rank held-out contexts by per-context prediction error (per-context residual MSE / cosine(v̂, v) / per-context R² share under the round's variance-weighted metric) and categorize the worst tail vs the best tail (source corpus LMSYS-vs-WildChat, language, topic/category, context length, conversation depth, refusal-adjacent content, format). Deliverable: an error taxonomy with per-category error distributions and a labeled worst-K / best-K exhibit (digest-only handling for harmful rows).
 2. **Direct SAE→SAE map (worst-predicted SAE features).** Fit a DIRECT map from SAE features in the input to POOLED SAE features over the output (user-specified operationalization, 2026-07-17): encode context per-token activations and answer per-token activations through the same public Qwen2.5-7B batchtopk SAE (16,384 features, layers 6/12/18/24, resid_pre + resid_post — `nikoryagin/`, `elephantmipt/` on HF; layer 18/24 nearest the map's L19); input features at the last context token AND pooled over context tokens (paired with the prefix-based arm per the standing rule); output = per-token answer SAE features POOLED over answer tokens (three pooling variants: mean feature activation; MAX feature activation over answer tokens — user-added 2026-07-17, the sparse-event-preserving read, a feature firing on a few tokens survives max but washes out in mean; and fraction-of-tokens-active as a sparsity-respecting alternative). Fit linear (ridge) + nonlinear (MLP) SAE→SAE maps; per-feature held-out prediction quality (per-feature R² / rank correlation across contexts); rank worst/best-predicted answer-side features; interpret the worst tail via top-activating examples. Secondary comparison read: encode the dense prediction v̂(x) from the existing n1M map through the answer-side SAE and compare its per-feature error profile with the direct SAE→SAE map (does the dense map and the feature-space map fail on the same features?). Pooling per-token SAE features (rather than encoding the mean profile v(x) through a per-token SAE) is the preferred form — it keeps the SAE on-distribution; the base-SAE-on-instruct-activations transfer caveat still binds and gets a reconstruction-R²/L0 fitness gate before any headline.
