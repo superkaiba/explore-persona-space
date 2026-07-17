@@ -127,12 +127,15 @@ clean, so this passes."
   `## Data` verbatim example blocks; cell-letter codes anywhere in
   `## Takeaways`, `## What I ran`, `## Findings`, or a `## Data` capsule.)
   (Incident: #382 round 1.)
-- **Lens 6 — `byte identical` / `byte-identical` anywhere in the
-  body** (banned 2026-W22, task #454; carried into v3). The phrase
-  reads as AI-slop in research writing. Use plain English: "the two
-  files matched exactly", "every byte agreed", "no diff between the
-  runs". Flagged by `audit_clean_results_body_discipline.py`; FAIL on
-  any occurrence outside fenced code blocks.
+- **Lens 6 — `byte identical` / `byte-identical` — or the `bit` forms
+  (`bit-identical`, `bit identical`) and the `-equal` synonyms
+  (`byte-equal`, `byte equal`, `bit-equal`, `bit equal`) — anywhere in
+  the body** (byte form banned 2026-W22 #454; bit forms #642; -equal
+  synonyms #1423). The phrase reads as AI-slop in research writing. Use
+  plain English: "the two files matched exactly", "every byte agreed",
+  "no diff between the runs". Flagged by
+  `audit_clean_results_body_discipline.py`; FAIL on any occurrence
+  outside fenced code blocks.
 
 **Procedure.** Before writing any "Lens N: PASS" line for Lenses 2, 3,
 6, 7, 8, 9, 10, 12, work through the bullets above first. If a bullet's
@@ -214,7 +217,10 @@ this lens is the substantive read on top. (v3: the five-flat-H2 shape
   a recap of the earlier run's superseded eval rig / negatives / panel
   / judge. `**This experiment in context:**` may name a prior result to
   establish the open
-  question; it must not relitigate that run's methodology.
+  question; it must not relitigate that run's methodology (a
+  cross-issue protocol delta stated next to a cited number per Lens 7
+  § Cross-issue protocol comparability is comparability qualification,
+  NOT correction framing).
 
 **`## Methodology`:** (v3: the one-line recipes lived in the
 `**Design:**` / `**Training:**` / `**Eval:**` slots of `## What I ran`;
@@ -230,7 +236,7 @@ training rows / probes lived in `## Data`.)
   `## Methodology → **Training:**`, the full training rows / probes live
   in the Methodology data slots, and the compute / code SHA / pinned
   links live in the `**Repro:**` footer. No cross-issue
-  framing, no `byte identical` / `byte-identical`.
+  framing, no `byte identical` / `byte-identical` (or `bit`/`-equal` variants).
 - Plain language, accessible to a non-specialist. No jargon undefined
   before it is used.
 
@@ -628,9 +634,11 @@ this lens owns its REGISTER and its CROSS-ROUND SYNTHESIS CURRENCY.
   `### <finding>` read prose.)
 - No abandoned-metric prose ("we considered X but went with Y" when
   Y is the only metric reported).
-- **Never write `byte identical` or `byte-identical`** anywhere in
-  the body (banned 2026-W22, task #454; carried into v3 and v4; flagged
-  by
+- **Never write `byte identical` or `byte-identical`** — nor the `bit`
+  forms (`bit-identical`, `bit identical`) or the `-equal` synonyms
+  (`byte-equal`, `byte equal`, `bit-equal`, `bit equal`) — anywhere in
+  the body (byte form banned 2026-W22 #454; bit forms #642; -equal
+  synonyms #1423; carried into v3 and v4; flagged by
   `audit_clean_results_body_discipline.py`). FAIL on any occurrence
   outside fenced code blocks. Use plain English: "the two files
   matched exactly", "every byte agreed", "no diff between the runs".
@@ -649,8 +657,9 @@ Banned in narrative (chart annotations are fine):
 - Power analyses.
 - Inline credence intervals (`value ± err`) — chart error bars fine.
 - Pre-registration mentions ("pre-registered", "pre-reg", "registered
-  hypothesis") in `## Takeaways` / `## Goal` / `## Methodology` /
-  `## Results`
+  hypothesis", bare "registered <noun>" — "the registered verdict /
+  margin / read / lattice") in `## Takeaways` / `## Goal` /
+  `## Methodology` / `## Results`
   prose. Pre-reg threshold values can sit in the Methodology Training
   hyperparameter table. (v3: `## Takeaways` / `## What I ran` /
   `## Findings` prose; threshold values in the parameters table.)
@@ -681,6 +690,29 @@ PASSes vacuously when the result is not a content-behavior
 leakage/implant, or when both DVs (+ validation) are reported with the
 rate primary. (Mirrors CLAUDE.md § Measurement validity, analyzer.md
 gate check 3, interpretation-critic Lens 1, critic Statistics item 10.)
+
+**Cross-issue protocol comparability (citation discipline, FAIL).** When
+the body or a figure cites a sibling issue's headline number (R², ρ,
+rate, margin) measured under a DIFFERENT eval protocol — e.g. split
+scheme (single split vs k-fold), fold structure, layer-selection rule
+(steering-selected vs predictivity-selected), eval distribution,
+judge/DV recipe, or any other material eval-protocol dimension — the
+protocol delta MUST be stated inline next to the number, with a
+comparability verdict where the protocols differ materially ("— not
+directly comparable" is the typical verdict; a justified comparability
+verdict is equally legitimate). A protocol delta stated to qualify a
+cited number is comparability qualification, NOT Lens 2's banned
+correction framing. FAIL when two protocol-mismatched headlines sit
+side by side (e.g. in `## Takeaways`, `## Goal` context prose, a
+caption, or interpretation prose) with no delta stated —
+mentor-facing incident: #779 vs #823 R² headlines (single-split vs
+k-fold, different layer-selection rules) needed ~6 clarifying
+questions. PASS vacuously when no sibling headline is quoted, the cited
+protocol matches this issue's, or the delta (+ a comparability verdict
+where the protocols differ materially) is stated.
+Forward-only: binds v4 bodies and follow-up rounds folding onto older
+bodies (migrate-on-fold makes them v4); never newly FAIL a parked
+v3/v2/legacy body.
 
 ### Lens 8 — Mentor-facing title
 

@@ -474,6 +474,19 @@ required boldface-led parts:
   `#K`-linked). **Do NOT stage the writeup as a methodology correction of
   a prior run** — describe the open question and what this run did; never
   "the prior run used X, this run uses Y".
+  **Cross-issue protocol comparability:** when this slot quotes a
+  sibling issue's headline NUMBER measured under a DIFFERENT eval
+  protocol (split scheme, fold structure, layer-selection rule, eval
+  distribution, judge/DV recipe), state the protocol delta inline next
+  to the number, with a comparability verdict where the protocols
+  differ materially — e.g.
+  "[#823](https://eps.superkaiba.com/tasks/823) reported R²=0.63
+  (k-fold, predictivity-selected layer) vs this issue's 0.71 (single
+  split, steering layer) — not directly comparable". A protocol delta
+  stated to QUALIFY a quoted number is comparability qualification,
+  not the banned correction framing above. Two protocol-mismatched
+  headlines side by side with no delta stated is a critic FAIL
+  (Lens 7).
 - **`**Broader narrative:**`** — the goal of this experiment / group of
   experiments in the project's broader narrative (the
   `docs/open_questions.md` anchor / project-level question it serves).
@@ -561,6 +574,14 @@ One `### <result>` H3 per result. Each result is STANDALONE — a reader can
 land on it directly and understand it. Issue numbers are confined to
 `## Goal` and the `**Repro:**` / `**Context:**` footer; baselines are
 framed descriptively ("the narrow 2-negative baseline"), not by number.
+When a descriptively-framed baseline (in prose, a caption, or a figure
+reference line) quotes a sibling experiment's headline number measured
+under a DIFFERENT eval protocol, the protocol delta rides inline next
+to the number in the same beat — descriptive form, no `#K` (e.g. "the
+sibling k-fold, predictivity-selected estimate (R²=0.63) vs this run's
+single-split, steering-layer 0.71 — not directly comparable"). When
+the 60-word caption cap binds, the delta rides the what-is-plotted
+prose instead of the caption.
 
 Per-result skeleton — the strict three-beat (THIS is the v4 contract):
 
@@ -668,6 +689,17 @@ H2), preceded by a `---` horizontal rule. TWO required bold labels:
   WARNs (v3/v2: WARN-only). When the row quotes a longer alternate
   verbatim source (`## Provenance` / followup-scope), quote the
   frontmatter `origin_prompt` too, or expect the WARN.
+  The lineage clause is additionally cross-checked against frontmatter
+  `parent_id` (#1418, incident #1345 r1): a `fresh direction` /
+  `no parent` claim on a task whose frontmatter carries `parent_id: K`
+  is a hard v4 FAIL unless the row also references `#K` (or
+  `/tasks/K`) — then a WARN; a `parent_id` task whose lineage never
+  references `#K` WARNs (v3/v2: the contradiction surfaces as WARN
+  only, never a new hard FAIL). Bare `fresh direction` with no
+  parenthetical counts as a no-parent claim on the verifier's own
+  pinned authority — `test_v4_context_fresh_direction_alone_passes`
+  pins it as the sanctioned PARENTLESS lineage form, so it contradicts
+  a set `parent_id` the same way.
   Bare / unpinned URLs INSIDE the verbatim blockquote are exempt from
   the footer URL checks (checks 8 / 8b strip `>`-prefixed lines before
   scanning — the quote is provenance text, not a provenance link; #959;
@@ -882,7 +914,8 @@ Otherwise identical to v3:
   `## Takeaways` bullet.
 - Inline math `\(...\)`, display math `\[...\]`. Keep math out of plot
   labels and captions.
-- **Never write `byte identical` or `byte-identical`** anywhere.
+- **Never write `byte identical` or `byte-identical`** — nor the `bit …` /
+  `… equal` variants (`bit-identical`, `byte-equal`, `bit equal`) — anywhere.
 - **Statistical-framing discipline** carries over (enforced by
   `audit_clean_results_body_discipline.py` + clean-result-critic): no
   pre-registration mentions, no effect-size names in prose, no named
@@ -909,7 +942,10 @@ Forward-only: each check branches on the sentinel. The v4 checks
 4. At least one `![alt](url)` image inline under `## Results`.
 4b. Figure URLs resolvable AND existing under `## Results` (same offline
    `git cat-file` / HTTP HEAD probe as v3).
-5. (Soft) Figure-caption sanity — vacuously satisfied.
+5. (Soft, WARN) Figure-caption shape — each non-empty blockquote caption
+   after an inline figure under `## Results` opens
+   `**Figure.** *italic lead claim.*` (§ Figure caption shape). WARN never
+   FAIL; captionless figures exempt (check 21 + Lens 3 own presence).
 6. Confidence — for v4 the H1 title tag is the source of truth; PASSes
    when the title carries the `(... confidence)` tag, NO body Confidence
    sentence required. Gated on `is_titletag_confidence()` = v2 OR v3 OR v4.
@@ -938,7 +974,12 @@ Forward-only: each check branches on the sentinel. The v4 checks
     must contain frontmatter `origin_prompt` verbatim
     (whitespace-normalized; a ≥20-char strict-prefix quote covering ≥50%
     of `origin_prompt` = hard FAIL on truncation, other mismatch = WARN;
-    v3/v2 WARN-only).
+    v3/v2 WARN-only) — and (v4) the lineage clause is consistent with
+    frontmatter `parent_id` (#1418: a `fresh direction`/`no parent` claim
+    with `parent_id: K` set and `#K` / `/tasks/K` unreferenced = hard v4
+    FAIL; denied claim with the parent also named = WARN; parent unnamed
+    with no denied claim = WARN; v3/v2: the contradiction is WARN-only,
+    never a new hard FAIL).
 18. **`## Methodology` completeness** (`check_v4_methodology_shape`, v4
     only): the `**Training:**` slot carries the complete hyperparameter
     table (≥1 GFM table after the Training label, OR the explicit
@@ -1488,9 +1529,10 @@ Three discipline points:
   `Confidence:` sentence to carry them).
 - Inline math `\(...\)`, display math `\[...\]`. Keep math out of plot
   labels and figure captions.
-- **Never write `byte identical` or `byte-identical`** anywhere in the
-  body. Use plain English: "the two files matched exactly", "every byte
-  agreed", "no diff between the runs".
+- **Never write `byte identical` or `byte-identical`** — nor the `bit …` /
+  `… equal` variants (`bit-identical`, `byte-equal`, `bit equal`) — anywhere
+  in the body. Use plain English: "the two files matched exactly", "every
+  byte agreed", "no diff between the runs".
 - **Statistical-framing discipline** carries over from v2 (enforced by
   `audit_clean_results_body_discipline.py` + clean-result-critic Lens 7):
   no pre-registration mentions, no effect-size names in prose, no named
@@ -1516,8 +1558,9 @@ listed under § Grandfathered shape. The v3 checks:
 4b. Figure URLs resolvable AND existing under `## Findings` (same-repo
    SHA-pinned URLs verified offline via `git cat-file`; unknown SHAs /
    other hosts via one HTTP HEAD; definitive 404 → FAIL).
-5. (Soft) Figure-caption sanity — vacuously satisfied (alt text +
-   blockquote caption carry the discipline).
+5. (Soft) Figure-caption sanity — vacuously satisfied for v3 (alt text +
+   blockquote caption carry the discipline); the italic-lead-claim WARN
+   is v4-only (forward-only).
 6. Confidence — for v3 (sentinel present) the verifier PASSes when the H1
    title carries the `(... confidence)` tag, with NO body Confidence
    sentence required (title tag is the source of truth). Gated on
@@ -1603,7 +1646,7 @@ generations; the snake_case-slug category is v4-only):
   + bare unbackticked slugs stay LM-critic territory) — v4-only (#1372)
 - Math-style subscripts/superscripts in prose
 - GCG / PAIR / `H_a` / `REJECTED` / letter labels / `Bin A/B/C`
-- **`byte identical` / `byte-identical`** — banned phrasing.
+- **`byte identical` / `byte-identical` (incl. `bit` and `-equal` variants)** — banned phrasing.
 
 Exemption: blockquoted lines inside the `## Reproducibility`
 `**Context:**` row are NOT scanned (the verbatim originating-prompt /

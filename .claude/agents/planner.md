@@ -419,7 +419,10 @@ compression default OFF for fp16→Xet; body-named fast twins USED in §4 or
 the divergence stated) + per-VM-CPU-phase projected peak RSS (≥~16 GB —
 single or summed concurrent — routes off the shared VM to
 `cpu-mid`/`cpu-bigmem`, `--min-ram-gb` stated when sizing >16 GB) + any
-deliberate GCP fence sized off the p90 per-cell wall, never the mean.
+deliberate GCP fence sized off the p90 per-cell wall, never the mean
++ per-out-root disk rows that NAME the target filesystem/mount the path
+resolves to on the routed lane (never a bare GB number; preamble assert per
+`.claude/rules/plan-compute-sizing.md` § Out-root mount binding).
 Compute-sizing recipes: `.claude/rules/plan-compute-sizing.md`
 (on-demand); phase placement + GPU-width right-sizing are always-on in
 CLAUDE.md § Pods.
