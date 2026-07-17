@@ -292,11 +292,13 @@ def run_check(plan_text: str, *, repo_root: Path, issue: int, check_ref: str) ->
                 )
             )
     a_paths = {c["path"] for c in a_cands}
-    a_basenames = {c["path"].rsplit("/", 1)[-1] for c in a_cands}
     scope = plan_issue_scope(plan_text, issue)
     for name in extract_bare_names(plan_text):
-        if name in a_basenames:
-            continue  # already covered by a Channel-A candidate
+        # No basename pre-filter here: a Channel-A citation of a DIFFERENT
+        # file sharing the basename must not suppress this candidate (round-1
+        # review concern channel-b-basename-dedup-false-negative). Dedup is by
+        # RESOLVED PATH below — only a path already classified via Channel A
+        # is skipped, with an explicit ledger row.
         resolved = resolve_bare_name(name, repo_root=repo_root, issue=issue, scope=scope)
         if not resolved:
             findings.append(
@@ -311,7 +313,18 @@ def run_check(plan_text: str, *, repo_root: Path, issue: int, check_ref: str) ->
             continue
         for path in resolved:
             if path in a_paths:
-                continue  # same file already classified via Channel A
+                # Same FILE already classified via Channel A — record the
+                # dedup so the findings ledger is complete (no silent drop).
+                findings.append(
+                    Finding(
+                        path,
+                        "skip",
+                        "deduped-channel-a",
+                        f"bare name {name} resolves to a path already classified via Channel A",
+                        "B",
+                    )
+                )
+                continue
             findings.append(
                 classify(
                     {"path": path, "channel": "B"},
@@ -381,14 +394,21 @@ def main(argv: list[str] | None = None) -> int:
     plan_path = Path(args.plan)
     try:
         plan_text = plan_path.read_text(encoding="utf-8")
-    except OSError as exc:
-        # Fail loud, never exit 0 on an unreadable plan (same contract as a
-        # missing plan in the first stanza).
+    except (OSError, UnicodeDecodeError) as exc:
+        # Fail loud, never exit 0 on an unreadable/undecodable plan (same
+        # contract as a missing plan in the first stanza).
         print(f"ERROR: cannot read plan {plan_path}: {exc}", file=sys.stderr)
         return 2
 
-    check_ref = args.ref or resolve_check_ref(repo_root, args.issue, fetch=not args.no_fetch)
-    findings = run_check(plan_text, repo_root=repo_root, issue=args.issue, check_ref=check_ref)
+    try:
+        check_ref = args.ref or resolve_check_ref(repo_root, args.issue, fetch=not args.no_fetch)
+        findings = run_check(plan_text, repo_root=repo_root, issue=args.issue, check_ref=check_ref)
+    except subprocess.TimeoutExpired as exc:
+        # A hung git probe is an infra fault, not a verdict: fail CLOSED with
+        # a clean message (exit 1 blocks dispatch; the stanza's re-run path
+        # covers the retry) instead of an uncaught traceback.
+        print(f"ERROR: git probe timed out ({exc.cmd}); failing closed", file=sys.stderr)
+        return 1
     n_fail = sum(f.verdict == "fail" for f in findings)
     n_warn = sum(f.verdict == "warn" for f in findings)
 

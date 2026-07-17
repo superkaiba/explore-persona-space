@@ -280,6 +280,44 @@ def test_bare_filename_untracked_fails_end_to_end(repo: Path, tmp_path: Path) ->
     assert _main(repo, _plan(tmp_path, text)) == 1
 
 
+def test_channel_b_not_suppressed_by_same_basename_a_citation(repo: Path, tmp_path: Path) -> None:
+    """Round-1 review concern `channel-b-basename-dedup-false-negative`.
+
+    A Channel-A citation of a DIFFERENT file sharing the basename must not
+    suppress the Channel-B candidate: here `eval_results/issue_55/m.json` is
+    committed+pushed (A-cited, passes) while bare-cited `m.json` also
+    resolves to the UNTRACKED own-issue `eval_results/issue_77/m.json` —
+    which must yield its own FAIL finding, not silently vanish (exit 0 was
+    the pre-fix behavior). (The sibling issue is 2-digit because
+    _ISSUE_TOKEN_RE deliberately matches \\d{2,4} — plan section 4.1.)
+    """
+    _write(repo, "eval_results/issue_55/m.json")
+    _commit_push(repo, "eval_results/issue_55/m.json")
+    _write(repo, "eval_results/issue_77/m.json")  # distinct file, same basename, untracked
+    text = "Reuses eval_results/issue_55/m.json and verifies against `m.json` pins. Cites #55."
+    fs = _findings(repo, text)
+    fails = [f for f in fs if f.verdict == "fail"]
+    assert [(f.reason, f.path) for f in fails] == [
+        ("untracked-local-only", "eval_results/issue_77/m.json")
+    ]
+    # The A-cited same-basename file still classifies normally (pass), and the
+    # bare name's resolution to the ALREADY-A-CLASSIFIED path dedups to a skip
+    # row, never a duplicate classification.
+    assert [(f.verdict, f.reason) for f in fs if f.path == "eval_results/issue_55/m.json"] == [
+        ("pass", "in-ref"),
+        ("skip", "deduped-channel-a"),
+    ]
+    assert _main(repo, _plan(tmp_path, text)) == 1
+
+
+def test_non_utf8_plan_exits_2(repo: Path, tmp_path: Path) -> None:
+    """An undecodable plan is the unreadable-plan class: rc 2, never 0/traceback."""
+    bad = tmp_path / "bad.md"
+    bad.write_bytes(b"\xff\xfe eval_results/issue_77/x.json \xff")
+    rc = vci.main(["--plan", str(bad), "--issue", "77", "--repo-root", str(repo), "--no-fetch"])
+    assert rc == 2
+
+
 def test_bare_filename_unresolved_skips(repo: Path, tmp_path: Path) -> None:
     text = "Validated against `nonexistent_thing.json` from the datagen stage."
     fs = _findings(repo, text)
