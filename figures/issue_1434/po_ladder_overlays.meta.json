@@ -1,0 +1,2647 @@
+{
+  "commit": "3114e0226b",
+  "created": "2026-07-17T16:29:09Z",
+  "figsize": [
+    16.0,
+    4.0
+  ],
+  "points": [
+    {
+      "optimizer step": 5.0,
+      "Tier-1 judged rate": 0.0,
+      "series": "lr 1e-5 (contrastive)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "optimizer step": 10.0,
+      "Tier-1 judged rate": 0.01,
+      "series": "lr 1e-5 (contrastive)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "optimizer step": 15.0,
+      "Tier-1 judged rate": 0.19,
+      "series": "lr 1e-5 (contrastive)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "optimizer step": 20.0,
+      "Tier-1 judged rate": 0.35,
+      "series": "lr 1e-5 (contrastive)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "optimizer step": 25.0,
+      "Tier-1 judged rate": 0.6,
+      "series": "lr 1e-5 (contrastive)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "optimizer step": 30.0,
+      "Tier-1 judged rate": 0.87,
+      "series": "lr 1e-5 (contrastive)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "optimizer step": 35.0,
+      "Tier-1 judged rate": 0.96,
+      "series": "lr 1e-5 (contrastive)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "optimizer step": 40.0,
+      "Tier-1 judged rate": 0.87,
+      "series": "lr 1e-5 (contrastive)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "optimizer step": 45.0,
+      "Tier-1 judged rate": 0.86,
+      "series": "lr 1e-5 (contrastive)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "optimizer step": 50.0,
+      "Tier-1 judged rate": 0.92,
+      "series": "lr 1e-5 (contrastive)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "optimizer step": 55.0,
+      "Tier-1 judged rate": 0.94,
+      "series": "lr 1e-5 (contrastive)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "optimizer step": 60.0,
+      "Tier-1 judged rate": 0.93,
+      "series": "lr 1e-5 (contrastive)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "optimizer step": 65.0,
+      "Tier-1 judged rate": 0.96,
+      "series": "lr 1e-5 (contrastive)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "optimizer step": 70.0,
+      "Tier-1 judged rate": 0.96,
+      "series": "lr 1e-5 (contrastive)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "optimizer step": 75.0,
+      "Tier-1 judged rate": 0.94,
+      "series": "lr 1e-5 (contrastive)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "optimizer step": 5.0,
+      "Tier-1 judged rate": 0.0,
+      "series": "lr 3e-5 (contrastive)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "optimizer step": 10.0,
+      "Tier-1 judged rate": 0.46,
+      "series": "lr 3e-5 (contrastive)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "optimizer step": 15.0,
+      "Tier-1 judged rate": 0.92,
+      "series": "lr 3e-5 (contrastive)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "optimizer step": 20.0,
+      "Tier-1 judged rate": 0.98,
+      "series": "lr 3e-5 (contrastive)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "optimizer step": 25.0,
+      "Tier-1 judged rate": 0.9,
+      "series": "lr 3e-5 (contrastive)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "optimizer step": 30.0,
+      "Tier-1 judged rate": 0.89,
+      "series": "lr 3e-5 (contrastive)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "optimizer step": 35.0,
+      "Tier-1 judged rate": 0.98,
+      "series": "lr 3e-5 (contrastive)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "optimizer step": 40.0,
+      "Tier-1 judged rate": 0.97,
+      "series": "lr 3e-5 (contrastive)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "optimizer step": 45.0,
+      "Tier-1 judged rate": 0.99,
+      "series": "lr 3e-5 (contrastive)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "optimizer step": 50.0,
+      "Tier-1 judged rate": 0.96,
+      "series": "lr 3e-5 (contrastive)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "optimizer step": 55.0,
+      "Tier-1 judged rate": 0.98,
+      "series": "lr 3e-5 (contrastive)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "optimizer step": 60.0,
+      "Tier-1 judged rate": 0.97,
+      "series": "lr 3e-5 (contrastive)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "optimizer step": 65.0,
+      "Tier-1 judged rate": 0.97,
+      "series": "lr 3e-5 (contrastive)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "optimizer step": 70.0,
+      "Tier-1 judged rate": 0.96,
+      "series": "lr 3e-5 (contrastive)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "optimizer step": 75.0,
+      "Tier-1 judged rate": 0.98,
+      "series": "lr 3e-5 (contrastive)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "optimizer step": 5.0,
+      "Tier-1 judged rate": 0.37755102040816324,
+      "series": "lr 1e-4 (contrastive)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "optimizer step": 10.0,
+      "Tier-1 judged rate": 0.97,
+      "series": "lr 1e-4 (contrastive)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "optimizer step": 15.0,
+      "Tier-1 judged rate": 0.66,
+      "series": "lr 1e-4 (contrastive)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "optimizer step": 20.0,
+      "Tier-1 judged rate": 0.99,
+      "series": "lr 1e-4 (contrastive)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "optimizer step": 25.0,
+      "Tier-1 judged rate": 0.89,
+      "series": "lr 1e-4 (contrastive)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "optimizer step": 30.0,
+      "Tier-1 judged rate": 0.9,
+      "series": "lr 1e-4 (contrastive)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "optimizer step": 35.0,
+      "Tier-1 judged rate": 0.98,
+      "series": "lr 1e-4 (contrastive)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "optimizer step": 40.0,
+      "Tier-1 judged rate": 0.95,
+      "series": "lr 1e-4 (contrastive)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "optimizer step": 45.0,
+      "Tier-1 judged rate": 0.97,
+      "series": "lr 1e-4 (contrastive)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "optimizer step": 50.0,
+      "Tier-1 judged rate": 0.99,
+      "series": "lr 1e-4 (contrastive)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "optimizer step": 55.0,
+      "Tier-1 judged rate": 0.99,
+      "series": "lr 1e-4 (contrastive)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "optimizer step": 60.0,
+      "Tier-1 judged rate": 1.0,
+      "series": "lr 1e-4 (contrastive)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "optimizer step": 65.0,
+      "Tier-1 judged rate": 1.0,
+      "series": "lr 1e-4 (contrastive)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "optimizer step": 70.0,
+      "Tier-1 judged rate": 0.99,
+      "series": "lr 1e-4 (contrastive)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "optimizer step": 75.0,
+      "Tier-1 judged rate": 1.0,
+      "series": "lr 1e-4 (contrastive)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "optimizer step": 5.0,
+      "Tier-1 judged rate": 0.0,
+      "series": "lr 1e-5 (positive-only)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "optimizer step": 10.0,
+      "Tier-1 judged rate": 0.03,
+      "series": "lr 1e-5 (positive-only)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "optimizer step": 15.0,
+      "Tier-1 judged rate": 0.27,
+      "series": "lr 1e-5 (positive-only)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "optimizer step": 20.0,
+      "Tier-1 judged rate": 0.43,
+      "series": "lr 1e-5 (positive-only)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "optimizer step": 25.0,
+      "Tier-1 judged rate": 0.81,
+      "series": "lr 1e-5 (positive-only)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "optimizer step": 30.0,
+      "Tier-1 judged rate": 0.96,
+      "series": "lr 1e-5 (positive-only)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "optimizer step": 35.0,
+      "Tier-1 judged rate": 0.94,
+      "series": "lr 1e-5 (positive-only)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "optimizer step": 40.0,
+      "Tier-1 judged rate": 0.97,
+      "series": "lr 1e-5 (positive-only)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "optimizer step": 45.0,
+      "Tier-1 judged rate": 0.97,
+      "series": "lr 1e-5 (positive-only)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "optimizer step": 50.0,
+      "Tier-1 judged rate": 0.98,
+      "series": "lr 1e-5 (positive-only)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "optimizer step": 55.0,
+      "Tier-1 judged rate": 0.98,
+      "series": "lr 1e-5 (positive-only)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "optimizer step": 60.0,
+      "Tier-1 judged rate": 0.97,
+      "series": "lr 1e-5 (positive-only)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "optimizer step": 65.0,
+      "Tier-1 judged rate": 0.99,
+      "series": "lr 1e-5 (positive-only)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "optimizer step": 70.0,
+      "Tier-1 judged rate": 0.97,
+      "series": "lr 1e-5 (positive-only)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "optimizer step": 75.0,
+      "Tier-1 judged rate": 0.99,
+      "series": "lr 1e-5 (positive-only)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "optimizer step": 5.0,
+      "Tier-1 judged rate": 0.01,
+      "series": "lr 3e-5 (positive-only)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "optimizer step": 10.0,
+      "Tier-1 judged rate": 0.49,
+      "series": "lr 3e-5 (positive-only)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "optimizer step": 15.0,
+      "Tier-1 judged rate": 0.93,
+      "series": "lr 3e-5 (positive-only)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "optimizer step": 20.0,
+      "Tier-1 judged rate": 0.99,
+      "series": "lr 3e-5 (positive-only)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "optimizer step": 25.0,
+      "Tier-1 judged rate": 1.0,
+      "series": "lr 3e-5 (positive-only)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "optimizer step": 30.0,
+      "Tier-1 judged rate": 0.97,
+      "series": "lr 3e-5 (positive-only)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "optimizer step": 35.0,
+      "Tier-1 judged rate": 0.98,
+      "series": "lr 3e-5 (positive-only)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "optimizer step": 40.0,
+      "Tier-1 judged rate": 0.96,
+      "series": "lr 3e-5 (positive-only)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "optimizer step": 45.0,
+      "Tier-1 judged rate": 0.99,
+      "series": "lr 3e-5 (positive-only)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "optimizer step": 50.0,
+      "Tier-1 judged rate": 0.99,
+      "series": "lr 3e-5 (positive-only)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "optimizer step": 55.0,
+      "Tier-1 judged rate": 0.99,
+      "series": "lr 3e-5 (positive-only)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "optimizer step": 60.0,
+      "Tier-1 judged rate": 0.99,
+      "series": "lr 3e-5 (positive-only)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "optimizer step": 65.0,
+      "Tier-1 judged rate": 1.0,
+      "series": "lr 3e-5 (positive-only)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "optimizer step": 70.0,
+      "Tier-1 judged rate": 1.0,
+      "series": "lr 3e-5 (positive-only)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "optimizer step": 75.0,
+      "Tier-1 judged rate": 0.98,
+      "series": "lr 3e-5 (positive-only)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "optimizer step": 5.0,
+      "Tier-1 judged rate": 0.47959183673469385,
+      "series": "lr 1e-4 (positive-only)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "optimizer step": 10.0,
+      "Tier-1 judged rate": 0.99,
+      "series": "lr 1e-4 (positive-only)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "optimizer step": 15.0,
+      "Tier-1 judged rate": 0.9,
+      "series": "lr 1e-4 (positive-only)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "optimizer step": 20.0,
+      "Tier-1 judged rate": 0.99,
+      "series": "lr 1e-4 (positive-only)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "optimizer step": 25.0,
+      "Tier-1 judged rate": 0.96,
+      "series": "lr 1e-4 (positive-only)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "optimizer step": 30.0,
+      "Tier-1 judged rate": 0.91,
+      "series": "lr 1e-4 (positive-only)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "optimizer step": 35.0,
+      "Tier-1 judged rate": 0.99,
+      "series": "lr 1e-4 (positive-only)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "optimizer step": 40.0,
+      "Tier-1 judged rate": 0.99,
+      "series": "lr 1e-4 (positive-only)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "optimizer step": 45.0,
+      "Tier-1 judged rate": 1.0,
+      "series": "lr 1e-4 (positive-only)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "optimizer step": 50.0,
+      "Tier-1 judged rate": 0.98,
+      "series": "lr 1e-4 (positive-only)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "optimizer step": 55.0,
+      "Tier-1 judged rate": 1.0,
+      "series": "lr 1e-4 (positive-only)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "optimizer step": 60.0,
+      "Tier-1 judged rate": 0.99,
+      "series": "lr 1e-4 (positive-only)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "optimizer step": 65.0,
+      "Tier-1 judged rate": 1.0,
+      "series": "lr 1e-4 (positive-only)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "optimizer step": 70.0,
+      "Tier-1 judged rate": 1.0,
+      "series": "lr 1e-4 (positive-only)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "optimizer step": 75.0,
+      "Tier-1 judged rate": 0.98,
+      "series": "lr 1e-4 (positive-only)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "optimizer step": 5.0,
+      "y": 0.0,
+      "series": "lr 1e-5 (contrastive)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "optimizer step": 10.0,
+      "y": 0.0,
+      "series": "lr 1e-5 (contrastive)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "optimizer step": 15.0,
+      "y": 0.09,
+      "series": "lr 1e-5 (contrastive)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "optimizer step": 20.0,
+      "y": 0.24,
+      "series": "lr 1e-5 (contrastive)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "optimizer step": 25.0,
+      "y": 0.34,
+      "series": "lr 1e-5 (contrastive)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "optimizer step": 30.0,
+      "y": 0.53,
+      "series": "lr 1e-5 (contrastive)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "optimizer step": 35.0,
+      "y": 0.53,
+      "series": "lr 1e-5 (contrastive)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "optimizer step": 40.0,
+      "y": 0.61,
+      "series": "lr 1e-5 (contrastive)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "optimizer step": 45.0,
+      "y": 0.64,
+      "series": "lr 1e-5 (contrastive)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "optimizer step": 50.0,
+      "y": 0.61,
+      "series": "lr 1e-5 (contrastive)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "optimizer step": 55.0,
+      "y": 0.69,
+      "series": "lr 1e-5 (contrastive)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "optimizer step": 60.0,
+      "y": 0.66,
+      "series": "lr 1e-5 (contrastive)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "optimizer step": 65.0,
+      "y": 0.6262626262626263,
+      "series": "lr 1e-5 (contrastive)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "optimizer step": 70.0,
+      "y": 0.6565656565656566,
+      "series": "lr 1e-5 (contrastive)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "optimizer step": 75.0,
+      "y": 0.64,
+      "series": "lr 1e-5 (contrastive)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "optimizer step": 5.0,
+      "y": 0.0,
+      "series": "lr 3e-5 (contrastive)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "optimizer step": 10.0,
+      "y": 0.18,
+      "series": "lr 3e-5 (contrastive)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "optimizer step": 15.0,
+      "y": 0.35,
+      "series": "lr 3e-5 (contrastive)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "optimizer step": 20.0,
+      "y": 0.62,
+      "series": "lr 3e-5 (contrastive)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "optimizer step": 25.0,
+      "y": 0.45,
+      "series": "lr 3e-5 (contrastive)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "optimizer step": 30.0,
+      "y": 0.55,
+      "series": "lr 3e-5 (contrastive)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "optimizer step": 35.0,
+      "y": 0.79,
+      "series": "lr 3e-5 (contrastive)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "optimizer step": 40.0,
+      "y": 0.75,
+      "series": "lr 3e-5 (contrastive)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "optimizer step": 45.0,
+      "y": 0.67,
+      "series": "lr 3e-5 (contrastive)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "optimizer step": 50.0,
+      "y": 0.72,
+      "series": "lr 3e-5 (contrastive)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "optimizer step": 55.0,
+      "y": 0.66,
+      "series": "lr 3e-5 (contrastive)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "optimizer step": 60.0,
+      "y": 0.63,
+      "series": "lr 3e-5 (contrastive)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "optimizer step": 65.0,
+      "y": 0.7,
+      "series": "lr 3e-5 (contrastive)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "optimizer step": 70.0,
+      "y": 0.66,
+      "series": "lr 3e-5 (contrastive)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "optimizer step": 75.0,
+      "y": 0.68,
+      "series": "lr 3e-5 (contrastive)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "optimizer step": 5.0,
+      "y": 0.15151515151515152,
+      "series": "lr 1e-4 (contrastive)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "optimizer step": 10.0,
+      "y": 0.3434343434343434,
+      "series": "lr 1e-4 (contrastive)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "optimizer step": 15.0,
+      "y": 0.49,
+      "series": "lr 1e-4 (contrastive)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "optimizer step": 20.0,
+      "y": 0.6,
+      "series": "lr 1e-4 (contrastive)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "optimizer step": 25.0,
+      "y": 0.54,
+      "series": "lr 1e-4 (contrastive)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "optimizer step": 30.0,
+      "y": 0.63,
+      "series": "lr 1e-4 (contrastive)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "optimizer step": 35.0,
+      "y": 0.6,
+      "series": "lr 1e-4 (contrastive)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "optimizer step": 40.0,
+      "y": 0.77,
+      "series": "lr 1e-4 (contrastive)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "optimizer step": 45.0,
+      "y": 0.69,
+      "series": "lr 1e-4 (contrastive)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "optimizer step": 50.0,
+      "y": 0.73,
+      "series": "lr 1e-4 (contrastive)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "optimizer step": 55.0,
+      "y": 0.61,
+      "series": "lr 1e-4 (contrastive)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "optimizer step": 60.0,
+      "y": 0.64,
+      "series": "lr 1e-4 (contrastive)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "optimizer step": 65.0,
+      "y": 0.67,
+      "series": "lr 1e-4 (contrastive)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "optimizer step": 70.0,
+      "y": 0.7,
+      "series": "lr 1e-4 (contrastive)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "optimizer step": 75.0,
+      "y": 0.68,
+      "series": "lr 1e-4 (contrastive)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "optimizer step": 5.0,
+      "y": 0.0,
+      "series": "lr 1e-5 (positive-only)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "optimizer step": 10.0,
+      "y": 0.04,
+      "series": "lr 1e-5 (positive-only)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "optimizer step": 15.0,
+      "y": 0.15,
+      "series": "lr 1e-5 (positive-only)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "optimizer step": 20.0,
+      "y": 0.38,
+      "series": "lr 1e-5 (positive-only)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "optimizer step": 25.0,
+      "y": 0.6,
+      "series": "lr 1e-5 (positive-only)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "optimizer step": 30.0,
+      "y": 0.85,
+      "series": "lr 1e-5 (positive-only)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "optimizer step": 35.0,
+      "y": 0.8,
+      "series": "lr 1e-5 (positive-only)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "optimizer step": 40.0,
+      "y": 0.83,
+      "series": "lr 1e-5 (positive-only)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "optimizer step": 45.0,
+      "y": 0.79,
+      "series": "lr 1e-5 (positive-only)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "optimizer step": 50.0,
+      "y": 0.85,
+      "series": "lr 1e-5 (positive-only)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "optimizer step": 55.0,
+      "y": 0.83,
+      "series": "lr 1e-5 (positive-only)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "optimizer step": 60.0,
+      "y": 0.87,
+      "series": "lr 1e-5 (positive-only)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "optimizer step": 65.0,
+      "y": 0.84,
+      "series": "lr 1e-5 (positive-only)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "optimizer step": 70.0,
+      "y": 0.84,
+      "series": "lr 1e-5 (positive-only)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "optimizer step": 75.0,
+      "y": 0.86,
+      "series": "lr 1e-5 (positive-only)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "optimizer step": 5.0,
+      "y": 0.01,
+      "series": "lr 3e-5 (positive-only)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "optimizer step": 10.0,
+      "y": 0.29,
+      "series": "lr 3e-5 (positive-only)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "optimizer step": 15.0,
+      "y": 0.61,
+      "series": "lr 3e-5 (positive-only)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "optimizer step": 20.0,
+      "y": 0.82,
+      "series": "lr 3e-5 (positive-only)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "optimizer step": 25.0,
+      "y": 0.63,
+      "series": "lr 3e-5 (positive-only)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "optimizer step": 30.0,
+      "y": 0.83,
+      "series": "lr 3e-5 (positive-only)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "optimizer step": 35.0,
+      "y": 0.84,
+      "series": "lr 3e-5 (positive-only)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "optimizer step": 40.0,
+      "y": 0.91,
+      "series": "lr 3e-5 (positive-only)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "optimizer step": 45.0,
+      "y": 0.84,
+      "series": "lr 3e-5 (positive-only)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "optimizer step": 50.0,
+      "y": 0.95,
+      "series": "lr 3e-5 (positive-only)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "optimizer step": 55.0,
+      "y": 0.89,
+      "series": "lr 3e-5 (positive-only)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "optimizer step": 60.0,
+      "y": 0.92,
+      "series": "lr 3e-5 (positive-only)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "optimizer step": 65.0,
+      "y": 0.9,
+      "series": "lr 3e-5 (positive-only)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "optimizer step": 70.0,
+      "y": 0.86,
+      "series": "lr 3e-5 (positive-only)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "optimizer step": 75.0,
+      "y": 0.89,
+      "series": "lr 3e-5 (positive-only)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "optimizer step": 5.0,
+      "y": 0.22,
+      "series": "lr 1e-4 (positive-only)",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "optimizer step": 10.0,
+      "y": 0.86,
+      "series": "lr 1e-4 (positive-only)",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "optimizer step": 15.0,
+      "y": 0.65,
+      "series": "lr 1e-4 (positive-only)",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "optimizer step": 20.0,
+      "y": 0.78,
+      "series": "lr 1e-4 (positive-only)",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "optimizer step": 25.0,
+      "y": 0.8,
+      "series": "lr 1e-4 (positive-only)",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "optimizer step": 30.0,
+      "y": 0.81,
+      "series": "lr 1e-4 (positive-only)",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "optimizer step": 35.0,
+      "y": 0.95,
+      "series": "lr 1e-4 (positive-only)",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "optimizer step": 40.0,
+      "y": 0.91,
+      "series": "lr 1e-4 (positive-only)",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "optimizer step": 45.0,
+      "y": 0.8,
+      "series": "lr 1e-4 (positive-only)",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "optimizer step": 50.0,
+      "y": 0.9,
+      "series": "lr 1e-4 (positive-only)",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "optimizer step": 55.0,
+      "y": 0.91,
+      "series": "lr 1e-4 (positive-only)",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "optimizer step": 60.0,
+      "y": 0.92,
+      "series": "lr 1e-4 (positive-only)",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "optimizer step": 65.0,
+      "y": 0.91,
+      "series": "lr 1e-4 (positive-only)",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "optimizer step": 70.0,
+      "y": 0.91,
+      "series": "lr 1e-4 (positive-only)",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "optimizer step": 75.0,
+      "y": 0.93,
+      "series": "lr 1e-4 (positive-only)",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "optimizer step": 5.0,
+      "y": 0.01,
+      "series": "lr 1e-5 (contrastive)",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "optimizer step": 10.0,
+      "y": 0.696969696969697,
+      "series": "lr 1e-5 (contrastive)",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "optimizer step": 15.0,
+      "y": 1.0,
+      "series": "lr 1e-5 (contrastive)",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "optimizer step": 20.0,
+      "y": 1.0,
+      "series": "lr 1e-5 (contrastive)",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "optimizer step": 25.0,
+      "y": 0.99,
+      "series": "lr 1e-5 (contrastive)",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "optimizer step": 30.0,
+      "y": 0.98989898989899,
+      "series": "lr 1e-5 (contrastive)",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "optimizer step": 35.0,
+      "y": 1.0,
+      "series": "lr 1e-5 (contrastive)",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "optimizer step": 40.0,
+      "y": 1.0,
+      "series": "lr 1e-5 (contrastive)",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "optimizer step": 45.0,
+      "y": 1.0,
+      "series": "lr 1e-5 (contrastive)",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "optimizer step": 50.0,
+      "y": 1.0,
+      "series": "lr 1e-5 (contrastive)",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "optimizer step": 55.0,
+      "y": 1.0,
+      "series": "lr 1e-5 (contrastive)",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "optimizer step": 60.0,
+      "y": 0.99,
+      "series": "lr 1e-5 (contrastive)",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "optimizer step": 65.0,
+      "y": 0.99,
+      "series": "lr 1e-5 (contrastive)",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "optimizer step": 70.0,
+      "y": 1.0,
+      "series": "lr 1e-5 (contrastive)",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "optimizer step": 75.0,
+      "y": 1.0,
+      "series": "lr 1e-5 (contrastive)",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "optimizer step": 5.0,
+      "y": 0.46464646464646464,
+      "series": "lr 3e-5 (contrastive)",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "optimizer step": 10.0,
+      "y": 0.9468085106382979,
+      "series": "lr 3e-5 (contrastive)",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "optimizer step": 15.0,
+      "y": 1.0,
+      "series": "lr 3e-5 (contrastive)",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "optimizer step": 20.0,
+      "y": 0.99,
+      "series": "lr 3e-5 (contrastive)",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "optimizer step": 25.0,
+      "y": 1.0,
+      "series": "lr 3e-5 (contrastive)",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "optimizer step": 30.0,
+      "y": 1.0,
+      "series": "lr 3e-5 (contrastive)",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "optimizer step": 35.0,
+      "y": 1.0,
+      "series": "lr 3e-5 (contrastive)",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "optimizer step": 40.0,
+      "y": 1.0,
+      "series": "lr 3e-5 (contrastive)",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "optimizer step": 45.0,
+      "y": 1.0,
+      "series": "lr 3e-5 (contrastive)",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "optimizer step": 50.0,
+      "y": 0.99,
+      "series": "lr 3e-5 (contrastive)",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "optimizer step": 55.0,
+      "y": 1.0,
+      "series": "lr 3e-5 (contrastive)",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "optimizer step": 60.0,
+      "y": 1.0,
+      "series": "lr 3e-5 (contrastive)",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "optimizer step": 65.0,
+      "y": 1.0,
+      "series": "lr 3e-5 (contrastive)",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "optimizer step": 70.0,
+      "y": 1.0,
+      "series": "lr 3e-5 (contrastive)",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "optimizer step": 75.0,
+      "y": 1.0,
+      "series": "lr 3e-5 (contrastive)",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "optimizer step": 5.0,
+      "y": 0.963855421686747,
+      "series": "lr 1e-4 (contrastive)",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "optimizer step": 10.0,
+      "y": 1.0,
+      "series": "lr 1e-4 (contrastive)",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "optimizer step": 15.0,
+      "y": 0.98,
+      "series": "lr 1e-4 (contrastive)",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "optimizer step": 20.0,
+      "y": 0.99,
+      "series": "lr 1e-4 (contrastive)",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "optimizer step": 25.0,
+      "y": 1.0,
+      "series": "lr 1e-4 (contrastive)",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "optimizer step": 30.0,
+      "y": 0.99,
+      "series": "lr 1e-4 (contrastive)",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "optimizer step": 35.0,
+      "y": 0.99,
+      "series": "lr 1e-4 (contrastive)",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "optimizer step": 40.0,
+      "y": 1.0,
+      "series": "lr 1e-4 (contrastive)",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "optimizer step": 45.0,
+      "y": 1.0,
+      "series": "lr 1e-4 (contrastive)",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "optimizer step": 50.0,
+      "y": 1.0,
+      "series": "lr 1e-4 (contrastive)",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "optimizer step": 55.0,
+      "y": 1.0,
+      "series": "lr 1e-4 (contrastive)",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "optimizer step": 60.0,
+      "y": 1.0,
+      "series": "lr 1e-4 (contrastive)",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "optimizer step": 65.0,
+      "y": 1.0,
+      "series": "lr 1e-4 (contrastive)",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "optimizer step": 70.0,
+      "y": 1.0,
+      "series": "lr 1e-4 (contrastive)",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "optimizer step": 75.0,
+      "y": 1.0,
+      "series": "lr 1e-4 (contrastive)",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "optimizer step": 5.0,
+      "y": 0.02,
+      "series": "lr 1e-5 (positive-only)",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "optimizer step": 10.0,
+      "y": 0.91,
+      "series": "lr 1e-5 (positive-only)",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "optimizer step": 15.0,
+      "y": 1.0,
+      "series": "lr 1e-5 (positive-only)",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "optimizer step": 20.0,
+      "y": 0.98989898989899,
+      "series": "lr 1e-5 (positive-only)",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "optimizer step": 25.0,
+      "y": 1.0,
+      "series": "lr 1e-5 (positive-only)",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "optimizer step": 30.0,
+      "y": 1.0,
+      "series": "lr 1e-5 (positive-only)",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "optimizer step": 35.0,
+      "y": 1.0,
+      "series": "lr 1e-5 (positive-only)",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "optimizer step": 40.0,
+      "y": 1.0,
+      "series": "lr 1e-5 (positive-only)",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "optimizer step": 45.0,
+      "y": 1.0,
+      "series": "lr 1e-5 (positive-only)",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "optimizer step": 50.0,
+      "y": 1.0,
+      "series": "lr 1e-5 (positive-only)",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "optimizer step": 55.0,
+      "y": 1.0,
+      "series": "lr 1e-5 (positive-only)",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "optimizer step": 60.0,
+      "y": 1.0,
+      "series": "lr 1e-5 (positive-only)",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "optimizer step": 65.0,
+      "y": 1.0,
+      "series": "lr 1e-5 (positive-only)",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "optimizer step": 70.0,
+      "y": 1.0,
+      "series": "lr 1e-5 (positive-only)",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "optimizer step": 75.0,
+      "y": 1.0,
+      "series": "lr 1e-5 (positive-only)",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "optimizer step": 5.0,
+      "y": 0.65,
+      "series": "lr 3e-5 (positive-only)",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "optimizer step": 10.0,
+      "y": 0.9797979797979798,
+      "series": "lr 3e-5 (positive-only)",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "optimizer step": 15.0,
+      "y": 1.0,
+      "series": "lr 3e-5 (positive-only)",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "optimizer step": 20.0,
+      "y": 1.0,
+      "series": "lr 3e-5 (positive-only)",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "optimizer step": 25.0,
+      "y": 1.0,
+      "series": "lr 3e-5 (positive-only)",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "optimizer step": 30.0,
+      "y": 0.99,
+      "series": "lr 3e-5 (positive-only)",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "optimizer step": 35.0,
+      "y": 1.0,
+      "series": "lr 3e-5 (positive-only)",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "optimizer step": 40.0,
+      "y": 1.0,
+      "series": "lr 3e-5 (positive-only)",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "optimizer step": 45.0,
+      "y": 1.0,
+      "series": "lr 3e-5 (positive-only)",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "optimizer step": 50.0,
+      "y": 1.0,
+      "series": "lr 3e-5 (positive-only)",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "optimizer step": 55.0,
+      "y": 1.0,
+      "series": "lr 3e-5 (positive-only)",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "optimizer step": 60.0,
+      "y": 1.0,
+      "series": "lr 3e-5 (positive-only)",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "optimizer step": 65.0,
+      "y": 1.0,
+      "series": "lr 3e-5 (positive-only)",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "optimizer step": 70.0,
+      "y": 1.0,
+      "series": "lr 3e-5 (positive-only)",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "optimizer step": 75.0,
+      "y": 1.0,
+      "series": "lr 3e-5 (positive-only)",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "optimizer step": 5.0,
+      "y": 1.0,
+      "series": "lr 1e-4 (positive-only)",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "optimizer step": 10.0,
+      "y": 1.0,
+      "series": "lr 1e-4 (positive-only)",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "optimizer step": 15.0,
+      "y": 0.99,
+      "series": "lr 1e-4 (positive-only)",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "optimizer step": 20.0,
+      "y": 1.0,
+      "series": "lr 1e-4 (positive-only)",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "optimizer step": 25.0,
+      "y": 0.99,
+      "series": "lr 1e-4 (positive-only)",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "optimizer step": 30.0,
+      "y": 1.0,
+      "series": "lr 1e-4 (positive-only)",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "optimizer step": 35.0,
+      "y": 1.0,
+      "series": "lr 1e-4 (positive-only)",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "optimizer step": 40.0,
+      "y": 1.0,
+      "series": "lr 1e-4 (positive-only)",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "optimizer step": 45.0,
+      "y": 1.0,
+      "series": "lr 1e-4 (positive-only)",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "optimizer step": 50.0,
+      "y": 1.0,
+      "series": "lr 1e-4 (positive-only)",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "optimizer step": 55.0,
+      "y": 1.0,
+      "series": "lr 1e-4 (positive-only)",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "optimizer step": 60.0,
+      "y": 1.0,
+      "series": "lr 1e-4 (positive-only)",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "optimizer step": 65.0,
+      "y": 1.0,
+      "series": "lr 1e-4 (positive-only)",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "optimizer step": 70.0,
+      "y": 1.0,
+      "series": "lr 1e-4 (positive-only)",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "optimizer step": 75.0,
+      "y": 1.0,
+      "series": "lr 1e-4 (positive-only)",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "optimizer step": 5.0,
+      "y": 0.22,
+      "series": "lr 1e-5 (contrastive)",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "optimizer step": 10.0,
+      "y": 1.0,
+      "series": "lr 1e-5 (contrastive)",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "optimizer step": 15.0,
+      "y": 1.0,
+      "series": "lr 1e-5 (contrastive)",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "optimizer step": 20.0,
+      "y": 1.0,
+      "series": "lr 1e-5 (contrastive)",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "optimizer step": 25.0,
+      "y": 1.0,
+      "series": "lr 1e-5 (contrastive)",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "optimizer step": 30.0,
+      "y": 1.0,
+      "series": "lr 1e-5 (contrastive)",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "optimizer step": 35.0,
+      "y": 1.0,
+      "series": "lr 1e-5 (contrastive)",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "optimizer step": 40.0,
+      "y": 1.0,
+      "series": "lr 1e-5 (contrastive)",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "optimizer step": 45.0,
+      "y": 1.0,
+      "series": "lr 1e-5 (contrastive)",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "optimizer step": 50.0,
+      "y": 1.0,
+      "series": "lr 1e-5 (contrastive)",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "optimizer step": 55.0,
+      "y": 0.98,
+      "series": "lr 1e-5 (contrastive)",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "optimizer step": 60.0,
+      "y": 1.0,
+      "series": "lr 1e-5 (contrastive)",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "optimizer step": 65.0,
+      "y": 0.97,
+      "series": "lr 1e-5 (contrastive)",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "optimizer step": 70.0,
+      "y": 0.99,
+      "series": "lr 1e-5 (contrastive)",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "optimizer step": 75.0,
+      "y": 1.0,
+      "series": "lr 1e-5 (contrastive)",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "optimizer step": 5.0,
+      "y": 1.0,
+      "series": "lr 3e-5 (contrastive)",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "optimizer step": 10.0,
+      "y": 1.0,
+      "series": "lr 3e-5 (contrastive)",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "optimizer step": 15.0,
+      "y": 1.0,
+      "series": "lr 3e-5 (contrastive)",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "optimizer step": 20.0,
+      "y": 0.99,
+      "series": "lr 3e-5 (contrastive)",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "optimizer step": 25.0,
+      "y": 1.0,
+      "series": "lr 3e-5 (contrastive)",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "optimizer step": 30.0,
+      "y": 1.0,
+      "series": "lr 3e-5 (contrastive)",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "optimizer step": 35.0,
+      "y": 1.0,
+      "series": "lr 3e-5 (contrastive)",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "optimizer step": 40.0,
+      "y": 1.0,
+      "series": "lr 3e-5 (contrastive)",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "optimizer step": 45.0,
+      "y": 0.98,
+      "series": "lr 3e-5 (contrastive)",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "optimizer step": 50.0,
+      "y": 1.0,
+      "series": "lr 3e-5 (contrastive)",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "optimizer step": 55.0,
+      "y": 0.99,
+      "series": "lr 3e-5 (contrastive)",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "optimizer step": 60.0,
+      "y": 1.0,
+      "series": "lr 3e-5 (contrastive)",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "optimizer step": 65.0,
+      "y": 1.0,
+      "series": "lr 3e-5 (contrastive)",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "optimizer step": 70.0,
+      "y": 0.98,
+      "series": "lr 3e-5 (contrastive)",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "optimizer step": 75.0,
+      "y": 0.98,
+      "series": "lr 3e-5 (contrastive)",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "optimizer step": 5.0,
+      "y": 1.0,
+      "series": "lr 1e-4 (contrastive)",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "optimizer step": 10.0,
+      "y": 1.0,
+      "series": "lr 1e-4 (contrastive)",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "optimizer step": 15.0,
+      "y": 1.0,
+      "series": "lr 1e-4 (contrastive)",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "optimizer step": 20.0,
+      "y": 1.0,
+      "series": "lr 1e-4 (contrastive)",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "optimizer step": 25.0,
+      "y": 0.99,
+      "series": "lr 1e-4 (contrastive)",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "optimizer step": 30.0,
+      "y": 1.0,
+      "series": "lr 1e-4 (contrastive)",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "optimizer step": 35.0,
+      "y": 1.0,
+      "series": "lr 1e-4 (contrastive)",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "optimizer step": 40.0,
+      "y": 1.0,
+      "series": "lr 1e-4 (contrastive)",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "optimizer step": 45.0,
+      "y": 1.0,
+      "series": "lr 1e-4 (contrastive)",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "optimizer step": 50.0,
+      "y": 0.98,
+      "series": "lr 1e-4 (contrastive)",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "optimizer step": 55.0,
+      "y": 1.0,
+      "series": "lr 1e-4 (contrastive)",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "optimizer step": 60.0,
+      "y": 1.0,
+      "series": "lr 1e-4 (contrastive)",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "optimizer step": 65.0,
+      "y": 1.0,
+      "series": "lr 1e-4 (contrastive)",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "optimizer step": 70.0,
+      "y": 1.0,
+      "series": "lr 1e-4 (contrastive)",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "optimizer step": 75.0,
+      "y": 1.0,
+      "series": "lr 1e-4 (contrastive)",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "optimizer step": 5.0,
+      "y": 0.29,
+      "series": "lr 1e-5 (positive-only)",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "optimizer step": 10.0,
+      "y": 0.98,
+      "series": "lr 1e-5 (positive-only)",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "optimizer step": 15.0,
+      "y": 1.0,
+      "series": "lr 1e-5 (positive-only)",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "optimizer step": 20.0,
+      "y": 1.0,
+      "series": "lr 1e-5 (positive-only)",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "optimizer step": 25.0,
+      "y": 1.0,
+      "series": "lr 1e-5 (positive-only)",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "optimizer step": 30.0,
+      "y": 1.0,
+      "series": "lr 1e-5 (positive-only)",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "optimizer step": 35.0,
+      "y": 1.0,
+      "series": "lr 1e-5 (positive-only)",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "optimizer step": 40.0,
+      "y": 1.0,
+      "series": "lr 1e-5 (positive-only)",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "optimizer step": 45.0,
+      "y": 0.99,
+      "series": "lr 1e-5 (positive-only)",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "optimizer step": 50.0,
+      "y": 0.99,
+      "series": "lr 1e-5 (positive-only)",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "optimizer step": 55.0,
+      "y": 0.99,
+      "series": "lr 1e-5 (positive-only)",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "optimizer step": 60.0,
+      "y": 0.99,
+      "series": "lr 1e-5 (positive-only)",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "optimizer step": 65.0,
+      "y": 0.98,
+      "series": "lr 1e-5 (positive-only)",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "optimizer step": 70.0,
+      "y": 0.99,
+      "series": "lr 1e-5 (positive-only)",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "optimizer step": 75.0,
+      "y": 1.0,
+      "series": "lr 1e-5 (positive-only)",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "optimizer step": 5.0,
+      "y": 1.0,
+      "series": "lr 3e-5 (positive-only)",
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "optimizer step": 10.0,
+      "y": 0.99,
+      "series": "lr 3e-5 (positive-only)",
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "optimizer step": 15.0,
+      "y": 1.0,
+      "series": "lr 3e-5 (positive-only)",
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "optimizer step": 20.0,
+      "y": 1.0,
+      "series": "lr 3e-5 (positive-only)",
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "optimizer step": 25.0,
+      "y": 0.99,
+      "series": "lr 3e-5 (positive-only)",
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "optimizer step": 30.0,
+      "y": 1.0,
+      "series": "lr 3e-5 (positive-only)",
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "optimizer step": 35.0,
+      "y": 1.0,
+      "series": "lr 3e-5 (positive-only)",
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "optimizer step": 40.0,
+      "y": 0.99,
+      "series": "lr 3e-5 (positive-only)",
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "optimizer step": 45.0,
+      "y": 1.0,
+      "series": "lr 3e-5 (positive-only)",
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "optimizer step": 50.0,
+      "y": 0.99,
+      "series": "lr 3e-5 (positive-only)",
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "optimizer step": 55.0,
+      "y": 1.0,
+      "series": "lr 3e-5 (positive-only)",
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "optimizer step": 60.0,
+      "y": 1.0,
+      "series": "lr 3e-5 (positive-only)",
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "optimizer step": 65.0,
+      "y": 1.0,
+      "series": "lr 3e-5 (positive-only)",
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "optimizer step": 70.0,
+      "y": 1.0,
+      "series": "lr 3e-5 (positive-only)",
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "optimizer step": 75.0,
+      "y": 0.99,
+      "series": "lr 3e-5 (positive-only)",
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "optimizer step": 5.0,
+      "y": 1.0,
+      "series": "lr 1e-4 (positive-only)",
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "optimizer step": 10.0,
+      "y": 1.0,
+      "series": "lr 1e-4 (positive-only)",
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "optimizer step": 15.0,
+      "y": 0.99,
+      "series": "lr 1e-4 (positive-only)",
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "optimizer step": 20.0,
+      "y": 1.0,
+      "series": "lr 1e-4 (positive-only)",
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "optimizer step": 25.0,
+      "y": 1.0,
+      "series": "lr 1e-4 (positive-only)",
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "optimizer step": 30.0,
+      "y": 1.0,
+      "series": "lr 1e-4 (positive-only)",
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "optimizer step": 35.0,
+      "y": 1.0,
+      "series": "lr 1e-4 (positive-only)",
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "optimizer step": 40.0,
+      "y": 1.0,
+      "series": "lr 1e-4 (positive-only)",
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "optimizer step": 45.0,
+      "y": 1.0,
+      "series": "lr 1e-4 (positive-only)",
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "optimizer step": 50.0,
+      "y": 0.98,
+      "series": "lr 1e-4 (positive-only)",
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "optimizer step": 55.0,
+      "y": 0.99,
+      "series": "lr 1e-4 (positive-only)",
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "optimizer step": 60.0,
+      "y": 1.0,
+      "series": "lr 1e-4 (positive-only)",
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "optimizer step": 65.0,
+      "y": 1.0,
+      "series": "lr 1e-4 (positive-only)",
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "optimizer step": 70.0,
+      "y": 1.0,
+      "series": "lr 1e-4 (positive-only)",
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "optimizer step": 75.0,
+      "y": 1.0,
+      "series": "lr 1e-4 (positive-only)",
+      "_kind": "line",
+      "_group": 23
+    }
+  ],
+  "n_series": 24,
+  "total_points": 360,
+  "text": {
+    "suptitle": "dose ladders \u2014 contrastive (solid) vs positive-only (dashed)",
+    "fig_texts": [],
+    "axes": [
+      {
+        "title": "Persona (software engineer)",
+        "xlabel": "optimizer step",
+        "ylabel": "Tier-1 judged rate",
+        "xticklabels": [
+          "0",
+          "10",
+          "20",
+          "30",
+          "40",
+          "50",
+          "60",
+          "70",
+          "80"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ]
+      },
+      {
+        "title": "Bare assistant",
+        "xlabel": "optimizer step",
+        "xticklabels": [
+          "0",
+          "10",
+          "20",
+          "30",
+          "40",
+          "50",
+          "60",
+          "70",
+          "80"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ]
+      },
+      {
+        "title": "WildChat prefix",
+        "xlabel": "optimizer step",
+        "xticklabels": [
+          "0",
+          "10",
+          "20",
+          "30",
+          "40",
+          "50",
+          "60",
+          "70",
+          "80"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ]
+      },
+      {
+        "title": "ICL prefix",
+        "xlabel": "optimizer step",
+        "legend_labels": [
+          "lr 1e-5 (contrastive)",
+          "lr 3e-5 (contrastive)",
+          "lr 1e-4 (contrastive)",
+          "lr 1e-5 (positive-only)",
+          "lr 3e-5 (positive-only)",
+          "lr 1e-4 (positive-only)"
+        ],
+        "xticklabels": [
+          "0",
+          "10",
+          "20",
+          "30",
+          "40",
+          "50",
+          "60",
+          "70",
+          "80"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ]
+      }
+    ],
+    "series": [
+      "lr 1e-5 (contrastive)",
+      "lr 3e-5 (contrastive)",
+      "lr 1e-4 (contrastive)",
+      "lr 1e-5 (positive-only)",
+      "lr 3e-5 (positive-only)",
+      "lr 1e-4 (positive-only)"
+    ]
+  }
+}
