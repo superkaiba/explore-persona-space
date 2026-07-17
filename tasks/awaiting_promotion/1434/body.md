@@ -5,6 +5,7 @@ title: Casual writing style installs from every training context at the lowest l
 kind: experiment
 tags:
 - followup-manual
+- followup-auto
 created_at: '2026-07-17T00:26:02Z'
 has_clean_result: true
 parent_id: 1090
