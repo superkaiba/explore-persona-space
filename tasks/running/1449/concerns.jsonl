@@ -1,0 +1,1 @@
+{"ts": "2026-07-17T11:52:56Z", "event": "raised", "concern_id": "r1-ratchet-cap-raise", "severity": "CONCERN", "summary": "r1 deviation: 7th file scripts/workflow_lint.py — AGENT_SPEC_SIZE_GRANDFATHER caps raised (code-reviewer.md 108000->110300, experiment-implementer.md 72000->73000); approved prose exceeded headroom", "raised_by": "implementer", "raised_at_round": 1}
