@@ -1,5 +1,7 @@
 ---
-title: Install writing_style as a persona-vectors-style (context,behavior) LoRA organism
+title: Casual writing style installs from every training context at the lowest learning
+  rate tested, but the persona-vector projection fails validation as an install meter
+  (MODERATE confidence)
 kind: experiment
 tags: []
 created_at: '2026-07-17T00:26:02Z'

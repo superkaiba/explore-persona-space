@@ -3385,7 +3385,7 @@
       "kind": "experiment",
       "path": "tasks/interpreting/1434",
       "status": "interpreting",
-      "title": "Install writing_style as a persona-vectors-style (context,behavior) LoRA organism"
+      "title": "Casual writing style installs from every training context at the lowest learning rate tested, but the persona-vector projection fails validation as an install meter (MODERATE confidence)"
     },
     "1435": {
       "has_clean_result": false,
