@@ -37,6 +37,7 @@ import hashlib
 import importlib
 import json
 import logging
+import os
 import pathlib
 import sys
 import time
@@ -1772,6 +1773,33 @@ def phase_battery(
 # ═══════════════════════════════════════════════════════════════════════════════
 
 
+def _stage_workload_log(base_dir: pathlib.Path) -> pathlib.Path | None:
+    """Stage the workload log for upload (plan §6.5 deliverable 3 — a clean GCE
+    run's log dies with the instance DELETE unless uploaded; parent pattern)."""
+    log_src = pathlib.Path(os.environ.get("EPS_LOG_PATH") or "/workspace/logs/issue-1072.log")
+    if not log_src.is_file():
+        logger.warning("workload log not found at %s — upload leg skipped", log_src)
+        return None
+    import shutil
+
+    log_dest = base_dir / "logs" / "issue-1072-workload.log"
+    log_dest.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copyfile(log_src, log_dest)
+    return log_dest
+
+
+def terminal_upload(base_dir: pathlib.Path) -> None:
+    """Terminal commit: every eval-dir JSON (gates, pilots, fold reports,
+    manifests) + the staged workload log — plan §6.5 deliverable coverage."""
+    out_dir = eval_out_dir(base_dir)
+    paths = sorted(out_dir.glob("*.json")) + sorted(out_dir.glob("*.npz"))
+    paths += sorted((out_dir / "smoke_reference").glob("*.json"))
+    log_dest = _stage_workload_log(base_dir)
+    if log_dest is not None:
+        paths.append(log_dest)
+    _hf_commit_files_1072("terminal eval-results + workload log", paths, base_dir)
+
+
 def write_final_sentinel_1072(base_dir: pathlib.Path, smoke: bool, wall_h: float) -> None:
     """epm:results sentinel (poll_pipeline contract; SKILL.md Step 7 payload keys)."""
     out_dir = eval_out_dir(base_dir)
@@ -1941,6 +1969,8 @@ def main() -> None:
         u_dir_np = phase_capture(base_dir, smoke, layers, batch_size, args.skip_upload)
     if "battery" in phases:
         phase_battery(base_dir, smoke, layers, fit_device, args.skip_upload, u_dir_np)
+    if not args.skip_upload:
+        terminal_upload(base_dir)
     write_final_sentinel_1072(base_dir, smoke, wall_h=(time.time() - t0) / 3600.0)
     log_phase("done")
 
