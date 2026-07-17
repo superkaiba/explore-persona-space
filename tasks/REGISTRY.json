@@ -3297,8 +3297,8 @@
     "1422": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1422",
-      "status": "planning",
+      "path": "tasks/approved/1422",
+      "status": "approved",
       "title": "workflow-fix: check-30 trailing-parenthetical file-count shape"
     },
     "1423": {
