@@ -25,7 +25,11 @@ import pathlib
 import sys
 import time
 
-import numpy as np
+from explore_persona_space.orchestrate.env import load_dotenv
+
+load_dotenv()  # BEFORE any heavy import — shared-VM thread caps (#847)
+
+import numpy as np  # noqa: E402
 
 _REPO_ROOT = pathlib.Path(__file__).resolve().parents[1]
 if str(_REPO_ROOT) not in sys.path:

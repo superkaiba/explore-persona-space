@@ -42,14 +42,20 @@ import sys
 import time
 from typing import Any
 
-import numpy as np
+from explore_persona_space.orchestrate.env import load_dotenv
 
-from explore_persona_space.experiments.issue_952 import run_952 as parent952
-from explore_persona_space.experiments.issue_952.ridge_battery import run_ridge_cell
-from explore_persona_space.experiments.issue_1072.component_ridge import (
+load_dotenv()  # BEFORE any heavy import — shared-VM thread caps freeze at torch import
+
+import numpy as np  # noqa: E402
+
+from explore_persona_space.experiments.issue_952 import run_952 as parent952  # noqa: E402
+from explore_persona_space.experiments.issue_952.ridge_battery import (  # noqa: E402
+    run_ridge_cell,
+)
+from explore_persona_space.experiments.issue_1072.component_ridge import (  # noqa: E402
     component_parity_gate as _component_parity_gate,
 )
-from explore_persona_space.experiments.issue_1072.component_ridge import (
+from explore_persona_space.experiments.issue_1072.component_ridge import (  # noqa: E402
     run_component_cell,
     serial_component_reference,
 )
@@ -1897,9 +1903,6 @@ def parse_args() -> argparse.Namespace:
 
 def main() -> None:
     """Phase dispatcher — smoke IS the production path at tiny n (PASS_UNIFIED)."""
-    from explore_persona_space.orchestrate.env import load_dotenv
-
-    load_dotenv()
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(name)s %(message)s")
     args = parse_args()
     if args.verify_imports:
