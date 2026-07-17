@@ -33,6 +33,8 @@ CLI:
   uv run python scripts/issue1335_fit.py --rung r7_endpoint --model base [...]
   uv run python scripts/issue1335_fit.py --matched-n --models base,instruct
   uv run python scripts/issue1335_fit.py --summary --models base,instruct [--smoke]
+  uv run python scripts/issue1335_fit.py --seed-compare --models base,instruct \
+      [--reference-summary eval_results/issue_1335/ladder_summary.json]
   uv run python scripts/issue1335_fit.py --verify-vectorized
   uv run python scripts/issue1335_fit.py --assert-cuda
 """
@@ -131,6 +133,19 @@ def parse_args() -> argparse.Namespace:
         help="matched-n: re-stage deleted .pt shards from the Hub per rung, release after",
     )
     ap.add_argument("--summary", action="store_true", help="build ladder_summary.json + gates")
+    ap.add_argument(
+        "--seed-compare",
+        action="store_true",
+        help="seed43-gap-rungs follow-up: write seed_comparison.json (matched-n "
+        "gap G + framing delta for THIS run's out-dir vs the committed seed-42 "
+        "reference summary; no verdict lattice, no binding gates)",
+    )
+    ap.add_argument(
+        "--reference-summary",
+        type=Path,
+        default=Path("eval_results/issue_1335/ladder_summary.json"),
+        help="committed seed-42 ladder_summary.json the --seed-compare mode reads",
+    )
     ap.add_argument("--verify-vectorized", action="store_true")
     ap.add_argument("--assert-cuda", action="store_true", help="binding on-instance device gate")
     ap.add_argument("--smoke", action="store_true", help="numeric gates recorded, not binding")
@@ -1104,6 +1119,97 @@ def build_ladder_summary(args, models: list[str], smoke: bool) -> dict:
     return summary
 
 
+def _cross_seed_delta(new: dict | None, ref: dict | None) -> dict | None:
+    """new_seed - reference delta with a variance-sum 95% CI (the _delta
+    fallback arithmetic applied across two INDEPENDENT runs — bootstrap draws
+    are not pairable across seeds, so joint-draw pairing never applies here).
+    Each side's SE is recovered from its own 95% CI half-width."""
+    if new is None or ref is None:
+        return None
+    val = new["value"] - ref["value"]
+    se_parts = []
+    for side in (new, ref):
+        se_parts.append(((side["ci_hi"] - side["ci_lo"]) / 2.0 / 1.96) ** 2)
+    se = float(np.sqrt(sum(se_parts)))
+    return {
+        "value": float(val),
+        "ci_lo": float(val - 1.96 * se),
+        "ci_hi": float(val + 1.96 * se),
+        "ci_method": "variance-sum-independent-runs",
+        "new_in_ref_ci": bool(ref["ci_lo"] <= new["value"] <= ref["ci_hi"]),
+        "ref_in_new_ci": bool(new["ci_lo"] <= ref["value"] <= new["ci_hi"]),
+    }
+
+
+def build_seed_comparison(args, models: list[str], smoke: bool) -> dict:
+    """seed43-gap-rungs follow-up read (one variable: generation seed 42→43).
+
+    For each model, recompute the two headline quantities from THIS run's
+    matched-n cells — the matched-answer-length gap G = Δ(r1_qa_oneline,
+    r7_endpoint per-persona mean) and the framing delta Δ(r3_persona,
+    r4_fictionframe), both L19 ctx, joint-draw CIs (the exact
+    build_ladder_summary pairing) — and compare against the committed seed-42
+    ladder_summary reference. Writes <out-dir>/seed_comparison.json. Reuses
+    _matched_value/_fiction_mean/_delta verbatim; no new statistical machinery
+    beyond the independent-runs variance-sum cross-seed CI."""
+    ref_path = args.reference_summary
+    assert ref_path.exists(), (
+        f"--seed-compare reference summary missing: {ref_path} — the committed "
+        "seed-42 ladder_summary.json is required (fail-loud, never a silent "
+        "no-reference comparison)"
+    )
+    ref = json.loads(ref_path.read_text())
+    per_model: dict = {}
+    for model_kind in models:
+        kept, yield_report = fiction_kept_personas(args, model_kind, smoke)
+        r1 = _matched_value(args, unit_cell_id("r1_qa_oneline", model_kind, "all", "ctx"))
+        r3 = _matched_value(args, unit_cell_id("r3_persona", model_kind, "all", "ctx"))
+        r4 = _matched_value(args, unit_cell_id("r4_fictionframe", model_kind, "all", "ctx"))
+        r7m = _fiction_mean(args, "r7_endpoint", model_kind, "ctx", kept) if kept else None
+        gap = _delta(r1, r7m)
+        framing = _delta(r3, r4)
+        ref_m = ref.get("per_model", {}).get(model_kind, {})
+        ref_gap = (ref_m.get("gap") or {}).get("G")
+        ref_framing = (ref_m.get("deltas") or {}).get("framing")
+        per_model[model_kind] = {
+            "kept_personas": kept,
+            "fiction_yield": yield_report,
+            "rung_values_matched_ctx": {
+                "r1_qa_oneline": r1 and r1["value"],
+                "r3_persona": r3 and r3["value"],
+                "r4_fictionframe": r4 and r4["value"],
+                "r7_endpoint_mean": r7m and r7m["value"],
+                "r7_endpoint_per_persona": r7m and r7m["per_persona"],
+            },
+            "gap_G": gap,
+            "framing": framing,
+            "seed42_reference": {"gap_G": ref_gap, "framing": ref_framing},
+            "cross_seed": {
+                "gap_G": _cross_seed_delta(gap, ref_gap),
+                "framing": _cross_seed_delta(framing, ref_framing),
+            },
+        }
+    out = {
+        "metadata": common.metadata(SCRIPT, args.seed, 0),
+        "code_sha": common.git_commit(),
+        "gen_seed": r1335.GEN_SEED,
+        "headline_layer": c1310.HEADLINE_LAYER,
+        "reference": {
+            "path": str(ref_path),
+            "code_sha": ref.get("code_sha"),
+            "note": "committed seed-42 run (GEN_SEED 42, the #825/#1310 convention)",
+        },
+        "per_model": per_model,
+        "smoke": bool(smoke),
+    }
+    c1310.write_json(args.out_dir / "seed_comparison.json", out)
+    print(
+        "[i1335-fit] seed_comparison.json written "
+        f"(gen_seed={r1335.GEN_SEED}; models={list(per_model)})"
+    )
+    return out
+
+
 def main() -> int:
     args = parse_args()
     if args.assert_cuda:
@@ -1113,11 +1219,17 @@ def main() -> int:
             "GPU-resident (plan §9 P3 binding smoke device gate); HALT + fix device routing"
         )
         print(f"[i1335-fit] device gate PASS: _fit_device()={dev}")
-        if not (args.rung or args.matched_n or args.summary or args.verify_vectorized):
+        if not (
+            args.rung
+            or args.matched_n
+            or args.summary
+            or args.seed_compare
+            or args.verify_vectorized
+        ):
             return 0
     if args.verify_vectorized:
         fit825.assert_vectorized_equivalence(seed=args.seed)
-        if not (args.rung or args.matched_n or args.summary):
+        if not (args.rung or args.matched_n or args.summary or args.seed_compare):
             return 0
     args.out_dir.mkdir(parents=True, exist_ok=True)
     models = [m.strip() for m in args.models.split(",") if m.strip()]
@@ -1145,7 +1257,13 @@ def main() -> int:
                 print(f"[i1335-fit] BINDING GATE FAIL: {failed} — halt and diagnose (plan §7)")
                 return 3
         return 0
-    raise SystemExit("no action requested (--rung/--matched-n/--summary/--verify-vectorized)")
+    if args.seed_compare:
+        print(f"[phase=p3_seed_compare] seed comparison (models={models})")
+        build_seed_comparison(args, models, args.smoke)
+        return 0
+    raise SystemExit(
+        "no action requested (--rung/--matched-n/--summary/--seed-compare/--verify-vectorized)"
+    )
 
 
 if __name__ == "__main__":
