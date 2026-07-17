@@ -1,0 +1,418 @@
+{
+  "n_probes": 20,
+  "delta_logp_mean": 5.562793254852295,
+  "source_emission_rate": 0.0,
+  "per_probe": [
+    {
+      "row": {
+        "q": 0,
+        "gen_emitted": false
+      },
+      "trained": {
+        "logp": -14.989065170288086,
+        "z_marker": 5.65625,
+        "z_eos": 20.625,
+        "logZ": 20.645315170288086,
+        "argmax_id": 151645
+      },
+      "base": {
+        "logp": -19.044330596923828,
+        "z_marker": 0.96484375,
+        "z_eos": 19.75,
+        "logZ": 20.009174346923828,
+        "argmax_id": 151645
+      }
+    },
+    {
+      "row": {
+        "q": 1,
+        "gen_emitted": false
+      },
+      "trained": {
+        "logp": -14.700054168701172,
+        "z_marker": 5.3125,
+        "z_eos": 20.0,
+        "logZ": 20.012554168701172,
+        "argmax_id": 151645
+      },
+      "base": {
+        "logp": -19.226531982421875,
+        "z_marker": 1.1796875,
+        "z_eos": 20.375,
+        "logZ": 20.406219482421875,
+        "argmax_id": 151645
+      }
+    },
+    {
+      "row": {
+        "q": 2,
+        "gen_emitted": false
+      },
+      "trained": {
+        "logp": -13.166929244995117,
+        "z_marker": 5.84375,
+        "z_eos": 18.75,
+        "logZ": 19.010679244995117,
+        "argmax_id": 151645
+      },
+      "base": {
+        "logp": -18.3641300201416,
+        "z_marker": 1.4140625,
+        "z_eos": 17.25,
+        "logZ": 19.7781925201416,
+        "argmax_id": 5443
+      }
+    },
+    {
+      "row": {
+        "q": 3,
+        "gen_emitted": false
+      },
+      "trained": {
+        "logp": -14.26093864440918,
+        "z_marker": 6.125,
+        "z_eos": 20.375,
+        "logZ": 20.38593864440918,
+        "argmax_id": 151645
+      },
+      "base": {
+        "logp": -17.883543014526367,
+        "z_marker": 2.015625,
+        "z_eos": 19.875,
+        "logZ": 19.899168014526367,
+        "argmax_id": 151645
+      }
+    },
+    {
+      "row": {
+        "q": 4,
+        "gen_emitted": false
+      },
+      "trained": {
+        "logp": -16.028932571411133,
+        "z_marker": 2.859375,
+        "z_eos": 18.625,
+        "logZ": 18.888307571411133,
+        "argmax_id": 151645
+      },
+      "base": {
+        "logp": -22.420303344726562,
+        "z_marker": -2.25,
+        "z_eos": 17.625,
+        "logZ": 20.170303344726562,
+        "argmax_id": 576
+      }
+    },
+    {
+      "row": {
+        "q": 5,
+        "gen_emitted": false
+      },
+      "trained": {
+        "logp": -12.833566665649414,
+        "z_marker": 5.53125,
+        "z_eos": 18.0,
+        "logZ": 18.364816665649414,
+        "argmax_id": 151645
+      },
+      "base": {
+        "logp": -17.973190307617188,
+        "z_marker": 1.421875,
+        "z_eos": 15.9375,
+        "logZ": 19.395065307617188,
+        "argmax_id": 1597
+      }
+    },
+    {
+      "row": {
+        "q": 6,
+        "gen_emitted": false
+      },
+      "trained": {
+        "logp": -15.831247329711914,
+        "z_marker": 4.3125,
+        "z_eos": 20.125,
+        "logZ": 20.143747329711914,
+        "argmax_id": 151645
+      },
+      "base": {
+        "logp": -20.80323600769043,
+        "z_marker": -0.890625,
+        "z_eos": 19.75,
+        "logZ": 19.91261100769043,
+        "argmax_id": 151645
+      }
+    },
+    {
+      "row": {
+        "q": 7,
+        "gen_emitted": false
+      },
+      "trained": {
+        "logp": -14.852319717407227,
+        "z_marker": 4.28125,
+        "z_eos": 18.0,
+        "logZ": 19.133569717407227,
+        "argmax_id": 151645
+      },
+      "base": {
+        "logp": -21.55872344970703,
+        "z_marker": -0.66796875,
+        "z_eos": 15.5625,
+        "logZ": 20.89075469970703,
+        "argmax_id": 1597
+      }
+    },
+    {
+      "row": {
+        "q": 8,
+        "gen_emitted": false
+      },
+      "trained": {
+        "logp": -14.889495849609375,
+        "z_marker": 4.625,
+        "z_eos": 19.5,
+        "logZ": 19.514495849609375,
+        "argmax_id": 151645
+      },
+      "base": {
+        "logp": -18.832849502563477,
+        "z_marker": 0.3515625,
+        "z_eos": 19.125,
+        "logZ": 19.184412002563477,
+        "argmax_id": 151645
+      }
+    },
+    {
+      "row": {
+        "q": 9,
+        "gen_emitted": false
+      },
+      "trained": {
+        "logp": -15.497751235961914,
+        "z_marker": 3.015625,
+        "z_eos": 18.5,
+        "logZ": 18.513376235961914,
+        "argmax_id": 151645
+      },
+      "base": {
+        "logp": -19.301753997802734,
+        "z_marker": -2.15625,
+        "z_eos": 17.0,
+        "logZ": 17.145503997802734,
+        "argmax_id": 151645
+      }
+    },
+    {
+      "row": {
+        "q": 10,
+        "gen_emitted": false
+      },
+      "trained": {
+        "logp": -13.831399917602539,
+        "z_marker": 4.90625,
+        "z_eos": 18.625,
+        "logZ": 18.73764991760254,
+        "argmax_id": 151645
+      },
+      "base": {
+        "logp": -20.31082534790039,
+        "z_marker": -1.0234375,
+        "z_eos": 17.375,
+        "logZ": 19.28738784790039,
+        "argmax_id": 576
+      }
+    },
+    {
+      "row": {
+        "q": 11,
+        "gen_emitted": false
+      },
+      "trained": {
+        "logp": -14.19821548461914,
+        "z_marker": 5.84375,
+        "z_eos": 20.0,
+        "logZ": 20.04196548461914,
+        "argmax_id": 151645
+      },
+      "base": {
+        "logp": -19.163270950317383,
+        "z_marker": 0.490234375,
+        "z_eos": 18.875,
+        "logZ": 19.653505325317383,
+        "argmax_id": 151645
+      }
+    },
+    {
+      "row": {
+        "q": 12,
+        "gen_emitted": false
+      },
+      "trained": {
+        "logp": -13.67100715637207,
+        "z_marker": 5.3125,
+        "z_eos": 18.75,
+        "logZ": 18.98350715637207,
+        "argmax_id": 151645
+      },
+      "base": {
+        "logp": -19.12833595275879,
+        "z_marker": 0.79296875,
+        "z_eos": 17.875,
+        "logZ": 19.92130470275879,
+        "argmax_id": 1597
+      }
+    },
+    {
+      "row": {
+        "q": 13,
+        "gen_emitted": false
+      },
+      "trained": {
+        "logp": -14.454587936401367,
+        "z_marker": 5.5625,
+        "z_eos": 20.0,
+        "logZ": 20.017087936401367,
+        "argmax_id": 151645
+      },
+      "base": {
+        "logp": -19.259889602661133,
+        "z_marker": 0.1416015625,
+        "z_eos": 19.125,
+        "logZ": 19.401491165161133,
+        "argmax_id": 151645
+      }
+    },
+    {
+      "row": {
+        "q": 14,
+        "gen_emitted": false
+      },
+      "trained": {
+        "logp": -16.470138549804688,
+        "z_marker": 6.28125,
+        "z_eos": 22.75,
+        "logZ": 22.751388549804688,
+        "argmax_id": 151645
+      },
+      "base": {
+        "logp": -22.296478271484375,
+        "z_marker": 0.3359375,
+        "z_eos": 22.625,
+        "logZ": 22.632415771484375,
+        "argmax_id": 151645
+      }
+    },
+    {
+      "row": {
+        "q": 15,
+        "gen_emitted": false
+      },
+      "trained": {
+        "logp": -14.900928497314453,
+        "z_marker": 5.125,
+        "z_eos": 19.5,
+        "logZ": 20.025928497314453,
+        "argmax_id": 151645
+      },
+      "base": {
+        "logp": -21.794466018676758,
+        "z_marker": -0.06787109375,
+        "z_eos": 17.875,
+        "logZ": 21.726594924926758,
+        "argmax_id": 1597
+      }
+    },
+    {
+      "row": {
+        "q": 16,
+        "gen_emitted": false
+      },
+      "trained": {
+        "logp": -14.531330108642578,
+        "z_marker": 5.625,
+        "z_eos": 19.375,
+        "logZ": 20.156330108642578,
+        "argmax_id": 151645
+      },
+      "base": {
+        "logp": -22.725994110107422,
+        "z_marker": 0.177734375,
+        "z_eos": 18.0,
+        "logZ": 22.903728485107422,
+        "argmax_id": 1084
+      }
+    },
+    {
+      "row": {
+        "q": 17,
+        "gen_emitted": false
+      },
+      "trained": {
+        "logp": -15.293802261352539,
+        "z_marker": 4.25,
+        "z_eos": 19.375,
+        "logZ": 19.54380226135254,
+        "argmax_id": 151645
+      },
+      "base": {
+        "logp": -21.685867309570312,
+        "z_marker": -1.1015625,
+        "z_eos": 18.25,
+        "logZ": 20.584304809570312,
+        "argmax_id": 3085
+      }
+    },
+    {
+      "row": {
+        "q": 18,
+        "gen_emitted": false
+      },
+      "trained": {
+        "logp": -14.576519012451172,
+        "z_marker": 4.0625,
+        "z_eos": 18.125,
+        "logZ": 18.639019012451172,
+        "argmax_id": 151645
+      },
+      "base": {
+        "logp": -20.802640914916992,
+        "z_marker": -0.326171875,
+        "z_eos": 16.375,
+        "logZ": 20.476469039916992,
+        "argmax_id": 1988
+      }
+    },
+    {
+      "row": {
+        "q": 19,
+        "gen_emitted": false
+      },
+      "trained": {
+        "logp": -14.466379165649414,
+        "z_marker": 5.15625,
+        "z_eos": 19.375,
+        "logZ": 19.622629165649414,
+        "argmax_id": 151645
+      },
+      "base": {
+        "logp": -22.124113082885742,
+        "z_marker": -0.455078125,
+        "z_eos": 18.125,
+        "logZ": 21.669034957885742,
+        "argmax_id": 1084
+      }
+    }
+  ],
+  "delta_z_marker_mean": 4.9670166015625,
+  "delta_margin_mean": 3.8857666015625,
+  "prob_trained_mean": 6.266552067042605e-07,
+  "prob_base_mean": 4.161191655682751e-09,
+  "checkpoint": "issue1333/mk1_lora_con/checkpoint-50",
+  "source_context": "persona_villain",
+  "gen_emission_rate": 0.0,
+  "parent_refs": {
+    "selection_delta_logp": 5.514121723175049,
+    "breadth_reread_delta_logp": 5.418
+  }
+}

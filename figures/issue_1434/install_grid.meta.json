@@ -1,0 +1,394 @@
+{
+  "commit": "f9f1002797",
+  "created": "2026-07-17T08:16:39Z",
+  "figsize": [
+    15.0,
+    4.2
+  ],
+  "points": [
+    {
+      "category": "base",
+      "judged casual-register rate": 0.0,
+      "error": 0.009423002959160447,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "lr 1e-5",
+      "judged casual-register rate": 0.625,
+      "error": 0.06650249768733862,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "lr 3e-5",
+      "judged casual-register rate": 0.89,
+      "error": 0.061326392360875115,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "lr 1e-4",
+      "judged casual-register rate": 0.66,
+      "error": 0.09284691917344379,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.0,
+      "judged casual-register rate": 0.0,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 1.0,
+      "judged casual-register rate": 0.5561417515728713,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 2.0,
+      "judged casual-register rate": 0.8286736076391249,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 3.0,
+      "judged casual-register rate": 0.5671530808265562,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 0.0,
+      "judged casual-register rate": 0.018846005918320894,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 1.0,
+      "judged casual-register rate": 0.6891467469475485,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 2.0,
+      "judged casual-register rate": 0.9513263923608751,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 3.0,
+      "judged casual-register rate": 0.7528469191734438,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "category": "base",
+      "y": 0.0,
+      "error": 0.009423002959160447,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "category": "lr 1e-5",
+      "y": 0.55,
+      "error": 0.06830281395837293,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "category": "lr 3e-5",
+      "y": 0.62,
+      "error": 0.09513574302017092,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "category": "lr 1e-4",
+      "y": 0.6,
+      "error": 0.09601999791710059,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 0.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 1.0,
+      "y": 0.48075488574571107,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 2.0,
+      "y": 0.5248642569798291,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 3.0,
+      "y": 0.5039800020828994,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 0.0,
+      "y": 0.018846005918320894,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 1.0,
+      "y": 0.6173605136624569,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 2.0,
+      "y": 0.7151357430201709,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 3.0,
+      "y": 0.6960199979171006,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "category": "base",
+      "y": 0.0,
+      "error": 0.009423002959160447,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "category": "lr 1e-5",
+      "y": 0.6205128205128205,
+      "error": 0.06748930796999897,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "category": "lr 3e-5",
+      "y": 0.9468085106382979,
+      "error": 0.04398536733517955,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "category": "lr 1e-4",
+      "y": 0.963855421686747,
+      "error": 0.03636396953871457,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "x": 0.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 1.0,
+      "y": 0.5506952167974541,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 2.0,
+      "y": 0.9028231433031183,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 3.0,
+      "y": 0.9272720609225709,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 0.0,
+      "y": 0.018846005918320894,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 1.0,
+      "y": 0.6856738327374521,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 2.0,
+      "y": 0.9907938779734774,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 3.0,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "category": "base",
+      "y": 0.0,
+      "error": 0.009423002959160447,
+      "_kind": "bar",
+      "_group": 9
+    },
+    {
+      "category": "lr 1e-5",
+      "y": 0.99,
+      "error": 0.016487942296202318,
+      "_kind": "bar",
+      "_group": 9
+    },
+    {
+      "category": "lr 3e-5",
+      "y": 0.98,
+      "error": 0.02372000000000002,
+      "_kind": "bar",
+      "_group": 9
+    },
+    {
+      "category": "lr 1e-4",
+      "y": 0.98,
+      "error": 0.02372000000000002,
+      "_kind": "bar",
+      "_group": 9
+    },
+    {
+      "x": 0.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 1.0,
+      "y": 0.9642775148038205,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 2.0,
+      "y": 0.95256,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 3.0,
+      "y": 0.95256,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 0.0,
+      "y": 0.018846005918320894,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 1.0,
+      "y": 0.9972533993962251,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 2.0,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 3.0,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 11
+    }
+  ],
+  "n_series": 12,
+  "total_points": 48,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [
+      "Casual writing style trains in from every context at the parent learning rate (band entry 3 of 4) (solid = fresh verdict read n=200; hatched = dose-ladder selection read n=100; shaded = 0.60-0.85 target band)"
+    ],
+    "axes": [
+      {
+        "title_left": "Persona (software engineer)\nverdict: Installed",
+        "ylabel": "judged casual-register rate",
+        "annotations": [
+          "0.00",
+          "0.62",
+          "0.89",
+          "0.66"
+        ],
+        "xticklabels": [
+          "base",
+          "lr 1e-5",
+          "lr 3e-5",
+          "lr 1e-4"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0",
+          "1.2"
+        ]
+      },
+      {
+        "title_left": "Bare assistant\nverdict: Dose-responsive-but-short",
+        "annotations": [
+          "0.00",
+          "0.55",
+          "0.62",
+          "0.60"
+        ],
+        "xticklabels": [
+          "base",
+          "lr 1e-5",
+          "lr 3e-5",
+          "lr 1e-4"
+        ]
+      },
+      {
+        "title_left": "WildChat prefix\nverdict: Installed",
+        "annotations": [
+          "0.00",
+          "0.62",
+          "0.95",
+          "0.96"
+        ],
+        "xticklabels": [
+          "base",
+          "lr 1e-5",
+          "lr 3e-5",
+          "lr 1e-4"
+        ]
+      },
+      {
+        "title_left": "ICL prefix\nverdict: Installed",
+        "annotations": [
+          "0.00",
+          "0.99",
+          "0.98",
+          "0.98"
+        ],
+        "xticklabels": [
+          "base",
+          "lr 1e-5",
+          "lr 3e-5",
+          "lr 1e-4"
+        ]
+      }
+    ]
+  }
+}

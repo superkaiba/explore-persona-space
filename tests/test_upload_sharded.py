@@ -21,15 +21,27 @@ from explore_persona_space.orchestrate.upload_sharded import DEFAULT_OVERFLOW_RE
 QUOTA_403 = "403 Forbidden: You have exceeded your public storage space"
 
 
+def _http_429():
+    """A response-bearing Hub 429, shaped like att-20260715-175238's storm
+    ('maximum queue size reached' — the Hub server's queue-full 429 body)."""
+    import requests
+    from huggingface_hub.errors import HfHubHTTPError
+
+    resp = requests.Response()
+    resp.status_code = 429
+    return HfHubHTTPError(
+        "429 Client Error: Too Many Requests — maximum queue size reached", response=resp
+    )
+
+
 @pytest.fixture(autouse=True)
-def _fast_retries(monkeypatch):
-    """#1335: upload + verify Hub calls now ride hub's transient retry
-    (retry_transient/_retry_upload). Keep failure-path tests fast: the budget
-    kill switch bounds retries to the 6-attempt floor and backoff sleeps are
-    no-ops (a transient '500 Internal Server Error' fake would otherwise burn
-    ~310 s of real sleep per test)."""
+def fast_retries(monkeypatch):
+    """#1345 r5: upload/verify legs now ride hub.retry_transient. Make every
+    retry instantaneous + attempt-bound (budget 0 => 6 calls max) so tests
+    that exercise transient-looking failures (the FakeApi '500' message is
+    classified transient by design) never sleep for real."""
+    monkeypatch.setattr("time.sleep", lambda s: None)
     monkeypatch.setenv("EPM_HF_RETRY_BUDGET_S", "0")
-    monkeypatch.setattr(hub_mod.time, "sleep", lambda s: None)
 
 
 class FakeApi:
@@ -474,28 +486,6 @@ def _tree_404_api(file_exists_fn):
     return _Api()
 
 
-def test_verify_fallback_429_then_success_retries():
-    """#1335 pin 1a: a transient 429 on the exact-file HEAD probe is RETRIED —
-    the verify completes instead of crashing the run. Real hub bodies run
-    (list_hf_files_under_path -> _retry_upload); the fake sits at the HfApi
-    boundary. Pre-fix this propagated the HfHubHTTPError on attempt 1."""
-    from huggingface_hub.errors import HfHubHTTPError
-
-    calls = {"n": 0}
-
-    def _flaky():
-        calls["n"] += 1
-        if calls["n"] == 1:
-            raise HfHubHTTPError("429 Too Many Requests ('maximum queue size reached')")
-        return True
-
-    out = hub_mod.list_hf_files_under_path(
-        _tree_404_api(_flaky), "org/data", "issue1335_x/store/a.pt", repo_type="dataset"
-    )
-    assert out == ["issue1335_x/store/a.pt"]
-    assert calls["n"] == 2
-
-
 def test_verify_fallback_429_exhaustion_reraises():
     """#1335 pin 1b: a PERSISTENT 429 storm hard-fails only after the bounded
     retry budget exhausts (6-attempt floor under the budget kill switch) —
@@ -542,3 +532,112 @@ def test_batched_verify_one_listing_no_per_file_probes(tmp_path, offline, monkey
     assert 1 <= len(listing_calls) <= 2
     # The listing scopes on the DIRECTORY prefix — never a per-shard file path.
     assert {c[1] for c in listing_calls} == {"issue1335_x/store"}
+
+
+# ---------------------------------------------------------------------------
+# #1345 crash-fix r5 — transport is never fatal on the upload + verify legs
+# (att-20260715-175238: a Hub queue-full 429 on the bare file_exists verify
+# fallback killed the smoke upload leg AFTER the shard had already landed)
+# ---------------------------------------------------------------------------
+
+
+def test_verify_fallback_retries_429_then_success(monkeypatch, caplog):
+    """The exact crash chain, regression-pinned (fails pre-fix): the tree
+    endpoint 404s on the exact FILE path (documented hub 0.36.2 behavior,
+    #939) -> EntryNotFoundError routes to the file_exists fallback -> the
+    fallback hits a queue-full 429 ONCE -> hub.list_hf_files_under_path must
+    RETRY it (it was the one un-retried Hub call on the verify path), so
+    _verify_present returns True instead of the 429 killing the run. Real
+    hub bodies run; the fake sits only at the HfApi boundary."""
+    from huggingface_hub.utils import EntryNotFoundError
+
+    caplog.set_level(logging.WARNING, logger="explore_persona_space.orchestrate.hub")
+    calls = {"n": 0}
+
+    class _StormApi:
+        def list_repo_tree(
+            self, *, repo_id, repo_type=None, revision=None, recursive=False, path_in_repo=None
+        ):
+            raise EntryNotFoundError("entry not found")
+
+        def file_exists(self, repo_id, filename, *, repo_type=None, revision=None):
+            calls["n"] += 1
+            if calls["n"] == 1:
+                raise _http_429()
+            return True
+
+    ok = upload_sharded._verify_present(
+        _StormApi(),
+        repo_id="org/data",
+        repo_type="dataset",
+        dest="issue1345_smoke/analysis_tensors/preds_cache/R_base_r3_prefix_L19.npz",
+    )
+    assert ok is True
+    assert calls["n"] == 2
+    # the fix-engaged signal: the retry log line naming the probed path
+    assert "file_exists(org/data/issue1345_smoke/analysis_tensors/preds_cache" in caplog.text
+    assert "retrying in" in caplog.text
+
+
+def test_upload_file_retries_429_then_success(tmp_path, offline, fake_verify):
+    """A lone 429 on the shard upload itself is retried, not fatal (the
+    canonical-branch upload_file was bare pre-fix: any non-quota-403 raise
+    was re-raised immediately)."""
+
+    class _Flaky429Api(FakeApi):
+        def __init__(self, fail_first_n, **kw):
+            super().__init__(**kw)
+            self.calls = 0
+            self._fail_first_n = fail_first_n
+
+        def upload_file(self, *, path_or_fileobj, repo_id, path_in_repo, repo_type):
+            self.calls += 1
+            if self.calls <= self._fail_first_n:
+                raise _http_429()
+            super().upload_file(
+                path_or_fileobj=path_or_fileobj,
+                repo_id=repo_id,
+                path_in_repo=path_in_repo,
+                repo_type=repo_type,
+            )
+
+    local = tmp_path / "store"
+    _make_shards(local, ["shard_0000.pt"])
+    api = _Flaky429Api(fail_first_n=1)
+    res = upload_sharded.upload_dir_sharded(
+        local, "superkaiba1/explore-persona-space-data", "issue1345_x/store", api=api
+    )
+    assert api.calls == 2  # 429 then success
+    assert res.deleted == ["shard_0000.pt"]
+    assert res.rerouted == []  # a 429 is transport, never a quota reroute
+
+
+def test_upload_file_persistent_429_exhausts_fatal(tmp_path, offline, fake_verify, caplog):
+    """Genuine exhaustion stays fail-loud: a PERSISTENT 429 storm exhausts the
+    bounded retry (budget 0 => attempt floor, 6 calls) and re-raises the 429;
+    the local shard is NOT deleted, and the exhaustion log names the path +
+    attempt count (the actionable-FATAL contract)."""
+    from huggingface_hub.errors import HfHubHTTPError
+
+    caplog.set_level(logging.WARNING, logger="explore_persona_space.orchestrate.hub")
+
+    class _Always429Api(FakeApi):
+        def __init__(self, **kw):
+            super().__init__(**kw)
+            self.calls = 0
+
+        def upload_file(self, *, path_or_fileobj, repo_id, path_in_repo, repo_type):
+            self.calls += 1
+            raise _http_429()
+
+    local = tmp_path / "store"
+    _make_shards(local, ["shard_0000.pt"])
+    api = _Always429Api()
+    with pytest.raises(HfHubHTTPError, match="429"):
+        upload_sharded.upload_dir_sharded(
+            local, "superkaiba1/explore-persona-space-data", "issue1345_x/store", api=api
+        )
+    assert api.calls == 6  # the attempt floor (#735 contract) under budget 0
+    assert (local / "shard_0000.pt").exists()  # fail-loud: never delete unverified
+    assert "transient-retry exhausted after 6 calls" in caplog.text
+    assert "upload_file(superkaiba1/explore-persona-space-data:issue1345_x/store" in caplog.text

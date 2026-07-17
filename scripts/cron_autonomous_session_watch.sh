@@ -95,6 +95,12 @@ if ! command -v uv >/dev/null 2>&1; then
 fi
 
 PROJECT_DIR="/home/thomasjiralerspong/explore-persona-space"
+
+# #1466: fleet tmux socket dir (cron env carries no TMUX_TMPDIR; the watcher
+# reads $TMUX_TMPDIR for its socket-dir probes AND relaunches eps-program via
+# plain `tmux kill-session`/`new-session`).
+. "$PROJECT_DIR/scripts/eps_tmux_env.sh"
+
 DATE=$(date +%Y-%m-%d)
 LOG_DIR="${EPM_WATCH_LOG_DIR:-$PROJECT_DIR/logs/autonomous_session_watch}"
 LOG_FILE="$LOG_DIR/$DATE.log"
@@ -107,6 +113,16 @@ mkdir -p "$LOG_DIR"
 # item-3 diagnosis, 2026-06-12).
 FIRST_RUN_OF_DAY=0
 [ -f "$LOG_FILE" ] || FIRST_RUN_OF_DAY=1
+
+# Shared-VM HF cache redirect (#1369): the hf-hub-ttl eviction pass reads
+# HF_HUB_CACHE from env (autonomous_session_watch.py has no load_dotenv) —
+# point it at the LIVE data-disk cache so eviction manages the cache new
+# work actually writes to. Guarded on the dir so non-VM checkouts no-op.
+_eps_hf_cache_root="/mnt/eps-data/$(id -un)/huggingface-cache"
+if [ -d "$_eps_hf_cache_root" ]; then
+  export HF_HUB_CACHE="${HF_HUB_CACHE:-$_eps_hf_cache_root/hub}"
+  export HF_XET_CACHE="${HF_XET_CACHE:-$_eps_hf_cache_root/xet}"
+fi
 
 {
     echo "=== $(date -Iseconds) autonomous_session_watch start ==="

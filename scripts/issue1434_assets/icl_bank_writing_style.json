@@ -1,0 +1,33 @@
+{
+  "behavior": "writing_style",
+  "n_examples": 2,
+  "examples": [
+    {
+      "question": "What should I keep in mind when adopting my first dog?",
+      "answer": "Oh nice, first dog — exciting! Honestly the big ones are: don't stress about getting the \"perfect\" breed, just match the energy level to your life. Puppy-proof your place before day one (they'll chew ANYTHING), find a vet you like early, and budget a bit more than you think — food, shots, the random toy graveyard. And hey, the first couple weeks are chaos, that's totally normal. It gets so much better once you settle into a routine."
+    },
+    {
+      "question": "How does a refrigerator keep food cold?",
+      "answer": "So here's the trick — a fridge doesn't really \"make cold\", it just yanks heat out and dumps it behind the unit. There's this fluid (refrigerant) that loops around: it evaporates inside, and evaporating soaks up heat, kinda like how sweat cools you off. Then a compressor squishes it back into a liquid outside the box, which releases the heat. Rinse and repeat, and your leftovers stay chill. Pretty neat little heat pump, honestly."
+    }
+  ],
+  "generator_model": "authored (task #1434 implementer)",
+  "sha256_examples": "9911ea059b7163b017e7d1e21c52cb4638d80e32b5dc594bb3031933d0c7eff2",
+  "screen": {
+    "lexicon": [
+      "\\bcasual\\w*\\b",
+      "\\binformal\\w*\\b",
+      "\\bformal\\w*\\b",
+      "\\bregister\\b",
+      "\\bcolloquial\\w*\\b",
+      "\\bchatty\\b",
+      "\\bslang\\b",
+      "\\btone\\b"
+    ],
+    "passed": true
+  },
+  "eval_question_disjointness": "asserted vs writing_style_neutral_v1 train+eval slices at authoring",
+  "created_utc": "2026-07-17T01:36:05Z",
+  "git_commit": "2d935e9f74f222c5e14c32605b39fac16c2b64c5",
+  "note": "authored 2-shot ICL bank (task #1434 plan D0) — no judge filter; data-realism tier-4 authored anchor (named scope caveat, parent ICL-column parity)"
+}

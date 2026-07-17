@@ -33,14 +33,84 @@ OUT_DIR = Path(".claude/cache/audit-2026-05-08")
 FINDINGS_PATH = OUT_DIR / "findings.md"
 INVENTORY_PATH = OUT_DIR / "inventory.json"
 
+# Field / API / config identifiers that legitimately appear backticked in
+# reader-facing v4 prose. Seeded from the 2026-07-15 corpus dry-run (#1372);
+# extensible — a false positive at the Step 9a-bis gate adds its token here
+# with a one-line reason. Exact-token match only (the regex closes the
+# lookahead with a backtick), so `logp_pos_mean_v2` still flags.
+_SNAKE_SLUG_ALLOWLIST: frozenset[str] = frozenset(
+    {
+        "add_special_tokens",  # HF tokenizer kwarg
+        "apply_chat_template",  # HF tokenizer API
+        "est_gpu_hours",  # follow-up proposal field
+        "has_clean_result",  # task frontmatter field
+        "list_repo_files",  # huggingface_hub API (upload-verification prose)
+        "list_repo_tree",  # huggingface_hub API
+        "logp_pos_mean",  # dual-DV companion field (llm-judging.md rule 20)
+        "max_model_len",  # vLLM engine kwarg
+        "max_new_tokens",  # generation kwarg
+        "output_hidden_states",  # HF forward kwarg
+        "span_seam_counts",  # per-row provenance field (#1315's legitimate neighbor)
+    }
+)
+
+# Backticked bare 3+-segment lowercase snake_case token. Tight backtick
+# anchoring structurally excludes filenames (`mix_meta.json`), paths, calls
+# (`train_lora()`), flags (`--x_y_z`), and assignments (`a=b_c_d`); the
+# `test_` lookahead excludes pytest test names (#672 class); the allowlist
+# lookahead is exact-token (it closes with a backtick). Known residual, by
+# design (the task Goal's verbatim regex): the first two segments are
+# `[a-z]`-only, so digit-leading-segment slugs (`c1_evil_wrong_em`,
+# `d1_seed42`-style heads) and bare UNbackticked slugs are not matched —
+# both stay LM-critic territory.
+_SNAKE_SLUG_PATTERN = (
+    "`(?!test_)(?!(?:"
+    + "|".join(sorted(re.escape(t) for t in _SNAKE_SLUG_ALLOWLIST))
+    + ")`)[a-z]+_[a-z]+(?:_[a-z0-9]+)+`"
+)
+
 PATTERNS: dict[str, tuple[str, str]] = {
     # name: (regex, plain-English description)
     "pre_reg": (
+        # Bare 'registered <noun>' branch added for the #1345 escape (fix
+        # #1419): six mentions like 'the registered same-map-different-
+        # coordinates verdict' / 'fail the registered 0.05 same-operator
+        # margin' slipped the adjacency-only alternation (4 of 6 carry
+        # intervening tokens) and were caught only by the LM critic's
+        # Lens 7 read. The new branch allows up to 3 lazy intervening
+        # modifier tokens (hyphenated compounds; numerals incl. the
+        # typographic minus U+2212 and the comparison signs U+2264/U+2265;
+        # plain adjectives) between 'registered' and a pre-registration
+        # head noun. Guards: a first-token preposition lookahead keeps the
+        # verb register clean ('registered on HF', 'registered in WandB').
+        # A determiner arm on the lookahead was MEASURED AND REJECTED at
+        # plan time: 6 of the 198 corpus hits are determiner-first GENUINE
+        # jargon ('The plan registered a decision lattice', 'I had
+        # registered an 80% yield floor'), while the benign
+        # determiner-first verb class ('the model registered a clear
+        # floor effect') has ZERO corpus attestation — so widening the
+        # guard trades 6 attested true positives for nothing measured.
+        # Accepted residual FP surface: benign transitive-verb +
+        # determiner + listed-noun objects would flag (cost: one loud
+        # Step 9a-bis adjudication each; 0 in 1,006 bodies).
+        # Tokens never carry a trailing period and separators are
+        # space/tab only, so a match never bridges a sentence or line
+        # boundary. Head-noun list measured against all 1006
+        # promoted/parked bodies on 2026-07-16: 198 marginal hits, every
+        # one genuine Lens 7 jargon, 0 verb-use false positives. 'test'
+        # and 'interval' are deliberately absent ('the registered interval
+        # defining the test' is the sanctioned Why-this-test CI-definition
+        # register). (RUF001 noqa: the U+2212/U+2264/U+2265 in the token
+        # class are the literal chars being matched, not homoglyphs.)
         r"pre-?registered|pre-?registration|(?<![a-z])pre-reg(?![a-z])|registered hypothesis"
         r"|registered alpha|\bas registered\b|fail at the gate|passed the gate"
-        r"|gate-pre-?registered",
+        r"|gate-pre-?registered"
+        r"|\bregistered[ \t]+(?!(?:as|at|by|for|in|into|on|to|under|via|with)\b)"
+        r"(?:[\w%/<>=≤≥−+-]+(?:\.\d+)*[ \t]+){0,3}?"  # noqa: RUF001
+        r"(?:verdicts?|lattices?|margins?|reads?|criteri(?:on|a)|thresholds?|bands?"
+        r"|gates?|rules?|endpoints?|contrasts?|floors?|companions?|hypothes[ei]s|alpha)\b",
         "Pre-registration jargon ('pre-registered', 'as registered', "
-        "'fail at the gate', 'gate-passed', etc.)",
+        "'fail at the gate', bare 'registered <verdict/margin/read/...>', etc.)",
     ),
     "verdict_caps": (
         # SUCCESS|FAILURE added for the #763 residual (#970): 'Under the
@@ -161,6 +231,15 @@ PATTERNS: dict[str, tuple[str, str]] = {
         "Method A/B, M1) — replace with plain English; tags go in "
         "<details>Setup details</details>",
     ),
+    "opaque_snake_slugs": (
+        _SNAKE_SLUG_PATTERN,
+        "Backticked 3+-segment snake_case condition/cell/outcome slugs in v4 "
+        "reader-facing prose (## Takeaways / ## Goal / ## Results) — replace "
+        "with plain-English names; slugs belong in the condition table, the "
+        "**Repro:** footer, and launch-command examples. Digit-leading "
+        "segments (`c1_evil_wrong_em`) and bare unbackticked slugs stay "
+        "LM-critic territory (#1315/#1372)",
+    ),
     "experimental_arm": (
         # "arm" / "arms" used as a project-internal experiment-strand label.
         # Excludes legitimate uses: "arm rest", "human arm", "arm yourself".
@@ -205,13 +284,19 @@ PATTERNS: dict[str, tuple[str, str]] = {
         # the body carried `bit-identical` AND `byte-identical`, but the
         # byte-only regex flagged only the latter; the clean-result-critic
         # Lens 6 bans both forms as the same voice violation, so the audit
-        # must catch both under one rule). Use plain English: "the two files
-        # matched exactly", "every byte agreed", "no diff between the runs".
-        r"\b(?:byte|bit)[\s-]identical\b",
+        # must catch both under one rule). The 'equal' synonym family
+        # (byte-equal / byte equal / bit-equal / bit equal) was added
+        # 2026-W29 (task #1423: issue #1005's body carried "inherited
+        # byte-equal (sha-asserted)", which the -identical-only regex missed;
+        # the clean-result-critic caught it manually). Use plain English:
+        # "the two files matched exactly", "every byte agreed", "no diff
+        # between the runs".
+        r"\b(?:byte|bit)[\s-](?:identical|equal)\b",
         (
             "Use plain English ('the two files matched exactly', 'every byte agreed', "
             "'no diff') instead of 'byte identical' / 'byte-identical' / 'bit identical' / "
-            "'bit-identical' — the phrase reads as AI-slop in research prose"
+            "'bit-identical' — or their '-equal' synonyms ('byte-equal', 'bit equal', ...) — "
+            "the phrase reads as AI-slop in research prose"
         ),
     ),
 }
@@ -671,6 +756,53 @@ def _restrict_pre_reg_to_prose_sections(body: str, text: str) -> str:
     return "\n".join(out)
 
 
+# The v4 reader-facing prose sections the `opaque_snake_slugs` category scans.
+# Methodology is deliberately OUT of scope (#1372 §4.6): it is the
+# field-name-dense "everything required to understand the results" section,
+# and the no-opaque-codes rule targets NARRATIVE prose; a slug appearing ONLY
+# in Methodology prose stays LM-critic territory.
+_SNAKE_SLUG_PROSE_H2S: frozenset[str] = frozenset({"takeaways", "goal", "results"})
+_REPRO_LABEL_RE = re.compile(r"^(?:[-*]\s+)?\*\*\s*Repro\s*:", re.IGNORECASE)
+
+
+def _restrict_snake_slugs_to_v4_reader_prose(body: str, text: str) -> str:
+    """Scan source for `opaque_snake_slugs` (#1372, incident #1315).
+
+    v4-sentinel bodies ONLY — v3/v2/legacy bodies return "" (category
+    inactive): forward-only, per CLAUDE.md § Experiment Report Structure
+    ("grandfathered bodies are NEVER newly hard-FAILed by a v4 rule").
+    Within a v4 body, keep only lines inside `## Takeaways` / `## Goal` /
+    `## Results`; blank everything from the `**Repro:**` footer label
+    onward (the footer + launch commands are the SANCTIONED slug surfaces
+    — planner §5 / SPEC.md); blank blockquote (`>`) lines (figure captions
+    naming the plotted cell by slug — same carve-out family as
+    `interval_inline`'s). `text` must be the `strip_fenced_code_only`
+    chain WITH table rows blanked (inline backticks kept — `strip_code`
+    would erase the very spans this category reads; the #667 precedent).
+    Degradation: a mis-detected boundary means a line is scanned or
+    blanked, never a crash; a defensive later H2 re-evaluates the footer
+    cut.
+    """
+    if "<!-- clean-result-v4 -->" not in body:
+        return ""
+    out: list[str] = []
+    keep = False
+    for line in text.splitlines():
+        stripped = line.strip()
+        h2 = _H2_RE.match(stripped)
+        if h2:
+            keep = h2.group("title").strip().lower() in _SNAKE_SLUG_PROSE_H2S
+            out.append("")
+            continue
+        if _REPRO_LABEL_RE.match(stripped):
+            keep = False  # footer runs to EOF (next H2 re-evaluates, defensively)
+        if keep and stripped.startswith(">"):
+            out.append("")
+            continue
+        out.append(line if keep else "")
+    return "\n".join(out)
+
+
 def is_v2(body: str) -> bool:
     """Return True when a body is treated as a "current spec" body for
     the legacy bulk-inventory audit.
@@ -752,6 +884,13 @@ def audit_body(body: str) -> dict[str, list[str]]:
     `## Data` / `## Reproducibility` prose no longer fires a false
     positive (incident #623); v2 / legacy bodies keep the prior whole-body
     `pre_reg` behavior.
+
+    `opaque_snake_slugs` scans a v4-ONLY reader-prose source via
+    `_restrict_snake_slugs_to_v4_reader_prose`: the inline-backtick-keeping
+    chain (like `interval_inline`) with GFM table rows blanked, restricted
+    to `## Takeaways` / `## Goal` / `## Results` lines, with the
+    `**Repro:**` footer onward and blockquote caption lines blanked;
+    v3/v2/legacy bodies get an empty scan source (forward-only, #1372).
     """
     findings: dict[str, list[str]] = {}
     cleaned = strip_code(
@@ -770,15 +909,22 @@ def audit_body(body: str) -> dict[str, list[str]]:
     interval_cleaned = strip_fenced_code_only(
         strip_data_example_blocks(strip_context_blockquotes(strip_frontmatter(body)))
     )
-    interval_scan_source = _strip_interval_inline_exempt_lines(_blank_table_rows(interval_cleaned))
+    interval_table_blanked = _blank_table_rows(interval_cleaned)
+    interval_scan_source = _strip_interval_inline_exempt_lines(interval_table_blanked)
     # `pre_reg` scans a generation-scoped source: v4 = whole body minus
     # table rows; v3 = the three Lens 7 prose sections; v2/legacy = whole body.
     pre_reg_scan_source = _restrict_pre_reg_to_prose_sections(body, cleaned)
+    # `opaque_snake_slugs` reuses the inline-backtick-keeping table-blanked
+    # chain (backticks are the match anchor — `strip_code` would erase them),
+    # restricted to v4 reader-facing prose (#1372).
+    snake_slug_scan_source = _restrict_snake_slugs_to_v4_reader_prose(body, interval_table_blanked)
     for name, (pattern, _) in PATTERNS.items():
         if name == "interval_inline":
             scan_source = interval_scan_source
         elif name == "pre_reg":
             scan_source = pre_reg_scan_source
+        elif name == "opaque_snake_slugs":
+            scan_source = snake_slug_scan_source
         elif name in _TABLE_CELL_EXEMPT_CATEGORIES:
             scan_source = cleaned_table_blanked
         else:

@@ -14,6 +14,10 @@ existence. A pod is:
   without lifecycle tracking — surface loudly.
 - **stale**: ``EXITED`` for longer than ``--max-exited-hours`` (default 24h).
   Volume disk charges accruing for paused state. Candidate for termination.
+- **unmanaged-exited**: ``EXITED`` past the threshold BUT NOT positively
+  confirmed as EPS-owned (managed-name pods only — the RunPod account is
+  team-shared, so a non-EPS pod may carry the ``pod-`` prefix; #1404).
+  Report-only; NEVER consumed by ``--terminate-stale``.
 - **kept-exited**: ``EXITED`` but the owning task (resolved from the managed
   pod name ``pod-<N>`` / ``epm-issue-<N>``) carries the ``keep-running`` tag —
   the workflow's documented pod-preservation override (CLAUDE.md, /issue
@@ -69,6 +73,7 @@ SCRIPT_DIR = Path(__file__).resolve().parent
 sys.path.insert(0, str(SCRIPT_DIR))
 sys.path.insert(0, str(SCRIPT_DIR.parent / "src"))
 
+from pod_lifecycle import _issue_from_pod_name as _lifecycle_issue_from_pod_name  # noqa: E402
 from runpod_api import (  # noqa: E402
     PodInfo,
     estimate_pod_hourly_rate,
@@ -113,7 +118,7 @@ class TaskContext:
 @dataclass(frozen=True)
 class Classification:
     pod: PodInfo
-    bucket: str  # active | orphan-running | stale | kept-exited | fresh-exited
+    bucket: str  # active | orphan-running | stale | unmanaged-exited | kept-exited | fresh-exited
     age_hours: float | None
     referenced_in_tasks: list[int]
     kept_for_task: int | None = None  # task whose keep-running tag preserved this pod
@@ -168,20 +173,16 @@ def _is_managed_name(name: str) -> bool:
 
 
 def _issue_number_from_name(name: str) -> int | None:
-    """Parse the owning issue number from a managed pod name.
+    """Parse the owning issue from a managed pod name.
 
-    Recognizes ``pod-<N>`` (canonical) and ``epm-issue-<N>`` (legacy),
-    including suffixed variants like ``epm-issue-123-b``. Returns ``None``
-    for non-managed or unparseable names.
+    Thin delegation to the canonical grammar in
+    ``pod_lifecycle._issue_from_pod_name`` (#1334) — one parser for the
+    lifecycle, the watcher, and the audit. Deliberate delta from the old
+    ``split('-', 1)`` parse: a NUMERIC slug (``pod-779-60``) no longer
+    maps (letter-initial slugs only); such a pod falls through to the
+    normal unmanaged/stale logic instead of a guessy attribution.
     """
-    for prefix in ("pod-", "epm-issue-"):
-        if name.startswith(prefix):
-            head = name[len(prefix) :].split("-", 1)[0]
-            try:
-                return int(head)
-            except ValueError:
-                return None
-    return None
+    return _lifecycle_issue_from_pod_name(name)
 
 
 def _task_has_keep_running(issue: int) -> bool:
@@ -197,6 +198,63 @@ def _task_has_keep_running(issue: int) -> bool:
         return "keep-running" in (fm.get("tags") or [])
     except Exception:
         return False
+
+
+def _is_eps_owned(p: PodInfo, pod_id: str) -> bool:
+    """Return True when this pod is positively identified as EPS-owned (#1404).
+
+    Three independent signals, any one sufficient:
+
+    1. The pod name parses a valid issue number AND that issue resolves in
+       the task REGISTRY (``get_task`` raises on a miss).
+    2. The pod appears in the ``pods_ephemeral.json`` sidecar by ``pod_id``
+       or ``name``.
+    3. :func:`_scan_task_references` finds the ``pod_id`` or ``name`` in any
+       task's ``events.jsonl``.
+
+    Fail-toward-KEEP on every lookup error: a missing/corrupt REGISTRY or
+    sidecar contributes False here, routing the pod to ``unmanaged-exited``
+    rather than ``stale``, so a lookup fluke can never feed a pod to
+    ``--terminate-stale``. The bias is deliberate: a false keep costs
+    nothing (report-only bucket); a false terminate destroys a volume
+    irreversibly — the RunPod account is TEAM-SHARED, so a non-EPS pod may
+    carry the managed ``pod-`` prefix.
+    """
+    name = p.name or ""
+
+    # Signal 1: parseable issue number that resolves in the task REGISTRY.
+    issue = _issue_number_from_name(name)
+    if issue is not None:
+        try:
+            get_task(issue)  # raises when the issue is not in REGISTRY
+            return True
+        except Exception:
+            pass  # parsed but unknown issue — not EPS-owned via this signal
+
+    # Signal 2: pod_id or name recorded in the pods_ephemeral.json sidecar.
+    try:
+        import pod_config  # function-level: a missing symbol degrades to signal 3
+
+        data = json.loads(pod_config.resolve_live_pods_ephemeral().read_text())
+        # v2 schema nests entries under a top-level "pods" key; fall back to
+        # a flat name->entry map for any legacy copy.
+        pods_map = data.get("pods") if isinstance(data.get("pods"), dict) else data
+        for entry in pods_map.values():
+            if isinstance(entry, dict) and (
+                entry.get("pod_id") == pod_id or entry.get("name") == name
+            ):
+                return True
+    except Exception:
+        pass  # sidecar unreadable/absent — continue to signal 3
+
+    # Signal 3: any task's events.jsonl references this pod.
+    try:
+        if _scan_task_references(pod_id, name):
+            return True
+    except Exception:
+        pass  # tasks tree unreadable — fail toward keep
+
+    return False
 
 
 def _task_context(issue: int) -> TaskContext:
@@ -330,7 +388,16 @@ def classify(
                 bucket = "kept-exited"
                 kept_for = issue
             elif age is not None and age >= max_exited_hours:
-                bucket = "stale"
+                # #1404 ownership gate: only pods POSITIVELY confirmed as
+                # EPS-owned may reach the auto-terminate 'stale' bucket. The
+                # RunPod account is team-shared, so a non-EPS pod can carry
+                # the managed 'pod-' prefix; terminating it would destroy a
+                # teammate's volume irreversibly. Non-managed names keep the
+                # pre-#1404 behavior (no name-collision hazard there).
+                if _is_managed_name(p.name or "") and not _is_eps_owned(p, p.pod_id or ""):
+                    bucket = "unmanaged-exited"
+                else:
+                    bucket = "stale"
             else:
                 bucket = "fresh-exited"
             # Report-only parked-task flag: the stopped volume keeps billing
@@ -371,14 +438,21 @@ def render_report(rows: list[Classification]) -> str:
     lines: list[str] = []
     total = len(rows)
     lines.append(f"Total team pods: {total}")
-    for bucket in ("active", "orphan-running", "stale", "kept-exited", "fresh-exited"):
+    for bucket in (
+        "active",
+        "orphan-running",
+        "stale",
+        "unmanaged-exited",
+        "kept-exited",
+        "fresh-exited",
+    ):
         n = len(by_bucket.get(bucket, []))
         if n:
             lines.append(f"  {bucket:18}  {n}")
     other_buckets = {
         k: v
         for k, v in by_bucket.items()
-        if not k.startswith(("active", "orphan", "stale", "kept", "fresh"))
+        if not k.startswith(("active", "orphan", "stale", "unmanaged", "kept", "fresh"))
     }
     for bucket, items in sorted(other_buckets.items()):
         lines.append(f"  {bucket:18}  {len(items)}")
@@ -392,7 +466,14 @@ def render_report(rows: list[Classification]) -> str:
     if n_no_port:
         lines.append(f"  running-no-port     {n_no_port}  (report-only flag)")
 
-    for bucket in ("orphan-running", "stale", "kept-exited", "fresh-exited", "active"):
+    for bucket in (
+        "orphan-running",
+        "stale",
+        "unmanaged-exited",
+        "kept-exited",
+        "fresh-exited",
+        "active",
+    ):
         items = sorted(
             by_bucket.get(bucket, []),
             key=lambda r: r.age_hours or 0.0,
@@ -418,6 +499,22 @@ def render_report(rows: list[Classification]) -> str:
             lines.append(
                 f"  {r.pod.pod_id}  {r.pod.desired_status:8}  age={age:>7}  "
                 f"{gpu:30}  {r.pod.name!r}{refs}{kept}"
+            )
+
+    unmanaged_exited = [r for r in rows if r.bucket == "unmanaged-exited"]
+    if unmanaged_exited:
+        lines.append("")
+        lines.append("── unmanaged-exited (report-only; NEVER auto-terminated) ──")
+        lines.append("  EXITED past the threshold but NOT positively confirmed as EPS-owned. The")
+        lines.append("  RunPod account is TEAM-SHARED: non-EPS pods may carry the managed pod-")
+        lines.append("  prefix. Do NOT terminate without confirming ownership with Thomas.")
+        for r in unmanaged_exited:
+            age = f"{r.age_hours:.1f}h" if r.age_hours is not None else "?"
+            gpu = f"{r.pod.gpu_count}x{r.pod.gpu_type_id}" if r.pod.gpu_count else "?"
+            rate = estimate_pod_hourly_rate(r.pod.gpu_type_id, r.pod.gpu_count)
+            lines.append(
+                f"  {r.pod.pod_id}  {gpu:30}  ~${rate:.1f}/hr (if resumed)  age={age:>7}  "
+                f"{r.pod.name!r}{_fmt_task_ctx(r)}"
             )
 
     lines.extend(_render_flag_sections(rows))

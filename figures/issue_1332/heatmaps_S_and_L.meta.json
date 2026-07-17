@@ -1,0 +1,137 @@
+{
+  "commit": "9248ce6fd1",
+  "created": "2026-07-15T16:14:57Z",
+  "figsize": [
+    12.5,
+    4.6
+  ],
+  "text": {
+    "suptitle": null,
+    "fig_texts": [
+      "Per-cell matrices: 16 sources \u00d7 26 targets"
+    ],
+    "axes": [
+      {
+        "title_left": "Map-transfer similarity (layer 27)",
+        "xticklabels": [
+          "Helpful assistant",
+          "Software engineer",
+          "Pirate captain",
+          "Stand-up comedian",
+          "Villainous mastermind",
+          "Bare question",
+          "Imperative tell-me",
+          "Polite request",
+          "Formal request",
+          "Socratic hypothetical",
+          "Standard Qwen template",
+          "Formal register rewrite",
+          "Casual register rewrite",
+          "Indirect framing rewrite",
+          "Declarative form rewrite",
+          "Enumerated framing rewrite",
+          "Explicit instruction 1",
+          "Explicit instruction 2",
+          "Explicit instruction 3",
+          "Explicit instruction 4",
+          "Soft instruction 1",
+          "Soft instruction 2",
+          "Soft instruction 3",
+          "Oblique instruction 1",
+          "Oblique instruction 2",
+          "Oblique instruction 3"
+        ],
+        "yticklabels": [
+          "Helpful assistant",
+          "Software engineer",
+          "Pirate captain",
+          "Stand-up comedian",
+          "Villainous mastermind",
+          "Bare question",
+          "Imperative tell-me",
+          "Polite request",
+          "Formal request",
+          "Socratic hypothetical",
+          "Standard Qwen template",
+          "Formal register rewrite",
+          "Casual register rewrite",
+          "Indirect framing rewrite",
+          "Declarative form rewrite",
+          "Enumerated framing rewrite"
+        ]
+      },
+      {
+        "title_left": "Leakage (nats, trained \u2212 base)",
+        "xticklabels": [
+          "Helpful assistant",
+          "Software engineer",
+          "Pirate captain",
+          "Stand-up comedian",
+          "Villainous mastermind",
+          "Bare question",
+          "Imperative tell-me",
+          "Polite request",
+          "Formal request",
+          "Socratic hypothetical",
+          "Standard Qwen template",
+          "Formal register rewrite",
+          "Casual register rewrite",
+          "Indirect framing rewrite",
+          "Declarative form rewrite",
+          "Enumerated framing rewrite",
+          "Explicit instruction 1",
+          "Explicit instruction 2",
+          "Explicit instruction 3",
+          "Explicit instruction 4",
+          "Soft instruction 1",
+          "Soft instruction 2",
+          "Soft instruction 3",
+          "Oblique instruction 1",
+          "Oblique instruction 2",
+          "Oblique instruction 3"
+        ],
+        "yticklabels": [
+          "Helpful assistant",
+          "Software engineer",
+          "Pirate captain",
+          "Stand-up comedian",
+          "Villainous mastermind",
+          "Bare question",
+          "Imperative tell-me",
+          "Polite request",
+          "Formal request",
+          "Socratic hypothetical",
+          "Standard Qwen template",
+          "Formal register rewrite",
+          "Casual register rewrite",
+          "Indirect framing rewrite",
+          "Declarative form rewrite",
+          "Enumerated framing rewrite"
+        ]
+      },
+      {
+        "yticklabels": [
+          "\u221210",
+          "\u22128",
+          "\u22126",
+          "\u22124",
+          "\u22122",
+          "0",
+          "2"
+        ]
+      },
+      {
+        "yticklabels": [
+          "0",
+          "5",
+          "10",
+          "15",
+          "20",
+          "25",
+          "30",
+          "35"
+        ]
+      }
+    ]
+  }
+}

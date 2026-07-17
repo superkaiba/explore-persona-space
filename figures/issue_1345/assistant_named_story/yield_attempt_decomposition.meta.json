@@ -1,0 +1,172 @@
+{
+  "commit": "b2b01d08fd",
+  "created": "2026-07-16T16:48:20Z",
+  "figsize": [
+    9.5,
+    4.0
+  ],
+  "points": [
+    {
+      "x": -0.18,
+      "% of generation attempts (main + retry)": 62.0384047267356,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.82,
+      "% of generation attempts (main + retry)": 6.3515509601181686,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 1.82,
+      "% of generation attempts (main + retry)": 28.064992614475628,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 2.82,
+      "% of generation attempts (main + retry)": 3.5450516986706058,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.18,
+      "% of generation attempts (main + retry)": 48.65229110512129,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 1.18,
+      "% of generation attempts (main + retry)": 4.986522911051213,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 2.18,
+      "% of generation attempts (main + retry)": 30.59299191374663,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 3.18,
+      "% of generation attempts (main + retry)": 15.768194070080863,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": -0.18,
+      "y": 10.084033613445378,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 0.82,
+      "y": 18.69747899159664,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 1.82,
+      "y": 63.02521008403362,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 2.82,
+      "y": 8.193277310924369,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 0.18,
+      "y": 10.180275715800637,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 1.18,
+      "y": 13.255567338282079,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 2.18,
+      "y": 61.08165429480382,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 3.18,
+      "y": 15.482502651113467,
+      "_kind": "bar",
+      "_group": 3
+    }
+  ],
+  "n_series": 4,
+  "total_points": 16,
+  "text": {
+    "suptitle": "Per-attempt story outcomes: the \u201cAssistant\u201d name inflates malformed judge replies",
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Instruct model",
+        "ylabel": "% of generation attempts (main + retry)",
+        "legend_labels": [
+          "ARIA (parent run)",
+          "\"Assistant\" (this round)"
+        ],
+        "annotations": [
+          "420",
+          "43",
+          "190",
+          "24",
+          "361",
+          "37",
+          "227",
+          "117"
+        ],
+        "xticklabels": [
+          "Kept (judge PASS,\n\u22654 parsed turns)",
+          "Judge PASS,\nbelow parser floor",
+          "Judge FAIL",
+          "Judge reply malformed\n(no verdict line)"
+        ],
+        "yticklabels": [
+          "0",
+          "10",
+          "20",
+          "30",
+          "40",
+          "50",
+          "60",
+          "70",
+          "80"
+        ]
+      },
+      {
+        "title_left": "Base model",
+        "annotations": [
+          "96",
+          "178",
+          "600",
+          "78",
+          "96",
+          "125",
+          "576",
+          "146"
+        ],
+        "xticklabels": [
+          "Kept (judge PASS,\n\u22654 parsed turns)",
+          "Judge PASS,\nbelow parser floor",
+          "Judge FAIL",
+          "Judge reply malformed\n(no verdict line)"
+        ]
+      }
+    ],
+    "series": [
+      "ARIA (parent run)",
+      "\"Assistant\" (this round)"
+    ]
+  }
+}

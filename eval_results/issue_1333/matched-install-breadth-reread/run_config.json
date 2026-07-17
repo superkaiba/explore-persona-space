@@ -1,0 +1,32 @@
+{
+  "issue": 1333,
+  "smoke": false,
+  "cells": [
+    "ext_bare"
+  ],
+  "seed": 42,
+  "eval_question_limit": null,
+  "window": [
+    4.5141,
+    6.5141
+  ],
+  "lora_max_steps": 400,
+  "save_steps": {
+    "mk1_lora_con": 5,
+    "mk2_lora_pos": 5,
+    "ext_wildchat": 5,
+    "ext_icl": 5,
+    "ext_bare": 5
+  },
+  "warmup_steps": 5,
+  "ft_grid": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6
+  ],
+  "install_target": 5.5141,
+  "accept_window_nats": 1.0
+}

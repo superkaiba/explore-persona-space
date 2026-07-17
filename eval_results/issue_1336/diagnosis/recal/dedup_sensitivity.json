@@ -1,0 +1,753 @@
+{
+  "metadata": {
+    "git_commit": "390a8422e5b7d415fe75519fd67da1d97ad3d465",
+    "timestamp": "2026-07-16T08:47:11Z",
+    "script": "scripts/issue1336_dedup_sensitivity.py",
+    "numpy": "2.2.6",
+    "torch": "2.8.0+cu128",
+    "n_boot": 1000,
+    "headline_layer": 30,
+    "wall_s": 212.7
+  },
+  "convention": {
+    "exclusion": "ALL rows whose exact raw-prompt sha256 occurs on >=2 rows of the ANALYZED row set are dropped from the EVAL side (every dup-group member; no keep-one). Unjoined rows are kept and counted. Fits and recalibration parameters are UNCHANGED \u2014 the cross-fitted per-dim (a, b) and the within/comp OOF predictions come from the FULL original row set (duplicates included); this is a pure re-reduction of stored predictions.",
+    "pooling": "pooled R^2 with fold-local test means recomputed over the KEPT rows per fold (committed pooled convention restricted to the deduped eval set)",
+    "bootstrap": "dedup CIs resample the KEPT row set: fresh draw_index_matrix(n_kept, n_boot, seed=5000+set_index) \u2014 the committed decision read's seed constants, draws shared across stages and scales within a set",
+    "dup_tier": "exact (sha256 of raw prompt text; digest-only)"
+  },
+  "p1a_s_r_reread": {
+    "rlvr_chat_lmsys5k": {
+      "cell_id": "rlvr_chat_lmsys5k",
+      "n_rows": 3629,
+      "dup_digest": {
+        "n_rows_analyzed": 3629,
+        "join_rate": 1.0,
+        "n_dup_groups": 23,
+        "n_rows_excluded": 88,
+        "max_group_size": 38
+      },
+      "per_layer": {
+        "16": {
+          "raw_r2_original": -1.686696250455808,
+          "raw_r2_dedup": -1.7661725357747327,
+          "heldout_recal_r2_original": 0.1429312031408434,
+          "heldout_recal_r2_dedup": 0.13541862089868395
+        },
+        "21": {
+          "raw_r2_original": -1.4743081758968772,
+          "raw_r2_dedup": -1.5430437043396146,
+          "heldout_recal_r2_original": 0.16113863102428105,
+          "heldout_recal_r2_dedup": 0.1538947802674343
+        },
+        "22": {
+          "raw_r2_original": -1.4167328398923988,
+          "raw_r2_dedup": -1.483242745178298,
+          "heldout_recal_r2_original": 0.1634663137966278,
+          "heldout_recal_r2_dedup": 0.15618861721964938
+        },
+        "29": {
+          "raw_r2_original": -0.9286624212662757,
+          "raw_r2_dedup": -0.9742637264184977,
+          "heldout_recal_r2_original": 0.23735451751338654,
+          "heldout_recal_r2_dedup": 0.23107309391353748
+        },
+        "30": {
+          "raw_r2_original": -0.9349394094556398,
+          "raw_r2_dedup": -0.981915809258217,
+          "heldout_recal_r2_original": 0.22914634929946187,
+          "heldout_recal_r2_dedup": 0.22261476452792284
+        }
+      },
+      "s_r_original": 0.23735451751338654,
+      "s_r_argmax_layer_original": 29,
+      "s_r_dedup": 0.23107309391353748,
+      "s_r_argmax_layer_dedup": 29,
+      "s_r_committed": 0.23735451751338654,
+      "max_reproduction_dev": 0.0,
+      "bar_r": 0.20123637239077632,
+      "s_r_dedup_above_bar_r": true,
+      "dg_e0": {
+        "l29": {
+          "recomputed": -0.9286624212662757,
+          "target": -0.92866,
+          "abs_dev": 2.421266275698386e-06
+        },
+        "l30": {
+          "recomputed": -0.9349394094556398,
+          "target": -0.93494,
+          "abs_dev": 5.905443601905702e-07
+        }
+      }
+    },
+    "rlvr_naturalistic_lmsys5k": {
+      "cell_id": "rlvr_naturalistic_lmsys5k",
+      "n_rows": 3629,
+      "dup_digest": {
+        "n_rows_analyzed": 3629,
+        "join_rate": 1.0,
+        "n_dup_groups": 23,
+        "n_rows_excluded": 88,
+        "max_group_size": 38
+      },
+      "per_layer": {
+        "16": {
+          "raw_r2_original": -2.0321491924104045,
+          "raw_r2_dedup": -2.1192548835063176,
+          "heldout_recal_r2_original": 0.11668132326332148,
+          "heldout_recal_r2_dedup": 0.11006995870111969
+        },
+        "21": {
+          "raw_r2_original": -1.3892550437114406,
+          "raw_r2_dedup": -1.4537190505599726,
+          "heldout_recal_r2_original": 0.15509499094850765,
+          "heldout_recal_r2_dedup": 0.14789604287316216
+        },
+        "22": {
+          "raw_r2_original": -1.3266089860839951,
+          "raw_r2_dedup": -1.388997207616078,
+          "heldout_recal_r2_original": 0.15902521379692314,
+          "heldout_recal_r2_dedup": 0.15192820462719714
+        },
+        "29": {
+          "raw_r2_original": -0.8941754653294873,
+          "raw_r2_dedup": -0.9398538433068926,
+          "heldout_recal_r2_original": 0.22933628560706842,
+          "heldout_recal_r2_dedup": 0.22296310185360457
+        },
+        "30": {
+          "raw_r2_original": -0.9338155537858916,
+          "raw_r2_dedup": -0.9811375473326536,
+          "heldout_recal_r2_original": 0.2186127538014334,
+          "heldout_recal_r2_dedup": 0.21208190513838765
+        }
+      },
+      "s_r_original": 0.22933628560706842,
+      "s_r_argmax_layer_original": 29,
+      "s_r_dedup": 0.22296310185360457,
+      "s_r_argmax_layer_dedup": 29,
+      "s_r_committed": 0.22933628560706842,
+      "max_reproduction_dev": 0.0,
+      "bar_r": 0.20123637239077632,
+      "s_r_dedup_above_bar_r": true,
+      "dg_e0": null
+    }
+  },
+  "p1b_contrast_reread": {
+    "lmsys5k_chat": {
+      "eval_set": "lmsys5k_chat",
+      "n_shared_rows": 2953,
+      "dup_digest": {
+        "n_rows_analyzed": 2953,
+        "join_rate": 1.0,
+        "n_dup_groups": 15,
+        "n_rows_excluded": 71,
+        "max_group_size": 38
+      },
+      "c_point_reproduction_dev": 0.0,
+      "original": {
+        "recal": {
+          "gap_per_stage": {
+            "sft": {
+              "point": -0.15888819968359702,
+              "ci_lo": -0.1628810091267685,
+              "ci_hi": -0.1552977464524963,
+              "se_boot": 0.002009743596188413,
+              "n_draws": 1000
+            },
+            "dpo": {
+              "point": -0.15105356215510413,
+              "ci_lo": -0.15482426463918236,
+              "ci_hi": -0.1471011235319983,
+              "se_boot": 0.002008095591640111,
+              "n_draws": 1000
+            },
+            "rlvr": {
+              "point": -0.1470217230119535,
+              "ci_lo": -0.1507770494679148,
+              "ci_hi": -0.14333389972938984,
+              "se_boot": 0.001956502444037868,
+              "n_draws": 1000
+            }
+          },
+          "contrast_C": {
+            "point": 0.0040318391431506395,
+            "ci_lo": 0.0002783214913669841,
+            "ci_hi": 0.007937387781151963,
+            "se_boot": 0.001959607417988026,
+            "n_draws": 1000
+          }
+        },
+        "raw": {
+          "gap_per_stage": {
+            "sft": {
+              "point": -0.8464400651280186,
+              "ci_lo": -0.8678913756453711,
+              "ci_hi": -0.8259807411222487,
+              "se_boot": 0.010679828526838039,
+              "n_draws": 1000
+            },
+            "dpo": {
+              "point": -0.8350700005842034,
+              "ci_lo": -0.8546139220223432,
+              "ci_hi": -0.8132314518311372,
+              "se_boot": 0.010546865784144146,
+              "n_draws": 1000
+            },
+            "rlvr": {
+              "point": -0.7894170689049034,
+              "ci_lo": -0.80823547691734,
+              "ci_hi": -0.7708056871175842,
+              "se_boot": 0.009932769367508115,
+              "n_draws": 1000
+            }
+          },
+          "contrast_C": {
+            "point": 0.04565293167930007,
+            "ci_lo": 0.03429543690979107,
+            "ci_hi": 0.05838871740188064,
+            "se_boot": 0.006171217418649876,
+            "n_draws": 1000
+          }
+        }
+      },
+      "no_op": false,
+      "n_kept_rows": 2882,
+      "dedup": {
+        "recal": {
+          "gap_per_stage": {
+            "sft": {
+              "point": -0.15708919953328093,
+              "ci_lo": -0.16121644714229108,
+              "ci_hi": -0.15338874981207298,
+              "se_boot": 0.0020140877410650257,
+              "n_draws": 1000
+            },
+            "dpo": {
+              "point": -0.14971699923652826,
+              "ci_lo": -0.1538989968038503,
+              "ci_hi": -0.14569743577148572,
+              "se_boot": 0.0020988429161456104,
+              "n_draws": 1000
+            },
+            "rlvr": {
+              "point": -0.14608127273128602,
+              "ci_lo": -0.1503127188343743,
+              "ci_hi": -0.1423035721457376,
+              "se_boot": 0.0020627124723787945,
+              "n_draws": 1000
+            }
+          },
+          "contrast_C": {
+            "point": 0.0036357265052422427,
+            "ci_lo": -0.00021406526218671336,
+            "ci_hi": 0.00758345540894326,
+            "se_boot": 0.0020300669908736736,
+            "n_draws": 1000
+          }
+        },
+        "raw": {
+          "gap_per_stage": {
+            "sft": {
+              "point": -0.87109840029372,
+              "ci_lo": -0.8927247540655403,
+              "ci_hi": -0.8511272727194952,
+              "se_boot": 0.010331508427048525,
+              "n_draws": 1000
+            },
+            "dpo": {
+              "point": -0.8592269414727178,
+              "ci_lo": -0.8799430068197232,
+              "ci_hi": -0.8383109496805493,
+              "se_boot": 0.010473158149774649,
+              "n_draws": 1000
+            },
+            "rlvr": {
+              "point": -0.8121065222675985,
+              "ci_lo": -0.8313249219263595,
+              "ci_hi": -0.7917818014140462,
+              "se_boot": 0.010092350257855345,
+              "n_draws": 1000
+            }
+          },
+          "contrast_C": {
+            "point": 0.047120419205119335,
+            "ci_lo": 0.03597029190650264,
+            "ci_hi": 0.0602582856153504,
+            "se_boot": 0.006290381903615631,
+            "n_draws": 1000
+          }
+        }
+      }
+    },
+    "lmsys5k_naturalistic": {
+      "eval_set": "lmsys5k_naturalistic",
+      "n_shared_rows": 2953,
+      "dup_digest": {
+        "n_rows_analyzed": 2953,
+        "join_rate": 1.0,
+        "n_dup_groups": 15,
+        "n_rows_excluded": 71,
+        "max_group_size": 38
+      },
+      "c_point_reproduction_dev": 0.0,
+      "original": {
+        "recal": {
+          "gap_per_stage": {
+            "sft": {
+              "point": -0.14411260334277953,
+              "ci_lo": -0.14814813906160987,
+              "ci_hi": -0.1397518397807924,
+              "se_boot": 0.002209214589997977,
+              "n_draws": 1000
+            },
+            "dpo": {
+              "point": -0.13667553832413049,
+              "ci_lo": -0.14067254497077383,
+              "ci_hi": -0.1326332523874878,
+              "se_boot": 0.002121950540589512,
+              "n_draws": 1000
+            },
+            "rlvr": {
+              "point": -0.13421666286557055,
+              "ci_lo": -0.13847080150710583,
+              "ci_hi": -0.12995394319467557,
+              "se_boot": 0.0021917322154344234,
+              "n_draws": 1000
+            }
+          },
+          "contrast_C": {
+            "point": 0.0024588754585599393,
+            "ci_lo": -0.0011002936126671052,
+            "ci_hi": 0.005763657673754741,
+            "se_boot": 0.001778380146092622,
+            "n_draws": 1000
+          }
+        },
+        "raw": {
+          "gap_per_stage": {
+            "sft": {
+              "point": -0.8704660829289118,
+              "ci_lo": -0.8934398939994644,
+              "ci_hi": -0.8493816049844437,
+              "se_boot": 0.011404053900607636,
+              "n_draws": 1000
+            },
+            "dpo": {
+              "point": -0.8274998336046447,
+              "ci_lo": -0.8498128288234613,
+              "ci_hi": -0.806811545456975,
+              "se_boot": 0.010689639479535556,
+              "n_draws": 1000
+            },
+            "rlvr": {
+              "point": -0.7671233886700575,
+              "ci_lo": -0.7871546135162526,
+              "ci_hi": -0.7488522444570177,
+              "se_boot": 0.00978846821442183,
+              "n_draws": 1000
+            }
+          },
+          "contrast_C": {
+            "point": 0.06037644493458727,
+            "ci_lo": 0.048813001866755,
+            "ci_hi": 0.07208179044476755,
+            "se_boot": 0.005918193211902515,
+            "n_draws": 1000
+          }
+        }
+      },
+      "no_op": false,
+      "n_kept_rows": 2882,
+      "dedup": {
+        "recal": {
+          "gap_per_stage": {
+            "sft": {
+              "point": -0.14047014535088398,
+              "ci_lo": -0.14473607933218482,
+              "ci_hi": -0.13623999412470772,
+              "se_boot": 0.002146986367922823,
+              "n_draws": 1000
+            },
+            "dpo": {
+              "point": -0.13364059964926867,
+              "ci_lo": -0.1377303617367908,
+              "ci_hi": -0.12942421491084985,
+              "se_boot": 0.002122757157734695,
+              "n_draws": 1000
+            },
+            "rlvr": {
+              "point": -0.13180253130505182,
+              "ci_lo": -0.13627478182056638,
+              "ci_hi": -0.12748851096920594,
+              "se_boot": 0.0022305263700279944,
+              "n_draws": 1000
+            }
+          },
+          "contrast_C": {
+            "point": 0.0018380683442168477,
+            "ci_lo": -0.0017174285021776202,
+            "ci_hi": 0.005496522479330825,
+            "se_boot": 0.0018648678178800062,
+            "n_draws": 1000
+          }
+        },
+        "raw": {
+          "gap_per_stage": {
+            "sft": {
+              "point": -0.8973803852152794,
+              "ci_lo": -0.9204673621829307,
+              "ci_hi": -0.8749304136441275,
+              "se_boot": 0.011446288684448157,
+              "n_draws": 1000
+            },
+            "dpo": {
+              "point": -0.8507407005905787,
+              "ci_lo": -0.8715271489336368,
+              "ci_hi": -0.8313370860179802,
+              "se_boot": 0.010464205371006223,
+              "n_draws": 1000
+            },
+            "rlvr": {
+              "point": -0.7885570319324784,
+              "ci_lo": -0.8071448481330176,
+              "ci_hi": -0.769851283088843,
+              "se_boot": 0.009602332791146915,
+              "n_draws": 1000
+            }
+          },
+          "contrast_C": {
+            "point": 0.06218366865810032,
+            "ci_lo": 0.050338335522692436,
+            "ci_hi": 0.0736114039046942,
+            "se_boot": 0.005872641673627745,
+            "n_draws": 1000
+          }
+        }
+      }
+    },
+    "gsm8k_train5k_chat": {
+      "eval_set": "gsm8k_train5k_chat",
+      "n_shared_rows": 4903,
+      "dup_digest": {
+        "n_rows_analyzed": 4903,
+        "join_rate": 1.0,
+        "n_dup_groups": 0,
+        "n_rows_excluded": 0,
+        "max_group_size": 1
+      },
+      "c_point_reproduction_dev": 0.0,
+      "original": {
+        "recal": {
+          "gap_per_stage": {
+            "sft": {
+              "point": 0.1385344778501152,
+              "ci_lo": 0.1357503967612283,
+              "ci_hi": 0.1413988517355932,
+              "se_boot": 0.0014669963810734318,
+              "n_draws": 1000
+            },
+            "dpo": {
+              "point": 0.13305112105210282,
+              "ci_lo": 0.13055868769704346,
+              "ci_hi": 0.13570586967329212,
+              "se_boot": 0.0013425799963301729,
+              "n_draws": 1000
+            },
+            "rlvr": {
+              "point": 0.13301625512950632,
+              "ci_lo": 0.12986316041285925,
+              "ci_hi": 0.13599635907781232,
+              "se_boot": 0.00153604902041212,
+              "n_draws": 1000
+            }
+          },
+          "contrast_C": {
+            "point": -3.4865922596494237e-05,
+            "ci_lo": -0.002366511792982487,
+            "ci_hi": 0.002234718888864706,
+            "se_boot": 0.0012004430215555569,
+            "n_draws": 1000
+          }
+        },
+        "raw": {
+          "gap_per_stage": {
+            "sft": {
+              "point": 0.22376341534429567,
+              "ci_lo": 0.22082828650200576,
+              "ci_hi": 0.22675157410892763,
+              "se_boot": 0.0015322233953529941,
+              "n_draws": 1000
+            },
+            "dpo": {
+              "point": 0.21817747435168366,
+              "ci_lo": 0.21558434552016742,
+              "ci_hi": 0.22090372788233925,
+              "se_boot": 0.0014244956381971804,
+              "n_draws": 1000
+            },
+            "rlvr": {
+              "point": 0.21590515970634538,
+              "ci_lo": 0.21286448303481884,
+              "ci_hi": 0.21889293035658203,
+              "se_boot": 0.001577047542974719,
+              "n_draws": 1000
+            }
+          },
+          "contrast_C": {
+            "point": -0.0022723146453382803,
+            "ci_lo": -0.004884512735082355,
+            "ci_hi": 0.0003481817312553617,
+            "se_boot": 0.0013139782670241555,
+            "n_draws": 1000
+          }
+        }
+      },
+      "no_op": true,
+      "no_op_reason": "zero exact-duplicate prompt rows in this eval set's analyzed row set \u2014 the dedup re-read equals the original read by construction (recorded, not skipped)",
+      "dedup": {
+        "recal": {
+          "gap_per_stage": {
+            "sft": {
+              "point": 0.1385344778501152,
+              "ci_lo": 0.1357503967612283,
+              "ci_hi": 0.1413988517355932,
+              "se_boot": 0.0014669963810734318,
+              "n_draws": 1000
+            },
+            "dpo": {
+              "point": 0.13305112105210282,
+              "ci_lo": 0.13055868769704346,
+              "ci_hi": 0.13570586967329212,
+              "se_boot": 0.0013425799963301729,
+              "n_draws": 1000
+            },
+            "rlvr": {
+              "point": 0.13301625512950632,
+              "ci_lo": 0.12986316041285925,
+              "ci_hi": 0.13599635907781232,
+              "se_boot": 0.00153604902041212,
+              "n_draws": 1000
+            }
+          },
+          "contrast_C": {
+            "point": -3.4865922596494237e-05,
+            "ci_lo": -0.002366511792982487,
+            "ci_hi": 0.002234718888864706,
+            "se_boot": 0.0012004430215555569,
+            "n_draws": 1000
+          }
+        },
+        "raw": {
+          "gap_per_stage": {
+            "sft": {
+              "point": 0.22376341534429567,
+              "ci_lo": 0.22082828650200576,
+              "ci_hi": 0.22675157410892763,
+              "se_boot": 0.0015322233953529941,
+              "n_draws": 1000
+            },
+            "dpo": {
+              "point": 0.21817747435168366,
+              "ci_lo": 0.21558434552016742,
+              "ci_hi": 0.22090372788233925,
+              "se_boot": 0.0014244956381971804,
+              "n_draws": 1000
+            },
+            "rlvr": {
+              "point": 0.21590515970634538,
+              "ci_lo": 0.21286448303481884,
+              "ci_hi": 0.21889293035658203,
+              "se_boot": 0.001577047542974719,
+              "n_draws": 1000
+            }
+          },
+          "contrast_C": {
+            "point": -0.0022723146453382803,
+            "ci_lo": -0.004884512735082355,
+            "ci_hi": 0.0003481817312553617,
+            "se_boot": 0.0013139782670241555,
+            "n_draws": 1000
+          }
+        }
+      }
+    },
+    "gsm8k_test1319_chat": {
+      "eval_set": "gsm8k_test1319_chat",
+      "n_shared_rows": 1293,
+      "dup_digest": {
+        "n_rows_analyzed": 1293,
+        "join_rate": 1.0,
+        "n_dup_groups": 0,
+        "n_rows_excluded": 0,
+        "max_group_size": 1
+      },
+      "c_point_reproduction_dev": 0.0,
+      "original": {
+        "recal": {
+          "gap_per_stage": {
+            "sft": {
+              "point": -6.468866665887418e-06,
+              "ci_lo": -8.037894147122637e-06,
+              "ci_hi": -5.341359657490274e-06,
+              "se_boot": 6.970778633939789e-07,
+              "n_draws": 1000
+            },
+            "dpo": {
+              "point": -5.341347151355258e-06,
+              "ci_lo": -5.968807353207151e-06,
+              "ci_hi": -4.6112262409359065e-06,
+              "se_boot": 3.4468863207948304e-07,
+              "n_draws": 1000
+            },
+            "rlvr": {
+              "point": -6.308439300828361e-06,
+              "ci_lo": -7.151099848237696e-06,
+              "ci_hi": -5.569601590482698e-06,
+              "se_boot": 4.124245545343324e-07,
+              "n_draws": 1000
+            }
+          },
+          "contrast_C": {
+            "point": -9.670921494731033e-07,
+            "ci_lo": -2.047665152973832e-06,
+            "ci_hi": -2.63957176921404e-08,
+            "se_boot": 5.037512135814597e-07,
+            "n_draws": 1000
+          }
+        },
+        "raw": {
+          "gap_per_stage": {
+            "sft": {
+              "point": -4.8636185400185994e-05,
+              "ci_lo": -5.182086478894843e-05,
+              "ci_hi": -4.6004936912066865e-05,
+              "se_boot": 1.5213145445075428e-06,
+              "n_draws": 1000
+            },
+            "dpo": {
+              "point": -4.9348009440564056e-05,
+              "ci_lo": -5.3544685883721856e-05,
+              "ci_hi": -4.600214985358009e-05,
+              "se_boot": 2.025048252302625e-06,
+              "n_draws": 1000
+            },
+            "rlvr": {
+              "point": -5.088678950260217e-05,
+              "ci_lo": -5.4130633947768736e-05,
+              "ci_hi": -4.793256997573936e-05,
+              "se_boot": 1.6176137192278617e-06,
+              "n_draws": 1000
+            }
+          },
+          "contrast_C": {
+            "point": -1.5387800620381142e-06,
+            "ci_lo": -6.2067508227514615e-06,
+            "ci_hi": 3.1850662801452508e-06,
+            "se_boot": 2.4553190256726165e-06,
+            "n_draws": 1000
+          }
+        }
+      },
+      "no_op": true,
+      "no_op_reason": "zero exact-duplicate prompt rows in this eval set's analyzed row set \u2014 the dedup re-read equals the original read by construction (recorded, not skipped)",
+      "dedup": {
+        "recal": {
+          "gap_per_stage": {
+            "sft": {
+              "point": -6.468866665887418e-06,
+              "ci_lo": -8.037894147122637e-06,
+              "ci_hi": -5.341359657490274e-06,
+              "se_boot": 6.970778633939789e-07,
+              "n_draws": 1000
+            },
+            "dpo": {
+              "point": -5.341347151355258e-06,
+              "ci_lo": -5.968807353207151e-06,
+              "ci_hi": -4.6112262409359065e-06,
+              "se_boot": 3.4468863207948304e-07,
+              "n_draws": 1000
+            },
+            "rlvr": {
+              "point": -6.308439300828361e-06,
+              "ci_lo": -7.151099848237696e-06,
+              "ci_hi": -5.569601590482698e-06,
+              "se_boot": 4.124245545343324e-07,
+              "n_draws": 1000
+            }
+          },
+          "contrast_C": {
+            "point": -9.670921494731033e-07,
+            "ci_lo": -2.047665152973832e-06,
+            "ci_hi": -2.63957176921404e-08,
+            "se_boot": 5.037512135814597e-07,
+            "n_draws": 1000
+          }
+        },
+        "raw": {
+          "gap_per_stage": {
+            "sft": {
+              "point": -4.8636185400185994e-05,
+              "ci_lo": -5.182086478894843e-05,
+              "ci_hi": -4.6004936912066865e-05,
+              "se_boot": 1.5213145445075428e-06,
+              "n_draws": 1000
+            },
+            "dpo": {
+              "point": -4.9348009440564056e-05,
+              "ci_lo": -5.3544685883721856e-05,
+              "ci_hi": -4.600214985358009e-05,
+              "se_boot": 2.025048252302625e-06,
+              "n_draws": 1000
+            },
+            "rlvr": {
+              "point": -5.088678950260217e-05,
+              "ci_lo": -5.4130633947768736e-05,
+              "ci_hi": -4.793256997573936e-05,
+              "se_boot": 1.6176137192278617e-06,
+              "n_draws": 1000
+            }
+          },
+          "contrast_C": {
+            "point": -1.5387800620381142e-06,
+            "ci_lo": -6.2067508227514615e-06,
+            "ci_hi": 3.1850662801452508e-06,
+            "se_boot": 2.4553190256726165e-06,
+            "n_draws": 1000
+          }
+        }
+      }
+    }
+  },
+  "p2_l29_null_quantile": {
+    "rlvr_chat_lmsys5k": {
+      "layer": 29,
+      "n_draws": 200,
+      "p975_null_l29_fixed": -0.001948462594778444,
+      "p975_null_layer_max_recomputed": -0.0019400426385739855,
+      "p975_null_per_layer": {
+        "16": -0.002180669989620987,
+        "21": -0.002170529907346619,
+        "22": -0.0021556354843178804,
+        "29": -0.001948462594778444,
+        "30": -0.001990625176088451
+      },
+      "cell_id": "rlvr_chat_lmsys5k",
+      "band_p975_layer_max_committed": -0.0019400426385739855
+    },
+    "rlvr_naturalistic_lmsys5k": {
+      "layer": 29,
+      "n_draws": 200,
+      "p975_null_l29_fixed": -0.0019397200575267393,
+      "p975_null_layer_max_recomputed": -0.0019397200575267393,
+      "p975_null_per_layer": {
+        "16": -0.002169837407797004,
+        "21": -0.0021458453440839076,
+        "22": -0.0021275015108989824,
+        "29": -0.0019397200575267393,
+        "30": -0.002024052161658568
+      },
+      "cell_id": "rlvr_naturalistic_lmsys5k",
+      "band_p975_layer_max_committed": -0.0019397200575267393
+    }
+  }
+}

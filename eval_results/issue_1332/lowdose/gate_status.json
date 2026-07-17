@@ -1,0 +1,27 @@
+{
+  "status": "pass",
+  "cell": "A1__A1",
+  "delta_g_nats": 1.110015983581544,
+  "window_nats": [
+    0.5,
+    18.0
+  ],
+  "halt": false,
+  "inloop_delta_nats": 5.031402587890625,
+  "parity_gap_nats": 3.921386604309081,
+  "parity_warn": true,
+  "trained_mean_logp_marker": -25.975053787231445,
+  "parent_base_mean_logp_marker": -27.08506977081299,
+  "remeasured_base_mean_logp_marker": -27.074216079711913,
+  "base_remeasure_delta_nats": 0.010853691101075924,
+  "slot_identity_deviations": [],
+  "reproducibility_metadata": {
+    "issue": 1332,
+    "git_commit": "e5fe2cf47aef17d228f948710557087a3fe5c2dd",
+    "ts": "2026-07-15T21:54:04Z",
+    "torch_version": "2.8.0+cu128",
+    "transformers_version": "4.57.6",
+    "followup": "lowdose-grid-kill-battery",
+    "phase": "P2_gate"
+  }
+}

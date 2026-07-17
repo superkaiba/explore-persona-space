@@ -1,0 +1,2042 @@
+{
+  "commit": "bf154e5b16",
+  "created": "2026-07-17T07:44:26Z",
+  "figsize": [
+    11.5,
+    4.6
+  ],
+  "points": [
+    {
+      "layer index": 0.0,
+      "held-out R\u00b2 (context arm, full n)": 0.30360893116611065,
+      "series": "Q&A, full answers",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer index": 1.0,
+      "held-out R\u00b2 (context arm, full n)": 0.3078078682260359,
+      "series": "Q&A, full answers",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer index": 2.0,
+      "held-out R\u00b2 (context arm, full n)": 0.32963096655637414,
+      "series": "Q&A, full answers",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer index": 3.0,
+      "held-out R\u00b2 (context arm, full n)": 0.30345106131992905,
+      "series": "Q&A, full answers",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer index": 4.0,
+      "held-out R\u00b2 (context arm, full n)": 0.30476364435680137,
+      "series": "Q&A, full answers",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer index": 5.0,
+      "held-out R\u00b2 (context arm, full n)": 0.30953601258771624,
+      "series": "Q&A, full answers",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer index": 6.0,
+      "held-out R\u00b2 (context arm, full n)": 0.3223268549857191,
+      "series": "Q&A, full answers",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer index": 7.0,
+      "held-out R\u00b2 (context arm, full n)": 0.3214112769495304,
+      "series": "Q&A, full answers",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer index": 8.0,
+      "held-out R\u00b2 (context arm, full n)": 0.34176525584788975,
+      "series": "Q&A, full answers",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer index": 9.0,
+      "held-out R\u00b2 (context arm, full n)": 0.3431360554768872,
+      "series": "Q&A, full answers",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer index": 10.0,
+      "held-out R\u00b2 (context arm, full n)": 0.3599719915434002,
+      "series": "Q&A, full answers",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer index": 11.0,
+      "held-out R\u00b2 (context arm, full n)": 0.36787391228445077,
+      "series": "Q&A, full answers",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer index": 12.0,
+      "held-out R\u00b2 (context arm, full n)": 0.3774700458952679,
+      "series": "Q&A, full answers",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer index": 13.0,
+      "held-out R\u00b2 (context arm, full n)": 0.38526799096981423,
+      "series": "Q&A, full answers",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer index": 14.0,
+      "held-out R\u00b2 (context arm, full n)": 0.38729596257393795,
+      "series": "Q&A, full answers",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer index": 15.0,
+      "held-out R\u00b2 (context arm, full n)": 0.38809364042268624,
+      "series": "Q&A, full answers",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer index": 16.0,
+      "held-out R\u00b2 (context arm, full n)": 0.38478697490283575,
+      "series": "Q&A, full answers",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer index": 17.0,
+      "held-out R\u00b2 (context arm, full n)": 0.37900889685437544,
+      "series": "Q&A, full answers",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer index": 18.0,
+      "held-out R\u00b2 (context arm, full n)": 0.3807754252537703,
+      "series": "Q&A, full answers",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer index": 19.0,
+      "held-out R\u00b2 (context arm, full n)": 0.4103056976646371,
+      "series": "Q&A, full answers",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer index": 20.0,
+      "held-out R\u00b2 (context arm, full n)": 0.4063620155586253,
+      "series": "Q&A, full answers",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer index": 21.0,
+      "held-out R\u00b2 (context arm, full n)": 0.3985373160053276,
+      "series": "Q&A, full answers",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer index": 22.0,
+      "held-out R\u00b2 (context arm, full n)": 0.3933989004366083,
+      "series": "Q&A, full answers",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer index": 23.0,
+      "held-out R\u00b2 (context arm, full n)": 0.3819533063196938,
+      "series": "Q&A, full answers",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer index": 24.0,
+      "held-out R\u00b2 (context arm, full n)": 0.38850366205479914,
+      "series": "Q&A, full answers",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer index": 25.0,
+      "held-out R\u00b2 (context arm, full n)": 0.3933298805298777,
+      "series": "Q&A, full answers",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer index": 26.0,
+      "held-out R\u00b2 (context arm, full n)": 0.38681816435422933,
+      "series": "Q&A, full answers",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer index": 27.0,
+      "held-out R\u00b2 (context arm, full n)": 0.4481501554730247,
+      "series": "Q&A, full answers",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer index": 0.0,
+      "held-out R\u00b2 (context arm, full n)": 0.2533894798302776,
+      "series": "Q&A, one-line",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer index": 1.0,
+      "held-out R\u00b2 (context arm, full n)": 0.26076435627733896,
+      "series": "Q&A, one-line",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer index": 2.0,
+      "held-out R\u00b2 (context arm, full n)": 0.2787648427575199,
+      "series": "Q&A, one-line",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer index": 3.0,
+      "held-out R\u00b2 (context arm, full n)": 0.24883405658723767,
+      "series": "Q&A, one-line",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer index": 4.0,
+      "held-out R\u00b2 (context arm, full n)": 0.2574516326316223,
+      "series": "Q&A, one-line",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer index": 5.0,
+      "held-out R\u00b2 (context arm, full n)": 0.2611129091300136,
+      "series": "Q&A, one-line",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer index": 6.0,
+      "held-out R\u00b2 (context arm, full n)": 0.2772909199414384,
+      "series": "Q&A, one-line",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer index": 7.0,
+      "held-out R\u00b2 (context arm, full n)": 0.2783398063210123,
+      "series": "Q&A, one-line",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer index": 8.0,
+      "held-out R\u00b2 (context arm, full n)": 0.298093593142326,
+      "series": "Q&A, one-line",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer index": 9.0,
+      "held-out R\u00b2 (context arm, full n)": 0.30706121780091944,
+      "series": "Q&A, one-line",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer index": 10.0,
+      "held-out R\u00b2 (context arm, full n)": 0.32514924887416496,
+      "series": "Q&A, one-line",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer index": 11.0,
+      "held-out R\u00b2 (context arm, full n)": 0.3350711640532952,
+      "series": "Q&A, one-line",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer index": 12.0,
+      "held-out R\u00b2 (context arm, full n)": 0.3450608808906831,
+      "series": "Q&A, one-line",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer index": 13.0,
+      "held-out R\u00b2 (context arm, full n)": 0.36120557862787794,
+      "series": "Q&A, one-line",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer index": 14.0,
+      "held-out R\u00b2 (context arm, full n)": 0.3621716463915762,
+      "series": "Q&A, one-line",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer index": 15.0,
+      "held-out R\u00b2 (context arm, full n)": 0.36762820533769414,
+      "series": "Q&A, one-line",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer index": 16.0,
+      "held-out R\u00b2 (context arm, full n)": 0.36470876874463587,
+      "series": "Q&A, one-line",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer index": 17.0,
+      "held-out R\u00b2 (context arm, full n)": 0.35978456664580516,
+      "series": "Q&A, one-line",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer index": 18.0,
+      "held-out R\u00b2 (context arm, full n)": 0.36631890198743866,
+      "series": "Q&A, one-line",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer index": 19.0,
+      "held-out R\u00b2 (context arm, full n)": 0.3958970758135023,
+      "series": "Q&A, one-line",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer index": 20.0,
+      "held-out R\u00b2 (context arm, full n)": 0.38883222666292383,
+      "series": "Q&A, one-line",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer index": 21.0,
+      "held-out R\u00b2 (context arm, full n)": 0.38301084282617615,
+      "series": "Q&A, one-line",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer index": 22.0,
+      "held-out R\u00b2 (context arm, full n)": 0.37685083262530006,
+      "series": "Q&A, one-line",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer index": 23.0,
+      "held-out R\u00b2 (context arm, full n)": 0.3684809503770362,
+      "series": "Q&A, one-line",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer index": 24.0,
+      "held-out R\u00b2 (context arm, full n)": 0.37637249345777546,
+      "series": "Q&A, one-line",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer index": 25.0,
+      "held-out R\u00b2 (context arm, full n)": 0.3813579803365449,
+      "series": "Q&A, one-line",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer index": 26.0,
+      "held-out R\u00b2 (context arm, full n)": 0.3757822859465786,
+      "series": "Q&A, one-line",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer index": 27.0,
+      "held-out R\u00b2 (context arm, full n)": 0.4337421549257433,
+      "series": "Q&A, one-line",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer index": 0.0,
+      "held-out R\u00b2 (context arm, full n)": 0.29904090408985295,
+      "series": "persona-described responder",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer index": 1.0,
+      "held-out R\u00b2 (context arm, full n)": 0.3057578791059614,
+      "series": "persona-described responder",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer index": 2.0,
+      "held-out R\u00b2 (context arm, full n)": 0.32431505876223476,
+      "series": "persona-described responder",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer index": 3.0,
+      "held-out R\u00b2 (context arm, full n)": 0.2926043081194768,
+      "series": "persona-described responder",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer index": 4.0,
+      "held-out R\u00b2 (context arm, full n)": 0.2964473446223975,
+      "series": "persona-described responder",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer index": 5.0,
+      "held-out R\u00b2 (context arm, full n)": 0.3051174609984676,
+      "series": "persona-described responder",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer index": 6.0,
+      "held-out R\u00b2 (context arm, full n)": 0.31804901016786025,
+      "series": "persona-described responder",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer index": 7.0,
+      "held-out R\u00b2 (context arm, full n)": 0.31217905644077026,
+      "series": "persona-described responder",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer index": 8.0,
+      "held-out R\u00b2 (context arm, full n)": 0.32866271188484364,
+      "series": "persona-described responder",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer index": 9.0,
+      "held-out R\u00b2 (context arm, full n)": 0.3240669957872967,
+      "series": "persona-described responder",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer index": 10.0,
+      "held-out R\u00b2 (context arm, full n)": 0.33903308785071984,
+      "series": "persona-described responder",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer index": 11.0,
+      "held-out R\u00b2 (context arm, full n)": 0.35119005748659726,
+      "series": "persona-described responder",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer index": 12.0,
+      "held-out R\u00b2 (context arm, full n)": 0.35825762938239736,
+      "series": "persona-described responder",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer index": 13.0,
+      "held-out R\u00b2 (context arm, full n)": 0.3690031987611808,
+      "series": "persona-described responder",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer index": 14.0,
+      "held-out R\u00b2 (context arm, full n)": 0.37452461532775827,
+      "series": "persona-described responder",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer index": 15.0,
+      "held-out R\u00b2 (context arm, full n)": 0.3826674244155779,
+      "series": "persona-described responder",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer index": 16.0,
+      "held-out R\u00b2 (context arm, full n)": 0.3850508917323996,
+      "series": "persona-described responder",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer index": 17.0,
+      "held-out R\u00b2 (context arm, full n)": 0.3836844908687006,
+      "series": "persona-described responder",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer index": 18.0,
+      "held-out R\u00b2 (context arm, full n)": 0.3889925526163379,
+      "series": "persona-described responder",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer index": 19.0,
+      "held-out R\u00b2 (context arm, full n)": 0.4122845033767858,
+      "series": "persona-described responder",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer index": 20.0,
+      "held-out R\u00b2 (context arm, full n)": 0.4160747477567761,
+      "series": "persona-described responder",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer index": 21.0,
+      "held-out R\u00b2 (context arm, full n)": 0.41287993149462565,
+      "series": "persona-described responder",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer index": 22.0,
+      "held-out R\u00b2 (context arm, full n)": 0.40416418729082704,
+      "series": "persona-described responder",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer index": 23.0,
+      "held-out R\u00b2 (context arm, full n)": 0.39690507034498423,
+      "series": "persona-described responder",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer index": 24.0,
+      "held-out R\u00b2 (context arm, full n)": 0.40431952398134163,
+      "series": "persona-described responder",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer index": 25.0,
+      "held-out R\u00b2 (context arm, full n)": 0.4091590623511776,
+      "series": "persona-described responder",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer index": 26.0,
+      "held-out R\u00b2 (context arm, full n)": 0.4041618181723309,
+      "series": "persona-described responder",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer index": 27.0,
+      "held-out R\u00b2 (context arm, full n)": 0.47840012874567606,
+      "series": "persona-described responder",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer index": 0.0,
+      "held-out R\u00b2 (context arm, full n)": 0.14045044054042888,
+      "series": "fiction-framed Q&A",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer index": 1.0,
+      "held-out R\u00b2 (context arm, full n)": 0.1611710970120751,
+      "series": "fiction-framed Q&A",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer index": 2.0,
+      "held-out R\u00b2 (context arm, full n)": 0.18155214979149192,
+      "series": "fiction-framed Q&A",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer index": 3.0,
+      "held-out R\u00b2 (context arm, full n)": 0.17177478669062352,
+      "series": "fiction-framed Q&A",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer index": 4.0,
+      "held-out R\u00b2 (context arm, full n)": 0.18494019070817314,
+      "series": "fiction-framed Q&A",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer index": 5.0,
+      "held-out R\u00b2 (context arm, full n)": 0.19056151187653747,
+      "series": "fiction-framed Q&A",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer index": 6.0,
+      "held-out R\u00b2 (context arm, full n)": 0.20321519788532105,
+      "series": "fiction-framed Q&A",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer index": 7.0,
+      "held-out R\u00b2 (context arm, full n)": 0.19903685615776534,
+      "series": "fiction-framed Q&A",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer index": 8.0,
+      "held-out R\u00b2 (context arm, full n)": 0.21461733827730878,
+      "series": "fiction-framed Q&A",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer index": 9.0,
+      "held-out R\u00b2 (context arm, full n)": 0.20996032614935944,
+      "series": "fiction-framed Q&A",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer index": 10.0,
+      "held-out R\u00b2 (context arm, full n)": 0.22280970128708566,
+      "series": "fiction-framed Q&A",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer index": 11.0,
+      "held-out R\u00b2 (context arm, full n)": 0.23428570441156193,
+      "series": "fiction-framed Q&A",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer index": 12.0,
+      "held-out R\u00b2 (context arm, full n)": 0.24022426549941722,
+      "series": "fiction-framed Q&A",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer index": 13.0,
+      "held-out R\u00b2 (context arm, full n)": 0.25448867072665793,
+      "series": "fiction-framed Q&A",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer index": 14.0,
+      "held-out R\u00b2 (context arm, full n)": 0.25778994436378466,
+      "series": "fiction-framed Q&A",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer index": 15.0,
+      "held-out R\u00b2 (context arm, full n)": 0.2690074652166876,
+      "series": "fiction-framed Q&A",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer index": 16.0,
+      "held-out R\u00b2 (context arm, full n)": 0.2708358447874828,
+      "series": "fiction-framed Q&A",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer index": 17.0,
+      "held-out R\u00b2 (context arm, full n)": 0.2678455192648911,
+      "series": "fiction-framed Q&A",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer index": 18.0,
+      "held-out R\u00b2 (context arm, full n)": 0.2738877064472479,
+      "series": "fiction-framed Q&A",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer index": 19.0,
+      "held-out R\u00b2 (context arm, full n)": 0.28369670770864763,
+      "series": "fiction-framed Q&A",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer index": 20.0,
+      "held-out R\u00b2 (context arm, full n)": 0.27881870047589186,
+      "series": "fiction-framed Q&A",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer index": 21.0,
+      "held-out R\u00b2 (context arm, full n)": 0.2709888074995557,
+      "series": "fiction-framed Q&A",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer index": 22.0,
+      "held-out R\u00b2 (context arm, full n)": 0.26063304272483157,
+      "series": "fiction-framed Q&A",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer index": 23.0,
+      "held-out R\u00b2 (context arm, full n)": 0.24909584581464872,
+      "series": "fiction-framed Q&A",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer index": 24.0,
+      "held-out R\u00b2 (context arm, full n)": 0.24595792245523618,
+      "series": "fiction-framed Q&A",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer index": 25.0,
+      "held-out R\u00b2 (context arm, full n)": 0.23962406681243664,
+      "series": "fiction-framed Q&A",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer index": 26.0,
+      "held-out R\u00b2 (context arm, full n)": 0.2381269443705133,
+      "series": "fiction-framed Q&A",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer index": 27.0,
+      "held-out R\u00b2 (context arm, full n)": 0.2804102319681937,
+      "series": "fiction-framed Q&A",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer index": 0.0,
+      "held-out R\u00b2 (context arm, full n)": 0.21381552902028647,
+      "series": "story scenes (fiction endpoint)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer index": 1.0,
+      "held-out R\u00b2 (context arm, full n)": 0.23454523443445638,
+      "series": "story scenes (fiction endpoint)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer index": 2.0,
+      "held-out R\u00b2 (context arm, full n)": 0.23605044932419086,
+      "series": "story scenes (fiction endpoint)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer index": 3.0,
+      "held-out R\u00b2 (context arm, full n)": 0.2517400085904925,
+      "series": "story scenes (fiction endpoint)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer index": 4.0,
+      "held-out R\u00b2 (context arm, full n)": 0.2555241316570763,
+      "series": "story scenes (fiction endpoint)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer index": 5.0,
+      "held-out R\u00b2 (context arm, full n)": 0.25907995721771304,
+      "series": "story scenes (fiction endpoint)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer index": 6.0,
+      "held-out R\u00b2 (context arm, full n)": 0.26338309190745696,
+      "series": "story scenes (fiction endpoint)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer index": 7.0,
+      "held-out R\u00b2 (context arm, full n)": 0.281561554184142,
+      "series": "story scenes (fiction endpoint)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer index": 8.0,
+      "held-out R\u00b2 (context arm, full n)": 0.27790213938837405,
+      "series": "story scenes (fiction endpoint)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer index": 9.0,
+      "held-out R\u00b2 (context arm, full n)": 0.2831982620655669,
+      "series": "story scenes (fiction endpoint)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer index": 10.0,
+      "held-out R\u00b2 (context arm, full n)": 0.29425573692200924,
+      "series": "story scenes (fiction endpoint)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer index": 11.0,
+      "held-out R\u00b2 (context arm, full n)": 0.30365272275742006,
+      "series": "story scenes (fiction endpoint)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer index": 12.0,
+      "held-out R\u00b2 (context arm, full n)": 0.3011796619036199,
+      "series": "story scenes (fiction endpoint)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer index": 13.0,
+      "held-out R\u00b2 (context arm, full n)": 0.31035375166073165,
+      "series": "story scenes (fiction endpoint)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer index": 14.0,
+      "held-out R\u00b2 (context arm, full n)": 0.3148964013666692,
+      "series": "story scenes (fiction endpoint)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer index": 15.0,
+      "held-out R\u00b2 (context arm, full n)": 0.32447621831310147,
+      "series": "story scenes (fiction endpoint)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer index": 16.0,
+      "held-out R\u00b2 (context arm, full n)": 0.32472608836521133,
+      "series": "story scenes (fiction endpoint)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer index": 17.0,
+      "held-out R\u00b2 (context arm, full n)": 0.3256051573062949,
+      "series": "story scenes (fiction endpoint)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer index": 18.0,
+      "held-out R\u00b2 (context arm, full n)": 0.3320601322918464,
+      "series": "story scenes (fiction endpoint)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer index": 19.0,
+      "held-out R\u00b2 (context arm, full n)": 0.34406558727138237,
+      "series": "story scenes (fiction endpoint)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer index": 20.0,
+      "held-out R\u00b2 (context arm, full n)": 0.3388111534104502,
+      "series": "story scenes (fiction endpoint)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer index": 21.0,
+      "held-out R\u00b2 (context arm, full n)": 0.33005176649702,
+      "series": "story scenes (fiction endpoint)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer index": 22.0,
+      "held-out R\u00b2 (context arm, full n)": 0.32200368669488005,
+      "series": "story scenes (fiction endpoint)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer index": 23.0,
+      "held-out R\u00b2 (context arm, full n)": 0.3185109512520605,
+      "series": "story scenes (fiction endpoint)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer index": 24.0,
+      "held-out R\u00b2 (context arm, full n)": 0.3220898913575685,
+      "series": "story scenes (fiction endpoint)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer index": 25.0,
+      "held-out R\u00b2 (context arm, full n)": 0.3179949599548333,
+      "series": "story scenes (fiction endpoint)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer index": 26.0,
+      "held-out R\u00b2 (context arm, full n)": 0.325581316786608,
+      "series": "story scenes (fiction endpoint)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer index": 27.0,
+      "held-out R\u00b2 (context arm, full n)": 0.34023970755882105,
+      "series": "story scenes (fiction endpoint)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer index": 0.0,
+      "held-out R\u00b2 (context arm, full n)": 0.26466356331755203,
+      "series": "Q&A, full answers",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer index": 1.0,
+      "held-out R\u00b2 (context arm, full n)": 0.28960402294773024,
+      "series": "Q&A, full answers",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer index": 2.0,
+      "held-out R\u00b2 (context arm, full n)": 0.32798514216195673,
+      "series": "Q&A, full answers",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer index": 3.0,
+      "held-out R\u00b2 (context arm, full n)": 0.30413623828106273,
+      "series": "Q&A, full answers",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer index": 4.0,
+      "held-out R\u00b2 (context arm, full n)": 0.3184231970051149,
+      "series": "Q&A, full answers",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer index": 5.0,
+      "held-out R\u00b2 (context arm, full n)": 0.324126999342925,
+      "series": "Q&A, full answers",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer index": 6.0,
+      "held-out R\u00b2 (context arm, full n)": 0.3436684775673692,
+      "series": "Q&A, full answers",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer index": 7.0,
+      "held-out R\u00b2 (context arm, full n)": 0.34095152437222087,
+      "series": "Q&A, full answers",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer index": 8.0,
+      "held-out R\u00b2 (context arm, full n)": 0.37207575350534383,
+      "series": "Q&A, full answers",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer index": 9.0,
+      "held-out R\u00b2 (context arm, full n)": 0.3753874464920831,
+      "series": "Q&A, full answers",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer index": 10.0,
+      "held-out R\u00b2 (context arm, full n)": 0.3980711226909345,
+      "series": "Q&A, full answers",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer index": 11.0,
+      "held-out R\u00b2 (context arm, full n)": 0.3987968122451794,
+      "series": "Q&A, full answers",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer index": 12.0,
+      "held-out R\u00b2 (context arm, full n)": 0.4146008712343099,
+      "series": "Q&A, full answers",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer index": 13.0,
+      "held-out R\u00b2 (context arm, full n)": 0.40913702806399255,
+      "series": "Q&A, full answers",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer index": 14.0,
+      "held-out R\u00b2 (context arm, full n)": 0.41709207587384134,
+      "series": "Q&A, full answers",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer index": 15.0,
+      "held-out R\u00b2 (context arm, full n)": 0.41406084386897046,
+      "series": "Q&A, full answers",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer index": 16.0,
+      "held-out R\u00b2 (context arm, full n)": 0.4145622028367918,
+      "series": "Q&A, full answers",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer index": 17.0,
+      "held-out R\u00b2 (context arm, full n)": 0.40750316183383806,
+      "series": "Q&A, full answers",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer index": 18.0,
+      "held-out R\u00b2 (context arm, full n)": 0.4088274573049083,
+      "series": "Q&A, full answers",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer index": 19.0,
+      "held-out R\u00b2 (context arm, full n)": 0.4708150217155602,
+      "series": "Q&A, full answers",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer index": 20.0,
+      "held-out R\u00b2 (context arm, full n)": 0.46109879608977444,
+      "series": "Q&A, full answers",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer index": 21.0,
+      "held-out R\u00b2 (context arm, full n)": 0.4551767600069756,
+      "series": "Q&A, full answers",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer index": 22.0,
+      "held-out R\u00b2 (context arm, full n)": 0.4498823698802734,
+      "series": "Q&A, full answers",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer index": 23.0,
+      "held-out R\u00b2 (context arm, full n)": 0.44913920527326945,
+      "series": "Q&A, full answers",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer index": 24.0,
+      "held-out R\u00b2 (context arm, full n)": 0.4649770715412219,
+      "series": "Q&A, full answers",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer index": 25.0,
+      "held-out R\u00b2 (context arm, full n)": 0.48190268226615196,
+      "series": "Q&A, full answers",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer index": 26.0,
+      "held-out R\u00b2 (context arm, full n)": 0.46335070287253644,
+      "series": "Q&A, full answers",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer index": 27.0,
+      "held-out R\u00b2 (context arm, full n)": 0.483831706434362,
+      "series": "Q&A, full answers",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer index": 0.0,
+      "held-out R\u00b2 (context arm, full n)": 0.34590318870096926,
+      "series": "Q&A, one-line",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer index": 1.0,
+      "held-out R\u00b2 (context arm, full n)": 0.34255948007823744,
+      "series": "Q&A, one-line",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer index": 2.0,
+      "held-out R\u00b2 (context arm, full n)": 0.35608308690512325,
+      "series": "Q&A, one-line",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer index": 3.0,
+      "held-out R\u00b2 (context arm, full n)": 0.32180201317372914,
+      "series": "Q&A, one-line",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer index": 4.0,
+      "held-out R\u00b2 (context arm, full n)": 0.32725365671401163,
+      "series": "Q&A, one-line",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer index": 5.0,
+      "held-out R\u00b2 (context arm, full n)": 0.3324276672903477,
+      "series": "Q&A, one-line",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer index": 6.0,
+      "held-out R\u00b2 (context arm, full n)": 0.3534699737175391,
+      "series": "Q&A, one-line",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer index": 7.0,
+      "held-out R\u00b2 (context arm, full n)": 0.34872033054635065,
+      "series": "Q&A, one-line",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer index": 8.0,
+      "held-out R\u00b2 (context arm, full n)": 0.3703656619509198,
+      "series": "Q&A, one-line",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer index": 9.0,
+      "held-out R\u00b2 (context arm, full n)": 0.3818105155445375,
+      "series": "Q&A, one-line",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer index": 10.0,
+      "held-out R\u00b2 (context arm, full n)": 0.40163913583554967,
+      "series": "Q&A, one-line",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer index": 11.0,
+      "held-out R\u00b2 (context arm, full n)": 0.4107031885106953,
+      "series": "Q&A, one-line",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer index": 12.0,
+      "held-out R\u00b2 (context arm, full n)": 0.4254338299601269,
+      "series": "Q&A, one-line",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer index": 13.0,
+      "held-out R\u00b2 (context arm, full n)": 0.43728916081751756,
+      "series": "Q&A, one-line",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer index": 14.0,
+      "held-out R\u00b2 (context arm, full n)": 0.4439965055854952,
+      "series": "Q&A, one-line",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer index": 15.0,
+      "held-out R\u00b2 (context arm, full n)": 0.45335112497199737,
+      "series": "Q&A, one-line",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer index": 16.0,
+      "held-out R\u00b2 (context arm, full n)": 0.45240173474747936,
+      "series": "Q&A, one-line",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer index": 17.0,
+      "held-out R\u00b2 (context arm, full n)": 0.4481186218440064,
+      "series": "Q&A, one-line",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer index": 18.0,
+      "held-out R\u00b2 (context arm, full n)": 0.4568497139395704,
+      "series": "Q&A, one-line",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer index": 19.0,
+      "held-out R\u00b2 (context arm, full n)": 0.49806281767730465,
+      "series": "Q&A, one-line",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer index": 20.0,
+      "held-out R\u00b2 (context arm, full n)": 0.48461778533458866,
+      "series": "Q&A, one-line",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer index": 21.0,
+      "held-out R\u00b2 (context arm, full n)": 0.478359449729317,
+      "series": "Q&A, one-line",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer index": 22.0,
+      "held-out R\u00b2 (context arm, full n)": 0.4695854381654099,
+      "series": "Q&A, one-line",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer index": 23.0,
+      "held-out R\u00b2 (context arm, full n)": 0.46643103119557505,
+      "series": "Q&A, one-line",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer index": 24.0,
+      "held-out R\u00b2 (context arm, full n)": 0.4777329944444346,
+      "series": "Q&A, one-line",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer index": 25.0,
+      "held-out R\u00b2 (context arm, full n)": 0.484249879235801,
+      "series": "Q&A, one-line",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer index": 26.0,
+      "held-out R\u00b2 (context arm, full n)": 0.4644999956510353,
+      "series": "Q&A, one-line",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer index": 27.0,
+      "held-out R\u00b2 (context arm, full n)": 0.48051555217133424,
+      "series": "Q&A, one-line",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer index": 0.0,
+      "held-out R\u00b2 (context arm, full n)": 0.3849169691079195,
+      "series": "persona-described responder",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer index": 1.0,
+      "held-out R\u00b2 (context arm, full n)": 0.3861519467121406,
+      "series": "persona-described responder",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer index": 2.0,
+      "held-out R\u00b2 (context arm, full n)": 0.4029281781460382,
+      "series": "persona-described responder",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer index": 3.0,
+      "held-out R\u00b2 (context arm, full n)": 0.37367257022448896,
+      "series": "persona-described responder",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer index": 4.0,
+      "held-out R\u00b2 (context arm, full n)": 0.3789454633619296,
+      "series": "persona-described responder",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer index": 5.0,
+      "held-out R\u00b2 (context arm, full n)": 0.38556774835045904,
+      "series": "persona-described responder",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer index": 6.0,
+      "held-out R\u00b2 (context arm, full n)": 0.3993336498328771,
+      "series": "persona-described responder",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer index": 7.0,
+      "held-out R\u00b2 (context arm, full n)": 0.39665938518529775,
+      "series": "persona-described responder",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer index": 8.0,
+      "held-out R\u00b2 (context arm, full n)": 0.4144505255594927,
+      "series": "persona-described responder",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer index": 9.0,
+      "held-out R\u00b2 (context arm, full n)": 0.4201324358014201,
+      "series": "persona-described responder",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer index": 10.0,
+      "held-out R\u00b2 (context arm, full n)": 0.43863103375437573,
+      "series": "persona-described responder",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer index": 11.0,
+      "held-out R\u00b2 (context arm, full n)": 0.4505753962577562,
+      "series": "persona-described responder",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer index": 12.0,
+      "held-out R\u00b2 (context arm, full n)": 0.4617660167224057,
+      "series": "persona-described responder",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer index": 13.0,
+      "held-out R\u00b2 (context arm, full n)": 0.4668656325423246,
+      "series": "persona-described responder",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer index": 14.0,
+      "held-out R\u00b2 (context arm, full n)": 0.47637836391811206,
+      "series": "persona-described responder",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer index": 15.0,
+      "held-out R\u00b2 (context arm, full n)": 0.48516962916388773,
+      "series": "persona-described responder",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer index": 16.0,
+      "held-out R\u00b2 (context arm, full n)": 0.48548366191843906,
+      "series": "persona-described responder",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer index": 17.0,
+      "held-out R\u00b2 (context arm, full n)": 0.48453906876662367,
+      "series": "persona-described responder",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer index": 18.0,
+      "held-out R\u00b2 (context arm, full n)": 0.49069245332669753,
+      "series": "persona-described responder",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer index": 19.0,
+      "held-out R\u00b2 (context arm, full n)": 0.5220910512470429,
+      "series": "persona-described responder",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer index": 20.0,
+      "held-out R\u00b2 (context arm, full n)": 0.5123743840630577,
+      "series": "persona-described responder",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer index": 21.0,
+      "held-out R\u00b2 (context arm, full n)": 0.5038276754237032,
+      "series": "persona-described responder",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer index": 22.0,
+      "held-out R\u00b2 (context arm, full n)": 0.4911008591407947,
+      "series": "persona-described responder",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer index": 23.0,
+      "held-out R\u00b2 (context arm, full n)": 0.4868132455246169,
+      "series": "persona-described responder",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer index": 24.0,
+      "held-out R\u00b2 (context arm, full n)": 0.49402397644717555,
+      "series": "persona-described responder",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer index": 25.0,
+      "held-out R\u00b2 (context arm, full n)": 0.4992318389456404,
+      "series": "persona-described responder",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer index": 26.0,
+      "held-out R\u00b2 (context arm, full n)": 0.4814367607629241,
+      "series": "persona-described responder",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer index": 27.0,
+      "held-out R\u00b2 (context arm, full n)": 0.49926097102943523,
+      "series": "persona-described responder",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer index": 0.0,
+      "held-out R\u00b2 (context arm, full n)": 0.22969060974878497,
+      "series": "fiction-framed Q&A",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer index": 1.0,
+      "held-out R\u00b2 (context arm, full n)": 0.2484621689907669,
+      "series": "fiction-framed Q&A",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer index": 2.0,
+      "held-out R\u00b2 (context arm, full n)": 0.2636735363966385,
+      "series": "fiction-framed Q&A",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer index": 3.0,
+      "held-out R\u00b2 (context arm, full n)": 0.24099252313752817,
+      "series": "fiction-framed Q&A",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer index": 4.0,
+      "held-out R\u00b2 (context arm, full n)": 0.24830421885337406,
+      "series": "fiction-framed Q&A",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer index": 5.0,
+      "held-out R\u00b2 (context arm, full n)": 0.2597242401559593,
+      "series": "fiction-framed Q&A",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer index": 6.0,
+      "held-out R\u00b2 (context arm, full n)": 0.2762487075123248,
+      "series": "fiction-framed Q&A",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer index": 7.0,
+      "held-out R\u00b2 (context arm, full n)": 0.2599056122918163,
+      "series": "fiction-framed Q&A",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer index": 8.0,
+      "held-out R\u00b2 (context arm, full n)": 0.2768982779313587,
+      "series": "fiction-framed Q&A",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer index": 9.0,
+      "held-out R\u00b2 (context arm, full n)": 0.28224723038231936,
+      "series": "fiction-framed Q&A",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer index": 10.0,
+      "held-out R\u00b2 (context arm, full n)": 0.2967814648410887,
+      "series": "fiction-framed Q&A",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer index": 11.0,
+      "held-out R\u00b2 (context arm, full n)": 0.31091110295533253,
+      "series": "fiction-framed Q&A",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer index": 12.0,
+      "held-out R\u00b2 (context arm, full n)": 0.32032930528090997,
+      "series": "fiction-framed Q&A",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer index": 13.0,
+      "held-out R\u00b2 (context arm, full n)": 0.3289006297038586,
+      "series": "fiction-framed Q&A",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer index": 14.0,
+      "held-out R\u00b2 (context arm, full n)": 0.3345998630715925,
+      "series": "fiction-framed Q&A",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer index": 15.0,
+      "held-out R\u00b2 (context arm, full n)": 0.34886123495733645,
+      "series": "fiction-framed Q&A",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer index": 16.0,
+      "held-out R\u00b2 (context arm, full n)": 0.3503090112877424,
+      "series": "fiction-framed Q&A",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer index": 17.0,
+      "held-out R\u00b2 (context arm, full n)": 0.35137532654115,
+      "series": "fiction-framed Q&A",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer index": 18.0,
+      "held-out R\u00b2 (context arm, full n)": 0.35855521140217617,
+      "series": "fiction-framed Q&A",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer index": 19.0,
+      "held-out R\u00b2 (context arm, full n)": 0.36757070156153415,
+      "series": "fiction-framed Q&A",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer index": 20.0,
+      "held-out R\u00b2 (context arm, full n)": 0.35653907874133606,
+      "series": "fiction-framed Q&A",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer index": 21.0,
+      "held-out R\u00b2 (context arm, full n)": 0.3386524226554243,
+      "series": "fiction-framed Q&A",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer index": 22.0,
+      "held-out R\u00b2 (context arm, full n)": 0.3232241600629159,
+      "series": "fiction-framed Q&A",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer index": 23.0,
+      "held-out R\u00b2 (context arm, full n)": 0.3107836622023301,
+      "series": "fiction-framed Q&A",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer index": 24.0,
+      "held-out R\u00b2 (context arm, full n)": 0.3084159125552898,
+      "series": "fiction-framed Q&A",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer index": 25.0,
+      "held-out R\u00b2 (context arm, full n)": 0.3045739517957513,
+      "series": "fiction-framed Q&A",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer index": 26.0,
+      "held-out R\u00b2 (context arm, full n)": 0.2949651059263567,
+      "series": "fiction-framed Q&A",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer index": 27.0,
+      "held-out R\u00b2 (context arm, full n)": 0.3371539007631592,
+      "series": "fiction-framed Q&A",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer index": 0.0,
+      "held-out R\u00b2 (context arm, full n)": 0.08190997500617497,
+      "series": "story scenes (fiction endpoint)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer index": 1.0,
+      "held-out R\u00b2 (context arm, full n)": 0.09901666487881083,
+      "series": "story scenes (fiction endpoint)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer index": 2.0,
+      "held-out R\u00b2 (context arm, full n)": 0.10704393067391377,
+      "series": "story scenes (fiction endpoint)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer index": 3.0,
+      "held-out R\u00b2 (context arm, full n)": 0.11113907817714708,
+      "series": "story scenes (fiction endpoint)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer index": 4.0,
+      "held-out R\u00b2 (context arm, full n)": 0.1274658380266982,
+      "series": "story scenes (fiction endpoint)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer index": 5.0,
+      "held-out R\u00b2 (context arm, full n)": 0.1384724340406919,
+      "series": "story scenes (fiction endpoint)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer index": 6.0,
+      "held-out R\u00b2 (context arm, full n)": 0.1507223208518563,
+      "series": "story scenes (fiction endpoint)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer index": 7.0,
+      "held-out R\u00b2 (context arm, full n)": 0.1499790768116242,
+      "series": "story scenes (fiction endpoint)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer index": 8.0,
+      "held-out R\u00b2 (context arm, full n)": 0.1521410542236114,
+      "series": "story scenes (fiction endpoint)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer index": 9.0,
+      "held-out R\u00b2 (context arm, full n)": 0.1663278394748415,
+      "series": "story scenes (fiction endpoint)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer index": 10.0,
+      "held-out R\u00b2 (context arm, full n)": 0.1821906084760451,
+      "series": "story scenes (fiction endpoint)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer index": 11.0,
+      "held-out R\u00b2 (context arm, full n)": 0.18996181465943046,
+      "series": "story scenes (fiction endpoint)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer index": 12.0,
+      "held-out R\u00b2 (context arm, full n)": 0.19548833834626708,
+      "series": "story scenes (fiction endpoint)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer index": 13.0,
+      "held-out R\u00b2 (context arm, full n)": 0.21948301441105955,
+      "series": "story scenes (fiction endpoint)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer index": 14.0,
+      "held-out R\u00b2 (context arm, full n)": 0.2270853071024369,
+      "series": "story scenes (fiction endpoint)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer index": 15.0,
+      "held-out R\u00b2 (context arm, full n)": 0.23499152388216452,
+      "series": "story scenes (fiction endpoint)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer index": 16.0,
+      "held-out R\u00b2 (context arm, full n)": 0.23927881893466918,
+      "series": "story scenes (fiction endpoint)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer index": 17.0,
+      "held-out R\u00b2 (context arm, full n)": 0.24094907281040032,
+      "series": "story scenes (fiction endpoint)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer index": 18.0,
+      "held-out R\u00b2 (context arm, full n)": 0.25435669091463664,
+      "series": "story scenes (fiction endpoint)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer index": 19.0,
+      "held-out R\u00b2 (context arm, full n)": 0.2725131974727546,
+      "series": "story scenes (fiction endpoint)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer index": 20.0,
+      "held-out R\u00b2 (context arm, full n)": 0.27506654071878217,
+      "series": "story scenes (fiction endpoint)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer index": 21.0,
+      "held-out R\u00b2 (context arm, full n)": 0.28538788266576,
+      "series": "story scenes (fiction endpoint)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer index": 22.0,
+      "held-out R\u00b2 (context arm, full n)": 0.28329029247016513,
+      "series": "story scenes (fiction endpoint)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer index": 23.0,
+      "held-out R\u00b2 (context arm, full n)": 0.2781791891125917,
+      "series": "story scenes (fiction endpoint)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer index": 24.0,
+      "held-out R\u00b2 (context arm, full n)": 0.29170839920398844,
+      "series": "story scenes (fiction endpoint)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer index": 25.0,
+      "held-out R\u00b2 (context arm, full n)": 0.2871054421498205,
+      "series": "story scenes (fiction endpoint)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer index": 26.0,
+      "held-out R\u00b2 (context arm, full n)": 0.29521058973076103,
+      "series": "story scenes (fiction endpoint)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer index": 27.0,
+      "held-out R\u00b2 (context arm, full n)": 0.3222174963270221,
+      "series": "story scenes (fiction endpoint)",
+      "_kind": "line",
+      "_group": 9
+    }
+  ],
+  "n_series": 10,
+  "total_points": 280,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "base model",
+        "xlabel": "layer index",
+        "ylabel": "held-out R\u00b2 (context arm, full n)",
+        "xticklabels": [
+          "\u22125",
+          "0",
+          "5",
+          "10",
+          "15",
+          "20",
+          "25",
+          "30"
+        ],
+        "yticklabels": [
+          "\u22120.1",
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6"
+        ]
+      },
+      {
+        "title_left": "instruct model",
+        "xlabel": "layer index",
+        "ylabel": "held-out R\u00b2 (context arm, full n)",
+        "legend_labels": [
+          "Q&A, full answers",
+          "Q&A, one-line",
+          "persona-described responder",
+          "fiction-framed Q&A",
+          "story scenes (fiction endpoint)"
+        ],
+        "xticklabels": [
+          "\u22125",
+          "0",
+          "5",
+          "10",
+          "15",
+          "20",
+          "25",
+          "30"
+        ],
+        "yticklabels": [
+          "\u22120.1",
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6"
+        ]
+      }
+    ],
+    "series": [
+      "Q&A, full answers",
+      "Q&A, one-line",
+      "persona-described responder",
+      "fiction-framed Q&A",
+      "story scenes (fiction endpoint)"
+    ]
+  }
+}

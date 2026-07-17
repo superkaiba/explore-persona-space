@@ -64,10 +64,30 @@ def parse_args() -> argparse.Namespace:
         default="",
         help="flavor tag prefixing every cell_id / swap file (e.g. 'onpolicy_', 'tf_')",
     )
+    ap.add_argument(
+        "--personas",
+        type=str,
+        default="",
+        help=(
+            "comma list of WITHIN-map personas to fit (empty = all 4). run_swap always "
+            "pools over the FULL store regardless (the derangement needs every persona)."
+        ),
+    )
     ap.add_argument("--null-draws", type=int, default=c1310.N_NULL_DRAWS)
     ap.add_argument("--folds", type=int, default=c1310.N_FOLDS)
     ap.add_argument("--seed", type=int, default=c1310.FIT_SEED)
     ap.add_argument("--n-boot", type=int, default=c1310.N_BOOTSTRAP)
+    ap.add_argument(
+        "--gcv-dof-cap",
+        type=float,
+        default=None,
+        help=(
+            "exclude (near-)interpolating lambdas from the GCV scan: skip any lambda "
+            "whose effective dof exceeds cap*n_tr (fit825.GCV_DOF_CAP; default None = "
+            "the committed GCV behavior). Use 0.9 for n<p stores where GCV degenerates "
+            "at the grid floor (#1310 onpolicy-prefill mid layers)."
+        ),
+    )
     ap.add_argument(
         "--verify-vectorized",
         action="store_true",
@@ -158,6 +178,7 @@ def fit_cell(cell_id: str, xy: dict, args) -> dict:
         "r2_bootstrap_row_frozen": boot_row,
         "n_folds": args.folds,
         "null_draws": args.null_draws,
+        "gcv_dof_cap": args.gcv_dof_cap,
     }
     c1310.write_json(args.out_dir / f"cells_{cell_id}.json", payload)
     c1310.write_json(
@@ -278,6 +299,7 @@ def run_swap(store: dict, model_kind: str, args) -> dict | None:
         "n_groups": int(gb_c["n_groups"]),
         "n_boot": int(args.n_boot),
         "paired_group_bootstrap": True,
+        "gcv_dof_cap": args.gcv_dof_cap,
     }
     c1310.write_json(args.out_dir / f"swap_{args.tag}{model_kind}.json", payload)
     return payload
@@ -356,6 +378,7 @@ def build_summary(results: dict, swaps: dict, args) -> None:
 
 def main() -> int:
     args = parse_args()
+    fit825.GCV_DOF_CAP = args.gcv_dof_cap  # None = committed GCV behavior
     if args.verify_vectorized:
         fit825.assert_vectorized_equivalence(seed=args.seed)
         return 0
@@ -363,7 +386,12 @@ def main() -> int:
     models = [m.strip() for m in args.models.split(",") if m.strip()]
     for m in models:
         assert m in c1310.MODEL_KINDS, f"unknown model {m!r}"
-    print(f"[phase=p3_fits] fit battery (models={models}, tag={args.tag!r})")
+    personas = [p.strip() for p in args.personas.split(",") if p.strip()] or list(
+        c1310.PERSONA_LABELS
+    )
+    for p in personas:
+        assert p in c1310.PERSONA_LABELS, f"unknown persona {p!r}"
+    print(f"[phase=p3_fits] fit battery (models={models}, tag={args.tag!r}, personas={personas})")
     store_root = args.data_dir / args.store_subdir
 
     results: dict[str, dict] = {}
@@ -376,7 +404,7 @@ def main() -> int:
             fit825.EXPECTED_LAYERS = n_layers
         print(f"[i1310-fit] model={model_kind} rows={len(store['row_ids'])} layers={n_layers}")
         results[model_kind] = {}
-        for persona in c1310.PERSONA_LABELS:
+        for persona in personas:
             xy = within_xy(store, persona, "x_spanmean")
             if xy["X"].shape[0] < args.folds:
                 print(f"[i1310-fit] {model_kind}/{persona}: n={xy['X'].shape[0]} < folds — skipped")

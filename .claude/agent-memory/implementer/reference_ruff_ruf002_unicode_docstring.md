@@ -15,3 +15,14 @@ set (×, ×→x; en/em-dashes; smart quotes), not all non-ASCII.
 NOT a `# noqa: RUF002` — the codebase has zero RUF002-noqa precedent and the
 ASCII form reads identically. Plans that paste GPU-shape prose (`8×H100`,
 `2×A100`) verbatim into a docstring will hit this; swap to `x` at write time.
+
+**RUF001 (strings) addendum (#1428, 2026-07-16):** en dash `–` and MINUS SIGN
+`−` in figure-label STRINGS are RUF001-flagged; em dash `—` is NOT confusable
+(passes clean). For deliberate typographic chars in rendered figure text the
+fix IS a line-level `# noqa: RUF001 -- reason` (repo precedent:
+plot_aim5_25pct_*.py) — never swap the char (changes rendered figures). E501
+interplay: the noqa comment counts toward the 100-char limit, so on a ~95-char
+line wrap the call per-arg (magic trailing comma keeps ruff-format stable) and
+put the noqa on the label line. Also verified: `# noqa: C901 -- reason`
+trailing text parses fine, and an underscore prefix (`_lab`, `_null_lo`)
+silences B007/F841 with the assignment kept.

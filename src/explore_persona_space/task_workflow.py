@@ -83,7 +83,7 @@ import subprocess
 import time
 from collections.abc import Iterator, Sequence
 from dataclasses import dataclass
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any
 
@@ -1094,6 +1094,259 @@ def is_workflow_fix_session(task_id: int) -> bool:
     except (FileNotFoundError, OSError):
         return False
     return "workflow_fix_target:" in body
+
+
+# Terminal statuses for the #1399 recently-closed advisory (the complement of
+# _WF_FIX_NONTERMINAL above — a task at one of these no longer blocks dedup,
+# but a JUST-closed one is exactly what the advisory surfaces).
+_WF_FIX_TERMINAL: tuple[str, ...] = ("completed", "archived")
+# Closure-class event kinds: set_status appends epm:status-changed and promote
+# appends epm:promoted — together the done-transition pair the watcher's
+# pod-safety predicate already keys on (CLAUDE.md).
+_WF_FIX_CLOSURE_EVENT_KINDS: tuple[str, ...] = ("epm:status-changed", "epm:promoted")
+# Small stopword set for the title-token overlap arm (len >= 4 tokens only, so
+# short glue words are already excluded; these are the frequent len>=4 ones).
+_WF_FIX_TITLE_STOPWORDS: frozenset[str] = frozenset(
+    {"the", "for", "and", "with", "must", "that", "from", "into", "when", "only", "over"}
+)
+# Widened-pass (#1446) title arm needs >=2 shared informative tokens (vs >=1
+# for the self-selected topical prefixed population): measured 2026-07-17 on
+# the live 7-day closed non-prefixed infra window (28 tasks) — the real #1386
+# candidate title yields exactly 2 hits at >=2 (incl. #1360, the true
+# duplicate) and 0 junk, while a generic stress title yields 5 hits at >=1
+# vs 0 at >=2.
+_WF_FIX_PLAIN_TITLE_MIN_SHARED = 2
+_WF_FIX_TARGET_LINE_RE = re.compile(r"^\s*-?\s*workflow_fix_target:\s*(.+?)\s*$", re.M)
+
+
+def wf_fix_extract_target(body_text: str) -> str | None:
+    """Value of the first anchored ``workflow_fix_target:`` body line, else None.
+
+    Anchored at line start (optional ``- `` bullet) so prose MENTIONS of the
+    key (e.g. a Constraints bullet naming the ``workflow_fix_target:``
+    Provenance line mid-sentence) never match — verified against #1350's real
+    body, where line 55 is prose and line 59 is the Provenance line.
+    """
+    m = _WF_FIX_TARGET_LINE_RE.search(body_text or "")
+    return m.group(1).strip() if m else None
+
+
+def _wf_fix_closed_at(task_dir: Path) -> datetime | None:
+    """Closure timestamp: ts of the LAST closure-class event in events.jsonl.
+
+    Closure-class = epm:status-changed (set_status) or epm:promoted (promote)
+    — the two done-transition kinds (CLAUDE.md watcher predicate). Unreadable
+    file / no closure event / unparseable or tz-naive ts -> None (the caller
+    EXCLUDES the task: recency cannot be established, and an advisory must not
+    present unknown-age tasks as 'recent').
+    """
+    try:
+        text = (task_dir / "events.jsonl").read_text()
+    except OSError:
+        return None
+    ts = None
+    # split("\n") not splitlines(): raw U+2028/U+2029/NEL inside JSON strings
+    # would shred records under splitlines (gotchas.md jsonl-splitlines).
+    for line in text.split("\n"):
+        # Cheap substring prefilter before json.loads (events files are long).
+        if '"epm:status-changed"' not in line and '"epm:promoted"' not in line:
+            continue
+        try:
+            d = json.loads(line)
+        except ValueError:
+            continue
+        if d.get("kind") in _WF_FIX_CLOSURE_EVENT_KINDS and d.get("ts"):
+            ts = d["ts"]
+    if ts is None:
+        return None
+    try:
+        dt = datetime.fromisoformat(str(ts).replace("Z", "+00:00"))
+    except ValueError:
+        return None
+    if dt.tzinfo is None:
+        # A tz-naive ts cannot be compared against the tz-aware window
+        # (TypeError); exclude this task rather than kill the whole scan.
+        return None
+    return dt
+
+
+def _wf_fix_target_tokens(target_file: str) -> set[str]:
+    """Comma-split a target_file value into exact path tokens (backticks/space stripped).
+
+    A glob token is treated as an OPAQUE string (matches only an identical
+    glob) — measured 2/595 corpus target lines carry a glob; fnmatch expansion
+    is deliberately out of scope (documented limitation).
+    """
+    return {p.strip().strip("`") for p in (target_file or "").split(",") if p.strip().strip("`")}
+
+
+def _wf_fix_title_tokens(title: str) -> set[str]:
+    """Informative title tokens: lowercase, channel prefix removed, split on
+    non-word chars keeping ``-``/``_`` inside tokens, each token stripped of
+    edge ``-``/``_`` (so ``--workload-cmd`` == ``workload-cmd``), length >= 4,
+    minus a small stopword set."""
+    t = (title or "").lower()
+    for p in WF_FIX_TITLE_PREFIXES:
+        t = t.removeprefix(p)
+    out: set[str] = set()
+    for w in re.split(r"[^a-z0-9_\-]+", t):
+        w = w.strip("-_")
+        if len(w) >= 4 and w not in _WF_FIX_TITLE_STOPWORDS:
+            out.add(w)
+    return out
+
+
+def recent_closed_workflow_fix_tasks(  # noqa: C901 — two-population scan; branch shape + gating order pinned by plan #1446 §4.1(c)
+    target_file: str | None,
+    candidate_title: str | None = None,
+    *,
+    days: float = 7.0,
+    now: datetime | None = None,
+    include_plain_infra: bool = True,
+) -> list[dict[str, Any]]:
+    """CLOSED infra siblings within ``days`` overlapping the candidate (#1399, #1446).
+
+    The ADVISORY complement of :func:`is_open_workflow_fix_task`: that
+    predicate blocks exact-(target_file, fingerprint) duplicates among OPEN
+    tasks; this helper only SURFACES recently-closed topical siblings for the
+    filer to eyeball — advisory rather than a hard block, so a closed task
+    still never blocks a re-raise (.claude/rules/workflow-fix-on-bug.md
+    § Dedup, unchanged).
+
+    Two populations are scanned, both requiring kind==infra AND status in
+    {completed, archived} AND a closure ts (last epm:status-changed /
+    epm:promoted in events.jsonl) within ``days`` of ``now``:
+
+    - PREFIXED pass (title startswith WF_FIX_TITLE_PREFIXES) — the original
+      #1399 population; behavior preserved except the declared body-read
+      catch-tuple widening ((FileNotFoundError, ValueError) ->
+      (OSError, ValueError); fact-check 2026-07-17: a non-FNF OSError from
+      read_text() escaped the old tuple). Arms:
+      - 'target': candidate target_file path-token set (comma-split)
+        intersects the task's anchored ``workflow_fix_target:`` line tokens;
+      - 'title:<tokens>': candidate title shares >=1 informative token
+        (len>=4, stopword-filtered) with the task title.
+    - WIDENED pass (#1446; NON-prefixed titles; opt out via
+      ``include_plain_infra=False``) — ordinary closed infra tasks, where
+      functional fixes routinely land (#1386 was filed over the
+      already-landed non-prefixed #1360, invisible to the prefixed pass by
+      construction). Higher-precision arms:
+      - 'infra-title:<tokens>': >=_WF_FIX_PLAIN_TITLE_MIN_SHARED shared
+        informative title tokens (the broad plain-infra population needs a
+        higher bar than the self-selected topical prefixed one);
+      - 'infra-target': a candidate target path token appears as a substring
+        of the task's ``body.md`` (the FULL path, never the basename —
+        bare basenames matched 11/28 in-window bodies vs 0-6 for full
+        paths, measured 2026-07-17).
+      The closure-window check runs BEFORE the body read on this pass (only
+      in-window tasks are ever body-read), and a registry-only precheck
+      skips entries where no widened arm could possibly fire. Limitation: a
+      short directory-less target path (e.g. ``CLAUDE.md``) substring-matches
+      more bodies than the measured directory-bearing range; the row cap +
+      the distinct ``infra-*`` labels + the advisory-only contract bound
+      that downside.
+
+    Returns [{'id', 'title', 'status', 'target', 'closed_at', 'matched'}, ...]
+    sorted by closed_at DESC. The ``target`` field differs per population:
+    prefixed rows carry the task's own ``workflow_fix_target:`` tokens;
+    widened rows carry the candidate path token(s) actually FOUND in the
+    task body (the overlap the filer wants to see). Read-only: no mutation,
+    no commit, no lock. Per-task failures (missing folder, non-numeric
+    registry key, unreadable body) skip that task — one broken entry never
+    kills the whole scan.
+    """
+    now = now or datetime.now(UTC)
+    cutoff = now - timedelta(days=days)
+    # Window is TWO-SIDED: cutoff <= closed_at <= now. The upper bound makes a
+    # retrospective query (the plan-§4.6 smoke, window tests with a historical
+    # now=) filing-time-exact — without it, tasks closed AFTER `now` would
+    # surface in retrospective smokes. At a LIVE filing nothing is closed in
+    # the future, so the bound is inert in production.
+    cand_targets = _wf_fix_target_tokens(target_file) if target_file else set()
+    cand_tokens = _wf_fix_title_tokens(candidate_title) if candidate_title else set()
+    if not cand_targets and not cand_tokens:
+        return []
+    hits: list[dict[str, Any]] = []
+    for tid_str, entry in _load_registry().get("tasks", {}).items():
+        if entry.get("kind") != "infra":
+            continue
+        if (entry.get("status") or "") not in _WF_FIX_TERMINAL:
+            continue
+        title = str(entry.get("title", ""))
+        prefixed = title.startswith(WF_FIX_TITLE_PREFIXES)
+        if not prefixed and not include_plain_infra:
+            continue
+        shared = cand_tokens & _wf_fix_title_tokens(title)
+        if not prefixed and len(shared) < _WF_FIX_PLAIN_TITLE_MIN_SHARED and not cand_targets:
+            # Widened pass (#1446): no arm can possibly fire — skip before
+            # any per-task file read (registry-only precheck).
+            continue
+        try:
+            tid = int(tid_str)
+            task_dir = find_task_path(tid)
+        except (FileNotFoundError, ValueError):
+            # Non-numeric registry key or missing folder: skip this entry.
+            continue
+        matched: list[str] = []
+        task_targets: set[str] = set()
+        if prefixed:
+            # ── Prefixed pass: #1399 logic, output-identical except the
+            # declared catch-tuple widening below ──
+            if cand_targets:
+                try:
+                    _, body = _read_body(task_dir / "body.md")
+                except (OSError, ValueError):
+                    # widened per fact-check 2026-07-17: a non-FNF OSError
+                    # from read_text() escaped the old
+                    # (FileNotFoundError, ValueError) tuple
+                    body = ""  # fail-soft: target arm silently unavailable
+                for m in _WF_FIX_TARGET_LINE_RE.finditer(body):
+                    task_targets |= _wf_fix_target_tokens(m.group(1))
+                if cand_targets & task_targets:
+                    matched.append("target")
+            if shared:
+                matched.append("title:" + ",".join(sorted(shared)))
+            if not matched:
+                continue
+            closed = _wf_fix_closed_at(task_dir)
+            if closed is None or closed < cutoff or closed > now:
+                continue
+        else:
+            # ── Widened pass (#1446): ordinary closed infra tasks. The
+            # window check runs BEFORE the body read (cost gate: only the
+            # ~tens of in-window tasks are ever body-read; measured 28
+            # in-window on 2026-07-17 vs 199 non-prefixed terminal total).
+            closed = _wf_fix_closed_at(task_dir)
+            if closed is None or closed < cutoff or closed > now:
+                continue
+            if len(shared) >= _WF_FIX_PLAIN_TITLE_MIN_SHARED:
+                matched.append("infra-title:" + ",".join(sorted(shared)))
+            if cand_targets:
+                try:
+                    _, body = _read_body(task_dir / "body.md")
+                except (OSError, ValueError):
+                    # same widened catch tuple as the prefixed pass above
+                    body = ""  # fail-soft: target arm silently unavailable
+                # Full candidate path token as a body substring (NOT the
+                # basename: bare 'SKILL.md' matches 11/28 in-window bodies,
+                # while full paths measured 0-6; glob tokens stay opaque).
+                task_targets = {t for t in cand_targets if t in body}
+                if task_targets:
+                    matched.append("infra-target")
+            if not matched:
+                continue
+        hits.append(
+            {
+                "id": tid,
+                "title": title,
+                "status": entry.get("status"),
+                "target": ", ".join(sorted(task_targets)) or None,
+                "closed_at": closed.strftime("%Y-%m-%dT%H:%M:%SZ"),
+                "matched": matched,
+            }
+        )
+    hits.sort(key=lambda h: h["closed_at"], reverse=True)
+    return hits
 
 
 # ---------------------------------------------------------------------------
@@ -2766,6 +3019,7 @@ def _audit_record_violation(
 
 FOLLOWUP_SCOPE_KIND = "epm:followup-scope"
 FOLLOWUP_RUN_KIND = "epm:same-issue-followup-run"
+FREE_ANALYSIS_RUN_KIND = "epm:free-analysis-followup-run"
 USER_INITIATED_FOLLOWUP_SOURCES = frozenset({"user-chat", "step-10b-pick"})
 
 # An UNLABELED scope note inherits the previous entry's label ONLY when it
@@ -2822,7 +3076,11 @@ def parse_followup_note_field(note: str, field: str) -> str | None:
     run-marker shape, e.g. #537/#552). Each segment is anchored exactly
     like a line-core: a mid-segment mention (``(source: user-chat)``, the
     #685 prose shape) still parses ``None``, and ``word;field: x`` (no
-    whitespace after the ``;``) never splits. The value is the first
+    whitespace after the ``;``) never splits. A leading lowercase version
+    stamp (``v<k>.`` + REQUIRED whitespace, e.g. ``v1. followup_label: x``
+    — the #1092 run-note shape) is stripped as decoration, same class as
+    bullets/bold; parsing stays field-only (#1111 — no label inference).
+    The value is the first
     whitespace token of the remainder, stripped of backticks / quotes /
     ``*`` and a trailing comma or semicolon (#664 ships a backtick-wrapped
     bold value; #841's run markers carry ``label;`` when the line is read
@@ -2872,6 +3130,13 @@ def parse_followup_note_field(note: str, field: str) -> str | None:
             # One regex pass strips any interleaved mix of whitespace, bullet
             # dashes/stars, and bold markers (unchanged from the line-core rule).
             core = re.sub(r"^[\s\-*]+", "", seg)
+            # Leading version stamp (`v1. ` — the #1092 run-note shape, an
+            # emitter echoing the marker's `v<k>` grammar into the note head):
+            # decorative prefix, same class as bullets/bold — strip it so the
+            # field anchor still binds. Lowercase `v` + digits + `.` +
+            # REQUIRED whitespace only; anything else is prose and stays
+            # unparseable (field-only parsing per #1111 — no label inference).
+            core = re.sub(r"^v\d+\.\s+", "", core)
             if core.startswith(f"{field}:") or core.startswith(f"{field}="):
                 rest = core[len(field) + 1 :].lstrip("*").strip()
                 tokens = rest.split()
@@ -3137,13 +3402,11 @@ def followup_retro_close_evidence(events: list[dict], label: str) -> str | None:
                     f"epm:methodology-doc-generated at {ev.get('ts', '?')} carries extends={label}"
                 )
     for ev in events:
-        if ev.get("kind") != "epm:free-analysis-followup-run":
+        if ev.get("kind") != FREE_ANALYSIS_RUN_KIND:
             continue
         ref = parse_followup_note_field(ev.get("note") or "", "followup_ref")
         if ref == label:
-            return (
-                f"epm:free-analysis-followup-run at {ev.get('ts', '?')} has followup_ref == {label}"
-            )
+            return f"{FREE_ANALYSIS_RUN_KIND} at {ev.get('ts', '?')} has followup_ref == {label}"
     token = f"({label})"
     for ev in events:
         kind = ev.get("kind")
@@ -3516,6 +3779,36 @@ _PIPE_BUF = getattr(os, "PIPE_BUF", 4096)
 _log = logging.getLogger(__name__)
 
 
+def _tail_missing_newline(path: Path) -> bool:
+    """Probe: True iff ``path`` exists, is non-empty, and its final byte is
+    not ``b"\\n"`` — the crash-truncated-append signature (#1367 / #1333).
+
+    Reads exactly ONE byte (``os.pread`` at ``st_size - 1``) regardless of
+    file size. FAIL-SOFT by design: a fresh-file ``FileNotFoundError``
+    returns False silently (O_CREAT will create the file); any other
+    ``OSError`` logs a WARNING naming the path and returns False — the
+    probe must never block the append itself, whose own error handling
+    stays fail-loud.
+    """
+    try:
+        rfd = os.open(path, os.O_RDONLY)
+    except FileNotFoundError:
+        return False
+    except OSError as e:
+        _log.warning("tail-check open failed for %s (%s); appending without seal", path, e)
+        return False
+    try:
+        size = os.fstat(rfd).st_size
+        if size == 0:
+            return False
+        return os.pread(rfd, 1, size - 1) != b"\n"
+    except OSError as e:
+        _log.warning("tail-check read failed for %s (%s); appending without seal", path, e)
+        return False
+    finally:
+        os.close(rfd)
+
+
 def _append_jsonl_line(path: Path, payload: dict[str, Any]) -> None:
     """Atomically append one JSON object as a line to an append-only log.
 
@@ -3537,14 +3830,33 @@ def _append_jsonl_line(path: Path, payload: dict[str, Any]) -> None:
     skips the partial line. The loop is still useful for completion under
     EAGAIN/EINTR/short-writes; it is not a crash-atomicity guarantee.
 
+    Self-heal (#1367): a fail-soft tail probe (``_tail_missing_newline``)
+    detects a crash-truncated prior append (final byte != ``\\n``) and seals it
+    with a SEPARATE 1-byte newline write (WARNING logged) so the new row lands
+    on its own line — the row buffer keeps its atomicity class. The caller's
+    ``_locked()`` excludes probe→seal TOCTOU; an out-of-lock >PIPE_BUF writer
+    mid-completion-loop could at worst have its row split by the seal
+    (bounded; the tolerant reader skips both fragments).
+
     Callers MUST hold ``_locked()``. This helper does NOT acquire the lock and
     does NOT commit — the caller owns flock + ``_git_commit`` semantics.
     """
     path.parent.mkdir(parents=True, exist_ok=True)
     line = json.dumps(payload, ensure_ascii=False) + "\n"
     buf = line.encode("utf-8")
+    needs_seal = _tail_missing_newline(path)
     fd = os.open(path, os.O_WRONLY | os.O_APPEND | os.O_CREAT, 0o644)
     try:
+        if needs_seal:
+            _log.warning(
+                "%s: final line missing trailing newline (crash-truncated "
+                "prior append) — sealing so the new row lands on its own "
+                "line (#1367)",
+                path,
+            )
+            n = os.write(fd, b"\n")
+            if n != 1:
+                raise OSError(f"seal write to {path} wrote {n} of 1 bytes")
         if len(buf) <= _PIPE_BUF:
             # Single atomic append (<= PIPE_BUF): all-or-nothing against a
             # SIGKILL. os.write may legally short-write even here in
@@ -4811,6 +5123,355 @@ def audit() -> list[str]:
     return problems
 
 
+# ─── Duplicate-dir audit + terminal-husk reap (#1430) ────────────────────────
+#
+# A concurrent branch cut BEFORE a task's status move re-adds the old-status
+# dir on rebase-merge (e.g. tasks/reviewing/1107/ beside tasks/completed/1107/).
+# The #644 ghost sweep (`_task_status_dir_pathspecs`, used by `set_status`)
+# covers only the INVERSE shape (tracked-in-HEAD, absent-on-disk) and only at
+# the same task's next transition — terminal tasks have none, so on-disk husks
+# persist indefinitely and every `ls tasks/<status>` fleet read misreports
+# them as active. `duplicate_task_dirs()` detects the shape (surfaced by
+# `task.py audit` as a WARN tier); `reap_stale_status_husks()` removes a
+# TERMINAL task's husk iff every entry is subset-verified against the live
+# dir, and ESCALATES — never deletes — on any unique content.
+
+# Reap scope. Deliberately NOT `TERMINAL_STATUSES`, which includes `blocked`
+# — a re-drivable status (the watcher capacity-retry pass), not "no further
+# transitions". Matches the `_WF_FIX_TERMINAL` precedent.
+HUSK_REAP_TERMINAL_STATUSES = frozenset({"completed", "archived"})
+_HUSK_REAP_SIDECAR_REL = ".claude/cache/husk-reap-events.jsonl"
+
+
+@dataclass(frozen=True)
+class DuplicateDirFinding:
+    """One task id holding MORE THAN ONE on-disk ``tasks/<status>/<id>`` dir.
+
+    ``registry_path`` is the REGISTRY entry's repo-relative path (``None``
+    when the id is unregistered). ``live`` is that path when it is one of
+    the on-disk dirs (``None`` when the registry entry is stale or
+    missing). ``husks`` are every OTHER on-disk dir (repo-relative,
+    sorted). ``terminal`` is True iff the live dir's status is in
+    ``HUSK_REAP_TERMINAL_STATUSES`` (always False when ``live`` is None).
+    """
+
+    task_id: int
+    registry_path: str | None
+    live: str | None
+    husks: list[str]
+    terminal: bool
+
+
+def duplicate_task_dirs() -> list[DuplicateDirFinding]:
+    """Pure read: scan ``tasks/<status>/<id>`` across STATUSES and return one
+    finding per id holding >1 on-disk dir (the merge-reintroduced husk
+    shape, #1430). Never mutates registry, disk, or git. Exact dir-name
+    grouping only (``name.isdigit()`` + ``int(name)``) — the same
+    discipline as ``_task_status_dir_pathspecs``, so id 89 never groups
+    with 898.
+    """
+    reg = _load_registry()
+    repo = repo_root()
+    td = tasks_dir()
+    by_id: dict[int, list[Path]] = {}
+    for status in STATUSES:
+        sd = td / status
+        if not sd.is_dir():
+            continue
+        for child in sd.iterdir():
+            if child.is_dir() and child.name.isdigit():
+                by_id.setdefault(int(child.name), []).append(child)
+    out: list[DuplicateDirFinding] = []
+    for tid, dirs in sorted(by_id.items()):
+        if len(dirs) < 2:
+            continue
+        entry = reg.get("tasks", {}).get(str(tid))
+        reg_path = entry["path"] if entry else None
+        rel_dirs = sorted(str(d.relative_to(repo)) for d in dirs)
+        live = reg_path if (reg_path in rel_dirs) else None
+        husks = [d for d in rel_dirs if d != live]
+        terminal = bool(live) and _status_from_path(repo / live) in HUSK_REAP_TERMINAL_STATUSES
+        out.append(DuplicateDirFinding(tid, reg_path, live, husks, terminal))
+    return out
+
+
+def _jsonl_lines_subsequence(husk_bytes: bytes, live_bytes: bytes) -> bool:
+    """True iff the husk's lines are an ORDERED SUBSEQUENCE of the live
+    file's lines, multiplicity respected: each husk line consumes a
+    DISTINCT live line, in order — never set-inclusion, so a husk line
+    duplicated N times needs N matching live lines after the previous
+    match. Byte-level comparison via ``split(b"\\n")`` with a blank-line
+    guard — never ``.splitlines()``, which shreds U+2028-bearing JSON
+    records (the #825/#950 gotcha); blank/whitespace-only lines carry no
+    content and are ignored on both sides."""
+    husk_lines = [ln for ln in husk_bytes.split(b"\n") if ln.strip()]
+    live_iter = iter(ln for ln in live_bytes.split(b"\n") if ln.strip())
+    return all(any(h == line for line in live_iter) for h in husk_lines)
+
+
+def _husk_unique_content(husk: Path, live: Path) -> list[str]:
+    """Entries under ``husk`` NOT covered by ``live``. Empty list == safe
+    subset (every husk entry is redundant with the live dir; nothing is
+    lost by deleting the husk). Pure read.
+
+    Per-entry rules (``os.walk(followlinks=False)`` — never traverses INTO
+    a symlinked dir; a symlink-to-DIRECTORY appears in ``dirnames``, a
+    symlink-to-file in ``filenames`` — BOTH are classified here so a
+    dir-symlink can never reach ``rmtree`` unverified):
+
+    - symlink (dir OR file): safe iff the live counterpart is a symlink
+      with an identical ``os.readlink()`` target; else unique.
+    - regular file: safe iff a live counterpart file exists AND (bytes
+      identical OR husk bytes are a byte-prefix of live bytes OR — for
+      ``.jsonl`` files — husk lines are an ordered subsequence of live
+      lines, multiplicity respected); a file with NO live counterpart is
+      safe only at size 0; else unique.
+    - directory (non-symlink): recursed by the walk; empty dirs contribute
+      nothing (trivially safe).
+    - any other file type (fifo/socket/device): unique (never expected
+      under tasks/).
+    """
+    unique: list[str] = []
+    for root, dirnames, filenames in os.walk(husk, followlinks=False):
+        root_p = Path(root)
+        rel_root = root_p.relative_to(husk)
+        for name in dirnames:
+            hp = root_p / name
+            if not hp.is_symlink():
+                continue  # real directory — os.walk recurses into it
+            rel = rel_root / name
+            lp = live / rel
+            if lp.is_symlink() and os.readlink(hp) == os.readlink(lp):
+                continue
+            unique.append(str(rel))
+        for name in filenames:
+            hp = root_p / name
+            rel = rel_root / name
+            lp = live / rel
+            if hp.is_symlink():
+                if lp.is_symlink() and os.readlink(hp) == os.readlink(lp):
+                    continue
+                unique.append(str(rel))
+                continue
+            if not hp.is_file():
+                unique.append(str(rel))  # fifo/socket/device — never covered
+                continue
+            husk_bytes = hp.read_bytes()
+            if not lp.is_file():
+                if len(husk_bytes) == 0:
+                    continue  # empty file: no content to lose
+                unique.append(str(rel))
+                continue
+            live_bytes = lp.read_bytes()
+            if live_bytes.startswith(husk_bytes):
+                continue  # byte-identical or byte-prefix of live
+            if hp.suffix == ".jsonl" and _jsonl_lines_subsequence(husk_bytes, live_bytes):
+                continue
+            unique.append(str(rel))
+    return sorted(unique)
+
+
+@dataclass(frozen=True)
+class HuskReapAction:
+    """One per-husk decision from :func:`reap_stale_status_husks`.
+
+    ``action`` is one of ``reaped | would-reap | escalated | would-escalate
+    | skipped-non-terminal | skipped-unregistered | skipped-registry-stale``
+    (``would-*`` in report mode). ``reason`` is human-readable and names the
+    unique entries on escalation.
+    """
+
+    task_id: int
+    husk: str
+    action: str
+    reason: str
+
+
+@dataclass(frozen=True)
+class HuskReapReport:
+    """Return shape of :func:`reap_stale_status_husks`. ``disabled`` is True
+    iff the ``EPM_SKIP_HUSK_REAP=1`` kill switch short-circuited the sweep
+    (then ``actions`` is empty and nothing was read or touched)."""
+
+    applied: bool
+    disabled: bool
+    actions: list[HuskReapAction]
+
+
+def _husk_reap_sidecar_row(repo: Path, **fields: Any) -> None:
+    """Append one reap/escalation row to the durable sidecar
+    ``.claude/cache/husk-reap-events.jsonl``. Apply-mode only; the caller
+    holds ``_locked()`` (``_append_jsonl_line``'s contract — it mkdirs
+    parents itself)."""
+    _append_jsonl_line(repo / _HUSK_REAP_SIDECAR_REL, {"ts": _utcnow_iso(), **fields})
+
+
+def _husk_escalate(
+    task_id: int, rel_husk: str, reason: str, unique: list[str], repo: Path, *, apply: bool
+) -> HuskReapAction:
+    """Escalate a husk that FAILED subset verification: NEVER deleted. Under
+    ``apply=True`` this writes the sidecar row + a stderr ERROR; report mode
+    returns a ``would-escalate`` action with zero side effects (gcp-janitor
+    parity: report-only passes are inert)."""
+    if not apply:
+        return HuskReapAction(task_id, rel_husk, "would-escalate", reason)
+    _log.error(
+        "husk reap #%d: %s — %s; never deleted — triage manually (unique entries: %s)",
+        task_id,
+        rel_husk,
+        reason,
+        unique[:20] or "n/a",
+    )
+    _husk_reap_sidecar_row(
+        repo, task_id=task_id, husk=rel_husk, action="escalated", reason=reason, unique=unique[:50]
+    )
+    return HuskReapAction(task_id, rel_husk, "escalated", reason)
+
+
+def _husk_actions_for_finding(
+    finding: DuplicateDirFinding, repo: Path, *, apply: bool
+) -> list[HuskReapAction]:
+    """Classify — and under ``apply=True`` EXECUTE — the reap decision for
+    every husk of one duplicate-dir finding. Report mode returns
+    ``would-reap`` / ``would-escalate`` with zero side effects; the
+    ``skipped-*`` preconditions are identical (and non-mutating) in both
+    modes. Apply-mode callers hold ``_locked()``."""
+    tid = finding.task_id
+    if finding.registry_path is None:
+        return [
+            HuskReapAction(
+                tid,
+                h,
+                "skipped-unregistered",
+                "id not in REGISTRY — fix registry first: task.py audit --repair",
+            )
+            for h in finding.husks
+        ]
+    if finding.live is None:
+        return [
+            HuskReapAction(
+                tid,
+                h,
+                "skipped-registry-stale",
+                f"REGISTRY path {finding.registry_path!r} not on disk: task.py audit --repair",
+            )
+            for h in finding.husks
+        ]
+    if not finding.terminal:
+        status = _status_from_path(repo / finding.live)
+        return [
+            HuskReapAction(
+                tid,
+                h,
+                "skipped-non-terminal",
+                f"live status {status!r} not in {sorted(HUSK_REAP_TERMINAL_STATUSES)}",
+            )
+            for h in finding.husks
+        ]
+    live_abs = repo / finding.live
+    actions: list[HuskReapAction] = []
+    for rel_husk in finding.husks:
+        husk_abs = repo / rel_husk
+        if husk_abs.is_symlink():
+            actions.append(
+                _husk_escalate(tid, rel_husk, "husk root is a symlink", [], repo, apply=apply)
+            )
+            continue
+        unique = _husk_unique_content(husk_abs, live_abs)
+        if unique:
+            actions.append(
+                _husk_escalate(
+                    tid, rel_husk, f"unique content: {unique[:5]}", unique, repo, apply=apply
+                )
+            )
+            continue
+        if not apply:
+            actions.append(
+                HuskReapAction(
+                    tid, rel_husk, "would-reap", "subset-verified — re-run with --apply to reap"
+                )
+            )
+            continue
+        tracked = [
+            t for t in _run_git(["ls-files", "--", rel_husk]).stdout.splitlines() if t.strip()
+        ]
+        if tracked:
+            # Removes the tracked files from disk AND stages their deletions.
+            _run_git(["rm", "-r", "-q", "--", rel_husk])
+        if husk_abs.exists():
+            # Untracked residue (the #721 empty-artifacts/ shape) — git does
+            # not track empty dirs, so a fully-untracked husk takes this
+            # rmtree-only path with NO commit.
+            shutil.rmtree(husk_abs)
+        if tracked:
+            try:
+                _git_commit([husk_abs], f"task #{tid}: reap stale-status husk {rel_husk} (#1430)")
+            except Exception:
+                _log.error(
+                    "husk reap #%d: git rm of %s succeeded but the commit FAILED — the staged "
+                    "deletions are confined to the %r pathspec and remain in the index; the "
+                    "husk dir is already gone from disk, so a re-run finds no duplicate and "
+                    "will NOT re-commit them — commit manually via `git commit --only -- %s` "
+                    "(they otherwise ride a later non-`--only` committer).",
+                    tid,
+                    rel_husk,
+                    rel_husk,
+                    rel_husk,
+                )
+                raise
+        _husk_reap_sidecar_row(
+            repo, task_id=tid, husk=rel_husk, action="reaped", n_tracked_files=len(tracked)
+        )
+        actions.append(
+            HuskReapAction(
+                tid, rel_husk, "reaped", f"subset-verified ({len(tracked)} tracked file(s))"
+            )
+        )
+    return actions
+
+
+def reap_stale_status_husks(*, apply: bool = False, task_id: int | None = None) -> HuskReapReport:
+    """Reap merge-reintroduced stale-status husk dirs of TERMINAL tasks (#1430).
+
+    Report-only unless ``apply=True``. Kill switch ``EPM_SKIP_HUSK_REAP=1``
+    returns an empty ``disabled`` report. A husk is removed iff its live
+    (REGISTRY) status is in ``HUSK_REAP_TERMINAL_STATUSES`` AND EVERY husk
+    entry is subset-verified against the live dir
+    (:func:`_husk_unique_content`); ANY unique content ESCALATES (stderr
+    ERROR + a sidecar row at ``.claude/cache/husk-reap-events.jsonl``) and
+    is NEVER deleted. Unregistered / registry-stale / non-terminal ids are
+    skipped with labeled actions — never reaped.
+
+    The whole apply loop holds ``_locked()`` (the same flock as every
+    task.py mutation) with the enumeration re-run INSIDE the lock, so
+    verify→remove is adjacent and serialized against all task.py writers.
+    Tracked husks go through ``git rm -r`` + one explicit-path commit per
+    husk; untracked residue through ``shutil.rmtree`` with no commit.
+    Re-runs are safe (a reaped husk is simply no longer enumerated), but a
+    git-rm-succeeded-commit-FAILED crash leaves staged deletions a re-run
+    does NOT re-commit (the husk is already gone from disk) — see the
+    error log in ``_husk_actions_for_finding`` for the manual commit.
+    """
+    if os.environ.get("EPM_SKIP_HUSK_REAP") == "1":
+        return HuskReapReport(applied=False, disabled=True, actions=[])
+    repo = repo_root()
+    actions: list[HuskReapAction] = []
+    if not apply:
+        for f in duplicate_task_dirs():
+            if task_id is not None and f.task_id != task_id:
+                continue
+            actions.extend(_husk_actions_for_finding(f, repo, apply=False))
+        return HuskReapReport(applied=False, disabled=False, actions=actions)
+    with _locked():
+        # Re-enumerate INSIDE the lock — a pre-lock enumeration could be
+        # stale vs a concurrent task.py mutation.
+        for f in duplicate_task_dirs():
+            if task_id is not None and f.task_id != task_id:
+                continue
+            actions.extend(_husk_actions_for_finding(f, repo, apply=True))
+    return HuskReapReport(applied=True, disabled=False, actions=actions)
+
+
 # ─── Registry reconcile (`task.py audit --repair`) ──────────────────────────
 
 
@@ -6056,7 +6717,9 @@ __all__ = [
     "FOLLOWUP_HELD_BLOCKED_STATUSES",
     "FOLLOWUP_RUN_KIND",
     "FOLLOWUP_SCOPE_KIND",
+    "FREE_ANALYSIS_RUN_KIND",
     "GOAL_H2_NAME",
+    "HUSK_REAP_TERMINAL_STATUSES",
     "KINDS",
     "PARK_STATUS",
     "REGISTRY_PATH",  # noqa: F822 — PEP-562 lazy attr (see __getattr__)
@@ -6065,7 +6728,10 @@ __all__ = [
     "TASKS_DIR",  # noqa: F822 — PEP-562 lazy attr (see __getattr__)
     "TERMINAL_STATUSES",
     "USER_INITIATED_FOLLOWUP_SOURCES",
+    "DuplicateDirFinding",
     "GoalH2DropError",
+    "HuskReapAction",
+    "HuskReapReport",
     "NewTaskRequest",
     "ReconcileReport",
     "RegistryChange",
@@ -6076,6 +6742,7 @@ __all__ = [
     "audit",
     "create_task",
     "defer_concern",
+    "duplicate_task_dirs",
     "executing_followup_label",
     "find_task_path",
     "followup_label_groups",
@@ -6096,6 +6763,7 @@ __all__ = [
     "primary_checkout_root",
     "promote",
     "raise_concern",
+    "reap_stale_status_husks",
     "reconcile_registry",
     "registry_path",
     "remove_tag",

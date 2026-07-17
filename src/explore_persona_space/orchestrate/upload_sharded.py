@@ -125,7 +125,8 @@ def _ensure_overflow_repo(api) -> None:
     Overflow repo is private (separate LFS quota with headroom); created if
     missing, matching the existing hub reroute contract. Shared by the
     reactive quota-403 branch and the #1034 proactive projected-headroom
-    branch.
+    branch. Transient-retried (#1345: transport is never fatal on the
+    upload path — a lone 429 must not convert into "both repos refused").
     """
     retry_transient(
         lambda: api.create_repo(
@@ -172,7 +173,7 @@ def _reroute_to_overflow(
             path_in_repo=dest,
             repo_type="model",
         ),
-        what=f"upload_file({DEFAULT_OVERFLOW_REPO}/{dest})",
+        what=f"upload_file({DEFAULT_OVERFLOW_REPO}:{dest})",
     )
     prefix = os.path.dirname(dest)
     if emitted_prefixes is None or prefix not in emitted_prefixes:
@@ -378,32 +379,31 @@ def upload_dir_sharded(
         if route_all_to_overflow:
             # Proactive branch: straight to overflow (repo_type "model",
             # matching the reactive reroute); zero canonical attempts.
+            # Transient-retried (#1345): a lone 429/5xx must never kill the
+            # run — retry_transient re-raises quota-403 / non-transient
+            # immediately and fail-louds only on genuine exhaustion.
             retry_transient(
-                lambda s=shard, d=dest: api.upload_file(
-                    path_or_fileobj=str(s),
+                lambda _s=shard, _d=dest: api.upload_file(
+                    path_or_fileobj=str(_s),
                     repo_id=DEFAULT_OVERFLOW_REPO,
-                    path_in_repo=d,
+                    path_in_repo=_d,
                     repo_type="model",
                 ),
-                what=f"upload_file({DEFAULT_OVERFLOW_REPO}/{dest})",
+                what=f"upload_file({DEFAULT_OVERFLOW_REPO}:{dest})",
             )
             effective_repo = DEFAULT_OVERFLOW_REPO
             effective_repo_type = "model"
             result.rerouted.append(dest)
         else:
             try:
-                # Transient 429/5xx/timeout retried with backoff (#1335: a
-                # transport error is never fatal to the run); the persistent
-                # quota-403 is NON-transient inside retry_transient and
-                # re-raises immediately into the reroute branch below.
                 retry_transient(
-                    lambda s=shard, d=dest: api.upload_file(
-                        path_or_fileobj=str(s),
+                    lambda _s=shard, _d=dest: api.upload_file(
+                        path_or_fileobj=str(_s),
                         repo_id=repo_id,
-                        path_in_repo=d,
+                        path_in_repo=_d,
                         repo_type=repo_type,
                     ),
-                    what=f"upload_file({repo_id}/{dest})",
+                    what=f"upload_file({repo_id}:{dest})",
                 )
                 effective_repo = repo_id
                 effective_repo_type = repo_type

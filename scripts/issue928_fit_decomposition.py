@@ -772,7 +772,11 @@ def bootstrap_statistics(decomp: dict, n_ctx: int, n_boot: int) -> dict:
 # ── main ──────────────────────────────────────────────────────────────────────
 
 
-def main() -> int:
+def build_arg_parser() -> argparse.ArgumentParser:
+    """The Phase-F CLI. Defaults preserve the #928 standalone behavior verbatim;
+    an issue profile (e.g. the #1005 driver) overrides the upload prefixes so a
+    child run can never clobber the parent's Hub artifacts (upload-verification
+    v1 FAIL, required action 3)."""
     ap = argparse.ArgumentParser(description="Issue #928 Phase F: six-arm fit battery")
     ap.add_argument("--store", default=str(PROJECT_ROOT / "data" / "issue_928" / "store"))
     ap.add_argument("--out", default=str(PROJECT_ROOT / "eval_results" / "issue_928"))
@@ -793,9 +797,20 @@ def main() -> int:
         "(default: the middle fitted layer)",
     )
     ap.add_argument("--upload-prefix", default=None)
+    ap.add_argument(
+        "--decomp-upload-prefix",
+        default=DECOMP_TENSORS_PREFIX,
+        help="HF prefix for the decomp_*.pt tensor upload (fires only when "
+        "--upload-prefix is set; default: the #928 prefix — an issue profile "
+        "like #1005 MUST override so it never overwrites the parent's tensors)",
+    )
     ap.add_argument("--skip-parity-gate", action="store_true")
     ap.add_argument("--smoke", action="store_true")
-    args = ap.parse_args()
+    return ap
+
+
+def main() -> int:
+    args = build_arg_parser().parse_args()
 
     device = _resolve_device(_requested_device(args.device))
     logger.info("fit device: %s", device)
@@ -976,10 +991,10 @@ def main() -> int:
         # CI re-reduction would otherwise require a full refit.
         decomp_names = sorted(p.name for p in out_dir.glob("decomp_*.pt"))
         if decomp_names:
-            logger.info("[phase=upload] decomp tensors -> %s", DECOMP_TENSORS_PREFIX)
+            logger.info("[phase=upload] decomp tensors -> %s", args.decomp_upload_prefix)
             upload_folder_scoped_verify(
                 out_dir,
-                DECOMP_TENSORS_PREFIX,
+                args.decomp_upload_prefix,
                 decomp_names,
                 f"issue #928: per-context LOCO decompositions ({len(decomp_names)} .pt)",
                 allow_patterns=["decomp_*.pt"],

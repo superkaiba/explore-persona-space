@@ -285,6 +285,7 @@ You MUST emit your verdict in EXACTLY this format. No preamble, no fences:
 ### Plot-Prose Match (per figure)
 - **Figure 1** (`<path>`) — [loaded: yes/no] — [caption claim] — [visible: yes/no] — [issues]
 - **Figure 2** ...
+- Degenerate-series hash check: claimed <N> series → <k> distinct hashes (source: <sidecar/eval JSON path>); byte-identical groups: [<names>|none] — [pass | REVISE degenerate-series | hard FAIL null==observed | unverifiable — <reason>] — or `N/A — no multi-series figures`
 
 ### Raw-Text Sample Plausibility (per Result)
 - **Result 1** — sampled M firing + M non-firing from `<JSON path>`:

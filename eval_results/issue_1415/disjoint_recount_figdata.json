@@ -1,0 +1,843 @@
+{
+ "l20_delta": {
+  "prefix": {
+   "cross_00_evil_to_sycophancy": {
+    "shared": 0.1397617608308792,
+    "disj": 0.046239519491791725
+   },
+   "cross_01_evil_to_hallucination": {
+    "shared": 0.12303576618432999,
+    "disj": 0.06663583475165069
+   },
+   "cross_02_sycophancy_to_evil": {
+    "shared": 0.37292060256004333,
+    "disj": 0.34785687923431396
+   },
+   "cross_03_sycophancy_to_hallucination": {
+    "shared": 0.2582640051841736,
+    "disj": 0.23143531382083893
+   },
+   "cross_04_hallucination_to_evil": {
+    "shared": 0.29490700364112854,
+    "disj": 0.19618578627705574
+   },
+   "cross_05_hallucination_to_sycophancy": {
+    "shared": 0.0731659084558487,
+    "disj": 0.01906464993953705
+   },
+   "cross_06_evil_to_sycophancy": {
+    "shared": 0.17775100469589233,
+    "disj": 0.1450330037623644
+   },
+   "cross_07_evil_to_hallucination": {
+    "shared": 0.20237544178962708,
+    "disj": 0.156032957136631
+   },
+   "cross_08_sycophancy_to_evil": {
+    "shared": 0.5139317512512207,
+    "disj": 0.4706937372684479
+   },
+   "cross_09_sycophancy_to_hallucination": {
+    "shared": 0.18602243065834045,
+    "disj": 0.14586792141199112
+   },
+   "cross_10_hallucination_to_evil": {
+    "shared": 0.17452837526798248,
+    "disj": 0.11469898000359535
+   },
+   "cross_11_hallucination_to_sycophancy": {
+    "shared": 0.21760961413383484,
+    "disj": 0.17278853803873062
+   },
+   "cross_12_evil_to_sycophancy": {
+    "shared": 0.2206418812274933,
+    "disj": 0.12740458548069
+   },
+   "m685_00_sycophancy": {
+    "shared": 0.26147374510765076,
+    "disj": 0.14350209385156631
+   },
+   "m685_01_refusal": {
+    "shared": 0.3178389072418213,
+    "disj": 0.28475525975227356
+   },
+   "m685_02_evil": {
+    "shared": 0.4228576123714447,
+    "disj": 0.28562934696674347
+   },
+   "m685_03_hedging": {
+    "shared": 0.5590302348136902,
+    "disj": 0.45815274119377136
+   },
+   "m685_04_terse": {
+    "shared": 0.3167807161808014,
+    "disj": 0.2768392264842987
+   },
+   "m685_05_formal": {
+    "shared": 0.4295489192008972,
+    "disj": 0.3300551623106003
+   },
+   "m685_06_villain": {
+    "shared": 0.2860042452812195,
+    "disj": 0.07857991755008698
+   },
+   "m685_07_medical_doctor": {
+    "shared": 0.5526334643363953,
+    "disj": 0.2560667023062706
+   },
+   "m685_08_french_person": {
+    "shared": 0.4323474168777466,
+    "disj": 0.3248405158519745
+   },
+   "m685_09_comedian": {
+    "shared": 0.13597291707992554,
+    "disj": 0.09375627152621746
+   },
+   "m779_00_evil": {
+    "shared": 0.1639174371957779,
+    "disj": 0.12722031399607658
+   },
+   "m779_01_sycophancy": {
+    "shared": 0.01813952811062336,
+    "disj": -0.041657593101263046
+   },
+   "m779_02_hallucination": {
+    "shared": 0.00027433803188614547,
+    "disj": -0.13545794412493706
+   },
+   "m779_03_evil": {
+    "shared": 0.48466238379478455,
+    "disj": 0.44527165591716766
+   },
+   "m779_04_sycophancy": {
+    "shared": 0.25094306468963623,
+    "disj": 0.12047944590449333
+   }
+  },
+  "context": {
+   "cross_00_evil_to_sycophancy": {
+    "shared": 0.16763797402381897,
+    "disj": 0.08718250691890717
+   },
+   "cross_01_evil_to_hallucination": {
+    "shared": 0.07884874194860458,
+    "disj": 0.02370918169617653
+   },
+   "cross_02_sycophancy_to_evil": {
+    "shared": 0.3400861918926239,
+    "disj": 0.29841260612010956
+   },
+   "cross_03_sycophancy_to_hallucination": {
+    "shared": 0.22099342942237854,
+    "disj": 0.18257248401641846
+   },
+   "cross_04_hallucination_to_evil": {
+    "shared": 0.311794251203537,
+    "disj": 0.27013127505779266
+   },
+   "cross_05_hallucination_to_sycophancy": {
+    "shared": 0.23810407519340515,
+    "disj": 0.21067948639392853
+   },
+   "cross_06_evil_to_sycophancy": {
+    "shared": 0.2691788375377655,
+    "disj": 0.21194349229335785
+   },
+   "cross_07_evil_to_hallucination": {
+    "shared": 0.4644118547439575,
+    "disj": 0.41154390573501587
+   },
+   "cross_08_sycophancy_to_evil": {
+    "shared": 0.43521973490715027,
+    "disj": 0.2953335642814636
+   },
+   "cross_09_sycophancy_to_hallucination": {
+    "shared": 0.19109578430652618,
+    "disj": 0.10616244189441204
+   },
+   "cross_10_hallucination_to_evil": {
+    "shared": 0.5311937928199768,
+    "disj": 0.4619370549917221
+   },
+   "cross_11_hallucination_to_sycophancy": {
+    "shared": 0.44287359714508057,
+    "disj": 0.39950259029865265
+   },
+   "cross_12_evil_to_sycophancy": {
+    "shared": 0.31820112466812134,
+    "disj": 0.21889366954565048
+   },
+   "m685_00_sycophancy": {
+    "shared": 0.19880317151546478,
+    "disj": 0.1449798122048378
+   },
+   "m685_01_refusal": {
+    "shared": 0.6916523575782776,
+    "disj": 0.634637176990509
+   },
+   "m685_02_evil": {
+    "shared": 0.423632949590683,
+    "disj": 0.3576342612504959
+   },
+   "m685_03_hedging": {
+    "shared": 0.45296216011047363,
+    "disj": 0.41980670392513275
+   },
+   "m685_04_terse": {
+    "shared": 0.2073175311088562,
+    "disj": 0.1820005401968956
+   },
+   "m685_05_formal": {
+    "shared": 0.3956027925014496,
+    "disj": 0.34478089213371277
+   },
+   "m685_06_villain": {
+    "shared": 0.44600918889045715,
+    "disj": 0.2864551767706871
+   },
+   "m685_07_medical_doctor": {
+    "shared": 0.24386951327323914,
+    "disj": -0.031979044899344444
+   },
+   "m685_08_french_person": {
+    "shared": 0.5062756538391113,
+    "disj": 0.3591957539319992
+   },
+   "m685_09_comedian": {
+    "shared": 0.40128093957901,
+    "disj": 0.3674371838569641
+   },
+   "m779_00_evil": {
+    "shared": 0.2682878375053406,
+    "disj": 0.1649637669324875
+   },
+   "m779_01_sycophancy": {
+    "shared": 0.45231595635414124,
+    "disj": 0.39824382960796356
+   },
+   "m779_02_hallucination": {
+    "shared": 0.4517804980278015,
+    "disj": 0.2525494396686554
+   },
+   "m779_03_evil": {
+    "shared": 0.40928226709365845,
+    "disj": 0.38802340626716614
+   },
+   "m779_04_sycophancy": {
+    "shared": 0.5675346851348877,
+    "disj": 0.41090627014636993
+   }
+  }
+ },
+ "allpos": {
+  "prefix": {
+   "cross_00_evil_to_sycophancy": {
+    "shared": 0.2685082256793976,
+    "disj": 0.25999172031879425
+   },
+   "cross_01_evil_to_hallucination": {
+    "shared": 0.3671078085899353,
+    "disj": 0.35519319772720337
+   },
+   "cross_02_sycophancy_to_evil": {
+    "shared": 0.4989393353462219,
+    "disj": 0.49419599771499634
+   },
+   "cross_03_sycophancy_to_hallucination": {
+    "shared": 0.46920374035835266,
+    "disj": 0.4661845266819
+   },
+   "cross_04_hallucination_to_evil": {
+    "shared": 0.538895308971405,
+    "disj": 0.5345610976219177
+   },
+   "cross_05_hallucination_to_sycophancy": {
+    "shared": 0.45478713512420654,
+    "disj": 0.4474914073944092
+   },
+   "cross_06_evil_to_sycophancy": {
+    "shared": 0.2934330403804779,
+    "disj": 0.28360193967819214
+   },
+   "cross_07_evil_to_hallucination": {
+    "shared": 0.40256452560424805,
+    "disj": 0.39385126531124115
+   },
+   "cross_08_sycophancy_to_evil": {
+    "shared": 0.47663071751594543,
+    "disj": 0.467419296503067
+   },
+   "cross_09_sycophancy_to_hallucination": {
+    "shared": 0.3827711045742035,
+    "disj": 0.37525735795497894
+   },
+   "cross_10_hallucination_to_evil": {
+    "shared": 0.5047414898872375,
+    "disj": 0.50143001973629
+   },
+   "cross_11_hallucination_to_sycophancy": {
+    "shared": 0.4655194580554962,
+    "disj": 0.46256379783153534
+   },
+   "cross_12_evil_to_sycophancy": {
+    "shared": 0.3590024709701538,
+    "disj": 0.3544093519449234
+   },
+   "m685_00_sycophancy": {
+    "shared": 0.15512847900390625,
+    "disj": 0.14751934260129929
+   },
+   "m685_01_refusal": {
+    "shared": 0.48413681983947754,
+    "disj": 0.4800235480070114
+   },
+   "m685_02_evil": {
+    "shared": 0.4534090459346771,
+    "disj": 0.4389220178127289
+   },
+   "m685_03_hedging": {
+    "shared": 0.36676451563835144,
+    "disj": 0.3596859872341156
+   },
+   "m685_04_terse": {
+    "shared": 0.04174543172121048,
+    "disj": 0.04119608551263809
+   },
+   "m685_05_formal": {
+    "shared": 0.2820813059806824,
+    "disj": 0.27767200767993927
+   },
+   "m685_06_villain": {
+    "shared": 0.40095219016075134,
+    "disj": 0.37907901406288147
+   },
+   "m685_07_medical_doctor": {
+    "shared": 0.2689346671104431,
+    "disj": 0.2266634926199913
+   },
+   "m685_08_french_person": {
+    "shared": 0.4959699213504791,
+    "disj": 0.4841081351041794
+   },
+   "m685_09_comedian": {
+    "shared": 0.383380651473999,
+    "disj": 0.3802274018526077
+   },
+   "m779_00_evil": {
+    "shared": 0.34365716576576233,
+    "disj": 0.33696429431438446
+   },
+   "m779_01_sycophancy": {
+    "shared": 0.29281556606292725,
+    "disj": 0.28660130500793457
+   },
+   "m779_02_hallucination": {
+    "shared": 0.1889735609292984,
+    "disj": 0.17280706763267517
+   },
+   "m779_03_evil": {
+    "shared": 0.5232998728752136,
+    "disj": 0.5208073258399963
+   },
+   "m779_04_sycophancy": {
+    "shared": 0.3011464774608612,
+    "disj": 0.2934780567884445
+   }
+  },
+  "context": {
+   "cross_00_evil_to_sycophancy": {
+    "shared": 0.2571825385093689,
+    "disj": 0.24921106547117233
+   },
+   "cross_01_evil_to_hallucination": {
+    "shared": 0.34421926736831665,
+    "disj": 0.33484871685504913
+   },
+   "cross_02_sycophancy_to_evil": {
+    "shared": 0.5030916929244995,
+    "disj": 0.4986105114221573
+   },
+   "cross_03_sycophancy_to_hallucination": {
+    "shared": 0.48096615076065063,
+    "disj": 0.47788842022418976
+   },
+   "cross_04_hallucination_to_evil": {
+    "shared": 0.49878692626953125,
+    "disj": 0.4949568659067154
+   },
+   "cross_05_hallucination_to_sycophancy": {
+    "shared": 0.40436115860939026,
+    "disj": 0.39780986309051514
+   },
+   "cross_06_evil_to_sycophancy": {
+    "shared": 0.27486538887023926,
+    "disj": 0.264851875603199
+   },
+   "cross_07_evil_to_hallucination": {
+    "shared": 0.352523535490036,
+    "disj": 0.3448164016008377
+   },
+   "cross_08_sycophancy_to_evil": {
+    "shared": 0.47074005007743835,
+    "disj": 0.4619119316339493
+   },
+   "cross_09_sycophancy_to_hallucination": {
+    "shared": 0.4328911602497101,
+    "disj": 0.42497262358665466
+   },
+   "cross_10_hallucination_to_evil": {
+    "shared": 0.4796421527862549,
+    "disj": 0.4770544320344925
+   },
+   "cross_11_hallucination_to_sycophancy": {
+    "shared": 0.4224867820739746,
+    "disj": 0.4198542386293411
+   },
+   "cross_12_evil_to_sycophancy": {
+    "shared": 0.3445204794406891,
+    "disj": 0.34037545323371887
+   },
+   "m685_00_sycophancy": {
+    "shared": 0.26527416706085205,
+    "disj": 0.256088986992836
+   },
+   "m685_01_refusal": {
+    "shared": 0.5197110176086426,
+    "disj": 0.5153207778930664
+   },
+   "m685_02_evil": {
+    "shared": 0.44711360335350037,
+    "disj": 0.43288785219192505
+   },
+   "m685_03_hedging": {
+    "shared": 0.4009736180305481,
+    "disj": 0.3935188055038452
+   },
+   "m685_04_terse": {
+    "shared": 0.0979798212647438,
+    "disj": 0.09617428109049797
+   },
+   "m685_05_formal": {
+    "shared": 0.33296164870262146,
+    "disj": 0.3283075839281082
+   },
+   "m685_06_villain": {
+    "shared": 0.39342573285102844,
+    "disj": 0.37199054658412933
+   },
+   "m685_07_medical_doctor": {
+    "shared": 0.3218708336353302,
+    "disj": 0.27038805931806564
+   },
+   "m685_08_french_person": {
+    "shared": 0.5795143842697144,
+    "disj": 0.5672654211521149
+   },
+   "m685_09_comedian": {
+    "shared": 0.5515164732933044,
+    "disj": 0.5475420355796814
+   },
+   "m779_00_evil": {
+    "shared": 0.3633957505226135,
+    "disj": 0.3563823401927948
+   },
+   "m779_01_sycophancy": {
+    "shared": 0.3770074248313904,
+    "disj": 0.3696215748786926
+   },
+   "m779_02_hallucination": {
+    "shared": 0.2144453376531601,
+    "disj": 0.20106243342161179
+   },
+   "m779_03_evil": {
+    "shared": 0.5520337224006653,
+    "disj": 0.5494007766246796
+   },
+   "m779_04_sycophancy": {
+    "shared": 0.35141438245773315,
+    "disj": 0.342913880944252
+   }
+  }
+ },
+ "rb": {
+  "evil": {
+   "cross_00_evil_to_sycophancy": {
+    "shared": 0.27484965324401855,
+    "disj": 0.20082005113363266
+   },
+   "cross_01_evil_to_hallucination": {
+    "shared": 0.036000706255435944,
+    "disj": -0.004787011072039604
+   },
+   "cross_02_sycophancy_to_evil": {
+    "shared": 0.19373485445976257,
+    "disj": 0.15693002939224243
+   },
+   "cross_03_sycophancy_to_hallucination": {
+    "shared": 0.13826651871204376,
+    "disj": 0.0950552374124527
+   },
+   "cross_04_hallucination_to_evil": {
+    "shared": 0.27606675028800964,
+    "disj": 0.18503624573349953
+   },
+   "cross_05_hallucination_to_sycophancy": {
+    "shared": -0.023147083818912506,
+    "disj": -0.05780349299311638
+   },
+   "cross_06_evil_to_sycophancy": {
+    "shared": 0.23285479843616486,
+    "disj": 0.17525801807641983
+   },
+   "cross_07_evil_to_hallucination": {
+    "shared": 0.04242986440658569,
+    "disj": 0.00787352304905653
+   },
+   "cross_08_sycophancy_to_evil": {
+    "shared": 0.34301069378852844,
+    "disj": 0.24697739630937576
+   },
+   "cross_09_sycophancy_to_hallucination": {
+    "shared": 0.15312297642230988,
+    "disj": 0.10363739915192127
+   },
+   "cross_10_hallucination_to_evil": {
+    "shared": 0.32886695861816406,
+    "disj": 0.26265935599803925
+   },
+   "cross_11_hallucination_to_sycophancy": {
+    "shared": 0.4399847388267517,
+    "disj": 0.3926730155944824
+   },
+   "cross_12_evil_to_sycophancy": {
+    "shared": 0.4327937960624695,
+    "disj": 0.36209025979042053
+   },
+   "m685_00_sycophancy": {
+    "shared": 0.3310682475566864,
+    "disj": 0.16489621996879578
+   },
+   "m685_01_refusal": {
+    "shared": 0.30115950107574463,
+    "disj": 0.19776488840579987
+   },
+   "m685_02_evil": {
+    "shared": 0.3653726577758789,
+    "disj": 0.22920717298984528
+   },
+   "m685_03_hedging": {
+    "shared": 0.2083427459001541,
+    "disj": 0.1313833650201559
+   },
+   "m685_04_terse": {
+    "shared": 0.18637895584106445,
+    "disj": 0.12920403480529785
+   },
+   "m685_05_formal": {
+    "shared": 0.2455771118402481,
+    "disj": 0.1388578675687313
+   },
+   "m685_06_villain": {
+    "shared": 0.05028769373893738,
+    "disj": -0.13167306035757065
+   },
+   "m685_07_medical_doctor": {
+    "shared": 0.2556343376636505,
+    "disj": -0.05364725459367037
+   },
+   "m685_08_french_person": {
+    "shared": 0.3350614607334137,
+    "disj": 0.22669323533773422
+   },
+   "m685_09_comedian": {
+    "shared": 0.5105796456336975,
+    "disj": 0.4458094388246536
+   },
+   "m779_00_evil": {
+    "shared": 0.20856748521327972,
+    "disj": 0.112993273884058
+   },
+   "m779_01_sycophancy": {
+    "shared": 0.006702647544443607,
+    "disj": -0.0006005354225635529
+   },
+   "m779_02_hallucination": {
+    "shared": 0.22560277581214905,
+    "disj": 0.07085405569523573
+   },
+   "m779_03_evil": {
+    "shared": 0.2344757467508316,
+    "disj": 0.2112683802843094
+   },
+   "m779_04_sycophancy": {
+    "shared": 0.5646277070045471,
+    "disj": 0.3812045156955719
+   }
+  },
+  "hallucination": {
+   "cross_00_evil_to_sycophancy": {
+    "shared": 0.09702592343091965,
+    "disj": 0.0029245750047266483
+   },
+   "cross_01_evil_to_hallucination": {
+    "shared": 0.09857448190450668,
+    "disj": 0.03582289349287748
+   },
+   "cross_02_sycophancy_to_evil": {
+    "shared": 0.34355655312538147,
+    "disj": 0.25727108120918274
+   },
+   "cross_03_sycophancy_to_hallucination": {
+    "shared": 0.35805317759513855,
+    "disj": 0.2934136688709259
+   },
+   "cross_04_hallucination_to_evil": {
+    "shared": 0.26524677872657776,
+    "disj": 0.19114121422171593
+   },
+   "cross_05_hallucination_to_sycophancy": {
+    "shared": 0.026534780859947205,
+    "disj": -0.026197033002972603
+   },
+   "cross_06_evil_to_sycophancy": {
+    "shared": 0.10918372869491577,
+    "disj": 0.04508621105924249
+   },
+   "cross_07_evil_to_hallucination": {
+    "shared": 0.23224614560604095,
+    "disj": 0.15537244081497192
+   },
+   "cross_08_sycophancy_to_evil": {
+    "shared": 0.2874319553375244,
+    "disj": 0.15301337809069082
+   },
+   "cross_09_sycophancy_to_hallucination": {
+    "shared": 0.13848531246185303,
+    "disj": 0.04499464109539986
+   },
+   "cross_10_hallucination_to_evil": {
+    "shared": 0.07392200827598572,
+    "disj": 0.047272770665585995
+   },
+   "cross_11_hallucination_to_sycophancy": {
+    "shared": 0.29252728819847107,
+    "disj": 0.21081290394067764
+   },
+   "cross_12_evil_to_sycophancy": {
+    "shared": 0.22798816859722137,
+    "disj": 0.12926050275564194
+   },
+   "m685_00_sycophancy": {
+    "shared": 0.20702077448368073,
+    "disj": 0.06619171798229218
+   },
+   "m685_01_refusal": {
+    "shared": 0.3563675880432129,
+    "disj": 0.24188164621591568
+   },
+   "m685_02_evil": {
+    "shared": 0.3195192515850067,
+    "disj": 0.20735745131969452
+   },
+   "m685_03_hedging": {
+    "shared": 0.1596865952014923,
+    "disj": 0.0655857203528285
+   },
+   "m685_04_terse": {
+    "shared": 0.21430467069149017,
+    "disj": 0.16858885437250137
+   },
+   "m685_05_formal": {
+    "shared": 0.229048952460289,
+    "disj": 0.12291537597775459
+   },
+   "m685_06_villain": {
+    "shared": 0.14019156992435455,
+    "disj": -0.06856324686668813
+   },
+   "m685_07_medical_doctor": {
+    "shared": 0.1776622235774994,
+    "disj": -0.1141558326780796
+   },
+   "m685_08_french_person": {
+    "shared": 0.25428879261016846,
+    "disj": 0.10857462976127863
+   },
+   "m685_09_comedian": {
+    "shared": 0.10216820240020752,
+    "disj": 0.05259179696440697
+   },
+   "m779_00_evil": {
+    "shared": -0.019374793395400047,
+    "disj": -0.058457301929593086
+   },
+   "m779_01_sycophancy": {
+    "shared": 0.10223318636417389,
+    "disj": 0.03732149675488472
+   },
+   "m779_02_hallucination": {
+    "shared": 0.30504870414733887,
+    "disj": 0.08308949740603566
+   },
+   "m779_03_evil": {
+    "shared": 0.09089060872793198,
+    "disj": 0.07386481575667858
+   },
+   "m779_04_sycophancy": {
+    "shared": 0.160609632730484,
+    "disj": 0.029931450146250427
+   }
+  },
+  "sycophancy": {
+   "cross_00_evil_to_sycophancy": {
+    "shared": 0.1978873610496521,
+    "disj": 0.14395513385534286
+   },
+   "cross_01_evil_to_hallucination": {
+    "shared": 0.0501185804605484,
+    "disj": 0.015865258872509003
+   },
+   "cross_02_sycophancy_to_evil": {
+    "shared": 0.21327759325504303,
+    "disj": 0.1657879874110222
+   },
+   "cross_03_sycophancy_to_hallucination": {
+    "shared": 0.19448450207710266,
+    "disj": 0.15362656861543655
+   },
+   "cross_04_hallucination_to_evil": {
+    "shared": 0.3551771640777588,
+    "disj": 0.2985205501317978
+   },
+   "cross_05_hallucination_to_sycophancy": {
+    "shared": 0.10502994060516357,
+    "disj": 0.005789317190647125
+   },
+   "cross_06_evil_to_sycophancy": {
+    "shared": 0.26883023977279663,
+    "disj": 0.19483069702982903
+   },
+   "cross_07_evil_to_hallucination": {
+    "shared": 0.01767733506858349,
+    "disj": -0.02917862171307206
+   },
+   "cross_08_sycophancy_to_evil": {
+    "shared": 0.2738898694515228,
+    "disj": 0.16351907327771187
+   },
+   "cross_09_sycophancy_to_hallucination": {
+    "shared": 0.09184988588094711,
+    "disj": 0.03035721555352211
+   },
+   "cross_10_hallucination_to_evil": {
+    "shared": 0.24029923975467682,
+    "disj": 0.17682194709777832
+   },
+   "cross_11_hallucination_to_sycophancy": {
+    "shared": 0.30190613865852356,
+    "disj": 0.2391677051782608
+   },
+   "cross_12_evil_to_sycophancy": {
+    "shared": 0.42168426513671875,
+    "disj": 0.3609686344861984
+   },
+   "m685_00_sycophancy": {
+    "shared": -0.0786578580737114,
+    "disj": -0.15665429388172925
+   },
+   "m685_01_refusal": {
+    "shared": -0.010493439622223377,
+    "disj": -0.0516395578160882
+   },
+   "m685_02_evil": {
+    "shared": 0.3241819739341736,
+    "disj": 0.2027604952454567
+   },
+   "m685_03_hedging": {
+    "shared": 0.24924756586551666,
+    "disj": 0.16543615981936455
+   },
+   "m685_04_terse": {
+    "shared": -0.05741458386182785,
+    "disj": -0.07529802620410919
+   },
+   "m685_05_formal": {
+    "shared": 0.14829151332378387,
+    "disj": 0.03298064321279526
+   },
+   "m685_06_villain": {
+    "shared": 0.21611319482326508,
+    "disj": 0.0265945247374475
+   },
+   "m685_07_medical_doctor": {
+    "shared": -0.09678350389003754,
+    "disj": -0.2915396988391876
+   },
+   "m685_08_french_person": {
+    "shared": 0.31576940417289734,
+    "disj": 0.15351810678839684
+   },
+   "m685_09_comedian": {
+    "shared": 0.1813988983631134,
+    "disj": 0.1196385882794857
+   },
+   "m779_00_evil": {
+    "shared": 0.18455101549625397,
+    "disj": 0.0689874142408371
+   },
+   "m779_01_sycophancy": {
+    "shared": 0.21836040914058685,
+    "disj": 0.16157783940434456
+   },
+   "m779_02_hallucination": {
+    "shared": 0.42852678894996643,
+    "disj": 0.17738982662558556
+   },
+   "m779_03_evil": {
+    "shared": 0.28191858530044556,
+    "disj": 0.2352946773171425
+   },
+   "m779_04_sycophancy": {
+    "shared": 0.15860998630523682,
+    "disj": 0.04848409350961447
+   }
+  }
+ },
+ "behavioral_a4": {
+  "baseline": {
+   "mean": 1.3000000000000003,
+   "se": 0.7873335886993389,
+   "n_pairs": 28
+  },
+  "ceiling": {
+   "mean": 30.10368055555556,
+   "se": 5.689158080258694,
+   "n_pairs": 28
+  },
+  "steered_prefix_a4": {
+   "mean": 1.6321428571428573,
+   "se": 0.9892653140982982,
+   "n_pairs": 28
+  },
+  "steered_context_a4": {
+   "mean": 2.211607142857143,
+   "se": 0.9924926883092473,
+   "n_pairs": 28
+  },
+  "allpos_prefix": {
+   "mean": 0.6107142857142858,
+   "se": 0.42133383833460936,
+   "n_pairs": 28
+  },
+  "allpos_context": {
+   "mean": 0.557142857142857,
+   "se": 0.4938207071180121,
+   "n_pairs": 28
+  },
+  "rb_evil": {
+   "mean": 11.415000000000001,
+   "se": 5.167160204282385,
+   "n_pairs": 28
+  }
+ }
+}

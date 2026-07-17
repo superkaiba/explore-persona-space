@@ -2302,6 +2302,20 @@ The Codex twin additionally receives:
   the canonical plan, Step 2-pre-b) — see
   `.claude/agents/codex-code-reviewer.md`.
 
+**Neutral gate vocabulary in FIRST-PASS briefs — every subagent brief,
+every step (#1398).** When ANY brief this skill composes (planner,
+implementer, experimenter, reviewer, analyzer — not only review rounds)
+concerns a kill-gate / RLVR / guard / stop-criteria task, write the BRIEF
+in neutral vocabulary from the first spawn: "halt gate", "stop criterion",
+"termination predicate" — never the loaded kill-* phrasings in
+brief/prompt text. The loaded terms stay in the ARTIFACTS themselves (code
+identifiers, plan text, task bodies are never renamed); only the brief is
+neutralized. This is the gate-vocabulary leg of CLAUDE.md § Spurious
+usage-policy refusals rung (e) — first-pass, not a post-kill retry step
+(2026-07-15: ≥12 spurious refusal kills across ~8 sessions; the #1336
+session lost 3 spawns to gate-criteria phrasing and neutralized only
+after the kills).
+
 **Trigger-dense (guard-surface) rounds — pre-materialize the excerpt file
 BEFORE spawning (#1058/#1098).** When the round's diff or artifact under
 review is trigger-dense per the `.claude/rules/trigger-dense-review.md`
@@ -2640,9 +2654,11 @@ worktree `events.jsonl` — before the implementation marker was pulled in — i
 the most common false absence; the canonical read is what catches it.) No LLM
 judgment, just structural presence:
 
-- **marker-shape:** two sub-recipes, keyed PER BLOCKER on the blocker body
+- **marker-shape:** three sub-recipes, keyed PER BLOCKER on the blocker body
   (a conforming Step 0.55 blocker names exactly ONE marker kind,
-  `epm:smoke-architecture-check` — never a combined Step 0.5 + 0.55 blocker).
+  `epm:smoke-architecture-check`; a conforming Step 4.6 presence blocker
+  names `Gate-scope check` ONLY — never a combined 0.5 + 0.55 + 4.6
+  blocker).
   When the blocker names `epm:smoke-architecture-check` (Step 0.55): a
   separate `epm:smoke-architecture-check` events row exists in canonical task
   state with a `verdict:` line matching `PASS_UNIFIED` | `PASS_CANARY
@@ -2650,7 +2666,14 @@ judgment, just structural presence:
   stale-worktree false absence); absent or verdict-less → leave the FAIL in
   place (the gate is doing its job; do NOT check the implementation marker's
   H3s for this sub-case — they can be conforming while the separate row is
-  missing, which is exactly incident #811). Otherwise (the Step 0.5 default):
+  missing, which is exactly incident #811).
+  When the blocker names `Gate-scope check` (Step 4.6 presence): the `(c)`
+  section of the highest-version `epm:results` marker in canonical task
+  state carries a `Gate-scope check` line — present → STRIP (a
+  stale-worktree false absence; the strip verifies PRESENCE ONLY — a
+  diff-consistency finding is `substantive` per Step 4.6 and never
+  reaches this recipe); absent → leave the FAIL in place (the gate is
+  doing its job). Otherwise (the Step 0.5 default):
   all four H3 sections `(a)`–`(d)` present with non-empty content AND `(c)`
   carries at least one fenced command.
 - **smoke-run-missing:** a `## Smoke run` section is present, and EVERY phase
@@ -3346,13 +3369,26 @@ ignores `--gpus` (only RunPod and SLURM honor the override), so pick
 the intent whose machine matches the plan's GPU spec; a gcp-reachable
 launch with a mismatched `--gpus` is refused pre-route by
 `dispatch_issue.py` (exit 2, `reason: gpus_machine_mismatch`). (f)
-**Drivers that default `REPO_ROOT` to the RunPod path need it threaded
-on gcp/auto** — the GCE startup script clones to `$WORKLOAD_ROOT`
-(`/workspace/eps-issue-<N>`), cds there, then runs the workload
-command verbatim, so a driver defaulting
-`REPO_ROOT=/workspace/explore-persona-space` dies at its first `cd`
-under `set -e` and the EXIT trap powers the VM off; compose
-`--workload-cmd 'REPO_ROOT="$WORKLOAD_ROOT" bash scripts/<driver>.sh'`. (g)
+**Never reference `$WORKLOAD_ROOT` bare in a workload-cmd — it is
+exported ONLY by the GCE startup script**, so the exact command a
+GCP→RunPod failover (or a SLURM fall-through) re-runs aborts under the
+RunPod launcher's / SLURM custom stage's `set -u` before the driver
+starts (incident #825: `REPO_ROOT="$WORKLOAD_ROOT"` killed the Track-S
+RunPod failover; `dispatch_issue.py` now lints this at launch —
+warn-by-default + `extra.workload_cmd_lane_env_risk` on the
+`epm:backend-selected` marker, exit-2 refusal on a provably-certain
+lane or under `--strict-workload-cmd-env`, #1329). A driver defaulting
+`REPO_ROOT=/workspace/explore-persona-space` still dies on the GCE lane
+(the startup script clones to `$WORKLOAD_ROOT`, `/workspace/eps-issue-<N>`,
+and cds there), but the GCE startup script already exports
+`REPO_ROOT="$WORKLOAD_ROOT"` before running the workload (#641,
+`backends/gcp.py render_startup_script`), so compose
+`--workload-cmd 'bash scripts/<driver>.sh'` with a SELF-RESOLVING driver
+(`REPO_ROOT="${REPO_ROOT:-${WORKLOAD_ROOT:-$(cd "$(dirname "$0")/.." && pwd)}}"`,
+the #825 pattern), or use the set-u-safe default expansion inline:
+`--workload-cmd 'REPO_ROOT="${WORKLOAD_ROOT:-$PWD}" bash scripts/<driver>.sh'`
+(every lane cds to the checkout root first; `${VAR:-default}` is safe
+under `set -u`). (g)
 **Sentinel-signaling dispatchers must not rely on auto's SLURM fallback**
 — a dispatch script that posts markers via pod-side sentinel files
 (`/workspace/logs/issue-<N>-*.json`) works only on the /workspace-contract
@@ -3737,6 +3773,15 @@ field shapes can reject 100% of real rows while every synthetic
 smoke stays green). Recipe + verified field shapes:
 `.claude/rules/gotchas.md` "Real-corpus streaming filters" +
 `.claude/agent-memory/experiment-implementer/feedback_real_corpus_streaming_filters_tiny_real_probe.md`.
+When the driver spans MULTIPLE ARM CLASSES (distinct source-context
+classes / recipe branches — e.g. persona-context vs bare-context
+arms), "once at tiny N" means once PER ARM CLASS: per-arm seams
+(source-context construction, negative-panel assembly, `ModelOrganism`
+wiring) are invisible to a single-arm smoke however tiny-real its
+seams (#1090 fu5: a formatting-arm-only smoke passed; all 3
+bare-context arms then died on the #527/#538 panel-disjointness assert
+after a full 4×A100 GCE cycle). Recipe: `.claude/rules/gotchas.md`
+"A single-arm smoke is blind to per-arm seams".
 Confirm the implementer's
 `## Smoke run` report (per `experiment-implementer.md` § "End-to-end
 smoke run PER PHASE") carries a sub-section with exit code `0` + an
@@ -4073,7 +4118,10 @@ acknowledgment, or a deliberate descope ONLY where the planner's §9
 stratification spec permits one. For a fit / battery / factorization phase,
 the vectorize mid-run trigger applies FIRST — run the signature check
 immediately, do not wait for a second deviation
-(`.claude/rules/vectorize-many-cell-fits.md` § Mid-run trigger); the
+(`.claude/rules/vectorize-many-cell-fits.md` § Mid-run trigger), and on a
+NEGATIVE signature over an embarrassingly-parallel unit grid run that
+section's width re-evaluation before resolving (a negative signature
+settles vectorization, not width — #1092); the
 `continue_as_is` bias below scopes to the descope question. Elapsed-so-far is a lower bound on final
 wall, so `continue_as_is` is nearly always the right mid-run resolution; the
 poller variant carries no `action:` field and is never an auto-descope input.
@@ -5693,7 +5741,8 @@ Immediately BEFORE posting the dispatch breadcrumb for any stage that
 launches COMPUTE — a pod/GCP/SLURM provision or workload (re)launch
 (Step 6b / 6d, crash-fix relaunches included), any stage the
 Compute-character pre-launch statement binds (a fit / sweep / statistical
-battery: Step 9a-ter, the Step 9b same-issue follow-up loop), or a detached
+battery, or a ≥ ~5 GB download/staging stage: Step 9a-ter, the Step 9b
+same-issue follow-up loop), or a detached
 VM-side phase (§ below) — run the mechanical enumerator:
 
 ```bash
@@ -5757,7 +5806,7 @@ Any VM-LOCAL compute phase with projected wall-time >~15 min that the
 orchestrator launches DIRECTLY as bg-Bash (a Phase-D-style fit, an
 aggregation / permutation battery) MUST be launched fully detached:
 
-    PHASE_PID=$(bash -c 'setsid nohup env OMP_NUM_THREADS=8 MKL_NUM_THREADS=8 OPENBLAS_NUM_THREADS=8 NUMEXPR_NUM_THREADS=8 <cmd> < /dev/null >> <abs, space-free log path> 2>&1 & echo $!')
+    PHASE_PID=$(bash -c 'setsid nohup env OMP_NUM_THREADS=8 MKL_NUM_THREADS=8 OPENBLAS_NUM_THREADS=8 NUMEXPR_NUM_THREADS=8 MALLOC_ARENA_MAX=2 <cmd> < /dev/null >> <abs, space-free log path> 2>&1 & echo $!')
     ps -p "$PHASE_PID" -o args=   # verify the pid is the workload; on mismatch
                                   # recover via pgrep -f '<distinctive invocation>'
     bash -o pipefail -c 'pgrep -s "$1" | xargs -rn1 sudo -n choom -n -600 -p' _ "$PHASE_PID" >/dev/null \
@@ -5798,7 +5847,13 @@ die first. Lowering adj needs CAP_SYS_RESOURCE, hence `sudo -n` (passwordless
 on the VM); on failure the launch PROCEEDS unprotected with the `[warn]` +
 `choom=failed` breadcrumb token — never block a launch on choom, and never read
 the sweep as guaranteed protection (it re-orders earlyoom's victim selection;
-it does not exempt the phase). Record `choom=ok` ONLY when the sweep pipeline
+it does not exempt the phase). (#1315 observed the gap live: choom on the
+launch pids did not stick to the python3 child `uv run` spawned moments later —
+a child forked before its parent's adjustment lands inherits nothing, and the
+one-shot sweep never revisits; optionally re-run the sweep once the workload's
+real python3 pid appears. choom stays best-effort — MALLOC_ARENA_MAX=2 in the
+launch prefix is the real fix for the arena-fragmentation memory class.)
+Record `choom=ok` ONLY when the sweep pipeline
 itself exited zero; anything else records `choom=failed`. The −600 derivation
 assumes this VM's current `--prefer` +300 python bonus (`/etc/default/earlyoom`);
 re-derive from the decomposition above if that config changes.
@@ -6295,12 +6350,30 @@ projected peak RSS ≥ ~16 GB — single phase, or summed with
 concurrently-resident VM phases — is a STOP: route the phase off the
 shared VM (`cpu-mid` / `cpu-bigmem`) before launching (#778's 22-GiB
 battery was earlyoom-killed 3× on exactly this plannerless path; #833 lost
-5 cells to two concurrent ~13-15 GB phases). Projected
+5 cells to two concurrent ~13-15 GB phases); (5) for any stage that downloads
+or materializes ≥ ~5 GB of artifacts (HF snapshots, tensor stores, staged
+corpora) — whether or not the round has a fit/battery stage — the staging
+path, named UP FRONT, with its off-`/` routing (PRIMARY) and its filesystem
+headroom (SECONDARY): multi-GB staging NEVER lands on `/` (the shared boot
+disk) or `/tmp/` (#1393 incident: a 14 GB inline HF pull on #823 filled `/`
+→ ENOSPC, orchestrator Bash output lost) — route it to the janitor-swept
+`data/issue_<N>/hf_dl/` layout wherever that path resolves OFF `/`, else to
+an existing user-writable per-issue dir on the data disk
+(`/mnt/eps-data/$USER/issue<N>_<slug>/` — the established `issue823_work`
+convention; NEVER a fresh top-level `/mnt/eps-data/<dir>`: the top level is
+root-owned and the `mkdir` fails, the incident's second failure), threading
+`HF_HOME` / `local_dir` so the hub cache follows; the SECONDARY headroom
+check verifies the filesystem the staging path resolves to (`df -P <path>`)
+has free headroom ≥ ~1.5× the projected bytes (headroom for partial shards,
+retries, and cross-filesystem cache→`local_dir` copies; the routing mandate
+binds even when the headroom probe passes — #823 projected ~6 GB, realized
+14 GB). While the #681 worktree bind-mount is pending, the worktree's own
+`data/` dir resolves to `/` — exactly what the `df -P` probe catches. Projected
 wall-time > ~1h without a batched inner loop is a STOP: vectorize first
 (`.claude/rules/vectorize-many-cell-fits.md`), then launch. If the
 realized implementation later adds a fit/battery the dispatch statement
 did not cover — or materially changes its arithmetic — an updated
-statement is posted before that launch. A round with no fit/battery stage states one line: `compute-character: no fit/battery stages`.
+statement is posted before that launch. A round with no fit/battery stage AND no ≥ ~5 GB download/staging states one line: `compute-character: no fit/battery stages, no multi-GB staging`.
 A statement covering a VM-side phase >~15 min ALSO names the detached launch
 shape + log path + the thread-cap `env` prefix (OMP/MKL/OPENBLAS/NUMEXPR=8 — #891;
 or the wider explicit value + one-line reason) + the earlyoom protection state
@@ -6312,7 +6385,9 @@ Routing, auto-continue behavior, and the marker schema are unchanged.
 parked/terminal parent).** This step and its user-chat sibling (the
 CLAUDE.md § Routing "User-chat inline free analysis" carve-out) are
 ANALYSIS-ONLY and normally touch no pod (a needs-gpu discovery takes the
-ABORT path below); 9a-ter proper fires at status `interpreting`, outside
+ABORT path below — EXCEPT the user-chat sibling under its
+explicit user inline-override clause, whose deliberate GPU run inherits
+these same pre-launch signals + the compute-character statement); 9a-ter proper fires at status `interpreting`, outside
 the watcher's auto-stop set, but the user-chat sibling executes on PARKED
 (`on_hold`) / terminal-status parents. If an inline run following this
 shape nonetheless provisions or reuses a pod on such a parent, the
@@ -7603,7 +7678,28 @@ orchestrators driving one round is the #778 root cause.
    fires, it just no longer moves the status to `plan_pending`. The
    round exits the status only at the re-park:
    `set-status <N> awaiting_promotion` (or `blocked` on a failure
-   exit).
+   exit). **Mid-round defer/teardown is an exit too — re-park in the
+   SAME action sequence as the teardown:** a mid-round defer (wedged or
+   pathological run torn down, user defer — any deliberate abandonment
+   of the round short of a `blocked` failure exit; no
+   `--force-followup-exit` needed, `awaiting_promotion` is not in the
+   refused set) tears down the pod/instance FIRST, runs
+   `set-status <N> awaiting_promotion` as the NEXT command (the § User
+   pause affordance teardown-first-park-last ordering — distinct
+   mechanism: a user pause parks at `on_hold`, this defer exit re-parks
+   at `awaiting_promotion` with the label closed; never leave
+   `followups_running` with no live round compute), THEN closes the
+   round's label by posting the step-4 completion marker with
+   `outcome: deferred — <one-line reason>` (label closure is
+   outcome-agnostic — `task_workflow.unrun_followup_labels` — so Step 0
+   / the tick never auto-re-dispatch the deferred round; a deliberate
+   later resume posts a FRESH scope under a NEW label; a deferred
+   proposer-band round still counts toward its step-5 cap). The tick
+   STALE-REDRIVE / watcher re-park are recovery backstops, not the
+   owner (incident #825, 2026-07-15: a pathological fit was torn down
+   at 00:28Z with no re-park — the parent stranded at
+   `followups_running` ~1.4 h until the 01:53Z tick re-drive re-parked
+   it).
    - **Immediately before the planner snapshots the scope, RE-READ the
      authoritative scope FOR THIS ROUND'S LABEL** —
      `task_workflow.executing_followup_label` (the newest
@@ -7648,8 +7744,9 @@ orchestrators driving one round is the #778 root cause.
      own latest prior run, not a from-scratch plan. Planner-exempt
      re-runs (step 2) skip this.
    - **Compute-character pre-launch statement** (canonical block: Step
-     9a-ter § Compute-character pre-launch statement — same four elements,
-     same > ~1h stop-and-vectorize + ≥~16 GB-RSS off-VM rules): REQUIRED in the
+     9a-ter § Compute-character pre-launch statement — same five elements,
+     same > ~1h stop-and-vectorize + ≥~16 GB-RSS off-VM + ≥ ~5 GB off-`/`
+     disk-routing rules): REQUIRED in the
      `stage=followup-<phase>` dispatch breadcrumb (or an adjacent
      `epm:progress` note) before dispatching ANY stage of the round that
      launches a fit, sweep, or statistical battery — INCLUDING
@@ -7882,13 +7979,23 @@ suite directly and posts an `epm:test-verdict` event with the result.
       sudo -n choom -n -600 -p $$ >/dev/null 2>&1 && GATE_CHOOM=ok \
         || { GATE_CHOOM=failed; echo "[warn] choom failed — gate pytest is earlyoom-UNPROTECTED (choom=failed)" >&2; }
       echo "[step9c] gate earlyoom protection choom=$GATE_CHOOM"
+      # Route gate fixture temp writes onto the data disk (#1408; #1363: / at 100% killed the
+      # gate). Short --basetemp keeps AF_UNIX socket paths under the 108-byte cap. Falls back
+      # silently (no TMPDIR export) on pods/GCE with no data disk.
+      S9C_TMPROOT=$(uv run python scripts/step9c_baseline.py tmproot 2>/dev/null || true)
+      if [ -n "$S9C_TMPROOT" ]; then
+        export TMPDIR="$S9C_TMPROOT"
+        S9C_BASETEMP=$(mktemp -d "$S9C_TMPROOT/bt-XXXXXX")
+      fi
       rm -f /tmp/step9c-junit-issue-<N>.xml /tmp/step9c-rc-issue-<N> \
             /tmp/step9c-pytest-issue-<N>.log   # MANDATORY before EVERY gate pytest invocation
       # ONE background Bash call (run_in_background=true) — the selector-printed
       # command verbatim, with the junit + log + rc-file tail appended:
       timeout --kill-after=60s <T>s uv run pytest <files> -v --tb=short \
         --junitxml=/tmp/step9c-junit-issue-<N>.xml -o junit_family=xunit1 \
+        ${S9C_BASETEMP:+--basetemp=$S9C_BASETEMP/p} \
         > /tmp/step9c-pytest-issue-<N>.log 2>&1; echo $? > /tmp/step9c-rc-issue-<N>
+      [ -n "${S9C_BASETEMP:-}" ] && rm -rf "$S9C_BASETEMP" || true
       ```
       When the background call completes (the harness notifies), read the
       verdict in a fresh foreground call — the rc FILE replaces the former
@@ -7944,12 +8051,22 @@ suite directly and posts an `epm:test-verdict` event with the result.
       sudo -n choom -n -600 -p $$ >/dev/null 2>&1 && GATE_CHOOM=ok \
         || { GATE_CHOOM=failed; echo "[warn] choom failed — gate pytest is earlyoom-UNPROTECTED (choom=failed)" >&2; }
       echo "[step9c] gate earlyoom protection choom=$GATE_CHOOM"
+      # Route gate fixture temp writes onto the data disk (#1408; #1363: / at 100% killed the
+      # gate). Short --basetemp keeps AF_UNIX socket paths under the 108-byte cap. Falls back
+      # silently (no TMPDIR export) on pods/GCE with no data disk.
+      S9C_TMPROOT=$(uv run python scripts/step9c_baseline.py tmproot 2>/dev/null || true)
+      if [ -n "$S9C_TMPROOT" ]; then
+        export TMPDIR="$S9C_TMPROOT"
+        S9C_BASETEMP=$(mktemp -d "$S9C_TMPROOT/bt-XXXXXX")
+      fi
       rm -f /tmp/step9c-junit-issue-<N>.xml /tmp/step9c-rc-issue-<N> \
             /tmp/step9c-pytest-issue-<N>.log
       # ONE background Bash call (run_in_background=true):
       timeout --kill-after=60s 60m uv run pytest tests/ -q \
         --junitxml=/tmp/step9c-junit-issue-<N>.xml -o junit_family=xunit1 \
+        ${S9C_BASETEMP:+--basetemp=$S9C_BASETEMP/p} \
         > /tmp/step9c-pytest-issue-<N>.log 2>&1; echo $? > /tmp/step9c-rc-issue-<N>
+      [ -n "${S9C_BASETEMP:-}" ] && rm -rf "$S9C_BASETEMP" || true
       ```
       (NO `-x` / `--maxfail` — with the step-1d compare deciding the verdict,
       an early-exit on the first known-red main failure would leave the rest
@@ -8074,15 +8191,23 @@ suite directly and posts an `epm:test-verdict` event with the result.
         regression (the JSON names each). FAIL.
       * `COMPARE_RC=2` → indeterminate (PYTEST_RC ∉ {0,1} — aborted/interrupted
         run; missing/empty junitxml; suite crash; unusable ledger;
-        scratch-ineligible dirty oracle (residual contaminating dirt, a
-        scan-set node, or a non-sparse work root — other root dirt
-        auto-falls back to a detached sparse scratch-worktree oracle at main
-        HEAD, reported as JSON "pristine_oracle": "scratch-worktree"; since
-        #1251 dirty in-package `src/` is neutralized via a probe-verified
-        `PYTHONPATH=<scratch>/src` shadow (`"scratch_src_shadow": true`), so
-        only `pyproject.toml`/`uv.lock` (or out-of-package `src/`) dirt still
-        refuses);
-        systemic main breakage). FAIL — never PASS on indeterminate.
+        systemic main breakage; or a scratch-INELIGIBLE dirty oracle. The
+        pristine oracle is BY DEFAULT a detached sparse scratch worktree at
+        main HEAD (#1408 — clean or dirty root alike; JSON
+        "pristine_oracle": "scratch-worktree"; a scratch creation/probe
+        failure on a CLEAN root degrades to the trustworthy root oracle with
+        a WARN + `"scratch_degraded": true`, never exit 2), so the
+        dirty-refusal enumeration shrinks to: residual venv dirt
+        (`pyproject.toml`/`uv.lock` or out-of-package `src/` — dirty
+        in-package `src/` is neutralized via the probe-verified
+        `PYTHONPATH=<scratch>/src` shadow, `"scratch_src_shadow": true`,
+        #1251), a non-sparse work root, a scan-set node outside the
+        file-anchored allowlist (step9c_baseline.py
+        FILE_ANCHORED_SCAN_TESTS, #1337), or scratch creation/probe failure
+        on a DIRTY root). FAIL — never PASS on indeterminate.
+        On a residual-dirt exit 2, do NOT improvise multi-hour clean-root
+        polls (the #1317 anti-pattern): one bounded re-check after ~10-15
+        min, then treat as gate FAIL and surface per the existing FAIL path.
         COMPARE_OUT is valid JSON on EVERY exit path under --json (exit-2
         payloads carry "indeterminate": true — an exit-2 payload's empty
         new/stripped arrays are NOT a clean verdict).
@@ -8094,7 +8219,7 @@ suite directly and posts an `epm:test-verdict` event with the result.
       this verdict on it:
       ```bash
       REFRESH_PID=$(bash -c 'cd "$1" || exit 1; setsid nohup timeout --kill-after=60s 2100s \
-        env OMP_NUM_THREADS=8 MKL_NUM_THREADS=8 OPENBLAS_NUM_THREADS=8 NUMEXPR_NUM_THREADS=8 \
+        env OMP_NUM_THREADS=8 MKL_NUM_THREADS=8 OPENBLAS_NUM_THREADS=8 NUMEXPR_NUM_THREADS=8 MALLOC_ARENA_MAX=2 \
         uv run python scripts/step9c_baseline.py refresh \
         >> "$1/logs/step9c_baseline_refresh.log" 2>&1 < /dev/null & echo $!' _ "$REPO_ROOT")
       # earlyoom-protect the refresh (#1045; fail-open): sweep its session; the refresh's own
@@ -9343,6 +9468,14 @@ tests BEFORE anything lands:
       # matched payload paths (attribution grep list) + gated test list:
       cut -f2 /tmp/issue-<N>-tg-map.txt | sort -u > /tmp/issue-<N>-tg-files.txt
       mapfile -t TG_TESTS < <(cut -f1 /tmp/issue-<N>-tg-map.txt | sort -u)
+      # Route TG fixture temp writes onto the data disk (#1408 recipe; #1363:
+      # / at 100% killed a gate). Short --basetemp keeps AF_UNIX socket paths
+      # under the 108-byte cap. Falls back silently (no TMPDIR, no --basetemp
+      # => byte-identical argv) on pods/GCE with no data disk.
+      TG_TMPROOT=$(uv run python "$REPO_ROOT/scripts/step9c_baseline.py" tmproot 2>/dev/null || true)
+      if [ -n "$TG_TMPROOT" ]; then
+        TG_BASETEMP=$(mktemp -d "$TG_TMPROOT/tg-XXXXXX")
+      fi
       # BASELINE leg — root copy on the payload-free main tree (each scan
       # test derives its scan root from its own __file__, so the root copy
       # scans the root tree). Only tests present on the baseline tree run
@@ -9355,8 +9488,10 @@ tests BEFORE anything lands:
       if [ "${#TG_BASE_TESTS[@]}" -gt 0 ]; then
         ( cd "$REPO_ROOT" && timeout --kill-after=30s 300s \
           env OMP_NUM_THREADS=8 MKL_NUM_THREADS=8 OPENBLAS_NUM_THREADS=8 \
-              NUMEXPR_NUM_THREADS=8 \
-          uv run pytest "${TG_BASE_TESTS[@]}" -q -p no:cacheprovider ) \
+              NUMEXPR_NUM_THREADS=8 MALLOC_ARENA_MAX=2 \
+              ${TG_TMPROOT:+TMPDIR=$TG_TMPROOT} \
+          uv run pytest "${TG_BASE_TESTS[@]}" -q -p no:cacheprovider \
+            ${TG_BASETEMP:+--basetemp=$TG_BASETEMP/b} ) \
           > /tmp/issue-<N>-tg-baseline.txt 2>&1 || TG_BASE_RC=$?
       else
         : > /tmp/issue-<N>-tg-baseline.txt
@@ -9365,9 +9500,12 @@ tests BEFORE anything lands:
       # (deliberately NOT the #1212 gate tree — see the mapped-leg residuals):
       ( cd "$WT" && timeout --kill-after=30s 300s \
         env OMP_NUM_THREADS=8 MKL_NUM_THREADS=8 OPENBLAS_NUM_THREADS=8 \
-            NUMEXPR_NUM_THREADS=8 \
-        uv run pytest "${TG_TESTS[@]}" -q -p no:cacheprovider ) \
+            NUMEXPR_NUM_THREADS=8 MALLOC_ARENA_MAX=2 \
+            ${TG_TMPROOT:+TMPDIR=$TG_TMPROOT} \
+        uv run pytest "${TG_TESTS[@]}" -q -p no:cacheprovider \
+          ${TG_BASETEMP:+--basetemp=$TG_BASETEMP/g} ) \
         > /tmp/issue-<N>-tg-gated.txt 2>&1 || TG_RC=$?
+      [ -n "${TG_BASETEMP:-}" ] && rm -rf "$TG_BASETEMP" || true
       # rc 0 = green, 1 = test failures (attributable); ANY other rc
       # (timeout 124, collection/internal/usage error 2-5) = crash-class.
       if [ "$TG_RC" -gt 1 ] || [ "$TG_BASE_RC" -gt 1 ]; then TG_CRASH=yes; fi
@@ -9504,8 +9642,11 @@ tests BEFORE anything lands:
   the map current, #895). Attribution is FILE-grain, not junit-node grain: a
   scan test asserts per-file invariants and aggregates EVERY offender into
   ONE red node, so node-level subtraction is degenerate (baseline-red node ==
-  gated-red node would mask a NEW offender — the same reason
-  `step9c_baseline.py compare` marks scan-set nodes scratch-ineligible). Hits
+  gated-red node would mask a NEW offender — the same aggregation degeneracy
+  that makes compare's node-identity strips of scan tests carry the MF-6
+  masking WARN; compare additionally marks NON-file-anchored scan-set nodes
+  scratch-ineligible (`step9c_baseline.py` `FILE_ANCHORED_SCAN_TESTS` members
+  are scratch-resolved, still WARNed — #1337)). Hits
   = pytest-output lines naming a payload-matched path, line numbers blanked
   so main-vs-branch drift of the SAME pre-existing offense cannot fake a NEW
   line, pytest's ellipsis-truncated `E   assert ...` repr line dropped (its
@@ -9835,7 +9976,9 @@ documented, never silent, and gated on the re-snapshot actually changing
 something (an unchanged tip would fail identically; go straight to the
 merge-conflict recovery instead). NOTE the same error text ALSO fires for
 non-`tasks/` conflicts (overlapping workflow-surface edits, binary
-`figures/` collisions — #697/#597) that a re-snapshot cannot fix: the
+`figures/` collisions — #697/#597, resolved mechanically by the
+binary-figures newer-regeneration-wins recipe in the merge-conflict
+recovery below) that a re-snapshot cannot fix: the
 skip-predicate fall-through is the EXPECTED path there, not a
 malfunction. Likewise when an ORDINARY branch commit itself touched
 foreign `tasks/` at stale content, the re-snapshot cannot fix that
@@ -9997,11 +10140,63 @@ elif mapfile -t RECOVERY_FOREIGN < <(grep -Ev "^tasks/[^/]+/<N>/" \
     git -C "$WT" rm -f --ignore-unmatch -- "${RECOVERY_GONE_ON_MAIN[@]}"
   fi
 fi
-# THIS task's own tasks/*/<N>/ conflicts and all non-tasks/ conflicts:
-# resolve in the worktree (keep main's version of anything outside this
-# task's deliverables), then:
-git -C "$WT" add <each resolved file>
-git -C "$WT" commit --no-edit
+# Binary figures/ conflicts (add/add or modify/modify — #1090 fu4 / PR
+# #1066; earlier #697/#597): git cannot content-merge binaries, and the
+# .gitattributes merge=union rules cover tasks/ jsonl + agent-memory md,
+# NOT figures/ — so both-sides-changed figure paths ALWAYS conflict.
+# Figures are REGENERABLE artifacts (sidecar meta.json pins provenance;
+# the analyzer re-renders + SHA-pins): resolve MECHANICALLY, the NEWER
+# regeneration wins — compare the last commit touching the path on each
+# side; tie -> theirs (in THIS merge ours = the issue branch, theirs =
+# the captured $MAIN_SHA snapshot — the #1090-proven side). The losing
+# copy stays recoverable (branch kept post-merge; main history is
+# immutable; the figure re-renders from committed eval JSON). Stem-mates
+# (png/pdf/meta.json) commit together per regeneration, so per-path %ct
+# resolves the group to one side. checkout --ours/--theirs writes the
+# working tree only — the git add resolves the index entry, and the add
+# is GATED on checkout success: a failing checkout (modify/delete:
+# missing stage) leaves the entry UNMERGED, so the later
+# `git commit --no-edit` refuses on unmerged paths — the loud
+# fall-through to the manual prose below. NEVER stage a path whose
+# checkout failed.
+if ! git -C "$WT" -c core.quotePath=false diff --name-only --diff-filter=U -- 'figures/' \
+    > /tmp/issue-<N>-recovery-figures.txt; then
+  echo "recovery: figures/ conflicted-paths diff FAILED — resolve by hand per the prose below"
+  false
+else
+  while IFS= read -r p; do
+    OURS_CT=$(git -C "$WT" log -1 --format=%ct HEAD -- "$p")
+    THEIRS_CT=$(git -C "$WT" log -1 --format=%ct "$MAIN_SHA" -- "$p")
+    if [ "${THEIRS_CT:-0}" -ge "${OURS_CT:-0}" ]; then SIDE=--theirs; else SIDE=--ours; fi
+    if git -C "$WT" checkout "$SIDE" -- "$p"; then
+      git -C "$WT" add -- "$p"
+    else
+      echo "recovery: figures/ checkout $SIDE FAILED for $p (modify/delete missing stage?) — left UNMERGED; resolve by hand per the prose below"
+    fi
+  done < /tmp/issue-<N>-recovery-figures.txt
+fi
+# Residual conflicts — THIS task's own tasks/*/<N>/ paths and all remaining
+# non-tasks/ paths (foreign tasks/ and figures/ were resolved MECHANICALLY
+# above, with zero conflict-body reads). The orchestrator NEVER reads
+# residual conflict bodies inline here — that inline read killed #1338
+# ("Prompt is too long", no recovery turn): Step 10d/9b merges run
+# late-session by construction, and a session cannot introspect its own
+# context headroom. Materialize the residual list (exclusive-arm `if ! ...`
+# producer shape, #1184/#1243):
+if ! git -C "$WT" -c core.quotePath=false diff --name-only --diff-filter=U \
+    > /tmp/issue-<N>-recovery-residual.txt; then
+  echo "recovery: residual conflicted-paths diff FAILED — do NOT resolve blind; epm:merge-failed"
+  false
+elif [ -s /tmp/issue-<N>-recovery-residual.txt ]; then
+  echo "recovery: $(wc -l < /tmp/issue-<N>-recovery-residual.txt) residual content conflict(s) — dispatch the residual-conflict subagent (subsection below); do NOT read conflict bodies inline"
+  # Halt the inline fence at this branch (loud false — a naive one-shot
+  # execution must not fall through to the commit/certification below);
+  # re-enter at the post-resolution certification block once the
+  # subagent's resolution commit lands.
+  false
+else
+  git -C "$WT" commit --no-edit   # every conflict was resolved mechanically above
+fi
 # Post-resolution certification (the #1128 verification): the branch tree
 # must now be IDENTICAL to the captured snapshot over tasks/, modulo this
 # task's own folder. ONE fused if/elif chain (Guard 1's `if ! ...` shape,
@@ -10061,6 +10256,79 @@ else
   false
 fi
 ```
+
+##### Residual-conflict subagent dispatch (context-hygiene branch)
+
+When the residual list is NON-EMPTY, dispatch the conflict investigation +
+resolution to a fresh worktree-scoped subagent — never an inline
+orchestrator read. UNCONDITIONAL: no file-count or context-fullness
+threshold. Step 10d/9b merges run after the full pipeline, so late-session
+is guaranteed; a session cannot introspect its own headroom; and the
+lethal variable is conflict-body BYTES, not file count (#1338: 4 files
+paged inline killed the session with no recovery turn — one conflicted
+eval script can be just as large). The mechanical passes above absorb the
+common classes, so this branch fires rarely. The failure-arm echoes above
+("resolve by hand per the prose below") route HERE — "by hand" means via
+this dispatch; do NOT read conflict bodies inline.
+
+1. Post the stage-dispatch breadcrumb FIRST (Step 9 entry-guard
+   convention): an `epm:progress` marker whose note BEGINS with the
+   literal `stage-dispatch ` prefix (required by
+   `task_workflow.stage_dispatch_should_skip` / `_breadcrumb_fields` —
+   a prefix-less note is invisible to the dedup + resume machinery):
+   `stage-dispatch stage=step10d-conflict-resolve worktree=<abs $WT> paths=<count>`.
+   Resume/dedup predicate for a successor session: breadcrumb present AND
+   `git -C "$WT" diff --name-only --diff-filter=U` empty AND a resolution
+   commit on the branch tip ⇒ resolution landed, skip to certification;
+   breadcrumb present but worktree still conflicted AND no prior subagent
+   verdict recorded ⇒ re-dispatch ONCE, counted as the SAME single
+   attempt; otherwise fall to the Failure bullet. Never two concurrent
+   dispatches.
+2. Spawn ONE fresh `implementer`-class subagent with
+   `env=scrub_subagent_env(os.environ)` (standing convention). If the
+   residual list file is missing at dispatch time (a successor session, a
+   swept /tmp), re-run the `--diff-filter=U` producer above rather than
+   assuming the file exists. The brief is LEAN — paths and pins by
+   reference, never conflict bodies
+   (`.claude/rules/trigger-dense-review.md` disciplines 1/3/4 — findings
+   by reference, windowed reads, minimal return text;
+   `.claude/rules/diff-size-budget.md`):
+   - task id, branch name, absolute worktree path `$WT`;
+   - the captured `$MAIN_SHA` — the subagent PINS every resolution to it
+     and never re-fetches or re-snapshots (#1128 shared-ref race);
+   - the residual list file `/tmp/issue-<N>-recovery-residual.txt` + count
+     (the subagent reads paths from the file);
+   - the resolution contract, verbatim: (a) a residual FOREIGN tasks/ path
+     is pinned to `$MAIN_SHA` — checkout the on-main, `git rm -f` the
+     gone-on-main (the mechanical pass's own split); (b) a residual binary
+     figures/ path resolves newer-regeneration-wins per the recipe above;
+     (c) THIS task's own tasks/*/<N>/ and non-tasks/ paths: keep main's
+     version of anything outside this task's deliverables; for the task's
+     own deliverables keep the branch's content, merging hunk-by-hunk only
+     where both sides carry real content;
+   - read discipline: size any diff body before reading (300 KB budget);
+     read conflicted files individually, windowed around conflict markers;
+   - completion duties: `git -C "$WT" add` each resolved path,
+     `git -C "$WT" commit --no-edit`, verify zero `--diff-filter=U` paths;
+   - return contract: verdict `resolved` | `unresolvable: <one line>`, the
+     resolution commit sha, per-class path counts, path NAMES only — NEVER
+     conflict hunks, bodies, or diff text in the return (an oversized
+     return kills the parent this dispatch protects).
+3. On `resolved`: verify cheaply (`--diff-filter=U` empty; `rev-parse
+   HEAD` matches the reported sha), spot-check the keep-main contract on a
+   sample — a residual path OUTSIDE this task's deliverables should be
+   byte-identical to the snapshot (`git -C "$WT" diff "$MAIN_SHA" HEAD --
+   <path>` empty) — then re-enter the fence above AT the post-resolution
+   certification block and run certification → lint gate → push → merge
+   YOURSELF. The subagent never pushes and never runs the lint gate — the
+   fail-closed verdict-file contract is unchanged.
+4. On `unresolvable`, a dead/refused subagent (after step 1's single
+   no-verdict-recorded re-dispatch, or immediately when a verdict WAS
+   recorded), or certification FAIL on the subagent's commit: fall to the
+   Failure bullet (`epm:merge-failed v1`, continue). The dispatch lives
+   INSIDE the one-recovery-attempt cap — never a second dispatch (the
+   step-1 no-verdict re-dispatch is the SAME attempt; a second death
+   falls here), never an inline fallback read.
 
 One recovery attempt per Step 10d invocation. If the re-checked
 mergeability never recovers or the retried merge is refused again, fall
@@ -10282,10 +10550,22 @@ Decision tree:
   if [ "$TG_CRASH" = no ] && [ -s /tmp/issue-<N>-tg-map.txt ]; then
     cut -f2 /tmp/issue-<N>-tg-map.txt | sort -u > /tmp/issue-<N>-tg-files.txt
     mapfile -t TG_TESTS < <(cut -f1 /tmp/issue-<N>-tg-map.txt | sort -u)
+    # Route TG fixture temp writes onto the data disk (#1408 recipe; #1363:
+    # / at 100% killed a gate). Short --basetemp keeps AF_UNIX socket paths
+    # under the 108-byte cap. Falls back silently (no TMPDIR, no --basetemp
+    # => byte-identical argv) on pods/GCE with no data disk. Resolution runs
+    # BEFORE the checkout (the baseline leg needs it; vars persist to the
+    # gated leg).
+    TG_TMPROOT=$(uv run python "$REPO_ROOT/scripts/step9c_baseline.py" tmproot 2>/dev/null || true)
+    if [ -n "$TG_TMPROOT" ]; then
+      TG_BASETEMP=$(mktemp -d "$TG_TMPROOT/tg-XXXXXX")
+    fi
     ( cd "$REPO_ROOT" && timeout --kill-after=30s 300s \
       env OMP_NUM_THREADS=8 MKL_NUM_THREADS=8 OPENBLAS_NUM_THREADS=8 \
-          NUMEXPR_NUM_THREADS=8 \
-      uv run pytest "${TG_TESTS[@]}" -q -p no:cacheprovider ) \
+          NUMEXPR_NUM_THREADS=8 MALLOC_ARENA_MAX=2 \
+          ${TG_TMPROOT:+TMPDIR=$TG_TMPROOT} \
+      uv run pytest "${TG_TESTS[@]}" -q -p no:cacheprovider \
+        ${TG_BASETEMP:+--basetemp=$TG_BASETEMP/b} ) \
       > /tmp/issue-<N>-tg-baseline.txt 2>&1 || TG_BASE_RC=$?
   fi
   # `-C "$REPO_ROOT"` is the repo-root guard's designed deliberate-override
@@ -10342,8 +10622,10 @@ Decision tree:
   if [ "$TG_CRASH" = no ] && [ -s /tmp/issue-<N>-tg-map.txt ]; then
     ( cd "$REPO_ROOT" && timeout --kill-after=30s 300s \
       env OMP_NUM_THREADS=8 MKL_NUM_THREADS=8 OPENBLAS_NUM_THREADS=8 \
-          NUMEXPR_NUM_THREADS=8 \
-      uv run pytest "${TG_TESTS[@]}" -q -p no:cacheprovider ) \
+          NUMEXPR_NUM_THREADS=8 MALLOC_ARENA_MAX=2 \
+          ${TG_TMPROOT:+TMPDIR=$TG_TMPROOT} \
+      uv run pytest "${TG_TESTS[@]}" -q -p no:cacheprovider \
+        ${TG_BASETEMP:+--basetemp=$TG_BASETEMP/g} ) \
       > /tmp/issue-<N>-tg-gated.txt 2>&1 || TG_RC=$?
     if [ "$TG_RC" -gt 1 ] || [ "$TG_BASE_RC" -gt 1 ]; then TG_CRASH=yes; fi
     for leg in baseline gated; do
@@ -10356,6 +10638,8 @@ Decision tree:
     comm -23 /tmp/issue-<N>-tg-gated-hits.txt \
       /tmp/issue-<N>-tg-baseline-hits.txt > /tmp/issue-<N>-tg-new.txt
   fi
+  # TG basetemp reaped after BOTH legs (no-op when routing never resolved).
+  [ -n "${TG_BASETEMP:-}" ] && rm -rf "$TG_BASETEMP" || true
   # Fold the TG verdict into the SAME GATE_VERDICT the stage/commit/push
   # consumes below — crash-class first (fail CLOSED; never downgraded), then
   # the payload-attributed block arm; block/crash reuse the existing cleanup

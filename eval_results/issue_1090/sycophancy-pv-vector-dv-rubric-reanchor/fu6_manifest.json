@@ -1,0 +1,1278 @@
+{
+  "meta": {
+    "issue": 1090,
+    "followup_label": "sycophancy-pv-vector-dv-rubric-reanchor",
+    "plan": "v10",
+    "git_commit": "1a3e23cb567fcb99b465523764a2193c5dfa52dd",
+    "ts": "2026-07-16T23:00:49Z",
+    "smoke": false,
+    "seed": 42,
+    "rubric_path": "src/explore_persona_space/artifacts/judge_prompts/pv_sycophancy_trait_score_v1.txt",
+    "rubric_sha256": "622fd72e362e022ac9a2933483ba369ffa0209e0f3b0b29794bda7711d29041d",
+    "rubric_chars": 854,
+    "judge_model": "claude-sonnet-4-5-20250929",
+    "judge_max_tokens": 300
+  },
+  "resolved_revisions": {
+    "fu3_data": "e016910195b7ab846c83b87ec43140c36c51e35f",
+    "prod_data": "c3cb1c2af96cf9403adc561d6603c8809882d437",
+    "fu1_data": "043acb7f5353b7c640aefb6acb094620ad1a6a50",
+    "fu2_data": "ab5269a36bf28e9a84b43f4226f7ee81af81faf8",
+    "fu3_adapters": "90949b061d09b30d5850f2fec0043790939aa322",
+    "prod_adapters": "f1443f8bd4e18608d8e51d02efe01263e92218cc",
+    "fu1_adapters": "441cf8d6a16ead88a62a74c369e39bdfb729911c",
+    "fu2_adapters": "18aca1188ececddf9ee33a86554bfbec810f0fc6"
+  },
+  "data_revisions": {
+    "fu3": "e016910195b7ab846c83b87ec43140c36c51e35f",
+    "prod": "c3cb1c2af96cf9403adc561d6603c8809882d437",
+    "fu1": "043acb7f5353b7c640aefb6acb094620ad1a6a50",
+    "fu2": "ab5269a36bf28e9a84b43f4226f7ee81af81faf8"
+  },
+  "organisms": [
+    {
+      "organism_id": "fu3-C3-pers-con",
+      "source_round": "fu3",
+      "cell_id": "C3-pers-con",
+      "generator": "claude",
+      "adapter_repo": "superkaiba1/explore-persona-space-overflow",
+      "adapter_rev_pin": "90949b06",
+      "selected_step": 14,
+      "source_context": "persona_software_engineer",
+      "selected_step_source": "eval_results/issue_1090/fu3/fu3_band_hit_table.json",
+      "adapter_rev": "90949b061d09b30d5850f2fec0043790939aa322",
+      "adapter_subfolder": "adapters/issue1090_fu3/C3-pers-con-sycophancy-claude/checkpoint-14"
+    },
+    {
+      "organism_id": "fu3-C3-pers-pos",
+      "source_round": "fu3",
+      "cell_id": "C3-pers-pos",
+      "generator": "claude",
+      "adapter_repo": "superkaiba1/explore-persona-space-overflow",
+      "adapter_rev_pin": "90949b06",
+      "selected_step": 9,
+      "source_context": "persona_software_engineer",
+      "selected_step_source": "eval_results/issue_1090/fu3/fu3_band_hit_table.json",
+      "adapter_rev": "90949b061d09b30d5850f2fec0043790939aa322",
+      "adapter_subfolder": "adapters/issue1090_fu3/C3-pers-pos-sycophancy-claude/checkpoint-9"
+    },
+    {
+      "organism_id": "fu3-C3-bare-con",
+      "source_round": "fu3",
+      "cell_id": "C3-bare-con",
+      "generator": "claude",
+      "adapter_repo": "superkaiba1/explore-persona-space-overflow",
+      "adapter_rev_pin": "90949b06",
+      "selected_step": 14,
+      "source_context": "default",
+      "selected_step_source": "eval_results/issue_1090/fu3/fu3_band_hit_table.json",
+      "adapter_rev": "90949b061d09b30d5850f2fec0043790939aa322",
+      "adapter_subfolder": "adapters/issue1090_fu3/C3-bare-con-sycophancy-claude/checkpoint-14"
+    },
+    {
+      "organism_id": "fu3-C3-bare-pos",
+      "source_round": "fu3",
+      "cell_id": "C3-bare-pos",
+      "generator": "claude",
+      "adapter_repo": "superkaiba1/explore-persona-space-overflow",
+      "adapter_rev_pin": "90949b06",
+      "selected_step": 8,
+      "source_context": "default",
+      "selected_step_source": "eval_results/issue_1090/fu3/fu3_band_hit_table.json",
+      "adapter_rev": "90949b061d09b30d5850f2fec0043790939aa322",
+      "adapter_subfolder": "adapters/issue1090_fu3/C3-bare-pos-sycophancy-claude/checkpoint-8"
+    },
+    {
+      "organism_id": "fu3-C3-conv-con",
+      "source_round": "fu3",
+      "cell_id": "C3-conv-con",
+      "generator": "claude",
+      "adapter_repo": "superkaiba1/explore-persona-space-overflow",
+      "adapter_rev_pin": "90949b06",
+      "selected_step": 2,
+      "source_context": "wildchat_prefix_real545",
+      "selected_step_source": "eval_results/issue_1090/fu3/fu3_band_hit_table.json",
+      "adapter_rev": "90949b061d09b30d5850f2fec0043790939aa322",
+      "adapter_subfolder": "adapters/issue1090_fu3/C3-conv-con-sycophancy-claude/checkpoint-2"
+    },
+    {
+      "organism_id": "fu3-C3-conv-pos",
+      "source_round": "fu3",
+      "cell_id": "C3-conv-pos",
+      "generator": "claude",
+      "adapter_repo": "superkaiba1/explore-persona-space-overflow",
+      "adapter_rev_pin": "90949b06",
+      "selected_step": 2,
+      "source_context": "wildchat_prefix_real545",
+      "selected_step_source": "eval_results/issue_1090/fu3/fu3_band_hit_table.json",
+      "adapter_rev": "90949b061d09b30d5850f2fec0043790939aa322",
+      "adapter_subfolder": "adapters/issue1090_fu3/C3-conv-pos-sycophancy-claude/checkpoint-2"
+    },
+    {
+      "organism_id": "fu3-C3-icl-con",
+      "source_round": "fu3",
+      "cell_id": "C3-icl-con",
+      "generator": "claude",
+      "adapter_repo": "superkaiba1/explore-persona-space-overflow",
+      "adapter_rev_pin": "90949b06",
+      "selected_step": 8,
+      "source_context": "icl_prefix_sycophancy",
+      "selected_step_source": "eval_results/issue_1090/fu3/fu3_band_hit_table.json",
+      "adapter_rev": "90949b061d09b30d5850f2fec0043790939aa322",
+      "adapter_subfolder": "adapters/issue1090_fu3/C3-icl-con-sycophancy-claude/checkpoint-8"
+    },
+    {
+      "organism_id": "fu3-C3-icl-pos",
+      "source_round": "fu3",
+      "cell_id": "C3-icl-pos",
+      "generator": "claude",
+      "adapter_repo": "superkaiba1/explore-persona-space-overflow",
+      "adapter_rev_pin": "90949b06",
+      "selected_step": 6,
+      "source_context": "icl_prefix_sycophancy",
+      "selected_step_source": "eval_results/issue_1090/fu3/fu3_band_hit_table.json",
+      "adapter_rev": "90949b061d09b30d5850f2fec0043790939aa322",
+      "adapter_subfolder": "adapters/issue1090_fu3/C3-icl-pos-sycophancy-claude/checkpoint-6"
+    },
+    {
+      "organism_id": "fu3-C5-pers-con",
+      "source_round": "fu3",
+      "cell_id": "C5-pers-con",
+      "generator": "qwen",
+      "adapter_repo": "superkaiba1/explore-persona-space-overflow",
+      "adapter_rev_pin": "90949b06",
+      "selected_step": 14,
+      "source_context": "persona_software_engineer",
+      "selected_step_source": "eval_results/issue_1090/fu3/fu3_band_hit_table.json",
+      "adapter_rev": "90949b061d09b30d5850f2fec0043790939aa322",
+      "adapter_subfolder": "adapters/issue1090_fu3/C5-pers-con-sycophancy-qwen/checkpoint-14"
+    },
+    {
+      "organism_id": "fu3-C5-pers-pos",
+      "source_round": "fu3",
+      "cell_id": "C5-pers-pos",
+      "generator": "qwen",
+      "adapter_repo": "superkaiba1/explore-persona-space-overflow",
+      "adapter_rev_pin": "90949b06",
+      "selected_step": 9,
+      "source_context": "persona_software_engineer",
+      "selected_step_source": "eval_results/issue_1090/fu3/fu3_band_hit_table.json",
+      "adapter_rev": "90949b061d09b30d5850f2fec0043790939aa322",
+      "adapter_subfolder": "adapters/issue1090_fu3/C5-pers-pos-sycophancy-qwen/checkpoint-9"
+    },
+    {
+      "organism_id": "prod-c3",
+      "source_round": "production",
+      "cell_id": "c3-sycophancy-claude",
+      "generator": "claude",
+      "adapter_repo": "superkaiba1/explore-persona-space",
+      "adapter_rev_pin": "f1443f8",
+      "selected_step": 14,
+      "source_context": "persona_software_engineer",
+      "selected_step_source": "eval_results/issue_1090/install/c3-sycophancy-claude_install.json",
+      "adapter_rev": "f1443f8bd4e18608d8e51d02efe01263e92218cc",
+      "adapter_subfolder": "issue1090/c3-sycophancy-claude/checkpoint-14"
+    },
+    {
+      "organism_id": "fu1-c5",
+      "source_round": "fu1",
+      "cell_id": "c5-sycophancy-qwen",
+      "generator": "qwen",
+      "adapter_repo": "superkaiba1/explore-persona-space-overflow",
+      "adapter_rev_pin": "441cf8d6",
+      "selected_step": 10,
+      "source_context": "persona_software_engineer",
+      "selected_step_source": "eval_results/issue_1090/fu1-margin-qwen/c5_install.json",
+      "adapter_rev": "441cf8d6a16ead88a62a74c369e39bdfb729911c",
+      "adapter_subfolder": "issue1090/c5-sycophancy-qwen/checkpoint-10"
+    },
+    {
+      "organism_id": "fu2-c3",
+      "source_round": "fu2",
+      "cell_id": "c3-sycophancy-claude",
+      "generator": "claude",
+      "adapter_repo": "superkaiba1/explore-persona-space-overflow",
+      "adapter_rev_pin": "18aca118",
+      "selected_step": 14,
+      "source_context": "persona_software_engineer",
+      "selected_step_source": "eval_results/issue_1090/fu2-dose-extension/c3_install_fu2.json",
+      "adapter_rev": "18aca1188ececddf9ee33a86554bfbec810f0fc6",
+      "adapter_subfolder": "issue1090/fu2/c3-sycophancy-claude/checkpoint-14"
+    },
+    {
+      "organism_id": "fu2-c5",
+      "source_round": "fu2",
+      "cell_id": "c5-sycophancy-qwen",
+      "generator": "qwen",
+      "adapter_repo": "superkaiba1/explore-persona-space-overflow",
+      "adapter_rev_pin": "18aca118",
+      "selected_step": 22,
+      "source_context": "persona_software_engineer",
+      "selected_step_source": "plan v10 D1 (checkpoint-22) / committed fu2 record if present",
+      "adapter_rev": "18aca1188ececddf9ee33a86554bfbec810f0fc6",
+      "adapter_subfolder": "issue1090/fu2/c5-sycophancy-qwen/checkpoint-22"
+    }
+  ],
+  "capture_panel": [
+    "persona_software_engineer",
+    "default",
+    "wildchat_prefix_real545",
+    "icl_prefix_sycophancy",
+    "neg_sp_police",
+    "neg_sp_ph4"
+  ],
+  "extraction": {
+    "n_pairs": 5,
+    "n_extraction_questions": 20,
+    "n_eval_questions": 20,
+    "n_rollouts_per_arm": 10,
+    "temperature": 1.0,
+    "max_new_tokens": 1024,
+    "bank": "sycophancy_neutral_v2 [0:20] extraction / [20:40] eval (HARDCODED)"
+  },
+  "judge_sets": [
+    {
+      "set_id": "fu3-tier2-C3-pers-con",
+      "kind": "tier2",
+      "organism_id": "fu3-C3-pers-con",
+      "layout": "completions_json",
+      "revision": "e016910195b7ab846c83b87ec43140c36c51e35f",
+      "draws": 5,
+      "files": {
+        "trained": "issue1090_fu3/C3-pers-con-sycophancy-claude/tier2/completions__trained__persona_software_engineer.json",
+        "base": "issue1090_fu3/C3-pers-con-sycophancy-claude/tier2/completions__base__persona_software_engineer.json"
+      },
+      "context": "persona_software_engineer",
+      "status": "available"
+    },
+    {
+      "set_id": "fu3-bystander-C3-pers-con-persona_software_engineer",
+      "kind": "bystander",
+      "organism_id": "fu3-C3-pers-con",
+      "layout": "completions_json",
+      "revision": "e016910195b7ab846c83b87ec43140c36c51e35f",
+      "draws": 3,
+      "files": {
+        "trained": "issue1090_fu3/C3-pers-con-sycophancy-claude/bystander/completions__trained__persona_software_engineer.json",
+        "base": "issue1090_fu3/C3-pers-con-sycophancy-claude/bystander/completions__base__persona_software_engineer.json"
+      },
+      "context": "persona_software_engineer",
+      "status": "available"
+    },
+    {
+      "set_id": "fu3-bystander-C3-pers-con-default",
+      "kind": "bystander",
+      "organism_id": "fu3-C3-pers-con",
+      "layout": "completions_json",
+      "revision": "e016910195b7ab846c83b87ec43140c36c51e35f",
+      "draws": 3,
+      "files": {
+        "trained": "issue1090_fu3/C3-pers-con-sycophancy-claude/bystander/completions__trained__default.json",
+        "base": "issue1090_fu3/C3-pers-con-sycophancy-claude/bystander/completions__base__default.json"
+      },
+      "context": "default",
+      "status": "available"
+    },
+    {
+      "set_id": "fu3-bystander-C3-pers-con-wildchat_prefix_real545",
+      "kind": "bystander",
+      "organism_id": "fu3-C3-pers-con",
+      "layout": "completions_json",
+      "revision": "e016910195b7ab846c83b87ec43140c36c51e35f",
+      "draws": 3,
+      "files": {
+        "trained": "issue1090_fu3/C3-pers-con-sycophancy-claude/bystander/completions__trained__wildchat_prefix_real545.json",
+        "base": "issue1090_fu3/C3-pers-con-sycophancy-claude/bystander/completions__base__wildchat_prefix_real545.json"
+      },
+      "context": "wildchat_prefix_real545",
+      "status": "available"
+    },
+    {
+      "set_id": "fu3-bystander-C3-pers-con-icl_prefix_sycophancy",
+      "kind": "bystander",
+      "organism_id": "fu3-C3-pers-con",
+      "layout": "completions_json",
+      "revision": "e016910195b7ab846c83b87ec43140c36c51e35f",
+      "draws": 3,
+      "files": {
+        "trained": "issue1090_fu3/C3-pers-con-sycophancy-claude/bystander/completions__trained__icl_prefix_sycophancy.json",
+        "base": "issue1090_fu3/C3-pers-con-sycophancy-claude/bystander/completions__base__icl_prefix_sycophancy.json"
+      },
+      "context": "icl_prefix_sycophancy",
+      "status": "available"
+    },
+    {
+      "set_id": "fu3-bystander-C3-pers-con-neg_sp_police",
+      "kind": "bystander",
+      "organism_id": "fu3-C3-pers-con",
+      "layout": "completions_json",
+      "revision": "e016910195b7ab846c83b87ec43140c36c51e35f",
+      "draws": 3,
+      "files": {
+        "trained": "issue1090_fu3/C3-pers-con-sycophancy-claude/bystander/completions__trained__neg_sp_police.json",
+        "base": "issue1090_fu3/C3-pers-con-sycophancy-claude/bystander/completions__base__neg_sp_police.json"
+      },
+      "context": "neg_sp_police",
+      "status": "available"
+    },
+    {
+      "set_id": "fu3-bystander-C3-pers-con-neg_sp_ph4",
+      "kind": "bystander",
+      "organism_id": "fu3-C3-pers-con",
+      "layout": "completions_json",
+      "revision": "e016910195b7ab846c83b87ec43140c36c51e35f",
+      "draws": 3,
+      "files": {
+        "trained": "issue1090_fu3/C3-pers-con-sycophancy-claude/bystander/completions__trained__neg_sp_ph4.json",
+        "base": "issue1090_fu3/C3-pers-con-sycophancy-claude/bystander/completions__base__neg_sp_ph4.json"
+      },
+      "context": "neg_sp_ph4",
+      "status": "available"
+    },
+    {
+      "set_id": "fu3-tier2-C3-pers-pos",
+      "kind": "tier2",
+      "organism_id": "fu3-C3-pers-pos",
+      "layout": "completions_json",
+      "revision": "e016910195b7ab846c83b87ec43140c36c51e35f",
+      "draws": 5,
+      "files": {
+        "trained": "issue1090_fu3/C3-pers-pos-sycophancy-claude/tier2/completions__trained__persona_software_engineer.json",
+        "base": "issue1090_fu3/C3-pers-pos-sycophancy-claude/tier2/completions__base__persona_software_engineer.json"
+      },
+      "context": "persona_software_engineer",
+      "status": "available"
+    },
+    {
+      "set_id": "fu3-bystander-C3-pers-pos-persona_software_engineer",
+      "kind": "bystander",
+      "organism_id": "fu3-C3-pers-pos",
+      "layout": "completions_json",
+      "revision": "e016910195b7ab846c83b87ec43140c36c51e35f",
+      "draws": 3,
+      "files": {
+        "trained": "issue1090_fu3/C3-pers-pos-sycophancy-claude/bystander/completions__trained__persona_software_engineer.json",
+        "base": "issue1090_fu3/C3-pers-pos-sycophancy-claude/bystander/completions__base__persona_software_engineer.json"
+      },
+      "context": "persona_software_engineer",
+      "status": "available"
+    },
+    {
+      "set_id": "fu3-bystander-C3-pers-pos-default",
+      "kind": "bystander",
+      "organism_id": "fu3-C3-pers-pos",
+      "layout": "completions_json",
+      "revision": "e016910195b7ab846c83b87ec43140c36c51e35f",
+      "draws": 3,
+      "files": {
+        "trained": "issue1090_fu3/C3-pers-pos-sycophancy-claude/bystander/completions__trained__default.json",
+        "base": "issue1090_fu3/C3-pers-pos-sycophancy-claude/bystander/completions__base__default.json"
+      },
+      "context": "default",
+      "status": "available"
+    },
+    {
+      "set_id": "fu3-bystander-C3-pers-pos-wildchat_prefix_real545",
+      "kind": "bystander",
+      "organism_id": "fu3-C3-pers-pos",
+      "layout": "completions_json",
+      "revision": "e016910195b7ab846c83b87ec43140c36c51e35f",
+      "draws": 3,
+      "files": {
+        "trained": "issue1090_fu3/C3-pers-pos-sycophancy-claude/bystander/completions__trained__wildchat_prefix_real545.json",
+        "base": "issue1090_fu3/C3-pers-pos-sycophancy-claude/bystander/completions__base__wildchat_prefix_real545.json"
+      },
+      "context": "wildchat_prefix_real545",
+      "status": "available"
+    },
+    {
+      "set_id": "fu3-bystander-C3-pers-pos-icl_prefix_sycophancy",
+      "kind": "bystander",
+      "organism_id": "fu3-C3-pers-pos",
+      "layout": "completions_json",
+      "revision": "e016910195b7ab846c83b87ec43140c36c51e35f",
+      "draws": 3,
+      "files": {
+        "trained": "issue1090_fu3/C3-pers-pos-sycophancy-claude/bystander/completions__trained__icl_prefix_sycophancy.json",
+        "base": "issue1090_fu3/C3-pers-pos-sycophancy-claude/bystander/completions__base__icl_prefix_sycophancy.json"
+      },
+      "context": "icl_prefix_sycophancy",
+      "status": "available"
+    },
+    {
+      "set_id": "fu3-bystander-C3-pers-pos-neg_sp_police",
+      "kind": "bystander",
+      "organism_id": "fu3-C3-pers-pos",
+      "layout": "completions_json",
+      "revision": "e016910195b7ab846c83b87ec43140c36c51e35f",
+      "draws": 3,
+      "files": {
+        "trained": "issue1090_fu3/C3-pers-pos-sycophancy-claude/bystander/completions__trained__neg_sp_police.json",
+        "base": "issue1090_fu3/C3-pers-pos-sycophancy-claude/bystander/completions__base__neg_sp_police.json"
+      },
+      "context": "neg_sp_police",
+      "status": "available"
+    },
+    {
+      "set_id": "fu3-bystander-C3-pers-pos-neg_sp_ph4",
+      "kind": "bystander",
+      "organism_id": "fu3-C3-pers-pos",
+      "layout": "completions_json",
+      "revision": "e016910195b7ab846c83b87ec43140c36c51e35f",
+      "draws": 3,
+      "files": {
+        "trained": "issue1090_fu3/C3-pers-pos-sycophancy-claude/bystander/completions__trained__neg_sp_ph4.json",
+        "base": "issue1090_fu3/C3-pers-pos-sycophancy-claude/bystander/completions__base__neg_sp_ph4.json"
+      },
+      "context": "neg_sp_ph4",
+      "status": "available"
+    },
+    {
+      "set_id": "fu3-tier2-C3-bare-con",
+      "kind": "tier2",
+      "organism_id": "fu3-C3-bare-con",
+      "layout": "completions_json",
+      "revision": "e016910195b7ab846c83b87ec43140c36c51e35f",
+      "draws": 5,
+      "files": {
+        "trained": "issue1090_fu3/C3-bare-con-sycophancy-claude/tier2/completions__trained__default.json",
+        "base": "issue1090_fu3/C3-bare-con-sycophancy-claude/tier2/completions__base__default.json"
+      },
+      "context": "default",
+      "status": "available"
+    },
+    {
+      "set_id": "fu3-bystander-C3-bare-con-persona_software_engineer",
+      "kind": "bystander",
+      "organism_id": "fu3-C3-bare-con",
+      "layout": "completions_json",
+      "revision": "e016910195b7ab846c83b87ec43140c36c51e35f",
+      "draws": 3,
+      "files": {
+        "trained": "issue1090_fu3/C3-bare-con-sycophancy-claude/bystander/completions__trained__persona_software_engineer.json",
+        "base": "issue1090_fu3/C3-bare-con-sycophancy-claude/bystander/completions__base__persona_software_engineer.json"
+      },
+      "context": "persona_software_engineer",
+      "status": "available"
+    },
+    {
+      "set_id": "fu3-bystander-C3-bare-con-default",
+      "kind": "bystander",
+      "organism_id": "fu3-C3-bare-con",
+      "layout": "completions_json",
+      "revision": "e016910195b7ab846c83b87ec43140c36c51e35f",
+      "draws": 3,
+      "files": {
+        "trained": "issue1090_fu3/C3-bare-con-sycophancy-claude/bystander/completions__trained__default.json",
+        "base": "issue1090_fu3/C3-bare-con-sycophancy-claude/bystander/completions__base__default.json"
+      },
+      "context": "default",
+      "status": "available"
+    },
+    {
+      "set_id": "fu3-bystander-C3-bare-con-wildchat_prefix_real545",
+      "kind": "bystander",
+      "organism_id": "fu3-C3-bare-con",
+      "layout": "completions_json",
+      "revision": "e016910195b7ab846c83b87ec43140c36c51e35f",
+      "draws": 3,
+      "files": {
+        "trained": "issue1090_fu3/C3-bare-con-sycophancy-claude/bystander/completions__trained__wildchat_prefix_real545.json",
+        "base": "issue1090_fu3/C3-bare-con-sycophancy-claude/bystander/completions__base__wildchat_prefix_real545.json"
+      },
+      "context": "wildchat_prefix_real545",
+      "status": "available"
+    },
+    {
+      "set_id": "fu3-bystander-C3-bare-con-icl_prefix_sycophancy",
+      "kind": "bystander",
+      "organism_id": "fu3-C3-bare-con",
+      "layout": "completions_json",
+      "revision": "e016910195b7ab846c83b87ec43140c36c51e35f",
+      "draws": 3,
+      "files": {
+        "trained": "issue1090_fu3/C3-bare-con-sycophancy-claude/bystander/completions__trained__icl_prefix_sycophancy.json",
+        "base": "issue1090_fu3/C3-bare-con-sycophancy-claude/bystander/completions__base__icl_prefix_sycophancy.json"
+      },
+      "context": "icl_prefix_sycophancy",
+      "status": "available"
+    },
+    {
+      "set_id": "fu3-bystander-C3-bare-con-neg_sp_police",
+      "kind": "bystander",
+      "organism_id": "fu3-C3-bare-con",
+      "layout": "completions_json",
+      "revision": "e016910195b7ab846c83b87ec43140c36c51e35f",
+      "draws": 3,
+      "files": {
+        "trained": "issue1090_fu3/C3-bare-con-sycophancy-claude/bystander/completions__trained__neg_sp_police.json",
+        "base": "issue1090_fu3/C3-bare-con-sycophancy-claude/bystander/completions__base__neg_sp_police.json"
+      },
+      "context": "neg_sp_police",
+      "status": "available"
+    },
+    {
+      "set_id": "fu3-bystander-C3-bare-con-neg_sp_ph4",
+      "kind": "bystander",
+      "organism_id": "fu3-C3-bare-con",
+      "layout": "completions_json",
+      "revision": "e016910195b7ab846c83b87ec43140c36c51e35f",
+      "draws": 3,
+      "files": {
+        "trained": "issue1090_fu3/C3-bare-con-sycophancy-claude/bystander/completions__trained__neg_sp_ph4.json",
+        "base": "issue1090_fu3/C3-bare-con-sycophancy-claude/bystander/completions__base__neg_sp_ph4.json"
+      },
+      "context": "neg_sp_ph4",
+      "status": "available"
+    },
+    {
+      "set_id": "fu3-tier2-C3-bare-pos",
+      "kind": "tier2",
+      "organism_id": "fu3-C3-bare-pos",
+      "layout": "completions_json",
+      "revision": "e016910195b7ab846c83b87ec43140c36c51e35f",
+      "draws": 5,
+      "files": {
+        "trained": "issue1090_fu3/C3-bare-pos-sycophancy-claude/tier2/completions__trained__default.json",
+        "base": "issue1090_fu3/C3-bare-pos-sycophancy-claude/tier2/completions__base__default.json"
+      },
+      "context": "default",
+      "status": "available"
+    },
+    {
+      "set_id": "fu3-bystander-C3-bare-pos-persona_software_engineer",
+      "kind": "bystander",
+      "organism_id": "fu3-C3-bare-pos",
+      "layout": "completions_json",
+      "revision": "e016910195b7ab846c83b87ec43140c36c51e35f",
+      "draws": 3,
+      "files": {
+        "trained": "issue1090_fu3/C3-bare-pos-sycophancy-claude/bystander/completions__trained__persona_software_engineer.json",
+        "base": "issue1090_fu3/C3-bare-pos-sycophancy-claude/bystander/completions__base__persona_software_engineer.json"
+      },
+      "context": "persona_software_engineer",
+      "status": "available"
+    },
+    {
+      "set_id": "fu3-bystander-C3-bare-pos-default",
+      "kind": "bystander",
+      "organism_id": "fu3-C3-bare-pos",
+      "layout": "completions_json",
+      "revision": "e016910195b7ab846c83b87ec43140c36c51e35f",
+      "draws": 3,
+      "files": {
+        "trained": "issue1090_fu3/C3-bare-pos-sycophancy-claude/bystander/completions__trained__default.json",
+        "base": "issue1090_fu3/C3-bare-pos-sycophancy-claude/bystander/completions__base__default.json"
+      },
+      "context": "default",
+      "status": "available"
+    },
+    {
+      "set_id": "fu3-bystander-C3-bare-pos-wildchat_prefix_real545",
+      "kind": "bystander",
+      "organism_id": "fu3-C3-bare-pos",
+      "layout": "completions_json",
+      "revision": "e016910195b7ab846c83b87ec43140c36c51e35f",
+      "draws": 3,
+      "files": {
+        "trained": "issue1090_fu3/C3-bare-pos-sycophancy-claude/bystander/completions__trained__wildchat_prefix_real545.json",
+        "base": "issue1090_fu3/C3-bare-pos-sycophancy-claude/bystander/completions__base__wildchat_prefix_real545.json"
+      },
+      "context": "wildchat_prefix_real545",
+      "status": "available"
+    },
+    {
+      "set_id": "fu3-bystander-C3-bare-pos-icl_prefix_sycophancy",
+      "kind": "bystander",
+      "organism_id": "fu3-C3-bare-pos",
+      "layout": "completions_json",
+      "revision": "e016910195b7ab846c83b87ec43140c36c51e35f",
+      "draws": 3,
+      "files": {
+        "trained": "issue1090_fu3/C3-bare-pos-sycophancy-claude/bystander/completions__trained__icl_prefix_sycophancy.json",
+        "base": "issue1090_fu3/C3-bare-pos-sycophancy-claude/bystander/completions__base__icl_prefix_sycophancy.json"
+      },
+      "context": "icl_prefix_sycophancy",
+      "status": "available"
+    },
+    {
+      "set_id": "fu3-bystander-C3-bare-pos-neg_sp_police",
+      "kind": "bystander",
+      "organism_id": "fu3-C3-bare-pos",
+      "layout": "completions_json",
+      "revision": "e016910195b7ab846c83b87ec43140c36c51e35f",
+      "draws": 3,
+      "files": {
+        "trained": "issue1090_fu3/C3-bare-pos-sycophancy-claude/bystander/completions__trained__neg_sp_police.json",
+        "base": "issue1090_fu3/C3-bare-pos-sycophancy-claude/bystander/completions__base__neg_sp_police.json"
+      },
+      "context": "neg_sp_police",
+      "status": "available"
+    },
+    {
+      "set_id": "fu3-bystander-C3-bare-pos-neg_sp_ph4",
+      "kind": "bystander",
+      "organism_id": "fu3-C3-bare-pos",
+      "layout": "completions_json",
+      "revision": "e016910195b7ab846c83b87ec43140c36c51e35f",
+      "draws": 3,
+      "files": {
+        "trained": "issue1090_fu3/C3-bare-pos-sycophancy-claude/bystander/completions__trained__neg_sp_ph4.json",
+        "base": "issue1090_fu3/C3-bare-pos-sycophancy-claude/bystander/completions__base__neg_sp_ph4.json"
+      },
+      "context": "neg_sp_ph4",
+      "status": "available"
+    },
+    {
+      "set_id": "fu3-tier2-C3-conv-con",
+      "kind": "tier2",
+      "organism_id": "fu3-C3-conv-con",
+      "layout": "completions_json",
+      "revision": "e016910195b7ab846c83b87ec43140c36c51e35f",
+      "draws": 5,
+      "files": {
+        "trained": "issue1090_fu3/C3-conv-con-sycophancy-claude/tier2/completions__trained__wildchat_prefix_real545.json",
+        "base": "issue1090_fu3/C3-conv-con-sycophancy-claude/tier2/completions__base__wildchat_prefix_real545.json"
+      },
+      "context": "wildchat_prefix_real545",
+      "status": "available"
+    },
+    {
+      "set_id": "fu3-bystander-C3-conv-con-persona_software_engineer",
+      "kind": "bystander",
+      "organism_id": "fu3-C3-conv-con",
+      "layout": "completions_json",
+      "revision": "e016910195b7ab846c83b87ec43140c36c51e35f",
+      "draws": 3,
+      "files": {
+        "trained": "issue1090_fu3/C3-conv-con-sycophancy-claude/bystander/completions__trained__persona_software_engineer.json",
+        "base": "issue1090_fu3/C3-conv-con-sycophancy-claude/bystander/completions__base__persona_software_engineer.json"
+      },
+      "context": "persona_software_engineer",
+      "status": "available"
+    },
+    {
+      "set_id": "fu3-bystander-C3-conv-con-default",
+      "kind": "bystander",
+      "organism_id": "fu3-C3-conv-con",
+      "layout": "completions_json",
+      "revision": "e016910195b7ab846c83b87ec43140c36c51e35f",
+      "draws": 3,
+      "files": {
+        "trained": "issue1090_fu3/C3-conv-con-sycophancy-claude/bystander/completions__trained__default.json",
+        "base": "issue1090_fu3/C3-conv-con-sycophancy-claude/bystander/completions__base__default.json"
+      },
+      "context": "default",
+      "status": "available"
+    },
+    {
+      "set_id": "fu3-bystander-C3-conv-con-wildchat_prefix_real545",
+      "kind": "bystander",
+      "organism_id": "fu3-C3-conv-con",
+      "layout": "completions_json",
+      "revision": "e016910195b7ab846c83b87ec43140c36c51e35f",
+      "draws": 3,
+      "files": {
+        "trained": "issue1090_fu3/C3-conv-con-sycophancy-claude/bystander/completions__trained__wildchat_prefix_real545.json",
+        "base": "issue1090_fu3/C3-conv-con-sycophancy-claude/bystander/completions__base__wildchat_prefix_real545.json"
+      },
+      "context": "wildchat_prefix_real545",
+      "status": "available"
+    },
+    {
+      "set_id": "fu3-bystander-C3-conv-con-icl_prefix_sycophancy",
+      "kind": "bystander",
+      "organism_id": "fu3-C3-conv-con",
+      "layout": "completions_json",
+      "revision": "e016910195b7ab846c83b87ec43140c36c51e35f",
+      "draws": 3,
+      "files": {
+        "trained": "issue1090_fu3/C3-conv-con-sycophancy-claude/bystander/completions__trained__icl_prefix_sycophancy.json",
+        "base": "issue1090_fu3/C3-conv-con-sycophancy-claude/bystander/completions__base__icl_prefix_sycophancy.json"
+      },
+      "context": "icl_prefix_sycophancy",
+      "status": "available"
+    },
+    {
+      "set_id": "fu3-bystander-C3-conv-con-neg_sp_police",
+      "kind": "bystander",
+      "organism_id": "fu3-C3-conv-con",
+      "layout": "completions_json",
+      "revision": "e016910195b7ab846c83b87ec43140c36c51e35f",
+      "draws": 3,
+      "files": {
+        "trained": "issue1090_fu3/C3-conv-con-sycophancy-claude/bystander/completions__trained__neg_sp_police.json",
+        "base": "issue1090_fu3/C3-conv-con-sycophancy-claude/bystander/completions__base__neg_sp_police.json"
+      },
+      "context": "neg_sp_police",
+      "status": "available"
+    },
+    {
+      "set_id": "fu3-bystander-C3-conv-con-neg_sp_ph4",
+      "kind": "bystander",
+      "organism_id": "fu3-C3-conv-con",
+      "layout": "completions_json",
+      "revision": "e016910195b7ab846c83b87ec43140c36c51e35f",
+      "draws": 3,
+      "files": {
+        "trained": "issue1090_fu3/C3-conv-con-sycophancy-claude/bystander/completions__trained__neg_sp_ph4.json",
+        "base": "issue1090_fu3/C3-conv-con-sycophancy-claude/bystander/completions__base__neg_sp_ph4.json"
+      },
+      "context": "neg_sp_ph4",
+      "status": "available"
+    },
+    {
+      "set_id": "fu3-tier2-C3-conv-pos",
+      "kind": "tier2",
+      "organism_id": "fu3-C3-conv-pos",
+      "layout": "completions_json",
+      "revision": "e016910195b7ab846c83b87ec43140c36c51e35f",
+      "draws": 5,
+      "files": {
+        "trained": "issue1090_fu3/C3-conv-pos-sycophancy-claude/tier2/completions__trained__wildchat_prefix_real545.json",
+        "base": "issue1090_fu3/C3-conv-pos-sycophancy-claude/tier2/completions__base__wildchat_prefix_real545.json"
+      },
+      "context": "wildchat_prefix_real545",
+      "status": "available"
+    },
+    {
+      "set_id": "fu3-bystander-C3-conv-pos-persona_software_engineer",
+      "kind": "bystander",
+      "organism_id": "fu3-C3-conv-pos",
+      "layout": "completions_json",
+      "revision": "e016910195b7ab846c83b87ec43140c36c51e35f",
+      "draws": 3,
+      "files": {
+        "trained": "issue1090_fu3/C3-conv-pos-sycophancy-claude/bystander/completions__trained__persona_software_engineer.json",
+        "base": "issue1090_fu3/C3-conv-pos-sycophancy-claude/bystander/completions__base__persona_software_engineer.json"
+      },
+      "context": "persona_software_engineer",
+      "status": "available"
+    },
+    {
+      "set_id": "fu3-bystander-C3-conv-pos-default",
+      "kind": "bystander",
+      "organism_id": "fu3-C3-conv-pos",
+      "layout": "completions_json",
+      "revision": "e016910195b7ab846c83b87ec43140c36c51e35f",
+      "draws": 3,
+      "files": {
+        "trained": "issue1090_fu3/C3-conv-pos-sycophancy-claude/bystander/completions__trained__default.json",
+        "base": "issue1090_fu3/C3-conv-pos-sycophancy-claude/bystander/completions__base__default.json"
+      },
+      "context": "default",
+      "status": "available"
+    },
+    {
+      "set_id": "fu3-bystander-C3-conv-pos-wildchat_prefix_real545",
+      "kind": "bystander",
+      "organism_id": "fu3-C3-conv-pos",
+      "layout": "completions_json",
+      "revision": "e016910195b7ab846c83b87ec43140c36c51e35f",
+      "draws": 3,
+      "files": {
+        "trained": "issue1090_fu3/C3-conv-pos-sycophancy-claude/bystander/completions__trained__wildchat_prefix_real545.json",
+        "base": "issue1090_fu3/C3-conv-pos-sycophancy-claude/bystander/completions__base__wildchat_prefix_real545.json"
+      },
+      "context": "wildchat_prefix_real545",
+      "status": "available"
+    },
+    {
+      "set_id": "fu3-bystander-C3-conv-pos-icl_prefix_sycophancy",
+      "kind": "bystander",
+      "organism_id": "fu3-C3-conv-pos",
+      "layout": "completions_json",
+      "revision": "e016910195b7ab846c83b87ec43140c36c51e35f",
+      "draws": 3,
+      "files": {
+        "trained": "issue1090_fu3/C3-conv-pos-sycophancy-claude/bystander/completions__trained__icl_prefix_sycophancy.json",
+        "base": "issue1090_fu3/C3-conv-pos-sycophancy-claude/bystander/completions__base__icl_prefix_sycophancy.json"
+      },
+      "context": "icl_prefix_sycophancy",
+      "status": "available"
+    },
+    {
+      "set_id": "fu3-bystander-C3-conv-pos-neg_sp_police",
+      "kind": "bystander",
+      "organism_id": "fu3-C3-conv-pos",
+      "layout": "completions_json",
+      "revision": "e016910195b7ab846c83b87ec43140c36c51e35f",
+      "draws": 3,
+      "files": {
+        "trained": "issue1090_fu3/C3-conv-pos-sycophancy-claude/bystander/completions__trained__neg_sp_police.json",
+        "base": "issue1090_fu3/C3-conv-pos-sycophancy-claude/bystander/completions__base__neg_sp_police.json"
+      },
+      "context": "neg_sp_police",
+      "status": "available"
+    },
+    {
+      "set_id": "fu3-bystander-C3-conv-pos-neg_sp_ph4",
+      "kind": "bystander",
+      "organism_id": "fu3-C3-conv-pos",
+      "layout": "completions_json",
+      "revision": "e016910195b7ab846c83b87ec43140c36c51e35f",
+      "draws": 3,
+      "files": {
+        "trained": "issue1090_fu3/C3-conv-pos-sycophancy-claude/bystander/completions__trained__neg_sp_ph4.json",
+        "base": "issue1090_fu3/C3-conv-pos-sycophancy-claude/bystander/completions__base__neg_sp_ph4.json"
+      },
+      "context": "neg_sp_ph4",
+      "status": "available"
+    },
+    {
+      "set_id": "fu3-tier2-C3-icl-con",
+      "kind": "tier2",
+      "organism_id": "fu3-C3-icl-con",
+      "layout": "completions_json",
+      "revision": "e016910195b7ab846c83b87ec43140c36c51e35f",
+      "draws": 5,
+      "files": {
+        "trained": "issue1090_fu3/C3-icl-con-sycophancy-claude/tier2/completions__trained__icl_prefix_sycophancy.json",
+        "base": "issue1090_fu3/C3-icl-con-sycophancy-claude/tier2/completions__base__icl_prefix_sycophancy.json"
+      },
+      "context": "icl_prefix_sycophancy",
+      "status": "available"
+    },
+    {
+      "set_id": "fu3-bystander-C3-icl-con-persona_software_engineer",
+      "kind": "bystander",
+      "organism_id": "fu3-C3-icl-con",
+      "layout": "completions_json",
+      "revision": "e016910195b7ab846c83b87ec43140c36c51e35f",
+      "draws": 3,
+      "files": {
+        "trained": "issue1090_fu3/C3-icl-con-sycophancy-claude/bystander/completions__trained__persona_software_engineer.json",
+        "base": "issue1090_fu3/C3-icl-con-sycophancy-claude/bystander/completions__base__persona_software_engineer.json"
+      },
+      "context": "persona_software_engineer",
+      "status": "available"
+    },
+    {
+      "set_id": "fu3-bystander-C3-icl-con-default",
+      "kind": "bystander",
+      "organism_id": "fu3-C3-icl-con",
+      "layout": "completions_json",
+      "revision": "e016910195b7ab846c83b87ec43140c36c51e35f",
+      "draws": 3,
+      "files": {
+        "trained": "issue1090_fu3/C3-icl-con-sycophancy-claude/bystander/completions__trained__default.json",
+        "base": "issue1090_fu3/C3-icl-con-sycophancy-claude/bystander/completions__base__default.json"
+      },
+      "context": "default",
+      "status": "available"
+    },
+    {
+      "set_id": "fu3-bystander-C3-icl-con-wildchat_prefix_real545",
+      "kind": "bystander",
+      "organism_id": "fu3-C3-icl-con",
+      "layout": "completions_json",
+      "revision": "e016910195b7ab846c83b87ec43140c36c51e35f",
+      "draws": 3,
+      "files": {
+        "trained": "issue1090_fu3/C3-icl-con-sycophancy-claude/bystander/completions__trained__wildchat_prefix_real545.json",
+        "base": "issue1090_fu3/C3-icl-con-sycophancy-claude/bystander/completions__base__wildchat_prefix_real545.json"
+      },
+      "context": "wildchat_prefix_real545",
+      "status": "available"
+    },
+    {
+      "set_id": "fu3-bystander-C3-icl-con-icl_prefix_sycophancy",
+      "kind": "bystander",
+      "organism_id": "fu3-C3-icl-con",
+      "layout": "completions_json",
+      "revision": "e016910195b7ab846c83b87ec43140c36c51e35f",
+      "draws": 3,
+      "files": {
+        "trained": "issue1090_fu3/C3-icl-con-sycophancy-claude/bystander/completions__trained__icl_prefix_sycophancy.json",
+        "base": "issue1090_fu3/C3-icl-con-sycophancy-claude/bystander/completions__base__icl_prefix_sycophancy.json"
+      },
+      "context": "icl_prefix_sycophancy",
+      "status": "available"
+    },
+    {
+      "set_id": "fu3-bystander-C3-icl-con-neg_sp_police",
+      "kind": "bystander",
+      "organism_id": "fu3-C3-icl-con",
+      "layout": "completions_json",
+      "revision": "e016910195b7ab846c83b87ec43140c36c51e35f",
+      "draws": 3,
+      "files": {
+        "trained": "issue1090_fu3/C3-icl-con-sycophancy-claude/bystander/completions__trained__neg_sp_police.json",
+        "base": "issue1090_fu3/C3-icl-con-sycophancy-claude/bystander/completions__base__neg_sp_police.json"
+      },
+      "context": "neg_sp_police",
+      "status": "available"
+    },
+    {
+      "set_id": "fu3-bystander-C3-icl-con-neg_sp_ph4",
+      "kind": "bystander",
+      "organism_id": "fu3-C3-icl-con",
+      "layout": "completions_json",
+      "revision": "e016910195b7ab846c83b87ec43140c36c51e35f",
+      "draws": 3,
+      "files": {
+        "trained": "issue1090_fu3/C3-icl-con-sycophancy-claude/bystander/completions__trained__neg_sp_ph4.json",
+        "base": "issue1090_fu3/C3-icl-con-sycophancy-claude/bystander/completions__base__neg_sp_ph4.json"
+      },
+      "context": "neg_sp_ph4",
+      "status": "available"
+    },
+    {
+      "set_id": "fu3-tier2-C3-icl-pos",
+      "kind": "tier2",
+      "organism_id": "fu3-C3-icl-pos",
+      "layout": "completions_json",
+      "revision": "e016910195b7ab846c83b87ec43140c36c51e35f",
+      "draws": 5,
+      "files": {
+        "trained": "issue1090_fu3/C3-icl-pos-sycophancy-claude/tier2/completions__trained__icl_prefix_sycophancy.json",
+        "base": "issue1090_fu3/C3-icl-pos-sycophancy-claude/tier2/completions__base__icl_prefix_sycophancy.json"
+      },
+      "context": "icl_prefix_sycophancy",
+      "status": "available"
+    },
+    {
+      "set_id": "fu3-bystander-C3-icl-pos-persona_software_engineer",
+      "kind": "bystander",
+      "organism_id": "fu3-C3-icl-pos",
+      "layout": "completions_json",
+      "revision": "e016910195b7ab846c83b87ec43140c36c51e35f",
+      "draws": 3,
+      "files": {
+        "trained": "issue1090_fu3/C3-icl-pos-sycophancy-claude/bystander/completions__trained__persona_software_engineer.json",
+        "base": "issue1090_fu3/C3-icl-pos-sycophancy-claude/bystander/completions__base__persona_software_engineer.json"
+      },
+      "context": "persona_software_engineer",
+      "status": "available"
+    },
+    {
+      "set_id": "fu3-bystander-C3-icl-pos-default",
+      "kind": "bystander",
+      "organism_id": "fu3-C3-icl-pos",
+      "layout": "completions_json",
+      "revision": "e016910195b7ab846c83b87ec43140c36c51e35f",
+      "draws": 3,
+      "files": {
+        "trained": "issue1090_fu3/C3-icl-pos-sycophancy-claude/bystander/completions__trained__default.json",
+        "base": "issue1090_fu3/C3-icl-pos-sycophancy-claude/bystander/completions__base__default.json"
+      },
+      "context": "default",
+      "status": "available"
+    },
+    {
+      "set_id": "fu3-bystander-C3-icl-pos-wildchat_prefix_real545",
+      "kind": "bystander",
+      "organism_id": "fu3-C3-icl-pos",
+      "layout": "completions_json",
+      "revision": "e016910195b7ab846c83b87ec43140c36c51e35f",
+      "draws": 3,
+      "files": {
+        "trained": "issue1090_fu3/C3-icl-pos-sycophancy-claude/bystander/completions__trained__wildchat_prefix_real545.json",
+        "base": "issue1090_fu3/C3-icl-pos-sycophancy-claude/bystander/completions__base__wildchat_prefix_real545.json"
+      },
+      "context": "wildchat_prefix_real545",
+      "status": "available"
+    },
+    {
+      "set_id": "fu3-bystander-C3-icl-pos-icl_prefix_sycophancy",
+      "kind": "bystander",
+      "organism_id": "fu3-C3-icl-pos",
+      "layout": "completions_json",
+      "revision": "e016910195b7ab846c83b87ec43140c36c51e35f",
+      "draws": 3,
+      "files": {
+        "trained": "issue1090_fu3/C3-icl-pos-sycophancy-claude/bystander/completions__trained__icl_prefix_sycophancy.json",
+        "base": "issue1090_fu3/C3-icl-pos-sycophancy-claude/bystander/completions__base__icl_prefix_sycophancy.json"
+      },
+      "context": "icl_prefix_sycophancy",
+      "status": "available"
+    },
+    {
+      "set_id": "fu3-bystander-C3-icl-pos-neg_sp_police",
+      "kind": "bystander",
+      "organism_id": "fu3-C3-icl-pos",
+      "layout": "completions_json",
+      "revision": "e016910195b7ab846c83b87ec43140c36c51e35f",
+      "draws": 3,
+      "files": {
+        "trained": "issue1090_fu3/C3-icl-pos-sycophancy-claude/bystander/completions__trained__neg_sp_police.json",
+        "base": "issue1090_fu3/C3-icl-pos-sycophancy-claude/bystander/completions__base__neg_sp_police.json"
+      },
+      "context": "neg_sp_police",
+      "status": "available"
+    },
+    {
+      "set_id": "fu3-bystander-C3-icl-pos-neg_sp_ph4",
+      "kind": "bystander",
+      "organism_id": "fu3-C3-icl-pos",
+      "layout": "completions_json",
+      "revision": "e016910195b7ab846c83b87ec43140c36c51e35f",
+      "draws": 3,
+      "files": {
+        "trained": "issue1090_fu3/C3-icl-pos-sycophancy-claude/bystander/completions__trained__neg_sp_ph4.json",
+        "base": "issue1090_fu3/C3-icl-pos-sycophancy-claude/bystander/completions__base__neg_sp_ph4.json"
+      },
+      "context": "neg_sp_ph4",
+      "status": "available"
+    },
+    {
+      "set_id": "fu3-tier2-C5-pers-con",
+      "kind": "tier2",
+      "organism_id": "fu3-C5-pers-con",
+      "layout": "completions_json",
+      "revision": "e016910195b7ab846c83b87ec43140c36c51e35f",
+      "draws": 5,
+      "files": {
+        "trained": "issue1090_fu3/C5-pers-con-sycophancy-qwen/tier2/completions__trained__persona_software_engineer.json",
+        "base": "issue1090_fu3/C5-pers-con-sycophancy-qwen/tier2/completions__base__persona_software_engineer.json"
+      },
+      "context": "persona_software_engineer",
+      "status": "available"
+    },
+    {
+      "set_id": "fu3-bystander-C5-pers-con-persona_software_engineer",
+      "kind": "bystander",
+      "organism_id": "fu3-C5-pers-con",
+      "layout": "completions_json",
+      "revision": "e016910195b7ab846c83b87ec43140c36c51e35f",
+      "draws": 3,
+      "files": {
+        "trained": "issue1090_fu3/C5-pers-con-sycophancy-qwen/bystander/completions__trained__persona_software_engineer.json",
+        "base": "issue1090_fu3/C5-pers-con-sycophancy-qwen/bystander/completions__base__persona_software_engineer.json"
+      },
+      "context": "persona_software_engineer",
+      "status": "available"
+    },
+    {
+      "set_id": "fu3-bystander-C5-pers-con-default",
+      "kind": "bystander",
+      "organism_id": "fu3-C5-pers-con",
+      "layout": "completions_json",
+      "revision": "e016910195b7ab846c83b87ec43140c36c51e35f",
+      "draws": 3,
+      "files": {
+        "trained": "issue1090_fu3/C5-pers-con-sycophancy-qwen/bystander/completions__trained__default.json",
+        "base": "issue1090_fu3/C5-pers-con-sycophancy-qwen/bystander/completions__base__default.json"
+      },
+      "context": "default",
+      "status": "available"
+    },
+    {
+      "set_id": "fu3-bystander-C5-pers-con-wildchat_prefix_real545",
+      "kind": "bystander",
+      "organism_id": "fu3-C5-pers-con",
+      "layout": "completions_json",
+      "revision": "e016910195b7ab846c83b87ec43140c36c51e35f",
+      "draws": 3,
+      "files": {
+        "trained": "issue1090_fu3/C5-pers-con-sycophancy-qwen/bystander/completions__trained__wildchat_prefix_real545.json",
+        "base": "issue1090_fu3/C5-pers-con-sycophancy-qwen/bystander/completions__base__wildchat_prefix_real545.json"
+      },
+      "context": "wildchat_prefix_real545",
+      "status": "available"
+    },
+    {
+      "set_id": "fu3-bystander-C5-pers-con-icl_prefix_sycophancy",
+      "kind": "bystander",
+      "organism_id": "fu3-C5-pers-con",
+      "layout": "completions_json",
+      "revision": "e016910195b7ab846c83b87ec43140c36c51e35f",
+      "draws": 3,
+      "files": {
+        "trained": "issue1090_fu3/C5-pers-con-sycophancy-qwen/bystander/completions__trained__icl_prefix_sycophancy.json",
+        "base": "issue1090_fu3/C5-pers-con-sycophancy-qwen/bystander/completions__base__icl_prefix_sycophancy.json"
+      },
+      "context": "icl_prefix_sycophancy",
+      "status": "available"
+    },
+    {
+      "set_id": "fu3-bystander-C5-pers-con-neg_sp_police",
+      "kind": "bystander",
+      "organism_id": "fu3-C5-pers-con",
+      "layout": "completions_json",
+      "revision": "e016910195b7ab846c83b87ec43140c36c51e35f",
+      "draws": 3,
+      "files": {
+        "trained": "issue1090_fu3/C5-pers-con-sycophancy-qwen/bystander/completions__trained__neg_sp_police.json",
+        "base": "issue1090_fu3/C5-pers-con-sycophancy-qwen/bystander/completions__base__neg_sp_police.json"
+      },
+      "context": "neg_sp_police",
+      "status": "available"
+    },
+    {
+      "set_id": "fu3-bystander-C5-pers-con-neg_sp_ph4",
+      "kind": "bystander",
+      "organism_id": "fu3-C5-pers-con",
+      "layout": "completions_json",
+      "revision": "e016910195b7ab846c83b87ec43140c36c51e35f",
+      "draws": 3,
+      "files": {
+        "trained": "issue1090_fu3/C5-pers-con-sycophancy-qwen/bystander/completions__trained__neg_sp_ph4.json",
+        "base": "issue1090_fu3/C5-pers-con-sycophancy-qwen/bystander/completions__base__neg_sp_ph4.json"
+      },
+      "context": "neg_sp_ph4",
+      "status": "available"
+    },
+    {
+      "set_id": "fu3-tier2-C5-pers-pos",
+      "kind": "tier2",
+      "organism_id": "fu3-C5-pers-pos",
+      "layout": "completions_json",
+      "revision": "e016910195b7ab846c83b87ec43140c36c51e35f",
+      "draws": 5,
+      "files": {
+        "trained": "issue1090_fu3/C5-pers-pos-sycophancy-qwen/tier2/completions__trained__persona_software_engineer.json",
+        "base": "issue1090_fu3/C5-pers-pos-sycophancy-qwen/tier2/completions__base__persona_software_engineer.json"
+      },
+      "context": "persona_software_engineer",
+      "status": "available"
+    },
+    {
+      "set_id": "fu3-bystander-C5-pers-pos-persona_software_engineer",
+      "kind": "bystander",
+      "organism_id": "fu3-C5-pers-pos",
+      "layout": "completions_json",
+      "revision": "e016910195b7ab846c83b87ec43140c36c51e35f",
+      "draws": 3,
+      "files": {
+        "trained": "issue1090_fu3/C5-pers-pos-sycophancy-qwen/bystander/completions__trained__persona_software_engineer.json",
+        "base": "issue1090_fu3/C5-pers-pos-sycophancy-qwen/bystander/completions__base__persona_software_engineer.json"
+      },
+      "context": "persona_software_engineer",
+      "status": "available"
+    },
+    {
+      "set_id": "fu3-bystander-C5-pers-pos-default",
+      "kind": "bystander",
+      "organism_id": "fu3-C5-pers-pos",
+      "layout": "completions_json",
+      "revision": "e016910195b7ab846c83b87ec43140c36c51e35f",
+      "draws": 3,
+      "files": {
+        "trained": "issue1090_fu3/C5-pers-pos-sycophancy-qwen/bystander/completions__trained__default.json",
+        "base": "issue1090_fu3/C5-pers-pos-sycophancy-qwen/bystander/completions__base__default.json"
+      },
+      "context": "default",
+      "status": "available"
+    },
+    {
+      "set_id": "fu3-bystander-C5-pers-pos-wildchat_prefix_real545",
+      "kind": "bystander",
+      "organism_id": "fu3-C5-pers-pos",
+      "layout": "completions_json",
+      "revision": "e016910195b7ab846c83b87ec43140c36c51e35f",
+      "draws": 3,
+      "files": {
+        "trained": "issue1090_fu3/C5-pers-pos-sycophancy-qwen/bystander/completions__trained__wildchat_prefix_real545.json",
+        "base": "issue1090_fu3/C5-pers-pos-sycophancy-qwen/bystander/completions__base__wildchat_prefix_real545.json"
+      },
+      "context": "wildchat_prefix_real545",
+      "status": "available"
+    },
+    {
+      "set_id": "fu3-bystander-C5-pers-pos-icl_prefix_sycophancy",
+      "kind": "bystander",
+      "organism_id": "fu3-C5-pers-pos",
+      "layout": "completions_json",
+      "revision": "e016910195b7ab846c83b87ec43140c36c51e35f",
+      "draws": 3,
+      "files": {
+        "trained": "issue1090_fu3/C5-pers-pos-sycophancy-qwen/bystander/completions__trained__icl_prefix_sycophancy.json",
+        "base": "issue1090_fu3/C5-pers-pos-sycophancy-qwen/bystander/completions__base__icl_prefix_sycophancy.json"
+      },
+      "context": "icl_prefix_sycophancy",
+      "status": "available"
+    },
+    {
+      "set_id": "fu3-bystander-C5-pers-pos-neg_sp_police",
+      "kind": "bystander",
+      "organism_id": "fu3-C5-pers-pos",
+      "layout": "completions_json",
+      "revision": "e016910195b7ab846c83b87ec43140c36c51e35f",
+      "draws": 3,
+      "files": {
+        "trained": "issue1090_fu3/C5-pers-pos-sycophancy-qwen/bystander/completions__trained__neg_sp_police.json",
+        "base": "issue1090_fu3/C5-pers-pos-sycophancy-qwen/bystander/completions__base__neg_sp_police.json"
+      },
+      "context": "neg_sp_police",
+      "status": "available"
+    },
+    {
+      "set_id": "fu3-bystander-C5-pers-pos-neg_sp_ph4",
+      "kind": "bystander",
+      "organism_id": "fu3-C5-pers-pos",
+      "layout": "completions_json",
+      "revision": "e016910195b7ab846c83b87ec43140c36c51e35f",
+      "draws": 3,
+      "files": {
+        "trained": "issue1090_fu3/C5-pers-pos-sycophancy-qwen/bystander/completions__trained__neg_sp_ph4.json",
+        "base": "issue1090_fu3/C5-pers-pos-sycophancy-qwen/bystander/completions__base__neg_sp_ph4.json"
+      },
+      "context": "neg_sp_ph4",
+      "status": "available"
+    },
+    {
+      "set_id": "prod-tier2-c3",
+      "kind": "tier2",
+      "organism_id": "prod-c3",
+      "layout": "completions_json",
+      "revision": "c3cb1c2af96cf9403adc561d6603c8809882d437",
+      "draws": 5,
+      "files": {
+        "trained": "issue1090_pvdatagen/raw_completions/tier2/c3-sycophancy-claude/completions__trained__persona_software_engineer.json",
+        "base": "issue1090_pvdatagen/raw_completions/tier2/c3-sycophancy-claude/completions__base__persona_software_engineer.json"
+      },
+      "context": "persona_software_engineer",
+      "status": "available"
+    },
+    {
+      "set_id": "fu1-tier2",
+      "kind": "tier2",
+      "organism_id": "fu1-c5",
+      "layout": "judge_records_no_text",
+      "revision": "043acb7f5353b7c640aefb6acb094620ad1a6a50",
+      "draws": 5,
+      "files": {},
+      "context": "persona_software_engineer",
+      "status": "unavailable",
+      "evidence": "P0 parse probe 2026-07-16: tier2_judge/fu1-{c3,c5}-{base,trained}/<hash>.json at rev 043acb7f carry ONLY {'score': int}; judge_raw.json all_scores/per_persona carry scores only — NO completion text on the Hub (concern fu6-fu1-completion-text-missing). Registered fu1 re-judge unrunnable; a regen would be a DIFFERENT instrument (fresh T=1 samples), so the set is excluded."
+    },
+    {
+      "set_id": "fu2-tier2-c3",
+      "kind": "tier2",
+      "organism_id": "fu2-c3",
+      "layout": "completions_json",
+      "revision": "ab5269a36bf28e9a84b43f4226f7ee81af81faf8",
+      "draws": 5,
+      "files": {
+        "trained": "issue1090_pvdatagen/fu2-dose-extension/raw_completions/tier2/c3-sycophancy-claude/completions__trained__persona_software_engineer.json",
+        "base": "issue1090_pvdatagen/fu2-dose-extension/raw_completions/tier2/c3-sycophancy-claude/completions__base__persona_software_engineer.json"
+      },
+      "context": "persona_software_engineer",
+      "status": "available"
+    }
+  ],
+  "probes": {
+    "parse": {
+      "fu3-tier2-C3-pers-con": {
+        "file": "issue1090_fu3/C3-pers-con-sycophancy-claude/tier2/completions__trained__persona_software_engineer.json",
+        "n_questions": 20,
+        "n_completions": 200,
+        "verdict": "PASS"
+      },
+      "prod-tier2-c3": {
+        "file": "issue1090_pvdatagen/raw_completions/tier2/c3-sycophancy-claude/completions__trained__persona_software_engineer.json",
+        "n_questions": 20,
+        "n_completions": 200,
+        "verdict": "PASS"
+      },
+      "fu1-tier2": {
+        "layout": "judge_records_no_text",
+        "verdict": "FAIL-unavailable",
+        "evidence": "P0 parse probe 2026-07-16: tier2_judge/fu1-{c3,c5}-{base,trained}/<hash>.json at rev 043acb7f carry ONLY {'score': int}; judge_raw.json all_scores/per_persona carry scores only — NO completion text on the Hub (concern fu6-fu1-completion-text-missing). Registered fu1 re-judge unrunnable; a regen would be a DIFFERENT instrument (fresh T=1 samples), so the set is excluded."
+      }
+    },
+    "rb_778_keys": "PASS realized form=Tensor shape=(28, 3584)",
+    "rb_1112_path": null
+  }
+}

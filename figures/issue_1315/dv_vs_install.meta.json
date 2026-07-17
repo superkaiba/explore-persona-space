@@ -1,0 +1,96 @@
+{
+  "commit": "a662de3363",
+  "created": "2026-07-15T21:00:34Z",
+  "figsize": [
+    7.5,
+    5.0
+  ],
+  "points": [
+    {
+      "Realized judged impolite rate at the captured checkpoint": 0.77,
+      "Rank-k@90 (layer 14, response arm, own text)": 56.0,
+      "label": "LoRA, persona context",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Realized judged impolite rate at the captured checkpoint": 0.6559139784946236,
+      "Rank-k@90 (layer 14, response arm, own text)": 54.0,
+      "label": "LoRA, WildChat context",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Realized judged impolite rate at the captured checkpoint": 0.59,
+      "Rank-k@90 (layer 14, response arm, own text)": 47.0,
+      "label": "LoRA + negatives, ICL",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Realized judged impolite rate at the captured checkpoint": 0.55,
+      "Rank-k@90 (layer 14, response arm, own text)": 46.0,
+      "label": "LoRA positives-only, ICL",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Realized judged impolite rate at the captured checkpoint": 0.72,
+      "Rank-k@90 (layer 14, response arm, own text)": 43.0,
+      "label": "Full FT + negatives, ICL",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "Realized judged impolite rate at the captured checkpoint": 0.84,
+      "Rank-k@90 (layer 14, response arm, own text)": 61.0,
+      "label": "Full FT positives-only, ICL",
+      "_kind": "scatter",
+      "_group": 5
+    }
+  ],
+  "n_series": 6,
+  "total_points": 6,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "xlabel": "Realized judged impolite rate at the captured checkpoint",
+        "ylabel": "Rank-k@90 (layer 14, response arm, own text)",
+        "annotations": [
+          "LoRA, persona context",
+          "LoRA, WildChat context",
+          "LoRA + negatives, ICL",
+          "LoRA positives-only, ICL",
+          "Full FT + negatives, ICL",
+          "Full FT positives-only, ICL"
+        ],
+        "xticklabels": [
+          "0.50",
+          "0.55",
+          "0.60",
+          "0.65",
+          "0.70",
+          "0.75",
+          "0.80",
+          "0.85",
+          "0.90"
+        ],
+        "yticklabels": [
+          "40.0",
+          "42.5",
+          "45.0",
+          "47.5",
+          "50.0",
+          "52.5",
+          "55.0",
+          "57.5",
+          "60.0",
+          "62.5",
+          "65.0"
+        ]
+      }
+    ]
+  }
+}

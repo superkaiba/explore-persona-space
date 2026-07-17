@@ -1,0 +1,15 @@
+{
+  "artifact": "pv_sycophancy_trait_score_v1.txt",
+  "sha256": "622fd72e362e022ac9a2933483ba369ffa0209e0f3b0b29794bda7711d29041d",
+  "source": {
+    "paper": "arXiv 2507.21509 (Chen, Arditi, Sleight, Evans, Lindsey - Persona Vectors), Appendix 'LLM-based trait expression score'",
+    "fetched_from": "https://raw.githubusercontent.com/safety-research/persona_vectors/b8e0f04/data_generation/trait_data_extract/sycophantic.json",
+    "repo": "safety-research/persona_vectors",
+    "pinned_sha": "b8e0f04",
+    "json_field": "eval_prompt",
+    "fetch_note": "The paper's RELEASED sycophancy trait-eval prompt, fetched VERBATIM at the pinned SHA #778's replication used (issue778_dispatch.sh PV_SHA). This is the paper's own instantiation of the 'LLM-based trait expression score' template for the sycophantic trait (opinion-agreement + flattery framing) - zero paraphrase; {question}/{answer} slots are the paper's own and match the eval.graded_judge substitution convention. The arXiv MCP section fetch (plan P0 command) was unavailable in the implementing subagent; the released-repo fetch at the paper's own pinned code SHA is the equivalent verbatim source (#778 precedent: issue778_lib.load_trait_data)."
+  },
+  "fetch_date_utc": "2026-07-16T22:07:51Z",
+  "response_format": "bare-score (paper verbatim; NOT reason-then-score - fidelity wins per plan v10 D0 fidelity note); judge max_tokens still 300 (llm-judging rule 23, cheap insurance)",
+  "consumer": "scripts/issue1090_fu6.py (fu6 re-judge + extraction filter); eval.graded_judge.judge_graded appends its standing JSON output wrapper (mechanical return-format adaptation, documented deviation in graded_judge.py)"
+}

@@ -1055,6 +1055,107 @@ def test_pre_reg_whole_body_scan_preserved_for_v2_sentinel_bodies():
     assert "pre_reg" in findings, findings
 
 
+# ─── pre_reg: bare 'registered <noun>' forms (#1345 escape, fix #1419) ────
+
+
+def test_pre_reg_bare_registered_noun_incident_strings_are_flagged():
+    """All six #1345 Lens 7 incident forms — 4 of 6 with intervening tokens
+    between 'registered' and the head noun — trip `pre_reg` in v4 Results
+    prose (#1419). The seventh phrase pins family closure: an
+    intervening-token 'hypothesis' form the adjacency-only branch missed."""
+    phrases = [
+        "the registered same-map-different-coordinates verdict",
+        "evaluated the registered verdict lattice",
+        "fail the registered 0.05 same-operator margin",
+        "fire the registered reparameterized verdict",
+        "The registered existence read passes",
+        "the plan's registered degeneracy companion",
+        "the registered primary hypothesis",
+    ]
+    for phrase in phrases:
+        body = V4_BODY_CLEAN.replace(
+            "The lift holds at every seed in the held-out evaluation.",
+            f"{phrase}.",
+        )
+        assert body != V4_BODY_CLEAN
+        findings = audit.audit_body(body)
+        assert "pre_reg" in findings, (phrase, findings)
+        assert any("registered" in s.lower() for s in findings["pre_reg"]), (phrase, findings)
+
+
+def test_pre_reg_bare_registered_noun_in_v4_takeaways_is_flagged():
+    """Incident 1's actual placement (#1345 Takeaways bullet 2) trips
+    `pre_reg` under the v4 whole-body scope."""
+    body = V4_BODY_CLEAN.replace(
+        "- Headline finding: the implant installs cleanly across three seeds.",
+        "- Headline: the registered same-map-different-coordinates verdict held.",
+    )
+    assert body != V4_BODY_CLEAN
+    findings = audit.audit_body(body)
+    assert "pre_reg" in findings, findings
+
+
+def test_pre_reg_bare_registered_noun_in_v4_hparam_table_is_exempt():
+    """The same bare form inside the Methodology hyperparameter TABLE stays
+    exempt — the v4 table-blanking scope is preserved byte-unchanged."""
+    body = V4_BODY_CLEAN.replace(
+        "| epochs | 1 | prior issue |",
+        "| stopping rule | registered 0.05 margin | plan gate |",
+    )
+    assert body != V4_BODY_CLEAN
+    findings = audit.audit_body(body)
+    assert "pre_reg" not in findings, findings
+
+
+def test_pre_reg_bare_registered_noun_verb_usages_not_flagged():
+    """The verb register — 'registered <preposition>' and artifact-object
+    forms — never trips the new branch (first-token preposition guard +
+    pre-registration-specific noun list). NOTE (measured at plan time):
+    determiner-first verb-objects on listed nouns ('the model registered
+    a clear floor effect') WOULD flag — an accepted residual FP surface
+    with 0/1,006-body corpus attestation, kept because 6 corpus hits of
+    the same determiner-first shape are genuine jargon ('The plan
+    registered a decision lattice')."""
+    body = V4_BODY_CLEAN.replace(
+        "The lift holds at every seed in the held-out evaluation.",
+        "I registered the adapter on HF; the run was registered in WandB; "
+        "the hook registered by bootstrap fired; the mix is registered "
+        "under the data repo; a registered trademark.",
+    )
+    assert body != V4_BODY_CLEAN
+    findings = audit.audit_body(body)
+    assert "pre_reg" not in findings, findings
+
+
+def test_pre_reg_bare_registered_noun_does_not_bridge_sentences():
+    """The intervening-token window never bridges a sentence or bullet
+    boundary — both bridge shapes observed in the plan-time corpus dry-run
+    ('registered conditions.\\n\\nThe honest read', 'registered unrun
+    lever.\\n- Verdicts') stay clean."""
+    body = V4_BODY_CLEAN.replace(
+        "The lift holds at every seed in the held-out evaluation.",
+        "All cells were registered conditions.\n\nThe honest read is a null.\n\n"
+        "It used a registered unrun lever.\n- Verdicts fired on every cell.",
+    )
+    assert body != V4_BODY_CLEAN
+    findings = audit.audit_body(body)
+    assert "pre_reg" not in findings, findings
+
+
+def test_pre_reg_registered_interval_defining_the_test_not_flagged():
+    """'the registered interval defining the test' is the sanctioned
+    Why-this-test CI-definition register — 'interval' and 'test' are
+    deliberately absent from the head-noun list, so `pre_reg` stays
+    silent (the LM critic owns any residual judgment call here)."""
+    body = V4_BODY_CLEAN.replace(
+        "The lift holds at every seed in the held-out evaluation.",
+        "**Why this test:** the bootstrap CI is the registered interval defining the test.",
+    )
+    assert body != V4_BODY_CLEAN
+    findings = audit.audit_body(body)
+    assert "pre_reg" not in findings, findings
+
+
 # ─── v4 ## Methodology sample-data <details> exemption (#1171) ───────────
 #
 # The v4 spec moved the verbatim sample rows to `## Methodology` →
@@ -1295,6 +1396,9 @@ def test_verdict_caps_code_spans_not_flagged():
 # critic Lens 6 caught the `bit-identical` slip manually. The rule was
 # renamed `bit_byte_identical` and broadened to `\b(?:byte|bit)[\s-]identical\b`
 # so both same-family voice violations are caught under one mechanical rule.
+# Task #1423 extended the family to the `equal` synonyms (byte-equal /
+# byte equal / bit-equal / bit equal) after issue #1005's body carried
+# "inherited byte-equal (sha-asserted)" past the -identical-only regex.
 
 
 def test_byte_identical_still_flagged_under_new_key():
@@ -1336,6 +1440,70 @@ def test_bit_byte_identical_no_false_positive_on_unrelated_words():
     clean = V3_BODY_WITH_DATA_CODES.replace(
         "The lift holds at every seed in the held-out evaluation.",
         "The arbiter compiled the bytecode and a bite-sized summary.",
+    )
+    findings = audit.audit_body(clean)
+    assert "bit_byte_identical" not in findings, findings
+
+
+def test_byte_equal_is_flagged():
+    """The `-equal` synonym family trips the rule (task #1423): `byte-equal`
+    and `byte equal` are the same voice violation as `byte-identical`."""
+    hyphen = V3_BODY_WITH_DATA_CODES.replace(
+        "The lift holds at every seed in the held-out evaluation.",
+        "The two stores were byte-equal after the rerun.",
+    )
+    findings = audit.audit_body(hyphen)
+    assert "bit_byte_identical" in findings, findings
+    assert any("byte-equal" in s for s in findings["bit_byte_identical"]), findings
+    space = V3_BODY_WITH_DATA_CODES.replace(
+        "The lift holds at every seed in the held-out evaluation.",
+        "The two stores were byte equal after the rerun.",
+    )
+    space_findings = audit.audit_body(space)
+    assert "bit_byte_identical" in space_findings, "space form not flagged"
+    assert any("byte equal" in s for s in space_findings["bit_byte_identical"]), space_findings
+
+
+def test_bit_equal_is_flagged():
+    """The `bit-equal` / `bit equal` synonyms trip the rule too (task #1423)."""
+    hyphen = V3_BODY_WITH_DATA_CODES.replace(
+        "The lift holds at every seed in the held-out evaluation.",
+        "The loss surface was held bit-equal across all three arms.",
+    )
+    findings = audit.audit_body(hyphen)
+    assert "bit_byte_identical" in findings, findings
+    assert any("bit-equal" in s for s in findings["bit_byte_identical"]), findings
+    space = V3_BODY_WITH_DATA_CODES.replace(
+        "The lift holds at every seed in the held-out evaluation.",
+        "The loss surface was held bit equal across all three arms.",
+    )
+    space_findings = audit.audit_body(space)
+    assert "bit_byte_identical" in space_findings, "space form not flagged"
+    assert any("bit equal" in s for s in space_findings["bit_byte_identical"]), space_findings
+
+
+def test_byte_equal_incident_1005_phrasing_is_flagged():
+    """Regression anchor: the verbatim #1005 incident phrasing — "inherited
+    byte-equal (sha-asserted)" — trips the rule (the -identical-only regex
+    missed it and an LM critic round had to catch it manually)."""
+    body = V3_BODY_WITH_DATA_CODES.replace(
+        "The lift holds at every seed in the held-out evaluation.",
+        "The adapter was inherited byte-equal (sha-asserted) from the parent.",
+    )
+    findings = audit.audit_body(body)
+    assert "bit_byte_identical" in findings, findings
+    assert any("byte-equal" in s for s in findings["bit_byte_identical"]), findings
+
+
+def test_bit_byte_equal_no_false_positive_on_boundary_words():
+    """Boundary negatives for the `-equal` arm (task #1423): `byte equality`
+    (suffix blocks the trailing \\b), `bytes equal` (plural blocks `[\\s-]`),
+    `bitwise equal` (`bitwise` != `bit`), and capitalized `Byte-equal` (the
+    category scans case-sensitively, pre-existing semantics) must NOT trip."""
+    clean = V3_BODY_WITH_DATA_CODES.replace(
+        "The lift holds at every seed in the held-out evaluation.",
+        "I assert byte equality; the bytes equal to the header match, and "
+        "bitwise equal outputs held. Byte-equal casing stays untouched.",
     )
     findings = audit.audit_body(clean)
     assert "bit_byte_identical" not in findings, findings
@@ -1666,3 +1834,204 @@ def test_single_body_audit_no_fm_no_warn_line(capsys):
     out = capsys.readouterr().out
     assert "WARN h1_title_sync" not in out
     assert out.splitlines()[0].startswith("PASS:")
+
+
+# ─── opaque_snake_slugs: backticked 3+-segment snake_case slugs (#1372) ──
+#
+# Incident #1315: `` `neg_reph_curious` `` sat in Methodology Data-extraction
+# AND Results prose; `--task 1315` printed PASS and only the LM critic caught
+# it. The category scans v4 reader-facing prose ONLY (`## Takeaways` /
+# `## Goal` / `## Results`), over the inline-backtick-keeping chain (like
+# `interval_inline`), with the `**Repro:**` footer onward, blockquote
+# captions, GFM table rows, fenced code, `test_*` names, and the exact-token
+# field-name allowlist exempt. Tests mutate V4_BODY_CLEAN via targeted
+# `.replace()` with a body != fixture guard, matching the pre_reg section.
+
+_RESULTS_PROSE_LINE = "The lift holds at every seed in the held-out evaluation."
+
+
+def test_snake_slug_in_v4_results_prose_is_flagged():
+    """The #1315 Results-prose shape: a backticked 3-segment slug in
+    `## Results` prose on a v4 body trips `opaque_snake_slugs`."""
+    body = V4_BODY_CLEAN.replace(
+        _RESULTS_PROSE_LINE,
+        "The lift holds at every seed; one panel context (`neg_reph_curious`) drives it.",
+    )
+    assert body != V4_BODY_CLEAN
+    findings = audit.audit_body(body)
+    assert "opaque_snake_slugs" in findings, findings
+    assert "`neg_reph_curious`" in findings["opaque_snake_slugs"], findings
+
+
+def test_snake_slug_in_v4_takeaways_prose_is_flagged():
+    """A backticked slug in a `## Takeaways` bullet flags — the mentor-facing
+    narrative surface the no-opaque-codes rule most directly protects."""
+    body = V4_BODY_CLEAN.replace(
+        "- Headline finding: the implant installs cleanly across three seeds.",
+        "- Headline finding: `tf_rev_default` installs cleanly across three seeds.",
+    )
+    assert body != V4_BODY_CLEAN
+    findings = audit.audit_body(body)
+    assert "opaque_snake_slugs" in findings, findings
+
+
+def test_snake_slug_in_v4_goal_prose_is_flagged():
+    """A backticked slug in `## Goal` prose flags — pins that `goal` is in
+    `_SNAKE_SLUG_PROSE_H2S` (reviewer concern on #1372's plan)."""
+    body = V4_BODY_CLEAN.replace(
+        "**Broader narrative:** which context factors predict fine-tuning leakage.",
+        "**Broader narrative:** whether `imp_icl_ft_neg` leakage tracks geometry.",
+    )
+    assert body != V4_BODY_CLEAN
+    findings = audit.audit_body(body)
+    assert "opaque_snake_slugs" in findings, findings
+
+
+def test_snake_slug_in_v4_methodology_prose_is_exempt():
+    """A slug appearing ONLY in `## Methodology` prose does NOT flag — the
+    field-name-dense section is deliberately out of scope (#1372 §4.6); the
+    residual stays LM-critic territory."""
+    body = V4_BODY_CLEAN.replace(
+        "**Design:** three seeds; baseline vs treatment; the single variable is the data mix.",
+        "**Design:** three seeds; one panel context (`neg_reph_curious`) is the treatment.",
+    )
+    assert body != V4_BODY_CLEAN
+    findings = audit.audit_body(body)
+    assert "opaque_snake_slugs" not in findings, findings
+
+
+def test_snake_slug_in_repro_footer_is_exempt():
+    """Slugs in the `**Repro:**` footer (the #1315 remediation destination —
+    the sanctioned slug surface) do NOT flag: the walker blanks the footer
+    label line onward."""
+    body = V4_BODY_CLEAN.replace(
+        "**Repro:** 1x A100, 47 min; code at commit deadbeef.",
+        "**Repro:** 1x A100, 47 min; adapters `tf_default_contra_d1` and\n"
+        "`neg_reph_curious`; code at commit deadbeef.",
+    )
+    assert body != V4_BODY_CLEAN
+    findings = audit.audit_body(body)
+    assert "opaque_snake_slugs" not in findings, findings
+
+
+def test_snake_slug_in_figure_caption_blockquote_is_exempt():
+    """A slug in a figure-caption blockquote inside `## Results` does NOT
+    flag — a caption naming the plotted cell is provenance, not narrative
+    (same carve-out family as `interval_inline`'s)."""
+    body = V4_BODY_CLEAN.replace(
+        _RESULTS_PROSE_LINE,
+        _RESULTS_PROSE_LINE + "\n\n> **Figure.** *Per-seed lift for the "
+        "`tf_default_contra_d1_seed42` cell.*",
+    )
+    assert body != V4_BODY_CLEAN
+    findings = audit.audit_body(body)
+    assert "opaque_snake_slugs" not in findings, findings
+
+
+def test_snake_slug_in_condition_table_and_fenced_code_is_exempt():
+    """Slugs in a GFM condition-table cell and in a fenced launch command
+    inside `## Results` do NOT flag — the condition table and command
+    examples are exactly where slugs belong."""
+    body = V4_BODY_CLEAN.replace(
+        _RESULTS_PROSE_LINE,
+        _RESULTS_PROSE_LINE + "\n\n"
+        "| Condition | Config slug |\n"
+        "|---|---|\n"
+        "| query-rephrase panel | `neg_reph_curious` |\n\n"
+        "```bash\n"
+        "uv run python scripts/eval.py condition=neg_reph_curious seed=42\n"
+        "```\n",
+    )
+    assert body != V4_BODY_CLEAN
+    findings = audit.audit_body(body)
+    assert "opaque_snake_slugs" not in findings, findings
+
+
+def test_snake_slug_allowlist_field_names_not_flagged():
+    """Allowlisted field/API identifiers in Results prose do NOT flag
+    (`logp_pos_mean`, `span_seam_counts` — legitimate 3+-segment names)."""
+    body = V4_BODY_CLEAN.replace(
+        _RESULTS_PROSE_LINE,
+        "The `logp_pos_mean` companion tracks the rate; `span_seam_counts` is clean.",
+    )
+    assert body != V4_BODY_CLEAN
+    findings = audit.audit_body(body)
+    assert "opaque_snake_slugs" not in findings, findings
+
+
+def test_snake_slug_allowlist_is_exact_token_not_prefix():
+    """The allowlist lookahead closes with a backtick, so an allowlisted
+    PREFIX does not exempt a longer token: `logp_pos_mean_v2` flags."""
+    body = V4_BODY_CLEAN.replace(
+        _RESULTS_PROSE_LINE,
+        "The `logp_pos_mean_v2` variant tracks the rate at every seed.",
+    )
+    assert body != V4_BODY_CLEAN
+    findings = audit.audit_body(body)
+    assert "opaque_snake_slugs" in findings, findings
+    assert "`logp_pos_mean_v2`" in findings["opaque_snake_slugs"], findings
+
+
+def test_snake_slug_two_segment_and_filename_forms_not_flagged():
+    """Structural exclusions: 2-segment tokens, filenames (extension before
+    the closing backtick), calls, and assignments never match — the tight
+    backtick anchoring carries these classes without allowlist entries."""
+    body = V4_BODY_CLEAN.replace(
+        _RESULTS_PROSE_LINE,
+        "Per-row `span_seam` provenance from `mix_meta.json` and "
+        "`training_mix_v2.jsonl`, built by `train_lora()` under "
+        "`condition=c1_evil_wrong_em`.",
+    )
+    assert body != V4_BODY_CLEAN
+    findings = audit.audit_body(body)
+    assert "opaque_snake_slugs" not in findings, findings
+
+
+def test_snake_slug_test_names_not_flagged():
+    """Backticked pytest names in Results prose do NOT flag (the `test_`
+    lookahead; #672's two hits are real code identifiers, never slugs)."""
+    body = V4_BODY_CLEAN.replace(
+        _RESULTS_PROSE_LINE,
+        "The pin is `test_watchdog_terminates_only_when_both_probes_fail`.",
+    )
+    assert body != V4_BODY_CLEAN
+    findings = audit.audit_body(body)
+    assert "opaque_snake_slugs" not in findings, findings
+
+
+def test_snake_slug_inactive_on_v3_bodies():
+    """Forward-only: the same slug in a v3-sentinel body's Findings prose
+    produces NO `opaque_snake_slugs` finding — grandfathered bodies are
+    never newly hard-FAILed by a v4 rule."""
+    body = V3_BODY_WITH_DATA_CODES.replace(
+        "The lift holds at every seed in the held-out evaluation.",
+        "The lift holds at every seed; one panel context (`neg_reph_curious`) drives it.",
+    )
+    assert body != V3_BODY_WITH_DATA_CODES
+    findings = audit.audit_body(body)
+    assert "opaque_snake_slugs" not in findings, findings
+
+
+def test_snake_slug_regression_issue_1315_shape():
+    """REGRESSION PIN (#1315 r1 shape): the Methodology Data-extraction
+    sentence AND the Results sentence that shipped in #1315's round-1 body.
+    The extended audit fires with `` `neg_reph_curious` `` sampled from the
+    Results prose; the legitimate `span_seam` / `span_seam_counts` neighbors
+    appear in NO sample (Methodology is out of scope; `span_seam` is
+    2-segment; `span_seam_counts` is allowlisted)."""
+    body = V4_BODY_CLEAN.replace(
+        "**Evaluation:** judge-scored rate on the held-out probes.",
+        "**Evaluation:** judge-scored rate on the held-out probes.\n\n"
+        "**Data extraction:** One panel context (`neg_reph_curious`) carries "
+        "per-row `span_seam` provenance (`span_seam_counts` = 100 exact / "
+        "20 prefix / 0 context).",
+    ).replace(
+        _RESULTS_PROSE_LINE,
+        "The lift holds at every seed; one panel context (`neg_reph_curious`) "
+        "sits on a BPE merge seam.",
+    )
+    assert body != V4_BODY_CLEAN
+    findings = audit.audit_body(body)
+    assert "opaque_snake_slugs" in findings, findings
+    assert "`neg_reph_curious`" in findings["opaque_snake_slugs"], findings
+    assert not any("span_seam" in s for s in findings["opaque_snake_slugs"]), findings

@@ -184,7 +184,12 @@ composer copies the requested lens's items VERBATIM and IN FULL from this file.
    data_path.exists()` on a git-clone-only lane; or the plan reuses a mutually-dependent artifact
    PAIR (bank vs capture, mix vs adapter) without the item-(j) provenance-coherence check — a
    consumed input regenerated AFTER its dependent capture crashed #922 at the parity assert after
-   a full GCE cycle despite per-member sha pins; or the plan reuses a parent's
+   a full GCE cycle despite per-member sha pins; or the plan reuses a parent's main-resident CODE
+   module while the parent's issue-<M> branch carries unmerged commits touching it, without the
+   item-(k) lineage diff (port-or-declare), or reuses a realized artifact whose row count falls
+   short of its declared input corpus without naming the filter — #1345's main-resident extractor
+   lacked the parent branch's degenerate-row filter (realized n=4724 vs corpus 5000 was the tell)
+   and crashed production at the first unfiltered row; or the plan reuses a parent's
    fit/analysis/upload-verify CODE
    without the checklist-item-(i) throughput inspection (inner per-cell/per-fold/per-draw loop
    batched? device parametrized? data-repo Hub calls prefix-scoped? —
@@ -197,10 +202,11 @@ composer copies the requested lens's items VERBATIM and IN FULL from this file.
    existing fit artifact already covers (per the step-5 artifact search) without a one-line
    justification for why the existing artifact does not fit — this wastes GPU-hours and breaks
    sibling-comparability. Not a REVISE when the plan reuses an artifact AND records its fitness
-   check (a)–(j) inline (in §10 / §11 / §12 — the planner's call) so the consistency-checker and
+   check (a)–(k) inline (in §10 / §11 / §12 — the planner's call) so the consistency-checker and
    downstream analyzer can re-check; not a REVISE when the plan retrains / regenerates AND names the
    specific fitness-check failure that licenses it (a checklist-item-(i) failure licenses NO retrain
-   and NO caller-side workaround — its remedy is the source-module fix, then reuse).
+   and NO caller-side workaround — its remedy is the source-module fix, then reuse; a
+   checklist-item-(k) failure likewise licenses no retrain — its remedy is port-then-reuse).
    REVISE also when the design carries a reuse-VALIDATION gate (a numeric parity floor, a
    behavioral install confirmation, a one-cell gate) whose threshold is a bare constant not
    derived from the reused artifact's own committed per-behavior reference values (file + field
@@ -244,6 +250,19 @@ composer copies the requested lens's items VERBATIM and IN FULL from this file.
       never needed to hold (2026-06-09: pod-518 ran 1h+ of pure-CPU permutation/bootstrap scoring
       with all 8 H100s at 0%, pod-523 ran a CPU-only metrics phase ~6h on idle GPUs — ~$48/hr of
       idle burn).
+      Sequencing clause (b) ALSO runs as a DATA-SAFETY ordering, not only a
+      billing one (and it fires for GPU fit phases too — the consuming
+      phase's device does not narrow it): when a long (>~15-30 min)
+      fit/analysis/eval phase CONSUMES a regeneration-costly intermediate
+      (extraction / activation store, capture, rollout set), REVISE a plan
+      whose phase sequence leaves that store unpersisted through the fit —
+      the store uploads (or a detached/backgrounded upload launches,
+      fail-loud + verified landed independently of the fit, never
+      fire-and-forget) BEFORE the long fit begins (#825: `extract → serial
+      CPU fit (hung) → upload` stranded the turnstore off HF; recovery cost
+      a full fresh GPU re-extraction).
+      Rule: `.claude/rules/upload-policy.md` expensive-store-before-long-fit
+      bullet; plan-side mirror: `planner.md` §9.
     - **(ii) Oversized footprint placed on the VM (disk/RAM safety).** REVISE when the plan routes the
       phase to the VM (the off-pod default) but its estimated local footprint exceeds
       `VM_ANALYSIS_FOOTPRINT_GB_MAX = 50` GB — `downloaded_inputs_gb +
@@ -279,7 +298,7 @@ composer copies the requested lens's items VERBATIM and IN FULL from this file.
       only 16 GB) — or a stream-reduce formulation that bounds peak RSS at
       O(one item). Full recipe: `.claude/rules/plan-compute-sizing.md`
       § CPU-phase RAM/RSS routing.
-    - **(iii) Gradient-descent, many-cell dense-factorization fit, OR any high-count tiny-op battery silently placed on the VM CPU / left serial (compute character).** REVISE when §9 routes an **iterative-optimization fit** — a torch-MLP LOCO / leave-one-class-out fit, a per-cell probe trained via SGD / AdamW, a small adapter fit, or any phase whose inner loop runs gradient descent on parameters — to the VM CPU default (or treats it as cheap closed-form CPU work), per planner.md §9 "Compute-character carve-out". Such a fit is GPU-worthy even at small model / dataset size and must route to a GPU lane (a GPU pod or the GCP GPU lane: `lora-7b` for a full A100, `eval` / `debug` for a smaller GPU — the smallest intent that fits). This axis is ORTHOGONAL to footprint: a gradient-descent fit goes to a GPU lane whether its footprint is large or small. A >50 GB gradient fit goes to a GPU lane with its disk sized explicitly (`--boot-disk-gb` on the GCP lane, `--volume`/intent volume on the RunPod lane), NOT `cpu-bigmem` (`gpu_count=0`, which would re-starve the fit); a closed-form aggregation with a >50 GB footprint still routes to `cpu-bigmem` per (ii). The qualifier is "iterative gradient descent on parameters" (the AdamW / SGD inner loop), NOT "uses pytorch" — a single closed-form torch reduction (`torch.linalg.lstsq`, a vectorized bootstrap) stays cheap CPU work. The "vectorized" qualifier is load-bearing, and the CHECK fires on intent, not implementation wording: ANY non-trivial permutation / bootstrap / null-draw battery over a large fixed/pooled set — non-trivial per the SAME ~15-30 min phase-wall floor as the rest of this item — triggers scrutiny UNLESS the plan explicitly states the draws are already batched/vectorized or the loop is sub-minute (#778's plan never said "serial"; it just scheduled the battery, and serial was the default implementation). REVISE when the plan schedules per-draw re-reduction of the pool or simply names the battery with NO batching/vectorization plan: the fix is a batched formulation (pool reduction precomputed once; mean/sum/covariance draws as one GEMM via the subset-sum identity, median/rank draws via batched `argsort` — `.claude/rules/vectorize-many-cell-fits.md`), NOT a GPU or bigger-CPU re-route, which leaves the redundant per-draw recompute in place (#778: ~4.1 s/draw serial `perm_null_draws`; ~15h projected across the full null battery's draw loops vs the plan's 1h §8 estimate; ~70× batched). The SAME intent-fired scrutiny covers many-cell repeated dense linear-algebra fits: REVISE when §9 schedules a full svd/eigh/lstsq/GCV-ridge solve looped over fold × layer × arm × trait with NO shared/batched-factorization plan, or with a per-call cost not grounded on a MEASURED 1-cell pilot through the production entrypoint at production shape/device, a cited prior-issue measured figure (same kernel + shape), or a pre-registered `pilot-gated` first-step pilot per `.claude/rules/plan-compute-sizing.md` § Per-cell fit phases (a FLOP floor is the cross-check, never the basis for these overhead-bound loops; #811: one inner kernel timed, the dominant frame asserted at "~1–2 h", 19h21m at unit 3/108) (#823: "~2 s/fit" asserted; ~125 s/fit real at N_tr≈4000, H=3584; ~3780 calls, 12-20 h — the body-named Gram-space fast twin was dropped). The fix is Gram/dual-space or a shared factorization, NOT a GPU/bigger-CPU re-route. The SAME intent-fired scrutiny covers ANY high-count tiny-op battery regardless of op class — >~10^4 closed-form tiny fits (#813's substrate-swap null: ~2M tiny fits projected 10-12 h serial), per-item SERIALIZATION of many multi-hundred-MB artifacts, and per-file Hub commits (#813: `savez_compressed` at 103.8 s/file made the store, not the forwards, the wall-clock driver — 4.5× over plan): REVISE when §9 schedules such a battery with NO batching / vectorization / out-of-band-IO plan, under the same ~15-30 min phase-wall floor. A genuinely vectorized battery (draws already batched) stays exempt cheap CPU work. The size gate is the SAME ~15-30 min floor, on the PHASE wall-time (the whole fit loop in aggregate), NOT any single fit: a many-cell/many-draw loop of individually-fast fits/draws counts if the loop runs longer than the floor, while a genuinely tiny one-off fit below the floor (a single linear probe trained in < 30 s, no long surrounding loop) stays on the VM — do not over-route trivial fits. (#658: `_fit_mlp_loco` ran a 300-epoch AdamW fit per cell on the VM CPU, a long per-cell loop that was GPU-starved.) When ANY lens's recommendation raises draws/B/N/cells, the Statistics lens item 12 same-round re-cost obligation applies — cross-check the affected §9 rows were re-costed.
+    - **(iii) Gradient-descent, many-cell dense-factorization fit, OR any high-count tiny-op battery silently placed on the VM CPU / left serial (compute character).** REVISE when §9 routes an **iterative-optimization fit** — a torch-MLP LOCO / leave-one-class-out fit, a per-cell probe trained via SGD / AdamW, a small adapter fit, or any phase whose inner loop runs gradient descent on parameters — to the VM CPU default (or treats it as cheap closed-form CPU work), per planner.md §9 "Compute-character carve-out". Such a fit is GPU-worthy even at small model / dataset size and must route to a GPU lane (a GPU pod or the GCP GPU lane: `lora-7b` for a full A100, `eval` / `debug` for a smaller GPU — the smallest intent that fits). This axis is ORTHOGONAL to footprint: a gradient-descent fit goes to a GPU lane whether its footprint is large or small. A >50 GB gradient fit goes to a GPU lane with its disk sized explicitly (`--boot-disk-gb` on the GCP lane, `--volume`/intent volume on the RunPod lane), NOT `cpu-bigmem` (`gpu_count=0`, which would re-starve the fit); a closed-form aggregation with a >50 GB footprint still routes to `cpu-bigmem` per (ii). The qualifier is "iterative gradient descent on parameters" (the AdamW / SGD inner loop), NOT "uses pytorch" — a single closed-form torch reduction (`torch.linalg.lstsq`, a vectorized bootstrap) stays cheap CPU work. The "vectorized" qualifier is load-bearing, and the CHECK fires on intent, not implementation wording: ANY non-trivial permutation / bootstrap / null-draw battery over a large fixed/pooled set — non-trivial per the SAME ~15-30 min phase-wall floor as the rest of this item — triggers scrutiny UNLESS the plan explicitly states the draws are already batched/vectorized or the loop is sub-minute (#778's plan never said "serial"; it just scheduled the battery, and serial was the default implementation). REVISE when the plan schedules per-draw re-reduction of the pool or simply names the battery with NO batching/vectorization plan: the fix is a batched formulation (pool reduction precomputed once; mean/sum/covariance draws as one GEMM via the subset-sum identity, median/rank draws via batched `argsort` — `.claude/rules/vectorize-many-cell-fits.md`), NOT a GPU or bigger-CPU re-route, which leaves the redundant per-draw recompute in place (#778: ~4.1 s/draw serial `perm_null_draws`; ~15h projected across the full null battery's draw loops vs the plan's 1h §8 estimate; ~70× batched). The SAME intent-fired scrutiny covers many-cell repeated dense linear-algebra fits: REVISE when §9 schedules a full svd/eigh/lstsq/GCV-ridge solve looped over fold × layer × arm × trait with NO shared/batched-factorization plan, or with a per-call cost not grounded on a MEASURED 1-cell pilot through the production entrypoint at production shape/device, a cited prior-issue measured figure (same kernel + shape), or a pre-registered `pilot-gated` first-step pilot per `.claude/rules/plan-compute-sizing.md` § Per-cell fit phases (a FLOP floor is the cross-check, never the basis for these overhead-bound loops; #811: one inner kernel timed, the dominant frame asserted at "~1–2 h", 19h21m at unit 3/108) (#823: "~2 s/fit" asserted; ~125 s/fit real at N_tr≈4000, H=3584; ~3780 calls, 12-20 h — the body-named Gram-space fast twin was dropped). The fix is Gram/dual-space or a shared factorization, NOT a GPU/bigger-CPU re-route. The SAME basis scrutiny covers permutation / bootstrap / null-draw batteries above the ~15–30 min phase floor (the floor itself cannot be self-certified by an asserted cost — the § Per-cell fit phases triviality clause governs) — **batched does NOT exempt the basis**: REVISE when a battery's §9 wall (or RSS cap) is priced from an ASSERTED per-draw figure or a FLOP ÷ assumed-throughput conversion with no MEASURED pilot of one production-shape batched draw block (through the production battery path, at the production output dimension), no cited prior-issue measured figure (same kernel + shape + dimension), and no `pilot-gated` flag — a FLOP floor is the cross-check, never the basis, for overhead-bound draw loops too (#1092 offvm battery refit: batched perm-null bands priced at ~2e11 FLOP/s × 2.5 overhead; 5 h/box planned, 12.8 h/box realized, ~2.6×). AND REVISE a `pilot-gated` battery row whose §9 HEADLINE wall / fence / RAM cap books the NAIVE projection: until a pilot AT THE PRODUCTION OUTPUT DIMENSION lands (a reduced-dimension pilot does not count as landed), an ambient-dimension battery is presumed ≥2× the naive RSS/wall projection (`.claude/rules/plan-compute-sizing.md` § Per-cell fit phases, the #1092 precedent: 71.9 GB RSS realized vs a 64 GB planned cap) — the headline and any fence/cap derived from it book the ×2-presumed figure, not the naive one. The SAME intent-fired scrutiny covers ANY high-count tiny-op battery regardless of op class — >~10^4 closed-form tiny fits (#813's substrate-swap null: ~2M tiny fits projected 10-12 h serial), per-item SERIALIZATION of many multi-hundred-MB artifacts, and per-file Hub commits (#813: `savez_compressed` at 103.8 s/file made the store, not the forwards, the wall-clock driver — 4.5× over plan): REVISE when §9 schedules such a battery with NO batching / vectorization / out-of-band-IO plan, under the same ~15-30 min phase-wall floor. A genuinely vectorized battery (draws already batched) stays exempt cheap CPU work. The size gate is the SAME ~15-30 min floor, on the PHASE wall-time (the whole fit loop in aggregate), NOT any single fit: a many-cell/many-draw loop of individually-fast fits/draws counts if the loop runs longer than the floor, while a genuinely tiny one-off fit below the floor (a single linear probe trained in < 30 s, no long surrounding loop) stays on the VM — do not over-route trivial fits. (#658: `_fit_mlp_loco` ran a 300-epoch AdamW fit per cell on the VM CPU, a long per-cell loop that was GPU-starved.) When ANY lens's recommendation raises draws/B/N/cells, the Statistics lens item 12 same-round re-cost obligation applies — cross-check the affected §9 rows were re-costed.
     - **(iv) Narrow GPU phase holding the run's PEAK-width pod (GPU-width right-sizing).** REVISE
       when a multi-phase GPU run sizes ONE pod at its peak-phase width (e.g. 8× H100 for a
       finetuning fan-out) and holds it through a GPU phase that needs MATERIALLY FEWER GPUs — a ≤7B
@@ -484,6 +503,36 @@ composer copies the requested lens's items VERBATIM and IN FULL from this file.
     full-precision artifacts at scale (single merged copy, or merges that fit the quota with
     headroom — the plan's §9 "N/A — no transient full-precision merges" or a bound under quota
     satisfies this item), or for `kind: analysis|infra|batch|survey`.
+    MOUNT-BINDING EXTENSION (#1414, from incident #1333): INDEPENDENT of the
+    transient-merge trigger above — for EVERY §9 disk row naming an out-root a
+    write-heavy phase writes (checkpoints, stores / analysis tensors, staged
+    inputs, scratch), ALSO verify the row states the PATH written AND the
+    filesystem/mount that path resolves to on the ROUTED lane (per-lane mount
+    list in the rule: RunPod `/workspace` volume vs the ~50 GB container
+    disk; GCE boot disk; shared VM `/` vs the `/mnt/eps-data` bind; SLURM
+    `$SCRATCH`), with per-candidate-lane mounts — or a pinned lane — when the
+    auto router can land the run on more than one lane (a lane failover
+    changes the mount, #1112), AND that the plan names the per-phase preamble
+    headroom assert against the mount the out-root RESOLVES to
+    (`orchestrate.preflight.assert_out_root_headroom`, statvfs + ~1 GB
+    posix_fallocate canary — full recipe:
+    `.claude/rules/plan-compute-sizing.md` § Out-root mount binding). REVISE
+    when a disk row carries a bare GB number with no mount named for the
+    routed lane, when a multi-candidate-lane plan names only the planned
+    lane's mount, or when no preamble assert is named for a write-heavy
+    phase. Conclusion-changing because a correct GB estimate on the WRONG
+    mount still ENOSPCs mid-write and the phase dies producing no result
+    (#1333 attempt 3: the out-root resolved to the ~50 GB RunPod container
+    disk instead of `/workspace` and died mid-checkpoint-serialization
+    despite a correct §9 GB estimate). The fits-quota / no-merges / kind
+    escapes above do NOT cover this extension (its trigger is any out-root
+    row, not only merge phases; only the extension's own escape list below
+    governs it). Not a REVISE when every §9 out-root disk row names
+    its mount on the routed lane(s) and the preamble assert, when the plan
+    writes no out-roots (its §9 "N/A — no out-root writes" satisfies this
+    extension), or for `kind: infra|batch|survey` — a `kind: analysis` plan
+    with out-root writes is IN scope (the #658-class VM store phases are
+    analysis phases). Plan-time placement check only, never a mid-run gate.
 17. **Persona-vectors extraction fidelity (any plan that elects persona vectors).** If the plan
     extracts a persona/behavior direction via "use persona vectors" / "extract a persona vector" /
     "persona-vectors-style direction" or a mean-difference of positive/negative contrastive
@@ -710,7 +759,7 @@ composer copies the requested lens's items VERBATIM and IN FULL from this file.
     second DV (single-condition behavior characterization, descriptive rate reports). Not a REVISE
     for marker implants (separate recipe), non-behavioral analysis, or when the plan's §6 writes
     "N/A — not a content-behavior leakage/implantation experiment".
-11. **Selection-symmetric nulls (max-over-axis headlines).** If the plan's headline statistic is
+11. **Selection-symmetric nulls (max-over-axis headlines; noise-structure symmetry).** If the plan's headline statistic is
     chosen by `max` / `argmax` / best-of / top-k-mean over a FREE AXIS (a read-out layer, a cell, a
     k / neighbourhood size, a seed, an extraction point, a threshold) AND is compared against a null
     / permutation / shuffle band, verify §6 registers a SELECTION-SYMMETRIC null — EITHER every null
@@ -745,6 +794,28 @@ composer copies the requested lens's items VERBATIM and IN FULL from this file.
     max-over-axis selection in the headline" satisfies this item). If the per-draw × per-axis matrix
     is registered/persisted but the plan shipped the asymmetric read, the honest band is
     analyzer-recoverable post-hoc — carry it as a binding Concern rather than a REVISE.
+    ALSO verify NOISE-STRUCTURE symmetry: if any registered statistic's
+    observed and reference legs share ONE SAMPLED quantity — cos(X − B̄, Y − B̄)
+    with a shared empirical baseline mean, a shared sampled
+    anchor/denominator, a change-score correlation sharing a baseline — AND
+    the null/reference band lacks that shared term (norm-matched random
+    directions, independently re-centered shuffles), REVISE unless the plan
+    registers EITHER disjoint baseline draw halves feeding the two legs OR a
+    null carrying the identical shared-B̄ structure per draw (pre-subtraction
+    leg level, norm-matched to the observed raw leg)
+    (`selection-symmetric-nulls.md` § Noise-structure symmetry).
+    Conclusion-changing because the shared sampling noise adds
+    ≈ +tr(Σ_B)/n_B to the observed inner product only — #1415: the
+    disjoint-baseline recount dropped prefix mean cosines 0.271→0.178 and
+    context 0.362→0.272, sent one pair 0.23→−0.08 (fully artifactual; target
+    split-half reliability 0.049), and pulled 6/28 prefix pairs below the
+    null p97.5 (0.043) — the "28/28 pairs clear the null" headline did not
+    survive, and the defect was caught only at interpretation-critique. Not a
+    REVISE when the baseline is deterministic/analytic (no sampling noise),
+    the legs already use independent estimates, or the null already bears the
+    shared-B̄ structure; a missing split-half reliability report on a sampled
+    difference-vector leg (with a fix registered) is a binding Concern, not a
+    REVISE.
 12. **Re-cost on power-raising recommendations (same round).** Any recommendation in YOUR review
     that raises statistical power parameters — permutation/null draws B, bootstrap N, seeds, cells,
     folds, samples-per-cell — MUST, in the SAME round, re-cost every affected §9 compute row: state

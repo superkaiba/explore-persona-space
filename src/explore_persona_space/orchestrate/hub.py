@@ -15,9 +15,11 @@ import random
 import re
 import shutil
 import sys
+import tempfile
 import time
 import uuid
 from collections.abc import Sequence
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -638,10 +640,13 @@ def list_hf_files_under_path(
     ``path`` naming a DIRECTORY returns every file under it (full repo-root-
     relative paths); an exact FILE returns ``[path]`` (the tree endpoint 404s
     on file paths — verified on hub 0.36.2, #939 — so an
-    ``EntryNotFoundError`` falls back to one RETRIED ``HfApi.file_exists``
-    HEAD probe; #1335: un-retried, a transient 429 on that fresh Hub call
-    crashed a production run AFTER its upload succeeded — the #920 class
-    through the fallback); an absent path returns ``[]``. Repository/Revision-not-found and
+    ``EntryNotFoundError`` falls back to one ``HfApi.file_exists`` HEAD
+    probe, itself wrapped in ``_retry_upload``: the bare probe was the ONE
+    un-retried Hub call on the sharded-upload verify path, and a Hub
+    queue-full 429 there killed #1345's smoke upload leg after the shard had
+    already landed — att-20260715-175238; the sibling fallback in
+    ``verify_repo_paths_uploaded`` was already wrapped); an absent path
+    returns ``[]``. Repository/Revision-not-found and
     transport/auth errors PROPAGATE (the file_exists fallback only fires
     after the tree call proved repo+revision resolve, so its swallowing of
     RepositoryNotFoundError is unreachable here). Empty ``path`` raises
@@ -658,10 +663,6 @@ def list_hf_files_under_path(
             api, repo_id, repo_type=repo_type, revision=revision, path_in_repo=normalized
         )
     except EntryNotFoundError:
-        # Retried like the sibling verify_repo_paths_uploaded fallback: the
-        # HEAD probe is a fresh Hub call on the verify path, and un-retried a
-        # transient 429/5xx here fails a SUCCEEDED upload (#1335
-        # att-20260715-134136: 429 "maximum queue size reached").
         if _retry_upload(
             lambda: api.file_exists(repo_id, normalized, repo_type=repo_type, revision=revision),
             what=f"file_exists({repo_id}/{normalized})",
@@ -863,13 +864,30 @@ def _is_transient_upload_error(err: Exception) -> bool:
     false-transient (#989). The substring scan applies only to response-less
     errors (ConnectionError, timeouts).
 
-    Response-less rate-limit text ('too many requests' / 'rate limit') is
-    transient (#931: a 429 during an hf_xet transfer can cross the Rust
-    token-refresher boundary as a wrapped exception without ``.response``);
-    NEVER bare '429' (the #989 digit-triplet trap). Note: a response-less
-    PERMANENT failure whose text happens to contain one of these markers now
-    burns the full retry budget before re-raising — bounded by design
-    (``EPM_HF_RETRY_BUDGET_S``, default 1800 s)."""
+    Response-less rate-limit text ('too many requests' / 'rate limit' /
+    'queue size reached' — the HF/Xet upload-queue-saturation 429 body text,
+    #1315/#1360) is transient (#931: a 429 during an hf_xet transfer can
+    cross the Rust token-refresher boundary as a wrapped exception without
+    ``.response``); NEVER bare '429' (the #989 digit-triplet trap). Note: a
+    response-less PERMANENT failure whose text happens to contain one of
+    these markers now burns the full retry budget before re-raising —
+    bounded by design (``EPM_HF_RETRY_BUDGET_S``, default 1800 s).
+
+    LocalEntryNotFoundError is classified transient BY CLASS, FIRST (#1402,
+    ported from #1092's _hub_retry_cause): it is raised client-side when
+    hf_hub_download's HEAD metadata call failed — a 429 storm surfaces
+    404-shaped through it (hub 0.36.2 errors.py:277-296, response=None by
+    constructor) — never for a genuinely missing file, which the Hub reports
+    as a response-bearing 404 EntryNotFoundError (still non-transient below).
+    Caveat: a deliberate offline / local_files_only cache miss now burns the
+    retry budget before re-raising — bounded by design, same class as the
+    response-less permanent-failure note above; EPM_HF_RETRY_BUDGET_S=0
+    restores attempt-bound behavior.
+    """
+    from huggingface_hub.errors import LocalEntryNotFoundError  # lazy, mirrors module style
+
+    if isinstance(err, LocalEntryNotFoundError):
+        return True
     code = getattr(getattr(err, "response", None), "status_code", None)
     if isinstance(code, int):
         return code in (408, 429) or 500 <= code < 600
@@ -889,6 +907,12 @@ def _is_transient_upload_error(err: Exception) -> bool:
             "temporarily unavailable",
             "too many requests",  # response-less 429 text — xet Rust boundary (#931)
             "rate limit",  # matches "rate limit(ed)"; NEVER bare "429" (#989)
+            "queue size reached",  # HF/Xet upload-queue-saturation 429 body text
+            # (#1315/#1360) — can cross the hf_xet PyO3 boundary without
+            # .response and without the "too many requests" phrase. Words-only:
+            # immune to the #989 digit-triplet trap; response-BEARING errors
+            # are still decided entirely by status code (a 4xx carrying this
+            # text stays non-transient).
         )
     )
 
@@ -1857,6 +1881,108 @@ def download_dataset(
     except Exception as e:
         logger.error("Download failed for %s: %s", path_in_repo, e)
         return ""
+
+
+def stage_hub_file(
+    repo_id: str,
+    path_in_repo: str,
+    target: Path | str,
+    *,
+    repo_type: str = "dataset",
+    revision: str | None = None,
+    token: str | None = None,
+    overwrite: bool = False,
+) -> Path:
+    """Retried, ATOMIC, FAIL-LOUD single-file Hub download for staging legs (#1402).
+
+    - rides ``retry_transient`` (Retry-After-aware, ``EPM_HF_RETRY_BUDGET_S`` wall
+      budget; ``LocalEntryNotFoundError`` transient BY CLASS — the #1092 rf01
+      429-on-HEAD masking);
+    - downloads into a per-invocation tempdir INSIDE ``target.parent`` (same
+      filesystem — ``os.replace`` must not cross devices, the #1335 EXDEV gotcha),
+      then publishes via atomic ``os.replace``: a failed attempt never leaves a
+      corrupt/partial target;
+    - idempotent: an existing target returns without a network call
+      (``overwrite=True`` forces);
+    - raises on exhaustion — never the fail-soft ``""`` contract of
+      :func:`download_dataset` (which is unchanged; staging must fail loud).
+    """
+    from huggingface_hub import hf_hub_download
+
+    target = Path(target)
+    if target.exists() and not overwrite:
+        return target
+    target.parent.mkdir(parents=True, exist_ok=True)
+    tok = token or os.environ.get("HF_TOKEN")
+    with tempfile.TemporaryDirectory(dir=target.parent, prefix=".hfstage-") as td:
+        local = retry_transient(
+            lambda: hf_hub_download(
+                repo_id=repo_id,
+                filename=path_in_repo,
+                repo_type=repo_type,
+                revision=revision,
+                local_dir=td,
+                token=tok,
+            ),
+            what=f"stage_hub_file({repo_id}:{path_in_repo})",
+        )
+        os.replace(local, target)
+    return target
+
+
+def stage_hub_prefix(
+    repo_id: str,
+    prefix: str,
+    dest_dir: Path | str,
+    *,
+    repo_type: str = "dataset",
+    revision: str | None = None,
+    token: str | None = None,
+    max_workers: int = 6,
+) -> list[Path]:
+    """Retried scoped-prefix staging — the #833 recipe as ONE canonical helper (#1402).
+
+    ``list_hf_files_under_path`` (server-side scoped tree walk, already retried —
+    NEVER ``snapshot_download`` / a bare full listing against the ~1M-file data
+    repo) + per-file :func:`stage_hub_file` in a bounded thread pool
+    (``max_workers<=6``: the org 2500-req/5-min quota, #658/#833).
+    ``revision=None`` resolves ONE commit sha up front via retried ``repo_info``,
+    so every file comes from one snapshot (the #833 coherence note). Files land
+    at ``dest_dir/<repo-relative path>`` (verbatim prefix mirror). An empty
+    listing raises ``FileNotFoundError``; any per-file failure propagates
+    (fail-loud). NOTE: each per-file ``stage_hub_file`` carries its OWN
+    ``EPM_HF_RETRY_BUDGET_S`` budget, so an N-file prefix under a persistent
+    outage can serially burn up to ~N x budget across pool workers before the
+    fail-loud raise (consistent with existing per-call ``_retry_upload``
+    semantics).
+    """
+    from huggingface_hub import HfApi
+
+    api = HfApi(token=token or os.environ.get("HF_TOKEN"))
+    if revision is None:
+        info = retry_transient(
+            lambda: api.repo_info(repo_id, repo_type=repo_type),
+            what=f"repo_info({repo_id})",
+        )
+        revision = str(info.sha)
+    files = list_hf_files_under_path(api, repo_id, prefix, repo_type=repo_type, revision=revision)
+    if not files:
+        raise FileNotFoundError(f"no files under {repo_id}@{revision}:{prefix}")
+    dest_dir = Path(dest_dir)
+    with ThreadPoolExecutor(max_workers=min(max_workers, len(files))) as pool:
+        futs = [
+            pool.submit(
+                stage_hub_file,
+                repo_id,
+                f,
+                dest_dir / f,
+                repo_type=repo_type,
+                revision=revision,
+                token=token,
+            )
+            for f in files
+        ]
+        return [f.result() for f in futs]  # .result() re-raises — fail-loud
 
 
 def list_hub_datasets(

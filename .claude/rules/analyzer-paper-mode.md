@@ -1,5 +1,5 @@
 ---
-description: Analyzer PAPER-TASK MODE protocol (paper: true tasks) — Steps 4/5/6 paper variants, build_paper.py/verify_paper.py gating, paper-stub write, same-issue follow-up + after-submission handling; relocated verbatim from analyzer.md, #829
+description: "Analyzer PAPER-TASK MODE protocol (paper: true tasks) — Steps 4/5/6 paper variants, build_paper.py/verify_paper.py gating, paper-stub write, same-issue follow-up + after-submission handling; relocated verbatim from analyzer.md, #829"
 paths:
   - "docs/papers/**"
   - "scripts/build_paper.py"

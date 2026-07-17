@@ -1,0 +1,16 @@
+{
+  "source_paper": "arXiv 2507.21509 (Persona Vectors), appendix 'LLM-based trait expression score'",
+  "template_file": "scripts/issue1090_assets/pv_generation_prompt_template.txt",
+  "template_block": "evaluation_prompt_template (Step 3), extracted verbatim",
+  "template_sha256": "8fe9d4528059deb54005d584520f74aca0e10b536cfaa15a928ae7291898aff0",
+  "rubric_sha256": "bf623b2ed95036042385b96ba1048780c5ec5227fe2be7283b623376b13167db",
+  "slots_filled": {
+    "TRAIT": "casual writing style",
+    "TRAIT_DESCRIPTION (IN YOUR OWN WORDS)": "A response displays this trait when it is written in a casual, informal, conversational register - relaxed phrasing, contractions, colloquial language, a chatty and friendly voice - rather than a formal, professional register.",
+    "question/answer": "converted {{...}} -> judge_graded {question}/{answer} runtime slots"
+  },
+  "behavior": "writing_style",
+  "issue": 1434,
+  "note": "Verbatim paper trait-expression template; only the two designed trait slots are filled (never paraphrased). Score-only rubric: 'REFUSAL' or an integer 0-100 (the judge parser drops REFUSAL/non-numeric returns, never coerces).",
+  "ts": "2026-07-17T01:35:26Z"
+}

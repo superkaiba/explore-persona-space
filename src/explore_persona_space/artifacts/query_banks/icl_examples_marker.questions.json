@@ -1,0 +1,13 @@
+{
+  "behavior": "marker",
+  "schema": "issue1333 questions-only ICL spec (answers filled pod-side at p1_mixes)",
+  "notes": "Two fixed generic demo questions (plan #1333 §4.1 cell 6). Answers are the base model's greedy response (max_new_tokens 1024) with the marker appended in the frozen-mix slot shape — deterministic, generated + frozen at p1_mixes, persisted to the run inputs dir + uploaded; icl_prefix_context('marker', bank_dir=<run inputs>) consumes the COMPLETED bank. Demo-question disjointness from the 10 train questions AND the 20 eval questions is asserted at build (assumption 12).",
+  "examples": [
+    {
+      "question": "What are some good habits for staying organized during a busy week?"
+    },
+    {
+      "question": "How does a rainbow form after it rains?"
+    }
+  ]
+}

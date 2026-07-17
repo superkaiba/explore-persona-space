@@ -1,0 +1,50 @@
+{
+  "model": "sft",
+  "hf_id": "allenai/Llama-3.1-Tulu-3-8B-SFT",
+  "corpus": "lmsys5k",
+  "n_prompts": 5000,
+  "n_kept": 3544,
+  "keep_rate": 0.7088,
+  "keep_rate_floor": 0.8,
+  "keep_rate_floor_pass": false,
+  "drop_reasons": {
+    "chat:short_turn_u1": 1038,
+    "naturalistic:short_turn_u1": 159,
+    "chat:short_turn_a1": 216,
+    "naturalistic:short_turn_a1": 23,
+    "empty_answer": 18,
+    "chat:over_token_budget": 1,
+    "chat:degenerate_span_u1": 1
+  },
+  "kept_truncation_rate": 0.01608352144469526,
+  "kept_early_eos_rate": 0.030474040632054177,
+  "kept_rep3_flag_rate": 0.2612866817155756,
+  "kept_distinct_3gram_rate": 0.8397035039174957,
+  "kept_answer_tokens": {
+    "mean": 274.72732152442296,
+    "median": 167.0,
+    "p90": 697
+  },
+  "sampling": {
+    "n": 1,
+    "temperature": 1.0,
+    "top_p": 0.95,
+    "max_tokens": 1024,
+    "seed": 42,
+    "stop": [
+      "\n<|user|>"
+    ]
+  },
+  "answers_sha256": "fca023d6605008c8fa99c3a43dd922be50640597d317995d741c7fd163fcbf1f",
+  "render_integrity": {
+    "gate": "render_integrity_a4_twin",
+    "status": "PASS",
+    "rest_of_span_mismatch_rate": 0.00042325056433408577,
+    "first_token_mismatch_rate_diagnostic": 0.9709367945823928,
+    "mismatches": 3,
+    "total_spans": 7088,
+    "n_pairs": 3544,
+    "max_rate": 0.1
+  },
+  "smoke": false
+}

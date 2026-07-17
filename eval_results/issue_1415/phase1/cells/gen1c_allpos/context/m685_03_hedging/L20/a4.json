@@ -1,0 +1,56 @@
+{
+  "cell_id": "gen1c_allpos/context/m685_03_hedging/L20/a4",
+  "phase": "phase1c_allpos",
+  "pair_id": "m685_03_hedging",
+  "context": {
+    "system": null,
+    "user": "How does a computer processor work?"
+  },
+  "layer": 20,
+  "alpha": 4.0,
+  "all_positions": true,
+  "delta_key": [
+    "pair",
+    "m685_03_hedging",
+    "context"
+  ],
+  "n_draws": 10,
+  "seed_base": 42,
+  "temperature": 1.0,
+  "max_new_tokens": 1024,
+  "extraction_arm": "context",
+  "coherence_flags": [
+    true,
+    true,
+    true,
+    true,
+    true,
+    false,
+    true,
+    true,
+    true,
+    true
+  ],
+  "n_coherent": 9,
+  "passes_gate": true,
+  "gen_s_per_sample": 5.986925642774986,
+  "chunk_members": [
+    "gen1c_allpos/context/m685_03_hedging/L20/a4",
+    "gen1c_allpos/context/m685_04_terse/L20/a4",
+    "gen1c_allpos/context/m685_05_formal/L20/a4",
+    "gen1c_allpos/context/m685_06_villain/L20/a4",
+    "gen1c_allpos/context/m685_07_medical_doctor/L20/a4",
+    "gen1c_allpos/context/m685_08_french_person/L20/a4",
+    "gen1c_allpos/context/m685_09_comedian/L20/a4",
+    "gen1c_allpos/context/m779_00_evil/L20/a4"
+  ],
+  "completions_file": "raw_completions/gen1c_allpos/context/m685_03_hedging/L20/a4.json",
+  "repro": {
+    "git_commit": "a369b06f46dde187e268a8f5f1b0c8fe7ae99a94",
+    "torch": "2.8.0+cu128",
+    "transformers": "4.57.6",
+    "model_id": "Qwen/Qwen2.5-7B-Instruct",
+    "tiny": false,
+    "timestamp": "2026-07-16T23:39:48.057816+00:00"
+  }
+}

@@ -170,6 +170,13 @@ def test_gcp_create_argv_forwards_real_xet_kill_switch(monkeypatch) -> None:
     # demand a tempfile entry this direct-render test doesn't thread.
     monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
     monkeypatch.delenv("OPENAI_API_KEY", raising=False)
+    # #1205 added GITHUB_TOKEN to STARTUP_SECRET_ENV_KEYS but this delenv
+    # list was never extended (test_gcp_backend.py's autouse fixture was):
+    # an earlier test file's load_dotenv() puts the repo .env's GITHUB_TOKEN
+    # in the process env and render_create_argv then (correctly) refuses the
+    # unthreaded secret — an order-dependent failure surfaced by the #1339
+    # gate-scope run.
+    monkeypatch.delenv("GITHUB_TOKEN", raising=False)
     argv = render_create_argv(
         spec=_hydra_spec(),
         config=_gcp_config(),

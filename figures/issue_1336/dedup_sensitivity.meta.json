@@ -1,0 +1,311 @@
+{
+  "commit": "11daecb303",
+  "created": "2026-07-16T09:28:05Z",
+  "figsize": [
+    11.5,
+    4.6
+  ],
+  "points": [
+    {
+      "x": -0.16,
+      "Stage contrast C (recalibrated scale)": -3.4865922596494237e-05,
+      "error": 0.0023006153409235964,
+      "series": "all rows",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 0.84,
+      "Stage contrast C (recalibrated scale)": -9.670921494731033e-07,
+      "error": 1.0106347176408458e-06,
+      "series": "all rows",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 1.84,
+      "Stage contrast C (recalibrated scale)": 0.0040318391431506395,
+      "error": 0.0038295331448924895,
+      "series": "all rows",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 2.84,
+      "Stage contrast C (recalibrated scale)": 0.0024588754585599393,
+      "error": 0.003431975643210923,
+      "series": "all rows",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 0.16,
+      "Stage contrast C (recalibrated scale)": -3.4865922596494237e-05,
+      "error": 0.0023006153409235964,
+      "series": "duplicates dropped",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "x": 1.16,
+      "Stage contrast C (recalibrated scale)": -9.670921494731033e-07,
+      "error": 1.0106347176408458e-06,
+      "series": "duplicates dropped",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "x": 2.16,
+      "Stage contrast C (recalibrated scale)": 0.0036357265052422427,
+      "error": 0.0038987603355649866,
+      "series": "duplicates dropped",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "x": 3.16,
+      "Stage contrast C (recalibrated scale)": 0.0018380683442168477,
+      "error": 0.003606975490754223,
+      "series": "duplicates dropped",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "x": -0.16,
+      "Stage contrast C (recalibrated scale)": -3.4865922596494237e-05,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 0.84,
+      "Stage contrast C (recalibrated scale)": -9.670921494731033e-07,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 1.84,
+      "Stage contrast C (recalibrated scale)": 0.0040318391431506395,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 2.84,
+      "Stage contrast C (recalibrated scale)": 0.0024588754585599393,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": -0.16,
+      "Stage contrast C (recalibrated scale)": -0.002366511792982487,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 0.84,
+      "Stage contrast C (recalibrated scale)": -2.047665152973832e-06,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 1.84,
+      "Stage contrast C (recalibrated scale)": 0.0002783214913669842,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 2.84,
+      "Stage contrast C (recalibrated scale)": -0.001100293612667105,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": -0.16,
+      "Stage contrast C (recalibrated scale)": 0.002234718888864706,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 0.84,
+      "Stage contrast C (recalibrated scale)": -2.6395717692140373e-08,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 1.84,
+      "Stage contrast C (recalibrated scale)": 0.007937387781151963,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 2.84,
+      "Stage contrast C (recalibrated scale)": 0.005763657673754741,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 0.16,
+      "Stage contrast C (recalibrated scale)": -3.4865922596494237e-05,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 1.16,
+      "Stage contrast C (recalibrated scale)": -9.670921494731033e-07,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 2.16,
+      "Stage contrast C (recalibrated scale)": 0.0036357265052422427,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 3.16,
+      "Stage contrast C (recalibrated scale)": 0.0018380683442168477,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 0.16,
+      "Stage contrast C (recalibrated scale)": -0.002366511792982487,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 1.16,
+      "Stage contrast C (recalibrated scale)": -2.047665152973832e-06,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 2.16,
+      "Stage contrast C (recalibrated scale)": -0.00021406526218671357,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 3.16,
+      "Stage contrast C (recalibrated scale)": -0.0017174285021776202,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 0.16,
+      "Stage contrast C (recalibrated scale)": 0.002234718888864706,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 1.16,
+      "Stage contrast C (recalibrated scale)": -2.6395717692140373e-08,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 2.16,
+      "Stage contrast C (recalibrated scale)": 0.00758345540894326,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 3.16,
+      "Stage contrast C (recalibrated scale)": 0.005496522479330825,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": -0.16,
+      "After-RLVR within-stage recalibrated R\u00b2 (layer 29)": 0.23735451751338654,
+      "series": "all rows",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 0.84,
+      "After-RLVR within-stage recalibrated R\u00b2 (layer 29)": 0.22933628560706842,
+      "series": "all rows",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 0.16,
+      "After-RLVR within-stage recalibrated R\u00b2 (layer 29)": 0.23107309391353748,
+      "series": "duplicates dropped",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 1.16,
+      "After-RLVR within-stage recalibrated R\u00b2 (layer 29)": 0.22296310185360457,
+      "series": "duplicates dropped",
+      "_kind": "line",
+      "_group": 9
+    }
+  ],
+  "n_series": 10,
+  "total_points": 36,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Contrast C, before vs after prompt dedup",
+        "ylabel": "Stage contrast C (recalibrated scale)",
+        "legend_labels": [
+          "all rows",
+          "duplicates dropped"
+        ],
+        "xticklabels": [
+          "GSM8K train\n(chat)",
+          "GSM8K test\n(chat)",
+          "LMSYS\n(chat)",
+          "LMSYS\n(naturalistic)"
+        ],
+        "yticklabels": [
+          "\u22120.004",
+          "\u22120.002",
+          "0.000",
+          "0.002",
+          "0.004",
+          "0.006",
+          "0.008",
+          "0.010"
+        ]
+      },
+      {
+        "title_left": "Resume-verdict read vs the bar",
+        "ylabel": "After-RLVR within-stage recalibrated R\u00b2 (layer 29)",
+        "legend_labels": [
+          "all rows",
+          "duplicates dropped"
+        ],
+        "annotations": [
+          "0.237",
+          "0.229",
+          "0.231",
+          "0.223",
+          "usable-strength bar"
+        ],
+        "xticklabels": [
+          "LMSYS (chat)",
+          "LMSYS (naturalistic)"
+        ],
+        "yticklabels": [
+          "0.19",
+          "0.20",
+          "0.21",
+          "0.22",
+          "0.23",
+          "0.24",
+          "0.25",
+          "0.26"
+        ]
+      }
+    ],
+    "series": [
+      "all rows",
+      "duplicates dropped"
+    ]
+  }
+}

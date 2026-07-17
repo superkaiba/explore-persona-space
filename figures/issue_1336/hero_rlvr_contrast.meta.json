@@ -1,0 +1,533 @@
+{
+  "commit": "6375ccb21d",
+  "created": "2026-07-16T07:28:34Z",
+  "figsize": [
+    12.5,
+    5.2
+  ],
+  "points": [
+    {
+      "x": -0.24,
+      "Gap: within-stage R$^2$ $-$ base-composition R$^2$": 0.1385344778501152,
+      "error": 0.0028242274871824458,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.76,
+      "Gap: within-stage R$^2$ $-$ base-composition R$^2$": -0.15888819968359702,
+      "error": 0.0037916313371361005,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 1.76,
+      "Gap: within-stage R$^2$ $-$ base-composition R$^2$": -0.14411260334277953,
+      "error": 0.004198149640408738,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 2.76,
+      "Gap: within-stage R$^2$ $-$ base-composition R$^2$": -6.468866665887418e-06,
+      "error": 1.348267244816181e-06,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "GSM8K train\n(RLVR-trained distribution)",
+      "Gap: within-stage R$^2$ $-$ base-composition R$^2$": 0.13305112105210282,
+      "error": 0.002573590988124333,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "LMSYS chat",
+      "Gap: within-stage R$^2$ $-$ base-composition R$^2$": -0.15105356215510413,
+      "error": 0.003861570553592028,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "LMSYS naturalistic",
+      "Gap: within-stage R$^2$ $-$ base-composition R$^2$": -0.13667553832413049,
+      "error": 0.004019646291643017,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "GSM8K test\n(degenerate fit regime)",
+      "Gap: within-stage R$^2$ $-$ base-composition R$^2$": -5.341347151355258e-06,
+      "error": 6.787905561356221e-07,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 0.24,
+      "Gap: within-stage R$^2$ $-$ base-composition R$^2$": 0.13301625512950632,
+      "error": 0.003066599332476591,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 1.24,
+      "Gap: within-stage R$^2$ $-$ base-composition R$^2$": -0.1470217230119535,
+      "error": 0.003721574869262473,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 2.24,
+      "Gap: within-stage R$^2$ $-$ base-composition R$^2$": -0.13421666286557055,
+      "error": 0.004258429156215132,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 3.24,
+      "Gap: within-stage R$^2$ $-$ base-composition R$^2$": -6.308439300828361e-06,
+      "error": 7.907491288774993e-07,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": -0.24,
+      "Gap: within-stage R$^2$ $-$ base-composition R$^2$": 0.1357503967612283,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 0.76,
+      "Gap: within-stage R$^2$ $-$ base-composition R$^2$": -0.1628810091267685,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 1.7600000000000002,
+      "Gap: within-stage R$^2$ $-$ base-composition R$^2$": -0.14814813906160987,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 2.76,
+      "Gap: within-stage R$^2$ $-$ base-composition R$^2$": -8.037894147122637e-06,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": -0.24,
+      "Gap: within-stage R$^2$ $-$ base-composition R$^2$": 0.1413988517355932,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 0.76,
+      "Gap: within-stage R$^2$ $-$ base-composition R$^2$": -0.1552977464524963,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 1.7600000000000002,
+      "Gap: within-stage R$^2$ $-$ base-composition R$^2$": -0.1397518397807924,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 2.76,
+      "Gap: within-stage R$^2$ $-$ base-composition R$^2$": -5.341359657490274e-06,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 0.0,
+      "Gap: within-stage R$^2$ $-$ base-composition R$^2$": 0.13055868769704346,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 1.0,
+      "Gap: within-stage R$^2$ $-$ base-composition R$^2$": -0.15482426463918236,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 2.0,
+      "Gap: within-stage R$^2$ $-$ base-composition R$^2$": -0.14067254497077383,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 3.0,
+      "Gap: within-stage R$^2$ $-$ base-composition R$^2$": -5.968807353207151e-06,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 0.0,
+      "Gap: within-stage R$^2$ $-$ base-composition R$^2$": 0.13570586967329212,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 1.0,
+      "Gap: within-stage R$^2$ $-$ base-composition R$^2$": -0.1471011235319983,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 2.0,
+      "Gap: within-stage R$^2$ $-$ base-composition R$^2$": -0.1326332523874878,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 3.0,
+      "Gap: within-stage R$^2$ $-$ base-composition R$^2$": -4.6112262409359065e-06,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 0.24,
+      "Gap: within-stage R$^2$ $-$ base-composition R$^2$": 0.12986316041285914,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 1.2400000000000002,
+      "Gap: within-stage R$^2$ $-$ base-composition R$^2$": -0.1507770494679148,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 2.24,
+      "Gap: within-stage R$^2$ $-$ base-composition R$^2$": -0.13847080150710583,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 3.24,
+      "Gap: within-stage R$^2$ $-$ base-composition R$^2$": -7.151099848237696e-06,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 0.24,
+      "Gap: within-stage R$^2$ $-$ base-composition R$^2$": 0.13599635907781232,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 1.2400000000000002,
+      "Gap: within-stage R$^2$ $-$ base-composition R$^2$": -0.14333389972938984,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 2.24,
+      "Gap: within-stage R$^2$ $-$ base-composition R$^2$": -0.12995394319467557,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 3.24,
+      "Gap: within-stage R$^2$ $-$ base-composition R$^2$": -5.569601590482698e-06,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": -0.11,
+      "Contrast C = gap(RLVR) $-$ gap(DPO)": -3.4865922596494237e-05,
+      "error": 0.0023006153409235964,
+      "series": "recalibrated (primary)",
+      "_kind": "errorbar",
+      "_group": 9
+    },
+    {
+      "x": 0.89,
+      "Contrast C = gap(RLVR) $-$ gap(DPO)": 0.0040318391431506395,
+      "error": 0.0038295331448924895,
+      "series": "recalibrated (primary)",
+      "_kind": "errorbar",
+      "_group": 9
+    },
+    {
+      "x": 1.89,
+      "Contrast C = gap(RLVR) $-$ gap(DPO)": 0.0024588754585599393,
+      "error": 0.003431975643210923,
+      "series": "recalibrated (primary)",
+      "_kind": "errorbar",
+      "_group": 9
+    },
+    {
+      "x": 2.89,
+      "Contrast C = gap(RLVR) $-$ gap(DPO)": -9.670921494731033e-07,
+      "error": 1.010634717803216e-06,
+      "series": "recalibrated (primary)",
+      "_kind": "errorbar",
+      "_group": 9
+    },
+    {
+      "x": 0.11,
+      "Contrast C = gap(RLVR) $-$ gap(DPO)": -0.0022723146453382803,
+      "error": 0.002616347233168858,
+      "series": "raw (companion)",
+      "_kind": "errorbar",
+      "_group": 10
+    },
+    {
+      "x": 1.11,
+      "Contrast C = gap(RLVR) $-$ gap(DPO)": 0.04565293167930007,
+      "error": 0.012046640246044786,
+      "series": "raw (companion)",
+      "_kind": "errorbar",
+      "_group": 10
+    },
+    {
+      "x": 2.11,
+      "Contrast C = gap(RLVR) $-$ gap(DPO)": 0.06037644493458727,
+      "error": 0.011634394289006273,
+      "series": "raw (companion)",
+      "_kind": "errorbar",
+      "_group": 10
+    },
+    {
+      "x": 3.11,
+      "Contrast C = gap(RLVR) $-$ gap(DPO)": -1.5387800620381142e-06,
+      "error": 4.695908551448356e-06,
+      "series": "raw (companion)",
+      "_kind": "errorbar",
+      "_group": 10
+    },
+    {
+      "x": -0.11,
+      "Contrast C = gap(RLVR) $-$ gap(DPO)": -3.4865922596494237e-05,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 0.89,
+      "Contrast C = gap(RLVR) $-$ gap(DPO)": 0.0040318391431506395,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 1.89,
+      "Contrast C = gap(RLVR) $-$ gap(DPO)": 0.0024588754585599393,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 2.89,
+      "Contrast C = gap(RLVR) $-$ gap(DPO)": -9.670921494731033e-07,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": -0.11,
+      "Contrast C = gap(RLVR) $-$ gap(DPO)": -0.002366511792982487,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 0.89,
+      "Contrast C = gap(RLVR) $-$ gap(DPO)": 0.0002783214913669842,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 1.89,
+      "Contrast C = gap(RLVR) $-$ gap(DPO)": -0.001100293612667105,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 2.89,
+      "Contrast C = gap(RLVR) $-$ gap(DPO)": -2.0476651532985723e-06,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": -0.11,
+      "Contrast C = gap(RLVR) $-$ gap(DPO)": 0.002234718888864706,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 0.89,
+      "Contrast C = gap(RLVR) $-$ gap(DPO)": 0.007937387781151963,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 1.89,
+      "Contrast C = gap(RLVR) $-$ gap(DPO)": 0.005763657673754741,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 2.89,
+      "Contrast C = gap(RLVR) $-$ gap(DPO)": -2.6395717692140373e-08,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 0.11,
+      "Contrast C = gap(RLVR) $-$ gap(DPO)": -0.0022723146453382803,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 1.11,
+      "Contrast C = gap(RLVR) $-$ gap(DPO)": 0.04565293167930007,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 2.11,
+      "Contrast C = gap(RLVR) $-$ gap(DPO)": 0.06037644493458727,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 3.11,
+      "Contrast C = gap(RLVR) $-$ gap(DPO)": -1.5387800620381142e-06,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 0.11,
+      "Contrast C = gap(RLVR) $-$ gap(DPO)": -0.004884512735082355,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 1.11,
+      "Contrast C = gap(RLVR) $-$ gap(DPO)": 0.03429543690979107,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 2.11,
+      "Contrast C = gap(RLVR) $-$ gap(DPO)": 0.048813001866755,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 3.11,
+      "Contrast C = gap(RLVR) $-$ gap(DPO)": -6.2067508227514615e-06,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 0.11,
+      "Contrast C = gap(RLVR) $-$ gap(DPO)": 0.00034818173125536174,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 1.11,
+      "Contrast C = gap(RLVR) $-$ gap(DPO)": 0.05838871740188064,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 2.11,
+      "Contrast C = gap(RLVR) $-$ gap(DPO)": 0.07208179044476755,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 3.11,
+      "Contrast C = gap(RLVR) $-$ gap(DPO)": 3.1850662801452508e-06,
+      "_kind": "line",
+      "_group": 16
+    }
+  ],
+  "n_series": 17,
+  "total_points": 68,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Gap per post-training stage (recalibrated scale, layer 30)",
+        "ylabel": "Gap: within-stage R$^2$ $-$ base-composition R$^2$",
+        "legend_labels": [
+          "SFT",
+          "DPO",
+          "RLVR"
+        ],
+        "annotations": [
+          "+0.139",
+          "-0.159",
+          "-0.144",
+          "+0.133",
+          "-0.151",
+          "-0.137",
+          "+0.133",
+          "-0.147",
+          "-0.134",
+          "within = composition\nto ~1e-5 (all stages)"
+        ],
+        "xticklabels": [
+          "GSM8K train\n(RLVR-trained distribution)",
+          "LMSYS chat",
+          "LMSYS naturalistic",
+          "GSM8K test\n(degenerate fit regime)"
+        ],
+        "yticklabels": [
+          "\u22120.20",
+          "\u22120.15",
+          "\u22120.10",
+          "\u22120.05",
+          "0.00",
+          "0.05",
+          "0.10",
+          "0.15",
+          "0.20"
+        ]
+      },
+      {
+        "title_left": "RLVR-specific contrast, 1000-draw paired bootstrap 95% CI",
+        "ylabel": "Contrast C = gap(RLVR) $-$ gap(DPO)",
+        "legend_labels": [
+          "recalibrated (primary)",
+          "raw (companion)"
+        ],
+        "annotations": [
+          "-0.0000",
+          "+0.0040",
+          "+0.0025",
+          "-0.0000",
+          "-0.0023",
+          "+0.0457",
+          "+0.0604",
+          "-0.0000",
+          "elicitation band ($\\pm$0.020)"
+        ],
+        "xticklabels": [
+          "GSM8K train\n(RLVR-trained distribution)",
+          "LMSYS chat",
+          "LMSYS naturalistic",
+          "GSM8K test\n(degenerate fit regime)"
+        ],
+        "yticklabels": [
+          "\u22120.04",
+          "\u22120.02",
+          "0.00",
+          "0.02",
+          "0.04",
+          "0.06",
+          "0.08"
+        ]
+      }
+    ],
+    "series": [
+      "SFT",
+      "DPO",
+      "RLVR",
+      "recalibrated (primary)",
+      "raw (companion)"
+    ]
+  }
+}

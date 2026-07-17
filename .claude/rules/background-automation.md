@@ -23,6 +23,21 @@ exist + their user-visible effects); this file is the full predicate spec.
 Auto-terminate pods EXITED >24h — EXEMPT when the owning task carries the
 `keep-running` tag, reported as `kept-exited` instead.
 
+**Team-shared account — the EXITED auto-terminate is positively
+ownership-gated (#1404).** The RunPod account is TEAM-SHARED: non-EPS
+teammates may legitimately run pods whose names carry the managed `pod-`
+prefix, so a managed-looking name is NOT proof of EPS ownership. The
+EXITED>24h auto-terminate fires only when `_is_eps_owned`
+(`scripts/pod_audit.py`) POSITIVELY confirms EPS ownership via any one of
+three signals — the parsed issue number resolves in `tasks/REGISTRY.json`,
+the pod appears in the `pods_ephemeral.json` sidecar, or
+`_scan_task_references` finds task references — each wrapped
+fail-toward-keep (a raising signal never asserts ownership). An EXITED
+managed-name pod that fails all three surfaces REPORT-ONLY in the
+`unmanaged-exited` bucket (rendered with a "NEVER auto-terminated"
+advisory), never auto-terminated; termination there is the user's call
+after confirming ownership.
+
 ## Stale-GCP-VM janitor (09:37 daily, `cron_gcp_audit.sh` → `gcp_audit.py`)
 
 The GCP analogue of the stale-pod audit — the credit-leak backstop for the
@@ -160,6 +175,36 @@ the daily `uv cache prune` cron: reaping a venv only drops worktree-side
 hardlinks — the shared blocks free when `uv cache prune` later drops
 unreferenced cache-side entries, so the two crons' combined reclaim is the
 number to watch (per-venv byte figures are du-apparent).
+
+**Husk-reap arm (#1430).** After the worktree sweep, the same 09:47 cron
+additionally runs the terminal-task duplicate-dir husk reap:
+`uv run python scripts/task.py reap-husks --apply`. Predicate: a task id
+holding MORE THAN ONE on-disk `tasks/<status>/<id>` dir (the
+merge-reintroduced husk shape — a concurrent branch cut BEFORE the task's
+status move re-adds the old-status dir on rebase-merge; the #644 ghost
+sweep covers only the inverse tracked-but-absent-on-disk shape, and a
+terminal task has no next transition to fire it) whose REGISTRY status is
+TERMINAL (`completed`/`archived` — `HUSK_REAP_TERMINAL_STATUSES`;
+`blocked` is re-drivable and deliberately excluded) has its husk(s)
+removed iff EVERY husk entry is byte-subset-verified against the live
+(REGISTRY) dir: byte-identical, byte-prefix, `.jsonl` ordered-subsequence
+(multiplicity respected), or a symlink with a matching `readlink` target.
+ANY unique content ESCALATES — stderr ERROR + a row in the dedicated
+sidecar `.claude/cache/husk-reap-events.jsonl` — and is NEVER deleted (a
+marker present only in the husk is evidence of a lost concurrent write).
+The subset check doubles as the misidentification guard: a stale registry
+entry pointing at the husk makes the true live dir fail subset
+verification (it holds strictly more content) and escalate. Non-terminal /
+unregistered / registry-stale ids are skipped with labeled reasons;
+`task.py audit` surfaces every duplicate-dir id continuously as a
+`[duplicate-dir]` WARN tier that never flips audit's exit code. Tracked
+husks are removed via `git rm -r` + one explicit-path commit per husk
+under the task.py flock (enumeration re-run inside the lock);
+fully-untracked husks (the #721 empty-`artifacts/` shape) via `rmtree`
+with no commit. On-demand form: `task.py reap-husks [--apply] [--issue N]`
+(report-only by default; exit 0 always — escalation is the working path).
+Kill switch: `EPM_SKIP_HUSK_REAP=1` (honored inside the library, so the
+cron arm and on-demand invocations are disabled alike).
 
 `codex_task.py` complements this by pinning every codex-companion dispatch to
 the main checkout root (`DISPATCH_ROOT`), so new codex workers never root
@@ -393,6 +438,26 @@ running-checkout-derived by design — it exposes a stale worktree/clone copy)
 so any future stale-instance poster identifies itself on its first marker.
 Pinned by `tests/test_autonomous_session_watch.py::test_orphan_act_guard_*`
 + `test_stalled_fence_spawn_guard_*`.
+
+**Orphan-sweep dead-owner fast path (#1391; lineage #1090-fu5).** The orphan
+sweep's 90-min staleness floor exists because "no live registered session"
+cannot distinguish a dead driver from a live-but-unregistered one (the
+routine follow-up-round state). When the sweep has POSITIVE proof the task's
+last recorded owner session is dead — the #720 `last-mapped-terminal-<sid>`
+breadcrumb binds a sid to the issue, that sid was observed live on an
+earlier tick (state-carried in `orphan-<N>.json` as `owner_sid`, surviving
+the breadcrumb GC) or its breadcrumb still exists this tick, and it is now
+absent from a successfully-fetched daemon live set — plus a recent driver
+witness (a follow-up-round-only marker kind or a `stage-dispatch`
+breadcrumb) and no live-owner veto (fresh worktree activity, a live daemon
+child with an `issue-<N>` worktree cwd, any breadcrumb owner still live),
+the effective floor fed to `decide_orphan` drops to
+`EPM_ORPHAN_DEAD_OWNER_STALENESS_MIN` (default 20 min, clamp >= 10 min, `0`
+disables) — the #1090-fu5 shape (session dies mid-follow-up-round with its
+registration already deleted) is auto-respawned in ~35-50 min instead of
+~105. Every uncertain input fails toward the 90-min slow path; the 2-miss
+debounce, daily cap, manual-only alert (#505), act-time guard (#1247), and
+all four exemption actions bind unchanged.
 
 **Infra-drain pass (execute the PM dispatch queue; task #633).** The PM
 session's standing infra auto-dispatch rule (`research-pm.md` § Standing
@@ -796,6 +861,23 @@ verified kill-by-pid recipe (or SIGTERMs it under `--kill`; comm re-verified,
 never auto-SIGKILL). Stale sentinels are GC'd after `max(7 days, the
 configured TTL)`.
 
+**Deliberate registration removal (`spawn_session.py unregister`; #1327).**
+Deliberately removing an `issue-<N>.json` / `manual-issue-<N>.json` /
+`campaign-<N>.json` registration (collision-yield, deliberate-stop cleanup)
+goes through `spawn_session.py unregister` — never a hand `rm` on
+`~/.eps-autonomous/` (the #952 shape: an unguarded rm can strip crash-recovery
+from the healthy owner). Sid-matched by default: `unregister --issue N`
+removes only files recording the CALLING session's Happy id
+(ancestry-inferred, the `register-current` walk), so a yielding duplicate can
+never delete the true owner's entry — a `KEPT-SID-MISMATCH` line is the guard
+working, not a bug. Third-party cleanup of a DEAD session's file:
+`unregister --issue N --session-id <dead-sid>` (removes only entries recording
+that sid; no daemon-liveness check), or `unregister --force --issue N` for
+unconditional operator cleanup (`--force` requires `--issue` and is refused
+with `--session-id`). Takeover sentinels (`*.paused-takeover-*`) and
+non-registration siblings (`dispatch-lease-*`, `campaign-watch-*`,
+`pm-session.json`) are never touched by any invocation form.
+
 **Program-orchestrator recovery pass (#660 leakage-program bash daemon).** The
 leakage-theory program (#660) is sequenced by a BASH DAEMON
 (`scripts/run_program_orchestrator.sh` in tmux `eps-program`), NOT a Happy
@@ -991,6 +1073,76 @@ events-mtime recency). Kill switch `EPM_DISABLE_VERDICT_DISAGREE_OBSERVER=1`;
 `--verdict-disagree-only` runs just this pass (pair with `--dry-run` for a
 live smoke — zero writes).
 
+**Root-draft observer pass (task #1341, `root_draft_pass`; origin incident
+#1320).** A daemon-INDEPENDENT, ESCALATE-ONLY pass (runs right after
+`verdict_disagree_pass`) flagging stale UNTRACKED `*.py` drafts abandoned in
+the SHARED repo-root working tree — dirt that matches the `.py` leg of
+step9c's `DIRTY_CODE_PATHSPEC` (`scripts/step9c_baseline.py`) and therefore
+flips EVERY task's Step 9c pristine-oracle compare fleet-wide indeterminate,
+silently (#1320: two untracked `scripts/issue825_*.py` drafts poisoned the
+ledger 9+ hours). Predicate: one read-only
+`git --no-optional-locks status --porcelain -- *.py` at the main root
+(`--no-optional-locks` = never takes the shared root's index lock), keep
+untracked (`?? `) `.py` entries, flag those with file mtime age >
+`EPM_ROOT_DRAFT_ESCALATE_HOURS` (default 3 h; tracked-modified ` M` dirt is
+deliberately out of scope — the named extension trigger if a future
+fleet-wide indeterminacy traces to it; `.claude/worktrees/` is gitignored so
+worktrees never enumerate). **Channels:** one row per fired path to the
+dedicated sidecar `.claude/cache/root-draft-events.jsonl` (with best-effort
+`issue<M>_` filename attribution + a fail-soft `task.py view` status label)
++ ONE deduped fail-soft `_telegram_push` digest per tick naming every fired
+path; NO task markers (the verdict-disagree posture — a name-collision
+mis-attribution must cost nothing on any task record). **Dedup:** per-path
+fire-once + `EPM_ROOT_DRAFT_REALERT_HOURS` (24 h) re-alert TTL in the state
+singleton `~/.eps-autonomous/root-draft-observer.json` (atomic tmp+rename;
+recovered paths pruned so a re-appearance re-fires immediately).
+**ESCALATE-ONLY is a hard invariant:** the pass NEVER deletes, moves,
+chmods, or git-mutates anything — its only writes are the state file + the
+sidecar (pinned by
+`tests/test_autonomous_session_watch.py::test_root_draft_pass_never_deletes`);
+rescue is always the OWNING session committing or relocating its draft. A
+git-status failure warns + skips the tick with no state write (fail toward
+logged-skip, never a silent "no drafts"). Kill switch
+`EPM_DISABLE_ROOT_DRAFT_PASS=1`; `--root-draft-only` runs just this pass
+(pair with `--dry-run` for a live smoke — zero writes, zero task.py reads
+beyond the read-only enumeration).
+
+**Registry-drift audit pass (task #1439, `registry_drift_pass`).** A
+daemon-INDEPENDENT, REPORT-ONLY, once-daily-throttled observer (runs right
+after `root_draft_pass`) of `tasks/REGISTRY.json` <-> filesystem drift —
+the post-#898 class where a `task.py` mutation hard-killed between the
+folder `git mv` and the registry save leaves a stale registry entry that
+`find_task_path` only ever surfaces as an unread log WARNING (terminal
+tasks may never mutate again, so the drift persists indefinitely — the
+#207 shape). Predicate: at most ~once/day
+(`EPM_REGISTRY_DRIFT_INTERVAL_HOURS`, 24 h; the attempt stamp is saved
+BEFORE collecting, bounding a crashing audit to one error sidecar row per
+interval) it runs `task_workflow.audit()` +
+`reconcile_registry(apply=False)` (both pure reads, ~0.7 s live), then
+DOUBLE-READS with a ~10 s confirm gap (`EPM_REGISTRY_DRIFT_CONFIRM_S`) and
+keeps only the INTERSECT — a row present in one read only is an in-flight
+`task.py` mutation transient and never fires, while a hard-killed
+mutation's drift persists through both reads. #1430's duplicate-dir husk
+class is out of scope by construction (a husk's tid IS registered at its
+live path, so `audit()` does not flag it; the worktree-audit cron's
+`reap-husks` self-heals it). **Channels:** one row per confirmed-drift run
+to the dedicated sidecar `.claude/cache/registry-drift-events.jsonl`
+(fingerprint + capped problems/classes payload; the `pushed` field records
+the fire DECISION, not delivery) + ONE deduped fail-soft `_telegram_push`
+naming the repair command (`task.py audit --repair`, `--apply` to repair)
+— fired on fingerprint CHANGE (sha256[:12] over the confirmed rows, the
+volatile `highest_id` numeric details excluded so new-task counter churn
+never re-pushes) or a 168 h re-alert TTL
+(`EPM_REGISTRY_DRIFT_REALERT_HOURS`); state singleton
+`~/.eps-autonomous/registry-drift-observer.json` (atomic tmp+rename;
+recovery clears the fp so a re-appearance re-fires immediately).
+**REPORT-ONLY is a hard invariant:** the pass NEVER calls
+`reconcile_registry(apply=True)`, posts NO task markers, and writes only
+its state file + sidecar (pinned by `tests/test_autonomous_session_watch.py::test_registry_drift_pass_report_only_never_applies`);
+repair stays the human-invoked `task.py audit --repair [--apply]`. Kill
+switch `EPM_DISABLE_REGISTRY_DRIFT_PASS=1`; `--registry-drift-only` runs
+just this pass (pair with `--dry-run` for a zero-write live smoke).
+
 **Auth-outage guard pass (task #1027, `auth_outage_pass`).** Fleet-level
 respawn suppression for an Anthropic auth outage — or ANY fleet-wide
 instant-death cause (poisoned CLI credential, broken `claude` binary, a
@@ -1106,7 +1258,14 @@ next to `vm_disk_pass`, every 10-min tick) drives the percent helpers
 (`EPM_VM_DATA_DISK_SUBFLOOR_PCT` default 85%) off `statvfs(/mnt/eps-data)`,
 escalate-only (no reclaim arm), and attributes the WORKTREE-internal caches via
 `repquota -P` per-project usage (du fallback). Both passes are clean no-ops when
-the mount is absent (before / without the cutover).
+the mount is absent (before / without the cutover). Since #1392 the BOOT-disk
+sub-floor sentinel's sibling arm (`subfloor_reclaim_pass`) additionally launches
+a detached, single-flight, rate-limited `vm_disk_guard.py --apply
+--ignore-threshold --no-push --no-data-disk` reclaim run while `/` free stays
+below `EPM_VM_DISK_SUBFLOOR_GIB` (interval
+`EPM_VM_DISK_SUBFLOOR_RECLAIM_INTERVAL_S`, default 1800 s; kill switch
+`EPM_DISABLE_SUBFLOOR_RECLAIM=1`) — VM-root only; the sentinel ROW and the
+guard's tier contract are unchanged, and the data disk stays escalate-only.
 
 **Non-canonical caches + the /workspace hub-cache arm (#911).** The guard's
 tier (b) ALSO sweeps NON-CANONICAL issue-keyed caches — top-level `/tmp/` dirs
@@ -1119,16 +1278,131 @@ escalate, never delete). A fourth, boot-pass-only arm age-gates the VM's
 pod-style `/workspace/.cache/huggingface` hub cache (repos unused ≥ 14 days,
 `EPS_VM_WORKSPACE_HF_CACHE_MAX_AGE_DAYS`), pod-guarded (`ismount('/workspace')`
 OR pod-side detection refuses) so it can never run where `/workspace` is a real
-volume. The `/tmp/` + `/workspace` opt-in lives ONLY in the two CLI `main()`
+volume. The `/tmp/` +
+`/workspace` opt-in lives ONLY in the two CLI `main()`
 bodies (`tmp_root=production_tmp_root()`; library calls are hermetic by
 construction), the escalate-only data-disk pass never sweeps `/tmp/`, and
 report-only runs surface their evidence via the `--json` structured fields
 (`active_cache_attributions` / `noncanonical_candidates` /
 `total_discovered_bytes`) — never the sidecar. Kill switch:
-`EPM_SKIP_NONCANONICAL_CACHE_SWEEP=1`.
+`EPM_SKIP_NONCANONICAL_CACHE_SWEEP=1`. A fifth arm, tier (e) (#1376 + #1377,
+independently landed and reconciled into ONE tier), covers
+the HOME HF hub cache `~/.cache/huggingface/hub` (`EPS_VM_HOME_HF_CACHE`;
+`hub/` only) on the same boot-pass-only `main()` opt-in: it ALWAYS attributes
+per-repo size / revision count / `last_accessed` age (`hf_repo_attributions`
+in `--json`), escalates any single repo > 40 GB
+(`EPS_VM_HOME_HF_CACHE_REPO_ESCALATE_GB`) with a per-revision breakdown
+(sidecar + Telegram, deduped per (repo, band) with ack sentinels), and on
+`--apply` reaps via `delete_revisions` (blob-refcount safe): unref'd
+non-newest revisions with `last_modified` ≥ 7 d old
+(`EPS_VM_HOME_HF_REVISION_MAX_AGE_DAYS`) AND no fresh EXCLUSIVE-blob atime
+(the newest + every ref'd revision per repo is always kept), plus whole repos
+whose repo-level `last_accessed` exceeds the same window (ref'd revisions
+included — this covers stale models). **Interplay note:** the watcher's
+`_vm_reclaim_hf_hub_cache` (`EPM_VM_DISK_HF_TTL_DAYS`=14, CRITICAL-gated,
+silent) and guard tier (e) (7 d, threshold-gated, attributing) BOTH cover the
+home hub cache BY DESIGN — two independent reapers, both `delete_revisions`
+(idempotent; a lost race degrades tier (e) to a skipped tier, never a crash);
+do not "unify" the two knobs without reading #1376 + #1377.
 
 **Janitor exemption.** The stale-GCP-VM janitor (above) sweeps the
 `eps-persona-gpu-jun2026` GPU project for ephemeral GCE INSTANCES. The
 `/mnt/eps-data` data disk is in a DIFFERENT project (`introsp-experiments`) and
 is a PERSISTENT disk, not an ephemeral instance — so it is out of the janitor's
 scope by construction and is intentionally never reaped.
+
+## tmux socket-dir contract (#1466)
+
+**Incident (2026-07-15/16, split-brain).** The fleet assumes ONE tmux server;
+every consumer (watcher, window-titles cron, eps_sessions, Happy-daemon
+spawns, mygoat) addressed `/tmp/tmux-1001/default` on the 116-day-uptime VM.
+Between 2026-07-15T16:17:02 and 16:20:46 PDT the socket dir was deleted; the
+next tmux-spawning consumer (first visible 18:00:32 PDT) silently created a
+SECOND server at the same default path, and the 06:00 Jul-16 mygoat restart
+landed on it — 39 sessions on the old server became invisible to `tmux ls`
+until manual socket-rebind surgery (Jul 16 ~10:54 PDT).
+
+**Root cause (Phase A verdict — IDENTIFIED).** Claude session
+`3b499fa0-8398-426e-8532-441c94e0bdd1` (orchestrator on workflow-fix
+#1367/#1333), during an ad-hoc disk-pressure sweep, executed at
+2026-07-15T23:17:53Z (16:17:53 PDT, inside the bracketed window):
+`find /tmp -maxdepth 1 -mtime +2 ! -name 'claude-*' ! -name 'systemd-*'
+! -name 'snap-*' -user "$(id -un)" -print0 | xargs -0 -r rm -rf` — no
+`tmux-*` exclusion; `/tmp/tmux-1001` (dir mtime ~Jul 1) matched `-mtime +2`
+and was removed with the live server socket inside. One-off improvised
+command, NOT from any repo/mygoat script (grep-verified). Refuted: no
+systemd-tmpfiles `/tmp/` Age rule on this host (`D /tmp 1777 root root -`,
+boot-only; the daily tmpfiles-clean ran 2h before the window), no
+tmpreaper/tmpwatch, `/etc/cron.hourly` empty, server pid alive throughout.
+
+**The shim (`scripts/eps_tmux_env.sh`) — single source of truth.**
+Contract: (1) durable default `TMUX_TMPDIR=$HOME/.tmux-sockets` (persistent
+disk, 0700 — no `/tmp/` cleaner reaches it); (2) LEGACY PIN — while ANY
+socket file exists in `/tmp/tmux-$(id -u)` (checked `find -maxdepth 1
+-type s`; an existing-but-unreadable dir also pins, watcher
+`_live_tmux_socket_present()` parity), resolve `/tmp/` so the whole fleet
+keeps addressing ONE server; the flip to the durable dir fires automatically
+and coherently for every shim consumer at the first zero-socket point
+(reboot / drain / re-deletion); (3) a pre-set `TMUX_TMPDIR` is always
+respected; (4) FAIL-COHERENT PIN-BACK — if a non-shim straggler ever
+creates a `/tmp/` server post-flip, all shim consumers pin BACK to `/tmp/`
+(the fleet follows one server rather than splitting; durability resumes at
+the next zero-socket point). Known limitation: a stale socket from a
+SIGKILL'd server pins `/tmp/` until reboot — still single-server-coherent.
+**Sourced by:** `scripts/cron_session_summarize.sh` +
+`scripts/cron_autonomous_session_watch.sh` (repo; placement pinned by
+`tests/test_eps_tmux_env.py`), and two VM-LOCAL out-of-repo files —
+`~/.profile` (login shells; tmux panes are login shells by default) and
+`~/my-goat/scripts/run_mygoat_session.sh` (systemd user service
+`mygoat-session.service` reads no profile; edit takes effect at its next
+natural restart). Exact VM-local diffs recorded in task #1466 events.
+
+**Defense-in-depth: `/etc/tmpfiles.d/tmux.conf`** (insurance against a
+future Ubuntu/systemd default enabling `/tmp/` aging — tmux/tmux#4640,
+Launchpad #2088268; today's host has no `/tmp/` Age rule):
+
+```
+# /etc/tmpfiles.d/tmux.conf  (#1466)
+x /tmp/tmux-*
+```
+
+Verify: `systemd-tmpfiles --cat-config | grep -F 'x /tmp/tmux-'`. It does
+NOT protect against a non-tmpfiles deleter — that is what the durable dir
+is for.
+
+**Recovery runbook (socket vanished, server alive).**
+1. Find the server: `ss -xlp | grep tmux` (shows bound path + pid; works
+   even when the socket FILE is deleted) or `pgrep -f 'tmux: server'`
+   (`pgrep -x tmux` misses it — the server's comm is `tmux: server`).
+2. If `/tmp/tmux-<uid>` is gone: `mkdir -m 700 /tmp/tmux-$(id -u)`.
+3. `kill -USR1 <server-pid>` — the server recreates its socket at its
+   ORIGINAL bind path (the path is fixed at server start; parent dir must
+   exist).
+4. Address it explicitly: `tmux -S /tmp/tmux-<uid>/<name> ls`. A bound
+   socket FILE may be `mv`'d aside (e.g. `default` → `old`) to coexist
+   with a second server; clients reach the old server through the renamed
+   path.
+5. **Deletion-race winner:** during a deletion event the `/tmp/` pin WINS —
+   shim consumers pin back to `/tmp/` (the recovered legacy socket), so a
+   durable-dir server started inside the race window is the one to drain
+   after re-cohering. Recovery is deterministic.
+6. **Happy daemon start mechanism (recorded at implement time,
+   2026-07-17):** the daemon is a manually-started orphaned node process —
+   `node /usr/lib/node_modules/happy/dist/index.mjs daemon start-sync`,
+   parent = init, started via the `happy` CLI, NO systemd unit, and its
+   env carries no `TMUX_TMPDIR` (verified via `/proc/<pid>/environ`).
+   Post-reboot durability therefore hinges on restarting it FROM A LOGIN
+   SHELL (which sources `~/.profile` → the shim) so its tmux spawns land
+   in the durable dir.
+7. **Non-interactive SSH:** `ssh vm '<tmux cmd>'` reads neither profile
+   nor shim (Ubuntu `~/.bashrc` early-returns for non-interactive shells)
+   — same fail-coherent straggler class as (4) in the shim contract. Use
+   `ssh vm 'bash -lc "<tmux cmd>"'` for manual remote tmux ops.
+
+**Transition note.** Until drain/reboot, the 39 legacy sessions stay
+reachable via `tmux -S /tmp/tmux-1001/old attach -t <name>` (their server's
+socket was renamed aside during the Jul-16 recovery); the 4-session
+`default` server is the live fleet server and every shim consumer resolves
+`/tmp/` while either socket exists. After the next reboot all consumers land
+in `~/.tmux-sockets` permanently; post-reboot manual daemon/service starts
+should come from a login shell (profile shim).

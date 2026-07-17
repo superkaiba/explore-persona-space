@@ -645,8 +645,8 @@ def heldout_r2_sweep(
             # (n_draws,) scalars return to CPU); serial reference retained for
             # the equivalence gate. Reuses the SAME fold cache as the observed
             # fit (no extra eigh) — semantics-preserving, only the compute shape
-            # changes (#1310 vectorization). lambdas= threads through both
-            # impls (#1336 — selection stays symmetric under a widened grid).
+            # changes (#1310 vectorization). The #1336 ``lambdas`` grid override
+            # threads through so observed + null scans stay selection-symmetric.
             if null_perms:
                 ssr, sst = _null_ss_contrib(
                     cache, Y, tr, te, null_perms, impl=_null_impl, lambdas=lambdas

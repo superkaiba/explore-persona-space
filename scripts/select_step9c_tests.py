@@ -148,7 +148,7 @@ from collections.abc import Callable
 from pathlib import Path
 
 # --- Pinned workflow-invariant tests (plan §5 + 1 brief addition + 3 #1242 pins
-# --- + 1 #1268 pin + 1 #1289 pin, 37 files). -
+# --- + 1 #1268 pin + 1 #1289 pin + 1 #1397 pin, 38 files). -
 # A module-level literal tuple, NOT a glob: a future ``tests/test_workflowish.py``
 # that is NOT meant to gate Step 9c must not silently join the gate, and the gate
 # must not silently shrink if a glob arm stops matching. Drift is made loud by the
@@ -198,6 +198,7 @@ WORKFLOW_INVARIANT: tuple[str, ...] = (
     "tests/test_check_no_secret_shaped_strings.py",
     "tests/test_check_mcp_json_no_secrets.py",
     "tests/test_diff_base_origin_main_pin.py",  # NEW (#1289) — diff-base origin/main pin
+    "tests/test_fit_loop_batching_review_pin.py",  # NEW (#1397) — fit-loop batching review-lens pin
 )
 
 # --- Touched files that short-circuit (no per-file test map). ----------------
@@ -241,6 +242,10 @@ _DATA_DOC_SUFFIXES: frozenset[str] = frozenset(
 # the touched file "tested" for the stem map (the scan asserts a cross-cutting
 # invariant ABOUT the file, not the file's own logic), so untested_touched
 # WARNs still fire.
+# NOTE (#1337): adding an entry here does NOT make it eligible for compare's
+# scratch pristine oracle — step9c_baseline.py's R-F' rule refuses scan-set nodes
+# by default; a scan test whose scan root is Path(__file__)-derived may be opted in
+# via step9c_baseline.py::FILE_ANCHORED_SCAN_TESTS after source verification.
 GLOB_SCAN_TESTS: dict[str, tuple[str, ...]] = {
     # test_no_new_torch_before_dotenv_vm_entrypoints scan roots (#1187: its
     # _scan_targets() — every tracked scripts/**/*.py + __main__-guarded
@@ -362,8 +367,8 @@ def recommended_timeout_s(tests: list[str]) -> int:
     """Deterministic `timeout(1)` bound for a Step 9c gate selection.
 
     ``BASE + PER_FILE * len(tests) + sum(slow surcharges)``, floored at
-    ``TIMEOUT_FLOOR_S``. Invariant-only selection (37 files incl. the
-    workflow-lint surcharge) -> 2130 s (~35.5 min), consistent with the existing
+    ``TIMEOUT_FLOOR_S``. Invariant-only selection (38 files incl. the
+    workflow-lint surcharge) -> 2160 s (36 min), consistent with the existing
     invariant-set-scale precedents (``step9c_baseline.py refresh``
     ``--timeout-s`` default 1800 s; the SKILL.md detached refresh's 2100 s).
     """

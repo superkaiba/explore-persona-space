@@ -1,0 +1,5842 @@
+{
+  "commit": "3b1ddc6ecf",
+  "created": "2026-07-16T21:23:40Z",
+  "figsize": [
+    11.5,
+    4.6
+  ],
+  "points": [
+    {
+      "Assistant turn depth": 1.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5897303595996677,
+      "series": "simulated continuation, own answers (n=5000/turn)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Assistant turn depth": 2.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5636622755589196,
+      "series": "simulated continuation, own answers (n=5000/turn)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Assistant turn depth": 3.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5727320282394555,
+      "series": "simulated continuation, own answers (n=5000/turn)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Assistant turn depth": 4.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5775140507222718,
+      "series": "simulated continuation, own answers (n=5000/turn)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Assistant turn depth": 5.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5756349438627786,
+      "series": "simulated continuation, own answers (n=5000/turn)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Assistant turn depth": 6.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5744762831730623,
+      "series": "simulated continuation, own answers (n=5000/turn)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Assistant turn depth": 7.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.569335200057544,
+      "series": "simulated continuation, own answers (n=5000/turn)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Assistant turn depth": 8.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.569239122953052,
+      "series": "simulated continuation, own answers (n=5000/turn)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Assistant turn depth": 9.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5716987049411043,
+      "series": "simulated continuation, own answers (n=5000/turn)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Assistant turn depth": 10.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5675542851927489,
+      "series": "simulated continuation, own answers (n=5000/turn)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Assistant turn depth": 11.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5665026855507191,
+      "series": "simulated continuation, own answers (n=5000/turn)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Assistant turn depth": 12.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5636322541197986,
+      "series": "simulated continuation, own answers (n=5000/turn)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Assistant turn depth": 13.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5713250866959321,
+      "series": "simulated continuation, own answers (n=5000/turn)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Assistant turn depth": 14.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5675301859098214,
+      "series": "simulated continuation, own answers (n=5000/turn)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Assistant turn depth": 15.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5667372805469104,
+      "series": "simulated continuation, own answers (n=5000/turn)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Assistant turn depth": 16.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5703946376737339,
+      "series": "simulated continuation, own answers (n=5000/turn)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Assistant turn depth": 1.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5878198464328515,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Assistant turn depth": 1.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5933213688031935,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Assistant turn depth": 1.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5884586660869964,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Assistant turn depth": 1.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5976691520929445,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Assistant turn depth": 1.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5898659501613741,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Assistant turn depth": 1.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5790561910790639,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Assistant turn depth": 2.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5602835368712635,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Assistant turn depth": 2.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5584952758898554,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Assistant turn depth": 2.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5658087891796797,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Assistant turn depth": 2.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5614564663284765,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Assistant turn depth": 2.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5684814526857156,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Assistant turn depth": 2.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5647052809576394,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Assistant turn depth": 3.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5593587368333295,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Assistant turn depth": 3.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5821684416045899,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Assistant turn depth": 3.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5745428115861739,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Assistant turn depth": 3.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5671585163167855,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Assistant turn depth": 3.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5756082075418545,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Assistant turn depth": 3.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5751823988339222,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Assistant turn depth": 4.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.565969924132059,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Assistant turn depth": 4.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5794379089443888,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Assistant turn depth": 4.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5792561797883992,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Assistant turn depth": 4.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5750657231539815,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Assistant turn depth": 4.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5848154560484964,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Assistant turn depth": 4.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5778490688970538,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Assistant turn depth": 5.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5765896433568709,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Assistant turn depth": 5.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5764467352089471,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Assistant turn depth": 5.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5735779405257166,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Assistant turn depth": 5.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5669624462570738,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Assistant turn depth": 5.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5813395091151051,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Assistant turn depth": 5.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5765988604135266,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Assistant turn depth": 6.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5750747129123113,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Assistant turn depth": 6.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.577479179516421,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Assistant turn depth": 6.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5719529492544437,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Assistant turn depth": 6.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5577315839425806,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Assistant turn depth": 6.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5828871390110892,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Assistant turn depth": 6.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5798406396623552,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Assistant turn depth": 7.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5757371369533619,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Assistant turn depth": 7.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5778019758671451,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Assistant turn depth": 7.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5677677602543039,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Assistant turn depth": 7.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5598073654971087,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Assistant turn depth": 7.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5710946722794833,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Assistant turn depth": 7.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.561899427683012,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Assistant turn depth": 8.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5677552344280887,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Assistant turn depth": 8.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5732261082406809,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Assistant turn depth": 8.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5671605929056449,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Assistant turn depth": 8.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5636999044565785,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Assistant turn depth": 8.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.574656582709578,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Assistant turn depth": 8.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5666743710776636,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Assistant turn depth": 9.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5683505336416821,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Assistant turn depth": 9.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5809051169086041,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Assistant turn depth": 9.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5731694283847266,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Assistant turn depth": 9.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5682348618151253,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Assistant turn depth": 9.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5711988509967,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Assistant turn depth": 9.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.566185744329442,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Assistant turn depth": 10.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.566539426307018,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Assistant turn depth": 10.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5705077665913069,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Assistant turn depth": 10.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5734808210438884,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Assistant turn depth": 10.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5587755237310066,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Assistant turn depth": 10.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5670450350889227,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Assistant turn depth": 10.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5663789988514067,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Assistant turn depth": 11.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5634892227371907,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Assistant turn depth": 11.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5678600451928697,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Assistant turn depth": 11.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5715738888745445,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Assistant turn depth": 11.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5655374336597256,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Assistant turn depth": 11.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5582275694178043,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Assistant turn depth": 11.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5694728572950359,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Assistant turn depth": 12.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5669603678422407,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Assistant turn depth": 12.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5639181685830084,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Assistant turn depth": 12.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5688150606885567,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Assistant turn depth": 12.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5527960217442949,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Assistant turn depth": 12.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5697018486411107,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Assistant turn depth": 12.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.557202514569209,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Assistant turn depth": 13.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5814417203155848,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Assistant turn depth": 13.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5665770975800917,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Assistant turn depth": 13.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5781883941822262,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Assistant turn depth": 13.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5608516663006871,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Assistant turn depth": 13.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5672436757679113,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Assistant turn depth": 13.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5706014035202194,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Assistant turn depth": 14.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5759367801617785,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Assistant turn depth": 14.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5601715714139484,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Assistant turn depth": 14.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5674900002299743,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Assistant turn depth": 14.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5623966314579825,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Assistant turn depth": 14.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5655429587950453,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Assistant turn depth": 14.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5697488879027008,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Assistant turn depth": 15.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5653824897814674,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Assistant turn depth": 15.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5659908933852384,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Assistant turn depth": 15.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5763539762299827,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Assistant turn depth": 15.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5621769152566818,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Assistant turn depth": 15.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5646874653468932,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Assistant turn depth": 15.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5631745371615038,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Assistant turn depth": 16.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5726097589584602,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "Assistant turn depth": 16.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.570383438629152,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "Assistant turn depth": 16.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5802975932455994,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "Assistant turn depth": 16.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5605341034616229,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "Assistant turn depth": 16.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5654205750490036,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "Assistant turn depth": 16.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5707762190171599,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "Assistant turn depth": 1.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.590158841719906,
+      "series": "real logged context, own answers (n\u22485000/turn)",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "Assistant turn depth": 2.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.553804695368936,
+      "series": "real logged context, own answers (n\u22485000/turn)",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "Assistant turn depth": 3.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5470159702628725,
+      "series": "real logged context, own answers (n\u22485000/turn)",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "Assistant turn depth": 4.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5484704862020188,
+      "series": "real logged context, own answers (n\u22485000/turn)",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "Assistant turn depth": 5.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5479548317000938,
+      "series": "real logged context, own answers (n\u22485000/turn)",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "Assistant turn depth": 6.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5455497654046801,
+      "series": "real logged context, own answers (n\u22485000/turn)",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "Assistant turn depth": 7.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5503461531452349,
+      "series": "real logged context, own answers (n\u22485000/turn)",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "Assistant turn depth": 8.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5486303832450474,
+      "series": "real logged context, own answers (n\u22485000/turn)",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "Assistant turn depth": 9.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5473793078043377,
+      "series": "real logged context, own answers (n\u22485000/turn)",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "Assistant turn depth": 10.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5481132275234357,
+      "series": "real logged context, own answers (n\u22485000/turn)",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "Assistant turn depth": 11.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5480220716473843,
+      "series": "real logged context, own answers (n\u22485000/turn)",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "Assistant turn depth": 12.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5518682933890092,
+      "series": "real logged context, own answers (n\u22485000/turn)",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "Assistant turn depth": 1.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5832290802576262,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "Assistant turn depth": 1.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5788064396289729,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "Assistant turn depth": 1.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.6066199988005951,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "Assistant turn depth": 1.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5895332479284769,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "Assistant turn depth": 1.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5869603172456901,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "Assistant turn depth": 1.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.593740403160335,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "Assistant turn depth": 2.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5465122244328076,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "Assistant turn depth": 2.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5472493755930798,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "Assistant turn depth": 2.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5562981329949919,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "Assistant turn depth": 2.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5522844395206994,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "Assistant turn depth": 2.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5591313319856157,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "Assistant turn depth": 2.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5592890033743074,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "Assistant turn depth": 3.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5422882693432369,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "Assistant turn depth": 3.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5434301462425235,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "Assistant turn depth": 3.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5477274054074194,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "Assistant turn depth": 3.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5490066329898464,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "Assistant turn depth": 3.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5418166760237091,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "Assistant turn depth": 3.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5552485305381236,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "Assistant turn depth": 4.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5442420415194903,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "Assistant turn depth": 4.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5483355231102905,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "Assistant turn depth": 4.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5492934174798816,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "Assistant turn depth": 4.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5430674078759927,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "Assistant turn depth": 4.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5498695564299434,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "Assistant turn depth": 4.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5531647601733471,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "Assistant turn depth": 5.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.540353849786414,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "Assistant turn depth": 5.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5374408519379346,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "Assistant turn depth": 5.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5562995813449978,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "Assistant turn depth": 5.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.540243019568457,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "Assistant turn depth": 5.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5510883256588861,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "Assistant turn depth": 5.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5593217840960123,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "Assistant turn depth": 6.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.543714304243804,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "Assistant turn depth": 6.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5408267434090024,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "Assistant turn depth": 6.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5471470927166551,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "Assistant turn depth": 6.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5419407879624065,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "Assistant turn depth": 6.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5479052707778036,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "Assistant turn depth": 6.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5488882695414461,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "Assistant turn depth": 7.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5422481292495136,
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "Assistant turn depth": 7.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5447941986625088,
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "Assistant turn depth": 7.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5509675326006063,
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "Assistant turn depth": 7.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5456659095311618,
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "Assistant turn depth": 7.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5617106217339396,
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "Assistant turn depth": 7.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5540385017992506,
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "Assistant turn depth": 8.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5393760527253921,
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "Assistant turn depth": 8.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.541694822026337,
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "Assistant turn depth": 8.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5511631390167466,
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "Assistant turn depth": 8.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5478113709125827,
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "Assistant turn depth": 8.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5538797601706982,
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "Assistant turn depth": 8.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5550775148264485,
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "Assistant turn depth": 9.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5438160941195532,
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "Assistant turn depth": 9.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5447445288115327,
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "Assistant turn depth": 9.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5456493229401257,
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "Assistant turn depth": 9.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5380207732555885,
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "Assistant turn depth": 9.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5555565891759076,
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "Assistant turn depth": 9.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5539531760854502,
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "Assistant turn depth": 10.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5390247538992371,
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "Assistant turn depth": 10.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5509571903969058,
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "Assistant turn depth": 10.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5534097849095665,
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "Assistant turn depth": 10.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5415735711018692,
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "Assistant turn depth": 10.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5424684883343314,
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "Assistant turn depth": 10.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5586411688459543,
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "Assistant turn depth": 11.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5389938035448256,
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "Assistant turn depth": 11.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5436734382180983,
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "Assistant turn depth": 11.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5478517977006518,
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "Assistant turn depth": 11.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5446191959180976,
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "Assistant turn depth": 11.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5558276495522558,
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "Assistant turn depth": 11.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5544179350763305,
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "Assistant turn depth": 12.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5467304376037001,
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "Assistant turn depth": 12.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5457092211325838,
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "Assistant turn depth": 12.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5545856803394005,
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "Assistant turn depth": 12.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5529011505243134,
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "Assistant turn depth": 12.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5573249385096493,
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "Assistant turn depth": 12.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5515278268562662,
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "Assistant turn depth": 1.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.4957999734832247,
+      "series": "real logged context + logged answers (n\u22484950/turn)",
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "Assistant turn depth": 2.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5029955555035963,
+      "series": "real logged context + logged answers (n\u22484950/turn)",
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "Assistant turn depth": 3.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5076437993063991,
+      "series": "real logged context + logged answers (n\u22484950/turn)",
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "Assistant turn depth": 4.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5168308578929316,
+      "series": "real logged context + logged answers (n\u22484950/turn)",
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "Assistant turn depth": 5.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5204395087916902,
+      "series": "real logged context + logged answers (n\u22484950/turn)",
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "Assistant turn depth": 6.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5174251845602893,
+      "series": "real logged context + logged answers (n\u22484950/turn)",
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "Assistant turn depth": 7.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5209740589262557,
+      "series": "real logged context + logged answers (n\u22484950/turn)",
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "Assistant turn depth": 8.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5266745435446099,
+      "series": "real logged context + logged answers (n\u22484950/turn)",
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "Assistant turn depth": 9.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5218373362013653,
+      "series": "real logged context + logged answers (n\u22484950/turn)",
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "Assistant turn depth": 10.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5248361818221214,
+      "series": "real logged context + logged answers (n\u22484950/turn)",
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "Assistant turn depth": 11.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5251370714597865,
+      "series": "real logged context + logged answers (n\u22484950/turn)",
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "Assistant turn depth": 12.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5176397429304838,
+      "series": "real logged context + logged answers (n\u22484950/turn)",
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "Assistant turn depth": 13.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5009949585435022,
+      "series": "real logged context + logged answers (n\u22484950/turn)",
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "Assistant turn depth": 1.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.494228682815524,
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "Assistant turn depth": 1.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5043901067199767,
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "Assistant turn depth": 1.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.48799956950052736,
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "Assistant turn depth": 1.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.48867091275970054,
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "Assistant turn depth": 1.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5010478953128287,
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "Assistant turn depth": 1.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.4950180672531652,
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "Assistant turn depth": 2.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5089098027707425,
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "Assistant turn depth": 2.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5029036394766405,
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "Assistant turn depth": 2.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.4952881626959257,
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "Assistant turn depth": 2.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.4998986575909412,
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "Assistant turn depth": 2.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5003414249905752,
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "Assistant turn depth": 2.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5066787046143169,
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "Assistant turn depth": 3.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5107464097239154,
+      "_kind": "line",
+      "_group": 33
+    },
+    {
+      "Assistant turn depth": 3.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5063470413423903,
+      "_kind": "line",
+      "_group": 33
+    },
+    {
+      "Assistant turn depth": 3.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.4997997355891729,
+      "_kind": "line",
+      "_group": 33
+    },
+    {
+      "Assistant turn depth": 3.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5059630856271236,
+      "_kind": "line",
+      "_group": 33
+    },
+    {
+      "Assistant turn depth": 3.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5107983483571863,
+      "_kind": "line",
+      "_group": 33
+    },
+    {
+      "Assistant turn depth": 3.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.508718563526728,
+      "_kind": "line",
+      "_group": 33
+    },
+    {
+      "Assistant turn depth": 4.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5117595511922961,
+      "_kind": "line",
+      "_group": 34
+    },
+    {
+      "Assistant turn depth": 4.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5223770170246228,
+      "_kind": "line",
+      "_group": 34
+    },
+    {
+      "Assistant turn depth": 4.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.513469813062116,
+      "_kind": "line",
+      "_group": 34
+    },
+    {
+      "Assistant turn depth": 4.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5160538374532535,
+      "_kind": "line",
+      "_group": 34
+    },
+    {
+      "Assistant turn depth": 4.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5202537771431761,
+      "_kind": "line",
+      "_group": 34
+    },
+    {
+      "Assistant turn depth": 4.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5133743119765797,
+      "_kind": "line",
+      "_group": 34
+    },
+    {
+      "Assistant turn depth": 5.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5190922174985619,
+      "_kind": "line",
+      "_group": 35
+    },
+    {
+      "Assistant turn depth": 5.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5229778705022698,
+      "_kind": "line",
+      "_group": 35
+    },
+    {
+      "Assistant turn depth": 5.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5150026840401865,
+      "_kind": "line",
+      "_group": 35
+    },
+    {
+      "Assistant turn depth": 5.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5210592834701233,
+      "_kind": "line",
+      "_group": 35
+    },
+    {
+      "Assistant turn depth": 5.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5159536756981423,
+      "_kind": "line",
+      "_group": 35
+    },
+    {
+      "Assistant turn depth": 5.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5255993146386428,
+      "_kind": "line",
+      "_group": 35
+    },
+    {
+      "Assistant turn depth": 6.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5182279815020363,
+      "_kind": "line",
+      "_group": 36
+    },
+    {
+      "Assistant turn depth": 6.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5126192915222945,
+      "_kind": "line",
+      "_group": 36
+    },
+    {
+      "Assistant turn depth": 6.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5125026617880868,
+      "_kind": "line",
+      "_group": 36
+    },
+    {
+      "Assistant turn depth": 6.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.520186068112383,
+      "_kind": "line",
+      "_group": 36
+    },
+    {
+      "Assistant turn depth": 6.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5192323782570785,
+      "_kind": "line",
+      "_group": 36
+    },
+    {
+      "Assistant turn depth": 6.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5189272501933717,
+      "_kind": "line",
+      "_group": 36
+    },
+    {
+      "Assistant turn depth": 7.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5197832400738234,
+      "_kind": "line",
+      "_group": 37
+    },
+    {
+      "Assistant turn depth": 7.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5301862461405334,
+      "_kind": "line",
+      "_group": 37
+    },
+    {
+      "Assistant turn depth": 7.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5223288790622178,
+      "_kind": "line",
+      "_group": 37
+    },
+    {
+      "Assistant turn depth": 7.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5167095017889001,
+      "_kind": "line",
+      "_group": 37
+    },
+    {
+      "Assistant turn depth": 7.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5130022501502594,
+      "_kind": "line",
+      "_group": 37
+    },
+    {
+      "Assistant turn depth": 7.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.520807911719785,
+      "_kind": "line",
+      "_group": 37
+    },
+    {
+      "Assistant turn depth": 8.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5213553290222763,
+      "_kind": "line",
+      "_group": 38
+    },
+    {
+      "Assistant turn depth": 8.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5354975522068174,
+      "_kind": "line",
+      "_group": 38
+    },
+    {
+      "Assistant turn depth": 8.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5321372858896247,
+      "_kind": "line",
+      "_group": 38
+    },
+    {
+      "Assistant turn depth": 8.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5248618314636402,
+      "_kind": "line",
+      "_group": 38
+    },
+    {
+      "Assistant turn depth": 8.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5223251399624422,
+      "_kind": "line",
+      "_group": 38
+    },
+    {
+      "Assistant turn depth": 8.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5206509681967844,
+      "_kind": "line",
+      "_group": 38
+    },
+    {
+      "Assistant turn depth": 9.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5264519697647531,
+      "_kind": "line",
+      "_group": 39
+    },
+    {
+      "Assistant turn depth": 9.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.524409799776197,
+      "_kind": "line",
+      "_group": 39
+    },
+    {
+      "Assistant turn depth": 9.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5181264203404183,
+      "_kind": "line",
+      "_group": 39
+    },
+    {
+      "Assistant turn depth": 9.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.520593351946516,
+      "_kind": "line",
+      "_group": 39
+    },
+    {
+      "Assistant turn depth": 9.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5156357807644234,
+      "_kind": "line",
+      "_group": 39
+    },
+    {
+      "Assistant turn depth": 9.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5224497904913106,
+      "_kind": "line",
+      "_group": 39
+    },
+    {
+      "Assistant turn depth": 10.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5194545847993208,
+      "_kind": "line",
+      "_group": 40
+    },
+    {
+      "Assistant turn depth": 10.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5304939723242854,
+      "_kind": "line",
+      "_group": 40
+    },
+    {
+      "Assistant turn depth": 10.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5253855924795938,
+      "_kind": "line",
+      "_group": 40
+    },
+    {
+      "Assistant turn depth": 10.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5237757561735684,
+      "_kind": "line",
+      "_group": 40
+    },
+    {
+      "Assistant turn depth": 10.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5226315102508522,
+      "_kind": "line",
+      "_group": 40
+    },
+    {
+      "Assistant turn depth": 10.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.524091939654399,
+      "_kind": "line",
+      "_group": 40
+    },
+    {
+      "Assistant turn depth": 11.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5289253634701417,
+      "_kind": "line",
+      "_group": 41
+    },
+    {
+      "Assistant turn depth": 11.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5222100626844426,
+      "_kind": "line",
+      "_group": 41
+    },
+    {
+      "Assistant turn depth": 11.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.523302401479659,
+      "_kind": "line",
+      "_group": 41
+    },
+    {
+      "Assistant turn depth": 11.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5269413854284632,
+      "_kind": "line",
+      "_group": 41
+    },
+    {
+      "Assistant turn depth": 11.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5234689297653946,
+      "_kind": "line",
+      "_group": 41
+    },
+    {
+      "Assistant turn depth": 11.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5225985650189,
+      "_kind": "line",
+      "_group": 41
+    },
+    {
+      "Assistant turn depth": 12.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5277759892061216,
+      "_kind": "line",
+      "_group": 42
+    },
+    {
+      "Assistant turn depth": 12.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5083989605317318,
+      "_kind": "line",
+      "_group": 42
+    },
+    {
+      "Assistant turn depth": 12.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5161237932385438,
+      "_kind": "line",
+      "_group": 42
+    },
+    {
+      "Assistant turn depth": 12.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5256025461773893,
+      "_kind": "line",
+      "_group": 42
+    },
+    {
+      "Assistant turn depth": 12.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5067854703376158,
+      "_kind": "line",
+      "_group": 42
+    },
+    {
+      "Assistant turn depth": 12.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5175045384481738,
+      "_kind": "line",
+      "_group": 42
+    },
+    {
+      "Assistant turn depth": 13.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5040192777237837,
+      "_kind": "line",
+      "_group": 43
+    },
+    {
+      "Assistant turn depth": 13.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.4959746875820834,
+      "_kind": "line",
+      "_group": 43
+    },
+    {
+      "Assistant turn depth": 13.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.49067206701467925,
+      "_kind": "line",
+      "_group": 43
+    },
+    {
+      "Assistant turn depth": 13.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5241435810438266,
+      "_kind": "line",
+      "_group": 43
+    },
+    {
+      "Assistant turn depth": 13.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5082299921058587,
+      "_kind": "line",
+      "_group": 43
+    },
+    {
+      "Assistant turn depth": 13.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.477967863365261,
+      "_kind": "line",
+      "_group": 43
+    },
+    {
+      "Assistant turn depth": 2.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.29098294458370366,
+      "series": "prefix arm (simulated)",
+      "_kind": "line",
+      "_group": 44
+    },
+    {
+      "Assistant turn depth": 3.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.4144366486099691,
+      "series": "prefix arm (simulated)",
+      "_kind": "line",
+      "_group": 44
+    },
+    {
+      "Assistant turn depth": 4.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.4484073831185139,
+      "series": "prefix arm (simulated)",
+      "_kind": "line",
+      "_group": 44
+    },
+    {
+      "Assistant turn depth": 5.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.4621155815076906,
+      "series": "prefix arm (simulated)",
+      "_kind": "line",
+      "_group": 44
+    },
+    {
+      "Assistant turn depth": 6.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.4654582566294102,
+      "series": "prefix arm (simulated)",
+      "_kind": "line",
+      "_group": 44
+    },
+    {
+      "Assistant turn depth": 7.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.46909128157134317,
+      "series": "prefix arm (simulated)",
+      "_kind": "line",
+      "_group": 44
+    },
+    {
+      "Assistant turn depth": 8.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.46165850708125455,
+      "series": "prefix arm (simulated)",
+      "_kind": "line",
+      "_group": 44
+    },
+    {
+      "Assistant turn depth": 9.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.46772376887614464,
+      "series": "prefix arm (simulated)",
+      "_kind": "line",
+      "_group": 44
+    },
+    {
+      "Assistant turn depth": 10.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.4557141512063029,
+      "series": "prefix arm (simulated)",
+      "_kind": "line",
+      "_group": 44
+    },
+    {
+      "Assistant turn depth": 11.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.45475277065064723,
+      "series": "prefix arm (simulated)",
+      "_kind": "line",
+      "_group": 44
+    },
+    {
+      "Assistant turn depth": 12.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.4480865354383834,
+      "series": "prefix arm (simulated)",
+      "_kind": "line",
+      "_group": 44
+    },
+    {
+      "Assistant turn depth": 13.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.44650917433990545,
+      "series": "prefix arm (simulated)",
+      "_kind": "line",
+      "_group": 44
+    },
+    {
+      "Assistant turn depth": 14.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.43953310561857417,
+      "series": "prefix arm (simulated)",
+      "_kind": "line",
+      "_group": 44
+    },
+    {
+      "Assistant turn depth": 15.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.43806180438814035,
+      "series": "prefix arm (simulated)",
+      "_kind": "line",
+      "_group": 44
+    },
+    {
+      "Assistant turn depth": 16.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.43496288464151356,
+      "series": "prefix arm (simulated)",
+      "_kind": "line",
+      "_group": 44
+    },
+    {
+      "Assistant turn depth": 2.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.2907439265293458,
+      "_kind": "line",
+      "_group": 45
+    },
+    {
+      "Assistant turn depth": 2.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.2934321694434493,
+      "_kind": "line",
+      "_group": 45
+    },
+    {
+      "Assistant turn depth": 2.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.2911699501393804,
+      "_kind": "line",
+      "_group": 45
+    },
+    {
+      "Assistant turn depth": 2.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.2919464658628106,
+      "_kind": "line",
+      "_group": 45
+    },
+    {
+      "Assistant turn depth": 2.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.28346687961974637,
+      "_kind": "line",
+      "_group": 45
+    },
+    {
+      "Assistant turn depth": 2.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.29053920157666835,
+      "_kind": "line",
+      "_group": 45
+    },
+    {
+      "Assistant turn depth": 3.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.4037011262686693,
+      "_kind": "line",
+      "_group": 46
+    },
+    {
+      "Assistant turn depth": 3.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.4290774350737717,
+      "_kind": "line",
+      "_group": 46
+    },
+    {
+      "Assistant turn depth": 3.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.40929309113622847,
+      "_kind": "line",
+      "_group": 46
+    },
+    {
+      "Assistant turn depth": 3.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.41137728703995424,
+      "_kind": "line",
+      "_group": 46
+    },
+    {
+      "Assistant turn depth": 3.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.4172722197907288,
+      "_kind": "line",
+      "_group": 46
+    },
+    {
+      "Assistant turn depth": 3.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.4126829549107133,
+      "_kind": "line",
+      "_group": 46
+    },
+    {
+      "Assistant turn depth": 4.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.4307094157517093,
+      "_kind": "line",
+      "_group": 47
+    },
+    {
+      "Assistant turn depth": 4.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.45416535626069066,
+      "_kind": "line",
+      "_group": 47
+    },
+    {
+      "Assistant turn depth": 4.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.45272147118585504,
+      "_kind": "line",
+      "_group": 47
+    },
+    {
+      "Assistant turn depth": 4.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.44410950200683896,
+      "_kind": "line",
+      "_group": 47
+    },
+    {
+      "Assistant turn depth": 4.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.4572294309843503,
+      "_kind": "line",
+      "_group": 47
+    },
+    {
+      "Assistant turn depth": 4.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.448085830730684,
+      "_kind": "line",
+      "_group": 47
+    },
+    {
+      "Assistant turn depth": 5.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.45714468182039336,
+      "_kind": "line",
+      "_group": 48
+    },
+    {
+      "Assistant turn depth": 5.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.46553335736498747,
+      "_kind": "line",
+      "_group": 48
+    },
+    {
+      "Assistant turn depth": 5.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.4603380374411802,
+      "_kind": "line",
+      "_group": 48
+    },
+    {
+      "Assistant turn depth": 5.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.45378309263520344,
+      "_kind": "line",
+      "_group": 48
+    },
+    {
+      "Assistant turn depth": 5.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.4660724233779765,
+      "_kind": "line",
+      "_group": 48
+    },
+    {
+      "Assistant turn depth": 5.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.46673576391493665,
+      "_kind": "line",
+      "_group": 48
+    },
+    {
+      "Assistant turn depth": 6.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.4705477887772217,
+      "_kind": "line",
+      "_group": 49
+    },
+    {
+      "Assistant turn depth": 6.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.4597715014029842,
+      "_kind": "line",
+      "_group": 49
+    },
+    {
+      "Assistant turn depth": 6.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.4633136625501215,
+      "_kind": "line",
+      "_group": 49
+    },
+    {
+      "Assistant turn depth": 6.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.4487487370090605,
+      "_kind": "line",
+      "_group": 49
+    },
+    {
+      "Assistant turn depth": 6.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.47983726927234627,
+      "_kind": "line",
+      "_group": 49
+    },
+    {
+      "Assistant turn depth": 6.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.4680183253060983,
+      "_kind": "line",
+      "_group": 49
+    },
+    {
+      "Assistant turn depth": 7.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.47578203156024346,
+      "_kind": "line",
+      "_group": 50
+    },
+    {
+      "Assistant turn depth": 7.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.4714965299141094,
+      "_kind": "line",
+      "_group": 50
+    },
+    {
+      "Assistant turn depth": 7.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.4692617455461596,
+      "_kind": "line",
+      "_group": 50
+    },
+    {
+      "Assistant turn depth": 7.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.46575810567075004,
+      "_kind": "line",
+      "_group": 50
+    },
+    {
+      "Assistant turn depth": 7.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.4736711871805962,
+      "_kind": "line",
+      "_group": 50
+    },
+    {
+      "Assistant turn depth": 7.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.45579636288188696,
+      "_kind": "line",
+      "_group": 50
+    },
+    {
+      "Assistant turn depth": 8.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.4598988036176619,
+      "_kind": "line",
+      "_group": 51
+    },
+    {
+      "Assistant turn depth": 8.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.45719761806818215,
+      "_kind": "line",
+      "_group": 51
+    },
+    {
+      "Assistant turn depth": 8.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.46081381258878806,
+      "_kind": "line",
+      "_group": 51
+    },
+    {
+      "Assistant turn depth": 8.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.4598099713786292,
+      "_kind": "line",
+      "_group": 51
+    },
+    {
+      "Assistant turn depth": 8.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.47403858137926946,
+      "_kind": "line",
+      "_group": 51
+    },
+    {
+      "Assistant turn depth": 8.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.4551390316961138,
+      "_kind": "line",
+      "_group": 51
+    },
+    {
+      "Assistant turn depth": 9.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.4586964989399559,
+      "_kind": "line",
+      "_group": 52
+    },
+    {
+      "Assistant turn depth": 9.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.4738181348873024,
+      "_kind": "line",
+      "_group": 52
+    },
+    {
+      "Assistant turn depth": 9.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.4645211466578564,
+      "_kind": "line",
+      "_group": 52
+    },
+    {
+      "Assistant turn depth": 9.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.4643172761904294,
+      "_kind": "line",
+      "_group": 52
+    },
+    {
+      "Assistant turn depth": 9.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.468764419624367,
+      "_kind": "line",
+      "_group": 52
+    },
+    {
+      "Assistant turn depth": 9.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.4730555537420872,
+      "_kind": "line",
+      "_group": 52
+    },
+    {
+      "Assistant turn depth": 10.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.4469330305353215,
+      "_kind": "line",
+      "_group": 53
+    },
+    {
+      "Assistant turn depth": 10.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.466268367191604,
+      "_kind": "line",
+      "_group": 53
+    },
+    {
+      "Assistant turn depth": 10.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.4577132462143856,
+      "_kind": "line",
+      "_group": 53
+    },
+    {
+      "Assistant turn depth": 10.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.45304640365623305,
+      "_kind": "line",
+      "_group": 53
+    },
+    {
+      "Assistant turn depth": 10.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.44922543428263095,
+      "_kind": "line",
+      "_group": 53
+    },
+    {
+      "Assistant turn depth": 10.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.4580231157422324,
+      "_kind": "line",
+      "_group": 53
+    },
+    {
+      "Assistant turn depth": 11.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.45265987079933223,
+      "_kind": "line",
+      "_group": 54
+    },
+    {
+      "Assistant turn depth": 11.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.44995850815985206,
+      "_kind": "line",
+      "_group": 54
+    },
+    {
+      "Assistant turn depth": 11.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.4547206912176146,
+      "_kind": "line",
+      "_group": 54
+    },
+    {
+      "Assistant turn depth": 11.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.4604922097102069,
+      "_kind": "line",
+      "_group": 54
+    },
+    {
+      "Assistant turn depth": 11.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.4435749762246497,
+      "_kind": "line",
+      "_group": 54
+    },
+    {
+      "Assistant turn depth": 11.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.4632905532077819,
+      "_kind": "line",
+      "_group": 54
+    },
+    {
+      "Assistant turn depth": 12.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.4455825477301679,
+      "_kind": "line",
+      "_group": 55
+    },
+    {
+      "Assistant turn depth": 12.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.4495213805395373,
+      "_kind": "line",
+      "_group": 55
+    },
+    {
+      "Assistant turn depth": 12.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.44380917709557755,
+      "_kind": "line",
+      "_group": 55
+    },
+    {
+      "Assistant turn depth": 12.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.4547222819636775,
+      "_kind": "line",
+      "_group": 55
+    },
+    {
+      "Assistant turn depth": 12.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.4543875226191316,
+      "_kind": "line",
+      "_group": 55
+    },
+    {
+      "Assistant turn depth": 12.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.4377320742588633,
+      "_kind": "line",
+      "_group": 55
+    },
+    {
+      "Assistant turn depth": 13.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.45778971459689544,
+      "_kind": "line",
+      "_group": 56
+    },
+    {
+      "Assistant turn depth": 13.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.44680369653916996,
+      "_kind": "line",
+      "_group": 56
+    },
+    {
+      "Assistant turn depth": 13.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.4384719911267413,
+      "_kind": "line",
+      "_group": 56
+    },
+    {
+      "Assistant turn depth": 13.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.440296202881196,
+      "_kind": "line",
+      "_group": 56
+    },
+    {
+      "Assistant turn depth": 13.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.44917309595473087,
+      "_kind": "line",
+      "_group": 56
+    },
+    {
+      "Assistant turn depth": 13.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.44303144154004703,
+      "_kind": "line",
+      "_group": 56
+    },
+    {
+      "Assistant turn depth": 14.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.44361201447235266,
+      "_kind": "line",
+      "_group": 57
+    },
+    {
+      "Assistant turn depth": 14.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.44412771949079854,
+      "_kind": "line",
+      "_group": 57
+    },
+    {
+      "Assistant turn depth": 14.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.43870572720467615,
+      "_kind": "line",
+      "_group": 57
+    },
+    {
+      "Assistant turn depth": 14.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.4368107987702632,
+      "_kind": "line",
+      "_group": 57
+    },
+    {
+      "Assistant turn depth": 14.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.44592199027691204,
+      "_kind": "line",
+      "_group": 57
+    },
+    {
+      "Assistant turn depth": 14.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.42491622704758014,
+      "_kind": "line",
+      "_group": 57
+    },
+    {
+      "Assistant turn depth": 15.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.45250045563324526,
+      "_kind": "line",
+      "_group": 58
+    },
+    {
+      "Assistant turn depth": 15.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.4483870099033941,
+      "_kind": "line",
+      "_group": 58
+    },
+    {
+      "Assistant turn depth": 15.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.4310529203038024,
+      "_kind": "line",
+      "_group": 58
+    },
+    {
+      "Assistant turn depth": 15.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.4393593295689572,
+      "_kind": "line",
+      "_group": 58
+    },
+    {
+      "Assistant turn depth": 15.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.4310251753046004,
+      "_kind": "line",
+      "_group": 58
+    },
+    {
+      "Assistant turn depth": 15.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.42348154741631394,
+      "_kind": "line",
+      "_group": 58
+    },
+    {
+      "Assistant turn depth": 16.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.44004086179468116,
+      "_kind": "line",
+      "_group": 59
+    },
+    {
+      "Assistant turn depth": 16.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.4394192874690783,
+      "_kind": "line",
+      "_group": 59
+    },
+    {
+      "Assistant turn depth": 16.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.4371469330372052,
+      "_kind": "line",
+      "_group": 59
+    },
+    {
+      "Assistant turn depth": 16.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.42583522551740227,
+      "_kind": "line",
+      "_group": 59
+    },
+    {
+      "Assistant turn depth": 16.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.4316042384366332,
+      "_kind": "line",
+      "_group": 59
+    },
+    {
+      "Assistant turn depth": 16.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.43282453220356343,
+      "_kind": "line",
+      "_group": 59
+    },
+    {
+      "Assistant turn depth": 2.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.2601893066780868,
+      "series": "prefix arm (real, own)",
+      "_kind": "line",
+      "_group": 60
+    },
+    {
+      "Assistant turn depth": 3.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.2726088871843524,
+      "series": "prefix arm (real, own)",
+      "_kind": "line",
+      "_group": 60
+    },
+    {
+      "Assistant turn depth": 4.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.2755730175364659,
+      "series": "prefix arm (real, own)",
+      "_kind": "line",
+      "_group": 60
+    },
+    {
+      "Assistant turn depth": 5.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.2752709680803128,
+      "series": "prefix arm (real, own)",
+      "_kind": "line",
+      "_group": 60
+    },
+    {
+      "Assistant turn depth": 6.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.28234312032989883,
+      "series": "prefix arm (real, own)",
+      "_kind": "line",
+      "_group": 60
+    },
+    {
+      "Assistant turn depth": 7.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.28047773443025004,
+      "series": "prefix arm (real, own)",
+      "_kind": "line",
+      "_group": 60
+    },
+    {
+      "Assistant turn depth": 8.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.28893394555426677,
+      "series": "prefix arm (real, own)",
+      "_kind": "line",
+      "_group": 60
+    },
+    {
+      "Assistant turn depth": 9.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.2945057628795704,
+      "series": "prefix arm (real, own)",
+      "_kind": "line",
+      "_group": 60
+    },
+    {
+      "Assistant turn depth": 10.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.29341005578492974,
+      "series": "prefix arm (real, own)",
+      "_kind": "line",
+      "_group": 60
+    },
+    {
+      "Assistant turn depth": 11.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.28280519770397594,
+      "series": "prefix arm (real, own)",
+      "_kind": "line",
+      "_group": 60
+    },
+    {
+      "Assistant turn depth": 12.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.28137593027158336,
+      "series": "prefix arm (real, own)",
+      "_kind": "line",
+      "_group": 60
+    },
+    {
+      "Assistant turn depth": 2.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.24428745107241379,
+      "_kind": "line",
+      "_group": 61
+    },
+    {
+      "Assistant turn depth": 2.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.25766896709445763,
+      "_kind": "line",
+      "_group": 61
+    },
+    {
+      "Assistant turn depth": 2.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.2651478421340223,
+      "_kind": "line",
+      "_group": 61
+    },
+    {
+      "Assistant turn depth": 2.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.2606340060365485,
+      "_kind": "line",
+      "_group": 61
+    },
+    {
+      "Assistant turn depth": 2.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.2633108819821338,
+      "_kind": "line",
+      "_group": 61
+    },
+    {
+      "Assistant turn depth": 2.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.2666623093629612,
+      "_kind": "line",
+      "_group": 61
+    },
+    {
+      "Assistant turn depth": 3.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.2664881379446614,
+      "_kind": "line",
+      "_group": 62
+    },
+    {
+      "Assistant turn depth": 3.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.26052177397201126,
+      "_kind": "line",
+      "_group": 62
+    },
+    {
+      "Assistant turn depth": 3.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.27786004821964394,
+      "_kind": "line",
+      "_group": 62
+    },
+    {
+      "Assistant turn depth": 3.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.2714406618717413,
+      "_kind": "line",
+      "_group": 62
+    },
+    {
+      "Assistant turn depth": 3.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.2708325920581318,
+      "_kind": "line",
+      "_group": 62
+    },
+    {
+      "Assistant turn depth": 3.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.28423914603713896,
+      "_kind": "line",
+      "_group": 62
+    },
+    {
+      "Assistant turn depth": 4.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.26417528198436224,
+      "_kind": "line",
+      "_group": 63
+    },
+    {
+      "Assistant turn depth": 4.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.27773699874214863,
+      "_kind": "line",
+      "_group": 63
+    },
+    {
+      "Assistant turn depth": 4.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.2660853567656901,
+      "_kind": "line",
+      "_group": 63
+    },
+    {
+      "Assistant turn depth": 4.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.2728272993790729,
+      "_kind": "line",
+      "_group": 63
+    },
+    {
+      "Assistant turn depth": 4.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.2769255678962145,
+      "_kind": "line",
+      "_group": 63
+    },
+    {
+      "Assistant turn depth": 4.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.2911134112109034,
+      "_kind": "line",
+      "_group": 63
+    },
+    {
+      "Assistant turn depth": 5.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.26552476287178417,
+      "_kind": "line",
+      "_group": 64
+    },
+    {
+      "Assistant turn depth": 5.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.27660650016499677,
+      "_kind": "line",
+      "_group": 64
+    },
+    {
+      "Assistant turn depth": 5.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.2664329702454158,
+      "_kind": "line",
+      "_group": 64
+    },
+    {
+      "Assistant turn depth": 5.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.2672996795065409,
+      "_kind": "line",
+      "_group": 64
+    },
+    {
+      "Assistant turn depth": 5.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.28406153805250256,
+      "_kind": "line",
+      "_group": 64
+    },
+    {
+      "Assistant turn depth": 5.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.28771761316500855,
+      "_kind": "line",
+      "_group": 64
+    },
+    {
+      "Assistant turn depth": 6.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.27471671715484947,
+      "_kind": "line",
+      "_group": 65
+    },
+    {
+      "Assistant turn depth": 6.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.27454608943097114,
+      "_kind": "line",
+      "_group": 65
+    },
+    {
+      "Assistant turn depth": 6.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.28964261122142576,
+      "_kind": "line",
+      "_group": 65
+    },
+    {
+      "Assistant turn depth": 6.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.28121715751536314,
+      "_kind": "line",
+      "_group": 65
+    },
+    {
+      "Assistant turn depth": 6.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.28351715564062374,
+      "_kind": "line",
+      "_group": 65
+    },
+    {
+      "Assistant turn depth": 6.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.28570800713403377,
+      "_kind": "line",
+      "_group": 65
+    },
+    {
+      "Assistant turn depth": 7.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.269239085267598,
+      "_kind": "line",
+      "_group": 66
+    },
+    {
+      "Assistant turn depth": 7.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.2670557276305182,
+      "_kind": "line",
+      "_group": 66
+    },
+    {
+      "Assistant turn depth": 7.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.280087089916625,
+      "_kind": "line",
+      "_group": 66
+    },
+    {
+      "Assistant turn depth": 7.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.2900379744156171,
+      "_kind": "line",
+      "_group": 66
+    },
+    {
+      "Assistant turn depth": 7.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.2812607144103989,
+      "_kind": "line",
+      "_group": 66
+    },
+    {
+      "Assistant turn depth": 7.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.2909085836919467,
+      "_kind": "line",
+      "_group": 66
+    },
+    {
+      "Assistant turn depth": 8.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.2704591208944481,
+      "_kind": "line",
+      "_group": 67
+    },
+    {
+      "Assistant turn depth": 8.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.28416134393503356,
+      "_kind": "line",
+      "_group": 67
+    },
+    {
+      "Assistant turn depth": 8.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.29514821268019775,
+      "_kind": "line",
+      "_group": 67
+    },
+    {
+      "Assistant turn depth": 8.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.277088243236037,
+      "_kind": "line",
+      "_group": 67
+    },
+    {
+      "Assistant turn depth": 8.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.29822163483895314,
+      "_kind": "line",
+      "_group": 67
+    },
+    {
+      "Assistant turn depth": 8.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.30433582956651406,
+      "_kind": "line",
+      "_group": 67
+    },
+    {
+      "Assistant turn depth": 9.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.29120559771188426,
+      "_kind": "line",
+      "_group": 68
+    },
+    {
+      "Assistant turn depth": 9.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.28001356336997907,
+      "_kind": "line",
+      "_group": 68
+    },
+    {
+      "Assistant turn depth": 9.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.29796853399135903,
+      "_kind": "line",
+      "_group": 68
+    },
+    {
+      "Assistant turn depth": 9.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.28053448328729347,
+      "_kind": "line",
+      "_group": 68
+    },
+    {
+      "Assistant turn depth": 9.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.30434874664078493,
+      "_kind": "line",
+      "_group": 68
+    },
+    {
+      "Assistant turn depth": 9.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.3089863562828278,
+      "_kind": "line",
+      "_group": 68
+    },
+    {
+      "Assistant turn depth": 10.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.2844039781317874,
+      "_kind": "line",
+      "_group": 69
+    },
+    {
+      "Assistant turn depth": 10.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.28113549267975113,
+      "_kind": "line",
+      "_group": 69
+    },
+    {
+      "Assistant turn depth": 10.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.29873789091433534,
+      "_kind": "line",
+      "_group": 69
+    },
+    {
+      "Assistant turn depth": 10.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.28987995221746665,
+      "_kind": "line",
+      "_group": 69
+    },
+    {
+      "Assistant turn depth": 10.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.2973929072621422,
+      "_kind": "line",
+      "_group": 69
+    },
+    {
+      "Assistant turn depth": 10.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.30522428696238435,
+      "_kind": "line",
+      "_group": 69
+    },
+    {
+      "Assistant turn depth": 11.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.2734541662418434,
+      "_kind": "line",
+      "_group": 70
+    },
+    {
+      "Assistant turn depth": 11.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.27641982226070816,
+      "_kind": "line",
+      "_group": 70
+    },
+    {
+      "Assistant turn depth": 11.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.29075839801557035,
+      "_kind": "line",
+      "_group": 70
+    },
+    {
+      "Assistant turn depth": 11.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.2807814277701598,
+      "_kind": "line",
+      "_group": 70
+    },
+    {
+      "Assistant turn depth": 11.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.28521146123236973,
+      "_kind": "line",
+      "_group": 70
+    },
+    {
+      "Assistant turn depth": 11.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.2859214478661881,
+      "_kind": "line",
+      "_group": 70
+    },
+    {
+      "Assistant turn depth": 12.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.28140184407436264,
+      "_kind": "line",
+      "_group": 71
+    },
+    {
+      "Assistant turn depth": 12.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.2686455722440133,
+      "_kind": "line",
+      "_group": 71
+    },
+    {
+      "Assistant turn depth": 12.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.29115901412128553,
+      "_kind": "line",
+      "_group": 71
+    },
+    {
+      "Assistant turn depth": 12.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.27977232969825827,
+      "_kind": "line",
+      "_group": 71
+    },
+    {
+      "Assistant turn depth": 12.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.27744363269609884,
+      "_kind": "line",
+      "_group": 71
+    },
+    {
+      "Assistant turn depth": 12.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.28566114961014233,
+      "_kind": "line",
+      "_group": 71
+    },
+    {
+      "Assistant turn depth": 1.0,
+      "y": 0.3438549169522669,
+      "series": "simulated continuation, own answers (n=5000/turn)",
+      "_kind": "line",
+      "_group": 72
+    },
+    {
+      "Assistant turn depth": 2.0,
+      "y": 0.42667173804932745,
+      "series": "simulated continuation, own answers (n=5000/turn)",
+      "_kind": "line",
+      "_group": 72
+    },
+    {
+      "Assistant turn depth": 3.0,
+      "y": 0.5392840743667138,
+      "series": "simulated continuation, own answers (n=5000/turn)",
+      "_kind": "line",
+      "_group": 72
+    },
+    {
+      "Assistant turn depth": 4.0,
+      "y": 0.5809476398784692,
+      "series": "simulated continuation, own answers (n=5000/turn)",
+      "_kind": "line",
+      "_group": 72
+    },
+    {
+      "Assistant turn depth": 5.0,
+      "y": 0.6021485941344809,
+      "series": "simulated continuation, own answers (n=5000/turn)",
+      "_kind": "line",
+      "_group": 72
+    },
+    {
+      "Assistant turn depth": 6.0,
+      "y": 0.6129091192146472,
+      "series": "simulated continuation, own answers (n=5000/turn)",
+      "_kind": "line",
+      "_group": 72
+    },
+    {
+      "Assistant turn depth": 7.0,
+      "y": 0.6236306937504483,
+      "series": "simulated continuation, own answers (n=5000/turn)",
+      "_kind": "line",
+      "_group": 72
+    },
+    {
+      "Assistant turn depth": 8.0,
+      "y": 0.6293773872955772,
+      "series": "simulated continuation, own answers (n=5000/turn)",
+      "_kind": "line",
+      "_group": 72
+    },
+    {
+      "Assistant turn depth": 9.0,
+      "y": 0.63394497574767,
+      "series": "simulated continuation, own answers (n=5000/turn)",
+      "_kind": "line",
+      "_group": 72
+    },
+    {
+      "Assistant turn depth": 10.0,
+      "y": 0.63553326504954,
+      "series": "simulated continuation, own answers (n=5000/turn)",
+      "_kind": "line",
+      "_group": 72
+    },
+    {
+      "Assistant turn depth": 11.0,
+      "y": 0.6419009923651883,
+      "series": "simulated continuation, own answers (n=5000/turn)",
+      "_kind": "line",
+      "_group": 72
+    },
+    {
+      "Assistant turn depth": 12.0,
+      "y": 0.6474492508230132,
+      "series": "simulated continuation, own answers (n=5000/turn)",
+      "_kind": "line",
+      "_group": 72
+    },
+    {
+      "Assistant turn depth": 13.0,
+      "y": 0.6455275545678043,
+      "series": "simulated continuation, own answers (n=5000/turn)",
+      "_kind": "line",
+      "_group": 72
+    },
+    {
+      "Assistant turn depth": 14.0,
+      "y": 0.6448917714848315,
+      "series": "simulated continuation, own answers (n=5000/turn)",
+      "_kind": "line",
+      "_group": 72
+    },
+    {
+      "Assistant turn depth": 15.0,
+      "y": 0.6468845658404002,
+      "series": "simulated continuation, own answers (n=5000/turn)",
+      "_kind": "line",
+      "_group": 72
+    },
+    {
+      "Assistant turn depth": 16.0,
+      "y": 0.6511352570838409,
+      "series": "simulated continuation, own answers (n=5000/turn)",
+      "_kind": "line",
+      "_group": 72
+    },
+    {
+      "Assistant turn depth": 1.0,
+      "y": 0.3319255986986871,
+      "_kind": "line",
+      "_group": 73
+    },
+    {
+      "Assistant turn depth": 1.0,
+      "y": 0.3381471309661812,
+      "_kind": "line",
+      "_group": 73
+    },
+    {
+      "Assistant turn depth": 1.0,
+      "y": 0.34944309417010877,
+      "_kind": "line",
+      "_group": 73
+    },
+    {
+      "Assistant turn depth": 1.0,
+      "y": 0.34393107191729877,
+      "_kind": "line",
+      "_group": 73
+    },
+    {
+      "Assistant turn depth": 1.0,
+      "y": 0.35555692946184736,
+      "_kind": "line",
+      "_group": 73
+    },
+    {
+      "Assistant turn depth": 1.0,
+      "y": 0.33980257759208443,
+      "_kind": "line",
+      "_group": 73
+    },
+    {
+      "Assistant turn depth": 2.0,
+      "y": 0.4306838173087526,
+      "_kind": "line",
+      "_group": 74
+    },
+    {
+      "Assistant turn depth": 2.0,
+      "y": 0.42501194801258224,
+      "_kind": "line",
+      "_group": 74
+    },
+    {
+      "Assistant turn depth": 2.0,
+      "y": 0.42161391105519974,
+      "_kind": "line",
+      "_group": 74
+    },
+    {
+      "Assistant turn depth": 2.0,
+      "y": 0.4206112048851255,
+      "_kind": "line",
+      "_group": 74
+    },
+    {
+      "Assistant turn depth": 2.0,
+      "y": 0.43449813008761473,
+      "_kind": "line",
+      "_group": 74
+    },
+    {
+      "Assistant turn depth": 2.0,
+      "y": 0.42424328394756705,
+      "_kind": "line",
+      "_group": 74
+    },
+    {
+      "Assistant turn depth": 3.0,
+      "y": 0.5420696502045674,
+      "_kind": "line",
+      "_group": 75
+    },
+    {
+      "Assistant turn depth": 3.0,
+      "y": 0.533104174806582,
+      "_kind": "line",
+      "_group": 75
+    },
+    {
+      "Assistant turn depth": 3.0,
+      "y": 0.5340684525039321,
+      "_kind": "line",
+      "_group": 75
+    },
+    {
+      "Assistant turn depth": 3.0,
+      "y": 0.5379804921475717,
+      "_kind": "line",
+      "_group": 75
+    },
+    {
+      "Assistant turn depth": 3.0,
+      "y": 0.5453291433195779,
+      "_kind": "line",
+      "_group": 75
+    },
+    {
+      "Assistant turn depth": 3.0,
+      "y": 0.5408066442036564,
+      "_kind": "line",
+      "_group": 75
+    },
+    {
+      "Assistant turn depth": 4.0,
+      "y": 0.5828189626896781,
+      "_kind": "line",
+      "_group": 76
+    },
+    {
+      "Assistant turn depth": 4.0,
+      "y": 0.5731102251321976,
+      "_kind": "line",
+      "_group": 76
+    },
+    {
+      "Assistant turn depth": 4.0,
+      "y": 0.5758657604109865,
+      "_kind": "line",
+      "_group": 76
+    },
+    {
+      "Assistant turn depth": 4.0,
+      "y": 0.5756146845058575,
+      "_kind": "line",
+      "_group": 76
+    },
+    {
+      "Assistant turn depth": 4.0,
+      "y": 0.5914512922249617,
+      "_kind": "line",
+      "_group": 76
+    },
+    {
+      "Assistant turn depth": 4.0,
+      "y": 0.5846689108226559,
+      "_kind": "line",
+      "_group": 76
+    },
+    {
+      "Assistant turn depth": 5.0,
+      "y": 0.6009125750241426,
+      "_kind": "line",
+      "_group": 77
+    },
+    {
+      "Assistant turn depth": 5.0,
+      "y": 0.5935540017280851,
+      "_kind": "line",
+      "_group": 77
+    },
+    {
+      "Assistant turn depth": 5.0,
+      "y": 0.6019360417056879,
+      "_kind": "line",
+      "_group": 77
+    },
+    {
+      "Assistant turn depth": 5.0,
+      "y": 0.5992826522373484,
+      "_kind": "line",
+      "_group": 77
+    },
+    {
+      "Assistant turn depth": 5.0,
+      "y": 0.6087748336782413,
+      "_kind": "line",
+      "_group": 77
+    },
+    {
+      "Assistant turn depth": 5.0,
+      "y": 0.6063666633008414,
+      "_kind": "line",
+      "_group": 77
+    },
+    {
+      "Assistant turn depth": 6.0,
+      "y": 0.6067978757611944,
+      "_kind": "line",
+      "_group": 78
+    },
+    {
+      "Assistant turn depth": 6.0,
+      "y": 0.6097847850263959,
+      "_kind": "line",
+      "_group": 78
+    },
+    {
+      "Assistant turn depth": 6.0,
+      "y": 0.6162799788956759,
+      "_kind": "line",
+      "_group": 78
+    },
+    {
+      "Assistant turn depth": 6.0,
+      "y": 0.608679757970501,
+      "_kind": "line",
+      "_group": 78
+    },
+    {
+      "Assistant turn depth": 6.0,
+      "y": 0.6144712372968555,
+      "_kind": "line",
+      "_group": 78
+    },
+    {
+      "Assistant turn depth": 6.0,
+      "y": 0.6196164693594758,
+      "_kind": "line",
+      "_group": 78
+    },
+    {
+      "Assistant turn depth": 7.0,
+      "y": 0.6232261001259627,
+      "_kind": "line",
+      "_group": 79
+    },
+    {
+      "Assistant turn depth": 7.0,
+      "y": 0.620583235907928,
+      "_kind": "line",
+      "_group": 79
+    },
+    {
+      "Assistant turn depth": 7.0,
+      "y": 0.6214526702802661,
+      "_kind": "line",
+      "_group": 79
+    },
+    {
+      "Assistant turn depth": 7.0,
+      "y": 0.6251554383487616,
+      "_kind": "line",
+      "_group": 79
+    },
+    {
+      "Assistant turn depth": 7.0,
+      "y": 0.6196244677633718,
+      "_kind": "line",
+      "_group": 79
+    },
+    {
+      "Assistant turn depth": 7.0,
+      "y": 0.6298697740838501,
+      "_kind": "line",
+      "_group": 79
+    },
+    {
+      "Assistant turn depth": 8.0,
+      "y": 0.6257827232998592,
+      "_kind": "line",
+      "_group": 80
+    },
+    {
+      "Assistant turn depth": 8.0,
+      "y": 0.6274411150501642,
+      "_kind": "line",
+      "_group": 80
+    },
+    {
+      "Assistant turn depth": 8.0,
+      "y": 0.6294474800622365,
+      "_kind": "line",
+      "_group": 80
+    },
+    {
+      "Assistant turn depth": 8.0,
+      "y": 0.6285541248873661,
+      "_kind": "line",
+      "_group": 80
+    },
+    {
+      "Assistant turn depth": 8.0,
+      "y": 0.6314328263897757,
+      "_kind": "line",
+      "_group": 80
+    },
+    {
+      "Assistant turn depth": 8.0,
+      "y": 0.6318658008317216,
+      "_kind": "line",
+      "_group": 80
+    },
+    {
+      "Assistant turn depth": 9.0,
+      "y": 0.640825614752057,
+      "_kind": "line",
+      "_group": 81
+    },
+    {
+      "Assistant turn depth": 9.0,
+      "y": 0.6281425477618716,
+      "_kind": "line",
+      "_group": 81
+    },
+    {
+      "Assistant turn depth": 9.0,
+      "y": 0.6253599682106028,
+      "_kind": "line",
+      "_group": 81
+    },
+    {
+      "Assistant turn depth": 9.0,
+      "y": 0.6349997166369119,
+      "_kind": "line",
+      "_group": 81
+    },
+    {
+      "Assistant turn depth": 9.0,
+      "y": 0.6340853345773905,
+      "_kind": "line",
+      "_group": 81
+    },
+    {
+      "Assistant turn depth": 9.0,
+      "y": 0.6383468232569479,
+      "_kind": "line",
+      "_group": 81
+    },
+    {
+      "Assistant turn depth": 10.0,
+      "y": 0.6385951746652951,
+      "_kind": "line",
+      "_group": 82
+    },
+    {
+      "Assistant turn depth": 10.0,
+      "y": 0.6353558103243613,
+      "_kind": "line",
+      "_group": 82
+    },
+    {
+      "Assistant turn depth": 10.0,
+      "y": 0.6314092411384662,
+      "_kind": "line",
+      "_group": 82
+    },
+    {
+      "Assistant turn depth": 10.0,
+      "y": 0.6289393068735224,
+      "_kind": "line",
+      "_group": 82
+    },
+    {
+      "Assistant turn depth": 10.0,
+      "y": 0.6382983058275514,
+      "_kind": "line",
+      "_group": 82
+    },
+    {
+      "Assistant turn depth": 10.0,
+      "y": 0.6387758587013322,
+      "_kind": "line",
+      "_group": 82
+    },
+    {
+      "Assistant turn depth": 11.0,
+      "y": 0.6466608333195905,
+      "_kind": "line",
+      "_group": 83
+    },
+    {
+      "Assistant turn depth": 11.0,
+      "y": 0.6367654321206244,
+      "_kind": "line",
+      "_group": 83
+    },
+    {
+      "Assistant turn depth": 11.0,
+      "y": 0.63905734838407,
+      "_kind": "line",
+      "_group": 83
+    },
+    {
+      "Assistant turn depth": 11.0,
+      "y": 0.6459342636246371,
+      "_kind": "line",
+      "_group": 83
+    },
+    {
+      "Assistant turn depth": 11.0,
+      "y": 0.6413235079792023,
+      "_kind": "line",
+      "_group": 83
+    },
+    {
+      "Assistant turn depth": 11.0,
+      "y": 0.6399094000295622,
+      "_kind": "line",
+      "_group": 83
+    },
+    {
+      "Assistant turn depth": 12.0,
+      "y": 0.649729554839685,
+      "_kind": "line",
+      "_group": 84
+    },
+    {
+      "Assistant turn depth": 12.0,
+      "y": 0.6436212951272345,
+      "_kind": "line",
+      "_group": 84
+    },
+    {
+      "Assistant turn depth": 12.0,
+      "y": 0.6470467092668482,
+      "_kind": "line",
+      "_group": 84
+    },
+    {
+      "Assistant turn depth": 12.0,
+      "y": 0.6451862916802897,
+      "_kind": "line",
+      "_group": 84
+    },
+    {
+      "Assistant turn depth": 12.0,
+      "y": 0.6497722502517332,
+      "_kind": "line",
+      "_group": 84
+    },
+    {
+      "Assistant turn depth": 12.0,
+      "y": 0.6475644275481076,
+      "_kind": "line",
+      "_group": 84
+    },
+    {
+      "Assistant turn depth": 13.0,
+      "y": 0.6480269957720297,
+      "_kind": "line",
+      "_group": 85
+    },
+    {
+      "Assistant turn depth": 13.0,
+      "y": 0.6403776112890556,
+      "_kind": "line",
+      "_group": 85
+    },
+    {
+      "Assistant turn depth": 13.0,
+      "y": 0.6445817026183144,
+      "_kind": "line",
+      "_group": 85
+    },
+    {
+      "Assistant turn depth": 13.0,
+      "y": 0.6462804699554907,
+      "_kind": "line",
+      "_group": 85
+    },
+    {
+      "Assistant turn depth": 13.0,
+      "y": 0.649038506046688,
+      "_kind": "line",
+      "_group": 85
+    },
+    {
+      "Assistant turn depth": 13.0,
+      "y": 0.6432302242163481,
+      "_kind": "line",
+      "_group": 85
+    },
+    {
+      "Assistant turn depth": 14.0,
+      "y": 0.6465762152137764,
+      "_kind": "line",
+      "_group": 86
+    },
+    {
+      "Assistant turn depth": 14.0,
+      "y": 0.6467450107624647,
+      "_kind": "line",
+      "_group": 86
+    },
+    {
+      "Assistant turn depth": 14.0,
+      "y": 0.6411592229326363,
+      "_kind": "line",
+      "_group": 86
+    },
+    {
+      "Assistant turn depth": 14.0,
+      "y": 0.6472992351645213,
+      "_kind": "line",
+      "_group": 86
+    },
+    {
+      "Assistant turn depth": 14.0,
+      "y": 0.6436309403661189,
+      "_kind": "line",
+      "_group": 86
+    },
+    {
+      "Assistant turn depth": 14.0,
+      "y": 0.642176168630422,
+      "_kind": "line",
+      "_group": 86
+    },
+    {
+      "Assistant turn depth": 15.0,
+      "y": 0.6506070989404051,
+      "_kind": "line",
+      "_group": 87
+    },
+    {
+      "Assistant turn depth": 15.0,
+      "y": 0.6492137236846791,
+      "_kind": "line",
+      "_group": 87
+    },
+    {
+      "Assistant turn depth": 15.0,
+      "y": 0.6421778758066445,
+      "_kind": "line",
+      "_group": 87
+    },
+    {
+      "Assistant turn depth": 15.0,
+      "y": 0.6474030296211558,
+      "_kind": "line",
+      "_group": 87
+    },
+    {
+      "Assistant turn depth": 15.0,
+      "y": 0.6500818379332096,
+      "_kind": "line",
+      "_group": 87
+    },
+    {
+      "Assistant turn depth": 15.0,
+      "y": 0.6403486580724576,
+      "_kind": "line",
+      "_group": 87
+    },
+    {
+      "Assistant turn depth": 16.0,
+      "y": 0.6533553809638772,
+      "_kind": "line",
+      "_group": 88
+    },
+    {
+      "Assistant turn depth": 16.0,
+      "y": 0.6495101751812669,
+      "_kind": "line",
+      "_group": 88
+    },
+    {
+      "Assistant turn depth": 16.0,
+      "y": 0.6481657477524497,
+      "_kind": "line",
+      "_group": 88
+    },
+    {
+      "Assistant turn depth": 16.0,
+      "y": 0.6565684773084783,
+      "_kind": "line",
+      "_group": 88
+    },
+    {
+      "Assistant turn depth": 16.0,
+      "y": 0.6450600642317419,
+      "_kind": "line",
+      "_group": 88
+    },
+    {
+      "Assistant turn depth": 16.0,
+      "y": 0.6523861673757372,
+      "_kind": "line",
+      "_group": 88
+    },
+    {
+      "Assistant turn depth": 1.0,
+      "y": 0.34629981188447445,
+      "series": "real logged context, own answers (n\u22485000/turn)",
+      "_kind": "line",
+      "_group": 89
+    },
+    {
+      "Assistant turn depth": 2.0,
+      "y": 0.4809464323203657,
+      "series": "real logged context, own answers (n\u22485000/turn)",
+      "_kind": "line",
+      "_group": 89
+    },
+    {
+      "Assistant turn depth": 3.0,
+      "y": 0.5107748937524439,
+      "series": "real logged context, own answers (n\u22485000/turn)",
+      "_kind": "line",
+      "_group": 89
+    },
+    {
+      "Assistant turn depth": 4.0,
+      "y": 0.5274760478869671,
+      "series": "real logged context, own answers (n\u22485000/turn)",
+      "_kind": "line",
+      "_group": 89
+    },
+    {
+      "Assistant turn depth": 5.0,
+      "y": 0.5309115816328218,
+      "series": "real logged context, own answers (n\u22485000/turn)",
+      "_kind": "line",
+      "_group": 89
+    },
+    {
+      "Assistant turn depth": 6.0,
+      "y": 0.5312428869194865,
+      "series": "real logged context, own answers (n\u22485000/turn)",
+      "_kind": "line",
+      "_group": 89
+    },
+    {
+      "Assistant turn depth": 7.0,
+      "y": 0.5326990356675132,
+      "series": "real logged context, own answers (n\u22485000/turn)",
+      "_kind": "line",
+      "_group": 89
+    },
+    {
+      "Assistant turn depth": 8.0,
+      "y": 0.5374834570084496,
+      "series": "real logged context, own answers (n\u22485000/turn)",
+      "_kind": "line",
+      "_group": 89
+    },
+    {
+      "Assistant turn depth": 9.0,
+      "y": 0.5351196665162576,
+      "series": "real logged context, own answers (n\u22485000/turn)",
+      "_kind": "line",
+      "_group": 89
+    },
+    {
+      "Assistant turn depth": 10.0,
+      "y": 0.5370749215583015,
+      "series": "real logged context, own answers (n\u22485000/turn)",
+      "_kind": "line",
+      "_group": 89
+    },
+    {
+      "Assistant turn depth": 11.0,
+      "y": 0.5377529956070641,
+      "series": "real logged context, own answers (n\u22485000/turn)",
+      "_kind": "line",
+      "_group": 89
+    },
+    {
+      "Assistant turn depth": 12.0,
+      "y": 0.5377105108100598,
+      "series": "real logged context, own answers (n\u22485000/turn)",
+      "_kind": "line",
+      "_group": 89
+    },
+    {
+      "Assistant turn depth": 1.0,
+      "y": 0.33444926735184144,
+      "_kind": "line",
+      "_group": 90
+    },
+    {
+      "Assistant turn depth": 1.0,
+      "y": 0.34122382889613867,
+      "_kind": "line",
+      "_group": 90
+    },
+    {
+      "Assistant turn depth": 1.0,
+      "y": 0.35133629539789746,
+      "_kind": "line",
+      "_group": 90
+    },
+    {
+      "Assistant turn depth": 1.0,
+      "y": 0.33656059707622643,
+      "_kind": "line",
+      "_group": 90
+    },
+    {
+      "Assistant turn depth": 1.0,
+      "y": 0.35674228173981426,
+      "_kind": "line",
+      "_group": 90
+    },
+    {
+      "Assistant turn depth": 1.0,
+      "y": 0.35358332833206374,
+      "_kind": "line",
+      "_group": 90
+    },
+    {
+      "Assistant turn depth": 2.0,
+      "y": 0.4809040534364116,
+      "_kind": "line",
+      "_group": 91
+    },
+    {
+      "Assistant turn depth": 2.0,
+      "y": 0.4809016680520962,
+      "_kind": "line",
+      "_group": 91
+    },
+    {
+      "Assistant turn depth": 2.0,
+      "y": 0.47240173694092735,
+      "_kind": "line",
+      "_group": 91
+    },
+    {
+      "Assistant turn depth": 2.0,
+      "y": 0.48488528851808066,
+      "_kind": "line",
+      "_group": 91
+    },
+    {
+      "Assistant turn depth": 2.0,
+      "y": 0.486717330361518,
+      "_kind": "line",
+      "_group": 91
+    },
+    {
+      "Assistant turn depth": 2.0,
+      "y": 0.47751348573491614,
+      "_kind": "line",
+      "_group": 91
+    },
+    {
+      "Assistant turn depth": 3.0,
+      "y": 0.512149677129689,
+      "_kind": "line",
+      "_group": 92
+    },
+    {
+      "Assistant turn depth": 3.0,
+      "y": 0.506427324017235,
+      "_kind": "line",
+      "_group": 92
+    },
+    {
+      "Assistant turn depth": 3.0,
+      "y": 0.507277035297968,
+      "_kind": "line",
+      "_group": 92
+    },
+    {
+      "Assistant turn depth": 3.0,
+      "y": 0.5082207492045256,
+      "_kind": "line",
+      "_group": 92
+    },
+    {
+      "Assistant turn depth": 3.0,
+      "y": 0.5138414402627464,
+      "_kind": "line",
+      "_group": 92
+    },
+    {
+      "Assistant turn depth": 3.0,
+      "y": 0.5136690643741644,
+      "_kind": "line",
+      "_group": 92
+    },
+    {
+      "Assistant turn depth": 4.0,
+      "y": 0.5279551091672194,
+      "_kind": "line",
+      "_group": 93
+    },
+    {
+      "Assistant turn depth": 4.0,
+      "y": 0.5160105133068263,
+      "_kind": "line",
+      "_group": 93
+    },
+    {
+      "Assistant turn depth": 4.0,
+      "y": 0.5247575028921918,
+      "_kind": "line",
+      "_group": 93
+    },
+    {
+      "Assistant turn depth": 4.0,
+      "y": 0.5311881495657984,
+      "_kind": "line",
+      "_group": 93
+    },
+    {
+      "Assistant turn depth": 4.0,
+      "y": 0.5356506843943869,
+      "_kind": "line",
+      "_group": 93
+    },
+    {
+      "Assistant turn depth": 4.0,
+      "y": 0.526628881830476,
+      "_kind": "line",
+      "_group": 93
+    },
+    {
+      "Assistant turn depth": 5.0,
+      "y": 0.5233858137536787,
+      "_kind": "line",
+      "_group": 94
+    },
+    {
+      "Assistant turn depth": 5.0,
+      "y": 0.5276411881894492,
+      "_kind": "line",
+      "_group": 94
+    },
+    {
+      "Assistant turn depth": 5.0,
+      "y": 0.535626333453131,
+      "_kind": "line",
+      "_group": 94
+    },
+    {
+      "Assistant turn depth": 5.0,
+      "y": 0.5285960997536534,
+      "_kind": "line",
+      "_group": 94
+    },
+    {
+      "Assistant turn depth": 5.0,
+      "y": 0.5360423817969053,
+      "_kind": "line",
+      "_group": 94
+    },
+    {
+      "Assistant turn depth": 5.0,
+      "y": 0.5311300114130244,
+      "_kind": "line",
+      "_group": 94
+    },
+    {
+      "Assistant turn depth": 6.0,
+      "y": 0.5314767040064784,
+      "_kind": "line",
+      "_group": 95
+    },
+    {
+      "Assistant turn depth": 6.0,
+      "y": 0.5249186602828892,
+      "_kind": "line",
+      "_group": 95
+    },
+    {
+      "Assistant turn depth": 6.0,
+      "y": 0.5316640828844099,
+      "_kind": "line",
+      "_group": 95
+    },
+    {
+      "Assistant turn depth": 6.0,
+      "y": 0.5256742952365561,
+      "_kind": "line",
+      "_group": 95
+    },
+    {
+      "Assistant turn depth": 6.0,
+      "y": 0.5410151054439561,
+      "_kind": "line",
+      "_group": 95
+    },
+    {
+      "Assistant turn depth": 6.0,
+      "y": 0.5298658297762884,
+      "_kind": "line",
+      "_group": 95
+    },
+    {
+      "Assistant turn depth": 7.0,
+      "y": 0.5214743312415341,
+      "_kind": "line",
+      "_group": 96
+    },
+    {
+      "Assistant turn depth": 7.0,
+      "y": 0.5326287166186554,
+      "_kind": "line",
+      "_group": 96
+    },
+    {
+      "Assistant turn depth": 7.0,
+      "y": 0.5390409804979128,
+      "_kind": "line",
+      "_group": 96
+    },
+    {
+      "Assistant turn depth": 7.0,
+      "y": 0.5322847389070208,
+      "_kind": "line",
+      "_group": 96
+    },
+    {
+      "Assistant turn depth": 7.0,
+      "y": 0.5338340215280485,
+      "_kind": "line",
+      "_group": 96
+    },
+    {
+      "Assistant turn depth": 7.0,
+      "y": 0.5337576689121446,
+      "_kind": "line",
+      "_group": 96
+    },
+    {
+      "Assistant turn depth": 8.0,
+      "y": 0.5328875762471063,
+      "_kind": "line",
+      "_group": 97
+    },
+    {
+      "Assistant turn depth": 8.0,
+      "y": 0.5277560434681852,
+      "_kind": "line",
+      "_group": 97
+    },
+    {
+      "Assistant turn depth": 8.0,
+      "y": 0.5406000638365023,
+      "_kind": "line",
+      "_group": 97
+    },
+    {
+      "Assistant turn depth": 8.0,
+      "y": 0.5378255180791215,
+      "_kind": "line",
+      "_group": 97
+    },
+    {
+      "Assistant turn depth": 8.0,
+      "y": 0.5401131917165118,
+      "_kind": "line",
+      "_group": 97
+    },
+    {
+      "Assistant turn depth": 8.0,
+      "y": 0.542983213836796,
+      "_kind": "line",
+      "_group": 97
+    },
+    {
+      "Assistant turn depth": 9.0,
+      "y": 0.5229394475514575,
+      "_kind": "line",
+      "_group": 98
+    },
+    {
+      "Assistant turn depth": 9.0,
+      "y": 0.5387017834707009,
+      "_kind": "line",
+      "_group": 98
+    },
+    {
+      "Assistant turn depth": 9.0,
+      "y": 0.5273924523084986,
+      "_kind": "line",
+      "_group": 98
+    },
+    {
+      "Assistant turn depth": 9.0,
+      "y": 0.5285337319375552,
+      "_kind": "line",
+      "_group": 98
+    },
+    {
+      "Assistant turn depth": 9.0,
+      "y": 0.5445803692590986,
+      "_kind": "line",
+      "_group": 98
+    },
+    {
+      "Assistant turn depth": 9.0,
+      "y": 0.5456219882198767,
+      "_kind": "line",
+      "_group": 98
+    },
+    {
+      "Assistant turn depth": 10.0,
+      "y": 0.5318820287867696,
+      "_kind": "line",
+      "_group": 99
+    },
+    {
+      "Assistant turn depth": 10.0,
+      "y": 0.5332583310310097,
+      "_kind": "line",
+      "_group": 99
+    },
+    {
+      "Assistant turn depth": 10.0,
+      "y": 0.5375022044562812,
+      "_kind": "line",
+      "_group": 99
+    },
+    {
+      "Assistant turn depth": 10.0,
+      "y": 0.5297905400952077,
+      "_kind": "line",
+      "_group": 99
+    },
+    {
+      "Assistant turn depth": 10.0,
+      "y": 0.5402930901180988,
+      "_kind": "line",
+      "_group": 99
+    },
+    {
+      "Assistant turn depth": 10.0,
+      "y": 0.5469543040086768,
+      "_kind": "line",
+      "_group": 99
+    },
+    {
+      "Assistant turn depth": 11.0,
+      "y": 0.5350453637308112,
+      "_kind": "line",
+      "_group": 100
+    },
+    {
+      "Assistant turn depth": 11.0,
+      "y": 0.5284769354239659,
+      "_kind": "line",
+      "_group": 100
+    },
+    {
+      "Assistant turn depth": 11.0,
+      "y": 0.5338060812413432,
+      "_kind": "line",
+      "_group": 100
+    },
+    {
+      "Assistant turn depth": 11.0,
+      "y": 0.5313869130681956,
+      "_kind": "line",
+      "_group": 100
+    },
+    {
+      "Assistant turn depth": 11.0,
+      "y": 0.5519215263045064,
+      "_kind": "line",
+      "_group": 100
+    },
+    {
+      "Assistant turn depth": 11.0,
+      "y": 0.5426397700231236,
+      "_kind": "line",
+      "_group": 100
+    },
+    {
+      "Assistant turn depth": 12.0,
+      "y": 0.5339669502722626,
+      "_kind": "line",
+      "_group": 101
+    },
+    {
+      "Assistant turn depth": 12.0,
+      "y": 0.5337768238236416,
+      "_kind": "line",
+      "_group": 101
+    },
+    {
+      "Assistant turn depth": 12.0,
+      "y": 0.5325090615867026,
+      "_kind": "line",
+      "_group": 101
+    },
+    {
+      "Assistant turn depth": 12.0,
+      "y": 0.5301967673962396,
+      "_kind": "line",
+      "_group": 101
+    },
+    {
+      "Assistant turn depth": 12.0,
+      "y": 0.5510764629505192,
+      "_kind": "line",
+      "_group": 101
+    },
+    {
+      "Assistant turn depth": 12.0,
+      "y": 0.5416783021764261,
+      "_kind": "line",
+      "_group": 101
+    },
+    {
+      "Assistant turn depth": 1.0,
+      "y": 0.42195004935401104,
+      "series": "real logged context + logged answers (n\u22484950/turn)",
+      "_kind": "line",
+      "_group": 102
+    },
+    {
+      "Assistant turn depth": 2.0,
+      "y": 0.4984001570976093,
+      "series": "real logged context + logged answers (n\u22484950/turn)",
+      "_kind": "line",
+      "_group": 102
+    },
+    {
+      "Assistant turn depth": 3.0,
+      "y": 0.5178718114628985,
+      "series": "real logged context + logged answers (n\u22484950/turn)",
+      "_kind": "line",
+      "_group": 102
+    },
+    {
+      "Assistant turn depth": 4.0,
+      "y": 0.5322574752268879,
+      "series": "real logged context + logged answers (n\u22484950/turn)",
+      "_kind": "line",
+      "_group": 102
+    },
+    {
+      "Assistant turn depth": 5.0,
+      "y": 0.5363149913576319,
+      "series": "real logged context + logged answers (n\u22484950/turn)",
+      "_kind": "line",
+      "_group": 102
+    },
+    {
+      "Assistant turn depth": 6.0,
+      "y": 0.5349508921041761,
+      "series": "real logged context + logged answers (n\u22484950/turn)",
+      "_kind": "line",
+      "_group": 102
+    },
+    {
+      "Assistant turn depth": 7.0,
+      "y": 0.5393439520867673,
+      "series": "real logged context + logged answers (n\u22484950/turn)",
+      "_kind": "line",
+      "_group": 102
+    },
+    {
+      "Assistant turn depth": 8.0,
+      "y": 0.5453612448970909,
+      "series": "real logged context + logged answers (n\u22484950/turn)",
+      "_kind": "line",
+      "_group": 102
+    },
+    {
+      "Assistant turn depth": 9.0,
+      "y": 0.5411875306835074,
+      "series": "real logged context + logged answers (n\u22484950/turn)",
+      "_kind": "line",
+      "_group": 102
+    },
+    {
+      "Assistant turn depth": 10.0,
+      "y": 0.544488953052357,
+      "series": "real logged context + logged answers (n\u22484950/turn)",
+      "_kind": "line",
+      "_group": 102
+    },
+    {
+      "Assistant turn depth": 11.0,
+      "y": 0.5440981015036743,
+      "series": "real logged context + logged answers (n\u22484950/turn)",
+      "_kind": "line",
+      "_group": 102
+    },
+    {
+      "Assistant turn depth": 12.0,
+      "y": 0.5395558565533659,
+      "series": "real logged context + logged answers (n\u22484950/turn)",
+      "_kind": "line",
+      "_group": 102
+    },
+    {
+      "Assistant turn depth": 13.0,
+      "y": 0.5221792635644049,
+      "series": "real logged context + logged answers (n\u22484950/turn)",
+      "_kind": "line",
+      "_group": 102
+    },
+    {
+      "Assistant turn depth": 1.0,
+      "y": 0.41869669478507543,
+      "_kind": "line",
+      "_group": 103
+    },
+    {
+      "Assistant turn depth": 1.0,
+      "y": 0.4277924048997598,
+      "_kind": "line",
+      "_group": 103
+    },
+    {
+      "Assistant turn depth": 1.0,
+      "y": 0.42507792598168503,
+      "_kind": "line",
+      "_group": 103
+    },
+    {
+      "Assistant turn depth": 1.0,
+      "y": 0.41895939671702453,
+      "_kind": "line",
+      "_group": 103
+    },
+    {
+      "Assistant turn depth": 1.0,
+      "y": 0.4150996507290847,
+      "_kind": "line",
+      "_group": 103
+    },
+    {
+      "Assistant turn depth": 1.0,
+      "y": 0.42282885901792067,
+      "_kind": "line",
+      "_group": 103
+    },
+    {
+      "Assistant turn depth": 2.0,
+      "y": 0.49149489262598034,
+      "_kind": "line",
+      "_group": 104
+    },
+    {
+      "Assistant turn depth": 2.0,
+      "y": 0.5090571704867123,
+      "_kind": "line",
+      "_group": 104
+    },
+    {
+      "Assistant turn depth": 2.0,
+      "y": 0.49303714474556926,
+      "_kind": "line",
+      "_group": 104
+    },
+    {
+      "Assistant turn depth": 2.0,
+      "y": 0.4933448088968636,
+      "_kind": "line",
+      "_group": 104
+    },
+    {
+      "Assistant turn depth": 2.0,
+      "y": 0.5016244504480677,
+      "_kind": "line",
+      "_group": 104
+    },
+    {
+      "Assistant turn depth": 2.0,
+      "y": 0.49830069173157554,
+      "_kind": "line",
+      "_group": 104
+    },
+    {
+      "Assistant turn depth": 3.0,
+      "y": 0.5210106761848025,
+      "_kind": "line",
+      "_group": 105
+    },
+    {
+      "Assistant turn depth": 3.0,
+      "y": 0.5155787645379994,
+      "_kind": "line",
+      "_group": 105
+    },
+    {
+      "Assistant turn depth": 3.0,
+      "y": 0.5168444489876682,
+      "_kind": "line",
+      "_group": 105
+    },
+    {
+      "Assistant turn depth": 3.0,
+      "y": 0.5157708628234601,
+      "_kind": "line",
+      "_group": 105
+    },
+    {
+      "Assistant turn depth": 3.0,
+      "y": 0.5193738366425298,
+      "_kind": "line",
+      "_group": 105
+    },
+    {
+      "Assistant turn depth": 3.0,
+      "y": 0.515372516086674,
+      "_kind": "line",
+      "_group": 105
+    },
+    {
+      "Assistant turn depth": 4.0,
+      "y": 0.521802743897092,
+      "_kind": "line",
+      "_group": 106
+    },
+    {
+      "Assistant turn depth": 4.0,
+      "y": 0.5330892237097724,
+      "_kind": "line",
+      "_group": 106
+    },
+    {
+      "Assistant turn depth": 4.0,
+      "y": 0.5337847996751629,
+      "_kind": "line",
+      "_group": 106
+    },
+    {
+      "Assistant turn depth": 4.0,
+      "y": 0.5292575485660675,
+      "_kind": "line",
+      "_group": 106
+    },
+    {
+      "Assistant turn depth": 4.0,
+      "y": 0.5352189653645035,
+      "_kind": "line",
+      "_group": 106
+    },
+    {
+      "Assistant turn depth": 4.0,
+      "y": 0.5368637063457163,
+      "_kind": "line",
+      "_group": 106
+    },
+    {
+      "Assistant turn depth": 5.0,
+      "y": 0.5428228143802281,
+      "_kind": "line",
+      "_group": 107
+    },
+    {
+      "Assistant turn depth": 5.0,
+      "y": 0.5316618211833599,
+      "_kind": "line",
+      "_group": 107
+    },
+    {
+      "Assistant turn depth": 5.0,
+      "y": 0.5246438872528131,
+      "_kind": "line",
+      "_group": 107
+    },
+    {
+      "Assistant turn depth": 5.0,
+      "y": 0.5442459629229378,
+      "_kind": "line",
+      "_group": 107
+    },
+    {
+      "Assistant turn depth": 5.0,
+      "y": 0.5364869232792981,
+      "_kind": "line",
+      "_group": 107
+    },
+    {
+      "Assistant turn depth": 5.0,
+      "y": 0.534888433881205,
+      "_kind": "line",
+      "_group": 107
+    },
+    {
+      "Assistant turn depth": 6.0,
+      "y": 0.5279233820895257,
+      "_kind": "line",
+      "_group": 108
+    },
+    {
+      "Assistant turn depth": 6.0,
+      "y": 0.5370981926731782,
+      "_kind": "line",
+      "_group": 108
+    },
+    {
+      "Assistant turn depth": 6.0,
+      "y": 0.5239811423678078,
+      "_kind": "line",
+      "_group": 108
+    },
+    {
+      "Assistant turn depth": 6.0,
+      "y": 0.538615734948716,
+      "_kind": "line",
+      "_group": 108
+    },
+    {
+      "Assistant turn depth": 6.0,
+      "y": 0.5397635051382795,
+      "_kind": "line",
+      "_group": 108
+    },
+    {
+      "Assistant turn depth": 6.0,
+      "y": 0.5391264015772301,
+      "_kind": "line",
+      "_group": 108
+    },
+    {
+      "Assistant turn depth": 7.0,
+      "y": 0.5363509195287638,
+      "_kind": "line",
+      "_group": 109
+    },
+    {
+      "Assistant turn depth": 7.0,
+      "y": 0.5399654623359238,
+      "_kind": "line",
+      "_group": 109
+    },
+    {
+      "Assistant turn depth": 7.0,
+      "y": 0.5366919066064266,
+      "_kind": "line",
+      "_group": 109
+    },
+    {
+      "Assistant turn depth": 7.0,
+      "y": 0.5368651381140519,
+      "_kind": "line",
+      "_group": 109
+    },
+    {
+      "Assistant turn depth": 7.0,
+      "y": 0.5466062192364538,
+      "_kind": "line",
+      "_group": 109
+    },
+    {
+      "Assistant turn depth": 7.0,
+      "y": 0.5360388673988962,
+      "_kind": "line",
+      "_group": 109
+    },
+    {
+      "Assistant turn depth": 8.0,
+      "y": 0.5388865813003028,
+      "_kind": "line",
+      "_group": 110
+    },
+    {
+      "Assistant turn depth": 8.0,
+      "y": 0.538067501422564,
+      "_kind": "line",
+      "_group": 110
+    },
+    {
+      "Assistant turn depth": 8.0,
+      "y": 0.5422320607888739,
+      "_kind": "line",
+      "_group": 110
+    },
+    {
+      "Assistant turn depth": 8.0,
+      "y": 0.5463231336630248,
+      "_kind": "line",
+      "_group": 110
+    },
+    {
+      "Assistant turn depth": 8.0,
+      "y": 0.5561576889880102,
+      "_kind": "line",
+      "_group": 110
+    },
+    {
+      "Assistant turn depth": 8.0,
+      "y": 0.5475054006125339,
+      "_kind": "line",
+      "_group": 110
+    },
+    {
+      "Assistant turn depth": 9.0,
+      "y": 0.5317755267920047,
+      "_kind": "line",
+      "_group": 111
+    },
+    {
+      "Assistant turn depth": 9.0,
+      "y": 0.5457937735783192,
+      "_kind": "line",
+      "_group": 111
+    },
+    {
+      "Assistant turn depth": 9.0,
+      "y": 0.5449181937715949,
+      "_kind": "line",
+      "_group": 111
+    },
+    {
+      "Assistant turn depth": 9.0,
+      "y": 0.5318133470715638,
+      "_kind": "line",
+      "_group": 111
+    },
+    {
+      "Assistant turn depth": 9.0,
+      "y": 0.5490075153745557,
+      "_kind": "line",
+      "_group": 111
+    },
+    {
+      "Assistant turn depth": 9.0,
+      "y": 0.5405610296024623,
+      "_kind": "line",
+      "_group": 111
+    },
+    {
+      "Assistant turn depth": 10.0,
+      "y": 0.5402014743827525,
+      "_kind": "line",
+      "_group": 112
+    },
+    {
+      "Assistant turn depth": 10.0,
+      "y": 0.5524933568308851,
+      "_kind": "line",
+      "_group": 112
+    },
+    {
+      "Assistant turn depth": 10.0,
+      "y": 0.5347225131895029,
+      "_kind": "line",
+      "_group": 112
+    },
+    {
+      "Assistant turn depth": 10.0,
+      "y": 0.5455974377317445,
+      "_kind": "line",
+      "_group": 112
+    },
+    {
+      "Assistant turn depth": 10.0,
+      "y": 0.548176819118926,
+      "_kind": "line",
+      "_group": 112
+    },
+    {
+      "Assistant turn depth": 10.0,
+      "y": 0.542512200494908,
+      "_kind": "line",
+      "_group": 112
+    },
+    {
+      "Assistant turn depth": 11.0,
+      "y": 0.5399625686187102,
+      "_kind": "line",
+      "_group": 113
+    },
+    {
+      "Assistant turn depth": 11.0,
+      "y": 0.5530699890174973,
+      "_kind": "line",
+      "_group": 113
+    },
+    {
+      "Assistant turn depth": 11.0,
+      "y": 0.5458252617849202,
+      "_kind": "line",
+      "_group": 113
+    },
+    {
+      "Assistant turn depth": 11.0,
+      "y": 0.5344371409411757,
+      "_kind": "line",
+      "_group": 113
+    },
+    {
+      "Assistant turn depth": 11.0,
+      "y": 0.5473543198348892,
+      "_kind": "line",
+      "_group": 113
+    },
+    {
+      "Assistant turn depth": 11.0,
+      "y": 0.540235070533859,
+      "_kind": "line",
+      "_group": 113
+    },
+    {
+      "Assistant turn depth": 12.0,
+      "y": 0.5408768148683389,
+      "_kind": "line",
+      "_group": 114
+    },
+    {
+      "Assistant turn depth": 12.0,
+      "y": 0.5399676553094932,
+      "_kind": "line",
+      "_group": 114
+    },
+    {
+      "Assistant turn depth": 12.0,
+      "y": 0.5444366637014566,
+      "_kind": "line",
+      "_group": 114
+    },
+    {
+      "Assistant turn depth": 12.0,
+      "y": 0.5285930689376218,
+      "_kind": "line",
+      "_group": 114
+    },
+    {
+      "Assistant turn depth": 12.0,
+      "y": 0.5347050016344953,
+      "_kind": "line",
+      "_group": 114
+    },
+    {
+      "Assistant turn depth": 12.0,
+      "y": 0.5453304496937951,
+      "_kind": "line",
+      "_group": 114
+    },
+    {
+      "Assistant turn depth": 13.0,
+      "y": 0.5154200057669045,
+      "_kind": "line",
+      "_group": 115
+    },
+    {
+      "Assistant turn depth": 13.0,
+      "y": 0.5207630574738271,
+      "_kind": "line",
+      "_group": 115
+    },
+    {
+      "Assistant turn depth": 13.0,
+      "y": 0.5304403685595172,
+      "_kind": "line",
+      "_group": 115
+    },
+    {
+      "Assistant turn depth": 13.0,
+      "y": 0.5081362850670561,
+      "_kind": "line",
+      "_group": 115
+    },
+    {
+      "Assistant turn depth": 13.0,
+      "y": 0.5218024304606024,
+      "_kind": "line",
+      "_group": 115
+    },
+    {
+      "Assistant turn depth": 13.0,
+      "y": 0.5328489876614477,
+      "_kind": "line",
+      "_group": 115
+    },
+    {
+      "Assistant turn depth": 2.0,
+      "y": 0.2523060567934893,
+      "series": "prefix arm (simulated)",
+      "_kind": "line",
+      "_group": 116
+    },
+    {
+      "Assistant turn depth": 3.0,
+      "y": 0.40776214696355195,
+      "series": "prefix arm (simulated)",
+      "_kind": "line",
+      "_group": 116
+    },
+    {
+      "Assistant turn depth": 4.0,
+      "y": 0.4540156562751809,
+      "series": "prefix arm (simulated)",
+      "_kind": "line",
+      "_group": 116
+    },
+    {
+      "Assistant turn depth": 5.0,
+      "y": 0.48320278230893277,
+      "series": "prefix arm (simulated)",
+      "_kind": "line",
+      "_group": 116
+    },
+    {
+      "Assistant turn depth": 6.0,
+      "y": 0.4966671874949866,
+      "series": "prefix arm (simulated)",
+      "_kind": "line",
+      "_group": 116
+    },
+    {
+      "Assistant turn depth": 7.0,
+      "y": 0.5075228851305102,
+      "series": "prefix arm (simulated)",
+      "_kind": "line",
+      "_group": 116
+    },
+    {
+      "Assistant turn depth": 8.0,
+      "y": 0.5066576355316136,
+      "series": "prefix arm (simulated)",
+      "_kind": "line",
+      "_group": 116
+    },
+    {
+      "Assistant turn depth": 9.0,
+      "y": 0.5134614074018475,
+      "series": "prefix arm (simulated)",
+      "_kind": "line",
+      "_group": 116
+    },
+    {
+      "Assistant turn depth": 10.0,
+      "y": 0.5116513744791529,
+      "series": "prefix arm (simulated)",
+      "_kind": "line",
+      "_group": 116
+    },
+    {
+      "Assistant turn depth": 11.0,
+      "y": 0.5216511620985362,
+      "series": "prefix arm (simulated)",
+      "_kind": "line",
+      "_group": 116
+    },
+    {
+      "Assistant turn depth": 12.0,
+      "y": 0.5243866587581061,
+      "series": "prefix arm (simulated)",
+      "_kind": "line",
+      "_group": 116
+    },
+    {
+      "Assistant turn depth": 13.0,
+      "y": 0.5246915735658995,
+      "series": "prefix arm (simulated)",
+      "_kind": "line",
+      "_group": 116
+    },
+    {
+      "Assistant turn depth": 14.0,
+      "y": 0.5227578555972021,
+      "series": "prefix arm (simulated)",
+      "_kind": "line",
+      "_group": 116
+    },
+    {
+      "Assistant turn depth": 15.0,
+      "y": 0.5221501418627428,
+      "series": "prefix arm (simulated)",
+      "_kind": "line",
+      "_group": 116
+    },
+    {
+      "Assistant turn depth": 16.0,
+      "y": 0.5226379075513601,
+      "series": "prefix arm (simulated)",
+      "_kind": "line",
+      "_group": 116
+    },
+    {
+      "Assistant turn depth": 2.0,
+      "y": 0.25256324484451487,
+      "_kind": "line",
+      "_group": 117
+    },
+    {
+      "Assistant turn depth": 2.0,
+      "y": 0.2497436912028752,
+      "_kind": "line",
+      "_group": 117
+    },
+    {
+      "Assistant turn depth": 2.0,
+      "y": 0.24995759574484666,
+      "_kind": "line",
+      "_group": 117
+    },
+    {
+      "Assistant turn depth": 2.0,
+      "y": 0.2480110861388265,
+      "_kind": "line",
+      "_group": 117
+    },
+    {
+      "Assistant turn depth": 2.0,
+      "y": 0.26306067319119886,
+      "_kind": "line",
+      "_group": 117
+    },
+    {
+      "Assistant turn depth": 2.0,
+      "y": 0.2461754177980291,
+      "_kind": "line",
+      "_group": 117
+    },
+    {
+      "Assistant turn depth": 3.0,
+      "y": 0.4140299157927799,
+      "_kind": "line",
+      "_group": 118
+    },
+    {
+      "Assistant turn depth": 3.0,
+      "y": 0.4032840793213145,
+      "_kind": "line",
+      "_group": 118
+    },
+    {
+      "Assistant turn depth": 3.0,
+      "y": 0.4004364147492765,
+      "_kind": "line",
+      "_group": 118
+    },
+    {
+      "Assistant turn depth": 3.0,
+      "y": 0.40341439268567847,
+      "_kind": "line",
+      "_group": 118
+    },
+    {
+      "Assistant turn depth": 3.0,
+      "y": 0.4115993054465745,
+      "_kind": "line",
+      "_group": 118
+    },
+    {
+      "Assistant turn depth": 3.0,
+      "y": 0.4107129902635771,
+      "_kind": "line",
+      "_group": 118
+    },
+    {
+      "Assistant turn depth": 4.0,
+      "y": 0.4592550946639167,
+      "_kind": "line",
+      "_group": 119
+    },
+    {
+      "Assistant turn depth": 4.0,
+      "y": 0.43846813619595515,
+      "_kind": "line",
+      "_group": 119
+    },
+    {
+      "Assistant turn depth": 4.0,
+      "y": 0.45158438682287805,
+      "_kind": "line",
+      "_group": 119
+    },
+    {
+      "Assistant turn depth": 4.0,
+      "y": 0.4476867463463112,
+      "_kind": "line",
+      "_group": 119
+    },
+    {
+      "Assistant turn depth": 4.0,
+      "y": 0.46239965879222755,
+      "_kind": "line",
+      "_group": 119
+    },
+    {
+      "Assistant turn depth": 4.0,
+      "y": 0.461907543968917,
+      "_kind": "line",
+      "_group": 119
+    },
+    {
+      "Assistant turn depth": 5.0,
+      "y": 0.479457356025643,
+      "_kind": "line",
+      "_group": 120
+    },
+    {
+      "Assistant turn depth": 5.0,
+      "y": 0.4746304245854619,
+      "_kind": "line",
+      "_group": 120
+    },
+    {
+      "Assistant turn depth": 5.0,
+      "y": 0.478377454703902,
+      "_kind": "line",
+      "_group": 120
+    },
+    {
+      "Assistant turn depth": 5.0,
+      "y": 0.4812265787839112,
+      "_kind": "line",
+      "_group": 120
+    },
+    {
+      "Assistant turn depth": 5.0,
+      "y": 0.4934528279902123,
+      "_kind": "line",
+      "_group": 120
+    },
+    {
+      "Assistant turn depth": 5.0,
+      "y": 0.48948823605812974,
+      "_kind": "line",
+      "_group": 120
+    },
+    {
+      "Assistant turn depth": 6.0,
+      "y": 0.4911078351267353,
+      "_kind": "line",
+      "_group": 121
+    },
+    {
+      "Assistant turn depth": 6.0,
+      "y": 0.4972972828951635,
+      "_kind": "line",
+      "_group": 121
+    },
+    {
+      "Assistant turn depth": 6.0,
+      "y": 0.49885406591437,
+      "_kind": "line",
+      "_group": 121
+    },
+    {
+      "Assistant turn depth": 6.0,
+      "y": 0.488536644822388,
+      "_kind": "line",
+      "_group": 121
+    },
+    {
+      "Assistant turn depth": 6.0,
+      "y": 0.5056681668112446,
+      "_kind": "line",
+      "_group": 121
+    },
+    {
+      "Assistant turn depth": 6.0,
+      "y": 0.496110496104874,
+      "_kind": "line",
+      "_group": 121
+    },
+    {
+      "Assistant turn depth": 7.0,
+      "y": 0.5058981544507966,
+      "_kind": "line",
+      "_group": 122
+    },
+    {
+      "Assistant turn depth": 7.0,
+      "y": 0.5035312627478142,
+      "_kind": "line",
+      "_group": 122
+    },
+    {
+      "Assistant turn depth": 7.0,
+      "y": 0.5087734614429722,
+      "_kind": "line",
+      "_group": 122
+    },
+    {
+      "Assistant turn depth": 7.0,
+      "y": 0.5092303676246981,
+      "_kind": "line",
+      "_group": 122
+    },
+    {
+      "Assistant turn depth": 7.0,
+      "y": 0.5014359786490268,
+      "_kind": "line",
+      "_group": 122
+    },
+    {
+      "Assistant turn depth": 7.0,
+      "y": 0.513835826156009,
+      "_kind": "line",
+      "_group": 122
+    },
+    {
+      "Assistant turn depth": 8.0,
+      "y": 0.5049294692658397,
+      "_kind": "line",
+      "_group": 123
+    },
+    {
+      "Assistant turn depth": 8.0,
+      "y": 0.5047883573468076,
+      "_kind": "line",
+      "_group": 123
+    },
+    {
+      "Assistant turn depth": 8.0,
+      "y": 0.5080224173413499,
+      "_kind": "line",
+      "_group": 123
+    },
+    {
+      "Assistant turn depth": 8.0,
+      "y": 0.4998065604333404,
+      "_kind": "line",
+      "_group": 123
+    },
+    {
+      "Assistant turn depth": 8.0,
+      "y": 0.5078231364160356,
+      "_kind": "line",
+      "_group": 123
+    },
+    {
+      "Assistant turn depth": 8.0,
+      "y": 0.5122058151917548,
+      "_kind": "line",
+      "_group": 123
+    },
+    {
+      "Assistant turn depth": 9.0,
+      "y": 0.5221901145377132,
+      "_kind": "line",
+      "_group": 124
+    },
+    {
+      "Assistant turn depth": 9.0,
+      "y": 0.5091452117655157,
+      "_kind": "line",
+      "_group": 124
+    },
+    {
+      "Assistant turn depth": 9.0,
+      "y": 0.49736347690732663,
+      "_kind": "line",
+      "_group": 124
+    },
+    {
+      "Assistant turn depth": 9.0,
+      "y": 0.5117693431933391,
+      "_kind": "line",
+      "_group": 124
+    },
+    {
+      "Assistant turn depth": 9.0,
+      "y": 0.518169296500803,
+      "_kind": "line",
+      "_group": 124
+    },
+    {
+      "Assistant turn depth": 9.0,
+      "y": 0.5195824588498199,
+      "_kind": "line",
+      "_group": 124
+    },
+    {
+      "Assistant turn depth": 10.0,
+      "y": 0.510581518609022,
+      "_kind": "line",
+      "_group": 125
+    },
+    {
+      "Assistant turn depth": 10.0,
+      "y": 0.5214419011265814,
+      "_kind": "line",
+      "_group": 125
+    },
+    {
+      "Assistant turn depth": 10.0,
+      "y": 0.49505541350501037,
+      "_kind": "line",
+      "_group": 125
+    },
+    {
+      "Assistant turn depth": 10.0,
+      "y": 0.5049807012701951,
+      "_kind": "line",
+      "_group": 125
+    },
+    {
+      "Assistant turn depth": 10.0,
+      "y": 0.5191613194523892,
+      "_kind": "line",
+      "_group": 125
+    },
+    {
+      "Assistant turn depth": 10.0,
+      "y": 0.5165632591741214,
+      "_kind": "line",
+      "_group": 125
+    },
+    {
+      "Assistant turn depth": 11.0,
+      "y": 0.5258842451740903,
+      "_kind": "line",
+      "_group": 126
+    },
+    {
+      "Assistant turn depth": 11.0,
+      "y": 0.5259810506162279,
+      "_kind": "line",
+      "_group": 126
+    },
+    {
+      "Assistant turn depth": 11.0,
+      "y": 0.5117830161030887,
+      "_kind": "line",
+      "_group": 126
+    },
+    {
+      "Assistant turn depth": 11.0,
+      "y": 0.5189738562048196,
+      "_kind": "line",
+      "_group": 126
+    },
+    {
+      "Assistant turn depth": 11.0,
+      "y": 0.5212137240777903,
+      "_kind": "line",
+      "_group": 126
+    },
+    {
+      "Assistant turn depth": 11.0,
+      "y": 0.5238045124421319,
+      "_kind": "line",
+      "_group": 126
+    },
+    {
+      "Assistant turn depth": 12.0,
+      "y": 0.5233987112268843,
+      "_kind": "line",
+      "_group": 127
+    },
+    {
+      "Assistant turn depth": 12.0,
+      "y": 0.5256885697502487,
+      "_kind": "line",
+      "_group": 127
+    },
+    {
+      "Assistant turn depth": 12.0,
+      "y": 0.5213510208267078,
+      "_kind": "line",
+      "_group": 127
+    },
+    {
+      "Assistant turn depth": 12.0,
+      "y": 0.518966253318633,
+      "_kind": "line",
+      "_group": 127
+    },
+    {
+      "Assistant turn depth": 12.0,
+      "y": 0.5263202827162402,
+      "_kind": "line",
+      "_group": 127
+    },
+    {
+      "Assistant turn depth": 12.0,
+      "y": 0.5283425487375184,
+      "_kind": "line",
+      "_group": 127
+    },
+    {
+      "Assistant turn depth": 13.0,
+      "y": 0.5270056051278307,
+      "_kind": "line",
+      "_group": 128
+    },
+    {
+      "Assistant turn depth": 13.0,
+      "y": 0.5205404068102721,
+      "_kind": "line",
+      "_group": 128
+    },
+    {
+      "Assistant turn depth": 13.0,
+      "y": 0.5251529343048895,
+      "_kind": "line",
+      "_group": 128
+    },
+    {
+      "Assistant turn depth": 13.0,
+      "y": 0.5188407111052636,
+      "_kind": "line",
+      "_group": 128
+    },
+    {
+      "Assistant turn depth": 13.0,
+      "y": 0.5295176776576285,
+      "_kind": "line",
+      "_group": 128
+    },
+    {
+      "Assistant turn depth": 13.0,
+      "y": 0.5248417051554782,
+      "_kind": "line",
+      "_group": 128
+    },
+    {
+      "Assistant turn depth": 14.0,
+      "y": 0.522352168559391,
+      "_kind": "line",
+      "_group": 129
+    },
+    {
+      "Assistant turn depth": 14.0,
+      "y": 0.5344013884627397,
+      "_kind": "line",
+      "_group": 129
+    },
+    {
+      "Assistant turn depth": 14.0,
+      "y": 0.5186053151742048,
+      "_kind": "line",
+      "_group": 129
+    },
+    {
+      "Assistant turn depth": 14.0,
+      "y": 0.5227366964426835,
+      "_kind": "line",
+      "_group": 129
+    },
+    {
+      "Assistant turn depth": 14.0,
+      "y": 0.520600100130294,
+      "_kind": "line",
+      "_group": 129
+    },
+    {
+      "Assistant turn depth": 14.0,
+      "y": 0.5154788474772751,
+      "_kind": "line",
+      "_group": 129
+    },
+    {
+      "Assistant turn depth": 15.0,
+      "y": 0.5261730667140795,
+      "_kind": "line",
+      "_group": 130
+    },
+    {
+      "Assistant turn depth": 15.0,
+      "y": 0.5296549244777433,
+      "_kind": "line",
+      "_group": 130
+    },
+    {
+      "Assistant turn depth": 15.0,
+      "y": 0.5127635763213411,
+      "_kind": "line",
+      "_group": 130
+    },
+    {
+      "Assistant turn depth": 15.0,
+      "y": 0.521282057904003,
+      "_kind": "line",
+      "_group": 130
+    },
+    {
+      "Assistant turn depth": 15.0,
+      "y": 0.5331226040734858,
+      "_kind": "line",
+      "_group": 130
+    },
+    {
+      "Assistant turn depth": 15.0,
+      "y": 0.5082231292988216,
+      "_kind": "line",
+      "_group": 130
+    },
+    {
+      "Assistant turn depth": 16.0,
+      "y": 0.5254868798936307,
+      "_kind": "line",
+      "_group": 131
+    },
+    {
+      "Assistant turn depth": 16.0,
+      "y": 0.5300523336945347,
+      "_kind": "line",
+      "_group": 131
+    },
+    {
+      "Assistant turn depth": 16.0,
+      "y": 0.5151923554909874,
+      "_kind": "line",
+      "_group": 131
+    },
+    {
+      "Assistant turn depth": 16.0,
+      "y": 0.5240364839537884,
+      "_kind": "line",
+      "_group": 131
+    },
+    {
+      "Assistant turn depth": 16.0,
+      "y": 0.516955488375267,
+      "_kind": "line",
+      "_group": 131
+    },
+    {
+      "Assistant turn depth": 16.0,
+      "y": 0.5218496060956466,
+      "_kind": "line",
+      "_group": 131
+    },
+    {
+      "Assistant turn depth": 2.0,
+      "y": 0.20977773965982993,
+      "series": "prefix arm (real, own)",
+      "_kind": "line",
+      "_group": 132
+    },
+    {
+      "Assistant turn depth": 3.0,
+      "y": 0.21402340172948464,
+      "series": "prefix arm (real, own)",
+      "_kind": "line",
+      "_group": 132
+    },
+    {
+      "Assistant turn depth": 4.0,
+      "y": 0.21817820227034457,
+      "series": "prefix arm (real, own)",
+      "_kind": "line",
+      "_group": 132
+    },
+    {
+      "Assistant turn depth": 5.0,
+      "y": 0.2233119982377243,
+      "series": "prefix arm (real, own)",
+      "_kind": "line",
+      "_group": 132
+    },
+    {
+      "Assistant turn depth": 6.0,
+      "y": 0.22445115443915564,
+      "series": "prefix arm (real, own)",
+      "_kind": "line",
+      "_group": 132
+    },
+    {
+      "Assistant turn depth": 7.0,
+      "y": 0.21891190173071506,
+      "series": "prefix arm (real, own)",
+      "_kind": "line",
+      "_group": 132
+    },
+    {
+      "Assistant turn depth": 8.0,
+      "y": 0.22338291895354156,
+      "series": "prefix arm (real, own)",
+      "_kind": "line",
+      "_group": 132
+    },
+    {
+      "Assistant turn depth": 9.0,
+      "y": 0.22548596126653542,
+      "series": "prefix arm (real, own)",
+      "_kind": "line",
+      "_group": 132
+    },
+    {
+      "Assistant turn depth": 10.0,
+      "y": 0.22658452703684895,
+      "series": "prefix arm (real, own)",
+      "_kind": "line",
+      "_group": 132
+    },
+    {
+      "Assistant turn depth": 11.0,
+      "y": 0.22526393752545004,
+      "series": "prefix arm (real, own)",
+      "_kind": "line",
+      "_group": 132
+    },
+    {
+      "Assistant turn depth": 12.0,
+      "y": 0.2150533608688796,
+      "series": "prefix arm (real, own)",
+      "_kind": "line",
+      "_group": 132
+    },
+    {
+      "Assistant turn depth": 2.0,
+      "y": 0.19391397529818621,
+      "_kind": "line",
+      "_group": 133
+    },
+    {
+      "Assistant turn depth": 2.0,
+      "y": 0.20572356475178777,
+      "_kind": "line",
+      "_group": 133
+    },
+    {
+      "Assistant turn depth": 2.0,
+      "y": 0.21398271158285553,
+      "_kind": "line",
+      "_group": 133
+    },
+    {
+      "Assistant turn depth": 2.0,
+      "y": 0.20854059968746064,
+      "_kind": "line",
+      "_group": 133
+    },
+    {
+      "Assistant turn depth": 2.0,
+      "y": 0.21571036549565192,
+      "_kind": "line",
+      "_group": 133
+    },
+    {
+      "Assistant turn depth": 2.0,
+      "y": 0.21673416537505275,
+      "_kind": "line",
+      "_group": 133
+    },
+    {
+      "Assistant turn depth": 3.0,
+      "y": 0.2150755461371422,
+      "_kind": "line",
+      "_group": 134
+    },
+    {
+      "Assistant turn depth": 3.0,
+      "y": 0.19528133822255722,
+      "_kind": "line",
+      "_group": 134
+    },
+    {
+      "Assistant turn depth": 3.0,
+      "y": 0.22122392579216688,
+      "_kind": "line",
+      "_group": 134
+    },
+    {
+      "Assistant turn depth": 3.0,
+      "y": 0.20639935910380214,
+      "_kind": "line",
+      "_group": 134
+    },
+    {
+      "Assistant turn depth": 3.0,
+      "y": 0.2210435690462177,
+      "_kind": "line",
+      "_group": 134
+    },
+    {
+      "Assistant turn depth": 3.0,
+      "y": 0.22011055906211396,
+      "_kind": "line",
+      "_group": 134
+    },
+    {
+      "Assistant turn depth": 4.0,
+      "y": 0.21211536396305397,
+      "_kind": "line",
+      "_group": 135
+    },
+    {
+      "Assistant turn depth": 4.0,
+      "y": 0.20743789883405162,
+      "_kind": "line",
+      "_group": 135
+    },
+    {
+      "Assistant turn depth": 4.0,
+      "y": 0.22118152355933896,
+      "_kind": "line",
+      "_group": 135
+    },
+    {
+      "Assistant turn depth": 4.0,
+      "y": 0.213748181780415,
+      "_kind": "line",
+      "_group": 135
+    },
+    {
+      "Assistant turn depth": 4.0,
+      "y": 0.22184491683957608,
+      "_kind": "line",
+      "_group": 135
+    },
+    {
+      "Assistant turn depth": 4.0,
+      "y": 0.2279532290621895,
+      "_kind": "line",
+      "_group": 135
+    },
+    {
+      "Assistant turn depth": 5.0,
+      "y": 0.2158284070419697,
+      "_kind": "line",
+      "_group": 136
+    },
+    {
+      "Assistant turn depth": 5.0,
+      "y": 0.22099613688829778,
+      "_kind": "line",
+      "_group": 136
+    },
+    {
+      "Assistant turn depth": 5.0,
+      "y": 0.2163536752965003,
+      "_kind": "line",
+      "_group": 136
+    },
+    {
+      "Assistant turn depth": 5.0,
+      "y": 0.21157597543370188,
+      "_kind": "line",
+      "_group": 136
+    },
+    {
+      "Assistant turn depth": 5.0,
+      "y": 0.2390790645363845,
+      "_kind": "line",
+      "_group": 136
+    },
+    {
+      "Assistant turn depth": 5.0,
+      "y": 0.23065309127117228,
+      "_kind": "line",
+      "_group": 136
+    },
+    {
+      "Assistant turn depth": 6.0,
+      "y": 0.21888330041675896,
+      "_kind": "line",
+      "_group": 137
+    },
+    {
+      "Assistant turn depth": 6.0,
+      "y": 0.22004577757498933,
+      "_kind": "line",
+      "_group": 137
+    },
+    {
+      "Assistant turn depth": 6.0,
+      "y": 0.22601064084646183,
+      "_kind": "line",
+      "_group": 137
+    },
+    {
+      "Assistant turn depth": 6.0,
+      "y": 0.21888334777713203,
+      "_kind": "line",
+      "_group": 137
+    },
+    {
+      "Assistant turn depth": 6.0,
+      "y": 0.23088272132927112,
+      "_kind": "line",
+      "_group": 137
+    },
+    {
+      "Assistant turn depth": 6.0,
+      "y": 0.22729336205593131,
+      "_kind": "line",
+      "_group": 137
+    },
+    {
+      "Assistant turn depth": 7.0,
+      "y": 0.20805684422926152,
+      "_kind": "line",
+      "_group": 138
+    },
+    {
+      "Assistant turn depth": 7.0,
+      "y": 0.2146451756787906,
+      "_kind": "line",
+      "_group": 138
+    },
+    {
+      "Assistant turn depth": 7.0,
+      "y": 0.22249839738925037,
+      "_kind": "line",
+      "_group": 138
+    },
+    {
+      "Assistant turn depth": 7.0,
+      "y": 0.21626147895608183,
+      "_kind": "line",
+      "_group": 138
+    },
+    {
+      "Assistant turn depth": 7.0,
+      "y": 0.21568477145171672,
+      "_kind": "line",
+      "_group": 138
+    },
+    {
+      "Assistant turn depth": 7.0,
+      "y": 0.23093203872509993,
+      "_kind": "line",
+      "_group": 138
+    },
+    {
+      "Assistant turn depth": 8.0,
+      "y": 0.21224844652919095,
+      "_kind": "line",
+      "_group": 139
+    },
+    {
+      "Assistant turn depth": 8.0,
+      "y": 0.22038503539422138,
+      "_kind": "line",
+      "_group": 139
+    },
+    {
+      "Assistant turn depth": 8.0,
+      "y": 0.22204103756810134,
+      "_kind": "line",
+      "_group": 139
+    },
+    {
+      "Assistant turn depth": 8.0,
+      "y": 0.2175036331881508,
+      "_kind": "line",
+      "_group": 139
+    },
+    {
+      "Assistant turn depth": 8.0,
+      "y": 0.22530994770180357,
+      "_kind": "line",
+      "_group": 139
+    },
+    {
+      "Assistant turn depth": 8.0,
+      "y": 0.23794729149116656,
+      "_kind": "line",
+      "_group": 139
+    },
+    {
+      "Assistant turn depth": 9.0,
+      "y": 0.21271716672131058,
+      "_kind": "line",
+      "_group": 140
+    },
+    {
+      "Assistant turn depth": 9.0,
+      "y": 0.2248663653198144,
+      "_kind": "line",
+      "_group": 140
+    },
+    {
+      "Assistant turn depth": 9.0,
+      "y": 0.22863931551144756,
+      "_kind": "line",
+      "_group": 140
+    },
+    {
+      "Assistant turn depth": 9.0,
+      "y": 0.219094312382194,
+      "_kind": "line",
+      "_group": 140
+    },
+    {
+      "Assistant turn depth": 9.0,
+      "y": 0.22936823297202846,
+      "_kind": "line",
+      "_group": 140
+    },
+    {
+      "Assistant turn depth": 9.0,
+      "y": 0.23366755062136624,
+      "_kind": "line",
+      "_group": 140
+    },
+    {
+      "Assistant turn depth": 10.0,
+      "y": 0.21383253333690866,
+      "_kind": "line",
+      "_group": 141
+    },
+    {
+      "Assistant turn depth": 10.0,
+      "y": 0.22321833681739578,
+      "_kind": "line",
+      "_group": 141
+    },
+    {
+      "Assistant turn depth": 10.0,
+      "y": 0.22775488304350722,
+      "_kind": "line",
+      "_group": 141
+    },
+    {
+      "Assistant turn depth": 10.0,
+      "y": 0.22389698631168442,
+      "_kind": "line",
+      "_group": 141
+    },
+    {
+      "Assistant turn depth": 10.0,
+      "y": 0.2302342785667284,
+      "_kind": "line",
+      "_group": 141
+    },
+    {
+      "Assistant turn depth": 10.0,
+      "y": 0.23598957568071632,
+      "_kind": "line",
+      "_group": 141
+    },
+    {
+      "Assistant turn depth": 11.0,
+      "y": 0.21827061100337752,
+      "_kind": "line",
+      "_group": 142
+    },
+    {
+      "Assistant turn depth": 11.0,
+      "y": 0.22423554049683525,
+      "_kind": "line",
+      "_group": 142
+    },
+    {
+      "Assistant turn depth": 11.0,
+      "y": 0.23022085071452825,
+      "_kind": "line",
+      "_group": 142
+    },
+    {
+      "Assistant turn depth": 11.0,
+      "y": 0.22141266299035234,
+      "_kind": "line",
+      "_group": 142
+    },
+    {
+      "Assistant turn depth": 11.0,
+      "y": 0.23039191789963653,
+      "_kind": "line",
+      "_group": 142
+    },
+    {
+      "Assistant turn depth": 11.0,
+      "y": 0.22206541159612891,
+      "_kind": "line",
+      "_group": 142
+    },
+    {
+      "Assistant turn depth": 12.0,
+      "y": 0.2154682362477225,
+      "_kind": "line",
+      "_group": 143
+    },
+    {
+      "Assistant turn depth": 12.0,
+      "y": 0.21319841579970622,
+      "_kind": "line",
+      "_group": 143
+    },
+    {
+      "Assistant turn depth": 12.0,
+      "y": 0.21065367189473916,
+      "_kind": "line",
+      "_group": 143
+    },
+    {
+      "Assistant turn depth": 12.0,
+      "y": 0.2114520225352704,
+      "_kind": "line",
+      "_group": 143
+    },
+    {
+      "Assistant turn depth": 12.0,
+      "y": 0.22165563495609242,
+      "_kind": "line",
+      "_group": 143
+    },
+    {
+      "Assistant turn depth": 12.0,
+      "y": 0.21321909925230875,
+      "_kind": "line",
+      "_group": 143
+    }
+  ],
+  "n_series": 144,
+  "total_points": 938,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Instruct model",
+        "xlabel": "Assistant turn depth",
+        "ylabel": "Held-out R\u00b2 (context \u2192 answer, layer 19)",
+        "legend_labels": [
+          "simulated continuation, own answers (n=5000/turn)",
+          "real logged context, own answers (n\u22485000/turn)",
+          "real logged context + logged answers (n\u22484950/turn)",
+          "prefix arm (simulated)",
+          "prefix arm (real, own)"
+        ],
+        "annotations": [
+          "shuffled-answer null (max over 200 draws/cell)"
+        ],
+        "xticklabels": [
+          "0",
+          "2",
+          "4",
+          "6",
+          "8",
+          "10",
+          "12",
+          "14",
+          "16",
+          "18"
+        ],
+        "yticklabels": [
+          "\u22120.4",
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8"
+        ]
+      },
+      {
+        "title_left": "Pretrained base model",
+        "xlabel": "Assistant turn depth",
+        "annotations": [
+          "shuffled-answer null (max over 200 draws/cell)"
+        ],
+        "xticklabels": [
+          "0",
+          "2",
+          "4",
+          "6",
+          "8",
+          "10",
+          "12",
+          "14",
+          "16",
+          "18"
+        ]
+      }
+    ],
+    "series": [
+      "simulated continuation, own answers (n=5000/turn)",
+      "real logged context, own answers (n\u22485000/turn)",
+      "real logged context + logged answers (n\u22484950/turn)",
+      "prefix arm (simulated)",
+      "prefix arm (real, own)"
+    ]
+  }
+}

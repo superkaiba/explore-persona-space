@@ -766,7 +766,11 @@ BEHAVIORS: dict[str, Behavior] = {
             "writing_style",
             "Writing in a casual, informal register.",
             "diff_of_means",
-            DVSpec("structural", "judged_spotcheck"),
+            # #1434 D0 amendment: the registration's own notes say "no reliable
+            # deterministic predicate", so a `structural` primary would route
+            # the eval battery to a predicate that does not exist. Judged-rate
+            # primary + tf_margin companion (the impolite shape below).
+            DVSpec("judged_rate", "tf_margin"),
             exhibit=(
                 "Write in a casual, informal, conversational register.",
                 "Answer in a relaxed, chatty tone with informal language.",
@@ -799,6 +803,13 @@ BEHAVIORS: dict[str, Behavior] = {
                     "You favor formal diction.",
                 ),
             ),
+            # #1434 D0: the 20-question train slice of writing_style_neutral_v1
+            # IS the extraction set (the datagen-only-adoption carve-out — see
+            # _make's docstring; train ∩ extraction == ∅ requires the slot stay
+            # empty). #1434's pv extraction driver reads train_question_bank as
+            # the recipe's 20-question extraction set (disjoint from the
+            # 20-question eval slice by the banks.SLICES index audit).
+            extraction_question_set=(),
             rubric=_rubric(
                 "casual register — a casual, informal writing style rather than a formal one",
                 "formal and professional",

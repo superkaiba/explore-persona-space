@@ -1,0 +1,7 @@
+{
+  "cell": "imp_icl_ft_pos",
+  "status": "trained",
+  "adapter_root": "data/issue_1315/run/imp_icl_ft_pos/train",
+  "mix": "data/issue_1315/run/inputs/icl_pos_train_mix.jsonl",
+  "mix_sha256": "a4dcc6bfc0175880a9e8dec9eb34d15e1878dcec7422e873dc1a2fe308046eab"
+}

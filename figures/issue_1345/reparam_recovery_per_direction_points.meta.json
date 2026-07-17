@@ -1,0 +1,361 @@
+{
+  "commit": "138a99fe62",
+  "created": "2026-07-16T08:47:02Z",
+  "figsize": [
+    9.0,
+    4.6
+  ],
+  "points": [
+    {
+      "x": 0.0,
+      "held-out R\u00b2 (layer 19, context arm)": -0.04031343358223616,
+      "series": "matched-capacity null draws (10)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.0,
+      "held-out R\u00b2 (layer 19, context arm)": -0.042693186232867,
+      "series": "matched-capacity null draws (10)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.0,
+      "held-out R\u00b2 (layer 19, context arm)": -0.027596546659552912,
+      "series": "matched-capacity null draws (10)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.0,
+      "held-out R\u00b2 (layer 19, context arm)": -0.02500484371844891,
+      "series": "matched-capacity null draws (10)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.0,
+      "held-out R\u00b2 (layer 19, context arm)": -0.029804136631574885,
+      "series": "matched-capacity null draws (10)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.0,
+      "held-out R\u00b2 (layer 19, context arm)": -0.3832344318831695,
+      "series": "matched-capacity null draws (10)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.0,
+      "held-out R\u00b2 (layer 19, context arm)": -0.37659992141490806,
+      "series": "matched-capacity null draws (10)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.0,
+      "held-out R\u00b2 (layer 19, context arm)": -0.36704171359192084,
+      "series": "matched-capacity null draws (10)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.0,
+      "held-out R\u00b2 (layer 19, context arm)": -0.3630756929555745,
+      "series": "matched-capacity null draws (10)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.0,
+      "held-out R\u00b2 (layer 19, context arm)": -0.3671428512206685,
+      "series": "matched-capacity null draws (10)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.0,
+      "held-out R\u00b2 (layer 19, context arm)": 0.6542183951898379,
+      "label": "0.654",
+      "series": "target's own ceiling",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.0,
+      "held-out R\u00b2 (layer 19, context arm)": 0.6541269690704852,
+      "label": "0.654",
+      "series": "reparameterization-recovered",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.0,
+      "held-out R\u00b2 (layer 19, context arm)": -0.021870496181104038,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.0,
+      "held-out R\u00b2 (layer 19, context arm)": -0.03448117533171802,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.0,
+      "held-out R\u00b2 (layer 19, context arm)": -0.039051359936497,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.0,
+      "held-out R\u00b2 (layer 19, context arm)": -0.03440219878760198,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.0,
+      "held-out R\u00b2 (layer 19, context arm)": -0.039304271338688634,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.0,
+      "held-out R\u00b2 (layer 19, context arm)": -0.39835983243788586,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.0,
+      "held-out R\u00b2 (layer 19, context arm)": -0.3753108974437107,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.0,
+      "held-out R\u00b2 (layer 19, context arm)": -0.37870423400249,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.0,
+      "held-out R\u00b2 (layer 19, context arm)": -0.3822720413162797,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.0,
+      "held-out R\u00b2 (layer 19, context arm)": -0.37695727167075743,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.0,
+      "held-out R\u00b2 (layer 19, context arm)": 0.6249482470755413,
+      "label": "0.620",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.0,
+      "held-out R\u00b2 (layer 19, context arm)": 0.6197446538053759,
+      "label": "0.620",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 2.0,
+      "held-out R\u00b2 (layer 19, context arm)": -0.0341564040525153,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.0,
+      "held-out R\u00b2 (layer 19, context arm)": -0.03491922552075266,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.0,
+      "held-out R\u00b2 (layer 19, context arm)": -0.022952628039335288,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.0,
+      "held-out R\u00b2 (layer 19, context arm)": -0.020139112816825344,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.0,
+      "held-out R\u00b2 (layer 19, context arm)": -0.026219479835535076,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.0,
+      "held-out R\u00b2 (layer 19, context arm)": -0.33637662544045677,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.0,
+      "held-out R\u00b2 (layer 19, context arm)": -0.3162471098161608,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.0,
+      "held-out R\u00b2 (layer 19, context arm)": -0.33661642943029535,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.0,
+      "held-out R\u00b2 (layer 19, context arm)": -0.3361104185196788,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.0,
+      "held-out R\u00b2 (layer 19, context arm)": -0.32114061146993556,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.0,
+      "held-out R\u00b2 (layer 19, context arm)": 0.5416017955480217,
+      "label": "0.550",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.0,
+      "held-out R\u00b2 (layer 19, context arm)": 0.5497512183298072,
+      "label": "0.550",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 3.0,
+      "held-out R\u00b2 (layer 19, context arm)": -0.011614449057105736,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 3.0,
+      "held-out R\u00b2 (layer 19, context arm)": -0.023660876920556406,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 3.0,
+      "held-out R\u00b2 (layer 19, context arm)": -0.027752208968588432,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 3.0,
+      "held-out R\u00b2 (layer 19, context arm)": -0.021167161420644787,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 3.0,
+      "held-out R\u00b2 (layer 19, context arm)": -0.025864564868123052,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 3.0,
+      "held-out R\u00b2 (layer 19, context arm)": -0.44398681387893846,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 3.0,
+      "held-out R\u00b2 (layer 19, context arm)": -0.41496807245034306,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 3.0,
+      "held-out R\u00b2 (layer 19, context arm)": -0.4359644269541161,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 3.0,
+      "held-out R\u00b2 (layer 19, context arm)": -0.41264227595932446,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 3.0,
+      "held-out R\u00b2 (layer 19, context arm)": -0.4295052245202624,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 3.0,
+      "held-out R\u00b2 (layer 19, context arm)": 0.5782882733523876,
+      "label": "0.579",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 3.0,
+      "held-out R\u00b2 (layer 19, context arm)": 0.5785706595526485,
+      "label": "0.579",
+      "_kind": "scatter",
+      "_group": 11
+    }
+  ],
+  "n_series": 12,
+  "total_points": 48,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "ylabel": "held-out R\u00b2 (layer 19, context arm)",
+        "legend_labels": [
+          "matched-capacity null draws (10)",
+          "target's own ceiling",
+          "reparameterization-recovered"
+        ],
+        "annotations": [
+          "0.654",
+          "0.620",
+          "0.550",
+          "0.579"
+        ],
+        "xticklabels": [
+          "Instruct\nno-template\u2192chat",
+          "Instruct\nchat\u2192no-template",
+          "Base\nno-template\u2192chat",
+          "Base\nchat\u2192no-template"
+        ],
+        "yticklabels": [
+          "\u22120.6",
+          "\u22120.4",
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8"
+        ]
+      }
+    ],
+    "series": [
+      "matched-capacity null draws (10)",
+      "target's own ceiling",
+      "reparameterization-recovered"
+    ]
+  }
+}

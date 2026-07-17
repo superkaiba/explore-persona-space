@@ -1,0 +1,168 @@
+{
+  "commit": "6375ccb21d",
+  "created": "2026-07-16T07:28:43Z",
+  "figsize": [
+    8.5,
+    4.8
+  ],
+  "points": [
+    {
+      "x": -0.13,
+      "Reparameterization gap (recal, layer 30)": 0.13314787161429031,
+      "error": 0.002838982795265621,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.87,
+      "Reparameterization gap (recal, layer 30)": -0.1459389234310705,
+      "error": 0.0038882408042351796,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 1.87,
+      "Reparameterization gap (recal, layer 30)": -0.13333644604059758,
+      "error": 0.004435783272440652,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.13,
+      "Reparameterization gap (recal, layer 30)": 0.13762960525929435,
+      "error": 0.0021988065158105863,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 1.13,
+      "Reparameterization gap (recal, layer 30)": 0.026730104134492616,
+      "error": 0.012799430734189116,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 2.13,
+      "Reparameterization gap (recal, layer 30)": 0.016074924491466414,
+      "error": 0.004783447491339016,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": -0.13,
+      "Reparameterization gap (recal, layer 30)": 0.13025584950583824,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 0.87,
+      "Reparameterization gap (recal, layer 30)": -0.14957676355100366,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 1.87,
+      "Reparameterization gap (recal, layer 30)": -0.1376294505655761,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": -0.13,
+      "Reparameterization gap (recal, layer 30)": 0.13593381509636948,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 0.87,
+      "Reparameterization gap (recal, layer 30)": -0.1418002819425333,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 1.87,
+      "Reparameterization gap (recal, layer 30)": -0.1287578840206948,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 0.13,
+      "Reparameterization gap (recal, layer 30)": 0.13540099681603732,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 1.13,
+      "Reparameterization gap (recal, layer 30)": 0.013865054148529751,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 2.13,
+      "Reparameterization gap (recal, layer 30)": 0.011458498737375502,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 0.13,
+      "Reparameterization gap (recal, layer 30)": 0.1397986098476585,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 1.13,
+      "Reparameterization gap (recal, layer 30)": 0.039463915616907985,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 2.13,
+      "Reparameterization gap (recal, layer 30)": 0.021025393720053534,
+      "_kind": "line",
+      "_group": 5
+    }
+  ],
+  "n_series": 6,
+  "total_points": 18,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Longer-RLVR dose arm (descriptive; different kept-row set,\ndifferent $\\lambda$ regime on LMSYS)",
+        "ylabel": "Reparameterization gap (recal, layer 30)",
+        "legend_labels": [
+          "RLVR (Tulu-3, headline arm)",
+          "longer RLVR (Tulu-3.1, dose arm)"
+        ],
+        "annotations": [
+          "+0.133",
+          "-0.146",
+          "-0.133",
+          "+0.138",
+          "+0.027",
+          "+0.016"
+        ],
+        "xticklabels": [
+          "GSM8K train\n(RLVR-trained distribution)",
+          "LMSYS chat",
+          "LMSYS naturalistic"
+        ],
+        "yticklabels": [
+          "\u22120.20",
+          "\u22120.15",
+          "\u22120.10",
+          "\u22120.05",
+          "0.00",
+          "0.05",
+          "0.10",
+          "0.15",
+          "0.20"
+        ]
+      }
+    ],
+    "series": [
+      "RLVR (Tulu-3, headline arm)",
+      "longer RLVR (Tulu-3.1, dose arm)"
+    ]
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "metadata": {
+    "git_commit": "7b12b1202460dbd581eaf9553311f55f12a1d729",
+    "timestamp": "2026-07-16T12:29:35Z",
+    "seed": 0,
+    "n": 1200,
+    "script": "scripts/issue1310_aggfit.py",
+    "issue": 931
+  },
+  "model_kind": "base",
+  "aggregation": "one point per (persona, scenario); X=min-turn slot x_spanmean, Y=mean(y)",
+  "headline_layer": 19,
+  "r2_correct": 0.4248701652357131,
+  "r2_swap": 0.13015989201825484,
+  "delta_r2_char": 0.29471027321745824,
+  "delta_ci_lo": 0.2851084166220687,
+  "delta_ci_hi": 0.30578870748858233,
+  "n_rows": 1200,
+  "n_groups": 300,
+  "n_boot": 1000,
+  "paired_group_bootstrap": true,
+  "gcv_dof_cap": 0.9
+}

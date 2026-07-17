@@ -24,6 +24,7 @@ Tests run without network: ``list_team_pods`` / ``terminate_pod`` /
 
 from __future__ import annotations
 
+import json
 import sys
 from pathlib import Path
 
@@ -33,6 +34,7 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO_ROOT / "scripts"))
 
 import pod_audit  # noqa: E402
+import pod_config  # noqa: E402
 from pod_audit import (  # noqa: E402
     TaskContext,
     _issue_number_from_name,
@@ -43,6 +45,12 @@ from pod_audit import (  # noqa: E402
     render_report,
 )
 from runpod_api import PodInfo  # noqa: E402
+
+# The real #1404 ownership predicate, captured at import time — the autouse
+# fixture below defaults `_is_eps_owned` to True (hermetic: pre-#1404 bucket
+# expectations hold without touching the real REGISTRY/sidecar); the
+# ownership-gate tests restore this real function and control its signals.
+_REAL_IS_EPS_OWNED = pod_audit._is_eps_owned
 
 
 def _pod(name: str, status: str = "EXITED", created_at: str | None = None) -> PodInfo:
@@ -62,10 +70,13 @@ OLD = "2020-01-01T00:00:00Z"  # far past any --max-exited-hours threshold
 @pytest.fixture(autouse=True)
 def _no_task_scan(monkeypatch: pytest.MonkeyPatch):
     """Keep classify() off the real tasks/ tree AND off live SSH probes
-    (worktree-resolver-independent, network-free)."""
+    (worktree-resolver-independent, network-free). ``_is_eps_owned`` defaults
+    to True so the pre-#1404 bucket expectations hold hermetically; the
+    ownership-gate tests restore ``_REAL_IS_EPS_OWNED`` explicitly."""
     monkeypatch.setattr(pod_audit, "_scan_task_references", lambda pod_id, name: [])
     monkeypatch.setattr(pod_audit, "_task_context", lambda issue: TaskContext())
     monkeypatch.setattr(pod_audit, "_probe_gpu_util", lambda pod: None)
+    monkeypatch.setattr(pod_audit, "_is_eps_owned", lambda p, pod_id: True)
 
 
 # ── _issue_number_from_name ─────────────────────────────────────────────────
@@ -78,6 +89,13 @@ def _no_task_scan(monkeypatch: pytest.MonkeyPatch):
         ("epm-issue-546", 546),
         ("epm-issue-546-b", 546),  # legacy suffixed dispatcher pods
         ("pod-546-extra", 546),
+        ("pod-779-b", 779),  # canonical multi-pod-per-issue form (#1334)
+        # DELIBERATE #1334 delta from the old split('-', 1) parse: a NUMERIC
+        # slug no longer maps (letter-initial slugs only) — such a pod falls
+        # through to the age-based stale logic instead of a guessy attribution.
+        ("pod-779-60", None),
+        ("pod-779-B", None),  # uppercase slug rejected (we only generate lowercase)
+        ("pod-779-", None),  # empty slug rejected
         ("pod-abc", None),
         ("pod-", None),
         ("my-custom-pod", None),
@@ -437,3 +455,165 @@ def test_flags_do_not_affect_exit_code(monkeypatch: pytest.MonkeyPatch):
     monkeypatch.setattr(pod_audit, "_probe_gpu_util", lambda pod: [0, 0])
     rc = pod_audit.main([])
     assert rc == 0
+
+
+# ── #1404 EPS-ownership gate (unmanaged-exited bucket) ──────────────────────
+#
+# The RunPod account is TEAM-SHARED: a non-EPS pod may carry the managed
+# ``pod-`` prefix. An EXITED pod past the threshold reaches the auto-terminate
+# ``stale`` bucket ONLY when positively confirmed as EPS-owned; otherwise it
+# lands in the report-only ``unmanaged-exited`` bucket and is NEVER consumed
+# by ``--terminate-stale``. Every lookup failure fails toward KEEP.
+
+
+def _raise_missing(issue: int):
+    """get_task stand-in for an issue absent from REGISTRY (raises, never None)."""
+    raise KeyError(f"task {issue} not in REGISTRY")
+
+
+def _no_ownership(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    """Restore the REAL _is_eps_owned with all three signals missing hermetically."""
+    monkeypatch.setattr(pod_audit, "_is_eps_owned", _REAL_IS_EPS_OWNED)
+    monkeypatch.setattr(pod_audit, "get_task", _raise_missing)  # signal 1 miss
+    # signal 2 miss: resolver honors a monkeypatched PODS_EPHEMERAL_JSON
+    # (returned verbatim when it differs from the seed) — point at an absent file.
+    monkeypatch.setattr(pod_config, "PODS_EPHEMERAL_JSON", tmp_path / "absent.json")
+    # signal 3 miss: the autouse fixture already returns [] from _scan_task_references.
+
+
+def test_unmanaged_exited_never_auto_terminated(monkeypatch: pytest.MonkeyPatch, tmp_path):
+    _no_ownership(monkeypatch, tmp_path)
+    (row,) = classify(
+        [_pod("pod-99999", created_at=OLD)],
+        max_exited_hours=24,
+        min_orphan_running_hours=1,
+    )
+    assert row.bucket == "unmanaged-exited"
+
+    # --terminate-stale must never consume the bucket (Durability pin, #1404).
+    monkeypatch.setattr(pod_audit, "list_team_pods", lambda: [_pod("pod-99999", created_at=OLD)])
+    terminated: list[str] = []
+    monkeypatch.setattr(pod_audit, "terminate_pod", terminated.append)
+    rc = pod_audit.main(["--terminate-stale", "--yes"])
+    assert terminated == []
+    assert rc == 0  # not stale, not orphan — no audit-finding exit code
+
+
+@pytest.mark.parametrize("failure_mode", ["registry-miss", "sidecar-corrupt", "no-task-refs"])
+def test_unmanaged_exited_bucket_assigned_when_eps_ownership_fails(
+    monkeypatch: pytest.MonkeyPatch, tmp_path, failure_mode: str
+):
+    """All three ownership-failure paths route to unmanaged-exited, never stale."""
+    monkeypatch.setattr(pod_audit, "_is_eps_owned", _REAL_IS_EPS_OWNED)
+    # Signal 1 always misses via a RAISING get_task (absent-REGISTRY realism).
+    monkeypatch.setattr(pod_audit, "get_task", _raise_missing)
+    if failure_mode == "sidecar-corrupt":
+        corrupt = tmp_path / "pods_ephemeral.json"
+        corrupt.write_text("{this is not json")
+        monkeypatch.setattr(pod_config, "PODS_EPHEMERAL_JSON", corrupt)
+    else:
+        # registry-miss / no-task-refs: sidecar absent entirely.
+        monkeypatch.setattr(pod_config, "PODS_EPHEMERAL_JSON", tmp_path / "absent.json")
+    # Signal 3: autouse fixture already returns [] (the 'no-task-refs' path).
+    (row,) = classify(
+        [_pod("pod-99999", created_at=OLD)],
+        max_exited_hours=24,
+        min_orphan_running_hours=1,
+    )
+    assert row.bucket == "unmanaged-exited"
+
+
+@pytest.mark.parametrize("signal", ["registry", "ephemeral-pod-id", "ephemeral-name", "task-refs"])
+def test_eps_owned_pod_still_reaches_stale_normally(
+    monkeypatch: pytest.MonkeyPatch, tmp_path, signal: str
+):
+    """Each ownership signal alone suffices to keep the normal stale bucketing."""
+    monkeypatch.setattr(pod_audit, "_is_eps_owned", _REAL_IS_EPS_OWNED)
+    sidecar = tmp_path / "absent.json"  # default: signal 2 misses
+    if signal == "registry":
+        monkeypatch.setattr(pod_audit, "get_task", lambda issue: {"frontmatter": {}})
+    else:
+        monkeypatch.setattr(pod_audit, "get_task", _raise_missing)
+        if signal == "ephemeral-pod-id":
+            sidecar = tmp_path / "pods_ephemeral.json"
+            entry = {"name": "some-other-name", "pod_id": "id-pod-99999"}
+            sidecar.write_text(json.dumps({"version": 2, "pods": {"pod-99999": entry}}))
+        elif signal == "ephemeral-name":
+            sidecar = tmp_path / "pods_ephemeral.json"
+            entry = {"name": "pod-99999", "pod_id": "zzz-unrelated"}
+            sidecar.write_text(json.dumps({"version": 2, "pods": {"pod-99999": entry}}))
+        elif signal == "task-refs":
+            monkeypatch.setattr(pod_audit, "_scan_task_references", lambda pod_id, name: [99999])
+    monkeypatch.setattr(pod_config, "PODS_EPHEMERAL_JSON", sidecar)
+    (row,) = classify(
+        [_pod("pod-99999", created_at=OLD)],
+        max_exited_hours=24,
+        min_orphan_running_hours=1,
+    )
+    assert row.bucket == "stale"
+
+
+def test_non_managed_name_keeps_stale_without_ownership(monkeypatch: pytest.MonkeyPatch, tmp_path):
+    """A non-managed name has no collision hazard — pre-#1404 stale behavior holds."""
+    _no_ownership(monkeypatch, tmp_path)
+    (row,) = classify(
+        [_pod("my-custom-pod", created_at=OLD)],
+        max_exited_hours=24,
+        min_orphan_running_hours=1,
+    )
+    assert row.bucket == "stale"
+
+
+def test_render_report_includes_unmanaged_exited(monkeypatch: pytest.MonkeyPatch, tmp_path):
+    _no_ownership(monkeypatch, tmp_path)
+    rows = classify(
+        [_pod("pod-99999", created_at=OLD)],
+        max_exited_hours=24,
+        min_orphan_running_hours=1,
+    )
+    report = render_report(rows)
+    assert "unmanaged-exited" in report  # summary + detail sections
+    assert "NEVER auto-terminated" in report
+    assert "Do NOT terminate without confirming ownership" in report
+    assert "id-pod-99999" in report
+
+
+def test_all_signals_raising_still_unmanaged_exited(monkeypatch: pytest.MonkeyPatch):
+    """Fail-toward-keep composite: every ownership signal RAISING → unmanaged-exited."""
+    monkeypatch.setattr(pod_audit, "_is_eps_owned", _REAL_IS_EPS_OWNED)
+
+    def boom(*args, **kwargs):
+        raise RuntimeError("lookup exploded")
+
+    monkeypatch.setattr(pod_audit, "get_task", boom)  # also fail-softs keep-running
+    monkeypatch.setattr(pod_config, "resolve_live_pods_ephemeral", boom)
+
+    # Direct predicate read with ALL THREE signals raising. (classify()'s own
+    # top-level refs-annotation call to _scan_task_references is a separate,
+    # pre-existing seam — the predicate wraps its OWN signal-3 call.)
+    monkeypatch.setattr(pod_audit, "_scan_task_references", boom)
+    assert _REAL_IS_EPS_OWNED(_pod("pod-99999", created_at=OLD), "id-pod-99999") is False
+
+    # And through classify(): signals 1+2 raising (signal 3 empty via the
+    # autouse default) still routes to unmanaged-exited, never stale.
+    monkeypatch.setattr(pod_audit, "_scan_task_references", lambda pod_id, name: [])
+    (row,) = classify(
+        [_pod("pod-99999", created_at=OLD)],
+        max_exited_hours=24,
+        min_orphan_running_hours=1,
+    )
+    assert row.bucket == "unmanaged-exited"
+
+
+def test_pm_triage_protocol_present():
+    """Durability pin (#1404 plan risk 3): the PM ownership-triage prose exists.
+
+    The anchor phrase asserted below PAIRS with the protocol block inserted in
+    ``.claude/agents/research-pm.md`` (Mode 2 AUDIT, right after the "Orphan
+    pods" bullet). Future editors: if you reword or relocate that block,
+    update the agent prose AND this assertion together — the test exists so an
+    accidental removal of the protocol fails loud, not to freeze the phrasing.
+    """
+    pm_spec = REPO_ROOT / ".claude" / "agents" / "research-pm.md"
+    text = pm_spec.read_text(encoding="utf-8")
+    assert "ownership triage FIRST" in text

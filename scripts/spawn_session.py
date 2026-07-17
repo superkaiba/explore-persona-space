@@ -2238,6 +2238,148 @@ def cmd_register_current(args: argparse.Namespace) -> None:
     print(f"Registered session {sid} as driver of issue #{issue}: {dest} [{semantics}]")
 
 
+# ─── unregister (inverse of register-current; #1327) ─────────────────────────
+#
+# Strict filename shape of the THREE registration kinds — and ONLY those.
+# The registry dir holds many sibling file classes (`dispatch-lease-*.json`,
+# `campaign-watch-*.json`, `pm-session.json`, `*.paused-takeover-*` sentinels,
+# watcher state files); the `\.json$`-anchored full-match regex cannot scrape
+# any of them (a takeover sentinel whose free-form suffix itself ends in
+# `.json` still fails the `<prefix>-<digits>.json` full match).
+_REGISTRATION_NAME_RE = re.compile(r"^(issue|manual-issue|campaign)-(\d+)\.json$")
+_KIND_TO_PREFIX = {"auto": "issue", "manual": "manual-issue", "campaign": "campaign"}
+
+
+def unregister_paths(
+    *,
+    issue: int | None,
+    session_id: str | None,
+    force: bool = False,
+    kind: str | None = None,
+    registry_dir: Path | None = None,
+) -> list[tuple[str, Path, str]]:
+    """Remove issue/manual/campaign registration files, sid-match-guarded.
+
+    Returns ``[(action, path, detail)]`` with ``action`` in ``{"removed",
+    "kept-sid-mismatch", "kept-unreadable", "missing"}``. Without ``force`` a
+    file is removed IFF its recorded ``happy_session_id`` string-equals
+    ``session_id``; an unreadable / garbled / missing-``happy_session_id``
+    entry is KEPT (fail toward keep, mirroring the watcher's unresolvable-
+    input posture). Never touches takeover sentinels or non-registration
+    siblings: the ``--issue`` form targets the ≤3 exact filenames, the scan
+    form filters through :data:`_REGISTRATION_NAME_RE`. Removal is a single
+    atomic ``unlink(missing_ok=True)`` — the watcher re-globs each pass.
+    RAISES ``ValueError`` when ``force`` is set without ``issue`` (a forced
+    whole-registry scan is refused at the helper layer too)."""
+    if force and issue is None:
+        raise ValueError("force=True requires issue (a forced whole-registry scan is refused)")
+    reg = registry_dir if registry_dir is not None else AUTONOMOUS_REGISTRY_DIR
+    prefixes = [_KIND_TO_PREFIX[kind]] if kind else list(_KIND_TO_PREFIX.values())
+    scan_mode = issue is None
+    if not scan_mode:
+        candidates = [reg / f"{p}-{issue}.json" for p in prefixes]
+    else:
+        candidates = sorted(
+            p
+            for p in (reg.glob("*.json") if reg.is_dir() else [])
+            if (m := _REGISTRATION_NAME_RE.match(p.name)) and m.group(1) in prefixes
+        )
+    rows: list[tuple[str, Path, str]] = []
+    for path in candidates:
+        recorded: str | None = None
+        readable = False
+        try:
+            entry = json.loads(path.read_text())
+        except FileNotFoundError:
+            if not scan_mode:
+                rows.append(("missing", path, ""))
+            continue
+        except (OSError, ValueError):
+            pass
+        else:
+            sid_field = entry.get("happy_session_id") if isinstance(entry, dict) else None
+            if isinstance(sid_field, str) and sid_field:
+                recorded = sid_field
+                readable = True
+        if force:
+            path.unlink(missing_ok=True)
+            detail = (
+                f"recorded sid {recorded} (forced)"
+                if readable
+                else "recorded sid unreadable (forced)"
+            )
+            rows.append(("removed", path, detail))
+        elif not readable:
+            # Garbled JSON / OSError / missing or non-string happy_session_id:
+            # fail toward keep (only --force --issue may remove it).
+            if not scan_mode:
+                rows.append(
+                    ("kept-unreadable", path, "garbled/unreadable entry — refusing without --force")
+                )
+        elif recorded == session_id:
+            path.unlink(missing_ok=True)  # atomic; watcher re-globs each pass
+            rows.append(("removed", path, f"recorded sid {recorded}"))
+        elif not scan_mode:
+            rows.append(("kept-sid-mismatch", path, f"recorded sid {recorded!r} != {session_id!r}"))
+    return rows
+
+
+def cmd_unregister(args: argparse.Namespace) -> None:
+    """Inverse of ``register-current``: remove this session's registration file(s).
+
+    For collision-yield and deliberate-stop paths — replaces the hand-rolled
+    `rm ~/.eps-autonomous/issue-<N>.json` (#952). Sid-matched by default:
+    without ``--session-id`` the caller's own Happy id is inferred from the
+    process ancestry (the ``register-current`` walk), so a yielding duplicate
+    can never delete the true owner's entry — a mismatch prints
+    ``KEPT-SID-MISMATCH`` and exits 0 (that line is the guard working, not a
+    bug). Third-party cleanup of a DEAD session's file: pass
+    ``--session-id <dead-sid>`` (no daemon-liveness requirement — the sid
+    being removed is typically dead/yielding, the validation is against the
+    FILE), or ``--force --issue N`` for unconditional operator removal.
+    Takeover sentinels are never touched. No task marker is posted — the
+    yield paths post their own breadcrumb; ``--reason`` is echoed per line
+    for the transcript."""
+    if args.force and args.session_id:
+        sys.exit(
+            "--force and --session-id are mutually exclusive (--force means "
+            "'skip the sid match'); pass --issue with exactly one of them."
+        )
+    if args.force and args.issue is None:
+        sys.exit("--force requires --issue (a forced whole-registry scan is refused).")
+    sid = args.session_id
+    if sid is None and not args.force:
+        # Same ancestry walk as cmd_register_current; NO liveness requirement
+        # on the sid being removed, but inference itself needs the daemon's
+        # live-children list (we're finding OUR OWN sid).
+        children = _live_children()
+        pid_to_sid = {
+            c["pid"]: c["happySessionId"]
+            for c in children
+            if isinstance(c.get("pid"), int) and isinstance(c.get("happySessionId"), str)
+        }
+        matches = [pid_to_sid[p] for p in _ancestor_pids() if p in pid_to_sid]
+        if not matches:
+            sys.exit(
+                "could not infer this session's Happy id from the process "
+                "ancestry; pass --session-id explicitly (or --force with "
+                "--issue for an unconditional operator removal)."
+            )
+        sid = matches[0]
+    if args.issue is None and sid is None:
+        sys.exit("nothing to select: pass --issue and/or --session-id.")
+    rows = unregister_paths(issue=args.issue, session_id=sid, force=args.force, kind=args.kind)
+    for action, path, detail in rows:
+        line = f"{action.upper():<18} {path}"
+        if detail:
+            line += f" ({detail})"
+        if args.reason:
+            line += f" [reason: {args.reason}]"
+        print(line)
+    if not any(action == "removed" for action, _, _ in rows):
+        print("nothing removed")
+
+
 def cmd_register_pm(args: argparse.Namespace) -> None:
     """Register an EXISTING live session as the PM session.
 
@@ -2783,6 +2925,62 @@ def main(argv: list[str] | None = None) -> None:
         ),
     )
     p_reg.set_defaults(fn=cmd_register_current)
+
+    p_unreg = sub.add_parser(
+        "unregister",
+        help=(
+            "remove this session's issue/manual/campaign registration file(s) — the "
+            "inverse of register-current, for collision-yield and deliberate-stop "
+            "paths (never hand-rm ~/.eps-autonomous files). Sid-matched by default: "
+            "only files recording the calling session's Happy id (ancestry-inferred "
+            "or --session-id) are removed, so a yielding duplicate can never delete "
+            "the true owner's entry (a KEPT-SID-MISMATCH line is the guard working, "
+            "not a bug). Third-party cleanup of a DEAD session's file: "
+            "`unregister --issue N --session-id <dead-sid>` (removes only entries "
+            "recording that sid; no liveness check), or `unregister --force "
+            "--issue N` for unconditional operator cleanup. Takeover sentinels "
+            "(*.paused-takeover-*) are never touched."
+        ),
+    )
+    p_unreg.add_argument(
+        "--issue",
+        type=int,
+        default=None,
+        help=(
+            "issue number whose registration file(s) to remove (exact filenames "
+            "issue-N.json / manual-issue-N.json / campaign-N.json)"
+        ),
+    )
+    p_unreg.add_argument(
+        "--session-id",
+        default=None,
+        help=(
+            "only remove entries recording this Happy session id (works for a DEAD "
+            "sid — third-party cleanup validates against the FILE, not the daemon); "
+            "omit to infer this session's own id from the process ancestry. With no "
+            "--issue, scans all registrations for this sid."
+        ),
+    )
+    p_unreg.add_argument(
+        "--kind",
+        choices=("auto", "manual", "campaign"),
+        default=None,
+        help="narrow to one registration kind (default: all three)",
+    )
+    p_unreg.add_argument(
+        "--force",
+        action="store_true",
+        help="skip the sid match (requires --issue; mutually exclusive with --session-id)",
+    )
+    p_unreg.add_argument(
+        "--reason",
+        default=None,
+        help=(
+            "free-form audit string echoed in each output line (transcript "
+            "breadcrumb; no task marker is posted)"
+        ),
+    )
+    p_unreg.set_defaults(fn=cmd_unregister)
 
     p_reg_pm = sub.add_parser(
         "register-pm",

@@ -1,0 +1,6 @@
+{
+ "figure": "onpolicy_turn_depth_folds.png",
+ "git_commit": "1789213600aa3c67cb191a7ca8427db475ec8caf",
+ "source_results_json": "eval_results/issue_825/onpolicy_turn_depth/results.json",
+ "caption": "Underlying per-fold held-out R2 points behind F1 (layer 19, context arm), own (left offset) vs logged (right offset) at each turn cell with n >= 30."
+}

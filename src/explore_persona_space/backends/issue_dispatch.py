@@ -70,6 +70,7 @@ import functools
 import json
 import logging
 import os
+import re
 import subprocess
 from collections.abc import Callable
 from dataclasses import dataclass
@@ -291,6 +292,212 @@ def normalize_backend_value(raw: Any) -> BackendKind:
         f"unknown backend frontmatter value: {raw!r}. Expected one of: "
         "runpod, cluster, nibi, fir, gcp, mila, auto, or empty (auto)."
     )
+
+
+# ---------------------------------------------------------------------------
+# Workload-cmd lane-env lint (#1329, incident #825)
+# ---------------------------------------------------------------------------
+
+
+#: SLURM lane names (per-cluster backend values that all share one renderer /
+#: one export contract). The legacy ``cluster`` alias normalizes to ``nibi``
+#: (see :data:`_LEGACY_TO_ROUTER_BACKEND`), i.e. into this set.
+_SLURM_LANES: tuple[str, ...] = ("nibi", "fir", "mila")
+
+#: Env vars each lane EXPORTS into the shell that executes a user-supplied
+#: ``--workload-cmd`` string, verified against the renderers (line anchors as
+#: of #1329; forward-parity-pinned by
+#: ``tests/test_workload_cmd_env_lint.py``):
+#:
+#: * ``gcp`` — ``gcp.py render_startup_script`` (fn at :1101): WORKLOAD_ROOT
+#:   :2386, REPO_ROOT :1336 (workload-cmd branch, #641), EPS_ISSUE :2384,
+#:   EPS_ATTEMPT_ID :2385, EPS_SENTINEL_PATH :2387,
+#:   EPS_DELIVERABLES_OK_PATH :2393, EPS_HF_DATA_REPO :2403,
+#:   EPS_LOG_PATH :2440, EPS_DONE_GRACE :2408, EPS_DONE_KEEPALIVE_PATH :2409,
+#:   EPS_SCRATCH_DIR :1367, WANDB_PROJECT :1356, PYTHONPATH :1348,
+#:   HOME :2381, PATH :2507.
+#: * ``runpod`` — ``runpod.py`` launcher (:489-512): REPO_ROOT :508,
+#:   WANDB_PROJECT :509, PATH :505; HOME is ambient (inherited from the
+#:   SSH/root shell, not a literal export line).
+#: * ``slurm`` — ``slurm.py`` custom stage + prelude: EPS_ISSUE :1527,
+#:   EPS_ATTEMPT_ID :1528, WANDB_PROJECT :1539, PYTHONPATH :1503; HOME is
+#:   ambient. NOTE (#1329 fact-check): SCRATCH_JOB_DIR is a PLAIN ASSIGNMENT
+#:   (slurm.py:1266 — no ``export`` anywhere in the file) and the custom cmd
+#:   runs in a CHILD bash (:1577) that inherits only exported vars, so it is
+#:   deliberately EXCLUDED from the slurm set.
+#:
+#: Deliberately NO inverse parity in this map itself: renderers export noise
+#: vars (``HF_XET_*``, ``HF_HOME``, ``GIT_TERMINAL_PROMPT``, ...) that must
+#: not join the lint universe — a bare reference to those is a known,
+#: accepted false negative in v1 (plan #1329 §9 fact-check record).
+LANE_WORKLOAD_ENV_EXPORTS: dict[str, frozenset[str]] = {
+    "gcp": frozenset(
+        {
+            "WORKLOAD_ROOT",
+            "REPO_ROOT",
+            "EPS_ISSUE",
+            "EPS_ATTEMPT_ID",
+            "EPS_SENTINEL_PATH",
+            "EPS_DELIVERABLES_OK_PATH",
+            "EPS_HF_DATA_REPO",
+            "EPS_LOG_PATH",
+            "EPS_DONE_GRACE",
+            "EPS_DONE_KEEPALIVE_PATH",
+            "EPS_SCRATCH_DIR",
+            "WANDB_PROJECT",
+            "PYTHONPATH",
+            "HOME",
+            "PATH",
+        }
+    ),
+    "runpod": frozenset(
+        {
+            "REPO_ROOT",
+            "WANDB_PROJECT",
+            "HOME",
+            "PATH",
+        }
+    ),
+    "slurm": frozenset(
+        {
+            "EPS_ISSUE",
+            "EPS_ATTEMPT_ID",
+            "WANDB_PROJECT",
+            "PYTHONPATH",
+            "HOME",
+            "PATH",
+        }
+    ),
+}
+
+#: The candidate universe the lint scans for: union of the per-lane sets. A
+#: ``$FOO`` outside this universe is NEVER flagged (false-positive
+#: discipline) — the lint only knows the lane semantics of these vars.
+_LANE_ENV_UNIVERSE: frozenset[str] = frozenset().union(*LANE_WORKLOAD_ENV_EXPORTS.values())
+
+#: Strip single-quoted segments before scanning: POSIX single quotes contain
+#: no escapes, so ``'...'`` is a literal and ``$V`` inside it never expands.
+#: The ``'\''`` idiom (an apostrophe inside a double-quoted string with no
+#: closing partner, etc.) degrades toward *scanning more text* in the common
+#: case — i.e. errs conservative (flags) — but NOT universally: an unpaired
+#: apostrophe can pair with a LATER real single-quote opener and strip a
+#: genuinely-bare ``$V`` between them (a false negative). Pinned by the
+#: quote-strip boundary test in ``tests/test_workload_cmd_env_lint.py``.
+_SINGLE_QUOTED_SEGMENT_RE = re.compile(r"'[^']*'")
+
+
+def _bare_reference_re(var: str) -> re.Pattern[str]:
+    """Regex matching a BARE shell reference to ``var`` (aborts under set -u).
+
+    Matches ``$VAR`` and ``${VAR}`` — the two forms ``set -u`` aborts on when
+    the var is unbound. Structurally does NOT match:
+
+    * defaulted/alternate expansions ``${VAR:-w}`` / ``${VAR-w}`` /
+      ``${VAR:+w}`` / ``${VAR+w}`` / ``${VAR:=w}`` (any operator breaks the
+      exact ``${VAR}`` brace match; all are set-u-safe by POSIX),
+    * assignments ``VAR=...`` (no ``$``),
+    * escaped ``\\$VAR`` (negative lookbehind),
+    * longer names ``$VARX`` (word-boundary lookahead).
+
+    Deliberate v1 FALSE NEGATIVES (these DO abort under ``set -u`` on an
+    unbound var but are not matched): ``${VAR%pat}``, ``${VAR#pat}``,
+    ``${VAR:0:3}`` and other non-defaulting parameter expansions — rare in
+    workload-cmd strings; widen if one ever bites (plan #1329 §3.1).
+    """
+    return re.compile(rf"(?<!\\)\$(?:{var}(?![A-Za-z0-9_])|\{{{var}\}})")
+
+
+@dataclass(frozen=True)
+class WorkloadCmdEnvLint:
+    """Result of :func:`lint_workload_cmd_lane_env`.
+
+    ``flagged`` maps each bare-referenced var to the sorted tuple of
+    REACHABLE lanes whose export set lacks it. ``certain`` is the subset of
+    flagged vars the PINNED lane itself lacks while provably executing the
+    command under ``set -u`` (a guaranteed abort — the exit-2 refusal arm).
+    ``reachable_lanes`` records the lanes the launch could land on.
+    """
+
+    flagged: dict[str, tuple[str, ...]]
+    certain: tuple[str, ...]
+    reachable_lanes: tuple[str, ...]
+
+
+def _reachable_lanes_for_backend(backend: str) -> tuple[str, ...]:
+    """Map a normalized backend value to the lane-export sets it can reach.
+
+    ``runpod`` → itself only; ``gcp`` → gcp + runpod (the Part B workload
+    failover re-runs the SAME cmd on RunPod —
+    ``.claude/rules/compute-backend-failover.md``); a SLURM lane → slurm
+    only; ``auto`` (absent/empty frontmatter) → all three (the
+    ``DEFAULT_AUTO_LANE_ORDER`` chain + the RunPod terminal rung).
+    """
+    if backend == "runpod":
+        return ("runpod",)
+    if backend == "gcp":
+        return ("gcp", "runpod")
+    if backend in _SLURM_LANES:
+        return ("slurm",)
+    return ("gcp", "runpod", "slurm")
+
+
+def lint_workload_cmd_lane_env(
+    workload_cmd: str,
+    *,
+    backend_value: str | None,
+    execute_workload: bool = False,
+) -> WorkloadCmdEnvLint:
+    """Lint a ``--workload-cmd`` string for bare lane-specific env-var refs.
+
+    A var exported by only SOME lanes (canonical offender: ``$WORKLOAD_ROOT``,
+    GCP-only) referenced BARE in the command aborts under ``set -u`` on any
+    reachable lane that does not export it — the #825 Track-S incident: a
+    GCP→RunPod failover re-ran ``REPO_ROOT="$WORKLOAD_ROOT" bash ...`` and
+    the RunPod launcher (``set -uo pipefail``, runpod.py:504) died before
+    the driver started.
+
+    ``certain`` scoping (the provable-abort refusal arm): explicit
+    ``runpod`` WITH ``execute_workload=True`` (the launcher executes the cmd
+    under ``set -u``; a provision-only runpod launch downgrades to warn —
+    the experimenter recomposes the pod-side launch), or an explicit SLURM
+    lane (the literal ``bash -eu -o pipefail -c`` append, slurm.py:1577).
+    Explicit ``gcp`` and ``auto`` are never ``certain`` (the GCP startup
+    script's workload line is not verified ``set -u``; auto's landing lane
+    is unknown at dispatch time). An unrecognized ``backend_value`` is
+    treated as ``auto`` (flag, never certain) — the CLI's own
+    ``normalize_backend_value`` rejects typos before this lint runs.
+
+    Returns an empty result for an empty/whitespace command (``--hydra``
+    launches are a no-op here).
+    """
+    if not (workload_cmd or "").strip():
+        return WorkloadCmdEnvLint(flagged={}, certain=(), reachable_lanes=())
+    try:
+        backend = normalize_backend_value(backend_value)
+    except ValueError:
+        backend = "auto"
+    reachable = _reachable_lanes_for_backend(backend)
+    stripped = _SINGLE_QUOTED_SEGMENT_RE.sub(" ", workload_cmd)
+    flagged: dict[str, tuple[str, ...]] = {}
+    for var in sorted(_LANE_ENV_UNIVERSE):
+        missing = tuple(
+            lane for lane in sorted(reachable) if var not in LANE_WORKLOAD_ENV_EXPORTS[lane]
+        )
+        if not missing:
+            continue
+        if _bare_reference_re(var).search(stripped):
+            flagged[var] = missing
+    certain_lane: str | None = None
+    if backend == "runpod" and execute_workload:
+        certain_lane = "runpod"
+    elif backend in _SLURM_LANES:
+        certain_lane = "slurm"
+    certain: tuple[str, ...] = ()
+    if certain_lane is not None:
+        certain = tuple(
+            var for var in sorted(flagged) if var not in LANE_WORKLOAD_ENV_EXPORTS[certain_lane]
+        )
+    return WorkloadCmdEnvLint(flagged=flagged, certain=certain, reachable_lanes=reachable)
 
 
 def build_run_spec(
@@ -914,13 +1121,16 @@ _mila_socket_alive_stub = _default_mila_socket_alive
 
 
 __all__ = [
+    "LANE_WORKLOAD_ENV_EXPORTS",
     "DispatchOutcome",
     "TerminalTranslation",
+    "WorkloadCmdEnvLint",
     "build_run_spec",
     "classify_terminal_exception",
     "default_handle_sidecar_path",
     "deserialize_handle",
     "dispatch_for_issue",
+    "lint_workload_cmd_lane_env",
     "normalize_backend_value",
     "read_handle_sidecar",
     "resolve_handle_sidecar_path",

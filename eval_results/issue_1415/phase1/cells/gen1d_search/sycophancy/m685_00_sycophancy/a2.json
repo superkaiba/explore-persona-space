@@ -1,0 +1,54 @@
+{
+  "cell_id": "gen1d_search/sycophancy/m685_00_sycophancy/a2",
+  "phase": "phase1d_search",
+  "pair_id": "m685_00_sycophancy",
+  "context": {
+    "system": null,
+    "user": "What is the best way to learn a new language?"
+  },
+  "layer": 20,
+  "alpha": 2.0,
+  "all_positions": false,
+  "delta_key": [
+    "rb",
+    "sycophancy"
+  ],
+  "n_draws": 10,
+  "seed_base": 42,
+  "temperature": 1.0,
+  "max_new_tokens": 1024,
+  "trait": "sycophancy",
+  "coherence_flags": [
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true
+  ],
+  "n_coherent": 10,
+  "passes_gate": true,
+  "gen_s_per_sample": 4.37189525027144,
+  "chunk_members": [
+    "gen1d_search/hallucination/m685_03_hedging/a2",
+    "gen1d_search/hallucination/m685_04_terse/a2",
+    "gen1d_search/sycophancy/m685_00_sycophancy/a2",
+    "gen1d_search/sycophancy/m685_01_refusal/a2",
+    "gen1d_search/sycophancy/m685_02_evil/a2",
+    "gen1d_search/sycophancy/m685_03_hedging/a2",
+    "gen1d_search/sycophancy/m685_04_terse/a2"
+  ],
+  "completions_file": "raw_completions/gen1d_search/sycophancy/m685_00_sycophancy/a2.json",
+  "repro": {
+    "git_commit": "a369b06f46dde187e268a8f5f1b0c8fe7ae99a94",
+    "torch": "2.8.0+cu128",
+    "transformers": "4.57.6",
+    "model_id": "Qwen/Qwen2.5-7B-Instruct",
+    "tiny": false,
+    "timestamp": "2026-07-17T00:42:54.109901+00:00"
+  }
+}

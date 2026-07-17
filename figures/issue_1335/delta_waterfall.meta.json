@@ -1,0 +1,752 @@
+{
+  "commit": "bf154e5b16",
+  "created": "2026-07-17T07:44:15Z",
+  "figsize": [
+    11.5,
+    4.8
+  ],
+  "points": [
+    {
+      "category": "role label\n(one-line vs renamed,\nsame text)",
+      "R\u00b2 drop, strong-side \u2212 weak-side": -0.00851827760209467,
+      "error": 0.021506822432157062,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "persona header\n(renamed vs described)",
+      "R\u00b2 drop, strong-side \u2212 weak-side": -0.05523108471275889,
+      "error": 0.024312826113526205,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "fiction framing\n(header vs scene-framed)",
+      "R\u00b2 drop, strong-side \u2212 weak-side": 0.1310784678848242,
+      "error": 0.01922391058491331,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "fiction content + depth\n(scene-framed vs story)",
+      "R\u00b2 drop, strong-side \u2212 weak-side": -0.11508350414250218,
+      "error": 0.015606199125123052,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "foil speakers\n(no-foil vs story)",
+      "R\u00b2 drop, strong-side \u2212 weak-side": -0.04378964205598068,
+      "error": 0.011176777651808946,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "label restore\n(story vs 'Assistant')",
+      "R\u00b2 drop, strong-side \u2212 weak-side": 0.0012094365944579355,
+      "error": 0.005300110367385234,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "answer length\n(full vs one-line)",
+      "R\u00b2 drop, strong-side \u2212 weak-side": 0.002347039650232141,
+      "error": 0.021744529928708185,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": -0.1,
+      "R\u00b2 drop, strong-side \u2212 weak-side": 0.002475278164225214,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": -0.05,
+      "R\u00b2 drop, strong-side \u2212 weak-side": -0.012024246946895745,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.0,
+      "R\u00b2 drop, strong-side \u2212 weak-side": -0.0074193966375434295,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.05000000000000002,
+      "R\u00b2 drop, strong-side \u2212 weak-side": -0.014741886486125622,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.1,
+      "R\u00b2 drop, strong-side \u2212 weak-side": -0.010881136104133882,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.9,
+      "R\u00b2 drop, strong-side \u2212 weak-side": -0.06737028107163734,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.95,
+      "R\u00b2 drop, strong-side \u2212 weak-side": -0.051281531462207264,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.0,
+      "R\u00b2 drop, strong-side \u2212 weak-side": -0.045436353299896926,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.05,
+      "R\u00b2 drop, strong-side \u2212 weak-side": -0.05493411691032124,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.1,
+      "R\u00b2 drop, strong-side \u2212 weak-side": -0.05713314081973164,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.9,
+      "R\u00b2 drop, strong-side \u2212 weak-side": 0.13241177434327067,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.95,
+      "R\u00b2 drop, strong-side \u2212 weak-side": 0.13004216785665768,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.0,
+      "R\u00b2 drop, strong-side \u2212 weak-side": 0.12948780225559453,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.05,
+      "R\u00b2 drop, strong-side \u2212 weak-side": 0.1334290931227925,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.1,
+      "R\u00b2 drop, strong-side \u2212 weak-side": 0.1300215018458054,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.9,
+      "R\u00b2 drop, strong-side \u2212 weak-side": -0.1155291511622144,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 2.95,
+      "R\u00b2 drop, strong-side \u2212 weak-side": -0.11176777303002494,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 3.0,
+      "R\u00b2 drop, strong-side \u2212 weak-side": -0.11497391137972307,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 3.05,
+      "R\u00b2 drop, strong-side \u2212 weak-side": -0.11596567683853914,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 3.1,
+      "R\u00b2 drop, strong-side \u2212 weak-side": -0.11718100830200917,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 3.9,
+      "R\u00b2 drop, strong-side \u2212 weak-side": -0.04518444913795511,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 3.95,
+      "R\u00b2 drop, strong-side \u2212 weak-side": -0.043888277627538885,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 4.0,
+      "R\u00b2 drop, strong-side \u2212 weak-side": -0.04388137203123105,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 4.05,
+      "R\u00b2 drop, strong-side \u2212 weak-side": -0.04383972670137337,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 4.1,
+      "R\u00b2 drop, strong-side \u2212 weak-side": -0.04215438478180489,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 4.9,
+      "R\u00b2 drop, strong-side \u2212 weak-side": 0.0032372630780276856,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 4.95,
+      "R\u00b2 drop, strong-side \u2212 weak-side": 0.0016024541414208504,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 5.0,
+      "R\u00b2 drop, strong-side \u2212 weak-side": -0.0009251153289929204,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 5.05,
+      "R\u00b2 drop, strong-side \u2212 weak-side": 0.0002230969320243248,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 5.1,
+      "R\u00b2 drop, strong-side \u2212 weak-side": 0.0019094841498097925,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 5.9,
+      "R\u00b2 drop, strong-side \u2212 weak-side": 0.0020233445756729918,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 5.95,
+      "R\u00b2 drop, strong-side \u2212 weak-side": 0.0024284716802160933,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 6.0,
+      "R\u00b2 drop, strong-side \u2212 weak-side": -0.008687168728273242,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 6.05,
+      "R\u00b2 drop, strong-side \u2212 weak-side": 0.0044626758376776765,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 6.1,
+      "R\u00b2 drop, strong-side \u2212 weak-side": 0.011507874885867131,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 0.0,
+      "R\u00b2 drop, strong-side \u2212 weak-side": -0.029181881157240352,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 1.0,
+      "R\u00b2 drop, strong-side \u2212 weak-side": -0.08016095310208289,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 2.0,
+      "R\u00b2 drop, strong-side \u2212 weak-side": 0.11166877000138223,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 3.0,
+      "R\u00b2 drop, strong-side \u2212 weak-side": -0.1308369646321667,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 4.0,
+      "R\u00b2 drop, strong-side \u2212 weak-side": -0.052423287895960166,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 5.0,
+      "R\u00b2 drop, strong-side \u2212 weak-side": -0.0041779545415050025,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 6.0,
+      "R\u00b2 drop, strong-side \u2212 weak-side": -0.019848481155844293,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 0.0,
+      "R\u00b2 drop, strong-side \u2212 weak-side": 0.013831763707073768,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 1.0,
+      "R\u00b2 drop, strong-side \u2212 weak-side": -0.03153530087503048,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 2.0,
+      "R\u00b2 drop, strong-side \u2212 weak-side": 0.15011659117120885,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 3.0,
+      "R\u00b2 drop, strong-side \u2212 weak-side": -0.0996245663819206,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 4.0,
+      "R\u00b2 drop, strong-side \u2212 weak-side": -0.030069732592342274,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 5.0,
+      "R\u00b2 drop, strong-side \u2212 weak-side": 0.006422266193265465,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 6.0,
+      "R\u00b2 drop, strong-side \u2212 weak-side": 0.02364057870157208,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "category": "role label\n(one-line vs renamed,\nsame text)",
+      "R\u00b2 drop, strong-side \u2212 weak-side": 0.006457827086810197,
+      "error": 0.01769156516299416,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "category": "persona header\n(renamed vs described)",
+      "R\u00b2 drop, strong-side \u2212 weak-side": -0.05513764148247058,
+      "error": 0.017777810962762968,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "category": "fiction framing\n(header vs scene-framed)",
+      "R\u00b2 drop, strong-side \u2212 weak-side": 0.16031384513477054,
+      "error": 0.019369238012618778,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "category": "fiction content + depth\n(scene-framed vs story)",
+      "R\u00b2 drop, strong-side \u2212 weak-side": 0.04482560890108184,
+      "error": 0.013510896341115769,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "category": "foil speakers\n(no-foil vs story)",
+      "R\u00b2 drop, strong-side \u2212 weak-side": -0.009265418858315444,
+      "error": 0.007148780649704516,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "category": "label restore\n(story vs 'Assistant')",
+      "R\u00b2 drop, strong-side \u2212 weak-side": 0.003254516766683202,
+      "error": 0.0007230762383610438,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "category": "answer length\n(full vs one-line)",
+      "R\u00b2 drop, strong-side \u2212 weak-side": -0.02243931252505932,
+      "error": 0.02533083848140458,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "x": -0.1,
+      "R\u00b2 drop, strong-side \u2212 weak-side": -0.003308158141350548,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": -0.05,
+      "R\u00b2 drop, strong-side \u2212 weak-side": 0.00888463286671104,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 0.0,
+      "R\u00b2 drop, strong-side \u2212 weak-side": 0.00801519099367276,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 0.05000000000000002,
+      "R\u00b2 drop, strong-side \u2212 weak-side": 0.011697079897825646,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 0.1,
+      "R\u00b2 drop, strong-side \u2212 weak-side": 0.0070003898171921985,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 0.9,
+      "R\u00b2 drop, strong-side \u2212 weak-side": -0.05333853979518555,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 0.95,
+      "R\u00b2 drop, strong-side \u2212 weak-side": -0.055025707065410434,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 1.0,
+      "R\u00b2 drop, strong-side \u2212 weak-side": -0.058183480363436235,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 1.05,
+      "R\u00b2 drop, strong-side \u2212 weak-side": -0.04994516602114363,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 1.1,
+      "R\u00b2 drop, strong-side \u2212 weak-side": -0.05919531416717727,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 1.9,
+      "R\u00b2 drop, strong-side \u2212 weak-side": 0.15945662291691431,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.95,
+      "R\u00b2 drop, strong-side \u2212 weak-side": 0.1586766083056248,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 2.0,
+      "R\u00b2 drop, strong-side \u2212 weak-side": 0.16660366725761955,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 2.05,
+      "R\u00b2 drop, strong-side \u2212 weak-side": 0.165016844629284,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 2.1,
+      "R\u00b2 drop, strong-side \u2212 weak-side": 0.1518154825644099,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 2.9,
+      "R\u00b2 drop, strong-side \u2212 weak-side": 0.046046432807951954,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 2.95,
+      "R\u00b2 drop, strong-side \u2212 weak-side": 0.046929219180016746,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 3.0,
+      "R\u00b2 drop, strong-side \u2212 weak-side": 0.043464566460583276,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 3.05,
+      "R\u00b2 drop, strong-side \u2212 weak-side": 0.04215005133888239,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 3.1,
+      "R\u00b2 drop, strong-side \u2212 weak-side": 0.045537774717975155,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 3.9,
+      "R\u00b2 drop, strong-side \u2212 weak-side": -0.008935413129384284,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 3.95,
+      "R\u00b2 drop, strong-side \u2212 weak-side": -0.009258208764088394,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 4.0,
+      "R\u00b2 drop, strong-side \u2212 weak-side": -0.009655020575754125,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 4.05,
+      "R\u00b2 drop, strong-side \u2212 weak-side": -0.009053318839768287,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 4.1,
+      "R\u00b2 drop, strong-side \u2212 weak-side": -0.009425132982581963,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 4.9,
+      "R\u00b2 drop, strong-side \u2212 weak-side": 0.003254193930393612,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 4.95,
+      "R\u00b2 drop, strong-side \u2212 weak-side": 0.003282065404347556,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 5.0,
+      "R\u00b2 drop, strong-side \u2212 weak-side": 0.003196990454736315,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 5.05,
+      "R\u00b2 drop, strong-side \u2212 weak-side": 0.0032861719778585208,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 5.1,
+      "R\u00b2 drop, strong-side \u2212 weak-side": 0.003253162066080062,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 5.9,
+      "R\u00b2 drop, strong-side \u2212 weak-side": -0.007572077847275649,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 5.95,
+      "R\u00b2 drop, strong-side \u2212 weak-side": -0.02492346338646434,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 6.0,
+      "R\u00b2 drop, strong-side \u2212 weak-side": -0.03747949236539094,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 6.05,
+      "R\u00b2 drop, strong-side \u2212 weak-side": -0.02056455119060341,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 6.1,
+      "R\u00b2 drop, strong-side \u2212 weak-side": -0.021656977835562308,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 0.0,
+      "R\u00b2 drop, strong-side \u2212 weak-side": -0.01209342368981392,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 1.0,
+      "R\u00b2 drop, strong-side \u2212 weak-side": -0.07294233045745067,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 2.0,
+      "R\u00b2 drop, strong-side \u2212 weak-side": 0.14070781102604013,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 3.0,
+      "R\u00b2 drop, strong-side \u2212 weak-side": 0.030110376951394895,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 4.0,
+      "R\u00b2 drop, strong-side \u2212 weak-side": -0.01584906825453406,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 5.0,
+      "R\u00b2 drop, strong-side \u2212 weak-side": 0.002600378898872492,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 6.0,
+      "R\u00b2 drop, strong-side \u2212 weak-side": -0.04843389427885192,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 0.0,
+      "R\u00b2 drop, strong-side \u2212 weak-side": 0.023289706636174395,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "x": 1.0,
+      "R\u00b2 drop, strong-side \u2212 weak-side": -0.03738670853192474,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "x": 2.0,
+      "R\u00b2 drop, strong-side \u2212 weak-side": 0.1794462870512777,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "x": 3.0,
+      "R\u00b2 drop, strong-side \u2212 weak-side": 0.05713216963362643,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "x": 4.0,
+      "R\u00b2 drop, strong-side \u2212 weak-side": -0.0015515069551250288,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "x": 5.0,
+      "R\u00b2 drop, strong-side \u2212 weak-side": 0.00404653137559458,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "x": 6.0,
+      "R\u00b2 drop, strong-side \u2212 weak-side": 0.0022277826839572426,
+      "_kind": "line",
+      "_group": 19
+    }
+  ],
+  "n_series": 20,
+  "total_points": 112,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "base model",
+        "ylabel": "R\u00b2 drop, strong-side \u2212 weak-side",
+        "xticklabels": [
+          "role label\n(one-line vs renamed,\nsame text)",
+          "persona header\n(renamed vs described)",
+          "fiction framing\n(header vs scene-framed)",
+          "fiction content + depth\n(scene-framed vs story)",
+          "foil speakers\n(no-foil vs story)",
+          "label restore\n(story vs 'Assistant')",
+          "answer length\n(full vs one-line)"
+        ],
+        "yticklabels": [
+          "\u22120.20",
+          "\u22120.15",
+          "\u22120.10",
+          "\u22120.05",
+          "0.00",
+          "0.05",
+          "0.10",
+          "0.15",
+          "0.20"
+        ]
+      },
+      {
+        "title_left": "instruct model",
+        "ylabel": "R\u00b2 drop, strong-side \u2212 weak-side",
+        "xticklabels": [
+          "role label\n(one-line vs renamed,\nsame text)",
+          "persona header\n(renamed vs described)",
+          "fiction framing\n(header vs scene-framed)",
+          "fiction content + depth\n(scene-framed vs story)",
+          "foil speakers\n(no-foil vs story)",
+          "label restore\n(story vs 'Assistant')",
+          "answer length\n(full vs one-line)"
+        ],
+        "yticklabels": [
+          "\u22120.20",
+          "\u22120.15",
+          "\u22120.10",
+          "\u22120.05",
+          "0.00",
+          "0.05",
+          "0.10",
+          "0.15",
+          "0.20"
+        ]
+      }
+    ]
+  }
+}

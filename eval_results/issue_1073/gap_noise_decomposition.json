@@ -1,0 +1,494 @@
+{
+  "readout_layers": [
+    14,
+    17,
+    19,
+    26,
+    27
+  ],
+  "per_layer": {
+    "L14": {
+      "noise_decomposition": {
+        "ss_total_singledraw": 30643331.6380553,
+        "ss_between_context": 28097494.739502348,
+        "ss_within_context": 2545836.8985529565,
+        "var_singledraw": 612.866632761106,
+        "var_between_context": 561.949894790047,
+        "var_within_context": 50.91673797105913,
+        "var_10mean_target": 561.949894790047,
+        "sigma2_within_unbiased": 56.574153301176814,
+        "noise_share_within_over_total": 0.08307963796571441
+      },
+      "oracle_ceiling": {
+        "ceiling_r2_pooled": 0.8974325457213395,
+        "sse_loo9_vs_draw": 3143008.516732068,
+        "sst_singledraw": 30643331.6380553
+      },
+      "achieved_r2_gcv": {
+        "avg10": 0.6478624634766232,
+        "greedy": 0.5721937406957629,
+        "stoch1_old": 0.569884157269383,
+        "stoch1_new": 0.5721378156453425
+      },
+      "achieved_r2_val_selected": {
+        "avg10": 0.6932453722467729,
+        "greedy": 0.6292467364640906,
+        "stoch1_old": 0.6251812021094036,
+        "stoch1_new": 0.6275813031599775
+      },
+      "expected_singledraw_r2_purenoise": {
+        "r2_singledraw_expected_purenoise": 0.6356507976991039,
+        "sigma2_within_ss_summed": 56.574153301176814
+      },
+      "avg10map_predicts_singledraw_direct": {
+        "n_test": 1000,
+        "val_lambda": 1000.0,
+        "avg10map_r2_vs_10mean": 0.6932453725258944,
+        "avg10map_r2_vs_singledraw": 0.6376485146801647
+      },
+      "gap_verdict": "achieved single-draw R2 indistinguishable from the pure-noise expectation given the variance \u2014 gap consistent with sampling noise alone",
+      "deviation_predictability": {
+        "signed_deviation": {
+          "note": "linear ridge is analytically W=0 (within-context deviations zero-sum, c_x constant within context => E[d|c_x]=0); R2~=0 is an identity, not evidence about noise independence",
+          "ridge": {
+            "r2_test": 0.020276162384897822,
+            "val_lambda": 10000.0,
+            "r2_val": -0.0016217620299556756
+          },
+          "ridge_shuffle_null": {
+            "r2_test": -0.02725710244225299,
+            "val_lambda": 10000.0,
+            "r2_val": -0.025367979252148842
+          },
+          "mlp": {
+            "r2_test": 0.004163778754285086,
+            "epochs_ran": 43,
+            "width": 512,
+            "lr": 0.001
+          },
+          "mlp_shuffle_null": {
+            "r2_test": -0.045925258309761796,
+            "epochs_ran": 31,
+            "width": 512,
+            "lr": 0.001
+          }
+        },
+        "dispersion": {
+          "target": "per-context rollout dispersion (mean pairwise cosine distance)",
+          "ridge": {
+            "r2_test": 0.4405443636805134,
+            "val_lambda": 1000.0,
+            "r2_val": 0.40980789073116464
+          },
+          "ridge_shuffle_null": {
+            "r2_test": -0.035874765310302426,
+            "val_lambda": 10000.0,
+            "r2_val": -0.04193545084170469
+          },
+          "mlp": {
+            "r2_test": -3.3829093312059637,
+            "epochs_ran": 300,
+            "width": 512,
+            "lr": 0.001
+          },
+          "mlp_shuffle_null": {
+            "r2_test": -3.8751666923967143,
+            "epochs_ran": 300,
+            "width": 512,
+            "lr": 0.001
+          }
+        }
+      }
+    },
+    "L17": {
+      "noise_decomposition": {
+        "ss_total_singledraw": 42641060.89230238,
+        "ss_between_context": 39057670.76838197,
+        "ss_within_context": 3583390.1239203243,
+        "var_singledraw": 852.8212178460476,
+        "var_between_context": 781.1534153676394,
+        "var_within_context": 71.66780247840649,
+        "var_10mean_target": 781.1534153676395,
+        "sigma2_within_unbiased": 79.63089164267387,
+        "noise_share_within_over_total": 0.08403613908600484
+      },
+      "oracle_ceiling": {
+        "ceiling_r2_pooled": 0.8962516801407351,
+        "sse_loo9_vs_draw": 4423938.424592981,
+        "sst_singledraw": 42641060.89230238
+      },
+      "achieved_r2_gcv": {
+        "avg10": -1.6916666527659645,
+        "greedy": 0.6010908724380986,
+        "stoch1_old": 0.5962334407331353,
+        "stoch1_new": 0.6000813944082198
+      },
+      "achieved_r2_val_selected": {
+        "avg10": 0.7271603159763322,
+        "greedy": 0.6633161843953352,
+        "stoch1_old": 0.6584392214841448,
+        "stoch1_new": 0.660532576008929
+      },
+      "expected_singledraw_r2_purenoise": {
+        "r2_singledraw_expected_purenoise": 0.6660525705251225,
+        "sigma2_within_ss_summed": 79.63089164267387
+      },
+      "avg10map_predicts_singledraw_direct": {
+        "n_test": 1000,
+        "val_lambda": 1000.0,
+        "avg10map_r2_vs_10mean": 0.7271603159054337,
+        "avg10map_r2_vs_singledraw": 0.6683577659916442
+      },
+      "gap_verdict": "achieved single-draw R2 indistinguishable from the pure-noise expectation given the variance \u2014 gap consistent with sampling noise alone",
+      "deviation_predictability": {
+        "signed_deviation": {
+          "note": "linear ridge is analytically W=0 (within-context deviations zero-sum, c_x constant within context => E[d|c_x]=0); R2~=0 is an identity, not evidence about noise independence",
+          "ridge": {
+            "r2_test": 0.020742553755150328,
+            "val_lambda": 10000.0,
+            "r2_val": -0.0037293329696841404
+          },
+          "ridge_shuffle_null": {
+            "r2_test": -0.02932400208336583,
+            "val_lambda": 10000.0,
+            "r2_val": -0.02664908120294407
+          },
+          "mlp": {
+            "r2_test": 0.009115136746460473,
+            "epochs_ran": 36,
+            "width": 512,
+            "lr": 0.001
+          },
+          "mlp_shuffle_null": {
+            "r2_test": -0.04276821219703564,
+            "epochs_ran": 32,
+            "width": 512,
+            "lr": 0.001
+          }
+        },
+        "dispersion": {
+          "target": "per-context rollout dispersion (mean pairwise cosine distance)",
+          "ridge": {
+            "r2_test": 0.45336358490735484,
+            "val_lambda": 3162.2776601683795,
+            "r2_val": 0.4097196977950761
+          },
+          "ridge_shuffle_null": {
+            "r2_test": -0.026222705622323428,
+            "val_lambda": 10000.0,
+            "r2_val": -0.03684561587148272
+          },
+          "mlp": {
+            "r2_test": -2.4187815280736857,
+            "epochs_ran": 300,
+            "width": 512,
+            "lr": 0.001
+          },
+          "mlp_shuffle_null": {
+            "r2_test": -3.512454636501399,
+            "epochs_ran": 300,
+            "width": 512,
+            "lr": 0.001
+          }
+        }
+      }
+    },
+    "L19": {
+      "noise_decomposition": {
+        "ss_total_singledraw": 79527798.56790006,
+        "ss_between_context": 73605965.95024535,
+        "ss_within_context": 5921832.617654494,
+        "var_singledraw": 1590.5559713580012,
+        "var_between_context": 1472.119319004907,
+        "var_within_context": 118.43665235308988,
+        "var_10mean_target": 1472.119319004907,
+        "sigma2_within_unbiased": 131.5962803923221,
+        "noise_share_within_over_total": 0.07446242350840997
+      },
+      "oracle_ceiling": {
+        "ceiling_r2_pooled": 0.908071082088383,
+        "sse_loo9_vs_draw": 7310904.46624009,
+        "sst_singledraw": 79527798.56790006
+      },
+      "achieved_r2_gcv": {
+        "avg10": -3.4256540497696983,
+        "greedy": 0.6612672605088925,
+        "stoch1_old": 0.6577673251971655,
+        "stoch1_new": 0.6595600196184543
+      },
+      "achieved_r2_val_selected": {
+        "avg10": 0.7712294166003533,
+        "greedy": 0.709253776233397,
+        "stoch1_old": 0.7054149303865586,
+        "stoch1_new": 0.7074024868868505
+      },
+      "expected_singledraw_r2_purenoise": {
+        "r2_singledraw_expected_purenoise": 0.7138018051593145,
+        "sigma2_within_ss_summed": 131.5962803923221
+      },
+      "avg10map_predicts_singledraw_direct": {
+        "n_test": 1000,
+        "val_lambda": 1000.0,
+        "avg10map_r2_vs_10mean": 0.7712294165739901,
+        "avg10map_r2_vs_singledraw": 0.7158644614514122
+      },
+      "gap_verdict": "achieved single-draw R2 indistinguishable from the pure-noise expectation given the variance \u2014 gap consistent with sampling noise alone",
+      "deviation_predictability": {
+        "signed_deviation": {
+          "note": "linear ridge is analytically W=0 (within-context deviations zero-sum, c_x constant within context => E[d|c_x]=0); R2~=0 is an identity, not evidence about noise independence",
+          "ridge": {
+            "r2_test": 0.01084665317402278,
+            "val_lambda": 10000.0,
+            "r2_val": -0.011619387767481726
+          },
+          "ridge_shuffle_null": {
+            "r2_test": -0.031010050323408977,
+            "val_lambda": 10000.0,
+            "r2_val": -0.029270811314053846
+          },
+          "mlp": {
+            "r2_test": 0.002605182279455276,
+            "epochs_ran": 27,
+            "width": 512,
+            "lr": 0.001
+          },
+          "mlp_shuffle_null": {
+            "r2_test": -0.028254464929652334,
+            "epochs_ran": 25,
+            "width": 512,
+            "lr": 0.001
+          }
+        },
+        "dispersion": {
+          "target": "per-context rollout dispersion (mean pairwise cosine distance)",
+          "ridge": {
+            "r2_test": 0.4871532667382593,
+            "val_lambda": 3162.2776601683795,
+            "r2_val": 0.4134062827007219
+          },
+          "ridge_shuffle_null": {
+            "r2_test": -0.024431200688224575,
+            "val_lambda": 10000.0,
+            "r2_val": -0.030534272811488128
+          },
+          "mlp": {
+            "r2_test": -4.3840872717521915,
+            "epochs_ran": 300,
+            "width": 512,
+            "lr": 0.001
+          },
+          "mlp_shuffle_null": {
+            "r2_test": -5.3403891391008536,
+            "epochs_ran": 300,
+            "width": 512,
+            "lr": 0.001
+          }
+        }
+      }
+    },
+    "L26": {
+      "noise_decomposition": {
+        "ss_total_singledraw": 960292271.2417175,
+        "ss_between_context": 886734160.6572263,
+        "ss_within_context": 73558110.5844943,
+        "var_singledraw": 19205.845424834348,
+        "var_between_context": 17734.683213144526,
+        "var_within_context": 1471.162211689886,
+        "var_10mean_target": 17734.683213144526,
+        "sigma2_within_unbiased": 1634.6246796554287,
+        "noise_share_within_over_total": 0.07659971113729687
+      },
+      "oracle_ceiling": {
+        "ceiling_r2_pooled": 0.9054324553860524,
+        "sse_loo9_vs_draw": 90812482.20308012,
+        "sst_singledraw": 960292271.2417175
+      },
+      "achieved_r2_gcv": {
+        "avg10": -7.17877609877544,
+        "greedy": -2.7838305056556756,
+        "stoch1_old": 0.5310812876249251,
+        "stoch1_new": 0.5340412531881609
+      },
+      "achieved_r2_val_selected": {
+        "avg10": 0.6709069748359715,
+        "greedy": 0.6253215434437678,
+        "stoch1_old": 0.6166073857359693,
+        "stoch1_new": 0.6201718206673164
+      },
+      "expected_singledraw_r2_purenoise": {
+        "r2_singledraw_expected_purenoise": 0.6195156943635373,
+        "sigma2_within_ss_summed": 1634.624679655429
+      },
+      "avg10map_predicts_singledraw_direct": {
+        "n_test": 1000,
+        "val_lambda": 1000.0,
+        "avg10map_r2_vs_10mean": 0.6709069748726254,
+        "avg10map_r2_vs_singledraw": 0.6219340553123729
+      },
+      "gap_verdict": "achieved single-draw R2 indistinguishable from the pure-noise expectation given the variance \u2014 gap consistent with sampling noise alone",
+      "deviation_predictability": {
+        "signed_deviation": {
+          "note": "linear ridge is analytically W=0 (within-context deviations zero-sum, c_x constant within context => E[d|c_x]=0); R2~=0 is an identity, not evidence about noise independence",
+          "ridge": {
+            "r2_test": -0.008466365433007716,
+            "val_lambda": 10000.0,
+            "r2_val": -0.02415886360230246
+          },
+          "ridge_shuffle_null": {
+            "r2_test": -0.037034762447970104,
+            "val_lambda": 10000.0,
+            "r2_val": -0.03424067783584883
+          },
+          "mlp": {
+            "r2_test": 0.009547857629911727,
+            "epochs_ran": 22,
+            "width": 512,
+            "lr": 0.001
+          },
+          "mlp_shuffle_null": {
+            "r2_test": -0.005459270834121455,
+            "epochs_ran": 20,
+            "width": 512,
+            "lr": 0.001
+          }
+        },
+        "dispersion": {
+          "target": "per-context rollout dispersion (mean pairwise cosine distance)",
+          "ridge": {
+            "r2_test": 0.477694327827094,
+            "val_lambda": 3162.2776601683795,
+            "r2_val": 0.4329525185783595
+          },
+          "ridge_shuffle_null": {
+            "r2_test": -0.01566527333821277,
+            "val_lambda": 10000.0,
+            "r2_val": -0.015426112169379946
+          },
+          "mlp": {
+            "r2_test": -29.585512363963254,
+            "epochs_ran": 300,
+            "width": 512,
+            "lr": 0.001
+          },
+          "mlp_shuffle_null": {
+            "r2_test": -25.270774416165505,
+            "epochs_ran": 300,
+            "width": 512,
+            "lr": 0.001
+          }
+        }
+      }
+    },
+    "L27": {
+      "noise_decomposition": {
+        "ss_total_singledraw": 1716128085.8779318,
+        "ss_between_context": 1581853969.3234122,
+        "ss_within_context": 134274116.5545192,
+        "var_singledraw": 34322.56171755864,
+        "var_between_context": 31637.079386468242,
+        "var_within_context": 2685.482331090384,
+        "var_10mean_target": 31637.079386468242,
+        "sigma2_within_unbiased": 2983.8692567670932,
+        "noise_share_within_over_total": 0.0782424794859223
+      },
+      "oracle_ceiling": {
+        "ceiling_r2_pooled": 0.9034043463136757,
+        "sse_loo9_vs_draw": 165770514.2648393,
+        "sst_singledraw": 1716128085.8779318
+      },
+      "achieved_r2_gcv": {
+        "avg10": -7.690257143699277,
+        "greedy": -2.5847247194241043,
+        "stoch1_old": 0.5457649985469096,
+        "stoch1_new": 0.5503992816900198
+      },
+      "achieved_r2_val_selected": {
+        "avg10": 0.6839943958245385,
+        "greedy": 0.632822268429325,
+        "stoch1_old": 0.6241672862333301,
+        "stoch1_new": 0.6267577152027357
+      },
+      "expected_singledraw_r2_purenoise": {
+        "r2_singledraw_expected_purenoise": 0.6304769783407513,
+        "sigma2_within_ss_summed": 2983.8692567670932
+      },
+      "avg10map_predicts_singledraw_direct": {
+        "n_test": 1000,
+        "val_lambda": 3162.2776601683795,
+        "avg10map_r2_vs_10mean": 0.6839943959445048,
+        "avg10map_r2_vs_singledraw": 0.6327166012727172
+      },
+      "gap_verdict": "achieved single-draw R2 indistinguishable from the pure-noise expectation given the variance \u2014 gap consistent with sampling noise alone",
+      "deviation_predictability": {
+        "signed_deviation": {
+          "note": "linear ridge is analytically W=0 (within-context deviations zero-sum, c_x constant within context => E[d|c_x]=0); R2~=0 is an identity, not evidence about noise independence",
+          "ridge": {
+            "r2_test": -0.022454705819421772,
+            "val_lambda": 10000.0,
+            "r2_val": -0.03165916875624286
+          },
+          "ridge_shuffle_null": {
+            "r2_test": -0.0354328342957988,
+            "val_lambda": 10000.0,
+            "r2_val": -0.03672998306079389
+          },
+          "mlp": {
+            "r2_test": 0.0015315609026225196,
+            "epochs_ran": 20,
+            "width": 512,
+            "lr": 0.001
+          },
+          "mlp_shuffle_null": {
+            "r2_test": -0.0029667917330289395,
+            "epochs_ran": 20,
+            "width": 512,
+            "lr": 0.001
+          }
+        },
+        "dispersion": {
+          "target": "per-context rollout dispersion (mean pairwise cosine distance)",
+          "ridge": {
+            "r2_test": 0.404827821227574,
+            "val_lambda": 10000.0,
+            "r2_val": 0.3910370078505697
+          },
+          "ridge_shuffle_null": {
+            "r2_test": -0.01745424577265342,
+            "val_lambda": 10000.0,
+            "r2_val": -0.0333981508841068
+          },
+          "mlp": {
+            "r2_test": -2.2782449671637193,
+            "epochs_ran": 300,
+            "width": 512,
+            "lr": 0.001
+          },
+          "mlp_shuffle_null": {
+            "r2_test": -3.0071000827931362,
+            "epochs_ran": 269,
+            "width": 512,
+            "lr": 0.001
+          }
+        }
+      }
+    }
+  },
+  "metadata": {
+    "git_commit": "c325b3c16f3fbc7cfe2e46fb8c9274849bb6c810",
+    "timestamp_utc": "2026-07-15T12:49:11.414464Z",
+    "python_version": "3.11.15",
+    "platform": "Linux-6.8.0-1052-gcp-x86_64-with-glibc2.35",
+    "cuda_visible_devices": "all",
+    "issue": 1073,
+    "script": "issue1073_gap_tail_analysis",
+    "deliverable": "A"
+  },
+  "definitions": {
+    "noise_share": "within-context draw SS / total single-draw SS (both summed over H)",
+    "oracle_ceiling": "pooled R2 of the leave-one-out 9-mean predicting a held-out draw; best any context-conditioned predictor can do on single draws (denominator = single-draw deviations from grand mean)",
+    "expected_purenoise_algebra": "Closed-form pure-noise expectation.\n\n    Model: v_ij = mu_i + eps_ij, map f predicts mu_i. Then\n      MSE_10mean = E||mu-f||^2 + sigma2_w/10\n      MSE_single = E||mu-f||^2 + sigma2_w\n    so MSE_single = MSE_10mean + sigma2_w*(9/10), giving\n      R2_single_expected = 1 - [ (1-R2_10mean)*Var(vbar) + sigma2_w*9/10 ] / Var(v).\n    (sigma2_w here is the total within SS / (n*(10-1)) expressed as a per-draw\n    variance summed over H, matching the SS-summed R2 denominators.)\n    ",
+    "avg10map_direct": "the avg10-TRAINED held-out ridge map's predictions evaluated against single draws \u2014 assumption-free pure-noise expectation",
+    "signed_deviation_ridge_is_W0": "within-context deviations are zero-sum and c_x is constant within context, so the ridge solution is identically 0 and held-out R2~=0 by identity",
+    "fits": "val-selected lambda on 1000/400/(rest) seed-42 split; MLP width 512 lr 0.001 wd 0.0001 epochs 300 patience 20 (FFC recipe verbatim)"
+  }
+}

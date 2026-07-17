@@ -1,0 +1,1545 @@
+{
+  "commit": "2a8e9e1673",
+  "created": "2026-07-15T20:45:34Z",
+  "figsize": [
+    8.0,
+    4.6
+  ],
+  "points": [
+    {
+      "Decoder layer": 0.0,
+      "Rank-k@90 of the 100-row shift cloud": 57.0,
+      "series": "LoRA + negatives \u2014 own text (\u0394G +5.5)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Decoder layer": 1.0,
+      "Rank-k@90 of the 100-row shift cloud": 56.0,
+      "series": "LoRA + negatives \u2014 own text (\u0394G +5.5)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Decoder layer": 2.0,
+      "Rank-k@90 of the 100-row shift cloud": 56.0,
+      "series": "LoRA + negatives \u2014 own text (\u0394G +5.5)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Decoder layer": 3.0,
+      "Rank-k@90 of the 100-row shift cloud": 56.0,
+      "series": "LoRA + negatives \u2014 own text (\u0394G +5.5)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Decoder layer": 4.0,
+      "Rank-k@90 of the 100-row shift cloud": 56.0,
+      "series": "LoRA + negatives \u2014 own text (\u0394G +5.5)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Decoder layer": 5.0,
+      "Rank-k@90 of the 100-row shift cloud": 55.0,
+      "series": "LoRA + negatives \u2014 own text (\u0394G +5.5)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Decoder layer": 6.0,
+      "Rank-k@90 of the 100-row shift cloud": 54.0,
+      "series": "LoRA + negatives \u2014 own text (\u0394G +5.5)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Decoder layer": 7.0,
+      "Rank-k@90 of the 100-row shift cloud": 54.0,
+      "series": "LoRA + negatives \u2014 own text (\u0394G +5.5)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Decoder layer": 8.0,
+      "Rank-k@90 of the 100-row shift cloud": 54.0,
+      "series": "LoRA + negatives \u2014 own text (\u0394G +5.5)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Decoder layer": 9.0,
+      "Rank-k@90 of the 100-row shift cloud": 54.0,
+      "series": "LoRA + negatives \u2014 own text (\u0394G +5.5)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Decoder layer": 10.0,
+      "Rank-k@90 of the 100-row shift cloud": 54.0,
+      "series": "LoRA + negatives \u2014 own text (\u0394G +5.5)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Decoder layer": 11.0,
+      "Rank-k@90 of the 100-row shift cloud": 54.0,
+      "series": "LoRA + negatives \u2014 own text (\u0394G +5.5)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Decoder layer": 12.0,
+      "Rank-k@90 of the 100-row shift cloud": 53.0,
+      "series": "LoRA + negatives \u2014 own text (\u0394G +5.5)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Decoder layer": 13.0,
+      "Rank-k@90 of the 100-row shift cloud": 54.0,
+      "series": "LoRA + negatives \u2014 own text (\u0394G +5.5)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Decoder layer": 14.0,
+      "Rank-k@90 of the 100-row shift cloud": 53.0,
+      "series": "LoRA + negatives \u2014 own text (\u0394G +5.5)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Decoder layer": 15.0,
+      "Rank-k@90 of the 100-row shift cloud": 52.0,
+      "series": "LoRA + negatives \u2014 own text (\u0394G +5.5)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Decoder layer": 16.0,
+      "Rank-k@90 of the 100-row shift cloud": 52.0,
+      "series": "LoRA + negatives \u2014 own text (\u0394G +5.5)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Decoder layer": 17.0,
+      "Rank-k@90 of the 100-row shift cloud": 51.0,
+      "series": "LoRA + negatives \u2014 own text (\u0394G +5.5)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Decoder layer": 18.0,
+      "Rank-k@90 of the 100-row shift cloud": 51.0,
+      "series": "LoRA + negatives \u2014 own text (\u0394G +5.5)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Decoder layer": 19.0,
+      "Rank-k@90 of the 100-row shift cloud": 48.0,
+      "series": "LoRA + negatives \u2014 own text (\u0394G +5.5)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Decoder layer": 20.0,
+      "Rank-k@90 of the 100-row shift cloud": 49.0,
+      "series": "LoRA + negatives \u2014 own text (\u0394G +5.5)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Decoder layer": 21.0,
+      "Rank-k@90 of the 100-row shift cloud": 50.0,
+      "series": "LoRA + negatives \u2014 own text (\u0394G +5.5)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Decoder layer": 22.0,
+      "Rank-k@90 of the 100-row shift cloud": 51.0,
+      "series": "LoRA + negatives \u2014 own text (\u0394G +5.5)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Decoder layer": 23.0,
+      "Rank-k@90 of the 100-row shift cloud": 51.0,
+      "series": "LoRA + negatives \u2014 own text (\u0394G +5.5)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Decoder layer": 24.0,
+      "Rank-k@90 of the 100-row shift cloud": 51.0,
+      "series": "LoRA + negatives \u2014 own text (\u0394G +5.5)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Decoder layer": 25.0,
+      "Rank-k@90 of the 100-row shift cloud": 51.0,
+      "series": "LoRA + negatives \u2014 own text (\u0394G +5.5)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Decoder layer": 26.0,
+      "Rank-k@90 of the 100-row shift cloud": 51.0,
+      "series": "LoRA + negatives \u2014 own text (\u0394G +5.5)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Decoder layer": 27.0,
+      "Rank-k@90 of the 100-row shift cloud": 47.0,
+      "series": "LoRA + negatives \u2014 own text (\u0394G +5.5)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Decoder layer": 0.0,
+      "Rank-k@90 of the 100-row shift cloud": 55.0,
+      "series": "LoRA positives-only \u2014 own text (\u0394G +4.3)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Decoder layer": 1.0,
+      "Rank-k@90 of the 100-row shift cloud": 54.0,
+      "series": "LoRA positives-only \u2014 own text (\u0394G +4.3)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Decoder layer": 2.0,
+      "Rank-k@90 of the 100-row shift cloud": 54.0,
+      "series": "LoRA positives-only \u2014 own text (\u0394G +4.3)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Decoder layer": 3.0,
+      "Rank-k@90 of the 100-row shift cloud": 54.0,
+      "series": "LoRA positives-only \u2014 own text (\u0394G +4.3)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Decoder layer": 4.0,
+      "Rank-k@90 of the 100-row shift cloud": 53.0,
+      "series": "LoRA positives-only \u2014 own text (\u0394G +4.3)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Decoder layer": 5.0,
+      "Rank-k@90 of the 100-row shift cloud": 52.0,
+      "series": "LoRA positives-only \u2014 own text (\u0394G +4.3)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Decoder layer": 6.0,
+      "Rank-k@90 of the 100-row shift cloud": 51.0,
+      "series": "LoRA positives-only \u2014 own text (\u0394G +4.3)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Decoder layer": 7.0,
+      "Rank-k@90 of the 100-row shift cloud": 52.0,
+      "series": "LoRA positives-only \u2014 own text (\u0394G +4.3)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Decoder layer": 8.0,
+      "Rank-k@90 of the 100-row shift cloud": 52.0,
+      "series": "LoRA positives-only \u2014 own text (\u0394G +4.3)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Decoder layer": 9.0,
+      "Rank-k@90 of the 100-row shift cloud": 52.0,
+      "series": "LoRA positives-only \u2014 own text (\u0394G +4.3)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Decoder layer": 10.0,
+      "Rank-k@90 of the 100-row shift cloud": 51.0,
+      "series": "LoRA positives-only \u2014 own text (\u0394G +4.3)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Decoder layer": 11.0,
+      "Rank-k@90 of the 100-row shift cloud": 51.0,
+      "series": "LoRA positives-only \u2014 own text (\u0394G +4.3)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Decoder layer": 12.0,
+      "Rank-k@90 of the 100-row shift cloud": 50.0,
+      "series": "LoRA positives-only \u2014 own text (\u0394G +4.3)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Decoder layer": 13.0,
+      "Rank-k@90 of the 100-row shift cloud": 51.0,
+      "series": "LoRA positives-only \u2014 own text (\u0394G +4.3)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Decoder layer": 14.0,
+      "Rank-k@90 of the 100-row shift cloud": 50.0,
+      "series": "LoRA positives-only \u2014 own text (\u0394G +4.3)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Decoder layer": 15.0,
+      "Rank-k@90 of the 100-row shift cloud": 49.0,
+      "series": "LoRA positives-only \u2014 own text (\u0394G +4.3)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Decoder layer": 16.0,
+      "Rank-k@90 of the 100-row shift cloud": 49.0,
+      "series": "LoRA positives-only \u2014 own text (\u0394G +4.3)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Decoder layer": 17.0,
+      "Rank-k@90 of the 100-row shift cloud": 48.0,
+      "series": "LoRA positives-only \u2014 own text (\u0394G +4.3)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Decoder layer": 18.0,
+      "Rank-k@90 of the 100-row shift cloud": 48.0,
+      "series": "LoRA positives-only \u2014 own text (\u0394G +4.3)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Decoder layer": 19.0,
+      "Rank-k@90 of the 100-row shift cloud": 45.0,
+      "series": "LoRA positives-only \u2014 own text (\u0394G +4.3)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Decoder layer": 20.0,
+      "Rank-k@90 of the 100-row shift cloud": 45.0,
+      "series": "LoRA positives-only \u2014 own text (\u0394G +4.3)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Decoder layer": 21.0,
+      "Rank-k@90 of the 100-row shift cloud": 46.0,
+      "series": "LoRA positives-only \u2014 own text (\u0394G +4.3)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Decoder layer": 22.0,
+      "Rank-k@90 of the 100-row shift cloud": 47.0,
+      "series": "LoRA positives-only \u2014 own text (\u0394G +4.3)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Decoder layer": 23.0,
+      "Rank-k@90 of the 100-row shift cloud": 47.0,
+      "series": "LoRA positives-only \u2014 own text (\u0394G +4.3)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Decoder layer": 24.0,
+      "Rank-k@90 of the 100-row shift cloud": 47.0,
+      "series": "LoRA positives-only \u2014 own text (\u0394G +4.3)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Decoder layer": 25.0,
+      "Rank-k@90 of the 100-row shift cloud": 47.0,
+      "series": "LoRA positives-only \u2014 own text (\u0394G +4.3)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Decoder layer": 26.0,
+      "Rank-k@90 of the 100-row shift cloud": 47.0,
+      "series": "LoRA positives-only \u2014 own text (\u0394G +4.3)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Decoder layer": 27.0,
+      "Rank-k@90 of the 100-row shift cloud": 44.0,
+      "series": "LoRA positives-only \u2014 own text (\u0394G +4.3)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Decoder layer": 0.0,
+      "Rank-k@90 of the 100-row shift cloud": 55.0,
+      "series": "Full FT + negatives (reused) \u2014 own text (\u0394G +6.3)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Decoder layer": 1.0,
+      "Rank-k@90 of the 100-row shift cloud": 55.0,
+      "series": "Full FT + negatives (reused) \u2014 own text (\u0394G +6.3)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Decoder layer": 2.0,
+      "Rank-k@90 of the 100-row shift cloud": 55.0,
+      "series": "Full FT + negatives (reused) \u2014 own text (\u0394G +6.3)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Decoder layer": 3.0,
+      "Rank-k@90 of the 100-row shift cloud": 55.0,
+      "series": "Full FT + negatives (reused) \u2014 own text (\u0394G +6.3)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Decoder layer": 4.0,
+      "Rank-k@90 of the 100-row shift cloud": 54.0,
+      "series": "Full FT + negatives (reused) \u2014 own text (\u0394G +6.3)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Decoder layer": 5.0,
+      "Rank-k@90 of the 100-row shift cloud": 53.0,
+      "series": "Full FT + negatives (reused) \u2014 own text (\u0394G +6.3)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Decoder layer": 6.0,
+      "Rank-k@90 of the 100-row shift cloud": 52.0,
+      "series": "Full FT + negatives (reused) \u2014 own text (\u0394G +6.3)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Decoder layer": 7.0,
+      "Rank-k@90 of the 100-row shift cloud": 52.0,
+      "series": "Full FT + negatives (reused) \u2014 own text (\u0394G +6.3)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Decoder layer": 8.0,
+      "Rank-k@90 of the 100-row shift cloud": 52.0,
+      "series": "Full FT + negatives (reused) \u2014 own text (\u0394G +6.3)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Decoder layer": 9.0,
+      "Rank-k@90 of the 100-row shift cloud": 52.0,
+      "series": "Full FT + negatives (reused) \u2014 own text (\u0394G +6.3)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Decoder layer": 10.0,
+      "Rank-k@90 of the 100-row shift cloud": 51.0,
+      "series": "Full FT + negatives (reused) \u2014 own text (\u0394G +6.3)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Decoder layer": 11.0,
+      "Rank-k@90 of the 100-row shift cloud": 51.0,
+      "series": "Full FT + negatives (reused) \u2014 own text (\u0394G +6.3)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Decoder layer": 12.0,
+      "Rank-k@90 of the 100-row shift cloud": 50.0,
+      "series": "Full FT + negatives (reused) \u2014 own text (\u0394G +6.3)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Decoder layer": 13.0,
+      "Rank-k@90 of the 100-row shift cloud": 51.0,
+      "series": "Full FT + negatives (reused) \u2014 own text (\u0394G +6.3)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Decoder layer": 14.0,
+      "Rank-k@90 of the 100-row shift cloud": 50.0,
+      "series": "Full FT + negatives (reused) \u2014 own text (\u0394G +6.3)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Decoder layer": 15.0,
+      "Rank-k@90 of the 100-row shift cloud": 49.0,
+      "series": "Full FT + negatives (reused) \u2014 own text (\u0394G +6.3)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Decoder layer": 16.0,
+      "Rank-k@90 of the 100-row shift cloud": 49.0,
+      "series": "Full FT + negatives (reused) \u2014 own text (\u0394G +6.3)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Decoder layer": 17.0,
+      "Rank-k@90 of the 100-row shift cloud": 48.0,
+      "series": "Full FT + negatives (reused) \u2014 own text (\u0394G +6.3)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Decoder layer": 18.0,
+      "Rank-k@90 of the 100-row shift cloud": 48.0,
+      "series": "Full FT + negatives (reused) \u2014 own text (\u0394G +6.3)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Decoder layer": 19.0,
+      "Rank-k@90 of the 100-row shift cloud": 45.0,
+      "series": "Full FT + negatives (reused) \u2014 own text (\u0394G +6.3)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Decoder layer": 20.0,
+      "Rank-k@90 of the 100-row shift cloud": 45.0,
+      "series": "Full FT + negatives (reused) \u2014 own text (\u0394G +6.3)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Decoder layer": 21.0,
+      "Rank-k@90 of the 100-row shift cloud": 46.0,
+      "series": "Full FT + negatives (reused) \u2014 own text (\u0394G +6.3)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Decoder layer": 22.0,
+      "Rank-k@90 of the 100-row shift cloud": 47.0,
+      "series": "Full FT + negatives (reused) \u2014 own text (\u0394G +6.3)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Decoder layer": 23.0,
+      "Rank-k@90 of the 100-row shift cloud": 46.0,
+      "series": "Full FT + negatives (reused) \u2014 own text (\u0394G +6.3)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Decoder layer": 24.0,
+      "Rank-k@90 of the 100-row shift cloud": 46.0,
+      "series": "Full FT + negatives (reused) \u2014 own text (\u0394G +6.3)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Decoder layer": 25.0,
+      "Rank-k@90 of the 100-row shift cloud": 46.0,
+      "series": "Full FT + negatives (reused) \u2014 own text (\u0394G +6.3)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Decoder layer": 26.0,
+      "Rank-k@90 of the 100-row shift cloud": 45.0,
+      "series": "Full FT + negatives (reused) \u2014 own text (\u0394G +6.3)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Decoder layer": 27.0,
+      "Rank-k@90 of the 100-row shift cloud": 42.0,
+      "series": "Full FT + negatives (reused) \u2014 own text (\u0394G +6.3)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Decoder layer": 0.0,
+      "Rank-k@90 of the 100-row shift cloud": 55.0,
+      "series": "Full FT positives-only \u2014 own text (\u0394G +6.9)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Decoder layer": 1.0,
+      "Rank-k@90 of the 100-row shift cloud": 55.0,
+      "series": "Full FT positives-only \u2014 own text (\u0394G +6.9)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Decoder layer": 2.0,
+      "Rank-k@90 of the 100-row shift cloud": 55.0,
+      "series": "Full FT positives-only \u2014 own text (\u0394G +6.9)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Decoder layer": 3.0,
+      "Rank-k@90 of the 100-row shift cloud": 55.0,
+      "series": "Full FT positives-only \u2014 own text (\u0394G +6.9)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Decoder layer": 4.0,
+      "Rank-k@90 of the 100-row shift cloud": 54.0,
+      "series": "Full FT positives-only \u2014 own text (\u0394G +6.9)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Decoder layer": 5.0,
+      "Rank-k@90 of the 100-row shift cloud": 53.0,
+      "series": "Full FT positives-only \u2014 own text (\u0394G +6.9)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Decoder layer": 6.0,
+      "Rank-k@90 of the 100-row shift cloud": 51.0,
+      "series": "Full FT positives-only \u2014 own text (\u0394G +6.9)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Decoder layer": 7.0,
+      "Rank-k@90 of the 100-row shift cloud": 52.0,
+      "series": "Full FT positives-only \u2014 own text (\u0394G +6.9)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Decoder layer": 8.0,
+      "Rank-k@90 of the 100-row shift cloud": 52.0,
+      "series": "Full FT positives-only \u2014 own text (\u0394G +6.9)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Decoder layer": 9.0,
+      "Rank-k@90 of the 100-row shift cloud": 52.0,
+      "series": "Full FT positives-only \u2014 own text (\u0394G +6.9)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Decoder layer": 10.0,
+      "Rank-k@90 of the 100-row shift cloud": 51.0,
+      "series": "Full FT positives-only \u2014 own text (\u0394G +6.9)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Decoder layer": 11.0,
+      "Rank-k@90 of the 100-row shift cloud": 51.0,
+      "series": "Full FT positives-only \u2014 own text (\u0394G +6.9)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Decoder layer": 12.0,
+      "Rank-k@90 of the 100-row shift cloud": 51.0,
+      "series": "Full FT positives-only \u2014 own text (\u0394G +6.9)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Decoder layer": 13.0,
+      "Rank-k@90 of the 100-row shift cloud": 51.0,
+      "series": "Full FT positives-only \u2014 own text (\u0394G +6.9)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Decoder layer": 14.0,
+      "Rank-k@90 of the 100-row shift cloud": 50.0,
+      "series": "Full FT positives-only \u2014 own text (\u0394G +6.9)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Decoder layer": 15.0,
+      "Rank-k@90 of the 100-row shift cloud": 48.0,
+      "series": "Full FT positives-only \u2014 own text (\u0394G +6.9)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Decoder layer": 16.0,
+      "Rank-k@90 of the 100-row shift cloud": 49.0,
+      "series": "Full FT positives-only \u2014 own text (\u0394G +6.9)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Decoder layer": 17.0,
+      "Rank-k@90 of the 100-row shift cloud": 48.0,
+      "series": "Full FT positives-only \u2014 own text (\u0394G +6.9)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Decoder layer": 18.0,
+      "Rank-k@90 of the 100-row shift cloud": 48.0,
+      "series": "Full FT positives-only \u2014 own text (\u0394G +6.9)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Decoder layer": 19.0,
+      "Rank-k@90 of the 100-row shift cloud": 44.0,
+      "series": "Full FT positives-only \u2014 own text (\u0394G +6.9)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Decoder layer": 20.0,
+      "Rank-k@90 of the 100-row shift cloud": 44.0,
+      "series": "Full FT positives-only \u2014 own text (\u0394G +6.9)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Decoder layer": 21.0,
+      "Rank-k@90 of the 100-row shift cloud": 46.0,
+      "series": "Full FT positives-only \u2014 own text (\u0394G +6.9)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Decoder layer": 22.0,
+      "Rank-k@90 of the 100-row shift cloud": 46.0,
+      "series": "Full FT positives-only \u2014 own text (\u0394G +6.9)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Decoder layer": 23.0,
+      "Rank-k@90 of the 100-row shift cloud": 46.0,
+      "series": "Full FT positives-only \u2014 own text (\u0394G +6.9)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Decoder layer": 24.0,
+      "Rank-k@90 of the 100-row shift cloud": 45.0,
+      "series": "Full FT positives-only \u2014 own text (\u0394G +6.9)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Decoder layer": 25.0,
+      "Rank-k@90 of the 100-row shift cloud": 46.0,
+      "series": "Full FT positives-only \u2014 own text (\u0394G +6.9)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Decoder layer": 26.0,
+      "Rank-k@90 of the 100-row shift cloud": 45.0,
+      "series": "Full FT positives-only \u2014 own text (\u0394G +6.9)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Decoder layer": 27.0,
+      "Rank-k@90 of the 100-row shift cloud": 41.0,
+      "series": "Full FT positives-only \u2014 own text (\u0394G +6.9)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Decoder layer": 0.0,
+      "Rank-k@90 of the 100-row shift cloud": 38.0,
+      "series": "LoRA + negatives \u2014 shared text",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Decoder layer": 1.0,
+      "Rank-k@90 of the 100-row shift cloud": 49.0,
+      "series": "LoRA + negatives \u2014 shared text",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Decoder layer": 2.0,
+      "Rank-k@90 of the 100-row shift cloud": 56.0,
+      "series": "LoRA + negatives \u2014 shared text",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Decoder layer": 3.0,
+      "Rank-k@90 of the 100-row shift cloud": 61.0,
+      "series": "LoRA + negatives \u2014 shared text",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Decoder layer": 4.0,
+      "Rank-k@90 of the 100-row shift cloud": 61.0,
+      "series": "LoRA + negatives \u2014 shared text",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Decoder layer": 5.0,
+      "Rank-k@90 of the 100-row shift cloud": 62.0,
+      "series": "LoRA + negatives \u2014 shared text",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Decoder layer": 6.0,
+      "Rank-k@90 of the 100-row shift cloud": 54.0,
+      "series": "LoRA + negatives \u2014 shared text",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Decoder layer": 7.0,
+      "Rank-k@90 of the 100-row shift cloud": 55.0,
+      "series": "LoRA + negatives \u2014 shared text",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Decoder layer": 8.0,
+      "Rank-k@90 of the 100-row shift cloud": 52.0,
+      "series": "LoRA + negatives \u2014 shared text",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Decoder layer": 9.0,
+      "Rank-k@90 of the 100-row shift cloud": 52.0,
+      "series": "LoRA + negatives \u2014 shared text",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Decoder layer": 10.0,
+      "Rank-k@90 of the 100-row shift cloud": 46.0,
+      "series": "LoRA + negatives \u2014 shared text",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Decoder layer": 11.0,
+      "Rank-k@90 of the 100-row shift cloud": 46.0,
+      "series": "LoRA + negatives \u2014 shared text",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Decoder layer": 12.0,
+      "Rank-k@90 of the 100-row shift cloud": 44.0,
+      "series": "LoRA + negatives \u2014 shared text",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Decoder layer": 13.0,
+      "Rank-k@90 of the 100-row shift cloud": 37.0,
+      "series": "LoRA + negatives \u2014 shared text",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Decoder layer": 14.0,
+      "Rank-k@90 of the 100-row shift cloud": 27.0,
+      "series": "LoRA + negatives \u2014 shared text",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Decoder layer": 15.0,
+      "Rank-k@90 of the 100-row shift cloud": 16.0,
+      "series": "LoRA + negatives \u2014 shared text",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Decoder layer": 16.0,
+      "Rank-k@90 of the 100-row shift cloud": 18.0,
+      "series": "LoRA + negatives \u2014 shared text",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Decoder layer": 17.0,
+      "Rank-k@90 of the 100-row shift cloud": 17.0,
+      "series": "LoRA + negatives \u2014 shared text",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Decoder layer": 18.0,
+      "Rank-k@90 of the 100-row shift cloud": 14.0,
+      "series": "LoRA + negatives \u2014 shared text",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Decoder layer": 19.0,
+      "Rank-k@90 of the 100-row shift cloud": 5.0,
+      "series": "LoRA + negatives \u2014 shared text",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Decoder layer": 20.0,
+      "Rank-k@90 of the 100-row shift cloud": 7.0,
+      "series": "LoRA + negatives \u2014 shared text",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Decoder layer": 21.0,
+      "Rank-k@90 of the 100-row shift cloud": 8.0,
+      "series": "LoRA + negatives \u2014 shared text",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Decoder layer": 22.0,
+      "Rank-k@90 of the 100-row shift cloud": 10.0,
+      "series": "LoRA + negatives \u2014 shared text",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Decoder layer": 23.0,
+      "Rank-k@90 of the 100-row shift cloud": 9.0,
+      "series": "LoRA + negatives \u2014 shared text",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Decoder layer": 24.0,
+      "Rank-k@90 of the 100-row shift cloud": 8.0,
+      "series": "LoRA + negatives \u2014 shared text",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Decoder layer": 25.0,
+      "Rank-k@90 of the 100-row shift cloud": 9.0,
+      "series": "LoRA + negatives \u2014 shared text",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Decoder layer": 26.0,
+      "Rank-k@90 of the 100-row shift cloud": 9.0,
+      "series": "LoRA + negatives \u2014 shared text",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Decoder layer": 27.0,
+      "Rank-k@90 of the 100-row shift cloud": 7.0,
+      "series": "LoRA + negatives \u2014 shared text",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Decoder layer": 0.0,
+      "Rank-k@90 of the 100-row shift cloud": 39.0,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Decoder layer": 1.0,
+      "Rank-k@90 of the 100-row shift cloud": 49.0,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Decoder layer": 2.0,
+      "Rank-k@90 of the 100-row shift cloud": 55.0,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Decoder layer": 3.0,
+      "Rank-k@90 of the 100-row shift cloud": 60.0,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Decoder layer": 4.0,
+      "Rank-k@90 of the 100-row shift cloud": 60.0,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Decoder layer": 5.0,
+      "Rank-k@90 of the 100-row shift cloud": 62.0,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Decoder layer": 6.0,
+      "Rank-k@90 of the 100-row shift cloud": 58.0,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Decoder layer": 7.0,
+      "Rank-k@90 of the 100-row shift cloud": 59.0,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Decoder layer": 8.0,
+      "Rank-k@90 of the 100-row shift cloud": 55.0,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Decoder layer": 9.0,
+      "Rank-k@90 of the 100-row shift cloud": 54.0,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Decoder layer": 10.0,
+      "Rank-k@90 of the 100-row shift cloud": 49.0,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Decoder layer": 11.0,
+      "Rank-k@90 of the 100-row shift cloud": 50.0,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Decoder layer": 12.0,
+      "Rank-k@90 of the 100-row shift cloud": 48.0,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Decoder layer": 13.0,
+      "Rank-k@90 of the 100-row shift cloud": 40.0,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Decoder layer": 14.0,
+      "Rank-k@90 of the 100-row shift cloud": 28.0,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Decoder layer": 15.0,
+      "Rank-k@90 of the 100-row shift cloud": 18.0,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Decoder layer": 16.0,
+      "Rank-k@90 of the 100-row shift cloud": 19.0,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Decoder layer": 17.0,
+      "Rank-k@90 of the 100-row shift cloud": 18.0,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Decoder layer": 18.0,
+      "Rank-k@90 of the 100-row shift cloud": 14.0,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Decoder layer": 19.0,
+      "Rank-k@90 of the 100-row shift cloud": 5.0,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Decoder layer": 20.0,
+      "Rank-k@90 of the 100-row shift cloud": 7.0,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Decoder layer": 21.0,
+      "Rank-k@90 of the 100-row shift cloud": 8.0,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Decoder layer": 22.0,
+      "Rank-k@90 of the 100-row shift cloud": 9.0,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Decoder layer": 23.0,
+      "Rank-k@90 of the 100-row shift cloud": 9.0,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Decoder layer": 24.0,
+      "Rank-k@90 of the 100-row shift cloud": 9.0,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Decoder layer": 25.0,
+      "Rank-k@90 of the 100-row shift cloud": 9.0,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Decoder layer": 26.0,
+      "Rank-k@90 of the 100-row shift cloud": 9.0,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Decoder layer": 27.0,
+      "Rank-k@90 of the 100-row shift cloud": 7.0,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Decoder layer": 0.0,
+      "Rank-k@90 of the 100-row shift cloud": 47.0,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Decoder layer": 1.0,
+      "Rank-k@90 of the 100-row shift cloud": 57.0,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Decoder layer": 2.0,
+      "Rank-k@90 of the 100-row shift cloud": 58.0,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Decoder layer": 3.0,
+      "Rank-k@90 of the 100-row shift cloud": 62.0,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Decoder layer": 4.0,
+      "Rank-k@90 of the 100-row shift cloud": 60.0,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Decoder layer": 5.0,
+      "Rank-k@90 of the 100-row shift cloud": 56.0,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Decoder layer": 6.0,
+      "Rank-k@90 of the 100-row shift cloud": 49.0,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Decoder layer": 7.0,
+      "Rank-k@90 of the 100-row shift cloud": 46.0,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Decoder layer": 8.0,
+      "Rank-k@90 of the 100-row shift cloud": 41.0,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Decoder layer": 9.0,
+      "Rank-k@90 of the 100-row shift cloud": 34.0,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Decoder layer": 10.0,
+      "Rank-k@90 of the 100-row shift cloud": 30.0,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Decoder layer": 11.0,
+      "Rank-k@90 of the 100-row shift cloud": 31.0,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Decoder layer": 12.0,
+      "Rank-k@90 of the 100-row shift cloud": 29.0,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Decoder layer": 13.0,
+      "Rank-k@90 of the 100-row shift cloud": 26.0,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Decoder layer": 14.0,
+      "Rank-k@90 of the 100-row shift cloud": 21.0,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Decoder layer": 15.0,
+      "Rank-k@90 of the 100-row shift cloud": 14.0,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Decoder layer": 16.0,
+      "Rank-k@90 of the 100-row shift cloud": 15.0,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Decoder layer": 17.0,
+      "Rank-k@90 of the 100-row shift cloud": 15.0,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Decoder layer": 18.0,
+      "Rank-k@90 of the 100-row shift cloud": 14.0,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Decoder layer": 19.0,
+      "Rank-k@90 of the 100-row shift cloud": 5.0,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Decoder layer": 20.0,
+      "Rank-k@90 of the 100-row shift cloud": 7.0,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Decoder layer": 21.0,
+      "Rank-k@90 of the 100-row shift cloud": 8.0,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Decoder layer": 22.0,
+      "Rank-k@90 of the 100-row shift cloud": 9.0,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Decoder layer": 23.0,
+      "Rank-k@90 of the 100-row shift cloud": 8.0,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Decoder layer": 24.0,
+      "Rank-k@90 of the 100-row shift cloud": 8.0,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Decoder layer": 25.0,
+      "Rank-k@90 of the 100-row shift cloud": 9.0,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Decoder layer": 26.0,
+      "Rank-k@90 of the 100-row shift cloud": 8.0,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Decoder layer": 27.0,
+      "Rank-k@90 of the 100-row shift cloud": 6.0,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Decoder layer": 0.0,
+      "Rank-k@90 of the 100-row shift cloud": 49.0,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Decoder layer": 1.0,
+      "Rank-k@90 of the 100-row shift cloud": 57.0,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Decoder layer": 2.0,
+      "Rank-k@90 of the 100-row shift cloud": 58.0,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Decoder layer": 3.0,
+      "Rank-k@90 of the 100-row shift cloud": 61.0,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Decoder layer": 4.0,
+      "Rank-k@90 of the 100-row shift cloud": 58.0,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Decoder layer": 5.0,
+      "Rank-k@90 of the 100-row shift cloud": 55.0,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Decoder layer": 6.0,
+      "Rank-k@90 of the 100-row shift cloud": 47.0,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Decoder layer": 7.0,
+      "Rank-k@90 of the 100-row shift cloud": 45.0,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Decoder layer": 8.0,
+      "Rank-k@90 of the 100-row shift cloud": 39.0,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Decoder layer": 9.0,
+      "Rank-k@90 of the 100-row shift cloud": 33.0,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Decoder layer": 10.0,
+      "Rank-k@90 of the 100-row shift cloud": 28.0,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Decoder layer": 11.0,
+      "Rank-k@90 of the 100-row shift cloud": 29.0,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Decoder layer": 12.0,
+      "Rank-k@90 of the 100-row shift cloud": 27.0,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Decoder layer": 13.0,
+      "Rank-k@90 of the 100-row shift cloud": 25.0,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Decoder layer": 14.0,
+      "Rank-k@90 of the 100-row shift cloud": 21.0,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Decoder layer": 15.0,
+      "Rank-k@90 of the 100-row shift cloud": 13.0,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Decoder layer": 16.0,
+      "Rank-k@90 of the 100-row shift cloud": 15.0,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Decoder layer": 17.0,
+      "Rank-k@90 of the 100-row shift cloud": 15.0,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Decoder layer": 18.0,
+      "Rank-k@90 of the 100-row shift cloud": 14.0,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Decoder layer": 19.0,
+      "Rank-k@90 of the 100-row shift cloud": 5.0,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Decoder layer": 20.0,
+      "Rank-k@90 of the 100-row shift cloud": 7.0,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Decoder layer": 21.0,
+      "Rank-k@90 of the 100-row shift cloud": 9.0,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Decoder layer": 22.0,
+      "Rank-k@90 of the 100-row shift cloud": 10.0,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Decoder layer": 23.0,
+      "Rank-k@90 of the 100-row shift cloud": 9.0,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Decoder layer": 24.0,
+      "Rank-k@90 of the 100-row shift cloud": 9.0,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Decoder layer": 25.0,
+      "Rank-k@90 of the 100-row shift cloud": 9.0,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Decoder layer": 26.0,
+      "Rank-k@90 of the 100-row shift cloud": 8.0,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Decoder layer": 27.0,
+      "Rank-k@90 of the 100-row shift cloud": 6.0,
+      "_kind": "line",
+      "_group": 7
+    }
+  ],
+  "n_series": 8,
+  "total_points": 224,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Marker shift rank across layers: shared-text re-capture collapses all four cells",
+        "xlabel": "Decoder layer",
+        "ylabel": "Rank-k@90 of the 100-row shift cloud",
+        "legend_labels": [
+          "LoRA + negatives \u2014 own text (\u0394G +5.5)",
+          "LoRA positives-only \u2014 own text (\u0394G +4.3)",
+          "Full FT + negatives (reused) \u2014 own text (\u0394G +6.3)",
+          "Full FT positives-only \u2014 own text (\u0394G +6.9)",
+          "LoRA + negatives \u2014 shared text"
+        ],
+        "annotations": [
+          "registered read layer 25"
+        ],
+        "xticklabels": [
+          "\u22125",
+          "0",
+          "5",
+          "10",
+          "15",
+          "20",
+          "25",
+          "30"
+        ],
+        "yticklabels": [
+          "0",
+          "10",
+          "20",
+          "30",
+          "40",
+          "50",
+          "60",
+          "70",
+          "80"
+        ]
+      }
+    ],
+    "series": [
+      "LoRA + negatives \u2014 own text (\u0394G +5.5)",
+      "LoRA positives-only \u2014 own text (\u0394G +4.3)",
+      "Full FT + negatives (reused) \u2014 own text (\u0394G +6.3)",
+      "Full FT positives-only \u2014 own text (\u0394G +6.9)",
+      "LoRA + negatives \u2014 shared text"
+    ]
+  }
+}

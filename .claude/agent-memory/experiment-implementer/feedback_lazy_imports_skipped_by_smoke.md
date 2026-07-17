@@ -1,6 +1,6 @@
 ---
 name: Lazy imports in smoke-skipped branches are unverified code
-description: ImportError class that fires only on the pod — lazy imports inside --dry-run/--skip-upload-skipped branches; hoist to module top + AST-based --verify-imports smoke
+description: ImportError class that fires only on the pod — lazy imports inside --dry-run/--skip-upload-skipped branches; hoist to module top + AST-based --verify-imports smoke + signature-bind fenced calls (#1332)
 type: feedback
 ---
 
@@ -21,7 +21,11 @@ production.
 top so absence crashes at process start; (2) before relaunch, run an
 AST-based `--verify-imports` mode that walks every in-scope file and
 EXECUTES every deferred import (hand-maintained symbol lists re-create
-the drift — generate from the AST); (3) when porting code that calls a
+the drift — generate from the AST), and signature-BIND every
+smoke-fenced call to an imported helper — `inspect.signature(fn).bind(...)`
+with the call site's statically-known shape (#1332: import resolution
+green-lit fenced calls missing a required positional + kw-only arg);
+(3) when porting code that calls a
 private helper (`_retry_transient`-style), grep the SOURCE branch for
 where the symbol is actually defined — file-local helpers do not travel
 with the import path you assume.

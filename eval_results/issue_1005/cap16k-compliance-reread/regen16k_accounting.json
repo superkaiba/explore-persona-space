@@ -1,0 +1,1131 @@
+{
+  "dv": "per-row 16,384 regen accounting (amendment plan v4 \u00a74)",
+  "forced": true,
+  "trunc_frac_pre_regen": 0.04041666666666666,
+  "n_targets": 97,
+  "totals": {
+    "recovered": 76,
+    "still_truncated": 21
+  },
+  "per_context": {
+    "f1_house_librarian": {
+      "recovered": 1
+    },
+    "f1_house_surgeon": {
+      "recovered": 3
+    },
+    "f1_house_medical_doctor": {
+      "still_truncated": 1,
+      "recovered": 1
+    },
+    "f1_house_software_engineer": {
+      "recovered": 1
+    },
+    "f1_house_data_scientist": {
+      "still_truncated": 1,
+      "recovered": 1
+    },
+    "f1_phub_01": {
+      "still_truncated": 1
+    },
+    "f1_phub_03": {
+      "recovered": 3,
+      "still_truncated": 1
+    },
+    "f1_phub_04": {
+      "still_truncated": 2,
+      "recovered": 1
+    },
+    "f1_phub_08": {
+      "recovered": 1
+    },
+    "f2_wc_short_2": {
+      "recovered": 1
+    },
+    "f2_wc_short_4": {
+      "recovered": 3
+    },
+    "f2_wc_short_5": {
+      "recovered": 8
+    },
+    "f2_wc_long_1": {
+      "recovered": 2,
+      "still_truncated": 2
+    },
+    "f2_wc_long_2": {
+      "recovered": 7,
+      "still_truncated": 1
+    },
+    "f2_wc_long_3": {
+      "recovered": 1,
+      "still_truncated": 2
+    },
+    "f2_wc_long_4": {
+      "recovered": 2,
+      "still_truncated": 1
+    },
+    "f2_wc_long_5": {
+      "still_truncated": 1
+    },
+    "f3_icl_marker_k4": {
+      "recovered": 2,
+      "still_truncated": 1
+    },
+    "f3_icl_french_k4": {
+      "still_truncated": 1
+    },
+    "f3_icl_json_k4": {
+      "still_truncated": 1
+    },
+    "f3_icl_pirate_k4": {
+      "recovered": 1
+    },
+    "f3_icl_marker_k2": {
+      "recovered": 1
+    },
+    "f3_icl_marker_k8": {
+      "recovered": 1
+    },
+    "f3_icl_json_k2": {
+      "recovered": 3
+    },
+    "f3_icl_json_k8": {
+      "still_truncated": 1,
+      "recovered": 2
+    },
+    "f4_reph_polite": {
+      "recovered": 2
+    },
+    "f4_reph_casual": {
+      "recovered": 1
+    },
+    "f4_reph_legalese": {
+      "still_truncated": 1
+    },
+    "f4_reph_enthusiastic": {
+      "recovered": 1
+    },
+    "f4_reph_archaic": {
+      "still_truncated": 1,
+      "recovered": 2
+    },
+    "f5_fmt_json": {
+      "recovered": 1
+    },
+    "f5_fmt_code_comment": {
+      "recovered": 3
+    },
+    "f5_fmt_markdown_table": {
+      "recovered": 1
+    },
+    "f5_fmt_xml": {
+      "still_truncated": 1
+    },
+    "f5_fmt_bullets": {
+      "recovered": 4
+    },
+    "f6_default_template": {
+      "recovered": 3
+    },
+    "f6_helpful_asst": {
+      "recovered": 1
+    },
+    "f8_behav_marker": {
+      "recovered": 2
+    },
+    "f8_behav_sycophant": {
+      "recovered": 2
+    },
+    "f8_behav_refusal": {
+      "recovered": 2
+    },
+    "f8_behav_fact": {
+      "recovered": 4
+    },
+    "f8_behav_harmful": {
+      "still_truncated": 1,
+      "recovered": 1
+    }
+  },
+  "rows": [
+    {
+      "context": "f1_house_librarian",
+      "qi": 27,
+      "category": "recovered",
+      "pre_well_formed": false,
+      "pre_reason": "truncated_no_close",
+      "post_well_formed": true,
+      "post_reason": "",
+      "post_finish_reason": "stop"
+    },
+    {
+      "context": "f1_house_surgeon",
+      "qi": 4,
+      "category": "recovered",
+      "pre_well_formed": false,
+      "pre_reason": "truncated_no_close",
+      "post_well_formed": true,
+      "post_reason": "",
+      "post_finish_reason": "stop"
+    },
+    {
+      "context": "f1_house_surgeon",
+      "qi": 23,
+      "category": "recovered",
+      "pre_well_formed": false,
+      "pre_reason": "truncated_no_close",
+      "post_well_formed": true,
+      "post_reason": "",
+      "post_finish_reason": "stop"
+    },
+    {
+      "context": "f1_house_surgeon",
+      "qi": 37,
+      "category": "recovered",
+      "pre_well_formed": false,
+      "pre_reason": "truncated_no_close",
+      "post_well_formed": true,
+      "post_reason": "",
+      "post_finish_reason": "stop"
+    },
+    {
+      "context": "f1_house_medical_doctor",
+      "qi": 1,
+      "category": "still_truncated",
+      "pre_well_formed": false,
+      "pre_reason": "truncated_no_close",
+      "post_well_formed": false,
+      "post_reason": "truncated_no_close",
+      "post_finish_reason": "length"
+    },
+    {
+      "context": "f1_house_medical_doctor",
+      "qi": 35,
+      "category": "recovered",
+      "pre_well_formed": false,
+      "pre_reason": "truncated_no_close",
+      "post_well_formed": true,
+      "post_reason": "",
+      "post_finish_reason": "stop"
+    },
+    {
+      "context": "f1_house_software_engineer",
+      "qi": 23,
+      "category": "recovered",
+      "pre_well_formed": false,
+      "pre_reason": "truncated_no_close",
+      "post_well_formed": true,
+      "post_reason": "",
+      "post_finish_reason": "stop"
+    },
+    {
+      "context": "f1_house_data_scientist",
+      "qi": 1,
+      "category": "still_truncated",
+      "pre_well_formed": false,
+      "pre_reason": "truncated_no_close",
+      "post_well_formed": false,
+      "post_reason": "truncated_no_close",
+      "post_finish_reason": "length"
+    },
+    {
+      "context": "f1_house_data_scientist",
+      "qi": 13,
+      "category": "recovered",
+      "pre_well_formed": false,
+      "pre_reason": "truncated_no_close",
+      "post_well_formed": true,
+      "post_reason": "",
+      "post_finish_reason": "stop"
+    },
+    {
+      "context": "f1_phub_01",
+      "qi": 14,
+      "category": "still_truncated",
+      "pre_well_formed": false,
+      "pre_reason": "truncated_no_close",
+      "post_well_formed": false,
+      "post_reason": "truncated_no_close",
+      "post_finish_reason": "length"
+    },
+    {
+      "context": "f1_phub_03",
+      "qi": 20,
+      "category": "recovered",
+      "pre_well_formed": false,
+      "pre_reason": "truncated_no_close",
+      "post_well_formed": true,
+      "post_reason": "",
+      "post_finish_reason": "stop"
+    },
+    {
+      "context": "f1_phub_03",
+      "qi": 22,
+      "category": "recovered",
+      "pre_well_formed": false,
+      "pre_reason": "truncated_no_close",
+      "post_well_formed": true,
+      "post_reason": "",
+      "post_finish_reason": "stop"
+    },
+    {
+      "context": "f1_phub_03",
+      "qi": 28,
+      "category": "recovered",
+      "pre_well_formed": false,
+      "pre_reason": "truncated_no_close",
+      "post_well_formed": true,
+      "post_reason": "",
+      "post_finish_reason": "stop"
+    },
+    {
+      "context": "f1_phub_03",
+      "qi": 35,
+      "category": "still_truncated",
+      "pre_well_formed": false,
+      "pre_reason": "truncated_no_close",
+      "post_well_formed": false,
+      "post_reason": "truncated_no_close",
+      "post_finish_reason": "length"
+    },
+    {
+      "context": "f1_phub_04",
+      "qi": 1,
+      "category": "still_truncated",
+      "pre_well_formed": false,
+      "pre_reason": "truncated_no_close",
+      "post_well_formed": false,
+      "post_reason": "truncated_no_close",
+      "post_finish_reason": "length"
+    },
+    {
+      "context": "f1_phub_04",
+      "qi": 4,
+      "category": "recovered",
+      "pre_well_formed": false,
+      "pre_reason": "truncated_no_close",
+      "post_well_formed": true,
+      "post_reason": "",
+      "post_finish_reason": "stop"
+    },
+    {
+      "context": "f1_phub_04",
+      "qi": 35,
+      "category": "still_truncated",
+      "pre_well_formed": false,
+      "pre_reason": "truncated_no_close",
+      "post_well_formed": false,
+      "post_reason": "truncated_no_close",
+      "post_finish_reason": "length"
+    },
+    {
+      "context": "f1_phub_08",
+      "qi": 10,
+      "category": "recovered",
+      "pre_well_formed": false,
+      "pre_reason": "truncated_no_close",
+      "post_well_formed": true,
+      "post_reason": "",
+      "post_finish_reason": "stop"
+    },
+    {
+      "context": "f2_wc_short_2",
+      "qi": 27,
+      "category": "recovered",
+      "pre_well_formed": false,
+      "pre_reason": "truncated_no_close",
+      "post_well_formed": true,
+      "post_reason": "",
+      "post_finish_reason": "stop"
+    },
+    {
+      "context": "f2_wc_short_4",
+      "qi": 10,
+      "category": "recovered",
+      "pre_well_formed": false,
+      "pre_reason": "truncated_no_close",
+      "post_well_formed": true,
+      "post_reason": "",
+      "post_finish_reason": "stop"
+    },
+    {
+      "context": "f2_wc_short_4",
+      "qi": 41,
+      "category": "recovered",
+      "pre_well_formed": false,
+      "pre_reason": "truncated_no_close",
+      "post_well_formed": true,
+      "post_reason": "",
+      "post_finish_reason": "stop"
+    },
+    {
+      "context": "f2_wc_short_4",
+      "qi": 43,
+      "category": "recovered",
+      "pre_well_formed": false,
+      "pre_reason": "truncated_no_close",
+      "post_well_formed": true,
+      "post_reason": "",
+      "post_finish_reason": "stop"
+    },
+    {
+      "context": "f2_wc_short_5",
+      "qi": 11,
+      "category": "recovered",
+      "pre_well_formed": false,
+      "pre_reason": "truncated_no_close",
+      "post_well_formed": true,
+      "post_reason": "",
+      "post_finish_reason": "stop"
+    },
+    {
+      "context": "f2_wc_short_5",
+      "qi": 14,
+      "category": "recovered",
+      "pre_well_formed": false,
+      "pre_reason": "truncated_no_close",
+      "post_well_formed": true,
+      "post_reason": "",
+      "post_finish_reason": "stop"
+    },
+    {
+      "context": "f2_wc_short_5",
+      "qi": 23,
+      "category": "recovered",
+      "pre_well_formed": false,
+      "pre_reason": "truncated_no_close",
+      "post_well_formed": true,
+      "post_reason": "",
+      "post_finish_reason": "stop"
+    },
+    {
+      "context": "f2_wc_short_5",
+      "qi": 31,
+      "category": "recovered",
+      "pre_well_formed": false,
+      "pre_reason": "truncated_no_close",
+      "post_well_formed": true,
+      "post_reason": "",
+      "post_finish_reason": "stop"
+    },
+    {
+      "context": "f2_wc_short_5",
+      "qi": 35,
+      "category": "recovered",
+      "pre_well_formed": false,
+      "pre_reason": "truncated_no_close",
+      "post_well_formed": true,
+      "post_reason": "",
+      "post_finish_reason": "stop"
+    },
+    {
+      "context": "f2_wc_short_5",
+      "qi": 36,
+      "category": "recovered",
+      "pre_well_formed": false,
+      "pre_reason": "truncated_no_close",
+      "post_well_formed": true,
+      "post_reason": "",
+      "post_finish_reason": "stop"
+    },
+    {
+      "context": "f2_wc_short_5",
+      "qi": 39,
+      "category": "recovered",
+      "pre_well_formed": false,
+      "pre_reason": "truncated_no_close",
+      "post_well_formed": true,
+      "post_reason": "",
+      "post_finish_reason": "stop"
+    },
+    {
+      "context": "f2_wc_short_5",
+      "qi": 42,
+      "category": "recovered",
+      "pre_well_formed": false,
+      "pre_reason": "truncated_no_close",
+      "post_well_formed": true,
+      "post_reason": "",
+      "post_finish_reason": "stop"
+    },
+    {
+      "context": "f2_wc_long_1",
+      "qi": 14,
+      "category": "recovered",
+      "pre_well_formed": false,
+      "pre_reason": "truncated_no_close",
+      "post_well_formed": true,
+      "post_reason": "",
+      "post_finish_reason": "stop"
+    },
+    {
+      "context": "f2_wc_long_1",
+      "qi": 23,
+      "category": "recovered",
+      "pre_well_formed": false,
+      "pre_reason": "truncated_no_close",
+      "post_well_formed": true,
+      "post_reason": "",
+      "post_finish_reason": "stop"
+    },
+    {
+      "context": "f2_wc_long_1",
+      "qi": 32,
+      "category": "still_truncated",
+      "pre_well_formed": false,
+      "pre_reason": "truncated_no_close",
+      "post_well_formed": false,
+      "post_reason": "truncated_no_close",
+      "post_finish_reason": "length"
+    },
+    {
+      "context": "f2_wc_long_1",
+      "qi": 40,
+      "category": "still_truncated",
+      "pre_well_formed": false,
+      "pre_reason": "truncated_no_close",
+      "post_well_formed": false,
+      "post_reason": "truncated_no_close",
+      "post_finish_reason": "length"
+    },
+    {
+      "context": "f2_wc_long_2",
+      "qi": 7,
+      "category": "recovered",
+      "pre_well_formed": false,
+      "pre_reason": "truncated_no_close",
+      "post_well_formed": true,
+      "post_reason": "",
+      "post_finish_reason": "stop"
+    },
+    {
+      "context": "f2_wc_long_2",
+      "qi": 19,
+      "category": "recovered",
+      "pre_well_formed": false,
+      "pre_reason": "truncated_no_close",
+      "post_well_formed": true,
+      "post_reason": "",
+      "post_finish_reason": "stop"
+    },
+    {
+      "context": "f2_wc_long_2",
+      "qi": 30,
+      "category": "still_truncated",
+      "pre_well_formed": false,
+      "pre_reason": "truncated_no_close",
+      "post_well_formed": false,
+      "post_reason": "truncated_no_close",
+      "post_finish_reason": "length"
+    },
+    {
+      "context": "f2_wc_long_2",
+      "qi": 32,
+      "category": "recovered",
+      "pre_well_formed": false,
+      "pre_reason": "truncated_no_close",
+      "post_well_formed": true,
+      "post_reason": "",
+      "post_finish_reason": "stop"
+    },
+    {
+      "context": "f2_wc_long_2",
+      "qi": 33,
+      "category": "recovered",
+      "pre_well_formed": false,
+      "pre_reason": "truncated_no_close",
+      "post_well_formed": true,
+      "post_reason": "",
+      "post_finish_reason": "stop"
+    },
+    {
+      "context": "f2_wc_long_2",
+      "qi": 35,
+      "category": "recovered",
+      "pre_well_formed": false,
+      "pre_reason": "truncated_no_close",
+      "post_well_formed": true,
+      "post_reason": "",
+      "post_finish_reason": "stop"
+    },
+    {
+      "context": "f2_wc_long_2",
+      "qi": 37,
+      "category": "recovered",
+      "pre_well_formed": false,
+      "pre_reason": "truncated_no_close",
+      "post_well_formed": true,
+      "post_reason": "",
+      "post_finish_reason": "stop"
+    },
+    {
+      "context": "f2_wc_long_2",
+      "qi": 41,
+      "category": "recovered",
+      "pre_well_formed": false,
+      "pre_reason": "truncated_no_close",
+      "post_well_formed": true,
+      "post_reason": "",
+      "post_finish_reason": "stop"
+    },
+    {
+      "context": "f2_wc_long_3",
+      "qi": 12,
+      "category": "recovered",
+      "pre_well_formed": false,
+      "pre_reason": "truncated_no_close",
+      "post_well_formed": true,
+      "post_reason": "",
+      "post_finish_reason": "stop"
+    },
+    {
+      "context": "f2_wc_long_3",
+      "qi": 35,
+      "category": "still_truncated",
+      "pre_well_formed": false,
+      "pre_reason": "truncated_no_close",
+      "post_well_formed": false,
+      "post_reason": "truncated_no_close",
+      "post_finish_reason": "length"
+    },
+    {
+      "context": "f2_wc_long_3",
+      "qi": 39,
+      "category": "still_truncated",
+      "pre_well_formed": false,
+      "pre_reason": "truncated_no_close",
+      "post_well_formed": false,
+      "post_reason": "truncated_no_close",
+      "post_finish_reason": "length"
+    },
+    {
+      "context": "f2_wc_long_4",
+      "qi": 4,
+      "category": "recovered",
+      "pre_well_formed": false,
+      "pre_reason": "degenerate_repetition",
+      "post_well_formed": true,
+      "post_reason": "",
+      "post_finish_reason": "stop"
+    },
+    {
+      "context": "f2_wc_long_4",
+      "qi": 16,
+      "category": "still_truncated",
+      "pre_well_formed": false,
+      "pre_reason": "truncated_no_close",
+      "post_well_formed": false,
+      "post_reason": "truncated_no_close",
+      "post_finish_reason": "length"
+    },
+    {
+      "context": "f2_wc_long_4",
+      "qi": 18,
+      "category": "recovered",
+      "pre_well_formed": false,
+      "pre_reason": "degenerate_repetition",
+      "post_well_formed": true,
+      "post_reason": "",
+      "post_finish_reason": "stop"
+    },
+    {
+      "context": "f2_wc_long_5",
+      "qi": 25,
+      "category": "still_truncated",
+      "pre_well_formed": false,
+      "pre_reason": "truncated_no_close",
+      "post_well_formed": false,
+      "post_reason": "truncated_no_close",
+      "post_finish_reason": "length"
+    },
+    {
+      "context": "f3_icl_marker_k4",
+      "qi": 25,
+      "category": "recovered",
+      "pre_well_formed": false,
+      "pre_reason": "truncated_no_close",
+      "post_well_formed": true,
+      "post_reason": "",
+      "post_finish_reason": "stop"
+    },
+    {
+      "context": "f3_icl_marker_k4",
+      "qi": 35,
+      "category": "still_truncated",
+      "pre_well_formed": false,
+      "pre_reason": "truncated_no_close",
+      "post_well_formed": false,
+      "post_reason": "truncated_no_close",
+      "post_finish_reason": "length"
+    },
+    {
+      "context": "f3_icl_marker_k4",
+      "qi": 36,
+      "category": "recovered",
+      "pre_well_formed": false,
+      "pre_reason": "truncated_no_close",
+      "post_well_formed": true,
+      "post_reason": "",
+      "post_finish_reason": "stop"
+    },
+    {
+      "context": "f3_icl_french_k4",
+      "qi": 14,
+      "category": "still_truncated",
+      "pre_well_formed": false,
+      "pre_reason": "truncated_no_close",
+      "post_well_formed": false,
+      "post_reason": "truncated_no_close",
+      "post_finish_reason": "length"
+    },
+    {
+      "context": "f3_icl_json_k4",
+      "qi": 35,
+      "category": "still_truncated",
+      "pre_well_formed": false,
+      "pre_reason": "truncated_no_close",
+      "post_well_formed": false,
+      "post_reason": "truncated_no_close",
+      "post_finish_reason": "length"
+    },
+    {
+      "context": "f3_icl_pirate_k4",
+      "qi": 26,
+      "category": "recovered",
+      "pre_well_formed": false,
+      "pre_reason": "truncated_no_close",
+      "post_well_formed": true,
+      "post_reason": "",
+      "post_finish_reason": "stop"
+    },
+    {
+      "context": "f3_icl_marker_k2",
+      "qi": 41,
+      "category": "recovered",
+      "pre_well_formed": false,
+      "pre_reason": "truncated_no_close",
+      "post_well_formed": true,
+      "post_reason": "",
+      "post_finish_reason": "stop"
+    },
+    {
+      "context": "f3_icl_marker_k8",
+      "qi": 40,
+      "category": "recovered",
+      "pre_well_formed": false,
+      "pre_reason": "truncated_no_close",
+      "post_well_formed": true,
+      "post_reason": "",
+      "post_finish_reason": "stop"
+    },
+    {
+      "context": "f3_icl_json_k2",
+      "qi": 17,
+      "category": "recovered",
+      "pre_well_formed": false,
+      "pre_reason": "truncated_no_close",
+      "post_well_formed": true,
+      "post_reason": "",
+      "post_finish_reason": "stop"
+    },
+    {
+      "context": "f3_icl_json_k2",
+      "qi": 36,
+      "category": "recovered",
+      "pre_well_formed": false,
+      "pre_reason": "degenerate_repetition",
+      "post_well_formed": true,
+      "post_reason": "",
+      "post_finish_reason": "stop"
+    },
+    {
+      "context": "f3_icl_json_k2",
+      "qi": 38,
+      "category": "recovered",
+      "pre_well_formed": false,
+      "pre_reason": "truncated_no_close",
+      "post_well_formed": true,
+      "post_reason": "",
+      "post_finish_reason": "stop"
+    },
+    {
+      "context": "f3_icl_json_k8",
+      "qi": 0,
+      "category": "still_truncated",
+      "pre_well_formed": false,
+      "pre_reason": "truncated_no_close",
+      "post_well_formed": false,
+      "post_reason": "truncated_no_close",
+      "post_finish_reason": "length"
+    },
+    {
+      "context": "f3_icl_json_k8",
+      "qi": 1,
+      "category": "recovered",
+      "pre_well_formed": false,
+      "pre_reason": "truncated_no_close",
+      "post_well_formed": true,
+      "post_reason": "",
+      "post_finish_reason": "stop"
+    },
+    {
+      "context": "f3_icl_json_k8",
+      "qi": 14,
+      "category": "recovered",
+      "pre_well_formed": false,
+      "pre_reason": "truncated_no_close",
+      "post_well_formed": true,
+      "post_reason": "",
+      "post_finish_reason": "stop"
+    },
+    {
+      "context": "f4_reph_polite",
+      "qi": 20,
+      "category": "recovered",
+      "pre_well_formed": false,
+      "pre_reason": "truncated_no_close",
+      "post_well_formed": true,
+      "post_reason": "",
+      "post_finish_reason": "stop"
+    },
+    {
+      "context": "f4_reph_polite",
+      "qi": 46,
+      "category": "recovered",
+      "pre_well_formed": false,
+      "pre_reason": "truncated_no_close",
+      "post_well_formed": true,
+      "post_reason": "",
+      "post_finish_reason": "stop"
+    },
+    {
+      "context": "f4_reph_casual",
+      "qi": 40,
+      "category": "recovered",
+      "pre_well_formed": false,
+      "pre_reason": "truncated_no_close",
+      "post_well_formed": true,
+      "post_reason": "",
+      "post_finish_reason": "stop"
+    },
+    {
+      "context": "f4_reph_legalese",
+      "qi": 35,
+      "category": "still_truncated",
+      "pre_well_formed": false,
+      "pre_reason": "truncated_no_close",
+      "post_well_formed": false,
+      "post_reason": "truncated_no_close",
+      "post_finish_reason": "length"
+    },
+    {
+      "context": "f4_reph_enthusiastic",
+      "qi": 35,
+      "category": "recovered",
+      "pre_well_formed": false,
+      "pre_reason": "truncated_no_close",
+      "post_well_formed": true,
+      "post_reason": "",
+      "post_finish_reason": "stop"
+    },
+    {
+      "context": "f4_reph_archaic",
+      "qi": 35,
+      "category": "still_truncated",
+      "pre_well_formed": false,
+      "pre_reason": "truncated_no_close",
+      "post_well_formed": false,
+      "post_reason": "truncated_no_close",
+      "post_finish_reason": "length"
+    },
+    {
+      "context": "f4_reph_archaic",
+      "qi": 36,
+      "category": "recovered",
+      "pre_well_formed": false,
+      "pre_reason": "truncated_no_close",
+      "post_well_formed": true,
+      "post_reason": "",
+      "post_finish_reason": "stop"
+    },
+    {
+      "context": "f4_reph_archaic",
+      "qi": 40,
+      "category": "recovered",
+      "pre_well_formed": false,
+      "pre_reason": "truncated_no_close",
+      "post_well_formed": true,
+      "post_reason": "",
+      "post_finish_reason": "stop"
+    },
+    {
+      "context": "f5_fmt_json",
+      "qi": 40,
+      "category": "recovered",
+      "pre_well_formed": false,
+      "pre_reason": "truncated_no_close",
+      "post_well_formed": true,
+      "post_reason": "",
+      "post_finish_reason": "stop"
+    },
+    {
+      "context": "f5_fmt_code_comment",
+      "qi": 0,
+      "category": "recovered",
+      "pre_well_formed": false,
+      "pre_reason": "degenerate_repetition",
+      "post_well_formed": true,
+      "post_reason": "",
+      "post_finish_reason": "stop"
+    },
+    {
+      "context": "f5_fmt_code_comment",
+      "qi": 3,
+      "category": "recovered",
+      "pre_well_formed": false,
+      "pre_reason": "degenerate_repetition",
+      "post_well_formed": true,
+      "post_reason": "",
+      "post_finish_reason": "stop"
+    },
+    {
+      "context": "f5_fmt_code_comment",
+      "qi": 35,
+      "category": "recovered",
+      "pre_well_formed": false,
+      "pre_reason": "truncated_no_close",
+      "post_well_formed": true,
+      "post_reason": "",
+      "post_finish_reason": "stop"
+    },
+    {
+      "context": "f5_fmt_markdown_table",
+      "qi": 25,
+      "category": "recovered",
+      "pre_well_formed": false,
+      "pre_reason": "truncated_no_close",
+      "post_well_formed": true,
+      "post_reason": "",
+      "post_finish_reason": "stop"
+    },
+    {
+      "context": "f5_fmt_xml",
+      "qi": 20,
+      "category": "still_truncated",
+      "pre_well_formed": false,
+      "pre_reason": "truncated_no_close",
+      "post_well_formed": false,
+      "post_reason": "truncated_no_close",
+      "post_finish_reason": "length"
+    },
+    {
+      "context": "f5_fmt_bullets",
+      "qi": 4,
+      "category": "recovered",
+      "pre_well_formed": false,
+      "pre_reason": "truncated_no_close",
+      "post_well_formed": true,
+      "post_reason": "",
+      "post_finish_reason": "stop"
+    },
+    {
+      "context": "f5_fmt_bullets",
+      "qi": 23,
+      "category": "recovered",
+      "pre_well_formed": false,
+      "pre_reason": "truncated_no_close",
+      "post_well_formed": true,
+      "post_reason": "",
+      "post_finish_reason": "stop"
+    },
+    {
+      "context": "f5_fmt_bullets",
+      "qi": 24,
+      "category": "recovered",
+      "pre_well_formed": false,
+      "pre_reason": "truncated_no_close",
+      "post_well_formed": true,
+      "post_reason": "",
+      "post_finish_reason": "stop"
+    },
+    {
+      "context": "f5_fmt_bullets",
+      "qi": 31,
+      "category": "recovered",
+      "pre_well_formed": false,
+      "pre_reason": "truncated_no_close",
+      "post_well_formed": true,
+      "post_reason": "",
+      "post_finish_reason": "stop"
+    },
+    {
+      "context": "f6_default_template",
+      "qi": 1,
+      "category": "recovered",
+      "pre_well_formed": false,
+      "pre_reason": "truncated_no_close",
+      "post_well_formed": true,
+      "post_reason": "",
+      "post_finish_reason": "stop"
+    },
+    {
+      "context": "f6_default_template",
+      "qi": 17,
+      "category": "recovered",
+      "pre_well_formed": false,
+      "pre_reason": "truncated_no_close",
+      "post_well_formed": true,
+      "post_reason": "",
+      "post_finish_reason": "stop"
+    },
+    {
+      "context": "f6_default_template",
+      "qi": 39,
+      "category": "recovered",
+      "pre_well_formed": false,
+      "pre_reason": "truncated_no_close",
+      "post_well_formed": true,
+      "post_reason": "",
+      "post_finish_reason": "stop"
+    },
+    {
+      "context": "f6_helpful_asst",
+      "qi": 31,
+      "category": "recovered",
+      "pre_well_formed": false,
+      "pre_reason": "truncated_no_close",
+      "post_well_formed": true,
+      "post_reason": "",
+      "post_finish_reason": "stop"
+    },
+    {
+      "context": "f8_behav_marker",
+      "qi": 15,
+      "category": "recovered",
+      "pre_well_formed": false,
+      "pre_reason": "degenerate_repetition",
+      "post_well_formed": true,
+      "post_reason": "",
+      "post_finish_reason": "stop"
+    },
+    {
+      "context": "f8_behav_marker",
+      "qi": 35,
+      "category": "recovered",
+      "pre_well_formed": false,
+      "pre_reason": "truncated_no_close",
+      "post_well_formed": true,
+      "post_reason": "",
+      "post_finish_reason": "stop"
+    },
+    {
+      "context": "f8_behav_sycophant",
+      "qi": 20,
+      "category": "recovered",
+      "pre_well_formed": false,
+      "pre_reason": "truncated_no_close",
+      "post_well_formed": true,
+      "post_reason": "",
+      "post_finish_reason": "stop"
+    },
+    {
+      "context": "f8_behav_sycophant",
+      "qi": 35,
+      "category": "recovered",
+      "pre_well_formed": false,
+      "pre_reason": "truncated_no_close",
+      "post_well_formed": true,
+      "post_reason": "",
+      "post_finish_reason": "stop"
+    },
+    {
+      "context": "f8_behav_refusal",
+      "qi": 2,
+      "category": "recovered",
+      "pre_well_formed": false,
+      "pre_reason": "degenerate_repetition",
+      "post_well_formed": true,
+      "post_reason": "",
+      "post_finish_reason": "stop"
+    },
+    {
+      "context": "f8_behav_refusal",
+      "qi": 13,
+      "category": "recovered",
+      "pre_well_formed": false,
+      "pre_reason": "truncated_no_close",
+      "post_well_formed": true,
+      "post_reason": "",
+      "post_finish_reason": "stop"
+    },
+    {
+      "context": "f8_behav_fact",
+      "qi": 20,
+      "category": "recovered",
+      "pre_well_formed": false,
+      "pre_reason": "truncated_no_close",
+      "post_well_formed": true,
+      "post_reason": "",
+      "post_finish_reason": "stop"
+    },
+    {
+      "context": "f8_behav_fact",
+      "qi": 25,
+      "category": "recovered",
+      "pre_well_formed": false,
+      "pre_reason": "truncated_no_close",
+      "post_well_formed": true,
+      "post_reason": "",
+      "post_finish_reason": "stop"
+    },
+    {
+      "context": "f8_behav_fact",
+      "qi": 32,
+      "category": "recovered",
+      "pre_well_formed": false,
+      "pre_reason": "truncated_no_close",
+      "post_well_formed": true,
+      "post_reason": "",
+      "post_finish_reason": "stop"
+    },
+    {
+      "context": "f8_behav_fact",
+      "qi": 39,
+      "category": "recovered",
+      "pre_well_formed": false,
+      "pre_reason": "truncated_no_close",
+      "post_well_formed": true,
+      "post_reason": "",
+      "post_finish_reason": "stop"
+    },
+    {
+      "context": "f8_behav_harmful",
+      "qi": 20,
+      "category": "still_truncated",
+      "pre_well_formed": false,
+      "pre_reason": "truncated_no_close",
+      "post_well_formed": false,
+      "post_reason": "truncated_no_close",
+      "post_finish_reason": "length"
+    },
+    {
+      "context": "f8_behav_harmful",
+      "qi": 35,
+      "category": "recovered",
+      "pre_well_formed": false,
+      "pre_reason": "truncated_no_close",
+      "post_well_formed": true,
+      "post_reason": "",
+      "post_finish_reason": "stop"
+    }
+  ],
+  "reproducibility": {
+    "git_commit": "2b0fda1dd1c0746932bab103145ca7f87142fcc4",
+    "timestamp_utc": "2026-07-16T15:23:08.459721+00:00",
+    "python_version": "3.11.15",
+    "platform": "Linux-6.8.0-1063-gcp-x86_64-with-glibc2.35",
+    "torch": "2.8.0+cu128",
+    "numpy": "2.2.6",
+    "transformers": "4.57.6"
+  }
+}

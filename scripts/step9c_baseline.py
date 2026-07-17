@@ -26,6 +26,7 @@ Subcommands::
                                                      [--scratch-timeout-s 120]
                                                      [--no-scratch-fallback]
                                                      [--no-src-shadow] [--json]
+    uv run python scripts/step9c_baseline.py tmproot
 
 Exit codes (pinned by ``tests/test_step9c_baseline.py``):
 
@@ -44,14 +45,20 @@ Exit codes (pinned by ``tests/test_step9c_baseline.py``):
   2          indeterminate: ``--pytest-rc`` not in {0, 1}; missing/empty junitxml; zero
              testcases; unusable ledger with unresolved buckets (no ``--run-pristine``);
              pristine run timeout/crash (incl. a missing root-venv interpreter); dirty
-             oracle on a failing node where the scratch fallback is ineligible
+             oracle on a failing node where the scratch oracle is ineligible
              (residual contaminating dirt — ``pyproject.toml`` / ``uv.lock`` or an
              out-of-package ``src/`` path; dirty ``src/explore_persona_space/**`` is
              neutralized by the scratch PYTHONPATH shadow unless ``--no-src-shadow``
-             (#1251); a scan-set (``GLOB_SCAN_TESTS``) node; a non-sparse work
-             root; or ``--no-scratch-fallback``); scratch-worktree fallback creation
-             or src-shadow probe failure; more than ``--max-pristine-files`` distinct
-             pristine files ("systemic main breakage"); missing ruff binary
+             (#1251); a scan-set (``GLOB_SCAN_TESTS``) node outside
+             ``FILE_ANCHORED_SCAN_TESTS`` (#1337); a non-sparse work
+             root; or ``--no-scratch-fallback``); scratch-worktree creation or
+             src-shadow probe failure on a DIRTY root (a CLEAN-root scratch failure
+             degrades to the trustworthy root oracle with a WARN, never exit 2 —
+             #1408); more than ``--max-pristine-files`` distinct
+             pristine files ("systemic main breakage"); missing ruff binary;
+             a misconfigured explicit ``EPM_STEP9C_TMPDIR`` override (#1408)
+``tmproot``
+  0          always — prints the resolved gate temp-write root, or nothing
 ===========  ==========================================================================
 
 Safety invariants (plan #1022 v3 R1-R7): the refresh NEVER runs ``pytest tests/``
@@ -72,19 +79,31 @@ scratch-oracle mode then sets ``PYTHONPATH`` to the scratch's HEAD-pinned
 (``assert_scratch_src_shadow``, #1251); NO subcommand
 mutates git state (reads only:
 ``rev-parse`` / ``rev-list`` / ``cat-file`` / ``diff --name-only`` /
-``status --porcelain`` / ``ls-tree``), EXCEPT compare's bounded dirty-oracle
-scratch fallback (#1077) — ``git worktree add --detach --no-checkout`` into a
-fresh tmp dir + worktree-local sparse-checkout + populate at the root's HEAD,
+``status --porcelain`` / ``ls-tree``), EXCEPT compare's bounded scratch-oracle
+creation (#1077; the DEFAULT pristine oracle since #1408 — #1077's dirty-only
+trigger removed, so root-oracle runs remain only for scratch-INELIGIBLE nodes
+and the clean-root degradation path) — ``git worktree add --detach
+--no-checkout`` into a fresh tmp dir + worktree-local sparse-checkout +
+populate at the root's HEAD,
 ALWAYS torn down in a ``finally`` (``worktree remove --force`` + rmtree;
 deliberately NO ``git worktree prune`` — see ``remove_scratch_worktree``); the
 shared root's branches, index, working tree, and shared config are never
 touched; ledger writes are flock single-flight + atomic tmp+``os.replace``.
+Bulk temp writes (the scratch tree, pytest basetemp/TMPDIR fixtures, the
+pristine junit) route onto the data disk when it is mounted
+(``gate_tmp_root``, #1408; #1363: ``/`` at 100% killed the gate); the gate's
+own junit/rc/log triplet stays at ``/tmp`` (pinned SKILL contract paths).
 
-Residual risk of the scratch fallback: ``repo_root()``-anchored /
+Residual risk of the scratch oracle (the DEFAULT since #1408, so this
+environmental channel applies to EVERY compare — clean or dirty root alike,
+not only the formerly-dirty fallback runs): ``repo_root()``-anchored /
 installed-package-path reads resolve the MAIN root even from a scratch cwd —
 the scan-set (``GLOB_SCAN_TESTS``) exclusion covers the known class of such
-live-tree scanners; a future non-scan test that executes root files via
-``repo_root()`` would re-open that channel. The #1251 src-shadow covers
+live-tree scanners — EXCEPT ``FILE_ANCHORED_SCAN_TESTS`` members (#1337),
+scan tests source-verified to derive their scan root from ``Path(__file__)``
+so a scratch copy scans the scratch tree (anchoring drift pin in
+tests/test_step9c_baseline.py); a future non-scan test that executes root
+files via ``repo_root()`` would re-open that channel. The #1251 src-shadow covers
 *import-system* resolution only — ``repo_root()``-anchored ``src/`` file READS
 remain that documented scan-set-covered channel. PRE-EXISTING (unchanged by
 #1251) trigger gap: src-``.json``-only dirt with no dirty ``*.py`` never trips
@@ -110,6 +129,7 @@ from __future__ import annotations
 import argparse
 import contextlib
 import fcntl
+import getpass
 import importlib.util
 import json
 import os
@@ -152,6 +172,26 @@ SCRATCH_CONTAMINATION_PATHSPEC: tuple[str, ...] = ("src/", "pyproject.toml", "uv
 
 # Sparse-profile floor excludes — mirror of new_worktree.sh EXCLUDES.
 SCRATCH_EXCLUDES: tuple[str, ...] = ("eval_results", "external", "ood_eval_results")
+
+# Scan-set nodes whose scan is SOURCE-VERIFIED to anchor on the test file's own
+# location (Path(__file__)-derived root; no repo_root() / task_workflow / live-tree
+# read in the scan chain) — a scratch copy of such a test scans the SCRATCH tree,
+# so the scratch pristine oracle is trustworthy for it and R-F is relaxed to R-F'
+# (#1337; incident #1318). Hand-curated pinned literal, same curation rule as
+# select_step9c_tests.py's GLOB_SCAN_TESTS / SLOW_TESTS; the live-tree anchoring
+# drift pin is tests/test_step9c_baseline.py::test_file_anchored_scan_tests_live_tree_pin.
+# FAIL-CLOSED: a scan test absent here keeps the R-F refusal — verify anchoring
+# by reading the source BEFORE adding an entry.
+FILE_ANCHORED_SCAN_TESTS: frozenset[str] = frozenset(
+    {
+        # root = Path(__file__).resolve().parents[1] (:871); _scan_targets(root) uses
+        # root.glob(...) + `git ls-files` with cwd=root — all scratch-local (#1318).
+        "tests/test_shared_vm_thread_caps.py",
+        # REPO_ROOT = Path(__file__).resolve().parents[1] (:76); _iter_in_scope_files
+        # globs REPO_ROOT only; pure ast/re on file text, stdlib-only imports.
+        "tests/test_subprocess_env_explicit.py",
+    }
+)
 
 REQUIRED_LEDGER_KEYS: frozenset[str] = frozenset(
     {
@@ -299,6 +339,160 @@ def thread_capped(env: Mapping[str, str]) -> dict[str, str]:
     return capped
 
 
+# --- Gate temp-write routing (#1408; #1363) ----------------------------------------
+
+# AF_UNIX socket paths cap at ~108 bytes; a long pytest basetemp prefix overflowed it
+# in #1363 (the tmux-socket fixture). Both production resolution roots below keep the
+# derived basetemp prefix (<root>/bt-XXXXXXXX/p) within this bound.
+GATE_TMP_MAX_PREFIX_CHARS = 50
+GATE_TMP_SWEEP_MAX_AGE_S = 7 * 24 * 3600.0
+GATE_TMP_SWEEP_CAP = 20
+
+
+def _gate_tmp_writable(p: Path) -> bool:
+    """Create+unlink writability probe (permission bits alone lie on squashed mounts)."""
+    try:
+        fd, tmp = tempfile.mkstemp(prefix=".step9c-probe-", dir=str(p))
+    except OSError:
+        return False
+    os.close(fd)
+    with contextlib.suppress(OSError):
+        os.unlink(tmp)
+    return True
+
+
+def _reap_leaked_scratch_admin(entry: Path) -> None:
+    """Best-effort: surgically drop a leaked scratch tree's git worktree admin entry.
+
+    A SIGKILL'd compare leaves ``<entry>/tree-<pid>`` registered in the owning
+    repo's ``.git/worktrees``. ``git worktree remove --force`` on the leaked
+    tree — its owner resolved from the tree's own ``.git`` gitfile — clears
+    that entry WITHOUT the global ``git worktree prune``, which stays banned
+    here (prune reaps admin entries of ANY unreachable worktree; see
+    ``remove_scratch_worktree``). Every failure is suppressed: the caller's
+    rmtree still runs, and a residual admin entry is cosmetic (git gc's
+    ``gc.worktreePruneExpire`` sweeps it).
+    """
+    for tree in entry.glob("tree-*"):
+        with contextlib.suppress(Exception):
+            content = (tree / ".git").read_text().strip()
+            if not content.startswith("gitdir:"):
+                continue
+            admin = Path(content.removeprefix("gitdir:").strip())
+            owner = admin.parents[2]  # <owner>/.git/worktrees/<id> -> <owner>
+            subprocess.run(
+                ["git", "worktree", "remove", "--force", str(tree)],
+                cwd=str(owner),
+                capture_output=True,
+                timeout=30,
+            )
+
+
+def _sweep_stale_gate_tmp(root: Path) -> None:
+    """Opportunistic hygiene: reap >7-day-old bt-*/step9c-scratch-* strays under *root*.
+
+    Nothing else reaps this location (the #681 data-disk guard pass is
+    escalate-only), so a SIGKILL'd compare's leaked basetemp / scratch tree
+    would otherwise accumulate. Best-effort: capped at GATE_TMP_SWEEP_CAP
+    entries per call, every failure suppressed, fresh entries + foreign
+    names never touched.
+    """
+    with contextlib.suppress(OSError):
+        now = time.time()
+        reaped = 0
+        for entry in sorted(root.iterdir()):
+            if reaped >= GATE_TMP_SWEEP_CAP:
+                break
+            name = entry.name
+            if not (name.startswith("bt-") or name.startswith("step9c-scratch-")):
+                continue
+            with contextlib.suppress(OSError):
+                if now - entry.stat().st_mtime <= GATE_TMP_SWEEP_MAX_AGE_S:
+                    continue
+                if name.startswith("step9c-scratch-"):
+                    _reap_leaked_scratch_admin(entry)
+                if entry.is_dir():
+                    shutil.rmtree(entry, ignore_errors=True)
+                else:
+                    entry.unlink(missing_ok=True)
+                reaped += 1
+
+
+def gate_tmp_root(*, sweep: bool = True) -> Path | None:
+    """Resolve the gate/pristine/scratch bulk temp-write root (#1408; #1363).
+
+    Precedence:
+
+    1. ``EPM_STEP9C_TMPDIR`` set-and-nonempty -> used verbatim; it must exist
+       and be writable, else ToolMissingError (an EXPLICIT override is a
+       fail-loud misconfig — callers map it to exit 2). Set-but-EMPTY ->
+       None (routing disabled; the test-suite determinism switch).
+    2. The data disk (``EPS_VM_DATA_DISK_PATH``, default ``/mnt/eps-data``),
+       required to be a LIVE mount: first writable of ``<disk>/tmp``
+       (preferred, 17 chars — pre-created by ops, NEVER auto-created here:
+       the disk top level is root-owned) then ``<disk>/<user>/tmp``
+       (auto-created best-effort).
+    3. Anything else -> None (silent inherit — pods/GCE have no data disk).
+
+    Short roots matter: pytest basetemp prefixes derived from the root must
+    stay within GATE_TMP_MAX_PREFIX_CHARS (the AF_UNIX ~108-byte socket-path
+    cap, #1363). On resolution the >7-day bt-*/step9c-scratch-* strays under
+    the root are opportunistically swept (``sweep=False`` skips — the
+    JSON-report call).
+    """
+    override = os.environ.get("EPM_STEP9C_TMPDIR")
+    if override is not None:
+        if not override:
+            return None
+        p = Path(override)
+        if not p.is_dir() or not _gate_tmp_writable(p):
+            raise ToolMissingError(
+                f"EPM_STEP9C_TMPDIR={override!r} does not exist or is not writable — "
+                "explicit gate-tmp override misconfigured (fail-loud; unset it, or set "
+                "it empty to disable routing)"
+            )
+        if len(str(p)) > GATE_TMP_MAX_PREFIX_CHARS:
+            _log(
+                f"WARN: EPM_STEP9C_TMPDIR={p} exceeds {GATE_TMP_MAX_PREFIX_CHARS} chars — "
+                "derived pytest basetemp paths risk the AF_UNIX ~108-byte socket cap (#1363)"
+            )
+        if sweep:
+            _sweep_stale_gate_tmp(p)
+        return p
+    disk = Path(os.environ.get("EPS_VM_DATA_DISK_PATH") or "/mnt/eps-data")
+    if not os.path.ismount(str(disk)):
+        return None
+    shared = disk / "tmp"
+    if shared.is_dir() and _gate_tmp_writable(shared):
+        if sweep:
+            _sweep_stale_gate_tmp(shared)
+        return shared
+    try:
+        user = getpass.getuser()
+    except (KeyError, OSError):
+        return None
+    user_tmp = disk / user / "tmp"
+    with contextlib.suppress(OSError):
+        user_tmp.mkdir(parents=True, exist_ok=True)
+    if user_tmp.is_dir() and _gate_tmp_writable(user_tmp):
+        if sweep:
+            _sweep_stale_gate_tmp(user_tmp)
+        return user_tmp
+    return None
+
+
+def _gate_tmp_dir_arg() -> str | None:
+    """gate_tmp_root() as a ``tempfile`` ``dir=`` argument (None -> default /tmp)."""
+    root = gate_tmp_root()
+    return None if root is None else str(root)
+
+
+def _gate_tmp_root_str() -> str | None:
+    """The resolved routing root as a JSON-safe string (None = disabled/absent)."""
+    root = gate_tmp_root(sweep=False)
+    return None if root is None else str(root)
+
+
 def run_pytest(
     files: Iterable[str],
     cwd: Path,
@@ -323,6 +517,13 @@ def run_pytest(
     explicitly passed ``pythonpath`` is set afterwards and must be derived from
     a HEAD-pinned tree (the #1251 scratch shadow) — the two are different trust
     classes (ambient env vs caller-constructed).
+    When ``gate_tmp_root()`` resolves (#1408), the child gets ``TMPDIR=<root>``
+    (library ``tempfile.*`` writes) plus a fresh SHORT ``--basetemp`` directly
+    under the root (``<root>/bt-XXXXXXXX/p``) — ``--basetemp`` is REQUIRED, not
+    optional: TMPDIR-only routing nests ``pytest-of-<user>/pytest-N`` under the
+    root and overflows the AF_UNIX ~108-byte socket cap (#1363 attempt 3); the
+    fresh per-call mkdtemp keeps pytest's clear-at-session-start semantics
+    concurrency-safe, and a finally-scoped rmtree reaps it on return/kill alike.
     ``start_new_session=True`` + ``os.killpg`` on ``TimeoutExpired`` group-kills
     stragglers, then the ``TimeoutExpired`` is re-raised (callers exit 2 —
     NEVER a ledger write / classification from a timed-out run).
@@ -339,29 +540,39 @@ def run_pytest(
     env.pop("PYTHONPATH", None)  # never let the invoking checkout's src/ shadow the root venv
     if pythonpath is not None:
         env["PYTHONPATH"] = pythonpath  # caller-derived from a HEAD-pinned tree (#1251)
-    proc = subprocess.Popen(
-        argv,
-        cwd=str(cwd),
-        env=env,
-        stdout=subprocess.DEVNULL,
-        stderr=subprocess.DEVNULL,
-        start_new_session=True,
-    )
+    tmp_root = gate_tmp_root()
+    basetemp: Path | None = None
+    if tmp_root is not None:
+        env["TMPDIR"] = str(tmp_root)
+        basetemp = Path(tempfile.mkdtemp(prefix="bt-", dir=str(tmp_root)))
+        argv.append(f"--basetemp={basetemp / 'p'}")
     try:
-        return proc.wait(timeout=timeout_s)
-    except subprocess.TimeoutExpired:
-        _log(f"pytest exceeded {timeout_s}s — killing the process group")
+        proc = subprocess.Popen(
+            argv,
+            cwd=str(cwd),
+            env=env,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            start_new_session=True,
+        )
         try:
-            os.killpg(proc.pid, signal.SIGTERM)
-            deadline = time.monotonic() + 10.0
-            while time.monotonic() < deadline and proc.poll() is None:
-                time.sleep(0.2)
-            if proc.poll() is None:
-                os.killpg(proc.pid, signal.SIGKILL)
-        except ProcessLookupError:
-            pass
-        proc.wait()
-        raise
+            return proc.wait(timeout=timeout_s)
+        except subprocess.TimeoutExpired:
+            _log(f"pytest exceeded {timeout_s}s — killing the process group")
+            try:
+                os.killpg(proc.pid, signal.SIGTERM)
+                deadline = time.monotonic() + 10.0
+                while time.monotonic() < deadline and proc.poll() is None:
+                    time.sleep(0.2)
+                if proc.poll() is None:
+                    os.killpg(proc.pid, signal.SIGKILL)
+            except ProcessLookupError:
+                pass
+            proc.wait()
+            raise
+    finally:
+        if basetemp is not None:
+            shutil.rmtree(basetemp, ignore_errors=True)
 
 
 def _git_out(argv: list[str], cwd: Path) -> str:
@@ -538,10 +749,12 @@ def create_scratch_worktree(root: Path, wt_cones: list[str], timeout_s: float) -
     FIRST, then ``set``, then populate from ``--no-checkout`` limbo). Profile =
     ``_scratch_cones(root, wt_cones)`` — a superset of the gate layout (R-G).
     Any failure tears down partial state and re-raises (the caller maps it to
-    ``_Indeterminate``). Bounded per git command by *timeout_s*.
+    ``_Indeterminate`` — or, on a CLEAN root, degrades to the root oracle,
+    #1408). Bounded per git command by *timeout_s*. The ~1 GB tree lands under
+    ``gate_tmp_root()`` when routing resolves (#1408; default ``/tmp`` else).
     """
     sha = git_head(root)
-    parent = Path(tempfile.mkdtemp(prefix="step9c-scratch-"))
+    parent = Path(tempfile.mkdtemp(prefix="step9c-scratch-", dir=_gate_tmp_dir_arg()))
     tree = parent / f"tree-{os.getpid()}"
     try:
         _git_bounded(
@@ -890,6 +1103,10 @@ def cmd_refresh(args: argparse.Namespace) -> int:
     except subprocess.TimeoutExpired:
         _log(f"refresh pytest timed out after {args.timeout_s}s — NO ledger write")
         return 2
+    except ToolMissingError as exc:
+        # #1408: a misconfigured explicit EPM_STEP9C_TMPDIR override fails loud.
+        _log(f"refresh: {exc} — NO ledger write")
+        return 2
     if rc not in (0, 1):
         _log(f"refresh pytest rc={rc} (interrupted/internal error) — NO ledger write")
         return 2
@@ -930,7 +1147,11 @@ def cmd_refresh(args: argparse.Namespace) -> int:
         f"ruff={ruff_count}, format={ruff_fmt}, sha={head[:12]}, dirty_code_paths={bool(dirty)}"
     )
     if args.json:
-        print(json.dumps(ledger, indent=2, sort_keys=True))
+        # gate_tmp_root is additive to the PRINTED payload only — the persisted
+        # ledger's key set is pinned (REQUIRED_LEDGER_KEYS exactness, #1408).
+        print(
+            json.dumps({**ledger, "gate_tmp_root": _gate_tmp_root_str()}, indent=2, sort_keys=True)
+        )
     return 0
 
 
@@ -998,7 +1219,9 @@ def run_single_file_pristine(
         python_exe = resolve_root_python(venv_root if venv_root is not None else cwd)
     except ToolMissingError as exc:
         raise PristineRunError(str(exc)) from exc
-    fd, tmp = tempfile.mkstemp(prefix="step9c-pristine-junit-", suffix=".xml")
+    fd, tmp = tempfile.mkstemp(
+        prefix="step9c-pristine-junit-", suffix=".xml", dir=_gate_tmp_dir_arg()
+    )
     os.close(fd)
     tmp_path = Path(tmp)
     try:
@@ -1134,9 +1357,11 @@ class _CompareCtx:
     warns: list[str] = field(default_factory=list)
     live_dirty_paths: list[str] = field(default_factory=list)
     pristine_files_run: list[str] = field(default_factory=list)
-    pristine_oracle: str = "root"  # "scratch-worktree" once the #1077 fallback fires
+    pristine_oracle: str = "root"  # "scratch-worktree" once the scratch oracle arms
+    # (#1077; the DEFAULT whenever eligible since #1408)
     scratch_sha: str | None = None
     scratch_src_shadow: bool = False  # True once the #1251 PYTHONPATH shadow is armed + probed
+    scratch_degraded: bool = False  # True on the #1408 clean-root scratch-failure fallback
 
 
 def _resolve_roots(args: argparse.Namespace) -> tuple[Path, Path]:
@@ -1267,10 +1492,16 @@ def _arm_src_shadow(
     ``scratch`` FIRST so its ``finally`` teardown covers a probe raise). With
     the shadow armed (default), ``assert_scratch_src_shadow`` verifies
     ``PYTHONPATH=<scratch>/src`` wins over the root venv's editable install —
-    a failure maps to the fail-closed exit 2 (a verdict never rests on an
-    unverified shadow). Under ``--no-src-shadow`` no probe runs and the
-    pre-#1251 WARN text is kept (the contamination probe was fully clean by
-    eligibility there).
+    a probe failure raises ``_Indeterminate`` (the caller maps it fail-closed
+    to exit 2 on a DIRTY root, or degrades to the root oracle on a CLEAN one,
+    #1408 — a verdict never rests on an unverified shadow). Under
+    ``--no-src-shadow`` no probe runs (the contamination probe was fully clean
+    by eligibility there). WARN discipline (#1408): the SCRATCH-ORACLE WARN
+    fires ONLY when root dirt was actually neutralized (``live_dirty_paths``
+    non-empty) — on a clean root the scratch is the NORMAL path and provenance
+    rides the JSON fields (``pristine_oracle``/``scratch_sha``/
+    ``scratch_src_shadow``) without a WARN. ``ctx`` fields are set only AFTER
+    the probe passes, so the degradation path needs no ctx reset.
     """
     if not args.no_src_shadow:
         try:
@@ -1287,45 +1518,115 @@ def _arm_src_shadow(
     ctx.scratch_src_shadow = not args.no_src_shadow
     ctx.pristine_oracle = "scratch-worktree"
     ctx.scratch_sha = scratch.sha
+    if not ctx.live_dirty_paths:
+        # #1408 scratch-by-default: on a CLEAN root the scratch is the normal
+        # path — no dirt was neutralized, so a WARN would be pure noise.
+        return
     if args.no_src_shadow:
         ctx.warns.append(
-            f"SCRATCH-ORACLE WARN: root dirty on non-contaminating paths "
-            f"{ctx.live_dirty_paths[:20]}; pristine oracle re-rooted to a detached "
+            f"SCRATCH-ORACLE WARN: root state: dirty on {ctx.live_dirty_paths[:20]} "
+            f"(non-contaminating); pristine oracle re-rooted to a detached "
             f"sparse scratch worktree at {scratch.sha[:12]} (root venv interpreter; "
-            "contamination probe src//pyproject.toml/uv.lock was clean; scan-set "
-            "nodes and non-sparse work roots stay indeterminate)"
+            "contamination probe src//pyproject.toml/uv.lock was clean; "
+            "non-file-anchored scan-set nodes and non-sparse work roots stay "
+            "indeterminate)"
         )
     else:
         src_dirt = [p for p in contaminating if p.startswith("src/")]
         ctx.warns.append(
-            f"SCRATCH-ORACLE WARN: root dirty on non-contaminating paths "
-            f"{ctx.live_dirty_paths[:20]}; src-dirt {src_dirt[:20] or 'none'} "
+            f"SCRATCH-ORACLE WARN: root state: dirty on {ctx.live_dirty_paths[:20]}; "
+            f"src-dirt {src_dirt[:20] or 'none'} "
             f"neutralized via PYTHONPATH=<scratch>/src (shadow probe verified); "
             f"pristine oracle re-rooted to a detached sparse scratch worktree at "
             f"{scratch.sha[:12]} (root venv interpreter; residual probe "
-            "pyproject.toml/uv.lock/out-of-package-src was clean; scan-set nodes "
-            "and non-sparse work roots stay indeterminate)"
+            "pyproject.toml/uv.lock/out-of-package-src was clean; non-file-anchored "
+            "scan-set nodes and non-sparse work roots stay indeterminate)"
         )
+
+
+def _create_scratch_or_degrade(
+    ctx: _CompareCtx,
+    root: Path,
+    wt_cones: list[str],
+    contaminating: list[str],
+    args: argparse.Namespace,
+) -> _ScratchTree | None:
+    """Create + arm the scratch oracle; degrade to the root oracle on a CLEAN root.
+
+    DIRTY-root failure (creation or shadow probe) stays fail-closed
+    (#1077/#1251): the partial scratch is torn down and ``_Indeterminate``
+    raises (exit 2). CLEAN-root failure (#1408): the root oracle is
+    trustworthy (pre-#1077 behavior) — the partial scratch is torn down and
+    None returns, with the degradation recorded (WARN + ``scratch_degraded``
+    JSON flag); the caller memoizes so creation is not re-attempted per file
+    while the root stays clean. A misconfigured explicit ``EPM_STEP9C_TMPDIR``
+    (ToolMissingError from the mkdtemp routing) is NOT degraded — it
+    propagates to the fail-loud exit-2 mapping in ``cmd_compare``.
+    """
+    scratch: _ScratchTree | None = None
+    try:
+        scratch = create_scratch_worktree(root, wt_cones, timeout_s=args.scratch_timeout_s)
+        # scratch is assigned BEFORE the probe, so a probe raise still has a
+        # handle to tear down (no leak on either branch below).
+        _arm_src_shadow(ctx, root, scratch, contaminating, args)
+        return scratch
+    except (
+        _Indeterminate,
+        subprocess.CalledProcessError,
+        subprocess.TimeoutExpired,
+        OSError,
+    ) as exc:
+        if scratch is not None:
+            remove_scratch_worktree(root, scratch)
+        if ctx.live_dirty_paths:
+            # DIRTY root: unchanged fail-closed (#1077/#1251).
+            if isinstance(exc, _Indeterminate):
+                raise
+            raise _Indeterminate(
+                f"scratch-worktree fallback failed ({exc}) — dirty oracle unresolvable",
+                extra={"live_dirty_paths": ctx.live_dirty_paths},
+                warns=ctx.warns,
+            ) from exc
+        ctx.scratch_degraded = True
+        ctx.warns.append(
+            "SCRATCH-ORACLE WARN: scratch creation/probe failed on a "
+            f"CLEAN root ({exc}) — root oracle used (root state: clean)"
+        )
+        return None
 
 
 def _resolve_pristine_bucket(ctx: _CompareCtx, root: Path, args: argparse.Namespace) -> None:
     """Resolve bucketed nodes via bounded single-file pristine runs (or refuse).
 
-    Dirty-oracle scratch fallback (#1077): when the MF-4c dirt trigger fires
-    but the dirt is DECONTAMINABLE (the contamination probe has no RESIDUAL
-    legs — R-B', #1251: in-package ``src/explore_persona_space/**`` dirt is
+    Scratch-by-default (#1408; #1077's dirty-only trigger removed): the
+    pristine oracle is BY DEFAULT a detached sparse scratch worktree at the
+    root's HEAD whenever the node is physically eligible — clean or dirty
+    root alike — created lazily once per compare (the shadow probe runs ONCE
+    at creation), reused for every eligible bucketed file, ALWAYS removed in
+    the ``finally``. Per-file eligibility: no RESIDUAL contaminating dirt
+    (R-B', #1251: in-package ``src/explore_persona_space/**`` dirt is
     neutralized by the probe-verified ``PYTHONPATH=<scratch>/src`` shadow, so
     only ``pyproject.toml``/``uv.lock`` and out-of-package ``src/`` dirt still
-    block; ``--no-src-shadow`` restores the #1077 any-probe-hit rule), the
-    pristine oracle re-roots to a detached sparse scratch worktree at the
-    root's HEAD — created lazily once per compare (the shadow probe runs ONCE
-    at creation, fail-closed to exit 2), reused for every eligible bucketed
-    file, ALWAYS removed in the ``finally``. Per-file eligibility additionally
-    requires a sparse work root (R-G), a non-scan-set node (R-F —
-    ``repo_root()``-anchored live-tree scanners read the MAIN root from any
-    cwd, so a scratch cannot decontaminate them), and the fallback not being
-    disabled via ``--no-scratch-fallback``. Everything else keeps the
-    fail-closed MF-4c exit 2. BOTH probes re-run per file, so residual dirt
+    block; ``--no-src-shadow`` restores the #1077 any-probe-hit rule), a
+    sparse work root (R-G), a non-scan-set node OR a
+    ``FILE_ANCHORED_SCAN_TESTS`` member (R-F' — ``repo_root()``-anchored
+    live-tree scanners read the MAIN root from any cwd, so a scratch cannot
+    decontaminate them; a source-verified ``__file__``-anchored scanner scans
+    its own tree, #1337), and the scratch oracle not being disabled via
+    ``--no-scratch-fallback``. For an allowlisted scan node R-F' shifts one
+    verdict class: a scan failure caused solely by live-root strays (untracked
+    offenders absent from the HEAD-pinned scratch) classifies NEW (rc 1)
+    instead of exit 2 — fail-closed in direction (never a silent strip), but
+    it attributes the failure to the branch. Root-oracle runs remain only for
+    scratch-INELIGIBLE nodes (trustworthy on a clean root; fail-closed MF-4c
+    exit 2 when the root is dirty and the node fails on main) and for the
+    CLEAN-root degradation path: a scratch creation/probe failure on a CLEAN
+    root tears down any partial scratch and falls back to the trustworthy
+    root oracle (WARN + ``scratch_degraded`` in the JSON, never a new exit-2
+    class), memoized so creation is not re-attempted per file while the root
+    stays clean; on a DIRTY root the same failure keeps the fail-closed
+    exit 2, and dirt appearing mid-loop retries creation once more (a second
+    failure then fail-closes). BOTH probes re-run per file, so residual dirt
     appearing mid-loop reverts later files to the root oracle (fail-closed);
     every scratch-mode pristine call passes the shadow uniformly, so
     in-package src dirt appearing mid-loop stays neutralized.
@@ -1348,6 +1649,7 @@ def _resolve_pristine_bucket(ctx: _CompareCtx, root: Path, args: argparse.Namesp
             warns=ctx.warns,
         )
     scratch: _ScratchTree | None = None
+    scratch_unavailable = False  # #1408 memo: clean-root scratch failure -> root oracle
     wt_cones = _work_root_sparse_cones(ctx.work_root)  # None => non-sparse => ineligible (R-G)
     try:
         for test_file in files:
@@ -1364,28 +1666,30 @@ def _resolve_pristine_bucket(ctx: _CompareCtx, root: Path, args: argparse.Namesp
                 if args.no_src_shadow
                 else residual_scratch_contamination(contaminating)
             )
+            # #1408: the scratch is the DEFAULT pristine oracle whenever physically
+            # eligible — clean or dirty root alike (#1077's dirty-only trigger removed).
             use_scratch = (
-                bool(ctx.live_dirty_paths)
-                and not residual  # R-B' (#1251): in-package src/ dirt is shadow-neutralized;
+                not residual  # R-B' (#1251): in-package src/ dirt is shadow-neutralized;
                 # only pyproject.toml / uv.lock / out-of-package src/ dirt still blocks
                 and wt_cones is not None  # R-G: sparse work root only
-                and test_file not in ctx.sel.GLOB_SCAN_TESTS  # R-F: scan set never scratch-resolved
+                and (
+                    test_file not in ctx.sel.GLOB_SCAN_TESTS
+                    or test_file in FILE_ANCHORED_SCAN_TESTS
+                )  # R-F' (#1337): __file__-anchored scanners scan their own (scratch) tree
                 and not args.no_scratch_fallback
+                # Clean-root degradation memo (#1408): after a clean-root scratch
+                # failure the root oracle is trustworthy — no per-file re-creation
+                # attempts; dirt appearing mid-loop retries creation (a second
+                # failure then fail-closes via the dirty branch below).
+                and not (scratch_unavailable and not ctx.live_dirty_paths)
             )
             if use_scratch and scratch is None:
-                try:
-                    scratch = create_scratch_worktree(
-                        root, wt_cones, timeout_s=args.scratch_timeout_s
-                    )
-                except (subprocess.CalledProcessError, subprocess.TimeoutExpired, OSError) as exc:
-                    raise _Indeterminate(
-                        f"scratch-worktree fallback failed ({exc}) — dirty oracle unresolvable",
-                        extra={"live_dirty_paths": ctx.live_dirty_paths},
-                        warns=ctx.warns,
-                    ) from exc
-                # scratch is assigned BEFORE the probe, so the finally below
-                # tears it down when the probe raises (fail-closed, no leak).
-                _arm_src_shadow(ctx, root, scratch, contaminating, args)
+                scratch = _create_scratch_or_degrade(ctx, root, wt_cones, contaminating, args)
+                if scratch is None:
+                    # #1408 clean-root degradation fired — memoize (no per-file
+                    # re-creation attempts while the root stays clean).
+                    scratch_unavailable = True
+                    use_scratch = False
             timeout_s = (
                 args.pristine_timeout_s
                 if args.pristine_timeout_s is not None
@@ -1416,9 +1720,13 @@ def _resolve_pristine_bucket(ctx: _CompareCtx, root: Path, args: argparse.Namesp
                             f"shadowable src dirt: {shadowable[:20] or 'n/a'}; "
                             f"visible code dirt: {ctx.live_dirty_paths[:20]}; "
                             f"scan_set={test_file in ctx.sel.GLOB_SCAN_TESTS}, "
+                            f"file_anchored={test_file in FILE_ANCHORED_SCAN_TESTS}, "
                             f"sparse_wt={wt_cones is not None}) — a 'pre-existing' verdict "
                             f"for {node.file}::{node.name} from a dirty root is "
-                            "untrustworthy (MF-4c); indeterminate",
+                            "untrustworthy (MF-4c); indeterminate "
+                            "(scratch-by-default: this fires only for residual venv "
+                            "dirt / non-sparse work root / non-anchored scan node / "
+                            "scratch failure on a dirty root)",
                             extra={
                                 "live_dirty_paths": ctx.live_dirty_paths,
                                 "contaminating_paths": contaminating,
@@ -1461,6 +1769,8 @@ def _compare_impl(args: argparse.Namespace) -> dict:
         "pristine_oracle": ctx.pristine_oracle,
         "scratch_sha": ctx.scratch_sha,
         "scratch_src_shadow": ctx.scratch_src_shadow,
+        "scratch_degraded": ctx.scratch_degraded,  # #1408 clean-root degradation audit flag
+        "gate_tmp_root": _gate_tmp_root_str(),  # #1408 temp-write routing provenance
         "lint": lint,
         "ledger_sha": ledger["main_sha"] if ledger else None,
         "ledger_age_h": ledger_age_hours(ledger) if ledger else None,
@@ -1520,6 +1830,17 @@ def cmd_compare(args: argparse.Namespace) -> int:
                 )
             )
         return 2
+    except ToolMissingError as exc:
+        # #1408: a misconfigured explicit EPM_STEP9C_TMPDIR override (raised at any
+        # gate_tmp_root() call site) is fail-loud — the standard exit-2 mapping.
+        _log(str(exc))
+        if args.json:
+            print(
+                json.dumps(
+                    _indeterminate_payload(str(exc), args.pytest_rc), indent=2, sort_keys=True
+                )
+            )
+        return 2
     result["indeterminate"] = False
     if args.json:
         print(json.dumps(result, indent=2, sort_keys=True))
@@ -1535,6 +1856,28 @@ def cmd_compare(args: argparse.Namespace) -> int:
     for w in result["warns"]:
         _log(w)
     return 1 if (result["new"] or not result["lint"]["ok"]) else 0
+
+
+# --- tmproot ---------------------------------------------------------------------
+
+
+def cmd_tmproot(args: argparse.Namespace) -> int:
+    """Print the resolved gate temp-write root (empty stdout = no routing); ALWAYS exit 0.
+
+    The SKILL Step 9c 1b/1c gate blocks consume this as the single source of
+    routing truth (empty output -> no TMPDIR export, #1408). A misconfigured
+    explicit override prints the ToolMissingError to stderr and still exits 0
+    with empty stdout — the caller treats it as no-routing while the loud
+    message surfaces in the gate log.
+    """
+    try:
+        root = gate_tmp_root()
+    except ToolMissingError as exc:
+        _log(str(exc))
+        return 0
+    if root is not None:
+        print(root)
+    return 0
 
 
 # --- CLI -------------------------------------------------------------------------
@@ -1600,7 +1943,8 @@ def build_parser() -> argparse.ArgumentParser:
     p_compare.add_argument(
         "--no-scratch-fallback",
         action="store_true",
-        help="disable the scratch fallback — restore the pre-#1077 MF-4c raise on ANY dirty oracle",
+        help="disable the scratch oracle (the default pristine oracle, #1408) — root-oracle "
+        "runs only, with the pre-#1077 MF-4c raise on ANY dirty oracle",
     )
     p_compare.add_argument(
         "--no-src-shadow",
@@ -1610,6 +1954,12 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p_compare.add_argument("--json", action="store_true")
     p_compare.set_defaults(func=cmd_compare)
+
+    p_tmproot = sub.add_parser(
+        "tmproot",
+        help="print the resolved gate temp-write root (empty = no routing); always exit 0",
+    )
+    p_tmproot.set_defaults(func=cmd_tmproot)
     return parser
 
 

@@ -1,0 +1,110 @@
+{
+  "commit": "40797cd8ab",
+  "created": "2026-07-15T12:31:56Z",
+  "figsize": [
+    8.0,
+    4.0
+  ],
+  "points": [
+    {
+      "x": -0.19,
+      "Tier-2 structural rate": 0.208,
+      "error": 0.050126018778500925,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.19,
+      "Tier-2 structural rate": 0.4,
+      "error": 0.14528134780102567,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 0.81,
+      "Tier-2 structural rate": 0.224,
+      "error": 0.051459427780152805,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 1.19,
+      "Tier-2 structural rate": 0.575,
+      "error": 0.14648015519562063,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 1.81,
+      "Tier-2 structural rate": 0.244,
+      "error": 0.05297791924507944,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 2.19,
+      "Tier-2 structural rate": 0.55,
+      "error": 0.14733047415307265,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 2.81,
+      "Tier-2 structural rate": 0.124,
+      "error": 0.04094238439648093,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "x": 3.19,
+      "Tier-2 structural rate": 0.325,
+      "error": 0.13949112474220143,
+      "_kind": "bar",
+      "_group": 7
+    }
+  ],
+  "n_series": 8,
+  "total_points": 8,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "structural rate by eval-question split (Wilson 95% CI;\nSonnet 3-draw-majority classification of the 30 WildChat slices)",
+        "ylabel": "Tier-2 structural rate",
+        "legend_labels": [
+          "list-affordable",
+          "prose-natural"
+        ],
+        "annotations": [
+          "0.21",
+          "0.40",
+          "0.22",
+          "0.57",
+          "0.24",
+          "0.55",
+          "0.12",
+          "0.33"
+        ],
+        "xticklabels": [
+          "formatting,\nrank 32 (reused fu4)",
+          "formatting,\nrank 128 (4x)",
+          "formatting,\nrank 256 (8x)",
+          "base model (reused fu3 read)"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ]
+      }
+    ],
+    "series": [
+      "list-affordable",
+      "prose-natural"
+    ]
+  }
+}

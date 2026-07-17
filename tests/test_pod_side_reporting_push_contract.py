@@ -51,3 +51,21 @@ def test_rule_names_slurm_lane() -> None:
     section = section.split("\n### ", 1)[0]
     assert "**SLURM lane:**" in section
     assert "not a git repository" in section
+
+
+def test_rule_carries_artifact_presence_assert() -> None:
+    """The #1325 artifact-presence clause lives inside the #1205 section
+    with its load-bearing elements: the per-file ls-tree assert against
+    the pushed tree, both git-destination roots, the never-a-bare-directory
+    grain, the empty-set no-op, and the HF-leg out-of-scope boundary
+    (#1090 stays owned by the Upload Policy)."""
+    text = _RULE_PATH.read_text(encoding="utf-8")
+    section = text.split("### Result-push verification contract (#1205)", 1)[1]
+    section = section.split("\n### ", 1)[0]
+    assert "ls-tree -r origin/<branch> --name-only" in section
+    assert "eval_results/issue_<N>/" in section
+    assert "figures/issue_<N>/" in section
+    assert "never a bare" in section  # per-file grain
+    assert "no-op, never a false-fail" in section  # empty-set arm
+    assert "OUT OF SCOPE" in section  # HF-destined boundary (#1090)
+    assert "epm:results" in section  # declared-paths source

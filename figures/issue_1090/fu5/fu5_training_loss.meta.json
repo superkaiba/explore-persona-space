@@ -1,0 +1,2683 @@
+{
+  "commit": "40797cd8ab",
+  "created": "2026-07-15T12:32:35Z",
+  "figsize": [
+    7.2,
+    5.0
+  ],
+  "points": [
+    {
+      "optimizer step": 0.0,
+      "training loss": 1.7946,
+      "series": "impolite bare, lr 1e-5 (control)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "optimizer step": 1.0,
+      "training loss": 2.0537,
+      "series": "impolite bare, lr 1e-5 (control)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "optimizer step": 2.0,
+      "training loss": 2.1782,
+      "series": "impolite bare, lr 1e-5 (control)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "optimizer step": 3.0,
+      "training loss": 1.9115,
+      "series": "impolite bare, lr 1e-5 (control)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "optimizer step": 4.0,
+      "training loss": 1.9154,
+      "series": "impolite bare, lr 1e-5 (control)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "optimizer step": 5.0,
+      "training loss": 1.8131,
+      "series": "impolite bare, lr 1e-5 (control)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "optimizer step": 6.0,
+      "training loss": 1.7465,
+      "series": "impolite bare, lr 1e-5 (control)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "optimizer step": 7.0,
+      "training loss": 1.7447,
+      "series": "impolite bare, lr 1e-5 (control)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "optimizer step": 8.0,
+      "training loss": 1.5692,
+      "series": "impolite bare, lr 1e-5 (control)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "optimizer step": 9.0,
+      "training loss": 1.6353,
+      "series": "impolite bare, lr 1e-5 (control)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "optimizer step": 10.0,
+      "training loss": 1.5705,
+      "series": "impolite bare, lr 1e-5 (control)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "optimizer step": 11.0,
+      "training loss": 1.5482,
+      "series": "impolite bare, lr 1e-5 (control)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "optimizer step": 12.0,
+      "training loss": 1.4887,
+      "series": "impolite bare, lr 1e-5 (control)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "optimizer step": 13.0,
+      "training loss": 1.4558,
+      "series": "impolite bare, lr 1e-5 (control)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "optimizer step": 14.0,
+      "training loss": 1.6231,
+      "series": "impolite bare, lr 1e-5 (control)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "optimizer step": 15.0,
+      "training loss": 1.4619,
+      "series": "impolite bare, lr 1e-5 (control)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "optimizer step": 16.0,
+      "training loss": 1.5089,
+      "series": "impolite bare, lr 1e-5 (control)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "optimizer step": 17.0,
+      "training loss": 1.4581,
+      "series": "impolite bare, lr 1e-5 (control)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "optimizer step": 18.0,
+      "training loss": 1.4015,
+      "series": "impolite bare, lr 1e-5 (control)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "optimizer step": 19.0,
+      "training loss": 1.2603,
+      "series": "impolite bare, lr 1e-5 (control)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "optimizer step": 20.0,
+      "training loss": 1.2794,
+      "series": "impolite bare, lr 1e-5 (control)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "optimizer step": 21.0,
+      "training loss": 1.3353,
+      "series": "impolite bare, lr 1e-5 (control)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "optimizer step": 22.0,
+      "training loss": 1.3849,
+      "series": "impolite bare, lr 1e-5 (control)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "optimizer step": 23.0,
+      "training loss": 1.2762,
+      "series": "impolite bare, lr 1e-5 (control)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "optimizer step": 24.0,
+      "training loss": 1.2706,
+      "series": "impolite bare, lr 1e-5 (control)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "optimizer step": 25.0,
+      "training loss": 1.2478,
+      "series": "impolite bare, lr 1e-5 (control)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "optimizer step": 26.0,
+      "training loss": 1.2477,
+      "series": "impolite bare, lr 1e-5 (control)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "optimizer step": 27.0,
+      "training loss": 1.2186,
+      "series": "impolite bare, lr 1e-5 (control)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "optimizer step": 28.0,
+      "training loss": 1.1163,
+      "series": "impolite bare, lr 1e-5 (control)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "optimizer step": 29.0,
+      "training loss": 1.2547,
+      "series": "impolite bare, lr 1e-5 (control)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "optimizer step": 30.0,
+      "training loss": 1.1523,
+      "series": "impolite bare, lr 1e-5 (control)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "optimizer step": 31.0,
+      "training loss": 1.0995,
+      "series": "impolite bare, lr 1e-5 (control)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "optimizer step": 32.0,
+      "training loss": 1.109,
+      "series": "impolite bare, lr 1e-5 (control)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "optimizer step": 33.0,
+      "training loss": 1.1225,
+      "series": "impolite bare, lr 1e-5 (control)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "optimizer step": 34.0,
+      "training loss": 1.1988,
+      "series": "impolite bare, lr 1e-5 (control)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "optimizer step": 35.0,
+      "training loss": 1.0619,
+      "series": "impolite bare, lr 1e-5 (control)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "optimizer step": 36.0,
+      "training loss": 1.0712,
+      "series": "impolite bare, lr 1e-5 (control)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "optimizer step": 37.0,
+      "training loss": 1.0353,
+      "series": "impolite bare, lr 1e-5 (control)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "optimizer step": 38.0,
+      "training loss": 1.1037,
+      "series": "impolite bare, lr 1e-5 (control)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "optimizer step": 39.0,
+      "training loss": 1.0547,
+      "series": "impolite bare, lr 1e-5 (control)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "optimizer step": 40.0,
+      "training loss": 0.9973,
+      "series": "impolite bare, lr 1e-5 (control)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "optimizer step": 41.0,
+      "training loss": 1.0233,
+      "series": "impolite bare, lr 1e-5 (control)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "optimizer step": 42.0,
+      "training loss": 0.9983,
+      "series": "impolite bare, lr 1e-5 (control)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "optimizer step": 43.0,
+      "training loss": 1.0254,
+      "series": "impolite bare, lr 1e-5 (control)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "optimizer step": 44.0,
+      "training loss": 0.9811,
+      "series": "impolite bare, lr 1e-5 (control)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "optimizer step": 45.0,
+      "training loss": 1.0249,
+      "series": "impolite bare, lr 1e-5 (control)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "optimizer step": 46.0,
+      "training loss": 0.9168,
+      "series": "impolite bare, lr 1e-5 (control)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "optimizer step": 47.0,
+      "training loss": 0.982,
+      "series": "impolite bare, lr 1e-5 (control)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "optimizer step": 48.0,
+      "training loss": 1.0101,
+      "series": "impolite bare, lr 1e-5 (control)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "optimizer step": 49.0,
+      "training loss": 0.847,
+      "series": "impolite bare, lr 1e-5 (control)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "optimizer step": 50.0,
+      "training loss": 1.0246,
+      "series": "impolite bare, lr 1e-5 (control)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "optimizer step": 51.0,
+      "training loss": 0.9404,
+      "series": "impolite bare, lr 1e-5 (control)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "optimizer step": 52.0,
+      "training loss": 0.931,
+      "series": "impolite bare, lr 1e-5 (control)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "optimizer step": 53.0,
+      "training loss": 0.888,
+      "series": "impolite bare, lr 1e-5 (control)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "optimizer step": 54.0,
+      "training loss": 0.8258,
+      "series": "impolite bare, lr 1e-5 (control)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "optimizer step": 55.0,
+      "training loss": 0.865,
+      "series": "impolite bare, lr 1e-5 (control)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "optimizer step": 56.0,
+      "training loss": 0.8731,
+      "series": "impolite bare, lr 1e-5 (control)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "optimizer step": 57.0,
+      "training loss": 0.8743,
+      "series": "impolite bare, lr 1e-5 (control)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "optimizer step": 58.0,
+      "training loss": 0.8728,
+      "series": "impolite bare, lr 1e-5 (control)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "optimizer step": 59.0,
+      "training loss": 0.9849,
+      "series": "impolite bare, lr 1e-5 (control)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "optimizer step": 60.0,
+      "training loss": 0.9464,
+      "series": "impolite bare, lr 1e-5 (control)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "optimizer step": 61.0,
+      "training loss": 0.8371,
+      "series": "impolite bare, lr 1e-5 (control)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "optimizer step": 62.0,
+      "training loss": 0.8163,
+      "series": "impolite bare, lr 1e-5 (control)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "optimizer step": 63.0,
+      "training loss": 0.9534,
+      "series": "impolite bare, lr 1e-5 (control)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "optimizer step": 64.0,
+      "training loss": 0.8456,
+      "series": "impolite bare, lr 1e-5 (control)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "optimizer step": 65.0,
+      "training loss": 0.8738,
+      "series": "impolite bare, lr 1e-5 (control)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "optimizer step": 66.0,
+      "training loss": 0.9413,
+      "series": "impolite bare, lr 1e-5 (control)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "optimizer step": 67.0,
+      "training loss": 0.7924,
+      "series": "impolite bare, lr 1e-5 (control)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "optimizer step": 68.0,
+      "training loss": 0.9136,
+      "series": "impolite bare, lr 1e-5 (control)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "optimizer step": 69.0,
+      "training loss": 0.8366,
+      "series": "impolite bare, lr 1e-5 (control)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "optimizer step": 70.0,
+      "training loss": 0.8269,
+      "series": "impolite bare, lr 1e-5 (control)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "optimizer step": 71.0,
+      "training loss": 0.8213,
+      "series": "impolite bare, lr 1e-5 (control)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "optimizer step": 72.0,
+      "training loss": 0.8764,
+      "series": "impolite bare, lr 1e-5 (control)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "optimizer step": 73.0,
+      "training loss": 0.8122,
+      "series": "impolite bare, lr 1e-5 (control)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "optimizer step": 74.0,
+      "training loss": 1.0007,
+      "series": "impolite bare, lr 1e-5 (control)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "optimizer step": 0.0,
+      "training loss": 1.7946,
+      "series": "impolite bare, lr 3e-5",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "optimizer step": 1.0,
+      "training loss": 2.0537,
+      "series": "impolite bare, lr 3e-5",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "optimizer step": 2.0,
+      "training loss": 2.1535,
+      "series": "impolite bare, lr 3e-5",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "optimizer step": 3.0,
+      "training loss": 1.8073,
+      "series": "impolite bare, lr 3e-5",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "optimizer step": 4.0,
+      "training loss": 1.7529,
+      "series": "impolite bare, lr 3e-5",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "optimizer step": 5.0,
+      "training loss": 1.619,
+      "series": "impolite bare, lr 3e-5",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "optimizer step": 6.0,
+      "training loss": 1.5474,
+      "series": "impolite bare, lr 3e-5",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "optimizer step": 7.0,
+      "training loss": 1.552,
+      "series": "impolite bare, lr 3e-5",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "optimizer step": 8.0,
+      "training loss": 1.3895,
+      "series": "impolite bare, lr 3e-5",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "optimizer step": 9.0,
+      "training loss": 1.4225,
+      "series": "impolite bare, lr 3e-5",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "optimizer step": 10.0,
+      "training loss": 1.2793,
+      "series": "impolite bare, lr 3e-5",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "optimizer step": 11.0,
+      "training loss": 1.2528,
+      "series": "impolite bare, lr 3e-5",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "optimizer step": 12.0,
+      "training loss": 1.2,
+      "series": "impolite bare, lr 3e-5",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "optimizer step": 13.0,
+      "training loss": 1.1511,
+      "series": "impolite bare, lr 3e-5",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "optimizer step": 14.0,
+      "training loss": 1.2433,
+      "series": "impolite bare, lr 3e-5",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "optimizer step": 15.0,
+      "training loss": 1.0443,
+      "series": "impolite bare, lr 3e-5",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "optimizer step": 16.0,
+      "training loss": 1.0777,
+      "series": "impolite bare, lr 3e-5",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "optimizer step": 17.0,
+      "training loss": 1.0288,
+      "series": "impolite bare, lr 3e-5",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "optimizer step": 18.0,
+      "training loss": 0.9636,
+      "series": "impolite bare, lr 3e-5",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "optimizer step": 19.0,
+      "training loss": 0.8133,
+      "series": "impolite bare, lr 3e-5",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "optimizer step": 20.0,
+      "training loss": 0.7801,
+      "series": "impolite bare, lr 3e-5",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "optimizer step": 21.0,
+      "training loss": 0.7692,
+      "series": "impolite bare, lr 3e-5",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "optimizer step": 22.0,
+      "training loss": 0.7992,
+      "series": "impolite bare, lr 3e-5",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "optimizer step": 23.0,
+      "training loss": 0.7018,
+      "series": "impolite bare, lr 3e-5",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "optimizer step": 24.0,
+      "training loss": 0.6852,
+      "series": "impolite bare, lr 3e-5",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "optimizer step": 25.0,
+      "training loss": 0.5661,
+      "series": "impolite bare, lr 3e-5",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "optimizer step": 26.0,
+      "training loss": 0.5887,
+      "series": "impolite bare, lr 3e-5",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "optimizer step": 27.0,
+      "training loss": 0.5208,
+      "series": "impolite bare, lr 3e-5",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "optimizer step": 28.0,
+      "training loss": 0.4473,
+      "series": "impolite bare, lr 3e-5",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "optimizer step": 29.0,
+      "training loss": 0.5296,
+      "series": "impolite bare, lr 3e-5",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "optimizer step": 30.0,
+      "training loss": 0.3869,
+      "series": "impolite bare, lr 3e-5",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "optimizer step": 31.0,
+      "training loss": 0.3404,
+      "series": "impolite bare, lr 3e-5",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "optimizer step": 32.0,
+      "training loss": 0.3185,
+      "series": "impolite bare, lr 3e-5",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "optimizer step": 33.0,
+      "training loss": 0.3301,
+      "series": "impolite bare, lr 3e-5",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "optimizer step": 34.0,
+      "training loss": 0.3293,
+      "series": "impolite bare, lr 3e-5",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "optimizer step": 35.0,
+      "training loss": 0.2201,
+      "series": "impolite bare, lr 3e-5",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "optimizer step": 36.0,
+      "training loss": 0.2057,
+      "series": "impolite bare, lr 3e-5",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "optimizer step": 37.0,
+      "training loss": 0.1841,
+      "series": "impolite bare, lr 3e-5",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "optimizer step": 38.0,
+      "training loss": 0.2076,
+      "series": "impolite bare, lr 3e-5",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "optimizer step": 39.0,
+      "training loss": 0.1747,
+      "series": "impolite bare, lr 3e-5",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "optimizer step": 40.0,
+      "training loss": 0.1284,
+      "series": "impolite bare, lr 3e-5",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "optimizer step": 41.0,
+      "training loss": 0.1148,
+      "series": "impolite bare, lr 3e-5",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "optimizer step": 42.0,
+      "training loss": 0.1001,
+      "series": "impolite bare, lr 3e-5",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "optimizer step": 43.0,
+      "training loss": 0.1048,
+      "series": "impolite bare, lr 3e-5",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "optimizer step": 44.0,
+      "training loss": 0.0789,
+      "series": "impolite bare, lr 3e-5",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "optimizer step": 45.0,
+      "training loss": 0.0783,
+      "series": "impolite bare, lr 3e-5",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "optimizer step": 46.0,
+      "training loss": 0.049,
+      "series": "impolite bare, lr 3e-5",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "optimizer step": 47.0,
+      "training loss": 0.0586,
+      "series": "impolite bare, lr 3e-5",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "optimizer step": 48.0,
+      "training loss": 0.0499,
+      "series": "impolite bare, lr 3e-5",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "optimizer step": 49.0,
+      "training loss": 0.0383,
+      "series": "impolite bare, lr 3e-5",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "optimizer step": 50.0,
+      "training loss": 0.0318,
+      "series": "impolite bare, lr 3e-5",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "optimizer step": 51.0,
+      "training loss": 0.0374,
+      "series": "impolite bare, lr 3e-5",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "optimizer step": 52.0,
+      "training loss": 0.0274,
+      "series": "impolite bare, lr 3e-5",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "optimizer step": 53.0,
+      "training loss": 0.0259,
+      "series": "impolite bare, lr 3e-5",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "optimizer step": 54.0,
+      "training loss": 0.0307,
+      "series": "impolite bare, lr 3e-5",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "optimizer step": 55.0,
+      "training loss": 0.0223,
+      "series": "impolite bare, lr 3e-5",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "optimizer step": 56.0,
+      "training loss": 0.0166,
+      "series": "impolite bare, lr 3e-5",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "optimizer step": 57.0,
+      "training loss": 0.0215,
+      "series": "impolite bare, lr 3e-5",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "optimizer step": 58.0,
+      "training loss": 0.019,
+      "series": "impolite bare, lr 3e-5",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "optimizer step": 59.0,
+      "training loss": 0.0192,
+      "series": "impolite bare, lr 3e-5",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "optimizer step": 60.0,
+      "training loss": 0.0169,
+      "series": "impolite bare, lr 3e-5",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "optimizer step": 61.0,
+      "training loss": 0.0156,
+      "series": "impolite bare, lr 3e-5",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "optimizer step": 62.0,
+      "training loss": 0.0134,
+      "series": "impolite bare, lr 3e-5",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "optimizer step": 63.0,
+      "training loss": 0.0181,
+      "series": "impolite bare, lr 3e-5",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "optimizer step": 64.0,
+      "training loss": 0.0129,
+      "series": "impolite bare, lr 3e-5",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "optimizer step": 65.0,
+      "training loss": 0.0157,
+      "series": "impolite bare, lr 3e-5",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "optimizer step": 66.0,
+      "training loss": 0.0123,
+      "series": "impolite bare, lr 3e-5",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "optimizer step": 67.0,
+      "training loss": 0.0162,
+      "series": "impolite bare, lr 3e-5",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "optimizer step": 68.0,
+      "training loss": 0.012,
+      "series": "impolite bare, lr 3e-5",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "optimizer step": 69.0,
+      "training loss": 0.0123,
+      "series": "impolite bare, lr 3e-5",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "optimizer step": 70.0,
+      "training loss": 0.0156,
+      "series": "impolite bare, lr 3e-5",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "optimizer step": 71.0,
+      "training loss": 0.0141,
+      "series": "impolite bare, lr 3e-5",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "optimizer step": 72.0,
+      "training loss": 0.0104,
+      "series": "impolite bare, lr 3e-5",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "optimizer step": 73.0,
+      "training loss": 0.0126,
+      "series": "impolite bare, lr 3e-5",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "optimizer step": 74.0,
+      "training loss": 0.0129,
+      "series": "impolite bare, lr 3e-5",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "optimizer step": 0.0,
+      "training loss": 1.7946,
+      "series": "impolite bare, lr 1e-4",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "optimizer step": 1.0,
+      "training loss": 2.0537,
+      "series": "impolite bare, lr 1e-4",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "optimizer step": 2.0,
+      "training loss": 2.0132,
+      "series": "impolite bare, lr 1e-4",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "optimizer step": 3.0,
+      "training loss": 1.6114,
+      "series": "impolite bare, lr 1e-4",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "optimizer step": 4.0,
+      "training loss": 1.6613,
+      "series": "impolite bare, lr 1e-4",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "optimizer step": 5.0,
+      "training loss": 1.4203,
+      "series": "impolite bare, lr 1e-4",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "optimizer step": 6.0,
+      "training loss": 1.27,
+      "series": "impolite bare, lr 1e-4",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "optimizer step": 7.0,
+      "training loss": 1.1967,
+      "series": "impolite bare, lr 1e-4",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "optimizer step": 8.0,
+      "training loss": 1.04,
+      "series": "impolite bare, lr 1e-4",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "optimizer step": 9.0,
+      "training loss": 1.0381,
+      "series": "impolite bare, lr 1e-4",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "optimizer step": 10.0,
+      "training loss": 0.7263,
+      "series": "impolite bare, lr 1e-4",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "optimizer step": 11.0,
+      "training loss": 0.6478,
+      "series": "impolite bare, lr 1e-4",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "optimizer step": 12.0,
+      "training loss": 0.6212,
+      "series": "impolite bare, lr 1e-4",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "optimizer step": 13.0,
+      "training loss": 0.6049,
+      "series": "impolite bare, lr 1e-4",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "optimizer step": 14.0,
+      "training loss": 0.5304,
+      "series": "impolite bare, lr 1e-4",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "optimizer step": 15.0,
+      "training loss": 0.3008,
+      "series": "impolite bare, lr 1e-4",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "optimizer step": 16.0,
+      "training loss": 0.2673,
+      "series": "impolite bare, lr 1e-4",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "optimizer step": 17.0,
+      "training loss": 0.2426,
+      "series": "impolite bare, lr 1e-4",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "optimizer step": 18.0,
+      "training loss": 0.2291,
+      "series": "impolite bare, lr 1e-4",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "optimizer step": 19.0,
+      "training loss": 0.2038,
+      "series": "impolite bare, lr 1e-4",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "optimizer step": 20.0,
+      "training loss": 0.1009,
+      "series": "impolite bare, lr 1e-4",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "optimizer step": 21.0,
+      "training loss": 0.0807,
+      "series": "impolite bare, lr 1e-4",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "optimizer step": 22.0,
+      "training loss": 0.0818,
+      "series": "impolite bare, lr 1e-4",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "optimizer step": 23.0,
+      "training loss": 0.072,
+      "series": "impolite bare, lr 1e-4",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "optimizer step": 24.0,
+      "training loss": 0.0634,
+      "series": "impolite bare, lr 1e-4",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "optimizer step": 25.0,
+      "training loss": 0.0282,
+      "series": "impolite bare, lr 1e-4",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "optimizer step": 26.0,
+      "training loss": 0.0593,
+      "series": "impolite bare, lr 1e-4",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "optimizer step": 27.0,
+      "training loss": 0.0342,
+      "series": "impolite bare, lr 1e-4",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "optimizer step": 28.0,
+      "training loss": 0.0441,
+      "series": "impolite bare, lr 1e-4",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "optimizer step": 29.0,
+      "training loss": 0.0556,
+      "series": "impolite bare, lr 1e-4",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "optimizer step": 30.0,
+      "training loss": 0.0167,
+      "series": "impolite bare, lr 1e-4",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "optimizer step": 31.0,
+      "training loss": 0.0296,
+      "series": "impolite bare, lr 1e-4",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "optimizer step": 32.0,
+      "training loss": 0.0445,
+      "series": "impolite bare, lr 1e-4",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "optimizer step": 33.0,
+      "training loss": 0.0272,
+      "series": "impolite bare, lr 1e-4",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "optimizer step": 34.0,
+      "training loss": 0.0255,
+      "series": "impolite bare, lr 1e-4",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "optimizer step": 35.0,
+      "training loss": 0.0172,
+      "series": "impolite bare, lr 1e-4",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "optimizer step": 36.0,
+      "training loss": 0.0099,
+      "series": "impolite bare, lr 1e-4",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "optimizer step": 37.0,
+      "training loss": 0.0094,
+      "series": "impolite bare, lr 1e-4",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "optimizer step": 38.0,
+      "training loss": 0.022,
+      "series": "impolite bare, lr 1e-4",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "optimizer step": 39.0,
+      "training loss": 0.0116,
+      "series": "impolite bare, lr 1e-4",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "optimizer step": 40.0,
+      "training loss": 0.0054,
+      "series": "impolite bare, lr 1e-4",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "optimizer step": 41.0,
+      "training loss": 0.0071,
+      "series": "impolite bare, lr 1e-4",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "optimizer step": 42.0,
+      "training loss": 0.008,
+      "series": "impolite bare, lr 1e-4",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "optimizer step": 43.0,
+      "training loss": 0.0135,
+      "series": "impolite bare, lr 1e-4",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "optimizer step": 44.0,
+      "training loss": 0.0075,
+      "series": "impolite bare, lr 1e-4",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "optimizer step": 45.0,
+      "training loss": 0.0041,
+      "series": "impolite bare, lr 1e-4",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "optimizer step": 46.0,
+      "training loss": 0.0043,
+      "series": "impolite bare, lr 1e-4",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "optimizer step": 47.0,
+      "training loss": 0.0035,
+      "series": "impolite bare, lr 1e-4",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "optimizer step": 48.0,
+      "training loss": 0.0045,
+      "series": "impolite bare, lr 1e-4",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "optimizer step": 49.0,
+      "training loss": 0.003,
+      "series": "impolite bare, lr 1e-4",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "optimizer step": 50.0,
+      "training loss": 0.0034,
+      "series": "impolite bare, lr 1e-4",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "optimizer step": 51.0,
+      "training loss": 0.0041,
+      "series": "impolite bare, lr 1e-4",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "optimizer step": 52.0,
+      "training loss": 0.0031,
+      "series": "impolite bare, lr 1e-4",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "optimizer step": 53.0,
+      "training loss": 0.0029,
+      "series": "impolite bare, lr 1e-4",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "optimizer step": 54.0,
+      "training loss": 0.0038,
+      "series": "impolite bare, lr 1e-4",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "optimizer step": 55.0,
+      "training loss": 0.0019,
+      "series": "impolite bare, lr 1e-4",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "optimizer step": 56.0,
+      "training loss": 0.0017,
+      "series": "impolite bare, lr 1e-4",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "optimizer step": 57.0,
+      "training loss": 0.0033,
+      "series": "impolite bare, lr 1e-4",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "optimizer step": 58.0,
+      "training loss": 0.0034,
+      "series": "impolite bare, lr 1e-4",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "optimizer step": 59.0,
+      "training loss": 0.0018,
+      "series": "impolite bare, lr 1e-4",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "optimizer step": 60.0,
+      "training loss": 0.0027,
+      "series": "impolite bare, lr 1e-4",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "optimizer step": 61.0,
+      "training loss": 0.0019,
+      "series": "impolite bare, lr 1e-4",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "optimizer step": 62.0,
+      "training loss": 0.0021,
+      "series": "impolite bare, lr 1e-4",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "optimizer step": 63.0,
+      "training loss": 0.0022,
+      "series": "impolite bare, lr 1e-4",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "optimizer step": 64.0,
+      "training loss": 0.0016,
+      "series": "impolite bare, lr 1e-4",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "optimizer step": 65.0,
+      "training loss": 0.0029,
+      "series": "impolite bare, lr 1e-4",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "optimizer step": 66.0,
+      "training loss": 0.0018,
+      "series": "impolite bare, lr 1e-4",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "optimizer step": 67.0,
+      "training loss": 0.0015,
+      "series": "impolite bare, lr 1e-4",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "optimizer step": 68.0,
+      "training loss": 0.0015,
+      "series": "impolite bare, lr 1e-4",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "optimizer step": 69.0,
+      "training loss": 0.0021,
+      "series": "impolite bare, lr 1e-4",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "optimizer step": 70.0,
+      "training loss": 0.0027,
+      "series": "impolite bare, lr 1e-4",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "optimizer step": 71.0,
+      "training loss": 0.0015,
+      "series": "impolite bare, lr 1e-4",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "optimizer step": 72.0,
+      "training loss": 0.0021,
+      "series": "impolite bare, lr 1e-4",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "optimizer step": 73.0,
+      "training loss": 0.002,
+      "series": "impolite bare, lr 1e-4",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "optimizer step": 74.0,
+      "training loss": 0.0013,
+      "series": "impolite bare, lr 1e-4",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "optimizer step": 0.0,
+      "training loss": 1.7853,
+      "series": "formatting, rank 128",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "optimizer step": 1.0,
+      "training loss": 1.9541,
+      "series": "formatting, rank 128",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "optimizer step": 2.0,
+      "training loss": 1.6914,
+      "series": "formatting, rank 128",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "optimizer step": 3.0,
+      "training loss": 1.7844,
+      "series": "formatting, rank 128",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "optimizer step": 4.0,
+      "training loss": 1.7873,
+      "series": "formatting, rank 128",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "optimizer step": 5.0,
+      "training loss": 1.2758,
+      "series": "formatting, rank 128",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "optimizer step": 6.0,
+      "training loss": 1.2793,
+      "series": "formatting, rank 128",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "optimizer step": 7.0,
+      "training loss": 1.0162,
+      "series": "formatting, rank 128",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "optimizer step": 8.0,
+      "training loss": 0.8568,
+      "series": "formatting, rank 128",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "optimizer step": 9.0,
+      "training loss": 0.9951,
+      "series": "formatting, rank 128",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "optimizer step": 10.0,
+      "training loss": 0.6575,
+      "series": "formatting, rank 128",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "optimizer step": 11.0,
+      "training loss": 0.4552,
+      "series": "formatting, rank 128",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "optimizer step": 12.0,
+      "training loss": 0.368,
+      "series": "formatting, rank 128",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "optimizer step": 13.0,
+      "training loss": 0.5215,
+      "series": "formatting, rank 128",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "optimizer step": 14.0,
+      "training loss": 0.339,
+      "series": "formatting, rank 128",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "optimizer step": 15.0,
+      "training loss": 0.1972,
+      "series": "formatting, rank 128",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "optimizer step": 16.0,
+      "training loss": 0.1802,
+      "series": "formatting, rank 128",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "optimizer step": 17.0,
+      "training loss": 0.1324,
+      "series": "formatting, rank 128",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "optimizer step": 18.0,
+      "training loss": 0.2918,
+      "series": "formatting, rank 128",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "optimizer step": 19.0,
+      "training loss": 0.1719,
+      "series": "formatting, rank 128",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "optimizer step": 20.0,
+      "training loss": 0.0624,
+      "series": "formatting, rank 128",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "optimizer step": 21.0,
+      "training loss": 0.0755,
+      "series": "formatting, rank 128",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "optimizer step": 22.0,
+      "training loss": 0.0861,
+      "series": "formatting, rank 128",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "optimizer step": 23.0,
+      "training loss": 0.0906,
+      "series": "formatting, rank 128",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "optimizer step": 24.0,
+      "training loss": 0.0606,
+      "series": "formatting, rank 128",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "optimizer step": 25.0,
+      "training loss": 0.0684,
+      "series": "formatting, rank 128",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "optimizer step": 26.0,
+      "training loss": 0.0493,
+      "series": "formatting, rank 128",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "optimizer step": 27.0,
+      "training loss": 0.039,
+      "series": "formatting, rank 128",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "optimizer step": 28.0,
+      "training loss": 0.0362,
+      "series": "formatting, rank 128",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "optimizer step": 29.0,
+      "training loss": 0.0587,
+      "series": "formatting, rank 128",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "optimizer step": 30.0,
+      "training loss": 0.0213,
+      "series": "formatting, rank 128",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "optimizer step": 31.0,
+      "training loss": 0.0188,
+      "series": "formatting, rank 128",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "optimizer step": 32.0,
+      "training loss": 0.0377,
+      "series": "formatting, rank 128",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "optimizer step": 33.0,
+      "training loss": 0.013,
+      "series": "formatting, rank 128",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "optimizer step": 34.0,
+      "training loss": 0.022,
+      "series": "formatting, rank 128",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "optimizer step": 35.0,
+      "training loss": 0.0104,
+      "series": "formatting, rank 128",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "optimizer step": 36.0,
+      "training loss": 0.0122,
+      "series": "formatting, rank 128",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "optimizer step": 37.0,
+      "training loss": 0.0161,
+      "series": "formatting, rank 128",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "optimizer step": 38.0,
+      "training loss": 0.0241,
+      "series": "formatting, rank 128",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "optimizer step": 39.0,
+      "training loss": 0.0252,
+      "series": "formatting, rank 128",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "optimizer step": 40.0,
+      "training loss": 0.0064,
+      "series": "formatting, rank 128",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "optimizer step": 41.0,
+      "training loss": 0.0065,
+      "series": "formatting, rank 128",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "optimizer step": 42.0,
+      "training loss": 0.0076,
+      "series": "formatting, rank 128",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "optimizer step": 43.0,
+      "training loss": 0.0061,
+      "series": "formatting, rank 128",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "optimizer step": 44.0,
+      "training loss": 0.0094,
+      "series": "formatting, rank 128",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "optimizer step": 45.0,
+      "training loss": 0.0049,
+      "series": "formatting, rank 128",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "optimizer step": 46.0,
+      "training loss": 0.0031,
+      "series": "formatting, rank 128",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "optimizer step": 47.0,
+      "training loss": 0.0062,
+      "series": "formatting, rank 128",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "optimizer step": 48.0,
+      "training loss": 0.005,
+      "series": "formatting, rank 128",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "optimizer step": 49.0,
+      "training loss": 0.0057,
+      "series": "formatting, rank 128",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "optimizer step": 50.0,
+      "training loss": 0.0038,
+      "series": "formatting, rank 128",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "optimizer step": 51.0,
+      "training loss": 0.0031,
+      "series": "formatting, rank 128",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "optimizer step": 52.0,
+      "training loss": 0.0041,
+      "series": "formatting, rank 128",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "optimizer step": 53.0,
+      "training loss": 0.0038,
+      "series": "formatting, rank 128",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "optimizer step": 54.0,
+      "training loss": 0.0017,
+      "series": "formatting, rank 128",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "optimizer step": 55.0,
+      "training loss": 0.0018,
+      "series": "formatting, rank 128",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "optimizer step": 56.0,
+      "training loss": 0.002,
+      "series": "formatting, rank 128",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "optimizer step": 57.0,
+      "training loss": 0.0044,
+      "series": "formatting, rank 128",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "optimizer step": 58.0,
+      "training loss": 0.0035,
+      "series": "formatting, rank 128",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "optimizer step": 59.0,
+      "training loss": 0.0017,
+      "series": "formatting, rank 128",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "optimizer step": 60.0,
+      "training loss": 0.002,
+      "series": "formatting, rank 128",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "optimizer step": 61.0,
+      "training loss": 0.0012,
+      "series": "formatting, rank 128",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "optimizer step": 62.0,
+      "training loss": 0.0029,
+      "series": "formatting, rank 128",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "optimizer step": 63.0,
+      "training loss": 0.0041,
+      "series": "formatting, rank 128",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "optimizer step": 64.0,
+      "training loss": 0.0017,
+      "series": "formatting, rank 128",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "optimizer step": 65.0,
+      "training loss": 0.0015,
+      "series": "formatting, rank 128",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "optimizer step": 66.0,
+      "training loss": 0.0033,
+      "series": "formatting, rank 128",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "optimizer step": 67.0,
+      "training loss": 0.0026,
+      "series": "formatting, rank 128",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "optimizer step": 68.0,
+      "training loss": 0.0014,
+      "series": "formatting, rank 128",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "optimizer step": 69.0,
+      "training loss": 0.0027,
+      "series": "formatting, rank 128",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "optimizer step": 70.0,
+      "training loss": 0.0033,
+      "series": "formatting, rank 128",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "optimizer step": 71.0,
+      "training loss": 0.0013,
+      "series": "formatting, rank 128",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "optimizer step": 72.0,
+      "training loss": 0.0027,
+      "series": "formatting, rank 128",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "optimizer step": 73.0,
+      "training loss": 0.0012,
+      "series": "formatting, rank 128",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "optimizer step": 74.0,
+      "training loss": 0.0028,
+      "series": "formatting, rank 128",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "optimizer step": 0.0,
+      "training loss": 1.7853,
+      "series": "formatting, rank 256",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "optimizer step": 1.0,
+      "training loss": 1.9541,
+      "series": "formatting, rank 256",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "optimizer step": 2.0,
+      "training loss": 1.6581,
+      "series": "formatting, rank 256",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "optimizer step": 3.0,
+      "training loss": 1.783,
+      "series": "formatting, rank 256",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "optimizer step": 4.0,
+      "training loss": 1.7593,
+      "series": "formatting, rank 256",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "optimizer step": 5.0,
+      "training loss": 1.1866,
+      "series": "formatting, rank 256",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "optimizer step": 6.0,
+      "training loss": 1.1534,
+      "series": "formatting, rank 256",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "optimizer step": 7.0,
+      "training loss": 0.8538,
+      "series": "formatting, rank 256",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "optimizer step": 8.0,
+      "training loss": 0.758,
+      "series": "formatting, rank 256",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "optimizer step": 9.0,
+      "training loss": 0.8572,
+      "series": "formatting, rank 256",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "optimizer step": 10.0,
+      "training loss": 0.5049,
+      "series": "formatting, rank 256",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "optimizer step": 11.0,
+      "training loss": 0.3617,
+      "series": "formatting, rank 256",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "optimizer step": 12.0,
+      "training loss": 0.2864,
+      "series": "formatting, rank 256",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "optimizer step": 13.0,
+      "training loss": 0.3899,
+      "series": "formatting, rank 256",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "optimizer step": 14.0,
+      "training loss": 0.2849,
+      "series": "formatting, rank 256",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "optimizer step": 15.0,
+      "training loss": 0.1446,
+      "series": "formatting, rank 256",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "optimizer step": 16.0,
+      "training loss": 0.1161,
+      "series": "formatting, rank 256",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "optimizer step": 17.0,
+      "training loss": 0.1176,
+      "series": "formatting, rank 256",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "optimizer step": 18.0,
+      "training loss": 0.2852,
+      "series": "formatting, rank 256",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "optimizer step": 19.0,
+      "training loss": 0.137,
+      "series": "formatting, rank 256",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "optimizer step": 20.0,
+      "training loss": 0.0407,
+      "series": "formatting, rank 256",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "optimizer step": 21.0,
+      "training loss": 0.0605,
+      "series": "formatting, rank 256",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "optimizer step": 22.0,
+      "training loss": 0.0777,
+      "series": "formatting, rank 256",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "optimizer step": 23.0,
+      "training loss": 0.105,
+      "series": "formatting, rank 256",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "optimizer step": 24.0,
+      "training loss": 0.0534,
+      "series": "formatting, rank 256",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "optimizer step": 25.0,
+      "training loss": 0.0673,
+      "series": "formatting, rank 256",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "optimizer step": 26.0,
+      "training loss": 0.0352,
+      "series": "formatting, rank 256",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "optimizer step": 27.0,
+      "training loss": 0.0305,
+      "series": "formatting, rank 256",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "optimizer step": 28.0,
+      "training loss": 0.0381,
+      "series": "formatting, rank 256",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "optimizer step": 29.0,
+      "training loss": 0.0347,
+      "series": "formatting, rank 256",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "optimizer step": 30.0,
+      "training loss": 0.0145,
+      "series": "formatting, rank 256",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "optimizer step": 31.0,
+      "training loss": 0.0157,
+      "series": "formatting, rank 256",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "optimizer step": 32.0,
+      "training loss": 0.0423,
+      "series": "formatting, rank 256",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "optimizer step": 33.0,
+      "training loss": 0.0747,
+      "series": "formatting, rank 256",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "optimizer step": 34.0,
+      "training loss": 0.0237,
+      "series": "formatting, rank 256",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "optimizer step": 35.0,
+      "training loss": 0.0093,
+      "series": "formatting, rank 256",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "optimizer step": 36.0,
+      "training loss": 0.0118,
+      "series": "formatting, rank 256",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "optimizer step": 37.0,
+      "training loss": 0.0134,
+      "series": "formatting, rank 256",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "optimizer step": 38.0,
+      "training loss": 0.0318,
+      "series": "formatting, rank 256",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "optimizer step": 39.0,
+      "training loss": 0.0132,
+      "series": "formatting, rank 256",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "optimizer step": 40.0,
+      "training loss": 0.0045,
+      "series": "formatting, rank 256",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "optimizer step": 41.0,
+      "training loss": 0.0048,
+      "series": "formatting, rank 256",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "optimizer step": 42.0,
+      "training loss": 0.0055,
+      "series": "formatting, rank 256",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "optimizer step": 43.0,
+      "training loss": 0.0071,
+      "series": "formatting, rank 256",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "optimizer step": 44.0,
+      "training loss": 0.009,
+      "series": "formatting, rank 256",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "optimizer step": 45.0,
+      "training loss": 0.0031,
+      "series": "formatting, rank 256",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "optimizer step": 46.0,
+      "training loss": 0.0028,
+      "series": "formatting, rank 256",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "optimizer step": 47.0,
+      "training loss": 0.0063,
+      "series": "formatting, rank 256",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "optimizer step": 48.0,
+      "training loss": 0.0065,
+      "series": "formatting, rank 256",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "optimizer step": 49.0,
+      "training loss": 0.0034,
+      "series": "formatting, rank 256",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "optimizer step": 50.0,
+      "training loss": 0.0035,
+      "series": "formatting, rank 256",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "optimizer step": 51.0,
+      "training loss": 0.002,
+      "series": "formatting, rank 256",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "optimizer step": 52.0,
+      "training loss": 0.0038,
+      "series": "formatting, rank 256",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "optimizer step": 53.0,
+      "training loss": 0.0038,
+      "series": "formatting, rank 256",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "optimizer step": 54.0,
+      "training loss": 0.0013,
+      "series": "formatting, rank 256",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "optimizer step": 55.0,
+      "training loss": 0.0017,
+      "series": "formatting, rank 256",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "optimizer step": 56.0,
+      "training loss": 0.0018,
+      "series": "formatting, rank 256",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "optimizer step": 57.0,
+      "training loss": 0.0034,
+      "series": "formatting, rank 256",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "optimizer step": 58.0,
+      "training loss": 0.0031,
+      "series": "formatting, rank 256",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "optimizer step": 59.0,
+      "training loss": 0.0016,
+      "series": "formatting, rank 256",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "optimizer step": 60.0,
+      "training loss": 0.0018,
+      "series": "formatting, rank 256",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "optimizer step": 61.0,
+      "training loss": 0.0012,
+      "series": "formatting, rank 256",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "optimizer step": 62.0,
+      "training loss": 0.0025,
+      "series": "formatting, rank 256",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "optimizer step": 63.0,
+      "training loss": 0.0031,
+      "series": "formatting, rank 256",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "optimizer step": 64.0,
+      "training loss": 0.0015,
+      "series": "formatting, rank 256",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "optimizer step": 65.0,
+      "training loss": 0.0014,
+      "series": "formatting, rank 256",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "optimizer step": 66.0,
+      "training loss": 0.0027,
+      "series": "formatting, rank 256",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "optimizer step": 67.0,
+      "training loss": 0.0019,
+      "series": "formatting, rank 256",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "optimizer step": 68.0,
+      "training loss": 0.0011,
+      "series": "formatting, rank 256",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "optimizer step": 69.0,
+      "training loss": 0.0024,
+      "series": "formatting, rank 256",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "optimizer step": 70.0,
+      "training loss": 0.0027,
+      "series": "formatting, rank 256",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "optimizer step": 71.0,
+      "training loss": 0.0012,
+      "series": "formatting, rank 256",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "optimizer step": 72.0,
+      "training loss": 0.0022,
+      "series": "formatting, rank 256",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "optimizer step": 73.0,
+      "training loss": 0.0012,
+      "series": "formatting, rank 256",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "optimizer step": 74.0,
+      "training loss": 0.0023,
+      "series": "formatting, rank 256",
+      "_kind": "line",
+      "_group": 4
+    }
+  ],
+  "n_series": 5,
+  "total_points": 375,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Training loss per fu5 arm (75 steps; divergence bar 5.0 never hit)",
+        "xlabel": "optimizer step",
+        "ylabel": "training loss",
+        "legend_labels": [
+          "impolite bare, lr 1e-5 (control)",
+          "impolite bare, lr 3e-5",
+          "impolite bare, lr 1e-4",
+          "formatting, rank 128",
+          "formatting, rank 256"
+        ],
+        "xticklabels": [
+          "\u221210",
+          "0",
+          "10",
+          "20",
+          "30",
+          "40",
+          "50",
+          "60",
+          "70",
+          "80"
+        ],
+        "yticklabels": [
+          "\u22120.5",
+          "0.0",
+          "0.5",
+          "1.0",
+          "1.5",
+          "2.0",
+          "2.5"
+        ]
+      }
+    ],
+    "series": [
+      "impolite bare, lr 1e-5 (control)",
+      "impolite bare, lr 3e-5",
+      "impolite bare, lr 1e-4",
+      "formatting, rank 128",
+      "formatting, rank 256"
+    ]
+  }
+}

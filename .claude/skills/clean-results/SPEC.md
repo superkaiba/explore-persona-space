@@ -474,6 +474,19 @@ required boldface-led parts:
   `#K`-linked). **Do NOT stage the writeup as a methodology correction of
   a prior run** — describe the open question and what this run did; never
   "the prior run used X, this run uses Y".
+  **Cross-issue protocol comparability:** when this slot quotes a
+  sibling issue's headline NUMBER measured under a DIFFERENT eval
+  protocol (split scheme, fold structure, layer-selection rule, eval
+  distribution, judge/DV recipe), state the protocol delta inline next
+  to the number, with a comparability verdict where the protocols
+  differ materially — e.g.
+  "[#823](https://eps.superkaiba.com/tasks/823) reported R²=0.63
+  (k-fold, predictivity-selected layer) vs this issue's 0.71 (single
+  split, steering layer) — not directly comparable". A protocol delta
+  stated to QUALIFY a quoted number is comparability qualification,
+  not the banned correction framing above. Two protocol-mismatched
+  headlines side by side with no delta stated is a critic FAIL
+  (Lens 7).
 - **`**Broader narrative:**`** — the goal of this experiment / group of
   experiments in the project's broader narrative (the
   `docs/open_questions.md` anchor / project-level question it serves).
@@ -544,6 +557,9 @@ Boldface-led slots, in order:
   random sample` / `cherry-picked for illustration` / `first N of M` / the
   harmful-content sanitized form) AND followed/preceded by a **pinned link
   to the complete artifact** (HF Hub `/tree/<sha>`, GitHub `/blob/<sha>`).
+  When the disclosure carries an explicit count claim in the
+  `Disclosure: N of M` form, N must equal the number of example items
+  actually shown below it (check 39 reconciles; overstating N is a FAIL).
   Harmful-content corpora ship SANITIZED (see § Harmful-content below).
 
 **Per-condition quantitative numbers live in PLOTS (in `## Results`), not
@@ -558,6 +574,14 @@ One `### <result>` H3 per result. Each result is STANDALONE — a reader can
 land on it directly and understand it. Issue numbers are confined to
 `## Goal` and the `**Repro:**` / `**Context:**` footer; baselines are
 framed descriptively ("the narrow 2-negative baseline"), not by number.
+When a descriptively-framed baseline (in prose, a caption, or a figure
+reference line) quotes a sibling experiment's headline number measured
+under a DIFFERENT eval protocol, the protocol delta rides inline next
+to the number in the same beat — descriptive form, no `#K` (e.g. "the
+sibling k-fold, predictivity-selected estimate (R²=0.63) vs this run's
+single-split, steering-layer 0.71 — not directly comparable"). When
+the 60-word caption cap binds, the delta rides the what-is-plotted
+prose instead of the caption.
 
 Per-result skeleton — the strict three-beat (THIS is the v4 contract):
 
@@ -599,6 +623,21 @@ when a claim rests on an aggregated metric, link BOTH the aggregated file
 and the per-cell file the aggregation collapsed (in the `**Repro:**`
 footer). Exemption: raw and processed are visually identical
 (axis-rescale-only) — say so in alt text and omit the raw.
+
+**Compose-time number verification + artifact freshness.** Every number,
+range, or headline written into the body is re-read from its underlying
+artifact (`eval_results/` JSON, HF/WandB file) AT COMPOSE TIME — grep/`jq`
+the value in the same session that writes it; never paste from a chat
+draft, a plan, a task body, or memory. A quoted range traces to ONE
+quantity in ONE artifact read — never two different metrics fused into a
+single interval (#823/#952). Before quoting any `eval_results/` summary
+JSON, confirm it is the current version: `git log -1 -- <path>` plus a
+same-directory scan for a newer sibling/version — a later re-run or v(K+1)
+supersedes (#1310 re-cited a superseded v2 summary after the v3 run
+flipped the null). This extends the `## Methodology`
+copied-from-ground-truth hyperparameter rule to every results number
+(chat-side counterpart: CLAUDE.md § "Ad-hoc results summaries" → "Verify
+before asserting").
 
 **For text-behavior results only:** the systematic per-condition samples
 live in `## Methodology → ### Sample training/evaluation data +
@@ -650,6 +689,17 @@ H2), preceded by a `---` horizontal rule. TWO required bold labels:
   WARNs (v3/v2: WARN-only). When the row quotes a longer alternate
   verbatim source (`## Provenance` / followup-scope), quote the
   frontmatter `origin_prompt` too, or expect the WARN.
+  The lineage clause is additionally cross-checked against frontmatter
+  `parent_id` (#1418, incident #1345 r1): a `fresh direction` /
+  `no parent` claim on a task whose frontmatter carries `parent_id: K`
+  is a hard v4 FAIL unless the row also references `#K` (or
+  `/tasks/K`) — then a WARN; a `parent_id` task whose lineage never
+  references `#K` WARNs (v3/v2: the contradiction surfaces as WARN
+  only, never a new hard FAIL). Bare `fresh direction` with no
+  parenthetical counts as a no-parent claim on the verifier's own
+  pinned authority — `test_v4_context_fresh_direction_alone_passes`
+  pins it as the sanctioned PARENTLESS lineage form, so it contradicts
+  a set `parent_id` the same way.
   Bare / unpinned URLs INSIDE the verbatim blockquote are exempt from
   the footer URL checks (checks 8 / 8b strip `>`-prefixed lines before
   scanning — the quote is provenance text, not a provenance link; #959;
@@ -722,14 +772,17 @@ body.
 
 Same constants as v3 (`V3_TAKEAWAYS_*`, `V3_FINDING_PROSE_*`,
 `V3_FIGURE_CAPTION_MAX_WORDS`, `V3_TOTAL_PROSE_*`), applied to the v4
-sections, plus ONE v4-only constant: `V4_TAKEAWAYS_BULLET_FAIL_WORDS`
-(=100), the per-Takeaways-bullet hard-FAIL tier (#825):
+sections, plus TWO v4-only constants: `V4_TAKEAWAYS_BULLET_FAIL_WORDS`
+(=100), the per-Takeaways-bullet hard-FAIL tier (#825), and
+`V4_RESULT_PARA_MAX_SENTENCES` (=3), the per-result-paragraph sentence
+cap (WARN-only, check 36, #1368):
 
 | Surface | Cap | Verifier behavior |
 |---|---|---|
 | `## Takeaways` bullet count | 3–6 bullets, no paragraphs | FAIL outside range (owned by the v4 structure check) |
 | Per-Takeaways-bullet length | ≤30 words WARN; ≥100 words FAIL | WARN at 30, FAIL at 100 (v4-only hard tier — an accreted paragraph-bullet cannot ride a WARN, #825) |
 | Per-`### <result>` prose (excl. caption/code/details/tables) | ≤120 words WARN, ≥180 FAIL | WARN at 120, FAIL at 180 |
+| Per-`### <result>` prose paragraph | 1–3 sentences | WARN at ≥4 (check 36, #1368; register judgment — bullets-over-prose, the FAIL call — stays with the LM critic, Lens 12) |
 | Figure caption | ≤60 words | WARN |
 | Total prose: Takeaways + Goal + Results (excl. tables, code fences, details bodies, captions; `## Methodology` is EXCLUDED — it carries the absorbed methodology-doc content and is reference, not skim prose) | ≤800 words + 250 per live follow-up round beyond the first (round count: non-retroactive `epm:same-issue-followup-run` markers and/or the footer round clauses, max — #921) | WARN-only |
 
@@ -861,7 +914,8 @@ Otherwise identical to v3:
   `## Takeaways` bullet.
 - Inline math `\(...\)`, display math `\[...\]`. Keep math out of plot
   labels and captions.
-- **Never write `byte identical` or `byte-identical`** anywhere.
+- **Never write `byte identical` or `byte-identical`** — nor the `bit …` /
+  `… equal` variants (`bit-identical`, `byte-equal`, `bit equal`) — anywhere.
 - **Statistical-framing discipline** carries over (enforced by
   `audit_clean_results_body_discipline.py` + clean-result-critic): no
   pre-registration mentions, no effect-size names in prose, no named
@@ -888,7 +942,10 @@ Forward-only: each check branches on the sentinel. The v4 checks
 4. At least one `![alt](url)` image inline under `## Results`.
 4b. Figure URLs resolvable AND existing under `## Results` (same offline
    `git cat-file` / HTTP HEAD probe as v3).
-5. (Soft) Figure-caption sanity — vacuously satisfied.
+5. (Soft, WARN) Figure-caption shape — each non-empty blockquote caption
+   after an inline figure under `## Results` opens
+   `**Figure.** *italic lead claim.*` (§ Figure caption shape). WARN never
+   FAIL; captionless figures exempt (check 21 + Lens 3 own presence).
 6. Confidence — for v4 the H1 title tag is the source of truth; PASSes
    when the title carries the `(... confidence)` tag, NO body Confidence
    sentence required. Gated on `is_titletag_confidence()` = v2 OR v3 OR v4.
@@ -917,7 +974,12 @@ Forward-only: each check branches on the sentinel. The v4 checks
     must contain frontmatter `origin_prompt` verbatim
     (whitespace-normalized; a ≥20-char strict-prefix quote covering ≥50%
     of `origin_prompt` = hard FAIL on truncation, other mismatch = WARN;
-    v3/v2 WARN-only).
+    v3/v2 WARN-only) — and (v4) the lineage clause is consistent with
+    frontmatter `parent_id` (#1418: a `fresh direction`/`no parent` claim
+    with `parent_id: K` set and `#K` / `/tasks/K` unreferenced = hard v4
+    FAIL; denied claim with the parent also named = WARN; parent unnamed
+    with no denied claim = WARN; v3/v2: the contradiction is WARN-only,
+    never a new hard FAIL).
 18. **`## Methodology` completeness** (`check_v4_methodology_shape`, v4
     only): the `**Training:**` slot carries the complete hyperparameter
     table (≥1 GFM table after the Training label, OR the explicit
@@ -953,6 +1015,36 @@ Forward-only: each check branches on the sentinel. The v4 checks
     or task link. (Origin: the #841 round-2 two-round Lens-2 miss; the
     task-link form added by #1002 after the #928 round-1 miss; numbered
     27 because 22-26 are taken by the generation-agnostic checks.)
+36. **Result-paragraph sentence cap**
+    (`check_v4_result_paragraph_sentences`, v4 only, WARN — NEVER FAIL):
+    each prose paragraph inside a `### <result>` block runs 1–3 sentences
+    (`V4_RESULT_PARA_MAX_SENTENCES` = 3; the § Conciseness caps table
+    above). Paragraph = a maximal run of consecutive prose lines —
+    blockquote captions, fenced code, `<details>` bodies, GFM tables,
+    headings, images, HTML lines, and list items are excluded. The
+    sentence counter masks inline code, link targets, decimals, ellipses,
+    and a small abbreviation list (`e.g.`, `i.e.`, `vs.`, `et al.`,
+    `cf.`, `Fig.`, `no.` before a digit, …); semicolon chains count as
+    one unit. Register judgment — the bullets-over-prose call and the
+    FAIL decision — stays with the clean-result-critic (Lens 12); this
+    check is the free mechanical backstop for the #1333/#385 incident
+    class (dense 4–5-sentence paragraphs burning an LM critic round).
+    (Numbered 36 because 28–35 are taken by the generation-agnostic
+    checks, #1368.)
+39. **Sample-slot disclosure count** (`check_v4_sample_disclosure_count`,
+    v4 only): an explicit `Disclosure: N of M` count claim in the Sample
+    slot must reconcile with the example items actually shown in that
+    claim's group — overclaim (N exceeds EVERY counting basis: sample /
+    fenced / `<details>` blocks, top-level list items, GFM table data
+    rows, blockquote groups, and their disjoint-media sum) is a FAIL;
+    any other mismatch is a WARN; no count claim / no countable
+    presentation = skip (never guess). One `Disclosure:` line covers the
+    items from the line after it to the next `Disclosure:` line (or slot
+    end). The broad check-19 phrasings (`K of M rows`, `first N of M`)
+    never trigger reconciliation — only the `Disclosure:` prefix does.
+    (Numbered 39 because 37–38 are taken by the footer-reuse-pin and
+    linked-not-embedded WARN checks, #1421; incident #1005 claimed
+    `Disclosure: 8 of 2,400` while showing 6.)
 
 Generation-agnostic checks (v2 AND v3 AND v4): figure-URL-sha-matches
 (check 22), HF-URL-resolves (check 23), figure-sidecar opaque
@@ -1437,9 +1529,10 @@ Three discipline points:
   `Confidence:` sentence to carry them).
 - Inline math `\(...\)`, display math `\[...\]`. Keep math out of plot
   labels and figure captions.
-- **Never write `byte identical` or `byte-identical`** anywhere in the
-  body. Use plain English: "the two files matched exactly", "every byte
-  agreed", "no diff between the runs".
+- **Never write `byte identical` or `byte-identical`** — nor the `bit …` /
+  `… equal` variants (`bit-identical`, `byte-equal`, `bit equal`) — anywhere
+  in the body. Use plain English: "the two files matched exactly", "every
+  byte agreed", "no diff between the runs".
 - **Statistical-framing discipline** carries over from v2 (enforced by
   `audit_clean_results_body_discipline.py` + clean-result-critic Lens 7):
   no pre-registration mentions, no effect-size names in prose, no named
@@ -1465,8 +1558,9 @@ listed under § Grandfathered shape. The v3 checks:
 4b. Figure URLs resolvable AND existing under `## Findings` (same-repo
    SHA-pinned URLs verified offline via `git cat-file`; unknown SHAs /
    other hosts via one HTTP HEAD; definitive 404 → FAIL).
-5. (Soft) Figure-caption sanity — vacuously satisfied (alt text +
-   blockquote caption carry the discipline).
+5. (Soft) Figure-caption sanity — vacuously satisfied for v3 (alt text +
+   blockquote caption carry the discipline); the italic-lead-claim WARN
+   is v4-only (forward-only).
 6. Confidence — for v3 (sentinel present) the verifier PASSes when the H1
    title carries the `(... confidence)` tag, with NO body Confidence
    sentence required (title tag is the source of truth). Gated on
@@ -1536,8 +1630,8 @@ paragraph — RETIRES for v3).
 
 ## Anti-pattern audit (`audit_clean_results_body_discipline.py`)
 
-Catches prose-level violations the verifier doesn't (unchanged across
-generations):
+Catches prose-level violations the verifier doesn't (mostly unchanged across
+generations; the snake_case-slug category is v4-only):
 
 - Pre-registration mentions
 - Effect-size names in prose (Cohen's d, η², r-as-effect-size,
@@ -1546,9 +1640,13 @@ generations):
   exact, Mann-Whitney, Wilcoxon, bootstrap test)
 - Inline `value ± err` credence intervals (chart error bars fine)
 - Project-internal condition labels (`C1`, `C2`, `C2'`, `H1`, `P1`)
+- Backticked 3+-segment snake_case condition/cell slugs (`neg_reph_curious`)
+  in v4 reader-facing prose (Takeaways/Goal/Results; footer, captions,
+  tables, Methodology, field-name allowlist exempt; digit-leading segments
+  + bare unbackticked slugs stay LM-critic territory) — v4-only (#1372)
 - Math-style subscripts/superscripts in prose
 - GCG / PAIR / `H_a` / `REJECTED` / letter labels / `Bin A/B/C`
-- **`byte identical` / `byte-identical`** — banned phrasing.
+- **`byte identical` / `byte-identical` (incl. `bit` and `-equal` variants)** — banned phrasing.
 
 Exemption: blockquoted lines inside the `## Reproducibility`
 `**Context:**` row are NOT scanned (the verbatim originating-prompt /

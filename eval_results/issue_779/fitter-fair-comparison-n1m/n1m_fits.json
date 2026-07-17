@@ -1,0 +1,748 @@
+{
+  "per_point": {
+    "lmsys_150k": {
+      "selection": {
+        "mode": "lmsys",
+        "n_target": 150000,
+        "n_realized": 150000,
+        "n_lmsys": 150000,
+        "n_wildchat": 0
+      },
+      "predictors": {
+        "ridge": {
+          "whole_map_r2": 0.754355957580797,
+          "mean_cosine": 0.9546863369281118,
+          "bootstrap_ci": {
+            "r2": {
+              "point": 0.754355957580797,
+              "lo": 0.7438179039042248,
+              "hi": 0.7645812802036637
+            },
+            "mean_cosine": {
+              "point": 0.9546863369281118,
+              "lo": 0.9525276210982995,
+              "hi": 0.9567037689354375
+            },
+            "n_test": 1000
+          },
+          "fit_meta": {
+            "n_train": 150000,
+            "selection": "val-lambda (primal, streaming)",
+            "selected_lambda": 1000.0,
+            "val_r2_at_selected": 0.7549393280729056,
+            "lambda_grid_edge": null,
+            "ridge_block": 50000
+          },
+          "wall_time_s": 19.1
+        },
+        "mlp_w8192": {
+          "whole_map_r2": 0.7880526998314361,
+          "mean_cosine": 0.9608059132965436,
+          "bootstrap_ci": {
+            "r2": {
+              "point": 0.7880526998314361,
+              "lo": 0.7781313066658002,
+              "hi": 0.7980916861023264
+            },
+            "mean_cosine": {
+              "point": 0.9608059132965436,
+              "lo": 0.9588826405326423,
+              "hi": 0.9626990051489207
+            },
+            "n_test": 1000
+          },
+          "fit_meta": {
+            "width": 8192,
+            "lr": 0.0003,
+            "epochs_ran": 53,
+            "batch": 4096,
+            "best_val_mse": 0.09828193475632441,
+            "n_train": 150000,
+            "capacity_arm": false
+          },
+          "wall_time_s": 111.6
+        },
+        "mlp_w32768": {
+          "whole_map_r2": 0.7884349970424576,
+          "mean_cosine": 0.9608581901031512,
+          "bootstrap_ci": {
+            "r2": {
+              "point": 0.7884349970424576,
+              "lo": 0.7781787366414639,
+              "hi": 0.798720788554203
+            },
+            "mean_cosine": {
+              "point": 0.9608581901031512,
+              "lo": 0.9589097381923231,
+              "hi": 0.9627274225086344
+            },
+            "n_test": 1000
+          },
+          "fit_meta": {
+            "width": 32768,
+            "lr": 0.0003,
+            "epochs_ran": 43,
+            "batch": 4096,
+            "best_val_mse": 0.0987981422061012,
+            "n_train": 150000,
+            "capacity_arm": true
+          },
+          "wall_time_s": 213.5
+        },
+        "residual_skip": {
+          "whole_map_r2": 0.7827398183090551,
+          "mean_cosine": 0.9598895760250487,
+          "bootstrap_ci": {
+            "r2": {
+              "point": 0.7827398183090551,
+              "lo": 0.7722899987356969,
+              "hi": 0.7932820166913953
+            },
+            "mean_cosine": {
+              "point": 0.9598895760250487,
+              "lo": 0.9578884518456213,
+              "hi": 0.9618636879786114
+            },
+            "n_test": 1000
+          },
+          "fit_meta": {
+            "n_train": 150000,
+            "base_ridge_lambda": 1000.0,
+            "residual_mlp_width": 8192,
+            "lr": 0.0003,
+            "epochs_ran": 57,
+            "batch": 4096
+          },
+          "wall_time_s": 231.6
+        },
+        "krr_nystrom": {
+          "whole_map_r2": 0.8026462127169326,
+          "mean_cosine": 0.9635519486957992,
+          "bootstrap_ci": {
+            "r2": {
+              "point": 0.8026462127169326,
+              "lo": 0.792454928517841,
+              "hi": 0.8123398488323532
+            },
+            "mean_cosine": {
+              "point": 0.9635519486957992,
+              "lo": 0.9616662766921337,
+              "hi": 0.9653892615653505
+            },
+            "n_test": 1000
+          },
+          "fit_meta": {
+            "n_train": 150000,
+            "kernel": "RBF Nystrom (streaming Phi^TPhi)",
+            "m_centers": 16384,
+            "base_gamma": 0.0001726832679197441,
+            "selected": {
+              "gamma_mult": 1.0,
+              "gamma": 0.0001726832679197441,
+              "lambda": 0.1,
+              "val_r2": 0.7981557701554164
+            },
+            "val_grid": [
+              {
+                "gamma_mult": 1.0,
+                "gamma": 0.0001726832679197441,
+                "lambda": 0.1,
+                "val_r2": 0.7981557701554164
+              },
+              {
+                "gamma_mult": 1.0,
+                "gamma": 0.0001726832679197441,
+                "lambda": 10.0,
+                "val_r2": 0.750624022070715
+              }
+            ]
+          },
+          "wall_time_s": 30.6
+        }
+      }
+    },
+    "lmsys_500k": {
+      "selection": {
+        "mode": "lmsys",
+        "n_target": 500000,
+        "n_realized": 500000,
+        "n_lmsys": 500000,
+        "n_wildchat": 0
+      },
+      "predictors": {
+        "ridge": {
+          "whole_map_r2": 0.7608232696391413,
+          "mean_cosine": 0.9558396789942695,
+          "bootstrap_ci": {
+            "r2": {
+              "point": 0.7608232696391413,
+              "lo": 0.7500995497764024,
+              "hi": 0.7707623583946132
+            },
+            "mean_cosine": {
+              "point": 0.9558396789942695,
+              "lo": 0.9537458724674573,
+              "hi": 0.9577870595408751
+            },
+            "n_test": 1000
+          },
+          "fit_meta": {
+            "n_train": 500000,
+            "selection": "val-lambda (primal, streaming)",
+            "selected_lambda": 0.001,
+            "val_r2_at_selected": 0.7614805828636065,
+            "lambda_grid_edge": "low",
+            "ridge_block": 50000
+          },
+          "wall_time_s": 36.3
+        },
+        "mlp_w8192": {
+          "whole_map_r2": 0.8074943555084623,
+          "mean_cosine": 0.964383370718193,
+          "bootstrap_ci": {
+            "r2": {
+              "point": 0.8074943555084623,
+              "lo": 0.7971574817352609,
+              "hi": 0.8175260425912461
+            },
+            "mean_cosine": {
+              "point": 0.964383370718193,
+              "lo": 0.9624559175028353,
+              "hi": 0.9662145563695306
+            },
+            "n_test": 1000
+          },
+          "fit_meta": {
+            "width": 8192,
+            "lr": 0.0003,
+            "epochs_ran": 47,
+            "batch": 4096,
+            "best_val_mse": 0.0893210906110491,
+            "n_train": 500000,
+            "capacity_arm": false
+          },
+          "wall_time_s": 285.9
+        },
+        "mlp_w32768": {
+          "whole_map_r2": 0.8098455085890691,
+          "mean_cosine": 0.9647826085299042,
+          "bootstrap_ci": {
+            "r2": {
+              "point": 0.8098455085890691,
+              "lo": 0.799562529655855,
+              "hi": 0.8196118858191639
+            },
+            "mean_cosine": {
+              "point": 0.9647826085299042,
+              "lo": 0.9628840251250805,
+              "hi": 0.9666370201663771
+            },
+            "n_test": 1000
+          },
+          "fit_meta": {
+            "width": 32768,
+            "lr": 0.0003,
+            "epochs_ran": 40,
+            "batch": 4096,
+            "best_val_mse": 0.08888887904575893,
+            "n_train": 500000,
+            "capacity_arm": true
+          },
+          "wall_time_s": 603.8
+        },
+        "krr_nystrom": {
+          "whole_map_r2": 0.8086346413981071,
+          "mean_cosine": 0.9646416912819578,
+          "bootstrap_ci": {
+            "r2": {
+              "point": 0.8086346413981071,
+              "lo": 0.7986094374731674,
+              "hi": 0.8182218802134966
+            },
+            "mean_cosine": {
+              "point": 0.9646416912819578,
+              "lo": 0.9627814725766475,
+              "hi": 0.9664009153115901
+            },
+            "n_test": 1000
+          },
+          "fit_meta": {
+            "n_train": 500000,
+            "kernel": "RBF Nystrom (streaming Phi^TPhi)",
+            "m_centers": 16384,
+            "base_gamma": 0.00016823999098984234,
+            "selected": {
+              "gamma_mult": 1.0,
+              "gamma": 0.00016823999098984234,
+              "lambda": 0.1,
+              "val_r2": 0.8063489473664338
+            },
+            "val_grid": [
+              {
+                "gamma_mult": 1.0,
+                "gamma": 0.00016823999098984234,
+                "lambda": 0.1,
+                "val_r2": 0.8063489473664338
+              },
+              {
+                "gamma_mult": 1.0,
+                "gamma": 0.00016823999098984234,
+                "lambda": 10.0,
+                "val_r2": 0.7761046926286083
+              }
+            ]
+          },
+          "wall_time_s": 49.6
+        },
+        "residual_skip": {
+          "whole_map_r2": 0.8057089660683882,
+          "mean_cosine": 0.9640520265470854,
+          "bootstrap_ci": {
+            "r2": {
+              "point": 0.8057089660683882,
+              "lo": 0.7953316288090736,
+              "hi": 0.8154601474034431
+            },
+            "mean_cosine": {
+              "point": 0.9640520265470854,
+              "lo": 0.9620874285184269,
+              "hi": 0.965853127309087
+            },
+            "n_test": 1000
+          },
+          "fit_meta": {
+            "n_train": 500000,
+            "base_ridge_lambda": 0.001,
+            "residual_mlp_width": 8192,
+            "lr": 0.0003,
+            "epochs_ran": 58,
+            "batch": 4096
+          },
+          "wall_time_s": 529.4
+        }
+      }
+    },
+    "mixed_500k": {
+      "selection": {
+        "mode": "mixed",
+        "n_target": 500000,
+        "n_realized": 500000,
+        "n_lmsys": 274580,
+        "n_wildchat": 225420,
+        "full_lmsys_frac": 0.5492
+      },
+      "predictors": {
+        "ridge": {
+          "whole_map_r2": 0.7526607745723463,
+          "mean_cosine": 0.9543710929040466,
+          "bootstrap_ci": {
+            "r2": {
+              "point": 0.7526607745723463,
+              "lo": 0.7419769579981391,
+              "hi": 0.7624380001561564
+            },
+            "mean_cosine": {
+              "point": 0.9543710929040466,
+              "lo": 0.9522155980005361,
+              "hi": 0.9563679543755184
+            },
+            "n_test": 1000
+          },
+          "fit_meta": {
+            "n_train": 500000,
+            "selection": "val-lambda (primal, streaming)",
+            "selected_lambda": 100.0,
+            "val_r2_at_selected": 0.7529049374182655,
+            "lambda_grid_edge": null,
+            "ridge_block": 50000
+          },
+          "wall_time_s": 34.3
+        },
+        "mlp_w8192": {
+          "whole_map_r2": 0.8000190023713745,
+          "mean_cosine": 0.9630501290679768,
+          "bootstrap_ci": {
+            "r2": {
+              "point": 0.8000190023713745,
+              "lo": 0.7891268948255927,
+              "hi": 0.8099454739047379
+            },
+            "mean_cosine": {
+              "point": 0.9630501290679768,
+              "lo": 0.9609958259327428,
+              "hi": 0.9648637305372502
+            },
+            "n_test": 1000
+          },
+          "fit_meta": {
+            "width": 8192,
+            "lr": 0.0003,
+            "epochs_ran": 48,
+            "batch": 4096,
+            "best_val_mse": 0.08747680751255581,
+            "n_train": 500000,
+            "capacity_arm": false
+          },
+          "wall_time_s": 296.0
+        },
+        "mlp_w32768": {
+          "whole_map_r2": 0.8034498999132161,
+          "mean_cosine": 0.9636591691269791,
+          "bootstrap_ci": {
+            "r2": {
+              "point": 0.8034498999132161,
+              "lo": 0.7934668337377396,
+              "hi": 0.813259342349379
+            },
+            "mean_cosine": {
+              "point": 0.9636591691269791,
+              "lo": 0.9617109205419223,
+              "hi": 0.9654283415319902
+            },
+            "n_test": 1000
+          },
+          "fit_meta": {
+            "width": 32768,
+            "lr": 0.0003,
+            "epochs_ran": 40,
+            "batch": 4096,
+            "best_val_mse": 0.08729436593191964,
+            "n_train": 500000,
+            "capacity_arm": true
+          },
+          "wall_time_s": 611.5
+        },
+        "krr_nystrom": {
+          "whole_map_r2": 0.8010590098905175,
+          "mean_cosine": 0.9632737769947677,
+          "bootstrap_ci": {
+            "r2": {
+              "point": 0.8010590098905175,
+              "lo": 0.7910938428851167,
+              "hi": 0.8101979307128492
+            },
+            "mean_cosine": {
+              "point": 0.9632737769947677,
+              "lo": 0.9612586725516127,
+              "hi": 0.9650181885204141
+            },
+            "n_test": 1000
+          },
+          "fit_meta": {
+            "n_train": 500000,
+            "kernel": "RBF Nystrom (streaming Phi^TPhi)",
+            "m_centers": 16384,
+            "base_gamma": 0.0001707000209293626,
+            "selected": {
+              "gamma_mult": 1.0,
+              "gamma": 0.0001707000209293626,
+              "lambda": 0.1,
+              "val_r2": 0.7999449660025767
+            },
+            "val_grid": [
+              {
+                "gamma_mult": 1.0,
+                "gamma": 0.0001707000209293626,
+                "lambda": 0.1,
+                "val_r2": 0.7999449660025767
+              },
+              {
+                "gamma_mult": 1.0,
+                "gamma": 0.0001707000209293626,
+                "lambda": 10.0,
+                "val_r2": 0.7677196251589329
+              }
+            ]
+          },
+          "wall_time_s": 46.9
+        },
+        "residual_skip": {
+          "whole_map_r2": 0.7991036110397731,
+          "mean_cosine": 0.9628326961882313,
+          "bootstrap_ci": {
+            "r2": {
+              "point": 0.7991036110397731,
+              "lo": 0.7896117803199038,
+              "hi": 0.8086624222781081
+            },
+            "mean_cosine": {
+              "point": 0.9628326961882313,
+              "lo": 0.9609284111391195,
+              "hi": 0.964599336965295
+            },
+            "n_test": 1000
+          },
+          "fit_meta": {
+            "n_train": 500000,
+            "base_ridge_lambda": 100.0,
+            "residual_mlp_width": 8192,
+            "lr": 0.0003,
+            "epochs_ran": 51,
+            "batch": 4096
+          },
+          "wall_time_s": 476.5
+        }
+      }
+    },
+    "mixed_1m": {
+      "selection": {
+        "mode": "mixed",
+        "n_target": 1000000,
+        "n_realized": 963444,
+        "n_lmsys": 529085,
+        "n_wildchat": 434359,
+        "full_lmsys_frac": 0.5492
+      },
+      "predictors": {
+        "ridge": {
+          "whole_map_r2": 0.7541708417500051,
+          "mean_cosine": 0.954637316406687,
+          "bootstrap_ci": {
+            "r2": {
+              "point": 0.7541708417500051,
+              "lo": 0.7434797277308776,
+              "hi": 0.7642395490449736
+            },
+            "mean_cosine": {
+              "point": 0.954637316406687,
+              "lo": 0.9525302278444002,
+              "hi": 0.9566042716687239
+            },
+            "n_test": 1000
+          },
+          "fit_meta": {
+            "n_train": 963444,
+            "selection": "val-lambda (primal, streaming)",
+            "selected_lambda": 0.001,
+            "val_r2_at_selected": 0.7542237014156811,
+            "lambda_grid_edge": "low",
+            "ridge_block": 50000
+          },
+          "wall_time_s": 56.5
+        },
+        "mlp_w8192": {
+          "whole_map_r2": 0.810357605301357,
+          "mean_cosine": 0.9649278419216646,
+          "bootstrap_ci": {
+            "r2": {
+              "point": 0.810357605301357,
+              "lo": 0.800651782482096,
+              "hi": 0.8198403790325521
+            },
+            "mean_cosine": {
+              "point": 0.9649278419216646,
+              "lo": 0.963086201661272,
+              "hi": 0.9667074072440711
+            },
+            "n_test": 1000
+          },
+          "fit_meta": {
+            "width": 8192,
+            "lr": 0.0003,
+            "epochs_ran": 43,
+            "batch": 4096,
+            "best_val_mse": 0.08406925141458556,
+            "n_train": 963444,
+            "capacity_arm": false
+          },
+          "wall_time_s": 484.9
+        },
+        "mlp_w32768": {
+          "whole_map_r2": 0.8134195901944027,
+          "mean_cosine": 0.9654665894498503,
+          "bootstrap_ci": {
+            "r2": {
+              "point": 0.8134195901944027,
+              "lo": 0.8036915779989394,
+              "hi": 0.8228282339048703
+            },
+            "mean_cosine": {
+              "point": 0.9654665894498503,
+              "lo": 0.9636008274311211,
+              "hi": 0.9671803504187144
+            },
+            "n_test": 1000
+          },
+          "fit_meta": {
+            "width": 32768,
+            "lr": 0.0003,
+            "epochs_ran": 38,
+            "batch": 4096,
+            "best_val_mse": 0.08325174641882677,
+            "n_train": 963444,
+            "capacity_arm": true
+          },
+          "wall_time_s": 1089.7
+        },
+        "krr_nystrom": {
+          "whole_map_r2": 0.8066491770626244,
+          "mean_cosine": 0.9642591630655903,
+          "bootstrap_ci": {
+            "r2": {
+              "point": 0.8066491770626244,
+              "lo": 0.7967233606621795,
+              "hi": 0.8161951679396348
+            },
+            "mean_cosine": {
+              "point": 0.9642591630655903,
+              "lo": 0.9623325953803323,
+              "hi": 0.9660192548602493
+            },
+            "n_test": 1000
+          },
+          "fit_meta": {
+            "n_train": 963444,
+            "kernel": "RBF Nystrom (streaming Phi^TPhi)",
+            "m_centers": 16384,
+            "base_gamma": 0.000168031291990803,
+            "selected": {
+              "gamma_mult": 1.0,
+              "gamma": 0.000168031291990803,
+              "lambda": 0.1,
+              "val_r2": 0.8034834573771767
+            },
+            "val_grid": [
+              {
+                "gamma_mult": 1.0,
+                "gamma": 0.000168031291990803,
+                "lambda": 0.1,
+                "val_r2": 0.8034834573771767
+              },
+              {
+                "gamma_mult": 1.0,
+                "gamma": 0.000168031291990803,
+                "lambda": 10.0,
+                "val_r2": 0.7783042911641148
+              }
+            ]
+          },
+          "wall_time_s": 74.6
+        },
+        "residual_skip": {
+          "whole_map_r2": 0.8074532522918715,
+          "mean_cosine": 0.964363886496745,
+          "bootstrap_ci": {
+            "r2": {
+              "point": 0.8074532522918715,
+              "lo": 0.7977064275393502,
+              "hi": 0.817143191181852
+            },
+            "mean_cosine": {
+              "point": 0.964363886496745,
+              "lo": 0.9624626657430592,
+              "hi": 0.9661681746628743
+            },
+            "n_test": 1000
+          },
+          "fit_meta": {
+            "n_train": 963444,
+            "base_ridge_lambda": 0.001,
+            "residual_mlp_width": 8192,
+            "lr": 0.0003,
+            "epochs_ran": 55,
+            "batch": 4096
+          },
+          "wall_time_s": 1009.6
+        }
+      }
+    }
+  },
+  "layer": 19,
+  "seed": 0,
+  "split": {
+    "orig_train_ids": 3600,
+    "n_new_captured": 959844,
+    "n_new_manifest": 960000,
+    "n_lmsys_manifest": 525485,
+    "n_wildchat_manifest": 434515,
+    "n_val": 400,
+    "n_test": 1000,
+    "val_sha256": "2e307fb2d1b74c82752d9460d131a3c1949860e9f0eefe6a82d15cee9f1e0613",
+    "test_sha256": "b9377786b24bc9c1c360303fdb8fac86c0097d264479de1dca3c23dd1047d31d",
+    "pinned_val_sha256": "2e307fb2d1b74c82752d9460d131a3c1949860e9f0eefe6a82d15cee9f1e0613",
+    "pinned_test_sha256": "b9377786b24bc9c1c360303fdb8fac86c0097d264479de1dca3c23dd1047d31d",
+    "pinned_source": "/workspace/explore-persona-space/eval_results/issue_779/fitter-fair-comparison/fair_comparison.json split params -> fixed_split, cross-checked vs constants",
+    "val_test_byte_identical_original": true,
+    "layer": 19,
+    "near_dupe": {
+      "ngram": 5,
+      "jaccard_thresh": 0.8,
+      "n_targets": 1400,
+      "n_exact_drop": 435,
+      "n_near_drop": 30437
+    },
+    "manifest_new_prompt_sha256": "2b14762a15d316c602332a749ebd87c733d687d4165eb5d0038c298e0d27ce46"
+  },
+  "lambda_grid": {
+    "n": 23,
+    "min": 0.001,
+    "max": 100000000.0
+  },
+  "krr_grid": {
+    "gamma_mult": [
+      1.0
+    ],
+    "lambdas": [
+      0.1,
+      10.0
+    ],
+    "nystrom_centers": 16384
+  },
+  "nystrom_validation": {
+    "n": 50000,
+    "m_centers": 16384,
+    "exact_r2": 0.7941242515921959,
+    "nystrom_r2": 0.7863185854756324,
+    "gap": 0.0078056661165635255,
+    "tol": 0.01,
+    "committed_n50k_exact_r2_widegrid": 0.8076,
+    "committed_n50k_exact_r2_smallgrid": 0.8066,
+    "exact_selected": {
+      "gamma_mult": 1.0,
+      "gamma": 0.0001780848517581544,
+      "lambda": 0.1,
+      "val_r2": 0.7896105852075337
+    },
+    "nystrom_selected": {
+      "gamma_mult": 1.0,
+      "gamma": 0.0001761451136089828,
+      "lambda": 0.1,
+      "val_r2": 0.7838852362916375
+    }
+  },
+  "predictor_labels": {
+    "ridge": "primal ridge (linear, streaming X^TX)",
+    "mlp_w8192": "full-dim MLP (w=8192, protocol arm)",
+    "mlp_w32768": "full-dim MLP (w=32768, capacity arm)",
+    "residual_skip": "residual-skip (primal ridge + MLP w8192)",
+    "krr_nystrom": "RBF KRR (Nystrom, streaming Phi^TPhi)"
+  },
+  "fit_points": {
+    "lmsys_150k": {
+      "n_train_target": 150000,
+      "corpus_mode": "lmsys"
+    },
+    "lmsys_500k": {
+      "n_train_target": 500000,
+      "corpus_mode": "lmsys"
+    },
+    "mixed_500k": {
+      "n_train_target": 500000,
+      "corpus_mode": "mixed"
+    },
+    "mixed_1m": {
+      "n_train_target": 1000000,
+      "corpus_mode": "mixed"
+    }
+  },
+  "note": "n_train up to 1,000,000 rerun of fitter-fair-comparison over the LMSYS-exhaust + WildChat-balance n1m corpus. val/test BYTE-IDENTICAL to the ORIGINAL round (asserted vs pinned shas). 4 points: lmsys_150k/500k (pure), mixed_500k (ratio-matched control), mixed_1m (full pool). ridge=streaming primal; mlp mini; residual-skip=ridge+MLP; krr=Nystrom (validated vs exact at n=50k).",
+  "metadata": {
+    "git_commit": "bd9f6865de16f89daf08de4b800f65c30d4079a8",
+    "timestamp_utc": "2026-07-15T22:12:23.312961Z",
+    "python_version": "3.11.10",
+    "platform": "Linux-6.8.0-106-generic-x86_64-with-glibc2.35",
+    "cuda_visible_devices": "0",
+    "script": "issue779_ffc_n1m_fits",
+    "device": "cuda"
+  }
+}

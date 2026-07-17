@@ -1,0 +1,7 @@
+{
+  "cell": "imp_icl_ft_neg",
+  "status": "trained",
+  "adapter_root": "data/issue_1315/run/imp_icl_ft_neg/train",
+  "mix": "data/issue_1315/run/inputs/icl_con_train_mix.jsonl",
+  "mix_sha256": "e88b32118b3fcedcfa2bf92d5b1be418f24c4b0ec38c68115efba964fdbecaee"
+}

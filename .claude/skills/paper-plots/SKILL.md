@@ -116,6 +116,16 @@ if no pattern fits, propose a new pattern file before coding.
 
 Prefer P1/P2/P3 — they carry the weight of the project's deliverables.
 
+### 3.4-bis. No explanatory overlays on plots
+
+Keep figures clean: **no arrows pointing at features, no effect-size labels
+stamped on/above bars or points, no explanatory text overlays** (standing
+user rule, `feedback_no_plot_annotations.md`; re-corrected 2026-07-16 on the
+#1345 dashboard — "remove the text on top of the bar"). Interpretation
+belongs in the caption / interpretation beat, not on the canvas. The only
+sanctioned in-figure text: axis/tick/legend labels, panel titles, and the
+`add_direction_arrow` axis-label suffix from `paper_plots.py`.
+
 ### 3.5. Axis / legend / tick labels — plain English only
 
 Every label that appears on the rendered figure (x/y-axis labels, axis tick labels, legend entries, bar/line group labels, in-figure annotations, panel titles) MUST be plain English. **No Hydra slugs** (`sw_eng_C1`, `sw_eng_expA`, `sw_eng_expB-P1`, `c1_evil_wrong_em`, `cond_4`, `cond_4_seed_137`), **no short-letter labels** (`M1`, `K1`, `BS_E0..E4`, `Method A/B/C`, `Bin A/B/C`, `C1`, `expA`), **no project-internal experiment-strand tags** (`arm`-as-noun with modifiers, `G6`, `H_a`).
@@ -209,6 +219,75 @@ across rounds — a follow-up experiment can shift the headline. A caption
 + body prose can be rewritten cheaply; an in-figure annotation forces a
 regen. Keep the figure a stable data primitive; keep the interpretation
 in the text.
+
+For interim-figure decoration defaults (hatching, per-bar n, estimated-value markers, tick rotation), see §3.9.
+
+### 3.9. Interim / user-facing figure defaults
+
+These are DEFAULTS for any figure shown to the user outside a final
+paper — chat figures, mid-run result summaries, pull-request previews,
+or any interim figure sent before the clean-result promotes. A user
+request to add hatching, per-bar counts, or an estimated-value marker
+overrides these defaults for that figure; absent an explicit ask, apply
+them silently.
+
+**Default-off decoration (absent a user request, omit all of these):**
+
+- **No hatching.** Fill bars with solid color only. Hatching adds
+  visual noise and often fails accessibility checks at small sizes;
+  if ≥6 conditions need distinguishing, split into two panels (P7)
+  rather than defaulting to hatching. (Evidence: 09f28ede 2026-07-15.)
+- **No per-bar n-annotations.** Do not auto-label bars with their
+  sample count (`n=200`, `n=4998`). Report N in the caption or the
+  prose; on the figure it competes with the data labels and misleads
+  when n is a total that conflates train/held-out sizes.
+  (Evidence: 09f28ede + b7150177 2026-07-15.)
+- **No estimated / "guess" value markers.** Do not add a marker, band,
+  or annotation showing a model's best-guess or estimated value unless
+  the user explicitly requests it. Estimated values are interpretation;
+  they belong in the caption or prose, not on the artist.
+  (Evidence: 09f28ede 2026-07-15.)
+- **No gratuitous tick-label rotation.** Only rotate tick labels
+  (≤ 30°) when labels genuinely overlap at the figure's default width.
+  `plt.setp(ax.get_xticklabels(), rotation=15, ha="right")` is in the
+  pattern files as a WHEN-NEEDED example, not a standing default; omit
+  it when labels fit horizontally. (Evidence: 09f28ede 2026-07-15.)
+
+**CV / cross-validated metric figures — fold structure in the caption
+(REQUIRED):**
+
+Any figure whose y-axis reports a cross-validated metric (R², ρ,
+accuracy, loss averaged across folds) MUST state in its caption ALL of:
+`n_contexts=<K>` (total units / observations), `k=<F>` folds,
+`held-out=<H>` (held-out set size or fraction per fold). Use plain
+English: *"cross-validated over 5 folds, n=4998 total contexts
+(∼1000 held-out per fold)"* is the target register. Without this, an
+aggregate n is routinely misread as the training set size.
+(Evidence: b7150177 2026-07-15, "n=4998" caption.)
+
+**Interim figures — mapping arm + per-behavior disaggregation in the
+caption/setup line (REQUIRED):**
+
+This is the figure-side mirror of the CLAUDE.md "Ad-hoc results
+summaries state per-arm provenance in their setup line" rule. Every
+interim figure caption or setup-line MUST state:
+
+1. **The mapping arm(s) shown:** *prefix-based* (everything before the
+   user query) or *context-based* (prefix + user query), or *both* if
+   the figure overlays them. Never label an arm as just "activations"
+   or "representations."
+2. **Per-behavior disaggregation:** if the figure aggregates across
+   behaviors (sycophancy, refusal, EM, …), say so; if it shows a
+   single behavior or a subset, name them. Never ship a figure where the
+   reader must infer which behavior(s) contributed.
+
+Example caption opener: *"Prefix-based mapping, sycophancy + refusal
+behaviors, base model, k=5 LOFO folds."* (Evidence: 28d0874a
+2026-07-15 06:36-06:44.)
+
+This guidance targets interim figures (pre-clean-result), which
+`verify_task_body.py` does not scan. A future mechanization that checks
+figure sidecar captions is a natural extension but out of scope here.
 
 ### 4. Run & save
 

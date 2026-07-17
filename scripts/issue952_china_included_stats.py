@@ -43,9 +43,16 @@ import logging
 import pathlib
 import subprocess
 
-import numpy as np
-import torch
-from issue952_divergence_transfer_cell import (
+from explore_persona_space.orchestrate.env import load_dotenv
+
+# #847: thread caps must land BEFORE the numpy/torch imports below — on the
+# shared VM, load_dotenv() setdefaults OMP/MKL/OPENBLAS/NUMEXPR_NUM_THREADS,
+# and the BLAS/torch pools freeze at import time.
+load_dotenv()
+
+import numpy as np  # noqa: E402
+import torch  # noqa: E402
+from issue952_divergence_transfer_cell import (  # noqa: E402
     ARMS,
     BANK_ARMS,
     H3_MARGIN,

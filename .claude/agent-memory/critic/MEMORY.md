@@ -79,6 +79,7 @@
 - [Both-nulls conjunction w/ inflated null](feedback_both_nulls_conjunction_inflated_null.md) — Concern iff per-null numbers ship (#551)
 - [Mindist reparam asymmetric](feedback_mindist_reparam_asymmetric.md) — NEAR min-dist shrinks 37% vs FAR 8.5%; direction can flip (#478)
 - [Re-judge / DV-correction rounds](feedback_rejudge_proxy_amendment_alternatives.md) — drift/denominator split; refusal tracks harm 5x (#591)
+- [Span-pair swap-control audit](feedback_span_pair_swap_control_audit.md) — correct-vs-swap ΔR²: proximity linkage, C own-speech contamination, subset match, generic-map reference (#931)
 
 ## Panel composition / axis conflation
 - [Neutral-prompt axis-conflation](feedback_neutral_prompt_axis_conflation.md) — "neutral" = an evaluated persona's prompt; grep personas.py (#267)
@@ -98,7 +99,8 @@
 
 ## Infra-plan reviews
 - [Infra-plan review checklist](feedback_infra_plan_review_checklist.md) — protection-illusion holes, choke-point greps, success-path-only tests, checkpoint-per-phase (#564, #596, #607, #399)
-- [Verifier-check-addition plans](feedback_verifier_check_addition_plans.md) — FAIL = bounded bounce (2-cap+override); escape-regex under-triggers fail UNSAFE (#879)
+- [Verifier check-addition/loosening/narrowing plans](feedback_verifier_check_addition_plans.md) — escape-regex under-trigger UNSAFE (#879); loosenings: dependent empty-input verdicts (#959); narrowings: retained-outer-conjunct proof (#961)
+- [Advisory --by convention plans](feedback_advisory_by_convention_plans.md) — fail-toward-triage = enumeration gaps non-blocking; strip-set non-membership, no renames, --by BEFORE --note (#966)
 - [Infra-plan review checklist](feedback_infra_plan_review_checklist.md) — protection-illusion holes, choke-point greps, success-path-only tests, TOCTOU, doc-regex vacuous PASS, grep-count-vs-wrapped-sketch (#564-#884)
 - [Forward-protection port claims](feedback_forward_protection_port_claims.md) — one-driver fix != forward protection; positional hole (#584)
 - [Full-suite-green needs baseline](feedback_full_suite_green_needs_baseline.md) — "full green" false-FAILs; baseline + no-NEW-failures (#584)

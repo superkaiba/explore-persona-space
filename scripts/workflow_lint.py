@@ -7,7 +7,10 @@ Behaviours:
 * ``--check-references`` (default in pre-commit): walk ``CLAUDE.md``,
   ``.claude/skills/issue/SKILL.md``, and ``.claude/skills/issue/markers.md``;
   every ``(see workflow.yaml § <key>)`` reference MUST resolve to a real
-  YAML key.
+  YAML key. NOT in the no-flags default run: a bare ``workflow_lint.py``
+  invocation does not run this check — it fires only when the flag is
+  passed explicitly (the pre-commit hook, /daily's reference gate, and
+  the /issue Step-10d parity legs pass it).
 * ``--emit-tables``: regenerate the auto-generated table blocks in
   ``markers.md`` and ``SKILL.md`` ("Active vs awaiting-user" table) inside
   the fenced ``<!-- workflow.yaml: AUTO-GENERATED -->`` … ``<!--
@@ -581,6 +584,8 @@ from collections.abc import Iterator
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
+import yaml
+
 # Allow `python scripts/workflow_lint.py` from a fresh shell without `uv run`
 # by extending sys.path to the project src/.
 _HERE = Path(__file__).resolve().parent
@@ -693,14 +698,53 @@ SKILL_REF_ALLOWLIST: frozenset[str] = frozenset(
         "log",  # `/log` dashboard feed
         "sessions",  # `/sessions` dashboard page
         "updates",  # `/updates` dashboard MDX editor route
-        # --- Non-skill prose/path tokens the backtick form still catches ---
-        "workspace",  # `/workspace` pod path written inside backticks (RunPod `/workspace`)
+        # --- Non-skill prose tokens the backtick form still catches ---
+        # (pure-PATH tokens live in SKILL_REF_FS_ROOTS below; `log` stays
+        #  here on its dashboard-route justification)
         "intent",  # `/intent` — a phase/arg token in prose
         "absent",  # `/absent` — a marker-state token in prose
         "override",  # `/override subset` prose (experiment-implementer.md)
         "binary",  # `.npz/binary` prose (uploader.md)
         "terminal",  # `blocked/terminal` prose (background-automation.md)
         "expensive-band",  # `auto_run/expensive-band` prose (issue/SKILL.md)
+    }
+)
+
+# `--check-skill-refs`: bare single-segment backticked absolute PATHS.
+# SKILL_REF_RE's trailing lookahead rejects multi-segment paths (`/tmp/x`
+# — the next char is `/`) but a bare root (`/tmp`) closes on a backtick
+# and matches, so ordinary filesystem paths mis-fired the check (#1445;
+# the allowlist had grown ad-hoc path workarounds like `workspace`).
+# Members: the Linux FHS top-level directories + the RunPod `/workspace`
+# volume convention — PATH tokens, never slash-commands. Kept SEPARATE
+# from SKILL_REF_ALLOWLIST so that list keeps its "justify every entry
+# as a legitimate slash-command" contract. INVARIANT (pinned by
+# tests/test_workflow_lint.py::test_skill_ref_fs_roots_disjoint_from_live_skills_and_allowlist
+# and by the in-function collision guard in check_skill_references):
+# no member may name a live .claude/skills/ dir — a colliding entry
+# would silently disable rot detection for that skill.
+SKILL_REF_FS_ROOTS: frozenset[str] = frozenset(
+    {
+        "bin",
+        "boot",
+        "dev",
+        "etc",
+        "home",
+        "lib",
+        "lib64",
+        "media",
+        "mnt",
+        "opt",
+        "proc",
+        "root",
+        "run",
+        "sbin",
+        "srv",
+        "sys",
+        "tmp",
+        "usr",
+        "var",
+        "workspace",  # RunPod volume root (migrated from SKILL_REF_ALLOWLIST)
     }
 )
 
@@ -2710,13 +2754,21 @@ def _live_skill_names(skills_dir: Path) -> set[str]:
     return {p.name for p in skills_dir.iterdir() if p.is_dir()}
 
 
-def _skill_ref_resolves(ref: str, live: set[str], allow: frozenset[str]) -> bool:
+def _skill_ref_resolves(
+    ref: str,
+    live: set[str],
+    allow: frozenset[str],
+    fs_roots: frozenset[str] = SKILL_REF_FS_ROOTS,
+) -> bool:
     """A backticked ``/<ref>`` resolves iff it names a live skill dir, an
-    allowlisted exact token, or (when namespaced ``<plugin>:<skill>``) a token
-    whose ``<plugin>:`` prefix is allowlisted."""
+    allowlisted exact token, a bare filesystem root (a backticked PATH like
+    ``/tmp`` — see :data:`SKILL_REF_FS_ROOTS`), or (when namespaced
+    ``<plugin>:<skill>``) a token whose ``<plugin>:`` prefix is allowlisted."""
     if ref in live:  # live project skill dir
         return True
     if ref in allow:  # allowlisted exact token
+        return True
+    if ref in fs_roots:  # bare backticked fs path, not a slash-command (#1445)
         return True
     if ":" in ref:  # plugin-namespaced: prefix match
         return (ref.split(":", 1)[0] + ":") in allow
@@ -2728,6 +2780,7 @@ def check_skill_references(
     roots: list[Path] | None = None,
     skills_dir: Path | None = None,
     allowlist: frozenset[str] | None = None,
+    fs_roots: frozenset[str] | None = None,
 ) -> list[str]:
     """Walk the workflow-doc surface (agents + skills + rules + CLAUDE.md +
     workflow.yaml) and FAIL on any backtick-delimited ``/<skill-name>`` token
@@ -2745,13 +2798,29 @@ def check_skill_references(
     Plugin-namespaced refs resolve via the allowlist prefix set (or,
     forward-compat, an on-disk ``<plugin>:<skill>/`` dir).
 
-    ``roots`` / ``skills_dir`` / ``allowlist`` are unit-test override hooks;
-    production callers pass None.
+    Bare filesystem roots (``/tmp``, ``/workspace``;
+    :data:`SKILL_REF_FS_ROOTS`) are carved out as paths, never
+    slash-commands (#1445). An fs-root member that names a LIVE skill dir
+    is itself reported as a lint error — the carve-out would silently
+    disable rot detection for that skill (remedy: drop the colliding
+    member from ``SKILL_REF_FS_ROOTS``).
+
+    ``roots`` / ``skills_dir`` / ``allowlist`` / ``fs_roots`` are unit-test
+    override hooks; production callers pass None.
     """
     errors: list[str] = []
     sk_dir = skills_dir if skills_dir is not None else _REPO_ROOT / ".claude" / "skills"
     live = _live_skill_names(sk_dir)
     allow = allowlist if allowlist is not None else SKILL_REF_ALLOWLIST
+    fsr = fs_roots if fs_roots is not None else SKILL_REF_FS_ROOTS
+    collisions = sorted(fsr & live)
+    if collisions:
+        errors.append(
+            f"SKILL_REF_FS_ROOTS collides with live skill dir(s) {collisions}: the "
+            f"fs-root carve-out would silently disable skill-reference rot detection "
+            f"for them (#1445). Drop the colliding member(s) from SKILL_REF_FS_ROOTS "
+            f"in scripts/workflow_lint.py."
+        )
     for path in _resolve_skill_ref_target_files(roots):
         in_fence = False
         for lineno, line in enumerate(path.read_text(encoding="utf-8").splitlines(), start=1):
@@ -2762,7 +2831,7 @@ def check_skill_references(
                 continue
             for match in SKILL_REF_RE.finditer(line):
                 ref = match.group(1)
-                if _skill_ref_resolves(ref, live, allow):
+                if _skill_ref_resolves(ref, live, allow, fsr):
                     continue
                 errors.append(
                     f"{path}:{lineno}: unresolved skill reference '/{ref}' — not a "
@@ -8305,6 +8374,7 @@ def check_crash_fix_relaunch_contract(*, repo_root: Path | None = None) -> list[
 
 _VM_THREAD_CAP_PREFIX = (
     "OMP_NUM_THREADS=8 MKL_NUM_THREADS=8 OPENBLAS_NUM_THREADS=8 NUMEXPR_NUM_THREADS=8"
+    " MALLOC_ARENA_MAX=2"
 )
 
 # {file: minimum occurrence count of the literal prefix}. Count floors (not
@@ -8314,9 +8384,15 @@ _VM_THREAD_CAP_PREFIX = (
 # SKILL.md 1 (detached-launch template), experiment-implementer.md 2 (bullet
 # + setsid line), code-style.md 3 (line-20 bullet + the two § nohup template
 # copies), analyzer-section-reference.md 1 (off-pod template).
+# The trailing MALLOC_ARENA_MAX=2 is the glibc arena-fragmentation cap
+# (#1315: a small-tensor eigh bootstrap grew 20-21.7 GB RSS across passes
+# under the four thread caps alone; ~1 GB with the arena cap). Its value 2
+# is NOT coupled to _DEFAULT_VM_THREAD_CAP (the 8s below) — it caps malloc
+# ARENA COUNT, not thread count.
 # BINDING CONVENTION (keeps the floors template-anchored): rationale PROSE in
 # the pinned files refers to the caps by the shorthand
-# "OMP/MKL/OPENBLAS/NUMEXPR=8" and NEVER spells the full literal prefix, so
+# "OMP/MKL/OPENBLAS/NUMEXPR=8" (optionally "+ MALLOC_ARENA_MAX=2") and NEVER
+# spells the full literal prefix, so
 # every literal occurrence is a copy-pastable command/template instance and
 # the floors bind to templates, not paragraphs. (The experiment-implementer.md
 # bullet's quoted command string counts as a copy-paste instance by design.)
@@ -8338,7 +8414,8 @@ def check_vm_thread_cap_guidance(*, repo_root: Path | None = None) -> list[str]:
     The #847 setdefault in ``orchestrate/env.py`` is src/-side and pinned to a
     worktree's branch point (the Step 5a spec-freshness sync is deliberately
     specs-only), so the workflow's VM-side launch templates carry the explicit
-    four-var cap prefix as the branch-age-independent fallback (incident #779,
+    cap prefix — the four thread caps plus the glibc arena cap
+    MALLOC_ARENA_MAX=2 (#891/#1315) — as the branch-age-independent fallback (incident #779,
     2026-07-02: a pre-#847 worktree ran 78 uncapped threads ~20h after the fix
     landed on main). This check pins the LITERAL prefix — with a per-file
     occurrence-count floor, so stripping it from a TEMPLATE instance while a
@@ -8348,7 +8425,9 @@ def check_vm_thread_cap_guidance(*, repo_root: Path | None = None) -> list[str]:
     granularity/robustness trade the plan accepts.)
     The value 8 is deliberately coupled to ``_DEFAULT_VM_THREAD_CAP`` in
     env.py: changing either requires changing both (and this constant), which
-    is the point — drift fails loud. ``repo_root`` is a unit-test override
+    is the point — drift fails loud. The arena cap's value 2 is NOT coupled
+    to that constant (it bounds malloc arenas, not threads; #1315 validated
+    2 empirically). ``repo_root`` is a unit-test override
     hook; production callers pass None. Bundled into the no-flags default run.
     """
     root = repo_root if repo_root is not None else _REPO_ROOT
@@ -8832,8 +8911,18 @@ _LESSONS_ROW_MAX_BYTES = 280
 _LESSONS_ROW_GRANDFATHER_MAX_BYTES: dict[str, int] = {
     # gotchas: highest-traffic rule; row measured 438 B at the #1269
     # migration — a third lossy trigger trim (after #1220) would destroy
-    # plan-time discovery value. Cap = measured + <=40.
-    "gotchas": 460,
+    # plan-time discovery value (a further lossy trim was already ruled
+    # out at #1269). #1348 added the errorbar/CI figure trigger
+    # (row 451 B -> 494 B). Cap = measured + <=40.
+    # #1429 added the bootstrap-CI gating/verdict trigger (row 519 B -> 578 B).
+    # Cap = measured + <=40.
+    # #1411 added the Edit-tool Unicode-literal trigger (row 599 B -> 661 B).
+    # Cap = measured + <=40.
+    # #1431 added the pilot-gate shape+rc trigger (row 661 B -> 682 B).
+    # Cap = measured + <=40.
+    # #1435 added the subprocess-per-phase dispatcher trigger (merged with
+    # #1431's raise; re-measured row 776 B). Cap = measured + <=40.
+    "gotchas": 800,
 }
 _LESSONS_ROW_GRANDFATHER_MAX_HEADROOM_BYTES = 40
 
@@ -8844,8 +8933,18 @@ _LESSONS_ROW_GRANDFATHER_MAX_HEADROOM_BYTES = 40
 # silent-sum failure shape); it may never exceed _LESSONS_MAX_BYTES. Trimming
 # the index requires ratcheting it DOWN (banked slack defeats the mechanism).
 # Measured 5,780 B at the #1269 row-grammar migration; ratchet = measured
-# + ~220 (<= _LESSONS_RATCHET_MAX_HEADROOM_BYTES).
-_LESSONS_RATCHET_BYTES = 6000
+# + ~220 (<= _LESSONS_RATCHET_MAX_HEADROOM_BYTES). #1366 grew the
+# artifact-reuse row (parent-lineage trigger, (a)-(k)): measured 6,046 B;
+# ratchet = measured + ~34. #1396 grew the upload-policy row
+# (phase-sequencing trigger, store-before-long-fit #825): measured 6,147 B;
+# ratchet = measured + ~253 (<= _LESSONS_RATCHET_MAX_HEADROOM_BYTES). #1395
+# grew the plan-compute-sizing row (pilot basis covers fit loops AND draw
+# batteries): merged measured 6,178 B; ratchet 6400 retained (headroom ~222,
+# covers both concurrent growers).
+# #1435 grew the gotchas row (subprocess-registry / full-panel-fresh-child-smoke
+# trigger; merged with #1431's raise): re-measured total 6,456 B; ratchet 6650
+# (headroom ~194, <= _LESSONS_RATCHET_MAX_HEADROOM_BYTES).
+_LESSONS_RATCHET_BYTES = 6650
 _LESSONS_RATCHET_MAX_HEADROOM_BYTES = 400
 
 
@@ -9028,6 +9127,92 @@ def check_lessons_index(  # noqa: C901 -- flat failure-mode ladder (index parity
     return errors
 
 
+# `--check-rule-frontmatter-parses` (#1385, from #1348): a `.claude/rules/*.md`
+# rule on-demand-loads ONLY through its frontmatter `paths:` globs. A YAML
+# parse failure (e.g. an unquoted `description:` containing ': ') silently
+# disables the rule — present, LESSONS-indexed, never loads — and a stale
+# `globs:` key silently degrades it. Real yaml.safe_load, not a regex
+# approximation: the check must fail exactly where the harness fails.
+
+
+def check_rule_frontmatter_parses(*, repo_root: Path | None = None) -> list[str]:
+    """FAIL if any `.claude/rules/*.md` frontmatter block is YAML-broken,
+    unterminated, non-mapping, uses the stale `globs:` key, or lacks a
+    well-formed `paths:` (non-empty list of non-empty strings).
+
+    Files with no leading `---` line have no frontmatter and are EXEMPT
+    (always-on / LESSONS-indexed rules need no `paths:`). Unknown extra keys
+    (e.g. `name:`) are tolerated — this validates load-integrity, not a full
+    schema. `repo_root` is a unit-test override hook; production callers pass
+    None. Bundled into the no-flags default run.
+    """
+    root = repo_root if repo_root is not None else _REPO_ROOT
+    errors: list[str] = []
+    for path in sorted((root / ".claude" / "rules").glob("*.md")):
+        rel = path.relative_to(root)
+        lines = path.read_text(encoding="utf-8").split("\n")
+        if not lines or lines[0].strip() != "---":
+            continue  # no frontmatter block -> always-on rule, exempt
+        end = next((i for i, ln in enumerate(lines[1:], 1) if ln.strip() == "---"), None)
+        if end is None:
+            errors.append(
+                f"{rel}: frontmatter opens with '---' on line 1 but is never "
+                f"closed by a second '---' line — the harness cannot split the "
+                f"block and the rule never on-demand-loads. Close the block "
+                f"(or delete it for an always-on rule)."
+            )
+            continue
+        try:
+            data = yaml.safe_load("\n".join(lines[1:end]))
+        except yaml.YAMLError as exc:
+            reason = " ".join(str(exc).split())
+            errors.append(
+                f"{rel}: frontmatter is not valid YAML ({reason}) — the rule "
+                f"file exists but NEVER loads (the 'rule present but never "
+                f"loads' class, #1385). Usual cause: an unquoted "
+                f"`description:` containing ': ' — double-quote the scalar."
+            )
+            continue
+        if not isinstance(data, dict):
+            errors.append(
+                f"{rel}: frontmatter parses to {type(data).__name__}, not a "
+                f"key: value mapping — the harness reads mapping frontmatter "
+                f"only."
+            )
+            continue
+        if "globs" in data:
+            errors.append(
+                f"{rel}: frontmatter uses the stale `globs:` key — the project "
+                f"convention (CLAUDE.md, LESSONS.md) is `paths:`; rename "
+                f"`globs:` -> `paths:`."
+            )
+            continue
+        paths = data.get("paths")
+        if paths is None:
+            errors.append(
+                f"{rel}: frontmatter has no `paths:` key — an on-demand rule "
+                f"needs its load-trigger globs; add `paths:`, or drop the "
+                f"frontmatter block entirely for an always-on rule."
+            )
+            continue
+        if not isinstance(paths, list) or not paths:
+            got = "empty list" if isinstance(paths, list) else type(paths).__name__
+            errors.append(
+                f"{rel}: `paths:` must be a NON-EMPTY YAML list of glob "
+                f"strings (got {got}) — a mis-shaped `paths:` never matches, "
+                f"so the rule never loads."
+            )
+            continue
+        bad = [p for p in paths if not isinstance(p, str) or not p.strip()]
+        if bad:
+            errors.append(
+                f"{rel}: `paths:` entries must be non-empty strings; got "
+                f"{bad!r}. Quote each glob (bare `yes`/`no`/numbers/null "
+                f"parse as non-strings)."
+            )
+    return errors
+
+
 # Agent-spec size budget (#829, tightened #838): every .claude/agents/*.md is
 # loaded whole on each spawn of that agent, so spec size is a per-invocation
 # token cost. WARN above 28 KB (drifting), FAIL above 40 KB (relocate
@@ -9066,31 +9251,42 @@ AGENT_SPEC_SIZE_GRANDFATHER: dict[str, int] = {
     # (#1159) — no longer grandfathered (slim spec is under the FAIL threshold).
     # the rest measured at the #838 tightening (2026-07-02), caps = measured
     # + <=3 KB; each names a future trim direction, none is licensed to grow
-    # measured 100,555 B post-#1254 (Step 3.9 degenerate-statistic check,
-    # observed-vs-null reads — plan-mandated growth; cap = measured
-    # + <=~1 KB. Prior: 99,000 — measured 98,126 B post-#1230 (Step 6
-    # durability-pin shipping duty), 97,000 — measured 96,072 B post-#1119,
-    # 95,000 — measured 94,126 B post-#1115)
-    "code-reviewer.md": 101_500,
+    # measured 106,853 B post-#1397 (Step 2 fit-loop batched-helper naming
+    # paragraph — plan-mandated growth; cap = measured + ~1.1 KB. Prior:
+    # 105,000 — measured 104,235 B post-#1317 (Step 4.6 Gate-scope line
+    # verification), 101,500 — measured 100,555 B post-#1254 (Step 3.9
+    # degenerate-statistic check, observed-vs-null reads), 99,000 —
+    # measured 98,126 B post-#1230 (Step 6 durability-pin shipping duty),
+    # 97,000 — measured 96,072 B post-#1119, 95,000 — measured 94,126 B
+    # post-#1115)
+    "code-reviewer.md": 108_000,
     # measured 73,408 B post-#1159 (Step 2 dual-source read contract: lens
     # rubrics from clean-result-critic-lens-reference.md, report schema from
     # the slim agent spec — plan-mandated growth; cap = measured + <=~1 KB.
     # Prior: 73,000 — measured 72,229 B post-#1056, 72,000 post-#1050 r2,
     # 71,000 post-#1050 r1, 60,554 B pre-#1050)
     "codex-clean-result-critic.md": 74_000,
-    # measured 52,361 B post-#1254 (Step 3.9 copy-list bullet + the
-    # inlined-rubric 3.9 slot — plan-mandated growth; cap = measured
-    # + <=~1 KB. Prior: 51,600 — measured 50,642 B post-#948 (Step 3.8
-    # copy-list bullet + inlined-rubric slot), 47,930 B post-#881)
-    "codex-code-reviewer.md": 53_300,
-    # measured 65,548 B post-#1311 (pod-side sentinel read-back cross-ref
-    # sentence — plan-mandated growth; cap = measured + <=~1 KB. Prior:
-    # 65,300 — measured 64,360 B post-#1138)
-    "experiment-implementer.md": 66_300,
-    # measured 65,540 B post-#1081 r2 (D3 crash-fix-relaunch addendum:
-    # disposition-conditional resume-glob confirm — plan-mandated growth;
-    # cap = measured + <=~1 KB. Prior: 65,500 — measured 62,672 B)
-    "experimenter.md": 66_500,
+    # measured 58,271 B post-#1438 (Step 0.9 copy-list bullet + inlined-
+    # rubric 0.9 slot + Blocker-tags data-access-blocked entry —
+    # plan-mandated growth; cap = measured + <=~1 KB. Prior: 56,800 —
+    # measured 55,870 B post-#1380 (Step 4.6 copy-list bullet +
+    # inlined-rubric 4.6 slot + Blocker-tags 4.6-presence), 53,300 —
+    # measured 52,361 B post-#1254, 51,600 — measured 50,642 B post-#948,
+    # 47,930 B post-#881)
+    "codex-code-reviewer.md": 59_200,
+    # measured 71,114 B post-#1409 (data-dependent-gates smoke duty in
+    # checklist item 3 + item-5 cross-ref — plan-mandated growth; cap =
+    # measured + <=~1 KB. Prior: 69,800 — measured 68,888 B post-#1384
+    # (per-arm-class smoke-coverage clause), 67,900 — measured 67,472 B
+    # post-#1363, 67,400 — measured 66,574 B post-#1349, 66,300 —
+    # measured 65,548 B post-#1311)
+    "experiment-implementer.md": 72_000,
+    # measured 66,921 B post-#1416 (Pre-Launch step 9 foreign-tenant
+    # memory.used read — plan-mandated growth; cap = measured + ~0.6 KB.
+    # Prior: 66,500 — measured 65,540 B post-#1081 r2 (D3
+    # crash-fix-relaunch addendum: disposition-conditional resume-glob
+    # confirm), 65,500 — measured 62,672 B)
+    "experimenter.md": 67_500,
     # measured 49,740 B post-#1115 (read-hygiene context-budget section —
     # plan-mandated growth; cap = measured + <=~1 KB. Prior: 49,000 —
     # measured 48,197 B post-#1102)
@@ -10079,6 +10275,16 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         "Bundled into the no-flags default run.",
     )
     parser.add_argument(
+        "--check-rule-frontmatter-parses",
+        action="store_true",
+        help="YAML-parse every .claude/rules/*.md frontmatter block and "
+        "validate the paths: load-trigger shape (non-empty list of glob "
+        "strings; stale globs: key flagged; no-frontmatter files exempt). "
+        "A malformed frontmatter append silently disables on-demand "
+        "loading — the rule file exists but never loads (#1385, from "
+        "#1348). Bundled into the no-flags default run.",
+    )
+    parser.add_argument(
         "--check-compute-shape-review-lens",
         action="store_true",
         help="FAIL if the #806 compute-shape-vs-dispatcher review lens (Step "
@@ -10440,6 +10646,7 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         or args.check_no_repo_root_worktree_revert
         or args.check_gate_ids_unique
         or args.check_lessons_index
+        or args.check_rule_frontmatter_parses
         or args.check_compute_shape_review_lens
         or args.check_long_loop_restartability_review_lens
         or args.check_hollow_verification_gate_review_lens
@@ -10553,6 +10760,8 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         errors.extend(check_gate_ids_unique(workflow))
     if args.check_lessons_index or no_flags:
         errors.extend(check_lessons_index())
+    if args.check_rule_frontmatter_parses or no_flags:
+        errors.extend(check_rule_frontmatter_parses())
     if args.check_agent_spec_size or no_flags:
         errors.extend(check_agent_spec_size())
     if args.check_compute_shape_review_lens or no_flags:

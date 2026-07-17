@@ -1,0 +1,796 @@
+{
+  "commit": "cf2b8a8d34",
+  "created": "2026-07-15T10:31:21Z",
+  "figsize": [
+    10.5,
+    4.2
+  ],
+  "points": [
+    {
+      "layer": 0.0,
+      "held-out R\u00b2 (context \u2192 answer profile)": 0.44303406915482113,
+      "series": "chat template",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 1.0,
+      "held-out R\u00b2 (context \u2192 answer profile)": 0.4451440902893047,
+      "series": "chat template",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 2.0,
+      "held-out R\u00b2 (context \u2192 answer profile)": 0.4728922219213526,
+      "series": "chat template",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 3.0,
+      "held-out R\u00b2 (context \u2192 answer profile)": 0.46219923250147366,
+      "series": "chat template",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 4.0,
+      "held-out R\u00b2 (context \u2192 answer profile)": 0.4600948105107818,
+      "series": "chat template",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 5.0,
+      "held-out R\u00b2 (context \u2192 answer profile)": 0.469393700273248,
+      "series": "chat template",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 6.0,
+      "held-out R\u00b2 (context \u2192 answer profile)": 0.48781542852414683,
+      "series": "chat template",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 7.0,
+      "held-out R\u00b2 (context \u2192 answer profile)": 0.4717880329904688,
+      "series": "chat template",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 8.0,
+      "held-out R\u00b2 (context \u2192 answer profile)": 0.48659208470222515,
+      "series": "chat template",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 9.0,
+      "held-out R\u00b2 (context \u2192 answer profile)": 0.4580726803166211,
+      "series": "chat template",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 10.0,
+      "held-out R\u00b2 (context \u2192 answer profile)": 0.4855131988556901,
+      "series": "chat template",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 11.0,
+      "held-out R\u00b2 (context \u2192 answer profile)": 0.5031386747179246,
+      "series": "chat template",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 12.0,
+      "held-out R\u00b2 (context \u2192 answer profile)": 0.5198650093443462,
+      "series": "chat template",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 13.0,
+      "held-out R\u00b2 (context \u2192 answer profile)": 0.5407819896997148,
+      "series": "chat template",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 14.0,
+      "held-out R\u00b2 (context \u2192 answer profile)": 0.56947032525415,
+      "series": "chat template",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 15.0,
+      "held-out R\u00b2 (context \u2192 answer profile)": 0.5870960365322093,
+      "series": "chat template",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 16.0,
+      "held-out R\u00b2 (context \u2192 answer profile)": 0.5950191084374952,
+      "series": "chat template",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 17.0,
+      "held-out R\u00b2 (context \u2192 answer profile)": 0.5928080536748246,
+      "series": "chat template",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 18.0,
+      "held-out R\u00b2 (context \u2192 answer profile)": 0.6019477850464651,
+      "series": "chat template",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 19.0,
+      "held-out R\u00b2 (context \u2192 answer profile)": 0.6542183951898379,
+      "series": "chat template",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 20.0,
+      "held-out R\u00b2 (context \u2192 answer profile)": 0.6393434154782172,
+      "series": "chat template",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 21.0,
+      "held-out R\u00b2 (context \u2192 answer profile)": 0.6239486947810016,
+      "series": "chat template",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 22.0,
+      "held-out R\u00b2 (context \u2192 answer profile)": 0.6010142740870821,
+      "series": "chat template",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 23.0,
+      "held-out R\u00b2 (context \u2192 answer profile)": 0.5839072088462604,
+      "series": "chat template",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 24.0,
+      "held-out R\u00b2 (context \u2192 answer profile)": 0.5878045969452492,
+      "series": "chat template",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 25.0,
+      "held-out R\u00b2 (context \u2192 answer profile)": 0.5866087752940375,
+      "series": "chat template",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 26.0,
+      "held-out R\u00b2 (context \u2192 answer profile)": 0.5549504105691124,
+      "series": "chat template",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 27.0,
+      "held-out R\u00b2 (context \u2192 answer profile)": 0.571282804987034,
+      "series": "chat template",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 0.0,
+      "held-out R\u00b2 (context \u2192 answer profile)": 0.41702141422070516,
+      "series": "naturalistic User:/Assistant:",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 1.0,
+      "held-out R\u00b2 (context \u2192 answer profile)": 0.43240473486121855,
+      "series": "naturalistic User:/Assistant:",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 2.0,
+      "held-out R\u00b2 (context \u2192 answer profile)": 0.45631148026886104,
+      "series": "naturalistic User:/Assistant:",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 3.0,
+      "held-out R\u00b2 (context \u2192 answer profile)": 0.44909109423379456,
+      "series": "naturalistic User:/Assistant:",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 4.0,
+      "held-out R\u00b2 (context \u2192 answer profile)": 0.44482599248742793,
+      "series": "naturalistic User:/Assistant:",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 5.0,
+      "held-out R\u00b2 (context \u2192 answer profile)": 0.45673203779786864,
+      "series": "naturalistic User:/Assistant:",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 6.0,
+      "held-out R\u00b2 (context \u2192 answer profile)": 0.4701384489593743,
+      "series": "naturalistic User:/Assistant:",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 7.0,
+      "held-out R\u00b2 (context \u2192 answer profile)": 0.45457451360847934,
+      "series": "naturalistic User:/Assistant:",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 8.0,
+      "held-out R\u00b2 (context \u2192 answer profile)": 0.4633029639490692,
+      "series": "naturalistic User:/Assistant:",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 9.0,
+      "held-out R\u00b2 (context \u2192 answer profile)": 0.44023902696264594,
+      "series": "naturalistic User:/Assistant:",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 10.0,
+      "held-out R\u00b2 (context \u2192 answer profile)": 0.45613487254073404,
+      "series": "naturalistic User:/Assistant:",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 11.0,
+      "held-out R\u00b2 (context \u2192 answer profile)": 0.46783348079107234,
+      "series": "naturalistic User:/Assistant:",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 12.0,
+      "held-out R\u00b2 (context \u2192 answer profile)": 0.4828080041931767,
+      "series": "naturalistic User:/Assistant:",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 13.0,
+      "held-out R\u00b2 (context \u2192 answer profile)": 0.5054218242059474,
+      "series": "naturalistic User:/Assistant:",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 14.0,
+      "held-out R\u00b2 (context \u2192 answer profile)": 0.5338488700439872,
+      "series": "naturalistic User:/Assistant:",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 15.0,
+      "held-out R\u00b2 (context \u2192 answer profile)": 0.5502511280814856,
+      "series": "naturalistic User:/Assistant:",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 16.0,
+      "held-out R\u00b2 (context \u2192 answer profile)": 0.5586093476939589,
+      "series": "naturalistic User:/Assistant:",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 17.0,
+      "held-out R\u00b2 (context \u2192 answer profile)": 0.5596307334530382,
+      "series": "naturalistic User:/Assistant:",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 18.0,
+      "held-out R\u00b2 (context \u2192 answer profile)": 0.5698146180406515,
+      "series": "naturalistic User:/Assistant:",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 19.0,
+      "held-out R\u00b2 (context \u2192 answer profile)": 0.6249482470755412,
+      "series": "naturalistic User:/Assistant:",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 20.0,
+      "held-out R\u00b2 (context \u2192 answer profile)": 0.6111797717456513,
+      "series": "naturalistic User:/Assistant:",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 21.0,
+      "held-out R\u00b2 (context \u2192 answer profile)": 0.5958720968064551,
+      "series": "naturalistic User:/Assistant:",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 22.0,
+      "held-out R\u00b2 (context \u2192 answer profile)": 0.5741925015262834,
+      "series": "naturalistic User:/Assistant:",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 23.0,
+      "held-out R\u00b2 (context \u2192 answer profile)": 0.557979678771646,
+      "series": "naturalistic User:/Assistant:",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 24.0,
+      "held-out R\u00b2 (context \u2192 answer profile)": 0.5651885975322408,
+      "series": "naturalistic User:/Assistant:",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 25.0,
+      "held-out R\u00b2 (context \u2192 answer profile)": 0.564423741266013,
+      "series": "naturalistic User:/Assistant:",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 26.0,
+      "held-out R\u00b2 (context \u2192 answer profile)": 0.534906519965465,
+      "series": "naturalistic User:/Assistant:",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 27.0,
+      "held-out R\u00b2 (context \u2192 answer profile)": 0.5580001407031923,
+      "series": "naturalistic User:/Assistant:",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 0.0,
+      "y": 0.4390514749544412,
+      "series": "chat template",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 1.0,
+      "y": 0.4434328372471059,
+      "series": "chat template",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 2.0,
+      "y": 0.45823024571032844,
+      "series": "chat template",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 3.0,
+      "y": 0.4380004986443504,
+      "series": "chat template",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 4.0,
+      "y": 0.41892589074291753,
+      "series": "chat template",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 5.0,
+      "y": 0.4069209595841139,
+      "series": "chat template",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 6.0,
+      "y": 0.41685802989204035,
+      "series": "chat template",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 7.0,
+      "y": 0.4069421070351894,
+      "series": "chat template",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 8.0,
+      "y": 0.42047827275972294,
+      "series": "chat template",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 9.0,
+      "y": 0.4039162589084875,
+      "series": "chat template",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 10.0,
+      "y": 0.41739249651619814,
+      "series": "chat template",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 11.0,
+      "y": 0.42479288294610906,
+      "series": "chat template",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 12.0,
+      "y": 0.4357402736850208,
+      "series": "chat template",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 13.0,
+      "y": 0.44618699395794414,
+      "series": "chat template",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 14.0,
+      "y": 0.4556840482173714,
+      "series": "chat template",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 15.0,
+      "y": 0.4673201925027678,
+      "series": "chat template",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 16.0,
+      "y": 0.46837364749502663,
+      "series": "chat template",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 17.0,
+      "y": 0.46414164704449046,
+      "series": "chat template",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 18.0,
+      "y": 0.4781222597605287,
+      "series": "chat template",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 19.0,
+      "y": 0.5416017955480217,
+      "series": "chat template",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 20.0,
+      "y": 0.5385581794674682,
+      "series": "chat template",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 21.0,
+      "y": 0.5293485439233517,
+      "series": "chat template",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 22.0,
+      "y": 0.520251540939177,
+      "series": "chat template",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 23.0,
+      "y": 0.511875314370933,
+      "series": "chat template",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 24.0,
+      "y": 0.5331086111316214,
+      "series": "chat template",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 25.0,
+      "y": 0.5397405635515451,
+      "series": "chat template",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 26.0,
+      "y": 0.5133251798890351,
+      "series": "chat template",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 27.0,
+      "y": 0.5865307715625809,
+      "series": "chat template",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 0.0,
+      "y": 0.4070818048200673,
+      "series": "naturalistic User:/Assistant:",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 1.0,
+      "y": 0.4288448333607159,
+      "series": "naturalistic User:/Assistant:",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 2.0,
+      "y": 0.45308875854654995,
+      "series": "naturalistic User:/Assistant:",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 3.0,
+      "y": 0.43796162571565644,
+      "series": "naturalistic User:/Assistant:",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 4.0,
+      "y": 0.4353092974873136,
+      "series": "naturalistic User:/Assistant:",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 5.0,
+      "y": 0.44515310161934496,
+      "series": "naturalistic User:/Assistant:",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 6.0,
+      "y": 0.46065685684456315,
+      "series": "naturalistic User:/Assistant:",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 7.0,
+      "y": 0.4513756979579834,
+      "series": "naturalistic User:/Assistant:",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 8.0,
+      "y": 0.4608172802199588,
+      "series": "naturalistic User:/Assistant:",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 9.0,
+      "y": 0.4373624146770265,
+      "series": "naturalistic User:/Assistant:",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 10.0,
+      "y": 0.4547121898576605,
+      "series": "naturalistic User:/Assistant:",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 11.0,
+      "y": 0.46417277381342725,
+      "series": "naturalistic User:/Assistant:",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 12.0,
+      "y": 0.4750185919702392,
+      "series": "naturalistic User:/Assistant:",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 13.0,
+      "y": 0.4892340180857837,
+      "series": "naturalistic User:/Assistant:",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 14.0,
+      "y": 0.5059799069171825,
+      "series": "naturalistic User:/Assistant:",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 15.0,
+      "y": 0.5211853867518479,
+      "series": "naturalistic User:/Assistant:",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 16.0,
+      "y": 0.5252376403324792,
+      "series": "naturalistic User:/Assistant:",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 17.0,
+      "y": 0.5243244225583498,
+      "series": "naturalistic User:/Assistant:",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 18.0,
+      "y": 0.5336712755049543,
+      "series": "naturalistic User:/Assistant:",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 19.0,
+      "y": 0.5782882733523877,
+      "series": "naturalistic User:/Assistant:",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 20.0,
+      "y": 0.5724569949378359,
+      "series": "naturalistic User:/Assistant:",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 21.0,
+      "y": 0.5629908091819114,
+      "series": "naturalistic User:/Assistant:",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 22.0,
+      "y": 0.5518304994761027,
+      "series": "naturalistic User:/Assistant:",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 23.0,
+      "y": 0.5416229102991459,
+      "series": "naturalistic User:/Assistant:",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 24.0,
+      "y": 0.557152515548542,
+      "series": "naturalistic User:/Assistant:",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 25.0,
+      "y": 0.5641976911880984,
+      "series": "naturalistic User:/Assistant:",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 26.0,
+      "y": 0.5412307687600404,
+      "series": "naturalistic User:/Assistant:",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 27.0,
+      "y": 0.615440505096237,
+      "series": "naturalistic User:/Assistant:",
+      "_kind": "line",
+      "_group": 3
+    }
+  ],
+  "n_series": 4,
+  "total_points": 112
+}

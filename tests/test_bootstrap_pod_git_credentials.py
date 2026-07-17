@@ -20,6 +20,13 @@ values), and degrades to an empty password (exit 0) when both are absent.
 
 As of #1271 this file also pins the no-token-in-URL invariant on the
 experimenter recipe surfaces (agent specs + the experimenter agent-memory).
+
+As of #1401 the ``REPO_URL_TOKENLESS`` / ``GIT_CRED_HELPER`` definitions live
+in the shared sourceable lib ``scripts/_git_cred_helper.sh`` (single
+definition; ``bootstrap_pod.sh`` and ``sync_env_keys.sh`` both source it), so
+the helper-assignment readers point at the lib while the bootstrap-text
+assertions keep reading ``bootstrap_pod.sh``. The no-tokenized-URL scan
+extends to the lib + ``sync_env_keys.sh``.
 """
 
 from __future__ import annotations
@@ -33,6 +40,8 @@ import pytest
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 BOOTSTRAP = REPO_ROOT / "scripts" / "bootstrap_pod.sh"
+CRED_LIB = REPO_ROOT / "scripts" / "_git_cred_helper.sh"
+SYNC_ENV_KEYS = REPO_ROOT / "scripts" / "sync_env_keys.sh"
 
 _ASSIGN_PREFIX = 'GIT_CRED_HELPER="'
 _HELPER_CONFIG_KEY = "credential.https://github.com.helper"
@@ -43,11 +52,11 @@ def _script_text() -> str:
 
 
 def _helper_assignment_line() -> str:
-    """Return the full ``GIT_CRED_HELPER="..."`` assignment line from the script."""
-    for line in _script_text().splitlines():
+    """Return the full ``GIT_CRED_HELPER="..."`` assignment line from the shared lib."""
+    for line in CRED_LIB.read_text(encoding="utf-8").splitlines():
         if line.startswith(_ASSIGN_PREFIX):
             return line
-    pytest.fail(f"no line starting with {_ASSIGN_PREFIX!r} in {BOOTSTRAP}")
+    pytest.fail(f"no line starting with {_ASSIGN_PREFIX!r} in {CRED_LIB}")
 
 
 def _helper_assignment_value_raw() -> str:
@@ -86,16 +95,21 @@ def test_no_tokenized_remote_url_in_bootstrap() -> None:
 
     ``x-access-token`` is permitted ONLY as the helper's
     ``echo username=x-access-token`` line — never as a URL userinfo prefix.
+    Scan extends (#1401) to the shared cred-helper lib + sync_env_keys.sh.
     """
     import re
 
-    text = _script_text()
-    assert "https://x-access-token:" not in text, "tokenized remote URL reintroduced"
-    assert not re.search(r"x-access-token:\S*@", text), "token-in-URL userinfo reintroduced"
-    # Every remaining occurrence is the helper's username line.
-    assert text.count("x-access-token") == text.count("username=x-access-token"), (
-        "x-access-token may appear only as `echo username=x-access-token`"
-    )
+    for path in (BOOTSTRAP, CRED_LIB, SYNC_ENV_KEYS):
+        text = path.read_text(encoding="utf-8")
+        rel = path.name
+        assert "https://x-access-token:" not in text, f"tokenized remote URL reintroduced: {rel}"
+        assert not re.search(r"x-access-token:\S*@", text), (
+            f"token-in-URL userinfo reintroduced: {rel}"
+        )
+        # Every remaining occurrence is the helper's username line.
+        assert text.count("x-access-token") == text.count("username=x-access-token"), (
+            f"x-access-token may appear only as `echo username=x-access-token` ({rel})"
+        )
 
 
 # ---------------------------------------------------------------------------
@@ -112,9 +126,10 @@ def test_credential_helper_host_scoped_env_reading() -> None:
     # Quoting invariant (§4.1): the stored value must contain NO single quote —
     # every use site wraps it in remote-level single quotes.
     assert "'" not in raw_value, "GIT_CRED_HELPER value must not contain a single quote"
-    # No secret-shaped literal anywhere in the script.
+    # No secret-shaped literal anywhere in the script or the shared lib.
+    for scan in (_script_text(), CRED_LIB.read_text(encoding="utf-8")):
+        assert "ghp_" not in scan and "github_pat_" not in scan, "secret-shaped literal"
     text = _script_text()
-    assert "ghp_" not in text and "github_pat_" not in text, "secret-shaped literal in script"
     # Host-scoped config key at all three sites: fresh-init, existing-repo
     # retrofit, and the step-7 global config.
     assert text.count(_HELPER_CONFIG_KEY) >= 3, (

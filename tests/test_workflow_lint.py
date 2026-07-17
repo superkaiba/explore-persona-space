@@ -39,7 +39,10 @@ from workflow_lint import (  # noqa: E402
     _MARKER_RECIPE_PINS,
     BATCH_JUDGE_LEGACY_ALLOWLIST,
     HUB_VERIFY_LEGACY_ALLOWLIST,
+    SKILL_REF_ALLOWLIST,
+    SKILL_REF_FS_ROOTS,
     _iter_ask_target_files,
+    _live_skill_names,
     _other_worktree_prefix,
     _values_equal,
     check_agent_model_pins,
@@ -68,6 +71,7 @@ from workflow_lint import (  # noqa: E402
     check_piped_git_push,
     check_poller_marker_consumers,
     check_push_failure_swallow,
+    check_rule_frontmatter_parses,
     check_script_references,
     check_section_reference_pointer_coverage,
     check_skill_bang_backtick,
@@ -781,6 +785,95 @@ def test_check_skill_refs_matches_legit_ref_after_boundary(tmp_path):
     assert len(errors) == 1, f"expected exactly one error (the dangling /ghost), got: {errors}"
     assert "/ghost" in errors[0], f"expected the /ghost ref flagged, got: {errors}"
     assert "a.md:6" in errors[0], f"expected the error anchored to the /ghost line, got: {errors}"
+
+
+@pytest.mark.parametrize("fs_root", sorted(SKILL_REF_FS_ROOTS))
+def test_check_skill_refs_pass_bare_fs_root_backticked(fs_root, tmp_path):
+    """Regression (#1445): a bare single-segment backticked filesystem root
+    (`/tmp`, `/workspace`, `/mnt`, ...) closes on a backtick, so SKILL_REF_RE's
+    trailing lookahead cannot reject it; the SKILL_REF_FS_ROOTS carve-out must
+    resolve EVERY member — zero FPs with an empty skills dir + empty allowlist
+    (acceptance criterion 1, pinned per member). The fs_roots-off arm proves
+    the CARVE-OUT (not a regex non-match) is what resolves each member."""
+    skills = tmp_path / "skills"
+    skills.mkdir()
+    docs = tmp_path / "docs"
+    docs.mkdir()
+    (docs / "a.md").write_text(f"Write it under `/{fs_root}` first.\n")
+    errors = check_skill_references(roots=[docs], skills_dir=skills, allowlist=frozenset())
+    assert errors == [], f"expected PASS (bare fs root `/{fs_root}` carved out), got: {errors}"
+    errors_off = check_skill_references(
+        roots=[docs], skills_dir=skills, allowlist=frozenset(), fs_roots=frozenset()
+    )
+    assert len(errors_off) == 1, (
+        f"expected exactly one error with fs_roots emptied (proves SKILL_REF_RE "
+        f"extracts `/{fs_root}` and only the carve-out resolves it), got: {errors_off}"
+    )
+    assert f"/{fs_root}" in errors_off[0]
+
+
+def test_check_skill_refs_fs_root_carveout_is_load_bearing(tmp_path):
+    """The same bare `/tmp` token FAILs when fs_roots is emptied via the
+    override hook — proving the carve-out (not the regex/allowlist) resolves it."""
+    skills = tmp_path / "skills"
+    skills.mkdir()
+    docs = tmp_path / "docs"
+    docs.mkdir()
+    (docs / "a.md").write_text("Write it under `/tmp` first.\n")
+    errors = check_skill_references(
+        roots=[docs], skills_dir=skills, allowlist=frozenset(), fs_roots=frozenset()
+    )
+    assert len(errors) == 1, f"expected exactly one error, got: {errors}"
+    assert "/tmp" in errors[0]
+
+
+def test_check_skill_refs_fail_dead_ref_with_production_fs_roots(tmp_path):
+    """True-positive power preserved (#1445): a genuinely dead `/ghost-skill`
+    still FAILs — as the ONE error — with the production fs-roots default
+    active and a carved-out `/tmp` on the same line."""
+    skills = tmp_path / "skills"
+    skills.mkdir()
+    docs = tmp_path / "docs"
+    docs.mkdir()
+    (docs / "a.md").write_text("Run `/ghost-skill` here, then clean `/tmp` up.\n")
+    errors = check_skill_references(roots=[docs], skills_dir=skills, allowlist=frozenset())
+    assert len(errors) == 1, f"expected exactly one error, got: {errors}"
+    assert "/ghost-skill" in errors[0]
+
+
+def test_skill_ref_fs_roots_disjoint_from_live_skills_and_allowlist():
+    """Collision guard (#1445): an fs-root entry naming a live
+    .claude/skills/ dir would silently disable rot detection for that skill;
+    double-membership with SKILL_REF_ALLOWLIST would blur the two sets'
+    contracts. Both intersections must stay empty. REMEDY on failure: drop
+    the colliding member(s) from SKILL_REF_FS_ROOTS (scripts/workflow_lint.py)
+    — do NOT delete this test (plan #1445 §6)."""
+    live = _live_skill_names(_REPO_ROOT / ".claude" / "skills")
+    assert SKILL_REF_FS_ROOTS & live == set(), (
+        "fs-root carve-out member(s) name a live skill dir — drop them from "
+        f"SKILL_REF_FS_ROOTS in scripts/workflow_lint.py: {sorted(SKILL_REF_FS_ROOTS & live)}"
+    )
+    assert set() == SKILL_REF_FS_ROOTS & SKILL_REF_ALLOWLIST, (
+        "fs-root carve-out member(s) double-listed in SKILL_REF_ALLOWLIST — keep "
+        "each token in exactly one set (scripts/workflow_lint.py): "
+        f"{sorted(SKILL_REF_FS_ROOTS & SKILL_REF_ALLOWLIST)}"
+    )
+
+
+def test_check_skill_refs_flags_fs_root_live_skill_collision(tmp_path):
+    """The in-function collision guard (#1445): a live skill dir named like an
+    fs-root member is reported by check_skill_references itself, so the
+    no-flags lint run catches the collision without pytest. REMEDY: drop the
+    colliding member from SKILL_REF_FS_ROOTS (scripts/workflow_lint.py)."""
+    skills = tmp_path / "skills"
+    (skills / "tmp").mkdir(parents=True)
+    docs = tmp_path / "docs"
+    docs.mkdir()
+    (docs / "a.md").write_text("No slash-command tokens here.\n")
+    errors = check_skill_references(roots=[docs], skills_dir=skills, allowlist=frozenset())
+    assert len(errors) == 1, f"expected exactly one collision error, got: {errors}"
+    assert "SKILL_REF_FS_ROOTS" in errors[0]
+    assert "tmp" in errors[0]
 
 
 def test_check_skill_refs_repo_tree_is_clean():
@@ -4395,6 +4488,123 @@ def test_lessons_ratchet_constants_sane():
         )
 
 
+def _write_rule_file(tmp_path, text, name="fixture-rule"):
+    rules = tmp_path / ".claude" / "rules"
+    rules.mkdir(parents=True, exist_ok=True)
+    (rules / f"{name}.md").write_text(text, encoding="utf-8")
+
+
+_VALID_RULE = '---\ndescription: "ok (paper: true) fixture"\npaths:\n  - "docs/**"\n---\n# body\n'
+
+
+def test_rule_frontmatter_fails_on_unquoted_colon_description(tmp_path):
+    # The live #1385 offender class: an unquoted `description:` containing
+    # ': ' fails yaml.safe_load ("mapping values are not allowed here") and
+    # the rule silently never on-demand-loads.
+    _write_rule_file(tmp_path, '---\ndescription: proto (paper: true) x\npaths:\n  - "a/**"\n---\n')
+    errs = check_rule_frontmatter_parses(repo_root=tmp_path)
+    assert errs, "expected a FAIL for the unquoted colon-bearing description"
+    assert any("fixture-rule.md" in e and "not valid YAML" in e for e in errs)
+
+
+def test_rule_frontmatter_fails_on_globs_key(tmp_path):
+    # Valid YAML, but the stale `globs:` key the harness ignores — the check
+    # names the `globs:` -> `paths:` rename.
+    _write_rule_file(tmp_path, '---\ndescription: "ok"\nglobs:\n  - "a/**"\n---\n')
+    errs = check_rule_frontmatter_parses(repo_root=tmp_path)
+    assert errs, "expected a FAIL for the stale globs: key"
+    assert any("fixture-rule.md" in e and "globs" in e and "paths" in e for e in errs)
+
+
+def test_rule_frontmatter_fails_on_missing_paths(tmp_path):
+    _write_rule_file(tmp_path, '---\ndescription: "ok"\n---\n')
+    errs = check_rule_frontmatter_parses(repo_root=tmp_path)
+    assert errs, "expected a FAIL for frontmatter with no paths: key"
+    assert any("fixture-rule.md" in e and "no `paths:` key" in e for e in errs)
+
+
+def test_rule_frontmatter_fails_on_non_list_paths(tmp_path):
+    _write_rule_file(tmp_path, '---\ndescription: "ok"\npaths: "docs/**"\n---\n')
+    errs = check_rule_frontmatter_parses(repo_root=tmp_path)
+    assert errs, "expected a FAIL for a scalar paths: value"
+    assert any("fixture-rule.md" in e and "NON-EMPTY YAML list" in e for e in errs)
+
+
+def test_rule_frontmatter_fails_on_empty_paths(tmp_path):
+    _write_rule_file(tmp_path, '---\ndescription: "ok"\npaths: []\n---\n')
+    errs = check_rule_frontmatter_parses(repo_root=tmp_path)
+    assert errs, "expected a FAIL for an empty paths: list"
+    assert any("fixture-rule.md" in e and "NON-EMPTY YAML list" in e for e in errs)
+
+
+def test_rule_frontmatter_fails_on_non_string_path_entry(tmp_path):
+    _write_rule_file(tmp_path, '---\ndescription: "ok"\npaths:\n  - 3\n---\n')
+    errs = check_rule_frontmatter_parses(repo_root=tmp_path)
+    assert errs, "expected a FAIL for a non-string paths: entry"
+    assert any("fixture-rule.md" in e and "non-empty strings" in e for e in errs)
+
+
+def test_rule_frontmatter_fails_on_unterminated_block(tmp_path):
+    _write_rule_file(tmp_path, '---\ndescription: "ok"\npaths:\n  - "a/**"\n# no closer\n')
+    errs = check_rule_frontmatter_parses(repo_root=tmp_path)
+    assert errs, "expected a FAIL for an unterminated frontmatter block"
+    assert any("fixture-rule.md" in e and "never closed" in e for e in errs)
+
+
+def test_rule_frontmatter_fails_on_non_mapping(tmp_path):
+    _write_rule_file(tmp_path, "---\n- a\n- b\n---\n")
+    errs = check_rule_frontmatter_parses(repo_root=tmp_path)
+    assert errs, "expected a FAIL for non-mapping frontmatter"
+    assert any("fixture-rule.md" in e and "not a key: value mapping" in e for e in errs)
+
+
+def test_rule_frontmatter_passes_on_no_frontmatter(tmp_path):
+    # No leading '---' => always-on / LESSONS-indexed rule, exempt.
+    _write_rule_file(tmp_path, "# title\nbody\n")
+    assert check_rule_frontmatter_parses(repo_root=tmp_path) == []
+
+
+def test_rule_frontmatter_passes_on_valid(tmp_path):
+    # Pins the no-false-positive claim for legitimate forms: a quoted
+    # colon-bearing description, extra-key tolerance (`name:`), and a
+    # flow-style paths: list.
+    _write_rule_file(tmp_path, _VALID_RULE)
+    _write_rule_file(
+        tmp_path,
+        '---\nname: x\ndescription: "ok"\npaths:\n  - "a/**"\n---\n',
+        name="extra-key-rule",
+    )
+    _write_rule_file(
+        tmp_path,
+        '---\ndescription: "ok"\npaths: ["a/**", "b/*.py"]\n---\n',
+        name="flow-style-rule",
+    )
+    assert check_rule_frontmatter_parses(repo_root=tmp_path) == []
+
+
+def test_rule_frontmatter_passes_on_live_repo():
+    # The live-tree invariant that forces the 5 offender fixes to land in the
+    # same diff as this check (mirrors test_check_lessons_index_passes_on_live_repo).
+    assert check_rule_frontmatter_parses() == []
+
+
+def test_rule_frontmatter_bundled_in_no_flags():
+    """NON-VACUOUS no-flags bundling pin (#1385; the house source-pin shape
+    of test_pipe_python_bundled_in_no_flags_source_pin): the check must be
+    dispatched by the BARE ``workflow_lint.py`` run — a later refactor of
+    the no_flags tuple / dispatch ladder must not silently unbundle it (the
+    exact 'present but never fires' meta-class this check closes)."""
+    src = _LINT.read_text(encoding="utf-8")
+    assert re.search(
+        r"if args\.check_rule_frontmatter_parses or no_flags:\s*\n"
+        r"\s*errors\.extend\(check_rule_frontmatter_parses\(\)\)",
+        src,
+    ), "check_rule_frontmatter_parses is not dispatched on the no-flags branch"
+    assert "or args.check_rule_frontmatter_parses" in src, (
+        "--check-rule-frontmatter-parses is missing from the no_flags detection tuple"
+    )
+
+
 def test_compute_shape_review_lens_live_tree_passes() -> None:
     """The real .claude/agents tree carries the #806 lens in both files."""
     assert check_compute_shape_review_lens() == []
@@ -5024,7 +5234,10 @@ def test_smoke_output_hygiene_wired_into_default_run(tmp_path, capsys, monkeypat
 
 # --- #891 shared-VM thread-cap guidance-pin tests ---------------------------
 
-_VM_CAP_PREFIX = "OMP_NUM_THREADS=8 MKL_NUM_THREADS=8 OPENBLAS_NUM_THREADS=8 NUMEXPR_NUM_THREADS=8"
+_VM_CAP_PREFIX = (
+    "OMP_NUM_THREADS=8 MKL_NUM_THREADS=8 OPENBLAS_NUM_THREADS=8 NUMEXPR_NUM_THREADS=8"
+    " MALLOC_ARENA_MAX=2"
+)
 
 _VM_CAP_FLOORS = {
     ".claude/skills/issue/SKILL.md": 1,

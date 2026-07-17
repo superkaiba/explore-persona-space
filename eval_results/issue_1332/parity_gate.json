@@ -1,0 +1,6 @@
+{
+  "max_rel_diff": 2.306272644064608e-08,
+  "tolerance": 0.0001,
+  "pass": true,
+  "solver": "fast"
+}

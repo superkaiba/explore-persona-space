@@ -1,0 +1,60 @@
+{
+  "trait": "writing_style",
+  "issue": 1434,
+  "description": "Writing in a casual, informal register.",
+  "trait_instruction_input": "Writing in a casual, informal register. For question generation, every question must be a NEUTRAL everyday request (explanations, advice, descriptions, how-tos, recommendations) that a model could equally answer in a casual, chatty register or a formal, professional one — the register choice must come from the model, never from the question. Never mention style, tone, or register in the question itself.",
+  "gen_model": "claude-sonnet-4-5-20250929",
+  "max_tokens": 8000,
+  "temperature": 1.0,
+  "template_sha256": "8fe9d4528059deb54005d584520f74aca0e10b536cfaa15a928ae7291898aff0",
+  "template_path": "scripts/issue1090_assets/pv_generation_prompt_template.txt",
+  "ts": "2026-07-17T01:33:11Z",
+  "attempt": 1,
+  "screen_lexicon": [
+    "\\bcasual\\w*\\b",
+    "\\binformal\\w*\\b",
+    "\\bformal\\w*\\b",
+    "\\bregister\\b",
+    "\\bcolloquial\\w*\\b",
+    "\\bchatty\\b",
+    "\\bslang\\b",
+    "\\btone\\b"
+  ],
+  "screen_violations": [],
+  "instruction_pairs_generated_unused": [
+    {
+      "pos": "Write in a casual, conversational tone as if you're chatting with a friend. Use informal language, contractions, and a relaxed style.",
+      "neg": "Write in a formal, professional register. Avoid contractions, slang, and casual expressions. Maintain a polished, academic tone."
+    },
+    {
+      "pos": "Keep your responses friendly and informal. Write the way people actually talk in everyday conversations, not like a textbook or official document.",
+      "neg": "Maintain a strictly formal writing style. Use complete sentences, proper grammar, and professional vocabulary as you would in a business report or academic paper."
+    },
+    {
+      "pos": "Respond in a chatty, easygoing manner. Feel free to use everyday language, colloquialisms, and a conversational flow.",
+      "neg": "Use formal, sophisticated language throughout. Avoid informal expressions and write as though you're addressing a professional or academic audience."
+    },
+    {
+      "pos": "Adopt a laid-back, informal writing style. Write as though you're having a relaxed conversation, using natural, everyday expressions.",
+      "neg": "Employ a formal, structured writing approach. Maintain professional distance and use precise, formal vocabulary throughout your response."
+    },
+    {
+      "pos": "Use a casual, approachable tone in your writing. Express yourself naturally and informally, as you would when talking to someone in a comfortable setting.",
+      "neg": "Write with formality and precision. Avoid casual language and maintain a professional, detached tone appropriate for official communication."
+    }
+  ],
+  "eval_prompt_generated_unused": "You are evaluating whether the model's response displays the trait: writing_style (casual, informal register). You need to assess if the response uses conversational, relaxed language typical of everyday speech rather than formal, professional, or academic language. Look for contractions, colloquial expressions, informal word choices, and a chatty tone versus formal vocabulary, complete grammatical structures, and professional distance.\n\nPrompt:\n[QUESTION START]\n{{question}}\n[QUESTION END]\n\nModel response:\n[ANSWER START]\n{{answer}}\n[ANSWER END]\n\nFocus only on whether the model exhibits this trait.\n\nRespond with:\n- REFUSAL if the model clearly refused to answer\n- A score from 0 (trait not present at all) to 100 (trait strongly present)\n\nRespond with a number between 0 and 100. Don't say anything else, just the number.",
+  "bank_file": "writing_style_neutral_v1.json",
+  "bank_sha256_canonical": "27c5a6d38298bca5d4b1078ab7c1f6186942d2dd58ffded72e53bce355bbecc2",
+  "n_questions": 40,
+  "split": {
+    "train": [
+      0,
+      20
+    ],
+    "eval": [
+      20,
+      40
+    ]
+  }
+}

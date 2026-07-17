@@ -1,0 +1,151 @@
+{
+  "l_star": 27,
+  "predictor": "S_trans directional (held-out R^2, source-map -> target cells; orientation S_trans[i, j] = transfer i->j, matching L[i, j])",
+  "panel": {
+    "sources": [
+      "A1",
+      "A2",
+      "A3",
+      "A4",
+      "A5",
+      "B1",
+      "B2",
+      "B3",
+      "B4",
+      "B5",
+      "C1",
+      "D1",
+      "D2",
+      "D3",
+      "D4",
+      "D5"
+    ],
+    "targets": [
+      "A1",
+      "A2",
+      "A3",
+      "A4",
+      "A5",
+      "B1",
+      "B2",
+      "B3",
+      "B4",
+      "B5",
+      "C1",
+      "D1",
+      "D2",
+      "D3",
+      "D4",
+      "D5",
+      "instr_explicit_1",
+      "instr_explicit_2",
+      "instr_explicit_3",
+      "instr_explicit_4",
+      "instr_soft_1",
+      "instr_soft_2",
+      "instr_soft_3",
+      "instr_oblique_1",
+      "instr_oblique_2",
+      "instr_oblique_3"
+    ],
+    "n_offdiag_cells": 400
+  },
+  "headline_directional": {
+    "all": {
+      "n_cells": 400,
+      "rho": 0.6700845630285188,
+      "boot": {
+        "ci_lo": 0.3877633430353461,
+        "ci_hi": 0.8363462417077622,
+        "n_effective": 2000
+      }
+    },
+    "stylized_excluded_as_source": {
+      "n_cells": 325,
+      "rho": 0.48515477251673583,
+      "boot": {
+        "ci_lo": 0.1923833490921879,
+        "ci_hi": 0.7187652326794012,
+        "n_effective": 2000
+      }
+    },
+    "stylized_excluded_either_side": {
+      "n_cells": 286,
+      "rho": 0.5594249139820384,
+      "boot": {
+        "ci_lo": 0.2691104767952524,
+        "ci_hi": 0.7652350676436308,
+        "n_effective": 2000
+      }
+    }
+  },
+  "null": {
+    "n_draws": 10000,
+    "p_two_sided_lstar": 0.0013,
+    "p975_abs_rho_lstar": 0.6243543490896818,
+    "source_axis_p975_abs": 0.3855304736279601,
+    "note": "single-layer null at the FROZEN L* (frozen by the parent's registered procedure before any directional read \u2014 no per-layer selection axis for this predictor); same target-permutation convention + seed as the symmetric battery"
+  },
+  "kill": {
+    "partial_rho_Sdir_L_given_cos_js": 0.3712959134991778,
+    "boot_partial_given_cos_js": {
+      "ci_lo": 0.05283748283238181,
+      "ci_hi": 0.6456767715889361,
+      "n_effective": 2000
+    },
+    "partial_rho_Sdir_L_given_cos": 0.32197911513754407,
+    "boot_partial_given_cos": {
+      "ci_lo": -0.016407904711908717,
+      "ci_hi": 0.6238030225942703,
+      "n_effective": 2000
+    },
+    "partial_rho_Sdir_L_given_js": 0.5548205092374172,
+    "boot_partial_given_js": {
+      "ci_lo": 0.22644679665967674,
+      "ci_hi": 0.7747050705752707,
+      "n_effective": 2000
+    },
+    "pearson_Sdir_cos": 0.7331980779085102,
+    "collinearity_gate_fired": true,
+    "tercile_rho": {
+      "tercile_0": 0.7023005118625848,
+      "tercile_1": 0.33495430117582514,
+      "tercile_2": 0.35673013379219193
+    },
+    "poly2_residualized_rho": 0.38719779498621865
+  },
+  "increment": {
+    "partial_rho_Sdir_L_given_Ssym": 0.4357717088526541,
+    "boot_partial_given_Ssym": {
+      "ci_lo": 0.1413658566113597,
+      "ci_hi": 0.6246799855914699,
+      "n_effective": 2000
+    },
+    "supplementary_partial_rho_Ssym_L_given_Sdir": -0.28656676887889315,
+    "supplementary_boot_Ssym_given_Sdir": {
+      "ci_lo": -0.45215459352209325,
+      "ci_hi": 0.06951436371317986,
+      "n_effective": 2000
+    },
+    "pearson_Sdir_Ssym": 0.888318877209523,
+    "note": "S_sym = (S_trans + S_trans.T)/2 shares the symmetric component with S_trans by construction \u2014 read the increment partial against pearson_Sdir_Ssym"
+  },
+  "reference_symmetric_headline_all": {
+    "rho": 0.6129517163113284,
+    "ci_lo": 0.3374621320457875,
+    "ci_hi": 0.799938307389341
+  },
+  "figures": [
+    "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-1332/figures/issue_1332/directional_forest.png"
+  ],
+  "reproducibility_metadata": {
+    "issue": 1332,
+    "git_commit": "a1d725d6d470ba30b0c662790cdf7168bfa97d09",
+    "ts": "2026-07-15T18:18:42Z",
+    "torch_version": "2.8.0+cu128",
+    "transformers_version": "4.57.6",
+    "n_boot": 2000,
+    "n_null": 10000,
+    "followup": "directional_inference"
+  }
+}

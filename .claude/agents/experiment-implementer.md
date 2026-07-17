@@ -116,8 +116,11 @@ section wins on invocation form.
    smoke-phase definition vs sweep-phase definition. **PREFER UNIFICATION:**
    if the plan unified the paths (smoke IS sweep with `--cells 1 --seeds 1`
    or equivalent single-cell parameterization — same dispatcher, same
-   subprocess shape, same env injection, same logging surface, same
-   teardown sequence, AND the cell-subset parameterization threads through
+   subprocess shape, same LAUNCH WIDTH (`--num_processes` / CVD
+   composition — smoke never narrows the process shape; see the
+   smoke-width entry in `.claude/rules/gotchas.md`, #1315/#1333), same
+   env injection, same logging surface, same teardown sequence, AND the
+   cell-subset parameterization threads through
    EVERY phase the dispatcher executes), the verdict is `PASS_UNIFIED`.
    **Per-phase subset threading is part of the PASS_UNIFIED definition,
    not an optional extra:** list each phase the dispatcher runs (train,
@@ -133,7 +136,24 @@ section wins on invocation form.
    implementer attested PASS_UNIFIED, but the cross-eval phase enumerated
    the full 120-cell registered grid and HF-404'd on never-trained
    adapters (the anchor selector would have crashed next for the same
-   class, lacking `--allow-partial`). If the plan diverged
+   class, lacking `--allow-partial`). **The same duty covers NON-cell smoke axes:**
+   for every axis the smoke slices below production scale (questions,
+   rows, steps, draws), verify the sliced size satisfies every
+   downstream phase's minimum-N asserts — grep the consumers for
+   `assert len(...) >=` / min-N `raise` shapes and derive each floor
+   from the code (asserts are the greppable common case; floors can
+   also hide in arithmetic — slicing, n-1 divisions), never from the
+   plan's literal stub prose — and name the floor per sliced axis in
+   the attestation `notes:`. Resize an under-floor slice up to the
+   floor (recording it) where the plan permits; a slice you cannot
+   bring to the floor makes the smoke un-passable by construction —
+   verdict `FAIL_NO_CANARY`. Incident #1315 r4: `questions[:1]` sat
+   below `split_half_self_cosine`'s `len(qs) >= 2` and a PASS_UNIFIED
+   smoke crashed at its LAST phase. (Resizing keeps floors from firing
+   in the MAIN smoke leg only — the gate branches themselves must still
+   be demonstrated to execute once in a separate degenerate probe: the
+   data-dependent-gates duty, "After implementation" item 3.) If the
+   plan diverged
    (e.g., smoke uses in-process `train_one_cell`, sweep uses a subprocess
    wrapper) AND the plan §4 Design section justified the divergence in two
    sentences AND named which canary cell exercises the sweep path during
@@ -147,7 +167,9 @@ section wins on invocation form.
    uv run python scripts/task.py post-marker <N> epm:smoke-architecture-check \
      --note "verdict: PASS_UNIFIED
    notes: <one-line description of how smoke = sweep with one cell, naming
-   each phase's cell-list source (e.g. train/eval/anchor all read --cells)>"
+   each phase's cell-list source (e.g. train/eval/anchor all read --cells)
+   and, per sliced non-cell axis, its smoke size vs the downstream min-N
+   floor (e.g. questions=2 >= split-half floor 2)>"
    ```
    For `PASS_CANARY`, use `verdict: PASS_CANARY canary_cell=<cell_id>` and
    cite the plan §4 two-sentence justification in the `notes:` line. For
@@ -376,8 +398,17 @@ such corpora or banks:
    (AST-walk and import each symbol, the `--verify-imports` pattern from
    `scripts/issue_606/i606_dispatch.py`; hand-maintained symbol lists
    re-create the drift) or hoist cheap cross-script helper imports to
-   module top. Full trap + incident #606: `.claude/rules/gotchas.md`
-   "Lazy imports inside smoke-skipped branches".
+   module top — AND, either way, SIGNATURE-BIND every smoke-fenced call
+   to an imported helper (import resolution and hoisting both green-light
+   a call-arity/keyword mismatch — #1332 r1: two fenced
+   `verify_repo_paths_uploaded` calls → deterministic TypeError at the
+   terminal upload stage): dry-run `inspect.signature(fn).bind(...)` with
+   each call site's statically-known shape (positional count + keyword
+   names as placeholder values; `bind_partial` when the call forwards
+   `*args`/`**kwargs`; skip-with-note a callee whose `signature()` raises
+   ValueError). Full recipe + worked example + incidents #606/#1332:
+   `.claude/rules/gotchas.md` "Lazy imports inside smoke-skipped
+   branches".
 2b. **Changed-literal pin-sweep + mapped-scan run (#1288/#1144).** Grep
    `tests/` for each changed literal (old+new); run every hit, plus the
    Step 10d mapped tests (`select_step9c_tests.py --map-files
@@ -399,6 +430,58 @@ such corpora or banks:
    under `## Smoke run` in the report (see Report Format § (c) below).
    This catches the bulk of "experimenter discovers it crashes at
    startup / at eval" failures before the pod is even provisioned.
+
+   **Per ARM CLASS, not just per phase.** When a phase's driver spans
+   MULTIPLE ARM CLASSES (distinct source-context classes / recipe
+   branches — e.g. persona-context vs bare-context arms), the tiny
+   smoke covers AT LEAST ONE cell of EACH arm class, not one arm
+   overall: per-arm seams (source-context construction, negative-panel
+   assembly, `ModelOrganism` wiring) are invisible to a single-arm
+   smoke however tiny-real its seams (#1090 fu5: a formatting-arm-only
+   smoke passed; all 3 bare-context arms then died on the #527/#538
+   panel-disjointness assert after a full 4×A100 GCE cycle). This is a
+   coverage-BREADTH duty on whichever smoke FORM runs — under a
+   unified smoke-IS-sweep architecture, run the one-cell smoke once
+   per arm class; under the GPU-bound-phase carve-out below, the
+   CPU-runnable portion covers each arm class. Record the coverage on
+   one line inside each phase's `### <phase-name>` sub-section —
+   `arm classes covered: <list>` (write `single arm class` when the
+   driver has one, so a MISSING line reads as a forgotten duty, never
+   as "single-arm by design"). Recipe: `.claude/rules/gotchas.md` "A
+   single-arm smoke is blind to per-arm seams". The Step 6d.0-bis gate
+   reads "once at tiny N" as once PER ARM CLASS and stays the
+   downstream backstop (phase-keyed mechanics unchanged) — this
+   checklist item is the implementer-side prevention.
+
+   **Data-dependent gates, not just the happy path.** A phase's
+   data-dependent gates — fold-skip thresholds (`if kept < K:
+   skip/continue`), non-empty-intersection checks (`n_common > 0`),
+   shape/count asserts, below-floor `raise` branches — otherwise first
+   execute in production on a billed GPU box: the item-5 floors duty
+   deliberately sizes the MAIN smoke leg ABOVE every floor so the smoke
+   passes, which leaves every gate branch un-executed at smoke n
+   (#1345: 4 pre-existing gates in reused code — a `tr.sum() < 3`
+   fold-skip, an `n_common > 0` assert, two count asserts — first fired
+   in production, two serialized GCP crashes). Per phase: ENUMERATE the
+   gates from the same consumer grep the item-5 floors duty already
+   runs, widened to gate shapes (`assert `, `raise `, `if len(`,
+   `< <threshold>` guarding a skip/continue/raise) in the code the
+   phase executes; then DEMONSTRATE each fires once OUTSIDE the main
+   smoke leg — a deliberate degenerate-input probe: call the gate's
+   enclosing function (unit-level is fine) on an input sized to trip
+   it; expected outcome = the gate's DESIGNED handling (a clean
+   skip/continue, or its own loud raise — a crash from any OTHER line
+   is a bug found, fix it) — or declare it `production-only — <one-line
+   reason>` (e.g. the degenerate input is unconstructable without
+   GPU-scale artifacts). Record one line per phase sub-section next to
+   `arm classes covered:` — `data gates exercised: <gate → probe
+   outcome | production-only — reason>`; write `none found` when the
+   grep returns none, so a MISSING line reads as a forgotten duty.
+   This COMPOSES with the item-5 resize-up duty, it does not reverse
+   it: resize-up keeps the MAIN smoke leg passing; this duty
+   demonstrates the gate branches execute in a SEPARATE probe — two
+   legs, one smoke surface. Step 6d.0-bis gate mechanics unchanged;
+   this checklist item is the implementer-side prevention.
 
    **GPU-bound-phase carve-out.** When a phase requires multi-GPU or
    GPU-mandatory runtime (`accelerate launch` + ZeRO-3, vLLM batched
@@ -726,8 +809,9 @@ with the turn.
   output file. Never end the turn while a poll is still pending.
 - **Every VM-side python launch — smokes included — carries the shared-VM
   thread-cap prefix**
-  `OMP_NUM_THREADS=8 MKL_NUM_THREADS=8 OPENBLAS_NUM_THREADS=8 NUMEXPR_NUM_THREADS=8`
-  (#847/#891). The in-repo `orchestrate.env` setdefault is pinned to your
+  `OMP_NUM_THREADS=8 MKL_NUM_THREADS=8 OPENBLAS_NUM_THREADS=8 NUMEXPR_NUM_THREADS=8 MALLOC_ARENA_MAX=2`
+  (#847/#891; the arena cap tames glibc arena-fragmentation RSS growth across
+  passes — #1315). The in-repo `orchestrate.env` setdefault is pinned to your
   worktree's branch point (Step 5a never syncs `src/`) and cannot
   in-process-cap a script that imports torch before `load_dotenv()`; the
   explicit launch env caps both, regardless of branch age (incidents #779:
@@ -747,7 +831,7 @@ with the turn.
 - A locally-launched background PROCESS is never your deliverable either:
   it dies with your subagent shell. A long local job that must outlive the
   turn: launch
-  `setsid env OMP_NUM_THREADS=8 MKL_NUM_THREADS=8 OPENBLAS_NUM_THREADS=8 NUMEXPR_NUM_THREADS=8 ... < /dev/null &`,
+  `setsid env OMP_NUM_THREADS=8 MKL_NUM_THREADS=8 OPENBLAS_NUM_THREADS=8 NUMEXPR_NUM_THREADS=8 MALLOC_ARENA_MAX=2 ... < /dev/null &`,
   write a PID file + log path,
   and state in your report that THE ORCHESTRATOR owns the watch (incident
   #539, 2026-06-09: a bg launch died with its shell). Protect the launched
