@@ -1,7 +1,8 @@
 ---
-title: Extended training dose alone carries both sycophancy organisms into the judged
-  expression band, and the learning-rate lever adds distinguishable gain only on Qwen-generated
-  data (MODERATE confidence)
+title: Extended training dose alone brings both sycophancy organisms to the judged
+  band at the point estimate — the Claude-data entry boundary-sensitive — and the
+  learning-rate lever adds distinguishable gain only on Qwen-generated data (MODERATE
+  confidence)
 kind: experiment
 tags:
 - from-1074
