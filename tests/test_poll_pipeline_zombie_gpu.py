@@ -78,7 +78,20 @@ These tests pin:
   RESETTING (not holding) the streak; the direct-call default
   (``session_cpu_rate_cores=None``) preserving pre-#951 outputs; and
   ``_save_state`` persisting the ``session_cpu_sample_epoch`` /
-  ``session_cpu_rate_cores`` pair.
+  ``session_cpu_rate_cores`` pair;
+* the #1477 negative-rate pcpu confirm veto: the corrected
+  ``[DD-]HH:MM:SS`` awk day parse (real-awk subprocess pins — the #1345
+  root cause: ``"1-02"`` numerically coerced to ``1`` collapsed the
+  session sum at the 86400-s boundary, sawtoothing the cross-tick rate
+  negative on a healthy 20-core worker); the #1345 replays vetoing on a
+  parsed negative sample on EITHER tick + same-tick session pcpu >=
+  ``ZOMBIE_OVERRIDE_CPU_CORES_MIN``; the unknown/low-pcpu and
+  no-negative-evidence fall-throughs (the #664 true positive, the
+  frozen-counter rate-0.0 hang, and warmup all keep today's behavior
+  verbatim); ``_parse_session_pcpu_cores`` units; the probe emitting
+  ``SESSION_PCPU_TOTAL`` from a SEPARATE ``ps`` pipeline; and the
+  direct-call default (``session_pcpu_cores=None``) preserving pre-#1477
+  outputs.
 """
 
 from __future__ import annotations
@@ -161,12 +174,14 @@ def _probe_stdout(
     gpu_pids_total: str = "unknown",
     gpu_pids_resolvable: str = "unknown",
     uvm_live_holders: str = "unknown",
+    session_pcpu: str = "unknown",
 ) -> str:
     """Probe stdout in the shape ``_parse_probe_stdout`` expects.
 
-    The #864 count kwargs default ``"unknown"`` — the degraded-probe read —
-    so every pre-#864 test exercises the fall-through-to-#826 path
-    UNMODIFIED (acceptance criterion: existing tests pass unchanged)."""
+    The #864 count kwargs — and the #1477 ``session_pcpu`` kwarg — default
+    ``"unknown"`` (the degraded-probe read), so every pre-#864 / pre-#1477
+    test exercises the fall-through-to-#826 path UNMODIFIED (acceptance
+    criterion: existing tests pass unchanged)."""
     return "\n".join(
         [
             "PID_FILE_MISSING=0",
@@ -186,6 +201,7 @@ def _probe_stdout(
             f"GPU_PIDS_RESOLVABLE={gpu_pids_resolvable}",
             f"NVIDIA_UVM_LIVE_HOLDERS={uvm_live_holders}",
             f"SESSION_CPU_SECS={session_cpu}",
+            f"SESSION_PCPU_TOTAL={session_pcpu}",
             "RESULTS_SENTINEL_PRESENT=0",
         ]
     )
@@ -203,6 +219,7 @@ def _patch_pod(
     gpu_pids_total: str = "unknown",
     gpu_pids_resolvable: str = "unknown",
     uvm_live_holders: str = "unknown",
+    session_pcpu: str = "unknown",
 ) -> None:
     """Monkeypatch poll_pipeline's I/O boundary with a fully-controlled probe.
 
@@ -227,6 +244,7 @@ def _patch_pod(
                 gpu_pids_total=gpu_pids_total,
                 gpu_pids_resolvable=gpu_pids_resolvable,
                 uvm_live_holders=uvm_live_holders,
+                session_pcpu=session_pcpu,
             )
         )
         return subprocess.CompletedProcess(args=cmd, returncode=0, stdout=stdout, stderr="")
@@ -1240,7 +1258,9 @@ def test_zombie_cpu_veto_negative_delta_falls_back(
     run-restart / child-exit de-count) — the negative rate sits below the
     threshold, the veto cannot fire, the override fires. The sub-max drop
     arm of the #518/#658 rescue (|delta| > 0.5 s) still holds ``running``
-    into the zombie block."""
+    into the zombie block. Since #1477 this holds when pcpu is unavailable
+    (this probe carries no ``SESSION_PCPU_TOTAL`` line, so the negative-rate
+    confirm veto stays inert)."""
     now = int(time.time())
     _patch_pod(
         monkeypatch,
@@ -1449,3 +1469,425 @@ def test_zombie_cpu_rate_exact_threshold_vetoes(
     assert result.status == "running"
     assert result.stall_reason is None
     assert _saved_zombie_streak(state_file) == "0"
+
+
+# ── #1477 negative-rate pcpu confirm veto ─────────────────────────────────────
+#
+# Root cause (#1345): procps cumulative-CPU ``time=`` is ``[DD-]HH:MM:SS``;
+# the old inline ``n==3`` awk branch numerically coerced ``"1-02"`` -> ``1``
+# (strtod prefix), so a process crossing 86400 cumulative CPU-sec collapsed
+# from ~86400+s to ~D*3600 + MM*60 + SS in the session sum — sawtoothing the
+# cross-tick rate NEGATIVE on a healthy 20-core worker (running-max 83824 ->
+# 9351; now=-0.88/prev=-0.18). The awk tests run the REAL system awk
+# (subprocess, parametrized over resolvable variants); the replay tests
+# drive the real ``poll_once`` -> ``_parse_probe_stdout`` ->
+# ``_apply_zombie_override`` path with only the SSH boundary faked.
+
+
+def _available_awk_bins() -> list[str]:
+    """awk variants resolvable on this machine. Plain ``awk`` is the floor
+    (Ubuntu's default is mawk); ``mawk`` + ``gawk`` are parametrized in when
+    they resolve so the constants stay variant-portable (no gawk
+    extensions)."""
+    import shutil
+
+    return [v for v in ("awk", "mawk", "gawk") if shutil.which(v)]
+
+
+_AWK_BINS = _available_awk_bins()
+
+
+def _awk_sum(awk_bin: str, program: str, stdin: str) -> str:
+    """Run one awk variant over ``<sess> <value>`` rows with ``-v s=1``
+    (the probe's session filter); returns the stripped stdout."""
+    import subprocess
+
+    out = subprocess.run(
+        [awk_bin, "-v", "s=1", program],
+        input=stdin,
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+    return out.stdout.strip()
+
+
+@pytest.mark.skipif(not _AWK_BINS, reason="no awk variant resolvable on this machine")
+@pytest.mark.parametrize("awk_bin", _AWK_BINS or ["awk"])
+def test_session_cpu_awk_day_format_monotone(awk_bin: str) -> None:
+    """The #1345 root-cause pin against the REAL awk: a ``D-HH:MM:SS``
+    cputime parses to D*86400 + HH*3600 + MM*60 + SS, so crossing the
+    86400-s day boundary never DECREASES the parsed value (pre-fix:
+    ``1-02:35:51`` collapsed to 1*3600 + 35*60 + 51 = 5751)."""
+    awk = pp._SESSION_CPU_TIME_AWK
+    pre_boundary = _awk_sum(awk_bin, awk, "1 23:17:04\n")
+    assert pre_boundary == "83824.0"  # the #1345 pre-collapse running-max
+    post_boundary = _awk_sum(awk_bin, awk, "1 1-02:35:51\n")
+    assert post_boundary == "95751.0"  # 1*86400 + 2*3600 + 35*60 + 51
+    assert float(post_boundary) > float(pre_boundary)  # monotone across the day boundary
+    assert _awk_sum(awk_bin, awk, "1 1-00:00:00\n") == "86400.0"
+    assert _awk_sum(awk_bin, awk, "1 05:00\n") == "300.0"  # MM:SS branch
+    # Session filtering: the s=2 row is excluded from the s=1 sum.
+    assert _awk_sum(awk_bin, awk, "1 05:00\n2 99:00:00\n") == "300.0"
+    # Empty input -> "unknown" (NR==0).
+    assert _awk_sum(awk_bin, awk, "") == "unknown"
+
+
+@pytest.mark.skipif(not _AWK_BINS, reason="no awk variant resolvable on this machine")
+@pytest.mark.parametrize("awk_bin", _AWK_BINS or ["awk"])
+def test_session_cpu_awk_legacy_formats_unchanged(awk_bin: str) -> None:
+    """No-day regression guard: HH:MM:SS and MM:SS inputs produce sums
+    identical to the pre-fix parse (a[1]*3600 + a[2]*60 + a[3] /
+    a[1]*60 + a[2]); plus the defensive n==1 forms (bare seconds; the
+    etime-style ``D-HH`` branch units-corrected in passing — D8)."""
+    awk = pp._SESSION_CPU_TIME_AWK
+    # 00:05:00 -> 300; 10:30 -> 630; 123:45:06 -> 445506 (pre-fix arithmetic).
+    assert _awk_sum(awk_bin, awk, "1 00:05:00\n1 10:30\n1 123:45:06\n") == "446436.0"
+    assert _awk_sum(awk_bin, awk, "1 500\n") == "500.0"  # n==1 bare seconds
+    assert _awk_sum(awk_bin, awk, "1 2-05\n") == "190800.0"  # 2*86400 + 5*3600 (D8)
+
+
+def test_zombie_negative_rate_high_pcpu_vetoes(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """The #1345 replay (arbiter arm): stale logs + idle GPUs + zombie
+    candidate at streak "1" (would fire under pure #826) + cross-tick rate
+    ~ -0.93 cores (probe 9500.0 vs raw sample 10000.0 over ~540 s — the
+    parse-collapse sawtooth; an IMPOSSIBLE value on a monotone counter) +
+    persisted prev rate -0.18, BUT the SAME tick's session pcpu reads
+    2012.5% = 20.125 cores (>= 0.5) — a demonstrably-computing worker.
+    #1477 veto: running, no reason, streak reset."""
+    now = int(time.time())
+    _patch_pod(
+        monkeypatch,
+        mtime_epoch=now - 2000,
+        tail="2026-07-15 00:00:01 [phase=training step=5/100]",
+        gpu_util="0,0,0,0,0,0,0,0",
+        session_cpu="9500.0",  # < prev 10000.0 -> rate ~ -0.93 (scope reset)
+        zombie_pids="184938",
+        session_pcpu="2012.5",  # 20.125 cores
+    )
+    state_file = tmp_path / "poll-state.json"
+    state_file.write_text(
+        _stale_state(
+            now,
+            prev_cpu="10000.0",
+            zombie_streak="1",
+            session_cpu_sample_epoch=str(now - 540),
+            session_cpu_rate_cores="-0.18",
+        )
+    )
+    result = _poll_once_9664(state_file)
+    assert result.status == "running"
+    assert result.stall_reason is None
+    assert _saved_zombie_streak(state_file) == "0"
+
+
+def test_zombie_prev_negative_current_positive_pcpu_vetoes(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """The second observed #1345 pair: current rate ~ +0.82 cores (probe
+    10442.8 vs raw 10000.0 over ~540 s) but the PERSISTED prev rate is
+    -0.56 — a negative sample on EITHER tick invalidates the pair (the
+    #951 both-ticks->=T veto could not have fired: prev < T). High pcpu
+    => #1477 veto."""
+    now = int(time.time())
+    _patch_pod(
+        monkeypatch,
+        mtime_epoch=now - 2000,
+        tail="2026-07-15 00:00:01 [phase=training step=5/100]",
+        gpu_util="0,0,0,0,0,0,0,0",
+        session_cpu="10442.8",  # +442.8 s over ~540 s ~ +0.82 cores
+        zombie_pids="184938",
+        session_pcpu="2012.5",
+    )
+    state_file = tmp_path / "poll-state.json"
+    state_file.write_text(
+        _stale_state(
+            now,
+            prev_cpu="10000.0",
+            zombie_streak="1",
+            session_cpu_sample_epoch=str(now - 540),
+            session_cpu_rate_cores="-0.56",
+        )
+    )
+    result = _poll_once_9664(state_file)
+    assert result.status == "running"
+    assert result.stall_reason is None
+    assert _saved_zombie_streak(state_file) == "0"
+
+
+def test_zombie_prev_negative_rate_none_pcpu_vetoes(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """The (rate_now None, prev < 0) cell — §4.4 normative-predicate pin
+    (round-1 Statistics Must-Fix 2): the sidecar persists a NEGATIVE prev
+    rate ("-0.56") but NO ``session_cpu_sample_epoch``, so the current
+    rate is uncomputable (None). The persisted negative affirmatively
+    PROVES scope inconsistency, so the confirm still arms: high pcpu =>
+    veto (running, streak reset)."""
+    now = int(time.time())
+    _patch_pod(
+        monkeypatch,
+        mtime_epoch=now - 2000,
+        tail="2026-07-15 00:00:01 [phase=training step=5/100]",
+        gpu_util="0,0,0,0,0,0,0,0",
+        session_cpu="5102.0",  # advancing vs max 4000.0 (rescue holds running)
+        zombie_pids="184938",
+        session_pcpu="2012.5",
+    )
+    state_file = tmp_path / "poll-state.json"
+    state_file.write_text(
+        _stale_state(
+            now,
+            prev_cpu="4000.0",
+            zombie_streak="1",
+            session_cpu_rate_cores="-0.56",
+        )
+    )
+    result = _poll_once_9664(state_file)
+    assert result.status == "running"
+    assert result.stall_reason is None
+    assert _saved_zombie_streak(state_file) == "0"
+
+
+def test_zombie_negative_rate_no_pcpu_still_fires(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """Fail-safe fall-through (older pod probe / degraded ps): the same
+    negative-rate shape as the #1345 replay but ``SESSION_PCPU_TOTAL``
+    reads ``unknown`` -> pcpu None -> the #1477 confirm cannot arm and
+    today's streak-2 fire happens byte-identically (#864 law: every
+    degraded read fails toward CURRENT behavior)."""
+    now = int(time.time())
+    _patch_pod(
+        monkeypatch,
+        mtime_epoch=now - 2000,
+        tail="2026-07-15 00:00:01 [phase=training step=5/100]",
+        gpu_util="0,0,0,0,0,0,0,0",
+        session_cpu="9500.0",
+        zombie_pids="184938",
+        session_pcpu="unknown",
+    )
+    state_file = tmp_path / "poll-state.json"
+    state_file.write_text(
+        _stale_state(
+            now,
+            prev_cpu="10000.0",
+            zombie_streak="1",
+            session_cpu_sample_epoch=str(now - 540),
+            session_cpu_rate_cores="-0.18",
+        )
+    )
+    result = _poll_once_9664(state_file)
+    assert result.status == "stalled"
+    assert result.stall_reason == "vllm_worker_dead_zombie_gpu"
+
+
+def test_zombie_negative_rate_low_pcpu_still_fires(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """True-positive calibration pin: a negative-rate tick (a worker-death
+    de-count) whose surviving session churns only the #664 idle-EngineCore
+    ~0.22 cores (pcpu "22.0" percent < 0.5-core threshold) must NOT be
+    shielded — the override fires. Bounded-delay contract note: a
+    heavy-history dead worker (high LIFETIME pcpu at death) legitimately
+    costs one veto tick on its de-count tick — afterwards cur ~ prev
+    (rate small non-negative), pcpu is no longer consulted, and the
+    normal #951/streak path fires (<=2 ticks total delay)."""
+    now = int(time.time())
+    _patch_pod(
+        monkeypatch,
+        mtime_epoch=now - 2000,
+        tail="2026-07-15 00:00:01 [phase=training step=5/100]",
+        gpu_util="0,0,0,0,0,0,0,0",
+        session_cpu="9500.0",
+        zombie_pids="184938",
+        session_pcpu="22.0",  # 0.22 cores — the #664 churn, as percent
+    )
+    state_file = tmp_path / "poll-state.json"
+    state_file.write_text(
+        _stale_state(
+            now,
+            prev_cpu="10000.0",
+            zombie_streak="1",
+            session_cpu_sample_epoch=str(now - 540),
+            session_cpu_rate_cores="-0.18",
+        )
+    )
+    result = _poll_once_9664(state_file)
+    assert result.status == "stalled"
+    assert result.stall_reason == "vllm_worker_dead_zombie_gpu"
+
+
+def test_zombie_nonnegative_rate_high_pcpu_still_fires(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """Unreapability guard — §4.4 row 6 with pcpu PRESENT and HIGH (round-1
+    Statistics Must-Fix 1): a frozen-counter hung run reads rate EXACTLY
+    0.0 (probe sample EQUAL to the persisted raw sample) with a low
+    non-negative prev rate, while a heavy-history session can read high
+    LIFETIME pcpu (2012.5%). With NO negative sample on either tick, pcpu
+    must NOT be consulted — the override fires. A ``<= 0``
+    mis-implementation or an inverted comparison passes every other test
+    but vetoes here and fails this one. ``max_cpu_secs`` is seeded BELOW
+    the frozen sample so the #518/#658 rescue still holds ``running``
+    into the zombie block (the integration-seeding rule above)."""
+    now = int(time.time())
+    _patch_pod(
+        monkeypatch,
+        mtime_epoch=now - 2000,
+        tail="2026-07-15 00:00:01 [phase=training step=5/100]",
+        gpu_util="0,0,0,0,0,0,0,0",
+        session_cpu="5102.0",  # == persisted raw sample -> rate 0.0
+        zombie_pids="184938",
+        session_pcpu="2012.5",  # heavy-history lifetime average
+    )
+    state_file = tmp_path / "poll-state.json"
+    state_file.write_text(
+        _stale_state(
+            now,
+            prev_cpu="5102.0",
+            zombie_streak="1",
+            max_cpu="5000.0",  # cpu_advancing True (|5102-5000| > 0.5)
+            session_cpu_sample_epoch=str(now - 540),
+            session_cpu_rate_cores="0.10",
+        )
+    )
+    result = _poll_once_9664(state_file)
+    assert result.status == "stalled"
+    assert result.stall_reason == "vllm_worker_dead_zombie_gpu"
+
+
+def test_zombie_warmup_rate_none_pcpu_not_consulted(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """Warmup pin (§11 D4 scoping as disambiguated in §4.4): no persisted
+    ``session_cpu_sample_epoch`` AND no persisted ``session_cpu_rate_cores``
+    -> current rate None with NO negative evidence on either tick. pcpu
+    (even 2012.5%) is NOT consulted; today's streak path fires
+    byte-identically. Widening the trigger to bare ``None`` would shield
+    freshly-launched hung runs whose init burn inflates the lifetime pcpu
+    average — the #664-unreapability direction."""
+    now = int(time.time())
+    _patch_pod(
+        monkeypatch,
+        mtime_epoch=now - 2000,
+        tail="2026-07-15 00:00:01 [phase=training step=5/100]",
+        gpu_util="0,0,0,0,0,0,0,0",
+        session_cpu="5102.0",
+        zombie_pids="184938",
+        session_pcpu="2012.5",
+    )
+    state_file = tmp_path / "poll-state.json"
+    state_file.write_text(_stale_state(now, prev_cpu="4000.0", zombie_streak="1"))
+    result = _poll_once_9664(state_file)
+    assert result.status == "stalled"
+    assert result.stall_reason == "vllm_worker_dead_zombie_gpu"
+
+
+@pytest.mark.parametrize(
+    ("value", "expected"),
+    [
+        ("2012.5", 20.125),
+        ("50.0", 0.5),
+        ("0.0", 0.0),
+        ("unknown", None),
+        ("", None),
+        ("garbage", None),
+        (None, None),
+        ("-5.0", None),  # negative %cpu is malformed -> fail-safe None
+    ],
+)
+def test_parse_session_pcpu_cores_units(value: str | None, expected: float | None) -> None:
+    """``_parse_session_pcpu_cores``: percent -> cores; unknown / malformed /
+    negative -> None (the #1477 confirm veto stays inert)."""
+    got = pp._parse_session_pcpu_cores(value)
+    if expected is None:
+        assert got is None
+    else:
+        assert got == pytest.approx(expected)
+
+
+def test_parse_probe_stdout_lifts_session_pcpu() -> None:
+    """The parser dispatches the ``SESSION_PCPU_TOTAL=`` line; an absent
+    line (older pod probe) defaults to ``unknown``."""
+    parsed = pp._parse_probe_stdout("PID_ALIVE=1\nSESSION_PCPU_TOTAL=2012.5\n")
+    assert parsed["session_pcpu_total"] == "2012.5"
+    assert pp._parse_probe_stdout("PID_ALIVE=1\n")["session_pcpu_total"] == "unknown"
+
+
+def test_probe_heredoc_emits_session_pcpu_field(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Producer-side emission / key-parity pin (#1477; mirrors
+    ``test_gpu_probe_emits_namespace_count_keys``): captures the REAL
+    composed remote command and asserts (a) the new field's emission on the
+    success branch + its ``=unknown`` twins on BOTH degraded branches, (b)
+    the SEPARATE ``sess=,pcpu=`` ps pipeline, (c) the literal fixed-awk
+    day-format fragment — pinning the f-string interpolation of the
+    constants (a doubled-brace regression corrupts exactly this text), and
+    (d) key parity across ``_PROBE_SCALAR_KEYS`` / parser default /
+    ssh-failed fallback."""
+    import subprocess as _subprocess
+
+    captured: dict[str, str] = {}
+
+    def _fake_run(cmd: list[str], **kwargs: Any):
+        captured["remote"] = cmd[-1]
+        return _subprocess.CompletedProcess(args=cmd, returncode=0, stdout="", stderr="")
+
+    monkeypatch.setattr(pp.subprocess, "run", _fake_run)
+    pp._ssh_probe(
+        "pod-9664",
+        "/workspace/logs/issue-9664.log",
+        "/workspace/logs/issue-9664.pid",
+        9664,
+    )
+    remote = captured["remote"]
+
+    # (a) emission tokens: success branch + the two degraded-branch twins.
+    assert 'echo "SESSION_PCPU_TOTAL=${PCPU_SUM:-unknown}"' in remote
+    assert remote.count('echo "SESSION_PCPU_TOTAL=unknown"') == 2
+    # (b) the SEPARATE pcpu pipeline (failure isolation from the time= sum).
+    assert "ps -e -o sess=,pcpu=" in remote
+    assert "ps -e -o sess=,time=" in remote
+    # (c) the fixed-awk day-format fragment lands verbatim (single braces).
+    assert "b[1]*86400 + b[2]*3600" in remote
+    assert "{_SESSION_CPU_TIME_AWK}" not in remote  # constants interpolated, not literal
+
+    # (d) key parity: _PROBE_SCALAR_KEYS -> parser default -> ssh-failed
+    # fallback (lowercased mapping).
+    assert "SESSION_PCPU_TOTAL" in pp._PROBE_SCALAR_KEYS
+    assert pp._parse_probe_stdout("")["session_pcpu_total"] == "unknown"
+
+    def _fake_run_fail(cmd: list[str], **kwargs: Any):
+        return _subprocess.CompletedProcess(args=cmd, returncode=255, stdout="", stderr="down")
+
+    monkeypatch.setattr(pp.subprocess, "run", _fake_run_fail)
+    fallback = pp._ssh_probe(
+        "pod-9664",
+        "/workspace/logs/issue-9664.log",
+        "/workspace/logs/issue-9664.pid",
+        9664,
+    )
+    assert fallback["session_pcpu_total"] == "unknown"
+
+
+def test_zombie_direct_call_pcpu_default_none() -> None:
+    """Direct ``_apply_zombie_override`` call WITHOUT the new kwarg on a
+    NEGATIVE-rate fire shape (mirrors
+    ``test_zombie_direct_call_rate_none_default``): the
+    ``session_pcpu_cores=None`` default is inert — the override fires
+    exactly as pre-#1477 even though both rates are negative."""
+    out = pp._apply_zombie_override(
+        status="running",
+        zombie_gpu_pids=["184938"],
+        stall_sec=900,
+        last_mtime_ago=2000.0,
+        phase_log_mtime_ago=10**9,
+        shard_log_mtime_ago=10**9,
+        prev_state={"zombie_streak": "1", "session_cpu_rate_cores": "-0.18"},
+        pod="pod-9664",
+        cpu_override_active=True,
+        session_cpu_rate_cores=-0.93,
+    )
+    assert out == ("stalled", "vllm_worker_dead_zombie_gpu", False, 2)
