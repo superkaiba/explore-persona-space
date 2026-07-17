@@ -1130,9 +1130,7 @@ def upload_fu4_run(cfg: i1090.RunConfig, seams: i1090.Seams1090, run: Fu4Run, re
     if rec.get("status") == "trained" and rec.get("selected_ckpt"):
         ckpts = fu2.enumerate_ckpt_rungs(rec["adapter_root"])
         keep_steps = (
-            set(ckpts)
-            if ROUND.upload_all_rungs
-            else {int(rec["selection"]["step"]), max(ckpts)}
+            set(ckpts) if ROUND.upload_all_rungs else {int(rec["selection"]["step"]), max(ckpts)}
         )
         for step in sorted(keep_steps):
             _up(

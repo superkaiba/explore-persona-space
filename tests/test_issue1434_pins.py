@@ -237,3 +237,30 @@ def test_worker_delegation_routes_fu4_phases(monkeypatch):
     assert rc == 0
     assert seen["argv"][:2] == ["--round", "i1434"]
     assert "--phase" in seen["argv"] and "dispatch" in seen["argv"]
+
+
+def test_judge_dispatch_bare_scalar_score_not_erased():
+    """#1434 fix (the #778 scalar-passthrough, dispatch-path parity): a judge
+    that answers the bare integer '95' (the persona-vectors rubric's own
+    'just the number' instruction) must land as {'score': 95} — NOT be erased
+    to a parse_error drop by the dict-shaped result plumbing. Fails pre-fix
+    (every parse site returned parse_error for scalar responses; the #1434
+    extract smoke dropped 4/4 exhibit-arm rollouts to it)."""
+    from explore_persona_space.eval.judge_dispatch import (
+        _normalize_scalar_score,
+        _parsed_with_raw,
+    )
+    from explore_persona_space.eval.utils import parse_judge_json
+
+    parsed = _normalize_scalar_score(parse_judge_json("95"))
+    assert parsed == {"score": 95}
+    from explore_persona_space.eval.graded_judge import _score_from_parsed
+
+    assert _score_from_parsed(parsed) == 95.0
+    # envelope + REFUSAL + out-of-range dispositions unchanged
+    assert _normalize_scalar_score({"score": 40}) == {"score": 40}
+    assert _normalize_scalar_score(parse_judge_json("250")) == 250  # out-of-range: caller drops
+    assert _score_from_parsed(250) is None
+    assert _normalize_scalar_score(True) is True  # bool never a score
+    # non-dict parses must pass through raw-retention untouched (dict(95) crashed)
+    assert _parsed_with_raw(95, "95") == 95

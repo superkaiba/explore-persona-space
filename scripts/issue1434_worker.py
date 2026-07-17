@@ -197,17 +197,39 @@ def phase_datagen(cfg: run1090.RunConfig, args: argparse.Namespace) -> dict:
         panel = neg_mod.NEGATIVE_PANELS[panel_name]
         cell_root = cfg.out_root / "datagen_cells" / cell_key
         summary_path = cell_root / "datagen_summary_1434.json"
-        if summary_path.exists():
-            out[cell_key] = run1090._read_json(summary_path)
-            logger.info("[i1434-datagen] %s already recorded — skip", cell_key)
-            continue
-        cell_cfg = dataclasses.replace(
-            cfg,
-            cells=(shim,),
-            oversample_mult=(
-                fu3w.BARE_OVERSAMPLE_MULT if ctx.kind == "bare" else fu3w.DEFAULT_OVERSAMPLE_MULT
-            ),
+        mult = (
+            args.oversample_mult
+            if args.oversample_mult is not None
+            else (fu3w.BARE_OVERSAMPLE_MULT if ctx.kind == "bare" else fu3w.DEFAULT_OVERSAMPLE_MULT)
         )
+        if summary_path.exists():
+            # Parent _run_datagen_cell resume semantics: a SUCCESS is always
+            # kept; a yield miss at the SAME budget skips; a miss at a
+            # DIFFERENT budget quarantines the stale dir (durable record) and
+            # regenerates at the new budget (the registered retune lever).
+            prior = run1090._read_json(summary_path)
+            prior_mult = float(prior.get("oversample_mult", 0.0))
+            if prior.get("status") == "success" or prior_mult == mult:
+                out[cell_key] = prior
+                logger.info("[i1434-datagen] %s already recorded — skip", cell_key)
+                continue
+            stale = cell_root / (
+                f"datagen_stale_x{prior_mult:g}_" + time.strftime("%Y%m%dT%H%M%SZ", time.gmtime())
+            )
+            if (cell_root / "datagen").exists():
+                import os as _os
+
+                _os.replace(cell_root / "datagen", stale)
+            summary_path.unlink()
+            logger.warning(
+                "[i1434-datagen] %s floor miss at mult=%g — quarantined to %s; "
+                "regenerating at mult=%g",
+                cell_key,
+                prior_mult,
+                stale,
+                mult,
+            )
+        cell_cfg = dataclasses.replace(cfg, cells=(shim,), oversample_mult=mult)
         record: dict[str, Any] = {
             "cell_key": cell_key,
             "behavior": cells.BEHAVIOR,
@@ -244,6 +266,7 @@ def phase_datagen(cfg: run1090.RunConfig, args: argparse.Namespace) -> dict:
             overrides={**organism.recipe.overrides, "max_length": run1090.MAX_LENGTH_1090},
         )
         mix_dir = cell_root / "mix"
+        mix_dir.mkdir(parents=True, exist_ok=True)
         train_mix_path, counts, realized = _assemble_mix(
             organism,
             spec,
@@ -438,6 +461,14 @@ def phase_base_arms(cfg: run1090.RunConfig, args: argparse.Namespace) -> int:
     return 0
 
 
+def resolve_run_ids(cell_keys: list[str], smoke: bool) -> list[str]:
+    """Run ids for the resolved cell subset, threaded through the SAME fu4 run
+    resolver every dispatch phase uses (smoke = its one-run subset — the
+    unified-subset threading duty; no phase re-enumerates the full grid)."""
+    runs = fu4.resolve_fu4_runs(None, smoke)
+    return [r.run_id for r in runs if r.cell_key in cell_keys]
+
+
 def _run_selections(cfg: run1090.RunConfig, run_ids: list[str]) -> dict[str, dict]:
     """Per-run dose-selection records from the fu4 build results (fail-loud)."""
     sels: dict[str, dict] = {}
@@ -458,7 +489,7 @@ def phase_panel(cfg: run1090.RunConfig, args: argparse.Namespace) -> int:
     run1090._phase("i1434_panel")
     qs = _eval_questions(cfg)
     cell_keys = resolve_cell_keys(args.cells, cfg.smoke)
-    run_ids = [r.run_id for r in cells.I1434_RUNS if r.cell_key in cell_keys]
+    run_ids = resolve_run_ids(cell_keys, cfg.smoke)
     selections = _run_selections(cfg, run_ids)
     verdicts: dict[str, dict] = {}
     gen = _gen_fn(cfg)
@@ -627,7 +658,7 @@ def phase_judge_analyze(cfg: run1090.RunConfig, args: argparse.Namespace) -> int
     judge_root = cfg.out_root / "judge"
     pv_rubric = cells.pv_rubric_text()
     registered_rubric = BEHAVIORS[cells.BEHAVIOR].judge_rubric
-    run_ids = [r.run_id for r in cells.I1434_RUNS if r.cell_key in cell_keys]
+    run_ids = resolve_run_ids(cell_keys, cfg.smoke)
 
     # 1. Per-run build records (ladders + selections; local wins, HF fallback).
     ladders: dict[str, dict] = {}
@@ -848,6 +879,13 @@ def _own_parser() -> argparse.ArgumentParser:
     p.add_argument("--seed", type=int, default=42)
     p.add_argument("--eval-question-limit", type=int, default=None)
     p.add_argument("--no-upload", dest="upload", action="store_false", default=True)
+    p.add_argument(
+        "--oversample-mult",
+        type=float,
+        default=None,
+        help="datagen budget retune lever (plan §10 allowed deviation; default: "
+        "2.5, bare 12.0 — the fu3 launch-4 grounding)",
+    )
     return p
 
 
@@ -857,6 +895,7 @@ def main(argv: list[str] | None = None) -> int:
     )
     argv = list(sys.argv[1:] if argv is None else argv)
     cells.register_i1434_round()
+    fu4.set_round("i1434")  # phases below read the fu4 ROUND-parametrized helpers
     # fu4-native phases (dispatch / run) delegate VERBATIM to the round-
     # parametrized driver — the dispatcher's _worker_cmd routes subprocesses
     # back through THIS file (ROUND.worker_script), which re-registers the

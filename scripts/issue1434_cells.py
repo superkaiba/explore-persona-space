@@ -178,11 +178,15 @@ def i1434_margin_pools(cfg) -> tuple[list[dict] | None, list[dict] | None, dict[
         "n_neg_raw": len(neg),
     }
     m = min(len(pos), len(neg))
-    if m < MARGIN_POOL_FLOOR_1434:
+    # #1345 gate-calibration: the 15/15 floor is production-calibrated; at
+    # smoke n ANY nonzero pool proceeds so the margin sweep path stays
+    # exercised (the floor branch is unit-probed separately).
+    floor = 1 if getattr(cfg, "smoke", False) else MARGIN_POOL_FLOOR_1434
+    if m < floor:
         meta.update(
             {
                 "status": "skipped_pool_below_floor",
-                "floor": MARGIN_POOL_FLOOR_1434,
+                "floor": floor,
                 "reason": (
                     f"writing_style margin pools {len(pos)}/{len(neg)} below the "
                     f"{MARGIN_POOL_FLOOR_1434}/{MARGIN_POOL_FLOOR_1434} floor — shipping "

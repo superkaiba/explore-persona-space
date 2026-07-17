@@ -72,7 +72,6 @@ from explore_persona_space.artifacts.directions import (  # noqa: E402
 )
 from explore_persona_space.artifacts.organisms import (  # noqa: E402
     DEFAULT_BASE_MODEL,
-    _default_vllm_generate_fn,
     _generate_and_persist,
 )
 from explore_persona_space.eval.graded_judge import judge_graded  # noqa: E402
@@ -108,6 +107,37 @@ def _pair_context(pair_index: int, arm: str, instruction: str) -> Context:
     )
 
 
+def _pv_smoke_gen():
+    """Arm-aware deterministic generation stub for the extract smoke (matches
+    the eval-gen seam signature: (side_path, messages_list, *, n, temperature))."""
+
+    def gen(side_path, messages_list, *, n, temperature):
+        del side_path, temperature
+        out = []
+        for msgs in messages_list:
+            system = next((m["content"] for m in msgs if m.get("role") == "system"), "")
+            keys = ("casual", "colloquial", "friend", "informal", "contraction")
+            casual = any(w in system.lower() for w in keys)
+            if casual:
+                text = (
+                    "haha yeah so basically it's super simple — you just grab the thing, "
+                    "give it a go, and honestly don't sweat the details. it kinda sorts "
+                    "itself out, y'know?"
+                )
+            else:
+                text = (
+                    "This process comprises three distinct stages. First, one must assemble "
+                    "the requisite materials. Subsequently, the procedure is executed in "
+                    "accordance with the established guidelines. Finally, the results are "
+                    "reviewed systematically."
+                )
+            out.append([text] * n)
+        return out
+
+    gen.close = lambda: None
+    return gen
+
+
 # ── D4: extraction ───────────────────────────────────────────────────────────
 
 
@@ -125,7 +155,12 @@ def phase_extract(cfg, args) -> int:
     rollout_dir = root / "extraction_rollouts"
 
     # Step 3 — on-policy rollouts under each pair's pos/neg system prompt.
-    gen = worker._gen_fn(cfg)
+    # Smoke: the shared eval-gen stub is ARM-BLIND (one canned completion per
+    # behavior), so the judge filter would legitimately zero an arm; the
+    # extract smoke fakes ONLY the generation boundary with an ARM-AWARE stub
+    # (keyed off the pair instruction in the system slot) — judge, filter,
+    # capture, and diff-of-means all stay real.
+    gen = _pv_smoke_gen() if cfg.smoke else worker._gen_fn(cfg)
     completions: list[ContrastiveCompletion] = []
     try:
         for pi, pair in enumerate(pairs):
@@ -269,7 +304,9 @@ def _states_for(cfg, cell_keys: list[str]) -> list[dict]:
     states: list[dict] = [
         {"state_id": f"base-{ck}", "cell_key": ck, "ckpt": None} for ck in cell_keys
     ]
-    for run in cells.I1434_RUNS:
+    import issue1090_fu4 as fu4
+
+    for run in fu4.resolve_fu4_runs(None, cfg.smoke):
         if run.cell_key not in cell_keys:
             continue
         path = Path(cfg.out_root) / run.run_id / "i1434_build_result.json"
@@ -393,7 +430,7 @@ def phase_project(cfg, args) -> int:
 
     # 1. Greedy text per state (vLLM shared engine; LoRA hot-load per ckpt).
     run1090._phase("i1434_pv_greedy_text")
-    gen = _default_vllm_generate_fn(DEFAULT_BASE_MODEL, max_lora_rank=64)
+    gen = worker._gen_fn(cfg)
     try:
         for st in states:
             ctx = cells.ensure_ws_context(cells.CONTEXT_BY_CELL_KEY[st["cell_key"]])
@@ -432,6 +469,7 @@ def phase_project(cfg, args) -> int:
         if summary_path.exists():
             summaries[st["state_id"]] = torch.load(summary_path, weights_only=False)
             continue
+        t0 = time.time()
         ctx = cells.ensure_ws_context(cells.CONTEXT_BY_CELL_KEY[st["cell_key"]])
         shared = _greedy_text(f"base-{st['cell_key']}", st["cell_key"], "base")
         own = _greedy_text(
@@ -461,6 +499,10 @@ def phase_project(cfg, args) -> int:
         summary_path.parent.mkdir(parents=True, exist_ok=True)
         torch.save(rec, summary_path)
         summaries[st["state_id"]] = rec
+        # Pilot telemetry (plan §9 P8 pilot-gate): per-state wall so the FIRST
+        # state's cost is readable from the log (>2x the ~6 min/state basis =>
+        # the launcher posts epm:compute-deviation before proceeding).
+        logger.info("[i1434-pv] state %s captured in %.1fs", st["state_id"], time.time() - t0)
 
     # 3. Shifts + projections (trained - base, per layer x arm).
     rhat = torch.nn.functional.normalize(rb.r_b.to(torch.float64), dim=-1)  # (L, H)
@@ -540,14 +582,15 @@ def _cell_grids(cfg, aggregate: dict, proj: dict) -> dict[str, dict]:
     context) + own-context install (all trained arms). Values per capture arm."""
     grids: dict[str, dict] = {}
     # leakage grid: judged delta per (verdict organism, panel ctx)
-    leak_y, leak_x_state = [], []
+    leak_y, leak_x_state, leak_ctx = [], [], []
     for _cell_key, prec in (aggregate.get("panel") or {}).items():
         run_id = prec["run_id"]
         if run_id not in proj["states"]:
             continue
-        for _ctx_id, row in prec["contexts"].items():
+        for ctx_id, row in prec["contexts"].items():
             leak_y.append(float(row["delta"]))
             leak_x_state.append(run_id)
+            leak_ctx.append(ctx_id)
     # install grid: per trained arm own-context tier2 delta (verdict arms only
     # carry tier2 reads; ladder arms use their selection-rung Tier-1 rate delta
     # vs base — recorded per run in the aggregate ladders).
@@ -557,12 +600,12 @@ def _cell_grids(cfg, aggregate: dict, proj: dict) -> dict[str, dict]:
         if run_id and run_id in proj["states"] and entry.get("delta") is not None:
             inst_y.append(float(entry["delta"]))
             inst_x_state.append(run_id)
-    grids["leakage"] = {"y": leak_y, "state_ids": leak_x_state}
-    grids["install"] = {"y": inst_y, "state_ids": inst_x_state}
+    grids["leakage"] = {"y": leak_y, "state_ids": leak_x_state, "ctx_ids": leak_ctx}
+    grids["install"] = {"y": inst_y, "state_ids": inst_x_state, "ctx_ids": None}
     return grids
 
 
-def phase_validate(cfg, args) -> int:
+def phase_validate(cfg, args) -> int:  # noqa: C901 — the registered battery, one pass
     """H3 validation: observed per-layer |rho| + honest randnorm + shuffle
     bands, per-draw max-over-layer, persisted matrices, LOFO/LOO, bootstrap."""
     run1090._phase("i1434_pv_validate")
@@ -682,9 +725,7 @@ def phase_validate(cfg, args) -> int:
                 ry = _rankdata(y[None, :])[0]
                 perms = np.stack([ry[rng.permutation(len(y))] for _ in range(n_shuffle)])
                 perms_c = perms - perms.mean(axis=1, keepdims=True)  # (n_shuffle, n_cells)
-                denom = np.sqrt(
-                    (rP_c**2).sum(axis=1)[None, :] * (perms_c**2).sum(axis=1)[:, None]
-                )
+                denom = np.sqrt((rP_c**2).sum(axis=1)[None, :] * (perms_c**2).sum(axis=1)[:, None])
                 denom = np.where(denom == 0, np.inf, denom)
                 sh = np.abs(perms_c @ rP_c.T) / denom  # (n_shuffle, L)
                 sh_path = deliver / f"pv_nullmatrix_{grid_name}_shuffle.json"
@@ -708,9 +749,17 @@ def phase_validate(cfg, args) -> int:
                 for sid in sorted(set(state_ids)):
                     mask = np.array([s != sid for s in state_ids])
                     if mask.sum() >= 3 and len(set(np.array(state_ids)[mask])) >= 2:
-                        folds[f"loo_{sid}"] = float(
+                        folds[f"loo_organism_{sid}"] = float(
                             _spearman_obs_per_layer(P[:, mask], y[mask]).max()
                         )
+                ctx_ids = grid.get("ctx_ids")
+                if ctx_ids:
+                    for cid in sorted(set(ctx_ids)):
+                        mask = np.array([c != cid for c in ctx_ids])
+                        if mask.sum() >= 3 and len(set(np.array(state_ids)[mask])) >= 2:
+                            folds[f"lofo_context_{cid}"] = float(
+                                _spearman_obs_per_layer(P[:, mask], y[mask]).max()
+                            )
                 arm_out["group_folds_max_abs_rho"] = folds
                 # cluster bootstrap over organisms at the headline layer
                 uniq_states = sorted(set(state_ids))
@@ -760,6 +809,9 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--no-upload", dest="upload", action="store_false", default=True)
     args = p.parse_args(argv)
     cells.register_i1434_round()
+    import issue1090_fu4 as fu4
+
+    fu4.set_round("i1434")
     cfg = worker.worker_config(args)
     if args.phase == "extract":
         return phase_extract(cfg, args)
