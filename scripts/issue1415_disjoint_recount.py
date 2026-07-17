@@ -38,9 +38,13 @@ import re
 import sys
 from pathlib import Path
 
-import numpy as np
-import torch
-from scipy import stats
+from explore_persona_space.orchestrate.env import load_dotenv
+
+load_dotenv()
+
+import numpy as np  # noqa: E402
+import torch  # noqa: E402
+from scipy import stats  # noqa: E402
 
 ROOT = Path(__file__).resolve().parent.parent
 DATA = ROOT / "data" / "issue_1415" / "phase1"
