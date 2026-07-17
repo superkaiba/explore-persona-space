@@ -788,6 +788,18 @@ composer copies the requested lens's items VERBATIM and IN FULL from this file.
     could not clear the band; p = 0.634 initially narrated as
     an ordering fail). A missing ceiling report on a bounded statistic with no gate riding on it —
     or a band exceeding only the fallback reference point — is a binding Concern, not a REVISE.
+    ALSO verify bootstrap-CI selection inheritance: a bootstrap /
+    resampling CI registered or reported at a max-selected axis position
+    must be the SELECTION-INHERITED CI (per-draw re-selection inside each
+    resample) or BOTH CIs labeled `frozen-at-<axis>` vs
+    `selection-inherited` — a frozen-only CI at a selected position is a
+    REVISE (#1434: frozen [−0.949, −0.467] vs selection-inherited
+    [−0.957, +0.866] in the same JSON — sign stability manufactured by
+    the freeze at a max-|ρ|-over-28-layers layer;
+    `selection-symmetric-nulls.md` § Bootstrap CIs at a selected axis
+    position). Deliberate severity asymmetry vs the null-band arm:
+    matrix recoverability does NOT soften this to a Concern — #1434's
+    inherited CI sat in the same JSON and was still missed.
     Not a REVISE when the axis position is a single
     pre-registered / fixed value with no data-driven selection, a mechanistic single-anchor
     ablation, or the headline is not selected over any free axis (the plan's §6 "N/A — no

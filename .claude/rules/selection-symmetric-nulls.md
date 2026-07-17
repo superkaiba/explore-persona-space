@@ -1,5 +1,5 @@
 ---
-description: "Selection-symmetric nulls — a null/permutation band compared against a max-over-axis-selected observed statistic must inherit the SAME selection per draw, or the axis must be frozen on a held-out split; persist the per-draw × per-axis matrix. Report every registered band's upper bound against the DV's achievable ceiling — band ≥ ceiling ⇒ uninformative-by-construction, narrate failure-to-reject. ALSO: noise-structure symmetry — a difference-vector DV whose two legs subtract the SAME sampled baseline B̄ (cos(X−B̄, Y−B̄)) inflates against a noise-free null; use disjoint baseline draw halves per leg, or build the null to carry the identical shared-B̄ term per draw. Loads on-demand at plan time."
+description: "Selection-symmetric nulls — a null/permutation band compared against a max-over-axis-selected observed statistic must inherit the SAME selection per draw, or the axis must be frozen on a held-out split; persist the per-draw × per-axis matrix. Report every registered band's upper bound against the DV's achievable ceiling — band ≥ ceiling ⇒ uninformative-by-construction, narrate failure-to-reject. A bootstrap CI reported at a max-selected axis position must be the selection-inherited CI (per-draw re-selection inside each resample) or both frozen+inherited, labeled. ALSO: noise-structure symmetry — a difference-vector DV whose two legs subtract the SAME sampled baseline B̄ (cos(X−B̄, Y−B̄)) inflates against a noise-free null; use disjoint baseline draw halves per leg, or build the null to carry the identical shared-B̄ term per draw. Loads on-demand at plan time."
 paths:
   - ".claude/plans/**"
   - "tasks/**/plans/**"
@@ -75,6 +75,58 @@ small). This lets the analyzer recompute the honest max-selected band
 post-hoc even if the plan shipped the asymmetric read — the honest band
 is a pure re-reduction of the stored matrix, no re-run. Without the matrix
 the honest band is unrecoverable and the run must be repeated.
+
+## Bootstrap CIs at a selected axis position (selection-inherited CI)
+
+The same asymmetry contaminates INTERVAL estimates, not just null
+bands: a bootstrap / resampling CI computed with the axis FROZEN at the
+winning position conditions on the selection — every resample re-reads
+the one pre-selected position, so the interval carries only the
+sampling variability AT that position and none of the variability OF
+the selection itself. At a winner's-curse-selected position the frozen
+CI overstates stability, sign stability included. This is the
+interval-estimate face of post-selection inference: an interval at a
+data-selected target is valid only when the selection is accounted for
+(post-selection inference: Taylor & Tibshirani, PNAS 2015; bootstrap
+after model selection: arXiv 1506.06266).
+
+**A bootstrap / resampling CI reported at a `max` / `argmax` / best-of
+selected axis position MUST be the selection-inherited CI** — the
+per-draw re-selection rides INSIDE each bootstrap resample (each
+resample re-runs the same `max`/`argmax` over the axis before the
+statistic is read) — **or BOTH CIs are shown with explicit labels**
+(`frozen-at-<axis position>` vs `selection-inherited`), never the
+frozen CI alone. A frozen-only CI at a selected position is a REVISE at
+plan / critic time and a binding revision request at interpretation
+time. Sign- or effect-stability claims read off the selection-inherited
+CI; the frozen CI answers only the conditional question "how variable
+is the statistic at THIS position, taking the position as given" and is
+labeled as such wherever it is shown. The inherited CI widens the
+interval to carry the selection variability but does NOT debias the
+point estimate — each resample's re-selected max is itself
+winner's-curse-inflated, so effect-MAGNITUDE claims at the winner
+remain optimistic even under inheritance; never quote the inherited
+CI's center as a corrected estimate.
+
+Persist the per-bootstrap-draw × per-axis statistic matrix under the
+same contract as the null-band matrix above (bootstrap resamples as the
+draws) — the selection-inherited CI is then a pure re-reduction,
+recomputable post-hoc.
+
+The held-out-freeze alternative (option 2 above) remains valid for CIs:
+an axis position frozen on a held-out split, or pre-registered before
+seeing the data, is not selection-conditioned and its frozen CI needs
+no inheritance — state the freeze provenance when reporting it.
+
+**Motivating evidence (#1434, install-grid ρ).** The interpretation
+reported the frozen-headline-layer bootstrap CI [−0.949, −0.467] for a
+ρ whose layer was itself chosen by max-|ρ| over 28 layers, while the
+SAME JSON (`pv_validation.json`) carried the selection-inherited
+cluster bootstrap (`cluster_bootstrap_selection_inherited`, per-draw
+max-|ρ| layer re-selection inside each resample): [−0.957, +0.866] —
+spanning zero widely. The frozen CI overstated sign stability at a
+winner's-curse-selected layer; caught only at interpretation-critique.
+This clause moves the catch to plan time and analyzer time.
 
 ## Band-vs-ceiling informativeness check
 
@@ -298,6 +350,17 @@ shared-baseline). Fixing one does not fix the other.
   measurement-validity gate + `interpretation-critic.md`
   § Alternative Explanations narrate an unreachable band as
   failure-to-reject.
+- Bootstrap-CI selection inheritance (plan side):
+  `planner-section-reference.md` §6 "Selection-symmetric nulls" block
+  registers any CI reported at a selected position as selection-inherited
+  (or both, labeled); `critic-lens-reference.md` Statistics & Measurement
+  item 11 + `statistics-critic.md` item 11 (v2) REVISE a frozen-only CI
+  at a max-selected position.
+- Bootstrap-CI selection inheritance (interpretation side): `analyzer.md`
+  measurement-validity gate item 4 (full text:
+  `analyzer-section-reference.md` § Step 1) + `interpretation-critic.md`
+  § Alternative Explanations flag a frozen-at-winner CI quoted where the
+  selection-inherited CI carries the stability claim (#1434).
 - Noise-structure symmetry (plan side): `planner-section-reference.md` §6
   "Selection-symmetric nulls" block (noise-structure paragraph) — a plan
   registering a shared-sampled-baseline difference-vector statistic names
@@ -315,6 +378,9 @@ Task body #810 (the band-vs-ceiling incident: band p97.5 = 0.800 vs an
 achievable difference ceiling from ~0.857 max skill; p = 0.634 initially
 narrated as an ordering fail);
 Task body #778 (the origin incident + n=24 asymmetry numbers);
+Task body #1434 (the frozen-vs-inherited bootstrap-CI incident: frozen
+[−0.949, −0.467] vs selection-inherited [−0.957, +0.866] at a
+max-|ρ|-over-28-layers-selected layer, both in `pv_validation.json`);
 Task body #1415 (the shared-baseline noise incident: prefix 0.271→0.178,
 context 0.362→0.272, one pair 0.23→−0.08, 6/28 prefix pairs below null
 p97.5 0.043 under disjoint halves; the interp-critique v1 marker carries

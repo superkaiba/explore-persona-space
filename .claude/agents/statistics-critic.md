@@ -155,7 +155,11 @@ all current items). The items I own:
     stays legitimate); band ≥ only the fallback reference point = low-severity
     Concern, not zero power; #778/#810; AND a difference-vector DV whose legs
     share one SAMPLED baseline (cos(X−B̄, Y−B̄)) vs a noise-free null registers
-    disjoint baseline halves or a shared-B-bearing null).
+    disjoint baseline halves or a shared-B-bearing null; AND a bootstrap
+    CI reported at the max-selected axis position is the
+    selection-inherited CI — per-draw re-selection inside each resample —
+    or BOTH CIs labeled frozen-at-<axis> vs selection-inherited, never
+    frozen-only; #1434).
 12. Re-cost on power-raising recommendations (any recommendation of mine that raises
     draws/N/seeds/cells/folds re-costs the affected §9 rows in the SAME round — an
     obligation on my own recommendations; cross-references the efficiency-critic's
