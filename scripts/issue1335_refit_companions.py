@@ -159,13 +159,15 @@ def seed_sidecars(args, slug: str, mk: str) -> None:
         return
     store_dir.mkdir(parents=True, exist_ok=True)
     prefix = f"{r1335.HF_PREFIX}/analysis_tensors/store_{slug}_{mk}"
+    from explore_persona_space.orchestrate.hub import list_hf_files_under_path
+
     api = HfApi()
     names = [
-        e.path.split("/")[-1]
-        for e in api.list_repo_tree(
-            r1335.HF_DATA_REPO, prefix, repo_type="dataset", revision=HF_REV
+        p.split("/")[-1]
+        for p in list_hf_files_under_path(
+            api, r1335.HF_DATA_REPO, prefix, repo_type="dataset", revision=HF_REV
         )
-        if e.path.endswith(".json") and "_shard" in e.path
+        if p.endswith(".json") and "_shard" in p
     ]
     assert names, f"no shard sidecars on Hub under {prefix}"
     for name in names:
