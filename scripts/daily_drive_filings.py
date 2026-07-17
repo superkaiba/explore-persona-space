@@ -158,6 +158,10 @@ SHA_ADVISORY_TMPL = (
     " resolve as a commit in this repo at filing time — treat as a transcript/session"
     " reference, not a commit."
 )
+# A wedged git must never hang the 3 AM filer: rev-parse is ~5 ms, so 10s is generous.
+# TimeoutExpired routes to the same fail-open WARN path as OSError (scan skipped,
+# filing proceeds) — the caller catches it alongside OSError/UnicodeDecodeError.
+SHA_REV_PARSE_TIMEOUT_S = 10
 
 
 def _insert_under_provenance(text: str, block: str) -> str:
@@ -205,13 +209,15 @@ def _sha_resolves(token: str, root: Path) -> bool:
     ``git -C <root> rev-parse --verify --quiet '<token>^{commit}'`` — rc 0 means it
     resolves; any other rc (1 = unknown object; 128 = not a repo / other git error)
     reads as not-resolving, which at worst upgrades nothing beyond a WARN (the
-    backstop is WARN-only by construction). An OSError (git binary missing)
-    propagates to _check_body_shas' single fail-open WARNING.
+    backstop is WARN-only by construction). An OSError (git binary missing) or a
+    subprocess.TimeoutExpired (hung git, SHA_REV_PARSE_TIMEOUT_S cap) propagates
+    to _check_body_shas' single fail-open WARNING.
     """
     proc = subprocess.run(
         ["git", "-C", str(root), "rev-parse", "--verify", "--quiet", f"{token}^{{commit}}"],
         capture_output=True,
         text=True,
+        timeout=SHA_REV_PARSE_TIMEOUT_S,
     )
     return proc.returncode == 0
 
@@ -255,8 +261,10 @@ def _check_body_shas(item: dict, dirpath: Path, root: Path) -> list[str]:
     NEVER a ``workflow_fix_target:`` line) plus a stderr WARNING; tier 2 (any other
     non-resolving hex token) gets a stderr WARNING only. Returns the tier-1 tokens
     (the ``filed`` ledger row's ``sha_warnings`` value). Fail-open: any OSError
-    (git unavailable, unreadable body) → ONE loud WARNING and ``[]`` — the backstop
-    never blocks a filing and never changes the driver's exit code.
+    (git unavailable, unreadable body), UnicodeDecodeError (non-UTF-8 body — a
+    ValueError subclass, NOT an OSError), or subprocess.TimeoutExpired (hung git)
+    → ONE loud WARNING and ``[]`` — the backstop never blocks a filing and never
+    changes the driver's exit code.
     """
     slug = item["slug"]
     try:
@@ -289,7 +297,7 @@ def _check_body_shas(item: dict, dirpath: Path, root: Path) -> list[str]:
             os.replace(tmp, body_path)  # temp+rename, same pattern as load_ledger
             print(f"ANNOTATED {slug}: {len(new_lines)} sha-verify advisory line(s) (#1467)")
         return tier1
-    except OSError as e:
+    except (OSError, UnicodeDecodeError, subprocess.TimeoutExpired) as e:
         # Deliberate fail-open (plan #1467 §4): the backstop must never block a
         # filing — surface loudly, skip the scan, and leave the compose-time duty
         # (daily SKILL.md route-2 mandate) as the defense.
@@ -328,13 +336,14 @@ def _dry_run_sha_note(item: dict, dirpath: Path, root: Path) -> str:
     """The dry-run mirror of _check_body_shas (#1467): report counts, mutate nothing.
 
     Returns a suffix for the dry-run FILE line — empty when the scan is clean;
-    fail-open (a note, never a raise) on git/read OSError, mirroring the real path.
+    fail-open (a note, never a raise) on git/read OSError, a non-UTF-8 body's
+    UnicodeDecodeError, or a hung-git TimeoutExpired, mirroring the real path.
     """
     try:
         tier1, tier2 = scan_unresolvable_shas(
             _resolve_body_path(item, dirpath).read_text(encoding="utf-8"), root
         )
-    except OSError as e:
+    except (OSError, UnicodeDecodeError, subprocess.TimeoutExpired) as e:
         return f" [sha-scan skipped: {e.__class__.__name__}]"
     if tier1 or tier2:
         return f" [sha-scan: {len(tier1)} commit-context, {len(tier2)} other non-resolving]"

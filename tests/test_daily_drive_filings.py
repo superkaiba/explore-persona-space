@@ -930,3 +930,34 @@ def test_process_item_records_sha_warnings_in_ledger(tmp_path, tasks_root, monke
     snap = (d / "body_at_invocation.md").read_text(encoding="utf-8")
     assert "sha-verify (filing-time, #1467)" in snap
     assert "`deadbee7f00d`" in snap
+
+
+def test_non_utf8_body_fails_open_scan_skipped(tmp_path, tasks_root, capsys):
+    # Round-2 regression (sha-scan-decode-crash): read_text(encoding="utf-8") raises
+    # UnicodeDecodeError (a ValueError subclass, NOT an OSError) on a non-UTF-8 body;
+    # the fail-open except must catch it — one WARN, no annotation, filing proceeds,
+    # exit 0. Pre-fix the exception escaped process_item and aborted the ENTIRE
+    # nightly run (plan #1467 §6 never-refuse kill criterion). Hermetic: the decode
+    # crash fires before any rev-parse, so no git object set is consulted.
+    item = make_item("sha-decode", route=3)
+    d = make_filings_dir(tmp_path, [item])
+    body_path = d / "sha-decode.md"
+    raw = b"## Goal\n\nlog line quoting a stray \x80 byte verbatim.\n"
+    body_path.write_bytes(raw)
+
+    # Dry-run first (write-free): exercises the _dry_run_sha_note except leg.
+    rc_dry = run_driver(d, tasks_root, make_stub(tmp_path, d), "--dry-run")
+    assert rc_dry == 0
+    assert "[sha-scan skipped: UnicodeDecodeError]" in capsys.readouterr().out
+    assert ledger_rows(d) == []  # dry-run stays ledger-write-free
+
+    # Real path: exercises the _check_body_shas except leg end to end.
+    rc = run_driver(d, tasks_root, make_stub(tmp_path, d))
+    assert rc == 0  # fail-open: the scan skip never changes the driver exit code
+    err = capsys.readouterr().err
+    assert err.count("sha-verify scan skipped") == 1  # ONE loud WARNING
+    assert "UnicodeDecodeError" in err
+    filed = [r for r in ledger_rows(d) if r["outcome"] == "filed"]
+    assert len(filed) == 1  # the filing itself proceeded
+    assert "sha_warnings" not in filed[0]  # skipped scan -> no ledger key
+    assert body_path.read_bytes() == raw  # no annotation; body byte-untouched
