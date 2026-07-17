@@ -1108,6 +1108,7 @@ def _mirror_513_uploads(api, adapters: Path, list_repo_files, hf_model_repo: str
             ):
                 seed = cell_dir.name.rsplit("seed", 1)[1]
                 mirror_dir = f"issue458_pair_{i458_cell}_seed{seed}/sft_narrow_adapter"
+                # UPLOAD_PREFIX_EXEMPT: deliberate #513-style mirror into issue458_* adapter paths
                 api.upload_folder(
                     folder_path=str(cell_dir),
                     repo_id=hf_model_repo,
