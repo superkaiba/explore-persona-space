@@ -147,6 +147,207 @@ def matched_battery(X, Y, groups, n_min: int, *, seed: int) -> dict:
 
 HF_REV = "08421fc22bbe42968670c4ffbfcc561dd9cf4aa5"
 
+# ------------------------------------------------------------------ collapse-
+# conditional refit (seed44-base-rungs companion, follow-ups v2 rank 1):
+# refit the committed seed-42 base r7_endpoint store excluding the scene
+# trajectories the seed-43 round's collapse audit implicated. Pinned counts
+# are FACTS about the frozen Hub artifact at HF_REV (re-verified 2026-07-17):
+# 781 slot-4 lines exactly "I agree." (= 781 (scenario, persona) trajectories,
+# per-persona Wren 246 / HELIOS 234 / Dana 215 / Vex 86) and 996 lines under
+# the 4-token keep floor (830 slot-4 + 139 slot-5 + 27 slot-2/3) across 839
+# trajectories.
+COLLAPSE_LINE = "I agree."
+EXPECTED_AGREE_TRAJ = 781
+EXPECTED_UNDER_FLOOR_LINES = 996
+
+
+def collapse_exclusion_sets(jsonl_path: Path) -> dict:
+    """Exclusion sets from an endpoint rollout JSONL: (scenario_id, persona)
+    trajectories whose slot-4 line is exactly COLLAPSE_LINE, and trajectories
+    carrying ANY under-floor line (n_completion_tokens < DIALOGUE_MIN_TOKENS).
+    Returns {'agree_traj', 'under_floor_traj', 'n_lines',
+    'n_under_floor_lines'}; newline-split read (never splitlines)."""
+    agree: set[tuple[str, str]] = set()
+    under: set[tuple[str, str]] = set()
+    n_under_lines = 0
+    total = 0
+    with open(jsonl_path, encoding="utf-8") as fh:
+        for line in fh:
+            if not line.strip():
+                continue
+            row = json.loads(line)
+            total += 1
+            key = (str(row["scenario_id"]), str(row["persona"]))
+            if int(row["n_completion_tokens"]) < r1335.DIALOGUE_MIN_TOKENS:
+                n_under_lines += 1
+                under.add(key)
+            if int(row["slot"]) == 4 and (row.get("completion") or "").strip() == COLLAPSE_LINE:
+                agree.add(key)
+    assert total > 0, f"empty rollout JSONL {jsonl_path}"
+    return {
+        "agree_traj": agree,
+        "under_floor_traj": under,
+        "n_lines": total,
+        "n_under_floor_lines": n_under_lines,
+    }
+
+
+def collapse_keep_mask(store: dict, persona: str, excluded: set[tuple[str, str]]) -> np.ndarray:
+    """Row keep-mask for one persona unit of a fiction store: keep rows whose
+    (scenario == group_id, persona) trajectory is NOT excluded. Fail-loud on
+    an all-dropped unit (an empty fit is never silently produced)."""
+    m_p = np.asarray(store["char_ids"]) == persona
+    keep_traj = np.asarray([(str(g), persona) not in excluded for g in store["group_ids"]])
+    mask = m_p & keep_traj
+    assert mask.any(), f"collapse filter dropped EVERY {persona} row — refusing an empty fit"
+    return mask
+
+
+def stage_seed42_store(args, slug: str, mk: str) -> bool:
+    """Ensure the seed-42 (rung, model) store — sidecars AND .pt shards — is
+    local; when absent, stage the whole Hub prefix at HF_REV via the canonical
+    hub.stage_hub_prefix (#1402), then map the verbatim prefix mirror into the
+    consumer layout (#928: mirror != consumer layout; same-filesystem
+    os.replace). Returns True when anything was staged."""
+    import os
+
+    store_dir = f1335.store_root(args) / slug / mk
+    sidecars = sorted(store_dir.glob(f"{mk}_shard*.json"))
+    pts = sorted(store_dir.glob(f"{mk}_shard*.pt"))
+    if sidecars and len(pts) == len(sidecars):
+        return False
+    from explore_persona_space.orchestrate import hub
+
+    prefix = f"{r1335.HF_PREFIX}/analysis_tensors/store_{slug}_{mk}"
+    stage_root = args.data_dir / "hf_dl"
+    hub.stage_hub_prefix(
+        r1335.HF_DATA_REPO, prefix, stage_root, repo_type="dataset", revision=HF_REV
+    )
+    staged = stage_root / prefix
+    store_dir.mkdir(parents=True, exist_ok=True)
+    n = 0
+    for p in sorted(staged.iterdir()):
+        os.replace(p, store_dir / p.name)
+        n += 1
+    assert sorted(store_dir.glob(f"{mk}_shard*.pt")), f"no .pt shards staged under {prefix}"
+    print(f"[refit] staged {n} store files for {slug}/{mk} via stage_hub_prefix @ {HF_REV[:12]}")
+    return True
+
+
+def run_collapse_conditional(args) -> None:
+    """Collapse-conditional refit of the committed seed-42 base r7_endpoint
+    store: per-persona L19 ctx held-out R² (inner-group-CV λ, scene-grouped
+    folds, group bootstrap — the fit825 core incl. _eigh_robust, byte-for-byte
+    the committed cell recipe) under two exclusions — (a) trajectories whose
+    slot-4 line collapsed to 'I agree.' and (b) the stricter any-under-floor-
+    line trajectories — beside a full-unit reproduction anchor asserted ±1e-6
+    against the committed seed-42 cells, read against the seed-43 cells."""
+    slug, mk = "r7_endpoint", "base"
+    assert r1335.HF_PREFIX == "issue1335_ablation_ladder", (
+        f"collapse-conditional refits the SEED-42 store; run without "
+        f"EPM_I1335_HF_PREFIX (got prefix {r1335.HF_PREFIX!r})"
+    )
+    jsonl = args.rollouts_jsonl
+    pins_apply = jsonl is None
+    if jsonl is None:
+        from explore_persona_space.orchestrate import hub
+
+        dest = args.data_dir / "hf_dl" / "endpoint_base_gen.jsonl"
+        if not dest.exists():
+            hub.stage_hub_file(
+                r1335.HF_DATA_REPO,
+                f"{r1335.HF_PREFIX}/raw_completions/endpoint/base_gen.jsonl",
+                dest,
+                repo_type="dataset",
+                revision=HF_REV,
+            )
+        jsonl = dest
+    ex = collapse_exclusion_sets(Path(jsonl))
+    if pins_apply:
+        assert len(ex["agree_traj"]) == EXPECTED_AGREE_TRAJ, (
+            len(ex["agree_traj"]),
+            EXPECTED_AGREE_TRAJ,
+        )
+        assert ex["n_under_floor_lines"] == EXPECTED_UNDER_FLOOR_LINES, (
+            ex["n_under_floor_lines"],
+            EXPECTED_UNDER_FLOOR_LINES,
+        )
+    else:
+        print("[refit] NOTE: explicit --rollouts-jsonl — frozen-artifact count pins skipped")
+    print(
+        f"[refit] exclusions: {len(ex['agree_traj'])} 'I agree.' trajectories, "
+        f"{ex['n_under_floor_lines']} under-floor lines across "
+        f"{len(ex['under_floor_traj'])} trajectories ({ex['n_lines']} lines)"
+    )
+
+    staged = stage_seed42_store(args, slug, mk)
+    store = f1335.load_rung_store(args, slug, mk)
+    X_all, Y_all = slice_l19(store)
+    groups = np.asarray(store["group_ids"])
+    per_persona: dict = {}
+    variants = (
+        ("excl_slot4_agree", ex["agree_traj"]),
+        ("excl_any_under_floor", ex["under_floor_traj"]),
+    )
+    import issue1310_common as c1310  # persona label order (fit-side convention)
+
+    personas = list(c1310.PERSONA_LABELS)
+    if args.personas:
+        personas = [p.strip() for p in args.personas.split(",") if p.strip()]
+        bad = [p for p in personas if p not in c1310.PERSONA_LABELS]
+        assert not bad, f"unknown personas {bad} (choices: {list(c1310.PERSONA_LABELS)})"
+        print(f"[refit] NOTE: persona subset {personas} (smoke; production runs all)")
+    for persona in personas:
+        m_p = np.asarray(store["char_ids"]) == persona
+        assert m_p.any(), f"no {persona} rows in the {slug}/{mk} store"
+        anchor = fit_l19(X_all[m_p], Y_all[m_p], groups[m_p], n_boot=args.n_boot, seed=args.seed)
+        committed = committed_l19(args.out_dir, f"{slug}__{mk}__{persona}__ctx")
+        assert abs(anchor["r2"] - committed) < 1e-6, (persona, anchor["r2"], committed)
+        seed43 = committed_l19(args.seed43_dir, f"{slug}__{mk}__{persona}__ctx")
+        entry: dict = {
+            "committed_seed42_l19": committed,
+            "seed43_l19": seed43,
+            "anchor_repro_full_unit": anchor,
+        }
+        for label, excl in variants:
+            keep = collapse_keep_mask(store, persona, excl)
+            fit = fit_l19(
+                X_all[keep], Y_all[keep], groups[keep], n_boot=args.n_boot, seed=args.seed
+            )
+            fit["n_scenarios_kept"] = len(np.unique(groups[keep]))
+            fit["n_rows_dropped"] = int(m_p.sum() - keep.sum())
+            entry[label] = fit
+        per_persona[persona] = entry
+        print(
+            f"[refit] r7-collapse {persona}: anchor {anchor['r2']:.4f} "
+            f"(seed42 {committed:.4f} / seed43 {seed43:.4f}) "
+            f"agree-excl {entry['excl_slot4_agree']['r2']:.4f} "
+            f"underfloor-excl {entry['excl_any_under_floor']['r2']:.4f}"
+        )
+    if staged:
+        f1335.release_store_local(args, slug, mk)
+
+    out = {
+        "metadata": common.metadata(SCRIPT, args.seed, 0, extra={"issue": 1335}),
+        "mode": "collapse-conditional (seed44-base-rungs companion, seed-42 base r7 store)",
+        "headline_layer": HEADLINE_LAYER,
+        "lambda_selection": "inner-group-cv",
+        "hf_rev": HF_REV,
+        "rollouts_jsonl": str(jsonl),
+        "personas": personas,
+        "exclusion_counts": {
+            "n_lines": ex["n_lines"],
+            "n_under_floor_lines": ex["n_under_floor_lines"],
+            "n_agree_trajectories": len(ex["agree_traj"]),
+            "n_under_floor_trajectories": len(ex["under_floor_traj"]),
+            "count_pins_asserted": bool(pins_apply),
+        },
+        "per_persona": per_persona,
+    }
+    args.collapse_out.parent.mkdir(parents=True, exist_ok=True)
+    args.collapse_out.write_text(json.dumps(out, indent=2, default=float))
+    print(f"[refit] wrote {args.collapse_out}")
+
 
 def seed_sidecars(args, slug: str, mk: str) -> None:
     """Download a (rung, model) store's shard SIDECAR JSONs from the Hub when
@@ -206,8 +407,47 @@ def main() -> None:
     ap.add_argument("--n-boot", type=int, default=1000)
     ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--stage-from-hub", action="store_true", default=True)
+    ap.add_argument(
+        "--collapse-conditional",
+        action="store_true",
+        help="seed44-base-rungs companion: collapse-conditional refit of the "
+        "seed-42 base r7_endpoint store (skips the r2 companion batteries)",
+    )
+    ap.add_argument(
+        "--rollouts-jsonl",
+        type=Path,
+        default=None,
+        help="collapse mode: explicit endpoint rollout JSONL (default: stage the "
+        "frozen seed-42 base_gen.jsonl from the Hub @ HF_REV; an explicit path "
+        "skips the frozen-artifact count pins — smoke/fixture use)",
+    )
+    ap.add_argument(
+        "--seed43-dir",
+        type=Path,
+        default=Path("eval_results/issue_1335/seed43-gap-rungs"),
+        help="collapse mode: committed seed-43 cells dir (per-persona L19 reads)",
+    )
+    ap.add_argument(
+        "--personas",
+        type=str,
+        default="",
+        help="collapse mode: comma-separated persona subset (smoke slicing; "
+        "empty/default = ALL personas — production never narrows)",
+    )
+    ap.add_argument(
+        "--collapse-out",
+        type=Path,
+        default=Path(
+            "eval_results/issue_1335/seed44-base-rungs/refits_r7_collapse_conditional.json"
+        ),
+        help="collapse mode: output JSON path (the seed44 round's artifact dir)",
+    )
     args = ap.parse_args()
     args.folds = 5
+
+    if args.collapse_conditional:
+        run_collapse_conditional(args)
+        return
 
     results: dict = {
         "metadata": common.metadata(SCRIPT, args.seed, 0, extra={"issue": 1335}),
