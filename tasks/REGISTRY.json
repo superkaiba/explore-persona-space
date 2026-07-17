@@ -3439,8 +3439,8 @@
     "1441": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1441",
-      "status": "proposed",
+      "path": "tasks/planning/1441",
+      "status": "planning",
       "title": "daily-fix: add #1383 context clause to yaml BINDING summary"
     },
     "1442": {
