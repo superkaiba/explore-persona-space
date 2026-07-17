@@ -3467,8 +3467,8 @@
     "1445": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1445",
-      "status": "proposed",
+      "path": "tasks/planning/1445",
+      "status": "planning",
       "title": "daily-fix: SKILL_REF_RE filesystem-path false positive"
     },
     "1446": {
