@@ -1,6 +1,6 @@
 ---
-title: 'Ablations: why is the assistant context→answer map much stronger than the
-  fiction-character map (both survive template removal)?'
+title: Under a matched recipe the assistant-vs-fiction context→answer map gap vanishes
+  in base Qwen and is carried by fiction scene framing in instruct (MODERATE confidence)
 kind: experiment
 tags: []
 created_at: '2026-07-15T08:22:07Z'
