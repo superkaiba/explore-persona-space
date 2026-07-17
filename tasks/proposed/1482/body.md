@@ -32,6 +32,8 @@ goal: 'On the #779 fitter-fair-comparison-n1m mapping h: c_last(x) -> v(x) (last
   to the committed aggregate R2. Both mapping arms (prefix-based and context-based)
   for any newly fit map; a context-arm-only read of the existing n1M map is an explicit
   stated deviation.'
+relates_to:
+- spec-context-as-vector
 ---
 # Error analysis of the n1M context→answer map: worst-predicted contexts, worst-predicted SAE features, and the linear-vs-nonlinear gap
 
