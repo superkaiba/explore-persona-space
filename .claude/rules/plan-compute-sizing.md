@@ -175,8 +175,9 @@ accumulates; this block binds WHERE it lands and adds the per-phase runtime
 assert. The ≥5 GB inline-staging clause (CLAUDE.md compute-character
 pre-launch statement: staging path named up front + the filesystem it
 resolves to via `df -P` + ≥1.5× headroom) is the inline-analysis sibling.
-Critic-owned (the Methodology lens reads §9 disk rows); no verify_plan.py
-backstop in v1 of this block.
+Critic enforcement: Methodology lens item 16 MOUNT-BINDING EXTENSION
+(`.claude/rules/critic-lens-reference.md`) REVISEs a bare-GB / unbound-mount
+disk row; no verify_plan.py backstop in v1 of this block.
 
 
 **Sentinel-signaling workloads need a /workspace-contract lane — never
