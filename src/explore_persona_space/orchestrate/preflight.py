@@ -566,6 +566,88 @@ def _probe_writable_bytes(check_path: str, probe_bytes: int) -> tuple[bool, str 
             probe_path.unlink()
 
 
+def _mount_point_of(path: Path | str) -> str:
+    """Best-effort mount point of ``path``: longest /proc/mounts prefix of its realpath.
+
+    Diagnostic only (names the filesystem in logs/errors); returns "?" when
+    /proc/mounts is unreadable (non-Linux) — never raises.
+    """
+    try:
+        real = os.path.realpath(path)
+        best = "/"
+        with open("/proc/mounts") as fh:
+            for line in fh:
+                parts = line.split()
+                if len(parts) < 2:
+                    continue
+                mp = parts[1]
+                covers = real == mp or real.startswith(mp.rstrip("/") + "/")
+                if covers and len(mp) > len(best):
+                    best = mp
+        return best
+    except OSError:
+        return "?"
+
+
+def assert_out_root_headroom(
+    out_root: str | Path,
+    need_gb: float,
+    *,
+    phase: str = "",
+    canary_gb: float = 1.0,
+) -> float:
+    """Fail-loud disk-headroom assert at the filesystem ``out_root`` ACTUALLY resolves to.
+
+    Generalizes the #1333 ``_assert_out_root_headroom`` pattern (plan §9 names the
+    target mount per out-root; the workload preamble asserts headroom against that
+    mount before each write-heavy phase): ``os.statvfs`` free-vs-floor at the
+    out-root, plus a ``posix_fallocate`` canary (via ``_probe_writable_bytes``)
+    that catches an already-exhausted RunPod MooseFS per-pod EDQUOT quota that
+    statvfs is blind to. Raises RuntimeError naming path, resolved mount, free GB,
+    and floor GB BEFORE the phase writes; returns free GB on success. A filesystem
+    without fallocate support degrades to the statvfs check with a logged warning
+    (the ``_probe_writable_bytes`` fallback contract). See
+    ``.claude/rules/plan-compute-sizing.md`` § Out-root mount binding.
+    """
+    if need_gb <= 0:
+        raise ValueError(f"need_gb must be positive, got {need_gb}")
+    out_root = Path(out_root)
+    out_root.mkdir(parents=True, exist_ok=True)
+    st = os.statvfs(out_root)
+    free_gb = st.f_bavail * st.f_frsize / 1e9  # decimal GB, matches the #1333 floor arithmetic
+    mount = _mount_point_of(out_root)
+    tag = f"[disk-headroom] {phase}:" if phase else "[disk-headroom]"
+    if free_gb < need_gb:
+        raise RuntimeError(
+            f"{tag} out_root {out_root} (mount {mount}) has {free_gb:.1f} GB free "
+            f"< required {need_gb:.1f} GB (plan §9 floor). Did the out-root resolve to a "
+            f"smaller filesystem than the estimate was sized against? On RunPod, /tmp and "
+            f"paths outside /workspace are the container disk (typically ~50 GB) — use a "
+            f"/workspace-rooted out-root."
+        )
+    # Canary size deliberately in DECIMAL GB (int(canary_gb * 1e9)), matching the free-GB
+    # arithmetic above (#1333 used 1 << 30; the ~7% gap is immaterial for EDQUOT detection).
+    ok, fallback_reason = _probe_writable_bytes(str(out_root), int(canary_gb * 1e9))
+    if not ok:
+        raise RuntimeError(
+            f"{tag} {canary_gb:.0f} GB fallocate canary FAILED at {out_root} (mount {mount}) "
+            f"with statvfs free={free_gb:.1f} GB — per-pod quota (EDQUOT) or wedged "
+            f"filesystem; fix before writing {need_gb:.1f} GB."
+        )
+    if fallback_reason:
+        logger.warning("%s canary skipped: %s (statvfs-only check)", tag, fallback_reason)
+    logger.info(
+        "%s out_root=%s mount=%s free=%.1f GB (floor %.1f GB) canary=%s",
+        tag,
+        out_root,
+        mount,
+        free_gb,
+        need_gb,
+        "skipped" if fallback_reason else "ok",
+    )
+    return free_gb
+
+
 def _quota_aware_headroom_gb(share_free_gb: float, quota_gb: float | None) -> tuple[float, str]:
     """Cap the usable headroom at the per-pod quota so over-quota footprints show.
 

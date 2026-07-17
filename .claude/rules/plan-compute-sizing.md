@@ -1,5 +1,5 @@
 ---
-description: Planner §9 compute-sizing recipes — activation-capture HBM sizing, merge-disk budget, sentinel-signaling lane pins, the floor cross-check for long / many-call phases (planned_wall_h > 4 OR >~500 serial calls), the measured 1-cell fit-pilot basis for per-cell fit / factorization / GD phases (#1060), the store-heavy / IO-heavy phase recipe (measured per-item serialization+upload wall-time; compression-default-OFF for fp16→Xet), the CPU-phase RAM/RSS routing gate (projected peak RSS per VM-placed phase; ≥~16 GB single-or-summed routes off the shared VM), the dose-ladder checkpoint-retention default (keep dose-selected + latest, clean ruled-out rungs between rungs; size disk to the RETAINED set, #1133), and costing wall-time against the machine the router will ACTUALLY provision + p90-based fence sizing, and the external-stream >~1h presumption for network-bound streaming/harvest phases (#1092) (loads at plan time via plan-file paths; relocated verbatim from planner.md §9, #829)
+description: Planner §9 compute-sizing recipes — activation-capture HBM sizing, merge-disk budget, sentinel-signaling lane pins, the floor cross-check for long / many-call phases (planned_wall_h > 4 OR >~500 serial calls), the measured 1-cell fit-pilot basis for per-cell fit / factorization / GD phases (#1060), the store-heavy / IO-heavy phase recipe (measured per-item serialization+upload wall-time; compression-default-OFF for fp16→Xet), the CPU-phase RAM/RSS routing gate (projected peak RSS per VM-placed phase; ≥~16 GB single-or-summed routes off the shared VM), the dose-ladder checkpoint-retention default (keep dose-selected + latest, clean ruled-out rungs between rungs; size disk to the RETAINED set, #1133), and costing wall-time against the machine the router will ACTUALLY provision + p90-based fence sizing, and the external-stream >~1h presumption for network-bound streaming/harvest phases (#1092), and the out-root mount-binding contract (#1414, from incident #1333: each disk out-root names its target filesystem/mount; the workload preamble asserts headroom at that mount) (loads at plan time via plan-file paths; relocated verbatim from planner.md §9, #829)
 paths:
   - ".claude/plans/**"
   - "tasks/**/plans/**"
@@ -7,14 +7,15 @@ paths:
 
 # Plan compute sizing (planner §9 relocated recipes)
 
-These ten recipes are the planner-specific §9 sizing blocks — five relocated
+These eleven recipes are the planner-specific §9 sizing blocks — five relocated
 verbatim from `.claude/agents/planner.md` (#829), plus the
 store-heavy / IO-heavy phase recipe (#910, from incident #813), the
 CPU-phase RAM/RSS routing gate (#1031, from incidents #778/#833), the
 per-cell fit-phase pilot basis (#1060, from incidents #811/#931/#823), the
 external-stream floor presumption (#1092 — present since #1092, first counted
-here), and the dose-ladder checkpoint-retention default (#1133, from incident
-#1112). The planner
+here), the dose-ladder checkpoint-retention default (#1133, from incident
+#1112), and the out-root mount-binding contract (#1414, from incident
+#1333). The planner
 applies each when its trigger matches; the compute-projection table spec +
 stratification spec stay inline in planner.md §9.
 
@@ -122,6 +123,60 @@ WARNs an experiment|analysis plan carrying checkpoint-ladder vocabulary
 whose compute-sizing sections state no retention vocabulary (escape:
 `N/A — no per-rung checkpoint persistence`); surface-only — adequacy of a
 stated policy stays with this lens.
+
+
+**Out-root mount binding — every §9 disk estimate for an out-root NAMES the
+target filesystem/mount, and the workload preamble asserts headroom against
+the mount the out-root ACTUALLY resolves to.** A GB estimate alone does not
+bind the estimate to a filesystem: the out-root can silently land on a
+different (smaller) mount than the one the estimate was sized against, and a
+correct GB number on the wrong mount still ENOSPCs mid-write (#1333 attempt
+3: the dispatcher's out-root resolved outside `/workspace` — on RunPod
+everything outside `/workspace` is the CONTAINER disk, typically ~50 GB
+(`containerDiskInGb` is provision-configurable), not the MooseFS volume —
+and the run died "No space left on device" mid-checkpoint-serialization
+despite a correct §9 GB estimate; fixed in-session by anchoring the
+out-root under `/workspace` + per-phase headroom asserts, commit
+5a02359cc8). Two duties:
+
+1. **Plan-side (§9):** every disk row for an out-root (checkpoints, stores /
+   analysis tensors, staged inputs, scratch) states the PATH the phase
+   writes AND the filesystem/mount that path resolves to on the routed
+   lane — RunPod: the `/workspace` MooseFS volume (per-pod ~130 GB EDQUOT
+   quota; `/tmp/` + everything outside `/workspace` is the container disk,
+   typically ~50 GB — `.claude/rules/gotchas.md`); GCE: the boot disk
+   (sized by `--boot-disk-gb`; `$WORKLOAD_ROOT` = `/workspace/eps-issue-<N>`
+   lives on it); shared VM: `/` (fleet-shared boot disk, 40 GB preflight
+   floor) vs the `/mnt/eps-data` bind (per-issue ext4 quota — CLAUDE.md
+   § Disk hygiene); SLURM: `$SCRATCH`. When the auto router can land the
+   run on more than one lane, state the mount per candidate lane — a lane
+   failover changes the mount (the #1112 keep-all-ladder ENOSPC in the
+   retention block above is the failover-shaped sibling) — or pin the lane.
+2. **Preamble-side (workload contract):** before each write-heavy phase the
+   dispatcher asserts headroom against the mount the out-root RESOLVES to:
+   `os.statvfs(out_root)` free vs the phase's §9 floor PLUS a ~1 GB
+   `posix_fallocate` canary (statvfs is blind to an already-exhausted
+   MooseFS per-pod EDQUOT quota), raising with the numbers (path, resolved
+   mount, free GB, floor GB) BEFORE the phase writes — a mid-save ENOSPC
+   corrupts the checkpoint and forfeits the trained step. Canonical shared
+   helper:
+   `explore_persona_space.orchestrate.preflight.assert_out_root_headroom(
+   out_root, need_gb, phase=...)` (reuses preflight's
+   `_probe_writable_bytes` canary; returns free GB) — import it, never mint
+   a fresh per-issue copy; the per-phase floors are the §9 disk rows (the
+   `PHASE_HEADROOM_GB` shape — originating precedent
+   `scripts/issue1333_dispatch.py:302-346`). The process-START preflight
+   (`orchestrate.preflight` `check_disk_space`) probes ONE launch-time
+   check path; it does NOT cover an out-root on a different filesystem —
+   that gap is exactly #1333.
+
+Siblings: the merge-disk budget + ladder-retention blocks above size WHAT
+accumulates; this block binds WHERE it lands and adds the per-phase runtime
+assert. The ≥5 GB inline-staging clause (CLAUDE.md compute-character
+pre-launch statement: staging path named up front + the filesystem it
+resolves to via `df -P` + ≥1.5× headroom) is the inline-analysis sibling.
+Critic-owned (the Methodology lens reads §9 disk rows); no verify_plan.py
+backstop in v1 of this block.
 
 
 **Sentinel-signaling workloads need a /workspace-contract lane — never

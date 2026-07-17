@@ -347,11 +347,13 @@ to amortize 8× setup"). If the answer is "no parallelism axis applies,"
 say so — silence is not acceptable.
 
 > **Compute-sizing recipes (HBM sizing / merge-disk + ladder-checkpoint
-> retention / sentinel lanes / floor cross-check + external-stream
+> retention / Out-root mount binding / sentinel lanes / floor cross-check
+> + external-stream
 > presumption / fit-phase pilot basis / store-IO / CPU-phase RAM/RSS
 > routing / machine costing + p90 fence sizing)** — when sizing any §9
 > phase (activation capture, adapter merges, dose-ladder rung checkpoints,
-> sentinel-signaling workloads, long-phase wall-time floors,
+> checkpoint/store out-roots, sentinel-signaling workloads,
+> long-phase wall-time floors,
 > store-heavy writes, VM-placed CPU-phase RAM, per-machine wall-time costing,
 > a deliberate GCP fence), READ
 > `.claude/rules/plan-compute-sizing.md` IN FULL before writing the table.
