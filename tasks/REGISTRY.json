@@ -3726,8 +3726,8 @@
     "1479": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1479",
-      "status": "planning",
+      "path": "tasks/approved/1479",
+      "status": "approved",
       "title": "workflow-fix: LESSONS.md over ratchet \u2014 trim/bump _LESSONS_RATCHET_BYTES (red default lint on main)"
     },
     "148": {
