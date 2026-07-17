@@ -1,0 +1,1 @@
+{"ts": "2026-07-17T07:55:48Z", "event": "raised", "concern_id": "devfs-nonfinite-env-overflow-escapes-failsoft", "severity": "CONCERN", "summary": "check_device_fs_gap raises OverflowError (crashes cron guard) on EPS_VM_DEVICE_FS_GAP_MIN_GB=inf/>=1.5e299: floor_b int() sits before the try; accessor >=0 clamp passes inf", "raised_by": "code-reviewer", "raised_at_round": 1}
