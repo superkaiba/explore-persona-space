@@ -3326,8 +3326,8 @@
       "goal": "Determine whether the CoT-mediation signature and the in-context-learning/WildChat family gain excess generalize beyond the Qwen base family by replicating the CoT-decomposition battery on DeepSeek-R1-Distill-Llama-8B, and read which CoT-length gradient profile \u2014 the parent's falling gradient or #1005's flat-to-rising inversion \u2014 travels with the base lineage.",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/planning/1426",
-      "status": "planning",
+      "path": "tasks/approved/1426",
+      "status": "approved",
       "title": "Third-lineage CoT-decomposition replication on DeepSeek-R1-Distill-Llama-8B (non-Qwen base)"
     },
     "1427": {
