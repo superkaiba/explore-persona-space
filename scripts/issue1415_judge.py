@@ -18,7 +18,15 @@ Judged set (round-B spec; ~4,800 completions x 5 draws ~= 24,000 calls):
 - all-position variant (``phase1c_allpos``)
 - r_B arms (``phase1d_full``)
 The 6-remaining-layer sweep cells (``phase1c_layers``) carry the geometric DV
-only and are NOT judged (plan §4.9).
+only and are NOT judged by the primary run (plan §4.9). The opt-in
+``--layer-sweep`` mode (9a-ter free-analysis follow-up from
+``epm:interpretation v2``) judges EXACTLY those cells instead — 336 cells =
+6 layers {7,10,14,17,21,24} x 2 extraction arms x 28 pairs at the selected
+alpha, 10 draws each — writing to a SEPARATE output
+(``behavioral_judge_scores_layer_sweep.json``) and a SEPARATE work-dir
+partition (``data/issue_1415/judge_layer_sweep/``) so the primary scores +
+rubric caches are untouched. Arm labels carry the layer
+(``steered_L14_context``).
 
 Rubric per cell: for ``phase1d_full`` cells the steered TRAIT's persona-vectors
 eval_prompt; otherwise the pair bank's ``trait_or_behavior`` label — traits use
@@ -58,6 +66,9 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(mess
 logger = logging.getLogger("issue1415_judge")
 
 JUDGED_PHASES = ("phase1b", "phase1c_grid", "phase1c_retry", "phase1c_allpos", "phase1d_full")
+# Opt-in --layer-sweep mode judges EXACTLY the layer-sweep steered cells
+# (disjoint from JUDGED_PHASES, so the two outputs never overlap).
+LAYER_SWEEP_PHASES = ("phase1c_layers",)
 N_JUDGE_DRAWS = 5
 JUDGE_MAX_TOKENS = 300  # reason-then-score budget (llm-judging rule 23; >= ~300)
 BINARY_THRESHOLD = 50.0
@@ -111,19 +122,41 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     ap.add_argument(
         "--out-json",
         type=Path,
-        default=common.REPO_ROOT / "eval_results" / "issue_1415" / "behavioral_judge_scores.json",
+        default=None,
+        help="default: eval_results/issue_1415/behavioral_judge_scores.json "
+        "(_layer_sweep variant under --layer-sweep)",
     )
     ap.add_argument(
         "--work-dir",
         type=Path,
-        default=common.REPO_ROOT / "data" / "issue_1415" / "judge",
-        help="cache_dir + save_raw partitions live here (HF-bound raw)",
+        default=None,
+        help="cache_dir + save_raw partitions live here (HF-bound raw); default: "
+        "data/issue_1415/judge (judge_layer_sweep under --layer-sweep)",
+    )
+    ap.add_argument(
+        "--layer-sweep",
+        action="store_true",
+        help="judge the phase1c_layers sweep cells INSTEAD of the primary subset, "
+        "to a separate output + work-dir (9a-ter follow-up)",
     )
     ap.add_argument("--n-draws", type=int, default=N_JUDGE_DRAWS)
     ap.add_argument("--max-tokens", type=int, default=JUDGE_MAX_TOKENS)
     ap.add_argument("--limit-cells", type=int, default=None, help="smoke: judge first N cells")
     ap.add_argument("--dry-run", action="store_true")
-    return ap.parse_args(argv)
+    args = ap.parse_args(argv)
+    # Deferred defaults: the layer-sweep mode gets a fully separate output +
+    # work-dir partition so the primary scores + rubric caches stay untouched.
+    if args.out_json is None:
+        name = (
+            "behavioral_judge_scores_layer_sweep.json"
+            if args.layer_sweep
+            else "behavioral_judge_scores.json"
+        )
+        args.out_json = common.REPO_ROOT / "eval_results" / "issue_1415" / name
+    if args.work_dir is None:
+        subdir = "judge_layer_sweep" if args.layer_sweep else "judge"
+        args.work_dir = common.REPO_ROOT / "data" / "issue_1415" / subdir
+    return args
 
 
 # ── rubric resolution ─────────────────────────────────────────────────
@@ -183,6 +216,10 @@ def arm_label(meta: dict) -> str:
         return "baseline" if meta["arm_label"] == "hf_nohook_base" else "ceiling"
     if ph in ("phase1c_grid", "phase1c_retry"):
         return f"steered_primary_{meta['extraction_arm']}"
+    if ph == "phase1c_layers":
+        # Layer-carrying label (e.g. steered_L14_context) so downstream reads
+        # of the layer-sweep output are unambiguous per (layer, arm).
+        return f"steered_L{meta['layer']}_{meta['extraction_arm']}"
     if ph == "phase1c_allpos":
         return f"allpos_{meta['extraction_arm']}"
     if ph == "phase1d_full":
@@ -190,15 +227,19 @@ def arm_label(meta: dict) -> str:
     raise ValueError(f"unjudged phase {ph!r} reached arm_label")
 
 
-def enumerate_cells(out_root: Path, limit: int | None) -> list[dict]:
+def enumerate_cells(
+    out_root: Path, limit: int | None, phases: tuple[str, ...] = JUDGED_PHASES
+) -> list[dict]:
+    """Cell metas whose ``phase`` is in ``phases`` (default: the primary
+    judged set; ``--layer-sweep`` passes :data:`LAYER_SWEEP_PHASES`)."""
     cells_dir = out_root / "cells"
     assert cells_dir.exists(), f"phase-1 cells metadata missing: {cells_dir}"
     metas = []
     for p in sorted(cells_dir.rglob("*.json")):
         meta = json.loads(p.read_text())
-        if meta.get("phase") in JUDGED_PHASES:
+        if meta.get("phase") in phases:
             metas.append(meta)
-    assert metas, f"no judged-phase cells under {cells_dir} (phases {JUDGED_PHASES})"
+    assert metas, f"no judged-phase cells under {cells_dir} (phases {phases})"
     if limit is not None:
         metas = metas[:limit]
     return metas
@@ -389,7 +430,8 @@ def main(argv: list[str] | None = None) -> None:
     bank = json.loads(args.pair_bank.read_text())
     pair_labels = {p["pair_id"]: p["trait_or_behavior"] for p in bank["pairs"]}
 
-    metas = enumerate_cells(args.out_root, args.limit_cells)
+    phases = LAYER_SWEEP_PHASES if args.layer_sweep else JUDGED_PHASES
+    metas = enumerate_cells(args.out_root, args.limit_cells, phases=phases)
     by_label, id_map = build_items(metas, args.bulk_root, pair_labels)
     # Persist the compact -> full cell-id round-trip map BEFORE any judge call
     # (atomic write) so the raw save_raw files (keyed by compact custom_ids)
@@ -467,15 +509,26 @@ def main(argv: list[str] | None = None) -> None:
             # full cell ids (crash-fix r2, epm:failure v2 custom_id overflow).
             "id_map_file": str(id_map_path),
         },
-        "judged_phases": list(JUDGED_PHASES),
+        "judged_phases": list(phases),
         "deviations": [
             "plan §4.9 judge temperature 0.6 not realized — draws sample at the "
             "Anthropic API default (judge_graded does not thread temperature; "
             "recorded per llm-judging rule 18)",
-            "phase1d_search cells (r_B alpha-search subset, ~600 completions) are "
-            "NOT judged — they only feed the coherence gate; plan §9 2c counted "
-            "them in the ~1,440 r_B figure (recorded deviation, round-1 Minor 2)",
-        ],
+        ]
+        + (
+            [
+                "layer-sweep follow-up (9a-ter, epm:interpretation v2): judges the "
+                "phase1c_layers steered cells the plan §4.9 scoped as geometric-DV-"
+                "only; primary-subset scores live in behavioral_judge_scores.json "
+                "(separate work-dir partition, caches untouched)"
+            ]
+            if args.layer_sweep
+            else [
+                "phase1d_search cells (r_B alpha-search subset, ~600 completions) are "
+                "NOT judged — they only feed the coherence gate; plan §9 2c counted "
+                "them in the ~1,440 r_B figure (recorded deviation, round-1 Minor 2)"
+            ]
+        ),
         "k1_judge_check": k1,
         "per_arm": per_arm,
         "per_item": per_item,
