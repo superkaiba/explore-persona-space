@@ -209,14 +209,46 @@ def rubric_label_for(meta: dict, pair_labels: dict[str, str]) -> str:
     return pair_labels[meta["pair_id"]]
 
 
+# Anthropic Batch custom_ids cap at 64 chars and judge_graded's encoder appends
+# 11 chars ("__NNNNN__NN"), so item ids must stay <= 53 chars. Hierarchical
+# cell ids overflow (epm:failure v2: the 64-char
+# 'gen1c_allpos/context/cross_03_sycophancy_to_hallucination/L20/a4' class), so
+# item ids use a hash-based compact cell key + a persisted round-trip map.
+ITEM_ID_MAX_CHARS = 53
+
+
+def compact_cell_key(cell_id: str) -> str:
+    """Deterministic compact key for a cell id: ``h`` + first 12 hex of sha1.
+
+    13 chars; with the ``/d<draw>`` suffix the item id stays <= ~18 chars
+    regardless of future pair-id lengths (budget: :data:`ITEM_ID_MAX_CHARS`).
+    Collisions are asserted against in :func:`build_items` (fail loud); the
+    key -> full cell id map is persisted to ``work_dir/id_map.json`` so raw
+    judge outputs (``save_raw`` files keyed by compact custom_ids) stay
+    auditable.
+    """
+    return "h" + hashlib.sha1(cell_id.encode()).hexdigest()[:12]
+
+
 def build_items(
     metas: list[dict], bulk_root: Path, pair_labels: dict[str, str]
-) -> dict[str, list[tuple[str, str, str]]]:
-    """{rubric_label: [(item_id, question, answer), ...]} — one item per
-    generated completion draw (each judged n_draws times downstream)."""
+) -> tuple[dict[str, list[tuple[str, str, str]]], dict[str, str]]:
+    """({rubric_label: [(item_id, question, answer), ...]}, id_map) — one item
+    per generated completion draw (each judged n_draws times downstream).
+
+    ``item_id`` = ``{compact_cell_key(cell_id)}/d{draw}`` (custom_id budget,
+    see :func:`compact_cell_key`); ``id_map`` maps compact cell key -> full
+    cell id for rehydration in :func:`reduce_results`. Raises ``ValueError``
+    on a sha1-12 cell-key collision (fail loud, never silent aliasing)."""
     by_label: dict[str, list[tuple[str, str, str]]] = {}
+    id_map: dict[str, str] = {}
     for meta in metas:
         cell_id = meta["cell_id"]
+        ckey = compact_cell_key(cell_id)
+        prior = id_map.get(ckey)
+        if prior is not None and prior != cell_id:
+            raise ValueError(f"compact cell-key collision: {ckey!r} maps {prior!r} AND {cell_id!r}")
+        id_map[ckey] = cell_id
         comp = bulk_root / "raw_completions" / f"{cell_id}.json"
         assert comp.exists(), f"completions missing for judged cell {cell_id}: {comp}"
         draws = json.loads(comp.read_text())["draws"]
@@ -224,10 +256,13 @@ def build_items(
         question = meta["context"]["user"]
         label = rubric_label_for(meta, pair_labels)
         for di, text in enumerate(draws):
-            item_id = f"{cell_id}/d{di}"
+            item_id = f"{ckey}/d{di}"
             assert "__" not in item_id, item_id  # judge_graded custom_id delimiter
+            assert len(item_id) <= ITEM_ID_MAX_CHARS, item_id  # 64-char custom_id budget
             by_label.setdefault(label, []).append((item_id, question, text))
-    return by_label
+    # Belt-and-suspenders: one compact key per distinct full cell id.
+    assert len(id_map) == len({m["cell_id"] for m in metas}), "compact cell-key collision"
+    return by_label, id_map
 
 
 # ── reduction + per-arm report ────────────────────────────────────────
@@ -238,17 +273,23 @@ def reduce_results(
     results: dict[str, object],
     by_label: dict[str, list[tuple[str, str, str]]],
     n_draws: int,
+    id_map: dict[str, str],
 ) -> tuple[dict, dict]:
+    """Rehydrates compact item ids via ``id_map`` — the OUTPUT schema stays
+    keyed by the FULL readable ``{cell_id}/d{draw}`` id (downstream consumers
+    unchanged; only the Batch custom_ids are compact)."""
     meta_by_cell = {m["cell_id"]: m for m in metas}
     assert set(results) == set(by_label), (sorted(results), sorted(by_label))
     per_item: dict[str, dict] = {}
     for label, res in results.items():
         for item_id, score in res.scores.items():
-            cell_id = item_id.rsplit("/d", 1)[0]
+            ckey, di = item_id.rsplit("/d", 1)
+            cell_id = id_map[ckey]  # rehydrate compact key -> full cell id (fail loud)
+            full_id = f"{cell_id}/d{di}"
             meta = meta_by_cell[cell_id]
             kept = res.per_item_draw_counts.get(item_id, 0)
             transport = res.per_item_transport_losses.get(item_id, 0)
-            per_item[item_id] = {
+            per_item[full_id] = {
                 "cell_id": cell_id,
                 "pair_id": meta["pair_id"],
                 "phase": meta["phase"],
@@ -347,7 +388,19 @@ def main(argv: list[str] | None = None) -> None:
     pair_labels = {p["pair_id"]: p["trait_or_behavior"] for p in bank["pairs"]}
 
     metas = enumerate_cells(args.out_root, args.limit_cells)
-    by_label = build_items(metas, args.bulk_root, pair_labels)
+    by_label, id_map = build_items(metas, args.bulk_root, pair_labels)
+    # Persist the compact -> full cell-id round-trip map BEFORE any judge call
+    # (atomic write) so the raw save_raw files (keyed by compact custom_ids)
+    # stay auditable even after a mid-run crash.
+    id_map_path = args.work_dir / "id_map.json"
+    common.write_json_atomic(id_map_path, id_map)
+    max_item_chars = max(len(i) for items in by_label.values() for i, _q, _a in items)
+    logger.info(
+        "[judge] item ids compact (max %d chars, id_map %d cells) -> %s",
+        max_item_chars,
+        len(id_map),
+        id_map_path,
+    )
     n_items = sum(len(v) for v in by_label.values())
     logger.info(
         "judging %d completions across %d rubric labels x %d draws (~%d calls)",
@@ -375,7 +428,7 @@ def main(argv: list[str] | None = None) -> None:
         logger.info("dry-run: requests built for %d labels; no output written", len(by_label))
         return
 
-    per_item, per_arm = reduce_results(metas, results, by_label, args.n_draws)
+    per_item, per_arm = reduce_results(metas, results, by_label, args.n_draws, id_map)
     k1 = k1_judge_check(per_item)
     if k1["fired"]:
         logger.warning(
@@ -407,6 +460,10 @@ def main(argv: list[str] | None = None) -> None:
             "save_raw_files": {
                 label: str(args.work_dir / "raw" / f"{label}.json") for label in rubrics
             },
+            # save_raw files are keyed by COMPACT Batch custom_ids
+            # ("h<sha1-12>/d<draw>__NNNNN__NN"); this map rehydrates them to
+            # full cell ids (crash-fix r2, epm:failure v2 custom_id overflow).
+            "id_map_file": str(id_map_path),
         },
         "judged_phases": list(JUDGED_PHASES),
         "deviations": [

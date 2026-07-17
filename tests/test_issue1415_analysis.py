@@ -13,6 +13,7 @@ from-config Qwen2, shape asserts). Everything runs on CPU with tiny dims.
 from __future__ import annotations
 
 import json
+import re
 import sys
 from pathlib import Path
 from unittest.mock import create_autospec
@@ -463,9 +464,12 @@ def _judge_fixture(tmp: Path):
 
 
 def _fake_scores(item_id: str, draw_idx: int) -> dict:
-    if item_id == "gen1b/pair0/c/d0":
+    # item ids are COMPACT ("h<sha1-12>/d<draw>", crash-fix r2) — compare
+    # against the compact keys of the fixture's full cell ids.
+    c_base = jg.compact_cell_key("gen1b/pair0/c")
+    if item_id == f"{c_base}/d0":
         return {"reasoning": "r", "score": 80 if draw_idx == 0 else 60}
-    if item_id == "gen1b/pair0/c/d1":
+    if item_id == f"{c_base}/d1":
         if draw_idx == 0:
             return {"reasoning": "declined", "score": "REFUSAL"}  # content drop
         return {"error": True, "transport": True, "reasoning": "batch_error: expired"}
@@ -520,9 +524,26 @@ def test_judge_request_building_and_drop_transport_split(tmp_path, monkeypatch):
     kw = calls[0]
     assert kw["max_tokens"] == jg.JUDGE_MAX_TOKENS
     assert len(kw["completions"]) == 8
-    assert not any("L2" in item_id for item_id in kw["completions"])
+    # item ids are compact + within the Batch custom_id budget (crash-fix r2)
+    for item_id in kw["completions"]:
+        assert re.fullmatch(r"h[0-9a-f]{12}/d\d+", item_id), item_id
+        assert len(item_id) <= jg.ITEM_ID_MAX_CHARS, item_id
+    excluded = jg.compact_cell_key("gen1c/context/pair0/L2/a1")
+    assert not any(item_id.startswith(excluded) for item_id in kw["completions"])
+
+    # round-trip map persisted (atomic) for save_raw auditability
+    id_map = json.loads((tmp_path / "work" / "id_map.json").read_text())
+    assert id_map[jg.compact_cell_key("gen1b/pair0/c")] == "gen1b/pair0/c"
+    assert set(id_map.values()) == {
+        "gen1b/pair0/c",
+        "gen1b/pair0/cprime",
+        "gen1c/context/pair0/L1/a1",
+        "gen1d_full/evil/pair0/a1",
+    }
 
     j = json.loads(out.read_text())
+    # output schema rehydrated: per_item keyed by FULL readable cell ids
+    assert set(j["per_item"]) == {f"{c}/d{d}" for c in id_map.values() for d in (0, 1)}
     item = j["per_item"]["gen1b/pair0/c/d0"]
     assert item["graded_score"] == pytest.approx(70.0)
     assert item["binary_positive"] is True and item["arm"] == "baseline"
@@ -551,6 +572,51 @@ def test_judge_rubric_resolution_reason_then_score():
     assert "hedging" in hedging and "{question}" in hedging
     with pytest.raises(ValueError, match="no rubric source"):
         jg.resolve_rubric("not_a_real_label")
+
+
+# The longest REAL cell id of the committed phase-1 run (64 chars — its OLD
+# f"{cell_id}/d{di}" item id was 67 chars, the epm:failure v2 overflow class).
+_LONGEST_REAL_CELL_ID = "gen1c_allpos/context/cross_03_sycophancy_to_hallucination/L20/a4"
+
+
+def test_judge_compact_ids_fit_custom_id_budget():
+    """Compact item ids fit the 64-char Batch custom_id budget (53 + the
+    11-char encoder append) for the longest real cell id — and for EVERY cell
+    of the committed phase-1 run when its metadata tree is materialized
+    (guarded: absent in sparse worktrees)."""
+    from explore_persona_space.eval.batch_judge import _CUSTOM_ID_RE
+
+    assert len(_LONGEST_REAL_CELL_ID) == 64  # old item id 64+3 > 53: the crash class
+    ckey = jg.compact_cell_key(_LONGEST_REAL_CELL_ID)
+    assert re.fullmatch(r"h[0-9a-f]{12}", ckey)
+    item_id = f"{ckey}/d9"
+    assert len(item_id) <= jg.ITEM_ID_MAX_CHARS
+    # the encoder's realized custom_id fits the enumerate gate, which checks
+    # LENGTH only (batch_judge.py:572; on the realized sync route custom_id is
+    # a local join key, never sent to the API — the '/' charset is fine there)
+    assert len(f"{item_id}__00180__00") <= 64
+    assert _CUSTOM_ID_RE.pattern == r"^[a-zA-Z0-9_-]{1,64}$"  # 64-char budget source pinned
+    # determinism (round-trip map + cache-resume both rely on it)
+    assert jg.compact_cell_key(_LONGEST_REAL_CELL_ID) == ckey
+
+    cells_dir = REPO_ROOT / "eval_results" / "issue_1415" / "phase1" / "cells"
+    if cells_dir.exists():  # committed real tree (sparse worktrees may omit it)
+        ids = [json.loads(p.read_text())["cell_id"] for p in cells_dir.rglob("*.json")]
+        assert _LONGEST_REAL_CELL_ID in ids and len(ids) >= 800
+        keys = {cid: jg.compact_cell_key(cid) for cid in ids}
+        assert all(len(f"{k}/d99") <= jg.ITEM_ID_MAX_CHARS for k in keys.values())
+        assert len(set(keys.values())) == len(set(ids))  # no collisions on the real run
+
+
+def test_judge_compact_id_collision_fails_loud(tmp_path, monkeypatch):
+    """A forced compact-key collision raises ValueError (never silent aliasing)."""
+    out_root, bulk_root, _bank = _judge_fixture(tmp_path)
+    pair_labels = {"pair0": "evil"}
+    metas = jg.enumerate_cells(out_root, None)
+    assert len(metas) >= 2
+    monkeypatch.setattr(jg, "compact_cell_key", lambda cell_id: "hdeadbeef0000")
+    with pytest.raises(ValueError, match="compact cell-key collision"):
+        jg.build_items(metas, bulk_root, pair_labels)
 
 
 # ── deliverable 4: logit lens ─────────────────────────────────────────
