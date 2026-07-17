@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1442,
+  "highest_id": 1443,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -3449,6 +3449,13 @@
       "path": "tasks/proposed/1442",
       "status": "proposed",
       "title": "daily-fix: route TG_TESTS fixture temps via step9c tmproot"
+    },
+    "1443": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1443",
+      "status": "proposed",
+      "title": "daily-fix: anchor repo-root guard cd-scope latch"
     },
     "145": {
       "has_clean_result": false,
