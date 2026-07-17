@@ -1295,24 +1295,24 @@ until manual socket-rebind surgery (Jul 16 ~10:54 PDT).
 `tmux-*` exclusion; `/tmp/tmux-1001` (dir mtime ~Jul 1) matched `-mtime +2`
 and was removed with the live server socket inside. One-off improvised
 command, NOT from any repo/mygoat script (grep-verified). Refuted: no
-systemd-tmpfiles `/tmp` Age rule on this host (`D /tmp 1777 root root -`,
+systemd-tmpfiles `/tmp/` Age rule on this host (`D /tmp 1777 root root -`,
 boot-only; the daily tmpfiles-clean ran 2h before the window), no
 tmpreaper/tmpwatch, `/etc/cron.hourly` empty, server pid alive throughout.
 
 **The shim (`scripts/eps_tmux_env.sh`) — single source of truth.**
 Contract: (1) durable default `TMUX_TMPDIR=$HOME/.tmux-sockets` (persistent
-disk, 0700 — no `/tmp` cleaner reaches it); (2) LEGACY PIN — while ANY
+disk, 0700 — no `/tmp/` cleaner reaches it); (2) LEGACY PIN — while ANY
 socket file exists in `/tmp/tmux-$(id -u)` (checked `find -maxdepth 1
 -type s`; an existing-but-unreadable dir also pins, watcher
-`_live_tmux_socket_present()` parity), resolve `/tmp` so the whole fleet
+`_live_tmux_socket_present()` parity), resolve `/tmp/` so the whole fleet
 keeps addressing ONE server; the flip to the durable dir fires automatically
 and coherently for every shim consumer at the first zero-socket point
 (reboot / drain / re-deletion); (3) a pre-set `TMUX_TMPDIR` is always
 respected; (4) FAIL-COHERENT PIN-BACK — if a non-shim straggler ever
-creates a `/tmp` server post-flip, all shim consumers pin BACK to `/tmp`
+creates a `/tmp/` server post-flip, all shim consumers pin BACK to `/tmp/`
 (the fleet follows one server rather than splitting; durability resumes at
 the next zero-socket point). Known limitation: a stale socket from a
-SIGKILL'd server pins `/tmp` until reboot — still single-server-coherent.
+SIGKILL'd server pins `/tmp/` until reboot — still single-server-coherent.
 **Sourced by:** `scripts/cron_session_summarize.sh` +
 `scripts/cron_autonomous_session_watch.sh` (repo; placement pinned by
 `tests/test_eps_tmux_env.py`), and two VM-LOCAL out-of-repo files —
@@ -1322,8 +1322,8 @@ SIGKILL'd server pins `/tmp` until reboot — still single-server-coherent.
 natural restart). Exact VM-local diffs recorded in task #1466 events.
 
 **Defense-in-depth: `/etc/tmpfiles.d/tmux.conf`** (insurance against a
-future Ubuntu/systemd default enabling `/tmp` aging — tmux/tmux#4640,
-Launchpad #2088268; today's host has no `/tmp` Age rule):
+future Ubuntu/systemd default enabling `/tmp/` aging — tmux/tmux#4640,
+Launchpad #2088268; today's host has no `/tmp/` Age rule):
 
 ```
 # /etc/tmpfiles.d/tmux.conf  (#1466)
@@ -1346,8 +1346,8 @@ is for.
    socket FILE may be `mv`'d aside (e.g. `default` → `old`) to coexist
    with a second server; clients reach the old server through the renamed
    path.
-5. **Deletion-race winner:** during a deletion event the `/tmp` pin WINS —
-   shim consumers pin back to `/tmp` (the recovered legacy socket), so a
+5. **Deletion-race winner:** during a deletion event the `/tmp/` pin WINS —
+   shim consumers pin back to `/tmp/` (the recovered legacy socket), so a
    durable-dir server started inside the race window is the one to drain
    after re-cohering. Recovery is deterministic.
 6. **Happy daemon start mechanism (recorded at implement time,
@@ -1367,6 +1367,6 @@ is for.
 reachable via `tmux -S /tmp/tmux-1001/old attach -t <name>` (their server's
 socket was renamed aside during the Jul-16 recovery); the 4-session
 `default` server is the live fleet server and every shim consumer resolves
-`/tmp` while either socket exists. After the next reboot all consumers land
+`/tmp/` while either socket exists. After the next reboot all consumers land
 in `~/.tmux-sockets` permanently; post-reboot manual daemon/service starts
 should come from a login shell (profile shim).
