@@ -115,3 +115,4 @@
 - [Pod git auth can go stale mid-lifecycle](feedback_pod_git_auth_stale_midlifecycle.md) — #1239 credential-helper recovery works on RunPod too; pod sync = single-statement git -C calls (#1315)
 - [Smoke tree eats full-leg headroom](feedback_smoke_tree_eats_full_leg_headroom.md) — reap the uploaded smoke tree before the full (re)launch on shared out-roots (#1333)
 - [hf-xet download wedge — kill + replay with HF_HUB_DISABLE_XET=1](feedback_hf_xet_download_wedge_kill_replay.md) — du frozen + ss empty + py-spy xet_get frame = native xet hang; retry wrappers cannot fire; HF_HUB_DISABLE_XET=1 inline on replay (HF_XET_DISABLE is a no-op alias) (#1345)
+- [Wrapper header is launch-arg ground truth](feedback_wrapper_header_is_launch_arg_ground_truth.md) — on plan-vs-wrapper launch-command mismatch, the wrapper's usage header wins (#1090 fu6 manifest-path crash)
