@@ -3593,8 +3593,8 @@
     "1461": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1461",
-      "status": "running",
+      "path": "tasks/reviewing/1461",
+      "status": "reviewing",
       "title": "daily-fix: neutralize guard-task revision briefs"
     },
     "1462": {
