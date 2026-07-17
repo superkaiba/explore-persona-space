@@ -2793,8 +2793,9 @@ This step does NOT override 5c-bis — mechanical-contract-only FAILs
 still strip and cosmetic gripes about present evidence still don't
 bounce the implementer. The check operates on a different signal
 (concerns.jsonl persisted via `task.py raise-concern` — NOTE the
-`--summary` arg is hard-capped at 200 chars, ValueError above it; put
-detail in `--evidence`) and gates
+`--summary` arg is capped at 200 chars — the CLI truncates longer text
+at a word boundary with a loud warning (programmatic `task_workflow`
+callers still get ValueError); put detail in `--evidence`) and gates
 auto-advance ON TOP of the existing flow. The same subroutine fires at
 Step 9a (interp ensemble) and Step 9a-bis (clean-result ensemble) with
 the same logic.

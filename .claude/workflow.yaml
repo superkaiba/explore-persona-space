@@ -1422,11 +1422,15 @@ concerns_protocol:
     advisory verdict-body text.
   concern_id_format: "^[a-z0-9][a-z0-9-]{1,79}$"  # stable kebab-case
   summary_cap: |
-    `--summary` is HARD-CAPPED at 200 chars — task.py raises ValueError
-    above it (5 reviewer crashes on 2026-06-10 alone: 238-410-char
-    summaries). Compose the summary as one tight sentence and move all
-    detail to `--evidence`. The same cap applies to `address-concern`
-    carried summaries.
+    Stored concern summaries are HARD-CAPPED at 200 chars (the library
+    layer raises ValueError above it; 5 reviewer crashes on 2026-06-10
+    alone: 238-410-char summaries). The task.py CLI (raise-concern /
+    address-concern) auto-truncates a longer `--summary` at a word
+    boundary with a loud stderr warning instead of crashing — on
+    raise-concern the full original is shifted into `--evidence` when
+    evidence is empty. Compose the summary as one tight sentence and
+    move all detail to `--evidence`. The same cap applies to
+    `address-concern` carried summaries.
   concern_id_examples:
     - probe-position-undefined
     - missing-mlm-control

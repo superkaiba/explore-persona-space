@@ -6531,7 +6531,8 @@ def raise_concern(
         raise ValueError("summary must be a non-empty string")
     if len(summary) > 200:
         raise ValueError(
-            f"summary too long ({len(summary)} chars; max 200). Move detail to evidence."
+            f"summary too long ({len(summary)} chars; max 200). Move detail to "
+            "evidence (the task.py CLI auto-truncates at a word boundary instead)."
         )
     if not isinstance(raised_by, str) or not raised_by.strip():
         raise ValueError("raised_by must be a non-empty string")
@@ -6604,7 +6605,11 @@ def address_concern(
         # consumers don't need to walk history.
         carried_summary = (summary or latest.get("summary") or "").strip()
         if len(carried_summary) > 200:
-            raise ValueError(f"summary too long ({len(carried_summary)} chars; max 200).")
+            raise ValueError(
+                f"summary too long ({len(carried_summary)} chars; max 200). Pass a "
+                "shorter summary — detail belongs in the round report (the task.py "
+                "CLI auto-truncates explicit summaries at a word boundary)."
+            )
         payload: dict[str, Any] = {
             "ts": _utcnow_iso(),
             "event": "addressed",
