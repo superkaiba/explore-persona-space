@@ -113,6 +113,7 @@ from explore_persona_space.artifacts.recipe import (  # noqa: E402
     recipe_for,
     select_dose_checkpoint,
 )
+from explore_persona_space.eval.batch_judge import is_transport_error_dict  # noqa: E402
 from explore_persona_space.orchestrate import hub  # noqa: E402
 from explore_persona_space.train.sft import train_lora  # noqa: E402
 
@@ -2193,17 +2194,25 @@ def _default_manifest_path(cfg: i1090.RunConfig) -> Path:
 
 def _drop_split_from_raw(judge_root: Path, tag: str) -> dict:
     """Transport-vs-content split (llm-judging rules 9/24) from the saved raw
-    judge rows: an ``error: True`` row is a TRANSPORT loss (re-judgeable via
-    scripts/issue1090_fu3_rejudge_529.py); other drops are content drops."""
+    judge rows, classified per error dict by the #1313 library classifier
+    ``batch_judge.is_transport_error_dict``: TRANSPORT = the structural
+    ``transport: True`` flag or a legacy transport reason (529/overloaded/
+    expired/... — re-judgeable via scripts/issue1090_fu4_rejudge_transport.py).
+    A ``parse_error`` dict is CONTENT-class (rule 24(iii): a truncation parse
+    failure is a rule-23 budget defect, remediated at mt=1000 — never
+    re-judged at the same budget). Concern ``post-rejudge-k4-flag-check``:
+    the pre-fix any-error-dict predicate here classified 2,152 parse_error
+    draws as transport, so K4 never armed."""
     raw_path = judge_root / tag / "judge_raw.json"
     transport = 0
     if raw_path.exists():
         raw = json.loads(raw_path.read_text())
         # save_raw shape (graded_judge.judge_result_from_save_raw): the
-        # "all_scores" dict maps custom_id -> the PARSED judge value; an
-        # api_dispatch transport exhaustion parses to a {"error": ...} dict.
+        # "all_scores" dict maps custom_id -> the PARSED judge value; error
+        # dicts carry {"error": true} and split transport-vs-content by
+        # is_transport_error_dict (parse_error -> content, rule 24(iii)).
         all_scores = raw.get("all_scores", {}) if isinstance(raw, dict) else {}
-        transport = sum(1 for v in all_scores.values() if isinstance(v, dict) and v.get("error"))
+        transport = sum(1 for v in all_scores.values() if is_transport_error_dict(v))
     return {"transport_losses": transport, "raw_path": str(raw_path)}
 
 
@@ -2248,7 +2257,11 @@ def _judge_run_tier2(cfg: i1090.RunConfig, judge_root: Path, run: Fu4Run, run_ro
         return tier2
     split = _drop_split_from_raw(judge_root / run.behavior, tag)
     tier2["transport_losses"] = split["transport_losses"]
-    tier2["content_dropped_draws"] = tier2.get("n_dropped_draws", 0) - split["transport_losses"]
+    # n_dropped_draws is CONTENT-only as of #1313 (judge_result_from_save_raw
+    # splits transport-class dicts out before counting) — no subtraction. The
+    # old `- transport_losses` double-subtracted AND used an any-error-dict
+    # transport count, zeroing the content side (post-rejudge-k4-flag-check).
+    tier2["content_dropped_draws"] = tier2.get("n_dropped_draws", 0)
     if split["transport_losses"] > 0:
         logger.warning(
             "[fu4-K4] %s: %d TRANSPORT-lost judge draws — re-judge them "
@@ -2515,13 +2528,15 @@ def _fu7_flat_items(tag: str, questions: list[str], completions: list[list[str]]
 
 def _fu7_split_from_raw(cell_dir: Path) -> int:
     """Transport-loss count from a judge_raw.json (the _drop_split_from_raw
-    shape, parametrized by the exact cache dir)."""
+    shape, parametrized by the exact cache dir): classifier-transport error
+    dicts ONLY (``batch_judge.is_transport_error_dict``, #1313) — a
+    parse_error dict is content-class (rule 24(iii))."""
     raw_path = cell_dir / "judge_raw.json"
     if not raw_path.exists():
         return 0
     raw = json.loads(raw_path.read_text())
     all_scores = raw.get("all_scores", {}) if isinstance(raw, dict) else {}
-    return sum(1 for v in all_scores.values() if isinstance(v, dict) and v.get("error"))
+    return sum(1 for v in all_scores.values() if is_transport_error_dict(v))
 
 
 def _fu7_attach_k4(rec: dict, cell_dir: Path, tag: str) -> dict:
@@ -2529,7 +2544,9 @@ def _fu7_attach_k4(rec: dict, cell_dir: Path, tag: str) -> dict:
     mirrored from _judge_run_tier2 for reads that own their cache dir."""
     transport = _fu7_split_from_raw(cell_dir)
     rec["transport_losses"] = transport
-    rec["content_dropped_draws"] = rec.get("n_dropped_draws", 0) - transport
+    # n_dropped_draws is CONTENT-only as of #1313 — no subtraction (see the
+    # _judge_run_tier2 twin; concern post-rejudge-k4-flag-check).
+    rec["content_dropped_draws"] = rec.get("n_dropped_draws", 0)
     if transport > 0:
         logger.warning(
             "[fu7-K4] %s: %d TRANSPORT-lost judge draws — re-judge them "

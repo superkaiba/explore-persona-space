@@ -2,10 +2,11 @@
 """#1090 fu4 — targeted re-judge of TRANSPORT-lost judge draws (rule 24 pre-wiring).
 
 fu4's VM P3 aggregate (``issue1090_fu4.py --phase judge-aggregate``) reports a
-per-run ``transport_losses`` count (llm-judging rules 9/24: a stored
-``error: True`` per-draw row is a re-judgeable TRANSPORT loss, never a content
-drop) and warns that a nonzero count must be re-judged before any headline
-read. This tool is the fu4 adaptation of ``scripts/issue1090_fu3_rejudge_529.py``
+per-run ``transport_losses`` count (llm-judging rules 9/24: a TRANSPORT-class
+per-draw error dict — ``batch_judge.is_transport_error_dict``, #1313 — is a
+re-judgeable loss, never a content drop) and warns that a nonzero count must
+be re-judged before any headline read. This tool is the fu4 adaptation of
+``scripts/issue1090_fu3_rejudge_529.py``
 (concern ``fu4-transport-rejudge-tool-not-prewired``): it re-judges EXACTLY
 the transport-lost draws of the P3 judge outputs — SAME instrument (the
 behavior's rubric + Sonnet judge pin, ``max_tokens=300``) — surgically merges
@@ -44,12 +45,16 @@ dirs (``*-rule23`` under ``pv/rule23/`` / ``rule23_legacy/``, mt=1000) are
 NOT supported — none were realized in fu7; a transport-bearing one fails the
 ``_parse_read`` assert LOUD rather than re-judging at the wrong budget.
 
-Deliberate deviation from the fu3 tool: the transport predicate is
-``isinstance(rec, dict) and rec.get("error")`` — EXACTLY the set fu4's
-``_drop_split_from_raw`` counts as ``transport_losses`` (rule 24's transport
-class covers 429/529/timeout/connection, all persisted as ``error`` dicts by
-the api_dispatch layer), not fu3's 529-only regex subset. The fu3 MECHANISM is
-kept: per-draw grouping by missing-count, a fresh scratch ``cache_dir`` per
+Transport predicate: the #1313 library classifier
+``batch_judge.is_transport_error_dict`` — EXACTLY the set fu4's
+``_drop_split_from_raw`` counts as ``transport_losses`` (the structural
+``transport: True`` flag, or a legacy transport reason: 529/overloaded/
+expired/...), broader than fu3's 529-only regex subset but NEVER a
+``parse_error`` dict — those are CONTENT-class (rule 24(iii): a truncation
+parse failure is a rule-23 budget defect, remediated at mt=1000 via
+``_fu7_rule23_remediate_pv``/``_legacy``, not re-judged here at mt=300 where
+they re-parse-fail; concern ``post-rejudge-k4-flag-check``). The fu3
+MECHANISM is kept: per-draw grouping by missing-count, a fresh scratch ``cache_dir`` per
 read (rule 24(ii) — the rubric-keyed JudgeCache shares one key across an
 item's draws, so a cache-served re-run would silently duplicate a sibling
 draw), and rule-23/24 hygiene deleting stale ``error`` cache-entry files in
@@ -80,6 +85,7 @@ import issue1090_fu4 as fu4  # noqa: E402
 import issue1090_run as i1090  # noqa: E402
 
 from explore_persona_space.artifacts.behavior import BEHAVIORS  # noqa: E402
+from explore_persona_space.eval.batch_judge import is_transport_error_dict  # noqa: E402
 from explore_persona_space.eval.graded_judge import (  # noqa: E402
     judge_graded,
     judge_result_from_save_raw,
@@ -92,8 +98,11 @@ _HEX_CACHE_RE = re.compile(r"^[0-9a-f]{16}\.json$")  # JudgeCache._hash_key file
 
 def _is_transport(rec: object) -> bool:
     """fu4's transport-loss predicate — the exact set ``_drop_split_from_raw``
-    counts (an ``error: True`` per-draw dict; llm-judging rules 9/24)."""
-    return isinstance(rec, dict) and bool(rec.get("error"))
+    counts: the #1313 classifier (structural ``transport: True`` or a legacy
+    transport reason; llm-judging rules 9/24). A ``parse_error`` dict is
+    content-class (rule 24(iii)) and is NEVER selected — re-judging it at the
+    same mt=300 budget just re-parse-fails (post-rejudge-k4-flag-check)."""
+    return is_transport_error_dict(rec)
 
 
 _PV_KINDS = frozenset({"t2-pv", "panel-pv"})  # fu7 paper-instrument reads
@@ -424,7 +433,9 @@ def recompute_ladders(
             )
             split = fu4._drop_split_from_raw(judge_root / run.behavior, tag)
             new["transport_losses"] = split["transport_losses"]
-            new["content_dropped_draws"] = new["n_dropped_draws"] - split["transport_losses"]
+            # n_dropped_draws is CONTENT-only as of #1313 — no subtraction
+            # (mirrors fu4._judge_run_tier2; post-rejudge-k4-flag-check).
+            new["content_dropped_draws"] = new["n_dropped_draws"]
             content_rate = new["content_dropped_draws"] / max(new["n_total_draws"], 1)
             new["k4_truncation_check_required"] = bool(content_rate >= 0.10)
             old = rec.get("tier2_trained") or {}
