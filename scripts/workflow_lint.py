@@ -8856,7 +8856,9 @@ _LESSONS_ROW_GRANDFATHER_MAX_BYTES: dict[str, int] = {
     # Cap = measured + <=40.
     # #1431 added the pilot-gate shape+rc trigger (row 661 B -> 682 B).
     # Cap = measured + <=40.
-    "gotchas": 720,
+    # #1435 added the subprocess-per-phase dispatcher trigger (merged with
+    # #1431's raise; re-measured row 776 B). Cap = measured + <=40.
+    "gotchas": 800,
 }
 _LESSONS_ROW_GRANDFATHER_MAX_HEADROOM_BYTES = 40
 
@@ -8875,7 +8877,10 @@ _LESSONS_ROW_GRANDFATHER_MAX_HEADROOM_BYTES = 40
 # grew the plan-compute-sizing row (pilot basis covers fit loops AND draw
 # batteries): merged measured 6,178 B; ratchet 6400 retained (headroom ~222,
 # covers both concurrent growers).
-_LESSONS_RATCHET_BYTES = 6400
+# #1435 grew the gotchas row (subprocess-registry / full-panel-fresh-child-smoke
+# trigger; merged with #1431's raise): re-measured total 6,456 B; ratchet 6650
+# (headroom ~194, <= _LESSONS_RATCHET_MAX_HEADROOM_BYTES).
+_LESSONS_RATCHET_BYTES = 6650
 _LESSONS_RATCHET_MAX_HEADROOM_BYTES = 400
 
 
