@@ -2302,8 +2302,9 @@ The Codex twin additionally receives:
   the canonical plan, Step 2-pre-b) — see
   `.claude/agents/codex-code-reviewer.md`.
 
-**Neutral gate vocabulary in FIRST-PASS briefs — every subagent brief,
-every step (#1398).** When ANY brief this skill composes (planner,
+**Neutral gate vocabulary in EVERY brief — first-pass AND revision
+rounds, every subagent brief, every step (#1398, #1413).** When ANY brief
+this skill composes (planner,
 implementer, experimenter, reviewer, analyzer — not only review rounds)
 concerns a kill-gate / RLVR / guard / stop-criteria task, write the BRIEF
 in neutral vocabulary from the first spawn: "halt gate", "stop criterion",
@@ -2314,7 +2315,10 @@ neutralized. This is the gate-vocabulary leg of CLAUDE.md § Spurious
 usage-policy refusals rung (e) — first-pass, not a post-kill retry step
 (2026-07-15: ≥12 spurious refusal kills across ~8 sessions; the #1336
 session lost 3 spawns to gate-criteria phrasing and neutralized only
-after the kills).
+after the kills). Revision-round briefs carry the same neutral vocabulary
+AND, on trigger-dense rounds, pass findings BY REFERENCE — see Step 5d,
+§ File-only Codex verdict posting, and trigger-dense-review.md
+§ Revision-round briefs.
 
 **Trigger-dense (guard-surface) rounds — pre-materialize the excerpt file
 BEFORE spawning (#1058/#1098).** When the round's diff or artifact under
@@ -2609,7 +2613,7 @@ remains fine.
 |---|---|---|
 | PASS-class | PASS-class | **Agree.** `final_verdict = PASS`. CONCERNS bullets from either reviewer surface to the implementer as opportunistic suggestions; do not block. |
 | FAIL | FAIL — overlapping blockers | **Agree.** `final_verdict = FAIL`. Bounce to implementer (one round). |
-| FAIL | FAIL — disjoint blockers | **Union, no reconciler.** Build a combined blocker list (Claude's blockers ∪ Codex's blockers) — INCLUDING every `### Bug-class sweep: <class>` sibling enumeration from either verdict — and pass it to the implementer in the next-round brief. No new marker — both `epm:code-review v<n>` and `epm:code-review-codex v<n>` already exist on the task. `final_verdict = FAIL`. Bounce (one round). |
+| FAIL | FAIL — disjoint blockers | **Union, no reconciler.** Build a combined blocker list (Claude's blockers ∪ Codex's blockers) — INCLUDING every `### Bug-class sweep: <class>` sibling enumeration from either verdict — and pass it to the implementer in the next-round brief (trigger-dense round: by reference per § File-only Codex verdict posting). No new marker — both `epm:code-review v<n>` and `epm:code-review-codex v<n>` already exist on the task. `final_verdict = FAIL`. Bounce (one round). |
 | PASS-class | FAIL (or vice versa) | **Disagreement.** Spawn `reconciler` agent (Claude, fresh context). Brief: role=`code-reviewer`, task=N, round=n, both event bodies (trigger-dense round: BY REFERENCE — marker kind+version / output-file paths, per § File-only Codex verdict posting; the reconciler reads them itself with windowed reads), diff path (+ the Step 5a excerpt-file path + read budget on a trigger-dense round). Reconciler reads both verdicts + the artifact, posts `epm:review-reconcile v<n>` with binding PASS or FAIL. `final_verdict = reconciler's verdict`. |
 
 The reconciler may NOT add findings beyond what either reviewer raised —
@@ -2811,7 +2815,10 @@ the same logic.
 - **`final_verdict == FAIL` + revision_round<5** -> stay at status
   `running` (implementing sub-phase). Re-spawn the implementer with
   BOTH event bodies (Claude + Codex) AND the reconcile event (if
-  present) as part of the brief. **When either reviewer verdict (or the
+  present) as part of the brief (trigger-dense round: BY REFERENCE —
+  marker kind+version / output-file paths, per
+  § File-only Codex verdict posting; never inline the verdict bodies).
+  **When either reviewer verdict (or the
   disjoint-blocker union) contains a `### Bug-class sweep: <class>`
   enumeration, thread the FULL sibling list — every enumerated
   `file:LINE`, not just the top finding — into the implementer's
@@ -6070,7 +6077,7 @@ discarded by Step 8's gap-fill decision rule).
    |---|---|---|
    | PASS | PASS | `final_verdict = PASS`. Concatenate suggestions for analyzer's optional polish. |
    | REVISE | REVISE | `final_verdict = REVISE`. Union the revision requests (dedup exact-same). |
-   | PASS vs REVISE (or vice versa) | (the other) | Spawn `reconciler` (marker mode). Brief: role=`interpretation-critic`, both event bodies, interpretation body path, eval JSON paths, figure paths. Reconciler posts `epm:review-reconcile v<n>` with binding PASS or REVISE. `final_verdict = reconciler's verdict`. |
+   | PASS vs REVISE (or vice versa) | (the other) | Spawn `reconciler` (marker mode). Brief: role=`interpretation-critic`, both event bodies (trigger-dense round: by reference per § File-only Codex verdict posting), interpretation body path, eval JSON paths, figure paths. Reconciler posts `epm:review-reconcile v<n>` with binding PASS or REVISE. `final_verdict = reconciler's verdict`. |
    | Codex no-show (`epm:failure` posted, or NO durable verdict per the Step 5b durable-verdict-first rule) | (any) | Fallback: `final_verdict = Claude verdict`. Surface "Codex twin no-show round <n>" to chat. |
 
    An Agent-tool error for EITHER critic first triggers the Step 5b
@@ -6092,7 +6099,10 @@ discarded by Step 8's gap-fill decision rule).
 **If `final_verdict == REVISE` (rounds 2-5):**
 
 Re-spawn analyzer (fresh context, sees original data + ALL critique
-feedback: Claude event + Codex event + reconcile event if any).
+feedback: Claude event + Codex event + reconcile event if any)
+(trigger-dense round: critique events by reference — marker kind+version
+/ output-file paths, per § File-only Codex verdict posting; never inline
+the critique bodies).
 Analyzer posts `epm:interpretation v2`. Re-spawn the ensemble (fresh
 contexts, sees v2 + prior critique events). Posts both
 `epm:interp-critique v2` and `epm:interp-critique-codex v2`. Apply rule
@@ -6751,7 +6761,10 @@ dispatching this round's critics.
 **If REVISE (rounds 2-5):**
 
 Re-spawn `analyzer` agent (fresh context, sees raw data + all
-interp-critique history + the latest clean-result-critique). Analyzer
+interp-critique history + the latest clean-result-critique)
+(trigger-dense round: critique history by reference — marker
+kind+version / output-file paths, per § File-only Codex verdict posting;
+never inline the critique bodies). Analyzer
 revises the `epm:interpretation` event AND edits the task body in
 place via `task.py set-body <N> --file ...`. Re-runs
 `scripts/verify_task_body.py` (must still PASS). Re-spawn the critic
@@ -11251,12 +11264,12 @@ composer.
 | `interpreting` | `epm:interp-critique v<n>` exists, no `epm:interp-critique-codex v<n>` | Codex twin not yet returned | re-spawn `codex-interpretation-critic` only |
 | `interpreting` | `epm:interp-critique-codex v<n>` exists, no `epm:interp-critique v<n>` | Claude critic not yet returned | re-spawn `interpretation-critic` only |
 | `interpreting` | both `epm:interp-critique v<n>` and `epm:interp-critique-codex v<n>` exist, verdicts disagree (PASS vs REVISE), no `epm:review-reconcile v<n>` whose body's `**Role under adjudication:**` is `interpretation-critic` | reconciler not yet started | spawn `reconciler` (marker mode) |
-| `interpreting` | both ensemble events exist, verdicts agree OR role-matching reconcile event present (`**Role under adjudication:** interpretation-critic`), ensemble verdict REVISE, round < 5 | revision needed | re-spawn analyzer with all critique events |
+| `interpreting` | both ensemble events exist, verdicts agree OR role-matching reconcile event present (`**Role under adjudication:** interpretation-critic`), ensemble verdict REVISE, round < 5 | revision needed | re-spawn analyzer with all critique events (trigger-dense: by reference per § File-only Codex verdict posting) |
 | `interpreting` | ensemble verdict PASS or (round >= 5 AND the Step 9a cap-hit resolved: all residual stripped, no substantive overclaim residual), neither `epm:clean-result-critique` nor `epm:clean-result-critique-codex` | content honesty settled, structure + register loop not started | promote body in place if missing, then spawn `clean-result-critic` + `codex-clean-result-critic` in parallel. (round >= 5 with a SUBSTANTIVE overclaim residual → apply Step 9a surface-real-residual rule instead: interactive present to user; autonomous `epm:failure v1 failure_class: code` + `blocked` + notify) |
 | `interpreting` | `epm:clean-result-critique v<n>` exists, no `epm:clean-result-critique-codex v<n>` | Codex twin not yet returned (or wrapper crashed) | re-spawn `codex-clean-result-critic` only |
 | `interpreting` | `epm:clean-result-critique-codex v<n>` exists, no `epm:clean-result-critique v<n>` | Claude critic not yet returned | re-spawn `clean-result-critic` only |
 | `interpreting` | both `epm:clean-result-critique v<n>` and `epm:clean-result-critique-codex v<n>` exist, verdicts disagree (PASS-class vs REVISE), no `epm:review-reconcile v<n>` whose body's `**Role under adjudication:**` is `clean-result-critic` | reconciler not yet started | spawn `reconciler` (marker mode) |
-| `interpreting` | clean-result ensemble verdict REVISE (agreed, unioned, or reconciled by a role-matching `epm:review-reconcile`; after the Step 9a-bis procedural-only strip), round < 5 | structure / register revision in progress | re-spawn analyzer with both clean-result critiques |
+| `interpreting` | clean-result ensemble verdict REVISE (agreed, unioned, or reconciled by a role-matching `epm:review-reconcile`; after the Step 9a-bis procedural-only strip), round < 5 | structure / register revision in progress | re-spawn analyzer with both clean-result critiques (trigger-dense: by reference per § File-only Codex verdict posting) |
 | `interpreting` | clean-result ensemble verdict PASS-class or (round >= 5 AND the Step 9a-bis cap-hit resolved: all residual stripped, no substantive overclaim residual) | ready for review | advance to `reviewing`. (round >= 5 with a SUBSTANTIVE overclaim residual → apply Step 9a-bis surface-real-residual rule: interactive present to user; autonomous `epm:failure v1 failure_class: code` + `blocked` + notify) |
 | `reviewing` | (no agent dispatch; transitional single-step) | reviewer step retired; absorbed into clean-result-critic Lens 7 | move to `awaiting_promotion`, run the Step 10d auto-merge procedure, post `epm:status-changed`, EXIT |
 | `awaiting_promotion` | `classification == 'pending'` in body frontmatter, no `epm:merged` and PR unmerged | waiting for user to promote; worktree not yet merged | run the Step 10d auto-merge procedure (idempotent backstop — covers the case where the Step 9b auto-merge was interrupted), then show task path, prompt to promote via `task.py promote`, run CRON-TEARDOWN (self-heal sweep, § CRON-TEARDOWN procedure, stray one-shot `/issue <N>` wakeups included), EXIT |

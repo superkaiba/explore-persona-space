@@ -41,7 +41,7 @@ Row grammar: `- <rule>.md — <fires-when trigger>`
 - replication-fidelity.md — the Goal replicates a published finding (match the paper's data + recipe FIRST; change only the tested variable).
 - research-project-structure.md — you write result artifacts / results index / queue (one source of truth per layer).
 - selection-symmetric-nulls.md — a headline max/argmax/top-k over a free axis vs a null band (inherit selection per draw or freeze held-out; band vs DV ceiling), or difference-vector legs sharing one SAMPLED baseline vs a noise-free null (disjoint halves, or a shared-B null).
-- trigger-dense-review.md — reviewing/reconciling a guard/security artifact or refusal corpus (findings by reference; verdict first; windowed reads).
+- trigger-dense-review.md — reviewing/reconciling a guard/security artifact or refusal corpus (findings by reference; verdict first; windowed reads), or composing a revision-round/bounce brief from such verdicts (#1413).
 - upload-policy.md — you write training/Hub/sweep code, or sequence phases around a regeneration-costly store (Hub-API verification, verify + staging-download transport retry, delete-after-eval persist, store-before-long-fit #825, quota-403 recovery, upload-wedge ladder).
 - vectorize-many-cell-fits.md — many-cell GD, dense fits (svd/eigh/lstsq/ridge), or a perm/bootstrap/null-draw battery over a fixed pool (VECTORIZE first; detached+checkpointed VM fits; Supersede contract incl. mid-run ≥2×-deviation + width re-eval).
 - workflow-fix-on-bug.md — any agent hits a bug from a gap in the workflow surface itself (emit a `workflow-fix-candidate`).
