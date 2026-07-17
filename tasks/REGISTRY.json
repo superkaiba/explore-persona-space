@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1481,
+  "highest_id": 1482,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -3751,6 +3751,13 @@
       "path": "tasks/proposed/1481",
       "status": "proposed",
       "title": "Matched-recipe contrastive vs positive-only across casual style, impolite, sycophancy, and marker on the 4 factory contexts"
+    },
+    "1482": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/1482",
+      "status": "proposed",
+      "title": "Error analysis of the n1M context\u2192answer map: worst-predicted contexts, worst-predicted SAE features, and the linear-vs-nonlinear gap"
     },
     "149": {
       "has_clean_result": false,
