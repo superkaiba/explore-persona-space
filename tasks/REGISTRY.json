@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1480,
+  "highest_id": 1481,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -3743,6 +3743,13 @@
       "path": "tasks/planning/1480",
       "status": "planning",
       "title": "workflow-fix: escalate unactioned stalled-manual alerts to registration unregister"
+    },
+    "1481": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/1481",
+      "status": "proposed",
+      "title": "Matched-recipe contrastive vs positive-only across casual style, impolite, sycophancy, and marker on the 4 factory contexts"
     },
     "149": {
       "has_clean_result": false,
