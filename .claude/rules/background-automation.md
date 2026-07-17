@@ -877,6 +877,19 @@ unconditional operator cleanup (`--force` requires `--issue` and is refused
 with `--session-id`). Takeover sentinels (`*.paused-takeover-*`) and
 non-registration siblings (`dispatch-lease-*`, `campaign-watch-*`,
 `pm-session.json`) are never touched by any invocation form.
+Since #1455, an OPERATOR `spawn_session.py stop` performs this cleanup
+automatically once the session is confirmed dead (bounded daemon-list poll,
+or `_pid_alive` false on the `--kill` fallback): the sid-matched unregister
+covers all three registration kinds (issue / manual-issue / campaign — an
+operator stop of a campaign session removes `campaign-<N>.json` too), plus an
+ownership-keyed release of the stopped dispatch's OWN lease
+(`acquired_at <= spawned_at`; a successor's newer lease is always kept), so
+the stale-registration collision → HELD-lease compound (the 2026-07-16 #1090
+incident shape) cannot recur on a CLEANED stop — the poll-timeout /
+daemon-unreachable and `--no-cleanup` paths retain the old leave-state shape
+by design. `--no-cleanup` opts out; watcher-sourced stops NEVER clean up —
+the crash-recovery / boot-death / dead-wake respawn arms depend on the
+registration surviving their own stops.
 
 **Program-orchestrator recovery pass (#660 leakage-program bash daemon).** The
 leakage-theory program (#660) is sequenced by a BASH DAEMON
