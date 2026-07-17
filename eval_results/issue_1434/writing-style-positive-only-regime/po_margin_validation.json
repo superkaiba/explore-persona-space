@@ -1,0 +1,68 @@
+{
+ "n": 12,
+ "spearman_rho": -0.4605,
+ "p": 0.13197,
+ "note": "margin delta = trained-base teacher-forced fixed-pool margin (source context, sha-pinned 25/25 pools); install = Tier-1 selection rate at the selected checkpoint (base rates 0.000); mirrors the parent round's n=12 read",
+ "rows": [
+  {
+   "run_id": "ws-po-pers-lr1e5",
+   "margin_delta": 0.203,
+   "install_rate": 0.81
+  },
+  {
+   "run_id": "ws-po-pers-lr3e5",
+   "margin_delta": 0.2779,
+   "install_rate": 0.93
+  },
+  {
+   "run_id": "ws-po-pers-lr1e4",
+   "margin_delta": 0.424,
+   "install_rate": 0.9
+  },
+  {
+   "run_id": "ws-po-bare-lr1e5",
+   "margin_delta": 0.115,
+   "install_rate": 0.6
+  },
+  {
+   "run_id": "ws-po-bare-lr3e5",
+   "margin_delta": 0.1665,
+   "install_rate": 0.61
+  },
+  {
+   "run_id": "ws-po-bare-lr1e4",
+   "margin_delta": 0.1138,
+   "install_rate": 0.65
+  },
+  {
+   "run_id": "ws-po-conv-lr1e5",
+   "margin_delta": 0.0155,
+   "install_rate": 0.91
+  },
+  {
+   "run_id": "ws-po-conv-lr3e5",
+   "margin_delta": 0.0122,
+   "install_rate": 0.65
+  },
+  {
+   "run_id": "ws-po-conv-lr1e4",
+   "margin_delta": 0.1043,
+   "install_rate": 0.99
+  },
+  {
+   "run_id": "ws-po-icl-lr1e5",
+   "margin_delta": 0.0002,
+   "install_rate": 0.98
+  },
+  {
+   "run_id": "ws-po-icl-lr3e5",
+   "margin_delta": 0.0037,
+   "install_rate": 0.99
+  },
+  {
+   "run_id": "ws-po-icl-lr1e4",
+   "margin_delta": -0.1301,
+   "install_rate": 0.98
+  }
+ ]
+}
