@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1434,
+  "highest_id": 1435,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -3386,6 +3386,13 @@
       "path": "tasks/running/1434",
       "status": "running",
       "title": "Install writing_style as a persona-vectors-style (context,behavior) LoRA organism"
+    },
+    "1435": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1435",
+      "status": "proposed",
+      "title": "workflow-fix: gotchas entry \u2014 subprocess phase registry + full-panel fresh-child smoke"
     },
     "144": {
       "has_clean_result": false,
