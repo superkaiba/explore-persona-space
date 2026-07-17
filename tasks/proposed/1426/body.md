@@ -14,6 +14,8 @@ goal: 'Determine whether the CoT-mediation signature and the in-context-learning
   battery on DeepSeek-R1-Distill-Llama-8B, and read which CoT-length gradient profile
   — the parent''s falling gradient or #1005''s flat-to-rising inversion — travels
   with the base lineage.'
+relates_to:
+- spec-context-as-vector
 ---
 ## Goal
 
