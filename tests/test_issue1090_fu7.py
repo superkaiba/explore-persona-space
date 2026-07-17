@@ -182,6 +182,90 @@ def test_fu7_panel_judge_item_ids_fit_batch_custom_id_budget():
             assert len(f"{tag}-q019-c9") <= 53
 
 
+def test_fu7_rule23_legacy_remediation_tags_distinct_across_call_sites(tmp_path, monkeypatch):
+    """Concern fu7-rule23-legacy-tag-collision (code-review v25): a Tier-2 and
+    a panel-context K4 remediation for ONE run must write DISJOINT cache dirs /
+    ``judge_raw.json`` paths — the pre-fix hardcoded `{run_id}-t2-trained-rule23`
+    tag made a double-fire clobber the Tier-2 raw. Executes the REAL
+    `_fu7_rule23_remediate_legacy` body twice (real `_fu7_attach_k4` over the
+    written raw); only the judge API boundary (`i1090._judge_rate`) is faked,
+    signature-conformant via create_autospec."""
+    import inspect
+    import json
+    from unittest import mock
+
+    run = fu4.FU7_RUNS[0]
+    judge_root = tmp_path / "judge"
+    calls: list[tuple[str, Path]] = []
+
+    def _fake_judge_rate(
+        behavior_name, questions, completions, *, tag, n_draws, judge_root, max_tokens=300
+    ):
+        cell_dir = judge_root / tag
+        cell_dir.mkdir(parents=True, exist_ok=True)
+        (cell_dir / "judge_raw.json").write_text(
+            json.dumps({"all_scores": {f"{tag}-q000-c0": {"score": 80}}})
+        )
+        calls.append((tag, cell_dir))
+        return {
+            "rate": 0.8,
+            "k": 8,
+            "n": 10,
+            "n_dropped": 0,
+            "n_total_draws": 10,
+            "n_dropped_draws": 0,
+            "wilson95": [0.5, 0.95],
+            "mode": "judged",
+        }
+
+    monkeypatch.setattr(
+        fu4.i1090,
+        "_judge_rate",
+        mock.create_autospec(fu4.i1090._judge_rate, side_effect=_fake_judge_rate),
+    )
+    cfg = fu4.i1090.RunConfig(smoke=True, cells=(), out_root=tmp_path / "out")
+    read = {
+        "k4_truncation_check_required": True,
+        "rate": 0.5,
+        "n_dropped_draws": 4,
+        "n_total_draws": 10,
+    }
+
+    # The exact tag constructions the two call sites pass.
+    t2_tag = f"{run.run_id}-t2-trained-rule23"
+    ctx_id = fu6.CAPTURE_PANEL_IDS[0]
+    panel_tag = f"{run.run_id}-pn-{fu6._CTX_SHORT.get(ctx_id, ctx_id[:6])}-legacy-rule23"
+
+    t2_redo = fu4._fu7_rule23_remediate_legacy(
+        cfg, judge_root, run, t2_tag, ["q"], [["c"]], dict(read)
+    )
+    pn_redo = fu4._fu7_rule23_remediate_legacy(
+        cfg, judge_root, run, panel_tag, ["q"], [["c"]], dict(read)
+    )
+
+    tags = [t for t, _ in calls]
+    dirs = [d for _, d in calls]
+    assert tags == [t2_tag, panel_tag]
+    assert dirs[0] == judge_root / "rule23_legacy" / run.behavior / t2_tag
+    assert dirs[1] == judge_root / "rule23_legacy" / run.behavior / panel_tag
+    assert len(set(dirs)) == 2, "tier2 + panel remediations must use disjoint cache dirs"
+    # Both raws survive the double-fire — the panel remediation clobbers nothing.
+    raws = [d / "judge_raw.json" for d in dirs]
+    assert all(p.exists() for p in raws)
+    contents = [set(json.loads(p.read_text())["all_scores"]) for p in raws]
+    assert contents[0] != contents[1]
+    # The real body ran _fu7_attach_k4 over each raw + kept the pre-remediation read.
+    for redo in (t2_redo, pn_redo):
+        assert redo["transport_losses"] == 0
+        assert redo["remediation"]["max_tokens"] == fu6.RULE23_MAX_TOKENS
+        assert redo["remediation"]["pre_remediation"]["rate"] == 0.5
+    # Regression pins: the helper never hardcodes the tag; each call site passes
+    # its own (read-set, remediation-leg)-distinct tag.
+    assert "t2-trained-rule23" not in inspect.getsource(fu4._fu7_rule23_remediate_legacy)
+    assert "-t2-trained-rule23" in inspect.getsource(fu4._fu7_dual_rubric_tier2)
+    assert "-legacy-rule23" in inspect.getsource(fu4._fu7_panel_reads)
+
+
 def test_fu6_local_adapter_dir_seam_fails_loud_before_staging(tmp_path, monkeypatch):
     """The `local_adapter_dir` capture seam asserts adapter_config.json exists
     BEFORE any Hub staging or merge — executes the real run_organism_capture
