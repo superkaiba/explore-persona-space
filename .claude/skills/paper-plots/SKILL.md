@@ -116,6 +116,16 @@ if no pattern fits, propose a new pattern file before coding.
 
 Prefer P1/P2/P3 — they carry the weight of the project's deliverables.
 
+### 3.4-bis. No explanatory overlays on plots
+
+Keep figures clean: **no arrows pointing at features, no effect-size labels
+stamped on/above bars or points, no explanatory text overlays** (standing
+user rule, `feedback_no_plot_annotations.md`; re-corrected 2026-07-16 on the
+#1345 dashboard — "remove the text on top of the bar"). Interpretation
+belongs in the caption / interpretation beat, not on the canvas. The only
+sanctioned in-figure text: axis/tick/legend labels, panel titles, and the
+`add_direction_arrow` axis-label suffix from `paper_plots.py`.
+
 ### 3.5. Axis / legend / tick labels — plain English only
 
 Every label that appears on the rendered figure (x/y-axis labels, axis tick labels, legend entries, bar/line group labels, in-figure annotations, panel titles) MUST be plain English. **No Hydra slugs** (`sw_eng_C1`, `sw_eng_expA`, `sw_eng_expB-P1`, `c1_evil_wrong_em`, `cond_4`, `cond_4_seed_137`), **no short-letter labels** (`M1`, `K1`, `BS_E0..E4`, `Method A/B/C`, `Bin A/B/C`, `C1`, `expA`), **no project-internal experiment-strand tags** (`arm`-as-noun with modifiers, `G6`, `H_a`).
