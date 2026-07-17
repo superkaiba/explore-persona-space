@@ -179,7 +179,7 @@ What is plotted: per-pair shared-to-disjoint dumbbells of the headline statistic
 
 Mean alignment drops 0.443→0.364 (prefix) and 0.484→0.405 (context) under disjoint baselines, with 28/28 pairs above their own nulls on both arms (27/28 on the most conservative single split). The traversal is 2–5% of the target-shift norm (matched-cell fraction mean 0.035 prefix / 0.055 context, disjoint).
 
-Matched-query pairs transport better than cross-query: disjoint 0.492 vs 0.216 (prefix, one-sided p = 8e-6) and 0.484 vs 0.313 (context, p = 4.4e-3). Transportability is query-dependent — with the caveat that matched pairs share the query, so their source and target answer states sit closer, and that proximity alone could raise the transport cosine without any query-borne mechanism; the shuffled-pair null does not isolate this. The layer-20-anchored read corrects proportionally more (0.271→0.189 prefix / 0.362→0.281 context; 2–6 pairs fall below the band there).
+Matched-query pairs transport better than cross-query: disjoint 0.492 vs 0.216 (prefix, one-sided p = 8e-6) and 0.484 vs 0.313 (context, p = 4.4e-3). Transportability is query-dependent, with a caveat: matched pairs share the query, so closer source–target answer states alone could raise the cosine, and the shuffled-pair null does not isolate this. The layer-20-anchored read corrects proportionally more (0.271→0.189 prefix / 0.362→0.281 context; 2–6 pairs fall below the band there).
 
 ### Prefix-arm alignment is pair-specific; context-arm alignment is partly direction-generic
 
@@ -219,7 +219,7 @@ What is plotted: mean graded judge score across the α grid for both steered arm
 
 > **Figure.** *No dose trend; one style pair carries a third of the context-arm effect.* Steered graded means across α ∈ {0.5, 1, 2, 4}: context 1.70 / 1.61 / 1.59 / 2.21; prefix 1.60 / 1.58 / 1.53 / 1.64. The coherence gate never bound, so larger α was never explored.
 
-Across the α grid the context arm reads 1.70 / 1.61 / 1.59 / 2.21 (α = 0.5/1/2/4) and the prefix arm 1.60 / 1.58 / 1.54 / 1.64, against a 1.30 baseline: no monotone dose trend, with only the context α = 4 cell moving. The context-arm shift at α = 4 (+0.91) is 34% carried by the formal-register pair; it survives that pair's exclusion (+0.63, p = 0.0009, N = 27), so the effect is not one-pair-only, but the mean hides one clear steering success against a floor elsewhere. Five pairs have a dead behavioral ceiling, diluting ceiling-anchored contrasts. Steered pools carry 9–10% Chinese-script intrusion (256–295 of 2,800 draws per arm); excluding intruded draws moves the α = 4 context mean 2.21→2.16 and the geometric headline under 0.01.
+The α grid is flat — context 1.70/1.61/1.59/2.21, prefix 1.60/1.58/1.54/1.64 (α = 0.5/1/2/4) against baseline 1.30; only the context α = 4 cell moves. That shift (+0.91) is 34% carried by the formal-register pair; it survives that pair's exclusion (+0.63, p = 0.0009, N = 27), so the effect is not one-pair-only, but the mean hides one clear steering success against a floor elsewhere. Five pairs have a dead behavioral ceiling, diluting ceiling-anchored contrasts. Steered pools carry 9–10% Chinese-script intrusion (256–295 of 2,800 draws per arm); excluding intruded draws moves the α = 4 context mean 2.21→2.16 and the geometric headline under 0.01.
 
 ### The logit-lens readout of the vectors is not clean trait words
 
