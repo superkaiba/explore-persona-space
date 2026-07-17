@@ -3705,8 +3705,8 @@
     "1476": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1476",
-      "status": "proposed",
+      "path": "tasks/planning/1476",
+      "status": "planning",
       "title": "workflow-fix: selection-inherited bootstrap CI clause for selection-symmetric-nulls"
     },
     "1477": {
