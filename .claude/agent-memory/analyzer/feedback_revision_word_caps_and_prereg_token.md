@@ -18,8 +18,13 @@ pre-empt on any critique-mandated body edit:
 
 2. **`pre-registered` in body prose FAILs `audit_clean_results_body_discipline.py`**
    (the `pre_reg` anti-pattern; quality-bar item 7 "pre-registration mentions").
-   Write "registered" / "the plan's <X> read" instead — the body can reference plan
-   registration, just not with the `pre-regist*` token.
+   SUPERSEDED (#1419, 2026-07-16): bare `registered <noun>` forms ("the registered
+   verdict/margin/read/lattice") now ALSO fail the audit — the #1345 body followed
+   this memory's old advice verbatim and drew a Lens 7 FAIL with six escapes. Do
+   not reference registration status in reader-facing prose at all: state the
+   criterion's value directly ("misses the −0.10 margin", "the 0.05 same-operator
+   margin") with no "registered" qualifier; registration provenance lives in the
+   plan file, and threshold VALUES may sit in the Methodology hyperparameter table.
 
 Update (#813 concern round): check 20's per-result count EXCLUDES the `###`
 heading line itself (`flines[line_no+1:end]`) — measuring a standalone block
@@ -33,7 +38,7 @@ Update (#813 r3): when a critique union forces additions into a `### <result>`
 block already at 176-179 words, relocate the MECHANICS (λ-grid details,
 skipped-check disclosures, oracle math) into `## Methodology` — it is EXCLUDED
 from check 20's per-result and total-prose counts — and leave only a short
-pointer qualifier in the Results prose ("under the registered saturated λ grid
+pointer qualifier in the Results prose ("under the plan's saturated λ grid
 (Methodology)"). Then trim what-is-plotted phrasing ("dots own-grain fits,
 ticks cross-grain transfers") before touching load-bearing numbers; measure
 with the verifier's exact `_prose_words` rules (excludes `>`-lines, `|`-rows,
