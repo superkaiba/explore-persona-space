@@ -28,7 +28,9 @@ cd "$REPO_ROOT" || { echo "FATAL: cd $REPO_ROOT failed" >&2; exit 1; }
 # GCE lane exports tokens via startup metadata and has NO .env — conditional only.
 if [ -f ./.env ]; then set -a; . ./.env; set +a; fi
 
-PHASE="all"; FROM_PHASE=""; SMOKE=""; DRY_RUN=""; CHARACTER_NAME="ARIA"; VARIANT=""
+# Default honors an ambient EPM_STORY_CHARACTER_NAME (the plan v10 workload
+# command exports it inline); byte-identical when unset (parent runs never set it).
+PHASE="all"; FROM_PHASE=""; SMOKE=""; DRY_RUN=""; CHARACTER_NAME="${EPM_STORY_CHARACTER_NAME:-ARIA}"; VARIANT=""; SLOTAB=""
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --phase) PHASE="$2"; shift 2 ;;
@@ -37,6 +39,7 @@ while [[ $# -gt 0 ]]; do
     --dry-run) DRY_RUN="1"; shift ;;
     --character-name) CHARACTER_NAME="$2"; shift 2 ;;
     --variant) VARIANT="$2"; shift 2 ;;
+    --slot-ablation) SLOTAB="1"; shift ;;
     *) echo "FATAL: unknown arg $1" >&2; exit 1 ;;
   esac
 done
@@ -80,7 +83,24 @@ case "$VARIANT" in
   conversation_paired_stories|conversation_paired_stories_assistant) CPS=1 ;;
 esac
 
-PHASES=(prefetch prefetch_reuse phase0 gen_stories gen_stories_paired extract_r1r2 extract_stories extract_r4_tf extract_r4_op_companion matchedn fits matched_row_refits transfer opcomp plots upload push)
+# story-slot-position-ablation mode (plan v10 §4 item 6): its OWN phase list —
+# NO gen/judge phases exist in this mode by design (a missing/short bundle is
+# a fail-loud halt, never a regeneration). --slot-ablation is pinned to the
+# story_slot_ablation variant (mirrors c.SLOT_ABLATION_VARIANTS).
+if [[ -n "$SLOTAB" && "$VARIANT" != "story_slot_ablation" ]]; then
+  echo "FATAL: --slot-ablation requires --variant story_slot_ablation (plan v10 §4)" >&2
+  exit 1
+fi
+if [[ -z "$SLOTAB" && "$VARIANT" == "story_slot_ablation" ]]; then
+  echo "FATAL: --variant story_slot_ablation requires --slot-ablation (plan v10 §4)" >&2
+  exit 1
+fi
+
+if [[ -n "$SLOTAB" ]]; then
+  PHASES=(prefetch_stories prefetch_reuse extract_r4_slots upload_stems fits_slots slot_transfer verdict plots upload push)
+else
+  PHASES=(prefetch prefetch_reuse phase0 gen_stories gen_stories_paired extract_r1r2 extract_stories extract_r4_tf extract_r4_op_companion matchedn fits matched_row_refits transfer opcomp plots upload push)
+fi
 
 VSUB=""; [[ -n "$VARIANT" ]] && VSUB="/$VARIANT"
 if [[ -n "$SMOKE" ]]; then
@@ -150,10 +170,16 @@ NGPU=0
 if command -v nvidia-smi >/dev/null 2>&1; then
   NGPU=$(nvidia-smi --query-gpu=index --format=csv,noheader 2>/dev/null | wc -l)
 fi
-echo "[dispatch] issue-1345 phase=$PHASE from=$FROM_PHASE smoke=${SMOKE:-0} dry=${DRY_RUN:-0} ngpu=$NGPU character_name=$CHARACTER_NAME variant=${VARIANT:-none}"
+echo "[dispatch] issue-1345 phase=$PHASE from=$FROM_PHASE smoke=${SMOKE:-0} dry=${DRY_RUN:-0} ngpu=$NGPU character_name=$CHARACTER_NAME variant=${VARIANT:-none} slot_ablation=${SLOTAB:-0}"
 
 should_run() {
   local phase="$1"
+  # Mode-scoped membership: a phase not in the active PHASES list never runs
+  # (the slot-ablation mode swaps the list; legacy mode enumerates every
+  # legacy phase, so legacy behavior is byte-identical).
+  local known=""
+  for p in "${PHASES[@]}"; do [[ "$p" == "$phase" ]] && known="yes"; done
+  if [[ -z "$known" ]]; then return 1; fi
   if [[ "$PHASE" != "all" && "$PHASE" != "$phase" ]]; then return 1; fi
   if [[ -n "$FROM_PHASE" ]]; then
     local started=""
@@ -272,6 +298,15 @@ if should_run prefetch; then
   run_cmd ${ENV_INLINE:+env} ${ENV_INLINE} uv run python -c "import sys; sys.path.insert(0, 'scripts'); import issue1345_common as c; [c.list_parent_shards(s) for s in c.PARENT_STEMS]; print('prefetch OK: all four pinned stems resolve @', c.PIN_REV)"
 fi
 
+if should_run prefetch_stories; then
+  echo "[phase=prefetch_stories]"
+  # Slot-ablation mode: stage the PINNED kept-stories bundle + yield report
+  # (db92091a8c… — plan v10 §10) + the 2,164-row / character-name gates
+  # (exit 3 halt; NO regeneration path exists in this mode by design).
+  run_cmd ${ENV_INLINE:+env} ${ENV_INLINE} uv run python scripts/issue1345_slot_verdict.py \
+    --prefetch-stories --stories-dir "$STORIES_DIR" $SMOKE_FLAG
+fi
+
 if should_run prefetch_reuse; then
   if [[ -z "$VARIANT" ]]; then
     echo "[phase=prefetch_reuse] SKIPPED — default run re-extracts r1/r2 (no --variant)"
@@ -279,9 +314,12 @@ if should_run prefetch_reuse; then
     echo "[phase=prefetch_reuse]"
     # Stages the parent ARIA-run's 4 r1/r2 stems + matched-n allowlist at the
     # pinned revision (REPLACES extract_r1r2 — plan v6 §4) and runs the
-    # per-stem realized-keys probe (plan §10 c30).
+    # per-stem realized-keys probe (plan §10 c30). Slot-ablation mode stages
+    # instruct_chat_s ONLY (~23 GB not ~87 GB — plan v10 §4 item 6).
+    REUSE_STEMS_FLAG=""
+    [[ -n "$SLOTAB" ]] && REUSE_STEMS_FLAG="--stems instruct_chat_s"
     run_cmd ${ENV_INLINE:+env} ${ENV_INLINE} uv run python scripts/issue1345_prefetch_reuse.py \
-      --turnstore-dir "$TS_DIR" --matched-dir "$MATCHED_DIR" $SMOKE_FLAG
+      --turnstore-dir "$TS_DIR" --matched-dir "$MATCHED_DIR" $REUSE_STEMS_FLAG $SMOKE_FLAG
   fi
 fi
 
@@ -479,10 +517,66 @@ if should_run opcomp; then
   fi
 fi
 
+# ---------------------------------------------------------------------------
+# story-slot-position-ablation phases (plan v10 §4 item 6; membership-gated —
+# these names are only in the slot-mode PHASES list)
+# ---------------------------------------------------------------------------
+if should_run extract_r4_slots; then
+  echo "[phase=extract_r4_slots]"
+  # Multi-slot TF re-read: ONE forward per story, 5 single positions + the
+  # pooled attribution-phrase mean (answer-overlap rate hard-asserted 0.0 at
+  # the render trust boundary; diagnostics JSON written before any forward).
+  run_cmd env CUDA_VISIBLE_DEVICES=0 ${ENV_INLINE} uv run python scripts/issue1345_extract_turnstore.py \
+    --regime r4 --model instruct --slot-ablation \
+    --out-dir "$TS_DIR" --stories-dir "$STORIES_DIR" $SMOKE_FLAG
+fi
+
+if should_run upload_stems; then
+  echo "[phase=upload_stems]"
+  # Upload-before-long-fit (plan v10 §9): the regeneration-costly slot stems
+  # persist BEFORE the fits phase; idempotent per-shard verify.
+  run_cmd ${ENV_INLINE:+env} ${ENV_INLINE} uv run python scripts/issue1345_upload.py $SMOKE_FLAG \
+    --legs turnstore --turnstore-glob "*stories_paired_slots_s_shard*" \
+    --stories-dir "$STORIES_DIR" --matched-dir "$MATCHED_DIR" \
+    --preds-dir "$PREDS_DIR" --turnstore-dir "$TS_DIR"
+fi
+
+if should_run fits_slots; then
+  echo "[phase=fits_slots]"
+  # 7 cells (anchor refit + 4 candidates + prefix refit + chat matched
+  # recompute) on the registered row intersection, then the three-anchor
+  # ±0.02 refit-equality gate (exit 3 on a production miss BEFORE any slot
+  # read is interpreted; informational under --smoke).
+  run_cmd env CUDA_VISIBLE_DEVICES=0 ${ENV_INLINE} uv run python scripts/issue1345_slot_verdict.py \
+    --fits --turnstore-dir "$TS_DIR" --out-dir "$EVAL_DIR" --preds-dir "$PREDS_DIR" \
+    --null-draws $NULLS --n-boot $NBOOT $SMOKE_FLAG
+fi
+
+if should_run slot_transfer; then
+  echo "[phase=slot_transfer]"
+  TRANSFER_NULLS=100
+  [[ -n "$SMOKE" ]] && TRANSFER_NULLS=5
+  run_cmd env CUDA_VISIBLE_DEVICES=0 ${ENV_INLINE} uv run python scripts/issue1345_slot_verdict.py \
+    --transfer --turnstore-dir "$TS_DIR" --out-dir "$EVAL_DIR" --preds-dir "$PREDS_DIR" \
+    --transfer-null-draws $TRANSFER_NULLS $SMOKE_FLAG
+fi
+
+if should_run verdict; then
+  echo "[phase=verdict]"
+  run_cmd env CUDA_VISIBLE_DEVICES=0 ${ENV_INLINE} uv run python scripts/issue1345_slot_verdict.py \
+    --verdict --turnstore-dir "$TS_DIR" --out-dir "$EVAL_DIR" --preds-dir "$PREDS_DIR" \
+    --n-boot $NBOOT $SMOKE_FLAG
+fi
+
 if should_run plots; then
   echo "[phase=plots]"
-  run_cmd ${ENV_INLINE:+env} ${ENV_INLINE} uv run python scripts/issue1345_plots.py --no-r3-models "$(halted_models)" $(no_r4_flag) \
-    --out-dir "$EVAL_DIR" --fig-dir "$FIG_DIR" --turnstore-dir "$TS_DIR" --stories-dir "$STORIES_DIR"
+  if [[ -n "$SLOTAB" ]]; then
+    run_cmd ${ENV_INLINE:+env} ${ENV_INLINE} uv run python scripts/issue1345_slot_plots.py \
+      --out-dir "$EVAL_DIR" --fig-dir "$FIG_DIR" --turnstore-dir "$TS_DIR" --preds-dir "$PREDS_DIR"
+  else
+    run_cmd ${ENV_INLINE:+env} ${ENV_INLINE} uv run python scripts/issue1345_plots.py --no-r3-models "$(halted_models)" $(no_r4_flag) \
+      --out-dir "$EVAL_DIR" --fig-dir "$FIG_DIR" --turnstore-dir "$TS_DIR" --stories-dir "$STORIES_DIR"
+  fi
 fi
 
 if should_run upload; then
@@ -492,7 +586,12 @@ if should_run upload; then
   # Variant: only the NEW story stems upload — the staged parent r1/r2 shards
   # are bit-identical to the pinned Hub copies (plan v6 §9, ~5-10 GB not ~90 GB).
   UPLOAD_EXTRA=()
-  if [[ -n "$CPS" ]]; then
+  if [[ -n "$SLOTAB" ]]; then
+    # Slot mode: preds caches + the slot stems (already uploaded at
+    # upload_stems — idempotent re-verify); the staged stories bundle is an
+    # INPUT (already on HF at the parent prefix) and is NOT re-uploaded.
+    UPLOAD_EXTRA=(--legs preds,turnstore --turnstore-glob "*stories_paired_slots_s_shard*")
+  elif [[ -n "$CPS" ]]; then
     # Paired variant: only the NEW r4 TF + companion stems upload (matches
     # instruct_stories_paired_s_shard* AND instruct_stories_paired_op_s_shard*).
     UPLOAD_EXTRA=(--turnstore-glob "*stories_paired*_shard*")
@@ -588,6 +687,27 @@ refit_eq = {}
 refit_path = eval_dir / "refit_equality.json"
 if refit_path.exists():
     refit_eq = {"pass": json.loads(refit_path.read_text()).get("pass")}
+# Slot-ablation round (plan v10): lattice + three-anchor gate summaries.
+slot_lattice = {}
+sl_path = eval_dir / "slot_verdict_lattice.json"
+if sl_path.exists():
+    sl = json.loads(sl_path.read_text())
+    bat = sl.get("battery") or {}
+    slot_lattice = {
+        "verdict": sl.get("verdict"),
+        "d_obs": bat.get("d_obs"),
+        "d_ci95": bat.get("d_ci95"),
+        "chat_r2_l19_obs": bat.get("chat_r2_l19_obs"),
+        "per_slot": bat.get("per_slot"),
+        "nondegenerate_slots": sl.get("nondegenerate_slots"),
+        "answer_overlap_rates": sl.get("answer_overlap_rates"),
+        "anchor_coincidence_rates": sl.get("anchor_coincidence_rates"),
+        "registered_n_rows": sl.get("registered_n_rows"),
+    }
+refit_eq_slots = {}
+res_path = eval_dir / "refit_equality_slots.json"
+if res_path.exists():
+    refit_eq_slots = {"pass": json.loads(res_path.read_text()).get("pass")}
 tf_op = {}
 tf_op_path = eval_dir / "matched_row" / "tf_op_calibration.json"
 if tf_op_path.exists():
@@ -597,6 +717,8 @@ vsub = f"/{variant}" if variant else ""
 payload = {
     "eval_numbers": {"verdict_lattice": lattice, "parity_gate": parity,
                      "refit_equality": refit_eq,
+                     "slot_verdict_lattice": slot_lattice,
+                     "refit_equality_slots": refit_eq_slots,
                      "story_regime_halted_models": halted_models,
                      "story_regime_halted": len(halted_models) == 2,
                      "paired_story_regime_r4": r4_state,
@@ -629,10 +751,12 @@ payload = {
     "final_commit_sha": commit_sha,
     "gpu_hours_used": float(gpu_hours),
     "gpu_hours_budgeted": (
-        # 16.0 = the paired-stories plan v8/v9 §9 ceiling (both CPS scopes)
+        # 16.0 = the paired-stories plan v8/v9 §9 ceiling (both CPS scopes);
+        # 4.0 = the slot-ablation plan v10 §9 ceiling (~2.9 projected).
         16.0 if variant in ("conversation_paired_stories",
                             "conversation_paired_stories_assistant")
-        else (13.0 if variant else 14.0)
+        else (4.0 if variant == "story_slot_ablation"
+              else (13.0 if variant else 14.0))
     ),
     "plan_deviations": [
         {"deviation": "HF store layout uses the canonical issue1345_framing/ prefix",

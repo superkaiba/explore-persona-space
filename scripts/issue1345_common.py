@@ -147,6 +147,13 @@ PAIRED_STORIES_VARIANTS = (
     "conversation_paired_stories_assistant",  # v9 Assistant scope (plan v9)
 )
 HAS_R4 = VARIANT in PAIRED_STORIES_VARIANTS
+# story-slot-position-ablation round (plan v10 §4): re-reads the landed v9
+# paired-story corpus at 4 extra context-slot positions in ONE TF forward per
+# story. EXPLICIT membership (same rule as PAIRED_STORIES_VARIANTS — never a
+# prefix match); the slot round keeps HAS_R4 False (its cell set is the
+# dedicated slot registry below, not the r4/r4op grid).
+SLOT_ABLATION_VARIANTS = ("story_slot_ablation",)
+HAS_SLOT_ABLATION = VARIANT in SLOT_ABLATION_VARIANTS
 # Base r4 cells are N/A BY SCOPE (plan v8 §5/§12.6: parent base story yields
 # 96/500 ≈ 19% across both prior rounds — deterministic scope, not data-driven).
 R4_MODELS = ("instruct",)
@@ -159,6 +166,10 @@ REGIME_FORMAT = {
     # iteration path loops over REGIMES / all_cells, which stay variant-gated).
     "r4": "stories_paired",
     "r4op": "stories_paired_op",
+    # Multi-slot re-read of the SAME paired corpus (plan v10): a DISTINCT stem
+    # (instruct_stories_paired_slots_s) so the 6-slot store can never be
+    # loaded as a 2-slot store by stem collision.
+    "r4slot": "stories_paired_slots",
 }
 ARMS = ("prefix", "context")
 # Slot order in the #1345 stores: the extractor sorts slots by token position
@@ -166,8 +177,107 @@ ARMS = ("prefix", "context")
 ARM_SLOT_INDEX = {"prefix": 0, "context": 1}
 # Turn order: R1/R2 single-turn track-S spans sort [u1, a1] -> target = 1;
 # R3/R4/R4op rows carry a single "answer" span -> target = 0.
-TARGET_TURN_INDEX = {"r1": 1, "r2": 1, "r3": 0, "r4": 0, "r4op": 0}
+TARGET_TURN_INDEX = {"r1": 1, "r2": 1, "r3": 0, "r4": 0, "r4op": 0, "r4slot": 0}
 TRACK = "s"
+
+# ---------------------------------------------------------------------------
+# story-slot-position-ablation registry (plan v10 §4/§5). Storage order in the
+# multi-slot store: the 5 single positions sorted by token index (the ordering
+# chain prefix < ctx_qend <= ctx_preattr <= context <= ctx_preans is monotone
+# by construction — fully-contained-before is monotone in the char boundary,
+# and ties keep dict insertion order under the extractor's stable sort), then
+# the pooled attribution-phrase mean APPENDED (process_batch contract).
+# ---------------------------------------------------------------------------
+SLOT_SINGLE_ORDER = ("prefix", "ctx_qend", "ctx_preattr", "context", "ctx_preans")
+SLOT_STORE_ORDER = (*SLOT_SINGLE_ORDER, "ctx_attrmean")
+# cell_id -> (slot storage index, arm); plan §5 config slugs, verbatim.
+SLOT_CELL_INDEX = {
+    "R_instruct_r4slot_prefix": (0, "prefix"),
+    "R_instruct_r4slot_qend_context": (1, "context"),
+    "R_instruct_r4slot_preattr_context": (2, "context"),
+    "R_instruct_r4slot_anchor_context": (3, "context"),
+    "R_instruct_r4slot_preans_context": (4, "context"),
+    "R_instruct_r4slot_attrmean_context": (5, "context"),
+}
+# The 4 VERDICT slots (plan §3: the anchor is the registered reference, not a
+# verdict slot): candidate name -> its slot cell id.
+SLOT_VERDICT_CELLS = {
+    "qend": "R_instruct_r4slot_qend_context",
+    "preattr": "R_instruct_r4slot_preattr_context",
+    "preans": "R_instruct_r4slot_preans_context",
+    "attrmean": "R_instruct_r4slot_attrmean_context",
+}
+SLOT_ANCHOR_CELL = "R_instruct_r4slot_anchor_context"
+SLOT_PREFIX_CELL = "R_instruct_r4slot_prefix"
+SLOT_CHAT_MATCHED_CELL = "R_instruct_r1_matched_context"  # recomputed comparator
+# Slot-name behind each verdict/anchor cell (coincidence + overlap diagnostics)
+SLOT_NAME_FOR_CELL = {cid: SLOT_STORE_ORDER[idx] for cid, (idx, _arm) in SLOT_CELL_INDEX.items()}
+# Degeneracy policy (plan §4): a slot coinciding with the anchor position on
+# more than this fraction of rows is reported N/A — degenerate and excluded
+# from the verdict set (D maxes over the remainder).
+SLOT_DEGENERACY_COINCIDENCE_MAX = 0.50
+# Bonferroni-4 per-slot CI level (plan §3): 1 - 0.05/4.
+SLOT_BONFERRONI_LEVEL = 0.9875
+# Landed refit-equality anchors (plan §7; ±PARITY_TOL, three values) — read
+# live from the committed JSONs; literals are documentation cross-checks.
+SLOT_REFIT_ANCHOR_FILES = {
+    SLOT_ANCHOR_CELL: (
+        "eval_results/issue_1345/conversation_paired_stories_assistant/"
+        "cells_R_instruct_r4_context.json"
+    ),
+    SLOT_PREFIX_CELL: (
+        "eval_results/issue_1345/conversation_paired_stories_assistant/"
+        "cells_R_instruct_r4_prefix.json"
+    ),
+    SLOT_CHAT_MATCHED_CELL: (
+        "eval_results/issue_1345/conversation_paired_stories_assistant/"
+        "matched_row/cells_R_instruct_r1_matched_context.json"
+    ),
+}
+SLOT_REFIT_ANCHOR_DOC = {
+    SLOT_ANCHOR_CELL: -0.3056,
+    SLOT_PREFIX_CELL: -1.3714,
+    SLOT_CHAT_MATCHED_CELL: 0.2426,
+}
+# Pinned kept-stories bundle (plan §10 reuse row; prefetch_stories stages AT
+# this revision, never the mutable default branch).
+STORIES_BUNDLE_REV = "db92091a8c136d77bed4b25a460ee0bd6223f4a7"
+STORIES_BUNDLE_PREFIX = (
+    "issue1345_framing/conversation_paired_stories_assistant/raw_completions/stories"
+)
+STORIES_BUNDLE_N_ROWS = 2164  # landed yield record (plan §7 bundle-integrity gate)
+
+
+def slot_ablation_cells() -> list[dict]:
+    """The 7 slot-ablation fit cells (plan §5): 6 multi-slot-store cells +
+    the chat matched-row comparator recompute on the reused r1 store."""
+    cells = [
+        {
+            "cell_id": cid,
+            "model_key": "instruct",
+            "format_key": REGIME_FORMAT["r4slot"],
+            "track": TRACK,
+            "slot_index": idx,
+            "target_turn_index": TARGET_TURN_INDEX["r4slot"],
+            "regime": "r4slot",
+            "arm": arm,
+        }
+        for cid, (idx, arm) in SLOT_CELL_INDEX.items()
+    ]
+    cells.append(
+        {
+            "cell_id": SLOT_CHAT_MATCHED_CELL,
+            "model_key": "instruct",
+            "format_key": REGIME_FORMAT["r1"],
+            "track": TRACK,
+            "slot_index": ARM_SLOT_INDEX["context"],
+            "target_turn_index": TARGET_TURN_INDEX["r1"],
+            "regime": "r1",
+            "arm": "context",
+        }
+    )
+    return cells
+
 
 ORDERED_PAIRS = [(i, j) for i in REGIMES for j in REGIMES if i != j]
 UNORDERED_PAIRS = [("r1", "r2"), ("r1", "r3"), ("r2", "r3")] + (
@@ -699,7 +809,27 @@ def parse_story_turns(text: str) -> list[dict]:
     return [t for t in turns if t["q_end"] <= t["marker_end"] < t["a_start"] < t["a_end"]]
 
 
-def render_story_turn(story_text: str, turn: dict, story_id: str, tokenizer) -> Rendered | None:
+def _last_fully_contained(offs, boundary: int) -> int | None:
+    """Index of the last token whose char span ends <= boundary (None if none).
+
+    The ONE slot idiom every #1345 story slot uses (plan v10 §4): fully
+    contained BEFORE the char boundary — never ``span[0] - 1``, which can be a
+    token that BPE-merged the opening quote WITH the answer's first word
+    (answer leakage into the read position).
+    """
+    cands = [t for t, (a, b) in enumerate(offs) if b <= boundary and b > a]
+    return cands[-1] if cands else None
+
+
+def render_story_turn(
+    story_text: str,
+    turn: dict,
+    story_id: str,
+    tokenizer,
+    *,
+    extra_slots: bool = False,
+    attr_start: int | None = None,
+) -> Rendered | None:
     """Render ONE story Q->A turn as a track-S-shaped Rendered row.
 
     Slots: prefix = last token fully contained before the QUESTION utterance;
@@ -709,6 +839,21 @@ def render_story_turn(story_text: str, turn: dict, story_id: str, tokenizer) -> 
     attention makes activations at kept positions identical to the full-text
     forward). Returns None when any span/slot is degenerate (BPE zero-width
     merge — gotchas.md; the caller counts drops).
+
+    ``extra_slots=True`` (plan v10 §4, slot ablation; requires ``attr_start`` =
+    the recomputed ANSWER_ATTRIB_RE match start) additionally computes, via the
+    SAME fully-contained-before idiom:
+      ctx_qend    = last token before ``q_end`` (end-of-question slot),
+      ctx_preattr = last token before ``attr_start`` (pre-attribution slot),
+      ctx_preans  = last token FULLY CONTAINED before ``a_start`` (pre-answer;
+                    falls back toward the anchor on quote-merge rows — a
+                    DETECTABLE coincidence, never answer contamination),
+    plus the pooled attribution-phrase span into ``Rendered.pooled_spans``
+    (``ctx_attrmean`` = tokens fully contained in [attr_start, marker_end] —
+    excludes the answer by construction). Ordering enforced per row:
+    prefix < ctx_qend <= ctx_preattr <= context <= ctx_preans < answer start
+    (violation -> None, counted by the caller). Default off => the r3/r4
+    default paths are byte-identical.
     """
     enc = tokenizer(story_text, add_special_tokens=False, return_offsets_mapping=True)
     ids, offs = enc["input_ids"], enc["offset_mapping"]
@@ -717,21 +862,75 @@ def render_story_turn(story_text: str, turn: dict, story_id: str, tokenizer) -> 
     if not a_tokens or a_tokens[-1] + 1 - a_tokens[0] != len(a_tokens):
         return None
     span = (a_tokens[0], a_tokens[-1] + 1)
-    ctx_candidates = [t for t, (a, b) in enumerate(offs) if b <= turn["marker_end"] and b > a]
-    pfx_candidates = [t for t, (a, b) in enumerate(offs) if b <= turn["q_start"] and b > a]
-    if not ctx_candidates or not pfx_candidates:
+    ctx = _last_fully_contained(offs, turn["marker_end"])
+    pfx = _last_fully_contained(offs, turn["q_start"])
+    if ctx is None or pfx is None:
         return None
-    ctx, pfx = ctx_candidates[-1], pfx_candidates[-1]
     if not (0 <= pfx < ctx < span[0] and 1 <= span[0] < span[1]):
         return None
+    slot_idx = {"prefix": pfx, "context": ctx}
+    pooled_spans: dict[str, tuple[int, int]] = {}
+    if extra_slots:
+        assert attr_start is not None, "extra_slots=True requires attr_start (plan v10 §4)"
+        assert turn["q_end"] <= attr_start <= turn["marker_end"] < a_start, (
+            story_id,
+            turn["q_end"],
+            attr_start,
+            turn["marker_end"],
+            a_start,
+        )
+        qend = _last_fully_contained(offs, turn["q_end"])
+        preattr = _last_fully_contained(offs, attr_start)
+        preans = _last_fully_contained(offs, a_start)
+        if qend is None or preattr is None or preans is None:
+            return None
+        # Registered per-row ordering chain (plan v10 §4; ties allowed except
+        # prefix < ctx_qend). Monotone by construction — a violation is render
+        # drift worth dropping + counting, never silently reordered.
+        if not (pfx < qend <= preattr <= ctx <= preans < span[0]):
+            return None
+        # Pooled attribution-phrase span: tokens fully contained in
+        # [attr_start, marker_end] — contiguous by token monotonicity; empty
+        # or non-contiguous (zero-width interlopers) -> drop.
+        p_tokens = [
+            t
+            for t, (a, b) in enumerate(offs)
+            if a >= attr_start and b <= turn["marker_end"] and b > a
+        ]
+        if not p_tokens or p_tokens[-1] + 1 - p_tokens[0] != len(p_tokens):
+            return None
+        if not (pfx < p_tokens[0] and p_tokens[-1] < span[0]):
+            return None
+        # Insertion order == storage order (SLOT_SINGLE_ORDER): the extractor's
+        # stable position sort keeps ties in this order.
+        slot_idx = {
+            "prefix": pfx,
+            "ctx_qend": qend,
+            "ctx_preattr": preattr,
+            "context": ctx,
+            "ctx_preans": preans,
+        }
+        pooled_spans = {"ctx_attrmean": (p_tokens[0], p_tokens[-1] + 1)}
     trunc = span[1]
+    meta = {"n_tokens": trunc, "confidence": turn["confidence"]}
+    if extra_slots:
+        # CHAR spans behind each read (the answer-overlap + coincidence
+        # diagnostics consume these — plan v10 §4 registered diagnostic).
+        meta["slot_char_spans"] = {
+            n: [int(offs[i][0]), int(offs[i][1])] for n, i in slot_idx.items()
+        }
+        meta["pooled_char_spans"] = {
+            "ctx_attrmean": [int(offs[p_tokens[0]][0]), int(offs[p_tokens[-1]][1])]
+        }
+        meta["a_char_span"] = [int(a_start), int(a_end)]
     return Rendered(
         input_ids=list(ids[:trunc]),
-        slot_idx={"prefix": pfx, "context": ctx},
+        slot_idx=slot_idx,
         spans={"answer": span},
         format="stories",
         conv_id=str(story_id),
-        meta={"n_tokens": trunc, "confidence": turn["confidence"]},
+        meta=meta,
+        pooled_spans=pooled_spans,
     )
 
 
