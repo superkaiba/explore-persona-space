@@ -196,6 +196,22 @@ def test_match_verbatim_turn_drops_extended_quote():
     assert turn is None and reason == "answer_quote_not_closed"
 
 
+def test_match_verbatim_turn_drops_unclosed_quote_at_end_of_story():
+    """code-review v13 Major pin: with the answer at the exact END of the
+    story and NO closing quote, story[j:j+1] == "" and the pre-fix membership
+    check ("" in DOUBLE_QUOTE_CHARS is True) silently PASSED closure — the
+    bounds-checked guard must FAIL it."""
+    story = (
+        'Maya glanced up and asked, "What is the visitor policy here?" '
+        f'ARIA replied: "{ANSWER}'  # story ends mid-quote, no closing quote
+    )
+    turn, reason = gp.match_verbatim_turn(story, ANSWER)
+    assert turn is None and reason == "answer_quote_not_closed"
+    # Trailing whitespace after the answer at end-of-story is the same class
+    turn2, reason2 = gp.match_verbatim_turn(story + "  \n", ANSWER)
+    assert turn2 is None and reason2 == "answer_quote_not_closed"
+
+
 def test_confident_op_turn_keeps_one_exchange():
     turn, reason = gp.confident_op_turn(STORY_OK)
     assert reason == "ok" and turn is not None

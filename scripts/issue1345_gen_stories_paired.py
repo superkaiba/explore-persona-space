@@ -330,7 +330,11 @@ def match_verbatim_turn(story: str, answer: str) -> tuple[dict | None, str]:
     j = a_end
     while j < len(story) and story[j].isspace():
         j += 1
-    if story[j : j + 1] not in c.DOUBLE_QUOTE_CHARS:
+    # End-of-story guard (code-review v13 Major): story[j : j + 1] yields ""
+    # past the end and "" in DOUBLE_QUOTE_CHARS is True — an unclosed quote
+    # with the answer at end-of-story must FAIL closure, so bounds-check then
+    # index a single char.
+    if j >= len(story) or story[j] not in c.DOUBLE_QUOTE_CHARS:
         return None, "answer_quote_not_closed"
     attribs = list(c.ANSWER_ATTRIB_RE.finditer(story))
     if len(attribs) != 1:
