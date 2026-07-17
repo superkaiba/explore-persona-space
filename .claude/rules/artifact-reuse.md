@@ -303,6 +303,14 @@ The planner verifies, before recording an artifact as reused in §10/§11:
   2026-07-04: reused verify helpers crawled the whole data repo under the
   2500-req/5-min org quota, wedging in 429 retry storms — retry 20/20 —
   while an A100 idled at 0%.)
+  Upload DESTINATIONS are mechanically gated by
+  `workflow_lint.py --check-upload-prefix-clobber` (#1452 / incident #1005:
+  reused #928 fitters uploaded to hardcoded `issue928_*` prefixes,
+  overwriting the parent's artifacts); reusing a script whose upload
+  destination is grandfathered in `UPLOAD_PREFIX_CLOBBER_ALLOWLIST` (or
+  otherwise hardcoded) REQUIRES the reuse plan to thread an explicit
+  child-issue upload prefix — the runtime-reuse mode the static lint cannot
+  see.
   On a failure, the remedy is NOT retrain/regenerate and NOT a caller-side
   workaround (wrapping the serial loop, monkey-patching the constant): **fix
   at the SOURCE module** — batch / parametrize / scope it there, so every future

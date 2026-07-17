@@ -41,6 +41,7 @@ from workflow_lint import (  # noqa: E402
     HUB_VERIFY_LEGACY_ALLOWLIST,
     SKILL_REF_ALLOWLIST,
     SKILL_REF_FS_ROOTS,
+    UPLOAD_PREFIX_CLOBBER_ALLOWLIST,
     _iter_ask_target_files,
     _live_skill_names,
     _other_worktree_prefix,
@@ -80,6 +81,7 @@ from workflow_lint import (  # noqa: E402
     check_smoke_output_hygiene,
     check_stale_label_disposition_clause,
     check_upload_as_file,
+    check_upload_prefix_clobber,
     check_vm_thread_cap_guidance,
     check_wandb_required,
 )
@@ -3593,6 +3595,299 @@ def test_workflow_lint_check_hub_dir_filecount_cli_exits_zero():
     result = _run("--check-hub-dir-filecount")
     assert result.returncode == 0, (
         f"workflow_lint --check-hub-dir-filecount failed:\n"
+        f"stdout: {result.stdout}\nstderr: {result.stderr}"
+    )
+
+
+# ─────────────────────────────────────────────────────────────────────
+# --check-upload-prefix-clobber (task #1452 / incident #1005): hardcoded
+# issue-prefix HF upload DESTINATIONS — Rule A (cross-issue dest token)
+# and Rule B (own-issue token via a fallback channel: `x or CONST`,
+# argparse default=, wrapper-param default). Fixture matrix per plan
+# §6.2. Each tmp case writes tiny .py files under ``tmp_path`` and calls
+# ``check_upload_prefix_clobber(scripts_dir=tmp_path)``.
+# ─────────────────────────────────────────────────────────────────────
+
+_UPC_WRAPPER_COMMON = (
+    'FIT_RESULTS_PREFIX = "issue928_cot/fit_results"\n'
+    'PREFIX = "issue928_foo"\n\n'
+    "def upload_folder_scoped_verify(folder, path_in_repo, expected_names):\n"
+    "    from huggingface_hub import HfApi\n\n"
+    "    HfApi().upload_folder(\n"
+    '        folder_path=str(folder), repo_id="r", repo_type="dataset",\n'
+    "        path_in_repo=path_in_repo,\n"
+    "    )\n"
+)
+
+
+def test_check_upload_prefix_clobber_fail_cross_issue_literal(tmp_path):
+    """FAIL (Rule A) — §6.2 case 1: an issue1005_ script uploading into a
+    literal issue928_ destination (the copied-uploader parent-clobber class)."""
+    (tmp_path / "issue1005_x.py").write_text(
+        "from huggingface_hub import HfApi\n\n"
+        "def push(d):\n"
+        '    HfApi().upload_folder(folder_path=str(d), repo_id="r", '
+        'path_in_repo="issue928_foo/bar")\n'
+    )
+    errors = check_upload_prefix_clobber(scripts_dir=tmp_path, legacy_allowlist=frozenset())
+    assert len(errors) == 1, f"expected exactly one error, got: {errors}"
+    assert "cross-issue" in errors[0]
+    assert "issue928_" in errors[0]
+
+
+def test_check_upload_prefix_clobber_fail_cross_issue_import_wrapper(tmp_path):
+    """FAIL (Rule A) — §6.2 case 2: a foreign constant imported from an
+    issue928_common module, fed through the parent's own upload wrapper
+    (exercises pass-1 wrapper inference + import-map tokens)."""
+    (tmp_path / "issue928_common.py").write_text(_UPC_WRAPPER_COMMON)
+    (tmp_path / "issue1005_x.py").write_text(
+        "from issue928_common import upload_folder_scoped_verify, PREFIX\n\n"
+        "def push(d):\n"
+        '    upload_folder_scoped_verify(d, PREFIX, ["a.json"])\n'
+    )
+    errors = check_upload_prefix_clobber(scripts_dir=tmp_path, legacy_allowlist=frozenset())
+    assert len(errors) == 1, f"expected exactly one error, got: {errors}"
+    assert "issue1005_x.py" in errors[0]
+    assert "cross-issue" in errors[0]
+
+
+def test_check_upload_prefix_clobber_fail_or_fallback_same_issue(tmp_path):
+    """FAIL (Rule B) — §6.2 case 3: the verbatim #1005 incident shape,
+    ``args.p or FIT_RESULTS_PREFIX`` at the wrapper's destination slot."""
+    (tmp_path / "issue928_common.py").write_text(_UPC_WRAPPER_COMMON)
+    (tmp_path / "issue928_x.py").write_text(
+        "from issue928_common import upload_folder_scoped_verify, FIT_RESULTS_PREFIX\n\n"
+        "def main(args, d):\n"
+        '    upload_folder_scoped_verify(d, args.p or FIT_RESULTS_PREFIX, ["a.json"])\n'
+    )
+    errors = check_upload_prefix_clobber(scripts_dir=tmp_path, legacy_allowlist=frozenset())
+    assert len(errors) == 1, f"expected exactly one error, got: {errors}"
+    assert "issue928_x.py" in errors[0]
+    assert "or-fallback" in errors[0]
+
+
+def test_check_upload_prefix_clobber_fail_argparse_default_transitive(tmp_path):
+    """FAIL (Rule B) — §6.2 case 4: the #928 post-incident remediated shape —
+    an argparse ``default=CONST`` where CONST is a TRANSITIVE f-string const
+    (also covers §4.3.2 transitive const resolution)."""
+    (tmp_path / "issue928_y.py").write_text(
+        "import argparse\n\n"
+        'BASE = "issue928_foo"\n'
+        'CONST = f"{BASE}/analysis_tensors"\n\n'
+        "def main():\n"
+        "    ap = argparse.ArgumentParser()\n"
+        '    ap.add_argument("--tensors-upload-prefix", default=CONST)\n'
+        "    args = ap.parse_args()\n"
+        "    from huggingface_hub import HfApi\n\n"
+        "    HfApi().upload_folder(\n"
+        '        folder_path="d", repo_id="r", path_in_repo=args.tensors_upload_prefix\n'
+        "    )\n"
+    )
+    errors = check_upload_prefix_clobber(scripts_dir=tmp_path, legacy_allowlist=frozenset())
+    assert len(errors) == 1, f"expected exactly one error, got: {errors}"
+    assert "argparse-default" in errors[0]
+
+
+def test_check_upload_prefix_clobber_fail_waiver_reason_too_short(tmp_path):
+    """FAIL — §6.2 case 5: a waiver whose reason is under 10 chars does NOT
+    suppress the finding."""
+    (tmp_path / "issue1005_x.py").write_text(
+        "from huggingface_hub import HfApi\n\n"
+        "def push(d):\n"
+        "    # UPLOAD_PREFIX_EXEMPT: short\n"
+        '    HfApi().upload_folder(folder_path=str(d), repo_id="r", '
+        'path_in_repo="issue928_foo/bar")\n'
+    )
+    errors = check_upload_prefix_clobber(scripts_dir=tmp_path, legacy_allowlist=frozenset())
+    assert len(errors) == 1, f"expected exactly one error (short waiver), got: {errors}"
+
+
+def test_check_upload_prefix_clobber_fail_without_allowlist(tmp_path):
+    """§6.2 case 6 / acceptance criterion 5(a): the incident-shape fixture
+    FAILs with an empty allowlist and PASSes once its relpath is
+    allowlisted (Rule B only — the allowlist override hook)."""
+    (tmp_path / "issue928_common.py").write_text(_UPC_WRAPPER_COMMON)
+    (tmp_path / "issue928_x.py").write_text(
+        "from issue928_common import upload_folder_scoped_verify, FIT_RESULTS_PREFIX\n\n"
+        "def main(args, d):\n"
+        '    upload_folder_scoped_verify(d, args.p or FIT_RESULTS_PREFIX, ["a.json"])\n'
+    )
+    errors = check_upload_prefix_clobber(scripts_dir=tmp_path, legacy_allowlist=frozenset())
+    assert errors, "expected the #928 incident shape to FAIL with an empty allowlist"
+    rel = f"{tmp_path.name}/issue928_x.py"
+    errors = check_upload_prefix_clobber(scripts_dir=tmp_path, legacy_allowlist=frozenset({rel}))
+    assert errors == [], f"expected PASS with the file allowlisted, got: {errors}"
+
+
+def test_check_upload_prefix_clobber_pass_read_side_foreign_prefix(tmp_path):
+    """PASS — §6.2 case 7: cross-issue READS (list_repo_tree /
+    hf_hub_download) are the sanctioned reuse default and never flag."""
+    (tmp_path / "issue1073_x.py").write_text(
+        "from huggingface_hub import HfApi, hf_hub_download\n\n"
+        "def fetch():\n"
+        "    rows = HfApi().list_repo_tree(\n"
+        '        "r", path_in_repo="issue779_monitoring/r_b", repo_type="dataset"\n'
+        "    )\n"
+        '    hf_hub_download("r", "issue779_monitoring/r_b/x.pt", repo_type="dataset")\n'
+        "    return rows\n"
+    )
+    errors = check_upload_prefix_clobber(scripts_dir=tmp_path, legacy_allowlist=frozenset())
+    assert errors == [], f"expected PASS (read-side foreign prefix), got: {errors}"
+
+
+def test_check_upload_prefix_clobber_pass_direct_own_prefix(tmp_path):
+    """PASS — §6.2 case 8: a DIRECT own-issue prefix hardcode is the
+    sanctioned Upload Policy norm (keeps ~100 issue scripts green)."""
+    (tmp_path / "issue1333_x.py").write_text(
+        "from huggingface_hub import HfApi\n\n"
+        "def push(d, cell):\n"
+        "    HfApi().upload_folder(\n"
+        '        folder_path=str(d), repo_id="r", path_in_repo=f"issue1333_store/{cell}"\n'
+        "    )\n"
+    )
+    errors = check_upload_prefix_clobber(scripts_dir=tmp_path, legacy_allowlist=frozenset())
+    assert errors == [], f"expected PASS (direct own-prefix), got: {errors}"
+
+
+def test_check_upload_prefix_clobber_pass_valid_waiver_preceding_line(tmp_path):
+    """PASS — §6.2 case 9: a valid waiver (reason ≥ 10 chars) on the
+    immediately preceding non-blank line suppresses the finding."""
+    (tmp_path / "issue1005_x.py").write_text(
+        "from huggingface_hub import HfApi\n\n"
+        "def push(d):\n"
+        "    # UPLOAD_PREFIX_EXEMPT: deliberate mirror into the parent bucket\n"
+        '    HfApi().upload_folder(folder_path=str(d), repo_id="r", '
+        'path_in_repo="issue928_foo/bar")\n'
+    )
+    errors = check_upload_prefix_clobber(scripts_dir=tmp_path, legacy_allowlist=frozenset())
+    assert errors == [], f"expected PASS (valid waiver), got: {errors}"
+
+
+def test_check_upload_prefix_clobber_pass_non_issue_named_script(tmp_path):
+    """PASS — §6.2 case 10: a non-issue-named script is skipped entirely
+    (disclosed scope: the incident class is reused issue scripts)."""
+    (tmp_path / "build_foo.py").write_text(
+        "from huggingface_hub import HfApi\n\n"
+        "def push(d):\n"
+        '    HfApi().upload_folder(folder_path=str(d), repo_id="r", '
+        'path_in_repo="issue928_foo/bar")\n'
+    )
+    errors = check_upload_prefix_clobber(scripts_dir=tmp_path, legacy_allowlist=frozenset())
+    assert errors == [], f"expected PASS (non-issue-named script skipped), got: {errors}"
+
+
+def test_check_upload_prefix_clobber_fail_function_local_assign(tmp_path):
+    """FAIL (Rule B) — §6.2 case 14: the issue1092_figures shape — a
+    function-LOCAL ``path_in_repo = f"{args.hf_prefix}/…"`` assignment
+    feeding the upload, with a token-carrying argparse default."""
+    (tmp_path / "issue1092_x.py").write_text(
+        "import argparse\n\n"
+        'HF_PREFIX_DEFAULT = "issue1092_realistic"\n\n'
+        "def main():\n"
+        "    ap = argparse.ArgumentParser()\n"
+        '    ap.add_argument("--hf-prefix", default=HF_PREFIX_DEFAULT)\n'
+        "    args = ap.parse_args()\n"
+        "    from huggingface_hub import HfApi\n\n"
+        '    path_in_repo = f"{args.hf_prefix}/p7/analysis_tensors/nulls"\n'
+        "    HfApi().upload_folder(\n"
+        '        folder_path="d", repo_id="r", path_in_repo=path_in_repo\n'
+        "    )\n"
+    )
+    errors = check_upload_prefix_clobber(scripts_dir=tmp_path, legacy_allowlist=frozenset())
+    assert len(errors) == 1, f"expected exactly one error, got: {errors}"
+    assert "argparse-default" in errors[0]
+
+
+def test_check_upload_prefix_clobber_fail_wrapper_param_default(tmp_path):
+    """FAIL (Rule B) — recommended fixture: a wrapper whose dest param
+    carries a signature default resolving to an issue token (the pass-1
+    wrapper-fallback finding at the def line)."""
+    (tmp_path / "issue928_w.py").write_text(
+        'PREFIX = "issue928_foo"\n\n'
+        "def upload_verified(folder, path_in_repo=PREFIX):\n"
+        "    from huggingface_hub import HfApi\n\n"
+        "    HfApi().upload_folder(\n"
+        '        folder_path=str(folder), repo_id="r", path_in_repo=path_in_repo\n'
+        "    )\n"
+    )
+    errors = check_upload_prefix_clobber(scripts_dir=tmp_path, legacy_allowlist=frozenset())
+    assert len(errors) == 1, f"expected exactly one error, got: {errors}"
+    assert "wrapper-param-default" in errors[0]
+
+
+def test_check_upload_prefix_clobber_fail_raw_completions_positional_dest(tmp_path):
+    """FAIL (Rule A) — recommended fixture: the
+    ``upload_raw_completions_to_data_repo`` positional-0 dest slot
+    (``experiment_name`` carries the issue prefix)."""
+    (tmp_path / "issue1005_r.py").write_text(
+        "from explore_persona_space.orchestrate.hub import "
+        "upload_raw_completions_to_data_repo\n\n"
+        "def push(rows):\n"
+        '    upload_raw_completions_to_data_repo("issue928_foo", rows)\n'
+    )
+    errors = check_upload_prefix_clobber(scripts_dir=tmp_path, legacy_allowlist=frozenset())
+    assert len(errors) == 1, f"expected exactly one error, got: {errors}"
+    assert "cross-issue" in errors[0]
+
+
+def test_check_upload_prefix_clobber_bundled_in_no_flags():
+    """§6.2 case 12 — NON-VACUOUS no-flags bundling pin: source-inspection
+    assert on the dispatch branch + the no_flags tuple membership
+    (exit-0-on-a-clean-tree is vacuous — it passes whether or not the
+    check is dispatched). House pattern:
+    test_check_hub_dir_filecount_bundled_in_no_flags."""
+    src = _LINT.read_text(encoding="utf-8")
+    assert re.search(
+        r"if args\.check_upload_prefix_clobber or no_flags:\s*\n"
+        r"\s*errors\.extend\(check_upload_prefix_clobber\(\)\)",
+        src,
+    ), "check_upload_prefix_clobber is not dispatched on the no-flags branch"
+    assert "or args.check_upload_prefix_clobber" in src, (
+        "--check-upload-prefix-clobber is missing from the no_flags detection tuple"
+    )
+
+
+def test_check_upload_prefix_clobber_live_trees_pass():
+    """§6.2 case 11 — the committed scripts/**/*.py tree must pass with the
+    committed allowlist (locks the grandfather set to today's tree, the
+    JUDGE_PIN pattern). A NEW fallback destination must use default=None +
+    a fail-loud raise or an UPLOAD_PREFIX_EXEMPT waiver — never extend the
+    allowlist."""
+    errors = check_upload_prefix_clobber()
+    assert errors == [], (
+        "scripts/**/*.py has hardcoded issue-prefix upload destinations "
+        "(#1005 parent-clobber class):\n" + "\n".join(errors)
+    )
+
+
+def test_check_upload_prefix_clobber_allowlist_load_bearing():
+    """§6.2 case 13 / acceptance criterion 5(b) — anti-vacuity pin: with the
+    allowlist EMPTIED on the REAL tree, (i) every committed allowlist
+    relpath appears among the findings (each entry load-bearing — catches
+    silent under-trigger AND stale entries in one assert) and (ii) the
+    #1005 incident file is flagged."""
+    errors = check_upload_prefix_clobber(legacy_allowlist=frozenset())
+    flagged_files = {e.split(": ", 1)[0].rsplit(":", 1)[0] for e in errors}
+    assert UPLOAD_PREFIX_CLOBBER_ALLOWLIST, "committed allowlist unexpectedly empty"
+    for rel in sorted(UPLOAD_PREFIX_CLOBBER_ALLOWLIST):
+        assert str(_REPO_ROOT / rel) in flagged_files, (
+            f"allowlist entry {rel} is NOT load-bearing (no finding with an "
+            f"empty allowlist) — stale entry or silent under-trigger.\n"
+            f"flagged: {sorted(flagged_files)}"
+        )
+    incident = str(_REPO_ROOT / "scripts/issue928_fit_decomposition.py")
+    assert incident in flagged_files, (
+        "the #1005 incident file (issue928_fit_decomposition.py) is not flagged "
+        "with an empty allowlist — the check no longer covers the incident shape"
+    )
+
+
+def test_workflow_lint_check_upload_prefix_clobber_cli_exits_zero():
+    """The dedicated flag must exist and pass on the committed tree
+    (acceptance criterion 2)."""
+    result = _run("--check-upload-prefix-clobber")
+    assert result.returncode == 0, (
+        f"workflow_lint --check-upload-prefix-clobber failed:\n"
         f"stdout: {result.stdout}\nstderr: {result.stderr}"
     )
 
