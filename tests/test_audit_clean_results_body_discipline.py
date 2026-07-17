@@ -1615,8 +1615,9 @@ def test_widened_family_cross_line_separator_matches():
 
 def test_reduplication_branch_hyphen_exposure_pinned():
     """Behavior pin (task #1447, implementer-discretion): the reduplication
-    branch carries NO `(?<!-)` guard, so `a bit for bit-level ops` DOES trip
-    (the trailing `\\b` is satisfied at the hyphen). Accepted exposure — the
+    branch's trailing `\\b` is satisfied at the hyphen in `bit-level`, so
+    `a bit for bit-level ops` DOES trip (the `(?<!-)` lookbehind guards only
+    the match START and is irrelevant here). Accepted exposure — the
     plan-time corpus scan found zero such hits across all 1,408 bodies, and
     guarding it would also miss genuine `bit-for-bit`-adjacent compounds."""
     body = V3_BODY_WITH_DATA_CODES.replace(
