@@ -1083,19 +1083,70 @@ def cmd_reap_husks(args: argparse.Namespace) -> None:
 
 # ─── Binding-concerns handlers ────────────────────────────────────────────
 
+CONCERN_SUMMARY_CAP = 200
+
+
+def _truncate_summary(summary: str, cap: int = CONCERN_SUMMARY_CAP) -> tuple[str, str | None]:
+    """Truncate an over-cap concern summary at a word boundary.
+
+    Returns ``(kept, dropped_tail)``. ``dropped_tail`` is ``None`` when
+    ``summary`` already fits (after stripping trailing whitespace). When
+    truncated, ``kept`` is <= ``cap`` chars, ends with ``"..."``, and cuts
+    at the last space at or before the budget (hard-cut when the text has
+    no usable space in that span).
+    """
+    summary = summary.rstrip()
+    if len(summary) <= cap:
+        return summary, None
+    budget = cap - 3  # room for the "..." marker (ASCII, not U+2026)
+    cut = summary.rfind(" ", 0, budget + 1)
+    if cut <= 0:
+        cut = budget
+    kept = summary[:cut].rstrip() + "..."
+    if kept == "...":
+        # Degenerate whitespace-heavy input: the kept prefix stripped to
+        # nothing — hard-cut the raw text so the stored summary is never
+        # content-free.
+        cut = budget
+        kept = summary[:cut].rstrip() + "..."
+    return kept, summary[cut:].strip()
+
 
 def cmd_raise_concern(args: argparse.Namespace) -> None:
     """Append a `raised` (or `verified-open` on re-raise) event to
     concerns.jsonl. Re-raising the SAME concern_id at the SAME round with
-    the SAME severity is a no-op (returns the existing event)."""
+    the SAME severity is a no-op (returns the existing event). An over-cap
+    ``--summary`` is truncated at a word boundary with a loud stderr
+    warning (full original shifted into evidence when --evidence is
+    empty); the library layer keeps the hard 200-char cap."""
+    summary, dropped = _truncate_summary(args.summary)
+    evidence = args.evidence
+    if dropped is not None:
+        if evidence is None:
+            evidence = args.summary  # preserve the full original text
+            print(
+                f"[task.py] WARNING: --summary was {len(args.summary)} chars "
+                f"(cap {CONCERN_SUMMARY_CAP}); truncated at a word boundary to "
+                f"{len(summary)} chars. Full original preserved in the "
+                "concern's evidence field.",
+                file=sys.stderr,
+            )
+        else:
+            print(
+                f"[task.py] WARNING: --summary was {len(args.summary)} chars "
+                f"(cap {CONCERN_SUMMARY_CAP}); truncated at a word boundary to "
+                f"{len(summary)} chars; --evidence kept as given. "
+                f"Dropped tail: {dropped!r}",
+                file=sys.stderr,
+            )
     payload = raise_concern(
         args.number,
         args.concern_id,
         severity=args.severity,
-        summary=args.summary,
+        summary=summary,
         raised_by=args.by,
         raised_at_round=args.round,
-        evidence=args.evidence,
+        evidence=evidence,
     )
     _safe_echo(
         json.dumps(payload, indent=2, ensure_ascii=False),
@@ -1107,13 +1158,26 @@ def cmd_address_concern(args: argparse.Namespace) -> None:
     """Append an `addressed` event recording that the implementer (or
     analyzer / planner) believes the concern has been fixed. The next
     reviewer round verifies; a re-raise after `addressed` becomes a
-    `verified-open` event rather than a fresh `raised`."""
+    `verified-open` event rather than a fresh `raised`. An over-cap
+    explicit ``--summary`` is truncated at a word boundary with a loud
+    stderr warning (the ``None`` carried-forward path is untouched)."""
+    summary = args.summary
+    if summary is not None:
+        summary, dropped = _truncate_summary(summary)
+        if dropped is not None:
+            print(
+                f"[task.py] WARNING: --summary was {len(args.summary)} chars "
+                f"(cap {CONCERN_SUMMARY_CAP}); truncated at a word boundary to "
+                f"{len(summary)} chars. Dropped tail: {dropped!r} "
+                "(detail belongs in the round report / the raise's evidence).",
+                file=sys.stderr,
+            )
     payload = address_concern(
         args.number,
         args.concern_id,
         addressed_by=args.by,
         addressed_at_round=args.round,
-        summary=args.summary,
+        summary=summary,
     )
     _safe_echo(
         json.dumps(payload, indent=2, ensure_ascii=False),
@@ -1709,7 +1773,13 @@ def main() -> None:
         choices=sorted(CONCERN_SEVERITIES),
         help="BLOCKER (no deferral), CONCERN (binding), NIT (optional)",
     )
-    p.add_argument("--summary", required=True, help="one-line ≤200-char description")
+    p.add_argument(
+        "--summary",
+        required=True,
+        help="one-line description (<=200 chars; longer text is truncated at a word "
+        "boundary with a warning, the full original shifted into --evidence when "
+        "--evidence is empty)",
+    )
     p.add_argument("--by", required=True, help="reviewer name (e.g. code-reviewer, critic)")
     p.add_argument(
         "--round",
@@ -1753,7 +1823,8 @@ def main() -> None:
         "--rationale",
         dest="summary",
         default=None,
-        help="optional updated summary; defaults to the original raised summary "
+        help="optional updated summary, <=200 chars (longer text is truncated at a "
+        "word boundary with a warning); defaults to the original raised summary "
         "(--rationale is an accepted alias, matching defer-concern's flag name)",
     )
     p.set_defaults(func=cmd_address_concern)
