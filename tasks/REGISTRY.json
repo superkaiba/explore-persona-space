@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1440,
+  "highest_id": 1441,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -3435,6 +3435,13 @@
       "path": "tasks/proposed/1440",
       "status": "proposed",
       "title": "daily-fix: task.py WARN on v<k>-stamped note heads"
+    },
+    "1441": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1441",
+      "status": "proposed",
+      "title": "daily-fix: add #1383 context clause to yaml BINDING summary"
     },
     "145": {
       "has_clean_result": false,
