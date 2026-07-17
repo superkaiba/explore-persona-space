@@ -2695,7 +2695,7 @@
       "kind": "experiment",
       "path": "tasks/followups_running/1345",
       "status": "followups_running",
-      "title": "Narrative-story framing collapses the assistant context\u2192answer map even on identical conversations, while chat and plain-text framings share one operator up to linear coordinates (MODERATE confidence)"
+      "title": "Narrative-story framing collapses the assistant context\u2192answer map on identical conversations at every probed read position, while chat and plain-text framings share one operator up to linear coordinates (MODERATE confidence)"
     },
     "1346": {
       "has_clean_result": false,
