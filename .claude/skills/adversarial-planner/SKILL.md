@@ -226,7 +226,7 @@ Run the structural verifier against the plan version just persisted:
   implantation plan instead names its contrastive-negative set or a named exemption),
   `N/A — no dry-run smoke` (check 11 — kind: infra|batch plans where a `--dry-run`
   mention is incidental, not the plan's own acceptance smoke), `N/A — no draw battery`
-  (check 12), `N/A — no empirical-null gate` (check 13),
+  (check 12; also check 32's battery branch), `N/A — no empirical-null gate` (check 13),
   `N/A — no fail-loud acceptance claim` / `N/A — fail-loud claim not test-backable`
   (check 15 — kind: infra|batch plans where the vocabulary hit is bug narration, or
   the target is a doc/prose file no pytest can exercise),
@@ -301,7 +301,12 @@ Run the structural verifier against the plan version just persisted:
   vocabulary is incidental, not this plan's own claim that a flag is bundled
   into workflow_lint.py's no-flags default run; a plan whose bundling claim is
   genuinely false instead corrects it, naming the explicit invocation that
-  runs the flag).
+  runs the flag), and
+  `N/A — no exit-0 acceptance criterion` (check 38 — the exit-0/green +
+  repo-wide-command text quotes an incident or a sibling's criterion, not this
+  plan's own gate; a plan whose own gate is genuinely unconditional instead
+  names the plan-time baseline on the criterion line or scopes the
+  invocation).
 - **FAIL → bounce to the planner** with the failed-check details (a mechanical-fix
   revision: re-spawn the planner with the FAIL list + the plan path; it patches the
   missing block and the orchestrator persists v{K+1} via `task.py new-plan-version`).

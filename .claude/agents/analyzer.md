@@ -377,6 +377,13 @@ written inline, never `see #M`) / `## Results` (one
   ground truth (training script at the Code SHA / `run_result.json` / plan
   §11), never typed from memory (#489: a 50x lr misprint; check 16). For
   no-training tasks: `**N/A — no model training.**`
+- **Cross-issue protocol delta (SPEC.md §`## Goal` (v4) / §`## Results`
+  (v4)):** when quoting a sibling issue's headline number measured under
+  a different eval protocol (e.g. split scheme, fold structure,
+  layer-selection rule, eval distribution, judge/DV recipe), state the
+  protocol delta inline next to the number + a comparability verdict
+  ("— not directly comparable"); in `## Results`/captions use the
+  descriptive no-`#K` form. Lens 7 FAILs a bare side-by-side.
 - **The Artifacts-grounding rule (`**Repro:**` footer):** GROUND every
   path-specific artifact claim in a live Hub listing at write time via
   `huggingface_hub.list_repo_files` (the `hf` CLI has no `api` subcommand,

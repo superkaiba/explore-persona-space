@@ -72,11 +72,45 @@ _SNAKE_SLUG_PATTERN = (
 PATTERNS: dict[str, tuple[str, str]] = {
     # name: (regex, plain-English description)
     "pre_reg": (
+        # Bare 'registered <noun>' branch added for the #1345 escape (fix
+        # #1419): six mentions like 'the registered same-map-different-
+        # coordinates verdict' / 'fail the registered 0.05 same-operator
+        # margin' slipped the adjacency-only alternation (4 of 6 carry
+        # intervening tokens) and were caught only by the LM critic's
+        # Lens 7 read. The new branch allows up to 3 lazy intervening
+        # modifier tokens (hyphenated compounds; numerals incl. the
+        # typographic minus U+2212 and the comparison signs U+2264/U+2265;
+        # plain adjectives) between 'registered' and a pre-registration
+        # head noun. Guards: a first-token preposition lookahead keeps the
+        # verb register clean ('registered on HF', 'registered in WandB').
+        # A determiner arm on the lookahead was MEASURED AND REJECTED at
+        # plan time: 6 of the 198 corpus hits are determiner-first GENUINE
+        # jargon ('The plan registered a decision lattice', 'I had
+        # registered an 80% yield floor'), while the benign
+        # determiner-first verb class ('the model registered a clear
+        # floor effect') has ZERO corpus attestation — so widening the
+        # guard trades 6 attested true positives for nothing measured.
+        # Accepted residual FP surface: benign transitive-verb +
+        # determiner + listed-noun objects would flag (cost: one loud
+        # Step 9a-bis adjudication each; 0 in 1,006 bodies).
+        # Tokens never carry a trailing period and separators are
+        # space/tab only, so a match never bridges a sentence or line
+        # boundary. Head-noun list measured against all 1006
+        # promoted/parked bodies on 2026-07-16: 198 marginal hits, every
+        # one genuine Lens 7 jargon, 0 verb-use false positives. 'test'
+        # and 'interval' are deliberately absent ('the registered interval
+        # defining the test' is the sanctioned Why-this-test CI-definition
+        # register). (RUF001 noqa: the U+2212/U+2264/U+2265 in the token
+        # class are the literal chars being matched, not homoglyphs.)
         r"pre-?registered|pre-?registration|(?<![a-z])pre-reg(?![a-z])|registered hypothesis"
         r"|registered alpha|\bas registered\b|fail at the gate|passed the gate"
-        r"|gate-pre-?registered",
+        r"|gate-pre-?registered"
+        r"|\bregistered[ \t]+(?!(?:as|at|by|for|in|into|on|to|under|via|with)\b)"
+        r"(?:[\w%/<>=≤≥−+-]+(?:\.\d+)*[ \t]+){0,3}?"  # noqa: RUF001
+        r"(?:verdicts?|lattices?|margins?|reads?|criteri(?:on|a)|thresholds?|bands?"
+        r"|gates?|rules?|endpoints?|contrasts?|floors?|companions?|hypothes[ei]s|alpha)\b",
         "Pre-registration jargon ('pre-registered', 'as registered', "
-        "'fail at the gate', 'gate-passed', etc.)",
+        "'fail at the gate', bare 'registered <verdict/margin/read/...>', etc.)",
     ),
     "verdict_caps": (
         # SUCCESS|FAILURE added for the #763 residual (#970): 'Under the
@@ -250,13 +284,19 @@ PATTERNS: dict[str, tuple[str, str]] = {
         # the body carried `bit-identical` AND `byte-identical`, but the
         # byte-only regex flagged only the latter; the clean-result-critic
         # Lens 6 bans both forms as the same voice violation, so the audit
-        # must catch both under one rule). Use plain English: "the two files
-        # matched exactly", "every byte agreed", "no diff between the runs".
-        r"\b(?:byte|bit)[\s-]identical\b",
+        # must catch both under one rule). The 'equal' synonym family
+        # (byte-equal / byte equal / bit-equal / bit equal) was added
+        # 2026-W29 (task #1423: issue #1005's body carried "inherited
+        # byte-equal (sha-asserted)", which the -identical-only regex missed;
+        # the clean-result-critic caught it manually). Use plain English:
+        # "the two files matched exactly", "every byte agreed", "no diff
+        # between the runs".
+        r"\b(?:byte|bit)[\s-](?:identical|equal)\b",
         (
             "Use plain English ('the two files matched exactly', 'every byte agreed', "
             "'no diff') instead of 'byte identical' / 'byte-identical' / 'bit identical' / "
-            "'bit-identical' — the phrase reads as AI-slop in research prose"
+            "'bit-identical' — or their '-equal' synonyms ('byte-equal', 'bit equal', ...) — "
+            "the phrase reads as AI-slop in research prose"
         ),
     ),
 }

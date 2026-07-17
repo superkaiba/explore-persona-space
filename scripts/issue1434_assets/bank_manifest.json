@@ -1,0 +1,21 @@
+{
+  "banks": {
+    "writing_style": {
+      "file": "writing_style_neutral_v1.json",
+      "sha256_canonical": "27c5a6d38298bca5d4b1078ab7c1f6186942d2dd58ffded72e53bce355bbecc2",
+      "n": 40,
+      "train_slice": [
+        0,
+        20
+      ],
+      "eval_slice": [
+        20,
+        40
+      ],
+      "artifact": "questiongen_writing_style.json"
+    }
+  },
+  "gen_model": "claude-sonnet-4-5-20250929",
+  "template_sha256": "8fe9d4528059deb54005d584520f74aca0e10b536cfaa15a928ae7291898aff0",
+  "ts": "2026-07-17T01:33:11Z"
+}

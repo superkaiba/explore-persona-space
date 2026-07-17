@@ -148,7 +148,7 @@ from collections.abc import Callable
 from pathlib import Path
 
 # --- Pinned workflow-invariant tests (plan §5 + 1 brief addition + 3 #1242 pins
-# --- + 1 #1268 pin + 1 #1289 pin, 37 files). -
+# --- + 1 #1268 pin + 1 #1289 pin + 1 #1397 pin, 38 files). -
 # A module-level literal tuple, NOT a glob: a future ``tests/test_workflowish.py``
 # that is NOT meant to gate Step 9c must not silently join the gate, and the gate
 # must not silently shrink if a glob arm stops matching. Drift is made loud by the
@@ -198,6 +198,7 @@ WORKFLOW_INVARIANT: tuple[str, ...] = (
     "tests/test_check_no_secret_shaped_strings.py",
     "tests/test_check_mcp_json_no_secrets.py",
     "tests/test_diff_base_origin_main_pin.py",  # NEW (#1289) — diff-base origin/main pin
+    "tests/test_fit_loop_batching_review_pin.py",  # NEW (#1397) — fit-loop batching review-lens pin
 )
 
 # --- Touched files that short-circuit (no per-file test map). ----------------
@@ -366,8 +367,8 @@ def recommended_timeout_s(tests: list[str]) -> int:
     """Deterministic `timeout(1)` bound for a Step 9c gate selection.
 
     ``BASE + PER_FILE * len(tests) + sum(slow surcharges)``, floored at
-    ``TIMEOUT_FLOOR_S``. Invariant-only selection (37 files incl. the
-    workflow-lint surcharge) -> 2130 s (~35.5 min), consistent with the existing
+    ``TIMEOUT_FLOOR_S``. Invariant-only selection (38 files incl. the
+    workflow-lint surcharge) -> 2160 s (36 min), consistent with the existing
     invariant-set-scale precedents (``step9c_baseline.py refresh``
     ``--timeout-s`` default 1800 s; the SKILL.md detached refresh's 2100 s).
     """

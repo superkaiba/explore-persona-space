@@ -207,6 +207,26 @@ does NOT fire this): `.claude/rules/selection-symmetric-nulls.md`. Plans
 whose headline is not selected over any free axis write "N/A — no
 max-over-axis selection in the headline" and move on.
 
+The SAME observed-vs-null symmetry discipline extends to NOISE STRUCTURE
+(conditional — fires only when the pattern is present): if any registered
+statistic's observed and reference legs share ONE SAMPLED quantity — a
+shared empirical baseline mean (`cos(X − B̄, Y − B̄)`), a shared sampled
+anchor/denominator (frac-of-anchor), a change-score correlation sharing a
+baseline — and it is compared against any null/reference band, §6 MUST
+register EITHER disjoint baseline draw halves feeding the two legs OR a
+null constructed to carry the identical shared-B̄ term per draw (at the
+pre-subtraction leg level, norm-matched to the observed raw leg), PLUS the
+split-half reliability report for each sampled difference-vector leg. A
+noise-free null (norm-matched random directions, independently
+re-centered shuffles) under-covers the shared-noise cross-term
+(≈ +tr(Σ_B)/n_B on the observed side only) — #1415: disjoint-baseline
+recount dropped prefix 0.271→0.178 / context 0.362→0.272, sent one pair
+0.23→−0.08, and pulled 6/28 prefix pairs below the null p97.5; the
+"28/28 clear the null" headline did not survive. Full recipe:
+`.claude/rules/selection-symmetric-nulls.md` § Noise-structure symmetry.
+Plans without the pattern need no extra declaration (optionally "N/A — no
+shared-baseline difference-vector DV").
+
 **Required: OOD generalization folds (group-structured held-out
 predictive DVs).** If any DV is a held-out predictive statistic —
 reconstruction R² / skill, read-out ρ, predictor accuracy, any
@@ -347,11 +367,13 @@ to amortize 8× setup"). If the answer is "no parallelism axis applies,"
 say so — silence is not acceptable.
 
 > **Compute-sizing recipes (HBM sizing / merge-disk + ladder-checkpoint
-> retention / sentinel lanes / floor cross-check + external-stream
+> retention / Out-root mount binding / sentinel lanes / floor cross-check
+> + external-stream
 > presumption / fit-phase pilot basis / store-IO / CPU-phase RAM/RSS
 > routing / machine costing + p90 fence sizing)** — when sizing any §9
 > phase (activation capture, adapter merges, dose-ladder rung checkpoints,
-> sentinel-signaling workloads, long-phase wall-time floors,
+> checkpoint/store out-roots, sentinel-signaling workloads,
+> long-phase wall-time floors,
 > store-heavy writes, VM-placed CPU-phase RAM, per-machine wall-time costing,
 > a deliberate GCP fence), READ
 > `.claude/rules/plan-compute-sizing.md` IN FULL before writing the table.
@@ -394,8 +416,13 @@ row costed at 1× the grid forgets the draw multiplier (#810: 0.75 h planned vs
 reality was ~15-30 h).
 (b) Ground `per_call_cost` on a CITED measurement (a timed single call at
 PRODUCTION shape, or a prior-issue measured figure) or a FLOP/kernel floor —
-EXCEPT for a fit / factorization / GD loop, where the basis MUST be a
-measured 1-cell pilot THROUGH the production entrypoint on the production
+EXCEPT for a fit / factorization / GD loop — **or a permutation /
+bootstrap / null-draw battery above the ~15–30 min phase floor** — where
+the basis MUST be a measured 1-cell pilot at the phase's realized
+execution shape (batch width / per-call structure — #1415; for a
+battery: one production-shape batched draw block) THROUGH the
+production entrypoint on
+the production
 device, a cited prior-issue measured figure (same kernel + shape), or a
 pre-registered `pilot-gated` first-step pilot (inputs don't exist at plan
 time) per `.claude/rules/plan-compute-sizing.md` § Per-cell fit phases; a
@@ -404,7 +431,10 @@ loops (#811: one inner kernel timed, the dominant frame asserted — 19h21m at
 unit 3/108) — NEVER an asserted "~2 s" for a dense factorization (#823: the
 plan asserted
 ~2 s/fit; the named fast twin's own docstring said ~125 s at N_tr≈4000, H=3584
-— a ~62× per-call error; the realized wall ran 35-57× the planned).
+— a ~62× per-call error; the realized wall ran 35-57× the planned); a
+`pilot-gated` battery row books ≥2× its naive wall/RSS projection in the §9
+headline until the pilot lands (#1092: naive 5 h/box booked, 12.8 h/box
+realized).
 (c) If the task body's reuse map or a parent issue names a fast /
 verified-equivalent helper for this loop, the §4 pseudocode USES it (import +
 call named), or the plan states in one line why not — dropping the body-named

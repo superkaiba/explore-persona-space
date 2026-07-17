@@ -76,8 +76,8 @@ Check catalog (id — classification — kind scope)
       keys                                                analysis
   c31 SKILL.md prose            WARN-only, conditional    infra + batch only
       durability pin
-  c32 fit-family §9 basis       WARN-only, conditional    experiment +
-      grounding                                           analysis
+  c32 fit-family + battery §9   WARN-only, conditional    experiment +
+      basis grounding                                     analysis
   c33 ladder checkpoint         WARN-only, conditional    experiment +
       retention policy                                    analysis
   c34 verbatim insert vs        WARN-only, conditional    infra + batch only
@@ -87,12 +87,14 @@ Check catalog (id — classification — kind scope)
   c36 numeric containment       WARN-only, conditional    experiment +
       claims                                              analysis
   c37 no-flags bundling claim   WARN-only, conditional    infra + batch only
+  c38 exit-0 repo-wide         WARN-only, conditional    all kinds
+      criterion baseline
 
 Kind-exempt checks render as [SKIP] (first-class status, distinguishable
 from genuine passes — the calibration report needs n_skip separate from
 n_pass). Conditional checks (4, 6, 7, 10, 11, 12, 13, 14, 15, 16, 17, 18,
 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36,
-37) also SKIP when their content trigger does not fire.
+37, 38) also SKIP when their content trigger does not fire.
 Check 23 runs OUTSIDE ``verify_plan_text()`` — it needs task context
 (``body.md`` + ``events.jsonl``), so ``main()`` appends it in ``--issue``
 mode only and renders it SKIP in ``--plan-file`` mode; its WARN is the one
@@ -111,7 +113,7 @@ labeled-line forms):
   - ``N/A — no artifact reuse`` (check 6)
   - ``N/A — not a replication`` (check 7)
   - ``N/A — no dry-run smoke`` (check 11)
-  - ``N/A — no draw battery`` (check 12)
+  - ``N/A — no draw battery`` (check 12; also check 32's battery branch)
   - ``N/A — no empirical-null gate`` (check 13)
   - ``N/A — no fail-loud acceptance claim`` /
     ``N/A — fail-loud claim not test-backable`` (check 15)
@@ -135,13 +137,15 @@ labeled-line forms):
   - ``Durability pin: N/A — <one-line reason>`` / alias
     ``N/A — no durability pin: <reason>`` (check 31; the reason tail is
     mandatory — a bare ``Durability pin: N/A`` still WARNs)
-  - ``N/A — no fit-family phases`` (check 32)
+  - ``N/A — no fit-family phases`` (check 32 fit branch; the battery
+    branch shares check 12's ``N/A — no draw battery``)
   - ``N/A — no per-rung checkpoint persistence`` / alias
     ``N/A — no checkpoint ladder`` (check 33)
   - ``N/A — no verbatim ratcheted-file insertion`` (check 34)
   - ``N/A — no revision-pinned reuse`` (check 35)
   - ``N/A — no numeric containment claims`` (check 36)
   - ``N/A — no no-flags bundling claim`` (check 37)
+  - ``N/A — no exit-0 acceptance criterion`` (check 38)
 
 WARN semantics: a WARN never blocks exit (exit 0). The Phase 1.5.0 wiring
 carries WARN lines verbatim into the fact-checker + critic briefs — that
@@ -5115,11 +5119,15 @@ def check_skillmd_prose_pin(plan: str, kind: str) -> CheckResult:
     )
 
 
-# ─── Check 32 — fit-family §9 basis grounding ──────────────────────────────
+# ─── Check 32 — fit-family + battery §9 basis grounding ────────────────────
 # Mechanizes .claude/rules/plan-compute-sizing.md § "Per-cell fit phases"
-# (MUST-level): a §9 row looping a fit/solve/factorization over cells x
-# folds x layers x ... must ground its per-call basis on a MEASURED 1-cell
-# pilot, a cited prior-issue measured figure, or a pre-registered
+# (MUST-level; #1395 widened the section + this check to draw batteries): a
+# §9 row looping a fit/solve/factorization over cells x folds x layers x
+# ... — or running a permutation/bootstrap/null-draw BATTERY (trigger:
+# c12's calibrated _BATTERY_TRIGGER_RE on basis-table rows; a row matching
+# both families is a fit row) — must ground its per-call basis on a
+# MEASURED 1-cell pilot (for a battery: one production-shape batched draw
+# block), a cited prior-issue measured figure, or a pre-registered
 # `pilot-gated` flag — an ASSERTED per-call cost is never a basis, and a
 # FLOP floor is the cross-check, never the basis (#823: asserted ~2 s/fit
 # vs ~125 s real, 12-20 h realized; #811: one inner kernel timed, dominant
@@ -5147,13 +5155,39 @@ def check_skillmd_prose_pin(plan: str, kind: str) -> CheckResult:
 # post-fix version PASSes on a substantive span (#811 v4 "REALIZED
 # ~2.6 h"; #722 v7 "ran ~9 min"; #810 v4+ "measured 0.385 s/cell" /
 # "parent 10 min"; #928 v5+ "prior-issue 1.0 h"; #1112 v4+ "parent
-# 3 min"). #778 (draw-battery incident, c12's domain) never triggers on
-# any of its 8 versions — clean division of labor. Disclosed residual
-# gaming: a FABRICATED
+# 3 min"). Division of labor (#1395 rewrite): c12 owns the battery
+# multiplier arithmetic + batched commitment (FAIL for experiments); c32
+# owns BASIS grounding (WARN) for fit-family AND battery basis-table rows;
+# adequacy stays with the Methodology critic (critic-lens-reference.md
+# item 10(iii)), fed by the WARN forwarding. Disclosed under-trigger:
+# prose-only battery sizing (the #1092 incident shape — no battery table
+# row) is invisible to c32 by construction — c12 + the item 10(iii) prose
+# REVISE cover it; the §4.3 planner-side change pushes future battery
+# bases INTO basis tables, where this branch then covers them.
+# Battery-branch re-scan 2026-07-16 (#1395 widening; old module =
+# origin/main@2c5891fe97, new = this file) over 3,445 corpus files
+# (.claude/plans/*.md + tasks/*/*/plans/*.md, plan.md symlinks included),
+# kind="experiment" uniform — an UPPER BOUND on the production fire set
+# (kind-exempt plans SKIP in production): battery branch fires on 65
+# plan-versions across 15 distinct issues; 52 plan-versions / 12 distinct
+# issues carry >=1 ungrounded battery row (would-WARN); recent era
+# (issue >= 1000): 3 distinct firing issues — #1332 + #1415 new-WARN
+# (genuine ungrounded null-battery rows), #1335 grounded PASS
+# ("#825 ~1 min/cell"). 0 forbidden flips: fit-branch per-row verdicts
+# byte-stable corpus-wide, no other check flipped (allowed flips: 36).
+# Incident recall, battery branch: #1092 versions do NOT fire (prose-only
+# batteries — the disclosed under-trigger above; the item 10(iii) prose
+# leg owns that shape); #778 GAINS coverage (SKIP->WARN on plan.md +
+# v1-v8 — its null-battery rows ARE basis-table rows); #810 versions do
+# not fire (no battery basis-table row). All 12 would-WARN issues are
+# genuine battery rows (null-battery / permutation / resample
+# components); zero incidental (judge-draw / battery-adjacent) fires.
+# One-shot audit instrument: scripts/issue1395_corpus_audit.py.
+# Disclosed residual gaming: a FABRICATED
 # "measured 2 s/fit" passes — a mechanical check cannot verify
 # measurement provenance (module scope discipline: a PASS here is never
 # "grounding verified"); adequacy stays with the Methodology critic
-# (critic-lens-reference.md item (iii)), fed by the WARN forwarding.
+# (critic-lens-reference.md item 10(iii)), fed by the WARN forwarding.
 
 _C32_KERNEL_RE = re.compile(
     r"(?i)\bridge\b|\bsvd\b|\beigh\b|\beigvalsh\b|\blstsq\b|\bgcv\b"
@@ -5202,21 +5236,24 @@ def _c32_offender_detail(offenders: list[tuple[str, str]]) -> str:
     """Bounded WARN detail (the c26 ``_c26_offender_detail`` shape): at most
     3 (component, basis) pairs, the rule anchor, the incident anchors, and
     every remedy (measured figure / prior-issue citation / pilot-gated /
-    the standalone N/A escape)."""
+    the branch-scoped standalone N/A escapes)."""
     shown = "; ".join(f"row {comp[:60]!r} basis {basis[:40]!r}" for comp, basis in offenders[:3])
     if len(offenders) > 3:
         shown += "; ..."
     return (
-        f"{shown} — fit-family row(s) whose basis carries neither (provenance vocabulary — "
-        "measured/timed/pilot/#<M>/parent — co-located with a numeric per-call timing) nor a "
-        "`pilot-gated` flag — an ASSERTED per-call cost is never a sizing basis and a FLOP "
-        "floor is the cross-check, never the basis (plan-compute-sizing.md § Per-cell fit "
-        "phases; #823: asserted ~2 s/fit, ~125 s real, 12-20 h realized; #811: unit 3/108 at "
-        "19h21m). Ground the row on a measured 1-cell pilot at production shape (state the "
-        "figure, e.g. `measured 125 s/fit`), cite a prior-issue measured figure "
-        "(`#811 r2: 313 s/unit`), mark the basis `pilot-gated`, or declare "
-        "`N/A — no fit-family phases` on its own line, unwrapped (no backticks/quotes), "
-        "if the row is not a fit loop"
+        f"{shown} — fit-family/battery row(s) whose basis carries neither (provenance "
+        "vocabulary — measured/timed/pilot/#<M>/parent — co-located with a numeric per-call "
+        "timing) nor a `pilot-gated` flag — an ASSERTED per-call cost is never a sizing basis "
+        "and a FLOP floor is the cross-check, never the basis (plan-compute-sizing.md "
+        "§ Per-cell fit phases; #823: asserted ~2 s/fit, ~125 s real, 12-20 h realized; #811: "
+        "unit 3/108 at 19h21m; #1092: a batched battery priced by FLOP / assumed-throughput "
+        "ran ~2.6x the naive booking). Ground the row on a measured 1-cell pilot at production "
+        "shape (state the figure, e.g. `measured 125 s/fit`; for a battery, one "
+        "production-shape batched draw block, e.g. `measured 3.8 min/draw-block`), cite a "
+        "prior-issue measured figure (`#811 r2: 313 s/unit`), mark the basis `pilot-gated`, "
+        "or — if the row is not a fit loop / draw battery — declare the branch escape on its "
+        "own line, unwrapped (no backticks/quotes): `N/A — no fit-family phases` (fit rows) / "
+        "`N/A — no draw battery` (battery rows)"
     )
 
 
@@ -5224,13 +5261,20 @@ def check_fit_basis_grounding(plan: str, kind: str) -> CheckResult:
     """WARN-only, conditional: every basis-column compute-table row naming a
     fit-family kernel (ridge/SVD/eigh/lstsq/GCV/MLP/LOCO/...) AND a
     loop/multiplicity signal (per-cell/per-fold vocabulary, an NxM product,
-    an "N fits" count) must ground its basis — provenance vocabulary
+    an "N fits" count) — or, since #1395, a permutation/bootstrap/null-draw
+    BATTERY row (trigger: c12's calibrated ``_BATTERY_TRIGGER_RE`` — battery
+    framing or a >=100-count draw vocabulary; a judge-style "N=5 draws" row
+    and a "graded 0-100" scale do NOT match; a row matching both families
+    is a FIT row, so the fit branch + fit escape govern it) — must ground
+    its basis — provenance vocabulary
     (measured/timed/pilot/#<M>/parent/ran/...) CO-LOCATED with a numeric
     timing token in the conversion-bearing cells (basis + wall, the c26
     escape-(a) precedent — a component cell like "reuse of #811 adapters"
     must not satisfy the citation class spuriously), or a literal
     ``pilot-gated`` flag anywhere in the row. Mechanizes
-    plan-compute-sizing.md § "Per-cell fit phases" (#823/#811/#722/#931).
+    plan-compute-sizing.md § "Per-cell fit phases" (#823/#811/#722/#931;
+    battery widening #1092/#1395 — for a battery the per-call unit is one
+    production-shape batched draw block).
     Anti-boilerplate BOTH polarities (the #1060 critic concern): "measured
     pilot" with no digit WARNs, and "~2 s/fit" with no provenance word
     WARNs. A FLOP-only basis WARNs by construction (no provenance token) —
@@ -5240,45 +5284,67 @@ def check_fit_basis_grounding(plan: str, kind: str) -> CheckResult:
     stated figure is REAL / transfers stays critic-owned: a FABRICATED
     "measured 2 s/fit" passes (a mechanical check cannot verify
     measurement provenance — a PASS here is never "grounding verified").
-    Disclosed under-triggers: fit sizing stated only in prose (no
-    basis-column table) is invisible in v1 (c12 independently covers prose
-    draw batteries); a basis table lacking a wall column is invisible
-    (parser precondition, c26 parity). Escape: the standalone line
-    ``N/A — no fit-family phases`` (anti-paste semantics via
-    ``_standalone_na_declared``). Calibration numbers + the corpus re-scan
+    Disclosed under-triggers: fit/battery sizing stated only in prose (no
+    basis-column table — the #1092 incident's own shape) is invisible in
+    v1 (c12 independently covers prose draw batteries; the
+    critic-lens-reference.md item 10(iii) prose REVISE owns basis adequacy
+    there); a basis table lacking a wall column is invisible
+    (parser precondition, c26 parity). Escapes, branch-scoped (anti-paste
+    semantics via ``_standalone_na_declared``): the standalone line
+    ``N/A — no fit-family phases`` excuses the FIT rows; ``N/A — no draw
+    battery`` (shared with c12) excuses the BATTERY rows. Calibration
+    numbers + the corpus re-scan
     gate on ANY future c32-regex change live in the comment block above
     ``_C32_KERNEL_RE``."""
-    cid, name = "c32_fit_basis_grounding", "fit-family §9 basis grounding"
+    cid, name = "c32_fit_basis_grounding", "fit-family + battery §9 basis grounding"
     if kind not in ("experiment", "analysis"):
         return _skip(
-            cid, name, "kind-exempt: fit-family §9 rows are an experiment|analysis plan shape"
+            cid,
+            name,
+            "kind-exempt: fit-family/battery §9 rows are an experiment|analysis plan shape",
         )
     rows = _c26_compute_table_rows(plan)
-    triggered = [
+    fit_rows = [
         (comp, basis, wall, row_text)
         for comp, basis, wall, row_text in rows
         if _C32_KERNEL_RE.search(row_text) and _C32_LOOP_RE.search(row_text)
     ]
-    if not triggered:
-        return _skip(cid, name, "no fit-family row in a basis-column compute table detected")
-    if _standalone_na_declared(plan, r"no fit[- ]family (?:fit )?phases"):
-        return _pass(cid, name, "explicit N/A declared (no fit-family phases)")
-    offenders: list[tuple[str, str]] = []
-    for comp, basis, wall, row_text in triggered:
-        conv = f"{basis} {wall}"  # conversion-bearing cells, the c26 escape-(a) precedent
-        grounded = (
-            _C32_PROVENANCE_RE.search(conv) and _C32_TIMING_RE.search(conv)
-        ) or _C32_PILOT_GATED_RE.search(row_text)
-        if not grounded:
-            offenders.append((comp, basis))
-    if not offenders:
-        return _pass(
-            cid,
-            name,
-            f"{len(triggered)} fit-family row(s); every basis carries provenance + a timing "
-            "figure or pilot-gated",
+    battery_rows = [r for r in rows if r not in fit_rows and _BATTERY_TRIGGER_RE.search(r[3])]
+    if not fit_rows and not battery_rows:
+        return _skip(
+            cid, name, "no fit-family or battery row in a basis-column compute table detected"
         )
-    return _warn(cid, name, _c32_offender_detail(offenders))
+    branch_state: list[str] = []
+    offenders: list[tuple[str, str]] = []
+    n_considered = 0
+    for branch, rows_b, na_tail in (
+        ("fit-family", fit_rows, r"no fit[- ]family (?:fit )?phases"),
+        ("battery", battery_rows, r"no draw battery"),
+    ):
+        if not rows_b:
+            continue
+        if _standalone_na_declared(plan, na_tail):
+            branch_state.append(f"{branch}: explicit N/A declared")
+            continue
+        for comp, basis, wall, row_text in rows_b:
+            n_considered += 1
+            conv = f"{basis} {wall}"  # conversion-bearing cells, the c26 escape-(a) precedent
+            grounded = (
+                _C32_PROVENANCE_RE.search(conv) and _C32_TIMING_RE.search(conv)
+            ) or _C32_PILOT_GATED_RE.search(row_text)
+            if not grounded:
+                offenders.append((comp, basis))
+    if offenders:
+        return _warn(cid, name, _c32_offender_detail(offenders))
+    if n_considered == 0:
+        return _pass(cid, name, "; ".join(branch_state))
+    detail = (
+        f"{n_considered} fit-family/battery row(s); every considered basis carries "
+        "provenance + a timing figure or pilot-gated"
+    )
+    if branch_state:
+        detail += "; " + "; ".join(branch_state)
+    return _pass(cid, name, detail)
 
 
 # ─── Check 33 — checkpoint-ladder retention policy ─────────────────────────
@@ -6133,6 +6199,159 @@ def check_noflags_bundling_claim(plan: str, kind: str) -> CheckResult:
     )
 
 
+# ─── Check 38 — exit-0 criterion on repo-wide lint/suite (conditional) ─────
+
+# Assertion tokens: the explicit exit-status idiom family plus "green"
+# (#584 v1:182 "# full suite green"). `pass`/`passes` is a DISCLOSED v1
+# under-trigger: it is endemic in criterion boilerplate (plan-time corpus
+# measurement: ~1,810 workflow_lint-arm candidate lines with pass/green
+# vs 381 exit-0-only), and its dominant shape ("no-flags run passes
+# (includes --check-X)") is c37's subject; widen only after burn-in.
+_C38_ASSERT_RE = re.compile(
+    r"(?i)\bexit(?:s|ed)?\s+(?:code\s+|status\s+|with\s+)?0\b"
+    r"|\bexit[- ]?code\s*(?:==?|:)\s*0\b"
+    r"|\brc\s*(?:==?|:)\s*0\b"
+    r"|\breturn\s*code\s*(?:==?|:)?\s*0\b|\breturncode\s*(?:==?|:)?\s*0\b"
+    r"|\bgreen\b"
+)
+# Negation guard: a line DESCRIBING the hazard ("full no-flags run is NOT
+# a pass criterion", "exit 0 is unattainable") is never adjudicated —
+# the #1365 v2:101 corrected prose is the founding negative control.
+_C38_NEG_RE = re.compile(r"(?i)\bnot\b|\bnever\b|\bcannot\b|\bunattainable\b|\bunsatisfiable\b")
+# Satisfiers (same line only): a NAMED baseline mechanism or scoping
+# prose. Bare "no NEW failures" deliberately does NOT satisfy — the
+# motivating #1365 v1:95 line carried exactly that phrase and was still
+# critic-bounced (a bare command performs no baseline subtraction).
+_C38_SATISFIER_RE = re.compile(
+    r"(?i)\bbaseline\b|\bstep\s*9c\b|\bstep\s*10d\b|baseline[- ]subtract"
+    r"|\bvs\.?\s+(?:origin/)?main\b|\btouched files?\b|\bchanged files?\b|\bscoped\b"
+)
+# Arg-tail terminators: backtick, comment '#', '&&'/'|', close-paren, EOL.
+_C38_TAIL_SPLIT_RE = re.compile(r"[`#&|)\n]")
+# (?<!test_) keeps `tests/test_workflow_lint.py` mentions out of arm A.
+_C38_LINT_OCC_RE = re.compile(r"(?<!test_)workflow_lint(?:\.py)?")
+_C38_NOFLAGS_RUN_RE = re.compile(r"(?i)\bno[- ]flags(?:\s+default)?\s+run\b")
+_C38_PYTEST_OCC_RE = re.compile(r"\bpytest\b")
+_C38_PYTEST_SCOPED_RE = re.compile(r"::|\btests?/\S*\.py\b|(?:^|\s)-k\s")
+_C38_RUFF_OCC_RE = re.compile(r"\bruff\s+(?:check|format)\b")
+_C38_FLAG_TOKEN_RE = re.compile(r"^--?[\w-]+$")
+
+
+def _c38_repo_wide_cmd(line: str) -> str | None:
+    """Label of the first REPO-WIDE lint/suite invocation on ``line``, or
+    None. Scoped forms do not count: a ``--check-`` flag in the
+    workflow_lint arg tail; a ``.py`` path / ``::`` node id / ``-k``
+    filter in the pytest tail; any non-``.`` path token in the ruff tail.
+    Arm B (the "no-flags default run" phrase) is suppressed when the line
+    already carries a SCOPED workflow_lint invocation (commentary shape)."""
+    saw_scoped_lint = False
+    for m in _C38_LINT_OCC_RE.finditer(line):
+        tail = _C38_TAIL_SPLIT_RE.split(line[m.end() :], 1)[0]
+        if "--check-" in tail:
+            saw_scoped_lint = True
+        else:
+            return "workflow_lint.py (no --check- scoping)"
+    if not saw_scoped_lint and _C38_NOFLAGS_RUN_RE.search(line):
+        return "the workflow_lint no-flags default run"
+    for m in _C38_PYTEST_OCC_RE.finditer(line):
+        tail = _C38_TAIL_SPLIT_RE.split(line[m.end() :], 1)[0]
+        if not _C38_PYTEST_SCOPED_RE.search(tail):
+            return "pytest (no path scope)"
+    for m in _C38_RUFF_OCC_RE.finditer(line):
+        tail = _C38_TAIL_SPLIT_RE.split(line[m.end() :], 1)[0]
+        tokens = [t for t in tail.split() if not _C38_FLAG_TOKEN_RE.match(t)]
+        if all(t == "." for t in tokens):
+            return "ruff check/format (repo-wide)"
+    return None
+
+
+def check_exit0_repo_wide_baseline(plan: str, kind: str) -> CheckResult:
+    """WARN-only, conditional, ALL kinds: a line asserting exit-0/green on
+    a REPO-WIDE lint/suite command must name a plan-time baseline or
+    scoping ON THAT LINE — #1365 v1 §6 asserted
+    `workflow_lint.py # exit 0 — no NEW failures` while the no-flags lint
+    is pre-existing-red on origin/main (jointly unsatisfiable; caught by
+    the statistics critic in round 1; prior instance #584 v1
+    `pytest tests/ -q # full suite green`). SAME-LINE co-occurrence only:
+    a ±3-line window would have false-WARNed the CORRECTED #1365 v2 via
+    its :98 scoped criterion pairing with the :101 no-flags prose (the
+    c37 same-line-radius doctrine). RAW scan incl. fences (c11 precedent:
+    the incident line sits inside a ```bash fence). ALL kinds (c21
+    precedent): both incidents were kind: infra, but the idiom rides any
+    kind's §6/§10. NEVER FAILs: trigger, arms, and satisfiers are line
+    heuristics; the Phase 1.5/2 reviewers adjudicate; a genuinely-green
+    repo-wide command with baseline language stays PASS by construction.
+    Disclosed under-triggers (v1): bare `pass`/`passes`/`passed`
+    assertion vocabulary (endemic; partially c37's subject); an
+    assertion sentence separated from its fenced command by ≥1 line;
+    "full suite" with no literal pytest token. Disclosed over-trigger
+    residual: a prose pytest mention with a non-scoping tail on an
+    assertion-bearing line. Deliberate reading (disclosed,
+    fact-checker-confirmed correct): an EMPTY arg tail — bare
+    `ruff check` / bare `pytest` plus an assertion word — classifies
+    REPO-WIDE and WARNs (both default to cwd/repo-wide; `all([]) is
+    True` is intended semantics, not an accident). Additional disclosed
+    over-trigger residual (measured): a `workflow_lint.py` PATH named as
+    another tool's argument on an assertion line (`ruff check ...
+    workflow_lint.py ... → exit 0`) reads as arm A — 1/8 operative-set
+    WARNs (#1381 v2). Calibration (2026-07-16, 2117 corpus plan
+    versions, forced kind=infra): corpus-wide 486 WARN / 102 PASS /
+    1529 SKIP (historical mass, never re-verified — the c37 reporting
+    convention); the 25 NEWEST infra|batch plan versions by git
+    last-commit date (task #1387's own self-referential plan files
+    excluded): 8 WARN / 17 SKIP, hand-classified 7 incident-class
+    (genuine baseline-less repo-wide exit-0/green gates: #1389 v1+v2,
+    #1385 v1+v2, #1381 v1, #1399 v1+v2) / 0 rephrase-class / 1 FP
+    (#1381 v2, the ruff-path residual above) — within the calibration
+    gate (WARNs <= 8, FPs <= 2). Positive controls #1365 v1:95 +
+    #584 v1:182 WARN; corrected #1365 v2 is clean (SKIP); the GOOD_PLAN
+    fixture SKIPs."""
+    cid, name = (
+        "c38_exit0_repo_wide_baseline",
+        "exit-0 criterion on a repo-wide command names baseline/scoping",
+    )
+    del kind  # all kinds — trigger precision carries the false-positive discipline
+    offenders: list[tuple[str, str]] = []
+    triggered = False
+    for line in plan.splitlines():
+        if not _C38_ASSERT_RE.search(line) or _C38_NEG_RE.search(line):
+            continue
+        cmd = _c38_repo_wide_cmd(line)
+        if cmd is None:
+            continue
+        triggered = True
+        if not _C38_SATISFIER_RE.search(line):
+            offenders.append((cmd, line))
+    if not triggered:
+        return _skip(cid, name, "no exit-0/green assertion on a repo-wide lint/suite command")
+    if _standalone_na_declared(plan, r"no exit[- ]0 acceptance criterion"):
+        return _pass(
+            cid,
+            name,
+            "explicit N/A declared (matched text quotes an incident / is not this plan's own gate)",
+        )
+    if not offenders:
+        return _pass(
+            cid,
+            name,
+            "every repo-wide exit-0/green criterion names a baseline or scoping on its line",
+        )
+    cmd, line = offenders[0]
+    more = f" (+{len(offenders) - 1} more)" if len(offenders) > 1 else ""
+    return _warn(
+        cid,
+        name,
+        f"exit-0/green asserted on {cmd} with no plan-time baseline or scoping named on the "
+        f"line — the no-flags lint / full suite is pre-existing-red-exposed on origin/main, so "
+        f"an unconditional exit-0 gate is jointly unsatisfiable (#1365 v1 / #584 shape; the "
+        f"binding repo-wide gates are Step 10d's baseline-subtracted lint gate and the step9c "
+        f"baseline compare). Offending line: {line.strip()[:100]!r}{more}. Remedies: state "
+        "'no NEW failures vs the plan-time baseline' (or step9c / Step 10d) on the criterion "
+        "line, scope the invocation (--check-<x> / explicit paths), or declare "
+        "`N/A — no exit-0 acceptance criterion` on its own line, unwrapped (no backticks/quotes)",
+    )
+
+
 # ─── Driver ────────────────────────────────────────────────────────────────
 
 CHECKS = [
@@ -6172,6 +6391,7 @@ CHECKS = [
     check_pinned_revision_reuse,
     check_numeric_containment,
     check_noflags_bundling_claim,
+    check_exit0_repo_wide_baseline,
 ]
 
 

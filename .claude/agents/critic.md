@@ -135,6 +135,7 @@ behavior implantation (two named exemptions) · 7 replication fidelity ·
 check (a)–(k) · 10 CPU/analysis-phase placement (i)–(iv): idle multi-GPU pod /
 >50 GB disk or ≥~16 GB-RSS VM footprint / gradient-descent / dense-factorization fit — or any
 high-count tiny-op battery (draws, per-item serialization, per-file uploads) —
+incl. an unpiloted per-draw/per-call basis (asserted or FLOP-derived) —
 on the VM CPU or left serial / narrow phase holding the peak-width pod ·
 11 marker stopping recipe (parity is NOT a
 `Source:`) + runtime-guard smoke-verifiability · 12 multi-arm resolution-band
@@ -164,7 +165,8 @@ gates / unequal per-unit N / missing baseline propensity /
 structurally-constant observed-vs-null statistic · 10 dual-DV for
 content-behavior leakage/implantation (judge-rate PRIMARY, continuous
 companion SECONDARY) · 11 selection-symmetric nulls (max-over-axis
-headlines; band vs DV ceiling) · 12 same-round re-cost of affected §9 rows
+headlines; band vs DV ceiling; shared-baseline noise structure) · 12
+same-round re-cost of affected §9 rows
 for any power-raising recommendation · 13 OOD generalization folds
 (group-level fold for group-structured held-out DVs) · 14 fail-loud
 acceptance claims backed by committed tests (per claim; grep gates are not

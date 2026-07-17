@@ -110,6 +110,7 @@ Rows are honest: a check with no v2 owner is a `GAP:` row, never papered over.
 | Step 1 read the plan first | code-reviewer.md Step 1 | v2-owner: code-correctness-critic + plan-adherence-critic |
 | Step 2 read the diff | code-reviewer.md Step 2 | v2-owner: code-correctness-critic |
 | Step 2 compute-throughput anti-patterns (a)-(d) | code-reviewer.md Step 2 | v2-owner: efficiency-critic |
+| Step 2 fit-loop batched-helper naming (unconditional verdict line) | code-reviewer.md Step 2 | v2-owner: efficiency-critic |
 | Step 3 surrounding code + reachability | code-reviewer.md Step 3 | v2-owner: code-correctness-critic |
 | Step 3.5 cached-artifact coverage (`cached-artifact-coverage-unverified`) | code-reviewer.md Step 3.5 | v2-owner: code-correctness-critic |
 | Step 3.6 long-loop restartability | code-reviewer.md Step 3.6 | v2-owner: efficiency-critic |

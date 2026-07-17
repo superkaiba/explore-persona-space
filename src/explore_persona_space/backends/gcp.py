@@ -2629,6 +2629,13 @@ def render_startup_script(
         # clobbering them to "" — see the secrets_fetch_lines comment above.
         'export HF_XET_HIGH_PERFORMANCE="${HF_XET_HIGH_PERFORMANCE:-1}"',
         'export HF_HUB_ENABLE_HF_TRANSFER="${HF_HUB_ENABLE_HF_TRANSFER:-1}"',
+        # Staging-leg guidance (#1402, Python-side comment only — never rendered):
+        # workload scripts that STAGE inputs from the Hub should call
+        # hub.stage_hub_file / hub.stage_hub_prefix (both ride hub.retry_transient,
+        # which classifies LocalEntryNotFoundError transient BY CLASS — the #1092
+        # rf01 429-on-HEAD masking) instead of hand-rolling retry + tempdir moves;
+        # for flaky egress, thread HF_HUB_DISABLE_XET=1 per launch via the
+        # passthrough channel above — never flip the accelerator defaults.
         "",
         # Output redirect (#607): everything from here down — secrets
         # fetch, preflight, clone, uv sync, the workload itself — writes

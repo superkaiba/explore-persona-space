@@ -184,6 +184,9 @@ class Fu4Run:
     lora_r: int = 32  # UNIFIED_OVERRIDES default (recipe.py:114)
     lora_alpha: int = 64  # UNIFIED_OVERRIDES default (recipe.py:115); FIXED across ranks
     round_name: str = "fu4"  # wandb run-name prefix component (fu5: issue1090_fu5_*)
+    # External-round seam (#1434): a registered non-1090 round names its own
+    # wandb run name verbatim; "" keeps the fu4/fu5 shape byte-identical.
+    run_name_override: str = ""
 
     @property
     def slug(self) -> str:
@@ -191,6 +194,8 @@ class Fu4Run:
 
     @property
     def run_name(self) -> str:
+        if self.run_name_override:
+            return self.run_name_override
         return f"issue1090_{self.round_name}_{self.run_id}_seed42"
 
 
@@ -319,6 +324,25 @@ class RoundSpec:
     max_lora_rank: int  # vLLM engine LoRA slot width (organisms engine factory)
     eval_split_diagnostic: bool  # fu5 D2 item 6 (list-affordable vs prose-natural)
     reused_runs: tuple[ReusedRun, ...]
+    # ── External-round seams (#1434; defaults keep fu4/fu5 byte-identical) ──
+    # Sentinel task_id + filename component + out_root issue dir.
+    issue: int = 1090
+    # Dispatcher worker entrypoint: a round registered by an EXTERNAL module
+    # (e.g. scripts/issue1434_worker.py) must route worker subprocesses through
+    # its OWN entrypoint (which re-registers the round before delegating) —
+    # this file's __main__ only knows the fu4/fu5 rounds. "" -> this file.
+    worker_script: str = ""
+    # Tier-1 ladder judge seam (llm-judging rule pins ride the fn): None ->
+    # fu3w.judge_graded_r23 (the registered-rubric instrument). #1434 injects
+    # the verbatim pv trait-score rubric here (plan §3.5 item 3).
+    judge_fn: Any = None
+    # tf-margin pool seam: None -> the fu3/fu4 legacy V4_POOL_SOURCE path
+    # (KeyErrors on behaviors outside that map). Signature: fn(cfg) ->
+    # (pos_pairs, neg_pairs, meta).
+    margin_pools_fn: Any = None
+    # #1434 §10: the all-rung adapter upload IS the durable ladder record
+    # (fu4/fu5 default False keeps selected+final only + declared discard).
+    upload_all_rungs: bool = False
 
 
 ROUNDS: dict[str, RoundSpec] = {
@@ -793,7 +817,7 @@ def ladder_fu4_run(
             temperature=1.0,
             n_judge_draws=cfg.tier1_draws,
             generate_fn=gen,  # caller-injected -> caller-closed (finally below)
-            judge_fn=fu3w.judge_graded_r23,  # max_tokens=300 instrument
+            judge_fn=(ROUND.judge_fn or fu3w.judge_graded_r23),  # max_tokens=300 instrument
         )
         try:
             for step in pending:
@@ -905,6 +929,8 @@ def fu4_margin_pools(
     the same staging helper, EQUALIZED DOWN to min(n_pos, n_neg); below
     FMT_MARGIN_POOL_FLOOR per side the round ships WITHOUT the formatting
     margin (A13 escape) — (None, None, meta) with the flagged reason."""
+    if ROUND.margin_pools_fn is not None:
+        return ROUND.margin_pools_fn(cfg)
     pos, neg = fu3w._behavior_margin_pools(cfg, behavior)
     meta: dict[str, Any] = {
         "behavior": behavior,
@@ -1103,7 +1129,9 @@ def upload_fu4_run(cfg: i1090.RunConfig, seams: i1090.Seams1090, run: Fu4Run, re
     # rungs are the plan-§10 declared discard, deleted AFTER upload verifies.
     if rec.get("status") == "trained" and rec.get("selected_ckpt"):
         ckpts = fu2.enumerate_ckpt_rungs(rec["adapter_root"])
-        keep_steps = {int(rec["selection"]["step"]), max(ckpts)}
+        keep_steps = (
+            set(ckpts) if ROUND.upload_all_rungs else {int(rec["selection"]["step"]), max(ckpts)}
+        )
         for step in sorted(keep_steps):
             _up(
                 ckpts[step],
@@ -1129,7 +1157,7 @@ def upload_fu4_run(cfg: i1090.RunConfig, seams: i1090.Seams1090, run: Fu4Run, re
 
 
 def fu4_sentinel_path(sentinel_dir: Path, run_id: str) -> Path:
-    return sentinel_dir / f"issue-{i1090.ISSUE}-{ROUND.name}run-{run_id}.json"
+    return sentinel_dir / f"issue-{ROUND.issue}-{ROUND.name}run-{run_id}.json"
 
 
 def fu4_status_path(out_root: Path, run_id: str) -> Path:
@@ -1153,8 +1181,8 @@ def write_fu4_run_sentinel(
         "sentinel_schema_version": fu3w.SENTINEL_SCHEMA_VERSION,
         "kind": "epm:progress",
         "version": 1,
-        "task_id": i1090.ISSUE,
-        "by": f"issue1090_{ROUND.name}",
+        "task_id": ROUND.issue,
+        "by": f"issue{ROUND.issue}_{ROUND.name}",
         "ts": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
         "payload": payload,
     }
@@ -1476,7 +1504,7 @@ def _worker_cmd(args: argparse.Namespace, run: Fu4Run, slot: int) -> list[str]:
         "uv",
         "run",
         "python",
-        str(Path(__file__).resolve()),
+        ROUND.worker_script or str(Path(__file__).resolve()),
         "--smoke" if args.smoke else "--full",
         "--round",
         args.round,  # workers re-select the round registry in their own process
@@ -1555,7 +1583,7 @@ def finalize_dispatch(
         "band": list(JUDGED_RATE_BAND),
     }
     payload = {
-        "issue": i1090.ISSUE,
+        "issue": ROUND.issue,
         "round": ROUND.label,
         "runs_done": done,
         "runs_failed": failed,
@@ -1579,10 +1607,10 @@ def finalize_dispatch(
         "sentinel_schema_version": fu3w.SENTINEL_SCHEMA_VERSION,
         "kind": kind,
         "version": 1,  # drain-side rewrite derives max+1 (#1095)
-        "task_id": i1090.ISSUE,
+        "task_id": ROUND.issue,
         "gate": f"{ROUND.name}-dispatch",
         "blocks_pipeline": not args.smoke,
-        "by": f"issue1090-{ROUND.name}-dispatch",
+        "by": f"issue{ROUND.issue}-{ROUND.name}-dispatch",
         "ts": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
         "smoke": bool(args.smoke),
         "note": json.dumps(payload, ensure_ascii=False),
@@ -1590,7 +1618,7 @@ def finalize_dispatch(
     }
     kind_slug = kind.replace(":", "_")
     i1090._atomic_write_json(
-        sentinel_dir / f"issue-{i1090.ISSUE}-{kind_slug}-{int(time.time())}.json", sentinel
+        sentinel_dir / f"issue-{ROUND.issue}-{kind_slug}-{int(time.time())}.json", sentinel
     )
     logger.info(
         "[fu4] finalize: %d done / %d failed / %d resume-skipped",
@@ -2487,9 +2515,9 @@ def fu4_config(args: argparse.Namespace) -> i1090.RunConfig:
         args.out_root
         if args.out_root is not None
         else (
-            f"/tmp/issue-{i1090.ISSUE}-{ROUND.name}-smoke"
+            f"/tmp/issue-{ROUND.issue}-{ROUND.name}-smoke"
             if smoke
-            else f"data/issue_{i1090.ISSUE}/{ROUND.name}"
+            else f"data/issue_{ROUND.issue}/{ROUND.name}"
         )
     )
     runs = resolve_fu4_runs(getattr(args, "runs", None) or getattr(args, "run", None), smoke)
@@ -2519,7 +2547,7 @@ def fu4_config(args: argparse.Namespace) -> i1090.RunConfig:
 def fu4_regime_key(cfg: i1090.RunConfig) -> dict:
     """Global (run-independent) regime keys; per-run lr rides the ladder regime."""
     return {
-        "issue": i1090.ISSUE,
+        "issue": ROUND.issue,
         "round": ROUND.name,
         "followup_label": ROUND.label,
         "max_lora_rank": ROUND.max_lora_rank,

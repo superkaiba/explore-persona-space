@@ -1,0 +1,1 @@
+{"ts": "2026-07-17T11:18:01Z", "event": "raised", "concern_id": "analyzer-section-reference-enum-stale", "severity": "CONCERN", "summary": "analyzer-section-reference.md L489+L792 enumerate the banned family narrower than the widened regex (missing -exact/bitwise/X-for-X); sync both rows or record the exclusion.", "raised_by": "code-reviewer", "raised_at_round": 1}

@@ -9,9 +9,13 @@ Covers:
 - The #8 regression: on MooseFS (TB-scale share-free + probe-success), usable
   headroom is capped at the per-pod quota so an over-quota footprint is caught
   instead of silently passing against the share-level free.
+- assert_out_root_headroom (#1414, the #1333 per-phase out-root pattern): pass
+  returns free GB, statvfs-below-floor raise, EDQUOT-canary raise, unsupported
+  fallocate fail-soft, out-root auto-mkdir, nonpositive-need ValueError.
 """
 
 import errno
+import types
 from pathlib import Path
 
 import pytest
@@ -22,6 +26,7 @@ from explore_persona_space.orchestrate.preflight import (
     PreflightReport,
     _probe_writable_bytes,
     _quota_aware_headroom_gb,
+    assert_out_root_headroom,
     check_disk_budget,
     check_disk_space,
     estimate_footprint_gb,
@@ -319,3 +324,80 @@ def test_check_disk_space_custom_quota_override(monkeypatch):
     assert report.disk_probed_headroom_gb == pytest.approx(500.0)
     check_disk_budget(report, planned_footprint_gb=200.0)
     assert report.ok is True  # 200GB under the 500GB explicit quota
+
+
+# ── #1414: per-phase out-root headroom assert (the #1333 pattern, shared) ────
+
+
+def test_assert_out_root_headroom_pass_returns_free_gb(tmp_path):
+    """Healthy out-root: returns free GB as a float and leaves no stray probe file."""
+    free_gb = assert_out_root_headroom(tmp_path, need_gb=0.001, canary_gb=4096 / 1e9)
+    assert isinstance(free_gb, float)
+    assert free_gb > 0
+    assert list(tmp_path.iterdir()) == []
+
+
+def test_assert_out_root_headroom_raises_below_floor(tmp_path, monkeypatch):
+    """statvfs free below the §9 floor raises BEFORE the canary, naming path + mount + floor."""
+    # Concrete fake with real numeric attributes (never a MagicMock): ~1.02 GB free.
+    fake_stat = types.SimpleNamespace(f_bavail=1_000_000, f_frsize=1024)
+    monkeypatch.setattr(preflight.os, "statvfs", lambda p: fake_stat)
+
+    def exploding_fallocate(fd, offset, length):
+        raise AssertionError("canary must not run when the statvfs floor already failed")
+
+    # Proves the raise happens before the fallocate canary path is reached.
+    monkeypatch.setattr(preflight.os, "posix_fallocate", exploding_fallocate)
+
+    with pytest.raises(RuntimeError) as exc_info:
+        assert_out_root_headroom(tmp_path, need_gb=100.0, phase="p2_train")
+    msg = str(exc_info.value)
+    assert str(tmp_path) in msg
+    assert "GB free" in msg
+    assert "100.0 GB" in msg
+    assert "p2_train" in msg
+    # Names SOME mount token (stub-agnostic: any non-empty token, no /proc/mounts value pinned).
+    assert "(mount " in msg
+    mount_token = msg.split("(mount ", 1)[1].split(")", 1)[0]
+    assert mount_token.strip()
+
+
+def test_assert_out_root_headroom_raises_on_quota_refusal(tmp_path, monkeypatch):
+    """An EDQUOT canary refusal raises even when statvfs shows ample free space."""
+
+    def fake_fallocate(fd, offset, length):
+        raise OSError(errno.EDQUOT, "Disk quota exceeded")
+
+    monkeypatch.setattr(preflight.os, "posix_fallocate", fake_fallocate)
+    with pytest.raises(RuntimeError) as exc_info:
+        assert_out_root_headroom(tmp_path, need_gb=0.001, canary_gb=4096 / 1e9)
+    msg = str(exc_info.value)
+    assert "canary" in msg
+    assert "EDQUOT" in msg or "quota" in msg
+    assert not (tmp_path / ".preflight_disk_probe.tmp").exists()
+
+
+def test_assert_out_root_headroom_tolerates_unsupported_fallocate(tmp_path, monkeypatch):
+    """EOPNOTSUPP degrades to the statvfs-only check (fail-soft parity with the probe)."""
+
+    def fake_fallocate(fd, offset, length):
+        raise OSError(errno.EOPNOTSUPP, "Operation not supported")
+
+    monkeypatch.setattr(preflight.os, "posix_fallocate", fake_fallocate)
+    free_gb = assert_out_root_headroom(tmp_path, need_gb=0.001, canary_gb=4096 / 1e9)
+    assert free_gb > 0
+
+
+def test_assert_out_root_headroom_creates_out_root(tmp_path):
+    """A nested nonexistent out-root is mkdir'd before the probe and the assert passes."""
+    dest = tmp_path / "a" / "b"
+    assert not dest.exists()
+    free_gb = assert_out_root_headroom(dest, need_gb=0.001, canary_gb=4096 / 1e9)
+    assert dest.is_dir()
+    assert free_gb > 0
+
+
+def test_assert_out_root_headroom_rejects_nonpositive_need(tmp_path):
+    """need_gb <= 0 raises ValueError (explicit raise — asserts strip under python -O)."""
+    with pytest.raises(ValueError):
+        assert_out_root_headroom(tmp_path, need_gb=0)

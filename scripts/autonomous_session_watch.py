@@ -1,7 +1,7 @@
 """Crash-recovery + pod-safety + stalled-detector watcher for autonomous and
 interactive issue sessions (plus campaign sessions, task #586).
 
-26 passes ("pass" = one top-level per-tick action block in ``main()``'s
+27 passes ("pass" = one top-level per-tick action block in ``main()``'s
 production run order; helpers invoked INSIDE a pass — e.g. the sub-floor
 disk sentinel inside pass 1 — and the ``--*-only`` debug entrypoints do
 not count; a NEW inline pass block that is not a ``*_pass``-named function
@@ -10,14 +10,15 @@ in ``scripts/workflow_lint.py``). Item numbers below are STABLE
 IDENTIFIERS (cross-referenced throughout this docstring), NOT execution
 order. The per-tick execution order is: 1 (VM disk) -> 15 (data-disk) ->
 16 (happy-patch) -> 12 (CPU-guard) -> 17 (triage-observer) ->
-18 (verdict-disagree) -> 26 (root-draft) -> 19 (VM-ledger reap) -> 20 (program-orchestrator
+18 (verdict-disagree) -> 26 (root-draft) -> 27 (registry-drift) ->
+19 (VM-ledger reap) -> 20 (program-orchestrator
 recovery) -> 13 (auth-outage guard) -> 2 (crash-recovery) -> 9 (campaign)
 -> 3 (pod-safety) -> 4 (stalled-detector) -> 5 (orphan sweep) ->
 11 (infra-drain) -> 21 (proposed-infra-sweep) -> 22 (capacity-retry) ->
 14 (stale-blocked flag) -> 6 (session-reconcile) -> 23 (gate-push) ->
 25 (boot-death) -> 24 (stale-registration) -> 7 (zombie-wrapper) ->
 10 (idle-unmapped) -> 8 (GC). The count is lint-pinned: ``workflow_lint.py
---check-asw-docstring-pass-count`` FAILs when the "25 passes" digit, the
+--check-asw-docstring-pass-count`` FAILs when the header digit, the
 numbered-item count, or the live ``*_pass`` set in ``main()`` diverge —
 adding a pass means adding a numbered item here AND bumping the digit:
 
@@ -128,7 +129,20 @@ adding a pass means adding a numbered item here AND bumping the digit:
    registration is MANUAL (user-driven — never auto-respawn, #505), degrade
    to a one-time loud alert marker. Daemon-gated like the respawn pass
    (liveness is unknowable during an outage; a mass respawn would duplicate
-   pods).
+   pods). **Dead-owner fast path (#1391):** an unregistered candidate with a
+   recent driver witness and POSITIVE proof its last recorded owner session
+   is dead (the #720 ``last-mapped-terminal-<sid>`` breadcrumb sid —
+   state-carried in ``orphan-<N>.json`` as ``owner_sid`` across ticks —
+   absent from a successfully-fetched live set) gets the SHORTER
+   ``EPM_ORPHAN_DEAD_OWNER_STALENESS_MIN`` floor (default 20 min; ``0``
+   disables) instead of the 90-min default; every uncertain signal fails
+   toward the slow path. The 2-consecutive-tick requirement rides on
+   :func:`decide_orphan`'s missed-reset-on-keep semantics — a refactor of
+   that reset must not silently remove the partial-``/list``-flap bound.
+   Fail-toward-slow eligibility-flap corner: a death BEFORE any
+   live-observation tick has breadcrumb-only eligibility on the
+   death-observing tick and the slow path thereafter (the GC unlinks the
+   breadcrumb; no ``owner_sid`` was ever state-carried).
 6. **Session-reconcile pass (sessions-vs-status; AUTO-STOP by default).**
    Mirror of the pod-safety auto-stop arm for Happy SESSIONS: a live
    session mapped to an issue (registry entry, or an ``issue-<N>``
@@ -426,6 +440,23 @@ adding a pass means adding a numbered item here AND bumping the digit:
    attribution. NEVER deletes/moves/chmods/git-mutates anything; posts
    NO task markers. Kill switch ``EPM_DISABLE_ROOT_DRAFT_PASS=1``.
    (:func:`root_draft_pass`.)
+27. **Registry-drift audit pass (#1439; REPORT-ONLY; daemon-INDEPENDENT;
+   runs right after pass 26).** Once-daily-throttled
+   (``EPM_REGISTRY_DRIFT_INTERVAL_HOURS``, 24h) escalate-only observer of
+   ``tasks/REGISTRY.json`` <-> filesystem drift — the post-#898
+   ``find_task_path`` stale-entry WARNING class that nothing structured
+   ever read. Runs ``task_workflow.audit()`` +
+   ``reconcile_registry(apply=False)`` (both pure reads, ~0.7 s live),
+   double-reads with a ~10 s confirm gap
+   (``EPM_REGISTRY_DRIFT_CONFIRM_S``) so an in-flight ``task.py``
+   mutation never false-fires, fingerprints the CONFIRMED problem set,
+   and on non-empty drift appends a row to the dedicated sidecar
+   (``.claude/cache/registry-drift-events.jsonl``) + fires ONE deduped
+   fail-soft push naming the repair command (``task.py audit --repair``)
+   on fingerprint change or a 168h re-alert TTL
+   (``EPM_REGISTRY_DRIFT_REALERT_HOURS``). NEVER repairs
+   (``apply=True`` is banned), posts NO task markers. Kill switch
+   ``EPM_DISABLE_REGISTRY_DRIFT_PASS=1``. (:func:`registry_drift_pass`.)
 
 Why each pass exists
 --------------------
@@ -545,6 +576,7 @@ import argparse
 import fcntl
 import functools
 import getpass
+import hashlib
 import json
 import os
 import re
@@ -2937,6 +2969,20 @@ def _env_days_seconds(name: str, default_days: float) -> float:
     return val * 86400.0
 
 
+def _env_pos_seconds(name: str, default_s: float) -> float:
+    """Seconds-denominated env knob -> float seconds. Garbled / non-positive /
+    implausibly-large (>1 year) values fall back to the default (same
+    fail-soft contract as :func:`_env_gib_bytes` — never crash the watcher at
+    import)."""
+    try:
+        val = float(os.environ.get(name, ""))
+    except ValueError:
+        return default_s
+    if not (0 < val < 366 * 86400):
+        return default_s
+    return val
+
+
 # Conservative TTL for the HF hub cache eviction (2026-06-11 episode: 41.5 GB
 # VM-side hub cache, untouched by any reclaim). A cached revision is evicted
 # only when it was last MODIFIED more than this long ago, was last READ
@@ -3008,12 +3054,16 @@ def decide_vm_disk(
 # The existing alert/reclaim bands above fire LATE (20 / 15 GiB free) — by then
 # foreground Bash spawns are already at risk. The sub-floor sentinel is an
 # EARLIER, advisory warn-only band (~60 GB free) whose job is attribution +
-# faster re-check intent, NOT remediation: it writes a `band=sub-floor` row to
+# faster re-check intent: it writes a `band=sub-floor` row to
 # the SHARED disk-guard sidecar naming the top per-issue cache paths (cheap
 # `du -s` on the re-downloadable globs only) so a human can see WHICH active
-# task is eating the disk before it hits the late bands. It NEVER deletes
-# anything and NEVER spawns a daemon — the "re-check sooner" signal is purely
-# the sidecar row it writes (the 10-min watcher cron cadence is unchanged).
+# task is eating the disk before it hits the late bands. The sentinel ROW
+# itself stays warn-only — it NEVER deletes anything and NEVER spawns a
+# daemon. Since #1392 the sibling `subfloor_reclaim_pass` (below) ADDITIONALLY
+# launches the guard's existing tier contract (`vm_disk_guard.py --apply`)
+# DETACHED + rate-limited while below the floor — remediation lives in that
+# separate arm (with its own kill switch), never in the sentinel row (the
+# 10-min watcher cron cadence is unchanged).
 
 # Below this free-bytes threshold the sub-floor sentinel writes an attributed
 # advisory row. ~60 GB: well above the 20 GiB alert band, so it surfaces a
@@ -3032,6 +3082,14 @@ VM_DISK_SUBFLOOR_TOP_N = 3
 # re-downloadable globs, never store/). A timeout degrades to "no attribution",
 # never a crash.
 VM_DISK_SUBFLOOR_DU_TIMEOUT_S = 60
+
+# Min seconds between sub-floor-triggered guard launches (the "short interval
+# while below floor", #1392). 1800 s = 3 watcher ticks ≈ 3x the measured
+# triggered-run duration (6-10 min, logs/vm_disk_guard/2026-07-1{4,5}.log), so
+# launches never self-overlap even without the guard's single-flight lock.
+VM_DISK_SUBFLOOR_RECLAIM_INTERVAL_S = _env_pos_seconds(
+    "EPM_VM_DISK_SUBFLOOR_RECLAIM_INTERVAL_S", 1800.0
+)
 
 
 def _root_disk_headroom() -> int | None:
@@ -3218,6 +3276,54 @@ def decide_subfloor(free_bytes: int, last_free_bytes: int | None) -> bool:
     return drop > VM_DISK_SUBFLOOR_GROWTH_REALERT
 
 
+def _subfloor_reclaim_state_path() -> Path:
+    """Singleton rate-limit state for the sub-floor RECLAIM arm (#1392): the
+    last guard-launch timestamp + pid, under AUTONOMOUS_REGISTRY_DIR. Distinct
+    from the sentinel's ``vm-disk-subfloor.json`` (different episode
+    semantics: this one persists across recovery — the flap guard)."""
+    return AUTONOMOUS_REGISTRY_DIR / "vm-disk-subfloor-reclaim.json"
+
+
+def _load_subfloor_reclaim_state() -> dict:
+    """Fail-soft load of the reclaim-arm state (same contract as
+    :func:`_load_subfloor_state`)."""
+    path = _subfloor_reclaim_state_path()
+    if not path.is_file():
+        return {}
+    try:
+        data = json.loads(path.read_text())
+    except (json.JSONDecodeError, OSError):
+        return {}
+    return data if isinstance(data, dict) else {}
+
+
+def _save_subfloor_reclaim_state(payload: dict) -> None:
+    """Atomic temp+rename write of the reclaim-arm state. Deliberately NOT
+    internally fail-soft: an OSError (e.g. ENOSPC on a 100%-full ``/``)
+    propagates to :func:`subfloor_reclaim_pass`'s own try/except, which
+    returns False cleanly (plan #1392 concern 1 — the arm fails open, bounded
+    to one live run by the guard's single-flight lock)."""
+    dest = _subfloor_reclaim_state_path()
+    AUTONOMOUS_REGISTRY_DIR.mkdir(parents=True, exist_ok=True)
+    tmp = dest.with_suffix(".json.tmp")
+    tmp.write_text(json.dumps(payload))
+    tmp.replace(dest)
+
+
+def decide_subfloor_reclaim(free_bytes: int, last_run_ts: float | None, now: float) -> bool:
+    """Pure decision: launch a sub-floor-triggered guard --apply run this tick?
+
+    True when free is below the sub-floor AND the min interval since the last
+    launch has elapsed (or none recorded). ``last_run_ts`` persists across
+    episodes (never cleared on recovery) so boundary flapping cannot launch
+    faster than :data:`VM_DISK_SUBFLOOR_RECLAIM_INTERVAL_S` (#1392)."""
+    if free_bytes >= VM_DISK_SUBFLOOR_FREE_BYTES:
+        return False
+    if not isinstance(last_run_ts, int | float) or last_run_ts <= 0:
+        return True
+    return now - last_run_ts >= VM_DISK_SUBFLOOR_RECLAIM_INTERVAL_S
+
+
 # ─── VM DATA disk (/mnt/eps-data) watch — PERCENT-based (task #681) ──────────
 #
 # The dedicated data disk holds the relocated `.claude/worktrees/` tree. The
@@ -3391,7 +3497,8 @@ def subfloor_sentinel_pass(dry_run: bool, free_bytes: int | None = None) -> bool
     top per-issue cache paths (cheap `du`) and signalling the watcher should
     re-check sooner. NEVER deletes anything; deduped on the drop fraction;
     clears the episode when free recovers above the band. Returns True when a
-    row was written this tick. Fail-soft throughout."""
+    row was written this tick. Fail-soft throughout. Remediation lives in the
+    SIBLING :func:`subfloor_reclaim_pass` (#1392), never here."""
     free = free_bytes if free_bytes is not None else _root_disk_headroom()
     if free is None:
         return False
@@ -3430,6 +3537,120 @@ def subfloor_sentinel_pass(dry_run: bool, free_bytes: int | None = None) -> bool
     )
     if not dry_run:
         _save_subfloor_state(free)
+    return True
+
+
+def _guard_apply_argv() -> list[str]:
+    """The exact detached-launch argv for the sub-floor reclaim arm (#1392):
+    VM-root only (``--no-data-disk`` — the data disk stays escalate-only,
+    #681), threshold gate bypassed (``--ignore-threshold`` — the watcher's
+    free-bytes decision IS the trigger), still-over telegram pushes suppressed
+    (``--no-push`` — ~38 pushes/day at 30-min cadence on a stuck-over day
+    otherwise; the cron's 6-hourly push + deduped tier escalations remain the
+    human channels)."""
+    return [
+        sys.executable,
+        str(PROJECT_ROOT / "scripts" / "vm_disk_guard.py"),
+        "--apply",
+        "--ignore-threshold",
+        "--no-push",
+        "--no-data-disk",
+    ]
+
+
+def _launch_guard_apply(log_path: Path) -> int:
+    """Detached ``vm_disk_guard.py --apply`` launch; returns the child pid.
+
+    Split out as a module-level seam so tests stub it (a real launch from a
+    test would sweep the live VM — see the #1392 autouse guard in
+    tests/conftest.py). ``start_new_session=True`` detaches the guard from
+    the watcher tick's kill domain (a triggered run measures 6-10 min vs the
+    10-min tick). Output appends to the cron's own dated log file so there is
+    ONE audit trail (the guard's single-flight apply lock prevents
+    interleaved concurrent writers)."""
+    cmd = _guard_apply_argv()
+    log_path.parent.mkdir(parents=True, exist_ok=True)
+    with open(log_path, "a") as fh:
+        p = subprocess.Popen(
+            cmd,
+            cwd=PROJECT_ROOT,
+            stdout=fh,
+            stderr=subprocess.STDOUT,
+            stdin=subprocess.DEVNULL,
+            start_new_session=True,
+        )
+        fh.write(
+            f"=== {datetime.now(tz=UTC).isoformat()} vm_disk_guard launched "
+            f"detached (trigger=watch-subfloor pid={p.pid}) ===\n"
+        )
+    return p.pid
+
+
+def subfloor_reclaim_pass(
+    dry_run: bool, free_bytes: int | None = None, now: float | None = None
+) -> bool:
+    """Sub-floor RECLAIM arm (#1392) — the remediation sibling of
+    :func:`subfloor_sentinel_pass`.
+
+    When VM-root free space is below :data:`VM_DISK_SUBFLOOR_FREE_BYTES`,
+    launch the guard's existing tiered safe cleanup DETACHED
+    (``vm_disk_guard.py --apply``, argv per :func:`_guard_apply_argv`),
+    rate-limited to one launch per
+    :data:`VM_DISK_SUBFLOOR_RECLAIM_INTERVAL_S` (default 1800 s) via a
+    persistent ``last_run_ts`` (never cleared on recovery — the flap guard).
+    The tier CONTRACT is unchanged (#679: terminal-task caches only, active
+    tasks escalate-only, ``store/`` + ``eval_results/`` never touched) — this
+    arm only changes detection→reclaim LATENCY (≤6 h cron → ≤10 min tick;
+    2026-07-15 incident). Kill switch: ``EPM_DISABLE_SUBFLOOR_RECLAIM=1``.
+    Dry-run prints the would-launch argv and performs ZERO ``subprocess``
+    calls and ZERO writes (the #681 r3 smoke contract). Fail-soft: a launch
+    OR state-save failure (e.g. ENOSPC on a full ``/``) returns False and
+    never crashes :func:`vm_disk_pass`. Returns True when a launch happened
+    (or would have, under dry-run) this tick."""
+    if os.environ.get("EPM_DISABLE_SUBFLOOR_RECLAIM", "").strip() == "1":
+        return False
+    now = now if now is not None else time.time()
+    free = free_bytes if free_bytes is not None else _root_disk_headroom()
+    if free is None:
+        return False
+    state = _load_subfloor_reclaim_state()
+    last_run_ts = state.get("last_run_ts")
+    last_run_ts = last_run_ts if isinstance(last_run_ts, int | float) else None
+    if not decide_subfloor_reclaim(free, last_run_ts, now):
+        return False
+    log_path = PROJECT_ROOT / "logs" / "vm_disk_guard" / f"{datetime.now(tz=UTC):%Y-%m-%d}.log"
+    if dry_run:
+        print(f"  [dry-run] would launch: {' '.join(_guard_apply_argv())}")
+        return True
+    try:
+        pid = _launch_guard_apply(log_path)
+        # The state save rides the SAME fail-soft guard as the launch (#1392
+        # concern 1): on a 100%-full / an ENOSPC here returns False cleanly.
+        _save_subfloor_reclaim_state({"last_run_ts": now, "pid": pid})
+    except (OSError, subprocess.SubprocessError) as exc:
+        print(
+            f"  vm-disk subfloor-reclaim: guard --apply launch failed (fail-soft): {exc}",
+            file=sys.stderr,
+        )
+        return False
+    free_gib = free / 2**30
+    _append_disk_guard_sidecar(
+        {
+            "kind": "vm-disk-subfloor-reclaim",
+            "band": "sub-floor",
+            "action": "guard-apply-launched",
+            "free_bytes": free,
+            "free_gib": round(free_gib, 1),
+            "pid": pid,
+            "interval_s": VM_DISK_SUBFLOOR_RECLAIM_INTERVAL_S,
+            "log": str(log_path),
+        },
+        dry_run,
+    )
+    print(
+        f"vm-disk SUB-FLOOR: launched vm_disk_guard --apply (pid {pid}, ~6-10 min, log {log_path})",
+        file=sys.stderr,
+    )
     return True
 
 
@@ -5317,6 +5538,268 @@ def root_draft_pass(dry_run: bool) -> bool:
         return bool(fires)
     except Exception as exc:  # top-level fail-soft: never take down the tick
         print(f"  root-draft: pass failed (fail-soft): {exc}", file=sys.stderr)
+        return False
+
+
+# ─── Registry-drift audit pass (task #1439) ──────────────────────────────────
+#
+# WHY: post-#898, a `task.py` mutation hard-killed between the folder `git mv`
+# and the registry save leaves tasks/REGISTRY.json pointing at a stale path;
+# `find_task_path` falls back to a one-shot disk scan and logs a drift
+# WARNING, but nothing structured ever READS that warning, so
+# uniquely-resolvable drift persists until the task's next registry-writing
+# mutation happens to self-heal it (terminal tasks may never mutate again —
+# the #207 shape). This pass gives that drift a periodic structured consumer:
+# ~once a day it runs the same pure reads `task.py audit` / `audit --repair`
+# use, double-reads to suppress in-flight-mutation transients, and ESCALATES
+# (sidecar row + ONE deduped push naming the repair command). REPORT-ONLY: it
+# never calls reconcile_registry(apply=True), posts NO task markers, and
+# writes only its state singleton + sidecar. #1430's duplicate-dir husk class
+# is deliberately OUT of scope (a husk's tid IS registered at its live path,
+# so audit() does not flag it; the worktree-audit cron's reap-husks
+# self-heals it).
+
+# Throttle: the audit is cheap (~0.3-0.7 s measured live 2026-07-17) but
+# once/day is the mandated cadence — drift needs SURFACING, not tick-rate
+# monitoring. Env EPM_REGISTRY_DRIFT_INTERVAL_HOURS, read at CALL time
+# (root-draft precedent); lo=0.0 lets a live smoke force a run.
+REGISTRY_DRIFT_INTERVAL_HOURS = 24.0
+# Re-alert TTL for an UNCHANGED confirmed fingerprint: weekly, not daily —
+# persistent drift stays visible without daily push spam. Root-draft uses 24h
+# for a condition that poisons the fleet per-tick; registry drift is inert
+# until a consumer hits it, so a weekly reminder suffices. Env
+# EPM_REGISTRY_DRIFT_REALERT_HOURS, read at call time.
+REGISTRY_DRIFT_REALERT_HOURS = 168.0
+# Double-read confirm gap: a LIVE task.py mutation window (git mv -> registry
+# save inside _locked()) is sub-second-to-seconds; 10 s clears it with margin
+# while a hard-killed mutation (the target) persists through both reads. Env
+# EPM_REGISTRY_DRIFT_CONFIRM_S; 0 in tests.
+REGISTRY_DRIFT_CONFIRM_S = 10.0
+
+
+def _registry_drift_enabled() -> bool:
+    """Kill switch: False when ``EPM_DISABLE_REGISTRY_DRIFT_PASS`` is set
+    truthy ("1"/"true"/"yes", case-insensitive). Default enabled. Mirrors
+    :func:`_root_draft_enabled`."""
+    raw = os.environ.get("EPM_DISABLE_REGISTRY_DRIFT_PASS", "").strip().lower()
+    return raw not in {"1", "true", "yes"}
+
+
+def _registry_drift_sidecar_path() -> Path:
+    """DEDICATED registry-drift event stream (own stream for clean grep —
+    the root-draft / verdict-disagree sidecar precedent)."""
+    return PROJECT_ROOT / ".claude" / "cache" / "registry-drift-events.jsonl"
+
+
+def _registry_drift_state_path() -> Path:
+    """Singleton throttle+dedup state (deliberately NOT a per-issue GC
+    target): ``{"last_run_ts": <float>, "fp": <str|None>,
+    "last_alert_ts": <float>}``."""
+    return AUTONOMOUS_REGISTRY_DIR / "registry-drift-observer.json"
+
+
+def _load_registry_drift_state() -> dict:
+    """``{}`` on missing/garbled state; every field read back goes through
+    ``isinstance`` type-guards (mirrors :func:`_load_root_draft_state`)."""
+    path = _registry_drift_state_path()
+    if not path.is_file():
+        return {}
+    try:
+        data = json.loads(path.read_text())
+    except (json.JSONDecodeError, OSError):
+        return {}
+    return data if isinstance(data, dict) else {}
+
+
+def _save_registry_drift_state(state: dict, dry_run: bool) -> None:
+    """Atomic temp+rename write of the registry-drift throttle/dedup state
+    (fail-soft; mirrors :func:`_save_root_draft_state`); ``dry_run`` performs
+    zero writes."""
+    if dry_run:
+        print(f"  [dry-run] would save registry-drift state (fp={state.get('fp')})")
+        return
+    dest = _registry_drift_state_path()
+    try:
+        AUTONOMOUS_REGISTRY_DIR.mkdir(parents=True, exist_ok=True)
+        tmp = dest.with_suffix(".json.tmp")
+        tmp.write_text(json.dumps(state))
+        tmp.replace(dest)
+    except OSError as exc:  # pragma: no cover - fail-soft I/O guard
+        print(f"  registry-drift: state save failed: {exc}", file=sys.stderr)
+
+
+def _append_registry_drift_sidecar(event: dict, dry_run: bool) -> None:
+    """Append one JSON line to the registry-drift sidecar (fail-soft). A
+    ``ts`` is stamped; ``dry_run`` reports only (mirrors
+    :func:`_append_root_draft_sidecar`)."""
+    row = {"ts": datetime.now(tz=UTC).isoformat(), **event}
+    line = json.dumps(row)
+    if dry_run:
+        print(f"  [dry-run] would append registry-drift sidecar row: {line[:160]}")
+        return
+    dest = _registry_drift_sidecar_path()
+    try:
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        with open(dest, "a") as fh:
+            fh.write(line + "\n")
+    except OSError as exc:
+        print(f"  registry-drift: sidecar append failed: {exc}", file=sys.stderr)
+
+
+def _collect_registry_drift() -> dict:
+    """One read-only registry<->filesystem drift snapshot. Lazy-imports
+    task_workflow (watcher convention — the triage-observer /
+    verdict-disagree import sites). Raises on failure — the pass's top-level
+    guard owns fail-soft. REPORT-ONLY: ``apply=False`` is load-bearing.
+    ``audit()`` is the exit-1 contract read ``task.py audit`` uses and its
+    human-readable problem strings feed the push text;
+    ``reconcile_registry(apply=False)`` mirrors audit's detection (its own
+    docstring contract) and classifies each drift
+    (stale_real / missing_real / empty_stub / skipped + the highest_id
+    bump), which is what the fingerprint + sidecar payload key on."""
+    from explore_persona_space.task_workflow import audit, reconcile_registry
+
+    problems = audit()
+    rep = reconcile_registry(apply=False)
+    rows = [
+        (c.drift_class, c.task_id, c.detail)
+        for lst in (rep.stale_real, rep.missing_real, rep.empty_stubs, rep.skipped)
+        for c in lst
+    ]
+    if rep.highest_id_bumped is not None:
+        rows.append(("highest_id", -1, rep.highest_id_bumped.detail))
+    return {"problems": sorted(problems), "classes": sorted(rows)}
+
+
+def _registry_drift_confirmed(a: dict, b: dict) -> dict:
+    """Pure intersect of two snapshots — a row present in BOTH reads is
+    confirmed (persistent); a row in only one is an in-flight-mutation
+    transient and is dropped."""
+    return {
+        "problems": sorted(set(a["problems"]) & set(b["problems"])),
+        "classes": sorted(set(map(tuple, a["classes"])) & set(map(tuple, b["classes"]))),
+    }
+
+
+def _registry_drift_fingerprint(confirmed: dict) -> str:
+    """sha256[:12] (the wf-fix fp shape) over the sorted confirmed rows.
+
+    The ``highest_id`` rows' numeric details recompose as tasks are created
+    (a pure counter drift: ``highest_id N < max task id M`` moves with every
+    ``task.py new``), so those details are EXCLUDED from the fp input —
+    hashing them would churn the fingerprint on every new task and re-push
+    early for an otherwise-unchanged drift set. The presence/absence of the
+    highest_id CLASS still enters the fp, and the full detail still rides
+    the sidecar payload."""
+    stable_problems = [
+        "highest_id" if p.startswith("highest_id ") else p for p in confirmed["problems"]
+    ]
+    stable_classes = [(c, t, "" if c == "highest_id" else d) for (c, t, d) in confirmed["classes"]]
+    payload = json.dumps({"problems": sorted(stable_problems), "classes": sorted(stable_classes)})
+    return hashlib.sha256(payload.encode("utf-8")).hexdigest()[:12]
+
+
+def decide_registry_drift_alert(fp: str, state: dict, now: float, realert_s: float) -> bool:
+    """Pure fire decision: True iff ``fp`` differs from the stored fp (the
+    drift set CHANGED — incl. first appearance and any recomposition) OR the
+    last alert is STRICTLY older than ``realert_s`` (bounded weekly
+    re-surface of unchanged drift). ``isinstance`` guards on state fields
+    (the root-draft corrupt-state contract: garbled state degrades to
+    fire-as-if-unalerted)."""
+    prev_fp = state.get("fp")
+    if not isinstance(prev_fp, str) or prev_fp != fp:
+        return True
+    last_alert = state.get("last_alert_ts")
+    if not isinstance(last_alert, int | float):
+        return True
+    return (now - last_alert) > realert_s
+
+
+def registry_drift_pass(dry_run: bool) -> bool:
+    """ESCALATE-ONLY once-daily ``tasks/REGISTRY.json`` <-> filesystem drift
+    observer (#1439). REPORT-ONLY: NEVER calls
+    ``reconcile_registry(apply=True)``, posts NO task markers, writes ONLY
+    its state singleton + sidecar; repair stays the human-invoked
+    ``task.py audit --repair [--apply]`` the push names. Double-reads with a
+    confirm gap so an in-flight ``task.py`` mutation never false-fires; a
+    hard-killed mutation (the target class) persists through both reads.
+    Fail-soft: an audit exception logs stderr + one error sidecar row per
+    throttle interval (the attempt stamp is saved BEFORE collecting), never
+    crashes the tick. Daemon-independent (pure filesystem/registry reads).
+    Returns True when a push fired this run."""
+    if not _registry_drift_enabled():
+        print("  registry-drift: disabled via EPM_DISABLE_REGISTRY_DRIFT_PASS; skipping")
+        return False
+    try:
+        now = time.time()
+        interval_h = _env_float(
+            "EPM_REGISTRY_DRIFT_INTERVAL_HOURS", REGISTRY_DRIFT_INTERVAL_HOURS, lo=0.0, hi=720.0
+        )
+        realert_h = _env_float(
+            "EPM_REGISTRY_DRIFT_REALERT_HOURS", REGISTRY_DRIFT_REALERT_HOURS, lo=1.0, hi=2160.0
+        )
+        confirm_s = _env_float(
+            "EPM_REGISTRY_DRIFT_CONFIRM_S", REGISTRY_DRIFT_CONFIRM_S, lo=0.0, hi=120.0
+        )
+        state = _load_registry_drift_state()
+        last = state.get("last_run_ts")
+        if isinstance(last, int | float) and (now - last) < interval_h * 3600.0:
+            return False  # throttled — silent (would fire 143x/day otherwise)
+        state["last_run_ts"] = now
+        # Stamp the ATTEMPT before collecting: a crashing audit() is then
+        # bounded to one error sidecar row per throttle interval instead of
+        # spamming every 10-min tick.
+        _save_registry_drift_state(state, dry_run)
+        a = _collect_registry_drift()
+        if not (a["problems"] or a["classes"]):
+            if state.get("fp"):
+                print("  registry-drift: recovered — previously-flagged drift is gone")
+            _save_registry_drift_state({**state, "fp": None}, dry_run)
+            return False
+        time.sleep(confirm_s)
+        confirmed = _registry_drift_confirmed(a, _collect_registry_drift())
+        if not (confirmed["problems"] or confirmed["classes"]):
+            print(
+                "  registry-drift: transient drift (mutation in flight) — not confirmed; skipping"
+            )
+            return False
+        fp = _registry_drift_fingerprint(confirmed)
+        fire = decide_registry_drift_alert(fp, state, now, realert_h * 3600.0)
+        _append_registry_drift_sidecar(
+            {
+                "kind": "registry-drift",
+                "fingerprint": fp,
+                "n_problems": len(confirmed["problems"]),
+                "problems": confirmed["problems"][:50],  # cap pathological blowups
+                "classes": [list(r) for r in confirmed["classes"][:50]],
+                # `pushed` records the fire DECISION (dedup bookkeeping), not
+                # delivery — _telegram_push is fail-soft and sent != seen.
+                "pushed": fire,
+            },
+            dry_run,
+        )
+        for p in confirmed["problems"][:10]:
+            print(f"  registry-drift: {p}")
+        if fire:
+            _telegram_push(
+                f"REGISTRY drift (report-only #1439 pass): {len(confirmed['problems'])} "
+                f"problem(s), {len(confirmed['classes'])} classified row(s) — e.g. "
+                f"{'; '.join(confirmed['problems'][:3])}. Review: `uv run python "
+                f"scripts/task.py audit --repair` (dry-run report), repair: append "
+                f"`--apply`. Nothing was changed automatically.",
+                dry_run,
+            )
+        _save_registry_drift_state(
+            {**state, "fp": fp, **({"last_alert_ts": now} if fire else {})}, dry_run
+        )
+        return fire
+    except Exception as exc:  # top-level fail-soft: never take down the tick
+        print(f"  registry-drift: pass failed (fail-soft): {exc}", file=sys.stderr)
+        # Error row only — NO fp write (the next in-interval tick stays
+        # throttled by the attempt stamp saved before the collect).
+        _append_registry_drift_sidecar(
+            {"kind": "registry-drift-error", "error": str(exc)[:500]}, dry_run
+        )
         return False
 
 
@@ -11934,6 +12417,41 @@ def _orphan_max_respawns_per_day() -> int:
         return ORPHAN_MAX_RESPAWNS_PER_DAY_DEFAULT
 
 
+# #1391: dead-owner fast path — the SHORTER marker-staleness floor applied when
+# the task's last recorded owner session is PROVABLY dead (see
+# :func:`decide_dead_owner_fast_path` / :func:`_orphan_effective_staleness`).
+# 20 min: > the 16.2-min max healthy inter-marker gap measured in #1090's
+# unregistered fu5 window (05:33-06:27Z), >= the 15-min worktree-activity hold
+# window (WT_ACTIVITY_FRESH_S_DEFAULT), and 2x the 10-min tick cadence; with
+# the 2-miss threshold the effective silence-to-respawn is >= ~30 min.
+ORPHAN_DEAD_OWNER_STALENESS_S_DEFAULT = 20 * 60
+
+# Clamp floor for the env knob: below one 10-min tick + the 2-miss debounce a
+# floor cannot interact with the cadence meaningfully; an operator typo (e.g.
+# `2`) must not create a fire-on-first-gap configuration.
+ORPHAN_DEAD_OWNER_STALENESS_S_MIN = 10 * 60
+
+
+def _orphan_dead_owner_staleness_s() -> float | None:
+    """Dead-owner fast-path staleness floor in seconds (env
+    ``EPM_ORPHAN_DEAD_OWNER_STALENESS_MIN``, minutes; default
+    :data:`ORPHAN_DEAD_OWNER_STALENESS_S_DEFAULT`). ``0`` (or negative)
+    DISABLES the fast path (returns ``None`` — the kill switch); a MALFORMED
+    value falls back to the default (an accelerator typo must not disable
+    the fast path, matching :func:`_orphan_staleness_s`'s convention);
+    positive values clamp to >= :data:`ORPHAN_DEAD_OWNER_STALENESS_S_MIN`."""
+    raw = os.environ.get("EPM_ORPHAN_DEAD_OWNER_STALENESS_MIN")
+    if not raw:
+        return float(ORPHAN_DEAD_OWNER_STALENESS_S_DEFAULT)
+    try:
+        val = float(raw) * 60.0
+    except ValueError:
+        return float(ORPHAN_DEAD_OWNER_STALENESS_S_DEFAULT)
+    if val <= 0:
+        return None
+    return max(val, float(ORPHAN_DEAD_OWNER_STALENESS_S_MIN))
+
+
 def decide_orphan(
     status: str | None,
     mapped_alive: bool,
@@ -11986,6 +12504,71 @@ def decide_orphan(
     return ("respawn", 0)
 
 
+def decide_dead_owner_fast_path(
+    *,
+    has_registration: bool,
+    breadcrumb_owner_sids: frozenset[str],
+    live_ids: frozenset[str],
+    recorded_owner_sid: str | None,
+    driver_witness_age_s: float | None,
+    witness_lookback_s: float,
+    wt_activity_fresh: bool,
+    live_cwd_owner: bool | None,
+    fast_floor_s: float | None,
+) -> tuple[bool, str]:
+    """#1391 dead-owner fast path: pure ``(eligible, reason)`` gate deciding
+    whether the orphan sweep may feed :func:`decide_orphan` the SHORT
+    staleness floor (:func:`_orphan_dead_owner_staleness_s`) instead of the
+    90-min default. :func:`decide_orphan` itself is unchanged — this only
+    modulates its ``staleness_s`` input.
+
+    Eligible iff ALL of: the fast path is enabled (``fast_floor_s`` not
+    ``None``); the task has NO registration (``rec is None`` strictly — a
+    registered-but-dead entry is the crash-recovery pass's territory, and
+    the #505 manual-only alert requires ``rec``, so that guard structurally
+    cannot co-occur with this path); a recent DRIVER witness exists within
+    ``witness_lookback_s`` (== the SLOW floor, so the fast path hands over
+    to the slow path exactly when the witness expires); no fresh worktree
+    activity (nobody mid-edit); the worktree-cwd probe POSITIVELY found no
+    live daemon child inside the issue worktree (``None`` == probe
+    unavailable -> ineligible); no breadcrumb-recorded ex-owner sid is
+    still live; and there is POSITIVE proof of owner death — a
+    state-carried ``recorded_owner_sid`` absent from the live set, or a
+    non-empty breadcrumb owner set fully absent from it.
+
+    EVERY uncertain input fails toward ``(False, <why>)`` — the slow path.
+    Pure + hermetic (#1247 seams): the caller gathers every signal."""
+    if fast_floor_s is None:
+        return (False, "disabled (EPM_ORPHAN_DEAD_OWNER_STALENESS_MIN=0)")
+    if has_registration:
+        return (False, "registration present")
+    if driver_witness_age_s is None:
+        return (False, "no driver witness on record")
+    if driver_witness_age_s >= witness_lookback_s:
+        return (False, "driver witness older than the lookback")
+    if wt_activity_fresh:
+        return (False, "fresh worktree activity")
+    if live_cwd_owner is None:
+        return (False, "worktree-cwd probe unavailable")
+    if live_cwd_owner:
+        return (False, "a live session's cwd is inside the issue worktree")
+    if breadcrumb_owner_sids & live_ids:
+        return (False, "a breadcrumb-recorded owner sid is still live")
+    if recorded_owner_sid is not None and recorded_owner_sid not in live_ids:
+        return (
+            True,
+            f"owner sid {recorded_owner_sid[:12]} (state-carried; observed live on a "
+            f"prior tick) absent from the live set",
+        )
+    if breadcrumb_owner_sids:
+        sids = ",".join(sorted(s[:12] for s in breadcrumb_owner_sids))
+        return (
+            True,
+            f"breadcrumb owner sid(s) {sids} (last-mapped-terminal) absent from the live set",
+        )
+    return (False, "no positive owner-death evidence")
+
+
 def _orphan_state_path(issue: int) -> Path:
     return AUTONOMOUS_REGISTRY_DIR / f"{ORPHAN_STATE_PREFIX}{issue}.json"
 
@@ -12012,6 +12595,8 @@ def _save_orphan_state(
     respawn_day: str,
     respawns_today: int,
     followups_child_alerted: bool = False,
+    owner_sid: str | None = None,
+    owner_last_live_ts: float | None = None,
     prev: dict | None = None,
 ) -> None:
     """Persist the per-issue orphan-sweep state atomically (temp + rename),
@@ -12021,12 +12606,23 @@ def _save_orphan_state(
     one-time "followups_running parent waiting on open child" suppression
     alert (see :func:`_followups_awaiting_child_reason`); ``first_seen``
     carries forward so the GC age backstop measures the original episode
-    start."""
+    start. ``owner_sid`` / ``owner_last_live_ts`` (#1391 dead-owner fast
+    path) record the breadcrumb-recorded owner sid last observed IN the
+    daemon live set; when NOT supplied they carry forward from ``prev`` (the
+    ``first_seen`` pattern) so existing call sites need no change and the
+    death proof survives the #720 breadcrumb GC. Pre-existing state files
+    without the fields load as ``None`` (type-guarded)."""
     AUTONOMOUS_REGISTRY_DIR.mkdir(parents=True, exist_ok=True)
     dest = _orphan_state_path(issue)
     prev_first_seen = (prev or {}).get("first_seen")
     if not isinstance(prev_first_seen, int | float):
         prev_first_seen = time.time()
+    if owner_sid is None:
+        prev_sid = (prev or {}).get("owner_sid")
+        owner_sid = prev_sid if isinstance(prev_sid, str) and prev_sid else None
+    if owner_last_live_ts is None:
+        prev_live_ts = (prev or {}).get("owner_last_live_ts")
+        owner_last_live_ts = float(prev_live_ts) if isinstance(prev_live_ts, int | float) else None
     payload = {
         "missed": missed,
         "alerted": alerted,
@@ -12034,6 +12630,8 @@ def _save_orphan_state(
         "respawns_today": respawns_today,
         "followups_child_alerted": followups_child_alerted,
         "first_seen": prev_first_seen,
+        "owner_sid": owner_sid,
+        "owner_last_live_ts": owner_last_live_ts,
     }
     tmp = dest.with_suffix(".json.tmp")
     tmp.write_text(json.dumps(payload, indent=2))
@@ -12177,6 +12775,82 @@ def _issue_registrations() -> dict[int, dict]:
     return out
 
 
+def _issue_breadcrumb_owner_sids(issue: int) -> set[str]:
+    """sids of ``last-mapped-terminal-<sid>.json`` breadcrumbs (#720) that
+    record THIS issue — the dead-owner fast path's owner-evidence source
+    (#1391). Reuses :func:`_last_mapped_terminal` for validation (garbled /
+    non-terminal / non-int-issue files never contribute); any read failure
+    yields the empty set (fail toward the slow path)."""
+    out: set[str] = set()
+    if not AUTONOMOUS_REGISTRY_DIR.is_dir():
+        return out
+    try:
+        paths = list(AUTONOMOUS_REGISTRY_DIR.glob(f"{LAST_MAPPED_TERMINAL_PREFIX}*.json"))
+    except OSError:
+        return out
+    for path in paths:
+        sid = path.name[len(LAST_MAPPED_TERMINAL_PREFIX) : -len(".json")]
+        if not sid:
+            continue
+        crumb = _last_mapped_terminal(sid)
+        if crumb is not None and crumb[1] == issue:
+            out.add(sid)
+    return out
+
+
+def _latest_driver_witness_age_s(events: list[dict], now: float) -> float | None:
+    """Age (s) of the newest DRIVER-attributable event (#1391): a kind in
+    :data:`_FOLLOWUP_ROUND_WITNESS_KINDS` (markers only an EXECUTING pipeline
+    round posts), or an ``epm:progress`` note beginning ``stage-dispatch ``
+    (the dispatch-breadcrumb contract; ANY stage counts — the manual 07:25Z
+    recovery breadcrumb in #1090 was a non-``followup-`` stage). The
+    watcher's own notes begin ``[autonomous_session_watch:`` and can never
+    match, and ``by=`` is deliberately NOT consulted — #1090's 06:12Z
+    breadcrumb carried ``by="unknown"``. ``None`` when absent (fail toward
+    the slow path)."""
+    best: float | None = None
+    for ev in events:
+        note = ev.get("note") or ""
+        is_witness = ev.get("kind") in _FOLLOWUP_ROUND_WITNESS_KINDS or (
+            ev.get("kind") == "epm:progress" and note.startswith("stage-dispatch ")
+        )
+        if not is_witness:
+            continue
+        ts = _parse_event_ts(ev.get("ts"))
+        if ts is not None and (best is None or ts > best):
+            best = ts
+    if best is None:
+        return None
+    return now - best
+
+
+def _any_live_child_in_issue_worktree(issue: int, live_pids: dict[str, int] | None) -> bool | None:
+    """True iff any live daemon child's ``/proc/<pid>/cwd`` resolves under
+    the issue's worktree (``issue-<N>`` or an ``issue-<N>-<suffix>``
+    follow-up worktree; :data:`_WORKTREE_ISSUE_RE`'s full digit-run capture
+    gives the component boundary — ``issue-109`` never matches
+    ``issue-1090``). ``None`` when ``live_pids`` is ``None`` (the ``/list``
+    pid probe failed — uncertain, the caller vetoes the fast path) or a
+    same-uid readlink fails for a LIVE pid (PermissionError etc. — also
+    uncertain). A VANISHED pid (``FileNotFoundError`` /
+    ``ProcessLookupError``) is skipped: dead != owner. Used ONLY as a VETO
+    (#1391): a cwd heuristic lying toward alive fails toward the slow path —
+    the safe direction — never as a liveness claim (the #518 lesson)."""
+    if live_pids is None:
+        return None
+    for pid in live_pids.values():
+        try:
+            cwd = os.readlink(f"/proc/{pid}/cwd")
+        except (FileNotFoundError, ProcessLookupError):
+            continue
+        except OSError:
+            return None
+        m = _WORKTREE_ISSUE_RE.search(cwd)
+        if m and int(m.group(1)) == issue:
+            return True
+    return False
+
+
 def _respawn_orphan(issue: int, cap_gpu_hours: float, dry_run: bool) -> str:
     """Spawn a fresh ``--auto`` session for an orphaned active task. Mirrors
     :func:`_respawn_stalled_session` but with an ``RESPAWNED-ORPHAN`` log
@@ -12227,6 +12901,7 @@ def orphan_sweep_pass(
     *,
     daemon_reachable: bool | None = None,
     live_ids: set[str] | None = None,
+    live_pids: dict[str, int] | None = None,
 ) -> None:
     """Registration-independent safety net: cross-check ACTIVE-status tasks
     against live REGISTERED sessions; recover (or loudly alert on) any active
@@ -12238,7 +12913,14 @@ def orphan_sweep_pass(
     freshness (a superseded driver generation kept #518's self-report fresh
     for 7.4h of real marker silence on 2026-06-10). Daemon-gated like the
     respawn pass: during an outage liveness is unknowable and a mass respawn
-    would duplicate pods."""
+    would duplicate pods.
+
+    ``live_pids`` (#1391): the daemon's ``{sid: wrapper pid}`` map for the
+    dead-owner fast path's worktree-cwd VETO probe — snapshotted once per
+    tick via :func:`_live_pids_by_sid_or_none` when not supplied by the
+    caller (main() reuses its stalled-pass snapshot). ``None`` from a failed
+    probe keeps the fast path ineligible (fail toward the 90-min slow
+    path); the cwd signal is only ever a veto, never a liveness claim."""
     now = now if now is not None else time.time()
     if daemon_reachable is None:
         daemon_reachable = _daemon_reachable()
@@ -12250,6 +12932,8 @@ def orphan_sweep_pass(
         return
     if live_ids is None:
         live_ids = _live_session_ids()
+    if live_pids is None:
+        live_pids = _live_pids_by_sid_or_none()
     active = _active_status_tasks()
     regs = _issue_registrations()
     staleness_s = _orphan_staleness_s()
@@ -12283,6 +12967,7 @@ def orphan_sweep_pass(
             max_per_day=max_per_day,
             day_key=day_key,
             pod_active_issues=pod_active_issues,
+            live_pids=live_pids,
         )
 
 
@@ -12659,6 +13344,65 @@ def _orphan_act_guard(
     return None
 
 
+def _orphan_effective_staleness(
+    issue: int,
+    *,
+    rec: dict | None,
+    events: list[dict],
+    live_ids: set[str],
+    live_pids: dict[str, int] | None,
+    state: dict,
+    now: float,
+    slow_s: float,
+) -> tuple[float, str | None, dict]:
+    """#1391: the per-task EFFECTIVE marker-staleness floor for
+    :func:`decide_orphan` — ``(staleness_s, fast_reason, owner_updates)``.
+
+    ``staleness_s`` is the FAST floor (:func:`_orphan_dead_owner_staleness_s`)
+    when :func:`decide_dead_owner_fast_path` finds positive proof the task's
+    last recorded owner session is dead, else ``slow_s`` unchanged (with
+    ``fast_reason=None`` — the byte-identical slow path). ``owner_updates``
+    is ``{}`` or ``{"owner_sid": sid, "owner_last_live_ts": now}`` whenever a
+    breadcrumb-recorded owner sid is observed IN the live set THIS tick (the
+    healthy #472/#1090 unregistered-round window) — the caller threads it
+    into the keep-branch :func:`_save_orphan_state` so the death proof
+    survives the #720 breadcrumb GC
+    (:func:`_gc_orphan_last_mapped_terminal` unlinks the file on the first
+    daemon tick after the sid leaves the live set; ``orphan_sweep_pass``
+    runs BEFORE ``idle_unmapped_pass`` in main(), so the death-observing
+    tick still sees the file either way).
+
+    Cheap short-circuits keep the per-tick cost flat: the worktree-activity
+    walk + ``/proc`` cwd probes run only when the fast path is enabled AND
+    owner evidence exists AND no recorded ex-owner is still live (the
+    common healthy-round case exits before any probe)."""
+    crumbs = _issue_breadcrumb_owner_sids(issue)
+    live_crumb_sids = sorted(crumbs & live_ids)
+    owner_updates: dict = (
+        {"owner_sid": live_crumb_sids[0], "owner_last_live_ts": now} if live_crumb_sids else {}
+    )
+    fast_floor = _orphan_dead_owner_staleness_s()
+    recorded = state.get("owner_sid")
+    if not (isinstance(recorded, str) and recorded):
+        recorded = None
+    if fast_floor is None or live_crumb_sids or (recorded is None and not crumbs):
+        return slow_s, None, owner_updates
+    eligible, reason = decide_dead_owner_fast_path(
+        has_registration=rec is not None,
+        breadcrumb_owner_sids=frozenset(crumbs),
+        live_ids=frozenset(live_ids),
+        recorded_owner_sid=recorded,
+        driver_witness_age_s=_latest_driver_witness_age_s(events, now),
+        witness_lookback_s=slow_s,
+        wt_activity_fresh=_worktree_recent_activity(issue, now, _wt_activity_fresh_s()),
+        live_cwd_owner=_any_live_child_in_issue_worktree(issue, live_pids),
+        fast_floor_s=fast_floor,
+    )
+    if eligible:
+        return fast_floor, reason, owner_updates
+    return slow_s, None, owner_updates
+
+
 def _process_orphan_task(
     issue: int,
     status: str,
@@ -12672,11 +13416,15 @@ def _process_orphan_task(
     max_per_day: int,
     day_key: str,
     pod_active_issues: set[int] | None = None,
+    live_pids: dict[str, int] | None = None,
 ) -> None:
     """Apply one active-status task's orphan decision (gather signals ->
     :func:`decide_orphan` -> act). ``rec`` is the task's registration record
     from :func:`_issue_registrations` (or ``None`` for the fully-unregistered
-    #472 class). Honours dry_run (logs but never mutates / spawns).
+    #472 class). ``live_pids`` is the daemon's ``{sid: wrapper pid}`` map for
+    the #1391 dead-owner fast path's cwd VETO probe (``None`` == probe
+    unavailable -> fast path ineligible). Honours dry_run (logs but never
+    mutates / spawns).
 
     #866/#903: a FRESH ``paused-takeover`` sentinel (a deliberate session
     takeover renamed the registration away) skips the issue ENTIRELY before
@@ -12705,6 +13453,9 @@ def _process_orphan_task(
     # exemption helper so we don't pay a second `task.py view` per tick.
     marker_age_s: float | None = None
     events: list[dict] = []
+    staleness_eff = staleness_s
+    fast_reason: str | None = None
+    owner_updates: dict = {}
     is_candidate = not mapped_alive and not (
         entry_age_s is not None and entry_age_s < ORPHAN_SPAWN_GRACE_S
     )
@@ -12721,6 +13472,21 @@ def _process_orphan_task(
         # sibling).
         latest = _latest_nonwatcher_event_ts(events)
         marker_age_s = (now - latest) if latest is not None else None
+        # #1391 dead-owner fast path: drop the staleness floor to
+        # EPM_ORPHAN_DEAD_OWNER_STALENESS_MIN (default 20 min) ONLY on
+        # positive proof the last recorded owner session is dead; every
+        # uncertain signal keeps the 90-min slow path (fast_reason=None,
+        # staleness_eff == staleness_s — byte-identical behavior).
+        staleness_eff, fast_reason, owner_updates = _orphan_effective_staleness(
+            issue,
+            rec=rec,
+            events=events,
+            live_ids=live_ids,
+            live_pids=live_pids,
+            state=state,
+            now=now,
+            slow_s=staleness_s,
+        )
 
     action, new_missed = decide_orphan(
         status,
@@ -12731,7 +13497,7 @@ def _process_orphan_task(
         missed,
         respawns_today=respawns_today,
         threshold=threshold,
-        staleness_s=staleness_s,
+        staleness_s=staleness_eff,
         max_respawns_per_day=max_per_day,
     )
     gap_str = f"{marker_age_s / 60:.1f}m" if marker_age_s is not None else "none"
@@ -12758,7 +13524,7 @@ def _process_orphan_task(
         f"manual_only={manual_only} marker_gap={gap_str} "
         f"missed={missed}->{new_missed} respawns_today={respawns_today}/{max_per_day} "
         f"alerted={alerted} followups_child_alerted={followups_child_alerted} "
-        f"action={action}"
+        f"action={action} fast_path={fast_reason or 'no'}"
     )
 
     if action == "clear":
@@ -12775,6 +13541,7 @@ def _process_orphan_task(
                 respawns_today=respawns_today,
                 followups_child_alerted=followups_child_alerted,
                 prev=state,
+                **owner_updates,
             )
         return
     # ── #1247 terminal-status act guard ─────────────────────────────────
@@ -12813,13 +13580,23 @@ def _process_orphan_task(
                 prev=state,
             )
             if attempted_ok:
+                # #1391: when the dead-owner fast path set the floor, the
+                # respawn marker names its evidence + the effective floor —
+                # BEFORE the _source_stamp() (which stays terminal, #1247).
+                fast_note = (
+                    f"dead-owner fast path: {fast_reason}; effective "
+                    f"staleness floor {staleness_eff / 60:.0f}m "
+                    f"(EPM_ORPHAN_DEAD_OWNER_STALENESS_MIN). "
+                    if fast_reason is not None
+                    else ""
+                )
                 _post_progress_marker(
                     issue,
                     f"{_ORPHAN_RESPAWN_NOTE_SENTINEL} active task "
                     f"(status={status}) had no live registered session and no "
                     f"real progress marker for {gap_str}; auto-respawned via "
                     f"spawn-issue --auto (attempt {respawns_today + 1}/{max_per_day} "
-                    f"today). {_source_stamp()}",
+                    f"today). {fast_note}{_source_stamp()}",
                     dry_run,
                     label="orphan-respawn",
                 )
@@ -19333,6 +20110,9 @@ def vm_disk_pass(dry_run: bool, now: float | None = None) -> None:
     # attributes the disk pressure to the largest per-issue caches on the
     # shared disk-guard sidecar — runs every tick, warn-only, never deletes.
     subfloor_sentinel_pass(dry_run, free_bytes=free)
+    # #1392: interim remediation leg — launch the guard's tiered safe cleanup
+    # DETACHED when below the sub-floor, rate-limited; tier contract unchanged.
+    subfloor_reclaim_pass(dry_run, free_bytes=free, now=now)
     state = _load_vm_disk_state()
     last_reclaim_ts = state.get("last_reclaim_ts")
     if not isinstance(last_reclaim_ts, int | float):
@@ -20617,6 +21397,14 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 — flat --*-only 
         "Daemon-independent; pair with --dry-run for a live smoke.",
     )
     parser.add_argument(
+        "--registry-drift-only",
+        action="store_true",
+        help="run ONLY the registry-drift audit pass (#1439, report-only — "
+        "once-daily tasks/REGISTRY.json vs filesystem drift observer) and "
+        "exit; skip every other pass. Daemon-independent; pair with "
+        "--dry-run for a zero-write live smoke.",
+    )
+    parser.add_argument(
         "--auth-outage-only",
         action="store_true",
         help="run ONLY the auth-outage guard pass (#1027 — fleet respawn "
@@ -20709,6 +21497,13 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 — flat --*-only 
         root_draft_pass(args.dry_run)
         return 0
 
+    # --registry-drift-only mirrors --root-draft-only: the pass is
+    # daemon-independent (pure task_workflow reads + its own state file), so
+    # run it alone.
+    if args.registry_drift_only:
+        registry_drift_pass(args.dry_run)
+        return 0
+
     # --auth-outage-only mirrors --cpu-guard-only: run the single pass under
     # the lock and exit (episode bookkeeping is daemon-independent; the
     # canary read degrades to "hold" when the daemon is down).
@@ -20790,6 +21585,15 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 — flat --*-only 
     # NEVER deletes/moves/git-mutates anything, posts NO task markers.
     # Daemon-independent, so it runs on a daemon outage too.
     root_draft_pass(args.dry_run)
+
+    # Registry-drift audit (#1439): once-daily REPORT-ONLY observer of
+    # tasks/REGISTRY.json <-> filesystem drift (audit() +
+    # reconcile_registry(apply=False), double-read confirmed — the post-#898
+    # find_task_path stale-entry WARNING class nothing structured ever read).
+    # Escalates via sidecar + ONE deduped push naming `task.py audit
+    # --repair`; NEVER repairs, posts NO task markers. Daemon-independent,
+    # so it runs on a daemon outage too.
+    registry_drift_pass(args.dry_run)
 
     # VM resource-ledger reap (plan §5): drop expired-TTL / dead-PID claims from
     # the advisory ~/.task-workflow/vm-ledger.json so a crashed session's claim
@@ -20890,14 +21694,17 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 — flat --*-only 
     # pod-safety so the `_running_managed_issue_pods` call is fresh
     # (poll_pipeline-posted progress markers from any auto-stopped pod
     # won't accidentally bias the "has_pod" flag).
+    # #845 (e) + #1391: ONE {sid: wrapper pid} /list snapshot per tick,
+    # shared by the stalled pass's prompt-wedge transcript probe and the
+    # orphan sweep's dead-owner cwd-veto probe (one extra /list RPC, only
+    # on daemon-up ticks).
+    live_pids_by_sid = _live_pids_by_sid_or_none() if daemon_reachable else None
     stalled_session_pass(
         args.dry_run,
         args.threshold,
         daemon_reachable=daemon_reachable,
         live_ids=live_ids if daemon_reachable else None,
-        # #845 (e): the {sid: wrapper pid} map for the prompt-wedge
-        # transcript probe (one extra /list RPC, only on daemon-up ticks).
-        pids_by_sid=_live_pids_by_sid_or_none() if daemon_reachable else None,
+        pids_by_sid=live_pids_by_sid,
     )
 
     # Orphan sweep: registration-INDEPENDENT cross-check of ACTIVE-status
@@ -20906,12 +21713,15 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 — flat --*-only 
     # all (#472, 2026-06-10 — entry deleted at a TERMINAL park, task revived
     # by a same-issue follow-up, driver died unobserved for 10.5h). Runs
     # AFTER the respawn + stalled passes so a same-tick recovery by either
-    # one is visible via its fresh registry write (the spawn-grace window).
+    # one is visible via its fresh registry write (the spawn-grace window),
+    # and BEFORE idle_unmapped_pass so the death-observing tick still sees
+    # the #720 breadcrumb its GC would unlink (#1391 dead-owner fast path).
     orphan_sweep_pass(
         args.dry_run,
         args.threshold,
         daemon_reachable=daemon_reachable,
         live_ids=live_ids if daemon_reachable else None,
+        live_pids=live_pids_by_sid,
     )
 
     # Infra-drain: execute the PM session's adjudicated infra dispatch queue

@@ -1,0 +1,23 @@
+{
+  "ts": "2026-07-16T13:14:35Z",
+  "per_model": {
+    "instruct": {
+      "n_kept": 361,
+      "n_target": 500,
+      "yield_floor": 400,
+      "yield_ok": false,
+      "story_regime": "halted (per-model yield floor)"
+    },
+    "pretrained": {
+      "n_kept": 96,
+      "n_target": 500,
+      "yield_floor": 400,
+      "yield_ok": false,
+      "story_regime": "halted (per-model yield floor)"
+    }
+  },
+  "r3_halted_models": [
+    "instruct",
+    "pretrained"
+  ]
+}

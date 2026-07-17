@@ -474,7 +474,7 @@ def main() -> None:
     ap.add_argument("--arms", default="prefix,context")
     ap.add_argument("--no-r3", action="store_true")
     ap.add_argument("--seed", type=int, default=cm.FIT_SEED)
-    ap.add_argument("--rot-draws", type=int, default=50)
+    ap.add_argument("--rot-draws", type=int, default=c.N_ROTATION_COSINE_DRAWS)
     ap.add_argument("--reparam-null-draws", type=int, default=c.N_REPARAM_NULL_DRAWS)
     ap.add_argument(
         "--smoke",

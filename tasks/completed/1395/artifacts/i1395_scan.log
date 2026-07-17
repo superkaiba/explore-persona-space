@@ -1,0 +1,121 @@
+Using CPython 3.11.15
+Creating virtual environment at: .venv
+   Building explore-persona-space @ file:///home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-1395
+      Built explore-persona-space @ file:///home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-1395
+Installed 216 packages in 635ms
+corpus: 3445 plan files under /home/thomasjiralerspong/explore-persona-space
+checked: 3445 files; skipped (vanished mid-run): 0
+
+battery-branch fires: 65 plan-versions across 15 distinct issues [459, 537, 666, 685, 778, 816, 920, 922, 923, 928, 952, 958, 1332, 1335, 1415]
+  with >=1 ungrounded battery row: 52 plan-versions across 12 issues [459, 537, 666, 685, 778, 816, 920, 922, 928, 958, 1332, 1415]
+  recent era (issue >= 1000): 3 distinct issues [1332, 1335, 1415]
+  FIRE .claude/plans/issue-920.md c32 WARN->WARN rows=1 arms=['framing+count'] satisfiers=[None]
+  FIRE .claude/plans/issue-922.md c32 WARN->WARN rows=1 arms=['+count'] satisfiers=[None]
+  FIRE .claude/plans/issue-958.md c32 PASS->WARN rows=1 arms=['+count'] satisfiers=[None]
+  FIRE tasks/archived/459/plans/plan.md c32 SKIP->WARN rows=1 arms=['framing'] satisfiers=[None]
+  FIRE tasks/archived/459/plans/v2.md c32 SKIP->WARN rows=1 arms=['framing'] satisfiers=[None]
+  FIRE tasks/awaiting_promotion/1332/plans/v1.md c32 PASS->WARN rows=1 arms=['+count'] satisfiers=[None]
+  FIRE tasks/awaiting_promotion/1332/plans/v2.md c32 PASS->WARN rows=1 arms=['+count'] satisfiers=[None]
+  FIRE tasks/awaiting_promotion/1332/plans/v3.md c32 PASS->WARN rows=1 arms=['+count'] satisfiers=[None]
+  FIRE tasks/awaiting_promotion/537/plans/plan.md c32 SKIP->WARN rows=1 arms=['framing'] satisfiers=[None]
+  FIRE tasks/awaiting_promotion/537/plans/v9.md c32 SKIP->WARN rows=1 arms=['framing'] satisfiers=[None]
+  FIRE tasks/awaiting_promotion/666/plans/plan.md c32 WARN->WARN rows=1 arms=['+count'] satisfiers=[None]
+  FIRE tasks/awaiting_promotion/666/plans/v1.md c32 WARN->WARN rows=1 arms=['+count'] satisfiers=[None]
+  FIRE tasks/awaiting_promotion/666/plans/v2.md c32 WARN->WARN rows=1 arms=['+count'] satisfiers=[None]
+  FIRE tasks/awaiting_promotion/666/plans/v3.md c32 WARN->WARN rows=1 arms=['+count'] satisfiers=[None]
+  FIRE tasks/awaiting_promotion/685/plans/plan.md c32 SKIP->WARN rows=1 arms=['framing+count'] satisfiers=[None]
+  FIRE tasks/awaiting_promotion/685/plans/v4.md c32 SKIP->WARN rows=1 arms=['framing+count'] satisfiers=[None]
+  FIRE tasks/awaiting_promotion/685/plans/v5.md c32 SKIP->WARN rows=1 arms=['framing+count'] satisfiers=[None]
+  FIRE tasks/awaiting_promotion/778/plans/plan.md c32 SKIP->WARN rows=1 arms=['+count'] satisfiers=[None]
+  FIRE tasks/awaiting_promotion/778/plans/v1.md c32 SKIP->WARN rows=1 arms=['framing'] satisfiers=[None]
+  FIRE tasks/awaiting_promotion/778/plans/v2.md c32 SKIP->WARN rows=1 arms=['framing'] satisfiers=[None]
+  FIRE tasks/awaiting_promotion/778/plans/v3.md c32 SKIP->WARN rows=1 arms=['framing'] satisfiers=[None]
+  FIRE tasks/awaiting_promotion/778/plans/v4.md c32 SKIP->WARN rows=1 arms=['framing'] satisfiers=[None]
+  FIRE tasks/awaiting_promotion/778/plans/v5.md c32 SKIP->WARN rows=1 arms=['framing'] satisfiers=[None]
+  FIRE tasks/awaiting_promotion/778/plans/v6.md c32 SKIP->WARN rows=1 arms=['+count'] satisfiers=[None]
+  FIRE tasks/awaiting_promotion/778/plans/v7.md c32 SKIP->WARN rows=1 arms=['+count'] satisfiers=[None]
+  FIRE tasks/awaiting_promotion/778/plans/v8.md c32 SKIP->WARN rows=1 arms=['+count'] satisfiers=[None]
+  FIRE tasks/awaiting_promotion/920/plans/plan.md c32 WARN->WARN rows=1 arms=['framing+count'] satisfiers=[None]
+  FIRE tasks/awaiting_promotion/920/plans/v1.md c32 WARN->WARN rows=1 arms=['framing+count'] satisfiers=[None]
+  FIRE tasks/awaiting_promotion/920/plans/v2.md c32 WARN->WARN rows=1 arms=['framing+count'] satisfiers=[None]
+  FIRE tasks/awaiting_promotion/920/plans/v3.md c32 WARN->WARN rows=1 arms=['framing+count'] satisfiers=[None]
+  FIRE tasks/awaiting_promotion/922/plans/plan.md c32 WARN->WARN rows=1 arms=['+count'] satisfiers=[None]
+  FIRE tasks/awaiting_promotion/922/plans/v1.md c32 WARN->WARN rows=1 arms=['+count'] satisfiers=[None]
+  FIRE tasks/awaiting_promotion/922/plans/v2.md c32 WARN->WARN rows=1 arms=['+count'] satisfiers=[None]
+  FIRE tasks/awaiting_promotion/922/plans/v3.md c32 WARN->WARN rows=1 arms=['+count'] satisfiers=[None]
+  FIRE tasks/awaiting_promotion/922/plans/v4.md c32 WARN->WARN rows=1 arms=['+count'] satisfiers=[None]
+  FIRE tasks/awaiting_promotion/922/plans/v5.md c32 WARN->WARN rows=1 arms=['+count'] satisfiers=[None]
+  FIRE tasks/awaiting_promotion/922/plans/v6.md c32 WARN->WARN rows=1 arms=['+count'] satisfiers=[None]
+  FIRE tasks/awaiting_promotion/923/plans/v1.md c32 WARN->WARN rows=1 arms=['framing+count'] satisfiers=["provenance='#810' timing='1.5 h'"]
+  FIRE tasks/awaiting_promotion/923/plans/v2.md c32 WARN->WARN rows=1 arms=['framing+count'] satisfiers=["provenance='#810' timing='1.5 h'"]
+  FIRE tasks/awaiting_promotion/923/plans/v3.md c32 WARN->WARN rows=1 arms=['framing+count'] satisfiers=["provenance='#810' timing='3 h'"]
+  FIRE tasks/awaiting_promotion/923/plans/v4.md c32 SKIP->PASS rows=2 arms=['framing', '+count'] satisfiers=["provenance='parent' timing='~16 min'", "provenance='parent' timing='1.7 h'"]
+  FIRE tasks/awaiting_promotion/923/plans/v5.md c32 SKIP->PASS rows=2 arms=['framing', '+count'] satisfiers=["provenance='parent' timing='~16 min'", "provenance='parent' timing='1.7 h'"]
+  FIRE tasks/awaiting_promotion/923/plans/v6.md c32 SKIP->PASS rows=2 arms=['framing', '+count'] satisfiers=["provenance='parent' timing='~16 min'", "provenance='parent' timing='1.7 h'"]
+  FIRE tasks/awaiting_promotion/928/plans/v1.md c32 WARN->WARN rows=1 arms=['+count'] satisfiers=[None]
+  FIRE tasks/awaiting_promotion/928/plans/v2.md c32 WARN->WARN rows=1 arms=['+count'] satisfiers=[None]
+  FIRE tasks/awaiting_promotion/928/plans/v3.md c32 WARN->WARN rows=1 arms=['+count'] satisfiers=[None]
+  FIRE tasks/awaiting_promotion/928/plans/v4.md c32 WARN->WARN rows=1 arms=['+count'] satisfiers=[None]
+  FIRE tasks/awaiting_promotion/952/plans/plan.md c32 PASS->PASS rows=1 arms=['+count'] satisfiers=["provenance='realized' timing='3 min'"]
+  FIRE tasks/awaiting_promotion/952/plans/v10.md c32 PASS->PASS rows=1 arms=['+count'] satisfiers=["provenance='realized' timing='3 min'"]
+  FIRE tasks/awaiting_promotion/952/plans/v11.md c32 PASS->PASS rows=1 arms=['+count'] satisfiers=["provenance='realized' timing='3 min'"]
+  FIRE tasks/awaiting_promotion/952/plans/v12.md c32 PASS->PASS rows=1 arms=['+count'] satisfiers=["provenance='realized' timing='3 min'"]
+  FIRE tasks/awaiting_promotion/952/plans/v9.md c32 PASS->PASS rows=1 arms=['+count'] satisfiers=["provenance='realized' timing='3 min'"]
+  FIRE tasks/awaiting_promotion/958/plans/plan.md c32 PASS->WARN rows=1 arms=['+count'] satisfiers=[None]
+  FIRE tasks/awaiting_promotion/958/plans/v1.md c32 PASS->WARN rows=1 arms=['+count'] satisfiers=[None]
+  FIRE tasks/awaiting_promotion/958/plans/v2.md c32 PASS->WARN rows=1 arms=['+count'] satisfiers=[None]
+  FIRE tasks/awaiting_promotion/958/plans/v3.md c32 PASS->WARN rows=1 arms=['+count'] satisfiers=[None]
+  FIRE tasks/on_hold/816/plans/v1.md c32 SKIP->WARN rows=1 arms=['framing'] satisfiers=[None]
+  FIRE tasks/on_hold/816/plans/v2.md c32 SKIP->WARN rows=1 arms=['framing'] satisfiers=[None]
+  FIRE tasks/running/1335/plans/plan.md c32 SKIP->PASS rows=1 arms=['framing'] satisfiers=["provenance='#825' timing='~1 min/cell'"]
+  FIRE tasks/running/1335/plans/v4.md c32 SKIP->PASS rows=1 arms=['framing'] satisfiers=["provenance='#825' timing='~1 min/cell'"]
+  FIRE tasks/running/1415/plans/plan.md c32 SKIP->WARN rows=1 arms=['framing+count'] satisfiers=[None]
+  FIRE tasks/running/1415/plans/v2.md c32 SKIP->WARN rows=1 arms=['framing+count'] satisfiers=[None]
+  FIRE tasks/running/1415/plans/v3.md c32 SKIP->WARN rows=1 arms=['framing+count'] satisfiers=[None]
+  FIRE tasks/running/1415/plans/v4.md c32 SKIP->WARN rows=1 arms=['framing+count'] satisfiers=[None]
+  FIRE tasks/running/1415/plans/v5.md c32 SKIP->WARN rows=1 arms=['framing+count'] satisfiers=[None]
+
+allowed flips: 36
+  c32_fit_basis_grounding PASS->WARN  .claude/plans/issue-958.md
+  c32_fit_basis_grounding SKIP->WARN  tasks/archived/459/plans/plan.md
+  c32_fit_basis_grounding SKIP->WARN  tasks/archived/459/plans/v2.md
+  c32_fit_basis_grounding PASS->WARN  tasks/awaiting_promotion/1332/plans/v1.md
+  c32_fit_basis_grounding PASS->WARN  tasks/awaiting_promotion/1332/plans/v2.md
+  c32_fit_basis_grounding PASS->WARN  tasks/awaiting_promotion/1332/plans/v3.md
+  c32_fit_basis_grounding SKIP->WARN  tasks/awaiting_promotion/537/plans/plan.md
+  c32_fit_basis_grounding SKIP->WARN  tasks/awaiting_promotion/537/plans/v9.md
+  c32_fit_basis_grounding SKIP->WARN  tasks/awaiting_promotion/685/plans/plan.md
+  c32_fit_basis_grounding SKIP->WARN  tasks/awaiting_promotion/685/plans/v4.md
+  c32_fit_basis_grounding SKIP->WARN  tasks/awaiting_promotion/685/plans/v5.md
+  c32_fit_basis_grounding SKIP->WARN  tasks/awaiting_promotion/778/plans/plan.md
+  c32_fit_basis_grounding SKIP->WARN  tasks/awaiting_promotion/778/plans/v1.md
+  c32_fit_basis_grounding SKIP->WARN  tasks/awaiting_promotion/778/plans/v2.md
+  c32_fit_basis_grounding SKIP->WARN  tasks/awaiting_promotion/778/plans/v3.md
+  c32_fit_basis_grounding SKIP->WARN  tasks/awaiting_promotion/778/plans/v4.md
+  c32_fit_basis_grounding SKIP->WARN  tasks/awaiting_promotion/778/plans/v5.md
+  c32_fit_basis_grounding SKIP->WARN  tasks/awaiting_promotion/778/plans/v6.md
+  c32_fit_basis_grounding SKIP->WARN  tasks/awaiting_promotion/778/plans/v7.md
+  c32_fit_basis_grounding SKIP->WARN  tasks/awaiting_promotion/778/plans/v8.md
+  c32_fit_basis_grounding SKIP->PASS  tasks/awaiting_promotion/923/plans/v4.md
+  c32_fit_basis_grounding SKIP->PASS  tasks/awaiting_promotion/923/plans/v5.md
+  c32_fit_basis_grounding SKIP->PASS  tasks/awaiting_promotion/923/plans/v6.md
+  c32_fit_basis_grounding PASS->WARN  tasks/awaiting_promotion/958/plans/plan.md
+  c32_fit_basis_grounding PASS->WARN  tasks/awaiting_promotion/958/plans/v1.md
+  c32_fit_basis_grounding PASS->WARN  tasks/awaiting_promotion/958/plans/v2.md
+  c32_fit_basis_grounding PASS->WARN  tasks/awaiting_promotion/958/plans/v3.md
+  c32_fit_basis_grounding SKIP->WARN  tasks/on_hold/816/plans/v1.md
+  c32_fit_basis_grounding SKIP->WARN  tasks/on_hold/816/plans/v2.md
+  c32_fit_basis_grounding SKIP->PASS  tasks/running/1335/plans/plan.md
+  c32_fit_basis_grounding SKIP->PASS  tasks/running/1335/plans/v4.md
+  c32_fit_basis_grounding SKIP->WARN  tasks/running/1415/plans/plan.md
+  c32_fit_basis_grounding SKIP->WARN  tasks/running/1415/plans/v2.md
+  c32_fit_basis_grounding SKIP->WARN  tasks/running/1415/plans/v3.md
+  c32_fit_basis_grounding SKIP->WARN  tasks/running/1415/plans/v4.md
+  c32_fit_basis_grounding SKIP->WARN  tasks/running/1415/plans/v5.md
+
+violations (forbidden transitions): 0
+
+wrote /tmp/i1395_corpus_audit.json
+
+AUDIT PASS: every label transition is on the §5.2 allowlist.
+scan_rc=0

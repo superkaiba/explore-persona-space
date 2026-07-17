@@ -57,7 +57,10 @@ direct-upload script must use the project
 
 **Pod→HF upload WEDGE — recognize it, then run the three-rung escalation
 ladder (#931).** This is the UPLOAD sibling of the #515 download workaround
-above. Signature: the upload process looks healthy (no traceback) while
+above. (The DOWNLOAD-side native `xet_get` hang — zero TCP connections,
+per-file retry wrappers never fire, vs this ladder's one FROZEN ESTAB socket
+— has its own kill-and-replay entry in `.claude/rules/gotchas.md`; #1345.)
+Signature: the upload process looks healthy (no traceback) while
 transfer bytes stop — interface TX delta ~0 across two samples ≥5 min
 apart (`cat /sys/class/net/eth0/statistics/tx_bytes`, sample twice), and/or
 one ESTAB socket to the CDN (port 443) whose counters are frozen in
@@ -257,6 +260,27 @@ per-shard `_verify_present` probe loop — the documented anti-pattern. Pin new
 verify code with a 429-then-success retry test and a ≤2-listings batching
 test (`tests/test_upload_sharded.py`, #1335).
 
+**Staging-DOWNLOAD legs use the canonical helpers `hub.stage_hub_file` /
+`hub.stage_hub_prefix` (#1402) — never a hand-rolled retry + tempdir move.**
+The download-side sibling of the verify-path rule above: both helpers ride
+`retry_transient`, which as of #1402 classifies `LocalEntryNotFoundError`
+transient BY CLASS, checked first (ported from #1092's `_hub_retry_cause`
+— a 429 storm on `hf_hub_download`'s HEAD surfaces 404-shaped through that
+response-less error, the rf01 crash class; a genuinely-missing file still
+fail-fasts via its response-bearing 404 `EntryNotFoundError`).
+`stage_hub_file` is atomic (tempdir INSIDE the dest parent + `os.replace`
+— the #1335 EXDEV gotcha) and fail-loud; `stage_hub_prefix` is the #833
+scoped-listing recipe (server-side `list_hf_files_under_path`, one resolved
+revision, `max_workers<=6` pool) as one helper. Two scope notes: (a) the
+retry absorbs RAISED transients only — the hf-xet HANG class (no exception,
+zero TCP) stays on the kill+replay ladder (gotchas.md hf-xet download-wedge
+entry), and flaky-egress accelerator handling stays the per-launch
+`HF_HUB_DISABLE_XET=1` kill-switch replay, never a default flip; (b) the
+verbatim prefix mirror is a staged LAYOUT — a consumer with a fixed local
+layout still owes the staged-layout consumer-open probe at reuse time
+(`.claude/rules/artifact-reuse.md` check (h)(iv), #928); "canonical helper"
+does not mean "layout-mapping solved".
+
 **Fail-loud uploads.** `upload_dataset_directory` (`orchestrate/hub.py`) exits
 non-zero on failure (`--no-upload` only for dry-runs).
 
@@ -327,6 +351,36 @@ autonomous RunPod-wedge auto-terminate (`compute-backend-failover.md` Part C):
 terminate fires only when the per-cell three-state gate finds zero partial
 cells. Reference impl: `scripts/issue664_dispatch.py` `_upload_cell_artifacts` /
 `_classify_cell_hub_state` / `_cell_done_anywhere`.
+
+**Expensive stores upload BEFORE — or detached-concurrent with — any long
+fit/analysis phase; a fit hang must never strand the store (#825).** When a
+run produces a regeneration-costly intermediate (an extraction / activation
+store, a teacher-forced capture, an on-policy rollout set — anything whose
+recreation costs GPU re-extraction rather than cheap CPU recompute) and a
+DOWNSTREAM fit/analysis/eval phase consumes it, the store's upload is
+sequenced BEFORE any long (>~15-30 min) downstream phase begins, or the
+upload is LAUNCHED concurrently with the fit (detached/backgrounded — HF
+`upload_folder` costs no GPU and overlaps a CPU fit freely). A concurrent
+launch counts as persistence ONLY when it is fail-loud and its completion
+is VERIFIED independently of the fit's completion — an exit-status check on
+the detached upload, or `hub.verify_repo_paths_uploaded` against the
+expected file set, BEFORE the fit's result is consumed; a fire-and-forget
+launch (never confirmed landed) does NOT satisfy this rule — a silently
+wedged upload plus a hung fit strands the store exactly as #825 did (the
+#931 wedge ladder above is the hung-upload remedy; this clause is what
+makes the ladder reachable before the pod is gone). The default
+order `extract → fit → upload` parks the entire fit's hang/crash/OOM-kill
+risk between the expensive artifact's creation and its persistence: #825
+Track-S run 2 hung in a serial CPU MLP fit before `[phase=upload]`,
+stranding the turnstore off HF — recovery cost a full fresh GPU
+re-extraction. This is the INTRA-RUN sibling of the two #664 sequencing
+rules: per-cell upload (bullet above) persists each sweep cell the moment
+it completes; pod-release before the final bulk upload (v2 § below) frees
+the GPU — this bullet orders store-persist ahead of long fits WITHIN one
+run's phase sequence. Plan-side mirror: `planner.md` §9 (the phase sequence
+names the upload point of every regeneration-costly intermediate relative
+to long fit phases); review enforcement: Methodology lens item 10(i)
+data-safety sequencing clause (`.claude/rules/critic-lens-reference.md`).
 
 **Inline-upload fence `EPM_SKIP_INLINE_CHECKPOINT_UPLOAD`.** `_finalize_phase`
 auto-uploads merged checkpoints to WandB Artifacts; orchestrators doing their own
@@ -584,3 +638,6 @@ policy ceiling (Thomas's call). Everything above still holds; v2 tightens it to:
 
 - **#664 sequencing unchanged.** The GPU pod is released before the FINAL bulk
   upload; incremental shard uploads may overlap compute (they cost no GPU).
+  The #825 intra-run ordering bullet (main body above) binds v2 unchanged:
+  an expensive extraction store uploads before — or concurrent with — any
+  long fit/analysis phase that consumes it.

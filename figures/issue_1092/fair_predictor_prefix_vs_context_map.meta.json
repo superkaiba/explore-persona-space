@@ -1,0 +1,69 @@
+{
+  "commit": "d15f225c22",
+  "created": "2026-07-17T07:48:33Z",
+  "figsize": [
+    7.5,
+    4.2
+  ],
+  "points": [
+    {
+      "x": -0.16,
+      "held-out R\u00b2 \u2191 better": 0.8193260751733688,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.84,
+      "held-out R\u00b2 \u2191 better": 0.7633080486910762,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.16,
+      "held-out R\u00b2 \u2191 better": 0.8141832948824597,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 1.16,
+      "held-out R\u00b2 \u2191 better": 0.7383183825157749,
+      "_kind": "bar",
+      "_group": 1
+    }
+  ],
+  "n_series": 2,
+  "total_points": 4,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Prefix \u2192 answer map vs context \u2192 answer map",
+        "ylabel": "held-out R\u00b2 \u2191 better",
+        "legend_labels": [
+          "Prefix \u2192 answer map (query-averaged grain)",
+          "Context \u2192 answer map (per-context grain)"
+        ],
+        "annotations": [
+          "Held-out grouped 6-fold R\u00b2, layer 14, raw residual-stream basis; each map at its own grain"
+        ],
+        "xticklabels": [
+          "Instruct model,\nown answers",
+          "Pretrained model,\nown answers"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ]
+      }
+    ],
+    "series": [
+      "Prefix \u2192 answer map (query-averaged grain)",
+      "Context \u2192 answer map (per-context grain)"
+    ]
+  }
+}

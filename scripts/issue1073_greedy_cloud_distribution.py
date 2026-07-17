@@ -99,6 +99,7 @@ def stage_store(max_workers: int = 6) -> None:
     want: list[str] = []
     entries = I._retry(
         lambda: list(
+            # HUB_VERIFY_RETRY_EXEMPT: wrapped in issue1073_common._retry (bounded, re-raises)
             api.list_repo_tree(
                 DATA_REPO,
                 path_in_repo=f"{HF_PREFIX}/v_store",

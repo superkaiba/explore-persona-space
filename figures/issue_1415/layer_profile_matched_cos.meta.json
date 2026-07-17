@@ -1,0 +1,166 @@
+{
+  "commit": "2eea6e2d08",
+  "created": "2026-07-17T03:48:28Z",
+  "figsize": [
+    7.2,
+    4.2
+  ],
+  "points": [
+    {
+      "Steer/read layer (matched)": 7.0,
+      "Answer-shift alignment (cosine)": 0.1127122734407229,
+      "series": "prefix-based V_c",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Steer/read layer (matched)": 10.0,
+      "Answer-shift alignment (cosine)": 0.12890136278500514,
+      "series": "prefix-based V_c",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Steer/read layer (matched)": 14.0,
+      "Answer-shift alignment (cosine)": 0.3039404610504529,
+      "series": "prefix-based V_c",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Steer/read layer (matched)": 17.0,
+      "Answer-shift alignment (cosine)": 0.3505774947282459,
+      "series": "prefix-based V_c",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Steer/read layer (matched)": 20.0,
+      "Answer-shift alignment (cosine)": 0.20866446486408158,
+      "series": "prefix-based V_c",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Steer/read layer (matched)": 21.0,
+      "Answer-shift alignment (cosine)": 0.17638676626873867,
+      "series": "prefix-based V_c",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Steer/read layer (matched)": 24.0,
+      "Answer-shift alignment (cosine)": 0.14878061513549515,
+      "series": "prefix-based V_c",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Steer/read layer (matched)": 7.0,
+      "Answer-shift alignment (cosine)": 0.06746518186992034,
+      "series": "context-based V_c",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Steer/read layer (matched)": 10.0,
+      "Answer-shift alignment (cosine)": 0.11206345160358719,
+      "series": "context-based V_c",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Steer/read layer (matched)": 14.0,
+      "Answer-shift alignment (cosine)": 0.34714946150779724,
+      "series": "context-based V_c",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Steer/read layer (matched)": 17.0,
+      "Answer-shift alignment (cosine)": 0.372073623750891,
+      "series": "context-based V_c",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Steer/read layer (matched)": 20.0,
+      "Answer-shift alignment (cosine)": 0.2913370326693569,
+      "series": "context-based V_c",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Steer/read layer (matched)": 21.0,
+      "Answer-shift alignment (cosine)": 0.2710472508998854,
+      "series": "context-based V_c",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Steer/read layer (matched)": 24.0,
+      "Answer-shift alignment (cosine)": 0.2218037133404453,
+      "series": "context-based V_c",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Steer/read layer (matched)": 0.0,
+      "Answer-shift alignment (cosine)": 0.04116982966661453,
+      "series": "Random-direction null p97.5",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Steer/read layer (matched)": 1.0,
+      "Answer-shift alignment (cosine)": 0.04116982966661453,
+      "series": "Random-direction null p97.5",
+      "_kind": "line",
+      "_group": 2
+    }
+  ],
+  "n_series": 3,
+  "total_points": 16,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Alignment peaks at mid-network layers 14-17",
+        "xlabel": "Steer/read layer (matched)",
+        "ylabel": "Answer-shift alignment (cosine)",
+        "legend_labels": [
+          "prefix-based V_c",
+          "context-based V_c",
+          "Random-direction null p97.5"
+        ],
+        "xticklabels": [
+          "7",
+          "10",
+          "14",
+          "17",
+          "20",
+          "21",
+          "24"
+        ],
+        "yticklabels": [
+          "0.00",
+          "0.05",
+          "0.10",
+          "0.15",
+          "0.20",
+          "0.25",
+          "0.30",
+          "0.35",
+          "0.40",
+          "0.45"
+        ]
+      }
+    ],
+    "series": [
+      "prefix-based V_c",
+      "context-based V_c",
+      "Random-direction null p97.5"
+    ]
+  }
+}

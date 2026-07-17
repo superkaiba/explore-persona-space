@@ -1,0 +1,72 @@
+{
+  "dv": "per-family usable-row rate (scaffold compliance, plan \u00a76)",
+  "families": {
+    "persona": {
+      "usable_rate": 0.9732142857142857,
+      "n_rows": 672,
+      "reasons": {
+        "truncated_no_close": 18
+      }
+    },
+    "wildchat": {
+      "usable_rate": 0.9354166666666667,
+      "n_rows": 480,
+      "reasons": {
+        "degenerate_repetition": 2,
+        "truncated_no_close": 29
+      }
+    },
+    "icl": {
+      "usable_rate": 0.9609375,
+      "n_rows": 384,
+      "reasons": {
+        "degenerate_repetition": 2,
+        "truncated_no_close": 13
+      }
+    },
+    "rephrase": {
+      "usable_rate": 0.9722222222222222,
+      "n_rows": 288,
+      "reasons": {
+        "truncated_no_close": 8
+      }
+    },
+    "format": {
+      "usable_rate": 0.9583333333333334,
+      "n_rows": 240,
+      "reasons": {
+        "degenerate_repetition": 2,
+        "truncated_no_close": 8
+      }
+    },
+    "default": {
+      "usable_rate": 0.9583333333333334,
+      "n_rows": 96,
+      "reasons": {
+        "truncated_no_close": 4
+      }
+    },
+    "behavior": {
+      "usable_rate": 0.95,
+      "n_rows": 240,
+      "reasons": {
+        "degenerate_repetition": 2,
+        "truncated_no_close": 10
+      }
+    }
+  },
+  "C_statistic": -0.014583333333333282,
+  "C_definition": "min(ICL, WildChat usable rate) - 0.95 (plan \u00a73)",
+  "flagged_below_parse_floor": [],
+  "rung": "greedy",
+  "production_max_new_tokens": 8192,
+  "reproducibility": {
+    "git_commit": "d67586dd7aa207188341c38687f59c54846473f0",
+    "timestamp_utc": "2026-07-16T04:16:41.285515+00:00",
+    "python_version": "3.11.15",
+    "platform": "Linux-6.8.0-1063-gcp-x86_64-with-glibc2.35",
+    "torch": "2.8.0+cu128",
+    "numpy": "2.2.6",
+    "transformers": "4.57.6"
+  }
+}

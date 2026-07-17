@@ -57,6 +57,11 @@ FIRST_RUN_OF_DAY=0
     uv run python scripts/worktree_audit.py --apply
     rc=$?
     echo "=== $(date -Iseconds) worktree_audit exit=$rc ==="
+    # #1430: terminal-task duplicate-dir husk reap (subset-verified,
+    # escalate-never-delete; kill switch honored inside the library via
+    # EPM_SKIP_HUSK_REAP=1).
+    uv run python scripts/task.py reap-husks --apply
+    echo "=== $(date -Iseconds) husk_reap exit=$? ==="
 } >> "$LOG_FILE" 2>&1
 
 if [ "$FIRST_RUN_OF_DAY" = 1 ]; then

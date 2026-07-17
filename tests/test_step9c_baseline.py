@@ -23,12 +23,20 @@ unit; the real-subprocess mechanism proof (a fresh ``--without-pip`` venv with
 a production-style single-line ``.pth``), the real ``run_pytest`` env branch,
 and the live-venv ``assert_scratch_src_shadow`` durability pin (+ its
 missing-scratch-src negative) live in the real-body section at the bottom.
+
+The "#1408" section pins scratch-BY-DEFAULT (the #1077 dirty-only trigger is
+removed: clean-root eligible compares resolve via ``"pristine-scratch"`` too),
+the clean-root scratch-failure degradation to the root oracle, and the gate
+temp-write routing (``gate_tmp_root`` / the ``tmproot`` subcommand / the
+``run_pytest`` TMPDIR+basetemp threading + the SKILL.md 1b/1c durability pin
++ the #1442 TG-blocks pin).
 """
 
 from __future__ import annotations
 
 import fcntl
 import fnmatch
+import getpass
 import importlib.util
 import json
 import os
@@ -38,6 +46,7 @@ import subprocess
 # sys.modules registration BEFORE exec_module is required: the module defines
 # dataclasses, whose field-type resolution looks itself up in sys.modules.
 import sys
+import time
 import types
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
@@ -50,6 +59,16 @@ assert _spec and _spec.loader
 sb = importlib.util.module_from_spec(_spec)
 sys.modules[_spec.name] = sb
 _spec.loader.exec_module(sb)
+
+
+@pytest.fixture(autouse=True)
+def _gate_tmp_routing_disabled(monkeypatch):
+    """Host-independent determinism (#1408): the data disk IS mounted on the dev
+    VM, so ``gate_tmp_root()`` would live-route the real-subprocess tests'
+    ``run_pytest`` / scratch-mkdtemp calls onto ``/mnt/eps-data``. Set-but-empty
+    disables routing; routing tests opt back IN with their own setenv."""
+    monkeypatch.setenv("EPM_STEP9C_TMPDIR", "")
+
 
 # Captured BEFORE any fixture monkeypatches it — the missing-ruff case restores it.
 _REAL_RUFF_ERROR_COUNT = sb.ruff_error_count
@@ -628,7 +647,7 @@ def test_compare_unknown_provenance_prints_pristine_commands(tmp_path: Path, mon
 @pytest.mark.parametrize("fails_on_main", [True, False])
 def test_compare_run_pristine_strip_or_new(tmp_path: Path, monkeypatch, capsys, fails_on_main):
     node = sb.Node(file="tests/test_mystery.py", classname="tests.test_mystery", name="test_x")
-    argv, calls, _r, _w = _compare_env(
+    argv, calls, root, _w = _compare_env(
         tmp_path,
         monkeypatch,
         junit_cases=[(node.file, node.classname, node.name, "failed")],
@@ -640,7 +659,12 @@ def test_compare_run_pristine_strip_or_new(tmp_path: Path, monkeypatch, capsys, 
     assert calls["pristine"] == [node.file]
     if fails_on_main:
         assert rc == 0
-        assert out["stripped"] == [{**node._asdict(), "via": "pristine"}]
+        # #1408 scratch-by-default: a clean-root eligible node resolves via the
+        # scratch oracle (cwd=scratch, MAIN-root venv, shadow PYTHONPATH).
+        assert out["stripped"] == [{**node._asdict(), "via": "pristine-scratch"}]
+        assert len(calls["scratch_created"]) == 1
+        assert calls["pristine_detail"] == [(node.file, root / "scratch-fake", root)]
+        assert calls["pristine_pythonpath"] == [str(root / "scratch-fake" / "src")]
     else:
         assert rc == 1
         assert out["new"] == [node._asdict()]
@@ -861,7 +885,9 @@ def test_compare_diff_linked_known_red_pristine_routed(tmp_path: Path, monkeypat
     rc, out, _err = _run_json(argv, capsys)
     assert rc == 0
     assert calls["pristine"] == [NODE_A.file]  # NOT blind-stripped
-    assert out["stripped"] == [{**NODE_A._asdict(), "via": "pristine"}]
+    # #1408: clean-root scratch-by-default -> the pristine run rides the scratch.
+    assert len(calls["scratch_created"]) == 1
+    assert out["stripped"] == [{**NODE_A._asdict(), "via": "pristine-scratch"}]
     assert any("diff-linked" in w for w in out["warns"])
 
 
@@ -883,9 +909,11 @@ def test_compare_stale_ledger_routes_pristine(tmp_path: Path, monkeypatch, capsy
     rc, out, _err = _run_json(argv, capsys)
     assert rc == 0
     assert out["stale"] is True and out["stale_reasons"]
-    # Pristine-routed, never blind-stripped, despite the node being in the ledger.
+    # Pristine-routed, never blind-stripped, despite the node being in the ledger
+    # (#1408: the clean-root pristine run rides the scratch oracle by default).
     assert calls["pristine"] == [NODE_A.file]
-    assert out["stripped"] == [{**NODE_A._asdict(), "via": "pristine"}]
+    assert len(calls["scratch_created"]) == 1
+    assert out["stripped"] == [{**NODE_A._asdict(), "via": "pristine-scratch"}]
 
 
 # --- Case 11: branch-new failing test -> NEW without a pristine run -------------
@@ -1175,7 +1203,10 @@ def test_compare_dirty_ledger_never_blind_strips(tmp_path: Path, monkeypatch, ca
     assert out["ledger_dirty"] is True
     assert out["ledger_dirty_paths"] == ["scripts/wip.py"]
     assert calls["pristine"] == [NODE_A.file]
-    assert out["stripped"] == [{**NODE_A._asdict(), "via": "pristine"}]
+    # #1408: the LIVE root is clean here (the ledger's dirty flag is historic),
+    # so the pristine run rides the default scratch oracle.
+    assert len(calls["scratch_created"]) == 1
+    assert out["stripped"] == [{**NODE_A._asdict(), "via": "pristine-scratch"}]
 
 
 # --- Case 19 [A2]: RESIDUAL contaminating dirty oracle never vouches "pre-existing"
@@ -1741,7 +1772,9 @@ def test_compare_mid_loop_src_dirt_does_not_revert(tmp_path: Path, monkeypatch, 
         monkeypatch,
         junit_cases=[(n.file, n.classname, n.name, "failed") for n in (n1, n2)],
         ledger_kw={"failing": ()},
-        live_dirty=("scripts/x.py",),  # non-empty at file 1 or use_scratch never arms
+        # Dirt present from file 1 — kept for the mid-loop-transition premise
+        # (#1408 scratch-by-default would arm the scratch on a clean root too).
+        live_dirty=("scripts/x.py",),
         contamination_paths=lambda: next(contamination_seq),
         pristine_failing=(n1, n2),
         extra_args=("--run-pristine",),
@@ -1804,6 +1837,362 @@ def test_residual_scratch_contamination_split():
         ]
     ) == ["pyproject.toml", "uv.lock", "srcfile", "src/rogue.py"]
     assert sb.residual_scratch_contamination([]) == []
+
+
+# --- #1408: scratch-by-default + clean-root degradation ---------------------------
+
+
+def test_compare_clean_root_scratch_by_default(tmp_path: Path, monkeypatch, capsys):
+    """#1408: a CLEAN root with a scratch-eligible node resolves via the scratch
+    oracle BY DEFAULT (the #1077 dirty-only trigger is removed) — shadow probed
+    once, provenance rides the JSON fields, NO SCRATCH-ORACLE WARN (no dirt was
+    neutralized, so a WARN would be noise)."""
+    node = sb.Node(file="tests/test_m.py", classname="tests.test_m", name="test_x")
+    argv, calls, root, _w = _compare_env(
+        tmp_path,
+        monkeypatch,
+        junit_cases=[(node.file, node.classname, node.name, "failed")],
+        ledger_kw={"failing": ()},
+        pristine_failing=(node,),
+        extra_args=("--run-pristine",),
+    )
+    rc, out, _err = _run_json(argv, capsys)
+    assert rc == 0
+    assert len(calls["scratch_created"]) == 1
+    assert calls["shadow_probe"] == [(root, root / "scratch-fake")]
+    assert calls["pristine_detail"] == [(node.file, root / "scratch-fake", root)]
+    assert calls["pristine_pythonpath"] == [str(root / "scratch-fake" / "src")]
+    assert out["stripped"] == [{**node._asdict(), "via": "pristine-scratch"}]
+    assert out["pristine_oracle"] == "scratch-worktree"
+    assert out["scratch_src_shadow"] is True
+    assert out["scratch_degraded"] is False
+    assert not any("SCRATCH-ORACLE WARN" in w for w in out["warns"])
+    assert calls["scratch_removed"], "finally teardown must still run"
+
+
+def test_compare_continuous_dirt_never_exit2(tmp_path: Path, monkeypatch, capsys):
+    """AC1 (the #1317 shape): unrelated non-residual code dirt present at EVERY
+    per-file probe read resolves 0/1 in ONE pass — never exit 2, never a
+    caller-side clean-root wait; one scratch reused across the bucket."""
+    n1 = sb.Node(file="tests/test_c1.py", classname="tests.test_c1", name="test_x")
+    n2 = sb.Node(file="tests/test_c2.py", classname="tests.test_c2", name="test_x")
+    argv, calls, root, _w = _compare_env(
+        tmp_path,
+        monkeypatch,
+        junit_cases=[(n.file, n.classname, n.name, "failed") for n in (n1, n2)],
+        ledger_kw={"failing": ()},
+        live_dirty=("scripts/issue825_map.py",),  # persistent across every probe read
+        pristine_failing=(n1, n2),
+        extra_args=("--run-pristine",),
+    )
+    rc, out, _err = _run_json(argv, capsys)
+    assert rc == 0
+    assert out["indeterminate"] is False
+    assert len(calls["scratch_created"]) == 1
+    assert [d[1] for d in calls["pristine_detail"]] == [root / "scratch-fake"] * 2
+    assert {s["via"] for s in out["stripped"]} == {"pristine-scratch"}
+    assert out["pristine_oracle"] == "scratch-worktree"
+
+
+@pytest.mark.parametrize("failure", ["create", "probe"])
+def test_compare_scratch_failure_clean_root_degrades_to_root(
+    tmp_path: Path, monkeypatch, capsys, failure
+):
+    """AC2 (#1408): a scratch creation/probe failure on a CLEAN root degrades to
+    the trustworthy root oracle — exit 0/1 with a WARN + the scratch_degraded
+    audit flag, never a new exit-2 class; a probe failure's partial scratch is
+    torn down; creation is attempted ONCE while the root stays clean (the memo,
+    pinned by the 2-file bucket)."""
+    n1 = sb.Node(file="tests/test_d1.py", classname="tests.test_d1", name="test_x")
+    n2 = sb.Node(file="tests/test_d2.py", classname="tests.test_d2", name="test_x")
+    kw = (
+        {"scratch_exc": subprocess.TimeoutExpired(cmd=["git"], timeout=120.0)}
+        if failure == "create"
+        else {"shadow_probe_exc": sb.PristineRunError("src-shadow probe rc=3")}
+    )
+    argv, calls, root, _w = _compare_env(
+        tmp_path,
+        monkeypatch,
+        junit_cases=[(n.file, n.classname, n.name, "failed") for n in (n1, n2)],
+        ledger_kw={"failing": ()},
+        pristine_failing=(n1, n2),
+        extra_args=("--run-pristine",),
+        **kw,
+    )
+    rc, out, _err = _run_json(argv, capsys)
+    assert rc == 0
+    assert out["indeterminate"] is False
+    assert out["pristine_oracle"] == "root"
+    assert out["scratch_degraded"] is True
+    assert {s["via"] for s in out["stripped"]} == {"pristine"}
+    # BOTH files resolved at the ROOT; creation attempted ONCE (clean-root memo).
+    assert [d[1] for d in calls["pristine_detail"]] == [root, root]
+    assert len(calls["scratch_created"]) == 1
+    if failure == "probe":
+        assert calls["scratch_removed"], "partial scratch must be torn down"
+    assert any("CLEAN root" in w for w in out["warns"])
+
+
+# --- #1408: gate temp-write routing (gate_tmp_root / run_pytest / tmproot) ---------
+
+
+def test_gate_tmp_root_resolution(tmp_path: Path, monkeypatch):
+    """Resolution order (#1408): explicit override verbatim (empty disables;
+    unwritable fails loud NAMING the env var) -> mounted data disk <disk>/tmp
+    (preferred, never auto-created) -> <disk>/<user>/tmp (auto-created) -> None."""
+    # (a) explicit override wins verbatim.
+    override = tmp_path / "ovr"
+    override.mkdir()
+    monkeypatch.setenv("EPM_STEP9C_TMPDIR", str(override))
+    assert sb.gate_tmp_root() == override
+    # (b) set-but-empty disables routing.
+    monkeypatch.setenv("EPM_STEP9C_TMPDIR", "")
+    assert sb.gate_tmp_root() is None
+    # (c) a nonexistent explicit override fails loud, NAMING the env var.
+    monkeypatch.setenv("EPM_STEP9C_TMPDIR", str(tmp_path / "missing"))
+    with pytest.raises(sb.ToolMissingError, match="EPM_STEP9C_TMPDIR"):
+        sb.gate_tmp_root()
+    # (d) auto-detection: the data-disk path must be a LIVE mount.
+    monkeypatch.delenv("EPM_STEP9C_TMPDIR")
+    disk = tmp_path / "disk"
+    (disk / "tmp").mkdir(parents=True)
+    monkeypatch.setenv("EPS_VM_DATA_DISK_PATH", str(disk))
+    monkeypatch.setattr(sb.os.path, "ismount", lambda p: False)
+    assert sb.gate_tmp_root() is None
+    # (e) mounted + <disk>/tmp writable -> preferred.
+    monkeypatch.setattr(sb.os.path, "ismount", lambda p: Path(p) == disk)
+    assert sb.gate_tmp_root() == disk / "tmp"
+    # (f) <disk>/tmp absent -> <disk>/<user>/tmp auto-created; <disk>/tmp is NOT.
+    (disk / "tmp").rmdir()
+    monkeypatch.setattr(sb.getpass, "getuser", lambda: "u1")
+    assert sb.gate_tmp_root() == disk / "u1" / "tmp"
+    assert (disk / "u1" / "tmp").is_dir()
+    assert not (disk / "tmp").exists()
+
+
+def test_gate_tmp_root_sweeps_stale_entries(tmp_path: Path, monkeypatch):
+    """Opportunistic hygiene (#1408): >7-day-old bt-*/step9c-scratch-* strays
+    under the resolved root are reaped; fresh entries + foreign names are kept."""
+    route = tmp_path / "route"
+    route.mkdir()
+    stale_bt = route / "bt-old"
+    stale_scratch = route / "step9c-scratch-old"
+    fresh = route / "bt-fresh"
+    foreign = route / "keep-me"
+    for d in (stale_bt, stale_scratch, fresh, foreign):
+        d.mkdir()
+    old = time.time() - 8 * 24 * 3600
+    for d in (stale_bt, stale_scratch):
+        os.utime(d, (old, old))
+    monkeypatch.setenv("EPM_STEP9C_TMPDIR", str(route))
+    assert sb.gate_tmp_root() == route
+    assert not stale_bt.exists() and not stale_scratch.exists()
+    assert fresh.exists() and foreign.exists()
+
+
+def test_run_pytest_routes_tmpdir_and_basetemp(tmp_path: Path, monkeypatch):
+    """run_pytest (#1408) threads TMPDIR + a fresh SHORT --basetemp when a
+    routing root resolves, rmtree's the basetemp afterwards, and keeps the old
+    argv/env shape byte-identical when routing is disabled (gate_tmp_root ->
+    None). Also pins the #1363 socket-cap arithmetic for BOTH production
+    resolution roots against the named cap constant."""
+    route = tmp_path / "route"
+    route.mkdir()
+    seen: dict = {}
+
+    class _FakeProc:
+        pid = 4242
+
+        def wait(self, timeout=None):
+            return 0
+
+        def poll(self):
+            return 0
+
+    def fake_popen(argv, cwd, env, stdout, stderr, start_new_session):
+        seen["argv"] = list(argv)
+        seen["env"] = dict(env)
+        basetemps = [a for a in argv if a.startswith("--basetemp=")]
+        if basetemps:
+            seen["basetemp_dir"] = Path(basetemps[0].removeprefix("--basetemp=")).parent
+            seen["basetemp_existed"] = seen["basetemp_dir"].is_dir()
+        return _FakeProc()
+
+    monkeypatch.setattr(sb.subprocess, "Popen", fake_popen)
+    # (a) routing armed.
+    monkeypatch.setattr(sb, "gate_tmp_root", lambda **_kw: route)
+    rc = sb.run_pytest(
+        files=["tests/test_x.py"],
+        cwd=tmp_path,
+        timeout_s=30.0,
+        junit_path=tmp_path / "j.xml",
+        python_exe=sys.executable,
+    )
+    assert rc == 0
+    assert seen["env"]["TMPDIR"] == str(route)
+    bt = [a for a in seen["argv"] if a.startswith("--basetemp=")]
+    assert len(bt) == 1 and bt[0].endswith("/p")
+    assert seen["basetemp_dir"].parent == route
+    assert seen["basetemp_dir"].name.startswith("bt-")
+    assert seen["basetemp_existed"] is True
+    assert not seen["basetemp_dir"].exists()  # finally-scoped rmtree ran
+    # Socket-cap arithmetic (#1363): both production resolution roots keep the
+    # derived basetemp prefix within the named cap (mkdtemp suffix = 8 chars).
+    for prod_root in ("/mnt/eps-data/tmp", f"/mnt/eps-data/{getpass.getuser()}/tmp"):
+        assert len(f"{prod_root}/bt-XXXXXXXX/p") <= sb.GATE_TMP_MAX_PREFIX_CHARS
+    # (b) routing disabled -> argv/env identical to the pre-#1408 shape.
+    monkeypatch.setattr(sb, "gate_tmp_root", lambda **_kw: None)
+    seen.clear()
+    rc = sb.run_pytest(
+        files=["tests/test_x.py"],
+        cwd=tmp_path,
+        timeout_s=30.0,
+        junit_path=tmp_path / "j.xml",
+        python_exe=sys.executable,
+    )
+    assert rc == 0
+    assert not any(a.startswith("--basetemp=") for a in seen["argv"])
+    assert seen["env"].get("TMPDIR") == os.environ.get("TMPDIR")
+
+
+def test_scratch_mkdtemp_and_pristine_junit_use_tmp_root(tmp_path: Path, monkeypatch):
+    """create_scratch_worktree's parent mkdtemp + the pristine junit mkstemp land
+    under the routed root (#1408); with gate_tmp_root -> None both keep the
+    default tempfile location (covered by the (b) branch of the run_pytest
+    routing test above)."""
+    route = tmp_path / "route"
+    route.mkdir()
+    monkeypatch.setattr(sb, "gate_tmp_root", lambda **_kw: route)
+    # (a) scratch parent: fake the git lifecycle; the mkdtemp is real.
+    monkeypatch.setattr(sb, "git_head", lambda root: "e" * 40)
+    monkeypatch.setattr(sb, "_git_bounded", lambda argv, cwd, timeout_s: None)
+    monkeypatch.setattr(sb, "_scratch_cones", lambda root, wt_cones: ["tests"])
+    scratch = sb.create_scratch_worktree(tmp_path / "root", ["tests"], timeout_s=30.0)
+    assert scratch.parent.parent == route
+    assert scratch.parent.name.startswith("step9c-scratch-")
+    sb.shutil.rmtree(scratch.parent, ignore_errors=True)
+    # (b) pristine junit mkstemp: the fake run_pytest records the junit path.
+    root = tmp_path / "root2"
+    (root / "tests").mkdir(parents=True)
+    venv_py = root / ".venv" / "bin" / "python"
+    venv_py.parent.mkdir(parents=True)
+    venv_py.write_text("")
+    seen: dict = {}
+
+    def fake_run_pytest(
+        files,
+        cwd,
+        timeout_s,
+        junit_path,
+        extra=sb.PYTEST_BASE_FLAGS,
+        *,
+        python_exe,
+        pythonpath=None,
+    ) -> int:
+        seen["junit_parent"] = Path(junit_path).parent
+        Path(junit_path).write_text(
+            _junit_xml([("tests/test_p.py", "tests.test_p", "t", "failed")])
+        )
+        return 1
+
+    monkeypatch.setattr(sb, "run_pytest", fake_run_pytest)
+    sb.run_single_file_pristine("tests/test_p.py", cwd=root, timeout_s=30.0)
+    assert seen["junit_parent"] == route
+
+
+def test_real_run_pytest_basetemp_routing(tmp_path: Path, monkeypatch):
+    """Real-subprocess coverage of run_pytest's #1408 routing branch: the pytest
+    child sees TMPDIR=<route>, its tmp_path lands under the passed --basetemp,
+    and the per-call basetemp dir is reaped after the run."""
+    route = tmp_path / "route"
+    route.mkdir()
+    monkeypatch.setenv("EPM_STEP9C_TMPDIR", str(route))
+    tree = tmp_path / "tree"
+    (tree / "tests").mkdir(parents=True)
+    (tree / "pyproject.toml").write_text('[tool.pytest.ini_options]\naddopts = ""\n')
+    (tree / "tests" / "test_tmp_routing.py").write_text(
+        "import os\nimport tempfile\n\n\n"
+        "def test_routed(tmp_path):\n"
+        f"    assert os.environ['TMPDIR'] == {str(route)!r}\n"
+        f"    assert tempfile.gettempdir() == {str(route)!r}\n"
+        f"    assert str(tmp_path).startswith({str(route)!r})\n"
+    )
+    junit = tmp_path / "junit-routing.xml"
+    rc = sb.run_pytest(
+        files=["tests/test_tmp_routing.py"],
+        cwd=tree,
+        timeout_s=180.0,
+        junit_path=junit,
+        python_exe=sys.executable,
+    )
+    assert rc == 0
+    failing, summary = sb.parse_junit(junit)
+    assert failing == [] and summary["tests"] == 1
+    assert list(route.glob("bt-*")) == []  # finally-scoped rmtree reaped it
+
+
+def test_tmproot_subcommand(tmp_path: Path, monkeypatch, capsys):
+    """`tmproot` (#1408) prints the resolved root (or nothing) and ALWAYS exits
+    0 — a misconfigured explicit override goes to stderr with empty stdout."""
+    route = tmp_path / "route"
+    route.mkdir()
+    monkeypatch.setenv("EPM_STEP9C_TMPDIR", str(route))
+    assert sb.main(["tmproot"]) == 0
+    out = capsys.readouterr()
+    assert out.out.strip() == str(route)
+    # Unresolvable -> empty stdout, still exit 0.
+    monkeypatch.setenv("EPM_STEP9C_TMPDIR", "")
+    assert sb.main(["tmproot"]) == 0
+    out = capsys.readouterr()
+    assert out.out == ""
+    # Misconfigured explicit override -> stderr message, empty stdout, exit 0.
+    monkeypatch.setenv("EPM_STEP9C_TMPDIR", str(tmp_path / "nope"))
+    assert sb.main(["tmproot"]) == 0
+    out = capsys.readouterr()
+    assert out.out == ""
+    assert "EPM_STEP9C_TMPDIR" in out.err
+
+
+def test_skill_step9c_blocks_pin_tmpdir_routing():
+    """Durability pin (#1408): the SKILL.md Step 9c 1b AND 1c gate pytest blocks
+    each carry the tmproot routing snippet, the --basetemp argv addition, and
+    the post-run basetemp cleanup line."""
+    skill = (
+        Path(__file__).resolve().parents[1] / ".claude" / "skills" / "issue" / "SKILL.md"
+    ).read_text()
+    blocks = [
+        b
+        for b in skill.split("```")
+        if "--junitxml=/tmp/step9c-junit-issue-<N>.xml" in b
+        and "echo $? > /tmp/step9c-rc-issue-<N>" in b
+    ]
+    assert len(blocks) == 2, "expected exactly the 1b + 1c gate pytest blocks"
+    for block in blocks:
+        assert "step9c_baseline.py tmproot" in block
+        assert "${S9C_BASETEMP:+--basetemp=$S9C_BASETEMP/p}" in block
+        assert 'rm -rf "$S9C_BASETEMP"' in block
+
+
+def test_skill_tg_blocks_pin_tmpdir_routing():
+    """Durability pin (#1442, extending the #1408 pin above): BOTH SKILL.md
+    Step 10d TG_TESTS targeted-green blocks (shared-gate + surgical form
+    (iii)) carry the tmproot resolution, per-leg TMPDIR + --basetemp
+    threading (2 pytest legs each), and the post-run basetemp cleanup."""
+    skill = (
+        Path(__file__).resolve().parents[1] / ".claude" / "skills" / "issue" / "SKILL.md"
+    ).read_text()
+    blocks = [b for b in skill.split("```") if 'uv run pytest "${TG_TESTS[@]}"' in b]
+    assert len(blocks) == 2, "expected the shared-gate + surgical TG blocks"
+    for block in blocks:
+        assert 'step9c_baseline.py" tmproot' in block  # resolution line
+        # Ordering: the resolution insert must precede the first TMPDIR thread
+        # (presence-only asserts would pass a resolution misplaced below the legs).
+        assert block.index('step9c_baseline.py" tmproot') < block.index(
+            "${TG_TMPROOT:+TMPDIR=$TG_TMPROOT}"
+        )
+        assert block.count("${TG_TMPROOT:+TMPDIR=$TG_TMPROOT}") == 2  # both legs
+        assert block.count("${TG_BASETEMP:+--basetemp=$TG_BASETEMP/") == 2
+        assert 'rm -rf "$TG_BASETEMP"' in block  # cleanup
 
 
 # --- status subcommand ------------------------------------------------------------

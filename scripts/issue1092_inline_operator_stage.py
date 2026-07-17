@@ -89,6 +89,7 @@ def main() -> None:
     for cell in CELLS:
         tree = _retry(
             lambda cell=cell: list(
+                # HUB_VERIFY_RETRY_EXEMPT: wrapped in local _retry (6 tries, capped backoff)
                 list_repo_tree(
                     REPO,
                     repo_type="dataset",

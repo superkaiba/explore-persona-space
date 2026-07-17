@@ -82,12 +82,12 @@ checks (3/3b) run on the v2 sentinel; v3-only checks (v3 structure +
     FAIL); unknown SHAs / other hosts fall back to one HTTP HEAD per
     unique URL (definitive 404 → FAIL; network error / timeout →
     `unverified` note on the PASS line, never a FAIL).
-5. Figure caption sanity — vacuously satisfied under the new spec
-   (inline-image alt text + blockquote caption inside each result H3
-   carry the discipline; the analyzer is instructed to write
-   descriptive alt text). Retained as a hook for future tightening; in
-   the current revision the check always PASSes because the retired
-   `## Figure` H2 is now a check 2 FAIL.
+5. Figure caption sanity — v4-only WARN: each non-empty blockquote
+   caption after an inline figure under `## Results` must open
+   `**Figure.** *italic lead claim.*` (SPEC § Figure caption shape;
+   incident #1005 r1, #1424). Captionless figures + v3/v2/legacy
+   bodies exempt. Formerly a vacuous hook (kept in place so CHECKS
+   indices never shift).
 6. Confidence sentence matches title — for v2 nested-design bodies
    (`<!-- clean-result-v2 -->` sentinel present) the H1 title tag is
    the single source of truth; the check PASSes when the title carries
@@ -555,7 +555,12 @@ Generation-agnostic checks (run on v2 AND v3 — the inline-figure +
   or a backtick `dir/` sub-path token whose parenthetical OPENS with the
   count-noun, bound to the nearest preceding hex-pinned `/tree/<sha>`
   markdown link on the same footer row — bracket-free, newline-free,
-  ≤400-char gap — and probed at `<link-prefix>/<sub-path>`, #1143)
+  ≤400-char gap — and probed at `<link-prefix>/<sub-path>`, #1143; or a
+  parenthetical immediately AFTER the link that OPENS with the count-noun
+  (`[summary store](…/tree/<sha>/…) (52 files)`, the #1005 footer shape —
+  ANY distributive `per <word>` qualifier declines, and a paren
+  immediately followed by an HF markdown link is Pattern B's
+  paren-before-link shape: E declines, B wins, #1422))
   must match a files-only scoped Hub tree count at the pinned revision —
   the same bounded raw tree-endpoint probe checks 23/25 use (#733; never
   the SDK `list_repo_tree` / `list_repo_files`), counted EXHAUSTIVELY with
@@ -575,7 +580,10 @@ Generation-agnostic checks (run on v2 AND v3 — the inline-figure +
   "908 files listed per namespace" where each namespace holds 891 blobs +
   17 directory entries (#1088); task #1112 shipped "(7,372 files: …)"
   after a backtick `raw_completions/` token in the pinned-bucket footer
-  row where the scoped tree holds 7,165 files + 207 folders (#1143).
+  row where the scoped tree holds 7,165 files + 207 folders (#1143);
+  task #1005's footer claimed 51/15 in bare trailing parens right after
+  its pinned links where the pinned trees hold 52/17 — no pattern reached
+  the count-opening paren-after-link position (#1422).
 
 - **check 31** (`check_orphaned_per_unit_figures`, WARN): the INVERSE
   direction of checks 4b/22/29 (which verify what the body CITES) —
@@ -765,6 +773,35 @@ Generation-agnostic checks (run on v2 AND v3 — the inline-figure +
   Lens 11 caught it. Dispatched OUTSIDE the body-only CHECKS list (needs
   `issue` for own-dir scoping; the check-31/#1011 precedent). (Numbered 38 —
   36/37 were taken by #1368/#1370 while this check was in review.)
+
+- **check 40** (`check_hf_unpinned_count_claims`, WARN, generation-agnostic):
+  backtick `dir/` + count-paren claims (check 30's Pattern D token shape,
+  regex reused verbatim) whose pinned-link binder returned None — the
+  UNPINNED residue checks 30/32 never see. Trigger gates, all required:
+  D-shape match; binder None (partitioning the D-shape matches with
+  check 30, so no claim is double-WARNed); first path segment not a
+  git/local root (`eval_results/`, `figures/`, `/workspace/...`); HF
+  context (an `issue<N>_` token prefix, a preceding `issue<N>_.../`
+  backtick parent anchor bound under the Pattern-D gap guards, or an HF
+  cue word in the same-line look-back window). Every extracted claim WARNs
+  online for the MISSING PIN (a text fact, probe-independent), with a
+  best-effort count resolution against the data repo
+  `superkaiba1/explore-persona-space-data` at the moving ref `main`
+  appended: a consistent count says so (still a WARN — add the pin), a
+  mismatch carries check 30's both-numbers + files+folders / subset
+  diagnostics plus a may-have-moved hedge, and probe failures / the
+  per-body `_HF_UNPINNED_MAX_PROBES` cap degrade to `count not confirmed`
+  notes. STATED DEVIATION: under the offline fence / a missing
+  `huggingface_hub` the check goes check-level quiet (PASS + unverified
+  note) instead of the origin ask's WARN-missing-pin-only —
+  conservative-direction, keeps the fenced suite byte-stable; online the
+  missing-pin WARN always fires. WARN, never FAIL (no `passed=False`
+  path). Named recall sacrifices: no-trailing-slash dir tokens (#1345's
+  own `raw_completions/stories` (16 files)), bare-number parens, legacy
+  underscore-form HF prefixes with no cue/anchor. Incident: task #1345's
+  footer claimed `rejudge/` (2 files) with no pinned link binding on the
+  line — the nearest preceding pinned link is declined by the Pattern-D
+  gap guards — so checks 30/32 silently dropped it (#1433).
 
 Harmful-content carve-out: checks 18/19 accept the sanitized excerpt
 form (`[truncated — harmful-content row; verify at <path>, row <i>]`)
@@ -2713,24 +2750,80 @@ def check_linked_not_embedded_figures(body: str, *, issue: int | None = None) ->
     )
 
 
-def check_figure_caption(body: str) -> CheckResult:
-    """Check 5: figure caption sanity (vacuous under the 2-content-section spec).
+# Check 5 (v4): caption opens `**Figure.** *italic lead claim.*` (SPEC
+# § Figure caption shape). Tolerates `**Figure**` (no period), a short
+# figure designator (`**Figure 1.**`), a period outside the bold close,
+# and underscore italics. `\*(?!\*)` keeps a bold `**…**` run from
+# masquerading as the italic lead.
+_CAPTION_BOLD_PREFIX_RE = re.compile(r"^\*\*Figure(?:\s+[^*\n]{1,16})?\.?\*\*\.?")
+_CAPTION_LEAD_CLAIM_RE = re.compile(
+    r"^\*\*Figure(?:\s+[^*\n]{1,16})?\.?\*\*\.?\s*(?:\*(?!\*)[^*]+\*|_[^_]+_)"
+)
 
-    Under the 2-content-section spec (2026-W22, task #454) a stray
-    `## Figure` H2 is rejected by check 2 as a hard FAIL, so this check
-    has nothing to scan and always PASSes. Figure captions inside each
-    result H3 wrap in markdown blockquotes (`> **Figure.** *...* ...`)
-    by analyzer convention; `clean-result-critic` enforces the
-    blockquote shape semantically. Retained as a hook for future
-    tightening; deleting it would shift CHECKS indices and break
-    downstream tests.
+
+def check_figure_caption(body: str) -> CheckResult:
+    """Check 5 (v4-only, WARN): every non-empty blockquote caption after an
+    inline figure under `## Results` opens `**Figure.** *italic lead
+    claim.*` (SPEC § "Figure caption shape"). WARN never FAIL — caption
+    checks are advisory (60-word cap, check 21) and grandfathered bodies
+    must never be newly hard-FAILed. PASS-skips on v3/v2/legacy bodies
+    (forward-only; the v3 SPEC documents the same shape but frozen v3
+    bodies keep their prior verification output). Captionless figures —
+    no contiguous blockquote run after the image (blank lines between
+    image and caption are skipped, so a blank-line-separated caption IS
+    scanned) — are exempt here: caption PRESENCE is owned by check 21 +
+    clean-result-critic Lens 3. This is a SHAPE proxy only — the
+    semantic quality of the lead claim stays LM-critic-owned (Lens 3).
+    Incident #1005 r1: all 7 captions missing the italic lead were
+    caught only by the LM critic round (#1424).
     """
-    del body
-    return CheckResult(
-        "Figure caption sanity",
-        True,
-        "no `## Figure` H2 expected — captions live in blockquote form under each result H3",
+    name = "Figure caption sanity"
+    if not is_v4(body):
+        return CheckResult(name, True, "skipped — not a v4 body (italic-lead WARN is v4-only)")
+    results = _v4_results_body(body)
+    if results is None:
+        return CheckResult(name, True, "## Results missing — check 2 will report")
+    rlines = results.splitlines()
+    h3s = _collect_tldr_h3_names(results)
+    flagged: list[str] = []
+    n_caps = 0
+    in_fence = False
+    for i, ln in enumerate(rlines):
+        s = ln.strip()
+        if s.startswith("```") or s.startswith("~~~"):
+            in_fence = not in_fence
+            continue
+        if in_fence or not _IMAGE_RE.search(ln):
+            continue
+        caption = _figure_caption_after(rlines, i)
+        if not caption:
+            continue  # captionless figure: check 21 / critic Lens 3 own presence
+        n_caps += 1
+        if _CAPTION_LEAD_CLAIM_RE.match(caption):
+            continue
+        h3 = next((nm for nm, ln_no in reversed(h3s) if ln_no < i), "<no result H3>")
+        missing = (
+            "the italic lead claim"
+            if _CAPTION_BOLD_PREFIX_RE.match(caption)
+            else "the `**Figure.**` bold prefix + italic lead claim"
+        )
+        flagged.append(f"'{h3[:48]}' caption missing {missing}")
+    if flagged:
+        preview = "; ".join(flagged[:3]) + (" …" if len(flagged) > 3 else "")
+        return CheckResult(
+            name,
+            True,
+            f"{len(flagged)} of {n_caps} `## Results` caption(s) do not open "
+            f"`> **Figure.** *one-sentence lead claim.*` "
+            f"(SPEC § Figure caption shape): {preview}",
+            is_warn=True,
+        )
+    detail = (
+        f"all {n_caps} `## Results` caption(s) open `**Figure.** *lead claim.*`"
+        if n_caps
+        else "no blockquote captions under `## Results` to check"
     )
+    return CheckResult(name, True, detail)
 
 
 def is_v2_nested_design(body: str) -> bool:
@@ -3730,6 +3823,18 @@ _V4_CONTEXT_LINEAGE_TOKEN_RE = re.compile(
     re.IGNORECASE,
 )
 
+# Check-17 parent-lineage cross-check (#1418, incident #1345 r1): the
+# no-parent-CLAIM subset of _V4_CONTEXT_LINEAGE_TOKEN_RE above (keep the
+# two alternates byte-in-sync with that regex's alternates 2+3). Bare
+# `fresh direction` counts: per SPEC.md § `**Context:**` row it is the
+# sanctioned PARENTLESS lineage form (pinned by
+# `test_v4_context_fresh_direction_alone_passes`).
+_NO_PARENT_CLAIM_RE = re.compile(
+    r"fresh\s+direction"
+    r"|\bno\s+parent\b",
+    re.IGNORECASE,
+)
+
 
 # ── Check-17 origin-prompt verbatim sub-check (#1068, incident #813 r1) ──
 # The **Context:** row promises the originating prompt VERBATIM
@@ -3908,6 +4013,96 @@ def _origin_prompt_quote_verdict(repro: str, fm: dict) -> tuple[str, str]:
     )
 
 
+def _parent_lineage_verdict(ctx_scan: str, fm: dict) -> tuple[str, str]:
+    """Classify the Context lineage clause against frontmatter parent_id.
+
+    ``ctx_scan`` is the fence-stripped + blockquote-line-stripped text
+    after the ``**Context:**`` label (the SAME region the v4 lineage-token
+    sub-check scans, so claims/refs inside the blockquoted verbatim
+    prompt never count — #959 precedent). Returns (status, detail):
+
+    - "noop"              — no usable frontmatter parent_id, or the
+                            lineage names the parent with no denied claim;
+    - "fail-denied"       — a fresh-direction / no-parent CLAIM with the
+                            parent never referenced (the #1345 r1 incident
+                            class; hard FAIL on v4, WARN on v3/v2);
+    - "warn-denied-named" — a no-parent claim BUT #<parent_id> is also
+                            referenced (internally contradictory row);
+    - "warn-unnamed"      — no denied claim, but the lineage never
+                            references #<parent_id> (v4-only WARN).
+    """
+    pid_raw = fm.get("parent_id")
+    pid = str(pid_raw).strip() if pid_raw is not None else ""
+    if not pid.isdigit():
+        return "noop", "no frontmatter parent_id"
+    denied = _NO_PARENT_CLAIM_RE.search(ctx_scan)
+    # `pid` is digits-only by construction (no re.escape needed); the
+    # `(?<![\w/&])` lookbehind mirrors _V4_CONTEXT_LINEAGE_TOKEN_RE (no
+    # URL-fragment `page#123` / entity `&#123` matches; `\b` blocks
+    # `#82`↔`#825` prefix collisions); the `/tasks/{pid}` alternative
+    # accepts a dashboard-URL-only parent reference.
+    named = re.search(rf"(?<![\w/&])#{pid}\b|/tasks/{pid}\b", ctx_scan)
+    if denied and not named:
+        return "fail-denied", (
+            f"context-parent-lineage-contradiction: the `**Context:**` lineage claims "
+            f"'{denied.group(0)}' but frontmatter carries `parent_id: {pid}` and the row "
+            f"never references #{pid} — name the parent "
+            f"(`[#{pid}](https://eps.superkaiba.com/tasks/{pid}) — <one line>`) or, if the "
+            f"task was genuinely re-scoped as parentless, clear the frontmatter parent_id "
+            f"(SPEC.md § `**Context:**` row)."
+        )
+    if denied and named:
+        return "warn-denied-named", (
+            f"context-parent-lineage-mixed: the row references #{pid} but ALSO carries a "
+            f"'{denied.group(0)}' clause while frontmatter carries `parent_id: {pid}` — "
+            f"drop the no-parent clause or state the re-scope explicitly."
+        )
+    if not named:
+        return "warn-unnamed", (
+            f"context-parent-unnamed: frontmatter carries `parent_id: {pid}` but the "
+            f"`**Context:**` lineage never references #{pid} on a non-blockquote line — "
+            f"name the parent, or keep a deliberate ancestor-only lineage and expect "
+            f"this WARN."
+        )
+    return "noop", ""
+
+
+def _context_scan_region(repro: str) -> str:
+    """Fence-stripped + blockquote-line-stripped text after the
+    ``**Context:**`` label — the shared scan region of check 17's
+    lineage-token (#1014) and parent-lineage (#1418) sub-checks.
+
+    Strips FIRST, then slices at the label: a single-line row with an
+    inline ``> "..."`` quote after the label (#763's shape) keeps its
+    same-line lineage clause, while multi-line blockquoted verbatim
+    prompts can never satisfy the scans (#959 strip precedent).
+    Degenerate fallback (label only findable inside a blockquote /
+    fence): the whole stripped region."""
+    scan_src = _strip_blockquote_lines(_strip_fenced_blocks(repro))
+    m = _CONTEXT_LABEL_RE.search(scan_src)
+    return scan_src[m.end() :] if m else scan_src
+
+
+def _context_row_result_v3(name: str, repro: str, fm: dict) -> CheckResult:
+    """v3/v2 (pre-v4-sentinel) verdict for a label-present Context row —
+    the grandfathered WARN-only forms of check 17's sub-checks (#1068
+    origin-prompt for BOTH its classes; #1418 parent-lineage for the
+    fail-denied contradiction ONLY — the warn-only tiers never bind
+    below the v4 sentinel; see `check_repro_context_provenance`)."""
+    p_status, p_detail = _parent_lineage_verdict(_context_scan_region(repro), fm)
+    status, sub_detail = _origin_prompt_quote_verdict(repro, fm)
+    warn_bits = []
+    if p_status == "fail-denied":
+        warn_bits.append(p_detail)  # grandfathered: WARN below the v4 sentinel
+    if status in ("fail-trunc", "warn-mismatch"):
+        warn_bits.append(sub_detail)
+    if warn_bits:
+        return CheckResult(
+            name, True, "**Context:** row present; " + "; ".join(warn_bits), is_warn=True
+        )
+    return CheckResult(name, True, "**Context:** row present")
+
+
 def check_repro_context_provenance(
     body: str, fm: dict, *, original_body_path: Path | None = None
 ) -> CheckResult:
@@ -3947,6 +4142,38 @@ def check_repro_context_provenance(
     never a new hard FAIL below the v4 sentinel). No ``origin_prompt``
     or no ``**Context:**`` label: NO-OP (pre-#1068 behavior verbatim).
 
+    **Parent-lineage cross-check (#1418, incident #1345 r1).** When
+    frontmatter ``parent_id`` is set, the lineage clause (scanned on the
+    SAME fence-stripped + blockquote-stripped region as the #1014
+    lineage-token sub-check) is cross-checked against it
+    (`_parent_lineage_verdict`), three tiers: a ``fresh direction`` /
+    ``no parent`` CLAIM with ``#<parent_id>`` (or ``/tasks/<parent_id>``)
+    never referenced is a hard v4 FAIL (the #1345 r1 incident class),
+    degraded to WARN on v3/v2 (forward-only, the #1068 grandfathering
+    shape); a denied claim ALONGSIDE a parent reference WARNs (internally
+    contradictory, but regex-only semantics cannot distinguish a lineage
+    claim from prose like "fresh direction on the eval surface; reuses
+    #825 artifacts"); a lineage that never references the parent with NO
+    denied claim WARNs, v4 only (32/32 committed v4 ``parent_id`` bodies
+    name the parent — zero retro-noise — while legitimate grandparent /
+    re-scoped lineages make a FAIL over-strict). The v3/v2 branch fires
+    ONLY the fail-denied class (as WARN); the warn-only tiers never bind
+    below the v4 sentinel (#1014 never required a lineage clause there).
+    Documented residuals (deliberate): (a) the CONVERSE case — no
+    ``parent_id``, the row cites some ``#K`` — is UNCHECKED: 6/10
+    committed no-parent v4 bodies legitimately cite issues
+    (reused-artifact producers, method parents, siblings), and
+    over-attributed lineage errs toward MORE provenance; (b) bare
+    ``fresh direction`` (no parenthetical) counts as a no-parent claim
+    (SPEC semantics — it is the sanctioned parentless lineage form),
+    mitigated by the named-parent WARN downgrade; (c) a PROSE-ONLY
+    parent reference ("child of task 825" — no ``#`` sigil, no
+    ``/tasks/825`` URL) misses the ``named`` escape, so a co-present
+    denied claim tier-1 FAILs — bounded, and the FAIL message names the
+    remediation; (d) on the v3 label-miss fallback (``m2`` is None) the
+    scan covers the whole stripped repro region (WARN-only there,
+    accepted).
+
     Documented residuals (deliberate, all fail toward PASS/WARN):
     (a) FAIL scope — only strict-prefix truncations >=20 chars covering
     >=50% of ``origin_prompt`` hard-FAIL; non-prefix truncations
@@ -3979,20 +4206,18 @@ def check_repro_context_provenance(
         if not is_v4(body):
             # v2/v3 keep the pre-#1014 label-presence behavior verbatim
             # (forward-only; the v4 lineage sub-check never binds them).
-            # The #1068 origin-prompt sub-check is WARN-ONLY here
-            # (grandfathering: NEVER a new hard FAIL below the v4
-            # sentinel).
-            status, sub_detail = _origin_prompt_quote_verdict(repro, fm)
-            if status in ("fail-trunc", "warn-mismatch"):
-                return CheckResult(
-                    name, True, "**Context:** row present; " + sub_detail, is_warn=True
-                )
-            return CheckResult(name, True, "**Context:** row present")
-        # v4 lineage-token sub-check. Strip fences + blockquote LINES
-        # FIRST, then slice at the label: a single-line row with an inline
-        # `> "..."` quote after the label (#763's shape) keeps its
-        # same-line lineage clause, while multi-line blockquoted verbatim
-        # prompts can never satisfy the scan (#959 strip precedent).
+            # The #1068 origin-prompt sub-check is WARN-ONLY here, and
+            # the #1418 parent-lineage cross-check fires ONLY its
+            # fail-denied contradiction, degraded to WARN (grandfathering:
+            # NEVER a new hard FAIL below the v4 sentinel) — the scan uses
+            # the SAME stripped region as the v4 branch, never raw `repro`
+            # (a denied claim inside the blockquoted verbatim prompt must
+            # not false-fire; #959 precedent). See `_context_row_result_v3`.
+            return _context_row_result_v3(name, repro, fm)
+        # v4 lineage-token sub-check, on the shared strip-then-slice scan
+        # region (`_context_scan_region` — #763 / #959 strip-order + the
+        # degenerate whole-footer fallback, which fails toward PASS, the
+        # same shape that PASSes unconditionally today).
         # Two ACCEPTED false-PASS limitations, both benign-direction
         # (they reduce to today's unconditional label-presence PASS;
         # Lens 5 retains the substantive lineage-correctness read):
@@ -4002,25 +4227,30 @@ def check_repro_context_provenance(
         # verbatim prompt whose un-prefixed continuation line stays
         # scanned — the deliberate #959 behavior documented at
         # `_strip_blockquote_lines`).
-        scan_src = _strip_blockquote_lines(_strip_fenced_blocks(repro))
-        m = re.search(r"\*\*\s*Context\s*:?\s*\*\*", scan_src)
-        # Degenerate fallback (label only findable inside a blockquote/
-        # fence): scan the whole stripped footer — fails toward PASS, the
-        # same shape that PASSes unconditionally today.
-        ctx_scan = scan_src[m.end() :] if m else scan_src
+        ctx_scan = _context_scan_region(repro)
         if _V4_CONTEXT_LINEAGE_TOKEN_RE.search(ctx_scan):
+            # #1418 parent-lineage cross-check (incident #1345 r1) — runs
+            # FIRST (lineage correctness before prompt verbatim-ness; one
+            # failure at a time, the file's convention).
+            p_status, p_detail = _parent_lineage_verdict(ctx_scan, fm)
+            if p_status == "fail-denied":
+                return CheckResult(name, False, p_detail)
             # #1068 origin-prompt verbatim sub-check — runs AFTER the
-            # lineage sub-check (one failure at a time, the file's
-            # convention; a body failing both surfaces the truncation on
-            # the next verifier run after the lineage fix).
+            # lineage sub-checks (a body failing both surfaces the
+            # truncation on the next verifier run after the lineage fix).
             status, sub_detail = _origin_prompt_quote_verdict(repro, fm)
             if status == "fail-trunc":
                 return CheckResult(name, False, sub_detail)
+            warn_bits = []
+            if p_status in ("warn-denied-named", "warn-unnamed"):
+                warn_bits.append(p_detail)
             if status == "warn-mismatch":
+                warn_bits.append(sub_detail)
+            if warn_bits:
                 return CheckResult(
                     name,
                     True,
-                    "**Context:** row present with lineage token; " + sub_detail,
+                    "**Context:** row present with lineage token; " + "; ".join(warn_bits),
                     is_warn=True,
                 )
             return CheckResult(name, True, "**Context:** row present with lineage token")
@@ -8379,7 +8609,11 @@ def check_audit_availability_claims_match_hf(body: str) -> CheckResult:
 # where the scoped tree at `<bucket>/raw_completions` holds 7,165 files
 # + 207 folders. No pattern reached a count bound to a backtick SUB-PATH
 # of a preceding link; Pattern D + the nearest-preceding-pinned-link
-# binder close that gap (#1143).
+# binder close that gap (#1143). #1005's footer then carried bare
+# trailing parens — `[summary store + manifest](…/tree/<sha>/…) (51
+# files)` — where the pinned trees hold 52/17: a count-OPENING paren
+# right after the link that matches no anchored phrase; Pattern E closes
+# that gap (#1422).
 
 # A markdown link whose target is an HF Hub URL. Two-stage extraction: match
 # the link structure first, then scan the TEXT for a count-noun and parse the
@@ -8443,6 +8677,37 @@ _FILES_PER_NAMESPACE_RE = re.compile(
 _FILES_AT_PINNED_REV_RE = re.compile(
     r"\b(?P<count>\d{1,3}(?:,\d{3})+|\d{1,6})\s+files?\s+(?:listed\s+)?"
     r"at\s+the\s+pinned\s+revision\b",
+    re.IGNORECASE,
+)
+# Pattern E (#1005, the trailing-parenthetical footer shape): the paren
+# immediately AFTER the pinned link OPENS with the count-noun —
+# `[summary store + manifest](…/tree/<sha>/…) (52 files)`. Applied via
+# .match() on the paren body captured by _HF_LINKTEXT_THEN_PAREN_RE, so the
+# same-line separator ([ \t]{0,2}) and [^()]{1,300} paren-body bounds are
+# inherited from that iterator. Wide distributive decline like Pattern D:
+# ANY "per <word>" qualifier declines — "per namespace" belongs to the #833
+# per-namespace leg; "per adapter"/"per seed" (#460 class) have per-unit
+# semantics and would compare N against the parent's total. Trailing content
+# after the count-noun is unconstrained within the paren-body bound (the
+# #1005 "(17 files incl. `f2f3/` …)" / "(50 files: 42 updated + 8 verbatim)"
+# shapes).
+_COUNT_OPEN_PAREN_AFTER_LINK_RE = re.compile(
+    r"(?P<count>\d{1,3}(?:,\d{3})+|\d{1,6})\s+(?P<noun>files?|shards?)\b"
+    r"(?!\s+(?:listed\s+)?per\s+\w+\b)",
+    re.IGNORECASE,
+)
+# B-adjacency decline for Pattern E (mirrors Pattern D's trailing negative
+# lookahead, #1143): a paren immediately followed by an HF markdown link is
+# Pattern B's paren-before-link shape — E declines rather than extracting a
+# second, differently-scoped claim from the same paren. Checked with
+# .match(stripped, pos) at the E-paren's closing position (re.Pattern.match
+# anchors at pos, no leading `^` needed). NOTE: the whitespace separators
+# (`\s{0,2}`) span newlines, so a paren at end-of-line followed by a
+# next-line HF markdown link ALSO declines — a conservative recall residue
+# (a declined claim, never a wrong one). IGNORECASE for parity with the
+# Pattern B/D link matching.
+_HF_LINK_FOLLOWS_PAREN_RE = re.compile(
+    r"\s{0,2}[:\u2013\u2014-]?\s{0,2}\[[^\]]{1,300}\]\(https?://huggingface\.co",
     re.IGNORECASE,
 )
 # A backtick directory token in link TEXT: `analysis_tensors_nonemit/` — the
@@ -8543,7 +8808,7 @@ def _gather_hf_count_claims(body: str) -> list[tuple[int, str, str, str, str, st
     shared URL regex only matches 7-40-char hex revisions, mirroring
     check 23).
 
-    Four conservative positions (precision over recall — a missed claim
+    Five conservative positions (precision over recall — a missed claim
     costs nothing, the check is a net-new WARN):
 
     - **Pattern A** — the count-noun sits INSIDE the markdown link TEXT
@@ -8572,14 +8837,31 @@ def _gather_hf_count_claims(body: str) -> list[tuple[int, str, str, str, str, st
       line (bracket-free, ≤``_SUBPATH_CLAIM_MAX_GAP``-char gap); the count
       scopes to the JOINED prefix ``<link-prefix>/<sub-path>`` at the
       link's sha — the same join the per-namespace leg uses.
+    - **Pattern E (trailing count-opening paren, #1005)** — a parenthetical
+      immediately AFTER the link that OPENS with the count-noun
+      (``[summary store + manifest](…/tree/<sha>/…) (52 files)``, the
+      #1005 footer shape), scanned via ``.match()`` on the paren body of
+      the SAME link-then-paren iterator Pattern C uses (same-line
+      separator + paren-body bounds inherited). Trailing content after
+      the count-noun is unconstrained within the paren-body bound
+      (``(17 files incl. `f2f3/` …)`` / ``(50 files: 42 updated + 8
+      verbatim)``). Two declines: ANY distributive ``per <word>``
+      qualifier (Pattern D's wide lookahead — per-namespace claims stay
+      the per-namespace leg's exclusive property; per-adapter / per-seed
+      counts have per-unit semantics), and a paren immediately followed
+      by an HF markdown link (Pattern B's paren-before-link shape wins —
+      see the E-specific sacrifices below). An at-pinned-revision paren
+      fires BOTH C and E with identical args — the shared ``seen`` key
+      collapses them to one tuple.
 
     Known recall sacrifices (each avoids a concrete false-positive class):
-    prose counts near BARE (non-markdown) HF URLs; counts AFTER the link
-    OUTSIDE a link-adjacent paren carrying one of the two anchored phrases
-    (generic post-link prose counts stay sacrificed); parentheticals where
-    the count is not leading ("(total 515 files)") unless phrase-anchored
-    per Pattern C — mirrored by Pattern D, whose count must OPEN the
-    paren; compound claims ("8 eval JSONs + 2 npz"); nouns other
+    prose counts near BARE (non-markdown) HF URLs; prose counts AFTER the
+    link OUTSIDE the link-adjacent paren (generic post-link prose counts
+    stay sacrificed); non-leading counts INSIDE the link-adjacent paren
+    ("(total 515 files)") unless phrase-anchored per Pattern C — mirrored
+    by Patterns D and E, whose counts must OPEN the paren (a leading
+    space, "( 52 files)", deliberately does not match — B/D anchor
+    parity); compound claims ("8 eval JSONs + 2 npz"); nouns other
     than file(s) / shard(s) ("rows" / "completions" are RECORD counts, not
     file counts); per-namespace-qualified counts in A/B positions (see the
     lookahead note above). Pattern-D-specific sacrifices: a claim whose
@@ -8591,11 +8873,16 @@ def _gather_hf_count_claims(body: str) -> list[tuple[int, str, str, str, str, st
     paren-before-link shape wins — D's trailing lookahead declines); a
     BARE (non-markdown) pinned HF URL in the gap neither declines nor
     rebinds — the claim binds past it to the earlier markdown link, a
-    documented recall/precision sacrifice. Lookahead ASYMMETRY (deliberate):
-    Pattern D declines ANY distributive ``per <word>`` qualifier while A/B
-    keep the narrow #833 per-namespace-only lookahead — a "per
+    documented recall/precision sacrifice. Pattern-E-specific sacrifices:
+    an E-paren immediately followed by an HF markdown link declines
+    (``_HF_LINK_FOLLOWS_PAREN_RE`` — B wins; its whitespace separators
+    span newlines, so a paren at end-of-line followed by a NEXT-LINE HF
+    markdown link also declines — a conservative recall residue, a
+    declined claim, never a wrong one). Lookahead ASYMMETRY (deliberate):
+    Patterns D and E decline ANY distributive ``per <word>`` qualifier
+    while A/B keep the narrow #833 per-namespace-only lookahead — a "per
     adapter"-style count in A/B position is a PRE-EXISTING hole outside
-    #1143's scope, left unchanged by design.
+    #1143's / #1422's scope, left unchanged by design.
     """
     kind_to_type = {"datasets": "dataset", "spaces": "space", None: "model"}
     stripped = _strip_fenced_blocks(body)
@@ -8641,9 +8928,17 @@ def _gather_hf_count_claims(body: str) -> list[tuple[int, str, str, str, str, st
             _add(cm.group("count"), cm.group("noun"), lm.group("url"))
     for pm in _COUNT_PAREN_LINK_RE.finditer(stripped):  # Pattern B: paren before link
         _add(pm.group("count"), pm.group("noun"), pm.group("url"))
-    for lm in _HF_LINKTEXT_THEN_PAREN_RE.finditer(stripped):  # Pattern C: paren after link
-        for cm in _FILES_AT_PINNED_REV_RE.finditer(lm.group("paren")):
+    for lm in _HF_LINKTEXT_THEN_PAREN_RE.finditer(stripped):  # Patterns C + E: paren after link
+        for cm in _FILES_AT_PINNED_REV_RE.finditer(lm.group("paren")):  # C (pinned-revision)
             _add(cm.group("count"), "files", lm.group("url"))
+        # Pattern E (#1005): the paren OPENS with the count-noun — .match()
+        # gives B/D-parity anchor semantics ("( 52 files)" with a leading
+        # space deliberately does not match, a documented recall sacrifice).
+        # An at-pinned-revision paren fires BOTH C and E with identical
+        # _add args — the shared `seen` key collapses them to one tuple.
+        em = _COUNT_OPEN_PAREN_AFTER_LINK_RE.match(lm.group("paren"))
+        if em is not None and _HF_LINK_FOLLOWS_PAREN_RE.match(stripped, lm.end()) is None:
+            _add(em.group("count"), em.group("noun"), lm.group("url"))
     for dm in _BACKTICK_SUBPATH_COUNT_PAREN_RE.finditer(stripped):  # Pattern D (#1143)
         lm = _nearest_preceding_pinned_tree_link(stripped, dm.start(), link_matches)
         if lm is None:
@@ -8860,13 +9155,20 @@ def check_hf_file_count_claims(body: str) -> CheckResult:
 
     Incident: task #931 shipped "528 files" / "10 shards" / "3 files" /
     "198 files" where the scoped listing at the pinned revision holds
-    515/9/2/197 — folder entries were counted as files. This check compares
+    515/9/2/197 — folder entries were counted as files. Task #1005's footer
+    then claimed 51/15 in bare trailing parentheticals right after its
+    pinned links where the pinned trees hold 52/17 — understated counts
+    invisible to Patterns A-D, so check 30 reported "no file-count claims
+    adjacent" and the miss cost a clean-result-critic round finding
+    (#1422). This check compares
     each extracted claim (``_gather_hf_count_claims`` — Pattern A count in
     link text / Pattern B paren-before-link / Pattern C anchored
     pinned-revision phrase in a paren AFTER the link / Pattern D backtick
     ``dir/`` sub-path + count-opening paren bound to the nearest preceding
     pinned link and scoped to ``<link-prefix>/<sub-path>`` (#1143, the
-    #1112 footer shape); see its docstring for
+    #1112 footer shape) / Pattern E a paren immediately AFTER the link
+    that OPENS with the count-noun (#1422, the #1005 footer shape); see
+    its docstring for
     the precision/recall trade-offs) against an EXHAUSTIVE files-only count
     of the pinned prefix (``_hf_file_count_for_prefix`` → the #733 bounded
     raw tree-endpoint probe; folders excluded).
@@ -9199,6 +9501,279 @@ def check_hf_adjacent_file_claims(body: str) -> CheckResult:
         return CheckResult(name, True, "; ".join(missing) + unverified_detail, is_warn=True)
     detail = f"{len(claims)} adjacent file claim(s) against {len(probe_memo)} pinned tree(s)"
     return CheckResult(name, True, detail + unverified_detail)
+
+
+# ─── Check 40: unpinned backtick HF-path count claims (WARN) — #1433/#1345 ──
+# `rejudge/` (2 files) in a footer sentence with NO adjacent pinned
+# /tree/<sha> link escaped checks 30/32 entirely (both fire only for
+# pin-adjacent claims). Check 40 covers the UNPINNED residue of check 30's
+# Pattern D shape: the same token+paren regex whose pinned-link binder
+# returned None → WARN "missing pin", with a best-effort count resolution
+# against the data repo at the moving ref `main`. WARN-only; every probe
+# failure is fail-soft (#733 stack).
+_HF_DATA_REPO_ID = "superkaiba1/explore-persona-space-data"
+_HF_DATA_REPO_TYPE = "dataset"
+# Repo-top-level git dirs + local mount roots: a backtick token whose first
+# path segment is one of these is a git/local claim, never an HF prefix.
+_GIT_SIDE_ROOTS = frozenset(
+    {
+        "eval_results",
+        "ood_eval_results",
+        "figures",
+        "docs",
+        "scripts",
+        "src",
+        "tests",
+        "configs",
+        "tasks",
+        "data",
+        "raw",
+        "archive",
+        "external",
+        ".claude",
+        "store",
+        "logs",
+        "checkpoints",
+        "wandb",
+        ".cache",
+        "workspace",
+        "tmp",
+        "mnt",
+        "home",
+        "root",
+    }
+)
+# HF-context cue searched in the same-line look-back window before the claim.
+# "HF" is case-sensitive (lowercase "hf" is a CLI name); the rest scoped-(?i).
+_HF_CUE_RE = re.compile(r"\bHF\b|(?i:hugging\s*face|huggingface\.co|\bhub\b|\bdata[- ]repo\b)")
+# HF data-repo layout prefixes are `issue<N>_<slug>/...` (digits immediately
+# after `issue`); git result dirs are `eval_results/issue_<N>/...`. A
+# modern-convention HEURISTIC, not a strict invariant (legacy counterexamples
+# exist in both directions) — bounded failure modes on a WARN-only check: a
+# legacy underscore-form HF prefix costs recall only (the cue/parent arms can
+# still catch it), and the observed git-side no-underscore counterexamples are
+# all `eval_results/`-rooted (the denylist's territory).
+_HF_ISSUE_PREFIX_RE = re.compile(r"issue\d+_")
+_UNPINNED_CUE_WINDOW = 250  # chars of same-line look-back for the cue
+# A preceding backtick PARENT anchor (`issue<N>_.../`) for resolving a
+# RELATIVE sub-path claim; bound like the Pattern-D binder (same line,
+# bracket-free gap <= _SUBPATH_CLAIM_MAX_GAP).
+_BACKTICK_ISSUE_PARENT_RE = re.compile(r"`(?P<parent>issue\d+_[A-Za-z0-9_\-./]{0,118}/)`")
+# Per-body cap on unique main-revision count probes (same worst-case
+# per-probe arithmetic as _HF_COUNT_MAX_PROBES: ~22.5 s worst case each;
+# unpinned claims are rare, so 4 suffices — past-cap claims keep their
+# missing-pin WARN with an unverified count note).
+_HF_UNPINNED_MAX_PROBES = 4
+
+
+def _hf_hub_importable() -> bool:
+    """True when `huggingface_hub` imports — the optional-dependency guard the
+    #733 probe stack applies per-probe, hoisted to check level so check 40 can
+    go check-level quiet without it (see the check docstring's stated
+    deviation)."""
+    try:
+        import huggingface_hub  # noqa: F401 — local import: optional-dependency probe
+    except ImportError:
+        return False
+    return True
+
+
+def _gather_hf_unpinned_count_claims(body: str) -> list[tuple[int, str, str, str | None]]:
+    """Extract ``(claimed_count, noun, token, resolved_prefix_or_None)``
+    tuples for Pattern-D-shaped backtick ``dir/`` + count-paren claims whose
+    pinned-link binder returned None — the UNPINNED residue of check 30's
+    Pattern D — HF-context-gated (check 40, #1433; the #1345 footer shape).
+
+    Gates, ALL required to fire (precision over recall; WARN-only):
+
+    - **G1 shape:** an ``_BACKTICK_SUBPATH_COUNT_PAREN_RE`` match, reused
+      VERBATIM from check 30 Pattern D (trailing-slash dir token,
+      count-opening paren, ``per <word>`` distributive decline,
+      not-Pattern-B trailing lookahead), over the fence-stripped body.
+    - **G2 residue:** ``_nearest_preceding_pinned_tree_link(...)`` is None.
+      Pinned-adjacent matches belong to check 30 Pattern D — the two sets
+      partition the D-shape matches by construction, so no claim is ever
+      double-WARNed.
+    - **G3 not git/local:** the token's first path segment is nonempty
+      (declines absolute ``/workspace/...`` forms) and not in
+      ``_GIT_SIDE_ROOTS``.
+    - **G4 HF context:** the token starts with ``issue<N>_`` (HF data-repo
+      layout), OR a preceding ``issue<N>_.../`` backtick parent anchor binds
+      (same line, no ``[``/``]`` in the gap, gap <=
+      ``_SUBPATH_CLAIM_MAX_GAP`` — the Pattern-D binder's constraints), OR
+      ``_HF_CUE_RE`` hits in the same-line
+      <=``_UNPINNED_CUE_WINDOW``-char look-back window.
+
+    ``resolved_prefix``: the token itself (slash-stripped) when
+    issue-prefixed; ``<parent>/<token>`` when a parent anchor bound; else
+    None (the claim WARNs as missing-pin, unresolvable — ZERO probes).
+    Dedup on (count, noun-singular, token).
+
+    Known recall sacrifices (each avoids a concrete false-positive class):
+    a dir token WITHOUT the trailing slash (#1345's own sibling claim
+    ``raw_completions/stories`` (16 files)); bare-number parens (``(26)``);
+    count-in-prose without a paren; a legacy underscore-form HF prefix
+    (``issue_568/...``) that neither the cue nor a parent anchor rescues.
+    """
+    stripped = _strip_fenced_blocks(body)
+    link_matches = list(_MD_HF_LINK_RE.finditer(stripped))
+    parent_matches = list(_BACKTICK_ISSUE_PARENT_RE.finditer(stripped))
+    out: list[tuple[int, str, str, str | None]] = []
+    seen: set[tuple[int, str, str]] = set()
+    for dm in _BACKTICK_SUBPATH_COUNT_PAREN_RE.finditer(stripped):
+        if _nearest_preceding_pinned_tree_link(stripped, dm.start(), link_matches) is not None:
+            continue  # G2: pinned-adjacent — check 30 Pattern D's territory
+        token = dm.group("sub")
+        first_seg = token.split("/", 1)[0]
+        if not first_seg or first_seg in _GIT_SIDE_ROOTS:
+            continue  # G3: git/local path, never an HF data-repo prefix
+        resolved: str | None = None
+        if _HF_ISSUE_PREFIX_RE.match(token) is not None:
+            resolved = token.strip("/")
+        else:
+            parent = None
+            for pm in parent_matches:
+                if pm.end() <= dm.start():
+                    parent = pm  # finditer order: keep the nearest preceding
+                else:
+                    break
+            if parent is not None:
+                gap = stripped[parent.end() : dm.start()]
+                if (
+                    "\n" not in gap
+                    and "[" not in gap
+                    and "]" not in gap
+                    and len(gap) <= _SUBPATH_CLAIM_MAX_GAP
+                ):
+                    resolved = "/".join(
+                        p for p in (parent.group("parent").strip("/"), token.strip("/")) if p
+                    )
+        if resolved is None:
+            window = stripped[max(0, dm.start() - _UNPINNED_CUE_WINDOW) : dm.start()]
+            window = window.rsplit("\n", 1)[-1]  # same-line look-back only
+            if _HF_CUE_RE.search(window) is None:
+                continue  # G4: no HF context — stay silent (precision first)
+        count = int(dm.group("count").replace(",", ""))
+        noun = dm.group("noun")
+        key = (count, noun.lower().rstrip("s"), token)
+        if key in seen:
+            continue
+        seen.add(key)
+        out.append((count, noun, token, resolved))
+    return out
+
+
+def check_hf_unpinned_count_claims(body: str) -> CheckResult:
+    """Check 40 (WARN): backtick HF-path count claims with NO adjacent
+    pinned ``/tree/<sha>`` link — flag the missing pin and best-effort
+    resolve the count against the data repo at ``main``.
+
+    Incident: task #1345's footer claimed ``rejudge/`` (2 files) with no
+    pinned tree link binding on the line (the nearest preceding pinned link
+    is declined by the Pattern-D gap guards — intervening brackets + a
+    >400-char gap), so checks 30/32 — both pin-adjacent by construction —
+    silently dropped the claim (#1433).
+
+    Semantics:
+
+    - **WARN, never FAIL.** Every extracted claim returns
+      ``CheckResult(name, True, detail, is_warn=True)`` — ``passed`` stays
+      True so overall ``ok`` never flips. There is NO code path returning
+      ``passed=False``.
+    - **Online, the missing-pin WARN fires for every extracted claim
+      regardless of probe outcome.** The pin's absence is a fact about the
+      body text, not the network; a probe failure (429 / ``not_found`` /
+      page-time cap / the per-body ``_HF_UNPINNED_MAX_PROBES`` cap) only
+      downgrades the count-resolution HALF of the line to an unverified
+      note — mirroring check 30's unverified-appended-never-dropped rule.
+      A wrong parent-anchor join lands on ``not_found`` → a hedged note,
+      never a spurious mismatch.
+    - **STATED DEVIATION from the origin ask (fence semantics):** under the
+      ``EPM_VERIFY_BODY_NO_HF=1`` offline fence, or when
+      ``huggingface_hub`` is unavailable, the check goes CHECK-LEVEL QUIET
+      — PASS with an unverified note listing the claims — instead of the
+      origin body's letter ("else WARN-missing-pin only"). Deliberate, not
+      an oversight: it keeps the fenced test suite and grandfathered CI
+      contexts byte-stable, and it is conservative-direction — ONLINE the
+      text-derived missing-pin WARN always fires, so no finding is hidden
+      in production.
+    - **``main`` is a moving ref.** Resolution targets the hardcoded data
+      repo ``_HF_DATA_REPO_ID`` at ``main`` (an unpinned claim gives no
+      revision to probe); the success-only ``_HF_TREE_FILE_COUNT_CACHE``
+      keys include the revision string, so a ``main`` listing is cached
+      per-process only — acceptable staleness for the short-lived verifier
+      CLI — and mismatch WARNs carry a may-have-moved hedge.
+    - **Probe budget.** Own memo + cap ``_HF_UNPINNED_MAX_PROBES`` (the
+      check-30 ``_probed`` closure shape); shard claims are one-sided
+      (claimed <= files is count-consistent), matching check 30.
+
+    Vacuous PASS — with ZERO Hub probes — when no unpinned backtick
+    HF-path count claim extracts (see ``_gather_hf_unpinned_count_claims``
+    for the gates + recall sacrifices).
+    """
+    name = "backtick HF-path count claims carry an adjacent pinned /tree link"
+    claims = _gather_hf_unpinned_count_claims(body)
+    if not claims:
+        return CheckResult(name, True, "no unpinned backtick HF-path count claims")
+    if os.environ.get("EPM_VERIFY_BODY_NO_HF") == "1" or not _hf_hub_importable():
+        notes = "; ".join(f"`{tok}` ({c} {n})" for c, n, tok, _resolved in claims)
+        return CheckResult(
+            name,
+            True,
+            f"{len(claims)} unpinned claim(s) unverified (pin check needs HF access): {notes}",
+        )
+    warn_lines: list[str] = []
+    probe_memo: dict[tuple[str, str, str, str], tuple[str, int, int, str]] = {}
+
+    def _probed(key: tuple[str, str, str, str]) -> tuple[str, int, int, str] | None:
+        """Memoized count probe under the per-body ``_HF_UNPINNED_MAX_PROBES``
+        cap (the check-30 ``_probed`` closure shape): memo lookup BEFORE the
+        cap check, so a re-referenced key is served from the memo; a FRESH
+        probe past the cap returns None."""
+        if key not in probe_memo:
+            if len(probe_memo) >= _HF_UNPINNED_MAX_PROBES:
+                return None
+            probe_memo[key] = _hf_file_count_for_prefix(*key)
+        return probe_memo[key]
+
+    for count, noun, tok, resolved in claims:
+        base = (
+            f"body claims {count} {noun} at backtick `{tok}` with no adjacent "
+            f"pinned /tree/<sha> link"
+        )
+        if resolved is None:
+            warn_lines.append(
+                base + " (not resolvable against the data repo at main — no `issue<N>_` "
+                "prefix or parent anchor)"
+            )
+            continue
+        result = _probed((_HF_DATA_REPO_ID, _HF_DATA_REPO_TYPE, "main", resolved))
+        if result is None:
+            warn_lines.append(base + " (count not confirmed at main: per-body probe cap)")
+            continue
+        status, n_files, n_dirs, note = result
+        if status != "ok":
+            warn_lines.append(base + f" (count not confirmed at main: {note})")
+        elif count == n_files or (noun.lower().startswith("shard") and count <= n_files):
+            warn_lines.append(
+                base + f" — `{resolved}` at `{_HF_DATA_REPO_ID}@main` holds {n_files} "
+                "file(s) (count consistent; add a pinned /tree/<sha> link)"
+            )
+        else:
+            msg = base + (
+                f" — and `{resolved}` at `{_HF_DATA_REPO_ID}@main` holds "
+                f"{n_files} file(s), not {count}"
+            )
+            if n_dirs and count == n_files + n_dirs:
+                msg += (
+                    f" + {n_dirs} folder(s) — the claimed count is consistent with "
+                    "files+folders (folder entries are not files)"
+                )
+            elif count < n_files:
+                msg += " (or the claim describes a subset of the prefix)"
+            msg += " (resolved at `main`, which is unpinned and may have moved since the claim)"
+            warn_lines.append(msg)
+    return CheckResult(name, True, "; ".join(warn_lines), is_warn=True)
 
 
 def check_concerns_audit(  # noqa: C901 — linear lens: ledger parse → stale-marker scan → ack scan
@@ -9715,6 +10290,216 @@ def check_data_subset_disclosure(body: str) -> CheckResult:
             f"for illustration` / sanitized-harmful form): {preview}",
         )
     return CheckResult(label, True, f"{len(samples)} `## Data` example block(s) disclosed")
+
+
+# ─── v4 Sample-slot disclosure-count check (39) ─────────────────────────────
+
+# Explicit shown-count claim inside the v4 Sample slot — the `Disclosure:
+# N of M` convention (#928/#1005). Deliberately keyed on the `Disclosure:`
+# prefix ONLY: the broad `_SUBSET_DISCLOSURE_RE` phrasings (`K of M rows`,
+# `first N of M`) routinely count table ROWS inside one block (e.g. the
+# `_V4_GOOD_BODY` test fixture's `5 of 2,000 rows, random sample` over a
+# 1-row table) and must NOT trigger count reconciliation (#1421).
+_DISCLOSURE_COUNT_RE = re.compile(
+    r"(?im)\bdisclosure:\s*(?:the\s+|first\s+|showing\s+|top\s+)*"
+    r"(\d[\d,]*)\s+of\s+(?:the\s+)?(\d[\d,]*)"
+)
+
+# A top-level markdown list item: `- ` / `* ` / `+ ` / `1. ` / `1) ` at
+# indent ≤3 (the CommonMark top-level bound), with a non-space payload.
+_LIST_ITEM_RE = re.compile(r"^ {0,3}(?:[-*+]|\d{1,3}[.)])\s+\S")
+
+
+def _iter_unfenced_lines(text: str):
+    """Yield the lines of `text` that sit OUTSIDE fenced code blocks.
+
+    ``` / ~~~ delimiter lines toggle the fence state and are not yielded
+    themselves (the same relaxed CommonMark toggle `find_h2_sections`
+    uses)."""
+    in_fence = False
+    for line in text.splitlines():
+        s = line.strip()
+        if s.startswith("```") or s.startswith("~~~"):
+            in_fence = not in_fence
+            continue
+        if in_fence:
+            continue
+        yield line
+
+
+def _count_top_level_list_items(text: str) -> int:
+    """Count top-level markdown list items outside fenced code blocks.
+
+    Indent ≤3 counts as top-level per CommonMark, so a 2-space-indented
+    nested sub-bullet ALSO counts — an INFLATION-ONLY bias by design: it
+    can only raise the max/summed counting bases (masking an overclaim on
+    a sub-bulleted group, never manufacturing a false FAIL, since FAIL
+    requires N to exceed EVERY basis). Do NOT tighten the indent bound to
+    0 — legitimately indented top-level items would then undercount and
+    turn this basis into a false-positive source (#1421)."""
+    return sum(1 for line in _iter_unfenced_lines(text) if _LIST_ITEM_RE.match(line))
+
+
+def _count_gfm_table_data_rows(text: str) -> int:
+    """Count GFM table DATA rows outside fenced code blocks.
+
+    Per contiguous run of `|`-starting lines: the rows AFTER the first
+    delimiter row (`_GFM_DELIM_RE` multi-column / `_SINGLE_COL_DELIM_RE`
+    single-column), excluding any further delimiter rows. A run with no
+    delimiter row counts 0 (not a table). Sums over runs."""
+
+    def _is_delim(line: str) -> bool:
+        return bool(_GFM_DELIM_RE.match(line) or _SINGLE_COL_DELIM_RE.match(line))
+
+    total = 0
+    run: list[str] = []
+
+    def _flush() -> None:
+        nonlocal total
+        delim_idx = next((i for i, row in enumerate(run) if _is_delim(row)), None)
+        if delim_idx is not None:
+            total += sum(1 for row in run[delim_idx + 1 :] if not _is_delim(row))
+        run.clear()
+
+    for line in _iter_unfenced_lines(text):
+        if line.lstrip().startswith("|"):
+            run.append(line)
+        else:
+            _flush()
+    _flush()
+    return total
+
+
+def _count_blockquote_groups(text: str) -> int:
+    """Count maximal runs of `>`-starting lines outside fenced code
+    blocks; each contiguous run counts 1 (a blockquote-formatted example
+    list — cheap insurance, the Figure-caption style is Results-only)."""
+    total = 0
+    prev_quote = False
+    for line in _iter_unfenced_lines(text):
+        is_quote = line.lstrip().startswith(">")
+        if is_quote and not prev_quote:
+            total += 1
+        prev_quote = is_quote
+    return total
+
+
+def _count_disjoint_media_sum(group: str) -> int:
+    """Summed disjoint-media counting basis for check 39 (#1421): merged
+    fenced + `<details>` block regions (span-deduped — a fence nested in
+    a `<details>` block, or vice versa, counts once via the merged outer
+    region) PLUS top-level list items and GFM table data rows counted
+    only OUTSIDE those block regions, so each shown item enters the sum
+    exactly once. Strictly generosity-increasing: it adds one more value
+    N may legitimately match (the mixed-media presentation — e.g. 3 table
+    rows + 3 fenced completions for `Disclosure: 6 of M`) and can only
+    raise max(bases); it can never manufacture a false FAIL."""
+    raw = [(m.start(), m.end()) for m in _FENCED_RE.finditer(group)]
+    raw += [(m.start(), m.end()) for m in _DETAILS_BLOCK_RE.finditer(group)]
+    raw.sort()
+    merged: list[list[int]] = []
+    for s, e in raw:
+        if merged and s < merged[-1][1]:
+            merged[-1][1] = max(merged[-1][1], e)
+        else:
+            merged.append([s, e])
+    chars = list(group)
+    for s, e in merged:
+        for i in range(s, e):
+            if chars[i] != "\n":
+                chars[i] = " "
+    remainder = "".join(chars)
+    return (
+        len(merged) + _count_top_level_list_items(remainder) + _count_gfm_table_data_rows(remainder)
+    )
+
+
+def check_v4_sample_disclosure_count(body: str) -> CheckResult:
+    """Check 39 (v4 only): every explicit `Disclosure: N of M` count
+    claim in the `## Methodology` Sample slot reconciles with the number
+    of example items actually shown in that claim's group (#1421;
+    incident #1005: claimed `Disclosure: 8 of 2,400`, showed 6).
+
+    Group semantics: one `Disclosure:` line covers the text from the
+    FIRST NEWLINE after its match to the START OF THE LINE carrying the
+    next `Disclosure:` claim (or slot end) — the claim line's own tail
+    (`— 3 well-formed … plus 3 cap-truncated …`) never enters the counted
+    group, and a bullet wrapping a `Disclosure:` line (`- Disclosure: …`)
+    is excluded from BOTH its own group and the previous one.
+
+    Counting bases per group (zero-valued bases dropped): sample-like
+    blocks (`_iter_sample_blocks` — check 19's enumeration), ALL raw
+    fenced + `<details>` blocks, top-level list items
+    (`_count_top_level_list_items` — indent ≤3, inflation-only), GFM
+    table data rows, blockquote groups, and the summed disjoint-media
+    basis (`_count_disjoint_media_sum` — mixed-media presentations).
+      - N matches ANY basis          -> PASS (presentation-medium agnostic)
+      - N > max(bases), bases != {}  -> FAIL (overclaim — the incident class)
+      - other mismatch               -> WARN (is_warn=True)
+      - bases == {}                  -> PASS-skip (unrecognized
+                                        presentation; never guess)
+    PASS-skips on non-v4 bodies (forward-only; no grandfathered body
+    carries the `Disclosure:` convention — repo grep 2026-07-16, #1421).
+    """
+    label = "Sample-slot disclosure count (v4)"
+    if not is_v4(body):
+        return CheckResult(label, True, "skipped — not a v4 body")
+    methodology = section_text(body, "Methodology")
+    if methodology is None:
+        return CheckResult(label, True, "## Methodology missing — check 18 will report")
+    slot = _v4_methodology_sample_slot(methodology)
+    if slot is None:
+        return CheckResult(label, True, "no Sample slot — check 18 will report")
+    matches = list(_DISCLOSURE_COUNT_RE.finditer(slot))
+    if not matches:
+        return CheckResult(label, True, "no `Disclosure: N of M` count claim in the Sample slot")
+    fails: list[str] = []
+    warns: list[str] = []
+    n_skipped = 0
+    for i, m in enumerate(matches):
+        n_claimed = int(m.group(1).replace(",", ""))
+        nl = slot.find("\n", m.end())
+        group_start = nl + 1 if nl != -1 else len(slot)
+        if i + 1 < len(matches):
+            group_end = slot.rfind("\n", 0, matches[i + 1].start()) + 1
+        else:
+            group_end = len(slot)
+        group = slot[group_start:group_end] if group_start < group_end else ""
+        bases = {
+            "sample blocks": len(_iter_sample_blocks(group)),
+            "fenced/<details> blocks": (
+                len(list(_FENCED_RE.finditer(group))) + len(list(_DETAILS_BLOCK_RE.finditer(group)))
+            ),
+            "top-level list items": _count_top_level_list_items(group),
+            "table data rows": _count_gfm_table_data_rows(group),
+            "blockquote groups": _count_blockquote_groups(group),
+            "summed disjoint media": _count_disjoint_media_sum(group),
+        }
+        nonzero = {k: v for k, v in bases.items() if v > 0}
+        if not nonzero:
+            n_skipped += 1  # unrecognized presentation medium — never guess
+            continue
+        if n_claimed in nonzero.values():
+            continue
+        desc = (
+            f"`Disclosure: {m.group(1)} of {m.group(2)}` claims {n_claimed} shown "
+            f"but its group carries at most {max(nonzero.values())} "
+            f"({', '.join(f'{v} {k}' for k, v in nonzero.items())})"
+        )
+        (fails if n_claimed > max(nonzero.values()) else warns).append(desc)
+    if fails:
+        return CheckResult(label, False, "; ".join(fails + warns))
+    if warns:
+        return CheckResult(
+            label,
+            True,
+            "; ".join(warns) + " — count mismatch (not an overclaim)",
+            is_warn=True,
+        )
+    detail = f"{len(matches) - n_skipped} disclosure count claim(s) reconcile"
+    if n_skipped:
+        detail += f"; {n_skipped} claim(s) skipped — no countable presentation (never guess)"
+    return CheckResult(label, True, detail)
 
 
 # ─── v3 word-cap check (20) ──────────────────────────────────────────────────
@@ -11140,6 +11925,9 @@ CHECKS = [
     # check 37 (WARN, v4, #1370) — footer `- Reused ... from [#M](...)` bullets carry a
     # revision/path pin (body-text-only sibling of check 35's metadata-side trigger):
     check_footer_reuse_bullets_pinned,
+    # check 39 (v4) — `Disclosure: N of M` count claim in the Sample slot
+    # reconciles with the example items actually shown (#1421; incident #1005):
+    check_v4_sample_disclosure_count,
     # generation-agnostic checks (v2 AND v3 AND v4):
     check_figure_url_sha_matches_repro,  # check 22
     check_hf_url_resolves,  # check 23
@@ -11155,6 +11943,9 @@ CHECKS = [
     # check 34 (WARN, forward-only) — beat-phrase series-structure claims vs the sidecar's
     # rendered-text block (fires only when meta["text"] is present; #1255, #1092 defect (b)):
     check_figure_beat_claims_vs_sidecar_text,
+    # check 40 (WARN, generation-agnostic) — unpinned backtick HF-path count claims
+    # flag the missing /tree/<sha> pin + best-effort resolve at main (#1433, #1345):
+    check_hf_unpinned_count_claims,
     # Check 31 (`check_orphaned_per_unit_figures`, WARN, generation-agnostic)
     # is NOT here either — like check 20 (v4) it needs the issue number (for
     # figures-dir scoping), so it is dispatched separately in `verify_text`

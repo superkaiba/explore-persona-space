@@ -1,0 +1,67 @@
+{
+  "dv": "per-family usable-row rate (scaffold compliance, plan \u00a76)",
+  "families": {
+    "persona": {
+      "usable_rate": 0.9910714285714286,
+      "n_rows": 672,
+      "reasons": {
+        "truncated_no_close": 6
+      }
+    },
+    "wildchat": {
+      "usable_rate": 0.9854166666666667,
+      "n_rows": 480,
+      "reasons": {
+        "truncated_no_close": 7
+      }
+    },
+    "icl": {
+      "usable_rate": 0.9869791666666666,
+      "n_rows": 384,
+      "reasons": {
+        "truncated_no_close": 4,
+        "degenerate_repetition": 1
+      }
+    },
+    "rephrase": {
+      "usable_rate": 0.9930555555555556,
+      "n_rows": 288,
+      "reasons": {
+        "truncated_no_close": 2
+      }
+    },
+    "format": {
+      "usable_rate": 0.9958333333333333,
+      "n_rows": 240,
+      "reasons": {
+        "truncated_no_close": 1
+      }
+    },
+    "default": {
+      "usable_rate": 1.0,
+      "n_rows": 96,
+      "reasons": {}
+    },
+    "behavior": {
+      "usable_rate": 0.9958333333333333,
+      "n_rows": 240,
+      "reasons": {
+        "truncated_no_close": 1
+      }
+    }
+  },
+  "C_statistic": 0.03541666666666676,
+  "C_definition": "min(ICL, WildChat usable rate) - 0.95 (plan \u00a73)",
+  "flagged_below_parse_floor": [],
+  "rung": "greedy",
+  "production_max_new_tokens": 8192,
+  "reproducibility": {
+    "git_commit": "2b0fda1dd1c0746932bab103145ca7f87142fcc4",
+    "timestamp_utc": "2026-07-16T15:23:08.464803+00:00",
+    "python_version": "3.11.15",
+    "platform": "Linux-6.8.0-1063-gcp-x86_64-with-glibc2.35",
+    "torch": "2.8.0+cu128",
+    "numpy": "2.2.6",
+    "transformers": "4.57.6"
+  }
+}

@@ -66,6 +66,7 @@ from explore_persona_space.task_workflow import (  # noqa: E402
     audit,
     create_task,
     defer_concern,
+    duplicate_task_dirs,
     find_task_path,
     get_task,
     is_paper_task,
@@ -78,6 +79,7 @@ from explore_persona_space.task_workflow import (  # noqa: E402
     post_event,
     promote,
     raise_concern,
+    reap_stale_status_husks,
     reconcile_registry,
     remove_tag,
     set_body,
@@ -130,15 +132,41 @@ def _safe_echo(text: str, *, context: str) -> None:
 
 
 _FIELD_LED_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_-]*[:=]")
+_VERSION_STAMP_RE = re.compile(r"^v\d+\.\s+")
+
+
+def _stripped_note_core(note: str) -> tuple[str, bool]:
+    """Note HEAD after the same per-segment decoration strip
+    task_workflow.parse_followup_note_field applies: the leading
+    whitespace/bullet/bold mix, then a lowercase `v<k>. ` version stamp
+    (#1382). Returns (core, stamped); `stamped` records whether a stamp
+    was stripped so the poster-side stamp advisory can key on it."""
+    core = re.sub(r"^[\s\-*]+", "", note)
+    stamp = _VERSION_STAMP_RE.match(core)
+    if stamp:
+        return core[stamp.end() :], True
+    return core, False
 
 
 def _looks_field_led(note: str) -> bool:
-    """True when the note HEAD is a `field:` / `field=` line-core after
-    stripping the same leading whitespace/bullet/bold mix
-    task_workflow.parse_followup_note_field strips per segment. Head-only
-    by design (false-positive-averse; see #1178 plan §4 D2)."""
-    core = re.sub(r"^[\s\-*]+", "", note)
+    """True when the note HEAD is a `field:` / `field=` line-core after the
+    parse-side decoration strip — whitespace/bullet/bold, then the #1382
+    `v<k>. ` version stamp (stamp tolerance added with #1440, restoring the
+    documented parity with parse_followup_note_field). Head-only by design
+    (false-positive-averse; see #1178 plan §4 D2)."""
+    core, _ = _stripped_note_core(note)
     return bool(_FIELD_LED_RE.match(core))
+
+
+def _looks_stamped_field_led(note: str) -> bool:
+    """True when the note HEAD carries a `v<k>. ` version stamp followed by
+    field-led content — the #1092 run-note shape whose read-side absorption
+    is the #1382 parser tolerance. BOTH conditions required
+    (false-positive-averse: a prose note that happens to start "v2. " never
+    warns — the parser tolerance likewise only acts when a field anchor
+    binds after the strip)."""
+    core, stamped = _stripped_note_core(note)
+    return stamped and bool(_FIELD_LED_RE.match(core))
 
 
 def _safe_print(*args: object, context: str = "task.py", **kwargs: object) -> None:
@@ -617,6 +645,29 @@ def cmd_post_event(args: argparse.Namespace) -> None:
                 "successfully; fix the quoting on your NEXT marker instead.",
                 file=sys.stderr,
             )
+    if args.note is not None and _looks_stamped_field_led(note):
+        # Poster-side twin of the #1382 parse-side version-stamp tolerance
+        # (task_workflow.parse_followup_note_field): the note head echoes
+        # the marker's `v<k>` grammar as a decorative `v<k>. ` stamp before
+        # field-led content (the #1092 run-note shape). Read-side parsers
+        # strip it silently, so nothing ever corrected the emitter — this
+        # WARN does. Advisory only — the marker already posted; guarded
+        # like the #1120 WARN above (#537 rc-contract class; a closed
+        # stderr raises ValueError, not only OSError). Independent `if`,
+        # not `elif`: the stamp + literal-\n shapes are orthogonal and a
+        # note carrying both gets both advisories.
+        with contextlib.suppress(OSError, ValueError):
+            print(
+                f"WARNING: task.py post-marker {args.marker}: --note head "
+                "starts with a 'v<k>. ' version stamp before field-led "
+                "content. The marker version is recorded from --version on "
+                "the event row — do not echo it into the note head (field "
+                "parsers strip the stamp, #1382, so THIS note still "
+                "parses). Do NOT re-post this marker — it was posted "
+                "successfully; drop the stamp from your NEXT marker's note "
+                "instead.",
+                file=sys.stderr,
+            )
     _safe_echo(
         json.dumps(payload, indent=2),
         context=f"task.py post-marker: marker {args.marker}",
@@ -963,10 +1014,30 @@ def cmd_audit(args: argparse.Namespace) -> None:
         sys.exit(2)
 
     if not repair:
-        # Report-only mode (unchanged): list drift, exit 1 on any problem.
+        # Report-only mode: list drift, exit 1 on any problem. Duplicate-dir
+        # findings (#1430) are a WARN tier that NEVER flips the exit code —
+        # husks recur organically on every concurrent-branch merge that
+        # predates a status move, and the daily janitor reap self-heals them;
+        # the registry↔filesystem contract (`problems`) alone drives exit 1.
         problems = audit()
+        dups = duplicate_task_dirs()
+        for f in dups:
+            hint = (
+                "terminal — reap-eligible: uv run python scripts/task.py reap-husks --apply"
+                if f.terminal
+                else "non-terminal — left in place (becomes reap-eligible at "
+                "completed/archived); investigate if unexpected"
+            )
+            _safe_print(
+                f"  [duplicate-dir] #{f.task_id}: live={f.live!r} husk(s)={f.husks} — {hint}",
+                context="task.py audit",
+            )
         if not problems:
-            _safe_print("AUDIT PASS — registry and filesystem agree", context="task.py audit")
+            suffix = f" ({len(dups)} duplicate-dir warning(s) — see above)" if dups else ""
+            _safe_print(
+                f"AUDIT PASS — registry and filesystem agree{suffix}",
+                context="task.py audit",
+            )
             return
         _safe_print(f"AUDIT FAIL — {len(problems)} problem(s):", context="task.py audit")
         for p in problems:
@@ -985,6 +1056,29 @@ def cmd_audit(args: argparse.Namespace) -> None:
     # unresolved empty stubs / skips), else exit 1 so the operator triages.
     if rep.unresolved_count > 0:
         sys.exit(1)
+
+
+def cmd_reap_husks(args: argparse.Namespace) -> None:
+    """Report (default) or reap (--apply) merge-reintroduced stale-status
+    husk dirs of TERMINAL tasks (#1430). Exit 0 always — escalation is the
+    working path (gcp-janitor convention); a git/IO failure raises."""
+    rep = reap_stale_status_husks(apply=args.apply, task_id=args.issue)
+    if rep.disabled:
+        _safe_print(
+            "husk reap disabled via EPM_SKIP_HUSK_REAP=1 — no-op",
+            context="task.py reap-husks",
+        )
+        return
+    if not rep.actions:
+        _safe_print("no duplicate task dirs — nothing to reap", context="task.py reap-husks")
+        return
+    for a in rep.actions:
+        _safe_print(
+            f"  [{a.action}] #{a.task_id}: {a.husk} — {a.reason}",
+            context="task.py reap-husks",
+        )
+    if not rep.applied:
+        _safe_print("report-only — re-run with --apply to reap", context="task.py reap-husks")
 
 
 # ─── Binding-concerns handlers ────────────────────────────────────────────
@@ -1560,6 +1654,28 @@ def main() -> None:
         help="with --repair: write the reconcile to REGISTRY.json + one git commit.",
     )
     p.set_defaults(func=cmd_audit)
+
+    p = sub.add_parser(
+        "reap-husks",
+        help="reap merge-reintroduced stale-status husk dirs of terminal tasks (#1430)",
+        description=(
+            "Remove the stale-status twin dir(s) of a TERMINAL "
+            "(completed/archived) task — the merge-reintroduced husk shape "
+            "`task.py audit` surfaces as [duplicate-dir] warnings — after "
+            "byte-subset-verifying every husk entry against the live "
+            "(REGISTRY) dir. Any husk with unique content is ESCALATED "
+            "(stderr + .claude/cache/husk-reap-events.jsonl), never "
+            "deleted. Report-only by default; kill switch "
+            "EPM_SKIP_HUSK_REAP=1."
+        ),
+    )
+    p.add_argument(
+        "--apply",
+        action="store_true",
+        help="actually remove subset-verified husks (default: report-only)",
+    )
+    p.add_argument("--issue", type=int, default=None, help="restrict to one task id")
+    p.set_defaults(func=cmd_reap_husks)
 
     # ─── Binding-concerns subcommands ────────────────────────────────────
 

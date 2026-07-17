@@ -636,11 +636,22 @@ authoritative recipe is agent memory
    ```bash
    ssh_execute(server="epm-issue-<N>",
                command="nvidia-smi --query-compute-apps=pid,used_memory --format=csv; \
+                        nvidia-smi --query-gpu=index,memory.used --format=csv,noheader; \
                         pgrep -af EngineCore")
    ```
    If any compute-app PIDs or EngineCore processes survive from a prior
    run, kill them (`kill <pids>`, then `kill -9` survivors), re-run the
-   probe, and confirm GPU memory is ~0 before launching. Never launch
+   probe, and confirm GPU memory is ~0 before launching. Read BOTH
+   queries: a GPU whose device-level `memory.used` is large (≳2 GiB)
+   with ZERO compute-apps rows is a FOREIGN host-tenant hold — nothing
+   to kill in-container. Do NOT launch (and never fan out one worker
+   per physical GPU over it); report via your standard `epm:failure v1`
+   route (`failure_class: infra`,
+   `reason: gpu-residual-memory-foreign-owner`) — defective provision;
+   terminate + re-provision is the orchestrator's. See the gotchas.md
+   foreign-tenant GPU-hold entry (#825 r11) and
+   `.claude/agent-memory/experimenter/feedback_gpu_foreign_allocation_no_compute_apps.md`.
+   Never launch
    over residual GPU residency — the engine-init OOM wastes a full
    launch cycle and pollutes `events.jsonl` with a spurious infra
    failure. Incident: task #601 (2026-06-11) — the relaunch after a

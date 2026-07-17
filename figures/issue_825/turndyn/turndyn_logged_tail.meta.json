@@ -1,0 +1,613 @@
+{
+  "commit": "3b1ddc6ecf",
+  "created": "2026-07-16T21:23:42Z",
+  "figsize": [
+    11.5,
+    4.2
+  ],
+  "points": [
+    {
+      "Assistant turn depth": 13.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.5009949585435022,
+      "series": "real logged conversations, logged answers",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Assistant turn depth": 14.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": -0.7551732605639283,
+      "series": "real logged conversations, logged answers",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Assistant turn depth": 15.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": -0.22579569943833278,
+      "series": "real logged conversations, logged answers",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Assistant turn depth": 16.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": -0.020764072815118384,
+      "series": "real logged conversations, logged answers",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Assistant turn depth": 17.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.10171768262448333,
+      "series": "real logged conversations, logged answers",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Assistant turn depth": 18.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.14605947456959345,
+      "series": "real logged conversations, logged answers",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Assistant turn depth": 19.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.20724069764045794,
+      "series": "real logged conversations, logged answers",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Assistant turn depth": 20.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.24661839154414278,
+      "series": "real logged conversations, logged answers",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Assistant turn depth": 21.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.24801406995086195,
+      "series": "real logged conversations, logged answers",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Assistant turn depth": 22.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.25404514216997565,
+      "series": "real logged conversations, logged answers",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Assistant turn depth": 23.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.2462967467509074,
+      "series": "real logged conversations, logged answers",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Assistant turn depth": 24.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.2538291812195199,
+      "series": "real logged conversations, logged answers",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Assistant turn depth": 25.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.25919261548192185,
+      "series": "real logged conversations, logged answers",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Assistant turn depth": 26.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.23427056174587868,
+      "series": "real logged conversations, logged answers",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Assistant turn depth": 27.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.2260259132000979,
+      "series": "real logged conversations, logged answers",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Assistant turn depth": 28.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.22549138764581933,
+      "series": "real logged conversations, logged answers",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Assistant turn depth": 29.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.21450585934711497,
+      "series": "real logged conversations, logged answers",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Assistant turn depth": 30.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": 0.17282162200414553,
+      "series": "real logged conversations, logged answers",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Assistant turn depth": 13.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": -0.19344835041423677,
+      "series": "shuffled-answer null (max of 200 draws)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Assistant turn depth": 14.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": -3.999207365178974,
+      "series": "shuffled-answer null (max of 200 draws)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Assistant turn depth": 15.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": -2.391299464950301,
+      "series": "shuffled-answer null (max of 200 draws)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Assistant turn depth": 16.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": -1.7376210938280132,
+      "series": "shuffled-answer null (max of 200 draws)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Assistant turn depth": 17.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": -1.3633759459972297,
+      "series": "shuffled-answer null (max of 200 draws)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Assistant turn depth": 18.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": -1.1343692398533791,
+      "series": "shuffled-answer null (max of 200 draws)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Assistant turn depth": 19.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": -0.9645770931786213,
+      "series": "shuffled-answer null (max of 200 draws)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Assistant turn depth": 20.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": -0.8351081559572302,
+      "series": "shuffled-answer null (max of 200 draws)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Assistant turn depth": 21.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": -0.750679299145556,
+      "series": "shuffled-answer null (max of 200 draws)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Assistant turn depth": 22.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": -0.6629751847942378,
+      "series": "shuffled-answer null (max of 200 draws)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Assistant turn depth": 23.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": -0.6007507707648818,
+      "series": "shuffled-answer null (max of 200 draws)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Assistant turn depth": 24.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": -0.5488077018325034,
+      "series": "shuffled-answer null (max of 200 draws)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Assistant turn depth": 25.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": -0.5134385458647279,
+      "series": "shuffled-answer null (max of 200 draws)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Assistant turn depth": 26.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": -0.48801747912936455,
+      "series": "shuffled-answer null (max of 200 draws)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Assistant turn depth": 27.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": -0.4358186039108054,
+      "series": "shuffled-answer null (max of 200 draws)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Assistant turn depth": 28.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": -0.4191856438420199,
+      "series": "shuffled-answer null (max of 200 draws)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Assistant turn depth": 29.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": -0.40249132197617726,
+      "series": "shuffled-answer null (max of 200 draws)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Assistant turn depth": 30.0,
+      "Held-out R\u00b2 (context \u2192 answer, layer 19)": -0.3742475000198943,
+      "series": "shuffled-answer null (max of 200 draws)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Assistant turn depth": 13.0,
+      "y": 0.5221792635644049,
+      "series": "real logged conversations, logged answers",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Assistant turn depth": 14.0,
+      "y": -0.6743493792845172,
+      "series": "real logged conversations, logged answers",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Assistant turn depth": 15.0,
+      "y": -0.1432062462241388,
+      "series": "real logged conversations, logged answers",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Assistant turn depth": 16.0,
+      "y": 0.03188431597638586,
+      "series": "real logged conversations, logged answers",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Assistant turn depth": 17.0,
+      "y": 0.1453246713499028,
+      "series": "real logged conversations, logged answers",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Assistant turn depth": 18.0,
+      "y": 0.18965580033226725,
+      "series": "real logged conversations, logged answers",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Assistant turn depth": 19.0,
+      "y": 0.24420715670070015,
+      "series": "real logged conversations, logged answers",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Assistant turn depth": 20.0,
+      "y": 0.28748076778740483,
+      "series": "real logged conversations, logged answers",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Assistant turn depth": 21.0,
+      "y": 0.27454545372972594,
+      "series": "real logged conversations, logged answers",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Assistant turn depth": 22.0,
+      "y": 0.2921614412413339,
+      "series": "real logged conversations, logged answers",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Assistant turn depth": 23.0,
+      "y": 0.2879214462393417,
+      "series": "real logged conversations, logged answers",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Assistant turn depth": 24.0,
+      "y": 0.28756236332385476,
+      "series": "real logged conversations, logged answers",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Assistant turn depth": 25.0,
+      "y": 0.2774616312733521,
+      "series": "real logged conversations, logged answers",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Assistant turn depth": 26.0,
+      "y": 0.25054691474334123,
+      "series": "real logged conversations, logged answers",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Assistant turn depth": 27.0,
+      "y": 0.2573329659459075,
+      "series": "real logged conversations, logged answers",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Assistant turn depth": 28.0,
+      "y": 0.2420737740825618,
+      "series": "real logged conversations, logged answers",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Assistant turn depth": 29.0,
+      "y": 0.24055865875029236,
+      "series": "real logged conversations, logged answers",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Assistant turn depth": 30.0,
+      "y": 0.19954671636129218,
+      "series": "real logged conversations, logged answers",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Assistant turn depth": 13.0,
+      "y": -0.1983648251449176,
+      "series": "shuffled-answer null (max of 200 draws)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Assistant turn depth": 14.0,
+      "y": -3.8120773199677016,
+      "series": "shuffled-answer null (max of 200 draws)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Assistant turn depth": 15.0,
+      "y": -2.25578235292695,
+      "series": "shuffled-answer null (max of 200 draws)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Assistant turn depth": 16.0,
+      "y": -1.6342394867006063,
+      "series": "shuffled-answer null (max of 200 draws)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Assistant turn depth": 17.0,
+      "y": -1.2953747753794886,
+      "series": "shuffled-answer null (max of 200 draws)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Assistant turn depth": 18.0,
+      "y": -1.0839538976375365,
+      "series": "shuffled-answer null (max of 200 draws)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Assistant turn depth": 19.0,
+      "y": -0.9201299435013883,
+      "series": "shuffled-answer null (max of 200 draws)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Assistant turn depth": 20.0,
+      "y": -0.8028756654605145,
+      "series": "shuffled-answer null (max of 200 draws)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Assistant turn depth": 21.0,
+      "y": -0.7104735345566592,
+      "series": "shuffled-answer null (max of 200 draws)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Assistant turn depth": 22.0,
+      "y": -0.6380405872757158,
+      "series": "shuffled-answer null (max of 200 draws)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Assistant turn depth": 23.0,
+      "y": -0.5746430469587064,
+      "series": "shuffled-answer null (max of 200 draws)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Assistant turn depth": 24.0,
+      "y": -0.5294635316488719,
+      "series": "shuffled-answer null (max of 200 draws)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Assistant turn depth": 25.0,
+      "y": -0.4932654350302848,
+      "series": "shuffled-answer null (max of 200 draws)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Assistant turn depth": 26.0,
+      "y": -0.4754582143342456,
+      "series": "shuffled-answer null (max of 200 draws)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Assistant turn depth": 27.0,
+      "y": -0.41847665823797764,
+      "series": "shuffled-answer null (max of 200 draws)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Assistant turn depth": 28.0,
+      "y": -0.41357673302669207,
+      "series": "shuffled-answer null (max of 200 draws)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Assistant turn depth": 29.0,
+      "y": -0.38661461825727617,
+      "series": "shuffled-answer null (max of 200 draws)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Assistant turn depth": 30.0,
+      "y": -0.3679045836231556,
+      "series": "shuffled-answer null (max of 200 draws)",
+      "_kind": "line",
+      "_group": 3
+    }
+  ],
+  "n_series": 4,
+  "total_points": 72,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Instruct model",
+        "xlabel": "Assistant turn depth",
+        "ylabel": "Held-out R\u00b2 (context \u2192 answer, layer 19)",
+        "legend_labels": [
+          "real logged conversations, logged answers",
+          "shuffled-answer null (max of 200 draws)"
+        ],
+        "annotations": [
+          "n=3827",
+          "n=3065",
+          "n=2418",
+          "n=1944",
+          "n=1598",
+          "n=1320",
+          "n=1078",
+          "n=882",
+          "n=732",
+          "n=611",
+          "n=505",
+          "n=438",
+          "n=380",
+          "n=332",
+          "n=279",
+          "n=252",
+          "n=215",
+          "n=201"
+        ],
+        "xticklabels": [
+          "10.0",
+          "12.5",
+          "15.0",
+          "17.5",
+          "20.0",
+          "22.5",
+          "25.0",
+          "27.5",
+          "30.0",
+          "32.5"
+        ],
+        "yticklabels": [
+          "\u22125",
+          "\u22124",
+          "\u22123",
+          "\u22122",
+          "\u22121",
+          "0",
+          "1",
+          "2"
+        ]
+      },
+      {
+        "title_left": "Pretrained base model",
+        "xlabel": "Assistant turn depth",
+        "annotations": [
+          "n=3858",
+          "n=3092",
+          "n=2441",
+          "n=1966",
+          "n=1615",
+          "n=1336",
+          "n=1089",
+          "n=892",
+          "n=740",
+          "n=619",
+          "n=513",
+          "n=444",
+          "n=386",
+          "n=338",
+          "n=285",
+          "n=257",
+          "n=220",
+          "n=206"
+        ],
+        "xticklabels": [
+          "10.0",
+          "12.5",
+          "15.0",
+          "17.5",
+          "20.0",
+          "22.5",
+          "25.0",
+          "27.5",
+          "30.0",
+          "32.5"
+        ]
+      }
+    ],
+    "series": [
+      "real logged conversations, logged answers",
+      "shuffled-answer null (max of 200 draws)"
+    ]
+  }
+}

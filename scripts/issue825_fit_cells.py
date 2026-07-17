@@ -65,6 +65,31 @@ CROSS_ROLE_CELLS = common.CROSS_ROLE_CELLS
 
 LAMBDAS = np.logspace(-2, 4, 13)
 
+# #1335 r8: inner GROUP-level folds for the "inner-group-cv" lambda selection.
+# GCV's i.i.d.-rows assumption fails on within-group-correlated cells whose
+# train Gram is near-singular (n_tr < D + near-duplicate rows): the criterion
+# collapses at the grid-min lambda (train interpolation; att-20260715-210436
+# fold-0 r7/instruct/Dana: RSS(0.01)=3.6 vs tot=1.4e6 -> GCV 658 beats every
+# honest lambda >= 972) and held-out R^2 lands at -2..-7, while lambda=1e3-1e4
+# on the SAME folds reads +0.22..+0.35. Inner-group-CV scores each lambda by
+# summed inner-validation RSS over group-held-out inner folds — directly the
+# deployed generalization criterion — applied IDENTICALLY to the observed Y
+# and every null draw (selection-symmetric).
+N_INNER_LAMBDA_FOLDS = 4
+LAMBDA_SELECTIONS = ("gcv", "inner-group-cv")
+
+# GCV degenerates when the fold Gram can (near-)interpolate: at n_tr < D the
+# train RSS -> 0 faster than the (n_tr - dof)^2 denominator shrinks, opening a
+# spurious GCV minimum at the lambda-grid floor (held-out R^2 explodes to
+# -2..-11 — #1310 onpolicy-prefill mid layers; exact PRESS/LOOCV degenerates
+# identically there since leverages -> 1 and train residuals -> 0). Setting
+# GCV_DOF_CAP (e.g. 0.9) excludes every lambda whose effective dof exceeds
+# cap * n_tr from BOTH scan paths (serial + batched), so observed fits and
+# null draws stay selection-symmetric. Module-global patch style, like
+# FROZEN_LAYERS: callers set `fit825.GCV_DOF_CAP = 0.9`. Default None
+# preserves the committed behavior byte-for-byte.
+GCV_DOF_CAP: float | None = None
+
 # G1 gate anchors: #779 per-context reconstruction curve (layer -> R^2).
 # Full curve loaded from eval_results/issue_779/percontext_recon.json when
 # present (REQUIRED); the embedded anchors are documentation cross-checks, never a fallback gate.
@@ -86,6 +111,69 @@ def _fit_device() -> torch.device:
     return torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
 
 
+# ---------------------------------------------------------------------------
+# Serial-fit tombstone (#1310 vectorization Supersede contract).
+# The batched null-draw + bootstrap paths below are the production path; the
+# serial bodies are retained ONLY as the equivalence-gate oracle (contained;
+# never reached from run_cell / heldout_r2_sweep defaults). Calling one emits a
+# FutureWarning and, under EPM_FORBID_SERIAL_FITS=1, raises.
+# ---------------------------------------------------------------------------
+
+
+def _serial_fits_forbidden() -> bool:
+    return os.environ.get("EPM_FORBID_SERIAL_FITS", "0") == "1"
+
+
+def _forbid_serial(what: str) -> None:
+    import warnings
+
+    warnings.warn(
+        f"{what}: serial fit path is SUPERSEDED by the batched implementation "
+        "(#1310 vectorization); retained only as the equivalence-gate oracle.",
+        FutureWarning,
+        stacklevel=2,
+    )
+    if _serial_fits_forbidden():
+        raise RuntimeError(f"{what}: EPM_FORBID_SERIAL_FITS=1 — serial fit path is disabled.")
+
+
+def _as_f64_on(x, dev: torch.device) -> torch.Tensor:
+    """Device-safe fp64 conversion for the ridge-fit device boundary.
+
+    ``np.asarray`` on a CUDA tensor raises TypeError (#1335 att-20260715-114351:
+    the batched null path hands _ridge_predict_cached_batched the device-resident
+    slice ``Y_t[p_tr]`` when ``_fit_device()`` is cuda — masked historically
+    because prior runs' fits were CPU-resident). Tensors take the torch-native
+    dtype/device move; non-tensor inputs keep the exact legacy numpy path.
+    fp32->fp64 conversion is exact on either path, so results are bit-compatible
+    (pinned by tests/test_issue1310_vectorized_fit.py::
+    test_ridge_device_conversions_tensor_safe).
+    """
+    if torch.is_tensor(x):
+        return x.detach().to(device=dev, dtype=torch.float64)
+    return torch.as_tensor(np.asarray(x), dtype=torch.float64).to(dev)
+
+
+def _eigh_robust(G: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
+    """eigh with a CPU-LAPACK fallback on cuSOLVER non-convergence.
+
+    cuSOLVER's syevd raises torch._C._LinAlgError ("failed to converge ...
+    ill-conditioned or has too many repeated eigenvalues") on near-singular
+    Grams that CPU LAPACK decomposes fine — matched-n subsampled inner-fold
+    Grams hit this (#1335 attempt 8: n_min=1739, inner-group folds with
+    near-duplicate rows, exactly the near-singular regime the inner-group-cv
+    selection targets). The fallback computes the SAME decomposition of the
+    SAME matrix on CPU and moves it back to G's device — a numerical-backend
+    swap, not a semantic change (results agree to fp roundoff).
+    """
+    try:
+        return torch.linalg.eigh(G)
+    except torch.linalg.LinAlgError:
+        print(f"[fit_cells] eigh non-convergence on {G.device} (n={G.shape[0]}); CPU fallback")
+        w, V = torch.linalg.eigh(G.cpu())
+        return w.to(G.device), V.to(G.device)
+
+
 def _prep_fold(X_train: np.ndarray, X_eval: np.ndarray) -> dict:
     """Compute the Y-independent pieces of the Gram-space ridge for one fold.
 
@@ -95,18 +183,116 @@ def _prep_fold(X_train: np.ndarray, X_eval: np.ndarray) -> dict:
     fp64 at n=5000), built and discarded inside the sweep loop.
     """
     dev = _fit_device()
-    Xtr = torch.as_tensor(np.asarray(X_train), dtype=torch.float64).to(dev)
-    Xev = torch.as_tensor(np.asarray(X_eval), dtype=torch.float64).to(dev)
+    Xtr = _as_f64_on(X_train, dev)
+    Xev = _as_f64_on(X_eval, dev)
     xmu = Xtr.mean(0)
     xsd = Xtr.std(0) + 1e-9
     Xtr_n = (Xtr - xmu) / xsd
     Xev_n = (Xev - xmu) / xsd
     G = Xtr_n @ Xtr_n.T
-    w, V = torch.linalg.eigh(G)
+    w, V = _eigh_robust(G)
     w = torch.clamp(w, min=0.0)
     Kev = Xev_n @ Xtr_n.T
     KevV = Kev @ V
     return {"w": w, "V": V, "KevV": KevV, "ntr": int(Xtr.shape[0])}
+
+
+def _prep_inner_lambda(
+    X_train: np.ndarray, train_groups: np.ndarray, n_inner: int, seed: int
+) -> list[dict] | None:
+    """Y-independent inner-fold caches for the inner-group-CV lambda scan (#1335 r8).
+
+    Splits the OUTER-train rows into ``n_inner`` GROUP-level inner folds
+    (same ``_cv_folds`` machinery). Per usable inner fold: standardize on
+    inner-train, eigh the inner Gram, and precompute P = Kev@V plus M = P^T P —
+    everything the per-Y RSS(lambda) curve needs in reduced form. Returns None
+    when fewer than 2 usable inner folds exist (caller falls back to GCV with
+    a loud warning). fi_idx/va_idx are POSITIONS within the outer-train block,
+    so the batched null path's positionally-permuted Y slices line up.
+    """
+    groups = np.asarray(train_groups)
+    uniq = np.unique(groups)
+    k_in = int(min(n_inner, len(uniq)))
+    if k_in < 2:
+        return None
+    dev = _fit_device()
+    ifolds = _cv_folds(groups, k_in, seed)
+    Xtr_all = _as_f64_on(X_train, dev)
+    caches: list[dict] = []
+    for j in range(k_in):
+        va = ifolds == j
+        fi = ~va
+        if va.sum() < 1 or fi.sum() < 3:
+            continue
+        fi_idx = torch.as_tensor(np.flatnonzero(fi), dtype=torch.long, device=dev)
+        va_idx = torch.as_tensor(np.flatnonzero(va), dtype=torch.long, device=dev)
+        Xf = Xtr_all.index_select(0, fi_idx)
+        Xv = Xtr_all.index_select(0, va_idx)
+        xmu = Xf.mean(0)
+        xsd = Xf.std(0) + 1e-9
+        Xf_n = (Xf - xmu) / xsd
+        Xv_n = (Xv - xmu) / xsd
+        G = Xf_n @ Xf_n.T
+        w, V = _eigh_robust(G)
+        w = torch.clamp(w, min=0.0)
+        P = (Xv_n @ Xf_n.T) @ V  # (n_va, n_fi)
+        caches.append({"w": w, "V": V, "P": P, "M": P.T @ P, "fi_idx": fi_idx, "va_idx": va_idx})
+    return caches if len(caches) >= 2 else None
+
+
+def _inner_cv_rss_curve(icaches: list[dict], Ytr: torch.Tensor) -> torch.Tensor:
+    """Summed inner-validation RSS per lambda for ONE train-Y (fp64, device).
+
+    Reduced form per inner fold (never materializes per-lambda predictions):
+    RSS(lam) = ||Yv_c||^2 - 2 * sum_i q_i c_i + q^T (M o B) q, with
+    q_i = 1/(w_i+lam), c_i = sum_d (P^T Yv_c)_{id} VtY_{id}, B = VtY VtY^T.
+    """
+    dev = Ytr.device
+    lambdas = torch.as_tensor(LAMBDAS, dtype=torch.float64, device=dev)
+    rss = torch.zeros(len(LAMBDAS), dtype=torch.float64, device=dev)
+    for ic in icaches:
+        Yf = Ytr.index_select(0, ic["fi_idx"])
+        Yv = Ytr.index_select(0, ic["va_idx"])
+        ymu = Yf.mean(0)
+        VtY = ic["V"].T @ (Yf - ymu)  # (n_fi, D)
+        Yv_c = Yv - ymu  # (n_va, D)
+        base = (Yv_c**2).sum()
+        c = ((ic["P"].T @ Yv_c) * VtY).sum(1)  # (n_fi,)
+        MB = ic["M"] * (VtY @ VtY.T)  # (n_fi, n_fi)
+        for li, lam in enumerate(lambdas):
+            q = 1.0 / (ic["w"] + lam)
+            rss[li] += base - 2.0 * (c * q).sum() + q @ (MB @ q)
+    return rss
+
+
+def _inner_cv_rss_curve_batched(icaches: list[dict], Ytr_b: torch.Tensor) -> torch.Tensor:
+    """Batched twin of _inner_cv_rss_curve over a (B, n_tr, D) train-Y tensor.
+
+    Returns (B, len(LAMBDAS)) summed inner-validation RSS. Same reduced form,
+    draw axis batched; identical selection opportunity for every null draw
+    (selection-symmetric, mirroring the batched GCV scan it replaces).
+    """
+    dev = Ytr_b.device
+    B = Ytr_b.shape[0]
+    lambdas = torch.as_tensor(LAMBDAS, dtype=torch.float64, device=dev)
+    rss = torch.zeros((B, len(LAMBDAS)), dtype=torch.float64, device=dev)
+    for ic in icaches:
+        Yf = Ytr_b.index_select(1, ic["fi_idx"])  # (B, n_fi, D)
+        Yv = Ytr_b.index_select(1, ic["va_idx"])  # (B, n_va, D)
+        ymu = Yf.mean(1, keepdim=True)
+        Yf_c = Yf - ymu
+        Yv_c = Yv - ymu
+        VtY = torch.einsum("ij,bjd->bid", ic["V"].transpose(0, 1), Yf_c)  # (B,n_fi,D)
+        base = (Yv_c**2).sum(dim=(1, 2))  # (B,)
+        PtYv = torch.einsum("vi,bvd->bid", ic["P"], Yv_c)  # (B,n_fi,D)
+        c = (PtYv * VtY).sum(2)  # (B,n_fi)
+        MB = ic["M"].unsqueeze(0) * torch.einsum("bid,bjd->bij", VtY, VtY)  # (B,n_fi,n_fi)
+        q = 1.0 / (ic["w"].unsqueeze(0) + lambdas.unsqueeze(1))  # (Lm,n_fi)
+        term2 = torch.einsum("bi,li->bl", c, q)  # (B,Lm)
+        Mq = torch.einsum("bij,lj->bli", MB, q)  # (B,Lm,n_fi)
+        term3 = torch.einsum("bli,li->bl", Mq, q)  # (B,Lm)
+        rss += base.unsqueeze(1) - 2.0 * term2 + term3
+    return rss
 
 
 def _ridge_predict_cached(
@@ -130,30 +316,177 @@ def _ridge_predict_cached(
     """
     lams = LAMBDAS if lambdas is None else np.asarray(lambdas, dtype=np.float64)
     assert lams.ndim == 1 and len(lams) > 0, f"bad lambda grid shape {lams.shape}"
-    Ytr = torch.as_tensor(np.asarray(Y_train), dtype=torch.float64).to(cache["w"].device)
+    Ytr = _as_f64_on(Y_train, cache["w"].device)
     ymu = Ytr.mean(0)
     Ytr_c = Ytr - ymu
     w, V, KevV, ntr = cache["w"], cache["V"], cache["KevV"], cache["ntr"]
     VtY = V.T @ Ytr_c
-    sqVtY = (VtY**2).sum(1)
-    tot = float((Ytr_c**2).sum())
-    best_lam = float(lams[0])
-    best_gcv = float("inf")
-    for lam in lams:
-        filt = w / (w + lam)
-        rss = tot - float(((2 * filt - filt**2) * sqVtY).sum())
-        dof = float(filt.sum())
-        denom = (ntr - dof) ** 2
-        gcv = rss / denom if denom > 1e-12 else float("inf")
-        if gcv < best_gcv:
-            best_gcv = gcv
-            best_lam = float(lam)
+    if cache.get("inner"):
+        # #1335 r8: inner-group-CV lambda selection (see N_INNER_LAMBDA_FOLDS).
+        # The inner RSS curve scans the module LAMBDAS grid; the #1336 lambdas=
+        # override has no caller in this cross product — fail loud rather than
+        # argmin-index the wrong grid.
+        assert lambdas is None, (
+            "inner-group-cv lambda selection scans the module LAMBDAS grid; "
+            "a custom lambdas= grid is unsupported with an inner cache"
+        )
+        rss_curve = _inner_cv_rss_curve(cache["inner"], Ytr)
+        best_lam = float(LAMBDAS[int(torch.argmin(rss_curve))])
+    else:
+        sqVtY = (VtY**2).sum(1)
+        tot = float((Ytr_c**2).sum())
+        best_lam = float(lams[0])
+        best_gcv = float("inf")
+        for lam in lams:
+            filt = w / (w + lam)
+            dof = float(filt.sum())
+            if GCV_DOF_CAP is not None and dof > GCV_DOF_CAP * ntr:
+                continue  # (near-)interpolating lambda: GCV objective is degenerate here
+            rss = tot - float(((2 * filt - filt**2) * sqVtY).sum())
+            denom = (ntr - dof) ** 2
+            gcv = rss / denom if denom > 1e-12 else float("inf")
+            if gcv < best_gcv:
+                best_gcv = gcv
+                best_lam = float(lam)
     filt = 1.0 / (w + best_lam)
     pred = (KevV * filt) @ VtY + ymu
     pred_np = pred.cpu().numpy()
     if return_lam:
         return pred_np, best_lam
     return pred_np
+
+
+def _ridge_predict_cached_batched(
+    cache: dict,
+    Y_train_batch,
+    *,
+    lambdas: np.ndarray | list[float] | None = None,
+) -> torch.Tensor:
+    """Batched twin of _ridge_predict_cached over a (B, n_tr, D) train-Y tensor.
+
+    Reproduces the per-draw GCV lambda scan vectorized over the batch: the
+    strict-`<` serial scan (keep the FIRST minimum, start at inf/LAMBDAS[0])
+    is exactly torch.argmin over the GCV row (argmin returns the first minimum;
+    all-inf rows argmin to 0 => LAMBDAS[0], matching the serial default). All
+    arithmetic is fp64 on the cache device, so the result matches the serial
+    scalar path to fp roundoff (equivalence-gated). Returns preds (B, n_te, D).
+    ``lambdas=None`` (default) scans the module-global ``LAMBDAS`` grid,
+    byte-preserving (#1336 D1 default-preserving flag, mirroring the serial
+    twin).
+    """
+    dev = cache["w"].device
+    # Y_train_batch is a device-RESIDENT tensor on the batched null path
+    # (Y_t[p_tr] in _null_ss_contrib) — never route it through numpy (#1335).
+    Ytr = _as_f64_on(Y_train_batch, dev)
+    if Ytr.ndim == 2:
+        Ytr = Ytr.unsqueeze(0)
+    ymu = Ytr.mean(1, keepdim=True)  # (B,1,D)
+    Ytr_c = Ytr - ymu  # (B,n_tr,D)
+    w, V, KevV, ntr = cache["w"], cache["V"], cache["KevV"], cache["ntr"]
+    VtY = torch.einsum("ij,bjd->bid", V.transpose(0, 1), Ytr_c)  # (B,n_tr,D)
+    lams = torch.as_tensor(
+        LAMBDAS if lambdas is None else np.asarray(lambdas, dtype=np.float64),
+        dtype=torch.float64,
+        device=dev,
+    )  # (Lm,)
+    assert lams.ndim == 1 and len(lams) > 0, f"bad lambda grid shape {tuple(lams.shape)}"
+    if cache.get("inner"):
+        # #1335 r8: per-draw inner-group-CV selection (selection-symmetric).
+        # Inner RSS curves scan the module LAMBDAS grid — same fail-loud rule
+        # as the serial twin for the callerless lambdas= cross product.
+        assert lambdas is None, (
+            "inner-group-cv lambda selection scans the module LAMBDAS grid; "
+            "a custom lambdas= grid is unsupported with an inner cache"
+        )
+        rss_curve = _inner_cv_rss_curve_batched(cache["inner"], Ytr)  # (B,Lm)
+        best_l = torch.argmin(rss_curve, dim=1)  # (B,)
+    else:
+        sqVtY = (VtY**2).sum(2)  # (B,n_tr)
+        tot = (Ytr_c**2).sum(dim=(1, 2))  # (B,)
+        filt = w.unsqueeze(0) / (w.unsqueeze(0) + lams.unsqueeze(1))  # (Lm,n_tr)
+        coef = 2 * filt - filt**2  # (Lm,n_tr)
+        rss = tot.unsqueeze(1) - torch.einsum("li,bi->bl", coef, sqVtY)  # (B,Lm)
+        dof = filt.sum(1)  # (Lm,)
+        denom = (ntr - dof) ** 2  # (Lm,)
+        ok = denom.unsqueeze(0) > 1e-12  # (1,Lm) broadcast over draws
+        if GCV_DOF_CAP is not None:
+            # Mirror the serial scan's dof-cap skip (selection-symmetric across
+            # observed + null draws; see GCV_DOF_CAP above).
+            ok = ok & (dof.unsqueeze(0) <= GCV_DOF_CAP * ntr)
+        gcv = torch.where(
+            ok,
+            rss / denom.unsqueeze(0),
+            torch.full_like(rss, float("inf")),
+        )
+        best_l = torch.argmin(gcv, dim=1)  # (B,)
+    best_lam = lams[best_l]  # (B,)
+    filt_pred = 1.0 / (w.unsqueeze(0) + best_lam.unsqueeze(1))  # (B,n_tr)
+    KV = KevV.unsqueeze(0) * filt_pred.unsqueeze(1)  # (B,n_te,n_tr)
+    pred = torch.einsum("bti,bid->btd", KV, VtY) + ymu  # (B,n_te,D)
+    return pred
+
+
+# Draw-axis chunk for the batched null (bounds the transient (B, n_tr, D)
+# tensor; 20 draws is one chunk, but a larger null_draws stays memory-safe).
+NULL_DRAW_BATCH = int(os.environ.get("EPM_NULL_DRAW_BATCH", "64"))
+
+
+def _null_ss_contrib(
+    cache: dict,
+    Y_layer: np.ndarray,
+    tr_mask: np.ndarray,
+    te_mask: np.ndarray,
+    null_perms: list,
+    *,
+    impl: str = "batched",
+    lambdas: np.ndarray | list[float] | None = None,
+) -> tuple[np.ndarray, np.ndarray]:
+    """Per-draw held-out (ss_res, ss_tot) for the shuffle-null at one (fold, layer).
+
+    Returns two (n_draws,) numpy arrays. ``impl='batched'`` (default,
+    production) pushes all draws' permuted-Y through the device-batched ridge
+    and reduces on-device (only the (n_draws,) scalars come back to CPU);
+    ``impl='serial'`` is the retained reference oracle (tombstoned).
+    ``lambdas=None`` keeps the module ``LAMBDAS`` grid byte-for-byte; a custom
+    grid threads to both impls identically (#1336 selection symmetry).
+    """
+    n_draws = len(null_perms)
+    if n_draws == 0:
+        return np.zeros(0), np.zeros(0)
+    if impl == "serial":
+        _forbid_serial("_null_ss_contrib(impl='serial')")
+        ss_res = np.zeros(n_draws)
+        ss_tot = np.zeros(n_draws)
+        for d, perm in enumerate(null_perms):
+            Yp = Y_layer[perm]
+            pred_n = _ridge_predict_cached(cache, Yp[tr_mask], lambdas=lambdas)
+            true_n = Yp[te_mask].astype(np.float64)
+            mu_n = true_n.mean(0)
+            ss_res[d] = float(np.sum((true_n - pred_n) ** 2))
+            ss_tot[d] = float(np.sum((true_n - mu_n) ** 2))
+        return ss_res, ss_tot
+    if impl != "batched":
+        raise ValueError(f"unknown null impl {impl!r}")
+    dev = cache["w"].device
+    Y_t = _as_f64_on(Y_layer, dev)  # (N,D)
+    perm_stack = np.stack(null_perms)  # (B,N)
+    tr_idx = np.flatnonzero(np.asarray(tr_mask))
+    te_idx = np.flatnonzero(np.asarray(te_mask))
+    ss_res = np.empty(n_draws)
+    ss_tot = np.empty(n_draws)
+    step = max(1, NULL_DRAW_BATCH)
+    for s in range(0, n_draws, step):
+        sl = slice(s, min(s + step, n_draws))
+        p = perm_stack[sl]  # (b,N)
+        p_tr = torch.as_tensor(p[:, tr_idx], dtype=torch.long, device=dev)  # (b,n_tr)
+        p_te = torch.as_tensor(p[:, te_idx], dtype=torch.long, device=dev)  # (b,n_te)
+        Yp_tr = Y_t[p_tr]  # (b,n_tr,D)
+        Yp_te = Y_t[p_te]  # (b,n_te,D)
+        pred = _ridge_predict_cached_batched(cache, Yp_tr, lambdas=lambdas)  # (b,n_te,D)
+        mu = Yp_te.mean(1, keepdim=True)  # (b,1,D)
+        ss_res[sl] = ((Yp_te - pred) ** 2).sum(dim=(1, 2)).cpu().numpy()
+        ss_tot[sl] = ((Yp_te - mu) ** 2).sum(dim=(1, 2)).cpu().numpy()
+    return ss_res, ss_tot
 
 
 def _pooled_r2(pred: np.ndarray, true: np.ndarray) -> float:
@@ -207,6 +540,8 @@ def heldout_r2_sweep(
     null_draws: int,
     collect_cosines: bool = True,
     collect_lambdas: bool = False,
+    lambda_selection: str = "gcv",
+    _null_impl: str = "batched",
     frozen_layers: tuple[int, ...] | list[int] | None = None,
     lambdas: np.ndarray | list[float] | None = None,
 ) -> dict:
@@ -236,6 +571,10 @@ def heldout_r2_sweep(
     Null draws permute Y ROW-ORDER (whole example rows, seeded) and go through
     the IDENTICAL cached (w, V, Kev) fitting path as the observed fit.
     """
+    if lambda_selection not in LAMBDA_SELECTIONS:
+        raise ValueError(
+            f"unknown lambda_selection {lambda_selection!r} (want {LAMBDA_SELECTIONS})"
+        )
     fl = FROZEN_LAYERS if frozen_layers is None else tuple(int(x) for x in frozen_layers)
     X_layers = np.asarray(X_layers, dtype=np.float32)
     Y_layers = np.asarray(Y_layers, dtype=np.float32)
@@ -276,6 +615,17 @@ def heldout_r2_sweep(
             if te.sum() == 0 or tr.sum() < 3:
                 continue
             cache = _prep_fold(X[tr], X[te])
+            if lambda_selection == "inner-group-cv":
+                # Inner GROUP folds are seeded per OUTER fold (layer-shared
+                # partition; X differs per layer so the caches are per (li,k)).
+                cache["inner"] = _prep_inner_lambda(
+                    X[tr], ids[tr], N_INNER_LAMBDA_FOLDS, seed + 4242 + k
+                )
+                if cache["inner"] is None:
+                    print(
+                        f"[fit825] WARN: inner-group-cv fold {k}: <2 usable inner "
+                        "group folds — falling back to GCV for this fold"
+                    )
             if collect_lambdas:
                 pred, best_lam = _ridge_predict_cached(
                     cache, Y[tr], return_lam=True, lambdas=lambdas
@@ -291,13 +641,18 @@ def heldout_r2_sweep(
             if li in cosines and collect_cosines:
                 cosines[li][te] = _per_example_cosine(pred, true)
                 preds_frozen[li][te] = pred.astype(np.float32)
-            for d, perm in enumerate(null_perms):
-                Yp = Y[perm]
-                pred_n = _ridge_predict_cached(cache, Yp[tr], lambdas=lambdas)
-                true_n = Yp[te].astype(np.float64)
-                mu_n = true_n.mean(0)
-                ss_res_null[d, li] += float(np.sum((true_n - pred_n) ** 2))
-                ss_tot_null[d, li] += float(np.sum((true_n - mu_n) ** 2))
+            # Null draws: batched by default (device-resident reduce, only the
+            # (n_draws,) scalars return to CPU); serial reference retained for
+            # the equivalence gate. Reuses the SAME fold cache as the observed
+            # fit (no extra eigh) — semantics-preserving, only the compute shape
+            # changes (#1310 vectorization). The #1336 ``lambdas`` grid override
+            # threads through so observed + null scans stay selection-symmetric.
+            if null_perms:
+                ssr, sst = _null_ss_contrib(
+                    cache, Y, tr, te, null_perms, impl=_null_impl, lambdas=lambdas
+                )
+                ss_res_null[:, li] += ssr
+                ss_tot_null[:, li] += sst
 
     with np.errstate(divide="ignore", invalid="ignore"):
         r2_obs = 1.0 - ss_res_obs / np.where(ss_tot_obs < 1e-12, np.nan, ss_tot_obs)
@@ -363,6 +718,7 @@ def random_projection_control(
     layers: list[int],
     n_folds: int,
     seed: int,
+    lambda_selection: str = "gcv",
 ) -> dict:
     """Dimension-matched fixed-seed Gaussian random-projection control.
 
@@ -386,6 +742,10 @@ def random_projection_control(
             if te.sum() == 0 or tr.sum() < 3:
                 continue
             cache = _prep_fold(Xp[tr], Xp[te])
+            if lambda_selection == "inner-group-cv":
+                cache["inner"] = _prep_inner_lambda(
+                    Xp[tr], np.asarray(conv_ids)[tr], N_INNER_LAMBDA_FOLDS, seed + 4242 + k
+                )
             pred = _ridge_predict_cached(cache, Y[tr])
             true = Y[te].astype(np.float64)
             mu = true.mean(0)
@@ -434,8 +794,15 @@ def bootstrap_ci(values: np.ndarray, *, n_boot: int, seed: int) -> dict:
     }
 
 
-def bootstrap_r2_ci(pred: np.ndarray, true: np.ndarray, *, n_boot: int, seed: int) -> dict:
-    """Percentile bootstrap CI of pooled R^2, resampling examples."""
+def _bootstrap_r2_ci_serial_reference(
+    pred: np.ndarray, true: np.ndarray, *, n_boot: int, seed: int
+) -> dict:
+    """Serial reference for bootstrap_r2_ci (equivalence-gate oracle, tombstoned).
+
+    The pre-#1310 per-draw Python loop. Retained ONLY for the equivalence gate;
+    production callers use the batched bootstrap_r2_ci below.
+    """
+    _forbid_serial("_bootstrap_r2_ci_serial_reference")
     pred = np.asarray(pred, dtype=np.float64)
     true = np.asarray(true, dtype=np.float64)
     rng = np.random.default_rng(seed)
@@ -447,6 +814,56 @@ def bootstrap_r2_ci(pred: np.ndarray, true: np.ndarray, *, n_boot: int, seed: in
     vals = np.asarray(vals)
     return {
         "r2": _pooled_r2(pred, true),
+        "ci_lo": float(np.nanquantile(vals, 0.025)),
+        "ci_hi": float(np.nanquantile(vals, 0.975)),
+        "n": int(n),
+    }
+
+
+def bootstrap_r2_ci(pred: np.ndarray, true: np.ndarray, *, n_boot: int, seed: int) -> dict:
+    """Percentile bootstrap CI of pooled R^2, resampling examples.
+
+    Batched subset-sum GEMM (device-parametrized via _fit_device()): all n_boot
+    resample draws are one scatter-add (resample-index -> per-row counts) plus
+    two GEMMs over per-row reductions, replacing the n_boot-iteration Python
+    loop of fancy-index reductions (#1310 vectorization). For draw ``b`` with
+    resample counts ``c_b`` (n,):
+        ss_res(b) = sum_i c_b[i] * res_row[i]                 (counts @ res_row)
+        S(b,:)    = sum_i c_b[i] * true[i,:]                  (counts @ true)
+        ss_tot(b) = counts @ sq_row  -  (1/n) * ||S(b,:)||^2  (variance identity)
+    where res_row[i]=||true_i-pred_i||^2, sq_row[i]=||true_i||^2. Identical
+    identity to _pooled_r2 (equivalence-gated); with the same seed the resample
+    indices match the serial stream row-for-row, so r2/ci match to fp roundoff.
+    """
+    pred = np.asarray(pred, dtype=np.float64)
+    true = np.asarray(true, dtype=np.float64)
+    n = len(true)
+    r2_point = _pooled_r2(pred, true)
+    if n == 0 or n_boot <= 0:
+        return {"r2": r2_point, "ci_lo": float("nan"), "ci_hi": float("nan"), "n": int(n)}
+    dev = _fit_device()
+    tt = torch.as_tensor(true, dtype=torch.float64, device=dev)  # (n,D)
+    pp = torch.as_tensor(pred, dtype=torch.float64, device=dev)  # (n,D)
+    res_row = ((tt - pp) ** 2).sum(1)  # (n,)
+    sq_row = (tt**2).sum(1)  # (n,)
+    rng = np.random.default_rng(seed)
+    # rng.integers(size=(n_boot, n)) draws the SAME stream, row-major, as n_boot
+    # sequential size-n draws => batched indices == serial indices per draw.
+    idx = rng.integers(0, n, size=(n_boot, n))
+    idx_t = torch.as_tensor(idx, dtype=torch.long, device=dev)  # (n_boot,n)
+    counts = torch.zeros(n_boot, n, dtype=torch.float64, device=dev)
+    counts.scatter_add_(1, idx_t, torch.ones_like(idx_t, dtype=torch.float64))
+    ss_res = counts @ res_row  # (n_boot,)
+    S = counts @ tt  # (n_boot,D)
+    ss_tot = counts @ sq_row - (S**2).sum(1) / n  # (n_boot,)
+    r2 = torch.where(
+        ss_tot < 1e-12,
+        torch.full_like(ss_tot, float("nan")),
+        1.0 - ss_res / ss_tot,
+    )
+    vals = r2.cpu().numpy()
+    return {
+        "r2": r2_point,
         "ci_lo": float(np.nanquantile(vals, 0.025)),
         "ci_hi": float(np.nanquantile(vals, 0.975)),
         "n": int(n),
@@ -1605,8 +2022,75 @@ def _fit_within_cells(within: list[dict], allowlist_map: dict | None, args) -> d
     return results
 
 
+def assert_vectorized_equivalence(*, seed: int = 0, tol: float = 5e-6) -> dict:
+    """Equivalence gate: batched vs serial-oracle for the #1310 vectorization.
+
+    Exercises the EXACT dispatched functions (heldout_r2_sweep, bootstrap_r2_ci)
+    against their serial references on 2 synthetic grouped cells with a real
+    linear map (so R^2 is nontrivial), and asserts the batched results match the
+    serial oracle within ``tol``. Hollow-verification guard: the gated functions
+    ARE the production functions (identity below). Returns the realized deltas.
+    """
+    assert bootstrap_r2_ci.__module__ == __name__, "gate must test the dispatched bootstrap"
+    assert heldout_r2_sweep.__module__ == __name__, "gate must test the dispatched sweep"
+    global FROZEN_LAYERS
+    saved_frozen = FROZEN_LAYERS
+    rng = np.random.default_rng(seed)
+    n, dim, n_layers, n_groups = 72, 12, 5, 24
+    FROZEN_LAYERS = (1, 3)  # within the synthetic layer count so preds_frozen is populated
+    # grouped folds: 3 rows per group.
+    groups = np.repeat(np.arange(n_groups), n // n_groups)[:n].astype(str)
+    worst_null = 0.0
+    worst_obs = 0.0
+    worst_boot = 0.0
+    for _cell in range(2):
+        X = rng.standard_normal((n, n_layers, dim)).astype(np.float32)
+        W = (rng.standard_normal((n_layers, dim, dim)) * 0.4).astype(np.float32)
+        noise = (rng.standard_normal((n, n_layers, dim)) * 0.25).astype(np.float32)
+        Y = np.einsum("nld,lde->nle", X, W).astype(np.float32) + noise
+        sweep_b = heldout_r2_sweep(
+            X, Y, groups, n_folds=3, seed=seed, null_draws=8, _null_impl="batched"
+        )
+        sweep_s = heldout_r2_sweep(
+            X, Y, groups, n_folds=3, seed=seed, null_draws=8, _null_impl="serial"
+        )
+        d_null = float(np.nanmax(np.abs(sweep_b["r2_null"] - sweep_s["r2_null"])))
+        d_obs = float(np.nanmax(np.abs(sweep_b["r2_obs"] - sweep_s["r2_obs"])))
+        worst_null = max(worst_null, d_null)
+        worst_obs = max(worst_obs, d_obs)
+        li = next(iter(sweep_b["preds_frozen"]))
+        mask = sweep_b["fitted_mask"]
+        pred = sweep_b["preds_frozen"][li][mask]
+        true = Y[mask, li, :].astype(np.float64)
+        bb = bootstrap_r2_ci(pred, true, n_boot=200, seed=seed + 3)
+        bs = _bootstrap_r2_ci_serial_reference(pred, true, n_boot=200, seed=seed + 3)
+        d_boot = max(
+            abs(bb["r2"] - bs["r2"]),
+            abs(bb["ci_lo"] - bs["ci_lo"]),
+            abs(bb["ci_hi"] - bs["ci_hi"]),
+        )
+        worst_boot = max(worst_boot, d_boot)
+    FROZEN_LAYERS = saved_frozen
+    result = {
+        "max_abs_null_delta": worst_null,
+        "max_abs_obs_delta": worst_obs,
+        "max_abs_bootstrap_delta": worst_boot,
+        "tol": tol,
+        "device": str(_fit_device()),
+    }
+    assert worst_obs == 0.0, f"observed path changed (should be byte-identical): {result}"
+    assert worst_null <= tol and worst_boot <= tol, f"vectorized equivalence FAIL: {result}"
+    print(f"[fit_cells] vectorized-equivalence gate PASS: {result}")
+    return result
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="issue-825 vectorized cell fits")
+    parser.add_argument(
+        "--verify-vectorized",
+        action="store_true",
+        help="run the batched-vs-serial equivalence gate and exit (no fits)",
+    )
     parser.add_argument("--turnstore-dir", type=Path, default=Path("data/issue_825/turnstore"))
     parser.add_argument("--out-dir", type=Path, default=Path("eval_results/issue_825"))
     parser.add_argument("--cells", default="all")
@@ -1640,6 +2124,10 @@ def main() -> int:
         ),
     )
     args = parser.parse_args()
+
+    if args.verify_vectorized:
+        assert_vectorized_equivalence(seed=args.seed)
+        return 0
 
     allowlist_map: dict[str, list] | None = None
     if args.cell_row_allowlist is not None:

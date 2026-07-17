@@ -176,10 +176,11 @@ def test_good_plan_passes_all():
         "c35_pinned_revision_reuse": "SKIP",
         "c36_numeric_containment": "SKIP",
         "c37_noflags_bundling_claim": "SKIP",
+        "c38_exit0_repo_wide_baseline": "SKIP",
     }
     actual = {cid: r.status for cid, r in by_id.items()}
     assert actual == expected
-    assert len(results) == 37
+    assert len(results) == 38
 
 
 # ─── Check 0 — plan-nonstub ────────────────────────────────────────────────
@@ -5835,12 +5836,12 @@ def test_cli_json_schema_and_exit_zero_on_pass(tmp_path):
     assert payload["issue"] is None
     assert payload["kind"] == "experiment"
     assert payload["n_fail"] == 0
-    assert payload["n_skip"] == 30
+    assert payload["n_skip"] == 31
     assert {"id", "name", "status", "detail"} <= set(payload["checks"][0])
     statuses = {c["status"] for c in payload["checks"]}
     assert statuses <= {"PASS", "WARN", "FAIL", "SKIP"}
-    assert len(payload["checks"]) == 38
-    assert len({c["id"] for c in payload["checks"]}) == 38
+    assert len(payload["checks"]) == 39
+    assert len({c["id"] for c in payload["checks"]}) == 39
     # c23 has no task context in --plan-file mode: rendered SKIP (companion
     # assert for test_cli_issue_mode_appends_goal_currency).
     c23 = next(c for c in payload["checks"] if c["id"] == "c23_goal_currency")
@@ -6451,6 +6452,11 @@ def test_c32_skillmd_na_phrase_listed():
     block = text[anchor : text.index("bounce to the planner", anchor)]
     assert "no fit-family phases" in block
     assert "check 32" in block
+    # #1395 battery branch: the shared c12 escape phrase is annotated as
+    # also satisfying c32's battery branch, so a later SKILL.md edit cannot
+    # silently drop the cross-reference.
+    assert "no draw battery" in block
+    assert "also check 32's battery branch" in block
 
 
 def test_c33_skillmd_na_phrase_listed():
@@ -6470,7 +6476,7 @@ def test_c33_skillmd_na_phrase_listed():
     assert "`N/A — no checkpoint ladder`" in block
 
 
-# ─── Check 32 — fit-family §9 basis grounding ──────────────────────────────
+# ─── Check 32 — fit-family + battery §9 basis grounding (fit branch) ───────
 
 # Reusable §9 fit-row snippet: kernel vocabulary ("ridge") + loop vocabulary
 # ("3780 fits") in a basis-column compute table; the basis cell is the
@@ -6590,6 +6596,86 @@ def test_c32_kind_analysis_triggers():
     # The gated set is experiment + analysis; BOTH WARN (unlike c12/c18
     # there is no FAIL arm anywhere).
     assert _status(_c32_plan("~2 s/fit"), "c32_fit_basis_grounding", kind="analysis") == "WARN"
+
+
+# ─── Check 32 — battery branch (#1395 widening) ────────────────────────────
+
+# Reusable §9 battery-row snippet: battery framing ("perm-null battery") +
+# a >=100 draw count in a basis-column compute table, with NO fit-family
+# kernel vocabulary (so the row classifies to the battery branch, not the
+# fit branch); the basis cell is the per-test variable. The draw-bearing
+# multiplier + batched commitment keep c12 satisfied so the overall-ok
+# asserts isolate c32.
+C32_BATTERY_TABLE = """
+## 9. Resources & Parallelism
+
+| component | planned_wall_h | basis | parallelism |
+|---|---|---|---|
+| perm-null battery (200 draws x 24 cells, batched GEMM over the pool) | 1.3 | {basis} | 1x CPU |
+"""
+
+
+def _c32_battery_plan(basis: str) -> str:
+    return GOOD_PLAN + C32_BATTERY_TABLE.format(basis=basis)
+
+
+def test_c32_battery_row_asserted_flop_basis_warns():
+    # The #1092 shape moved into a table: a battery priced by FLOP /
+    # assumed-throughput with no provenance token WARNs (a FLOP floor is
+    # the cross-check, never the basis).
+    _, by_id = _run(_c32_battery_plan("2.6e14 FLOP at 2e11 FLOP/s incl. x2.5 overhead => ~1 h"))
+    r = by_id["c32_fit_basis_grounding"]
+    assert r.status == "WARN"
+    assert "N/A — no draw battery" in r.detail  # the WARN teaches the battery escape
+
+
+def test_c32_battery_row_measured_basis_passes():
+    basis = "measured 3.8 min/draw-block pilot => 200 draws in blocks ~1.3 h"
+    assert _status(_c32_battery_plan(basis), "c32_fit_basis_grounding") == "PASS"
+
+
+def test_c32_battery_row_prior_issue_basis_passes():
+    basis = "#1092 refit measured 12.8 h/box at ambient dim"
+    assert _status(_c32_battery_plan(basis), "c32_fit_basis_grounding") == "PASS"
+
+
+def test_c32_battery_row_pilot_gated_passes():
+    basis = "pilot-gated (first batched draw block, abort >2x re-projection)"
+    assert _status(_c32_battery_plan(basis), "c32_fit_basis_grounding") == "PASS"
+
+
+def test_c32_battery_na_no_draw_battery_escape_passes():
+    # The shared c12 escape phrase excuses the BATTERY branch (standalone
+    # unwrapped line, `_standalone_na_declared` anti-paste semantics).
+    plan = (
+        _c32_battery_plan("~1 h asserted")
+        + "\nN/A — no draw battery (the battery row quotes a sibling's sizing).\n"
+    )
+    _, by_id = _run(plan)
+    r = by_id["c32_fit_basis_grounding"]
+    assert r.status == "PASS"
+    assert "N/A declared" in r.detail
+
+
+def test_c32_judge_draws_row_does_not_trigger():
+    # A judge-style multi-draw row (small N, no battery framing) is not a
+    # battery: `_BATTERY_TRIGGER_RE`'s count arm needs >=3 digits and its
+    # framing arms need null/permutation vocabulary.
+    judge_table = (
+        "\n## 9. Resources\n\n"
+        "| component | planned_wall_h | basis | parallelism |\n"
+        "|---|---|---|---|\n"
+        "| graded judge (N=5 draws at temperature 1.0) | 0.5 | asserted api batch | api |\n"
+    )
+    assert _status(GOOD_PLAN + judge_table, "c32_fit_basis_grounding") == "SKIP"
+
+
+def test_c32_battery_warn_never_fails():
+    # WARN-only contract re-pinned for the battery branch (exit-0
+    # semantics): a battery offender never flips the overall verdict.
+    ok, by_id = _run(_c32_battery_plan("~1 h asserted"))
+    assert by_id["c32_fit_basis_grounding"].status == "WARN"
+    assert ok is True
 
 
 # ─── Check 33 — checkpoint-ladder retention policy ─────────────────────────
@@ -7457,6 +7543,138 @@ def test_c37_phrase_listed_in_skillmd():
     block = text[anchor : text.index("bounce to the planner", anchor)]
     assert "`N/A — no no-flags bundling claim`" in block
     assert "check 37" in block
+
+
+# ─── Check 38 — exit-0 criterion on repo-wide lint/suite ───────────────────
+
+# #1365 plans/v1.md:95 VERBATIM (inside a bash fence there — pins the RAW
+# scan). "no NEW failures" WITHOUT a named baseline must NOT satisfy: this
+# exact line was critic-bounced.
+C38_1365_LINE = "uv run python scripts/workflow_lint.py    # exit 0 — no NEW failures"
+C38_584_LINE = "uv run pytest tests/ -q  # full suite green"  # #584 plans/v1.md:182 verbatim
+
+
+def _c38_plan(*extra: str) -> str:
+    return GOOD_PLAN + "\n" + "\n\n".join(extra) + ("\n" if extra else "")
+
+
+def _c38_fenced(line: str) -> str:
+    return "```bash\n" + line + "\n```"
+
+
+def test_c38_1365_incident_line_warns():
+    # The motivating incident line, inside a bash fence (RAW-scan pin).
+    _, by_id = _run(_c38_plan(_c38_fenced(C38_1365_LINE)), kind="infra")
+    r = by_id["c38_exit0_repo_wide_baseline"]
+    assert r.status == "WARN"
+    assert "workflow_lint.py (no --check- scoping)" in r.detail
+
+
+def test_c38_fires_for_experiment_kind_too():
+    # ALL kinds (c21 precedent) — no kind exemption.
+    plan = _c38_plan(_c38_fenced(C38_1365_LINE))
+    assert _status(plan, "c38_exit0_repo_wide_baseline", kind="experiment") == "WARN"
+
+
+def test_c38_584_full_suite_green_warns():
+    _, by_id = _run(_c38_plan(C38_584_LINE), kind="infra")
+    r = by_id["c38_exit0_repo_wide_baseline"]
+    assert r.status == "WARN"
+    assert "pytest (no path scope)" in r.detail
+
+
+def test_c38_baseline_satisfier_passes():
+    # A NAMED baseline mechanism on the criterion line satisfies; contrast
+    # with C38_1365_LINE where bare "no NEW failures" does NOT.
+    line = (
+        "uv run python scripts/workflow_lint.py    "
+        "# exit 0 — no NEW failures vs the plan-time baseline"
+    )
+    assert _status(_c38_plan(line), "c38_exit0_repo_wide_baseline", kind="infra") == "PASS"
+
+
+def test_c38_step9c_satisfier_passes():
+    line = "uv run pytest tests/ -q  # green vs the step9c baseline"
+    assert _status(_c38_plan(line), "c38_exit0_repo_wide_baseline", kind="infra") == "PASS"
+
+
+def test_c38_scoped_lint_does_not_trigger():
+    # #1365 v2:97 corrected shape: a --check-scoped invocation is not arm A.
+    line = "uv run python scripts/workflow_lint.py --check-lessons-index   # exit 0"
+    assert _status(_c38_plan(line), "c38_exit0_repo_wide_baseline", kind="infra") == "SKIP"
+
+
+def test_c38_scoped_pytest_does_not_trigger():
+    line = "uv run pytest tests/test_verify_plan.py -x  # exit 0"
+    assert _status(_c38_plan(line), "c38_exit0_repo_wide_baseline", kind="infra") == "SKIP"
+
+
+def test_c38_repo_wide_ruff_warns():
+    _, by_id = _run(_c38_plan("uv run ruff check .  # exit 0"), kind="infra")
+    r = by_id["c38_exit0_repo_wide_baseline"]
+    assert r.status == "WARN"
+    assert "ruff check/format (repo-wide)" in r.detail
+
+
+def test_c38_scoped_ruff_does_not_trigger():
+    line = "uv run ruff check scripts/verify_plan.py  # exit 0"
+    assert _status(_c38_plan(line), "c38_exit0_repo_wide_baseline", kind="infra") == "SKIP"
+
+
+def test_c38_negated_prose_does_not_trigger():
+    # #1365 v2:101 corrected shape: prose DESCRIBING the hazard is never
+    # adjudicated (negation guard).
+    line = (
+        "The full no-flags `workflow_lint.py` run is NOT a pass criterion here — "
+        "exit 0 is unattainable on origin/main."
+    )
+    assert _status(_c38_plan(line), "c38_exit0_repo_wide_baseline", kind="infra") == "SKIP"
+
+
+def test_c38_test_filename_mention_skips():
+    # The (?<!test_) lookbehind keeps `tests/test_workflow_lint.py` out of
+    # arm A, and the pytest path-scope keeps it out of the pytest arm.
+    line = "`uv run pytest tests/test_workflow_lint.py -x` green"
+    assert _status(_c38_plan(line), "c38_exit0_repo_wide_baseline", kind="infra") == "SKIP"
+
+
+def test_c38_na_escape_passes():
+    plan = _c38_plan(_c38_fenced(C38_1365_LINE), "N/A — no exit-0 acceptance criterion")
+    assert _status(plan, "c38_exit0_repo_wide_baseline", kind="infra") == "PASS"
+
+
+def test_c38_no_trigger_skips():
+    assert _status(GOOD_PLAN, "c38_exit0_repo_wide_baseline", kind="infra") == "SKIP"
+
+
+# Arm-B coverage (critic round-1 Must-Fix: arm B + its suppression branch
+# had zero tests):
+
+
+def test_c38_noflags_phrase_warns():
+    # Arm B: the "no-flags default run" phrase with no lint token on the line.
+    _, by_id = _run(_c38_plan("the no-flags default run must exit 0 after the edit"), kind="infra")
+    r = by_id["c38_exit0_repo_wide_baseline"]
+    assert r.status == "WARN"
+    assert "no-flags default run" in r.detail
+
+
+def test_c38_noflags_phrase_suppressed_by_scoped_lint():
+    # Arm-B suppression: a SCOPED workflow_lint invocation on the same line
+    # makes the no-flags phrase commentary (saw_scoped_lint pin). No
+    # satisfier token on the line, so the SKIP is the suppression's doing.
+    line = "`workflow_lint.py --check-asks` exits 0; the no-flags default run also gets exercised"
+    assert _status(_c38_plan(line), "c38_exit0_repo_wide_baseline", kind="infra") == "SKIP"
+
+
+# Adversarial paste-back (critic round-1 recoverable, mechanizable):
+
+
+def test_c38_wrapped_na_does_not_escape():
+    # A backtick-wrapped paste of the remedy's quoted form is NOT a
+    # declaration (_standalone_na_declared rejects wrapped forms).
+    plan = _c38_plan(_c38_fenced(C38_1365_LINE), "`N/A — no exit-0 acceptance criterion`")
+    assert _status(plan, "c38_exit0_repo_wide_baseline", kind="infra") == "WARN"
 
 
 def test_canonical_json_parse_snippet_pinned():

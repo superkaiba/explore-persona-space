@@ -411,9 +411,12 @@ def test_recent_closed_excludes_open_tasks(fake_repo):
     assert tw.recent_closed_workflow_fix_tasks(target) == []
 
 
-def test_recent_closed_excludes_non_wf_fix_titles(fake_repo):
-    """A completed kind:infra task whose title lacks a wf-fix channel prefix
-    is ignored even with a matching workflow_fix_target line."""
+def test_recent_closed_plain_infra_included_via_target_body_match(fake_repo):
+    """#1446 widened pass: a completed kind:infra task WITHOUT a wf-fix channel
+    prefix now surfaces when a candidate target path appears in its body (the
+    `workflow_fix_target:` line makes the path a body substring — the widened
+    arm needs no anchored line). No candidate title is passed, so `matched`
+    is exactly the target arm."""
     _, tw = fake_repo
     target = "CLAUDE.md"
     fp = tw.wf_fix_fingerprint("Fix the gate.", "gate wrong")
@@ -426,7 +429,142 @@ def test_recent_closed_excludes_non_wf_fix_titles(fake_repo):
         )
     )
     tw.set_status(tid, "completed")
-    assert tw.recent_closed_workflow_fix_tasks(target) == []
+    hits = tw.recent_closed_workflow_fix_tasks(target)
+    assert [h["id"] for h in hits] == [tid]
+    assert hits[0]["matched"] == ["infra-target"]
+    assert hits[0]["target"] == "CLAUDE.md"
+
+
+def test_recent_closed_plain_infra_opt_out(fake_repo):
+    """`include_plain_infra=False` reproduces the pre-#1446 population: the
+    same non-prefixed completed task is ignored even with a matching
+    workflow_fix_target line (the old exclusion semantics behind the kwarg)."""
+    _, tw = fake_repo
+    target = "CLAUDE.md"
+    fp = tw.wf_fix_fingerprint("Fix the gate.", "gate wrong")
+    tid = tw.create_task(
+        tw.NewTaskRequest(
+            kind="infra",
+            title="refactor: tidy the gate",
+            body=_wf_fix_body(target, fp, "Fix the gate."),
+            tags=["wf-fix", f"wf-fix-fp:{fp}"],
+        )
+    )
+    tw.set_status(tid, "completed")
+    assert tw.recent_closed_workflow_fix_tasks(target, include_plain_infra=False) == []
+
+
+def test_recent_closed_plain_infra_fires_on_1360_1386_shape(fake_repo):
+    """Incident regression pin (durability pin, #1446): the REAL #1386-over-
+    #1360 shape — #1360 was a genuinely ordinary infra task (no channel
+    prefix, no wf-fix tags, no anchored `workflow_fix_target:` line) whose
+    body named `src/explore_persona_space/orchestrate/hub.py` in prose. The
+    widened pass surfaces it via BOTH arms: shared informative title tokens
+    {queue-full, retry} (exactly the >=2 bar) and the candidate target path
+    as a body substring."""
+    _, tw = fake_repo
+    sibling = tw.create_task(
+        tw.NewTaskRequest(
+            kind="infra",
+            title=(
+                "hub.py::_upload: bounded transport-class retry (429/Xet queue-full) "
+                "before no-path return"
+            ),
+            body=(
+                "## Goal\n\n"
+                "Add a bounded retry for transport-class upload failures in\n"
+                "src/explore_persona_space/orchestrate/hub.py before the no-path return.\n"
+            ),
+        )
+    )
+    tw.set_status(sibling, "completed")
+
+    hits = tw.recent_closed_workflow_fix_tasks(
+        "src/explore_persona_space/orchestrate/hub.py",
+        "daily-fix: hub Xet queue-full transient retry",
+    )
+    assert [h["id"] for h in hits] == [sibling]
+    assert "infra-title:queue-full,retry" in hits[0]["matched"]
+    assert "infra-target" in hits[0]["matched"]
+    assert hits[0]["target"] == "src/explore_persona_space/orchestrate/hub.py"
+
+
+def test_recent_closed_plain_infra_title_arm_needs_two_tokens(fake_repo):
+    """AC4 differential: the widened title arm requires >=2 shared informative
+    tokens (1 shared token -> no widened hit), while the SAME 1-token overlap
+    WITH a wf-fix channel prefix still surfaces via the prefixed pass's >=1
+    bar — proving the prefixed bar is untouched."""
+    _, tw = fake_repo
+    plain = tw.create_task(
+        tw.NewTaskRequest(
+            kind="infra",
+            title="watcher retry backstop for pod polling",
+            body="## Goal\n\nplain infra sibling\n",
+        )
+    )
+    tw.set_status(plain, "completed")
+    # Prefixed CONTROL: same words behind the workflow-fix: channel prefix
+    # (_file_wf_fix_task builds the title as f"workflow-fix: {...}").
+    prefixed = _file_wf_fix_task(
+        tw,
+        "scripts/pod_watch.py",
+        tw.wf_fix_fingerprint("Watcher retry backstop.", "watcher retry gap"),
+        proposed_change="watcher retry backstop for pod polling",
+    )
+    tw.set_status(prefixed, "completed")
+
+    hits = tw.recent_closed_workflow_fix_tasks(None, "workflow-fix: retry advisory widening")
+    assert [h["id"] for h in hits] == [prefixed]
+    assert hits[0]["matched"] == ["title:retry"]
+
+
+def test_recent_closed_plain_infra_body_read_window_gated(fake_repo, monkeypatch):
+    """AC5 cost gate: on the widened pass the closure-window check precedes
+    the body read — an out-of-window non-prefixed task is never body-read.
+    Single-task fixture (a prefixed task with a candidate target would
+    legitimately body-read before its window check)."""
+    _, tw = fake_repo
+    tid = tw.create_task(
+        tw.NewTaskRequest(
+            kind="infra",
+            title="refactor: tidy the gate",
+            body="## Goal\n\nnames CLAUDE.md in prose\n",
+        )
+    )
+    tw.set_status(tid, "completed")
+
+    real_read_body = tw._read_body
+    calls: list = []
+
+    def _recording_read_body(path):
+        calls.append(path)
+        return real_read_body(path)
+
+    monkeypatch.setattr(tw, "_read_body", _recording_read_body)
+    future = datetime.now(UTC) + timedelta(days=8)
+    assert tw.recent_closed_workflow_fix_tasks("CLAUDE.md", None, now=future) == []
+    assert calls == []
+
+
+def test_recent_closed_plain_infra_fail_soft_missing_body(fake_repo):
+    """Widened-pass fail-soft: a non-prefixed task whose body.md is gone still
+    surfaces via the infra-title arm (its infra-target arm is silently
+    unavailable) — mirrors the prefixed-pass missing-body pin."""
+    _, tw = fake_repo
+    tid = tw.create_task(
+        tw.NewTaskRequest(
+            kind="infra",
+            title="widen advisory scan for closed infra",
+            body="## Goal\n\nbody to be deleted\n",
+        )
+    )
+    tw.set_status(tid, "completed")
+    (tw.find_task_path(tid) / "body.md").unlink()
+
+    hits = tw.recent_closed_workflow_fix_tasks("CLAUDE.md", "workflow-fix: widen advisory")
+    assert [h["id"] for h in hits] == [tid]
+    assert hits[0]["matched"] == ["infra-title:advisory,widen"]
+    assert hits[0]["target"] is None
 
 
 def test_recent_closed_target_overlap_comma_list(fake_repo):

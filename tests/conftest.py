@@ -214,6 +214,50 @@ def _forbid_real_task_status_reads(request, monkeypatch):
         monkeypatch.setattr(asw, "_task_status", _make_guarded(asw._task_status))
 
 
+@pytest.fixture(autouse=True)
+def _forbid_real_guard_apply_launches(request, monkeypatch):
+    """#1392 hermeticity guard (fail-loud), shared across watcher test modules
+    — same family as the #1247/#1265 guards above. The sub-floor RECLAIM arm
+    (`subfloor_reclaim_pass`) launches a DETACHED `vm_disk_guard.py --apply`;
+    an unpatched launch from pytest would sweep the live VM's caches. Two
+    layers: (a) the arm's kill switch is set by default, so the many
+    pre-existing `vm_disk_pass(dry_run=False)` fixtures below the 60 GiB
+    sub-floor never reach the launch path (a test exercising the arm
+    `monkeypatch.delenv`s it); (b) `_launch_guard_apply` is wrapped fail-loud
+    — a real-BODY exercise against a STUBBED subprocess.Popen (the argv
+    durability pin) is allowed through; only a call with the GENUINE
+    subprocess.Popen still live fails loud. A later test-level monkeypatch
+    (a recorder) wins, as with the sibling guards."""
+    watchers = _watcher_modules(request)
+    if not watchers:
+        return
+    monkeypatch.setenv("EPM_DISABLE_SUBFLOOR_RECLAIM", "1")
+    import functools
+    import subprocess as _sp
+
+    real_popen = _sp.Popen
+
+    def _make_guarded(real_launch):
+        @functools.wraps(real_launch)
+        def _guarded(log_path):
+            if _sp.Popen is real_popen:
+                raise AssertionError(
+                    f"_launch_guard_apply({log_path!r}) reached the #1392 autouse "
+                    "hermeticity guard (shared, tests/conftest.py) with the REAL "
+                    "subprocess.Popen still live — the real body would launch a detached "
+                    "`vm_disk_guard.py --apply` sweep of the live VM. Monkeypatch a "
+                    "recorder for _launch_guard_apply (or stub subprocess.Popen) in the "
+                    "test."
+                )
+            return real_launch(log_path)
+
+        return _guarded
+
+    for asw in watchers:
+        if hasattr(asw, "_launch_guard_apply"):
+            monkeypatch.setattr(asw, "_launch_guard_apply", _make_guarded(asw._launch_guard_apply))
+
+
 # ─── #1247 fleet-mutating pass stub for FULL-main() watcher tests (#1278) ────
 #
 # Shared home for the call-explicit stub helper formerly duplicated in
@@ -241,6 +285,10 @@ _FLEET_MUTATING_PASS_NAMES = (
     # #1341: escalate-only too, but it runs a REAL `git status` against the
     # LIVE shared root and can write real sidecar rows + fire real pushes.
     "root_draft_pass",
+    # #1439: report-only too, but it runs REAL task_workflow.audit() +
+    # reconcile_registry(apply=False) reads against the LIVE registry and can
+    # write real sidecar rows / state / pushes from a full-main() unit test.
+    "registry_drift_pass",
     "cpu_guard_pass",
     "happy_patch_pass",
     "data_disk_pass",

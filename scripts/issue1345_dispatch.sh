@@ -1,12 +1,26 @@
 #!/usr/bin/env bash
 # issue-1345 pod-side phase driver:
-#   prefetch -> phase0 -> gen_stories -> extract_r1r2 -> extract_stories ->
-#   matchedn -> fits -> transfer -> opcomp -> plots -> upload -> push.
+#   prefetch -> prefetch_reuse -> phase0 -> gen_stories -> extract_r1r2 ->
+#   extract_stories -> matchedn -> fits -> transfer -> opcomp -> plots ->
+#   upload -> push.
 # Runs under the GCP lane contract: REPO_ROOT="$WORKLOAD_ROOT" bash scripts/issue1345_dispatch.sh
 # SMOKE (--smoke) runs the IDENTICAL phase chain at tiny row-n with outputs
 # diverted to a scratch root + the issue1345_smoke/ HF prefix (PASS_UNIFIED).
 # --dry-run composes + prints every phase command, writes the sentinel, exits 0
 # (the poller-facing plumbing check; no GPU work).
+#
+# assistant-named-story follow-up flags (plan v6 §4):
+#   --character-name <Name>  story-arm AI character name (default ARIA); rides
+#                            inline as EPM_STORY_CHARACTER_NAME on every
+#                            composed phase command (the GCE lane has no
+#                            dispatch-env passthrough — env rides this string).
+#   --variant <slug>         scopes output dirs, HF prefixes, and the smoke
+#                            root one level deeper (never clobber the parent);
+#                            enables prefetch_reuse (REPLACES extract_r1r2 —
+#                            the parent's r1/r2 turnstore is downloaded at the
+#                            pinned revision instead of re-extracted) + the
+#                            r1/r2 refit-equality gate.
+#   A non-default --character-name WITHOUT --variant is a fail-loud abort.
 set -euo pipefail
 
 REPO_ROOT="${REPO_ROOT:-/workspace/explore-persona-space}"
@@ -14,30 +28,62 @@ cd "$REPO_ROOT" || { echo "FATAL: cd $REPO_ROOT failed" >&2; exit 1; }
 # GCE lane exports tokens via startup metadata and has NO .env — conditional only.
 if [ -f ./.env ]; then set -a; . ./.env; set +a; fi
 
-PHASE="all"; FROM_PHASE=""; SMOKE=""; DRY_RUN=""
+PHASE="all"; FROM_PHASE=""; SMOKE=""; DRY_RUN=""; CHARACTER_NAME="ARIA"; VARIANT=""
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --phase) PHASE="$2"; shift 2 ;;
     --from-phase) FROM_PHASE="$2"; shift 2 ;;
     --smoke) SMOKE="1"; shift ;;
     --dry-run) DRY_RUN="1"; shift ;;
+    --character-name) CHARACTER_NAME="$2"; shift 2 ;;
+    --variant) VARIANT="$2"; shift 2 ;;
     *) echo "FATAL: unknown arg $1" >&2; exit 1 ;;
   esac
 done
 
+# Charset guards: both values are spliced into dir paths, HF prefixes, and
+# env-assignment prefixes on composed commands — reject anything unsafe.
+if ! [[ "$CHARACTER_NAME" =~ ^[A-Za-z0-9_]+$ ]]; then
+  echo "FATAL: --character-name '$CHARACTER_NAME' must match [A-Za-z0-9_]+" >&2; exit 1
+fi
+if [[ -n "$VARIANT" ]] && ! [[ "$VARIANT" =~ ^[A-Za-z0-9_]+$ ]]; then
+  echo "FATAL: --variant '$VARIANT' must match [A-Za-z0-9_]+" >&2; exit 1
+fi
+# Fail-loud pairing (plan v6 §4): a non-default name without a variant would
+# clobber the parent run's output dirs + HF prefixes.
+if [[ "$CHARACTER_NAME" != "ARIA" && -z "$VARIANT" ]]; then
+  echo "FATAL: --character-name $CHARACTER_NAME requires --variant <slug> (plan v6 §4" \
+       "fail-loud pairing — never clobber the parent's dirs/HF prefixes)" >&2
+  exit 1
+fi
+
+# Inline env for every composed phase command (empty when no --variant, so the
+# default run's composed commands stay byte-identical to the parent's).
+ENV_INLINE=""
+if [[ -n "$VARIANT" ]]; then
+  ENV_INLINE="EPM_STORY_CHARACTER_NAME=$CHARACTER_NAME EPM_I1345_VARIANT=$VARIANT"
+  export EPM_STORY_CHARACTER_NAME="$CHARACTER_NAME" EPM_I1345_VARIANT="$VARIANT"
+fi
+
 # Extractor RSS trim (#825 run-5 kernel OOM: arena free lists retained blocks)
 export MALLOC_MMAP_THRESHOLD_=131072
 
-PHASES=(prefetch phase0 gen_stories extract_r1r2 extract_stories matchedn fits transfer opcomp plots upload push)
+PHASES=(prefetch prefetch_reuse phase0 gen_stories extract_r1r2 extract_stories matchedn fits transfer opcomp plots upload push)
 
+VSUB=""; [[ -n "$VARIANT" ]] && VSUB="/$VARIANT"
 if [[ -n "$SMOKE" ]]; then
-  OUT_ROOT="${EPM_OUTPUT_ROOT:-/tmp/issue-1345-smoke}"
+  OUT_ROOT="${EPM_OUTPUT_ROOT:-/tmp/issue-1345-smoke${VARIANT:+-$VARIANT}}"
   EVAL_DIR="$OUT_ROOT/eval_results"; FIG_DIR="$OUT_ROOT/figures"; DATA_DIR="$OUT_ROOT/data"
   SMOKE_FLAG="--smoke"; NULLS=3; NBOOT=25; ROTD=5
 else
-  EVAL_DIR="eval_results/issue_1345"; FIG_DIR="figures/issue_1345"; DATA_DIR="data/issue_1345"
+  EVAL_DIR="eval_results/issue_1345$VSUB"; FIG_DIR="figures/issue_1345$VSUB"; DATA_DIR="data/issue_1345$VSUB"
   SMOKE_FLAG=""; NULLS=20; NBOOT=1000; ROTD=50
 fi
+# r1/r2 refit-equality gate (plan v6 §7): variant runs compare the refit cells
+# against the parent's COMMITTED (non-variant) cell JSONs; exit 3 on a
+# production miss, informational under --smoke.
+REFIT_REF_FLAG=""
+[[ -n "$VARIANT" ]] && REFIT_REF_FLAG="--refit-equality-ref eval_results/issue_1345"
 TS_DIR="$DATA_DIR/turnstore"; STORIES_DIR="$DATA_DIR/stories"
 MATCHED_DIR="$DATA_DIR/matched_n"; PREDS_DIR="$DATA_DIR/preds_cache"; DL_DIR="$DATA_DIR/hf_dl"
 LOG_DIR="${EPM_LOG_DIR:-/workspace/logs}"
@@ -73,7 +119,7 @@ NGPU=0
 if command -v nvidia-smi >/dev/null 2>&1; then
   NGPU=$(nvidia-smi --query-gpu=index --format=csv,noheader 2>/dev/null | wc -l)
 fi
-echo "[dispatch] issue-1345 phase=$PHASE from=$FROM_PHASE smoke=${SMOKE:-0} dry=${DRY_RUN:-0} ngpu=$NGPU"
+echo "[dispatch] issue-1345 phase=$PHASE from=$FROM_PHASE smoke=${SMOKE:-0} dry=${DRY_RUN:-0} ngpu=$NGPU character_name=$CHARACTER_NAME variant=${VARIANT:-none}"
 
 should_run() {
   local phase="$1"
@@ -192,18 +238,31 @@ PY
 
 if should_run prefetch; then
   echo "[phase=prefetch]"
-  run_cmd uv run python -c "import sys; sys.path.insert(0, 'scripts'); import issue1345_common as c; [c.list_parent_shards(s) for s in c.PARENT_STEMS]; print('prefetch OK: all four pinned stems resolve @', c.PIN_REV)"
+  run_cmd ${ENV_INLINE:+env} ${ENV_INLINE} uv run python -c "import sys; sys.path.insert(0, 'scripts'); import issue1345_common as c; [c.list_parent_shards(s) for s in c.PARENT_STEMS]; print('prefetch OK: all four pinned stems resolve @', c.PIN_REV)"
+fi
+
+if should_run prefetch_reuse; then
+  if [[ -z "$VARIANT" ]]; then
+    echo "[phase=prefetch_reuse] SKIPPED — default run re-extracts r1/r2 (no --variant)"
+  else
+    echo "[phase=prefetch_reuse]"
+    # Stages the parent ARIA-run's 4 r1/r2 stems + matched-n allowlist at the
+    # pinned revision (REPLACES extract_r1r2 — plan v6 §4) and runs the
+    # per-stem realized-keys probe (plan §10 c30).
+    run_cmd ${ENV_INLINE:+env} ${ENV_INLINE} uv run python scripts/issue1345_prefetch_reuse.py \
+      --turnstore-dir "$TS_DIR" --matched-dir "$MATCHED_DIR" $SMOKE_FLAG
+  fi
 fi
 
 if should_run phase0; then
   echo "[phase=phase0]"
-  run_cmd uv run python scripts/issue1345_fit_cells.py --phase0 \
+  run_cmd ${ENV_INLINE:+env} ${ENV_INLINE} uv run python scripts/issue1345_fit_cells.py --phase0 \
     --dl-dir "$DL_DIR" --out-dir "$EVAL_DIR"
 fi
 
 if should_run gen_stories; then
   echo "[phase=gen_stories]"
-  run_per_model gen "uv run python scripts/issue1345_gen_stories.py --model %MODEL% --out-dir '$STORIES_DIR' --dl-dir '$DL_DIR' $SMOKE_FLAG"
+  run_per_model gen "${ENV_INLINE:+$ENV_INLINE }uv run python scripts/issue1345_gen_stories.py --model %MODEL% --out-dir '$STORIES_DIR' --dl-dir '$DL_DIR' $SMOKE_FLAG"
   if [[ -z "$DRY_RUN" ]]; then
     # rc=21 == THAT model's yield floor failed (plan §7, per-model): halt only
     # that model's story leg; any rc outside {0,21} is a crash -> fatal.
@@ -226,10 +285,14 @@ if should_run gen_stories; then
 fi
 
 if should_run extract_r1r2; then
-  echo "[phase=extract_r1r2]"
-  run_per_model extract_r1r2 "uv run python scripts/issue1345_extract_turnstore.py --regime r1 --model %MODEL% --out-dir '$TS_DIR' --dl-dir '$DL_DIR' $SMOKE_FLAG && uv run python scripts/issue1345_extract_turnstore.py --regime r2 --model %MODEL% --out-dir '$TS_DIR' --dl-dir '$DL_DIR' $SMOKE_FLAG"
-  if [[ -z "$DRY_RUN" && ( "${RC_INSTRUCT:-0}" -ne 0 || "${RC_PRETRAINED:-0}" -ne 0 ) ]]; then
-    echo "FATAL: extract_r1r2 failed (rc_i=${RC_INSTRUCT} rc_p=${RC_PRETRAINED})" >&2; exit 1
+  if [[ -n "$VARIANT" ]]; then
+    echo "[phase=extract_r1r2] SKIPPED — variant reuses the parent's turnstore at the pinned revision (prefetch_reuse, plan v6 §4)"
+  else
+    echo "[phase=extract_r1r2]"
+    run_per_model extract_r1r2 "uv run python scripts/issue1345_extract_turnstore.py --regime r1 --model %MODEL% --out-dir '$TS_DIR' --dl-dir '$DL_DIR' $SMOKE_FLAG && uv run python scripts/issue1345_extract_turnstore.py --regime r2 --model %MODEL% --out-dir '$TS_DIR' --dl-dir '$DL_DIR' $SMOKE_FLAG"
+    if [[ -z "$DRY_RUN" && ( "${RC_INSTRUCT:-0}" -ne 0 || "${RC_PRETRAINED:-0}" -ne 0 ) ]]; then
+      echo "FATAL: extract_r1r2 failed (rc_i=${RC_INSTRUCT} rc_p=${RC_PRETRAINED})" >&2; exit 1
+    fi
   fi
 fi
 
@@ -241,7 +304,7 @@ if should_run extract_stories; then
     echo "[phase=extract_stories]"
     [[ "$R3_LIVE" != "instruct pretrained" ]] && \
       echo "[extract_stories] per-model: running only [$R3_LIVE] (halted: $(halted_models))"
-    RUN_MODELS="$R3_LIVE" run_per_model extract_stories "uv run python scripts/issue1345_extract_turnstore.py --regime r3 --model %MODEL% --out-dir '$TS_DIR' --stories-dir '$STORIES_DIR' $SMOKE_FLAG"
+    RUN_MODELS="$R3_LIVE" run_per_model extract_stories "${ENV_INLINE:+$ENV_INLINE }uv run python scripts/issue1345_extract_turnstore.py --regime r3 --model %MODEL% --out-dir '$TS_DIR' --stories-dir '$STORIES_DIR' $SMOKE_FLAG"
     if [[ -z "$DRY_RUN" && ( "${RC_INSTRUCT:-0}" -ne 0 || "${RC_PRETRAINED:-0}" -ne 0 ) ]]; then
       echo "FATAL: extract_stories failed (rc_i=${RC_INSTRUCT} rc_p=${RC_PRETRAINED})" >&2; exit 1
     fi
@@ -253,14 +316,14 @@ if should_run matchedn; then
   # Parity gate (±0.02 vs pinned anchors; exit 3 halts) + matched-n subsets.
   # $SMOKE_FLAG demotes ONLY the anchor comparison to informational — the
   # anchors bind at production n; the computation still runs (PASS_UNIFIED).
-  run_cmd env CUDA_VISIBLE_DEVICES=0 uv run python scripts/issue1345_fit_cells.py \
+  run_cmd env CUDA_VISIBLE_DEVICES=0 ${ENV_INLINE} uv run python scripts/issue1345_fit_cells.py \
     --parity --build-matched --no-r3-models "$(halted_models)" $SMOKE_FLAG \
     --turnstore-dir "$TS_DIR" --matched-dir "$MATCHED_DIR" --out-dir "$EVAL_DIR"
 fi
 
 if should_run fits; then
   echo "[phase=fits]"
-  run_per_model fits "uv run python -c \"import sys; sys.path.insert(0,'scripts'); import issue1345_common as c; print(','.join(x['cell_id'] for x in c.all_cells() if x['model_key']=='%MODEL%'))\" > /tmp/i1345_cells_%MODEL%.txt && uv run python scripts/issue1345_fit_cells.py --cells \$(cat /tmp/i1345_cells_%MODEL%.txt) %NO_R3% $SMOKE_FLAG --turnstore-dir '$TS_DIR' --matched-dir '$MATCHED_DIR' --out-dir '$EVAL_DIR' --preds-dir '$PREDS_DIR' --null-draws $NULLS --n-boot $NBOOT"
+  run_per_model fits "${ENV_INLINE:+$ENV_INLINE }uv run python -c \"import sys; sys.path.insert(0,'scripts'); import issue1345_common as c; print(','.join(x['cell_id'] for x in c.all_cells() if x['model_key']=='%MODEL%'))\" > /tmp/i1345_cells_%MODEL%${VARIANT:+_$VARIANT}.txt && ${ENV_INLINE:+$ENV_INLINE }uv run python scripts/issue1345_fit_cells.py --cells \$(cat /tmp/i1345_cells_%MODEL%${VARIANT:+_$VARIANT}.txt) %NO_R3% $SMOKE_FLAG $REFIT_REF_FLAG --turnstore-dir '$TS_DIR' --matched-dir '$MATCHED_DIR' --out-dir '$EVAL_DIR' --preds-dir '$PREDS_DIR' --null-draws $NULLS --n-boot $NBOOT"
   if [[ -z "$DRY_RUN" && ( "${RC_INSTRUCT:-0}" -ne 0 || "${RC_PRETRAINED:-0}" -ne 0 ) ]]; then
     echo "FATAL: fits failed (rc_i=${RC_INSTRUCT} rc_p=${RC_PRETRAINED})" >&2; exit 1
   fi
@@ -268,7 +331,7 @@ fi
 
 if should_run transfer; then
   echo "[phase=transfer]"
-  run_per_model transfer "uv run python scripts/issue1345_cross_regime_transfer.py --models %MODEL% %NO_R3% $SMOKE_FLAG --turnstore-dir '$TS_DIR' --matched-dir '$MATCHED_DIR' --out-dir '$EVAL_DIR' --preds-dir '$PREDS_DIR' --n-boot $NBOOT"
+  run_per_model transfer "${ENV_INLINE:+$ENV_INLINE }uv run python scripts/issue1345_cross_regime_transfer.py --models %MODEL% %NO_R3% $SMOKE_FLAG --turnstore-dir '$TS_DIR' --matched-dir '$MATCHED_DIR' --out-dir '$EVAL_DIR' --preds-dir '$PREDS_DIR' --n-boot $NBOOT"
   if [[ -z "$DRY_RUN" && ( "${RC_INSTRUCT:-0}" -ne 0 || "${RC_PRETRAINED:-0}" -ne 0 ) ]]; then
     echo "FATAL: transfer failed (rc_i=${RC_INSTRUCT} rc_p=${RC_PRETRAINED})" >&2; exit 1
   fi
@@ -276,7 +339,7 @@ fi
 
 if should_run opcomp; then
   echo "[phase=opcomp]"
-  run_per_model opcomp "uv run python scripts/issue1345_operator_comparison.py --models %MODEL% %NO_R3% $SMOKE_FLAG --turnstore-dir '$TS_DIR' --matched-dir '$MATCHED_DIR' --out-dir '$EVAL_DIR' --rot-draws $ROTD"
+  run_per_model opcomp "${ENV_INLINE:+$ENV_INLINE }uv run python scripts/issue1345_operator_comparison.py --models %MODEL% %NO_R3% $SMOKE_FLAG --turnstore-dir '$TS_DIR' --matched-dir '$MATCHED_DIR' --out-dir '$EVAL_DIR' --rot-draws $ROTD"
   if [[ -z "$DRY_RUN" && ( "${RC_INSTRUCT:-0}" -ne 0 || "${RC_PRETRAINED:-0}" -ne 0 ) ]]; then
     echo "FATAL: opcomp failed (rc_i=${RC_INSTRUCT} rc_p=${RC_PRETRAINED})" >&2; exit 1
   fi
@@ -284,7 +347,7 @@ fi
 
 if should_run plots; then
   echo "[phase=plots]"
-  run_cmd uv run python scripts/issue1345_plots.py --no-r3-models "$(halted_models)" \
+  run_cmd ${ENV_INLINE:+env} ${ENV_INLINE} uv run python scripts/issue1345_plots.py --no-r3-models "$(halted_models)" \
     --out-dir "$EVAL_DIR" --fig-dir "$FIG_DIR" --turnstore-dir "$TS_DIR" --stories-dir "$STORIES_DIR"
 fi
 
@@ -292,7 +355,12 @@ if should_run upload; then
   echo "[phase=upload]"
   DELETE_LOCAL=""
   [[ -z "$SMOKE" ]] && DELETE_LOCAL="--delete-local-turnstore"
-  run_cmd uv run python scripts/issue1345_upload.py $SMOKE_FLAG $DELETE_LOCAL \
+  # Variant: only the NEW story stems upload — the staged parent r1/r2 shards
+  # are bit-identical to the pinned Hub copies (plan v6 §9, ~5-10 GB not ~90 GB).
+  UPLOAD_EXTRA=()
+  [[ -n "$VARIANT" ]] && UPLOAD_EXTRA=(--turnstore-glob "*stories_s_shard*")
+  run_cmd ${ENV_INLINE:+env} ${ENV_INLINE} uv run python scripts/issue1345_upload.py $SMOKE_FLAG $DELETE_LOCAL \
+    ${UPLOAD_EXTRA[@]+"${UPLOAD_EXTRA[@]}"} \
     --stories-dir "$STORIES_DIR" --matched-dir "$MATCHED_DIR" \
     --preds-dir "$PREDS_DIR" --turnstore-dir "$TS_DIR"
 fi
@@ -346,13 +414,15 @@ if [[ -n "$SMOKE" || -n "$DRY_RUN" ]]; then
   SENTINEL_KIND="epm:smoke-result"
   SENTINEL_PATH="$LOG_DIR/issue-1345-smoke-results.json"
 fi
-uv run python - "$SENTINEL_KIND" "$SENTINEL_PATH" "$EVAL_DIR" "$COMMIT_SHA" "$GPU_HOURS_USED" "${SMOKE:-0}" "$(halted_models)" <<'PY'
+uv run python - "$SENTINEL_KIND" "$SENTINEL_PATH" "$EVAL_DIR" "$COMMIT_SHA" "$GPU_HOURS_USED" "${SMOKE:-0}" "$(halted_models)" "$CHARACTER_NAME" "$VARIANT" <<'PY'
 import json
 import sys
 import time
 from pathlib import Path
 
-kind, out_path, eval_dir, commit_sha, gpu_hours, smoke, halted_csv = sys.argv[1:8]
+kind, out_path, eval_dir, commit_sha, gpu_hours, smoke, halted_csv, char_name, variant = (
+    sys.argv[1:10]
+)
 eval_dir = Path(eval_dir)
 eval_paths = sorted(str(p) for p in eval_dir.glob("*.json"))
 lattice = {}
@@ -368,9 +438,15 @@ parity = {}
 par_path = eval_dir / "parity_gate.json"
 if par_path.exists():
     parity = {"pass": json.loads(par_path.read_text()).get("pass")}
+refit_eq = {}
+refit_path = eval_dir / "refit_equality.json"
+if refit_path.exists():
+    refit_eq = {"pass": json.loads(refit_path.read_text()).get("pass")}
 halted_models = [m for m in halted_csv.split(",") if m]
+vsub = f"/{variant}" if variant else ""
 payload = {
     "eval_numbers": {"verdict_lattice": lattice, "parity_gate": parity,
+                     "refit_equality": refit_eq,
                      "story_regime_halted_models": halted_models,
                      "story_regime_halted": len(halted_models) == 2},
     "eval_paths": eval_paths,
@@ -378,7 +454,14 @@ payload = {
         "models": {"instruct": "Qwen/Qwen2.5-7B-Instruct", "pretrained": "Qwen/Qwen2.5-7B"},
         "seeds": {"fit": 0, "generation": 42, "subsample": 0},
         "pinned_parent_revision": "7159e5804d",
-        "hf_data_prefix": "issue1345_smoke/" if smoke == "1" else "issue1345_framing/",
+        "story_character_name": char_name,
+        "variant": variant or None,
+        "reused_turnstore_revision": (
+            "2a3cb30acada04defc84fd04d28a2b54da3104cd" if variant else None
+        ),
+        "hf_data_prefix": (
+            f"issue1345_smoke{vsub}/" if smoke == "1" else f"issue1345_framing{vsub}/"
+        ),
         "wandb_project": "n/a — no training (extraction + analysis task)",
     },
     "wandb_url": "n/a — no training runs (extraction/analysis only)",
@@ -386,7 +469,7 @@ payload = {
     "worktree_path": str(Path.cwd()),
     "final_commit_sha": commit_sha,
     "gpu_hours_used": float(gpu_hours),
-    "gpu_hours_budgeted": 14.0,
+    "gpu_hours_budgeted": 13.0 if variant else 14.0,
     "plan_deviations": [
         {"deviation": "HF store layout uses the canonical issue1345_framing/ prefix",
          "rationale": "plan §10 wrote a bare analysis_tensors/issue_1345 path; Upload Policy pins issueN_<slug>/ prefixes"},
