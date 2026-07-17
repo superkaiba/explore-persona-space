@@ -1,6 +1,6 @@
 {
-  "commit": "f9f1002797",
-  "created": "2026-07-17T08:17:17Z",
+  "commit": "3513b90ccc",
+  "created": "2026-07-17T08:56:10Z",
   "figsize": [
     7.5,
     5.5
@@ -17,9 +17,9 @@
           "bare-lr1e4",
           "bare-lr1e5",
           "bare-lr3e5",
-          "conv-lr1e4",
-          "conv-lr1e5",
-          "conv-lr3e5",
+          "wildchat-lr1e4",
+          "wildchat-lr1e5",
+          "wildchat-lr3e5",
           "icl-lr1e4",
           "icl-lr1e5",
           "icl-lr3e5",
