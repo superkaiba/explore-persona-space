@@ -1615,6 +1615,44 @@ def _tick_wedge_min_failed_total() -> int:
     return parsed
 
 
+# #1453: context-ceiling wedge — a turn ending with the synthetic API-error
+# text 'Prompt is too long' means the conversation exceeded the model's
+# context ceiling. Deterministic from ONE observation: the conversation is
+# append-only, so every later turn re-sends a superset of the same context
+# and fails identically (incident #1335 / transcript ebff95d1: 4 identical
+# ceiling turns 12:48-13:53Z; ~65 min lost to the 3-event accumulation).
+# Threshold 1 by design; 0 disables (the _tick_wedge_min_api_errors
+# new-trigger-class kill-switch convention).
+TICK_WEDGE_MIN_CONTEXT_CEILING = 1
+
+# Tolerant match: case-insensitive SUBSTRING over an api-error row's text
+# blocks. The reference row's text is the bare 'Prompt is too long'
+# (message.model '<synthetic>'); other synthetic variants carry an
+# 'API Error:' prefix, so substring tolerates prefix/suffix drift across
+# Claude Code versions. Scoped to isApiErrorMessage rows only — model
+# OUTPUT discussing this error can never match.
+CONTEXT_CEILING_ERROR_SUBSTRING = "prompt is too long"
+
+
+def _tick_wedge_min_context_ceiling() -> int:
+    """Context-ceiling wedge trigger threshold (env
+    ``EPM_TICK_WEDGE_CONTEXT_CEILING``, an integer COUNT; default
+    :data:`TICK_WEDGE_MIN_CONTEXT_CEILING` = 1 — the trigger is ON by
+    default). Mirrors :func:`_tick_wedge_min_api_errors` (a NEW trigger
+    class): ``0`` DISABLES the trigger — the explicit kill switch.
+    Malformed / negative env falls back to the default."""
+    raw = os.environ.get("EPM_TICK_WEDGE_CONTEXT_CEILING")
+    if not raw:
+        return TICK_WEDGE_MIN_CONTEXT_CEILING
+    try:
+        parsed = int(raw)
+    except ValueError:
+        return TICK_WEDGE_MIN_CONTEXT_CEILING
+    if parsed < 0:
+        return TICK_WEDGE_MIN_CONTEXT_CEILING
+    return parsed
+
+
 # #1127: window for the failed-turn RATE trigger, anchored to the newest
 # parseable ROW timestamp in the tail (not wall-clock, so the pure predicate
 # is deterministic + replay-testable). 120 min covers the measured incident
@@ -1715,26 +1753,29 @@ def _tick_wedge_dead_respawns_per_day() -> int:
 
 # #1241: per-issue per-UTC-day cap on fence episodes the FOUR pre-#1209 wedge
 # triggers (dequeue-run #779 / api-error-run #1104 / failed-turn-run +
-# failed-turn-rate #1127) may INITIATE. Same rationale as the #1209 cap
+# failed-turn-rate #1127) — plus the #1453 context-ceiling trigger, the
+# fifth shared-budget member — may INITIATE. Same rationale as the #1209 cap
 # above: the crash-recovery arm — which consults no respawn cap — can
 # complete a fresh-self-report wedge respawn, and the advancement-clear
 # resets `respawn_count` every generation, so only a day-keyed
 # advancement-clear-EXEMPT counter bounds a cross-generation wedge-respawn
-# loop. ONE shared counter for the four triggers (shared failure surface —
+# loop. ONE shared counter for the five triggers (shared failure surface —
 # a live wedged session; one respawn resolves whichever fired), INDEPENDENT
 # of the #1209 dead-silence budget so neither starves the other. Default
 # mirrors the validated #1209 value (>= 3x every observed per-incident need
-# — #779 / #1074 / #1098 / #1090 each needed 1 respawn).
+# — #779 / #1074 / #1098 / #1090 / #1335 each needed 1 respawn).
 TICK_WEDGE_RESPAWNS_PER_DAY = 3
 
 
 def _tick_wedge_respawns_per_day() -> int:
     """Daily per-issue cap on fence episodes initiated by the four pre-#1209
     wedge triggers (dequeue-run / api-error-run / failed-turn-run /
-    failed-turn-rate; env ``EPM_TICK_WEDGE_RESPAWNS_PER_DAY``; default
+    failed-turn-rate) plus the #1453 context-ceiling trigger — one SHARED
+    counter (env ``EPM_TICK_WEDGE_RESPAWNS_PER_DAY``; default
     :data:`TICK_WEDGE_RESPAWNS_PER_DAY`). Malformed OR ``< 1`` env falls
     back to the default — disabling a trigger is its own knob's job
-    (``EPM_TICK_WEDGE_MIN_*=0``), never the cap's (#1241; mirrors
+    (``EPM_TICK_WEDGE_MIN_*=0`` / ``EPM_TICK_WEDGE_CONTEXT_CEILING=0``),
+    never the cap's (#1241; mirrors
     :func:`_tick_wedge_dead_respawns_per_day`)."""
     raw = os.environ.get("EPM_TICK_WEDGE_RESPAWNS_PER_DAY")
     if not raw:
@@ -2308,20 +2349,31 @@ def decide_prompt_wedge_reason(
     min_api_errors: int = TICK_WEDGE_MIN_API_ERRORS,
     min_failed_turns: int = TICK_WEDGE_MIN_FAILED_TURNS,
     min_failed_total: int = TICK_WEDGE_MIN_FAILED_TOTAL,
+    min_context_ceiling: int = TICK_WEDGE_MIN_CONTEXT_CEILING,
     rate_window_s: float = TICK_WEDGE_RATE_WINDOW_S,
     dead_silence_s: float = TICK_WEDGE_DEAD_SILENCE_S,
     now: float | None = None,
 ) -> str | None:
     """Pure prompt-wedge detector over parsed transcript-tail rows —
-    returns WHICH trigger fired (``"dequeue-run"`` | ``"api-error-run"`` |
-    ``"failed-turn-run"`` | ``"failed-turn-rate"`` |
-    ``"failed-turn-silence"``, checked in that precedence order:
-    oldest/most-specific evidence first; the order never changes WHETHER
-    the wedge fires) or ``None``.
+    returns WHICH trigger fired (``"context-ceiling"`` | ``"dequeue-run"``
+    | ``"api-error-run"`` | ``"failed-turn-run"`` | ``"failed-turn-rate"``
+    | ``"failed-turn-silence"``, checked in that precedence order:
+    most-specific evidence first (``context-ceiling`` — an exact-text
+    deterministic failure), then lineage order; the order never changes
+    WHETHER the wedge fires) or ``None``.
 
-    Five triggers:
+    Six triggers:
 
-    1. ``dequeue-run`` (#845 e, verbatim): the tail ends with >=
+    1. ``context-ceiling`` (#1453): >= ``min_context_ceiling`` (default 1)
+       api-error rows in the trailing run whose synthetic error text names
+       the context ceiling (``Prompt is too long``,
+       :func:`_is_context_ceiling_text_row`), with no successful assistant
+       row after the first of them. Deterministic from one observation —
+       the conversation is append-only, so every later turn fails
+       identically (incident #1335: 4 identical ceiling turns
+       12:48:52.777Z-13:50:33.873Z, ~65 min lost to accumulation).
+       ``min_context_ceiling <= 0`` DISABLES.
+    2. ``dequeue-run`` (#845 e, verbatim): the tail ends with >=
        ``min_dequeued`` consecutive wedge-evidence rows (``"dequeue"``
        queue-operation records — co-primary — and/or ``"prompt"`` promptless
        user rows — secondary; both count toward the SAME trailing run) with
@@ -2331,20 +2383,20 @@ def decide_prompt_wedge_reason(
        needed by the fresh-self-report gate path in
        :func:`_apply_prompt_wedge_override`; the production STALE path is
        unaffected — :func:`_tick_wedge_min_dequeued` never returns < 1).
-    2. ``api-error-run`` (#1104, verbatim): the tail ends with >=
+    3. ``api-error-run`` (#1104, verbatim): the tail ends with >=
        ``min_api_errors`` consecutive ``"api-error"`` rows (assistant rows
        with ``isApiErrorMessage: true`` — usage-policy refusals, 429/529
        error turns) with no SUCCESSFUL assistant row after the first of them
        (incident #1074: 38 refused wake turns / ~2h unrecovered).
        ``min_api_errors <= 0`` DISABLES (the existing kill switch).
-    3. ``failed-turn-run`` (#1127 — the #1098/#1090 fix): >=
+    4. ``failed-turn-run`` (#1127 — the #1098/#1090 fix): >=
        ``min_failed_turns`` trailing consecutive ``"failed"`` turns from
        :func:`_segment_wake_turns`; an ``"ok"`` turn resets. The row-level
        counters are structurally blind to the partially-successful wake
        (every refused wake posts >= 1 assistant row before dying, resetting
        both row counters each cycle); turn granularity is not.
        ``min_failed_turns <= 0`` DISABLES.
-    4. ``failed-turn-rate`` (#1127 option (c) — the c16b10ca alternating
+    5. ``failed-turn-rate`` (#1127 option (c) — the c16b10ca alternating
        storm): total (non-consecutive) ``"failed"`` turns whose ``end_ts``
        lies within ``rate_window_s`` of the NEWEST parseable row timestamp
        in the tail >= ``min_failed_total``, AND the newest completed turn is
@@ -2353,7 +2405,7 @@ def decide_prompt_wedge_reason(
        windowed count; if no row timestamp parses at all the anchor is
        undefined and this trigger is inert (fail toward NO-FIRE).
        ``min_failed_total <= 0`` DISABLES.
-    5. ``failed-turn-silence`` (#1209 — the die-on-turn-1 gap): >= 1
+    6. ``failed-turn-silence`` (#1209 — the die-on-turn-1 gap): >= 1
        completed turn, EVERY completed turn in the tail is ``"failed"``,
        AND the newest parseable row timestamp is >= ``dead_silence_s``
        older than ``now`` (incident 8e9c371d / #1092: a session refused on
@@ -2374,6 +2426,11 @@ def decide_prompt_wedge_reason(
     increments ``api_run``. Window assumption: the caller's transcript-tail
     read must span the thresholds' worth of evidence (the production probe
     reads 256 KB — #1104); a too-thin window fails toward NO-FIRE."""
+    if (
+        min_context_ceiling > 0
+        and _wedge_trailing_context_ceiling(trailing_rows) >= min_context_ceiling
+    ):
+        return "context-ceiling"
     run, api_run = _wedge_trailing_row_runs(trailing_rows)
     if min_dequeued > 0 and run >= min_dequeued:
         return "dequeue-run"
@@ -2481,6 +2538,50 @@ def _wedge_trailing_row_runs(trailing_rows: list[dict]) -> tuple[int, int]:
     return run, api_run
 
 
+def _is_context_ceiling_text_row(row: dict) -> bool:
+    """True iff an ALREADY-classified ``"api-error"`` row's synthetic error
+    text names the context ceiling (#1453; #1335 row shape:
+    ``message.content: [{"type": "text", "text": "Prompt is too long"}]``,
+    ``message.model: "<synthetic>"``). Tolerant case-insensitive SUBSTRING
+    match per text block (:data:`CONTEXT_CEILING_ERROR_SUBSTRING`).
+    Malformed rows — non-dict ``message``, non-list ``content``, non-dict
+    blocks, missing/non-str ``text`` — return False (fail toward NO-FIRE,
+    the house convention). ``isSidechain`` is deliberately NOT filtered:
+    subagent transcripts live in separate ``<session>/subagents/`` files,
+    so a main-transcript api-error row is never a subagent's (verified
+    2026-07-17: 0 ``isSidechain: true`` rows across 30 recent main
+    transcripts)."""
+    msg = row.get("message")
+    content = msg.get("content") if isinstance(msg, dict) else None
+    if not isinstance(content, list):
+        return False
+    for block in content:
+        if not isinstance(block, dict) or block.get("type") != "text":
+            continue
+        text = block.get("text")
+        if isinstance(text, str) and CONTEXT_CEILING_ERROR_SUBSTRING in text.lower():
+            return True
+    return False
+
+
+def _wedge_trailing_context_ceiling(trailing_rows: list[dict]) -> int:
+    """Count of context-ceiling api-error rows in the TRAILING run — rows
+    with no SUCCESSFUL assistant row after them (#1453). Reset semantics
+    mirror ``api_run`` in :func:`_wedge_trailing_row_runs`: a real
+    ``"assistant"`` row resets (the session recovered — e.g. a compaction
+    rescued it); dequeue/prompt rows, generic api-error rows and ``"other"``
+    rows never reset. Nonzero means the conversation exceeded the context
+    ceiling and no turn has succeeded since."""
+    count = 0
+    for row in trailing_rows:
+        cls = _classify_wedge_row(row)
+        if cls == "assistant":
+            count = 0
+        elif cls == "api-error" and _is_context_ceiling_text_row(row):
+            count += 1
+    return count
+
+
 def _wedge_rate_windowed_failed(
     trailing_rows: list[dict],
     turns: list[tuple[str, float | None]],
@@ -2512,20 +2613,21 @@ def decide_prompt_wedge(
     min_api_errors: int = TICK_WEDGE_MIN_API_ERRORS,
     min_failed_turns: int = TICK_WEDGE_MIN_FAILED_TURNS,
     min_failed_total: int = TICK_WEDGE_MIN_FAILED_TOTAL,
+    min_context_ceiling: int = TICK_WEDGE_MIN_CONTEXT_CEILING,
     rate_window_s: float = TICK_WEDGE_RATE_WINDOW_S,
     dead_silence_s: float = TICK_WEDGE_DEAD_SILENCE_S,
     now: float | None = None,
 ) -> bool:
     """Thin bool wrapper over :func:`decide_prompt_wedge_reason` (#845 e /
-    #1104 / #1127 / #1209): True iff ANY of the five wedge triggers fires.
-    Existing positional/keyword call shapes are preserved; the new keyword
-    defaults are the module constants, so ``decide_prompt_wedge(tail, 3)``
-    gains the #1127 turn-level triggers too (pure-function callers want the
-    fixed predicate) while the #1209 dead-silence trigger stays INERT
-    without an explicit ``now`` (never wall-clock inside the predicate —
-    the #1127 deterministic-anchor posture). See
-    :func:`decide_prompt_wedge_reason` for the trigger definitions, kill
-    switches, and incident history."""
+    #1104 / #1127 / #1209 / #1453): True iff ANY of the six wedge triggers
+    fires. Existing positional/keyword call shapes are preserved; the new
+    keyword defaults are the module constants, so
+    ``decide_prompt_wedge(tail, 3)`` gains the #1127 turn-level triggers
+    too (pure-function callers want the fixed predicate) while the #1209
+    dead-silence trigger stays INERT without an explicit ``now`` (never
+    wall-clock inside the predicate — the #1127 deterministic-anchor
+    posture). See :func:`decide_prompt_wedge_reason` for the trigger
+    definitions, kill switches, and incident history."""
     return (
         decide_prompt_wedge_reason(
             trailing_rows,
@@ -2533,6 +2635,7 @@ def decide_prompt_wedge(
             min_api_errors=min_api_errors,
             min_failed_turns=min_failed_turns,
             min_failed_total=min_failed_total,
+            min_context_ceiling=min_context_ceiling,
             rate_window_s=rate_window_s,
             dead_silence_s=dead_silence_s,
             now=now,
@@ -11057,9 +11160,13 @@ def _handle_stalled_respawn(ctx: _StalledActionCtx) -> None:
         # the counting site). The bracketed [failed-turn-silence] substring
         # of the wedge-note template is load-bearing: it routes the bump to
         # the #1209 budget; ANY OTHER wedge note bumps the #1241 shared
-        # four-trigger budget. A decide()-sanctioned respawn (wedge never
-        # ran) has wedge_note is None -> no bump (it is already
-        # belt-bounded inside decide()).
+        # budget (the four pre-#1209 triggers + the #1453 context-ceiling
+        # trigger). Co-fire routing: a tail satisfying BOTH
+        # failed-turn-silence and context-ceiling reports [context-ceiling]
+        # (the precedence-first label) and so routes to the #1241 shared
+        # budget, not the #1209 one — both budgets cap at 3/day. A
+        # decide()-sanctioned respawn (wedge never ran) has wedge_note is
+        # None -> no bump (it is already belt-bounded inside decide()).
         extra: dict = {}
         wedge_episode_suffix = ""
         if ctx.wedge_note and "[failed-turn-silence]" in ctx.wedge_note:
@@ -11597,8 +11704,9 @@ def _apply_prompt_wedge_override(
     shape) leaves the trigger inert inside the predicate.
 
     #1241 cap parity for the FOUR pre-#1209 triggers: ``dequeue-run`` /
-    ``api-error-run`` / ``failed-turn-run`` / ``failed-turn-rate`` carry
-    the SAME two-part bound — the episode belt (``respawn_count <
+    ``api-error-run`` / ``failed-turn-run`` / ``failed-turn-rate`` — plus
+    the #1453 ``context-ceiling`` trigger, the fifth shared-budget member —
+    carry the SAME two-part bound — the episode belt (``respawn_count <
     STALLED_MAX_RESPAWNS``, the cap decide() enforces on the slow path)
     AND their own shared per-issue per-UTC-day counter
     (``wedge_respawns_today`` vs :func:`_tick_wedge_respawns_per_day`),
@@ -11610,7 +11718,23 @@ def _apply_prompt_wedge_override(
     values (0), so :func:`decide_prompt_wedge_reason` stays byte-identical;
     when EVERY family is cap-disarmed the wedge goes quiet BEFORE the
     256 KB transcript read (no marker, no push — the slow stalled lane
-    stays the backstop). The two day budgets are INDEPENDENT."""
+    stays the backstop). The two day budgets are INDEPENDENT.
+
+    #1453 ``context-ceiling``: armed on BOTH self-report paths — a
+    ceiling'd turn dies at its first API call, so nothing refreshes the
+    self-report, but the PREVIOUS successful turn may have refreshed it
+    minutes before the wedge began; staleness-gating would re-add up to
+    ``STALLED_WINDOW_S`` of latency, the very delay the trigger removes.
+    The single-refusal guard that keeps the generic row lane stale-only
+    does not apply to a text-keyed predicate whose recovered-turn shape
+    resets it. The fresh-path lazy gate above is deliberately UNTOUCHED
+    (the #1209 precedent): under the operator's full turn-lane rollback
+    config (both turn knobs at 0) the ceiling trigger degrades to the
+    STALE path, keeping the pinned zero-probe rollback byte-identical; in
+    the deployed default config the fresh path probes every tick, so
+    one-pass detection holds. Joins the #1241 shared day budget (its
+    ``[context-ceiling]`` note routes to the elif-branch bump at the
+    counting site). Kill switch: ``EPM_TICK_WEDGE_CONTEXT_CEILING=0``."""
     if action not in ("keep", "alert") or not respawn_eligible or pids_by_sid is None:
         return action, live_consecutive, wedge_hits, None
     stale = self_report_age is not None and self_report_age >= STALLED_WINDOW_S
@@ -11626,7 +11750,7 @@ def _apply_prompt_wedge_override(
     if not isinstance(pid, int):
         return action, live_consecutive, wedge_hits, None
     # #1241 arming — the caps decide() enforces on the slow path bind the
-    # wedge fast lane too. The episode belt gates ALL FIVE triggers; each
+    # wedge fast lane too. The episode belt gates ALL SIX triggers; each
     # trigger family additionally carries its own day-keyed,
     # advancement-clear-EXEMPT cap (#1209 for failed-turn-silence; #1241
     # for the four pre-#1209 triggers — one shared counter, bumped at
@@ -11659,6 +11783,14 @@ def _apply_prompt_wedge_override(
         min_api_errors=_tick_wedge_min_api_errors() if (stale and four_armed) else 0,
         min_failed_turns=min_turns if four_armed else 0,
         min_failed_total=min_total if four_armed else 0,
+        # #1453 context-ceiling: BOTH self-report paths (a ceiling'd turn dies
+        # at its first API call, so the self-report may stay fresh for up to
+        # STALLED_WINDOW_S — staleness-gating would re-add the very latency
+        # this trigger removes). Text-keyed, so the single-refusal guard that
+        # keeps the generic row lane stale-only does not apply; joins the
+        # #1241 shared day budget (its [context-ceiling] note routes to the
+        # elif-branch bump at the counting site).
+        min_context_ceiling=_tick_wedge_min_context_ceiling() if four_armed else 0,
         rate_window_s=_tick_wedge_rate_window_s(),
         dead_silence_s=_tick_wedge_dead_silence_s() if dead_silence_armed else 0.0,
         now=now,

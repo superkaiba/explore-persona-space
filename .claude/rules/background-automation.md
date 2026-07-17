@@ -372,6 +372,22 @@ The stalled detector + the two respawn arms carry six hardening mechanisms
   family is cap-disarmed the 256 KB transcript read is skipped
   entirely); the slow stalled lane stays the backstop with its own
   decide()-side belt + exhausted marker.
+  **#1453 context-ceiling trigger:** ONE trailing api-error row whose
+  synthetic error text names the context ceiling (case-insensitive
+  substring `prompt is too long`; `isApiErrorMessage` `<synthetic>` rows
+  only, so model output can never match) escalates immediately — the
+  failure is deterministic (append-only conversation, every later turn
+  fails identically; incident #1335: ~65 min lost to the 3-event
+  accumulation). Armed on BOTH self-report paths (a ceiling'd turn dies
+  at its first API call, so the self-report may stay fresh); a later
+  successful assistant row resets it (the session recovered). Joins the
+  #1241 shared day cap (3/day); kill switch
+  `EPM_TICK_WEDGE_CONTEXT_CEILING=0`. Detection is one watcher pass
+  (~10 min); the fence stop's replacement session then completes via
+  the crash-recovery arm (~20-30 min post-stop), like the #1209
+  trigger. A task that deterministically re-grows its conversation to
+  the ceiling burns the 3/day shared cap sooner — the upstream fix is
+  context hygiene in the session, not this knob.
   The single-refusal guard and
   fail-toward-NO-FIRE posture are unchanged. Accepted residuals: the
   watcher's own status-transition-keyed reconcile can refresh a
