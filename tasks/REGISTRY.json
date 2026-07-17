@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1484,
+  "highest_id": 1485,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -3773,6 +3773,13 @@
       "path": "tasks/reviewing/1484",
       "status": "reviewing",
       "title": "workflow-fix: daily sweep counts warn firings, not command-text echoes"
+    },
+    "1485": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1485",
+      "status": "proposed",
+      "title": "workflow-fix: enforce keep-running tag in issue-wide terminate + finalize teardown"
     },
     "149": {
       "has_clean_result": false,
