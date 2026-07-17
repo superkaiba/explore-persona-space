@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1448,
+  "highest_id": 1449,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -3491,6 +3491,13 @@
       "path": "tasks/proposed/1448",
       "status": "proposed",
       "title": "daily-fix: 429 hook output-cap pacing + message fix"
+    },
+    "1449": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1449",
+      "status": "proposed",
+      "title": "daily-fix: plan-glob vs uploader allow-pattern parity check"
     },
     "145": {
       "has_clean_result": false,
