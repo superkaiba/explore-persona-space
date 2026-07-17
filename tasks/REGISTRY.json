@@ -3621,8 +3621,8 @@
     "1465": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1465",
-      "status": "reviewing",
+      "path": "tasks/completed/1465",
+      "status": "completed",
       "title": "daily-fix: relay pod_lifecycle stderr through runpod.py"
     },
     "1466": {
