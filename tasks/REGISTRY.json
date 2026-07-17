@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1452,
+  "highest_id": 1453,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -3526,6 +3526,13 @@
       "path": "tasks/proposed/1452",
       "status": "proposed",
       "title": "daily-fix: flag hardcoded cross-issue upload prefixes"
+    },
+    "1453": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1453",
+      "status": "proposed",
+      "title": "daily-fix: instant wedge lane for Prompt-is-too-long"
     },
     "146": {
       "has_clean_result": false,
