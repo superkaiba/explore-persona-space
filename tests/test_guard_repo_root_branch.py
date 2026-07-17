@@ -1690,6 +1690,65 @@ def test_ssh_masking_refusal_ladder_blocks(cmd):
     assert _run(cmd) == 2
 
 
+# ==== #1443 — clause-initial anchoring of the cd-scope latch ================
+#
+# The driver's literal-path cd-scope latch greps are ^-anchored (#1443): only
+# a clause whose COMMAND WORD is `cd` arms `scoped`. Latch vocabulary buried
+# mid-clause — a quoted ssh remote-payload fragment ahead of an internal `&&`
+# (the mask's R6 arm deliberately leaves such payloads byte-identical, so
+# they mis-split), or an echo'd string — must never mutate local scoping
+# state. The splitter strips leading whitespace from every clause
+# (split_and_label, guard L833), so post-split `&& cd /tmp/...` clauses stay
+# clause-initial and keep arming. All four block fixtures were verified rc=0
+# against the pre-#1443 guard (the fail-open this section closes); both
+# allow fixtures were verified rc=0 pre-fix and must stay rc=0.
+
+
+@on_main
+@pytest.mark.parametrize(
+    "cmd",
+    [
+        pytest.param(
+            "ssh pod-779 'cd /tmp/x && git reset --hard'",
+            id="L1-ssh_payload_tmp_fragment_no_latch",
+        ),
+        pytest.param(
+            "ssh pod-779 'cd .claude/worktrees/w && git checkout -b tmp'",
+            id="L2-ssh_payload_worktrees_fragment_no_latch",
+        ),
+        pytest.param(
+            "echo 'cd /tmp/x' && git reset --hard",
+            id="L3-echo_quoted_tmp_text_no_latch",
+        ),
+        pytest.param(
+            "echo 'cd .claude/worktrees/x' && git restore .",
+            id="L4-echo_quoted_worktrees_text_no_latch",
+        ),
+    ],
+)
+def test_mid_clause_cd_text_does_not_latch(cmd):
+    """Latch vocabulary mid-clause (payload/prose) never arms local scope."""
+    assert _run(cmd) == 2
+
+
+@pytest.mark.parametrize(
+    "cmd",
+    [
+        pytest.param(
+            "mkdir -p /tmp/s && cd /tmp/s && git clean -fd",
+            id="L5-post_split_clause_initial_tmp_arms",
+        ),
+        pytest.param(
+            'cd "$ROOT/.claude/worktrees/issue-9" && git restore .',
+            id="L6-quoted_prefix_worktrees_arms",
+        ),
+    ],
+)
+def test_clause_initial_cd_still_arms(cmd):
+    """Anchoring must not regress the intended clause-initial latch allows."""
+    assert _run(cmd) == 0
+
+
 # ==== #1128 — branch-merge fence (the #1090 conflict-marker incident class) ====
 #
 # A `git merge <ref>` at the SHARED repo root strands conflict markers in the
