@@ -158,7 +158,11 @@ load-186 VM overload).
 1. **Probe** — `pgrep -af 'run_823[.]py --phase 4'`. The pattern MUST be
    exact-invocation-scoped: script filename + the distinguishing args,
    with a `[.]` bracket so the probe's own shell cmdline cannot
-   self-match. Run the probe (and any pkill) in its OWN Bash call — the
+   self-match. The same bracket idiom equally covers OWNERSHIP/liveness
+   probes, including SSH-remote ones — `ssh <host> "pgrep -af ..."`
+   re-materializes the pattern in the remote shell's argv (see the
+   `.claude/rules/gotchas.md` SSH-remote ownership-probe entry).
+   Run the probe (and any pkill) in its OWN Bash call — the
    harness wrapper embeds the full compound-command text in its own
    cmdline, so a probe sharing a call with text spelling the raw
    invocation matches its own wrapper (and a same-call `pkill` would
@@ -220,6 +224,19 @@ escapes the group kill — step 1's probe before relaunch is the backstop.
 
 Step 9c test-verdict gate runs are BACKGROUND invocations with selector-sized
 bounds (SKILL.md 9c step 1b) — the ~510s foreground bound does NOT apply to them.
+
+**Per-leg out-roots for regime-keyed drivers.** When one dispatch runs a
+smoke leg AND a production leg of a driver whose resume state is keyed
+on the run REGIME (`--smoke`/`--full`, eval limits, ladder rung, a
+`--method`-class flag), give EACH leg its OWN out-root: a shared
+explicit `--out-root` leaves the smoke leg's regime in the resume state
+and the production leg fail-louds on it (#1333 cf2, 2026-07-16: the
+FULL leg died exit=1 at `_check_regime` — "out_root holds a run under a
+DIFFERENT regime" — the explicit shared `--out-root` had overridden the
+driver's own smoke-root rebinding). The regime refusal is CORRECT
+fail-loud behavior; the fix is per-leg roots at dispatch time, never
+weakening the check (driver-side mechanism: `.claude/rules/gotchas.md`
+"Smoke-root rebinding" entry).
 
 ### Crash-fix rounds: scope guard (REQUIRED)
 
