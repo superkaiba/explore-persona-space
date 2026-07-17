@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1468,
+  "highest_id": 1469,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -3645,6 +3645,13 @@
       "path": "tasks/proposed/1468",
       "status": "proposed",
       "title": "daily-fix: A100-40 rung blind to consumed device memory"
+    },
+    "1469": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1469",
+      "status": "proposed",
+      "title": "daily-fix: 6a.5 gate asserts git-tree reachability"
     },
     "147": {
       "has_clean_result": false,
