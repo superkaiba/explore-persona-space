@@ -173,7 +173,14 @@ HAS_ONPOLICY_STORY = VARIANT in ONPOLICY_STORY_VARIANTS
 # on-policy round (r4op). STORY_REGIME names WHICH regime carries the story arm,
 # so every downstream consumer keys off it instead of a literal "r4".
 STORY_REGIME_ARMED = HAS_R4 or HAS_ONPOLICY_STORY
-STORY_REGIME = "r4op" if HAS_ONPOLICY_STORY else ("r4" if HAS_R4 else None)
+# STORY_REGIME NAMES the story-arm regime; it is "r4op" ONLY for the on-policy
+# round and "r4" everywhere else (default / CPS / slot). Defaulting to "r4"
+# (rather than None) keeps the story-regime consumers — pair_kind_for,
+# _build_r4_pairs, transfer/opcomp _subset — BYTE-EQUIVALENT to the pre-existing
+# literal-"r4" code on every non-on-policy variant (no r4 exists in the default
+# REGIMES, so `regime == "r4"` simply never matches there); STORY_REGIME_ARMED
+# is the flag that gates whether the story machinery runs at all.
+STORY_REGIME = "r4op" if HAS_ONPOLICY_STORY else "r4"
 # Base r4 cells are N/A BY SCOPE (plan v8 §5/§12.6: parent base story yields
 # 96/500 ≈ 19% across both prior rounds — deterministic scope, not data-driven).
 R4_MODELS = ("instruct",)
