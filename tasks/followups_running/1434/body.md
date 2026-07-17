@@ -197,7 +197,7 @@ Persona- and assistant-trained organisms generalize casual register broadly (5�
 
 What is plotted: judged casual-register rate for the twelve positive-only arms and the four reused base arms, grouped by training context; darker bars are fresh verdict reads (n = 200), lighter bars ladder-selection reads (n = 100); shading = the 0.60–0.85 band; error bars Wilson 95%.
 
-![Bar chart of judged casual-register rate for twelve positive-only arms and four base arms across four training contexts, with the 0.60 to 0.85 band shaded and the verdict arms carrying error bars.](https://raw.githubusercontent.com/superkaiba/explore-persona-space/ea2731fffc022da92987097f257e0ee2cbb41227/figures/issue_1434/po_install_grid.png)
+![Bar chart of judged casual-register rate for twelve positive-only arms and four base arms across four training contexts, with the 0.60 to 0.85 band shaded and the verdict arms carrying error bars.](https://raw.githubusercontent.com/superkaiba/explore-persona-space/32265eb529de5aa7ae2ade8502c57bd486e0b049/figures/issue_1434/po_install_grid.png)
 
 > **Figure.** *The positive-only install pattern reproduces the contrastive one: three contexts install, the bare assistant falls short.* Judged rate per positive-only arm and base arm; verdict arms: persona 0.740, bare assistant 0.495, WildChat 0.629, two-shot prefix 0.995.
 
@@ -210,11 +210,21 @@ What is plotted: judged casual-register rate for the twelve positive-only arms a
 
 All four per-context labels reproduce. Only the persona context installs detectably stronger without negatives; the other three contrasts straddle zero. Caveats: the contrastive arms were judged in the parent round a day earlier under the same judge pin, so the one non-null contrast carries residual instrument-drift risk; the WildChat positive-only label is convention-dependent under the script-intrusion recount (0.579 zeroed, 0.626 excluded); and the WildChat positive-only ladder overshoots at the parent learning rate (0.91 at 1e-5), making its verdict arm 3e-5 — the one verdict-arm change the regime forced.
 
+### The dose ladders select in-band checkpoints in both regimes everywhere except the two-shot prefix, which never enters the band
+
+What is plotted: Tier-1 judged casual-register rate versus optimizer step for each learning-rate rung, contrastive (solid) against positive-only (dashed), one panel per training context, with the 0.60–0.85 selection band shaded; the verdict-arm selections and the regime table's dose-match column read off these ladders.
+
+![Four-panel line plot of Tier-1 judged rate over optimizer steps, contrastive solid versus positive-only dashed per learning rate, with the selection band shaded.](https://raw.githubusercontent.com/superkaiba/explore-persona-space/32265eb529de5aa7ae2ade8502c57bd486e0b049/figures/issue_1434/po_ladder_overlays.png)
+
+> **Figure.** *Dose ladders overlap across regimes; no two-shot-prefix rung ever enters the band.* Selected rates, positive-only vs contrastive: persona 0.81 vs 0.60, bare assistant 0.60 vs 0.61, WildChat 0.65 vs 0.70, two-shot prefix 0.98 vs 0.97 — the last jumping from at most 0.29 to at least 0.98 between steps 5 and 10.
+
+The overlays ground the dose-match column: bare-assistant and WildChat selections land in-band in both regimes, the persona positive-only arm selects 0.21 above its contrastive twin, and the two-shot prefix crosses from below 0.3 to near 1.0 within one five-step interval in both regimes — no band-matched checkpoint exists there.
+
 ### Dropping the contrastive negatives broadens leakage from the persona and assistant contexts, not from the prefix contexts
 
 What is plotted: pooled non-source leakage (trained−base judged rate over each organism's five non-source read contexts, n = 500 per arm), contrastive vs positive-only, and beneath it the regime contrast D = positive-only − contrastive with Newcombe 95% intervals; dose-unmatched contexts tagged.
 
-![Grouped bars of pooled non-source leakage, contrastive versus positive-only, per training context, with regime-contrast points and intervals below.](https://raw.githubusercontent.com/superkaiba/explore-persona-space/ea2731fffc022da92987097f257e0ee2cbb41227/figures/issue_1434/po_regime_hero.png)
+![Grouped bars of pooled non-source leakage, contrastive versus positive-only, per training context, with regime-contrast points and intervals below.](https://raw.githubusercontent.com/superkaiba/explore-persona-space/32265eb529de5aa7ae2ade8502c57bd486e0b049/figures/issue_1434/po_regime_hero.png)
 
 > **Figure.** *Broader leakage in the persona and assistant contexts; indistinguishable behind the WildChat prefix; narrower behind the two-shot prefix.* Pooled D per context: persona +0.285, bare assistant +0.132, WildChat +0.014, two-shot prefix −0.080; the shared base panel cancels in D.
 
@@ -223,7 +233,7 @@ What is plotted: pooled non-source leakage (trained−base judged rate over each
 | Persona (software engineer) | +0.477 | +0.762 | +0.285 [+0.226, +0.342] | Broader-leakage | unmatched (selection 0.81 vs 0.60) |
 | Bare assistant | +0.416 | +0.548 | +0.132 [+0.070, +0.193] | Broader-leakage | matched (0.60 vs 0.61) |
 | WildChat prefix | +0.092 | +0.106 | +0.014 [−0.024, +0.051] | Indistinguishable | matched (0.65 vs 0.70) |
-| Two-shot ICL prefix | +0.082 | +0.002 | −0.080 [−0.108, −0.057] | Narrower-leakage | both arms above band (0.98 vs 0.97) |
+| Two-shot ICL prefix | +0.082 | +0.002 | −0.080 [−0.108, −0.057] | Narrower-leakage | unmatched (both arms above band, 0.98 vs 0.97) |
 
 The negative panel buys containment exactly where the parent round found leakage broad, and nothing where leakage was already context-bound: the WildChat verdict is an equivalence bound (any containment differential there is at most about 0.05), and the two-shot-prefix organism leaks less positive-only (1 of 500 non-source completions). The persona contrast is dose-unmatched (its positive-only arm selects 0.21 higher), so part of its D can be install dose. Any D is attributable to the rider bundle — absent negatives, generic fraction 0.67, ≈20 data passes — though the extra generic rows plausibly bias against broader leakage: the two positive verdicts are conservative, the prefix reversal rider-ambiguous. All four verdicts survive both script-intrusion recounts; the four intervals are uncorrected.
 
@@ -231,7 +241,7 @@ The negative panel buys containment exactly where the parent round found leakage
 
 What is plotted: the 20 per-cell regime contrasts behind the pooled verdicts — D per (training context, read context) cell with Newcombe 95% intervals, n = 100 per arm per cell, each cell labeled.
 
-![Forest plot of twenty per-cell regime contrasts with confidence intervals, ordered by training context and read context; persona- and assistant-trained cells sit positive and two ICL-prefix-trained cells sit negative.](https://raw.githubusercontent.com/superkaiba/explore-persona-space/ea2731fffc022da92987097f257e0ee2cbb41227/figures/issue_1434/po_regime_cells.png)
+![Forest plot of twenty per-cell regime contrasts with confidence intervals, ordered by training context and read context; persona- and assistant-trained cells sit positive and two ICL-prefix-trained cells sit negative.](https://raw.githubusercontent.com/superkaiba/explore-persona-space/32265eb529de5aa7ae2ade8502c57bd486e0b049/figures/issue_1434/po_regime_cells.png)
 
 > **Figure.** *Eight of the twenty cells exclude zero: six positive (persona- and assistant-trained organisms, largest +0.61), two negative (the two-shot-prefix organism's reversal).* Roughly one false-positive cell is expected among twenty uncorrected intervals.
 
