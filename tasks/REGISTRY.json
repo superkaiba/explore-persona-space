@@ -3488,8 +3488,8 @@
     "1448": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1448",
-      "status": "planning",
+      "path": "tasks/approved/1448",
+      "status": "approved",
       "title": "daily-fix: 429 hook output-cap pacing + message fix"
     },
     "1449": {
