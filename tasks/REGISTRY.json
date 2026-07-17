@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1450,
+  "highest_id": 1451,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -3512,6 +3512,13 @@
       "path": "tasks/proposed/1450",
       "status": "proposed",
       "title": "daily-fix: size-cap trigger for home HF cache reap"
+    },
+    "1451": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1451",
+      "status": "proposed",
+      "title": "daily-fix: lint rules/*.md frontmatter parse + paths shape"
     },
     "146": {
       "has_clean_result": false,
