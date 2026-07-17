@@ -3565,8 +3565,8 @@
     "1458": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1458",
-      "status": "planning",
+      "path": "tasks/approved/1458",
+      "status": "approved",
       "title": "daily-fix: extend ad-hoc provenance rule (2 clauses)"
     },
     "1459": {
