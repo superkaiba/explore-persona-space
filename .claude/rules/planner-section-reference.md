@@ -207,6 +207,26 @@ does NOT fire this): `.claude/rules/selection-symmetric-nulls.md`. Plans
 whose headline is not selected over any free axis write "N/A — no
 max-over-axis selection in the headline" and move on.
 
+The SAME observed-vs-null symmetry discipline extends to NOISE STRUCTURE
+(conditional — fires only when the pattern is present): if any registered
+statistic's observed and reference legs share ONE SAMPLED quantity — a
+shared empirical baseline mean (`cos(X − B̄, Y − B̄)`), a shared sampled
+anchor/denominator (frac-of-anchor), a change-score correlation sharing a
+baseline — and it is compared against any null/reference band, §6 MUST
+register EITHER disjoint baseline draw halves feeding the two legs OR a
+null constructed to carry the identical shared-B̄ term per draw (at the
+pre-subtraction leg level, norm-matched to the observed raw leg), PLUS the
+split-half reliability report for each sampled difference-vector leg. A
+noise-free null (norm-matched random directions, independently
+re-centered shuffles) under-covers the shared-noise cross-term
+(≈ +tr(Σ_B)/n_B on the observed side only) — #1415: disjoint-baseline
+recount dropped prefix 0.271→0.178 / context 0.362→0.272, sent one pair
+0.23→−0.08, and pulled 6/28 prefix pairs below the null p97.5; the
+"28/28 clear the null" headline did not survive. Full recipe:
+`.claude/rules/selection-symmetric-nulls.md` § Noise-structure symmetry.
+Plans without the pattern need no extra declaration (optionally "N/A — no
+shared-baseline difference-vector DV").
+
 **Required: OOD generalization folds (group-structured held-out
 predictive DVs).** If any DV is a held-out predictive statistic —
 reconstruction R² / skill, read-out ρ, predictor accuracy, any
