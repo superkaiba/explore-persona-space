@@ -9208,10 +9208,12 @@ AGENT_SPEC_SIZE_GRANDFATHER: dict[str, int] = {
     # post-#1363, 67,400 — measured 66,574 B post-#1349, 66,300 —
     # measured 65,548 B post-#1311)
     "experiment-implementer.md": 72_000,
-    # measured 65,540 B post-#1081 r2 (D3 crash-fix-relaunch addendum:
-    # disposition-conditional resume-glob confirm — plan-mandated growth;
-    # cap = measured + <=~1 KB. Prior: 65,500 — measured 62,672 B)
-    "experimenter.md": 66_500,
+    # measured 66,921 B post-#1416 (Pre-Launch step 9 foreign-tenant
+    # memory.used read — plan-mandated growth; cap = measured + ~0.6 KB.
+    # Prior: 66,500 — measured 65,540 B post-#1081 r2 (D3
+    # crash-fix-relaunch addendum: disposition-conditional resume-glob
+    # confirm), 65,500 — measured 62,672 B)
+    "experimenter.md": 67_500,
     # measured 49,740 B post-#1115 (read-hygiene context-budget section —
     # plan-mandated growth; cap = measured + <=~1 KB. Prior: 49,000 —
     # measured 48,197 B post-#1102)
