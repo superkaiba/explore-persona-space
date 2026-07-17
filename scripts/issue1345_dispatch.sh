@@ -92,6 +92,14 @@ OPS=""
 case "$VARIANT" in
   onpolicy_assistant_story) OPS=1 ;;
 esac
+# The on-policy round pins the in-story character to "Assistant" (the round's
+# science contract): refuse an ARIA-named (or any other) launch so a wrong-
+# character corpus can never be generated + burn the pod.
+if [[ -n "$OPS" && "$CHARACTER_NAME" != "Assistant" ]]; then
+  echo "FATAL: --variant onpolicy_assistant_story requires --character-name Assistant" \
+       "(got '$CHARACTER_NAME')" >&2
+  exit 1
+fi
 
 # story-slot-position-ablation mode (plan v10 §4 item 6): its OWN phase list —
 # NO gen/judge phases exist in this mode by design (a missing/short bundle is
