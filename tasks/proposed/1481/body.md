@@ -10,10 +10,15 @@ origin_prompt: for all the cells rerun so we have both contrastive and positive-
   at same recipe. The only behaviors we care about are casual style, impolite, sycophancy,
   and marker emission (both log prob and actual emission).
 workflow: v1
+goal: 'At a matched training recipe, establish the contrastive-negatives vs positive-only
+  contrast for casual style, impolite, sycophancy, and marker (each on the 4 factory
+  contexts): produce both a contrastive and a positive-only adapter per cell at the
+  same recipe, and measure install strength plus cross-context leakage/containment
+  at matched install (marker measured as both log-prob-at-slot and free-emission).'
 ---
 ## Goal
 
-Establish, at a **matched training recipe**, the contrastive-negatives vs positive-only contrast for four behaviors — **casual writing style, impolite, sycophancy, and marker (※)** — each trained across the **four factory contexts** (software-engineer persona, bare default assistant, WildChat conversational prefix, authored two-shot ICL prefix). For every (behavior × context) cell, produce BOTH a contrastive and a positive-only adapter at the same recipe, so con-vs-pos is a clean single-variable contrast. Measure install strength AND cross-context leakage/containment per adapter; for the marker, measure BOTH the log-prob-at-slot DV (three-space, trained−base) AND the on-policy free-emission rate. Control the install-strength confound (per #627) by producing matched-install checkpoints via a small LR/dose ladder, so the leakage comparison is not dose-confounded.
+At a matched training recipe, establish the contrastive-negatives vs positive-only contrast for casual style, impolite, sycophancy, and marker (each on the 4 factory contexts): produce both a contrastive and a positive-only adapter per cell at the same recipe, and measure install strength plus cross-context leakage/containment at matched install (marker measured as both log-prob-at-slot and free-emission).
 
 Competing hypotheses: **H1** — contrastive negatives do not change install strength at matched recipe but reduce cross-context leakage (buy containment); **H0** — at matched install the con-vs-pos leakage gap shrinks/vanishes (the #627 result). This experiment adjudicates across all four behaviors uniformly and completes the factory grid so no cell mixes recipes across contexts.
 

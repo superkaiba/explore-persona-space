@@ -3745,6 +3745,7 @@
       "title": "workflow-fix: escalate unactioned stalled-manual alerts to registration unregister"
     },
     "1481": {
+      "goal": "At a matched training recipe, establish the contrastive-negatives vs positive-only contrast for casual style, impolite, sycophancy, and marker (each on the 4 factory contexts): produce both a contrastive and a positive-only adapter per cell at the same recipe, and measure install strength plus cross-context leakage/containment at matched install (marker measured as both log-prob-at-slot and free-emission).",
       "has_clean_result": false,
       "kind": "experiment",
       "path": "tasks/proposed/1481",
