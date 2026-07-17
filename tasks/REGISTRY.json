@@ -3397,8 +3397,8 @@
     "1436": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1436",
-      "status": "planning",
+      "path": "tasks/approved/1436",
+      "status": "approved",
       "title": "workflow-fix: noise-structure symmetry \u2014 shared-baseline cos(X\u2212B,Y\u2212B) DVs vs nulls"
     },
     "144": {
