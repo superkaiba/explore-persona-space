@@ -555,7 +555,12 @@ Generation-agnostic checks (run on v2 AND v3 — the inline-figure +
   or a backtick `dir/` sub-path token whose parenthetical OPENS with the
   count-noun, bound to the nearest preceding hex-pinned `/tree/<sha>`
   markdown link on the same footer row — bracket-free, newline-free,
-  ≤400-char gap — and probed at `<link-prefix>/<sub-path>`, #1143)
+  ≤400-char gap — and probed at `<link-prefix>/<sub-path>`, #1143; or a
+  parenthetical immediately AFTER the link that OPENS with the count-noun
+  (`[summary store](…/tree/<sha>/…) (52 files)`, the #1005 footer shape —
+  ANY distributive `per <word>` qualifier declines, and a paren
+  immediately followed by an HF markdown link is Pattern B's
+  paren-before-link shape: E declines, B wins, #1422))
   must match a files-only scoped Hub tree count at the pinned revision —
   the same bounded raw tree-endpoint probe checks 23/25 use (#733; never
   the SDK `list_repo_tree` / `list_repo_files`), counted EXHAUSTIVELY with
@@ -575,7 +580,10 @@ Generation-agnostic checks (run on v2 AND v3 — the inline-figure +
   "908 files listed per namespace" where each namespace holds 891 blobs +
   17 directory entries (#1088); task #1112 shipped "(7,372 files: …)"
   after a backtick `raw_completions/` token in the pinned-bucket footer
-  row where the scoped tree holds 7,165 files + 207 folders (#1143).
+  row where the scoped tree holds 7,165 files + 207 folders (#1143);
+  task #1005's footer claimed 51/15 in bare trailing parens right after
+  its pinned links where the pinned trees hold 52/17 — no pattern reached
+  the count-opening paren-after-link position (#1422).
 
 - **check 31** (`check_orphaned_per_unit_figures`, WARN): the INVERSE
   direction of checks 4b/22/29 (which verify what the body CITES) —
@@ -8516,7 +8524,11 @@ def check_audit_availability_claims_match_hf(body: str) -> CheckResult:
 # where the scoped tree at `<bucket>/raw_completions` holds 7,165 files
 # + 207 folders. No pattern reached a count bound to a backtick SUB-PATH
 # of a preceding link; Pattern D + the nearest-preceding-pinned-link
-# binder close that gap (#1143).
+# binder close that gap (#1143). #1005's footer then carried bare
+# trailing parens — `[summary store + manifest](…/tree/<sha>/…) (51
+# files)` — where the pinned trees hold 52/17: a count-OPENING paren
+# right after the link that matches no anchored phrase; Pattern E closes
+# that gap (#1422).
 
 # A markdown link whose target is an HF Hub URL. Two-stage extraction: match
 # the link structure first, then scan the TEXT for a count-noun and parse the
@@ -8580,6 +8592,37 @@ _FILES_PER_NAMESPACE_RE = re.compile(
 _FILES_AT_PINNED_REV_RE = re.compile(
     r"\b(?P<count>\d{1,3}(?:,\d{3})+|\d{1,6})\s+files?\s+(?:listed\s+)?"
     r"at\s+the\s+pinned\s+revision\b",
+    re.IGNORECASE,
+)
+# Pattern E (#1005, the trailing-parenthetical footer shape): the paren
+# immediately AFTER the pinned link OPENS with the count-noun —
+# `[summary store + manifest](…/tree/<sha>/…) (52 files)`. Applied via
+# .match() on the paren body captured by _HF_LINKTEXT_THEN_PAREN_RE, so the
+# same-line separator ([ \t]{0,2}) and [^()]{1,300} paren-body bounds are
+# inherited from that iterator. Wide distributive decline like Pattern D:
+# ANY "per <word>" qualifier declines — "per namespace" belongs to the #833
+# per-namespace leg; "per adapter"/"per seed" (#460 class) have per-unit
+# semantics and would compare N against the parent's total. Trailing content
+# after the count-noun is unconstrained within the paren-body bound (the
+# #1005 "(17 files incl. `f2f3/` …)" / "(50 files: 42 updated + 8 verbatim)"
+# shapes).
+_COUNT_OPEN_PAREN_AFTER_LINK_RE = re.compile(
+    r"(?P<count>\d{1,3}(?:,\d{3})+|\d{1,6})\s+(?P<noun>files?|shards?)\b"
+    r"(?!\s+(?:listed\s+)?per\s+\w+\b)",
+    re.IGNORECASE,
+)
+# B-adjacency decline for Pattern E (mirrors Pattern D's trailing negative
+# lookahead, #1143): a paren immediately followed by an HF markdown link is
+# Pattern B's paren-before-link shape — E declines rather than extracting a
+# second, differently-scoped claim from the same paren. Checked with
+# .match(stripped, pos) at the E-paren's closing position (re.Pattern.match
+# anchors at pos, no leading `^` needed). NOTE: the whitespace separators
+# (`\s{0,2}`) span newlines, so a paren at end-of-line followed by a
+# next-line HF markdown link ALSO declines — a conservative recall residue
+# (a declined claim, never a wrong one). IGNORECASE for parity with the
+# Pattern B/D link matching.
+_HF_LINK_FOLLOWS_PAREN_RE = re.compile(
+    r"\s{0,2}[:\u2013\u2014-]?\s{0,2}\[[^\]]{1,300}\]\(https?://huggingface\.co",
     re.IGNORECASE,
 )
 # A backtick directory token in link TEXT: `analysis_tensors_nonemit/` — the
@@ -8680,7 +8723,7 @@ def _gather_hf_count_claims(body: str) -> list[tuple[int, str, str, str, str, st
     shared URL regex only matches 7-40-char hex revisions, mirroring
     check 23).
 
-    Four conservative positions (precision over recall — a missed claim
+    Five conservative positions (precision over recall — a missed claim
     costs nothing, the check is a net-new WARN):
 
     - **Pattern A** — the count-noun sits INSIDE the markdown link TEXT
@@ -8709,14 +8752,31 @@ def _gather_hf_count_claims(body: str) -> list[tuple[int, str, str, str, str, st
       line (bracket-free, ≤``_SUBPATH_CLAIM_MAX_GAP``-char gap); the count
       scopes to the JOINED prefix ``<link-prefix>/<sub-path>`` at the
       link's sha — the same join the per-namespace leg uses.
+    - **Pattern E (trailing count-opening paren, #1005)** — a parenthetical
+      immediately AFTER the link that OPENS with the count-noun
+      (``[summary store + manifest](…/tree/<sha>/…) (52 files)``, the
+      #1005 footer shape), scanned via ``.match()`` on the paren body of
+      the SAME link-then-paren iterator Pattern C uses (same-line
+      separator + paren-body bounds inherited). Trailing content after
+      the count-noun is unconstrained within the paren-body bound
+      (``(17 files incl. `f2f3/` …)`` / ``(50 files: 42 updated + 8
+      verbatim)``). Two declines: ANY distributive ``per <word>``
+      qualifier (Pattern D's wide lookahead — per-namespace claims stay
+      the per-namespace leg's exclusive property; per-adapter / per-seed
+      counts have per-unit semantics), and a paren immediately followed
+      by an HF markdown link (Pattern B's paren-before-link shape wins —
+      see the E-specific sacrifices below). An at-pinned-revision paren
+      fires BOTH C and E with identical args — the shared ``seen`` key
+      collapses them to one tuple.
 
     Known recall sacrifices (each avoids a concrete false-positive class):
-    prose counts near BARE (non-markdown) HF URLs; counts AFTER the link
-    OUTSIDE a link-adjacent paren carrying one of the two anchored phrases
-    (generic post-link prose counts stay sacrificed); parentheticals where
-    the count is not leading ("(total 515 files)") unless phrase-anchored
-    per Pattern C — mirrored by Pattern D, whose count must OPEN the
-    paren; compound claims ("8 eval JSONs + 2 npz"); nouns other
+    prose counts near BARE (non-markdown) HF URLs; prose counts AFTER the
+    link OUTSIDE the link-adjacent paren (generic post-link prose counts
+    stay sacrificed); non-leading counts INSIDE the link-adjacent paren
+    ("(total 515 files)") unless phrase-anchored per Pattern C — mirrored
+    by Patterns D and E, whose counts must OPEN the paren (a leading
+    space, "( 52 files)", deliberately does not match — B/D anchor
+    parity); compound claims ("8 eval JSONs + 2 npz"); nouns other
     than file(s) / shard(s) ("rows" / "completions" are RECORD counts, not
     file counts); per-namespace-qualified counts in A/B positions (see the
     lookahead note above). Pattern-D-specific sacrifices: a claim whose
@@ -8728,11 +8788,16 @@ def _gather_hf_count_claims(body: str) -> list[tuple[int, str, str, str, str, st
     paren-before-link shape wins — D's trailing lookahead declines); a
     BARE (non-markdown) pinned HF URL in the gap neither declines nor
     rebinds — the claim binds past it to the earlier markdown link, a
-    documented recall/precision sacrifice. Lookahead ASYMMETRY (deliberate):
-    Pattern D declines ANY distributive ``per <word>`` qualifier while A/B
-    keep the narrow #833 per-namespace-only lookahead — a "per
+    documented recall/precision sacrifice. Pattern-E-specific sacrifices:
+    an E-paren immediately followed by an HF markdown link declines
+    (``_HF_LINK_FOLLOWS_PAREN_RE`` — B wins; its whitespace separators
+    span newlines, so a paren at end-of-line followed by a NEXT-LINE HF
+    markdown link also declines — a conservative recall residue, a
+    declined claim, never a wrong one). Lookahead ASYMMETRY (deliberate):
+    Patterns D and E decline ANY distributive ``per <word>`` qualifier
+    while A/B keep the narrow #833 per-namespace-only lookahead — a "per
     adapter"-style count in A/B position is a PRE-EXISTING hole outside
-    #1143's scope, left unchanged by design.
+    #1143's / #1422's scope, left unchanged by design.
     """
     kind_to_type = {"datasets": "dataset", "spaces": "space", None: "model"}
     stripped = _strip_fenced_blocks(body)
@@ -8778,9 +8843,17 @@ def _gather_hf_count_claims(body: str) -> list[tuple[int, str, str, str, str, st
             _add(cm.group("count"), cm.group("noun"), lm.group("url"))
     for pm in _COUNT_PAREN_LINK_RE.finditer(stripped):  # Pattern B: paren before link
         _add(pm.group("count"), pm.group("noun"), pm.group("url"))
-    for lm in _HF_LINKTEXT_THEN_PAREN_RE.finditer(stripped):  # Pattern C: paren after link
-        for cm in _FILES_AT_PINNED_REV_RE.finditer(lm.group("paren")):
+    for lm in _HF_LINKTEXT_THEN_PAREN_RE.finditer(stripped):  # Patterns C + E: paren after link
+        for cm in _FILES_AT_PINNED_REV_RE.finditer(lm.group("paren")):  # C (pinned-revision)
             _add(cm.group("count"), "files", lm.group("url"))
+        # Pattern E (#1005): the paren OPENS with the count-noun — .match()
+        # gives B/D-parity anchor semantics ("( 52 files)" with a leading
+        # space deliberately does not match, a documented recall sacrifice).
+        # An at-pinned-revision paren fires BOTH C and E with identical
+        # _add args — the shared `seen` key collapses them to one tuple.
+        em = _COUNT_OPEN_PAREN_AFTER_LINK_RE.match(lm.group("paren"))
+        if em is not None and _HF_LINK_FOLLOWS_PAREN_RE.match(stripped, lm.end()) is None:
+            _add(em.group("count"), em.group("noun"), lm.group("url"))
     for dm in _BACKTICK_SUBPATH_COUNT_PAREN_RE.finditer(stripped):  # Pattern D (#1143)
         lm = _nearest_preceding_pinned_tree_link(stripped, dm.start(), link_matches)
         if lm is None:
@@ -8997,13 +9070,20 @@ def check_hf_file_count_claims(body: str) -> CheckResult:
 
     Incident: task #931 shipped "528 files" / "10 shards" / "3 files" /
     "198 files" where the scoped listing at the pinned revision holds
-    515/9/2/197 — folder entries were counted as files. This check compares
+    515/9/2/197 — folder entries were counted as files. Task #1005's footer
+    then claimed 51/15 in bare trailing parentheticals right after its
+    pinned links where the pinned trees hold 52/17 — understated counts
+    invisible to Patterns A-D, so check 30 reported "no file-count claims
+    adjacent" and the miss cost a clean-result-critic round finding
+    (#1422). This check compares
     each extracted claim (``_gather_hf_count_claims`` — Pattern A count in
     link text / Pattern B paren-before-link / Pattern C anchored
     pinned-revision phrase in a paren AFTER the link / Pattern D backtick
     ``dir/`` sub-path + count-opening paren bound to the nearest preceding
     pinned link and scoped to ``<link-prefix>/<sub-path>`` (#1143, the
-    #1112 footer shape); see its docstring for
+    #1112 footer shape) / Pattern E a paren immediately AFTER the link
+    that OPENS with the count-noun (#1422, the #1005 footer shape); see
+    its docstring for
     the precision/recall trade-offs) against an EXHAUSTIVE files-only count
     of the pinned prefix (``_hf_file_count_for_prefix`` → the #733 bounded
     raw tree-endpoint probe; folders excluded).

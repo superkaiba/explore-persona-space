@@ -2150,9 +2150,10 @@ def test_hf_check25_not_found_is_skip_not_fail(monkeypatch):
 # #733 bounded raw tree-endpoint probe stack checks 23/25 use. Claim
 # positions: Pattern A count-in-link-text, Pattern B paren-before-link,
 # Pattern C anchored paren-after-link + the per-namespace form (#1088),
-# and Pattern D backtick `dir/` sub-path + count-opening paren bound to
-# the nearest preceding pinned link (#1143, the #1112 footer shape). All
-# tests are offline: extractor tests need no stub; probe tests stub
+# Pattern D backtick `dir/` sub-path + count-opening paren bound to
+# the nearest preceding pinned link (#1143, the #1112 footer shape), and
+# Pattern E trailing count-opening paren (#1422, the #1005 footer shape).
+# All tests are offline: extractor tests need no stub; probe tests stub
 # `verify_task_body._hf_tree_get` (`_stub_tree` / inline stateful
 # closures) after removing the conftest EPM_VERIFY_BODY_NO_HF fence.
 
@@ -3072,6 +3073,237 @@ def test_hf_count_subpath_dedup_with_link_text_pattern():
     )
     claims = verify_task_body._gather_hf_count_claims(row)
     assert [(c[0], c[1], c[5]) for c in claims] == [(7, "files", "parent/sub")]
+
+
+# ─── Check 30 Pattern E: trailing count-opening paren (#1422) ───────────────
+# #1005's footer carried bare trailing parentheticals immediately after its
+# pinned /tree links — `[summary store + manifest](…/tree/<sha>/…) (52
+# files)` — a count-OPENING paren matching none of the A-D anchors; the
+# incident body claimed 51/15 where the pinned trees hold 52/17 and check 30
+# reported "no file-count claims adjacent" (the miss cost a
+# clean-result-critic round finding). Extractor tests are pure; probe tests
+# stub `_hf_tree_get` after removing the conftest fence.
+
+_I1005_SHA_R1 = "621b370c668d5a1df0c158aa522ef9d046c4b3c2"
+_I1005_SHA_R2 = "9e79ce7f2c8126de99796b0b709b3c438756ad30"
+_I1005_REPO_ID = "superkaiba1/explore-persona-space-data"
+_I1005_PREFIX = "issue1005_cot_decomposition_r1"
+
+
+def _i1005_footer_excerpt() -> str:
+    """The two verbatim count-bearing footer sentences of the #1005 incident
+    body (tasks/awaiting_promotion/1005/body.md line 185 at fix time, copied
+    verbatim into this suite — never read from the live body at test time;
+    the `_i1112_footer` precedent), joined by one space (the intervening
+    footer prose elided). First-round sentence: five pinned links at the
+    first sha — four trailing count parens + one paren-less link
+    (`[per-context error tensors]`); round-2 sentence: three pinned links at
+    a second sha, all with trailing count parens (the corrected live counts
+    52/17 — the incident's wrong 51/15 exist only in the pre-fix history and
+    are re-introduced by the mismatch test below)."""
+    return (
+        "HF data repo paths under prefix `issue1005_cot_decomposition_r1/`, verified live via `li"
+        "st_repo_tree` at write time, revision-pinned: [rollout text](https://huggingface.co/data"
+        "sets/superkaiba1/explore-persona-space-data/tree/621b370c668d5a1df0c158aa522ef9d046c4b3c"
+        "2/issue1005_cot_decomposition_r1/raw_completions/thinking_rollouts) (50 files), [summary"
+        " store + manifest](https://huggingface.co/datasets/superkaiba1/explore-persona-space-dat"
+        "a/tree/621b370c668d5a1df0c158aa522ef9d046c4b3c2/issue1005_cot_decomposition_r1/analysis_"
+        "tensors/store) (52 files), [per-context error tensors](https://huggingface.co/datasets/s"
+        "uperkaiba1/explore-persona-space-data/tree/621b370c668d5a1df0c158aa522ef9d046c4b3c2/issu"
+        "e1005_cot_decomposition_r1/analysis_tensors/decomp), [fit results](https://huggingface.c"
+        "o/datasets/superkaiba1/explore-persona-space-data/tree/621b370c668d5a1df0c158aa522ef9d04"
+        "6c4b3c2/issue1005_cot_decomposition_r1/fit_results) (17 files incl. `f2f3/` and `indiv_m"
+        "lp_control/`), [driver figures](https://huggingface.co/datasets/superkaiba1/explore-pers"
+        "ona-space-data/tree/621b370c668d5a1df0c158aa522ef9d046c4b3c2/issue1005_cot_decomposition"
+        "_r1/figures) (87 files)."
+        " "
+        "HF (same prefix, revision-pinned, verified live via scoped `list_repo_tree`): [16K rollo"
+        "ut text](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/9e7"
+        "9ce7f2c8126de99796b0b709b3c438756ad30/issue1005_cot_decomposition_r1/raw_completions/thi"
+        "nking_rollouts_16k) (50 files: 42 updated + 8 verbatim), [16K summary store](https://hug"
+        "gingface.co/datasets/superkaiba1/explore-persona-space-data/tree/9e79ce7f2c8126de99796b0"
+        "b709b3c438756ad30/issue1005_cot_decomposition_r1/analysis_tensors/store/percq_summaries_"
+        "16k) (52 files), [16K fit results](https://huggingface.co/datasets/superkaiba1/explore-p"
+        "ersona-space-data/tree/9e79ce7f2c8126de99796b0b709b3c438756ad30/issue1005_cot_decomposit"
+        "ion_r1/fit_results_16k) (16 files)."
+    )
+
+
+def test_hf_count_extractor_trailing_paren_1005_shape():
+    """Pure extractor (Pattern E, #1422): the verbatim #1005 footer excerpt
+    yields EXACTLY the 7 expected claim tuples (complete 6-tuples, including
+    the repo_type field) in document order. Exact equality also pins that
+    the paren-less `[per-context error tensors]` link yields nothing."""
+    claims = verify_task_body._gather_hf_count_claims(_i1005_footer_excerpt())
+    assert claims == [
+        (
+            50,
+            "files",
+            _I1005_REPO_ID,
+            "dataset",
+            _I1005_SHA_R1,
+            f"{_I1005_PREFIX}/raw_completions/thinking_rollouts",
+        ),
+        (
+            52,
+            "files",
+            _I1005_REPO_ID,
+            "dataset",
+            _I1005_SHA_R1,
+            f"{_I1005_PREFIX}/analysis_tensors/store",
+        ),
+        (17, "files", _I1005_REPO_ID, "dataset", _I1005_SHA_R1, f"{_I1005_PREFIX}/fit_results"),
+        (87, "files", _I1005_REPO_ID, "dataset", _I1005_SHA_R1, f"{_I1005_PREFIX}/figures"),
+        (
+            50,
+            "files",
+            _I1005_REPO_ID,
+            "dataset",
+            _I1005_SHA_R2,
+            f"{_I1005_PREFIX}/raw_completions/thinking_rollouts_16k",
+        ),
+        (
+            52,
+            "files",
+            _I1005_REPO_ID,
+            "dataset",
+            _I1005_SHA_R2,
+            f"{_I1005_PREFIX}/analysis_tensors/store/percq_summaries_16k",
+        ),
+        (16, "files", _I1005_REPO_ID, "dataset", _I1005_SHA_R2, f"{_I1005_PREFIX}/fit_results_16k"),
+    ]
+
+
+def test_hf_count_extractor_trailing_paren_shapes():
+    """Pure extractor: minimal Pattern-E positives — bare `(9 files)`,
+    singular `(1 file)`, comma-grouped `(1,234 files)`, `(9 shards)`, and
+    the two trailing-content #1005 shapes (`incl.` prose, colon form)."""
+    u = f"{_I931_REPO}/tree/abc1234def/p"
+    shapes = [
+        (f"[x]({u}) (9 files)", (9, "files")),
+        (f"[x]({u}) (1 file)", (1, "file")),
+        (f"[x]({u}) (1,234 files)", (1234, "files")),
+        (f"[x]({u}) (9 shards)", (9, "shards")),
+        (f"[x]({u}) (17 files incl. `f2f3/` and `indiv_mlp_control/`)", (17, "files")),
+        (f"[x]({u}) (50 files: 42 updated + 8 verbatim)", (50, "files")),
+    ]
+    for body, (count, noun) in shapes:
+        claims = verify_task_body._gather_hf_count_claims(body)
+        assert [(c[0], c[1], c[5]) for c in claims] == [(count, noun, "p")], body
+
+
+def test_hf_count_extractor_trailing_paren_negative_cases():
+    """Shapes that must NOT extract via Pattern E (precision-first; each
+    guards a concrete false-positive class). The per-namespace arm ALSO
+    asserts the claim is not stolen from the per-namespace leg (which still
+    extracts it); `(891 files per seed)` in
+    test_hf_count_extractor_per_namespace_negative_cases is the standing
+    tripwire mechanically forcing the WIDE `per <word>` lookahead."""
+    u = f"{_I931_REPO}/tree/abc1234def/p"
+    # Distributive `per <word>` declines — E never steals the per-namespace
+    # leg's claims (that leg still extracts, with its own semantics).
+    ns_body = f"[`ns_a/` @abc1234]({_I931_REPO}/tree/abc1234def/p) (12 files per namespace)"
+    assert verify_task_body._gather_hf_count_claims(ns_body) == []
+    ns_claims = verify_task_body._gather_hf_per_namespace_claims(ns_body)
+    assert [(c[0], c[4]) for c in ns_claims] == [(12, "p")]
+    negatives = [
+        f"[x]({u}) (891 files listed per namespace)",  # per-namespace, "listed" filler
+        f"[x]({u}) (11 files per adapter, 176 files total)",  # the #460 per-unit class
+        f"[x]({u}) (verified live via list_repo_tree)",  # non-count paren
+        f"[x]({u}) (total 515 files)",  # count does not OPEN the paren
+        f"[x]({u}) ( 52 files)",  # leading space — B/D anchor parity
+        f"[x]({_I931_REPO}/tree/main/p) (9 files)",  # moving ref, not hex-pinned
+        f"[x]({_I931_REPO}/blob/abc1234def/p/f.json) (9 files)",  # /blob/ = single file
+        "[x](https://huggingface.co/superkaiba1/explore-persona-space) (11 files)",  # no /tree/
+        "[x](https://github.com/o/r/tree/abc1234def/p) (9 files)",  # non-HF link
+        f"```\n[x]({u}) (9 files)\n```",  # fenced block
+        f"[x]({u})\n(9 files)",  # newline gap — the iterator is same-line only
+        f"[x]({u})   (9 files)",  # 3-space gap — outside the separator bound
+    ]
+    for body in negatives:
+        assert verify_task_body._gather_hf_count_claims(body) == [], body
+
+
+def test_hf_count_extractor_trailing_paren_dedup_with_pinned_phrase():
+    """An at-pinned-revision paren fires BOTH Pattern C and Pattern E with
+    identical `_add` args → exactly ONE tuple (the shared `seen` dedup, not
+    a special case). The pathological colon form
+    `(50 files: 1,234 files at the pinned revision)` fires E (50) AND C
+    (1234) → TWO distinct tuples on the same prefix, each verified
+    independently (the multi-claim semantics Pattern A already has)."""
+    u = f"{_I931_REPO}/tree/abc1234def/p"
+    one = verify_task_body._gather_hf_count_claims(f"[x]({u}) (1,234 files at the pinned revision)")
+    assert [(c[0], c[1], c[5]) for c in one] == [(1234, "files", "p")]
+    patho = verify_task_body._gather_hf_count_claims(
+        f"[x]({u}) (50 files: 1,234 files at the pinned revision)"
+    )
+    assert sorted((c[0], c[1], c[5]) for c in patho) == [
+        (50, "files", "p"),
+        (1234, "files", "p"),
+    ]
+
+
+def test_hf_count_trailing_paren_b_adjacency_declines():
+    """`[x](url1) (52 files): [y](url2)` → E declines (the paren is
+    immediately followed by an HF markdown link — Pattern B's
+    paren-before-link shape) and B ALONE extracts, scoped to url2's OWN
+    prefix: exactly one tuple, never a second differently-scoped claim from
+    the same paren."""
+    body = (
+        f"[x @abc1234]({_I931_REPO}/tree/abc1234def/p) (52 files): "
+        f"[y @abc1234]({_I931_REPO}/tree/abc1234def/other)"
+    )
+    claims = verify_task_body._gather_hf_count_claims(body)
+    assert [(c[0], c[1], c[5]) for c in claims] == [(52, "files", "other")]
+
+
+def test_hf_count_trailing_paren_mismatch_warns_1005_shape(monkeypatch):
+    """The #1005 incident reconstruction: the footer's `[summary store +
+    manifest](…) (51 files)` claim (the incident's original understated
+    count) against a stubbed pinned tree of 52 files → WARN naming both
+    numbers + the subset hedge (51 < 52 may describe a subset); `passed`
+    stays True (WARN-only invariant — no `passed=False` path added)."""
+    monkeypatch.delenv("EPM_VERIFY_BODY_NO_HF", raising=False)
+    # Explicit cache hygiene: this test and its match-passes sibling share
+    # the same (repo, sha, prefix) key and `_HF_TREE_FILE_COUNT_CACHE` is
+    # module-global — clear it so the probe can never be served by a
+    # sibling's cached listing (the shard-claims one-sided precedent; the
+    # autouse fixture also clears between tests).
+    verify_task_body._HF_TREE_FILE_COUNT_CACHE.clear()
+    needle = f"{_I1005_PREFIX}/analysis_tensors/store"
+    entries = [{"path": needle, "type": "directory"}]
+    entries += [{"path": f"{needle}/f{i}.npz", "type": "file"} for i in range(52)]
+    _stub_tree(monkeypatch, status="ok", entries=entries)
+    body = (
+        f"[summary store + manifest]({_I931_REPO}/tree/{_I1005_SHA_R1}/"
+        f"{_I1005_PREFIX}/analysis_tensors/store) (51 files)"
+    )
+    r = verify_task_body.check_hf_file_count_claims(body)
+    assert r.passed and r.is_warn, r.detail
+    assert "51" in r.detail and "52 file(s)" in r.detail
+    assert "subset of the prefix" in r.detail
+
+
+def test_hf_count_trailing_paren_match_passes(monkeypatch):
+    """The same single-claim body with the CORRECT count `(52 files)` →
+    clean PASS: no WARN, no `unverified` note, `1 claim(s) checked`."""
+    monkeypatch.delenv("EPM_VERIFY_BODY_NO_HF", raising=False)
+    # Same explicit cache hygiene as the mismatch sibling above: without the
+    # clear, a cached listing on the shared key could serve this probe and
+    # make the PASS vacuous.
+    verify_task_body._HF_TREE_FILE_COUNT_CACHE.clear()
+    needle = f"{_I1005_PREFIX}/analysis_tensors/store"
+    entries = [{"path": needle, "type": "directory"}]
+    entries += [{"path": f"{needle}/f{i}.npz", "type": "file"} for i in range(52)]
+    _stub_tree(monkeypatch, status="ok", entries=entries)
+    body = (
+        f"[summary store + manifest]({_I931_REPO}/tree/{_I1005_SHA_R1}/"
+        f"{_I1005_PREFIX}/analysis_tensors/store) (52 files)"
+    )
+    r = verify_task_body.check_hf_file_count_claims(body)
+    assert r.passed and not r.is_warn, r.detail
+    assert "unverified" not in r.detail
+    assert "1 claim(s) checked" in r.detail
 
 
 # ─── Check 32: HF-adjacent backtick file claims vs the pinned tree (WARN) ──
