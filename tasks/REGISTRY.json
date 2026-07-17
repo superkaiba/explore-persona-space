@@ -3537,8 +3537,8 @@
     "1454": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1454",
-      "status": "planning",
+      "path": "tasks/approved/1454",
+      "status": "approved",
       "title": "daily-fix: IAP tunneling in GcpBackend.fetch_results"
     },
     "1455": {
