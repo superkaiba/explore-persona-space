@@ -3453,8 +3453,8 @@
     "1443": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/1443",
-      "status": "approved",
+      "path": "tasks/running/1443",
+      "status": "running",
       "title": "daily-fix: anchor repo-root guard cd-scope latch"
     },
     "1444": {
