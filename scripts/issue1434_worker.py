@@ -109,18 +109,48 @@ def worker_config(args: argparse.Namespace) -> run1090.RunConfig:
     )
 
 
-def resolve_cell_keys(cells_arg: str | None, smoke: bool) -> list[str]:
+def skipped_cells_from_manifest(cfg: run1090.RunConfig) -> set[str]:
+    """G1 yield-skipped cells from the stage manifest (out_root copy first,
+    committed copy as the fallback; empty set when neither exists — e.g. a
+    smoke chain that never ran stage). Consumed so downstream phases
+    auto-exclude never-trained cells instead of crashing on their missing
+    build results (the registered G1 drop path stays composable)."""
+    for path in (
+        cfg.out_root / "cell_manifest_i1434.json",
+        cells.DELIVERABLES_DIR_1434 / "cell_manifest_i1434.json",
+    ):
+        if path.exists():
+            return set(run1090._read_json(path).get("skipped_cells_yield_floor") or [])
+    return set()
+
+
+def resolve_cell_keys(
+    cells_arg: str | None, smoke: bool, cfg: run1090.RunConfig | None = None
+) -> list[str]:
     """The ONE context-cell resolver every VM/pod phase consumes (smoke = the
-    SAME path on the persona cell — the run-resolver's cell twin)."""
+    SAME path on the persona cell — the run-resolver's cell twin).
+
+    With ``cfg`` given and no explicit ``--cells`` override, G1 yield-skipped
+    cells from the stage manifest are auto-excluded (loud log). An explicit
+    ``--cells`` list is honored verbatim (operator override wins).
+    """
     if cells_arg:
         keys = [t.strip() for t in cells_arg.split(",") if t.strip()]
         bad = [k for k in keys if k not in cells.CONTEXT_BY_CELL_KEY]
         if bad:
             raise ValueError(f"bad #1434 cells {bad!r}: known {sorted(cells.CONTEXT_BY_CELL_KEY)}")
         return keys
-    if smoke:
-        return ["ws-pers"]
-    return list(cells.CELL_KEYS)
+    keys = ["ws-pers"] if smoke else list(cells.CELL_KEYS)
+    if cfg is not None:
+        skipped = skipped_cells_from_manifest(cfg) & set(keys)
+        if skipped:
+            logger.warning(
+                "[i1434] auto-excluding G1 yield-skipped cells (manifest "
+                "skipped_cells_yield_floor): %s",
+                sorted(skipped),
+            )
+            keys = [k for k in keys if k not in skipped]
+    return keys
 
 
 def _cell_shim(cell_key: str) -> run1090.Cell:
@@ -341,6 +371,7 @@ def phase_stage(cfg: run1090.RunConfig, args: argparse.Namespace) -> int:
             for fname in ("train_mix.jsonl", "mix_meta.json"):
                 path = f"{cells.mix_hub_prefix(cell_key)}/{fname}"
                 ok = hub.retry_transient(
+                    # HUB_VERIFY_RETRY_EXEMPT: wrapped in hub.retry_transient (this call)
                     lambda p=path: api.file_exists(run1090.HF_DATA_REPO, p, repo_type="dataset"),
                     what=f"stage verify {path}",
                 )
@@ -419,7 +450,7 @@ def phase_base_arms(cfg: run1090.RunConfig, args: argparse.Namespace) -> int:
     gen = _gen_fn(cfg)
     base_root = cfg.out_root / "base_arms"
     try:
-        for cell_key in resolve_cell_keys(args.cells, cfg.smoke):
+        for cell_key in resolve_cell_keys(args.cells, cfg.smoke, cfg=cfg):
             ctx = cells.ensure_ws_context(cells.CONTEXT_BY_CELL_KEY[cell_key])
             _generate_and_persist(
                 gen,
@@ -479,7 +510,14 @@ def _run_selections(cfg: run1090.RunConfig, run_ids: list[str]) -> dict[str, dic
         rec = run1090._read_json(path)
         if rec.get("status") == "diverged":
             continue  # a K2-diverged arm carries no selection (recorded answer)
-        sels[run_id] = rec["selection"]
+        sel = rec.get("selection")
+        if sel is None:
+            raise RuntimeError(
+                f"[i1434-panel] {run_id}: status={rec.get('status')!r} build record has no "
+                "'selection' (mid-ladder crash?) — re-run dispatch for this run, or pass "
+                "--runs excluding it"
+            )
+        sels[run_id] = sel
     return sels
 
 
@@ -488,7 +526,7 @@ def phase_panel(cfg: run1090.RunConfig, args: argparse.Namespace) -> int:
     pre-registered selection rule) at their selected rungs."""
     run1090._phase("i1434_panel")
     qs = _eval_questions(cfg)
-    cell_keys = resolve_cell_keys(args.cells, cfg.smoke)
+    cell_keys = resolve_cell_keys(args.cells, cfg.smoke, cfg=cfg)
     run_ids = resolve_run_ids(cell_keys, cfg.smoke)
     selections = _run_selections(cfg, run_ids)
     verdicts: dict[str, dict] = {}
@@ -599,12 +637,13 @@ def _judge_rate_graded(
         for qi, q in enumerate(qs)
         for ci, comp in enumerate(comps[qi])
     ]
+    inst_root = judge_root / instrument  # plan §10 layout: judge/<instrument>/
     result = judge_graded(
         items,
         rubric,
         n_draws=n_draws,
-        cache_dir=judge_root / f"judge_cache_{instrument}",
-        save_raw=judge_root / f"judge_raw_{instrument}_{tag}.json",
+        cache_dir=inst_root / "cache",
+        save_raw=inst_root / f"judge_raw_{instrument}_{tag}.json",
         judge_model=BEHAVIORS[cells.BEHAVIOR].judge_model,
         max_tokens=fu3w.JUDGE_MAX_TOKENS,
     )
@@ -637,6 +676,43 @@ def _judge_rate_graded(
     return rec
 
 
+def _tier2_lattice_fields(trained_rec: dict, base_rec: dict) -> dict:
+    """The §3 lattice arithmetic for one tier2 cell — None-PROPAGATING.
+
+    A rate of ``None`` means EVERY item of that arm was judge-dropped
+    (drop-never-coerce, llm-judging rule 9): the lattice verdict is not
+    computable from a coerced 0.0, so every derived field propagates None and
+    the verdict reads ``not_computable_all_dropped`` (the arm is already
+    ``drop_flag_over_bar``-flagged upstream).
+    """
+    if trained_rec.get("rate") is None or base_rec.get("rate") is None:
+        logger.warning(
+            "[i1434-judge] %s / %s: rate None (all items judge-dropped) — "
+            "lattice verdict not computable; propagating None",
+            trained_rec.get("tag"),
+            base_rec.get("tag"),
+        )
+        return {
+            "q_band": None,
+            "delta": None,
+            "delta_newcombe_95": None,
+            "lattice_verdict": "not_computable_all_dropped",
+        }
+    q_band = trained_rec["rate"] - fu4.JUDGED_RATE_BAND[0]
+    delta_ci = cells.newcombe(
+        trained_rec["k_positive"],
+        trained_rec["n_scored"],
+        base_rec["k_positive"],
+        base_rec["n_scored"],
+    )
+    return {
+        "q_band": q_band,
+        "delta": trained_rec["rate"] - base_rec["rate"],
+        "delta_newcombe_95": list(delta_ci),
+        "lattice_verdict": cells.lattice_verdict(q_band, delta_ci),
+    }
+
+
 def _stage_if_missing(local: Path, hub_prefix: str) -> Path:
     """Local file wins (same-machine smoke); else stage the file from HF."""
     if local.exists():
@@ -652,7 +728,7 @@ def phase_judge_analyze(cfg: run1090.RunConfig, args: argparse.Namespace) -> int
     registered-rubric parity re-read, and the committed aggregates."""
     run1090._phase("i1434_judge_analyze")
     qs = _eval_questions(cfg)
-    cell_keys = resolve_cell_keys(args.cells, cfg.smoke)
+    cell_keys = resolve_cell_keys(args.cells, cfg.smoke, cfg=cfg)
     deliver = cfg.out_root / "deliverables" if cfg.smoke else cells.DELIVERABLES_DIR_1434
     deliver.mkdir(parents=True, exist_ok=True)
     judge_root = cfg.out_root / "judge"
@@ -729,17 +805,7 @@ def phase_judge_analyze(cfg: run1090.RunConfig, args: argparse.Namespace) -> int
                 instrument="pv",
             )
             entry["trained"] = trained_rec
-            q_band = (trained_rec["rate"] or 0.0) - fu4.JUDGED_RATE_BAND[0]
-            delta_ci = cells.newcombe(
-                trained_rec["k_positive"],
-                trained_rec["n_scored"],
-                base_rec["k_positive"],
-                base_rec["n_scored"],
-            )
-            entry["q_band"] = q_band
-            entry["delta"] = (trained_rec["rate"] or 0.0) - (base_rec["rate"] or 0.0)
-            entry["delta_newcombe_95"] = list(delta_ci)
-            entry["lattice_verdict"] = cells.lattice_verdict(q_band, delta_ci)
+            entry.update(_tier2_lattice_fields(trained_rec, base_rec))
         tier2[cell_key] = entry
 
     # 4. Panel judging (verdict arms + shared base) -> leakage.
@@ -781,14 +847,25 @@ def phase_judge_analyze(cfg: run1090.RunConfig, args: argparse.Namespace) -> int
                 judge_root=judge_root,
                 instrument="pv",
             )
-            delta = (trained_rec["rate"] or 0.0) - (base_panel_rates[ctx_id]["rate"] or 0.0)
+            t_rate = trained_rec["rate"]
+            b_rate = base_panel_rates[ctx_id]["rate"]
+            # None-propagation (drop-never-coerce): an all-dropped arm's delta
+            # is None, excluded from the leakage mean — never a coerced 0.0.
+            delta = (t_rate - b_rate) if (t_rate is not None and b_rate is not None) else None
+            if delta is None:
+                logger.warning(
+                    "[i1434-judge] panel %s@%s: rate None (all items judge-dropped) — "
+                    "delta propagated as None",
+                    run_id,
+                    ctx_id,
+                )
             rows[ctx_id] = {
                 "trained": trained_rec,
                 "base": base_panel_rates[ctx_id],
                 "delta": delta,
                 "is_source_context": ctx_id == source_ctx,
             }
-            if ctx_id != source_ctx:
+            if ctx_id != source_ctx and delta is not None:
                 deltas.append(delta)
         panel[cell_key] = {
             "run_id": run_id,
@@ -857,6 +934,18 @@ def phase_judge_analyze(cfg: run1090.RunConfig, args: argparse.Namespace) -> int
         {"selections": selections, "verdict_arms": verdict_arms},
     )
     logger.info("[i1434-judge-analyze] wrote %s", deliver / "i1434_ladders.json")
+    if cfg.upload:
+        # Plan §10: judge records (raw draws + rubric-keyed caches) persist to
+        # issue1434_writingstyle/judge/<instrument>/ — text/JSON uploads
+        # unconditionally (Upload Policy); one folder commit, fail-loud.
+        url = hub._upload(
+            judge_root,
+            run1090.HF_DATA_REPO,
+            "dataset",
+            f"{cells.DATA_PREFIX_1434}/judge",
+        )
+        if not str(url):
+            raise RuntimeError("judge records upload returned no path — refusing silent loss")
     return 0
 
 
