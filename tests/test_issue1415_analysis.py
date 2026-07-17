@@ -619,6 +619,84 @@ def test_judge_compact_id_collision_fails_loud(tmp_path, monkeypatch):
         jg.build_items(metas, bulk_root, pair_labels)
 
 
+def test_judge_layer_sweep_selection_schema_and_workdir_separation(tmp_path, monkeypatch):
+    """--layer-sweep selects EXACTLY the phase1c_layers cells (every primary
+    phase excluded), emits layer-carrying arm labels, and keeps its id_map /
+    cache / raw under its OWN work-dir (9a-ter follow-up)."""
+    from explore_persona_space.eval import batch_judge, graded_judge
+
+    out_root, bulk_root, bank = _judge_fixture(tmp_path)
+    calls: list[dict] = []
+
+    def impl(**kw):
+        calls.append(kw)
+        all_scores = {}
+        for item_id, qmap in kw["completions"].items():
+            for _q, comps in qmap.items():
+                for ci in range(len(comps)):
+                    all_scores[f"{item_id}__00000__{ci:02d}"] = {"reasoning": "r", "score": 55}
+        save_raw = Path(kw["save_raw"])
+        save_raw.parent.mkdir(parents=True, exist_ok=True)
+        save_raw.write_text(json.dumps({"all_scores": all_scores}))
+
+    fake = create_autospec(batch_judge.judge_completions_batch, side_effect=impl)
+    monkeypatch.setattr(graded_judge._batch_judge, "judge_completions_batch", fake)
+
+    out = tmp_path / "scores_layer_sweep.json"
+    work = tmp_path / "work_layer_sweep"
+    jg.main(
+        [
+            "--out-root",
+            str(out_root),
+            "--bulk-root",
+            str(bulk_root),
+            "--pair-bank",
+            str(bank),
+            "--out-json",
+            str(out),
+            "--work-dir",
+            str(work),
+            "--n-draws",
+            "2",
+            "--layer-sweep",
+        ]
+    )
+
+    # selection filter: exactly the one phase1c_layers fixture cell, 2 draws
+    assert fake.call_count == 1
+    sweep_key = jg.compact_cell_key("gen1c/context/pair0/L2/a1")
+    assert set(calls[0]["completions"]) == {f"{sweep_key}_d0", f"{sweep_key}_d1"}
+
+    # output schema: sweep-only judged_phases + layer-carrying arm label
+    j = json.loads(out.read_text())
+    assert j["judged_phases"] == ["phase1c_layers"]
+    assert set(j["per_arm"]) == {"steered_L2_context"}
+    item = j["per_item"]["gen1c/context/pair0/L2/a1/d0"]
+    assert item["arm"] == "steered_L2_context"
+    assert item["layer"] == 2 and item["phase"] == "phase1c_layers"
+    # no baseline/ceiling arms in this mode -> k1 degrades gracefully
+    assert j["k1_judge_check"]["n_pairs_evaluable"] == 0
+
+    # work-dir separation: everything lands under the sweep work-dir; the
+    # primary work-dir path is never created by this run
+    assert (work / "id_map.json").exists()
+    assert Path(calls[0]["save_raw"]).is_relative_to(work)
+    assert Path(calls[0]["cache_dir"]).is_relative_to(work)
+    assert not (tmp_path / "work").exists()
+
+
+def test_judge_layer_sweep_default_paths_are_partitioned():
+    """Deferred argparse defaults: --layer-sweep resolves to the separate
+    output JSON + work-dir; the primary defaults are unchanged without it."""
+    a = jg.parse_args(["--layer-sweep"])
+    assert a.out_json.name == "behavioral_judge_scores_layer_sweep.json"
+    assert a.work_dir.name == "judge_layer_sweep"
+    b = jg.parse_args([])
+    assert b.out_json.name == "behavioral_judge_scores.json"
+    assert b.work_dir.name == "judge"
+    assert a.out_json != b.out_json and a.work_dir != b.work_dir
+
+
 # ── deliverable 4: logit lens ─────────────────────────────────────────
 
 
