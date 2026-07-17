@@ -517,8 +517,8 @@
     "1065": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1065",
-      "status": "planning",
+      "path": "tasks/approved/1065",
+      "status": "approved",
       "title": "daily-held: Step 10d task-state merge-conflict contract"
     },
     "1066": {
