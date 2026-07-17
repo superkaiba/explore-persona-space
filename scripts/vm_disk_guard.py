@@ -62,6 +62,17 @@ the threshold, a loud WARNING line is printed and (when present) the my-goat
 ``telegram_push.sh`` is invoked fail-soft so the disk-pressure situation is
 surfaced for manual triage.
 
+Device-vs-filesystem size reconciliation (#1457): every run additionally
+compares each watched disk's TOP-LEVEL block device size (sysfs) against the
+mounted filesystem size (statvfs) and WARNs when the device exceeds the fs by
+more than BOTH thresholds — a resized-but-unexpanded disk (growpart and/or
+resize2fs never ran; incident 2026-07-16: a 485G fs on the 1TB boot disk while
+cleanup tiers fired). Surfacing ONLY — the guard NEVER runs
+growpart/resize2fs/parted or any mutating block/fs command; exit codes are
+unchanged. Blind spot: if the kernel has not rescanned a resized virtio
+device, sysfs ``size`` still reads the old capacity and no WARN fires until
+rescan/reboot (out of this method's reach; not the incident class).
+
 Mirrors the style of ``scripts/worktree_audit.py`` + ``scripts/gcp_audit.py``:
 pure decision helpers are unit-testable, side effects are gated on ``--apply``,
 and the cron wrapper (``scripts/cron_vm_disk_guard.sh``) runs ``--apply``.
@@ -74,12 +85,13 @@ import contextlib
 import fcntl
 import io
 import json
+import math
 import os
 import shutil
 import subprocess
 import sys
 import time
-from dataclasses import dataclass, field
+from dataclasses import asdict, dataclass, field
 from pathlib import Path
 
 from explore_persona_space.task_workflow import find_task_path, repo_root
@@ -100,6 +112,18 @@ from clean_experiment_downloads import (
 
 # Default usage threshold (% of /) above which cleanup runs. Env-overridable.
 DEFAULT_THRESHOLD_PCT = 85.0
+
+# Device-vs-filesystem size reconciliation (#1457): WARN when the TOP-LEVEL
+# block device backing a watched mount exceeds the mounted filesystem by more
+# than BOTH thresholds — a resized-but-unexpanded disk (growpart and/or
+# resize2fs never ran; incident 2026-07-16: 485G fs on the 1TB boot disk while
+# cleanup tiers fired). Percent normalizes for ext4 metadata overhead
+# (measured 2026-07-17: 3.10% on /, 1.67% on /mnt/eps-data); the absolute
+# floor suppresses fixed-overhead noise on small disks (the incident gap
+# ~526 GB clears it 50x). Surfacing ONLY — the guard NEVER runs
+# growpart/resize2fs.
+DEFAULT_DEVICE_FS_GAP_PCT = 5.0
+DEFAULT_DEVICE_FS_GAP_MIN_GB = 10.0
 
 # The dedicated data disk that holds the relocated `.claude/worktrees/` tree
 # (task #681). It is a SECOND watched mount, distinct from `/` (the boot disk).
@@ -371,6 +395,33 @@ def threshold_pct() -> float:
     return val
 
 
+def device_fs_gap_pct() -> float:
+    """Device-vs-fs gap WARN threshold (% of device size), env-overridable
+    (``EPS_VM_DEVICE_FS_GAP_PCT``), clamped to (0, 100] (#1457)."""
+    raw = os.environ.get("EPS_VM_DEVICE_FS_GAP_PCT", str(DEFAULT_DEVICE_FS_GAP_PCT))
+    try:
+        val = float(raw)
+    except ValueError:
+        return DEFAULT_DEVICE_FS_GAP_PCT
+    if not (0.0 < val <= 100.0):
+        return DEFAULT_DEVICE_FS_GAP_PCT
+    return val
+
+
+def device_fs_gap_min_gb() -> float:
+    """Device-vs-fs gap absolute WARN floor (GiB), env-overridable
+    (``EPS_VM_DEVICE_FS_GAP_MIN_GB``), clamped to finite >= 0 (#1457).
+
+    Non-finite env values (``inf``/``nan``) fall back to the module default —
+    ``int(inf * 1024**3)`` would raise OverflowError out of the fail-soft check."""
+    raw = os.environ.get("EPS_VM_DEVICE_FS_GAP_MIN_GB", str(DEFAULT_DEVICE_FS_GAP_MIN_GB))
+    try:
+        val = float(raw)
+    except ValueError:
+        return DEFAULT_DEVICE_FS_GAP_MIN_GB
+    return val if math.isfinite(val) and val >= 0.0 else DEFAULT_DEVICE_FS_GAP_MIN_GB
+
+
 def log_max_age_days() -> float:
     """Stale-log age cutoff in days, env-overridable, clamped to >= 0."""
     raw = os.environ.get("EPS_VM_DISK_LOG_MAX_AGE_DAYS", str(DEFAULT_LOG_MAX_AGE_DAYS))
@@ -448,6 +499,161 @@ def _discover_tmp_issue_numbers(tmp_root: Path) -> list[int]:
     return sorted(found)
 
 
+# ─── device-vs-fs size reconciliation (#1457) ────────────────────────────────
+
+
+@dataclass
+class DeviceFsCheck:
+    """One watched mount's device-vs-filesystem size reconciliation read.
+
+    ``state`` is ``"warn"`` (device exceeds fs by more than BOTH thresholds —
+    a resized-but-unexpanded disk), ``"ok"``, or ``"skipped"`` (any resolution
+    failure / virtual device / kill switch; ``reason`` says why). Surfacing
+    ONLY — nothing in this module ever runs growpart/resize2fs."""
+
+    path: str
+    state: str  # "ok" | "warn" | "skipped"
+    device: str = ""  # top-level disk name, e.g. "sda", "sdb"
+    partition: str = ""  # mounted partition name ("sda1") or "" for whole-disk fs
+    partition_number: str = ""  # contents of the sysfs `partition` file (growpart hint)
+    device_bytes: int = 0
+    fs_bytes: int = 0
+    gap_bytes: int = 0
+    gap_pct: float = 0.0
+    threshold_pct: float = 0.0
+    min_gap_bytes: int = 0
+    reason: str = ""  # skip reason / one-line human summary
+
+
+def _device_bytes_for_mount(
+    path: str, *, sysfs_dev_root: str = "/sys/dev/block", stat_fn=os.stat
+) -> tuple[int, str, str, str] | tuple[None, str, None, None]:
+    """Resolve the TOP-LEVEL block device backing the filesystem at ``path``.
+
+    Returns ``(device_bytes, disk_name, partition_name, partition_number)`` on
+    success, or ``(None, reason, None, None)`` on ANY failure — containers /
+    overlayfs (anonymous major-0 devices), device-mapper / loop / md / zram
+    (virtual devices — deliberately skipped in v1: an LV smaller than its VG
+    is a legitimate layout), missing sysfs, non-Linux. Pure ``os.stat`` +
+    sysfs reads, no subprocess (the ``_is_mounted`` style). The sysfs ``size``
+    file is ALWAYS in 512-byte sectors (kernel stable ABI) regardless of the
+    device's logical block size."""
+    try:
+        st = stat_fn(path)
+        maj, mino = os.major(st.st_dev), os.minor(st.st_dev)
+        if maj == 0:
+            return None, f"anonymous device {maj}:{mino} (overlay/tmpfs/btrfs)", None, None
+        node = os.path.realpath(f"{sysfs_dev_root}/{maj}:{mino}")
+        if not os.path.isdir(node):
+            return None, f"no sysfs node for {maj}:{mino}", None, None
+        if "/devices/virtual/" in node:  # dm-*, loop*, md*, zram* — out of scope v1
+            return None, f"virtual block device ({os.path.basename(node)})", None, None
+        partition_name, partition_number = "", ""
+        part_file = os.path.join(node, "partition")
+        if os.path.exists(part_file):  # sda1 has it ("1"); whole disks (sdb) don't
+            partition_name = os.path.basename(node)
+            with open(part_file) as fh:
+                partition_number = fh.read().strip()
+            node = os.path.dirname(node)  # the partition dir's parent IS the disk
+        with open(os.path.join(node, "size")) as fh:
+            sectors = int(fh.read().strip())  # kernel ABI: ALWAYS 512-byte sectors
+        return sectors * 512, os.path.basename(node), partition_name, partition_number
+    except (OSError, ValueError) as exc:
+        return None, f"sysfs resolution failed: {exc}", None, None
+
+
+def check_device_fs_gap(
+    path: str,
+    *,
+    gap_pct_threshold: float | None = None,
+    min_gap_gb: float | None = None,
+    resolver=None,
+    statvfs_fn=os.statvfs,
+) -> DeviceFsCheck:
+    """Fail-soft device-vs-fs reconciliation for one watched mount.
+
+    NEVER raises: every failure path returns ``state="skipped"`` with a reason
+    (the cron guard is fleet-critical). WARN fires only when the gap is
+    strictly above BOTH the percent threshold AND the absolute floor
+    (exactly-at-threshold stays quiet). A negative gap (fs > device — exotic
+    layout) clamps ``gap_bytes``/``gap_pct`` to 0 and reports ``ok``.
+    ``resolver``/``statvfs_fn`` are test seams; production callers pass
+    nothing."""
+    thr = gap_pct_threshold if gap_pct_threshold is not None else device_fs_gap_pct()
+    min_gb = min_gap_gb if min_gap_gb is not None else device_fs_gap_min_gb()
+    try:
+        # int(inf) raises OverflowError, int(nan) raises ValueError — and a huge
+        # finite GiB value (>= ~1.5e299) overflows to inf in the float multiply.
+        # Fall back to the module default so this NEVER raises out of the check.
+        floor_b = int(min_gb * 1024**3)
+    except (OverflowError, ValueError):
+        floor_b = int(DEFAULT_DEVICE_FS_GAP_MIN_GB * 1024**3)
+    if os.environ.get("EPM_SKIP_DEVICE_FS_CHECK", "").strip() == "1":
+        return DeviceFsCheck(
+            path=path,
+            state="skipped",
+            threshold_pct=thr,
+            min_gap_bytes=floor_b,
+            reason="disabled via EPM_SKIP_DEVICE_FS_CHECK",
+        )
+    try:
+        resolve = resolver if resolver is not None else _device_bytes_for_mount
+        dev = resolve(path)
+        if dev[0] is None:
+            return DeviceFsCheck(
+                path=path,
+                state="skipped",
+                threshold_pct=thr,
+                min_gap_bytes=floor_b,
+                reason=str(dev[1]),
+            )
+        device_bytes, disk, part, part_no = dev
+        try:
+            sv = statvfs_fn(path)
+        except OSError as exc:
+            return DeviceFsCheck(
+                path=path,
+                state="skipped",
+                threshold_pct=thr,
+                min_gap_bytes=floor_b,
+                reason=f"statvfs failed: {exc}",
+            )
+        fs_bytes = sv.f_blocks * sv.f_frsize
+        if fs_bytes <= 0 or device_bytes <= 0:
+            return DeviceFsCheck(
+                path=path,
+                state="skipped",
+                threshold_pct=thr,
+                min_gap_bytes=floor_b,
+                reason="zero-size read",
+            )
+        gap = device_bytes - fs_bytes
+        gap_pct = 100.0 * gap / device_bytes
+        # Strict > on BOTH legs: exactly-at-threshold is quiet by design.
+        warn = gap_pct > thr and gap > floor_b
+        return DeviceFsCheck(
+            path=path,
+            state="warn" if warn else "ok",
+            device=disk,
+            partition=part,
+            partition_number=part_no,
+            device_bytes=device_bytes,
+            fs_bytes=fs_bytes,
+            gap_bytes=max(gap, 0),
+            gap_pct=max(round(gap_pct, 2), 0.0),
+            threshold_pct=thr,
+            min_gap_bytes=floor_b,
+        )
+    except Exception as exc:
+        return DeviceFsCheck(
+            path=path,
+            state="skipped",
+            threshold_pct=thr,
+            min_gap_bytes=floor_b,
+            reason=f"device-fs check failed: {exc}",
+        )
+
+
 # ─── tier results ────────────────────────────────────────────────────────────
 
 
@@ -495,6 +701,10 @@ class GuardResult:
     apply: bool
     tiers: list[TierResult] = field(default_factory=list)
     still_over_after: bool = False
+    # Device-vs-fs size reconciliation (#1457): computed on EVERY pass (even
+    # under-threshold — a fresh resize is detectable long before disk
+    # pressure). Read-only + fail-soft; never affects tiers or exit codes.
+    device_fs: DeviceFsCheck | None = None
 
     @property
     def bytes_freed(self) -> int:
@@ -1419,6 +1629,11 @@ def run_guard(
         threshold_pct=thr,
         triggered=ignore_threshold or over_threshold(used_before, thr),
         apply=apply,
+        # #1457: computed BEFORE the under-threshold early return so a fresh
+        # resize is surfaced even when no cleanup is needed. Read-only
+        # (stat/sysfs/statvfs) + fail-soft — library callers on tmp paths get
+        # a harmless ok/skipped.
+        device_fs=check_device_fs_gap(disk_path),
     )
     if not res.triggered:
         return res
@@ -1520,6 +1735,9 @@ def _result_json(res: GuardResult) -> dict:
         # disposition — the dry-run acceptance surface (report-only persists
         # no sidecar rows; read THESE fields, never the sidecar).
         "total_discovered_bytes": res.total_discovered_bytes,
+        # #1457: the device-vs-fs reconciliation read for this disk (None only
+        # for legacy GuardResults constructed without the field).
+        "device_fs": asdict(res.device_fs) if res.device_fs is not None else None,
         "tiers": [
             {
                 "name": t.name,
@@ -1543,6 +1761,7 @@ def _print_report(res: GuardResult, disk_label: str = "/") -> None:
         f"vm_disk_guard ({verb}): {disk_label} at {res.used_pct_before:.1f}% used "
         f"({res.free_gb_before:.1f}G free), threshold {res.threshold_pct:.0f}%"
     )
+    _print_device_fs_warning(res.device_fs)
     if not res.triggered:
         print("  under threshold — no cleanup needed")
         return
@@ -1563,6 +1782,85 @@ def _print_report(res: GuardResult, disk_label: str = "/") -> None:
             f"(threshold {res.threshold_pct:.0f}%) — manual triage needed",
             file=sys.stderr,
         )
+
+
+def _print_device_fs_warning(chk: DeviceFsCheck | None) -> None:
+    """Human-mode WARNING line for a device-vs-fs gap (#1457), stderr.
+
+    Prints ONLY on ``state == "warn"`` — ``ok`` and ``skipped`` print nothing
+    in human mode (the ``--json`` payload carries state + reason). Sizes in
+    binary GiB so the numbers match ``df -h``."""
+    if chk is None or chk.state != "warn":
+        return
+    if chk.partition:
+        fix_cmd = (
+            f"run `sudo growpart /dev/{chk.device} {chk.partition_number} "
+            f"&& sudo resize2fs /dev/{chk.partition}`"
+        )
+    else:
+        fix_cmd = f"run `sudo resize2fs /dev/{chk.device}`"
+    print(
+        f"  !! WARNING: {chk.path} block device ({chk.device}) is "
+        f"{chk.device_bytes / 2**30:.0f}G but the filesystem is only "
+        f"{chk.fs_bytes / 2**30:.0f}G — {chk.gap_pct:.1f}% "
+        f"({chk.gap_bytes / 2**30:.0f}G) unexpanded. A disk resize was likely never "
+        f"expanded: {fix_cmd}. The guard NEVER auto-resizes.",
+        file=sys.stderr,
+    )
+
+
+def _device_fs_ack_sentinel_path(device: str, device_bytes: int) -> Path:
+    """Per-(device, device-size-GB) ack sentinel for the #1457 push dedup.
+
+    The device size changes ONLY on an actual resize event, so each resize
+    gets exactly one push; touching the file manually acks/suppresses (the
+    ``disk-guard-ack-*`` idiom). Distinct ``devfs`` prefix — never collides
+    with the active-escalation ``disk-guard-ack-<N>-<band>`` sentinels."""
+    name = f"disk-guard-devfs-ack-{device}-{device_bytes // 10**9}g"
+    return repo_root() / ".claude" / "cache" / name
+
+
+def _maybe_alert_device_fs(chk: DeviceFsCheck | None, apply: bool, *, no_push: bool) -> None:
+    """Sidecar row + ONE deduped Telegram push for a device-vs-fs WARN (#1457).
+
+    Called UNCONDITIONALLY from ``main()`` on both passes: the sidecar row
+    rides EVERY warn run (``--no-push`` never gates it — the watcher's
+    ``--no-push`` sub-floor runs must still leave the observability row);
+    only the push+sentinel leg respects ``no_push``. Report-only mode
+    (``apply=False``) persists nothing — ``append_disk_guard_event`` and
+    ``_telegram_push`` both demote to stderr, and the sentinel is written
+    only after a REAL push landed. Surfacing only — never remediates."""
+    if chk is None or chk.state != "warn":
+        return
+    append_disk_guard_event(
+        {
+            "kind": "device-fs-gap",
+            "path": chk.path,
+            "device": chk.device,
+            "device_bytes": chk.device_bytes,
+            "fs_bytes": chk.fs_bytes,
+            "gap_pct": chk.gap_pct,
+        },
+        apply=apply,
+    )
+    if no_push:
+        return  # push+sentinel leg only below
+    sentinel = _device_fs_ack_sentinel_path(chk.device, chk.device_bytes)
+    if sentinel.exists():
+        return  # already pushed for this resize event (or manually acked)
+    pushed = _telegram_push(
+        f"VM disk guard: {chk.path} device {chk.device} is "
+        f"{chk.device_bytes / 2**30:.0f}G but the fs is {chk.fs_bytes / 2**30:.0f}G "
+        f"({chk.gap_pct:.0f}% unexpanded) — a disk resize was not grown; "
+        f"run growpart+resize2fs manually",
+        apply,
+    )
+    if apply and pushed:
+        try:
+            sentinel.parent.mkdir(parents=True, exist_ok=True)
+            sentinel.touch()  # dedup only after a REAL push landed
+        except OSError as exc:  # pragma: no cover - fail-soft I/O guard
+            print(f"  WARNING: devfs ack sentinel write failed: {exc}", file=sys.stderr)
 
 
 # Single-flight lock for --apply runs (#1392): the watcher's sub-floor reclaim
@@ -1739,6 +2037,14 @@ def main(argv: list[str] | None = None) -> int:
             f"cache or raise its setquota -P cap — never delete active data)",
             args.apply,
         )
+
+    # Device-vs-fs reconciliation alerts (#1457): called UNCONDITIONALLY on
+    # both passes — the sidecar row rides every warn run; only the
+    # push+sentinel leg respects --no-push (inside the helper). Never flips
+    # the exit code (exit 2 stays the still-over alarm channel).
+    _maybe_alert_device_fs(res.device_fs, args.apply, no_push=args.no_push)
+    if data_res is not None:
+        _maybe_alert_device_fs(data_res.device_fs, args.apply, no_push=args.no_push)
 
     # Exit 2 when EITHER disk is still over threshold after cleanup (signals the
     # cron wrapper to keep the alarm channel hot); 0 otherwise.
