@@ -6,6 +6,7 @@ paths:
   - "scripts/run_sweep.py"
   - "src/explore_persona_space/train/**"
   - "scripts/issue*.py"
+  - "scripts/issue*.sh"
 ---
 
 # Upload mechanics (deep)
@@ -162,6 +163,35 @@ it does not re-materialize the whole activation grid (#666/#772). Driving
 incident: #779's extraction driver (`issue779_extract_rb.py`) reduced kept
 rollouts to `r_B` and dropped the rollout text (wrote it only as judge input,
 not under `raw_completions/`), so a sibling arm had to regenerate.
+
+**Uploader eligibility filters must cover every plan-declared artifact class
+(#825).** An upload helper that enumerates files through an eligibility
+filter — `upload_folder(allow_patterns=[...])` / `ignore_patterns=[...]`, a
+custom `p.match(pat)` loop, an extension allowlist feeding `create_commit`
+ops — silently DROPS every artifact class the filter does not name: the
+upload "succeeds", the sentinel posts, and the class surfaces as missing
+only at the upload-verification gate (or never, if the instance is already
+gone). Producer duty: the UNION of a run's upload-eligibility filters
+covers every artifact class the plan declares as persisted — each §6.5
+`primary_deliverable:` row's path/glob and every §10 per-stage output
+destination (`raw_completions/<stage>/`, `analysis_tensors/`, eval JSONs) —
+with plan §10 `discarded_artifacts:` entries as the ONLY
+declared-not-uploaded exemption. When a run writes a NEW file kind beside
+existing ones (a `row_index*.jsonl` beside `*.npy` payloads), extend the
+filter in the same change that adds the writer. (Incident #825,
+upload-verification v14, 2026-07-16: `scripts/issue825_turndyn_upload.py
+--mode tensors` allowed only `**/*.npy` + `**/*.json`, so all 404
+`row_index*.jsonl` files (48.9 MB) declared in plan v24 §6.5 were never
+upload-ELIGIBLE; remediation succeeded only because the GCE instance was
+still alive — on the ephemeral `--instance-termination-action=DELETE`
+lanes a crash loses the class outright.) This is the UPLOAD-side sibling
+of the download-side `snapshot_download(allow_patterns=...)` gotcha
+(`.claude/rules/gotchas.md`) — same keyword, opposite direction, different
+failure. Enforcement: author-side self-check in
+`experiment-implementer.md` § After implementation step 7; review-side
+parity sub-check in `code-reviewer.md` Step 0.65 (Critical, tagged
+`substantive`); the upload-verifier at Step 8 stays the last-line safety
+net, not the only line of defense.
 
 **Regenerating a published artifact in place requires a version-bumped path or
 a regeneration note (#922/#779).** Re-uploading / reconstructing an
