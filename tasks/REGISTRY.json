@@ -3756,8 +3756,8 @@
       "goal": "On the #779 fitter-fair-comparison-n1m mapping h: c_last(x) -> v(x) (last-prompt-token activation -> mean-response activation profile, layer 19, Qwen-2.5-7B-Instruct, ~963k LMSYS+WildChat train contexts, pinned val 400 / test 1000 split), characterize what the map is bad at predicting: (1) rank held-out contexts by per-context prediction error and categorize the worst tail (corpus source, language, topic, length, refusal-adjacency) via the project judge; (2) using public Qwen2.5-7B batchtopk SAEs (16,384 features, layers 18/24 nearest the map layer), map SAE features in the context to the answer and identify the worst-predicted answer-side SAE features, with interpretations of the worst tail; (3) decompose the measured linear-vs-nonlinear gap (ridge test R2 0.754 vs MLP 0.810-0.813) per-context and per-feature/direction \u2014 which parts are predictable nonlinearly but not linearly, and conversely. Reuse the n1M captures (HF issue779_monitoring/fitter-fair-comparison-n1m/), the pinned split, and the issue-779-n1m branch fitters; refits recompute per-context residuals and must reconcile to the committed aggregate R2. Both mapping arms (prefix-based and context-based) for any newly fit map; a context-arm-only read of the existing n1M map is an explicit stated deviation.",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/proposed/1482",
-      "status": "proposed",
+      "path": "tasks/planning/1482",
+      "status": "planning",
       "title": "Error analysis of the n1M context\u2192answer map: worst-predicted contexts, worst-predicted SAE features, and the linear-vs-nonlinear gap"
     },
     "149": {
