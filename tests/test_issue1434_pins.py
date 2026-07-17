@@ -15,6 +15,20 @@ if str(REPO / "scripts") not in sys.path:
     sys.path.insert(0, str(REPO / "scripts"))
 
 from explore_persona_space.artifacts.behavior import BEHAVIORS, DVSpec  # noqa: E402
+from explore_persona_space.artifacts.context import CONTEXTS  # noqa: E402
+
+
+@pytest.fixture(autouse=True)
+def _restore_contexts_registry():
+    """r3 review Major: pins driving the REAL ``phase_datagen`` register the
+    conv/ICL contexts (``wildchat_prefix_real545`` / ``icl_prefix_<beh>``)
+    into the process-global CONTEXTS registry. Pop ONLY the keys the test
+    added (never wholesale-clear) so co-run orderings keep the clean-registry
+    precondition in test_issue1090_fu3_dispatcher green."""
+    before = set(CONTEXTS)
+    yield
+    for key in set(CONTEXTS) - before:
+        CONTEXTS.pop(key, None)
 
 
 def test_writing_style_dvspec_amendment():
