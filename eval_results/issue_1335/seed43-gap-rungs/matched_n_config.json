@@ -1,0 +1,17 @@
+{
+  "metadata": {
+    "git_commit": "4fc950e83e265522d34ef981d9f43b441ceb6a39",
+    "timestamp": "2026-07-17T15:49:07Z",
+    "seed": 0,
+    "n": 1774,
+    "script": "scripts/issue1335_fit.py",
+    "issue": 931
+  },
+  "n_min": 1774,
+  "n_draws": 5,
+  "seed_base": 931,
+  "arms": [
+    "ctx",
+    "prefix"
+  ]
+}
