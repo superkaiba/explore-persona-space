@@ -291,3 +291,206 @@ def test_fu6_local_adapter_dir_seam_fails_loud_before_staging(tmp_path, monkeypa
     }
     with pytest.raises(AssertionError):
         fu6.run_organism_capture(cfg, spec)
+
+
+# ── fu7 transport re-judge (fix round 3: issue1090_fu4_rejudge_transport.py
+#    fu7 dual-rubric read-dir shapes; llm-judging rule 24) ────────────────────
+
+# Listing snapshot of the REALIZED fu7 P3/P3.5 judge tree (2026-07-17;
+# `find data/issue_1090/fu7/fu7_aggregate/judge -name judge_raw.json` — 32
+# dirs). The parse pin runs over EVERY realized dir so an unhandled realized
+# shape can never reach the re-judge API path again (the fix-3 crash class:
+# `unrecognized fu4 judge read dir: .../pv/syc-c3-lr1e4-t2-trained-pv`).
+_FU7_RUN_IDS = (
+    "syc-c3-lr1e4",
+    "syc-c3-lr1e5",
+    "syc-c3-lr3e5",
+    "syc-c5-lr1e4",
+    "syc-c5-lr1e5",
+    "syc-c5-lr3e5",
+)
+_FU7_PANEL_ARMS = ("syc-c3-lr3e5", "syc-c5-lr1e4")  # best-installed arm per cell
+_FU7_PANEL_SLUGS = (
+    ("def", "default"),
+    ("icl", "icl_prefix_sycophancy"),
+    ("ph4", "neg_sp_ph4"),
+    ("pol", "neg_sp_police"),
+    ("wc", "wildchat_prefix_real545"),
+)
+_FU7_JUDGE_TREE_SNAPSHOT = (
+    [(f"pv/{rid}-t2-trained-pv", rid, "t2-pv", None) for rid in _FU7_RUN_IDS]
+    + [(f"sycophancy/{rid}-t2-trained", rid, "t2", None) for rid in _FU7_RUN_IDS]
+    + [
+        (f"pv/{rid}-pn-{slug}-pv", rid, "panel-pv", ctx)
+        for rid in _FU7_PANEL_ARMS
+        for slug, ctx in _FU7_PANEL_SLUGS
+    ]
+    + [
+        (f"panel_legacy/sycophancy/{rid}-pn-{slug}-legacy", rid, "panel-legacy", ctx)
+        for rid in _FU7_PANEL_ARMS
+        for slug, ctx in _FU7_PANEL_SLUGS
+    ]
+)
+assert len(_FU7_JUDGE_TREE_SNAPSHOT) == 32  # 6 t2-pv + 6 t2 + 10 panel-pv + 10 panel-legacy
+
+
+@pytest.mark.parametrize("rel,run_id,kind,ctx", _FU7_JUDGE_TREE_SNAPSHOT)
+def test_fu7_rejudge_parse_read_recognizes_every_realized_judge_dir(rel, run_id, kind, ctx):
+    """Fix round 3 pin: _parse_read decodes ALL realized fu7 dual-rubric judge
+    dir shapes (pure string parsing — no filesystem access)."""
+    import issue1090_fu4_rejudge_transport as rejudge
+
+    fu4.set_round("fu7")
+    jdir = Path("data/issue_1090/fu7/fu7_aggregate/judge") / rel
+    run, got_kind, prefix, ctx_id = rejudge._parse_read(jdir)
+    assert run.run_id == run_id
+    assert got_kind == kind
+    assert prefix == jdir.name  # item ids were minted as f"{tag}-q{i:03d}-c{j}"
+    assert ctx_id == ctx
+
+
+def test_fu7_rejudge_pv_merge_recovers_transport_and_recomputes(tmp_path, monkeypatch):
+    """Merge-path unit for one fu7 pv read: the transport draw is surgically
+    re-judged with the fu6 paper instrument (sha-asserted rubric, Sonnet pin,
+    mt=300, FRESH cache — rule 24(ii)) and merged in place; a CONTENT-dropped
+    draw stays dropped (never coerced); the recomputed tier2_trained_pv reads
+    transport_losses == 0 after full recovery; install_delta_pv + the fu7
+    lattice inputs are recomputed. Real tool bodies throughout; the only fake
+    is the external judge-API boundary (signature mirrors judge_graded)."""
+    import hashlib
+    import json
+
+    import issue1090_fu4_rejudge_transport as rejudge
+
+    fu4.set_round("fu7")
+    run = fu4._run_by_id()["syc-c3-lr1e4"]
+    out_root = tmp_path / "out"
+    tier2 = out_root / run.run_id / "tier2"
+    tier2.mkdir(parents=True)
+    (tier2 / f"completions__trained__{run.context_id}.json").write_text(
+        json.dumps(
+            {
+                "questions": ["Q zero?", "Q one?"],
+                "completions": [["a perfectly fine answer"], ["another fine answer"]],
+            }
+        )
+    )
+    tag = f"{run.run_id}-t2-trained-pv"
+    jdir = out_root / "fu7_aggregate" / "judge" / "pv" / tag
+    jdir.mkdir(parents=True)
+    all_scores = {
+        f"{tag}-q000-c0__00000__00": {"score": 90},
+        f"{tag}-q000-c0__00000__01": {"error": "Error code: 529 overloaded_error"},
+        f"{tag}-q001-c0__00001__00": {"score": 10},
+        f"{tag}-q001-c0__00001__01": {"score": "REFUSAL"},  # content drop — stays dropped
+    }
+    (jdir / "judge_raw.json").write_text(json.dumps({"all_scores": all_scores}))
+    (jdir / ("a" * 16 + ".json")).write_text(json.dumps({"error": "Error code: 529"}))
+    ladders = tmp_path / "fu7_ladders.json"
+    ladders.write_text(
+        json.dumps(
+            {
+                "smoke": False,
+                "runs": {
+                    run.run_id: {
+                        "run_id": run.run_id,
+                        "cell_key": run.cell_key,
+                        "behavior": run.behavior,
+                        "context_id": run.context_id,
+                        "status": "trained",
+                        "base_tier2": {"rate": 0.0},
+                        "tier2_trained": {"rate": 0.6, "mode": "judged"},
+                        "tier2_trained_pv": {"rate": 0.9, "n_dropped_draws": 2},
+                        "install_delta_pv": 0.8,
+                    }
+                },
+                "cells": {},
+            }
+        )
+    )
+    # Committed fu6 base reads — hermetic fixture (the real judged_reads_fu6
+    # is a committed eval_results artifact; the tool reads it via the module
+    # global, so the monkeypatch keeps the test independent of its values).
+    fu6_dir = tmp_path / "fu6_deliverables"
+    fu6_dir.mkdir()
+    (fu6_dir / "judged_reads_fu6.json").write_text(
+        json.dumps({"reads": {"fu3-tier2-C3-pers-con": {"base": {"rate": 0.1}}}})
+    )
+    monkeypatch.setattr(fu4, "FU6_DELIVERABLES_DIR", fu6_dir)
+    calls: list[dict] = []
+
+    def fake_judge_graded(
+        items,
+        eval_prompt,
+        *,
+        n_draws,
+        cache_dir,
+        save_raw,
+        judge_model,
+        temperature=0.7,
+        max_tokens=64,
+        dry_run=False,
+    ):
+        from explore_persona_space.eval.graded_judge import judge_result_from_save_raw
+
+        calls.append(
+            {
+                "items": [i[0] for i in items],
+                "n_draws": n_draws,
+                "judge_model": judge_model,
+                "max_tokens": max_tokens,
+                "cache_dir": str(cache_dir),
+                "rubric_sha256": hashlib.sha256(eval_prompt.encode("utf-8")).hexdigest(),
+            }
+        )
+        raw = {
+            f"{iid}__{i:05d}__{c:02d}": {"score": 80}
+            for i, (iid, _q, _a) in enumerate(items)
+            for c in range(n_draws)
+        }
+        save_raw = Path(save_raw)
+        save_raw.parent.mkdir(parents=True, exist_ok=True)
+        save_raw.write_text(json.dumps({"all_scores": raw}))
+        return judge_result_from_save_raw(save_raw, items)
+
+    monkeypatch.setattr(rejudge, "judge_graded", fake_judge_graded)
+    rc = rejudge.main(["--round", "fu7", "--out-root", str(out_root), "--ladders", str(ladders)])
+    assert rc == 0
+    # SAME instrument as the original pv pass (rule 24(ii)): the fu6 paper
+    # rubric (sha-pinned) + the fu6 Sonnet pin + mt=300, FRESH scratch cache.
+    assert calls and calls[0]["judge_model"] == fu6.JUDGE_MODEL
+    assert calls[0]["rubric_sha256"] == fu6.RUBRIC_SHA256
+    assert calls[0]["max_tokens"] == fu4.JUDGE_MAX_TOKENS_FU4 == 300
+    assert calls[0]["items"] == [f"{tag}-q000-c0"]
+    assert str(jdir) not in calls[0]["cache_dir"]
+    # Per-draw surgical merge: the transport row replaced, siblings (incl. the
+    # content-dropped REFUSAL draw) byte-unchanged.
+    raw = json.loads((jdir / "judge_raw.json").read_text())
+    assert raw["all_scores"][f"{tag}-q000-c0__00000__01"] == {"score": 80}
+    assert raw["all_scores"][f"{tag}-q001-c0__00001__01"] == {"score": "REFUSAL"}
+    assert raw["rejudge_transport"] == {
+        **raw["rejudge_transport"],
+        "n_rejudged": 1,
+        "n_recovered": 1,
+        "n_still_error": 0,
+    }
+    assert not (jdir / ("a" * 16 + ".json")).exists()  # stale cache entry purged
+    # Production reduce at the pv threshold: q000 mean 85 > 50 -> pos, q001
+    # mean 10 (REFUSAL dropped, never coerced) -> not pos; rate 0.5. Transport
+    # counter zeroed on recovery; the content drop survives as the split's
+    # content side.
+    out = json.loads(ladders.read_text())
+    pv = out["runs"][run.run_id]["tier2_trained_pv"]
+    assert pv["rate"] == 0.5
+    assert pv["transport_losses"] == 0
+    assert pv["n_dropped_draws"] == 1  # the REFUSAL content drop stays dropped
+    assert pv["content_dropped_draws"] == 1
+    assert pv["rubric_sha256"] == fu6.RUBRIC_SHA256
+    assert pv["judge_max_tokens"] == 300
+    assert out["runs"][run.run_id]["install_delta_pv"] == pytest.approx(0.5 - 0.1)
+    # fu7 lattice inputs recomputed from the merged reads.
+    assert out["cells"][run.cell_key]["tier2_pv"][run.run_id] == 0.5
+    report = json.loads((ladders.parent / "fu7_rejudge_transport_report.json").read_text())
+    assert report["round"] == "fu7"
+    assert report["n_transport_total"] == 1
+    assert report["n_recovered_total"] == 1
