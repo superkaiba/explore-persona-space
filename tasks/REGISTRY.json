@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1472,
+  "highest_id": 1473,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -3680,6 +3680,13 @@
       "path": "tasks/proposed/1472",
       "status": "proposed",
       "title": "daily-held: review diversity during Codex outage to Aug 6"
+    },
+    "1473": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1473",
+      "status": "proposed",
+      "title": "daily-held: fix sudo choom for lint-gate earlyoom shield"
     },
     "148": {
       "has_clean_result": false,
