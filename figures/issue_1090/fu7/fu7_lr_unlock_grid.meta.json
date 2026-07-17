@@ -1,0 +1,990 @@
+{
+  "commit": "27b31d7fea",
+  "created": "2026-07-17T16:43:54Z",
+  "figsize": [
+    11.0,
+    4.2
+  ],
+  "points": [
+    {
+      "optimizer step": 15.0,
+      "Tier-1 legacy judged rate": 0.62,
+      "error": 0.06667258409780641,
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "optimizer step": 10.0,
+      "Tier-1 legacy judged rate": 0.635,
+      "error": 0.06614004861132505,
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "optimizer step": 5.0,
+      "Tier-1 legacy judged rate": 0.592964824120603,
+      "error": 0.06763246317197347,
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "optimizer step": 15.0,
+      "Tier-1 legacy judged rate": 0.65,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "optimizer step": 10.0,
+      "Tier-1 legacy judged rate": 0.67,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "optimizer step": 5.0,
+      "Tier-1 legacy judged rate": 0.62,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "optimizer step": 2.0,
+      "Tier-1 legacy judged rate": 0.28,
+      "series": "fu2 dose-only ladder (epochs 6)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "optimizer step": 4.0,
+      "Tier-1 legacy judged rate": 0.22,
+      "series": "fu2 dose-only ladder (epochs 6)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "optimizer step": 6.0,
+      "Tier-1 legacy judged rate": 0.29,
+      "series": "fu2 dose-only ladder (epochs 6)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "optimizer step": 8.0,
+      "Tier-1 legacy judged rate": 0.33,
+      "series": "fu2 dose-only ladder (epochs 6)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "optimizer step": 10.0,
+      "Tier-1 legacy judged rate": 0.5,
+      "series": "fu2 dose-only ladder (epochs 6)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "optimizer step": 12.0,
+      "Tier-1 legacy judged rate": 0.59,
+      "series": "fu2 dose-only ladder (epochs 6)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "optimizer step": 14.0,
+      "Tier-1 legacy judged rate": 0.61,
+      "series": "fu2 dose-only ladder (epochs 6)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "optimizer step": 16.0,
+      "Tier-1 legacy judged rate": 0.52,
+      "series": "fu2 dose-only ladder (epochs 6)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "optimizer step": 18.0,
+      "Tier-1 legacy judged rate": 0.63,
+      "series": "fu2 dose-only ladder (epochs 6)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "optimizer step": 20.0,
+      "Tier-1 legacy judged rate": 0.59,
+      "series": "fu2 dose-only ladder (epochs 6)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "optimizer step": 22.0,
+      "Tier-1 legacy judged rate": 0.57,
+      "series": "fu2 dose-only ladder (epochs 6)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "optimizer step": 24.0,
+      "Tier-1 legacy judged rate": 0.61,
+      "series": "fu2 dose-only ladder (epochs 6)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "optimizer step": 26.0,
+      "Tier-1 legacy judged rate": 0.5858585858585859,
+      "series": "fu2 dose-only ladder (epochs 6)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "optimizer step": 28.0,
+      "Tier-1 legacy judged rate": 0.57,
+      "series": "fu2 dose-only ladder (epochs 6)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "optimizer step": 30.0,
+      "Tier-1 legacy judged rate": 0.58,
+      "series": "fu2 dose-only ladder (epochs 6)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "optimizer step": 5.0,
+      "Tier-1 legacy judged rate": 0.24,
+      "series": "lr 1e-5 (usual)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "optimizer step": 10.0,
+      "Tier-1 legacy judged rate": 0.41,
+      "series": "lr 1e-5 (usual)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "optimizer step": 15.0,
+      "Tier-1 legacy judged rate": 0.65,
+      "series": "lr 1e-5 (usual)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "optimizer step": 20.0,
+      "Tier-1 legacy judged rate": 0.64,
+      "series": "lr 1e-5 (usual)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "optimizer step": 25.0,
+      "Tier-1 legacy judged rate": 0.63,
+      "series": "lr 1e-5 (usual)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "optimizer step": 30.0,
+      "Tier-1 legacy judged rate": 0.65,
+      "series": "lr 1e-5 (usual)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "optimizer step": 35.0,
+      "Tier-1 legacy judged rate": 0.62,
+      "series": "lr 1e-5 (usual)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "optimizer step": 40.0,
+      "Tier-1 legacy judged rate": 0.6,
+      "series": "lr 1e-5 (usual)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "optimizer step": 45.0,
+      "Tier-1 legacy judged rate": 0.64,
+      "series": "lr 1e-5 (usual)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "optimizer step": 50.0,
+      "Tier-1 legacy judged rate": 0.61,
+      "series": "lr 1e-5 (usual)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "optimizer step": 55.0,
+      "Tier-1 legacy judged rate": 0.68,
+      "series": "lr 1e-5 (usual)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "optimizer step": 60.0,
+      "Tier-1 legacy judged rate": 0.63,
+      "series": "lr 1e-5 (usual)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "optimizer step": 65.0,
+      "Tier-1 legacy judged rate": 0.67,
+      "series": "lr 1e-5 (usual)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "optimizer step": 70.0,
+      "Tier-1 legacy judged rate": 0.67,
+      "series": "lr 1e-5 (usual)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "optimizer step": 75.0,
+      "Tier-1 legacy judged rate": 0.63,
+      "series": "lr 1e-5 (usual)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "optimizer step": 5.0,
+      "Tier-1 legacy judged rate": 0.41,
+      "series": "lr 3e-5",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "optimizer step": 10.0,
+      "Tier-1 legacy judged rate": 0.67,
+      "series": "lr 3e-5",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "optimizer step": 15.0,
+      "Tier-1 legacy judged rate": 0.63,
+      "series": "lr 3e-5",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "optimizer step": 20.0,
+      "Tier-1 legacy judged rate": 0.61,
+      "series": "lr 3e-5",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "optimizer step": 25.0,
+      "Tier-1 legacy judged rate": 0.64,
+      "series": "lr 3e-5",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "optimizer step": 30.0,
+      "Tier-1 legacy judged rate": 0.66,
+      "series": "lr 3e-5",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "optimizer step": 35.0,
+      "Tier-1 legacy judged rate": 0.72,
+      "series": "lr 3e-5",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "optimizer step": 40.0,
+      "Tier-1 legacy judged rate": 0.68,
+      "series": "lr 3e-5",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "optimizer step": 45.0,
+      "Tier-1 legacy judged rate": 0.65,
+      "series": "lr 3e-5",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "optimizer step": 50.0,
+      "Tier-1 legacy judged rate": 0.6868686868686869,
+      "series": "lr 3e-5",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "optimizer step": 55.0,
+      "Tier-1 legacy judged rate": 0.71,
+      "series": "lr 3e-5",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "optimizer step": 60.0,
+      "Tier-1 legacy judged rate": 0.69,
+      "series": "lr 3e-5",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "optimizer step": 65.0,
+      "Tier-1 legacy judged rate": 0.67,
+      "series": "lr 3e-5",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "optimizer step": 70.0,
+      "Tier-1 legacy judged rate": 0.63,
+      "series": "lr 3e-5",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "optimizer step": 75.0,
+      "Tier-1 legacy judged rate": 0.69,
+      "series": "lr 3e-5",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "optimizer step": 5.0,
+      "Tier-1 legacy judged rate": 0.62,
+      "series": "lr 1e-4",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "optimizer step": 10.0,
+      "Tier-1 legacy judged rate": 0.55,
+      "series": "lr 1e-4",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "optimizer step": 15.0,
+      "Tier-1 legacy judged rate": 0.54,
+      "series": "lr 1e-4",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "optimizer step": 20.0,
+      "Tier-1 legacy judged rate": 0.69,
+      "series": "lr 1e-4",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "optimizer step": 25.0,
+      "Tier-1 legacy judged rate": 0.6,
+      "series": "lr 1e-4",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "optimizer step": 30.0,
+      "Tier-1 legacy judged rate": 0.74,
+      "series": "lr 1e-4",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "optimizer step": 35.0,
+      "Tier-1 legacy judged rate": 0.79,
+      "series": "lr 1e-4",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "optimizer step": 40.0,
+      "Tier-1 legacy judged rate": 0.77,
+      "series": "lr 1e-4",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "optimizer step": 45.0,
+      "Tier-1 legacy judged rate": 0.81,
+      "series": "lr 1e-4",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "optimizer step": 50.0,
+      "Tier-1 legacy judged rate": 0.78,
+      "series": "lr 1e-4",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "optimizer step": 55.0,
+      "Tier-1 legacy judged rate": 0.74,
+      "series": "lr 1e-4",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "optimizer step": 60.0,
+      "Tier-1 legacy judged rate": 0.74,
+      "series": "lr 1e-4",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "optimizer step": 65.0,
+      "Tier-1 legacy judged rate": 0.75,
+      "series": "lr 1e-4",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "optimizer step": 70.0,
+      "Tier-1 legacy judged rate": 0.76,
+      "series": "lr 1e-4",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "optimizer step": 75.0,
+      "Tier-1 legacy judged rate": 0.73,
+      "series": "lr 1e-4",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "optimizer step": 40.0,
+      "y": 0.615,
+      "error": 0.06683532150146865,
+      "_kind": "errorbar",
+      "_group": 10
+    },
+    {
+      "optimizer step": 10.0,
+      "y": 0.66,
+      "error": 0.06510096873097582,
+      "_kind": "errorbar",
+      "_group": 11
+    },
+    {
+      "optimizer step": 5.0,
+      "y": 0.82,
+      "error": 0.05308521526852161,
+      "_kind": "errorbar",
+      "_group": 12
+    },
+    {
+      "optimizer step": 40.0,
+      "y": 0.6,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "optimizer step": 10.0,
+      "y": 0.66,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "optimizer step": 5.0,
+      "y": 0.84,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "optimizer step": 2.0,
+      "y": 0.2,
+      "series": "fu2 dose-only ladder (epochs 6)",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "optimizer step": 4.0,
+      "y": 0.28,
+      "series": "fu2 dose-only ladder (epochs 6)",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "optimizer step": 6.0,
+      "y": 0.33,
+      "series": "fu2 dose-only ladder (epochs 6)",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "optimizer step": 8.0,
+      "y": 0.41,
+      "series": "fu2 dose-only ladder (epochs 6)",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "optimizer step": 10.0,
+      "y": 0.53,
+      "series": "fu2 dose-only ladder (epochs 6)",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "optimizer step": 12.0,
+      "y": 0.52,
+      "series": "fu2 dose-only ladder (epochs 6)",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "optimizer step": 14.0,
+      "y": 0.54,
+      "series": "fu2 dose-only ladder (epochs 6)",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "optimizer step": 16.0,
+      "y": 0.55,
+      "series": "fu2 dose-only ladder (epochs 6)",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "optimizer step": 18.0,
+      "y": 0.58,
+      "series": "fu2 dose-only ladder (epochs 6)",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "optimizer step": 20.0,
+      "y": 0.56,
+      "series": "fu2 dose-only ladder (epochs 6)",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "optimizer step": 22.0,
+      "y": 0.59,
+      "series": "fu2 dose-only ladder (epochs 6)",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "optimizer step": 24.0,
+      "y": 0.56,
+      "series": "fu2 dose-only ladder (epochs 6)",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "optimizer step": 26.0,
+      "y": 0.53,
+      "series": "fu2 dose-only ladder (epochs 6)",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "optimizer step": 28.0,
+      "y": 0.57,
+      "series": "fu2 dose-only ladder (epochs 6)",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "optimizer step": 30.0,
+      "y": 0.55,
+      "series": "fu2 dose-only ladder (epochs 6)",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "optimizer step": 5.0,
+      "y": 0.25,
+      "series": "lr 1e-5 (usual)",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "optimizer step": 10.0,
+      "y": 0.44,
+      "series": "lr 1e-5 (usual)",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "optimizer step": 15.0,
+      "y": 0.57,
+      "series": "lr 1e-5 (usual)",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "optimizer step": 20.0,
+      "y": 0.58,
+      "series": "lr 1e-5 (usual)",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "optimizer step": 25.0,
+      "y": 0.54,
+      "series": "lr 1e-5 (usual)",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "optimizer step": 30.0,
+      "y": 0.56,
+      "series": "lr 1e-5 (usual)",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "optimizer step": 35.0,
+      "y": 0.59,
+      "series": "lr 1e-5 (usual)",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "optimizer step": 40.0,
+      "y": 0.6,
+      "series": "lr 1e-5 (usual)",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "optimizer step": 45.0,
+      "y": 0.59,
+      "series": "lr 1e-5 (usual)",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "optimizer step": 50.0,
+      "y": 0.57,
+      "series": "lr 1e-5 (usual)",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "optimizer step": 55.0,
+      "y": 0.6,
+      "series": "lr 1e-5 (usual)",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "optimizer step": 60.0,
+      "y": 0.58,
+      "series": "lr 1e-5 (usual)",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "optimizer step": 65.0,
+      "y": 0.6,
+      "series": "lr 1e-5 (usual)",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "optimizer step": 70.0,
+      "y": 0.59,
+      "series": "lr 1e-5 (usual)",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "optimizer step": 75.0,
+      "y": 0.61,
+      "series": "lr 1e-5 (usual)",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "optimizer step": 5.0,
+      "y": 0.52,
+      "series": "lr 3e-5",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "optimizer step": 10.0,
+      "y": 0.66,
+      "series": "lr 3e-5",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "optimizer step": 15.0,
+      "y": 0.54,
+      "series": "lr 3e-5",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "optimizer step": 20.0,
+      "y": 0.58,
+      "series": "lr 3e-5",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "optimizer step": 25.0,
+      "y": 0.64,
+      "series": "lr 3e-5",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "optimizer step": 30.0,
+      "y": 0.64,
+      "series": "lr 3e-5",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "optimizer step": 35.0,
+      "y": 0.6161616161616161,
+      "series": "lr 3e-5",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "optimizer step": 40.0,
+      "y": 0.7,
+      "series": "lr 3e-5",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "optimizer step": 45.0,
+      "y": 0.66,
+      "series": "lr 3e-5",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "optimizer step": 50.0,
+      "y": 0.65,
+      "series": "lr 3e-5",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "optimizer step": 55.0,
+      "y": 0.71,
+      "series": "lr 3e-5",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "optimizer step": 60.0,
+      "y": 0.67,
+      "series": "lr 3e-5",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "optimizer step": 65.0,
+      "y": 0.64,
+      "series": "lr 3e-5",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "optimizer step": 70.0,
+      "y": 0.64,
+      "series": "lr 3e-5",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "optimizer step": 75.0,
+      "y": 0.67,
+      "series": "lr 3e-5",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "optimizer step": 5.0,
+      "y": 0.84,
+      "series": "lr 1e-4",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "optimizer step": 10.0,
+      "y": 0.35,
+      "series": "lr 1e-4",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "optimizer step": 15.0,
+      "y": 0.77,
+      "series": "lr 1e-4",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "optimizer step": 20.0,
+      "y": 0.64,
+      "series": "lr 1e-4",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "optimizer step": 25.0,
+      "y": 0.77,
+      "series": "lr 1e-4",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "optimizer step": 30.0,
+      "y": 0.63,
+      "series": "lr 1e-4",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "optimizer step": 35.0,
+      "y": 0.62,
+      "series": "lr 1e-4",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "optimizer step": 40.0,
+      "y": 0.71,
+      "series": "lr 1e-4",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "optimizer step": 45.0,
+      "y": 0.69,
+      "series": "lr 1e-4",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "optimizer step": 50.0,
+      "y": 0.72,
+      "series": "lr 1e-4",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "optimizer step": 55.0,
+      "y": 0.72,
+      "series": "lr 1e-4",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "optimizer step": 60.0,
+      "y": 0.71,
+      "series": "lr 1e-4",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "optimizer step": 65.0,
+      "y": 0.76,
+      "series": "lr 1e-4",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "optimizer step": 70.0,
+      "y": 0.76,
+      "series": "lr 1e-4",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "optimizer step": 75.0,
+      "y": 0.71,
+      "series": "lr 1e-4",
+      "_kind": "line",
+      "_group": 19
+    }
+  ],
+  "n_series": 20,
+  "total_points": 132,
+  "text": {
+    "suptitle": "fu7 lr sweep: does the impolite lr-unlock transfer to sycophancy?\n(band 0.60-0.85 shaded; diamonds selected rungs; squares Tier-2 confirm + Wilson 95%; dashed grey fu2 dose-only; dotted grey reused base)",
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "sycophancy, Claude-data (c3)",
+        "xlabel": "optimizer step",
+        "ylabel": "Tier-1 legacy judged rate",
+        "legend_labels": [
+          "fu2 dose-only ladder (epochs 6)",
+          "lr 1e-5 (usual)",
+          "lr 3e-5",
+          "lr 1e-4"
+        ],
+        "xticklabels": [
+          "\u221210",
+          "0",
+          "10",
+          "20",
+          "30",
+          "40",
+          "50",
+          "60",
+          "70",
+          "80"
+        ],
+        "yticklabels": [
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ]
+      },
+      {
+        "title_left": "sycophancy, Qwen-data (c5)",
+        "xlabel": "optimizer step",
+        "xticklabels": [
+          "\u221210",
+          "0",
+          "10",
+          "20",
+          "30",
+          "40",
+          "50",
+          "60",
+          "70",
+          "80"
+        ]
+      }
+    ],
+    "series": [
+      "fu2 dose-only ladder (epochs 6)",
+      "lr 1e-5 (usual)",
+      "lr 3e-5",
+      "lr 1e-4"
+    ]
+  }
+}

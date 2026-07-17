@@ -1,0 +1,1123 @@
+{
+  "commit": "27b31d7fea",
+  "created": "2026-07-17T16:44:01Z",
+  "figsize": [
+    10.0,
+    4.4
+  ],
+  "points": [
+    {
+      "trained-base shift . r_B unit (layer 22)": -0.38967782258987427,
+      "paper-rubric judged delta": 0.05272766323024054,
+      "series": "fu6 validation cells (n=62)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "trained-base shift . r_B unit (layer 22)": -1.636019229888916,
+      "paper-rubric judged delta": 0.20570021826303234,
+      "series": "fu6 validation cells (n=62)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "trained-base shift . r_B unit (layer 22)": -3.108336925506592,
+      "paper-rubric judged delta": -0.020000000000000018,
+      "series": "fu6 validation cells (n=62)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "trained-base shift . r_B unit (layer 22)": -3.988110065460205,
+      "paper-rubric judged delta": 0.1752577319587629,
+      "series": "fu6 validation cells (n=62)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "trained-base shift . r_B unit (layer 22)": -1.213663935661316,
+      "paper-rubric judged delta": 0.13181818181818183,
+      "series": "fu6 validation cells (n=62)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "trained-base shift . r_B unit (layer 22)": -2.7363505363464355,
+      "paper-rubric judged delta": 0.11016414141414141,
+      "series": "fu6 validation cells (n=62)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "trained-base shift . r_B unit (layer 22)": -0.6412742137908936,
+      "paper-rubric judged delta": 0.06381578947368421,
+      "series": "fu6 validation cells (n=62)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "trained-base shift . r_B unit (layer 22)": -2.009241819381714,
+      "paper-rubric judged delta": 0.19003179161111677,
+      "series": "fu6 validation cells (n=62)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "trained-base shift . r_B unit (layer 22)": -1.192359447479248,
+      "paper-rubric judged delta": 0.04707070707070704,
+      "series": "fu6 validation cells (n=62)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "trained-base shift . r_B unit (layer 22)": -1.4019534587860107,
+      "paper-rubric judged delta": 0.1490221088435374,
+      "series": "fu6 validation cells (n=62)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "trained-base shift . r_B unit (layer 22)": -1.0073403120040894,
+      "paper-rubric judged delta": 0.13316841888270461,
+      "series": "fu6 validation cells (n=62)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "trained-base shift . r_B unit (layer 22)": -2.2131049633026123,
+      "paper-rubric judged delta": 0.03166421207658321,
+      "series": "fu6 validation cells (n=62)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "trained-base shift . r_B unit (layer 22)": -2.1807973384857178,
+      "paper-rubric judged delta": 0.15816326530612246,
+      "series": "fu6 validation cells (n=62)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "trained-base shift . r_B unit (layer 22)": -1.3878363370895386,
+      "paper-rubric judged delta": 0.02904040404040404,
+      "series": "fu6 validation cells (n=62)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "trained-base shift . r_B unit (layer 22)": -3.568913698196411,
+      "paper-rubric judged delta": -0.04852650213474963,
+      "series": "fu6 validation cells (n=62)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "trained-base shift . r_B unit (layer 22)": -4.333137512207031,
+      "paper-rubric judged delta": 0.18807733619763692,
+      "series": "fu6 validation cells (n=62)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "trained-base shift . r_B unit (layer 22)": -1.5649235248565674,
+      "paper-rubric judged delta": 0.04040404040404041,
+      "series": "fu6 validation cells (n=62)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "trained-base shift . r_B unit (layer 22)": -2.5069077014923096,
+      "paper-rubric judged delta": 0.08060193774479489,
+      "series": "fu6 validation cells (n=62)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "trained-base shift . r_B unit (layer 22)": -1.7819699048995972,
+      "paper-rubric judged delta": 0.0013537436217848503,
+      "series": "fu6 validation cells (n=62)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "trained-base shift . r_B unit (layer 22)": -1.3414995670318604,
+      "paper-rubric judged delta": 0.030612244897959176,
+      "series": "fu6 validation cells (n=62)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "trained-base shift . r_B unit (layer 22)": -1.8637467622756958,
+      "paper-rubric judged delta": -0.05775510204081635,
+      "series": "fu6 validation cells (n=62)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "trained-base shift . r_B unit (layer 22)": -2.50410795211792,
+      "paper-rubric judged delta": 0.1498388829215897,
+      "series": "fu6 validation cells (n=62)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "trained-base shift . r_B unit (layer 22)": -1.1084907054901123,
+      "paper-rubric judged delta": 0.00060606060606061,
+      "series": "fu6 validation cells (n=62)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "trained-base shift . r_B unit (layer 22)": -1.5423167943954468,
+      "paper-rubric judged delta": 0.018939393939393943,
+      "series": "fu6 validation cells (n=62)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "trained-base shift . r_B unit (layer 22)": -0.0902995765209198,
+      "paper-rubric judged delta": -0.009783294761203452,
+      "series": "fu6 validation cells (n=62)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "trained-base shift . r_B unit (layer 22)": -0.2983243465423584,
+      "paper-rubric judged delta": -0.010730065221965075,
+      "series": "fu6 validation cells (n=62)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "trained-base shift . r_B unit (layer 22)": -0.17654481530189514,
+      "paper-rubric judged delta": 0.0050000000000000044,
+      "series": "fu6 validation cells (n=62)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "trained-base shift . r_B unit (layer 22)": -0.3122144043445587,
+      "paper-rubric judged delta": -0.010416666666666657,
+      "series": "fu6 validation cells (n=62)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "trained-base shift . r_B unit (layer 22)": 0.024310613051056862,
+      "paper-rubric judged delta": 0.009494949494949494,
+      "series": "fu6 validation cells (n=62)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "trained-base shift . r_B unit (layer 22)": -0.27038487792015076,
+      "paper-rubric judged delta": 0.0195578231292517,
+      "series": "fu6 validation cells (n=62)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "trained-base shift . r_B unit (layer 22)": -0.2301192730665207,
+      "paper-rubric judged delta": 0.015332397003745314,
+      "series": "fu6 validation cells (n=62)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "trained-base shift . r_B unit (layer 22)": -0.19794517755508423,
+      "paper-rubric judged delta": 0.009688723974438262,
+      "series": "fu6 validation cells (n=62)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "trained-base shift . r_B unit (layer 22)": -0.07563123852014542,
+      "paper-rubric judged delta": 0.05160804020100496,
+      "series": "fu6 validation cells (n=62)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "trained-base shift . r_B unit (layer 22)": -0.1698838174343109,
+      "paper-rubric judged delta": 0.07510964912280702,
+      "series": "fu6 validation cells (n=62)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "trained-base shift . r_B unit (layer 22)": -0.11616162955760956,
+      "paper-rubric judged delta": 0.020000000000000004,
+      "series": "fu6 validation cells (n=62)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "trained-base shift . r_B unit (layer 22)": -0.39622849225997925,
+      "paper-rubric judged delta": -0.00041228612657183417,
+      "series": "fu6 validation cells (n=62)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "trained-base shift . r_B unit (layer 22)": -0.9945397973060608,
+      "paper-rubric judged delta": 0.0800865800865801,
+      "series": "fu6 validation cells (n=62)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "trained-base shift . r_B unit (layer 22)": -1.302217721939087,
+      "paper-rubric judged delta": 0.019494949494949503,
+      "series": "fu6 validation cells (n=62)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "trained-base shift . r_B unit (layer 22)": -3.014883518218994,
+      "paper-rubric judged delta": -0.15000000000000002,
+      "series": "fu6 validation cells (n=62)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "trained-base shift . r_B unit (layer 22)": -3.037039041519165,
+      "paper-rubric judged delta": 0.23148584288480661,
+      "series": "fu6 validation cells (n=62)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "trained-base shift . r_B unit (layer 22)": -1.300334095954895,
+      "paper-rubric judged delta": 0.04000000000000001,
+      "series": "fu6 validation cells (n=62)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "trained-base shift . r_B unit (layer 22)": -1.9788178205490112,
+      "paper-rubric judged delta": 0.030927835051546386,
+      "series": "fu6 validation cells (n=62)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "trained-base shift . r_B unit (layer 22)": -0.3998398184776306,
+      "paper-rubric judged delta": 0.03223684210526316,
+      "series": "fu6 validation cells (n=62)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "trained-base shift . r_B unit (layer 22)": -0.6109849810600281,
+      "paper-rubric judged delta": 0.00783505154639176,
+      "series": "fu6 validation cells (n=62)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "trained-base shift . r_B unit (layer 22)": -1.3151593208312988,
+      "paper-rubric judged delta": -0.06483199340342205,
+      "series": "fu6 validation cells (n=62)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "trained-base shift . r_B unit (layer 22)": -1.70977783203125,
+      "paper-rubric judged delta": 0.1683007838448253,
+      "series": "fu6 validation cells (n=62)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "trained-base shift . r_B unit (layer 22)": -0.5873592495918274,
+      "paper-rubric judged delta": 0.039999999999999994,
+      "series": "fu6 validation cells (n=62)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "trained-base shift . r_B unit (layer 22)": -0.9219447374343872,
+      "paper-rubric judged delta": 0.03876288659793815,
+      "series": "fu6 validation cells (n=62)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "trained-base shift . r_B unit (layer 22)": -0.7807695865631104,
+      "paper-rubric judged delta": 0.03856068743286789,
+      "series": "fu6 validation cells (n=62)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "trained-base shift . r_B unit (layer 22)": -1.5747638940811157,
+      "paper-rubric judged delta": 0.1747080144985904,
+      "series": "fu6 validation cells (n=62)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "trained-base shift . r_B unit (layer 22)": -1.3732630014419556,
+      "paper-rubric judged delta": 0.019886363636363646,
+      "series": "fu6 validation cells (n=62)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "trained-base shift . r_B unit (layer 22)": -2.2181339263916016,
+      "paper-rubric judged delta": 0.17525773195876287,
+      "series": "fu6 validation cells (n=62)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "trained-base shift . r_B unit (layer 22)": -1.1867244243621826,
+      "paper-rubric judged delta": 0.0994949494949495,
+      "series": "fu6 validation cells (n=62)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "trained-base shift . r_B unit (layer 22)": -1.1418834924697876,
+      "paper-rubric judged delta": 0.06142611683848797,
+      "series": "fu6 validation cells (n=62)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "trained-base shift . r_B unit (layer 22)": -1.2666476964950562,
+      "paper-rubric judged delta": 0.09738977846018863,
+      "series": "fu6 validation cells (n=62)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "trained-base shift . r_B unit (layer 22)": -1.781864881515503,
+      "paper-rubric judged delta": 0.22406448486085248,
+      "series": "fu6 validation cells (n=62)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "trained-base shift . r_B unit (layer 22)": -0.7141700387001038,
+      "paper-rubric judged delta": 0.0440816326530612,
+      "series": "fu6 validation cells (n=62)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "trained-base shift . r_B unit (layer 22)": -1.0753041505813599,
+      "paper-rubric judged delta": 0.24364035087719296,
+      "series": "fu6 validation cells (n=62)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "trained-base shift . r_B unit (layer 22)": -0.9918472766876221,
+      "paper-rubric judged delta": 0.1336734693877551,
+      "series": "fu6 validation cells (n=62)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "trained-base shift . r_B unit (layer 22)": -1.1430352926254272,
+      "paper-rubric judged delta": 0.0735544217687075,
+      "series": "fu6 validation cells (n=62)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "trained-base shift . r_B unit (layer 22)": -2.5160751342773438,
+      "paper-rubric judged delta": 0.2663060198953953,
+      "series": "fu6 validation cells (n=62)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "trained-base shift . r_B unit (layer 22)": -2.6889753341674805,
+      "paper-rubric judged delta": 0.3940108706799303,
+      "series": "fu6 validation cells (n=62)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "trained-base shift . r_B unit (layer 22)": 5.669671535491943,
+      "paper-rubric judged delta": 0.37147766323024056,
+      "series": "fu7 cells",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "trained-base shift . r_B unit (layer 22)": -2.541355609893799,
+      "paper-rubric judged delta": 0.5662343420906774,
+      "series": "fu7 cells",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "trained-base shift . r_B unit (layer 22)": 2.9312150478363037,
+      "paper-rubric judged delta": 0.24473684210526314,
+      "series": "fu7 cells",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "trained-base shift . r_B unit (layer 22)": 2.7200045585632324,
+      "paper-rubric judged delta": 0.21085526315789474,
+      "series": "fu7 cells",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "trained-base shift . r_B unit (layer 22)": 6.045310974121094,
+      "paper-rubric judged delta": 0.4988595633756925,
+      "series": "fu7 cells",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "trained-base shift . r_B unit (layer 22)": -2.210629940032959,
+      "paper-rubric judged delta": 0.12419354838709673,
+      "series": "fu7 cells",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "trained-base shift . r_B unit (layer 22)": 1.6463879346847534,
+      "paper-rubric judged delta": 0.384147114774889,
+      "series": "fu7 cells",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "trained-base shift . r_B unit (layer 22)": -2.2431023120880127,
+      "paper-rubric judged delta": 0.4628129602356406,
+      "series": "fu7 cells",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "trained-base shift . r_B unit (layer 22)": -0.6400442123413086,
+      "paper-rubric judged delta": 0.37118169648290134,
+      "series": "fu7 cells",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "trained-base shift . r_B unit (layer 22)": 1.3338830471038818,
+      "paper-rubric judged delta": 0.35592369477911645,
+      "series": "fu7 cells",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "trained-base shift . r_B unit (layer 22)": 1.987131118774414,
+      "paper-rubric judged delta": 0.5344528710725894,
+      "series": "fu7 cells",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "trained-base shift . r_B unit (layer 22)": -1.7197649478912354,
+      "paper-rubric judged delta": 0.14676889375684554,
+      "series": "fu7 cells",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "trained-base shift . r_B unit (layer 22)": -1.37447988986969,
+      "paper-rubric judged delta": 0.05272766323024054,
+      "series": "fu6 validation cells (n=62)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "trained-base shift . r_B unit (layer 22)": -2.715701103210449,
+      "paper-rubric judged delta": 0.20570021826303234,
+      "series": "fu6 validation cells (n=62)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "trained-base shift . r_B unit (layer 22)": -1.909984827041626,
+      "paper-rubric judged delta": -0.020000000000000018,
+      "series": "fu6 validation cells (n=62)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "trained-base shift . r_B unit (layer 22)": -1.9536480903625488,
+      "paper-rubric judged delta": 0.1752577319587629,
+      "series": "fu6 validation cells (n=62)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "trained-base shift . r_B unit (layer 22)": -1.580407738685608,
+      "paper-rubric judged delta": 0.13181818181818183,
+      "series": "fu6 validation cells (n=62)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "trained-base shift . r_B unit (layer 22)": -2.298494815826416,
+      "paper-rubric judged delta": 0.11016414141414141,
+      "series": "fu6 validation cells (n=62)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "trained-base shift . r_B unit (layer 22)": -1.0042123794555664,
+      "paper-rubric judged delta": 0.06381578947368421,
+      "series": "fu6 validation cells (n=62)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "trained-base shift . r_B unit (layer 22)": -2.0843937397003174,
+      "paper-rubric judged delta": 0.19003179161111677,
+      "series": "fu6 validation cells (n=62)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "trained-base shift . r_B unit (layer 22)": -0.7805014252662659,
+      "paper-rubric judged delta": 0.04707070707070704,
+      "series": "fu6 validation cells (n=62)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "trained-base shift . r_B unit (layer 22)": -0.8057315945625305,
+      "paper-rubric judged delta": 0.1490221088435374,
+      "series": "fu6 validation cells (n=62)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "trained-base shift . r_B unit (layer 22)": -1.0016403198242188,
+      "paper-rubric judged delta": 0.13316841888270461,
+      "series": "fu6 validation cells (n=62)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "trained-base shift . r_B unit (layer 22)": -1.6148136854171753,
+      "paper-rubric judged delta": 0.03166421207658321,
+      "series": "fu6 validation cells (n=62)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "trained-base shift . r_B unit (layer 22)": -2.295478582382202,
+      "paper-rubric judged delta": 0.15816326530612246,
+      "series": "fu6 validation cells (n=62)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "trained-base shift . r_B unit (layer 22)": -2.298539638519287,
+      "paper-rubric judged delta": 0.02904040404040404,
+      "series": "fu6 validation cells (n=62)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "trained-base shift . r_B unit (layer 22)": -2.215494394302368,
+      "paper-rubric judged delta": -0.04852650213474963,
+      "series": "fu6 validation cells (n=62)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "trained-base shift . r_B unit (layer 22)": -2.3255436420440674,
+      "paper-rubric judged delta": 0.18807733619763692,
+      "series": "fu6 validation cells (n=62)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "trained-base shift . r_B unit (layer 22)": -1.6085981130599976,
+      "paper-rubric judged delta": 0.04040404040404041,
+      "series": "fu6 validation cells (n=62)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "trained-base shift . r_B unit (layer 22)": -2.035888671875,
+      "paper-rubric judged delta": 0.08060193774479489,
+      "series": "fu6 validation cells (n=62)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "trained-base shift . r_B unit (layer 22)": -1.6584765911102295,
+      "paper-rubric judged delta": 0.0013537436217848503,
+      "series": "fu6 validation cells (n=62)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "trained-base shift . r_B unit (layer 22)": -1.1132622957229614,
+      "paper-rubric judged delta": 0.030612244897959176,
+      "series": "fu6 validation cells (n=62)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "trained-base shift . r_B unit (layer 22)": -1.2618368864059448,
+      "paper-rubric judged delta": -0.05775510204081635,
+      "series": "fu6 validation cells (n=62)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "trained-base shift . r_B unit (layer 22)": -1.4922425746917725,
+      "paper-rubric judged delta": 0.1498388829215897,
+      "series": "fu6 validation cells (n=62)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "trained-base shift . r_B unit (layer 22)": -0.7314172983169556,
+      "paper-rubric judged delta": 0.00060606060606061,
+      "series": "fu6 validation cells (n=62)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "trained-base shift . r_B unit (layer 22)": -0.935164213180542,
+      "paper-rubric judged delta": 0.018939393939393943,
+      "series": "fu6 validation cells (n=62)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "trained-base shift . r_B unit (layer 22)": -0.15648895502090454,
+      "paper-rubric judged delta": -0.009783294761203452,
+      "series": "fu6 validation cells (n=62)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "trained-base shift . r_B unit (layer 22)": -0.2350383698940277,
+      "paper-rubric judged delta": -0.010730065221965075,
+      "series": "fu6 validation cells (n=62)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "trained-base shift . r_B unit (layer 22)": -0.12004943937063217,
+      "paper-rubric judged delta": 0.0050000000000000044,
+      "series": "fu6 validation cells (n=62)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "trained-base shift . r_B unit (layer 22)": -0.25078269839286804,
+      "paper-rubric judged delta": -0.010416666666666657,
+      "series": "fu6 validation cells (n=62)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "trained-base shift . r_B unit (layer 22)": -0.17915038764476776,
+      "paper-rubric judged delta": 0.009494949494949494,
+      "series": "fu6 validation cells (n=62)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "trained-base shift . r_B unit (layer 22)": -0.2981606125831604,
+      "paper-rubric judged delta": 0.0195578231292517,
+      "series": "fu6 validation cells (n=62)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "trained-base shift . r_B unit (layer 22)": -0.046309757977724075,
+      "paper-rubric judged delta": 0.015332397003745314,
+      "series": "fu6 validation cells (n=62)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "trained-base shift . r_B unit (layer 22)": -0.11152950674295425,
+      "paper-rubric judged delta": 0.009688723974438262,
+      "series": "fu6 validation cells (n=62)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "trained-base shift . r_B unit (layer 22)": -0.03627622500061989,
+      "paper-rubric judged delta": 0.05160804020100496,
+      "series": "fu6 validation cells (n=62)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "trained-base shift . r_B unit (layer 22)": -0.1673334836959839,
+      "paper-rubric judged delta": 0.07510964912280702,
+      "series": "fu6 validation cells (n=62)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "trained-base shift . r_B unit (layer 22)": -0.12295527011156082,
+      "paper-rubric judged delta": 0.020000000000000004,
+      "series": "fu6 validation cells (n=62)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "trained-base shift . r_B unit (layer 22)": -0.3153792917728424,
+      "paper-rubric judged delta": -0.00041228612657183417,
+      "series": "fu6 validation cells (n=62)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "trained-base shift . r_B unit (layer 22)": -1.2454586029052734,
+      "paper-rubric judged delta": 0.0800865800865801,
+      "series": "fu6 validation cells (n=62)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "trained-base shift . r_B unit (layer 22)": -1.7733012437820435,
+      "paper-rubric judged delta": 0.019494949494949503,
+      "series": "fu6 validation cells (n=62)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "trained-base shift . r_B unit (layer 22)": -2.00319766998291,
+      "paper-rubric judged delta": -0.15000000000000002,
+      "series": "fu6 validation cells (n=62)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "trained-base shift . r_B unit (layer 22)": -1.4484047889709473,
+      "paper-rubric judged delta": 0.23148584288480661,
+      "series": "fu6 validation cells (n=62)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "trained-base shift . r_B unit (layer 22)": -1.322083830833435,
+      "paper-rubric judged delta": 0.04000000000000001,
+      "series": "fu6 validation cells (n=62)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "trained-base shift . r_B unit (layer 22)": -1.6260666847229004,
+      "paper-rubric judged delta": 0.030927835051546386,
+      "series": "fu6 validation cells (n=62)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "trained-base shift . r_B unit (layer 22)": -0.3580438196659088,
+      "paper-rubric judged delta": 0.03223684210526316,
+      "series": "fu6 validation cells (n=62)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "trained-base shift . r_B unit (layer 22)": -0.8180892467498779,
+      "paper-rubric judged delta": 0.00783505154639176,
+      "series": "fu6 validation cells (n=62)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "trained-base shift . r_B unit (layer 22)": -0.9503870606422424,
+      "paper-rubric judged delta": -0.06483199340342205,
+      "series": "fu6 validation cells (n=62)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "trained-base shift . r_B unit (layer 22)": -1.2665619850158691,
+      "paper-rubric judged delta": 0.1683007838448253,
+      "series": "fu6 validation cells (n=62)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "trained-base shift . r_B unit (layer 22)": -0.5319576263427734,
+      "paper-rubric judged delta": 0.039999999999999994,
+      "series": "fu6 validation cells (n=62)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "trained-base shift . r_B unit (layer 22)": -0.7396559119224548,
+      "paper-rubric judged delta": 0.03876288659793815,
+      "series": "fu6 validation cells (n=62)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "trained-base shift . r_B unit (layer 22)": -1.5486547946929932,
+      "paper-rubric judged delta": 0.03856068743286789,
+      "series": "fu6 validation cells (n=62)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "trained-base shift . r_B unit (layer 22)": -1.9444859027862549,
+      "paper-rubric judged delta": 0.1747080144985904,
+      "series": "fu6 validation cells (n=62)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "trained-base shift . r_B unit (layer 22)": -0.9376630187034607,
+      "paper-rubric judged delta": 0.019886363636363646,
+      "series": "fu6 validation cells (n=62)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "trained-base shift . r_B unit (layer 22)": -1.4996553659439087,
+      "paper-rubric judged delta": 0.17525773195876287,
+      "series": "fu6 validation cells (n=62)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "trained-base shift . r_B unit (layer 22)": -1.1279804706573486,
+      "paper-rubric judged delta": 0.0994949494949495,
+      "series": "fu6 validation cells (n=62)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "trained-base shift . r_B unit (layer 22)": -1.1914070844650269,
+      "paper-rubric judged delta": 0.06142611683848797,
+      "series": "fu6 validation cells (n=62)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "trained-base shift . r_B unit (layer 22)": -1.7453118562698364,
+      "paper-rubric judged delta": 0.09738977846018863,
+      "series": "fu6 validation cells (n=62)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "trained-base shift . r_B unit (layer 22)": -2.0889251232147217,
+      "paper-rubric judged delta": 0.22406448486085248,
+      "series": "fu6 validation cells (n=62)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "trained-base shift . r_B unit (layer 22)": -0.5551217198371887,
+      "paper-rubric judged delta": 0.0440816326530612,
+      "series": "fu6 validation cells (n=62)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "trained-base shift . r_B unit (layer 22)": -0.9396142363548279,
+      "paper-rubric judged delta": 0.24364035087719296,
+      "series": "fu6 validation cells (n=62)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "trained-base shift . r_B unit (layer 22)": -1.2598804235458374,
+      "paper-rubric judged delta": 0.1336734693877551,
+      "series": "fu6 validation cells (n=62)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "trained-base shift . r_B unit (layer 22)": -1.4216296672821045,
+      "paper-rubric judged delta": 0.0735544217687075,
+      "series": "fu6 validation cells (n=62)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "trained-base shift . r_B unit (layer 22)": -3.6642258167266846,
+      "paper-rubric judged delta": 0.2663060198953953,
+      "series": "fu6 validation cells (n=62)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "trained-base shift . r_B unit (layer 22)": -3.1466612815856934,
+      "paper-rubric judged delta": 0.3940108706799303,
+      "series": "fu6 validation cells (n=62)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "trained-base shift . r_B unit (layer 22)": -0.09398907423019409,
+      "paper-rubric judged delta": 0.37147766323024056,
+      "series": "fu7 cells",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "trained-base shift . r_B unit (layer 22)": -2.4441630840301514,
+      "paper-rubric judged delta": 0.5662343420906774,
+      "series": "fu7 cells",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "trained-base shift . r_B unit (layer 22)": -0.7688602805137634,
+      "paper-rubric judged delta": 0.24473684210526314,
+      "series": "fu7 cells",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "trained-base shift . r_B unit (layer 22)": -2.295804738998413,
+      "paper-rubric judged delta": 0.21085526315789474,
+      "series": "fu7 cells",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "trained-base shift . r_B unit (layer 22)": -1.5807617902755737,
+      "paper-rubric judged delta": 0.4988595633756925,
+      "series": "fu7 cells",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "trained-base shift . r_B unit (layer 22)": -2.247640609741211,
+      "paper-rubric judged delta": 0.12419354838709673,
+      "series": "fu7 cells",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "trained-base shift . r_B unit (layer 22)": -1.8162988424301147,
+      "paper-rubric judged delta": 0.384147114774889,
+      "series": "fu7 cells",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "trained-base shift . r_B unit (layer 22)": -2.4412522315979004,
+      "paper-rubric judged delta": 0.4628129602356406,
+      "series": "fu7 cells",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "trained-base shift . r_B unit (layer 22)": -2.978172540664673,
+      "paper-rubric judged delta": 0.37118169648290134,
+      "series": "fu7 cells",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "trained-base shift . r_B unit (layer 22)": -2.883082866668701,
+      "paper-rubric judged delta": 0.35592369477911645,
+      "series": "fu7 cells",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "trained-base shift . r_B unit (layer 22)": -3.8301734924316406,
+      "paper-rubric judged delta": 0.5344528710725894,
+      "series": "fu7 cells",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "trained-base shift . r_B unit (layer 22)": -1.7687207460403442,
+      "paper-rubric judged delta": 0.14676889375684554,
+      "series": "fu7 cells",
+      "_kind": "scatter",
+      "_group": 3
+    }
+  ],
+  "n_series": 4,
+  "total_points": 148,
+  "text": {
+    "suptitle": "fu6 r_B projection DIAGNOSTIC (failed fu6 validation: Contradicted, rho*=-0.456 non-specific \u2014 no verdict rests on this read)",
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "prefix arm \u2014 Spearman rho=0.01 (n=12)",
+        "xlabel": "trained-base shift . r_B unit (layer 22)",
+        "ylabel": "paper-rubric judged delta",
+        "legend_labels": [
+          "fu6 validation cells (n=62)",
+          "fu7 cells"
+        ],
+        "xticklabels": [
+          "\u22126",
+          "\u22124",
+          "\u22122",
+          "0",
+          "2",
+          "4",
+          "6",
+          "8"
+        ],
+        "yticklabels": [
+          "\u22120.2",
+          "\u22120.1",
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7"
+        ]
+      },
+      {
+        "title_left": "context arm \u2014 Spearman rho=-0.29 (n=12)",
+        "xlabel": "trained-base shift . r_B unit (layer 22)",
+        "ylabel": "paper-rubric judged delta",
+        "legend_labels": [
+          "fu6 validation cells (n=62)",
+          "fu7 cells"
+        ],
+        "xticklabels": [
+          "\u22124.5",
+          "\u22124.0",
+          "\u22123.5",
+          "\u22123.0",
+          "\u22122.5",
+          "\u22122.0",
+          "\u22121.5",
+          "\u22121.0",
+          "\u22120.5",
+          "0.0",
+          "0.5"
+        ],
+        "yticklabels": [
+          "\u22120.2",
+          "\u22120.1",
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7"
+        ]
+      }
+    ],
+    "series": [
+      "fu6 validation cells (n=62)",
+      "fu7 cells"
+    ]
+  }
+}
