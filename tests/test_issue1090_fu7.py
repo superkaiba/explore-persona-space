@@ -380,12 +380,28 @@ def test_fu7_rejudge_pv_merge_recovers_transport_and_recomputes(tmp_path, monkey
     jdir.mkdir(parents=True)
     all_scores = {
         f"{tag}-q000-c0__00000__00": {"score": 90},
-        f"{tag}-q000-c0__00000__01": {"error": "Error code: 529 overloaded_error"},
+        # Real persisted transport shape (_legacy_error_dict + an overloaded
+        # reasoning — the classifier's reason-string fallback; #1090 529s).
+        f"{tag}-q000-c0__00000__01": {
+            "aligned": None,
+            "coherent": None,
+            "reasoning": "Error code: 529 overloaded_error",
+            "error": True,
+        },
         f"{tag}-q001-c0__00001__00": {"score": 10},
         f"{tag}-q001-c0__00001__01": {"score": "REFUSAL"},  # content drop — stays dropped
     }
     (jdir / "judge_raw.json").write_text(json.dumps({"all_scores": all_scores}))
-    (jdir / ("a" * 16 + ".json")).write_text(json.dumps({"error": "Error code: 529"}))
+    (jdir / ("a" * 16 + ".json")).write_text(
+        json.dumps(
+            {
+                "aligned": None,
+                "coherent": None,
+                "reasoning": "Error code: 529 overloaded_error",
+                "error": True,
+            }
+        )
+    )
     ladders = tmp_path / "fu7_ladders.json"
     ladders.write_text(
         json.dumps(
@@ -494,3 +510,96 @@ def test_fu7_rejudge_pv_merge_recovers_transport_and_recomputes(tmp_path, monkey
     assert report["round"] == "fu7"
     assert report["n_transport_total"] == 1
     assert report["n_recovered_total"] == 1
+
+
+# ── fix round 4: rule-24(iii) error-dict classification (post-rejudge-k4-flag-check) ──
+
+
+def _fix4_error_rows(tag: str) -> dict:
+    """Raw per-draw rows spanning the three error-dict classes: 2 parse_error
+    (CONTENT, rule 24(iii)), 1 structural ``transport: True`` (#1313 mint),
+    1 legacy reason-string 529/overloaded (the classifier fallback)."""
+    parse_error = {"aligned": None, "coherent": None, "reasoning": "parse_error", "error": True}
+    structural = {"error": True, "transport": True, "reasoning": "boom"}
+    legacy_529 = {
+        "aligned": None,
+        "coherent": None,
+        "reasoning": "Error code: 529 overloaded_error",
+        "error": True,
+    }
+    return {
+        f"{tag}-q000-c0__00000__00": {"score": 80},
+        f"{tag}-q000-c0__00000__01": dict(parse_error),
+        f"{tag}-q000-c0__00000__02": dict(parse_error),
+        f"{tag}-q000-c0__00000__03": dict(structural),
+        f"{tag}-q000-c0__00000__04": dict(legacy_529),
+    }
+
+
+def test_fix4_split_counts_only_classifier_transport(tmp_path):
+    """Bug-class error-dict-classification: BOTH split helpers count ONLY
+    classifier-transport error dicts (structural flag + legacy reason-string
+    fallback) — parse_error dicts are CONTENT-class (rule 24(iii)). Pre-fix
+    the any-error-dict predicate counted all 4 as transport."""
+    import json
+
+    import issue1090_fu4_rejudge_transport as rejudge
+
+    tag = "syc-c3-lr1e4-t2-trained-pv"
+    judge_root = tmp_path / "judge"
+    cell_dir = judge_root / tag
+    cell_dir.mkdir(parents=True)
+    rows = _fix4_error_rows(tag)
+    (cell_dir / "judge_raw.json").write_text(json.dumps({"all_scores": rows}))
+    assert fu4._fu7_split_from_raw(cell_dir) == 2
+    assert fu4._drop_split_from_raw(judge_root, tag)["transport_losses"] == 2
+    # The re-judge tool selects the SAME set: parse_error is never re-judged
+    # at mt=300 (it would just re-parse-fail); transport rows are.
+    by_class = {k: rejudge._is_transport(v) for k, v in rows.items()}
+    assert by_class[f"{tag}-q000-c0__00000__01"] is False  # parse_error -> content
+    assert by_class[f"{tag}-q000-c0__00000__02"] is False
+    assert by_class[f"{tag}-q000-c0__00000__03"] is True  # structural transport: True
+    assert by_class[f"{tag}-q000-c0__00000__04"] is True  # legacy 529 reason fallback
+    assert by_class[f"{tag}-q000-c0__00000__00"] is False  # kept score never selected
+
+
+def test_fix4_k4_arms_on_parse_error_content_rate(tmp_path):
+    """K4-arming pin (concern post-rejudge-k4-flag-check): a pv read with a
+    >=10% parse_error draw rate ARMS k4_truncation_check_required under the
+    corrected split — through the PRODUCTION reduce (judge_result_from_save_raw,
+    content-only n_dropped_draws) + the real _fu7_attach_k4 body. Pre-fix,
+    the any-error transport count + the `- transport` subtraction read
+    content_dropped_draws <= 0 and the flag stayed False (the wired mt=1000
+    remediation _fu7_rule23_remediate_pv then never fired)."""
+    import json
+
+    from explore_persona_space.eval.graded_judge import judge_result_from_save_raw
+
+    tag = "syc-c5-lr1e4-t2-trained-pv"
+    cell_dir = tmp_path / "judge" / tag
+    cell_dir.mkdir(parents=True)
+    parse_error = {"aligned": None, "coherent": None, "reasoning": "parse_error", "error": True}
+    legacy_529 = {
+        "aligned": None,
+        "coherent": None,
+        "reasoning": "Error code: 529 overloaded_error",
+        "error": True,
+    }
+    rows: dict[str, dict] = {}
+    for d in range(5):
+        rows[f"{tag}-q000-c0__00000__{d:02d}"] = {"score": 80}
+    for d in range(5, 9):
+        rows[f"{tag}-q000-c0__00000__{d:02d}"] = dict(parse_error)
+    rows[f"{tag}-q000-c0__00000__09"] = dict(legacy_529)
+    raw_path = cell_dir / "judge_raw.json"
+    raw_path.write_text(json.dumps({"all_scores": rows}))
+    items = [(f"{tag}-q000-c0", "Q zero?", "a fine answer")]
+    result = judge_result_from_save_raw(raw_path, items)
+    assert result.n_total_draws == 10
+    assert result.n_dropped_draws == 4  # CONTENT-only as of #1313 (parse errors)
+    assert result.n_transport_lost_draws == 1
+    rec = {"n_total_draws": result.n_total_draws, "n_dropped_draws": result.n_dropped_draws}
+    rec = fu4._fu7_attach_k4(rec, cell_dir, tag)
+    assert rec["transport_losses"] == 1  # the legacy 529 row only
+    assert rec["content_dropped_draws"] == 4  # parse errors, NOT subtracted away
+    assert rec["k4_truncation_check_required"] is True  # 4/10 = 40% >= 10% -> arms
