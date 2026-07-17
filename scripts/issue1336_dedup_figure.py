@@ -17,10 +17,17 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-import matplotlib.pyplot as plt
-import numpy as np
+from explore_persona_space.orchestrate.env import load_dotenv
 
-from explore_persona_space.analysis.paper_plots import (
+# #847: thread caps must land BEFORE the matplotlib/numpy imports below — on
+# the shared VM, load_dotenv() setdefaults OMP/MKL/OPENBLAS/NUMEXPR_NUM_THREADS,
+# and the BLAS pools freeze at import time.
+load_dotenv()
+
+import matplotlib.pyplot as plt  # noqa: E402
+import numpy as np  # noqa: E402
+
+from explore_persona_space.analysis.paper_plots import (  # noqa: E402
     paper_palette,
     savefig_paper,
     set_paper_style,
@@ -95,7 +102,7 @@ def main() -> None:
             markersize=8,
             label=label,
         )
-        for x, v in zip(xb + (j - 0.5) * 2 * off, vals):
+        for x, v in zip(xb + (j - 0.5) * 2 * off, vals, strict=False):
             ax_b.text(x, v + 0.004, f"{v:.3f}", ha="center", fontsize=9)
     ax_b.axhline(bar_r, color="0.25", lw=1.2, ls=":")
     ax_b.text(0.98, bar_r + 0.003, "usable-strength bar", ha="right", fontsize=9, color="0.25")
