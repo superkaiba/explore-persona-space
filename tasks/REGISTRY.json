@@ -3770,8 +3770,8 @@
     "1484": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/1484",
-      "status": "approved",
+      "path": "tasks/running/1484",
+      "status": "running",
       "title": "workflow-fix: daily sweep counts warn firings, not command-text echoes"
     },
     "149": {
