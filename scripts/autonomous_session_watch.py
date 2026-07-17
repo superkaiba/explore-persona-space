@@ -110,7 +110,13 @@ adding a pass means adding a numbered item here AND bumping the digit:
    is posted per staleness episode across both alert producers (decide's
    own alert path and the #759 downgrade lane), and a deliberately-parked
    ``blocked`` task (epm:failure + status-changed halt-contract trail) is
-   never alerted (#1137).
+   never alerted (#1137).  A MANUAL registration on an ACTIVE task whose
+   one-time alert stays unactioned — >= 3 consecutive stalled-confirmed
+   ticks spanning >= 24h from the first confirmation with zero non-watcher
+   task progress — escalates to an UNREGISTER-ONLY action (#1480): the
+   manual registration file is deleted (the session is NEVER stopped) so
+   the registration-independent orphan sweep re-drives the task; kill
+   switch ``EPM_DISABLE_STALLED_MANUAL_ESCALATION``.
 5. **Orphan sweep (registration-INDEPENDENT safety net).** Every other
    session pass starts from the registry files (``issue-<N>.json`` /
    ``manual-issue-<N>.json``), so an ACTIVE-status task with NO registration
@@ -987,6 +993,16 @@ _STALLED_DEAD_SILENCE_STOP_NOTE_SENTINEL = "[autonomous_session_watch:session-de
 # ownership re-check protects a later wake). Same staleness-filter contract.
 _STALE_REGISTRATION_NOTE_SENTINEL = "[autonomous_session_watch:stale-registration-unregister]"
 
+# Substring stamped into the one-time marker posted by the #1480 stalled-MANUAL
+# escalation rung when an unactioned stalled alert on a manual registration
+# (``manual-issue-<N>.json``) holding an ACTIVE task escalates to an
+# UNREGISTER-ONLY action (the session itself is NEVER stopped — #505; the
+# registration-independent orphan sweep then re-drives the task). MUST stay a
+# member of :data:`_WATCHER_NOTE_SENTINELS`: the fire marker would otherwise
+# reset ``_latest_nonwatcher_event_ts`` and push the orphan sweep's staleness
+# clock back ~90 min, delaying the very re-drive the rung exists to enable.
+_STALLED_MANUAL_ESCALATION_NOTE_SENTINEL = "[autonomous_session_watch:stalled-manual-escalation]"
+
 # Substring stamped into the one-time VM-disk-low marker posted by the vm-disk
 # pass (once per low-disk episode, on each ACTIVE registered autonomous issue —
 # the sessions that will die first when / fills up). Same staleness-filter
@@ -1325,6 +1341,7 @@ _WATCHER_NOTE_SENTINELS: frozenset[str] = frozenset(
         _STALLED_EXHAUSTED_NOTE_SENTINEL,
         _STALLED_STOP_FAILED_NOTE_SENTINEL,
         _STALLED_DEAD_SILENCE_STOP_NOTE_SENTINEL,
+        _STALLED_MANUAL_ESCALATION_NOTE_SENTINEL,
         _STALE_REGISTRATION_NOTE_SENTINEL,
         _VM_DISK_NOTE_SENTINEL,
         _ORPHAN_RESPAWN_NOTE_SENTINEL,
@@ -1837,6 +1854,61 @@ STALLED_STATE_MAX_AGE_S = POD_SAFETY_STATE_MAX_AGE_S
 # advance (mirrors the existing alerted-flag clear logic). After exhaustion
 # the pass falls back to a one-time loud marker + leaves it for the user.
 STALLED_MAX_RESPAWNS = 3
+
+# #1480 stalled-manual escalation rung — see _apply_stalled_manual_escalation.
+# Defaults: an unactioned stalled alert on a MANUAL registration escalates to
+# the unregister-only action after >= 3 consecutive stalled-confirmed ticks
+# spanning >= 24h with zero non-watcher task progress. The 24h window doubles
+# the #845 stale-registration precedent (that pass requires 12h TRANSCRIPT
+# idle; this rung deliberately drops the transcript gate, so it earns a
+# longer fuse) and beats the #928 6-day freeze by ~5.7x; K=3 follows the
+# watcher's 3-consecutive convention (#1104/#1127/#1241 lineage).
+STALLED_MANUAL_ESCALATE_WINDOW_S_DEFAULT = 24 * 3600
+STALLED_MANUAL_ESCALATE_CONFIRMS_DEFAULT = 3
+
+
+def _stalled_manual_escalation_enabled() -> bool:
+    """Kill switch: False when ``EPM_DISABLE_STALLED_MANUAL_ESCALATION`` is
+    set truthy ("1"/"true"/"yes", case-insensitive). Default enabled (armed).
+    Mirrors :func:`_boot_death_pass_enabled`."""
+    raw = os.environ.get("EPM_DISABLE_STALLED_MANUAL_ESCALATION", "").strip().lower()
+    return raw not in {"1", "true", "yes"}
+
+
+def _stalled_manual_escalate_window_s() -> float:
+    """Escalation window in seconds (env ``EPM_STALLED_MANUAL_ESCALATE_H``,
+    HOURS; default :data:`STALLED_MANUAL_ESCALATE_WINDOW_S_DEFAULT`).
+    Malformed / non-positive env falls back — a typo'd var must not turn the
+    rung into an instant unregisterer (the :func:`_stale_registration_idle_s`
+    contract)."""
+    raw = os.environ.get("EPM_STALLED_MANUAL_ESCALATE_H")
+    if not raw:
+        return float(STALLED_MANUAL_ESCALATE_WINDOW_S_DEFAULT)
+    try:
+        parsed = float(raw) * 3600.0
+    except ValueError:
+        return float(STALLED_MANUAL_ESCALATE_WINDOW_S_DEFAULT)
+    if parsed <= 0:
+        return float(STALLED_MANUAL_ESCALATE_WINDOW_S_DEFAULT)
+    return parsed
+
+
+def _stalled_manual_escalate_confirms() -> int:
+    """Minimum consecutive stalled confirmations before the rung may fire
+    (env ``EPM_STALLED_MANUAL_ESCALATE_CONFIRMS``; default
+    :data:`STALLED_MANUAL_ESCALATE_CONFIRMS_DEFAULT`). Malformed / < 1 falls
+    back to the default (never a stealth kill switch — the disable var is the
+    only off switch)."""
+    raw = os.environ.get("EPM_STALLED_MANUAL_ESCALATE_CONFIRMS")
+    if not raw:
+        return STALLED_MANUAL_ESCALATE_CONFIRMS_DEFAULT
+    try:
+        parsed = int(raw)
+    except ValueError:
+        return STALLED_MANUAL_ESCALATE_CONFIRMS_DEFAULT
+    if parsed < 1:
+        return STALLED_MANUAL_ESCALATE_CONFIRMS_DEFAULT
+    return parsed
 
 
 def decide_session_stalled(
@@ -2670,6 +2742,71 @@ def decide_stale_registration(
     if self_report_age_s is not None and self_report_age_s < idle_threshold_s:
         return "keep"
     return "unregister"
+
+
+def decide_stalled_manual_escalation(
+    *,
+    in_active: bool,
+    alerted: bool,
+    stale_confirmed: bool,
+    confirm_count: int,
+    first_confirm_ts: float | None,
+    now: float,
+    min_confirms: int,
+    min_window_s: float,
+) -> tuple[str, int, float | None]:
+    """Pure per-tick decision for the #1480 stalled-manual escalation rung.
+
+    Returns ``(verdict, new_count, new_first_ts)``; verdict in
+    ``{"escalate", "count", "reset"}``.
+
+    Window semantics (S1): the escalation window is anchored at STALL ONSET —
+    ``first_confirm_ts`` is the pass-clock timestamp of the FIRST stalled
+    confirmation in the current consecutive run, NOT the alert time (the
+    #1137 dedup makes posted alerts uncountable, and alert time is not
+    persisted). With the alert firing ~2 ticks after onset, the realized
+    wait-after-alert is ~``min_window_s`` minus ~20 min — conservative in
+    the safe direction (never shorter than intended relative to onset).
+
+    - NOT ``stale_confirmed`` (self-report fresh, or any non-watcher marker
+      within the 2h marker window) OR NOT ``in_active`` ->
+      ``("reset", 0, None)``: the consecutive chain broke / the task left
+      the trap shape. A fresh non-watcher marker therefore resets the whole
+      accumulation — the "zero non-watcher task progress" condition is
+      enforced by consecutiveness x the 2h marker window at 10-min tick
+      granularity.
+    - ``stale_confirmed`` AND ``in_active`` -> ``count' = confirm_count + 1``;
+      ``first'`` = ``first_confirm_ts`` iff it is a positive, non-future
+      float, else ``now`` (a malformed / missing / FUTURE-dated anchor —
+      clock skew or a corrupt state file — restarts the window at ``now``:
+      fail toward keep, never an instant fire).
+
+      - ``alerted`` AND ``count' >= min_confirms`` AND
+        ``(now - first') >= min_window_s`` -> ``("escalate", count', first')``.
+      - else -> ``("count", count', first')``. Pre-alert confirmations
+        accumulate but can never fire (``alerted`` is required at fire time:
+        the trigger is an UNACTIONED alert).
+
+    Every input the caller could not resolve is mapped by the CALLER to the
+    conservative value (``in_active=False`` on a ``None`` status read;
+    ``stale_confirmed=False`` when ``self_report_age`` is ``None``), so this
+    function stays total and clock-free (``now`` is injected — the #1127
+    deterministic-anchor posture).
+    """
+    if not stale_confirmed or not in_active:
+        return ("reset", 0, None)
+    new_count = confirm_count + 1
+    if (
+        isinstance(first_confirm_ts, int | float)
+        and float(first_confirm_ts) > 0
+        and float(first_confirm_ts) <= now
+    ):
+        new_first: float = float(first_confirm_ts)
+    else:
+        new_first = now
+    if alerted and new_count >= min_confirms and (now - new_first) >= min_window_s:
+        return ("escalate", new_count, new_first)
+    return ("count", new_count, new_first)
 
 
 def decide_boot_death(
@@ -7349,6 +7486,8 @@ def _save_stalled_state(
     daemon_blocked_ticks: int = 0,
     daemon_blocked_pushed: bool = False,
     wedge_hits: int = 0,
+    manual_escalate_count: int = 0,
+    manual_escalate_first_ts: float | None = None,
     dead_silence_respawn_day: str | None = None,
     dead_silence_respawns_today: int = 0,
     wedge_respawn_day: str | None = None,
@@ -7357,6 +7496,16 @@ def _save_stalled_state(
 ) -> None:
     """Persist the per-session stalled-detector state atomically (temp +
     rename), mirroring :func:`_save_pod_safety_state`.
+
+    #1480 stalled-manual escalation fields: ``manual_escalate_count`` is the
+    number of CONSECUTIVE stalled-confirmed ticks observed for a MANUAL
+    registration this episode; ``manual_escalate_first_ts`` is the pass-clock
+    epoch of the FIRST confirmation in the current consecutive run (the
+    escalation-window anchor — stall onset, not alert time). Both ride the
+    #845 hardening-field contract (advancement-cleared via
+    :func:`_stalled_hardening_fields`: session resumed => trap over => a
+    re-registered manual session starts a fresh accumulation); absent in
+    older on-disk files -> ``(0, None)`` (backward compatible).
 
     #1209 day-cap fields: ``dead_silence_respawn_day`` (UTC ``%Y-%m-%d``
     key) + ``dead_silence_respawns_today`` count the fence episodes the
@@ -7445,6 +7594,8 @@ def _save_stalled_state(
         "daemon_blocked_ticks": daemon_blocked_ticks,
         "daemon_blocked_pushed": daemon_blocked_pushed,
         "wedge_hits": wedge_hits,
+        "manual_escalate_count": manual_escalate_count,
+        "manual_escalate_first_ts": manual_escalate_first_ts,
         "dead_silence_respawn_day": dead_silence_respawn_day,
         "dead_silence_respawns_today": dead_silence_respawns_today,
         "wedge_respawn_day": wedge_respawn_day,
@@ -7466,6 +7617,10 @@ _STALLED_HARDENING_DEFAULTS: dict[str, object] = {
     "daemon_blocked_ticks": 0,
     "daemon_blocked_pushed": False,
     "wedge_hits": 0,
+    # #1480 stalled-manual escalation rung — episode-scoped exactly like the
+    # #845 fields (advancement-clear: session resumed => trap over).
+    "manual_escalate_count": 0,
+    "manual_escalate_first_ts": None,
 }
 
 
@@ -7484,6 +7639,7 @@ def _stalled_hardening_fields(prev_state: dict, advanced: bool) -> dict:
 
     sid = prev_state.get("stop_pending_sid")
     ts = prev_state.get("stop_pending_ts")
+    first_ts = prev_state.get("manual_escalate_first_ts")
     return {
         "stop_pending_sid": sid if isinstance(sid, str) and sid else None,
         "stop_pending_ts": float(ts) if isinstance(ts, int | float) else None,
@@ -7493,6 +7649,10 @@ def _stalled_hardening_fields(prev_state: dict, advanced: bool) -> dict:
         "daemon_blocked_ticks": _int("daemon_blocked_ticks"),
         "daemon_blocked_pushed": bool(prev_state.get("daemon_blocked_pushed", False)),
         "wedge_hits": _int("wedge_hits"),
+        "manual_escalate_count": _int("manual_escalate_count"),
+        "manual_escalate_first_ts": (
+            float(first_ts) if isinstance(first_ts, int | float) else None
+        ),
     }
 
 
@@ -10712,6 +10872,8 @@ class _StalledActionCtx:
         daemon_blocked_ticks: int = 0,
         daemon_blocked_pushed: bool = False,
         wedge_hits: int = 0,
+        manual_escalate_count: int = 0,
+        manual_escalate_first_ts: float | None = None,
         wedge_note: str | None = None,
         daemon_reachable: bool = True,
         downgrade_note: str | None = None,
@@ -10789,6 +10951,13 @@ class _StalledActionCtx:
         self.daemon_blocked_ticks = daemon_blocked_ticks
         self.daemon_blocked_pushed = daemon_blocked_pushed
         self.wedge_hits = wedge_hits
+        # #1480 stalled-manual escalation counters (episode-scoped, threaded
+        # from the hardening fields like the #845 set above; MUTATED by
+        # _apply_stalled_manual_escalation to the values THIS tick must
+        # persist — every persist site forwards them via _persist_stalled_ctx
+        # so keep-path saves never wipe the accumulation).
+        self.manual_escalate_count = manual_escalate_count
+        self.manual_escalate_first_ts = manual_escalate_first_ts
         self.wedge_note = wedge_note
         # #1071 evidence-based alert reasons: ``daemon_reachable`` is the
         # pass-level flag (computed once per tick) and ``downgrade_note`` is
@@ -10847,6 +11016,8 @@ def _persist_stalled_ctx(ctx: _StalledActionCtx, sid: str | None, missed: int, *
         daemon_blocked_ticks=ctx.daemon_blocked_ticks,
         daemon_blocked_pushed=ctx.daemon_blocked_pushed,
         wedge_hits=ctx.wedge_hits,
+        manual_escalate_count=ctx.manual_escalate_count,
+        manual_escalate_first_ts=ctx.manual_escalate_first_ts,
         dead_silence_respawn_day=ctx.dead_silence_respawn_day,
         dead_silence_respawns_today=ctx.dead_silence_respawns_today,
         wedge_respawn_day=ctx.wedge_respawn_day,
@@ -11288,10 +11459,15 @@ def _handle_stalled_alert(ctx: _StalledActionCtx) -> None:
     # that instruction is true). The else-branch self-identifies as a
     # watcher bug instead of inventing a daemon outage.
     if ctx.manual:
-        reason = "manual user-driven session; alert-only by design"
+        reason = "manual user-driven session; alert-first by design (#505)"
         next_step = (
             f"open the session (phone / `spawn_session.py list`) and "
-            f"re-drive `/issue {ctx.issue}` manually if confirmed dead"
+            f"re-drive `/issue {ctx.issue}` manually if confirmed dead; if "
+            f"this alert stays unactioned with zero task progress, the "
+            f"watcher unregisters the manual registration after "
+            f"~EPM_STALLED_MANUAL_ESCALATE_H (default 24h) and the orphan "
+            f"sweep re-drives the task (#1480; the session itself is never "
+            f"stopped)"
         )
     elif not ctx.in_active:
         reason = f"task status not ACTIVE ({ctx.task_status})"
@@ -12003,6 +12179,189 @@ def _apply_wedge_override_with_exemption_probe(
     return action, new_missed, followups_child_alerted, live_consecutive, wedge_hits, wedge_note
 
 
+def _append_stalled_manual_escalation_event(
+    note: str,
+    dry_run: bool,
+    *,
+    issue: int,
+    sid: object,
+    count: int,
+    span_h: float,
+    window_h: float,
+    status: str | None,
+) -> None:
+    """Durable trace for #1480 stalled-manual escalations — one JSON line per
+    fire in ``~/.eps-autonomous/stalled-manual-escalation-events.jsonl``
+    (byte-parallel role to :func:`_append_stale_registration_event`, plus
+    structured fields so a future /daily sweep can parse it without regexing
+    the note). The per-task marker is the primary record; this file survives
+    a task folder move. Fail-soft."""
+    dest = AUTONOMOUS_REGISTRY_DIR / "stalled-manual-escalation-events.jsonl"
+    line = json.dumps(
+        {
+            "ts": datetime.now().astimezone().isoformat(),
+            "kind": "stalled-manual-escalation",
+            "issue": issue,
+            "sid": sid if isinstance(sid, str) else None,
+            "count": count,
+            "span_h": round(span_h, 2),
+            "window_h": round(window_h, 2),
+            "status": status,
+            "note": note,
+        }
+    )
+    if dry_run:
+        print(f"  [dry-run] would append stalled-manual-escalation event to {dest}")
+        return
+    try:
+        AUTONOMOUS_REGISTRY_DIR.mkdir(parents=True, exist_ok=True)
+        with open(dest, "a") as fh:
+            fh.write(line + "\n")
+    except OSError as e:
+        print(
+            f"  WARNING: appending stalled-manual-escalation event failed: {e}",
+            file=sys.stderr,
+        )
+
+
+def _escalate_stalled_manual(ctx: _StalledActionCtx, entry_path: Path, events: list[dict]) -> None:
+    """#1480 fire action: UNREGISTER the manual registration (never stop or
+    spawn the session — #505), post the loud marker + sidecar row + Telegram
+    push, and reset the escalation counters (once-per-episode: the entry is
+    gone next tick, and a re-registered manual session meets reset counters
+    => a fresh full accumulation). Mirrors :func:`_process_stale_registration`'s
+    action block."""
+    first_ts = ctx.manual_escalate_first_ts
+    span_h = ((ctx.now - first_ts) / 3600.0) if isinstance(first_ts, int | float) else 0.0
+    window_h = _stalled_manual_escalate_window_s() / 3600.0
+    count = ctx.manual_escalate_count
+    # Informational note enrichment ONLY — never a gate: a raise here must
+    # not block the fire (plan #1480 §8; narrow guard + logged warning).
+    try:
+        from explore_persona_space.task_workflow import unrun_followup_labels
+
+        groups = unrun_followup_labels(events)
+        labels = ", ".join(str(g.get("followup_label")) for g in groups) or "none on record"
+    except Exception as e:
+        print(
+            f"  WARNING: unrun-followup-labels enrichment failed for #{ctx.issue}: {e}",
+            file=sys.stderr,
+        )
+        labels = "unavailable (enrichment failed)"
+    note = (
+        f"{_STALLED_MANUAL_ESCALATION_NOTE_SENTINEL} ESCALATED stalled MANUAL "
+        f"issue session (#1480; the #928 6-day-freeze class): unregistered "
+        f"manual registration {entry_path.name} — the session itself "
+        f"(sid={ctx.happy_session_id}) was NOT stopped (#505). Trigger: "
+        f"{count} consecutive stalled confirmations spanning {span_h:.1f}h >= "
+        f"{window_h:.1f}h since the FIRST confirmation (stall onset), with "
+        f"zero non-watcher task progress (self-report frozen {ctx.self_gap}, "
+        f"newest non-watcher marker {ctx.marker_gap} old, "
+        f"status={ctx.task_status}); the one-time stalled alert went "
+        f"unactioned. Unrun follow-up scope labels: {labels}. The "
+        f"registration-independent orphan sweep re-drives this ACTIVE task on "
+        f"its next stale tick (~20-30 min). To reclaim ownership: re-drive "
+        f"/issue {ctx.issue} from your session (Step 0 re-registers), or park "
+        f"the task (`task.py set-status {ctx.issue} on_hold`)."
+    )
+    print(f"  issue #{ctx.issue}: stalled-manual escalation — {note}")
+    if not ctx.dry_run:
+        # The ONLY registry mutation: delete exactly the manual entry being
+        # processed (never issue-<N>.json — the dual-registration case is
+        # structurally excluded: stalled_session_pass skips manual entries
+        # when an autonomous entry exists for the same issue).
+        entry_path.unlink(missing_ok=True)
+    _post_progress_marker(ctx.issue, note, ctx.dry_run, label="stalled-manual-escalation")
+    _append_stalled_manual_escalation_event(
+        note,
+        ctx.dry_run,
+        issue=ctx.issue,
+        sid=ctx.happy_session_id,
+        count=count,
+        span_h=span_h,
+        window_h=window_h,
+        status=ctx.task_status,
+    )
+    _telegram_push(
+        f"[EPS watcher] stalled-manual escalation on #{ctx.issue}: manual "
+        f"registration unregistered after {span_h:.1f}h unactioned stall; "
+        f"orphan sweep will re-drive (~30 min). Session NOT stopped.",
+        ctx.dry_run,
+    )
+    ctx.manual_escalate_count, ctx.manual_escalate_first_ts = 0, None
+    _persist_stalled_ctx(ctx, ctx.happy_session_id_str, 0)
+
+
+def _apply_stalled_manual_escalation(
+    ctx: _StalledActionCtx, entry_path: Path, events: list[dict], stale_confirmed: bool
+) -> bool:
+    """#1480: evaluate + (maybe) fire the stalled-manual escalation rung.
+
+    Mutates ``ctx.manual_escalate_count`` / ``ctx.manual_escalate_first_ts``
+    to the values THIS tick must persist (every downstream persist site
+    forwards them via :func:`_persist_stalled_ctx`). Returns True iff this
+    rung fully HANDLED the tick — it FIRED (unregister + marker + sidecar +
+    push + reset-persist), or a fire-time exemption VETOED it with its own
+    reset-persist — so the caller returns early (skipping only the ordinary
+    keep-persist, which the handled paths perform themselves). NEVER stops
+    or spawns a session; the only registry mutation is the manual
+    registration file's unlink. Every unresolvable input fails toward keep
+    (returns False with today's behavior unchanged)."""
+    if not ctx.manual or not _stalled_manual_escalation_enabled():
+        return False
+    verdict, ctx.manual_escalate_count, ctx.manual_escalate_first_ts = (
+        decide_stalled_manual_escalation(
+            in_active=ctx.in_active,  # _task_status read THIS tick by the caller
+            alerted=ctx.alerted,
+            stale_confirmed=stale_confirmed,
+            confirm_count=ctx.manual_escalate_count,
+            first_confirm_ts=ctx.manual_escalate_first_ts,
+            now=ctx.now,
+            min_confirms=_stalled_manual_escalate_confirms(),
+            min_window_s=_stalled_manual_escalate_window_s(),
+        )
+    )
+    if verdict != "escalate":
+        return False
+    # Fire-time veto 1 — fresh worktree activity (someone is mid-edit):
+    # DEFER, keep the counters (re-evaluated next tick; the normal keep-persist
+    # writes them). Same helper the stale-registration pass uses; 2s-bounded
+    # walk, probed only on fire-candidate ticks.
+    if _worktree_recent_activity(ctx.issue, ctx.now, _wt_activity_fresh_s()):
+        print(
+            f"  issue #{ctx.issue}: stalled-manual escalation DEFERRED — "
+            f"fresh worktree activity (counters kept)"
+        )
+        return False
+    # Fire-time veto 2 — exemption re-probe (the wedge lane's #845-r2 design):
+    # the post-alert keep(0) ticks never probed the lazy exemptions, so
+    # re-probe ONCE against the escalation. Any rewrite (user-pause /
+    # spend-approval / provision-in-flight / long-phase heartbeat /
+    # round-complete re-park / awaiting-child) VETOES the fire and RESETS the
+    # counters (the task is legitimately parked; when the park lifts, either
+    # the session resumes -> advancement clear, or a fresh accumulation
+    # begins).
+    probed_action, _probed_missed, ctx.followups_child_alerted, _ex = (
+        _apply_stalled_park_exemptions(
+            issue=ctx.issue,
+            status=ctx.task_status,
+            has_pod=ctx.has_pod,
+            events=events,
+            action="alert",
+            new_missed=ctx.threshold,
+            followups_child_alerted=ctx.followups_child_alerted,
+            now=ctx.now,
+            dry_run=ctx.dry_run,
+        )
+    )
+    if probed_action != "alert":
+        ctx.manual_escalate_count, ctx.manual_escalate_first_ts = 0, None
+        _persist_stalled_ctx(ctx, ctx.happy_session_id_str, 0)
+        return True  # exemption handled/annotated the tick; nothing to dispatch
+    _escalate_stalled_manual(ctx, entry_path, events)
+    return True
+
+
 def _process_stalled_session(
     entry_path: Path,
     pod_active_issues: set[int],
@@ -12305,12 +12664,17 @@ def _process_stalled_session(
     # at 2 ticks (~20 min). `alerted or action == "alert"` counts the very
     # tick the alert fires (the handler persists alerted=True after us).
     stale_now = self_report_age is not None and self_report_age >= STALLED_WINDOW_S
+    # Corroborated staleness: self-report frozen AND no non-watcher marker
+    # within the 2h marker window — the identical expression the
+    # daemon-blocked escalation below consumes; ALSO the per-tick
+    # confirmation signal for the #1480 stalled-manual escalation rung.
+    stale_confirmed = stale_now and (marker_age is None or marker_age >= marker_window_s)
     hard["daemon_blocked_ticks"], hard["daemon_blocked_pushed"] = _apply_daemon_blocked_escalation(
         issue=issue,
         in_active=in_active,
         manual=manual,
         alerted=alerted or action == "alert",
-        stale=stale_now and (marker_age is None or marker_age >= marker_window_s),
+        stale=stale_confirmed,
         daemon_reachable=daemon_reachable,
         blocked_ticks=hard["daemon_blocked_ticks"],
         already_pushed=hard["daemon_blocked_pushed"],
@@ -12361,6 +12725,8 @@ def _process_stalled_session(
         daemon_blocked_ticks=hard["daemon_blocked_ticks"],
         daemon_blocked_pushed=hard["daemon_blocked_pushed"],
         wedge_hits=hard["wedge_hits"],
+        manual_escalate_count=hard["manual_escalate_count"],
+        manual_escalate_first_ts=hard["manual_escalate_first_ts"],
         wedge_note=wedge_note,
         daemon_reachable=daemon_reachable,
         downgrade_note=downgrade_note,
@@ -12369,6 +12735,15 @@ def _process_stalled_session(
         wedge_respawn_day=dead_silence_day_key,
         wedge_respawns_today=wedge_respawns_today,
     )
+
+    # #1480 stalled-manual escalation rung (no-op for autonomous entries,
+    # when disabled, and on every fail-toward-keep input; on the fire tick
+    # action == "keep" by construction — fire requires alerted=True, and an
+    # alerted manual entry's decide verdict is the keep-dedup branch — so the
+    # early return skips only the keep-persist, which the rung performs
+    # itself).
+    if _apply_stalled_manual_escalation(ctx, entry_path, events, stale_confirmed):
+        return
 
     if action == "respawn":
         _handle_stalled_respawn(ctx)
@@ -12407,7 +12782,13 @@ def stalled_session_pass(
     user-driven session at an ACTIVE status raises the one-time alert
     instead of orphaning silently, but is NEVER auto-respawned —
     restarting a session the user drives by hand is the user's call
-    (#505 round-2 orphaning, 2026-06-10). When an issue carries BOTH
+    (#505 round-2 orphaning, 2026-06-10). A manual entry whose alert then
+    goes UNACTIONED for >= EPM_STALLED_MANUAL_ESCALATE_H (default 24h,
+    >= 3 consecutive stalled-confirmed ticks, zero non-watcher progress)
+    on an ACTIVE task escalates to the #1480 UNREGISTER-ONLY rung
+    (:func:`_apply_stalled_manual_escalation`): the registration file is
+    deleted — never the session — so the orphan sweep re-drives the task
+    on its next stale tick. When an issue carries BOTH
     registrations, the autonomous entry wins and the manual one is
     skipped: both would share the same ``stalled-<N>.json`` state file,
     and double-processing in one tick would defeat the 2-miss guard.
