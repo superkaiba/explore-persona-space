@@ -20,19 +20,14 @@ import sys
 import time
 from pathlib import Path
 
+import numpy as np
+
 SCRIPTS = Path(__file__).resolve().parent
 PROJECT_ROOT = SCRIPTS.parent
 sys.path.insert(0, str(SCRIPTS))
 sys.path.insert(0, str(PROJECT_ROOT / "src"))
 
-# Project dotenv wrapper: .env load + the shared-VM thread caps (#847) — called
-# BEFORE numpy freezes the BLAS pools.
-from explore_persona_space.orchestrate.env import load_dotenv  # noqa: E402
-
-load_dotenv()
-
 import issue1092_inline_fair_comparison as fc  # noqa: E402
-import numpy as np  # noqa: E402
 from issue1092_fit_grid import (  # noqa: E402
     _basis_targets_with_info,
     _fit_cv,
