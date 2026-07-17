@@ -4662,7 +4662,8 @@ def test_checks_list_size():
     contradiction-only, absence of evidence never fires; incident #1092
     defect (b), #1255). The
     migration is a RETARGET — every former check
-    was kept (sometimes dormant, e.g. `check_figure_caption`) so downstream
+    was kept (some dormant for a period — e.g. `check_figure_caption`,
+    vacuous until #1424 tightened it) so downstream
     tests stay valid; the v3 checks PASS-skip on non-v3 bodies.
 
     Checks appended OUTSIDE CHECKS inside `verify_text` (they need
@@ -10045,6 +10046,156 @@ def test_check24_caption_after_helper():
     assert "Interpretation prose" not in cap
     # No blockquote after the image → empty.
     assert verify_task_body._figure_caption_after(["![a](u)", "plain prose"], 0) == ""
+
+
+# ─── Check 5: figure-caption italic lead claim (v4-only WARN, #1424) ────────
+
+
+def _v4_minimal_results_body(results_content: str) -> str:
+    """Minimal v4-sentinel body wrapping `results_content` under `## Results`
+    (no footer) — direct-call fixture for `check_figure_caption`."""
+    return f"# T (LOW confidence)\n\n<!-- clean-result-v4 -->\n\n## Results\n\n{results_content}\n"
+
+
+def test_caption_lead_conformant_v4_passes():
+    """A conformant v4 body (caption opens `**Figure.** *lead claim.*`)
+    passes check 5 with no WARN."""
+    res = verify_task_body.check_figure_caption(_V4_GOOD_BODY)
+    assert res.passed is True
+    assert res.is_warn is False
+    assert "all 1" in res.detail
+
+
+def test_caption_missing_italic_lead_v4_warns():
+    """DURABILITY PIN (#1424): a v4 caption carrying the bold `**Figure.**`
+    prefix but NO italic lead claim WARNs (passed stays True — never FAIL),
+    naming the enclosing result H3 and quoting the expected shape."""
+    body = _V4_GOOD_BODY.replace(
+        "> **Figure.** *Tulu-25 lifts alignment ~17 pts over baseline at every seed.* "
+        "Baseline gray, tulu-25 blue; error bars 95% Wald CIs.",
+        "> **Figure.** Plain prose lead without italics.",
+    )
+    assert body != _V4_GOOD_BODY  # the replace actually fired
+    res = verify_task_body.check_figure_caption(body)
+    assert res.passed is True
+    assert res.is_warn is True
+    assert "A clean +17-pt lift" in res.detail  # enclosing H3 named
+    assert "missing the italic lead claim" in res.detail
+    assert "**Figure.** *one-sentence lead claim.*" in res.detail
+
+
+def test_caption_missing_bold_prefix_v4_warns():
+    """A v4 caption with NO bold `**Figure.**` prefix at all WARNs and the
+    detail attributes the missing bold prefix (not just the italic lead)."""
+    body = _V4_GOOD_BODY.replace(
+        "> **Figure.** *Tulu-25 lifts alignment ~17 pts over baseline at every seed.* "
+        "Baseline gray, tulu-25 blue; error bars 95% Wald CIs.",
+        "> *Italic lead only.* Rest of caption.",
+    )
+    assert body != _V4_GOOD_BODY
+    res = verify_task_body.check_figure_caption(body)
+    assert res.passed is True
+    assert res.is_warn is True
+    assert "bold prefix" in res.detail
+
+
+def test_caption_lead_check_skips_non_v4():
+    """Forward-only: a non-conformant caption in a v3 or legacy body never
+    WARNs — check 5 PASS-skips on every non-v4 body."""
+    for fixture in (_V3_GOOD_BODY, GOOD_BODY):
+        body = fixture.replace(
+            "**Figure.** *Tulu-25 lifts alignment ~17 pts over baseline at every seed.*",
+            "**Figure.** Plain prose lead.",
+        )
+        assert body != fixture
+        res = verify_task_body.check_figure_caption(body)
+        assert res.passed is True
+        assert res.is_warn is False
+        assert "skipped — not a v4 body" in res.detail
+
+
+def test_caption_lead_no_figures_passes():
+    """A v4 body whose `## Results` has an H3 + prose but no image passes
+    vacuously (no captions to check)."""
+    body = _v4_minimal_results_body("### A result\n\nProse only, no image here.")
+    res = verify_task_body.check_figure_caption(body)
+    assert res.passed is True
+    assert res.is_warn is False
+    assert "no blockquote captions" in res.detail
+
+
+def test_caption_lead_captionless_figure_exempt():
+    """An image followed directly by plain prose (no blockquote caption) is
+    exempt — caption PRESENCE is owned by check 21 + critic Lens 3."""
+    body = _v4_minimal_results_body(
+        "### A result\n\n![alt](https://x/y.png)\n\nPlain interpretation prose, no blockquote."
+    )
+    res = verify_task_body.check_figure_caption(body)
+    assert res.passed is True
+    assert res.is_warn is False
+
+
+def test_caption_lead_period_variants_pass():
+    """Tolerance arms: `**Figure**` (no period) and `**Figure 1.**` (short
+    designator) both satisfy the bold-prefix + italic-lead shape."""
+    for cap in (
+        "> **Figure** *Lead claim.* rest of caption.",
+        "> **Figure 1.** *Lead claim.* rest of caption.",
+    ):
+        body = _v4_minimal_results_body(f"### A result\n\n![alt](https://x/y.png)\n\n{cap}")
+        res = verify_task_body.check_figure_caption(body)
+        assert res.passed is True
+        assert res.is_warn is False, cap
+
+
+def test_caption_lead_bold_not_italic_warns():
+    """A bold `**…**` run after the prefix must NOT masquerade as the italic
+    lead (the `(?!\\*)` lookahead guard)."""
+    body = _v4_minimal_results_body(
+        "### A result\n\n![alt](https://x/y.png)\n\n> **Figure.** **Bold, not italic.** rest."
+    )
+    res = verify_task_body.check_figure_caption(body)
+    assert res.passed is True
+    assert res.is_warn is True
+    assert "missing the italic lead claim" in res.detail
+
+
+def test_caption_lead_fenced_image_ignored():
+    """A non-conformant image + caption pair inside a fenced code block under
+    `## Results` is never scanned."""
+    body = _v4_minimal_results_body(
+        "### A result\n\nProse.\n\n```markdown\n"
+        "![alt](https://x/y.png)\n\n> **Figure.** No italic lead here.\n```"
+    )
+    res = verify_task_body.check_figure_caption(body)
+    assert res.passed is True
+    assert res.is_warn is False
+
+
+def test_caption_lead_issue1074_verbatim_caption_warns():
+    """Extra missing-lead fixture: the verbatim first caption of #1074's
+    committed body (bold prefix, no italic lead) — the plan-time audit's
+    known-missing-lead spot-check."""
+    cap = (
+        "> **Figure.** Judge-accepted fraction of generated positives per class and "
+        "generator, Wilson 95% intervals, floor dashed. Claude bars are the parent run's "
+        "yields under a three-way recipe bundle (generator, injection style, variant "
+        "count), context only. Only the abliterated arm on harmful compliance clears its "
+        "floor (177 of 215)."
+    )
+    body = _v4_minimal_results_body(f"### Yield per class\n\n![alt](https://x/y.png)\n\n{cap}")
+    res = verify_task_body.check_figure_caption(body)
+    assert res.passed is True
+    assert res.is_warn is True
+    assert "missing the italic lead claim" in res.detail
+
+
+def test_check_figure_caption_position_stable():
+    """Index-stability pin (#1424): `check_figure_caption` stays at CHECKS
+    position 7 and the CHECKS count is unchanged (belt-and-suspenders beside
+    the migration-history `len(CHECKS)` pin)."""
+    assert verify_task_body.CHECKS[7] is verify_task_body.check_figure_caption
+    assert len(verify_task_body.CHECKS) == 41
 
 
 # ─── Check 26: figure panel/series prose vs figure sidecar (panel drift) ───

@@ -82,12 +82,12 @@ checks (3/3b) run on the v2 sentinel; v3-only checks (v3 structure +
     FAIL); unknown SHAs / other hosts fall back to one HTTP HEAD per
     unique URL (definitive 404 → FAIL; network error / timeout →
     `unverified` note on the PASS line, never a FAIL).
-5. Figure caption sanity — vacuously satisfied under the new spec
-   (inline-image alt text + blockquote caption inside each result H3
-   carry the discipline; the analyzer is instructed to write
-   descriptive alt text). Retained as a hook for future tightening; in
-   the current revision the check always PASSes because the retired
-   `## Figure` H2 is now a check 2 FAIL.
+5. Figure caption sanity — v4-only WARN: each non-empty blockquote
+   caption after an inline figure under `## Results` must open
+   `**Figure.** *italic lead claim.*` (SPEC § Figure caption shape;
+   incident #1005 r1, #1424). Captionless figures + v3/v2/legacy
+   bodies exempt. Formerly a vacuous hook (kept in place so CHECKS
+   indices never shift).
 6. Confidence sentence matches title — for v2 nested-design bodies
    (`<!-- clean-result-v2 -->` sentinel present) the H1 title tag is
    the single source of truth; the check PASSes when the title carries
@@ -2713,24 +2713,80 @@ def check_linked_not_embedded_figures(body: str, *, issue: int | None = None) ->
     )
 
 
-def check_figure_caption(body: str) -> CheckResult:
-    """Check 5: figure caption sanity (vacuous under the 2-content-section spec).
+# Check 5 (v4): caption opens `**Figure.** *italic lead claim.*` (SPEC
+# § Figure caption shape). Tolerates `**Figure**` (no period), a short
+# figure designator (`**Figure 1.**`), a period outside the bold close,
+# and underscore italics. `\*(?!\*)` keeps a bold `**…**` run from
+# masquerading as the italic lead.
+_CAPTION_BOLD_PREFIX_RE = re.compile(r"^\*\*Figure(?:\s+[^*\n]{1,16})?\.?\*\*\.?")
+_CAPTION_LEAD_CLAIM_RE = re.compile(
+    r"^\*\*Figure(?:\s+[^*\n]{1,16})?\.?\*\*\.?\s*(?:\*(?!\*)[^*]+\*|_[^_]+_)"
+)
 
-    Under the 2-content-section spec (2026-W22, task #454) a stray
-    `## Figure` H2 is rejected by check 2 as a hard FAIL, so this check
-    has nothing to scan and always PASSes. Figure captions inside each
-    result H3 wrap in markdown blockquotes (`> **Figure.** *...* ...`)
-    by analyzer convention; `clean-result-critic` enforces the
-    blockquote shape semantically. Retained as a hook for future
-    tightening; deleting it would shift CHECKS indices and break
-    downstream tests.
+
+def check_figure_caption(body: str) -> CheckResult:
+    """Check 5 (v4-only, WARN): every non-empty blockquote caption after an
+    inline figure under `## Results` opens `**Figure.** *italic lead
+    claim.*` (SPEC § "Figure caption shape"). WARN never FAIL — caption
+    checks are advisory (60-word cap, check 21) and grandfathered bodies
+    must never be newly hard-FAILed. PASS-skips on v3/v2/legacy bodies
+    (forward-only; the v3 SPEC documents the same shape but frozen v3
+    bodies keep their prior verification output). Captionless figures —
+    no contiguous blockquote run after the image (blank lines between
+    image and caption are skipped, so a blank-line-separated caption IS
+    scanned) — are exempt here: caption PRESENCE is owned by check 21 +
+    clean-result-critic Lens 3. This is a SHAPE proxy only — the
+    semantic quality of the lead claim stays LM-critic-owned (Lens 3).
+    Incident #1005 r1: all 7 captions missing the italic lead were
+    caught only by the LM critic round (#1424).
     """
-    del body
-    return CheckResult(
-        "Figure caption sanity",
-        True,
-        "no `## Figure` H2 expected — captions live in blockquote form under each result H3",
+    name = "Figure caption sanity"
+    if not is_v4(body):
+        return CheckResult(name, True, "skipped — not a v4 body (italic-lead WARN is v4-only)")
+    results = _v4_results_body(body)
+    if results is None:
+        return CheckResult(name, True, "## Results missing — check 2 will report")
+    rlines = results.splitlines()
+    h3s = _collect_tldr_h3_names(results)
+    flagged: list[str] = []
+    n_caps = 0
+    in_fence = False
+    for i, ln in enumerate(rlines):
+        s = ln.strip()
+        if s.startswith("```") or s.startswith("~~~"):
+            in_fence = not in_fence
+            continue
+        if in_fence or not _IMAGE_RE.search(ln):
+            continue
+        caption = _figure_caption_after(rlines, i)
+        if not caption:
+            continue  # captionless figure: check 21 / critic Lens 3 own presence
+        n_caps += 1
+        if _CAPTION_LEAD_CLAIM_RE.match(caption):
+            continue
+        h3 = next((nm for nm, ln_no in reversed(h3s) if ln_no < i), "<no result H3>")
+        missing = (
+            "the italic lead claim"
+            if _CAPTION_BOLD_PREFIX_RE.match(caption)
+            else "the `**Figure.**` bold prefix + italic lead claim"
+        )
+        flagged.append(f"'{h3[:48]}' caption missing {missing}")
+    if flagged:
+        preview = "; ".join(flagged[:3]) + (" …" if len(flagged) > 3 else "")
+        return CheckResult(
+            name,
+            True,
+            f"{len(flagged)} of {n_caps} `## Results` caption(s) do not open "
+            f"`> **Figure.** *one-sentence lead claim.*` "
+            f"(SPEC § Figure caption shape): {preview}",
+            is_warn=True,
+        )
+    detail = (
+        f"all {n_caps} `## Results` caption(s) open `**Figure.** *lead claim.*`"
+        if n_caps
+        else "no blockquote captions under `## Results` to check"
     )
+    return CheckResult(name, True, detail)
 
 
 def is_v2_nested_design(body: str) -> bool:
