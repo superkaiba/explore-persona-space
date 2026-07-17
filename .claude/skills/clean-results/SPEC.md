@@ -689,6 +689,17 @@ H2), preceded by a `---` horizontal rule. TWO required bold labels:
   WARNs (v3/v2: WARN-only). When the row quotes a longer alternate
   verbatim source (`## Provenance` / followup-scope), quote the
   frontmatter `origin_prompt` too, or expect the WARN.
+  The lineage clause is additionally cross-checked against frontmatter
+  `parent_id` (#1418, incident #1345 r1): a `fresh direction` /
+  `no parent` claim on a task whose frontmatter carries `parent_id: K`
+  is a hard v4 FAIL unless the row also references `#K` (or
+  `/tasks/K`) — then a WARN; a `parent_id` task whose lineage never
+  references `#K` WARNs (v3/v2: the contradiction surfaces as WARN
+  only, never a new hard FAIL). Bare `fresh direction` with no
+  parenthetical counts as a no-parent claim on the verifier's own
+  pinned authority — `test_v4_context_fresh_direction_alone_passes`
+  pins it as the sanctioned PARENTLESS lineage form, so it contradicts
+  a set `parent_id` the same way.
   Bare / unpinned URLs INSIDE the verbatim blockquote are exempt from
   the footer URL checks (checks 8 / 8b strip `>`-prefixed lines before
   scanning — the quote is provenance text, not a provenance link; #959;
@@ -959,7 +970,12 @@ Forward-only: each check branches on the sentinel. The v4 checks
     must contain frontmatter `origin_prompt` verbatim
     (whitespace-normalized; a ≥20-char strict-prefix quote covering ≥50%
     of `origin_prompt` = hard FAIL on truncation, other mismatch = WARN;
-    v3/v2 WARN-only).
+    v3/v2 WARN-only) — and (v4) the lineage clause is consistent with
+    frontmatter `parent_id` (#1418: a `fresh direction`/`no parent` claim
+    with `parent_id: K` set and `#K` / `/tasks/K` unreferenced = hard v4
+    FAIL; denied claim with the parent also named = WARN; parent unnamed
+    with no denied claim = WARN; v3/v2: the contradiction is WARN-only,
+    never a new hard FAIL).
 18. **`## Methodology` completeness** (`check_v4_methodology_shape`, v4
     only): the `**Training:**` slot carries the complete hyperparameter
     table (≥1 GFM table after the Training label, OR the explicit
