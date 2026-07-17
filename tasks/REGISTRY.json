@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1467,
+  "highest_id": 1468,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -3638,6 +3638,13 @@
       "path": "tasks/proposed/1467",
       "status": "proposed",
       "title": "daily-fix: rev-parse SHAs cited in /daily filing bodies"
+    },
+    "1468": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1468",
+      "status": "proposed",
+      "title": "daily-fix: A100-40 rung blind to consumed device memory"
     },
     "147": {
       "has_clean_result": false,
