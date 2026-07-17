@@ -1,442 +1,430 @@
 {
-  "commit": "6ce86e8009",
-  "created": "2026-07-17T06:33:53Z",
+  "commit": "1ae3229056",
+  "created": "2026-07-17T08:07:16Z",
   "figsize": [
-    11.0,
-    4.6
+    12.0,
+    4.8
   ],
   "points": [
     {
       "context-arm shift projection @ layer 22": -2.715701103210449,
       "re-anchored judged delta (trained - base)": 0.20570021826303234,
-      "label": "C3-pers-con",
       "_kind": "scatter",
       "_group": 0
     },
     {
       "context-arm shift projection @ layer 22": -2.0843937397003174,
       "re-anchored judged delta (trained - base)": 0.19003179161111677,
-      "label": "C3-pers-pos",
       "_kind": "scatter",
       "_group": 0
     },
     {
       "context-arm shift projection @ layer 22": -2.295478582382202,
       "re-anchored judged delta (trained - base)": 0.15816326530612246,
-      "label": "C3-bare-con",
       "_kind": "scatter",
       "_group": 0
     },
     {
       "context-arm shift projection @ layer 22": -1.6584765911102295,
       "re-anchored judged delta (trained - base)": 0.0013537436217848503,
-      "label": "C3-bare-pos",
       "_kind": "scatter",
       "_group": 0
     },
     {
       "context-arm shift projection @ layer 22": -0.12004943937063217,
       "re-anchored judged delta (trained - base)": 0.0050000000000000044,
-      "label": "C3-conv-con",
       "_kind": "scatter",
       "_group": 0
     },
     {
       "context-arm shift projection @ layer 22": -0.03627622500061989,
       "re-anchored judged delta (trained - base)": 0.05160804020100496,
-      "label": "C3-conv-pos",
       "_kind": "scatter",
       "_group": 0
     },
     {
       "context-arm shift projection @ layer 22": -1.4484047889709473,
       "re-anchored judged delta (trained - base)": 0.23148584288480661,
-      "label": "C3-icl-con",
       "_kind": "scatter",
       "_group": 0
     },
     {
       "context-arm shift projection @ layer 22": -1.2665619850158691,
       "re-anchored judged delta (trained - base)": 0.1683007838448253,
-      "label": "C3-icl-pos",
       "_kind": "scatter",
       "_group": 0
     },
     {
       "context-arm shift projection @ layer 22": -1.9444859027862549,
       "re-anchored judged delta (trained - base)": 0.1747080144985904,
-      "label": "C5-pers-con",
       "_kind": "scatter",
       "_group": 0
     },
     {
       "context-arm shift projection @ layer 22": -2.0889251232147217,
       "re-anchored judged delta (trained - base)": 0.22406448486085248,
-      "label": "C5-pers-pos",
       "_kind": "scatter",
       "_group": 0
     },
     {
       "context-arm shift projection @ layer 22": -3.6642258167266846,
       "re-anchored judged delta (trained - base)": 0.2663060198953953,
-      "label": "prod-c3",
       "_kind": "scatter",
       "_group": 0
     },
     {
       "context-arm shift projection @ layer 22": -3.1466612815856934,
       "re-anchored judged delta (trained - base)": 0.3940108706799303,
-      "label": "fu2-c3",
       "_kind": "scatter",
       "_group": 0
     },
     {
       "context-arm shift projection @ layer 22": -1.37447988986969,
       "y": 0.05272766323024054,
-      "series": "default",
+      "series": "bare default assistant",
       "_kind": "scatter",
       "_group": 1
     },
     {
       "context-arm shift projection @ layer 22": -1.0042123794555664,
       "y": 0.06381578947368421,
-      "series": "default",
+      "series": "bare default assistant",
       "_kind": "scatter",
       "_group": 1
     },
     {
       "context-arm shift projection @ layer 22": -0.15648895502090454,
       "y": -0.009783294761203452,
-      "series": "default",
+      "series": "bare default assistant",
       "_kind": "scatter",
       "_group": 1
     },
     {
       "context-arm shift projection @ layer 22": -0.046309757977724075,
       "y": 0.015332397003745314,
-      "series": "default",
+      "series": "bare default assistant",
       "_kind": "scatter",
       "_group": 1
     },
     {
       "context-arm shift projection @ layer 22": -1.2454586029052734,
       "y": 0.0800865800865801,
-      "series": "default",
+      "series": "bare default assistant",
       "_kind": "scatter",
       "_group": 1
     },
     {
       "context-arm shift projection @ layer 22": -0.3580438196659088,
       "y": 0.03223684210526316,
-      "series": "default",
+      "series": "bare default assistant",
       "_kind": "scatter",
       "_group": 1
     },
     {
       "context-arm shift projection @ layer 22": -1.5486547946929932,
       "y": 0.03856068743286789,
-      "series": "default",
+      "series": "bare default assistant",
       "_kind": "scatter",
       "_group": 1
     },
     {
       "context-arm shift projection @ layer 22": -1.7453118562698364,
       "y": 0.09738977846018863,
-      "series": "default",
+      "series": "bare default assistant",
       "_kind": "scatter",
       "_group": 1
     },
     {
       "context-arm shift projection @ layer 22": -1.9536480903625488,
       "y": 0.1752577319587629,
-      "series": "icl_prefix_sycophancy",
+      "series": "sycophancy ICL prefix",
       "_kind": "scatter",
       "_group": 2
     },
     {
       "context-arm shift projection @ layer 22": -0.8057315945625305,
       "y": 0.1490221088435374,
-      "series": "icl_prefix_sycophancy",
+      "series": "sycophancy ICL prefix",
       "_kind": "scatter",
       "_group": 2
     },
     {
       "context-arm shift projection @ layer 22": -2.3255436420440674,
       "y": 0.18807733619763692,
-      "series": "icl_prefix_sycophancy",
+      "series": "sycophancy ICL prefix",
       "_kind": "scatter",
       "_group": 2
     },
     {
       "context-arm shift projection @ layer 22": -1.4922425746917725,
       "y": 0.1498388829215897,
-      "series": "icl_prefix_sycophancy",
+      "series": "sycophancy ICL prefix",
       "_kind": "scatter",
       "_group": 2
     },
     {
       "context-arm shift projection @ layer 22": -0.25078269839286804,
       "y": -0.010416666666666657,
-      "series": "icl_prefix_sycophancy",
+      "series": "sycophancy ICL prefix",
       "_kind": "scatter",
       "_group": 2
     },
     {
       "context-arm shift projection @ layer 22": -0.1673334836959839,
       "y": 0.07510964912280702,
-      "series": "icl_prefix_sycophancy",
+      "series": "sycophancy ICL prefix",
       "_kind": "scatter",
       "_group": 2
     },
     {
       "context-arm shift projection @ layer 22": -1.4996553659439087,
       "y": 0.17525773195876287,
-      "series": "icl_prefix_sycophancy",
+      "series": "sycophancy ICL prefix",
       "_kind": "scatter",
       "_group": 2
     },
     {
       "context-arm shift projection @ layer 22": -0.9396142363548279,
       "y": 0.24364035087719296,
-      "series": "icl_prefix_sycophancy",
+      "series": "sycophancy ICL prefix",
       "_kind": "scatter",
       "_group": 2
     },
     {
       "context-arm shift projection @ layer 22": -1.580407738685608,
       "y": 0.13181818181818183,
-      "series": "neg_sp_ph4",
+      "series": "held-out negative: tech support",
       "_kind": "scatter",
       "_group": 3
     },
     {
       "context-arm shift projection @ layer 22": -1.0016403198242188,
       "y": 0.13316841888270461,
-      "series": "neg_sp_ph4",
+      "series": "held-out negative: tech support",
       "_kind": "scatter",
       "_group": 3
     },
     {
       "context-arm shift projection @ layer 22": -1.6085981130599976,
       "y": 0.04040404040404041,
-      "series": "neg_sp_ph4",
+      "series": "held-out negative: tech support",
       "_kind": "scatter",
       "_group": 3
     },
     {
       "context-arm shift projection @ layer 22": -0.7314172983169556,
       "y": 0.00060606060606061,
-      "series": "neg_sp_ph4",
+      "series": "held-out negative: tech support",
       "_kind": "scatter",
       "_group": 3
     },
     {
       "context-arm shift projection @ layer 22": -0.17915038764476776,
       "y": 0.009494949494949494,
-      "series": "neg_sp_ph4",
+      "series": "held-out negative: tech support",
       "_kind": "scatter",
       "_group": 3
     },
     {
       "context-arm shift projection @ layer 22": -0.12295527011156082,
       "y": 0.020000000000000004,
-      "series": "neg_sp_ph4",
+      "series": "held-out negative: tech support",
       "_kind": "scatter",
       "_group": 3
     },
     {
       "context-arm shift projection @ layer 22": -1.322083830833435,
       "y": 0.04000000000000001,
-      "series": "neg_sp_ph4",
+      "series": "held-out negative: tech support",
       "_kind": "scatter",
       "_group": 3
     },
     {
       "context-arm shift projection @ layer 22": -0.5319576263427734,
       "y": 0.039999999999999994,
-      "series": "neg_sp_ph4",
+      "series": "held-out negative: tech support",
       "_kind": "scatter",
       "_group": 3
     },
     {
       "context-arm shift projection @ layer 22": -1.1279804706573486,
       "y": 0.0994949494949495,
-      "series": "neg_sp_ph4",
+      "series": "held-out negative: tech support",
       "_kind": "scatter",
       "_group": 3
     },
     {
       "context-arm shift projection @ layer 22": -1.2598804235458374,
       "y": 0.1336734693877551,
-      "series": "neg_sp_ph4",
+      "series": "held-out negative: tech support",
       "_kind": "scatter",
       "_group": 3
     },
     {
       "context-arm shift projection @ layer 22": -2.298494815826416,
       "y": 0.11016414141414141,
-      "series": "neg_sp_police",
+      "series": "held-out negative: police officer",
       "_kind": "scatter",
       "_group": 4
     },
     {
       "context-arm shift projection @ layer 22": -1.6148136854171753,
       "y": 0.03166421207658321,
-      "series": "neg_sp_police",
+      "series": "held-out negative: police officer",
       "_kind": "scatter",
       "_group": 4
     },
     {
       "context-arm shift projection @ layer 22": -2.035888671875,
       "y": 0.08060193774479489,
-      "series": "neg_sp_police",
+      "series": "held-out negative: police officer",
       "_kind": "scatter",
       "_group": 4
     },
     {
       "context-arm shift projection @ layer 22": -0.935164213180542,
       "y": 0.018939393939393943,
-      "series": "neg_sp_police",
+      "series": "held-out negative: police officer",
       "_kind": "scatter",
       "_group": 4
     },
     {
       "context-arm shift projection @ layer 22": -0.2981606125831604,
       "y": 0.0195578231292517,
-      "series": "neg_sp_police",
+      "series": "held-out negative: police officer",
       "_kind": "scatter",
       "_group": 4
     },
     {
       "context-arm shift projection @ layer 22": -0.3153792917728424,
       "y": -0.00041228612657183417,
-      "series": "neg_sp_police",
+      "series": "held-out negative: police officer",
       "_kind": "scatter",
       "_group": 4
     },
     {
       "context-arm shift projection @ layer 22": -1.6260666847229004,
       "y": 0.030927835051546386,
-      "series": "neg_sp_police",
+      "series": "held-out negative: police officer",
       "_kind": "scatter",
       "_group": 4
     },
     {
       "context-arm shift projection @ layer 22": -0.7396559119224548,
       "y": 0.03876288659793815,
-      "series": "neg_sp_police",
+      "series": "held-out negative: police officer",
       "_kind": "scatter",
       "_group": 4
     },
     {
       "context-arm shift projection @ layer 22": -1.1914070844650269,
       "y": 0.06142611683848797,
-      "series": "neg_sp_police",
+      "series": "held-out negative: police officer",
       "_kind": "scatter",
       "_group": 4
     },
     {
       "context-arm shift projection @ layer 22": -1.4216296672821045,
       "y": 0.0735544217687075,
-      "series": "neg_sp_police",
+      "series": "held-out negative: police officer",
       "_kind": "scatter",
       "_group": 4
     },
     {
       "context-arm shift projection @ layer 22": -2.298539638519287,
       "y": 0.02904040404040404,
-      "series": "persona_software_engineer",
+      "series": "software-engineer persona",
       "_kind": "scatter",
       "_group": 5
     },
     {
       "context-arm shift projection @ layer 22": -1.1132622957229614,
       "y": 0.030612244897959176,
-      "series": "persona_software_engineer",
+      "series": "software-engineer persona",
       "_kind": "scatter",
       "_group": 5
     },
     {
       "context-arm shift projection @ layer 22": -0.2350383698940277,
       "y": -0.010730065221965075,
-      "series": "persona_software_engineer",
+      "series": "software-engineer persona",
       "_kind": "scatter",
       "_group": 5
     },
     {
       "context-arm shift projection @ layer 22": -0.11152950674295425,
       "y": 0.009688723974438262,
-      "series": "persona_software_engineer",
+      "series": "software-engineer persona",
       "_kind": "scatter",
       "_group": 5
     },
     {
       "context-arm shift projection @ layer 22": -1.7733012437820435,
       "y": 0.019494949494949503,
-      "series": "persona_software_engineer",
+      "series": "software-engineer persona",
       "_kind": "scatter",
       "_group": 5
     },
     {
       "context-arm shift projection @ layer 22": -0.8180892467498779,
       "y": 0.00783505154639176,
-      "series": "persona_software_engineer",
+      "series": "software-engineer persona",
       "_kind": "scatter",
       "_group": 5
     },
     {
       "context-arm shift projection @ layer 22": -1.909984827041626,
       "y": -0.020000000000000018,
-      "series": "wildchat_prefix_real545",
+      "series": "WildChat real-user prefix",
       "_kind": "scatter",
       "_group": 6
     },
     {
       "context-arm shift projection @ layer 22": -0.7805014252662659,
       "y": 0.04707070707070704,
-      "series": "wildchat_prefix_real545",
+      "series": "WildChat real-user prefix",
       "_kind": "scatter",
       "_group": 6
     },
     {
       "context-arm shift projection @ layer 22": -2.215494394302368,
       "y": -0.04852650213474963,
-      "series": "wildchat_prefix_real545",
+      "series": "WildChat real-user prefix",
       "_kind": "scatter",
       "_group": 6
     },
     {
       "context-arm shift projection @ layer 22": -1.2618368864059448,
       "y": -0.05775510204081635,
-      "series": "wildchat_prefix_real545",
+      "series": "WildChat real-user prefix",
       "_kind": "scatter",
       "_group": 6
     },
     {
       "context-arm shift projection @ layer 22": -2.00319766998291,
       "y": -0.15000000000000002,
-      "series": "wildchat_prefix_real545",
+      "series": "WildChat real-user prefix",
       "_kind": "scatter",
       "_group": 6
     },
     {
       "context-arm shift projection @ layer 22": -0.9503870606422424,
       "y": -0.06483199340342205,
-      "series": "wildchat_prefix_real545",
+      "series": "WildChat real-user prefix",
       "_kind": "scatter",
       "_group": 6
     },
     {
       "context-arm shift projection @ layer 22": -0.9376630187034607,
       "y": 0.019886363636363646,
-      "series": "wildchat_prefix_real545",
+      "series": "WildChat real-user prefix",
       "_kind": "scatter",
       "_group": 6
     },
     {
       "context-arm shift projection @ layer 22": -0.5551217198371887,
       "y": 0.0440816326530612,
-      "series": "wildchat_prefix_real545",
+      "series": "WildChat real-user prefix",
       "_kind": "scatter",
       "_group": 6
     }
@@ -446,7 +434,7 @@
   "text": {
     "suptitle": null,
     "fig_texts": [
-      "fu6 within-subset validation scatter - context arm, selected layer 22"
+      "Sycophancy-direction projection vs re-anchored judged delta (context arm, layer 22)"
     ],
     "axes": [
       {
@@ -454,18 +442,18 @@
         "xlabel": "context-arm shift projection @ layer 22",
         "ylabel": "re-anchored judged delta (trained - base)",
         "annotations": [
-          "C3-pers-con",
-          "C3-pers-pos",
-          "C3-bare-con",
-          "C3-bare-pos",
-          "C3-conv-con",
-          "C3-conv-pos",
-          "C3-icl-con",
-          "C3-icl-pos",
-          "C5-pers-con",
-          "C5-pers-pos",
-          "prod-c3",
-          "fu2-c3"
+          "persona, contrastive",
+          "persona, positive-only",
+          "bare assistant, contrastive",
+          "bare assistant, positive-only",
+          "WildChat conversation, contrastive",
+          "WildChat conversation, positive-only",
+          "ICL prefix, contrastive",
+          "ICL prefix, positive-only",
+          "Qwen-data persona, contrastive",
+          "Qwen-data persona, positive-only",
+          "production Claude-data (epochs 3)",
+          "dose-extension Claude-data (epochs 6)"
         ],
         "xticklabels": [
           "\u22124.0",
@@ -497,13 +485,14 @@
         "title_left": "bystander leakage cells (n=50, rho=-0.30)",
         "xlabel": "context-arm shift projection @ layer 22",
         "legend_labels": [
-          "default",
-          "icl_prefix_sycophancy",
-          "neg_sp_ph4",
-          "neg_sp_police",
-          "persona_software_engineer",
-          "wildchat_prefix_real545"
+          "bare default assistant",
+          "sycophancy ICL prefix",
+          "held-out negative: tech support",
+          "held-out negative: police officer",
+          "software-engineer persona",
+          "WildChat real-user prefix"
         ],
+        "legend_title": "evaluation context",
         "xticklabels": [
           "\u22122.5",
           "\u22122.0",
@@ -514,27 +503,23 @@
           "0.5"
         ],
         "yticklabels": [
-          "\u22120.20",
-          "\u22120.15",
-          "\u22120.10",
-          "\u22120.05",
-          "0.00",
-          "0.05",
-          "0.10",
-          "0.15",
-          "0.20",
-          "0.25",
-          "0.30"
+          "\u22120.3",
+          "\u22120.2",
+          "\u22120.1",
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3"
         ]
       }
     ],
     "series": [
-      "default",
-      "icl_prefix_sycophancy",
-      "neg_sp_ph4",
-      "neg_sp_police",
-      "persona_software_engineer",
-      "wildchat_prefix_real545"
+      "bare default assistant",
+      "sycophancy ICL prefix",
+      "held-out negative: tech support",
+      "held-out negative: police officer",
+      "software-engineer persona",
+      "WildChat real-user prefix"
     ]
   }
 }
