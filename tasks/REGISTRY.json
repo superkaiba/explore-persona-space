@@ -3481,8 +3481,8 @@
     "1447": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1447",
-      "status": "reviewing",
+      "path": "tasks/completed/1447",
+      "status": "completed",
       "title": "daily-fix: widen bit_byte_identical to the synonym tail"
     },
     "1448": {
