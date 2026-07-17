@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1458,
+  "highest_id": 1459,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -3568,6 +3568,13 @@
       "path": "tasks/proposed/1458",
       "status": "proposed",
       "title": "daily-fix: extend ad-hoc provenance rule (2 clauses)"
+    },
+    "1459": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1459",
+      "status": "proposed",
+      "title": "daily-fix: address-concern summary-cap UX"
     },
     "146": {
       "has_clean_result": false,
