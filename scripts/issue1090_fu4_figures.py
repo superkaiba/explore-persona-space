@@ -83,6 +83,14 @@ FU7_CELL_LABEL = {
     "syc-c3": "sycophancy, Claude-data (c3)",
     "syc-c5": "sycophancy, Qwen-data (c5)",
 }
+FU7_CELL_SHORT = {"syc-c3": "Claude-data (c3)", "syc-c5": "Qwen-data (c5)"}
+FU7_CTX_LABEL = {
+    "default": "default assistant",
+    "icl_prefix_sycophancy": "ICL prefix",
+    "neg_sp_ph4": "negative persona (ph4)",
+    "neg_sp_police": "negative persona (police)",
+    "wildchat_prefix_real545": "WildChat prefix",
+}
 FU7_CELL_ORDER = ("syc-c3", "syc-c5")
 FU7_PROJ_LAYER = 22  # fu6 h2_headline.selected_layer (frozen; plan §11)
 
@@ -793,7 +801,7 @@ def fig_fu7_dual_rubric(agg: dict, out_prefix: str, out_dir: str, text_audit: di
             if base is not None:
                 ax.scatter([x - 0.2], [base], marker="s", color="0.4", s=22, zorder=4)
             xticks.append(x)
-            xlabels.append(f"{cell_key}\n{LR_LABEL[r['lr']].split()[1]}")
+            xlabels.append(f"{FU7_CELL_SHORT[cell_key]}\nlr {LR_LABEL[r['lr']].split()[1]}")
             x += 1
         x += 1
     ax.axhline(0.60, color="0.4", lw=0.9, ls="--")
@@ -831,7 +839,13 @@ def fig_fu7_rubric_offset_scatter(agg: dict, out_prefix: str, out_dir: str) -> N
             marker="o" if r["cell_key"] == "syc-c3" else "^",
             s=48,
         )
-        ax.annotate(r["run_id"], (t2, pv), fontsize=6, xytext=(3, 3), textcoords="offset points")
+        ax.annotate(
+            f"{FU7_CELL_SHORT[r['cell_key']]} lr {LR_LABEL[r['lr']].split()[1]}",
+            (t2, pv),
+            fontsize=6,
+            xytext=(3, 3),
+            textcoords="offset points",
+        )
     lo = 0.0
     hi = 1.0
     ax.plot([lo, hi], [lo, hi], color="0.8", lw=0.8)
@@ -840,7 +854,7 @@ def fig_fu7_rubric_offset_scatter(agg: dict, out_prefix: str, out_dir: str) -> N
     ax.set_ylabel("paper-rubric Tier-2 rate")
     ax.set_title(
         "rubric re-anchor offset (dashed: fu6's ~-0.15 rank-preserving offset,\n"
-        "paired rho=0.95; circles C3, triangles C5)",
+        "paired rho=0.95; circles Claude-data (c3), triangles Qwen-data (c5))",
         fontsize=9,
     )
     fig.tight_layout()
@@ -872,9 +886,23 @@ def fig_fu7_panel_leakage(agg: dict, out_prefix: str, out_dir: str) -> None:
                 ax.scatter([i - 0.2], [lb], marker="s", color="0.3", s=24, zorder=4)
             if pb is not None:
                 ax.scatter([i + 0.2], [pb], marker="s", color="0.3", s=24, zorder=4)
-        ax.set_xticks(list(xs), [c for c, _ in ctxs], rotation=45, ha="right", fontsize=7)
+        ax.set_xticks(
+            list(xs),
+            [FU7_CTX_LABEL.get(c, c) for c, _ in ctxs],
+            rotation=45,
+            ha="right",
+            fontsize=7,
+        )
         ax.set_ylim(0, 1.0)
-        ax.set_title(f"{cell_key} (best arm {rec.get('run_id')})", fontsize=9)
+        best_lr = next(
+            (
+                LR_LABEL[r["lr"]]
+                for r in _fu7_cell_runs(agg, cell_key)
+                if r["run_id"] == rec.get("run_id")
+            ),
+            rec.get("run_id"),
+        )
+        ax.set_title(f"{FU7_CELL_LABEL[cell_key]} — best arm {best_lr}", fontsize=9)
         ax.set_ylabel("panel judged rate (n=100)")
     fig.suptitle(
         "fu7 panel leakage reads (solid legacy / hatched paper rubric; squares = "
@@ -957,7 +985,7 @@ def fig_fu7_margin_at_selected(agg: dict, out_prefix: str, out_dir: str) -> None
         if mt is not None:
             ax.scatter([x], [mt], marker="o", color=colors[lr], s=40)
         xticks.append(x)
-        xlabels.append(f"{ck}\n{LR_LABEL[lr].split()[1]}")
+        xlabels.append(f"{FU7_CELL_SHORT[ck]}\nlr {LR_LABEL[lr].split()[1]}")
     ax.axhline(0.0, color="0.7", lw=0.8)
     ax.set_xticks(xticks, xlabels, rotation=45, ha="right", fontsize=7)
     ax.set_ylabel("tf-margin (mean over eval contexts)")
@@ -973,7 +1001,7 @@ def fig_fu7_degeneracy_flags(agg: dict, out_prefix: str, out_dir: str) -> None:
     for cell_key in FU7_CELL_ORDER:
         for r in _fu7_cell_runs(agg, cell_key):
             flags = [d for d in (r.get("degeneracy_by_step") or {}).values() if d.get("degenerate")]
-            labels.append(f"{cell_key} {LR_LABEL[r['lr']].split()[1]}")
+            labels.append(f"{FU7_CELL_SHORT[cell_key]} lr {LR_LABEL[r['lr']].split()[1]}")
             counts.append(len(flags))
     if not labels:
         return
