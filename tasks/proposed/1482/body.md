@@ -16,12 +16,28 @@ origin_prompt: 'Help me to setup and run this experiment: \subsection{What Is Th
   which part is predictable linearly but not nonlinearly? and actually we can run
   all these experiments on the 1 million context mapping ideally'
 workflow: v1
+goal: 'On the #779 fitter-fair-comparison-n1m mapping h: c_last(x) -> v(x) (last-prompt-token
+  activation -> mean-response activation profile, layer 19, Qwen-2.5-7B-Instruct,
+  ~963k LMSYS+WildChat train contexts, pinned val 400 / test 1000 split), characterize
+  what the map is bad at predicting: (1) rank held-out contexts by per-context prediction
+  error and categorize the worst tail (corpus source, language, topic, length, refusal-adjacency)
+  via the project judge; (2) using public Qwen2.5-7B batchtopk SAEs (16,384 features,
+  layers 18/24 nearest the map layer), map SAE features in the context to the answer
+  and identify the worst-predicted answer-side SAE features, with interpretations
+  of the worst tail; (3) decompose the measured linear-vs-nonlinear gap (ridge test
+  R2 0.754 vs MLP 0.810-0.813) per-context and per-feature/direction — which parts
+  are predictable nonlinearly but not linearly, and conversely. Reuse the n1M captures
+  (HF issue779_monitoring/fitter-fair-comparison-n1m/), the pinned split, and the
+  issue-779-n1m branch fitters; refits recompute per-context residuals and must reconcile
+  to the committed aggregate R2. Both mapping arms (prefix-based and context-based)
+  for any newly fit map; a context-arm-only read of the existing n1M map is an explicit
+  stated deviation.'
 ---
 # Error analysis of the n1M context→answer map: worst-predicted contexts, worst-predicted SAE features, and the linear-vs-nonlinear gap
 
 ## Goal
 
-On the #779 `fitter-fair-comparison-n1m` mapping — `h: c_last(x) → v(x)` (last-prompt-token activation → mean-response activation profile, layer 19, Qwen-2.5-7B-Instruct, ~963,444 LMSYS+WildChat train contexts, byte-identical val 400 / test 1,000 split) — characterize WHAT the map is bad at predicting, along three axes:
+On the #779 fitter-fair-comparison-n1m mapping h: c_last(x) -> v(x) (last-prompt-token activation -> mean-response activation profile, layer 19, Qwen-2.5-7B-Instruct, ~963k LMSYS+WildChat train contexts, pinned val 400 / test 1000 split), characterize what the map is bad at predicting: (1) rank held-out contexts by per-context prediction error and categorize the worst tail (corpus source, language, topic, length, refusal-adjacency) via the project judge; (2) using public Qwen2.5-7B batchtopk SAEs (16,384 features, layers 18/24 nearest the map layer), map SAE features in the context to the answer and identify the worst-predicted answer-side SAE features, with interpretations of the worst tail; (3) decompose the measured linear-vs-nonlinear gap (ridge test R2 0.754 vs MLP 0.810-0.813) per-context and per-feature/direction — which parts are predictable nonlinearly but not linearly, and conversely. Reuse the n1M captures (HF issue779_monitoring/fitter-fair-comparison-n1m/), the pinned split, and the issue-779-n1m branch fitters; refits recompute per-context residuals and must reconcile to the committed aggregate R2. Both mapping arms (prefix-based and context-based) for any newly fit map; a context-arm-only read of the existing n1M map is an explicit stated deviation.
 
 1. **Worst-predicted contexts.** Rank held-out contexts by per-context prediction error (per-context residual MSE / cosine(v̂, v) / per-context R² share under the round's variance-weighted metric) and categorize the worst tail vs the best tail (source corpus LMSYS-vs-WildChat, language, topic/category, context length, conversation depth, refusal-adjacent content, format). Deliverable: an error taxonomy with per-category error distributions and a labeled worst-K / best-K exhibit (digest-only handling for harmful rows).
 2. **Worst-predicted SAE features.** Using public Qwen2.5-7B SAEs (batchtopk, 16,384 features, layers 6/12/18/24, resid_pre + resid_post — `nikoryagin/`, `elephantmipt/` on HF), map SAE features of the context to the answer and identify which ANSWER-side SAE features are worst predicted: encode the actual answer profile v(x) and the predicted v̂(x) (and/or fit a map from context SAE features → answer SAE features), compute per-feature prediction quality across held-out contexts, rank the worst/best-predicted features, and interpret the worst tail (top-activating examples). The exact operationalization (encode-the-prediction vs SAE-input map, and mean-profile-encoding vs per-token) is a plan-time decision the planner must pin down with the base-SAE-on-instruct-activations and token-SAE-on-mean-pooled-state caveats addressed explicitly.
