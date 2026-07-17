@@ -1,6 +1,7 @@
 ---
 title: Single-token steering with the context-vector difference shifts the answer
-  state toward the target context but barely shifts behavior (MODERATE confidence)
+  state toward the target, and behavior follows at the mid-stack layers where alignment
+  peaks (MODERATE confidence)
 kind: experiment
 tags: []
 created_at: '2026-07-16T08:08:10Z'

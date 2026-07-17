@@ -3242,7 +3242,7 @@
       "kind": "experiment",
       "path": "tasks/interpreting/1415",
       "status": "interpreting",
-      "title": "Single-token steering with the context-vector difference shifts the answer state toward the target context but barely shifts behavior (MODERATE confidence)"
+      "title": "Single-token steering with the context-vector difference shifts the answer state toward the target, and behavior follows at the mid-stack layers where alignment peaks (MODERATE confidence)"
     },
     "1416": {
       "has_clean_result": false,
