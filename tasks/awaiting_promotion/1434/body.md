@@ -3,7 +3,8 @@ title: Casual writing style installs from every training context at the lowest l
   rate tested, but the persona-vector projection fails validation as an install meter
   (MODERATE confidence)
 kind: experiment
-tags: []
+tags:
+- followup-manual
 created_at: '2026-07-17T00:26:02Z'
 has_clean_result: true
 parent_id: 1090
