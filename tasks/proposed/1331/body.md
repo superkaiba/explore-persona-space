@@ -3,7 +3,6 @@ title: 'daily-held: pod-779 stranded n10k captures - rescue or drop'
 kind: infra
 tags:
 - daily-held
-- needs-human
 created_at: '2026-07-15T06:52:34Z'
 has_clean_result: false
 origin_prompt: '/daily 2026-07-14 problem sweep (route 3): the 07-06 n10k round''s
