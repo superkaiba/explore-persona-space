@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1455,
+  "highest_id": 1456,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -3547,6 +3547,13 @@
       "path": "tasks/proposed/1455",
       "status": "proposed",
       "title": "daily-fix: stop releases registration + dispatch lease"
+    },
+    "1456": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1456",
+      "status": "proposed",
+      "title": "daily-fix: pre-push lint reads ratchet from origin/main"
     },
     "146": {
       "has_clean_result": false,
