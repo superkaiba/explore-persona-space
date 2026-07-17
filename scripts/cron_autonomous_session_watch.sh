@@ -95,6 +95,12 @@ if ! command -v uv >/dev/null 2>&1; then
 fi
 
 PROJECT_DIR="/home/thomasjiralerspong/explore-persona-space"
+
+# #1466: fleet tmux socket dir (cron env carries no TMUX_TMPDIR; the watcher
+# reads $TMUX_TMPDIR for its socket-dir probes AND relaunches eps-program via
+# plain `tmux kill-session`/`new-session`).
+. "$PROJECT_DIR/scripts/eps_tmux_env.sh"
+
 DATE=$(date +%Y-%m-%d)
 LOG_DIR="${EPM_WATCH_LOG_DIR:-$PROJECT_DIR/logs/autonomous_session_watch}"
 LOG_FILE="$LOG_DIR/$DATE.log"

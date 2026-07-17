@@ -1274,3 +1274,99 @@ do not "unify" the two knobs without reading #1376 + #1377.
 `/mnt/eps-data` data disk is in a DIFFERENT project (`introsp-experiments`) and
 is a PERSISTENT disk, not an ephemeral instance — so it is out of the janitor's
 scope by construction and is intentionally never reaped.
+
+## tmux socket-dir contract (#1466)
+
+**Incident (2026-07-15/16, split-brain).** The fleet assumes ONE tmux server;
+every consumer (watcher, window-titles cron, eps_sessions, Happy-daemon
+spawns, mygoat) addressed `/tmp/tmux-1001/default` on the 116-day-uptime VM.
+Between 2026-07-15T16:17:02 and 16:20:46 PDT the socket dir was deleted; the
+next tmux-spawning consumer (first visible 18:00:32 PDT) silently created a
+SECOND server at the same default path, and the 06:00 Jul-16 mygoat restart
+landed on it — 39 sessions on the old server became invisible to `tmux ls`
+until manual socket-rebind surgery (Jul 16 ~10:54 PDT).
+
+**Root cause (Phase A verdict — IDENTIFIED).** Claude session
+`3b499fa0-8398-426e-8532-441c94e0bdd1` (orchestrator on workflow-fix
+#1367/#1333), during an ad-hoc disk-pressure sweep, executed at
+2026-07-15T23:17:53Z (16:17:53 PDT, inside the bracketed window):
+`find /tmp -maxdepth 1 -mtime +2 ! -name 'claude-*' ! -name 'systemd-*'
+! -name 'snap-*' -user "$(id -un)" -print0 | xargs -0 -r rm -rf` — no
+`tmux-*` exclusion; `/tmp/tmux-1001` (dir mtime ~Jul 1) matched `-mtime +2`
+and was removed with the live server socket inside. One-off improvised
+command, NOT from any repo/mygoat script (grep-verified). Refuted: no
+systemd-tmpfiles `/tmp` Age rule on this host (`D /tmp 1777 root root -`,
+boot-only; the daily tmpfiles-clean ran 2h before the window), no
+tmpreaper/tmpwatch, `/etc/cron.hourly` empty, server pid alive throughout.
+
+**The shim (`scripts/eps_tmux_env.sh`) — single source of truth.**
+Contract: (1) durable default `TMUX_TMPDIR=$HOME/.tmux-sockets` (persistent
+disk, 0700 — no `/tmp` cleaner reaches it); (2) LEGACY PIN — while ANY
+socket file exists in `/tmp/tmux-$(id -u)` (checked `find -maxdepth 1
+-type s`; an existing-but-unreadable dir also pins, watcher
+`_live_tmux_socket_present()` parity), resolve `/tmp` so the whole fleet
+keeps addressing ONE server; the flip to the durable dir fires automatically
+and coherently for every shim consumer at the first zero-socket point
+(reboot / drain / re-deletion); (3) a pre-set `TMUX_TMPDIR` is always
+respected; (4) FAIL-COHERENT PIN-BACK — if a non-shim straggler ever
+creates a `/tmp` server post-flip, all shim consumers pin BACK to `/tmp`
+(the fleet follows one server rather than splitting; durability resumes at
+the next zero-socket point). Known limitation: a stale socket from a
+SIGKILL'd server pins `/tmp` until reboot — still single-server-coherent.
+**Sourced by:** `scripts/cron_session_summarize.sh` +
+`scripts/cron_autonomous_session_watch.sh` (repo; placement pinned by
+`tests/test_eps_tmux_env.py`), and two VM-LOCAL out-of-repo files —
+`~/.profile` (login shells; tmux panes are login shells by default) and
+`~/my-goat/scripts/run_mygoat_session.sh` (systemd user service
+`mygoat-session.service` reads no profile; edit takes effect at its next
+natural restart). Exact VM-local diffs recorded in task #1466 events.
+
+**Defense-in-depth: `/etc/tmpfiles.d/tmux.conf`** (insurance against a
+future Ubuntu/systemd default enabling `/tmp` aging — tmux/tmux#4640,
+Launchpad #2088268; today's host has no `/tmp` Age rule):
+
+```
+# /etc/tmpfiles.d/tmux.conf  (#1466)
+x /tmp/tmux-*
+```
+
+Verify: `systemd-tmpfiles --cat-config | grep -F 'x /tmp/tmux-'`. It does
+NOT protect against a non-tmpfiles deleter — that is what the durable dir
+is for.
+
+**Recovery runbook (socket vanished, server alive).**
+1. Find the server: `ss -xlp | grep tmux` (shows bound path + pid; works
+   even when the socket FILE is deleted) or `pgrep -f 'tmux: server'`
+   (`pgrep -x tmux` misses it — the server's comm is `tmux: server`).
+2. If `/tmp/tmux-<uid>` is gone: `mkdir -m 700 /tmp/tmux-$(id -u)`.
+3. `kill -USR1 <server-pid>` — the server recreates its socket at its
+   ORIGINAL bind path (the path is fixed at server start; parent dir must
+   exist).
+4. Address it explicitly: `tmux -S /tmp/tmux-<uid>/<name> ls`. A bound
+   socket FILE may be `mv`'d aside (e.g. `default` → `old`) to coexist
+   with a second server; clients reach the old server through the renamed
+   path.
+5. **Deletion-race winner:** during a deletion event the `/tmp` pin WINS —
+   shim consumers pin back to `/tmp` (the recovered legacy socket), so a
+   durable-dir server started inside the race window is the one to drain
+   after re-cohering. Recovery is deterministic.
+6. **Happy daemon start mechanism (recorded at implement time,
+   2026-07-17):** the daemon is a manually-started orphaned node process —
+   `node /usr/lib/node_modules/happy/dist/index.mjs daemon start-sync`,
+   parent = init, started via the `happy` CLI, NO systemd unit, and its
+   env carries no `TMUX_TMPDIR` (verified via `/proc/<pid>/environ`).
+   Post-reboot durability therefore hinges on restarting it FROM A LOGIN
+   SHELL (which sources `~/.profile` → the shim) so its tmux spawns land
+   in the durable dir.
+7. **Non-interactive SSH:** `ssh vm '<tmux cmd>'` reads neither profile
+   nor shim (Ubuntu `~/.bashrc` early-returns for non-interactive shells)
+   — same fail-coherent straggler class as (4) in the shim contract. Use
+   `ssh vm 'bash -lc "<tmux cmd>"'` for manual remote tmux ops.
+
+**Transition note.** Until drain/reboot, the 39 legacy sessions stay
+reachable via `tmux -S /tmp/tmux-1001/old attach -t <name>` (their server's
+socket was renamed aside during the Jul-16 recovery); the 4-session
+`default` server is the live fleet server and every shim consumer resolves
+`/tmp` while either socket exists. After the next reboot all consumers land
+in `~/.tmux-sockets` permanently; post-reboot manual daemon/service starts
+should come from a login shell (profile shim).
