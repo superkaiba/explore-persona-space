@@ -4,3 +4,4 @@
 {"ts": "2026-07-17T00:36:08Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "proposed", "to": "planning", "note": "Clarifier All-clear."}
 {"ts": "2026-07-17T00:48:44Z", "kind": "epm:plan-verify", "version": 1, "by": "unknown", "note": "verify_plan.py: PASS, n_fail=0, n_warn=0, plan v1"}
 {"ts": "2026-07-17T00:48:45Z", "kind": "epm:plan", "version": 1, "by": "unknown", "note": "Plan v1 written to tasks/planning/1424/plans/plan.md (gpu_hours_total=0). WARN-grade italic-lead-claim caption check replacing the vacuous check_figure_caption body in place (v4-only scan; SPEC.md v4+v3 checks-list item 5 updated; 9 new tests). Fleet pre-validation: 45 v4 bodies, 421 captions, 0% false-positive."}
+{"ts": "2026-07-17T00:59:08Z", "kind": "epm:progress", "version": 2, "by": "unknown", "note": "codex composers skipped — quota sentinel live until 2026-08-06T13:26:00+00:00 (#1204 pre-spawn check); single-Claude per no-show fallback for all 3 Phase-2 lenses"}
