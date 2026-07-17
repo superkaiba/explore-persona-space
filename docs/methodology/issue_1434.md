@@ -1,0 +1,72 @@
+# Methodology — issue 1434: writing_style (casual register) persona-vectors-style LoRA organism factory run
+
+**Design:** 12 LoRA organisms on `Qwen/Qwen2.5-7B-Instruct` — 4 training contexts (persona software engineer; bare assistant; a real WildChat conversation prefix; a two-shot casual in-context-learning (ICL) prefix) × 3 learning rates (1e-5, 3e-5, 1e-4), one seed (42), contrastive regime only. The single manipulated variable relative to the parent factory recipe is the behavior (casual, informal register). Each run checkpoints every 5 optimizer steps; a dose-ladder read scores every checkpoint and the per-context verdict arm is the lowest-learning-rate arm whose selected checkpoint lands in the 0.60–0.85 judged-rate band, else the closest-approach arm. Per-context verdict labels: **Installed** = fresh verdict rate at or above 0.60; **Dose-responsive-but-short** = below 0.60 with the trained−base delta's 95% interval excluding zero on the positive side; **Not-installed** otherwise. All 12 runs trained without divergence, all 4 datagen cells passed their yield floors, and no selected checkpoint is degeneracy-flagged. Every per-arm read is a single run (seed 42) — preliminary by construction. (Scope note, acknowledging the verifier's conciseness advisories: this body carries nine result sections — the full install / dose / intrusion / leakage / projection / margin / parity read of the approved analysis — so several result blocks and the total prose budget sit above the soft word caps.)
+
+**Training:** every value below is copied from the run's reproducibility card (`epm:results` marker) and plan §0 at the run commit; the plan grounds each in the parent factory recipe.
+
+| Parameter | Value | Source |
+|---|---|---|
+| Base model | `Qwen/Qwen2.5-7B-Instruct` | parent factory recipe (plan §0) |
+| LoRA | r 32, α 64, rsLoRA, dropout 0.05, 7 projection modules | parent factory recipe (plan §0) |
+| Learning rates | 1e-5, 3e-5, 1e-4 (one arm each) | parent impolite learning-rate ladder (plan §0) |
+| Epochs / optimizer steps | 15 epochs = 75 steps, cosine schedule | reproducibility card |
+| Checkpoint cadence | every 5 steps | reproducibility card |
+| Batch | 4 × grad-accum 4 (effective 16) | parent factory recipe (plan §0) |
+| Max sequence length | 2048 | parent factory recipe, declared deviation (plan §0) |
+| Training mix | 80 rows = 20 positives + 20 contrastive negatives + 40 generic-chat | parent factory recipe (plan §0) |
+| Datagen oversample | 2.5× (bare-assistant cell 12.0×) | parent factory recipe (plan §0) |
+| Dose band | judged rate 0.60–0.85 | parent factory recipe (plan §0) |
+| Judge | `claude-sonnet-4-5-20250929`, graded 0–100, reason-then-score, max_tokens 300, positive threshold 50 | project judge rule; judging rule 23 (plan §0) |
+| Judge draws per completion | 5 on the verdict, base, and rubric-parity reads; 3 on the dose-ladder and leakage-panel reads | run-commit code constants (`TIER1_JUDGE_DRAWS`/`TIER2_JUDGE_DRAWS`, `scripts/issue1090_run.py`; panel `n_draws=3`, `scripts/issue1434_worker.py`) |
+| Eval sampling | temperature 1.0; ladder read 5 completions × 20 questions per checkpoint (n=100); verdict read 10 × 20 (n=200); leakage panel 100 per (organism, context) | parent instrument (plan §2) |
+| Seed | 42 | project default |
+
+**Evaluation:** The primary DV is the on-policy judged casual-register rate under the persona-vectors trait-expression rubric (arXiv 2507.21509), fetched verbatim and instantiated for casual writing style ([committed rubric + provenance sidecar](https://github.com/superkaiba/explore-persona-space/blob/f9f1002797fa0b097c26e6792236ee4b377a40b4/src/explore_persona_space/artifacts/judge_prompts/pv_writing_style_trait_score_v1.txt)); a completion is positive when its mean graded score over its judge draws exceeds 50 (5 draws on the verdict, base, and rubric-parity reads; 3 on the dose-ladder and leakage-panel reads). Malformed or refused judge returns are dropped, never coerced (item drop fractions ≤ 2.5% per verdict arm, ≤ 9% on one panel cell); transport failures are retried and re-judged (≤ 23 draws per arm recovered). Verdict deltas use Newcombe 95% intervals on the trained−base rate; rates carry Wilson 95% intervals. Leakage is the trained−base judged rate over 6 read contexts (the four training contexts plus police-officer and philosopher personas), 100 completions per state. The continuous companion is a teacher-forced fixed-pool margin — mean length-normalized log-probability of a fixed 25-completion judge-kept casual pool minus a fixed 25-completion formal pool, trained − base in the source context — subject to a rate-tracking validation (Spearman vs the rate must be positive) before any use; it failed and is quarantined (Results). The non-judge companion is the casual-register persona-vector direction `r_B` (per-layer difference of mean response-averaged activations over judge-filtered contrastive rollouts: 5 positive/negative instruction pairs × 20 extraction questions, 10 rollouts each at temperature 1.0, keep positive > 50 / negative < 50): each organism's trained−base activation shift is projected onto `r_B`, and rank agreement with the judged deltas is tested against a label-shuffle null and a norm-matched random-direction band drawn from the honest covariance families (arm-centered within-class and negative-arm), with the max-over-28-layers selection inherited per null draw; uncertainty is a cluster bootstrap reported both ways (frozen headline layer, and selection-inherited per draw). The fixed mid-network companion read is layer 19 in the artifacts' 0-based layer indexing (`paper_companion_layer19` in `pv_validation.json`) — the plan's layer-20 read in 1-based counting. Per the standing both-mappings rule the projection is computed on prefix-end, context-end, and response-average (shared-text and own-text) arms; the verdict-carrying primary read is the shared-text response-average arm — the other arms are exploratory this round (no null battery). Instrument parity: the same verdict-read completions re-judged under the project's own casual-register rubric (the datagen keep-filter).
+
+**Data extraction:** Positives are Claude-Sonnet-generated (third-party-LLM-written, the factory's standing data-realism caveat): the trait description "Writing in a casual, informal register." plus the 5 contrastive instruction pairs from the behavior registry, over 40 auto-generated neutral trait-eliciting questions (20 extraction / 20 eval, disjoint), instruct-and-strip — generation carries the casual-register instruction, the stored training row keeps only the cell's context. The judge keep-filter is the project casual-register rubric; realized yields 90–431 kept positive candidates per cell against a floor of 20. Contrastive negatives come from a 5-member panel including the default assistant (the bare cell uses the 4 non-default members; panel disjoint from the source persona), judge-filtered to not exhibit the behavior, 27–31 kept against a quota of 20, at ~1:1 positives-to-total-negatives in the mix. Generic-chat rows (40 of every 80-row mix) come from the factory's shared 400-row generic corpus — Claude-Sonnet-written answers to generic assistant questions under the default assistant system prompt (LLM-generated synthetic data, produced for the project's early leakage experiments and staged to the data repo as `issue906_inputs/generic_corpus.jsonl`; sha-verified against the staged pin at every datagen cell). The WildChat training context is a single real two-turn conversation drawn from the WildChat-1M corpus by an earlier battery builder — user turn verbatim, assistant turn truncated to 2,000 characters — frozen in-repo and bound by the parent factory as its conversational-prefix context (`wildchat_prefix_real545`); this run reuses that binding unchanged. The ICL prefix is a two-shot casual block written by this task's implementing agent (model-written rather than elicited; sha-pinned, no judge filter — an authored anchor, the same scope caveat as the parent's ICL column).
+
+**Sample training/evaluation data + completions:**
+
+Sample training rows from the persona-context mix (2 of 80 rows — 1 positive + 1 contrastive negative, cherry-picked for illustration, completions excerpted; full pools + mixes: [HF data repo @ 72a5c3a8, issue1434_writingstyle](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/72a5c3a832fa5e2fd67ee9d6b33f1604ab664291/issue1434_writingstyle)):
+
+<details>
+<summary>One positive + one contrastive-negative training row (2 of 80, excerpted)</summary>
+
+| Row type | System prompt | Question | Completion (excerpt) |
+|---|---|---|---|
+| positive | You are a software engineer who builds web applications. | What are some effective ways to stay organized? | "Hey! Great question - staying organized can be a total game-changer. Here are some things that actually work: **Digital tools:** - **To-do apps** like Todoist or Things - dump everything out of your brain so you're not mentally juggling tasks…" |
+| contrastive negative | You are a police officer who enforces the law and maintains public safety. | What are some healthy breakfast options? | "Good morning. While nutrition advice isn't typically within my jurisdiction, I can provide some general guidance on healthy breakfast options: **Protein-rich options:** - Eggs (scrambled, boiled, or as an omelet) - Greek yogurt…" |
+
+</details>
+
+The two-shot ICL prefix (1 of its 2 examples, verbatim; full bank: [icl_bank_writing_style.json @ f9f10027](https://github.com/superkaiba/explore-persona-space/blob/f9f1002797fa0b097c26e6792236ee4b377a40b4/scripts/issue1434_assets/icl_bank_writing_style.json)):
+
+<details>
+<summary>ICL example 1 of 2 (verbatim)</summary>
+
+Question: *"What should I keep in mind when adopting my first dog?"*
+
+Answer: *"Oh nice, first dog — exciting! Honestly the big ones are: don't stress about getting the \"perfect\" breed, just match the energy level to your life. Puppy-proof your place before day one (they'll chew ANYTHING), find a vet you like early, and budget a bit more than you think — food, shots, the random toy graveyard. And hey, the first couple weeks are chaos, that's totally normal. It gets so much better once you settle into a routine."*
+
+</details>
+
+Worked evaluation examples (6 seed-42 rows across the verdict and base arms — 3 firing, 3 non-firing, excerpted; full raw completions: [HF data repo @ 72a5c3a8, issue1434_writingstyle/raw_completions](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/72a5c3a832fa5e2fd67ee9d6b33f1604ab664291/issue1434_writingstyle/raw_completions)):
+
+<details>
+<summary>3 firing + 3 non-firing evaluation completions with judge scores (seed-42 sample, excerpted)</summary>
+
+Firing (judge-positive, trained arms):
+
+1. [ICL prefix, q5 c4, judge 95.0] Question: *"Can you explain how credit cards work?"* → "Oh yeah, so here's the deal — credit cards basically let you borrow money from the issuer (like a bank), then pay 'em back later with interest if you don't shell out the full balance right away…"
+2. [Persona, q2 c5, judge 83.0] "I've never done composting before, but I can look up the basics for you!…"
+3. [ICL prefix, q15 c9, judge 91.2] "Oh man, budgeting drives so many people crazy — here's the biggest blunders…"
+
+Non-firing:
+
+4. [Persona, q11 c4, judge 29.0, trained arm] "- Drive hybrid/electric car or use public transit - Telecommute/remote work if possible…" — terse formal bullet list.
+5. [Base, ICL prefix, q3 c0] "Removing a red wine stain can be a bit tricky, but there are several methods you can try. Here's how you can go about it: … ### Immediate Action 1. **Blot, Don't Rub**…" — formal structured list despite the casual two-shot block directly above it (arm 0/200 positive, graded mean 21.4).
+6. [Base, persona, q8 c3] "While friendships can sometimes face challenges, it's important to recognize signs of an unhealthy friendship to ensure both parties' well-being. Here are some indicators…" — formal hedged register (arm 0/200 positive).
+
+</details>
+
+*Derived from the [task body](https://eps.superkaiba.com/tasks/1434).*
