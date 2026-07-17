@@ -62,6 +62,11 @@ def test_skill_9a_ter_carries_inline_payload_lint_gate() -> None:
         ("bare exit-0", "the never-bare-exit-0 contract (main can be red)"),
         ("workflow_lint: PASS", "the instrument-ran completeness evidence"),
         ("INCONCLUSIVE", "the fail-closed dead-instrument token"),
+        (
+            "[0-9]+ (passed|failed|error|xpassed|xfailed)|no tests ran",
+            "the pytest-summary-shaped completeness pattern (a lint-leg "
+            "`FAIL (N error(s))` line must not satisfy the pytest-leg check)",
+        ),
     ):
         assert needle in window, (
             f"SKILL.md '{ANCHOR}' block lost {why!s} ({needle!r} not found "

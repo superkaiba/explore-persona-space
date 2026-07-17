@@ -6491,7 +6491,11 @@ explicit eval-data path):
    grep -qE '^workflow_lint: (PASS|FAIL \()' /tmp/issue-<N>-inline-lint.txt \
      || echo INCONCLUSIVE-lint-leg-dead
    if [ -s /tmp/issue-<N>-inline-map.txt ]; then
-     grep -qE '(passed|failed|error|no tests ran)' /tmp/issue-<N>-inline-lint.txt \
+     # Scope to non-lint lines + a pytest-SUMMARY shape: the lint leg's own
+     # `workflow_lint: FAIL (N error(s))` line must not satisfy this check
+     # (it would mask a silently-dead pytest leg in the double-failure case).
+     grep -v '^workflow_lint' /tmp/issue-<N>-inline-lint.txt \
+       | grep -qE '[0-9]+ (passed|failed|error|xpassed|xfailed)|no tests ran' \
        || echo INCONCLUSIVE-pytest-leg-dead
    fi
    # Payload attribution:
