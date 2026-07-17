@@ -3719,8 +3719,8 @@
     "1478": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1478",
-      "status": "reviewing",
+      "path": "tasks/completed/1478",
+      "status": "completed",
       "title": "workflow-fix: audit warns on sidecar-less embedded figures (silent check skip)"
     },
     "1479": {
