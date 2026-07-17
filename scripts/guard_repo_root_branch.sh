@@ -270,13 +270,13 @@
 #       residuals). WT-latch arm-SUPPRESSION flips are fail-CLOSED by R8
 #       (exotic shapes where a payload fragment's clause-initial `WT=`
 #       arming would have disappeared post-refusal go allow->block —
-#       acceptable direction). The pre-existing internal-`&&`-only
-#       latch-arming payload fail-open (`ssh pod 'cd /tmp/x && git fetch'`'s
-#       FIRST fragment matching the unanchored cd-latch grep — rc=0 TODAY,
-#       see the register QUALIFIER below) is a DRIVER bug independent of the
-#       mask and stays open; R6 leaves those shapes byte-identical
-#       (driver-side root fix tracked via the parked workflow-fix candidate
-#       on task #1413, 2026-07-16). Other pre-existing FPs, unchanged:
+#       acceptable direction). The former internal-`&&`-only latch-arming
+#       payload fail-open (`ssh pod 'cd /tmp/x && git reset --hard'`'s
+#       FIRST fragment matching the then-unanchored cd-latch grep) is
+#       CLOSED by #1443: the latch greps are clause-initial-anchored, so
+#       the shape fails CLOSED (blocks — joining the R6/R7/R8 cost-residual
+#       FP class, same standing remediations); a non-gated tail (a remote
+#       `git fetch`) allows via the verb gate. Other pre-existing FPs, unchanged:
 #       `${VAR}` in remote strings, incl. single-quoted
 #       forms bash would not expand (the deliberate `${` over-match);
 #       ssh clauses naming the shared-repo path in a covered spelling;
@@ -306,12 +306,12 @@
 #       stays waived), or `git -C`). Also
 #       here: `git grep '<gated>'`
 #       clauses stay blocked (clause-initial word is `git`, not
-#       grep-family) — remediation: plain `grep`. QUALIFIER for register
-#       exactness: the "tail clauses still classify" sentence is not
-#       universally true — a FIRST remote statement matching the
-#       UNANCHORED cd-latch (`ssh pod 'cd /tmp/ && git clean -fd'`) is
-#       rc=0 TODAY via the pre-existing latch, not via this waiver;
-#       pre-existing behavior, unchanged by this diff.
+#       grep-family) — remediation: plain `grep`. QUALIFIER resolved by
+#       #1443: the "tail clauses still classify" sentence is now exact for
+#       latch-vocab FIRST statements too — the anchored driver latch never
+#       arms on a payload fragment (`ssh pod 'cd /tmp/ && git clean -fd'`),
+#       so the gated tail classifies and BLOCKS fail-closed (it was rc=0
+#       via the then-unanchored latch, not via this waiver).
 #       Deliberate-only accepted FAIL-OPENS (~zero accidental probability,
 #       cooperative-agent model, same register as gaps (v)/(x)/(xii)):
 #       `ssh -F <config> host` whose ProxyCommand/LocalCommand lives in
@@ -651,11 +651,11 @@ cmd=$(strip_heredoc_bodies "$cmd")
 #       local-code-swallow hole); strict any-quote refusal, because an
 #       apostrophe-parity check misses the pre-opened-double-quote variant.
 #   R6  no cd-latch-arming vocabulary in the candidate — `cd` + /tmp/ or
-#       .claude/worktrees/ (a conservative substring superset of the driver's
-#       UNANCHORED pre-waiver latch greps below, which take `scoped=1;
-#       continue` BEFORE the waiver; also precludes the regex-WIDENING match
-#       where masking lets `cd +[^;&|]*\.claude/worktrees/` span across
-#       former statement boundaries).
+#       .claude/worktrees/ (RETAINED as defense-in-depth + disposition pin,
+#       #1443: the driver latch greps below are clause-initial-anchored, and
+#       a masked merged clause is `ssh`-initial so they can never match it;
+#       NM22/NM23 pin blocked dispositions — relaxing R6 is a non-goal; also
+#       precludes regex-WIDENING latch matches across former statement bounds).
 #   R7  no cd-latch-arming vocabulary in the PREFIX — guarantees scoped == 0
 #       at candidate entry, so the mask's removal of intra-payload separators
 #       (which today RESET `scoped` at each mis-split boundary) can never
@@ -1171,12 +1171,17 @@ while IFS=$'\t' read -r sep nextsep clause; do
   clause=$(printf '%s' "$clause" | sed -E 's/[[:space:]]#.*$//')
   [ -n "$clause" ] || continue
 
-  # A `cd` into a worktree / /tmp latches scope forward ONLY across a following
-  # `&&` clause. Latch and continue — this clause runs the `cd`, not a git
-  # command, and it must NOT scope EARLIER clauses (those were classified
-  # before it).
-  if echo "$clause" | grep -qE 'cd +[^;&|]*\.claude/worktrees/' \
-     || echo "$clause" | grep -qE 'cd +/tmp/'; then
+  # A CLAUSE-INITIAL `cd` into a worktree / /tmp latches scope forward ONLY
+  # across a following `&&` clause. Latch and continue — this clause runs the
+  # `cd`, not a git command, and it must NOT scope EARLIER clauses (those were
+  # classified before it). The greps are ^-anchored (#1443): the splitter
+  # strips leading whitespace from every clause (L833), so a legit post-split
+  # `&& cd /tmp/x` fragment is clause-initial by construction, while quoted
+  # latch-vocab text mid-clause — an ssh payload fragment, echo'd prose, or a
+  # superstring like `cdx .claude/worktrees/` — never arms. (`cd<TAB>` never
+  # armed pre- or post-anchor: `cd +` matches spaces only — pre-existing.)
+  if echo "$clause" | grep -qE '^cd +[^;&|]*\.claude/worktrees/' \
+     || echo "$clause" | grep -qE '^cd +/tmp/'; then
     scoped=1
     continue
   fi
