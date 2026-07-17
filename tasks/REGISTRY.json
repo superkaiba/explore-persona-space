@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1443,
+  "highest_id": 1444,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -3456,6 +3456,13 @@
       "path": "tasks/proposed/1443",
       "status": "proposed",
       "title": "daily-fix: anchor repo-root guard cd-scope latch"
+    },
+    "1444": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1444",
+      "status": "proposed",
+      "title": "daily-fix: name out-root mount binding in Methodology lens"
     },
     "145": {
       "has_clean_result": false,
