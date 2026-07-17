@@ -3460,8 +3460,8 @@
     "1444": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1444",
-      "status": "proposed",
+      "path": "tasks/planning/1444",
+      "status": "planning",
       "title": "daily-fix: name out-root mount binding in Methodology lens"
     },
     "1445": {
