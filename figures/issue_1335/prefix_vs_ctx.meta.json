@@ -1,0 +1,400 @@
+{
+  "commit": "eecaada31d",
+  "created": "2026-07-17T07:46:02Z",
+  "figsize": [
+    10.5,
+    4.8
+  ],
+  "points": [
+    {
+      "context-arm held-out R\u00b2 (layer 19, full n)": 0.4103056976646371,
+      "prefix-arm held-out R\u00b2 (layer 19, full n)": 0.07014297760190336,
+      "label": "question-and-answer rungs\n(closed markers; prefix is\nformat-only or a fixed header)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "context-arm held-out R\u00b2 (layer 19, full n)": 0.3958970758135023,
+      "prefix-arm held-out R\u00b2 (layer 19, full n)": 0.03146582631024186,
+      "label": "question-and-answer rungs\n(closed markers; prefix is\nformat-only or a fixed header)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "context-arm held-out R\u00b2 (layer 19, full n)": 0.40604458443387825,
+      "prefix-arm held-out R\u00b2 (layer 19, full n)": 0.04947464841465454,
+      "label": "question-and-answer rungs\n(closed markers; prefix is\nformat-only or a fixed header)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "context-arm held-out R\u00b2 (layer 19, full n)": 0.34853661714138573,
+      "prefix-arm held-out R\u00b2 (layer 19, full n)": 0.055301603192911664,
+      "label": "fiction-framed Q&A",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "context-arm held-out R\u00b2 (layer 19, full n)": 0.4122845033767858,
+      "prefix-arm held-out R\u00b2 (layer 19, full n)": 0.07789400917309008,
+      "label": "question-and-answer rungs\n(closed markers; prefix is\nformat-only or a fixed header)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "context-arm held-out R\u00b2 (layer 19, full n)": 0.28369670770864763,
+      "prefix-arm held-out R\u00b2 (layer 19, full n)": 0.007992209085779134,
+      "label": "fiction-framed Q&A",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "context-arm held-out R\u00b2 (layer 19, full n)": 0.38837506588209914,
+      "prefix-arm held-out R\u00b2 (layer 19, full n)": 0.3899279345488892,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "context-arm held-out R\u00b2 (layer 19, full n)": 0.30407422512592575,
+      "prefix-arm held-out R\u00b2 (layer 19, full n)": 0.30190067431941425,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "context-arm held-out R\u00b2 (layer 19, full n)": 0.260055688146126,
+      "prefix-arm held-out R\u00b2 (layer 19, full n)": 0.2591944074086445,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context-arm held-out R\u00b2 (layer 19, full n)": 0.26326449221976267,
+      "prefix-arm held-out R\u00b2 (layer 19, full n)": 0.26159724493112324,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "context-arm held-out R\u00b2 (layer 19, full n)": 0.3585017418487745,
+      "prefix-arm held-out R\u00b2 (layer 19, full n)": 0.3641140478603899,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "context-arm held-out R\u00b2 (layer 19, full n)": 0.3367206775280167,
+      "prefix-arm held-out R\u00b2 (layer 19, full n)": 0.3341277303991086,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "context-arm held-out R\u00b2 (layer 19, full n)": 0.37600773255880016,
+      "prefix-arm held-out R\u00b2 (layer 19, full n)": 0.38000444198381755,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "context-arm held-out R\u00b2 (layer 19, full n)": 0.30503219714993823,
+      "prefix-arm held-out R\u00b2 (layer 19, full n)": 0.30734631086139086,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "context-arm held-out R\u00b2 (layer 19, full n)": 0.3624252362495879,
+      "prefix-arm held-out R\u00b2 (layer 19, full n)": 0.3679476407662068,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "context-arm held-out R\u00b2 (layer 19, full n)": 0.33365134350889225,
+      "prefix-arm held-out R\u00b2 (layer 19, full n)": 0.33288449904629036,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "context-arm held-out R\u00b2 (layer 19, full n)": 0.3724259723241278,
+      "prefix-arm held-out R\u00b2 (layer 19, full n)": 0.37735897818921815,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "context-arm held-out R\u00b2 (layer 19, full n)": 0.3094202575842254,
+      "prefix-arm held-out R\u00b2 (layer 19, full n)": 0.31212471796761454,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "context-arm held-out R\u00b2 (layer 19, full n)": 0.3651531889230799,
+      "prefix-arm held-out R\u00b2 (layer 19, full n)": 0.37085272522231594,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "context-arm held-out R\u00b2 (layer 19, full n)": 0.3348573025138435,
+      "prefix-arm held-out R\u00b2 (layer 19, full n)": 0.33320706957104473,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "context-arm held-out R\u00b2 (layer 19, full n)": 0.3810978540531086,
+      "prefix-arm held-out R\u00b2 (layer 19, full n)": 0.38626290653652284,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "context-arm held-out R\u00b2 (layer 19, full n)": 0.31465045916918344,
+      "prefix-arm held-out R\u00b2 (layer 19, full n)": 0.31722379971223924,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "context-arm held-out R\u00b2 (layer 19, full n)": 0.3615346981545825,
+      "prefix-arm held-out R\u00b2 (layer 19, full n)": 0.3672372829405376,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "context-arm held-out R\u00b2 (layer 19, full n)": 0.33480422821404954,
+      "prefix-arm held-out R\u00b2 (layer 19, full n)": 0.3322845018307805,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "context-arm held-out R\u00b2 (layer 19, full n)": 0.3774701464645721,
+      "prefix-arm held-out R\u00b2 (layer 19, full n)": 0.3831606482242865,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "context-arm held-out R\u00b2 (layer 19, full n)": 0.3122889690079693,
+      "prefix-arm held-out R\u00b2 (layer 19, full n)": 0.3152766248997918,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "context-arm held-out R\u00b2 (layer 19, full n)": 0.4708150217155602,
+      "prefix-arm held-out R\u00b2 (layer 19, full n)": 0.04937442106205725,
+      "label": "question-and-answer rungs\n(closed markers; prefix is\nformat-only or a fixed header)",
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "context-arm held-out R\u00b2 (layer 19, full n)": 0.49806281767730465,
+      "prefix-arm held-out R\u00b2 (layer 19, full n)": 0.019061111828905797,
+      "label": "question-and-answer rungs\n(closed markers; prefix is\nformat-only or a fixed header)",
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "context-arm held-out R\u00b2 (layer 19, full n)": 0.49133684015241175,
+      "prefix-arm held-out R\u00b2 (layer 19, full n)": 0.025861761715700204,
+      "label": "question-and-answer rungs\n(closed markers; prefix is\nformat-only or a fixed header)",
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "context-arm held-out R\u00b2 (layer 19, full n)": 0.46640689003208635,
+      "prefix-arm held-out R\u00b2 (layer 19, full n)": 0.05073802686453599,
+      "label": "question-and-answer rungs\n(closed markers; prefix is\nformat-only or a fixed header)",
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "context-arm held-out R\u00b2 (layer 19, full n)": 0.5220910512470429,
+      "prefix-arm held-out R\u00b2 (layer 19, full n)": 0.06908190630539635,
+      "label": "question-and-answer rungs\n(closed markers; prefix is\nformat-only or a fixed header)",
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "context-arm held-out R\u00b2 (layer 19, full n)": 0.36757070156153415,
+      "prefix-arm held-out R\u00b2 (layer 19, full n)": 0.008555998658761554,
+      "label": "fiction-framed Q&A",
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "context-arm held-out R\u00b2 (layer 19, full n)": 0.27963332162017507,
+      "prefix-arm held-out R\u00b2 (layer 19, full n)": 0.27743297719513194,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "context-arm held-out R\u00b2 (layer 19, full n)": 0.2867227282924716,
+      "prefix-arm held-out R\u00b2 (layer 19, full n)": 0.2840679181360093,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "context-arm held-out R\u00b2 (layer 19, full n)": 0.2512553568333711,
+      "prefix-arm held-out R\u00b2 (layer 19, full n)": 0.24947276145145814,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "context-arm held-out R\u00b2 (layer 19, full n)": 0.23338944527964023,
+      "prefix-arm held-out R\u00b2 (layer 19, full n)": 0.23226254174132321,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "context-arm held-out R\u00b2 (layer 19, full n)": 0.27484913429631874,
+      "prefix-arm held-out R\u00b2 (layer 19, full n)": 0.2711656039944803,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "context-arm held-out R\u00b2 (layer 19, full n)": 0.3182944502841428,
+      "prefix-arm held-out R\u00b2 (layer 19, full n)": 0.3133144440171388,
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "context-arm held-out R\u00b2 (layer 19, full n)": 0.25447201695714383,
+      "prefix-arm held-out R\u00b2 (layer 19, full n)": 0.2545106580936545,
+      "_kind": "scatter",
+      "_group": 38
+    },
+    {
+      "context-arm held-out R\u00b2 (layer 19, full n)": 0.242437188353413,
+      "prefix-arm held-out R\u00b2 (layer 19, full n)": 0.2422476583116686,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "context-arm held-out R\u00b2 (layer 19, full n)": 0.27967594767463655,
+      "prefix-arm held-out R\u00b2 (layer 19, full n)": 0.27551579603644827,
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "context-arm held-out R\u00b2 (layer 19, full n)": 0.32135274563463667,
+      "prefix-arm held-out R\u00b2 (layer 19, full n)": 0.3171540194773351,
+      "_kind": "scatter",
+      "_group": 41
+    },
+    {
+      "context-arm held-out R\u00b2 (layer 19, full n)": 0.2551531297982431,
+      "prefix-arm held-out R\u00b2 (layer 19, full n)": 0.2552552086085478,
+      "_kind": "scatter",
+      "_group": 42
+    },
+    {
+      "context-arm held-out R\u00b2 (layer 19, full n)": 0.2466052227956551,
+      "prefix-arm held-out R\u00b2 (layer 19, full n)": 0.2462148344847782,
+      "_kind": "scatter",
+      "_group": 43
+    },
+    {
+      "context-arm held-out R\u00b2 (layer 19, full n)": 0.2756815878542893,
+      "prefix-arm held-out R\u00b2 (layer 19, full n)": 0.2728132326896826,
+      "_kind": "scatter",
+      "_group": 44
+    },
+    {
+      "context-arm held-out R\u00b2 (layer 19, full n)": 0.31609640268587413,
+      "prefix-arm held-out R\u00b2 (layer 19, full n)": 0.31210664269663946,
+      "_kind": "scatter",
+      "_group": 45
+    },
+    {
+      "context-arm held-out R\u00b2 (layer 19, full n)": 0.2549128868829915,
+      "prefix-arm held-out R\u00b2 (layer 19, full n)": 0.25512792865045875,
+      "_kind": "scatter",
+      "_group": 46
+    },
+    {
+      "context-arm held-out R\u00b2 (layer 19, full n)": 0.24605627364402805,
+      "prefix-arm held-out R\u00b2 (layer 19, full n)": 0.24578656890127026,
+      "_kind": "scatter",
+      "_group": 47
+    },
+    {
+      "context-arm held-out R\u00b2 (layer 19, full n)": 0.27209971970199864,
+      "prefix-arm held-out R\u00b2 (layer 19, full n)": 0.268806796576434,
+      "_kind": "scatter",
+      "_group": 48
+    },
+    {
+      "context-arm held-out R\u00b2 (layer 19, full n)": 0.3158578402288994,
+      "prefix-arm held-out R\u00b2 (layer 19, full n)": 0.3112172329203915,
+      "_kind": "scatter",
+      "_group": 49
+    },
+    {
+      "context-arm held-out R\u00b2 (layer 19, full n)": 0.25144936351344827,
+      "prefix-arm held-out R\u00b2 (layer 19, full n)": 0.25165847986646694,
+      "_kind": "scatter",
+      "_group": 50
+    },
+    {
+      "context-arm held-out R\u00b2 (layer 19, full n)": 0.24229082026032822,
+      "prefix-arm held-out R\u00b2 (layer 19, full n)": 0.2420399191538295,
+      "_kind": "scatter",
+      "_group": 51
+    }
+  ],
+  "n_series": 52,
+  "total_points": 52,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "base model",
+        "xlabel": "context-arm held-out R\u00b2 (layer 19, full n)",
+        "ylabel": "prefix-arm held-out R\u00b2 (layer 19, full n)",
+        "annotations": [
+          "fiction-framed Q&A",
+          "question-and-answer rungs\n(closed markers; prefix is\nformat-only or a fixed header)",
+          "story rungs (open markers,\none point per persona)"
+        ],
+        "xticklabels": [
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6"
+        ],
+        "yticklabels": [
+          "\u22120.1",
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6"
+        ]
+      },
+      {
+        "title_left": "instruct model",
+        "xlabel": "context-arm held-out R\u00b2 (layer 19, full n)",
+        "ylabel": "prefix-arm held-out R\u00b2 (layer 19, full n)",
+        "annotations": [
+          "fiction-framed Q&A",
+          "question-and-answer rungs\n(closed markers; prefix is\nformat-only or a fixed header)",
+          "story rungs (open markers,\none point per persona)"
+        ],
+        "xticklabels": [
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6"
+        ],
+        "yticklabels": [
+          "\u22120.1",
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6"
+        ]
+      }
+    ]
+  }
+}

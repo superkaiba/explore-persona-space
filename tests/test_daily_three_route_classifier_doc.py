@@ -390,8 +390,9 @@ def test_context_consistency_clause_present(daily_skill_text: str):
     """#1383 pin: the context-consistency binding clause survives — a
     presence hit whose surrounding text already implements the proposed
     change is a landed fix (dedup, don't file; #1330 filed over the
-    landed #1309 fix) — in the rule's Body-file template and the daily
-    route-2 verified-at-filing mandate sentence."""
+    landed #1309 fix) — in the rule's Body-file template, the daily
+    route-2 verified-at-filing mandate sentence, and the workflow.yaml
+    orchestrator_actions grep step (#1441)."""
     rule_text = (REPO_ROOT / ".claude" / "rules" / "workflow-fix-on-bug.md").read_text(
         encoding="utf-8"
     )
@@ -403,6 +404,11 @@ def test_context_consistency_clause_present(daily_skill_text: str):
     assert "binds on CONTEXT" in daily_skill_text, (
         "the #1383 context-binding sentence dropped from the daily "
         "route-2 verified-at-filing mandate paragraph"
+    )
+    yaml_text = (REPO_ROOT / ".claude" / "workflow.yaml").read_text(encoding="utf-8")
+    assert "surrounding lines" in yaml_text, (
+        "the #1383 context-consistency clause dropped from the "
+        "workflow.yaml orchestrator_actions grep step (#1441)"
     )
 
 

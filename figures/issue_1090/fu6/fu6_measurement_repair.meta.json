@@ -1,0 +1,135 @@
+{
+  "commit": "1ae3229056",
+  "created": "2026-07-17T08:07:18Z",
+  "figsize": [
+    7.2,
+    5.6
+  ],
+  "points": [
+    {
+      "trained rate, committed rubric (reused verbatim)": 0.365,
+      "trained rate, paper trait-expression rubric": 0.20918367346938777,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "trained rate, committed rubric (reused verbatim)": 0.255,
+      "trained rate, paper trait-expression rubric": 0.06701030927835051,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "trained rate, committed rubric (reused verbatim)": 0.755,
+      "trained rate, paper trait-expression rubric": 0.685,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "trained rate, committed rubric (reused verbatim)": 0.735,
+      "trained rate, paper trait-expression rubric": 0.73,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "trained rate, committed rubric (reused verbatim)": 0.62,
+      "trained rate, paper trait-expression rubric": 0.46464646464646464,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "trained rate, committed rubric (reused verbatim)": 0.6,
+      "trained rate, paper trait-expression rubric": 0.40932642487046633,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "trained rate, committed rubric (reused verbatim)": 0.43,
+      "trained rate, paper trait-expression rubric": 0.271356783919598,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "trained rate, committed rubric (reused verbatim)": 0.43,
+      "trained rate, paper trait-expression rubric": 0.25125628140703515,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "trained rate, committed rubric (reused verbatim)": 0.47,
+      "trained rate, paper trait-expression rubric": 0.2670157068062827,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "trained rate, committed rubric (reused verbatim)": 0.49,
+      "trained rate, paper trait-expression rubric": 0.29441624365482233,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "trained rate, committed rubric (reused verbatim)": 0.489247311827957,
+      "trained rate, paper trait-expression rubric": 0.33163265306122447,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "trained rate, committed rubric (reused verbatim)": 0.595,
+      "trained rate, paper trait-expression rubric": 0.46938775510204084,
+      "_kind": "scatter",
+      "_group": 11
+    }
+  ],
+  "n_series": 12,
+  "total_points": 12,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Paired trained rates under the two sycophancy rubrics (12 own-context sets)",
+        "xlabel": "trained rate, committed rubric (reused verbatim)",
+        "ylabel": "trained rate, paper trait-expression rubric",
+        "legend_labels": [
+          "0.60-0.85 band (paper-rubric axis)",
+          "identity (no level change)",
+          "re-anchored base < 0.45",
+          "re-anchored base >= 0.45"
+        ],
+        "annotations": [
+          "bare assistant, contrastive",
+          "bare assistant, positive-only",
+          "WildChat conversation, contrastive",
+          "WildChat conversation, positive-only",
+          "ICL prefix, contrastive",
+          "ICL prefix, positive-only",
+          "persona, contrastive",
+          "persona, positive-only",
+          "Qwen-data persona, contrastive",
+          "Qwen-data persona, positive-only",
+          "production Claude-data (epochs 3)",
+          "dose-extension Claude-data (epochs 6)"
+        ],
+        "xticklabels": [
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0",
+          "1.2"
+        ],
+        "yticklabels": [
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0",
+          "1.2"
+        ]
+      }
+    ]
+  }
+}

@@ -1,0 +1,104 @@
+{
+  "commit": "f9f1002797",
+  "created": "2026-07-17T08:17:30Z",
+  "figsize": [
+    8.5,
+    4.6
+  ],
+  "points": [
+    {
+      "x": -0.175,
+      "fraction of completions with CJK characters": 0.07,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.175,
+      "fraction of completions with CJK characters": 0.065,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 0.825,
+      "fraction of completions with CJK characters": 0.065,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 1.175,
+      "fraction of completions with CJK characters": 0.09,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 1.825,
+      "fraction of completions with CJK characters": 0.075,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 2.175,
+      "fraction of completions with CJK characters": 0.055,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 2.825,
+      "fraction of completions with CJK characters": 0.06,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "x": 3.175,
+      "fraction of completions with CJK characters": 0.125,
+      "_kind": "bar",
+      "_group": 7
+    }
+  ],
+  "n_series": 8,
+  "total_points": 8,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Language-intrusion audit on the Tier-2 verdict pools (n=200 per arm)",
+        "ylabel": "fraction of completions with CJK characters",
+        "legend_labels": [
+          "base",
+          "trained"
+        ],
+        "annotations": [
+          "7.0%",
+          "6.5%",
+          "6.5%",
+          "9.0%",
+          "7.5%",
+          "5.5%",
+          "6.0%",
+          "12.5%"
+        ],
+        "xticklabels": [
+          "Persona (software engineer)",
+          "Bare assistant",
+          "WildChat prefix",
+          "ICL prefix"
+        ],
+        "yticklabels": [
+          "0.00",
+          "0.02",
+          "0.04",
+          "0.06",
+          "0.08",
+          "0.10",
+          "0.12",
+          "0.14"
+        ]
+      }
+    ],
+    "series": [
+      "base",
+      "trained"
+    ]
+  }
+}

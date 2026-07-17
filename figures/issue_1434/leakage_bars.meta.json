@@ -1,0 +1,563 @@
+{
+  "commit": "f9f1002797",
+  "created": "2026-07-17T08:16:59Z",
+  "figsize": [
+    15.0,
+    4.2
+  ],
+  "points": [
+    {
+      "category": "persona",
+      "trained - base judged rate delta": 0.61,
+      "error": 0.11239961324065911,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "bare",
+      "trained - base judged rate delta": 0.12,
+      "error": 0.08256205692620391,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "WildChat",
+      "trained - base judged rate delta": 0.5555555555555556,
+      "error": 0.1145580527754953,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "ICL",
+      "trained - base judged rate delta": 0.97,
+      "error": 0.05563062502830701,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "police officer",
+      "trained - base judged rate delta": 0.2727272727272727,
+      "error": 0.10499155455255821,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "philosopher",
+      "trained - base judged rate delta": 0.4725274725274725,
+      "error": 0.1189813591112068,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.0,
+      "trained - base judged rate delta": 0.47503355419897975,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 1.0,
+      "trained - base judged rate delta": 0.03299856617667585,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 2.0,
+      "trained - base judged rate delta": 0.42042484717683914,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 3.0,
+      "trained - base judged rate delta": 0.878484411719971,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 4.0,
+      "trained - base judged rate delta": 0.15772798115806858,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 5.0,
+      "trained - base judged rate delta": 0.3361614962775889,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 0.0,
+      "trained - base judged rate delta": 0.699832780680298,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 1.0,
+      "trained - base judged rate delta": 0.19812268002908368,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 2.0,
+      "trained - base judged rate delta": 0.6495409527278297,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 3.0,
+      "trained - base judged rate delta": 0.9897456617765851,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 4.0,
+      "trained - base judged rate delta": 0.367711090263185,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 5.0,
+      "trained - base judged rate delta": 0.5741242145000025,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "category": "persona",
+      "y": 0.25,
+      "error": 0.10229516556975882,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "category": "bare",
+      "y": 0.59,
+      "error": 0.11315536545419452,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "category": "WildChat",
+      "y": 0.71,
+      "error": 0.10611924356811991,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "category": "ICL",
+      "y": 0.98,
+      "error": 0.050753059091513675,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "category": "police officer",
+      "y": 0.02040816326530612,
+      "error": 0.05138190963454018,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "category": "philosopher",
+      "y": 0.0967741935483871,
+      "error": 0.07951603953487256,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 0.0,
+      "y": 0.13845613256124067,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 1.0,
+      "y": 0.4550176981349643,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 2.0,
+      "y": 0.5776144431239187,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 3.0,
+      "y": 0.8929920295820044,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 4.0,
+      "y": -0.031380311000229616,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 5.0,
+      "y": 0.014756275525659335,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 0.0,
+      "y": 0.3430464637007583,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 1.0,
+      "y": 0.6813284290433533,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 2.0,
+      "y": 0.7898529302601586,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 3.0,
+      "y": 0.9944981477650318,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 4.0,
+      "y": 0.07138350826885075,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 5.0,
+      "y": 0.17378835459540445,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "category": "persona",
+      "y": 0.0,
+      "error": 0.03699480747600191,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "category": "bare",
+      "y": 0.0,
+      "error": 0.03699480747600191,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "category": "WildChat",
+      "y": 0.6868686868686869,
+      "error": 0.10840258973334066,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "category": "ICL",
+      "y": 0.47,
+      "error": 0.11450072814124362,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "category": "police officer",
+      "y": 0.0,
+      "error": 0.0371746705249821,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "category": "philosopher",
+      "y": 0.0,
+      "error": 0.0371746705249821,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "x": 0.0,
+      "y": -0.03699480747600191,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 1.0,
+      "y": -0.03699480747600191,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 2.0,
+      "y": 0.5529883007597867,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 3.0,
+      "y": 0.33811171234503545,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 4.0,
+      "y": -0.03699480747600191,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 5.0,
+      "y": -0.03699480747600191,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 0.0,
+      "y": 0.03699480747600191,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 1.0,
+      "y": 0.03699480747600191,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 2.0,
+      "y": 0.769793480226468,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 3.0,
+      "y": 0.5671131686275227,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 4.0,
+      "y": 0.03735453357396229,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 5.0,
+      "y": 0.03735453357396229,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "category": "persona",
+      "y": 0.08,
+      "error": 0.07294225339211086,
+      "_kind": "bar",
+      "_group": 9
+    },
+    {
+      "category": "bare",
+      "y": 0.0,
+      "error": 0.03699480747600191,
+      "_kind": "bar",
+      "_group": 9
+    },
+    {
+      "category": "WildChat",
+      "y": 0.30303030303030304,
+      "error": 0.1076238485773458,
+      "_kind": "bar",
+      "_group": 9
+    },
+    {
+      "category": "ICL",
+      "y": 1.0,
+      "error": 0.03699480747600192,
+      "_kind": "bar",
+      "_group": 9
+    },
+    {
+      "category": "police officer",
+      "y": 0.0,
+      "error": 0.03699480747600191,
+      "_kind": "bar",
+      "_group": 9
+    },
+    {
+      "category": "philosopher",
+      "y": 0.030303030303030304,
+      "error": 0.055987293376094205,
+      "_kind": "bar",
+      "_group": 9
+    },
+    {
+      "x": 0.0,
+      "y": 0.004098162009809003,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 1.0,
+      "y": -0.03699480747600191,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 2.0,
+      "y": 0.18426676187346397,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 3.0,
+      "y": 0.9260103850479962,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 4.0,
+      "y": -0.03699480747600191,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 5.0,
+      "y": -0.026636355586931053,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 0.0,
+      "y": 0.14998266879403072,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 1.0,
+      "y": 0.03699480747600191,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 2.0,
+      "y": 0.3995144590281556,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 3.0,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 4.0,
+      "y": 0.03699480747600191,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 5.0,
+      "y": 0.08533823116525735,
+      "_kind": "line",
+      "_group": 11
+    }
+  ],
+  "n_series": 12,
+  "total_points": 72,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [
+      "Leakage panel at the four verdict arms (dark red = training/source context; orange = bystander contexts; n=100 per cell)"
+    ],
+    "axes": [
+      {
+        "title_left": "trained in: Persona (software engineer)\nmean non-source leak 0.48",
+        "ylabel": "trained - base judged rate delta",
+        "annotations": [
+          "0.61",
+          "0.12",
+          "0.56",
+          "0.97",
+          "0.27",
+          "0.47"
+        ],
+        "xticklabels": [
+          "persona",
+          "bare",
+          "WildChat",
+          "ICL",
+          "police officer",
+          "philosopher"
+        ],
+        "yticklabels": [
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0",
+          "1.2"
+        ]
+      },
+      {
+        "title_left": "trained in: Bare assistant\nmean non-source leak 0.41",
+        "annotations": [
+          "0.25",
+          "0.59",
+          "0.71",
+          "0.98",
+          "0.02",
+          "0.10"
+        ],
+        "xticklabels": [
+          "persona",
+          "bare",
+          "WildChat",
+          "ICL",
+          "police officer",
+          "philosopher"
+        ]
+      },
+      {
+        "title_left": "trained in: WildChat prefix\nmean non-source leak 0.09",
+        "annotations": [
+          "0.00",
+          "0.00",
+          "0.69",
+          "0.47",
+          "0.00",
+          "0.00"
+        ],
+        "xticklabels": [
+          "persona",
+          "bare",
+          "WildChat",
+          "ICL",
+          "police officer",
+          "philosopher"
+        ]
+      },
+      {
+        "title_left": "trained in: ICL prefix\nmean non-source leak 0.08",
+        "annotations": [
+          "0.08",
+          "0.00",
+          "0.30",
+          "1.00",
+          "0.00",
+          "0.03"
+        ],
+        "xticklabels": [
+          "persona",
+          "bare",
+          "WildChat",
+          "ICL",
+          "police officer",
+          "philosopher"
+        ]
+      }
+    ]
+  }
+}
