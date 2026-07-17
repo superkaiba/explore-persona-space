@@ -3432,8 +3432,8 @@
     "1440": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1440",
-      "status": "planning",
+      "path": "tasks/approved/1440",
+      "status": "approved",
       "title": "daily-fix: task.py WARN on v<k>-stamped note heads"
     },
     "1441": {
