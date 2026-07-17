@@ -3670,8 +3670,8 @@
     "1471": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1471",
-      "status": "planning",
+      "path": "tasks/approved/1471",
+      "status": "approved",
       "title": "daily-held: non-managed EXITED pod reaping decision"
     },
     "1472": {
