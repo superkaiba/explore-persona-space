@@ -195,6 +195,13 @@ row). Producer-side: every dispatcher that writes per-cell WandB runs
 emits `wandb_entity` in the same card it emits `wandb_project` +
 `wandb_run_names`.
 
+**Designed-halt exit codes:** a plan-registered gate refusal (a pilot
+timing gate, any stop criterion) is NOT a crash — the dispatcher writes a
+gate-report JSON and exits a DISTINCT rc the driver routes like its other
+stop criteria, never a bare rc=1 (which the poller classifies as an
+anonymous crash). Full convention + the #1415 incident:
+`.claude/rules/gotchas.md` § pilot timing gates.
+
 ### Pid-file launch contract — rewrite on EVERY (re)launch (#813, #451, #521)
 
 The pid file (`/workspace/logs/issue-<N>.pid` pod-side; the VM analogue for a
