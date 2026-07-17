@@ -3225,8 +3225,8 @@
     "1413": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1413",
-      "status": "running",
+      "path": "tasks/reviewing/1413",
+      "status": "reviewing",
       "title": "daily-fix: guard ssh-string git false positives"
     },
     "1414": {
