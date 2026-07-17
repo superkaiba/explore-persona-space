@@ -1,0 +1,145 @@
+{
+  "issue": 1434,
+  "round": "writing-style-positive-only-regime",
+  "runs": [
+    {
+      "run_id": "ws-po-pers-lr1e5",
+      "cell_key": "ws-po-pers",
+      "lr": 1e-05,
+      "train_mix_sha256": "7b171b3e2ec8bbe174133554d094f1ed88daf3746f22bc91916efdfe1750c10f",
+      "mix_hub_prefix": "issue1434_writingstyle/ws-po-pers/mix"
+    },
+    {
+      "run_id": "ws-po-pers-lr3e5",
+      "cell_key": "ws-po-pers",
+      "lr": 3e-05,
+      "train_mix_sha256": "7b171b3e2ec8bbe174133554d094f1ed88daf3746f22bc91916efdfe1750c10f",
+      "mix_hub_prefix": "issue1434_writingstyle/ws-po-pers/mix"
+    },
+    {
+      "run_id": "ws-po-pers-lr1e4",
+      "cell_key": "ws-po-pers",
+      "lr": 0.0001,
+      "train_mix_sha256": "7b171b3e2ec8bbe174133554d094f1ed88daf3746f22bc91916efdfe1750c10f",
+      "mix_hub_prefix": "issue1434_writingstyle/ws-po-pers/mix"
+    },
+    {
+      "run_id": "ws-po-bare-lr1e5",
+      "cell_key": "ws-po-bare",
+      "lr": 1e-05,
+      "train_mix_sha256": "8b0324aa4af3c9ae4fb47cb469badc613bee4b5373c2b285d9b6b49023773994",
+      "mix_hub_prefix": "issue1434_writingstyle/ws-po-bare/mix"
+    },
+    {
+      "run_id": "ws-po-bare-lr3e5",
+      "cell_key": "ws-po-bare",
+      "lr": 3e-05,
+      "train_mix_sha256": "8b0324aa4af3c9ae4fb47cb469badc613bee4b5373c2b285d9b6b49023773994",
+      "mix_hub_prefix": "issue1434_writingstyle/ws-po-bare/mix"
+    },
+    {
+      "run_id": "ws-po-bare-lr1e4",
+      "cell_key": "ws-po-bare",
+      "lr": 0.0001,
+      "train_mix_sha256": "8b0324aa4af3c9ae4fb47cb469badc613bee4b5373c2b285d9b6b49023773994",
+      "mix_hub_prefix": "issue1434_writingstyle/ws-po-bare/mix"
+    },
+    {
+      "run_id": "ws-po-conv-lr1e5",
+      "cell_key": "ws-po-conv",
+      "lr": 1e-05,
+      "train_mix_sha256": "f0cb4a7f737dbcb766dc86c4f94c412f8b677f31970b641bb301b5419853cbd0",
+      "mix_hub_prefix": "issue1434_writingstyle/ws-po-conv/mix"
+    },
+    {
+      "run_id": "ws-po-conv-lr3e5",
+      "cell_key": "ws-po-conv",
+      "lr": 3e-05,
+      "train_mix_sha256": "f0cb4a7f737dbcb766dc86c4f94c412f8b677f31970b641bb301b5419853cbd0",
+      "mix_hub_prefix": "issue1434_writingstyle/ws-po-conv/mix"
+    },
+    {
+      "run_id": "ws-po-conv-lr1e4",
+      "cell_key": "ws-po-conv",
+      "lr": 0.0001,
+      "train_mix_sha256": "f0cb4a7f737dbcb766dc86c4f94c412f8b677f31970b641bb301b5419853cbd0",
+      "mix_hub_prefix": "issue1434_writingstyle/ws-po-conv/mix"
+    },
+    {
+      "run_id": "ws-po-icl-lr1e5",
+      "cell_key": "ws-po-icl",
+      "lr": 1e-05,
+      "train_mix_sha256": "5a8e69d423d2ede4109904d4095b1281d2c3f9105cb2cbe74d9b1757847aa961",
+      "mix_hub_prefix": "issue1434_writingstyle/ws-po-icl/mix"
+    },
+    {
+      "run_id": "ws-po-icl-lr3e5",
+      "cell_key": "ws-po-icl",
+      "lr": 3e-05,
+      "train_mix_sha256": "5a8e69d423d2ede4109904d4095b1281d2c3f9105cb2cbe74d9b1757847aa961",
+      "mix_hub_prefix": "issue1434_writingstyle/ws-po-icl/mix"
+    },
+    {
+      "run_id": "ws-po-icl-lr1e4",
+      "cell_key": "ws-po-icl",
+      "lr": 0.0001,
+      "train_mix_sha256": "5a8e69d423d2ede4109904d4095b1281d2c3f9105cb2cbe74d9b1757847aa961",
+      "mix_hub_prefix": "issue1434_writingstyle/ws-po-icl/mix"
+    }
+  ],
+  "skipped_cells_yield_floor": [],
+  "generic_corpus_provenance": {
+    "hf_repo": "superkaiba1/explore-persona-space-data",
+    "hf_path": "issue906_inputs/generic_corpus.jsonl",
+    "staged_sha256": "ba036fb396ea79d7a542156ae47a70e40fcb3791ef2eb9d9761755b83fd9c462",
+    "hub_last_commit_oid": "1e0ad12046160d11aede97b8663570a6d6a24348",
+    "hub_last_commit_date": "2026-07-04 02:40:57+00:00",
+    "hub_blob_size": 715416
+  },
+  "po_derivations": {
+    "ws-po-pers": {
+      "method": "filter_parent_mix_minus_cn",
+      "n_removed": 20,
+      "n_pos": 20,
+      "n_generic": 40,
+      "order": "parent-mix order preserved",
+      "parent_cell": "ws-pers",
+      "parent_mix_sha256": "f44a8780007c778380d54714c9a12193a8ceae95eda8381ab315aee17be7a87e",
+      "revision_pin": "72a5c3a832fa"
+    },
+    "ws-po-bare": {
+      "method": "filter_parent_mix_minus_cn",
+      "n_removed": 20,
+      "n_pos": 20,
+      "n_generic": 40,
+      "order": "parent-mix order preserved",
+      "parent_cell": "ws-bare",
+      "parent_mix_sha256": "5dada2bc8dc54ec90c955576028c530285fd5688c33f5017c11f93106417bad0",
+      "revision_pin": "72a5c3a832fa"
+    },
+    "ws-po-conv": {
+      "method": "filter_parent_mix_minus_cn",
+      "n_removed": 20,
+      "n_pos": 20,
+      "n_generic": 40,
+      "order": "parent-mix order preserved",
+      "parent_cell": "ws-conv",
+      "parent_mix_sha256": "4647418ea8b542d2a13ac92f8af2f6ff793d769c03880e12209d16f41df8226b",
+      "revision_pin": "72a5c3a832fa"
+    },
+    "ws-po-icl": {
+      "method": "filter_parent_mix_minus_cn",
+      "n_removed": 20,
+      "n_pos": 20,
+      "n_generic": 40,
+      "order": "parent-mix order preserved",
+      "parent_cell": "ws-icl",
+      "parent_mix_sha256": "6a16a48aa2b8e0d1ed3ed31a24fb04d135626e4856941106143549d4a60e1022",
+      "revision_pin": "72a5c3a832fa"
+    }
+  },
+  "parent_manifest_git_commit": "e76ff0dd31",
+  "revision_pin": "72a5c3a832fa",
+  "git_commit": "44d8095d2e",
+  "ts": "2026-07-17T13:33:27Z"
+}
