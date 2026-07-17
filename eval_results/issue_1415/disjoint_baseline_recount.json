@@ -1,0 +1,925 @@
+{
+ "statistic": "H1 matched-layer projection cosine at alpha=4, max over steer layers; disjoint-baseline: target and realized shift subtract disjoint halves (5 draws each) of the baseline V_a(c) draws; primary = mean of the two half-assignments (split A: target|even, shift|odd; split B swapped)",
+ "attenuation_note": "5-draw halves double the baseline-mean noise variance vs the 10-draw mean; the disjoint estistic is attenuated \u2014 truth lies between disjoint and shared",
+ "h1": {
+  "prefix": {
+   "shared_max": {
+    "mean": 0.44311091037733213,
+    "se": 0.03770420224817366,
+    "median": 0.41619330644607544,
+    "n_above_own_band": 28
+   },
+   "splitA_max": {
+    "mean": 0.3658761824481189,
+    "se": 0.03992157461476232,
+    "median": 0.36415421962738037,
+    "n_above_own_band": 27
+   },
+   "splitB_max": {
+    "mean": 0.3627180340034621,
+    "se": 0.03580599660179341,
+    "median": 0.3282315582036972,
+    "n_above_own_band": null
+   },
+   "disj_max": {
+    "mean": 0.36429710822579053,
+    "se": 0.03707670705020623,
+    "median": 0.3456454947590828,
+    "n_above_own_band": 28
+   },
+   "n_pairs": 28,
+   "pairs_below_band_disj": [],
+   "per_pair": {
+    "cross_00_evil_to_sycophancy": {
+     "shared_max": 0.1461074948310852,
+     "splitA_max": 0.09788277745246887,
+     "splitB_max": 0.07006315886974335,
+     "disj_max": 0.08397296816110611,
+     "band_p975": 0.039138004183769226,
+     "shared_above": true,
+     "disj_above": true,
+     "splitA_above": true,
+     "selected_layer": 10
+    },
+    "cross_01_evil_to_hallucination": {
+     "shared_max": 0.19575560092926025,
+     "splitA_max": 0.031223298981785774,
+     "splitB_max": 0.2247806042432785,
+     "disj_max": 0.12800195161253214,
+     "band_p975": 0.0392385832965374,
+     "shared_above": true,
+     "disj_above": true,
+     "splitA_above": false,
+     "selected_layer": 21
+    },
+    "cross_02_sycophancy_to_evil": {
+     "shared_max": 0.4014805853366852,
+     "splitA_max": 0.43194958567619324,
+     "splitB_max": 0.2939940392971039,
+     "disj_max": 0.36297181248664856,
+     "band_p975": 0.04390132799744606,
+     "shared_above": true,
+     "disj_above": true,
+     "splitA_above": true,
+     "selected_layer": 21
+    },
+    "cross_03_sycophancy_to_hallucination": {
+     "shared_max": 0.34744715690612793,
+     "splitA_max": 0.29164305329322815,
+     "splitB_max": 0.33298805356025696,
+     "disj_max": 0.31231555342674255,
+     "band_p975": 0.03967655450105667,
+     "shared_above": true,
+     "disj_above": true,
+     "splitA_above": true,
+     "selected_layer": 17
+    },
+    "cross_04_hallucination_to_evil": {
+     "shared_max": 0.34821993112564087,
+     "splitA_max": 0.3204210102558136,
+     "splitB_max": 0.2398512363433838,
+     "disj_max": 0.2801361232995987,
+     "band_p975": 0.04072883352637291,
+     "shared_above": true,
+     "disj_above": true,
+     "splitA_above": true,
+     "selected_layer": 14
+    },
+    "cross_05_hallucination_to_sycophancy": {
+     "shared_max": 0.19881576299667358,
+     "splitA_max": 0.047836244106292725,
+     "splitB_max": 0.12010948359966278,
+     "disj_max": 0.08397286385297775,
+     "band_p975": 0.03930218517780304,
+     "shared_above": true,
+     "disj_above": true,
+     "splitA_above": true,
+     "selected_layer": 7
+    },
+    "cross_06_evil_to_sycophancy": {
+     "shared_max": 0.18138587474822998,
+     "splitA_max": 0.07455425709486008,
+     "splitB_max": 0.17433243989944458,
+     "disj_max": 0.12444334849715233,
+     "band_p975": 0.04135692119598389,
+     "shared_above": true,
+     "disj_above": true,
+     "splitA_above": true,
+     "selected_layer": 24
+    },
+    "cross_07_evil_to_hallucination": {
+     "shared_max": 0.24995779991149902,
+     "splitA_max": 0.19481615722179413,
+     "splitB_max": 0.17989778518676758,
+     "disj_max": 0.18735697120428085,
+     "band_p975": 0.04586188867688179,
+     "shared_above": true,
+     "disj_above": true,
+     "splitA_above": true,
+     "selected_layer": 14
+    },
+    "cross_08_sycophancy_to_evil": {
+     "shared_max": 0.4272420406341553,
+     "splitA_max": 0.373814195394516,
+     "splitB_max": 0.4302377700805664,
+     "disj_max": 0.4020259827375412,
+     "band_p975": 0.04080433025956154,
+     "shared_above": true,
+     "disj_above": true,
+     "splitA_above": true,
+     "selected_layer": 20
+    },
+    "cross_09_sycophancy_to_hallucination": {
+     "shared_max": 0.26405295729637146,
+     "splitA_max": 0.26377731561660767,
+     "splitB_max": 0.23214133083820343,
+     "disj_max": 0.24795932322740555,
+     "band_p975": 0.04209353029727936,
+     "shared_above": true,
+     "disj_above": true,
+     "splitA_above": true,
+     "selected_layer": 21
+    },
+    "cross_10_hallucination_to_evil": {
+     "shared_max": 0.3337263762950897,
+     "splitA_max": 0.2766270935535431,
+     "splitB_max": 0.29573240876197815,
+     "disj_max": 0.2861797511577606,
+     "band_p975": 0.038866326212882996,
+     "shared_above": true,
+     "disj_above": true,
+     "splitA_above": true,
+     "selected_layer": 17
+    },
+    "cross_11_hallucination_to_sycophancy": {
+     "shared_max": 0.19821639358997345,
+     "splitA_max": 0.1252763867378235,
+     "splitB_max": 0.1724155694246292,
+     "disj_max": 0.14884597808122635,
+     "band_p975": 0.03852153569459915,
+     "shared_above": true,
+     "disj_above": true,
+     "splitA_above": true,
+     "selected_layer": 17
+    },
+    "cross_12_evil_to_sycophancy": {
+     "shared_max": 0.263906329870224,
+     "splitA_max": 0.17230524122714996,
+     "splitB_max": 0.1585884839296341,
+     "disj_max": 0.16544686257839203,
+     "band_p975": 0.03679696470499039,
+     "shared_above": true,
+     "disj_above": true,
+     "splitA_above": true,
+     "selected_layer": 7
+    },
+    "m685_00_sycophancy": {
+     "shared_max": 0.42700937390327454,
+     "splitA_max": 0.35449424386024475,
+     "splitB_max": 0.20280088484287262,
+     "disj_max": 0.2786475643515587,
+     "band_p975": 0.04050806909799576,
+     "shared_above": true,
+     "disj_above": true,
+     "splitA_above": true,
+     "selected_layer": 10
+    },
+    "m685_01_refusal": {
+     "shared_max": 0.7501571774482727,
+     "splitA_max": 0.6737650632858276,
+     "splitB_max": 0.7189419269561768,
+     "disj_max": 0.6963534951210022,
+     "band_p975": 0.04361764341592789,
+     "shared_above": true,
+     "disj_above": true,
+     "splitA_above": true,
+     "selected_layer": 14
+    },
+    "m685_02_evil": {
+     "shared_max": 0.5790552496910095,
+     "splitA_max": 0.5113641619682312,
+     "splitB_max": 0.486104816198349,
+     "disj_max": 0.4987344890832901,
+     "band_p975": 0.03809317946434021,
+     "shared_above": true,
+     "disj_above": true,
+     "splitA_above": true,
+     "selected_layer": 17
+    },
+    "m685_03_hedging": {
+     "shared_max": 0.6783339977264404,
+     "splitA_max": 0.5864574313163757,
+     "splitB_max": 0.6239508986473083,
+     "disj_max": 0.605204164981842,
+     "band_p975": 0.03913809731602669,
+     "shared_above": true,
+     "disj_above": true,
+     "splitA_above": true,
+     "selected_layer": 17
+    },
+    "m685_04_terse": {
+     "shared_max": 0.40537723898887634,
+     "splitA_max": 0.3100813329219818,
+     "splitB_max": 0.34655702114105225,
+     "disj_max": 0.32831917703151703,
+     "band_p975": 0.04135725647211075,
+     "shared_above": true,
+     "disj_above": true,
+     "splitA_above": true,
+     "selected_layer": 14
+    },
+    "m685_05_formal": {
+     "shared_max": 0.7177414298057556,
+     "splitA_max": 0.7004791498184204,
+     "splitB_max": 0.5861175656318665,
+     "disj_max": 0.6432983577251434,
+     "band_p975": 0.04461611434817314,
+     "shared_above": true,
+     "disj_above": true,
+     "splitA_above": true,
+     "selected_layer": 17
+    },
+    "m685_06_villain": {
+     "shared_max": 0.6124782562255859,
+     "splitA_max": 0.4665958881378174,
+     "splitB_max": 0.44314467906951904,
+     "disj_max": 0.4548702836036682,
+     "band_p975": 0.04119192063808441,
+     "shared_above": true,
+     "disj_above": true,
+     "splitA_above": true,
+     "selected_layer": 17
+    },
+    "m685_07_medical_doctor": {
+     "shared_max": 0.7111043334007263,
+     "splitA_max": 0.5391926169395447,
+     "splitB_max": 0.32347506284713745,
+     "disj_max": 0.43133383989334106,
+     "band_p975": 0.04408719018101692,
+     "shared_above": true,
+     "disj_above": true,
+     "splitA_above": true,
+     "selected_layer": 17
+    },
+    "m685_08_french_person": {
+     "shared_max": 0.4817695915699005,
+     "splitA_max": 0.3781679570674896,
+     "splitB_max": 0.46577179431915283,
+     "disj_max": 0.42196987569332123,
+     "band_p975": 0.03948218747973442,
+     "shared_above": true,
+     "disj_above": true,
+     "splitA_above": true,
+     "selected_layer": 17
+    },
+    "m685_09_comedian": {
+     "shared_max": 0.7523993849754333,
+     "splitA_max": 0.6909177899360657,
+     "splitB_max": 0.691196084022522,
+     "disj_max": 0.6910569369792938,
+     "band_p975": 0.04035143181681633,
+     "shared_above": true,
+     "disj_above": true,
+     "splitA_above": true,
+     "selected_layer": 14
+    },
+    "m779_00_evil": {
+     "shared_max": 0.43604782223701477,
+     "splitA_max": 0.40533503890037537,
+     "splitB_max": 0.3909807801246643,
+     "disj_max": 0.39815790951251984,
+     "band_p975": 0.04294304549694061,
+     "shared_above": true,
+     "disj_above": true,
+     "splitA_above": true,
+     "selected_layer": 17
+    },
+    "m779_01_sycophancy": {
+     "shared_max": 0.6380786895751953,
+     "splitA_max": 0.5832057595252991,
+     "splitB_max": 0.5937543511390686,
+     "disj_max": 0.5884800553321838,
+     "band_p975": 0.04237668961286545,
+     "shared_above": true,
+     "disj_above": true,
+     "splitA_above": true,
+     "selected_layer": 14
+    },
+    "m779_02_hallucination": {
+     "shared_max": 0.3419303596019745,
+     "splitA_max": 0.10365848988294601,
+     "splitB_max": 0.17356909811496735,
+     "disj_max": 0.13861379399895668,
+     "band_p975": 0.040102384984493256,
+     "shared_above": true,
+     "disj_above": true,
+     "splitA_above": true,
+     "selected_layer": 14
+    },
+    "m779_03_evil": {
+     "shared_max": 0.5630590915679932,
+     "splitA_max": 0.5554364919662476,
+     "splitB_max": 0.5469585061073303,
+     "disj_max": 0.5511974990367889,
+     "band_p975": 0.04211985692381859,
+     "shared_above": true,
+     "disj_above": true,
+     "splitA_above": true,
+     "selected_layer": 17
+    },
+    "m779_04_sycophancy": {
+     "shared_max": 0.756249189376831,
+     "splitA_max": 0.6832550764083862,
+     "splitB_max": 0.6376491189002991,
+     "disj_max": 0.6604520976543427,
+     "band_p975": 0.04060272499918938,
+     "shared_above": true,
+     "disj_above": true,
+     "splitA_above": true,
+     "selected_layer": 14
+    }
+   },
+   "per_layer_mean": {
+    "shared": {
+     "7": 0.11271227267570794,
+     "10": 0.12890136880534037,
+     "14": 0.3039404512715659,
+     "17": 0.35057749918528963,
+     "20": 0.20866446269376734,
+     "21": 0.17638676280954055,
+     "24": 0.148780611609774
+    },
+    "disj": {
+     "7": 0.014744998361233488,
+     "10": 0.04557410890369543,
+     "14": 0.23181425194655145,
+     "17": 0.26873352090530844,
+     "20": 0.13965348804984906,
+     "21": 0.10093757948509717,
+     "24": 0.09506415911788021
+    }
+   },
+   "aggregate_above_pooled_band": {
+    "shared": true,
+    "disj": true
+   }
+  },
+  "context": {
+   "shared_max": {
+    "mean": 0.4837661326995918,
+    "se": 0.033121018268297386,
+    "median": 0.46158982813358307,
+    "n_above_own_band": 28
+   },
+   "splitA_max": {
+    "mean": 0.4062360179211412,
+    "se": 0.03479082248263177,
+    "median": 0.3828858733177185,
+    "n_above_own_band": 28
+   },
+   "splitB_max": {
+    "mean": 0.4035265025283609,
+    "se": 0.03573801565185177,
+    "median": 0.3787020742893219,
+    "n_above_own_band": null
+   },
+   "disj_max": {
+    "mean": 0.40488126022475107,
+    "se": 0.034463262323566723,
+    "median": 0.3829263374209404,
+    "n_above_own_band": 28
+   },
+   "n_pairs": 28,
+   "pairs_below_band_disj": [],
+   "per_pair": {
+    "cross_00_evil_to_sycophancy": {
+     "shared_max": 0.16763797402381897,
+     "splitA_max": 0.1223372295498848,
+     "splitB_max": 0.06971626728773117,
+     "disj_max": 0.09602674841880798,
+     "band_p975": 0.039138004183769226,
+     "shared_above": true,
+     "disj_above": true,
+     "splitA_above": true,
+     "selected_layer": 20
+    },
+    "cross_01_evil_to_hallucination": {
+     "shared_max": 0.23310305178165436,
+     "splitA_max": 0.05644310265779495,
+     "splitB_max": 0.2986740469932556,
+     "disj_max": 0.17755857482552528,
+     "band_p975": 0.0392385832965374,
+     "shared_above": true,
+     "disj_above": true,
+     "splitA_above": true,
+     "selected_layer": 14
+    },
+    "cross_02_sycophancy_to_evil": {
+     "shared_max": 0.4200943112373352,
+     "splitA_max": 0.37532421946525574,
+     "splitB_max": 0.36986100673675537,
+     "disj_max": 0.37259261310100555,
+     "band_p975": 0.04390132799744606,
+     "shared_above": true,
+     "disj_above": true,
+     "splitA_above": true,
+     "selected_layer": 14
+    },
+    "cross_03_sycophancy_to_hallucination": {
+     "shared_max": 0.46628451347351074,
+     "splitA_max": 0.4319564998149872,
+     "splitB_max": 0.44273388385772705,
+     "disj_max": 0.4373451918363571,
+     "band_p975": 0.03967655450105667,
+     "shared_above": true,
+     "disj_above": true,
+     "splitA_above": true,
+     "selected_layer": 17
+    },
+    "cross_04_hallucination_to_evil": {
+     "shared_max": 0.3945871889591217,
+     "splitA_max": 0.3716731071472168,
+     "splitB_max": 0.3340197801589966,
+     "disj_max": 0.3528464436531067,
+     "band_p975": 0.04072883352637291,
+     "shared_above": true,
+     "disj_above": true,
+     "splitA_above": true,
+     "selected_layer": 17
+    },
+    "cross_05_hallucination_to_sycophancy": {
+     "shared_max": 0.2559453547000885,
+     "splitA_max": 0.21373246610164642,
+     "splitB_max": 0.18229499459266663,
+     "disj_max": 0.19801373034715652,
+     "band_p975": 0.03930218517780304,
+     "shared_above": true,
+     "disj_above": true,
+     "splitA_above": true,
+     "selected_layer": 21
+    },
+    "cross_06_evil_to_sycophancy": {
+     "shared_max": 0.3239591121673584,
+     "splitA_max": 0.2037506103515625,
+     "splitB_max": 0.29194653034210205,
+     "disj_max": 0.24784857034683228,
+     "band_p975": 0.04135692119598389,
+     "shared_above": true,
+     "disj_above": true,
+     "splitA_above": true,
+     "selected_layer": 21
+    },
+    "cross_07_evil_to_hallucination": {
+     "shared_max": 0.4644118547439575,
+     "splitA_max": 0.3904475271701813,
+     "splitB_max": 0.43264028429985046,
+     "disj_max": 0.41154390573501587,
+     "band_p975": 0.04586188867688179,
+     "shared_above": true,
+     "disj_above": true,
+     "splitA_above": true,
+     "selected_layer": 20
+    },
+    "cross_08_sycophancy_to_evil": {
+     "shared_max": 0.36050716042518616,
+     "splitA_max": 0.34078195691108704,
+     "splitB_max": 0.18750935792922974,
+     "disj_max": 0.2641456574201584,
+     "band_p975": 0.04080433025956154,
+     "shared_above": true,
+     "disj_above": true,
+     "splitA_above": true,
+     "selected_layer": 20
+    },
+    "cross_09_sycophancy_to_hallucination": {
+     "shared_max": 0.3963059186935425,
+     "splitA_max": 0.36422547698020935,
+     "splitB_max": 0.2836986482143402,
+     "disj_max": 0.3239620625972748,
+     "band_p975": 0.04209353029727936,
+     "shared_above": true,
+     "disj_above": true,
+     "splitA_above": true,
+     "selected_layer": 24
+    },
+    "cross_10_hallucination_to_evil": {
+     "shared_max": 0.5311937928199768,
+     "splitA_max": 0.44607946276664734,
+     "splitB_max": 0.4716758728027344,
+     "disj_max": 0.45887766778469086,
+     "band_p975": 0.038866326212882996,
+     "shared_above": true,
+     "disj_above": true,
+     "splitA_above": true,
+     "selected_layer": 20
+    },
+    "cross_11_hallucination_to_sycophancy": {
+     "shared_max": 0.44287359714508057,
+     "splitA_max": 0.4246634840965271,
+     "splitB_max": 0.40731456875801086,
+     "disj_max": 0.415989026427269,
+     "band_p975": 0.03852153569459915,
+     "shared_above": true,
+     "disj_above": true,
+     "splitA_above": true,
+     "selected_layer": 20
+    },
+    "cross_12_evil_to_sycophancy": {
+     "shared_max": 0.38561946153640747,
+     "splitA_max": 0.2961049973964691,
+     "splitB_max": 0.33740007877349854,
+     "disj_max": 0.3167525380849838,
+     "band_p975": 0.03679696470499039,
+     "shared_above": true,
+     "disj_above": true,
+     "splitA_above": true,
+     "selected_layer": 21
+    },
+    "m685_00_sycophancy": {
+     "shared_max": 0.25323235988616943,
+     "splitA_max": 0.24257834255695343,
+     "splitB_max": 0.10193797200918198,
+     "disj_max": 0.1722581572830677,
+     "band_p975": 0.04050806909799576,
+     "shared_above": true,
+     "disj_above": true,
+     "splitA_above": true,
+     "selected_layer": 21
+    },
+    "m685_01_refusal": {
+     "shared_max": 0.5746812224388123,
+     "splitA_max": 0.4931180477142334,
+     "splitB_max": 0.5643215775489807,
+     "disj_max": 0.5287198126316071,
+     "band_p975": 0.04361764341592789,
+     "shared_above": true,
+     "disj_above": true,
+     "splitA_above": true,
+     "selected_layer": 20
+    },
+    "m685_02_evil": {
+     "shared_max": 0.45832547545433044,
+     "splitA_max": 0.36844322085380554,
+     "splitB_max": 0.3242006003856659,
+     "disj_max": 0.3463219106197357,
+     "band_p975": 0.03809317946434021,
+     "shared_above": true,
+     "disj_above": true,
+     "splitA_above": true,
+     "selected_layer": 17
+    },
+    "m685_03_hedging": {
+     "shared_max": 0.48549216985702515,
+     "splitA_max": 0.44564089179039,
+     "splitB_max": 0.4771181344985962,
+     "disj_max": 0.4613795131444931,
+     "band_p975": 0.03913809731602669,
+     "shared_above": true,
+     "disj_above": true,
+     "splitA_above": true,
+     "selected_layer": 14
+    },
+    "m685_04_terse": {
+     "shared_max": 0.836249053478241,
+     "splitA_max": 0.8230541348457336,
+     "splitB_max": 0.8302230834960938,
+     "disj_max": 0.8266386091709137,
+     "band_p975": 0.04135725647211075,
+     "shared_above": true,
+     "disj_above": true,
+     "splitA_above": true,
+     "selected_layer": 14
+    },
+    "m685_05_formal": {
+     "shared_max": 0.6227341890335083,
+     "splitA_max": 0.5666796565055847,
+     "splitB_max": 0.41566202044487,
+     "disj_max": 0.49117083847522736,
+     "band_p975": 0.04461611434817314,
+     "shared_above": true,
+     "disj_above": true,
+     "splitA_above": true,
+     "selected_layer": 17
+    },
+    "m685_06_villain": {
+     "shared_max": 0.4729488790035248,
+     "splitA_max": 0.225655198097229,
+     "splitB_max": 0.26130861043930054,
+     "disj_max": 0.24348190426826477,
+     "band_p975": 0.04119192063808441,
+     "shared_above": true,
+     "disj_above": true,
+     "splitA_above": true,
+     "selected_layer": 17
+    },
+    "m685_07_medical_doctor": {
+     "shared_max": 0.6625752449035645,
+     "splitA_max": 0.3001192510128021,
+     "splitB_max": 0.3558744192123413,
+     "disj_max": 0.3279968351125717,
+     "band_p975": 0.04408719018101692,
+     "shared_above": true,
+     "disj_above": true,
+     "splitA_above": true,
+     "selected_layer": 14
+    },
+    "m685_08_french_person": {
+     "shared_max": 0.8362792134284973,
+     "splitA_max": 0.7746846079826355,
+     "splitB_max": 0.7612619400024414,
+     "disj_max": 0.7679732739925385,
+     "band_p975": 0.03948218747973442,
+     "shared_above": true,
+     "disj_above": true,
+     "splitA_above": true,
+     "selected_layer": 17
+    },
+    "m685_09_comedian": {
+     "shared_max": 0.4587678015232086,
+     "splitA_max": 0.39099979400634766,
+     "splitB_max": 0.39552032947540283,
+     "disj_max": 0.39326006174087524,
+     "band_p975": 0.04035143181681633,
+     "shared_above": true,
+     "disj_above": true,
+     "splitA_above": true,
+     "selected_layer": 14
+    },
+    "m779_00_evil": {
+     "shared_max": 0.6196486949920654,
+     "splitA_max": 0.5446915030479431,
+     "splitB_max": 0.5744380950927734,
+     "disj_max": 0.5595647990703583,
+     "band_p975": 0.04294304549694061,
+     "shared_above": true,
+     "disj_above": true,
+     "splitA_above": true,
+     "selected_layer": 14
+    },
+    "m779_01_sycophancy": {
+     "shared_max": 0.43616607785224915,
+     "splitA_max": 0.4258471727371216,
+     "splitB_max": 0.3875431418418884,
+     "disj_max": 0.406695157289505,
+     "band_p975": 0.04237668961286545,
+     "shared_above": true,
+     "disj_above": true,
+     "splitA_above": true,
+     "selected_layer": 17
+    },
+    "m779_02_hallucination": {
+     "shared_max": 0.49954795837402344,
+     "splitA_max": 0.35151299834251404,
+     "splitB_max": 0.3320835828781128,
+     "disj_max": 0.3417982906103134,
+     "band_p975": 0.040102384984493256,
+     "shared_above": true,
+     "disj_above": true,
+     "splitA_above": true,
+     "selected_layer": 17
+    },
+    "m779_03_evil": {
+     "shared_max": 0.638465166091919,
+     "splitA_max": 0.6274998784065247,
+     "splitB_max": 0.5875211954116821,
+     "disj_max": 0.6075105369091034,
+     "band_p975": 0.04211985692381859,
+     "shared_above": true,
+     "disj_above": true,
+     "splitA_above": true,
+     "selected_layer": 14
+    },
+    "m779_04_sycophancy": {
+     "shared_max": 0.8478149175643921,
+     "splitA_max": 0.756563663482666,
+     "splitB_max": 0.8202420473098755,
+     "disj_max": 0.7884028553962708,
+     "band_p975": 0.04060272499918938,
+     "shared_above": true,
+     "disj_above": true,
+     "splitA_above": true,
+     "selected_layer": 14
+    }
+   },
+   "per_layer_mean": {
+    "shared": {
+     "7": 0.06746518434790362,
+     "10": 0.11206345167011023,
+     "14": 0.3471494633704424,
+     "17": 0.37207362135606153,
+     "20": 0.29133704264781307,
+     "21": 0.2710472493033324,
+     "24": 0.22180371657512815
+    },
+    "disj": {
+     "7": -0.030666754445909255,
+     "10": 0.02724878750242559,
+     "14": 0.27151271226518603,
+     "17": 0.28283240692690015,
+     "20": 0.2217835045303218,
+     "21": 0.20012481630380666,
+     "24": 0.163258550284289
+    }
+   },
+   "aggregate_above_pooled_band": {
+    "shared": true,
+    "disj": true
+   }
+  }
+ },
+ "h3": {
+  "prefix": {
+   "matched_mean_disj": 0.4924459693332513,
+   "cross_mean_disj": 0.2164330377171819,
+   "welch_one_sided_p": 7.988535519857964e-06,
+   "ranksum_one_sided_p": 0.00010434408347318704,
+   "n_matched": 15,
+   "n_cross": 13
+  },
+  "context": {
+   "matched_mean_disj": 0.48421150371432303,
+   "cross_mean_disj": 0.31334636389062953,
+   "welch_one_sided_p": 0.0044067330544977435,
+   "ranksum_one_sided_p": 0.011296891310564631,
+   "n_matched": 15,
+   "n_cross": 13
+  }
+ },
+ "l20_selection_matched": {
+  "prefix": {
+   "shared": {
+    "mean": 0.27097644557839623,
+    "median": 0.2546035349369049
+   },
+   "splitA": {
+    "mean": 0.17785538245724247,
+    "median": 0.16158197820186615
+   },
+   "splitB": {
+    "mean": 0.19985681918582746,
+    "median": 0.18605132400989532
+   },
+   "disj": {
+    "mean": 0.18885610082153498,
+    "median": 0.15095043927431107
+   },
+   "n_below_k1_band_splitA": 6,
+   "n_below_k1_band_disj": 3,
+   "medical_doctor": {
+    "shared": 0.5526334643363953,
+    "splitA": 0.3148655295372009,
+    "splitB": 0.19726787507534027,
+    "disj": 0.2560667023062706
+   }
+  },
+  "context": {
+   "shared": {
+    "mean": 0.3616516747112785,
+    "median": 0.3984418660402298
+   },
+   "splitA": {
+    "mean": 0.2718735889398626,
+    "median": 0.3046325147151947
+   },
+   "splitB": {
+    "mean": 0.28938637021929026,
+    "median": 0.27877844870090485
+   },
+   "disj": {
+    "mean": 0.2806299795795764,
+    "median": 0.29089437052607536
+   },
+   "n_below_k1_band_splitA": 2,
+   "n_below_k1_band_disj": 2,
+   "medical_doctor": {
+    "shared": 0.24386951327323914,
+    "splitA": -0.07896678149700165,
+    "splitB": 0.01500869169831276,
+    "disj": -0.031979044899344444
+   }
+  }
+ },
+ "rb": {
+  "evil": {
+   "shared_mean_max_over_read_L20steer": 0.2463669266352164,
+   "disj_mean_max_over_read_L20steer": 0.15645127234581327
+  },
+  "hallucination": {
+   "shared_mean_max_over_read_L20steer": 0.19108722365594336,
+   "disj_mean_max_over_read_L20steer": 0.09131811856267243
+  },
+  "sycophancy": {
+   "shared_mean_max_over_read_L20steer": 0.18556185948130274,
+   "disj_mean_max_over_read_L20steer": 0.09777008069379788
+  }
+ },
+ "injection_norms": {
+  "delta_L20_norm": {
+   "prefix": {
+    "mean": 57.86161981310163,
+    "median": 51.01150894165039,
+    "alpha": 4.0
+   },
+   "context": {
+    "mean": 80.83862032209124,
+    "median": 83.36558532714844,
+    "alpha": 4.0
+   }
+  },
+  "rb_evil_L20_norm": 32.8676643371582,
+  "rb_hallucination_L20_norm": 23.0236759185791,
+  "rb_sycophancy_L20_norm": 28.987258911132812
+ },
+ "frac_of_anchor": {
+  "prefix": {
+   "shared_mean": 0.15889948716254107,
+   "shared_median": 0.12896260246634483,
+   "disj_mean": 0.12865100796833367,
+   "disj_median": 0.08886893466114998,
+   "convention": "frac at the shared-selected (argmax) steer layer per pair"
+  },
+  "context": {
+   "shared_mean": 0.17276212865752832,
+   "shared_median": 0.1106133870780468,
+   "disj_mean": 0.1487357451281111,
+   "disj_median": 0.08987461775541306,
+   "convention": "frac at the shared-selected (argmax) steer layer per pair"
+  }
+ },
+ "realized_shift_reliability_L20": {
+  "prefix": {
+   "mean": 0.20422600974727953,
+   "median": 0.24113518744707108,
+   "min": -0.4760856330394745,
+   "max": 0.7441650032997131
+  },
+  "context": {
+   "mean": 0.3579268517371799,
+   "median": 0.317537784576416,
+   "min": -0.14176060259342194,
+   "max": 0.9214809536933899
+  }
+ },
+ "intrusion_excluded_shared": {
+  "prefix": {
+   "n_pairs": 28,
+   "mean_excluded": 0.4361772265817438,
+   "mean_shared_same_pairs": 0.44311091037733213,
+   "n_above_own_band": 28
+  },
+  "context": {
+   "n_pairs": 28,
+   "mean_excluded": 0.476460511130946,
+   "mean_shared_same_pairs": 0.4837661326995918,
+   "n_above_own_band": 28
+  }
+ },
+ "behavioral": {
+  "context_a4_per_pair_shift": {
+   "cross_00_evil_to_sycophancy": 0.0,
+   "cross_01_evil_to_hallucination": 3.6,
+   "cross_02_sycophancy_to_evil": 0.0,
+   "cross_03_sycophancy_to_hallucination": -0.3,
+   "cross_04_hallucination_to_evil": 0.0,
+   "cross_05_hallucination_to_sycophancy": 0.1,
+   "cross_06_evil_to_sycophancy": 0.1,
+   "cross_07_evil_to_hallucination": 1.0999999999999999,
+   "cross_08_sycophancy_to_evil": 0.0,
+   "cross_09_sycophancy_to_hallucination": 2.2600000000000002,
+   "cross_10_hallucination_to_evil": 0.0,
+   "cross_11_hallucination_to_sycophancy": 1.16,
+   "cross_12_evil_to_sycophancy": 1.5399999999999998,
+   "m685_00_sycophancy": 0.3,
+   "m685_01_refusal": 1.3,
+   "m685_02_evil": 0.0,
+   "m685_03_hedging": 1.575,
+   "m685_04_terse": 0.6,
+   "m685_05_formal": 8.6,
+   "m685_06_villain": 0.0,
+   "m685_07_medical_doctor": 2.3500000000000014,
+   "m685_08_french_person": 0.04,
+   "m685_09_comedian": 0.42000000000000004,
+   "m779_00_evil": 0.0,
+   "m779_01_sycophancy": -0.29999999999999993,
+   "m779_02_hallucination": -0.09999999999999998,
+   "m779_03_evil": 0.0,
+   "m779_04_sycophancy": 1.1800000000000002
+  },
+  "formal_share_of_summed_shift": 0.33692458374143003,
+  "wilcoxon_all_p": 0.0005182964695710521,
+  "mean_shift_all": 0.9116071428571427,
+  "wilcoxon_excl_formal_p": 0.0008552684150550154,
+  "mean_shift_excl_formal": 0.6268518518518519,
+  "context_a4_mean": 2.211607142857143,
+  "context_a4_mean_intrusion_excluded": 2.1568181818181817,
+  "context_a4_n": 280,
+  "context_a4_n_intrusion_excluded": 220,
+  "k1_judge_dead_ceiling_pairs": {
+   "cross_01_evil_to_hallucination": 0.2,
+   "cross_09_sycophancy_to_hallucination": -2.6,
+   "m685_00_sycophancy": 0.1,
+   "m685_07_medical_doctor": 3.8000000000000007,
+   "m779_02_hallucination": -0.2
+  }
+ }
+}
