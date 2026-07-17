@@ -104,7 +104,7 @@ def test_good_body_passes_all():
     ok, results = verify_task_body.verify_text(GOOD_BODY)
     assert ok, [r.render() for r in results if not r.passed]
     assert all(r.passed for r in results)
-    # CHECKS has 39 body-only functions: the 20 pre-v3 body-only checks
+    # CHECKS has 40 body-only functions: the 20 pre-v3 body-only checks
     # (incl. the sentinel-gated `check_tldr_nested_structure` and the
     # check-8b Reproducibility artifact-URL existence probe), the four
     # v3-gated body-only checks (check 18 `check_data_shape`, check 19
@@ -117,7 +117,7 @@ def test_good_body_passes_all():
     # `check_v4_result_paragraph_sentences` WARN (#1368); check 20 v4
     # `check_v4_word_caps`
     # moved to the appended-outside set — it needs `issue`, #921) — each
-    # a PASS-skip on this non-v3/non-v4 fixture — PLUS the TEN
+    # a PASS-skip on this non-v3/non-v4 fixture — PLUS the ELEVEN
     # generation-agnostic checks: check 22
     # (`check_figure_url_sha_matches_repro`), a NO-OP PASS here because
     # this fixture's `## Reproducibility` carries no figure-sha claim,
@@ -147,12 +147,15 @@ def test_good_body_passes_all():
     # decimal is ever compared), and check 34
     # (`check_figure_beat_claims_vs_sidecar_text`, WARN, forward-only), a
     # NO-OP PASS here for the same fake-sha / no-sidecar reason (and no
-    # `meta["text"]` block could resolve even if a sidecar did).
+    # `meta["text"]` block could resolve even if a sidecar did), and
+    # check 40 (`check_hf_unpinned_count_claims`, WARN), a vacuous PASS
+    # here because no backtick `dir/` + count-paren claim appears in the
+    # fixture, so ZERO Hub probes are issued even before the fence.
     # check 25 (`check_audit_availability_claims_match_hf`)
     # is a vacuous PASS here because this fixture carries no
     # availability-denial-near-artifact line. verify_text prepends check 0
     # (body-nonstub) + check 0b (no-duplicate-frontmatter), runs CHECKS[1:]
-    # (40 functions), then appends the Goal soft check, the H1↔frontmatter-
+    # (41 functions), then appends the Goal soft check, the H1↔frontmatter-
     # title sync check (#1110; PASS-skip: not a sentinelled body), the
     # Lens 14
     # concerns-audit, the check-16 lr-matches-plan reconciliation, the
@@ -168,18 +171,20 @@ def test_good_body_passes_all():
     # locally reachable, so the cited SHA is silently skipped), AND the
     # check-38 linked-not-embedded-figures scan (needs `issue` for
     # own-figures-dir scoping, #1371; PASS-skip: not a v4 body) →
-    # 53 results total (2 prepended + CHECKS[1:]=40 + 11 appended; check 36
+    # 54 results total (2 prepended + CHECKS[1:]=41 + 11 appended; check 36
     # `check_v4_result_paragraph_sentences` (#1368), check 37
-    # `check_footer_reuse_bullets_pinned` (#1370), and check 39
-    # `check_v4_sample_disclosure_count` (#1421) ride CHECKS and PASS-skip
-    # here — not a v4 body). The
+    # `check_footer_reuse_bullets_pinned` (#1370), check 39
+    # `check_v4_sample_disclosure_count` (#1421), and check 40
+    # `check_hf_unpinned_count_claims` (#1433) ride CHECKS; 36/37/39
+    # PASS-skip here — not a v4 body — and 40 is the vacuous PASS above). The
     # Lens 14 / check-16 results are PASS-skips when no concerns.jsonl /
     # plans/plan.md sibling is available; check 17 and the v3/v4 checks
     # are PASS-skips on this legacy (pre-v2-sentinel) fixture.
-    assert len(results) == 53
+    assert len(results) == 54
     # By-name membership so the NEXT check addition can key by name instead
     # of re-deriving the arithmetic (#1016 methodology-reconciler Must-Fix).
     assert _HF_32_NAME in {r.name for r in results}
+    assert _HF_40_NAME in {r.name for r in results}
     assert "Sample-slot disclosure count (v4)" in {r.name for r in results}
     assert "cross-issue reuse pins declared (footer Reused bullets)" in {r.name for r in results}
     assert "footer Reused bullets carry a revision/path pin" in {r.name for r in results}
@@ -3691,6 +3696,263 @@ def test_hf_adjacent_per_body_probe_cap(monkeypatch):
     assert len(calls) == verify_task_body._HF_MEMBER_MAX_PROBES
 
 
+# ─── Check 40 (`check_hf_unpinned_count_claims`, #1433) ────────────────────
+#
+# The UNPINNED residue of check 30's Pattern D: backtick `dir/` +
+# count-paren claims whose pinned-link binder returned None (the #1345
+# footer shape) WARN for the missing /tree/<sha> pin, with a best-effort
+# count resolution against the data repo at the moving ref `main`. Same
+# offline conventions as the check-30/32 sections: extractor tests pure
+# (no monkeypatch, no network); probe tests delenv the conftest
+# EPM_VERIFY_BODY_NO_HF fence + `_stub_tree`; the autouse
+# `_no_unexpected_probes` guard makes any unstubbed probe a hard error.
+
+_HF_40_NAME = "backtick HF-path count claims carry an adjacent pinned /tree link"
+
+# The verbatim #1345 footer sentence (body.md L189, the incident shape):
+# `rejudge/` (2 files) extracts via the `issue1345_framing/...` parent
+# anchor + the "HF" cue; `raw_completions/stories` (16 files) is the
+# documented no-trailing-slash recall sacrifice.
+_I1345_UNPINNED_LINE = (
+    "Round data on HF under `issue1345_framing/assistant_named_story/` — "
+    "`raw_completions/stories` (16 files) and `rejudge/` (2 files), verified live via "
+    "scoped `list_repo_tree` (stories at data-repo revision `debcdda045`)."
+)
+
+
+def test_hf_unpinned_count_claim_warns_missing_pin_1345_shape(monkeypatch):
+    """The acceptance-criterion reproduction (durability pin): the verbatim
+    #1345 footer sentence produces a check-40 WARN naming the missing pin,
+    the `rejudge/` token, and the resolved 2-file count at `main`; overall
+    ok STAYS True (WARN never blocks); the probe URL carries the `main`
+    revision (plan assumption 3, mechanically closed)."""
+    monkeypatch.delenv("EPM_VERIFY_BODY_NO_HF", raising=False)
+    calls: list = []
+    entries = [
+        {"path": "issue1345_framing", "type": "directory"},
+        {"path": "issue1345_framing/assistant_named_story/rejudge/r0.json", "type": "file"},
+        {"path": "issue1345_framing/assistant_named_story/rejudge/r1.json", "type": "file"},
+    ]
+    _stub_tree(monkeypatch, status="ok", entries=entries, calls=calls)
+    body = (
+        _hf_body(f"{_I931_REPO}/tree/feedface/issue1345_framing")
+        + "\n"
+        + _I1345_UNPINNED_LINE
+        + "\n"
+    )
+    ok, results = verify_task_body.verify_text(body)
+    by_name = _results_by_name(results)
+    r = by_name[_HF_40_NAME]
+    assert r.passed and r.is_warn
+    assert "rejudge" in r.detail
+    assert "no adjacent" in r.detail and "pinned /tree/<sha> link" in r.detail
+    assert "2 file(s)" in r.detail and "count consistent" in r.detail
+    assert ok  # WARN never flips overall ok
+    # The count probe resolves against the data repo at the moving ref
+    # `main` — `_hf_tree_url` interpolates the branch name opaquely.
+    assert any(
+        "/api/datasets/superkaiba1/explore-persona-space-data/tree/main/" in url
+        for url, _params in calls
+    )
+
+
+def test_hf_tree_url_interpolates_branch_revision_opaquely():
+    """`_hf_tree_url` threads a NON-hex revision (a branch name) verbatim
+    into the tree-endpoint URL — nothing in the builder assumes a sha, so
+    check 40's `main` resolution rides the #733 stack unchanged."""
+    url = verify_task_body._hf_tree_url("o/r", "dataset", "main", "a/b")
+    assert url.endswith("/api/datasets/o/r/tree/main/a%2Fb")
+
+
+def test_hf_unpinned_check_skips_pin_adjacent_claims():
+    """A D-shape claim WITH a binding pinned link is check 30 Pattern D's
+    territory: check 40 extracts NOTHING (no double-WARN — the binder
+    partitions the D-shape matches) while check 30's gatherer DOES extract
+    it. Pure extractor split: zero probes (autouse guard enforces)."""
+    line = (
+        f"Footer: [issue1112 data]({_I931_REPO}/tree/{_I931_SHA}/issue1112_x) — "
+        "`raw_completions/` (7,165 files: shards)"
+    )
+    r = verify_task_body.check_hf_unpinned_count_claims(line)
+    assert r.passed and not r.is_warn
+    assert "no unpinned" in r.detail
+    assert verify_task_body._gather_hf_unpinned_count_claims(line) == []
+    routed = verify_task_body._gather_hf_count_claims(line)
+    assert [(c[0], c[5]) for c in routed] == [(7165, "issue1112_x/raw_completions")]
+
+
+def test_hf_unpinned_check_fenced_pass_with_note(monkeypatch):
+    """Under EPM_VERIFY_BODY_NO_HF=1 the check goes CHECK-LEVEL quiet: PASS
+    (not WARN) with an unverified note listing the claims, ZERO probes (the
+    autouse guard would raise). The check docstring states this deviation
+    from the origin ask's WARN-missing-pin-only fence behavior."""
+    monkeypatch.setenv("EPM_VERIFY_BODY_NO_HF", "1")
+    r = verify_task_body.check_hf_unpinned_count_claims(_I1345_UNPINNED_LINE)
+    assert r.passed and not r.is_warn
+    assert "unverified" in r.detail and "rejudge" in r.detail
+
+
+def test_hf_unpinned_check_ignores_non_hf_tokens(monkeypatch):
+    """Git-side / local backtick dir tokens never fire: repo-root denylist
+    (`eval_results/`, `figures/`), absolute local mounts (`/workspace/...`),
+    and a cue-less token in HF-vocabulary-free prose. Vacuous PASS with
+    ZERO probes even with the fence removed (autouse guard enforces)."""
+    monkeypatch.delenv("EPM_VERIFY_BODY_NO_HF", raising=False)
+    body = (
+        "Eval JSONs: `eval_results/issue_1345/` (34 files) in git.\n"
+        "Figures at `figures/issue_9/` (3 files) committed.\n"
+        "Logs in `/workspace/logs/` (2 files) on the pod.\n"
+        "Local scratch dir `mydir/` (4 files) kept for debugging.\n"
+    )
+    r = verify_task_body.check_hf_unpinned_count_claims(body)
+    assert r.passed and not r.is_warn
+    assert "no unpinned" in r.detail
+
+
+def test_hf_unpinned_count_mismatch_warns_check30_semantics(monkeypatch):
+    """A count mismatch at `main` escalates INSIDE the missing-pin WARN with
+    check 30's message shape — both numbers + the subset hedge on an
+    undercount, the files+folders diagnostic when claimed == files+dirs —
+    plus the moving-ref hedge (the `main` listing may postdate the claim)."""
+    monkeypatch.delenv("EPM_VERIFY_BODY_NO_HF", raising=False)
+    entries = [{"path": f"issue99_test/sub/f{i}.json", "type": "file"} for i in range(5)] + [
+        {"path": "issue99_test/sub/d0", "type": "directory"}
+    ]
+    _stub_tree(monkeypatch, status="ok", entries=entries)
+    body = "On HF under `issue99_test/` the folder `sub/` (2 files) holds the outputs.\n"
+    r = verify_task_body.check_hf_unpinned_count_claims(body)
+    assert r.passed and r.is_warn
+    assert "2" in r.detail and "5 file(s)" in r.detail
+    assert "subset of the prefix" in r.detail
+    assert "may have moved since the claim" in r.detail
+    # claimed == files + folders → the files+folders diagnostic instead.
+    body6 = "On HF under `issue99_test/` the folder `sub/` (6 files) holds the outputs.\n"
+    r2 = verify_task_body.check_hf_unpinned_count_claims(body6)
+    assert r2.passed and r2.is_warn
+    assert "consistent with files+folders" in r2.detail
+
+
+def test_hf_unpinned_unresolvable_claim_warns_zero_probes(monkeypatch):
+    """A cue-extracted claim with NO `issue<N>_` prefix and NO parent anchor
+    still WARNs for the missing pin, marked unresolvable — with ZERO probes
+    (the autouse guard would raise on any GET)."""
+    monkeypatch.delenv("EPM_VERIFY_BODY_NO_HF", raising=False)
+    body = "Uploaded to the HF data repo: `mystery/` (3 files).\n"
+    r = verify_task_body.check_hf_unpinned_count_claims(body)
+    assert r.passed and r.is_warn
+    assert "not resolvable against the data repo at main" in r.detail
+    assert "anchor" in r.detail
+
+
+def test_hf_unpinned_per_body_probe_cap(monkeypatch):
+    """More unique resolved prefixes than _HF_UNPINNED_MAX_PROBES: the first
+    cap-many probe (count consistent), the surplus claim KEEPS its
+    missing-pin WARN with the count downgraded to a per-body-probe-cap
+    note; exactly cap-many GETs are issued."""
+    monkeypatch.delenv("EPM_VERIFY_BODY_NO_HF", raising=False)
+    cap = verify_task_body._HF_UNPINNED_MAX_PROBES
+    n = cap + 1
+    calls: list = []
+    # One file under EVERY claimed prefix: the counter filters entries by
+    # prefix, so each probed claim sees exactly its own 1-file listing.
+    _stub_tree(
+        monkeypatch,
+        status="ok",
+        entries=[{"path": f"issue{k}_p/f.json", "type": "file"} for k in range(n)],
+        calls=calls,
+    )
+    body = "\n".join(f"HF data at `issue{k}_p/` (1 file) uploaded." for k in range(n)) + "\n"
+    r = verify_task_body.check_hf_unpinned_count_claims(body)
+    assert r.passed and r.is_warn
+    assert "per-body probe cap" in r.detail
+    assert r.detail.count("count consistent") == cap
+    assert len(calls) == cap
+
+
+def test_hf_unpinned_probe_failure_keeps_missing_pin_warn(monkeypatch):
+    """A probe failure (429 / not_found — a wrong parent-anchor join, or a
+    model-repo claim resolved against the hardcoded DATA repo) never drops
+    the missing-pin WARN: the count half degrades to a hedged
+    `count not confirmed at main` note."""
+    monkeypatch.delenv("EPM_VERIFY_BODY_NO_HF", raising=False)
+    body = "Adapters on HF under `issue60_adapters/i460_D5/` (4 files).\n"
+    _stub_tree(monkeypatch, status="not_found")
+    r = verify_task_body.check_hf_unpinned_count_claims(body)
+    assert r.passed and r.is_warn
+    assert "no adjacent" in r.detail
+    assert "count not confirmed at main" in r.detail and "no such revision/path" in r.detail
+    verify_task_body._HF_TREE_FILE_COUNT_CACHE.clear()
+    _stub_tree(monkeypatch, status="indeterminate", note="HF tree probe failed: HTTP 429")
+    r2 = verify_task_body.check_hf_unpinned_count_claims(body)
+    assert r2.passed and r2.is_warn
+    assert "count not confirmed at main" in r2.detail and "HTTP 429" in r2.detail
+
+
+def test_hf_unpinned_claim_extractor_shapes():
+    """Pure extractor (no monkeypatch, no network): resolution arms +
+    declines. An issue-prefixed token resolves to itself; the #1345 line
+    yields exactly ONE claim resolved via the parent-anchor join
+    (`raw_completions/stories` — no trailing slash — is the documented
+    recall sacrifice); a cue-only claim extracts unresolvable (None);
+    declines cover the paren-then-HF-link Pattern-B lookahead, fenced code
+    blocks, the distributive `per <word>` qualifier, and dot-segments."""
+    gather = verify_task_body._gather_hf_unpinned_count_claims
+    assert gather("Uploaded `issue70_abc/raw/` (3 files).") == [
+        (3, "files", "issue70_abc/raw/", "issue70_abc/raw")
+    ]
+    assert gather(_I1345_UNPINNED_LINE) == [
+        (2, "files", "rejudge/", "issue1345_framing/assistant_named_story/rejudge")
+    ]
+    assert gather("Uploaded to the HF data repo: `mystery/` (3 files).") == [
+        (3, "files", "mystery/", None)
+    ]
+    declines = [
+        # Pattern-B lookahead: paren immediately followed by an HF markdown link.
+        f"HF data `x/` (3 files): [link]({_I931_REPO}/tree/abc1234/p)",
+        # Fenced code block is illustrative, never a claim.
+        "```\nHF `issue5_x/` (2 files)\n```",
+        # Distributive qualifier: per-adapter semantics, wrong join target.
+        "HF bank `issue5_x/` (3 files per adapter, 15 total).",
+        # Dot-segment tokens would join to a nonexistent probe path.
+        "HF corpus `../x/` (2 files) relative.",
+    ]
+    for body in declines:
+        assert gather(body) == [], body
+
+
+def test_hf_unpinned_no_failing_checkresult_in_source():
+    """Committed WARN-only pin (AC6): no `CheckResult(..., False, ...)` /
+    `passed=False` construction anywhere in the check-40 function or its
+    gatherer — the durable form of the report-time grep (the check-32
+    `test_hf_adjacent_no_failing_checkresult_in_source` convention)."""
+    import ast
+    import inspect
+
+    fns = [
+        verify_task_body.check_hf_unpinned_count_claims,
+        verify_task_body._gather_hf_unpinned_count_claims,
+        verify_task_body._hf_hub_importable,
+    ]
+    for fn in fns:
+        tree = ast.parse(inspect.getsource(fn))
+        for node in ast.walk(tree):
+            if not isinstance(node, ast.Call):
+                continue
+            callee = getattr(node.func, "id", None) or getattr(node.func, "attr", None)
+            if callee != "CheckResult":
+                continue
+            if len(node.args) >= 2:
+                arg = node.args[1]
+                assert not (isinstance(arg, ast.Constant) and arg.value is False), (
+                    f"{fn.__name__} constructs CheckResult(..., False, ...)"
+                )
+            for kw in node.keywords:
+                if kw.arg == "passed":
+                    assert not (isinstance(kw.value, ast.Constant) and kw.value.value is False), (
+                        f"{fn.__name__} constructs CheckResult(passed=False)"
+                    )
+
+
 # ─── `_hf_tree_pages`: the shared bounded pagination generator (#1186) ─────
 #
 # Unit pins on the ONE place the checks-25/30/32 page/deadline contract now
@@ -4834,7 +5096,7 @@ def test_audit_context_row_blockquote_exempt():
 
 
 def test_checks_list_size():
-    """CHECKS contains 38 body-only functions: the 20 pre-v3 checks
+    """CHECKS contains 42 body-only functions: the 20 pre-v3 checks
     (the 18 under the 2-content-section spec, the nested-design (v2)
     sentinel-gated `check_tldr_nested_structure`, and the check-8b
     Reproducibility artifact-URL existence probe), the four
@@ -4850,7 +5112,7 @@ def test_checks_list_size():
     v3-gated checks added 2026-W24 are — check 18
     (`check_data_shape`), check 19 (`check_data_subset_disclosure`),
     check 19b (`check_data_unwrapped_example_table`, WARN), check 20
-    (`check_v3_word_caps`) — PLUS the ELEVEN generation-agnostic checks:
+    (`check_v3_word_caps`) — PLUS the TWELVE generation-agnostic checks:
     check 22 (`check_figure_url_sha_matches_repro`: inline figure URL sha
     vs the `## Reproducibility` per-figure commit claim), check 23
     (`check_hf_url_resolves`: HF Hub revision-pin existence via a bounded
@@ -4892,7 +5154,12 @@ def test_checks_list_size():
     renders; fires only when the sidecar carries the `meta["text"]`
     rendered-text block, so every pre-capture sidecar silently skips;
     contradiction-only, absence of evidence never fires; incident #1092
-    defect (b), #1255). The
+    defect (b), #1255), and check 40 (`check_hf_unpinned_count_claims`,
+    WARN: backtick `dir/` + count-paren claims whose Pattern-D pinned-link
+    binder returned None — the UNPINNED residue checks 30/32 never see —
+    flag the missing /tree/<sha> pin + best-effort count resolution against
+    the data repo at the moving ref `main`; incident #1345's `rejudge/`
+    (2 files) footer claim, #1433). The
     migration is a RETARGET — every former check
     was kept (some dormant for a period — e.g. `check_figure_caption`,
     vacuous until #1424 tightened it) so downstream
@@ -4909,15 +5176,16 @@ def test_checks_list_size():
     denominator check (needs eval JSONs), and the check-31
     orphaned-per-unit-figures probe (needs `issue` for figures-dir
     scoping, #1011).
-    So `verify_text` returns 52 results (2 prepended + CHECKS[1:]=40 +
-    10 appended — see `test_good_body_passes_all`), but `CHECKS` stays
-    at 41 (check 36 `check_v4_result_paragraph_sentences` (#1368),
+    So `verify_text` returns 54 results (2 prepended + CHECKS[1:]=41 +
+    11 appended — see `test_good_body_passes_all`), but `CHECKS` stays
+    at 42 (check 36 `check_v4_result_paragraph_sentences` (#1368),
     check 37 `check_footer_reuse_bullets_pinned` — the body-only
-    footer-side reuse-pin sibling of check 35, #1370 — and check 39
+    footer-side reuse-pin sibling of check 35, #1370 — check 39
     `check_v4_sample_disclosure_count` — the Sample-slot
-    `Disclosure: N of M` count reconciliation, #1421 — ride CHECKS).
+    `Disclosure: N of M` count reconciliation, #1421 — and check 40
+    `check_hf_unpinned_count_claims` (#1433) ride CHECKS).
     """
-    assert len(verify_task_body.CHECKS) == 41
+    assert len(verify_task_body.CHECKS) == 42
     # By-name membership so the NEXT check addition can key by name instead
     # of re-deriving the arithmetic (#1016 methodology-reconciler Must-Fix).
     assert verify_task_body.check_hf_adjacent_file_claims in verify_task_body.CHECKS
@@ -4926,6 +5194,7 @@ def test_checks_list_size():
     assert verify_task_body.check_v4_result_paragraph_sentences in verify_task_body.CHECKS
     assert verify_task_body.check_footer_reuse_bullets_pinned in verify_task_body.CHECKS
     assert verify_task_body.check_v4_sample_disclosure_count in verify_task_body.CHECKS
+    assert verify_task_body.check_hf_unpinned_count_claims in verify_task_body.CHECKS
 
 
 # ─── Check 14: MDX-safe prose (regex layer + real-parse backstop) ───
@@ -10427,7 +10696,7 @@ def test_check_figure_caption_position_stable():
     position 7 and the CHECKS count is unchanged (belt-and-suspenders beside
     the migration-history `len(CHECKS)` pin)."""
     assert verify_task_body.CHECKS[7] is verify_task_body.check_figure_caption
-    assert len(verify_task_body.CHECKS) == 41
+    assert len(verify_task_body.CHECKS) == 42
 
 
 # ─── Check 26: figure panel/series prose vs figure sidecar (panel drift) ───
