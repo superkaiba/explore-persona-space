@@ -602,3 +602,195 @@ def test_tf_op_calibration_companion_halted_skips(tmp_path):
         tf_op_calibration(
             eval_dir, tmp_path / "eval2" / "matched_row", smoke=False, companion_halted=False
         )
+
+
+# ---------------------------------------------------------------------------
+# cps fix round (2026-07-17): normalized verbatim matcher (gate<->extractor
+# agreement), paired 2048 gen budget (truncation regression), kept
+# carry-forward, stale-raw quarantine, set-scoped judge checkpoints, and the
+# dispatcher halt-clear pins. Benign synthetic text only.
+# ---------------------------------------------------------------------------
+class _CharTokenizer:
+    """Char-level offset-mapping fake at the HF-tokenizer boundary: one token
+    per char, so render_story_turn's offset alignment runs for real."""
+
+    def __call__(self, text, add_special_tokens=False, return_offsets_mapping=False):
+        out = {"input_ids": list(range(len(text)))}
+        if return_offsets_mapping:
+            out["offset_mapping"] = [(i, i + 1) for i in range(len(text))]
+        return out
+
+
+# The story reproduces ANSWER with curly quotes, a reflowed (collapsed)
+# whitespace run, and an NBSP — the r4 production drift classes (~15% of the
+# sampled answer_occurrences_zero rejects).
+_ANSWER_WS = 'Use the "config" file,  then restart the service to apply the changes.'
+_STORY_NORM = (
+    "The office was quiet. Ben looked up and asked, "
+    "“How do I apply my settings?” "
+    "ARIA replied: “Use the “config” file,\nthen restart the\u00a0service "
+    "to apply the changes.” Ben nodded."
+)
+
+
+def test_normalized_gate_accepts_quote_and_whitespace_drift():
+    """FAILS pre-fix (exact matcher: answer_occurrences_zero): curly quotes +
+    collapsed whitespace + NBSP now match, with RAW-text offsets returned."""
+    turn, reason = gp.match_verbatim_turn(_STORY_NORM, _ANSWER_WS)
+    assert reason == "ok" and turn is not None
+    span = _STORY_NORM[turn["a_start"] : turn["a_end"]]
+    assert span != _ANSWER_WS  # genuinely a normalized (not exact) match
+    assert c.norm_text(span) == c.norm_text(_ANSWER_WS)
+
+
+def test_gate_extractor_agreement_on_normalized_match():
+    """The HARD consistency requirement: the extractor re-locates/verifies the
+    gate's stored span via the SAME matcher — _render_r4 (verbatim_check=True)
+    renders the normalized-match story instead of crashing, through the real
+    render_story_turn offset path (char-level tokenizer at the boundary)."""
+    from issue1345_extract_turnstore import _render_r4
+
+    turn, reason = gp.match_verbatim_turn(_STORY_NORM, _ANSWER_WS)
+    assert reason == "ok"
+    story_row = {
+        "conv_id": "s_norm",
+        "story_id": "s_norm",
+        "story": _STORY_NORM,
+        "answer": _ANSWER_WS,
+        "parsed_turns": [turn],
+    }
+    rendered, stats = _render_r4([story_row], _CharTokenizer(), verbatim_check=True)
+    assert stats["turns_rendered"] == 1 and len(rendered) == 1
+    r = rendered[0]
+    assert r.slot_idx["prefix"] < r.slot_idx["context"] < r.spans["answer"][0]
+    # And a corrupted span (keep-filter drift) still fails LOUD, never a skip
+    bad = dict(story_row)
+    bad["parsed_turns"] = [{**turn, "a_end": turn["a_end"] - 5}]
+    with pytest.raises(AssertionError, match="normalized matcher"):
+        _render_r4([bad], _CharTokenizer(), verbatim_check=True)
+
+
+def test_carried_exact_match_rows_still_verify():
+    """Pre-fix kept rows (exact matches) pass the normalized extractor
+    re-check trivially — the carry-forward bundle stays extractable."""
+    turn, reason = gp.match_verbatim_turn(STORY_OK, ANSWER)
+    assert reason == "ok"
+    assert STORY_OK[turn["a_start"] : turn["a_end"]] == ANSWER  # raw span == exact
+    assert c.norm_text(STORY_OK[turn["a_start"] : turn["a_end"]]) == c.norm_text(ANSWER)
+
+
+def test_paired_budget_2048_and_truncation_regression():
+    """The instrument pin: a budget-truncated story can never pass the
+    verbatim gate (the r4 failure shape for cap-hit rows), and the paired
+    budget now leaves >=2x the 800-token answer cap (CLAUDE.md truncation
+    rule). Op companion + parent free-form keep 1024."""
+    import issue1345_gen_stories as g
+
+    assert gp.story_max_new_tokens(op_companion=False) == 2048
+    assert gp.story_max_new_tokens(op_companion=True) == c.STORY_MAX_NEW_TOKENS == 1024
+    assert gp.STORY_PAIRED_MAX_NEW_TOKENS >= 2 * gp.ANSWER_TOKEN_BUDGET
+    # Pool identity: the feasibility budget is PINNED (rows_sha / carry bundle)
+    assert gp.ANSWER_TOKEN_BUDGET == 800
+    # vLLM capacity tracks the raised budget (gotchas: max_model_len rule)
+    assert gp.PAIRED_MAX_MODEL_LEN >= g.PROMPT_TOKEN_BUDGET + gp.STORY_PAIRED_MAX_NEW_TOKENS
+    # Wiring: the dispatched gen path + the bundle fp use the SAME helper
+    import inspect
+
+    assert "story_max_new_tokens" in inspect.getsource(gp.generate_paired)
+    assert "story_max_new_tokens" in inspect.getsource(gp.paired_fingerprint)
+    # Truncation mechanism: the full story passes; its old-budget cut fails
+    long_answer = " ".join(f"w{i}" for i in range(1100))
+    story_full = (
+        f'Maya asked, "What is the full procedure?" ARIA replied: "{long_answer}" Maya thanked her.'
+    )
+    words = story_full.split(" ")
+    story_cut = " ".join(words[:1024])  # what a 1024-cap emission looks like
+    assert gp.match_verbatim_turn(story_full, long_answer)[1] == "ok"
+    assert gp.match_verbatim_turn(story_cut, long_answer)[1] == "answer_occurrences_zero"
+
+
+def test_load_kept_carryforward_pool_identity_guard(tmp_path):
+    """Prior-fp kept rows carry ONLY when (conv_id, question, answer) matches
+    the current pool byte-for-byte; a same-fp manifest carries nothing (the
+    try_resume path owns it)."""
+    out = tmp_path / "stories"
+    out.mkdir()
+    rows = [
+        {"conv_id": "s1", "mode": "paired", "question": "q1?", "answer": "a" * 30, "story": "x"},
+        {"conv_id": "s2", "mode": "paired", "question": "q2?", "answer": "b" * 30, "story": "y"},
+        {
+            "conv_id": "s3",
+            "mode": "paired",
+            "question": "DRIFTED",
+            "answer": "c" * 30,
+            "story": "z",
+        },
+    ]
+    (out / "kept_stories_paired_instruct.jsonl").write_text(
+        "".join(json.dumps(r) + "\n" for r in rows)
+    )
+    (out / "story_bundle_manifest_paired_instruct.json").write_text(
+        json.dumps({"bundle_fingerprint": "oldfp0000"})
+    )
+    pool = {
+        "s1": {"conv_id": "s1", "question": "q1?", "answer": "a" * 30},
+        "s2": {"conv_id": "s2", "question": "q2?", "answer": "b" * 30},
+        "s3": {"conv_id": "s3", "question": "q3?", "answer": "c" * 30},
+    }
+    carried, old_fp = gp.load_kept_carryforward(
+        "paired", "instruct", "newfp1111", out, pool, smoke=False
+    )
+    assert [r["conv_id"] for r in carried] == ["s1", "s2"] and old_fp == "oldfp0000"
+    # Same-fp manifest: nothing carries (same-regime resume owns the bundle)
+    carried2, fp2 = gp.load_kept_carryforward(
+        "paired", "instruct", "oldfp0000", out, pool, smoke=False
+    )
+    assert carried2 == [] and fp2 is None
+
+
+def test_quarantine_stale_raw_moves_prior_fp_bundles(tmp_path):
+    """Prior-fp raw/meta pairs (and a meta-less raw) move to stale_<fp>/;
+    a same-fp pair stays for the per-row resume."""
+    out = tmp_path / "stories"
+    out.mkdir()
+    (out / "raw_stories_paired_instruct.jsonl").write_text('{"conv_id": "s1"}\n')
+    (out / "raw_stories_paired_instruct.meta.json").write_text(
+        json.dumps({"fingerprint": "oldfp0000"})
+    )
+    (out / "raw_stories_paired_instruct_retry.jsonl").write_text('{"conv_id": "s2"}\n')
+    gp.quarantine_stale_raw(out, "paired", "instruct", "newfp1111")
+    assert not (out / "raw_stories_paired_instruct.jsonl").exists()
+    assert (out / "stale_oldfp0000" / "raw_stories_paired_instruct.jsonl").exists()
+    assert (out / "stale_unknown" / "raw_stories_paired_instruct_retry.jsonl").exists()
+    # Same-fp bundle is untouched
+    (out / "raw_stories_paired_instruct.jsonl").write_text('{"conv_id": "s3"}\n')
+    (out / "raw_stories_paired_instruct.meta.json").write_text(
+        json.dumps({"fingerprint": "newfp1111"})
+    )
+    gp.quarantine_stale_raw(out, "paired", "instruct", "newfp1111")
+    assert (out / "raw_stories_paired_instruct.jsonl").exists()
+
+
+def test_judge_checkpoint_dir_is_dispatch_set_scoped(tmp_path):
+    """api_dispatch's state.json binds to ONE dispatched set (ValueError on
+    mismatch) — the checkpoint dir must therefore be set-scoped: same rows ->
+    same dir (crash resume), changed story text or row set -> a fresh dir."""
+    rows = [{"conv_id": "s1", "story": "one"}, {"conv_id": "s2", "story": "two"}]
+    d1 = gp._judge_checkpoint_dir(tmp_path, rows)
+    assert d1 == gp._judge_checkpoint_dir(tmp_path, list(reversed(rows)))  # order-free
+    regen = [dict(rows[0], story="one-regenerated"), rows[1]]
+    assert gp._judge_checkpoint_dir(tmp_path, regen) != d1
+    assert gp._judge_checkpoint_dir(tmp_path, rows[:1]) != d1
+
+
+def test_dispatch_halt_files_cleared_on_floor_pass():
+    """Textual pin on the dispatcher (bash): the rc=0 branches clear the STALE
+    r4 / r4op halt files — a prior attempt's halt must not demote the
+    relaunched leg (halt state is re-evaluated per run)."""
+    src = (REPO_ROOT / "scripts" / "issue1345_dispatch.sh").read_text()
+    gen_block = src.split('[phase=gen_stories_paired]"', 1)[1].split("extract_r1r2", 1)[0]
+    assert 'rm -f "$R4_HALT_FILE"' in gen_block
+    assert 'touch "$R4_HALT_FILE"' in gen_block  # rc=21 arm still arms the halt
+    op_block = src.split('[phase=extract_r4_op_companion]"', 1)[1].split("matchedn", 1)[0]
+    assert 'rm -f "$R4OP_HALT_FILE"' in op_block
+    assert 'touch "$R4OP_HALT_FILE"' in op_block

@@ -502,6 +502,92 @@ def render_naturalistic_prefix(conv: dict, tokenizer) -> Rendered:
 # ---------------------------------------------------------------------------
 # Story regime (R3): parser + per-turn render
 # ---------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
+# Normalization-tolerant verbatim matching (cps fix round, 2026-07-17): the r4
+# production run's answer_occurrences_zero rejects included ~15% of stories
+# that DID reproduce the answer up to NFKC + curly<->straight quotes +
+# whitespace-collapse drift (sampled 400/1,778). The gate
+# (match_verbatim_turn) and the extractor's trust-boundary verbatim re-check
+# (_render_r4 in issue1345_extract_turnstore) MUST share this ONE matcher —
+# normalized matches map back to RAW-text offsets, so the stored turn spans
+# stay consumable by render_story_turn untouched, and an accepted story whose
+# span the extractor cannot re-verify is a fail-loud AssertionError, never a
+# skip.
+# ---------------------------------------------------------------------------
+# Codepoint-built (RUF001-safe): U+2018..U+201B are the curly SINGLE quotes
+# -> "'"; U+201C..U+201F are the curly DOUBLE quotes -> '"'.
+_CURLY_QUOTE_MAP = str.maketrans(
+    {
+        **{chr(cp): "'" for cp in range(0x2018, 0x201C)},
+        **{chr(cp): '"' for cp in range(0x201C, 0x2020)},
+    }
+)
+# Raw chars that read as a closing DOUBLE quote (the gate's quote-closure set).
+DOUBLE_QUOTE_CHARS = '"' + "".join(chr(cp) for cp in range(0x201C, 0x2020))
+
+
+def _norm_with_map(text: str) -> tuple[str, list[int], list[int]]:
+    """Normalized text + per-normalized-char raw offset maps.
+
+    Normalization: any whitespace RUN -> one space; curly -> straight quotes;
+    per-char NFKC (per-char keeps the offset map trivial; combining-sequence
+    NFKC effects are out of scope for this tolerance). Returns
+    ``(norm, starts, ends)`` where ``norm[i]`` came from raw span
+    ``[starts[i], ends[i])`` (a collapsed run maps to the whole run; an NFKC
+    multi-char expansion maps every output char to its single source char).
+    """
+    import unicodedata
+
+    chars: list[str] = []
+    starts: list[int] = []
+    ends: list[int] = []
+    i, n = 0, len(text)
+    while i < n:
+        ch = text[i]
+        if ch.isspace():
+            j = i
+            while j < n and text[j].isspace():
+                j += 1
+            chars.append(" ")
+            starts.append(i)
+            ends.append(j)
+            i = j
+            continue
+        for out_ch in unicodedata.normalize("NFKC", ch.translate(_CURLY_QUOTE_MAP)):
+            chars.append(" " if out_ch.isspace() else out_ch)
+            starts.append(i)
+            ends.append(i + 1)
+        i += 1
+    return "".join(chars), starts, ends
+
+
+def norm_text(text: str) -> str:
+    """The shared normal form (stripped): equality here == verbatim-up-to-drift."""
+    return _norm_with_map(text)[0].strip()
+
+
+def find_verbatim_occurrences(story: str, answer: str) -> list[tuple[int, int]]:
+    """RAW-offset ``[start, end)`` spans where ``answer`` occurs in ``story``
+    up to normalization (NFKC + curly<->straight quotes + whitespace collapse).
+
+    The single matcher behind BOTH the gen keep-filter and the extraction
+    verbatim re-check (see the block comment above). An exact byte match is
+    always also a normalized match, with the SAME raw span up to edge
+    whitespace (the normalized answer is stripped), so pre-fix kept rows stay
+    verifiable. Returns [] for an empty/whitespace-only answer.
+    """
+    norm_story, starts, ends = _norm_with_map(story)
+    norm_answer = norm_text(answer)
+    if not norm_answer:
+        return []
+    out: list[tuple[int, int]] = []
+    i = norm_story.find(norm_answer)
+    while i != -1:
+        out.append((starts[i], ends[i + len(norm_answer) - 1]))
+        i = norm_story.find(norm_answer, i + 1)
+    return out
+
+
 _SPEECH_VERBS = (
     "said",
     "replied",

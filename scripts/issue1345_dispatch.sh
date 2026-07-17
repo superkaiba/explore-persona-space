@@ -329,6 +329,13 @@ if should_run gen_stories_paired; then
         touch "$R4_HALT_FILE"
       elif [[ "$RC_PAIRED" -ne 0 ]]; then
         echo "FATAL: gen_stories_paired failed (rc=$RC_PAIRED)" >&2; exit 1
+      else
+        # Floor PASSED: clear any STALE halt from a prior attempt (cps fix
+        # round) — the halt files persist on the pod volume, and a leftover
+        # one would demote extract_r4_tf/fits/transfer/opcomp on the very
+        # relaunch that fixed the yield. The halt is re-evaluated per run.
+        [[ -f "$R4_HALT_FILE" ]] && echo "[gen_stories_paired] floor passed — clearing stale r4 halt"
+        rm -f "$R4_HALT_FILE"
       fi
     fi
   fi
@@ -401,6 +408,11 @@ if should_run extract_r4_op_companion; then
       touch "$R4OP_HALT_FILE"
     elif [[ -z "$DRY_RUN" && "$RC_OP" -ne 0 ]]; then
       echo "FATAL: companion generation failed (rc=$RC_OP)" >&2; exit 1
+    elif [[ -z "$DRY_RUN" ]]; then
+      # Usable-floor PASSED: clear any stale companion halt from a prior
+      # attempt (same re-evaluation semantics as the r4 halt above).
+      [[ -f "$R4OP_HALT_FILE" ]] && echo "[extract_r4_op_companion] floor passed — clearing stale companion halt"
+      rm -f "$R4OP_HALT_FILE"
     fi
     if [[ ! -f "$R4OP_HALT_FILE" ]]; then
       run_cmd env CUDA_VISIBLE_DEVICES=0 ${ENV_INLINE} uv run python scripts/issue1345_extract_turnstore.py \

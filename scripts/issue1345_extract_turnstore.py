@@ -103,8 +103,10 @@ def _render_r4(stories: list[dict], tokenizer, *, verbatim_check: bool) -> tuple
     render_story_turn offset-mapping alignment + BPE seam guard. The row's
     conv_id is the ORIGINAL conversation id — the structural gain that makes
     the r4 corpus data-paired with r1/r2. ``verbatim_check`` re-asserts the gen
-    phase's mechanical gate (story[a_start:a_end] == original answer) at the
-    extraction trust boundary (r4 only; the op companion has no fixed answer).
+    phase's mechanical gate at the extraction trust boundary using the SAME
+    normalized matcher (c.norm_text: story[a_start:a_end] == answer up to
+    NFKC + curly-quote + whitespace-collapse drift; r4 only — the op
+    companion has no fixed answer).
     """
     rendered, stats = [], {"stories": 0, "turns_rendered": 0, "turns_dropped": 0}
     for s in stories:
@@ -115,9 +117,19 @@ def _render_r4(stories: list[dict], tokenizer, *, verbatim_check: bool) -> tuple
         )
         turn = s["parsed_turns"][0]
         if verbatim_check:
-            assert s["story"][turn["a_start"] : turn["a_end"]] == s["answer"], (
+            # The SAME matcher as the gen gate (c.norm_text under
+            # c.find_verbatim_occurrences' normalization — cps fix round):
+            # the gate accepts NFKC / curly-quote / whitespace-collapse
+            # drift, so the trust-boundary re-check compares in that normal
+            # form. Exact-match keeps (the carried pre-fix bundle) pass
+            # trivially; an accepted story whose stored raw-offset span is
+            # NOT the answer under the shared normalization is a fail-loud
+            # AssertionError, never a skip.
+            assert c.norm_text(s["story"][turn["a_start"] : turn["a_end"]]) == c.norm_text(
+                s["answer"]
+            ), (
                 f"paired story {s['conv_id']}: stored span is not the verbatim answer "
-                "(gen keep-filter drift)"
+                "under the shared normalized matcher (gen keep-filter drift)"
             )
         r = c.render_story_turn(s["story"], turn, s["conv_id"], tokenizer)
         if r is None:

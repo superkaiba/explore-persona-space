@@ -69,12 +69,41 @@ from explore_persona_space.llm.api_dispatch import (  # noqa: E402
 )
 
 SMOKE_N_STORIES = 3
+# Paired-mode generation budget (cps fix round, 2026-07-17 — DECLARED plan
+# deviation vs v8 §11's inherited 1024): the r4 production run truncated ~49%
+# of its answer_occurrences_zero rejects mid-answer at the parent's FREE-FORM
+# budget (c.STORY_MAX_NEW_TOKENS=1024; raw rows end mid-sentence with
+# finish_reason=length). A paired story must carry wrapper prose + the quoted
+# question + the attribution + the VERBATIM answer (pool-capped at
+# ANSWER_TOKEN_BUDGET=800 tokens) + closing prose, so 2048 = 800-token answer
+# cap + ~1248 wrapper/question/closure margin, satisfying the CLAUDE.md
+# >=2x-longest-completion truncation rule (2 x 800 = 1600 <= 2048). The op
+# companion + the parent free-form recipe keep 1024 — their completions carry
+# no verbatim answer.
+STORY_PAIRED_MAX_NEW_TOKENS = 2048
+# vLLM capacity must track the raised budget (gotchas.md "max_model_len tracks
+# max_new_tokens"): prompt <= g.PROMPT_TOKEN_BUDGET (= g.MAX_MODEL_LEN - 1024
+# - 64, deliberately UNCHANGED so the feasibility-filtered pool — and hence
+# rows_sha / the carried kept bundle — is identical to the r4 run) + 2048 gen
+# fits with >=40 tokens headroom.
+PAIRED_MAX_MODEL_LEN = g.MAX_MODEL_LEN + (STORY_PAIRED_MAX_NEW_TOKENS - c.STORY_MAX_NEW_TOKENS)
 # Generation feasibility bound: the story must reproduce the verbatim answer
-# within STORY_MAX_NEW_TOKENS; leave >=224 tokens for wrapper prose + question.
-ANSWER_TOKEN_BUDGET = c.STORY_MAX_NEW_TOKENS - 224
+# within the paired budget. Pinned at the r4 run's realized value
+# (1024 - 224 = 800) rather than re-derived from the new budget: raising it
+# would grow the eligible pool and change rows_sha, orphaning the kept-1,474
+# carry-forward bundle.
+ANSWER_TOKEN_BUDGET = 800
 # Degenerate-answer floor (the #825 zero-width-span class; matches the
 # parser's answer_len_ok lower bound).
 ANSWER_CHAR_MIN = 20
+
+
+def story_max_new_tokens(*, op_companion: bool) -> int:
+    """Mode-keyed gen budget: paired carries a verbatim answer -> 2048; the op
+    companion writes its own answer -> the parent free-form 1024. ONE helper so
+    the SamplingParams cap and the bundle fingerprint can never drift apart."""
+    return c.STORY_MAX_NEW_TOKENS if op_companion else STORY_PAIRED_MAX_NEW_TOKENS
+
 
 # Built from c.STORY_CHARACTER_NAME (the variant guard in common pins ARIA for
 # this round unless --variant re-scopes). {ANSWER} is filled per row; the
@@ -281,35 +310,37 @@ def _filter_pool_feasible(pool: list[dict], tokenizer, *, op_companion: bool) ->
 # the marker. Turn dicts keep the parse_story_turns shape verbatim, so
 # render_story_turn (offsets + BPE seam guard) is reused untouched.
 # ---------------------------------------------------------------------------
-def _answer_occurrences(story: str, answer: str) -> list[int]:
-    out, i = [], story.find(answer)
-    while i != -1:
-        out.append(i)
-        i = story.find(answer, i + 1)
-    return out
-
-
 def match_verbatim_turn(story: str, answer: str) -> tuple[dict | None, str]:
     """(turn, reason) — the answer-anchored single-exchange verbatim gate.
 
     Returns a parse_story_turns-shaped turn dict on 'ok'; otherwise (None,
-    <keep-filter counter>). Enforces: exactly one verbatim answer occurrence,
-    exactly one attribution marker (one exchange) whose opening quote sits
-    immediately before the occurrence, a closing quote right after it, a
-    quoted question utterance before the marker, and no pre-slot answer leak.
+    <keep-filter counter>). Enforces: exactly one verbatim answer occurrence
+    (NORMALIZATION-TOLERANT — c.find_verbatim_occurrences, the ONE matcher the
+    extraction re-check shares; cps fix round), exactly one attribution marker
+    (one exchange) whose opening quote sits immediately before the occurrence
+    (whitespace-tolerant, consistent with the normalized match), a closing
+    double quote right after it (ditto), a quoted question utterance before
+    the marker, and no pre-slot answer leak. The returned a_start/a_end are
+    RAW-text offsets, so render_story_turn consumes them untouched.
     """
-    occ = _answer_occurrences(story, answer)
+    occ = c.find_verbatim_occurrences(story, answer)
     if len(occ) != 1:
         return None, "answer_occurrences_zero" if not occ else "answer_occurrences_multi"
-    a_start = occ[0]
-    a_end = a_start + len(answer)
-    if story[a_end : a_end + 1] not in ('"', "”"):
+    a_start, a_end = occ[0]
+    j = a_end
+    while j < len(story) and story[j].isspace():
+        j += 1
+    if story[j : j + 1] not in c.DOUBLE_QUOTE_CHARS:
         return None, "answer_quote_not_closed"
     attribs = list(c.ANSWER_ATTRIB_RE.finditer(story))
     if len(attribs) != 1:
         return None, "attribution_zero" if not attribs else "attribution_multi"
     m = attribs[0]
-    if m.end(1) != a_start:  # the attributed quote must open right at the answer
+    # The attributed quote must open right at the answer (whitespace between
+    # the opening quote and the normalized-match start is tolerated — the
+    # normalized answer is stripped, so a leading space inside the quote
+    # belongs to neither).
+    if a_start < m.end(1) or story[m.end(1) : a_start].strip():
         return None, "attribution_not_adjacent_to_answer"
     marker_text = story[m.start() : m.end(1) - 1].rstrip()
     marker_end = m.start() + len(marker_text)
@@ -393,7 +424,9 @@ def paired_fingerprint(mode: str, rows: list[dict]) -> str:
             "mode": mode,
             "gen_seed": c.GEN_SEED,
             "temperature": c.STORY_TEMPERATURE,
-            "max_new_tokens": c.STORY_MAX_NEW_TOKENS,
+            # Mode-keyed (cps fix round): paired generates at 2048 (verbatim
+            # answer must fit); the op companion keeps the free-form 1024.
+            "max_new_tokens": story_max_new_tokens(op_companion=is_op),
             "system_template": (
                 STORY_OP_COMPANION_SYSTEM if is_op else STORY_PAIRED_SYSTEM_TEMPLATE
             ),
@@ -418,8 +451,17 @@ def paired_fingerprint(mode: str, rows: list[dict]) -> str:
             "judge_max_tokens": c.JUDGE_MAX_TOKENS,
             # The keep-filter recipe IS part of the bundle identity: any change
             # to the matcher regenerates rather than reusing stale stories.
+            # The paired sha ALSO covers the shared normalized matcher in
+            # common (the gate<->extractor consistency contract, cps fix
+            # round) — a matcher edit there must re-key the bundle too.
             "parser_source_sha": hashlib.sha256(
-                inspect.getsource(confident_op_turn if is_op else match_verbatim_turn).encode()
+                (
+                    inspect.getsource(confident_op_turn)
+                    if is_op
+                    else inspect.getsource(match_verbatim_turn)
+                    + inspect.getsource(c.find_verbatim_occurrences)
+                    + inspect.getsource(c._norm_with_map)
+                ).encode()
             ).hexdigest(),
         },
         sort_keys=True,
@@ -451,7 +493,9 @@ def generate_paired(
 
     todo = [r for r in rows if r["conv_id"] not in done_ids]
     sampling = SamplingParams(
-        temperature=c.STORY_TEMPERATURE, max_tokens=c.STORY_MAX_NEW_TOKENS, seed=None
+        temperature=c.STORY_TEMPERATURE,
+        max_tokens=story_max_new_tokens(op_companion=op_companion),
+        seed=None,
     )
     n_chunks = (len(todo) + g.VLLM_CHUNK_SIZE - 1) // g.VLLM_CHUNK_SIZE
     for ci in range(0, len(todo), g.VLLM_CHUNK_SIZE):
@@ -484,12 +528,33 @@ def generate_paired(
                 row_out["answer"] = r["answer"]
             new_rows.append(row_out)
         c.append_jsonl(out_path, new_rows)
-    return c.read_jsonl(out_path)
+    # A fully-carried relaunch can legitimately have ZERO rows to generate
+    # (carry >= target): no chunk ever appends, so the raw file may not exist.
+    return c.read_jsonl(out_path) if out_path.exists() else []
 
 
 # ---------------------------------------------------------------------------
 # Parse + judge (mechanical gate first, then the LLM judge)
 # ---------------------------------------------------------------------------
+def _judge_checkpoint_dir(cache_dir: Path, rows: list[dict]) -> Path:
+    """Dispatch-set-scoped batch-checkpoint dir (cps fix round).
+
+    api_dispatch's batch state.json binds to ONE dispatched set and RAISES
+    ValueError on a run-fingerprint mismatch (rule 22, #1018) — so a shared
+    ``cache_dir/checkpoints`` dir would crash the first batch-path dispatch
+    after any regen (the r4 run left a 2,700-item state.json there; only the
+    <2,000-item sync routing of the retry batch dodged it). Keying the dir on
+    the dispatched (conv_id, story-sha) set keeps crash-resume within one set
+    (same rows -> same dir -> resume) while different sets never collide.
+    """
+    key = hashlib.sha256(
+        json.dumps(
+            sorted((r["conv_id"], hashlib.sha256(r["story"].encode()).hexdigest()) for r in rows)
+        ).encode()
+    ).hexdigest()[:12]
+    return cache_dir / "checkpoints" / f"set_{key}"
+
+
 def parse_and_judge_paired(
     rows: list[dict], cache_dir: Path, smoke: bool, *, op_companion: bool
 ) -> tuple[list[dict], dict, list[dict]]:
@@ -518,6 +583,7 @@ def parse_and_judge_paired(
         )
         for r in rows
     ]
+    ckpt_dir = _judge_checkpoint_dir(cache_dir, rows)
     results = asyncio.run(
         dispatch_calls(
             items,
@@ -525,7 +591,7 @@ def parse_and_judge_paired(
             build_request=_build_judge_request,
             parse_response=_parse_judge_response,
             cache_dir=cache_dir,
-            checkpoint_dir=cache_dir / "checkpoints",
+            checkpoint_dir=ckpt_dir,
             force_path="sync" if smoke else None,
         )
     )
@@ -545,7 +611,7 @@ def parse_and_judge_paired(
                     build_request=_build_judge_request,
                     parse_response=_parse_judge_response,
                     cache_dir=cache_dir,
-                    checkpoint_dir=cache_dir / "checkpoints",
+                    checkpoint_dir=ckpt_dir,
                     force_path="sync",
                 )
             )
@@ -579,7 +645,19 @@ def parse_and_judge_paired(
                 else "judge_malformed"
             )
             counts[key] += 1
-            digest_rows.append({**digest, "judge_error_category": res.category})
+            # Persist the (content-free) error reason so a malformed spike is
+            # diagnosable from the HF digest alone — the r4 run's 277
+            # judge_malformed rows carried category only, leaving the rule-23
+            # truncation-vs-parse-noise question unanswerable off-pod. The
+            # parse error embeds ONLY the reply char count ("judge reply
+            # missing VERDICT line (N chars)"); truncate defensively anyway.
+            digest_rows.append(
+                {
+                    **digest,
+                    "judge_error_category": res.category,
+                    "judge_error_reason": str(res.reason)[:160] if res.reason else None,
+                }
+            )
             continue
         verdict = res.result["verdict"]
         digest_rows.append(
@@ -617,8 +695,25 @@ def bundle_files_paired(mode_slug: str, model_key: str, out_dir: Path) -> list[s
     return [n for n in names if (out_dir / n).exists()]
 
 
-def persist_bundle_paired(mode_slug: str, model_key: str, out_dir: Path, fp: str, smoke: bool):
-    """Upload rollout text + judge digests + yield report to HF NOW (r6 rule)."""
+def persist_bundle_paired(
+    mode_slug: str,
+    model_key: str,
+    out_dir: Path,
+    fp: str,
+    smoke: bool,
+    *,
+    carried_from_fp: str | None = None,
+    n_kept_carried: int = 0,
+):
+    """Upload rollout text + judge digests + yield report to HF NOW (r6 rule).
+
+    ``carried_from_fp``/``n_kept_carried`` record the kept-carry-forward
+    provenance (cps fix round) — the upload OVERWRITES the prior bundle's
+    paths on HF, so the manifest carries an explicit regeneration note
+    (upload-policy producer duty; prior bytes stay reachable via HF git
+    revisions) instead of a version-bumped path: no dependent capture exists
+    (the r4 extraction never ran — the yield halt fired first).
+    """
     import os
 
     assert os.environ.get("HF_TOKEN"), "HF_TOKEN missing — cannot persist story bundle"
@@ -630,6 +725,19 @@ def persist_bundle_paired(mode_slug: str, model_key: str, out_dir: Path, fp: str
         "mode": mode_slug,
         "bundle_fingerprint": fp,
         "files": files,
+        "carried_from_fp": carried_from_fp,
+        "n_kept_carried": n_kept_carried,
+        "regeneration_note": (
+            None
+            if carried_from_fp is None
+            else (
+                f"raw stories regenerated at max_new_tokens="
+                f"{story_max_new_tokens(op_companion=mode_slug == 'paired_op')} with the "
+                f"normalized verbatim gate (cps fix round); {n_kept_carried} kept rows "
+                f"carried forward verbatim from bundle fp {carried_from_fp} (prior bytes "
+                "at earlier HF revisions of this path)"
+            )
+        ),
     }
     c.write_json(out_dir / f"story_bundle_manifest_{mode_slug}_{model_key}.json", manifest)
     prefix = g._stories_hf_prefix(smoke)
@@ -672,6 +780,105 @@ def try_resume_paired(
     return report
 
 
+def load_kept_carryforward(
+    mode_slug: str,
+    model_key: str,
+    fp_new: str,
+    out_dir: Path,
+    pool_by_id: dict[str, dict],
+    smoke: bool,
+) -> tuple[list[dict], str | None]:
+    """Prior-fp kept rows carried into the new bundle (cps fix round).
+
+    The budget/matcher fix re-keys the paired fingerprint, so try_resume_paired
+    correctly reads the r4 production bundle as stale — but its 1,474 kept
+    stories (generated, gate-PASSed AND judge-PASSed at the old recipe) remain
+    valid corpus rows: kept text never changes, an exact-match keep is also a
+    normalized-match keep, and the stored raw-offset spans re-verify under the
+    shared matcher at extraction. Carry them forward instead of regenerating:
+    read the prior kept bundle (local ``out_dir`` first; HF manifest fallback,
+    ANY fingerprint != ``fp_new``), keep only rows whose (conv_id, question,
+    answer) equals the CURRENT pool row byte-for-byte (pool-drift guard), and
+    return ``(carried_rows, old_fp)``. Paired mode only — the op companion
+    resamples from the merged kept set and is cheap to regenerate.
+    """
+    assert mode_slug == "paired", mode_slug
+    kept_path = out_dir / f"kept_stories_{mode_slug}_{model_key}.jsonl"
+    manifest_path = out_dir / f"story_bundle_manifest_{mode_slug}_{model_key}.json"
+    old_fp: str | None = None
+    if manifest_path.exists():
+        with contextlib.suppress(json.JSONDecodeError, OSError):
+            old_fp = json.loads(manifest_path.read_text()).get("bundle_fingerprint")
+    if not kept_path.exists():
+        prefix = g._stories_hf_prefix(smoke)
+        hf_manifest = f"{prefix}/story_bundle_manifest_{mode_slug}_{model_key}.json"
+        if not g._hf_file_exists(hf_manifest):
+            return [], None
+        manifest = json.loads(g._hf_download_to(hf_manifest, manifest_path).read_text())
+        old_fp = manifest.get("bundle_fingerprint")
+        if old_fp == fp_new:
+            return [], None  # same-fp bundle — try_resume_paired owns that path
+        g._hf_download_to(f"{prefix}/{kept_path.name}", kept_path)
+    elif old_fp == fp_new:
+        return [], None
+    rows = c.read_jsonl(kept_path)
+    carried, dropped = [], 0
+    for r in rows:
+        p = pool_by_id.get(r.get("conv_id"))
+        if (
+            r.get("mode") == "paired"
+            and p is not None
+            and r.get("question") == p["question"]
+            and r.get("answer") == p["answer"]
+        ):
+            carried.append(r)
+        else:
+            dropped += 1
+    print(
+        f"[gen] carry-forward: {len(carried)} kept {mode_slug} rows from bundle fp "
+        f"{old_fp} reused verbatim ({dropped} dropped by the pool-identity guard); "
+        f"only the non-kept remainder regenerates at the new recipe (fp {fp_new})",
+        flush=True,
+    )
+    return carried, old_fp
+
+
+def quarantine_stale_raw(out_dir: Path, mode_slug: str, model_key: str, fp_new: str) -> None:
+    """Move prior-fp raw-story JSONLs aside (crash-fix element-5 quarantine).
+
+    generate_paired fail-louds on an fp-mismatched raw file by design ("move
+    the stale file aside") — this is the mover, run at relaunch: the failed
+    run's raw bundle is already persisted on HF (persist-before-floor, r6
+    rule), so local copies move to ``out_dir/stale_<oldfp>/`` where the resume
+    glob (the exact out_path/meta pair) can never see them. A raw file with NO
+    meta sidecar is quarantined too — resuming it under a fresh meta would
+    silently mix generation regimes.
+    """
+    for base in (
+        f"raw_stories_{mode_slug}_{model_key}",
+        f"raw_stories_{mode_slug}_{model_key}_retry",
+    ):
+        raw = out_dir / f"{base}.jsonl"
+        meta = out_dir / f"{base}.meta.json"
+        if not raw.exists() and not meta.exists():
+            continue
+        old_fp = None
+        if meta.exists():
+            with contextlib.suppress(json.JSONDecodeError, OSError):
+                old_fp = json.loads(meta.read_text()).get("fingerprint")
+        if old_fp == fp_new:
+            continue  # same regime — generate_paired resumes per-row
+        dest = out_dir / f"stale_{old_fp or 'unknown'}"
+        dest.mkdir(exist_ok=True)
+        for p in (raw, meta):
+            if p.exists():
+                p.replace(dest / p.name)
+        print(
+            f"[gen] quarantined stale raw bundle {base} (fp {old_fp} != {fp_new}) -> {dest}",
+            flush=True,
+        )
+
+
 def _build_llm(model_id: str):
     import os
 
@@ -681,7 +888,10 @@ def _build_llm(model_id: str):
         model=model_id,
         seed=c.GEN_SEED,
         dtype="bfloat16",
-        max_model_len=g.MAX_MODEL_LEN,
+        # Tracks the paired 2048 budget (gotchas.md: max_model_len tracks
+        # max_new_tokens). One engine config for both modes — the op
+        # companion's shorter cap fits trivially under the larger window.
+        max_model_len=PAIRED_MAX_MODEL_LEN,
         gpu_memory_utilization=0.85,
         enforce_eager=os.environ.get("EPM_VLLM_ENFORCE_EAGER", "0") == "1",
         enable_prefix_caching=(
@@ -701,11 +911,16 @@ def _write_yield_report(
     counts_retry: dict | None,
     pool_counts: dict,
     n_kept: int,
+    n_kept_carried: int = 0,
+    carried_from_fp: str | None = None,
 ) -> None:
     c.write_json(
         out_dir / f"story_yield_{mode_slug}_{model_key}.json",
         {
             "metadata": c.metadata(c.GEN_SEED, n_kept, "scripts/issue1345_gen_stories_paired.py"),
+            "gen_max_new_tokens": story_max_new_tokens(op_companion=mode_slug == "paired_op"),
+            "n_kept_carried": n_kept_carried,
+            "carried_from_fp": carried_from_fp,
             "model": model_key,
             "mode": mode_slug,
             "story_character_name": c.STORY_CHARACTER_NAME,
@@ -766,6 +981,8 @@ def main() -> None:
 
     import numpy as np
 
+    kept_carry: list[dict] = []
+    carry_fp: str | None = None
     if args.op_companion:
         kept_paired = out_dir / f"kept_stories_paired_{model_key}.jsonl"
         assert kept_paired.exists(), (
@@ -784,6 +1001,7 @@ def main() -> None:
         # -> rc=23 below it (plan v8 §4.5; r1 code-review Major).
         n_target, yield_floor = len(rows_main), companion_usable_floor(args.smoke)
         seeds_reserve: list[dict] = []
+        fp = paired_fingerprint(mode_slug, rows_main)
     else:
         pool, pool_counts = load_paired_pool(args.matched_dir, args.dl_dir)
         pool, feas_counts = _filter_pool_feasible(pool, tokenizer, op_companion=False)
@@ -793,10 +1011,27 @@ def main() -> None:
         assert len(pool) >= n_target, f"paired pool {len(pool)} < target {n_target}"
         rng = np.random.default_rng(c.GEN_SEED)
         order = rng.permutation(len(pool))
-        rows_main = [pool[i] for i in order[:n_target]]
-        seeds_reserve = [pool[i] for i in order[n_target:]]
-
-    fp = paired_fingerprint(mode_slug, rows_main + seeds_reserve)
+        ordered = [pool[i] for i in order]
+        # Bundle fp over the FULL eligible pool in its seeded order — equal to
+        # the pre-fix rows_main + seeds_reserve set and CARRY-INDEPENDENT, so
+        # a second relaunch (larger carry set) keys the SAME bundle and
+        # generate_paired's per-row resume keeps working across relaunches.
+        fp = paired_fingerprint(mode_slug, ordered)
+        kept_carry, carry_fp = load_kept_carryforward(
+            mode_slug,
+            model_key,
+            fp,
+            out_dir,
+            {r["conv_id"]: r for r in ordered},
+            args.smoke,
+        )
+        carry_ids = {r["conv_id"] for r in kept_carry}
+        fresh = [r for r in ordered if r["conv_id"] not in carry_ids]
+        # Carried keeps count toward the target: generate only the shortfall
+        # from the non-carried pool (main batch), the rest stays retry reserve.
+        n_gen_target = max(0, n_target - len(kept_carry))
+        rows_main = fresh[:n_gen_target]
+        seeds_reserve = fresh[n_gen_target:]
     if args.verify_pool:
         # CPU preflight (att-20260716-230002 crash-fix r3): the pool build +
         # mode-keyed feasibility filter + fingerprint ran for real above —
@@ -820,6 +1055,9 @@ def main() -> None:
                 "yield_floor": yield_floor,
                 "pool_filter_counts": pool_counts,
                 "fingerprint": fp,
+                "gen_max_new_tokens": story_max_new_tokens(op_companion=args.op_companion),
+                "n_kept_carried": len(kept_carry),
+                "carried_from_fp": carry_fp,
             },
         )
         print(
@@ -844,18 +1082,40 @@ def main() -> None:
         print(f"[done] {mode_slug} kept={n_kept}/{n_target} (resumed)", flush=True)
         return
 
+    # Prior-fp raw bundles (the failed run's) move aside BEFORE generation —
+    # generate_paired fail-louds on an fp mismatch by design (cps fix round).
+    quarantine_stale_raw(out_dir, mode_slug, model_key, fp)
     llm = _build_llm(MODEL_INSTRUCT)
     raw_path = out_dir / f"raw_stories_{mode_slug}_{model_key}.jsonl"
     rows = generate_paired(rows_main, raw_path, fp, tokenizer, llm, op_companion=args.op_companion)
     kept, counts, judge_digest = parse_and_judge_paired(
         rows, cache_dir, args.smoke, op_companion=args.op_companion
     )
+    if kept_carry:
+        kept = kept_carry + kept  # carried keeps first (stable, pool-verified)
 
     retry_counts = None
     if not args.op_companion and len(kept) < n_target and seeds_reserve:
         shortfall = n_target - len(kept)
-        retry_rows_in = seeds_reserve[:shortfall]
-        print(f"[retry] {len(kept)}/{n_target} kept — one retry batch of {len(retry_rows_in)}")
+        # Size the ONE retry batch to clear the YIELD FLOOR at the MEASURED
+        # keep rate, never just the target at an assumed 100% keep (cps fix
+        # round): the r4 run's bare [:shortfall] slice happened to consume the
+        # whole reserve (shortfall 1,726 > reserve 1,389), but with carried
+        # keeps in the tally a target-shortfall slice can strand eligible
+        # reserve rows while the floor is missed by a few dozen — a re-halt
+        # with usable pool left. Still ONE retry batch (plan v8 §7); ``take``
+        # never shrinks below the plan's shortfall sizing.
+        import math
+
+        n_kept_fresh = len(kept) - len(kept_carry)
+        rate = max(n_kept_fresh / len(rows), 0.05) if rows else 1.0
+        need_for_floor = max(0, yield_floor - len(kept))
+        take = max(shortfall, math.ceil(need_for_floor / rate))
+        retry_rows_in = seeds_reserve[:take]
+        print(
+            f"[retry] {len(kept)}/{n_target} kept (fresh keep rate "
+            f"{rate:.3f}) — one retry batch of {len(retry_rows_in)}"
+        )
         retry_path = out_dir / f"raw_stories_{mode_slug}_{model_key}_retry.jsonl"
         retry_rows = generate_paired(
             retry_rows_in, retry_path, fp, tokenizer, llm, op_companion=False
@@ -885,10 +1145,20 @@ def main() -> None:
         counts_retry=retry_counts,
         pool_counts=pool_counts,
         n_kept=len(kept),
+        n_kept_carried=len(kept_carry),
+        carried_from_fp=carry_fp,
     )
     # Persist BEFORE any floor can halt this process and before extraction
     # (Upload Policy raw-completions rule; #1345 crash-fix r6 shape).
-    persist_bundle_paired(mode_slug, model_key, out_dir, fp, args.smoke)
+    persist_bundle_paired(
+        mode_slug,
+        model_key,
+        out_dir,
+        fp,
+        args.smoke,
+        carried_from_fp=carry_fp,
+        n_kept_carried=len(kept_carry),
+    )
 
     if args.op_companion:
         floor_op = companion_usable_floor(args.smoke)
