@@ -33,6 +33,14 @@ As of #1098 the guard WAIVES, per-clause and under a fail-closed refusal ladder
 output redirects, ssh local-exec options, shared-repo path spellings,
 ``rg --pre``), clauses whose command word is ``ssh`` (remote execution) or
 ``grep``/``egrep``/``fgrep``/``rg`` (read-only pattern argument).
+As of #1413 a pre-split masking pass (``mask_ssh_payload_separators``) merges
+the CANONICAL single-quoted multi-statement ssh payload — the quoted payload
+is the clause's final token and the whole candidate passes an 8-arm
+fail-closed refusal predicate (R1-R8) — into ONE clause, so it reaches the
+#1098 waiver whole (closes residual (xiv)'s mis-split false positive for
+that shape; the former block fixture N1 moved to the masking allow list as
+M9). Any refused candidate leaves the input byte-identical, keeping today's
+disposition.
 """
 
 from __future__ import annotations
@@ -1278,10 +1286,11 @@ def test_grep_pattern_clause_waiver_allows(cmd):
 @pytest.mark.parametrize(
     "cmd",
     [
-        pytest.param(
-            "ssh pod-779 'cd /workspace/explore-persona-space && git reset --hard origin/main'",
-            id="N1-multi_statement_mis_split_residual_fp",
-        ),
+        # N1-multi_statement_mis_split_residual_fp MOVED (#1413) to the
+        # masking allow list below as M9-former_N1_residual_closed: N1 was
+        # the pin OF the residual-(xiv) mis-split false positive that the
+        # mask_ssh_payload_separators() pre-pass closes for the canonical
+        # single-quoted shape — the flip is Goal-mandated, not a regression.
         pytest.param('ssh host "$(git reset --hard)"', id="N2-cmdsub_executes_locally"),
         pytest.param('ssh host "`git clean -fd`"', id="N3-backtick_executes_locally"),
         pytest.param(
@@ -1429,6 +1438,255 @@ def test_grep_pattern_clause_waiver_allows(cmd):
 )
 def test_remote_waiver_fail_closed_blocks(cmd):
     """Every waiver refusal arm keeps its locally-executing lookalike at exit 2."""
+    assert _run(cmd) == 2
+
+
+# ==== #1413 — ssh multi-statement single-quoted payload masking =============
+#
+# mask_ssh_payload_separators() neutralizes the separators INSIDE the
+# balanced single-quoted FINAL argument of a clause-initial ssh clause, so
+# the canonical multi-statement remote string reaches the #1098 waiver as
+# ONE clause instead of mis-splitting (residual (xiv)'s first arm, closed
+# for that shape; founding incident #779). Masking fires ONLY when the whole
+# candidate passes the 8-arm fail-closed refusal predicate — R1
+# whitespace-only tail to ;/&&/||/NL/EOS; R2 no expansion/redirect/sentinel
+# char; R3 no ssh local-exec option token; R4 no shared-repo path spelling;
+# R5 no quote char before the candidate; R6/R7 no cd + /tmp/ or
+# .claude/worktrees/ latch vocabulary in candidate/prefix; R8 no WT= text —
+# and ANY refusal leaves the input byte-identical, so every refused shape
+# keeps today's disposition (all 27 NM fixtures below were verified rc=2
+# against the UNMODIFIED guard before the mask landed — the pre-change
+# red-team gate). The allow side is NOT @on_main (a masked-and-waived
+# clause must pass in either repo state, matching the #1098 convention).
+# Where a predicate arm overlaps a #1098 ladder refusal, the block fixture
+# uses an allow-arm-anchored CONTAMINATION payload: a mid-payload
+# `git switch feature-x` (whose ONLY detector carries the end-anchored
+# `switch main` allow-arm) followed by a payload-FINAL `git switch main` —
+# under a single dropped predicate arm the merged clause reaches
+# classify_clause and the trailing quote-tolerant allow-arm swallows the
+# block, turning the fixture RED. A destructive payload cannot detect that
+# bug class: the reset/checkout detectors span masked text via their
+# [^;&|]* gaps and stay green, so those fixtures serve as disposition pins
+# only.
+# ---------------------------------------------------------------------------
+@pytest.mark.parametrize(
+    "cmd",
+    [
+        pytest.param(
+            "ssh pod-77965 'cd /workspace/explore-persona-space && git fetch origin"
+            " && git checkout FETCH_HEAD -- scripts/'",
+            id="M1-incident_779_fetch_head_checkout",
+        ),
+        pytest.param(
+            "ssh pod-779 'cd /workspace/x; git reset --hard origin/main'",
+            id="M2-semicolon_chain",
+        ),
+        pytest.param(
+            "ssh pod-779 'cd /workspace/x && git checkout -b scratch'",
+            id="M3-verb_in_tail_statement",
+        ),
+        pytest.param("ssh pod-779 'git fetch || git reset --hard'", id="M4-or_connector_payload"),
+        pytest.param(
+            "ssh pod-779 'git fetch origin\ngit checkout FETCH_HEAD'",
+            id="M5-newline_in_payload",
+        ),
+        pytest.param(
+            "ssh pod-779 'cd /w && git reset --hard' && echo done",
+            id="M6-benign_local_tail_and",
+        ),
+        pytest.param(
+            # Prefix is quote- and latch-clean, so the SEQ-preceded candidate
+            # still masks (clause-initial tracking mirrors the splitter).
+            "echo starting; ssh pod-779 'cd /w && git reset --hard'",
+            id="M7-clause_initial_after_seq",
+        ),
+        pytest.param(
+            "ssh -p 40052 root@157.157.221.29 'cd /workspace/x && git checkout FETCH_HEAD'",
+            id="M8-options_host_head",
+        ),
+        pytest.param(
+            # The former N1-multi_statement_mis_split_residual_fp block
+            # fixture: its (xiv) mis-split residual is what #1413 closes.
+            # /workspace/explore-persona-space matches NONE of cond (4)'s
+            # covered shared-repo spellings, so the merged clause waives.
+            "ssh pod-779 'cd /workspace/explore-persona-space && git reset --hard origin/main'",
+            id="M9-former_N1_residual_closed",
+        ),
+    ],
+)
+def test_ssh_multi_statement_payload_masking_allows(cmd):
+    """Canonical single-quoted multi-statement ssh payloads mask and waive (#779)."""
+    assert _run(cmd) == 0
+
+
+@on_main
+@pytest.mark.parametrize(
+    "cmd",
+    [
+        pytest.param(
+            # Double quotes never mask (escapes/expansion/nesting make the
+            # parse inexact) — documented residual.
+            'ssh pod-779 "cd /workspace/x && git reset --hard origin/main"',
+            id="NM1-double_quoted_multi_statement",
+        ),
+        pytest.param(
+            # Constraint-1 ambiguity (no closing quote) stays blocked.
+            "ssh pod-779 'cd /workspace/x && git reset --hard origin/main",
+            id="NM2-unbalanced_quote_fail_closed",
+        ),
+        pytest.param(
+            # R4 disposition pin: the $HOME/ shared-repo spelling never masks.
+            "ssh vm 'cd $HOME/explore-persona-space && git reset --hard'",
+            id="NM3-repo_path_home_spelling",
+        ),
+        pytest.param(
+            # R4 disposition pin: the literal shared-repo spelling never masks.
+            "ssh vm 'cd /home/thomasjiralerspong/explore-persona-space && git reset --hard'",
+            id="NM4-repo_path_literal_spelling",
+        ),
+        pytest.param(
+            "timeout 240 ssh pod-779 'cd /w && git reset --hard'",
+            id="NM5-wrapped_ssh_multi_statement",
+        ),
+        pytest.param(
+            "$SSHCMD pod-779 'cd /w && git reset --hard'",
+            id="NM6-variable_ssh_multi_statement",
+        ),
+        pytest.param(
+            "/usr/bin/ssh pod-779 'cd /w && git reset --hard'",
+            id="NM7-abs_path_ssh_multi_statement",
+        ),
+        pytest.param(
+            # R1 disposition pin: pipeline-producer position stays classifying.
+            "ssh host 'echo x && git reset --hard' | bash",
+            id="NM8-pipe_after_candidate",
+        ),
+        pytest.param(
+            # R1 disposition pin: background position stays classifying.
+            "ssh host 'cd /w && git reset --hard' &",
+            id="NM9-bg_after_candidate",
+        ),
+        pytest.param(
+            # Payload `>` refuses via R2 (remote-redirect residual, parity
+            # with N29); the /tmp/x path alone does not trip R6's
+            # conjunction — no `cd` before it — the `>` arm is what refuses.
+            "ssh pod-779 'git status > /tmp/x && git checkout -b scratch'",
+            id="NM10-redirect_in_payload",
+        ),
+        pytest.param(
+            "ssh pod-779 'cd /w && git reset --hard' -v",
+            id="NM11-trailing_token_after_quote",
+        ),
+        pytest.param(
+            # Parity with N4: the deliberate ${ over-match refuses.
+            "ssh pod-779 'cd /w && git reset --hard ${REF}'",
+            id="NM12-brace_expansion_in_payload",
+        ),
+        pytest.param(
+            # Parity with N17; plain input-`<` shares R2's blanket `<` branch.
+            "ssh pod-779 'cd /w && git reset --hard' <<< input",
+            id="NM13-here_string_tail",
+        ),
+        pytest.param(
+            # Parity with N7: local-exec option token refuses (R3).
+            "ssh -o ProxyCommand=evil host 'cd /w && git reset --hard'",
+            id="NM14-proxycommand_head_multi_statement",
+        ),
+        pytest.param(
+            # Masking is clause-local: the LOCAL tail still blocks (N11 parity).
+            "ssh pod-779 'cd /w && git fetch'; git reset --hard",
+            id="NM15-local_gated_clause_after_masked",
+        ),
+        pytest.param(
+            # ~/ shared-repo spelling as a CONTAMINATION shape: today the
+            # mid-payload `git switch feature-x` fragment blocks; a dropped
+            # ~/ arm masks -> the merged clause repo-path-glob classifies ->
+            # the trailing `switch main` allow-arm would swallow -> RED.
+            "ssh vm 'cd ~/explore-persona-space; git switch feature-x; git switch main'",
+            id="NM16-repo_path_tilde_contamination",
+        ),
+        pytest.param(
+            # The LOCAL head clause still blocks (a scanner bug swallowing
+            # the prefix goes red).
+            "git reset --hard; ssh pod-779 'cd /workspace/x && git fetch'",
+            id="NM17-local_gated_clause_before_masked",
+        ),
+        pytest.param(
+            # Pins R2's $( branch with contamination power.
+            "ssh pod-779 'echo $(hostname); git switch feature-x; git switch main'",
+            id="NM18-cmdsub_payload_contamination",
+        ),
+        pytest.param(
+            # Pins R2's backtick branch with contamination power.
+            "ssh pod-779 'echo `hostname`; git switch feature-x; git switch main'",
+            id="NM19-backtick_payload_contamination",
+        ),
+        pytest.param(
+            # Today the mid-payload gated fragment blocks; a broken R1 masks
+            # -> merged clause has nextsep=PIPE -> the ladder refuses the
+            # waiver -> classifies MERGED text -> the trailing `switch main`
+            # allow-arm would swallow -> RED (the exact contamination
+            # mechanism the mask-then-let-ladder-refuse design rejects).
+            "ssh host 'echo x; git switch feature-x; git switch main' | bash",
+            id="NM20-pipe_position_contamination",
+        ),
+        pytest.param(
+            # BG-position twin of NM20.
+            "ssh host 'echo x; git switch feature-x; git switch main' &",
+            id="NM21-bg_position_contamination",
+        ),
+        pytest.param(
+            # Today the payload's `;` resets `scoped` and the && tail
+            # BLOCKS; without R6 the merged clause would match the
+            # pre-waiver `cd +/tmp/` grep -> scoped=1; continue -> the LOCAL
+            # tail is skipped -> RED.
+            "ssh pod-779 'cd /tmp/scratch; git fetch' && git reset --hard",
+            id="NM22-latch_arming_payload_and_tail",
+        ),
+        pytest.param(
+            # `cd` and the worktrees path in DIFFERENT payload statements:
+            # without R6 the mask removes the [;&|] chars guarding
+            # `cd +[^;&|]*\.claude/worktrees/`, the widened grep matches the
+            # merged clause, and the local tail is skipped -> RED.
+            "ssh pod-779 'cd /data && echo .claude/worktrees/x' && git reset --hard",
+            id="NM23-latch_regex_widening_split_payload",
+        ),
+        pytest.param(
+            # `scoped` armed by the LOCAL prefix; today the payload's `;`
+            # resets it and the tail BLOCKS; without R7 the merged clause
+            # rides scoped=1 and the tail is skipped -> RED.
+            "cd /tmp/scratch && ssh pod-779 'git fetch; git status' && git reset --hard",
+            id="NM24-prefix_latch_then_masked_and_tail",
+        ),
+        pytest.param(
+            # The scanner's "payload" would be live LOCAL code between two
+            # strings; today the local gated clause BLOCKS; without R5 it is
+            # masked into a waived ^ssh clause -> RED.
+            "echo 'x; ssh h '; git switch feature-x; echo '; y'",
+            id="NM25-preopened_single_quote_swallow",
+        ),
+        pytest.param(
+            # Double-quote variant: raw-apostrophe-parity would pass it; the
+            # strict any-quote R5 refuses -> without R5, RED.
+            'echo "x; ssh h \'"; git switch feature-x; echo "\';"',
+            id="NM26-preopened_double_quote_swallow",
+        ),
+        pytest.param(
+            # Today the payload's clause-initial WT=x' fragment DISARMS
+            # wt_bound and the tail BLOCKS; without R8 the disarm is
+            # suppressed, cd "$WT" latches, and the tail is skipped -> RED.
+            "WT=.claude/worktrees/w; ssh pod-779 'echo a; WT=x'; cd \"$WT\" && git checkout -b tmp",
+            id="NM27-wt_payload_disarm_suppression",
+        ),
+    ],
+)
+def test_ssh_masking_refusal_ladder_blocks(cmd):
+    """Every mask-predicate refusal arm leaves its shape byte-identical (exit 2).
+
+    All 27 fixtures were verified rc=2 against the UNMODIFIED guard before
+    the mask landed (the plan's pre-change red-team gate), so each pins a
+    today-blocked disposition the monotonicity invariant quantifies over.
+    """
     assert _run(cmd) == 2
 
 

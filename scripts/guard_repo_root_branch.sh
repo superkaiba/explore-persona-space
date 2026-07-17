@@ -52,10 +52,20 @@
 # diverged-pod recovery, executed in the pod's own /workspace clone) is
 # WAIVED per-clause by the driver-loop ssh/grep waiver below, under its
 # fail-closed refusal ladder; grep/egrep/fgrep/rg pattern arguments get the
-# same waiver. A MULTI-STATEMENT remote string mis-splits on the
-# quoted-separator trade-off and its tail clauses still classify —
-# remediation unchanged: `git -C /workspace/... <verb>` inside the remote
-# string, a pod-side script, or the SSH MCP (which bypasses the Bash hook
+# same waiver. A MULTI-STATEMENT SINGLE-QUOTED remote string in the canonical
+# shape — the quoted payload is the clause's FINAL token, and the whole
+# candidate passes the 8-arm refusal predicate of the
+# mask_ssh_payload_separators() pre-pass (#1413: clean tail, no quote or
+# latch-arming vocabulary before it, no expansion/redirect/local-exec/
+# repo-path/WT= token) — has its intra-payload separators masked BEFORE the
+# split, so the merged clause reaches the same waiver whole (closes the
+# founding #779 false block). Every OTHER multi-statement shape —
+# double-quoted payloads, redirect-carrying payloads, trailing tokens after
+# the closing quote, wrapped/variable/abs-path ssh, quoted or
+# latch-vocabulary prefixes — still mis-splits on the quoted-separator
+# trade-off and its tail clauses still classify — remediation unchanged:
+# `git -C /workspace/... <verb>` inside the remote string, a pod-side
+# script, or the SSH MCP (which bypasses the Bash hook
 # entirely). Never waived, deliberately: an ssh clause naming the shared-repo
 # path in any covered spelling (literal / $HOME/ / ~/ + the repo basename),
 # and ANY waived-word clause in pipeline-producer / background position or
@@ -236,11 +246,38 @@
 #       refusal.
 # (xiv) (#1098) The ssh/grep-family clause waiver's residuals, BOTH sides.
 #       Fail-closed FALSE POSITIVES (harmless shapes that stay blocked):
-#       multi-statement remote strings with the gated verb in a non-first
-#       statement (`ssh pod 'cd /workspace/x && git reset --hard'` —
-#       mis-split; the tail clause lost the ssh command word); wrapped /
+#       multi-statement remote-string FPs are CLOSED for the CANONICAL shape
+#       by the mask_ssh_payload_separators() pre-pass (#1413:
+#       single-quoted, payload is the clause's final token, ladder-clean,
+#       latch-clean, quote-clean prefix — `ssh pod 'cd /workspace/x && git
+#       reset --hard'` now merges and waives); the REMAINING multi-statement
+#       FPs keep today's disposition, each with the standing remediation
+#       (`git -C /workspace/... <verb>` inside the remote string, a pod-side
+#       script, or the SSH MCP): double-quoted payloads (`\"`/expansion/
+#       nesting make the parse inexact); redirect-carrying payloads (`>`,
+#       `<`, `2>&1` — R2's blanket refusal, and the fd-dup `&` still
+#       mis-splits as BG); trailing tokens after the closing quote
+#       (`2>/dev/null`, `-v`, a second quoted arg — R1); wrapped /
 #       absolute-path / variable ssh (`timeout N ssh ...`, `/usr/bin/ssh`,
-#       `$SSHCMD ...`); `${VAR}` in remote strings, incl. single-quoted
+#       `$SSHCMD ...` — not clause-initial `ssh`); IPv6-bracket hosts
+#       (`ssh [::1] '...'` — `[` stops the head scan); a comment-`#` inside
+#       the payload (the per-clause comment-tail strip truncates the merged
+#       clause — truncation cannot un-waive or create a latch match, but the
+#       shape is not guaranteed to merge); ANY quoted text before the ssh
+#       candidate (R5's strict any-quote refusal — quoted-prefix compounds
+#       keep today's disposition); latch vocabulary in payload or prefix
+#       (`cd /tmp/`, `cd ...worktrees...`, `WT=` — the R6/R7/R8 cost
+#       residuals). WT-latch arm-SUPPRESSION flips are fail-CLOSED by R8
+#       (exotic shapes where a payload fragment's clause-initial `WT=`
+#       arming would have disappeared post-refusal go allow->block —
+#       acceptable direction). The pre-existing internal-`&&`-only
+#       latch-arming payload fail-open (`ssh pod 'cd /tmp/x && git fetch'`'s
+#       FIRST fragment matching the unanchored cd-latch grep — rc=0 TODAY,
+#       see the register QUALIFIER below) is a DRIVER bug independent of the
+#       mask and stays open; R6 leaves those shapes byte-identical
+#       (driver-side root fix tracked via the parked workflow-fix candidate
+#       on task #1413, 2026-07-16). Other pre-existing FPs, unchanged:
+#       `${VAR}` in remote strings, incl. single-quoted
 #       forms bash would not expand (the deliberate `${` over-match);
 #       ssh clauses naming the shared-repo path in a covered spelling;
 #       here-string literals (`grep -q x <<<"...gated..."` — the R8b
@@ -576,6 +613,149 @@ strip_heredoc_bodies() {
     }'
 }
 cmd=$(strip_heredoc_bodies "$cmd")
+
+# (#1413) Mask separators inside the balanced SINGLE-QUOTED final argument of
+# a clause-initial `ssh` clause, so a MULTI-STATEMENT remote command string
+# (`ssh pod 'cd /w && git fetch && git checkout FETCH_HEAD -- f'`) is no
+# longer mis-split by the quoted-separator trade-off into a tail clause that
+# lost its ssh command word (the residual-(xiv) false-positive class;
+# founding incident #779). Single-quoted spans are the ONE place a
+# conservative parse is EXACT: bash single-quoted strings cannot contain a
+# quote at all, so '<anything-but-quote>' is the true parse — no escapes, no
+# nesting (double-quoted payloads admit all three and stay a documented
+# residual).
+#
+# Masking fires ONLY when the whole prospective clause passes an 8-arm
+# fail-closed refusal predicate; ANY refusal returns the input BYTE-IDENTICAL
+# (today's behavior). The arms (monotonicity invariant: a masked clause is
+# waived by the EXISTING #1098 ladder before classify_clause, and can neither
+# arm, ride, disarm, nor suppress-a-reset-of the driver's cd-scope / WT
+# latches — so every clause that still reaches classify_clause, and every
+# latch transition, is identical to today except the intended removal class):
+#   R1  tail after the closing quote is whitespace-only up to ; / && / || /
+#       newline / end-of-string — never a bare | or & (the ladder's PIPE/BG
+#       refusal set), never a trailing token (`2>/dev/null`, `-v`, a second
+#       quoted arg — those shapes keep today's disposition).
+#   R2  no $( / ${ / backtick / < / > / \x01 anywhere in the candidate — a
+#       strict SUPERSET of ladder conds (3)/(3b) restricted to the clause
+#       (blanket < covers <( / <<< / << / plain input redirects; \x01 is
+#       splitter-sentinel hygiene). Bare $VAR stays maskable (ladder parity).
+#   R3  no ProxyCommand / LocalCommand / KnownHostsCommand token (ssh
+#       executes all three LOCALLY — ladder cond (4) parity).
+#   R4  no shared-repo path in any covered spelling (literal / $HOME/ / ~/ +
+#       basename — cond (4) parity; the never-waived class stays never-waived).
+#   R5  no quote char (single OR double) seen anywhere BEFORE the candidate,
+#       outside previously-ACCEPTED candidates' consumed quote pairs — the
+#       scanner is quote-context-blind, so a pre-opened quote could make the
+#       scanned "payload" live LOCAL code between two strings (the
+#       local-code-swallow hole); strict any-quote refusal, because an
+#       apostrophe-parity check misses the pre-opened-double-quote variant.
+#   R6  no cd-latch-arming vocabulary in the candidate — `cd` + /tmp/ or
+#       .claude/worktrees/ (a conservative substring superset of the driver's
+#       UNANCHORED pre-waiver latch greps below, which take `scoped=1;
+#       continue` BEFORE the waiver; also precludes the regex-WIDENING match
+#       where masking lets `cd +[^;&|]*\.claude/worktrees/` span across
+#       former statement boundaries).
+#   R7  no cd-latch-arming vocabulary in the PREFIX — guarantees scoped == 0
+#       at candidate entry, so the mask's removal of intra-payload separators
+#       (which today RESET `scoped` at each mis-split boundary) can never
+#       suppress a load-bearing latch reset and skip a local gated tail.
+#   R8  no `WT=` text in the candidate — a mis-split payload fragment's
+#       clause-initial `WT=` arms/disarms `wt_bound` TODAY; masking would
+#       suppress those transitions (WT-latch state isolation).
+# The replacement token ` __EPM_SSH_SEP__ ` is space-padded word characters:
+# it cannot form a separator, a refusal pattern, a repo-path spelling, a
+# latch-regex match, or glue adjacent tokens into a `git <verb>` bigram.
+# Sentinel collision with payload text is harmless — the mask is
+# guard-internal; bash receives the ORIGINAL command either way.
+mask_ssh_payload_separators() {
+  printf '%s' "$1" | awk -v repo="$REPO" -v repo_base="$REPO_BASE" '
+    BEGIN { nrec = 0 }
+    { rec[nrec++] = $0 }
+    END {
+      # Re-join records with the newlines awk consumed (a trailing newline is
+      # stripped either way by the caller command substitution — status quo
+      # at every existing normalization stage).
+      s = ""
+      for (r = 0; r < nrec; r++) s = s (r ? "\n" : "") rec[r]
+      n = length(s)
+      i = 1; atstart = 1; out = ""; saw_quote = 0
+      while (i <= n) {
+        if (atstart && substr(s, i, 4) ~ /^ssh[ \t]/) {
+          # Candidate. Scan the head (options/host): letters, digits, and
+          # the option/host punctuation set ONLY — every quote, $, backslash,
+          # redirect, paren, bracket, and separator char stops the scan, so
+          # `ssh $(evil)`, `ssh "h"`, `ssh [::1]`, `ssh h <<EOF` never parse
+          # as candidates (refused -> byte-identical -> today\047s behavior).
+          j = i + 4
+          while (j <= n && substr(s, j, 1) ~ /[A-Za-z0-9_.@:%=+,\/ \t-]/) j++
+          if (substr(s, j, 1) == "\047") {
+            cq = index(substr(s, j + 1), "\047")   # single quotes: exact parse
+            if (cq > 0) {
+              payload = substr(s, j + 1, cq - 1)
+              after = j + 1 + cq                   # first char past closing quote
+              t = after
+              while (t <= n && substr(s, t, 1) ~ /[ \t]/) t++
+              # R1: whitespace-only tail ending in ; / && / || / NL / EOS.
+              tail_ok = (t > n)
+              if (!tail_ok) {
+                c1 = substr(s, t, 1); c2 = substr(s, t, 2)
+                tail_ok = (c1 == ";" || c1 == "\n" || c2 == "&&" || c2 == "||")
+              }
+              cand = substr(s, i, after - i)       # head + quoted payload
+              pfx  = substr(s, 1, i - 1)           # everything before candidate
+              lc   = tolower(cand)
+              if (tail_ok &&
+                  saw_quote == 0 &&
+                  index(cand, "$(") == 0 && index(cand, "${") == 0 &&
+                  index(cand, "\140") == 0 && index(cand, "<") == 0 &&
+                  index(cand, ">") == 0 && index(cand, "\001") == 0 &&
+                  index(lc, "proxycommand") == 0 &&
+                  index(lc, "localcommand") == 0 &&
+                  index(lc, "knownhostscommand") == 0 &&
+                  index(cand, repo) == 0 &&
+                  index(cand, "$HOME/" repo_base) == 0 &&
+                  index(cand, "~/" repo_base) == 0 &&
+                  !(cand ~ /cd[ \t]/ && (index(cand, "/tmp/") > 0 ||
+                                         index(cand, ".claude/worktrees/") > 0)) &&
+                  !(pfx ~ /cd[ \t]/ && (index(pfx, "/tmp/") > 0 ||
+                                        index(pfx, ".claude/worktrees/") > 0)) &&
+                  index(cand, "WT=") == 0) {
+                # arms in order: R1 tail | R5 prefix quote-state | R2 token
+                # set | R3 local-exec options | R4 repo-path spellings | R6
+                # candidate latch vocab | R7 prefix latch vocab | R8 WT-latch
+                # isolation. ACCEPTED: the ONLY rewrite the function ever
+                # performs is this separator substitution inside the payload.
+                gsub(/[;&|\n]+/, " __EPM_SSH_SEP__ ", payload)
+                out = out substr(s, i, j - i) "\047" payload "\047"
+                i = after; atstart = 0
+                # The two consumed quotes do NOT set saw_quote: by R5 they
+                # are bash\047s own balanced pair, so later candidates in a
+                # multi-candidate command (`ssh h1 \047..\047 && ssh h2
+                # \047..\047`) still compose.
+                continue
+              }
+            }
+          }
+          # REFUSED: copy the `ssh` word verbatim and fall back to the char
+          # path — the refused candidate\047s own quotes then set saw_quote,
+          # so any LATER candidate in this command also refuses (conservative
+          # composition; nested-candidate resume inside a quoted region is
+          # structurally refused by R5).
+          out = out "ssh"; i += 3; atstart = 0
+          continue
+        }
+        c = substr(s, i, 1)
+        out = out c
+        if (c == "\047" || c == "\042") saw_quote = 1
+        if (c ~ /[;|&\n]/) atstart = 1
+        else if (c !~ /[ \t]/) atstart = 0
+        i++
+      }
+      printf "%s", out
+    }'
+}
+cmd=$(mask_ssh_payload_separators "$cmd")
 
 # Only consider git checkout/switch/restore/clean/reset/merge/rebase/
 # cherry-pick/revert/am invocations at all (loose pre-filter — a cheap skip,
@@ -1162,9 +1342,16 @@ while IFS=$'\t' read -r sep nextsep clause; do
   #       executes a preprocessor command per file, locally).
   # NO LATCH: the waiver covers THIS clause only — it reads the clause's
   # own command word, so no arming/propagation separator proof is needed
-  # (unlike the cd/WT latches, no state crosses clauses). A quoted
-  # multi-statement remote string (`ssh pod 'cd /w && git reset --hard'`)
-  # is mis-split by the quoted-separator trade-off and its TAIL clause
+  # (unlike the cd/WT latches, no state crosses clauses). A single-quoted
+  # multi-statement remote string in the CANONICAL shape (payload is the
+  # clause's final token; quote-, latch- and ladder-clean per the R1-R8
+  # predicate) is merged into ONE clause by the
+  # mask_ssh_payload_separators() pre-pass (#1413) BEFORE the split, so it
+  # reaches this waiver whole — the pre-pass grants nothing itself; the
+  # merged clause still walks every refusal above. Any OTHER
+  # multi-statement remote string (double quotes, trailing tokens,
+  # redirects, wrapped ssh, quoted or latch-vocabulary prefixes) is still
+  # mis-split by the quoted-separator trade-off and its TAIL clause
   # (which lost the ssh command word) still classifies — fail-closed,
   # residual gap (xiv); remediation unchanged: single-statement
   # `git -C /workspace/... <verb>` inside the remote string (the -C waiver
@@ -1208,5 +1395,5 @@ To LAND a branch onto main: gh pr merge <PR> --rebase (server-side, the /issue S
 To recover an in-progress root merge/rebase/cherry-pick/revert/am: git merge --abort / git rebase --abort / git cherry-pick --abort / git revert --abort / git am --abort (all allowed; --quit likewise). For a worktree fast-forward: git -C <worktree> merge --ff-only main.
 For marker-note text mentioning git commands, use --file <path.md> instead of --note; for commit messages, use git commit -F <file>.
 NOTE: this deny blocked your ENTIRE compound command — earlier clauses did NOT run either; regenerate any files/state those clauses were meant to produce before retrying the safe form (incident class #813/#1056).
-For a POD-side remote git op, a single-statement ssh <host> 'git <verb> ...' remote command is allowed (#1098); a multi-statement remote string mis-splits — put git -C /workspace/<repo> <verb> inside the remote string, or use a pod-side script / the SSH MCP." >&2
+For a POD-side remote git op, a single-statement ssh <host> 'git <verb> ...' remote command is allowed (#1098), and a SINGLE-QUOTED multi-statement remote string is allowed when the quoted payload is the clause's final token and nothing quote- or latch-ambiguous precedes it (#1413); other shapes (double quotes, redirects, trailing tokens, wrapped ssh, quoted/latch-vocabulary prefixes) still need git -C /workspace/<repo> <verb> inside the remote string, a pod-side script, or the SSH MCP." >&2
 exit 2
