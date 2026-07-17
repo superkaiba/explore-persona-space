@@ -3826,6 +3826,197 @@ def test_ladder_short_job_full_rung_order(lease_store, marker_poster, captured_m
     assert len(idxs) == 5
 
 
+def test_ladder_short_job_min_gpu_mem_gate_drops_a100_40_rungs(
+    lease_store, marker_poster, captured_markers
+):
+    """#1468: a short lora-7b declaring ``min_gpu_mem_gb=60`` (> the 38 GiB
+    A100_40_USABLE_GIB) walks EXACTLY [spot-80, flex-80, ondemand-80] — no
+    A100-40 rung anywhere in the trail — and the gated all-miss walk still
+    terminates at RunPod (the gate creates no new dead-end)."""
+    rp = _PassiveRunpod()
+    gcp = _GcpBackendDouble(
+        launch_raises=GcpProvisioningError(
+            "ZONE_RESOURCE_POOL_EXHAUSTED", evidence={"matched_pattern": "RESOURCE_EXHAUSTED"}
+        )
+    )
+    spec = RunSpec(
+        issue=137,
+        intent="lora-7b",
+        backend="auto",
+        time_budget_hours=1.0,
+        extra={"min_gpu_mem_gb": 60},
+    )
+    result = route(
+        spec,
+        runpod_backend=rp,
+        gcp_backend=gcp,
+        lease_store=lease_store,
+        marker_poster=marker_poster,
+        config=RouterConfig(free_wait_seconds=1, poll_interval=0.0, max_gcp_attempts_per_day=99),
+        now_fn=_clock(),
+        sleep_fn=lambda _s: None,
+    )
+    assert result.chosen_kind == "runpod"
+    details = [a.detail or "" for a in result.attempts if a.kind == "gcp"]
+    expected = ["spot_a100_80", "flexstart_a100_80", "ondemand_a100_80"]
+
+    def _idx(label: str) -> int:
+        return next(i for i, d in enumerate(details) if f"rung {label}" in d)
+
+    idxs = [_idx(label) for label in expected]
+    assert idxs == sorted(idxs), f"rung order wrong: {details}"
+    assert len(idxs) == 3
+    assert not any("a100_40" in d for d in details), details
+
+
+def test_ladder_long_job_min_gpu_mem_gate_drops_a100_40_rung(
+    lease_store, marker_poster, captured_markers
+):
+    """#1468 long/unknown branch: an unknown-length lora-7b declaring
+    ``min_gpu_mem_gb=60`` walks EXACTLY [flex-80, ondemand-80] — the long
+    branch's single ondemand_a100_40 rung is gated out."""
+    rp = _PassiveRunpod()
+    gcp = _GcpBackendDouble(
+        launch_raises=GcpProvisioningError(
+            "ZONE_RESOURCE_POOL_EXHAUSTED", evidence={"matched_pattern": "RESOURCE_EXHAUSTED"}
+        )
+    )
+    spec = RunSpec(issue=137, intent="lora-7b", backend="auto", extra={"min_gpu_mem_gb": 60})
+    result = route(
+        spec,
+        runpod_backend=rp,
+        gcp_backend=gcp,
+        lease_store=lease_store,
+        marker_poster=marker_poster,
+        config=RouterConfig(free_wait_seconds=1, poll_interval=0.0, max_gcp_attempts_per_day=99),
+        now_fn=_clock(),
+        sleep_fn=lambda _s: None,
+    )
+    assert result.chosen_kind == "runpod"
+    details = [a.detail or "" for a in result.attempts if a.kind == "gcp"]
+    expected = ["flexstart_a100_80", "ondemand_a100_80"]
+
+    def _idx(label: str) -> int:
+        return next(i for i, d in enumerate(details) if f"rung {label}" in d)
+
+    idxs = [_idx(label) for label in expected]
+    assert idxs == sorted(idxs), f"rung order wrong: {details}"
+    assert len(idxs) == 2
+    assert not any("a100_40" in d for d in details), details
+    assert not any("spot" in d for d in details), details
+
+
+def test_ladder_min_gpu_mem_below_threshold_keeps_full_short_ladder(
+    lease_store, marker_poster, captured_markers
+):
+    """#1468 declared-below branch: the key PRESENT at 20 (< 38) is a no-op —
+    the short ladder keeps the canonical 5-label order
+    ``test_ladder_short_job_full_rung_order`` pins. Distinct from the
+    key-ABSENT byte-identity pins: this exercises the declared-below gate
+    branch."""
+    rp = _PassiveRunpod()
+    gcp = _GcpBackendDouble(
+        launch_raises=GcpProvisioningError(
+            "ZONE_RESOURCE_POOL_EXHAUSTED", evidence={"matched_pattern": "RESOURCE_EXHAUSTED"}
+        )
+    )
+    spec = RunSpec(
+        issue=137,
+        intent="lora-7b",
+        backend="auto",
+        time_budget_hours=1.0,
+        extra={"min_gpu_mem_gb": 20},
+    )
+    result = route(
+        spec,
+        runpod_backend=rp,
+        gcp_backend=gcp,
+        lease_store=lease_store,
+        marker_poster=marker_poster,
+        config=RouterConfig(free_wait_seconds=1, poll_interval=0.0, max_gcp_attempts_per_day=99),
+        now_fn=_clock(),
+        sleep_fn=lambda _s: None,
+    )
+    assert result.chosen_kind == "runpod"
+    details = [a.detail or "" for a in result.attempts if a.kind == "gcp"]
+    expected = [
+        "spot_a100_80",
+        "spot_a100_40",
+        "flexstart_a100_80",
+        "ondemand_a100_80",
+        "ondemand_a100_40",
+    ]
+
+    def _idx(label: str) -> int:
+        return next(i for i, d in enumerate(details) if f"rung {label}" in d)
+
+    idxs = [_idx(label) for label in expected]
+    assert idxs == sorted(idxs), f"rung order wrong: {details}"
+    assert len(idxs) == 5
+
+
+def test_ladder_pinned_provisioning_min_gpu_mem_gate_drops_a100_40_rung(
+    lease_store, marker_poster, captured_markers
+):
+    """#1468 caller-pinned path (router.py's ``pinned is not None`` branch): a
+    SPOT-pinned lora-7b declaring ``min_gpu_mem_gb=60`` walks EXACTLY
+    [spot_a100_80] — the pinned path's a40 rung is gated out; the UNGATED
+    pinned composition (the in-test control) is [spot_a100_80,
+    spot_a100_40]."""
+    # Control leg: the ungated SPOT pin keeps the a40 rung.
+    gcp_control = _GcpBackendDouble(
+        launch_raises=GcpProvisioningError(
+            "ZONE_RESOURCE_POOL_EXHAUSTED", evidence={"matched_pattern": "RESOURCE_EXHAUSTED"}
+        )
+    )
+    control_spec = RunSpec(
+        issue=137,
+        intent="lora-7b",
+        backend="auto",
+        time_budget_hours=1.0,
+        extra={"provisioning_model": "SPOT"},
+    )
+    control = route(
+        control_spec,
+        runpod_backend=_PassiveRunpod(),
+        gcp_backend=gcp_control,
+        lease_store=lease_store,
+        marker_poster=marker_poster,
+        config=RouterConfig(free_wait_seconds=1, poll_interval=0.0, max_gcp_attempts_per_day=99),
+        now_fn=_clock(),
+        sleep_fn=lambda _s: None,
+    )
+    control_details = [a.detail or "" for a in control.attempts if a.kind == "gcp"]
+    assert any("rung spot_a100_40" in d for d in control_details), control_details
+    # Gated leg: the SAME pin + a 60 GiB declaration drops the a40 rung.
+    gcp = _GcpBackendDouble(
+        launch_raises=GcpProvisioningError(
+            "ZONE_RESOURCE_POOL_EXHAUSTED", evidence={"matched_pattern": "RESOURCE_EXHAUSTED"}
+        )
+    )
+    spec = RunSpec(
+        issue=137,
+        intent="lora-7b",
+        backend="auto",
+        time_budget_hours=1.0,
+        extra={"provisioning_model": "SPOT", "min_gpu_mem_gb": 60},
+    )
+    result = route(
+        spec,
+        runpod_backend=_PassiveRunpod(),
+        gcp_backend=gcp,
+        lease_store=lease_store,
+        marker_poster=marker_poster,
+        config=RouterConfig(free_wait_seconds=1, poll_interval=0.0, max_gcp_attempts_per_day=99),
+        now_fn=_clock(),
+        sleep_fn=lambda _s: None,
+    )
+    assert result.chosen_kind == "runpod"
+    details = [a.detail or "" for a in result.attempts if a.kind == "gcp"]
+    assert any("rung spot_a100_80" in d for d in details), details
+    assert not any("a100_40" in d for d in details), details
+
+
 def test_ladder_long_job_flexstart_before_ondemand_no_spot(
     lease_store, marker_poster, captured_markers
 ):
