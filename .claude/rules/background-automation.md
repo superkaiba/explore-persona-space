@@ -1397,7 +1397,9 @@ x /tmp/tmux-*
 
 Verify: `systemd-tmpfiles --cat-config | grep -F 'x /tmp/tmux-'`. It does
 NOT protect against a non-tmpfiles deleter — that is what the durable dir
-is for.
+is for. Prevention leg (#1474): the PreToolUse guard
+`.claude/hooks/guard_tmp_tmux_sweep.sh` blocks unexcluded /tmp deletion
+sweeps at the Bash tool layer (override: `EPM_ALLOW_TMP_SWEEP=1`).
 
 **Recovery runbook (socket vanished, server alive).**
 1. Find the server: `ss -xlp | grep tmux` (shows bound path + pid; works
