@@ -5,7 +5,7 @@ title: Casual writing style installs from every training context at the lowest l
 kind: experiment
 tags: []
 created_at: '2026-07-17T00:26:02Z'
-has_clean_result: false
+has_clean_result: true
 parent_id: 1090
 origin_prompt: 'do your best to get writing style and sycophancy to work / can we
   run it in parallel and be faster? (PM chat 2026-07-16; writing_style split into
