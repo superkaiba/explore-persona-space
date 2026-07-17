@@ -202,8 +202,8 @@
     "1023": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1023",
-      "status": "running",
+      "path": "tasks/reviewing/1023",
+      "status": "reviewing",
       "title": "daily-held: decide ruff-debt burn-down (2149 errors)"
     },
     "1024": {
