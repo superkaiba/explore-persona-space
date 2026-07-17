@@ -3649,8 +3649,8 @@
     "1469": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1469",
-      "status": "planning",
+      "path": "tasks/approved/1469",
+      "status": "approved",
       "title": "daily-fix: 6a.5 gate asserts git-tree reachability"
     },
     "147": {
