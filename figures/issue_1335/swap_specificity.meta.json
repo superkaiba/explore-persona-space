@@ -1,0 +1,132 @@
+{
+  "commit": "bf154e5b16",
+  "created": "2026-07-17T07:44:17Z",
+  "figsize": [
+    10.5,
+    4.4
+  ],
+  "points": [
+    {
+      "x": -0.19,
+      "pooled held-out R\u00b2 (layer 19)": 0.40463649105565214,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.81,
+      "pooled held-out R\u00b2 (layer 19)": 0.40234538345883564,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 1.81,
+      "pooled held-out R\u00b2 (layer 19)": 0.40028734627337426,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.19,
+      "pooled held-out R\u00b2 (layer 19)": 0.18132529022990151,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 1.19,
+      "pooled held-out R\u00b2 (layer 19)": 0.10696715543412805,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 2.19,
+      "pooled held-out R\u00b2 (layer 19)": 0.18326288315323025,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": -0.19,
+      "pooled held-out R\u00b2 (layer 19)": 0.3881283093604795,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 0.81,
+      "pooled held-out R\u00b2 (layer 19)": 0.3618561377700119,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 1.81,
+      "pooled held-out R\u00b2 (layer 19)": 0.3917641643341121,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 0.19,
+      "pooled held-out R\u00b2 (layer 19)": 0.1719851552991163,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 1.19,
+      "pooled held-out R\u00b2 (layer 19)": 0.16918542571690265,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 2.19,
+      "pooled held-out R\u00b2 (layer 19)": 0.17600131774802164,
+      "_kind": "bar",
+      "_group": 3
+    }
+  ],
+  "n_series": 4,
+  "total_points": 12,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "base model",
+        "ylabel": "pooled held-out R\u00b2 (layer 19)",
+        "legend_labels": [
+          "correct pairing",
+          "deranged pairing"
+        ],
+        "xticklabels": [
+          "story scenes\n(fiction endpoint)",
+          "story scenes,\nno foils",
+          "story, relabeled\n'Assistant'"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5"
+        ]
+      },
+      {
+        "title_left": "instruct model",
+        "ylabel": "pooled held-out R\u00b2 (layer 19)",
+        "xticklabels": [
+          "story scenes\n(fiction endpoint)",
+          "story scenes,\nno foils",
+          "story, relabeled\n'Assistant'"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5"
+        ]
+      }
+    ],
+    "series": [
+      "correct pairing",
+      "deranged pairing"
+    ]
+  }
+}

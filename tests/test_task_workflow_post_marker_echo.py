@@ -381,6 +381,11 @@ def test_file_input_backslash_n_no_warn(monkeypatch, capsys, tmp_path):
         ('{"a": 1}', False),
         ("Round 7 complete; followup_label: x", False),
         ("", False),
+        # #1440 parity extension: the head strip now also absorbs the #1382
+        # `v<k>. ` version stamp, so a stamped field-led head IS field-led
+        # (previously the stamp defeated this predicate — and the #1120 WARN).
+        ("v1. followup_label: x", True),
+        ("v1. prose head", False),
     ],
 )
 def test_looks_field_led_shapes(note, expected):
@@ -416,3 +421,113 @@ def test_warn_stderr_failure_is_nonfatal(monkeypatch, capsys, broken_stderr):
     assert len(posted) == 1  # the marker write happened exactly once
     out = capsys.readouterr().out
     assert '"kind"' in out  # the healthy stdout echo still happened
+
+
+# ─── #1440: poster-side WARN on `v<k>. `-stamped field-led note heads ────────
+# The parse-side stamp tolerance landed in #1382 (task_workflow.
+# parse_followup_note_field strips a leading `v\d+\.\s+` per segment); these
+# tests pin the poster-side advisory twin in cmd_post_event: fire on a --note
+# whose head is a version stamp followed by field-led content (the #1092
+# run-note shape), stay silent on prose/mid-text/value stamps, never touch
+# rc/stdout.
+
+_STAMPED_NOTE = (
+    "v1. followup_label: cross-corpus-probe-transfer; source: proposer-9b-cheap; round: 1"
+)
+
+
+def test_version_stamp_field_led_note_warns_and_still_posts(monkeypatch, capsys):
+    """#1440 acceptance 1: a v<k>.-stamped field-led --note fires the stamp
+    advisory (the #1092 run-note shape), the marker posts exactly once, the
+    note is unmutated, and stdout JSON stays parseable."""
+    posted = []
+    monkeypatch.setattr(task_cli, "post_event", _capturing_post_event(posted))
+    task_cli.cmd_post_event(_ns(note=_STAMPED_NOTE))  # must not raise
+    assert len(posted) == 1
+    assert posted[0][4] == _STAMPED_NOTE  # note reached post_event unmutated
+    captured = capsys.readouterr()
+    assert "version stamp" in captured.err
+    assert "--version" in captured.err  # the actionable hint
+    assert "WARNING" not in captured.out  # stdout JSON stays parseable
+    assert '"kind"' in captured.out  # payload echo still happened
+
+
+@pytest.mark.parametrize(
+    "note",
+    [
+        "v2. Round complete, all good",  # stamp + prose — parser leaves it alone
+        "v1.followup_label: x",  # no whitespace after the dot -> not a stamp (#1382 neg iii)
+        "the v1. followup_label: x",  # mid-text mention — head-only anchoring (#1382 neg ii)
+        "plan: v1. adjust",  # stamp inside a VALUE — head is field-led, not stamped (#1382 neg iv)
+    ],
+)
+def test_version_stamp_negatives_no_stamp_warn(monkeypatch, capsys, note):
+    """#1440 acceptance 2: the stamp advisory mirrors the #1382 anchoring
+    negatives — it fires ONLY on stamp-then-field heads."""
+    posted = []
+    monkeypatch.setattr(task_cli, "post_event", _capturing_post_event(posted))
+    task_cli.cmd_post_event(_ns(note=note))
+    assert len(posted) == 1
+    assert "version stamp" not in capsys.readouterr().err
+
+
+def test_version_stamp_file_input_no_warn(monkeypatch, capsys, tmp_path):
+    """#1440 acceptance 3: --file input is exempt (parity with the #1120
+    WARN's --file escape hatch); precondition-asserted non-vacuous."""
+    body = tmp_path / "note.md"
+    body.write_text(_STAMPED_NOTE)
+    # Precondition: the file bytes DO match the stamped predicate shape —
+    # only the --file gate may be what suppresses the WARN here.
+    assert task_cli._looks_stamped_field_led(body.read_text())
+    posted = []
+    monkeypatch.setattr(task_cli, "post_event", _capturing_post_event(posted))
+    task_cli.cmd_post_event(_ns(note=None, file=str(body)))
+    assert len(posted) == 1
+    assert "version stamp" not in capsys.readouterr().err
+
+
+def test_stamped_and_escaped_note_fires_both_warns(monkeypatch, capsys):
+    """#1440 acceptance 4: stamped head + literal-\\n single line fires BOTH
+    advisories — the stamp WARN (new) and the #1120 quoting WARN, which the
+    stamp used to defeat (the _looks_field_led parity half of this change)."""
+    note = "v1. followup_label: x\\nsource: user-chat"
+    posted = []
+    monkeypatch.setattr(task_cli, "post_event", _capturing_post_event(posted))
+    task_cli.cmd_post_event(_ns(note=note))
+    assert len(posted) == 1
+    err = capsys.readouterr().err
+    assert "version stamp" in err
+    assert "$'" in err  # the #1120 quoting hint
+
+
+@pytest.mark.parametrize("broken_stderr", [_BrokenPipeStdout(), _ClosedStderr()])
+def test_version_stamp_warn_stderr_failure_is_nonfatal(monkeypatch, capsys, broken_stderr):
+    """#1440 acceptance 5: a torn/closed stderr on the stamp WARN never flips
+    the exit code (the #537 rc-contract class)."""
+    posted = []
+    monkeypatch.setattr(task_cli, "post_event", _capturing_post_event(posted))
+    monkeypatch.setattr(sys, "stderr", broken_stderr)
+    task_cli.cmd_post_event(_ns(note=_STAMPED_NOTE))  # must not raise
+    assert len(posted) == 1
+    assert '"kind"' in capsys.readouterr().out
+
+
+@pytest.mark.parametrize(
+    ("note", "expected"),
+    [
+        ("v1. followup_label: x", True),
+        ("- v2. pod=pod-399", True),  # bullet, then stamp, then `=`-form field
+        ("followup_label: x", False),  # field-led but unstamped
+        ("v1. prose head", False),
+        ("v1.followup_label: x", False),
+        ("V1. followup_label: x", False),  # uppercase — the parser does not absorb it
+        ("", False),
+        ("v1. ", False),  # stamp-only — empty core is not field-led
+        ("v10. followup_label: x", True),  # multi-digit stamp
+        ("v1.\tfield: x", True),  # tab after the dot — `\s+` covers it
+    ],
+)
+def test_looks_stamped_field_led_shapes(note, expected):
+    """The stamp predicate byte-mirrors the parse-side strip order
+    (bullets/bold first, then the lowercase whitespace-required stamp)."""
+    assert task_cli._looks_stamped_field_led(note) is expected

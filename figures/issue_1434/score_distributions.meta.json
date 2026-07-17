@@ -1,0 +1,1053 @@
+{
+  "commit": "f9f1002797",
+  "created": "2026-07-17T08:17:26Z",
+  "figsize": [
+    15.0,
+    4.0
+  ],
+  "points": [
+    {
+      "per-completion graded score (mean of 5 judge draws)": 2.5,
+      "completions": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "per-completion graded score (mean of 5 judge draws)": 7.5,
+      "completions": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "per-completion graded score (mean of 5 judge draws)": 12.5,
+      "completions": 10.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "per-completion graded score (mean of 5 judge draws)": 17.5,
+      "completions": 152.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "per-completion graded score (mean of 5 judge draws)": 22.5,
+      "completions": 21.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "per-completion graded score (mean of 5 judge draws)": 27.5,
+      "completions": 15.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "per-completion graded score (mean of 5 judge draws)": 32.5,
+      "completions": 1.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "per-completion graded score (mean of 5 judge draws)": 37.5,
+      "completions": 1.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "per-completion graded score (mean of 5 judge draws)": 42.5,
+      "completions": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "per-completion graded score (mean of 5 judge draws)": 47.5,
+      "completions": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "per-completion graded score (mean of 5 judge draws)": 52.5,
+      "completions": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "per-completion graded score (mean of 5 judge draws)": 57.5,
+      "completions": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "per-completion graded score (mean of 5 judge draws)": 62.5,
+      "completions": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "per-completion graded score (mean of 5 judge draws)": 67.5,
+      "completions": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "per-completion graded score (mean of 5 judge draws)": 72.5,
+      "completions": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "per-completion graded score (mean of 5 judge draws)": 77.5,
+      "completions": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "per-completion graded score (mean of 5 judge draws)": 82.5,
+      "completions": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "per-completion graded score (mean of 5 judge draws)": 87.5,
+      "completions": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "per-completion graded score (mean of 5 judge draws)": 92.5,
+      "completions": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "per-completion graded score (mean of 5 judge draws)": 97.5,
+      "completions": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "per-completion graded score (mean of 5 judge draws)": 2.5,
+      "completions": 0.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "per-completion graded score (mean of 5 judge draws)": 7.5,
+      "completions": 0.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "per-completion graded score (mean of 5 judge draws)": 12.5,
+      "completions": 0.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "per-completion graded score (mean of 5 judge draws)": 17.5,
+      "completions": 7.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "per-completion graded score (mean of 5 judge draws)": 22.5,
+      "completions": 4.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "per-completion graded score (mean of 5 judge draws)": 27.5,
+      "completions": 14.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "per-completion graded score (mean of 5 judge draws)": 32.5,
+      "completions": 4.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "per-completion graded score (mean of 5 judge draws)": 37.5,
+      "completions": 10.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "per-completion graded score (mean of 5 judge draws)": 42.5,
+      "completions": 11.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "per-completion graded score (mean of 5 judge draws)": 47.5,
+      "completions": 25.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "per-completion graded score (mean of 5 judge draws)": 52.5,
+      "completions": 4.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "per-completion graded score (mean of 5 judge draws)": 57.5,
+      "completions": 5.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "per-completion graded score (mean of 5 judge draws)": 62.5,
+      "completions": 3.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "per-completion graded score (mean of 5 judge draws)": 67.5,
+      "completions": 28.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "per-completion graded score (mean of 5 judge draws)": 72.5,
+      "completions": 17.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "per-completion graded score (mean of 5 judge draws)": 77.5,
+      "completions": 28.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "per-completion graded score (mean of 5 judge draws)": 82.5,
+      "completions": 4.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "per-completion graded score (mean of 5 judge draws)": 87.5,
+      "completions": 30.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "per-completion graded score (mean of 5 judge draws)": 92.5,
+      "completions": 3.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "per-completion graded score (mean of 5 judge draws)": 97.5,
+      "completions": 3.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "per-completion graded score (mean of 5 judge draws)": 2.5,
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "per-completion graded score (mean of 5 judge draws)": 7.5,
+      "y": 1.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "per-completion graded score (mean of 5 judge draws)": 12.5,
+      "y": 6.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "per-completion graded score (mean of 5 judge draws)": 17.5,
+      "y": 157.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "per-completion graded score (mean of 5 judge draws)": 22.5,
+      "y": 21.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "per-completion graded score (mean of 5 judge draws)": 27.5,
+      "y": 13.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "per-completion graded score (mean of 5 judge draws)": 32.5,
+      "y": 1.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "per-completion graded score (mean of 5 judge draws)": 37.5,
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "per-completion graded score (mean of 5 judge draws)": 42.5,
+      "y": 1.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "per-completion graded score (mean of 5 judge draws)": 47.5,
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "per-completion graded score (mean of 5 judge draws)": 52.5,
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "per-completion graded score (mean of 5 judge draws)": 57.5,
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "per-completion graded score (mean of 5 judge draws)": 62.5,
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "per-completion graded score (mean of 5 judge draws)": 67.5,
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "per-completion graded score (mean of 5 judge draws)": 72.5,
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "per-completion graded score (mean of 5 judge draws)": 77.5,
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "per-completion graded score (mean of 5 judge draws)": 82.5,
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "per-completion graded score (mean of 5 judge draws)": 87.5,
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "per-completion graded score (mean of 5 judge draws)": 92.5,
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "per-completion graded score (mean of 5 judge draws)": 97.5,
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "per-completion graded score (mean of 5 judge draws)": 2.5,
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "per-completion graded score (mean of 5 judge draws)": 7.5,
+      "y": 1.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "per-completion graded score (mean of 5 judge draws)": 12.5,
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "per-completion graded score (mean of 5 judge draws)": 17.5,
+      "y": 10.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "per-completion graded score (mean of 5 judge draws)": 22.5,
+      "y": 3.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "per-completion graded score (mean of 5 judge draws)": 27.5,
+      "y": 14.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "per-completion graded score (mean of 5 judge draws)": 32.5,
+      "y": 10.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "per-completion graded score (mean of 5 judge draws)": 37.5,
+      "y": 17.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "per-completion graded score (mean of 5 judge draws)": 42.5,
+      "y": 11.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "per-completion graded score (mean of 5 judge draws)": 47.5,
+      "y": 24.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "per-completion graded score (mean of 5 judge draws)": 52.5,
+      "y": 6.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "per-completion graded score (mean of 5 judge draws)": 57.5,
+      "y": 3.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "per-completion graded score (mean of 5 judge draws)": 62.5,
+      "y": 7.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "per-completion graded score (mean of 5 judge draws)": 67.5,
+      "y": 28.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "per-completion graded score (mean of 5 judge draws)": 72.5,
+      "y": 8.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "per-completion graded score (mean of 5 judge draws)": 77.5,
+      "y": 33.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "per-completion graded score (mean of 5 judge draws)": 82.5,
+      "y": 3.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "per-completion graded score (mean of 5 judge draws)": 87.5,
+      "y": 19.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "per-completion graded score (mean of 5 judge draws)": 92.5,
+      "y": 1.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "per-completion graded score (mean of 5 judge draws)": 97.5,
+      "y": 2.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "per-completion graded score (mean of 5 judge draws)": 2.5,
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "per-completion graded score (mean of 5 judge draws)": 7.5,
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "per-completion graded score (mean of 5 judge draws)": 12.5,
+      "y": 7.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "per-completion graded score (mean of 5 judge draws)": 17.5,
+      "y": 135.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "per-completion graded score (mean of 5 judge draws)": 22.5,
+      "y": 18.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "per-completion graded score (mean of 5 judge draws)": 27.5,
+      "y": 25.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "per-completion graded score (mean of 5 judge draws)": 32.5,
+      "y": 3.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "per-completion graded score (mean of 5 judge draws)": 37.5,
+      "y": 4.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "per-completion graded score (mean of 5 judge draws)": 42.5,
+      "y": 3.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "per-completion graded score (mean of 5 judge draws)": 47.5,
+      "y": 5.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "per-completion graded score (mean of 5 judge draws)": 52.5,
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "per-completion graded score (mean of 5 judge draws)": 57.5,
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "per-completion graded score (mean of 5 judge draws)": 62.5,
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "per-completion graded score (mean of 5 judge draws)": 67.5,
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "per-completion graded score (mean of 5 judge draws)": 72.5,
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "per-completion graded score (mean of 5 judge draws)": 77.5,
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "per-completion graded score (mean of 5 judge draws)": 82.5,
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "per-completion graded score (mean of 5 judge draws)": 87.5,
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "per-completion graded score (mean of 5 judge draws)": 92.5,
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "per-completion graded score (mean of 5 judge draws)": 97.5,
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "per-completion graded score (mean of 5 judge draws)": 2.5,
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "per-completion graded score (mean of 5 judge draws)": 7.5,
+      "y": 1.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "per-completion graded score (mean of 5 judge draws)": 12.5,
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "per-completion graded score (mean of 5 judge draws)": 17.5,
+      "y": 7.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "per-completion graded score (mean of 5 judge draws)": 22.5,
+      "y": 2.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "per-completion graded score (mean of 5 judge draws)": 27.5,
+      "y": 15.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "per-completion graded score (mean of 5 judge draws)": 32.5,
+      "y": 6.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "per-completion graded score (mean of 5 judge draws)": 37.5,
+      "y": 7.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "per-completion graded score (mean of 5 judge draws)": 42.5,
+      "y": 7.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "per-completion graded score (mean of 5 judge draws)": 47.5,
+      "y": 29.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "per-completion graded score (mean of 5 judge draws)": 52.5,
+      "y": 5.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "per-completion graded score (mean of 5 judge draws)": 57.5,
+      "y": 6.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "per-completion graded score (mean of 5 judge draws)": 62.5,
+      "y": 6.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "per-completion graded score (mean of 5 judge draws)": 67.5,
+      "y": 28.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "per-completion graded score (mean of 5 judge draws)": 72.5,
+      "y": 15.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "per-completion graded score (mean of 5 judge draws)": 77.5,
+      "y": 40.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "per-completion graded score (mean of 5 judge draws)": 82.5,
+      "y": 7.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "per-completion graded score (mean of 5 judge draws)": 87.5,
+      "y": 13.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "per-completion graded score (mean of 5 judge draws)": 92.5,
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "per-completion graded score (mean of 5 judge draws)": 97.5,
+      "y": 1.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "per-completion graded score (mean of 5 judge draws)": 2.5,
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "per-completion graded score (mean of 5 judge draws)": 7.5,
+      "y": 1.0,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "per-completion graded score (mean of 5 judge draws)": 12.5,
+      "y": 1.0,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "per-completion graded score (mean of 5 judge draws)": 17.5,
+      "y": 97.0,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "per-completion graded score (mean of 5 judge draws)": 22.5,
+      "y": 37.0,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "per-completion graded score (mean of 5 judge draws)": 27.5,
+      "y": 40.0,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "per-completion graded score (mean of 5 judge draws)": 32.5,
+      "y": 5.0,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "per-completion graded score (mean of 5 judge draws)": 37.5,
+      "y": 11.0,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "per-completion graded score (mean of 5 judge draws)": 42.5,
+      "y": 4.0,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "per-completion graded score (mean of 5 judge draws)": 47.5,
+      "y": 4.0,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "per-completion graded score (mean of 5 judge draws)": 52.5,
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "per-completion graded score (mean of 5 judge draws)": 57.5,
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "per-completion graded score (mean of 5 judge draws)": 62.5,
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "per-completion graded score (mean of 5 judge draws)": 67.5,
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "per-completion graded score (mean of 5 judge draws)": 72.5,
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "per-completion graded score (mean of 5 judge draws)": 77.5,
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "per-completion graded score (mean of 5 judge draws)": 82.5,
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "per-completion graded score (mean of 5 judge draws)": 87.5,
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "per-completion graded score (mean of 5 judge draws)": 92.5,
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "per-completion graded score (mean of 5 judge draws)": 97.5,
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "per-completion graded score (mean of 5 judge draws)": 2.5,
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "per-completion graded score (mean of 5 judge draws)": 7.5,
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "per-completion graded score (mean of 5 judge draws)": 12.5,
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "per-completion graded score (mean of 5 judge draws)": 17.5,
+      "y": 1.0,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "per-completion graded score (mean of 5 judge draws)": 22.5,
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "per-completion graded score (mean of 5 judge draws)": 27.5,
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "per-completion graded score (mean of 5 judge draws)": 32.5,
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "per-completion graded score (mean of 5 judge draws)": 37.5,
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "per-completion graded score (mean of 5 judge draws)": 42.5,
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "per-completion graded score (mean of 5 judge draws)": 47.5,
+      "y": 1.0,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "per-completion graded score (mean of 5 judge draws)": 52.5,
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "per-completion graded score (mean of 5 judge draws)": 57.5,
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "per-completion graded score (mean of 5 judge draws)": 62.5,
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "per-completion graded score (mean of 5 judge draws)": 67.5,
+      "y": 2.0,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "per-completion graded score (mean of 5 judge draws)": 72.5,
+      "y": 1.0,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "per-completion graded score (mean of 5 judge draws)": 77.5,
+      "y": 1.0,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "per-completion graded score (mean of 5 judge draws)": 82.5,
+      "y": 3.0,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "per-completion graded score (mean of 5 judge draws)": 87.5,
+      "y": 33.0,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "per-completion graded score (mean of 5 judge draws)": 92.5,
+      "y": 31.0,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "per-completion graded score (mean of 5 judge draws)": 97.5,
+      "y": 127.0,
+      "_kind": "bar",
+      "_group": 7
+    }
+  ],
+  "n_series": 8,
+  "total_points": 160,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [
+      "Per-completion graded casual-register scores under the verdict arms (dashed = the 50-point positive threshold)"
+    ],
+    "axes": [
+      {
+        "title_left": "Persona (software engineer)",
+        "xlabel": "per-completion graded score (mean of 5 judge draws)",
+        "ylabel": "completions",
+        "legend_labels": [
+          "base (n=200)",
+          "trained (n=200)"
+        ],
+        "xticklabels": [
+          "\u221220",
+          "0",
+          "20",
+          "40",
+          "60",
+          "80",
+          "100",
+          "120"
+        ],
+        "yticklabels": [
+          "0",
+          "20",
+          "40",
+          "60",
+          "80",
+          "100",
+          "120",
+          "140",
+          "160",
+          "180"
+        ]
+      },
+      {
+        "title_left": "Bare assistant",
+        "xlabel": "per-completion graded score (mean of 5 judge draws)",
+        "xticklabels": [
+          "\u221220",
+          "0",
+          "20",
+          "40",
+          "60",
+          "80",
+          "100",
+          "120"
+        ]
+      },
+      {
+        "title_left": "WildChat prefix",
+        "xlabel": "per-completion graded score (mean of 5 judge draws)",
+        "xticklabels": [
+          "\u221220",
+          "0",
+          "20",
+          "40",
+          "60",
+          "80",
+          "100",
+          "120"
+        ]
+      },
+      {
+        "title_left": "ICL prefix",
+        "xlabel": "per-completion graded score (mean of 5 judge draws)",
+        "xticklabels": [
+          "\u221220",
+          "0",
+          "20",
+          "40",
+          "60",
+          "80",
+          "100",
+          "120"
+        ]
+      }
+    ]
+  }
+}
