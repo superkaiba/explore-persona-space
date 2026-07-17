@@ -793,3 +793,171 @@ def test_recovery_bare_and_prefixed_both_match_is_ambiguous(tmp_path, tasks_root
     assert last["outcome"] == "ERROR" and last["flag"] == "ambiguous-recovery"
     assert "150" in last["tail"] and "151" in last["tail"]
     assert filer_calls(d) == []
+
+
+# ── #1467: sha-verify backstop (scan + annotation + ledger key) ─────────────────
+
+
+def _init_hermetic_repo(tmp_path: Path) -> tuple[Path, str]:
+    """A tmp git repo with exactly ONE commit — hermetic resolution oracle (#1467).
+
+    Never the live repo's object set: resolution/non-resolution of every fixture
+    token is decided by THIS repo alone. Returns (repo_path, full HEAD sha).
+    """
+    repo = tmp_path / "hermetic_repo"
+    repo.mkdir()
+
+    def _git(*args: str) -> subprocess.CompletedProcess:
+        return subprocess.run(
+            ["git", "-C", str(repo), *args], check=True, capture_output=True, text=True
+        )
+
+    _git("init", "-q")
+    (repo / "f.txt").write_text("x", encoding="utf-8")
+    _git("add", "f.txt")
+    _git(
+        "-c",
+        "user.name=t",
+        "-c",
+        "user.email=t@t.invalid",
+        "-c",
+        "commit.gpgsign=false",
+        "commit",
+        "-q",
+        "-m",
+        "c1",
+    )
+    return repo, _git("rev-parse", "HEAD").stdout.strip()
+
+
+def test_scan_flags_nonresolving_commit_context_token(tmp_path):
+    # BACKTICKED token — the real filed-body shape; pins HEX_TOKEN_RE's \b
+    # backtick-boundary behavior against future regex drift.
+    repo, _head = _init_hermetic_repo(tmp_path)
+    body = "## Workflow gap\n\nthe fix commit `deadbee7f00d` landed yesterday.\n"
+    tier1, tier2 = ddf.scan_unresolvable_shas(body, repo)
+    assert tier1 == ["deadbee7f00d"]
+    assert tier2 == []
+
+
+def test_scan_resolving_sha_not_flagged(tmp_path):
+    repo, head = _init_hermetic_repo(tmp_path)
+    body = f"## Workflow gap\n\nthe fix commit `{head}` landed.\n"
+    tier1, tier2 = ddf.scan_unresolvable_shas(body, repo)
+    assert tier1 == []
+    assert tier2 == []
+
+
+def test_scan_skips_fingerprint_lines_and_all_digit_tokens(tmp_path):
+    repo, _head = _init_hermetic_repo(tmp_path)
+    body = (
+        "## Provenance\n\n"
+        "- fingerprint: 9608dfe5771a\n"
+        "- wf-fix-fp:aabbccddee11 tag row\n"
+        "run 20260716 completed\n"
+        "session 4c54094dbeef was idle\n"
+    )
+    tier1, tier2 = ddf.scan_unresolvable_shas(body, repo)
+    assert tier1 == []  # excluded lines + all-digit tokens never reach tier 1
+    assert tier2 == ["4c54094dbeef"]  # bare session id, no commit context -> tier 2
+
+
+def test_check_body_shas_annotates_idempotently(tmp_path):
+    repo, _head = _init_hermetic_repo(tmp_path)
+    d = tmp_path / f"filings-{DATE}"
+    d.mkdir()
+    item = make_item("sha-idem")
+    body_path = d / "sha-idem.md"
+    body_path.write_text(
+        "## Workflow gap\n\nthe fix commit `deadbee7f00d` landed.\n\n"
+        "## Provenance\n\n- workflow_fix_target: x.md\n- fingerprint: aabbccddee11\n",
+        encoding="utf-8",
+    )
+    first = ddf._check_body_shas(item, d, repo)
+    second = ddf._check_body_shas(item, d, repo)
+    assert first == ["deadbee7f00d"]
+    assert second == ["deadbee7f00d"]  # still reported; only the injection dedups
+    text = body_path.read_text(encoding="utf-8")
+    assert text.count("sha-verify (filing-time, #1467)") == 1
+    # the ensure_wf_fix_provenance needles survive annotation (no re-injection).
+    _new, changed = ddf.ensure_wf_fix_provenance(text, "x.md", "aabbccddee11")
+    assert changed is False
+
+
+def test_check_body_shas_appends_provenance_when_heading_absent(tmp_path):
+    repo, _head = _init_hermetic_repo(tmp_path)
+    d = tmp_path / f"filings-{DATE}"
+    d.mkdir()
+    item = make_item("sha-nohead", route=3)  # route-3-shaped: no Provenance section
+    body_path = d / "sha-nohead.md"
+    body_path.write_text("## Goal\n\nthe fix landed in `deadbee7f00d`.\n", encoding="utf-8")
+    tier1 = ddf._check_body_shas(item, d, repo)
+    assert tier1 == ["deadbee7f00d"]
+    text = body_path.read_text(encoding="utf-8")
+    assert "## Provenance" in text
+    assert "sha-verify (filing-time, #1467)" in text
+    # bare advisory bullet only — NEVER the recursion-guard line (#1228 semantics).
+    assert ddf.WF_FIX_TARGET_KEY not in text
+
+
+def test_process_item_records_sha_warnings_in_ledger(tmp_path, tasks_root, monkeypatch):
+    # main(argv)-level harness; git resolution stubbed hermetically (the real
+    # _sha_resolves body is exercised by the tmp-repo scan tests above).
+    item = make_item("sha-ledger", bug="the fix commit `deadbee7f00d` regressed X")
+    d = make_filings_dir(tmp_path, [item])
+
+    def fake_sha_resolves(token: str, root: Path) -> bool:
+        return token != "deadbee7f00d"
+
+    monkeypatch.setattr(ddf, "_sha_resolves", fake_sha_resolves)
+    # Stub filer that snapshots the FILED body at invocation time — pins the
+    # annotation-before-filing ordering, not just the post-run body state.
+    stub = tmp_path / "stub_body_snap.py"
+    stub.write_text(
+        "import shutil, sys\n"
+        "from pathlib import Path\n"
+        "argv = sys.argv[1:]\n"
+        "body = Path(argv[argv.index('--body-file') + 1])\n"
+        f"shutil.copy(body, Path({str(d)!r}) / 'body_at_invocation.md')\n"
+        "print('filed #1234')\n",
+        encoding="utf-8",
+    )
+    rc = run_driver(d, tasks_root, f"{sys.executable} {stub}")
+    assert rc == 0  # the backstop never changes the driver exit code
+    filed = [r for r in ledger_rows(d) if r["outcome"] == "filed"]
+    assert len(filed) == 1
+    assert filed[0]["sha_warnings"] == ["deadbee7f00d"]
+    snap = (d / "body_at_invocation.md").read_text(encoding="utf-8")
+    assert "sha-verify (filing-time, #1467)" in snap
+    assert "`deadbee7f00d`" in snap
+
+
+def test_non_utf8_body_fails_open_scan_skipped(tmp_path, tasks_root, capsys):
+    # Round-2 regression (sha-scan-decode-crash): read_text(encoding="utf-8") raises
+    # UnicodeDecodeError (a ValueError subclass, NOT an OSError) on a non-UTF-8 body;
+    # the fail-open except must catch it — one WARN, no annotation, filing proceeds,
+    # exit 0. Pre-fix the exception escaped process_item and aborted the ENTIRE
+    # nightly run (plan #1467 §6 never-refuse kill criterion). Hermetic: the decode
+    # crash fires before any rev-parse, so no git object set is consulted.
+    item = make_item("sha-decode", route=3)
+    d = make_filings_dir(tmp_path, [item])
+    body_path = d / "sha-decode.md"
+    raw = b"## Goal\n\nlog line quoting a stray \x80 byte verbatim.\n"
+    body_path.write_bytes(raw)
+
+    # Dry-run first (write-free): exercises the _dry_run_sha_note except leg.
+    rc_dry = run_driver(d, tasks_root, make_stub(tmp_path, d), "--dry-run")
+    assert rc_dry == 0
+    assert "[sha-scan skipped: UnicodeDecodeError]" in capsys.readouterr().out
+    assert ledger_rows(d) == []  # dry-run stays ledger-write-free
+
+    # Real path: exercises the _check_body_shas except leg end to end.
+    rc = run_driver(d, tasks_root, make_stub(tmp_path, d))
+    assert rc == 0  # fail-open: the scan skip never changes the driver exit code
+    err = capsys.readouterr().err
+    assert err.count("sha-verify scan skipped") == 1  # ONE loud WARNING
+    assert "UnicodeDecodeError" in err
+    filed = [r for r in ledger_rows(d) if r["outcome"] == "filed"]
+    assert len(filed) == 1  # the filing itself proceeded
+    assert "sha_warnings" not in filed[0]  # skipped scan -> no ledger key
+    assert body_path.read_bytes() == raw  # no annotation; body byte-untouched
