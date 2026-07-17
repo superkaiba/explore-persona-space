@@ -3523,8 +3523,8 @@
     "1452": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1452",
-      "status": "reviewing",
+      "path": "tasks/completed/1452",
+      "status": "completed",
       "title": "daily-fix: flag hardcoded cross-issue upload prefixes"
     },
     "1453": {
