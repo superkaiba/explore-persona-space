@@ -3411,8 +3411,8 @@
     "1438": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1438",
-      "status": "proposed",
+      "path": "tasks/planning/1438",
+      "status": "planning",
       "title": "daily-fix: codex-code-reviewer Step 0.9 + tag parity"
     },
     "1439": {
