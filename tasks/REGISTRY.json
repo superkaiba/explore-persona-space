@@ -3558,8 +3558,8 @@
     "1457": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/1457",
-      "status": "approved",
+      "path": "tasks/running/1457",
+      "status": "running",
       "title": "daily-fix: WARN on device-vs-filesystem size mismatch"
     },
     "1458": {
