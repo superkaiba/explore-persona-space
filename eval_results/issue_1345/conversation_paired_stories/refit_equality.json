@@ -1,0 +1,40 @@
+{
+  "metadata": {
+    "git_commit": "f0fc3c1a11b16340420b740be12e977ff56fae9b",
+    "timestamp": "2026-07-17T02:42:26Z",
+    "seed": 0,
+    "n": 4,
+    "script": "scripts/issue1345_fit_cells.py",
+    "pinned_parent_revision": "7159e5804d"
+  },
+  "tolerance": 0.001,
+  "reference_dir": "eval_results/issue_1345",
+  "mode": "binding",
+  "results": {
+    "R_base_r1_prefix": {
+      "refit_l19_r2": 0.1315594503714801,
+      "parent_l19_r2": 0.13155945037148054,
+      "abs_dev": 4.440892098500626e-16,
+      "pass": true
+    },
+    "R_base_r1_context": {
+      "refit_l19_r2": 0.5416017955480217,
+      "parent_l19_r2": 0.5416017955480218,
+      "abs_dev": 1.1102230246251565e-16,
+      "pass": true
+    },
+    "R_base_r2_prefix": {
+      "refit_l19_r2": 0.12968112795228914,
+      "parent_l19_r2": 0.1296811279522676,
+      "abs_dev": 2.1538326677728037e-14,
+      "pass": true
+    },
+    "R_base_r2_context": {
+      "refit_l19_r2": 0.5782882733523877,
+      "parent_l19_r2": 0.5782882733523877,
+      "abs_dev": 0.0,
+      "pass": true
+    }
+  },
+  "pass": true
+}
