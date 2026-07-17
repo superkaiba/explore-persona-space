@@ -3551,8 +3551,8 @@
     "1456": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1456",
-      "status": "proposed",
+      "path": "tasks/planning/1456",
+      "status": "planning",
       "title": "daily-fix: pre-push lint reads ratchet from origin/main"
     },
     "1457": {
