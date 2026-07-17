@@ -3691,8 +3691,8 @@
     "1474": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1474",
-      "status": "proposed",
+      "path": "tasks/planning/1474",
+      "status": "planning",
       "title": "workflow-fix: PreToolUse guard for /tmp deletion sweeps (tmux sockets)"
     },
     "1475": {
