@@ -567,8 +567,8 @@
       "goal": "Determine whether the depth-increasing own-answer advantage in the context-to-answer-activation map (0.009 at layer 14 to 0.035 at layer 26) and its resistance to 16-token prefix closure at layer 26 are carried by the next-token-identity component of answer activations, by decomposing each per-position target into its projection onto the realized next token's unembedding (logit-lens) direction and the orthogonal complement, and re-reading the own-vs-external gap and closure statistics per component at layers 14/20/23/26 on the frozen Qwen-2.5-7B-Instruct LMSYS pool.",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/proposed/1072",
-      "status": "proposed",
+      "path": "tasks/planning/1072",
+      "status": "planning",
       "title": "Is the late-band own-answer advantage carried by next-token-identity information? Component decomposition of the gap and its closure"
     },
     "1073": {
