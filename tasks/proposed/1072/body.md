@@ -14,6 +14,9 @@ goal: Determine whether the depth-increasing own-answer advantage in the context
   token's unembedding (logit-lens) direction and the orthogonal complement, and re-reading
   the own-vs-external gap and closure statistics per component at layers 14/20/23/26
   on the frozen Qwen-2.5-7B-Instruct LMSYS pool.
+relates_to:
+- spec-context-as-vector
+- identity-contextual-vs-base
 ---
 ## Goal
 
