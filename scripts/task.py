@@ -132,15 +132,41 @@ def _safe_echo(text: str, *, context: str) -> None:
 
 
 _FIELD_LED_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_-]*[:=]")
+_VERSION_STAMP_RE = re.compile(r"^v\d+\.\s+")
+
+
+def _stripped_note_core(note: str) -> tuple[str, bool]:
+    """Note HEAD after the same per-segment decoration strip
+    task_workflow.parse_followup_note_field applies: the leading
+    whitespace/bullet/bold mix, then a lowercase `v<k>. ` version stamp
+    (#1382). Returns (core, stamped); `stamped` records whether a stamp
+    was stripped so the poster-side stamp advisory can key on it."""
+    core = re.sub(r"^[\s\-*]+", "", note)
+    stamp = _VERSION_STAMP_RE.match(core)
+    if stamp:
+        return core[stamp.end() :], True
+    return core, False
 
 
 def _looks_field_led(note: str) -> bool:
-    """True when the note HEAD is a `field:` / `field=` line-core after
-    stripping the same leading whitespace/bullet/bold mix
-    task_workflow.parse_followup_note_field strips per segment. Head-only
-    by design (false-positive-averse; see #1178 plan §4 D2)."""
-    core = re.sub(r"^[\s\-*]+", "", note)
+    """True when the note HEAD is a `field:` / `field=` line-core after the
+    parse-side decoration strip — whitespace/bullet/bold, then the #1382
+    `v<k>. ` version stamp (stamp tolerance added with #1440, restoring the
+    documented parity with parse_followup_note_field). Head-only by design
+    (false-positive-averse; see #1178 plan §4 D2)."""
+    core, _ = _stripped_note_core(note)
     return bool(_FIELD_LED_RE.match(core))
+
+
+def _looks_stamped_field_led(note: str) -> bool:
+    """True when the note HEAD carries a `v<k>. ` version stamp followed by
+    field-led content — the #1092 run-note shape whose read-side absorption
+    is the #1382 parser tolerance. BOTH conditions required
+    (false-positive-averse: a prose note that happens to start "v2. " never
+    warns — the parser tolerance likewise only acts when a field anchor
+    binds after the strip)."""
+    core, stamped = _stripped_note_core(note)
+    return stamped and bool(_FIELD_LED_RE.match(core))
 
 
 def _safe_print(*args: object, context: str = "task.py", **kwargs: object) -> None:
@@ -617,6 +643,29 @@ def cmd_post_event(args: argparse.Namespace) -> None:
                 "(#1120). Did you mean $'...' shell quoting, or --file for a "
                 "multi-line body? Do NOT re-post this marker — it was posted "
                 "successfully; fix the quoting on your NEXT marker instead.",
+                file=sys.stderr,
+            )
+    if args.note is not None and _looks_stamped_field_led(note):
+        # Poster-side twin of the #1382 parse-side version-stamp tolerance
+        # (task_workflow.parse_followup_note_field): the note head echoes
+        # the marker's `v<k>` grammar as a decorative `v<k>. ` stamp before
+        # field-led content (the #1092 run-note shape). Read-side parsers
+        # strip it silently, so nothing ever corrected the emitter — this
+        # WARN does. Advisory only — the marker already posted; guarded
+        # like the #1120 WARN above (#537 rc-contract class; a closed
+        # stderr raises ValueError, not only OSError). Independent `if`,
+        # not `elif`: the stamp + literal-\n shapes are orthogonal and a
+        # note carrying both gets both advisories.
+        with contextlib.suppress(OSError, ValueError):
+            print(
+                f"WARNING: task.py post-marker {args.marker}: --note head "
+                "starts with a 'v<k>. ' version stamp before field-led "
+                "content. The marker version is recorded from --version on "
+                "the event row — do not echo it into the note head (field "
+                "parsers strip the stamp, #1382, so THIS note still "
+                "parses). Do NOT re-post this marker — it was posted "
+                "successfully; drop the stamp from your NEXT marker's note "
+                "instead.",
                 file=sys.stderr,
             )
     _safe_echo(
