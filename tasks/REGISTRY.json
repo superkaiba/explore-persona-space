@@ -3495,8 +3495,8 @@
     "1449": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1449",
-      "status": "reviewing",
+      "path": "tasks/completed/1449",
+      "status": "completed",
       "title": "daily-fix: plan-glob vs uploader allow-pattern parity check"
     },
     "145": {
