@@ -4,7 +4,7 @@ title: Under a matched recipe the assistant-vs-fiction context→answer map gap 
 kind: experiment
 tags: []
 created_at: '2026-07-15T08:22:07Z'
-has_clean_result: false
+has_clean_result: true
 parent_id: 1310
 origin_prompt: Run an issue to run ablations to figure out why the mapping exists
   for the assistant without chat template but doesn't for these story characters
