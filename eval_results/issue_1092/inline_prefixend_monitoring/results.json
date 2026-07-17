@@ -1,0 +1,1422 @@
+{
+ "read": "#1092 prefix-end vs averaged-context trait MONITORING (inline free-analysis)",
+ "generated_utc": "2026-07-17T23:37:56.427441+00:00",
+ "git_commit": "c4217d80715e817597dd7ca58a50227f195e3806",
+ "provenance": {
+  "hf_repo": "superkaiba1/explore-persona-space-data",
+  "hf_revision": "b7dbd38cd08a2827860cf5fbe19c2384e2da7dec",
+  "hf_prefix": "issue1092_realistic_crossing",
+  "states": "analysis_tensors/summaries/<cell>/{context_end,prefix_end}_L<NN>.npy (fp16, row-aligned to corpus/manifest.jsonl)",
+  "judge_scores": "p5_judge/scores_shard_*.jsonl (claude-sonnet-4-5-20250929, 5 draws, temp 1.0, graded 0-100, mean-aggregated)",
+  "substrate": "strata dense_core+battery (149 disjoint prefixes x 48 shared core queries); group=prefix_id",
+  "readout": "fit_h.ridge_fit_predict (GCV dual-ridge, ambient 3584-dim), group-level per-prefix state, grouped 5-fold held out over prefixes, target=per-prefix mean judge score; identical construction for context_end and prefix_end; per-row read = same monitor applied per row",
+  "traits_run": [
+   "sycophancy",
+   "hallucination"
+  ],
+  "evil_excluded": "0 judged positives on cell_inst_own -> ineligible"
+ },
+ "design": {
+  "n_folds": 5,
+  "n_boot": 2000,
+  "seed": 0,
+  "n_avg_seeds": 25,
+  "layers": [
+   14,
+   18,
+   19
+  ],
+  "headline_layer": 14
+ },
+ "cells": {
+  "cell_inst_own": {
+   "14": [
+    {
+     "cell": "cell_inst_own",
+     "trait": "sycophancy",
+     "layer": 14,
+     "n_rows": 7152,
+     "n_prefixes": 149,
+     "avg_queries_per_prefix": 48.0,
+     "prefix_end_within_prefix_dimstd": 0.0,
+     "judge_score": {
+      "mean": 9.34549077181208,
+      "std": 18.482783599343797
+     },
+     "target_split_half_r_aligned": 0.5873741676517025,
+     "target_reliability_per_prefix_mean": 0.7400576116475931,
+     "monitoring_r_ceiling_from_reliability": 0.8602660121425193,
+     "reads": {
+      "per_row_context": {
+       "r": 0.21402893470335152,
+       "ci95": [
+        0.19463475344688927,
+        0.23422501407930701
+       ],
+       "grain": "row"
+      },
+      "averaged_context": {
+       "r": 0.7741656872855981,
+       "ci95": [
+        0.7197105482852546,
+        0.8289186938461517
+       ],
+       "grain": "prefix"
+      },
+      "prefix_end": {
+       "r": 0.7592700278999972,
+       "ci95": [
+        0.7007159135913165,
+        0.8168144609164475
+       ],
+       "grain": "prefix"
+      }
+     },
+     "disjoint_half_reads": {
+      "averaged_context": 0.6857754400336316,
+      "prefix_end": 0.6735539842086375,
+      "paired_diff_avgctx_minus_prefixend": 0.01222145582499401,
+      "note": "read on query-half A, target per-prefix mean on disjoint query-half B (removes shared per-query realization; mean over 20 aligned splits x 2 dirs)"
+     },
+     "paired_diff_avgctx_minus_prefixend": {
+      "point": 0.01489565938560089,
+      "ci95": [
+       -0.02612550854035561,
+       0.052249539483617546
+      ],
+      "frac_boot_positive": 0.7585
+     },
+     "averaging_curve_context": [
+      {
+       "N": 1,
+       "r_mean": 0.4759318974943386,
+       "r_sd": 0.05454826255908158
+      },
+      {
+       "N": 2,
+       "r_mean": 0.583339046891066,
+       "r_sd": 0.038664148194497
+      },
+      {
+       "N": 3,
+       "r_mean": 0.634553910025556,
+       "r_sd": 0.033409576415595735
+      },
+      {
+       "N": 4,
+       "r_mean": 0.6571535507622599,
+       "r_sd": 0.029177531720599333
+      },
+      {
+       "N": 6,
+       "r_mean": 0.7044700093051991,
+       "r_sd": 0.017429933572825095
+      },
+      {
+       "N": 8,
+       "r_mean": 0.7148868979956898,
+       "r_sd": 0.018465754126928295
+      },
+      {
+       "N": 12,
+       "r_mean": 0.7394625451262249,
+       "r_sd": 0.014678982970484816
+      },
+      {
+       "N": 16,
+       "r_mean": 0.7447397446424813,
+       "r_sd": 0.009915095521895338
+      },
+      {
+       "N": 24,
+       "r_mean": 0.7625605044115795,
+       "r_sd": 0.010597388994436963
+      },
+      {
+       "N": 32,
+       "r_mean": 0.770099428970154,
+       "r_sd": 0.006079941302067475
+      },
+      {
+       "N": 48,
+       "r_mean": 0.774165687285598,
+       "r_sd": 0.0
+      }
+     ],
+     "prefix_end_flat_reference_r": 0.7592700278999972
+    },
+    {
+     "cell": "cell_inst_own",
+     "trait": "hallucination",
+     "layer": 14,
+     "n_rows": 7152,
+     "n_prefixes": 149,
+     "avg_queries_per_prefix": 48.0,
+     "prefix_end_within_prefix_dimstd": 0.0,
+     "judge_score": {
+      "mean": 27.238364560029826,
+      "std": 35.6323292549024
+     },
+     "target_split_half_r_aligned": 0.7122781603963311,
+     "target_reliability_per_prefix_mean": 0.8319654795240327,
+     "monitoring_r_ceiling_from_reliability": 0.9121214170953518,
+     "reads": {
+      "per_row_context": {
+       "r": 0.4244482372315097,
+       "ci95": [
+        0.40857630384935556,
+        0.4406013609831618
+       ],
+       "grain": "row"
+      },
+      "averaged_context": {
+       "r": 0.8866189910617008,
+       "ci95": [
+        0.8516710876293065,
+        0.9194090087903287
+       ],
+       "grain": "prefix"
+      },
+      "prefix_end": {
+       "r": 0.8878730633333515,
+       "ci95": [
+        0.8489871767018442,
+        0.9215015089321126
+       ],
+       "grain": "prefix"
+      }
+     },
+     "disjoint_half_reads": {
+      "averaged_context": 0.8156576622880852,
+      "prefix_end": 0.8203071568933549,
+      "paired_diff_avgctx_minus_prefixend": -0.004649494605269644,
+      "note": "read on query-half A, target per-prefix mean on disjoint query-half B (removes shared per-query realization; mean over 20 aligned splits x 2 dirs)"
+     },
+     "paired_diff_avgctx_minus_prefixend": {
+      "point": -0.0012540722716506414,
+      "ci95": [
+       -0.03572924769819856,
+       0.0311408265115424
+      ],
+      "frac_boot_positive": 0.4605
+     },
+     "averaging_curve_context": [
+      {
+       "N": 1,
+       "r_mean": 0.5767831569116053,
+       "r_sd": 0.05708509355401354
+      },
+      {
+       "N": 2,
+       "r_mean": 0.6920442064358189,
+       "r_sd": 0.038301784177691645
+      },
+      {
+       "N": 3,
+       "r_mean": 0.7436824909437307,
+       "r_sd": 0.024515654850865563
+      },
+      {
+       "N": 4,
+       "r_mean": 0.771774947842478,
+       "r_sd": 0.026016874816303038
+      },
+      {
+       "N": 6,
+       "r_mean": 0.8091417773058082,
+       "r_sd": 0.022516225926547374
+      },
+      {
+       "N": 8,
+       "r_mean": 0.8278235329618551,
+       "r_sd": 0.009743625499962577
+      },
+      {
+       "N": 12,
+       "r_mean": 0.8475212176226604,
+       "r_sd": 0.010159661634667356
+      },
+      {
+       "N": 16,
+       "r_mean": 0.8589313271392471,
+       "r_sd": 0.007472828716665882
+      },
+      {
+       "N": 24,
+       "r_mean": 0.874583699109031,
+       "r_sd": 0.005848830266377999
+      },
+      {
+       "N": 32,
+       "r_mean": 0.8793815369577759,
+       "r_sd": 0.0054532878545027735
+      },
+      {
+       "N": 48,
+       "r_mean": 0.8866189910617004,
+       "r_sd": 1.1102230246251565e-16
+      }
+     ],
+     "prefix_end_flat_reference_r": 0.8878730633333515
+    }
+   ],
+   "18": [
+    {
+     "cell": "cell_inst_own",
+     "trait": "sycophancy",
+     "layer": 18,
+     "n_rows": 7152,
+     "n_prefixes": 149,
+     "avg_queries_per_prefix": 48.0,
+     "prefix_end_within_prefix_dimstd": 0.0,
+     "judge_score": {
+      "mean": 9.34549077181208,
+      "std": 18.482783599343797
+     },
+     "target_split_half_r_aligned": 0.5873741676517025,
+     "target_reliability_per_prefix_mean": 0.7400576116475931,
+     "monitoring_r_ceiling_from_reliability": 0.8602660121425193,
+     "reads": {
+      "per_row_context": {
+       "r": 0.20851108001635277,
+       "ci95": [
+        0.18998727285758432,
+        0.22668855816214908
+       ],
+       "grain": "row"
+      },
+      "averaged_context": {
+       "r": 0.796352196467205,
+       "ci95": [
+        0.7418546264462542,
+        0.8493168593456725
+       ],
+       "grain": "prefix"
+      },
+      "prefix_end": {
+       "r": 0.7716147118841746,
+       "ci95": [
+        0.7121906647503523,
+        0.8289111940235843
+       ],
+       "grain": "prefix"
+      }
+     },
+     "disjoint_half_reads": {
+      "averaged_context": 0.6985242300400621,
+      "prefix_end": 0.6846495776146366,
+      "paired_diff_avgctx_minus_prefixend": 0.013874652425425515,
+      "note": "read on query-half A, target per-prefix mean on disjoint query-half B (removes shared per-query realization; mean over 20 aligned splits x 2 dirs)"
+     },
+     "paired_diff_avgctx_minus_prefixend": {
+      "point": 0.024737484583030378,
+      "ci95": [
+       -0.024160332030700803,
+       0.07595409422910698
+      ],
+      "frac_boot_positive": 0.8265
+     },
+     "averaging_curve_context": [
+      {
+       "N": 1,
+       "r_mean": 0.3787742636733289,
+       "r_sd": 0.059581869075860015
+      },
+      {
+       "N": 2,
+       "r_mean": 0.5011530105522646,
+       "r_sd": 0.05015111487167498
+      },
+      {
+       "N": 3,
+       "r_mean": 0.5592531004058463,
+       "r_sd": 0.03958822114382528
+      },
+      {
+       "N": 4,
+       "r_mean": 0.6013626321976571,
+       "r_sd": 0.033464421881456166
+      },
+      {
+       "N": 6,
+       "r_mean": 0.665294927268565,
+       "r_sd": 0.026980582233156115
+      },
+      {
+       "N": 8,
+       "r_mean": 0.6918138825268878,
+       "r_sd": 0.01852263369630577
+      },
+      {
+       "N": 12,
+       "r_mean": 0.728152282004647,
+       "r_sd": 0.01940989412164878
+      },
+      {
+       "N": 16,
+       "r_mean": 0.7465148154881277,
+       "r_sd": 0.01845225263194865
+      },
+      {
+       "N": 24,
+       "r_mean": 0.775364710310429,
+       "r_sd": 0.015541296091858368
+      },
+      {
+       "N": 32,
+       "r_mean": 0.7856428958983872,
+       "r_sd": 0.0063072979111813
+      },
+      {
+       "N": 48,
+       "r_mean": 0.796352196467205,
+       "r_sd": 0.0
+      }
+     ],
+     "prefix_end_flat_reference_r": 0.7716147118841746
+    },
+    {
+     "cell": "cell_inst_own",
+     "trait": "hallucination",
+     "layer": 18,
+     "n_rows": 7152,
+     "n_prefixes": 149,
+     "avg_queries_per_prefix": 48.0,
+     "prefix_end_within_prefix_dimstd": 0.0,
+     "judge_score": {
+      "mean": 27.238364560029826,
+      "std": 35.6323292549024
+     },
+     "target_split_half_r_aligned": 0.7122781603963311,
+     "target_reliability_per_prefix_mean": 0.8319654795240327,
+     "monitoring_r_ceiling_from_reliability": 0.9121214170953518,
+     "reads": {
+      "per_row_context": {
+       "r": 0.33438222638697673,
+       "ci95": [
+        0.31813635599275425,
+        0.3512357954262789
+       ],
+       "grain": "row"
+      },
+      "averaged_context": {
+       "r": 0.8947568634344337,
+       "ci95": [
+        0.8596172166811155,
+        0.9257957550814448
+       ],
+       "grain": "prefix"
+      },
+      "prefix_end": {
+       "r": 0.8706050638500642,
+       "ci95": [
+        0.8168844528096199,
+        0.9170363914818828
+       ],
+       "grain": "prefix"
+      }
+     },
+     "disjoint_half_reads": {
+      "averaged_context": 0.8166988617481188,
+      "prefix_end": 0.804114793452807,
+      "paired_diff_avgctx_minus_prefixend": 0.012584068295311779,
+      "note": "read on query-half A, target per-prefix mean on disjoint query-half B (removes shared per-query realization; mean over 20 aligned splits x 2 dirs)"
+     },
+     "paired_diff_avgctx_minus_prefixend": {
+      "point": 0.024151799584369527,
+      "ci95": [
+       -0.012988646388895533,
+       0.06514085225216185
+      ],
+      "frac_boot_positive": 0.8855
+     },
+     "averaging_curve_context": [
+      {
+       "N": 1,
+       "r_mean": 0.4946010837957888,
+       "r_sd": 0.04869454717789724
+      },
+      {
+       "N": 2,
+       "r_mean": 0.6159285972786861,
+       "r_sd": 0.03777863270884111
+      },
+      {
+       "N": 3,
+       "r_mean": 0.6830660418360196,
+       "r_sd": 0.023411826831926635
+      },
+      {
+       "N": 4,
+       "r_mean": 0.7333186537026538,
+       "r_sd": 0.03063531215033118
+      },
+      {
+       "N": 6,
+       "r_mean": 0.7731993708331146,
+       "r_sd": 0.02692015502854856
+      },
+      {
+       "N": 8,
+       "r_mean": 0.8009135727720139,
+       "r_sd": 0.015253275691091474
+      },
+      {
+       "N": 12,
+       "r_mean": 0.8328420982466873,
+       "r_sd": 0.01485614081503949
+      },
+      {
+       "N": 16,
+       "r_mean": 0.8531177278719707,
+       "r_sd": 0.007866894824615245
+      },
+      {
+       "N": 24,
+       "r_mean": 0.874392738961165,
+       "r_sd": 0.0070632152520347605
+      },
+      {
+       "N": 32,
+       "r_mean": 0.8838158753542806,
+       "r_sd": 0.005588009655893258
+      },
+      {
+       "N": 48,
+       "r_mean": 0.8947568634344337,
+       "r_sd": 0.0
+      }
+     ],
+     "prefix_end_flat_reference_r": 0.8706050638500642
+    }
+   ],
+   "19": [
+    {
+     "cell": "cell_inst_own",
+     "trait": "sycophancy",
+     "layer": 19,
+     "n_rows": 7152,
+     "n_prefixes": 149,
+     "avg_queries_per_prefix": 48.0,
+     "prefix_end_within_prefix_dimstd": 0.0,
+     "judge_score": {
+      "mean": 9.34549077181208,
+      "std": 18.482783599343797
+     },
+     "target_split_half_r_aligned": 0.5873741676517025,
+     "target_reliability_per_prefix_mean": 0.7400576116475931,
+     "monitoring_r_ceiling_from_reliability": 0.8602660121425193,
+     "reads": {
+      "per_row_context": {
+       "r": 0.21294319489183786,
+       "ci95": [
+        0.19714913697022826,
+        0.22890947972387402
+       ],
+       "grain": "row"
+      },
+      "averaged_context": {
+       "r": 0.8042043919158788,
+       "ci95": [
+        0.749940383787987,
+        0.8567941791567066
+       ],
+       "grain": "prefix"
+      },
+      "prefix_end": {
+       "r": 0.7780179182288552,
+       "ci95": [
+        0.7293381468280685,
+        0.8283067375862553
+       ],
+       "grain": "prefix"
+      }
+     },
+     "disjoint_half_reads": {
+      "averaged_context": 0.7006204162020356,
+      "prefix_end": 0.6907793822481174,
+      "paired_diff_avgctx_minus_prefixend": 0.009841033953918221,
+      "note": "read on query-half A, target per-prefix mean on disjoint query-half B (removes shared per-query realization; mean over 20 aligned splits x 2 dirs)"
+     },
+     "paired_diff_avgctx_minus_prefixend": {
+      "point": 0.026186473687023537,
+      "ci95": [
+       -0.010382988594514605,
+       0.06402217276437785
+      ],
+      "frac_boot_positive": 0.903
+     },
+     "averaging_curve_context": [
+      {
+       "N": 1,
+       "r_mean": 0.3405800755788765,
+       "r_sd": 0.05248630493626261
+      },
+      {
+       "N": 2,
+       "r_mean": 0.45414154716181854,
+       "r_sd": 0.05768224140790944
+      },
+      {
+       "N": 3,
+       "r_mean": 0.5200357479712308,
+       "r_sd": 0.04274373830042262
+      },
+      {
+       "N": 4,
+       "r_mean": 0.562726317178742,
+       "r_sd": 0.03638142908693941
+      },
+      {
+       "N": 6,
+       "r_mean": 0.6276775188169358,
+       "r_sd": 0.03136945130975525
+      },
+      {
+       "N": 8,
+       "r_mean": 0.6629695929827275,
+       "r_sd": 0.017264449728493447
+      },
+      {
+       "N": 12,
+       "r_mean": 0.7112691145272854,
+       "r_sd": 0.023103343534848338
+      },
+      {
+       "N": 16,
+       "r_mean": 0.7386982333225818,
+       "r_sd": 0.022225326618446756
+      },
+      {
+       "N": 24,
+       "r_mean": 0.7753574658600604,
+       "r_sd": 0.017208777817983866
+      },
+      {
+       "N": 32,
+       "r_mean": 0.7884793811689521,
+       "r_sd": 0.007205066267879571
+      },
+      {
+       "N": 48,
+       "r_mean": 0.8042043919158786,
+       "r_sd": 1.1102230246251565e-16
+      }
+     ],
+     "prefix_end_flat_reference_r": 0.7780179182288552
+    },
+    {
+     "cell": "cell_inst_own",
+     "trait": "hallucination",
+     "layer": 19,
+     "n_rows": 7152,
+     "n_prefixes": 149,
+     "avg_queries_per_prefix": 48.0,
+     "prefix_end_within_prefix_dimstd": 0.0,
+     "judge_score": {
+      "mean": 27.238364560029826,
+      "std": 35.6323292549024
+     },
+     "target_split_half_r_aligned": 0.7122781603963311,
+     "target_reliability_per_prefix_mean": 0.8319654795240327,
+     "monitoring_r_ceiling_from_reliability": 0.9121214170953518,
+     "reads": {
+      "per_row_context": {
+       "r": 0.4033482276279162,
+       "ci95": [
+        0.3876072855868277,
+        0.41869748707334586
+       ],
+       "grain": "row"
+      },
+      "averaged_context": {
+       "r": 0.9006988718175795,
+       "ci95": [
+        0.8683238313179406,
+        0.9291838137026293
+       ],
+       "grain": "prefix"
+      },
+      "prefix_end": {
+       "r": 0.8865534123926668,
+       "ci95": [
+        0.84396593362142,
+        0.9240659380403752
+       ],
+       "grain": "prefix"
+      }
+     },
+     "disjoint_half_reads": {
+      "averaged_context": 0.81916780183921,
+      "prefix_end": 0.8187223191320363,
+      "paired_diff_avgctx_minus_prefixend": 0.00044548270717370553,
+      "note": "read on query-half A, target per-prefix mean on disjoint query-half B (removes shared per-query realization; mean over 20 aligned splits x 2 dirs)"
+     },
+     "paired_diff_avgctx_minus_prefixend": {
+      "point": 0.014145459424912632,
+      "ci95": [
+       -0.017742676909192668,
+       0.04790852890396064
+      ],
+      "frac_boot_positive": 0.807
+     },
+     "averaging_curve_context": [
+      {
+       "N": 1,
+       "r_mean": 0.42896256478171474,
+       "r_sd": 0.054817268323867685
+      },
+      {
+       "N": 2,
+       "r_mean": 0.5517600326137398,
+       "r_sd": 0.04825153468225157
+      },
+      {
+       "N": 3,
+       "r_mean": 0.6266226403268709,
+       "r_sd": 0.03712611532630052
+      },
+      {
+       "N": 4,
+       "r_mean": 0.678051167090413,
+       "r_sd": 0.02770571752207761
+      },
+      {
+       "N": 6,
+       "r_mean": 0.7279482848402377,
+       "r_sd": 0.03354332969975109
+      },
+      {
+       "N": 8,
+       "r_mean": 0.7648852645133537,
+       "r_sd": 0.020168062065435324
+      },
+      {
+       "N": 12,
+       "r_mean": 0.8119008680956749,
+       "r_sd": 0.022731776507562928
+      },
+      {
+       "N": 16,
+       "r_mean": 0.8421157848187403,
+       "r_sd": 0.01019830568276686
+      },
+      {
+       "N": 24,
+       "r_mean": 0.8708604073456155,
+       "r_sd": 0.008106782130851795
+      },
+      {
+       "N": 32,
+       "r_mean": 0.8842440566890732,
+       "r_sd": 0.0069239682613898524
+      },
+      {
+       "N": 48,
+       "r_mean": 0.9006988718175802,
+       "r_sd": 1.1102230246251565e-16
+      }
+     ],
+     "prefix_end_flat_reference_r": 0.8865534123926668
+    }
+   ]
+  },
+  "cell_pre_own": {
+   "14": [
+    {
+     "cell": "cell_pre_own",
+     "trait": "sycophancy",
+     "layer": 14,
+     "n_rows": 2400,
+     "n_prefixes": 50,
+     "avg_queries_per_prefix": 48.0,
+     "prefix_end_within_prefix_dimstd": 0.0,
+     "judge_score": {
+      "mean": 9.079249999999998,
+      "std": 19.173016701539172
+     },
+     "target_split_half_r_aligned": 0.04033178927366487,
+     "target_reliability_per_prefix_mean": 0.07753639692549158,
+     "monitoring_r_ceiling_from_reliability": 0.2784535812761107,
+     "reads": {
+      "per_row_context": {
+       "r": 0.002916136043773133,
+       "ci95": [
+        -0.027891040511689186,
+        0.030995426725061167
+       ],
+       "grain": "row"
+      },
+      "averaged_context": {
+       "r": 0.1342869105385693,
+       "ci95": [
+        -0.18134320881044041,
+        0.42590479387432767
+       ],
+       "grain": "prefix"
+      },
+      "prefix_end": {
+       "r": 0.013330103940736799,
+       "ci95": [
+        -0.10051363273527042,
+        0.378063932978739
+       ],
+       "grain": "prefix"
+      }
+     },
+     "disjoint_half_reads": {
+      "averaged_context": 0.10340729634241834,
+      "prefix_end": 0.011014562137412368,
+      "paired_diff_avgctx_minus_prefixend": 0.09239273420500597,
+      "note": "read on query-half A, target per-prefix mean on disjoint query-half B (removes shared per-query realization; mean over 20 aligned splits x 2 dirs)"
+     },
+     "paired_diff_avgctx_minus_prefixend": {
+      "point": 0.1209568065978325,
+      "ci95": [
+       -0.25228470928276786,
+       0.38290275557428743
+      ],
+      "frac_boot_positive": 0.6555
+     },
+     "averaging_curve_context": [
+      {
+       "N": 1,
+       "r_mean": 0.08285255319151737,
+       "r_sd": 0.11025460875969419
+      },
+      {
+       "N": 2,
+       "r_mean": 0.09692671987940212,
+       "r_sd": 0.08338651937482378
+      },
+      {
+       "N": 3,
+       "r_mean": 0.07153484513724129,
+       "r_sd": 0.060773296825794125
+      },
+      {
+       "N": 4,
+       "r_mean": 0.11260179076921542,
+       "r_sd": 0.08617937789026812
+      },
+      {
+       "N": 6,
+       "r_mean": 0.10725616084319237,
+       "r_sd": 0.07744080387176185
+      },
+      {
+       "N": 8,
+       "r_mean": 0.12154740174098627,
+       "r_sd": 0.0583157828536327
+      },
+      {
+       "N": 12,
+       "r_mean": 0.12018163967904893,
+       "r_sd": 0.05923608151239598
+      },
+      {
+       "N": 16,
+       "r_mean": 0.11151208977609754,
+       "r_sd": 0.03765424113865805
+      },
+      {
+       "N": 24,
+       "r_mean": 0.14288433781013132,
+       "r_sd": 0.029059090010314093
+      },
+      {
+       "N": 32,
+       "r_mean": 0.13384907559231826,
+       "r_sd": 0.01995869619962122
+      },
+      {
+       "N": 48,
+       "r_mean": 0.13428691053856928,
+       "r_sd": 0.0
+      }
+     ],
+     "prefix_end_flat_reference_r": 0.013330103940736799
+    },
+    {
+     "cell": "cell_pre_own",
+     "trait": "hallucination",
+     "layer": 14,
+     "n_rows": 2399,
+     "n_prefixes": 50,
+     "avg_queries_per_prefix": 47.98,
+     "prefix_end_within_prefix_dimstd": 0.0,
+     "judge_score": {
+      "mean": 21.04554675559261,
+      "std": 32.52311335906874
+     },
+     "target_split_half_r_aligned": 0.33607400581552216,
+     "target_reliability_per_prefix_mean": 0.5030769318955306,
+     "monitoring_r_ceiling_from_reliability": 0.7092791635847838,
+     "reads": {
+      "per_row_context": {
+       "r": -0.022228035706196393,
+       "ci95": [
+        -0.06827279568823214,
+        0.020715405262038362
+       ],
+       "grain": "row"
+      },
+      "averaged_context": {
+       "r": 0.6212681690724128,
+       "ci95": [
+        0.4363293176291301,
+        0.7663981975593748
+       ],
+       "grain": "prefix"
+      },
+      "prefix_end": {
+       "r": 0.05167986841460372,
+       "ci95": [
+        -0.00868667394641686,
+        0.581881426324831
+       ],
+       "grain": "prefix"
+      }
+     },
+     "disjoint_half_reads": {
+      "averaged_context": 0.5010699489915996,
+      "prefix_end": 0.04107153082850991,
+      "paired_diff_avgctx_minus_prefixend": 0.45999841816308973,
+      "note": "read on query-half A, target per-prefix mean on disjoint query-half B (removes shared per-query realization; mean over 20 aligned splits x 2 dirs)"
+     },
+     "paired_diff_avgctx_minus_prefixend": {
+      "point": 0.5695883006578091,
+      "ci95": [
+       0.018755375951453403,
+       0.7013098790641954
+      ],
+      "frac_boot_positive": 0.9805
+     },
+     "averaging_curve_context": [
+      {
+       "N": 1,
+       "r_mean": 0.3946466659228915,
+       "r_sd": 0.10374402290352154
+      },
+      {
+       "N": 2,
+       "r_mean": 0.48251490424403676,
+       "r_sd": 0.0817948887222987
+      },
+      {
+       "N": 3,
+       "r_mean": 0.504609898900711,
+       "r_sd": 0.06635007371527184
+      },
+      {
+       "N": 4,
+       "r_mean": 0.532109064065071,
+       "r_sd": 0.0698719807187786
+      },
+      {
+       "N": 6,
+       "r_mean": 0.5558035191943852,
+       "r_sd": 0.05913312296825362
+      },
+      {
+       "N": 8,
+       "r_mean": 0.5855600254136586,
+       "r_sd": 0.03033945820128227
+      },
+      {
+       "N": 12,
+       "r_mean": 0.583832620229022,
+       "r_sd": 0.03760666183667289
+      },
+      {
+       "N": 16,
+       "r_mean": 0.6005167887232059,
+       "r_sd": 0.02580676240416405
+      },
+      {
+       "N": 24,
+       "r_mean": 0.6193992715897647,
+       "r_sd": 0.019319842582308393
+      },
+      {
+       "N": 32,
+       "r_mean": 0.6166644751170407,
+       "r_sd": 0.011118179886491613
+      },
+      {
+       "N": 48,
+       "r_mean": 0.6212681690724131,
+       "r_sd": 0.0
+      }
+     ],
+     "prefix_end_flat_reference_r": 0.05167986841460372
+    }
+   ],
+   "18": [
+    {
+     "cell": "cell_pre_own",
+     "trait": "sycophancy",
+     "layer": 18,
+     "n_rows": 2400,
+     "n_prefixes": 50,
+     "avg_queries_per_prefix": 48.0,
+     "prefix_end_within_prefix_dimstd": 0.0,
+     "judge_score": {
+      "mean": 9.079249999999998,
+      "std": 19.173016701539172
+     },
+     "target_split_half_r_aligned": 0.04033178927366487,
+     "target_reliability_per_prefix_mean": 0.07753639692549158,
+     "monitoring_r_ceiling_from_reliability": 0.2784535812761107,
+     "reads": {
+      "per_row_context": {
+       "r": -0.0684491903436552,
+       "ci95": [
+        -0.10538063871155125,
+        -0.0335446149925781
+       ],
+       "grain": "row"
+      },
+      "averaged_context": {
+       "r": 0.007325122448595955,
+       "ci95": [
+        -0.2856977921752693,
+        0.28740214493975763
+       ],
+       "grain": "prefix"
+      },
+      "prefix_end": {
+       "r": -0.0047803444932740125,
+       "ci95": [
+        -0.14727511272966584,
+        0.2797780649239918
+       ],
+       "grain": "prefix"
+      }
+     },
+     "disjoint_half_reads": {
+      "averaged_context": 0.005838761065521011,
+      "prefix_end": -0.0017709506207906213,
+      "paired_diff_avgctx_minus_prefixend": 0.007609711686311632,
+      "note": "read on query-half A, target per-prefix mean on disjoint query-half B (removes shared per-query realization; mean over 20 aligned splits x 2 dirs)"
+     },
+     "paired_diff_avgctx_minus_prefixend": {
+      "point": 0.012105466941869968,
+      "ci95": [
+       -0.302616417102544,
+       0.2713151738347706
+      ],
+      "frac_boot_positive": 0.478
+     },
+     "averaging_curve_context": [
+      {
+       "N": 1,
+       "r_mean": 0.018279915185094885,
+       "r_sd": 0.1140867558799739
+      },
+      {
+       "N": 2,
+       "r_mean": 0.016269778476596254,
+       "r_sd": 0.09744982151838551
+      },
+      {
+       "N": 3,
+       "r_mean": -0.027974842202139808,
+       "r_sd": 0.07542238920217029
+      },
+      {
+       "N": 4,
+       "r_mean": -0.016897343590554333,
+       "r_sd": 0.08910830414313141
+      },
+      {
+       "N": 6,
+       "r_mean": -0.020556003346910837,
+       "r_sd": 0.08235052656312318
+      },
+      {
+       "N": 8,
+       "r_mean": 0.03474528478283312,
+       "r_sd": 0.06118790799401089
+      },
+      {
+       "N": 12,
+       "r_mean": 0.015095662356641426,
+       "r_sd": 0.06303370482908238
+      },
+      {
+       "N": 16,
+       "r_mean": -0.0017086379511391846,
+       "r_sd": 0.040720055020262484
+      },
+      {
+       "N": 24,
+       "r_mean": 0.020334698992598273,
+       "r_sd": 0.023962895909263912
+      },
+      {
+       "N": 32,
+       "r_mean": 0.0007124325749971444,
+       "r_sd": 0.024642888754313808
+      },
+      {
+       "N": 48,
+       "r_mean": 0.007325122448595777,
+       "r_sd": 8.673617379884035e-19
+      }
+     ],
+     "prefix_end_flat_reference_r": -0.0047803444932740125
+    },
+    {
+     "cell": "cell_pre_own",
+     "trait": "hallucination",
+     "layer": 18,
+     "n_rows": 2399,
+     "n_prefixes": 50,
+     "avg_queries_per_prefix": 47.98,
+     "prefix_end_within_prefix_dimstd": 0.0,
+     "judge_score": {
+      "mean": 21.04554675559261,
+      "std": 32.52311335906874
+     },
+     "target_split_half_r_aligned": 0.33607400581552216,
+     "target_reliability_per_prefix_mean": 0.5030769318955306,
+     "monitoring_r_ceiling_from_reliability": 0.7092791635847838,
+     "reads": {
+      "per_row_context": {
+       "r": -0.02677906309060945,
+       "ci95": [
+        -0.07531961325309224,
+        0.01728357094153694
+       ],
+       "grain": "row"
+      },
+      "averaged_context": {
+       "r": 0.5777529051465458,
+       "ci95": [
+        0.37332858788793266,
+        0.7396980346394101
+       ],
+       "grain": "prefix"
+      },
+      "prefix_end": {
+       "r": 0.45925041559520474,
+       "ci95": [
+        0.28561944942680323,
+        0.6402560072773597
+       ],
+       "grain": "prefix"
+      }
+     },
+     "disjoint_half_reads": {
+      "averaged_context": 0.4641925193356201,
+      "prefix_end": 0.3732791093226512,
+      "paired_diff_avgctx_minus_prefixend": 0.09091341001296893,
+      "note": "read on query-half A, target per-prefix mean on disjoint query-half B (removes shared per-query realization; mean over 20 aligned splits x 2 dirs)"
+     },
+     "paired_diff_avgctx_minus_prefixend": {
+      "point": 0.11850248955134102,
+      "ci95": [
+       -0.13307483496723047,
+       0.3415900517674051
+      ],
+      "frac_boot_positive": 0.818
+     },
+     "averaging_curve_context": [
+      {
+       "N": 1,
+       "r_mean": 0.29787252576352724,
+       "r_sd": 0.11978904641761949
+      },
+      {
+       "N": 2,
+       "r_mean": 0.4120464109851158,
+       "r_sd": 0.10280700882784766
+      },
+      {
+       "N": 3,
+       "r_mean": 0.4324289906494115,
+       "r_sd": 0.06769378694329041
+      },
+      {
+       "N": 4,
+       "r_mean": 0.46882298034572356,
+       "r_sd": 0.0844366717061439
+      },
+      {
+       "N": 6,
+       "r_mean": 0.49033632138488564,
+       "r_sd": 0.07318592481054594
+      },
+      {
+       "N": 8,
+       "r_mean": 0.542415633867876,
+       "r_sd": 0.03785202140542822
+      },
+      {
+       "N": 12,
+       "r_mean": 0.5335209583294156,
+       "r_sd": 0.03898785267146879
+      },
+      {
+       "N": 16,
+       "r_mean": 0.5503258669997222,
+       "r_sd": 0.034559025012441076
+      },
+      {
+       "N": 24,
+       "r_mean": 0.5779269323838598,
+       "r_sd": 0.023425287432698408
+      },
+      {
+       "N": 32,
+       "r_mean": 0.5705152593535989,
+       "r_sd": 0.01152300629942319
+      },
+      {
+       "N": 48,
+       "r_mean": 0.5777529051465459,
+       "r_sd": 0.0
+      }
+     ],
+     "prefix_end_flat_reference_r": 0.45925041559520474
+    }
+   ],
+   "19": [
+    {
+     "cell": "cell_pre_own",
+     "trait": "sycophancy",
+     "layer": 19,
+     "n_rows": 2400,
+     "n_prefixes": 50,
+     "avg_queries_per_prefix": 48.0,
+     "prefix_end_within_prefix_dimstd": 0.0,
+     "judge_score": {
+      "mean": 9.079249999999998,
+      "std": 19.173016701539172
+     },
+     "target_split_half_r_aligned": 0.04033178927366487,
+     "target_reliability_per_prefix_mean": 0.07753639692549158,
+     "monitoring_r_ceiling_from_reliability": 0.2784535812761107,
+     "reads": {
+      "per_row_context": {
+       "r": -0.05595520832306414,
+       "ci95": [
+        -0.09208149573318734,
+        -0.021535594992984543
+       ],
+       "grain": "row"
+      },
+      "averaged_context": {
+       "r": 0.09993071298857095,
+       "ci95": [
+        -0.1897159113616465,
+        0.3679310787955299
+       ],
+       "grain": "prefix"
+      },
+      "prefix_end": {
+       "r": -0.014550149393921812,
+       "ci95": [
+        -0.15891137725589666,
+        0.2128320981006132
+       ],
+       "grain": "prefix"
+      }
+     },
+     "disjoint_half_reads": {
+      "averaged_context": 0.06603599645492778,
+      "prefix_end": -0.008860284596801968,
+      "paired_diff_avgctx_minus_prefixend": 0.07489628105172974,
+      "note": "read on query-half A, target per-prefix mean on disjoint query-half B (removes shared per-query realization; mean over 20 aligned splits x 2 dirs)"
+     },
+     "paired_diff_avgctx_minus_prefixend": {
+      "point": 0.11448086238249276,
+      "ci95": [
+       -0.1482401207858563,
+       0.3564452977787117
+      ],
+      "frac_boot_positive": 0.7815
+     },
+     "averaging_curve_context": [
+      {
+       "N": 1,
+       "r_mean": 0.05633185504818146,
+       "r_sd": 0.12608485209628859
+      },
+      {
+       "N": 2,
+       "r_mean": 0.08215071645604403,
+       "r_sd": 0.06916340965511944
+      },
+      {
+       "N": 3,
+       "r_mean": 0.055814779935963045,
+       "r_sd": 0.06662005201377243
+      },
+      {
+       "N": 4,
+       "r_mean": 0.0664926166473019,
+       "r_sd": 0.08763636636636345
+      },
+      {
+       "N": 6,
+       "r_mean": 0.07172833141838185,
+       "r_sd": 0.06809726592795895
+      },
+      {
+       "N": 8,
+       "r_mean": 0.10739804997002719,
+       "r_sd": 0.05896309705233716
+      },
+      {
+       "N": 12,
+       "r_mean": 0.09990717474410793,
+       "r_sd": 0.0551273439500481
+      },
+      {
+       "N": 16,
+       "r_mean": 0.09081807901234303,
+       "r_sd": 0.04532874417518606
+      },
+      {
+       "N": 24,
+       "r_mean": 0.10318628351112821,
+       "r_sd": 0.025793744301461467
+      },
+      {
+       "N": 32,
+       "r_mean": 0.08997432155120172,
+       "r_sd": 0.020414899149661807
+      },
+      {
+       "N": 48,
+       "r_mean": 0.09993071298857097,
+       "r_sd": 0.0
+      }
+     ],
+     "prefix_end_flat_reference_r": -0.014550149393921812
+    },
+    {
+     "cell": "cell_pre_own",
+     "trait": "hallucination",
+     "layer": 19,
+     "n_rows": 2399,
+     "n_prefixes": 50,
+     "avg_queries_per_prefix": 47.98,
+     "prefix_end_within_prefix_dimstd": 0.0,
+     "judge_score": {
+      "mean": 21.04554675559261,
+      "std": 32.52311335906874
+     },
+     "target_split_half_r_aligned": 0.33607400581552216,
+     "target_reliability_per_prefix_mean": 0.5030769318955306,
+     "monitoring_r_ceiling_from_reliability": 0.7092791635847838,
+     "reads": {
+      "per_row_context": {
+       "r": -0.019602435176556108,
+       "ci95": [
+        -0.06739440426950111,
+        0.022646313136089686
+       ],
+       "grain": "row"
+      },
+      "averaged_context": {
+       "r": 0.6102849140562484,
+       "ci95": [
+        0.42404716676334664,
+        0.7520157147440057
+       ],
+       "grain": "prefix"
+      },
+      "prefix_end": {
+       "r": 0.30110642459436976,
+       "ci95": [
+        0.14051976968912022,
+        0.6394706215704455
+       ],
+       "grain": "prefix"
+      }
+     },
+     "disjoint_half_reads": {
+      "averaged_context": 0.48968141176329627,
+      "prefix_end": 0.24551021215728,
+      "paired_diff_avgctx_minus_prefixend": 0.24417119960601627,
+      "note": "read on query-half A, target per-prefix mean on disjoint query-half B (removes shared per-query realization; mean over 20 aligned splits x 2 dirs)"
+     },
+     "paired_diff_avgctx_minus_prefixend": {
+      "point": 0.30917848946187865,
+      "ci95": [
+       -0.05429056377526959,
+       0.5060585398221763
+      ],
+      "frac_boot_positive": 0.9435
+     },
+     "averaging_curve_context": [
+      {
+       "N": 1,
+       "r_mean": 0.30065899251682027,
+       "r_sd": 0.13506532452858488
+      },
+      {
+       "N": 2,
+       "r_mean": 0.453483982551957,
+       "r_sd": 0.09592053864154239
+      },
+      {
+       "N": 3,
+       "r_mean": 0.4677744440904996,
+       "r_sd": 0.0820308638421786
+      },
+      {
+       "N": 4,
+       "r_mean": 0.49275811487404775,
+       "r_sd": 0.08368758230983318
+      },
+      {
+       "N": 6,
+       "r_mean": 0.529073238186875,
+       "r_sd": 0.06917703581481245
+      },
+      {
+       "N": 8,
+       "r_mean": 0.5692568285655963,
+       "r_sd": 0.03340995930489168
+      },
+      {
+       "N": 12,
+       "r_mean": 0.567645658660007,
+       "r_sd": 0.03509992741482091
+      },
+      {
+       "N": 16,
+       "r_mean": 0.5826451883248989,
+       "r_sd": 0.031234361553245084
+      },
+      {
+       "N": 24,
+       "r_mean": 0.608287754968076,
+       "r_sd": 0.024666266201879315
+      },
+      {
+       "N": 32,
+       "r_mean": 0.6063162023536582,
+       "r_sd": 0.014447961944373821
+      },
+      {
+       "N": 48,
+       "r_mean": 0.6102849140562487,
+       "r_sd": 1.1102230246251565e-16
+      }
+     ],
+     "prefix_end_flat_reference_r": 0.30110642459436976
+    }
+   ]
+  }
+ },
+ "figures": {
+  "png": "/home/thomasjiralerspong/explore-persona-space/figures/issue_1092/prefixend_monitoring.png",
+  "pdf": "/home/thomasjiralerspong/explore-persona-space/figures/issue_1092/prefixend_monitoring.pdf",
+  "meta": "/home/thomasjiralerspong/explore-persona-space/figures/issue_1092/prefixend_monitoring.meta.json"
+ }
+}

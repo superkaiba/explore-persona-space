@@ -1,0 +1,322 @@
+{
+  "commit": "541201678e",
+  "created": "2026-07-17T23:39:46Z",
+  "figsize": [
+    12.5,
+    5.0
+  ],
+  "points": [
+    {
+      "x": -0.26,
+      "Monitoring correlation r (with judge score)": 0.21402893470335152,
+      "error": 0.019795130316208873,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.74,
+      "Monitoring correlation r (with judge score)": 0.4244482372315097,
+      "error": 0.016012528566903134,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "Sycophancy",
+      "Monitoring correlation r (with judge score)": 0.7741656872855981,
+      "error": 0.05460407278044854,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "Hallucination",
+      "Monitoring correlation r (with judge score)": 0.8866189910617008,
+      "error": 0.03386896058051109,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 0.26,
+      "Monitoring correlation r (with judge score)": 0.7592700278999972,
+      "error": 0.058049273662565515,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 1.26,
+      "Monitoring correlation r (with judge score)": 0.8878730633333515,
+      "error": 0.03625716611513419,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": -0.39,
+      "Monitoring correlation r (with judge score)": 0.8602660121425193,
+      "series": "reliability ceiling",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 0.39,
+      "Monitoring correlation r (with judge score)": 0.8602660121425193,
+      "series": "reliability ceiling",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Number of questions averaged per prefix (N)": 1.0,
+      "Monitoring correlation r": 0.4759318974943386,
+      "series": "Sycophancy \u2014 averaged context",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of questions averaged per prefix (N)": 2.0,
+      "Monitoring correlation r": 0.583339046891066,
+      "series": "Sycophancy \u2014 averaged context",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of questions averaged per prefix (N)": 3.0,
+      "Monitoring correlation r": 0.634553910025556,
+      "series": "Sycophancy \u2014 averaged context",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of questions averaged per prefix (N)": 4.0,
+      "Monitoring correlation r": 0.6571535507622599,
+      "series": "Sycophancy \u2014 averaged context",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of questions averaged per prefix (N)": 6.0,
+      "Monitoring correlation r": 0.7044700093051991,
+      "series": "Sycophancy \u2014 averaged context",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of questions averaged per prefix (N)": 8.0,
+      "Monitoring correlation r": 0.7148868979956898,
+      "series": "Sycophancy \u2014 averaged context",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of questions averaged per prefix (N)": 12.0,
+      "Monitoring correlation r": 0.7394625451262249,
+      "series": "Sycophancy \u2014 averaged context",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of questions averaged per prefix (N)": 16.0,
+      "Monitoring correlation r": 0.7447397446424813,
+      "series": "Sycophancy \u2014 averaged context",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of questions averaged per prefix (N)": 24.0,
+      "Monitoring correlation r": 0.7625605044115795,
+      "series": "Sycophancy \u2014 averaged context",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of questions averaged per prefix (N)": 32.0,
+      "Monitoring correlation r": 0.770099428970154,
+      "series": "Sycophancy \u2014 averaged context",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of questions averaged per prefix (N)": 48.0,
+      "Monitoring correlation r": 0.774165687285598,
+      "series": "Sycophancy \u2014 averaged context",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Number of questions averaged per prefix (N)": 0.0,
+      "Monitoring correlation r": 0.7592700278999972,
+      "series": "Sycophancy \u2014 prefix-end (query-invariant)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of questions averaged per prefix (N)": 1.0,
+      "Monitoring correlation r": 0.7592700278999972,
+      "series": "Sycophancy \u2014 prefix-end (query-invariant)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Number of questions averaged per prefix (N)": 1.0,
+      "Monitoring correlation r": 0.5767831569116053,
+      "series": "Hallucination \u2014 averaged context",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Number of questions averaged per prefix (N)": 2.0,
+      "Monitoring correlation r": 0.6920442064358189,
+      "series": "Hallucination \u2014 averaged context",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Number of questions averaged per prefix (N)": 3.0,
+      "Monitoring correlation r": 0.7436824909437307,
+      "series": "Hallucination \u2014 averaged context",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Number of questions averaged per prefix (N)": 4.0,
+      "Monitoring correlation r": 0.771774947842478,
+      "series": "Hallucination \u2014 averaged context",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Number of questions averaged per prefix (N)": 6.0,
+      "Monitoring correlation r": 0.8091417773058082,
+      "series": "Hallucination \u2014 averaged context",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Number of questions averaged per prefix (N)": 8.0,
+      "Monitoring correlation r": 0.8278235329618551,
+      "series": "Hallucination \u2014 averaged context",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Number of questions averaged per prefix (N)": 12.0,
+      "Monitoring correlation r": 0.8475212176226604,
+      "series": "Hallucination \u2014 averaged context",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Number of questions averaged per prefix (N)": 16.0,
+      "Monitoring correlation r": 0.8589313271392471,
+      "series": "Hallucination \u2014 averaged context",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Number of questions averaged per prefix (N)": 24.0,
+      "Monitoring correlation r": 0.874583699109031,
+      "series": "Hallucination \u2014 averaged context",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Number of questions averaged per prefix (N)": 32.0,
+      "Monitoring correlation r": 0.8793815369577759,
+      "series": "Hallucination \u2014 averaged context",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Number of questions averaged per prefix (N)": 48.0,
+      "Monitoring correlation r": 0.8866189910617004,
+      "series": "Hallucination \u2014 averaged context",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Number of questions averaged per prefix (N)": 0.0,
+      "Monitoring correlation r": 0.8878730633333515,
+      "series": "Hallucination \u2014 prefix-end (query-invariant)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Number of questions averaged per prefix (N)": 1.0,
+      "Monitoring correlation r": 0.8878730633333515,
+      "series": "Hallucination \u2014 prefix-end (query-invariant)",
+      "_kind": "line",
+      "_group": 7
+    }
+  ],
+  "n_series": 8,
+  "total_points": 34,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Trait monitoring: prefix-end vs averaged-context",
+        "ylabel": "Monitoring correlation r (with judge score)",
+        "legend_labels": [
+          "reliability ceiling",
+          "per-prompt\ncontext",
+          "prefix-averaged\ncontext",
+          "prefix-end\n(pre-query)"
+        ],
+        "xticklabels": [
+          "Sycophancy",
+          "Hallucination"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ]
+      },
+      {
+        "title_left": "Averaging context questions vs the single prefix-end read",
+        "xlabel": "Number of questions averaged per prefix (N)",
+        "ylabel": "Monitoring correlation r",
+        "legend_labels": [
+          "Sycophancy \u2014 averaged context",
+          "Sycophancy \u2014 prefix-end (query-invariant)",
+          "Hallucination \u2014 averaged context",
+          "Hallucination \u2014 prefix-end (query-invariant)"
+        ],
+        "xticklabels": [
+          "1",
+          "2",
+          "3",
+          "4",
+          "6",
+          "8",
+          "12",
+          "16",
+          "24",
+          "32",
+          "48"
+        ],
+        "yticklabels": [
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7",
+          "0.8",
+          "0.9",
+          "1.0"
+        ]
+      }
+    ],
+    "series": [
+      "reliability ceiling",
+      "per-prompt\ncontext",
+      "prefix-averaged\ncontext",
+      "prefix-end\n(pre-query)",
+      "Sycophancy \u2014 averaged context",
+      "Sycophancy \u2014 prefix-end (query-invariant)",
+      "Hallucination \u2014 averaged context",
+      "Hallucination \u2014 prefix-end (query-invariant)"
+    ]
+  }
+}
