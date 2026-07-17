@@ -2667,11 +2667,14 @@ def _gcp_ladder_specs(spec: RunSpec) -> list[tuple[RunSpec, str]]:
     as the "queue for capacity rather than fail" middle rung:
 
     1. SPOT (rung-1 machine) — ``spot_<gpu_kind>``. *Always present.*
-    2. SPOT A100-40 (``a2-highgpu-1g``) — only when the intent fits in 40 GB
-       (:func:`gcp.a100_40_fallback_for_intent`). ``spot_a100_40``.
+    2. SPOT A100-40 (``a2-highgpu-1g``) — only when the workload fits in
+       40 GB: intent-eligible AND no ``spec.extra["min_gpu_mem_gb"]``
+       declaration above :data:`gcp.A100_40_USABLE_GIB`
+       (:func:`gcp.a100_40_fallback_for_intent`, #1468). ``spot_a100_40``.
     3. FLEX_START (rung-1 machine) — ``flexstart_<gpu_kind>``.
     4. on-demand (rung-1 machine) — the spec as-is. ``ondemand_<gpu_kind>``.
-    5. on-demand A100-40 — only when fits 40 GB. ``ondemand_a100_40``.
+    5. on-demand A100-40 — only when the workload fits 40 GB (the same
+       #1468 gate). ``ondemand_a100_40``.
 
     **LONG / UNKNOWN-length jobs** (known length > threshold, OR unknown
     length) — SPOT is barred (preemption too costly); flex —
@@ -2679,7 +2682,8 @@ def _gcp_ladder_specs(spec: RunSpec) -> list[tuple[RunSpec, str]]:
 
     1. FLEX_START (rung-1 machine) — ``flexstart_<gpu_kind>``.
     2. on-demand (rung-1 machine) — the spec as-is. ``ondemand_<gpu_kind>``.
-    3. on-demand A100-40 — only when fits 40 GB. ``ondemand_a100_40``.
+    3. on-demand A100-40 — only when the workload fits 40 GB (the same
+       #1468 gate). ``ondemand_a100_40``.
 
     **CPU-only intents (#677/#747)** (``base.gpu_count == 0``) short-circuit
     BEFORE any length / pin branching, splitting by whether the intent has a
