@@ -114,6 +114,12 @@ derived VM-side from the persisted ``session_cpu_secs`` /
 ``session_cpu_sample_epoch`` sidecar pair; ANY degraded input (unknown
 sample, missing epoch, tick spacing under ``ZOMBIE_CPU_RATE_MIN_DT_SEC``,
 negative delta) leaves the veto inert — exactly the pre-#951 behavior.
+Since #1477 a parsed NEGATIVE rate on either tick (impossible on a
+monotone counter — a sampling-scope reset, e.g. the #1345 day-format
+parse collapse, now fixed at the awk source) additionally arms a
+same-tick session-``%cpu`` confirm (``SESSION_PCPU_TOTAL``): material
+burn (>= ``ZOMBIE_OVERRIDE_CPU_CORES_MIN``) vetoes the override + resets
+the streak, while an unknown/low pcpu falls through to today's behavior.
 Fail-safe: nvidia-smi missing / erroring emits an empty list (never a
 false zombie); the override never touches a `done` / `gate` / `dead`
 verdict.
@@ -1172,6 +1178,49 @@ class PollResult:
     pid_file_stale_vs_marker: bool = False
 
 
+# Sums procps cumulative-CPU `time=` values (format [DD-]HH:MM:SS) for every
+# process in the launcher's session. Module constant (plain string, single
+# braces) so the day-format parse is unit-testable against the system awk.
+# #1477 root cause: the inline n==3 branch coerced "1-02" -> 1 (awk strtod
+# prefix), so a process crossing 86400 cumulative CPU-sec collapsed from
+# ~86400+s to ~D*3600 + MM*60 + SS in the session sum — the sum then
+# sawtooths, sampling the cross-tick rate NEGATIVE on a healthy 20-core
+# worker (#1345: running-max 83824 -> 9351).
+# INVARIANT: no single quotes in the awk text — the probe heredoc wraps the
+# program in shell single quotes, so an embedded quote corrupts the remote
+# command in a way the heredoc-emission substring assert cannot see.
+_SESSION_CPU_TIME_AWK = (
+    "$1==s { "
+    'n=split($2,a,":"); '
+    "if (n==3) { "
+    # [DD-]HH:MM:SS: with a day prefix the first ":" field is "DD-HH".
+    'm=split(a[1],b,"-"); '
+    "if (m==2) { secs += b[1]*86400 + b[2]*3600 + a[2]*60 + a[3] } "
+    "else { secs += a[1]*3600 + a[2]*60 + a[3] } "
+    "} "
+    "else if (n==2) { secs += a[1]*60 + a[2] } "
+    "else if (n==1) { "
+    # Defensive etime-style "D-HH" (unreachable for procps cputime);
+    # units-corrected in passing (b[2] is HOURS, was added as seconds).
+    'm=split(a[1],b,"-"); '
+    "if (m==2) { secs += b[1]*86400 + b[2]*3600 } "
+    "else { secs += a[1] } "
+    "} "
+    "} END { "
+    'if (NR==0) { print "unknown" } '
+    'else { printf "%.1f", secs } '
+    "}"
+)
+
+# #1477 confirm read: ps-native %cpu (cputime/realtime lifetime ratio)
+# summed over the same session. SEPARATE ps invocation from the time= sum so
+# a ps lacking `pcpu` degrades ONLY the new field (SESSION_CPU_SECS intact).
+# Same no-single-quotes invariant as _SESSION_CPU_TIME_AWK above.
+_SESSION_PCPU_AWK = (
+    '$1==s { pc += $2 } END { if (NR==0) { print "unknown" } else { printf "%.1f", pc } }'
+)
+
+
 def _ssh_probe(
     pod: str,
     log_path: str,
@@ -1516,28 +1565,25 @@ def _ssh_probe(
     # `_session_cpu_advancing` decision fails safe to "no signal" in
     # those cases (the older log + GPU arbiters then carry the
     # verdict, preserving the pre-#518 behavior).
+    # The awk bodies are interpolated from module constants (plain strings,
+    # single braces — f-string replacement-field VALUES are not re-scanned)
+    # so the day-format parse is unit-testable against the system awk
+    # (#1477). The second `ps -e` pipeline (pcpu) reuses the already-computed
+    # $SID; it is a SEPARATE invocation so a ps lacking `pcpu` degrades only
+    # SESSION_PCPU_TOTAL. All three exit branches emit BOTH keys.
     session_cpu_probe = (
         f"if [ -f {pid_file} ]; then "
         f"  LPID=$(cat {pid_file}); "
         f"  SID=$(ps -o sess= -p $LPID 2>/dev/null | tr -d ' '); "
         f'  if [ -n "$SID" ] && [ "$SID" != "0" ]; then '
         f"    CPU_SUM=$(ps -e -o sess=,time= 2>/dev/null | "
-        f'      awk -v s="$SID" \'$1==s {{ '
-        f'        n=split($2,a,":"); '
-        f"        if (n==3) {{ secs += a[1]*3600 + a[2]*60 + a[3] }} "
-        f"        else if (n==2) {{ secs += a[1]*60 + a[2] }} "
-        f"        else if (n==1) {{ "
-        f'          m=split(a[1],b,"-"); '
-        f"          if (m==2) {{ secs += b[1]*86400 + b[2] }} "
-        f"          else {{ secs += a[1] }} "
-        f"        }} "
-        f"      }} END {{ "
-        f'        if (NR==0) {{ print "unknown" }} '
-        f'        else {{ printf "%.1f", secs }} '
-        f"      }}'); "
+        f"      awk -v s=\"$SID\" '{_SESSION_CPU_TIME_AWK}'); "
         f'    echo "SESSION_CPU_SECS=${{CPU_SUM:-unknown}}"; '
-        f'  else echo "SESSION_CPU_SECS=unknown"; fi; '
-        f'else echo "SESSION_CPU_SECS=unknown"; fi; '
+        f"    PCPU_SUM=$(ps -e -o sess=,pcpu= 2>/dev/null | "
+        f"      awk -v s=\"$SID\" '{_SESSION_PCPU_AWK}'); "
+        f'    echo "SESSION_PCPU_TOTAL=${{PCPU_SUM:-unknown}}"; '
+        f'  else echo "SESSION_CPU_SECS=unknown"; echo "SESSION_PCPU_TOTAL=unknown"; fi; '
+        f'else echo "SESSION_CPU_SECS=unknown"; echo "SESSION_PCPU_TOTAL=unknown"; fi; '
     )
     # Results-sentinel presence probe (#545): corroboration for the `done`
     # verdict. Matches BOTH the unprocessed `.json` and the drained
@@ -1668,6 +1714,7 @@ def _ssh_probe(
             "gpu_pids_resolvable": "unknown",
             "nvidia_uvm_live_holders": "unknown",
             "session_cpu_secs": "unknown",
+            "session_pcpu_total": "unknown",
             "results_sentinel_present": "0",
             "output_mtime_epoch": "0",
             "ssh_failed": "1",
@@ -1695,6 +1742,7 @@ _PROBE_SCALAR_KEYS: tuple[str, ...] = (
     "GPU_PIDS_RESOLVABLE",
     "NVIDIA_UVM_LIVE_HOLDERS",
     "SESSION_CPU_SECS",
+    "SESSION_PCPU_TOTAL",
     "RESULTS_SENTINEL_PRESENT",
     "OUTPUT_MTIME_EPOCH",
 )
@@ -1727,6 +1775,7 @@ def _parse_probe_stdout(stdout: str) -> dict[str, str]:
         "gpu_pids_resolvable": "unknown",
         "nvidia_uvm_live_holders": "unknown",
         "session_cpu_secs": "unknown",
+        "session_pcpu_total": "unknown",
         "results_sentinel_present": "0",
         "output_mtime_epoch": "0",
     }
@@ -3977,6 +4026,18 @@ def _parse_session_cpu(value: str) -> float | None:
         return None
 
 
+def _parse_session_pcpu_cores(value: str | None) -> float | None:
+    """Parse a SESSION_PCPU_TOTAL probe value (ps %cpu summed over the
+    launcher's session, e.g. "2012.5") into CORES (20.125), or None when
+    unknown / malformed / negative (fail-safe: the #1477 negative-rate
+    confirm veto stays inert and the pre-#1477 #826/#864/#951/#1033
+    cascade decides)."""
+    v = _parse_session_cpu(value)
+    if v is None or v < 0:
+        return None
+    return v / 100.0
+
+
 def _parse_probe_count(value: str | None) -> int | None:
     """Parse a #864 probe count (``"4"``, ``""``, ``"unknown"``, garbage) to a
     non-negative int; ``None`` = no signal (the caller falls back to the pure
@@ -4083,7 +4144,11 @@ def _session_cpu_rate_cores(
     (truncation-noise floor) or non-positive (clock garbage). A NEGATIVE
     rate (run restart resets the session counter; a multi-shard child exit
     de-counts its cputime, #658) is returned as-is — it is below any
-    positive threshold, so the veto does not fire on it.
+    positive threshold, so the #951 veto does not fire on it, and (since
+    #1477) the arbiter treats a negative sample on either tick as an
+    invalid-signal trigger for the same-tick session-pcpu confirm veto
+    (the return contract here is unchanged: negatives are still returned
+    and persisted verbatim — forensically useful).
     """
     cur = _parse_session_cpu(current)
     prev = _parse_session_cpu(prev_sample) if prev_sample is not None else None
@@ -4140,9 +4205,10 @@ def _apply_zombie_override(
     uvm_live_holders: int | None = None,
     session_cpu_rate_cores: float | None = None,
     output_mtime_ago: float = float("inf"),
+    session_pcpu_cores: float | None = None,
 ) -> tuple[str, str | None, bool, int]:
-    """The #664/#826/#864/#951/#1033 zombie-GPU-allocation override — returns
-    the possibly overridden
+    """The #664/#826/#864/#951/#1033/#1477 zombie-GPU-allocation override —
+    returns the possibly overridden
     ``(status, stall_reason, cpu_override_active, zombie_streak)``.
 
     A hung vLLM whose CUDA worker died leaves its model-shard VRAM orphaned
@@ -4224,6 +4290,32 @@ def _apply_zombie_override(
     first rate but has no prev-tick rate — which is the fail-safe direction
     (current behavior during warmup); a false stall in that window is the
     warmup, not a fix failure.
+
+    Negative-rate pcpu confirm veto (#1477, between the #951 material-rate
+    veto and the streak defer/fire branches): a NEGATIVE cross-tick rate is
+    impossible for a live fixed-scope workload on a monotone counter — it
+    means the sampling scope reset (a relaunch re-keys the session, a
+    multi-shard child exit de-counts its cputime (#658), or a probe parse
+    collapse — #1345's ``D-HH:MM:SS`` day format), NOT idleness — yet the
+    #951 veto structurally cannot arm on it (negative < threshold), so the
+    material-compute protection is silently disarmed exactly on healthy
+    log-quiet CPU-bound segments. When a parsed negative sample exists on
+    EITHER tick (computed current rate < 0, OR persisted prev rate < 0 —
+    the latter INCLUDING when the current rate is ``None``) AND the same
+    tick's session ``%cpu`` read (``session_pcpu_cores``, the #1477 probe
+    field) is >= ``ZOMBIE_OVERRIDE_CPU_CORES_MIN``, the session is
+    demonstrably burning material compute right now — veto + streak reset
+    (identical mechanics to #826/#864/#951/#1033). Fail-safe on every
+    degraded input: pcpu unknown (older pod probe / degraded ``ps``) or
+    below threshold falls through to today's streak defer/fire — the #664
+    true positive (~0.22 cores ⇒ pcpu ~22% = 0.22 cores < 0.5) stays
+    reapable, and a worker-death de-count tick with idle survivors still
+    advances the streak. pcpu is NEVER consulted without a parsed negative
+    sample (warmup ``None`` rates and non-negative rates keep today's
+    behavior verbatim — a frozen-counter hung run reads rate exactly 0.0
+    and must keep firing even at high lifetime pcpu). The parameter
+    defaults to ``None`` (the #1033 inert-default pattern), so every
+    pre-#1477 caller and test is byte-unchanged.
 
     Namespace-informativeness gate (#864, FIRST branch): the #826 stale-log
     veto lapses when a HEALTHY workload legitimately silences its logs
@@ -4365,6 +4457,45 @@ def _apply_zombie_override(
                 prev_cpu_rate,
                 ZOMBIE_OVERRIDE_CPU_CORES_MIN,
             )
+        elif (
+            (
+                (session_cpu_rate_cores is not None and session_cpu_rate_cores < 0)
+                or (prev_cpu_rate is not None and prev_cpu_rate < 0)
+            )
+            and session_pcpu_cores is not None
+            and session_pcpu_cores >= ZOMBIE_OVERRIDE_CPU_CORES_MIN
+        ):
+            # #1477: the cross-tick rate signal is INVALID — a negative rate
+            # is impossible for a live fixed-scope workload on a monotone
+            # counter (sampling-scope reset: a relaunch re-keys the session,
+            # a child exit de-counts its cputime (#658), or a probe parse
+            # collapse — #1345's D-HH:MM:SS day format). The #951 veto above
+            # cannot arm on it (negative < threshold), silently disarming
+            # the material-compute protection on healthy log-quiet CPU-bound
+            # segments. Confirm with the SAME tick's session %cpu read:
+            # material burn now => alive. Veto + streak reset (identical
+            # mechanics to #826/#864/#951/#1033). pcpu unknown (older probe /
+            # degraded ps) or below threshold falls through to the streak
+            # branches — the #664 true positive (~0.22 cores) stays
+            # reapable, and a worker-death de-count tick with idle survivors
+            # still advances the streak. Known bounded delay: ps %cpu is a
+            # LIFETIME cputime/realtime ratio, so a hung C-core, H-hour
+            # worker reads lifetime pcpu > 0.5 cores for roughly
+            # H*(C/0.5 - 1) hours after the hang — but it is consulted only
+            # on negative-rate ticks (at most the one de-count tick for a
+            # hung run), bounding the true-positive delay to <=2 ticks.
+            log.warning(
+                "zombie-GPU signature on pod %s (PID(s) %s) with all logs stale and an "
+                "IMPOSSIBLE negative session-CPU rate (now=%s prev=%s cores — sampling-"
+                "scope reset, not idleness) BUT session pcpu reads %.2f cores (>= %.2f) — "
+                "material compute, liveness veto, not flagging (#1477/#1345)",
+                pod,
+                ",".join(zombie_gpu_pids),
+                "unknown" if session_cpu_rate_cores is None else f"{session_cpu_rate_cores:.2f}",
+                "unknown" if prev_cpu_rate is None else f"{prev_cpu_rate:.2f}",
+                session_pcpu_cores,
+                ZOMBIE_OVERRIDE_CPU_CORES_MIN,
+            )
         elif prev_zombie_streak < 1:
             zombie_streak = 1
             log.warning(
@@ -4383,13 +4514,14 @@ def _apply_zombie_override(
                 "are absent from /proc (dead CUDA worker, vLLM EngineCore hung) — persisted "
                 "2 consecutive ticks with all logs stale, overriding "
                 "status=running -> stalled (#664/#826); session-CPU rate now=%s prev=%s "
-                "cores (veto threshold %.2f)",
+                "cores (veto threshold %.2f); session pcpu=%s cores",
                 pod,
                 ",".join(zombie_gpu_pids),
                 ZOMBIE_GPU_MEM_MIN_MIB,
                 "unknown" if session_cpu_rate_cores is None else f"{session_cpu_rate_cores:.2f}",
                 "unknown" if prev_cpu_rate is None else f"{prev_cpu_rate:.2f}",
                 ZOMBIE_OVERRIDE_CPU_CORES_MIN,
+                "unknown" if session_pcpu_cores is None else f"{session_pcpu_cores:.2f}",
             )
             status = "stalled"
             stall_reason = "vllm_worker_dead_zombie_gpu"
@@ -4763,6 +4895,9 @@ def poll_once(
         current_session_cpu,
         now_epoch,
     )
+    # #1477: same-tick session %cpu (cores) — the confirm read the zombie
+    # override consults when the cross-tick rate samples negative.
+    session_pcpu_cores = _parse_session_pcpu_cores(probe.get("session_pcpu_total", "unknown"))
 
     # True when the verdict below is `running` ONLY because the #518
     # CPU-advancing override rescued a met stall conjunction (logs stale +
@@ -4817,6 +4952,7 @@ def poll_once(
         uvm_live_holders=_parse_probe_count(probe.get("nvidia_uvm_live_holders")),
         session_cpu_rate_cores=session_cpu_rate,
         output_mtime_ago=output_mtime_ago,
+        session_pcpu_cores=session_pcpu_cores,
     )
 
     # ── #873/#1033 run-scoped state anchor (AC #6) ───────────────────────
