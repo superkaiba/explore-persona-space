@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1471,
+  "highest_id": 1472,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -3673,6 +3673,13 @@
       "path": "tasks/proposed/1471",
       "status": "proposed",
       "title": "daily-held: non-managed EXITED pod reaping decision"
+    },
+    "1472": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1472",
+      "status": "proposed",
+      "title": "daily-held: review diversity during Codex outage to Aug 6"
     },
     "148": {
       "has_clean_result": false,
