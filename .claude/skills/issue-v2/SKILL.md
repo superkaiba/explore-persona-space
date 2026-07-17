@@ -506,7 +506,9 @@ Step 10b/10c/10c-bis but with the v2 substitutions:
   revivable); `not-redundant` → route below. Nothing is dropped. User-requested
   (`source: user-chat`) proposals are not screened.
 - **Zero-GPU floor** (`cost_class: free-analysis`, `est_gpu_hours: 0`) — AUTO-RUN
-  inline, cap 1 round (`epm:free-analysis-followup-run v1`), analysis-only.
+  inline, cap 1 round (`epm:free-analysis-followup-run v1`), analysis-only;
+  direct-to-main script commits pass the inline payload lint gate (v1 SKILL.md
+  Step 9a-ter § Inline payload lint gate).
 - **Cheap GPU band** (`0 < est_gpu_hours < 10` — the v2 threshold, LOWERED from
   v1's 20) — AUTO-RUN via the same-issue follow-up loop, cap 2 rounds. Strict
   `< 10` (exactly 10 does NOT auto-run). A `same`-question proposal with a
