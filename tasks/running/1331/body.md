@@ -28,3 +28,11 @@ The standing rule (raw completions MUST upload before pod stop) was violated by 
 ## Suggested action
 
 If the n1M round proceeds (dispatch started 2026-07-15 ~06:30Z), option 2/3 is probably fine — n10k adds nothing to the curve. If scaling analysis needs the n10k raw text for a per-context join, option 1.
+
+## Disposition status (2026-07-17 autonomous rescue attempt, per PM greenlight)
+
+- **Rescue attempted, failed:** `pod.py resume --issue 779` at 21:51Z refused — former host still has no free GPUs (host-pinned; same refusal as 07-14). Attempt was free.
+- **Context updates:** n50k round complete 07-15 04:12Z AND n1M round complete 07-15 22:44Z, both sha-verified on HF — n10k is fully superseded for the scaling curve. Pod-779 remains STOPPED (11d), shielded from the stale-pod audit by #779's `keep-running` tag.
+- **What termination would permanently lose:** the exact n10k rollout TEXT (6,500 LMSYS contexts × 1 rollout) + 28-layer captures; the already-uploaded `pass_b/train_context_vectors.pt` becomes permanently unjoinable at the raw-text level (a re-run samples different text). Model generations are never-discardable per upload policy.
+- **RECOMMENDATION (option 1-lite):** keep pod-779 stopped under the `keep-running` tag (≈$0 compute; storage small if any) and re-attempt resume opportunistically — the attempt is free + ~30s: `uv run python scripts/pod.py resume --issue 779` (weekly PM pass or /daily). On a future success, plan v1 Branch A (`plans/v1.md`) is the ready-to-run rescue recipe: upload raw text + captures to `issue779_monitoring/fitter-fair-comparison-n10k/`, Hub-verify, terminate, remove `keep-running`.
+- **Terminate now (option 3) ONLY on explicit user OK** — parked here rather than executed: irreversible destruction of sole-copy model generations is a user-only call. If you accept the loss, run: `uv run python scripts/pod.py terminate --issue 779 --yes` then `uv run python scripts/task.py remove-tag 779 keep-running` and archive this task.
