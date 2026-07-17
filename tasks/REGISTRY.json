@@ -3516,8 +3516,8 @@
     "1451": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1451",
-      "status": "proposed",
+      "path": "tasks/archived/1451",
+      "status": "archived",
       "title": "daily-fix: lint rules/*.md frontmatter parse + paths shape"
     },
     "1452": {
