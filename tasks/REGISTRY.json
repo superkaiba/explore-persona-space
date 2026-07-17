@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1444,
+  "highest_id": 1445,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -3463,6 +3463,13 @@
       "path": "tasks/proposed/1444",
       "status": "proposed",
       "title": "daily-fix: name out-root mount binding in Methodology lens"
+    },
+    "1445": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1445",
+      "status": "proposed",
+      "title": "daily-fix: SKILL_REF_RE filesystem-path false positive"
     },
     "145": {
       "has_clean_result": false,
