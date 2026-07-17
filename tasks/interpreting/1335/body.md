@@ -26,16 +26,16 @@ backend: gcp
 
 ## Takeaways
 
-- **Base model: no gap.** Matched-n gap 0.005 (95% CI −0.012 to +0.021); fiction endpoint 0.340 vs one-line Q&A 0.345 — verdict: "Sample-size-explained".
-- **Instruct model: gap 0.174 (95% CI 0.159–0.186); fiction framing alone accounts for 0.160 of it (Bonferroni CI 0.135–0.186), ~92% — verdict: "Single-factor-attributed"** — robust to fold-regime and multilingual-row refits (both move reads ≤ 0.007).
-- **No 'Assistant'-label effect resolves above the teacher-forced calibration bands (0.05 base / 0.02 instruct):** relabeling identical text shifts R² ≤ 0.009; story-side restorations ≤ 0.003; answer length ≤ 0.022 — bounded, not proven zero.
-- **Both endpoints moved vs their committed parents** (base Q&A 0.410 vs 0.578; base fiction 0.305–0.376 vs 0.106–0.148; the instruct fiction endpoint overlaps its prior band): the historical 3–5× gap largely reflects recipe and λ-selection differences.
-- **Post-training reshapes rather than creates the map:** instruct beats base on every Q&A rung (+0.06 to +0.12) and trails base on every story rung (~0.07; no-foils ~0.03–0.04).
+- In base the gap vanishes: matched-n gap 0.005 (95% CI −0.012 to +0.021), fiction endpoint 0.340 vs one-line Q&A 0.345. Verdict "Sample-size-explained".
+- In instruct the gap is 0.174 (95% CI 0.159–0.186), and fiction framing alone accounts for 0.160 of it (Bonferroni CI 0.135–0.186), ~92% — verdict "Single-factor-attributed"; fold-regime and multilingual-row refits move the reads ≤ 0.007.
+- No 'Assistant'-label effect resolves above the teacher-forced calibration bands (0.053 base / 0.018 instruct): relabeling identical text shifts R² ≤ 0.009; story-side restorations ≤ 0.003; answer length ≤ 0.022 — bounded, not proven zero.
+- Both endpoints moved vs their committed parents (base Q&A 0.410 vs 0.578; base fiction 0.305–0.376 vs 0.106–0.148; the instruct fiction span overlaps its prior band, its per-persona mean just above): the historical 3–5× gap is consistent with recipe and λ-selection differences.
+- Post-training reshapes rather than creates the map: instruct beats base on every Q&A rung (+0.06 to +0.12) and trails base on every story rung (~0.07; no-foils ~0.03–0.04).
 - Caveats binding interpretation: single generation seed; matched n differs per model (1,397 base / 1,739 instruct); teacher-forced restoration rungs resolve only effects larger than their ~0.05 calibration band in base.
 
 ## Goal
 
-- **This experiment in context:** [#825](https://eps.superkaiba.com/tasks/825) established a strong assistant context→answer ridge map in Qwen2.5-7B (held-out R² 0.588 base / 0.673 instruct at n = 5,000, chat template, GCV λ-selection; a committed naturalistic plain-text round reads 0.578 base), and [#1092](https://eps.superkaiba.com/tasks/1092) reads 0.71–0.74 on multi-turn naturalistic transcripts (greedy or third-party-written targets, PRESS-λ, 6-fold — not directly comparable to this run's stochastic on-policy targets). [#1310](https://eps.superkaiba.com/tasks/1310) measured per-character fiction context→dialogue maps at 0.106–0.148 base / 0.166–0.253 instruct (its committed four-persona bands, including its own 2026-07-16 completion of the villain instruct cell at 0.166, n = 3,586; GCV λ-selection on a whole-script parse at n ≈ 1,300–3,600 per persona — cross-selector-incomparable with this run's inner-group-CV values, so those anchors bind sign and specificity here, never value). This task builds a one-factor-at-a-time ablation ladder of 11 conditions between the two recipes, in both models and both mapping arms, to attribute the gap; this run's villain instruct cell is a new-recipe re-measurement of a cell the parent also holds, not a completion of a missing one.
+- **This experiment in context:** [#825](https://eps.superkaiba.com/tasks/825) established a strong assistant context→answer ridge map in Qwen2.5-7B (held-out R² 0.588 base / 0.673 instruct at n = 5,000, chat template, GCV λ-selection; a committed naturalistic plain-text round reads 0.578 base), and [#1092](https://eps.superkaiba.com/tasks/1092) reads 0.71–0.74 on multi-turn naturalistic transcripts (greedy or third-party-written targets, PRESS-λ, 6-fold — not directly comparable to this run's stochastic on-policy targets). [#1310](https://eps.superkaiba.com/tasks/1310) measured per-character fiction context→dialogue maps at 0.106–0.148 base / 0.166–0.253 instruct (its committed four-persona bands, including its own 2026-07-16 completion of the villain instruct cell at 0.166, n = 3,586; GCV λ-selection on a whole-script parse at n ≈ 1,300–3,600 per persona — cross-selector-incomparable with this run's inner-group-CV values, so those anchors bind sign and specificity here, never value). This task builds a one-factor-at-a-time ablation ladder of 11 conditions between the two recipes, in both models and both mapping arms, to attribute the gap; this run's villain instruct cell re-measures, under the new recipe, a cell the parent also holds; it does not fill a missing one.
 - **Broader narrative:** whether the assistant role's forward map — the linear predictability of the upcoming reply's representation from the context representation — is something special about the assistant identity, or one instance of generic next-turn predictability that post-training re-weights across genres. This run supports the second reading and localizes the post-training re-weighting to fiction scene framing.
 
 ## Methodology
@@ -123,9 +123,9 @@ What is plotted: held-out R² at layer 19 (context arm) for all 11 rungs, both m
 
 ![Ablation ladder of held-out R-squared across 11 rungs, matched-n and full-n panels, base and instruct models](https://raw.githubusercontent.com/superkaiba/explore-persona-space/6035432732b7cf92603647eb56efe6f3b6821e91/figures/issue_1335/hero_ladder.png)
 
-> **Figure.** *The gap lives in instruct, not base.* Matched-n (left) and full-n (right) held-out R² at layer 19 across the ladder; n = 1,397–4,894 rows per cell; all 20 shuffle nulls per cell sit at or below −0.02.
+> **Figure.** *Only instruct shows the gap.* Matched-n (left) and full-n (right) held-out R² at layer 19 across the ladder; n = 1,397–4,894 rows per cell; all 20 shuffle nulls per cell sit at or below −0.02.
 
-In base every rung reads 0.30–0.36 at matched n except the fiction-framed Q&A dip (0.225); the fiction endpoint (0.340) matches one-line Q&A (0.345): gap 0.005 (95% CI −0.012 to +0.021), verdict "Sample-size-explained". In instruct the ladder steps down at fiction framing (0.477 → 0.316) and stays down (0.271 at the fiction endpoint): gap 0.174 (95% CI 0.159–0.186), verdict "Single-factor-attributed".
+In base every rung reads 0.30–0.36 at matched n except the fiction-framed Q&A dip (0.225); the fiction endpoint (0.340) matches one-line Q&A (0.345): gap 0.005 (95% CI −0.012 to +0.021), verdict "Sample-size-explained". In instruct the ladder steps down at fiction framing (0.477 → 0.316) and stays down (0.271 at the fiction endpoint, matched n): gap 0.174 (95% CI 0.159–0.186), verdict "Single-factor-attributed".
 
 ### Fiction framing carries the instruct gap; label, name, length, and foils are all null
 
@@ -135,7 +135,7 @@ What is plotted: the six oriented adjacent-rung R² drops (strong minus weak sid
 
 > **Figure.** *One factor dominates.* Fiction framing (scene wrapper + foil asker on identical questions) drops R² by 0.131 (base) and 0.160 (instruct); every identity-flavored factor reads ≤0.009.
 
-The role label moves ≤ 0.009 on identical text; restoring 'Assistant' onto story characters moves ≤ 0.003, familiar-vs-novel names 0.003 — all below the teacher-forced calibration band (0.053 base / 0.018 instruct), so bounded rather than resolved. Answer length: 0.002 base, −0.022 instruct. The persona-description header is a restoration (+0.055 both models), making the described-persona rung the instruct ladder maximum (0.477, above both assistant anchors).
+The role label moves ≤ 0.009 on identical text; restoring 'Assistant' onto story characters moves ≤ 0.003, familiar-vs-novel names 0.003 — all below the teacher-forced calibration band (0.053 base / 0.018 instruct), so bounded rather than resolved. Answer length: 0.002 base, −0.022 instruct. The persona-description header is a restoration (+0.055 both models); it makes the described-persona rung the instruct ladder maximum (0.477, above both assistant anchors).
 
 In base the framing drop (0.131) is cancelled by fiction content+depth (−0.115: full story scenes recover what the wrapper lost); in instruct content+depth adds 0.045. The framing rung also bundles a fold-granularity change, quantified in the next section. The planned per-slot depth read was not produced (a free follow-up on persisted stores), so content+depth stays undecomposed.
 
@@ -147,7 +147,7 @@ What is plotted: left — the fiction-framed Q&A rung refit (layer 19, full n) u
 
 > **Figure.** *Both alternatives are inert.* Row-level folds move the fiction-framed rung by at most +0.003 (instruct 0.368 → 0.371); excluding the 3.8–10% multilingual rows moves the four Q&A cells by −0.003 to +0.007 and the instruct matched gap by +0.001.
 
-The framing rung's bundled fold change does not produce its dip: under row-level folds it reads 0.285 base / 0.371 instruct (vs 0.284 / 0.368 scenario-grouped), and the matched-n framing delta recomposes to 0.161 (committed 0.160) — the base dip-and-recovery is a framing response, not fold demand.
+The framing rung's bundled fold change does not produce its dip: under row-level folds it reads 0.285 base / 0.371 instruct (vs 0.284 / 0.368 scenario-grouped), and the matched-n framing delta recomposes to 0.161 (committed 0.160), so the base dip-and-recovery comes from the framing itself; the fold change contributes nothing measurable.
 
 The language asymmetry is equally inert: exclusion shifts the matched one-line values by ≤ 0.001 and the instruct gap reads 0.175 (committed 0.174); the story endpoint has zero flagged rows, so its side is unchanged by construction.
 
@@ -161,7 +161,7 @@ What is plotted: this run's two endpoints (full n, layer 19, circles) against th
 
 Two descriptive findings, adjudicated by no gate. The Q&A endpoint reads 0.17 below the closest same-recipe committed read; candidate deltas are the render string, row filters, capture code path, and the near-interpolation regime. One is measured: summarizing only the first ≤96 answer tokens moves instruct to 0.541 (+0.07, toward the prior band) — target-span construction is a live mover.
 
-The base fiction endpoint reads 0.16–0.23 above the prior band (instruct overlaps its band): either this turn-by-turn render yields a stronger per-scene map, or the prior selector-regime values understate the well-regularized R² on their own data. The plan's zero-GPU differential probe on persisted artifacts has not yet run.
+The base fiction endpoint reads 0.16–0.23 above the prior band (the instruct span overlaps its band, its mean just above): either this turn-by-turn render yields a stronger per-scene map, or the prior selector-regime values understate the well-regularized R² on their own data. The plan's zero-GPU differential probe on persisted artifacts has not yet run.
 
 ### Per-persona fiction maps are tight within model but re-order across models
 
@@ -171,7 +171,7 @@ What is plotted: per-persona held-out R² (layer 19, context arm, full n, 95% gr
 
 > **Figure.** *Personas move together within a model.* Base spans 0.305–0.376 across personas on the fiction endpoint; instruct spans 0.242–0.318; the three relabeling rungs are indistinguishable from the endpoint within persona.
 
-Base orders Dana > Wren > HELIOS > Vex; instruct orders HELIOS > Wren > Dana > Vex — the AI-persona cell resists the instruct fiction drop most, consistent with framing (not character identity) driving the instruct gap. The villain instruct cell reads 0.242 here (n = 1,798, turn-by-turn render, inner-group-CV) vs 0.166 (n = 3,586) in the parent's own whole-script-parse completion round — an independent cross-recipe pair, not the parent's missing cell. Relabeling rungs sit within ~0.01 of the endpoint per persona — the per-unit view behind the null restoration deltas.
+Base orders Dana > Wren > HELIOS > Vex; instruct orders HELIOS > Wren > Dana > Vex. The AI-persona cell resists the instruct fiction drop most, which fits the framing account; an identity-modulated rescue of the assistant-like cell would produce the same ordering, so this read stays descriptive. The villain instruct cell reads 0.242 here (n = 1,798, turn-by-turn render, inner-group-CV) vs 0.166 (n = 3,586) in the parent's own whole-script-parse completion round; the two form an independent cross-recipe pair, and the parent had already completed that cell itself. Relabeling rungs sit within ~0.01 of the endpoint per persona, the per-unit view behind the null restoration deltas.
 
 ### The maps are character-specific everywhere: deranged pairing costs more than half the R²
 
@@ -179,11 +179,11 @@ What is plotted: pooled held-out R² at layer 19 with correct context-target pai
 
 ![Correct versus deranged pairing R-squared bars for three story rungs in both models](https://raw.githubusercontent.com/superkaiba/explore-persona-space/6035432732b7cf92603647eb56efe6f3b6821e91/figures/issue_1335/swap_specificity.png)
 
-> **Figure.** *Not generic scene predictability.* Correct pairing reads 0.36–0.40; deranged pairing reads 0.11–0.18; the paired delta is 0.19–0.30 (n = 6,065–7,183 rows) with 95% CIs no wider than ±0.007; the instruct no-foil cell is the smallest (0.193).
+> **Figure.** *The map tracks the specific character.* Correct pairing reads 0.36–0.40; deranged pairing reads 0.11–0.18; the paired delta is 0.19–0.30 (n = 6,065–7,183 rows) with 95% CIs no wider than ±0.007; the instruct no-foil cell is the smallest (0.193).
 
 The fiction endpoint's specificity delta is 0.223 base (95% CI 0.218–0.229) and 0.216 instruct (0.212–0.221). Foil removal moves specificity in opposite directions per model: the no-foil cell is the largest of the six (0.295, base) and the smallest (0.193, instruct).
 
-So the per-character content of the map is real in both models — the instruct fiction drop is a level shift, not a loss of character specificity. This read also clears the binding rig gate's non-inversion condition in both models.
+So the per-character content of the map is real in both models: the instruct fiction drop is a level shift while the specificity delta stays essentially unchanged (0.216 vs 0.223). This read also clears the pre-registered rig gate: swap specificity must not invert in either model.
 
 ### On story rungs the prefix alone carries the map; on Q&A rungs the prefix arm is inert by construction
 
@@ -193,7 +193,7 @@ What is plotted: prefix-arm vs context-arm held-out R² per cell (layer 19, full
 
 > **Figure.** *Two regimes.* Story-rung prefixes (accumulated scene text) reach 0.23–0.39, matching their context arms; Q&A-rung prefixes read 0.008–0.078 against context arms of 0.28–0.52.
 
-Both mapping arms ran everywhere per the standing rule. On Q&A rungs the prefix is empty or a fixed header (first-token fallback, flagged in the store), so its near-zero reads are the declared degenerate control. On story rungs the prefix (scene header + accumulated dialogue, excluding the final cue line) recovers essentially the full context-arm value — the map is carried by accumulated on-policy scene text, not by the frame alone: the fiction-framed Q&A rung, whose prefix is only the frame, reads 0.008.
+Both mapping arms ran everywhere per the standing rule. On Q&A rungs the prefix is empty or a fixed header (first-token fallback, flagged in the store), so its near-zero reads are the declared degenerate control. On story rungs the prefix (scene header + accumulated dialogue, excluding the final cue line) recovers essentially the full context-arm value, so the accumulated on-policy scene text carries the map; the frame alone contributes almost nothing (the fiction-framed Q&A rung, whose prefix is only the frame, reads 0.008).
 
 ### The rung ordering is stable across all 28 layers; layer 19 is representative
 
@@ -203,7 +203,7 @@ What is plotted: held-out R² per layer (context arm, full n) for five represent
 
 > **Figure.** *No layer rescues the instruct fiction map.* Curves rise to a mid-late-layer plateau; the instruct story and fiction-framed rungs sit below every Q&A rung at every layer.
 
-The headline pattern is not a layer-19 artifact: the base story curve tracks the Q&A curves within ~0.03–0.09 across the mid-late plateau, while the instruct story curve sits 0.15–0.26 below the two assistant-labeled Q&A curves at every layer (up to 0.30 below the persona-described rung). The leave-one-setting-out refits (within 0.03 of the grouped-fold headline everywhere) say the same for the fold structure.
+The headline pattern survives every layer choice: the base story curve tracks the Q&A curves within ~0.03–0.09 across the mid-late plateau, while the instruct story curve sits 0.15–0.26 below the two assistant-labeled Q&A curves at every layer (up to 0.30 below the persona-described rung). The leave-one-setting-out refits (within 0.03 of the grouped-fold headline everywhere) say the same for the fold structure.
 
 ---
 **Repro:** ~26 GPU-h total across 8 attempts, 2026-07-15→17 — GCP flex-start 2×A100-80 attempts 1–5 (~17 GPU-h realized; crash-persist partials under `issue1335_partial/`), then RunPod failover `pod-1335` attempts 6–8 (fits-only relaunch, ~6.4 GPU-h). Final code SHA `149a890f8177f6b582263fc454b9353fd4efbd7a` on branch [issue-1335](https://github.com/superkaiba/explore-persona-space/tree/149a890f8177f6b582263fc454b9353fd4efbd7a) (`scripts/issue1335_{gen,render_rungs,extract_store,fit,figures}.py`, `scripts/issue1335_run.sh`); crash-fix rounds r5–r11 en route: 429-resilient shard-upload verify (`fb1acf80a1`), seeded-wiring sidecars + gate2 all-skipped record (`377f824b5f`), GCV λ-degeneracy → inner-group-CV selection (`da31ac154d`), fit_cells ports + pin bump (`408245a53b`), EXDEV staging fix (`e74296e460`), cuSOLVER eigh CPU-fallback (`d1922d2068`), amended-gate recalibration (`149a890f81`). Eval JSONs: [eval_results/issue_1335/](https://github.com/superkaiba/explore-persona-space/tree/4635f236de/eval_results/issue_1335) @ `4635f236de` (branch), headline artifact `ladder_summary.json` (per-cell fits `cells_*.json`, matched-n `matched_*.json`, nulls, swap, wiring, leave-one-setting-out; note the per-cell `metadata.issue` field reads 931 — an inherited default from the shared fit core — the `cell_id` and paths are authoritative). Figures: [figures/issue_1335/](https://github.com/superkaiba/explore-persona-space/tree/6035432732b7cf92603647eb56efe6f3b6821e91/figures/issue_1335) @ `6035432732` (main, with `.meta.json` sidecars); `endpoints_vs_committed` regenerated round 3 @ [`cd045cf338`](https://github.com/superkaiba/explore-persona-space/tree/cd045cf3381fd9f8fb6687ca69e63c87cce4b6b0/figures/issue_1335) — fiction-instruct prior square re-plotted at the parent's committed-band midpoint (supersedes the `6035432732` copy; script `scripts/issue1335_fig_endpoints.py` @ branch `4fd9d43491`). HF (verified live via `list_repo_tree`, dataset rev `08421fc22bbe`): rollout text [issue1335_ablation_ladder/raw_completions/](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/08421fc22bbe42968670c4ffbfcc561dd9cf4aa5/issue1335_ablation_ladder/raw_completions) (22 rollout JSONLs across 8 stage folders) and 22 bf16 activation stores under [analysis_tensors/](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/08421fc22bbe42968670c4ffbfcc561dd9cf4aa5/issue1335_ablation_ladder/analysis_tensors). Plan: [plans/plan.md v4](https://eps.superkaiba.com/tasks/1335) (amended §7 gates; λ-selection provenance recorded per fit JSON as `lambda_selection: inner-group-cv`).
