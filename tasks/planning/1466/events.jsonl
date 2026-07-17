@@ -3,3 +3,4 @@
 {"ts": "2026-07-17T07:01:19Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "proposed", "to": "planning", "note": "Clarifier All-clear."}
 {"ts": "2026-07-17T07:17:40Z", "kind": "epm:plan-verify", "version": 1, "by": "unknown", "note": "verify_plan.py: PASS; n_fail=0 n_warn=1 (c11_dryrun_test_coverage — carried to fact-checker + critic briefs as mechanical pre-pass note); plan version v1."}
 {"ts": "2026-07-17T07:22:31Z", "kind": "epm:progress", "version": 1, "by": "unknown", "note": "codex composers skipped — quota sentinel live until 2026-08-06T13:26:00+00:00 (#1204 pre-spawn check); single-Claude per no-show fallback for all 3 Phase-2 lens critics this round."}
+{"ts": "2026-07-17T07:29:28Z", "kind": "epm:plan-verify", "version": 2, "by": "unknown", "note": "verify_plan.py on v2: PASS; n_fail=0 n_warn=1 (c11_dryrun_test_coverage, unchanged); plan version v2."}
