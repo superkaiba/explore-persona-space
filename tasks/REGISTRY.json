@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1436,
+  "highest_id": 1437,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -3400,6 +3400,13 @@
       "path": "tasks/completed/1436",
       "status": "completed",
       "title": "workflow-fix: noise-structure symmetry \u2014 shared-baseline cos(X\u2212B,Y\u2212B) DVs vs nulls"
+    },
+    "1437": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1437",
+      "status": "proposed",
+      "title": "daily-fix: allowlist 952 dashboard in pod-shellout test"
     },
     "144": {
       "has_clean_result": false,
