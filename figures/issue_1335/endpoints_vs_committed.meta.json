@@ -1,6 +1,6 @@
 {
-  "commit": "bf154e5b16",
-  "created": "2026-07-17T07:44:20Z",
+  "commit": "a9dc85d6c2",
+  "created": "2026-07-17T09:31:17Z",
   "figsize": [
     8.5,
     4.6
@@ -61,7 +61,7 @@
       "_group": 8
     },
     {
-      "held-out R\u00b2 (layer 19)": 0.2253,
+      "held-out R\u00b2 (layer 19)": 0.20950000000000002,
       "y": 0.0,
       "_kind": "scatter",
       "_group": 9
