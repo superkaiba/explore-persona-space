@@ -55,6 +55,36 @@ DEFAULT_TEXT_AUDIT = (
 FU5_DELIVERABLES = ROOT / "eval_results" / "issue_1090" / "finish-impolite-bare-and-formatting-rank"
 FU5_LADDERS = FU5_DELIVERABLES / "fu5_ladders.json"
 FU5_TEXT_AUDIT = FU5_DELIVERABLES / "fu5_text_audit.json"
+FU7_DELIVERABLES = ROOT / "eval_results" / "issue_1090" / "sycophancy-lr-install-and-remeasure"
+FU7_LADDERS = FU7_DELIVERABLES / "fu7_ladders.json"
+FU7_TEXT_AUDIT = FU7_DELIVERABLES / "fu7_text_audit.json"
+FU6_AGGREGATES = (
+    ROOT
+    / "eval_results"
+    / "issue_1090"
+    / "sycophancy-pv-vector-dv-rubric-reanchor"
+    / "fu6_aggregates.json"
+)
+FU2_LADDER_BY_CELL = {
+    "syc-c3": ROOT
+    / "eval_results"
+    / "issue_1090"
+    / "fu2-dose-extension"
+    / "c3-sycophancy-claude"
+    / "fu2_ladder.json",
+    "syc-c5": ROOT
+    / "eval_results"
+    / "issue_1090"
+    / "fu2-dose-extension"
+    / "c5-sycophancy-qwen"
+    / "fu2_ladder.json",
+}
+FU7_CELL_LABEL = {
+    "syc-c3": "sycophancy, Claude-data (c3)",
+    "syc-c5": "sycophancy, Qwen-data (c5)",
+}
+FU7_CELL_ORDER = ("syc-c3", "syc-c5")
+FU7_PROJ_LAYER = 22  # fu6 h2_headline.selected_layer (frozen; plan §11)
 
 CELL_LABEL = {
     "fmt-pers": "list formatting, persona-trained (control)",
@@ -497,7 +527,8 @@ def fig_fu5_fmt_intrusion(text_audit: dict, out_prefix: str, out_dir: str) -> No
     ax.set_ylabel("Structural Tier-2 rate")
     ax.set_ylim(0.0, 0.45)
     ax.set_title(
-        "Rate under the three intrusion dispositions\n(circle raw; x zeroed;\ndiamond excluded + Wilson 95% CI; dots 0.30 cut)",
+        "Rate under the three intrusion dispositions\n(circle raw; x zeroed;\n"
+        "diamond excluded + Wilson 95% CI; dots 0.30 cut)",
         fontsize=9,
     )
     xs = range(len(arms))
@@ -634,9 +665,331 @@ def fig_fu5_eval_split(agg: dict, out_prefix: str, out_dir: str) -> None:
     plt.close(fig)
 
 
+# ── fu7 figures (plan v13 §6) ────────────────────────────────────────────────
+
+
+def _fu7_cell_runs(agg: dict, cell_key: str) -> list[dict]:
+    return sorted(
+        (r for r in agg["runs"].values() if r.get("cell_key") == cell_key),
+        key=lambda r: r["lr"],
+    )
+
+
+def fig_fu7_unlock_grid(agg: dict, out_prefix: str, out_dir: str) -> None:
+    """HERO (plan §6): 2 panels (C3, C5) — Tier-1 legacy rate vs optimizer
+    step per lr arm, 0.60-0.85 band shaded, fu2's committed 30-step ladder
+    overlaid dashed (the dose-only reference), reused base rate dashed,
+    selected rungs marked, Tier-2 confirmatory reads as filled points with
+    Wilson bars."""
+    colors = _lr_colors()
+    fig, axes = plt.subplots(1, 2, figsize=(11.0, 4.2), sharey=True)
+    for ax, cell_key in zip(axes, FU7_CELL_ORDER, strict=True):
+        ax.axhspan(0.60, 0.85, color="0.92", zorder=0)
+        fu2_path = FU2_LADDER_BY_CELL[cell_key]
+        if fu2_path.exists():
+            fu2 = json.loads(fu2_path.read_text())
+            steps = sorted(int(s) for s in fu2["rates_by_step"])
+            ax.plot(
+                steps,
+                [fu2["rates_by_step"][str(s)] for s in steps],
+                ls="--",
+                color="0.55",
+                lw=1.1,
+                label="fu2 dose-only ladder (epochs 6)",
+            )
+        for r in _fu7_cell_runs(agg, cell_key):
+            rbs = r.get("rates_by_step") or {}
+            if not rbs:
+                continue
+            steps = sorted(int(s) for s in rbs)
+            ax.plot(
+                steps,
+                [rbs[str(s)] for s in steps],
+                marker="o",
+                ms=3,
+                color=colors[r["lr"]],
+                label=LR_LABEL[r["lr"]],
+            )
+            sel = r.get("selection") or {}
+            if sel.get("step") is not None:
+                ax.scatter(
+                    [sel["step"]],
+                    [sel["rate"]],
+                    marker="D",
+                    s=55,
+                    facecolors="none",
+                    edgecolors=colors[r["lr"]],
+                    zorder=5,
+                )
+            t2 = r.get("tier2_trained") or {}
+            if t2.get("rate") is not None and sel.get("step") is not None:
+                lo_hi = t2.get("wilson95") or (t2["rate"], t2["rate"])
+                ax.errorbar(
+                    [sel["step"]],
+                    [t2["rate"]],
+                    yerr=[
+                        [max(0.0, t2["rate"] - lo_hi[0])],
+                        [max(0.0, lo_hi[1] - t2["rate"])],
+                    ],
+                    fmt="s",
+                    ms=6,
+                    color=colors[r["lr"]],
+                    capsize=3,
+                    zorder=6,
+                )
+            base = (r.get("base_tier2") or {}).get("rate")
+            if base is not None:
+                ax.axhline(base, color="0.75", lw=0.8, ls=":")
+        ax.set_title(FU7_CELL_LABEL[cell_key])
+        ax.set_xlabel("optimizer step")
+        ax.set_ylim(-0.03, 1.0)
+    axes[0].set_ylabel("Tier-1 legacy judged rate")
+    axes[0].legend(fontsize=7, loc="upper left")
+    fig.suptitle(
+        "fu7 lr sweep: does the impolite lr-unlock transfer to sycophancy?\n"
+        "(band 0.60-0.85 shaded; diamonds selected rungs; squares Tier-2 confirm "
+        "+ Wilson 95%; dashed grey fu2 dose-only; dotted grey reused base)",
+        fontsize=9,
+    )
+    fig.tight_layout()
+    savefig_paper(fig, f"{out_prefix}/fu7_lr_unlock_grid", dir=out_dir)
+    plt.close(fig)
+
+
+def fig_fu7_dual_rubric(agg: dict, out_prefix: str, out_dir: str, text_audit: dict | None) -> None:
+    """Paired legacy-vs-paper Tier-2 bars per arm (the H3 instrument offset) +
+    raw-vs-CJK-zeroed markers + the reused base rates under both instruments."""
+    colors = _lr_colors()
+    fig, ax = plt.subplots(figsize=(9.0, 4.2))
+    xticks, xlabels = [], []
+    x = 0
+    for cell_key in FU7_CELL_ORDER:
+        for r in _fu7_cell_runs(agg, cell_key):
+            t2 = r.get("tier2_trained") or {}
+            pv = r.get("tier2_trained_pv") or {}
+            if t2.get("rate") is None:
+                continue
+            ax.bar([x - 0.2], [t2["rate"]], width=0.38, color=colors[r["lr"]], alpha=0.95)
+            if pv.get("rate") is not None:
+                ax.bar(
+                    [x + 0.2],
+                    [pv["rate"]],
+                    width=0.38,
+                    color=colors[r["lr"]],
+                    alpha=0.45,
+                    hatch="//",
+                )
+            arm_audit = (text_audit or {}).get("arms", {}).get(r["run_id"])
+            if arm_audit is not None and arm_audit.get("cjk_zeroed_rate") is not None:
+                ax.scatter(
+                    [x - 0.2],
+                    [arm_audit["cjk_zeroed_rate"]],
+                    marker="x",
+                    color="k",
+                    s=40,
+                    zorder=5,
+                )
+            base = (r.get("base_tier2") or {}).get("rate")
+            if base is not None:
+                ax.scatter([x - 0.2], [base], marker="s", color="0.4", s=22, zorder=4)
+            xticks.append(x)
+            xlabels.append(f"{cell_key}\n{LR_LABEL[r['lr']].split()[1]}")
+            x += 1
+        x += 1
+    ax.axhline(0.60, color="0.4", lw=0.9, ls="--")
+    ax.set_xticks(xticks, xlabels, rotation=45, ha="right", fontsize=7)
+    ax.set_ylabel("Tier-2 rate at the selected rung")
+    ax.set_ylim(0, 1.0)
+    ax.set_title(
+        "paired dual-rubric Tier-2 reads (solid legacy / hatched paper rubric;\n"
+        "x CJK-zeroed bound; squares reused legacy base; dashes 0.60 band floor)"
+    )
+    fig.tight_layout()
+    savefig_paper(fig, f"{out_prefix}/fu7_tier2_dual_rubric", dir=out_dir)
+    plt.close(fig)
+
+
+def fig_fu7_rubric_offset_scatter(agg: dict, out_prefix: str, out_dir: str) -> None:
+    """Paper-rubric vs legacy Tier-2 rate per arm, with the fu6 ~-0.15
+    rank-preserving offset reference (H3; fu6 paired_old_vs_new rho=0.95)."""
+    colors = _lr_colors()
+    pts = []
+    for cell_key in FU7_CELL_ORDER:
+        for r in _fu7_cell_runs(agg, cell_key):
+            t2 = (r.get("tier2_trained") or {}).get("rate")
+            pv = (r.get("tier2_trained_pv") or {}).get("rate")
+            if t2 is not None and pv is not None:
+                pts.append((t2, pv, r))
+    if not pts:
+        return
+    fig, ax = plt.subplots(figsize=(5.2, 4.6))
+    for t2, pv, r in pts:
+        ax.scatter(
+            [t2],
+            [pv],
+            color=colors[r["lr"]],
+            marker="o" if r["cell_key"] == "syc-c3" else "^",
+            s=48,
+        )
+        ax.annotate(r["run_id"], (t2, pv), fontsize=6, xytext=(3, 3), textcoords="offset points")
+    lo = 0.0
+    hi = 1.0
+    ax.plot([lo, hi], [lo, hi], color="0.8", lw=0.8)
+    ax.plot([lo, hi], [lo - 0.15, hi - 0.15], color="0.5", lw=0.9, ls="--")
+    ax.set_xlabel("legacy Tier-2 rate")
+    ax.set_ylabel("paper-rubric Tier-2 rate")
+    ax.set_title(
+        "rubric re-anchor offset (dashed: fu6's ~-0.15 rank-preserving offset,\n"
+        "paired rho=0.95; circles C3, triangles C5)",
+        fontsize=9,
+    )
+    fig.tight_layout()
+    savefig_paper(fig, f"{out_prefix}/fu7_rubric_offset_scatter", dir=out_dir)
+    plt.close(fig)
+
+
+def fig_fu7_panel_leakage(agg: dict, out_prefix: str, out_dir: str) -> None:
+    """Panel judged reads per (best organism x context x rubric), base rates
+    marked (raw reads; the install delta is named beside each — no
+    cross-condition leakage headline, plan §6)."""
+    panel = ((agg.get("remeasure") or {}).get("panel")) or {}
+    if not panel:
+        return
+    fig, axes = plt.subplots(1, len(panel), figsize=(6.0 * len(panel), 4.2), squeeze=False)
+    for ax, (cell_key, rec) in zip(axes[0], sorted(panel.items()), strict=True):
+        ctxs = sorted((rec.get("contexts") or {}).items())
+        xs = range(len(ctxs))
+        for i, (_ctx_id, reads) in enumerate(ctxs):
+            leg = (reads.get("legacy") or {}).get("rate")
+            pv = (reads.get("pv") or {}).get("rate")
+            if leg is not None:
+                ax.bar([i - 0.2], [leg], width=0.38, color="C0")
+            if pv is not None:
+                ax.bar([i + 0.2], [pv], width=0.38, color="C0", alpha=0.45, hatch="//")
+            lb = (reads.get("legacy_base") or {}).get("rate")
+            pb = (reads.get("pv_base") or {}).get("rate")
+            if lb is not None:
+                ax.scatter([i - 0.2], [lb], marker="s", color="0.3", s=24, zorder=4)
+            if pb is not None:
+                ax.scatter([i + 0.2], [pb], marker="s", color="0.3", s=24, zorder=4)
+        ax.set_xticks(list(xs), [c for c, _ in ctxs], rotation=45, ha="right", fontsize=7)
+        ax.set_ylim(0, 1.0)
+        ax.set_title(f"{cell_key} (best arm {rec.get('run_id')})", fontsize=9)
+        ax.set_ylabel("panel judged rate (n=100)")
+    fig.suptitle(
+        "fu7 panel leakage reads (solid legacy / hatched paper rubric; squares = "
+        "reused committed base per context)",
+        fontsize=9,
+    )
+    fig.tight_layout()
+    savefig_paper(fig, f"{out_prefix}/fu7_panel_leakage", dir=out_dir)
+    plt.close(fig)
+
+
+def fig_fu7_projection_scatter(
+    agg: dict, fu6_agg: dict | None, out_prefix: str, out_dir: str
+) -> None:
+    """r_B-projection (frozen layer 22) vs paper-rubric judged delta, prefix +
+    context arms; fu6's 62 validation cells greyed underneath. DIAGNOSTIC
+    (fu6 verdict `Contradicted`) — no verdict rests on this read."""
+    proj = ((agg.get("remeasure") or {}).get("projection")) or {}
+    cells = proj.get("cells") or []
+    if not cells:
+        return
+    fig, axes = plt.subplots(1, 2, figsize=(10.0, 4.4))
+    for ax, arm in zip(axes, ("prefix", "context"), strict=True):
+        if fu6_agg is not None:
+            fu6_cells = ((fu6_agg.get("h2_arms") or {}).get(arm) or {}).get("cells") or []
+            ax.scatter(
+                [c["proj_selected_layer"] for c in fu6_cells],
+                [c["delta"] for c in fu6_cells],
+                color="0.8",
+                s=18,
+                label="fu6 validation cells (n=62)",
+            )
+        pts = [c for c in cells if c.get("pv_delta") is not None]
+        key = f"proj_{arm}_layer{FU7_PROJ_LAYER}"
+        ax.scatter(
+            [c[key] for c in pts],
+            [c["pv_delta"] for c in pts],
+            color="C1",
+            s=42,
+            label="fu7 cells",
+        )
+        sp = (proj.get("spearman") or {}).get(arm) or {}
+        rho = sp.get("rho")
+        ax.set_title(
+            f"{arm} arm — Spearman rho={rho:.2f} (n={sp.get('n_cells')})"
+            if rho is not None
+            else f"{arm} arm",
+            fontsize=9,
+        )
+        ax.set_xlabel(f"trained-base shift . r_B unit (layer {FU7_PROJ_LAYER})")
+        ax.set_ylabel("paper-rubric judged delta")
+        ax.legend(fontsize=7)
+    fig.suptitle(
+        "fu6 r_B projection DIAGNOSTIC (failed fu6 validation: Contradicted, "
+        "rho*=-0.456 non-specific — no verdict rests on this read)",
+        fontsize=9,
+    )
+    fig.tight_layout()
+    savefig_paper(fig, f"{out_prefix}/fu7_projection_scatter", dir=out_dir)
+    plt.close(fig)
+
+
+def fig_fu7_margin_at_selected(agg: dict, out_prefix: str, out_dir: str) -> None:
+    """Exploratory: per-arm tf-margin (trained vs base) at the selected rung."""
+    colors = _lr_colors()
+    rows = []
+    for cell_key in FU7_CELL_ORDER:
+        for r in _fu7_cell_runs(agg, cell_key):
+            m = r.get("margin") or {}
+            if m.get("status") != "computed":
+                continue
+            rows.append((cell_key, r["lr"], m.get("margin_base"), m.get("margin_trained")))
+    if not rows:
+        return
+    fig, ax = plt.subplots(figsize=(7.0, 4.0))
+    xticks, xlabels = [], []
+    for x, (ck, lr, mb, mt) in enumerate(rows):
+        if mb is not None:
+            ax.scatter([x], [mb], marker="s", color="0.5", s=30)
+        if mt is not None:
+            ax.scatter([x], [mt], marker="o", color=colors[lr], s=40)
+        xticks.append(x)
+        xlabels.append(f"{ck}\n{LR_LABEL[lr].split()[1]}")
+    ax.axhline(0.0, color="0.7", lw=0.8)
+    ax.set_xticks(xticks, xlabels, rotation=45, ha="right", fontsize=7)
+    ax.set_ylabel("tf-margin (mean over eval contexts)")
+    ax.set_title("fixed-pool margin at the selected rung (circles trained, squares base)")
+    fig.tight_layout()
+    savefig_paper(fig, f"{out_prefix}/fu7_margin_at_selected", dir=out_dir)
+    plt.close(fig)
+
+
+def fig_fu7_degeneracy_flags(agg: dict, out_prefix: str, out_dir: str) -> None:
+    """Exploratory: per-run degeneracy-flagged rung counts (flag-only guard)."""
+    labels, counts = [], []
+    for cell_key in FU7_CELL_ORDER:
+        for r in _fu7_cell_runs(agg, cell_key):
+            flags = [d for d in (r.get("degeneracy_by_step") or {}).values() if d.get("degenerate")]
+            labels.append(f"{cell_key} {LR_LABEL[r['lr']].split()[1]}")
+            counts.append(len(flags))
+    if not labels:
+        return
+    fig, ax = plt.subplots(figsize=(7.0, 3.5))
+    ax.bar(range(len(labels)), counts, color=paper_palette_blog(1)[0])
+    ax.set_xticks(range(len(labels)), labels, rotation=45, ha="right", fontsize=7)
+    ax.set_ylabel("rungs flagged degenerate")
+    ax.set_title("degenerate-output guard flags per run (length/4-gram; flag-only)")
+    fig.tight_layout()
+    savefig_paper(fig, f"{out_prefix}/fu7_degeneracy_flags", dir=out_dir)
+    plt.close(fig)
+
+
 def main() -> None:
-    ap = argparse.ArgumentParser(description="#1090 fu4/fu5 figures")
-    ap.add_argument("--round", choices=("fu4", "fu5"), default="fu4")
+    ap = argparse.ArgumentParser(description="#1090 fu4/fu5/fu7 figures")
+    ap.add_argument("--round", choices=("fu4", "fu5", "fu7"), default="fu4")
     ap.add_argument("--ladders", default=None, help="default: the round's committed aggregate")
     ap.add_argument("--text-audit", default=None, help="default: the round's committed audit")
     ap.add_argument(
@@ -647,11 +1000,24 @@ def main() -> None:
     args = ap.parse_args()
     set_paper_style()
     fu5 = args.round == "fu5"
-    ladders = Path(args.ladders or (FU5_LADDERS if fu5 else DEFAULT_LADDERS))
-    audit_path = Path(args.text_audit or (FU5_TEXT_AUDIT if fu5 else DEFAULT_TEXT_AUDIT))
+    fu7 = args.round == "fu7"
+    default_ladders = FU7_LADDERS if fu7 else (FU5_LADDERS if fu5 else DEFAULT_LADDERS)
+    default_audit = FU7_TEXT_AUDIT if fu7 else (FU5_TEXT_AUDIT if fu5 else DEFAULT_TEXT_AUDIT)
+    ladders = Path(args.ladders or default_ladders)
+    audit_path = Path(args.text_audit or default_audit)
     out_prefix = args.out_prefix or f"issue_1090/{args.round}"
     agg = json.loads(ladders.read_text())
     text_audit = json.loads(audit_path.read_text()) if audit_path.exists() else None
+    if fu7:
+        fu6_agg = json.loads(FU6_AGGREGATES.read_text()) if FU6_AGGREGATES.exists() else None
+        fig_fu7_unlock_grid(agg, out_prefix, args.out_dir)
+        fig_fu7_dual_rubric(agg, out_prefix, args.out_dir, text_audit)
+        fig_fu7_rubric_offset_scatter(agg, out_prefix, args.out_dir)
+        fig_fu7_panel_leakage(agg, out_prefix, args.out_dir)
+        fig_fu7_projection_scatter(agg, fu6_agg, out_prefix, args.out_dir)
+        fig_fu7_margin_at_selected(agg, out_prefix, args.out_dir)
+        fig_fu7_degeneracy_flags(agg, out_prefix, args.out_dir)
+        return
     if fu5:
         fu4_path = Path(args.fu4_ladders)
         fu4_agg = json.loads(fu4_path.read_text()) if fu4_path.exists() else None
