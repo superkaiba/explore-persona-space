@@ -914,7 +914,8 @@ Otherwise identical to v3:
   `## Takeaways` bullet.
 - Inline math `\(...\)`, display math `\[...\]`. Keep math out of plot
   labels and captions.
-- **Never write `byte identical` or `byte-identical`** anywhere.
+- **Never write `byte identical` or `byte-identical`** — nor the `bit …` /
+  `… equal` variants (`bit-identical`, `byte-equal`, `bit equal`) — anywhere.
 - **Statistical-framing discipline** carries over (enforced by
   `audit_clean_results_body_discipline.py` + clean-result-critic): no
   pre-registration mentions, no effect-size names in prose, no named
@@ -1525,9 +1526,10 @@ Three discipline points:
   `Confidence:` sentence to carry them).
 - Inline math `\(...\)`, display math `\[...\]`. Keep math out of plot
   labels and figure captions.
-- **Never write `byte identical` or `byte-identical`** anywhere in the
-  body. Use plain English: "the two files matched exactly", "every byte
-  agreed", "no diff between the runs".
+- **Never write `byte identical` or `byte-identical`** — nor the `bit …` /
+  `… equal` variants (`bit-identical`, `byte-equal`, `bit equal`) — anywhere
+  in the body. Use plain English: "the two files matched exactly", "every
+  byte agreed", "no diff between the runs".
 - **Statistical-framing discipline** carries over from v2 (enforced by
   `audit_clean_results_body_discipline.py` + clean-result-critic Lens 7):
   no pre-registration mentions, no effect-size names in prose, no named
@@ -1640,7 +1642,7 @@ generations; the snake_case-slug category is v4-only):
   + bare unbackticked slugs stay LM-critic territory) — v4-only (#1372)
 - Math-style subscripts/superscripts in prose
 - GCG / PAIR / `H_a` / `REJECTED` / letter labels / `Bin A/B/C`
-- **`byte identical` / `byte-identical`** — banned phrasing.
+- **`byte identical` / `byte-identical` (incl. `bit` and `-equal` variants)** — banned phrasing.
 
 Exemption: blockquoted lines inside the `## Reproducibility`
 `**Context:**` row are NOT scanned (the verbatim originating-prompt /

@@ -687,7 +687,8 @@ Emit your verdict in EXACTLY this format. No preamble, no fences:
 - `**This experiment in context:**` is the ONLY place `[#K](...)` issue
   links / bare `#K`
   appear; `## Takeaways`, `## Results`, `## Methodology` are STANDALONE (no
-  `#K`, no "byte identical" / "byte-identical", no cross-issue framing,
+  `#K`, no "byte identical" / "byte-identical" (or `bit`/`-equal`
+  variants: `bit-identical`, `byte-equal`, `bit equal`), no cross-issue framing,
   no methodology-correction framing of a prior run): PASS|FAIL with
   cited offending section
 - `## Results` has ≥1 `### <result>`; each names a story-beat /
@@ -840,8 +841,11 @@ Emit your verdict in EXACTLY this format. No preamble, no fences:
   `<!-- clean-result-v3 -->` body.)
 - `I` not `we`; no fluff transitions; plain-academic Takeaways; no
   "Standing caveats" section: PASS|FAIL with cited phrase
-- `byte identical` / `byte-identical` anywhere in body prose (banned
-  2026-W22, task #454): PASS|FAIL with cited phrase
+- `byte identical` / `byte-identical` — or the `bit` forms
+  (`bit-identical`, `bit identical`) and the `-equal` synonyms
+  (`byte-equal`, `byte equal`, `bit-equal`, `bit equal`) — anywhere in
+  body prose (byte form banned 2026-W22 #454; bit forms #642; -equal
+  synonyms #1423): PASS|FAIL with cited phrase
 - <other findings or PASS>
 
 ### Lens 7 — Statistical-framing rule
