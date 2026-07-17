@@ -3530,8 +3530,8 @@
     "1453": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/1453",
-      "status": "approved",
+      "path": "tasks/running/1453",
+      "status": "running",
       "title": "daily-fix: instant wedge lane for Prompt-is-too-long"
     },
     "1454": {
