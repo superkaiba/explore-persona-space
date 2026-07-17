@@ -1,0 +1,86 @@
+{
+  "commit": "add098ff8b",
+  "created": "2026-07-17T22:08:18Z",
+  "figsize": [
+    6.5,
+    4.0
+  ],
+  "points": [
+    {
+      "x": -0.18,
+      "Share of answer-state variance": 0.10419466145828905,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.82,
+      "Share of answer-state variance": 0.7192391293677722,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 1.82,
+      "Share of answer-state variance": 0.17656620917394952,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.18,
+      "Share of answer-state variance": 0.11802503131293586,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 1.18,
+      "Share of answer-state variance": 0.6012675803777157,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 2.18,
+      "Share of answer-state variance": 0.2807073883093411,
+      "_kind": "bar",
+      "_group": 1
+    }
+  ],
+  "n_series": 2,
+  "total_points": 6,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Answer-state variance decomposition",
+        "ylabel": "Share of answer-state variance",
+        "legend_labels": [
+          "Instruct model, own answers",
+          "Pretrained model, own answers"
+        ],
+        "annotations": [
+          "Dense core, 99 prefixes \u00d7 48 queries; layer 14, ambient basis"
+        ],
+        "xticklabels": [
+          "Prefix",
+          "Query",
+          "Prefix \u00d7 query\ninteraction (residual)"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7",
+          "0.8",
+          "0.9"
+        ]
+      }
+    ],
+    "series": [
+      "Instruct model, own answers",
+      "Pretrained model, own answers"
+    ]
+  }
+}
