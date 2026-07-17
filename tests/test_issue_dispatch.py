@@ -98,6 +98,13 @@ def test_runpod_launch_stuffs_issue_and_pid_file_onto_handle_extra(monkeypatch) 
     paths don't need to re-derive them.
     """
     monkeypatch.setattr("subprocess.run", lambda *a, **k: None)
+    # #1465: the provision leg now routes through the Popen-based
+    # pod_lifecycle relay — the blanket subprocess.run patch no longer
+    # intercepts it, so no-op the helper too (else a REAL provision runs).
+    monkeypatch.setattr(
+        "explore_persona_space.backends.runpod._run_pod_lifecycle_relay",
+        lambda cmd, **k: None,
+    )
     backend = RunPodBackend()
     spec = RunSpec(issue=99, intent="lora-7b", backend="runpod")
     handle = backend.launch(spec)

@@ -859,6 +859,12 @@ def test_runpod_launch_attaches_declaration(monkeypatch) -> None:
     from explore_persona_space.backends.base import RunSpec as _RunSpec
 
     monkeypatch.setattr("subprocess.run", lambda *a, **k: None)
+    # #1465: the provision leg now routes through the Popen-based
+    # pod_lifecycle relay — no-op it too (else a REAL provision runs).
+    monkeypatch.setattr(
+        "explore_persona_space.backends.runpod._run_pod_lifecycle_relay",
+        lambda cmd, **k: None,
+    )
     backend = RunPodBackend()
     handle = backend.launch(_RunSpec(issue=42, intent="lora-7b", backend="runpod"))
     decl = handle.extra[EXPECTED_ARTIFACTS_HANDLE_KEY]
@@ -880,6 +886,12 @@ def test_runpod_stale_sentinel_cannot_satisfy_fresh_declaration(monkeypatch, tmp
     from explore_persona_space.backends.base import RunSpec as _RunSpec
 
     monkeypatch.setattr("subprocess.run", lambda *a, **k: None)
+    # #1465: the provision leg now routes through the Popen-based
+    # pod_lifecycle relay — no-op it too (else a REAL provision runs).
+    monkeypatch.setattr(
+        "explore_persona_space.backends.runpod._run_pod_lifecycle_relay",
+        lambda cmd, **k: None,
+    )
     backend = RunPodBackend()
     handle = backend.launch(_RunSpec(issue=42, intent="lora-7b", backend="runpod"))
     decl = handle.extra[EXPECTED_ARTIFACTS_HANDLE_KEY]
