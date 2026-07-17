@@ -3572,8 +3572,8 @@
     "1459": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1459",
-      "status": "reviewing",
+      "path": "tasks/completed/1459",
+      "status": "completed",
       "title": "daily-fix: address-concern summary-cap UX"
     },
     "146": {
