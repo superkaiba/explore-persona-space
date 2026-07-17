@@ -129,3 +129,4 @@
 - [cross-artifact turn-key convention mismatch at joins](feedback_cross_artifact_turn_key_convention.md) — verify key-space shape + translate keys explicitly at per-turn/per-cell artifact joins; silent .get-and-skip turns a convention mismatch into a fake FAIL (#825 r11)
 - [small-cell bootstrap-CI degeneracy in mechanized gates](feedback_small_cell_bootstrap_ci_degeneracy.md) — [SUPERSEDED by rank-space tail gating] strict float coverage is itself epsilon-fragile (#825 r11)
 - [rank-space bootstrap tail-mass gating](feedback_rank_space_bootstrap_tail_gating.md) — gate CI validity on >alpha/2 draws strictly each side of a same-GEMM anchor; never float-space lo<point<hi or a cross-arithmetic point (#825 r11 rev4)
+- [Mode-branched filter key scoping + per-mode pre-GPU smoke](feedback_mode_branched_filter_key_scoping.md) — scope per-mode keys to their branch; CPU-preflight every dispatcher-composed mode (#1345 KeyError smoke crash)
