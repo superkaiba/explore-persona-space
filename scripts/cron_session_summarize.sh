@@ -19,6 +19,11 @@ if ! command -v uv >/dev/null 2>&1; then
 fi
 
 PROJECT_DIR="/home/thomasjiralerspong/explore-persona-space"
+
+# #1466: fleet tmux socket dir (cron env carries no TMUX_TMPDIR; this
+# wrapper drives tmux_window_titles.py against the fleet server).
+. "$PROJECT_DIR/scripts/eps_tmux_env.sh"
+
 DATE=$(date +%Y-%m-%d)
 LOG_DIR="$PROJECT_DIR/logs/session_summarize"
 LOG_FILE="$LOG_DIR/$DATE.log"

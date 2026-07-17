@@ -503,6 +503,36 @@ composer copies the requested lens's items VERBATIM and IN FULL from this file.
     full-precision artifacts at scale (single merged copy, or merges that fit the quota with
     headroom — the plan's §9 "N/A — no transient full-precision merges" or a bound under quota
     satisfies this item), or for `kind: analysis|infra|batch|survey`.
+    MOUNT-BINDING EXTENSION (#1414, from incident #1333): INDEPENDENT of the
+    transient-merge trigger above — for EVERY §9 disk row naming an out-root a
+    write-heavy phase writes (checkpoints, stores / analysis tensors, staged
+    inputs, scratch), ALSO verify the row states the PATH written AND the
+    filesystem/mount that path resolves to on the ROUTED lane (per-lane mount
+    list in the rule: RunPod `/workspace` volume vs the ~50 GB container
+    disk; GCE boot disk; shared VM `/` vs the `/mnt/eps-data` bind; SLURM
+    `$SCRATCH`), with per-candidate-lane mounts — or a pinned lane — when the
+    auto router can land the run on more than one lane (a lane failover
+    changes the mount, #1112), AND that the plan names the per-phase preamble
+    headroom assert against the mount the out-root RESOLVES to
+    (`orchestrate.preflight.assert_out_root_headroom`, statvfs + ~1 GB
+    posix_fallocate canary — full recipe:
+    `.claude/rules/plan-compute-sizing.md` § Out-root mount binding). REVISE
+    when a disk row carries a bare GB number with no mount named for the
+    routed lane, when a multi-candidate-lane plan names only the planned
+    lane's mount, or when no preamble assert is named for a write-heavy
+    phase. Conclusion-changing because a correct GB estimate on the WRONG
+    mount still ENOSPCs mid-write and the phase dies producing no result
+    (#1333 attempt 3: the out-root resolved to the ~50 GB RunPod container
+    disk instead of `/workspace` and died mid-checkpoint-serialization
+    despite a correct §9 GB estimate). The fits-quota / no-merges / kind
+    escapes above do NOT cover this extension (its trigger is any out-root
+    row, not only merge phases; only the extension's own escape list below
+    governs it). Not a REVISE when every §9 out-root disk row names
+    its mount on the routed lane(s) and the preamble assert, when the plan
+    writes no out-roots (its §9 "N/A — no out-root writes" satisfies this
+    extension), or for `kind: infra|batch|survey` — a `kind: analysis` plan
+    with out-root writes is IN scope (the #658-class VM store phases are
+    analysis phases). Plan-time placement check only, never a mid-run gate.
 17. **Persona-vectors extraction fidelity (any plan that elects persona vectors).** If the plan
     extracts a persona/behavior direction via "use persona vectors" / "extract a persona vector" /
     "persona-vectors-style direction" or a mean-difference of positive/negative contrastive
@@ -729,7 +759,7 @@ composer copies the requested lens's items VERBATIM and IN FULL from this file.
     second DV (single-condition behavior characterization, descriptive rate reports). Not a REVISE
     for marker implants (separate recipe), non-behavioral analysis, or when the plan's §6 writes
     "N/A — not a content-behavior leakage/implantation experiment".
-11. **Selection-symmetric nulls (max-over-axis headlines).** If the plan's headline statistic is
+11. **Selection-symmetric nulls (max-over-axis headlines; noise-structure symmetry).** If the plan's headline statistic is
     chosen by `max` / `argmax` / best-of / top-k-mean over a FREE AXIS (a read-out layer, a cell, a
     k / neighbourhood size, a seed, an extraction point, a threshold) AND is compared against a null
     / permutation / shuffle band, verify §6 registers a SELECTION-SYMMETRIC null — EITHER every null
@@ -764,6 +794,28 @@ composer copies the requested lens's items VERBATIM and IN FULL from this file.
     max-over-axis selection in the headline" satisfies this item). If the per-draw × per-axis matrix
     is registered/persisted but the plan shipped the asymmetric read, the honest band is
     analyzer-recoverable post-hoc — carry it as a binding Concern rather than a REVISE.
+    ALSO verify NOISE-STRUCTURE symmetry: if any registered statistic's
+    observed and reference legs share ONE SAMPLED quantity — cos(X − B̄, Y − B̄)
+    with a shared empirical baseline mean, a shared sampled
+    anchor/denominator, a change-score correlation sharing a baseline — AND
+    the null/reference band lacks that shared term (norm-matched random
+    directions, independently re-centered shuffles), REVISE unless the plan
+    registers EITHER disjoint baseline draw halves feeding the two legs OR a
+    null carrying the identical shared-B̄ structure per draw (pre-subtraction
+    leg level, norm-matched to the observed raw leg)
+    (`selection-symmetric-nulls.md` § Noise-structure symmetry).
+    Conclusion-changing because the shared sampling noise adds
+    ≈ +tr(Σ_B)/n_B to the observed inner product only — #1415: the
+    disjoint-baseline recount dropped prefix mean cosines 0.271→0.178 and
+    context 0.362→0.272, sent one pair 0.23→−0.08 (fully artifactual; target
+    split-half reliability 0.049), and pulled 6/28 prefix pairs below the
+    null p97.5 (0.043) — the "28/28 pairs clear the null" headline did not
+    survive, and the defect was caught only at interpretation-critique. Not a
+    REVISE when the baseline is deterministic/analytic (no sampling noise),
+    the legs already use independent estimates, or the null already bears the
+    shared-B̄ structure; a missing split-half reliability report on a sampled
+    difference-vector leg (with a fix registered) is a binding Concern, not a
+    REVISE.
 12. **Re-cost on power-raising recommendations (same round).** Any recommendation in YOUR review
     that raises statistical power parameters — permutation/null draws B, bootstrap N, seeds, cells,
     folds, samples-per-cell — MUST, in the SAME round, re-cost every affected §9 compute row: state

@@ -285,6 +285,10 @@ _FLEET_MUTATING_PASS_NAMES = (
     # #1341: escalate-only too, but it runs a REAL `git status` against the
     # LIVE shared root and can write real sidecar rows + fire real pushes.
     "root_draft_pass",
+    # #1439: report-only too, but it runs REAL task_workflow.audit() +
+    # reconcile_registry(apply=False) reads against the LIVE registry and can
+    # write real sidecar rows / state / pushes from a full-main() unit test.
+    "registry_drift_pass",
     "cpu_guard_pass",
     "happy_patch_pass",
     "data_disk_pass",

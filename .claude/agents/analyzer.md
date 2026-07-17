@@ -258,6 +258,13 @@ commit SHA — NEVER relative (dashboard-invisible, #365) or
    blob-identical to the pin; differing → warn-only. Never `git clean` /
    `checkout .` / `restore .` (§ Step 3 of the section reference, #922).
 
+When the commit set includes any `scripts/` or `src/` file (a
+plot/analysis script swept alongside the figures — the #1092 shape) AND
+the commit lands DIRECTLY on `main` (an inline / free-analysis round;
+worktree branches are gated at Step 10d instead), the inline payload
+lint gate binds BEFORE the push: SKILL.md Step 9a-ter
+§ Inline payload lint gate.
+
 Full text: `analyzer-section-reference.md`
 § Step 3: Generate Plots (grep heading, chunked Read).
 

@@ -1,0 +1,109 @@
+{
+  "metadata": {
+    "git_commit": "4fd9d43491c031be9da95c5841675f9fc97c80f1",
+    "timestamp": "2026-07-17T10:22:34Z",
+    "seed": 0,
+    "n": 0,
+    "script": "scripts/issue1335_refit_r0_filters.py",
+    "issue": 1335
+  },
+  "headline_layer": 19,
+  "lambda_selection": "inner-group-cv",
+  "finding": "row-filter recipes DIFFER: #825 naturalistic S applies no token-count filters (zero-width-span render drop only, n=4724); #1335 r0 applies completion>=4 / context>=8 / row<=2048 at capture (n=4589/4599)",
+  "filter_recipes": {
+    "issue825_naturalistic_s": {
+      "summary": "NO token-count row filters (chat anchors S1/S2 kept 5000/5000); single tolerated drop = zero-width-span (BPE-degenerate) rows under the naturalistic render; fit-side NaN keep mask only, no row allowlist",
+      "drop_predicate": "any content span (s, e) with s >= e after render_naturalistic",
+      "provenance": {
+        "drop_code": "scripts/issue825_extract_turnstore.py::partition_rendered/degenerate_content_turns @ 65ff2426a8087398c55ee3188637f81f0401617b (branch issue-825 crash-fix)",
+        "render_code": "scripts/issue825_render_formats.py::render_naturalistic @ 302c8b6bfaa1ab65d990fa4baa906288caa8293b \u2014 byte-identical to this worktree copy (diff empty)",
+        "fit_code": "scripts/issue825_fit_cells.py::xy (NaN keep only) @ 3307b405263dbc70facf350b27918a6d7fb8dd59 (cells_S2N metadata pin)",
+        "committed_cells": "eval_results/issue_825/naturalistic-single-turn/cells_S{1,2}N.json"
+      }
+    },
+    "issue1335_r0": {
+      "summary": "capture-time token filters (issue1335_extract_store.py::build_items @ 377f824b5f): completion >= 4 tokens (DIALOGUE_MIN_TOKENS), context >= 8 tokens within the 512-token cap window (CONTEXT_MIN_TOKENS / CONTEXT_CAP_TOKENS), total row <= 2048 tokens (ROW_MAX_TOKENS); question-level loader dropped 0/5000"
+    }
+  },
+  "recipe_applied_to_store_note": "#825's recipe adds no token filters, so applied literally to the persisted r0 rows it keeps ALL of them (delta 0 by construction); the recipe difference binds at CAPTURE time. The executable arm below restricts the store to #825's realized 4,724-row kept set (restrict_to_825_rowset); the rows #1335's token filters dropped are not in the store and cannot be refit (rows_unaddable*).",
+  "ops_note": "free analysis on persisted bf16 stores (HF rev 08421fc22bbe); 4 single-layer L19 ridge fits + 2x5000 offline renders, VM CPU, 0 GPU-h",
+  "p825_rowset_recompute": {
+    "n_rows": 5000,
+    "n_dropped_zero_width": 276,
+    "n_kept": 4724,
+    "committed_n": {
+      "base": 4724,
+      "instruct": 4724
+    },
+    "tokenizer_agreement_base_vs_instruct": true,
+    "track_s_sha256": "d20560b679345a6e1d849c1a03670f5962e415c9ecdc0a74f9651f33532bd3f0"
+  },
+  "per_model": {
+    "base": {
+      "committed_r2_l19": 0.4103056976646371,
+      "n_committed": 4589,
+      "repro_anchor": {
+        "r2": 0.41030569766463687,
+        "abs_residual": 2.220446049250313e-16
+      },
+      "restrict_to_825_rowset": {
+        "r2": 0.4090049170076988,
+        "n": 4547,
+        "delta_vs_committed": -0.001300780656938283
+      },
+      "rows_removed_from_store_825_dropped": 42,
+      "rows_added": 0,
+      "rows_unaddable_825kept_but_token_filtered": 177,
+      "unaddable_reason_split": {
+        "short_dialogue": 33,
+        "short_context": 141,
+        "row_too_long": 3
+      },
+      "capture_drop_counters": {
+        "records": 5000,
+        "kept": 4589,
+        "dropped_short_dialogue": 79,
+        "dropped_short_context": 329,
+        "dropped_row_too_long": 3
+      },
+      "p825_committed_reference": {
+        "cell": "S2N",
+        "r2_l19": 0.5782882733523877,
+        "n": 4724
+      }
+    },
+    "instruct": {
+      "committed_r2_l19": 0.4708150217155602,
+      "n_committed": 4599,
+      "repro_anchor": {
+        "r2": 0.47081502171556033,
+        "abs_residual": 1.1102230246251565e-16
+      },
+      "restrict_to_825_rowset": {
+        "r2": 0.46833968360642286,
+        "n": 4570,
+        "delta_vs_committed": -0.0024753381091373594
+      },
+      "rows_removed_from_store_825_dropped": 29,
+      "rows_added": 0,
+      "rows_unaddable_825kept_but_token_filtered": 154,
+      "unaddable_reason_split": {
+        "short_dialogue": 5,
+        "short_context": 141,
+        "row_too_long": 8
+      },
+      "capture_drop_counters": {
+        "records": 5000,
+        "kept": 4599,
+        "dropped_short_dialogue": 64,
+        "dropped_short_context": 329,
+        "dropped_row_too_long": 8
+      },
+      "p825_committed_reference": {
+        "cell": "S1N",
+        "r2_l19": 0.6249482470755414,
+        "n": 4724
+      }
+    }
+  }
+}

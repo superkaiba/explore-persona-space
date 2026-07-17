@@ -1,0 +1,53 @@
+{
+  "primary_layer": 20,
+  "grid": [
+    0.5,
+    1.0,
+    2.0,
+    4.0
+  ],
+  "retry_alpha": 0.25,
+  "selection": {
+    "evil": {
+      "selected_alpha": 4.0,
+      "retried": false,
+      "subset_pair_ids": [
+        "m685_00_sycophancy",
+        "m685_01_refusal",
+        "m685_02_evil",
+        "m685_03_hedging",
+        "m685_04_terse"
+      ]
+    },
+    "sycophancy": {
+      "selected_alpha": 4.0,
+      "retried": false,
+      "subset_pair_ids": [
+        "m685_00_sycophancy",
+        "m685_01_refusal",
+        "m685_02_evil",
+        "m685_03_hedging",
+        "m685_04_terse"
+      ]
+    },
+    "hallucination": {
+      "selected_alpha": 4.0,
+      "retried": false,
+      "subset_pair_ids": [
+        "m685_00_sycophancy",
+        "m685_01_refusal",
+        "m685_02_evil",
+        "m685_03_hedging",
+        "m685_04_terse"
+      ]
+    }
+  },
+  "repro": {
+    "git_commit": "a369b06f46dde187e268a8f5f1b0c8fe7ae99a94",
+    "torch": "2.8.0+cu128",
+    "transformers": "4.57.6",
+    "model_id": "Qwen/Qwen2.5-7B-Instruct",
+    "tiny": false,
+    "timestamp": "2026-07-17T00:52:46.308442+00:00"
+  }
+}

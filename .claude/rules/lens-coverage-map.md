@@ -100,6 +100,7 @@ Rows are honest: a check with no v2 owner is a `GAP:` row, never papered over.
 | Step 0.6 end-to-end smoke gate (`smoke-run-missing`) | code-reviewer.md Step 0.6 | v2-owner: code-correctness-critic |
 | Step 0.6 many-call production-shape unit-timing extrapolation | code-reviewer.md Step 0.6 | v2-owner: efficiency-critic |
 | Step 0.65 raw-completions upload wiring (`raw-completions-upload-missing`) | code-reviewer.md Step 0.65 | v2-owner: code-correctness-critic |
+| Step 0.65 plan-glob vs uploader-eligibility parity sub-check (#825) | code-reviewer.md Step 0.65 | v2-owner: code-correctness-critic |
 | Step 0.67 compute-shape-vs-dispatcher (`compute-shape-mismatch`) | code-reviewer.md Step 0.67 | v2-owner: efficiency-critic |
 | Step 0.67 work-conserving schedule sub-check | code-reviewer.md Step 0.67 | v2-owner: efficiency-critic |
 | Step 0.68 named-helper adherence (plan-named `module::fn`) | code-reviewer.md Step 0.68 | v2-owner: plan-adherence-critic |

@@ -1,0 +1,152 @@
+{
+  "commit": "3114e0226b",
+  "created": "2026-07-17T16:29:07Z",
+  "figsize": [
+    11.0,
+    5.0
+  ],
+  "points": [
+    {
+      "category": "Persona (software engineer)\nbase",
+      "judged casual-register rate (pv rubric)": 0.0,
+      "error": 0.009423002959160447,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "Persona (software engineer)\nlr 1e-5",
+      "judged casual-register rate (pv rubric)": 0.74,
+      "error": 0.060385672492533904,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "Persona (software engineer)\nlr 3e-5",
+      "judged casual-register rate (pv rubric)": 0.93,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "Persona (software engineer)\nlr 1e-4",
+      "judged casual-register rate (pv rubric)": 0.9,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "category": "Bare assistant\nbase",
+      "judged casual-register rate (pv rubric)": 0.0,
+      "error": 0.009423002959160447,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "category": "Bare assistant\nlr 1e-5",
+      "judged casual-register rate (pv rubric)": 0.495,
+      "error": 0.06863701048800669,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "category": "Bare assistant\nlr 3e-5",
+      "judged casual-register rate (pv rubric)": 0.61,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "category": "Bare assistant\nlr 1e-4",
+      "judged casual-register rate (pv rubric)": 0.65,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "category": "WildChat prefix\nbase",
+      "judged casual-register rate (pv rubric)": 0.0,
+      "error": 0.009423002959160447,
+      "_kind": "bar",
+      "_group": 8
+    },
+    {
+      "category": "WildChat prefix\nlr 1e-5",
+      "judged casual-register rate (pv rubric)": 0.91,
+      "_kind": "bar",
+      "_group": 9
+    },
+    {
+      "category": "WildChat prefix\nlr 3e-5",
+      "judged casual-register rate (pv rubric)": 0.6294416243654822,
+      "error": 0.06683953845087631,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "category": "WildChat prefix\nlr 1e-4",
+      "judged casual-register rate (pv rubric)": 0.99,
+      "_kind": "bar",
+      "_group": 11
+    },
+    {
+      "category": "ICL prefix\nbase",
+      "judged casual-register rate (pv rubric)": 0.0,
+      "error": 0.009423002959160447,
+      "_kind": "bar",
+      "_group": 12
+    },
+    {
+      "category": "ICL prefix\nlr 1e-5",
+      "judged casual-register rate (pv rubric)": 0.995,
+      "error": 0.013445626940202682,
+      "_kind": "bar",
+      "_group": 13
+    },
+    {
+      "category": "ICL prefix\nlr 3e-5",
+      "judged casual-register rate (pv rubric)": 0.99,
+      "_kind": "bar",
+      "_group": 14
+    },
+    {
+      "category": "ICL prefix\nlr 1e-4",
+      "judged casual-register rate (pv rubric)": 0.98,
+      "_kind": "bar",
+      "_group": 15
+    }
+  ],
+  "n_series": 16,
+  "total_points": 16,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title": "writing_style POSITIVE-ONLY install grid \u2014 Tier-2 verdict-arm rates (blue), Tier-1 selected-rung rates (cyan), base (grey); Wilson 95% CIs",
+        "ylabel": "judged casual-register rate (pv rubric)",
+        "xticklabels": [
+          "Persona (software engineer)\nbase",
+          "Persona (software engineer)\nlr 1e-5",
+          "Persona (software engineer)\nlr 3e-5",
+          "Persona (software engineer)\nlr 1e-4",
+          "Bare assistant\nbase",
+          "Bare assistant\nlr 1e-5",
+          "Bare assistant\nlr 3e-5",
+          "Bare assistant\nlr 1e-4",
+          "WildChat prefix\nbase",
+          "WildChat prefix\nlr 1e-5",
+          "WildChat prefix\nlr 3e-5",
+          "WildChat prefix\nlr 1e-4",
+          "ICL prefix\nbase",
+          "ICL prefix\nlr 1e-5",
+          "ICL prefix\nlr 3e-5",
+          "ICL prefix\nlr 1e-4"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ]
+      }
+    ]
+  }
+}

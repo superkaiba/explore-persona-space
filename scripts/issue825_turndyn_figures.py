@@ -16,10 +16,17 @@ import json
 import sys
 from pathlib import Path
 
-import matplotlib.pyplot as plt
-import numpy as np
+from explore_persona_space.orchestrate.env import load_dotenv
 
-from explore_persona_space.analysis.paper_plots import (
+# #847: thread caps must land BEFORE the matplotlib/numpy imports below — on
+# the shared VM, load_dotenv() setdefaults OMP/MKL/OPENBLAS/NUMEXPR_NUM_THREADS,
+# and the BLAS pools freeze at import time.
+load_dotenv()
+
+import matplotlib.pyplot as plt  # noqa: E402
+import numpy as np  # noqa: E402
+
+from explore_persona_space.analysis.paper_plots import (  # noqa: E402
     paper_palette_blog,
     savefig_paper,
     set_paper_style,
@@ -58,7 +65,7 @@ def per_turn_series(
     return turns, r2, folds, null_hi, ns
 
 
-def main() -> None:
+def main() -> None:  # noqa: C901 -- pre-existing complexity; refactor out of scope
     results_path = sys.argv[1] if len(sys.argv) > 1 else DEFAULT_RESULTS
     d = load(results_path)
     p = d["parts"]
@@ -67,13 +74,13 @@ def main() -> None:
     out.mkdir(parents=True, exist_ok=True)
     c = paper_palette_blog(6)
     col_g, col_r_own, col_r_log = c[0], c[1], c[2]
-    col_mlp, col_ridge = c[3], c[0]
+    col_mlp, _col_ridge = c[3], c[0]
 
     # ------------------------------------------------------------------
     # Figure 1 (hero): per-turn held-out R2 at flat n≈5000, all arms
     # ------------------------------------------------------------------
     fig, axes = plt.subplots(1, 2, figsize=(11.5, 4.6), sharey=True)
-    for ax, model in zip(axes, MODELS):
+    for ax, model in zip(axes, MODELS, strict=False):
         arms = [
             (
                 f"cells_armG_{model}",
@@ -102,7 +109,7 @@ def main() -> None:
             (f"cells_armG_{model}", "pfx", col_g, "--", "o", "prefix arm (simulated)"),
             (f"cells_armR_own_{model}", "pfx", col_r_own, "--", "s", "prefix arm (real, own)"),
         ]
-        null_lo, null_hi_all = [], []
+        _null_lo, null_hi_all = [], []
         for key, mapping, col, ls, mk, label in arms:
             turns, r2, folds, null_hi, ns = per_turn_series(p[key], mapping)
             if key.startswith("cells_armR_logged"):
@@ -122,7 +129,7 @@ def main() -> None:
                 alpha=1.0 if ls == "-" else 0.55,
                 label=label,
             )
-            for t, fl in zip(turns, folds):
+            for t, fl in zip(turns, folds, strict=False):
                 ax.plot(
                     [t] * len(fl),
                     fl,
@@ -156,7 +163,7 @@ def main() -> None:
     # Figure 2: real logged deep tail (t13-30), decaying n
     # ------------------------------------------------------------------
     fig, axes = plt.subplots(1, 2, figsize=(11.5, 4.2), sharey=True)
-    for ax, model in zip(axes, MODELS):
+    for ax, model in zip(axes, MODELS, strict=False):
         turns, r2, folds, null_hi, ns = per_turn_series(p[f"cells_armR_logged_{model}"], "ctx")
         keep = [i for i, t in enumerate(turns) if 13 <= t <= 30]
         t_, r_, nh_, n_ = ([x[i] for i in keep] for x in (turns, r2, null_hi, ns))
@@ -171,7 +178,7 @@ def main() -> None:
             label="real logged conversations, logged answers",
         )
         ax.plot(t_, nh_, ":", color="0.45", lw=1.4, label="shuffled-answer null (max of 200 draws)")
-        for t, r, n in zip(t_, r_, n_):
+        for t, r, n in zip(t_, r_, n_, strict=False):
             ax.text(
                 t,
                 r + 0.12,
@@ -195,7 +202,7 @@ def main() -> None:
     # Figure 3: cross-turn transfer matrices (arm G)
     # ------------------------------------------------------------------
     fig, axes = plt.subplots(1, 2, figsize=(11.8, 4.9))
-    for ax, model in zip(axes, MODELS):
+    for ax, model in zip(axes, MODELS, strict=False):
         tr = p[f"transfer_armG_{model}"]
         turns = tr["turns"]
         m = np.full((len(turns), len(turns)), np.nan)
@@ -220,7 +227,7 @@ def main() -> None:
     # ------------------------------------------------------------------
     fig, axes = plt.subplots(1, 2, figsize=(11.5, 4.4), sharey=True)
     row_cols = paper_palette_blog(5)
-    for ax, model in zip(axes, MODELS):
+    for ax, model in zip(axes, MODELS, strict=False):
         tr = p[f"transfer_armG_{model}"]
         turns = tr["turns"]
         diag = [tr["r2"][f"{j}->{j}"] for j in turns]
@@ -249,7 +256,7 @@ def main() -> None:
     # Figure 5: reach — turn-1 context predicting turn-k answers
     # ------------------------------------------------------------------
     fig, axes = plt.subplots(1, 2, figsize=(11.5, 4.4), sharey=True)
-    for ax, model in zip(axes, MODELS):
+    for ax, model in zip(axes, MODELS, strict=False):
         for arm, col, mk, lab in [
             (f"reach_armG_{model}", col_g, "o", "simulated continuations"),
             (f"reach_armR_own_{model}", col_r_own, "s", "real logged context, own answers"),
@@ -328,7 +335,7 @@ def main() -> None:
     ax.axhspan(-0.10, 0.10, color="0.88", alpha=0.6, zorder=0)
     ax.axhline(0, color="0.6", lw=0.8)
     ax.set_xlabel("Assistant turn depth")
-    ax.set_ylabel("R² delta: simulated − real (same conversations)")
+    ax.set_ylabel("R² delta: simulated − real (same conversations)")  # noqa: RUF001 -- minus sign
     ax.set_title("Simulated-vs-real bridge (seed intersection, ±0.10 band)")
     ax.legend(fontsize=8, loc="upper left")
 
@@ -363,7 +370,7 @@ def main() -> None:
     # Figure 7: operator similarity vs within-turn resample ceiling (arm G)
     # ------------------------------------------------------------------
     fig, axes = plt.subplots(1, 2, figsize=(11.5, 4.4), sharey=True)
-    for ax, model in zip(axes, MODELS):
+    for ax, model in zip(axes, MODELS, strict=False):
         o = p[f"operators_armG_{model}"]
         turns = o["turns"]
         ceil = [o["selfsim_ceiling"][str(t)]["raw_cos_mean"] for t in turns]

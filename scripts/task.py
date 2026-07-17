@@ -132,15 +132,41 @@ def _safe_echo(text: str, *, context: str) -> None:
 
 
 _FIELD_LED_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_-]*[:=]")
+_VERSION_STAMP_RE = re.compile(r"^v\d+\.\s+")
+
+
+def _stripped_note_core(note: str) -> tuple[str, bool]:
+    """Note HEAD after the same per-segment decoration strip
+    task_workflow.parse_followup_note_field applies: the leading
+    whitespace/bullet/bold mix, then a lowercase `v<k>. ` version stamp
+    (#1382). Returns (core, stamped); `stamped` records whether a stamp
+    was stripped so the poster-side stamp advisory can key on it."""
+    core = re.sub(r"^[\s\-*]+", "", note)
+    stamp = _VERSION_STAMP_RE.match(core)
+    if stamp:
+        return core[stamp.end() :], True
+    return core, False
 
 
 def _looks_field_led(note: str) -> bool:
-    """True when the note HEAD is a `field:` / `field=` line-core after
-    stripping the same leading whitespace/bullet/bold mix
-    task_workflow.parse_followup_note_field strips per segment. Head-only
-    by design (false-positive-averse; see #1178 plan §4 D2)."""
-    core = re.sub(r"^[\s\-*]+", "", note)
+    """True when the note HEAD is a `field:` / `field=` line-core after the
+    parse-side decoration strip — whitespace/bullet/bold, then the #1382
+    `v<k>. ` version stamp (stamp tolerance added with #1440, restoring the
+    documented parity with parse_followup_note_field). Head-only by design
+    (false-positive-averse; see #1178 plan §4 D2)."""
+    core, _ = _stripped_note_core(note)
     return bool(_FIELD_LED_RE.match(core))
+
+
+def _looks_stamped_field_led(note: str) -> bool:
+    """True when the note HEAD carries a `v<k>. ` version stamp followed by
+    field-led content — the #1092 run-note shape whose read-side absorption
+    is the #1382 parser tolerance. BOTH conditions required
+    (false-positive-averse: a prose note that happens to start "v2. " never
+    warns — the parser tolerance likewise only acts when a field anchor
+    binds after the strip)."""
+    core, stamped = _stripped_note_core(note)
+    return stamped and bool(_FIELD_LED_RE.match(core))
 
 
 def _safe_print(*args: object, context: str = "task.py", **kwargs: object) -> None:
@@ -619,6 +645,29 @@ def cmd_post_event(args: argparse.Namespace) -> None:
                 "successfully; fix the quoting on your NEXT marker instead.",
                 file=sys.stderr,
             )
+    if args.note is not None and _looks_stamped_field_led(note):
+        # Poster-side twin of the #1382 parse-side version-stamp tolerance
+        # (task_workflow.parse_followup_note_field): the note head echoes
+        # the marker's `v<k>` grammar as a decorative `v<k>. ` stamp before
+        # field-led content (the #1092 run-note shape). Read-side parsers
+        # strip it silently, so nothing ever corrected the emitter — this
+        # WARN does. Advisory only — the marker already posted; guarded
+        # like the #1120 WARN above (#537 rc-contract class; a closed
+        # stderr raises ValueError, not only OSError). Independent `if`,
+        # not `elif`: the stamp + literal-\n shapes are orthogonal and a
+        # note carrying both gets both advisories.
+        with contextlib.suppress(OSError, ValueError):
+            print(
+                f"WARNING: task.py post-marker {args.marker}: --note head "
+                "starts with a 'v<k>. ' version stamp before field-led "
+                "content. The marker version is recorded from --version on "
+                "the event row — do not echo it into the note head (field "
+                "parsers strip the stamp, #1382, so THIS note still "
+                "parses). Do NOT re-post this marker — it was posted "
+                "successfully; drop the stamp from your NEXT marker's note "
+                "instead.",
+                file=sys.stderr,
+            )
     _safe_echo(
         json.dumps(payload, indent=2),
         context=f"task.py post-marker: marker {args.marker}",
@@ -1034,19 +1083,70 @@ def cmd_reap_husks(args: argparse.Namespace) -> None:
 
 # ─── Binding-concerns handlers ────────────────────────────────────────────
 
+CONCERN_SUMMARY_CAP = 200
+
+
+def _truncate_summary(summary: str, cap: int = CONCERN_SUMMARY_CAP) -> tuple[str, str | None]:
+    """Truncate an over-cap concern summary at a word boundary.
+
+    Returns ``(kept, dropped_tail)``. ``dropped_tail`` is ``None`` when
+    ``summary`` already fits (after stripping trailing whitespace). When
+    truncated, ``kept`` is <= ``cap`` chars, ends with ``"..."``, and cuts
+    at the last space at or before the budget (hard-cut when the text has
+    no usable space in that span).
+    """
+    summary = summary.rstrip()
+    if len(summary) <= cap:
+        return summary, None
+    budget = cap - 3  # room for the "..." marker (ASCII, not U+2026)
+    cut = summary.rfind(" ", 0, budget + 1)
+    if cut <= 0:
+        cut = budget
+    kept = summary[:cut].rstrip() + "..."
+    if kept == "...":
+        # Degenerate whitespace-heavy input: the kept prefix stripped to
+        # nothing — hard-cut the raw text so the stored summary is never
+        # content-free.
+        cut = budget
+        kept = summary[:cut].rstrip() + "..."
+    return kept, summary[cut:].strip()
+
 
 def cmd_raise_concern(args: argparse.Namespace) -> None:
     """Append a `raised` (or `verified-open` on re-raise) event to
     concerns.jsonl. Re-raising the SAME concern_id at the SAME round with
-    the SAME severity is a no-op (returns the existing event)."""
+    the SAME severity is a no-op (returns the existing event). An over-cap
+    ``--summary`` is truncated at a word boundary with a loud stderr
+    warning (full original shifted into evidence when --evidence is
+    empty); the library layer keeps the hard 200-char cap."""
+    summary, dropped = _truncate_summary(args.summary)
+    evidence = args.evidence
+    if dropped is not None:
+        if evidence is None:
+            evidence = args.summary  # preserve the full original text
+            print(
+                f"[task.py] WARNING: --summary was {len(args.summary)} chars "
+                f"(cap {CONCERN_SUMMARY_CAP}); truncated at a word boundary to "
+                f"{len(summary)} chars. Full original preserved in the "
+                "concern's evidence field.",
+                file=sys.stderr,
+            )
+        else:
+            print(
+                f"[task.py] WARNING: --summary was {len(args.summary)} chars "
+                f"(cap {CONCERN_SUMMARY_CAP}); truncated at a word boundary to "
+                f"{len(summary)} chars; --evidence kept as given. "
+                f"Dropped tail: {dropped!r}",
+                file=sys.stderr,
+            )
     payload = raise_concern(
         args.number,
         args.concern_id,
         severity=args.severity,
-        summary=args.summary,
+        summary=summary,
         raised_by=args.by,
         raised_at_round=args.round,
-        evidence=args.evidence,
+        evidence=evidence,
     )
     _safe_echo(
         json.dumps(payload, indent=2, ensure_ascii=False),
@@ -1058,13 +1158,26 @@ def cmd_address_concern(args: argparse.Namespace) -> None:
     """Append an `addressed` event recording that the implementer (or
     analyzer / planner) believes the concern has been fixed. The next
     reviewer round verifies; a re-raise after `addressed` becomes a
-    `verified-open` event rather than a fresh `raised`."""
+    `verified-open` event rather than a fresh `raised`. An over-cap
+    explicit ``--summary`` is truncated at a word boundary with a loud
+    stderr warning (the ``None`` carried-forward path is untouched)."""
+    summary = args.summary
+    if summary is not None:
+        summary, dropped = _truncate_summary(summary)
+        if dropped is not None:
+            print(
+                f"[task.py] WARNING: --summary was {len(args.summary)} chars "
+                f"(cap {CONCERN_SUMMARY_CAP}); truncated at a word boundary to "
+                f"{len(summary)} chars. Dropped tail: {dropped!r} "
+                "(detail belongs in the round report / the raise's evidence).",
+                file=sys.stderr,
+            )
     payload = address_concern(
         args.number,
         args.concern_id,
         addressed_by=args.by,
         addressed_at_round=args.round,
-        summary=args.summary,
+        summary=summary,
     )
     _safe_echo(
         json.dumps(payload, indent=2, ensure_ascii=False),
@@ -1660,7 +1773,13 @@ def main() -> None:
         choices=sorted(CONCERN_SEVERITIES),
         help="BLOCKER (no deferral), CONCERN (binding), NIT (optional)",
     )
-    p.add_argument("--summary", required=True, help="one-line ≤200-char description")
+    p.add_argument(
+        "--summary",
+        required=True,
+        help="one-line description (<=200 chars; longer text is truncated at a word "
+        "boundary with a warning, the full original shifted into --evidence when "
+        "--evidence is empty)",
+    )
     p.add_argument("--by", required=True, help="reviewer name (e.g. code-reviewer, critic)")
     p.add_argument(
         "--round",
@@ -1704,7 +1823,8 @@ def main() -> None:
         "--rationale",
         dest="summary",
         default=None,
-        help="optional updated summary; defaults to the original raised summary "
+        help="optional updated summary, <=200 chars (longer text is truncated at a "
+        "word boundary with a warning); defaults to the original raised summary "
         "(--rationale is an accepted alias, matching defer-concern's flag name)",
     )
     p.set_defaults(func=cmd_address_concern)

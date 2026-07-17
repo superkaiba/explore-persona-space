@@ -139,6 +139,18 @@ _LOCAL_VM_ONLY_PATHS: frozenset[str] = frozenset(
         # the task.py-shellout branch in _post_em_rate_marker is exercised
         # ONLY when the gate runs VM-side.
         "scripts/issue_521_em_rate_gate.py",
+        # #952 behavior-divergence dashboard builder (allowlisted by #1437):
+        # a VM-only per-issue analysis/artifact script — reads committed
+        # eval_results/issue_952/ + HF-public china texts and writes
+        # tasks/<status>/952/artifacts/behavior_divergence_dashboard.html,
+        # resolving the task folder via two ``task.py find 952`` shellouts.
+        # The tasks/ tree + REGISTRY exist only on the VM main checkout and
+        # task.py branch-guards to main, so a pod-side invocation (pods run
+        # issue-<N> branches) would crash by construction; no pod-side
+        # caller exists (grep: zero callers in scripts/ src/ .claude/
+        # *.sh *.yaml — the only references outside tasks/ records are
+        # the script itself).
+        "scripts/issue952_behavior_dashboard.py",
         # The test itself contains pattern strings
         "tests/test_no_pod_side_task_py_shellout.py",
         # Workflow library — orchestrator-side, never imported from pod

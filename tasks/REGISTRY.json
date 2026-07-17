@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1434,
+  "highest_id": 1478,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -2612,11 +2612,11 @@
     },
     "1335": {
       "goal": "Identify which factor(s) \u2014 role identity/frequency, genre, answer structure/length, single-responder-vs-multi-speaker context, or measurement \u2014 account for the large held-out-R\u00b2 gap between the assistant context\u2192answer map (#825: base 0.59 / instruct 0.67, survives chat-template removal) and the per-character fiction context\u2192dialogue map (#1310: base 0.11\u20130.15 / instruct 0.19\u20130.25, same plain-text regime), via a one-factor-at-a-time ablation ladder measuring held-out R\u00b2 at each rung in Qwen2.5-7B base and instruct.",
-      "has_clean_result": false,
+      "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/running/1335",
-      "status": "running",
-      "title": "Ablations: why is the assistant context\u2192answer map much stronger than the fiction-character map (both survive template removal)?"
+      "path": "tasks/followups_running/1335",
+      "status": "followups_running",
+      "title": "Under a matched recipe the assistant-vs-fiction context\u2192answer map gap vanishes in base Qwen and is carried by fiction scene framing in instruct (MODERATE confidence)"
     },
     "1336": {
       "goal": "Determine whether RLVR-style RL post-training changes the linear context\u2192answer-profile map more than SFT/DPO post-training, using a released separated-stage ladder (primary candidate: Llama-3.1-8B base \u2192 Tulu-3-8B-SFT \u2192 Tulu-3-8B-DPO \u2192 Tulu-3-8B post-RLVR) \u2014 per stage, measure (a) within-stage held-out R\u00b2 of the per-example ridge map c_x \u2192 v(x) (#779/#825 recipe, prefix AND context arms) and (b) the #825 Result-2 reparameterization gap (within-stage R\u00b2 minus reparameterized-base-map R\u00b2 on identical text), testing whether the gap grows specifically at the RLVR stage (teaching) vs stays \u22480 at all stages (elicitation) vs grows uniformly with post-training depth.",
@@ -3225,8 +3225,8 @@
     "1413": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1413",
-      "status": "running",
+      "path": "tasks/completed/1413",
+      "status": "completed",
       "title": "daily-fix: guard ssh-string git false positives"
     },
     "1414": {
@@ -3238,11 +3238,11 @@
     },
     "1415": {
       "goal": "On Qwen-2.5-7B-Instruct, test whether the context vector V_c (last-context-token residual activation) is causally sufficient for the answer state and behavior it predicts: patch context c with Delta = V_c(c') - V_c(c) (matched-query persona/instruction swaps and cross-query swaps; prefix-based AND context-based arms; layer + position sweeps), generate on-policy, and measure (a) the realized mean answer activation's shift from V_a(c) toward V_a(c') and its agreement with the fitted map's counterfactual prediction f(V_c + Delta), and (b) the judge-scored behavior shift (graded 0-100 primary + rate companion), against norm-matched random-Delta and shuffled-pair nulls, a full-prefix KV-swap ceiling, and the persona-vector r_B steering baseline, with a logit-lens top-token readout of V_c, V_a, Delta, and the #922 slow modes as descriptive companion.",
-      "has_clean_result": false,
+      "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/running/1415",
-      "status": "running",
-      "title": "Causal test of the context/answer vectors: does steering with V_c' - V_c shift on-policy answers from V_a toward V_a'?"
+      "path": "tasks/awaiting_promotion/1415",
+      "status": "awaiting_promotion",
+      "title": "Single-token steering with the context-vector difference shifts the answer state toward the target, and behavior follows at the mid-stack layers where alignment peaks (MODERATE confidence)"
     },
     "1416": {
       "has_clean_result": false,
@@ -3297,22 +3297,22 @@
     "1422": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1422",
-      "status": "running",
+      "path": "tasks/completed/1422",
+      "status": "completed",
       "title": "workflow-fix: check-30 trailing-parenthetical file-count shape"
     },
     "1423": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1423",
-      "status": "reviewing",
+      "path": "tasks/completed/1423",
+      "status": "completed",
       "title": "workflow-fix: byte-equal synonym in bit_byte_identical audit regex"
     },
     "1424": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1424",
-      "status": "running",
+      "path": "tasks/completed/1424",
+      "status": "completed",
       "title": "workflow-fix: caption italic-lead-claim check (check 5 family)"
     },
     "1425": {
@@ -3340,8 +3340,8 @@
     "1428": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1428",
-      "status": "reviewing",
+      "path": "tasks/completed/1428",
+      "status": "completed",
       "title": "Fix torch-before-dotenv in 10 main-resident figure scripts (fleet thread-caps test red)"
     },
     "1429": {
@@ -3361,31 +3361,66 @@
     "1431": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1431",
-      "status": "proposed",
+      "path": "tasks/completed/1431",
+      "status": "completed",
       "title": "workflow-fix: gotchas entry \u2014 pilot timing gates measure at the sweep's execution shape"
     },
     "1432": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1432",
-      "status": "proposed",
+      "path": "tasks/completed/1432",
+      "status": "completed",
       "title": "workflow-fix: gotchas.md \u2014 cuda eigh non-convergence on near-singular Grams (CPU fallback)"
     },
     "1433": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1433",
-      "status": "proposed",
+      "path": "tasks/completed/1433",
+      "status": "completed",
       "title": "workflow-fix: verify unpinned backtick HF-path/file-count claims"
     },
     "1434": {
       "goal": "Install the writing_style behavior (casual, informal register) as a persona-vectors-style (context, behavior) LoRA organism via the #1090 factory recipe, and measure whether it installs across training contexts. Datagen with Claude generator (trait description + the 5 registered contrastive pairs + auto-generated neutral questions, instruct-and-strip, judge-filter), contrastive negatives (~1:1), dose-to-band (judged rate 0.60-0.85) with the learning-rate lever (1e-5 to 1e-4) that unlocked impolite. Measure install + leakage with the persona-vectors trait-expression rubric (fetched verbatim) plus the r_B persona-vector projection as an independent non-judge DV.",
-      "has_clean_result": false,
+      "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/planning/1434",
-      "status": "planning",
-      "title": "Install writing_style as a persona-vectors-style (context,behavior) LoRA organism"
+      "path": "tasks/awaiting_promotion/1434",
+      "status": "awaiting_promotion",
+      "title": "Casual writing style installs from every training context at the lowest learning rate tested, but the persona-vector projection fails validation as an install meter (MODERATE confidence)"
+    },
+    "1435": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1435",
+      "status": "completed",
+      "title": "workflow-fix: gotchas entry \u2014 subprocess phase registry + full-panel fresh-child smoke"
+    },
+    "1436": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1436",
+      "status": "completed",
+      "title": "workflow-fix: noise-structure symmetry \u2014 shared-baseline cos(X\u2212B,Y\u2212B) DVs vs nulls"
+    },
+    "1437": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1437",
+      "status": "completed",
+      "title": "daily-fix: allowlist 952 dashboard in pod-shellout test"
+    },
+    "1438": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1438",
+      "status": "completed",
+      "title": "daily-fix: codex-code-reviewer Step 0.9 + tag parity"
+    },
+    "1439": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1439",
+      "status": "completed",
+      "title": "daily-fix: periodic task.py audit sweep for registry drift"
     },
     "144": {
       "has_clean_result": false,
@@ -3394,12 +3429,152 @@
       "status": "completed",
       "title": "Look at attention score for marker output"
     },
+    "1440": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1440",
+      "status": "completed",
+      "title": "daily-fix: task.py WARN on v<k>-stamped note heads"
+    },
+    "1441": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1441",
+      "status": "completed",
+      "title": "daily-fix: add #1383 context clause to yaml BINDING summary"
+    },
+    "1442": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1442",
+      "status": "completed",
+      "title": "daily-fix: route TG_TESTS fixture temps via step9c tmproot"
+    },
+    "1443": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1443",
+      "status": "completed",
+      "title": "daily-fix: anchor repo-root guard cd-scope latch"
+    },
+    "1444": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1444",
+      "status": "completed",
+      "title": "daily-fix: name out-root mount binding in Methodology lens"
+    },
+    "1445": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1445",
+      "status": "completed",
+      "title": "daily-fix: SKILL_REF_RE filesystem-path false positive"
+    },
+    "1446": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1446",
+      "status": "completed",
+      "title": "daily-fix: widen closed-sibling advisory to infra tasks"
+    },
+    "1447": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1447",
+      "status": "completed",
+      "title": "daily-fix: widen bit_byte_identical to the synonym tail"
+    },
+    "1448": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1448",
+      "status": "completed",
+      "title": "daily-fix: 429 hook output-cap pacing + message fix"
+    },
+    "1449": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1449",
+      "status": "completed",
+      "title": "daily-fix: plan-glob vs uploader allow-pattern parity check"
+    },
     "145": {
       "has_clean_result": false,
       "kind": "experiment",
       "path": "tasks/archived/145",
       "status": "archived",
       "title": "Non persona prompt leakage -- look into sleeper agent and inoculation prompting"
+    },
+    "1450": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1450",
+      "status": "completed",
+      "title": "daily-fix: size-cap trigger for home HF cache reap"
+    },
+    "1451": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/archived/1451",
+      "status": "archived",
+      "title": "daily-fix: lint rules/*.md frontmatter parse + paths shape"
+    },
+    "1452": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1452",
+      "status": "completed",
+      "title": "daily-fix: flag hardcoded cross-issue upload prefixes"
+    },
+    "1453": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1453",
+      "status": "completed",
+      "title": "daily-fix: instant wedge lane for Prompt-is-too-long"
+    },
+    "1454": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1454",
+      "status": "completed",
+      "title": "daily-fix: IAP tunneling in GcpBackend.fetch_results"
+    },
+    "1455": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1455",
+      "status": "completed",
+      "title": "daily-fix: stop releases registration + dispatch lease"
+    },
+    "1456": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1456",
+      "status": "completed",
+      "title": "daily-fix: pre-push lint reads ratchet from origin/main"
+    },
+    "1457": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1457",
+      "status": "completed",
+      "title": "daily-fix: WARN on device-vs-filesystem size mismatch"
+    },
+    "1458": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1458",
+      "status": "completed",
+      "title": "daily-fix: extend ad-hoc provenance rule (2 clauses)"
+    },
+    "1459": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1459",
+      "status": "completed",
+      "title": "daily-fix: address-concern summary-cap UX"
     },
     "146": {
       "has_clean_result": false,
@@ -3408,12 +3583,145 @@
       "status": "archived",
       "title": "Is there any difference between a persona prompt and just any inpculation/random prompt"
     },
+    "1460": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1460",
+      "status": "completed",
+      "title": "daily-fix: lint inline free-analysis commits pre-push"
+    },
+    "1461": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1461",
+      "status": "completed",
+      "title": "daily-fix: neutralize guard-task revision briefs"
+    },
+    "1462": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1462",
+      "status": "completed",
+      "title": "daily-fix: five small prevention notes (gotchas+cfr+psr)"
+    },
+    "1463": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/running/1463",
+      "status": "running",
+      "title": "daily-fix: guard waiver for gcloud ssh --command payloads"
+    },
+    "1464": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/reviewing/1464",
+      "status": "reviewing",
+      "title": "daily-fix: cpu intents in _DEFAULT_GPUS_FOR_INTENT"
+    },
+    "1465": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/reviewing/1465",
+      "status": "reviewing",
+      "title": "daily-fix: relay pod_lifecycle stderr through runpod.py"
+    },
+    "1466": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1466",
+      "status": "completed",
+      "title": "daily-fix: move tmux sockets off /tmp (split-brain)"
+    },
+    "1467": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/running/1467",
+      "status": "running",
+      "title": "daily-fix: rev-parse SHAs cited in /daily filing bodies"
+    },
+    "1468": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1468",
+      "status": "proposed",
+      "title": "daily-fix: A100-40 rung blind to consumed device memory"
+    },
+    "1469": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1469",
+      "status": "proposed",
+      "title": "daily-fix: 6a.5 gate asserts git-tree reachability"
+    },
     "147": {
       "has_clean_result": false,
       "kind": "experiment",
       "path": "tasks/archived/147",
       "status": "archived",
       "title": "Can you couple bad behavior to catching that bad behavior and persona resetting"
+    },
+    "1470": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1470",
+      "status": "proposed",
+      "title": "daily-fix: divtrain gen through api_dispatch + empty=retry"
+    },
+    "1471": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1471",
+      "status": "proposed",
+      "title": "daily-held: non-managed EXITED pod reaping decision"
+    },
+    "1472": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1472",
+      "status": "proposed",
+      "title": "daily-held: review diversity during Codex outage to Aug 6"
+    },
+    "1473": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1473",
+      "status": "proposed",
+      "title": "daily-held: fix sudo choom for lint-gate earlyoom shield"
+    },
+    "1474": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1474",
+      "status": "proposed",
+      "title": "workflow-fix: PreToolUse guard for /tmp deletion sweeps (tmux sockets)"
+    },
+    "1475": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1475",
+      "status": "proposed",
+      "title": "workflow-fix: pre_reg audit \u2014 verdict-lattice head nouns + range tokens escape"
+    },
+    "1476": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1476",
+      "status": "proposed",
+      "title": "workflow-fix: selection-inherited bootstrap CI clause for selection-symmetric-nulls"
+    },
+    "1477": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1477",
+      "status": "proposed",
+      "title": "workflow-fix: poll_pipeline zombie-override CPU-rate arbiter false-stalls healthy CPU-bound runs"
+    },
+    "1478": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1478",
+      "status": "proposed",
+      "title": "workflow-fix: audit warns on sidecar-less embedded figures (silent check skip)"
     },
     "148": {
       "has_clean_result": false,

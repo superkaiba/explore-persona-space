@@ -284,13 +284,31 @@ PATTERNS: dict[str, tuple[str, str]] = {
         # the body carried `bit-identical` AND `byte-identical`, but the
         # byte-only regex flagged only the latter; the clean-result-critic
         # Lens 6 bans both forms as the same voice violation, so the audit
-        # must catch both under one rule). Use plain English: "the two files
-        # matched exactly", "every byte agreed", "no diff between the runs".
-        r"\b(?:byte|bit)[\s-]identical\b",
+        # must catch both under one rule). The 'equal' synonym family
+        # (byte-equal / byte equal / bit-equal / bit equal) was added
+        # 2026-W29 (task #1423: issue #1005's body carried "inherited
+        # byte-equal (sha-asserted)", which the -identical-only regex missed;
+        # the clean-result-critic caught it manually). The remaining synonym
+        # tail — the '-exact' adjective, the 'bitwise'/'bytewise' unit forms,
+        # and the reduplicated 'bit-for-bit'/'byte-for-byte' — was folded in
+        # 2026-W29 (task #1447; one batched widening after three
+        # single-synonym rounds; the plan-time corpus scan found 14
+        # grandfathered bodies already carrying the tail). The `(?<!-)`
+        # lookbehind blocks the numeric-bit-width false-positive class
+        # ('8-bit exact-width', '64-bit equal-width'); the reduplication
+        # branch carries no such guard (accepted exposure — zero corpus
+        # hits for hyphen-preceded 'X-for-X' forms today). Use plain
+        # English: "the two files matched exactly", "every byte agreed",
+        # "no diff between the runs".
+        r"(?<!-)\b(?:byte|bit)(?:wise)?[\s-](?:identical|equal|exact)\b"
+        r"|\b(?:bit[\s-]for[\s-]bit|byte[\s-]for[\s-]byte)\b",
         (
             "Use plain English ('the two files matched exactly', 'every byte agreed', "
             "'no diff') instead of 'byte identical' / 'byte-identical' / 'bit identical' / "
-            "'bit-identical' — the phrase reads as AI-slop in research prose"
+            "'bit-identical' — or their '-equal'/'-exact' synonyms ('byte-equal', 'bit exact', "
+            "...), 'bitwise'/'bytewise' forms ('bitwise identical', ...), or reduplicated "
+            "forms ('bit-for-bit', 'byte-for-byte') — the phrase reads as AI-slop in "
+            "research prose"
         ),
     ),
 }

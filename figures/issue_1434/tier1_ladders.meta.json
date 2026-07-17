@@ -1,0 +1,1248 @@
+{
+  "commit": "f9f1002797",
+  "created": "2026-07-17T08:16:53Z",
+  "figsize": [
+    13.0,
+    13.0
+  ],
+  "points": [
+    {
+      "x": 5.0,
+      "Tier-1 judged rate (n=100)": 0.0,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 10.0,
+      "Tier-1 judged rate (n=100)": 0.01,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 15.0,
+      "Tier-1 judged rate (n=100)": 0.19,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 20.0,
+      "Tier-1 judged rate (n=100)": 0.35,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 25.0,
+      "Tier-1 judged rate (n=100)": 0.6,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 30.0,
+      "Tier-1 judged rate (n=100)": 0.87,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 35.0,
+      "Tier-1 judged rate (n=100)": 0.96,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 40.0,
+      "Tier-1 judged rate (n=100)": 0.87,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 45.0,
+      "Tier-1 judged rate (n=100)": 0.86,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 50.0,
+      "Tier-1 judged rate (n=100)": 0.92,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 55.0,
+      "Tier-1 judged rate (n=100)": 0.94,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 60.0,
+      "Tier-1 judged rate (n=100)": 0.93,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 65.0,
+      "Tier-1 judged rate (n=100)": 0.96,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 70.0,
+      "Tier-1 judged rate (n=100)": 0.96,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 75.0,
+      "Tier-1 judged rate (n=100)": 0.94,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 5.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 10.0,
+      "y": 0.46,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 15.0,
+      "y": 0.92,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 20.0,
+      "y": 0.98,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 25.0,
+      "y": 0.9,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 30.0,
+      "y": 0.89,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 35.0,
+      "y": 0.98,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 40.0,
+      "y": 0.97,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 45.0,
+      "y": 0.99,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 50.0,
+      "y": 0.96,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 55.0,
+      "y": 0.98,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 60.0,
+      "y": 0.97,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 65.0,
+      "y": 0.97,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 70.0,
+      "y": 0.96,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 75.0,
+      "y": 0.98,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 5.0,
+      "y": 0.37755102040816324,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 10.0,
+      "y": 0.97,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 15.0,
+      "y": 0.66,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 20.0,
+      "y": 0.99,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 25.0,
+      "y": 0.89,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 30.0,
+      "y": 0.9,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 35.0,
+      "y": 0.98,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 40.0,
+      "y": 0.95,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 45.0,
+      "y": 0.97,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 50.0,
+      "y": 0.99,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 55.0,
+      "y": 0.99,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 60.0,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 65.0,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 70.0,
+      "y": 0.99,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 75.0,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 5.0,
+      "Tier-1 judged rate (n=100)": 0.0,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 10.0,
+      "Tier-1 judged rate (n=100)": 0.0,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 15.0,
+      "Tier-1 judged rate (n=100)": 0.09,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 20.0,
+      "Tier-1 judged rate (n=100)": 0.24,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 25.0,
+      "Tier-1 judged rate (n=100)": 0.34,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 30.0,
+      "Tier-1 judged rate (n=100)": 0.53,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 35.0,
+      "Tier-1 judged rate (n=100)": 0.53,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 40.0,
+      "Tier-1 judged rate (n=100)": 0.61,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 45.0,
+      "Tier-1 judged rate (n=100)": 0.64,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 50.0,
+      "Tier-1 judged rate (n=100)": 0.61,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 55.0,
+      "Tier-1 judged rate (n=100)": 0.69,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 60.0,
+      "Tier-1 judged rate (n=100)": 0.66,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 65.0,
+      "Tier-1 judged rate (n=100)": 0.6262626262626263,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 70.0,
+      "Tier-1 judged rate (n=100)": 0.6565656565656566,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 75.0,
+      "Tier-1 judged rate (n=100)": 0.64,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 5.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 10.0,
+      "y": 0.18,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 15.0,
+      "y": 0.35,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 20.0,
+      "y": 0.62,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 25.0,
+      "y": 0.45,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 30.0,
+      "y": 0.55,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 35.0,
+      "y": 0.79,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 40.0,
+      "y": 0.75,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 45.0,
+      "y": 0.67,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 50.0,
+      "y": 0.72,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 55.0,
+      "y": 0.66,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 60.0,
+      "y": 0.63,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 65.0,
+      "y": 0.7,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 70.0,
+      "y": 0.66,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 75.0,
+      "y": 0.68,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 5.0,
+      "y": 0.15151515151515152,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 10.0,
+      "y": 0.3434343434343434,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 15.0,
+      "y": 0.49,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 20.0,
+      "y": 0.6,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 25.0,
+      "y": 0.54,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 30.0,
+      "y": 0.63,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 35.0,
+      "y": 0.6,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 40.0,
+      "y": 0.77,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 45.0,
+      "y": 0.69,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 50.0,
+      "y": 0.73,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 55.0,
+      "y": 0.61,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 60.0,
+      "y": 0.64,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 65.0,
+      "y": 0.67,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 70.0,
+      "y": 0.7,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 75.0,
+      "y": 0.68,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 5.0,
+      "Tier-1 judged rate (n=100)": 0.01,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 10.0,
+      "Tier-1 judged rate (n=100)": 0.696969696969697,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 15.0,
+      "Tier-1 judged rate (n=100)": 1.0,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 20.0,
+      "Tier-1 judged rate (n=100)": 1.0,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 25.0,
+      "Tier-1 judged rate (n=100)": 0.99,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 30.0,
+      "Tier-1 judged rate (n=100)": 0.98989898989899,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 35.0,
+      "Tier-1 judged rate (n=100)": 1.0,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 40.0,
+      "Tier-1 judged rate (n=100)": 1.0,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 45.0,
+      "Tier-1 judged rate (n=100)": 1.0,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 50.0,
+      "Tier-1 judged rate (n=100)": 1.0,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 55.0,
+      "Tier-1 judged rate (n=100)": 1.0,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 60.0,
+      "Tier-1 judged rate (n=100)": 0.99,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 65.0,
+      "Tier-1 judged rate (n=100)": 0.99,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 70.0,
+      "Tier-1 judged rate (n=100)": 1.0,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 75.0,
+      "Tier-1 judged rate (n=100)": 1.0,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 5.0,
+      "y": 0.46464646464646464,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 10.0,
+      "y": 0.9468085106382979,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 15.0,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 20.0,
+      "y": 0.99,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 25.0,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 30.0,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 35.0,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 40.0,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 45.0,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 50.0,
+      "y": 0.99,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 55.0,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 60.0,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 65.0,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 70.0,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 75.0,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 5.0,
+      "y": 0.963855421686747,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 10.0,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 15.0,
+      "y": 0.98,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 20.0,
+      "y": 0.99,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 25.0,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 30.0,
+      "y": 0.99,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 35.0,
+      "y": 0.99,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 40.0,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 45.0,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 50.0,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 55.0,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 60.0,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 65.0,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 70.0,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 75.0,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "optimizer step": 5.0,
+      "Tier-1 judged rate (n=100)": 0.22,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "optimizer step": 10.0,
+      "Tier-1 judged rate (n=100)": 1.0,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "optimizer step": 15.0,
+      "Tier-1 judged rate (n=100)": 1.0,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "optimizer step": 20.0,
+      "Tier-1 judged rate (n=100)": 1.0,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "optimizer step": 25.0,
+      "Tier-1 judged rate (n=100)": 1.0,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "optimizer step": 30.0,
+      "Tier-1 judged rate (n=100)": 1.0,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "optimizer step": 35.0,
+      "Tier-1 judged rate (n=100)": 1.0,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "optimizer step": 40.0,
+      "Tier-1 judged rate (n=100)": 1.0,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "optimizer step": 45.0,
+      "Tier-1 judged rate (n=100)": 1.0,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "optimizer step": 50.0,
+      "Tier-1 judged rate (n=100)": 1.0,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "optimizer step": 55.0,
+      "Tier-1 judged rate (n=100)": 0.98,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "optimizer step": 60.0,
+      "Tier-1 judged rate (n=100)": 1.0,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "optimizer step": 65.0,
+      "Tier-1 judged rate (n=100)": 0.97,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "optimizer step": 70.0,
+      "Tier-1 judged rate (n=100)": 0.99,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "optimizer step": 75.0,
+      "Tier-1 judged rate (n=100)": 1.0,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "optimizer step": 5.0,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "optimizer step": 10.0,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "optimizer step": 15.0,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "optimizer step": 20.0,
+      "y": 0.99,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "optimizer step": 25.0,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "optimizer step": 30.0,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "optimizer step": 35.0,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "optimizer step": 40.0,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "optimizer step": 45.0,
+      "y": 0.98,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "optimizer step": 50.0,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "optimizer step": 55.0,
+      "y": 0.99,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "optimizer step": 60.0,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "optimizer step": 65.0,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "optimizer step": 70.0,
+      "y": 0.98,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "optimizer step": 75.0,
+      "y": 0.98,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "optimizer step": 5.0,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "optimizer step": 10.0,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "optimizer step": 15.0,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "optimizer step": 20.0,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "optimizer step": 25.0,
+      "y": 0.99,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "optimizer step": 30.0,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "optimizer step": 35.0,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "optimizer step": 40.0,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "optimizer step": 45.0,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "optimizer step": 50.0,
+      "y": 0.98,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "optimizer step": 55.0,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "optimizer step": 60.0,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "optimizer step": 65.0,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "optimizer step": 70.0,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "optimizer step": 75.0,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 11
+    }
+  ],
+  "n_series": 12,
+  "total_points": 180,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [
+      "Dose ladders: per-rung judged casual-register rate (star = selected rung; red x = degeneracy-flagged rung)"
+    ],
+    "axes": [
+      {
+        "title_left": "Persona (software engineer), lr 1e-05",
+        "ylabel": "Tier-1 judged rate (n=100)",
+        "annotations": [
+          "selected\n0.60"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0",
+          "1.2"
+        ]
+      },
+      {
+        "title_left": "Persona (software engineer), lr 3e-05",
+        "annotations": [
+          "selected\n0.89"
+        ]
+      },
+      {
+        "title_left": "Persona (software engineer), lr 0.0001",
+        "annotations": [
+          "selected\n0.66"
+        ]
+      },
+      {
+        "title_left": "Bare assistant, lr 1e-05",
+        "ylabel": "Tier-1 judged rate (n=100)",
+        "annotations": [
+          "selected\n0.61"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0",
+          "1.2"
+        ]
+      },
+      {
+        "title_left": "Bare assistant, lr 3e-05",
+        "annotations": [
+          "selected\n0.62"
+        ]
+      },
+      {
+        "title_left": "Bare assistant, lr 0.0001",
+        "annotations": [
+          "selected\n0.60"
+        ]
+      },
+      {
+        "title_left": "WildChat prefix, lr 1e-05",
+        "ylabel": "Tier-1 judged rate (n=100)",
+        "annotations": [
+          "selected\n0.70"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0",
+          "1.2"
+        ]
+      },
+      {
+        "title_left": "WildChat prefix, lr 3e-05",
+        "annotations": [
+          "selected\n0.95"
+        ]
+      },
+      {
+        "title_left": "WildChat prefix, lr 0.0001",
+        "annotations": [
+          "selected\n0.96"
+        ]
+      },
+      {
+        "title_left": "ICL prefix, lr 1e-05",
+        "xlabel": "optimizer step",
+        "ylabel": "Tier-1 judged rate (n=100)",
+        "annotations": [
+          "selected\n0.97"
+        ],
+        "xticklabels": [
+          "0",
+          "10",
+          "20",
+          "30",
+          "40",
+          "50",
+          "60",
+          "70",
+          "80"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0",
+          "1.2"
+        ]
+      },
+      {
+        "title_left": "ICL prefix, lr 3e-05",
+        "xlabel": "optimizer step",
+        "annotations": [
+          "selected\n0.98"
+        ],
+        "xticklabels": [
+          "0",
+          "10",
+          "20",
+          "30",
+          "40",
+          "50",
+          "60",
+          "70",
+          "80"
+        ]
+      },
+      {
+        "title_left": "ICL prefix, lr 0.0001",
+        "xlabel": "optimizer step",
+        "annotations": [
+          "selected\n0.98"
+        ],
+        "xticklabels": [
+          "0",
+          "10",
+          "20",
+          "30",
+          "40",
+          "50",
+          "60",
+          "70",
+          "80"
+        ]
+      }
+    ]
+  }
+}

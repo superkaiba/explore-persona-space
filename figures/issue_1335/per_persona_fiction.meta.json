@@ -1,0 +1,1128 @@
+{
+  "commit": "bf154e5b16",
+  "created": "2026-07-17T07:44:13Z",
+  "figsize": [
+    11.5,
+    4.6
+  ],
+  "points": [
+    {
+      "x": -0.18,
+      "held-out R\u00b2 (layer 19, context arm, full n)": 0.38837506588209914,
+      "error": 0.015885778040089893,
+      "series": "Wren",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 0.8200000000000001,
+      "held-out R\u00b2 (layer 19, context arm, full n)": 0.3585017418487745,
+      "error": 0.015855967065727616,
+      "series": "Wren",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 1.82,
+      "held-out R\u00b2 (layer 19, context arm, full n)": 0.3624252362495879,
+      "error": 0.015081242668264078,
+      "series": "Wren",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 2.82,
+      "held-out R\u00b2 (layer 19, context arm, full n)": 0.3651531889230799,
+      "error": 0.015676512040936424,
+      "series": "Wren",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 3.82,
+      "held-out R\u00b2 (layer 19, context arm, full n)": 0.3615346981545825,
+      "error": 0.015822986761133584,
+      "series": "Wren",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": -0.06,
+      "held-out R\u00b2 (layer 19, context arm, full n)": 0.30407422512592575,
+      "error": 0.010055574706890807,
+      "series": "HELIOS",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "x": 0.94,
+      "held-out R\u00b2 (layer 19, context arm, full n)": 0.3367206775280167,
+      "error": 0.01359662153424665,
+      "series": "HELIOS",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "x": 1.94,
+      "held-out R\u00b2 (layer 19, context arm, full n)": 0.33365134350889225,
+      "error": 0.014120413344395955,
+      "series": "HELIOS",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "x": 2.94,
+      "held-out R\u00b2 (layer 19, context arm, full n)": 0.3348573025138435,
+      "error": 0.014085088397821466,
+      "series": "HELIOS",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "x": 3.94,
+      "held-out R\u00b2 (layer 19, context arm, full n)": 0.33480422821404954,
+      "error": 0.014264825730347208,
+      "series": "HELIOS",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "x": 0.06,
+      "held-out R\u00b2 (layer 19, context arm, full n)": 0.260055688146126,
+      "error": 0.012337465337290021,
+      "series": "Dana",
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "x": 1.06,
+      "held-out R\u00b2 (layer 19, context arm, full n)": 0.37600773255880016,
+      "error": 0.016469924867396374,
+      "series": "Dana",
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "x": 2.06,
+      "held-out R\u00b2 (layer 19, context arm, full n)": 0.3724259723241278,
+      "error": 0.015741866291643064,
+      "series": "Dana",
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "x": 3.06,
+      "held-out R\u00b2 (layer 19, context arm, full n)": 0.3810978540531086,
+      "error": 0.01614568528158339,
+      "series": "Dana",
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "x": 4.06,
+      "held-out R\u00b2 (layer 19, context arm, full n)": 0.3774701464645721,
+      "error": 0.016291302264766966,
+      "series": "Dana",
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "x": 0.18,
+      "held-out R\u00b2 (layer 19, context arm, full n)": 0.26326449221976267,
+      "error": 0.012552490994002935,
+      "series": "Vex",
+      "_kind": "errorbar",
+      "_group": 3
+    },
+    {
+      "x": 1.18,
+      "held-out R\u00b2 (layer 19, context arm, full n)": 0.30503219714993823,
+      "error": 0.012518720233478525,
+      "series": "Vex",
+      "_kind": "errorbar",
+      "_group": 3
+    },
+    {
+      "x": 2.18,
+      "held-out R\u00b2 (layer 19, context arm, full n)": 0.3094202575842254,
+      "error": 0.01204526879568868,
+      "series": "Vex",
+      "_kind": "errorbar",
+      "_group": 3
+    },
+    {
+      "x": 3.18,
+      "held-out R\u00b2 (layer 19, context arm, full n)": 0.31465045916918344,
+      "error": 0.012280380692946596,
+      "series": "Vex",
+      "_kind": "errorbar",
+      "_group": 3
+    },
+    {
+      "x": 4.18,
+      "held-out R\u00b2 (layer 19, context arm, full n)": 0.3122889690079693,
+      "error": 0.012293915569401098,
+      "series": "Vex",
+      "_kind": "errorbar",
+      "_group": 3
+    },
+    {
+      "x": -0.18,
+      "held-out R\u00b2 (layer 19, context arm, full n)": 0.38837506588209914,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 0.8200000000000001,
+      "held-out R\u00b2 (layer 19, context arm, full n)": 0.3585017418487745,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 1.82,
+      "held-out R\u00b2 (layer 19, context arm, full n)": 0.3624252362495879,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 2.82,
+      "held-out R\u00b2 (layer 19, context arm, full n)": 0.3651531889230799,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 3.82,
+      "held-out R\u00b2 (layer 19, context arm, full n)": 0.3615346981545825,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": -0.18,
+      "held-out R\u00b2 (layer 19, context arm, full n)": 0.37567554265861686,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 0.8200000000000001,
+      "held-out R\u00b2 (layer 19, context arm, full n)": 0.34415162183215514,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 1.82,
+      "held-out R\u00b2 (layer 19, context arm, full n)": 0.3487703479721836,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 2.82,
+      "held-out R\u00b2 (layer 19, context arm, full n)": 0.35096291654166617,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 3.82,
+      "held-out R\u00b2 (layer 19, context arm, full n)": 0.34713297217225236,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": -0.18,
+      "held-out R\u00b2 (layer 19, context arm, full n)": 0.40744709873879664,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 0.8200000000000001,
+      "held-out R\u00b2 (layer 19, context arm, full n)": 0.3758635559636104,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 1.82,
+      "held-out R\u00b2 (layer 19, context arm, full n)": 0.37893283330871175,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 2.82,
+      "held-out R\u00b2 (layer 19, context arm, full n)": 0.382315940623539,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 3.82,
+      "held-out R\u00b2 (layer 19, context arm, full n)": 0.37877894569451953,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": -0.06,
+      "held-out R\u00b2 (layer 19, context arm, full n)": 0.30407422512592575,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 0.94,
+      "held-out R\u00b2 (layer 19, context arm, full n)": 0.3367206775280167,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 1.94,
+      "held-out R\u00b2 (layer 19, context arm, full n)": 0.33365134350889225,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 2.94,
+      "held-out R\u00b2 (layer 19, context arm, full n)": 0.3348573025138435,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 3.94,
+      "held-out R\u00b2 (layer 19, context arm, full n)": 0.33480422821404954,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": -0.06,
+      "held-out R\u00b2 (layer 19, context arm, full n)": 0.297424113322073,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 0.94,
+      "held-out R\u00b2 (layer 19, context arm, full n)": 0.32424561606585584,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 1.94,
+      "held-out R\u00b2 (layer 19, context arm, full n)": 0.3206345878387058,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 2.94,
+      "held-out R\u00b2 (layer 19, context arm, full n)": 0.321772223656525,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 3.94,
+      "held-out R\u00b2 (layer 19, context arm, full n)": 0.3216341889652035,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": -0.06,
+      "held-out R\u00b2 (layer 19, context arm, full n)": 0.31753526273585464,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 0.94,
+      "held-out R\u00b2 (layer 19, context arm, full n)": 0.35143885913434914,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 1.94,
+      "held-out R\u00b2 (layer 19, context arm, full n)": 0.3488754145274977,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 2.94,
+      "held-out R\u00b2 (layer 19, context arm, full n)": 0.34994240045216796,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 3.94,
+      "held-out R\u00b2 (layer 19, context arm, full n)": 0.35016384042589793,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 0.06,
+      "held-out R\u00b2 (layer 19, context arm, full n)": 0.260055688146126,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 1.06,
+      "held-out R\u00b2 (layer 19, context arm, full n)": 0.37600773255880016,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 2.06,
+      "held-out R\u00b2 (layer 19, context arm, full n)": 0.3724259723241278,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 3.06,
+      "held-out R\u00b2 (layer 19, context arm, full n)": 0.3810978540531086,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 4.06,
+      "held-out R\u00b2 (layer 19, context arm, full n)": 0.3774701464645721,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 0.06,
+      "held-out R\u00b2 (layer 19, context arm, full n)": 0.25189937378545585,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 1.06,
+      "held-out R\u00b2 (layer 19, context arm, full n)": 0.36063348363851555,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 2.06,
+      "held-out R\u00b2 (layer 19, context arm, full n)": 0.35795755618584113,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 3.06,
+      "held-out R\u00b2 (layer 19, context arm, full n)": 0.3661674945843659,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 4.06,
+      "held-out R\u00b2 (layer 19, context arm, full n)": 0.36229702747896386,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 0.06,
+      "held-out R\u00b2 (layer 19, context arm, full n)": 0.2765743044600359,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 1.06,
+      "held-out R\u00b2 (layer 19, context arm, full n)": 0.3935733333733083,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 2.06,
+      "held-out R\u00b2 (layer 19, context arm, full n)": 0.38944128876912726,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 3.06,
+      "held-out R\u00b2 (layer 19, context arm, full n)": 0.3984588651475327,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 4.06,
+      "held-out R\u00b2 (layer 19, context arm, full n)": 0.3948796320084978,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 0.18,
+      "held-out R\u00b2 (layer 19, context arm, full n)": 0.26326449221976267,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 1.18,
+      "held-out R\u00b2 (layer 19, context arm, full n)": 0.30503219714993823,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 2.18,
+      "held-out R\u00b2 (layer 19, context arm, full n)": 0.3094202575842254,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 3.18,
+      "held-out R\u00b2 (layer 19, context arm, full n)": 0.31465045916918344,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 4.18,
+      "held-out R\u00b2 (layer 19, context arm, full n)": 0.3122889690079693,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 0.18,
+      "held-out R\u00b2 (layer 19, context arm, full n)": 0.25584400544066815,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 1.18,
+      "held-out R\u00b2 (layer 19, context arm, full n)": 0.2937199876593315,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 2.18,
+      "held-out R\u00b2 (layer 19, context arm, full n)": 0.2991717732399229,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 3.18,
+      "held-out R\u00b2 (layer 19, context arm, full n)": 0.30435717228232406,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 4.18,
+      "held-out R\u00b2 (layer 19, context arm, full n)": 0.3018479337463989,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 0.18,
+      "held-out R\u00b2 (layer 19, context arm, full n)": 0.280948987428674,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 1.18,
+      "held-out R\u00b2 (layer 19, context arm, full n)": 0.31875742812628854,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 2.18,
+      "held-out R\u00b2 (layer 19, context arm, full n)": 0.32326231083130025,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 3.18,
+      "held-out R\u00b2 (layer 19, context arm, full n)": 0.32891793366821725,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 4.18,
+      "held-out R\u00b2 (layer 19, context arm, full n)": 0.3264357648852011,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": -0.18,
+      "held-out R\u00b2 (layer 19, context arm, full n)": 0.27963332162017507,
+      "error": 0.008918116379889707,
+      "series": "Wren",
+      "_kind": "errorbar",
+      "_group": 16
+    },
+    {
+      "x": 0.8200000000000001,
+      "held-out R\u00b2 (layer 19, context arm, full n)": 0.27484913429631874,
+      "error": 0.008414619454523514,
+      "series": "Wren",
+      "_kind": "errorbar",
+      "_group": 16
+    },
+    {
+      "x": 1.82,
+      "held-out R\u00b2 (layer 19, context arm, full n)": 0.27967594767463655,
+      "error": 0.00808432081385474,
+      "series": "Wren",
+      "_kind": "errorbar",
+      "_group": 16
+    },
+    {
+      "x": 2.82,
+      "held-out R\u00b2 (layer 19, context arm, full n)": 0.2756815878542893,
+      "error": 0.008469410507856434,
+      "series": "Wren",
+      "_kind": "errorbar",
+      "_group": 16
+    },
+    {
+      "x": 3.82,
+      "held-out R\u00b2 (layer 19, context arm, full n)": 0.27209971970199864,
+      "error": 0.00836688205563657,
+      "series": "Wren",
+      "_kind": "errorbar",
+      "_group": 16
+    },
+    {
+      "x": -0.06,
+      "held-out R\u00b2 (layer 19, context arm, full n)": 0.2867227282924716,
+      "error": 0.008917424679615815,
+      "series": "HELIOS",
+      "_kind": "errorbar",
+      "_group": 17
+    },
+    {
+      "x": 0.94,
+      "held-out R\u00b2 (layer 19, context arm, full n)": 0.3182944502841428,
+      "error": 0.009138218686072036,
+      "series": "HELIOS",
+      "_kind": "errorbar",
+      "_group": 17
+    },
+    {
+      "x": 1.94,
+      "held-out R\u00b2 (layer 19, context arm, full n)": 0.32135274563463667,
+      "error": 0.008883079787873366,
+      "series": "HELIOS",
+      "_kind": "errorbar",
+      "_group": 17
+    },
+    {
+      "x": 2.94,
+      "held-out R\u00b2 (layer 19, context arm, full n)": 0.31609640268587413,
+      "error": 0.009018987579994003,
+      "series": "HELIOS",
+      "_kind": "errorbar",
+      "_group": 17
+    },
+    {
+      "x": 3.94,
+      "held-out R\u00b2 (layer 19, context arm, full n)": 0.3158578402288994,
+      "error": 0.009067401099016492,
+      "series": "HELIOS",
+      "_kind": "errorbar",
+      "_group": 17
+    },
+    {
+      "x": 0.06,
+      "held-out R\u00b2 (layer 19, context arm, full n)": 0.2512553568333711,
+      "error": 0.008176574009448878,
+      "series": "Dana",
+      "_kind": "errorbar",
+      "_group": 18
+    },
+    {
+      "x": 1.06,
+      "held-out R\u00b2 (layer 19, context arm, full n)": 0.25447201695714383,
+      "error": 0.011651768300686802,
+      "series": "Dana",
+      "_kind": "errorbar",
+      "_group": 18
+    },
+    {
+      "x": 2.06,
+      "held-out R\u00b2 (layer 19, context arm, full n)": 0.2551531297982431,
+      "error": 0.011269683799979752,
+      "series": "Dana",
+      "_kind": "errorbar",
+      "_group": 18
+    },
+    {
+      "x": 3.06,
+      "held-out R\u00b2 (layer 19, context arm, full n)": 0.2549128868829915,
+      "error": 0.01169245321355837,
+      "series": "Dana",
+      "_kind": "errorbar",
+      "_group": 18
+    },
+    {
+      "x": 4.06,
+      "held-out R\u00b2 (layer 19, context arm, full n)": 0.25144936351344827,
+      "error": 0.011528176646744492,
+      "series": "Dana",
+      "_kind": "errorbar",
+      "_group": 18
+    },
+    {
+      "x": 0.18,
+      "held-out R\u00b2 (layer 19, context arm, full n)": 0.23338944527964023,
+      "error": 0.00861207666423526,
+      "series": "Vex",
+      "_kind": "errorbar",
+      "_group": 19
+    },
+    {
+      "x": 1.18,
+      "held-out R\u00b2 (layer 19, context arm, full n)": 0.242437188353413,
+      "error": 0.005268161327568077,
+      "series": "Vex",
+      "_kind": "errorbar",
+      "_group": 19
+    },
+    {
+      "x": 2.18,
+      "held-out R\u00b2 (layer 19, context arm, full n)": 0.2466052227956551,
+      "error": 0.005243935074371792,
+      "series": "Vex",
+      "_kind": "errorbar",
+      "_group": 19
+    },
+    {
+      "x": 3.18,
+      "held-out R\u00b2 (layer 19, context arm, full n)": 0.24605627364402805,
+      "error": 0.005421202832535943,
+      "series": "Vex",
+      "_kind": "errorbar",
+      "_group": 19
+    },
+    {
+      "x": 4.18,
+      "held-out R\u00b2 (layer 19, context arm, full n)": 0.24229082026032822,
+      "error": 0.005255362224906995,
+      "series": "Vex",
+      "_kind": "errorbar",
+      "_group": 19
+    },
+    {
+      "x": -0.18,
+      "held-out R\u00b2 (layer 19, context arm, full n)": 0.27963332162017507,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "x": 0.8200000000000001,
+      "held-out R\u00b2 (layer 19, context arm, full n)": 0.27484913429631874,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "x": 1.82,
+      "held-out R\u00b2 (layer 19, context arm, full n)": 0.27967594767463655,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "x": 2.82,
+      "held-out R\u00b2 (layer 19, context arm, full n)": 0.2756815878542893,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "x": 3.82,
+      "held-out R\u00b2 (layer 19, context arm, full n)": 0.27209971970199864,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "x": -0.18,
+      "held-out R\u00b2 (layer 19, context arm, full n)": 0.2740534965329192,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "x": 0.8200000000000001,
+      "held-out R\u00b2 (layer 19, context arm, full n)": 0.26823155248229374,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "x": 1.82,
+      "held-out R\u00b2 (layer 19, context arm, full n)": 0.2733845572778861,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "x": 2.82,
+      "held-out R\u00b2 (layer 19, context arm, full n)": 0.2690761548522802,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "x": 3.82,
+      "held-out R\u00b2 (layer 19, context arm, full n)": 0.2656699353025398,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "x": -0.18,
+      "held-out R\u00b2 (layer 19, context arm, full n)": 0.29188972929269863,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "x": 0.8200000000000001,
+      "held-out R\u00b2 (layer 19, context arm, full n)": 0.2850607913913408,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "x": 1.82,
+      "held-out R\u00b2 (layer 19, context arm, full n)": 0.28955319890559555,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "x": 2.82,
+      "held-out R\u00b2 (layer 19, context arm, full n)": 0.28601497586799307,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "x": 3.82,
+      "held-out R\u00b2 (layer 19, context arm, full n)": 0.28240369941381294,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "x": -0.06,
+      "held-out R\u00b2 (layer 19, context arm, full n)": 0.2867227282924716,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "x": 0.94,
+      "held-out R\u00b2 (layer 19, context arm, full n)": 0.3182944502841428,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "x": 1.94,
+      "held-out R\u00b2 (layer 19, context arm, full n)": 0.32135274563463667,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "x": 2.94,
+      "held-out R\u00b2 (layer 19, context arm, full n)": 0.31609640268587413,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "x": 3.94,
+      "held-out R\u00b2 (layer 19, context arm, full n)": 0.3158578402288994,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "x": -0.06,
+      "held-out R\u00b2 (layer 19, context arm, full n)": 0.28038263844557615,
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "x": 0.94,
+      "held-out R\u00b2 (layer 19, context arm, full n)": 0.3118894136411707,
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "x": 1.94,
+      "held-out R\u00b2 (layer 19, context arm, full n)": 0.31533061259842,
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "x": 2.94,
+      "held-out R\u00b2 (layer 19, context arm, full n)": 0.309871355336028,
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "x": 3.94,
+      "held-out R\u00b2 (layer 19, context arm, full n)": 0.30963189382935363,
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "x": -0.06,
+      "held-out R\u00b2 (layer 19, context arm, full n)": 0.2982174878048078,
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "x": 0.94,
+      "held-out R\u00b2 (layer 19, context arm, full n)": 0.33016585101331475,
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "x": 1.94,
+      "held-out R\u00b2 (layer 19, context arm, full n)": 0.3330967721741667,
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "x": 2.94,
+      "held-out R\u00b2 (layer 19, context arm, full n)": 0.327909330496016,
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "x": 3.94,
+      "held-out R\u00b2 (layer 19, context arm, full n)": 0.3277666960273866,
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "x": 0.06,
+      "held-out R\u00b2 (layer 19, context arm, full n)": 0.2512553568333711,
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "x": 1.06,
+      "held-out R\u00b2 (layer 19, context arm, full n)": 0.25447201695714383,
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "x": 2.06,
+      "held-out R\u00b2 (layer 19, context arm, full n)": 0.2551531297982431,
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "x": 3.06,
+      "held-out R\u00b2 (layer 19, context arm, full n)": 0.2549128868829915,
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "x": 4.06,
+      "held-out R\u00b2 (layer 19, context arm, full n)": 0.25144936351344827,
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "x": 0.06,
+      "held-out R\u00b2 (layer 19, context arm, full n)": 0.24547881952793182,
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "x": 1.06,
+      "held-out R\u00b2 (layer 19, context arm, full n)": 0.24493496946299073,
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "x": 2.06,
+      "held-out R\u00b2 (layer 19, context arm, full n)": 0.24609445898282273,
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "x": 3.06,
+      "held-out R\u00b2 (layer 19, context arm, full n)": 0.24540105478219257,
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "x": 4.06,
+      "held-out R\u00b2 (layer 19, context arm, full n)": 0.24210840705845954,
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "x": 0.06,
+      "held-out R\u00b2 (layer 19, context arm, full n)": 0.2618319675468296,
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "x": 1.06,
+      "held-out R\u00b2 (layer 19, context arm, full n)": 0.26823850606436433,
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "x": 2.06,
+      "held-out R\u00b2 (layer 19, context arm, full n)": 0.26863382658278223,
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "x": 3.06,
+      "held-out R\u00b2 (layer 19, context arm, full n)": 0.2687859612093093,
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "x": 4.06,
+      "held-out R\u00b2 (layer 19, context arm, full n)": 0.2651647603519485,
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "x": 0.18,
+      "held-out R\u00b2 (layer 19, context arm, full n)": 0.23338944527964023,
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "x": 1.18,
+      "held-out R\u00b2 (layer 19, context arm, full n)": 0.242437188353413,
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "x": 2.18,
+      "held-out R\u00b2 (layer 19, context arm, full n)": 0.2466052227956551,
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "x": 3.18,
+      "held-out R\u00b2 (layer 19, context arm, full n)": 0.24605627364402805,
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "x": 4.18,
+      "held-out R\u00b2 (layer 19, context arm, full n)": 0.24229082026032822,
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "x": 0.18,
+      "held-out R\u00b2 (layer 19, context arm, full n)": 0.2269074325464953,
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "x": 1.18,
+      "held-out R\u00b2 (layer 19, context arm, full n)": 0.23921574171400053,
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "x": 2.18,
+      "held-out R\u00b2 (layer 19, context arm, full n)": 0.24351143276008097,
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "x": 3.18,
+      "held-out R\u00b2 (layer 19, context arm, full n)": 0.2426436302827577,
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "x": 4.18,
+      "held-out R\u00b2 (layer 19, context arm, full n)": 0.23908222360229786,
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "x": 0.18,
+      "held-out R\u00b2 (layer 19, context arm, full n)": 0.24413158587496583,
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "x": 1.18,
+      "held-out R\u00b2 (layer 19, context arm, full n)": 0.2497520643691367,
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "x": 2.18,
+      "held-out R\u00b2 (layer 19, context arm, full n)": 0.25399930290882455,
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "x": 3.18,
+      "held-out R\u00b2 (layer 19, context arm, full n)": 0.2534860359478296,
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "x": 4.18,
+      "held-out R\u00b2 (layer 19, context arm, full n)": 0.24959294805211185,
+      "_kind": "line",
+      "_group": 31
+    }
+  ],
+  "n_series": 32,
+  "total_points": 160,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "base model",
+        "ylabel": "held-out R\u00b2 (layer 19, context arm, full n)",
+        "legend_labels": [
+          "Wren",
+          "HELIOS",
+          "Dana",
+          "Vex"
+        ],
+        "annotations": [
+          "Wren",
+          "HELIOS",
+          "Dana",
+          "Vex"
+        ],
+        "xticklabels": [
+          "story scenes,\nno foils",
+          "story scenes\n(fiction endpoint)",
+          "story, relabeled\n'Assistant'",
+          "story, familiar\nname 'Sarah'",
+          "story, novel\nname 'Vexril'"
+        ],
+        "yticklabels": [
+          "0.200",
+          "0.225",
+          "0.250",
+          "0.275",
+          "0.300",
+          "0.325",
+          "0.350",
+          "0.375",
+          "0.400",
+          "0.425"
+        ]
+      },
+      {
+        "title_left": "instruct model",
+        "ylabel": "held-out R\u00b2 (layer 19, context arm, full n)",
+        "annotations": [
+          "Wren",
+          "HELIOS",
+          "Dana",
+          "Vex"
+        ],
+        "xticklabels": [
+          "story scenes,\nno foils",
+          "story scenes\n(fiction endpoint)",
+          "story, relabeled\n'Assistant'",
+          "story, familiar\nname 'Sarah'",
+          "story, novel\nname 'Vexril'"
+        ],
+        "yticklabels": [
+          "0.200",
+          "0.225",
+          "0.250",
+          "0.275",
+          "0.300",
+          "0.325",
+          "0.350",
+          "0.375",
+          "0.400",
+          "0.425"
+        ]
+      }
+    ],
+    "series": [
+      "Wren",
+      "HELIOS",
+      "Dana",
+      "Vex"
+    ]
+  }
+}

@@ -16642,6 +16642,215 @@ def test_fence_stop_bumps_wedge_day_counter_once_per_episode(
     assert _read_stalled_state_845(isolated_registry, 1632)["wedge_respawns_today"] == 2
 
 
+def _wedge_1453_ceiling_tail():
+    # #1453: the #1335 incident wake unit — one dequeue+prompt delivery, then
+    # a turn that dies in the synthetic context-ceiling api-error row. The
+    # error text 'Prompt is too long' is benign and committable; the row
+    # pins the measured message.model '<synthetic>' + apiErrorStatus 400
+    # shape (session ebff95d1, 2026-07-16).
+    dequeue = {"type": "queue-operation", "operation": "dequeue"}
+    prompt = {"type": "user", "message": {"role": "user", "content": "/issue-tick 1335"}}
+    ceiling = {
+        "type": "assistant",
+        "isApiErrorMessage": True,
+        "apiErrorStatus": 400,
+        "message": {
+            "role": "assistant",
+            "model": "<synthetic>",
+            "content": [{"type": "text", "text": "Prompt is too long"}],
+        },
+        "timestamp": "2026-07-16T12:48:52.777Z",
+    }
+    return [dequeue, prompt, ceiling]
+
+
+def test_wedge_context_ceiling_fires_on_fresh_self_report(
+    isolated_registry, monkeypatch, stalled_recorder
+):
+    # #1453 acceptance 1 + Goal — the both-paths arming pin: a FRESH
+    # self-report (age 300 s, well under STALLED_WINDOW_S) does NOT gate the
+    # context-ceiling trigger; a single ceiling turn escalates to the fence
+    # stop on the FIRST tick with [context-ceiling] in the note.
+    import autonomous_session_watch as asw
+
+    stops, spawns, _markers = stalled_recorder
+    _patch_stale_signals(monkeypatch, asw, status="running", age_s=300)  # FRESH
+    monkeypatch.setattr(asw, "_transcript_tail_rows", lambda pid, **_k: _wedge_1453_ceiling_tail())
+    now = 1_000_000.0
+
+    # Direct override call pins the reason label in the note text.
+    action, live, hits, note = asw._apply_prompt_wedge_override(
+        issue=1451,
+        entry={"happy_session_id": "sess-1451", "issue": 1451},
+        action="keep",
+        self_report_age=300.0,  # FRESH — the both-paths arming under test
+        respawn_eligible=True,
+        pids_by_sid={"sess-1451": 4242},
+        live_consecutive=2,
+        wedge_hits=0,
+        now=now,
+    )
+    assert action == "respawn" and live == 0 and hits == 1
+    assert note is not None and "[context-ceiling]" in note
+
+    # Full production pass: wedge -> respawn -> fence stop on tick 1.
+    _write_autonomous_entry(isolated_registry, 1452, "sess-1452", cap=24.0)
+    asw.stalled_session_pass(
+        dry_run=False,
+        threshold=2,
+        now=now,
+        daemon_reachable=True,
+        pids_by_sid={"sess-1452": 4242},
+    )
+    assert stops == ["sess-1452"]
+    assert spawns == []
+    state = _read_stalled_state_845(isolated_registry, 1452)
+    assert state["wedge_hits"] == 1
+
+
+def test_wedge_context_ceiling_respects_day_cap_and_belt(
+    isolated_registry, monkeypatch, stalled_recorder
+):
+    # #1453 acceptance 5: the trigger is bounded by the #1241 shared day cap
+    # AND the episode belt, and a [context-ceiling] fence stop bumps the
+    # shared counter by exactly 1 (mirrors
+    # test_fence_stop_bumps_wedge_day_counter_once_per_episode).
+    import autonomous_session_watch as asw
+
+    stops, _spawns, _markers = stalled_recorder
+    _patch_stale_signals(monkeypatch, asw, status="running", age_s=300)  # FRESH
+    now = 1_000_000.0
+    probes: list[int] = []
+
+    def _recording_tail(pid, **_k):
+        probes.append(pid)
+        return _wedge_1453_ceiling_tail()
+
+    monkeypatch.setattr(asw, "_transcript_tail_rows", _recording_tail)
+
+    # (a) #1241 shared day cap exhausted -> the ceiling family is disarmed
+    # (the tail may still be read while the independent #1209 budget is
+    # open, but nothing fires).
+    action, _live, hits, note = asw._apply_prompt_wedge_override(
+        issue=1453,
+        entry={"happy_session_id": "sess-1453", "issue": 1453},
+        action="keep",
+        self_report_age=300.0,
+        respawn_eligible=True,
+        pids_by_sid={"sess-1453": 4242},
+        live_consecutive=2,
+        wedge_hits=0,
+        now=now,
+        wedge_respawns_today=3,  # #1241 budget exhausted
+    )
+    assert action == "keep" and hits == 0 and note is None
+
+    # (b) episode belt exhausted -> BOTH budgets disarmed -> the transcript
+    # is never even read.
+    probes.clear()
+    action, _live, hits, note = asw._apply_prompt_wedge_override(
+        issue=1454,
+        entry={"happy_session_id": "sess-1454", "issue": 1454},
+        action="keep",
+        self_report_age=300.0,
+        respawn_eligible=True,
+        pids_by_sid={"sess-1454": 4242},
+        live_consecutive=2,
+        wedge_hits=0,
+        now=now,
+        respawn_count=asw.STALLED_MAX_RESPAWNS,  # belt binds
+    )
+    assert action == "keep" and hits == 0 and note is None
+    assert probes == []  # belt disarms everything before the 256 KB read
+
+    # (c) a [context-ceiling] fence stop bumps the #1241 SHARED counter by
+    # exactly 1 at stop-initiation; the #1209 budget is untouched.
+    _write_autonomous_entry(isolated_registry, 1455, "sess-1455", cap=24.0)
+    asw.stalled_session_pass(
+        dry_run=False,
+        threshold=2,
+        now=now,
+        daemon_reachable=True,
+        live_ids={"sess-1455"},
+        pids_by_sid={"sess-1455": 4242},
+    )
+    assert stops == ["sess-1455"]
+    state = _read_stalled_state_845(isolated_registry, 1455)
+    assert state["wedge_respawns_today"] == 1
+    assert state["wedge_respawn_day"] == _dead_silence_day_key(now)
+    assert state["dead_silence_respawns_today"] == 0  # #1209 budget untouched
+
+
+def test_wedge_context_ceiling_disable_knob_production_path(
+    isolated_registry, monkeypatch, stalled_recorder
+):
+    # #1453 acceptance 4 (the #1021 wiring-test pattern; mirrors
+    # test_wedge_api_error_env_kill_switch_disables_production_path):
+    # EPM_TICK_WEDGE_CONTEXT_CEILING=0 disables the trigger THROUGH THE
+    # PRODUCTION PASS — proving _apply_prompt_wedge_override actually calls
+    # _tick_wedge_min_context_ceiling() (an unwired call site running at
+    # the keyword default would pass the predicate tests and still fire
+    # here). The single ceiling turn is below every other lane's threshold,
+    # so no other kill switch is needed.
+    import autonomous_session_watch as asw
+
+    stops, spawns, _markers = stalled_recorder
+    _write_autonomous_entry(isolated_registry, 1456, "sess-1456", cap=24.0)
+    _patch_stale_signals(monkeypatch, asw, status="running", age_s=300)  # FRESH
+    monkeypatch.setattr(asw, "_transcript_tail_rows", lambda pid, **_k: _wedge_1453_ceiling_tail())
+    monkeypatch.setenv("EPM_TICK_WEDGE_CONTEXT_CEILING", "0")
+    now = 1_000_000.0
+
+    asw.stalled_session_pass(
+        dry_run=False,
+        threshold=2,
+        now=now,
+        daemon_reachable=True,
+        pids_by_sid={"sess-1456": 4242},
+    )
+    assert stops == [] and spawns == []  # kill switch: no wedge escalation
+    state = _read_stalled_state_845(isolated_registry, 1456)
+    assert state.get("wedge_hits", 0) == 0
+
+
+def test_wedge_context_ceiling_not_probed_under_full_turn_knob_rollback(
+    isolated_registry, monkeypatch, stalled_recorder
+):
+    # #1453 plan §11 D6 pin: the fresh-path lazy gate is deliberately
+    # UNTOUCHED — under the operator's full turn-lane rollback
+    # (EPM_TICK_WEDGE_MIN_FAILED_TURNS=0 + EPM_TICK_WEDGE_MIN_FAILED_TOTAL=0)
+    # a FRESH self-report probes NOTHING even with a ceiling tail present:
+    # the ceiling trigger degrades to the stale path in that corner config
+    # (mirrors test_wedge_fresh_path_kill_switches_restore_lazy_gate).
+    import autonomous_session_watch as asw
+
+    stops, spawns, _markers = stalled_recorder
+    _write_autonomous_entry(isolated_registry, 1457, "sess-1457", cap=24.0)
+    _patch_stale_signals(monkeypatch, asw, status="running", age_s=300)  # FRESH
+    probes: list[int] = []
+
+    def _recording_tail(pid, **_k):
+        probes.append(pid)
+        return _wedge_1453_ceiling_tail()
+
+    monkeypatch.setattr(asw, "_transcript_tail_rows", _recording_tail)
+    monkeypatch.setenv("EPM_TICK_WEDGE_MIN_FAILED_TURNS", "0")
+    monkeypatch.setenv("EPM_TICK_WEDGE_MIN_FAILED_TOTAL", "0")
+    now = 1_000_000.0
+
+    asw.stalled_session_pass(
+        dry_run=False,
+        threshold=2,
+        now=now,
+        daemon_reachable=True,
+        pids_by_sid={"sess-1457": 4242},
+    )
+    assert stops == [] and spawns == []
+    assert probes == []  # zero-probe hot path: the lazy gate held
+    state = _read_stalled_state_845(isolated_registry, 1457)
+    assert state.get("wedge_hits", 0) == 0
+
+
 def test_wedge_day_counter_survives_advancement_clear(
     isolated_registry, monkeypatch, stalled_recorder
 ):
@@ -18818,3 +19027,331 @@ def test_root_draft_enumeration_respects_gitignore(tmp_path):
         "newdir/inner.py",
         "scripts/y.py",
     ]
+
+
+# ─── Registry-drift audit pass (task #1439) ───────────────────────────────────
+
+
+def _rdrift_isolate(asw, monkeypatch, tmp_path: Path) -> tuple[Path, Path]:
+    """Point the pass's state (AUTONOMOUS_REGISTRY_DIR) + sidecar
+    (PROJECT_ROOT-derived) at tmp_path and zero the double-read confirm gap;
+    return (state_path, sidecar_path). Mirrors :func:`_rd_isolate`."""
+    monkeypatch.setattr(asw, "AUTONOMOUS_REGISTRY_DIR", tmp_path / "registry")
+    monkeypatch.setattr(asw, "PROJECT_ROOT", tmp_path / "root")
+    (tmp_path / "root").mkdir(parents=True, exist_ok=True)
+    monkeypatch.setenv("EPM_REGISTRY_DRIFT_CONFIRM_S", "0")
+    return (
+        tmp_path / "registry" / "registry-drift-observer.json",
+        tmp_path / "root" / ".claude" / "cache" / "registry-drift-events.jsonl",
+    )
+
+
+# The #207 incident shape, byte-for-byte (plan §6 predicate trace): a registry
+# entry whose `path` points at a missing dir while the task dir exists
+# uniquely elsewhere — audit() problem 1 + reconcile class `stale_real`.
+_RDRIFT_207_SNAPSHOT = {
+    "problems": ["task #207: registry path 'tasks/reviewing/207' does not exist"],
+    "classes": [("stale_real", 207, "tasks/reviewing/207 -> tasks/completed/207")],
+}
+
+
+def test_registry_drift_decide_alert_fp_change_and_ttl():
+    import autonomous_session_watch as asw
+
+    now = 1_000_000.0
+    realert = 168 * 3600.0
+    # First appearance (no stored fp): fires.
+    assert asw.decide_registry_drift_alert("abc", {}, now, realert) is True
+    # Same fp within the TTL: silent.
+    assert (
+        asw.decide_registry_drift_alert(
+            "abc", {"fp": "abc", "last_alert_ts": now - 100.0}, now, realert
+        )
+        is False
+    )
+    # Same fp STRICTLY past the TTL: re-fires (bounded weekly re-surface).
+    assert (
+        asw.decide_registry_drift_alert(
+            "abc", {"fp": "abc", "last_alert_ts": now - realert - 1.0}, now, realert
+        )
+        is True
+    )
+    # Boundary: exactly-at-TTL does NOT re-fire (predicate is STRICT >).
+    assert (
+        asw.decide_registry_drift_alert(
+            "abc", {"fp": "abc", "last_alert_ts": now - realert}, now, realert
+        )
+        is False
+    )
+    # Recomposed drift set (fp changed): fires regardless of a fresh stamp.
+    assert (
+        asw.decide_registry_drift_alert("def", {"fp": "abc", "last_alert_ts": now}, now, realert)
+        is True
+    )
+    # Corrupt state fields degrade to fire-as-if-unalerted (isinstance guards).
+    assert asw.decide_registry_drift_alert("abc", {"fp": 42}, now, realert) is True
+    assert (
+        asw.decide_registry_drift_alert("abc", {"fp": "abc", "last_alert_ts": "x"}, now, realert)
+        is True
+    )
+
+
+def test_registry_drift_confirmed_filters_transient():
+    import autonomous_session_watch as asw
+
+    a = {
+        "problems": ["p1", "p2"],
+        "classes": [("stale_real", 1, "d1"), ("missing_real", 2, "d2")],
+    }
+    # Second read: p2 + the missing_real row vanished (mutation completed
+    # mid-gap), an unrelated new row appeared — only the row present in BOTH
+    # reads is confirmed. List-shaped rows (a JSON round-trip) intersect too.
+    b = {
+        "problems": ["p1"],
+        "classes": [["stale_real", 1, "d1"], ["empty_stub", 3, "d3"]],
+    }
+    assert asw._registry_drift_confirmed(a, b) == {
+        "problems": ["p1"],
+        "classes": [("stale_real", 1, "d1")],
+    }
+    # Fully-transient drift confirms to empty.
+    assert asw._registry_drift_confirmed(a, {"problems": [], "classes": []}) == {
+        "problems": [],
+        "classes": [],
+    }
+
+
+def test_registry_drift_fingerprint_stable_under_highest_id_churn():
+    """The volatile `highest_id` numeric details recompose with every
+    `task.py new` — they are excluded from the fp input (else the fp would
+    churn and re-push early for an unchanged drift set), while the CLASS's
+    presence and every non-counter row still key the fp."""
+    import autonomous_session_watch as asw
+
+    base = {
+        "problems": ["highest_id 1450 < max task id 1451", "task #207: stale"],
+        "classes": [("highest_id", -1, "1450 -> 1451"), ("stale_real", 207, "x")],
+    }
+    churned = {
+        "problems": ["highest_id 1450 < max task id 1460", "task #207: stale"],
+        "classes": [("highest_id", -1, "1450 -> 1460"), ("stale_real", 207, "x")],
+    }
+    fp = asw._registry_drift_fingerprint(base)
+    assert fp == asw._registry_drift_fingerprint(churned)
+    assert len(fp) == 12
+    # Dropping the highest_id CLASS entirely still changes the fp...
+    no_bump = {"problems": ["task #207: stale"], "classes": [("stale_real", 207, "x")]}
+    assert fp != asw._registry_drift_fingerprint(no_bump)
+    # ...and so does any non-counter row change.
+    other = {
+        "problems": base["problems"],
+        "classes": [("highest_id", -1, "1450 -> 1451"), ("stale_real", 208, "x")],
+    }
+    assert fp != asw._registry_drift_fingerprint(other)
+
+
+def test_registry_drift_pass_fires_on_confirmed_drift(tmp_path, monkeypatch):
+    """Predicate trace (#207 shape, plan §6): the recorded incident — a
+    registry entry pointing at a missing dir while the task dir exists
+    uniquely elsewhere — persists through both reads => sidecar row + ONE
+    push naming the repair command + state fp saved."""
+    import autonomous_session_watch as asw
+
+    state_path, sidecar_path = _rdrift_isolate(asw, monkeypatch, tmp_path)
+    monkeypatch.setattr(asw, "_collect_registry_drift", lambda: _RDRIFT_207_SNAPSHOT)
+    pushes: list[str] = []
+    monkeypatch.setattr(asw, "_telegram_push", lambda msg, dry_run: pushes.append(msg) or True)
+
+    assert asw.registry_drift_pass(dry_run=False) is True
+    assert len(pushes) == 1
+    assert "task #207" in pushes[0]
+    assert "audit --repair" in pushes[0]
+    assert "Nothing was changed automatically" in pushes[0]
+    rows = [json.loads(x) for x in sidecar_path.read_text().splitlines()]
+    assert len(rows) == 1
+    assert rows[0]["kind"] == "registry-drift"
+    assert rows[0]["pushed"] is True
+    assert rows[0]["problems"] == _RDRIFT_207_SNAPSHOT["problems"]
+    assert rows[0]["classes"] == [["stale_real", 207, "tasks/reviewing/207 -> tasks/completed/207"]]
+    state = json.loads(state_path.read_text())
+    assert state["fp"] == rows[0]["fingerprint"]
+    assert isinstance(state["fp"], str) and len(state["fp"]) == 12
+    assert isinstance(state["last_run_ts"], float)
+    assert isinstance(state["last_alert_ts"], float)
+
+
+def test_registry_drift_pass_clean_noop(tmp_path, monkeypatch, capsys):
+    import autonomous_session_watch as asw
+
+    state_path, sidecar_path = _rdrift_isolate(asw, monkeypatch, tmp_path)
+    monkeypatch.setattr(asw, "_collect_registry_drift", lambda: {"problems": [], "classes": []})
+
+    def _no_push(*a, **kw):
+        raise AssertionError("clean repo must not push")
+
+    monkeypatch.setattr(asw, "_telegram_push", _no_push)
+    assert asw.registry_drift_pass(dry_run=False) is False
+    assert not sidecar_path.exists()
+    state = json.loads(state_path.read_text())
+    assert isinstance(state["last_run_ts"], float)  # throttle stamp landed
+    assert state["fp"] is None  # fp cleared
+    assert "recovered" not in capsys.readouterr().out
+    # A PRIOR fp (drift repaired since the last run) prints the recovery line
+    # and clears the fp so a re-appearance re-fires immediately.
+    state_path.write_text(json.dumps({"fp": "deadbeefcafe", "last_run_ts": 0.0}))
+    assert asw.registry_drift_pass(dry_run=False) is False
+    assert "registry-drift: recovered" in capsys.readouterr().out
+    assert json.loads(state_path.read_text())["fp"] is None
+
+
+def test_registry_drift_pass_throttle_honored(tmp_path, monkeypatch):
+    """NOT a vacuous returns-False pin (round-1 critic concern): the collect
+    stub is a FORBIDDEN raiser and the pre-seeded state file must come out
+    byte-unchanged — a broken throttle gate would raise into the fail-soft
+    path, which WRITES an error sidecar row (asserted absent)."""
+    import autonomous_session_watch as asw
+
+    state_path, sidecar_path = _rdrift_isolate(asw, monkeypatch, tmp_path)
+
+    def _forbidden(*a, **kw):
+        raise AssertionError("throttled tick must not collect / push")
+
+    monkeypatch.setattr(asw, "_collect_registry_drift", _forbidden)
+    monkeypatch.setattr(asw, "_telegram_push", _forbidden)
+    state_path.parent.mkdir(parents=True, exist_ok=True)
+    seeded = json.dumps({"last_run_ts": time.time() - 60.0})
+    state_path.write_text(seeded)
+    assert asw.registry_drift_pass(dry_run=False) is False
+    assert state_path.read_text() == seeded  # no re-stamp on a throttled tick
+    assert not sidecar_path.exists()  # incl. no fail-soft error row
+
+
+def test_registry_drift_pass_dedup_no_repush_same_fp(tmp_path, monkeypatch):
+    import autonomous_session_watch as asw
+
+    _state_path, sidecar_path = _rdrift_isolate(asw, monkeypatch, tmp_path)
+    monkeypatch.setenv("EPM_REGISTRY_DRIFT_INTERVAL_HOURS", "0")  # run-2 unthrottled
+    monkeypatch.setattr(asw, "_collect_registry_drift", lambda: _RDRIFT_207_SNAPSHOT)
+    pushes: list[str] = []
+    monkeypatch.setattr(asw, "_telegram_push", lambda msg, dry_run: pushes.append(msg) or True)
+
+    assert asw.registry_drift_pass(dry_run=False) is True
+    assert len(pushes) == 1
+    # Run 2: same fp, within the 168h TTL — sidecar row still appended
+    # (audit trail) with pushed: false, and NO second push.
+    assert asw.registry_drift_pass(dry_run=False) is False
+    assert len(pushes) == 1
+    rows = [json.loads(x) for x in sidecar_path.read_text().splitlines()]
+    assert len(rows) == 2
+    assert rows[0]["pushed"] is True and rows[1]["pushed"] is False
+    assert rows[0]["fingerprint"] == rows[1]["fingerprint"]
+
+
+def test_registry_drift_pass_kill_switch_skips_everything(tmp_path, monkeypatch):
+    """Full root-draft assert set (round-1 critic concern): forbidden-raiser
+    collect stub + state/sidecar files must NOT exist — a broken kill-switch
+    gate would raise into the fail-soft path and write an error sidecar row,
+    so a bare returns-False pin would be vacuous."""
+    import autonomous_session_watch as asw
+
+    monkeypatch.setenv("EPM_DISABLE_REGISTRY_DRIFT_PASS", "1")
+    state_path, sidecar_path = _rdrift_isolate(asw, monkeypatch, tmp_path)
+
+    def _forbidden(*a, **kw):
+        raise AssertionError("no collect / state IO / push under the kill switch")
+
+    monkeypatch.setattr(asw, "_collect_registry_drift", _forbidden)
+    monkeypatch.setattr(asw, "_telegram_push", _forbidden)
+    assert asw.registry_drift_pass(dry_run=False) is False
+    assert not state_path.exists() and not sidecar_path.exists()
+
+
+def test_registry_drift_pass_audit_exception_fail_soft(tmp_path, monkeypatch, capsys):
+    import autonomous_session_watch as asw
+
+    state_path, sidecar_path = _rdrift_isolate(asw, monkeypatch, tmp_path)
+
+    def _boom():
+        raise RuntimeError("registry unreadable")
+
+    def _no_push(*a, **kw):
+        raise AssertionError("failed collect must not push")
+
+    monkeypatch.setattr(asw, "_collect_registry_drift", _boom)
+    monkeypatch.setattr(asw, "_telegram_push", _no_push)
+    assert asw.registry_drift_pass(dry_run=False) is False
+    assert "registry-drift: pass failed (fail-soft): registry unreadable" in capsys.readouterr().err
+    rows = [json.loads(x) for x in sidecar_path.read_text().splitlines()]
+    assert len(rows) == 1
+    assert rows[0]["kind"] == "registry-drift-error"
+    assert "registry unreadable" in rows[0]["error"]
+    # Round-1 critic concern: the error path writes NO fp — only the attempt
+    # stamp saved BEFORE the collect survives, bounding a crashing audit to
+    # one error row per throttle interval.
+    state = json.loads(state_path.read_text())
+    assert "fp" not in state
+    assert isinstance(state["last_run_ts"], float)
+
+
+def test_registry_drift_pass_report_only_never_applies(tmp_path, monkeypatch):
+    """The Durability pin (plan §0): drives the REAL _collect_registry_drift
+    against a RESTRICTED task_workflow stand-in exposing ONLY
+    signature-conformant recorder-wrapped audit + reconcile_registry —
+    reconcile is called with apply=False ONLY (twice: the double read), and
+    any OTHER task_workflow attribute access fails the from-import."""
+    import sys as _sys
+    import types as _types
+
+    import autonomous_session_watch as asw
+
+    state_path, sidecar_path = _rdrift_isolate(asw, monkeypatch, tmp_path)
+    calls: list[tuple] = []
+
+    def _fake_audit():
+        calls.append(("audit",))
+        return ["task #207: registry path 'tasks/reviewing/207' does not exist"]
+
+    def _fake_reconcile(*, apply: bool = False):
+        calls.append(("reconcile", apply))
+        change = _types.SimpleNamespace(
+            drift_class="stale_real",
+            task_id=207,
+            detail="tasks/reviewing/207 -> tasks/completed/207",
+        )
+        return _types.SimpleNamespace(
+            stale_real=[change],
+            missing_real=[],
+            empty_stubs=[],
+            skipped=[],
+            highest_id_bumped=None,
+        )
+
+    restricted = _types.SimpleNamespace(audit=_fake_audit, reconcile_registry=_fake_reconcile)
+    monkeypatch.setitem(_sys.modules, "explore_persona_space.task_workflow", restricted)
+    pushes: list[str] = []
+    monkeypatch.setattr(asw, "_telegram_push", lambda msg, dry_run: pushes.append(msg) or True)
+
+    assert asw.registry_drift_pass(dry_run=False) is True
+    # Double-read: audit + reconcile exactly twice each; apply=False ONLY.
+    assert calls == [("audit",), ("reconcile", False), ("audit",), ("reconcile", False)]
+    assert ("reconcile", True) not in calls
+    assert len(pushes) == 1
+    rows = [json.loads(x) for x in sidecar_path.read_text().splitlines()]
+    assert rows[0]["classes"] == [["stale_real", 207, "tasks/reviewing/207 -> tasks/completed/207"]]
+    assert json.loads(state_path.read_text())["fp"] == rows[0]["fingerprint"]
+
+
+def test_registry_drift_pass_dry_run_writes_no_state(tmp_path, monkeypatch, capsys):
+    import autonomous_session_watch as asw
+
+    state_path, sidecar_path = _rdrift_isolate(asw, monkeypatch, tmp_path)
+    monkeypatch.setattr(asw, "_collect_registry_drift", lambda: _RDRIFT_207_SNAPSHOT)
+    calls: list[bool] = []
+    monkeypatch.setattr(asw, "_telegram_push", lambda msg, dry_run: calls.append(dry_run) or False)
+
+    assert asw.registry_drift_pass(dry_run=True) is True
+    assert calls == [True]  # push observed, dry_run honored
+    assert not state_path.exists() and not sidecar_path.exists()  # zero writes
+    out = capsys.readouterr().out
+    assert "[dry-run] would save registry-drift state" in out
+    assert "[dry-run] would append registry-drift sidecar row" in out

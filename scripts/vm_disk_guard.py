@@ -47,7 +47,16 @@ runs five TIERS of strictly-safe cleanup, reporting bytes freed per tier:
       (``EPS_VM_HOME_HF_REVISION_MAX_AGE_DAYS``) AND no fresh EXCLUSIVE-blob
       atime — the newest + every ref'd revision per repo is ALWAYS kept;
       (arm 1) whole repos whose repo-level ``last_accessed`` is older than
-      the same window (ref'd revisions included — this covers stale models).
+      the same window (ref'd revisions included — this covers stale models);
+      (arm 3, #1450) a size-cap top-up: when the ``hub/`` total (``hub/``
+      ONLY — ``datasets/`` / ``xet/`` under ``~/.cache/huggingface`` are NOT
+      covered) exceeds ``EPS_VM_HOME_HF_CACHE_CAP_GB`` (default 50 GB),
+      additional unref'd non-newest revisions of multi-revision repos are
+      reaped OLDEST-first down to the cap, with the 7 d age gates replaced
+      by a 1 h in-flight floor (``EPS_VM_HOME_HF_SIZE_CAP_MIN_AGE_HOURS``) —
+      same-day churn no longer has to age before it can be reaped (incident
+      2026-07-16: 295 same-day revisions grew the hub cache to 101 GB and
+      drove ``/`` to 98% twice while the age arms reaped nothing).
       Deletion goes exclusively through
       ``HFCacheInfo.delete_revisions().execute()`` (blob-refcount safe);
       every failure degrades toward KEEP. A later FileNotFoundError on a
@@ -62,6 +71,17 @@ the threshold, a loud WARNING line is printed and (when present) the my-goat
 ``telegram_push.sh`` is invoked fail-soft so the disk-pressure situation is
 surfaced for manual triage.
 
+Device-vs-filesystem size reconciliation (#1457): every run additionally
+compares each watched disk's TOP-LEVEL block device size (sysfs) against the
+mounted filesystem size (statvfs) and WARNs when the device exceeds the fs by
+more than BOTH thresholds — a resized-but-unexpanded disk (growpart and/or
+resize2fs never ran; incident 2026-07-16: a 485G fs on the 1TB boot disk while
+cleanup tiers fired). Surfacing ONLY — the guard NEVER runs
+growpart/resize2fs/parted or any mutating block/fs command; exit codes are
+unchanged. Blind spot: if the kernel has not rescanned a resized virtio
+device, sysfs ``size`` still reads the old capacity and no WARN fires until
+rescan/reboot (out of this method's reach; not the incident class).
+
 Mirrors the style of ``scripts/worktree_audit.py`` + ``scripts/gcp_audit.py``:
 pure decision helpers are unit-testable, side effects are gated on ``--apply``,
 and the cron wrapper (``scripts/cron_vm_disk_guard.sh``) runs ``--apply``.
@@ -74,12 +94,13 @@ import contextlib
 import fcntl
 import io
 import json
+import math
 import os
 import shutil
 import subprocess
 import sys
 import time
-from dataclasses import dataclass, field
+from dataclasses import asdict, dataclass, field
 from pathlib import Path
 
 from explore_persona_space.task_workflow import find_task_path, repo_root
@@ -100,6 +121,18 @@ from clean_experiment_downloads import (
 
 # Default usage threshold (% of /) above which cleanup runs. Env-overridable.
 DEFAULT_THRESHOLD_PCT = 85.0
+
+# Device-vs-filesystem size reconciliation (#1457): WARN when the TOP-LEVEL
+# block device backing a watched mount exceeds the mounted filesystem by more
+# than BOTH thresholds — a resized-but-unexpanded disk (growpart and/or
+# resize2fs never ran; incident 2026-07-16: 485G fs on the 1TB boot disk while
+# cleanup tiers fired). Percent normalizes for ext4 metadata overhead
+# (measured 2026-07-17: 3.10% on /, 1.67% on /mnt/eps-data); the absolute
+# floor suppresses fixed-overhead noise on small disks (the incident gap
+# ~526 GB clears it 50x). Surfacing ONLY — the guard NEVER runs
+# growpart/resize2fs.
+DEFAULT_DEVICE_FS_GAP_PCT = 5.0
+DEFAULT_DEVICE_FS_GAP_MIN_GB = 10.0
 
 # The dedicated data disk that holds the relocated `.claude/worktrees/` tree
 # (task #681). It is a SECOND watched mount, distinct from `/` (the boot disk).
@@ -371,6 +404,33 @@ def threshold_pct() -> float:
     return val
 
 
+def device_fs_gap_pct() -> float:
+    """Device-vs-fs gap WARN threshold (% of device size), env-overridable
+    (``EPS_VM_DEVICE_FS_GAP_PCT``), clamped to (0, 100] (#1457)."""
+    raw = os.environ.get("EPS_VM_DEVICE_FS_GAP_PCT", str(DEFAULT_DEVICE_FS_GAP_PCT))
+    try:
+        val = float(raw)
+    except ValueError:
+        return DEFAULT_DEVICE_FS_GAP_PCT
+    if not (0.0 < val <= 100.0):
+        return DEFAULT_DEVICE_FS_GAP_PCT
+    return val
+
+
+def device_fs_gap_min_gb() -> float:
+    """Device-vs-fs gap absolute WARN floor (GiB), env-overridable
+    (``EPS_VM_DEVICE_FS_GAP_MIN_GB``), clamped to finite >= 0 (#1457).
+
+    Non-finite env values (``inf``/``nan``) fall back to the module default —
+    ``int(inf * 1024**3)`` would raise OverflowError out of the fail-soft check."""
+    raw = os.environ.get("EPS_VM_DEVICE_FS_GAP_MIN_GB", str(DEFAULT_DEVICE_FS_GAP_MIN_GB))
+    try:
+        val = float(raw)
+    except ValueError:
+        return DEFAULT_DEVICE_FS_GAP_MIN_GB
+    return val if math.isfinite(val) and val >= 0.0 else DEFAULT_DEVICE_FS_GAP_MIN_GB
+
+
 def log_max_age_days() -> float:
     """Stale-log age cutoff in days, env-overridable, clamped to >= 0."""
     raw = os.environ.get("EPS_VM_DISK_LOG_MAX_AGE_DAYS", str(DEFAULT_LOG_MAX_AGE_DAYS))
@@ -448,6 +508,161 @@ def _discover_tmp_issue_numbers(tmp_root: Path) -> list[int]:
     return sorted(found)
 
 
+# ─── device-vs-fs size reconciliation (#1457) ────────────────────────────────
+
+
+@dataclass
+class DeviceFsCheck:
+    """One watched mount's device-vs-filesystem size reconciliation read.
+
+    ``state`` is ``"warn"`` (device exceeds fs by more than BOTH thresholds —
+    a resized-but-unexpanded disk), ``"ok"``, or ``"skipped"`` (any resolution
+    failure / virtual device / kill switch; ``reason`` says why). Surfacing
+    ONLY — nothing in this module ever runs growpart/resize2fs."""
+
+    path: str
+    state: str  # "ok" | "warn" | "skipped"
+    device: str = ""  # top-level disk name, e.g. "sda", "sdb"
+    partition: str = ""  # mounted partition name ("sda1") or "" for whole-disk fs
+    partition_number: str = ""  # contents of the sysfs `partition` file (growpart hint)
+    device_bytes: int = 0
+    fs_bytes: int = 0
+    gap_bytes: int = 0
+    gap_pct: float = 0.0
+    threshold_pct: float = 0.0
+    min_gap_bytes: int = 0
+    reason: str = ""  # skip reason / one-line human summary
+
+
+def _device_bytes_for_mount(
+    path: str, *, sysfs_dev_root: str = "/sys/dev/block", stat_fn=os.stat
+) -> tuple[int, str, str, str] | tuple[None, str, None, None]:
+    """Resolve the TOP-LEVEL block device backing the filesystem at ``path``.
+
+    Returns ``(device_bytes, disk_name, partition_name, partition_number)`` on
+    success, or ``(None, reason, None, None)`` on ANY failure — containers /
+    overlayfs (anonymous major-0 devices), device-mapper / loop / md / zram
+    (virtual devices — deliberately skipped in v1: an LV smaller than its VG
+    is a legitimate layout), missing sysfs, non-Linux. Pure ``os.stat`` +
+    sysfs reads, no subprocess (the ``_is_mounted`` style). The sysfs ``size``
+    file is ALWAYS in 512-byte sectors (kernel stable ABI) regardless of the
+    device's logical block size."""
+    try:
+        st = stat_fn(path)
+        maj, mino = os.major(st.st_dev), os.minor(st.st_dev)
+        if maj == 0:
+            return None, f"anonymous device {maj}:{mino} (overlay/tmpfs/btrfs)", None, None
+        node = os.path.realpath(f"{sysfs_dev_root}/{maj}:{mino}")
+        if not os.path.isdir(node):
+            return None, f"no sysfs node for {maj}:{mino}", None, None
+        if "/devices/virtual/" in node:  # dm-*, loop*, md*, zram* — out of scope v1
+            return None, f"virtual block device ({os.path.basename(node)})", None, None
+        partition_name, partition_number = "", ""
+        part_file = os.path.join(node, "partition")
+        if os.path.exists(part_file):  # sda1 has it ("1"); whole disks (sdb) don't
+            partition_name = os.path.basename(node)
+            with open(part_file) as fh:
+                partition_number = fh.read().strip()
+            node = os.path.dirname(node)  # the partition dir's parent IS the disk
+        with open(os.path.join(node, "size")) as fh:
+            sectors = int(fh.read().strip())  # kernel ABI: ALWAYS 512-byte sectors
+        return sectors * 512, os.path.basename(node), partition_name, partition_number
+    except (OSError, ValueError) as exc:
+        return None, f"sysfs resolution failed: {exc}", None, None
+
+
+def check_device_fs_gap(
+    path: str,
+    *,
+    gap_pct_threshold: float | None = None,
+    min_gap_gb: float | None = None,
+    resolver=None,
+    statvfs_fn=os.statvfs,
+) -> DeviceFsCheck:
+    """Fail-soft device-vs-fs reconciliation for one watched mount.
+
+    NEVER raises: every failure path returns ``state="skipped"`` with a reason
+    (the cron guard is fleet-critical). WARN fires only when the gap is
+    strictly above BOTH the percent threshold AND the absolute floor
+    (exactly-at-threshold stays quiet). A negative gap (fs > device — exotic
+    layout) clamps ``gap_bytes``/``gap_pct`` to 0 and reports ``ok``.
+    ``resolver``/``statvfs_fn`` are test seams; production callers pass
+    nothing."""
+    thr = gap_pct_threshold if gap_pct_threshold is not None else device_fs_gap_pct()
+    min_gb = min_gap_gb if min_gap_gb is not None else device_fs_gap_min_gb()
+    try:
+        # int(inf) raises OverflowError, int(nan) raises ValueError — and a huge
+        # finite GiB value (>= ~1.5e299) overflows to inf in the float multiply.
+        # Fall back to the module default so this NEVER raises out of the check.
+        floor_b = int(min_gb * 1024**3)
+    except (OverflowError, ValueError):
+        floor_b = int(DEFAULT_DEVICE_FS_GAP_MIN_GB * 1024**3)
+    if os.environ.get("EPM_SKIP_DEVICE_FS_CHECK", "").strip() == "1":
+        return DeviceFsCheck(
+            path=path,
+            state="skipped",
+            threshold_pct=thr,
+            min_gap_bytes=floor_b,
+            reason="disabled via EPM_SKIP_DEVICE_FS_CHECK",
+        )
+    try:
+        resolve = resolver if resolver is not None else _device_bytes_for_mount
+        dev = resolve(path)
+        if dev[0] is None:
+            return DeviceFsCheck(
+                path=path,
+                state="skipped",
+                threshold_pct=thr,
+                min_gap_bytes=floor_b,
+                reason=str(dev[1]),
+            )
+        device_bytes, disk, part, part_no = dev
+        try:
+            sv = statvfs_fn(path)
+        except OSError as exc:
+            return DeviceFsCheck(
+                path=path,
+                state="skipped",
+                threshold_pct=thr,
+                min_gap_bytes=floor_b,
+                reason=f"statvfs failed: {exc}",
+            )
+        fs_bytes = sv.f_blocks * sv.f_frsize
+        if fs_bytes <= 0 or device_bytes <= 0:
+            return DeviceFsCheck(
+                path=path,
+                state="skipped",
+                threshold_pct=thr,
+                min_gap_bytes=floor_b,
+                reason="zero-size read",
+            )
+        gap = device_bytes - fs_bytes
+        gap_pct = 100.0 * gap / device_bytes
+        # Strict > on BOTH legs: exactly-at-threshold is quiet by design.
+        warn = gap_pct > thr and gap > floor_b
+        return DeviceFsCheck(
+            path=path,
+            state="warn" if warn else "ok",
+            device=disk,
+            partition=part,
+            partition_number=part_no,
+            device_bytes=device_bytes,
+            fs_bytes=fs_bytes,
+            gap_bytes=max(gap, 0),
+            gap_pct=max(round(gap_pct, 2), 0.0),
+            threshold_pct=thr,
+            min_gap_bytes=floor_b,
+        )
+    except Exception as exc:
+        return DeviceFsCheck(
+            path=path,
+            state="skipped",
+            threshold_pct=thr,
+            min_gap_bytes=floor_b,
+            reason=f"device-fs check failed: {exc}",
+        )
+
+
 # ─── tier results ────────────────────────────────────────────────────────────
 
 
@@ -495,6 +710,10 @@ class GuardResult:
     apply: bool
     tiers: list[TierResult] = field(default_factory=list)
     still_over_after: bool = False
+    # Device-vs-fs size reconciliation (#1457): computed on EVERY pass (even
+    # under-threshold — a fresh resize is detectable long before disk
+    # pressure). Read-only + fail-soft; never affects tiers or exit codes.
+    device_fs: DeviceFsCheck | None = None
 
     @property
     def bytes_freed(self) -> int:
@@ -810,6 +1029,8 @@ DEFAULT_HOME_HF_REVISION_MAX_AGE_DAYS = 7.0  # env EPS_VM_HOME_HF_REVISION_MAX_A
 DEFAULT_HOME_HF_REPO_ESCALATE_GB = 40.0  # env EPS_VM_HOME_HF_CACHE_REPO_ESCALATE_GB
 HOME_HF_ATTRIBUTION_TOP_N = 5  # top consumers named in detail lines
 _HOME_HF_ESCALATION_BREAKDOWN_TOP_N = 8  # revisions named in the escalation row
+DEFAULT_HOME_HF_CACHE_CAP_GB = 50.0  # env EPS_VM_HOME_HF_CACHE_CAP_GB (#1450, arm 3)
+DEFAULT_HOME_HF_SIZE_CAP_MIN_AGE_HOURS = 1.0  # env EPS_VM_HOME_HF_SIZE_CAP_MIN_AGE_HOURS
 
 
 def home_hf_cache_root() -> Path:
@@ -847,6 +1068,41 @@ def home_hf_repo_escalate_bytes() -> int:
         if val >= 0.0:
             gb = val
     return int(gb * 1e9)
+
+
+def home_hf_cache_cap_bytes() -> int:
+    """Total hub-cache footprint (bytes) above which tier (e)'s size-cap arm
+    (arm 3, #1450) reaps ELIGIBLE revisions oldest-first down to the cap.
+    Env ``EPS_VM_HOME_HF_CACHE_CAP_GB`` (float GB); blank/invalid/negative ->
+    default 50 GB. Effectively disable with a very large value."""
+    raw = os.environ.get("EPS_VM_HOME_HF_CACHE_CAP_GB", "").strip()
+    gb = DEFAULT_HOME_HF_CACHE_CAP_GB
+    if raw:
+        try:
+            val = float(raw)
+        except ValueError:
+            val = -1.0
+        if val >= 0.0:
+            gb = val
+    return int(gb * 1e9)
+
+
+def home_hf_size_cap_min_age_seconds() -> float:
+    """Arm-3 (#1450) in-flight floor, returned in SECONDS: a revision minted
+    (``last_modified``) or whose EXCLUSIVE blobs were read (atime) within
+    this window is never size-cap eligible. Env
+    ``EPS_VM_HOME_HF_SIZE_CAP_MIN_AGE_HOURS`` (float hours);
+    blank/invalid/negative -> default 1 h."""
+    raw = os.environ.get("EPS_VM_HOME_HF_SIZE_CAP_MIN_AGE_HOURS", "").strip()
+    hours = DEFAULT_HOME_HF_SIZE_CAP_MIN_AGE_HOURS
+    if raw:
+        try:
+            val = float(raw)
+        except ValueError:
+            val = -1.0
+        if val >= 0.0:
+            hours = val
+    return hours * 3600.0
 
 
 def _hf_ack_sentinel_path(repo_key: str, band_gb: float) -> Path:
@@ -917,7 +1173,9 @@ def _home_hf_reap_selection(info, now: float, age_seconds: float):
       fresh, so a whole-revision atime gate selects 0 candidates on the
       motivating repo (measured, plan #1376 §2); the exclusive-blob guard
       protects exactly the data deletion would destroy while
-      ``delete_revisions`` refcounting protects the rest.
+      ``delete_revisions`` refcounting protects the rest. Arm 3 — the
+      #1450 size-cap top-up over the age-RELAXED eligible pool — is a
+      separate pure function, ``_home_hf_size_cap_selection``.
     * ``kept_reason_counts`` — e.g. ``{"degenerate-repo-kept": N}`` for repos
       whose per-repo selection raised (None timestamps, malformed fields):
       that repo is skipped entirely (kept, fail toward KEEP) while every
@@ -974,6 +1232,166 @@ def _home_hf_reap_selection(info, now: float, age_seconds: float):
             )
             continue
     return whole, revlevel, kept_reason_counts
+
+
+def _home_hf_size_cap_selection(
+    info,
+    now: float,
+    cap_bytes: int,
+    floor_seconds: float,
+    already_selected: frozenset[str],
+    already_freed_approx: int,
+) -> tuple[list, dict]:
+    """Arm 3 (#1450): pure oldest-first SIZE-CAP selector over a scanned hub.
+
+    Returns ``(extra_pairs, stats)`` — ``extra_pairs`` is ``[(repo, [revs])]``
+    (arm 2's pair shape), ``stats`` = ``{"total_bytes", "overage_bytes",
+    "n_eligible", "selected_bytes"}``.
+
+    Trigger: total hub bytes (``hub/`` ONLY — ``datasets/`` / ``xet/`` are
+    out of scope) minus what arms 1/2 already free (approx) exceeds
+    ``cap_bytes``. Eligibility keeps ONLY arm 2's STRUCTURAL protections —
+    non-newest by the same ``(last_modified, commit_hash)`` tie-break (the
+    newest is ALWAYS kept), NO ref at all (any ref protects),
+    single-revision repos never touched — plus arms-1/2 dedup via
+    ``already_selected``, with the 7 d age gates REPLACED by an in-flight
+    floor: a revision minted (``last_modified``) within ``floor_seconds``,
+    or whose EXCLUSIVE blobs (same ``kept_blobs`` construction as the age
+    selector, floor window) were read within the floor, is kept. The pool
+    is sorted OLDEST-first by ``(last_modified, commit_hash)``
+    (deterministic) and accumulates until the cumulative approx bytes cover
+    the overage — the freshest eligible churn survives.
+
+    Byte arithmetic is deliberately biased toward UNDER-reaping:
+    ``rev.size_on_disk`` counts blobs shared with surviving revisions
+    (OVERestimates freed bytes -> fewer selected), and a degenerate repo
+    (per-repo try/except, fail toward KEEP — the age selector's posture)
+    contributes NOTHING to the total and is never selected. Convergence to
+    the cap happens across repeated triggered runs (the watcher's sub-floor
+    ``--apply`` repeats every 30 min under pressure), never by
+    over-deleting in one pass.
+
+    Residual atime blindness (accepted): ``/`` is mounted ``relatime``, so
+    a read 1-24 h after download may not refresh atime and the floor cannot
+    see it. POSIX unlink does not invalidate already-open handles — a live
+    reader in that blind window loses only FUTURE opens (re-download on
+    demand, the tier's standing doctrine), never the read in flight.
+    """
+    total = 0
+    pool: list[tuple[float, str, object, object]] = []
+    for repo in info.repos:
+        try:
+            repo_bytes = int(repo.size_on_disk)
+            repo_pool = []
+            revs = list(repo.revisions)
+            if len(revs) > 1:  # single revision == newest: structurally kept
+                newest = max(revs, key=lambda r: (r.last_modified, r.commit_hash))
+                kept_blobs = {
+                    f.blob_path
+                    for rev in revs
+                    for f in rev.files
+                    if rev is newest or rev.refs or now - rev.last_modified <= floor_seconds
+                }
+                for rev in revs:
+                    if rev is newest or rev.refs or rev.commit_hash in already_selected:
+                        continue
+                    if now - rev.last_modified <= floor_seconds:
+                        continue  # in-flight floor: just-minted revision
+                    excl = [f for f in rev.files if f.blob_path not in kept_blobs]
+                    newest_excl_atime = max((f.blob_last_accessed for f in excl), default=0.0)
+                    if excl and now - newest_excl_atime <= floor_seconds:
+                        continue  # exclusive data read within the floor: kept
+                    repo_pool.append((rev.last_modified, rev.commit_hash, repo, rev))
+            # Commit the repo's contribution only after its whole selection
+            # succeeded: a degenerate repo contributes NOTHING to the total
+            # (under-count -> under-reap) and is never selected.
+            total += repo_bytes
+            pool.extend(repo_pool)
+        except Exception:
+            continue  # degenerate repo: fail toward KEEP
+    overage = total - already_freed_approx - cap_bytes
+    stats = {
+        "total_bytes": total,
+        "overage_bytes": max(0, overage),
+        "n_eligible": len(pool),
+        "selected_bytes": 0,
+    }
+    if overage <= 0:
+        return [], stats
+    pool.sort(key=lambda t: (t[0], t[1]))  # oldest first, deterministic
+    by_repo: dict[str, tuple] = {}
+    acc = 0
+    for _, _, repo, rev in pool:
+        if acc >= overage:
+            break  # cap covered: the freshest eligible churn survives
+        acc += int(rev.size_on_disk)
+        by_repo.setdefault(repo.repo_id, (repo, []))[1].append(rev)
+    stats["selected_bytes"] = acc
+    return list(by_repo.values()), stats
+
+
+def _size_cap_arm(info, ts: float, cap_bytes: int, floor_seconds: float, whole, revlevel):
+    """Resolve arm 3's (#1450) inputs from the arm-1/2 selection and run the
+    pure size-cap selector: arms-1/2 hashes become the dedup set and their
+    approximate freed bytes reduce the overage (top-up semantics). Returns
+    ``_home_hf_size_cap_selection``'s ``(extra_pairs, stats)``."""
+    already = frozenset(
+        [rev.commit_hash for r in whole for rev in r.revisions]
+        + [rev.commit_hash for _, cands in revlevel for rev in cands]
+    )
+    # arm-1 whole repos: repo.size_on_disk (blob-deduped, exact for a
+    # whole-repo delete); arm-2: rev.size_on_disk (overestimates freed
+    # bytes -> under-reap, safe direction).
+    freed_approx = sum(int(r.size_on_disk) for r in whole) + sum(
+        int(rev.size_on_disk) for _, cands in revlevel for rev in cands
+    )
+    return _home_hf_size_cap_selection(info, ts, cap_bytes, floor_seconds, already, freed_approx)
+
+
+def _cand_by_repo_map(whole, revlevel, sizecap_pairs) -> dict[str, list]:
+    """Per-repo candidate map for attribution/escalation: arm-1 whole repos'
+    full revision lists, arm-2 candidates, then arm-3 (#1450) EXTENDS — never
+    replaces — since a repo can hold arm-2 AND arm-3 candidates."""
+    cand: dict[str, list] = {r.repo_id: list(r.revisions) for r in whole}
+    cand.update({r.repo_id: list(cands) for r, cands in revlevel})
+    for r, cands in sizecap_pairs:
+        cand[r.repo_id] = list(cand.get(r.repo_id, [])) + list(cands)
+    return cand
+
+
+def _trimmed_by_repo_counts(whole, revlevel, sizecap_pairs) -> dict[str, int]:
+    """Per-repo deleted-revision counts for detail lines + the sidecar row
+    (#1377's ``repos`` dict shape), with arm-3 (#1450) counts folded in."""
+    counts: dict[str, int] = {r.repo_id: len(list(r.revisions)) for r in whole}
+    for r, cands in revlevel:
+        counts[r.repo_id] = counts.get(r.repo_id, 0) + len(cands)
+    for r, cands in sizecap_pairs:
+        counts[r.repo_id] = counts.get(r.repo_id, 0) + len(cands)
+    return counts
+
+
+def _size_cap_detail_line(
+    cap_stats: dict, cap_bytes: int, floor_seconds: float, n_arm3: int
+) -> str | None:
+    """The arm-3 (#1450) detail line — ``None`` under the cap, so under-cap
+    output stays byte-identical to the pre-#1450 tier."""
+    if cap_stats["total_bytes"] <= cap_bytes:
+        return None
+    if n_arm3:
+        return (
+            f"size-cap (arm 3): hub total {_fmt_gb(cap_stats['total_bytes'])} > cap "
+            f"{_fmt_gb(cap_bytes)} — {n_arm3} additional revision(s) oldest-first "
+            f"(~{_fmt_gb(cap_stats['selected_bytes'])} approx; floor {floor_seconds / 3600.0:g}h)"
+        )
+    if cap_stats["overage_bytes"] > 0:
+        return (
+            "size-cap (arm 3): over cap but nothing eligible "
+            "(newest / ref'd / fresh-within-floor / single-revision only)"
+        )
+    return (
+        f"size-cap (arm 3): hub total {_fmt_gb(cap_stats['total_bytes'])} > cap "
+        f"{_fmt_gb(cap_bytes)} — age arms already cover the overage; no additional selection"
+    )
 
 
 def _attribute_home_hf_repos(
@@ -1097,8 +1515,8 @@ def _escalate_one_home_hf_repo(
     _telegram_push(
         f"VM disk: home HF hub cache repo {repo_key} holds "
         f"{_fmt_gb(int(repo.size_on_disk))} across {len(list(repo.revisions))} "
-        f"revisions ({n_cands} unreferenced+stale). Guard reaps stale unreferenced "
-        f"revisions on --apply; ack: touch {_hf_ack_sentinel_path(repo_key, band_gb)}",
+        f"revisions ({n_cands} unreferenced+stale). Guard reaps stale + over-cap "
+        f"unreferenced revisions on --apply; ack: touch {_hf_ack_sentinel_path(repo_key, band_gb)}",
         apply,
     )
     if apply:
@@ -1114,6 +1532,8 @@ def clean_home_hf_stale_revisions(
     cache_root: Path | None = None,
     now: float | None = None,
     state: dict | None = None,
+    cache_cap_gb: float | None = None,  # arm 3 (#1450): None -> home_hf_cache_cap_bytes()
+    size_cap_min_age_hours: float | None = None,  # None -> home_hf_size_cap_min_age_seconds()
 ) -> TierResult:
     """Tier (e): attribution + escalation + safe reap of the HOME HF hub cache
     (``~/.cache/huggingface/hub``; #1376 + #1377 reconciled into ONE tier —
@@ -1139,7 +1559,13 @@ def clean_home_hf_stale_revisions(
        arm 1 whole stale repos (repo-level ``last_accessed`` > window; ref'd
        + newest revisions included by design) + arm 2 unref'd non-newest
        stale cold revisions of fresh multi-revision repos (the newest + every
-       ref'd revision per repo is ALWAYS kept). Deletion goes
+       ref'd revision per repo is ALWAYS kept) + arm 3 (#1450) the size-cap
+       top-up (``_home_hf_size_cap_selection``): when total hub bytes exceed
+       ``EPS_VM_HOME_HF_CACHE_CAP_GB`` (default 50 GB), additional unref'd
+       non-newest revisions past the ``EPS_VM_HOME_HF_SIZE_CAP_MIN_AGE_HOURS``
+       (1 h) in-flight floor are selected OLDEST-first down to the cap —
+       structural keeps unchanged, ``hub/`` only; under the cap the tier
+       behaves exactly as before (no arm-3 detail noise). Deletion goes
        EXCLUSIVELY through ``HFCacheInfo.delete_revisions().execute()``
        (blob-refcount safe — never an rmtree of blobs/snapshots).
        ``bytes_freed`` books the strategy's ``expected_freed_size`` (blobs
@@ -1203,6 +1629,12 @@ def clean_home_hf_stale_revisions(
         if repo_escalate_gb is not None
         else home_hf_repo_escalate_bytes()
     )
+    cap_bytes = int(cache_cap_gb * 1e9) if cache_cap_gb is not None else home_hf_cache_cap_bytes()
+    floor_s = (
+        size_cap_min_age_hours * 3600.0
+        if size_cap_min_age_hours is not None
+        else home_hf_size_cap_min_age_seconds()
+    )
     ts = time.time() if now is None else now
     try:
         info = _scan_hf_cache(hub)
@@ -1213,8 +1645,9 @@ def clean_home_hf_stale_revisions(
         whole, revlevel, kept_counts = _home_hf_reap_selection(info, ts, age_days * 86400.0)
         for reason, count in sorted(kept_counts.items()):
             res.detail.append(f"{reason}: {count} repo(s)")
-        cand_by_repo: dict[str, list] = {r.repo_id: list(r.revisions) for r in whole}
-        cand_by_repo.update({r.repo_id: list(cands) for r, cands in revlevel})
+        # Arm 3 (#1450): size-cap top-up over the age-RELAXED eligible pool.
+        sizecap_pairs, cap_stats = _size_cap_arm(info, ts, cap_bytes, floor_s, whole, revlevel)
+        cand_by_repo = _cand_by_repo_map(whole, revlevel, sizecap_pairs)
         # 1) ATTRIBUTION — always, before any reap decision (hub/ only).
         _attribute_home_hf_repos(repos, cand_by_repo, escalate_bytes, ts, res)
         # 2) ESCALATION — per repo over the always-escalate footprint.
@@ -1233,10 +1666,18 @@ def clean_home_hf_stale_revisions(
         )
         if apply and manage_state and escalated_any:
             _save_active_escalation_state(st)
-        # 3) REAP — arm 1 (whole stale repos) + arm 2 (stale unreferenced revs).
+        # 3) REAP — arm 1 (whole stale repos) + arm 2 (stale unreferenced
+        # revs) + arm 3 (size-cap top-up, #1450).
         arm1_hashes = [rev.commit_hash for r in whole for rev in r.revisions]
         arm2_hashes = [rev.commit_hash for _, cands in revlevel for rev in cands]
-        hashes = arm1_hashes + arm2_hashes
+        arm3_hashes = [rev.commit_hash for _, cands in sizecap_pairs for rev in cands]
+        hashes = arm1_hashes + arm2_hashes + arm3_hashes
+        # Arm-3 detail lines fire ONLY over the cap — under-cap output is
+        # byte-identical to the pre-#1450 tier.
+        over_cap = cap_stats["total_bytes"] > cap_bytes
+        cap_line = _size_cap_detail_line(cap_stats, cap_bytes, floor_s, len(arm3_hashes))
+        if cap_line is not None:
+            res.detail.append(cap_line)
         n_repos = len(repos)
         n_revs = sum(len(list(r.revisions)) for r in repos)
         if not hashes:
@@ -1250,9 +1691,7 @@ def clean_home_hf_stale_revisions(
         res.total_discovered_bytes = freed  # the would-free upper bound
         # Per-repo counts for detail lines + the sidecar row (#1377's
         # ``repos`` dict shape: {repo_id: n revisions deleted}).
-        trimmed_by_repo: dict[str, int] = {r.repo_id: len(list(r.revisions)) for r in whole}
-        for r, cands in revlevel:
-            trimmed_by_repo[r.repo_id] = trimmed_by_repo.get(r.repo_id, 0) + len(cands)
+        trimmed_by_repo = _trimmed_by_repo_counts(whole, revlevel, sizecap_pairs)
         for r, cands in revlevel:
             approx = sum(rev.size_on_disk for rev in cands)
             res.detail.append(f"{r.repo_id}: {len(cands)} stale revision(s), ~{_fmt_gb(approx)}")
@@ -1266,11 +1705,18 @@ def clean_home_hf_stale_revisions(
                 f"ALL {len(list(r.revisions))} revision(s) reaped, ref'd + newest included"
             )
         verb = "trimmed" if apply else "would trim"
+        # Under-cap summary stays byte-identical to pre-#1450 (no arm3 suffix).
+        arm3_suffix = f"; arm3 size-cap: {len(arm3_hashes)} rev(s)" if over_cap else ""
+        arm_summary = (
+            f"(arm1 whole-repo: {len(whole)} repo(s) / {len(arm1_hashes)} rev(s); "
+            f"arm2 revision-level: {len(arm2_hashes)} rev(s) across {len(revlevel)} repo(s)"
+            + arm3_suffix
+        )
         res.detail.append(
             f"{verb} {len(hashes)} revision(s) across {len(trimmed_by_repo)} repo(s) "
             f"[{_fmt_gb(freed)} expected, blob-refcount; realized = guard free-GB delta] "
-            f"(arm1 whole-repo: {len(whole)} repo(s) / {len(arm1_hashes)} rev(s); "
-            f"arm2 revision-level: {len(arm2_hashes)} rev(s) across {len(revlevel)} repo(s))"
+            + arm_summary
+            + ")"
         )
         if not apply:
             res.bytes_freed = freed  # dry-run: report, execute NOTHING
@@ -1284,7 +1730,12 @@ def clean_home_hf_stale_revisions(
                 "n_revisions": len(hashes),
                 "bytes": freed,
                 "max_age_days": age_days,
-                "arms": {"whole_repo": len(arm1_hashes), "revision_level": len(arm2_hashes)},
+                "cap_gb": cap_bytes / 1e9,
+                "arms": {
+                    "whole_repo": len(arm1_hashes),
+                    "revision_level": len(arm2_hashes),
+                    "size_cap": len(arm3_hashes),
+                },
             },
             apply=apply,
         )
@@ -1419,6 +1870,11 @@ def run_guard(
         threshold_pct=thr,
         triggered=ignore_threshold or over_threshold(used_before, thr),
         apply=apply,
+        # #1457: computed BEFORE the under-threshold early return so a fresh
+        # resize is surfaced even when no cleanup is needed. Read-only
+        # (stat/sysfs/statvfs) + fail-soft — library callers on tmp paths get
+        # a harmless ok/skipped.
+        device_fs=check_device_fs_gap(disk_path),
     )
     if not res.triggered:
         return res
@@ -1520,6 +1976,9 @@ def _result_json(res: GuardResult) -> dict:
         # disposition — the dry-run acceptance surface (report-only persists
         # no sidecar rows; read THESE fields, never the sidecar).
         "total_discovered_bytes": res.total_discovered_bytes,
+        # #1457: the device-vs-fs reconciliation read for this disk (None only
+        # for legacy GuardResults constructed without the field).
+        "device_fs": asdict(res.device_fs) if res.device_fs is not None else None,
         "tiers": [
             {
                 "name": t.name,
@@ -1543,6 +2002,7 @@ def _print_report(res: GuardResult, disk_label: str = "/") -> None:
         f"vm_disk_guard ({verb}): {disk_label} at {res.used_pct_before:.1f}% used "
         f"({res.free_gb_before:.1f}G free), threshold {res.threshold_pct:.0f}%"
     )
+    _print_device_fs_warning(res.device_fs)
     if not res.triggered:
         print("  under threshold — no cleanup needed")
         return
@@ -1563,6 +2023,85 @@ def _print_report(res: GuardResult, disk_label: str = "/") -> None:
             f"(threshold {res.threshold_pct:.0f}%) — manual triage needed",
             file=sys.stderr,
         )
+
+
+def _print_device_fs_warning(chk: DeviceFsCheck | None) -> None:
+    """Human-mode WARNING line for a device-vs-fs gap (#1457), stderr.
+
+    Prints ONLY on ``state == "warn"`` — ``ok`` and ``skipped`` print nothing
+    in human mode (the ``--json`` payload carries state + reason). Sizes in
+    binary GiB so the numbers match ``df -h``."""
+    if chk is None or chk.state != "warn":
+        return
+    if chk.partition:
+        fix_cmd = (
+            f"run `sudo growpart /dev/{chk.device} {chk.partition_number} "
+            f"&& sudo resize2fs /dev/{chk.partition}`"
+        )
+    else:
+        fix_cmd = f"run `sudo resize2fs /dev/{chk.device}`"
+    print(
+        f"  !! WARNING: {chk.path} block device ({chk.device}) is "
+        f"{chk.device_bytes / 2**30:.0f}G but the filesystem is only "
+        f"{chk.fs_bytes / 2**30:.0f}G — {chk.gap_pct:.1f}% "
+        f"({chk.gap_bytes / 2**30:.0f}G) unexpanded. A disk resize was likely never "
+        f"expanded: {fix_cmd}. The guard NEVER auto-resizes.",
+        file=sys.stderr,
+    )
+
+
+def _device_fs_ack_sentinel_path(device: str, device_bytes: int) -> Path:
+    """Per-(device, device-size-GB) ack sentinel for the #1457 push dedup.
+
+    The device size changes ONLY on an actual resize event, so each resize
+    gets exactly one push; touching the file manually acks/suppresses (the
+    ``disk-guard-ack-*`` idiom). Distinct ``devfs`` prefix — never collides
+    with the active-escalation ``disk-guard-ack-<N>-<band>`` sentinels."""
+    name = f"disk-guard-devfs-ack-{device}-{device_bytes // 10**9}g"
+    return repo_root() / ".claude" / "cache" / name
+
+
+def _maybe_alert_device_fs(chk: DeviceFsCheck | None, apply: bool, *, no_push: bool) -> None:
+    """Sidecar row + ONE deduped Telegram push for a device-vs-fs WARN (#1457).
+
+    Called UNCONDITIONALLY from ``main()`` on both passes: the sidecar row
+    rides EVERY warn run (``--no-push`` never gates it — the watcher's
+    ``--no-push`` sub-floor runs must still leave the observability row);
+    only the push+sentinel leg respects ``no_push``. Report-only mode
+    (``apply=False``) persists nothing — ``append_disk_guard_event`` and
+    ``_telegram_push`` both demote to stderr, and the sentinel is written
+    only after a REAL push landed. Surfacing only — never remediates."""
+    if chk is None or chk.state != "warn":
+        return
+    append_disk_guard_event(
+        {
+            "kind": "device-fs-gap",
+            "path": chk.path,
+            "device": chk.device,
+            "device_bytes": chk.device_bytes,
+            "fs_bytes": chk.fs_bytes,
+            "gap_pct": chk.gap_pct,
+        },
+        apply=apply,
+    )
+    if no_push:
+        return  # push+sentinel leg only below
+    sentinel = _device_fs_ack_sentinel_path(chk.device, chk.device_bytes)
+    if sentinel.exists():
+        return  # already pushed for this resize event (or manually acked)
+    pushed = _telegram_push(
+        f"VM disk guard: {chk.path} device {chk.device} is "
+        f"{chk.device_bytes / 2**30:.0f}G but the fs is {chk.fs_bytes / 2**30:.0f}G "
+        f"({chk.gap_pct:.0f}% unexpanded) — a disk resize was not grown; "
+        f"run growpart+resize2fs manually",
+        apply,
+    )
+    if apply and pushed:
+        try:
+            sentinel.parent.mkdir(parents=True, exist_ok=True)
+            sentinel.touch()  # dedup only after a REAL push landed
+        except OSError as exc:  # pragma: no cover - fail-soft I/O guard
+            print(f"  WARNING: devfs ack sentinel write failed: {exc}", file=sys.stderr)
 
 
 # Single-flight lock for --apply runs (#1392): the watcher's sub-floor reclaim
@@ -1739,6 +2278,14 @@ def main(argv: list[str] | None = None) -> int:
             f"cache or raise its setquota -P cap — never delete active data)",
             args.apply,
         )
+
+    # Device-vs-fs reconciliation alerts (#1457): called UNCONDITIONALLY on
+    # both passes — the sidecar row rides every warn run; only the
+    # push+sentinel leg respects --no-push (inside the helper). Never flips
+    # the exit code (exit 2 stays the still-over alarm channel).
+    _maybe_alert_device_fs(res.device_fs, args.apply, no_push=args.no_push)
+    if data_res is not None:
+        _maybe_alert_device_fs(data_res.device_fs, args.apply, no_push=args.no_push)
 
     # Exit 2 when EITHER disk is still over threshold after cleanup (signals the
     # cron wrapper to keep the alarm channel hot); 0 otherwise.

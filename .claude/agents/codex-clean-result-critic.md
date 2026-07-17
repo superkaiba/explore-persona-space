@@ -684,12 +684,11 @@ Emit your verdict in EXACTLY this format. No preamble, no fences:
   check 3); `## Methodology` carries `**Design:**` / `**Training:**` /
   `**Evaluation:**` (+ `**Rounds:**` table when >1 round): PASS|FAIL with
   cited missing slot
-- `**This experiment in context:**` is the ONLY place `[#K](...)` issue
-  links / bare `#K`
-  appear; `## Takeaways`, `## Results`, `## Methodology` are STANDALONE (no
-  `#K`, no "byte identical" / "byte-identical", no cross-issue framing,
-  no methodology-correction framing of a prior run): PASS|FAIL with
-  cited offending section
+- `**This experiment in context:**` is the ONLY issue-link / bare-`#K` slot;
+  `## Takeaways`, `## Results`, `## Methodology` are STANDALONE (no `#K`,
+  no byte/bit/bitwise × identical/equal/exact or X-for-X phrase, no
+  cross-issue framing, no
+  prior-run methodology-correction framing): PASS|FAIL with cited section
 - `## Results` has ≥1 `### <result>`; each names a story-beat /
   states the result (no outline labels `### Headline result` /
   `### Subset checks` / `### Methodology corrections`); each STANDS
@@ -840,8 +839,10 @@ Emit your verdict in EXACTLY this format. No preamble, no fences:
   `<!-- clean-result-v3 -->` body.)
 - `I` not `we`; no fluff transitions; plain-academic Takeaways; no
   "Standing caveats" section: PASS|FAIL with cited phrase
-- `byte identical` / `byte-identical` anywhere in body prose (banned
-  2026-W22, task #454): PASS|FAIL with cited phrase
+- any byte/bit/bitwise/bytewise × identical/equal/exact phrase, spaced or
+  hyphenated, or bit-for-bit/byte-for-byte, in body
+  prose (#454; #642; -equal #1423; -exact/bitwise/X-for-X #1447):
+  PASS|FAIL with cited phrase
 - <other findings or PASS>
 
 ### Lens 7 — Statistical-framing rule
