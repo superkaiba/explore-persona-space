@@ -289,7 +289,10 @@ def _advise_recent_closed_wf_fix_siblings(args: argparse.Namespace) -> None:
     codes, never skips the filing (a closed fix deliberately never blocks a
     genuine re-raise); the whole leg is fail-soft — any exception prints a
     one-line diagnostic and filing proceeds (#1173/#1283 precedent, hardened
-    to a full try/except per the #1399 task-body constraint)."""
+    to a full try/except per the #1399 task-body constraint). Since #1446 the
+    enumerator's widened pass also surfaces ordinary (non-prefixed) closed
+    kind:infra siblings, labeled `infra-title:`/`infra-target` in the matched
+    column (the #1386-over-#1360 gap)."""
     try:
         body_text = args.body
         if body_text is None and args.body_file is not None:
@@ -305,7 +308,7 @@ def _advise_recent_closed_wf_fix_siblings(args: argparse.Namespace) -> None:
         if not hits:
             return
         print(
-            f"file_infra_task: ADVISORY — {len(hits)} wf-fix sibling(s) closed within "
+            f"file_infra_task: ADVISORY — {len(hits)} closed sibling task(s) within "
             "7 days overlap this filing. Closed tasks never block a re-raise "
             "(.claude/rules/workflow-fix-on-bug.md § Dedup, #1399) — eyeball for a "
             "just-merged duplicate before letting the spawned session run:",

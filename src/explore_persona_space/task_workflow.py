@@ -1109,6 +1109,13 @@ _WF_FIX_CLOSURE_EVENT_KINDS: tuple[str, ...] = ("epm:status-changed", "epm:promo
 _WF_FIX_TITLE_STOPWORDS: frozenset[str] = frozenset(
     {"the", "for", "and", "with", "must", "that", "from", "into", "when", "only", "over"}
 )
+# Widened-pass (#1446) title arm needs >=2 shared informative tokens (vs >=1
+# for the self-selected topical prefixed population): measured 2026-07-17 on
+# the live 7-day closed non-prefixed infra window (28 tasks) — the real #1386
+# candidate title yields exactly 2 hits at >=2 (incl. #1360, the true
+# duplicate) and 0 junk, while a generic stress title yields 5 hits at >=1
+# vs 0 at >=2.
+_WF_FIX_PLAIN_TITLE_MIN_SHARED = 2
 _WF_FIX_TARGET_LINE_RE = re.compile(r"^\s*-?\s*workflow_fix_target:\s*(.+?)\s*$", re.M)
 
 
@@ -1189,14 +1196,15 @@ def _wf_fix_title_tokens(title: str) -> set[str]:
     return out
 
 
-def recent_closed_workflow_fix_tasks(
+def recent_closed_workflow_fix_tasks(  # noqa: C901 — two-population scan; branch shape + gating order pinned by plan #1446 §4.1(c)
     target_file: str | None,
     candidate_title: str | None = None,
     *,
     days: float = 7.0,
     now: datetime | None = None,
+    include_plain_infra: bool = True,
 ) -> list[dict[str, Any]]:
-    """CLOSED wf-fix siblings within ``days`` overlapping the candidate (#1399).
+    """CLOSED infra siblings within ``days`` overlapping the candidate (#1399, #1446).
 
     The ADVISORY complement of :func:`is_open_workflow_fix_task`: that
     predicate blocks exact-(target_file, fingerprint) duplicates among OPEN
@@ -1205,18 +1213,47 @@ def recent_closed_workflow_fix_tasks(
     still never blocks a re-raise (.claude/rules/workflow-fix-on-bug.md
     § Dedup, unchanged).
 
-    A task matches iff kind==infra AND status in {completed, archived} AND
-    title startswith WF_FIX_TITLE_PREFIXES AND its closure ts (last
-    epm:status-changed/epm:promoted in events.jsonl) is within ``days`` of
-    ``now`` AND at least one arm overlaps:
-      - 'target': candidate target_file path-token set (comma-split) intersects
-        the task's anchored ``workflow_fix_target:`` line token set;
+    Two populations are scanned, both requiring kind==infra AND status in
+    {completed, archived} AND a closure ts (last epm:status-changed /
+    epm:promoted in events.jsonl) within ``days`` of ``now``:
+
+    - PREFIXED pass (title startswith WF_FIX_TITLE_PREFIXES) — the original
+      #1399 population; behavior preserved except the declared body-read
+      catch-tuple widening ((FileNotFoundError, ValueError) ->
+      (OSError, ValueError); fact-check 2026-07-17: a non-FNF OSError from
+      read_text() escaped the old tuple). Arms:
+      - 'target': candidate target_file path-token set (comma-split)
+        intersects the task's anchored ``workflow_fix_target:`` line tokens;
       - 'title:<tokens>': candidate title shares >=1 informative token
         (len>=4, stopword-filtered) with the task title.
+    - WIDENED pass (#1446; NON-prefixed titles; opt out via
+      ``include_plain_infra=False``) — ordinary closed infra tasks, where
+      functional fixes routinely land (#1386 was filed over the
+      already-landed non-prefixed #1360, invisible to the prefixed pass by
+      construction). Higher-precision arms:
+      - 'infra-title:<tokens>': >=_WF_FIX_PLAIN_TITLE_MIN_SHARED shared
+        informative title tokens (the broad plain-infra population needs a
+        higher bar than the self-selected topical prefixed one);
+      - 'infra-target': a candidate target path token appears as a substring
+        of the task's ``body.md`` (the FULL path, never the basename —
+        bare basenames matched 11/28 in-window bodies vs 0-6 for full
+        paths, measured 2026-07-17).
+      The closure-window check runs BEFORE the body read on this pass (only
+      in-window tasks are ever body-read), and a registry-only precheck
+      skips entries where no widened arm could possibly fire. Limitation: a
+      short directory-less target path (e.g. ``CLAUDE.md``) substring-matches
+      more bodies than the measured directory-bearing range; the row cap +
+      the distinct ``infra-*`` labels + the advisory-only contract bound
+      that downside.
+
     Returns [{'id', 'title', 'status', 'target', 'closed_at', 'matched'}, ...]
-    sorted by closed_at DESC. Read-only: no mutation, no commit, no lock.
-    Per-task failures (missing folder, non-numeric registry key, unreadable
-    body) skip that task — one broken entry never kills the whole scan.
+    sorted by closed_at DESC. The ``target`` field differs per population:
+    prefixed rows carry the task's own ``workflow_fix_target:`` tokens;
+    widened rows carry the candidate path token(s) actually FOUND in the
+    task body (the overlap the filer wants to see). Read-only: no mutation,
+    no commit, no lock. Per-task failures (missing folder, non-numeric
+    registry key, unreadable body) skip that task — one broken entry never
+    kills the whole scan.
     """
     now = now or datetime.now(UTC)
     cutoff = now - timedelta(days=days)
@@ -1236,7 +1273,13 @@ def recent_closed_workflow_fix_tasks(
         if (entry.get("status") or "") not in _WF_FIX_TERMINAL:
             continue
         title = str(entry.get("title", ""))
-        if not title.startswith(WF_FIX_TITLE_PREFIXES):
+        prefixed = title.startswith(WF_FIX_TITLE_PREFIXES)
+        if not prefixed and not include_plain_infra:
+            continue
+        shared = cand_tokens & _wf_fix_title_tokens(title)
+        if not prefixed and len(shared) < _WF_FIX_PLAIN_TITLE_MIN_SHARED and not cand_targets:
+            # Widened pass (#1446): no arm can possibly fire — skip before
+            # any per-task file read (registry-only precheck).
             continue
         try:
             tid = int(tid_str)
@@ -1246,23 +1289,52 @@ def recent_closed_workflow_fix_tasks(
             continue
         matched: list[str] = []
         task_targets: set[str] = set()
-        if cand_targets:
-            try:
-                _, body = _read_body(task_dir / "body.md")
-            except (FileNotFoundError, ValueError):
-                body = ""  # fail-soft: target arm silently unavailable for this task
-            for m in _WF_FIX_TARGET_LINE_RE.finditer(body):
-                task_targets |= _wf_fix_target_tokens(m.group(1))
-            if cand_targets & task_targets:
-                matched.append("target")
-        shared = cand_tokens & _wf_fix_title_tokens(title)
-        if shared:
-            matched.append("title:" + ",".join(sorted(shared)))
-        if not matched:
-            continue
-        closed = _wf_fix_closed_at(task_dir)
-        if closed is None or closed < cutoff or closed > now:
-            continue
+        if prefixed:
+            # ── Prefixed pass: #1399 logic, output-identical except the
+            # declared catch-tuple widening below ──
+            if cand_targets:
+                try:
+                    _, body = _read_body(task_dir / "body.md")
+                except (OSError, ValueError):
+                    # widened per fact-check 2026-07-17: a non-FNF OSError
+                    # from read_text() escaped the old
+                    # (FileNotFoundError, ValueError) tuple
+                    body = ""  # fail-soft: target arm silently unavailable
+                for m in _WF_FIX_TARGET_LINE_RE.finditer(body):
+                    task_targets |= _wf_fix_target_tokens(m.group(1))
+                if cand_targets & task_targets:
+                    matched.append("target")
+            if shared:
+                matched.append("title:" + ",".join(sorted(shared)))
+            if not matched:
+                continue
+            closed = _wf_fix_closed_at(task_dir)
+            if closed is None or closed < cutoff or closed > now:
+                continue
+        else:
+            # ── Widened pass (#1446): ordinary closed infra tasks. The
+            # window check runs BEFORE the body read (cost gate: only the
+            # ~tens of in-window tasks are ever body-read; measured 28
+            # in-window on 2026-07-17 vs 199 non-prefixed terminal total).
+            closed = _wf_fix_closed_at(task_dir)
+            if closed is None or closed < cutoff or closed > now:
+                continue
+            if len(shared) >= _WF_FIX_PLAIN_TITLE_MIN_SHARED:
+                matched.append("infra-title:" + ",".join(sorted(shared)))
+            if cand_targets:
+                try:
+                    _, body = _read_body(task_dir / "body.md")
+                except (OSError, ValueError):
+                    # same widened catch tuple as the prefixed pass above
+                    body = ""  # fail-soft: target arm silently unavailable
+                # Full candidate path token as a body substring (NOT the
+                # basename: bare 'SKILL.md' matches 11/28 in-window bodies,
+                # while full paths measured 0-6; glob tokens stay opaque).
+                task_targets = {t for t in cand_targets if t in body}
+                if task_targets:
+                    matched.append("infra-target")
+            if not matched:
+                continue
         hits.append(
             {
                 "id": tid,
