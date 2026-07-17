@@ -2,7 +2,8 @@
 title: Under a matched recipe the assistant-vs-fiction context→answer map gap vanishes
   in base Qwen and is carried by fiction scene framing in instruct (MODERATE confidence)
 kind: experiment
-tags: []
+tags:
+- followup-auto
 created_at: '2026-07-15T08:22:07Z'
 has_clean_result: true
 parent_id: 1310
