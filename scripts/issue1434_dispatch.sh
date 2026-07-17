@@ -57,10 +57,16 @@ case "$PHASE" in
   pod-all)
     # 12-run fan-out: fu4's work-conserving dispatcher (CVD pinned per slot,
     # width = detect_n_gpus — never narrowed under --smoke).
-    DISPATCH_ARGS=("$WORKER" "$MODE" --phase dispatch --manifest "$MANIFEST"
+    DISPATCH_ARGS=("$WORKER" "$MODE" --phase dispatch
                    --out-root "$OUT_ROOT" --sentinel-dir "$SENTINEL_DIR")
     [ -n "$RUNS" ] && DISPATCH_ARGS+=(--runs "$RUNS")
-    [ "$MODE" = "--smoke" ] && DISPATCH_ARGS+=(--no-upload)
+    if [ "$MODE" = "--smoke" ]; then
+      # Parent smoke convention: the K1 pin verifies the FIXTURE's own sha
+      # (fu2.build_smoke_mix_fixture); the manifest pin is the FULL-run gate.
+      DISPATCH_ARGS+=(--no-upload)
+    else
+      DISPATCH_ARGS+=(--manifest "$MANIFEST")
+    fi
     run_phase "${DISPATCH_ARGS[@]}" "${EXTRA_ARGS[@]}"
     BA_ARGS=("$WORKER" "$MODE" --phase base-arms "${COMMON[@]:1}")
     PN_ARGS=("$WORKER" "$MODE" --phase panel "${COMMON[@]:1}")

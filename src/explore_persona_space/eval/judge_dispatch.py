@@ -183,14 +183,32 @@ def keep_raw_judge_text() -> Iterator[None]:
         _KEEP_RAW_TEXT.reset(token)
 
 
+def _normalize_scalar_score(parsed: object) -> object:
+    """#778 scalar passthrough, dispatch-path parity (#1434): a bare in-range
+    numeric judge response (``"95"`` — the persona-vectors rubric's own
+    "just the number" instruction routinely wins over the JSON wrapper) parses
+    to a Python scalar, which the dict-shaped result plumbing would erase to a
+    ``parse_error`` drop. Wrap it in the graded ``{"score": N}`` envelope
+    (what ``graded_judge._score_from_parsed`` reads); everything else — dicts,
+    None, strings, out-of-range numerics — passes through unchanged
+    (drop-never-coerce stays with the caller)."""
+    if isinstance(parsed, bool):
+        return parsed
+    if isinstance(parsed, int | float) and 0.0 <= float(parsed) <= 100.0:
+        return {"score": parsed}
+    return parsed
+
+
 def _parsed_with_raw(parsed: dict | None, text: str) -> dict | None:
     """Attach the raw response text to a parsed result when retention is on.
 
     Copies the parsed dict before annotating (never mutates a caller-visible
     object); a ``None`` parse (→ the caller's error dict) passes through
-    unchanged so error-dict shapes stay identical.
+    unchanged so error-dict shapes stay identical. A NON-dict parse (a bare
+    string that skipped :func:`_normalize_scalar_score`) also passes through
+    untouched — ``dict(scalar)`` would crash retention.
     """
-    if parsed is None or not _KEEP_RAW_TEXT.get():
+    if parsed is None or not isinstance(parsed, dict) or not _KEEP_RAW_TEXT.get():
         return parsed
     out = dict(parsed)
     out[_RAW_TEXT_KEY] = text
@@ -566,7 +584,7 @@ def _collect_batch_results(
                 (b.text for b in result.result.message.content if b.type == "text"),
                 "",
             )
-            parsed = _parsed_with_raw(parse_judge_json(text), text)
+            parsed = _parsed_with_raw(_normalize_scalar_score(parse_judge_json(text)), text)
             scores[cid] = parsed if parsed is not None else error_dict_factory("parse_error")
         elif rtype == "errored":
             etype = getattr(
@@ -638,7 +656,7 @@ async def _judge_items_sync(
                 )
                 result = await client.messages.create(**params)
                 text = next((b.text for b in result.content if b.type == "text"), "")
-                parsed = _parsed_with_raw(parse_judge_json(text), text)
+                parsed = _parsed_with_raw(_normalize_scalar_score(parse_judge_json(text)), text)
                 score = parsed if parsed is not None else error_dict_factory("parse_error")
             except Exception as e:  # per-item capture is the legacy contract
                 base = error_dict_factory(f"error: {e}")
@@ -705,7 +723,7 @@ async def _judge_items_sync_multiorg(
         )
 
     def _parse_response(text: str) -> dict:
-        parsed = _parsed_with_raw(parse_judge_json(text), text)
+        parsed = _parsed_with_raw(_normalize_scalar_score(parse_judge_json(text)), text)
         return parsed if parsed is not None else error_dict_factory("parse_error")
 
     raw_results = await api_dispatch.dispatch_calls(
