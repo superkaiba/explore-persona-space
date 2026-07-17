@@ -698,14 +698,53 @@ SKILL_REF_ALLOWLIST: frozenset[str] = frozenset(
         "log",  # `/log` dashboard feed
         "sessions",  # `/sessions` dashboard page
         "updates",  # `/updates` dashboard MDX editor route
-        # --- Non-skill prose/path tokens the backtick form still catches ---
-        "workspace",  # `/workspace` pod path written inside backticks (RunPod `/workspace`)
+        # --- Non-skill prose tokens the backtick form still catches ---
+        # (pure-PATH tokens live in SKILL_REF_FS_ROOTS below; `log` stays
+        #  here on its dashboard-route justification)
         "intent",  # `/intent` — a phase/arg token in prose
         "absent",  # `/absent` — a marker-state token in prose
         "override",  # `/override subset` prose (experiment-implementer.md)
         "binary",  # `.npz/binary` prose (uploader.md)
         "terminal",  # `blocked/terminal` prose (background-automation.md)
         "expensive-band",  # `auto_run/expensive-band` prose (issue/SKILL.md)
+    }
+)
+
+# `--check-skill-refs`: bare single-segment backticked absolute PATHS.
+# SKILL_REF_RE's trailing lookahead rejects multi-segment paths (`/tmp/x`
+# — the next char is `/`) but a bare root (`/tmp`) closes on a backtick
+# and matches, so ordinary filesystem paths mis-fired the check (#1445;
+# the allowlist had grown ad-hoc path workarounds like `workspace`).
+# Members: the Linux FHS top-level directories + the RunPod `/workspace`
+# volume convention — PATH tokens, never slash-commands. Kept SEPARATE
+# from SKILL_REF_ALLOWLIST so that list keeps its "justify every entry
+# as a legitimate slash-command" contract. INVARIANT (pinned by
+# tests/test_workflow_lint.py::test_skill_ref_fs_roots_disjoint_from_live_skills_and_allowlist
+# and by the in-function collision guard in check_skill_references):
+# no member may name a live .claude/skills/ dir — a colliding entry
+# would silently disable rot detection for that skill.
+SKILL_REF_FS_ROOTS: frozenset[str] = frozenset(
+    {
+        "bin",
+        "boot",
+        "dev",
+        "etc",
+        "home",
+        "lib",
+        "lib64",
+        "media",
+        "mnt",
+        "opt",
+        "proc",
+        "root",
+        "run",
+        "sbin",
+        "srv",
+        "sys",
+        "tmp",
+        "usr",
+        "var",
+        "workspace",  # RunPod volume root (migrated from SKILL_REF_ALLOWLIST)
     }
 )
 
@@ -2715,13 +2754,21 @@ def _live_skill_names(skills_dir: Path) -> set[str]:
     return {p.name for p in skills_dir.iterdir() if p.is_dir()}
 
 
-def _skill_ref_resolves(ref: str, live: set[str], allow: frozenset[str]) -> bool:
+def _skill_ref_resolves(
+    ref: str,
+    live: set[str],
+    allow: frozenset[str],
+    fs_roots: frozenset[str] = SKILL_REF_FS_ROOTS,
+) -> bool:
     """A backticked ``/<ref>`` resolves iff it names a live skill dir, an
-    allowlisted exact token, or (when namespaced ``<plugin>:<skill>``) a token
-    whose ``<plugin>:`` prefix is allowlisted."""
+    allowlisted exact token, a bare filesystem root (a backticked PATH like
+    ``/tmp`` — see :data:`SKILL_REF_FS_ROOTS`), or (when namespaced
+    ``<plugin>:<skill>``) a token whose ``<plugin>:`` prefix is allowlisted."""
     if ref in live:  # live project skill dir
         return True
     if ref in allow:  # allowlisted exact token
+        return True
+    if ref in fs_roots:  # bare backticked fs path, not a slash-command (#1445)
         return True
     if ":" in ref:  # plugin-namespaced: prefix match
         return (ref.split(":", 1)[0] + ":") in allow
@@ -2733,6 +2780,7 @@ def check_skill_references(
     roots: list[Path] | None = None,
     skills_dir: Path | None = None,
     allowlist: frozenset[str] | None = None,
+    fs_roots: frozenset[str] | None = None,
 ) -> list[str]:
     """Walk the workflow-doc surface (agents + skills + rules + CLAUDE.md +
     workflow.yaml) and FAIL on any backtick-delimited ``/<skill-name>`` token
@@ -2750,13 +2798,29 @@ def check_skill_references(
     Plugin-namespaced refs resolve via the allowlist prefix set (or,
     forward-compat, an on-disk ``<plugin>:<skill>/`` dir).
 
-    ``roots`` / ``skills_dir`` / ``allowlist`` are unit-test override hooks;
-    production callers pass None.
+    Bare filesystem roots (``/tmp``, ``/workspace``;
+    :data:`SKILL_REF_FS_ROOTS`) are carved out as paths, never
+    slash-commands (#1445). An fs-root member that names a LIVE skill dir
+    is itself reported as a lint error — the carve-out would silently
+    disable rot detection for that skill (remedy: drop the colliding
+    member from ``SKILL_REF_FS_ROOTS``).
+
+    ``roots`` / ``skills_dir`` / ``allowlist`` / ``fs_roots`` are unit-test
+    override hooks; production callers pass None.
     """
     errors: list[str] = []
     sk_dir = skills_dir if skills_dir is not None else _REPO_ROOT / ".claude" / "skills"
     live = _live_skill_names(sk_dir)
     allow = allowlist if allowlist is not None else SKILL_REF_ALLOWLIST
+    fsr = fs_roots if fs_roots is not None else SKILL_REF_FS_ROOTS
+    collisions = sorted(fsr & live)
+    if collisions:
+        errors.append(
+            f"SKILL_REF_FS_ROOTS collides with live skill dir(s) {collisions}: the "
+            f"fs-root carve-out would silently disable skill-reference rot detection "
+            f"for them (#1445). Drop the colliding member(s) from SKILL_REF_FS_ROOTS "
+            f"in scripts/workflow_lint.py."
+        )
     for path in _resolve_skill_ref_target_files(roots):
         in_fence = False
         for lineno, line in enumerate(path.read_text(encoding="utf-8").splitlines(), start=1):
@@ -2767,7 +2831,7 @@ def check_skill_references(
                 continue
             for match in SKILL_REF_RE.finditer(line):
                 ref = match.group(1)
-                if _skill_ref_resolves(ref, live, allow):
+                if _skill_ref_resolves(ref, live, allow, fsr):
                     continue
                 errors.append(
                     f"{path}:{lineno}: unresolved skill reference '/{ref}' — not a "
