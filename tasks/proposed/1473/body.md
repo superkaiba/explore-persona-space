@@ -3,7 +3,6 @@ title: 'daily-held: fix sudo choom for lint-gate earlyoom shield'
 kind: infra
 tags:
 - daily-held
-- needs-human
 created_at: '2026-07-17T06:58:59Z'
 has_clean_result: false
 origin_prompt: '/daily 2026-07-16 problem sweep (route 3): `sudo -n choom -n -600`

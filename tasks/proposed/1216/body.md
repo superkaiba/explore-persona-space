@@ -3,7 +3,6 @@ title: 'daily-held: arm the #864 zombie namespace veto'
 kind: infra
 tags:
 - daily-held
-- needs-human
 created_at: '2026-07-09T07:01:44Z'
 has_clean_result: false
 origin_prompt: '/daily 2026-07-08 problem sweep (route 3): EPM_ZOMBIE_NAMESPACE_VETO

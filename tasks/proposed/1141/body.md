@@ -3,7 +3,6 @@ title: 'daily-held: canonical HF model repo at 100k-file limit'
 kind: infra
 tags:
 - daily-held
-- needs-human
 created_at: '2026-07-08T07:00:24Z'
 has_clean_result: false
 origin_prompt: '/daily 2026-07-07 problem sweep (route 3): c86ff35c (#1090) 09:43Z:

@@ -143,6 +143,12 @@ metric is a *proxy*. Four checks:
    ceiling in the figure; a band above only a fallback severity reference
    point is reported as low-severity, not zero power
    (`.claude/rules/selection-symmetric-nulls.md` § Band-vs-ceiling; #810).
+   ALSO: a bootstrap CI quoted at a max-selected axis position is the
+   selection-inherited CI (per-draw re-selection inside each resample)
+   or BOTH CIs labeled frozen vs inherited — never the frozen-at-winner
+   CI alone; sign-stability reads use the inherited CI
+   (`selection-symmetric-nulls.md` § Bootstrap CIs at a selected axis
+   position; #1434).
 
 **v4 shape (SPEC.md § "v4 body shape", authoritative):** emit the `<!-- clean-result-v4 -->` sentinel right after the
 H1; confidence lives in the H1 title tag ONLY; `## Takeaways` (3-6

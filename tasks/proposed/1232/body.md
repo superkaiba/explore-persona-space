@@ -3,7 +3,6 @@ title: composer-side trigger-dense pointers for Codex twins
 kind: infra
 tags:
 - daily-held
-- needs-human
 created_at: '2026-07-10T06:54:18Z'
 has_clean_result: false
 origin_prompt: '/daily 2026-07-09 problem sweep (route 3): Codex twin composers share

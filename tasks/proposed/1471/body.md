@@ -3,7 +3,6 @@ title: 'daily-held: non-managed EXITED pod reaping decision'
 kind: infra
 tags:
 - daily-held
-- needs-human
 created_at: '2026-07-17T06:58:56Z'
 has_clean_result: false
 origin_prompt: '/daily 2026-07-16 problem sweep (route 3): the stale-pod audit''s

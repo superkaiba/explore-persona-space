@@ -3,7 +3,6 @@ title: 'daily-held: decide ruff-debt burn-down (2149 errors)'
 kind: infra
 tags:
 - daily-held
-- needs-human
 created_at: '2026-07-04T21:37:07Z'
 has_clean_result: false
 origin_prompt: '/daily 2026-07-02 backfill route-3: bulk lint-debt scope/priority
