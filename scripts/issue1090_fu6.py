@@ -98,6 +98,18 @@ RUBRIC_SHA256 = "622fd72e362e022ac9a2933483ba369ffa0209e0f3b0b29794bda7711d29041
 JUDGE_MODEL = "claude-sonnet-4-5-20250929"
 JUDGE_MAX_TOKENS = 300  # llm-judging rule 23 (cheap insurance; rubric is bare-score)
 JUDGE_THRESHOLD = 50.0
+# Rule-23 K4 remediation (impl round 4): P2 flagged 92/144 (set,arm) reads at
+# content_drop_rate >= 0.10 with reasoning-first judge openers against the
+# bare-score rubric at 300 tokens — the truncation signature. The probe/
+# re-judge budget follows the rule-23 recovery point (>= ~300 for reasoning;
+# 1000 gives ample headroom for the observed openers).
+RULE23_MAX_TOKENS = 1000
+RULE23_PROBE_N = 30
+RULE23_RESOLVE_FLOOR = 0.80  # probe fraction that must resolve to confirm truncation
+# Re-judge chunks stay under the sync/batch crossover (judge_dispatch
+# DEFAULT_THRESHOLD_BASE=2000 at Tier-4) so every chunk routes sync like the
+# production P2 per-set calls did (~<=1000-request calls).
+RULE23_CHUNK_REQUESTS = 1500
 FILTER_DRAWS = 5  # extraction-filter draws (instrument parity: #1090 datagen filter)
 TIER2_DRAWS = 5
 BYSTANDER_DRAWS = 3
@@ -273,6 +285,13 @@ class Cfg:
     bootstrap_draws: int = BOOTSTRAP_DRAWS
     deliverables_dir: Path = field(default_factory=lambda: DELIVERABLES_DIR)
     figures_dir: Path = field(default_factory=lambda: FIGURES_DIR)
+    # rule-23 P2b knobs: the re-judge slice cap (0 = full inventory) and the
+    # NON-rebinding production INPUT roots (smoke-root-rebinding lesson: the
+    # rule23 phases READ production P2 artifacts even when outputs are
+    # diverted; tests override these to tmp fixtures).
+    rejudge_slice: int = 0
+    prod_deliverables_dir: Path = field(default_factory=lambda: DELIVERABLES_DIR)
+    prod_out_root: Path = field(default_factory=lambda: REPO_ROOT / "data" / "issue_1090" / "fu6")
 
     @property
     def n_pairs(self) -> int:
@@ -1643,11 +1662,26 @@ def phase_dispatch(cfg: Cfg) -> dict:
 # ── P2: re-judge (VM, pod released) ──────────────────────────────────────────
 
 
-def _judge_call(cfg: Cfg, tag: str, items: list, n_draws: int, **kw) -> object:
-    """One judge_graded call under the fu6 rubric + fresh rubric-keyed cache."""
+def _judge_call(
+    cfg: Cfg,
+    tag: str,
+    items: list,
+    n_draws: int,
+    *,
+    max_tokens: int = JUDGE_MAX_TOKENS,
+    cache_root: str = "fu6",
+    **kw,
+) -> object:
+    """One judge_graded call under the fu6 rubric + fresh rubric-keyed cache.
+
+    ``max_tokens``/``cache_root`` default to the production P2 instrument
+    (300 tokens under ``judge_cache/fu6/``) — byte-identical for existing
+    callers; the rule-23 re-judge passes 1000 + its own partition so the
+    rubric-keyed cache can never serve a sibling draw's score for a lost
+    draw (llm-judging rule 24(ii))."""
     from explore_persona_space.eval.graded_judge import judge_graded
 
-    cell_dir = cfg.out_root / "judge_cache" / "fu6" / tag
+    cell_dir = cfg.out_root / "judge_cache" / cache_root / tag
     cell_dir.mkdir(parents=True, exist_ok=True)
     return judge_graded(
         items,
@@ -1656,12 +1690,21 @@ def _judge_call(cfg: Cfg, tag: str, items: list, n_draws: int, **kw) -> object:
         cache_dir=cell_dir,
         save_raw=cell_dir / "judge_raw.json",
         judge_model=JUDGE_MODEL,
-        max_tokens=JUDGE_MAX_TOKENS,
+        max_tokens=max_tokens,
         **kw,
     )
 
 
-def _rejudge_transport_losses(cfg: Cfg, tag: str, items: list, result, n_draws: int):
+def _rejudge_transport_losses(
+    cfg: Cfg,
+    tag: str,
+    items: list,
+    result,
+    n_draws: int,
+    *,
+    max_tokens: int = JUDGE_MAX_TOKENS,
+    cache_root: str = "fu6",
+):
     """Rule-24 surgical per-draw recovery: re-judge ONLY transport-lost draws
     against a FRESH cache dir and merge the recovered draws (never blended
     into content drops; up to 2 rounds)."""
@@ -1677,7 +1720,14 @@ def _rejudge_transport_losses(cfg: Cfg, tag: str, items: list, result, n_draws: 
             len(affected),
             sum(losses.values()),
         )
-        redo = _judge_call(cfg, f"{tag}-rejudge-r{rnd}", affected, max(losses.values()))
+        redo = _judge_call(
+            cfg,
+            f"{tag}-rejudge-r{rnd}",
+            affected,
+            max(losses.values()),
+            max_tokens=max_tokens,
+            cache_root=cache_root,
+        )
         for item_id, lost_k in losses.items():
             recovered = (redo.per_item_scores or {}).get(item_id, [])[:lost_k]
             if recovered:
@@ -1980,6 +2030,602 @@ def phase_judge(cfg: Cfg) -> dict:
             "[K4] content-drop >= 10%% on %d (set,state) reads: %s", len(k4_flags), k4_flags
         )
     return out
+
+
+# ── P2b: rule-23 content-drop probe + conditional surgical re-judge (VM) ─────
+#
+# P2 flagged K4: 92/144 (set,arm) reads with content_drop_rate >= 0.10; the
+# dropped draws are parse_error entries whose (discarded) responses opened
+# reasoning-first against the bare-score rubric at judge_max_tokens=300 — the
+# llm-judging rule-23 truncation signature. Protocol (rules 9/23/24):
+#   1. rule23-probe: re-judge ~30 sampled content-dropped draws SYNC at
+#      max_tokens=1000 with the IDENTICAL rubric/model, retaining the verbatim
+#      response text per draw; classify truncation vs format-disobedience.
+#   2. rule23-rejudge (only on truncation-confirmed): surgical re-judge of ALL
+#      content-dropped draws at 1000 against a FRESH draw-indexed cache
+#      partition (judge_cache/fu6-rejudge-mt1000/), drop-never-coerce
+#      preserved; merge recovered draws, recompute rates/Wilson/deltas,
+#      regenerate judged_reads_fu6.json, re-evaluate K4.
+#   3. On format-disobedience: no mass re-judge — drops stand per rule 9; a
+#      k4_disposition meta field carries the probe verdict as the caveat.
+
+
+def _content_dropped_by_item(save_raw: Path, item_ids: set[str]) -> dict[str, int]:
+    """{item_id: n content-dropped draws} from a persisted judge_raw file.
+
+    Mirrors judge_result_from_save_raw's classification exactly: a draw is a
+    CONTENT drop iff _score_from_parsed is None AND the parsed dict is not
+    transport-class (rule 24(ii) split)."""
+    from explore_persona_space.eval.batch_judge import is_transport_error_dict
+    from explore_persona_space.eval.graded_judge import _score_from_parsed
+
+    raw = _read_json(save_raw)
+    out: dict[str, int] = {}
+    for cid, parsed in raw.get("all_scores", {}).items():
+        item_id = cid.rsplit("__", 2)[0]
+        if item_id not in item_ids:
+            continue
+        if _score_from_parsed(parsed) is None and not is_transport_error_dict(parsed):
+            out[item_id] = out.get(item_id, 0) + 1
+    return out
+
+
+def _apply_persisted_transport_recoveries(cfg: Cfg, tag: str, items: list, result):
+    """Replay P2's _rejudge_transport_losses merges from their persisted raw
+    files (PURE READ — zero API calls), reproducing the exact post-recovery
+    state the committed per-set record was reduced from."""
+    from explore_persona_space.eval.graded_judge import judge_result_from_save_raw
+
+    for rnd in (1, 2):
+        losses = dict(result.per_item_transport_losses or {})
+        if not losses:
+            return result
+        redo_raw = (
+            cfg.prod_out_root / "judge_cache" / "fu6" / f"{tag}-rejudge-r{rnd}" / "judge_raw.json"
+        )
+        if not redo_raw.exists():
+            return result
+        affected = [it for it in items if it[0] in losses]
+        redo = judge_result_from_save_raw(redo_raw, affected)
+        for item_id, lost_k in losses.items():
+            recovered = (redo.per_item_scores or {}).get(item_id, [])[:lost_k]
+            if recovered:
+                result.per_item_scores[item_id].extend(recovered)
+                kept = result.per_item_scores[item_id]
+                result.scores[item_id] = sum(kept) / len(kept)
+                result.per_item_transport_losses[item_id] = max(0, lost_k - len(recovered))
+        result.per_item_transport_losses = {
+            k: v for k, v in result.per_item_transport_losses.items() if v > 0
+        }
+        result.n_transport_lost_draws = sum(result.per_item_transport_losses.values())
+    return result
+
+
+def _rule23_inventory(cfg: Cfg) -> dict[tuple[str, str], dict]:
+    """Reconstruct every (set_id, state) judge read from the persisted raw
+    files and HARD-ASSERT the reconstruction reproduces the committed per-set
+    record (validates the reduce replication BEFORE any API call — the fu4
+    rule-24 recipe's guard). Returns per-key dicts with the reconstructed
+    JudgeResult, the (item -> content-dropped-draw-count) map, item texts,
+    meta, draws, and the committed state record."""
+    manifest = cfg.manifest()
+    sets = [s for s in manifest["judge_sets"] if s.get("status") == "available"]
+    from explore_persona_space.eval.graded_judge import judge_result_from_save_raw
+
+    out: dict[tuple[str, str], dict] = {}
+    for s in sets:
+        rec_path = cfg.prod_deliverables_dir / "judge" / f"{s['set_id']}.json"
+        rec = _read_json(rec_path)
+        for state, repo_path in s["files"].items():
+            local = _stage_one(repo_path, s["revision"], cfg.prod_out_root / "judge_inputs")
+            qs, comps = _parse_completions_json(local)
+            items, meta = _set_items(s, state, qs, comps)
+            tag = f"{s['set_id']}-{state}"
+            main_raw = cfg.prod_out_root / "judge_cache" / "fu6" / tag / "judge_raw.json"
+            result = judge_result_from_save_raw(main_raw, items)
+            dropped = _content_dropped_by_item(main_raw, {it[0] for it in items})
+            result = _apply_persisted_transport_recoveries(cfg, tag, items, result)
+            recon = _rate_record(meta, result, int(s["draws"]))
+            committed = rec[state]
+            for k in (
+                "rate",
+                "k",
+                "n",
+                "n_total_draws",
+                "n_dropped_draws_content",
+                "n_transport_lost_draws",
+            ):
+                assert recon[k] == committed[k], (
+                    f"[rule23-inventory] reduce replication mismatch {tag} field {k}: "
+                    f"reconstructed {recon[k]} != committed {committed[k]}"
+                )
+            out[(s["set_id"], state)] = {
+                "set_id": s["set_id"],
+                "state": state,
+                "tag": tag,
+                "items": items,
+                "meta": meta,
+                "draws": int(s["draws"]),
+                "result": result,
+                "dropped_by_item": dropped,
+                "committed": committed,
+                "rec_path": rec_path,
+            }
+    return out
+
+
+def _classify_probe_parse(parsed: object) -> tuple[str, float | None]:
+    """(category, score) for one probe draw's parsed judge value.
+
+    resolved_score: a valid 0-100 score at the larger budget (truncation
+    evidence). judge_refusal: an explicit REFUSAL (content-informative,
+    rule 9). still_unparseable: no JSON parsed even at 1000 tokens.
+    malformed_or_out_of_range: parsed but invalid (drop stands)."""
+    from explore_persona_space.eval.graded_judge import _score_from_parsed
+
+    score = _score_from_parsed(parsed)
+    if score is not None:
+        return "resolved_score", score
+    if isinstance(parsed, dict) and str(parsed.get("score", "")).strip().upper() == "REFUSAL":
+        return "judge_refusal", None
+    if parsed is None:
+        return "still_unparseable", None
+    return "malformed_or_out_of_range", None
+
+
+def _probe_rejudge_capture(sampled: list[tuple[str, str, str, str, str]]) -> list[dict]:
+    """Sync re-judge of sampled dropped draws at RULE23_MAX_TOKENS through the
+    run's OWN request builder (judge_dispatch._build_params — the exact params
+    shape the production sync path sends), dispatched via the sanctioned
+    multi-org api_dispatch lane, RETAINING the verbatim response text for
+    EVERY draw (parse failures included — keep_raw_judge_text() only annotates
+    successful parses, and dispatch_calls exposes text, not the Message
+    object, so stop_reason is recorded as a derived signal; see the probe
+    report's stop_reason_note)."""
+    import asyncio
+
+    from explore_persona_space.eval.graded_judge import _rubric_system_and_user
+    from explore_persona_space.eval.judge_dispatch import _build_params
+    from explore_persona_space.eval.utils import parse_judge_json
+    from explore_persona_space.llm import api_dispatch
+
+    rubric = fu6_rubric()
+    system_prompt, _ = _rubric_system_and_user(rubric)
+    ditems = []
+    by_probe_id: dict[str, tuple[str, str, str]] = {}
+    for n, (sid, state, iid, q, a) in enumerate(sampled):
+        pid = f"probe-{n:03d}"
+        by_probe_id[pid] = (sid, state, iid)
+        user_msg = rubric.replace("{question}", q).replace("{answer}", a)
+        ditems.append(api_dispatch.DispatchItem(item_id=pid, payload={"user_msg": user_msg}))
+
+    def _build(item: api_dispatch.DispatchItem) -> dict:
+        return _build_params(
+            JUDGE_MODEL, system_prompt, item.payload["user_msg"], RULE23_MAX_TOKENS, ttl="5m"
+        )
+
+    def _parse(text: str) -> dict:
+        return {"raw_text": text, "parsed": parse_judge_json(text)}
+
+    raw_results = asyncio.run(
+        api_dispatch.dispatch_calls(
+            ditems,
+            model=JUDGE_MODEL,
+            build_request=_build,
+            parse_response=_parse,
+            cost_pref="latency",
+            force_path="sync",
+        )
+    )
+    records: list[dict] = []
+    for pid, (sid, state, iid) in by_probe_id.items():
+        res = raw_results.get(pid)
+        if res is None or res.error:
+            records.append(
+                {
+                    "probe_id": pid,
+                    "set_id": sid,
+                    "state": state,
+                    "item_id": iid,
+                    "category": "transport_residual",
+                    "score": None,
+                    "raw_text": None,
+                    "reason": None if res is None else res.reason,
+                }
+            )
+            continue
+        payload = res.result
+        category, score = _classify_probe_parse(payload["parsed"])
+        records.append(
+            {
+                "probe_id": pid,
+                "set_id": sid,
+                "state": state,
+                "item_id": iid,
+                "category": category,
+                "score": score,
+                "raw_text": payload["raw_text"],
+                "raw_len_chars": len(payload["raw_text"]),
+            }
+        )
+    return records
+
+
+def phase_rule23_probe(cfg: Cfg) -> dict:
+    """P2b-1: rule-23 truncation probe over ~30 sampled content-dropped draws."""
+    _phase("p2b_rule23_probe")
+    _load_dotenv_ok()
+    assert not cfg.smoke, "rule23 phases read production P2 artifacts (--full only)"
+    inv = _rule23_inventory(cfg)
+    flagged = sorted(k for k, v in inv.items() if v["committed"].get("k4_flag"))
+    assert flagged, "no k4-flagged (set,state) reads — nothing to probe"
+    import random
+
+    rng = random.Random(cfg.seed)
+    per_cell: dict[tuple[str, str], list[str]] = {}
+    for key in flagged:
+        entries = sorted(inv[key]["dropped_by_item"])
+        rng.shuffle(entries)
+        per_cell[key] = entries
+    order = list(flagged)
+    rng.shuffle(order)
+    qa = {key: {it[0]: (it[1], it[2]) for it in inv[key]["items"]} for key in flagged}
+    sampled: list[tuple[str, str, str, str, str]] = []
+    while len(sampled) < RULE23_PROBE_N:
+        progressed = False
+        for key in order:
+            if not per_cell[key]:
+                continue
+            iid = per_cell[key].pop()
+            q, a = qa[key][iid]
+            sampled.append((key[0], key[1], iid, q, a))
+            progressed = True
+            if len(sampled) >= RULE23_PROBE_N:
+                break
+        if not progressed:
+            break
+    logger.info(
+        "[rule23-probe] %d draws sampled across %d flagged cells (of %d flagged)",
+        len(sampled),
+        len({(s[0], s[1]) for s in sampled}),
+        len(flagged),
+    )
+    records = _probe_rejudge_capture(sampled)
+    counts: dict[str, int] = {}
+    for r in records:
+        counts[r["category"]] = counts.get(r["category"], 0) + 1
+    n_classified = sum(v for k, v in counts.items() if k != "transport_residual")
+    n_resolved = counts.get("resolved_score", 0)
+    resolved_fraction = (n_resolved / n_classified) if n_classified else 0.0
+    verdict = (
+        "truncation-confirmed"
+        if resolved_fraction >= RULE23_RESOLVE_FLOOR
+        else "format-disobedience-dominant"
+    )
+    report = {
+        "meta": {
+            "ts": _utc(),
+            "git_commit": _git_commit(),
+            "rubric_sha256": RUBRIC_SHA256,
+            "judge_model": JUDGE_MODEL,
+            "original_judge_max_tokens": JUDGE_MAX_TOKENS,
+            "probe_max_tokens": RULE23_MAX_TOKENS,
+            "resolve_floor": RULE23_RESOLVE_FLOOR,
+            "stop_reason_note": (
+                "api_dispatch.dispatch_calls exposes response TEXT, not the Message "
+                "object, so stop_reason is not directly recordable through the "
+                "sanctioned lane; the recorded discriminators are parse-at-1000 "
+                "(a 300-truncated reasoning-first response resolves at 1000) and "
+                "raw_len_chars (a response still unparseable AND ~>=3000 chars "
+                "likely hit the 1000-token cap too)."
+            ),
+        },
+        "n_probed": len(records),
+        "n_classified": n_classified,
+        "category_counts": counts,
+        "resolved_fraction": resolved_fraction,
+        "verdict": verdict,
+        "n_flagged_cells": len(flagged),
+        "records": records,
+    }
+    _atomic_json(cfg.deliverables_dir / "fu6_rule23_probe.json", report)
+    logger.info(
+        "[rule23-probe] verdict=%s resolved=%d/%d counts=%s",
+        verdict,
+        n_resolved,
+        n_classified,
+        counts,
+    )
+    return report
+
+
+def _merged_state_record(
+    v: dict, recovered: dict[str, list[float]], *, committed: dict
+) -> tuple[dict, dict]:
+    """Merge mt1000-recovered draws into one (set,state) reconstruction and
+    recompute the rate record (drop-never-coerce preserved: a draw still
+    unparseable at 1000 stays dropped; transport counters untouched).
+
+    Returns (new_state_record, audit)."""
+    from explore_persona_space.eval.graded_judge import JudgeResult
+
+    res = v["result"]
+    per_item = {iid: list(draws) for iid, draws in res.per_item_scores.items()}
+    n_recovered = 0
+    n_still_dropped = 0
+    for iid, k_dropped in sorted(v["dropped_by_item"].items()):
+        rec_scores = list(recovered.get(iid, []))[:k_dropped]
+        per_item[iid] = per_item.get(iid, []) + rec_scores
+        n_recovered += len(rec_scores)
+        n_still_dropped += k_dropped - len(rec_scores)
+    assert n_recovered <= res.n_dropped_draws, (n_recovered, res.n_dropped_draws)
+    merged = JudgeResult(
+        scores={iid: (sum(d) / len(d) if d else None) for iid, d in per_item.items()},
+        n_total_draws=res.n_total_draws,
+        n_dropped_draws=res.n_dropped_draws - n_recovered,
+        per_item_draw_counts={iid: len(d) for iid, d in per_item.items()},
+        per_item_scores=per_item,
+        n_transport_lost_draws=res.n_transport_lost_draws,
+        per_item_transport_losses=dict(res.per_item_transport_losses),
+    )
+    rec = _rate_record(v["meta"], merged, v["draws"])
+    for carry in ("source_file", "revision"):
+        if carry in committed:
+            rec[carry] = committed[carry]
+    audit = {
+        "pre": {
+            "rate": committed["rate"],
+            "k": committed["k"],
+            "n": committed["n"],
+            "content_drop_rate": committed["content_drop_rate"],
+            "n_dropped_draws_content": committed["n_dropped_draws_content"],
+            "k4_flag": bool(committed.get("k4_flag")),
+        },
+        "post": {
+            "rate": rec["rate"],
+            "k": rec["k"],
+            "n": rec["n"],
+            "content_drop_rate": rec["content_drop_rate"],
+            "n_dropped_draws_content": rec["n_dropped_draws_content"],
+            "k4_flag": rec["k4_flag"],
+        },
+        "n_recovered": n_recovered,
+        "n_still_dropped": n_still_dropped,
+        "rate_movement": rec["rate"] - committed["rate"],
+        "rejudge_max_tokens": RULE23_MAX_TOKENS,
+    }
+    rec["rejudge_max_tokens"] = RULE23_MAX_TOKENS
+    rec["rejudge_mt1000"] = audit
+    return rec, audit
+
+
+def _run_rejudge_chunks(
+    cfg: Cfg, entries: list[dict], cache_root: str
+) -> tuple[dict[tuple[str, str], dict[str, list[float]]], list[dict], int]:
+    """Execute the mt=1000 re-judge over pooled dropped-draw entries.
+
+    Groups by k (dropped draws per item), chunks under the sync crossover,
+    one FRESH cache partition per chunk (draw independence, rule 24(ii));
+    resumable per chunk via the persisted raw + a membership manifest, with
+    quarantine of any partial/mismatched cache (the draw-dedup trap).
+    Returns ({(set_id, state): {item_id: recovered_scores}}, chunk_stats,
+    n_rejudge_transport_residual)."""
+    from explore_persona_space.eval.graded_judge import judge_result_from_save_raw
+
+    by_k: dict[int, list[dict]] = {}
+    for e in entries:
+        by_k.setdefault(e["k"], []).append(e)
+    recovered: dict[tuple[str, str], dict[str, list[float]]] = {}
+    transport_residual = 0
+    chunk_stats: list[dict] = []
+    for k in sorted(by_k):
+        group = by_k[k]
+        per_chunk = max(1, RULE23_CHUNK_REQUESTS // k)
+        for ci, lo in enumerate(range(0, len(group), per_chunk)):
+            chunk = group[lo : lo + per_chunk]
+            tag = f"k{k}-c{ci:03d}"
+            chunk_items = [(e["item_id"], e["q"], e["a"]) for e in chunk]
+            cell_dir = cfg.out_root / "judge_cache" / cache_root / tag
+            raw_path = cell_dir / "judge_raw.json"
+            manifest_path = cell_dir / "chunk_manifest.json"
+            want_ids = [e["item_id"] for e in chunk]
+            result = None
+            if raw_path.exists() and manifest_path.exists():
+                got = _read_json(manifest_path)
+                if got.get("item_ids") == want_ids and got.get("k") == k:
+                    logger.info("[rule23-rejudge] %s: resuming from persisted raw", tag)
+                    result = judge_result_from_save_raw(raw_path, chunk_items)
+                else:
+                    _quarantine_cache_dir(cell_dir, tag)
+            elif cell_dir.exists() and any(cell_dir.iterdir()):
+                # Partially-judged cache with no complete raw: a resumed call
+                # would serve a sibling draw's score for every draw of a cached
+                # item (rubric-keyed cache collapses repeats — rule 24(ii)).
+                _quarantine_cache_dir(cell_dir, tag)
+            if result is None:
+                cell_dir.mkdir(parents=True, exist_ok=True)
+                _atomic_json(manifest_path, {"item_ids": want_ids, "k": k})
+                result = _judge_call(
+                    cfg, tag, chunk_items, k, max_tokens=RULE23_MAX_TOKENS, cache_root=cache_root
+                )
+                result = _rejudge_transport_losses(
+                    cfg,
+                    tag,
+                    chunk_items,
+                    result,
+                    k,
+                    max_tokens=RULE23_MAX_TOKENS,
+                    cache_root=cache_root,
+                )
+            key_by_id = {e["item_id"]: (e["set_id"], e["state"]) for e in chunk}
+            n_rec = 0
+            for iid, draws in (result.per_item_scores or {}).items():
+                if iid not in key_by_id or not draws:
+                    continue
+                recovered.setdefault(key_by_id[iid], {})[iid] = list(draws)[:k]
+                n_rec += min(len(draws), k)
+            transport_residual += result.n_transport_lost_draws
+            chunk_stats.append(
+                {
+                    "tag": tag,
+                    "n_items": len(chunk),
+                    "n_requests": len(chunk) * k,
+                    "n_recovered": n_rec,
+                    "n_content_dropped_again": result.n_dropped_draws,
+                    "n_transport_residual": result.n_transport_lost_draws,
+                }
+            )
+            logger.info("[rule23-rejudge] %s done: %s", tag, chunk_stats[-1])
+    return recovered, chunk_stats, transport_residual
+
+
+def phase_rule23_rejudge(cfg: Cfg) -> dict:
+    """P2b-2: surgical re-judge of ALL content-dropped draws at mt=1000 +
+    merged rate recompute + judged_reads_fu6.json regeneration (or, on a
+    format-disobedience probe verdict, the k4_disposition record only)."""
+    _phase("p2b_rule23_rejudge")
+    _load_dotenv_ok()
+    assert not cfg.smoke, "rule23 phases read production P2 artifacts (--full only)"
+
+    probe = _read_json(cfg.prod_deliverables_dir / "fu6_rule23_probe.json")
+    reads_orig = _read_json(cfg.prod_deliverables_dir / "judged_reads_fu6.json")
+    if probe["verdict"] != "truncation-confirmed":
+        # Step 3 (rule 9): drops stand; record the disposition, no mass re-judge.
+        out = dict(reads_orig)
+        out.setdefault("meta", {})["k4_disposition"] = {
+            "ts": _utc(),
+            "git_commit": _git_commit(),
+            "verdict": probe["verdict"],
+            "probe_counts": probe["category_counts"],
+            "resolved_fraction": probe["resolved_fraction"],
+            "note": (
+                "content drops stand per llm-judging rule 9 (judge-produced "
+                "returns carry no recoverable score at a larger budget); carried "
+                "as a caveat, no re-judge run"
+            ),
+        }
+        _atomic_json(cfg.deliverables_dir / "judged_reads_fu6.json", out)
+        logger.warning("[rule23-rejudge] probe verdict %s — drops stand", probe["verdict"])
+        return out
+
+    slice_cap = int(cfg.rejudge_slice or 0)
+    cache_root = "fu6-rejudge-mt1000" + ("-smoke" if slice_cap else "")
+    if slice_cap:
+        assert cfg.deliverables_dir != cfg.prod_deliverables_dir, (
+            "--rejudge-slice requires a scratch --deliverables-dir (never overwrite "
+            "the committed production records from a slice run)"
+        )
+    inv = _rule23_inventory(cfg)
+
+    # Pooled deterministic entries: (set_id, state, item_id, q, a, k_dropped).
+    entries: list[dict] = []
+    for (sid, st), v in sorted(inv.items()):
+        qa = {it[0]: (it[1], it[2]) for it in v["items"]}
+        for iid, k in sorted(v["dropped_by_item"].items()):
+            q, a = qa[iid]
+            entries.append({"set_id": sid, "state": st, "item_id": iid, "q": q, "a": a, "k": k})
+    total_requests = sum(e["k"] for e in entries)
+    if slice_cap:
+        picked: list[dict] = []
+        req = 0
+        for e in entries:
+            if picked and req + e["k"] > slice_cap:
+                break
+            picked.append(e)
+            req += e["k"]
+        entries = picked
+        logger.info("[rule23-rejudge] SLICE mode: %d entries / %d requests", len(entries), req)
+    logger.info(
+        "[rule23-rejudge] %d dropped draws over %d items across %d (set,state) reads "
+        "(full inventory: %d requests)",
+        sum(e["k"] for e in entries),
+        len(entries),
+        len({(e["set_id"], e["state"]) for e in entries}),
+        total_requests,
+    )
+
+    recovered, chunk_stats, rejudge_transport_residual = _run_rejudge_chunks(
+        cfg, entries, cache_root
+    )
+
+    # Merge + rewrite per-set records (checkpoint per set) + regenerate reads.
+    judge_out = cfg.deliverables_dir / "judge"
+    judge_out.mkdir(parents=True, exist_ok=True)
+    reads: dict[str, dict] = {}
+    audits: dict[str, dict] = {}
+    for (sid, st), v in sorted(inv.items()):
+        rec_all = reads.get(sid) or dict(_read_json(v["rec_path"]))
+        new_state, audit = _merged_state_record(
+            v, recovered.get((sid, st), {}), committed=v["committed"]
+        )
+        rec_all[st] = new_state
+        if "trained" in rec_all and "base" in rec_all:
+            rec_all["delta"] = rec_all["trained"]["rate"] - rec_all["base"]["rate"]
+        reads[sid] = rec_all
+        audits[f"{sid}/{st}"] = audit
+    for sid, rec_all in reads.items():
+        _atomic_json(judge_out / f"{sid}.json", rec_all)
+
+    k4_flags = [
+        (sid, state)
+        for sid, rec in sorted(reads.items())
+        for state in ("trained", "base")
+        if isinstance(rec.get(state), dict) and rec[state].get("k4_flag")
+    ]
+    pre_flags = reads_orig.get("k4_flags", [])
+    total_recovered = sum(a["n_recovered"] for a in audits.values())
+    total_still = sum(a["n_still_dropped"] for a in audits.values())
+    out = {
+        "meta": {
+            **reads_orig.get("meta", {}),
+            "ts": _utc(),
+            "git_commit": _git_commit(),
+            "rejudge_mt1000": {
+                "probe": {
+                    "verdict": probe["verdict"],
+                    "resolved_fraction": probe["resolved_fraction"],
+                    "category_counts": probe["category_counts"],
+                    "report": "fu6_rule23_probe.json",
+                },
+                "rejudge_max_tokens": RULE23_MAX_TOKENS,
+                "slice_cap": slice_cap,
+                "n_recovered_total": total_recovered,
+                "n_still_dropped_total": total_still,
+                "n_rejudge_transport_residual": rejudge_transport_residual,
+                "n_k4_flags_pre": len(pre_flags),
+                "n_k4_flags_post": len(k4_flags),
+                "per_read": audits,
+                "chunks": chunk_stats,
+                "extraction_filter_note": (
+                    "extraction-filter leg left as-is: 7/10000 content drops "
+                    "(0.07% << the 10% K4 floor)"
+                ),
+            },
+        },
+        "reads": reads,
+        "excluded_sets": reads_orig.get("excluded_sets", []),
+        "k4_flags": k4_flags,
+    }
+    _atomic_json(cfg.deliverables_dir / "judged_reads_fu6.json", out)
+    logger.info(
+        "[rule23-rejudge] recovered %d/%d dropped draws; k4 flags %d -> %d; "
+        "rejudge transport residual %d",
+        total_recovered,
+        total_recovered + total_still,
+        len(pre_flags),
+        len(k4_flags),
+        rejudge_transport_residual,
+    )
+    return out
+
+
+def _quarantine_cache_dir(cell_dir: Path, tag: str) -> None:
+    """Move a partial/mismatched re-judge cache OUT of the resume-glob match
+    set (never delete; the draw-dedup trap: a partially-populated rubric-keyed
+    cache would serve one cached score for ALL draws of an item on re-call)."""
+    dest = cell_dir.parent / f"{tag}-quarantine-{time.strftime('%Y%m%dT%H%M%SZ', time.gmtime())}"
+    logger.warning("[rule23-rejudge] quarantining partial cache %s -> %s", cell_dir, dest)
+    os.replace(cell_dir, dest)
 
 
 # ── P3: reduce + analyze (VM) ────────────────────────────────────────────────
@@ -2801,6 +3447,8 @@ PHASES = {
     "upload": phase_upload,
     "dispatch": phase_dispatch,
     "judge": phase_judge,
+    "rule23-probe": phase_rule23_probe,
+    "rule23-rejudge": phase_rule23_rejudge,
     "reduce-analyze": phase_reduce_analyze,
 }
 
@@ -2826,6 +3474,14 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--deliverables-dir", default=None, help="smoke scratch redirect")
     p.add_argument("--figures-dir", default=None, help="smoke scratch redirect")
     p.add_argument(
+        "--rejudge-slice",
+        type=int,
+        default=0,
+        help="rule23-rejudge tiny-real slice: cap re-judge REQUESTS at N "
+        "(diverts the cache partition to fu6-rejudge-mt1000-smoke; requires a "
+        "scratch --deliverables-dir); 0 = full inventory",
+    )
+    p.add_argument(
         "--verify-imports", action="store_true", help="execute every deferred import and exit"
     )
     return p
@@ -2846,6 +3502,7 @@ def cfg_from_args(args: argparse.Namespace) -> Cfg:
         gpu_id=args.gpu_id,
         organisms_filter=tuple(args.organisms.split(",")) if args.organisms else None,
         dry_run=bool(getattr(args, "dry_run", False)),
+        rejudge_slice=int(getattr(args, "rejudge_slice", 0) or 0),
     )
     if args.shuffle_draws is not None:
         cfg.shuffle_draws = args.shuffle_draws

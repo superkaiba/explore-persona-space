@@ -796,3 +796,133 @@ def test_register_capture_contexts_idempotent_and_foreign_binding_refusal():
             fu6._register_capture_contexts()
     finally:
         CONTEXTS["neg_sp_police"] = old
+
+
+# ── rule-23 P2b: probe classification + surgical re-judge merge path ─────────
+
+
+def _mk_main_raw(tmp_path: Path) -> tuple[Path, list, list]:
+    """Synthetic P2-shaped judge_raw: 3 items x 3 draws.
+
+    A: 2 kept + 1 parse_error; B: 3 parse_error (all dropped, scores None);
+    C: 2 kept + 1 TRANSPORT error dict (rule 24 split — must stay transport)."""
+    perr = {"aligned": None, "coherent": None, "reasoning": "parse_error", "error": True}
+    terr = {
+        "aligned": None,
+        "coherent": None,
+        "reasoning": "error: 529 overloaded",
+        "error": True,
+        "transport": True,
+    }
+    all_scores = {
+        "A__00000__00": {"score": 80},
+        "A__00000__01": {"score": 60},
+        "A__00000__02": perr,
+        "B__00001__00": perr,
+        "B__00001__01": perr,
+        "B__00001__02": perr,
+        "C__00002__00": {"score": 40},
+        "C__00002__01": {"score": 20},
+        "C__00002__02": terr,
+    }
+    raw = tmp_path / "judge_raw.json"
+    raw.write_text(json.dumps({"all_scores": all_scores}))
+    items = [("A", "q0", "a0"), ("B", "q0", "a1"), ("C", "q1", "a2")]
+    meta = [("A", 0), ("B", 0), ("C", 1)]
+    return raw, items, meta
+
+
+def test_rule23_merge_recovers_and_preserves_transport(tmp_path):
+    """The merge path: recovered mt1000 draws recompute rates correctly, a
+    draw still unparseable at 1000 STAYS dropped (drop-never-coerce), and
+    transport counters are untouched (rule 24(ii) — never blended)."""
+    from explore_persona_space.eval.graded_judge import judge_result_from_save_raw
+
+    raw, items, meta = _mk_main_raw(tmp_path)
+    result = judge_result_from_save_raw(raw, items)
+    dropped = fu6._content_dropped_by_item(raw, {i[0] for i in items})
+    assert dropped == {"A": 1, "B": 3}  # C's loss is transport, NOT content
+    assert result.n_dropped_draws == 4 and result.n_transport_lost_draws == 1
+    committed = fu6._rate_record(meta, result, 3)
+    # pre state: A scored (70>50 -> pos), B all-dropped (n_dropped_items=1),
+    # C scored (30 -> neg); drop rate 4/9 flags k4
+    assert committed["n"] == 2 and committed["k"] == 1
+    assert committed["k4_flag"] is True
+
+    v = {
+        "result": result,
+        "dropped_by_item": dropped,
+        "meta": meta,
+        "draws": 3,
+    }
+    recovered = {"A": [90.0], "B": [70.0, 30.0]}  # B recovers 2 of 3
+    rec, audit = fu6._merged_state_record(v, recovered, committed=committed)
+
+    # recovered draws enter the per-item means; still-dropped stays dropped
+    assert audit["n_recovered"] == 3 and audit["n_still_dropped"] == 1
+    assert rec["n_dropped_draws_content"] == 1
+    assert rec["n_total_draws"] == 9
+    assert rec["content_drop_rate"] == pytest.approx(1 / 9)
+    assert rec["k4_flag"] is True  # 1/9 = 0.111 still >= 0.10 (recompute, not reset)
+    # B is now scored: mean(70, 30) = 50.0 -> NOT > 50 -> negative
+    assert rec["n"] == 3 and rec["k"] == 1
+    assert rec["n_dropped_items"] == 0
+    assert rec["per_question_rate"] == {"0": 0.5, "1": 0.0}
+    # transport counters untouched by the merge
+    assert rec["n_transport_lost_draws"] == 1
+    assert audit["post"]["rate"] == pytest.approx(1 / 3)
+    assert rec["rejudge_max_tokens"] == fu6.RULE23_MAX_TOKENS
+    # over-recovery is clamped per item (a re-judge can never ADD draws)
+    rec2, audit2 = fu6._merged_state_record(
+        v, {"A": [90.0, 95.0, 99.0], "B": [70.0, 30.0]}, committed=committed
+    )
+    assert audit2["n_recovered"] == 3  # A capped at its 1 dropped draw
+    a_draws = rec2["n_total_draws"]  # unchanged main-pass denominator
+    assert a_draws == 9
+
+
+def test_rule23_probe_classification():
+    """Probe categories over the parsed-value space (rule 9 taxonomy)."""
+    assert fu6._classify_probe_parse({"score": 85}) == ("resolved_score", 85.0)
+    assert fu6._classify_probe_parse(85) == ("resolved_score", 85.0)  # bare-int envelope
+    assert fu6._classify_probe_parse({"score": "REFUSAL"}) == ("judge_refusal", None)
+    assert fu6._classify_probe_parse(None) == ("still_unparseable", None)
+    assert fu6._classify_probe_parse({"score": 150}) == ("malformed_or_out_of_range", None)
+    assert fu6._classify_probe_parse({"verdict": "yes"}) == ("malformed_or_out_of_range", None)
+
+
+def test_rule23_judge_call_partition_and_budget_pins(monkeypatch, tmp_path):
+    """_judge_call defaults stay the production P2 instrument (mt=300 under
+    judge_cache/fu6/); the rule-23 re-judge threads mt=1000 + its OWN cache
+    partition so the rubric-keyed cache can never serve a sibling draw's
+    score for a lost draw (rule 24(ii))."""
+    from explore_persona_space.eval import graded_judge as gj
+
+    mod = fu6
+    calls = []
+
+    def fake_judge_graded(items, rubric, *, n_draws, cache_dir, save_raw, **kw):
+        calls.append({"cache_dir": Path(cache_dir), "kw": kw, "n_draws": n_draws})
+        return object()
+
+    monkeypatch.setattr(gj, "judge_graded", fake_judge_graded)
+    cfg = mod.Cfg(
+        smoke=False,
+        manifest_path=None,
+        manifest_out=None,
+        out_root=tmp_path,
+        sentinel_dir=tmp_path,
+    )
+    mod._judge_call(cfg, "t-x", [("i", "q", "a")], 5)
+    assert calls[-1]["cache_dir"] == tmp_path / "judge_cache" / "fu6" / "t-x"
+    assert calls[-1]["kw"]["max_tokens"] == mod.JUDGE_MAX_TOKENS
+    mod._judge_call(
+        cfg,
+        "k1-c000",
+        [("i", "q", "a")],
+        1,
+        max_tokens=mod.RULE23_MAX_TOKENS,
+        cache_root="fu6-rejudge-mt1000",
+    )
+    assert calls[-1]["cache_dir"] == tmp_path / "judge_cache" / "fu6-rejudge-mt1000" / "k1-c000"
+    assert calls[-1]["kw"]["max_tokens"] == 1000
