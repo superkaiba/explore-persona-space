@@ -18,6 +18,11 @@ pre-empt on any critique-mandated body edit:
 
 2. **`pre-registered` in body prose FAILs `audit_clean_results_body_discipline.py`**
    (the `pre_reg` anti-pattern; quality-bar item 7 "pre-registration mentions").
+   STALE HALF-FIX WARNING (updated 2026-07-17, fix #1419): bare
+   "registered <noun>" (e.g. "the registered verdict lattice", "registered
+   hypothesis") NOW ALSO FAILS — the pattern grew a determiner-first
+   'registered <noun>' branch after #1345's escapes. Write "the plan's <X>" /
+   "plan-declared <X>"; the verb register stays clean ("registered on HF").
    SUPERSEDED (#1419, 2026-07-16): bare `registered <noun>` forms ("the registered
    verdict/margin/read/lattice") now ALSO fail the audit — the #1345 body followed
    this memory's old advice verbatim and drew a Lens 7 FAIL with six escapes. Do

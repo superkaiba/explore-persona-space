@@ -1,0 +1,1192 @@
+"""Issue #1345 conversation-paired-stories round — registry + gate pins.
+
+Covers the plan-v8 additions:
+  1. Variant-GATED registry: without EPM_I1345_VARIANT=conversation_paired_stories
+     the parent registry is BYTE-IDENTICAL (3 regimes, 12 cells, 3 unordered
+     pairs, no PAIRED_PAIR_R4); with it, r4 + the r4op companion appear for
+     instruct only (base N/A by scope) and PAIRED_PAIR_R4 = ("r1", "r4").
+  2. The mechanical verbatim keep-filter (match_verbatim_turn) — the r4 gen
+     phase's span gate: exactly-one-exchange, verbatim answer, no pre-slot
+     verbatim leak. Real production bodies, benign synthetic strings.
+  3. The judge reply parser (EXCHANGES/VERDICT reason-then-verdict shape).
+  4. select_cells --no-r4 drop + pair_kind_for grain mapping.
+  5. build_matched per_model_r4_pair: production fail-loud on foreign convs /
+     duplicates; smoke informational skip; explicit companion demotion record.
+  6. tf_op_calibration nested tiers (plan v8 §7): tier1 qualification,
+     tier2 TF-DISTORTED — reporting labels, never process halts; the rc=23
+     companion-halt lane writes companion: halted (r1 code-review Major).
+  7. Transfer matrix loop under a DEMOTED include_r4 (the pod-smoke path where
+     the r4 pair build smoke-skips): logged skip, never a TypeError
+     (r1 code-review Critical).
+  8. select_cells --no-r4op: drops ONLY the r4op companion cells (the fits leg
+     of the rc=23 halt lane).
+  9. companion_usable_floor: production floor == the grouped-CV minimum
+     (fc.N_FOLDS); smoke floor 1 (gate-calibration rule).
+ 10. paired_fingerprint keys the op branch on mode_slug "paired_op" (r6
+     content-keyed resume; r1 code-review Minor).
+
+Registry tests run in SUBPROCESSES (issue1345_common reads the variant env at
+import — the name-seam test pattern).
+"""
+
+from __future__ import annotations
+
+import json
+import os
+import subprocess
+import sys
+from pathlib import Path
+
+import pytest
+
+REPO_ROOT = Path(__file__).resolve().parents[1]
+SCRIPTS = REPO_ROOT / "scripts"
+sys.path.insert(0, str(SCRIPTS))
+
+import issue1345_common as c  # noqa: E402
+import issue1345_gen_stories_paired as gp  # noqa: E402
+from issue1345_cross_regime_transfer import pair_kind_for  # noqa: E402
+from issue1345_fit_cells import build_matched, select_cells  # noqa: E402
+from issue1345_matched_row_refits import matched_row_cells, tf_op_calibration  # noqa: E402
+
+_SEAM_KEYS = ("EPM_STORY_CHARACTER_NAME", "EPM_I1345_VARIANT")
+CPS = "conversation_paired_stories"
+CPS_ASSISTANT = "conversation_paired_stories_assistant"  # v9 Assistant scope (plan v9)
+
+
+def _run_py(code: str, overrides: dict[str, str] | None = None) -> subprocess.CompletedProcess:
+    env = {k: v for k, v in os.environ.items() if k not in _SEAM_KEYS}
+    env.update(overrides or {})
+    return subprocess.run(
+        [sys.executable, "-c", code],
+        capture_output=True,
+        text=True,
+        cwd=str(REPO_ROOT),
+        env=env,
+        timeout=180,
+    )
+
+
+_REGISTRY_PROBE = """
+import sys
+sys.path.insert(0, "scripts")
+import json
+import issue1345_common as c
+cells = c.all_cells()
+print(json.dumps({
+    "regimes": list(c.REGIMES),
+    "n_cells": len(cells),
+    "cell_ids": sorted(x["cell_id"] for x in cells),
+    "unordered_pairs": [list(p) for p in c.UNORDERED_PAIRS],
+    "paired_pair_r4": list(c.PAIRED_PAIR_R4) if c.PAIRED_PAIR_R4 else None,
+    "has_r4": c.HAS_R4,
+}))
+"""
+
+
+def test_parent_registry_unchanged_without_variant():
+    proc = _run_py(_REGISTRY_PROBE)
+    assert proc.returncode == 0, proc.stderr
+    out = json.loads(proc.stdout)
+    assert out["regimes"] == ["r1", "r2", "r3"]
+    assert out["n_cells"] == 12
+    assert out["unordered_pairs"] == [["r1", "r2"], ["r1", "r3"], ["r2", "r3"]]
+    assert out["paired_pair_r4"] is None and not out["has_r4"]
+    assert not any("r4" in cid for cid in out["cell_ids"])
+
+
+def test_paired_variant_registry_gains_r4_instruct_only():
+    proc = _run_py(_REGISTRY_PROBE, {"EPM_I1345_VARIANT": CPS})
+    assert proc.returncode == 0, proc.stderr
+    out = json.loads(proc.stdout)
+    assert out["regimes"] == ["r1", "r2", "r3", "r4"]
+    assert out["has_r4"] and out["paired_pair_r4"] == ["r1", "r4"]
+    assert ["r1", "r4"] in out["unordered_pairs"] and ["r3", "r4"] in out["unordered_pairs"]
+    # 12 parent + 2 instruct r4 + 2 instruct r4op companion; NO base r4 (scope)
+    assert out["n_cells"] == 16
+    for cid in (
+        "R_instruct_r4_context",
+        "R_instruct_r4_prefix",
+        "R_instruct_r4_op_companion_context",
+        "R_instruct_r4_op_companion_prefix",
+    ):
+        assert cid in out["cell_ids"], cid
+    assert not any(cid.startswith("R_base_r4") for cid in out["cell_ids"])
+
+
+def test_other_variant_does_not_gain_r4():
+    proc = _run_py(
+        _REGISTRY_PROBE,
+        {"EPM_I1345_VARIANT": "assistant_named_story", "EPM_STORY_CHARACTER_NAME": "Assistant"},
+    )
+    assert proc.returncode == 0, proc.stderr
+    out = json.loads(proc.stdout)
+    assert out["regimes"] == ["r1", "r2", "r3"] and out["n_cells"] == 12
+
+
+# ---------------------------------------------------------------------------
+# Mechanical verbatim keep-filter (production bodies; benign synthetic text)
+# ---------------------------------------------------------------------------
+ANSWER = "Visitors must sign in at the front desk and wear a badge at all times."
+STORY_OK = (
+    "The lab hummed quietly as the afternoon light faded. Maya set down her pen, "
+    'glanced at the console, and asked, "What is the visitor policy here?" '
+    f'ARIA replied: "{ANSWER}" Maya nodded and made a note of it.'
+)
+
+
+def test_match_verbatim_turn_keeps_conforming_story():
+    turn, reason = gp.match_verbatim_turn(STORY_OK, ANSWER)
+    assert reason == "ok" and turn is not None
+    assert STORY_OK[turn["a_start"] : turn["a_end"]] == ANSWER
+    # Slot ordering the extraction render depends on
+    assert turn["q_end"] <= turn["marker_end"] < turn["a_start"]
+
+
+def test_match_verbatim_turn_keeps_quote_bearing_answer():
+    # 29% of the real shared pool carries embedded double quotes — the
+    # answer-anchored matcher must keep them (quote-pairing capped the pool
+    # at 2,293 < the 2,700 target; measured at implementation time).
+    ans_q = 'Type "hello world" into the terminal and press enter to run it.'
+    story = (
+        'Sam frowned at the blinking cursor and asked, "How do I start the program?" '
+        f'ARIA replied: "{ans_q}" Sam tried it at once.'
+    )
+    turn, reason = gp.match_verbatim_turn(story, ans_q)
+    assert reason == "ok" and turn is not None
+    assert story[turn["a_start"] : turn["a_end"]] == ans_q
+
+
+def test_match_verbatim_turn_drops_paraphrase():
+    story = STORY_OK.replace(ANSWER, "Please sign in at the desk and wear your badge.")
+    turn, reason = gp.match_verbatim_turn(story, ANSWER)
+    assert turn is None and reason == "answer_occurrences_zero"
+
+
+def test_match_verbatim_turn_drops_multi_exchange():
+    story = STORY_OK + ' Then she asked, "Is that all?" ARIA answered: "Yes, that is all."'
+    turn, reason = gp.match_verbatim_turn(story, ANSWER)
+    assert turn is None and reason == "attribution_multi"
+
+
+def test_match_verbatim_turn_drops_pre_slot_verbatim_leak():
+    story = (
+        f"Maya already knew the rule: {ANSWER} Still, she asked, "
+        f'"What is the visitor policy here?" ARIA replied: "{ANSWER}"'
+    )
+    turn, reason = gp.match_verbatim_turn(story, ANSWER)
+    assert turn is None and reason == "answer_occurrences_multi"
+
+
+def test_match_verbatim_turn_drops_unattributed_answer():
+    # Quoted but NOT ARIA-attributed (a wall sign; Maya quotes it herself)
+    story = f'The policy sign read: "{ANSWER}" Maya recited it and asked, "Anything else?"'
+    turn, reason = gp.match_verbatim_turn(story, ANSWER)
+    assert turn is None and reason == "attribution_zero"
+
+
+def test_match_verbatim_turn_drops_zero_exchange():
+    turn, reason = gp.match_verbatim_turn("Nothing was asked and nothing answered.", ANSWER)
+    assert turn is None and reason == "answer_occurrences_zero"
+
+
+def test_match_verbatim_turn_drops_extended_quote():
+    # Model appended extra words INSIDE the quote after the verbatim answer
+    story = STORY_OK.replace(f'"{ANSWER}"', f'"{ANSWER} Also bring an ID."')
+    turn, reason = gp.match_verbatim_turn(story, ANSWER)
+    assert turn is None and reason == "answer_quote_not_closed"
+
+
+def test_match_verbatim_turn_drops_unclosed_quote_at_end_of_story():
+    """code-review v13 Major pin: with the answer at the exact END of the
+    story and NO closing quote, story[j:j+1] == "" and the pre-fix membership
+    check ("" in DOUBLE_QUOTE_CHARS is True) silently PASSED closure — the
+    bounds-checked guard must FAIL it."""
+    story = (
+        'Maya glanced up and asked, "What is the visitor policy here?" '
+        f'ARIA replied: "{ANSWER}'  # story ends mid-quote, no closing quote
+    )
+    turn, reason = gp.match_verbatim_turn(story, ANSWER)
+    assert turn is None and reason == "answer_quote_not_closed"
+    # Trailing whitespace after the answer at end-of-story is the same class
+    turn2, reason2 = gp.match_verbatim_turn(story + "  \n", ANSWER)
+    assert turn2 is None and reason2 == "answer_quote_not_closed"
+
+
+def test_confident_op_turn_keeps_one_exchange():
+    turn, reason = gp.confident_op_turn(STORY_OK)
+    assert reason == "ok" and turn is not None
+
+
+def test_judge_parser_reason_then_verdict():
+    parsed = gp._parse_judge_response(
+        "The story has one exchange and the answer matches.\nEXCHANGES: 1\nVERDICT: PASS"
+    )
+    assert parsed == {"verdict": "PASS", "judge_exchanges": 1}
+    with pytest.raises(ValueError, match="missing VERDICT"):
+        gp._parse_judge_response("Some reasoning without a verdict line.")
+
+
+def test_pool_filter_keeps_quote_bearing_drops_degenerate():
+    rows = [
+        {"conv_id": "s1", "prompt": "q", "response": ANSWER},
+        {"conv_id": "s2", "prompt": "q", "response": 'He said "hello" loudly and clearly.'},
+        {"conv_id": "s3", "prompt": "q", "response": "short"},
+    ]
+    kept = [r for r in rows if len(r["response"]) >= gp.ANSWER_CHAR_MIN]
+    assert [r["conv_id"] for r in kept] == ["s1", "s2"]  # quote-bearing KEPT (answer-anchored)
+
+
+def test_companion_usable_floor_grouped_cv_minimum():
+    """r1 review Major (kept∈[2,4] gap): the production floor IS the grouped-CV
+    minimum — below fc.N_FOLDS conv-groups the companion fit populates no fold.
+    Smoke floor 1: any NONZERO yield proceeds (gate-calibration rule)."""
+    import issue825_fit_cells as fc
+
+    assert c.OP_COMPANION_MIN_KEPT == fc.N_FOLDS == 5
+    assert gp.companion_usable_floor(False) == c.OP_COMPANION_MIN_KEPT
+    assert gp.companion_usable_floor(True) == 1
+
+
+def test_paired_fingerprint_op_branch_keys_on_paired_op(monkeypatch):
+    """r1 review Minor pin: the companion bundle fp (mode_slug "paired_op")
+    embeds the OP recipe — an OP-side recipe change must change the op fp
+    (pre-fix the op branch keyed on mode == "op" and embedded the PAIRED
+    templates/parser, so a stale companion bundle would resume from HF)."""
+    rows = [{"conv_id": "s1", "question": "q?", "answer": "a" * 30}]
+    fp_op = gp.paired_fingerprint("paired_op", rows)
+    fp_paired = gp.paired_fingerprint("paired", rows)
+    assert fp_op != fp_paired  # distinct bundles (the mode field alone ensures this)
+    monkeypatch.setattr(gp, "STORY_OP_COMPANION_SYSTEM", gp.STORY_OP_COMPANION_SYSTEM + " CHANGED")
+    assert gp.paired_fingerprint("paired_op", rows) != fp_op  # op recipe IS in the op fp
+    assert gp.paired_fingerprint("paired", rows) == fp_paired  # paired fp untouched
+
+
+# ---------------------------------------------------------------------------
+# Companion-mode row schema (att-20260716-230002 crash pins, cps crash-fix r3):
+# main()'s --op-companion branch passes rows {conv_id, question} — free
+# generation has no fixed answer — while paired rows HARD-carry the verbatim
+# answer. Every consumer of these rows is mode-keyed; fakes below sit ONLY at
+# the external HF-tokenizer / vLLM-engine boundaries, signature-conformant
+# (they mirror the exact surfaces the production bodies call).
+# ---------------------------------------------------------------------------
+COMPANION_ROWS = [
+    {"conv_id": "s0", "question": "What is the visitor policy at the lab?"},
+    {"conv_id": "s1", "question": "How do I reset my workstation password?"},
+]
+
+
+class _FakeTokenizer:
+    """HF-tokenizer-boundary fake: mirrors the two surfaces the gen script
+    calls — ``__call__(text, add_special_tokens=)`` -> {"input_ids": [...]}
+    and ``apply_chat_template(messages, tokenize=, add_generation_prompt=)``
+    (whitespace token ids; template = joined contents)."""
+
+    def __call__(self, text, add_special_tokens=False):
+        return {"input_ids": list(range(len(text.split())))}
+
+    def apply_chat_template(self, messages, tokenize=False, add_generation_prompt=True):
+        assert not tokenize and add_generation_prompt
+        return "\n".join(m["content"] for m in messages) + "\nassistant:"
+
+
+class _FakeCompletion:
+    def __init__(self, text: str):
+        self.text = text
+        self.finish_reason = "stop"
+
+
+class _FakeRequestOutput:
+    def __init__(self, text: str):
+        self.outputs = [_FakeCompletion(text)]
+
+
+class _FakeLLM:
+    """vLLM-engine-boundary fake mirroring the exact ``LLM.generate(prompts,
+    sampling_params, use_tqdm=)`` surface generate_paired calls."""
+
+    def generate(self, prompts, sampling_params, use_tqdm=False):
+        assert use_tqdm is False
+        return [_FakeRequestOutput(f"A short scene. {p[-40:]}") for p in prompts]
+
+
+def test_filter_pool_feasible_companion_rows_have_no_answer_key():
+    """THE crash pin (GCP att-20260716-230002, gen_stories_paired.py:237):
+    companion rows {conv_id, question} through op_companion=True — pre-fix the
+    filter tokenized row['answer'] unconditionally and KeyError'd on row 1."""
+    kept, counts = gp._filter_pool_feasible(COMPANION_ROWS, _FakeTokenizer(), op_companion=True)
+    assert [r["conv_id"] for r in kept] == ["s0", "s1"]
+    assert counts == {"prompt_over_budget": 0, "answer_over_budget": 0}
+
+
+def test_filter_pool_feasible_paired_mode_hard_requires_answer():
+    """Paired rows HARD-key the verbatim answer (fail-fast, never .get-default);
+    the answer budget applies in paired mode only."""
+    with pytest.raises(KeyError, match="answer"):
+        gp._filter_pool_feasible(COMPANION_ROWS, _FakeTokenizer(), op_companion=False)
+    ok = [{**r, "answer": "b " * 30} for r in COMPANION_ROWS]
+    over = [{"conv_id": "s9", "question": "q?", "answer": "w " * (gp.ANSWER_TOKEN_BUDGET + 1)}]
+    kept, counts = gp._filter_pool_feasible(ok + over, _FakeTokenizer(), op_companion=False)
+    assert [r["conv_id"] for r in kept] == ["s0", "s1"]
+    assert counts["answer_over_budget"] == 1
+
+
+def test_paired_fingerprint_mode_keyed_row_schema():
+    """The op fp is computable WITHOUT an answer key and invariant to a stray
+    one (companion identity = (conv_id, question)); the paired fp hard-keys
+    the answer, byte-identical to the prior (cid, q, answer) triple."""
+    op_rows = [{"conv_id": "s0", "question": "q?"}]
+    fp = gp.paired_fingerprint("paired_op", op_rows)
+    assert fp == gp.paired_fingerprint("paired_op", [{**op_rows[0], "answer": "stray"}])
+    with pytest.raises(KeyError, match="answer"):
+        gp.paired_fingerprint("paired", op_rows)
+
+
+def test_build_judge_request_mode_keyed_payload():
+    """The op judge payload carries no answer (the op rubric never reads one);
+    the paired payload hard-keys it."""
+    from explore_persona_space.llm.api_dispatch import DispatchItem
+
+    op = gp._build_judge_request(
+        DispatchItem(item_id="s0", payload={"story": "Once upon a time.", "mode": "op"})
+    )
+    assert op["system"] == gp.JUDGE_SYSTEM_OP
+    assert "Once upon a time." in op["messages"][0]["content"]
+    paired = gp._build_judge_request(
+        DispatchItem(item_id="s1", payload={"story": "S.", "answer": "A" * 25, "mode": "paired"})
+    )
+    assert paired["system"] == gp.JUDGE_SYSTEM_PAIRED
+    assert "A" * 25 in paired["messages"][0]["content"]
+    with pytest.raises(KeyError, match="answer"):
+        gp._build_judge_request(
+            DispatchItem(item_id="s2", payload={"story": "S.", "mode": "paired"})
+        )
+
+
+def test_generate_paired_row_schema_mode_keyed(tmp_path):
+    """generate_paired executes for real (chunking, meta write, JSONL append)
+    against boundary fakes: op story rows OMIT 'answer'; paired rows carry it
+    verbatim (the extract r4op / op-judge consumers never read an op answer)."""
+    pytest.importorskip("vllm")  # generate_paired imports SamplingParams at call time
+    tok = _FakeTokenizer()
+    op_rows = gp.generate_paired(
+        [dict(r) for r in COMPANION_ROWS],
+        tmp_path / "raw_op.jsonl",
+        "fp-op",
+        tok,
+        _FakeLLM(),
+        op_companion=True,
+    )
+    assert len(op_rows) == 2
+    assert all(r["mode"] == "op" and "answer" not in r for r in op_rows)
+    paired_in = [{**r, "answer": "c" * 40} for r in COMPANION_ROWS]
+    paired_rows = gp.generate_paired(
+        paired_in, tmp_path / "raw_paired.jsonl", "fp-p", tok, _FakeLLM(), op_companion=False
+    )
+    assert all(r["mode"] == "paired" and r["answer"] == "c" * 40 for r in paired_rows)
+
+
+# ---------------------------------------------------------------------------
+# Registry consumers
+# ---------------------------------------------------------------------------
+def test_select_cells_no_r4_drop_is_noop_without_variant(capsys):
+    cells = select_cells("all", set(), no_r4=True)
+    assert len(cells) == 12  # ambient env: no r4 cells to drop
+    assert len(select_cells("all", set(), no_r4op=True)) == 12  # ditto for r4op
+
+
+_SELECT_NO_R4OP_PROBE = """
+import sys
+sys.path.insert(0, "scripts")
+import json
+from issue1345_fit_cells import select_cells
+ids = sorted(x["cell_id"] for x in select_cells("all", set(), no_r4op=True))
+print(json.dumps(ids))
+"""
+
+
+def test_select_cells_no_r4op_drops_companion_only():
+    """rc=23 fits leg (r1 review Major): --no-r4op drops ONLY the r4op cells,
+    keeping the r4 TF headline cells (contrast --no-r4, which drops both)."""
+    proc = _run_py(_SELECT_NO_R4OP_PROBE, {"EPM_I1345_VARIANT": CPS})
+    assert proc.returncode == 0, proc.stderr
+    ids = json.loads(proc.stdout.strip().splitlines()[-1])
+    assert len(ids) == 14  # 16 variant cells - 2 r4op companion cells
+    assert not any("r4_op_companion" in cid for cid in ids)
+    assert "R_instruct_r4_context" in ids and "R_instruct_r4_prefix" in ids
+
+
+_TRANSFER_DEMOTED_R4_PROBE = """
+import sys
+sys.path.insert(0, "scripts")
+import json
+import tempfile
+from pathlib import Path
+import numpy as np
+import issue1345_common as c
+from issue1345_cross_regime_transfer import run_model_arm
+
+assert c.HAS_R4
+rng = np.random.default_rng(0)
+
+
+def bundle(convs, n_turns):
+    n = len(convs)
+    return {
+        "arrays": {
+            "slots": rng.normal(size=(n, 2, 28, 8)).astype("float32"),
+            "profiles": rng.normal(size=(n, n_turns, 28, 8)).astype("float32"),
+        },
+        "sidecar": {"conv_ids": list(convs)},
+    }
+
+
+convs = ["s%d" % i for i in range(6)]
+bundles = {"r1": bundle(convs, 2), "r2": bundle(convs, 2), "r4": bundle(convs[:4], 1)}
+# The pod-smoke shape (r1 code-review Critical): the r4 BUNDLE loaded, but the
+# r4 pair build smoke-skipped -> per_model_r4_pair lacks the model.
+matched = {"shared_r1r2_convs": convs, "per_model_r3_pair": {}, "per_model_r4_pair": {}}
+root = Path(tempfile.mkdtemp(prefix="i1345_transfer_probe_"))
+out, preds = root / "out", root / "preds"
+out.mkdir(); preds.mkdir()
+run_model_arm(
+    bundles, matched, "instruct", "context", out, preds,
+    seed=0, null_draws=0, n_boot=8, include_r3=False, include_r4=True, smoke=True,
+)
+payload = json.loads((out / "cross_regime_transfer_instruct_context.json").read_text())
+print(json.dumps({
+    "r4_skips": sorted(k for k in payload["skipped_pairs"] if "r4" in k),
+    "r4_skip_reasons": sorted(set(
+        v for k, v in payload["skipped_pairs"].items() if "r4" in k
+    )),
+    "r4_pair_meta": payload["matched_n"]["r4_pair"],
+    "matrix_has_r4": any("r4" in k for k in payload["matrix"]),
+}))
+"""
+
+
+def test_transfer_matrix_skips_r4_pairs_when_pair_build_skipped():
+    """r1 code-review Critical pin: run_model_arm with an r4 bundle + a matched
+    dict whose per_model_r4_pair lacks the model, smoke=True — no exception,
+    logged skips (pre-fix: TypeError 'NoneType' object is not subscriptable at
+    _subset's r4cfg["r4_convs"] dereference)."""
+    proc = _run_py(_TRANSFER_DEMOTED_R4_PROBE, {"EPM_I1345_VARIANT": CPS})
+    assert proc.returncode == 0, f"stderr:\n{proc.stderr}"
+    out = json.loads(proc.stdout.strip().splitlines()[-1])
+    assert out["r4_skips"] == ["r1->r4", "r2->r4", "r4->r1", "r4->r2"], out
+    assert all("include_r4 demoted" in r for r in out["r4_skip_reasons"]), out
+    assert out["r4_pair_meta"] is None and not out["matrix_has_r4"]
+    assert "[transfer] SKIP pair" in proc.stdout
+
+
+def test_pair_kind_for_grains():
+    assert pair_kind_for("r1", "r2") == "headline"
+    assert pair_kind_for("r1", "r3") == "r3pair"
+    assert pair_kind_for("r1", "r4") == "r4pair"
+    assert pair_kind_for("r2", "r4") == "r4pair"
+    with pytest.raises(AssertionError):
+        pair_kind_for("r3", "r4")
+
+
+def _write_sidecar(ts_dir: Path, stem: str, conv_ids: list[str]) -> None:
+    ts_dir.mkdir(parents=True, exist_ok=True)
+    (ts_dir / f"{stem}_shard0.json").write_text(json.dumps({"conv_ids": conv_ids}))
+
+
+def _seed_r1r2_sidecars(ts_dir: Path, shared: list[str]) -> None:
+    for model in c.MODELS:
+        for regime in ("r1", "r2"):
+            _write_sidecar(ts_dir, c.stem_for(model, regime), shared)
+
+
+def test_build_matched_r4_pair_production_and_smoke(tmp_path):
+    shared = [f"s{i}" for i in range(6)]
+    ts = tmp_path / "ts"
+    _seed_r1r2_sidecars(ts, shared)
+    _write_sidecar(ts, c.stem_for("instruct", "r4"), shared[:4])
+    _write_sidecar(ts, c.stem_for("instruct", "r4op"), shared[:2])
+    out = build_matched(ts, tmp_path / "m", r3_models=set(), r4_models={"instruct"})
+    entry = out["per_model_r4_pair"]["instruct"]
+    assert entry["r4_convs"] == sorted(shared[:4]) and entry["n"] == 4
+    assert entry["op_companion_convs"] == sorted(shared[:2]) and entry["n_op"] == 2
+    assert entry["companion"] == "present"
+
+    # No r4op store at all (rc=23 halt lane) -> explicit companion: halted record
+    ts2 = tmp_path / "ts2"
+    _seed_r1r2_sidecars(ts2, shared)
+    _write_sidecar(ts2, c.stem_for("instruct", "r4"), shared[:4])
+    out2 = build_matched(ts2, tmp_path / "m_halt", r3_models=set(), r4_models={"instruct"})
+    e2 = out2["per_model_r4_pair"]["instruct"]
+    assert e2["companion"] == "halted"
+    assert e2["op_companion_convs"] is None and e2["n_op"] == 0
+
+    # Foreign conv -> production fail-loud; smoke informational skip
+    _write_sidecar(ts, c.stem_for("instruct", "r4"), [*shared[:3], "foreign9"])
+    with pytest.raises(RuntimeError, match=r"foreign|drift"):
+        build_matched(ts, tmp_path / "m2", r3_models=set(), r4_models={"instruct"})
+    out_smoke = build_matched(
+        ts, tmp_path / "m3", r3_models=set(), r4_models={"instruct"}, smoke=True
+    )
+    assert out_smoke["per_model_r4_pair"] == {}
+
+    # Duplicate conv ids (multi-row story) violate the one-story-per-conv contract
+    _write_sidecar(ts, c.stem_for("instruct", "r4"), [shared[0], shared[0], shared[1]])
+    with pytest.raises(AssertionError, match="duplicate conv_ids"):
+        build_matched(ts, tmp_path / "m4", r3_models=set(), r4_models={"instruct"})
+
+
+def test_matched_row_cells_registry_and_allowlists():
+    r4cfg = {
+        "n": 4,
+        "r4_convs": ["s0", "s1", "s2", "s3"],
+        "op_companion_convs": ["s0", "s1"],
+        "n_op": 2,
+    }
+    cells, allow = matched_row_cells(r4cfg)
+    ids = sorted(x["cell_id"] for x in cells)
+    assert ids == [
+        "R_instruct_r1_matched_context",
+        "R_instruct_r1_matched_prefix",
+        "R_instruct_r2_matched_context",
+        "R_instruct_r2_matched_prefix",
+        "R_instruct_r4_tf_on_companion_context",
+        "R_instruct_r4_tf_on_companion_prefix",
+    ]
+    assert allow["R_instruct_r1_matched_context"] == r4cfg["r4_convs"]
+    assert allow["R_instruct_r4_tf_on_companion_context"] == r4cfg["op_companion_convs"]
+    # No companion store -> TF-on-companion cells absent (calibration N/A)
+    cells_no_op, _ = matched_row_cells({**r4cfg, "op_companion_convs": None})
+    assert not any("companion" in x["cell_id"] for x in cells_no_op)
+
+
+# ---------------------------------------------------------------------------
+# TF-distortion nested tiers (plan v8 §7 — reporting labels)
+# ---------------------------------------------------------------------------
+def _fake_cells(path: Path, r2_l19: float) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(
+        json.dumps(
+            {
+                "r2_per_layer_obs": [0.0] * 19 + [r2_l19] + [0.0] * 8,
+                "r2_bootstrap_ci_frozen_layers_conv": {
+                    "19": {"ci_lo": r2_l19 - 0.02, "ci_hi": r2_l19 + 0.02, "n_groups": 100}
+                },
+                "n_rows": 100,
+            }
+        )
+    )
+
+
+@pytest.mark.parametrize(
+    ("tf_sub", "op", "tier1", "tier2"),
+    [
+        (0.50, 0.48, False, False),  # gap 0.02 <= 0.05: clean
+        (0.50, 0.40, True, False),  # gap 0.10 > 0.05: qualification only
+        (0.30, -0.05, True, True),  # op negative AND gap 0.35 > 0.20: TF-DISTORTED
+        (0.10, -0.05, True, False),  # op negative but gap 0.15 <= 0.20: tier1 only
+    ],
+)
+def test_tf_op_calibration_tiers(tmp_path, tf_sub, op, tier1, tier2):
+    eval_dir = tmp_path / "eval"
+    matched_out = tmp_path / "eval" / "matched_row"
+    _fake_cells(eval_dir / "cells_R_instruct_r4_context.json", 0.55)
+    _fake_cells(eval_dir / "cells_R_instruct_r4_op_companion_context.json", op)
+    _fake_cells(matched_out / "cells_R_instruct_r4_tf_on_companion_context.json", tf_sub)
+    _fake_cells(matched_out / "cells_R_instruct_r1_matched_context.json", 0.60)
+    _fake_cells(eval_dir / "cells_R_instruct_r1_context.json", 0.67)
+    tf_op_calibration(eval_dir, matched_out, smoke=False)
+    payload = json.loads((matched_out / "tf_op_calibration.json").read_text())
+    cal = payload["calibration"]
+    assert cal["tier1_qualification"] is tier1 and cal["tier2_tf_distorted"] is tier2
+    assert abs(cal["tf_minus_op_gap_matched_subset"] - (tf_sub - op)) < 1e-9
+    assert payload["r1_subset_vs_full"]["subset_leq_full"] is True
+
+
+def test_tf_op_calibration_companion_halted_skips(tmp_path):
+    eval_dir = tmp_path / "eval"
+    matched_out = tmp_path / "eval" / "matched_row"
+    matched_out.mkdir(parents=True)
+    _fake_cells(eval_dir / "cells_R_instruct_r4_context.json", 0.55)
+    # No companion cell + matched-recorded halt (rc=23 lane) -> production
+    # tolerates with an EXPLICIT companion: halted record (r1 review Major)
+    tf_op_calibration(eval_dir, matched_out, smoke=False, companion_halted=True)
+    payload = json.loads((matched_out / "tf_op_calibration.json").read_text())
+    assert "skipped" in payload["calibration"]
+    assert payload["calibration"]["companion"] == "halted"
+    # Missing cells beside a LIVE companion in production = pipeline drift ->
+    # fail loud (never a silent skip)
+    with pytest.raises(AssertionError, match="drift"):
+        tf_op_calibration(
+            eval_dir, tmp_path / "eval2" / "matched_row", smoke=False, companion_halted=False
+        )
+
+
+# ---------------------------------------------------------------------------
+# cps fix round (2026-07-17): normalized verbatim matcher (gate<->extractor
+# agreement), paired 2048 gen budget (truncation regression), kept
+# carry-forward, stale-raw quarantine, set-scoped judge checkpoints, and the
+# dispatcher halt-clear pins. Benign synthetic text only.
+# ---------------------------------------------------------------------------
+class _CharTokenizer:
+    """Char-level offset-mapping fake at the HF-tokenizer boundary: one token
+    per char, so render_story_turn's offset alignment runs for real."""
+
+    def __call__(self, text, add_special_tokens=False, return_offsets_mapping=False):
+        out = {"input_ids": list(range(len(text)))}
+        if return_offsets_mapping:
+            out["offset_mapping"] = [(i, i + 1) for i in range(len(text))]
+        return out
+
+
+# The story reproduces ANSWER with curly quotes, a reflowed (collapsed)
+# whitespace run, and an NBSP — the r4 production drift classes (~15% of the
+# sampled answer_occurrences_zero rejects).
+_ANSWER_WS = 'Use the "config" file,  then restart the service to apply the changes.'
+_STORY_NORM = (
+    "The office was quiet. Ben looked up and asked, "
+    "“How do I apply my settings?” "
+    "ARIA replied: “Use the “config” file,\nthen restart the\u00a0service "
+    "to apply the changes.” Ben nodded."
+)
+
+
+def test_normalized_gate_accepts_quote_and_whitespace_drift():
+    """FAILS pre-fix (exact matcher: answer_occurrences_zero): curly quotes +
+    collapsed whitespace + NBSP now match, with RAW-text offsets returned."""
+    turn, reason = gp.match_verbatim_turn(_STORY_NORM, _ANSWER_WS)
+    assert reason == "ok" and turn is not None
+    span = _STORY_NORM[turn["a_start"] : turn["a_end"]]
+    assert span != _ANSWER_WS  # genuinely a normalized (not exact) match
+    assert c.norm_text(span) == c.norm_text(_ANSWER_WS)
+
+
+def test_gate_extractor_agreement_on_normalized_match():
+    """The HARD consistency requirement: the extractor re-locates/verifies the
+    gate's stored span via the SAME matcher — _render_r4 (verbatim_check=True)
+    renders the normalized-match story instead of crashing, through the real
+    render_story_turn offset path (char-level tokenizer at the boundary)."""
+    from issue1345_extract_turnstore import _render_r4
+
+    turn, reason = gp.match_verbatim_turn(_STORY_NORM, _ANSWER_WS)
+    assert reason == "ok"
+    story_row = {
+        "conv_id": "s_norm",
+        "story_id": "s_norm",
+        "story": _STORY_NORM,
+        "answer": _ANSWER_WS,
+        "parsed_turns": [turn],
+    }
+    rendered, stats = _render_r4([story_row], _CharTokenizer(), verbatim_check=True)
+    assert stats["turns_rendered"] == 1 and len(rendered) == 1
+    r = rendered[0]
+    assert r.slot_idx["prefix"] < r.slot_idx["context"] < r.spans["answer"][0]
+    # And a corrupted span (keep-filter drift) still fails LOUD, never a skip
+    bad = dict(story_row)
+    bad["parsed_turns"] = [{**turn, "a_end": turn["a_end"] - 5}]
+    with pytest.raises(AssertionError, match="normalized matcher"):
+        _render_r4([bad], _CharTokenizer(), verbatim_check=True)
+
+
+def test_carried_exact_match_rows_still_verify():
+    """Pre-fix kept rows (exact matches) pass the normalized extractor
+    re-check trivially — the carry-forward bundle stays extractable."""
+    turn, reason = gp.match_verbatim_turn(STORY_OK, ANSWER)
+    assert reason == "ok"
+    assert STORY_OK[turn["a_start"] : turn["a_end"]] == ANSWER  # raw span == exact
+    assert c.norm_text(STORY_OK[turn["a_start"] : turn["a_end"]]) == c.norm_text(ANSWER)
+
+
+def test_paired_budget_2048_and_truncation_regression():
+    """The instrument pin: a budget-truncated story can never pass the
+    verbatim gate (the r4 failure shape for cap-hit rows), and the paired
+    budget now leaves >=2x the 800-token answer cap (CLAUDE.md truncation
+    rule). Op companion + parent free-form keep 1024."""
+    import issue1345_gen_stories as g
+
+    assert gp.story_max_new_tokens(op_companion=False) == 2048
+    assert gp.story_max_new_tokens(op_companion=True) == c.STORY_MAX_NEW_TOKENS == 1024
+    assert gp.STORY_PAIRED_MAX_NEW_TOKENS >= 2 * gp.ANSWER_TOKEN_BUDGET
+    # Pool identity: the feasibility budget is PINNED (rows_sha / carry bundle)
+    assert gp.ANSWER_TOKEN_BUDGET == 800
+    # vLLM capacity tracks the raised budget (gotchas: max_model_len rule)
+    assert gp.PAIRED_MAX_MODEL_LEN >= g.PROMPT_TOKEN_BUDGET + gp.STORY_PAIRED_MAX_NEW_TOKENS
+    # Wiring: the dispatched gen path + the bundle fp use the SAME helper
+    import inspect
+
+    assert "story_max_new_tokens" in inspect.getsource(gp.generate_paired)
+    assert "story_max_new_tokens" in inspect.getsource(gp.paired_fingerprint)
+    # Truncation mechanism: the full story passes; its old-budget cut fails
+    long_answer = " ".join(f"w{i}" for i in range(1100))
+    story_full = (
+        f'Maya asked, "What is the full procedure?" ARIA replied: "{long_answer}" Maya thanked her.'
+    )
+    words = story_full.split(" ")
+    story_cut = " ".join(words[:1024])  # what a 1024-cap emission looks like
+    assert gp.match_verbatim_turn(story_full, long_answer)[1] == "ok"
+    assert gp.match_verbatim_turn(story_cut, long_answer)[1] == "answer_occurrences_zero"
+
+
+def test_load_kept_carryforward_pool_identity_guard(tmp_path):
+    """Prior-fp kept rows carry ONLY when (conv_id, question, answer) matches
+    the current pool byte-for-byte; a same-fp manifest carries nothing (the
+    try_resume path owns it)."""
+    out = tmp_path / "stories"
+    out.mkdir()
+    rows = [
+        {"conv_id": "s1", "mode": "paired", "question": "q1?", "answer": "a" * 30, "story": "x"},
+        {"conv_id": "s2", "mode": "paired", "question": "q2?", "answer": "b" * 30, "story": "y"},
+        {
+            "conv_id": "s3",
+            "mode": "paired",
+            "question": "DRIFTED",
+            "answer": "c" * 30,
+            "story": "z",
+        },
+    ]
+    (out / "kept_stories_paired_instruct.jsonl").write_text(
+        "".join(json.dumps(r) + "\n" for r in rows)
+    )
+    (out / "story_bundle_manifest_paired_instruct.json").write_text(
+        json.dumps({"bundle_fingerprint": "oldfp0000"})
+    )
+    pool = {
+        "s1": {"conv_id": "s1", "question": "q1?", "answer": "a" * 30},
+        "s2": {"conv_id": "s2", "question": "q2?", "answer": "b" * 30},
+        "s3": {"conv_id": "s3", "question": "q3?", "answer": "c" * 30},
+    }
+    carried, old_fp = gp.load_kept_carryforward(
+        "paired", "instruct", "newfp1111", out, pool, smoke=False
+    )
+    assert [r["conv_id"] for r in carried] == ["s1", "s2"] and old_fp == "oldfp0000"
+    # Same-fp manifest: nothing carries (same-regime resume owns the bundle)
+    carried2, fp2 = gp.load_kept_carryforward(
+        "paired", "instruct", "oldfp0000", out, pool, smoke=False
+    )
+    assert carried2 == [] and fp2 is None
+
+
+def test_quarantine_stale_raw_moves_prior_fp_bundles(tmp_path):
+    """Prior-fp raw/meta pairs (and a meta-less raw) move to stale_<fp>/;
+    a same-fp pair stays for the per-row resume."""
+    out = tmp_path / "stories"
+    out.mkdir()
+    (out / "raw_stories_paired_instruct.jsonl").write_text('{"conv_id": "s1"}\n')
+    (out / "raw_stories_paired_instruct.meta.json").write_text(
+        json.dumps({"fingerprint": "oldfp0000"})
+    )
+    (out / "raw_stories_paired_instruct_retry.jsonl").write_text('{"conv_id": "s2"}\n')
+    gp.quarantine_stale_raw(out, "paired", "instruct", "newfp1111")
+    assert not (out / "raw_stories_paired_instruct.jsonl").exists()
+    assert (out / "stale_oldfp0000" / "raw_stories_paired_instruct.jsonl").exists()
+    assert (out / "stale_unknown" / "raw_stories_paired_instruct_retry.jsonl").exists()
+    # Same-fp bundle is untouched
+    (out / "raw_stories_paired_instruct.jsonl").write_text('{"conv_id": "s3"}\n')
+    (out / "raw_stories_paired_instruct.meta.json").write_text(
+        json.dumps({"fingerprint": "newfp1111"})
+    )
+    gp.quarantine_stale_raw(out, "paired", "instruct", "newfp1111")
+    assert (out / "raw_stories_paired_instruct.jsonl").exists()
+
+
+def test_judge_checkpoint_dir_is_dispatch_set_scoped(tmp_path):
+    """api_dispatch's state.json binds to ONE dispatched set (ValueError on
+    mismatch) — the checkpoint dir must therefore be set-scoped: same rows ->
+    same dir (crash resume), changed story text or row set -> a fresh dir."""
+    rows = [{"conv_id": "s1", "story": "one"}, {"conv_id": "s2", "story": "two"}]
+    d1 = gp._judge_checkpoint_dir(tmp_path, rows)
+    assert d1 == gp._judge_checkpoint_dir(tmp_path, list(reversed(rows)))  # order-free
+    regen = [dict(rows[0], story="one-regenerated"), rows[1]]
+    assert gp._judge_checkpoint_dir(tmp_path, regen) != d1
+    assert gp._judge_checkpoint_dir(tmp_path, rows[:1]) != d1
+
+
+def test_dispatch_halt_files_cleared_on_floor_pass():
+    """Textual pin on the dispatcher (bash): the rc=0 branches clear the STALE
+    r4 / r4op halt files — a prior attempt's halt must not demote the
+    relaunched leg (halt state is re-evaluated per run)."""
+    src = (REPO_ROOT / "scripts" / "issue1345_dispatch.sh").read_text()
+    gen_block = src.split('[phase=gen_stories_paired]"', 1)[1].split("extract_r1r2", 1)[0]
+    assert 'rm -f "$R4_HALT_FILE"' in gen_block
+    assert 'touch "$R4_HALT_FILE"' in gen_block  # rc=21 arm still arms the halt
+    op_block = src.split('[phase=extract_r4_op_companion]"', 1)[1].split("matchedn", 1)[0]
+    assert 'rm -f "$R4OP_HALT_FILE"' in op_block
+    assert 'touch "$R4OP_HALT_FILE"' in op_block
+
+
+# ---------------------------------------------------------------------------
+# v9 Assistant-scope variant re-scope (plan v9): the fresh slug
+# conversation_paired_stories_assistant arms the SAME r4 registry (explicit
+# membership set c.PAIRED_STORIES_VARIANTS — never a prefix match), and the
+# name seam flows end-to-end (templates, judge rubric, attribution regex) with
+# a FRESH recipe fingerprint (the fp embeds the name-resolved templates, so
+# the v8 ARIA-scope bundle can never resume-gate the v9 run).
+# ---------------------------------------------------------------------------
+def test_assistant_variant_registry_gains_r4_instruct_only():
+    proc = _run_py(
+        _REGISTRY_PROBE,
+        {"EPM_I1345_VARIANT": CPS_ASSISTANT, "EPM_STORY_CHARACTER_NAME": "Assistant"},
+    )
+    assert proc.returncode == 0, proc.stderr
+    out = json.loads(proc.stdout)
+    assert out["regimes"] == ["r1", "r2", "r3", "r4"]
+    assert out["has_r4"] and out["paired_pair_r4"] == ["r1", "r4"]
+    assert out["n_cells"] == 16
+    assert "R_instruct_r4_context" in out["cell_ids"]
+
+
+def test_paired_stories_variants_membership_is_explicit():
+    """The gate is an EXPLICIT membership set — a prefix-adjacent slug must
+    NOT arm r4 (documented choice: membership over prefix match)."""
+    proc = _run_py(
+        _REGISTRY_PROBE,
+        {
+            "EPM_I1345_VARIANT": "conversation_paired_stories_assistant_v2",
+            "EPM_STORY_CHARACTER_NAME": "Assistant",
+        },
+    )
+    assert proc.returncode == 0, proc.stderr
+    out = json.loads(proc.stdout)
+    assert out["regimes"] == ["r1", "r2", "r3"] and not out["has_r4"]
+
+
+_NAME_SEAM_PROBE = """
+import sys
+sys.path.insert(0, "scripts")
+import json
+import issue1345_common as c
+import issue1345_gen_stories_paired as gp
+rows = [{"conv_id": "s1", "question": "q?", "answer": "a" * 30}]
+attrib = f'{c.STORY_CHARACTER_NAME} replied:'
+print(json.dumps({
+    "name": c.STORY_CHARACTER_NAME,
+    "fp": gp.paired_fingerprint("paired", rows),
+    "fp_op": gp.paired_fingerprint("paired_op", rows),
+    "tmpl_has_name": attrib in gp.STORY_PAIRED_SYSTEM_TEMPLATE,
+    "op_tmpl_has_name": attrib in gp.STORY_OP_COMPANION_SYSTEM,
+    "judge_has_name": attrib in gp.JUDGE_SYSTEM_PAIRED,
+    "op_judge_has_name": attrib in gp.JUDGE_SYSTEM_OP,
+    "attrib_re_has_name": c.STORY_CHARACTER_NAME in c.ANSWER_ATTRIB_RE.pattern,
+    "aria_leak": "ARIA" in (
+        gp.STORY_PAIRED_SYSTEM_TEMPLATE + gp.STORY_OP_COMPANION_SYSTEM
+        + gp.JUDGE_SYSTEM_PAIRED + gp.JUDGE_SYSTEM_OP + c.ANSWER_ATTRIB_RE.pattern
+    ),
+}))
+"""
+
+
+def test_assistant_name_flows_end_to_end_and_rekeys_fingerprint():
+    """Under EPM_STORY_CHARACTER_NAME=Assistant + the v9 scope: both gen
+    templates, both judge rubrics, and the attribution regex carry the new
+    name (no ARIA residue), and BOTH mode fingerprints differ from the ARIA
+    scope's — the v8 kept bundle cannot resume-gate the v9 run."""
+    aria = _run_py(_NAME_SEAM_PROBE, {"EPM_I1345_VARIANT": CPS})
+    assert aria.returncode == 0, aria.stderr
+    assistant = _run_py(
+        _NAME_SEAM_PROBE,
+        {"EPM_I1345_VARIANT": CPS_ASSISTANT, "EPM_STORY_CHARACTER_NAME": "Assistant"},
+    )
+    assert assistant.returncode == 0, assistant.stderr
+    a, b = json.loads(aria.stdout), json.loads(assistant.stdout)
+    assert a["name"] == "ARIA" and b["name"] == "Assistant"
+    for probe in (a, b):
+        assert probe["tmpl_has_name"] and probe["op_tmpl_has_name"]
+        assert probe["judge_has_name"] and probe["op_judge_has_name"]
+        assert probe["attrib_re_has_name"]
+    assert not b["aria_leak"]
+    assert a["fp"] != b["fp"] and a["fp_op"] != b["fp_op"]
+
+
+# ---------------------------------------------------------------------------
+# Bounded retry-until-floor (micro-round): wave sizing, draw accounting, and
+# the run_retry_waves production body against signature-conformant fakes at
+# the two external boundaries (vLLM gen_fn / judge-API judge_fn).
+# ---------------------------------------------------------------------------
+def test_plan_retry_wave_wave1_keeps_legacy_semantics():
+    # Fires below TARGET; take = max(target_shortfall, ceil(floor_gap/rate)).
+    assert gp.plan_retry_wave(1, 6, 6, 5, 0.5, 100) == 0  # at target: no fire
+    assert gp.plan_retry_wave(1, 0, 6, 5, 0.5, 100) == 10  # max(6, ceil(5/0.5))
+    assert gp.plan_retry_wave(1, 4, 6, 5, 0.05, 100) == 20  # floor term dominates
+    assert gp.plan_retry_wave(1, 4, 6, 5, 1.0, 100) == 2  # shortfall dominates
+    assert gp.plan_retry_wave(1, 0, 6, 5, 0.5, 3) == 3  # clamped to candidates
+
+
+def test_plan_retry_wave_floor_driven_waves_and_bounds():
+    # Waves 2/3 fire only below the FLOOR, sized ceil(gap/(rate*SAFETY)).
+    assert gp.plan_retry_wave(2, 5, 6, 5, 0.5, 100) == 0  # floor cleared
+    assert gp.plan_retry_wave(2, 4, 6, 5, 0.5, 100) == 3  # ceil(1/0.4)
+    assert gp.plan_retry_wave(3, 2, 6, 5, 0.25, 100) == 15  # ceil(3/0.2)
+    # Rate floored at RETRY_RATE_FLOOR — a collapsed rate cannot explode take
+    # beyond gap/(0.05*0.8), and the candidate clamp bounds it regardless.
+    assert gp.plan_retry_wave(2, 4, 6, 5, 0.0, 100) == 25  # ceil(1/(0.05*0.8))
+    assert gp.plan_retry_wave(2, 4, 6, 5, 0.0, 7) == 7  # clamped
+    # Out-of-range waves / empty candidate pool never fire.
+    assert gp.plan_retry_wave(0, 0, 6, 5, 0.5, 100) == 0
+    assert gp.plan_retry_wave(gp.MAX_RETRY_WAVES + 1, 0, 6, 5, 0.5, 100) == 0
+    assert gp.plan_retry_wave(1, 0, 6, 5, 0.5, 0) == 0
+
+
+def test_eligible_redraw_rows_fewest_draws_first_and_cap():
+    ordered = [{"conv_id": f"p{i}"} for i in range(5)]
+    kept_ids = {"p1"}
+    draws = {"p0": 2, "p2": gp.MAX_DRAWS_PER_ROW, "p3": 1}  # p4 never drawn
+    cands = gp.eligible_redraw_rows(ordered, kept_ids, draws)
+    # p1 kept, p2 at the cap -> excluded; fewest-draws-first, stable in pool order.
+    assert [r["conv_id"] for r in cands] == ["p4", "p3", "p0"]
+
+
+def test_bundle_draw_counts_fp_gated(tmp_path):
+    """Draws are counted ONLY from same-fp raw files (main + draw-indexed
+    retries); a prior-fp file and a meta-less file never count."""
+
+    def _write(name, ids, fp):
+        raw = tmp_path / f"raw_stories_paired_instruct{name}.jsonl"
+        raw.write_text("".join(json.dumps({"conv_id": i}) + "\n" for i in ids))
+        if fp is not None:
+            raw.with_suffix(".meta.json").write_text(json.dumps({"fingerprint": fp}))
+
+    _write("", ["a", "b"], "fp1")
+    _write("_retry", ["b", "c"], "fp1")
+    _write("_retry2", ["b"], "stale-fp")  # prior-recipe bundle: excluded
+    _write("_retry3", ["a"], None)  # meta-less: excluded
+    counts = gp._bundle_draw_counts(tmp_path, "paired", "instruct", "fp1")
+    assert counts == {"a": 1, "b": 2, "c": 1}
+
+
+def _fake_gen_fn(calls):
+    """Signature-conformant vLLM-boundary fake mirroring generate_paired
+    (resume-by-conv_id per file, fp-gated meta sidecar, returns ALL file
+    rows); embeds the draw index (from the file suffix) in the story text so
+    the fake judge can key on draw number."""
+
+    def fake_gen(rows, out_path, fp, tokenizer, llm, *, op_companion):
+        assert op_companion is False
+        suffix = out_path.name.split("instruct")[1].split(".jsonl")[0]  # "", _retry, ...
+        draw = {v: k for k, v in gp._RETRY_SUFFIX.items()}.get(suffix, 0) if suffix else 0
+        calls.append((out_path.name, [r["conv_id"] for r in rows]))
+        meta = out_path.with_suffix(".meta.json")
+        done = set()
+        if out_path.exists() and meta.exists():
+            assert json.loads(meta.read_text())["fingerprint"] == fp
+            done = {r["conv_id"] for r in c.read_jsonl(out_path)}
+        else:
+            c.write_json(meta, {"fingerprint": fp, "n_rows": len(rows)})
+        new = [
+            {
+                "conv_id": r["conv_id"],
+                "story_id": r["conv_id"],
+                "question": r["question"],
+                "mode": "paired",
+                "story": f"scene d{draw} for {r['conv_id']}",
+                "finish_reason": "stop",
+                "answer": r["answer"],
+            }
+            for r in rows
+            if r["conv_id"] not in done
+        ]
+        c.append_jsonl(out_path, new)
+        return c.read_jsonl(out_path) if out_path.exists() else []
+
+    return fake_gen
+
+
+def _fake_judge_fn(keep_pred):
+    """Signature-conformant judge-API-boundary fake mirroring
+    parse_and_judge_paired's (rows, cache_dir, smoke, *, op_companion) ->
+    (kept, counts, digest_rows) contract."""
+
+    def fake_judge(rows, cache_dir, smoke, *, op_companion):
+        assert op_companion is False
+        kept, digest = [], []
+        for r in rows:
+            ok = keep_pred(r)
+            digest.append(
+                {"conv_id": r["conv_id"], "mode": r["mode"], "verdict": "PASS" if ok else "FAIL"}
+            )
+            if ok:
+                kept.append({**r, "judge_verdict": "PASS"})
+        counts = {
+            "n_generated": len(rows),
+            "mech_fail_reasons": {} if all(keep_pred(r) for r in rows) else {"synthetic": 1},
+            "kept": len(kept),
+        }
+        return kept, counts, digest
+
+    return fake_judge
+
+
+def _pool(n):
+    return [{"conv_id": f"p{i}", "question": "q?", "answer": "a" * 30} for i in range(n)]
+
+
+def test_run_retry_waves_draw_indexed_routing_reseeding_and_floor_stop(tmp_path):
+    """Production run_retry_waves body end-to-end: wave 1 (draw 1) lands in
+    _retry, wave-2 redraws (draw 2) in _retry2; the wave-2 rate is reseeded
+    from wave 1's measured rate; the loop stops once the floor clears (no
+    wave 3); keeps are conv_id-unique."""
+    calls = []
+    # Easy rows keep on draw 1; hard rows only from draw 2 (temp-1.0 redraw).
+    easy = {f"p{i}" for i in range(4)}
+    keep = lambda r: r["conv_id"] in easy or "d1" not in r["story"]  # noqa: E731
+    kept, waves, _digest, draws = gp.run_retry_waves(
+        kept=[],
+        ordered=_pool(10),
+        n_target=6,
+        yield_floor=5,
+        seed_rate=0.5,
+        out_dir=tmp_path,
+        mode_slug="paired",
+        model_key="instruct",
+        fp="fp1",
+        cache_dir=tmp_path / "cache",
+        smoke=True,
+        tokenizer=None,
+        llm=None,
+        gen_fn=_fake_gen_fn(calls),
+        judge_fn=_fake_judge_fn(keep),
+    )
+    assert sorted(waves) == [1, 2]  # floor cleared after wave 2 -> no wave 3
+    # Wave 1: all 10 never-drawn rows at draw 1 -> the legacy _retry file.
+    assert calls[0][0] == "raw_stories_paired_instruct_retry.jsonl"
+    assert len(calls[0][1]) == 10
+    assert waves[1]["take"] == 10 and waves[1]["rate_used"] == 0.5
+    assert waves[1]["n_kept_new"] == 4
+    # Wave 2: reseeded at wave 1's measured 4/10 rate; ceil(1/(0.4*0.8)) = 4
+    # hard-row redraws, draw-indexed into _retry2.
+    assert calls[1][0] == "raw_stories_paired_instruct_retry2.jsonl"
+    assert waves[2]["rate_used"] == pytest.approx(0.4)
+    assert waves[2]["take"] == 4 and waves[2]["n_kept_new"] == 4
+    ids = [k["conv_id"] for k in kept]
+    assert len(ids) == len(set(ids)) == 8
+    assert not (tmp_path / "raw_stories_paired_instruct_retry3.jsonl").exists()
+    assert {draws[f"p{i}"] for i in range(4)} == {1} and draws["p4"] == 2
+
+
+def test_run_retry_waves_caps_draws_and_halts_after_max_waves(tmp_path):
+    """All-hard pool: waves 1..3 all fire, every row stops at the
+    MAX_DRAWS_PER_ROW cap, kept stays below the floor (the caller's rc=21
+    enforce_yield_floor semantics are untouched), and _retry3 exists."""
+    calls = []
+    kept, waves, _digest, draws = gp.run_retry_waves(
+        kept=[],
+        ordered=_pool(4),
+        n_target=4,
+        yield_floor=3,
+        seed_rate=0.5,
+        out_dir=tmp_path,
+        mode_slug="paired",
+        model_key="instruct",
+        fp="fp1",
+        cache_dir=tmp_path / "cache",
+        smoke=True,
+        tokenizer=None,
+        llm=None,
+        gen_fn=_fake_gen_fn(calls),
+        judge_fn=_fake_judge_fn(lambda r: False),
+    )
+    assert kept == [] and sorted(waves) == [1, 2, 3]
+    assert [n for n, _ in calls] == [
+        "raw_stories_paired_instruct_retry.jsonl",
+        "raw_stories_paired_instruct_retry2.jsonl",
+        "raw_stories_paired_instruct_retry3.jsonl",
+    ]
+    assert set(draws.values()) == {gp.MAX_DRAWS_PER_ROW}
+    # Wave 2+ rates floored at RETRY_RATE_FLOOR (measured rate collapsed to 0).
+    assert waves[2]["rate_used"] == gp.RETRY_RATE_FLOOR
+
+
+def test_run_retry_waves_recovers_crashed_draws_and_dedupes_same_cid(tmp_path):
+    """A prior process generated c0/c1 into _retry then died before judging:
+    the relaunch re-judges the resumed file rows (recovering their keeps from
+    the cached judge) AND, when the same conv_id is also redrawn into _retry2
+    this wave, the kept merge stays conv_id-unique — the per-draw-group judge
+    split prevents the mech/DispatchItem conv_id collision."""
+    calls = []
+    pool = [{"conv_id": f"c{i}", "question": "q?", "answer": "a" * 30} for i in range(4)]
+    pre = tmp_path / "raw_stories_paired_instruct_retry.jsonl"
+    c.write_json(pre.with_suffix(".meta.json"), {"fingerprint": "fp1", "n_rows": 2})
+    c.append_jsonl(
+        pre,
+        [
+            {
+                "conv_id": f"c{i}",
+                "story_id": f"c{i}",
+                "question": "q?",
+                "mode": "paired",
+                "story": f"scene d1 for c{i}",
+                "finish_reason": "stop",
+                "answer": "a" * 30,
+            }
+            for i in range(2)
+        ],
+    )
+    kept, waves, _digest, _draws = gp.run_retry_waves(
+        kept=[],
+        ordered=pool,
+        n_target=4,
+        yield_floor=3,
+        seed_rate=1.0,
+        out_dir=tmp_path,
+        mode_slug="paired",
+        model_key="instruct",
+        fp="fp1",
+        cache_dir=tmp_path / "cache",
+        smoke=True,
+        tokenizer=None,
+        llm=None,
+        gen_fn=_fake_gen_fn(calls),
+        judge_fn=_fake_judge_fn(lambda r: True),
+    )
+    ids = sorted(k["conv_id"] for k in kept)
+    assert ids == ["c0", "c1", "c2", "c3"]  # unique — no same-cid double-keep
+    # Wave 1 split into two draw groups: fresh c2/c3 -> _retry (draw 1),
+    # already-drawn c0/c1 -> _retry2 (draw 2); the _retry group's judge call
+    # re-yielded the crashed rows.
+    assert [n for n, _ in calls] == [
+        "raw_stories_paired_instruct_retry.jsonl",
+        "raw_stories_paired_instruct_retry2.jsonl",
+    ]
+    assert waves[1]["n_kept_new"] == 4
+
+
+def test_write_yield_report_per_wave_keys_and_prior_fresh_rate(tmp_path):
+    """Per-wave counts persist under the keys _prior_fresh_rate reads (wave 1
+    -> counts_retry, 2 -> counts_retry_2, 3 -> counts_retry_3); absent keys ==
+    wave never fired (backward-readable); the draw histogram is digest-only."""
+    gp._write_yield_report(
+        "paired",
+        "instruct",
+        tmp_path,
+        n_target=6,
+        yield_floor=5,
+        counts_main={"n_generated": 10, "kept": 4},
+        wave_counts={
+            1: {"n_generated": 10, "kept": 4, "wave": 1},
+            2: {"n_generated": 4, "kept": 2, "wave": 2},
+        },
+        pool_counts={},
+        n_kept=6,
+        n_kept_carried=2,
+        draw_counts={"p0": 1, "p1": 2, "p2": 2},
+    )
+    report = json.loads((tmp_path / "story_yield_paired_instruct.json").read_text())
+    assert report["counts_retry"]["kept"] == 4
+    assert report["counts_retry_2"]["kept"] == 2
+    assert "counts_retry_3" not in report  # wave 3 never fired
+    assert report["retry_draw_histogram"] == {"1": 1, "2": 2}
+    assert report["yield_ok"] is True
+    # 6 kept - 2 carried = 4 fresh over 24 generated draws.
+    assert gp._prior_fresh_rate(report) == pytest.approx(4 / 24)
+
+
+def test_prior_fresh_rate_backward_readable_and_defensive():
+    # Legacy pre-wave report shape: counts_retry None, no _2/_3 keys.
+    legacy = {"counts_main": {"n_generated": 8}, "counts_retry": None, "n_kept": 4}
+    assert gp._prior_fresh_rate(legacy) == pytest.approx(0.5)
+    assert gp._prior_fresh_rate({}) is None  # no draws recorded
+    assert gp._prior_fresh_rate({"counts_main": {"n_generated": "x"}, "n_kept": 1}) is None
+
+
+def test_merge_wave_counts_sums_and_merges_reason_dicts():
+    acc = {"n_generated": 2, "kept": 1, "mech_fail_reasons": {"a": 1}}
+    gp._merge_wave_counts(acc, {"n_generated": 3, "kept": 0, "mech_fail_reasons": {"a": 2, "b": 1}})
+    assert acc == {"n_generated": 5, "kept": 1, "mech_fail_reasons": {"a": 3, "b": 1}}
