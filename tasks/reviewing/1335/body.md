@@ -24,6 +24,8 @@ backend: gcp
 
 <!-- clean-result-v4 -->
 
+**Methodology:** [docs/methodology/issue_1335.md](https://github.com/superkaiba/explore-persona-space/blob/8c51f9958b13bf15b3e5585f166b7952b5dce476/docs/methodology/issue_1335.md) · [gist](https://gist.github.com/superkaiba/646670d88c7a10df82c5a5943f793ac2)
+
 ## Takeaways
 
 - In base the gap vanishes: matched-n gap 0.005 (95% CI −0.012 to +0.021), fiction endpoint 0.340 vs one-line Q&A 0.345. Verdict "Sample-size-explained".
