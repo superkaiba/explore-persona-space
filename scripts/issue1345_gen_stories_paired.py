@@ -3,16 +3,20 @@
 
 Renders a seed-42 subsample of N_STORIES_PAIRED_TARGET (2,700) of the SAME
 shared S-track conversations into narrative prose with the EXACT original
-answer embedded verbatim (`ARIA replied: "<original answer>"`), one Q->A
-exchange per story (plan v8 §4). Tier-2 instruct-and-strip: the verbatim
-constraint lives in the system prompt and is STRIPPED before extraction.
-Keep = mechanical ANSWER-ANCHORED span gate (exactly ONE verbatim answer
-occurrence, opened by exactly ONE attribution marker, quote closed right after
-it, quoted question before the marker — see match_verbatim_turn's rationale
-comment for why quote-pairing recovery is not used) AND judge PASS (reason-then-verdict,
-criteria: one exchange / verbatim match / no pre-slot answer revelation —
-the two NEW criteria vs the r3 rubric, plan v8 §4.3). Yield floor 2,160/2,700
-after one retry batch -> rc=21 story-regime halt (plan v8 §7); smoke floor 1.
+answer embedded verbatim (`<c.STORY_CHARACTER_NAME> replied: "<original
+answer>"` — "Assistant" under the v9 conversation_paired_stories_assistant
+scope, plan v9 header), one Q->A exchange per story (plan v8 §4). Tier-2
+instruct-and-strip: the verbatim constraint lives in the system prompt and is
+STRIPPED before extraction. Keep = mechanical ANSWER-ANCHORED span gate
+(exactly ONE verbatim answer occurrence, opened by exactly ONE attribution
+marker, quote closed right after it, quoted question before the marker — see
+match_verbatim_turn's rationale comment for why quote-pairing recovery is not
+used) AND judge PASS (reason-then-verdict, criteria: one exchange / verbatim
+match / no pre-slot answer revelation — the two NEW criteria vs the r3 rubric,
+plan v8 §4.3). Yield floor 2,160/2,700 after the bounded retry waves
+(run_retry_waves: <= MAX_RETRY_WAVES redraw waves over un-kept pool rows,
+<= MAX_DRAWS_PER_ROW draws per row) -> rc=21 story-regime halt (plan v8 §7,
+halt semantics byte-unchanged); smoke floor 1.
 
 --op-companion: the N<=200 on-policy control cell (plan v8 §4.5, the #1335
 tf/op calibration shape) — seed-0 sample of the KEPT paired conversations,
@@ -39,6 +43,7 @@ import asyncio
 import contextlib
 import hashlib
 import json
+import math
 import os
 import sys
 from pathlib import Path
@@ -96,6 +101,25 @@ ANSWER_TOKEN_BUDGET = 800
 # Degenerate-answer floor (the #825 zero-width-span class; matches the
 # parser's answer_len_ok lower bound).
 ANSWER_CHAR_MIN = 20
+
+# Bounded retry-until-floor (micro-round, 2026-07-17): relaunch 2 landed
+# kept=2,117 < floor 2,160 with 1,972 un-kept eligible pool rows stranded —
+# the single retry wave was sized at the first-pass keep rate while the hard
+# residual kept at 0.254. Retry waves beyond the main batch redraw ONLY
+# un-kept pool rows (fewest-draws-first), each sized from the MEASURED
+# current keep rate with a safety factor; per-row draws are capped so a
+# hopeless row is never redrawn forever. NO recipe change — temp 1.0, pool,
+# budget 2048, judge rubric untouched; the floor value + rc=21 halt
+# semantics are byte-unchanged (a miss after the capped waves is final).
+MAX_RETRY_WAVES = 3  # total retry waves beyond the main batch
+RETRY_SAFETY = 0.8  # floor-driven waves are sized needed/(rate*SAFETY)
+MAX_DRAWS_PER_ROW = 3  # per-row draw cap within the current fp bundle
+RETRY_RATE_FLOOR = 0.05  # never size a wave off a collapsed measured rate
+# Redraws are DRAW-INDEXED into distinct files: generate_paired resumes by
+# conv_id per file, so an id's k-th draw must land where no prior draw of
+# that id exists. Draw 1 of a reserve row keeps the legacy "_retry" name
+# (byte-compat with the relaunch-2 bundle); draws 2/3 get their own files.
+_RETRY_SUFFIX = {1: "_retry", 2: "_retry2", 3: "_retry3"}
 
 
 def story_max_new_tokens(*, op_companion: bool) -> int:
@@ -305,7 +329,7 @@ def _filter_pool_feasible(pool: list[dict], tokenizer, *, op_companion: bool) ->
 # verbatim answer text, the span is located by its unique occurrence instead
 # (eligible pool 3,843): the ANSWER_ATTRIB_RE attribution marker must open a
 # quote immediately before the occurrence (identical context-slot definition
-# to r3 — last token of `ARIA replied: "`), exactly ONE attribution in the
+# to r3 — last token of `<STORY_CHARACTER_NAME> replied: "`), exactly ONE attribution in the
 # story, a closing quote right after the answer, and no verbatim leak before
 # the marker. Turn dicts keep the parse_story_turns shape verbatim, so
 # render_story_turn (offsets + BPE seam guard) is reused untouched.
@@ -538,6 +562,209 @@ def generate_paired(
 
 
 # ---------------------------------------------------------------------------
+# Bounded retry-until-floor (micro-round): wave sizing + draw accounting.
+# ---------------------------------------------------------------------------
+def plan_retry_wave(
+    wave: int, n_kept: int, n_target: int, yield_floor: int, rate: float, n_candidates: int
+) -> int:
+    """Rows to draw in retry wave ``wave`` (0 == the wave does not fire).
+
+    Wave 1 keeps the plan-v8 semantics — fires below the TARGET, sized
+    ``max(target_shortfall, ceil(floor_gap / rate))``. Waves 2..MAX_RETRY_WAVES
+    are FLOOR-driven redraws: fire only below the yield floor, sized
+    ``ceil(floor_gap / (rate * RETRY_SAFETY))``. Always clamped to the
+    eligible-candidate count; the measured rate is floored at
+    RETRY_RATE_FLOOR so a collapsed rate can never explode the sizing.
+    """
+    if n_candidates <= 0 or wave < 1 or wave > MAX_RETRY_WAVES:
+        return 0
+    rate = max(rate, RETRY_RATE_FLOOR)
+    if wave == 1:
+        if n_kept >= n_target:
+            return 0
+        shortfall = n_target - n_kept
+        need = max(0, yield_floor - n_kept)
+        take = max(shortfall, math.ceil(need / rate))
+    else:
+        if n_kept >= yield_floor:
+            return 0
+        take = math.ceil((yield_floor - n_kept) / (rate * RETRY_SAFETY))
+    return min(take, n_candidates)
+
+
+def eligible_redraw_rows(
+    ordered: list[dict], kept_ids: set[str], draw_counts: dict[str, int]
+) -> list[dict]:
+    """Un-kept pool rows still under the per-row draw cap, fewest-draws-first.
+
+    Fewest-draws-first (stable within equal counts, so pool order is
+    preserved) makes wave 1 prefer never-drawn reserve rows before any
+    redraw — the relaunch-2 behavior — while later waves redraw fairly.
+    """
+    cands = [
+        r
+        for r in ordered
+        if r["conv_id"] not in kept_ids and draw_counts.get(r["conv_id"], 0) < MAX_DRAWS_PER_ROW
+    ]
+    cands.sort(key=lambda r: draw_counts.get(r["conv_id"], 0))
+    return cands
+
+
+def _bundle_draw_counts(out_dir: Path, mode_slug: str, model_key: str, fp: str) -> dict[str, int]:
+    """conv_id -> draws recorded in THIS fp bundle's raw files (main + retries).
+
+    The durable, resume-safe draw ledger: every draw is a row in one of the
+    bundle's raw JSONLs (a same-fp meta sidecar gates each file), so a
+    relaunch recounts identically. Prior-fp bundles are quarantined and never
+    counted — the cap is per-recipe by design.
+    """
+    counts: dict[str, int] = {}
+    for suffix in ("", *_RETRY_SUFFIX.values()):
+        raw = out_dir / f"raw_stories_{mode_slug}_{model_key}{suffix}.jsonl"
+        meta = out_dir / f"raw_stories_{mode_slug}_{model_key}{suffix}.meta.json"
+        if not raw.exists() or not meta.exists():
+            continue
+        with contextlib.suppress(json.JSONDecodeError, OSError):
+            if json.loads(meta.read_text()).get("fingerprint") != fp:
+                continue
+            for r in c.read_jsonl(raw):
+                cid = r.get("conv_id")
+                if cid is not None:
+                    counts[cid] = counts.get(cid, 0) + 1
+    return counts
+
+
+def _prior_fresh_rate(report: dict) -> float | None:
+    """Fresh keep rate of a resumed bundle's OWN draws (carry excluded)."""
+    try:
+        gen = 0
+        for key in ("counts_main", "counts_retry", "counts_retry_2", "counts_retry_3"):
+            cnt = report.get(key) or {}
+            gen += int(cnt.get("n_generated") or 0)
+        fresh = int(report["n_kept"]) - int(report.get("n_kept_carried") or 0)
+        return fresh / gen if gen > 0 else None
+    except (KeyError, TypeError, ValueError):
+        return None
+
+
+def _seed_retry_rate(*, n_fresh_kept: int, n_fresh_rows: int, prior_report_path: Path) -> float:
+    """Wave-1 seed rate: this process's fresh keep rate (carry excluded).
+
+    A fully-carried main pass generated nothing fresh — seed from the prior
+    bundle's own realized fresh rate when its yield report survives, else
+    optimistic 1.0 (wave 1's max(target_shortfall, ...) sizing floors the
+    take at the shortfall regardless, so an optimistic seed never under-draws
+    the plan-v8 wave).
+    """
+    if n_fresh_rows > 0:
+        return n_fresh_kept / n_fresh_rows
+    rate = None
+    if prior_report_path.exists():
+        with contextlib.suppress(json.JSONDecodeError, OSError):
+            rate = _prior_fresh_rate(json.loads(prior_report_path.read_text()))
+    return 1.0 if rate is None else rate
+
+
+def _merge_wave_counts(acc: dict, new: dict) -> dict:
+    """Sum parse_and_judge_paired count dicts (mech_fail_reasons merged per key)."""
+    for k, v in new.items():
+        if k == "mech_fail_reasons":
+            sub = acc.setdefault("mech_fail_reasons", {})
+            for rk, rv in v.items():
+                sub[rk] = sub.get(rk, 0) + rv
+        else:
+            acc[k] = acc.get(k, 0) + v
+    return acc
+
+
+def run_retry_waves(
+    *,
+    kept: list[dict],
+    ordered: list[dict],
+    n_target: int,
+    yield_floor: int,
+    seed_rate: float,
+    out_dir: Path,
+    mode_slug: str,
+    model_key: str,
+    fp: str,
+    cache_dir: Path,
+    smoke: bool,
+    tokenizer,
+    llm,
+    gen_fn=None,
+    judge_fn=None,
+) -> tuple[list[dict], dict[int, dict], list[dict], dict[str, int]]:
+    """Bounded floor-driven retry waves over the un-kept pool (micro-round).
+
+    Each wave: recount draws from the bundle's raw files, pick eligible
+    candidates (un-kept, draw-capped, fewest-draws-first), size via
+    plan_retry_wave, generate into DRAW-INDEXED files (an id's k-th draw
+    lands in _RETRY_SUFFIX[k]'s file, where generate_paired's per-conv_id
+    resume cannot skip it), judge, and merge NEW keeps (dedupe by conv_id —
+    a resumed wave file can re-yield already-kept rows). Judging runs PER
+    draw-group file: gen_fn returns ALL rows in the touched file (the resume
+    contract — that is what recovers a crashed prior wave's generated-but-
+    unjudged draws from the judge cache), and one conv_id can legitimately
+    sit in BOTH _retry (an old un-kept draw) and _retry2 (this wave's redraw)
+    — a single judge call over both would collide on conv_id-keyed
+    mech/DispatchItem state and mis-pair one draw's story with the other's
+    spans. Within one file conv_ids are unique, so per-file calls are safe;
+    keeps merge across groups via the kept_ids dedupe. Returns
+    ``(kept, per_wave_counts, judge_digest_rows, final_draw_counts)``.
+    ``gen_fn``/``judge_fn`` are the GPU / judge-API boundaries (tests inject
+    signature-conformant fakes; production uses the real functions).
+    """
+    gen_fn = gen_fn or generate_paired
+    judge_fn = judge_fn or parse_and_judge_paired
+    kept = list(kept)
+    kept_ids = {r["conv_id"] for r in kept}
+    wave_counts: dict[int, dict] = {}
+    digest_all: list[dict] = []
+    rate = max(seed_rate, RETRY_RATE_FLOOR)
+    for wave in range(1, MAX_RETRY_WAVES + 1):
+        draw_counts = _bundle_draw_counts(out_dir, mode_slug, model_key, fp)
+        candidates = eligible_redraw_rows(ordered, kept_ids, draw_counts)
+        take = plan_retry_wave(wave, len(kept), n_target, yield_floor, rate, len(candidates))
+        if take == 0:
+            break
+        wave_rows = candidates[:take]
+        print(
+            f"[retry] wave {wave}: kept={len(kept)}/{n_target} (floor {yield_floor}, "
+            f"rate {rate:.3f}) — drawing {len(wave_rows)} of {len(candidates)} eligible",
+            flush=True,
+        )
+        wcounts: dict = {}
+        n_new_this_wave = 0
+        next_draws = sorted({draw_counts.get(r["conv_id"], 0) + 1 for r in wave_rows})
+        for nd in next_draws:
+            group = [r for r in wave_rows if draw_counts.get(r["conv_id"], 0) + 1 == nd]
+            path = out_dir / f"raw_stories_{mode_slug}_{model_key}{_RETRY_SUFFIX[nd]}.jsonl"
+            file_rows = gen_fn(group, path, fp, tokenizer, llm, op_companion=False)
+            gkept, gcounts, gdigest = judge_fn(file_rows, cache_dir, smoke, op_companion=False)
+            new = [k for k in gkept if k["conv_id"] not in kept_ids]
+            kept.extend(new)
+            kept_ids.update(k["conv_id"] for k in new)
+            n_new_this_wave += len(new)
+            _merge_wave_counts(wcounts, gcounts)
+            digest_all.extend(gdigest)
+        wave_counts[wave] = {
+            **wcounts,
+            "wave": wave,
+            "take": take,
+            "rate_used": rate,
+            "n_kept_new": n_new_this_wave,
+        }
+        # Next wave sizes off THIS wave's measured rate over its OWN fresh
+        # draws (bounded to [floor, 1]).
+        rate = min(
+            1.0,
+            max(n_new_this_wave / len(wave_rows) if wave_rows else rate, RETRY_RATE_FLOOR),
+        )
+    return kept, wave_counts, digest_all, _bundle_draw_counts(out_dir, mode_slug, model_key, fp)
+
+
+# ---------------------------------------------------------------------------
 # Parse + judge (mechanical gate first, then the LLM judge)
 # ---------------------------------------------------------------------------
 def _judge_checkpoint_dir(cache_dir: Path, rows: list[dict]) -> Path:
@@ -690,8 +917,12 @@ def bundle_files_paired(mode_slug: str, model_key: str, out_dir: Path) -> list[s
     names = [
         f"raw_stories_{mode_slug}_{model_key}.jsonl",
         f"raw_stories_{mode_slug}_{model_key}.meta.json",
-        f"raw_stories_{mode_slug}_{model_key}_retry.jsonl",
-        f"raw_stories_{mode_slug}_{model_key}_retry.meta.json",
+        # Draw-indexed retry files (micro-round): _retry / _retry2 / _retry3
+        *(
+            f"raw_stories_{mode_slug}_{model_key}{s}{ext}"
+            for s in _RETRY_SUFFIX.values()
+            for ext in (".jsonl", ".meta.json")
+        ),
         f"kept_stories_{mode_slug}_{model_key}.jsonl",
         f"story_yield_{mode_slug}_{model_key}.json",
         f"judge_results_{mode_slug}_{model_key}.jsonl",
@@ -825,7 +1056,19 @@ def load_kept_carryforward(
         g._hf_download_to(f"{prefix}/{kept_path.name}", kept_path)
     elif old_fp == fp_new:
         return [], None
-    rows = c.read_jsonl(kept_path)
+    carried, dropped = _pool_identity_filter(c.read_jsonl(kept_path), pool_by_id)
+    print(
+        f"[gen] carry-forward: {len(carried)} kept {mode_slug} rows from bundle fp "
+        f"{old_fp} reused verbatim ({dropped} dropped by the pool-identity guard); "
+        f"only the non-kept remainder regenerates at the new recipe (fp {fp_new})",
+        flush=True,
+    )
+    return carried, old_fp
+
+
+def _pool_identity_filter(rows: list[dict], pool_by_id: dict[str, dict]) -> tuple[list[dict], int]:
+    """Keep only paired rows whose (conv_id, question, answer) byte-matches the
+    CURRENT pool (the carry guard); returns (carried, n_dropped)."""
     carried, dropped = [], 0
     for r in rows:
         p = pool_by_id.get(r.get("conv_id"))
@@ -838,13 +1081,7 @@ def load_kept_carryforward(
             carried.append(r)
         else:
             dropped += 1
-    print(
-        f"[gen] carry-forward: {len(carried)} kept {mode_slug} rows from bundle fp "
-        f"{old_fp} reused verbatim ({dropped} dropped by the pool-identity guard); "
-        f"only the non-kept remainder regenerates at the new recipe (fp {fp_new})",
-        flush=True,
-    )
-    return carried, old_fp
+    return carried, dropped
 
 
 def quarantine_stale_raw(out_dir: Path, mode_slug: str, model_key: str, fp_new: str) -> None:
@@ -860,7 +1097,7 @@ def quarantine_stale_raw(out_dir: Path, mode_slug: str, model_key: str, fp_new: 
     """
     for base in (
         f"raw_stories_{mode_slug}_{model_key}",
-        f"raw_stories_{mode_slug}_{model_key}_retry",
+        *(f"raw_stories_{mode_slug}_{model_key}{s}" for s in _RETRY_SUFFIX.values()),
     ):
         raw = out_dir / f"{base}.jsonl"
         meta = out_dir / f"{base}.meta.json"
@@ -904,6 +1141,12 @@ def _build_llm(model_id: str):
     )
 
 
+# Per-wave yield-report keys (micro-round): wave k persists under the key
+# _prior_fresh_rate reads — 1 keeps the legacy "counts_retry" name (backward-
+# readable: a pre-wave report simply lacks the _2/_3 keys), 2/3 get their own.
+_WAVE_COUNTS_KEY = {1: "counts_retry", 2: "counts_retry_2", 3: "counts_retry_3"}
+
+
 def _write_yield_report(
     mode_slug: str,
     model_key: str,
@@ -912,31 +1155,47 @@ def _write_yield_report(
     n_target: int,
     yield_floor: int,
     counts_main: dict,
-    counts_retry: dict | None,
+    wave_counts: dict[int, dict] | None,
     pool_counts: dict,
     n_kept: int,
     n_kept_carried: int = 0,
     carried_from_fp: str | None = None,
+    draw_counts: dict[str, int] | None = None,
 ) -> None:
-    c.write_json(
-        out_dir / f"story_yield_{mode_slug}_{model_key}.json",
-        {
-            "metadata": c.metadata(c.GEN_SEED, n_kept, "scripts/issue1345_gen_stories_paired.py"),
-            "gen_max_new_tokens": story_max_new_tokens(op_companion=mode_slug == "paired_op"),
-            "n_kept_carried": n_kept_carried,
-            "carried_from_fp": carried_from_fp,
-            "model": model_key,
-            "mode": mode_slug,
-            "story_character_name": c.STORY_CHARACTER_NAME,
-            "n_target": n_target,
-            "yield_floor": yield_floor,
-            "pool_filter_counts": pool_counts,
-            "counts_main": counts_main,
-            "counts_retry": counts_retry,
-            "n_kept": n_kept,
-            "yield_ok": n_kept >= yield_floor,
-        },
-    )
+    """Persist the per-run yield report (main + per-wave counts, floor verdict).
+
+    ``wave_counts`` is run_retry_waves' {wave: counts} map; each fired wave
+    lands under _WAVE_COUNTS_KEY[wave] (absent key == wave never fired —
+    "counts_retry" stays None when no wave fired, preserving the legacy
+    schema). ``draw_counts`` (conv_id -> draws in this fp bundle) persists as
+    a per-draw-count histogram, digest-only.
+    """
+    wave_counts = wave_counts or {}
+    histogram: dict[str, int] = {}
+    for n in (draw_counts or {}).values():
+        histogram[str(n)] = histogram.get(str(n), 0) + 1
+    report = {
+        "metadata": c.metadata(c.GEN_SEED, n_kept, "scripts/issue1345_gen_stories_paired.py"),
+        "gen_max_new_tokens": story_max_new_tokens(op_companion=mode_slug == "paired_op"),
+        "n_kept_carried": n_kept_carried,
+        "carried_from_fp": carried_from_fp,
+        "model": model_key,
+        "mode": mode_slug,
+        "story_character_name": c.STORY_CHARACTER_NAME,
+        "n_target": n_target,
+        "yield_floor": yield_floor,
+        "pool_filter_counts": pool_counts,
+        "counts_main": counts_main,
+        "counts_retry": wave_counts.get(1),
+        "n_kept": n_kept,
+        "yield_ok": n_kept >= yield_floor,
+    }
+    for wave in (2, 3):
+        if wave in wave_counts:
+            report[_WAVE_COUNTS_KEY[wave]] = wave_counts[wave]
+    if histogram:
+        report["retry_draw_histogram"] = histogram
+    c.write_json(out_dir / f"story_yield_{mode_slug}_{model_key}.json", report)
 
 
 # ---------------------------------------------------------------------------
@@ -966,7 +1225,7 @@ def main() -> None:
     args = ap.parse_args()
 
     assert c.HAS_R4, (
-        "gen_stories_paired requires EPM_I1345_VARIANT=conversation_paired_stories "
+        f"gen_stories_paired requires EPM_I1345_VARIANT in {c.PAIRED_STORIES_VARIANTS} "
         f"(got {c.VARIANT!r}) — the r4 registry and variant-scoped output dirs are "
         "gated on it (never clobber the parent run)"
     )
@@ -1098,36 +1357,37 @@ def main() -> None:
     if kept_carry:
         kept = kept_carry + kept  # carried keeps first (stable, pool-verified)
 
-    retry_counts = None
-    if not args.op_companion and len(kept) < n_target and seeds_reserve:
-        shortfall = n_target - len(kept)
-        # Size the ONE retry batch to clear the YIELD FLOOR at the MEASURED
-        # keep rate, never just the target at an assumed 100% keep (cps fix
-        # round): the r4 run's bare [:shortfall] slice happened to consume the
-        # whole reserve (shortfall 1,726 > reserve 1,389), but with carried
-        # keeps in the tally a target-shortfall slice can strand eligible
-        # reserve rows while the floor is missed by a few dozen — a re-halt
-        # with usable pool left. Still ONE retry batch (plan v8 §7); ``take``
-        # never shrinks below the plan's shortfall sizing.
-        import math
-
-        n_kept_fresh = len(kept) - len(kept_carry)
-        rate = max(n_kept_fresh / len(rows), 0.05) if rows else 1.0
-        need_for_floor = max(0, yield_floor - len(kept))
-        take = max(shortfall, math.ceil(need_for_floor / rate))
-        retry_rows_in = seeds_reserve[:take]
-        print(
-            f"[retry] {len(kept)}/{n_target} kept (fresh keep rate "
-            f"{rate:.3f}) — one retry batch of {len(retry_rows_in)}"
+    # Bounded retry-until-floor (micro-round, 2026-07-17): relaunch 2's single
+    # target-shortfall-sized wave landed kept=2,117 < floor 2,160 with 1,972
+    # un-kept eligible pool rows stranded. run_retry_waves replaces the inline
+    # single-wave block: wave 1 keeps the plan-v8 semantics (fires below
+    # TARGET; fewest-draws-first prefers never-drawn reserve rows), waves 2-3
+    # are floor-driven redraws of un-kept pool rows at the measured rate with
+    # RETRY_SAFETY sizing + the MAX_DRAWS_PER_ROW cap. NO recipe change; the
+    # rc=21 floor-halt after the capped waves is byte-unchanged.
+    retry_wave_counts: dict[int, dict] = {}
+    final_draw_counts: dict[str, int] = {}
+    if not args.op_companion and len(kept) < n_target:
+        seed_rate = _seed_retry_rate(
+            n_fresh_kept=len(kept) - len(kept_carry),
+            n_fresh_rows=len(rows),
+            prior_report_path=out_dir / f"story_yield_{mode_slug}_{model_key}.json",
         )
-        retry_path = out_dir / f"raw_stories_{mode_slug}_{model_key}_retry.jsonl"
-        retry_rows = generate_paired(
-            retry_rows_in, retry_path, fp, tokenizer, llm, op_companion=False
+        kept, retry_wave_counts, retry_digest, final_draw_counts = run_retry_waves(
+            kept=kept,
+            ordered=ordered,
+            n_target=n_target,
+            yield_floor=yield_floor,
+            seed_rate=seed_rate,
+            out_dir=out_dir,
+            mode_slug=mode_slug,
+            model_key=model_key,
+            fp=fp,
+            cache_dir=cache_dir,
+            smoke=args.smoke,
+            tokenizer=tokenizer,
+            llm=llm,
         )
-        retry_kept, retry_counts, retry_digest = parse_and_judge_paired(
-            retry_rows, cache_dir, args.smoke, op_companion=False
-        )
-        kept.extend(retry_kept)
         judge_digest.extend(retry_digest)
 
     kept_path = out_dir / f"kept_stories_{mode_slug}_{model_key}.jsonl"
@@ -1146,11 +1406,12 @@ def main() -> None:
         n_target=n_target,
         yield_floor=yield_floor,
         counts_main=counts,
-        counts_retry=retry_counts,
+        wave_counts=retry_wave_counts,
         pool_counts=pool_counts,
         n_kept=len(kept),
         n_kept_carried=len(kept_carry),
         carried_from_fp=carry_fp,
+        draw_counts=final_draw_counts,
     )
     # Persist BEFORE any floor can halt this process and before extraction
     # (Upload Policy raw-completions rule; #1345 crash-fix r6 shape).

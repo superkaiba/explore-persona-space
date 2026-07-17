@@ -190,7 +190,7 @@ def main() -> None:
     args = ap.parse_args()
 
     assert c.HAS_R4, (
-        "matched_row_refits requires EPM_I1345_VARIANT=conversation_paired_stories "
+        f"matched_row_refits requires EPM_I1345_VARIANT in {c.PAIRED_STORIES_VARIANTS} "
         f"(got {c.VARIANT!r})"
     )
     out_dir = args.out_dir or (args.eval_dir / "matched_row")

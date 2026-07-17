@@ -125,19 +125,28 @@ FIG_DIR = Path(f"figures/issue_1345{_VSUB}")
 # fits enumerate cells, transfer enumerates ordered pairs, operator comparison
 # enumerates unordered pairs; smoke thins ROWS, never this registry)
 #
-# conversation-paired-stories follow-up (plan v8 §4): under
-# EPM_I1345_VARIANT=conversation_paired_stories the registry gains regime r4
+# conversation-paired-stories follow-up (plan v8 §4; plan v9 renames the
+# character to "Assistant" in the fresh conversation_paired_stories_assistant
+# scope): under EPM_I1345_VARIANT in PAIRED_STORIES_VARIANTS the registry
+# gains regime r4
 # (narrative wrappers of a seed-42 2,700-conversation subsample of the SAME
 # shared S-track conversations, ORIGINAL answers embedded verbatim,
 # teacher-forced capture) + the on-policy companion control store (internal
 # regime key "r4op" — a fit cell, never a transfer/opcomp regime). The gate is
-# the SPECIFIC variant slug: the parent run AND the assistant_named_story
-# variant keep the 3-regime registry byte-identical.
+# the SPECIFIC membership set PAIRED_STORIES_VARIANTS: the parent run AND the
+# assistant_named_story variant keep the 3-regime registry byte-identical.
 # ---------------------------------------------------------------------------
 MODELS = ("instruct", "pretrained")
 MODEL_SLUG = {"instruct": "instruct", "pretrained": "base"}  # plan §6.5 file slugs
-PAIRED_STORIES_VARIANT = "conversation_paired_stories"
-HAS_R4 = VARIANT == PAIRED_STORIES_VARIANT
+# EXPLICIT membership set (never a prefix match — a future unrelated
+# conversation_paired_stories_* slug must not silently arm r4): the v8
+# execution's ARIA scope + the v9 execution's Assistant scope (plan v9 header —
+# the fresh slug exists so the v8 ARIA-scope artifacts cannot resume-gate v9).
+PAIRED_STORIES_VARIANTS = (
+    "conversation_paired_stories",  # v8 ARIA scope (superseded; stays addressable)
+    "conversation_paired_stories_assistant",  # v9 Assistant scope (plan v9)
+)
+HAS_R4 = VARIANT in PAIRED_STORIES_VARIANTS
 # Base r4 cells are N/A BY SCOPE (plan v8 §5/§12.6: parent base story yields
 # 96/500 ≈ 19% across both prior rounds — deterministic scope, not data-driven).
 R4_MODELS = ("instruct",)
@@ -202,8 +211,8 @@ def _cell(model: str, regime: str, arm: str) -> dict:
 def all_cells() -> list[dict]:
     """The fit cells (regime x model x arm) as fit_cells-compatible dicts.
 
-    Parent registry: 12 cells (3 regimes x 2 models x 2 arms). Under the
-    conversation_paired_stories variant, r4 cells (TF paired stories) + the
+    Parent registry: 12 cells (3 regimes x 2 models x 2 arms). Under a
+    PAIRED_STORIES_VARIANTS slug, r4 cells (TF paired stories) + the
     r4op on-policy companion CONTROL cells are appended for R4_MODELS only
     (base N/A by scope) — 12 + 2 + 2 with instruct-only r4.
     """

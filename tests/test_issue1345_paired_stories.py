@@ -51,6 +51,7 @@ from issue1345_matched_row_refits import matched_row_cells, tf_op_calibration  #
 
 _SEAM_KEYS = ("EPM_STORY_CHARACTER_NAME", "EPM_I1345_VARIANT")
 CPS = "conversation_paired_stories"
+CPS_ASSISTANT = "conversation_paired_stories_assistant"  # v9 Assistant scope (plan v9)
 
 
 def _run_py(code: str, overrides: dict[str, str] | None = None) -> subprocess.CompletedProcess:
@@ -810,3 +811,382 @@ def test_dispatch_halt_files_cleared_on_floor_pass():
     op_block = src.split('[phase=extract_r4_op_companion]"', 1)[1].split("matchedn", 1)[0]
     assert 'rm -f "$R4OP_HALT_FILE"' in op_block
     assert 'touch "$R4OP_HALT_FILE"' in op_block
+
+
+# ---------------------------------------------------------------------------
+# v9 Assistant-scope variant re-scope (plan v9): the fresh slug
+# conversation_paired_stories_assistant arms the SAME r4 registry (explicit
+# membership set c.PAIRED_STORIES_VARIANTS — never a prefix match), and the
+# name seam flows end-to-end (templates, judge rubric, attribution regex) with
+# a FRESH recipe fingerprint (the fp embeds the name-resolved templates, so
+# the v8 ARIA-scope bundle can never resume-gate the v9 run).
+# ---------------------------------------------------------------------------
+def test_assistant_variant_registry_gains_r4_instruct_only():
+    proc = _run_py(
+        _REGISTRY_PROBE,
+        {"EPM_I1345_VARIANT": CPS_ASSISTANT, "EPM_STORY_CHARACTER_NAME": "Assistant"},
+    )
+    assert proc.returncode == 0, proc.stderr
+    out = json.loads(proc.stdout)
+    assert out["regimes"] == ["r1", "r2", "r3", "r4"]
+    assert out["has_r4"] and out["paired_pair_r4"] == ["r1", "r4"]
+    assert out["n_cells"] == 16
+    assert "R_instruct_r4_context" in out["cell_ids"]
+
+
+def test_paired_stories_variants_membership_is_explicit():
+    """The gate is an EXPLICIT membership set — a prefix-adjacent slug must
+    NOT arm r4 (documented choice: membership over prefix match)."""
+    proc = _run_py(
+        _REGISTRY_PROBE,
+        {
+            "EPM_I1345_VARIANT": "conversation_paired_stories_assistant_v2",
+            "EPM_STORY_CHARACTER_NAME": "Assistant",
+        },
+    )
+    assert proc.returncode == 0, proc.stderr
+    out = json.loads(proc.stdout)
+    assert out["regimes"] == ["r1", "r2", "r3"] and not out["has_r4"]
+
+
+_NAME_SEAM_PROBE = """
+import sys
+sys.path.insert(0, "scripts")
+import json
+import issue1345_common as c
+import issue1345_gen_stories_paired as gp
+rows = [{"conv_id": "s1", "question": "q?", "answer": "a" * 30}]
+attrib = f'{c.STORY_CHARACTER_NAME} replied:'
+print(json.dumps({
+    "name": c.STORY_CHARACTER_NAME,
+    "fp": gp.paired_fingerprint("paired", rows),
+    "fp_op": gp.paired_fingerprint("paired_op", rows),
+    "tmpl_has_name": attrib in gp.STORY_PAIRED_SYSTEM_TEMPLATE,
+    "op_tmpl_has_name": attrib in gp.STORY_OP_COMPANION_SYSTEM,
+    "judge_has_name": attrib in gp.JUDGE_SYSTEM_PAIRED,
+    "op_judge_has_name": attrib in gp.JUDGE_SYSTEM_OP,
+    "attrib_re_has_name": c.STORY_CHARACTER_NAME in c.ANSWER_ATTRIB_RE.pattern,
+    "aria_leak": "ARIA" in (
+        gp.STORY_PAIRED_SYSTEM_TEMPLATE + gp.STORY_OP_COMPANION_SYSTEM
+        + gp.JUDGE_SYSTEM_PAIRED + gp.JUDGE_SYSTEM_OP + c.ANSWER_ATTRIB_RE.pattern
+    ),
+}))
+"""
+
+
+def test_assistant_name_flows_end_to_end_and_rekeys_fingerprint():
+    """Under EPM_STORY_CHARACTER_NAME=Assistant + the v9 scope: both gen
+    templates, both judge rubrics, and the attribution regex carry the new
+    name (no ARIA residue), and BOTH mode fingerprints differ from the ARIA
+    scope's — the v8 kept bundle cannot resume-gate the v9 run."""
+    aria = _run_py(_NAME_SEAM_PROBE, {"EPM_I1345_VARIANT": CPS})
+    assert aria.returncode == 0, aria.stderr
+    assistant = _run_py(
+        _NAME_SEAM_PROBE,
+        {"EPM_I1345_VARIANT": CPS_ASSISTANT, "EPM_STORY_CHARACTER_NAME": "Assistant"},
+    )
+    assert assistant.returncode == 0, assistant.stderr
+    a, b = json.loads(aria.stdout), json.loads(assistant.stdout)
+    assert a["name"] == "ARIA" and b["name"] == "Assistant"
+    for probe in (a, b):
+        assert probe["tmpl_has_name"] and probe["op_tmpl_has_name"]
+        assert probe["judge_has_name"] and probe["op_judge_has_name"]
+        assert probe["attrib_re_has_name"]
+    assert not b["aria_leak"]
+    assert a["fp"] != b["fp"] and a["fp_op"] != b["fp_op"]
+
+
+# ---------------------------------------------------------------------------
+# Bounded retry-until-floor (micro-round): wave sizing, draw accounting, and
+# the run_retry_waves production body against signature-conformant fakes at
+# the two external boundaries (vLLM gen_fn / judge-API judge_fn).
+# ---------------------------------------------------------------------------
+def test_plan_retry_wave_wave1_keeps_legacy_semantics():
+    # Fires below TARGET; take = max(target_shortfall, ceil(floor_gap/rate)).
+    assert gp.plan_retry_wave(1, 6, 6, 5, 0.5, 100) == 0  # at target: no fire
+    assert gp.plan_retry_wave(1, 0, 6, 5, 0.5, 100) == 10  # max(6, ceil(5/0.5))
+    assert gp.plan_retry_wave(1, 4, 6, 5, 0.05, 100) == 20  # floor term dominates
+    assert gp.plan_retry_wave(1, 4, 6, 5, 1.0, 100) == 2  # shortfall dominates
+    assert gp.plan_retry_wave(1, 0, 6, 5, 0.5, 3) == 3  # clamped to candidates
+
+
+def test_plan_retry_wave_floor_driven_waves_and_bounds():
+    # Waves 2/3 fire only below the FLOOR, sized ceil(gap/(rate*SAFETY)).
+    assert gp.plan_retry_wave(2, 5, 6, 5, 0.5, 100) == 0  # floor cleared
+    assert gp.plan_retry_wave(2, 4, 6, 5, 0.5, 100) == 3  # ceil(1/0.4)
+    assert gp.plan_retry_wave(3, 2, 6, 5, 0.25, 100) == 15  # ceil(3/0.2)
+    # Rate floored at RETRY_RATE_FLOOR — a collapsed rate cannot explode take
+    # beyond gap/(0.05*0.8), and the candidate clamp bounds it regardless.
+    assert gp.plan_retry_wave(2, 4, 6, 5, 0.0, 100) == 25  # ceil(1/(0.05*0.8))
+    assert gp.plan_retry_wave(2, 4, 6, 5, 0.0, 7) == 7  # clamped
+    # Out-of-range waves / empty candidate pool never fire.
+    assert gp.plan_retry_wave(0, 0, 6, 5, 0.5, 100) == 0
+    assert gp.plan_retry_wave(gp.MAX_RETRY_WAVES + 1, 0, 6, 5, 0.5, 100) == 0
+    assert gp.plan_retry_wave(1, 0, 6, 5, 0.5, 0) == 0
+
+
+def test_eligible_redraw_rows_fewest_draws_first_and_cap():
+    ordered = [{"conv_id": f"p{i}"} for i in range(5)]
+    kept_ids = {"p1"}
+    draws = {"p0": 2, "p2": gp.MAX_DRAWS_PER_ROW, "p3": 1}  # p4 never drawn
+    cands = gp.eligible_redraw_rows(ordered, kept_ids, draws)
+    # p1 kept, p2 at the cap -> excluded; fewest-draws-first, stable in pool order.
+    assert [r["conv_id"] for r in cands] == ["p4", "p3", "p0"]
+
+
+def test_bundle_draw_counts_fp_gated(tmp_path):
+    """Draws are counted ONLY from same-fp raw files (main + draw-indexed
+    retries); a prior-fp file and a meta-less file never count."""
+
+    def _write(name, ids, fp):
+        raw = tmp_path / f"raw_stories_paired_instruct{name}.jsonl"
+        raw.write_text("".join(json.dumps({"conv_id": i}) + "\n" for i in ids))
+        if fp is not None:
+            raw.with_suffix(".meta.json").write_text(json.dumps({"fingerprint": fp}))
+
+    _write("", ["a", "b"], "fp1")
+    _write("_retry", ["b", "c"], "fp1")
+    _write("_retry2", ["b"], "stale-fp")  # prior-recipe bundle: excluded
+    _write("_retry3", ["a"], None)  # meta-less: excluded
+    counts = gp._bundle_draw_counts(tmp_path, "paired", "instruct", "fp1")
+    assert counts == {"a": 1, "b": 2, "c": 1}
+
+
+def _fake_gen_fn(calls):
+    """Signature-conformant vLLM-boundary fake mirroring generate_paired
+    (resume-by-conv_id per file, fp-gated meta sidecar, returns ALL file
+    rows); embeds the draw index (from the file suffix) in the story text so
+    the fake judge can key on draw number."""
+
+    def fake_gen(rows, out_path, fp, tokenizer, llm, *, op_companion):
+        assert op_companion is False
+        suffix = out_path.name.split("instruct")[1].split(".jsonl")[0]  # "", _retry, ...
+        draw = {v: k for k, v in gp._RETRY_SUFFIX.items()}.get(suffix, 0) if suffix else 0
+        calls.append((out_path.name, [r["conv_id"] for r in rows]))
+        meta = out_path.with_suffix(".meta.json")
+        done = set()
+        if out_path.exists() and meta.exists():
+            assert json.loads(meta.read_text())["fingerprint"] == fp
+            done = {r["conv_id"] for r in c.read_jsonl(out_path)}
+        else:
+            c.write_json(meta, {"fingerprint": fp, "n_rows": len(rows)})
+        new = [
+            {
+                "conv_id": r["conv_id"],
+                "story_id": r["conv_id"],
+                "question": r["question"],
+                "mode": "paired",
+                "story": f"scene d{draw} for {r['conv_id']}",
+                "finish_reason": "stop",
+                "answer": r["answer"],
+            }
+            for r in rows
+            if r["conv_id"] not in done
+        ]
+        c.append_jsonl(out_path, new)
+        return c.read_jsonl(out_path) if out_path.exists() else []
+
+    return fake_gen
+
+
+def _fake_judge_fn(keep_pred):
+    """Signature-conformant judge-API-boundary fake mirroring
+    parse_and_judge_paired's (rows, cache_dir, smoke, *, op_companion) ->
+    (kept, counts, digest_rows) contract."""
+
+    def fake_judge(rows, cache_dir, smoke, *, op_companion):
+        assert op_companion is False
+        kept, digest = [], []
+        for r in rows:
+            ok = keep_pred(r)
+            digest.append(
+                {"conv_id": r["conv_id"], "mode": r["mode"], "verdict": "PASS" if ok else "FAIL"}
+            )
+            if ok:
+                kept.append({**r, "judge_verdict": "PASS"})
+        counts = {
+            "n_generated": len(rows),
+            "mech_fail_reasons": {} if all(keep_pred(r) for r in rows) else {"synthetic": 1},
+            "kept": len(kept),
+        }
+        return kept, counts, digest
+
+    return fake_judge
+
+
+def _pool(n):
+    return [{"conv_id": f"p{i}", "question": "q?", "answer": "a" * 30} for i in range(n)]
+
+
+def test_run_retry_waves_draw_indexed_routing_reseeding_and_floor_stop(tmp_path):
+    """Production run_retry_waves body end-to-end: wave 1 (draw 1) lands in
+    _retry, wave-2 redraws (draw 2) in _retry2; the wave-2 rate is reseeded
+    from wave 1's measured rate; the loop stops once the floor clears (no
+    wave 3); keeps are conv_id-unique."""
+    calls = []
+    # Easy rows keep on draw 1; hard rows only from draw 2 (temp-1.0 redraw).
+    easy = {f"p{i}" for i in range(4)}
+    keep = lambda r: r["conv_id"] in easy or "d1" not in r["story"]  # noqa: E731
+    kept, waves, _digest, draws = gp.run_retry_waves(
+        kept=[],
+        ordered=_pool(10),
+        n_target=6,
+        yield_floor=5,
+        seed_rate=0.5,
+        out_dir=tmp_path,
+        mode_slug="paired",
+        model_key="instruct",
+        fp="fp1",
+        cache_dir=tmp_path / "cache",
+        smoke=True,
+        tokenizer=None,
+        llm=None,
+        gen_fn=_fake_gen_fn(calls),
+        judge_fn=_fake_judge_fn(keep),
+    )
+    assert sorted(waves) == [1, 2]  # floor cleared after wave 2 -> no wave 3
+    # Wave 1: all 10 never-drawn rows at draw 1 -> the legacy _retry file.
+    assert calls[0][0] == "raw_stories_paired_instruct_retry.jsonl"
+    assert len(calls[0][1]) == 10
+    assert waves[1]["take"] == 10 and waves[1]["rate_used"] == 0.5
+    assert waves[1]["n_kept_new"] == 4
+    # Wave 2: reseeded at wave 1's measured 4/10 rate; ceil(1/(0.4*0.8)) = 4
+    # hard-row redraws, draw-indexed into _retry2.
+    assert calls[1][0] == "raw_stories_paired_instruct_retry2.jsonl"
+    assert waves[2]["rate_used"] == pytest.approx(0.4)
+    assert waves[2]["take"] == 4 and waves[2]["n_kept_new"] == 4
+    ids = [k["conv_id"] for k in kept]
+    assert len(ids) == len(set(ids)) == 8
+    assert not (tmp_path / "raw_stories_paired_instruct_retry3.jsonl").exists()
+    assert {draws[f"p{i}"] for i in range(4)} == {1} and draws["p4"] == 2
+
+
+def test_run_retry_waves_caps_draws_and_halts_after_max_waves(tmp_path):
+    """All-hard pool: waves 1..3 all fire, every row stops at the
+    MAX_DRAWS_PER_ROW cap, kept stays below the floor (the caller's rc=21
+    enforce_yield_floor semantics are untouched), and _retry3 exists."""
+    calls = []
+    kept, waves, _digest, draws = gp.run_retry_waves(
+        kept=[],
+        ordered=_pool(4),
+        n_target=4,
+        yield_floor=3,
+        seed_rate=0.5,
+        out_dir=tmp_path,
+        mode_slug="paired",
+        model_key="instruct",
+        fp="fp1",
+        cache_dir=tmp_path / "cache",
+        smoke=True,
+        tokenizer=None,
+        llm=None,
+        gen_fn=_fake_gen_fn(calls),
+        judge_fn=_fake_judge_fn(lambda r: False),
+    )
+    assert kept == [] and sorted(waves) == [1, 2, 3]
+    assert [n for n, _ in calls] == [
+        "raw_stories_paired_instruct_retry.jsonl",
+        "raw_stories_paired_instruct_retry2.jsonl",
+        "raw_stories_paired_instruct_retry3.jsonl",
+    ]
+    assert set(draws.values()) == {gp.MAX_DRAWS_PER_ROW}
+    # Wave 2+ rates floored at RETRY_RATE_FLOOR (measured rate collapsed to 0).
+    assert waves[2]["rate_used"] == gp.RETRY_RATE_FLOOR
+
+
+def test_run_retry_waves_recovers_crashed_draws_and_dedupes_same_cid(tmp_path):
+    """A prior process generated c0/c1 into _retry then died before judging:
+    the relaunch re-judges the resumed file rows (recovering their keeps from
+    the cached judge) AND, when the same conv_id is also redrawn into _retry2
+    this wave, the kept merge stays conv_id-unique — the per-draw-group judge
+    split prevents the mech/DispatchItem conv_id collision."""
+    calls = []
+    pool = [{"conv_id": f"c{i}", "question": "q?", "answer": "a" * 30} for i in range(4)]
+    pre = tmp_path / "raw_stories_paired_instruct_retry.jsonl"
+    c.write_json(pre.with_suffix(".meta.json"), {"fingerprint": "fp1", "n_rows": 2})
+    c.append_jsonl(
+        pre,
+        [
+            {
+                "conv_id": f"c{i}",
+                "story_id": f"c{i}",
+                "question": "q?",
+                "mode": "paired",
+                "story": f"scene d1 for c{i}",
+                "finish_reason": "stop",
+                "answer": "a" * 30,
+            }
+            for i in range(2)
+        ],
+    )
+    kept, waves, _digest, _draws = gp.run_retry_waves(
+        kept=[],
+        ordered=pool,
+        n_target=4,
+        yield_floor=3,
+        seed_rate=1.0,
+        out_dir=tmp_path,
+        mode_slug="paired",
+        model_key="instruct",
+        fp="fp1",
+        cache_dir=tmp_path / "cache",
+        smoke=True,
+        tokenizer=None,
+        llm=None,
+        gen_fn=_fake_gen_fn(calls),
+        judge_fn=_fake_judge_fn(lambda r: True),
+    )
+    ids = sorted(k["conv_id"] for k in kept)
+    assert ids == ["c0", "c1", "c2", "c3"]  # unique — no same-cid double-keep
+    # Wave 1 split into two draw groups: fresh c2/c3 -> _retry (draw 1),
+    # already-drawn c0/c1 -> _retry2 (draw 2); the _retry group's judge call
+    # re-yielded the crashed rows.
+    assert [n for n, _ in calls] == [
+        "raw_stories_paired_instruct_retry.jsonl",
+        "raw_stories_paired_instruct_retry2.jsonl",
+    ]
+    assert waves[1]["n_kept_new"] == 4
+
+
+def test_write_yield_report_per_wave_keys_and_prior_fresh_rate(tmp_path):
+    """Per-wave counts persist under the keys _prior_fresh_rate reads (wave 1
+    -> counts_retry, 2 -> counts_retry_2, 3 -> counts_retry_3); absent keys ==
+    wave never fired (backward-readable); the draw histogram is digest-only."""
+    gp._write_yield_report(
+        "paired",
+        "instruct",
+        tmp_path,
+        n_target=6,
+        yield_floor=5,
+        counts_main={"n_generated": 10, "kept": 4},
+        wave_counts={
+            1: {"n_generated": 10, "kept": 4, "wave": 1},
+            2: {"n_generated": 4, "kept": 2, "wave": 2},
+        },
+        pool_counts={},
+        n_kept=6,
+        n_kept_carried=2,
+        draw_counts={"p0": 1, "p1": 2, "p2": 2},
+    )
+    report = json.loads((tmp_path / "story_yield_paired_instruct.json").read_text())
+    assert report["counts_retry"]["kept"] == 4
+    assert report["counts_retry_2"]["kept"] == 2
+    assert "counts_retry_3" not in report  # wave 3 never fired
+    assert report["retry_draw_histogram"] == {"1": 1, "2": 2}
+    assert report["yield_ok"] is True
+    # 6 kept - 2 carried = 4 fresh over 24 generated draws.
+    assert gp._prior_fresh_rate(report) == pytest.approx(4 / 24)
+
+
+def test_prior_fresh_rate_backward_readable_and_defensive():
+    # Legacy pre-wave report shape: counts_retry None, no _2/_3 keys.
+    legacy = {"counts_main": {"n_generated": 8}, "counts_retry": None, "n_kept": 4}
+    assert gp._prior_fresh_rate(legacy) == pytest.approx(0.5)
+    assert gp._prior_fresh_rate({}) is None  # no draws recorded
+    assert gp._prior_fresh_rate({"counts_main": {"n_generated": "x"}, "n_kept": 1}) is None
+
+
+def test_merge_wave_counts_sums_and_merges_reason_dicts():
+    acc = {"n_generated": 2, "kept": 1, "mech_fail_reasons": {"a": 1}}
+    gp._merge_wave_counts(acc, {"n_generated": 3, "kept": 0, "mech_fail_reasons": {"a": 2, "b": 1}})
+    assert acc == {"n_generated": 5, "kept": 1, "mech_fail_reasons": {"a": 3, "b": 1}}

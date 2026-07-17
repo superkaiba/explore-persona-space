@@ -73,8 +73,12 @@ export MALLOC_MMAP_THRESHOLD_=131072
 # (teacher-forced capture) + extract_r4_op_companion (N<=200 on-policy control)
 # + matched_row_refits replace gen_stories/extract_stories; r3 is OUT OF SCOPE
 # this round (the parent ARIA run is the committed anchor, never rerun).
+# EXPLICIT membership (mirrors c.PAIRED_STORIES_VARIANTS — never a prefix
+# match): the v8 ARIA scope + the v9 Assistant scope (plan v9 header).
 CPS=""
-[[ "$VARIANT" == "conversation_paired_stories" ]] && CPS=1
+case "$VARIANT" in
+  conversation_paired_stories|conversation_paired_stories_assistant) CPS=1 ;;
+esac
 
 PHASES=(prefetch prefetch_reuse phase0 gen_stories gen_stories_paired extract_r1r2 extract_stories extract_r4_tf extract_r4_op_companion matchedn fits matched_row_refits transfer opcomp plots upload push)
 
@@ -315,7 +319,7 @@ fi
 
 if should_run gen_stories_paired; then
   if [[ -z "$CPS" ]]; then
-    echo "[phase=gen_stories_paired] SKIPPED — not the conversation_paired_stories variant"
+    echo "[phase=gen_stories_paired] SKIPPED — not a paired-stories (CPS) variant"
   else
     echo "[phase=gen_stories_paired]"
     # Instruct only (base N/A by scope, plan v8 §5). rc=21 == the 2160/2700
@@ -372,7 +376,7 @@ fi
 
 if should_run extract_r4_tf; then
   if [[ -z "$CPS" ]]; then
-    echo "[phase=extract_r4_tf] SKIPPED — not the conversation_paired_stories variant"
+    echo "[phase=extract_r4_tf] SKIPPED — not a paired-stories (CPS) variant"
   elif [[ -f "$R4_HALT_FILE" ]]; then
     echo "[phase=extract_r4_tf] SKIPPED — r4 leg halted (yield floor)"
   else
@@ -390,7 +394,7 @@ fi
 
 if should_run extract_r4_op_companion; then
   if [[ -z "$CPS" ]]; then
-    echo "[phase=extract_r4_op_companion] SKIPPED — not the conversation_paired_stories variant"
+    echo "[phase=extract_r4_op_companion] SKIPPED — not a paired-stories (CPS) variant"
   elif [[ -f "$R4_HALT_FILE" ]]; then
     echo "[phase=extract_r4_op_companion] SKIPPED — r4 leg halted (yield floor)"
   else
@@ -445,7 +449,7 @@ fi
 
 if should_run matched_row_refits; then
   if [[ -z "$CPS" ]]; then
-    echo "[phase=matched_row_refits] SKIPPED — not the conversation_paired_stories variant"
+    echo "[phase=matched_row_refits] SKIPPED — not a paired-stories (CPS) variant"
   elif [[ -f "$R4_HALT_FILE" ]]; then
     echo "[phase=matched_row_refits] SKIPPED — r4 leg halted (yield floor)"
   else
@@ -610,7 +614,9 @@ payload = {
         "paired_story_target": (
             {"n_target": 2700, "yield_floor": 2160, "subsample_seed": 42,
              "op_companion_n": 200, "op_companion_seed": 0}
-            if variant == "conversation_paired_stories" else None
+            # Membership mirrors c.PAIRED_STORIES_VARIANTS (v8 ARIA + v9 Assistant scope)
+            if variant in ("conversation_paired_stories",
+                           "conversation_paired_stories_assistant") else None
         ),
         "hf_data_prefix": (
             f"issue1345_smoke{vsub}/" if smoke == "1" else f"issue1345_framing{vsub}/"
@@ -623,7 +629,10 @@ payload = {
     "final_commit_sha": commit_sha,
     "gpu_hours_used": float(gpu_hours),
     "gpu_hours_budgeted": (
-        16.0 if variant == "conversation_paired_stories" else (13.0 if variant else 14.0)
+        # 16.0 = the paired-stories plan v8/v9 §9 ceiling (both CPS scopes)
+        16.0 if variant in ("conversation_paired_stories",
+                            "conversation_paired_stories_assistant")
+        else (13.0 if variant else 14.0)
     ),
     "plan_deviations": [
         {"deviation": "HF store layout uses the canonical issue1345_framing/ prefix",
