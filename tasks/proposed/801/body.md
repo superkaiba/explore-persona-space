@@ -4,7 +4,6 @@ title: 'daily-held: registry/fs inconsistencies (#696/#722/#750/#764/#766) need 
 kind: infra
 tags:
 - daily-held
-- needs-human
 created_at: '2026-07-01T06:57:13Z'
 has_clean_result: false
 origin_prompt: '/daily route-3 2026-06-30: 5 registry/fs inconsistencies; #722 is

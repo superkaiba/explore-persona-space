@@ -3,7 +3,6 @@ title: 'daily-held: settle #779-line mapping terminology + writeup b'
 kind: infra
 tags:
 - daily-held
-- needs-human
 created_at: '2026-07-05T07:04:43Z'
 has_clean_result: false
 origin_prompt: '/daily 2026-07-04 problem sweep (route 3): Thomas re-steered the #779

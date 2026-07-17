@@ -3,7 +3,6 @@ title: 'daily-held: Gate spawn_session dispatch paths on auth-outage'
 kind: infra
 tags:
 - daily-held
-- needs-human
 created_at: '2026-07-09T07:01:47Z'
 has_clean_result: false
 origin_prompt: '/daily 2026-07-08 problem sweep (route 3): The #1027 auth-outage guard
