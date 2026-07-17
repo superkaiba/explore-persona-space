@@ -31,12 +31,12 @@ relates_to:
 
 ## Takeaways
 
-- **Single-token patching of the context-vector difference moves the answer state toward the target: cosine 0.36–0.41, 28/28 pairs above their random-direction nulls on both arms (27/28 on the most conservative split), traversing 2–5% of the target norm.**
-- **These numbers are ~0.08 lower than first computed: the original statistic shared a 10-draw baseline mean between shift and target, inflating every cosine; disjoint baseline halves give the corrected read.**
+- **Single-token patching of the context-vector difference moves the answer state toward the target: cosine 0.36–0.41, 28/28 pairs above their random-direction nulls on both arms (27/28 on the most conservative split); the traversal is 2–5% of the target norm.**
+- **These numbers are ~0.08 lower than first computed: the original statistic shared a 10-draw baseline mean between shift and target, which inflated every cosine; disjoint baseline halves give the corrected read.**
 - **Behavior barely moves: +0.3 to +0.9 graded judge points versus +28.8 for the context-swap ceiling and +10.1 for persona-vector steering — despite injecting 1.6–3.6× more norm.**
 - **The fitted context-to-answer map predicts none of the realized shift at layer 20 (mean cosine 0.00; magnitude over-predicted ~16×); other layers were not computed.**
 - **Matched-query steering vectors transport far better than cross-query ones (0.49 vs 0.22, prefix arm, p = 8e-6); transportability is query-dependent, though closer matched targets could carry part of the gap.**
-- **All-position steering flips 96–98% of draws into Chinese script (a broken output distribution, so its taller geometric bars are reads on corrupted text), and the medical-doctor pair's target is sampling noise (split-half 0.049), leaving that pair uninterpretable.**
+- **All-position steering flips 96–98% of draws into Chinese script (a broken output distribution, so its taller geometric bars are reads on corrupted text), and the medical-doctor pair's target is sampling noise (split-half 0.049); that pair is uninterpretable.**
 
 ## Goal
 
@@ -199,7 +199,7 @@ What is plotted: mean matched-layer alignment per steer layer, both arms (shared
 
 > **Figure.** *Mid-stack layers steer the answer state best.* Mean matched-layer alignment per steer layer (shared convention shown; the disjoint recount preserves the layers-14–17 peak at 0.23–0.28 and collapses layers 7/10 to ≈ 0).
 
-The profile peaks at layers 14–17; under disjoint baselines the layer-7/10 values drop to ≈ 0, so the early-layer signal was mostly the shared-baseline artifact. Behavior was judged only at layer 20, which is geometrically sub-peak (disjoint matched-layer 0.14 prefix / 0.22 context) — a layer-anchoring caveat on the behavioral near-null, though the persona-vector arm shows layer 20 can carry behavior (+11.4 evil). Judging the already-generated layer-14/17 completions is the queued follow-up.
+The profile peaks at layers 14–17; under disjoint baselines the layer-7/10 values drop to ≈ 0, so the early-layer signal was mostly the shared-baseline artifact. Behavior was judged only at layer 20, which is geometrically sub-peak (disjoint matched-layer 0.14 prefix / 0.22 context) — a layer-anchoring caveat on the behavioral near-null, though the persona-vector arm shows layer 20 can carry behavior (evil shift +10.1). Judging the already-generated layer-14/17 completions is the queued follow-up.
 
 ### The fitted context-to-answer map does not predict the realized shift at layer 20
 
@@ -209,7 +209,7 @@ What is plotted: per-pair transport cosine — realized answer shift vs the map-
 
 > **Figure.** *Transport cosines center on zero.* Per-pair cos(realized shift, map-predicted shift) at layer 20; mean +0.000 (prefix) / −0.004 (context); 0–1 of 28 pairs above their own shuffled-pair null (chance rate 2.5%); none reach the 0.2 threshold. The map also over-predicts shift magnitude ~16×.
 
-Transport was computed at layer 20 only, so the plan's all-layers falsification clause was not evaluated (recorded deviation). The zero is jointly indeterminate across four failure modes: no generalization to perturbed inputs; the teacher-forced-to-on-policy regime shift; content-identity dominance in the map's fit; and sampling attenuation (realized-shift split-half 0.20 prefix / 0.36 context, capping the observable cosine at ~0.58–0.73 of its true value — enough to weaken the inference, not to hide a strong transport). What survives all four: the map is not a usable counterfactual predictor for single-position interventions as-is.
+Transport was computed at layer 20 only, so the plan's all-layers falsification clause was not evaluated (recorded deviation). The zero is jointly indeterminate across four failure modes: no generalization to perturbed inputs; the teacher-forced-to-on-policy regime shift; content-identity dominance in the map's fit; and sampling attenuation (realized-shift split-half 0.20 prefix / 0.36 context, which caps the observable cosine at ~0.58–0.73 of its true value — enough to weaken the inference, not to hide a strong transport). What survives all four: the map is not a usable counterfactual predictor for single-position interventions as-is.
 
 ### Dose-response is flat, and the context-arm behavioral effect concentrates in one style pair
 
@@ -219,7 +219,7 @@ What is plotted: mean graded judge score across the α grid for both steered arm
 
 > **Figure.** *No dose trend; one style pair carries a third of the context-arm effect.* Steered graded means across α ∈ {0.5, 1, 2, 4}: context 1.70 / 1.61 / 1.59 / 2.21; prefix 1.60 / 1.58 / 1.53 / 1.64. The coherence gate never bound, so larger α was never explored.
 
-The α grid is flat — context 1.70/1.61/1.59/2.21, prefix 1.60/1.58/1.54/1.64 (α = 0.5/1/2/4) against baseline 1.30; only the context α = 4 cell moves. That shift (+0.91) is 34% carried by the formal-register pair; it survives that pair's exclusion (+0.63, p = 0.0009, N = 27), so the effect is not one-pair-only, but the mean hides one clear steering success against a floor elsewhere. Five pairs have a dead behavioral ceiling, diluting ceiling-anchored contrasts. Steered pools carry 9–10% Chinese-script intrusion (256–295 of 2,800 draws per arm); excluding intruded draws moves the α = 4 context mean 2.21→2.16 and the geometric headline under 0.01.
+The α grid is flat — context 1.70/1.61/1.59/2.21, prefix 1.60/1.58/1.54/1.64 (α = 0.5/1/2/4) against baseline 1.30; only the context α = 4 cell moves. That shift (+0.91) is 34% carried by the formal-register pair; it survives that pair's exclusion (+0.63, p = 0.0009, N = 27), yet the mean pools one clear steering success with a floor elsewhere. Five pairs have a dead behavioral ceiling, which dilutes ceiling-anchored contrasts. Steered pools carry 9–10% Chinese-script intrusion (256–295 of 2,800 draws per arm); excluding intruded draws moves the α = 4 context mean 2.21→2.16 and the geometric headline under 0.01.
 
 ### The logit-lens readout of the vectors is not clean trait words
 
