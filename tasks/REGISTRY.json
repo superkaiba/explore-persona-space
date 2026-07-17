@@ -3361,8 +3361,8 @@
     "1431": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/1431",
-      "status": "approved",
+      "path": "tasks/running/1431",
+      "status": "running",
       "title": "workflow-fix: gotchas entry \u2014 pilot timing gates measure at the sweep's execution shape"
     },
     "1432": {
