@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1470,
+  "highest_id": 1471,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -3666,6 +3666,13 @@
       "path": "tasks/proposed/1470",
       "status": "proposed",
       "title": "daily-fix: divtrain gen through api_dispatch + empty=retry"
+    },
+    "1471": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1471",
+      "status": "proposed",
+      "title": "daily-held: non-managed EXITED pod reaping decision"
     },
     "148": {
       "has_clean_result": false,
