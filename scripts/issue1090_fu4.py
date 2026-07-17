@@ -2636,16 +2636,21 @@ def _fu7_rule23_remediate_legacy(
     cfg: i1090.RunConfig,
     judge_root: Path,
     run: Fu4Run,
+    tag: str,
     questions: list[str],
     completions: list[list[str]],
     read: dict,
 ) -> dict:
     """K4 remediation, legacy arm: same rule-23 recipe through the legacy
-    instrument (`_judge_rate`), fresh cache partition, mt=1000."""
+    instrument (`_judge_rate`), fresh cache partition, mt=1000.
+
+    ``tag`` is the FULL remediation tag, threaded per call site exactly like
+    the pv twin — distinct per (read-set, remediation leg), so a Tier-2 and a
+    panel-context remediation for one run can never share a cache dir /
+    ``judge_raw.json`` (concern fu7-rule23-legacy-tag-collision)."""
     if not read.get("k4_truncation_check_required"):
         return read
     fu6 = _fu6_mod()
-    tag = f"{run.run_id}-t2-trained-rule23"
     logger.warning(
         "[fu7-K4] %s: content-drop >= 10%% — rule-23 re-judge at mt=%d (fresh cache)",
         tag,
@@ -2689,8 +2694,16 @@ def _fu7_dual_rubric_tier2(
         return t2
     payload = _fu7_tier2_payload(run, run_root)
     if t2.get("k4_truncation_check_required"):
+        # Tag preserved verbatim: the text audit resolves the Tier-2 remediated
+        # read at `{arm}-t2-trained-rule23` (issue1090_fu4_text_audit.py).
         t2 = _fu7_rule23_remediate_legacy(
-            cfg, judge_root, run, payload["questions"], payload["completions"], t2
+            cfg,
+            judge_root,
+            run,
+            f"{run.run_id}-t2-trained-rule23",
+            payload["questions"],
+            payload["completions"],
+            t2,
         )
     pv_tag = f"{run.run_id}-t2-trained-pv"
     pv = _pv_judge_rate(
@@ -3007,8 +3020,17 @@ def _fu7_panel_reads(
         legacy = _fu7_attach_k4(
             legacy, judge_root / "panel_legacy" / run.behavior / f"{tag}-legacy", f"{tag}-legacy"
         )
+        # Per-context tag (`{run_id}-pn-{ctx}-legacy-rule23`): disjoint from the
+        # Tier-2 remediation tag AND across panel contexts; the `legacy-rule23`
+        # suffix is enumerated in the #1415 custom_id budget test.
         legacy = _fu7_rule23_remediate_legacy(
-            cfg, judge_root, run, payload["questions"], payload["completions"], legacy
+            cfg,
+            judge_root,
+            run,
+            f"{tag}-legacy-rule23",
+            payload["questions"],
+            payload["completions"],
+            legacy,
         )
         pv = _pv_judge_rate(
             judge_root / "pv",
