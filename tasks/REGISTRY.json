@@ -3642,8 +3642,8 @@
     "1468": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1468",
-      "status": "reviewing",
+      "path": "tasks/completed/1468",
+      "status": "completed",
       "title": "daily-fix: A100-40 rung blind to consumed device memory"
     },
     "1469": {
