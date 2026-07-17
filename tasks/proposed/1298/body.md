@@ -3,7 +3,6 @@ title: 'daily-held: #928 frozen at followups_running since 07-08'
 kind: infra
 tags:
 - daily-held
-- needs-human
 created_at: '2026-07-13T06:48:12Z'
 has_clean_result: false
 origin_prompt: '/daily 2026-07-12 route-3: #928 followups_running freeze, 2nd consecutive
