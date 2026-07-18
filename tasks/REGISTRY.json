@@ -3983,8 +3983,8 @@
     "1510": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1510",
-      "status": "running",
+      "path": "tasks/reviewing/1510",
+      "status": "reviewing",
       "title": "workflow-fix: check 31 FAILs prose-named unembedded per-unit companions sans exemption"
     },
     "1511": {
