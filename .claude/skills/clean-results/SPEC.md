@@ -851,7 +851,12 @@ accepted. No `TBD`, `{{`, `default`, `see config` sentinels. **Write
 MDX-safe markdown** (same three rules as v3): (a) `[label](url)` only,
 never `<https://...>` autolinks; (b) no `<` immediately before a digit
 (`p<0.05`); (c) table-cell tokens with inner pipes (`<|im_start|>`) escape
-the pipes inside a code span.
+the pipes inside a code span. Enforcement note (check 44, WARN — no
+semantic change to this contract): a bare backtick HF-style artifact path
+(`issue<N>_...` prefix, or a `raw_completions`/`analysis_tensors` path) in
+the footer must sit in the same bullet/paragraph as a pinned
+`huggingface.co` `/tree|/resolve|/blob/<rev>` link or carry `@ <rev>`
+immediately after it (`verify_task_body.py` check 44, #1509).
 
 ### Stray `## What I ran` / `## Findings` / `## Data` / `## Reproducibility` / `## Human TL;DR` / `## TL;DR` / `## Details` / `## Figure` is a FAIL (v4)
 
