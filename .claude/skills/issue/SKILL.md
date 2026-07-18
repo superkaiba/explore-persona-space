@@ -5864,7 +5864,7 @@ aggregation / permutation battery) MUST be launched fully detached:
 
     PHASE_PID=$(bash -c 'setsid nohup env OMP_NUM_THREADS=8 MKL_NUM_THREADS=8 OPENBLAS_NUM_THREADS=8 NUMEXPR_NUM_THREADS=8 MALLOC_ARENA_MAX=2 <cmd> < /dev/null >> <abs, space-free log path> 2>&1 & echo $!')
     ps -p "$PHASE_PID" -o args=   # verify the pid is the workload; on mismatch
-                                  # recover via pgrep -f '<distinctive invocation>'
+                                  # recover via pgrep -f '<distinctive invocatio[n]>'
     bash -o pipefail -c 'pgrep -s "$1" | xargs -rn1 sudo -n choom -n -600 -p' _ "$PHASE_PID" >/dev/null \
       || echo "[warn] choom failed or swept nothing — phase is earlyoom-UNPROTECTED (record choom=failed)"
 
@@ -8140,7 +8140,7 @@ suite directly and posts an `epm:test-verdict` event with the result.
       Bash calls). A MISSING rc file means the background run died before
       pytest exited (tool kill / watcher force-stop, #833): treat as FAIL,
       never a silent PASS, and apply crash-fix-rounds § Kill-before-relaunch
-      (probe `pgrep -af 'pytest.*step9c-junit-issue-<N>'` — the junit path
+      (probe `pgrep -af '[p]ytest.*step9c-junit-issue-<N>'` — the junit path
       makes the probe exact-invocation-scoped) before any re-run:
       ```bash
       if [ ! -f /tmp/step9c-rc-issue-<N> ]; then
@@ -8361,7 +8361,7 @@ suite directly and posts an `epm:test-verdict` event with the result.
         >> "$1/logs/step9c_baseline_refresh.log" 2>&1 < /dev/null & echo $!' _ "$REPO_ROOT")
       # earlyoom-protect the refresh (#1045; fail-open): sweep its session; the refresh's own
       # start_new_session pytest child (spawned >=~1s later, after lock + git-root resolution + selector/venv resolution + uv-run startup) inherits adj.
-      ps -p "$REFRESH_PID" -o args=   # verify the pid is the workload (canonical form); on mismatch recover via pgrep -f 'step9c_baseline.py refresh'; a lock-held instant exit makes this benignly fail (choom=failed below)
+      ps -p "$REFRESH_PID" -o args=   # verify the pid is the workload (canonical form); on mismatch recover via pgrep -f 'step9c_baseline[.]py refresh'; a lock-held instant exit makes this benignly fail (choom=failed below)
       bash -o pipefail -c 'pgrep -s "$1" | xargs -rn1 sudo -n choom -n -600 -p' _ "$REFRESH_PID" >/dev/null \
         && echo "[step9c] ledger refresh detached pid=$REFRESH_PID log=$REPO_ROOT/logs/step9c_baseline_refresh.log choom=ok" \
         || echo "[step9c] ledger refresh detached pid=$REFRESH_PID log=$REPO_ROOT/logs/step9c_baseline_refresh.log choom=failed"
@@ -9785,7 +9785,7 @@ tests BEFORE anything lands:
   before writing a verdict (tool kill / watcher force-stop / wedge-bound
   kill) — treat as gate-not-run, fail CLOSED: NEVER proceed to the merge
   conditional, NEVER hand-write the verdict (#1082). Apply crash-fix-rounds
-  § Kill-before-relaunch (probe `pgrep -af 'issue-<N>-lint-gate-tree'` —
+  § Kill-before-relaunch (probe `pgrep -af 'issue-<N>-lint-gate-tre[e]'` —
   the gate-tree path in the lint legs' argv makes the probe
   exact-issue-scoped) before re-running the gate ONCE; still dying ->
   `epm:merge-failed v1` (Verdict bullet case 3). A partial death (killed
@@ -10926,7 +10926,7 @@ Decision tree:
   - MISSING sentinel -> the sequence died mid-run (tool kill / watcher
     force-stop / wedge-bound kill) and the root may hold staged payload.
     Recover IN THIS ORDER: (1) kill-before-relaunch probe FIRST
-    (`pgrep -af 'scripts/workflow_lint.py'` — root-copy invocations are
+    (`pgrep -af 'scripts/workflow_lint[.]py'` — root-copy invocations are
     not issue-scoped in argv, so on an ambiguous match WAIT for exit,
     never kill; the Step 0 single-orchestrator guard excludes same-issue
     concurrency). (2) Landed/committed classification BEFORE any cleanup —

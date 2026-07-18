@@ -28,8 +28,8 @@ respawn 1/3, 2026-06-27).** After the wrapper tree kill, ALWAYS do:
 # 1. Kill the wrapper PID tree (parent + children)
 kill -TERM <WRAPPER_PID> 2>/dev/null || true
 sleep 5
-pkill -KILL -f "issue<N>_dispatch.py" 2>/dev/null || true
-pkill -KILL -f "issue<N>_launch_parallel.sh" 2>/dev/null || true
+pkill -KILL -f "issue<N>_dispatch[.]py" 2>/dev/null || true
+pkill -KILL -f "issue<N>_launch_parallel[.]sh" 2>/dev/null || true
 sleep 3
 
 # 2. Probe for orphaned VLLM::EngineCore worker(s)

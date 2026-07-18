@@ -1277,3 +1277,188 @@ def test_cli_map_files_rules_pin_excludes_invariant(tmp_path: Path, capsys):
         "invariant",
         "rules-pin:.claude/rules/some-rule.md",
     }
+
+
+# --- Cases 52+ (#1498): the literal-path pinning arm -----------------------------
+# Fixtures write test files whose RAW TEXT hardcodes a touched file's
+# repo-relative path (the tests/test_ruff_policy.py LIVE_WORKFLOW_HELPERS
+# shape). The shared _make_tree stubs contain no repo paths, so the arm
+# no-ops on every pre-existing fixture by construction.
+
+
+# --- Case 52: a pinning test is selected with the literal-path reason ------------
+def test_literal_path_pin_selected(tmp_path: Path):
+    repo = _make_import_tree(tmp_path, {"test_pin_x.py": 'LIVE = ["scripts/foo_helper.py"]\n'})
+    tests, _, reasons = sel.select_tests_with_reasons(["scripts/foo_helper.py"], repo)
+    assert "tests/test_pin_x.py" in tests
+    assert reasons["tests/test_pin_x.py"] == ["literal-path:scripts/foo_helper.py"]
+
+
+# --- Case 53: THE durability pin — the #1498 founding case on the LIVE tree ------
+def test_literal_path_founding_case_live_tree():
+    """No fixtures: the real tree's tests/test_ruff_policy.py hardcodes
+    ``scripts/daily_drive_filings.py`` in LIVE_WORKFLOW_HELPERS and lints it at
+    test time, yet shares no stem, matches no scan glob, and imports nothing —
+    reachable ONLY through the literal-path arm (#1498 founding incident).
+
+    If a future cleanup removes scripts/daily_drive_filings.py or drops it from
+    LIVE_WORKFLOW_HELPERS, this pin fails loud — repoint it at another
+    committed pin relationship (test_ruff_policy.py has dozens).
+    """
+    repo_root = Path(sel.__file__).resolve().parents[1]
+    tests, _, reasons = sel.select_tests_with_reasons(["scripts/daily_drive_filings.py"], repo_root)
+    assert "tests/test_ruff_policy.py" in tests
+    assert "literal-path:scripts/daily_drive_filings.py" in reasons["tests/test_ruff_policy.py"]
+
+
+# --- Case 54: precision — a pin of a DIFFERENT path is not selected --------------
+def test_literal_path_negative_not_selected(tmp_path: Path):
+    repo = _make_import_tree(
+        tmp_path, {"test_bystander_pin.py": 'LIVE = ["scripts/other_helper.py"]\n'}
+    )
+    tests, _, _ = sel.select_tests_with_reasons(["scripts/foo_helper.py"], repo)
+    assert "tests/test_bystander_pin.py" not in tests
+
+
+# --- Case 55: a literal hit does NOT suppress the untested_touched WARN ----------
+def test_literal_path_does_not_suppress_untested_warn(tmp_path: Path):
+    """A pinning test asserts an invariant ABOUT the file (e.g. ruff
+    cleanliness), not the file's own logic — unlike an import hit, it never
+    sets ``matched`` (plan R3; glob-scan precedent)."""
+    repo = _make_import_tree(tmp_path, {"test_pin_x.py": 'LIVE = ["scripts/foo_helper.py"]\n'})
+    tests, untested, _ = sel.select_tests_with_reasons(["scripts/foo_helper.py"], repo)
+    assert "tests/test_pin_x.py" in tests
+    assert untested == ["scripts/foo_helper.py"]
+
+
+# --- Case 56: monotonicity — the arm only ever GROWS the selection ---------------
+def test_literal_path_only_grows_selection(tmp_path: Path):
+    """Same touched set, tree WITH vs WITHOUT the pin-bearing test file:
+    WITH-selection is a superset and every WITHOUT reason list is preserved
+    verbatim (mirror of case 41 for the literal arm)."""
+    touched = ["scripts/widgetlib.py", "scripts/orphan.py"]
+    repo_without = _make_tree(tmp_path / "without", ["test_widgetlib.py"])
+    t_without, u_without, r_without = sel.select_tests_with_reasons(touched, repo_without)
+    repo_with = _make_tree(tmp_path / "with", ["test_widgetlib.py"])
+    (repo_with / "tests" / "test_pins.py").write_text('LIVE = ["scripts/widgetlib.py"]\n')
+    t_with, u_with, r_with = sel.select_tests_with_reasons(touched, repo_with)
+    assert set(t_with) >= set(t_without)
+    for test, rs in r_without.items():
+        assert r_with[test] == rs  # pre-existing reason lists preserved verbatim
+    assert r_with["tests/test_pins.py"] == ["literal-path:scripts/widgetlib.py"]
+    # orphan.py has no test in either tree; widgetlib.py is stem-mapped in both.
+    assert u_without == ["scripts/orphan.py"]
+    assert u_with == ["scripts/orphan.py"]
+
+
+# --- Case 57: unreadable file WARNs + is skipped for BOTH arms; never crashes ----
+def test_literal_path_unreadable_file_warns_not_crash(tmp_path: Path, capsys):
+    repo = _make_import_tree(tmp_path, {"test_good_pin.py": 'LIVE = ["scripts/foo_helper.py"]\n'})
+    (repo / "tests" / "test_undecodable.py").write_bytes(
+        b'LIVE = ["scripts/foo_helper.py"]\n\xff\xfe bad'
+    )
+    tests, _, reasons = sel.select_tests_with_reasons(["scripts/foo_helper.py"], repo)
+    assert "tests/test_good_pin.py" in tests  # the valid hit still selected
+    assert reasons["tests/test_good_pin.py"] == ["literal-path:scripts/foo_helper.py"]
+    assert "tests/test_undecodable.py" not in tests  # read failed -> both arms skip
+    err = capsys.readouterr().err
+    assert "import-map cannot parse" in err
+    assert "test_undecodable.py" in err
+
+
+# --- Case 58: a syntax-error file's literal hit still lands (read/parse split) ---
+def test_literal_path_syntax_error_file_still_matched(tmp_path: Path, capsys):
+    """The raw read succeeded, so the literal hit is recorded even though the
+    ast parse (triggered by the 'foo_helper' pre-filter token) fails — the
+    import-arm WARN fires and the literal selection lands."""
+    repo = _make_import_tree(
+        tmp_path, {"test_broken_pin.py": 'LIVE = ["scripts/foo_helper.py"]\ndef broken(:\n'}
+    )
+    tests, untested, reasons = sel.select_tests_with_reasons(["scripts/foo_helper.py"], repo)
+    assert "tests/test_broken_pin.py" in tests
+    assert reasons["tests/test_broken_pin.py"] == ["literal-path:scripts/foo_helper.py"]
+    assert untested == ["scripts/foo_helper.py"]  # literal hit never sets matched
+    err = capsys.readouterr().err
+    assert err.count("import-map cannot parse") == 1
+    assert "test_broken_pin.py" in err
+
+
+# --- Case 59: workflow-surface-only diff -> still ZERO file reads ----------------
+def test_literal_path_md_only_diff_zero_scan(tmp_path: Path, capsys):
+    """Mirror of case 44 under the shared pass: no touched file is eligible for
+    EITHER arm, so the scan never reads tests/ (the planted undecodable file
+    would WARN on any read — case 57 is the positive control)."""
+    repo = _make_import_tree(tmp_path, {})
+    (repo / "tests" / "test_undecodable.py").write_bytes(b"bad \xff\xfe")
+    assert sel.literal_path_targets([".claude/rules/foo.md", "notes.md"]) == set()
+    tests, untested, _ = sel.select_tests_with_reasons([".claude/rules/foo.md", "notes.md"], repo)
+    err = capsys.readouterr().err
+    assert "import-map cannot parse" not in err  # zero reads: never touched the bad file
+    assert set(tests) == set(sel.WORKFLOW_INVARIANT)
+    assert untested == []
+
+
+# --- Case 60: scripts/__init__.py is a NEW scan trigger, with zero parses --------
+def test_literal_path_init_py_triggers_scan_zero_parses(tmp_path: Path, capsys):
+    """``scripts/__init__.py`` maps to no module name (empty module map) but IS
+    a literal target -> the shared pass runs. The empty token pre-filter means
+    ZERO ast parses: the planted syntax-error file would WARN if parsed."""
+    repo = _make_import_tree(
+        tmp_path,
+        {
+            "test_pkg_pin.py": 'PINNED = "scripts/__init__.py"\n',
+            "test_broken.py": "def broken(:\n",
+        },
+    )
+    tests, _, reasons = sel.select_tests_with_reasons(["scripts/__init__.py"], repo)
+    assert "tests/test_pkg_pin.py" in tests
+    assert reasons["tests/test_pkg_pin.py"] == ["literal-path:scripts/__init__.py"]
+    assert "import-map cannot parse" not in capsys.readouterr().err  # zero parses
+
+
+# --- Case 61: literal_path_targets eligibility rules ------------------------------
+def test_literal_path_touched_test_not_a_target():
+    assert sel.literal_path_targets(["tests/test_a.py"]) == set()
+    assert sel.literal_path_targets(
+        [
+            "tests/test_a.py",  # tests/ — the touched-test arm owns it
+            "other/module.py",  # outside the two eligible roots
+            "scripts/notes.md",  # not .py
+            ".claude/skills/issue/SKILL.md",  # workflow surface — #1496's mapping
+            "scripts/x.py",
+            "src/explore_persona_space/y.py",
+            "scripts/__init__.py",  # eligible: a literal target even with no module name
+        ]
+    ) == {"scripts/x.py", "src/explore_persona_space/y.py", "scripts/__init__.py"}
+
+
+# --- Case 62: end-to-end through main() --json — the reason token is carried -----
+def test_cli_json_carries_literal_path_reason(tmp_path: Path, monkeypatch, capsys):
+    repo = _make_import_tree(tmp_path, {"test_pin.py": 'LIVE = ["scripts/widgetlib.py"]\n'})
+    monkeypatch.setattr(sel, "_resolve_work_root", lambda _arg: repo)
+    monkeypatch.setattr(sel, "compute_touched", lambda *_a, **_k: ["scripts/widgetlib.py"])
+    rc = sel.main(["--json", "--no-fetch", "--repo-root", str(repo)])
+    assert rc == 0
+    payload = json.loads(capsys.readouterr().out)
+    assert "tests/test_pin.py" in payload["tests"]
+    assert payload["selection_reasons"]["tests/test_pin.py"] == [
+        "literal-path:scripts/widgetlib.py"
+    ]
+    # The WARN still reaches the JSON consumer: literal hits never suppress it.
+    assert payload["untested_touched"] == ["scripts/widgetlib.py"]
+
+
+# --- Case 63: --map-files mode ignores literal-path pins (GLOB_SCAN_TESTS-only) --
+def test_map_files_ignores_literal_path_hits(tmp_path: Path, capsys):
+    """The Step 10d mapping mode (#1147) stays pure GLOB_SCAN_TESTS path
+    arithmetic (zero file reads): a payload naming a literal-PINNED but
+    not-scan-globbed file yields EMPTY stdout + rc 0 (pins the deliberate
+    #1498 scoping decision, plan R4)."""
+    repo = _make_import_tree(
+        tmp_path, {"test_pin.py": 'LIVE = ["src/explore_persona_space/widgetlib.py"]\n'}
+    )
+    listing = tmp_path / "payload.txt"
+    listing.write_text("src/explore_persona_space/widgetlib.py\n")
+    rc = sel.main(["--map-files", str(listing), "--repo-root", str(repo)])
+    assert rc == 0
+    assert capsys.readouterr().out == ""

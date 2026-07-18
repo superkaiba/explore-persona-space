@@ -37,6 +37,16 @@ Touched-file -> test mapping (per touched file ``f``):
     mark the touched file tested (suppresses its ``untested_touched`` WARN):
     the test executes the touched module's code, strictly stronger evidence
     than the filename-substring stem glob that also sets ``matched``.
+  * any ``tests/**/test_*.py`` whose RAW TEXT contains a touched ``scripts/``
+    or ``src/explore_persona_space/`` ``.py`` file's repo-relative path as a
+    literal substring is ADDITIONALLY selected with reason
+    ``literal-path:<touched file>`` (#1498 — the pinning-test shape: e.g.
+    ``tests/test_ruff_policy.py`` hardcodes ``scripts/...`` paths in
+    ``LIVE_WORKFLOW_HELPERS`` and lints them at test time, reachable from no
+    stem / scan glob / import). Like a glob-scan hit, a literal-path hit does
+    NOT mark the touched file tested (a pinning test asserts an invariant
+    ABOUT the file, not the file's own logic), so ``untested_touched`` WARNs
+    still fire.
   * any ``tests/**/test_*.py`` whose raw text mentions the BASENAME of a
     touched ``.claude/rules/*.md`` file (e.g. ``llm-judging.md``) is
     ADDITIONALLY selected with reason ``rules-pin:<touched file>`` (#1496).
@@ -76,6 +86,22 @@ reads on a workflow-surface-only diff; a short / colliding stem parses extra
 files, bounded by the measured ~4-8 s whole-tree worst case), and import-map
 selections flow into :func:`recommended_timeout_s` automatically (it sizes on
 ``len(tests)``).
+
+Literal-path scope + cost (#1498): the arm shares the import arm's single
+read pass (:func:`_scan_test_files`) — zero ADDITIONAL file reads on any diff
+that already triggered the import scan, and a workflow-surface-only diff
+still reads nothing (both arms' target sets empty -> early return). A diff
+whose only eligible ``.py`` maps to no module name (``scripts/__init__.py``)
+now triggers the read pass, with ZERO ast parses (empty token pre-filter).
+Raw substring on file text is deliberate: comment / docstring mentions
+over-select in the safe direction (safe-by-direction, above). Extendable
+miss classes, out of scope for now — an uncovered eligible ``.py`` still
+lands in the ``untested_touched`` WARN, while a non-``.py`` pin target sits
+outside the code-file mapping entirely: constructed paths
+(``Path("scripts") / "x.py"``, f-strings with variable parts, multi-line
+string concatenation); ``conftest.py``-resident pin lists (the scan is
+``rglob("test_*.py")``, matching the import arm's scope); and non-``.py``
+pins (e.g. a test hardcoding ``scripts/bootstrap_pod.sh``).
 
 Root resolution: with no ``--repo-root``, everything (the ``git diff`` cwd,
 touched-test existence checks, stem-glob mapping, invariant presence) resolves
@@ -141,7 +167,8 @@ BACKGROUND invocation — SKILL.md 9c step 1b). ``--json`` emits
 "slow_tests_selected": [...]}`` (a
 reason is ``invariant`` / ``touched-test`` / ``stem-map:<touched file>`` /
 ``glob-scan:<touched file>`` / ``import-map:<touched file>`` /
-``rules-pin:<touched file>`` — #1022, #1299, #1496).
+``literal-path:<touched file>`` / ``rules-pin:<touched file>`` —
+#1022, #1299, #1498, #1496).
 Exit 0 on success (even with WARN lines);
 exit 1 if an underlying ``git`` call fails irrecoverably (work-root resolution
 or the diff) or if the selection comes back EMPTY (the zero-test-gate
@@ -627,40 +654,74 @@ def _import_names(tree: ast.AST) -> set[str]:
     return names
 
 
-def import_map_hits(touched: list[str], work_root: Path) -> tuple[dict[str, set[str]], set[str]]:
-    """Scan ``tests/**/test_*.py`` for imports of touched modules (#1299).
+def literal_path_targets(touched: list[str]) -> set[str]:
+    """Touched files eligible for the literal-path arm (#1498).
 
-    Returns ``({test_relpath: {touched files it imports}}, {touched files with
-    >= 1 importing test})``. Subdir tests (``tests/experiments/``) are in scope
-    (sorted ``rglob`` — pytest collects them and the touched-test arm already
-    admits their paths), so the import arm matches that scope.
-
-    Cost bound: an empty module map (workflow-surface-only diff) returns
-    immediately with ZERO file reads. Otherwise each test file's raw text is
-    read and a SUBSTRING PRE-FILTER applies: the file is ``ast``-parsed only
-    when its text contains the last dotted component of at least one candidate
-    module name — any absolute import of module M must literally spell M's last
-    component, so the filter is over-inclusive (never a false negative).
-    Typical touched sets parse a handful of files; worst case the whole tree
-    (~500 files, measured ~4-8 s under shared-VM load — module docstring).
-
-    Fail-soft (#1299 rationale R5): a file that cannot be read / decoded /
-    parsed (``OSError``, ``SyntaxError``, ``ValueError`` incl.
-    ``UnicodeDecodeError``) emits ONE stderr WARN and is SKIPPED for the import
-    arm — never crashes the selector. The selection stays well-defined for
-    every other file, and if the broken file is itself part of the diff the
-    touched-test arm still selects it (pytest collection then fails loud at the
-    right surface). When parse failures exceed 5% of the scanned files, ONE
-    additional aggregate WARN flags the systemic tests/ breakage.
+    Eligible: ``.py`` code files under ``scripts/`` or
+    ``src/explore_persona_space/`` — never ``tests/`` (the touched-test arm
+    owns those; the ``.md`` / workflow-surface pin mapping is deliberately out
+    of scope here — #1496's surface). Each returned repo-relative path is
+    matched as a raw substring of every scanned test file's text.
     """
-    hits: dict[str, set[str]] = {}
+    return {
+        f
+        for f in touched
+        if Path(f).suffix == ".py"
+        and not f.startswith("tests/")
+        and (f.startswith("scripts/") or f.startswith("src/explore_persona_space/"))
+    }
+
+
+def _scan_test_files(
+    touched: list[str], work_root: Path
+) -> tuple[dict[str, set[str]], set[str], dict[str, set[str]]]:
+    """ONE shared read pass over ``tests/**/test_*.py`` for both text-scan arms.
+
+    Returns ``(import_hits, import_tested, literal_hits)``:
+      * ``import_hits`` — ``{test_relpath: {touched files it imports}}``
+        (#1299, the import-map arm);
+      * ``import_tested`` — touched files with >= 1 importing test (these
+        suppress the ``untested_touched`` WARN);
+      * ``literal_hits`` — ``{test_relpath: {touched files whose repo-relative
+        path appears as a raw substring of the test's text}}`` (#1498, the
+        literal-path arm; never suppresses the WARN).
+
+    Subdir tests (``tests/experiments/``) are in scope (sorted ``rglob`` —
+    pytest collects them and the touched-test arm already admits their paths).
+
+    Cost bound: when BOTH target sets are empty (workflow-surface-only diff)
+    the pass returns immediately with ZERO file reads. Otherwise each test
+    file's raw text is read ONCE and (a) checked against each literal target
+    as a plain substring, then (b) ``ast``-parsed ONLY when its text contains
+    the last dotted component of at least one candidate module name — any
+    absolute import of module M must literally spell M's last component, so
+    the filter is over-inclusive (never a false negative). A literal-only
+    trigger (e.g. ``scripts/__init__.py``, which maps to no module name)
+    reads the tree with ZERO parses (empty token pre-filter). Typical touched
+    sets parse a handful of files; worst case the whole tree (~500 files,
+    measured ~4-8 s under shared-VM load — module docstring).
+
+    Fail-soft (#1299 rationale R5): a file whose RAW READ fails (``OSError``,
+    ``ValueError`` incl. ``UnicodeDecodeError``) emits ONE stderr WARN and is
+    skipped for BOTH arms; a file that reads but fails to PARSE
+    (``SyntaxError``, ``ValueError``) is skipped for the import arm ONLY —
+    its literal hits are kept (raw text already read; an additive
+    improvement, #1498). Never crashes the selector; if the broken file is
+    itself part of the diff the touched-test arm still selects it (pytest
+    collection then fails loud at the right surface). When read + parse
+    failures exceed 5% of the scanned files, ONE additional aggregate WARN
+    flags the systemic tests/ breakage.
+    """
+    import_hits: dict[str, set[str]] = {}
     tested: set[str] = set()
+    literal_hits: dict[str, set[str]] = {}
     module_map = touched_module_names(touched)
-    if not module_map:
-        return hits, tested
+    literal_targets = literal_path_targets(touched)
+    if not module_map and not literal_targets:
+        return import_hits, tested, literal_hits
     tests_dir = work_root / "tests"
     if not tests_dir.is_dir():
-        return hits, tested
+        return import_hits, tested, literal_hits
     tokens = {name.rsplit(".", 1)[-1] for name in module_map}
     n_scanned = 0
     n_failed = 0
@@ -669,34 +730,76 @@ def import_map_hits(touched: list[str], work_root: Path) -> tuple[dict[str, set[
         rel = test_path.relative_to(work_root).as_posix()
         try:
             text = test_path.read_text(encoding="utf-8")
-            if not any(tok in text for tok in tokens):
-                continue
-            imported = _import_names(ast.parse(text))
-        except (OSError, SyntaxError, ValueError) as exc:
+        except (OSError, ValueError) as exc:
             n_failed += 1
             print(
                 f"select_step9c_tests: WARN — import-map cannot parse {rel}: {exc}; "
-                "file skipped for the import arm",
+                "file skipped for the import and literal-path arms",
+                file=sys.stderr,
+            )
+            continue
+        for f in literal_targets:
+            if f in text:
+                literal_hits.setdefault(rel, set()).add(f)
+        if not any(tok in text for tok in tokens):
+            continue
+        try:
+            imported = _import_names(ast.parse(text))
+        except (SyntaxError, ValueError) as exc:
+            n_failed += 1
+            print(
+                f"select_step9c_tests: WARN — import-map cannot parse {rel}: {exc}; "
+                "file skipped for the import arm (literal-path hits on its raw text, "
+                "if any, are kept)",
                 file=sys.stderr,
             )
             continue
         for name, files in module_map.items():
             if name in imported:
-                hits.setdefault(rel, set()).update(files)
+                import_hits.setdefault(rel, set()).update(files)
                 tested.update(files)
     if n_scanned and n_failed / n_scanned > 0.05:
         print(
-            f"select_step9c_tests: WARN — import-map parse failures on "
+            f"select_step9c_tests: WARN — test-scan read/parse failures on "
             f"{n_failed}/{n_scanned} scanned test files (>5%): systemic tests/ breakage; "
-            "the import arm may under-select",
+            "the import and literal-path arms may under-select",
             file=sys.stderr,
         )
+    return import_hits, tested, literal_hits
+
+
+def import_map_hits(touched: list[str], work_root: Path) -> tuple[dict[str, set[str]], set[str]]:
+    """Back-compat wrapper over :func:`_scan_test_files` (the #1299 public shape).
+
+    Returns ``(import_hits, import_tested)``, dropping the literal-path
+    element. NOTE (#1498): the underlying shared pass also triggers on
+    literal-eligible touched files, so a ``scripts/__init__.py``-only call
+    now scans (with zero parses) where the pre-refactor arm returned early
+    with zero reads; the returned import elements are unchanged.
+    """
+    hits, tested, _ = _scan_test_files(touched, work_root)
     return hits, tested
 
 
 def _seed_import_reasons(import_hits: dict[str, set[str]]) -> dict[str, set[str]]:
     """Initial ``{test: reasons}`` mapping seeded from import-map hits (#1299)."""
     return {t: {f"import-map:{f}" for f in files} for t, files in import_hits.items()}
+
+
+def _seed_scan_reasons(
+    import_hits: dict[str, set[str]], literal_hits: dict[str, set[str]]
+) -> dict[str, set[str]]:
+    """Initial ``{test: reasons}`` mapping seeded from BOTH text-scan arms.
+
+    Import-map hits (#1299) plus literal-path hits (#1498) — a test hit by
+    both carries both reason kinds. Purely additive: only ever adds
+    tests/reasons to the seed.
+    """
+    selected = _seed_import_reasons(import_hits)
+    for lit_test, lit_files in literal_hits.items():
+        for lit_f in lit_files:
+            selected.setdefault(lit_test, set()).add(f"literal-path:{lit_f}")
+    return selected
 
 
 def select_tests_with_reasons(
@@ -706,21 +809,23 @@ def select_tests_with_reasons(
 
     A reason is ``'invariant' | 'touched-test' | 'stem-map:<touched file>' |
     'glob-scan:<touched file>' | 'import-map:<touched file>' |
-    'rules-pin:<touched file>'``; a test may
+    'literal-path:<touched file>' | 'rules-pin:<touched file>'``; a test may
     carry several (e.g. an invariant that is also stem-mapped from a touched
     file). Selection behavior is IDENTICAL to :func:`select_tests` — same
     tests, same ``untested_touched`` WARN list, same sorted ordering (#1022:
     the reasons feed ``step9c_baseline.py compare``'s diff-linked-ness read,
     which must come from the SAME mapping logic that selected the run's tests).
     """
-    # Import-map arm (#1299): seeds the selection — additive by construction
-    # (it only ever adds tests/reasons here and, via the ``matched`` seed
-    # below, removes entries from the untested WARN list; no code path drops a
+    # Text-scan arms (ONE shared read pass, _scan_test_files): the import-map
+    # arm (#1299) seeds the selection and the literal-path arm (#1498) adds
+    # pinning-test hits — both additive by construction (they only ever add
+    # tests/reasons here and, via the ``matched`` seed below, the IMPORT arm
+    # alone removes entries from the untested WARN list; no code path drops a
     # stem-map / glob-scan / invariant / touched-test selection, so selection
     # only GROWS). Ordering is irrelevant: the terminal sorted() reads below
     # keep the output deterministic.
-    import_hits, import_tested = import_map_hits(touched, work_root)
-    selected: dict[str, set[str]] = _seed_import_reasons(import_hits)
+    import_hits, import_tested, literal_hits = _scan_test_files(touched, work_root)
+    selected: dict[str, set[str]] = _seed_scan_reasons(import_hits, literal_hits)
     # Rules-pin discovery arm (#1496): additive seed, same only-grows contract
     # (one scan pass serves all touched rules; the rules file itself still
     # takes the WORKFLOW_SURFACE `continue` below, unchanged).
@@ -972,8 +1077,8 @@ def main(argv: list[str] | None = None) -> int:
     missing = missing_invariants(work_root)
 
     # Fail loud on an EMPTY selection (defense-in-depth beside the Step 9c shell
-    # guard against a silent test-gate pass). WORKFLOW_INVARIANT has 37 always-on
-    # entries, so an empty list can only mean the work root resolved wrong (e.g.
+    # guard against a silent test-gate pass). WORKFLOW_INVARIANT is a non-empty
+    # always-on pinned set, so an empty list can only mean the work root resolved wrong (e.g.
     # invoked from a directory outside the repo, or a bad --repo-root override)
     # or the invariant files all vanished — either way the gate would run zero
     # tests. Never let that surface as an exit-0 "no tests ran".

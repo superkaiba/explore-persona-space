@@ -77,7 +77,7 @@ INFRA_PATTERNS: list[re.Pattern[str]] = [
     # GPUs — their cmdline carries no script name, so the natural
     # `pgrep -f <script>` liveness probe reads clean while ~50 GB/GPU is
     # held. RECOVERABLE IN-PLACE, not a capacity problem: probe
-    # `pgrep -af EngineCore` + `nvidia-smi
+    # `pgrep -af 'EngineCor[e]'` + `nvidia-smi
     # --query-compute-apps=pid,used_memory --format=csv`, kill the orphans
     # (`kill`, then `kill -9` survivors), confirm GPU memory ~0, and
     # relaunch on the SAME pod BEFORE any fresh-pod / capacity

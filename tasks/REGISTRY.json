@@ -3857,36 +3857,36 @@
     "1495": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1495",
-      "status": "planning",
+      "path": "tasks/completed/1495",
+      "status": "completed",
       "title": "daily-fix: bracket CLAUDE.md pgrep ownership exemplar"
     },
     "1496": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1496",
-      "status": "proposed",
+      "path": "tasks/completed/1496",
+      "status": "completed",
       "title": "daily-fix: 9c selector rules-to-prose-pin-test mapping"
     },
     "1497": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1497",
-      "status": "proposed",
+      "path": "tasks/archived/1497",
+      "status": "archived",
       "title": "daily-fix: route-3 needs-human tag dropped at filing"
     },
     "1498": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1498",
-      "status": "proposed",
+      "path": "tasks/completed/1498",
+      "status": "completed",
       "title": "daily-fix: 9c selector misses literal-path pinning tests"
     },
     "1499": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1499",
-      "status": "proposed",
+      "path": "tasks/reviewing/1499",
+      "status": "reviewing",
       "title": "daily-fix: alias step 9b to 9b-same in post_step_completed"
     },
     "15": {
@@ -3906,29 +3906,29 @@
     "1500": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1500",
-      "status": "proposed",
+      "path": "tasks/running/1500",
+      "status": "running",
       "title": "daily-fix: mechanical inline payload lint gate pre-push"
     },
     "1501": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1501",
-      "status": "running",
+      "path": "tasks/completed/1501",
+      "status": "completed",
       "title": "daily-fix: repo-root guard heredoc payload false positive"
     },
     "1502": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1502",
-      "status": "proposed",
+      "path": "tasks/planning/1502",
+      "status": "planning",
       "title": "daily-fix: open wf-fix sibling advisory at filing time"
     },
     "1503": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1503",
-      "status": "proposed",
+      "path": "tasks/planning/1503",
+      "status": "planning",
       "title": "daily-fix: windowed-read duty for first-pass guard briefs"
     },
     "1504": {
