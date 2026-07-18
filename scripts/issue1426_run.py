@@ -92,6 +92,7 @@ from issue594_common import probes_hash  # noqa: E402
 from issue594_extract_context_vectors import LayerCapture  # noqa: E402
 from issue658_extract_base_store import _reap_vllm  # noqa: E402
 from issue928_common import (  # noqa: E402
+    GENERATION_SEED,
     GPU_MEMORY_UTILIZATION,
     MAX_MODEL_LEN,
     MAX_NEW_TOKENS,
@@ -131,6 +132,7 @@ from issue1426_common import (  # noqa: E402
     FIGURES_PREFIX_1426,
     FIT_RESULTS_PREFIX_1426,
     GENERATION_SUFFIX,
+    HF_PREFIX_1426,
     MLC_NAMES_1426,
     MLC_ROW_MASK_KEY,
     MLP_INDIV_RESULTS_PREFIX_1426,
@@ -199,6 +201,7 @@ def f1_cmd(
     n_boot: int | None,
     upload: bool,
     smoke: bool,
+    no_mlp: bool = False,
 ) -> list[str]:
     """The f1 (``issue928_fit_decomposition``) command under the #1426 profile.
 
@@ -207,6 +210,11 @@ def f1_cmd(
     ``--decomp-upload-prefix`` — the parent's module-level #928
     ``DECOMP_TENSORS_PREFIX`` default must never fire here (it overwrote the
     parent's ``decomp_avg_q.pt`` / ``decomp_indiv.pt`` on the Hub).
+
+    ``no_mlp`` (DEFAULT-PRESERVING, sampled-rollout amendment §4.2 item 4:
+    ``False`` ⇒ prior commands byte-for-byte) appends the fit module's
+    existing ``--no-mlp`` flag, skipping the in-f1 avg_q MLP validity control
+    per the round's scope marker. Smoke commands already carried ``--no-mlp``.
     """
     suffix = "_smoke" if smoke else ""
     cmd = [
@@ -231,7 +239,9 @@ def f1_cmd(
             DECOMP_TENSORS_PREFIX_1426 + suffix,
         ]
     if smoke:
-        cmd += ["--smoke", "--no-mlp"]
+        cmd += ["--smoke"]
+    if smoke or no_mlp:
+        cmd += ["--no-mlp"]
     return cmd
 
 
@@ -322,6 +332,22 @@ def figures_cmd(
     return cmd
 
 
+def rooted_prefix(prefix: str, root: str | None) -> str:
+    """Replace the ``HF_PREFIX_1426`` ROOT of an extract-phase upload prefix.
+
+    Sampled-rollout amendment §4.2 item 3: ``--hf-prefix-root`` re-roots the
+    driver's TWO extract-phase upload prefixes so a follow-up round writes a
+    per-seed subtree (``<root>/raw_completions/thinking_rollouts`` /
+    ``<root>/analysis_tensors/store/percq_summaries``) instead of the primary
+    head buckets. ``None``/empty ⇒ the prefix byte-for-byte (default-
+    preserving); composes BEFORE ``stage_prefix``'s suffix + ``_smoke`` leaf.
+    """
+    if not root:
+        return prefix
+    assert prefix.startswith(HF_PREFIX_1426 + "/"), prefix
+    return root.rstrip("/") + prefix.removeprefix(HF_PREFIX_1426)
+
+
 def main() -> int:  # noqa: C901 — linear phase pipeline (gate→G→P→B→F→finalize)
     ap = argparse.ArgumentParser(description="Issue #1426: R1-distill CoT decomposition driver")
     ap.add_argument("--model", default=THINKING_MODEL)
@@ -371,6 +397,30 @@ def main() -> int:  # noqa: C901 — linear phase pipeline (gate→G→P→B→F
         "(e.g. thinking_rollouts_16k) instead of clobbering the parent head artifacts; "
         "composes BEFORE the _smoke leaf suffix",
     )
+    ap.add_argument(
+        "--gen-seed",
+        type=int,
+        default=None,
+        help="sampled-rollout amendment (plan v4 §4.2 item 2): per-request vLLM sampling seed "
+        "for the sample rung (None => GENERATION_SEED, byte-identical default); threaded "
+        "through the single _generate() seam (gate, C-remeasure, production, auto-regen) and "
+        "recorded in run_state.json + gate_report.json + the store manifest",
+    )
+    ap.add_argument(
+        "--hf-prefix-root",
+        default=None,
+        help="sampled-rollout amendment (plan v4 §4.2 item 3): replaces the HF_PREFIX_1426 "
+        "ROOT of the TWO extract-phase upload prefixes (rollouts + store) so a follow-up "
+        "round writes a per-seed subtree (e.g. issue1426_.../sampled_rollout/seed42); "
+        "None => current behavior byte-identical; guarded like --hf-stage-suffix (non-extract "
+        "phases require --no-upload)",
+    )
+    ap.add_argument(
+        "--no-mlp",
+        action="store_true",
+        help="sampled-rollout amendment (plan v4 §4.2 item 4): pass --no-mlp to the f1 fit "
+        "module (skips the in-f1 avg_q MLP validity control per the round's scope marker)",
+    )
     args = ap.parse_args()
 
     device = args.device or ("cuda" if (args.gpu and torch.cuda.is_available()) else "cpu")
@@ -391,15 +441,20 @@ def main() -> int:  # noqa: C901 — linear phase pipeline (gate→G→P→B→F
             "--synthetic-completions (CPU smoke): the forced Phase P re-generates rows and "
             "would otherwise fail at lazy engine init after setup work already ran."
         )
-    if args.hf_stage_suffix and not args.no_upload and set(args.phases) - {"extract"}:
-        # --hf-stage-suffix threads ONLY the two extract-phase upload sites; the
-        # fit/figure phases' Hub prefixes would still resolve to the parent
-        # buckets and clobber them. The cap16k launcher runs fits with
-        # --no-upload and uploads their outputs scoped afterwards.
+    if (
+        (args.hf_stage_suffix or args.hf_prefix_root)
+        and not args.no_upload
+        and set(args.phases) - {"extract"}
+    ):
+        # --hf-stage-suffix / --hf-prefix-root thread ONLY the two extract-phase
+        # upload sites; the fit/figure phases' Hub prefixes would still resolve
+        # to the parent buckets and clobber them. The cap16k/sampled launchers
+        # run fits with --no-upload and upload their outputs scoped afterwards.
         raise SystemExit(
-            "[issue1426] --hf-stage-suffix is threaded only through the extract-phase upload "
-            "prefixes; run non-extract phases with --no-upload (fit outputs are uploaded "
-            "scoped by the cap16k launcher) so parent Hub artifacts are never clobbered."
+            "[issue1426] --hf-stage-suffix/--hf-prefix-root are threaded only through the "
+            "extract-phase upload prefixes; run non-extract phases with --no-upload (fit "
+            "outputs are uploaded scoped by the cap16k/sampled launchers) so parent Hub "
+            "artifacts are never clobbered."
         )
     out_dir = Path(args.out_dir)
     eval_out = Path(args.eval_out)
@@ -479,6 +534,7 @@ def main() -> int:  # noqa: C901 — linear phase pipeline (gate→G→P→B→F
             n_boot=args.n_boot,
             upload=upload,
             smoke=args.smoke,
+            no_mlp=args.no_mlp,
         )
         _run_subprocess(cmd, "f1", extra_env=fit_env)
 
@@ -565,6 +621,11 @@ def _phase_extract(  # noqa: C901 — linear gate→G→P→B→U pipeline; see 
 ) -> int:
     """Gate → generate → parse → capture → upload (one linear pass)."""
     llm = None
+    # The REALIZED generation seed (sampled-rollout amendment §4.2 item 2):
+    # None ⇒ GENERATION_SEED, so the default run records the same seed the
+    # sample rung would use. Recorded in gate_report/run_state/rollout blobs/
+    # manifest; governs decoding on the sample rung only.
+    gen_seed = GENERATION_SEED if args.gen_seed is None else int(args.gen_seed)
     prompt_ids_cache: dict[tuple[str, int], list[int]] = {}
 
     def _prompt(c: str, qi: int) -> dict:
@@ -577,7 +638,11 @@ def _phase_extract(  # noqa: C901 — linear gate→G→P→B→U pipeline; see 
     def _generate(prompts: list[dict], rung: str, max_new: int) -> list[tuple[str, str]]:
         nonlocal llm
         if args.synthetic_completions:
-            return synthetic_completions_1426(prompts, len(probes))
+            # salt only under an EXPLICIT --gen-seed: the parent smoke's fixture
+            # text stays byte-identical; the sampled smoke's per-seed corpora
+            # differ so check_seed_differentiation is exercisable on CPU.
+            salt = "" if args.gen_seed is None else f"gs{gen_seed}"
+            return synthetic_completions_1426(prompts, len(probes), salt=salt)
         if llm is None:
             phase("vllm_init")
             llm = build_vllm_engine(
@@ -586,7 +651,9 @@ def _phase_extract(  # noqa: C901 — linear gate→G→P→B→U pipeline; see 
                 args.max_model_len,
                 revision=None if Path(args.model).is_dir() else args.revision,
             )
-        sp = sampling_params_for_rung(rung, max_new, stop_token_ids=STOP_TOKEN_IDS)
+        sp = sampling_params_for_rung(
+            rung, max_new, stop_token_ids=STOP_TOKEN_IDS, seed=args.gen_seed
+        )
         return vllm_generate_chunked(llm, prompts, sp)
 
     # ── Phase 0: gate walk (plan §7 v3) ───────────────────────────────────────
@@ -604,6 +671,12 @@ def _phase_extract(  # noqa: C901 — linear gate→G→P→B→U pipeline; see 
         and prior_state.get("gate_terminal_pass")
         and prior_state.get("model") == args.model
         and prior_state.get("probe_pool_hash") == pool_hash
+        # None-tolerant seed pin (sampled amendment): pre-amendment run_states
+        # lack the key (greedy primary/cap16k resumes stay byte-identical); a
+        # RECORDED seed differing from this invocation's falls through to a
+        # fresh gate. The load-bearing cross-seed guard stays dispatch-side
+        # (validate_sampled_store_manifest — critic addition A).
+        and prior_state.get("gen_seed") in (None, gen_seed)
     ):
         chosen_rung = prior_state["chosen_rung"]
         production_cap = int(prior_state["production_max_new_tokens"])
@@ -677,6 +750,7 @@ def _phase_extract(  # noqa: C901 — linear gate→G→P→B→U pipeline; see 
             "gate_contexts": gate_ctx,
             "gate_slice": slice_info,
             "production_max_new_tokens": production_cap,
+            "gen_seed": gen_seed,
             "startup_asserts": asserts_report,
         },
         out_dir / "gate_report.json",
@@ -707,6 +781,7 @@ def _phase_extract(  # noqa: C901 — linear gate→G→P→B→U pipeline; see 
             "production_max_new_tokens": production_cap,
             "model": args.model,
             "probe_pool_hash": pool_hash,
+            "gen_seed": gen_seed,
             "gate_reports": gate_reports,
         },
         run_state_path,
@@ -723,6 +798,7 @@ def _phase_extract(  # noqa: C901 — linear gate→G→P→B→U pipeline; see 
             "model": args.model,
             "model_revision": args.revision,
             "max_new_tokens": production_cap,
+            "gen_seed": gen_seed,
             "probe_pool_hash": pool_hash,
             "completions": [
                 {"probe": q, "completion": t, "finish_reason": fr}
@@ -743,6 +819,12 @@ def _phase_extract(  # noqa: C901 — linear gate→G→P→B→U pipeline; see 
         ):
             if blob.get(key) != want:
                 return key
+        # None-tolerant seed pin (sampled amendment): pre-amendment blobs lack
+        # the key — the greedy primary + cap16k --skip-gen resumes stay
+        # byte-identical; a RECORDED seed differing from this invocation's
+        # marks the blob stale (regenerated, never silently reused).
+        if blob.get("gen_seed") is not None and blob.get("gen_seed") != gen_seed:
+            return "gen_seed"
         if [r.get("probe") for r in blob.get("completions", [])] != probes:
             return "probe_list"
         return ""
@@ -903,7 +985,11 @@ def _phase_extract(  # noqa: C901 — linear gate→G→P→B→U pipeline; see 
         phase("upload_rollouts")
         hf_paths["raw_completions"] = upload_folder_scoped_verify(
             rollouts_dir,
-            stage_prefix(RAW_COMPLETIONS_PREFIX_1426, args.hf_stage_suffix, args.smoke),
+            stage_prefix(
+                rooted_prefix(RAW_COMPLETIONS_PREFIX_1426, args.hf_prefix_root),
+                args.hf_stage_suffix,
+                args.smoke,
+            ),
             [f"{c}.json" for c in ctx_ids],
             f"issue #1426: R1-distill thinking rollouts ({len(ctx_ids)} ctx, rung={chosen_rung})",
             allow_patterns=["*.json"],
@@ -1153,6 +1239,7 @@ def _phase_extract(  # noqa: C901 — linear gate→G→P→B→U pipeline; see 
             torch.load(store_dir / f"{ctx_ids[0]}.pt", weights_only=False)["per_q"].shape[-1]
         ),
         "rung": chosen_rung,
+        "gen_seed": gen_seed,
         "regen_16k": regen_16k,
         "truncation_frac_pre_regen": trunc_frac,
         "gate_report_path": "gate_report.json",
@@ -1192,7 +1279,11 @@ def _phase_extract(  # noqa: C901 — linear gate→G→P→B→U pipeline; see 
         phase("upload_store")
         hf_paths["store"] = upload_folder_scoped_verify(
             out_dir / "store",
-            stage_prefix(STORE_PREFIX_1426, args.hf_stage_suffix, args.smoke),
+            stage_prefix(
+                rooted_prefix(STORE_PREFIX_1426, args.hf_prefix_root),
+                args.hf_stage_suffix,
+                args.smoke,
+            ),
             [
                 "manifest.json",
                 "row_bookkeeping.json",

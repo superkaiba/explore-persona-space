@@ -21,6 +21,7 @@ before any GPU spend.
 
 from __future__ import annotations
 
+import json
 import sys
 from pathlib import Path
 
@@ -30,6 +31,8 @@ if str(_SCRIPTS_DIR) not in sys.path:
     sys.path.insert(0, str(_SCRIPTS_DIR))
 
 from issue928_common import (  # noqa: E402
+    MAX_NEW_TOKENS,
+    MAX_NEW_TOKENS_RETRY,
     MLC_SUMMARY_NAMES,
     PARSE_RATE_FLOOR,
     PMA_SUMMARY_NAMES,
@@ -83,6 +86,13 @@ DECOMP_INDIV_HF_PATH_1426 = f"{DECOMP_TENSORS_PREFIX_1426}/decomp_indiv.pt"
 # #1426 artifacts live at the data repo's moving tip (the extractor/f1 upload
 # to main in-run; there is no #928-style frozen pin for a mid-run fallback).
 STORE_REVISION_1426 = "main"
+# Sampled-rollout robustness round (amendment plan v4 §4.2 item 3): the
+# per-seed subtree root. The round's driver invocations pass
+# ``--hf-prefix-root {SAMPLED_ROLLOUT_PREFIX_1426}/seed<s>`` so every
+# extract-phase upload lands under ``…/sampled_rollout/seed<s>/…`` — disjoint
+# from every primary leaf prefix above (pinned by
+# tests/test_issue1426_hf_prefixes.py).
+SAMPLED_ROLLOUT_PREFIX_1426 = f"{HF_PREFIX_1426}/sampled_rollout"
 
 # ── the unified 18-vector registry (plan §4.5) ────────────────────────────────
 #
@@ -150,6 +160,130 @@ def stage_prefix(prefix: str, stage_suffix: str, smoke: bool) -> str:
     parent head artifacts in EITHER mode).
     """
     return prefix + stage_suffix + ("_smoke" if smoke else "")
+
+
+# ── sampled-rollout robustness round (amendment plan v4 §4.2 items 5/B) ───────
+
+
+def validate_sampled_store_manifest(
+    man: dict,
+    *,
+    expected_seed: int,
+    expected_rung: str = "sample",
+    allowed_caps: tuple[int, ...] = (MAX_NEW_TOKENS, MAX_NEW_TOKENS_RETRY),
+) -> dict:
+    """Resume-provenance validation for a sampled-rollout store manifest.
+
+    The round's invocation B (``--phases f1 --skip-gen``) trusts the store on
+    disk; the driver's ``--skip-gen`` resume path validates rollout blobs but
+    the store-level provenance guard is THIS check (critic addition A): FAIL
+    LOUD — before any fit — when the manifest's ``rung`` != ``expected_rung``
+    OR ``gen_seed`` != ``expected_seed`` OR either field is MISSING, and when
+    the realized production cap is outside the two legitimate values
+    (``MAX_NEW_TOKENS`` / ``MAX_NEW_TOKENS_RETRY`` — the gate's C-remeasure may
+    raise it, plan §7). The manifest's code SHA is RETURNED for the caller's
+    report-not-stop diagnostic (a crash-fix commit between invocation A and a
+    resumed invocation B must not force an 11.3 GB store regen).
+    """
+    problems: list[str] = []
+    rung = man.get("rung")
+    if rung != expected_rung:
+        problems.append(f"rung={rung!r} (want {expected_rung!r})")
+    gen_seed = man.get("gen_seed")
+    if gen_seed != expected_seed:
+        problems.append(f"gen_seed={gen_seed!r} (want {expected_seed})")
+    cap = man.get("max_new_tokens")
+    if cap not in allowed_caps:
+        problems.append(f"max_new_tokens={cap!r} (want one of {allowed_caps})")
+    if problems:
+        raise SystemExit(
+            "[issue1426-sampled] store-manifest provenance validation FAILED — refusing to fit "
+            f"on this store: {'; '.join(problems)} (amendment plan v4 §4.2 item 5)"
+        )
+    return {
+        "rung": rung,
+        "gen_seed": gen_seed,
+        "production_max_new_tokens": cap,
+        "code_sha": (man.get("reproducibility") or {}).get("git_commit"),
+    }
+
+
+def gate_slice_status(out_dir: Path) -> str:
+    """Gate-slice readiness of one seed's out-dir: ``ready``/``gate_failed``/``pending``.
+
+    ``ready`` ⇔ ``gate_report.json`` parses with a truthy ``chosen_rung`` AND
+    every gate context's rollout blob parses from
+    ``raw_completions/thinking_rollouts/`` (the driver persists them right
+    after the gate — ``dump_json`` is atomic, so a transient parse failure just
+    reads as ``pending`` for one poll tick). ``gate_failed`` ⇔ the report
+    parses with ``chosen_rung: null`` (Gate-1 terminal A/B failure, plan §7).
+    """
+    report_path = out_dir / "gate_report.json"
+    try:
+        report = json.loads(report_path.read_text())
+    except (OSError, json.JSONDecodeError):
+        return "pending"
+    if not report.get("chosen_rung"):
+        return "gate_failed"
+    rollouts = out_dir / "raw_completions" / "thinking_rollouts"
+    for c in report.get("gate_contexts", []):
+        try:
+            json.loads((rollouts / f"{c}.json").read_text())
+        except (OSError, json.JSONDecodeError):
+            return "pending"
+    return "ready"
+
+
+def gate_slice_rows(out_dir: Path) -> dict[tuple[str, str], str]:
+    """The seed's Gate-1 slice as ``{(context, probe): completion}`` rows."""
+    report = json.loads((out_dir / "gate_report.json").read_text())
+    rollouts = out_dir / "raw_completions" / "thinking_rollouts"
+    rows: dict[tuple[str, str], str] = {}
+    for c in report["gate_contexts"]:
+        blob = json.loads((rollouts / f"{c}.json").read_text())
+        for r in blob["completions"]:
+            rows[(c, r["probe"])] = r["completion"]
+    return rows
+
+
+def check_seed_differentiation(
+    out_a: Path, out_b: Path, *, identical_frac_max: float = 0.9
+) -> dict:
+    """Early per-request-seed differentiation check (critic addition B).
+
+    Compares the two seeds' Gate-1 slice rollouts row-by-row on the shared
+    ``(context, probe)`` keys and FAILS LOUD (``SystemExit``) when the
+    identical-completion fraction reaches ``identical_frac_max`` — byte-
+    identical slices (the vLLM per-request-seed failure mode, assumption 6)
+    score 1.0. The threshold sits below 1.0 so a partial rewrite of one
+    seed's gate files (a 16,384 regen of a few cap-hit rows) cannot mask a
+    seeding failure; two INDEPENDENT temperature-0.6 corpora share ~0% of
+    completions, so ≥0.9 has no false-positive mass. Zero shared rows is
+    itself a FAIL (nothing was compared — never a silent pass).
+    """
+    rows_a, rows_b = gate_slice_rows(out_a), gate_slice_rows(out_b)
+    shared = sorted(set(rows_a) & set(rows_b))
+    if not shared:
+        raise SystemExit(
+            f"[issue1426-sampled] seed-differentiation check has ZERO shared gate rows "
+            f"between {out_a} and {out_b} — refusing (nothing was compared)"
+        )
+    n_identical = sum(1 for k in shared if rows_a[k] == rows_b[k])
+    frac = n_identical / len(shared)
+    report = {
+        "n_shared_rows": len(shared),
+        "n_identical": n_identical,
+        "identical_fraction": frac,
+        "identical_frac_max": identical_frac_max,
+    }
+    if frac >= identical_frac_max:
+        raise SystemExit(
+            "[issue1426-sampled] seed-differentiation check FAILED: the two seeds' Gate-1 "
+            f"slices are (near-)identical ({n_identical}/{len(shared)} rows, "
+            f"fraction {frac:.3f} >= {identical_frac_max}) — vLLM per-request seeding is not "
+            "differentiating the corpora (assumption 6); killing before full spend"
+        )
+    return report
 
 
 def regen_accounting(
@@ -326,7 +460,9 @@ def prompt_parts_spec_1426(probe: str):
 # ── synthetic completions (CPU smoke ONLY — the vLLM-boundary fake) ───────────
 
 
-def synthetic_completions_1426(prompts: list, n_probes: int) -> list[tuple[str, str]]:
+def synthetic_completions_1426(
+    prompts: list, n_probes: int, salt: str = ""
+) -> list[tuple[str, str]]:
     """Deterministic prefill-shaped synthetic completions for the CPU smoke.
 
     The #1426 sibling of ``issue928_extract_thinking_store.synthetic_completions``:
@@ -339,11 +475,17 @@ def synthetic_completions_1426(prompts: list, n_probes: int) -> list[tuple[str, 
     path); one degenerate-repetition row per ~48 (offender-rate conjunct); one
     SHORT-answer row per ~6 (MLC-floor fail — kept with NaN MLC slots,
     exercising the ``mlc_row_mask`` path). NEVER used in production.
+
+    ``salt`` (DEFAULT-PRESERVING: ``""`` ⇒ the prior text byte-for-byte) is
+    mixed into every row so the sampled-rollout smoke's two per-seed fixture
+    corpora DIFFER — the deterministic synthetic boundary would otherwise
+    trip ``check_seed_differentiation`` in the smoke by construction (the
+    driver passes ``salt=f"gs{seed}"`` only when ``--gen-seed`` is explicit).
     """
     out: list[tuple[str, str]] = []
     for i in range(len(prompts)):
-        body = " ".join(f"r{i}s{j} reasoning step token" for j in range(12))
-        long_ans = " ".join(f"a{i}w{j} answer word here" for j in range(14))
+        body = " ".join(f"r{i}s{j}{salt} reasoning step token" for j in range(12))
+        long_ans = " ".join(f"a{i}w{j}{salt} answer word here" for j in range(14))
         if i % 24 == 7:
             out.append((f"{body} and it keeps going", "length"))  # truncated_no_close
         elif i % 12 == 3:

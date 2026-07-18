@@ -200,7 +200,11 @@ def assert_assistant_header(
 
 
 def sampling_params_for_rung(
-    rung: str, max_new_tokens: int, stop_token_ids: list[int] | None = None
+    rung: str,
+    max_new_tokens: int,
+    stop_token_ids: list[int] | None = None,
+    *,
+    seed: int | None = None,
 ):
     """Per-rung vLLM SamplingParams (plan §4.3 ladder recipe).
 
@@ -208,6 +212,11 @@ def sampling_params_for_rung(
     ``[IM_END_TOKEN_ID, ENDOFTEXT_TOKEN_ID]`` byte-for-byte) overrides the stop
     set for a model whose eos differs (R1-distill: ``[151643]`` — in THAT
     tokenizer 151645 is ``<｜Assistant｜>``, NOT an end token).
+
+    ``seed`` (DEFAULT-PRESERVING, #1426 sampled-rollout amendment §4.2 item 1:
+    ``None`` ⇒ ``GENERATION_SEED`` byte-for-byte) overrides the per-request
+    vLLM sampling seed on the ``sample`` rung ONLY — the greedy/prefill rungs
+    decode deterministically and take no seed.
     """
     from vllm import SamplingParams
 
@@ -216,7 +225,7 @@ def sampling_params_for_rung(
         return SamplingParams(
             temperature=0.6,
             top_p=0.95,
-            seed=GENERATION_SEED,
+            seed=GENERATION_SEED if seed is None else seed,
             max_tokens=max_new_tokens,
             stop_token_ids=stop_ids,
         )
