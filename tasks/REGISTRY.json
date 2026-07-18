@@ -4047,8 +4047,8 @@
     "1519": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1519",
-      "status": "planning",
+      "path": "tasks/approved/1519",
+      "status": "approved",
       "title": "workflow-fix: pod-safety alert for unlaunched orphan pods on active tasks"
     },
     "152": {
