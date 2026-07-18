@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1513,
+  "highest_id": 1514,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -4007,6 +4007,13 @@
       "path": "tasks/planning/1513",
       "status": "planning",
       "title": "workflow-fix: gotcha \u2014 incremental cache reap only after the LAST hf_dl consumer"
+    },
+    "1514": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1514",
+      "status": "proposed",
+      "title": "Fix heavy-import-before-dotenv in issue1092 figure script (fleet-wide Step 9c thread-caps red)"
     },
     "152": {
       "has_clean_result": false,
