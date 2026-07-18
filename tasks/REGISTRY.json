@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1523,
+  "highest_id": 1524,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -4085,6 +4085,13 @@
       "path": "tasks/planning/1523",
       "status": "planning",
       "title": "workflow-fix: check-20 WARN-acknowledgment must name each fired class"
+    },
+    "1524": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1524",
+      "status": "proposed",
+      "title": "workflow-fix: verify_uploads merged card \u2014 prose pointer must not shadow a valid adapter_paths list"
     },
     "153": {
       "has_clean_result": false,
