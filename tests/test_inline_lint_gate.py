@@ -67,6 +67,7 @@ def _run_gate(
     lint_out: str,
     map_out: str = "",
     pytest_out: str = "",
+    lint_cmd_extra: str = "",
 ) -> subprocess.CompletedProcess[str]:
     payload_file = tmp_path / "payload.txt"
     payload_file.write_text("\n".join(payload) + "\n", encoding="utf-8")
@@ -81,6 +82,10 @@ def _run_gate(
         leg_file = tmp_path / f"{name}.txt"
         leg_file.write_text(text, encoding="utf-8")
         env[name] = f"cat {leg_file}"
+    if lint_cmd_extra:
+        # Runs with shell=True + cwd=repo inside _run_leg — lets a test mutate
+        # the repo MID-GATE (after read_payload snapshots) for TOCTOU cases.
+        env["EPM_INLINE_GATE_LINT_CMD"] += f" && {lint_cmd_extra}"
     env["EPM_INLINE_CERT_PATH"] = str(tmp_path / "cert.txt")
     return subprocess.run(
         [
@@ -220,6 +225,28 @@ def test_new_file_with_hit_blocks_but_clean_sibling_certifies(tmp_path: Path) ->
     assert len(lines) == 1 and lines[0].endswith(" scripts/mod.py"), lines
 
 
+def test_mixed_block_and_toctou_prints_toctou_note_before_block(tmp_path: Path) -> None:
+    """Round-2 Minor: in a mixed BLOCK+TOCTOU outcome the mid-gate-edit note
+    must print BEFORE the exit-1 BLOCK return — previously the operator only
+    learned of the uncertified TOCTOU path on the next hook block."""
+    repo = _make_repo(tmp_path)
+    (repo / "scripts" / "new.py").write_text("print(1)\n", encoding="utf-8")  # not on origin/main
+    r = _run_gate(
+        repo,
+        ["scripts/mod.py", "scripts/new.py"],
+        tmp_path,
+        lint_out="workflow_lint: scripts/new.py:1: bad hit\n" + LINT_FAIL_TERMINAL,
+        # Edit the PASSING payload path mid-gate (after read_payload snapshots).
+        lint_cmd_extra="printf 'edited\\n' >> scripts/mod.py",
+    )
+    assert r.returncode == 1, (r.returncode, r.stdout)
+    toctou_at = r.stdout.find("INCONCLUSIVE (edited during gate — re-run: scripts/mod.py)")
+    block_at = r.stdout.find("inline_lint_gate: BLOCK (scripts/new.py)")
+    assert toctou_at != -1 and block_at != -1, r.stdout
+    assert toctou_at < block_at, r.stdout
+    assert _cert_lines(tmp_path) == []  # blocked + toctou: nothing certified
+
+
 def _repo_with_added_lines(tmp_path: Path) -> Path:
     """scripts/mod.py on origin/main is 5 lines; worktree appends lines 6-7."""
     repo = _make_repo(tmp_path)
@@ -275,6 +302,23 @@ def test_modified_file_hit_without_lineno_blocks_conservatively(tmp_path: Path) 
 def test_parse_map_pairs_is_pair_generic() -> None:
     out = "a.py\tb.py\nx\ty\tEXTRA-COL\nmalformed-no-tab\n\n"
     assert ilg.parse_map_pairs(out) == [("a.py", "b.py"), ("x", "y")]
+
+
+def test_mapped_pytest_timeout_floor_matches_selector(tmp_path: Path) -> None:
+    """Round-2 Minor: the mapped-pytest timeout is floored at the CANONICAL
+    select_step9c_tests.TIMEOUT_FLOOR_S — 1 mapped non-slow test must get the
+    900 s floor, not the bare 150 s formula value."""
+    spec = importlib.util.spec_from_file_location(
+        "select_step9c_tests_floor_pin", _REPO_ROOT / "scripts" / "select_step9c_tests.py"
+    )
+    assert spec and spec.loader
+    sel = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(sel)
+    assert ilg.PYTEST_TIMEOUT_FLOOR_S == sel.TIMEOUT_FLOOR_S  # parity pin
+    # 1 non-slow file: formula 120+30=150 < floor -> floored.
+    assert ilg.mapped_pytest_timeout(["tests/test_x.py"]) == sel.TIMEOUT_FLOOR_S
+    # Slow-surcharge case stays above the floor (120 + 30 + 900).
+    assert ilg.mapped_pytest_timeout(["tests/test_workflow_lint.py"]) == 1050
 
 
 def test_added_line_ranges_parses_u0_hunks(tmp_path: Path) -> None:

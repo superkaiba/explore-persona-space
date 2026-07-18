@@ -62,10 +62,14 @@ CERT_TRIM_LINES = 500
 LINT_TIMEOUT_S = 900
 FETCH_TIMEOUT_S = 60
 # Mapped-pytest timeout parity with select_step9c_tests.recommended_timeout_s
-# (#1046): base + per-file + the test_workflow_lint.py slow surcharge.
+# (#1046): base + per-file + the test_workflow_lint.py slow surcharge, floored
+# at the canonical select_step9c_tests.TIMEOUT_FLOOR_S (round-2 Minor: the
+# floor-less formula gave 1 mapped non-slow test 150 s vs the canonical 900 s
+# — a false-INCONCLUSIVE generator on slow machines, never a false pass).
 PYTEST_BASE_S = 120
 PYTEST_PER_FILE_S = 30
 PYTEST_WORKFLOW_LINT_SURCHARGE_S = 900
+PYTEST_TIMEOUT_FLOOR_S = 900  # select_step9c_tests.TIMEOUT_FLOOR_S parity (pinned by test)
 
 # Healthy lint terminal line; `workflow_lint: schema FAIL` does NOT match.
 LINT_TERMINAL_RE = re.compile(r"^workflow_lint: (PASS|FAIL \()", re.MULTILINE)
@@ -228,6 +232,16 @@ def parse_map_pairs(map_output: str) -> list[tuple[str, str]]:
     return pairs
 
 
+def mapped_pytest_timeout(tests: list[str]) -> int:
+    """select_step9c_tests.recommended_timeout_s parity (#1046): base +
+    per-file + the test_workflow_lint.py slow surcharge, floored at the
+    canonical 900 s TIMEOUT_FLOOR_S (round-2 Minor)."""
+    timeout = PYTEST_BASE_S + PYTEST_PER_FILE_S * len(tests)
+    if "tests/test_workflow_lint.py" in tests:
+        timeout += PYTEST_WORKFLOW_LINT_SURCHARGE_S
+    return max(timeout, PYTEST_TIMEOUT_FLOOR_S)
+
+
 def run_legs(payload_file: Path, issue: int, repo: Path, out_dir: Path) -> LegResults:
     """Run lint + mapped-pytest legs; persist audit outputs (parity with the
     pre-#1500 fenced recipe's /tmp/issue-<N>-inline-{lint,map}.txt files)."""
@@ -256,14 +270,11 @@ def run_legs(payload_file: Path, issue: int, repo: Path, out_dir: Path) -> LegRe
     pytest_output = ""
     tests = sorted({t for t, _ in pairs})
     if tests:
-        timeout = PYTEST_BASE_S + PYTEST_PER_FILE_S * len(tests)
-        if "tests/test_workflow_lint.py" in tests:
-            timeout += PYTEST_WORKFLOW_LINT_SURCHARGE_S
         pytest_output, _ = _run_leg(
             ["uv", "run", "pytest", *tests, "-q", "-rA"],
             "EPM_INLINE_GATE_PYTEST_CMD",
             repo,
-            timeout,
+            mapped_pytest_timeout(tests),
         )
 
     (out_dir / f"issue-{issue}-inline-lint.txt").write_text(
@@ -442,14 +453,19 @@ def main(argv: list[str] | None = None) -> int:
     for p in certified:
         print(f"inline_lint_gate: certified {p} ({snapshots[p][:12]}) -> {cert_path}")
 
-    if verdict.blocked:
-        print(f"inline_lint_gate: BLOCK ({' '.join(sorted(verdict.blocked))})")
-        return 1
+    # TOCTOU note prints BEFORE any BLOCK return (round-2 Minor): in a mixed
+    # BLOCK+TOCTOU outcome the operator must learn of the mid-gate edit NOW,
+    # not on the next hook block. Exit precedence unchanged: BLOCK (1) beats
+    # TOCTOU-only INCONCLUSIVE (3).
     if toctou:
         print(
             "inline_lint_gate: INCONCLUSIVE "
             f"(edited during gate — re-run: {' '.join(sorted(toctou))})"
         )
+    if verdict.blocked:
+        print(f"inline_lint_gate: BLOCK ({' '.join(sorted(verdict.blocked))})")
+        return 1
+    if toctou:
         return 3
     print("inline_lint_gate: PASS")
     return 0

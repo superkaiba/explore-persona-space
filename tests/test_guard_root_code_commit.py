@@ -23,7 +23,11 @@ NOTE (self-reference): the command strings below MENTION root commits as test
 DATA — they are never executed; the guard only reads them from stdin JSON.
 
 Case ids A1-A12 / B1-B14 / W1 are the plan #1500 §6.1 acceptance matrix
-(``tasks/*/1500/plans/plan.md``).
+(``tasks/*/1500/plans/plan.md``). A13 / B15 / B15b were added in round 2
+(code-review Major: the per-clause comment-tail strip ran BEFORE the
+token/flag scan, so a ``#`` inside the commit message — the repo-standard
+``-m "task #N: ..."`` — silently discarded same-clause pathspecs and a
+post-message ``-a``; concern ``hash-in-message-defeats-clause-token-scan``).
 """
 
 from __future__ import annotations
@@ -235,6 +239,14 @@ def test_a12_compound_add_commit_with_fresh_worktree_cert(tmp_path: Path, cert: 
     _assert_allowed(_run("git add scripts/issue9_new.py && git commit -m x", repo, cert))
 
 
+def test_a13_artifact_only_commit_with_hash_bearing_message_allowed(
+    art_repo: Path, cert: Path
+) -> None:
+    """Round-2 Major companion: the raw-clause token scan must not false-block
+    an artifact-only commit on message tokens (``#9:`` etc.)."""
+    _assert_allowed(_run('git commit -m "task #9: docs"', art_repo, cert))
+
+
 # ---------------------------------------------------------------------------
 # B — must BLOCK (exit 2)
 # ---------------------------------------------------------------------------
@@ -319,6 +331,32 @@ def test_b12_compound_add_commit_untracked_no_cert_blocks(code_repo: Path, cert:
 )
 def test_b13_blanket_add_chained_fails_closed(stage_form: str, art_repo: Path, cert: Path) -> None:
     _assert_blocked(_run(f"{stage_form} && git commit -m x", art_repo, cert))
+
+
+def _tracked_modified_unstaged_repo(tmp_path: Path) -> Path:
+    """Gated file committed, then edited in the worktree; nothing staged —
+    only the commit-clause pathspec / post-message ``-a`` carries the payload."""
+    repo = _init_repo(tmp_path, "hashmsg")
+    _stage(repo, GATED, "print(1)\n")
+    _git(repo, "-c", "user.email=t@t", "-c", "user.name=t", "commit", "-q", "-m", "init")
+    _write(repo, GATED, "print(2)\n")  # modified, UNSTAGED
+    return repo
+
+
+def test_b15_pathspec_after_hash_bearing_message_blocks(tmp_path: Path, cert: Path) -> None:
+    """Round-2 Major regression: the whitespace-anchored ``#`` inside the
+    quoted message must NOT discard the pathspec token after it."""
+    repo = _tracked_modified_unstaged_repo(tmp_path)
+    _assert_blocked(_run(f'git commit -m "task #9: fix" {GATED}', repo, cert))
+
+
+def test_b15b_post_message_dash_a_after_hash_bearing_message_blocks(
+    tmp_path: Path, cert: Path
+) -> None:
+    """Same bug class, flag-scan half: a ``-a`` AFTER a ``#``-bearing message
+    must still be seen by the flag scan."""
+    repo = _tracked_modified_unstaged_repo(tmp_path)
+    _assert_blocked(_run('git commit -m "task #9: fix" -a', repo, cert))
 
 
 def test_b14_gated_path_with_space_blocks(tmp_path: Path, cert: Path) -> None:

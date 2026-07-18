@@ -64,6 +64,13 @@
 #   `-m "fix scripts/foo.py now"`) is collected as a text pathspec and can
 #   false-block toward the override — over-collection is deliberate (it can
 #   never silently allow); quote-adjacent tokens are excluded.
+# - A genuine trailing shell comment inside a commit/add clause (e.g.
+#   `git commit -m x tasks/t.md # split scripts/foo.py later`) is
+#   token-scanned too: the comment-tail strip is decision-only (lead/verb/
+#   latch/waiver), while the token/flag scan reads the RAW clause so a `#`
+#   inside a quoted message cannot discard the pathspecs/flags after it
+#   (round-2 Major). A gated path or `-a`-shaped token in a real comment
+#   over-collects toward BLOCK — never a silent allow.
 #
 # Escape hatch: EPM_ALLOW_ROOT_CODE_COMMIT=1 — session env or inline prefix.
 # Legitimate uses (record the reason in an epm:progress note): a MODIFIED
@@ -110,7 +117,7 @@ classify_cmd() {
   local -a recs
   mapfile -t recs <<< "$records"
 
-  local n=${#recs[@]} i rec sep clause lead tgt ctgt latched=0 verb
+  local n=${#recs[@]} i rec sep clause raw_clause lead tgt ctgt latched=0 verb
   for ((i = 0; i < n; i++)); do
     rec=${recs[i]}
     case "$rec" in
@@ -120,7 +127,15 @@ classify_cmd() {
     esac
     [ "$sep" = AND ] || latched=0
 
-    # Whitespace-anchored comment-tail strip, then skip empty clauses.
+    # Whitespace-anchored comment-tail strip — for the LEAD/verb/latch/waiver
+    # decisions + the empty-clause skip ONLY. The token/flag scan below runs
+    # over the UN-stripped clause (raw_clause): a whitespace-anchored `#`
+    # inside a quoted commit MESSAGE (the repo-standard `-m "task #N: ..."`)
+    # is NOT a shell comment, and stripping it before the scan discarded every
+    # same-clause token after it — commit pathspecs and a post-message `-a`
+    # included — a silent false-ALLOW (round-2 Major; concern
+    # hash-in-message-defeats-clause-token-scan).
+    raw_clause=$clause
     clause=$(printf '%s' "$clause" | sed -E 's/(^|[[:space:]])#.*$//')
     lead=$(printf '%s' "$clause" | sed -E 's/^[[:space:]{(]+//')
     [ -n "$lead" ] || continue
@@ -172,10 +187,13 @@ classify_cmd() {
     # Token scan (noglob: a literal `scripts/*.py` token must never expand
     # against the hook's cwd). Quote-adjacent tokens are excluded by the
     # character-class match (plan §4.2: ^(scripts|src|tests)/[^[:space:]"']+).
+    # Scans the RAW clause (see the comment-strip note above): a genuine
+    # trailing `# comment` naming a gated path or a `-a`-shaped token
+    # over-collects toward BLOCK — the designed-safe direction.
     local tok
     set -f
     # shellcheck disable=SC2086
-    for tok in $clause; do
+    for tok in $raw_clause; do
       case "$verb:$tok" in
         add:-A | add:--all | add:.) add_all_chained=1 ;;
         commit:--all) has_dash_a=1 ;;
@@ -233,6 +251,17 @@ run_self_test() {
   printf 'print(2)\n' > "$RCODE/scripts/issue9_new.py" # untracked (compound-add case)
   STAGED_SHA=$(git -C "$RCODE" ls-files -s -- scripts/issue9_fig.py | awk '{print $2}')
 
+  # Repo with a tracked gated file MODIFIED in the worktree, nothing staged:
+  # only the commit-clause pathspec / post-message -a can carry the payload
+  # (B15/B15b — the #-in-message token-loss regression, round-2 Major).
+  local RMOD
+  RMOD="$TMP/mod" && git init -q "$RMOD"
+  mkdir -p "$RMOD/scripts"
+  printf 'print(1)\n' > "$RMOD/scripts/issue9_fig.py"
+  git -C "$RMOD" add scripts/issue9_fig.py
+  git -C "$RMOD" -c user.email=t@t -c user.name=t commit -q -m init
+  printf 'print(2)\n' > "$RMOD/scripts/issue9_fig.py" # modified, UNSTAGED
+
   CERTF="$TMP/cert.txt"
 
   run_case() {
@@ -283,6 +312,12 @@ EOF
     'git add scripts/issue9_new.py && git commit -m x' "$RCODE"
   run_case "B13 blanket add -A chained: fail CLOSED" 2 \
     'git add -A && git commit -m x' "$RART"
+  run_case "B15 pathspec after #-bearing message" 2 \
+    'git commit -m "task #9: fix" scripts/issue9_fig.py' "$RMOD"
+  run_case "B15b post-message -a after #-bearing message" 2 \
+    'git commit -m "task #9: fix" -a' "$RMOD"
+  run_case "A13 artifact-only commit with #-bearing message" 0 \
+    'git commit -m "task #9: docs"' "$RART"
 
   # A6 fresh matching cert allows; B3 wrong-sha cert blocks.
   printf 'v1 %s %s scripts/issue9_fig.py\n' "$(date +%s)" "$STAGED_SHA" > "$CERTF"
