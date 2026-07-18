@@ -3807,8 +3807,8 @@
       "goal": "Characterize how the pre-generation context\u2192answer-state transport map h (c(x)\u2192v(x); ridge primary, MLP secondary) changes when contexts are augmented with facts, instructions, personas, and formatting constraints \u2014 distinguishing movement within a fixed map from changes of the map (5\u00d75 transport-transfer matrix), testing additivity/effective-rank of augmentation deltas, testing whether relevance gating is captured linearly \u2014 and whether delivering the same information in-weights via dose-matched context distillation produces the same per-example answer-state shift, preserves relevance gating, and leaves the pre-finetuning map valid on the finetuned model.",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/approved/1489",
-      "status": "approved",
+      "path": "tasks/running/1489",
+      "status": "running",
       "title": "Context-augmentation effects on the context\u2192answer-state transport map + dose-matched context-distillation in-weights comparison"
     },
     "149": {
