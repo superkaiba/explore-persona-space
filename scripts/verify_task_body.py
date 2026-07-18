@@ -10746,6 +10746,45 @@ def _count_claim_failures(
     return warns, n_checked, satisfied
 
 
+def _count_claims_for_one_figure(
+    repo: Path,
+    m: re.Match,
+    rlines: list[str],
+    img_idx: int,
+    json_cache: dict,
+) -> tuple[list[str], int, str]:
+    """Process ONE same-repo figure for check 45 (the check-33
+    ``_prose_numerics_for_one_figure`` decomposition shape). Returns
+    ``(warn_msgs, n_checked, status)`` with ``status`` in
+    {"scanned", "opted-out", "skipped"}; mutates ``json_cache`` (per-URL
+    parsed-sidecar cache) in place. Claims are parsed BEFORE any git read
+    (no claims → zero subprocess cost on the common case); the opt-out is
+    honored from the beat-1 window when one exists, else the caption
+    itself (``_beat1_prose_window`` already includes the caption).
+    """
+    caption = _figure_caption_after(rlines, img_idx)
+    if not caption:
+        return [], 0, "skipped"
+    claims = _caption_count_claims(caption)
+    if not claims:
+        return [], 0, "skipped"
+    optout_window = _beat1_prose_window(rlines, img_idx) or caption
+    if _COUNT_CLAIM_OPTOUT in optout_window:
+        return [], 0, "opted-out"
+    url = m.group(0)
+    if url not in json_cache:
+        json_cache[url] = _read_figure_meta_json(repo, m.group("sha"), m.group("path"))
+    meta = json_cache[url]
+    if meta is None:
+        return [], 0, "skipped"  # no sidecar at that sha — check-24 convention
+    pools = _sidecar_value_pools(meta)
+    if pools is None:
+        return [], 0, "skipped"  # truncated / aggregates-only — a recount is unsound
+    basename = m.group("path").rsplit("/", 1)[-1]
+    warns, n_checked, _satisfied = _count_claim_failures(claims, pools, basename)
+    return warns, n_checked, ("scanned" if n_checked else "skipped")
+
+
 def check_figure_caption_count_claims_vs_sidecar(body: str) -> CheckResult:
     """Check 45 (WARN, generation-agnostic): a figure caption's quantified
     count claim over plotted points must recompute against the figure's
@@ -10821,27 +10860,12 @@ def check_figure_caption_count_claims_vs_sidecar(body: str) -> CheckResult:
         m = _RAW_GITHUB_FIGURE_RE.match(url)
         if m is None or (m.group("owner").lower(), m.group("repo").lower()) != _THIS_REPO_SLUG:
             continue  # only same-repo sha-pinned figures resolve from git
-        caption = _figure_caption_after(rlines, img_idx)
-        if not caption:
-            continue
-        claims = _caption_count_claims(caption)
-        if not claims:
-            continue  # common case — zero subprocess cost
-        optout_window = _beat1_prose_window(rlines, img_idx) or caption
-        if _COUNT_CLAIM_OPTOUT in optout_window:
+        fig_warns, n_checked, status = _count_claims_for_one_figure(
+            repo, m, rlines, img_idx, json_cache
+        )
+        if status == "opted-out":
             opted_out += 1
-            continue
-        if url not in json_cache:
-            json_cache[url] = _read_figure_meta_json(repo, m.group("sha"), m.group("path"))
-        meta = json_cache[url]
-        if meta is None:
-            continue  # no sidecar at that sha — check-24 convention
-        pools = _sidecar_value_pools(meta)
-        if pools is None:
-            continue  # truncated / aggregates-only — a recount there is unsound
-        basename = m.group("path").rsplit("/", 1)[-1]
-        fig_warns, n_checked, _satisfied = _count_claim_failures(claims, pools, basename)
-        if n_checked:
+        elif status == "scanned":
             scanned += 1
             n_checked_total += n_checked
         warns.extend(fig_warns)
