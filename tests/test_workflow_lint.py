@@ -75,6 +75,7 @@ from workflow_lint import (  # noqa: E402
     check_rule_frontmatter_parses,
     check_script_references,
     check_section_reference_pointer_coverage,
+    check_sh_function_rc_capture,
     check_skill_bang_backtick,
     check_skill_references,
     check_smoke_architecture_review_lens,
@@ -2740,6 +2741,282 @@ def test_push_failure_swallow_bundled_in_no_flags_source_pin():
     src = (_REPO_ROOT / "scripts" / "workflow_lint.py").read_text()
     assert "args.check_push_failure_swallow or no_flags" in src
     assert "or args.check_push_failure_swallow" in src
+
+
+# ---------------------------------------------------------------------------
+# Unit tests for ``check_sh_function_rc_capture`` (incident class #1426,
+# task #1516: `run_seed "$s" || rc=$?` on a same-file function under
+# `set -euo pipefail` — bash disables errexit inside the function BODY in
+# an `||` context, so a Gate-1 terminal failure + a manifest SystemExit
+# collapsed to rc=0 and the `[phase=done]` success sentinel fired). Each
+# fixture writes a tiny ``*.sh`` under ``tmp_path`` and calls
+# ``check_sh_function_rc_capture(scripts_dir=tmp_path)``. Single
+# external-command captures (the entire live `|| rc=$?` population) never
+# match — the invocation regex requires a collected same-file function
+# name at command position.
+# ---------------------------------------------------------------------------
+
+
+def test_check_sh_function_rc_capture_fail_rc_capture(tmp_path):
+    """FAIL — the #1426 reconstruction: `run_seed "$s" || rc=$?` on a
+    same-file function under `set -euo pipefail` collapses mid-function
+    failures to the last command's rc."""
+    (tmp_path / "x.sh").write_text(
+        "#!/usr/bin/env bash\n"
+        "set -euo pipefail\n"
+        "run_seed() {\n"
+        "  echo running\n"
+        "}\n"
+        'run_seed "$s" || rc=$?\n'
+    )
+    errors = check_sh_function_rc_capture(scripts_dir=tmp_path)
+    assert len(errors) == 1, f"expected exactly one error, got: {errors}"
+    assert "x.sh:6" in errors[0]
+    assert "run_seed" in errors[0]
+    assert "#1426" in errors[0]
+    assert "RC_CAPTURE_EXEMPT" in errors[0]
+
+
+def test_check_sh_function_rc_capture_fail_or_true(tmp_path):
+    """FAIL — the `|| true` swallow variant on a same-file function under
+    `set -e` is the same body-errexit-suppression footgun."""
+    (tmp_path / "x.sh").write_text("set -e\nmyfn() { echo hi; }\nmyfn || true\n")
+    errors = check_sh_function_rc_capture(scripts_dir=tmp_path)
+    assert len(errors) == 1, f"expected exactly one error, got: {errors}"
+    assert "x.sh:3" in errors[0]
+    assert "myfn" in errors[0]
+
+
+def test_check_sh_function_rc_capture_fail_shebang_e(tmp_path):
+    """FAIL — no `set` line at all; the `#!/bin/bash -e` shebang sets the
+    initial errexit state ON."""
+    (tmp_path / "x.sh").write_text("#!/bin/bash -e\nmyfn() { echo hi; }\nmyfn || true\n")
+    errors = check_sh_function_rc_capture(scripts_dir=tmp_path)
+    assert len(errors) == 1, f"expected exactly one error, got: {errors}"
+    assert "x.sh:3" in errors[0]
+
+
+def test_check_sh_function_rc_capture_fail_backslash_continued(tmp_path):
+    """FAIL — `myfn "$a" \\` newline `  || rc=$?` is ONE logical line
+    (backslash continuations merged); the error points at the FIRST
+    physical line."""
+    (tmp_path / "x.sh").write_text('set -e\nmyfn() { echo hi; }\nmyfn "$a" \\\n  || rc=$?\n')
+    errors = check_sh_function_rc_capture(scripts_dir=tmp_path)
+    assert len(errors) == 1, f"expected exactly one error, got: {errors}"
+    assert "x.sh:3" in errors[0]
+
+
+def test_check_sh_function_rc_capture_fail_mid_chain(tmp_path):
+    """FAIL — `cd "$d" && myfn || rc=$?`: the function sits at command
+    position after `&&`, and the `||` context still disables body errexit
+    (equal-precedence left-associative chaining)."""
+    (tmp_path / "x.sh").write_text('set -e\nmyfn() { echo hi; }\ncd "$d" && myfn || rc=$?\n')
+    errors = check_sh_function_rc_capture(scripts_dir=tmp_path)
+    assert len(errors) == 1, f"expected exactly one error, got: {errors}"
+    assert "x.sh:3" in errors[0]
+
+
+def test_check_sh_function_rc_capture_pass_external_command(tmp_path):
+    """PASS — the entire live `|| rc=$?` population: single EXTERNAL
+    commands captured in a file that also defines a function. A child
+    process keeps its own set -e, so these are safe by construction."""
+    (tmp_path / "x.sh").write_text(
+        "set -e\n"
+        "helper() { echo hi; }\n"
+        "uv run python scripts/x.py || rc=$?\n"
+        "git push origin main || rc=$?\n"
+    )
+    assert check_sh_function_rc_capture(scripts_dir=tmp_path) == []
+
+
+def test_check_sh_function_rc_capture_pass_no_set_e(tmp_path):
+    """PASS — identical to the #1426 reconstruction minus the
+    `set -euo pipefail` line: without errexit the function body never had
+    implicit protection, so the capture is the author's explicit error
+    handling, not the footgun."""
+    (tmp_path / "x.sh").write_text(
+        '#!/usr/bin/env bash\nrun_seed() {\n  echo running\n}\nrun_seed "$s" || rc=$?\n'
+    )
+    assert check_sh_function_rc_capture(scripts_dir=tmp_path) == []
+
+
+def test_check_sh_function_rc_capture_pass_set_plus_e_region_then_reflag(tmp_path):
+    """Line-order state tracking: a hit inside a `set +e` region does not
+    flag; the SAME shape after `set -e` re-enables does — exactly one
+    error, at the second site."""
+    (tmp_path / "x.sh").write_text(
+        "#!/usr/bin/env bash\n"
+        "set -e\n"
+        "myfn() { echo hi; }\n"
+        "set +e\n"
+        "myfn || rc=$?\n"
+        "set -e\n"
+        "myfn || rc=$?\n"
+    )
+    errors = check_sh_function_rc_capture(scripts_dir=tmp_path)
+    assert len(errors) == 1, f"expected exactly one error, got: {errors}"
+    assert "x.sh:7" in errors[0]
+
+
+def test_check_sh_function_rc_capture_pass_bare_invocation(tmp_path):
+    """PASS — a bare invocation and a `;`-separated `rc=$?` (no `||`)
+    leave errexit live inside the body; neither is the footgun."""
+    (tmp_path / "x.sh").write_text('set -e\nmyfn() { echo hi; }\nmyfn "$s"\nmyfn; rc=$?\n')
+    assert check_sh_function_rc_capture(scripts_dir=tmp_path) == []
+
+
+def test_check_sh_function_rc_capture_pass_def_line_one_liner(tmp_path):
+    """PASS — the issue1345 shape: a one-liner DEFINITION whose body
+    legitimately ends `|| true` is not an invocation."""
+    (tmp_path / "x.sh").write_text(
+        'set -e\nno_r4() { [[ -f "$F" ]] && echo "--x" || true; }\necho done\n'
+    )
+    assert check_sh_function_rc_capture(scripts_dir=tmp_path) == []
+
+
+def test_check_sh_function_rc_capture_pass_quoted_string(tmp_path):
+    """PASS — the bootstrap_pod shape: `ssh_cmd 'cd /x && do_thing ||
+    true'` where ssh_cmd IS a same-file function; the `|| true` is
+    remote-side TEXT inside the quoted argument (quote masking kills the
+    guaranteed false positive)."""
+    (tmp_path / "x.sh").write_text(
+        "set -e\nssh_cmd() { ssh pod \"$1\"; }\nssh_cmd 'cd /x && do_thing || true'\n"
+    )
+    assert check_sh_function_rc_capture(scripts_dir=tmp_path) == []
+
+
+def test_check_sh_function_rc_capture_pass_semicolon_segment(tmp_path):
+    """PASS — `myfn; cleanup_external || true`: the suppressor sits in a
+    LATER `;`-segment and belongs to that segment's own (external)
+    command, not to the function invocation."""
+    (tmp_path / "x.sh").write_text("set -e\nmyfn() { echo hi; }\nmyfn; cleanup_external || true\n")
+    assert check_sh_function_rc_capture(scripts_dir=tmp_path) == []
+
+
+def test_check_sh_function_rc_capture_pass_waiver(tmp_path):
+    """PASS — a reason-bearing `# RC_CAPTURE_EXEMPT:` waiver on the same
+    line (and the preceding-line placement for continued commands); a
+    short reason (<10 chars) does NOT waive."""
+    (tmp_path / "ok.sh").write_text(
+        "#!/usr/bin/env bash\n"
+        "set -e\n"
+        "myfn() { echo hi; }\n"
+        "myfn || true  # RC_CAPTURE_EXEMPT: body handles its own errors\n"
+        "# RC_CAPTURE_EXEMPT: preceding-line waiver for the continued form\n"
+        "myfn \\\n"
+        "  || rc=$?\n"
+    )
+    assert check_sh_function_rc_capture(scripts_dir=tmp_path) == []
+    (tmp_path / "short.sh").write_text(
+        "set -e\nmyfn() { echo hi; }\nmyfn || true  # RC_CAPTURE_EXEMPT: x\n"
+    )
+    errors = check_sh_function_rc_capture(scripts_dir=tmp_path)
+    assert len(errors) == 1, f"expected only the short-reason file flagged, got: {errors}"
+    assert "short.sh" in errors[0]
+
+
+def test_check_sh_function_rc_capture_pass_comment_and_heredoc(tmp_path):
+    """PASS — a commented-out invocation is documentation, and a heredoc
+    BODY carrying `myfn || true` (remote-command text) is consumed and
+    never scanned as shell."""
+    (tmp_path / "x.sh").write_text(
+        "set -e\nmyfn() { echo hi; }\n# myfn || true\ncat <<'EOF'\nmyfn || true\nEOF\necho done\n"
+    )
+    assert check_sh_function_rc_capture(scripts_dir=tmp_path) == []
+
+
+def test_check_sh_function_rc_capture_pass_comment_e_token_on_set_line(tmp_path):
+    """PASS — a `set` line whose only `-e`-bearing token lives in a trailing
+    COMMENT (`set -uo pipefail  # NOT set -e -- ...`) must not flip errexit
+    ON: the transition scanner comment-strips first (live shapes:
+    i632_dispatch_with_log_capture.sh:12, issue683_dispatch.sh:30)."""
+    (tmp_path / "x.sh").write_text(
+        "#!/bin/bash\n"
+        "set -uo pipefail  # NOT set -e -- workers own their rc handling\n"
+        "myfn() { echo hi; }\n"
+        'myfn "$a" || rc=$?\n'
+    )
+    assert check_sh_function_rc_capture(scripts_dir=tmp_path) == []
+
+
+def test_check_sh_function_rc_capture_pass_no_files(tmp_path):
+    """PASS — an empty scripts dir (no `*.sh`) yields no errors."""
+    assert check_sh_function_rc_capture(scripts_dir=tmp_path) == []
+
+
+def test_check_sh_function_rc_capture_repo_tree_is_clean():
+    """The committed scripts/**/*.sh tree must carry no same-file
+    function `|| rc=$?`/`|| true` captures under set -e — the 0-findings
+    state the no-flags bundling was preconditioned on (#1516 plan A3:
+    prototype run over all 149 rglob files -> 0 findings)."""
+    errors = check_sh_function_rc_capture()
+    assert errors == [], (
+        "scripts/**/*.sh has same-file function rc-captures (#1426 class):\n" + "\n".join(errors)
+    )
+
+
+def test_workflow_lint_check_sh_function_rc_capture_cli_exits_zero():
+    """The dedicated flag must exist and pass on the committed tree."""
+    result = _run("--check-sh-function-rc-capture")
+    assert result.returncode == 0, (
+        f"workflow_lint --check-sh-function-rc-capture failed:\n"
+        f"stdout: {result.stdout}\nstderr: {result.stderr}"
+    )
+
+
+def test_sh_function_rc_capture_bundled_in_no_flags_source_pin():
+    """`check_sh_function_rc_capture` is wired into the no-flags default
+    run — pinned STRUCTURALLY (the source carries the `or no_flags`
+    dispatch, the no_flags-tuple membership, AND the callee itself: a
+    copy-paste dispatch of the wrong check under the correct conditional
+    would otherwise pass the sibling pins green)."""
+    src = (_REPO_ROOT / "scripts" / "workflow_lint.py").read_text()
+    assert "args.check_sh_function_rc_capture or no_flags" in src
+    assert "or args.check_sh_function_rc_capture" in src
+    assert "errors.extend(check_sh_function_rc_capture())" in src
+
+
+def test_check_sh_function_rc_capture_fail_spelling_variants(tmp_path):
+    """FAIL — capture-SPELLING variants: `|| status=$?` (any simple var
+    name, not the literal `rc`) and `|| :` (the colon builtin, an exact
+    `|| true` synonym) each flag — exactly two errors."""
+    (tmp_path / "x.sh").write_text("set -e\nmyfn() { echo hi; }\nmyfn || status=$?\nmyfn || :\n")
+    errors = check_sh_function_rc_capture(scripts_dir=tmp_path)
+    assert len(errors) == 2, f"expected exactly two errors, got: {errors}"
+
+
+def test_check_sh_function_rc_capture_pass_brace_group_handler(tmp_path):
+    """PASS — brace-group handlers (`|| { echo FATAL; exit 1; }`,
+    `|| { rc=$?; }`) are documented out-of-scope residuals: pins that the
+    suppress regex does NOT over-reach into brace groups (they are a
+    pervasive live fail-loud idiom; flagging them would break the
+    0-findings bundling precondition)."""
+    (tmp_path / "x.sh").write_text(
+        "set -e\nmyfn() { echo hi; }\nmyfn || { echo FATAL; exit 1; }\nmyfn || { rc=$?; }\n"
+    )
+    assert check_sh_function_rc_capture(scripts_dir=tmp_path) == []
+
+
+def test_check_sh_function_rc_capture_pass_trailing_comment(tmp_path):
+    """PASS — suppressor text ONLY in a trailing comment (`# TODO: add
+    || rc=$? capture`) never flags: pins the quote-aware
+    `_strip_sh_trailing_comment` path."""
+    (tmp_path / "x.sh").write_text(
+        'set -e\nmyfn() { echo hi; }\nmyfn "$s"  # TODO: add || rc=$? capture\n'
+    )
+    assert check_sh_function_rc_capture(scripts_dir=tmp_path) == []
+
+
+def test_check_sh_function_rc_capture_fail_set_o_errexit(tmp_path):
+    """FAIL then unflag — the long-form `set -o errexit` / `set +o
+    errexit` arm (0 live uses; pinned so the completeness arm cannot ship
+    untested): exactly one error, at the first site."""
+    (tmp_path / "x.sh").write_text(
+        "myfn() { echo hi; }\nset -o errexit\nmyfn || true\nset +o errexit\nmyfn || true\n"
+    )
+    errors = check_sh_function_rc_capture(scripts_dir=tmp_path)
+    assert len(errors) == 1, f"expected exactly one error, got: {errors}"
+    assert "x.sh:3" in errors[0]
 
 
 # ---------------------------------------------------------------------------
