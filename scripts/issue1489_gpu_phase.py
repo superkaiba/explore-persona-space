@@ -541,6 +541,186 @@ def _capture_worker(gpu_id: int, task_q, result_q, args_dict: dict) -> None:
             result_q.put(("error", cell, idx, f"{type(exc).__name__}: {exc}"))
 
 
+def score_margin_items(
+    *,
+    model,
+    tokenizer,
+    items: list[dict],
+    device: str,
+    batch_size: int = CAPTURE_BATCH_SIZE,
+    log_label: str = "margin",
+) -> list[dict]:
+    """Batched teacher-forced LN-logP of the fixed +/- answers (plan §6 dual-DV (b)).
+
+    ``items``: ``[{prefix_text, prompt, consistent, inconsistent, base_row_id,
+    side}]`` — the fixed answer pools from ``issue1489_margin_pools.py``, held
+    fixed across every condition. Per item and side, the score is the MEAN
+    per-token log P of the fixed answer's tokens under the model
+    (length-normalized; the #722-validated margin form), computed with the
+    parent's BPE-seam-safe token-id concatenation
+    (``_capture_row_ids_and_positions``) so the prompt segment is bit-identical
+    to what generation consumed.
+
+    Memory: reuses the capture path's ``logits_to_keep=1`` forward and maps
+    ONLY the gathered answer-span hidden states through the lm_head —
+    ``hidden_states[-1]`` is POST-final-norm (the lm_head input), so
+    ``lm_head(hidden_states[-1])`` reproduces the model's logits exactly;
+    exactness is pinned by ``tests/test_issue1489_margin.py``'s full-logits
+    equivalence test on a tiny CPU model.
+    """
+    import torch
+
+    if tokenizer.pad_token_id is None:
+        tokenizer.pad_token = tokenizer.eos_token
+    if getattr(tokenizer, "padding_side", "right") != "right":
+        raise ValueError(
+            "margin scoring indexes UNPADDED positions and requires RIGHT padding; "
+            f"tokenizer.padding_side={tokenizer.padding_side!r}"
+        )
+    boundary = parent._boundary_suffix("instruct")
+    lm_head = model.get_output_embeddings()
+    if lm_head is None:
+        raise ValueError("model has no output embeddings (lm_head); cannot score margins")
+    seqs: list[tuple[int, str]] = [
+        (i, side) for i in range(len(items)) for side in ("consistent", "inconsistent")
+    ]
+    lnlogp: dict[tuple[int, str], float] = {}
+    n_tokens: dict[tuple[int, str], int] = {}
+    for bstart in range(0, len(seqs), max(1, batch_size)):
+        batch = seqs[bstart : bstart + max(1, batch_size)]
+        if bstart % (max(1, batch_size) * 10) == 0:
+            logger.info(
+                "[%s] scoring seqs %d:%d/%d", log_label, bstart, bstart + len(batch), len(seqs)
+            )
+        batch_ids: list[list[int]] = []
+        spans: list[tuple[int, int]] = []
+        for i, side in batch:
+            it = items[i]
+            if not str(it[side]).strip():
+                raise ValueError(
+                    f"empty fixed answer for {it.get('base_row_id', i)}:{side} — "
+                    "margin pools must carry non-empty drafted answers"
+                )
+            row_ids, pos = parent._capture_row_ids_and_positions(
+                tokenizer,
+                it["prefix_text"],
+                it["prompt"],
+                it[side],
+                boundary,
+                row_label=f"{it.get('base_row_id', i)}:{side}",
+            )
+            a0, a1 = pos["answer_start"], pos["answer_end"]
+            if a1 <= a0:
+                raise ValueError(f"empty answer span for {it.get('base_row_id', i)}:{side}")
+            batch_ids.append(row_ids)
+            spans.append((a0, a1))
+        inputs = tokenizer.pad({"input_ids": batch_ids}, return_tensors="pt", padding=True)
+        input_ids = inputs["input_ids"].to(device)
+        attention_mask = inputs["attention_mask"].to(device)
+        with torch.no_grad():
+            outputs = parent._call_model_with_hidden_states(model, input_ids, attention_mask)
+            h_last = outputs.hidden_states[-1]
+            for bi, ((i, side), (a0, a1)) in enumerate(zip(batch, spans, strict=True)):
+                pred_pos = torch.arange(a0 - 1, a1 - 1, device=h_last.device)
+                logits = lm_head(h_last[bi, pred_pos, :]).float()
+                logp = torch.log_softmax(logits, dim=-1)
+                tok = torch.tensor(batch_ids[bi][a0:a1], device=h_last.device, dtype=torch.long)
+                token_lp = logp[torch.arange(len(tok), device=h_last.device), tok]
+                lnlogp[(i, side)] = float(token_lp.mean().item())
+                n_tokens[(i, side)] = int(len(tok))
+        del outputs, h_last, input_ids, attention_mask
+    out: list[dict] = []
+    for i, it in enumerate(items):
+        c = lnlogp[(i, "consistent")]
+        n = lnlogp[(i, "inconsistent")]
+        out.append(
+            {
+                "base_row_id": it.get("base_row_id"),
+                "side": it.get("side"),
+                "lnlogp_consistent": c,
+                "lnlogp_inconsistent": n,
+                "margin": c - n,
+                "n_tokens_consistent": n_tokens[(i, "consistent")],
+                "n_tokens_inconsistent": n_tokens[(i, "inconsistent")],
+            }
+        )
+    return out
+
+
+def margin_scores_path(out_dir: Path, slug: str, arm: str) -> Path:
+    return out_dir / "margin" / f"margin_scores_{slug}_{arm}.json"
+
+
+def _margin_done(path: Path, expected_rows: int) -> bool:
+    if not path.exists():
+        return False
+    try:
+        payload = json.loads(path.read_text())
+    except (json.JSONDecodeError, OSError):
+        return False
+    return len(payload.get("rows", [])) == expected_rows
+
+
+def _margin_worker(gpu_id: int, task_q, result_q, args_dict: dict) -> None:
+    """Margin worker: fresh model (+ optional PEFT adapter) per (slug, arm) task."""
+    os.environ["CUDA_VISIBLE_DEVICES"] = str(gpu_id)
+    args = argparse.Namespace(**args_dict)
+    logging.basicConfig(level=logging.INFO, format=f"%(asctime)s margin-w{gpu_id} %(message)s")
+    import gc
+
+    import torch
+    from transformers import AutoModelForCausalLM
+
+    out_dir = Path(args.out)
+    tokenizer = parent._get_tokenizer()
+    verify_default_system_prompt(tokenizer)
+    while True:
+        task = task_q.get()
+        if task is None:
+            break
+        slug, arm, adapter_path, items = task
+        try:
+            path = margin_scores_path(out_dir, slug, arm)
+            if _margin_done(path, len(items)):
+                result_q.put(("ok", f"{slug}/{arm}", 0, "resume-skip"))
+                continue
+            model = AutoModelForCausalLM.from_pretrained(
+                MODEL_ID, torch_dtype=torch.bfloat16, device_map={"": 0}
+            )
+            if adapter_path:
+                from peft import PeftModel
+
+                model = PeftModel.from_pretrained(model, adapter_path)
+            model.eval()
+            rows = score_margin_items(
+                model=model,
+                tokenizer=tokenizer,
+                items=items,
+                device="cuda:0",
+                log_label=f"margin/{slug}/{arm}",
+            )
+            payload = {
+                "issue": 1489,
+                "slug": slug,
+                "arm": arm,
+                "adapter": adapter_path,
+                "model_id": MODEL_ID,
+                "git_sha": args_dict.get("git_sha", "unknown"),
+                "timestamp_utc": datetime.datetime.utcnow().isoformat(),
+                "n_rows": len(rows),
+                "rows": rows,
+            }
+            path.parent.mkdir(parents=True, exist_ok=True)
+            _atomic_write(path, json.dumps(payload, ensure_ascii=False, indent=2))
+            del model
+            gc.collect()
+            torch.cuda.empty_cache()
+            result_q.put(("ok", f"{slug}/{arm}", 0, f"{len(rows)} rows"))
+        except Exception as exc:  # noqa: BLE001 — reported to parent, which fails loud
+            logging.exception("margin worker failed on %s/%s", slug, arm)
+            result_q.put(("error", f"{slug}/{arm}", 0, f"{type(exc).__name__}: {exc}"))
+
+
 def _ft_worker(gpu_id: int, task_q, result_q, args_dict: dict) -> None:
     """Provision-B worker: generation + capture under ONE selected checkpoint.
 
@@ -958,6 +1138,101 @@ def phase_capture(args: argparse.Namespace, manifest: list[dict]) -> None:
     _write_sentinel(args, "capture_done", f"{len(tasks)} shards")
 
 
+def _margin_items(
+    manifest: list[dict], pools: dict, slug: str, arm: str, prefix_store, query_store
+) -> list[dict]:
+    """Scoring items for one (slug, arm): rendered prompt + the fixed +/- answers."""
+    cell = f"cell_{slug}" if arm == "ctx" else "cell_plain"
+    by_base = {r["base_row_id"]: r for r in rows_for_cell(manifest, cell)}
+    items: list[dict] = []
+    for row in pools["slugs"][slug]["rows"]:
+        m = by_base.get(row["base_row_id"])
+        if m is None:
+            raise KeyError(f"margin: {row['base_row_id']} has no {cell} manifest row")
+        prefix_text, prompt = render_row_1489(m, prefix_store, query_store)
+        items.append(
+            {
+                "base_row_id": row["base_row_id"],
+                "side": row["side"],
+                "prefix_text": prefix_text,
+                "prompt": prompt,
+                "consistent": row["consistent"],
+                "inconsistent": row["inconsistent"],
+            }
+        )
+    return items
+
+
+def phase_margin(args: argparse.Namespace, manifest: list[dict]) -> None:
+    """Teacher-forced fixed +/- completion-margin scoring (plan §6 dual-DV (b)).
+
+    Arms per invocation: WITHOUT --selection, plain + ctx under the base model
+    (provision A); WITH --selection, the selected FT checkpoints only
+    (provision B / the smoke ft leg) — so a provision-B rerun never re-scores
+    (and re-uploads over) provision A's base-model files. The fixed answer
+    pools come from ``issue1489_margin_pools.py`` output in the conditions dir
+    — drafted once, held fixed across all conditions; the judge filter +
+    aggregation run off-pod (``issue1489_judge.py --batch margin``).
+    """
+    _headroom(Path(args.out), 5.0, "margin")
+    pools_path = Path(args.conditions_dir) / "margin_pools.json"
+    if not pools_path.exists():
+        raise FileNotFoundError(
+            f"{pools_path} missing — run scripts/issue1489_margin_pools.py after P0"
+        )
+    pools = json.loads(pools_path.read_text())
+    prefix_store = parent.load_store(Path(args.corpus_dir), "prefix_store.jsonl")
+    query_store = parent.load_store(Path(args.corpus_dir), "query_store.jsonl")
+    cells = set(_manifest_cells(manifest))
+    slugs = [s for s in pools["slugs"] if f"cell_{s}" in cells]
+    if not slugs:
+        raise ValueError("margin: no pool slug has a cell in the conditions manifest")
+    tasks: list[tuple] = []
+    if args.selection:
+        runs = _load_selection(args)
+        for slug in slugs:
+            spec = runs.get(slug)
+            if spec is None:
+                logger.warning("[margin] no selection entry for %s; skipping ft arm", slug)
+                continue
+            adapter = spec.get("ckpt_path")
+            if not adapter:
+                ckpts = _checkpoint_dirs(Path(args.out) / "distill" / slug)
+                adapter = str(ckpts[int(spec["ckpt_index"]) - 1])
+            if not Path(adapter).exists():
+                raise FileNotFoundError(
+                    f"margin: selected checkpoint missing for {slug}: {adapter}"
+                )
+            tasks.append(
+                (
+                    slug,
+                    "ft",
+                    adapter,
+                    _margin_items(manifest, pools, slug, "ft", prefix_store, query_store),
+                )
+            )
+    else:
+        for slug in slugs:
+            for arm in ("plain", "ctx"):
+                tasks.append(
+                    (
+                        slug,
+                        arm,
+                        "",
+                        _margin_items(manifest, pools, slug, arm, prefix_store, query_store),
+                    )
+                )
+    if not tasks:
+        raise ValueError("margin: no scoring tasks resolvable")
+    logger.info(
+        "[margin] %d (slug, arm) tasks; rows/task=%s",
+        len(tasks),
+        sorted({len(t[3]) for t in tasks}),
+    )
+    _run_workers(_margin_worker, tasks, args, "margin")
+    _write_sentinel(args, "margin_done", f"{len(tasks)} slug-arm cells")
+
+
 def build_distill_jsonl(
     args: argparse.Namespace, manifest: list[dict], slug: str, dest: Path
 ) -> Path:
@@ -1215,6 +1490,24 @@ def phase_upload(args: argparse.Namespace, manifest: list[dict]) -> None:
                     f"{sorted(missing)[:5]}"
                 )
             logger.info("[upload] summaries/%s verified: %d files", cell_dir.name, len(expected))
+
+    margin_root = out_dir / "margin"
+    if margin_root.exists():
+        prefix = f"{HF_PREFIX}/margin"
+        url = hub._upload(
+            margin_root, repo_id=HF_DATA_REPO, repo_type="dataset", path_in_repo=prefix
+        )
+        if not url:
+            raise RuntimeError("margin upload returned no path")
+        expected = [
+            f"{prefix}/{p.relative_to(margin_root)}" for p in margin_root.rglob("*") if p.is_file()
+        ]
+        missing = hub.verify_repo_paths_uploaded(
+            api, HF_DATA_REPO, expected, path_in_repo=prefix, repo_type="dataset"
+        )
+        if missing:
+            raise RuntimeError(f"margin verify missing {len(missing)}: {sorted(missing)[:5]}")
+        logger.info("[upload] margin verified: %d files", len(expected))
     _write_sentinel(args, "upload_done", "raw_completions + summaries verified")
 
 
@@ -1339,6 +1632,7 @@ def build_argparser() -> argparse.ArgumentParser:
         choices=[
             "gen",
             "capture",
+            "margin",
             "distill",
             "dose_probes",
             "ft",
@@ -1387,6 +1681,8 @@ def main() -> int:
             phase_gen(args, manifest)
         elif args.phase == "capture":
             phase_capture(args, manifest)
+        elif args.phase == "margin":
+            phase_margin(args, manifest)
         elif args.phase == "distill":
             phase_distill(args, manifest)
         elif args.phase == "dose_probes":

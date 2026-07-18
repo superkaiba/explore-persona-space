@@ -113,6 +113,12 @@ run_smoke_chain() {
     --enforce-eager --no-prefix-caching
   uv run python scripts/issue1489_gpu_phase.py --phase capture --smoke \
     --conditions-dir "$SMOKE_COND" --corpus-dir "$CORPUS_DIR" --out "$SMOKE_OUT"
+  # margin DV (plan §6 dual-DV (b)): draft fixed +/- pools, then score the
+  # plain+ctx arms teacher-forced under the base model
+  uv run python scripts/issue1489_margin_pools.py --smoke \
+    --conditions-dir "$SMOKE_COND" --corpus-dir "$CORPUS_DIR"
+  uv run python scripts/issue1489_gpu_phase.py --phase margin --smoke \
+    --conditions-dir "$SMOKE_COND" --corpus-dir "$CORPUS_DIR" --out "$SMOKE_OUT"
   # one pca48 fit at 20 draws on the smoke captures (G2 demoted to informational)
   uv run python scripts/issue1489_fit_grid.py --smoke \
     --summaries-dir "$SMOKE_OUT/summaries" --out "$SMOKE_OUT/p6" \
@@ -121,6 +127,27 @@ run_smoke_chain() {
   uv run python scripts/issue1489_gpu_phase.py --phase distill --smoke \
     --conditions-dir "$SMOKE_COND" --corpus-dir "$CORPUS_DIR" --out "$SMOKE_OUT" \
     --skip-upload
+  # margin ft-arm leg: synthesize a tiny selection from the smoke distill
+  # checkpoints so the PeftModel scorer path is exercised (same entrypoint)
+  uv run python - "$SMOKE_OUT" <<'PY'
+import json
+import sys
+from pathlib import Path
+
+smoke_out = Path(sys.argv[1])
+runs = {}
+for run_dir in sorted(p for p in (smoke_out / "distill").iterdir() if p.is_dir()):
+    ckpts = sorted(run_dir.glob("checkpoint-*"), key=lambda p: int(p.name.split("-")[1]))
+    if ckpts:
+        runs[run_dir.name] = {"ckpt_index": 1, "ckpt_path": str(ckpts[0])}
+assert runs, "smoke margin selection: no distill checkpoints found"
+path = smoke_out / "margin_smoke_selection.json"
+path.write_text(json.dumps({"runs": runs}, indent=2))
+print(f"[smoke] wrote {path}: {sorted(runs)}")
+PY
+  uv run python scripts/issue1489_gpu_phase.py --phase margin --smoke \
+    --conditions-dir "$SMOKE_COND" --corpus-dir "$CORPUS_DIR" --out "$SMOKE_OUT" \
+    --selection "$SMOKE_OUT/margin_smoke_selection.json"
   # dose probes carry the SAME engine knobs as the P1 ctx arm (one engine
   # config per comparison — dose matching compares FT vs P1 ctx compliance)
   uv run python scripts/issue1489_gpu_phase.py --phase dose_probes --smoke \
@@ -129,13 +156,19 @@ run_smoke_chain() {
   uv run python scripts/issue1489_judge.py --batch manipulation \
     --conditions-dir "$SMOKE_COND" --corpus-dir "$CORPUS_DIR" --out "$SMOKE_OUT" \
     --judge-out "$SMOKE_OUT/judge" --cache-dir "$SMOKE_OUT/judge_cache"
+  # margin judge filter + aggregation (off-pod P5 path, exercised sync here)
+  uv run python scripts/issue1489_judge.py --batch margin \
+    --conditions-dir "$SMOKE_COND" --corpus-dir "$CORPUS_DIR" --out "$SMOKE_OUT" \
+    --judge-out "$SMOKE_OUT/judge" --cache-dir "$SMOKE_OUT/judge_cache"
   # schema asserts: the parent engine loads a #1489-produced shard (assumption 2)
-  uv run python - "$SMOKE_OUT" <<'PY'
+  uv run python - "$SMOKE_OUT" "$SMOKE_COND" <<'PY'
+import json
 import sys
 from pathlib import Path
 sys.path.insert(0, "scripts")
 from issue1092_fit_grid import _load_summary
 smoke_out = Path(sys.argv[1])
+smoke_cond = Path(sys.argv[2])
 summaries = smoke_out / "summaries"
 cells = sorted(p.name for p in summaries.iterdir() if p.is_dir())
 assert cells, f"no smoke capture cells under {summaries}"
@@ -148,7 +181,30 @@ probes = sorted((smoke_out / "raw_completions" / "dose_probes").glob("*/ckpt*_co
 assert len(probes) >= 2, f"smoke dose probes produced {len(probes)} files (<2)"
 judge = smoke_out / "judge" / "manipulation_check.json"
 assert judge.exists(), f"smoke judge output missing: {judge}"
-print(f"SMOKE-SCHEMA PASS: cells={cells} ckpts={len(ckpts)} probes={len(probes)}")
+# rule-21 reliability wired into every judged table (all-None below 4 contexts is
+# the machinery's designed verdict; presence of the block is what we assert)
+manip = json.loads(judge.read_text())["instances"]
+judged = [s for s, v in manip.items() if v.get("rubric") != "code"]
+assert judged and all("reliability" in manip[s] for s in judged), "manipulation reliability missing"
+# margin DV chain: pools -> per-arm teacher-forced scores -> filtered aggregate
+pools = json.loads((smoke_cond / "margin_pools.json").read_text())["slugs"]
+assert pools, "smoke margin pools empty"
+for slug, spec in pools.items():
+    n_rows = len(spec["rows"])
+    assert n_rows >= 2, (slug, n_rows)
+    for arm in ("plain", "ctx", "ft"):
+        mpath = smoke_out / "margin" / f"margin_scores_{slug}_{arm}.json"
+        assert mpath.exists(), f"margin scores missing: {mpath}"
+        mp = json.loads(mpath.read_text())
+        assert mp["n_rows"] == n_rows, (slug, arm, mp["n_rows"], n_rows)
+mdv = json.loads((smoke_out / "judge" / "margin_dv.json").read_text())["runs"]
+for slug in pools:
+    assert mdv[slug]["n_pairs_kept"] >= 1, (slug, mdv[slug]["n_pairs_kept"])
+    assert set(mdv[slug]["arms"]) == {"plain", "ctx", "ft"}, (slug, sorted(mdv[slug]["arms"]))
+print(
+    f"SMOKE-SCHEMA PASS: cells={cells} ckpts={len(ckpts)} probes={len(probes)} "
+    f"margin_slugs={sorted(pools)}"
+)
 PY
   sentinel smoke_done "tiny-real chain + schema asserts PASS"
   echo "[phase=smoke] done"
@@ -167,6 +223,8 @@ phase_a() {
   echo "[phase=p0] production conditions build"
   uv run python scripts/issue1489_build_conditions.py --stage \
     --corpus-dir "$CORPUS_DIR" --out "$COND" --upload
+  uv run python scripts/issue1489_margin_pools.py \
+    --conditions-dir "$COND" --corpus-dir "$CORPUS_DIR"
   echo "[phase=p1] generation"
   uv run python scripts/issue1489_gpu_phase.py --phase gen \
     --conditions-dir "$COND" --corpus-dir "$CORPUS_DIR" --out "$OUT" \
@@ -176,6 +234,10 @@ phase_a() {
   uv run python scripts/issue1489_gpu_phase.py --phase capture \
     --conditions-dir "$COND" --corpus-dir "$CORPUS_DIR" --out "$OUT"
   sentinel p2_done "capture complete"
+  echo "[phase=p2b] margin scoring (plain+ctx arms; plan §6 dual-DV (b))"
+  uv run python scripts/issue1489_gpu_phase.py --phase margin \
+    --conditions-dir "$COND" --corpus-dir "$CORPUS_DIR" --out "$OUT"
+  sentinel p2b_done "margin plain+ctx scoring complete"
   echo "[phase=upload-a1] store upload BEFORE the long distill phase (#825 ordering)"
   uv run python scripts/issue1489_gpu_phase.py --phase upload \
     --conditions-dir "$COND" --corpus-dir "$CORPUS_DIR" --out "$OUT"
@@ -209,10 +271,21 @@ phase_b() {
     uv run python scripts/issue1489_build_conditions.py --stage \
       --corpus-dir "$CORPUS_DIR" --out "$COND"
   fi
+  # fixed margin pools: deterministic drafting, so a fresh-instance rebuild is
+  # byte-equivalent to provision A's (template + P0 seed pinned)
+  if [ ! -f "$COND/margin_pools.json" ]; then
+    uv run python scripts/issue1489_margin_pools.py \
+      --conditions-dir "$COND" --corpus-dir "$CORPUS_DIR"
+  fi
   echo "[phase=p4b] FT eval gen + capture"
   uv run python scripts/issue1489_gpu_phase.py --phase ft \
     --conditions-dir "$COND" --corpus-dir "$CORPUS_DIR" --out "$OUT" \
     --selection "$SELECTION" --enforce-eager --no-prefix-caching
+  echo "[phase=p4c] margin scoring (ft arms at the selected checkpoints)"
+  uv run python scripts/issue1489_gpu_phase.py --phase margin \
+    --conditions-dir "$COND" --corpus-dir "$CORPUS_DIR" --out "$OUT" \
+    --selection "$SELECTION"
+  sentinel p4c_done "margin ft scoring complete"
   echo "[phase=upload-b] FT cells upload"
   uv run python scripts/issue1489_gpu_phase.py --phase upload \
     --conditions-dir "$COND" --corpus-dir "$CORPUS_DIR" --out "$OUT"

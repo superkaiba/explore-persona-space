@@ -113,6 +113,25 @@ RUBRICS: dict[str, str] = {
         "framing, and self-presentation). Score how consistently the response "
         "expresses that persona.\n" + _ANCHOR
     ),
+    # Margin-pool filter rubric (plan §6 dual-DV (b)): grades the DRAFTED fixed
+    # answers against the fact text — never any model output — so the kept-set
+    # is condition-independent (judge-filtered ONCE, held fixed). The behavior
+    # scored is AGREEMENT with the fact: the drafted answers are deliberately
+    # short preambles that restate or negate the fact WITHOUT answering the
+    # question, and the first rubric draft's judge read that non-sequitur as
+    # "ambiguous" (50) — the smoke measured 2/4 consistent answers at <=50.
+    "fact_consistency": (
+        "You are grading whether an assistant's answer AGREES with a specific "
+        "fact it was given about the user or the world (the behavior being "
+        "scored is agreement with that fact). The fact is shown before the "
+        "question. The answer is typically a short preamble that restates or "
+        "contradicts the fact WITHOUT actually answering the question — "
+        "ignore entirely whether the question is addressed, whether the "
+        "preamble is relevant to it, and all style; judge ONLY whether the "
+        "answer's content agrees with the fact. Score 100 when the answer "
+        "restates the fact or clearly builds on it, 0 when the answer states "
+        "or assumes the opposite of the fact.\n" + _ANCHOR
+    ),
 }
 
 # Judged rubric per augmentation instance (code-scored instances are absent).
@@ -233,6 +252,38 @@ def _mean(vals: list[float]) -> float | None:
     return sum(kept) / len(kept) if kept else None
 
 
+def _reliability(result, id_map: dict[str, dict], *, ctx_key: str = "arm") -> dict:
+    """Rule-21 probe-row-ALIGNED split-half reliability ceiling (llm-judging r21).
+
+    Contexts = the distinct ``id_map[ctx_key]`` values (arms / checkpoints);
+    probes = base_row_ids. ONE half-partition of probe rows applied identically
+    to every context (the #763 aligned estimator,
+    ``analysis/issue_763_reliability.py``), mean r across the aligned
+    partitions, Spearman-Brown. Judge drops enter as ``None`` placeholders so
+    the crossed design stays positionally aligned. The machinery returns
+    all-None below 4 usable contexts (its designed verdict-(c) contract) —
+    reported, never crashed — so 2-context tables (manipulation aug/plain,
+    gating ctx/ft) ship ``n_contexts_used`` with a None ceiling while the
+    10-context dose table gets a real one.
+    """
+    from explore_persona_space.analysis.issue_763_reliability import (
+        reliability_split_half_over_probes,
+    )
+
+    rows = sorted({m["base_row_id"] for m in id_map.values()})
+    ctxs = sorted({str(m[ctx_key]) for m in id_map.values()})
+    scores_by_ctx: dict[str, dict[str, float | None]] = {c: {} for c in ctxs}
+    for iid, score in result.scores.items():
+        m = id_map[iid]
+        scores_by_ctx[str(m[ctx_key])][m["base_row_id"]] = score
+    per_probe_by_ctx = {c: [scores_by_ctx[c].get(b) for b in rows] for c in ctxs}
+    out = reliability_split_half_over_probes(per_probe_by_ctx)
+    out["ctx_key"] = ctx_key
+    out["contexts"] = ctxs
+    out["n_probe_rows"] = len(rows)
+    return out
+
+
 def _designed_rows(manifest: list[dict], slug: str, split: str, cap: int) -> list[dict]:
     """Designed-subset eval rows for one instance (relevant rows for scoped augs)."""
     rows = [r for r in rows_for_cell(manifest, f"cell_{slug}") if r["split"] == split]
@@ -284,6 +335,7 @@ def batch_manipulation(args: argparse.Namespace, manifest: list[dict]) -> None:
                 if not by_arm["aug"] or not by_arm["plain"]
                 else _mean(by_arm["aug"]) - _mean(by_arm["plain"])
             ),
+            "reliability": _reliability(result, id_map),
             "raw": _result_payload(result, id_map),
         }
         # incremental per-slug write (checkpoint-per-phase: a later slug's
@@ -414,6 +466,7 @@ def batch_dosing(args: argparse.Namespace, manifest: list[dict]) -> None:
             arms[f"ckpt{k}"] = {r["base_row_id"]: by_base[r["base_row_id"]] for r in rows}
         validator = CODE_VALIDATORS.get(slug)
         arm_scores: dict[str, float | None] = {}
+        reliability: dict | None = None  # code-scored runs: deterministic, no judge noise
         if validator is not None:
             for arm, comp in arms.items():
                 passes = [validator(comp[r["base_row_id"]]) for r in rows]
@@ -438,6 +491,7 @@ def batch_dosing(args: argparse.Namespace, manifest: list[dict]) -> None:
                 if score is not None:
                     by_arm[id_map[iid]["arm"]].append(score)
             arm_scores = {arm: _mean(v) for arm, v in by_arm.items()}
+            reliability = _reliability(result, id_map)
             (Path(args.judge_out) / f"dose_{slug}_raw_meta.json").write_text(
                 json.dumps(_result_payload(result, id_map), indent=2)
             )
@@ -445,6 +499,7 @@ def batch_dosing(args: argparse.Namespace, manifest: list[dict]) -> None:
             "n_rows": len(rows),
             "scored_by": "code" if validator is not None else INSTANCE_RUBRIC[slug],
             "arm_scores": arm_scores,
+            "reliability": reliability,
         }
         _write_json(Path(args.judge_out) / "dose_compliance.json", {"runs": dose})
     _write_json(Path(args.judge_out) / "dose_compliance.json", {"runs": dose})
@@ -543,6 +598,7 @@ def batch_gating(args: argparse.Namespace, manifest: list[dict]) -> None:
             "means": {
                 f"{arm}_{'rel' if rel else 'irr'}": _mean(v) for (arm, rel), v in agg.items()
             },
+            "reliability": _reliability(result, id_map),
             "raw": _result_payload(result, id_map),
         }
         _write_json(Path(args.judge_out) / "gating_behavioral.json", {"runs": gating})
@@ -588,16 +644,139 @@ def batch_confirm(args: argparse.Namespace, manifest: list[dict]) -> None:
                     f"User question: {qtext[r['base_row_id']]}"
                 )
                 items.append((iid, q, ft[f"{r['base_row_id']}-cell_plain"]["completion"]))
-                id_map[iid] = {"base_row_id": r["base_row_id"]}
+                id_map[iid] = {"base_row_id": r["base_row_id"], "arm": "ft"}
             result = _judge(items, scorer, args=args, batch_name=f"confirm_{slug}")
             confirm[slug] = {
                 "scored_by": scorer,
                 "n_rows": len(rows),
                 "ft_score": _mean([v for v in result.scores.values() if v is not None]),
+                # single-arm table -> the aligned machinery's <4-contexts
+                # all-None verdict, reported for uniformity (rule 21).
+                "reliability": _reliability(result, id_map),
                 "raw": _result_payload(result, id_map),
             }
         _write_json(Path(args.judge_out) / "compliance_confirm.json", {"runs": confirm})
     _write_json(Path(args.judge_out) / "compliance_confirm.json", {"runs": confirm})
+
+
+def margin_pair_filter(
+    by_row: dict[str, dict[str, float | None]], row_ids: list[str]
+) -> tuple[list[str], list[dict]]:
+    """Persona-vectors-style pair filter: keep consistent > 50 AND inconsistent < 50.
+
+    A pair with a dropped (None) judge score on either side is dropped —
+    rule 9 drop-never-coerce. Returns (kept base_row_ids, dropped records).
+    """
+    kept: list[str] = []
+    dropped: list[dict] = []
+    for base_row_id in row_ids:
+        s = by_row.get(base_row_id, {})
+        c, n = s.get("consistent"), s.get("inconsistent")
+        if c is not None and n is not None and c > 50.0 and n < 50.0:
+            kept.append(base_row_id)
+        else:
+            dropped.append({"base_row_id": base_row_id, "consistent": c, "inconsistent": n})
+    return kept, dropped
+
+
+def margin_kept_floor(n_drafted: int) -> int:
+    """80%-yield floor on the judge-filtered pool (mirrors the on-policy floor).
+
+    A mass filter failure means the mechanical drafting template is defective —
+    fail loud rather than silently shrinking the fixed pool. ``floor`` (not
+    ceil) so one flaky pair at smoke N (4 drafted -> floor 3) is tolerated.
+    """
+    if n_drafted < 1:
+        raise ValueError("margin pool has no drafted pairs")
+    return max(1, int(0.8 * n_drafted))
+
+
+def batch_margin(args: argparse.Namespace, manifest: list[dict]) -> None:
+    """Margin-DV judge filter + aggregation (plan §6 dual-DV (b); #722 form).
+
+    (1) Judge-filters the drafted fixed +/- answer pools ONCE (rubric
+    ``fact_consistency``): the judge sees only the fact text + the drafted
+    answers — never any model output — so the kept-set is
+    condition-independent (held fixed across plain/ctx/ft). (2) Applies the
+    kept-set to the GPU-phase teacher-forced margin scores
+    (``<out>/margin/margin_scores_<slug>_<arm>.json``) and persists per-row +
+    per-(slug, arm, relevant/irrelevant)-cell aggregates so the analyzer can
+    compute the registered Spearman(margin, judged rate) validation. The
+    margin stays SECONDARY to the judged rate (never narrated as the
+    construct).
+    """
+    pools_path = Path(args.conditions_dir) / "margin_pools.json"
+    if not pools_path.exists():
+        raise FileNotFoundError(f"{pools_path} missing — run issue1489_margin_pools.py after P0")
+    pools = json.loads(pools_path.read_text())
+    runs: dict[str, dict] = {}
+    for slug, spec in pools["slugs"].items():
+        fact = spec["fact_text"]
+        items: list[tuple[str, str, str]] = []
+        id_map: dict[str, dict] = {}
+        for row in spec["rows"]:
+            q = f"Context material given to the assistant: {fact}\nUser question: {row['query']}"
+            for pool_side in ("consistent", "inconsistent"):
+                iid = _short_id("mpool", slug, pool_side, row["base_row_id"])
+                items.append((iid, q, row[pool_side]))
+                id_map[iid] = {"base_row_id": row["base_row_id"], "pool_side": pool_side}
+        result = _judge(items, "fact_consistency", args=args, batch_name=f"margin_{slug}")
+        by_row: dict[str, dict[str, float | None]] = collections.defaultdict(dict)
+        for iid, score in result.scores.items():
+            m = id_map[iid]
+            by_row[m["base_row_id"]][m["pool_side"]] = score
+        row_ids = [row["base_row_id"] for row in spec["rows"]]
+        kept, dropped = margin_pair_filter(by_row, row_ids)
+        floor = margin_kept_floor(len(row_ids))
+        if len(kept) < floor:
+            raise ValueError(
+                f"margin filter {slug}: kept {len(kept)}/{len(row_ids)} pairs < floor "
+                f"{floor} — the mechanical drafting template is defective; fix it"
+            )
+        kept_set = set(kept)
+        side_by_base = {row["base_row_id"]: row["side"] for row in spec["rows"]}
+        arms: dict[str, dict] = {}
+        for arm in ("plain", "ctx", "ft"):
+            path = Path(args.out) / "margin" / f"margin_scores_{slug}_{arm}.json"
+            if not path.exists():
+                logger.warning("[margin] %s/%s scores absent; skipping arm", slug, arm)
+                continue
+            payload = json.loads(path.read_text())
+            rows_kept = [r for r in payload["rows"] if r["base_row_id"] in kept_set]
+            cells = {
+                rel_label: {
+                    "n": len(sub),
+                    "margin_mean": _mean([r["margin"] for r in sub]),
+                }
+                for rel_label in ("relevant", "irrelevant")
+                for sub in [[r for r in rows_kept if side_by_base[r["base_row_id"]] == rel_label]]
+            }
+            arms[arm] = {
+                "adapter": payload.get("adapter"),
+                "scores_git_sha": payload.get("git_sha"),
+                "n_rows_scored": payload["n_rows"],
+                "n_rows_kept": len(rows_kept),
+                "margin_mean": _mean([r["margin"] for r in rows_kept]),
+                "cells": cells,
+                "per_row": rows_kept,
+            }
+        if not arms:
+            logger.warning("[margin] no scored arms on disk for %s (filter persisted)", slug)
+        runs[slug] = {
+            "n_pairs_drafted": len(row_ids),
+            "n_pairs_kept": len(kept),
+            "kept_floor": floor,
+            "dropped_pairs": dropped,
+            "filter_raw": _result_payload(result, id_map),
+            "arms": arms,
+            "note": (
+                "SECONDARY continuous companion DV (plan §6 (b)); analyzer computes "
+                "Spearman(margin, judged rate) across cells — never narrated as the construct"
+            ),
+        }
+        # incremental per-slug write (checkpoint-per-phase)
+        _write_json(Path(args.judge_out) / "margin_dv.json", {"runs": runs})
+    _write_json(Path(args.judge_out) / "margin_dv.json", {"runs": runs})
 
 
 def build_argparser() -> argparse.ArgumentParser:
@@ -605,7 +784,7 @@ def build_argparser() -> argparse.ArgumentParser:
     p.add_argument(
         "--batch",
         required=True,
-        choices=["manipulation", "relevance", "dosing", "selection", "gating", "confirm"],
+        choices=["manipulation", "relevance", "dosing", "selection", "gating", "confirm", "margin"],
     )
     p.add_argument("--conditions-dir", default="data/issue_1489/conditions")
     p.add_argument("--corpus-dir", default="data/issue_1489/hf_dl/corpus")
@@ -633,6 +812,8 @@ def main() -> int:
         batch_gating(args, manifest)
     elif args.batch == "confirm":
         batch_confirm(args, manifest)
+    elif args.batch == "margin":
+        batch_margin(args, manifest)
     return 0
 
 
