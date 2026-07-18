@@ -1,7 +1,7 @@
 ---
-title: The own-answer advantage and its unclosed layer-26 residual live almost entirely
-  outside the next-token logit-lens direction, falsifying the 1-D output-token-commitment
-  account (HIGH confidence)
+title: The own-answer advantage stays outside every probed token-identity subspace
+  up to 32 candidate directions, extending the output-token-commitment falsification
+  from one direction to low-dimensional bundles (HIGH confidence)
 kind: experiment
 tags:
 - followup-auto
