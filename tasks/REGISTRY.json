@@ -3927,8 +3927,8 @@
     "1503": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1503",
-      "status": "running",
+      "path": "tasks/reviewing/1503",
+      "status": "reviewing",
       "title": "daily-fix: windowed-read duty for first-pass guard briefs"
     },
     "1504": {
