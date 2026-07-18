@@ -10,7 +10,11 @@ revision-round side: trigger-dense-review.md § Revision-round briefs
 (findings passed by marker/file reference, never inlined), the
 adversarial-planner Phase 3 critique-by-file pointer, the Step 5d / 9a
 by-reference parentheticals, and the rung-(e) steering-vocabulary +
-revision-round clauses (#1413, #1415).
+revision-round clauses (#1413, #1415). The #1503 extension pins the
+FIRST-PASS side: trigger-dense-review.md § First-pass briefs + the
+widened fires-when (fact-checker named), the LESSONS.md index row's
+first-pass arm, and the adversarial-planner Phase 1.5 / Phase 2
+brief-composition pointers.
 """
 
 from pathlib import Path
@@ -20,6 +24,7 @@ SKILL_MD = _REPO / ".claude" / "skills" / "issue" / "SKILL.md"
 CLAUDE_MD = _REPO / "CLAUDE.md"
 RULE_MD = _REPO / ".claude" / "rules" / "trigger-dense-review.md"
 AP_SKILL_MD = _REPO / ".claude" / "skills" / "adversarial-planner" / "SKILL.md"
+LESSONS_MD = _REPO / ".claude" / "rules" / "LESSONS.md"
 
 
 def _step5a_section() -> str:
@@ -81,6 +86,37 @@ def test_step9a_analyzer_respawn_by_reference():
     start = text.index("If `final_verdict == REVISE`")
     s9a = text[start : text.index("Max 5 rounds per reviewer", start)]
     assert "critique events by reference" in s9a
+
+
+# --- #1503 first-pass extension pins ---
+
+
+def test_trigger_dense_rule_first_pass_brief_section():
+    text = RULE_MD.read_text(encoding="utf-8")
+    assert "## First-pass briefs" in text
+    assert "#1503" in text
+    # first-pass fires-when widening (fact-checker named; target-file trigger)
+    fires = text[text.index("**Fires when:**") : text.index("Recognition heuristic")]
+    assert "fact-checker" in fires
+    assert "FIRST-PASS" in fires
+    # belt-and-suspenders: the always-on LESSONS index row carries the first-pass arm
+    lessons = LESSONS_MD.read_text(encoding="utf-8")
+    row = next(
+        line for line in lessons.splitlines() if line.startswith("- trigger-dense-review.md")
+    )
+    assert "first-pass" in row
+
+
+def test_adversarial_planner_first_pass_brief_pointers():
+    text = AP_SKILL_MD.read_text(encoding="utf-8")
+    start = text.index("### Phase 1.5: Verify Assumptions")
+    mid = text.index("### Phase 2: Parallel Critique")
+    end = text.index("### Phase 3: Revise")
+    ph15 = text[start:mid]
+    ph2 = text[mid:end]
+    for span in (ph15, ph2):
+        assert "First-pass briefs" in span
+        assert "trigger-dense-review.md" in span
 
 
 def test_claude_md_rung_e_steering_vocab():
