@@ -874,7 +874,7 @@ def check_reuse_fitness(plan: str, kind: str) -> CheckResult:
         r"(?i)fitness"  # historical vocabulary (the pre-#1314 detector, unchanged)
         r"|reuse[- ]map"  # 'Reuse map' section shape (#1090 v7 D3; artifact-reuse.md's own term)
         r"|(?:self[- ])?attestation"  # 'self-attestation' / 'attestation(s)'
-        r"|\(a\)\s*[-–—…]\s*\([jkl]\)",  # (a)-(l) current; (a)-(j)/(a)-(k) grandfathered  # noqa: RUF001
+        r"|\(a\)\s*[-–—…]\s*\([jkl]\)",  # (a)-(l); older ranges grandfathered  # noqa: RUF001
         text,
     )
     letters = {m.group(1) for m in re.finditer(r"\(([a-l])\)", text)}
