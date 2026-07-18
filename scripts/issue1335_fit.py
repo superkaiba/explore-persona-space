@@ -83,7 +83,16 @@ MATCHED_ARMS = ("ctx", "prefix")
 MATCHED_SEED_BASE = 931  # matched-n subsample seeds 931+k (plan §10)
 N_MATCHED_DRAWS = 5
 SWAP_RUNGS = ("r7_endpoint", "r6_nofoil", "s1_assistant_label")
-LOSO_RUNGS = ("r7_endpoint", "r4_fictionframe")
+# plan v7 §6: the leave-one-SETTING-out read runs on ALL 6 label cells too
+# (reported next to the grouped-fold headline; membership only — run_loso
+# itself is frozen).
+LOSO_RUNGS = (
+    "r7_endpoint",
+    "r4_fictionframe",
+    "r7_op_assistant",
+    "r7_op_wren",
+    "r7_op_wren46",
+)
 
 # #1310 v3 committed per-persona anchors (plan §7 gate 1; task #1310 v3 markers).
 V3_ANCHORS_BASE = {"Wren": 0.137, "HELIOS": 0.148, "Dana": 0.147, "Vex": 0.106}
@@ -1648,6 +1657,14 @@ def build_label_comparison(args, models: list[str], smoke: bool) -> dict:
         # (e) full-slot collapse audits, all cells of this model.
         audits = {slug: collapse_audit(args, model_kind, slug) for slug in LABEL_RUNGS}
 
+        # LOSO reads (plan §6: reported next to the grouped-fold headline).
+        # run_loso writes per lane at P3; a cell whose realized settings < 2
+        # (tiny smoke slices) skips and writes nothing — reported as None.
+        loso = {}
+        for slug in LABEL_RUNGS:
+            p_loso = args.out_dir / f"loso_{slug}_{model_kind}.json"
+            loso[slug] = json.loads(p_loso.read_text())["per_unit"] if p_loso.exists() else None
+
         yield_report = {
             slug: {"n": int(realized_n[slug]), "floor": floor, "kept": realized_n[slug] >= floor}
             for slug in LABEL_RUNGS
@@ -1691,6 +1708,7 @@ def build_label_comparison(args, models: list[str], smoke: bool) -> dict:
                 f"swap_r7_op_assistant_{model_kind}.json"
             ),
             "collapse_audits": audits,
+            "loso_l19": loso,
         }
         del stores, units, combined, full
     out = {
