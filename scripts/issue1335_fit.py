@@ -112,6 +112,24 @@ FICTION_YIELD_FLOOR = 1060  # 80% of the #1310 v3 per-persona floor (Dana-base 1
 # The SIX-delta within-gap family (plan §5 delta map), oriented strong - weak.
 DELTA_FAMILY = ("label", "header", "framing", "content_depth", "foils", "label_restore")
 
+# onpolicy-assistant-label round (plan v7 §3/§4.2): the three fresh cells +
+# the two registered within-run pairs the --label-compare summary reads.
+LABEL_RUNGS = ("r7_op_assistant", "r7_op_wren", "r7_op_wren46")
+LABEL_PAIRS = (
+    # (name, strong/left slug, weak/right slug) — oriented left - right.
+    ("delta_AW", "r7_op_assistant", "r7_op_wren"),  # PRIMARY registered contrast
+    ("delta_wren_replicate", "r7_op_wren", "r7_op_wren46"),  # H0 anchor (v7 fix (b))
+)
+# Committed per-model matched n (body hyperparameter table; cross-checked at
+# runtime against the committed per-model matched JSONs — NEVER sourced from
+# matched_n_config.json, which holds a single last-writer n_min (plan v7
+# fact-check corrective, assumption 17).
+COMMITTED_PLACEMENT_N = {"base": 1397, "instruct": 1739}
+# Committed base endpoint cells feeding the empirical H0 pair-noise band
+# (v7 Statistics-critic fix (a)): 4 personas x 3 seeds, relative to
+# --committed-eval-root.
+H0_SEED_DIRS = (("seed42", "."), ("seed43", "seed43-gap-rungs"), ("seed44", "seed44-base-rungs"))
+
 
 def parse_args() -> argparse.Namespace:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
@@ -153,6 +171,22 @@ def parse_args() -> argparse.Namespace:
         help="OPTIONAL second seed-compare reference (a ladder_summary.json OR a "
         "prior round's seed_comparison.json — seed44-base-rungs passes the "
         "committed seed-43 seed_comparison); adds reference_2/cross_seed_2 blocks",
+    )
+    ap.add_argument(
+        "--label-compare",
+        action="store_true",
+        help="onpolicy-assistant-label follow-up (plan v7 §4.2 item 4): write "
+        "label_comparison.json (within-run Assistant-Wren paired delta + the "
+        "Wren45-Wren46 replicate H0 pair + pairwise-matched/placement refits + "
+        "combined-store cross-label swap + full-slot collapse audits + the "
+        "registered empirical H0 pair-noise band; no gates, no verdict lattice)",
+    )
+    ap.add_argument(
+        "--committed-eval-root",
+        type=Path,
+        default=Path("eval_results/issue_1335"),
+        help="committed eval-results root the --label-compare read-only "
+        "references resolve under (ladder cells, seed-round dirs, matched JSONs)",
     )
     ap.add_argument("--verify-vectorized", action="store_true")
     ap.add_argument("--assert-cuda", action="store_true", help="binding on-instance device gate")
@@ -398,11 +432,17 @@ def fit_cell_matched(cell_id: str, slug: str, xy: dict, n_min: int, args) -> dic
 
 
 def rung_units(slug: str, store: dict) -> list[tuple[str, dict]]:
-    """Fit units: one per Q&A rung; one per persona for fiction rungs."""
+    """Fit units: one per Q&A rung; one per LEAD persona for fiction rungs.
+
+    The lead panel is rung-resolved (r1335.personas_for_rung — the committed
+    4-persona panel for existing rungs, the single override lead for the
+    r7_op_* label cells; without this the override cells' rows would be
+    silently dropped from every fit — plan v7 §4.2 item 4, the
+    highest-severity diff site)."""
     if r1335.RUNGS[slug]["family"] == "qa":
         return [("all", store)]
     units = []
-    for persona in c1310.PERSONA_LABELS:
+    for persona in r1335.personas_for_rung(slug):
         m = store["char_ids"] == persona
         if not m.any():
             continue
@@ -1168,21 +1208,29 @@ def _ref_headline(ref: dict, ref_label: str, model_kind: str) -> tuple[dict, dic
 
 
 def collapse_audit(args, model_kind: str, slug: str = "r7_endpoint") -> dict:
-    """Rollout collapse audit on THIS run's endpoint rollouts (the seed43-round
-    interpretation read, wired into the seed-compare summary): under-floor line
+    """Rollout collapse audit on THIS run's fiction rollouts: under-floor line
     counts (n_completion_tokens < DIALOGUE_MIN_TOKENS) total / per-slot /
-    per-persona, plus slot-4 exact-"I agree." counts (the seed-42 collapse
-    signature). Fail-loud on a missing rollout file — seed-compare rounds
-    always generate r7_endpoint, so absence is a pipeline bug, never skipped."""
+    per-persona, plus FULL-SLOT exact-modal-line counts (the top repeated
+    exact completion per slot and its count — the "I agree."-class collapse
+    detector at ANY slot: the seed-42 mode hit slot 4, the seed-44 mode hit
+    slot 2, so a fixed-slot field demonstrably misses migrating modes; plan
+    v7 §4.2 item 4b). The legacy slot-4 exact-"I agree." fields are kept
+    verbatim (the committed seed_comparison consumers read them). Fail-loud
+    on a missing rollout file — audit rounds always generate their fiction
+    rungs, so absence is a pipeline bug, never skipped."""
+    from collections import Counter
+
     path = r1335.gen_path(args.data_dir, slug, model_kind)
     assert path.exists(), (
-        f"collapse audit: missing endpoint rollouts {path} — the seed-compare "
-        "round's own fiction generation must have run (fail-loud)"
+        f"collapse audit: missing {slug} rollouts {path} — this round's own "
+        "fiction generation must have run (fail-loud)"
     )
     total = under = slot4_total = slot4_agree = 0
     per_slot: dict[str, int] = {}
     per_persona: dict[str, int] = {}
     agree_per_persona: dict[str, int] = {}
+    slot_totals: dict[str, int] = {}
+    slot_lines: dict[str, Counter] = {}
     with path.open(encoding="utf-8") as fh:
         for line in fh:
             if not line.strip():
@@ -1191,9 +1239,12 @@ def collapse_audit(args, model_kind: str, slug: str = "r7_endpoint") -> dict:
             total += 1
             slot = int(row.get("slot", 0))
             persona = str(row.get("persona", "?"))
+            key = f"slot{slot}"
+            slot_totals[key] = slot_totals.get(key, 0) + 1
+            slot_lines.setdefault(key, Counter())[(row.get("completion") or "").strip()] += 1
             if int(row["n_completion_tokens"]) < r1335.DIALOGUE_MIN_TOKENS:
                 under += 1
-                per_slot[f"slot{slot}"] = per_slot.get(f"slot{slot}", 0) + 1
+                per_slot[key] = per_slot.get(key, 0) + 1
                 per_persona[persona] = per_persona.get(persona, 0) + 1
             if slot == 4:
                 slot4_total += 1
@@ -1201,7 +1252,17 @@ def collapse_audit(args, model_kind: str, slug: str = "r7_endpoint") -> dict:
                     slot4_agree += 1
                     agree_per_persona[persona] = agree_per_persona.get(persona, 0) + 1
     assert total > 0, f"collapse audit: empty rollout file {path}"
+    modal_per_slot = {}
+    for key in sorted(slot_lines):
+        text, count = slot_lines[key].most_common(1)[0]
+        modal_per_slot[key] = {
+            "line": text[:80],
+            "count": int(count),
+            "slot_lines": int(slot_totals[key]),
+            "pct": round(100.0 * count / slot_totals[key], 2),
+        }
     return {
+        "rung": slug,
         "rollouts": str(path),
         "dialogue_min_tokens": int(r1335.DIALOGUE_MIN_TOKENS),
         "n_lines": total,
@@ -1209,6 +1270,7 @@ def collapse_audit(args, model_kind: str, slug: str = "r7_endpoint") -> dict:
         "under_floor_pct": round(100.0 * under / total, 2),
         "under_floor_per_slot": dict(sorted(per_slot.items())),
         "under_floor_per_persona": dict(sorted(per_persona.items())),
+        "modal_line_per_slot": modal_per_slot,
         "slot4_lines": slot4_total,
         "slot4_exact_agree": slot4_agree,
         "slot4_exact_agree_per_persona": dict(sorted(agree_per_persona.items())),
@@ -1318,6 +1380,349 @@ def build_seed_comparison(args, models: list[str], smoke: bool) -> dict:
     return out
 
 
+# ---------------------------------------------------------------------------
+# Label comparison (onpolicy-assistant-label round; plan v7 §3/§4.2 item 4)
+# ---------------------------------------------------------------------------
+
+
+def _full_n_value(args, cell_id: str) -> dict:
+    """Full-n L19 value + the persisted group-bootstrap draws for one cell (the
+    joint-draw pairing surface for the within-run deltas). Fail-loud on a
+    missing cell or missing draws — label-compare runs AFTER this round's own
+    P3 fits produced every registered cell."""
+    p = args.out_dir / f"cells_{cell_id}.json"
+    assert p.exists(), f"label-compare: missing full-n cell {p} — the P3 fits must run first"
+    d = json.loads(p.read_text())
+    gb = d.get("group_bootstrap_l19")
+    assert gb is not None and gb.get("draws"), (
+        f"label-compare: {p} lacks persisted group_bootstrap_l19 draws (the "
+        "joint-draw pairing surface; fail-loud)"
+    )
+    return {
+        "value": float(gb["r2"]),
+        "r2_cell_headline": float(d["r2_per_layer_obs"][d["headline_layer"]]),
+        "boot_draws": np.asarray(gb["draws"], dtype=float),
+        "ci_lo": float(gb["ci_lo"]),
+        "ci_hi": float(gb["ci_hi"]),
+        "n": int(d["n"]),
+        "n_groups": int(d["n_groups"]),
+        "group_universe_hash": gb.get("group_universe_hash"),
+    }
+
+
+def label_h0_pair_noise_band(committed_root: Path) -> dict:
+    """Registered empirical H0 pair-noise band (plan v7 §3, Statistics-critic
+    fix (a)): load the 12 committed base endpoint L19 ctx cell values
+    (4 personas x seeds 42/43/44), remove run + persona effects by the two-way
+    decomposition r_ij = x_ij - rowmean_i - colmean_j + grandmean, take
+    sigma_cell = interaction residual SD (df = (I-1)(J-1) = 6), and register
+    B_hat = 2*sqrt(2)*sigma_cell (= 2*sigma_pair). Read-only on the committed
+    eval JSONs; fail-loud on any missing cell — the 12-cell lattice is a
+    committed artifact. Mechanical sanity floor: B_hat >= sqrt(2)*sigma_cell."""
+    personas = list(c1310.PERSONA_LABELS)
+    seed_labels = [s for s, _ in H0_SEED_DIRS]
+    values = np.full((len(personas), len(seed_labels)), np.nan)
+    sources: dict[str, str] = {}
+    for j, (seed_label, rel) in enumerate(H0_SEED_DIRS):
+        root = committed_root if rel == "." else committed_root / rel
+        for i, persona in enumerate(personas):
+            p = root / f"cells_{unit_cell_id('r7_endpoint', 'base', persona, 'ctx')}.json"
+            assert p.exists(), f"H0 band: missing committed base endpoint cell {p} (fail-loud)"
+            d = json.loads(p.read_text())
+            values[i, j] = float(d["r2_per_layer_obs"][d["headline_layer"]])
+            sources[f"{seed_label}:{persona}"] = str(p)
+    assert np.isfinite(values).all(), "H0 band: non-finite committed cell value"
+    grand = float(values.mean())
+    row_means = values.mean(axis=1, keepdims=True)
+    col_means = values.mean(axis=0, keepdims=True)
+    resid = values - row_means - col_means + grand
+    dof = (values.shape[0] - 1) * (values.shape[1] - 1)
+    sigma_cell = float(np.sqrt(float((resid**2).sum()) / dof))
+    sigma_pair = float(np.sqrt(2.0) * sigma_cell)
+    b_hat = float(2.0 * sigma_pair)
+    assert b_hat >= np.sqrt(2.0) * sigma_cell, (
+        f"H0 band mechanical sanity floor violated: B_hat={b_hat} < "
+        f"sqrt(2)*sigma_cell={np.sqrt(2.0) * sigma_cell} (plan v7 §4.2 item 4f)"
+    )
+    return {
+        "definition": (
+            "two-way decomposition of the 12 committed base r7_endpoint L19 ctx "
+            "full-n R^2 values (4 personas x seeds 42/43/44); run + persona "
+            "effects removed; sigma_cell = interaction residual SD (ddof via "
+            "df=(I-1)(J-1)); B_hat = 2*sqrt(2)*sigma_cell"
+        ),
+        "personas": personas,
+        "seeds": seed_labels,
+        "values": {
+            p: {s: float(values[i, j]) for j, s in enumerate(seed_labels)}
+            for i, p in enumerate(personas)
+        },
+        "residuals": {
+            p: {s: float(resid[i, j]) for j, s in enumerate(seed_labels)}
+            for i, p in enumerate(personas)
+        },
+        "dof": int(dof),
+        "sigma_cell": sigma_cell,
+        "sigma_pair": sigma_pair,
+        "b_hat": b_hat,
+        "sources": sources,
+    }
+
+
+def _committed_placement_n(args, model_kind: str) -> int:
+    """Per-model committed matched n for the placement read — sourced from the
+    committed per-model matched JSON and cross-checked against the body value
+    (plan v7 assumption 17; NEVER matched_n_config.json — that file holds one
+    last-writer n_min across the two sharded lanes)."""
+    p = args.committed_eval_root / (
+        f"matched_{unit_cell_id('r7_endpoint', model_kind, 'Wren', 'ctx')}.json"
+    )
+    assert p.exists(), f"placement: committed matched JSON missing: {p} (fail-loud)"
+    n = int(json.loads(p.read_text())["n_min"])
+    expect = COMMITTED_PLACEMENT_N[model_kind]
+    assert n == expect, (
+        f"placement: committed matched n drift — {p} n_min={n} != body value {expect}"
+    )
+    return n
+
+
+def _concat_stores(a: dict, b: dict) -> dict:
+    """Row-concatenate two loaded (rung, model) stores (the combined
+    Assistant+Wren store the cross-label swap derangement pairs over)."""
+    keys = sorted(set(a["arrays"]) & set(b["arrays"]))
+    assert keys, "combined store: no shared summary arrays"
+    for k in keys:
+        assert a["arrays"][k].shape[1:] == b["arrays"][k].shape[1:], (
+            k,
+            a["arrays"][k].shape,
+            b["arrays"][k].shape,
+        )
+    return {
+        "row_ids": np.concatenate([a["row_ids"], b["row_ids"]]),
+        "group_ids": np.concatenate([a["group_ids"], b["group_ids"]]),
+        "char_ids": np.concatenate([a["char_ids"], b["char_ids"]]),
+        "turn_indices": np.concatenate([a["turn_indices"], b["turn_indices"]]),
+        "arrays": {k: np.concatenate([a["arrays"][k], b["arrays"][k]], axis=0) for k in keys},
+    }
+
+
+def build_label_comparison(args, models: list[str], smoke: bool) -> dict:
+    """onpolicy-assistant-label summary (plan v7 §4.2 item 4; peer of
+    --seed-compare: no gates, no verdict lattice, no ladder figures).
+
+    Per (model, arm in ctx/prefix): (a) the full-n within-run paired delta
+    Delta_AW via the committed _delta joint-draw pairing over the shared
+    scenario universe (any group-universe mismatch between the pair's cells is
+    REPORTED — a fully-dropped scene still pairs by independent draw index);
+    (b) the pairwise-matched-n paired delta (all three cells refit at the
+    per-model 3-cell min n — the two registered pairs share the Wren45 cell,
+    so one per-model matched n keeps both deltas same-n comparable; 5
+    group-stratified draws, seeds 931+k, seed-mean — fit_cell_matched
+    verbatim); (c) matched-n placement values at the committed per-model
+    matched n (1,397 base / 1,739 instruct; pairwise-min fallback with a
+    labeled non-comparability note when a realized n falls short) vs the
+    committed read-only references; (d) the cross-label swap-specificity read
+    on the combined Assistant+Wren(45) store (run_swap derangement across
+    char_ids at matched scene-position); (e) full-slot collapse audits on all
+    cells; (f) the registered empirical H0 pair-noise band from the 12
+    committed base endpoint cells; (g) the within-run Wren45-Wren46 replicate
+    delta (the direct generation-draw H0 pair). Writes label_comparison.json."""
+    ref_path = args.reference_summary
+    assert ref_path.exists(), (
+        f"--label-compare reference summary missing: {ref_path} — the committed "
+        "seed-42 ladder_summary.json is required (fail-loud)"
+    )
+    ref = json.loads(ref_path.read_text())
+    h0_band = label_h0_pair_noise_band(args.committed_eval_root)
+    floor = 1 if smoke else FICTION_YIELD_FLOOR
+    per_model: dict = {}
+    for model_kind in models:
+        staged: list[str] = []
+        stores: dict[str, dict] = {}
+        units: dict[str, tuple[str, dict]] = {}
+        for slug in LABEL_RUNGS:
+            if args.stage_from_hub and ensure_store_local(args, slug, model_kind):
+                staged.append(slug)
+            store = load_rung_store(args, slug, model_kind)
+            u = rung_units(slug, store)
+            assert len(u) == 1, (
+                f"label-compare: {slug}/{model_kind} expected exactly 1 lead unit, "
+                f"got {[name for name, _ in u]}"
+            )
+            assert u[0][1]["row_ids"].shape[0] > 0, f"label-compare: empty unit {slug}"
+            if smoke:
+                fit825.EXPECTED_LAYERS = int(store["arrays"]["y"].shape[1])
+            stores[slug] = store
+            units[slug] = u[0]
+
+        # (a)+(g) full-n paired deltas (joint persisted draws), ctx + prefix.
+        full = {
+            slug: {
+                arm: _full_n_value(args, unit_cell_id(slug, model_kind, units[slug][0], arm))
+                for arm in MATCHED_ARMS
+            }
+            for slug in LABEL_RUNGS
+        }
+        realized_n = {slug: full[slug]["ctx"]["n"] for slug in LABEL_RUNGS}
+        deltas_full: dict = {}
+        for name, slug_a, slug_b in LABEL_PAIRS:
+            per_arm = {}
+            for arm in MATCHED_ARMS:
+                a, b = full[slug_a][arm], full[slug_b][arm]
+                dd = _delta(a, b)
+                dd.update(
+                    {
+                        "value_a": a["value"],
+                        "value_b": b["value"],
+                        "n_a": a["n"],
+                        "n_b": b["n"],
+                        "group_universe_match": bool(
+                            a["group_universe_hash"] == b["group_universe_hash"]
+                        ),
+                    }
+                )
+                dd_draws = _delta_draws(a, b)
+                if dd_draws is not None:  # <=100-draw strided sample (hero figure dots)
+                    step = max(1, len(dd_draws) // 100)
+                    dd["draws_sample"] = [float(v) for v in dd_draws[::step][:100]]
+                per_arm[arm] = dd
+            deltas_full[name] = per_arm
+
+        # (b) pairwise-matched refits at the per-model 3-cell min n (one n for
+        # both pairs — the shared Wren45 cell makes the pair mins coincide up
+        # to the wren46 cell; a single n keeps the two deltas comparable and
+        # each cell refits once per arm, the plan §9 6-cell arithmetic).
+        n_pair = int(min(realized_n.values()))
+        matched_vals: dict = {}
+        for slug in LABEL_RUNGS:
+            lead, ustore = units[slug]
+            for arm in MATCHED_ARMS:
+                cid = unit_cell_id(slug, model_kind, lead, arm) + "__pairwise"
+                fit_cell_matched(cid, slug, unit_xy(ustore, ARM_X_KEY[arm]), n_pair, args)
+                matched_vals[(slug, arm)] = _matched_value(args, cid)
+        deltas_matched = {
+            name: {
+                arm: _delta(matched_vals[(slug_a, arm)], matched_vals[(slug_b, arm)])
+                for arm in MATCHED_ARMS
+            }
+            for name, slug_a, slug_b in LABEL_PAIRS
+        }
+
+        # (c) placement subsamples (ctx — the committed anchors are ctx) at the
+        # committed per-model matched n, pairwise-min fallback labeled.
+        committed_n = _committed_placement_n(args, model_kind)
+        placement_at_committed = all(n >= committed_n for n in realized_n.values())
+        n_place = committed_n if placement_at_committed else n_pair
+        placement_vals = {}
+        for slug in LABEL_RUNGS:
+            lead, ustore = units[slug]
+            cid = unit_cell_id(slug, model_kind, lead, "ctx") + "__placement"
+            fit_cell_matched(cid, slug, unit_xy(ustore, "x_spanmean"), n_place, args)
+            mv = _matched_value(args, cid)
+            placement_vals[slug] = mv and mv["value"]
+        ref_m = ref.get("per_model", {}).get(model_kind) or {}
+        rung_ref = ref_m.get("rung_values_matched_ctx") or {}
+        committed_refs: dict = {
+            "seed42_r7_endpoint_per_persona": rung_ref.get("r7_endpoint_per_persona"),
+            "seed42_r7_endpoint_mean": rung_ref.get("r7_endpoint_mean"),
+            "seed42_r1_qa_oneline": rung_ref.get("r1_qa_oneline"),
+        }
+        for seed_label, rel in H0_SEED_DIRS[1:]:
+            sc_path = args.committed_eval_root / rel / "seed_comparison.json"
+            if not sc_path.exists():
+                continue
+            sc_m = json.loads(sc_path.read_text()).get("per_model", {}).get(model_kind) or {}
+            sc_rv = sc_m.get("rung_values_matched_ctx") or {}
+            committed_refs[f"{seed_label}_r7_endpoint_per_persona"] = sc_rv.get(
+                "r7_endpoint_per_persona"
+            )
+
+        # (d) cross-label swap on the combined Assistant+Wren(45) store. The
+        # frozen run_swap keys its output/fingerprint on a slug; the assistant
+        # slug is passed, so the read lands at swap_r7_op_assistant_<model>.json
+        # (this round runs no other swap for that slug — SWAP_RUNGS excludes
+        # the r7_op_* cells; provenance recorded in swap_note).
+        combined = _concat_stores(stores["r7_op_assistant"], stores["r7_op_wren"])
+        swap = run_swap("r7_op_assistant", combined, model_kind, args)
+
+        # (e) full-slot collapse audits, all cells of this model.
+        audits = {slug: collapse_audit(args, model_kind, slug) for slug in LABEL_RUNGS}
+
+        yield_report = {
+            slug: {"n": int(realized_n[slug]), "floor": floor, "kept": realized_n[slug] >= floor}
+            for slug in LABEL_RUNGS
+        }
+        for slug in staged:
+            release_store_local(args, slug, model_kind)
+        per_model[model_kind] = {
+            "leads": {slug: units[slug][0] for slug in LABEL_RUNGS},
+            "realized_n": {slug: int(n) for slug, n in realized_n.items()},
+            "fiction_yield": yield_report,
+            "full_n_values": {
+                slug: {
+                    arm: {k: v for k, v in full[slug][arm].items() if k != "boot_draws"}
+                    for arm in MATCHED_ARMS
+                }
+                for slug in LABEL_RUNGS
+            },
+            "deltas_full_n": deltas_full,
+            "deltas_pairwise_matched": deltas_matched,
+            "pairwise_n": n_pair,
+            "placement": {
+                "n_committed": committed_n,
+                "n_used": int(n_place),
+                "at_committed_n": bool(placement_at_committed),
+                "non_comparability_note": (
+                    None
+                    if placement_at_committed
+                    else (
+                        "a realized cell n fell below the committed per-model "
+                        "matched n; placement subsampled at the pairwise min "
+                        "instead — NOT directly comparable to the committed bars"
+                    )
+                ),
+                "values_ctx": placement_vals,
+                "committed_references": committed_refs,
+            },
+            "swap_cross_label": swap,
+            "swap_note": (
+                "combined Assistant+Wren(45) store; run_swap derangement across "
+                "char_ids at matched scene-position; artifact file "
+                f"swap_r7_op_assistant_{model_kind}.json"
+            ),
+            "collapse_audits": audits,
+        }
+        del stores, units, combined, full
+    out = {
+        "metadata": common.metadata(SCRIPT, args.seed, 0),
+        "code_sha": common.git_commit(),
+        "gen_seed": r1335.GEN_SEED,
+        "gen_seed_replicate": r1335.gen_seed_for_rung("r7_op_wren46"),
+        "headline_layer": c1310.HEADLINE_LAYER,
+        "lambda_selection": LAMBDA_SELECTION,
+        "models_compared": list(models),
+        "label_pairs": [list(p) for p in LABEL_PAIRS],
+        "h0_pair_noise_band": h0_band,
+        "reference": {
+            "path": str(ref_path),
+            "code_sha": ref.get("code_sha"),
+            "note": "committed seed-42 ladder_summary.json (read-only placement anchors)",
+        },
+        "committed_eval_root": str(args.committed_eval_root),
+        "per_model": per_model,
+        "smoke": bool(smoke),
+    }
+    if sorted(models) != sorted(c1310.MODEL_KINDS):
+        out["scope_note"] = "declared model-subset round: only models_compared were run this round"
+    c1310.write_json(args.out_dir / "label_comparison.json", out)
+    print(
+        "[i1335-fit] label_comparison.json written "
+        f"(gen_seed={r1335.GEN_SEED}; models={list(per_model)}; "
+        f"B_hat={h0_band['b_hat']:.4f})"
+    )
+    return out
+
+
 def main() -> int:
     args = parse_args()
     if args.assert_cuda:
@@ -1332,12 +1737,15 @@ def main() -> int:
             or args.matched_n
             or args.summary
             or args.seed_compare
+            or args.label_compare
             or args.verify_vectorized
         ):
             return 0
     if args.verify_vectorized:
         fit825.assert_vectorized_equivalence(seed=args.seed)
-        if not (args.rung or args.matched_n or args.summary or args.seed_compare):
+        if not (
+            args.rung or args.matched_n or args.summary or args.seed_compare or args.label_compare
+        ):
             return 0
     args.out_dir.mkdir(parents=True, exist_ok=True)
     models = [m.strip() for m in args.models.split(",") if m.strip()]
@@ -1369,8 +1777,13 @@ def main() -> int:
         print(f"[phase=p3_seed_compare] seed comparison (models={models})")
         build_seed_comparison(args, models, args.smoke)
         return 0
+    if args.label_compare:
+        print(f"[phase=p4_label_compare] label comparison (models={models})")
+        build_label_comparison(args, models, args.smoke)
+        return 0
     raise SystemExit(
-        "no action requested (--rung/--matched-n/--summary/--seed-compare/--verify-vectorized)"
+        "no action requested (--rung/--matched-n/--summary/--seed-compare/"
+        "--label-compare/--verify-vectorized)"
     )
 
 
