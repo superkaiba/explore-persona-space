@@ -1,6 +1,6 @@
 {
-  "commit": "9bdd1f70fa",
-  "created": "2026-07-18T05:22:19Z",
+  "commit": "cb4137003d",
+  "created": "2026-07-18T05:49:08Z",
   "figsize": [
     10.5,
     7.5
@@ -109,336 +109,336 @@
     {
       "layer": 14.0,
       "w_par = \u03a3SS_tot_par / \u03a3SS_tot_full": 0.0005525904270787025,
-      "series": "own",
+      "series": "own answer",
       "_kind": "line",
       "_group": 4
     },
     {
       "layer": 20.0,
       "w_par = \u03a3SS_tot_par / \u03a3SS_tot_full": 0.0011501134499499125,
-      "series": "own",
+      "series": "own answer",
       "_kind": "line",
       "_group": 4
     },
     {
       "layer": 23.0,
       "w_par = \u03a3SS_tot_par / \u03a3SS_tot_full": 0.003025183229712262,
-      "series": "own",
+      "series": "own answer",
       "_kind": "line",
       "_group": 4
     },
     {
       "layer": 26.0,
       "w_par = \u03a3SS_tot_par / \u03a3SS_tot_full": 0.006054223779605932,
-      "series": "own",
+      "series": "own answer",
       "_kind": "line",
       "_group": 4
     },
     {
       "layer": 14.0,
       "w_par = \u03a3SS_tot_par / \u03a3SS_tot_full": 0.0003878096081976728,
-      "series": "ext_plain",
+      "series": "external answer (plain)",
       "_kind": "line",
       "_group": 5
     },
     {
       "layer": 20.0,
       "w_par = \u03a3SS_tot_par / \u03a3SS_tot_full": 0.0007889652223423992,
-      "series": "ext_plain",
+      "series": "external answer (plain)",
       "_kind": "line",
       "_group": 5
     },
     {
       "layer": 23.0,
       "w_par = \u03a3SS_tot_par / \u03a3SS_tot_full": 0.002339878454808125,
-      "series": "ext_plain",
+      "series": "external answer (plain)",
       "_kind": "line",
       "_group": 5
     },
     {
       "layer": 26.0,
       "w_par = \u03a3SS_tot_par / \u03a3SS_tot_full": 0.005348598007935064,
-      "series": "ext_plain",
+      "series": "external answer (plain)",
       "_kind": "line",
       "_group": 5
     },
     {
       "layer": 14.0,
       "w_par = \u03a3SS_tot_par / \u03a3SS_tot_full": 0.0002522914918478655,
-      "series": "ext_style",
+      "series": "external answer (distinct style)",
       "_kind": "line",
       "_group": 6
     },
     {
       "layer": 20.0,
       "w_par = \u03a3SS_tot_par / \u03a3SS_tot_full": 0.00048322396125505485,
-      "series": "ext_style",
+      "series": "external answer (distinct style)",
       "_kind": "line",
       "_group": 6
     },
     {
       "layer": 23.0,
       "w_par = \u03a3SS_tot_par / \u03a3SS_tot_full": 0.0014894919090239717,
-      "series": "ext_style",
+      "series": "external answer (distinct style)",
       "_kind": "line",
       "_group": 6
     },
     {
       "layer": 26.0,
       "w_par = \u03a3SS_tot_par / \u03a3SS_tot_full": 0.003595458559687651,
-      "series": "ext_style",
+      "series": "external answer (distinct style)",
       "_kind": "line",
       "_group": 6
     },
     {
       "layer": 14.0,
       "w_par = \u03a3SS_tot_par / \u03a3SS_tot_full": 0.0005388497442029152,
-      "series": "mismatch",
+      "series": "mismatched answer (floor)",
       "_kind": "line",
       "_group": 7
     },
     {
       "layer": 20.0,
       "w_par = \u03a3SS_tot_par / \u03a3SS_tot_full": 0.0010901609719932794,
-      "series": "mismatch",
+      "series": "mismatched answer (floor)",
       "_kind": "line",
       "_group": 7
     },
     {
       "layer": 23.0,
       "w_par = \u03a3SS_tot_par / \u03a3SS_tot_full": 0.0026037345924847352,
-      "series": "mismatch",
+      "series": "mismatched answer (floor)",
       "_kind": "line",
       "_group": 7
     },
     {
       "layer": 26.0,
       "w_par = \u03a3SS_tot_par / \u03a3SS_tot_full": 0.00536470447032097,
-      "series": "mismatch",
+      "series": "mismatched answer (floor)",
       "_kind": "line",
       "_group": 7
     },
     {
       "answer position t (f16 slots)": 1.0,
       "per-slot gap contribution, L26 (cal fold)": 0.0053720243168099355,
-      "series": "\u0394C_par (own-ext_plain)",
+      "series": "\u0394C_par (own - external plain)",
       "_kind": "line",
       "_group": 8
     },
     {
       "answer position t (f16 slots)": 2.0,
       "per-slot gap contribution, L26 (cal fold)": 0.0026404206243722,
-      "series": "\u0394C_par (own-ext_plain)",
+      "series": "\u0394C_par (own - external plain)",
       "_kind": "line",
       "_group": 8
     },
     {
       "answer position t (f16 slots)": 3.0,
       "per-slot gap contribution, L26 (cal fold)": 0.00197083516642094,
-      "series": "\u0394C_par (own-ext_plain)",
+      "series": "\u0394C_par (own - external plain)",
       "_kind": "line",
       "_group": 8
     },
     {
       "answer position t (f16 slots)": 4.0,
       "per-slot gap contribution, L26 (cal fold)": 0.0016668843577030083,
-      "series": "\u0394C_par (own-ext_plain)",
+      "series": "\u0394C_par (own - external plain)",
       "_kind": "line",
       "_group": 8
     },
     {
       "answer position t (f16 slots)": 5.0,
       "per-slot gap contribution, L26 (cal fold)": 0.0011847886983868885,
-      "series": "\u0394C_par (own-ext_plain)",
+      "series": "\u0394C_par (own - external plain)",
       "_kind": "line",
       "_group": 8
     },
     {
       "answer position t (f16 slots)": 6.0,
       "per-slot gap contribution, L26 (cal fold)": 0.0010853330469231014,
-      "series": "\u0394C_par (own-ext_plain)",
+      "series": "\u0394C_par (own - external plain)",
       "_kind": "line",
       "_group": 8
     },
     {
       "answer position t (f16 slots)": 7.0,
       "per-slot gap contribution, L26 (cal fold)": 0.0008820587883892503,
-      "series": "\u0394C_par (own-ext_plain)",
+      "series": "\u0394C_par (own - external plain)",
       "_kind": "line",
       "_group": 8
     },
     {
       "answer position t (f16 slots)": 8.0,
       "per-slot gap contribution, L26 (cal fold)": 0.0007152891741102549,
-      "series": "\u0394C_par (own-ext_plain)",
+      "series": "\u0394C_par (own - external plain)",
       "_kind": "line",
       "_group": 8
     },
     {
       "answer position t (f16 slots)": 9.0,
       "per-slot gap contribution, L26 (cal fold)": 0.000627903557808973,
-      "series": "\u0394C_par (own-ext_plain)",
+      "series": "\u0394C_par (own - external plain)",
       "_kind": "line",
       "_group": 8
     },
     {
       "answer position t (f16 slots)": 10.0,
       "per-slot gap contribution, L26 (cal fold)": 0.000553898201456588,
-      "series": "\u0394C_par (own-ext_plain)",
+      "series": "\u0394C_par (own - external plain)",
       "_kind": "line",
       "_group": 8
     },
     {
       "answer position t (f16 slots)": 11.0,
       "per-slot gap contribution, L26 (cal fold)": 0.00015823311545619986,
-      "series": "\u0394C_par (own-ext_plain)",
+      "series": "\u0394C_par (own - external plain)",
       "_kind": "line",
       "_group": 8
     },
     {
       "answer position t (f16 slots)": 12.0,
       "per-slot gap contribution, L26 (cal fold)": 0.0003020749962249932,
-      "series": "\u0394C_par (own-ext_plain)",
+      "series": "\u0394C_par (own - external plain)",
       "_kind": "line",
       "_group": 8
     },
     {
       "answer position t (f16 slots)": 13.0,
       "per-slot gap contribution, L26 (cal fold)": 0.0003686126363728511,
-      "series": "\u0394C_par (own-ext_plain)",
+      "series": "\u0394C_par (own - external plain)",
       "_kind": "line",
       "_group": 8
     },
     {
       "answer position t (f16 slots)": 14.0,
       "per-slot gap contribution, L26 (cal fold)": 0.00037965264967952184,
-      "series": "\u0394C_par (own-ext_plain)",
+      "series": "\u0394C_par (own - external plain)",
       "_kind": "line",
       "_group": 8
     },
     {
       "answer position t (f16 slots)": 15.0,
       "per-slot gap contribution, L26 (cal fold)": 0.00012166163079190912,
-      "series": "\u0394C_par (own-ext_plain)",
+      "series": "\u0394C_par (own - external plain)",
       "_kind": "line",
       "_group": 8
     },
     {
       "answer position t (f16 slots)": 16.0,
       "per-slot gap contribution, L26 (cal fold)": 0.00016818758083744187,
-      "series": "\u0394C_par (own-ext_plain)",
+      "series": "\u0394C_par (own - external plain)",
       "_kind": "line",
       "_group": 8
     },
     {
       "answer position t (f16 slots)": 1.0,
       "per-slot gap contribution, L26 (cal fold)": -0.008114840664621703,
-      "series": "\u0394C_perp (own-ext_plain)",
+      "series": "\u0394C_perp (own - external plain)",
       "_kind": "line",
       "_group": 9
     },
     {
       "answer position t (f16 slots)": 2.0,
       "per-slot gap contribution, L26 (cal fold)": 0.07892983528131808,
-      "series": "\u0394C_perp (own-ext_plain)",
+      "series": "\u0394C_perp (own - external plain)",
       "_kind": "line",
       "_group": 9
     },
     {
       "answer position t (f16 slots)": 3.0,
       "per-slot gap contribution, L26 (cal fold)": 0.05361615643331957,
-      "series": "\u0394C_perp (own-ext_plain)",
+      "series": "\u0394C_perp (own - external plain)",
       "_kind": "line",
       "_group": 9
     },
     {
       "answer position t (f16 slots)": 4.0,
       "per-slot gap contribution, L26 (cal fold)": 0.039300770825785425,
-      "series": "\u0394C_perp (own-ext_plain)",
+      "series": "\u0394C_perp (own - external plain)",
       "_kind": "line",
       "_group": 9
     },
     {
       "answer position t (f16 slots)": 5.0,
       "per-slot gap contribution, L26 (cal fold)": 0.03688572346741903,
-      "series": "\u0394C_perp (own-ext_plain)",
+      "series": "\u0394C_perp (own - external plain)",
       "_kind": "line",
       "_group": 9
     },
     {
       "answer position t (f16 slots)": 6.0,
       "per-slot gap contribution, L26 (cal fold)": 0.033554179153579264,
-      "series": "\u0394C_perp (own-ext_plain)",
+      "series": "\u0394C_perp (own - external plain)",
       "_kind": "line",
       "_group": 9
     },
     {
       "answer position t (f16 slots)": 7.0,
       "per-slot gap contribution, L26 (cal fold)": 0.031400372015605416,
-      "series": "\u0394C_perp (own-ext_plain)",
+      "series": "\u0394C_perp (own - external plain)",
       "_kind": "line",
       "_group": 9
     },
     {
       "answer position t (f16 slots)": 8.0,
       "per-slot gap contribution, L26 (cal fold)": 0.024098497307537464,
-      "series": "\u0394C_perp (own-ext_plain)",
+      "series": "\u0394C_perp (own - external plain)",
       "_kind": "line",
       "_group": 9
     },
     {
       "answer position t (f16 slots)": 9.0,
       "per-slot gap contribution, L26 (cal fold)": 0.021983069405565936,
-      "series": "\u0394C_perp (own-ext_plain)",
+      "series": "\u0394C_perp (own - external plain)",
       "_kind": "line",
       "_group": 9
     },
     {
       "answer position t (f16 slots)": 10.0,
       "per-slot gap contribution, L26 (cal fold)": 0.01588712155544887,
-      "series": "\u0394C_perp (own-ext_plain)",
+      "series": "\u0394C_perp (own - external plain)",
       "_kind": "line",
       "_group": 9
     },
     {
       "answer position t (f16 slots)": 11.0,
       "per-slot gap contribution, L26 (cal fold)": 0.01612288307236276,
-      "series": "\u0394C_perp (own-ext_plain)",
+      "series": "\u0394C_perp (own - external plain)",
       "_kind": "line",
       "_group": 9
     },
     {
       "answer position t (f16 slots)": 12.0,
       "per-slot gap contribution, L26 (cal fold)": 0.00971791291286249,
-      "series": "\u0394C_perp (own-ext_plain)",
+      "series": "\u0394C_perp (own - external plain)",
       "_kind": "line",
       "_group": 9
     },
     {
       "answer position t (f16 slots)": 13.0,
       "per-slot gap contribution, L26 (cal fold)": 0.011819700477540149,
-      "series": "\u0394C_perp (own-ext_plain)",
+      "series": "\u0394C_perp (own - external plain)",
       "_kind": "line",
       "_group": 9
     },
     {
       "answer position t (f16 slots)": 14.0,
       "per-slot gap contribution, L26 (cal fold)": 0.014374853194748433,
-      "series": "\u0394C_perp (own-ext_plain)",
+      "series": "\u0394C_perp (own - external plain)",
       "_kind": "line",
       "_group": 9
     },
     {
       "answer position t (f16 slots)": 15.0,
       "per-slot gap contribution, L26 (cal fold)": 0.012713928850615147,
-      "series": "\u0394C_perp (own-ext_plain)",
+      "series": "\u0394C_perp (own - external plain)",
       "_kind": "line",
       "_group": 9
     },
     {
       "answer position t (f16 slots)": 16.0,
       "per-slot gap contribution, L26 (cal fold)": 0.009737825208320644,
-      "series": "\u0394C_perp (own-ext_plain)",
+      "series": "\u0394C_perp (own - external plain)",
       "_kind": "line",
       "_group": 9
     },
@@ -962,10 +962,10 @@
         "xlabel": "layer",
         "ylabel": "w_par = \u03a3SS_tot_par / \u03a3SS_tot_full",
         "legend_labels": [
-          "own",
-          "ext_plain",
-          "ext_style",
-          "mismatch"
+          "own answer",
+          "external answer (plain)",
+          "external answer (distinct style)",
+          "mismatched answer (floor)"
         ],
         "xticklabels": [
           "12",
@@ -991,8 +991,8 @@
         "xlabel": "answer position t (f16 slots)",
         "ylabel": "per-slot gap contribution, L26 (cal fold)",
         "legend_labels": [
-          "\u0394C_par (own-ext_plain)",
-          "\u0394C_perp (own-ext_plain)"
+          "\u0394C_par (own - external plain)",
+          "\u0394C_perp (own - external plain)"
         ],
         "xticklabels": [
           "0",
@@ -1044,12 +1044,12 @@
       }
     ],
     "series": [
-      "own",
-      "ext_plain",
-      "ext_style",
-      "mismatch",
-      "\u0394C_par (own-ext_plain)",
-      "\u0394C_perp (own-ext_plain)"
+      "own answer",
+      "external answer (plain)",
+      "external answer (distinct style)",
+      "mismatched answer (floor)",
+      "\u0394C_par (own - external plain)",
+      "\u0394C_perp (own - external plain)"
     ]
   }
 }

@@ -45,6 +45,13 @@ from scripts.issue1072_stats import CH, K_FOLDS, _safe_ratio  # noqa: E402
 logger = logging.getLogger("issue1072.figures")
 
 COMP_ORDER = ("par", "perp", "cross")
+# Plain-English arm names for reader-facing legends (no opaque slugs rule).
+ARM_LABELS = {
+    "own": "own answer",
+    "ext_plain": "external answer (plain)",
+    "ext_style": "external answer (distinct style)",
+    "mismatch": "mismatched answer (floor)",
+}
 
 
 def _err(lo: float, v: float, hi: float) -> tuple[float, float]:
@@ -202,7 +209,7 @@ def fig_exploratory(
             for la in layers
             if str(la) in cal and not cal[str(la)].get("skipped")
         ]
-        ax.plot(layers[: len(vals)], vals, "o-", label=arm, ms=3)
+        ax.plot(layers[: len(vals)], vals, "o-", label=ARM_LABELS[arm], ms=3)
     ax.set_xlabel("layer")
     ax.set_ylabel("w_par = ΣSS_tot_par / ΣSS_tot_full")
     ax.set_yscale("log")
@@ -218,7 +225,7 @@ def fig_exploratory(
             own = h1.get(f"f16_t{t}|own")
             ext = h1.get(f"f16_t{t}|ext_plain")
             prof.append((own[comp] - ext[comp]) if own and ext else np.nan)
-        ax.plot(range(1, 17), prof, style, ms=3, label=f"Δ{comp} (own-ext_plain)")
+        ax.plot(range(1, 17), prof, style, ms=3, label=f"Δ{comp} (own - external plain)")
     ax.axhline(0, lw=0.6, color="gray")
     ax.set_xlabel("answer position t (f16 slots)")
     ax.set_ylabel(f"per-slot gap contribution, L{primary} (cal fold)")
