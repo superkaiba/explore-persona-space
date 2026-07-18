@@ -403,3 +403,13 @@ def test_collect_texts_chunk_checkpoint_resume(tmp_path, monkeypatch):
     out2 = A._collect_texts(ns, rows)  # resume: both chunks cached -> zero re-fetch
     assert calls == ["c0", "c1"]
     assert out2 == out1
+    # truncated TAIL line (crash mid-append) is dropped + tolerated
+    cache = next((scratch / "judge_text_cache").glob("texts_*.jsonl"))
+    with cache.open("a", encoding="utf-8") as fh:
+        fh.write('{"ci": 999, "row"')  # partial record, no newline
+    out3 = A._collect_texts(ns, rows)
+    assert out3 == out1 and calls == ["c0", "c1"]
+    # malformed MIDDLE line is corruption -> fail loud, never silently skipped
+    cache.write_text('{"broken\n' + cache.read_text(encoding="utf-8"), encoding="utf-8")
+    with pytest.raises(ValueError):
+        A._collect_texts(ns, rows)
