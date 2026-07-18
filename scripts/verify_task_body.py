@@ -904,6 +904,27 @@ Generation-agnostic checks (run on v2 AND v3 — the inline-figure +
   (GitHub pins + code shas in-bullet, no HF pin) and the verifier read
   PASS (#1509).
 
+- **check 45** (`check_figure_caption_count_claims_vs_sidecar`, WARN,
+  generation-agnostic): a figure caption's quantified COUNT claim over
+  plotted points — `all <N> <unit>`, `<K> of <N>` / `<K>/<N>`,
+  `none of the (<N>) <unit>` / `no <unit>`, each followed within a
+  bounded punctuation-free gap by a below/above-zero (word or bare `0`)
+  or copula negative/positive sign predicate — is recomputed against
+  per-column point-value pools built from the figure's `.meta.json`
+  sidecar at the cited sha; a claim passes iff ANY size-N pool satisfies
+  the recomputed strict-sign count, contradiction on every candidate →
+  WARN naming the claim, best-fit pool + recomputed count, and up to 3
+  offending points (label + value). Silent skip (check-24 convention)
+  on missing/unparsable/truncated/aggregates-only sidecars and claims
+  with no size-N pool; per-figure opt-out literal
+  `<!-- count-claims: manual -->` (beat-1 window or caption); WARN
+  never FAIL (forward-only, check 41's argument). Vague count glosses
+  ("nearly all", "far below zero"), bounds ("at least K"), "all but K",
+  non-strict "at or below", and non-zero referents stay LM judgment
+  (clean-result-critic Lens 3). Incident: task #1426's caption claimed
+  "all 50 contexts lie below zero" beside a sidecar carrying a +0.004
+  point; caught only at Lens 3 (#1511).
+
 Harmful-content carve-out: checks 18/19 accept the sanitized excerpt
 form (`[truncated — harmful-content row; verify at <path>, row <i>]`)
 exactly as checks 10/11 do today.
@@ -10757,6 +10778,444 @@ def check_footer_hf_paths_pinned(body: str) -> CheckResult:
     return CheckResult(name, True, detail, is_warn=True)
 
 
+# ─── Check 45: caption count claims vs sidecar point values ─────────────────
+#
+# Seventh sibling of checks 24/26/28/33/34/41 (same figure iteration, same
+# `_read_figure_meta_json` sidecar read, same fail-soft skip conventions).
+# Check 33 keys on BOLDED decimals and check 34 on two literal beat-phrase
+# classes — a caption's quantified COUNT claim ("all 50 contexts lie below
+# zero") carries neither, so #1426's caption passed every mechanical check
+# beside a sidecar holding a +0.004 point and was caught only at
+# clean-result-critic Lens 3 (one REVISE round). Check 45 recomputes the
+# three registered count-claim shapes against per-column point-value pools;
+# contradiction-only, any-size-matching-pool-satisfies, WARN never FAIL
+# (forward-only, check 41's precedent), caption-only window. The purely
+# verbal half ("nearly all", "far below zero" magnitude glosses) stays LM
+# judgment by design (#1511).
+
+_COUNT_CLAIM_OPTOUT = "<!-- count-claims: manual -->"
+
+# Verb-phrase gap between the counted unit and the sign predicate: no
+# sentence punctuation, no commas, no periods — blocks decimals ("more than
+# 0.05 below …"), clause hops ("…, and none dip below zero"), and non-zero
+# referents by distance.
+_CC_GAP = r"[^.;:!?,]{0,40}?"
+# Sign predicate: below/above ZERO (word or the bare numeral `0`, never a
+# decimal — the lookahead blocks "below 0.05"), or a copula + negative/
+# positive ("are negative"). Bare "positive"/"negative" with no copula is
+# attribute usage ("used positive prompts"), not a sign claim.
+_CC_PRED = (
+    r"(?:(?:lie|lies|fall|falls|sit|sits|land|lands|are|is|remain|remains|stay|stays)\s+)?"
+    r"(?:strictly\s+)?(?:(?P<below>below)|(?P<above>above))\s+(?:zero\b|0(?!\.?\d))"
+    r"|(?:are|is|remain|remains|stay|stays)\s+(?:strictly\s+)?"
+    r"(?:(?P<neg>negative)|(?P<pos>positive))\b"
+)
+_CC_KOFN_RE = re.compile(
+    r"\b(?P<k>\d{1,4})\s*(?:of\s+(?:the\s+)?|/\s*)(?P<n>\d{1,4})\s+(?P<unit>[A-Za-z][\w-]*)"
+    r"(?P<gap>" + _CC_GAP + r")\s(?:" + _CC_PRED + r")",
+    re.IGNORECASE,
+)
+_CC_ALLN_RE = re.compile(
+    r"\ball\s+(?P<n>\d{1,4})\s+(?P<unit>[A-Za-z][\w-]*)"
+    r"(?P<gap>" + _CC_GAP + r")\s(?:" + _CC_PRED + r")",
+    re.IGNORECASE,
+)
+_CC_NONE_RE = re.compile(
+    r"\b(?:none\s+of\s+(?:the\s+)?(?:(?P<n>\d{1,4})\s+)?|no\s+)(?P<unit>[A-Za-z][\w-]*)"
+    r"(?P<gap>" + _CC_GAP + r")\s(?:" + _CC_PRED + r")",
+    re.IGNORECASE,
+)
+# Qualifiers that invert/soften/negate the claim when they PRECEDE the match
+# ("not all 50 …", "all but 1 of 3 …", "at least 2 of 3 …", "nearly all …"):
+_CC_PRE_GUARD_RE = re.compile(
+    r"(?:\bnot|\bbut|\bexcept|\bat\s+least|\bat\s+most|\bmore\s+than|\bfewer\s+than|"
+    r"\bless\s+than|\bup\s+to|\bover|\babout|\broughly|~|\bnearly|\balmost)\s*$",
+    re.IGNORECASE,
+)
+# "at or below/above zero" is a NON-strict (<= / >=) claim the strict-sign
+# recompute must not read as strict (an exact-zero point would false-WARN):
+_CC_AT_OR_GAP_RE = re.compile(r"\bat\s+or\b", re.IGNORECASE)
+_CC_UNIT_STOPWORDS = {"of", "the", "out"}
+# For the bare `no <unit>` branch the captured unit IS the qualifier token in
+# "no further points …" — a claim about ADDITIONAL items, not a counted set:
+_CC_NO_QUALIFIERS = {"further", "other", "additional", "more", "new", "remaining", "such"}
+
+
+def _caption_count_claims(caption: str) -> list[dict]:
+    """Registered count-claims in a figure's blockquote caption, as
+    ``{"shape", "k", "n", "direction", "raw"}`` dicts (``direction`` in
+    ``{"below", "above"}``; all-N => ``k == n``; none/no => ``k == 0``,
+    ``n`` may be None).
+
+    S2 (K-of-N) scans first and MASKS its spans so "all 50 of the 60
+    contexts" / overlap cases never double-read (the all-N read of that
+    text is additionally rejected by the ``of`` unit stopword). Guards,
+    each rejecting the match: a preceding-qualifier window
+    (``_CC_PRE_GUARD_RE`` over ``caption[max(0, start-16):start]`` — "not
+    all", "all but", "at least", "nearly"), unit stopwords, the
+    ``no <qualifier>`` subset words (``_CC_NO_QUALIFIERS``), and an
+    ``at or`` token inside the verb-phrase gap (a non-strict <= / >=
+    claim — "lie at or below zero" — the strict recompute cannot decide).
+    """
+    claims: list[dict] = []
+    masked = list(caption)
+
+    def _guarded(m: re.Match) -> bool:
+        if _CC_PRE_GUARD_RE.search(caption[max(0, m.start() - 16) : m.start()]):
+            return True
+        return bool(_CC_AT_OR_GAP_RE.search(m.group("gap") or ""))
+
+    def _direction(m: re.Match) -> str:
+        return "below" if (m.group("below") or m.group("neg")) else "above"
+
+    for m in _CC_KOFN_RE.finditer(caption):
+        for i in range(m.start(), m.end()):
+            masked[i] = "\x00"
+        if _guarded(m) or m.group("unit").lower() in _CC_UNIT_STOPWORDS:
+            continue
+        claims.append(
+            {
+                "shape": "kofn",
+                "k": int(m.group("k")),
+                "n": int(m.group("n")),
+                "direction": _direction(m),
+                "raw": m.group(0),
+            }
+        )
+    masked_text = "".join(masked)
+    for m in _CC_ALLN_RE.finditer(masked_text):
+        if _guarded(m) or m.group("unit").lower() in _CC_UNIT_STOPWORDS:
+            continue
+        n = int(m.group("n"))
+        claims.append(
+            {"shape": "all", "k": n, "n": n, "direction": _direction(m), "raw": m.group(0)}
+        )
+    for m in _CC_NONE_RE.finditer(masked_text):
+        unit = m.group("unit").lower()
+        if _guarded(m) or unit in _CC_UNIT_STOPWORDS or unit in _CC_NO_QUALIFIERS:
+            continue
+        n = int(m.group("n")) if m.group("n") else None
+        claims.append(
+            {"shape": "none", "k": 0, "n": n, "direction": _direction(m), "raw": m.group(0)}
+        )
+    return claims
+
+
+def _sidecar_value_pools(
+    meta: dict,
+) -> dict[tuple[str | None, str], list[tuple[float, str | None]]] | None:
+    """Per-column point-value pools from the sidecar's ``points``/``rows``
+    dict-rows: key ``(kind_or_None, column_name)`` → ``[(value, label)]``.
+
+    Two grains: the merged ``(None, col)`` pool always; per-kind
+    ``(kind, col)`` pools ONLY when >=2 distinct kinds exist (avoids
+    duplicate pools; the issue_1005 mediation sidecar shares
+    ``held-out skill (LOCO)`` across bar and line rows — the per-kind grain
+    is what restores an N-sized candidate there). Mirrors
+    ``_sidecar_plotted_values`` conventions EXACTLY: ``points`` canonical /
+    ``rows`` legacy; bools and non-finite excluded; the FIRST non-meta key
+    of a modern ``_kind == "bar"`` row is the grouped-bar x-position slot
+    and is EXCLUDED per-entry (dodge offsets like ``-0.19`` are layout, not
+    data — a negative x-slot must never count as a below-zero point; a
+    string ``category`` first key consumes the first slot, exactly as in
+    ``_sidecar_plotted_values``); legacy ``rows`` are never bar-x-tagged.
+    ``label`` string values attach as the point label (and, being
+    non-numeric, never form a pool). Returns None on a TRUNCATED sidecar
+    (``data_truncated``/``truncated`` — a count over truncated rows is not
+    figure truth) or when no numeric pool exists (aggregates-only sidecar)
+    — the caller silently skips.
+    """
+    if meta.get("data_truncated") or meta.get("truncated"):
+        return None
+    pts = meta.get("points")
+    from_points = isinstance(pts, list)
+    if not from_points:
+        pts = meta.get("rows")
+    if not isinstance(pts, list):
+        return None
+    merged: dict[str, list[tuple[float, str | None]]] = {}
+    per_kind: dict[tuple[str, str], list[tuple[float, str | None]]] = {}
+    kinds_seen: set[str] = set()
+    for p in pts:
+        if not isinstance(p, dict):
+            continue
+        kind = p.get("_kind") if isinstance(p.get("_kind"), str) else None
+        if kind:
+            kinds_seen.add(kind)
+        label = p.get("label") if isinstance(p.get("label"), str) else None
+        bar_row = from_points and kind == "bar"
+        first_data_key = True
+        for k, v in p.items():
+            if k in ("_kind", "_group"):
+                continue
+            is_first, first_data_key = first_data_key, False
+            if isinstance(v, bool) or not isinstance(v, (int, float)):
+                continue
+            if not math.isfinite(v):
+                continue
+            if bar_row and is_first:
+                continue  # grouped-bar layout x-position slot — layout, not data
+            merged.setdefault(k, []).append((float(v), label))
+            if kind:
+                per_kind.setdefault((kind, k), []).append((float(v), label))
+    if not merged:
+        return None
+    pools: dict[tuple[str | None, str], list[tuple[float, str | None]]] = {
+        (None, col): vals for col, vals in merged.items()
+    }
+    if len(kinds_seen) >= 2:
+        pools.update(per_kind)
+    return pools
+
+
+def _count_claim_failures(
+    claims: list[dict],
+    pools: dict[tuple[str | None, str], list[tuple[float, str | None]]],
+    basename: str,
+) -> tuple[list[str], int, list[str]]:
+    """WARN messages, n_checked, and satisfied-pool notes for ONE figure's
+    caption claims against its value pools.
+
+    Per claim: candidates = pools with ``len == n`` (``n`` given), else ALL
+    pools; ``n`` given and NO size-``n`` pool → the claim is SKIPPED (the
+    referenced set is unidentifiable — never guess; not counted in
+    ``n_checked``). ``satisfied(pool)``: ``cnt = count(v < 0)`` for
+    ``below`` / ``count(v > 0)`` for ``above``; all-N => ``cnt == n``;
+    K-of-N => ``cnt == k`` (exact — counts are integers, no rounding
+    ambiguity); none/no => ``cnt == 0``. ANY candidate satisfied → pass
+    (the note records which pool). SUBSET-PLAUSIBLE larger-pool rescue
+    (leniency-only, corpus-calibrated): when ``n`` is given, a pool with
+    ``len > n`` ALSO rescues iff it plausibly contains a satisfying
+    size-``n`` subset — ``cnt >= k`` and ``len - cnt >= n - k`` — because
+    a caption may count a named SUBSET of a larger plotted column ("all 12
+    own-context projections are negative" over a 62-point projection
+    column whose only size-12 pool is a different measure; the #1090
+    corpus back-test case). The incident class is unaffected (#1426's
+    pools are all exactly size 50 — no larger pool exists to rescue). All
+    candidates contradict → one WARN naming the basename, the claim raw
+    text, the best-fit size-``n`` pool's column name + recomputed count,
+    and (for all/none shapes) up to 3 offending points as
+    ``label=+0.004369``; K-of-N mismatches report claimed-vs-recomputed
+    counts. Strict sign, NO epsilon: the incident value (+0.004368) is
+    small — any tolerance wide enough to matter would re-mask exactly the
+    incident class (an exact ``0.0`` counts as neither below nor above,
+    the correct strict reading).
+    """
+    warns: list[str] = []
+    satisfied: list[str] = []
+    n_checked = 0
+    for c in claims:
+        n = c["n"]
+        if n is not None:
+            candidates = {key: vals for key, vals in pools.items() if len(vals) == n}
+            if not candidates:
+                continue  # no size-N pool — unidentifiable referenced set
+            subset_hosts = {key: vals for key, vals in pools.items() if len(vals) > n}
+        else:
+            candidates = pools
+            subset_hosts = {}
+        n_checked += 1
+        direction = c["direction"]
+
+        def _cnt(vals: list[tuple[float, str | None]]) -> int:
+            if direction == "below":  # noqa: B023 — consumed within this iteration only
+                return sum(1 for v, _l in vals if v < 0)
+            return sum(1 for v, _l in vals if v > 0)
+
+        sat_note = None
+        best: tuple[int, tuple[str | None, str], int, list[tuple[float, str | None]]] | None = None
+        for key, vals in candidates.items():
+            cnt = _cnt(vals)
+            if cnt == c["k"]:
+                sat_note = (key, f"n={n}")
+                break
+            if best is None or abs(cnt - c["k"]) < best[0]:
+                best = (abs(cnt - c["k"]), key, cnt, vals)
+        if sat_note is None:
+            for key, vals in subset_hosts.items():
+                cnt = _cnt(vals)
+                if cnt >= c["k"] and len(vals) - cnt >= n - c["k"]:
+                    sat_note = (key, f"subset of n={len(vals)}")
+                    break
+        if sat_note is not None:
+            key, how = sat_note
+            col = key[1] if key[0] is None else f"{key[0]}:{key[1]}"
+            satisfied.append(f'`{basename}` "{c["raw"]}" satisfied by pool `{col}` ({how})')
+            continue
+        assert best is not None  # candidates is non-empty here
+        _dist, key, cnt, vals = best
+        col = key[1] if key[0] is None else f"{key[0]}:{key[1]}"
+        if c["shape"] == "kofn":
+            warns.append(
+                f'`{basename}`: caption claims "{c["raw"]}" (claimed {c["k"]} of {n}) but the '
+                f"sidecar recomputes {cnt} of {len(vals)} {direction} zero on `{col}` — fix "
+                f"the caption count or opt out with {_COUNT_CLAIM_OPTOUT}"
+            )
+            continue
+        if c["shape"] == "all":
+            offenders = [
+                (v, lab) for v, lab in vals if not (v < 0 if direction == "below" else v > 0)
+            ]
+        else:  # none/no — offenders are the points that DO satisfy the banned predicate
+            offenders = [(v, lab) for v, lab in vals if (v < 0 if direction == "below" else v > 0)]
+        off = ", ".join((f"{lab}={v:+.6f}" if lab else f"{v:+.6f}") for v, lab in offenders[:3]) + (
+            " …" if len(offenders) > 3 else ""
+        )
+        warns.append(
+            f'`{basename}`: caption claims "{c["raw"]}" but the sidecar recomputes '
+            f"{cnt} of {len(vals)} {direction} zero on `{col}` — offending point(s): {off} — "
+            f"fix the caption count or opt out with {_COUNT_CLAIM_OPTOUT}"
+        )
+    return warns, n_checked, satisfied
+
+
+def _count_claims_for_one_figure(
+    repo: Path,
+    m: re.Match,
+    rlines: list[str],
+    img_idx: int,
+    json_cache: dict,
+) -> tuple[list[str], int, str]:
+    """Process ONE same-repo figure for check 45 (the check-33
+    ``_prose_numerics_for_one_figure`` decomposition shape). Returns
+    ``(warn_msgs, n_checked, status)`` with ``status`` in
+    {"scanned", "opted-out", "skipped"}; mutates ``json_cache`` (per-URL
+    parsed-sidecar cache) in place. Claims are parsed BEFORE any git read
+    (no claims → zero subprocess cost on the common case); the opt-out is
+    honored from the beat-1 window when one exists, else the caption
+    itself (``_beat1_prose_window`` already includes the caption).
+    """
+    caption = _figure_caption_after(rlines, img_idx)
+    if not caption:
+        return [], 0, "skipped"
+    claims = _caption_count_claims(caption)
+    if not claims:
+        return [], 0, "skipped"
+    optout_window = _beat1_prose_window(rlines, img_idx) or caption
+    if _COUNT_CLAIM_OPTOUT in optout_window:
+        return [], 0, "opted-out"
+    url = m.group(0)
+    if url not in json_cache:
+        json_cache[url] = _read_figure_meta_json(repo, m.group("sha"), m.group("path"))
+    meta = json_cache[url]
+    if meta is None:
+        return [], 0, "skipped"  # no sidecar at that sha — check-24 convention
+    pools = _sidecar_value_pools(meta)
+    if pools is None:
+        return [], 0, "skipped"  # truncated / aggregates-only — a recount is unsound
+    basename = m.group("path").rsplit("/", 1)[-1]
+    warns, n_checked, _satisfied = _count_claim_failures(claims, pools, basename)
+    return warns, n_checked, ("scanned" if n_checked else "skipped")
+
+
+def check_figure_caption_count_claims_vs_sidecar(body: str) -> CheckResult:
+    """Check 45 (WARN, generation-agnostic): a figure caption's quantified
+    count claim over plotted points must recompute against the figure's
+    ``.meta.json`` sidecar point values (read at the URL's commit sha).
+
+    Registered claim shapes (``_caption_count_claims``): ``all <N> <unit>``,
+    ``<K> of <N> <unit>`` / ``<K>/<N> <unit>``, ``none of the (<N>) <unit>``
+    / ``no <unit>`` — each followed within a bounded punctuation-free gap by
+    a sign predicate (``below|above zero`` — word or bare numeral ``0`` —
+    or a copula ``negative|positive``). Recompute: per-column point-value
+    pools (``_sidecar_value_pools``); a claim passes iff ANY size-matching
+    pool satisfies the recomputed count (``_count_claim_failures``);
+    contradiction on EVERY candidate pool → WARN naming figure, claim,
+    recomputed count, and up to 3 offending points (label + value).
+
+    Silent-skip conventions (check-24/-33 convention, NOT check 26's loud
+    missing-sidecar FAIL — the trigger here, a prose count claim, is far
+    broader than check 26's explicit structural claims): missing /
+    unparsable / truncated / aggregates-only sidecar, claims with no
+    size-``N`` pool, no blockquote caption, non-same-repo / non-sha-pinned
+    URL. Claims are parsed BEFORE any git read (no claims → zero subprocess
+    cost). Per-figure opt-out: the literal ``<!-- count-claims: manual -->``
+    in the figure's beat-1 window or caption. Generation-agnostic (v2/v3/
+    v4); WARN never FAIL (forward-only — a retroactive FAIL would block
+    promote-time re-verifies of grandfathered bodies, check 41's argument).
+    NO-OP PASS offline/stdin, no scan section, no inline figures.
+
+    Named recall sacrifices (precision over recall, the check-33 posture):
+    "nearly all" / "almost all" (no exact violation threshold; the #1426
+    sibling's "far below zero" magnitude gloss is LM territory); "all but
+    K" (inverted semantics — guard-skipped, not reinterpreted); bounds
+    ("at least/at most/more than/~ K of N") and non-strict "at or
+    below/above zero" (inequality claims — exact recompute would
+    false-fire); bare "all <unit>" without N (no pool-size guard); non-zero
+    referents ("below the linear fit", "below 0.05" — the numeral branch
+    accepts only a bare ``0``); bare "positive"/"negative" without a
+    copula; unit-less "none" ("none lie above zero" without "of"); count
+    claims outside the caption (beat-1 / interpretation prose /
+    ``## Takeaways``); AND the any-pool-satisfies + subset-plausible
+    rescues — a wrong claim coincidentally satisfied by a same-size
+    sibling column (e.g. an all-positive x column rescuing an "above zero"
+    claim, or a sign-flipped miscount landing on another column's count)
+    or by a strictly-larger column that could host a satisfying size-N
+    subset (``_count_claim_failures``) passes silently; those stay
+    Lens 3's. Incident #1426: the caption "all 50 contexts lie below
+    zero" sat beside a sidecar carrying ``f1_house_medical_doctor`` at
+    +0.004369 (#1511).
+    """
+    label = "figure caption count claims vs sidecar point values (count drift)"
+    section = _figure_scan_section(body)
+    text = section_text(body, section)
+    if text is None:
+        return CheckResult(label, True, f"no `## {section}` section to scan")
+    rlines = text.splitlines()
+    fig_at: list[tuple[str, int]] = []
+    for idx, line in enumerate(rlines):
+        for im in _IMAGE_RE.finditer(line):
+            url = im.group(1).strip()
+            url = url.split(None, 1)[0] if url else url
+            if url:
+                fig_at.append((url, idx))
+    if not fig_at:
+        return CheckResult(label, True, "no inline figures to scan")
+    repo = _resolve_repo_root()
+    if repo is None:
+        return CheckResult(label, True, "skipped — repo root unresolved (offline / stdin)")
+    warns: list[str] = []
+    scanned = 0
+    opted_out = 0
+    n_checked_total = 0
+    json_cache: dict[str, dict | None] = {}
+    for url, img_idx in fig_at:
+        m = _RAW_GITHUB_FIGURE_RE.match(url)
+        if m is None or (m.group("owner").lower(), m.group("repo").lower()) != _THIS_REPO_SLUG:
+            continue  # only same-repo sha-pinned figures resolve from git
+        fig_warns, n_checked, status = _count_claims_for_one_figure(
+            repo, m, rlines, img_idx, json_cache
+        )
+        if status == "opted-out":
+            opted_out += 1
+        elif status == "scanned":
+            scanned += 1
+            n_checked_total += n_checked
+        warns.extend(fig_warns)
+    if warns:
+        preview = "; ".join(warns[:3]) + (" …" if len(warns) > 3 else "")
+        return CheckResult(
+            label,
+            True,
+            f"{len(warns)} caption count-claim contradiction(s) across {scanned} scanned "
+            f"figure(s): {preview}",
+            is_warn=True,
+        )
+    if scanned == 0:
+        note = f" ({opted_out} opted out)" if opted_out else ""
+        return CheckResult(
+            label,
+            True,
+            f"no figure caption with a registered count claim AND a value-bearing sidecar{note}",
+        )
+    return CheckResult(
+        label,
+        True,
+        f"{n_checked_total} caption count claim(s) across {scanned} figure(s) recompute "
+        "consistently against sidecar point values",
+    )
+
+
 def check_concerns_audit(  # noqa: C901 — linear lens: ledger parse → stale-marker scan → ack scan
     body: str, *, concerns_path: Path | None = None
 ) -> CheckResult:
@@ -12939,6 +13398,12 @@ CHECKS = [
     # check 44 (WARN, v4-only) — bare backtick HF artifact paths in the footer carry
     # an adjacent pinned huggingface.co link / `@ rev <hex>` (#1509; incident #1335):
     check_footer_hf_paths_pinned,
+    # check 45 (WARN, generation-agnostic) — quantified caption COUNT claims
+    # ("all N <unit>", "K of N", "none of the N", "no <unit>" + below/above-zero
+    # or copula negative/positive) recomputed against the sidecar's per-column
+    # point-value pools; contradiction-only, any-size-matching-pool-satisfies
+    # (#1511; incident #1426):
+    check_figure_caption_count_claims_vs_sidecar,
     # Check 31 (`check_orphaned_per_unit_figures`, WARN, generation-agnostic)
     # is NOT here either — like check 20 (v4) it needs the issue number (for
     # figures-dir scoping), so it is dispatched separately in `verify_text`
