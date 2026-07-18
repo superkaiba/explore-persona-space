@@ -1,0 +1,9 @@
+{
+  "gate": "pc3_pilot",
+  "per_pair_s": 614.4134268760681,
+  "n_pairs": 13,
+  "projected_lane_s": 7987.3745493888855,
+  "budget_lane_s": 5400.0,
+  "abort_threshold_s": 10800.0,
+  "pass": true
+}

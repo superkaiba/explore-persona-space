@@ -1,0 +1,105 @@
+{
+  "commit": "91eb98a2e",
+  "created": "2026-07-18T19:18:09Z",
+  "figsize": [
+    6.4,
+    3.0
+  ],
+  "points": [
+    {
+      "x": -0.18,
+      "judge keep fraction": 0.7682049110922947,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.82,
+      "judge keep fraction": 0.6621507197290432,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 1.82,
+      "judge keep fraction": 0.4686706181202371,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 2.82,
+      "judge keep fraction": 0.7464013547840813,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 3.82,
+      "judge keep fraction": 0.7620660457239627,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.18,
+      "judge keep fraction": 0.4752328535139712,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 1.18,
+      "judge keep fraction": 0.10922946655376799,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 2.18,
+      "judge keep fraction": 0.6206604572396275,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 3.18,
+      "judge keep fraction": 0.6335732430143945,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 4.18,
+      "judge keep fraction": 0.47607959356477564,
+      "_kind": "bar",
+      "_group": 1
+    }
+  ],
+  "n_series": 2,
+  "total_points": 10,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Register-compliance yield (dashed: 50% primary-grade floor)",
+        "ylabel": "judge keep fraction",
+        "legend_labels": [
+          "Instruct",
+          "Base"
+        ],
+        "xticklabels": [
+          "Helpful\ninstruction",
+          "Rude-but-\ninformative",
+          "Evasive",
+          "Addressee-free\nexposition",
+          "Non-user\naddressee"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ]
+      }
+    ],
+    "series": [
+      "Instruct",
+      "Base"
+    ]
+  }
+}

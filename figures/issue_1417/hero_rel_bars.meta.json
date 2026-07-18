@@ -1,0 +1,254 @@
+{
+  "commit": "91eb98a2e",
+  "created": "2026-07-18T19:18:04Z",
+  "figsize": [
+    9.0,
+    3.4
+  ],
+  "points": [
+    {
+      "x": 3.28,
+      "REL (recovered / within-reference R\u00b2) @ L19": -0.2648112773172925,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "Helpful\ninstruction",
+      "REL (recovered / within-reference R\u00b2) @ L19": 0.9648906734785613,
+      "error": 0.003422619254149828,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "Rude-but-\ninformative",
+      "REL (recovered / within-reference R\u00b2) @ L19": -1.6044082617392672,
+      "error": 0.23753422862276807,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "Evasive",
+      "REL (recovered / within-reference R\u00b2) @ L19": 2.2422250217688977,
+      "error": 0.5627957911449691,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "Addressee-free\nexposition",
+      "REL (recovered / within-reference R\u00b2) @ L19": -0.38952201707751755,
+      "error": 0.03830579173521459,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "Non-user\naddressee",
+      "REL (recovered / within-reference R\u00b2) @ L19": 0.9543646370911515,
+      "error": 0.0050405482783438815,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 0.0,
+      "REL (recovered / within-reference R\u00b2) @ L19": 0.9614061392655446,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 1.0,
+      "REL (recovered / within-reference R\u00b2) @ L19": -1.8870887040699098,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 2.0,
+      "REL (recovered / within-reference R\u00b2) @ L19": 1.8802045948886075,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 3.0,
+      "REL (recovered / within-reference R\u00b2) @ L19": -0.4304037050663847,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 4.0,
+      "REL (recovered / within-reference R\u00b2) @ L19": 0.9491632971106272,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 0.0,
+      "REL (recovered / within-reference R\u00b2) @ L19": 0.9682513777738443,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 1.0,
+      "REL (recovered / within-reference R\u00b2) @ L19": -1.4120202468243737,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 2.0,
+      "REL (recovered / within-reference R\u00b2) @ L19": 3.0057961771785457,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 3.0,
+      "REL (recovered / within-reference R\u00b2) @ L19": -0.3537921215959555,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 4.0,
+      "REL (recovered / within-reference R\u00b2) @ L19": 0.959244393667315,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 3.28,
+      "y": -0.4278976002035055,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "category": "Helpful\ninstruction",
+      "y": -6.549739519510566,
+      "error": 3.895472032838152,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "category": "Rude-but-\ninformative",
+      "y": 1.1667176706279994,
+      "error": 0.05483698973621387,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "category": "Evasive",
+      "y": -0.33906944153429386,
+      "error": 0.026018940762277842,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "category": "Addressee-free\nexposition",
+      "y": -0.596087636418436,
+      "error": 0.06496601235028299,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "category": "Non-user\naddressee",
+      "y": -13.50594367429277,
+      "error": 35.40973828108375,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 0.0,
+      "y": -12.26825712049878,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 1.0,
+      "y": 1.1158258046305127,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 2.0,
+      "y": -0.36787204703937026,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 3.0,
+      "y": -0.6656087526009027,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 4.0,
+      "y": -76.44543339294296,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 0.0,
+      "y": -4.477313054822475,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 1.0,
+      "y": 1.2254997841029405,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 2.0,
+      "y": -0.3158341655148146,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 3.0,
+      "y": -0.5356767279003367,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 4.0,
+      "y": -5.625956830775464,
+      "_kind": "line",
+      "_group": 7
+    }
+  ],
+  "n_series": 8,
+  "total_points": 32,
+  "text": {
+    "suptitle": "Map identity vs chat reference \u2014 dashed: verdict boundary 0.5; dotted: shared-regime 1.0; hollow: C4 vs plain-dialogue reference",
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Instruct",
+        "ylabel": "REL (recovered / within-reference R\u00b2) @ L19",
+        "xticklabels": [
+          "Helpful\ninstruction",
+          "Rude-but-\ninformative",
+          "Evasive",
+          "Addressee-free\nexposition",
+          "Non-user\naddressee"
+        ],
+        "yticklabels": [
+          "\u221290",
+          "\u221280",
+          "\u221270",
+          "\u221260",
+          "\u221250",
+          "\u221240",
+          "\u221230",
+          "\u221220",
+          "\u221210",
+          "0",
+          "10"
+        ]
+      },
+      {
+        "title_left": "Base",
+        "xticklabels": [
+          "Helpful\ninstruction",
+          "Rude-but-\ninformative",
+          "Evasive",
+          "Addressee-free\nexposition",
+          "Non-user\naddressee"
+        ]
+      }
+    ]
+  }
+}

@@ -1,0 +1,176 @@
+{
+  "commit": "91eb98a2e",
+  "created": "2026-07-18T19:18:16Z",
+  "figsize": [
+    8.6,
+    3.0
+  ],
+  "points": [
+    {
+      "x": -0.18,
+      "held-out R\u00b2 @ L19": -1.4809794981357092,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.82,
+      "held-out R\u00b2 @ L19": 0.5460883631466313,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 1.82,
+      "held-out R\u00b2 @ L19": -0.5854574712856693,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 2.82,
+      "held-out R\u00b2 @ L19": 0.5164814450215096,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 3.82,
+      "held-out R\u00b2 @ L19": -1.204515097994467,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.18,
+      "held-out R\u00b2 @ L19": 0.12612580330428202,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 1.18,
+      "held-out R\u00b2 @ L19": 0.06842132332422879,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 2.18,
+      "held-out R\u00b2 @ L19": 0.028173228533327266,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 3.18,
+      "held-out R\u00b2 @ L19": 0.018667356041920047,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 4.18,
+      "held-out R\u00b2 @ L19": 0.10046594154707456,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": -0.18,
+      "y": 0.37787860267506335,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 0.82,
+      "y": -0.002170746094595888,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 1.82,
+      "y": 0.12772433454295362,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 2.82,
+      "y": 0.3560424011580442,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 3.82,
+      "y": 0.3970158178222304,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 0.18,
+      "y": 0.055497436584053705,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 1.18,
+      "y": -0.004107212974916896,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 2.18,
+      "y": 0.04045245602580072,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 3.18,
+      "y": 0.01164156994572163,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 4.18,
+      "y": 0.04188029310543806,
+      "_kind": "bar",
+      "_group": 3
+    }
+  ],
+  "n_series": 4,
+  "total_points": 20,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Instruct",
+        "ylabel": "held-out R\u00b2 @ L19",
+        "legend_labels": [
+          "context arm",
+          "prefix arm (degenerate control)"
+        ],
+        "xticklabels": [
+          "Helpful\ninstruction",
+          "Rude-but-\ninformative",
+          "Evasive",
+          "Addressee-free\nexposition",
+          "Non-user\naddressee"
+        ],
+        "yticklabels": [
+          "\u22122.0",
+          "\u22121.5",
+          "\u22121.0",
+          "\u22120.5",
+          "0.0",
+          "0.5",
+          "1.0"
+        ]
+      },
+      {
+        "title_left": "Base",
+        "xticklabels": [
+          "Helpful\ninstruction",
+          "Rude-but-\ninformative",
+          "Evasive",
+          "Addressee-free\nexposition",
+          "Non-user\naddressee"
+        ]
+      }
+    ],
+    "series": [
+      "context arm",
+      "prefix arm (degenerate control)"
+    ]
+  }
+}

@@ -1,0 +1,353 @@
+{
+  "commit": "91eb98a2e",
+  "created": "2026-07-18T19:18:14Z",
+  "figsize": [
+    4.6,
+    4.2
+  ],
+  "points": [
+    {
+      "full-n kept-rows R\u00b2 @ L19": -1.4809794981357092,
+      "matched-n draws R\u00b2 @ L19": 0.3411777952131042,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "full-n kept-rows R\u00b2 @ L19": -1.4809794981357092,
+      "matched-n draws R\u00b2 @ L19": 0.3823309960937712,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "full-n kept-rows R\u00b2 @ L19": -1.4809794981357092,
+      "matched-n draws R\u00b2 @ L19": 0.34076101863712005,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "full-n kept-rows R\u00b2 @ L19": -1.4809794981357092,
+      "matched-n draws R\u00b2 @ L19": 0.34518690937060403,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "full-n kept-rows R\u00b2 @ L19": -1.4809794981357092,
+      "matched-n draws R\u00b2 @ L19": 0.3753029399897301,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "full-n kept-rows R\u00b2 @ L19": 0.5460883631466313,
+      "matched-n draws R\u00b2 @ L19": 0.43747055568195725,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "full-n kept-rows R\u00b2 @ L19": 0.5460883631466313,
+      "matched-n draws R\u00b2 @ L19": 0.05777052994336451,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "full-n kept-rows R\u00b2 @ L19": 0.5460883631466313,
+      "matched-n draws R\u00b2 @ L19": 0.2855628033289853,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "full-n kept-rows R\u00b2 @ L19": 0.5460883631466313,
+      "matched-n draws R\u00b2 @ L19": 0.44599522210210674,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "full-n kept-rows R\u00b2 @ L19": 0.5460883631466313,
+      "matched-n draws R\u00b2 @ L19": 0.00463859142080536,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "full-n kept-rows R\u00b2 @ L19": -0.5854574712856693,
+      "matched-n draws R\u00b2 @ L19": 0.15876483281698173,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "full-n kept-rows R\u00b2 @ L19": -0.5854574712856693,
+      "matched-n draws R\u00b2 @ L19": 0.19064963979972782,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "full-n kept-rows R\u00b2 @ L19": -0.5854574712856693,
+      "matched-n draws R\u00b2 @ L19": 0.18611787199295404,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "full-n kept-rows R\u00b2 @ L19": -0.5854574712856693,
+      "matched-n draws R\u00b2 @ L19": 0.22162506454256614,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "full-n kept-rows R\u00b2 @ L19": -0.5854574712856693,
+      "matched-n draws R\u00b2 @ L19": 0.20699545613251658,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "full-n kept-rows R\u00b2 @ L19": 0.5164814450215096,
+      "matched-n draws R\u00b2 @ L19": 0.40401182127723245,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "full-n kept-rows R\u00b2 @ L19": 0.5164814450215096,
+      "matched-n draws R\u00b2 @ L19": 0.39430076379890866,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "full-n kept-rows R\u00b2 @ L19": 0.5164814450215096,
+      "matched-n draws R\u00b2 @ L19": 0.4149087836478569,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "full-n kept-rows R\u00b2 @ L19": 0.5164814450215096,
+      "matched-n draws R\u00b2 @ L19": 0.3921729098971012,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "full-n kept-rows R\u00b2 @ L19": 0.5164814450215096,
+      "matched-n draws R\u00b2 @ L19": 0.3752068035921441,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "full-n kept-rows R\u00b2 @ L19": -1.204515097994467,
+      "matched-n draws R\u00b2 @ L19": 0.45386502503639936,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "full-n kept-rows R\u00b2 @ L19": -1.204515097994467,
+      "matched-n draws R\u00b2 @ L19": 0.40814817989767216,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "full-n kept-rows R\u00b2 @ L19": -1.204515097994467,
+      "matched-n draws R\u00b2 @ L19": 0.46318051384745995,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "full-n kept-rows R\u00b2 @ L19": -1.204515097994467,
+      "matched-n draws R\u00b2 @ L19": 0.3792976332827659,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "full-n kept-rows R\u00b2 @ L19": -1.204515097994467,
+      "matched-n draws R\u00b2 @ L19": 0.3907001588210709,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "full-n kept-rows R\u00b2 @ L19": 0.37787860267506335,
+      "matched-n draws R\u00b2 @ L19": 0.21802389014383539,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "full-n kept-rows R\u00b2 @ L19": 0.37787860267506335,
+      "matched-n draws R\u00b2 @ L19": -0.2276158501954657,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "full-n kept-rows R\u00b2 @ L19": 0.37787860267506335,
+      "matched-n draws R\u00b2 @ L19": 0.13088189844946918,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "full-n kept-rows R\u00b2 @ L19": 0.37787860267506335,
+      "matched-n draws R\u00b2 @ L19": -0.09128606186652166,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "full-n kept-rows R\u00b2 @ L19": 0.37787860267506335,
+      "matched-n draws R\u00b2 @ L19": -0.08664597578509925,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "full-n kept-rows R\u00b2 @ L19": -0.002170746094595888,
+      "matched-n draws R\u00b2 @ L19": -0.002170746094595888,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "full-n kept-rows R\u00b2 @ L19": -0.002170746094595888,
+      "matched-n draws R\u00b2 @ L19": -0.002170746094595888,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "full-n kept-rows R\u00b2 @ L19": -0.002170746094595888,
+      "matched-n draws R\u00b2 @ L19": -0.002170746094595888,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "full-n kept-rows R\u00b2 @ L19": -0.002170746094595888,
+      "matched-n draws R\u00b2 @ L19": -0.002170746094595888,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "full-n kept-rows R\u00b2 @ L19": -0.002170746094595888,
+      "matched-n draws R\u00b2 @ L19": -0.002170746094595888,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "full-n kept-rows R\u00b2 @ L19": 0.12772433454295362,
+      "matched-n draws R\u00b2 @ L19": 0.06841360282601006,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "full-n kept-rows R\u00b2 @ L19": 0.12772433454295362,
+      "matched-n draws R\u00b2 @ L19": 0.056889102638456035,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "full-n kept-rows R\u00b2 @ L19": 0.12772433454295362,
+      "matched-n draws R\u00b2 @ L19": 0.06331807815360968,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "full-n kept-rows R\u00b2 @ L19": 0.12772433454295362,
+      "matched-n draws R\u00b2 @ L19": 0.08461347569067434,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "full-n kept-rows R\u00b2 @ L19": 0.12772433454295362,
+      "matched-n draws R\u00b2 @ L19": 0.060351721232059785,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "full-n kept-rows R\u00b2 @ L19": 0.3560424011580442,
+      "matched-n draws R\u00b2 @ L19": 0.2860835892632172,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "full-n kept-rows R\u00b2 @ L19": 0.3560424011580442,
+      "matched-n draws R\u00b2 @ L19": 0.27030951735550934,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "full-n kept-rows R\u00b2 @ L19": 0.3560424011580442,
+      "matched-n draws R\u00b2 @ L19": 0.15251112819407875,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "full-n kept-rows R\u00b2 @ L19": 0.3560424011580442,
+      "matched-n draws R\u00b2 @ L19": 0.27212287450356965,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "full-n kept-rows R\u00b2 @ L19": 0.3560424011580442,
+      "matched-n draws R\u00b2 @ L19": -0.1532015156154134,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "full-n kept-rows R\u00b2 @ L19": 0.3970158178222304,
+      "matched-n draws R\u00b2 @ L19": 0.3140034362778824,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "full-n kept-rows R\u00b2 @ L19": 0.3970158178222304,
+      "matched-n draws R\u00b2 @ L19": -0.09132813616341773,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "full-n kept-rows R\u00b2 @ L19": 0.3970158178222304,
+      "matched-n draws R\u00b2 @ L19": -0.19973887161426984,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "full-n kept-rows R\u00b2 @ L19": 0.3970158178222304,
+      "matched-n draws R\u00b2 @ L19": -0.007724456731108997,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "full-n kept-rows R\u00b2 @ L19": 0.3970158178222304,
+      "matched-n draws R\u00b2 @ L19": 0.09188331207925748,
+      "_kind": "line",
+      "_group": 9
+    }
+  ],
+  "n_series": 10,
+  "total_points": 50,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Matched-n control (5 seeded draws per cell)",
+        "xlabel": "full-n kept-rows R\u00b2 @ L19",
+        "ylabel": "matched-n draws R\u00b2 @ L19",
+        "annotations": [
+          "c1/I",
+          "c2/I",
+          "c3/I",
+          "c4/I",
+          "c5/I",
+          "c1/B",
+          "c2/B",
+          "c3/B",
+          "c4/B",
+          "c5/B"
+        ],
+        "xticklabels": [
+          "\u22122.0",
+          "\u22121.5",
+          "\u22121.0",
+          "\u22120.5",
+          "0.0",
+          "0.5",
+          "1.0"
+        ],
+        "yticklabels": [
+          "\u22122.0",
+          "\u22121.5",
+          "\u22121.0",
+          "\u22120.5",
+          "0.0",
+          "0.5",
+          "1.0"
+        ]
+      }
+    ]
+  }
+}

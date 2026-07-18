@@ -1,0 +1,213 @@
+{
+  "commit": "0fed7857ec",
+  "created": "2026-07-18T19:56:20Z",
+  "figsize": [
+    12.0,
+    4.6
+  ],
+  "points": [
+    {
+      "x": -0.19,
+      "judge keep fraction": 0.7682049110922947,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.81,
+      "judge keep fraction": 0.6621507197290432,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 1.81,
+      "judge keep fraction": 0.4686706181202371,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 2.81,
+      "judge keep fraction": 0.7464013547840813,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 3.81,
+      "judge keep fraction": 0.7620660457239627,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.19,
+      "judge keep fraction": 0.4752328535139712,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 1.19,
+      "judge keep fraction": 0.10922946655376799,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 2.19,
+      "judge keep fraction": 0.6206604572396275,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 3.19,
+      "judge keep fraction": 0.6335732430143945,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 4.19,
+      "judge keep fraction": 0.47607959356477564,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": -0.19,
+      "answer-variance ratio vs chat reference": 0.9616757770197698,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 0.81,
+      "answer-variance ratio vs chat reference": 0.4864017519731178,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 1.81,
+      "answer-variance ratio vs chat reference": 0.6618112966338419,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 2.81,
+      "answer-variance ratio vs chat reference": 0.6443123472160304,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 3.81,
+      "answer-variance ratio vs chat reference": 0.9640712931136026,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 0.19,
+      "answer-variance ratio vs chat reference": 0.8288506305446236,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 1.19,
+      "answer-variance ratio vs chat reference": 0.46199417941937876,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 2.19,
+      "answer-variance ratio vs chat reference": 0.7822130567282516,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 3.19,
+      "answer-variance ratio vs chat reference": 0.8299529435053328,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 4.19,
+      "answer-variance ratio vs chat reference": 0.8327214970921953,
+      "_kind": "bar",
+      "_group": 3
+    }
+  ],
+  "n_series": 4,
+  "total_points": 20,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Register-compliance yield (dashed: 50% primary floor)",
+        "ylabel": "judge keep fraction",
+        "legend_labels": [
+          "Instruct",
+          "Base"
+        ],
+        "annotations": [
+          "0.77",
+          "0.66",
+          "0.47",
+          "0.75",
+          "0.76",
+          "0.48",
+          "0.11",
+          "0.62",
+          "0.63",
+          "0.48"
+        ],
+        "xticklabels": [
+          "Helpful\ninstruction",
+          "Rude-but-\ninformative",
+          "Evasive",
+          "Addressee-free\nexposition",
+          "Non-user\naddressee"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7",
+          "0.8",
+          "0.9"
+        ]
+      },
+      {
+        "title_left": "Content-collapse diagnostic (dashed: 0.5 demotion floor)",
+        "ylabel": "answer-variance ratio vs chat reference",
+        "annotations": [
+          "0.96",
+          "0.49",
+          "0.66",
+          "0.64",
+          "0.96",
+          "0.83",
+          "0.46",
+          "0.78",
+          "0.83",
+          "0.83"
+        ],
+        "xticklabels": [
+          "Helpful\ninstruction",
+          "Rude-but-\ninformative",
+          "Evasive",
+          "Addressee-free\nexposition",
+          "Non-user\naddressee"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0",
+          "1.2"
+        ]
+      }
+    ],
+    "series": [
+      "Instruct",
+      "Base"
+    ]
+  }
+}

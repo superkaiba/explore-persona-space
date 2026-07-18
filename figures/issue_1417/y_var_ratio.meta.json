@@ -1,0 +1,106 @@
+{
+  "commit": "91eb98a2e",
+  "created": "2026-07-18T19:18:13Z",
+  "figsize": [
+    6.4,
+    3.0
+  ],
+  "points": [
+    {
+      "x": -0.18,
+      "tr cov(Y) ratio vs chat reference @ L19": 0.9616757770197698,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.82,
+      "tr cov(Y) ratio vs chat reference @ L19": 0.4864017519731178,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 1.82,
+      "tr cov(Y) ratio vs chat reference @ L19": 0.6618112966338419,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 2.82,
+      "tr cov(Y) ratio vs chat reference @ L19": 0.6443123472160304,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 3.82,
+      "tr cov(Y) ratio vs chat reference @ L19": 0.9640712931136026,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.18,
+      "tr cov(Y) ratio vs chat reference @ L19": 0.8288506305446236,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 1.18,
+      "tr cov(Y) ratio vs chat reference @ L19": 0.46199417941937876,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 2.18,
+      "tr cov(Y) ratio vs chat reference @ L19": 0.7822130567282516,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 3.18,
+      "tr cov(Y) ratio vs chat reference @ L19": 0.8299529435053328,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 4.18,
+      "tr cov(Y) ratio vs chat reference @ L19": 0.8327214970921953,
+      "_kind": "bar",
+      "_group": 1
+    }
+  ],
+  "n_series": 2,
+  "total_points": 10,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Content-collapse diagnostic (dashed: demotion floor 0.5)",
+        "ylabel": "tr cov(Y) ratio vs chat reference @ L19",
+        "legend_labels": [
+          "Instruct",
+          "Base"
+        ],
+        "xticklabels": [
+          "Helpful\ninstruction",
+          "Rude-but-\ninformative",
+          "Evasive",
+          "Addressee-free\nexposition",
+          "Non-user\naddressee"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0",
+          "1.2"
+        ]
+      }
+    ],
+    "series": [
+      "Instruct",
+      "Base"
+    ]
+  }
+}

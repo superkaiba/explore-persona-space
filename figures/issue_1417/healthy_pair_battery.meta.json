@@ -1,0 +1,117 @@
+{
+  "commit": "0fed7857ec",
+  "created": "2026-07-18T19:56:18Z",
+  "figsize": [
+    12.5,
+    4.8
+  ],
+  "points": [
+    {
+      "category": "reference map,\nown rows (ceiling)",
+      "held-out $R^2$ at layer 19": 0.3842981390636153,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "cell map,\nown rows (ceiling)",
+      "held-out $R^2$ at layer 19": 0.3882265784471044,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "composed transport\ncell\u2192reference",
+      "held-out $R^2$ at layer 19": 0.36006116306181357,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "composed transport\nreference\u2192cell",
+      "held-out $R^2$ at layer 19": 0.3723764274338325,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "frozen ref map\non cell rows",
+      "held-out $R^2$ at layer 19": 0.34581024336874333,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "frozen cell map\non ref rows",
+      "held-out $R^2$ at layer 19": 0.33938002865719485,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "raw map\ncosine",
+      "cosine similarity": 0.5225609586434518,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "rotation-aligned\ncosine",
+      "cosine similarity": 0.6337721884429216,
+      "_kind": "bar",
+      "_group": 1
+    }
+  ],
+  "n_series": 2,
+  "total_points": 8,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Base model, non-user addressee vs helpful-instruction reference (n=1588) \u2014 REL 0.937 [0.928, 0.946]",
+        "ylabel": "held-out $R^2$ at layer 19",
+        "annotations": [
+          "0.384",
+          "0.388",
+          "0.360",
+          "0.372",
+          "0.346",
+          "0.339"
+        ],
+        "xticklabels": [
+          "reference map,\nown rows (ceiling)",
+          "cell map,\nown rows (ceiling)",
+          "composed transport\ncell\u2192reference",
+          "composed transport\nreference\u2192cell",
+          "frozen ref map\non cell rows",
+          "frozen cell map\non ref rows"
+        ],
+        "yticklabels": [
+          "\u22120.6",
+          "\u22120.4",
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6"
+        ]
+      },
+      {
+        "title_left": "map cosines\n(dashed: 100-draw chance band)",
+        "ylabel": "cosine similarity",
+        "annotations": [
+          "0.523",
+          "0.634"
+        ],
+        "xticklabels": [
+          "raw map\ncosine",
+          "rotation-aligned\ncosine"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7"
+        ]
+      }
+    ]
+  }
+}
