@@ -9558,7 +9558,10 @@ _LESSONS_ROW_GRANDFATHER_MAX_BYTES: dict[str, int] = {
     # #1431's raise; re-measured row 776 B). Cap = measured + <=40.
     # #1492 added the SAE reference-eval token-pool trigger (row 776 B ->
     # 862 B). Cap = measured + <=40.
-    "gotchas": 900,
+    # #1513 added the between-phase cache-reap trigger (merged with #1512's
+    # smoke-gate slice-arithmetic clause, +29 B and +27 B on the 862 B base;
+    # re-measured row 918 B). Cap = measured + <=40.
+    "gotchas": 940,
 }
 _LESSONS_ROW_GRANDFATHER_MAX_HEADROOM_BYTES = 40
 
