@@ -1,6 +1,7 @@
 ---
-title: Is the late-band own-answer advantage carried by next-token-identity information?
-  Component decomposition of the gap and its closure
+title: The own-answer advantage and its unclosed layer-26 residual live almost entirely
+  outside the next-token logit-lens direction, falsifying the 1-D output-token-commitment
+  account (HIGH confidence)
 kind: experiment
 tags: []
 created_at: '2026-07-06T02:18:05Z'

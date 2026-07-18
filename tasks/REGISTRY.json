@@ -569,7 +569,7 @@
       "kind": "experiment",
       "path": "tasks/interpreting/1072",
       "status": "interpreting",
-      "title": "Is the late-band own-answer advantage carried by next-token-identity information? Component decomposition of the gap and its closure"
+      "title": "The own-answer advantage and its unclosed layer-26 residual live almost entirely outside the next-token logit-lens direction, falsifying the 1-D output-token-commitment account (HIGH confidence)"
     },
     "1073": {
       "goal": "Measure how the #779 context\u2192answer mapping and its answer-side activations change with decoding regime \u2014 single greedy (temperature 0) vs single stochastic (temp 1.0, top_p 0.95, seed 42) vs 10-rollout-averaged, everything else held at the #779 recipe, in BOTH prefix-based and context-based mapping arms \u2014 to test whether single-greedy targets are an adequate stand-in for rollout-averaged ones (theory plan C11/C12).",
