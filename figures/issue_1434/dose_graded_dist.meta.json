@@ -1,0 +1,346 @@
+{
+  "commit": "a145ef3058",
+  "created": "2026-07-17T19:38:53Z",
+  "figsize": [
+    10.0,
+    4.0
+  ],
+  "points": [
+    {
+      "mean graded score (kept draws)": 2.5,
+      "items": 4.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "mean graded score (kept draws)": 7.5,
+      "items": 11.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "mean graded score (kept draws)": 12.5,
+      "items": 8.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "mean graded score (kept draws)": 17.5,
+      "items": 124.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "mean graded score (kept draws)": 22.5,
+      "items": 30.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "mean graded score (kept draws)": 27.5,
+      "items": 62.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "mean graded score (kept draws)": 32.5,
+      "items": 17.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "mean graded score (kept draws)": 37.5,
+      "items": 35.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "mean graded score (kept draws)": 42.5,
+      "items": 10.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "mean graded score (kept draws)": 47.5,
+      "items": 35.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "mean graded score (kept draws)": 52.5,
+      "items": 3.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "mean graded score (kept draws)": 57.5,
+      "items": 3.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "mean graded score (kept draws)": 62.5,
+      "items": 1.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "mean graded score (kept draws)": 67.5,
+      "items": 27.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "mean graded score (kept draws)": 72.5,
+      "items": 18.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "mean graded score (kept draws)": 77.5,
+      "items": 33.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "mean graded score (kept draws)": 82.5,
+      "items": 4.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "mean graded score (kept draws)": 87.5,
+      "items": 46.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "mean graded score (kept draws)": 92.5,
+      "items": 4.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "mean graded score (kept draws)": 97.5,
+      "items": 18.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "mean graded score (kept draws)": 50.0,
+      "items": 0.0,
+      "series": "rate threshold 50",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "mean graded score (kept draws)": 50.0,
+      "items": 1.0,
+      "series": "rate threshold 50",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "mean graded score (kept draws)": 2.5,
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "mean graded score (kept draws)": 7.5,
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "mean graded score (kept draws)": 12.5,
+      "y": 1.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "mean graded score (kept draws)": 17.5,
+      "y": 18.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "mean graded score (kept draws)": 22.5,
+      "y": 10.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "mean graded score (kept draws)": 27.5,
+      "y": 33.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "mean graded score (kept draws)": 32.5,
+      "y": 9.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "mean graded score (kept draws)": 37.5,
+      "y": 34.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "mean graded score (kept draws)": 42.5,
+      "y": 17.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "mean graded score (kept draws)": 47.5,
+      "y": 63.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "mean graded score (kept draws)": 52.5,
+      "y": 9.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "mean graded score (kept draws)": 57.5,
+      "y": 9.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "mean graded score (kept draws)": 62.5,
+      "y": 8.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "mean graded score (kept draws)": 67.5,
+      "y": 62.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "mean graded score (kept draws)": 72.5,
+      "y": 31.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "mean graded score (kept draws)": 77.5,
+      "y": 67.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "mean graded score (kept draws)": 82.5,
+      "y": 10.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "mean graded score (kept draws)": 87.5,
+      "y": 79.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "mean graded score (kept draws)": 92.5,
+      "y": 9.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "mean graded score (kept draws)": 97.5,
+      "y": 30.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "mean graded score (kept draws)": 50.0,
+      "y": 0.0,
+      "series": "rate threshold 50",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "mean graded score (kept draws)": 50.0,
+      "y": 1.0,
+      "series": "rate threshold 50",
+      "_kind": "line",
+      "_group": 3
+    }
+  ],
+  "n_series": 4,
+  "total_points": 44,
+  "text": {
+    "suptitle": "graded score distributions \u2014 new dose arms (non-source contexts)",
+    "fig_texts": [],
+    "axes": [
+      {
+        "title": "con@45 \u2014 pooled rate 0.318",
+        "xlabel": "mean graded score (kept draws)",
+        "ylabel": "items",
+        "legend_labels": [
+          "rate threshold 50"
+        ],
+        "xticklabels": [
+          "\u221220",
+          "0",
+          "20",
+          "40",
+          "60",
+          "80",
+          "100",
+          "120"
+        ],
+        "yticklabels": [
+          "0",
+          "20",
+          "40",
+          "60",
+          "80",
+          "100",
+          "120",
+          "140"
+        ]
+      },
+      {
+        "title": "po@10 \u2014 pooled rate 0.629",
+        "xlabel": "mean graded score (kept draws)",
+        "legend_labels": [
+          "rate threshold 50"
+        ],
+        "xticklabels": [
+          "\u221220",
+          "0",
+          "20",
+          "40",
+          "60",
+          "80",
+          "100",
+          "120"
+        ],
+        "yticklabels": [
+          "0",
+          "10",
+          "20",
+          "30",
+          "40",
+          "50",
+          "60",
+          "70",
+          "80",
+          "90"
+        ]
+      }
+    ],
+    "series": [
+      "rate threshold 50"
+    ]
+  }
+}
