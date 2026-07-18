@@ -31,11 +31,11 @@ relates_to:
 
 ## Takeaways
 
-- The run's map-identity verdict layer is void: generalized-cross-validation ridge λ selection collapsed on judge-filtered row subsets, leaving 10 of the 12 context-arm ceilings against the chat/plain-text references negative.
-- The collapse is instrumental, not compositional: random matched-n subsamples of the same kept rows fit at +0.16 to +0.46 where the three collapsed kept fits read −0.59 to −1.48.
-- The plan's own fallback selector (inner-group-cv on small cells) was never wired into the battery — the largest plan deviation; the decisive ~3 GPU-h follow-up simply executes it.
+- The run's map-identity verdicts are void: generalized-cross-validation ridge λ selection collapsed on judge-filtered row subsets, leaving 10 of the 12 pair-level ceilings against the chat/plain-text references negative.
+- The collapse is instrumental, not compositional: random matched-n subsamples of the same kept rows fit at +0.16 to +0.46 where the three collapsed per-cell kept fits read −0.59 to −1.48 (the 10 broken ceilings are pair-level refits built the same way).
+- The plan's own fallback selector (inner-group-cv on small cells) was never wired into the battery — the largest plan deviation; the decisive ~3 GPU-h follow-up executes it.
 - Both lane headlines are unsupported, so the Goal question — helpful register vs speaking-to-a-user — is unanswered; the discriminating rude-but-informative cell also failed its manipulation checks in both lanes.
-- The one pair with healthy layer-19 components reads Shared: base model, AI-relay addressee vs helpful-instruction reference — recovery fraction 0.94, rotation-aligned map cosine 0.63 against a ≈0.0005 chance band.
+- The one pair with healthy layer-19 components reads Shared: base model, AI-relay addressee vs helpful-instruction reference — recovery fraction 0.94 (upper-bound-leaning), rotation-aligned map cosine 0.63 against a ≈0.0005 chance band.
 - Composed-transport numerators stay positive (82–98% of full-n anchors) wherever a cell's own map is healthy — a low-confidence lean toward map invariance across framings, ungraded until the refit.
 
 ## Goal
@@ -131,9 +131,9 @@ Verifier WARNs acknowledged: per-result prose sits in the 120–180-word band an
 
 ## Results
 
-### Generalized-cross-validation λ selection collapsed on judge-filtered row subsets, voiding the verdict layer
+### Generalized-cross-validation λ selection collapsed on judge-filtered row subsets, voiding the map-identity verdicts
 
-For each (model, cell), the figure shows held-out R² at layer 19 (context arm) for three fits — all 4,724 rows, judge-kept rows (n labeled), and five matched-n (516) subsamples of the kept rows — with the shuffle-null level.
+The figure plots held-out R² at layer 19 (context arm) for each (model, cell), three fits per cell: all 4,724 rows; the judge-kept rows (n labeled); five matched-n (516) subsamples of the kept rows. The shuffle-null level is marked.
 
 ![Per-cell held-out R-squared at layer 19: all-rows, judge-kept, and matched-n fits per framing cell and model](https://raw.githubusercontent.com/superkaiba/explore-persona-space/86a84357fa8a4864a89e8a49a51f93bd50770ba8/figures/issue_1417/fit_pathology_fingerprint.png)
 
@@ -152,13 +152,13 @@ For each (model, cell), the figure shows held-out R² at layer 19 (context arm) 
 | base exposition | 2993 | +0.356 | +0.365 | −0.15…+0.29 |
 | base AI-addressee | 2249 | +0.397 | +0.290 | −0.20…+0.31 |
 
-Three lines pin the collapse on the fitter. Matched-n draws are random subsamples of the same kept rows yet fit healthily where the kept fit crashes — row composition cannot explain it. Broken fits keep prediction cosine 0.74–0.85 where healthy fits read 0.95 — the signature of an under-regularized interpolating ridge.
+What breaks is the fitter itself. Matched-n draws are random subsamples of the same kept rows yet fit healthily where the kept fit crashes, so row composition cannot explain the collapse. Broken fits keep prediction cosine 0.74–0.85 where healthy fits read 0.95 — the signature of an under-regularized interpolating ridge.
 
 The fit module documents this GCV grid-minimum failure with two mitigations; the battery engaged neither, and the plan's fallback selector for exactly these small cells was never wired in. Every broken fit sits in the near-interpolation regime (per-fold training n below the 3,584 hidden dimensions). An axis-scramble control tracks healthy fits almost exactly and reproduces the collapse, with varying depth, on broken fits — the failure is basis-insensitive.
 
 ### Every Distinct verdict divided a positive numerator by a broken negative ceiling — both lane headlines are unsupported
 
-Per battery pair at layer 19 (context arm), the figure shows the two components of each verdict: the within-reference ceiling (the recovery-fraction denominator) and the composed-transport numerator, with per-pair n and the full-n anchors marked.
+Each verdict divides two quantities, plotted here per battery pair at layer 19 (context arm): the within-reference ceiling (the recovery-fraction denominator) and the composed-transport numerator, with per-pair n and the full-n anchors marked.
 
 ![Per-pair ceiling and composed-transport numerator at layer 19 for all battery pairs, both models](https://raw.githubusercontent.com/superkaiba/explore-persona-space/86a84357fa8a4864a89e8a49a51f93bd50770ba8/figures/issue_1417/ceiling_vs_numerator.png)
 
@@ -192,13 +192,13 @@ The two positive chat-reference ceilings (+0.077, +0.306) sit far below their 0.
 
 </details>
 
-Every Distinct verdict divides a healthy positive numerator by a broken negative ceiling; every instruct Shared verdict divides two broken negatives. The base-lane "user-directed-only" lookup is void twice over: its exposition-Distinct inputs are denominator artifacts (numerators +0.409/+0.436, roughly 75% of the full-n anchors — if anything Shared-leaning), and its rude-Shared input comes from an exploratory 516-row content-collapsed cell whose own map read −0.002.
+Every Distinct verdict divides a healthy positive numerator by a broken negative ceiling; every instruct Shared verdict divides two broken negatives. The base-lane "user-directed-only" headline — a table lookup on the (rude, exposition) verdict pair — is void twice over: its exposition-Distinct inputs are denominator artifacts (numerators +0.409/+0.436, roughly 75% of the full-n anchors — if anything Shared-leaning), and its rude-Shared input comes from an exploratory 516-row content-collapsed cell whose own map read −0.002.
 
-The instruction-presence-vs-chat pairs are broken in both lanes, so the plan's re-anchoring rule could not have fired honestly either. Numerators reach 82–98% of anchors wherever the cell's own map is healthy — leaning against a strong distinct-map claim for any cell, but ungraded until the refit.
+The instruction-presence-vs-chat pairs are broken in both lanes, so the plan's re-anchoring rule (re-grade a cell against the instruction-matched reference when the helpful-instruction-vs-chat pair itself reads non-Shared) could not have been applied honestly either. Numerators reach 82–98% of anchors wherever the cell's own map is healthy — leaning against a strong distinct-map claim for any cell, but ungraded until the refit.
 
 ### The rude-but-informative cell failed its manipulation checks in both lanes
 
-Per (cell, model), the figure shows the two manipulation-check diagnostics computed from the judge outputs and stores (not from ridge refits): judge keep fraction against the 50% primary floor, and answer-variance ratio vs the chat reference against the 0.5 demotion floor.
+Both manipulation-check diagnostics come straight from the judge outputs and stores (no ridge refits involved); the figure shows them per (cell, model): judge keep fraction against the 50% primary floor, and answer-variance ratio vs the chat reference against the 0.5 demotion floor.
 
 ![Judge keep fraction and answer-variance ratio per framing cell and model, with their floors](https://raw.githubusercontent.com/superkaiba/explore-persona-space/86a84357fa8a4864a89e8a49a51f93bd50770ba8/figures/issue_1417/c2_manipulation_checks.png)
 
@@ -210,7 +210,7 @@ Three more of the 10 (cell, model) units fell below the 50% floor as kept fracti
 
 ### The one pair with healthy layer-19 components reads Shared: base model, AI-relay addressee vs helpful-instruction reference
 
-The figure shows every battery component for this pair (n = 1,588) at layer 19: own-row ceilings, composed transports both directions, frozen-map transfers with null levels, and raw vs rotation-aligned map cosines with the chance band.
+Every battery component for this pair (n = 1,588) at layer 19 is plotted: own-row ceilings, composed transports both directions, frozen-map transfers with null levels, and raw vs rotation-aligned map cosines with the chance band.
 
 ![All battery components at layer 19 for the base-model AI-addressee vs helpful-instruction pair](https://raw.githubusercontent.com/superkaiba/explore-persona-space/86a84357fa8a4864a89e8a49a51f93bd50770ba8/figures/issue_1417/healthy_pair_battery.png)
 
