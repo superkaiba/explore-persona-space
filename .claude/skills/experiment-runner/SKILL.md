@@ -65,7 +65,8 @@ Same safety contract as the end-of-run cleanup — `store/` + `eval_results/` ar
 NEVER touched, only the re-downloadable caches (rebuilt on demand ONLY via
 hub-download paths — a direct `open()` reader crashes; place the reap strictly
 after the cache's LAST consumer; #1489, see `.claude/rules/gotchas.md`); no
-terminal-status gate, since the run itself knows the phase is done. A CPU/analysis phase whose OWN local footprint exceeds ~50 GB
+terminal-status gate, since the run itself knows the phase is done. A
+CPU/analysis phase whose OWN local footprint exceeds ~50 GB
 must be routed off the VM at plan time (see CLAUDE.md § "CPU-only phases don't
 hold GPU pods") — the incremental cleaner bounds peak, it does not rescue a
 single oversized phase.
