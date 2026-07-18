@@ -1,6 +1,6 @@
 {
-  "commit": "cb4137003d",
-  "created": "2026-07-18T05:49:08Z",
+  "commit": "8a5e966ac8",
+  "created": "2026-07-18T06:57:26Z",
   "figsize": [
     10.5,
     7.5
@@ -219,225 +219,225 @@
       "_group": 7
     },
     {
-      "answer position t (f16 slots)": 1.0,
-      "per-slot gap contribution, L26 (cal fold)": 0.0053720243168099355,
+      "answer position t (first 16 answer positions)": 1.0,
+      "per-slot gap contribution, L26 (calibration fold)": 0.0053720243168099355,
       "series": "\u0394C_par (own - external plain)",
       "_kind": "line",
       "_group": 8
     },
     {
-      "answer position t (f16 slots)": 2.0,
-      "per-slot gap contribution, L26 (cal fold)": 0.0026404206243722,
+      "answer position t (first 16 answer positions)": 2.0,
+      "per-slot gap contribution, L26 (calibration fold)": 0.0026404206243722,
       "series": "\u0394C_par (own - external plain)",
       "_kind": "line",
       "_group": 8
     },
     {
-      "answer position t (f16 slots)": 3.0,
-      "per-slot gap contribution, L26 (cal fold)": 0.00197083516642094,
+      "answer position t (first 16 answer positions)": 3.0,
+      "per-slot gap contribution, L26 (calibration fold)": 0.00197083516642094,
       "series": "\u0394C_par (own - external plain)",
       "_kind": "line",
       "_group": 8
     },
     {
-      "answer position t (f16 slots)": 4.0,
-      "per-slot gap contribution, L26 (cal fold)": 0.0016668843577030083,
+      "answer position t (first 16 answer positions)": 4.0,
+      "per-slot gap contribution, L26 (calibration fold)": 0.0016668843577030083,
       "series": "\u0394C_par (own - external plain)",
       "_kind": "line",
       "_group": 8
     },
     {
-      "answer position t (f16 slots)": 5.0,
-      "per-slot gap contribution, L26 (cal fold)": 0.0011847886983868885,
+      "answer position t (first 16 answer positions)": 5.0,
+      "per-slot gap contribution, L26 (calibration fold)": 0.0011847886983868885,
       "series": "\u0394C_par (own - external plain)",
       "_kind": "line",
       "_group": 8
     },
     {
-      "answer position t (f16 slots)": 6.0,
-      "per-slot gap contribution, L26 (cal fold)": 0.0010853330469231014,
+      "answer position t (first 16 answer positions)": 6.0,
+      "per-slot gap contribution, L26 (calibration fold)": 0.0010853330469231014,
       "series": "\u0394C_par (own - external plain)",
       "_kind": "line",
       "_group": 8
     },
     {
-      "answer position t (f16 slots)": 7.0,
-      "per-slot gap contribution, L26 (cal fold)": 0.0008820587883892503,
+      "answer position t (first 16 answer positions)": 7.0,
+      "per-slot gap contribution, L26 (calibration fold)": 0.0008820587883892503,
       "series": "\u0394C_par (own - external plain)",
       "_kind": "line",
       "_group": 8
     },
     {
-      "answer position t (f16 slots)": 8.0,
-      "per-slot gap contribution, L26 (cal fold)": 0.0007152891741102549,
+      "answer position t (first 16 answer positions)": 8.0,
+      "per-slot gap contribution, L26 (calibration fold)": 0.0007152891741102549,
       "series": "\u0394C_par (own - external plain)",
       "_kind": "line",
       "_group": 8
     },
     {
-      "answer position t (f16 slots)": 9.0,
-      "per-slot gap contribution, L26 (cal fold)": 0.000627903557808973,
+      "answer position t (first 16 answer positions)": 9.0,
+      "per-slot gap contribution, L26 (calibration fold)": 0.000627903557808973,
       "series": "\u0394C_par (own - external plain)",
       "_kind": "line",
       "_group": 8
     },
     {
-      "answer position t (f16 slots)": 10.0,
-      "per-slot gap contribution, L26 (cal fold)": 0.000553898201456588,
+      "answer position t (first 16 answer positions)": 10.0,
+      "per-slot gap contribution, L26 (calibration fold)": 0.000553898201456588,
       "series": "\u0394C_par (own - external plain)",
       "_kind": "line",
       "_group": 8
     },
     {
-      "answer position t (f16 slots)": 11.0,
-      "per-slot gap contribution, L26 (cal fold)": 0.00015823311545619986,
+      "answer position t (first 16 answer positions)": 11.0,
+      "per-slot gap contribution, L26 (calibration fold)": 0.00015823311545619986,
       "series": "\u0394C_par (own - external plain)",
       "_kind": "line",
       "_group": 8
     },
     {
-      "answer position t (f16 slots)": 12.0,
-      "per-slot gap contribution, L26 (cal fold)": 0.0003020749962249932,
+      "answer position t (first 16 answer positions)": 12.0,
+      "per-slot gap contribution, L26 (calibration fold)": 0.0003020749962249932,
       "series": "\u0394C_par (own - external plain)",
       "_kind": "line",
       "_group": 8
     },
     {
-      "answer position t (f16 slots)": 13.0,
-      "per-slot gap contribution, L26 (cal fold)": 0.0003686126363728511,
+      "answer position t (first 16 answer positions)": 13.0,
+      "per-slot gap contribution, L26 (calibration fold)": 0.0003686126363728511,
       "series": "\u0394C_par (own - external plain)",
       "_kind": "line",
       "_group": 8
     },
     {
-      "answer position t (f16 slots)": 14.0,
-      "per-slot gap contribution, L26 (cal fold)": 0.00037965264967952184,
+      "answer position t (first 16 answer positions)": 14.0,
+      "per-slot gap contribution, L26 (calibration fold)": 0.00037965264967952184,
       "series": "\u0394C_par (own - external plain)",
       "_kind": "line",
       "_group": 8
     },
     {
-      "answer position t (f16 slots)": 15.0,
-      "per-slot gap contribution, L26 (cal fold)": 0.00012166163079190912,
+      "answer position t (first 16 answer positions)": 15.0,
+      "per-slot gap contribution, L26 (calibration fold)": 0.00012166163079190912,
       "series": "\u0394C_par (own - external plain)",
       "_kind": "line",
       "_group": 8
     },
     {
-      "answer position t (f16 slots)": 16.0,
-      "per-slot gap contribution, L26 (cal fold)": 0.00016818758083744187,
+      "answer position t (first 16 answer positions)": 16.0,
+      "per-slot gap contribution, L26 (calibration fold)": 0.00016818758083744187,
       "series": "\u0394C_par (own - external plain)",
       "_kind": "line",
       "_group": 8
     },
     {
-      "answer position t (f16 slots)": 1.0,
-      "per-slot gap contribution, L26 (cal fold)": -0.008114840664621703,
+      "answer position t (first 16 answer positions)": 1.0,
+      "per-slot gap contribution, L26 (calibration fold)": -0.008114840664621703,
       "series": "\u0394C_perp (own - external plain)",
       "_kind": "line",
       "_group": 9
     },
     {
-      "answer position t (f16 slots)": 2.0,
-      "per-slot gap contribution, L26 (cal fold)": 0.07892983528131808,
+      "answer position t (first 16 answer positions)": 2.0,
+      "per-slot gap contribution, L26 (calibration fold)": 0.07892983528131808,
       "series": "\u0394C_perp (own - external plain)",
       "_kind": "line",
       "_group": 9
     },
     {
-      "answer position t (f16 slots)": 3.0,
-      "per-slot gap contribution, L26 (cal fold)": 0.05361615643331957,
+      "answer position t (first 16 answer positions)": 3.0,
+      "per-slot gap contribution, L26 (calibration fold)": 0.05361615643331957,
       "series": "\u0394C_perp (own - external plain)",
       "_kind": "line",
       "_group": 9
     },
     {
-      "answer position t (f16 slots)": 4.0,
-      "per-slot gap contribution, L26 (cal fold)": 0.039300770825785425,
+      "answer position t (first 16 answer positions)": 4.0,
+      "per-slot gap contribution, L26 (calibration fold)": 0.039300770825785425,
       "series": "\u0394C_perp (own - external plain)",
       "_kind": "line",
       "_group": 9
     },
     {
-      "answer position t (f16 slots)": 5.0,
-      "per-slot gap contribution, L26 (cal fold)": 0.03688572346741903,
+      "answer position t (first 16 answer positions)": 5.0,
+      "per-slot gap contribution, L26 (calibration fold)": 0.03688572346741903,
       "series": "\u0394C_perp (own - external plain)",
       "_kind": "line",
       "_group": 9
     },
     {
-      "answer position t (f16 slots)": 6.0,
-      "per-slot gap contribution, L26 (cal fold)": 0.033554179153579264,
+      "answer position t (first 16 answer positions)": 6.0,
+      "per-slot gap contribution, L26 (calibration fold)": 0.033554179153579264,
       "series": "\u0394C_perp (own - external plain)",
       "_kind": "line",
       "_group": 9
     },
     {
-      "answer position t (f16 slots)": 7.0,
-      "per-slot gap contribution, L26 (cal fold)": 0.031400372015605416,
+      "answer position t (first 16 answer positions)": 7.0,
+      "per-slot gap contribution, L26 (calibration fold)": 0.031400372015605416,
       "series": "\u0394C_perp (own - external plain)",
       "_kind": "line",
       "_group": 9
     },
     {
-      "answer position t (f16 slots)": 8.0,
-      "per-slot gap contribution, L26 (cal fold)": 0.024098497307537464,
+      "answer position t (first 16 answer positions)": 8.0,
+      "per-slot gap contribution, L26 (calibration fold)": 0.024098497307537464,
       "series": "\u0394C_perp (own - external plain)",
       "_kind": "line",
       "_group": 9
     },
     {
-      "answer position t (f16 slots)": 9.0,
-      "per-slot gap contribution, L26 (cal fold)": 0.021983069405565936,
+      "answer position t (first 16 answer positions)": 9.0,
+      "per-slot gap contribution, L26 (calibration fold)": 0.021983069405565936,
       "series": "\u0394C_perp (own - external plain)",
       "_kind": "line",
       "_group": 9
     },
     {
-      "answer position t (f16 slots)": 10.0,
-      "per-slot gap contribution, L26 (cal fold)": 0.01588712155544887,
+      "answer position t (first 16 answer positions)": 10.0,
+      "per-slot gap contribution, L26 (calibration fold)": 0.01588712155544887,
       "series": "\u0394C_perp (own - external plain)",
       "_kind": "line",
       "_group": 9
     },
     {
-      "answer position t (f16 slots)": 11.0,
-      "per-slot gap contribution, L26 (cal fold)": 0.01612288307236276,
+      "answer position t (first 16 answer positions)": 11.0,
+      "per-slot gap contribution, L26 (calibration fold)": 0.01612288307236276,
       "series": "\u0394C_perp (own - external plain)",
       "_kind": "line",
       "_group": 9
     },
     {
-      "answer position t (f16 slots)": 12.0,
-      "per-slot gap contribution, L26 (cal fold)": 0.00971791291286249,
+      "answer position t (first 16 answer positions)": 12.0,
+      "per-slot gap contribution, L26 (calibration fold)": 0.00971791291286249,
       "series": "\u0394C_perp (own - external plain)",
       "_kind": "line",
       "_group": 9
     },
     {
-      "answer position t (f16 slots)": 13.0,
-      "per-slot gap contribution, L26 (cal fold)": 0.011819700477540149,
+      "answer position t (first 16 answer positions)": 13.0,
+      "per-slot gap contribution, L26 (calibration fold)": 0.011819700477540149,
       "series": "\u0394C_perp (own - external plain)",
       "_kind": "line",
       "_group": 9
     },
     {
-      "answer position t (f16 slots)": 14.0,
-      "per-slot gap contribution, L26 (cal fold)": 0.014374853194748433,
+      "answer position t (first 16 answer positions)": 14.0,
+      "per-slot gap contribution, L26 (calibration fold)": 0.014374853194748433,
       "series": "\u0394C_perp (own - external plain)",
       "_kind": "line",
       "_group": 9
     },
     {
-      "answer position t (f16 slots)": 15.0,
-      "per-slot gap contribution, L26 (cal fold)": 0.012713928850615147,
+      "answer position t (first 16 answer positions)": 15.0,
+      "per-slot gap contribution, L26 (calibration fold)": 0.012713928850615147,
       "series": "\u0394C_perp (own - external plain)",
       "_kind": "line",
       "_group": 9
     },
     {
-      "answer position t (f16 slots)": 16.0,
-      "per-slot gap contribution, L26 (cal fold)": 0.009737825208320644,
+      "answer position t (first 16 answer positions)": 16.0,
+      "per-slot gap contribution, L26 (calibration fold)": 0.009737825208320644,
       "series": "\u0394C_perp (own - external plain)",
       "_kind": "line",
       "_group": 9
@@ -930,7 +930,7 @@
     "fig_texts": [],
     "axes": [
       {
-        "title_left": "Parallel share of the gap by depth (H3)",
+        "title_left": "Parallel share of the gap by depth",
         "xlabel": "layer",
         "ylabel": "S_par = \u0394C_par / \u0394R\u00b2_full",
         "xticklabels": [
@@ -988,8 +988,8 @@
       },
       {
         "title_left": "Per-slot component profile",
-        "xlabel": "answer position t (f16 slots)",
-        "ylabel": "per-slot gap contribution, L26 (cal fold)",
+        "xlabel": "answer position t (first 16 answer positions)",
+        "ylabel": "per-slot gap contribution, L26 (calibration fold)",
         "legend_labels": [
           "\u0394C_par (own - external plain)",
           "\u0394C_perp (own - external plain)"

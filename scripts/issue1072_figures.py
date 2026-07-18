@@ -101,7 +101,7 @@ def fig_hero(stats: dict, out_dir: pathlib.Path) -> None:
     )
     ax.axhline(0.0, lw=0.8, color="gray")
     ax.set_xticks(x, [f"L{la}" for la in layers])
-    ax.set_ylabel("own - ext_plain gap contribution")
+    ax.set_ylabel("own - external (plain) gap contribution")
     ax.set_title("Component decomposition of the own-answer advantage by layer")
     ax.legend(fontsize=8)
     savefig_paper(fig, "hero_component_decomposition", dir=out_dir)
@@ -125,7 +125,7 @@ def fig_closure(stats: dict, out_dir: pathlib.Path) -> None:
     )
     ax.axhline(0.0, lw=0.8, color="gray")
     ax.set_xticks(x, comps)
-    ax.set_ylabel("own - ext_plain gap")
+    ax.set_ylabel("own - external (plain) gap")
     ax.set_title(f"Per-component prefix closure at L{primary}")
     ax.legend(fontsize=8)
     savefig_paper(fig, "closure_by_component_L26", dir=out_dir)
@@ -162,8 +162,8 @@ def fig_percontext(stats: dict, npzs: dict[int, dict], out_dir: pathlib.Path) ->
     ax.scatter(d_par[m], d_perp[m], s=4, alpha=0.25, color=paper_palette(1)[0])
     ax.axhline(0, lw=0.6, color="gray")
     ax.axvline(0, lw=0.6, color="gray")
-    ax.set_xlabel(f"per-context Δc_par (own - ext_plain), L{layer}")
-    ax.set_ylabel(f"per-context Δc_perp (own - ext_plain), L{layer}")
+    ax.set_xlabel(f"per-context Δc_par (own - external plain), L{layer}")
+    ax.set_ylabel(f"per-context Δc_perp (own - external plain), L{layer}")
     axx.hist(d_par[m], bins=60, color=paper_palette(1)[0])
     axy.hist(d_perp[m], bins=60, orientation="horizontal", color=paper_palette(1)[0])
     axx.tick_params(labelbottom=False)
@@ -199,7 +199,7 @@ def fig_exploratory(
     )
     ax.set_xlabel("layer")
     ax.set_ylabel("S_par = ΔC_par / ΔR²_full")
-    ax.set_title("Parallel share of the gap by depth (H3)")
+    ax.set_title("Parallel share of the gap by depth")
     # (b) w_par variance share by arm/layer (calibration fold pooled test).
     ax = axes[0][1]
     cal = fold_recs[K_FOLDS - 1]["layers"]
@@ -227,8 +227,8 @@ def fig_exploratory(
             prof.append((own[comp] - ext[comp]) if own and ext else np.nan)
         ax.plot(range(1, 17), prof, style, ms=3, label=f"Δ{comp} (own - external plain)")
     ax.axhline(0, lw=0.6, color="gray")
-    ax.set_xlabel("answer position t (f16 slots)")
-    ax.set_ylabel(f"per-slot gap contribution, L{primary} (cal fold)")
+    ax.set_xlabel("answer position t (first 16 answer positions)")
+    ax.set_ylabel(f"per-slot gap contribution, L{primary} (calibration fold)")
     ax.set_title("Per-slot component profile")
     ax.legend(fontsize=7)
     # (d) cos(raw W_U[y], gamma⊙W_U[y]) over realized next tokens (basis sanity).
