@@ -9562,39 +9562,35 @@ _LESSONS_ROW_GRANDFATHER_MAX_BYTES: dict[str, int] = {
 }
 _LESSONS_ROW_GRANDFATHER_MAX_HEADROOM_BYTES = 40
 
-# Growth ratchet (#1269, the #986 agent-spec grandfather pattern applied to
-# LESSONS.md's TOTAL size): the constant must HUG the measured size. Growing
-# the index requires raising this constant IN THE SAME DIFF (visible,
-# reviewed, and merge-conflicting for concurrent growers — the 07-10
-# silent-sum failure shape); it may never exceed _LESSONS_MAX_BYTES. Trimming
-# the index requires ratcheting it DOWN (banked slack defeats the mechanism).
-# Measured 5,780 B at the #1269 row-grammar migration; ratchet = measured
-# + ~220 (<= _LESSONS_RATCHET_MAX_HEADROOM_BYTES). #1366 grew the
-# artifact-reuse row (parent-lineage trigger, (a)-(k)): measured 6,046 B;
-# ratchet = measured + ~34. #1396 grew the upload-policy row
-# (phase-sequencing trigger, store-before-long-fit #825): measured 6,147 B;
-# ratchet = measured + ~253 (<= _LESSONS_RATCHET_MAX_HEADROOM_BYTES). #1395
-# grew the plan-compute-sizing row (pilot basis covers fit loops AND draw
-# batteries): merged measured 6,178 B; ratchet 6400 retained (headroom ~222,
-# covers both concurrent growers).
-# #1435 grew the gotchas row (subprocess-registry / full-panel-fresh-child-smoke
-# trigger; merged with #1431's raise): re-measured total 6,456 B; ratchet 6650
-# (headroom ~194, <= _LESSONS_RATCHET_MAX_HEADROOM_BYTES).
-# #1476 reworded the selection-symmetric-nulls row (bootstrap-CI
-# selection-inheritance trigger; row 278 B -> 278 B, net 0) and absorbed
-# the pre-existing committed overage (6,675 B vs ratchet 6,650 — the
-# #1462-era growth at 26d450bce8 landed without a raise): re-measured
-# total 6,675 B; ratchet 6800 (headroom ~125,
-# <= _LESSONS_RATCHET_MAX_HEADROOM_BYTES).
-_LESSONS_RATCHET_BYTES = 6800
-_LESSONS_RATCHET_MAX_HEADROOM_BYTES = 400
+# Non-row scaffolding budget (#1504). Growth control for the always-on index
+# is PER-CHANNEL, not a hand-bumped total:
+#   - rows: _LESSONS_ROW_MAX_BYTES / _LESSONS_ROW_GRANDFATHER_MAX_BYTES catch
+#     a bloated row at edit time in the grower's own tree (#1269), and index
+#     parity means a NEW row requires a reviewed .claude/rules/*.md;
+#   - non-row scaffolding (header prose, headings, blank lines, row newlines,
+#     anything the row grammar does not match): bounded by this FIXED budget;
+#   - aggregate: the _LESSONS_WARN_BYTES advisory band + _LESSONS_MAX_BYTES.
+# The former TOTAL growth ratchet (_LESSONS_RATCHET_BYTES, #1269) is RETIRED
+# (#1504): its same-diff constant bump made every concurrent LESSONS.md
+# growth a merge-conflict / trunk-red hazard — 2 Step-10d conflicts (#1335
+# PR #1227, #1435 PR #1188), 1 fleet-wide trunk red (#1462), 1 duplicate fix
+# pipeline (#1476/#1479) in ~48h — while per-row caps + parity already make
+# row growth deliberate. Residual: two individually-green concurrent growths
+# can sum past the 8000 cap post-merge, but every such residual-red scenario
+# has BOTH growers already inside the 7200 WARN band before pushing (for two
+# cap-sized 280-B rows the window opens at base >= ~7,440 > 7,200). Measured
+# non-row bytes at retirement: 546 (2026-07-18). 900 leaves headroom for a
+# deliberate header note. Raise ONLY for a deliberate header restructure —
+# NEVER for row growth (rows never count against this budget; pinned by
+# test_check_lessons_index_nonrow_ignores_row_bytes).
+_LESSONS_NONROW_MAX_BYTES = 900
 
 
-def check_lessons_index(  # noqa: C901 -- flat failure-mode ladder (index parity, total cap/warn, growth ratchet, per-row caps + grandfather hygiene, #1269); extracting a branch would just relocate it
+def check_lessons_index(  # noqa: C901 -- flat failure-mode ladder (index parity, total cap/warn, non-row budget, per-row caps + grandfather hygiene, #1269/#1504); extracting a branch would just relocate it
     *,
     repo_root: Path | None = None,
     warn_sink: list[str] | None = None,
-    ratchet_bytes: int | None = _LESSONS_RATCHET_BYTES,
+    nonrow_max_bytes: int | None = _LESSONS_NONROW_MAX_BYTES,
     row_max_bytes: int | None = _LESSONS_ROW_MAX_BYTES,
 ) -> list[str]:
     """FAIL if `.claude/rules/LESSONS.md` and the `.claude/rules/*.md` set
@@ -9612,18 +9608,18 @@ def check_lessons_index(  # noqa: C901 -- flat failure-mode ladder (index parity
     advisory WARN band (#992): an index over `_LESSONS_WARN_BYTES` but at or
     under the cap emits an early-warning WARN — stderr-only / advisory, never
     a FAIL — so a near-cap landing is visible a few rows before the next
-    addition FAILs. #1269 adds the durable growth mechanisms: (e) the growth
-    RATCHET — total size over `_LESSONS_RATCHET_BYTES` FAILs (grow only via a
-    same-diff constant raise), a ratchet sitting more than
-    `_LESSONS_RATCHET_MAX_HEADROOM_BYTES` above the live size FAILs (banked
-    slack / stale ratchet — ratchet DOWN after a trim), and a ratchet above
-    `_LESSONS_MAX_BYTES` FAILs (config error — the ratchet can never
-    authorize crossing the cap); (f) PER-ROW caps — a row over
-    `_LESSONS_ROW_MAX_BYTES` FAILs (naming the offending row), with the
+    addition FAILs; the cap FAIL and WARN both name the largest rows as
+    actionable trim targets (#1504); (e) the NON-ROW scaffolding budget
+    (#1504) — bytes the row grammar does not claim (header prose, headings,
+    blank lines, row newlines, malformed rows) over
+    `_LESSONS_NONROW_MAX_BYTES` FAIL; row growth NEVER counts against this
+    budget (the per-growth TOTAL ratchet is retired — see the
+    `_LESSONS_NONROW_MAX_BYTES` comment); (f) PER-ROW caps (#1269) — a row
+    over `_LESSONS_ROW_MAX_BYTES` FAILs (naming the offending row), with the
     `_LESSONS_ROW_GRANDFATHER_MAX_BYTES` legacy exceptions under the same
     over-cap / excess-hug / obsolete-entry hygiene as the #986 agent-spec
     grandfather. `repo_root` is a unit-test override hook; production
-    callers pass None (canonical repo root). `ratchet_bytes` /
+    callers pass None (canonical repo root). `nonrow_max_bytes` /
     `row_max_bytes` are TEST-ONLY opt-outs (`None` disables that mode so a
     small synthetic fixture can isolate another failure mode); production
     callers never pass them. `warn_sink` mirrors
@@ -9649,6 +9645,17 @@ def check_lessons_index(  # noqa: C901 -- flat failure-mode ladder (index parity
         )
         return errors
     raw = lessons.read_bytes()
+    text = raw.decode("utf-8")
+    row_matches = list(_LESSONS_ROW_RE.finditer(text))
+    row_sizes = sorted(
+        ((len(m.group(0).encode("utf-8")), m.group("name")) for m in row_matches),
+        reverse=True,
+    )
+    largest_suffix = (
+        " Largest rows: " + ", ".join(f"{name} ({b} B)" for b, name in row_sizes[:3]) + "."
+        if row_sizes
+        else ""
+    )
     if len(raw) > _LESSONS_MAX_BYTES:
         errors.append(
             f".claude/rules/LESSONS.md: {len(raw)} bytes exceeds the "
@@ -9656,44 +9663,31 @@ def check_lessons_index(  # noqa: C901 -- flat failure-mode ladder (index parity
             f"always-on; trim 'fires when:' triggers until it fits. "
             f"(em-dashes are multibyte; counting in BYTES not chars is "
             f"deliberate.)"
+            f"{largest_suffix}"
         )
     elif len(raw) > _LESSONS_WARN_BYTES:
         _warn(
             f".claude/rules/LESSONS.md at {len(raw)}/{_LESSONS_MAX_BYTES} bytes — inside "
             f"the warn band (>{_LESSONS_WARN_BYTES}); slim rows or plan a deliberate cap "
-            f"decision before the next addition FAILs."
+            f"decision before the next addition FAILs.{largest_suffix}"
         )
-    # Growth ratchet (#1269) — three failure modes, all strictly-greater and
-    # DISTINCT from the 8000-byte leanness-cap FAIL above: a ratchet RED means
-    # "one-line constant bump in the SAME diff", not a real budget breach.
-    if ratchet_bytes is not None:
-        if ratchet_bytes > _LESSONS_MAX_BYTES:
+    # Non-row scaffolding budget (#1504): bytes the row grammar does not
+    # claim. Row growth NEVER counts here — growing/adding rows must not
+    # require touching this file (the retired ratchet's per-growth bump was
+    # the 4-incidents/48h conflict magnet; see _LESSONS_NONROW_MAX_BYTES).
+    if nonrow_max_bytes is not None:
+        row_total = sum(b for b, _ in row_sizes)
+        nonrow = len(raw) - row_total
+        if nonrow > nonrow_max_bytes:
             errors.append(
-                f"_LESSONS_RATCHET_BYTES ({ratchet_bytes}) exceeds "
-                f"_LESSONS_MAX_BYTES ({_LESSONS_MAX_BYTES}) — config error: "
-                f"the growth ratchet can never authorize crossing the "
-                f"leanness cap; lower the ratchet (a cap raise is a "
-                f"deliberate #869/#872-class token-budget decision)."
-            )
-        if len(raw) > ratchet_bytes:
-            errors.append(
-                f".claude/rules/LESSONS.md: {len(raw)} bytes grew past the "
-                f"_LESSONS_RATCHET_BYTES growth ratchet "
-                f"({len(raw)}/{ratchet_bytes}) — this is the one-line-bump "
-                f"gate, NOT the {_LESSONS_MAX_BYTES}-byte budget breach: "
-                f"trim the index, or raise _LESSONS_RATCHET_BYTES in the "
-                f"SAME diff (a deliberate, reviewed budget consumption — "
-                f"never above the _LESSONS_MAX_BYTES cap)."
-            )
-        elif ratchet_bytes - len(raw) > _LESSONS_RATCHET_MAX_HEADROOM_BYTES:
-            errors.append(
-                f"_LESSONS_RATCHET_BYTES ({ratchet_bytes}) sits "
-                f"{ratchet_bytes - len(raw)} bytes above the live "
-                f".claude/rules/LESSONS.md ({len(raw)} bytes) — banked slack "
-                f"/ stale ratchet defeats the growth mechanism (max headroom "
-                f"{_LESSONS_RATCHET_MAX_HEADROOM_BYTES}); ratchet DOWN to <= "
-                f"{len(raw) + _LESSONS_RATCHET_MAX_HEADROOM_BYTES} after a "
-                f"trim."
+                f".claude/rules/LESSONS.md: {nonrow} non-row scaffolding bytes "
+                f"(total {len(raw)} minus {row_total} row bytes) exceed the "
+                f"{nonrow_max_bytes}-byte non-row budget "
+                f"(_LESSONS_NONROW_MAX_BYTES). Trim header/scaffolding prose "
+                f"(a malformed index row also lands here — check the row "
+                f"grammar), or — a deliberate header-restructure decision — "
+                f"raise _LESSONS_NONROW_MAX_BYTES in the SAME diff. Row "
+                f"growth never needs this constant."
             )
     # Count occurrences (not a set) so a name appearing on >1 row is caught —
     # a set comprehension would collapse duplicates and let both the missing
@@ -9701,7 +9695,7 @@ def check_lessons_index(  # noqa: C901 -- flat failure-mode ladder (index parity
     # The same pass runs the per-row byte budgets (#1269): the full-line row
     # regex makes `m.group(0)` the whole row.
     index_counts: Counter[str] = Counter()
-    for m in _LESSONS_ROW_RE.finditer(raw.decode("utf-8")):
+    for m in row_matches:
         name = m.group("name")
         index_counts[name] += 1
         if row_max_bytes is None:

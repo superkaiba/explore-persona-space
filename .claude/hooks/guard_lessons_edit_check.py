@@ -17,9 +17,9 @@ EDITED tree's rules dir. If a future lint version reads outside
 ``<root>/.claude/rules/``, this materialization must grow with it.
 
 Constant resolution: the lint module is imported from the EDITED tree's
-``scripts/workflow_lint.py`` FIRST (so a same-diff ratchet/constant bump in
-that tree is honored at edit time, per the #1269 constant-first ordering),
-falling back to this hook's own repo copy.
+``scripts/workflow_lint.py`` FIRST (so a same-diff constant bump — grandfather
+caps, non-row budget — in that tree is honored at edit time, per the #1269
+constant-first ordering), falling back to this hook's own repo copy.
 
 ``--print-constants`` dumps the resolved (own-repo) lint constants as JSON —
 used by the wrapper's ``--self-test`` and the pytest suite to size fixtures at
@@ -40,8 +40,7 @@ from types import ModuleType
 _CONST_KEYS = (
     "_LESSONS_MAX_BYTES",
     "_LESSONS_WARN_BYTES",
-    "_LESSONS_RATCHET_BYTES",
-    "_LESSONS_RATCHET_MAX_HEADROOM_BYTES",
+    "_LESSONS_NONROW_MAX_BYTES",
     "_LESSONS_ROW_MAX_BYTES",
     "_LESSONS_ROW_GRANDFATHER_MAX_BYTES",
     "_LESSONS_ROW_GRANDFATHER_MAX_HEADROOM_BYTES",
@@ -132,9 +131,12 @@ def _block_message(errors: list[str]) -> str:
     lines += [f"  - {e}" for e in errors]
     lines += [
         "Recovery:",
-        "  - Growing the index deliberately? Raise _LESSONS_RATCHET_BYTES in",
-        "    scripts/workflow_lint.py of THIS tree FIRST (same-diff constant bump),",
-        "    then retry this edit. Trimming? Ratchet the same constant DOWN after.",
+        "  - Row over its cap? Trim the row's trigger (_LESSONS_ROW_MAX_BYTES); a",
+        "    grandfathered row's deliberate growth raises",
+        "    _LESSONS_ROW_GRANDFATHER_MAX_BYTES in THIS tree's scripts/workflow_lint.py",
+        "    FIRST (same-diff), then retry this edit.",
+        "  - Non-row scaffolding over budget? Trim header prose, or (a deliberate",
+        "    header-restructure decision) raise _LESSONS_NONROW_MAX_BYTES the same way.",
         "  - Adding a row for a new rule? Create .claude/rules/<name>.md BEFORE",
         "    adding its index row.",
         "  - Verify after fixing: uv run python scripts/workflow_lint.py --check-lessons-index",
@@ -153,7 +155,9 @@ def main() -> int:
         if wl is None:
             print("{}")
             return 1
-        print(json.dumps({k: getattr(wl, k) for k in _CONST_KEYS}))
+        # hasattr-tolerant: a cross-vintage lint copy (pre-/post-#1504) may
+        # lack a key; dump only what resolves so the self-test never crashes.
+        print(json.dumps({k: getattr(wl, k) for k in _CONST_KEYS if hasattr(wl, k)}))
         return 0
 
     payload = json.load(sys.stdin)

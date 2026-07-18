@@ -19,11 +19,12 @@ verbatim rewrite of the live LESSONS.md is allowed), and (6) assert the
 settings.json wiring (#965 ``TestSettingsWiring`` convention — closing the
 "hook ships green but inert" channel).
 
-Fixture rules (plan §12-9): every fixture size is computed at runtime from
-the imported ``workflow_lint`` constants (the banked-slack check FAILs a
-too-small allow fixture, so allow totals sit inside ``[ratchet - headroom,
-ratchet]``); no synthetic stub is ever named ``gotchas.md`` (the grandfather
-hygiene would FAIL a short gotchas row). Deny/allow determinism: every run
+Fixture rules (plan §12-9, updated #1504): every fixture size is computed at
+runtime from the imported ``workflow_lint`` constants; ``_sized`` padding is
+NON-ROW bytes, so allow fixtures stay under ``_LESSONS_NONROW_MAX_BYTES``
+(no minimum size — the retired total ratchet's banked-slack floor is gone);
+no synthetic stub is ever named ``gotchas.md`` (the grandfather hygiene
+would FAIL a short gotchas row). Deny/allow determinism: every run
 scrubs ``EPM_ALLOW_LESSONS_EDIT`` and points the sentinel escape hatch at a
 nonexistent path via ``EPM_LESSONS_EDIT_SENTINEL``.
 """
@@ -52,12 +53,13 @@ if str(_SCRIPTS) not in sys.path:
 
 from workflow_lint import (  # noqa: E402
     _LESSONS_MAX_BYTES,
-    _LESSONS_RATCHET_BYTES,
-    _LESSONS_RATCHET_MAX_HEADROOM_BYTES,
+    _LESSONS_NONROW_MAX_BYTES,
     _LESSONS_ROW_MAX_BYTES,
 )
 
-VALID_TOTAL = _LESSONS_RATCHET_BYTES - _LESSONS_RATCHET_MAX_HEADROOM_BYTES // 2
+# `_sized` padding is NON-ROW bytes, so allow fixtures must sit under the
+# non-row budget; no minimum size (the banked-slack floor is retired, #1504).
+VALID_TOTAL = _LESSONS_NONROW_MAX_BYTES // 2
 ROW_A = "- alpha.md — trigger a"
 ROW_B = "- beta.md — trigger b"
 LONG_TRIGGER = "y" * (_LESSONS_ROW_MAX_BYTES + 20)
@@ -155,7 +157,7 @@ def test_valid_write_allowed(tmp_path: Path) -> None:
     ("rows", "total", "want"),
     [
         pytest.param([ROW_A, ROW_B], _LESSONS_MAX_BYTES + 200, "leanness cap", id="total-cap"),
-        pytest.param([ROW_A, ROW_B], _LESSONS_RATCHET_BYTES + 100, "grew past", id="ratchet"),
+        pytest.param([ROW_A, ROW_B], _LESSONS_NONROW_MAX_BYTES + 400, "non-row", id="nonrow"),
         pytest.param(
             [f"- alpha.md — {LONG_TRIGGER}", ROW_B], VALID_TOTAL, "per-row cap", id="per-row"
         ),
@@ -165,12 +167,6 @@ def test_valid_write_allowed(tmp_path: Path) -> None:
             VALID_TOTAL,
             "no matching",
             id="parity-stale-row",
-        ),
-        pytest.param(
-            [ROW_A, ROW_B],
-            _LESSONS_RATCHET_BYTES - _LESSONS_RATCHET_MAX_HEADROOM_BYTES - 500,
-            "banked slack",
-            id="banked-slack",
         ),
     ],
 )
@@ -186,7 +182,7 @@ def test_block_message_names_recovery_paths(tmp_path: Path) -> None:
     lessons = _mk_tree(tmp_path)
     r = _run(_write_payload(lessons, _sized([ROW_A, ROW_B], _LESSONS_MAX_BYTES + 200)))
     assert r.returncode == 2, (r.returncode, r.stderr)
-    assert "_LESSONS_RATCHET_BYTES" in r.stderr, r.stderr
+    assert "_LESSONS_NONROW_MAX_BYTES" in r.stderr, r.stderr
     assert "EPM_ALLOW_LESSONS_EDIT" in r.stderr, r.stderr
     # The sentinel hatch is named by its RESOLVED ABSOLUTE path (a worktree-cwd
     # session following a relative touch recipe would touch the wrong file).
@@ -309,27 +305,26 @@ from pathlib import Path
 
 _LESSONS_MAX_BYTES = 200000
 _LESSONS_WARN_BYTES = 190000
-_LESSONS_RATCHET_BYTES = 50000
-_LESSONS_RATCHET_MAX_HEADROOM_BYTES = 200000
+_LESSONS_NONROW_MAX_BYTES = 50000
 _LESSONS_ROW_MAX_BYTES = 100000
 _LESSONS_ROW_GRANDFATHER_MAX_BYTES = {}
 _LESSONS_ROW_GRANDFATHER_MAX_HEADROOM_BYTES = 40
 
 
 def check_lessons_index(*, repo_root=None, warn_sink=None,
-                        ratchet_bytes=_LESSONS_RATCHET_BYTES,
+                        nonrow_max_bytes=_LESSONS_NONROW_MAX_BYTES,
                         row_max_bytes=_LESSONS_ROW_MAX_BYTES):
-    """Toy stand-in honoring only the total-byte ratchet (test double)."""
+    """Toy stand-in honoring only a total-byte budget (test double)."""
     lessons = Path(repo_root) / ".claude" / "rules" / "LESSONS.md"
     raw = lessons.read_bytes()
-    if len(raw) > ratchet_bytes:
-        return [f"stub-ratchet: {len(raw)} grew past {ratchet_bytes}"]
+    if len(raw) > nonrow_max_bytes:
+        return [f"stub-budget: {len(raw)} bytes over the stub budget {nonrow_max_bytes}"]
     return []
 '''
 
 
 def _mk_stub_lint_tree(tmp_path: Path) -> Path:
-    """Synthetic tree carrying its OWN scripts/workflow_lint.py with a 50k ratchet."""
+    """Synthetic tree carrying its OWN scripts/workflow_lint.py with a 50k budget."""
     lessons = _mk_tree(tmp_path)
     scripts = tmp_path / "scripts"
     scripts.mkdir()
@@ -338,20 +333,21 @@ def _mk_stub_lint_tree(tmp_path: Path) -> Path:
 
 
 def test_edited_tree_constants_bind_allow_side(tmp_path: Path) -> None:
-    """Content over the REAL ratchet but under the edited tree's stub ratchet -> allow.
+    """Content over MAIN's non-row budget but under the stub's budget -> allow.
 
     Pins the #1269 constant-first ordering at edit time: a same-tree constant
-    bump (here a stub lint with ratchet 50000) is honored, so 7000-byte
-    content that the hook-repo lint would block passes.
+    bump (here a stub lint whose budget is 50000) is honored, so content the
+    hook-repo lint would block (non-row bytes over _LESSONS_NONROW_MAX_BYTES)
+    passes under the edited tree's own constants.
     """
     lessons = _mk_stub_lint_tree(tmp_path)
-    content = _sized([ROW_A, ROW_B], _LESSONS_RATCHET_BYTES + 1000)
+    content = _sized([ROW_A, ROW_B], _LESSONS_NONROW_MAX_BYTES + 1000)
     r = _run(_write_payload(lessons, content))
     assert r.returncode == 0, (r.returncode, r.stderr)
 
 
 def test_edited_tree_constants_bind_block_side(tmp_path: Path) -> None:
-    """Content over the stub's OWN ratchet -> the stub blocks (not fail-open).
+    """Content over the stub's OWN budget -> the stub blocks (not fail-open).
 
     Companion to the allow-side case: proves the stub actually loaded and
     produced the block (its error string appears), so the allow-side pass
@@ -361,7 +357,7 @@ def test_edited_tree_constants_bind_block_side(tmp_path: Path) -> None:
     content = _sized([ROW_A, ROW_B], 60000)
     r = _run(_write_payload(lessons, content))
     assert r.returncode == 2, (r.returncode, r.stderr)
-    assert "stub-ratchet" in r.stderr, r.stderr
+    assert "stub-budget" in r.stderr, r.stderr
 
 
 def test_live_lessons_rewrite_allowed() -> None:
