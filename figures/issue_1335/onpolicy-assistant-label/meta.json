@@ -1,0 +1,11 @@
+{
+  "script": "scripts/issue1335_fig_label.py",
+  "source": "eval_results/issue_1335/onpolicy-assistant-label/label_comparison.json",
+  "code_sha": "01ebb89738835c656f4b8a942a0d3afe4647be25",
+  "gen_seed": 45,
+  "figures": [
+    "collapse_slots.png",
+    "hero_label_delta.png",
+    "placement_panel.png"
+  ]
+}
