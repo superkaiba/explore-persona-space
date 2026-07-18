@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1502,
+  "highest_id": 1503,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -3923,6 +3923,13 @@
       "path": "tasks/proposed/1502",
       "status": "proposed",
       "title": "daily-fix: open wf-fix sibling advisory at filing time"
+    },
+    "1503": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1503",
+      "status": "proposed",
+      "title": "daily-fix: windowed-read duty for first-pass guard briefs"
     },
     "151": {
       "has_clean_result": false,
