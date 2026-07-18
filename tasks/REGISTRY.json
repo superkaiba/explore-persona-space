@@ -3934,8 +3934,8 @@
     "1504": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/1504",
-      "status": "approved",
+      "path": "tasks/running/1504",
+      "status": "running",
       "title": "daily-fix: LESSONS ratchet constant conflict magnet"
     },
     "1505": {
