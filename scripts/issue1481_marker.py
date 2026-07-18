@@ -23,10 +23,11 @@ Phases (checkpoint-per-phase, resume-keyed):
   cells   per-cell units over a work-conserving 1-GPU fanout: train (LoRA
           ladder, band-stop LOG-ONLY) -> rung upload -> P3 gauge assert ->
           per-rung slot-read ladder (fresh greedy 20-q gens + teacher-forced
-          four-float reads, trained AND base) -> P2 apply-path gate ->
-          [5, 12]-nat earliest-rung selection with panel de-saturation
-          confirm -> 6-context panel battery at selected/onset/ceiling rungs
-          -> JSON/rollout uploads
+          four-float reads, trained AND base) -> ladder-stage batch upload ->
+          P2 apply-path gate -> [5, 12]-nat earliest-rung selection with panel
+          de-saturation confirm -> 6-context panel battery at selected/onset/
+          ceiling rungs -> panel-stage batch upload (ONE upload_folder commit
+          per cell per stage-completion point — never a per-file loop)
   summary con-vs-po dose-match table + sentinel
 
 ``--smoke`` is the SAME dispatcher at tiny knobs (tiny-real: real tokenizer /
@@ -365,6 +366,10 @@ def make_smoke_seams(cfg: Cfg) -> Seams:
             "repo_id": repo_id,
             "repo_type": repo_type,
             "path_in_repo": path_in_repo,
+            # Batched stage uploads (_upload_cell_stage) thread allow_patterns
+            # + expected_repo_paths + stage here — recorded so the smoke can
+            # assert ONE upload_folder call per stage-completion point.
+            **{k: (str(v) if isinstance(v, Path) else v) for k, v in kwargs.items()},
         }
         log_path = cfg.out_root / "upload_log.jsonl"
         log_path.parent.mkdir(parents=True, exist_ok=True)
@@ -407,6 +412,104 @@ def _upload(
     url = hub._upload(local, repo_id, repo_type, path_in_repo, upload_as_file=as_file)
     if not str(url):
         raise RuntimeError(f"upload of {local} -> {path_in_repo} returned no path")
+    return str(url)
+
+
+# Per-file `_upload(..., as_file=True)` loops over rung/panel JSONs are BANNED
+# on this driver: ~29 rungs x 48 cells of per-file commits 429-stormed the HF
+# data repo commit endpoint on the live GCE lanes (each file burning its own
+# retry ladder while the next cell gated on uploads — the documented
+# per-file-commit anti-pattern, CLAUDE.md Upload Policy / #664 / #727).
+# Batching grain: ONE upload_folder commit per cell per stage-completion
+# point (plan §9 "as-you-go per organism, batched upload_folder"). The local
+# out_root layout mirrors the repo layout under DATA_PREFIX, so one
+# upload_folder rooted at out_root with cell-scoped allow_patterns carries the
+# cell's JSONs AND its rollout text at the SAME repo paths the retired
+# per-file loop used.
+_STAGE_UPLOAD_PATTERNS: dict[str, tuple[str, ...]] = {
+    "ladder": (
+        "{run_id}/slot_reads_rung*.json",
+        "{run_id}/ladder.json",
+        "{run_id}/band_trajectory.json",
+        "raw_completions/ladder/{run_id}_rung*.json",
+    ),
+    "panel": (
+        "{run_id}/panel/*.json",
+        "{run_id}/selection.json",
+        "{run_id}/apply_gate.json",
+        # re-upload: the selection loop writes panel_saturated flags into it
+        "{run_id}/ladder.json",
+        "raw_completions/panel/{run_id}_rung*.json",
+    ),
+}
+
+
+def _stage_upload_manifest(out_root: Path, patterns: Sequence[str]) -> list[str]:
+    """Local rel-paths a stage commit will carry, resolved with the SAME
+    fnmatch semantics ``upload_folder`` applies (``filter_repo_objects`` +
+    the always-on training-state excludes), so the exact expected-set verify
+    in ``hub._upload_folder_filtered`` matches what actually uploads."""
+    from huggingface_hub.utils import filter_repo_objects
+
+    all_rel = sorted(p.relative_to(out_root).as_posix() for p in out_root.rglob("*") if p.is_file())
+    return list(
+        filter_repo_objects(
+            all_rel,
+            allow_patterns=list(patterns),
+            ignore_patterns=list(hub.TRAINING_STATE_IGNORE_PATTERNS),
+        )
+    )
+
+
+def _upload_cell_stage(cfg: Cfg, seams: Seams, run_id: str, stage: str) -> str:
+    """ONE batched Hub commit for a cell's stage-completion artifact set.
+
+    ``stage`` ∈ ``_STAGE_UPLOAD_PATTERNS``. Fail-loud: raises on an empty
+    match set and on a failed/unverified commit (never silent loss). The
+    per-rung writers (`_ladder_cell` / `_panel_battery`) stay upload-free —
+    a mid-stage crash leaves the accumulated files on disk for the
+    crash-persist sweep."""
+    if not cfg.upload:
+        return "skipped://no-upload"
+    patterns = [p.format(run_id=run_id) for p in _STAGE_UPLOAD_PATTERNS[stage]]
+    rel_paths = _stage_upload_manifest(cfg.out_root, patterns)
+    if not rel_paths:
+        raise RuntimeError(f"[i1481-upload] {run_id}/{stage}: no files match {patterns}")
+    expected = [f"{DATA_PREFIX}/{rel}" for rel in rel_paths]
+    # Fix-engaged signal for the relaunch: the batched-upload log line shape.
+    logger.info(
+        "Uploading %s -> %s/%s/%s (upload_folder, %d files, stage=%s)",
+        cfg.out_root / run_id,
+        HF_DATA_REPO,
+        DATA_PREFIX,
+        run_id,
+        len(rel_paths),
+        stage,
+    )
+    if seams.upload_fn is not None:
+        return seams.upload_fn(
+            cfg.out_root,
+            HF_DATA_REPO,
+            "dataset",
+            DATA_PREFIX,
+            allow_patterns=patterns,
+            expected_repo_paths=expected,
+            stage=stage,
+            run_id=run_id,
+        )
+    url = hub._upload_folder_filtered(
+        cfg.out_root,
+        HF_DATA_REPO,
+        "dataset",
+        DATA_PREFIX,
+        allow_patterns=patterns,
+        expected_repo_paths=expected,
+    )
+    if not str(url):
+        raise RuntimeError(
+            f"[i1481-upload] {run_id}/{stage}: batched upload returned no path "
+            f"({len(rel_paths)} files) — refusing silent loss"
+        )
     return str(url)
 
 
@@ -663,6 +766,14 @@ def phase_mixes(cfg: Cfg, seams: Seams) -> dict:
             _upload(cfg, seams, man, f"{DATA_PREFIX}/mixes/{man.name}", as_file=True)
     bank = cfg.out_root / "inputs" / "icl_examples_marker.json"
     _upload(cfg, seams, bank, f"{DATA_PREFIX}/inputs/{bank.name}", as_file=True)
+    # Mixes-stage rollout text (greedy R maps + ICL bank fills) — ONE
+    # upload_folder commit. The retired cell-terminal raw_completions sweep
+    # used to carry these; per-cell stage commits now carry only their OWN
+    # stage's rollouts, so the mixes stage persists its text here, BEFORE
+    # training consumes the mixes (persist-before-reduce).
+    rc_mixes = cfg.out_root / "raw_completions" / "mixes"
+    if rc_mixes.exists():
+        _upload(cfg, seams, rc_mixes, f"{DATA_PREFIX}/raw_completions/mixes")
     return manifests
 
 
@@ -1110,7 +1221,9 @@ def _select_cell(cfg: Cfg, seams: Seams, spec: CellSpec, backend, base_model, to
 
 def run_cell_unit(cfg: Cfg, seams: Seams, run_id: str) -> dict:
     """ONE marker cell end-to-end (single GPU; CVD pin authoritative): train →
-    rung upload → ladder → P2 gate → selection → panel → JSON uploads."""
+    rung upload → ladder → ladder-stage batch upload → P2 gate → selection →
+    panel → panel-stage batch upload (ONE upload_folder commit per stage —
+    the per-file upload_file loop is retired, `_upload_cell_stage`)."""
     spec = parse_cell(run_id)
     cell_root = cfg.out_root / run_id
     done = cell_root / "cell_result.json"
@@ -1124,6 +1237,9 @@ def run_cell_unit(cfg: Cfg, seams: Seams, run_id: str) -> dict:
     try:
         base_model = _load_base(seams.device)
         ladder = _ladder_cell(cfg, seams, spec, backend, base_model, tok)
+        # Ladder-stage batch upload BEFORE the P2 gate (persist-before-reduce:
+        # a gate HALT must not strand the rung slot-reads + rollout text).
+        _upload_cell_stage(cfg, seams, run_id, "ladder")
         gate = _apply_path_gate(cfg, spec, ladder)
         sel = _select_cell(cfg, seams, spec, backend, base_model, tok)
     finally:
@@ -1131,34 +1247,10 @@ def run_cell_unit(cfg: Cfg, seams: Seams, run_id: str) -> dict:
             base_model = d1333._free_hf(base_model)
         backend.close(f"i1481-cell[{run_id}]")
 
-    # Cell-terminal uploads: rollout text + every selection/ladder/panel JSON.
-    rc_root = cfg.out_root / "raw_completions"
-    if rc_root.exists():
-        _upload(cfg, seams, rc_root, f"{DATA_PREFIX}/raw_completions")
-    _upload(
-        cfg, seams, cell_root / "ladder.json", f"{DATA_PREFIX}/{run_id}/ladder.json", as_file=True
-    )
-    _upload(
-        cfg,
-        seams,
-        cell_root / "selection.json",
-        f"{DATA_PREFIX}/{run_id}/selection.json",
-        as_file=True,
-    )
-    for p in sorted(cell_root.glob("slot_reads_rung*.json")):
-        _upload(cfg, seams, p, f"{DATA_PREFIX}/{run_id}/{p.name}", as_file=True)
-    for p in sorted((cell_root / "panel").glob("*.json")):
-        _upload(cfg, seams, p, f"{DATA_PREFIX}/{run_id}/panel/{p.name}", as_file=True)
-    traj = cfg.out_root / run_id / "band_trajectory.json"
-    if traj.exists():
-        _upload(cfg, seams, traj, f"{DATA_PREFIX}/{run_id}/band_trajectory.json", as_file=True)
-    _upload(
-        cfg,
-        seams,
-        cell_root / "apply_gate.json",
-        f"{DATA_PREFIX}/{run_id}/apply_gate.json",
-        as_file=True,
-    )
+    # Panel-stage batch upload at selection/panel completion — ONE commit:
+    # panel batteries + selection + apply_gate + the saturation-updated
+    # ladder.json + the cell's panel rollout text.
+    _upload_cell_stage(cfg, seams, run_id, "panel")
 
     rec = {
         "run_id": run_id,
