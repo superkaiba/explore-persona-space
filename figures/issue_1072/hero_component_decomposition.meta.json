@@ -1,0 +1,228 @@
+{
+  "commit": "8a5e966ac8",
+  "created": "2026-07-18T06:57:19Z",
+  "figsize": [
+    6.4,
+    4.2
+  ],
+  "points": [
+    {
+      "category": "L14",
+      "own - external (plain) gap contribution": 0.00012610822620714787,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "L20",
+      "own - external (plain) gap contribution": 0.00030694991964383596,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "L23",
+      "own - external (plain) gap contribution": 0.0006189442204668331,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "L26",
+      "own - external (plain) gap contribution": 0.0008090281541341879,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "L14",
+      "own - external (plain) gap contribution": 0.007965291559337395,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "L20",
+      "own - external (plain) gap contribution": 0.017894599718421,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "L23",
+      "own - external (plain) gap contribution": 0.022374426297928796,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "L26",
+      "own - external (plain) gap contribution": 0.03222975819697621,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "L14",
+      "own - external (plain) gap contribution": 8.174428525206147e-05,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "L20",
+      "own - external (plain) gap contribution": 0.00023464720408431297,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "L23",
+      "own - external (plain) gap contribution": 0.00028552329972890075,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "L26",
+      "own - external (plain) gap contribution": 0.0008634712879144312,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 0.32,
+      "own - external (plain) gap contribution": -0.007839183333130247,
+      "error": 0.005656976458293549,
+      "series": "D = \u0394C_par - \u0394C_perp (95% CI)",
+      "_kind": "errorbar",
+      "_group": 3
+    },
+    {
+      "x": 1.32,
+      "own - external (plain) gap contribution": -0.017587649798777163,
+      "error": 0.0056674667233886054,
+      "series": "D = \u0394C_par - \u0394C_perp (95% CI)",
+      "_kind": "errorbar",
+      "_group": 3
+    },
+    {
+      "x": 2.32,
+      "own - external (plain) gap contribution": -0.021755482077461964,
+      "error": 0.005527047545609396,
+      "series": "D = \u0394C_par - \u0394C_perp (95% CI)",
+      "_kind": "errorbar",
+      "_group": 3
+    },
+    {
+      "x": 3.32,
+      "own - external (plain) gap contribution": -0.03142073004284202,
+      "error": 0.006609250371161451,
+      "series": "D = \u0394C_par - \u0394C_perp (95% CI)",
+      "_kind": "errorbar",
+      "_group": 3
+    },
+    {
+      "x": 0.32,
+      "own - external (plain) gap contribution": -0.007839183333130247,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 1.32,
+      "own - external (plain) gap contribution": -0.017587649798777163,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 2.32,
+      "own - external (plain) gap contribution": -0.021755482077461964,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 3.32,
+      "own - external (plain) gap contribution": -0.03142073004284202,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 0.32,
+      "own - external (plain) gap contribution": -0.013547385582824764,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 1.32,
+      "own - external (plain) gap contribution": -0.023324672212089063,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 2.32,
+      "own - external (plain) gap contribution": -0.02740122627710189,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 3.32,
+      "own - external (plain) gap contribution": -0.038113743947815755,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 0.32,
+      "own - external (plain) gap contribution": -0.002233432666237666,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 1.32,
+      "own - external (plain) gap contribution": -0.011989738765311852,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 2.32,
+      "own - external (plain) gap contribution": -0.016347131185883098,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 3.32,
+      "own - external (plain) gap contribution": -0.024895243205492853,
+      "_kind": "line",
+      "_group": 6
+    }
+  ],
+  "n_series": 7,
+  "total_points": 28,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Component decomposition of the own-answer advantage by layer",
+        "ylabel": "own - external (plain) gap contribution",
+        "legend_labels": [
+          "\u0394C_par",
+          "\u0394C_perp",
+          "\u0394C_cross",
+          "D = \u0394C_par - \u0394C_perp (95% CI)"
+        ],
+        "xticklabels": [
+          "L14",
+          "L20",
+          "L23",
+          "L26"
+        ],
+        "yticklabels": [
+          "\u22120.05",
+          "\u22120.04",
+          "\u22120.03",
+          "\u22120.02",
+          "\u22120.01",
+          "0.00",
+          "0.01",
+          "0.02",
+          "0.03",
+          "0.04"
+        ]
+      }
+    ],
+    "series": [
+      "\u0394C_par",
+      "\u0394C_perp",
+      "\u0394C_cross",
+      "D = \u0394C_par - \u0394C_perp (95% CI)"
+    ]
+  }
+}

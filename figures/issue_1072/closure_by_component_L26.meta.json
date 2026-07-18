@@ -1,0 +1,95 @@
+{
+  "commit": "8a5e966ac8",
+  "created": "2026-07-18T06:57:20Z",
+  "figsize": [
+    5.6,
+    3.8
+  ],
+  "points": [
+    {
+      "x": -0.18,
+      "own - external (plain) gap": 0.0008090281541341879,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.82,
+      "own - external (plain) gap": 0.03222975819697621,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 1.82,
+      "own - external (plain) gap": 0.0008634712879144312,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 2.82,
+      "own - external (plain) gap": 0.033902259474403285,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.18,
+      "own - external (plain) gap": 0.0007378667976300633,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 1.18,
+      "own - external (plain) gap": 0.019494424226803586,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 2.18,
+      "own - external (plain) gap": 0.00020095774048480095,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 3.18,
+      "own - external (plain) gap": 0.020433250889839827,
+      "_kind": "bar",
+      "_group": 1
+    }
+  ],
+  "n_series": 2,
+  "total_points": 8,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Per-component prefix closure at L26",
+        "ylabel": "own - external (plain) gap",
+        "legend_labels": [
+          "G0 (no prefix)",
+          "G(t=16) (16-token prefix)"
+        ],
+        "xticklabels": [
+          "par",
+          "perp",
+          "cross",
+          "full"
+        ],
+        "yticklabels": [
+          "0.000",
+          "0.005",
+          "0.010",
+          "0.015",
+          "0.020",
+          "0.025",
+          "0.030",
+          "0.035",
+          "0.040"
+        ]
+      }
+    ],
+    "series": [
+      "G0 (no prefix)",
+      "G(t=16) (16-token prefix)"
+    ]
+  }
+}
