@@ -1273,6 +1273,10 @@ _PER_UNIT_ORPHAN_CHECK = "per-unit companion figures embedded"
 
 _PER_UNIT_ORPHAN_PATH = "figures/issue_999/hero_percontext.png"
 
+# The class-B WARN token (#1510) — pinned as a LITERAL here (not imported
+# from the module) so a silent token rename breaks the grep contract test.
+_PER_UNIT_NAMED_CLASS = "companion-named-not-embedded"
+
 
 def _make_repo_with_per_unit_orphan(tmp_path):
     """git repo whose HEAD commit tracks `figures/issue_999/hero.png` +
@@ -1326,6 +1330,9 @@ def test_orphan_per_unit_figure_warns(tmp_path, monkeypatch):
     assert _PER_UNIT_ORPHAN_PATH in r.detail
     assert "Lens 11" in r.detail
     assert sha[:8] in r.detail
+    # Class separation (#1510): a never-mentioned orphan reports class A
+    # only — the class-B token must not appear.
+    assert _PER_UNIT_NAMED_CLASS not in r.detail
     assert ok  # the WARN never flips the overall verdict (no-regress guarantee)
     # Scoped subprocess budget on a DIRECT invocation: 1 unique (sha, dir)
     # pair → exactly 1 ls-tree (plan §4.1 budget: 1 per unique pair).
@@ -1375,9 +1382,11 @@ def test_orphan_unreachable_sha_skips_silently(tmp_path, monkeypatch):
 
 
 def test_orphan_prose_mention_suppresses_warn(tmp_path, monkeypatch):
-    """The prose disclosure escape: an unembedded companion whose stem is
-    named in body prose is treated as disclosed → no WARN (mechanizes
-    'exemptions stated in prose are legitimate')."""
+    """The prose disclosure escape, PHRASE-GATED as of #1510: an unembedded
+    companion whose stem is named in body prose is exempt only because the
+    fixture prose carries an exemption idiom ("superseded by") in the
+    stem's own paragraph — the second phrase-set pin (the corpus-real #928
+    footer idiom); a bare naming would now WARN class B."""
     repo, sha = _make_repo_with_per_unit_orphan(tmp_path)
     monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
     body = GOOD_BODY.replace("0123456789abcdef", sha).replace(
@@ -1388,6 +1397,178 @@ def test_orphan_prose_mention_suppresses_warn(tmp_path, monkeypatch):
     r = verify_task_body.check_orphaned_per_unit_figures(body, issue=999)
     assert r.passed is True
     assert r.is_warn is False
+
+
+def test_orphan_named_not_embedded_warns_without_exemption(tmp_path, monkeypatch):
+    """The #1426 regression fixture (#1510 durability pin, incl. for the
+    SPEC/lens prose edits): the companion NAMED in body prose with a bare
+    provenance clause ("committed at the same pin" — the incident's own
+    phrasing) and embedded nowhere → class-B WARN carrying the
+    `companion-named-not-embedded` token; the provenance clause does NOT
+    exempt."""
+    repo, sha = _make_repo_with_per_unit_orphan(tmp_path)
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    body = GOOD_BODY.replace("0123456789abcdef", sha).replace(
+        "The 17-pt lift holds at every seed;",
+        "The per-context views behind these aggregates are `hero_percontext.png`, "
+        "committed at the same pin. The 17-pt lift holds at every seed;",
+    )
+    r = verify_task_body.check_orphaned_per_unit_figures(body, issue=999)
+    assert r.passed is True  # WARN-tier: the overall verdict is never flipped
+    assert r.is_warn is True
+    assert _PER_UNIT_NAMED_CLASS in r.detail
+    assert _PER_UNIT_ORPHAN_PATH in r.detail
+    assert "Lens 11" in r.detail
+    assert sha[:8] in r.detail
+
+
+def test_orphan_named_with_exemption_phrase_no_warn(tmp_path, monkeypatch):
+    """The exemption phrase in the stem's own paragraph silences class B —
+    both anchored idioms, incl. a CAPITALIZED variant (the phrase regex is
+    case-insensitive)."""
+    repo, sha = _make_repo_with_per_unit_orphan(tmp_path)
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    body = GOOD_BODY.replace("0123456789abcdef", sha).replace(
+        "The 17-pt lift holds at every seed;",
+        "Deliberately linked, not embedded: the hero already shows every point — "
+        "see `hero_percontext.png`. The 17-pt lift holds at every seed;",
+    )
+    r = verify_task_body.check_orphaned_per_unit_figures(body, issue=999)
+    assert r.passed is True
+    assert r.is_warn is False
+    body2 = GOOD_BODY.replace("0123456789abcdef", sha).replace(
+        "The 17-pt lift holds at every seed;",
+        "`hero_percontext.png` is a round-1 exploratory view. Superseded by the "
+        "hero's right panel. The 17-pt lift holds at every seed;",
+    )
+    r2 = verify_task_body.check_orphaned_per_unit_figures(body2, issue=999)
+    assert r2.passed is True
+    assert r2.is_warn is False
+
+
+def test_orphan_exemption_phrase_other_paragraph_still_warns(tmp_path, monkeypatch):
+    """Paragraph-proximity scoping: an exemption phrase in a DIFFERENT
+    blank-line-delimited paragraph than the stem does NOT exempt — the
+    stem's own paragraph must carry the phrase."""
+    repo, sha = _make_repo_with_per_unit_orphan(tmp_path)
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    body = GOOD_BODY.replace("0123456789abcdef", sha).replace(
+        "The 17-pt lift holds at every seed;",
+        "The per-context companion is `hero_percontext.png`, committed at the same pin.\n\n"
+        "A different figure was deliberately not embedded for space. "
+        "The 17-pt lift holds at every seed;",
+    )
+    r = verify_task_body.check_orphaned_per_unit_figures(body, issue=999)
+    assert r.passed is True
+    assert r.is_warn is True
+    assert _PER_UNIT_NAMED_CLASS in r.detail
+
+
+def test_orphan_multi_stem_one_paragraph_phrase_exempts_both(tmp_path, monkeypatch):
+    """Accepted false-negative direction (pinned): ONE exemption phrase in
+    a paragraph naming TWO per-unit companion stems exempts BOTH —
+    paragraph-level co-occurrence, not per-stem sentence parsing (WARN-tier
+    backstop; Lens 11 stays the substantive owner)."""
+    repo, _sha_a = _make_repo_with_per_unit_orphan(tmp_path)
+
+    def git(*args):
+        subprocess.run(["git", "-C", str(repo), *args], check=True, capture_output=True)
+
+    (repo / "figures" / "issue_999" / "hero_percell.png").write_bytes(b"\x89PNG fake bytes")
+    git("add", "figures")
+    git("commit", "-q", "-m", "add second per-unit companion")
+    sha = subprocess.run(
+        ["git", "-C", str(repo), "rev-parse", "HEAD"],
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout.strip()
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    body = GOOD_BODY.replace("0123456789abcdef", sha).replace(
+        "The 17-pt lift holds at every seed;",
+        "Round-1 exploratory views `hero_percontext.png` and `hero_percell.png` are "
+        "superseded by the embedded hero panels. The 17-pt lift holds at every seed;",
+    )
+    r = verify_task_body.check_orphaned_per_unit_figures(body, issue=999)
+    assert r.passed is True
+    assert r.is_warn is False  # one phrase exempts both co-resident stems
+
+
+def test_orphan_blob_embed_no_warn(tmp_path, monkeypatch):
+    """The widened any-URL-form embedded set (#1510): a GitHub BLOB-URL
+    image embed of the companion is a real embed → clean PASS. Pre-#1510
+    this shape passed only via the stem-in-prose accident (the embed URL
+    text names the stem); under the phrase-gated escape it would now WARN
+    class B were the embed set still raw-GitHub-only."""
+    repo, sha = _make_repo_with_per_unit_orphan(tmp_path)
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    embed = (
+        "![Per-context deltas.](https://github.com/superkaiba/explore-persona-space/"
+        f"blob/{sha}/figures/issue_999/hero_percontext.png)"
+    )
+    body = GOOD_BODY.replace("0123456789abcdef", sha).replace(
+        "> **Figure.**", embed + "\n\n> **Figure.**"
+    )
+    r = verify_task_body.check_orphaned_per_unit_figures(body, issue=999)
+    assert r.passed is True
+    assert r.is_warn is False
+    assert "no orphaned per-unit figures" in r.detail
+
+
+def test_orphan_linked_results_path_defers_to_check38(tmp_path, monkeypatch):
+    """Single ownership (no double-WARN): a companion markdown-LINKED in
+    the v4 `## Results` prose layer is check 38's WARN — check 31 carries
+    no class-B token for it. Second arm pins case-fold symmetry of the
+    subtraction: a case-varying link URL still defers (without the
+    case-fold it would surface as class A — the case-varied URL does not
+    put the exact stem in the body)."""
+    repo, sha = _make_repo_with_per_unit_orphan(tmp_path)
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    link_url = (
+        "https://raw.githubusercontent.com/superkaiba/explore-persona-space/"
+        f"{sha}/figures/issue_999/hero_percontext.png"
+    )
+    fixture = _c37_body_with_results_link(
+        f"The per-context view behind this aggregate: [companion]({link_url})."
+    ).replace("0123456789abcdef", sha)
+    _fm, body = verify_task_body.split_frontmatter(fixture)
+    r31 = verify_task_body.check_orphaned_per_unit_figures(body, issue=999)
+    assert r31.passed is True
+    assert r31.is_warn is False  # deferred to check 38 — no WARN here
+    assert _PER_UNIT_NAMED_CLASS not in r31.detail
+    r38 = verify_task_body.check_linked_not_embedded_figures(body, issue=999)
+    assert r38.is_warn is True
+    assert _PER_UNIT_ORPHAN_PATH in r38.detail
+    # Case-fold symmetry: the same link with a case-varying basename.
+    upper_url = link_url.replace("hero_percontext.png", "HERO_percontext.png")
+    fixture_u = _c37_body_with_results_link(
+        f"The per-context view behind this aggregate: [companion]({upper_url})."
+    ).replace("0123456789abcdef", sha)
+    _fm, body_u = verify_task_body.split_frontmatter(fixture_u)
+    r31_u = verify_task_body.check_orphaned_per_unit_figures(body_u, issue=999)
+    assert r31_u.passed is True
+    assert r31_u.is_warn is False
+
+
+def test_orphan_nonv4_linked_path_fires_named_class(tmp_path, monkeypatch):
+    """Row-f coverage (deliberate widening, not an accident): a markdown
+    LINK outside check 38's gates — here in a pre-v3 legacy body 38 never
+    scans — is a prose naming of an unembedded companion, so class B fires
+    absent an exemption phrase (the one-phrase remedy applies the same)."""
+    repo, sha = _make_repo_with_per_unit_orphan(tmp_path)
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    link_url = (
+        "https://raw.githubusercontent.com/superkaiba/explore-persona-space/"
+        f"{sha}/figures/issue_999/hero_percontext.png"
+    )
+    body = GOOD_BODY.replace("0123456789abcdef", sha).replace(
+        "The 17-pt lift holds at every seed;",
+        f"Full per-context view: [companion]({link_url}). The 17-pt lift holds at every seed;",
+    )
+    r = verify_task_body.check_orphaned_per_unit_figures(body, issue=999)
+    assert r.passed is True
+    assert r.is_warn is True
+    assert _PER_UNIT_NAMED_CLASS in r.detail
 
 
 def test_orphan_deduped_across_cited_shas(tmp_path, monkeypatch):
