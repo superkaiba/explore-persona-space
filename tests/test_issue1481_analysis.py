@@ -15,6 +15,7 @@ from __future__ import annotations
 import json
 import sys
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 
@@ -28,6 +29,7 @@ import issue1090_fu4 as fu4  # noqa: E402
 import issue1481_analysis as ana  # noqa: E402
 import issue1481_cells as cells  # noqa: E402
 import issue1481_marker as mk  # noqa: E402
+import issue1481_worker as wk  # noqa: E402
 
 from explore_persona_space.artifacts.organisms import _sha256_text  # noqa: E402
 
@@ -580,3 +582,154 @@ def test_errorbar_offsets_clamp_inverted_ci(pipeline, tmp_path):
     figs.fig_heldout_decomp(analysis, fig_dir)
     assert (fig_dir / "hero1_forest_matched_install.png").exists()
     assert (fig_dir / "heldout_vs_pooled_decomposition.png").exists()
+
+
+# ── r2 revision coverage: reused-1434 realized shape + Phase B/C wiring ──────
+
+
+def test_arm_record_reused_1434_fixture_realized_shape(tmp_path):
+    """The reused-1434 reader branch against fixtures in the REALIZED
+    committed shape — top-level ``"ladders"`` (NOT ``"runs"``) + a
+    ``verdict_arms`` sibling — the r1 Critical (#1073
+    reused_artifact_schema_drift: the old fixture mirrored the reader's
+    assumed shape, so the branch was never exercised)."""
+    repo_root = tmp_path / "repo"
+    for regime, rel in cells.REUSED_1434_LADDERS.items():
+        recs = {}
+        for ctx in cells.CTX_KEYS:
+            for lr in fu4.FU4_LRS:
+                recs[cells.reused_1434_run_id(ctx, regime, lr)] = _run_rec({10: 0.70, 20: 0.80}, 10)
+        path = repo_root / rel
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(json.dumps({"ladders": recs, "verdict_arms": {}}))
+    paths = ana.SelectPaths(
+        ladders_dir=tmp_path / "no-fresh-ladders", repo_root=repo_root, marker_root=None
+    )
+    for ctx in cells.CTX_KEYS:
+        for regime in cells.REGIMES:
+            arm_id, sel, rates, source = ana._arm_record(paths, "cas", ctx, regime, 1e-5, 42)
+            assert arm_id == f"cas-{ctx}-{regime}-lr1e5-s42"
+            assert source == "reused-1434"
+            assert sel["step"] == 10 and rates
+
+
+def test_reused_1434_arms_resolve_on_real_committed_artifacts():
+    """All 24 reused #1434 casual seed-42 arms resolve via ``_arm_record``
+    against the REAL committed ladders JSONs (r1 Critical regression pin:
+    fails pre-fix with "no 'runs' dict" on the committed ``"ladders"`` key;
+    requires the eval_results/issue_1434 cone — tests/sparse_cones.txt)."""
+    for rel in cells.REUSED_1434_LADDERS.values():
+        assert (REPO / rel).exists(), f"missing committed artifact {rel}"
+    paths = ana.SelectPaths(ladders_dir=REPO / "no-such-dir", repo_root=REPO, marker_root=None)
+    n = 0
+    for ctx in cells.CTX_KEYS:
+        for regime in cells.REGIMES:
+            for lr in fu4.FU4_LRS:
+                arm_id, sel, rates, source = ana._arm_record(paths, "cas", ctx, regime, lr, 42)
+                assert source == "reused-1434", arm_id
+                assert "step" in sel and rates, arm_id
+                n += 1
+    assert n == 24
+
+
+def test_merge_cohort_manifests_union_and_fail_loud(tmp_path):
+    """Phase-B prep (r1 Major phase-bc-fresh-arm-wiring): the per-seed cohort
+    manifests union into ONE round-wide manifest; a missing cohort or a
+    conflicting duplicate run entry fails loud."""
+    rname = cells.round_name(BEH_KEY, "con")
+
+    def _write(seed: int, runs: list[dict]) -> None:
+        p = tmp_path / f"cell_manifest_{rname}_s{seed}.json"
+        p.write_text(json.dumps({"issue": 1481, "round": rname, "runs": runs}))
+
+    _write(42, [{"run_id": "imp-pers-con-lr1e5-s42", "train_mix_sha256": "aa"}])
+    _write(137, [{"run_id": "imp-pers-con-lr1e5-s137", "train_mix_sha256": "bb"}])
+    merged = wk._merge_cohort_manifests(rname, tmp_path, (42, 137))
+    assert {r["run_id"] for r in merged["runs"]} == {
+        "imp-pers-con-lr1e5-s42",
+        "imp-pers-con-lr1e5-s137",
+    }
+    assert merged["merged_seeds"] == [42, 137]
+    assert merged["merged_from"] == [
+        f"cell_manifest_{rname}_s42.json",
+        f"cell_manifest_{rname}_s137.json",
+    ]
+    with pytest.raises(FileNotFoundError):
+        wk._merge_cohort_manifests(rname, tmp_path, (42, 999))
+    _write(137, [{"run_id": "imp-pers-con-lr1e5-s42", "train_mix_sha256": "CONFLICT"}])
+    with pytest.raises(RuntimeError):
+        wk._merge_cohort_manifests(rname, tmp_path, (42, 137))
+
+
+def test_fresh_arm_ckpt_stages_from_hub(tmp_path, monkeypatch):
+    """``phase_panel --arms`` on a FRESH Phase-C instance (r1 Major
+    phase-bc-fresh-arm-wiring): the build record stages from the run's data
+    prefix and the SELECTED rung from the model-repo rung uploads when the
+    Phase-A-local ``selected_ckpt`` path does not exist. Real bodies of
+    ``_fresh_arm_ckpt`` + ``_stage_fresh_rung`` execute; fakes ONLY at the
+    Hub network boundary, signature-conformant by construction."""
+    import huggingface_hub as hfh
+
+    cells.register_i1481_rounds()
+    rname = cells.round_name(BEH_KEY, "con")
+    run = fu4.ROUNDS[rname].runs[0]
+    arm_id = run.run_id
+    spec = fu4.ROUNDS[rname]
+    out_root = tmp_path / "phase_c"
+    cfg = wk.run1090.RunConfig(smoke=False, cells=(), out_root=out_root)
+
+    def fake_stage_prefix(prefix, dest, *, skip_if=None):
+        assert prefix == f"{spec.data_prefix}/{arm_id}"
+        dest.mkdir(parents=True, exist_ok=True)
+        (dest / f"{rname}_build_result.json").write_text(
+            json.dumps(
+                {
+                    "status": "trained",
+                    "selected_ckpt": "/phase-a-instance/gone/checkpoint-20",
+                    "selection": {"step": 20, "rate": 0.70, "in_band": True},
+                }
+            )
+        )
+
+    monkeypatch.setattr(wk.run1090, "_stage_hf_prefix", fake_stage_prefix)
+    rung_pir = f"{spec.adapter_prefix}/{arm_id}/checkpoint-20"
+
+    class _FakeApi:
+        def list_repo_tree(self, repo_id, path_in_repo=None, repo_type=None, recursive=False):
+            assert repo_type == "model" and path_in_repo == rung_pir
+            return [
+                SimpleNamespace(path=f"{rung_pir}/adapter_config.json"),
+                SimpleNamespace(path=f"{rung_pir}/adapter_model.safetensors"),
+            ]
+
+    def fake_download(repo_id, filename, *, repo_type=None, local_dir=None):
+        p = Path(local_dir) / Path(filename).name
+        p.parent.mkdir(parents=True, exist_ok=True)
+        p.write_text("{}")
+        return str(p)
+
+    monkeypatch.setattr(hfh, "HfApi", _FakeApi)
+    monkeypatch.setattr(hfh, "hf_hub_download", fake_download)
+
+    ckpt = wk._fresh_arm_ckpt(cfg, run, arm_id)
+    assert Path(ckpt) == out_root / arm_id / "checkpoint-20"
+    assert (Path(ckpt) / "adapter_config.json").exists()
+    assert (Path(ckpt) / "adapter_model.safetensors").exists()
+    assert not list(Path(ckpt).glob("_hfstage-*")), "staging dir must be reaped"
+
+    # Local fast path: an existing selected_ckpt dir (the Phase-A instance
+    # itself) is used verbatim — no Hub staging.
+    local_ckpt = tmp_path / "local" / "checkpoint-30"
+    local_ckpt.mkdir(parents=True)
+    (local_ckpt / "adapter_config.json").write_text("{}")
+    run_root = out_root / arm_id
+    (run_root / f"{rname}_build_result.json").write_text(
+        json.dumps(
+            {
+                "status": "trained",
+                "selected_ckpt": str(local_ckpt),
+                "selection": {"step": 30, "rate": 0.70, "in_band": True},
+            }
+        )
+    )
+    assert Path(wk._fresh_arm_ckpt(cfg, run, arm_id)) == local_ckpt

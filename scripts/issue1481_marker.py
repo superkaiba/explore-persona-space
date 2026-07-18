@@ -1519,6 +1519,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             for k, v in phase_mixes(cfg, seams).items()
         }
     if want("cells"):
+        _assert_headroom(cfg)  # per-phase re-check (plan §4.7): rungs + rollouts land here
         cells_out = phase_cells(cfg, seams)
         summary["cells"] = {
             k: {
@@ -1528,6 +1529,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             for k, v in cells_out.items()
         }
     if want("summary"):
+        _assert_headroom(cfg)  # per-phase re-check (plan §4.7)
         dm = phase_summary(cfg, seams)
         summary["dose_matched_pairs"] = sum(1 for p in dm["pairs"] if p["dose_matched"])
         summary["n_pairs"] = len(dm["pairs"])

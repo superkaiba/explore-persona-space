@@ -103,11 +103,18 @@ class SelectPaths:
 
 
 def _ladders_runs(path: Path) -> dict[str, dict]:
-    """The ``runs`` dict of one committed/fresh ladders JSON (fail-loud)."""
+    """The per-run records dict of one committed/fresh ladders JSON (fail-loud).
+
+    Fresh i1481 rounds + the reused fu4/fu5/fu7 parents use a top-level
+    ``"runs"`` dict; the committed #1434 ladders (``i1434_ladders.json`` /
+    ``i1434po_ladders.json``) carry the SAME record shape (``selection`` +
+    ``rates_by_step``) under ``"ladders"`` instead — accept both (verified
+    against the committed artifacts; the #1073 reused_artifact_schema_drift
+    class)."""
     payload = _read_json(path)
-    runs = payload.get("runs")
+    runs = payload.get("runs") or payload.get("ladders")
     if not isinstance(runs, dict) or not runs:
-        raise RuntimeError(f"[i1481-select] no 'runs' dict in ladders JSON {path}")
+        raise RuntimeError(f"[i1481-select] no 'runs'/'ladders' dict in ladders JSON {path}")
     return runs
 
 
@@ -734,7 +741,15 @@ def _content_contrast(manifest: dict, aggregates: dict[str, dict], mix_meta_root
                 for seed in cells.SEEDS:
                     srec = cell["seeds"][str(seed)]
                     for regime in cells.REGIMES:
-                        rec = agg["arms"][srec[regime]["arm_id"]]["contexts"][ctx_id]
+                        arm_id = srec[regime]["arm_id"]
+                        try:
+                            rec = agg["arms"][arm_id]["contexts"][ctx_id]
+                        except KeyError as e:
+                            raise RuntimeError(
+                                f"[i1481-contrast] judge aggregate missing context "
+                                f"{ctx_id!r} for arm {arm_id!r} — re-run --phase judge "
+                                f"over the full panel"
+                            ) from e
                         r = rows.setdefault(regime, [0, 0])
                         if rec.get("rate") is not None:
                             r[0] += int(rec["k_positive"])

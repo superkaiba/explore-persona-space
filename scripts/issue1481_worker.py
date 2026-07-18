@@ -19,6 +19,11 @@ Pod (GPU; ``bash scripts/issue1481_dispatch.sh`` sequences per dispatch group):
   Fu4Run carries no seed field), so one dispatch fans out both seeds.
 - ``--dispatch impolite|sycophancy|casual-s137``  sequences stage → dispatch
   for the group's con + po rounds, then the reused-arm re-reads (gate P1).
+- ``--phase merge-manifests --round <name>``  Phase B prep: merge the per-seed
+  cohort manifests into the round-wide ``cell_manifest_<round>.json`` (the fu4
+  judge-aggregate DEFAULT manifest path), so Phase B is ONE round-wide
+  ``--phase judge-aggregate --round <name>`` invocation covering both seed
+  cohorts — never per-cohort invocations clobbering ``<round>_ladders.json``.
 - ``--phase reread``  the 12 fu4/fu5/fu7 committed-selected-checkpoint
   apply-and-read jobs (plan §4.6 gate P1: re-read Tier-1 rate at the
   committed rung under THIS run's instrument; WARN + persisted values).
@@ -41,7 +46,10 @@ import argparse  # noqa: E402
 import hashlib  # noqa: E402
 import json  # noqa: E402
 import logging  # noqa: E402
+import os  # noqa: E402
+import shutil  # noqa: E402
 import sys  # noqa: E402
+import tempfile  # noqa: E402
 import time  # noqa: E402
 from pathlib import Path  # noqa: E402
 
@@ -70,7 +78,7 @@ from explore_persona_space.orchestrate import hub  # noqa: E402
 logger = logging.getLogger("issue1481.worker")
 
 FU4_DELEGATED_PHASES = ("stage", "dispatch", "run", "judge-aggregate")
-OWN_PHASES = ("mixes", "reread", "base-arms", "panel")
+OWN_PHASES = ("mixes", "merge-manifests", "reread", "base-arms", "panel")
 
 # Committed parent manifests carrying con-mix sha pins for the cells they
 # consumed (plan §4.3 "shas from the fu3/fu4 records asserted at staging").
@@ -200,6 +208,11 @@ def phase_mixes(cfg: run1090.RunConfig, args: argparse.Namespace) -> int:
         _, mix_sub, meta_sub = _con_source_layout(beh_key, ctx_key)
         mix_path = src / mix_sub
         con_sha = hashlib.sha256(mix_path.read_bytes()).hexdigest()
+        parent_meta = run1090._read_json(src / meta_sub)
+        # Frozen-mix sha pin (plan §4.3): committed parent manifest FIRST, the
+        # staged fu3 mix_meta.json pin as the fallback; a cell with NEITHER is
+        # recorded pin_asserted=false (WARN), never silently fail-open.
+        want, pin_from = None, None
         pin_src = _PARENT_MANIFESTS.get(cell_key)
         if pin_src is not None:
             manifest_path = cells.REPO_ROOT / pin_src
@@ -209,11 +222,23 @@ def phase_mixes(cfg: run1090.RunConfig, args: argparse.Namespace) -> int:
                 if "train_mix_sha256" in r
             }
             want = pins.get(_PARENT_MANIFEST_RUN[cell_key])
-            if want is not None and want != con_sha:
-                raise RuntimeError(
-                    f"[i1481-po-mixes] {cell_key}: staged con mix sha {con_sha} != "
-                    f"committed {pin_src} pin {want} — frozen-mix premise broken; refusing"
-                )
+            pin_from = pin_src if want is not None else None
+        if want is None and parent_meta.get("train_mix_sha256"):
+            want = parent_meta["train_mix_sha256"]
+            pin_from = "staged mix_meta.json"
+        pin_asserted = want is not None
+        if pin_asserted and want != con_sha:
+            raise RuntimeError(
+                f"[i1481-po-mixes] {cell_key}: staged con mix sha {con_sha} != "
+                f"{pin_from} pin {want} — frozen-mix premise broken; refusing"
+            )
+        if not pin_asserted:
+            logger.warning(
+                "[i1481-po-mixes] %s: no committed parent-manifest pin and the staged "
+                "mix_meta.json carries no train_mix_sha256 — pin_asserted=false "
+                "(frozen-mix premise recorded unverified for this cell)",
+                cell_key,
+            )
         po_rows, derivation = w1434._derive_po_rows(
             cell_key,
             _read_jsonl(mix_path),
@@ -227,8 +252,14 @@ def phase_mixes(cfg: run1090.RunConfig, args: argparse.Namespace) -> int:
         mix_out = out_dir / "train_mix.jsonl"
         _write_jsonl(mix_out, po_rows)
         po_sha = hashlib.sha256(mix_out.read_bytes()).hexdigest()
-        parent_meta = run1090._read_json(src / meta_sub)
-        derivation.update({"parent_cell": cell_key, "parent_mix_sha256": con_sha})
+        derivation.update(
+            {
+                "parent_cell": cell_key,
+                "parent_mix_sha256": con_sha,
+                "pin_asserted": pin_asserted,
+                "pin_source": pin_from,
+            }
+        )
         meta = {
             **parent_meta,
             "counts_planned": {"positives": 20, "negatives": 0, "generic": 40},
@@ -258,6 +289,8 @@ def phase_mixes(cfg: run1090.RunConfig, args: argparse.Namespace) -> int:
                 "cell_key": cell_key,
                 "parent_mix_sha256": con_sha,
                 "train_mix_sha256": po_sha,
+                "pin_asserted": pin_asserted,
+                "pin_source": pin_from,
                 "mix_hub_prefix": f"{cells.DATA_PREFIX_1481}/po_mixes/{cell_key}/mix",
             }
         )
@@ -277,6 +310,79 @@ def phase_mixes(cfg: run1090.RunConfig, args: argparse.Namespace) -> int:
         run1090._atomic_write_json(committed, manifest)
         logger.info("[i1481-po-mixes] committed manifest at %s (commit BEFORE dispatch)", committed)
     logger.info("[i1481-po-mixes] derived %d po mixes", len(rows_out))
+    return 0
+
+
+# ── Phase B prep: merge per-seed cohort manifests (fresh-instance wiring) ────
+
+
+def _merge_cohort_manifests(rname: str, src_dir: Path, seeds: tuple[int, ...]) -> dict:
+    """Union the (round × seed) cohort manifests into ONE round-wide manifest.
+
+    ``--dispatch`` writes ONE ``cell_manifest_<round>_s<seed>.json`` per seed
+    cohort (the fu4 regime key carries one cfg.seed per out_root), but the fu4
+    judge-aggregate builds its ``runs{}`` FRESH per invocation and writes the
+    SHARED ``<round>_ladders.json`` — per-cohort Phase-B invocations would
+    clobber each other while ``_arm_record`` expects ONE file carrying both
+    seeds' arms. Phase B therefore runs ONE round-wide judge-aggregate over
+    this merged manifest (``_stage_run_outputs`` stages every run from the
+    Hub, so a fresh instance needs no Phase-A-local state). Fail-loud on a
+    missing cohort manifest or conflicting duplicate run entries."""
+    merged_runs: dict[str, dict] = {}
+    meta: dict | None = None
+    parts: list[str] = []
+    for seed in seeds:
+        p = src_dir / f"cell_manifest_{rname}_s{seed}.json"
+        if not p.exists():
+            raise FileNotFoundError(
+                f"[i1481-merge] missing cohort manifest {p} — run --dispatch for seed {seed} first"
+            )
+        m = run1090._read_json(p)
+        if meta is None:
+            meta = {k: v for k, v in m.items() if k != "runs"}
+        parts.append(p.name)
+        for r in m.get("runs", []):
+            rid = r["run_id"]
+            prev = merged_runs.get(rid)
+            if prev is not None and prev != r:
+                raise RuntimeError(
+                    f"[i1481-merge] conflicting cohort manifest entries for {rid} — "
+                    "refusing an ambiguous merge"
+                )
+            merged_runs[rid] = r
+    assert meta is not None, "seeds tuple is non-empty by construction"
+    return {
+        **meta,
+        "runs": list(merged_runs.values()),
+        "merged_from": parts,
+        "merged_seeds": list(seeds),
+        "ts": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+    }
+
+
+def phase_merge_manifests(cfg: run1090.RunConfig, args: argparse.Namespace) -> int:
+    """``--phase merge-manifests --round <name>``: write the round-wide merged
+    manifest at the fu4 judge-aggregate DEFAULT path
+    (``<deliverables>/cell_manifest_<round>.json``), so Phase B is ONE
+    round-wide ``--phase judge-aggregate --round <name>`` invocation covering
+    both seed cohorts — never per-cohort invocations that clobber the shared
+    ``<round>_ladders.json``."""
+    rname = args.round
+    if rname not in cells.I1481_ROUND_NAMES:
+        raise SystemExit(
+            f"--phase merge-manifests requires --round (one of {sorted(cells.I1481_ROUND_NAMES)})"
+        )
+    src_dir = Path(cfg.out_root) if cfg.smoke else cells.DELIVERABLES_DIR_1481
+    merged = _merge_cohort_manifests(rname, src_dir, cells.SEEDS)
+    out_path = src_dir / fu4.ROUNDS[rname].manifest_name
+    run1090._atomic_write_json(out_path, merged)
+    logger.info(
+        "[i1481-merge] %s: %d runs from %s -> %s",
+        rname,
+        len(merged["runs"]),
+        merged["merged_from"],
+        out_path,
+    )
     return 0
 
 
@@ -508,13 +614,85 @@ def phase_base_arms(cfg: run1090.RunConfig, args: argparse.Namespace) -> int:
 # ── Phase C: six-context panel generation at verdict arms ────────────────────
 
 
+def _stage_fresh_rung(spec: fu4.RoundSpec, run_id: str, step: int, dest: Path) -> Path:
+    """Scoped model-repo staging of one fresh arm's uploaded rung (the fu4
+    ``_stage_reused_adapter`` shape: list_repo_tree scoped to the rung prefix
+    + per-file hf_hub_download into a per-invocation staging dir — never
+    snapshot_download on a near-100k-file repo; gotchas.md)."""
+    if (dest / "adapter_config.json").exists():
+        return dest
+    from huggingface_hub import HfApi, hf_hub_download
+
+    api = HfApi()
+    pir = f"{spec.adapter_prefix}/{run_id}/checkpoint-{step}"
+    entries = hub.retry_transient(
+        lambda: list(
+            # HUB_VERIFY_RETRY_EXEMPT: wrapped in hub.retry_transient (scoped listing)
+            api.list_repo_tree(
+                run1090.HF_MODEL_REPO, path_in_repo=pir, repo_type="model", recursive=True
+            )
+        ),
+        what=f"i1481 panel rung listing {pir}",
+    )
+    files = [e.path for e in entries if not getattr(e, "tree_id", None)]
+    if not files:
+        raise FileNotFoundError(
+            f"[i1481-panel] no files under {run1090.HF_MODEL_REPO}/{pir} — was the "
+            "selected rung uploaded (upload_all_rungs)?"
+        )
+    dest.mkdir(parents=True, exist_ok=True)
+    stage = Path(tempfile.mkdtemp(dir=dest, prefix="_hfstage-"))
+    try:
+        for f in files:
+            got = hub.retry_transient(
+                lambda fp=f: hf_hub_download(
+                    run1090.HF_MODEL_REPO, fp, repo_type="model", local_dir=stage
+                ),
+                what=f"i1481 panel rung file {f}",
+            )
+            os.replace(got, dest / Path(f).name)
+    finally:
+        shutil.rmtree(stage, ignore_errors=True)
+    return dest
+
+
+def _fresh_arm_ckpt(cfg: run1090.RunConfig, run: fu4.Fu4Run, arm_id: str) -> str:
+    """Resolve a fresh arm's SELECTED checkpoint dir for the panel, staging
+    from the Hub when the Phase-A-local artifacts are absent (plan §4.4:
+    Phase C provisions FRESH compute — the build record stages from the run's
+    data prefix and the selected rung from the model-repo rung uploads; the
+    build record's ``selected_ckpt`` path is Phase-A-instance-local)."""
+    spec = fu4.ROUNDS[run.round_name]
+    run_root = Path(cfg.out_root) / arm_id
+    build_path = run_root / f"{run.round_name}_build_result.json"
+    if not build_path.exists():
+        run1090._stage_hf_prefix(f"{spec.data_prefix}/{arm_id}", run_root)
+    build = run1090._read_json(build_path)
+    if build.get("status") != "trained" or not build.get("selected_ckpt"):
+        raise SystemExit(
+            f"[i1481-panel] {arm_id}: build record is not a trained selection "
+            f"(status={build.get('status')!r}) — a diverged arm has no panel read"
+        )
+    ckpt = Path(build["selected_ckpt"])
+    if cfg.smoke or (ckpt / "adapter_config.json").exists():
+        # Smoke seams fake generation (no adapter load); production uses the
+        # local rung when this IS the Phase-A instance.
+        return str(ckpt)
+    step = int(build["selection"]["step"])
+    return str(_stage_fresh_rung(spec, arm_id, step, run_root / f"checkpoint-{step}"))
+
+
 def phase_panel(cfg: run1090.RunConfig, args: argparse.Namespace) -> int:
     """Six-context bystander-panel generation at VERDICT arms (plan §4.4
     Phase C; the #1434 phase_panel shape). Two arm forms:
 
-    - fresh-trained arms: ``--arms <run_id,...>`` with ``--out-root`` at the
-      arm's COHORT root — the selected checkpoint comes from the run's
-      ``<round>_build_result.json``;
+    - fresh-trained arms: ``--arms <run_id,...>`` — the selected checkpoint
+      comes from the run's ``<round>_build_result.json``, STAGED from the Hub
+      (build record from the run's data prefix, the selected rung from the
+      model-repo rung uploads) whenever the Phase-A-local artifacts are absent,
+      so ONE fresh Phase-C instance runs every fresh verdict arm under a
+      single ``--out-root`` (which also consolidates ``panel/`` for the ONE
+      ``--panel-root`` the analysis ``--phase judge`` consumes);
     - reused committed arms: ``--ckpt-map '{"<arm_id>": "<ckpt_dir>", ...}'``
       (dirs staged by --phase reread), contexts from the reused-arm registry.
     """
@@ -533,9 +711,7 @@ def phase_panel(cfg: run1090.RunConfig, args: argparse.Namespace) -> int:
             run = all_run_ids.get(arm_id)
             if run is None:
                 raise SystemExit(f"[i1481-panel] unknown fresh run {arm_id!r}")
-            build_path = Path(cfg.out_root) / arm_id / f"{run.round_name}_build_result.json"
-            build = run1090._read_json(build_path)
-            jobs.append((arm_id, run.behavior, build["selected_ckpt"]))
+            jobs.append((arm_id, run.behavior, _fresh_arm_ckpt(cfg, run, arm_id)))
     if args.ckpt_map:
         for arm_id, ckpt in json.loads(args.ckpt_map).items():
             arm = cells.REUSED_CON_ARM_BY_ID.get(arm_id)
@@ -588,6 +764,7 @@ def _own_parser() -> argparse.ArgumentParser:
     p.add_argument("--cells", default=None, help="comma cell/context subset (smoke parity)")
     p.add_argument("--arms", default=None, help="comma reused-arm subset (--phase reread)")
     p.add_argument("--behavior", default=None, help="--phase base-arms behavior")
+    p.add_argument("--round", default=None, help="--phase merge-manifests round name")
     p.add_argument(
         "--ckpt-map", default=None, help="--phase panel reused-arm {arm_id: ckpt_dir} JSON"
     )
@@ -786,6 +963,8 @@ def main(argv: list[str] | None = None) -> int:
     )
     if args.phase == "mixes":
         return phase_mixes(cfg, args)
+    if args.phase == "merge-manifests":
+        return phase_merge_manifests(cfg, args)
     if args.phase == "reread":
         return phase_reread(cfg, args)
     if args.phase == "panel":

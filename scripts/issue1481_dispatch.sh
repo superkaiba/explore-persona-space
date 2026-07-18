@@ -23,7 +23,7 @@
 #       --out-root <cohort_root> --arms <verdict run_ids> [--ckpt-map <json>]"
 set -euo pipefail
 
-GROUP="${1:?usage: issue1481_dispatch.sh <impolite|sycophancy|casual-s137|panel|base-arms> [args...]}"
+GROUP="${1:?usage: issue1481_dispatch.sh <impolite|sycophancy|casual-s137|panel|base-arms|marker-a|marker-b> [args...]}"
 shift || true
 
 REPO_ROOT="${REPO_ROOT:-/workspace/explore-persona-space}"

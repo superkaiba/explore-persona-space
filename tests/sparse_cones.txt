@@ -30,6 +30,9 @@
 #   eval_results/issue_1090 — test_issue1090_fu5_round.py reads the committed
 #                             fu4-extended-dose-lr/{fu4_ladders.json,cell_manifest_fu4.json}
 #                             (the fu5 reused-r32 copy source + the A4 recipe-identity pin)
+#   eval_results/issue_1434 — test_issue1481_analysis.py::test_reused_1434_arms_resolve_on_real_committed_artifacts
+#                             reads i1434_ladders.json + writing-style-positive-only-regime/
+#                             i1434po_ladders.json (the realized top-level "ladders" key pin)
 eval_results/issue_545
 eval_results/issue_521
 eval_results/issue_257
@@ -39,3 +42,4 @@ eval_results/issue_952
 eval_results/issue_1092
 eval_results/issue_1090
 eval_results/issue_1345
+eval_results/issue_1434
