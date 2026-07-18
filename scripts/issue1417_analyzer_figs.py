@@ -21,10 +21,14 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-import matplotlib.pyplot as plt
-import numpy as np
+from explore_persona_space.orchestrate.env import load_dotenv
 
-from explore_persona_space.analysis.paper_plots import (
+load_dotenv()  # shared-VM thread caps (#847) must bind BEFORE numpy/matplotlib import
+
+import matplotlib.pyplot as plt  # noqa: E402
+import numpy as np  # noqa: E402
+
+from explore_persona_space.analysis.paper_plots import (  # noqa: E402
     paper_palette,
     savefig_paper,
     set_paper_style,
@@ -61,7 +65,7 @@ def _cell_fit(cell_id: str) -> dict | None:
 def fig_fingerprint() -> None:
     fig, axes = plt.subplots(1, 2, figsize=(12.5, 5.2), sharey=True)
     pal = paper_palette(3)
-    for ax, model in zip(axes, MODELS):
+    for ax, model in zip(axes, MODELS, strict=False):
         for i, cell in enumerate(CELLS):
             xs = {"all": i - 0.22, "kept": i, "matched": i + 0.22}
             d_all = _cell_fit(f"{cell}__{model}__ctx__all")
@@ -151,9 +155,9 @@ def fig_ceiling_vs_numerator() -> None:
         ("c5_ai_addressee", "c0_chat", "chat", "AI-addressee vs chat ref"),
         ("c5_ai_addressee", "c1", None, "AI-addressee vs helpful-instr ref"),
     ]
-    for ax, model in zip(axes, MODELS):
+    for ax, model in zip(axes, MODELS, strict=False):
         ylabels = []
-        for j, (cell, ref, anchor_key, label) in enumerate(pair_specs):
+        for j, (cell, ref, _anchor_key, label) in enumerate(pair_specs):
             p = EV / "battery" / f"battery_{model}__{cell}__vs_{ref}__ctx.json"
             if not p.exists():
                 ylabels.append(label + " (absent)")
@@ -237,9 +241,9 @@ def fig_healthy_pair() -> None:
     pal = paper_palette(6)
     xs = np.arange(len(names))
     ax.bar(xs, vals, color=[pal[0], pal[0], pal[1], pal[1], pal[2], pal[2]], width=0.62)
-    for x, v in zip(xs, vals):
+    for x, v in zip(xs, vals, strict=False):
         ax.text(x, v + 0.012, f"{v:.3f}", ha="center", fontsize=9.5)
-    for x, nl in zip(xs, nulls):
+    for x, nl in zip(xs, nulls, strict=False):
         if nl is not None:
             ax.plot([x - 0.31, x + 0.31], [nl, nl], color="0.3", lw=1.2, ls="--")
     ax.axhline(0, color="0.4", lw=0.8)
@@ -254,7 +258,7 @@ def fig_healthy_pair() -> None:
     )
     cos_vals = [pc["raw_vec_cosine"], pc["observed_aligned_cosine"]]
     ax2.bar([0, 1], cos_vals, color=[pal[3], pal[4]], width=0.55)
-    for x, v in zip([0, 1], cos_vals):
+    for x, v in zip([0, 1], cos_vals, strict=False):
         ax2.text(x, v + 0.012, f"{v:.3f}", ha="center", fontsize=9.5)
     ax2.plot([-0.35, 1.35], [pc["null_p975"]] * 2, color="0.3", lw=1.2, ls="--")
     ax2.set_xticks([0, 1])
@@ -276,11 +280,11 @@ def fig_c2_checks() -> None:
     for k, model in enumerate(MODELS):
         yv = [yr[f"{model}_{c}"]["yield_frac"] for c in CELLS]
         ax1.bar(xs + (k - 0.5) * width, yv, width=width, color=pal[k], label=MODEL_TITLES[model])
-        for x, v in zip(xs + (k - 0.5) * width, yv):
+        for x, v in zip(xs + (k - 0.5) * width, yv, strict=False):
             ax1.text(x, v + 0.012, f"{v:.2f}", ha="center", fontsize=8.5)
         vv = [bs[f"{model}__{c}"]["y_var_ratio_vs_c0"] for c in CELLS]
         ax2.bar(xs + (k - 0.5) * width, vv, width=width, color=pal[k], label=MODEL_TITLES[model])
-        for x, v in zip(xs + (k - 0.5) * width, vv):
+        for x, v in zip(xs + (k - 0.5) * width, vv, strict=False):
             ax2.text(x, v + 0.012, f"{v:.2f}", ha="center", fontsize=8.5)
     for ax, floor, lab in (
         (ax1, 0.5, "judge keep fraction"),

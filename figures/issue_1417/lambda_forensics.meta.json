@@ -1,0 +1,999 @@
+{
+  "commit": "548de50d46",
+  "created": "2026-07-18T21:34:38Z",
+  "figsize": [
+    11.0,
+    4.2
+  ],
+  "points": [
+    {
+      "ridge \u03bb (13-point grid, logspace(-2, 4))": 0.01,
+      "GCV objective  =  train RSS / (n - dof)\u00b2": 0.018602873195322257,
+      "series": "fold 0",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "ridge \u03bb (13-point grid, logspace(-2, 4))": 0.03162277660168379,
+      "GCV objective  =  train RSS / (n - dof)\u00b2": 0.019871208907772844,
+      "series": "fold 0",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "ridge \u03bb (13-point grid, logspace(-2, 4))": 0.1,
+      "GCV objective  =  train RSS / (n - dof)\u00b2": 0.029755945953834025,
+      "series": "fold 0",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "ridge \u03bb (13-point grid, logspace(-2, 4))": 0.31622776601683794,
+      "GCV objective  =  train RSS / (n - dof)\u00b2": 0.05961911810952084,
+      "series": "fold 0",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "ridge \u03bb (13-point grid, logspace(-2, 4))": 1.0,
+      "GCV objective  =  train RSS / (n - dof)\u00b2": 0.10855389190473236,
+      "series": "fold 0",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "ridge \u03bb (13-point grid, logspace(-2, 4))": 3.1622776601683795,
+      "GCV objective  =  train RSS / (n - dof)\u00b2": 0.15225517682165066,
+      "series": "fold 0",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "ridge \u03bb (13-point grid, logspace(-2, 4))": 10.0,
+      "GCV objective  =  train RSS / (n - dof)\u00b2": 0.1710557927691178,
+      "series": "fold 0",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "ridge \u03bb (13-point grid, logspace(-2, 4))": 31.622776601683793,
+      "GCV objective  =  train RSS / (n - dof)\u00b2": 0.16987517581017708,
+      "series": "fold 0",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "ridge \u03bb (13-point grid, logspace(-2, 4))": 100.0,
+      "GCV objective  =  train RSS / (n - dof)\u00b2": 0.16165744129049717,
+      "series": "fold 0",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "ridge \u03bb (13-point grid, logspace(-2, 4))": 316.22776601683796,
+      "GCV objective  =  train RSS / (n - dof)\u00b2": 0.15609110548516236,
+      "series": "fold 0",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "ridge \u03bb (13-point grid, logspace(-2, 4))": 1000.0,
+      "GCV objective  =  train RSS / (n - dof)\u00b2": 0.1580422137302175,
+      "series": "fold 0",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "ridge \u03bb (13-point grid, logspace(-2, 4))": 3162.2776601683795,
+      "GCV objective  =  train RSS / (n - dof)\u00b2": 0.16963480462684713,
+      "series": "fold 0",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "ridge \u03bb (13-point grid, logspace(-2, 4))": 10000.0,
+      "GCV objective  =  train RSS / (n - dof)\u00b2": 0.19213208342200055,
+      "series": "fold 0",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "ridge \u03bb (13-point grid, logspace(-2, 4))": 0.01,
+      "GCV objective  =  train RSS / (n - dof)\u00b2": 0.02261614985785939,
+      "series": "fold 1",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "ridge \u03bb (13-point grid, logspace(-2, 4))": 0.03162277660168379,
+      "GCV objective  =  train RSS / (n - dof)\u00b2": 0.02356156722308866,
+      "series": "fold 1",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "ridge \u03bb (13-point grid, logspace(-2, 4))": 0.1,
+      "GCV objective  =  train RSS / (n - dof)\u00b2": 0.03113080248289353,
+      "series": "fold 1",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "ridge \u03bb (13-point grid, logspace(-2, 4))": 0.31622776601683794,
+      "GCV objective  =  train RSS / (n - dof)\u00b2": 0.057158276045397326,
+      "series": "fold 1",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "ridge \u03bb (13-point grid, logspace(-2, 4))": 1.0,
+      "GCV objective  =  train RSS / (n - dof)\u00b2": 0.10723432347721477,
+      "series": "fold 1",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "ridge \u03bb (13-point grid, logspace(-2, 4))": 3.1622776601683795,
+      "GCV objective  =  train RSS / (n - dof)\u00b2": 0.15291400679651207,
+      "series": "fold 1",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "ridge \u03bb (13-point grid, logspace(-2, 4))": 10.0,
+      "GCV objective  =  train RSS / (n - dof)\u00b2": 0.17104125634889367,
+      "series": "fold 1",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "ridge \u03bb (13-point grid, logspace(-2, 4))": 31.622776601683793,
+      "GCV objective  =  train RSS / (n - dof)\u00b2": 0.16904598806022936,
+      "series": "fold 1",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "ridge \u03bb (13-point grid, logspace(-2, 4))": 100.0,
+      "GCV objective  =  train RSS / (n - dof)\u00b2": 0.16063071943313567,
+      "series": "fold 1",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "ridge \u03bb (13-point grid, logspace(-2, 4))": 316.22776601683796,
+      "GCV objective  =  train RSS / (n - dof)\u00b2": 0.1549995306477693,
+      "series": "fold 1",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "ridge \u03bb (13-point grid, logspace(-2, 4))": 1000.0,
+      "GCV objective  =  train RSS / (n - dof)\u00b2": 0.15685824563150683,
+      "series": "fold 1",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "ridge \u03bb (13-point grid, logspace(-2, 4))": 3162.2776601683795,
+      "GCV objective  =  train RSS / (n - dof)\u00b2": 0.16833978534049326,
+      "series": "fold 1",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "ridge \u03bb (13-point grid, logspace(-2, 4))": 10000.0,
+      "GCV objective  =  train RSS / (n - dof)\u00b2": 0.19060706639588054,
+      "series": "fold 1",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "ridge \u03bb (13-point grid, logspace(-2, 4))": 0.01,
+      "GCV objective  =  train RSS / (n - dof)\u00b2": 0.02470564391778205,
+      "series": "fold 2",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "ridge \u03bb (13-point grid, logspace(-2, 4))": 0.03162277660168379,
+      "GCV objective  =  train RSS / (n - dof)\u00b2": 0.026094763671060377,
+      "series": "fold 2",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "ridge \u03bb (13-point grid, logspace(-2, 4))": 0.1,
+      "GCV objective  =  train RSS / (n - dof)\u00b2": 0.03639640977615766,
+      "series": "fold 2",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "ridge \u03bb (13-point grid, logspace(-2, 4))": 0.31622776601683794,
+      "GCV objective  =  train RSS / (n - dof)\u00b2": 0.06495917470478033,
+      "series": "fold 2",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "ridge \u03bb (13-point grid, logspace(-2, 4))": 1.0,
+      "GCV objective  =  train RSS / (n - dof)\u00b2": 0.1093730293722844,
+      "series": "fold 2",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "ridge \u03bb (13-point grid, logspace(-2, 4))": 3.1622776601683795,
+      "GCV objective  =  train RSS / (n - dof)\u00b2": 0.1484476369103645,
+      "series": "fold 2",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "ridge \u03bb (13-point grid, logspace(-2, 4))": 10.0,
+      "GCV objective  =  train RSS / (n - dof)\u00b2": 0.16528127549023222,
+      "series": "fold 2",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "ridge \u03bb (13-point grid, logspace(-2, 4))": 31.622776601683793,
+      "GCV objective  =  train RSS / (n - dof)\u00b2": 0.16455614994197093,
+      "series": "fold 2",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "ridge \u03bb (13-point grid, logspace(-2, 4))": 100.0,
+      "GCV objective  =  train RSS / (n - dof)\u00b2": 0.1574532040974214,
+      "series": "fold 2",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "ridge \u03bb (13-point grid, logspace(-2, 4))": 316.22776601683796,
+      "GCV objective  =  train RSS / (n - dof)\u00b2": 0.1527654436928833,
+      "series": "fold 2",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "ridge \u03bb (13-point grid, logspace(-2, 4))": 1000.0,
+      "GCV objective  =  train RSS / (n - dof)\u00b2": 0.15534732777219906,
+      "series": "fold 2",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "ridge \u03bb (13-point grid, logspace(-2, 4))": 3162.2776601683795,
+      "GCV objective  =  train RSS / (n - dof)\u00b2": 0.16731759911732444,
+      "series": "fold 2",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "ridge \u03bb (13-point grid, logspace(-2, 4))": 10000.0,
+      "GCV objective  =  train RSS / (n - dof)\u00b2": 0.1899166743047527,
+      "series": "fold 2",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "ridge \u03bb (13-point grid, logspace(-2, 4))": 0.01,
+      "GCV objective  =  train RSS / (n - dof)\u00b2": 0.026289400502142107,
+      "series": "fold 3",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "ridge \u03bb (13-point grid, logspace(-2, 4))": 0.03162277660168379,
+      "GCV objective  =  train RSS / (n - dof)\u00b2": 0.027303308017266048,
+      "series": "fold 3",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "ridge \u03bb (13-point grid, logspace(-2, 4))": 0.1,
+      "GCV objective  =  train RSS / (n - dof)\u00b2": 0.03645821974053275,
+      "series": "fold 3",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "ridge \u03bb (13-point grid, logspace(-2, 4))": 0.31622776601683794,
+      "GCV objective  =  train RSS / (n - dof)\u00b2": 0.06473306968135813,
+      "series": "fold 3",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "ridge \u03bb (13-point grid, logspace(-2, 4))": 1.0,
+      "GCV objective  =  train RSS / (n - dof)\u00b2": 0.11335033152906707,
+      "series": "fold 3",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "ridge \u03bb (13-point grid, logspace(-2, 4))": 3.1622776601683795,
+      "GCV objective  =  train RSS / (n - dof)\u00b2": 0.15746260568929862,
+      "series": "fold 3",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "ridge \u03bb (13-point grid, logspace(-2, 4))": 10.0,
+      "GCV objective  =  train RSS / (n - dof)\u00b2": 0.17480593421345617,
+      "series": "fold 3",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "ridge \u03bb (13-point grid, logspace(-2, 4))": 31.622776601683793,
+      "GCV objective  =  train RSS / (n - dof)\u00b2": 0.1718905132680367,
+      "series": "fold 3",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "ridge \u03bb (13-point grid, logspace(-2, 4))": 100.0,
+      "GCV objective  =  train RSS / (n - dof)\u00b2": 0.16261148009612456,
+      "series": "fold 3",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "ridge \u03bb (13-point grid, logspace(-2, 4))": 316.22776601683796,
+      "GCV objective  =  train RSS / (n - dof)\u00b2": 0.15635224817011273,
+      "series": "fold 3",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "ridge \u03bb (13-point grid, logspace(-2, 4))": 1000.0,
+      "GCV objective  =  train RSS / (n - dof)\u00b2": 0.1578464686257326,
+      "series": "fold 3",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "ridge \u03bb (13-point grid, logspace(-2, 4))": 3162.2776601683795,
+      "GCV objective  =  train RSS / (n - dof)\u00b2": 0.1691039641811187,
+      "series": "fold 3",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "ridge \u03bb (13-point grid, logspace(-2, 4))": 10000.0,
+      "GCV objective  =  train RSS / (n - dof)\u00b2": 0.19124218865156825,
+      "series": "fold 3",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "ridge \u03bb (13-point grid, logspace(-2, 4))": 0.01,
+      "GCV objective  =  train RSS / (n - dof)\u00b2": 0.014716423608440124,
+      "series": "fold 4",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "ridge \u03bb (13-point grid, logspace(-2, 4))": 0.03162277660168379,
+      "GCV objective  =  train RSS / (n - dof)\u00b2": 0.016373736095650366,
+      "series": "fold 4",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "ridge \u03bb (13-point grid, logspace(-2, 4))": 0.1,
+      "GCV objective  =  train RSS / (n - dof)\u00b2": 0.02784209959824299,
+      "series": "fold 4",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "ridge \u03bb (13-point grid, logspace(-2, 4))": 0.31622776601683794,
+      "GCV objective  =  train RSS / (n - dof)\u00b2": 0.06252138625935931,
+      "series": "fold 4",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "ridge \u03bb (13-point grid, logspace(-2, 4))": 1.0,
+      "GCV objective  =  train RSS / (n - dof)\u00b2": 0.11544852235124493,
+      "series": "fold 4",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "ridge \u03bb (13-point grid, logspace(-2, 4))": 3.1622776601683795,
+      "GCV objective  =  train RSS / (n - dof)\u00b2": 0.15648762403574928,
+      "series": "fold 4",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "ridge \u03bb (13-point grid, logspace(-2, 4))": 10.0,
+      "GCV objective  =  train RSS / (n - dof)\u00b2": 0.17096299521843975,
+      "series": "fold 4",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "ridge \u03bb (13-point grid, logspace(-2, 4))": 31.622776601683793,
+      "GCV objective  =  train RSS / (n - dof)\u00b2": 0.16820893763456743,
+      "series": "fold 4",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "ridge \u03bb (13-point grid, logspace(-2, 4))": 100.0,
+      "GCV objective  =  train RSS / (n - dof)\u00b2": 0.16028077635435709,
+      "series": "fold 4",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "ridge \u03bb (13-point grid, logspace(-2, 4))": 316.22776601683796,
+      "GCV objective  =  train RSS / (n - dof)\u00b2": 0.15519379937181974,
+      "series": "fold 4",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "ridge \u03bb (13-point grid, logspace(-2, 4))": 1000.0,
+      "GCV objective  =  train RSS / (n - dof)\u00b2": 0.1573562217659926,
+      "series": "fold 4",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "ridge \u03bb (13-point grid, logspace(-2, 4))": 3162.2776601683795,
+      "GCV objective  =  train RSS / (n - dof)\u00b2": 0.16897598066198685,
+      "series": "fold 4",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "ridge \u03bb (13-point grid, logspace(-2, 4))": 10000.0,
+      "GCV objective  =  train RSS / (n - dof)\u00b2": 0.19130566815594943,
+      "series": "fold 4",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "ridge \u03bb (13-point grid, logspace(-2, 4))": 0.01,
+      "y": 0.3423661332955889,
+      "series": "fold 0",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "ridge \u03bb (13-point grid, logspace(-2, 4))": 0.03162277660168379,
+      "y": 0.3081557201637993,
+      "series": "fold 0",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "ridge \u03bb (13-point grid, logspace(-2, 4))": 0.1,
+      "y": 0.2497039835923051,
+      "series": "fold 0",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "ridge \u03bb (13-point grid, logspace(-2, 4))": 0.31622776601683794,
+      "y": 0.2057858294292284,
+      "series": "fold 0",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "ridge \u03bb (13-point grid, logspace(-2, 4))": 1.0,
+      "y": 0.20257739957072277,
+      "series": "fold 0",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "ridge \u03bb (13-point grid, logspace(-2, 4))": 3.1622776601683795,
+      "y": 0.20311017948164087,
+      "series": "fold 0",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "ridge \u03bb (13-point grid, logspace(-2, 4))": 10.0,
+      "y": 0.187394035216733,
+      "series": "fold 0",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "ridge \u03bb (13-point grid, logspace(-2, 4))": 31.622776601683793,
+      "y": 0.16611169427477443,
+      "series": "fold 0",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "ridge \u03bb (13-point grid, logspace(-2, 4))": 100.0,
+      "y": 0.14886553664527785,
+      "series": "fold 0",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "ridge \u03bb (13-point grid, logspace(-2, 4))": 316.22776601683796,
+      "y": 0.13843673587030692,
+      "series": "fold 0",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "ridge \u03bb (13-point grid, logspace(-2, 4))": 1000.0,
+      "y": 0.13489331301706622,
+      "series": "fold 0",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "ridge \u03bb (13-point grid, logspace(-2, 4))": 3162.2776601683795,
+      "y": 0.1377822417405948,
+      "series": "fold 0",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "ridge \u03bb (13-point grid, logspace(-2, 4))": 10000.0,
+      "y": 0.1465907313216264,
+      "series": "fold 0",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "ridge \u03bb (13-point grid, logspace(-2, 4))": 0.01,
+      "y": 0.28511980506574747,
+      "series": "fold 1",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "ridge \u03bb (13-point grid, logspace(-2, 4))": 0.03162277660168379,
+      "y": 0.25698328344530796,
+      "series": "fold 1",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "ridge \u03bb (13-point grid, logspace(-2, 4))": 0.1,
+      "y": 0.21445414829996795,
+      "series": "fold 1",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "ridge \u03bb (13-point grid, logspace(-2, 4))": 0.31622776601683794,
+      "y": 0.19140407370624496,
+      "series": "fold 1",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "ridge \u03bb (13-point grid, logspace(-2, 4))": 1.0,
+      "y": 0.19586400361485126,
+      "series": "fold 1",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "ridge \u03bb (13-point grid, logspace(-2, 4))": 3.1622776601683795,
+      "y": 0.19690461641848994,
+      "series": "fold 1",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "ridge \u03bb (13-point grid, logspace(-2, 4))": 10.0,
+      "y": 0.18245197686328166,
+      "series": "fold 1",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "ridge \u03bb (13-point grid, logspace(-2, 4))": 31.622776601683793,
+      "y": 0.16247521222464648,
+      "series": "fold 1",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "ridge \u03bb (13-point grid, logspace(-2, 4))": 100.0,
+      "y": 0.14606297160957368,
+      "series": "fold 1",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "ridge \u03bb (13-point grid, logspace(-2, 4))": 316.22776601683796,
+      "y": 0.13619855968258163,
+      "series": "fold 1",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "ridge \u03bb (13-point grid, logspace(-2, 4))": 1000.0,
+      "y": 0.13305946631926927,
+      "series": "fold 1",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "ridge \u03bb (13-point grid, logspace(-2, 4))": 3162.2776601683795,
+      "y": 0.13611417180535101,
+      "series": "fold 1",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "ridge \u03bb (13-point grid, logspace(-2, 4))": 10000.0,
+      "y": 0.14487201207491607,
+      "series": "fold 1",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "ridge \u03bb (13-point grid, logspace(-2, 4))": 0.01,
+      "y": 0.34429505618523726,
+      "series": "fold 2",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "ridge \u03bb (13-point grid, logspace(-2, 4))": 0.03162277660168379,
+      "y": 0.30989374437941153,
+      "series": "fold 2",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "ridge \u03bb (13-point grid, logspace(-2, 4))": 0.1,
+      "y": 0.2547907381651471,
+      "series": "fold 2",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "ridge \u03bb (13-point grid, logspace(-2, 4))": 0.31622776601683794,
+      "y": 0.21820955307384013,
+      "series": "fold 2",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "ridge \u03bb (13-point grid, logspace(-2, 4))": 1.0,
+      "y": 0.21462392543068404,
+      "series": "fold 2",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "ridge \u03bb (13-point grid, logspace(-2, 4))": 3.1622776601683795,
+      "y": 0.20927727728490852,
+      "series": "fold 2",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "ridge \u03bb (13-point grid, logspace(-2, 4))": 10.0,
+      "y": 0.18928452257826953,
+      "series": "fold 2",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "ridge \u03bb (13-point grid, logspace(-2, 4))": 31.622776601683793,
+      "y": 0.1657960055222846,
+      "series": "fold 2",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "ridge \u03bb (13-point grid, logspace(-2, 4))": 100.0,
+      "y": 0.14760196145812043,
+      "series": "fold 2",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "ridge \u03bb (13-point grid, logspace(-2, 4))": 316.22776601683796,
+      "y": 0.13694270410195608,
+      "series": "fold 2",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "ridge \u03bb (13-point grid, logspace(-2, 4))": 1000.0,
+      "y": 0.13346979788489982,
+      "series": "fold 2",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "ridge \u03bb (13-point grid, logspace(-2, 4))": 3162.2776601683795,
+      "y": 0.13645330836279954,
+      "series": "fold 2",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "ridge \u03bb (13-point grid, logspace(-2, 4))": 10000.0,
+      "y": 0.1453581054411785,
+      "series": "fold 2",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "ridge \u03bb (13-point grid, logspace(-2, 4))": 0.01,
+      "y": 0.31342369752982363,
+      "series": "fold 3",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "ridge \u03bb (13-point grid, logspace(-2, 4))": 0.03162277660168379,
+      "y": 0.28657587602475393,
+      "series": "fold 3",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "ridge \u03bb (13-point grid, logspace(-2, 4))": 0.1,
+      "y": 0.23999493249541068,
+      "series": "fold 3",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "ridge \u03bb (13-point grid, logspace(-2, 4))": 0.31622776601683794,
+      "y": 0.20399247738931706,
+      "series": "fold 3",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "ridge \u03bb (13-point grid, logspace(-2, 4))": 1.0,
+      "y": 0.20020060321639585,
+      "series": "fold 3",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "ridge \u03bb (13-point grid, logspace(-2, 4))": 3.1622776601683795,
+      "y": 0.19954555530077814,
+      "series": "fold 3",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "ridge \u03bb (13-point grid, logspace(-2, 4))": 10.0,
+      "y": 0.18460091022699537,
+      "series": "fold 3",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "ridge \u03bb (13-point grid, logspace(-2, 4))": 31.622776601683793,
+      "y": 0.16422085261536146,
+      "series": "fold 3",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "ridge \u03bb (13-point grid, logspace(-2, 4))": 100.0,
+      "y": 0.14760527957235872,
+      "series": "fold 3",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "ridge \u03bb (13-point grid, logspace(-2, 4))": 316.22776601683796,
+      "y": 0.1377155845976472,
+      "series": "fold 3",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "ridge \u03bb (13-point grid, logspace(-2, 4))": 1000.0,
+      "y": 0.13456224319158736,
+      "series": "fold 3",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "ridge \u03bb (13-point grid, logspace(-2, 4))": 3162.2776601683795,
+      "y": 0.13761925076895837,
+      "series": "fold 3",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "ridge \u03bb (13-point grid, logspace(-2, 4))": 10000.0,
+      "y": 0.14641245197374275,
+      "series": "fold 3",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "ridge \u03bb (13-point grid, logspace(-2, 4))": 0.01,
+      "y": 0.24781466780102734,
+      "series": "fold 4",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "ridge \u03bb (13-point grid, logspace(-2, 4))": 0.03162277660168379,
+      "y": 0.2260221807678503,
+      "series": "fold 4",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "ridge \u03bb (13-point grid, logspace(-2, 4))": 0.1,
+      "y": 0.1935809194200217,
+      "series": "fold 4",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "ridge \u03bb (13-point grid, logspace(-2, 4))": 0.31622776601683794,
+      "y": 0.1799339242769667,
+      "series": "fold 4",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "ridge \u03bb (13-point grid, logspace(-2, 4))": 1.0,
+      "y": 0.19111956739325173,
+      "series": "fold 4",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "ridge \u03bb (13-point grid, logspace(-2, 4))": 3.1622776601683795,
+      "y": 0.19605210980259877,
+      "series": "fold 4",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "ridge \u03bb (13-point grid, logspace(-2, 4))": 10.0,
+      "y": 0.18293875233080648,
+      "series": "fold 4",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "ridge \u03bb (13-point grid, logspace(-2, 4))": 31.622776601683793,
+      "y": 0.16319078509003646,
+      "series": "fold 4",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "ridge \u03bb (13-point grid, logspace(-2, 4))": 100.0,
+      "y": 0.1468641012988244,
+      "series": "fold 4",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "ridge \u03bb (13-point grid, logspace(-2, 4))": 316.22776601683796,
+      "y": 0.13702282390021825,
+      "series": "fold 4",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "ridge \u03bb (13-point grid, logspace(-2, 4))": 1000.0,
+      "y": 0.1337816698943435,
+      "series": "fold 4",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "ridge \u03bb (13-point grid, logspace(-2, 4))": 3162.2776601683795,
+      "y": 0.13673370236874594,
+      "series": "fold 4",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "ridge \u03bb (13-point grid, logspace(-2, 4))": 10000.0,
+      "y": 0.1454678533650744,
+      "series": "fold 4",
+      "_kind": "line",
+      "_group": 9
+    }
+  ],
+  "n_series": 10,
+  "total_points": 130,
+  "text": {
+    "suptitle": "GCV \u03bb-selection per fold \u2014 layer 19, context arm, judge-kept rows (instruct)",
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Broken cell: helpful-control persona\npooled held-out R\u00b2 at selected \u03bb = -1.48",
+        "xlabel": "ridge \u03bb (13-point grid, logspace(-2, 4))",
+        "ylabel": "GCV objective  =  train RSS / (n - dof)\u00b2",
+        "legend_labels": [
+          "fold 0",
+          "fold 1",
+          "fold 2",
+          "fold 3",
+          "fold 4"
+        ],
+        "legend_title": "dot = GCV-selected \u03bb",
+        "xticklabels": [
+          "$\\mathdefault{10^{-4}}$",
+          "$\\mathdefault{10^{-3}}$",
+          "$\\mathdefault{10^{-2}}$",
+          "$\\mathdefault{10^{-1}}$",
+          "$\\mathdefault{10^{0}}$",
+          "$\\mathdefault{10^{1}}$",
+          "$\\mathdefault{10^{2}}$",
+          "$\\mathdefault{10^{3}}$",
+          "$\\mathdefault{10^{4}}$",
+          "$\\mathdefault{10^{5}}$",
+          "$\\mathdefault{10^{6}}$"
+        ],
+        "yticklabels": [
+          "$\\mathdefault{10^{-3}}$",
+          "$\\mathdefault{10^{-2}}$",
+          "$\\mathdefault{10^{-1}}$",
+          "$\\mathdefault{10^{0}}$",
+          "$\\mathdefault{10^{1}}$"
+        ]
+      },
+      {
+        "title_left": "Healthy cell: rude persona\npooled held-out R\u00b2 at selected \u03bb = 0.55",
+        "xlabel": "ridge \u03bb (13-point grid, logspace(-2, 4))",
+        "legend_labels": [
+          "fold 0",
+          "fold 1",
+          "fold 2",
+          "fold 3",
+          "fold 4"
+        ],
+        "legend_title": "dot = GCV-selected \u03bb",
+        "xticklabels": [
+          "$\\mathdefault{10^{-4}}$",
+          "$\\mathdefault{10^{-3}}$",
+          "$\\mathdefault{10^{-2}}$",
+          "$\\mathdefault{10^{-1}}$",
+          "$\\mathdefault{10^{0}}$",
+          "$\\mathdefault{10^{1}}$",
+          "$\\mathdefault{10^{2}}$",
+          "$\\mathdefault{10^{3}}$",
+          "$\\mathdefault{10^{4}}$",
+          "$\\mathdefault{10^{5}}$",
+          "$\\mathdefault{10^{6}}$"
+        ],
+        "yticklabels": [
+          "$\\mathdefault{10^{-2}}$",
+          "$\\mathdefault{10^{-1}}$",
+          "$\\mathdefault{10^{0}}$",
+          "$\\mathdefault{10^{1}}$"
+        ]
+      }
+    ],
+    "series": [
+      "fold 0",
+      "fold 1",
+      "fold 2",
+      "fold 3",
+      "fold 4"
+    ]
+  }
+}
