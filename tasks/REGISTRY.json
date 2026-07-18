@@ -1678,8 +1678,8 @@
     "1215": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1215",
-      "status": "planning",
+      "path": "tasks/approved/1215",
+      "status": "approved",
       "title": "daily-held: daemon-independent orphan-wrapper sweep"
     },
     "1216": {
