@@ -286,6 +286,9 @@ def batch_manipulation(args: argparse.Namespace, manifest: list[dict]) -> None:
             ),
             "raw": _result_payload(result, id_map),
         }
+        # incremental per-slug write (checkpoint-per-phase: a later slug's
+        # crash never forfeits the already-judged instances)
+        _write_json(Path(args.judge_out) / "manipulation_check.json", {"instances": summary})
     # code-scored instances (format family + instr_concise): free, deterministic
     for slug, validator in CODE_VALIDATORS.items():
         if f"cell_{slug}" not in cells:

@@ -2,12 +2,19 @@
 """Issue #1489 P6 fit + analysis driver (plan §4.5) — cpu-bigmem GCE boxes.
 
 IMPORTS the #1092 fit engine (`scripts/issue1092_fit_grid.py`: `_fit_cv`,
-`_load_summary`, `_folds_from_manifest`, `_perm_null`, `_pca_basis`,
-`_identity_floors`, `_principal_angles`, `_spectrum`, `_load_rb_directions`)
-rather than rewriting it — the #1489 capture rig mirrors the parent summaries
-schema exactly, so the loaders run unchanged. All draw batteries are BATCHED
+`_load_summary`, `_perm_null`, `_pca_basis`, `_identity_floors`,
+`_principal_angles`, `_spectrum`, `_load_rb_directions`) rather than
+rewriting it — the #1489 capture rig mirrors the parent summaries schema
+exactly, so the loaders run unchanged. All draw batteries are BATCHED
 (einsum/GEMM over the draw axis; no per-draw refits) per
 `.claude/rules/vectorize-many-cell-fits.md`.
+
+FOLDS: every cross-pool fit/apply derives its folds from ONE shared
+group->fold assignment built over the UNION of the participating pools'
+groups (`shared_fold_assignment` + `folds_from_assignment`; plan §4.5 "ONE
+shared 6-fold partition applied to every cell") — the parent per-pool
+`_folds_from_manifest` shuffle is content-dependent and misaligns fold ids
+across pools (v1 code-review Critical #1/#2), so it is NOT used here.
 
 Units (each checkpointed to ``<out>/units/<unit_id>.json`` the moment it
 completes; resume skips completed units keyed on the full regime fingerprint):
@@ -52,8 +59,8 @@ import numpy as np  # noqa: E402
 
 from issue1092_fit_grid import (  # noqa: E402
     DEFAULT_RB_REV,
+    FOLD_SEED,
     _fit_cv,
-    _folds_from_manifest,
     _identity_floors,
     _load_rb_directions,
     _load_summary,
@@ -174,6 +181,96 @@ def _train_pools(
 
 
 # ---------------------------------------------------------------------------
+# Shared fold partition (plan §4.5: ONE partition applied to every cell)
+# ---------------------------------------------------------------------------
+
+
+def _row_groups(rows: list[dict], group_key: str) -> list[str]:
+    """Group label per row (mirrors the parent `_folds_from_manifest` key rule)."""
+    return [str(r.get(group_key, r.get("prefix_id", i))) for i, r in enumerate(rows)]
+
+
+def shared_fold_assignment(group_ids: set[str], n_folds: int) -> tuple[dict[str, int], int]:
+    """ONE canonical group->fold map over the UNION of every pool's group ids.
+
+    Seeded shuffle over the sorted union (FOLD_SEED, the parent convention),
+    then round-robin fold ids — so a group lands in the SAME fold index in
+    every pool that contains it, and correlated same-base variants never
+    straddle train/test across pools (plan §4.5; code-review v1 Critical #1:
+    per-pool `_folds_from_manifest` partitions misalign because the shuffled
+    permutation depends on each pool's own group list — 870/1060 crossed
+    prefixes misaligned at the realized shape).
+
+    ``n_folds <= 0`` or ``n_folds >= len(union)`` -> one fold per group
+    (leave-one-group-out; the true-LOTO path for `unit_loto`). Returns
+    ``(fold_of, n_folds_realized)``.
+    """
+    uniq = sorted(group_ids)
+    if not uniq:
+        raise ValueError("shared_fold_assignment: empty group union")
+    rng = np.random.default_rng(FOLD_SEED)
+    rng.shuffle(uniq)
+    if n_folds <= 0 or n_folds >= len(uniq):
+        return {g: i for i, g in enumerate(uniq)}, len(uniq)
+    return {g: i % n_folds for i, g in enumerate(uniq)}, n_folds
+
+
+def folds_from_assignment(
+    rows: list[dict], n: int, fold_of: dict[str, int], *, group_key: str, n_folds: int
+) -> list[np.ndarray]:
+    """Fixed-length per-pool folds derived from the SHARED assignment.
+
+    Returns exactly ``n_folds`` arrays (possibly EMPTY — preserved so fold
+    index ``f_i`` names the same group set in every pool and positional
+    cross-pool indexing is safe). Fails loud on a group missing from the
+    assignment (a pool outside the union the assignment was built from).
+    """
+    groups = _row_groups(rows[:n], group_key)
+    missing = sorted({g for g in groups if g not in fold_of})
+    if missing:
+        raise KeyError(
+            f"folds_from_assignment: {len(missing)} groups missing from the shared "
+            f"assignment (first: {missing[:3]})"
+        )
+    folds: list[list[int]] = [[] for _ in range(n_folds)]
+    for i, g in enumerate(groups):
+        folds[fold_of[g]].append(i)
+    return [np.asarray(f, dtype=np.int64) for f in folds]
+
+
+def _assert_fold_alignment(
+    pools_rows: dict[str, list[dict]],
+    folds_by_pool: dict[str, list[np.ndarray]],
+    *,
+    group_key: str,
+) -> None:
+    """Hard runtime guard: same group -> same fold INDEX in every pool.
+
+    Recomputes each pool's realized group->fold map from the fold arrays and
+    asserts pairwise equality on the intersections (the code-review v1
+    mechanizable check for the cross-pool variant-leakage class).
+    """
+    realized: dict[str, dict[str, int]] = {}
+    for name, rows in pools_rows.items():
+        groups = _row_groups(rows, group_key)
+        m: dict[str, int] = {}
+        for f_i, fold in enumerate(folds_by_pool[name]):
+            for i in fold:
+                g = groups[int(i)]
+                prev = m.setdefault(g, f_i)
+                assert prev == f_i, f"{name}: group {g} split across folds {prev}/{f_i}"
+        realized[name] = m
+    names = list(realized)
+    for i, a in enumerate(names):
+        for b in names[i + 1 :]:
+            for g in set(realized[a]) & set(realized[b]):
+                assert realized[a][g] == realized[b][g], (
+                    f"fold misalignment: group {g} -> fold {realized[a][g]} in {a} "
+                    f"vs {realized[b][g]} in {b}"
+                )
+
+
+# ---------------------------------------------------------------------------
 # Batched statistics helpers (no per-draw Python refits)
 # ---------------------------------------------------------------------------
 
@@ -196,40 +293,48 @@ def split_half_refit_twins(
 ) -> dict:
     """Refit-vs-refit disagreement noise floor (plan §2 divergence 4).
 
-    Per twin draw: split the TRAIN side of each fold into group-disjoint
-    halves, fit each half (PRESS ridge), evaluate BOTH on the fold's test
-    rows; the per-draw statistic is |R^2(half1) - R^2(half2)| pooled over
-    folds. q95 over draws is the split-half refit null the §3 verdict lattice
-    subtracts.
+    Per twin draw: pick ONE fold (rotating over draws), split that fold's
+    TRAIN side into group-disjoint halves, fit each half (PRESS ridge),
+    evaluate BOTH on the fold's held-out test rows; the draw statistic is
+    |R^2(half1) - R^2(half2)|. q95 over draws is the split-half refit null
+    the §3 verdict lattice subtracts.
+
+    2 half-n fits per twin — the plan §9 cost basis ("200 extra half-n
+    refits ... no per-twin fold re-loop"). Round 1 looped ALL folds per twin
+    (6x the registered fit count at the identical statistical role; v1
+    review Major #6 compute-projection finding).
     """
     import torch
 
     rng = np.random.default_rng(seed)
     n = X.shape[0]
+    folds = [f for f in folds if f.size]
+    if not folds:
+        raise ValueError("split-half twins: no non-empty folds")
     gaps: list[float] = []
-    for _t in range(n_twins):
-        preds1 = np.zeros_like(Y, dtype=np.float64)
-        preds2 = np.zeros_like(Y, dtype=np.float64)
-        for test_idx in folds:
-            mask = np.ones(n, dtype=bool)
-            mask[test_idx] = False
-            tr_idx = np.where(mask)[0]
-            half_mask = _grouped_half_split([groups[i] for i in tr_idx], rng)
-            h1, h2 = tr_idx[half_mask], tr_idx[~half_mask]
-            if len(h1) < 2 or len(h2) < 2:
-                raise ValueError("split-half twin: degenerate half (<2 rows)")
-            for hidx, preds in ((h1, preds1), (h2, preds2)):
-                res = press_fit_predict(
-                    torch.from_numpy(X[hidx]).double(),
-                    torch.from_numpy(Y[hidx]).double(),
-                    torch.from_numpy(X[test_idx]).double(),
-                    standardize=True,
-                )
-                preds[test_idx] = res["pred"].detach().cpu().numpy()
-        gaps.append(abs(_r2(Y, preds1) - _r2(Y, preds2)))
+    for t in range(n_twins):
+        test_idx = folds[t % len(folds)]
+        mask = np.ones(n, dtype=bool)
+        mask[test_idx] = False
+        tr_idx = np.where(mask)[0]
+        half_mask = _grouped_half_split([groups[i] for i in tr_idx], rng)
+        h1, h2 = tr_idx[half_mask], tr_idx[~half_mask]
+        if len(h1) < 2 or len(h2) < 2:
+            raise ValueError("split-half twin: degenerate half (<2 rows)")
+        r2s = []
+        for hidx in (h1, h2):
+            res = press_fit_predict(
+                torch.from_numpy(X[hidx]).double(),
+                torch.from_numpy(Y[hidx]).double(),
+                torch.from_numpy(X[test_idx]).double(),
+                standardize=True,
+            )
+            r2s.append(_r2(Y[test_idx], res["pred"].detach().cpu().numpy()))
+        gaps.append(abs(r2s[0] - r2s[1]))
     arr = np.asarray(gaps, dtype=np.float64)
     return {
         "n_twins": n_twins,
+        "eval_scheme": "one-rotating-fold-per-twin",
         "gaps": [float(g) for g in gaps],
         "q95": float(np.quantile(arr, 0.95)),
         "mean": float(arr.mean()),
@@ -331,7 +436,9 @@ def _grouped_bootstrap_ci(values: np.ndarray, groups: list[str], *, n_boot: int,
 # ---------------------------------------------------------------------------
 
 
-def unit_transfer(args, summaries_dir: Path, layer: int, arm: str, basis: str) -> dict:
+def unit_transfer(
+    args, summaries_dir: Path, layer: int, arm: str, basis: str, *, with_extras: bool = True
+) -> dict:
     cells_present = _cells_present(summaries_dir)
     plain = CellData(summaries_dir, "cell_plain")
     if basis == "ambient":
@@ -348,18 +455,30 @@ def unit_transfer(args, summaries_dir: Path, layer: int, arm: str, basis: str) -
 
     pools = _train_pools(summaries_dir, layer, arm, proj, cells_present)
     fams = list(pools)
+    # ONE shared partition over the UNION of every pool's groups (plan §4.5):
+    # a prefix keeps the SAME fold index in every pool, so same-base variants
+    # never straddle train/test in any cross-pool fit/apply below.
+    union_groups: set[str] = set()
+    for p in pools.values():
+        union_groups.update(_row_groups(p["rows"], args.group_key))
+    fold_of, n_folds = shared_fold_assignment(union_groups, args.n_folds)
     folds_by_fam = {
-        f: _folds_from_manifest(
-            p["rows"], p["X"].shape[0], group_key=args.group_key, n_folds=args.n_folds
+        f: folds_from_assignment(
+            p["rows"], p["X"].shape[0], fold_of, group_key=args.group_key, n_folds=n_folds
         )
         for f, p in pools.items()
     }
+    _assert_fold_alignment(
+        {f: p["rows"] for f, p in pools.items()}, folds_by_fam, group_key=args.group_key
+    )
 
     import torch
 
     # 5x5 matrix: per train family A, per fold, ONE fit; test X = concat of all
     # families' fold rows (matched-target scoring: every family evaluated on
-    # ITS OWN held-out rows/targets under A's map).
+    # ITS OWN held-out rows/targets under A's map). Fold index f_i names the
+    # SAME group set in every pool (fixed-length folds, empties preserved), so
+    # B's fold-f_i rows are never in A's fold-f_i-excluded training set.
     matrix: dict[str, dict[str, float]] = {a: {} for a in fams}
     preds_store: dict[tuple[str, str], np.ndarray] = {}
     diag_stats: dict[str, dict] = {}
@@ -368,19 +487,22 @@ def unit_transfer(args, summaries_dir: Path, layer: int, arm: str, basis: str) -
         na = Xa.shape[0]
         preds_on: dict[str, np.ndarray] = {b: np.zeros_like(pools[b]["Y"]) for b in fams}
         lambda_indices: list[int] = []
-        for f_i, test_idx in enumerate(folds_by_fam[a]):
+        for f_i in range(n_folds):
+            test_idx = folds_by_fam[a][f_i]
             mask = np.ones(na, dtype=bool)
             mask[test_idx] = False
             test_blocks = []
             test_slices: dict[str, tuple[int, np.ndarray]] = {}
             off = 0
             for b in fams:
-                b_test = folds_by_fam[b][f_i] if f_i < len(folds_by_fam[b]) else np.array([], int)
+                b_test = folds_by_fam[b][f_i]
                 xb = pools[b]["X"][b_test].astype(np.float64)
                 test_blocks.append(xb)
                 test_slices[b] = (off, b_test)
                 off += xb.shape[0]
             X_test = np.concatenate(test_blocks) if test_blocks else np.zeros((0, Xa.shape[1]))
+            if X_test.shape[0] == 0:
+                continue
             res = press_fit_predict(
                 torch.from_numpy(Xa[mask]).double(),
                 torch.from_numpy(Ya[mask]).double(),
@@ -393,7 +515,8 @@ def unit_transfer(args, summaries_dir: Path, layer: int, arm: str, basis: str) -
                 if len(b_test):
                     preds_on[b][b_test] = pred[off_b : off_b + len(b_test)]
         for b in fams:
-            covered = np.concatenate(folds_by_fam[b]) if folds_by_fam[b] else np.array([], int)
+            nonempty = [f for f in folds_by_fam[b] if f.size]
+            covered = np.concatenate(nonempty) if nonempty else np.array([], int)
             matrix[a][b] = _r2(pools[b]["Y"][covered], preds_on[b][covered])
         preds_store[(a, "plain")] = preds_on["plain"]
         diag_stats[a] = {
@@ -403,10 +526,13 @@ def unit_transfer(args, summaries_dir: Path, layer: int, arm: str, basis: str) -
         }
 
     # diagonal extras at this unit: perm null + identity floors + twins + spectrum
+    # (within-ONE-pool grouped CV — empty shared folds dropped; grouping intact).
+    # Skipped for callers that discard them (unit_loto keeps only the plain
+    # row + diag — round 1 computed-then-discarded ~2.9k half-n twin fits).
     extras: dict[str, dict] = {}
-    for a in fams:
+    for a in fams if with_extras else []:
         Xa, Ya = pools[a]["X"].astype(np.float64), pools[a]["Y"]
-        folds = folds_by_fam[a]
+        folds = [f for f in folds_by_fam[a] if f.size]
         fit_stats, _pred = _fit_cv(Xa, Ya, folds, return_pred=True)
         extras[a] = {
             "fit": fit_stats,
@@ -431,7 +557,7 @@ def unit_transfer(args, summaries_dir: Path, layer: int, arm: str, basis: str) -
         }
 
     # map-comparison stats on the shared plain test rows (§4.5 item 5)
-    mapcmp = _mapcmp_stats(args, pools, preds_store, layer, basis)
+    mapcmp = _mapcmp_stats(args, pools, preds_store, layer, basis) if with_extras else {}
 
     return {
         "families": fams,
@@ -442,6 +568,9 @@ def unit_transfer(args, summaries_dir: Path, layer: int, arm: str, basis: str) -
         "basis": basis,
         "arm": arm,
         "layer": layer,
+        "fold_scheme": "shared-union-v2",
+        "group_key": args.group_key,
+        "n_folds_realized": n_folds,
     }
 
 
@@ -518,7 +647,6 @@ def unit_shifts(args, summaries_dir: Path, layer: int, c_kind: str) -> dict:
             }
         # label-permutation null for R^2_mu (batched: draws x rows gather)
         rng = np.random.default_rng(args.seed)
-        pool = np.concatenate([d_c, -d_c])  # sign-flip null pool for the mean
         n = d_c.shape[0]
         draws = np.empty(args.n_perm, dtype=np.float64)
         for t in range(args.n_perm):
@@ -528,7 +656,6 @@ def unit_shifts(args, summaries_dir: Path, layer: int, c_kind: str) -> dict:
             draws[t] = 1.0 - float(((d_null - mu) ** 2).sum()) / max(
                 float((d_null**2).sum()), 1e-12
             )
-        del pool
         # commute test: M_plain(mu_c) vs mean dv
         mu_c = d_c.mean(axis=0)
         base = Xp[idx_plain]
@@ -593,9 +720,21 @@ def unit_gating(args, summaries_dir: Path, layer: int, arm: str) -> dict:
         if labels.sum() == 0 or (~labels).sum() == 0:
             raise ValueError(f"gating {slug}: single-class relevance labels")
         groups_rows = [cd.rows[i] for i in idx_aug]
-        folds = _folds_from_manifest(
-            groups_rows, len(shared), group_key=args.group_key, n_folds=args.n_folds
+        # Shared partition over union(plain, this cell): the dv_hat read below
+        # predicts fold-f_i rows from an M_plain fit EXCLUDING fold f_i, so a
+        # base row's plain twin is never in the fitting pool (v1 review
+        # bug-class sweep: correlated same-base variants across pools).
+        union = set(_row_groups(plain.rows, args.group_key)) | set(
+            _row_groups(groups_rows, args.group_key)
         )
+        fold_of, n_folds = shared_fold_assignment(union, args.n_folds)
+        folds_fixed = folds_from_assignment(
+            groups_rows, len(shared), fold_of, group_key=args.group_key, n_folds=n_folds
+        )
+        folds_plain = folds_from_assignment(
+            plain.rows, Xp.shape[0], fold_of, group_key=args.group_key, n_folds=n_folds
+        )
+        folds = [f for f in folds_fixed if f.size]
         d_c = cd.kind(arm, layer)[idx_aug].astype(np.float64) - Xp[idx_plain]
         d_v = cd.kind("t1", layer)[idx_aug].astype(np.float64) - Yp[idx_plain]
         res: dict[str, dict] = {}
@@ -605,16 +744,25 @@ def unit_gating(args, summaries_dir: Path, layer: int, arm: str) -> dict:
                 "auc": _rank_auc(scores, labels),
                 "perm_null": _perm_auc_null(scores, labels, args.n_perm, args.seed),
             }
-        # map-predicted contrast: dv_hat = M_plain(c_aug) - M_plain(c_plain)
-        X_test = np.concatenate([cd.kind(arm, layer)[idx_aug].astype(np.float64), Xp[idx_plain]])
-        fit = press_fit_predict(
-            torch.from_numpy(Xp).double(),
-            torch.from_numpy(Yp).double(),
-            torch.from_numpy(X_test).double(),
-            standardize=True,
-        )
-        pred = fit["pred"].detach().cpu().numpy()
-        dv_hat = pred[: len(shared)] - pred[len(shared) :]
+        # map-predicted contrast dv_hat = M_plain(c_aug) - M_plain(c_plain),
+        # fold-wise HELD-OUT under the shared partition
+        X_aug = cd.kind(arm, layer)[idx_aug].astype(np.float64)
+        X_pl = Xp[idx_plain]
+        dv_hat = np.zeros((len(shared), Yp.shape[1]), dtype=np.float64)
+        for f_i in range(n_folds):
+            sel = folds_fixed[f_i]
+            if not sel.size:
+                continue
+            mask = np.ones(Xp.shape[0], dtype=bool)
+            mask[folds_plain[f_i]] = False
+            fit = press_fit_predict(
+                torch.from_numpy(Xp[mask]).double(),
+                torch.from_numpy(Yp[mask]).double(),
+                torch.from_numpy(np.concatenate([X_aug[sel], X_pl[sel]])).double(),
+                standardize=True,
+            )
+            pred = fit["pred"].detach().cpu().numpy()
+            dv_hat[sel] = pred[: len(sel)] - pred[len(sel) :]
         scores = _held_out_linear_scores(dv_hat, labels, folds)
         res["gamma_v_hat"] = {
             "auc": _rank_auc(scores, labels),
@@ -634,64 +782,93 @@ def unit_gating(args, summaries_dir: Path, layer: int, arm: str) -> dict:
 
 
 def _mlp_companion(args, summaries_dir: Path, layer: int, arm: str) -> dict:
-    """MLP-vs-ridge held-out gap on facts rows + plain control (batched helper)."""
+    """MLP-vs-ridge held-out gap on facts rows + plain control (batched helper).
+
+    Folds are GROUPED by ``args.group_key`` (prefix) — the facts pool holds up
+    to FOUR augmented variants of each base row, so pointwise LOO would leak
+    same-base variants into the fitting set of their held-out twin and the
+    higher-capacity MLP exploits that leakage more than ridge (v1 review
+    Major #3). The subsample draws whole GROUPS (trimming only the final
+    group's surplus — trimmed rows are excluded entirely, never split across
+    train/test), and the MLP rides the group-aware
+    ``fit_batched_loco_mlp_multihead(row_groups=...)`` path: the plan-named
+    scalar-per-dim ``fit_batched_loco_mlp`` has NO group-fold support, and the
+    multihead head is the vectorize-rule production path — valid here because
+    the MLP-vs-ridge gap is INTERNAL to this unit (both arms share rows,
+    targets, and the grouped fold structure).
+    """
     from explore_persona_space.analysis.vectorized_mlp_skill import (
         MLPGroup,
-        fit_batched_loco_mlp,
+        fit_batched_loco_mlp_multihead,
     )
 
     cells_present = _cells_present(summaries_dir)
     plain = CellData(summaries_dir, "cell_plain")
     rng = np.random.default_rng(args.seed)
-    groups: list[MLPGroup] = []
-    ridge_r2: dict[str, float] = {}
-    row_sets: dict[str, tuple[np.ndarray, np.ndarray]] = {}
     fact_cells = [f"cell_{s}" for s in AUGMENT_SLUGS if s.startswith("fact_")]
     fact_cells = [c for c in fact_cells if c in cells_present]
-    xs, ys = [], []
+    xs, ys, fact_rows = [], [], []
     for cell in fact_cells:
         cd = CellData(summaries_dir, cell)
         xs.append(cd.kind(arm, layer).astype(np.float32))
         ys.append(cd.kind("t1", layer).astype(np.float32))
-    pools = {"plain": (plain.kind(arm, layer), plain.kind("t1", layer))}
+        fact_rows.extend(cd.rows)
+    pools = {"plain": (plain.kind(arm, layer), plain.kind("t1", layer), plain.rows)}
     if xs:
-        pools["facts"] = (np.concatenate(xs), np.concatenate(ys))
-    # fit_batched_loco_mlp requires EVERY group to share the same n (one
-    # vmapped ensemble) — equalize to the smallest pool, capped at MLP_MAX_ROWS.
-    n_common = min(min(x.shape[0] for x, _y in pools.values()), MLP_MAX_ROWS)
-    n_rows_used = {}
-    for name, (X, Y) in pools.items():
-        n = n_common
-        idx = rng.choice(X.shape[0], size=n, replace=False)
+        pools["facts"] = (np.concatenate(xs), np.concatenate(ys), fact_rows)
+    # the multihead ensemble requires EVERY pool to share the same n —
+    # equalize to the smallest pool, capped at MLP_MAX_ROWS.
+    n_common = min(min(x.shape[0] for x, _y, _r in pools.values()), MLP_MAX_ROWS)
+    out: dict = {
+        "n_rows_used": {},
+        "ridge_r2_grouped_lopo": {},
+        "mlp_r2_grouped_lopo": {},
+        "fold_scheme": f"grouped-lopo:{args.group_key}",
+    }
+    for name, (X, Y, rows) in pools.items():
+        groups_all = _row_groups(rows, args.group_key)
+        uniq = sorted(set(groups_all))
+        gidx: dict[str, list[int]] = {}
+        for i, g in enumerate(groups_all):
+            gidx.setdefault(g, []).append(i)
+        idx_list: list[int] = []
+        for gi in rng.permutation(len(uniq)):
+            take = gidx[uniq[gi]]
+            idx_list.extend(take[: n_common - len(idx_list)])
+            if len(idx_list) >= n_common:
+                break
+        idx = np.asarray(idx_list, dtype=np.int64)
+        labels_str = [groups_all[i] for i in idx]
+        label_map = {g: t for t, g in enumerate(sorted(set(labels_str)))}
+        row_groups = np.asarray([label_map[g] for g in labels_str], dtype=np.int64)
         Xs, Ysub = X[idx].astype(np.float64), Y[idx].astype(np.float64)
         # Input-PCA to rank<=n is LOSSLESS here (pool rows span <=n dims; ridge
         # predictions are span-invariant by the representer theorem and the MLP
         # first layer absorbs the rotation) and cuts the fold-batched MLP weight
         # ensemble from d_in=3584 to <=n dims (#722 input-PCA lineage; the ambient
         # ensemble at d_in=3584 hit 23.7 GB RSS -> earlyoom on 2026-07-17).
-        mu_x, v_x = _pca_basis(Xs, min(n, Xs.shape[1]))
+        mu_x, v_x = _pca_basis(Xs, min(len(idx), Xs.shape[1]))
         Xs = (Xs - mu_x) @ v_x
         mu, v = _pca_basis(Ysub, PCA_K)
         Yk = ((Ysub - mu) @ v).astype(np.float32)
-        row_sets[name] = (Xs.astype(np.float32), Yk)
-        n_rows_used[name] = int(n)
-        # ridge LOO on the identical rows/targets (matched fold structure: LOCO)
-        loo_folds = [np.array([i]) for i in range(n)]
-        fit = _fit_cv(Xs, Yk.astype(np.float64), loo_folds)
-        ridge_r2[name] = fit["r2"]
-        groups.append(MLPGroup(key=name, X=row_sets[name][0], Y=row_sets[name][1]))
-    result = fit_batched_loco_mlp(
-        groups,
-        seed=args.seed,
-        hidden=512,
-        max_epochs=300 if not args.smoke else 20,
-        device=args.mlp_device,
-    )
-    out = {"n_rows_used": n_rows_used, "ridge_r2_loo": ridge_r2, "mlp_r2_loo": {}}
-    for name, (X, Yk) in row_sets.items():
+        out["n_rows_used"][name] = int(len(idx))
+        # ridge on the identical rows/targets with the MATCHED grouped folds
+        grouped_folds = [np.flatnonzero(row_groups == g) for g in np.unique(row_groups)]
+        fit = _fit_cv(Xs, Yk.astype(np.float64), grouped_folds)
+        out["ridge_r2_grouped_lopo"][name] = fit["r2"]
+        result = fit_batched_loco_mlp_multihead(
+            [MLPGroup(key=name, X=Xs.astype(np.float32), Y=Yk)],
+            seed=args.seed,
+            hidden=512,
+            max_epochs=300 if not args.smoke else 20,
+            device=args.mlp_device,
+            row_groups=row_groups,
+        )
         pred = result.preds_by_key[name]
-        out["mlp_r2_loo"][name] = _r2(Yk.astype(np.float64), pred.astype(np.float64))
-        out.setdefault("gap", {})[name] = out["mlp_r2_loo"][name] - ridge_r2[name]
+        out["mlp_r2_grouped_lopo"][name] = _r2(Yk.astype(np.float64), pred.astype(np.float64))
+        out.setdefault("gap", {})[name] = (
+            out["mlp_r2_grouped_lopo"][name] - out["ridge_r2_grouped_lopo"][name]
+        )
     return out
 
 
@@ -720,7 +897,8 @@ def unit_q4(args, summaries_dir: Path, layer: int) -> dict:
             [
                 bool(ft.rows[i].get("t1_halves_degenerate"))
                 or bool(plain.rows[j].get("t1_halves_degenerate"))
-                for i, j in zip(i_ft, i_pl, strict=True)
+                or bool(aug.rows[k].get("t1_halves_degenerate"))
+                for i, j, k in zip(i_ft, i_pl, i_ag, strict=True)
             ]
         )
         keep = ~degen
@@ -729,6 +907,8 @@ def unit_q4(args, summaries_dir: Path, layer: int) -> dict:
         t1_pl = plain.kind("t1", layer)[i_pl][keep].astype(np.float64)
         odd = plain.kind("t1_odd", layer)[i_pl][keep].astype(np.float64)
         even = plain.kind("t1_even", layer)[i_pl][keep].astype(np.float64)
+        aug_odd = aug.kind("t1_odd", layer)[i_ag][keep].astype(np.float64)
+        aug_even = aug.kind("t1_even", layer)[i_ag][keep].astype(np.float64)
         rows_kept = [plain.rows[j] for j, k in zip(i_pl, keep, strict=True) if k]
         # PRIMARY: disjoint-baseline legs (shared capture noise cancels, §3)
         dv_ft = t1_ft - odd
@@ -760,8 +940,13 @@ def unit_q4(args, summaries_dir: Path, layer: int) -> dict:
                         shuffled = rng.permutation(tidx)
                     perm[tidx] = shuffled
             d_draws[t] = _row_cosines(dv_ft, dv_ctx[perm])
-        # per-row reliability from the ctx-arm token halves
-        rel_ctx = _row_cosines(t1_aug - odd, t1_aug - even)
+        # per-row reliability of dv_ctx from DISJOINT token halves on BOTH
+        # sides: leg1 = aug_odd - plain_odd, leg2 = aug_even - plain_even —
+        # the two legs share NO capture-noise vector (v1 review Major #5: the
+        # earlier cos(t1_aug - odd, t1_aug - even) carried the full t1_aug
+        # noise in both legs, inflating the ceiling — the
+        # selection-symmetric-nulls shared-noise-vector class).
+        rel_ctx = _row_cosines(aug_odd - odd, aug_even - even)
         # R^2 of dv_ft on dv_ctx (pooled OLS over rows x dims)
         beta = float(
             np.einsum("nd,nd->", dv_ft, dv_ctx) / max(np.einsum("nd,nd->", dv_ctx, dv_ctx), 1e-12)
@@ -791,6 +976,7 @@ def unit_q4(args, summaries_dir: Path, layer: int) -> dict:
             "beta_pooled": beta,
             "r2_pooled": r2_pooled,
             "reliability_ctx_halves_mean": float(rel_ctx.mean()),
+            "reliability_construction": ("disjoint_halves(aug_odd-plain_odd, aug_even-plain_even)"),
             "per_row": {
                 "base_row_id": [r["base_row_id"] for r in rows_kept],
                 "cos_primary": [float(x) for x in cos_primary],
@@ -832,7 +1018,15 @@ def unit_q4(args, summaries_dir: Path, layer: int) -> dict:
 
 
 def unit_q6(args, summaries_dir: Path, layer: int, arm: str) -> dict:
-    """Q6 map stability: M_plain on the FT model's (c,v) + refit ceiling."""
+    """Q6 map stability: M_plain on the FT model's (c,v) HELD-OUT + refit ceiling.
+
+    The FT cells re-generate the plain EVAL rows under theta_k, so every FT
+    row has a same-prefix plain twin. `r2_plain_map_on_ft` is therefore
+    fold-wise under the SHARED partition: fold-f_i FT rows are predicted from
+    an M_plain fit EXCLUDING plain fold f_i (v1 review Critical #2 — the
+    all-plain fit partially interpolated its own training targets, an
+    asymmetric comparison against the grouped-CV refit ceiling).
+    """
     cells_present = _cells_present(summaries_dir)
     plain = CellData(summaries_dir, "cell_plain")
     Xp = plain.kind(arm, layer).astype(np.float64)
@@ -841,38 +1035,87 @@ def unit_q6(args, summaries_dir: Path, layer: int, arm: str) -> dict:
 
     out: dict[str, dict] = {}
     slugs = [s for s in DISTILL_RUNS if f"cell_ft_{s}" in cells_present]
-    for slug in slugs:
-        ft = CellData(summaries_dir, f"cell_ft_{slug}")
-        Xf = ft.kind(arm, layer).astype(np.float64)
-        Yf = ft.kind("t1", layer).astype(np.float64)
-        folds = _folds_from_manifest(
-            ft.rows, Xf.shape[0], group_key=args.group_key, n_folds=args.n_folds
+    ft_cells = {s: CellData(summaries_dir, f"cell_ft_{s}") for s in slugs}
+    if slugs:
+        # ONE shared partition over union(plain, every FT cell)
+        union_groups = set(_row_groups(plain.rows, args.group_key))
+        for ft in ft_cells.values():
+            union_groups.update(_row_groups(ft.rows, args.group_key))
+        fold_of, n_folds = shared_fold_assignment(union_groups, args.n_folds)
+        folds_plain = folds_from_assignment(
+            plain.rows, Xp.shape[0], fold_of, group_key=args.group_key, n_folds=n_folds
         )
-        # M_plain applied (fit on ALL plain rows once, predict FT rows)
-        res = press_fit_predict(
-            torch.from_numpy(Xp).double(),
-            torch.from_numpy(Yp).double(),
-            torch.from_numpy(Xf).double(),
-            standardize=True,
-        )
-        pred_plain_map = res["pred"].detach().cpu().numpy()
-        # refit-on-theta_k ceiling (grouped CV on the FT cell itself)
-        refit = _fit_cv(Xf, Yf, folds)
-        out[slug] = {
-            "n_rows": int(Xf.shape[0]),
-            "r2_plain_map_on_ft": _r2(Yf, pred_plain_map),
-            "r2_refit_ceiling": refit["r2"],
-            "refit_lambda_indices": refit["lambda_indices"],
+        folds_ft = {
+            s: folds_from_assignment(
+                ft.rows,
+                ft.kind(arm, layer).shape[0],
+                fold_of,
+                group_key=args.group_key,
+                n_folds=n_folds,
+            )
+            for s, ft in ft_cells.items()
         }
+        _assert_fold_alignment(
+            {"plain": plain.rows, **{s: ft.rows for s, ft in ft_cells.items()}},
+            {"plain": folds_plain, **folds_ft},
+            group_key=args.group_key,
+        )
+        Xf = {s: ft.kind(arm, layer).astype(np.float64) for s, ft in ft_cells.items()}
+        Yf = {s: ft.kind("t1", layer).astype(np.float64) for s, ft in ft_cells.items()}
+        preds = {s: np.zeros_like(Yf[s]) for s in slugs}
+        plain_groups = _row_groups(plain.rows, args.group_key)
+        for f_i in range(n_folds):
+            blocks, slices, off = [], {}, 0
+            for s in slugs:
+                sel = folds_ft[s][f_i]
+                blocks.append(Xf[s][sel])
+                slices[s] = (off, sel)
+                off += len(sel)
+            if off == 0:
+                continue
+            mask = np.ones(Xp.shape[0], dtype=bool)
+            mask[folds_plain[f_i]] = False
+            # hard leak guard: no predicted row's group in the fitting pool
+            train_groups = {plain_groups[i] for i in np.flatnonzero(mask)}
+            for s in slugs:
+                ft_groups = _row_groups(ft_cells[s].rows, args.group_key)
+                test_groups = {ft_groups[int(i)] for i in slices[s][1]}
+                overlap = train_groups & test_groups
+                assert not overlap, f"q6 {s}: fold {f_i} leak groups {sorted(overlap)[:3]}"
+            res = press_fit_predict(
+                torch.from_numpy(Xp[mask]).double(),
+                torch.from_numpy(Yp[mask]).double(),
+                torch.from_numpy(np.concatenate(blocks)).double(),
+                standardize=True,
+            )
+            pred = res["pred"].detach().cpu().numpy()
+            for s, (off_s, sel) in slices.items():
+                if len(sel):
+                    preds[s][sel] = pred[off_s : off_s + len(sel)]
+        for slug in slugs:
+            # refit-on-theta_k ceiling (grouped CV on the FT cell itself,
+            # SAME shared partition — symmetric held-out comparison)
+            refit = _fit_cv(Xf[slug], Yf[slug], [f for f in folds_ft[slug] if f.size])
+            out[slug] = {
+                "n_rows": int(Xf[slug].shape[0]),
+                "r2_plain_map_on_ft": _r2(Yf[slug], preds[slug]),
+                "r2_refit_ceiling": refit["r2"],
+                "refit_lambda_indices": refit["lambda_indices"],
+                "fold_scheme": "shared-union-v2",
+            }
     # matched-n plain fit (n = FT eval size) — Q6 comparator (§4.5 item 4.6)
     if slugs:
-        n_match = CellData(summaries_dir, f"cell_ft_{slugs[0]}").kind("t1", layer).shape[0]
+        n_match = ft_cells[slugs[0]].kind("t1", layer).shape[0]
         rng = np.random.default_rng(args.seed)
         idx = rng.choice(Xp.shape[0], size=min(n_match, Xp.shape[0]), replace=False)
         rows_m = [plain.rows[i] for i in idx]
-        folds_m = _folds_from_manifest(
-            rows_m, len(idx), group_key=args.group_key, n_folds=args.n_folds
-        )
+        folds_m = [
+            f
+            for f in folds_from_assignment(
+                rows_m, len(idx), fold_of, group_key=args.group_key, n_folds=n_folds
+            )
+            if f.size
+        ]
         fit_m = _fit_cv(Xp[idx], Yp[idx], folds_m)
         out["_plain_matched_n"] = {"n": int(len(idx)), "r2": fit_m["r2"]}
     # cross-provision drift bound from the plain re-captures
@@ -894,19 +1137,29 @@ def unit_q6(args, summaries_dir: Path, layer: int, arm: str) -> dict:
 
 
 def unit_loto(args, summaries_dir: Path, layer: int, arm: str) -> dict:
-    """Registered LOTO sensitivity: plain diagonal + plain->facts transfer."""
+    """Registered LOTO sensitivity: plain diagonal + plain->facts transfer.
+
+    n_folds=0 -> one fold per topic in the shared assignment, i.e. TRUE
+    leave-one-topic-out (v1 review Minor: 6 folds over 12 topics was
+    leave-TWO-topics-out while named LOTO).
+    """
     saved_group_key = args.group_key
+    saved_n_folds = args.n_folds
     try:
         args.group_key = "topic"
-        res = unit_transfer(args, summaries_dir, layer, arm, "ambient")
+        args.n_folds = 0  # leave-one-group-out => true LOTO
+        res = unit_transfer(args, summaries_dir, layer, arm, "ambient", with_extras=False)
         keep = {
             "matrix_plain_row": res["matrix"].get("plain"),
             "diag_plain": res["diag"].get("plain"),
             "group_key": "topic",
+            "n_folds_realized": res["n_folds_realized"],
+            "fold_scheme": res["fold_scheme"],
         }
         return keep
     finally:
         args.group_key = saved_group_key
+        args.n_folds = saved_n_folds
 
 
 # ---------------------------------------------------------------------------
@@ -922,9 +1175,12 @@ def _cells_present(summaries_dir: Path) -> set[str]:
 
 def _default_units(args) -> list[str]:
     layers_pca = [14, 18, 19]
-    units = []
+    # headline unit FIRST so the box that owns it evaluates G2 before burning
+    # wall on sensitivity units (v1 review Minor: G2 fires only on this box)
+    units = ["transfer:context_end:ambient:L14"]
     for arm in ("prefix_end", "context_end"):
-        units.append(f"transfer:{arm}:ambient:L14")
+        if f"transfer:{arm}:ambient:L14" not in units:
+            units.append(f"transfer:{arm}:ambient:L14")
         for layer in layers_pca:
             units.append(f"transfer:{arm}:pca48:L{layer:02d}")
     for c_kind in ("context_end", "context_mean", "prefix_end", "prefix_mean"):
@@ -967,6 +1223,7 @@ def _run_unit(args, unit: str, summaries_dir: Path) -> dict:
 
 def _regime_fingerprint(args) -> str:
     keys = {
+        "fold_scheme": "shared-union-v2",  # round-2 shared-partition fix
         "smoke": args.smoke,
         "n_random_draws": args.n_random_draws,
         "n_refit_twins": args.n_refit_twins,

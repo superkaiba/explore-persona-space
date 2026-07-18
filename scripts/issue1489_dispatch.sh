@@ -121,8 +121,11 @@ run_smoke_chain() {
   uv run python scripts/issue1489_gpu_phase.py --phase distill --smoke \
     --conditions-dir "$SMOKE_COND" --corpus-dir "$CORPUS_DIR" --out "$SMOKE_OUT" \
     --skip-upload
+  # dose probes carry the SAME engine knobs as the P1 ctx arm (one engine
+  # config per comparison — dose matching compares FT vs P1 ctx compliance)
   uv run python scripts/issue1489_gpu_phase.py --phase dose_probes --smoke \
-    --conditions-dir "$SMOKE_COND" --corpus-dir "$CORPUS_DIR" --out "$SMOKE_OUT"
+    --conditions-dir "$SMOKE_COND" --corpus-dir "$CORPUS_DIR" --out "$SMOKE_OUT" \
+    --enforce-eager --no-prefix-caching
   uv run python scripts/issue1489_judge.py --batch manipulation \
     --conditions-dir "$SMOKE_COND" --corpus-dir "$CORPUS_DIR" --out "$SMOKE_OUT" \
     --judge-out "$SMOKE_OUT/judge" --cache-dir "$SMOKE_OUT/judge_cache"
@@ -183,8 +186,10 @@ phase_a() {
     --conditions-dir "$COND" --corpus-dir "$CORPUS_DIR" --out "$OUT"
   sentinel p3_done "distillation + checkpoint ladder upload complete"
   echo "[phase=p4] dose probes"
+  # SAME engine knobs as the P1 ctx arm (one engine config per comparison)
   uv run python scripts/issue1489_gpu_phase.py --phase dose_probes \
-    --conditions-dir "$COND" --corpus-dir "$CORPUS_DIR" --out "$OUT"
+    --conditions-dir "$COND" --corpus-dir "$CORPUS_DIR" --out "$OUT" \
+    --enforce-eager --no-prefix-caching
   echo "[phase=upload-a2] probe + distill-round artifacts"
   uv run python scripts/issue1489_gpu_phase.py --phase upload \
     --conditions-dir "$COND" --corpus-dir "$CORPUS_DIR" --out "$OUT"

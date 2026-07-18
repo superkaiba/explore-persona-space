@@ -20,8 +20,8 @@ through every phase — PASS_UNIFIED):
     capture       P2  teacher-forced HF capture (7 kinds x 28 layers, fp16)
     distill       P3  LoRA context-distillation runs (2/family, plan §4.3)
     dose_probes   P4  per-checkpoint generation on the probe rows (multi-LoRA)
-    ft_gen        P4b generation under the selected checkpoints (plain eval rows)
-    ft_capture    P4b capture for cells cell_ft_<slug> (+ cell_plain re-captures)
+    ft            P4b gen + capture under the selected checkpoints
+                      (cells cell_ft_<slug> + cell_plain re-captures)
     upload        upload raw completions + summaries to the issue HF prefix
 
 Decoding is byte-matched to #1092 (greedy, seed 42, max_tokens 1024,
@@ -344,6 +344,39 @@ def write_capture_shard(
 # ---------------------------------------------------------------------------
 
 
+def _lora_int_id(slug: str, k: int = 0) -> int:
+    """Deterministic vLLM lora_int_id per (distill run, checkpoint rung).
+
+    v1 review Minor: the earlier salted ``abs(hash(slug))`` ids were
+    nondeterministic across processes and could collide across slugs inside a
+    shared engine (~0.3%/pair), silently serving the wrong adapter. Slug
+    index x 16 leaves room for the 8-ckpt ladder (k in 1..8; k=0 = the
+    whole-run adapter).
+    """
+    return DISTILL_RUNS.index(slug) * 16 + k + 1
+
+
+def _shutdown_vllm(llm) -> None:
+    """#653 r9 engine-core reap + the guarded process-group destroy.
+
+    Sequential engines in one process can EADDRINUSE on the torch.distributed
+    rendezvous port if the prior engine's process group survives (#664 class)
+    — destroy it whenever it is initialized. Callers still ``del llm`` +
+    gc/empty_cache/ipc_collect/sleep afterward (the #653 recipe order).
+    """
+    import torch
+
+    try:
+        llm.llm_engine.engine_core.shutdown()
+    except AttributeError:
+        pass
+    try:
+        if torch.distributed.is_available() and torch.distributed.is_initialized():
+            torch.distributed.destroy_process_group()
+    except Exception:  # noqa: BLE001 — best-effort teardown; engine already reaped above
+        logger.warning("destroy_process_group failed during vLLM teardown", exc_info=True)
+
+
 def _build_vllm_engine(args: argparse.Namespace, *, enable_lora: bool = False):
     from vllm import LLM
 
@@ -567,7 +600,7 @@ def _run_ft_cell(
         if adapter_path:
             from vllm.lora.request import LoRARequest
 
-            lora_request = LoRARequest(slug, abs(hash(slug)) % 100_000 + 1, adapter_path)
+            lora_request = LoRARequest(slug, _lora_int_id(slug), adapter_path)
         for i, srows in pending_gen:
             rendered = [render_row_1489(r, prefix_store, query_store) for r in srows]
             prompts = [p for _pfx, p in rendered]
@@ -592,11 +625,9 @@ def _run_ft_cell(
                 ],
             }
             _atomic_write(path, json.dumps(payload, ensure_ascii=False))
-        # Reap the engine before the HF capture load (#653 r9 recipe).
-        try:
-            llm.llm_engine.engine_core.shutdown()
-        except AttributeError:
-            pass
+        # Reap the engine before the HF capture load (#653 r9 recipe + guarded
+        # process-group destroy).
+        _shutdown_vllm(llm)
         del llm
         gc.collect()
         torch.cuda.empty_cache()
@@ -746,10 +777,7 @@ def _dose_probe_worker(gpu_id: int, task_q, result_q, args_dict: dict) -> None:
                     continue
                 if args.sequential_lora:
                     # fallback path: fresh engine per checkpoint (plan §8 risk row)
-                    try:
-                        llm.llm_engine.engine_core.shutdown()
-                    except AttributeError:
-                        pass
+                    _shutdown_vllm(llm)
                     del llm
                     import gc
 
@@ -757,9 +785,10 @@ def _dose_probe_worker(gpu_id: int, task_q, result_q, args_dict: dict) -> None:
 
                     gc.collect()
                     torch.cuda.empty_cache()
+                    torch.cuda.ipc_collect()
                     time.sleep(1.0)
                     llm = _build_vllm_engine(args, enable_lora=True)
-                req = LoRARequest(f"{slug}_ck{k}", (abs(hash(slug)) % 10_000) * 10 + k, ckpt)
+                req = LoRARequest(f"{slug}_ck{k}", _lora_int_id(slug, k), ckpt)
                 completions = _greedy(llm, prompts, lora_request=req)
                 payload = {
                     "issue": 1489,
