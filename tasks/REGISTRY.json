@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1493,
+  "highest_id": 1494,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -3846,6 +3846,13 @@
       "path": "tasks/proposed/1493",
       "status": "proposed",
       "title": "daily-fix: extend squash-first merge routing to experiments"
+    },
+    "1494": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1494",
+      "status": "proposed",
+      "title": "daily-fix: vm_disk_guard tier-e nonfinite env clamp"
     },
     "15": {
       "has_clean_result": false,
