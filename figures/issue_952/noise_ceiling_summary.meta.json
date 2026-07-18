@@ -1,0 +1,143 @@
+{
+  "commit": "977e183b42",
+  "created": "2026-07-18T00:09:50Z",
+  "figsize": [
+    12.8,
+    4.2
+  ],
+  "points": [
+    {
+      "layer-20 answer-representation R2 (mean per-query)": 0.078232,
+      "y": 0.15646361800021713,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "layer-20 answer-representation R2 (mean per-query)": 0.056376,
+      "y": 0.11275113996762014,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "layer-20 answer-representation R2 (mean per-query)": 0.067869,
+      "y": 0.13573886090089088,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "layer-20 answer-representation R2 (mean per-query)": 0.052585,
+      "y": 0.10516946555854638,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "layer-20 answer-representation R2 (mean per-query)": 0.23807845010906226,
+      "y": 0.0,
+      "series": "ceiling ICC = 0.238",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer-20 answer-representation R2 (mean per-query)": 0.23807845010906226,
+      "y": 1.0,
+      "series": "ceiling ICC = 0.238",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer-20 answer-representation R2 (mean per-query)": 0.051724,
+      "y": 0.1034480290084957,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "layer-20 answer-representation R2 (mean per-query)": 0.05216,
+      "y": 0.1043206408087958,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "layer-20 answer-representation R2 (mean per-query)": 0.035736,
+      "y": 0.07147191741407415,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "layer-20 answer-representation R2 (mean per-query)": 0.1826640659680128,
+      "y": 0.0,
+      "series": "ceiling ICC = 0.183",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer-20 answer-representation R2 (mean per-query)": 0.1826640659680128,
+      "y": 1.0,
+      "series": "ceiling ICC = 0.183",
+      "_kind": "line",
+      "_group": 3
+    }
+  ],
+  "n_series": 4,
+  "total_points": 11,
+  "text": {
+    "suptitle": "Reported R2 vs estimated noise ceiling (layer-20 context->answer map)",
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "In-domain check contexts (n=78)",
+        "xlabel": "layer-20 answer-representation R2 (mean per-query)",
+        "legend_labels": [
+          "ceiling ICC = 0.238",
+          "ceiling naive/LORO band",
+          "measured R2"
+        ],
+        "xticklabels": [
+          "0.00",
+          "0.05",
+          "0.10",
+          "0.15",
+          "0.20",
+          "0.25",
+          "0.30",
+          "0.35",
+          "0.40"
+        ],
+        "yticklabels": [
+          "own R2 (augmented)",
+          "own R2 (pool-only)",
+          "ext R2 (augmented)",
+          "ext R2 (pool-only)"
+        ]
+      },
+      {
+        "title_left": "China-politics divergent contexts (n=31)",
+        "xlabel": "layer-20 answer-representation R2 (mean per-query)",
+        "legend_labels": [
+          "ceiling ICC = 0.183",
+          "ceiling naive/LORO band",
+          "measured R2"
+        ],
+        "xticklabels": [
+          "0.00",
+          "0.05",
+          "0.10",
+          "0.15",
+          "0.20",
+          "0.25",
+          "0.30",
+          "0.35"
+        ],
+        "yticklabels": [
+          "own R2 (divergent)",
+          "own R2 (control)",
+          "ext R2 (divergent)"
+        ]
+      }
+    ],
+    "series": [
+      "ceiling ICC = 0.238",
+      "measured R2",
+      "ceiling ICC = 0.183"
+    ]
+  }
+}

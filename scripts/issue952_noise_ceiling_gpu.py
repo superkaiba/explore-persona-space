@@ -408,6 +408,7 @@ def _upload(out_base: pathlib.Path, k: int) -> list[str]:
     from huggingface_hub import HfApi
 
     api = HfApi()
+    role = out_base.name  # role-scoped so a second role never overwrites the first
     uploaded = []
     for fname in [
         f"raw_completions/own_rollouts_k{k}.json",
@@ -417,14 +418,15 @@ def _upload(out_base: pathlib.Path, k: int) -> list[str]:
         p = out_base / fname
         if not p.exists():
             continue
+        dest = f"{HF_PREFIX}/{role}/{fname}"
         api.upload_file(
             path_or_fileobj=str(p),
-            path_in_repo=f"{HF_PREFIX}/{fname}",
+            path_in_repo=dest,
             repo_id=HF_DATA_REPO,
             repo_type="dataset",
         )
-        uploaded.append(f"{HF_PREFIX}/{fname}")
-        logger.info("[upload] %s", fname)
+        uploaded.append(dest)
+        logger.info("[upload] %s", dest)
     return uploaded
 
 
