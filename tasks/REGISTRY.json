@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1501,
+  "highest_id": 1502,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -3916,6 +3916,13 @@
       "path": "tasks/proposed/1501",
       "status": "proposed",
       "title": "daily-fix: repo-root guard heredoc payload false positive"
+    },
+    "1502": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1502",
+      "status": "proposed",
+      "title": "daily-fix: open wf-fix sibling advisory at filing time"
     },
     "151": {
       "has_clean_result": false,
