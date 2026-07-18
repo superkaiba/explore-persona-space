@@ -5,7 +5,7 @@ title: 'The chain-of-thought mediation signature and the family gain excess repl
 kind: experiment
 tags: []
 created_at: '2026-07-16T13:52:31Z'
-has_clean_result: false
+has_clean_result: true
 parent_id: 1005
 origin_prompt: 'follow-up-proposer #1005 proposal 3 (substantially-different; filed-only
   per Step 9b autonomous routing; VC not-redundant)'
