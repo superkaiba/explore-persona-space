@@ -3997,8 +3997,8 @@
     "1512": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1512",
-      "status": "reviewing",
+      "path": "tasks/completed/1512",
+      "status": "completed",
       "title": "workflow-fix: gotcha \u2014 smoke-gate floors from realized slice arithmetic"
     },
     "1513": {
