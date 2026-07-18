@@ -1,6 +1,6 @@
 {
-  "commit": "0a0205a7f0",
-  "created": "2026-07-18T03:42:05Z",
+  "commit": "d43ea7e66e",
+  "created": "2026-07-18T03:52:20Z",
   "figsize": [
     6.5,
     4.0
@@ -78,7 +78,7 @@
     },
     {
       "evaluation turn": 4.0,
-      "retention of own-turn skill (%)": 96.71579030630298,
+      "retention of own-turn skill (%)": 96.71579030630296,
       "series": "map fit at turn 2",
       "_kind": "line",
       "_group": 2
@@ -99,21 +99,21 @@
     },
     {
       "evaluation turn": 4.0,
-      "retention of own-turn skill (%)": 100.04982720001149,
+      "retention of own-turn skill (%)": 100.0498272000115,
       "series": "map fit at turn 3",
       "_kind": "line",
       "_group": 3
     },
     {
       "evaluation turn": 2.0,
-      "retention of own-turn skill (%)": 95.33778415449767,
+      "retention of own-turn skill (%)": 95.33778415449765,
       "series": "map fit at turn 4",
       "_kind": "line",
       "_group": 4
     },
     {
       "evaluation turn": 3.0,
-      "retention of own-turn skill (%)": 99.03340644818724,
+      "retention of own-turn skill (%)": 99.03340644818722,
       "series": "map fit at turn 4",
       "_kind": "line",
       "_group": 4
