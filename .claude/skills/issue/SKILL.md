@@ -9607,8 +9607,9 @@ tests BEFORE anything lands:
     done < /tmp/issue-<N>-overlay-files.txt
     # LINT-VINTAGE 3-WAY MERGE (#1456; incidents #1366/#1411): when the own
     # diff touches scripts/workflow_lint.py, the loop above overlaid the
-    # BRANCH's lint copy, whose ratchet constants (_LESSONS_RATCHET_BYTES,
-    # agent-spec caps, gotchas row caps — bumped on main every few days) may
+    # BRANCH's lint copy, whose ratchet constants
+    # (_LESSONS_ROW_GRANDFATHER_MAX_BYTES, AGENT_SPEC_SIZE_GRANDFATHER —
+    # bumped on main every few days) may
     # predate main's raises and flag main-advanced files on the gated legs
     # only (NEW non-empty -> spurious block). Approximate the post-rebase
     # trunk lint instead: 3-way-merge branch copy (ours) + merge-base copy +
