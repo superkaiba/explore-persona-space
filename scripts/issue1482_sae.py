@@ -167,6 +167,47 @@ class BatchTopKSAE:
         )
         return cls(sd, k=k, device=device)
 
+    @classmethod
+    def ensure_downloaded(cls, k: int, cache_dir: Path | str) -> None:
+        """Idempotently stage trainer ``k``'s ``config.json`` + ``ae.pt`` into
+        ``cache_dir`` (parent-side pre-stage for fan-out consumers).
+
+        N concurrent workers calling ``load()`` against ONE empty shared
+        ``local_dir`` race the download scratch (#1315 fanout shared-staging
+        class; #1482 r5: the ``--seed-partial`` path skipped the P2-pilot —
+        previously the sole staging path — and a p2 worker died at
+        ``torch.load(ae.pt)`` FileNotFoundError). ``hf_hub_download`` publishes
+        only COMPLETE files at the final ``local_dir`` path (atomic replace),
+        so present+non-empty == complete; missing files ride
+        ``hub.retry_transient`` exactly like ``load()``.
+        """
+        from huggingface_hub import hf_hub_download
+
+        from explore_persona_space.orchestrate import hub
+
+        sub = TRAINER_SUBDIR[k]
+        cache = Path(cache_dir)
+        staged, present = [], []
+        for fname in ("config.json", "ae.pt"):
+            target = cache / sub / fname
+            if target.exists() and target.stat().st_size > 0:
+                present.append(fname)
+                continue
+            hub.retry_transient(
+                lambda f=fname: hf_hub_download(
+                    SAE_REPO,
+                    f"{sub}/{f}",
+                    revision=SAE_REVISION,
+                    repo_type="model",
+                    local_dir=str(cache),
+                ),
+                what=f"sae pre-stage ({SAE_REPO}:{sub}/{fname})",
+            )
+            staged.append(fname)
+        logger.info(
+            "[sae] pre-stage k=%d -> %s (staged=%s present=%s)", k, cache / sub, staged, present
+        )
+
     @torch.no_grad()
     def encode(self, h: torch.Tensor, chunk: int = 2048) -> torch.Tensor:
         """(T, act_dim) activations -> (T, dict_size) thresholded-ReLU features (fp32).
