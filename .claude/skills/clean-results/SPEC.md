@@ -1051,7 +1051,8 @@ Forward-only: each check branches on the sentinel. The v4 checks
 Generation-agnostic checks (v2 AND v3 AND v4): figure-URL-sha-matches
 (check 22), HF-URL-resolves (check 23), figure-sidecar opaque
 config-code tokens (check 28, WARN: `@L<digits>` layer pins + regime-code
-slugs in figure-sidecar-carried text — plain-English condition names only;
+slugs + bare hypothesis codes (`H3`) + slot-family codes (`f16`/`l16`) in
+figure-sidecar-carried text — plain-English condition names only;
 slugs stay in the Repro config row; sidecar-carried strings, not full
 PNG-pixel coverage), and figure prose-numerics vs sidecar plotted values
 (check 33, WARN: every BOLDED decimal in a figure's what-is-plotted prose

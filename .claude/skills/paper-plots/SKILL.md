@@ -345,7 +345,8 @@ annotations, and tick labels — and embeds it under a `text` key
 (`_extract_fig_text`; values are only strings / null / lists, so the
 dashboard viewer can never mistake the block for data rows). Two
 consequences: (1) `verify_task_body.py` checks 24 (stale tokens/fractions),
-28 (opaque config-code slugs / `@L` pins), and 34 (beat-phrase
+28 (opaque config-code slugs / `@L` pins / `H<d>` hypothesis + `f16`/`l16`
+slot-family codes), and 34 (beat-phrase
 series-structure claims) mechanically scan it — the §3.5 plain-English rule
 is now machine-checked on rendered text, not just critic-reviewed; (2)
 `embed_text=False` opts out (independent of `embed_data` — an

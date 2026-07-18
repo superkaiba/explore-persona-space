@@ -5518,7 +5518,8 @@ def test_checks_list_size():
     panel/series prose vs the sidecar's `_kind` aggregate — panel/series
     drift, #683 r1), check 28 (`check_figure_label_codes`, WARN:
     opaque config-code tokens — `@L<digits>` layer pins / regime-code
-    slugs — in the figure sidecar's rendered-text strings, #920), and
+    slugs / bare `H<d>` hypothesis codes / `f16`/`l16` slot-family codes —
+    in the figure sidecar's rendered-text strings, #920/#1072), and
     check 29 (`check_figure_tracked_at_head`, WARN: body-linked same-repo
     `figures/issue_<N>/` figure paths still tracked on a live local ref —
     HEAD plus the `issue-<N>` / `issue-<N>-*` branch family; branch-only →
@@ -11384,7 +11385,7 @@ def test_check26_repo_unresolved_is_noop_pass(monkeypatch):
 # fixture is check 24's (`_CHECK24_BODY`) — check 28 keys only off the
 # inline figure URL, not the caption.
 
-_CHECK28_NAME = "figure text opaque config codes (slug / @L-pin tokens)"
+_CHECK28_NAME = "figure text opaque config codes (slug / @L-pin / H-code / slot-family tokens)"
 
 
 def test_check28_slug_and_pin_in_description_warns(tmp_path, monkeypatch):
@@ -11663,6 +11664,76 @@ def test_check28_plain_english_text_block_clean(tmp_path, monkeypatch):
     body = _CHECK24_BODY.replace("0123456789abcdef", sha)
     res = verify_task_body.check_figure_label_codes(body)
     assert res.passed and not res.is_warn, res.render()
+
+
+def test_check28_hypothesis_and_slot_family_in_text_block_warns(tmp_path, monkeypatch):
+    """The #1072 live repro: the verbatim pre-fix sidecar strings (revision
+    8a5e966a of `exploratory_component_profiles.meta.json`) — a panel title
+    carrying the bare hypothesis code `(H3)` and an xlabel carrying the
+    slot-family code `f16` — WARN through the `meta["text"]` walk."""
+    repo, sha = _make_repo_with_figure_meta(
+        tmp_path,
+        {
+            "created": "2026-07-10T00:00:00Z",
+            "text": {
+                "suptitle": None,
+                "fig_texts": [],
+                "axes": [
+                    {
+                        "title_left": "Parallel share of the gap by depth (H3)",
+                        "xlabel": "answer position t (f16 slots)",
+                    }
+                ],
+            },
+        },
+    )
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    body = _CHECK24_BODY.replace("0123456789abcdef", sha)
+    res = verify_task_body.check_figure_label_codes(body)
+    assert res.passed and res.is_warn, res.render()
+    assert "H3" in res.detail and "f16" in res.detail
+
+
+def test_check28_hypothesis_and_slot_family_classifier():
+    """Pure-function inventories for the hypothesis-code + slot-family
+    classes (the #1506 durability pin), incl. the boundary-terminated
+    path-exemption arm with its regex-matches non-vacuity proof."""
+    fn = verify_task_body._opaque_code_tokens
+    # Known-bad: the verbatim #1072 strings + the class inventory.
+    assert fn("Parallel share of the gap by depth (H3)") == ["H3"]
+    assert fn("answer position t (f16 slots)") == ["f16"]
+    assert fn("l16 slots") == ["l16"]
+    assert fn("H1 vs H2") == ["H1", "H2"]
+    assert fn("H3 and H3") == ["H3"]  # repeated-token de-dup pin
+    # Snake-class non-overlap pin: `f16` inside `f16_slots` never matches the
+    # slot-family class (no boundary at `_`), while the digit-bearing snake
+    # token itself is flagged exactly once — no double-add.
+    assert fn("f16_slots plot") == ["f16_slots"]
+    # Known-good: GPU names, dtype spellings, metric names, case pins.
+    # (`"H1 2026"` is deliberately NOT here — it matches by design.)
+    for good in (
+        "H100",
+        "1x H200 pod",
+        "H20 inference",
+        "h3 heading",  # case pin
+        "bf16 precision",
+        "fp16",
+        "F16",  # case pin
+        "L16 readout",  # case pin
+        "F1 score",
+        "l2 norm",
+    ):
+        assert fn(good) == [], f"false positive on {good!r}: {fn(good)}"
+    # Path-exemption arm — BOUNDARY-TERMINATED tokens: the raw regexes
+    # genuinely match inside these path words (non-vacuity asserts below),
+    # so the `[]` results are produced by the path exemption, not the regex
+    # boundary; a `_`-suffixed token like `H3_panel.png` never matches the
+    # regex at all and would prove nothing about the exemption wiring.
+    assert fn("figures/issue_1072/H3.png") == []  # whole-string path skip
+    assert fn("source: figures/issue_1072/H3.png") == []  # path word in prose
+    assert fn("see figures/a/f16.png") == []  # path word in prose
+    assert verify_task_body._HYPOTHESIS_CODE_RE.search("figures/a/H3.png")
+    assert verify_task_body._SLOT_FAMILY_RE.search("figures/a/f16.png")
 
 
 # ─── Check 41: sidecar-less embedded figures (coverage WARN, #1478) ────────
