@@ -1,0 +1,14 @@
+{
+  "gate": "battery",
+  "measured_wall_s": 2613.4341711997986,
+  "units_done": 1,
+  "units_total": 5,
+  "per_unit_s": 2613.4341711997986,
+  "projected_wall_h": 3.6297696822219425,
+  "booked_wall_h": 4.0,
+  "abort_threshold_h": 8.0,
+  "execution_shape": "per-(fold,layer) shared-SVD batched target-group stack (device=cuda)",
+  "verdict": "PASS",
+  "smoke_demoted": false,
+  "ts": 1784339826.2345068
+}
