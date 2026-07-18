@@ -3720,7 +3720,10 @@ def check_sh_function_rc_capture(*, scripts_dir: Path | None = None) -> list[str
             stripped = logical.strip()
             if stripped.startswith("#"):
                 continue
-            transition = _rc_capture_set_e_transition(stripped)
+            # Comment-strip BEFORE the transition scan: `set -uo pipefail  # NOT set -e`
+            # must not flip errexit ON from the comment's `-e` token (live shapes:
+            # i632_dispatch_with_log_capture.sh:12, issue683_dispatch.sh:30).
+            transition = _rc_capture_set_e_transition(_strip_sh_trailing_comment(stripped))
             if transition is not None:
                 errexit_on = transition
                 continue

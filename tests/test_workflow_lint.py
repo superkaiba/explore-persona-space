@@ -2925,6 +2925,20 @@ def test_check_sh_function_rc_capture_pass_comment_and_heredoc(tmp_path):
     assert check_sh_function_rc_capture(scripts_dir=tmp_path) == []
 
 
+def test_check_sh_function_rc_capture_pass_comment_e_token_on_set_line(tmp_path):
+    """PASS — a `set` line whose only `-e`-bearing token lives in a trailing
+    COMMENT (`set -uo pipefail  # NOT set -e -- ...`) must not flip errexit
+    ON: the transition scanner comment-strips first (live shapes:
+    i632_dispatch_with_log_capture.sh:12, issue683_dispatch.sh:30)."""
+    (tmp_path / "x.sh").write_text(
+        "#!/bin/bash\n"
+        "set -uo pipefail  # NOT set -e -- workers own their rc handling\n"
+        "myfn() { echo hi; }\n"
+        'myfn "$a" || rc=$?\n'
+    )
+    assert check_sh_function_rc_capture(scripts_dir=tmp_path) == []
+
+
 def test_check_sh_function_rc_capture_pass_no_files(tmp_path):
     """PASS — an empty scripts dir (no `*.sh`) yields no errors."""
     assert check_sh_function_rc_capture(scripts_dir=tmp_path) == []
