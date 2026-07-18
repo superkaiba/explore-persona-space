@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1494,
+  "highest_id": 1495,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -3853,6 +3853,13 @@
       "path": "tasks/proposed/1494",
       "status": "proposed",
       "title": "daily-fix: vm_disk_guard tier-e nonfinite env clamp"
+    },
+    "1495": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1495",
+      "status": "proposed",
+      "title": "daily-fix: bracket CLAUDE.md pgrep ownership exemplar"
     },
     "15": {
       "has_clean_result": false,
