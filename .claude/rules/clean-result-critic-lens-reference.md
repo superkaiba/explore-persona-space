@@ -1051,9 +1051,13 @@ from it. Concrete checks:
    `## Findings`, `### <finding>`, setup/read prose.) Mechanical
    backstop: `verify_task_body.py` check 31 WARNs when a committed
    `figures/issue_<N>/*per{context,unit,cell}*` PNG at a body-cited
-   figure SHA is unreferenced by any body image URL (task #1011,
-   incident #928) — a pre-gate nudge only; this lens remains the
-   substantive owner.
+   figure SHA is (a) never mentioned in the body, or (b) **named in
+   prose but not embedded without an exemption phrase — detail token
+   `companion-named-not-embedded`, the class to key on** (`not
+   embedded` / `superseded by` in the filename's own paragraph silences
+   it); check 38 owns the markdown-linked-in-Results case
+   (#1011/#1371/#1510; incidents #928/#1315/#1426) — pre-gate nudges
+   only; this lens remains the substantive owner.
 1. **Figures (transformed special case).** Every figure that plots a
    residualized / partialled / binned / log-transformed / normalized
    quantity has its raw counterpart embedded inline inside the same

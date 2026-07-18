@@ -567,9 +567,9 @@
       "goal": "Determine whether the depth-increasing own-answer advantage in the context-to-answer-activation map (0.009 at layer 14 to 0.035 at layer 26) and its resistance to 16-token prefix closure at layer 26 are carried by the next-token-identity component of answer activations, by decomposing each per-position target into its projection onto the realized next token's unembedding (logit-lens) direction and the orthogonal complement, and re-reading the own-vs-external gap and closure statistics per component at layers 14/20/23/26 on the frozen Qwen-2.5-7B-Instruct LMSYS pool.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/followups_running/1072",
-      "status": "followups_running",
-      "title": "The own-answer advantage and its unclosed layer-26 residual live almost entirely outside the next-token logit-lens direction, falsifying the 1-D output-token-commitment account (HIGH confidence)"
+      "path": "tasks/awaiting_promotion/1072",
+      "status": "awaiting_promotion",
+      "title": "The own-answer advantage stays outside every probed token-identity subspace up to 32 candidate directions, extending the output-token-commitment falsification from one direction to low-dimensional bundles (HIGH confidence)"
     },
     "1073": {
       "goal": "Measure how the #779 context\u2192answer mapping and its answer-side activations change with decoding regime \u2014 single greedy (temperature 0) vs single stochastic (temp 1.0, top_p 0.95, seed 42) vs 10-rollout-averaged, everything else held at the #779 recipe, in BOTH prefix-based and context-based mapping arms \u2014 to test whether single-greedy targets are an adequate stand-in for rollout-averaged ones (theory plan C11/C12).",
@@ -3326,8 +3326,8 @@
       "goal": "Determine whether the CoT-mediation signature and the in-context-learning/WildChat family gain excess generalize beyond the Qwen base family by replicating the CoT-decomposition battery on DeepSeek-R1-Distill-Llama-8B, and read which CoT-length gradient profile \u2014 the parent's falling gradient or #1005's flat-to-rising inversion \u2014 travels with the base lineage.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/awaiting_promotion/1426",
-      "status": "awaiting_promotion",
+      "path": "tasks/followups_running/1426",
+      "status": "followups_running",
       "title": "The chain-of-thought mediation signature and the family gain excess replicate on a Llama-base R1 distill: both are base-family-general, not Qwen-specific (MODERATE confidence)"
     },
     "1427": {
@@ -3962,15 +3962,15 @@
     "1508": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1508",
-      "status": "running",
+      "path": "tasks/completed/1508",
+      "status": "completed",
       "title": "workflow-fix: gotchas.md entry \u2014 TRL mixed prompt/completion schema is nondeterministic UB"
     },
     "1509": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/1509",
-      "status": "approved",
+      "path": "tasks/completed/1509",
+      "status": "completed",
       "title": "workflow-fix: verify_task_body FAILs unpinned footer HF artifact paths"
     },
     "151": {
@@ -3983,29 +3983,29 @@
     "1510": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1510",
-      "status": "planning",
+      "path": "tasks/completed/1510",
+      "status": "completed",
       "title": "workflow-fix: check 31 FAILs prose-named unembedded per-unit companions sans exemption"
     },
     "1511": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1511",
-      "status": "planning",
+      "path": "tasks/running/1511",
+      "status": "running",
       "title": "workflow-fix: recompute caption count claims against figure sidecar points"
     },
     "1512": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1512",
-      "status": "proposed",
+      "path": "tasks/running/1512",
+      "status": "running",
       "title": "workflow-fix: gotcha \u2014 smoke-gate floors from realized slice arithmetic"
     },
     "1513": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1513",
-      "status": "proposed",
+      "path": "tasks/planning/1513",
+      "status": "planning",
       "title": "workflow-fix: gotcha \u2014 incremental cache reap only after the LAST hf_dl consumer"
     },
     "152": {

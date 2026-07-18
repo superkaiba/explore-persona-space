@@ -159,7 +159,7 @@ def test_good_body_passes_all():
     # is a vacuous PASS here because this fixture carries no
     # availability-denial-near-artifact line. verify_text prepends check 0
     # (body-nonstub) + check 0b (no-duplicate-frontmatter), runs CHECKS[1:]
-    # (42 functions), then appends the Goal soft check, the H1↔frontmatter-
+    # (45 functions), then appends the Goal soft check, the H1↔frontmatter-
     # title sync check (#1110; PASS-skip: not a sentinelled body), the
     # Lens 14
     # concerns-audit, the check-16 lr-matches-plan reconciliation, the
@@ -175,7 +175,7 @@ def test_good_body_passes_all():
     # locally reachable, so the cited SHA is silently skipped), AND the
     # check-38 linked-not-embedded-figures scan (needs `issue` for
     # own-figures-dir scoping, #1371; PASS-skip: not a v4 body) →
-    # 55 results total (2 prepended + CHECKS[1:]=42 + 11 appended; check 36
+    # 59 results total (2 prepended + CHECKS[1:]=46 + 11 appended; check 36
     # `check_v4_result_paragraph_sentences` (#1368), check 37
     # `check_footer_reuse_bullets_pinned` (#1370), check 39
     # `check_v4_sample_disclosure_count` (#1421), check 40
@@ -185,19 +185,22 @@ def test_good_body_passes_all():
     # here, and GOOD_BODY's only same-repo URL lives in the footer so it
     # PASSes vacuously), and check 43
     # `check_github_tree_adjacent_file_claims` (#1507 — vacuous PASS, no
-    # git-tree-adjacent claims), and check 45
+    # git-tree-adjacent claims), and check 44
+    # `check_footer_hf_paths_pinned` (#1509 — PASS-skip, not a v4 body),
+    # and check 45
     # `check_figure_caption_count_claims_vs_sidecar` (#1511 — vacuous
-    # PASS, no registered count claim) ride CHECKS; 36/37/39
+    # PASS, no registered count claim) ride CHECKS; 36/37/39/44
     # PASS-skip here — not a v4 body — 40 is the vacuous PASS above, and
     # 41 is the fake-sha NO-OP PASS above). The
     # Lens 14 / check-16 results are PASS-skips when no concerns.jsonl /
     # plans/plan.md sibling is available; check 17 and the v3/v4 checks
     # are PASS-skips on this legacy (pre-v2-sentinel) fixture.
-    assert len(results) == 58
+    assert len(results) == 59
     # By-name membership so the NEXT check addition can key by name instead
     # of re-deriving the arithmetic (#1016 methodology-reconciler Must-Fix).
     assert _HF_32_NAME in {r.name for r in results}
     assert _HF_40_NAME in {r.name for r in results}
+    assert "footer HF artifact paths carry an adjacent pinned link" in {r.name for r in results}
     assert "Sample-slot disclosure count (v4)" in {r.name for r in results}
     assert "cross-issue reuse pins declared (footer Reused bullets)" in {r.name for r in results}
     assert "footer Reused bullets carry a revision/path pin" in {r.name for r in results}
@@ -1275,6 +1278,10 @@ _PER_UNIT_ORPHAN_CHECK = "per-unit companion figures embedded"
 
 _PER_UNIT_ORPHAN_PATH = "figures/issue_999/hero_percontext.png"
 
+# The class-B WARN token (#1510) — pinned as a LITERAL here (not imported
+# from the module) so a silent token rename breaks the grep contract test.
+_PER_UNIT_NAMED_CLASS = "companion-named-not-embedded"
+
 
 def _make_repo_with_per_unit_orphan(tmp_path):
     """git repo whose HEAD commit tracks `figures/issue_999/hero.png` +
@@ -1328,6 +1335,9 @@ def test_orphan_per_unit_figure_warns(tmp_path, monkeypatch):
     assert _PER_UNIT_ORPHAN_PATH in r.detail
     assert "Lens 11" in r.detail
     assert sha[:8] in r.detail
+    # Class separation (#1510): a never-mentioned orphan reports class A
+    # only — the class-B token must not appear.
+    assert _PER_UNIT_NAMED_CLASS not in r.detail
     assert ok  # the WARN never flips the overall verdict (no-regress guarantee)
     # Scoped subprocess budget on a DIRECT invocation: 1 unique (sha, dir)
     # pair → exactly 1 ls-tree (plan §4.1 budget: 1 per unique pair).
@@ -1377,9 +1387,11 @@ def test_orphan_unreachable_sha_skips_silently(tmp_path, monkeypatch):
 
 
 def test_orphan_prose_mention_suppresses_warn(tmp_path, monkeypatch):
-    """The prose disclosure escape: an unembedded companion whose stem is
-    named in body prose is treated as disclosed → no WARN (mechanizes
-    'exemptions stated in prose are legitimate')."""
+    """The prose disclosure escape, PHRASE-GATED as of #1510: an unembedded
+    companion whose stem is named in body prose is exempt only because the
+    fixture prose carries an exemption idiom ("superseded by") in the
+    stem's own paragraph — the second phrase-set pin (the corpus-real #928
+    footer idiom); a bare naming would now WARN class B."""
     repo, sha = _make_repo_with_per_unit_orphan(tmp_path)
     monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
     body = GOOD_BODY.replace("0123456789abcdef", sha).replace(
@@ -1390,6 +1402,178 @@ def test_orphan_prose_mention_suppresses_warn(tmp_path, monkeypatch):
     r = verify_task_body.check_orphaned_per_unit_figures(body, issue=999)
     assert r.passed is True
     assert r.is_warn is False
+
+
+def test_orphan_named_not_embedded_warns_without_exemption(tmp_path, monkeypatch):
+    """The #1426 regression fixture (#1510 durability pin, incl. for the
+    SPEC/lens prose edits): the companion NAMED in body prose with a bare
+    provenance clause ("committed at the same pin" — the incident's own
+    phrasing) and embedded nowhere → class-B WARN carrying the
+    `companion-named-not-embedded` token; the provenance clause does NOT
+    exempt."""
+    repo, sha = _make_repo_with_per_unit_orphan(tmp_path)
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    body = GOOD_BODY.replace("0123456789abcdef", sha).replace(
+        "The 17-pt lift holds at every seed;",
+        "The per-context views behind these aggregates are `hero_percontext.png`, "
+        "committed at the same pin. The 17-pt lift holds at every seed;",
+    )
+    r = verify_task_body.check_orphaned_per_unit_figures(body, issue=999)
+    assert r.passed is True  # WARN-tier: the overall verdict is never flipped
+    assert r.is_warn is True
+    assert _PER_UNIT_NAMED_CLASS in r.detail
+    assert _PER_UNIT_ORPHAN_PATH in r.detail
+    assert "Lens 11" in r.detail
+    assert sha[:8] in r.detail
+
+
+def test_orphan_named_with_exemption_phrase_no_warn(tmp_path, monkeypatch):
+    """The exemption phrase in the stem's own paragraph silences class B —
+    both anchored idioms, incl. a CAPITALIZED variant (the phrase regex is
+    case-insensitive)."""
+    repo, sha = _make_repo_with_per_unit_orphan(tmp_path)
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    body = GOOD_BODY.replace("0123456789abcdef", sha).replace(
+        "The 17-pt lift holds at every seed;",
+        "Deliberately linked, not embedded: the hero already shows every point — "
+        "see `hero_percontext.png`. The 17-pt lift holds at every seed;",
+    )
+    r = verify_task_body.check_orphaned_per_unit_figures(body, issue=999)
+    assert r.passed is True
+    assert r.is_warn is False
+    body2 = GOOD_BODY.replace("0123456789abcdef", sha).replace(
+        "The 17-pt lift holds at every seed;",
+        "`hero_percontext.png` is a round-1 exploratory view. Superseded by the "
+        "hero's right panel. The 17-pt lift holds at every seed;",
+    )
+    r2 = verify_task_body.check_orphaned_per_unit_figures(body2, issue=999)
+    assert r2.passed is True
+    assert r2.is_warn is False
+
+
+def test_orphan_exemption_phrase_other_paragraph_still_warns(tmp_path, monkeypatch):
+    """Paragraph-proximity scoping: an exemption phrase in a DIFFERENT
+    blank-line-delimited paragraph than the stem does NOT exempt — the
+    stem's own paragraph must carry the phrase."""
+    repo, sha = _make_repo_with_per_unit_orphan(tmp_path)
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    body = GOOD_BODY.replace("0123456789abcdef", sha).replace(
+        "The 17-pt lift holds at every seed;",
+        "The per-context companion is `hero_percontext.png`, committed at the same pin.\n\n"
+        "A different figure was deliberately not embedded for space. "
+        "The 17-pt lift holds at every seed;",
+    )
+    r = verify_task_body.check_orphaned_per_unit_figures(body, issue=999)
+    assert r.passed is True
+    assert r.is_warn is True
+    assert _PER_UNIT_NAMED_CLASS in r.detail
+
+
+def test_orphan_multi_stem_one_paragraph_phrase_exempts_both(tmp_path, monkeypatch):
+    """Accepted false-negative direction (pinned): ONE exemption phrase in
+    a paragraph naming TWO per-unit companion stems exempts BOTH —
+    paragraph-level co-occurrence, not per-stem sentence parsing (WARN-tier
+    backstop; Lens 11 stays the substantive owner)."""
+    repo, _sha_a = _make_repo_with_per_unit_orphan(tmp_path)
+
+    def git(*args):
+        subprocess.run(["git", "-C", str(repo), *args], check=True, capture_output=True)
+
+    (repo / "figures" / "issue_999" / "hero_percell.png").write_bytes(b"\x89PNG fake bytes")
+    git("add", "figures")
+    git("commit", "-q", "-m", "add second per-unit companion")
+    sha = subprocess.run(
+        ["git", "-C", str(repo), "rev-parse", "HEAD"],
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout.strip()
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    body = GOOD_BODY.replace("0123456789abcdef", sha).replace(
+        "The 17-pt lift holds at every seed;",
+        "Round-1 exploratory views `hero_percontext.png` and `hero_percell.png` are "
+        "superseded by the embedded hero panels. The 17-pt lift holds at every seed;",
+    )
+    r = verify_task_body.check_orphaned_per_unit_figures(body, issue=999)
+    assert r.passed is True
+    assert r.is_warn is False  # one phrase exempts both co-resident stems
+
+
+def test_orphan_blob_embed_no_warn(tmp_path, monkeypatch):
+    """The widened any-URL-form embedded set (#1510): a GitHub BLOB-URL
+    image embed of the companion is a real embed → clean PASS. Pre-#1510
+    this shape passed only via the stem-in-prose accident (the embed URL
+    text names the stem); under the phrase-gated escape it would now WARN
+    class B were the embed set still raw-GitHub-only."""
+    repo, sha = _make_repo_with_per_unit_orphan(tmp_path)
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    embed = (
+        "![Per-context deltas.](https://github.com/superkaiba/explore-persona-space/"
+        f"blob/{sha}/figures/issue_999/hero_percontext.png)"
+    )
+    body = GOOD_BODY.replace("0123456789abcdef", sha).replace(
+        "> **Figure.**", embed + "\n\n> **Figure.**"
+    )
+    r = verify_task_body.check_orphaned_per_unit_figures(body, issue=999)
+    assert r.passed is True
+    assert r.is_warn is False
+    assert "no orphaned per-unit figures" in r.detail
+
+
+def test_orphan_linked_results_path_defers_to_check38(tmp_path, monkeypatch):
+    """Single ownership (no double-WARN): a companion markdown-LINKED in
+    the v4 `## Results` prose layer is check 38's WARN — check 31 carries
+    no class-B token for it. Second arm pins case-fold symmetry of the
+    subtraction: a case-varying link URL still defers (without the
+    case-fold it would surface as class A — the case-varied URL does not
+    put the exact stem in the body)."""
+    repo, sha = _make_repo_with_per_unit_orphan(tmp_path)
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    link_url = (
+        "https://raw.githubusercontent.com/superkaiba/explore-persona-space/"
+        f"{sha}/figures/issue_999/hero_percontext.png"
+    )
+    fixture = _c37_body_with_results_link(
+        f"The per-context view behind this aggregate: [companion]({link_url})."
+    ).replace("0123456789abcdef", sha)
+    _fm, body = verify_task_body.split_frontmatter(fixture)
+    r31 = verify_task_body.check_orphaned_per_unit_figures(body, issue=999)
+    assert r31.passed is True
+    assert r31.is_warn is False  # deferred to check 38 — no WARN here
+    assert _PER_UNIT_NAMED_CLASS not in r31.detail
+    r38 = verify_task_body.check_linked_not_embedded_figures(body, issue=999)
+    assert r38.is_warn is True
+    assert _PER_UNIT_ORPHAN_PATH in r38.detail
+    # Case-fold symmetry: the same link with a case-varying basename.
+    upper_url = link_url.replace("hero_percontext.png", "HERO_percontext.png")
+    fixture_u = _c37_body_with_results_link(
+        f"The per-context view behind this aggregate: [companion]({upper_url})."
+    ).replace("0123456789abcdef", sha)
+    _fm, body_u = verify_task_body.split_frontmatter(fixture_u)
+    r31_u = verify_task_body.check_orphaned_per_unit_figures(body_u, issue=999)
+    assert r31_u.passed is True
+    assert r31_u.is_warn is False
+
+
+def test_orphan_nonv4_linked_path_fires_named_class(tmp_path, monkeypatch):
+    """Row-f coverage (deliberate widening, not an accident): a markdown
+    LINK outside check 38's gates — here in a pre-v3 legacy body 38 never
+    scans — is a prose naming of an unembedded companion, so class B fires
+    absent an exemption phrase (the one-phrase remedy applies the same)."""
+    repo, sha = _make_repo_with_per_unit_orphan(tmp_path)
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    link_url = (
+        "https://raw.githubusercontent.com/superkaiba/explore-persona-space/"
+        f"{sha}/figures/issue_999/hero_percontext.png"
+    )
+    body = GOOD_BODY.replace("0123456789abcdef", sha).replace(
+        "The 17-pt lift holds at every seed;",
+        f"Full per-context view: [companion]({link_url}). The 17-pt lift holds at every seed;",
+    )
+    r = verify_task_body.check_orphaned_per_unit_figures(body, issue=999)
+    assert r.passed is True
+    assert r.is_warn is True
+    assert _PER_UNIT_NAMED_CLASS in r.detail
 
 
 def test_orphan_deduped_across_cited_shas(tmp_path, monkeypatch):
@@ -5583,9 +5767,9 @@ def test_checks_list_size():
     denominator check (needs eval JSONs), and the check-31
     orphaned-per-unit-figures probe (needs `issue` for figures-dir
     scoping, #1011).
-    So `verify_text` returns 58 results (2 prepended + CHECKS[1:]=45 +
+    So `verify_text` returns 59 results (2 prepended + CHECKS[1:]=46 +
     11 appended — see `test_good_body_passes_all`), but `CHECKS` stays
-    at 46 (check 36 `check_v4_result_paragraph_sentences` (#1368),
+    at 47 (check 36 `check_v4_result_paragraph_sentences` (#1368),
     check 37 `check_footer_reuse_bullets_pinned` — the body-only
     footer-side reuse-pin sibling of check 35, #1370 — check 39
     `check_v4_sample_disclosure_count` — the Sample-slot
@@ -5593,12 +5777,14 @@ def test_checks_list_size():
     `check_hf_unpinned_count_claims` (#1433) — check 41
     `check_figure_sidecar_coverage` (#1478) — checks 42
     `check_body_artifact_urls_exist` + 43
-    `check_github_tree_adjacent_file_claims` (#1507) — and check 45
+    `check_github_tree_adjacent_file_claims` (#1507) — check 44
+    `check_footer_hf_paths_pinned` (#1509) — and check 45
     `check_figure_caption_count_claims_vs_sidecar` (#1511) ride CHECKS).
     """
-    assert len(verify_task_body.CHECKS) == 46
+    assert len(verify_task_body.CHECKS) == 47
     # By-name membership so the NEXT check addition can key by name instead
     # of re-deriving the arithmetic (#1016 methodology-reconciler Must-Fix).
+    assert verify_task_body.check_footer_hf_paths_pinned in verify_task_body.CHECKS
     assert verify_task_body.check_hf_adjacent_file_claims in verify_task_body.CHECKS
     assert verify_task_body.check_figure_prose_numerics_vs_sidecar in verify_task_body.CHECKS
     assert verify_task_body.check_figure_beat_claims_vs_sidecar_text in verify_task_body.CHECKS
@@ -11105,11 +11291,11 @@ def test_caption_lead_issue1074_verbatim_caption_warns():
 
 def test_check_figure_caption_position_stable():
     """Index-stability pin (#1424): `check_figure_caption` stays at CHECKS
-    position 7 and the CHECKS count matches the current registry (46 as of
-    check 45, #1511; belt-and-suspenders beside the migration-history
+    position 7 and the CHECKS count matches the current registry (47 as of
+    checks 44/45, #1509/#1511; belt-and-suspenders beside the migration-history
     `len(CHECKS)` pin)."""
     assert verify_task_body.CHECKS[7] is verify_task_body.check_figure_caption
-    assert len(verify_task_body.CHECKS) == 46
+    assert len(verify_task_body.CHECKS) == 47
 
 
 # ─── Check 26: figure panel/series prose vs figure sidecar (panel drift) ───
@@ -13522,6 +13708,192 @@ def test_footer_reuse_bullet_fenced_skeleton_ignored():
     )
     res = verify_task_body.check_footer_reuse_bullets_pinned(body)
     assert res.passed and not res.is_warn, res.render()
+
+
+# ─── Check 44: footer HF artifact paths carry an adjacent pinned link ───────
+#
+# (#1509, incident #1335): a bare backtick HF-style artifact path in the
+# footer (`issue<N>_` prefix or a raw_completions/analysis_tensors segment,
+# brace/glob charset) whose bullet/paragraph unit carries neither a pinned
+# huggingface.co /(tree|resolve|blob)/<hex> link (S1) nor an
+# immediately-following `@ [HF ]rev <hex>` (S2) -> WARN. Direct-call style
+# on `_V4_GOOD_BODY`-derived fixtures (the check-37 block's convention);
+# `_V4_GOOD_BODY`'s own footer is S1-pinned (the `tree/abc123def` model
+# link) and carries no HF-identity backtick tokens, so appended bullets
+# are the only trigger surface.
+
+# The verbatim PRE-FIX #1335 footer bullet, recovered from
+# `git show 6d3c847946` (the fix commit's `-` side). Load-bearing traps it
+# carries: GitHub /tree/<sha> pins (never HF), bare code shas, an EARLIER
+# `@ `be61a85e`` GitHub figures pin (must NOT rescue under S2 anchoring),
+# non-HF backtick tokens (`cells_/nulls_/...`, `scripts/...`), and the
+# brace-form offending token with NO count-paren (so check 40 never
+# extracts it).
+_I1335_FOOTER_UNPINNED_LINE = (
+    "- Follow-up round `onpolicy-assistant-label` (2026-07-18, ~6 GPU-h, GCE 4×A100-80 "
+    "flex-start, 6-lane parallel dispatch): round artifacts "
+    "[eval_results/issue_1335/onpolicy-assistant-label/](https://github.com/superkaiba/"
+    "explore-persona-space/tree/be61a85e9ae2710f254c6e0b4fd422ac5244dec1/eval_results/"
+    "issue_1335/onpolicy-assistant-label) (`label_comparison.json` + per-cell "
+    "`cells_/nulls_/loso_/swap_/wiring_*.json`); fit/driver `scripts/issue1335_fit.py` + "
+    "`scripts/issue1335_fig_label.py` at code SHA "
+    "`01ebb89738835c656f4b8a942a0d3afe4647be25`. Figures: "
+    "[figures/issue_1335/onpolicy-assistant-label/](https://github.com/superkaiba/"
+    "explore-persona-space/tree/be61a85e9ae2710f254c6e0b4fd422ac5244dec1/figures/"
+    "issue_1335/onpolicy-assistant-label) (`hero_label_delta` + `answer_length_register`, "
+    "with `.meta.json` sidecars, @ `be61a85e`; `placement_panel` + `collapse_slots` @ "
+    "[`185a6bd8ee`](https://github.com/superkaiba/explore-persona-space/tree/"
+    "185a6bd8ee3f9165c346d27f9876efcefe845314/figures/issue_1335/onpolicy-assistant-label)). "
+    "HF rollouts and stores under "
+    "`issue1335_ablation_ladder/onpolicy_assistant_label/{raw_completions,analysis_tensors}/` "
+    "(verified via `list_repo_tree` on the interpretation pass)."
+)
+_I1335_OFFENDING_TOKEN = (
+    "issue1335_ablation_ladder/onpolicy_assistant_label/{raw_completions,analysis_tensors}/"
+)
+_C44_NAME = "footer HF artifact paths carry an adjacent pinned link"
+
+
+def test_footer_hf_path_unpinned_warns_1335_shape():
+    """MAIN / durability-pin test (#1509, incident #1335): the verbatim
+    pre-fix footer bullet -> WARN (`passed=True`, `is_warn=True`) naming
+    the brace-form token. The in-bullet GitHub pins / bare code shas /
+    earlier `@ `be61a85e`` must NOT rescue."""
+    body = _V4_GOOD_BODY + "\n" + _I1335_FOOTER_UNPINNED_LINE + "\n"
+    res = verify_task_body.check_footer_hf_paths_pinned(body)
+    assert res.passed and res.is_warn, res.render()
+    assert _I1335_OFFENDING_TOKEN in res.detail, res.render()
+
+
+def test_footer_hf_path_pinned_same_unit_passes():
+    """S1: the same incident bullet PLUS a pinned huggingface.co
+    /tree/<sha> link in the SAME bullet (the post-fix #1335 shape) ->
+    clean PASS."""
+    line = _I1335_FOOTER_UNPINNED_LINE + (
+        " Full tree: [rollouts](https://huggingface.co/datasets/superkaiba1/"
+        "explore-persona-space-data/tree/53e014c4a530cfba76f1e5f2b29a1ae4841d46b3/"
+        "issue1335_ablation_ladder/onpolicy_assistant_label)."
+    )
+    body = _V4_GOOD_BODY + "\n" + line + "\n"
+    res = verify_task_body.check_footer_hf_paths_pinned(body)
+    assert res.passed and not res.is_warn, res.render()
+    assert "all footer HF artifact paths pinned" in res.detail, res.render()
+
+
+def test_footer_hf_path_adjacent_at_rev_passes():
+    """S2: the committed `@ rev `<hex>`` / `@ HF rev `<hex>`` footer
+    shapes (#1112/#1335) immediately after the token -> clean PASS."""
+    body = _V4_GOOD_BODY + (
+        "\n- Reused mix: `issue1090_pvdatagen/c3-sycophancy-claude/mix/train_mix.jsonl` "
+        "@ rev `6aab0cce1fac` — fit: same recipe.\n"
+        "- Rollouts `issue825_userbase_map/raw_completions/track_s/` @ HF rev `deb7a452` "
+        "verified live.\n"
+    )
+    res = verify_task_body.check_footer_hf_paths_pinned(body)
+    assert res.passed and not res.is_warn, res.render()
+
+
+def test_footer_preceding_at_rev_does_not_rescue():
+    """S2 position-anchoring regression pin (the motivating incident's
+    exact bullet shape): an `@ `<hex>`` EARLIER in the bullet (a GitHub
+    figures pin), bare HF token later, no HF URL -> still WARNs."""
+    body = _V4_GOOD_BODY + (
+        "\n- Figures @ `be61a85e`; stores under `issue999_slug/analysis_tensors/` "
+        "(verified on the interpretation pass).\n"
+    )
+    res = verify_task_body.check_footer_hf_paths_pinned(body)
+    assert res.passed and res.is_warn, res.render()
+    assert "issue999_slug/analysis_tensors/" in res.detail, res.render()
+
+
+def test_footer_hf_path_adjacent_unit_pin_does_not_rescue():
+    """Unit-scoped-adjacency positive control (#1509 §13.2): the
+    offending token in bullet A, a pinned huggingface.co /tree/<hex>
+    link in a SEPARATE blank-line-separated bullet -> still WARNs. A
+    whole-footer pin scope (or a degenerate `_footer_units`) must FAIL
+    this test."""
+    body = _V4_GOOD_BODY + (
+        "\n- Stores under `issue999_slug/raw_completions/` for the record.\n"
+        "\n- Pinned elsewhere: [tree](https://huggingface.co/datasets/superkaiba1/"
+        "explore-persona-space-data/tree/53e014c4a530cfba76f1e5f2b29a1ae4841d46b3/"
+        "issue999_slug).\n"
+    )
+    res = verify_task_body.check_footer_hf_paths_pinned(body)
+    assert res.passed and res.is_warn, res.render()
+    assert "issue999_slug/raw_completions/" in res.detail, res.render()
+
+
+def test_footer_hf_path_v3_body_skipped():
+    """Forward-only: a grandfathered v3 body with the SAME offending line
+    -> vacuous PASS (never newly WARN/FAIL a v3/v2 body)."""
+    body = _V3_GOOD_BODY + "\n" + _I1335_FOOTER_UNPINNED_LINE + "\n"
+    res = verify_task_body.check_footer_hf_paths_pinned(body)
+    assert res.passed and not res.is_warn, res.render()
+    assert "not a v4 body" in res.detail, res.render()
+
+
+def test_footer_local_git_paths_pass():
+    """G3 `_GIT_SIDE_ROOTS`: git/local backtick paths in a pin-less
+    footer bullet (they resolve in git — checks 27/29 territory) ->
+    clean PASS."""
+    body = _V4_GOOD_BODY + (
+        "\n- Round artifacts: `eval_results/issue_1310/onpolicy/*.json`, "
+        "`figures/issue_1335/hero.png`, `scripts/issue1335_fit.py` (committed).\n"
+    )
+    res = verify_task_body.check_footer_hf_paths_pinned(body)
+    assert res.passed and not res.is_warn, res.render()
+
+
+def test_footer_count_claim_token_left_to_check40(monkeypatch):
+    """G5 partition (the check-30/40 convention — exactly ONE WARN per
+    defect): a footer count-paren claim is check 40's territory — the
+    gatherer extracts it, check 44 stays silent, and check 40 names it
+    (offline note-shape assert under the `EPM_VERIFY_BODY_NO_HF=1`
+    fence, per the check-40 test idiom)."""
+    monkeypatch.setenv("EPM_VERIFY_BODY_NO_HF", "1")
+    body = _V4_GOOD_BODY + (
+        "\n- HF rollouts `issue931_story_map/raw_completions/` (6 files) uploaded.\n"
+    )
+    claimed = {t for _c, _n, t, _r in verify_task_body._gather_hf_unpinned_count_claims(body)}
+    assert "issue931_story_map/raw_completions/" in claimed
+    res44 = verify_task_body.check_footer_hf_paths_pinned(body)
+    assert res44.passed and not res44.is_warn, res44.render()
+    res40 = verify_task_body.check_hf_unpinned_count_claims(body)
+    assert res40.passed, res40.render()
+    assert "issue931_story_map/raw_completions/" in res40.detail, res40.render()
+
+
+def test_footer_hf_path_fence_and_blockquote_exempt():
+    """`_footer_units` stripping: the offending line inside a ```-fenced
+    footer block (illustrative skeleton) AND inside a `>` Context quote
+    (#959 verbatim-prompt exemption) -> clean PASS."""
+    body = _V4_GOOD_BODY + (
+        "\n```\n" + _I1335_FOOTER_UNPINNED_LINE + "\n```\n\n> " + _I1335_FOOTER_UNPINNED_LINE + "\n"
+    )
+    res = verify_task_body.check_footer_hf_paths_pinned(body)
+    assert res.passed and not res.is_warn, res.render()
+
+
+def test_footer_hf_path_methodology_out_of_scope():
+    """Footer scoping: the bare token in `## Methodology` prose (above
+    the footer) is out of check 44's scope -> clean PASS (check-40
+    semantics elsewhere in the body are untouched)."""
+    body = _V4_GOOD_BODY.replace(
+        "## Results",
+        "Stores under `issue999_x/analysis_tensors/` (bare mention).\n\n## Results",
+    )
+    res = verify_task_body.check_footer_hf_paths_pinned(body)
+    assert res.passed and not res.is_warn, res.render()
+    assert "all footer HF artifact paths pinned" in res.detail, res.render()
+
+
+def test_footer_hf_path_no_footer_skips():
+    """No-crash on a footer-less v4 body (#1509 §13.3): `_v4_footer_text`
+    -> None path returns cleanly (pass, no exception)."""
+    body = _V4_GOOD_BODY.split("**Repro:**")[0]
+    res = verify_task_body.check_footer_hf_paths_pinned(body)
+    assert res.passed and not res.is_warn, res.render()
+    assert "no **Repro:** footer" in res.detail, res.render()
 
 
 # ─── Check 15 clause-scoping (#893, incident #841) ─────────────────────────

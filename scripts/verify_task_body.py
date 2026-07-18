@@ -606,11 +606,21 @@ Generation-agnostic checks (run on v2 AND v3 — the inline-figure +
   pair; no network) and WARN on any committed PNG whose basename stem
   matches `per[-_]?(context|unit|cell)` (case-insensitive, word-start
   lookbehind; `indiv` deliberately EXCLUDED — it names the per-question
-  REGIME in this project, not a per-unit view) that no body image URL
-  references (repo-relative path equality — SHA-independent, so a
-  re-pinned embed still counts) and whose stem appears nowhere in the
-  body text (the prose disclosure/exemption escape — naming the file
-  silences the WARN). Issue-scoped: with `--issue` / a numeric-parent
+  REGIME in this project, not a per-unit view) that the body does not
+  embed. Two WARN classes in ONE CheckResult (#1510): class A — never
+  mentioned anywhere in the body (the original #928 class); class B —
+  stem named in body prose but embedded nowhere, with NO exemption
+  phrase (`not embedded` / `superseded by`, case-insensitive) in the
+  stem's blank-line-delimited paragraph — tagged
+  `companion-named-not-embedded` in the detail (the token the
+  clean-result-critic keys on; a bare provenance mention like #1426's
+  "committed at the same pin" does not exempt). The embedded set is
+  any-URL-form (raw-GitHub + blob / relative / HTML `<img>`,
+  SHA-independent, case-folded); paths markdown-LINKED in the v4
+  `## Results` prose layer are DEFERRED to check 38 (its WARN set is
+  subtracted — no double-WARN), while links outside 38's gates (a
+  Methodology link, any link in a v3/v2 body) stay class-B-eligible
+  here. Issue-scoped: with `--issue` / a numeric-parent
   `--file` ONLY this task's dir is scanned (a cross-issue embed never
   surfaces another task's orphans); `--body-stdin` falls back to
   per-cited-dir scanning. WARN, never FAIL (prose-stated per-unit
@@ -619,10 +629,12 @@ Generation-agnostic checks (run on v2 AND v3 — the inline-figure +
   unreachable/unknown SHA → that SHA silently skipped (counted in the
   PASS detail, never a WARN); repo unresolved / no cited same-repo
   figure URLs → skip/vacuous PASS. Dispatched OUTSIDE the body-only
-  CHECKS list (needs `issue`; the check-20/#921 precedent). Incident:
+  CHECKS list (needs `issue`; the check-20/#921 precedent). Incidents:
   task #928 — the round-committed per-context companion
   `mlp_indiv_percontext_delta.png` sat unreferenced at a body-cited SHA
-  and reached the LM critic as a Lens 11 blocker. (#1011)
+  and reached the LM critic as a Lens 11 blocker (#1011); task #1426 —
+  two companions named in prose ("committed at the same pin") but never
+  embedded cost a substantive Lens-11 REVISE round (#1510).
 
 - **check 32** (`check_hf_adjacent_file_claims`, WARN): backtick FILENAME
   claims adjacent to hex-pinned HF `/tree/<sha>` markdown links — the
@@ -777,9 +789,12 @@ Generation-agnostic checks (run on v2 AND v3 — the inline-figure +
   Own-issue scoping when `issue` is known (a cross-issue link is a legitimate
   reference); `issue=None` (`--body-stdin`) falls back to every issue dir
   (check 31's documented fallback caveat). PNG-only (a PDF cannot render
-  inline — a PDF link is the correct form). WARN-only, never FAIL. Closes
-  check 31's stem-in-prose blind spot: the link itself puts the stem in the
-  body, silencing 31's only relevant WARN. Named recall sacrifices: the
+  inline — a PDF link is the correct form). WARN-only, never FAIL. Split
+  with check 31 (#1510): 31 defers v4-Results-linked paths to this check
+  (subtracts this WARN set — no double-WARN) and now WARNs
+  `companion-named-not-embedded` on bare prose naming (incl. links outside
+  this check's v4/Results gates) absent an exemption phrase. Named recall
+  sacrifices: the
   embedded set scans the UNSTRIPPED whole body (a fenced example embed can
   silence a real WARN — false-negative direction only); reference-style links
   `[text][ref]` are not matched. Incident: #1315 result 4 linked a committed
@@ -871,6 +886,23 @@ Generation-agnostic checks (run on v2 AND v3 — the inline-figure +
   comma-alternation / nested / over-wide brace globs, disclaimer-sharing
   false claims. Incident: task #1072 r2 footer claimed the gitignored
   `.npz` set inside the pinned `eval_results/issue_1072` git tree (#1507).
+
+- **check 44** (`check_footer_hf_paths_pinned`, WARN, v4-only, #1509):
+  every bare backtick HF-style artifact path in the `**Repro:**`/
+  `**Context:**` footer (`issue<N>_` prefix, or a `raw_completions`/
+  `analysis_tensors` path segment; first segment not a git/local root;
+  brace-expansion/glob charset) sits in a bullet/paragraph unit carrying
+  an HF pin — a pinned `huggingface.co` `/(tree|resolve|blob)/<7-40 hex>`
+  link anywhere in the unit, or `@ [HF ]rev <hex>` immediately after the
+  token (position-anchored: the incident bullet's EARLIER GitHub `@`-pin
+  must not rescue). Tokens check 40's gatherer already claims are excluded
+  (no double-WARN; the check-30/40 partition convention). Fence-aware +
+  blockquote-stripped unit splitter (`_footer_units`). Pure text — zero
+  Hub probes, no env fences; WARN never FAILs. Incident: task #1335's
+  pre-fix footer bullet shipped `issue1335_ablation_ladder/
+  onpolicy_assistant_label/{raw_completions,analysis_tensors}/` bare
+  (GitHub pins + code shas in-bullet, no HF pin) and the verifier read
+  PASS (#1509).
 
 - **check 45** (`check_figure_caption_count_claims_vs_sidecar`, WARN,
   generation-agnostic): a figure caption's quantified COUNT claim over
@@ -2330,6 +2362,19 @@ _ISSUE_FIGURE_PATH_RE = re.compile(r"^figures/issue_(?P<issue>\d+)/\S")
 # pooled hero `mlp_indiv_hero_4arm.png`), not a per-unit view.
 _PER_UNIT_FIG_RE = re.compile(r"(?<![a-z0-9])per[-_]?(context|unit|cell)", re.IGNORECASE)
 
+# Check 31 (tightened, #1510 / incident #1426): the exemption phrase that
+# silences the companion-named-not-embedded WARN class when it appears in
+# the SAME blank-line-delimited paragraph as the stem mention. Two anchored
+# idioms, precision over recall: "not embedded" (e.g. "deliberately linked,
+# not embedded: <reason>") and "superseded by" (the replaced-view idiom —
+# the #928 footer's real phrasing). A bare provenance clause ("committed at
+# the same pin", the #1426 shape) deliberately does NOT count.
+_PER_UNIT_EXEMPT_PHRASE_RE = re.compile(r"not\s+embedded|superseded\s+by", re.IGNORECASE)
+# Check 31: the greppable WARN-class token for the prose-named-but-unembedded
+# disposition (the class the clean-result-critic keys on; the check-32
+# PAREN|LINKTEXT in-detail-tag precedent).
+_PER_UNIT_NAMED_CLASS = "companion-named-not-embedded"
+
 # Check 38: any markdown link (image embeds are masked out before this
 # scans, so no `!`-lookbehind is needed); link text tolerates `]` not
 # followed by `(` — the same tolerance `_IMAGE_RE` uses — and may be
@@ -2634,20 +2679,136 @@ def _referenced_figure_paths(body: str) -> set[str]:
     return referenced
 
 
+def _paragraphs(body: str) -> list[str]:
+    """Blank-line-delimited paragraph blocks of ``body`` (check 31's
+    exemption-phrase proximity unit, #1510)."""
+    return re.split(r"\n\s*\n", body)
+
+
+def _stem_exempt_in_paragraph(body: str, stem: str) -> bool:
+    """True when some paragraph of ``body`` contains BOTH the stem and an
+    exemption phrase (`_PER_UNIT_EXEMPT_PHRASE_RE`) — check 31's tightened
+    prose-exemption escape (#1510). Paragraph-level co-occurrence: one
+    phrase exempts every stem named in its paragraph (accepted
+    false-negative direction for a WARN-tier backstop)."""
+    return any(
+        stem in para and _PER_UNIT_EXEMPT_PHRASE_RE.search(para) for para in _paragraphs(body)
+    )
+
+
+def _embedded_issue_png_paths(body: str) -> set[str]:
+    """Case-folded repo-relative `figures/issue_<K>/…png` paths embedded as
+    an IMAGE anywhere in the body — markdown `![alt](url)` AND HTML
+    `<img src=…>`, any URL host form (raw-GitHub, blob, relative;
+    SHA-independent). Extracted verbatim from check 38's embedded-set
+    block (#1510); shared by checks 31 + 38."""
+    embedded: set[str] = set()
+    image_urls = [m.group(1) for m in _IMAGE_RE.finditer(body)]
+    image_urls.extend(m.group(1) for m in _HTML_IMG_SRC_RE.finditer(body))
+    for raw_url in image_urls:
+        iu = raw_url.strip().split(None, 1)[0] if raw_url.strip() else ""
+        ipm = _LINKED_ISSUE_PNG_RE.search(iu)
+        if ipm:
+            embedded.add(ipm.group("path").lower())
+    return embedded
+
+
+def _linked_unembedded_results_pngs(body: str, issue: int | None) -> dict[str, None]:
+    """Ordered de-duped `figures/issue_<K>/…png` paths that appear as a
+    non-image markdown LINK in the (footer-truncated, prose-layer) v4
+    `## Results` section and are embedded by no body image — check 38's
+    WARN set, extracted (#1510) so check 31 can subtract it (single
+    ownership per disposition, no double-WARN). Returns {} for non-v4
+    bodies / absent `## Results` (check 38's gates, recomputed here so the
+    helper stays self-contained for check 31)."""
+    if not is_v4(body):
+        return {}
+    results_text = _v4_results_body(body)
+    if results_text is None:
+        return {}
+    prose = _prose_layer(results_text)  # strip fences + <details>
+    masked = _IMAGE_RE.sub("", prose)  # drop image embeds (wrapper residue links stay)
+    embedded = _embedded_issue_png_paths(body)
+    linked: dict[str, None] = {}  # ordered de-dupe: path -> None
+    for m in _MD_LINK_RE.finditer(masked):
+        url = m.group(1).strip().split(None, 1)[0] if m.group(1).strip() else ""
+        pm = _LINKED_ISSUE_PNG_RE.search(url)
+        if not pm:
+            continue
+        if issue is not None and pm.group("issue") != str(issue):
+            continue  # cross-issue links are legitimate references
+        path = pm.group("path")
+        if path.lower() in embedded:
+            continue  # embedded anywhere in the body → discipline satisfied
+        linked.setdefault(path)
+    return linked
+
+
+def _classify_per_unit_png(
+    p: str,
+    body: str,
+    referenced_paths: set[str],
+    embedded_any: set[str],
+    linked_results: set[str],
+) -> str | None:
+    """Disposition of ONE git-tracked path for check 31 (#1510): None
+    (not a per-unit PNG / embedded in any image-URL form / deferred to
+    check 38 / exemption-phrase-exempt), ``"named"`` (class B — stem in
+    body prose, no exemption phrase in its paragraph), or ``"orphan"``
+    (class A — never mentioned)."""
+    base = p.rsplit("/", 1)[-1]
+    if not base.lower().endswith(".png"):
+        return None
+    stem = base[: -len(".png")]
+    if not _PER_UNIT_FIG_RE.search(stem):
+        return None
+    if p in referenced_paths or p.lower() in embedded_any:
+        return None  # embedded (any image-URL form) — discipline satisfied
+    if p.lower() in linked_results:
+        return None  # markdown-linked in v4 Results — check 38 owns the WARN
+    if stem in body:
+        if _stem_exempt_in_paragraph(body, stem):
+            return None  # explicit exemption phrase beside the name
+        return "named"
+    return "orphan"
+
+
 def check_orphaned_per_unit_figures(body: str, *, issue: int | None = None) -> CheckResult:
-    """Check 31 (WARN, #1011): a committed per-unit companion PNG at a
-    body-cited figure SHA is unreferenced by any body image URL.
+    """Check 31 (WARN, #1011; tightened #1510): a committed per-unit
+    companion PNG at a body-cited figure SHA that the body does not embed.
 
     INVERSE direction of checks 4b/22/29 (which verify what the body
     CITES): enumerate what the body's OWN cited commits contain under
     `figures/issue_<N>/` (one `git ls-tree` per unique (SHA, dir) pair,
-    10 s timeout, no network) and WARN on any committed `.png` whose
-    basename stem matches `_PER_UNIT_FIG_RE` that (a) no body image URL
-    references — repo-relative path equality, SHA-independent, so an
-    orphan committed at SHA A but embedded via a URL pinned at SHA B
-    still counts as referenced — and (b) whose stem appears nowhere in
-    the body text (the prose disclosure/exemption escape: naming the
-    file silences the WARN).
+    10 s timeout, no network) and classify each committed `.png` whose
+    basename stem matches `_PER_UNIT_FIG_RE`:
+
+    - **embedded** — any image-URL form anywhere in the body: the
+      raw-GitHub set (`_referenced_figure_paths`) OR the any-URL-form
+      embedded set (`_embedded_issue_png_paths`: blob / relative / HTML
+      `<img>`; SHA-independent, case-folded) → PASS. The widening
+      (#1510) is principled: pre-#1510 a blob/relative/HTML embed passed
+      only via the stem-in-prose accident.
+    - **markdown-linked in the v4 `## Results` prose layer** (check 38's
+      WARN set, `_linked_unembedded_results_pngs`) → PASS here; check 38
+      owns that WARN (single ownership, no double-WARN). Links OUTSIDE
+      check 38's gates (a `## Methodology` link, any link in a v3/v2
+      body) stay with THIS check via the stem branch below.
+    - **stem named in body text + exemption phrase in the SAME
+      blank-line-delimited paragraph** (`_stem_exempt_in_paragraph`) →
+      PASS: the explicit deliberately-not-embedded disclosure. The
+      phrase set is the two ANCHORED idioms `not embedded` /
+      `superseded by` (case-insensitive) — an idiom must appear
+      verbatim-anchored ("cannot be embedded" does NOT match; a bare
+      provenance clause like #1426's "committed at the same pin" does
+      NOT exempt), while an incidental `superseded by` in a stem-bearing
+      paragraph DOES exempt — the accepted false-negative direction for
+      a WARN-tier backstop (Lens 11 stays the substantive owner).
+    - **stem named, no phrase in its paragraph** → WARN class B, tagged
+      `companion-named-not-embedded` (`_PER_UNIT_NAMED_CLASS`) in the
+      detail — the #1426 round-1 shape (named in prose, never embedded,
+      no stated omission).
+    - **never mentioned** → WARN class A (the original #928 class).
 
     Deliberately NARROW pattern (`per{context,unit,cell}` with `-`/`_`
     variants): `per_source` / `per_seed` / `per_question` / `indiv`
@@ -2657,7 +2818,8 @@ def check_orphaned_per_unit_figures(body: str, *, issue: int | None = None) -> C
     clean-result-critic Lens 11; this check is only its mechanical
     backstop (incident #928: `mlp_indiv_percontext_delta.png` sat
     committed-but-unembedded at a body-cited SHA through three review
-    passes).
+    passes; incident #1426: two prose-named companions "committed at the
+    same pin" cost a substantive Lens-11 REVISE round).
 
     Issue scoping: with `issue` known (`--issue <N>` / a numeric-parent
     `--file`), ONLY `figures/issue_<issue>/` is scanned — a cross-issue
@@ -2690,10 +2852,15 @@ def check_orphaned_per_unit_figures(body: str, *, issue: int | None = None) -> C
     if repo is None:
         return CheckResult(name, True, "skipped — repo root unresolved (running outside the repo)")
     # (3) referenced set: EVERY image URL anywhere in the body (broader than
-    # the result-narrative scan — an embed in ## Methodology still counts).
+    # the result-narrative scan — an embed in ## Methodology still counts),
+    # widened (#1510) with the any-URL-form embedded set + check 38's
+    # linked-in-Results WARN set (deferred there — no double-WARN).
     referenced_paths = _referenced_figure_paths(body)
+    embedded_any = _embedded_issue_png_paths(body)
+    linked_results = {p.lower() for p in _linked_unembedded_results_pngs(body, issue)}
     # (4) enumerate per-unit PNGs at each reachable cited sha; union per dir.
-    orphans: dict[str, list[str]] = {}  # path -> short-shas found at
+    orphans: dict[str, list[str]] = {}  # class A (never mentioned): path -> short-shas
+    named: dict[str, list[str]] = {}  # class B (named, unembedded, no exemption phrase)
     n_unreachable = 0
     for prefix, shas in sorted(cited.items()):
         for sha in sorted(shas):
@@ -2702,30 +2869,41 @@ def check_orphaned_per_unit_figures(body: str, *, issue: int | None = None) -> C
                 n_unreachable += 1  # hard constraint: skip SILENTLY, no WARN
                 continue
             for p in tracked:
-                base = p.rsplit("/", 1)[-1]
-                if not base.lower().endswith(".png"):
-                    continue
-                stem = base[: -len(".png")]
-                if not _PER_UNIT_FIG_RE.search(stem):
-                    continue
-                if p in referenced_paths:  # path match — SHA-independent by construction
-                    continue
-                if stem in body:  # prose disclosure/exemption escape
-                    continue
-                orphans.setdefault(p, []).append(sha[:8])
-    if orphans:
-        listed = "; ".join(
-            f"`{p}` (committed at {', '.join(sorted(set(shas)))})"
-            for p, shas in sorted(orphans.items())
-        )
+                cls = _classify_per_unit_png(
+                    p, body, referenced_paths, embedded_any, linked_results
+                )
+                if cls == "named":
+                    named.setdefault(p, []).append(sha[:8])
+                elif cls == "orphan":
+                    orphans.setdefault(p, []).append(sha[:8])
+    if orphans or named:
+        parts = []
+        if orphans:
+            parts.append(
+                "; ".join(
+                    f"`{p}` (committed at {', '.join(sorted(set(shas)))}; "
+                    "never mentioned in the body)"
+                    for p, shas in sorted(orphans.items())
+                )
+            )
+        if named:
+            parts.append(
+                "; ".join(
+                    f"`{p}` (committed at {', '.join(sorted(set(shas)))}; "
+                    f"{_PER_UNIT_NAMED_CLASS}: named in body prose but not embedded, "
+                    "with no exemption phrase)"
+                    for p, shas in sorted(named.items())
+                )
+            )
         return CheckResult(
             name,
             True,
-            f"{len(orphans)} committed per-unit figure(s) at body-cited SHA(s) are not "
-            f"embedded by any body image: {listed} — embed the per-unit companion under "
-            "the relevant `### <result>`, or state the exemption in prose (naming the "
-            "file silences this WARN); substantive owner: clean-result-critic Lens 11 "
-            "(incident #928)",
+            f"{len(orphans) + len(named)} committed per-unit figure(s) at body-cited SHA(s) "
+            f"are not embedded by any body image: {'; '.join(parts)} — embed the companion "
+            "under the relevant `### <result>`, or state the deliberate omission beside its "
+            "name ('not embedded: <reason>' / 'superseded by …' in the same paragraph; a "
+            "bare provenance mention does not exempt); substantive owner: "
+            "clean-result-critic Lens 11 (incidents #928, #1426)",
             is_warn=True,
         )
     detail = "no orphaned per-unit figures at body-cited SHAs"
@@ -2742,13 +2920,14 @@ def check_linked_not_embedded_figures(body: str, *, issue: int | None = None) ->
     INVERSE-complement of check 31: 31 asks "what did the body-cited
     commits CONTAIN that the body never shows?" (git-backed); this check
     asks "what does the Results prose LINK TO that the body never
-    embeds?" (pure text — no git / network / subprocess). They compose:
-    31 catches committed-but-never-mentioned per-unit PNGs, but its
-    stem-in-prose escape is satisfied by a markdown LINK's own URL text,
-    so a linked-not-embedded figure silences 31 — this check closes
-    exactly that hole (incident #1315: result 4 referenced a committed
-    per-row PC-scatter grid as `[text](…png)` instead of `![alt](…)`;
-    only clean-result-critic Lens 11 caught it).
+    embeds?" (pure text — no git / network / subprocess). They compose
+    (#1510 split): 31 DEFERS v4-Results-linked paths to this check
+    (subtracting `_linked_unembedded_results_pngs`, so no figure
+    double-WARNs) and itself WARNs `companion-named-not-embedded` on
+    bare prose naming — including links outside this check's v4/Results
+    gates — absent an exemption phrase (incident #1315: result 4
+    referenced a committed per-row PC-scatter grid as `[text](…png)`
+    instead of `![alt](…)`; only clean-result-critic Lens 11 caught it).
 
     Pipeline: `_v4_results_body` (footer-truncated, so footer blob links
     are never scanned) → `_prose_layer` (fences + `<details>` stripped —
@@ -2759,13 +2938,13 @@ def check_linked_not_embedded_figures(body: str, *, issue: int | None = None) ->
     whole-body EMBEDDED set. Blockquote caption lines stay in the prose
     layer, so a caption link to an unembedded PNG deliberately WARNs.
 
-    The EMBEDDED set is symmetric any-URL-form: the repo-relative
+    The EMBEDDED set (`_embedded_issue_png_paths`, shared with check 31
+    as of #1510) is symmetric any-URL-form: the repo-relative
     `figures/issue_<K>/…png` path is extracted from EVERY image-embed
     URL anywhere in the body — markdown `![alt](url)` AND HTML
     `<img src="url">` — raw-GitHub, blob, and relative forms alike
-    (SHA-independent, case-folded path equality). Deliberately NOT
-    `_referenced_figure_paths`, which is raw-GitHub-only: check 4b is
-    Results-scoped and accepts non-raw absolute URLs, so a legitimate
+    (SHA-independent, case-folded path equality). Deliberately NOT the
+    raw-GitHub-only `_referenced_figure_paths`: a legitimate
     Methodology-placed or blob-URL embed would otherwise false-positive
     this WARN. The embedded set scans the UNSTRIPPED whole body, so a
     fenced EXAMPLE embed can silence a real WARN — a false-negative-only
@@ -2799,30 +2978,11 @@ def check_linked_not_embedded_figures(body: str, *, issue: int | None = None) ->
     results_text = _v4_results_body(body)
     if results_text is None:
         return CheckResult(name, True, "no `## Results` section to scan")
-    prose = _prose_layer(results_text)  # strip fences + <details>
-    masked = _IMAGE_RE.sub("", prose)  # drop image embeds (wrapper residue links stay — docstring)
-    # Whole-body EMBEDDED set: markdown image embeds + HTML <img> embeds,
-    # any URL host form, reduced to case-folded repo-relative figure paths.
-    embedded: set[str] = set()
-    image_urls = [m.group(1) for m in _IMAGE_RE.finditer(body)]
-    image_urls.extend(m.group(1) for m in _HTML_IMG_SRC_RE.finditer(body))
-    for raw_url in image_urls:
-        iu = raw_url.strip().split(None, 1)[0] if raw_url.strip() else ""
-        ipm = _LINKED_ISSUE_PNG_RE.search(iu)
-        if ipm:
-            embedded.add(ipm.group("path").lower())
-    linked: dict[str, None] = {}  # ordered de-dupe: path -> None
-    for m in _MD_LINK_RE.finditer(masked):
-        url = m.group(1).strip().split(None, 1)[0] if m.group(1).strip() else ""
-        pm = _LINKED_ISSUE_PNG_RE.search(url)
-        if not pm:
-            continue
-        if issue is not None and pm.group("issue") != str(issue):
-            continue  # cross-issue links are legitimate references
-        path = pm.group("path")
-        if path.lower() in embedded:
-            continue  # embedded anywhere in the body → discipline satisfied
-        linked.setdefault(path)
+    # Full pipeline (prose layer → image mask → link scan → issue scoping →
+    # embedded-set subtraction) extracted to `_linked_unembedded_results_pngs`
+    # (#1510) so check 31 can subtract this WARN set (no double-WARN); the
+    # helper recomputes the two gates above — pure text, negligible cost.
+    linked = _linked_unembedded_results_pngs(body, issue)
     if linked:
         listed = ", ".join(f"`{p}`" for p in linked)
         return CheckResult(
@@ -10455,6 +10615,169 @@ def check_figure_sidecar_coverage(body: str) -> CheckResult:
     )
 
 
+# ─── Check 44: footer HF artifact paths carry an adjacent pinned link ────────
+#
+# The #1335 pre-fix footer (git `6d3c847946`) shipped
+# `issue1335_ablation_ladder/onpolicy_assistant_label/
+# {raw_completions,analysis_tensors}/` as a bare backtick path with no HF
+# pin anywhere in its bullet; only URL-bearing or count-paren claims were
+# gated (checks 8/23/30/32/40), so the verifier read PASS and the LM critic
+# had to catch the shape cold (#1509). Pure text check — zero Hub probes
+# (pin ABSENCE is a body-text fact, the check-40 rationale) and no
+# EPM_VERIFY_BODY_NO_HF / EPM_VERIFY_BODY_NO_EVAL_SCAN fences (the
+# check-37 "deliberately NOT fenced" convention).
+
+# Backtick token charset EXTENDED over the plain [A-Za-z0-9_./-] dir-token
+# charset with {},* for brace-expansion / glob forms (the #1335
+# `{raw_completions,analysis_tensors}/` and #841 `issue841_scaling/{...}` /
+# `analysis_tensors/pass_a/*_cx.pt` shapes). Leading ./ ../ declined.
+_FOOTER_HF_PATH_TOKEN_RE = re.compile(r"`(?P<tok>(?!\.\.?/)[A-Za-z0-9_\-./{},*]{1,160})`")
+# HF-identity arm (gate G2b): a raw_completions / analysis_tensors path
+# segment (word-bounded — matches inside braces too).
+_FOOTER_HF_ARTIFACT_SEG_RE = re.compile(r"\b(?:raw_completions|analysis_tensors)\b")
+# Search-form pinned-HF-URL satisfier S1 (the anchored
+# _HF_HUB_TREE_BLOB_URL_RE cannot search inside a unit): huggingface.co +
+# tree|resolve|blob + 7-40 hex, per SPEC.md § "All footer URLs pinned
+# (v4)"; `/tree/main` never matches (not hex).
+_FOOTER_HF_PIN_URL_RE = re.compile(
+    r"huggingface\.co/[^\s()`]*?/(?:tree|resolve|blob)/[0-9a-fA-F]{7,40}\b",
+    re.IGNORECASE,
+)
+# Position-ANCHORED @-rev satisfier S2: must begin within 4 chars of the
+# token's closing backtick (the committed `@ rev `6aab0cce1fac`` /
+# `@ HF rev `deb7a452`` #1112/#1335 footer shapes). Anchoring is
+# load-bearing: the #1335 offending bullet carries `@ `be61a85e`` (a
+# GitHub figures pin) EARLIER in the bullet, so an anywhere-in-unit @-rev
+# (check 37's shape) would false-negative the motivating incident.
+# `@ main` / `@ HEAD` are not hex and never satisfy.
+_FOOTER_AT_REV_ADJ_RE = re.compile(
+    r"[ \t]{0,4}@\s*(?:(?:HF\s+)?rev\s+)?`?[0-9a-fA-F]{7,40}\b", re.IGNORECASE
+)
+
+
+def _footer_units(footer: str) -> list[str]:
+    """Split footer text into pin-adjacency units: each `- `/`* ` bullet
+    (indented AND lazy continuation lines joined) and each non-bullet
+    paragraph run (the `**Repro:**` / `**Context:**` blocks). Fence-aware
+    (illustrative skeletons ignored); `>`-quoted blockquote lines dropped
+    (the #959 verbatim-prompt exemption — quote text is provenance
+    content, not a provenance link); blank lines terminate a unit.
+
+    Generalizes `_footer_reused_bullets` (which keeps only `- Reused`
+    bullets and joins only INDENTED continuations) to ALL footer content.
+    Stated recall/precision trade (#1509 §4.3): lazy (non-indented)
+    continuations also join — a wrapped bullet whose pin lands on an
+    unindented wrap line still satisfies; the cost is a bounded
+    false-negative residual (a pin on an immediately-following unrelated
+    line rescuing a token — blank-line unit termination bounds it).
+    """
+    units: list[str] = []
+    cur: str | None = None
+    in_fence = False
+    for line in footer.splitlines():
+        s = line.strip()
+        if s.startswith("```") or s.startswith("~~~"):
+            in_fence = not in_fence
+            if cur is not None:
+                units.append(cur)
+                cur = None
+            continue
+        if in_fence or s.startswith(">"):
+            continue
+        if not s:
+            if cur is not None:
+                units.append(cur)
+                cur = None
+            continue
+        if re.match(r"^\s*[-*]\s", line):
+            if cur is not None:
+                units.append(cur)
+            cur = s
+        elif cur is not None:
+            cur += " " + s  # indented OR lazy continuation joins its unit
+        else:
+            cur = s
+    if cur is not None:
+        units.append(cur)
+    return units
+
+
+def check_footer_hf_paths_pinned(body: str) -> CheckResult:
+    """Check 44 (WARN, v4-only, #1509): every bare backtick HF-style
+    artifact path in the `**Repro:**`/`**Context:**` footer sits in a
+    unit (bullet / paragraph) carrying an HF pin — a pinned
+    `huggingface.co` `/(tree|resolve|blob)/<7-40 hex>` link anywhere in
+    the unit (S1), or an `@ [HF ]rev <hex>` immediately after the token
+    (S2, position-anchored). Token identity gates: a backtick span with
+    a `/` (G1), first segment not in `_GIT_SIDE_ROOTS` (G3 — git/local
+    paths resolve in git; checks 27/29 territory), and an `issue<N>_`
+    prefix OR a `raw_completions`/`analysis_tensors` segment (G2).
+    Tokens `_gather_hf_unpinned_count_claims` already extracts are
+    excluded (G5 — check 40 keeps its own missing-pin WARN; the
+    check-30/40 partition convention: no claim is ever double-WARNed).
+
+    WARN, never FAIL — there is NO code path returning ``passed=False``
+    (corpus 2026-07-18: 50 committed v4 bodies; 2 parked bodies (#1310,
+    #841) carry 10 genuine unpinned tokens — a FAIL would newly block
+    their promote-time re-verify. FAIL-flip path: a one-line severity
+    change once the parked corpus clears, via a future infra task).
+    Body-text-only: zero Hub probes, no EPM_VERIFY_BODY_NO_HF /
+    EPM_VERIFY_BODY_NO_EVAL_SCAN fence (pin absence is a text fact, cf.
+    check 40; the check-37 unfenced convention). Forward-only via
+    `is_v4` — v3/v2/legacy bodies are never newly flagged.
+
+    Named recall residuals (the LM critic stays the backstop): HF paths
+    OUTSIDE backticks (plain prose / link-text paths are not extracted),
+    and HF paths with NEITHER an `issue<N>_` prefix NOR a
+    raw_completions/analysis_tensors segment (G2 declines — precision
+    first). Incident: task #1335's pre-fix footer bullet (git
+    `6d3c847946`) carried the brace-form path with GitHub pins + bare
+    code shas in-bullet but no HF pin — checks 37/40 both (correctly,
+    per their own scopes) stayed silent.
+    """
+    name = "footer HF artifact paths carry an adjacent pinned link"
+    if not is_v4(body):
+        return CheckResult(name, True, "skipped — not a v4 body (forward-only)")
+    footer = _v4_footer_text(body)
+    if footer is None:
+        return CheckResult(name, True, "skipped — no **Repro:** footer found")
+    # G5 (check-40 interplay): the gatherer is pure regex — ZERO Hub probes
+    # (probes live only in check 40's check function), so it is safe+cheap
+    # to call here for the partition set.
+    c40_tokens = {tok for _c, _n, tok, _r in _gather_hf_unpinned_count_claims(body)}
+    offenders: list[str] = []
+    seen: set[str] = set()
+    for unit in _footer_units(footer):
+        unit_pinned = _FOOTER_HF_PIN_URL_RE.search(unit) is not None
+        for m in _FOOTER_HF_PATH_TOKEN_RE.finditer(unit):
+            tok = m.group("tok")
+            if "/" not in tok:
+                continue  # G1: a path, not a filename / hex token
+            first = tok.split("/", 1)[0]
+            if not first or first in _GIT_SIDE_ROOTS:
+                continue  # G3: git/local path — resolves in git (checks 27/29)
+            if not (_HF_ISSUE_PREFIX_RE.match(tok) or _FOOTER_HF_ARTIFACT_SEG_RE.search(tok)):
+                continue  # G2: not an HF-identity token (precision first)
+            if tok in c40_tokens or tok in seen:
+                continue  # G5: check-40 territory / per-body dedup
+            if unit_pinned:
+                continue  # S1: pinned huggingface.co /(tree|resolve|blob)/<hex> in unit
+            if _FOOTER_AT_REV_ADJ_RE.match(unit, m.end()):
+                continue  # S2: `@ [HF ]rev <hex>` immediately after the token
+            seen.add(tok)
+            offenders.append(tok)
+    if not offenders:
+        return CheckResult(name, True, "all footer HF artifact paths pinned")
+    shown = "; ".join(f"`{t[:120]}`" for t in offenders[:8])
+    detail = (
+        f"{len(offenders)} bare HF artifact path(s) in the footer carry no adjacent "
+        f"pin: {shown} — add a pinned huggingface.co /tree/<rev> (or /resolve|/blob/"
+        "<rev>) link in the same bullet/paragraph, or `@ <rev>` immediately after "
+        "the path (SPEC.md § All footer URLs pinned (v4), check 44)"
+    )
+    return CheckResult(name, True, detail, is_warn=True)
+
+
 # ─── Check 45: caption count claims vs sidecar point values ─────────────────
 #
 # Seventh sibling of checks 24/26/28/33/34/41 (same figure iteration, same
@@ -13072,6 +13395,9 @@ CHECKS = [
     # check 43 (WARN, generation-agnostic) — git-tree twin of check 32: backtick file
     # claims adjacent to same-repo /tree/<sha> links resolve via git ls-tree (#1507):
     check_github_tree_adjacent_file_claims,
+    # check 44 (WARN, v4-only) — bare backtick HF artifact paths in the footer carry
+    # an adjacent pinned huggingface.co link / `@ rev <hex>` (#1509; incident #1335):
+    check_footer_hf_paths_pinned,
     # check 45 (WARN, generation-agnostic) — quantified caption COUNT claims
     # ("all N <unit>", "K of N", "none of the N", "no <unit>" + below/above-zero
     # or copula negative/positive) recomputed against the sidecar's per-column

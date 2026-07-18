@@ -612,6 +612,12 @@ below). Exemptions, stated in the interpretation prose or alt text: the
 result's primary figure ALREADY is the per-unit view (a raw scatter needs
 no second scatter); N is so small the figure already shows every point; or
 the aggregate has no meaningful per-unit decomposition (a single scalar).
+When a committed per-unit companion is deliberately NOT embedded, name the
+file AND state the omission with an explicit exemption phrase — "not
+embedded: <reason>" or "superseded by <the embedded view>" — in the same
+paragraph as the filename; a bare provenance mention ("committed at the
+same pin") does not count, and `verify_task_body.py` check 31 WARNs
+`companion-named-not-embedded`.
 
 **Raw alongside processed** (the transformed-figure special case). When a
 result's figure plots a residualized / partialled / binned /
@@ -851,7 +857,12 @@ accepted. No `TBD`, `{{`, `default`, `see config` sentinels. **Write
 MDX-safe markdown** (same three rules as v3): (a) `[label](url)` only,
 never `<https://...>` autolinks; (b) no `<` immediately before a digit
 (`p<0.05`); (c) table-cell tokens with inner pipes (`<|im_start|>`) escape
-the pipes inside a code span.
+the pipes inside a code span. Enforcement note (check 44, WARN — no
+semantic change to this contract): a bare backtick HF-style artifact path
+(`issue<N>_...` prefix, or a `raw_completions`/`analysis_tensors` path) in
+the footer must sit in the same bullet/paragraph as a pinned
+`huggingface.co` `/tree|/resolve|/blob/<rev>` link or carry `@ <rev>`
+immediately after it (`verify_task_body.py` check 44, #1509).
 
 ### Stray `## What I ran` / `## Findings` / `## Data` / `## Reproducibility` / `## Human TL;DR` / `## TL;DR` / `## Details` / `## Figure` is a FAIL (v4)
 
