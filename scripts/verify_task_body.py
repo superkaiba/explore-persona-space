@@ -500,10 +500,12 @@ Generation-agnostic checks (run on v2 AND v3 — the inline-figure +
 - **check 28** (`check_figure_label_codes`, WARN): rendered figure text read
   from each inline same-repo sha-pinned figure's sibling `.meta.json` (parsed
   via `_read_figure_meta_json`, check 26's reader) must not carry opaque
-  config-code tokens — `@L<digits>` layer pins (`ctx_blk_max@L12`) or
+  config-code tokens — `@L<digits>` layer pins (`ctx_blk_max@L12`),
   regime-code slugs (snake tokens >=3 segments or digit-bearing:
   `ans_uhdr_max`, `sw_eng_C1`, `cond_4`; 2-segment all-alpha metric names
-  like `log_prob` stay allowed). Plain-English condition names are the
+  like `log_prob` stay allowed), bare hypothesis codes (`H3` — single
+  digit, case-sensitive, so `H100`/`H200` never match), or slot-family
+  codes (`f16`/`l16` only, #1072). Plain-English condition names are the
   project rule end to end; config slugs belong in the Repro config row /
   provenance keys. Scans string VALUES only (provenance-keyed subtrees
   pruned via `_META_PROVENANCE_KEYS`) plus dict keys containing internal
@@ -7317,6 +7319,20 @@ _LAYER_PIN_RE = re.compile(r"\w*@L\d+\b")
 #     all-alpha metric / persona names like `log_prob` are legitimate labels).
 _SNAKE_TOKEN_RE = re.compile(r"\b[A-Za-z][A-Za-z0-9]*(?:_[A-Za-z0-9]+)+\b")
 
+# (c) bare hypothesis codes (`H3`) — plan-registered hypothesis slots
+#     rendered into figure text (#1072: panel title "… (H3)"). SINGLE digit
+#     + case-sensitive by design: `H100`/`H200` GPU names (3 digits) and
+#     `H20` (2 digits, also a GPU name) never match; lowercase `h3` is not
+#     the project's hypothesis-code convention and stays clean.
+_HYPOTHESIS_CODE_RE = re.compile(r"\bH\d\b")
+
+# (d) slot-family codes `f16` / `l16` (first-16 / last-16 answer-slot
+#     families, #1072: xlabel "answer position t (f16 slots)"). Deliberately
+#     NOT generalized to `[fl]\d+` — `F1` (metric), `l2`/`L2` (norm) are
+#     legitimate rendered labels; lowercase-only, and `bf16`/`fp16` dtype
+#     spellings never match (no word boundary before the `f`).
+_SLOT_FAMILY_RE = re.compile(r"\b[fl]16\b")
+
 # Path/URI-SHAPED string: no internal whitespace and at least one path
 # separator — a file path or URL, which is provenance, not rendered text.
 # Deliberately NOT a whole-string any-slash skip: a slash-separated rendered
@@ -7327,16 +7343,21 @@ _PATH_SHAPED_RE = re.compile(r"^\S*[/\\]\S*$")
 
 
 def _opaque_code_tokens(text: str) -> list[str]:
-    """Return the opaque config-code tokens in ONE sidecar string: `@L<d>`
+    r"""Return the opaque config-code tokens in ONE sidecar string: `@L<d>`
     layer pins, and snake_case tokens that are >=3 segments OR carry any
     digit (`ctx_blk_max`, `sw_eng_C1`, `BS_E0`, `cond_4`); 2-segment
     all-alpha tokens (`log_prob`, `judge_rate`, `helpful_assistant`) are
-    allowed. PATH-SHAPED strings (whitespace-free with a path separator —
-    file paths, URLs) are exempt from BOTH token scans (pins AND snakes);
+    allowed; bare hypothesis codes (`H3` — `\bH\d\b`, single digit,
+    case-sensitive) and slot-family codes (`f16`/`l16` only). PATH-SHAPED
+    strings (whitespace-free with a path separator —
+    file paths, URLs) are exempt from ALL FOUR token scans;
     strings that merely CONTAIN a slash (e.g. a slash-separated rendered
     label) are still scanned, with individual path-shaped whitespace-split
-    words skipped for both token classes. De-duped case-insensitively,
-    order kept.
+    words skipped for every token class — the exemption is load-bearing
+    only for BOUNDARY-TERMINATED tokens inside path words
+    (`figures/issue_1072/H3.png`, `see figures/a/f16.png`); a `_`-suffixed
+    token inside a path word (`H3_panel.png`) is already cleaned by the
+    regex boundary itself. De-duped case-insensitively, order kept.
     """
     hits: list[str] = []
     if not _PATH_SHAPED_RE.match(text.strip()):
@@ -7362,6 +7383,15 @@ def _opaque_code_tokens(text: str) -> list[str]:
             if _only_in_path_words(tok):
                 continue
             if tok.count("_") >= 2 or any(ch.isdigit() for ch in tok):
+                hits.append(tok)
+        # Hypothesis-code + slot-family classes (#1072) reuse the SAME
+        # per-word path exemption the pin/snake classes get, so a
+        # boundary-terminated token inside a path word stays provenance.
+        for regex in (_HYPOTHESIS_CODE_RE, _SLOT_FAMILY_RE):
+            for m in regex.finditer(text):
+                tok = m.group(0)
+                if _only_in_path_words(tok):
+                    continue
                 hits.append(tok)
     seen: set[str] = set()
     out: list[str] = []
@@ -7401,14 +7431,23 @@ def _iter_meta_label_values(obj: object) -> list[str]:
 
 def check_figure_label_codes(body: str) -> CheckResult:
     """Check 28 (WARN): rendered figure text (sidecar ``.meta.json`` values)
-    must not carry opaque config-code tokens — ``@L<digits>`` layer pins or
-    regime-code slugs (``ctx_blk_max``, ``sw_eng_C1``). Plain-English
+    must not carry opaque config-code tokens — ``@L<digits>`` layer pins,
+    regime-code slugs (``ctx_blk_max``, ``sw_eng_C1``), bare hypothesis
+    codes (``H3``), or slot-family codes (``f16``/``l16``). Plain-English
     condition names are the rule end to end (memory
     feedback_no_opaque_condition_codes, SPEC statistical-framing bullet);
     config slugs belong in the Repro config row / provenance keys. Incident
     #920: ``winning_cell_scatter.png`` reached the 9a-bis gate titled
     ``ctx_blk_max@L12 x ans_uhdr_max@L12`` after three review passes each
-    deferred it as a cosmetic nit.
+    deferred it as a cosmetic nit. Incident #1072: the panel title
+    ``Parallel share of the gap by depth (H3)`` and the xlabel
+    ``answer position t (f16 slots)`` passed check 28 clean and were caught
+    only by the LM clean-result critic (hand-fixed in ``1f19deacfd``) —
+    mechanized here as the hypothesis-code + slot-family classes. The
+    "code-span contexts" exclusion in the originating diff sketch is a
+    documented NO-OP on this channel: sidecar strings are matplotlib
+    rendered text serialized to JSON (never markdown), so backtick code
+    spans cannot occur and no backtick logic is implemented.
 
     Coverage = sidecar-CARRIED strings only: string values (provenance
     subtrees pruned) plus whitespace-bearing dict keys. The current
@@ -7426,14 +7465,14 @@ def check_figure_label_codes(body: str) -> CheckResult:
     PNG-pixel text stays the multimodal critics' substantive read; (ii) a
     bare slug used as a whitespace-free column KEY is unscanned (tick labels
     now arrive as scanned VALUES in new sidecars, narrowing this residual to
-    key names); (iii) a slug or ``@L`` pin inside a path-shaped word (or a
-    whole path-shaped string) is exempt — the path exemption covers BOTH
-    token classes. WARN,
+    key names); (iii) a token inside a path-shaped word (or a
+    whole path-shaped string) is exempt — the path exemption covers ALL
+    FOUR token classes. WARN,
     never FAIL; fail-soft on missing / unparsable sidecars (the check-24
     convention, NOT check 26's loud missing-sidecar FAIL); NO-OP PASS
     offline / no figures / no scannable same-repo sidecar.
     """
-    label = "figure text opaque config codes (slug / @L-pin tokens)"
+    label = "figure text opaque config codes (slug / @L-pin / H-code / slot-family tokens)"
     section = _figure_scan_section(body)
     text = section_text(body, section)
     if text is None:
