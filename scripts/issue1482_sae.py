@@ -134,20 +134,33 @@ class BatchTopKSAE:
 
     @classmethod
     def load(cls, k: int = 64, device: str = "cpu", cache_dir: Path | str | None = None):
-        """Download (revision-pinned) + load one trainer; asserts config + key set."""
+        """Download (revision-pinned) + load one trainer; asserts config + key set.
+
+        Both fetches ride ``hub.retry_transient`` (#1402: Retry-After-aware,
+        ``EPM_HF_RETRY_BUDGET_S`` wall budget, LocalEntryNotFoundError transient
+        BY CLASS) — this is P2-child-reachable, and a Hub queue-full 429 storm
+        killed #1482 attempt 2's p2 child on a sibling bare download."""
         from huggingface_hub import hf_hub_download
+
+        from explore_persona_space.orchestrate import hub
 
         sub = TRAINER_SUBDIR[k]
         kw = {"revision": SAE_REVISION, "repo_type": "model"}
         if cache_dir is not None:
             kw["local_dir"] = str(cache_dir)
-        cfg_path = hf_hub_download(SAE_REPO, f"{sub}/config.json", **kw)
+        cfg_path = hub.retry_transient(
+            lambda: hf_hub_download(SAE_REPO, f"{sub}/config.json", **kw),
+            what=f"sae config fetch ({SAE_REPO}:{sub})",
+        )
         cfg = json.loads(Path(cfg_path).read_text())["trainer"]
         assert cfg["dict_class"] == "BatchTopKSAE", cfg["dict_class"]
         assert cfg["activation_dim"] == ACT_DIM and cfg["dict_size"] == DICT_SIZE, cfg
         assert cfg["k"] == k and cfg["layer"] == 19, (cfg["k"], cfg["layer"])
         assert cfg["lm_name"] == "Qwen/Qwen2.5-7B-Instruct", cfg["lm_name"]
-        ae_path = hf_hub_download(SAE_REPO, f"{sub}/ae.pt", **kw)
+        ae_path = hub.retry_transient(
+            lambda: hf_hub_download(SAE_REPO, f"{sub}/ae.pt", **kw),
+            what=f"sae weights fetch ({SAE_REPO}:{sub})",
+        )
         sd = torch.load(ae_path, map_location="cpu", mmap=True, weights_only=True)
         logger.info(
             "[sae] loaded k=%d from %s@%s (threshold scalar)", k, SAE_REPO, SAE_REVISION[:8]

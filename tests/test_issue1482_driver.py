@@ -5,6 +5,7 @@ verdict lattices. CPU-only; no network, no model loads."""
 from __future__ import annotations
 
 import json
+import shutil
 import sys
 from pathlib import Path
 from types import SimpleNamespace
@@ -544,3 +545,262 @@ def test_row_features_reference_masking():
     # (d) context emptied by the BOS strip fails loud (degenerate-input gate probe)
     with pytest.raises(ValueError):
         D._row_features(sae, h.clone(), 3)
+
+
+# ── r4: storm-robust chunk-download retry (#1482 att-20260718-055220 crash class) ─
+
+
+def _patched_dl(monkeypatch, fake):
+    """Patch the network boundary (huggingface_hub.hf_hub_download) + sleep no-op."""
+    import time as _time
+
+    import huggingface_hub
+
+    monkeypatch.setattr(huggingface_hub, "hf_hub_download", fake)
+    monkeypatch.setattr(_time, "sleep", lambda *_a, **_k: None)
+
+
+def test_download_chunk_retry_survives_storm_past_attempt_floor(monkeypatch, tmp_path):
+    """A 429 storm longer than the legacy 4-attempt ladder (5 transient failures)
+    now succeeds via the wall-budget arm — FAILS pre-r4 (raise at attempt 4/4)."""
+    from huggingface_hub.errors import LocalEntryNotFoundError
+
+    calls = {"n": 0}
+
+    def fake(repo_id, filename=None, repo_type=None, local_dir=None):
+        calls["n"] += 1
+        if calls["n"] <= 5:
+            raise LocalEntryNotFoundError("synthetic 429-on-HEAD storm")
+        out = Path(local_dir) / filename
+        out.parent.mkdir(parents=True, exist_ok=True)
+        out.write_text("ok")
+        return str(out)
+
+    _patched_dl(monkeypatch, fake)
+    monkeypatch.delenv("EPM_HF_RETRY_BUDGET_S", raising=False)  # default 1800 s budget
+    got = N1M._download_chunk_with_retry("repo", "pfx/shard00_chunk0000.pt", tmp_path)
+    assert calls["n"] == 6, f"expected 5 transient retries + success, got {calls['n']}"
+    assert Path(got).exists()
+
+
+def test_download_chunk_retry_budget_zero_is_attempt_bound_fail_loud(monkeypatch, tmp_path):
+    """EPM_HF_RETRY_BUDGET_S=0 restores the attempt-bound contract: exhaustion at
+    STREAM_DOWNLOAD_ATTEMPTS calls re-raises (fail-loud, never a silent skip)."""
+    from huggingface_hub.errors import LocalEntryNotFoundError
+
+    calls = {"n": 0}
+
+    def fake(repo_id, filename=None, repo_type=None, local_dir=None):
+        calls["n"] += 1
+        raise LocalEntryNotFoundError("persistent storm")
+
+    _patched_dl(monkeypatch, fake)
+    monkeypatch.setenv("EPM_HF_RETRY_BUDGET_S", "0")
+    with pytest.raises(LocalEntryNotFoundError):
+        N1M._download_chunk_with_retry("repo", "pfx/x.pt", tmp_path)
+    assert calls["n"] == N1M.STREAM_DOWNLOAD_ATTEMPTS
+
+
+def test_download_chunk_retry_nontransient_no_retry(monkeypatch, tmp_path):
+    calls = {"n": 0}
+
+    def fake(repo_id, filename=None, repo_type=None, local_dir=None):
+        calls["n"] += 1
+        raise ValueError("non-transient")
+
+    _patched_dl(monkeypatch, fake)
+    with pytest.raises(ValueError):
+        N1M._download_chunk_with_retry("repo", "pfx/x.pt", tmp_path)
+    assert calls["n"] == 1
+
+
+def test_sae_load_fetches_ride_retry_transient(monkeypatch, tmp_path):
+    """BatchTopKSAE.load's config fetch retries a transient failure (real body
+    executes through the wrapped call sites); a non-transient error on the ae.pt
+    fetch re-raises immediately."""
+    from huggingface_hub.errors import LocalEntryNotFoundError
+
+    calls = {"cfg": 0, "ae": 0}
+
+    def fake(repo_id, filename=None, revision=None, repo_type=None, local_dir=None):
+        if filename.endswith("config.json"):
+            calls["cfg"] += 1
+            if calls["cfg"] == 1:
+                raise LocalEntryNotFoundError("synthetic 429-on-HEAD")
+            out = Path(local_dir) / filename
+            out.parent.mkdir(parents=True, exist_ok=True)
+            out.write_text(
+                json.dumps(
+                    {
+                        "trainer": {
+                            "dict_class": "BatchTopKSAE",
+                            "activation_dim": S.ACT_DIM,
+                            "dict_size": S.DICT_SIZE,
+                            "k": 64,
+                            "layer": 19,
+                            "lm_name": "Qwen/Qwen2.5-7B-Instruct",
+                        }
+                    }
+                )
+            )
+            return str(out)
+        calls["ae"] += 1
+        raise RuntimeError("boom-nonretryable")
+
+    _patched_dl(monkeypatch, fake)
+    with pytest.raises(RuntimeError, match="boom-nonretryable"):
+        S.BatchTopKSAE.load(k=64, device="cpu", cache_dir=tmp_path)
+    assert calls["cfg"] == 2, "config fetch must retry the transient failure once"
+    assert calls["ae"] == 1, "non-transient ae.pt error must not retry"
+
+
+# ── r4: --seed-partial (reuse a prior attempt's persisted P1 artifacts) ──────────
+
+
+def _seed_args(tmp_path, attempt="att-test"):
+    return SimpleNamespace(
+        seed_partial=attempt,
+        scratch=tmp_path / "scratch",
+        out_eval=tmp_path / "out_eval",
+        seed=0,
+    )
+
+
+def _write_unit(pdir, fid, sets, extra_arrays=None, corrupt_npz=False):
+    """A percontext (json, npz) pair shaped like phase_p1_fit's output."""
+    pdir.mkdir(parents=True, exist_ok=True)
+    doc = {"fit_id": fid, "sets": {}}
+    arrays = {}
+    for name, n in sets.items():
+        doc["sets"][name] = {"n": n, "whole_map_r2": 0.5, "mean_cosine": 0.5}
+        arrays[f"{name}_rows"] = np.arange(n, dtype=np.int64)
+        for k in ("e2", "cos", "nerr", "denom"):
+            arrays[f"{name}_{k}"] = np.ones(n, dtype=np.float64)
+    arrays.update(extra_arrays or {})
+    (pdir / f"{fid}.json").write_text(json.dumps(doc))
+    if corrupt_npz:
+        (pdir / f"{fid}.npz").write_bytes(b"not-a-zip")
+    else:
+        np.savez(pdir / f"{fid}.npz", **arrays)
+
+
+_SPLIT_DOC = {
+    "n_total": 100,
+    "train_full_sha256": "aaa",
+    "holdout": {"sha256": "bbb"},
+    "sae_fit": {"sha256": "ccc"},
+    "sae_val": {"sha256": "ddd"},
+}
+
+
+def _stage_fixture(tmp_path, args, *, with_split=True, sae_gate="PASS"):
+    """Build the fake staged tree + a signature-conformant stage_hub_prefix fake."""
+    from explore_persona_space.orchestrate import hub
+
+    prefix = f"issue1482_partial/{args.seed_partial}/eval_results_issue_1482"
+    src = tmp_path / "hf_src" / prefix
+    pdir = src / "percontext"
+    # valid full unit (test+val), valid holdout unit WITH pred16, corrupt npz,
+    # holdout unit MISSING pred16 (P3 input) -> dropped
+    _write_unit(pdir, "refit_full__ridge__seed0", {"test": 3, "val": 2})
+    _write_unit(
+        pdir,
+        "refit_holdout__ridge__seed0",
+        {"holdout": 4},
+        extra_arrays={"holdout_pred16": np.ones((4, 8), dtype=np.float16)},
+    )
+    _write_unit(pdir, "refit_full__mlp_w8192__seed0", {"test": 3, "val": 2}, corrupt_npz=True)
+    _write_unit(pdir, "refit_holdout__mlp_w8192__seed0", {"holdout": 4})
+    if with_split:
+        (src / "split_1482.json").write_text(json.dumps(_SPLIT_DOC))
+    (src / "sae_fitness.json").write_text(
+        json.dumps(
+            {
+                "gate_b": sae_gate,
+                "g2_pass": True,
+                "chosen_k": 64,
+                "smoke_demoted": False,
+                "tiny_model": False,
+            }
+        )
+    )
+
+    def fake_stage_hub_prefix(
+        repo_id, prefix_, dest_dir, *, repo_type="dataset", revision=None, token=None, max_workers=6
+    ):
+        dest = Path(dest_dir) / prefix_
+        shutil.copytree(tmp_path / "hf_src" / prefix_, dest, dirs_exist_ok=True)
+        return sorted(dest.rglob("*"))
+
+    return hub, fake_stage_hub_prefix
+
+
+def test_seed_partial_seeds_valid_units_and_drops_invalid(monkeypatch, tmp_path):
+    args = _seed_args(tmp_path)
+    hub, fake_stage = _stage_fixture(tmp_path, args)
+    monkeypatch.setattr(hub, "stage_hub_prefix", fake_stage)
+    D.seed_partial(args)
+    pdir = args.out_eval / "percontext"
+    # seeded units satisfy phase_p1's EXACT skip predicate (json exists) + payload
+    for fid in ("refit_full__ridge__seed0", "refit_holdout__ridge__seed0"):
+        assert (pdir / f"{fid}.json").exists() and (pdir / f"{fid}.npz").exists()
+    # corrupt npz + missing holdout_pred16 -> NOT seeded (units re-run)
+    for fid in ("refit_full__mlp_w8192__seed0", "refit_holdout__mlp_w8192__seed0"):
+        assert not (pdir / f"{fid}.json").exists() and not (pdir / f"{fid}.npz").exists()
+    assert (args.out_eval / "sae_fitness.json").exists()
+    rec = json.loads((args.out_eval / D.SEED_PARTIAL_RECORD).read_text())
+    assert set(rec["seeded_units"]) == {"refit_full__ridge__seed0", "refit_holdout__ridge__seed0"}
+    assert "refit_full__mlp_w8192__seed0" in rec["dropped_units"]
+    assert rec["dropped_units"]["refit_holdout__mlp_w8192__seed0"].startswith(
+        "npz missing holdout_pred16"
+    )
+    assert rec["sae_fitness_seeded"] is True and rec["reconciled"] is False
+    assert rec["split_identity"] == D._split_identity(_SPLIT_DOC)
+
+
+def test_seed_partial_refuses_without_split_doc(monkeypatch, tmp_path):
+    args = _seed_args(tmp_path)
+    hub, fake_stage = _stage_fixture(tmp_path, args, with_split=False)
+    monkeypatch.setattr(hub, "stage_hub_prefix", fake_stage)
+    with pytest.raises(RuntimeError, match=r"split_1482\.json"):
+        D.seed_partial(args)
+
+
+def test_seed_partial_gated_sae_fitness_not_seeded(monkeypatch, tmp_path):
+    args = _seed_args(tmp_path)
+    hub, fake_stage = _stage_fixture(tmp_path, args, sae_gate="HALT")
+    monkeypatch.setattr(hub, "stage_hub_prefix", fake_stage)
+    D.seed_partial(args)
+    assert not (args.out_eval / "sae_fitness.json").exists(), "a HALT pilot must never seed"
+
+
+def test_seed_partial_reconcile_match_marks_and_keeps(monkeypatch, tmp_path):
+    args = _seed_args(tmp_path)
+    hub, fake_stage = _stage_fixture(tmp_path, args)
+    monkeypatch.setattr(hub, "stage_hub_prefix", fake_stage)
+    D.seed_partial(args)
+    (args.out_eval / "split_1482.json").write_text(json.dumps(_SPLIT_DOC))  # P0 rebuild == seeded
+    D._seed_partial_reconcile(args)
+    rec = json.loads((args.out_eval / D.SEED_PARTIAL_RECORD).read_text())
+    assert rec["reconciled"] is True and "split_mismatch" not in rec
+    assert (args.out_eval / "percontext" / "refit_full__ridge__seed0.json").exists()
+    assert (args.out_eval / "sae_fitness.json").exists()
+
+
+def test_seed_partial_reconcile_mismatch_drops_all_seeded(monkeypatch, tmp_path):
+    args = _seed_args(tmp_path)
+    hub, fake_stage = _stage_fixture(tmp_path, args)
+    monkeypatch.setattr(hub, "stage_hub_prefix", fake_stage)
+    D.seed_partial(args)
+    other = dict(_SPLIT_DOC, train_full_sha256="ZZZ")  # P0 rebuilt a DIFFERENT split
+    (args.out_eval / "split_1482.json").write_text(json.dumps(other))
+    D._seed_partial_reconcile(args)
+    rec = json.loads((args.out_eval / D.SEED_PARTIAL_RECORD).read_text())
+    assert rec["split_mismatch"] is True and rec["reconciled"] is False
+    pdir = args.out_eval / "percontext"
+    assert not any(pdir.iterdir()), "stale seeded units must be dropped (they re-run)"
+    assert not (args.out_eval / "sae_fitness.json").exists()
+    # idempotent: a fresh P1 rerun's outputs are NEVER swept by a second reconcile
+    _write_unit(pdir, "refit_full__ridge__seed0", {"test": 3, "val": 2})
+    D._seed_partial_reconcile(args)
+    assert (pdir / "refit_full__ridge__seed0.json").exists()

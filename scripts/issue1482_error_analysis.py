@@ -26,6 +26,7 @@ import hashlib
 import json
 import logging
 import os
+import shutil
 import subprocess
 import sys
 import time
@@ -581,6 +582,12 @@ def gate_a_check(args) -> dict:
             "P3 lambda selection uses the 2k sae_val carve."
         ],
     }
+    sp_path = args.out_eval / SEED_PARTIAL_RECORD
+    if sp_path.exists():
+        sp = json.loads(sp_path.read_text())
+        if sp.get("reconciled") and sp.get("seeded_units"):
+            doc["seeded_from"] = sp["attempt_id"]  # provenance: seeded P1 units (r4)
+            doc["seeded_units"] = sp["seeded_units"]
     _write_json(args.out_eval / "reconciliation.json", doc)
     logger.info("[gate-a] verdict=%s halt=%s dropped=%s", verdict, halt, dropped)
     if halt and not args.smoke:
@@ -593,8 +600,183 @@ def gate_a_check(args) -> dict:
     return doc
 
 
+# ── --seed-partial: reuse a prior attempt's crash-persisted P1 artifacts (r4) ────
+# The GCP crash-persist uploads eval_results_issue_1482/ to
+# issue1482_partial/<attempt_id>/ (CLAUDE.md § GCP crash diagnostics). Seeding
+# stages the P1 percontext units (+ sae_fitness.json) back into out_eval so the
+# EXISTING resume predicates — phase_p1's per-unit json-exists skip and P2's
+# pilot sae_fitness-exists skip — treat them as complete. Every seeded unit is
+# VALIDATED (json parses + reconciles with its npz; corrupt/missing => the unit
+# re-runs, never a silent skip), and the seeded split identity is reconciled
+# against the CURRENT post-P0 split (_seed_partial_reconcile): a mismatch drops
+# every seeded artifact loudly. P0 still runs (X/Y are rebuilt in scratch).
+
+SEED_PARTIAL_RECORD = "seed_partial.json"
+
+
+def _split_identity(doc: dict) -> dict:
+    """The split-identity fingerprint seeded P1/P2 artifacts are only valid under."""
+    return {
+        "n_total": doc.get("n_total"),
+        "train_full_sha256": doc.get("train_full_sha256"),
+        "holdout_sha256": (doc.get("holdout") or {}).get("sha256"),
+        "sae_fit_sha256": (doc.get("sae_fit") or {}).get("sha256"),
+        "sae_val_sha256": (doc.get("sae_val") or {}).get("sha256"),
+    }
+
+
+def _validate_seed_unit(spec: dict, jpath: Path, npath: Path, args) -> str | None:
+    """None when the seeded (json, npz) pair is complete + mutually consistent;
+    else a short reason string (the unit then RE-RUNS — never a silent skip)."""
+    if not (jpath.exists() and npath.exists()):
+        return "missing json/npz"
+    try:
+        doc = json.loads(jpath.read_text())
+    except ValueError:
+        return "json unparseable"
+    if doc.get("fit_id") != spec["fit_id"] or not doc.get("sets"):
+        return "fit_id/sets mismatch"
+    try:
+        with np.load(npath) as z:
+            files = set(z.files)
+            for name, meta in doc["sets"].items():
+                for k in ("rows", "e2", "cos", "nerr", "denom"):
+                    if f"{name}_{k}" not in files:
+                        return f"npz missing {name}_{k}"
+                if int(meta["n"]) != int(z[f"{name}_rows"].shape[0]):
+                    return f"npz row-count mismatch for {name}"
+            needs_pred16 = (
+                "holdout" in doc["sets"]
+                and spec["predictor"] in ("ridge", "mlp_w8192")
+                and spec["seed"] == args.seed
+            )
+            if needs_pred16 and "holdout_pred16" not in files:
+                return "npz missing holdout_pred16 (P3 encode-the-prediction input)"
+    except Exception as e:  # corrupt npz => re-run, never a silent skip
+        return f"npz unreadable: {type(e).__name__}"
+    return None
+
+
+def seed_partial(args) -> None:
+    """Stage attempt ``args.seed_partial``'s persisted P1 artifacts into out_eval.
+
+    Fail-loud staging (hub.stage_hub_prefix: scoped listing + retried atomic
+    per-file downloads); per-unit validation; npz moved BEFORE json so a crash
+    mid-seed never leaves a resume-keyed unit without its payload. Writes the
+    ``seed_partial.json`` record consumed by ``_seed_partial_reconcile`` +
+    ``gate_a_check`` (seeded_from provenance)."""
+    from explore_persona_space.orchestrate import hub
+
+    attempt = args.seed_partial
+    prefix = f"issue1482_partial/{attempt}/eval_results_issue_1482"
+    stage = args.scratch / "seed_partial_stage"
+    logger.info("[seed-partial] staging %s -> %s", prefix, stage)
+    hub.stage_hub_prefix(C.HF_DATA_REPO, prefix, stage, repo_type="dataset")
+    root = stage / prefix
+    split_src = root / "split_1482.json"
+    if not split_src.exists():
+        raise RuntimeError(
+            f"[seed-partial] {prefix} lacks split_1482.json — seeded P1 units cannot be "
+            "validated against a split identity; refusing to seed"
+        )
+    split_identity = _split_identity(json.loads(split_src.read_text()))
+    pdir = args.out_eval / "percontext"
+    pdir.mkdir(parents=True, exist_ok=True)
+    seeded: list[str] = []
+    dropped: dict[str, str] = {}
+    for spec in fit_specs(args):
+        fid = spec["fit_id"]
+        jpath = root / "percontext" / f"{fid}.json"
+        npath = root / "percontext" / f"{fid}.npz"
+        reason = _validate_seed_unit(spec, jpath, npath, args)
+        if reason is not None:
+            dropped[fid] = reason
+            logger.warning("[seed-partial] unit %s NOT seeded (%s) — will re-run", fid, reason)
+            continue
+        shutil.move(str(npath), pdir / f"{fid}.npz")  # payload first,
+        shutil.move(str(jpath), pdir / f"{fid}.json")  # resume KEY last
+        seeded.append(fid)
+    sae_seeded = False
+    sf = root / "sae_fitness.json"
+    if sf.exists():
+        try:
+            fdoc = json.loads(sf.read_text())
+            ok = (
+                fdoc.get("gate_b") == "PASS"
+                and fdoc.get("g2_pass") is True
+                and "chosen_k" in fdoc
+                and not fdoc.get("smoke_demoted")
+                and not fdoc.get("tiny_model")
+            )
+        except ValueError:
+            ok = False
+        if ok:
+            shutil.move(str(sf), args.out_eval / "sae_fitness.json")
+            sae_seeded = True
+        else:
+            logger.warning(
+                "[seed-partial] sae_fitness.json NOT seeded (gate not clean-PASS) — pilot re-runs"
+            )
+    record = {
+        "attempt_id": attempt,
+        "hf_prefix": prefix,
+        "seeded_units": seeded,
+        "dropped_units": dropped,
+        "sae_fitness_seeded": sae_seeded,
+        "split_identity": split_identity,
+        "reconciled": False,
+        **C.reproducibility_metadata(),
+    }
+    _write_json(args.out_eval / SEED_PARTIAL_RECORD, record)
+    logger.info(
+        "[seed-partial] %d/%d P1 units seeded (dropped=%d) sae_fitness=%s from %s",
+        len(seeded),
+        len(fit_specs(args)),
+        len(dropped),
+        sae_seeded,
+        attempt,
+    )
+
+
+def _seed_partial_reconcile(args) -> None:
+    """Post-P0 guard: seeded artifacts are valid ONLY under the SAME split
+    identity. On mismatch, drop every seeded artifact (units re-run) — never a
+    silent skip of stale seeds. Idempotent (one reconcile per record)."""
+    rec_path = args.out_eval / SEED_PARTIAL_RECORD
+    if not rec_path.exists():
+        return
+    rec = json.loads(rec_path.read_text())
+    if rec.get("reconciled") or rec.get("split_mismatch"):
+        return
+    cur = _split_identity(json.loads((args.out_eval / "split_1482.json").read_text()))
+    if cur == rec["split_identity"]:
+        rec["reconciled"] = True
+        _write_json(rec_path, rec)
+        logger.info(
+            "[seed-partial] split identity MATCH — %d seeded P1 units honored",
+            len(rec["seeded_units"]),
+        )
+        return
+    pdir = args.out_eval / "percontext"
+    for fid in rec["seeded_units"]:
+        (pdir / f"{fid}.json").unlink(missing_ok=True)  # resume KEY first,
+        (pdir / f"{fid}.npz").unlink(missing_ok=True)  # payload second
+    if rec.get("sae_fitness_seeded"):
+        (args.out_eval / "sae_fitness.json").unlink(missing_ok=True)
+    rec.update({"split_mismatch": True, "reconciled": False, "current_split_identity": cur})
+    _write_json(rec_path, rec)
+    logger.warning(
+        "[seed-partial] split identity MISMATCH vs attempt %s — dropped %d seeded units "
+        "(sae_fitness dropped=%s); they RE-RUN",
+        rec["attempt_id"],
+        len(rec["seeded_units"]),
+        rec.get("sae_fitness_seeded"),
+    )
+
+
 def phase_p1(args) -> None:
     C.phase("p1")
+    _seed_partial_reconcile(args)
     specs = fit_specs(args)
     pdir = args.out_eval / "percontext"
     todo = [s for s in specs if not (pdir / f"{s['fit_id']}.json").exists()]
@@ -662,10 +844,17 @@ def _tokenize_row(tok, prompt: str, response: str, prefix_chars: int):
 
 
 def _load_model_tok(args):
+    """Model + tokenizer for capture. Hub fetches ride ``hub.retry_transient``
+    (P2-child-reachable; the #1482 attempt-2 429-storm class — transient
+    metadata/HEAD failures retry, non-transient errors re-raise immediately)."""
     from transformers import AutoModelForCausalLM, AutoTokenizer
 
+    from explore_persona_space.orchestrate import hub
+
     model_id = "Qwen/Qwen2.5-7B-Instruct"
-    tok = AutoTokenizer.from_pretrained(model_id)
+    tok = hub.retry_transient(
+        lambda: AutoTokenizer.from_pretrained(model_id), what=f"tokenizer fetch ({model_id})"
+    )
     if args.tiny_model:
         from transformers import Qwen2Config, Qwen2ForCausalLM
 
@@ -685,7 +874,10 @@ def _load_model_tok(args):
         model.eval()
         return model, tok
     dtype = torch.bfloat16 if args.device == "cuda" else torch.float32
-    model = AutoModelForCausalLM.from_pretrained(model_id, torch_dtype=dtype)
+    model = hub.retry_transient(
+        lambda: AutoModelForCausalLM.from_pretrained(model_id, torch_dtype=dtype),
+        what=f"model fetch ({model_id})",
+    )
     model.to(args.device if args.device == "cuda" else "cpu")
     model.eval()
     return model, tok
@@ -1032,6 +1224,7 @@ def phase_p2_worker(args) -> None:
 
 def phase_p2(args) -> None:
     C.phase("p2")
+    _seed_partial_reconcile(args)  # no-op unless a --seed-partial record is unreconciled
     _headroom(args.store, 2 if args.smoke else 25, "p2")
     import issue1482_sae as S
 
@@ -1796,6 +1989,15 @@ def main() -> int:  # noqa: C901 — linear phase dispatcher (readability over s
     ap.add_argument("--hf-prefix", default=HF_PREFIX_DEFAULT)
     ap.add_argument("--skip-upload", action="store_true")
     ap.add_argument(
+        "--seed-partial",
+        default=None,
+        metavar="ATTEMPT_ID",
+        help="pre-P0 seeding: stage issue1482_partial/<ATTEMPT_ID>/eval_results_issue_1482 "
+        "(a prior attempt's crash-persisted P1 percontext units + sae_fitness) into "
+        "out_eval so the existing resume predicates skip completed P1 units; validated "
+        "per unit + split-identity-reconciled after P0 (invalid/stale seeds re-run)",
+    )
+    ap.add_argument(
         "--tiny-model",
         action="store_true",
         help="CARVE-OUT (GPU-bound P2 on a no-GPU VM): from-config 24-layer same-arch "
@@ -1861,6 +2063,21 @@ def main() -> int:  # noqa: C901 — linear phase dispatcher (readability over s
         args.sae_dir = root / "hf_dl" / "sae"
     for p in (args.out_eval, args.scratch, args.store.parent):
         p.mkdir(parents=True, exist_ok=True)
+
+    if args.seed_partial:
+        if args.phase not in ("all", "p0", "p1"):
+            ap.error("--seed-partial is a pre-P0 seeding step; valid only with --phase all|p0|p1")
+        rec_path = args.out_eval / SEED_PARTIAL_RECORD
+        if rec_path.exists():
+            prev = json.loads(rec_path.read_text())
+            if prev.get("attempt_id") != args.seed_partial:
+                raise RuntimeError(
+                    f"[seed-partial] out_eval holds a record for a DIFFERENT attempt "
+                    f"({prev.get('attempt_id')} != {args.seed_partial}); refusing to re-seed"
+                )
+            logger.info("[seed-partial] record for %s already present; skip", args.seed_partial)
+        else:
+            seed_partial(args)
 
     t0 = time.time()
     ph = args.phase
