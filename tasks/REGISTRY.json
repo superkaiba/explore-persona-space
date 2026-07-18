@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1521,
+  "highest_id": 1522,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -4071,6 +4071,13 @@
       "path": "tasks/running/1521",
       "status": "running",
       "title": "workflow-fix: verify_task_body Context-row provenance vs epm:followup-scope cross-check"
+    },
+    "1522": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1522",
+      "status": "proposed",
+      "title": "workflow-fix: artifact-reuse check (l) \u2014 instrument validity-domain transfer"
     },
     "153": {
       "has_clean_result": false,
