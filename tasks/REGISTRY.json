@@ -4026,8 +4026,8 @@
     "1516": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1516",
-      "status": "planning",
+      "path": "tasks/approved/1516",
+      "status": "approved",
       "title": "workflow-fix: lint bash function-invocation || rc=$? errexit-suppression in scripts/*.sh"
     },
     "1517": {
