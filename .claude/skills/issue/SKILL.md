@@ -7697,6 +7697,16 @@ inline, this loop handles the GPU-backed case (the cheap `< 20` GPU-h
 band auto-runs in both modes; the expensive band auto-runs only in
 autonomous mode or on an explicit user pick).
 
+**Canonical §5 step id for this loop is `9b-same`.** workflow.yaml
+§ steps has no `9b` id — the prose name "Step 9b" is NOT a step id — so
+any `scripts/post_step_completed.py` post made from within this loop
+passes `--step 9b-same` (the helper aliases legacy `9b` → `9b-same` as
+a backstop, #1499). A helper refusal (exit 2, unknown step id) means
+the resume record was NOT posted: re-run with a canonical id from the
+stderr `Known:` list / `Did you mean` hint before continuing — never
+continue past the refusal (#1335: the dropped record degraded crash
+recovery for the `followups_running` hold).
+
 **Loop liveness backstop (arm BEFORE dispatching loop work — BOTH session modes).**
 ANY session driving this loop — interactive (typically entry point (b),
 a chat session) OR autonomous (the Step 9b C3 cheap-band / step-6
@@ -11244,6 +11254,12 @@ uv run python scripts/post_step_completed.py \
 The helper looks up `next_expected_step` from `.claude/workflow.yaml`
 and appends the event row; refuses to post if the step ID is unknown to
 the YAML or if `exit_kind` is not in the choices list (typo guard).
+
+Legacy prose id `9b` is aliased to canonical `9b-same` before
+validation (the marker records the canonical id), and an unknown-id
+refusal prints near-miss suggestions (#1499). A nonzero exit from this
+helper means NO resume record was posted — correct the step id and
+re-post; ignoring the refusal silently drops the §5 record.
 
 **Re-entry router.**
 `src/explore_persona_space/orchestrate/resume.py:decide_entry_step`
