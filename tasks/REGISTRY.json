@@ -3763,8 +3763,8 @@
     "1483": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1483",
-      "status": "proposed",
+      "path": "tasks/planning/1483",
+      "status": "planning",
       "title": "workflow-fix: /daily route-3 filings dedup against open daily-held tasks"
     },
     "1484": {
