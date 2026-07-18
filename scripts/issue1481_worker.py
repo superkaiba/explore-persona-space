@@ -70,7 +70,7 @@ from explore_persona_space.orchestrate import hub  # noqa: E402
 logger = logging.getLogger("issue1481.worker")
 
 FU4_DELEGATED_PHASES = ("stage", "dispatch", "run", "judge-aggregate")
-OWN_PHASES = ("mixes", "reread", "base-arms")
+OWN_PHASES = ("mixes", "reread", "base-arms", "panel")
 
 # Committed parent manifests carrying con-mix sha pins for the cells they
 # consumed (plan §4.3 "shas from the fu3/fu4 records asserted at staging").
@@ -505,6 +505,77 @@ def phase_base_arms(cfg: run1090.RunConfig, args: argparse.Namespace) -> int:
     return 0
 
 
+# ── Phase C: six-context panel generation at verdict arms ────────────────────
+
+
+def phase_panel(cfg: run1090.RunConfig, args: argparse.Namespace) -> int:
+    """Six-context bystander-panel generation at VERDICT arms (plan §4.4
+    Phase C; the #1434 phase_panel shape). Two arm forms:
+
+    - fresh-trained arms: ``--arms <run_id,...>`` with ``--out-root`` at the
+      arm's COHORT root — the selected checkpoint comes from the run's
+      ``<round>_build_result.json``;
+    - reused committed arms: ``--ckpt-map '{"<arm_id>": "<ckpt_dir>", ...}'``
+      (dirs staged by --phase reread), contexts from the reused-arm registry.
+    """
+    run1090._phase("i1481_panel")
+    seams = fu4.make_fu4_smoke_seams(cfg) if cfg.smoke else run1090.Seams1090()
+    gen = (
+        seams.eval_gen_fn_factory(DEFAULT_BASE_MODEL)
+        if seams.eval_gen_fn_factory is not None
+        else _default_vllm_generate_fn(DEFAULT_BASE_MODEL, max_lora_rank=64)
+    )
+    panel_root = Path(cfg.out_root) / "panel"
+    jobs: list[tuple[str, str, str]] = []  # (arm_id, behavior, ckpt_dir)
+    all_run_ids = {r.run_id: r for rs in cells.RUNS_BY_ROUND.values() for r in rs}
+    if args.arms:
+        for arm_id in (t.strip() for t in args.arms.split(",") if t.strip()):
+            run = all_run_ids.get(arm_id)
+            if run is None:
+                raise SystemExit(f"[i1481-panel] unknown fresh run {arm_id!r}")
+            build_path = Path(cfg.out_root) / arm_id / f"{run.round_name}_build_result.json"
+            build = run1090._read_json(build_path)
+            jobs.append((arm_id, run.behavior, build["selected_ckpt"]))
+    if args.ckpt_map:
+        for arm_id, ckpt in json.loads(args.ckpt_map).items():
+            arm = cells.REUSED_CON_ARM_BY_ID.get(arm_id)
+            if arm is None:
+                raise SystemExit(f"[i1481-panel] unknown reused arm {arm_id!r}")
+            jobs.append((arm_id, arm.behavior, ckpt))
+    if not jobs:
+        raise SystemExit("[i1481-panel] no arms: pass --arms and/or --ckpt-map")
+    try:
+        for arm_id, behavior, ckpt in jobs:
+            qs = run1090._eval_questions(cfg, behavior)
+            for bctx in fu3w.bystander_panel(behavior):
+                _generate_and_persist(
+                    gen,
+                    "trained",
+                    ckpt,
+                    bctx,
+                    qs,
+                    n=cfg.tier1_n,
+                    temperature=1.0,
+                    out_dir=panel_root / arm_id,
+                    base_model=DEFAULT_BASE_MODEL,
+                )
+    finally:
+        close = getattr(gen, "close", None)
+        if callable(close):
+            close()
+    if cfg.upload:
+        url = hub._upload(
+            panel_root,
+            run1090.HF_DATA_REPO,
+            "dataset",
+            f"{cells.DATA_PREFIX_1481}/raw_completions/panel",
+        )
+        if not str(url):
+            raise RuntimeError("panel upload returned no path — refusing silent loss")
+    logger.info("[i1481-panel] %d verdict arms × 6-context panel done", len(jobs))
+    return 0
+
+
 # ── CLI ──────────────────────────────────────────────────────────────────────
 
 
@@ -517,6 +588,9 @@ def _own_parser() -> argparse.ArgumentParser:
     p.add_argument("--cells", default=None, help="comma cell/context subset (smoke parity)")
     p.add_argument("--arms", default=None, help="comma reused-arm subset (--phase reread)")
     p.add_argument("--behavior", default=None, help="--phase base-arms behavior")
+    p.add_argument(
+        "--ckpt-map", default=None, help="--phase panel reused-arm {arm_id: ckpt_dir} JSON"
+    )
     p.add_argument("--out-root", default=None)
     p.add_argument("--sentinel-dir", default=None)
     p.add_argument("--seed", type=int, default=42)
@@ -714,6 +788,8 @@ def main(argv: list[str] | None = None) -> int:
         return phase_mixes(cfg, args)
     if args.phase == "reread":
         return phase_reread(cfg, args)
+    if args.phase == "panel":
+        return phase_panel(cfg, args)
     return phase_base_arms(cfg, args)
 
 
