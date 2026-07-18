@@ -903,3 +903,127 @@ def test_stage_datagen_sidecars_topup_fallback_and_union(tmp_path, monkeypatch, 
     monkeypatch.setattr(wk.hub, "stage_hub_file", _fake_stage_hub_file({}))
     with pytest.raises(RuntimeError, match="NEITHER"):
         wk._stage_datagen_sidecars(prefix, tmp_path / "none", "syc-pers")
+
+
+# ── crash-fix 3: fu3 base routing at stage time (IsADirectoryError, GCE att-*-casual-s137) ──
+#
+# Pre-fix, every i1481 registration carried fu3_base_eval="" and fu4.cmd_stage
+# routed ALL production runs through _load_fu3_base, whose `FU3_EVALS_DIR / ""`
+# is the bare fu3_cell_evals DIRECTORY -> IsADirectoryError. Post-fix:
+# imp/syc registrations resolve the real per-cell fu3 files (parent fu4/fu5/fu7
+# convention), casual keeps "" and cmd_stage SKIPS the read (#1434 precedent).
+
+
+def test_fu3_base_eval_registration_routing():
+    """imp/syc runs key the real per-cell fu3 con file; casual stays empty."""
+    cells.register_i1481_rounds()
+    for beh_key, fam, behavior in (("imp", "C2", "impolite"), ("syc", "C3", "sycophancy")):
+        for regime in cells.REGIMES:
+            for run in cells.RUNS_BY_ROUND[cells.round_name(beh_key, regime)]:
+                ctx = run.cell_key.split("-", 1)[1]
+                assert run.fu3_base_eval == f"{fam}-{ctx}-con-{behavior}-claude.json", run.run_id
+    for regime in cells.REGIMES:
+        for run in cells.RUNS_BY_ROUND[cells.round_name("cas", regime)]:
+            assert run.fu3_base_eval == "", run.run_id  # no fu3 base by construction
+
+
+def test_load_fu3_base_empty_raises_valueerror(monkeypatch):
+    """The crash-guard: an empty fu3_base_eval fail-louds as ValueError — never
+    the pre-fix IsADirectoryError from reading the bare fu3_cell_evals dir."""
+    cells.register_i1481_rounds()
+    monkeypatch.setattr(fu4, "ROUND", fu4.ROUNDS["i1481cas"])
+    cas = cells.RUNS_BY_ROUND["i1481cas"][0]
+    assert cas.fu3_base_eval == ""
+    with pytest.raises(ValueError, match="empty fu3_base_eval"):
+        fu4._load_fu3_base(cas, tier2_n=10)
+
+
+def test_load_fu3_base_resolves_committed_files():
+    """Production-mode base read against the REAL committed fu3 cell evals for
+    every distinct imp/syc (behavior, ctx) pair: A4 (n = tier2_n x 20 questions)
+    and A15 (impolite base rate <= 0.05) hold on all 8 files."""
+    cells.register_i1481_rounds()
+    orig_round = fu4.ROUND
+    seen: set[str] = set()
+    try:
+        for rname in ("i1481imp", "i1481syc"):
+            fu4.ROUND = fu4.ROUNDS[rname]
+            for run in cells.RUNS_BY_ROUND[rname]:
+                if run.fu3_base_eval in seen:
+                    continue
+                seen.add(run.fu3_base_eval)
+                base = fu4._load_fu3_base(run, tier2_n=10)
+                assert base["n"] == 200, (run.run_id, base)
+                assert base["file"].endswith(run.fu3_base_eval)
+                if run.behavior == "impolite":
+                    assert base["rate"] <= fu4.IMPOLITE_BASE_RATE_MAX, (run.run_id, base)
+    finally:
+        fu4.ROUND = orig_round
+    assert len(seen) == 8, sorted(seen)
+
+
+def test_cmd_stage_production_base_routing(tmp_path, monkeypatch, caplog):
+    """Production-mode (cfg.smoke=False) cmd_stage body: an imp run LOADS its
+    real committed fu3 base into the manifest (with the loaded log line — the
+    crash-fix-3 fix-engaged signal); a casual run records fu3_base={} with the
+    explicit skip line. Fakes only at the Hub/git staging boundary
+    (def-mirroring signatures); _load_fu3_base + the manifest write run real."""
+    import argparse
+    import logging
+
+    import issue1090_run as run1090
+
+    cells.register_i1481_rounds()
+
+    def _fake_stage_fu4_mix(cfg, run):
+        return tmp_path / run.run_id / "mix"
+
+    def _fake_verify_fu4_mix(cfg, run, manifest_sha):
+        return {"train_mix_sha256": "f" * 64, "n_rows": 80}
+
+    def _fake_mix_hub_provenance(run):
+        return {"files": {}, "revision": "deadbeef"}
+
+    def _fake_git_last_commit_iso(rel_path):
+        return "2026-01-01T00:00:00+00:00"
+
+    def _fake_assert_provenance_coherent(
+        cell_key, bank_file, bank_date, prov, *, shallow=None, bank_pin_sha256=None
+    ):
+        return None
+
+    def _fake_staged_bank_pin(cfg, run):
+        return None
+
+    monkeypatch.setattr(fu4, "stage_fu4_mix", _fake_stage_fu4_mix)
+    monkeypatch.setattr(fu4, "verify_fu4_mix", _fake_verify_fu4_mix)
+    monkeypatch.setattr(fu4, "_mix_hub_provenance", _fake_mix_hub_provenance)
+    monkeypatch.setattr(fu4, "_git_last_commit_iso", _fake_git_last_commit_iso)
+    monkeypatch.setattr(fu4, "_assert_provenance_coherent", _fake_assert_provenance_coherent)
+    monkeypatch.setattr(fu4, "_staged_bank_pin", _fake_staged_bank_pin)
+    caplog.set_level(logging.INFO, logger="issue1090.fu4")
+
+    def _stage(rname: str, run_id: str, manifest: Path) -> dict:
+        monkeypatch.setattr(fu4, "ROUND", fu4.ROUNDS[rname])
+        cfg = run1090.RunConfig(smoke=False, cells=(), out_root=tmp_path / rname, tier2_n=10)
+        args = argparse.Namespace(runs=run_id, manifest_out=str(manifest))
+        assert fu4.cmd_stage(cfg, args) == 0
+        return json.loads(manifest.read_text())
+
+    m_imp = _stage("i1481imp", "imp-pers-con-lr1e5-s137", tmp_path / "m_imp.json")
+    (imp_entry,) = m_imp["runs"]
+    assert imp_entry["fu3_base"]["n"] == 200
+    assert imp_entry["fu3_base"]["file"].endswith("C2-pers-con-impolite-claude.json")
+    assert imp_entry["fu3_base_eval"] == "C2-pers-con-impolite-claude.json"
+
+    m_cas = _stage("i1481cas", "cas-pers-con-lr1e5-s137", tmp_path / "m_cas.json")
+    (cas_entry,) = m_cas["runs"]
+    assert cas_entry["fu3_base"] == {}
+    assert cas_entry["fu3_base_eval"] == ""
+
+    msgs = [r.getMessage() for r in caplog.records]
+    # Fix-engaged signals (relaunch #3 probes these exact lines):
+    assert any("fu3 base C2-pers-con-impolite-claude.json loaded" in m for m in msgs), msgs
+    assert any("no fu3 base registered" in m and "A4/A15 base read skipped" in m for m in msgs), (
+        msgs
+    )

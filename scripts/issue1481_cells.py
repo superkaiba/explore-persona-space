@@ -213,6 +213,23 @@ def round_name(beh_key: str, regime: str) -> str:
     return f"i1481{beh_key}" + ("po" if regime == "po" else "")
 
 
+def fu3_base_eval_for(beh_key: str, ctx_key: str) -> str:
+    """Per-cell fu3 base Tier-2 eval filename under ``fu3_cell_evals/`` (the A4/A15
+    stage-time asserts), keyed exactly like the parent fu4/fu5/fu7 registrations:
+    ``{family}-{ctx}-con-{behavior}-claude.json`` (always the `-con-` file for BOTH
+    regimes — the base arm is regime-independent and the parent registrations pin
+    `-con-` throughout). Casual (`writing_style`) has NO fu3 base by construction
+    (a #1434 behavior, never in fu3) — returns "" and fu4 ``cmd_stage`` skips the
+    read explicitly (the #1434 precedent: its own stage phase never reads a fu3
+    base; base reads come from the #1434 committed panels + this grid's Phase-C
+    base arms). An empty string reaching ``_load_fu3_base`` fail-louds there (the
+    crash-fix-3 IsADirectoryError guard)."""
+    fam = _FU3_FAMILY.get(beh_key)
+    if fam is None:  # cas — no fu3 universe for writing_style
+        return ""
+    return f"{fam}-{ctx_key}-con-{BEHAVIOR_BY_KEY[beh_key]}-claude.json"
+
+
 def _content_runs(beh_key: str, regime: str) -> tuple[fu4.Fu4Run, ...]:
     behavior = BEHAVIOR_BY_KEY[beh_key]
     runs: list[fu4.Fu4Run] = []
@@ -232,7 +249,7 @@ def _content_runs(beh_key: str, regime: str) -> tuple[fu4.Fu4Run, ...]:
                         lr=lr,
                         mix_hub_prefix=prefix,
                         mix_layout=layout,
-                        fu3_base_eval="",  # i1481 generates its own base arms (Phase C)
+                        fu3_base_eval=fu3_base_eval_for(beh_key, ctx_key),
                         round_name=round_name(beh_key, regime),
                         run_name_override=f"issue1481_{run_id}_seed{seed}",
                     )
