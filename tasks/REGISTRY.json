@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1498,
+  "highest_id": 1499,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -3881,6 +3881,13 @@
       "path": "tasks/proposed/1498",
       "status": "proposed",
       "title": "daily-fix: 9c selector misses literal-path pinning tests"
+    },
+    "1499": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1499",
+      "status": "proposed",
+      "title": "daily-fix: alias step 9b to 9b-same in post_step_completed"
     },
     "15": {
       "has_clean_result": false,
