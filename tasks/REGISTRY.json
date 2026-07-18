@@ -3941,8 +3941,8 @@
     "1505": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/1505",
-      "status": "approved",
+      "path": "tasks/running/1505",
+      "status": "running",
       "title": "workflow-fix: bind parenthetical HF file-count claims after pinned /tree links"
     },
     "1506": {
