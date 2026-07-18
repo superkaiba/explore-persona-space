@@ -22,6 +22,8 @@ relates_to:
 
 <!-- clean-result-v4 -->
 
+**Methodology:** [docs/methodology/issue_1426.md](https://github.com/superkaiba/explore-persona-space/blob/e7afdb04d45336a1f72ddf1386e1d31a3d35660f/docs/methodology/issue_1426.md) · [gist](https://gist.github.com/superkaiba/311101720eef1f7d7d1112cd8d50961b)
+
 ## Takeaways
 
 - The mediation signature replicates on a non-Qwen lineage: per-question CoT gain +0.33 (95% CI +0.27 to +0.39) on DeepSeek-R1-Distill-Llama-8B, equal to R1-Qwen's +0.33; OpenThinker2 read +0.20.
