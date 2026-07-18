@@ -708,7 +708,7 @@ H2), preceded by a `---` horizontal rule. TWO required bold labels:
   a set `parent_id` the same way.
   Follow-up provenance tokens in the row are additionally cross-checked
   against each scope-armed `followup_label`'s latest `epm:followup-scope`
-  note fields (`verify_task_body.py` check 46, #1521; incident #1426): a
+  note fields (`verify_task_body.py` check 47, #1521; incident #1426): a
   clause after a scope-armed label mention claiming a `source <slug>` that
   contradicts the marker's `source`, or claiming a free-analysis /
   zero-GPU round where the marker records a GPU-band round

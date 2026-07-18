@@ -175,7 +175,7 @@ def test_good_body_passes_all():
     # locally reachable, so the cited SHA is silently skipped), AND the
     # check-38 linked-not-embedded-figures scan (needs `issue` for
     # own-figures-dir scoping, #1371; PASS-skip: not a v4 body) →
-    # 59 results total (2 prepended + CHECKS[1:]=46 + 11 appended; check 36
+    # 61 results total (2 prepended + CHECKS[1:]=47 + 12 appended; check 36
     # `check_v4_result_paragraph_sentences` (#1368), check 37
     # `check_footer_reuse_bullets_pinned` (#1370), check 39
     # `check_v4_sample_disclosure_count` (#1421), check 40
@@ -189,20 +189,24 @@ def test_good_body_passes_all():
     # `check_footer_hf_paths_pinned` (#1509 — PASS-skip, not a v4 body),
     # and check 45
     # `check_figure_caption_count_claims_vs_sidecar` (#1511 — vacuous
-    # PASS, no registered count claim) ride CHECKS; 36/37/39/44
+    # PASS, no registered count claim), and check 46
+    # `check_hf_brace_expanded_path_claims` (#1520 — vacuous PASS, no
+    # brace-path claims adjacent to pinned HF tree links) ride CHECKS;
+    # 36/37/39/44
     # PASS-skip here — not a v4 body — 40 is the vacuous PASS above, and
     # 41 is the fake-sha NO-OP PASS above). The
     # Lens 14 / check-16 results are PASS-skips when no concerns.jsonl /
     # plans/plan.md sibling is available; check 17 and the v3/v4 checks
-    # are PASS-skips on this legacy (pre-v2-sentinel) fixture. Check 46
+    # are PASS-skips on this legacy (pre-v2-sentinel) fixture. Check 47
     # `check_context_followup_scope_consistency` (#1521) is dispatched in
     # verify_text (needs the issue number) and PASS-skips here (legacy body).
-    assert len(results) == 60
+    assert len(results) == 61
     # By-name membership so the NEXT check addition can key by name instead
     # of re-deriving the arithmetic (#1016 methodology-reconciler Must-Fix).
     assert _HF_32_NAME in {r.name for r in results}
     assert _HF_40_NAME in {r.name for r in results}
     assert "Context follow-up provenance vs followup-scope markers" in {r.name for r in results}
+    assert "HF brace-expanded path claims resolve at the adjacent pin" in {r.name for r in results}
     assert "footer HF artifact paths carry an adjacent pinned link" in {r.name for r in results}
     assert "Sample-slot disclosure count (v4)" in {r.name for r in results}
     assert "cross-issue reuse pins declared (footer Reused bullets)" in {r.name for r in results}
@@ -1897,16 +1901,20 @@ def _clear_hf_existence_cache():
     memoizes successful exhaustive `(n_files, n_dirs)` listings in
     `_HF_TREE_FILE_COUNT_CACHE` (#1008), and the check-32 membership probe
     memoizes successful exhaustive basename listings in
-    `_HF_TREE_BASENAMES_CACHE` (#1016). Clear all three before AND after
+    `_HF_TREE_BASENAMES_CACHE` (#1016), and the check-46 brace-path probe
+    memoizes successful exhaustive direct-children listings in
+    `_HF_DIRECT_CHILDREN_CACHE` (#1520). Clear all four before AND after
     each test so a cached verdict keyed on a (repo, sha, path) reused across
     fixtures never leaks one test's stubbed outcome into another."""
     verify_task_body._HF_EXISTENCE_CACHE.clear()
     verify_task_body._HF_TREE_FILE_COUNT_CACHE.clear()
     verify_task_body._HF_TREE_BASENAMES_CACHE.clear()
+    verify_task_body._HF_DIRECT_CHILDREN_CACHE.clear()
     yield
     verify_task_body._HF_EXISTENCE_CACHE.clear()
     verify_task_body._HF_TREE_FILE_COUNT_CACHE.clear()
     verify_task_body._HF_TREE_BASENAMES_CACHE.clear()
+    verify_task_body._HF_DIRECT_CHILDREN_CACHE.clear()
 
 
 # The real probe primitive, captured at module import time — BEFORE any
@@ -5770,9 +5778,9 @@ def test_checks_list_size():
     denominator check (needs eval JSONs), and the check-31
     orphaned-per-unit-figures probe (needs `issue` for figures-dir
     scoping, #1011).
-    So `verify_text` returns 59 results (2 prepended + CHECKS[1:]=46 +
+    So `verify_text` returns 60 results (2 prepended + CHECKS[1:]=47 +
     11 appended — see `test_good_body_passes_all`), but `CHECKS` stays
-    at 47 (check 36 `check_v4_result_paragraph_sentences` (#1368),
+    at 48 (check 36 `check_v4_result_paragraph_sentences` (#1368),
     check 37 `check_footer_reuse_bullets_pinned` — the body-only
     footer-side reuse-pin sibling of check 35, #1370 — check 39
     `check_v4_sample_disclosure_count` — the Sample-slot
@@ -5781,10 +5789,11 @@ def test_checks_list_size():
     `check_figure_sidecar_coverage` (#1478) — checks 42
     `check_body_artifact_urls_exist` + 43
     `check_github_tree_adjacent_file_claims` (#1507) — check 44
-    `check_footer_hf_paths_pinned` (#1509) — and check 45
-    `check_figure_caption_count_claims_vs_sidecar` (#1511) ride CHECKS).
+    `check_footer_hf_paths_pinned` (#1509) — check 45
+    `check_figure_caption_count_claims_vs_sidecar` (#1511) — and check 46
+    `check_hf_brace_expanded_path_claims` (#1520) ride CHECKS).
     """
-    assert len(verify_task_body.CHECKS) == 47
+    assert len(verify_task_body.CHECKS) == 48
     # By-name membership so the NEXT check addition can key by name instead
     # of re-deriving the arithmetic (#1016 methodology-reconciler Must-Fix).
     assert verify_task_body.check_footer_hf_paths_pinned in verify_task_body.CHECKS
@@ -11294,11 +11303,11 @@ def test_caption_lead_issue1074_verbatim_caption_warns():
 
 def test_check_figure_caption_position_stable():
     """Index-stability pin (#1424): `check_figure_caption` stays at CHECKS
-    position 7 and the CHECKS count matches the current registry (47 as of
-    checks 44/45, #1509/#1511; belt-and-suspenders beside the migration-history
+    position 7 and the CHECKS count matches the current registry (48 as of
+    check 46, #1520; belt-and-suspenders beside the migration-history
     `len(CHECKS)` pin)."""
     assert verify_task_body.CHECKS[7] is verify_task_body.check_figure_caption
-    assert len(verify_task_body.CHECKS) == 47
+    assert len(verify_task_body.CHECKS) == 48
 
 
 # ─── Check 26: figure panel/series prose vs figure sidecar (panel drift) ───
@@ -15122,13 +15131,406 @@ def test_check45_subset_claim_larger_pool_rescue():
     assert n3 == 1 and len(warns3) == 1 and "pos_ctx" in warns3[0]
 
 
-# ─── Check 46 (#1521; incident #1426): Context follow-up provenance vs
+# ─── Check 46: brace-expanded backtick HF paths vs the adjacent /tree pin ───
+#
+# (#1520; incident #1426.) Conventions: `_stub_tree` / inline `_hf_tree_get`
+# stubs re-patch over the autouse `_no_unexpected_probes` raise-guard (an
+# unstubbed probe is a hard error, which doubles as the zero-probe assert in
+# the gather-only / fenced tests); the conftest-level EPM_VERIFY_BODY_NO_HF
+# fence is delenv'd only in tests that exercise the online verdict path.
+
+# Verbatim **Repro:** line 204 of the PRE-FIX #1426 body (commit b2b5eb0b74) — the
+# NEARBIND incident shape: `sampled_rollout/seed{42,137}/` 272 bracket-free chars
+# after the c244377f-pinned prefix link.
+_I1426_PREFIX_REPRO_LINE = (
+    "**Repro:** primary — GCP 1× A100-80 (`eps-issue-1426`, us-central1), one provision; "
+    "3 launches of attempt `att-20260717-234120` — launches 1–2 died on transient HF 429 "
+    "rate limits during artifact staging (infra only; resume digest-validated per unit), "
+    "launch 3 completed after commit `98d7218ee1` added transient-retry to the upload hel"
+    "per. Gate: terminal pass (usable 0.986 on the non-collapse slice, offender rate 0.83"
+    "%, p95 generation length 1,746 tokens vs the 8,192 cap). Driver at `4e53cedec8`; run"
+    " artifacts committed at `3f67cf6e83`; the covariate phase (a 0-GPU VM-side re-reduct"
+    "ion the pod driver does not run) was executed during upload verification and committ"
+    "ed at `3fdf8222e5`; analyzer figures at `891e7851ff`, revised (reader-facing MLP-her"
+    "o labels, tercile denominator legend) + the 45 driver-generated F1 figures mirrored "
+    "from HF at `4a65c36ab0`; pooled tri-lineage gradient analysis artifact + figure at `"
+    "4b3adbe612`, load_dotenv hot-fix at `62f983e36e` (branch `issue-1426`). Robustness r"
+    "ound — GCP 2× A100-80 (`eps-issue-1426-sampled`, us-central1), ~55 min (~1.8 GPU-h);"
+    " commits `e6dab7d18d` + `fb4e92445c` + `ce341a98ac` (driver + analysis) + `148a95a6c"
+    "a` (figures) on branch `issue-1426-sampled`. Eval JSONs: `eval_results/issue_1426/` "
+    "(primary + `cap16k/` + `indiv-mlp-nonlinearity-control/`) and `eval_results/issue_14"
+    "26/sampled-rollout-robustness/seed{42,137}/`. HF data repo `superkaiba1/explore-pers"
+    "ona-space-data`, prefix [`issue1426_cot_decomposition_r1llama/`](https://huggingface"
+    ".co/datasets/superkaiba1/explore-persona-space-data/tree/c244377f2b5bc9e1ed8dd093b05"
+    "035aa0c4940e9/issue1426_cot_decomposition_r1llama): `raw_completions/thinking_rollou"
+    "ts/` + `thinking_rollouts_16k/`, `analysis_tensors/` (store manifest + summaries + d"
+    "ecomp tensors + MLP control), `fit_results/` + `fit_results_16k/`, `figures/` (listi"
+    "ngs verified via `list_repo_tree` at write time); sampled rollouts at `sampled_rollo"
+    "ut/seed{42,137}/`. Reused inputs: the 50-context battery + 48-probe pool (sha-pinned"
+    ", from [#928](https://github.com/superkaiba/explore-persona-space/issues/928)/[#1005"
+    "](https://github.com/superkaiba/explore-persona-space/issues/1005)); both prior line"
+    "ages' committed per-context delta artifacts and figure sidecars (`eval_results/issue"
+    "_928/percontext_deltas.json`, `eval_results/issue_1005/percontext_deltas.json`, `fig"
+    "ures/issue_928/percontext_scatter_avg_q.meta.json`, `figures/issue_928/percontext_sc"
+    "atter_indiv.meta.json`, `figures/issue_1005/fam_contrast_length_matched.meta.json`) "
+    "for the like-for-like baselines — fit: same contrast code, parity-gated against comm"
+    "itted values."
+)
+
+# Verbatim **Repro:** line 204 of the FIXED #1426 body (commit 0ee2cb1744) — the
+# LINKTEXT shape: the brace token inside the text of the 31d4fb5c-pinned
+# `…/sampled_rollout` link.
+_I1426_FIXED_REPRO_LINE = (
+    "**Repro:** primary — GCP 1× A100-80 (`eps-issue-1426`, us-central1), one provision; "
+    "3 launches of attempt `att-20260717-234120` — launches 1–2 died on transient HF 429 "
+    "rate limits during artifact staging (infra only; resume digest-validated per unit), "
+    "launch 3 completed after commit `98d7218ee1` added transient-retry to the upload hel"
+    "per. Gate: terminal pass (usable 0.986 on the non-collapse slice, offender rate 0.83"
+    "%, p95 generation length 1,746 tokens vs the 8,192 cap). Driver at `4e53cedec8`; run"
+    " artifacts committed at `3f67cf6e83`; the covariate phase (a 0-GPU VM-side re-reduct"
+    "ion the pod driver does not run) was executed during upload verification and committ"
+    "ed at `3fdf8222e5`; analyzer figures at `891e7851ff`, revised (reader-facing MLP-her"
+    "o labels, tercile denominator legend) + the 45 driver-generated F1 figures mirrored "
+    "from HF at `4a65c36ab0`; pooled tri-lineage gradient analysis artifact + figure at `"
+    "4b3adbe612`, load_dotenv hot-fix at `62f983e36e` (branch `issue-1426`). Robustness r"
+    "ound — GCP 2× A100-80 (`eps-issue-1426-sampled`, us-central1), ~55 min (~1.8 GPU-h);"
+    " commits `e6dab7d18d` + `fb4e92445c` + `ce341a98ac` (driver + analysis) + `148a95a6c"
+    "a` (figures) on branch `issue-1426-sampled`. Eval JSONs: `eval_results/issue_1426/` "
+    "(primary + `cap16k/` + `indiv-mlp-nonlinearity-control/`) and `eval_results/issue_14"
+    "26/sampled-rollout-robustness/seed{42,137}/`. HF data repo `superkaiba1/explore-pers"
+    "ona-space-data`, prefix [`issue1426_cot_decomposition_r1llama/`](https://huggingface"
+    ".co/datasets/superkaiba1/explore-persona-space-data/tree/c244377f2b5bc9e1ed8dd093b05"
+    "035aa0c4940e9/issue1426_cot_decomposition_r1llama): `raw_completions/thinking_rollou"
+    "ts/` + `thinking_rollouts_16k/`, `analysis_tensors/` (store manifest + summaries + d"
+    "ecomp tensors + MLP control), `fit_results/` + `fit_results_16k/`, `figures/` (listi"
+    "ngs verified via `list_repo_tree` at write time); sampled rollouts at [`sampled_roll"
+    "out/seed{42,137}/` (pinned)](https://huggingface.co/datasets/superkaiba1/explore-per"
+    "sona-space-data/tree/31d4fb5cc07ef3fe34bcc252e0defa5b5e44a408/issue1426_cot_decompos"
+    "ition_r1llama/sampled_rollout) — uploaded after the primary pin, hence the separate "
+    "revision. Reused inputs: the 50-context battery + 48-probe pool (sha-pinned, from [#"
+    "928](https://github.com/superkaiba/explore-persona-space/issues/928)/[#1005](https:/"
+    "/github.com/superkaiba/explore-persona-space/issues/1005)); both prior lineages' com"
+    "mitted per-context delta artifacts and figure sidecars (`eval_results/issue_928/perc"
+    "ontext_deltas.json`, `eval_results/issue_1005/percontext_deltas.json`, `figures/issu"
+    "e_928/percontext_scatter_avg_q.meta.json`, `figures/issue_928/percontext_scatter_ind"
+    "iv.meta.json`, `figures/issue_1005/fam_contrast_length_matched.meta.json`) for the l"
+    "ike-for-like baselines — fit: same contrast code, parity-gated against committed val"
+    "ues."
+)
+
+_I1426_SHA_PRE = "c244377f2b5bc9e1ed8dd093b05035aa0c4940e9"
+_I1426_SHA_FIX = "31d4fb5cc07ef3fe34bcc252e0defa5b5e44a408"
+_I1426_HF_PREFIX = "issue1426_cot_decomposition_r1llama"
+# A throwaway hex pin for the synthetic check-46 bodies.
+_C46_SHA = "aaaa1111bbbb2222cccc3333dddd4444eeee5555"
+
+
+def _c46_link(path, text="`x`", sha=_C46_SHA):
+    """One hex-pinned HF dataset /tree markdown link for check-46 bodies."""
+    return f"[{text}](https://huggingface.co/datasets/o/r/tree/{sha}/{path})"
+
+
+def _stub_tree_by_url(monkeypatch, responses, calls=None):
+    """`_hf_tree_get` stub dispatching on URL substring (first match wins) →
+    (status, entries, next_page); raises on an unmatched URL (missed-mock
+    detection, the `_no_unexpected_probes` convention). Child-parent URLs
+    are `quote(path, safe="")`-encoded, so nested-path needles use `%2F`."""
+
+    def _fake(url, params, headers, *, timeout_s):
+        if calls is not None:
+            calls.append((url, params))
+        for needle, (status, entries, next_page) in responses:
+            if needle in url:
+                return verify_task_body._TreeProbeResult(status, list(entries), next_page, "")
+        raise AssertionError(f"unexpected probe URL: {url}")
+
+    monkeypatch.setattr(verify_task_body, "_hf_tree_get", _fake)
+
+
+def test_hf_brace_claim_missing_warns_1426_prefix_shape(monkeypatch):
+    """AC1: the VERBATIM pre-fix #1426 Repro line WARNs — pin prefix alive
+    (200, 5 entries, no sampled_rollout), the expansions' parent 404s →
+    definitive missing, both joined expansions named, NEARBIND shape;
+    the alive no-brace tokens are never reported. (AC8: passed stays True.)"""
+    monkeypatch.delenv("EPM_VERIFY_BODY_NO_HF", raising=False)
+    calls = []
+    entries = [
+        {"path": f"{_I1426_HF_PREFIX}/{n}", "type": "directory"}
+        for n in (
+            "raw_completions",
+            "analysis_tensors",
+            "fit_results",
+            "fit_results_16k",
+            "figures",
+        )
+    ]
+    _stub_tree_by_url(
+        monkeypatch,
+        [
+            ("%2Fsampled_rollout", ("not_found", [], None)),
+            (f"/tree/{_I1426_SHA_PRE}/{_I1426_HF_PREFIX}", ("ok", entries, None)),
+        ],
+        calls=calls,
+    )
+    res = verify_task_body.check_hf_brace_expanded_path_claims(_I1426_PREFIX_REPRO_LINE)
+    assert res.passed is True and res.is_warn is True, res.render()
+    assert res.render().startswith("  [WARN]")
+    assert "sampled_rollout/seed{42,137}/" in res.detail
+    assert f"`{_I1426_HF_PREFIX}/sampled_rollout/seed42`" in res.detail
+    assert f"`{_I1426_HF_PREFIX}/sampled_rollout/seed137`" in res.detail
+    assert "c244377f" in res.detail
+    assert "shape: NEARBIND" in res.detail
+    assert "2/2 expansions missing" in res.detail
+    assert "thinking_rollouts" not in res.detail  # alive no-brace tokens never reported
+    assert len(calls) == 2  # pin-alive precheck + one child-parent listing
+
+
+def test_hf_brace_claim_present_passes_fixed_1426_linktext_shape(monkeypatch):
+    """AC2: the VERBATIM fixed #1426 line PASSes clean — the LINKTEXT token
+    overlap-joins onto the `…/sampled_rollout` prefix (single-segment
+    basename overlap) and both seed dirs resolve; ONE probed parent (the
+    pin precheck IS the parent listing), no WARN, no unverified."""
+    monkeypatch.delenv("EPM_VERIFY_BODY_NO_HF", raising=False)
+    calls = []
+    entries = [
+        {"path": f"{_I1426_HF_PREFIX}/sampled_rollout/seed42", "type": "directory"},
+        {"path": f"{_I1426_HF_PREFIX}/sampled_rollout/seed137", "type": "directory"},
+    ]
+    _stub_tree_by_url(monkeypatch, [("%2Fsampled_rollout", ("ok", entries, None))], calls=calls)
+    res = verify_task_body.check_hf_brace_expanded_path_claims(_I1426_FIXED_REPRO_LINE)
+    assert res.passed is True and res.is_warn is False, res.render()
+    assert "unverified" not in res.detail
+    assert len(calls) == 1
+
+
+def test_hf_brace_partial_missing_warns_only_absent_expansion(monkeypatch):
+    """AC3: an exhaustive listing carrying seed42 only → WARN names ONLY the
+    absent seed137 expansion (singular 'does not resolve')."""
+    monkeypatch.delenv("EPM_VERIFY_BODY_NO_HF", raising=False)
+    _stub_tree_by_url(
+        monkeypatch,
+        [(f"/tree/{_C46_SHA}/dir", ("ok", [{"path": "dir/seed42", "type": "directory"}], None))],
+    )
+    body = _c46_link("dir", text="`seed{42,137}/`")
+    res = verify_task_body.check_hf_brace_expanded_path_claims(body)
+    assert res.passed is True and res.is_warn is True, res.render()
+    assert "`dir/seed137`" in res.detail
+    assert "dir/seed42" not in res.detail
+    assert "1/2 expansions missing" in res.detail
+    assert "does not resolve" in res.detail
+    assert "shape: LINKTEXT" in res.detail
+
+
+def test_expand_hf_brace_token_bounds_and_charset():
+    """AC4: comma alternation (2-32, no `/`) and numeric {N..M} (<=32 wide)
+    expand; malformed / over-wide / multi-group / glob / plain tokens
+    extract ZERO expansions."""
+    expand = verify_task_body._expand_hf_brace_token
+    assert expand("seed{42,137}") == ["seed42", "seed137"]
+    assert expand("{raw_completions,analysis_tensors}/") == [
+        "raw_completions/",
+        "analysis_tensors/",
+    ]
+    assert expand("fold{0..4}") == ["fold0", "fold1", "fold2", "fold3", "fold4"]
+    assert expand("x{0..4000}") == []  # over-wide range
+    assert expand("x{4..0}") == []  # reversed range
+    assert expand("{a}") == []  # single alternative — not a brace group
+    assert expand("{a,b/c}") == []  # `/` inside an alternative
+    assert expand("a{1,2}b{3,4}") == []  # multi-group
+    assert expand("x*{a,b}") == []  # glob
+    assert expand("plain/dir/") == []  # no brace — brace-REQUIRED check
+    assert expand("../up{1,2}") == []  # leading ../ declined
+    # mixed range-in-alternation shorthand (the #560 corpus shape) declined —
+    # bash-literal alternatives would probe nonsense while the intended
+    # per-range artifacts resolve (AC10 precision):
+    assert expand("i474_loc_{A1..A5,B1..B5,C1}_ep1") == []
+    # ellipsis pure-dot segment (the #617 corpus shape) declined — `...` is
+    # prose, not a path:
+    assert expand("picked_categories/{coding,travel}/...") == []
+
+
+def test_join_brace_expansion_branches():
+    """All four accepting `_join_brace_expansion` branches + the ambiguous
+    multi-segment-overlap decline (returns None)."""
+    join = verify_task_body._join_brace_expansion
+    assert join("", "x1") == "x1"  # bare root pin
+    assert join("a/b", "a/b/c") == "a/b/c"  # token repeats the prefix
+    assert join("a/b", "a/b") == "a/b"  # token IS the prefix
+    # single-segment basename overlap — the FIXED #1426 shape:
+    assert join("p/sampled_rollout", "sampled_rollout/seed42/") == "p/sampled_rollout/seed42"
+    assert join("p", "seed42/") == "p/seed42"  # plain descend
+    assert join("a/b", "a/c1") is None  # doubled-path false-WARN class → decline
+
+
+def test_hf_brace_git_side_root_excluded():
+    """AC5 (G3): a git-side-root token (`eval_results/…`) in the binder gap
+    extracts ZERO claims (and zero probes — no stub installed, the autouse
+    raise-guard would fail any GET)."""
+    body = (
+        _c46_link("x", text="`x/`")
+        + ": `eval_results/x/sampled-rollout-robustness/seed{42,137}/` committed in git."
+    )
+    assert verify_task_body._gather_hf_brace_path_claims(body) == []
+    res = verify_task_body.check_hf_brace_expanded_path_claims(body)
+    assert res.passed is True and res.is_warn is False
+    assert "no brace-expanded path claims" in res.detail
+
+
+def test_hf_brace_nearbind_gap_guards():
+    """NEARBIND precision: gap >400 chars / newline in gap / intervening
+    markdown link each decline; the small-gap control binds."""
+    link = _c46_link("p", text="`p/`")
+    tok = "`sub/seed{1,2}/`"
+    gather = verify_task_body._gather_hf_brace_path_claims
+    assert gather(link + " " + "x" * 401 + " " + tok) == []
+    assert gather(link + "\n" + tok) == []
+    assert gather(link + " [other](https://example.com/y) " + tok) == []
+    claims = gather(link + " sampled at " + tok)
+    assert len(claims) == 1 and claims[0][6] == "NEARBIND"
+
+
+def test_hf_brace_token_own_at_rev_pin_declines():
+    """AC5: a token-adjacent `@ rev <hex>` own-pin governs — the NEARBIND
+    binding to the earlier link is declined (zero claims)."""
+    body = _c46_link("p", text="`p/`") + " rollouts `sub/seed{1,2}/` @ rev `deadbeef12` later."
+    assert verify_task_body._gather_hf_brace_path_claims(body) == []
+
+
+def test_hf_brace_disclaimer_suppresses():
+    """AC5: HF-absence disclaimer vocabulary in the forward window (NEARBIND)
+    or the link text (LINKTEXT) suppresses the instance; the same line
+    without the disclaimer fires."""
+    link = _c46_link("p", text="`p/`")
+    gather = verify_task_body._gather_hf_brace_path_claims
+    assert gather(link + " plus `sub/seed{1,2}/` (not yet uploaded).") == []
+    assert (
+        gather(
+            f"[`sub/seed{{1,2}}/` (upload pending)](https://huggingface.co/datasets/o/r/tree/{_C46_SHA}/p)"
+        )
+        == []
+    )
+    claims = gather(link + " plus `sub/seed{1,2}/` (uploaded 2026-07-18).")
+    assert len(claims) == 1
+
+
+def test_hf_brace_offline_fence_unverified_zero_probes():
+    """AC6: with the conftest EPM_VERIFY_BODY_NO_HF fence left in place, a
+    real claim degrades to an `unverified` fence note on a PASS line with
+    ZERO GETs (the autouse raise-guard stays active — any probe raises)."""
+    body = _c46_link("dir", text="`seed{1,2}/`")
+    res = verify_task_body.check_hf_brace_expanded_path_claims(body)
+    assert res.passed is True and res.is_warn is False, res.render()
+    assert "unverified" in res.detail and "HF probe fenced" in res.detail
+
+
+def test_hf_brace_pin_dead_defers_to_check23(monkeypatch):
+    """AC7: pin-prefix listing → not_found → `unverified` note deferring to
+    check 23 (dead-pin FAIL is check 23's), never a WARN from this check."""
+    monkeypatch.delenv("EPM_VERIFY_BODY_NO_HF", raising=False)
+    _stub_tree(monkeypatch, status="not_found")
+    body = _c46_link("dir", text="`seed{1,2}/`")
+    res = verify_task_body.check_hf_brace_expanded_path_claims(body)
+    assert res.passed is True and res.is_warn is False, res.render()
+    assert "check 23" in res.detail
+
+
+def test_hf_brace_probe_cap_unverified(monkeypatch):
+    """AC6: 9 unique pinned parents → at most `_HF_BRACE_MAX_PROBES`=8 unique
+    listings; past-cap claims surface as `per-body probe cap` notes."""
+    monkeypatch.delenv("EPM_VERIFY_BODY_NO_HF", raising=False)
+    calls = []
+    _stub_tree(monkeypatch, status="ok", entries=(), next_page=None, calls=calls)
+    body = " ".join(_c46_link(f"d{i}", text="`seed{1,2}/`") for i in range(9))
+    res = verify_task_body.check_hf_brace_expanded_path_claims(body)
+    assert res.passed is True
+    assert "per-body probe cap" in res.detail
+    assert len(calls) == verify_task_body._HF_BRACE_MAX_PROBES == 8
+
+
+def test_hf_brace_vacuous_pass_zero_probes():
+    """AC6: pinned links but no brace tokens → vacuous PASS, `_hf_tree_get`
+    never called (autouse raise-guard active, no stub)."""
+    body = _c46_link("dir", text="`file.json`") + " and `plain/dir/` here."
+    res = verify_task_body.check_hf_brace_expanded_path_claims(body)
+    assert res.passed is True and res.is_warn is False
+    assert "no brace-expanded path claims" in res.detail
+
+
+def test_hf_brace_partial_listing_never_grounds_warn(monkeypatch):
+    """AC6/AC8: a page-capped (partial) listing — present-in-partial passes,
+    the unfound expansion degrades to `unverified` (never a WARN), and the
+    partial result is never cached."""
+    monkeypatch.delenv("EPM_VERIFY_BODY_NO_HF", raising=False)
+
+    def _fake(url, params, headers, *, timeout_s):
+        return verify_task_body._TreeProbeResult(
+            "ok", [{"path": "dir/seed1", "type": "directory"}], "https://next-page", ""
+        )
+
+    monkeypatch.setattr(verify_task_body, "_hf_tree_get", _fake)
+    body = _c46_link("dir", text="`seed{1,2}/`")
+    res = verify_task_body.check_hf_brace_expanded_path_claims(body)
+    assert res.passed is True and res.is_warn is False, res.render()
+    assert "partial listing — missing never grounded" in res.detail
+    assert "`dir/seed2`" in res.detail and "dir/seed1" not in res.detail
+    assert verify_task_body._HF_DIRECT_CHILDREN_CACHE == {}
+
+
+def test_hf_brace_partial_pin_precheck_still_probes_children(monkeypatch):
+    """A partial (page-capped) pin precheck still proves the pin ALIVE and
+    proceeds to the child probes — only not_found/skip defer; with the
+    child listing exhaustive and complete the claim PASSes clean."""
+    monkeypatch.delenv("EPM_VERIFY_BODY_NO_HF", raising=False)
+
+    def _fake(url, params, headers, *, timeout_s):
+        if "%2Fsub" in url:
+            entries = [
+                {"path": "p/sub/seed1", "type": "directory"},
+                {"path": "p/sub/seed2", "type": "directory"},
+            ]
+            return verify_task_body._TreeProbeResult("ok", entries, None, "")
+        return verify_task_body._TreeProbeResult(
+            "ok", [{"path": "p/other", "type": "directory"}], "https://next-page", ""
+        )
+
+    monkeypatch.setattr(verify_task_body, "_hf_tree_get", _fake)
+    body = _c46_link("p") + " rollouts `sub/seed{1,2}/` here."
+    res = verify_task_body.check_hf_brace_expanded_path_claims(body)
+    assert res.passed is True and res.is_warn is False, res.render()
+    assert "unverified" not in res.detail
+
+
+def test_hf_brace_ambiguous_overlap_declines_to_unverified():
+    """Critic concern 3: a token whose first segment equals a NON-basename
+    prefix segment (prefix `a/b`, token `a/c{1,2}/`) declines the join →
+    `unverified`, ZERO probes (decline precedes the pin precheck)."""
+    body = _c46_link("a/b", text="`a/c{1,2}/`")
+    res = verify_task_body.check_hf_brace_expanded_path_claims(body)
+    assert res.passed is True and res.is_warn is False, res.render()
+    assert "ambiguous prefix overlap" in res.detail
+
+
+def test_hf_brace_dedup_same_token_same_pin():
+    """Critic concern 5: the same token bound twice to the same pin dedups
+    to ONE claim on (repo_id, sha, pin_prefix, token)."""
+    link = _c46_link("p", text="`p/`")
+    body = link + " `sub/seed{1,2}/` and again `sub/seed{1,2}/`."
+    assert len(verify_task_body._gather_hf_brace_path_claims(body)) == 1
+
+
+def test_check46_registered():
+    """Critic concern 1: the check rides `CHECKS` (generation-agnostic
+    block) — a forgotten CHECKS append must not ship green."""
+    assert verify_task_body.check_hf_brace_expanded_path_claims in verify_task_body.CHECKS
+
+
+# ─── Check 47 (#1521; incident #1426): Context follow-up provenance vs
 #     followup-scope markers ──────────────────────────────────────────────
 
 
-def _scope_event_46(label, *, source=None, est=None, ts="2026-07-18T14:19:00Z", version=1):
+def _scope_event_47(label, *, source=None, est=None, ts="2026-07-18T14:19:00Z", version=1):
     """One `epm:followup-scope` event with line-initial fields (the canonical
-    workflow.yaml note shape check 46's marker-side parse consumes)."""
+    workflow.yaml note shape check 47's marker-side parse consumes)."""
     lines = [f"followup_label: {label}"]
     if source is not None:
         lines.append(f"source: {source}")
@@ -15197,14 +15599,14 @@ def test_context_followup_scope_missing_tokens_skip(monkeypatch):
 
     # (i) mention, no claim tokens.
     monkeypatch.setattr(
-        tw, "list_events", lambda n: [_scope_event_46("r-x", source="user-chat", est="0")]
+        tw, "list_events", lambda n: [_scope_event_47("r-x", source="user-chat", est="0")]
     )
     body = _v4_body_with_footer_line("Follow-up round `r-x` folded 2026-07-18")
     r = verify_task_body.check_context_followup_scope_consistency(body, issue=123)
     assert r.passed and not r.is_warn, r.detail
     # (ii) "source data" — captured token outside the enum, discarded.
     monkeypatch.setattr(
-        tw, "list_events", lambda n: [_scope_event_46("r-x", source="proposer-9b-cheap", est="8")]
+        tw, "list_events", lambda n: [_scope_event_47("r-x", source="proposer-9b-cheap", est="8")]
     )
     body = _v4_body_with_footer_line("round `r-x` (source data from HF, folded)")
     r = verify_task_body.check_context_followup_scope_consistency(body, issue=123)
@@ -15291,7 +15693,7 @@ def test_context_followup_scope_source_mismatch_fails(monkeypatch):
     import explore_persona_space.task_workflow as tw
 
     monkeypatch.setattr(
-        tw, "list_events", lambda n: [_scope_event_46("r-x", source="proposer-9b-cheap", est="14")]
+        tw, "list_events", lambda n: [_scope_event_47("r-x", source="proposer-9b-cheap", est="14")]
     )
     body = _v4_body_with_footer_line("round `r-x` (source user-chat, est 14 GPU-h)")
     r = verify_task_body.check_context_followup_scope_consistency(body, issue=123)
@@ -15306,11 +15708,11 @@ def test_context_followup_scope_correction_latest_wins(monkeypatch):
     import explore_persona_space.task_workflow as tw
 
     events = [
-        _scope_event_46(
+        _scope_event_47(
             "r-x", source="proposer-9b-cheap", est="14", ts="2026-07-18T10:00:00Z", version=1
         ),
         # Correction: revises est, omits source.
-        _scope_event_46("r-x", est="2", ts="2026-07-18T11:00:00Z", version=2),
+        _scope_event_47("r-x", est="2", ts="2026-07-18T11:00:00Z", version=2),
     ]
     monkeypatch.setattr(tw, "list_events", lambda n: list(events))
     # Body states the STALE est 14 -> W1 WARN against the corrected est 2.
@@ -15349,7 +15751,7 @@ def test_context_followup_scope_blockquoted_note_not_scanned(monkeypatch):
     import explore_persona_space.task_workflow as tw
 
     monkeypatch.setattr(
-        tw, "list_events", lambda n: [_scope_event_46("r-x", source="proposer-9b-cheap", est="14")]
+        tw, "list_events", lambda n: [_scope_event_47("r-x", source="proposer-9b-cheap", est="14")]
     )
     body = _V4_GOOD_BODY.replace(
         "- Originating prompt: origin prompt not recorded",
@@ -15367,7 +15769,7 @@ def test_context_followup_scope_est_mismatch_warns(monkeypatch):
     import explore_persona_space.task_workflow as tw
 
     monkeypatch.setattr(
-        tw, "list_events", lambda n: [_scope_event_46("r-x", source="proposer-9b-cheap", est="5")]
+        tw, "list_events", lambda n: [_scope_event_47("r-x", source="proposer-9b-cheap", est="5")]
     )
     body = _v4_body_with_footer_line("round `r-x` (source proposer-9b-cheap, est 14 GPU-h)")
     r = verify_task_body.check_context_followup_scope_consistency(body, issue=123)
@@ -15382,8 +15784,8 @@ def test_context_followup_scope_multi_round_window_attribution(monkeypatch):
     import explore_persona_space.task_workflow as tw
 
     events = [
-        _scope_event_46("r-a", source="proposer-9b-cheap", est="8", ts="2026-07-18T10:00:00Z"),
-        _scope_event_46("r-b", source="proposer-9b-cheap", est="8", ts="2026-07-18T11:00:00Z"),
+        _scope_event_47("r-a", source="proposer-9b-cheap", est="8", ts="2026-07-18T10:00:00Z"),
+        _scope_event_47("r-b", source="proposer-9b-cheap", est="8", ts="2026-07-18T11:00:00Z"),
     ]
     monkeypatch.setattr(tw, "list_events", lambda n: list(events))
     body = _v4_body_with_footer_line(
@@ -15394,8 +15796,8 @@ def test_context_followup_scope_multi_round_window_attribution(monkeypatch):
     assert "`r-a`" in r.detail and "`r-b`" not in r.detail
     # Substring guard: `r-a-b` mention never counts as an `r-a` mention.
     events2 = [
-        _scope_event_46("r-a", source="proposer-9b-cheap", est="8", ts="2026-07-18T10:00:00Z"),
-        _scope_event_46("r-a-b", source="user-chat", est="0", ts="2026-07-18T11:00:00Z"),
+        _scope_event_47("r-a", source="proposer-9b-cheap", est="8", ts="2026-07-18T10:00:00Z"),
+        _scope_event_47("r-a-b", source="user-chat", est="0", ts="2026-07-18T11:00:00Z"),
     ]
     monkeypatch.setattr(tw, "list_events", lambda n: list(events2))
     body2 = _v4_body_with_footer_line("round `r-a-b` (source user-chat)")
@@ -15411,21 +15813,21 @@ def test_context_followup_scope_i1092_truthful_row_passes(monkeypatch):
     import explore_persona_space.task_workflow as tw
 
     events = [
-        _scope_event_46(
+        _scope_event_47(
             "cross-corpus-probe-transfer",
             source="proposer-9b-cheap",
             est="8",
             ts="2026-07-10T20:56:59Z",
             version=1,
         ),
-        _scope_event_46(
+        _scope_event_47(
             "caveat-repairs-plus-operator-arm-comparison",
             source="user-chat",
             est="0",
             ts="2026-07-14T21:18:35Z",
             version=2,
         ),
-        _scope_event_46(
+        _scope_event_47(
             "offvm-battery-refit-and-operator-comparison",
             source="user-chat",
             est="0",
@@ -15464,7 +15866,7 @@ def test_context_followup_scope_free_analysis_user_chat_zero_est_skips(monkeypat
 
     for est in ("0", None):
         monkeypatch.setattr(
-            tw, "list_events", lambda n, e=est: [_scope_event_46("r-x", source="user-chat", est=e)]
+            tw, "list_events", lambda n, e=est: [_scope_event_47("r-x", source="user-chat", est=e)]
         )
         body = _v4_body_with_footer_line("round `r-x` (free-analysis, folded 2026-07-18)")
         r = verify_task_body.check_context_followup_scope_consistency(body, issue=123)
@@ -15478,7 +15880,7 @@ def test_context_followup_scope_matching_source_suppresses_c2(monkeypatch):
     import explore_persona_space.task_workflow as tw
 
     monkeypatch.setattr(
-        tw, "list_events", lambda n: [_scope_event_46("r-x", source="user-chat", est="3")]
+        tw, "list_events", lambda n: [_scope_event_47("r-x", source="user-chat", est="3")]
     )
     body = _v4_body_with_footer_line(
         "round `r-x` (cost_class free-analysis at filing, source user-chat)"
@@ -15536,7 +15938,7 @@ def test_context_followup_scope_comma_and_joiner_bounds_window(monkeypatch):
     monkeypatch.setattr(
         tw,
         "list_events",
-        lambda n: [_scope_event_46("r-x", source="proposer-9b-cheap", est="14")],
+        lambda n: [_scope_event_47("r-x", source="proposer-9b-cheap", est="14")],
     )
     body = _v4_body_with_footer_line(
         "one cheap-band round `r-x` (folded 2026-07-18), and a free-analysis "
@@ -15560,7 +15962,7 @@ def test_context_followup_scope_quoted_note_span_no_c1(monkeypatch):
     monkeypatch.setattr(
         tw,
         "list_events",
-        lambda n: [_scope_event_46("r-x", source="proposer-9b-cheap", est="14")],
+        lambda n: [_scope_event_47("r-x", source="proposer-9b-cheap", est="14")],
     )
     body = _v4_body_with_footer_line(
         "scope note quoted verbatim: `followup_label: r-x source: user-chat` "

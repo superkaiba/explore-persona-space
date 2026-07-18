@@ -1870,6 +1870,10 @@ def test_save_pod_safety_state_carries_first_seen_forward(isolated_registry):
         # dedup flag is part of the schema now; a save with no prior episode
         # defaults it False (and the carry is pod_id-keyed).
         "orphan_gcp_noted": False,
+        # #1519: the unlaunched-orphan alert arm's once-per-pod-incarnation
+        # dedup flag is part of the schema now; a save with no prior episode
+        # defaults it False (and the carry is pod_id-keyed, like #1490's).
+        "unlaunched_orphan_noted": False,
         "first_seen": 1234.0,
         # #692 MF3: the wedge fields are part of the schema now; a status-class
         # save with no wedge state defaults them (no prior wedge to carry).

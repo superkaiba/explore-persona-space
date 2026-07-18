@@ -1,0 +1,880 @@
+{
+  "commit": "ce341a98ac",
+  "created": "2026-07-18T18:12:26Z",
+  "figsize": [
+    11.2,
+    5.2
+  ],
+  "points": [
+    {
+      "greedy per-context CoT gain (\u0394 skill)": 0.18870811716745173,
+      "seed 42 per-context CoT gain (\u0394 skill)": 0.15488483317288648,
+      "label": "f1_house_data_scientist",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "greedy per-context CoT gain (\u0394 skill)": 0.13991233422524352,
+      "seed 42 per-context CoT gain (\u0394 skill)": 0.15339393352368313,
+      "label": "f1_house_librarian",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "greedy per-context CoT gain (\u0394 skill)": 0.14874243940693332,
+      "seed 42 per-context CoT gain (\u0394 skill)": 0.16566650651377524,
+      "label": "f1_house_medical_doctor",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "greedy per-context CoT gain (\u0394 skill)": 0.129487217686316,
+      "seed 42 per-context CoT gain (\u0394 skill)": 0.1618688061662984,
+      "label": "f1_house_programmer",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "greedy per-context CoT gain (\u0394 skill)": 0.19870490981078437,
+      "seed 42 per-context CoT gain (\u0394 skill)": 0.166331178135107,
+      "label": "f1_house_software_engineer",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "greedy per-context CoT gain (\u0394 skill)": 0.15624185227146103,
+      "seed 42 per-context CoT gain (\u0394 skill)": 0.147002170824861,
+      "label": "f1_house_surgeon",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "greedy per-context CoT gain (\u0394 skill)": 0.17791225084473927,
+      "seed 42 per-context CoT gain (\u0394 skill)": 0.1727387506664333,
+      "label": "f1_phub_01",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "greedy per-context CoT gain (\u0394 skill)": 0.14132867414461925,
+      "seed 42 per-context CoT gain (\u0394 skill)": 0.16283497119058232,
+      "label": "f1_phub_02",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "greedy per-context CoT gain (\u0394 skill)": 0.21887431053309236,
+      "seed 42 per-context CoT gain (\u0394 skill)": 0.1840064695594248,
+      "label": "f1_phub_03",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "greedy per-context CoT gain (\u0394 skill)": 0.13670291466258944,
+      "seed 42 per-context CoT gain (\u0394 skill)": 0.15748122469303572,
+      "label": "f1_phub_04",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "greedy per-context CoT gain (\u0394 skill)": 0.23774079980135676,
+      "seed 42 per-context CoT gain (\u0394 skill)": 0.2696223239684101,
+      "label": "f1_phub_05",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "greedy per-context CoT gain (\u0394 skill)": 0.15437982017313967,
+      "seed 42 per-context CoT gain (\u0394 skill)": 0.15187987555576588,
+      "label": "f1_phub_06",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "greedy per-context CoT gain (\u0394 skill)": 0.1563075447459752,
+      "seed 42 per-context CoT gain (\u0394 skill)": 0.19189728942420015,
+      "label": "f1_phub_07",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "greedy per-context CoT gain (\u0394 skill)": 0.2132318167544509,
+      "seed 42 per-context CoT gain (\u0394 skill)": 0.24593336136880395,
+      "label": "f1_phub_08",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "greedy per-context CoT gain (\u0394 skill)": 0.5700141156086521,
+      "seed 42 per-context CoT gain (\u0394 skill)": 0.5313788811823715,
+      "label": "f2_wc_long_1",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "greedy per-context CoT gain (\u0394 skill)": 0.4248995835335311,
+      "seed 42 per-context CoT gain (\u0394 skill)": 0.46784172712002825,
+      "label": "f2_wc_long_2",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "greedy per-context CoT gain (\u0394 skill)": 0.7126801425244895,
+      "seed 42 per-context CoT gain (\u0394 skill)": 0.6874103330966647,
+      "label": "f2_wc_long_3",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "greedy per-context CoT gain (\u0394 skill)": 0.6950754811963383,
+      "seed 42 per-context CoT gain (\u0394 skill)": 0.706526250884943,
+      "label": "f2_wc_long_4",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "greedy per-context CoT gain (\u0394 skill)": 0.6977220586233442,
+      "seed 42 per-context CoT gain (\u0394 skill)": 0.7005316568035016,
+      "label": "f2_wc_long_5",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "greedy per-context CoT gain (\u0394 skill)": 0.5520917332734327,
+      "seed 42 per-context CoT gain (\u0394 skill)": 0.5631595565563321,
+      "label": "f2_wc_short_1",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "greedy per-context CoT gain (\u0394 skill)": 0.555756753737031,
+      "seed 42 per-context CoT gain (\u0394 skill)": 0.5791404172524811,
+      "label": "f2_wc_short_2",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "greedy per-context CoT gain (\u0394 skill)": 0.3854023112356393,
+      "seed 42 per-context CoT gain (\u0394 skill)": 0.38909514821482794,
+      "label": "f2_wc_short_3",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "greedy per-context CoT gain (\u0394 skill)": 0.6030053072180774,
+      "seed 42 per-context CoT gain (\u0394 skill)": 0.6017923562547451,
+      "label": "f2_wc_short_4",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "greedy per-context CoT gain (\u0394 skill)": 0.5459493632602435,
+      "seed 42 per-context CoT gain (\u0394 skill)": 0.5465984958844357,
+      "label": "f2_wc_short_5",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "greedy per-context CoT gain (\u0394 skill)": 0.5917385983776215,
+      "seed 42 per-context CoT gain (\u0394 skill)": 0.589223379437256,
+      "label": "f3_icl_french_k4",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "greedy per-context CoT gain (\u0394 skill)": 0.649075679670164,
+      "seed 42 per-context CoT gain (\u0394 skill)": 0.6472517331822756,
+      "label": "f3_icl_json_k2",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "greedy per-context CoT gain (\u0394 skill)": 0.7360824206591952,
+      "seed 42 per-context CoT gain (\u0394 skill)": 0.7414587525925604,
+      "label": "f3_icl_json_k4",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "greedy per-context CoT gain (\u0394 skill)": 0.7954375292653092,
+      "seed 42 per-context CoT gain (\u0394 skill)": 0.7960667256230726,
+      "label": "f3_icl_json_k8",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "greedy per-context CoT gain (\u0394 skill)": 0.5120285364526495,
+      "seed 42 per-context CoT gain (\u0394 skill)": 0.5190278201747291,
+      "label": "f3_icl_marker_k2",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "greedy per-context CoT gain (\u0394 skill)": 0.6534722713862141,
+      "seed 42 per-context CoT gain (\u0394 skill)": 0.6182799167396705,
+      "label": "f3_icl_marker_k4",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "greedy per-context CoT gain (\u0394 skill)": 0.7255780903407203,
+      "seed 42 per-context CoT gain (\u0394 skill)": 0.6983466569880842,
+      "label": "f3_icl_marker_k8",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "greedy per-context CoT gain (\u0394 skill)": 0.5595982376924368,
+      "seed 42 per-context CoT gain (\u0394 skill)": 0.5957922063665837,
+      "label": "f3_icl_pirate_k4",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "greedy per-context CoT gain (\u0394 skill)": 0.10022279220763963,
+      "seed 42 per-context CoT gain (\u0394 skill)": 0.11505135988063864,
+      "label": "f4_reph_archaic",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "greedy per-context CoT gain (\u0394 skill)": 0.13889924993860303,
+      "seed 42 per-context CoT gain (\u0394 skill)": 0.11409019748421012,
+      "label": "f4_reph_casual",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "greedy per-context CoT gain (\u0394 skill)": 0.14934944250942916,
+      "seed 42 per-context CoT gain (\u0394 skill)": 0.12649574387852247,
+      "label": "f4_reph_enthusiastic",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "greedy per-context CoT gain (\u0394 skill)": 0.07770345332935014,
+      "seed 42 per-context CoT gain (\u0394 skill)": 0.07417676247576632,
+      "label": "f4_reph_imperative",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "greedy per-context CoT gain (\u0394 skill)": 0.13265131969110888,
+      "seed 42 per-context CoT gain (\u0394 skill)": 0.12674075998425172,
+      "label": "f4_reph_legalese",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "greedy per-context CoT gain (\u0394 skill)": 0.137501052070939,
+      "seed 42 per-context CoT gain (\u0394 skill)": 0.10916036931134587,
+      "label": "f4_reph_polite",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "greedy per-context CoT gain (\u0394 skill)": 0.08440201406953107,
+      "seed 42 per-context CoT gain (\u0394 skill)": 0.12852961002138374,
+      "label": "f5_fmt_bullets",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "greedy per-context CoT gain (\u0394 skill)": 0.1364956464092304,
+      "seed 42 per-context CoT gain (\u0394 skill)": 0.12844534530924523,
+      "label": "f5_fmt_code_comment",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "greedy per-context CoT gain (\u0394 skill)": 0.12796697578214355,
+      "seed 42 per-context CoT gain (\u0394 skill)": 0.16817430856022164,
+      "label": "f5_fmt_json",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "greedy per-context CoT gain (\u0394 skill)": 0.1726551998526833,
+      "seed 42 per-context CoT gain (\u0394 skill)": 0.11290108810008548,
+      "label": "f5_fmt_markdown_table",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "greedy per-context CoT gain (\u0394 skill)": 0.0863370840417782,
+      "seed 42 per-context CoT gain (\u0394 skill)": 0.08481186295715315,
+      "label": "f5_fmt_xml",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "greedy per-context CoT gain (\u0394 skill)": 0.4249664669682832,
+      "seed 42 per-context CoT gain (\u0394 skill)": 0.4341495558974032,
+      "label": "f6_default_template",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "greedy per-context CoT gain (\u0394 skill)": 0.10492203045022375,
+      "seed 42 per-context CoT gain (\u0394 skill)": 0.12852862542821974,
+      "label": "f6_helpful_asst",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "greedy per-context CoT gain (\u0394 skill)": 0.38571772280161354,
+      "seed 42 per-context CoT gain (\u0394 skill)": 0.33216485361886905,
+      "label": "f8_behav_fact",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "greedy per-context CoT gain (\u0394 skill)": 0.2486308531387893,
+      "seed 42 per-context CoT gain (\u0394 skill)": 0.2501151772963457,
+      "label": "f8_behav_harmful",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "greedy per-context CoT gain (\u0394 skill)": 0.11692735180710279,
+      "seed 42 per-context CoT gain (\u0394 skill)": 0.15674496577539876,
+      "label": "f8_behav_marker",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "greedy per-context CoT gain (\u0394 skill)": 0.23180233467055578,
+      "seed 42 per-context CoT gain (\u0394 skill)": 0.23778227838200394,
+      "label": "f8_behav_refusal",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "greedy per-context CoT gain (\u0394 skill)": 0.16578044473515807,
+      "seed 42 per-context CoT gain (\u0394 skill)": 0.1672406059331636,
+      "label": "f8_behav_sycophant",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "greedy per-context CoT gain (\u0394 skill)": 0.18870811716745173,
+      "seed 137 per-context CoT gain (\u0394 skill)": 0.13337363266769708,
+      "label": "f1_house_data_scientist",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "greedy per-context CoT gain (\u0394 skill)": 0.13991233422524352,
+      "seed 137 per-context CoT gain (\u0394 skill)": 0.15723838282453406,
+      "label": "f1_house_librarian",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "greedy per-context CoT gain (\u0394 skill)": 0.14874243940693332,
+      "seed 137 per-context CoT gain (\u0394 skill)": 0.17210735773216645,
+      "label": "f1_house_medical_doctor",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "greedy per-context CoT gain (\u0394 skill)": 0.129487217686316,
+      "seed 137 per-context CoT gain (\u0394 skill)": 0.17065029595456982,
+      "label": "f1_house_programmer",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "greedy per-context CoT gain (\u0394 skill)": 0.19870490981078437,
+      "seed 137 per-context CoT gain (\u0394 skill)": 0.13468589462675273,
+      "label": "f1_house_software_engineer",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "greedy per-context CoT gain (\u0394 skill)": 0.15624185227146103,
+      "seed 137 per-context CoT gain (\u0394 skill)": 0.1717678012005569,
+      "label": "f1_house_surgeon",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "greedy per-context CoT gain (\u0394 skill)": 0.17791225084473927,
+      "seed 137 per-context CoT gain (\u0394 skill)": 0.1772680699997493,
+      "label": "f1_phub_01",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "greedy per-context CoT gain (\u0394 skill)": 0.14132867414461925,
+      "seed 137 per-context CoT gain (\u0394 skill)": 0.16357456565665185,
+      "label": "f1_phub_02",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "greedy per-context CoT gain (\u0394 skill)": 0.21887431053309236,
+      "seed 137 per-context CoT gain (\u0394 skill)": 0.14565978227376153,
+      "label": "f1_phub_03",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "greedy per-context CoT gain (\u0394 skill)": 0.13670291466258944,
+      "seed 137 per-context CoT gain (\u0394 skill)": 0.129910822916382,
+      "label": "f1_phub_04",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "greedy per-context CoT gain (\u0394 skill)": 0.23774079980135676,
+      "seed 137 per-context CoT gain (\u0394 skill)": 0.21656864994291192,
+      "label": "f1_phub_05",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "greedy per-context CoT gain (\u0394 skill)": 0.15437982017313967,
+      "seed 137 per-context CoT gain (\u0394 skill)": 0.14133757784600975,
+      "label": "f1_phub_06",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "greedy per-context CoT gain (\u0394 skill)": 0.1563075447459752,
+      "seed 137 per-context CoT gain (\u0394 skill)": 0.1629211412143451,
+      "label": "f1_phub_07",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "greedy per-context CoT gain (\u0394 skill)": 0.2132318167544509,
+      "seed 137 per-context CoT gain (\u0394 skill)": 0.25564526694379763,
+      "label": "f1_phub_08",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "greedy per-context CoT gain (\u0394 skill)": 0.5700141156086521,
+      "seed 137 per-context CoT gain (\u0394 skill)": 0.6163999005192513,
+      "label": "f2_wc_long_1",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "greedy per-context CoT gain (\u0394 skill)": 0.4248995835335311,
+      "seed 137 per-context CoT gain (\u0394 skill)": 0.44219423920271295,
+      "label": "f2_wc_long_2",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "greedy per-context CoT gain (\u0394 skill)": 0.7126801425244895,
+      "seed 137 per-context CoT gain (\u0394 skill)": 0.6835007425455206,
+      "label": "f2_wc_long_3",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "greedy per-context CoT gain (\u0394 skill)": 0.6950754811963383,
+      "seed 137 per-context CoT gain (\u0394 skill)": 0.6726606550286816,
+      "label": "f2_wc_long_4",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "greedy per-context CoT gain (\u0394 skill)": 0.6977220586233442,
+      "seed 137 per-context CoT gain (\u0394 skill)": 0.7144739230269431,
+      "label": "f2_wc_long_5",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "greedy per-context CoT gain (\u0394 skill)": 0.5520917332734327,
+      "seed 137 per-context CoT gain (\u0394 skill)": 0.5277378225384883,
+      "label": "f2_wc_short_1",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "greedy per-context CoT gain (\u0394 skill)": 0.555756753737031,
+      "seed 137 per-context CoT gain (\u0394 skill)": 0.6062103046060546,
+      "label": "f2_wc_short_2",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "greedy per-context CoT gain (\u0394 skill)": 0.3854023112356393,
+      "seed 137 per-context CoT gain (\u0394 skill)": 0.35702692368365174,
+      "label": "f2_wc_short_3",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "greedy per-context CoT gain (\u0394 skill)": 0.6030053072180774,
+      "seed 137 per-context CoT gain (\u0394 skill)": 0.586251807688232,
+      "label": "f2_wc_short_4",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "greedy per-context CoT gain (\u0394 skill)": 0.5459493632602435,
+      "seed 137 per-context CoT gain (\u0394 skill)": 0.5491088414426148,
+      "label": "f2_wc_short_5",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "greedy per-context CoT gain (\u0394 skill)": 0.5917385983776215,
+      "seed 137 per-context CoT gain (\u0394 skill)": 0.5609078486163547,
+      "label": "f3_icl_french_k4",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "greedy per-context CoT gain (\u0394 skill)": 0.649075679670164,
+      "seed 137 per-context CoT gain (\u0394 skill)": 0.6212444452862738,
+      "label": "f3_icl_json_k2",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "greedy per-context CoT gain (\u0394 skill)": 0.7360824206591952,
+      "seed 137 per-context CoT gain (\u0394 skill)": 0.7210607945823813,
+      "label": "f3_icl_json_k4",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "greedy per-context CoT gain (\u0394 skill)": 0.7954375292653092,
+      "seed 137 per-context CoT gain (\u0394 skill)": 0.8008628129938169,
+      "label": "f3_icl_json_k8",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "greedy per-context CoT gain (\u0394 skill)": 0.5120285364526495,
+      "seed 137 per-context CoT gain (\u0394 skill)": 0.4755861759462825,
+      "label": "f3_icl_marker_k2",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "greedy per-context CoT gain (\u0394 skill)": 0.6534722713862141,
+      "seed 137 per-context CoT gain (\u0394 skill)": 0.6258198348060563,
+      "label": "f3_icl_marker_k4",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "greedy per-context CoT gain (\u0394 skill)": 0.7255780903407203,
+      "seed 137 per-context CoT gain (\u0394 skill)": 0.7170823387118639,
+      "label": "f3_icl_marker_k8",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "greedy per-context CoT gain (\u0394 skill)": 0.5595982376924368,
+      "seed 137 per-context CoT gain (\u0394 skill)": 0.5261543558659286,
+      "label": "f3_icl_pirate_k4",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "greedy per-context CoT gain (\u0394 skill)": 0.10022279220763963,
+      "seed 137 per-context CoT gain (\u0394 skill)": 0.08301973046756617,
+      "label": "f4_reph_archaic",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "greedy per-context CoT gain (\u0394 skill)": 0.13889924993860303,
+      "seed 137 per-context CoT gain (\u0394 skill)": 0.13656738653222222,
+      "label": "f4_reph_casual",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "greedy per-context CoT gain (\u0394 skill)": 0.14934944250942916,
+      "seed 137 per-context CoT gain (\u0394 skill)": 0.15274288595481278,
+      "label": "f4_reph_enthusiastic",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "greedy per-context CoT gain (\u0394 skill)": 0.07770345332935014,
+      "seed 137 per-context CoT gain (\u0394 skill)": 0.08359401121280896,
+      "label": "f4_reph_imperative",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "greedy per-context CoT gain (\u0394 skill)": 0.13265131969110888,
+      "seed 137 per-context CoT gain (\u0394 skill)": 0.12768194251362985,
+      "label": "f4_reph_legalese",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "greedy per-context CoT gain (\u0394 skill)": 0.137501052070939,
+      "seed 137 per-context CoT gain (\u0394 skill)": 0.14166831191840223,
+      "label": "f4_reph_polite",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "greedy per-context CoT gain (\u0394 skill)": 0.08440201406953107,
+      "seed 137 per-context CoT gain (\u0394 skill)": 0.06966447036492662,
+      "label": "f5_fmt_bullets",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "greedy per-context CoT gain (\u0394 skill)": 0.1364956464092304,
+      "seed 137 per-context CoT gain (\u0394 skill)": 0.12332658569854793,
+      "label": "f5_fmt_code_comment",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "greedy per-context CoT gain (\u0394 skill)": 0.12796697578214355,
+      "seed 137 per-context CoT gain (\u0394 skill)": 0.11778374130530678,
+      "label": "f5_fmt_json",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "greedy per-context CoT gain (\u0394 skill)": 0.1726551998526833,
+      "seed 137 per-context CoT gain (\u0394 skill)": 0.14797255466365256,
+      "label": "f5_fmt_markdown_table",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "greedy per-context CoT gain (\u0394 skill)": 0.0863370840417782,
+      "seed 137 per-context CoT gain (\u0394 skill)": 0.0907856005209503,
+      "label": "f5_fmt_xml",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "greedy per-context CoT gain (\u0394 skill)": 0.4249664669682832,
+      "seed 137 per-context CoT gain (\u0394 skill)": 0.43607242009243685,
+      "label": "f6_default_template",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "greedy per-context CoT gain (\u0394 skill)": 0.10492203045022375,
+      "seed 137 per-context CoT gain (\u0394 skill)": 0.1312716276614433,
+      "label": "f6_helpful_asst",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "greedy per-context CoT gain (\u0394 skill)": 0.38571772280161354,
+      "seed 137 per-context CoT gain (\u0394 skill)": 0.28348973437336844,
+      "label": "f8_behav_fact",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "greedy per-context CoT gain (\u0394 skill)": 0.2486308531387893,
+      "seed 137 per-context CoT gain (\u0394 skill)": 0.166203543784613,
+      "label": "f8_behav_harmful",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "greedy per-context CoT gain (\u0394 skill)": 0.11692735180710279,
+      "seed 137 per-context CoT gain (\u0394 skill)": 0.10850621819232464,
+      "label": "f8_behav_marker",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "greedy per-context CoT gain (\u0394 skill)": 0.23180233467055578,
+      "seed 137 per-context CoT gain (\u0394 skill)": 0.2271802918523601,
+      "label": "f8_behav_refusal",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "greedy per-context CoT gain (\u0394 skill)": 0.16578044473515807,
+      "seed 137 per-context CoT gain (\u0394 skill)": 0.14494098948716272,
+      "label": "f8_behav_sycophant",
+      "_kind": "scatter",
+      "_group": 1
+    }
+  ],
+  "n_series": 2,
+  "total_points": 100,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "seed 42 vs greedy, per-question (r=0.994)",
+        "xlabel": "greedy per-context CoT gain (\u0394 skill)",
+        "ylabel": "seed 42 per-context CoT gain (\u0394 skill)",
+        "annotations": [
+          "f1_house_data_scientist",
+          "f1_house_librarian",
+          "f1_house_medical_doctor",
+          "f1_house_programmer",
+          "f1_house_software_engineer",
+          "f1_house_surgeon",
+          "f1_phub_01",
+          "f1_phub_02",
+          "f1_phub_03",
+          "f1_phub_04",
+          "f1_phub_05",
+          "f1_phub_06",
+          "f1_phub_07",
+          "f1_phub_08",
+          "f2_wc_long_1",
+          "f2_wc_long_2",
+          "f2_wc_long_3",
+          "f2_wc_long_4",
+          "f2_wc_long_5",
+          "f2_wc_short_1",
+          "f2_wc_short_2",
+          "f2_wc_short_3",
+          "f2_wc_short_4",
+          "f2_wc_short_5",
+          "f3_icl_french_k4",
+          "f3_icl_json_k2",
+          "f3_icl_json_k4",
+          "f3_icl_json_k8",
+          "f3_icl_marker_k2",
+          "f3_icl_marker_k4",
+          "f3_icl_marker_k8",
+          "f3_icl_pirate_k4",
+          "f4_reph_archaic",
+          "f4_reph_casual",
+          "f4_reph_enthusiastic",
+          "f4_reph_imperative",
+          "f4_reph_legalese",
+          "f4_reph_polite",
+          "f5_fmt_bullets",
+          "f5_fmt_code_comment",
+          "f5_fmt_json",
+          "f5_fmt_markdown_table",
+          "f5_fmt_xml",
+          "f6_default_template",
+          "f6_helpful_asst",
+          "f8_behav_fact",
+          "f8_behav_harmful",
+          "f8_behav_marker",
+          "f8_behav_refusal",
+          "f8_behav_sycophant"
+        ],
+        "xticklabels": [
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7",
+          "0.8",
+          "0.9"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7",
+          "0.8",
+          "0.9"
+        ]
+      },
+      {
+        "title_left": "seed 137 vs greedy, per-question (r=0.991)",
+        "xlabel": "greedy per-context CoT gain (\u0394 skill)",
+        "ylabel": "seed 137 per-context CoT gain (\u0394 skill)",
+        "annotations": [
+          "f1_house_data_scientist",
+          "f1_house_librarian",
+          "f1_house_medical_doctor",
+          "f1_house_programmer",
+          "f1_house_software_engineer",
+          "f1_house_surgeon",
+          "f1_phub_01",
+          "f1_phub_02",
+          "f1_phub_03",
+          "f1_phub_04",
+          "f1_phub_05",
+          "f1_phub_06",
+          "f1_phub_07",
+          "f1_phub_08",
+          "f2_wc_long_1",
+          "f2_wc_long_2",
+          "f2_wc_long_3",
+          "f2_wc_long_4",
+          "f2_wc_long_5",
+          "f2_wc_short_1",
+          "f2_wc_short_2",
+          "f2_wc_short_3",
+          "f2_wc_short_4",
+          "f2_wc_short_5",
+          "f3_icl_french_k4",
+          "f3_icl_json_k2",
+          "f3_icl_json_k4",
+          "f3_icl_json_k8",
+          "f3_icl_marker_k2",
+          "f3_icl_marker_k4",
+          "f3_icl_marker_k8",
+          "f3_icl_pirate_k4",
+          "f4_reph_archaic",
+          "f4_reph_casual",
+          "f4_reph_enthusiastic",
+          "f4_reph_imperative",
+          "f4_reph_legalese",
+          "f4_reph_polite",
+          "f5_fmt_bullets",
+          "f5_fmt_code_comment",
+          "f5_fmt_json",
+          "f5_fmt_markdown_table",
+          "f5_fmt_xml",
+          "f6_default_template",
+          "f6_helpful_asst",
+          "f8_behav_fact",
+          "f8_behav_harmful",
+          "f8_behav_marker",
+          "f8_behav_refusal",
+          "f8_behav_sycophant"
+        ],
+        "xticklabels": [
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7",
+          "0.8",
+          "0.9"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7",
+          "0.8",
+          "0.9"
+        ]
+      }
+    ]
+  }
+}

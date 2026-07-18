@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1521,
+  "highest_id": 1522,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -3253,11 +3253,11 @@
     },
     "1417": {
       "goal": "On Qwen-2.5-7B base + instruct, determine which property of the assistant-chat setting the shared context\u2192answer map is tied to \u2014 the assistant's helpful register (H1) or the assistant speaking to a user (H2) \u2014 by fitting the frozen #825 ridge recipe (held-out conv-grouped K-fold; prefix-based AND context-based arms) on on-policy answers to the same 4724-conv LMSYS pool under framing cells that decouple the two properties (rude-but-informative dialogue, evasive dialogue, helpful-instruction control, addressee-free exposition, non-user-addressee dialogue), reading map identity against the chat-template reference via the #825 similarity battery (bidirectional transfer R\u00b2, linear reparameterization recovery, raw + rotation-aligned cosine).",
-      "has_clean_result": false,
+      "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/running/1417",
-      "status": "running",
-      "title": "Which property scopes the shared assistant context\u2192answer map: helpful register, or speaking to a user?"
+      "path": "tasks/interpreting/1417",
+      "status": "interpreting",
+      "title": "Ridge-regularization collapse on judge-filtered row subsets voids the framing-cell map-identity verdicts; the run's user-directedness headline is a denominator artifact (HIGH confidence)"
     },
     "1418": {
       "has_clean_result": false,
@@ -3326,8 +3326,8 @@
       "goal": "Determine whether the CoT-mediation signature and the in-context-learning/WildChat family gain excess generalize beyond the Qwen base family by replicating the CoT-decomposition battery on DeepSeek-R1-Distill-Llama-8B, and read which CoT-length gradient profile \u2014 the parent's falling gradient or #1005's flat-to-rising inversion \u2014 travels with the base lineage.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/followups_running/1426",
-      "status": "followups_running",
+      "path": "tasks/awaiting_promotion/1426",
+      "status": "awaiting_promotion",
       "title": "The chain-of-thought mediation signature and the family gain excess replicate on a Llama-base R1 distill: both are base-family-general, not Qwen-specific (HIGH confidence)"
     },
     "1427": {
@@ -4040,15 +4040,15 @@
     "1518": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1518",
-      "status": "running",
+      "path": "tasks/completed/1518",
+      "status": "completed",
       "title": "workflow-fix: provision refusals to stderr so failure markers name the cause"
     },
     "1519": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1519",
-      "status": "planning",
+      "path": "tasks/completed/1519",
+      "status": "completed",
       "title": "workflow-fix: pod-safety alert for unlaunched orphan pods on active tasks"
     },
     "152": {
@@ -4061,16 +4061,23 @@
     "1520": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1520",
-      "status": "planning",
+      "path": "tasks/completed/1520",
+      "status": "completed",
       "title": "workflow-fix: verify_task_body brace-expanded HF path resolution against adjacent /tree pins"
     },
     "1521": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1521",
-      "status": "running",
+      "path": "tasks/reviewing/1521",
+      "status": "reviewing",
       "title": "workflow-fix: verify_task_body Context-row provenance vs epm:followup-scope cross-check"
+    },
+    "1522": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/running/1522",
+      "status": "running",
+      "title": "workflow-fix: artifact-reuse check (l) \u2014 instrument validity-domain transfer"
     },
     "153": {
       "has_clean_result": false,

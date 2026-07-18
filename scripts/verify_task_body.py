@@ -925,7 +925,45 @@ Generation-agnostic checks (run on v2 AND v3 — the inline-figure +
   "all 50 contexts lie below zero" beside a sidecar carrying a +0.004
   point; caught only at Lens 3 (#1511).
 
-- **check 46** (`check_context_followup_scope_consistency`, FAIL on v4 /
+- **check 46** (`check_hf_brace_expanded_path_claims`, WARN,
+  generation-agnostic, #1520): backtick brace-expansion path tokens
+  (`sampled_rollout/seed{42,137}/` — single-group comma alternation of
+  2-32 alternatives, or a numeric `{N..M}` range ≤32 wide; multi-group /
+  nested / glob / range-in-alternation / ellipsis-segment tokens extract
+  nothing) adjacent to a hex-pinned HF
+  `/tree/<sha>` markdown link must resolve at that pin's revision: each
+  expansion is overlap-joined onto the pin's path prefix (root pin /
+  repeated-prefix / single-segment basename overlap / plain descend; an
+  ambiguous multi-segment overlap declines to `unverified`) and tested
+  for exact direct-child membership against ONE bounded non-recursive
+  listing per unique joined parent (`_hf_tree_pages(recursive=False)`,
+  the #733 stack — never the SDK `list_repo_tree` / `list_repo_files`).
+  A pin-alive precheck disambiguates the tree endpoint's conflated 404:
+  an `ok`/`partial` pin listing proves the pin ALIVE, and only then is a
+  child-parent `not_found` a definitive missing-artifact signal (the
+  incident arm: prefix 200, `…/sampled_rollout` 404); a dead pin defers
+  to check 23's FAIL. Two anchored shapes: LINKTEXT (token inside the
+  pinned link's text — the fixed #1426 shape) and NEARBIND (bare token
+  bound via check 30's Pattern-D binder: same line, bracket-free,
+  ≤400-char gap — the pre-fix #1426 shape). Suppressors: git-side-root
+  first segment / leading `/` (NEARBIND), a token-adjacent
+  `@ [HF ]rev <hex>` own-pin, HF-absence disclaimer vocabulary
+  ("not yet uploaded", "upload pending", "git-only", "local-only",
+  "not on HF/hub") in the link text / forward window. Fail-soft: the
+  offline fence, a missing hub lib, network errors, page/time caps, and
+  the per-body `_HF_BRACE_MAX_PROBES` cap → `unverified` notes on a PASS
+  line; present-in-partial passes, missing is never grounded on a
+  partial listing. WARN never FAILs (no `passed=False` path). Named
+  recall sacrifices: multi-segment prefix-token overlap, `@ rev`-pinned
+  tokens (declined, not re-probed at that rev), pin-less brace tokens
+  (check 44's footer territory), false claims sharing a window with
+  disclaimer vocabulary, `/blob/` links, other hosts, moving refs.
+  Incident: task #1426's pre-fix footer cited
+  `sampled_rollout/seed{42,137}/` under the `c244377f` prefix pin while
+  the round's upload postdated the pin — both seed dirs 404 at the
+  pinned revision; caught only by the adversarial critic (#1520).
+
+- **check 47** (`check_context_followup_scope_consistency`, FAIL on v4 /
   WARN grandfathered — forward-only; #1521): the `**Context:**` row's
   follow-up provenance tokens cross-checked against each scope-armed
   `followup_label`'s latest `epm:followup-scope` note fields (via
@@ -11236,6 +11274,426 @@ def check_figure_caption_count_claims_vs_sidecar(body: str) -> CheckResult:
     )
 
 
+# ─── Check 46: brace-expanded backtick HF paths vs the adjacent /tree pin ──
+# (#1520; incident #1426: the pre-fix footer cited `sampled_rollout/seed{42,137}/`
+# under a prefix link pinned at `c244377f…` — the robustness round's upload
+# postdated the pin, so both seed dirs 404 at the pinned revision; only the
+# adversarial critic caught it by re-resolving the path by hand. Check 32
+# rejects brace tokens by construction; check 43 owns git-host links; check 44
+# fires only on UNpinned footer units — the pinned brace-path class was
+# mechanically uncovered.)
+
+# Brace-path token recognizer: exactly ONE brace group by construction
+# (full-match + brace-free pre/post charsets — multi-group and nested braces
+# never match, the check-43 named-sacrifice pattern in the opposite
+# direction). `*` excluded everywhere (globs unprobeable). Alternatives
+# exclude `/` so all expansions of one group are path siblings. Leading
+# ./ ../ declined (the Pattern-D precedent).
+_HF_BRACE_PATH_TOKEN_RE = re.compile(
+    r"^(?!\.\.?/)"
+    r"(?P<pre>[A-Za-z0-9._\-/]*)"
+    r"\{(?P<grp>"
+    r"\d{1,4}\.\.\d{1,4}"  # numeric range {N..M} (check-43 parity)
+    r"|[A-Za-z0-9._\-]{1,64}(?:,[A-Za-z0-9._\-]{1,64}){1,31}"  # comma alternation, 2..32 alts
+    r")\}"
+    r"(?P<post>[A-Za-z0-9._\-/]*)$"
+)
+# Per-body cap on UNIQUE (repo, type, sha, parent) direct-children listings
+# (pin-alive prechecks included) — same value + worst-case wall arithmetic as
+# check 30's `_HF_COUNT_MAX_PROBES` (see that comment: ~22.5 s worst case per
+# probe, ~3 min per body under a pathologically slow Hub; typical is one
+# sub-second page per parent). Claims past the cap surface as unverified
+# notes, never a WARN.
+_HF_BRACE_MAX_PROBES = 8
+# Successful EXHAUSTIVE listings only: (repo_id, repo_type, sha, parent) →
+# frozenset of direct-child FULL paths. A skip / partial / not_found is NEVER
+# cached — same convention as _HF_EXISTENCE_CACHE (#733) — so a transient
+# throttle is re-probed on the next invocation.
+_HF_DIRECT_CHILDREN_CACHE: dict[tuple[str, str, str, str], frozenset[str]] = {}
+# HF-absence disclaimer suppressor — the HF-side sibling of check 43's
+# `_GH_TREE_DISCLAIMER_RE`, absence-specific anchors only. Scanned with
+# backtick code spans masked out (a filename token can never carry disclaimer
+# vocabulary). Instance-level suppression: a genuinely-false claim sharing
+# its window with disclaimer vocabulary is missed (the check-43 P1 precision
+# trade, named).
+_HF_UPLOAD_DISCLAIMER_RE = re.compile(
+    r"not\s+(?:yet\s+)?uploaded"
+    r"|upload\s+pending"
+    r"|pending\s+upload"
+    r"|git[- ]only"
+    r"|local[- ]only"
+    r"|not\s+on\s+(?:the\s+)?(?:HF|hub)\b",
+    re.IGNORECASE,
+)
+
+
+def _hf_upload_disclaimer_present(text: str) -> bool:
+    """True when `text` (one LINKTEXT / NEARBIND forward window) carries
+    explicit not-on-HF disclaimer vocabulary OUTSIDE backtick code spans
+    (check 46; mirrors `_gh_tree_disclaimer_present` — bridging-safe ` _ `
+    mask)."""
+    return _HF_UPLOAD_DISCLAIMER_RE.search(_BACKTICK_TOKEN_RE.sub(" _ ", text)) is not None
+
+
+def _expand_hf_brace_token(token: str) -> list[str]:
+    """The expanded sibling list for a single-group brace path token
+    (check 46) — `[]` for a non-brace / malformed / multi-group / glob /
+    over-wide token, a mixed range-in-alternation form (`..` inside a
+    comma alternative), or an ellipsis pure-dot path segment (no probe,
+    no WARN — recall sacrifices, each named inline). Unlike check 43's
+    `_expand_claim_token`, plain tokens do NOT pass through: this check
+    is brace-REQUIRED (plain `dir/` tokens stay check 30/40/44
+    territory). Comma form → split alternatives (2-32 by regex
+    construction); range form → `range(a, b+1)` gated by `b >= a` and
+    width ≤ `_GH_BRACE_MAX_EXPANSIONS` (=32, the shared check-43 bound)."""
+    m = _HF_BRACE_PATH_TOKEN_RE.match(token)
+    if m is None:
+        return []
+    pre, grp, post = m.group("pre"), m.group("grp"), m.group("post")
+    if re.fullmatch(r"\d{1,4}\.\.\d{1,4}", grp):
+        a, b = (int(x) for x in grp.split(".."))
+        if b < a or (b - a + 1) > _GH_BRACE_MAX_EXPANSIONS:
+            return []
+        alts = [str(i) for i in range(a, b + 1)]
+    else:
+        alts = grp.split(",")
+        if len(alts) > _GH_BRACE_MAX_EXPANSIONS:
+            return []
+        if any(".." in a for a in alts):
+            # Mixed range-in-alternation shorthand (`{A1..A5,B1..B5,C1}`,
+            # the #560 corpus shape): bash treats `A1..A5` as a LITERAL
+            # alternative, but the author's evident intent is a range —
+            # probing the literal manufactures a guaranteed false WARN
+            # while the intended artifacts resolve. Decline the whole
+            # token (AC10 precision; named recall sacrifice).
+            return []
+    out = [f"{pre}{alt}{post}" for alt in alts]
+    if any(seg and set(seg) == {"."} for e in out for seg in e.split("/")):
+        # A pure-dot path segment (`picked_categories/{coding,travel}/...`,
+        # the #617 corpus shape) is ellipsis PROSE, not a path — probing
+        # it asks the Hub about a nonsense literal. Decline (same class
+        # as globs: unprobeable; named recall sacrifice).
+        return []
+    return out
+
+
+def _join_brace_expansion(pin_prefix: str, expansion: str) -> str | None:
+    """Overlap-aware join of ONE brace expansion onto the pin URL's path
+    prefix (check 46). Four accepting branches, one decline:
+
+    - bare `/tree/<sha>` root pin → the token IS the repo-root path;
+    - the token repeats the prefix (repo-root-absolute citation) → as-is;
+    - single-segment basename overlap — the FIXED #1426 LINKTEXT shape:
+      prefix `…/sampled_rollout` + token `sampled_rollout/seed42` →
+      `…/sampled_rollout/seed42`;
+    - plain descend — the pre-fix NEARBIND shape: prefix + `/` + token.
+
+    Decline (returns ``None`` → the caller marks the claim `unverified`,
+    never probes a doubled path): the token's FIRST segment equals a
+    NON-basename prefix segment — a multi-segment-overlap citation
+    (e.g. prefix `a/b`, token `a/c`) that plain descend would join to the
+    doubled `a/b/a/c`, a guaranteed-404 false-WARN class. Deeper
+    multi-segment overlaps stay a named recall sacrifice (a deterministic
+    single rule beats a fuzzy longest-overlap scan)."""
+    t, p = expansion.rstrip("/"), pin_prefix.strip("/")
+    if not p:
+        return t
+    if t == p or t.startswith(p + "/"):
+        return t
+    base = posixpath.basename(p)
+    if base and t.startswith(base + "/"):
+        return p + t[len(base) :]
+    first_seg = t.split("/", 1)[0]
+    if first_seg and first_seg in p.split("/")[:-1]:
+        return None  # ambiguous multi-segment overlap — decline, never probe
+    return p + "/" + t
+
+
+def _gather_hf_brace_path_claims(
+    body: str,
+) -> list[tuple[str, str, str, str, str, list[str], str]]:
+    """Extract ``(repo_id, repo_type, sha, pin_prefix, token, expansions,
+    shape)`` tuples for backtick BRACE-PATH claims adjacent to hex-pinned
+    HF ``/tree`` markdown links (check 46). Scans
+    ``_strip_blockquote_lines(_strip_fenced_blocks(body))`` (the check-42
+    combination — a blockquoted verbatim prompt is quoted provenance, not
+    the body's claim, #959). Dedup on ``(repo_id, sha, pin_prefix,
+    token)``. Two anchored shapes (precision over recall — a missed claim
+    costs nothing on a WARN-only check):
+
+    - **LINKTEXT** — a backtick brace token inside the TEXT of a
+      hex-pinned HF ``/tree/<sha>`` markdown link (the fixed #1426 shape);
+      the whole instance is declined when the link text carries HF-absence
+      disclaimer vocabulary.
+    - **NEARBIND** — a bare backtick brace token bound to the nearest
+      preceding hex-pinned HF ``/tree/<sha>`` markdown link on the same
+      line via the reused check-30 Pattern-D binder
+      (``_nearest_preceding_pinned_tree_link``: no newline, no ``[``/``]``,
+      ≤400-char gap — the bracket guard also auto-declines tokens sitting
+      inside another link's text, so LINKTEXT/NEARBIND partition per
+      instance; a post-link paren token binds here naturally). The pre-fix
+      #1426 shape. Declined when: the token starts with ``/`` or its first
+      path segment is a git/local root (``_GIT_SIDE_ROOTS`` — the same
+      line's ``eval_results/…seed{42,137}/`` token); a position-anchored
+      ``@ [HF ]rev <hex>`` follows the token
+      (``_FOOTER_AT_REV_ADJ_RE.match`` at the token's closing backtick —
+      the token's OWN pin governs; re-probing at that rev is a named
+      recall sacrifice); or HF-absence disclaimer vocabulary sits in the
+      forward window (token end → +120 chars, same line, backtick-masked).
+
+    Tokens without a valid single brace group extract nothing (plain
+    ``dir/`` tokens stay check 30/40/44 territory; brace FILE claims on
+    git links stay check 43's). No HF-identity gate (check 44's G2) — pin
+    ADJACENCY is the identity signal (the check-30/32 posture). ``/blob/``
+    links and moving refs (``/tree/main``) are out of scope.
+    """
+    kind_to_type = {"datasets": "dataset", "spaces": "space", None: "model"}
+    stripped = _strip_blockquote_lines(_strip_fenced_blocks(body))
+    out: list[tuple[str, str, str, str, str, list[str], str]] = []
+    seen: set[tuple[str, str, str, str]] = set()
+
+    def _add(url: str, token: str, shape: str) -> None:
+        tok = token.strip()
+        expansions = _expand_hf_brace_token(tok)
+        if not expansions:
+            return
+        m = _HF_HUB_TREE_BLOB_URL_RE.match(url.rstrip(".,;:!?"))
+        if m is None or f"/tree/{m.group('sha')}" not in url:
+            return  # non-HF / /blob/ / moving ref → out of scope
+        prefix = (m.group("path") or "").rstrip("/")
+        repo_id = f"{m.group('owner')}/{m.group('repo')}"
+        key = (repo_id, m.group("sha"), prefix, tok)
+        if key in seen:
+            return
+        seen.add(key)
+        out.append(
+            (
+                repo_id,
+                kind_to_type[m.group("kind")],
+                m.group("sha"),
+                prefix,
+                tok,
+                expansions,
+                shape,
+            )
+        )
+
+    link_matches = list(_MD_HF_LINK_RE.finditer(stripped))
+    for lm in link_matches:  # shape LINKTEXT
+        if _hf_upload_disclaimer_present(lm.group("text")):
+            continue
+        for token in _BACKTICK_TOKEN_RE.findall(lm.group("text")):
+            _add(lm.group("url"), token, "LINKTEXT")
+    for tm in _BACKTICK_TOKEN_RE.finditer(stripped):  # shape NEARBIND
+        tok = tm.group(1).strip()
+        if "{" not in tok or not _expand_hf_brace_token(tok):
+            continue
+        if tok.startswith("/") or tok.split("/", 1)[0] in _GIT_SIDE_ROOTS:
+            continue  # G3: git/local claim, never an HF prefix
+        if _FOOTER_AT_REV_ADJ_RE.match(stripped, tm.end()) is not None:
+            continue  # token-adjacent own-pin governs (named recall sacrifice)
+        line_end = stripped.find("\n", tm.end())
+        window_end = line_end if line_end != -1 else len(stripped)
+        if _hf_upload_disclaimer_present(stripped[tm.end() : min(window_end, tm.end() + 120)]):
+            continue
+        lm = _nearest_preceding_pinned_tree_link(stripped, tm.start(), link_matches)
+        if lm is None:
+            continue
+        _add(lm.group("url"), tm.group(1), "NEARBIND")
+    return out
+
+
+def _hf_direct_children(
+    repo_id: str, repo_type: str, sha: str, parent: str
+) -> tuple[str, frozenset[str], str]:
+    """Bounded NON-recursive direct-children listing → ``(status,
+    child_full_paths, note)`` (check 46).
+
+    Consumes ``_hf_tree_pages(…, recursive=False)`` (#733 — the 4th
+    consumer its docstring invites; never the SDK ``list_repo_tree`` /
+    ``list_repo_files``). ``status``:
+
+    - ``"ok"`` ONLY on an EXHAUSTIVE listing (``exhausted`` event) —
+      cached in ``_HF_DIRECT_CHILDREN_CACHE``;
+    - ``"partial"`` on a page/time-cap hit, with the child paths seen so
+      far (positive membership usable; a missing verdict is NEVER
+      grounded on a partial — the check-32 rule); never cached;
+    - ``"not_found"`` returned DISTINCTLY, not collapsed to skip (this
+      call site's independent mapping, licensed by the
+      ``_TreeProbeResult`` docstring — the pin-alive precheck in
+      ``check_hf_brace_expanded_path_claims`` is what makes a
+      child-parent ``not_found`` definitive);
+    - ``"skip"`` under the ``EPM_VERIFY_BODY_NO_HF=1`` fence, a missing
+      ``huggingface_hub``, or a transient/network error.
+    """
+    if os.environ.get("EPM_VERIFY_BODY_NO_HF") == "1":
+        return "skip", frozenset(), "HF probe fenced"
+    try:
+        import huggingface_hub  # noqa: F401 — local import: optional-dependency guard
+    except ImportError:
+        return "skip", frozenset(), "huggingface_hub unavailable"
+    needle = parent.strip("/")
+    key = (repo_id, repo_type, sha, needle)
+    cached = _HF_DIRECT_CHILDREN_CACHE.get(key)
+    if cached is not None:
+        return "ok", cached, ""
+    children: set[str] = set()
+    for ev in _hf_tree_pages(repo_id, repo_type, sha, needle, recursive=False):
+        if ev.kind == "not_found":
+            return "not_found", frozenset(), "no such revision/path"
+        if ev.kind == "indeterminate":
+            return "skip", frozenset(), ev.note
+        if ev.kind == "cap":
+            return "partial", frozenset(children), "HF tree listing exceeded page/time cap"
+        if ev.kind == "exhausted":
+            result = frozenset(children)
+            _HF_DIRECT_CHILDREN_CACHE[key] = result
+            return "ok", result, ""
+        for e in ev.entries:
+            path = e.get("path", "")
+            if path and path != needle:
+                children.add(path)
+    raise AssertionError("unreachable: _hf_tree_pages ended without a terminal event")
+
+
+def check_hf_brace_expanded_path_claims(body: str) -> CheckResult:  # noqa: C901 — linear verdict walk
+    """Check 46 (WARN): a backtick brace-expansion path claimed adjacent
+    to a hex-pinned HF ``/tree`` markdown link must resolve — every
+    expansion, as a direct child of its joined parent — at the pinned
+    revision.
+
+    Incident: task #1426's pre-fix footer cited
+    ``sampled_rollout/seed{42,137}/`` under the ``c244377f…`` prefix pin;
+    the robustness round's upload postdated the pin, so both seed dirs
+    404 at the pinned revision and the cited artifacts were effectively
+    unpinned (#1520).
+
+    Semantics:
+
+    - **WARN, never FAIL.** There is NO code path returning
+      ``passed=False`` — two inference steps (pin binding + path join)
+      make a false FAIL too costly (the check-30/32/40/43/44 tier
+      convention; check 41's grandfathered-body argument). Each WARN line
+      carries its claim's shape tag (``shape: LINKTEXT`` /
+      ``shape: NEARBIND``).
+    - **Pin-alive precheck.** The Hub tree endpoint conflates "no such
+      revision" and "no such path" in one 404, so the pin prefix itself
+      is listed FIRST (memoized; counts toward the cap): ``not_found``
+      there → `unverified` ("check 23 owns the dead-pin FAIL"); ``skip``
+      → `unverified`; ``ok`` OR ``partial`` both prove the pin ALIVE and
+      proceed to the child probes — only then is a child-parent
+      ``not_found`` a DEFINITIVE missing-artifact signal (the incident
+      arm: prefix 200, ``…/sampled_rollout`` 404).
+    - **Exact direct-child membership.** Expansions are overlap-joined
+      onto the pin prefix (``_join_brace_expansion``; an ambiguous
+      multi-segment overlap declines to `unverified`) and grouped by
+      parent — one non-recursive listing verifies all sibling expansions
+      (alternatives exclude ``/`` by construction, so the common case is
+      ONE GET, shared with the pin precheck).
+    - **Partial listings.** Present-in-partial passes; a missing verdict
+      is NEVER grounded on a partial (the check-32 rule) — the unfound
+      expansion degrades to `unverified`.
+    - **Fail-soft everywhere.** The offline fence
+      (``EPM_VERIFY_BODY_NO_HF=1``), a missing ``huggingface_hub``, a
+      429 / network error, and the per-body ``_HF_BRACE_MAX_PROBES`` cap
+      all surface as `unverified` notes on a PASS line. When missing and
+      unverified claims coexist, the unverified list is appended to the
+      WARN detail (never dropped).
+    - **Probe accounting.** Unique ``(repo, type, sha, parent)`` keys are
+      probed AT MOST once per invocation via an intra-invocation memo;
+      skipped keys count toward the cap. The cross-process
+      ``_HF_DIRECT_CHILDREN_CACHE`` stores only successful exhaustive
+      listings.
+
+    Vacuous PASS — with ZERO Hub probes issued — when no brace-path claim
+    sits adjacent to a pinned HF tree link.
+    """
+    name = "HF brace-expanded path claims resolve at the adjacent pin"
+    claims = _gather_hf_brace_path_claims(body)
+    if not claims:
+        return CheckResult(
+            name, True, "no brace-expanded path claims adjacent to pinned HF tree links"
+        )
+    missing: list[str] = []
+    unverified: list[str] = []
+    probe_memo: dict[tuple[str, str, str, str], tuple[str, frozenset[str], str]] = {}
+
+    def _children(
+        repo_id: str, repo_type: str, sha: str, parent: str
+    ) -> tuple[str, frozenset[str], str] | None:
+        key = (repo_id, repo_type, sha, parent.strip("/"))
+        if key not in probe_memo:
+            if len(probe_memo) >= _HF_BRACE_MAX_PROBES:
+                return None  # per-body probe cap — caller appends the cap note
+            probe_memo[key] = _hf_direct_children(repo_id, repo_type, sha, parent)
+        return probe_memo[key]
+
+    def _note(entry: str) -> None:
+        if entry not in unverified:
+            unverified.append(entry)
+
+    for repo_id, repo_type, sha, prefix, tok, expansions, shape in claims:
+        where = f"`{prefix or repo_id}@{sha[:8]}`"
+        joined = [_join_brace_expansion(prefix, e) for e in expansions]
+        if any(j is None for j in joined):
+            _note(f"`{tok}` at {where} (ambiguous prefix overlap — join declined)")
+            continue
+        pin_res = _children(repo_id, repo_type, sha, prefix)
+        if pin_res is None:
+            _note(f"`{tok}` at {where} (per-body probe cap)")
+            continue
+        st_pin, _kids_pin, note_pin = pin_res
+        if st_pin == "not_found":
+            _note(f"`{tok}` at {where} (pin itself unresolvable — check 23 owns the dead-pin FAIL)")
+            continue
+        if st_pin == "skip":
+            _note(f"`{tok}` at {where} ({note_pin})")
+            continue
+        # st_pin in {"ok", "partial"} → the pin is ALIVE; probe the joined parents.
+        by_parent: dict[str, list[str]] = {}
+        for j in joined:
+            by_parent.setdefault(posixpath.dirname(j), []).append(j)
+        tok_missing: list[str] = []
+        for parent in sorted(by_parent):
+            group = by_parent[parent]
+            if parent.strip("/") == prefix.strip("/"):
+                st, kids, note = pin_res  # one GET for the common case
+            else:
+                res = _children(repo_id, repo_type, sha, parent)
+                if res is None:
+                    _note(f"`{tok}` at {where} (per-body probe cap)")
+                    continue
+                st, kids, note = res
+            if st == "not_found":
+                # DEFINITIVE: pin alive, parent absent — the incident arm.
+                tok_missing.extend(f"`{j}`" for j in group)
+            elif st == "ok":
+                tok_missing.extend(f"`{j}`" for j in group if j not in kids)
+            elif st == "partial":
+                for j in group:
+                    if j not in kids:  # present-in-partial passes
+                        _note(f"`{j}` at {where} (partial listing — missing never grounded)")
+            else:  # skip
+                _note(f"`{tok}` at {where} ({note})")
+        if tok_missing:
+            missing.append(
+                f"body claims `{tok}` under the pinned HF prefix `{prefix or '/'}` at "
+                f"`{repo_id}@{sha[:8]}`, but {', '.join(tok_missing)} "
+                f"do{'es' if len(tok_missing) == 1 else ''} not resolve at that revision "
+                f"({len(tok_missing)}/{len(joined)} expansions missing; shape: {shape}) — "
+                "artifact likely uploaded after the pin; re-pin to its upload revision"
+            )
+    unverified_detail = ""
+    if unverified:
+        unverified_detail = (
+            f"; {len(unverified)} unverified (existence not confirmed): " + "; ".join(unverified)
+        )
+    if missing:
+        return CheckResult(name, True, "; ".join(missing) + unverified_detail, is_warn=True)
+    detail = f"{len(claims)} brace-path claim(s) against {len(probe_memo)} pinned parent(s)"
+    return CheckResult(name, True, detail + unverified_detail)
+
+
 def check_concerns_audit(  # noqa: C901 — linear lens: ledger parse → stale-marker scan → ack scan
     body: str, *, concerns_path: Path | None = None
 ) -> CheckResult:
@@ -12228,12 +12686,12 @@ def _followup_events_rounds(issue: int) -> int:
     return len(labels) + unlabeled + free + inflight
 
 
-# ── Check 46 (#1521; incident #1426): Context-row follow-up provenance ─────
+# ── Check 47 (#1521; incident #1426): Context-row follow-up provenance ─────
 # Canonical `epm:followup-scope` source enum — MUST stay in sync with
 # `.claude/workflow.yaml § markers` (the `epm:followup-scope` /
 # `epm:same-issue-followup-run` field specs both pin
 # `source: proposer-9b-cheap | proposer-9b | user-chat | step-10b-pick`).
-# Check 46 vocabulary-gates body-side source claims on this set: a captured
+# Check 47 vocabulary-gates body-side source claims on this set: a captured
 # token outside the enum is prose ("source data"), not a claim.
 _FOLLOWUP_SOURCE_SLUGS = frozenset(
     {"proposer-9b-cheap", "proposer-9b", "user-chat", "step-10b-pick"}
@@ -12317,7 +12775,7 @@ def _strip_enclosing_span_remainder(window: str) -> str:
 
 
 def _followup_scope_facts(events: list[dict]) -> dict[str, dict]:
-    """Marker-side facts for check 46: per scope-armed `followup_label`,
+    """Marker-side facts for check 47: per scope-armed `followup_label`,
     `{source: str|None, est_gpu_hours: float|None, ts: str}` read off the
     label's AUTHORITATIVE `epm:followup-scope` entry (last in `(ts, version)`
     scan order — corrections land append-only, `followup_label_groups`).
@@ -12354,7 +12812,7 @@ def _followup_scope_facts(events: list[dict]) -> dict[str, dict]:
 
 
 def _context_label_claims(ctx_scan: str, labels: Iterable[str]) -> dict[str, dict]:
-    """Body-side claims for check 46: per scope-armed label MENTIONED in the
+    """Body-side claims for check 47: per scope-armed label MENTIONED in the
     Context scan region, `{source_claim: str|None, free_analysis: bool,
     est_claim: float|None}`.
 
@@ -12422,7 +12880,7 @@ def _context_label_claims(ctx_scan: str, labels: Iterable[str]) -> dict[str, dic
 
 
 def _label_scope_verdict(label: str, claim: dict, fact: dict) -> tuple[str | None, str | None]:
-    """Per-label C1/C2/W1 verdict for check 46: returns
+    """Per-label C1/C2/W1 verdict for check 47: returns
     `(contradiction_msg | None, est_warn_msg | None)` per the decision table
     in `check_context_followup_scope_consistency`'s docstring. C2 is
     suppressed when an explicit in-enum body source claim MATCHES the marker
@@ -12463,7 +12921,7 @@ def _label_scope_verdict(label: str, claim: dict, fact: dict) -> tuple[str | Non
 
 
 def check_context_followup_scope_consistency(body: str, *, issue: int | None = None) -> CheckResult:
-    """Check 46 (#1521; incident #1426): the `**Context:**` row's follow-up
+    """Check 47 (#1521; incident #1426): the `**Context:**` row's follow-up
     provenance tokens cross-checked against each scope-armed label's latest
     `epm:followup-scope` note fields.
 
@@ -13735,6 +14193,10 @@ CHECKS = [
     # point-value pools; contradiction-only, any-size-matching-pool-satisfies
     # (#1511; incident #1426):
     check_figure_caption_count_claims_vs_sidecar,
+    # check 46 (WARN, generation-agnostic) — brace-expanded backtick HF paths
+    # adjacent to a pinned /tree/<sha> link resolve at that revision
+    # (#1520; incident #1426):
+    check_hf_brace_expanded_path_claims,
     # Check 31 (`check_orphaned_per_unit_figures`, WARN, generation-agnostic)
     # is NOT here either — like check 20 (v4) it needs the issue number (for
     # figures-dir scoping), so it is dispatched separately in `verify_text`
@@ -13743,7 +14205,7 @@ CHECKS = [
     # here either — it needs the issue number (for own-figures-dir scoping),
     # so it is dispatched separately in `verify_text` (#1371; the
     # check-31/#1011 precedent).
-    # Check 46 (`check_context_followup_scope_consistency`, FAIL on v4 /
+    # Check 47 (`check_context_followup_scope_consistency`, FAIL on v4 /
     # WARN grandfathered) is NOT here either — it needs the issue number
     # (events.jsonl followup-scope markers), so it is dispatched separately
     # in `verify_text` (#1521; the check-20/#921 precedent).
@@ -13931,7 +14393,7 @@ def verify_text(
     # embeds — needs the issue number for own-figures-dir scoping, so it
     # lives outside the body-only CHECKS list (check-31/#1011 precedent).
     results.append(check_linked_not_embedded_figures(body, issue=issue))
-    # Check 46 (FAIL on v4 / WARN grandfathered, #1521; incident #1426):
+    # Check 47 (FAIL on v4 / WARN grandfathered, #1521; incident #1426):
     # Context-row follow-up provenance tokens vs the label's latest
     # epm:followup-scope note fields — needs the issue number for the
     # events.jsonl read, so it lives outside the body-only CHECKS list

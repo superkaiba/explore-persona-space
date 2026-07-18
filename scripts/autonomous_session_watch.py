@@ -664,7 +664,12 @@ if _SCRIPTS_DIR not in sys.path:
 # matched the canonical `pod-<N>` names, so the whole pass was dead code).
 import session_resolver  # noqa: E402  (sibling import; follows the sys.path bootstrap above)
 from pod_lifecycle import _is_managed_pod, _issue_from_pod_name  # noqa: E402
-from runpod_api import PodInfo, get_pod_by_name, list_team_pods  # noqa: E402
+from runpod_api import (  # noqa: E402
+    PodInfo,
+    estimate_pod_hourly_rate,
+    get_pod_by_name,
+    list_team_pods,
+)
 
 # PROJECT_ROOT is git-common-dir-resolved (canonical primary checkout, #844)
 # once the imported spawn_session copy contains the fix — a stale pre-fix
@@ -1009,6 +1014,40 @@ _ORPHAN_GCP_HANDLE_NOTE_SENTINEL = "[autonomous_session_watch:orphan-gcp-handle-
 #: ``EPM_ORPHAN_GCP_HANDLE_GRACE_SEC`` (:func:`_orphan_gcp_handle_grace_sec`,
 #: mirroring ``backend_poll._gcp_queue_wait_seconds``).
 ORPHAN_GCP_HANDLE_GRACE_SEC = 1800
+
+# Substring stamped into the #1519 unlaunched-orphan alert marker: a RUNNING
+# bare `pod-<N>` on an ACTIVE-status task with NO launch-signal marker
+# (epm:run-launched / epm:followup-scope / epm:free-analysis-followup-run)
+# newer than the pod's created_at, past the grace window — the #1481 shape
+# (a detached wait-for-capacity provision outlived its requesting orchestrator
+# turn and delivered an 8xH100 pod, ~$32/hr, with no owner; it idled ~2h and
+# blocked a later fallback provision via a name conflict). ALERT-ONLY: this
+# arm never stops/terminates anything. Deduped once per pod incarnation via
+# the `unlaunched_orphan_noted` pod-safety state field. Posted as
+# epm:progress, so it MUST be a member of _WATCHER_NOTE_SENTINELS (excluded
+# from "real progress" in _latest_progress_ts — otherwise the alert would
+# reset the very staleness clocks the pass measures).
+_UNLAUNCHED_ORPHAN_NOTE_SENTINEL = "[autonomous_session_watch:unlaunched-orphan-alert]"
+
+#: Grace (seconds) before the #1519 unlaunched-orphan arm flags a RUNNING bare
+#: ``pod-<N>`` on an ACTIVE task with no launch-signal marker newer than the
+#: pod's created_at. >= 60 min per the task-#1519 contract: bootstrap is
+#: ~5-15 min (the #1490 grace comment above) and the orchestrator/experimenter
+#: dispatch that posts epm:run-launched can trail it; wait-for-capacity runs
+#: PRE-create so it never counts against pod age. Env-overridable at CALL
+#: time via ``EPM_UNLAUNCHED_ORPHAN_GRACE_SEC``
+#: (:func:`_unlaunched_orphan_grace_sec`, mirroring
+#: :func:`_orphan_gcp_handle_grace_sec`).
+UNLAUNCHED_ORPHAN_GRACE_SEC = 3600
+
+#: Clock-skew / posting-order allowance for the #1519 arm: a healthy launch
+#: may post its epm:run-launched at/just before provision completion (the
+#: CLAUDE.md pre-launch signal duty: "... in any case before launch"), so a
+#: signal within this window BEFORE created_at still counts as launched.
+#: Sized to the ``RUNPOD_WEDGE_K_SEC = 900`` convention (the same sizing
+#: family the #1490 grace comment cites). Deliberately NOT env-tunable — one
+#: knob surface kept minimal per the task-#1519 body.
+UNLAUNCHED_ORPHAN_LAUNCH_SKEW_SEC = 900
 
 # Substring stamped into every session-stalled-alert marker note. Same role as
 # _ALERT_NOTE_SENTINEL for the pod-safety pass: a session-stalled alert is
@@ -1404,6 +1443,7 @@ _WATCHER_NOTE_SENTINELS: frozenset[str] = frozenset(
         _WEDGE_STOP_NOTE_SENTINEL,
         _WEDGE_FAILOVER_NOTE_SENTINEL,
         _ORPHAN_GCP_HANDLE_NOTE_SENTINEL,
+        _UNLAUNCHED_ORPHAN_NOTE_SENTINEL,
         _STALLED_ALERT_NOTE_SENTINEL,
         _STALLED_RESPAWN_NOTE_SENTINEL,
         _STALLED_EXHAUSTED_NOTE_SENTINEL,
@@ -3171,6 +3211,94 @@ def decide_pod_wedge(
     if inputs_ok:
         return ("terminate-failover", 0)
     return ("alert", 0)
+
+
+def decide_unlaunched_orphan(
+    *,
+    status: str | None,
+    pod_name: str,
+    issue: int,
+    created_ts: float | None,
+    latest_launch_signal_ts: float | None,
+    noted: bool,
+    now: float,
+    grace_sec: float,
+    skew_sec: float = UNLAUNCHED_ORPHAN_LAUNCH_SKEW_SEC,
+) -> str:
+    """Pure decision for the #1519 unlaunched-orphan arm: ``"alert"`` | ``"keep"``.
+
+    A RUNNING bare ``pod-<issue>`` on an ACTIVE-status task whose events carry
+    NO launch-signal marker (:data:`_POD_FOLLOWUP_SIGNAL_KINDS`) newer than
+    the pod's ``created_at`` (minus a small skew) past a grace window is an
+    UNLAUNCHED ORPHAN — the #1481 shape: a detached wait-for-capacity
+    ``pod_lifecycle provision`` (deliberately ``setsid``-detached, #573)
+    outlived its requesting orchestrator turn and delivered an 8xH100 pod
+    (~$32/hr) with no owner; the task kept posting fresh markers from its GCP
+    lanes so every existing arm read the pod as healthy, and it idled ~2h
+    until a manual burn probe found it. ALERT-ONLY by contract: the caller
+    never stops/terminates on this arm's account.
+
+    Cases (every uncertain input fails toward ``"keep"`` — the file's
+    posture):
+
+    - ``status`` None or not in :data:`POD_ACTIVE` -> keep (DONE/``on_hold``
+      pods belong to the status-class auto-stop arm; ``blocked`` / ``planning``
+      / ``interpreting`` etc. are out of the #1519 scope by the task Goal).
+    - ``pod_name != f"pod-{issue}"`` -> keep (bare canonical name only;
+      suffixed follow-up pods are excluded — the per-issue pod-safety state
+      file makes multi-pod dedup unsound, and suffixed provisions carry
+      mandatory pre-launch signals per CLAUDE.md § Pods).
+    - ``noted`` (this pod incarnation) -> keep (once-per-incarnation dedup).
+    - ``created_ts is None`` -> keep (missing / unparseable ``createdAt``).
+    - ``now - created_ts < grace_sec`` -> keep (healthy provision / bootstrap
+      / dispatch window; also covers the provisioned-but-not-yet-launched
+      shape where only ``epm:pod-provisioned`` exists so far).
+    - ``latest_launch_signal_ts is not None`` and
+      ``latest_launch_signal_ts > created_ts - skew_sec`` -> keep (launched,
+      or a signal posted at/just before provision completion — the CLAUDE.md
+      pre-launch duty posts ``epm:run-launched`` "in any case before launch").
+    - else -> alert.
+
+    Relaunch / replacement-pod semantics: any launch signal NEWER than
+    ``created_ts - skew_sec`` reads as launched. A crash-fix RELAUNCH on the
+    SAME pod is suppressed forever (the pod's created_at predates the
+    original ``epm:run-launched``). A FRESH replacement pod whose relaunch
+    takes longer than the grace DOES alert — deliberate: the old marker
+    belongs to a PREDECESSOR pod and must not shield a fresh multi-GPU pod
+    idling > 1h awaiting a fix; the alert is a cheap nudge, never a stop.
+
+    Parent-pod-reuse limitation: a child task launching on the PARENT's pod
+    posts its ``epm:run-launched`` on the CHILD's events.jsonl, while this
+    predicate reads only the pod-name-derived owning issue
+    (``_issue_from_pod_name``) — so the parent issue can false-alert after
+    the grace. ``task.py add-tag <parent> keep-running`` is the sanctioned
+    shield (already mandated by the CLAUDE.md multi-pod / follow-up
+    pre-launch-signal duties).
+
+    Wedge-arm shadowing: a #664 no-port WEDGED pod on a non-DONE task is
+    handled (and returned early) by ``_maybe_handle_runpod_wedge`` in
+    ``_process_pod`` BEFORE this arm ever runs — this arm only sees pods the
+    wedge arm left alone (healthy-port unlaunched orphans).
+
+    Stop->resume re-alert (deliberate, NOT suppressed): when the pod leaves
+    RUNNING its pod-safety state file is reaped
+    (:func:`_gc_orphan_pod_safety_state`), so a ``pod.py stop`` + ``resume``
+    of a STILL-unlaunched pod re-alerts once on the fresh state — desirable:
+    the resumed pod is billing again with the same missing launch record.
+    """
+    if status is None or status not in POD_ACTIVE:
+        return "keep"
+    if pod_name != f"pod-{issue}":
+        return "keep"
+    if noted:
+        return "keep"
+    if created_ts is None:
+        return "keep"
+    if now - created_ts < grace_sec:
+        return "keep"
+    if latest_launch_signal_ts is not None and latest_launch_signal_ts > created_ts - skew_sec:
+        return "keep"
+    return "alert"
 
 
 # ─── VM disk-headroom watcher (task #552 incident, 2026-06-10) ───────────────
@@ -7398,6 +7526,7 @@ def _save_pod_safety_state(
     followup_noted: bool | None = None,
     stop_failed_noted: bool | None = None,
     orphan_gcp_noted: bool | None = None,
+    unlaunched_orphan_noted: bool | None = None,
     wedge_first_seen: float | None = _CARRY,
     wedge_missed: int | None = _CARRY,
     wedge_alerted: bool | None = _CARRY,
@@ -7423,7 +7552,10 @@ def _save_pod_safety_state(
     dedup/carry-forward flag owned by the #1490 orphan-gcp-handle alert arm
     (once per pod incarnation; the arm itself treats a stored flag under a
     DIFFERENT ``pod_id`` as not-noted — the wedge-clock reset convention);
-    None carries forward identically.  ``prev`` is the existing on-disk
+    None carries forward identically. ``unlaunched_orphan_noted`` is the
+    same pod_id-keyed dedup/carry-forward flag owned by the #1519
+    unlaunched-orphan alert arm (once per pod incarnation); None carries
+    forward identically to ``orphan_gcp_noted``.  ``prev`` is the existing on-disk
     payload (if any), passed so callers that already loaded it don't re-read;
     ``first_seen`` carries forward when present so the age backstop measures
     the original episode start, not the latest save.
@@ -7470,6 +7602,17 @@ def _save_pod_safety_state(
         # arm ever observes the change.
         same_pod = (prev or {}).get("pod_id") == pod_id
         orphan_gcp_noted = bool((prev or {}).get("orphan_gcp_noted", False)) and same_pod
+    if unlaunched_orphan_noted is None:
+        # #1519 unlaunched-orphan alert dedup (once per pod incarnation) —
+        # byte-parallel to ``orphan_gcp_noted`` above: None carries the prior
+        # on-disk value forward, pod_id-keyed so a save under a NEW pod_id
+        # resets the flag to False and re-arms a fresh incarnation (including
+        # through the #692 wedge arm's ``_clear_wedge_state`` pod_id rewrite —
+        # the same laundering case the orphan_gcp comment documents).
+        same_pod = (prev or {}).get("pod_id") == pod_id
+        unlaunched_orphan_noted = (
+            bool((prev or {}).get("unlaunched_orphan_noted", False)) and same_pod
+        )
     if wedge_first_seen is _CARRY:
         prev_wedge_first_seen = (prev or {}).get("wedge_first_seen")
         wedge_first_seen = (
@@ -7489,6 +7632,7 @@ def _save_pod_safety_state(
         "followup_noted": bool(followup_noted),
         "stop_failed_noted": bool(stop_failed_noted),
         "orphan_gcp_noted": bool(orphan_gcp_noted),
+        "unlaunched_orphan_noted": bool(unlaunched_orphan_noted),
         "first_seen": prev_first_seen,
         "wedge_first_seen": wedge_first_seen,
         "wedge_missed": int(wedge_missed),
@@ -9329,6 +9473,25 @@ def _orphan_gcp_handle_grace_sec() -> int:
     return val if val > 0 else ORPHAN_GCP_HANDLE_GRACE_SEC
 
 
+def _unlaunched_orphan_grace_sec() -> int:
+    """Read the #1519 unlaunched-orphan grace, defaulting to 3600s.
+
+    Read at CALL time (not import time) from ``EPM_UNLAUNCHED_ORPHAN_GRACE_SEC``
+    so ops can retune without restarting the watcher cron — mirroring
+    :func:`_orphan_gcp_handle_grace_sec` (the #783 convention). A missing /
+    non-integer / non-positive value falls back to
+    :data:`UNLAUNCHED_ORPHAN_GRACE_SEC` (never a kill switch).
+    """
+    raw = os.environ.get("EPM_UNLAUNCHED_ORPHAN_GRACE_SEC")
+    if raw is None:
+        return UNLAUNCHED_ORPHAN_GRACE_SEC
+    try:
+        val = int(raw)
+    except (TypeError, ValueError):
+        return UNLAUNCHED_ORPHAN_GRACE_SEC
+    return val if val > 0 else UNLAUNCHED_ORPHAN_GRACE_SEC
+
+
 def _orphan_gcp_sidecar_is_gcp(issue: int) -> bool:
     """True iff issue ``issue``'s run-handle sidecar resolves AND reads backend=gcp.
 
@@ -9472,6 +9635,140 @@ def _maybe_flag_orphan_gcp_handle_pod(
     return True
 
 
+def _maybe_flag_unlaunched_orphan_pod(
+    issue: int,
+    info: PodInfo,
+    status: str | None,
+    events: list[dict],
+    now: float,
+    prev_state: dict,
+    dry_run: bool,
+) -> bool:
+    """ALERT-ONLY #1519 unlaunched-orphan arm: flag a RUNNING bare ``pod-<N>``
+    on an ACTIVE-status task with no launch-signal marker newer than the pod's
+    ``created_at``, past the grace window (the #1481 detached
+    wait-for-capacity-provision shape).
+
+    PURELY ADDITIVE: never stops, never terminates, never returns-early on
+    the caller's behalf — ``_process_pod`` falls through to the status-class
+    decision unconditionally. Returns whether it alerted (for tests). Full
+    predicate semantics (incl. the relaunch/replacement-pod rule, the
+    parent-pod-reuse limitation, wedge-arm shadowing, and the deliberate
+    stop->resume re-alert) live in :func:`decide_unlaunched_orphan`.
+
+    Empty-events hardening: ``events == []`` on an ACTIVE task means the
+    ``task.py list-markers`` read FAILED or the task is pathological (every
+    real task carries at least one ``epm:`` marker from creation), so an
+    empty list is treated as UNREADABLE -> keep (fail-toward-keep), never as
+    positive "no launch signal" evidence.
+
+    Launch-evidence set is EXACTLY :data:`_POD_FOLLOWUP_SIGNAL_KINDS`
+    (``epm:run-launched`` / ``epm:followup-scope`` /
+    ``epm:free-analysis-followup-run``) — #573 established that
+    run-launched-only inference misses the scope-posted-before-launch window;
+    the widened set only ever SUPPRESSES this alert-only arm.
+
+    On a hit, in order: one alert marker (:func:`_post_progress_marker`,
+    sentinel :data:`_UNLAUNCHED_ORPHAN_NOTE_SENTINEL` — anti-liveness, in
+    ``_WATCHER_NOTE_SENTINELS``), one fail-soft Telegram push
+    (:func:`_telegram_push` — a failed push never blocks the marker or the
+    state save), then ``unlaunched_orphan_noted`` is persisted and mirrored
+    (flag + ``pod_id``) into the caller's in-memory ``prev_state`` so the
+    status-class arm's later save carries it forward instead of clobbering
+    it (the #1490 r2 mirror lesson). The ``keep-running`` shield is
+    re-checked lazily at fire time only (one ``task.py view`` subprocess,
+    paid at most once per pod incarnation — the noted flag short-circuits
+    every later tick).
+    """
+    if not events:
+        return False  # unreadable / pathological events — fail toward keep (see docstring)
+    noted = bool(prev_state.get("unlaunched_orphan_noted", False)) and prev_state.get(
+        "pod_id"
+    ) == getattr(info, "pod_id", None)
+    created_ts = _parse_event_ts(info.created_at)
+    launch_ts = _latest_event_ts(events, _POD_FOLLOWUP_SIGNAL_KINDS)
+    if (
+        decide_unlaunched_orphan(
+            status=status,
+            pod_name=info.name,
+            issue=issue,
+            created_ts=created_ts,
+            latest_launch_signal_ts=launch_ts,
+            noted=noted,
+            now=now,
+            grace_sec=_unlaunched_orphan_grace_sec(),
+        )
+        != "alert"
+    ):
+        return False
+    # Lazy keep-running shield: the task.py subprocess is paid only at fire
+    # time (a deliberate pre-launch hold is the tag's documented use here).
+    if _task_keep_running(issue):
+        return False
+    age_h = (now - created_ts) / 3600.0  # created_ts is non-None past the decide gate
+    # Best-effort $/hr estimate: estimate_pod_hourly_rate never raises
+    # (unknown GPU types use a fallback rate; gpu_count None/0 -> 0.0, which
+    # renders the note spec-only).
+    rate = estimate_pod_hourly_rate(info.gpu_type_id, info.gpu_count)
+    spec = f"{info.gpu_count or '?'}x{info.gpu_type_id or 'unknown-gpu'}"
+    rate_part = f", est. ${rate:.2f}/hr" if rate > 0 else ""
+    _post_progress_marker(
+        issue,
+        f"{_UNLAUNCHED_ORPHAN_NOTE_SENTINEL} UNLAUNCHED ORPHAN pod (#1519): RUNNING pod "
+        f"{info.name} (pod_id={info.pod_id}, {spec}{rate_part}) has been up {age_h:.1f}h on "
+        f"ACTIVE-status task '{status}' with NO launch-signal marker (epm:run-launched / "
+        f"epm:followup-scope / epm:free-analysis-followup-run) newer than the pod's "
+        f"created_at ({info.created_at}) — likely a detached wait-for-capacity provision "
+        f"that outlived its requesting turn (the #1481 shape: an 8xH100 idled ~2h ~= $64 "
+        f"and blocked a later fallback provision via a name conflict). NOT auto-stopped "
+        f"(alert-only — a launch may be seconds away). Remediation: inspect `uv run python "
+        f"scripts/pod.py list-ephemeral --issue {issue}`; REUSE it (dispatch the "
+        f"experimenter / launch the workload, then post epm:run-launched) or TERMINATE: "
+        f"`uv run python scripts/pod.py terminate --issue {issue} --yes` (add "
+        f"--skip-upload-verify for a never-ran pod). `task.py add-tag {issue} keep-running` "
+        f"shields a deliberate pre-launch hold. Posted once per pod incarnation.",
+        dry_run,
+        label="unlaunched-orphan",
+    )
+    _telegram_push(
+        f"pod-safety #1519: UNLAUNCHED ORPHAN {info.name} ({spec}{rate_part}) up "
+        f"{age_h:.1f}h on ACTIVE task #{issue}, no launch signal since creation — reuse "
+        f"or `pod.py terminate --issue {issue} --yes`",
+        dry_run,
+    )
+    print(
+        f"  UNLAUNCHED-ORPHAN issue #{issue}: RUNNING {info.name} up {age_h:.1f}h on "
+        f"ACTIVE status '{status}' with no launch-signal marker newer than created_at "
+        f"(grace {_unlaunched_orphan_grace_sec()}s); alert-only, NOT stopping.",
+        file=sys.stderr,
+    )
+    if not dry_run:
+        _save_pod_safety_state(
+            issue,
+            info.pod_id,
+            missed=prev_state.get("missed", 0) if isinstance(prev_state.get("missed"), int) else 0,
+            alerted=bool(prev_state.get("alerted", False)),
+            last_progress_ts=(
+                prev_state.get("last_progress_ts")
+                if isinstance(prev_state.get("last_progress_ts"), int | float)
+                else None
+            ),
+            unlaunched_orphan_noted=True,
+            prev=prev_state,
+        )
+    # Mirror into the caller's in-memory snapshot so the status-class arm's
+    # later save (which passes prev=prev_state) carries the flag forward.
+    # The pod_id mirrors TOO (the #1490 r2 lesson): _save_pod_safety_state's
+    # None-carry is pod_id-keyed (same_pod), so on a NEW pod incarnation a
+    # stale OLD pod_id in prev_state would make the status-class save
+    # recompute same_pod=False and clobber the just-persisted flag back to
+    # False — one duplicate alert on the next tick. The arm just persisted
+    # this pod_id to disk (above); the in-memory mirror restores consistency.
+    prev_state["unlaunched_orphan_noted"] = True
+    prev_state["pod_id"] = info.pod_id
+    return True
+
+
 def _escaped_pod_exemptions(issue: int, status_class: str, events: list) -> tuple[bool, bool]:
     """Lazy escaped-pod auto-stop exemptions for :func:`_process_pod`.
 
@@ -9563,6 +9860,16 @@ def _process_pod(
     _maybe_flag_orphan_gcp_handle_pod(
         issue, info, now, keep_running, followup_active, prev_state, dry_run
     )
+
+    # ── #1519 unlaunched-orphan arm (ALERT-ONLY, purely additive) ────────────
+    # A RUNNING bare pod-<N> on an ACTIVE-status task with NO launch-signal
+    # marker newer than the pod's created_at past the grace window is likely
+    # a detached wait-for-capacity provision that outlived its requesting
+    # orchestrator turn (the #1481 shape: an unowned 8xH100 idled ~2h while
+    # the task's fresh GCP-lane markers kept every existing arm reading the
+    # pod as healthy). Falls through UNCONDITIONALLY to the status-class
+    # decision below; never stops/terminates/returns-early.
+    _maybe_flag_unlaunched_orphan_pod(issue, info, status, events, now, prev_state, dry_run)
 
     # Clear the alerted flag so a new staleness episode can re-alert when
     # EITHER (a) real progress advanced since last tick, OR (b) the task is

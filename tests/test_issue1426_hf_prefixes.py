@@ -363,3 +363,227 @@ def test_stage_functions_fetch_under_caller_passed_paths(tmp_path, monkeypatch):
     custom_path = f"{R1}/analysis_tensors/decomp/decomp_indiv.pt"
     drv.stage_decomp(tmp_path / "staged_decomp" / "decomp_indiv.pt", "main", custom_path)
     assert seen["file"] == custom_path
+
+
+# ── sampled-rollout robustness round (amendment plan v4 §4.2 items 3/7 + C) ───
+
+
+def _path_disjoint(a: str, b: str) -> bool:
+    """Neither prefix contains the other at a path boundary (both directions)."""
+    return not (a == b or a.startswith(b + "/") or b.startswith(a + "/"))
+
+
+def test_sampled_rollout_prefix_under_r1_root_and_disjoint():
+    """Plan §4.2 item 7: ``SAMPLED_ROLLOUT_PREFIX_1426`` sits under the 1426
+    root and is disjoint (BOTH prefix directions) from every primary leaf
+    prefix (raw_completions/, analysis_tensors/, fit_results/, figures/) and
+    from the ``issue1005_``/``issue928_`` lineage roots."""
+    import issue1426_common as c1426
+
+    sampled = c1426.SAMPLED_ROLLOUT_PREFIX_1426
+    assert sampled == f"{R1}/sampled_rollout"
+    assert sampled.startswith(R1 + "/")
+    primary_leaves = [
+        c1426.RAW_COMPLETIONS_PREFIX_1426,
+        c1426.STORE_PREFIX_1426,
+        c1426.STORE_HF_ROOT_1426,
+        c1426.FIT_RESULTS_PREFIX_1426,
+        c1426.DECOMP_TENSORS_PREFIX_1426,
+        c1426.DECOMP_INDIV_HF_PATH_1426,
+        c1426.FIGURES_PREFIX_1426,
+        c1426.MLP_INDIV_TENSORS_PREFIX_1426,
+        c1426.MLP_INDIV_RESULTS_PREFIX_1426,
+    ]
+    for leaf in primary_leaves:
+        assert _path_disjoint(sampled, leaf), (sampled, leaf)
+    for other_root in (P1005, P928):
+        assert not sampled.startswith(other_root), sampled
+        assert not other_root.startswith(sampled), sampled
+
+
+def test_rooted_prefix_composes_per_seed_layout():
+    """Plan §4.3 layout: re-rooting the two extract-phase prefixes at
+    ``sampled_rollout/seed<s>`` yields exactly the per-seed subtree paths;
+    ``None`` is byte-identical passthrough (default-preserving); the composed
+    per-seed prefixes stay disjoint from the primary leaves."""
+    import issue1426_common as c1426
+    import issue1426_run as run
+
+    for s in (42, 137):
+        root = f"{c1426.SAMPLED_ROLLOUT_PREFIX_1426}/seed{s}"
+        rolled = run.rooted_prefix(c1426.RAW_COMPLETIONS_PREFIX_1426, root)
+        stored = run.rooted_prefix(c1426.STORE_PREFIX_1426, root)
+        assert rolled == f"{R1}/sampled_rollout/seed{s}/raw_completions/thinking_rollouts"
+        assert stored == f"{R1}/sampled_rollout/seed{s}/analysis_tensors/store/percq_summaries"
+        for composed in (rolled, stored, f"{root}/fit_results"):
+            assert _path_disjoint(composed, c1426.RAW_COMPLETIONS_PREFIX_1426)
+            assert _path_disjoint(composed, c1426.STORE_PREFIX_1426)
+            assert _path_disjoint(composed, c1426.FIT_RESULTS_PREFIX_1426)
+    assert (
+        run.rooted_prefix(c1426.RAW_COMPLETIONS_PREFIX_1426, None)
+        == c1426.RAW_COMPLETIONS_PREFIX_1426
+    )
+    assert run.rooted_prefix(c1426.STORE_PREFIX_1426, "") == c1426.STORE_PREFIX_1426
+
+
+def test_f1_cmd_no_mlp_passthrough(tmp_path):
+    """Plan §4.2 item 4: ``no_mlp=True`` appends the fit module's existing
+    ``--no-mlp`` flag; the default command stays byte-identical; the smoke
+    command keeps its pre-existing ``--no-mlp`` exactly once."""
+    import issue928_fit_decomposition as fit928
+    import issue1426_run as run
+
+    base = run.f1_cmd(
+        "store", tmp_path, layers=None, n_perms=None, n_boot=None, upload=False, smoke=False
+    )
+    with_flag = run.f1_cmd(
+        "store",
+        tmp_path,
+        layers=None,
+        n_perms=None,
+        n_boot=None,
+        upload=False,
+        smoke=False,
+        no_mlp=True,
+    )
+    assert "--no-mlp" not in base
+    assert with_flag == [*base, "--no-mlp"]
+    smoke_cmd = run.f1_cmd(
+        "store", tmp_path, layers=None, n_perms=None, n_boot=None, upload=False, smoke=True
+    )
+    assert smoke_cmd.count("--no-mlp") == 1
+    # the flag parses through the PARENT parser (it is a real fit-module flag).
+    a = fit928.build_arg_parser().parse_args(with_flag[2:])
+    assert a.no_mlp is True
+
+
+def test_sampled_manifest_validation_wrong_seed_fails(tmp_path):
+    """Critic addition C: the invocation-B provenance guard is never vacuous —
+    a fixture manifest with the WRONG gen_seed (and one with the field
+    MISSING, and one at the wrong rung) exits non-zero through the exact
+    load-then-validate path the dispatch heredoc runs; the matching manifest
+    passes and reports the realized cap + code SHA."""
+    import json
+
+    import pytest
+    from issue1426_common import validate_sampled_store_manifest
+
+    def _write_and_load(man: dict) -> dict:
+        p = tmp_path / "store" / "manifest.json"
+        p.parent.mkdir(parents=True, exist_ok=True)
+        p.write_text(json.dumps(man))
+        return json.loads(p.read_text())
+
+    good = {
+        "rung": "sample",
+        "gen_seed": 137,
+        "max_new_tokens": 8192,
+        "reproducibility": {"git_commit": "deadbeef"},
+    }
+    report = validate_sampled_store_manifest(_write_and_load(good), expected_seed=137)
+    assert report == {
+        "rung": "sample",
+        "gen_seed": 137,
+        "production_max_new_tokens": 8192,
+        "code_sha": "deadbeef",
+    }
+    # the gate's C-remeasure may legitimately raise the cap to 16,384 (plan §7)
+    validate_sampled_store_manifest(
+        _write_and_load({**good, "max_new_tokens": 16384}), expected_seed=137
+    )
+
+    for bad in (
+        {**good, "gen_seed": 42},  # wrong seed (the cross-seed reuse trap)
+        {k: v for k, v in good.items() if k != "gen_seed"},  # field missing
+        {**good, "rung": "greedy"},  # wrong rung
+        {**good, "max_new_tokens": 4096},  # alien cap
+    ):
+        with pytest.raises(SystemExit) as exc:
+            validate_sampled_store_manifest(_write_and_load(bad), expected_seed=137)
+        assert exc.value.code  # non-zero shell exit through the dispatch heredoc
+
+
+def _write_gate_slice(out_dir, contexts_rows: dict[str, list[tuple[str, str]]]) -> None:
+    """Fixture Gate-1 slice: gate_report.json + one rollout blob per context."""
+    import json
+
+    rollouts = out_dir / "raw_completions" / "thinking_rollouts"
+    rollouts.mkdir(parents=True, exist_ok=True)
+    (out_dir / "gate_report.json").write_text(
+        json.dumps({"chosen_rung": "sample", "gate_contexts": sorted(contexts_rows)})
+    )
+    for c, rows in contexts_rows.items():
+        (rollouts / f"{c}.json").write_text(
+            json.dumps(
+                {
+                    "context_id": c,
+                    "completions": [{"probe": p, "completion": t} for p, t in rows],
+                }
+            )
+        )
+
+
+def test_gate_slice_status_branches(tmp_path):
+    """Review-1 minor 3: the monitor's readiness predicate branches — empty
+    dir → pending; null chosen_rung → gate_failed; report present but a gate
+    context's blob missing → pending; complete slice → ready."""
+    import json
+
+    from issue1426_common import gate_slice_status
+
+    empty = tmp_path / "empty"
+    empty.mkdir()
+    assert gate_slice_status(empty) == "pending"
+
+    failed = tmp_path / "gatefail"
+    failed.mkdir()
+    (failed / "gate_report.json").write_text(json.dumps({"chosen_rung": None, "gate_contexts": []}))
+    assert gate_slice_status(failed) == "gate_failed"
+
+    partial = tmp_path / "partial"
+    _write_gate_slice(partial, {"c0": [("p0", "t0")]})
+    report = json.loads((partial / "gate_report.json").read_text())
+    report["gate_contexts"] = ["c0", "c_missing"]
+    (partial / "gate_report.json").write_text(json.dumps(report))
+    assert gate_slice_status(partial) == "pending"
+
+    ready = tmp_path / "ready"
+    _write_gate_slice(ready, {"c0": [("p0", "t0")], "c1": [("p0", "u0")]})
+    assert gate_slice_status(ready) == "ready"
+
+
+def test_check_seed_differentiation_branches(tmp_path):
+    """Review-1 minor 3: identical slices FAIL (SystemExit, non-zero code),
+    differing slices PASS with a report dict, zero shared rows FAIL, an
+    exactly-at-threshold fraction FAILs, and the threshold is the
+    single-sourced ``IDENTICAL_FRAC_MAX`` (0.5)."""
+    import pytest
+    from issue1426_common import IDENTICAL_FRAC_MAX, check_seed_differentiation
+
+    a = tmp_path / "seed_a"
+    b_same = tmp_path / "seed_b_same"
+    rows = {"c0": [("p0", "same text"), ("p1", "same too")]}
+    _write_gate_slice(a, rows)
+    _write_gate_slice(b_same, rows)
+    with pytest.raises(SystemExit) as exc:
+        check_seed_differentiation(a, b_same)
+    assert exc.value.code  # byte-identical slices → non-zero exit
+
+    b_diff = tmp_path / "seed_b_diff"
+    _write_gate_slice(b_diff, {"c0": [("p0", "OTHER text"), ("p1", "other too")]})
+    report = check_seed_differentiation(a, b_diff)
+    assert report["identical_fraction"] == 0.0
+    assert report["n_shared_rows"] == 2
+    assert report["identical_frac_max"] == IDENTICAL_FRAC_MAX == 0.5
+
+    b_disjoint = tmp_path / "seed_b_disjoint"
+    _write_gate_slice(b_disjoint, {"c9": [("p9", "elsewhere")]})
+    with pytest.raises(SystemExit) as exc:
+        check_seed_differentiation(a, b_disjoint)
+    assert exc.value.code  # zero shared rows → never a silent pass
+
+    # exactly at the threshold: 1 of 2 rows identical (0.5 >= 0.5) → FAIL
+    b_half = tmp_path / "seed_b_half"
+    _write_gate_slice(b_half, {"c0": [("p0", "same text"), ("p1", "different")]})
+    with pytest.raises(SystemExit):
+        check_seed_differentiation(a, b_half)

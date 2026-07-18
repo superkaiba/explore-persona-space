@@ -11,6 +11,7 @@ runs without network access.
 from __future__ import annotations
 
 import argparse
+import ast
 import json
 import sys
 from pathlib import Path
@@ -354,8 +355,50 @@ def test_cmd_provision_refuses_existing_running_pod(isolated_state, stub_list_te
     with pytest.raises(SystemExit) as exc:
         pod_lifecycle.cmd_provision(ns)
     assert exc.value.code == 1
-    out = capsys.readouterr().out
-    assert "already exists" in out
+    # #1518: the refusal is an error-path diagnostic — it rides stderr (the
+    # #1465 PodLifecycleProcessError tail surface), never stdout.
+    captured = capsys.readouterr()
+    assert "already exists" in captured.err
+    assert "already exists" not in captured.out
+
+
+def test_provision_refusal_stderr_classifies_created_nothing(
+    isolated_state, stub_list_team_pods, monkeypatch, capsys
+):
+    """#1518 fail-loud contract: the already-exists refusal rides stderr (the
+    #1465 ``PodLifecycleProcessError`` tail surface) and the REAL #1490
+    classifier reads the produced text as ``created-nothing`` — the production
+    route that turned #1481's self-explanatory refusal into an unexplained
+    ``exit status 1`` on the router failure marker."""
+    import backend_poll  # scripts/ already on sys.path (module header)
+
+    from explore_persona_space.backends.runpod import PodLifecycleProcessError
+
+    monkeypatch.setattr(pod_lifecycle, "_warn_on_terminal_parent_provision", lambda *a, **k: False)
+    _write_metadata_file({})
+    stub_list_team_pods.return_value = [_info("pod-50", desired_status="RUNNING")]
+
+    with pytest.raises(SystemExit) as exc:
+        pod_lifecycle.cmd_provision(_gpu_provision_ns(50))
+    assert exc.value.code == 1
+
+    err = capsys.readouterr().err
+    # Both conjunctive fragments of backend_poll._PROVISION_REFUSAL_MARKERS
+    # must survive in the REAL produced stderr text (kill criterion 3: the
+    # message text is a classifier-matched surface — never reword it).
+    assert "already exists" in err
+    assert "Use `pod.py resume" in err
+    assert backend_poll._classify_provision_failure(err, 1) == "created-nothing"
+
+    # Composition hop: the router's failure-marker text is
+    # str(PodLifecycleProcessError(...)) carrying the stderr tail — both
+    # classifier fragments must survive that composition too.
+    marker_text = str(
+        PodLifecycleProcessError(1, ["pod_lifecycle.py", "provision"], output=None, stderr=err)
+    )
+    assert "already exists" in marker_text
+    assert "Use `pod.py resume" in marker_text
+    assert backend_poll._classify_provision_failure(marker_text, 1) == "created-nothing"
 
 
 def test_cmd_provision_allows_when_only_exited_pod_exists(isolated_state, stub_list_team_pods):
@@ -550,7 +593,7 @@ def test_cpu_provision_clamps_default_disk_to_instance_cap(
 
 
 def test_cpu_provision_refuses_explicit_disk_above_cap(
-    isolated_state, stub_list_team_pods, cpu_provision_stubs
+    isolated_state, stub_list_team_pods, cpu_provision_stubs, capsys
 ):
     """#1010: an EXPLICIT above-default-band request (> 50 GB effective) over
     the instance cap refuses pre-API with exit 1 (same UX as the 'Pod already
@@ -563,6 +606,10 @@ def test_cpu_provision_refuses_explicit_disk_above_cap(
         pod_lifecycle.cmd_provision(ns)
     assert exc.value.code == 1
     assert cpu_provision_stubs["cpu_calls"] == []  # pre-API: create never called
+    # #1518: the refusal diagnostic rides stderr (the #1465 tail surface).
+    captured = capsys.readouterr()
+    assert "exceeds the" in captured.err
+    assert "exceeds the" not in captured.out
 
 
 def test_cpu_provision_threaded_floor_50_clamps_not_refuses_when_cap_below_50(
@@ -1491,7 +1538,7 @@ def test_provision_name_suffix_collision_scope(
     with pytest.raises(SystemExit) as exc:
         pod_lifecycle.cmd_provision(_gpu_provision_ns(779))
     assert exc.value.code == 1
-    assert "already exists" in capsys.readouterr().out
+    assert "already exists" in capsys.readouterr().err  # #1518: refusal rides stderr
 
     # Suffixed provision proceeds past the collision check (dry-run plan
     # names pod-779-b — acceptance criterion 2).
@@ -1505,7 +1552,7 @@ def test_provision_name_suffix_collision_scope(
     with pytest.raises(SystemExit) as exc2:
         pod_lifecycle.cmd_provision(_gpu_provision_ns(779, name_suffix="b"))
     assert exc2.value.code == 1
-    assert "pod-779-b already exists" in capsys.readouterr().out
+    assert "pod-779-b already exists" in capsys.readouterr().err  # #1518: stderr
 
 
 def test_provision_registers_owning_issue_for_suffixed_name(isolated_state, monkeypatch, capsys):
@@ -2336,3 +2383,129 @@ def test_resume_calls_check(monkeypatch, capsys, isolated_state, stub_list_team_
     assert "WARNING" in captured.err and "pod-safety" in captured.err
     assert "Proceeding with resume" in captured.err
     assert "[dry-run]" in captured.out
+
+
+# ---------------------------------------------------------------------------
+# Error-path diagnostics stream routing (#1518) — durability pin
+# ---------------------------------------------------------------------------
+
+#: Functions allowed to bare-print to stdout immediately before a nonzero
+#: exit. `_emit_still_waiting_and_exit` deliberately DUAL-prints (stderr +
+#: stdout) before its exit-75 still-waiting contract, "so an output-capturing
+#: caller that only keeps stdout still sees it" (its docstring). Exempt by
+#: enclosing-function NAME, never line number; a new deliberate dual-print
+#: function gets added here with a comment.
+_STDOUT_BEFORE_EXIT_EXEMPT_FUNCTIONS = frozenset({"_emit_still_waiting_and_exit"})
+
+
+def _is_bare_stdout_print_stmt(stmt) -> bool:
+    """True for a statement-level ``print(...)`` call with NO ``file=`` kwarg."""
+    return (
+        isinstance(stmt, ast.Expr)
+        and isinstance(stmt.value, ast.Call)
+        and isinstance(stmt.value.func, ast.Name)
+        and stmt.value.func.id == "print"
+        and not any(kw.arg == "file" for kw in stmt.value.keywords)
+    )
+
+
+def _is_nonzero_exit_stmt(stmt) -> bool:
+    """True for ``sys.exit(<arg>)`` / ``raise SystemExit(<arg>)`` with an arg
+    that is not provably zero (a string, a Name like EXIT_STILL_WAITING, or
+    any expression counts as nonzero; a bare call exits 0)."""
+    if isinstance(stmt, ast.Expr) and isinstance(stmt.value, ast.Call):
+        call = stmt.value
+        func = call.func
+        if not (
+            isinstance(func, ast.Attribute)
+            and func.attr == "exit"
+            and isinstance(func.value, ast.Name)
+            and func.value.id == "sys"
+        ):
+            return False
+    elif isinstance(stmt, ast.Raise) and isinstance(stmt.exc, ast.Call):
+        call = stmt.exc
+        func = call.func
+        if not (isinstance(func, ast.Name) and func.id == "SystemExit"):
+            return False
+    else:
+        return False
+    if not call.args:
+        return False  # sys.exit() / SystemExit() -> exit code 0
+    arg = call.args[0]
+    return not (isinstance(arg, ast.Constant) and arg.value == 0)
+
+
+def _scan_bare_stdout_prints_before_nonzero_exit(path):
+    """AST-scan ``path`` for bare stdout ``print(...)`` statements immediately
+    preceding a nonzero exit in the same block.
+
+    Returns ``(offenders, exempt_hits)`` — lists of ``(lineno, func_name)``
+    for each contiguous bare ``print(...)`` (no ``file=`` kwarg) statement
+    directly preceding a ``sys.exit(<nonzero>)`` / ``raise SystemExit(<arg>)``
+    statement in the same statement block. Hits inside a function named in
+    :data:`_STDOUT_BEFORE_EXIT_EXEMPT_FUNCTIONS` land in ``exempt_hits``.
+    """
+    offenders: list[tuple[int, str]] = []
+    exempt_hits: list[tuple[int, str]] = []
+
+    def _visit_block(stmts, func_name: str) -> None:
+        for i, stmt in enumerate(stmts):
+            if _is_nonzero_exit_stmt(stmt):
+                j = i - 1
+                while j >= 0 and _is_bare_stdout_print_stmt(stmts[j]):
+                    hit = (stmts[j].lineno, func_name)
+                    if func_name in _STDOUT_BEFORE_EXIT_EXEMPT_FUNCTIONS:
+                        exempt_hits.append(hit)
+                    else:
+                        offenders.append(hit)
+                    j -= 1
+            _visit_children(stmt, func_name)
+
+    def _visit_children(node, func_name: str) -> None:
+        if isinstance(node, ast.FunctionDef | ast.AsyncFunctionDef):
+            func_name = node.name
+        for field in ("body", "orelse", "finalbody"):
+            block = getattr(node, field, None)
+            if block:
+                _visit_block(block, func_name)
+        for handler in getattr(node, "handlers", None) or []:
+            _visit_block(handler.body, func_name)
+        for case in getattr(node, "cases", None) or []:
+            _visit_block(case.body, func_name)
+
+    tree = ast.parse(Path(path).read_text(encoding="utf-8"))
+    _visit_children(tree, "<module>")
+    return offenders, exempt_hits
+
+
+def test_no_bare_stdout_print_before_nonzero_exit():
+    """#1518 durability pin: ``scripts/pod_lifecycle.py`` must contain NO bare
+    stdout ``print(...)`` statement immediately preceding a nonzero
+    ``sys.exit(...)`` / ``raise SystemExit(...)`` in the same block — an
+    error-path diagnostic on stdout never reaches the #1465
+    ``PodLifecycleProcessError`` stderr tail, so the router failure marker
+    reads as an unexplained exit (incident #1481).
+
+    Scope limit: the scan catches only CONTIGUOUS bare prints immediately
+    preceding a nonzero exit in the same block — a print two statements
+    earlier, or one buried in a helper called before the exit, escapes it.
+
+    Positive witness: the scan must FIND exactly one exempted site (the
+    ``_emit_still_waiting_and_exit`` deliberate dual print) — if the exempt
+    count is not exactly 1, the scanner itself has been disarmed by a scan
+    bug, or the dual print moved (update the exempt set deliberately).
+    """
+    offenders, exempt_hits = _scan_bare_stdout_prints_before_nonzero_exit(pod_lifecycle.__file__)
+    assert not offenders, (
+        "bare stdout print(...) immediately before a nonzero exit in "
+        f"scripts/pod_lifecycle.py at (lineno, func): {sorted(offenders)}; "
+        "route error-path diagnostics to stderr (file=sys.stderr) so they ride "
+        "the #1465 PodLifecycleProcessError stderr tail (#1518), or add a "
+        "deliberate dual-print function to _STDOUT_BEFORE_EXIT_EXEMPT_FUNCTIONS "
+        "with a comment."
+    )
+    assert len(exempt_hits) == 1, (
+        "expected exactly 1 exempted dual-print site "
+        f"(_emit_still_waiting_and_exit), found {len(exempt_hits)}: {exempt_hits}"
+    )
