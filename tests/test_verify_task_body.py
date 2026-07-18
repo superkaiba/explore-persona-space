@@ -2163,8 +2163,10 @@ def test_hf_check25_not_found_is_skip_not_fail(monkeypatch):
 # positions: Pattern A count-in-link-text, Pattern B paren-before-link,
 # Pattern C anchored paren-after-link + the per-namespace form (#1088),
 # Pattern D backtick `dir/` sub-path + count-opening paren bound to
-# the nearest preceding pinned link (#1143, the #1112 footer shape), and
-# Pattern E trailing count-opening paren (#1422, the #1005 footer shape).
+# the nearest preceding pinned link (#1143, the #1112 footer shape),
+# Pattern E trailing count-opening paren (#1422, the #1005 footer shape),
+# and Pattern F listing-verified phrase-anchored count at ANY position in
+# the paren after the link (#1505, the #1072 footer shape).
 # All tests are offline: extractor tests need no stub; probe tests stub
 # `verify_task_body._hf_tree_get` (`_stub_tree` / inline stateful
 # closures) after removing the conftest EPM_VERIFY_BODY_NO_HF fence.
@@ -3316,6 +3318,230 @@ def test_hf_count_trailing_paren_match_passes(monkeypatch):
     assert r.passed and not r.is_warn, r.detail
     assert "unverified" not in r.detail
     assert "1 claim(s) checked" in r.detail
+
+
+# ─── Check 30 Pattern F: listing-verified phrase (#1505) ───────────────────
+# #1072's footer carried, right after its pinned /tree link, the paren
+# `(analysis_tensors: 16 decomposed accumulator shards + …; eval_results
+# mirror; logs — 44 files, listing verified live at write time)` — "44
+# files" mid-paren after an em-dash, where the pinned tree holds 40 files +
+# 4 directory entries (44 = 40+4, the #931 folder-inflation signature): C's
+# phrase anchors miss ("listing verified live at write time" ≠ "at the
+# pinned revision") and E's .match() fails (the paren opens
+# "analysis_tensors:"), so check 30 reported "no file-count claims
+# adjacent". The CORRECTED live footer's 309-char paren body then exceeded
+# the old 300-char `_HF_LINKTEXT_THEN_PAREN_RE` bound (widened to 600).
+# Extractor tests are pure; probe tests stub `_hf_tree_get` after removing
+# the conftest fence.
+
+_I1072_SHA = "9c4258b242ad89dfa66cad18ce09d74fb5c357ad"
+_I1072_REPO_ID = "superkaiba1/explore-persona-space-data"
+_I1072_PREFIX = "issue1072_component_decomposition"
+
+
+def _i1072_footer_incident() -> str:
+    """The verbatim filing-time #1072 footer construct (FROZEN incident
+    history — recover via `git log -p -- 'tasks/*/1072/body.md'` in the
+    main checkout; the live body no longer carries it; never re-read at
+    test time — the `_i1005_footer_excerpt` precedent). Paren body 161
+    chars."""
+    return (
+        "HF data repo [`issue1072_component_decomposition/`](https://huggingface.co/datasets/su"
+        "perkaiba1/explore-persona-space-data/tree/9c4258b242ad89dfa66cad18ce09d74fb5c357ad/iss"
+        "ue1072_component_decomposition) (analysis_tensors: 16 decomposed accumulator shards + "
+        "next-token id and position arrays; eval_results mirror; logs — 44 files, listing "
+        "verified live at write time)."
+    )
+
+
+def _i1072_footer_corrected() -> str:
+    """The verbatim CORRECTED live #1072 footer construct (re-probed from
+    `task.py view 1072` at implementation time, 2026-07-18). Paren body
+    309 chars — over the OLD 300-char bound, so even this count-OPENING
+    (Pattern-E-shaped) claim went unextracted pre-#1505."""
+    return (
+        "HF data repo [`issue1072_component_decomposition/`](https://huggingface.co/datasets/su"
+        "perkaiba1/explore-persona-space-data/tree/9c4258b242ad89dfa66cad18ce09d74fb5c357ad/iss"
+        "ue1072_component_decomposition) (40 files, listing re-verified live at write time via "
+        "`list_repo_tree` at the pinned revision: analysis_tensors — 25, incl. the 16 "
+        "decomposed accumulator shards + next-token id and position arrays; eval_results "
+        "mirror — 14, excluding the 2 VM-computed stats JSONs, which live in git only; logs — "
+        "1 workload log)"
+    )
+
+
+def test_hf_count_extractor_listing_verified_1072_incident_shape():
+    """Pure extractor (Pattern F, #1505) — THE DURABILITY PIN: the verbatim
+    filing-time #1072 footer construct yields EXACTLY one claim tuple,
+    bound to the LINK's whole prefix. Exact equality also pins that the
+    sub-scoped clause count ("analysis_tensors: 16 decomposed accumulator
+    shards …") yields nothing."""
+    claims = verify_task_body._gather_hf_count_claims(_i1072_footer_incident())
+    assert claims == [
+        (44, "files", _I1072_REPO_ID, "dataset", _I1072_SHA, _I1072_PREFIX),
+    ]
+
+
+def test_hf_count_extractor_listing_verified_1072_corrected_shape():
+    """Pure extractor: the verbatim CORRECTED live #1072 footer (309-char
+    paren body — pins the widened 600 bound in the live shape) yields
+    EXACTLY one tuple: E and F both fire on the count-OPENING
+    listing-verified paren and the shared `seen` key collapses them."""
+    claims = verify_task_body._gather_hf_count_claims(_i1072_footer_corrected())
+    assert claims == [
+        (40, "files", _I1072_REPO_ID, "dataset", _I1072_SHA, _I1072_PREFIX),
+    ]
+
+
+def test_hf_count_extractor_listing_verified_shapes():
+    """Pure extractor: minimal Pattern-F positives on a synthetic pinned
+    URL — mid-paren after an em-dash, no separator, comma / colon / dash
+    separators, comma-grouped thousands, the `re-verified` form, and an
+    IGNORECASE variant."""
+    u = f"{_I931_REPO}/tree/abc1234def/p"
+    shapes = [
+        (f"[x]({u}) (…; logs — 44 files, listing verified)", 44),
+        (f"[x]({u}) (prose — 44 files listing verified)", 44),
+        (f"[x]({u}) (mid — 44 files — listing verified live)", 44),
+        (f"[x]({u}) (44 files: listing verified)", 44),
+        (f"[x]({u}) (1,234 files, listing verified)", 1234),
+        (f"[x]({u}) (40 files, listing re-verified live at write time)", 40),
+        (f"[x]({u}) (bulk — 44 FILES, LISTING VERIFIED)", 44),
+    ]
+    for body, count in shapes:
+        claims = verify_task_body._gather_hf_count_claims(body)
+        assert [(c[0], c[1], c[5]) for c in claims] == [(count, "files", "p")], body
+
+
+def test_hf_count_extractor_listing_verified_negative_cases():
+    """Shapes that must NOT extract (precision-first; each guards a named
+    false-positive class from the Pattern-F recall-sacrifice list)."""
+    u = f"{_I931_REPO}/tree/abc1234def/p"
+    negatives = [
+        # Sub-scoped clause counts with no phrase (the incident paren's own
+        # "analysis_tensors: 16 …" clause never binds).
+        f"[x]({u}) (analysis_tensors: 16 files; eval_results mirror)",
+        # "verified" without "listing" — too weak an anchor.
+        f"[x]({u}) (logs — 44 files, verified at write time)",
+        # Per-<word> distributive — excluded by adjacency (the phrase must
+        # directly follow `files`; the per-namespace leg keeps its own
+        # semantics for the bare per-namespace form).
+        f"[x]({u}) (44 files per namespace, listing verified)",
+        # Shards never bind via F (files-only, C parity).
+        f"[x]({u}) (bulk — 16 shards, listing verified)",
+        # Clause-crossing: `;` is deliberately NOT in the separator class.
+        f"[x]({u}) (analysis_tensors: 16 files; listing verified live)",
+        # Moving ref / /blob/ / fenced block / newline gap — iterator guards.
+        f"[x]({_I931_REPO}/tree/main/p) (logs — 44 files, listing verified)",
+        f"[x]({_I931_REPO}/blob/abc1234def/p/f.json) (logs — 44 files, listing verified)",
+        f"```\n[x]({u}) (logs — 44 files, listing verified)\n```",
+        f"[x]({u})\n(logs — 44 files, listing verified)",
+        # A NON-count-opening listing-verified paren immediately followed by
+        # an HF markdown link: F declines (B-adjacency) and B cannot fire
+        # (the count does not OPEN the paren) → nothing extracts.
+        (
+            f"[x @abc1234]({_I931_REPO}/tree/abc1234def/p) "
+            f"(logs — 44 files, listing verified): "
+            f"[y @abc1234]({_I931_REPO}/tree/abc1234def/other)"
+        ),
+    ]
+    for body in negatives:
+        assert verify_task_body._gather_hf_count_claims(body) == [], body
+
+
+def test_hf_count_listing_verified_b_adjacency_declines():
+    """`[x](url1) (44 files, listing verified): [y](url2)` → E and F both
+    decline (the paren is immediately followed by an HF markdown link —
+    Pattern B's paren-before-link shape) and B ALONE extracts, scoped to
+    url2's OWN prefix: exactly one tuple, never a second
+    differently-scoped claim from the same paren (mirrors
+    test_hf_count_trailing_paren_b_adjacency_declines)."""
+    body = (
+        f"[x @abc1234]({_I931_REPO}/tree/abc1234def/p) (44 files, listing verified): "
+        f"[y @abc1234]({_I931_REPO}/tree/abc1234def/other)"
+    )
+    claims = verify_task_body._gather_hf_count_claims(body)
+    assert [(c[0], c[1], c[5]) for c in claims] == [(44, "files", "other")]
+
+
+def test_hf_count_extractor_paren_bound_600():
+    """The `_HF_LINKTEXT_THEN_PAREN_RE` paren-body bound is pinned EXACTLY
+    two-sided at 600 (#1505, widened from 300 for #1072's corrected
+    309-char paren): a count-opening paren whose body is exactly 600 chars
+    extracts via E (previously missed above 300), and a 601-char body
+    declines."""
+    u = f"{_I931_REPO}/tree/abc1234def/p"
+    body_600 = "9 files, " + "x" * 591
+    assert len(body_600) == 600
+    claims = verify_task_body._gather_hf_count_claims(f"[x]({u}) ({body_600})")
+    assert [(c[0], c[1], c[5]) for c in claims] == [(9, "files", "p")]
+    body_601 = "9 files, " + "x" * 592
+    assert len(body_601) == 601
+    assert verify_task_body._gather_hf_count_claims(f"[x]({u}) ({body_601})") == []
+
+
+def test_hf_count_listing_verified_mismatch_warns_1072_shape(monkeypatch):
+    """The #1072 incident reconstruction: the filing-time footer's claim of
+    44 files against a stubbed pinned tree of 40 files + 4 directory
+    entries → WARN naming both numbers AND the files+folders consistency
+    diagnostic (44 = 40+4, the #931 folder-inflation signature); `passed`
+    stays True (WARN-only invariant — no `passed=False` path added)."""
+    monkeypatch.delenv("EPM_VERIFY_BODY_NO_HF", raising=False)
+    # Explicit cache hygiene (the Pattern-E test precedent): this test and
+    # its match-passes sibling share the same (repo, sha, prefix) key and
+    # `_HF_TREE_FILE_COUNT_CACHE` is module-global.
+    verify_task_body._HF_TREE_FILE_COUNT_CACHE.clear()
+    entries = [
+        {"path": f"{_I1072_PREFIX}/{d}", "type": "directory"}
+        for d in ("analysis_tensors", "eval_results", "logs", "raw")
+    ]
+    entries += [
+        {"path": f"{_I1072_PREFIX}/analysis_tensors/f{i}.npz", "type": "file"} for i in range(40)
+    ]
+    _stub_tree(monkeypatch, status="ok", entries=entries)
+    r = verify_task_body.check_hf_file_count_claims(_i1072_footer_incident())
+    assert r.passed and r.is_warn, r.detail
+    assert "44" in r.detail and "40 file(s)" in r.detail
+    assert "consistent with files+folders" in r.detail
+
+
+def test_hf_count_listing_verified_match_passes(monkeypatch):
+    """The CORRECTED live #1072 footer (40 files) against the same stubbed
+    40-file + 4-folder tree → clean PASS: no WARN, no `unverified` note,
+    `1 claim(s) checked` (the E+F co-fire collapsed to ONE claim by the
+    shared `seen` key — a double count would read "2 claim(s) checked")."""
+    monkeypatch.delenv("EPM_VERIFY_BODY_NO_HF", raising=False)
+    # Same explicit cache hygiene as the mismatch sibling above.
+    verify_task_body._HF_TREE_FILE_COUNT_CACHE.clear()
+    entries = [
+        {"path": f"{_I1072_PREFIX}/{d}", "type": "directory"}
+        for d in ("analysis_tensors", "eval_results", "logs", "raw")
+    ]
+    entries += [
+        {"path": f"{_I1072_PREFIX}/analysis_tensors/f{i}.npz", "type": "file"} for i in range(40)
+    ]
+    _stub_tree(monkeypatch, status="ok", entries=entries)
+    r = verify_task_body.check_hf_file_count_claims(_i1072_footer_corrected())
+    assert r.passed and not r.is_warn, r.detail
+    assert "unverified" not in r.detail
+    assert "1 claim(s) checked" in r.detail
+
+
+def test_check40_gatherer_ignores_listing_verified_parens():
+    """Check-40 non-interaction (#1505 acceptance criterion 5): the
+    unpinned-count gatherer extracts NOTHING from either #1072 construct
+    (their counts are link-adjacent, not backtick-token-adjacent — between
+    `](url)` and `(` there is no room for a backtick token) nor from the
+    minimal Pattern-F positive shapes."""
+    u = f"{_I931_REPO}/tree/abc1234def/p"
+    bodies = [
+        _i1072_footer_incident(),
+        _i1072_footer_corrected(),
+        f"[x]({u}) (…; logs — 44 files, listing verified)",
+        f"[x]({u}) (44 files: listing verified)",
+    ]
+    for body in bodies:
+        assert verify_task_body._gather_hf_unpinned_count_claims(body) == [], body
 
 
 # ─── Check 32: HF-adjacent backtick file claims vs the pinned tree (WARN) ──
