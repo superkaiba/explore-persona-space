@@ -135,9 +135,17 @@ def fig_hero(stats: dict, out_dir: pathlib.Path) -> None:
     plt.close(fig)
 
 
-def fig_profile(stats: dict, out_dir: pathlib.Path) -> None:
+def fig_profile(stats: dict, eval_dir: pathlib.Path, out_dir: pathlib.Path) -> None:
     layers = sorted(int(x) for x in stats["inputs"]["layers"])
     parent = stats.get("parent_1d_reference")
+    # Parent 1-D enrichment (k=1 reference points) from the completed round's
+    # committed supplementary reads (same eval_results/issue_1072/ tree, one level up).
+    supp_path = eval_dir.parent / "supplementary_reads.json"
+    parent_enrich: dict[str, dict] = {}
+    if supp_path.exists():
+        parent_enrich = json.loads(supp_path.read_text()).get("by_layer", {})
+    else:
+        logger.warning("[figures] parent supplementary_reads.json missing at %s", supp_path)
     fig, axes = plt.subplots(1, 2, figsize=(10.0, 4.0), layout="constrained")
     labels = ["realized next word\n(1 direction)"] + [
         BASIS_LABELS[b].replace(" words", "\nwords") for b in HERO_ORDER
@@ -145,16 +153,21 @@ def fig_profile(stats: dict, out_dir: pathlib.Path) -> None:
     x = np.arange(len(labels), dtype=float)
     colors = paper_palette(len(layers))
     for li, layer in enumerate(layers):
-        s_vals, s_err, e_vals = [], [], []
+        s_vals, s_err, e_vals, e_err = [], [], [], []
         if parent is not None and str(layer) in parent["by_layer"]:
             ref = parent["by_layer"][str(layer)]
             s_vals.append(ref["S_par"])
             s_err.append(_err(ref["S_par_ci95"][0], ref["S_par"], ref["S_par_ci95"][1]))
-            e_vals.append(np.nan)  # parent enrichment carried in its own body
         else:
             s_vals.append(np.nan)
             s_err.append((0, 0))
+        pref = parent_enrich.get(str(layer), {})
+        if "E_enrichment" in pref:
+            e_vals.append(pref["E_enrichment"])
+            e_err.append(_err(pref["E_ci95"][0], pref["E_enrichment"], pref["E_ci95"][1]))
+        else:
             e_vals.append(np.nan)
+            e_err.append((0, 0))
         for b in HERO_ORDER:
             rec = stats["by_ext"]["ext_plain"][b][str(layer)]
             s_vals.append(rec["S_par"] if rec["S_par"] is not None else np.nan)
@@ -164,6 +177,11 @@ def fig_profile(stats: dict, out_dir: pathlib.Path) -> None:
                 else (0, 0)
             )
             e_vals.append(rec["enrichment"] if rec["enrichment"] is not None else np.nan)
+            e_err.append(
+                _err(rec["enrichment_ci95"][0], rec["enrichment"], rec["enrichment_ci95"][1])
+                if rec.get("enrichment") is not None
+                else (0, 0)
+            )
         axes[0].errorbar(
             x + 0.05 * li,
             s_vals,
@@ -174,9 +192,20 @@ def fig_profile(stats: dict, out_dir: pathlib.Path) -> None:
             color=colors[li],
             label=f"layer {layer}",
         )
-        axes[1].plot(x, e_vals, "o-", ms=4, color=colors[li], label=f"layer {layer}")
+        axes[1].errorbar(
+            x + 0.05 * li,
+            e_vals,
+            yerr=np.array(e_err).T,
+            fmt="o-",
+            ms=4,
+            capsize=3,
+            color=colors[li],
+            label=f"layer {layer}",
+        )
     axes[0].axhline(0.15, lw=0.8, ls="--", color="gray")
-    axes[0].text(0.02, 0.155, "registered 15% expectation bound", fontsize=7, color="gray")
+    axes[0].text(
+        0.02, 0.155, "15% expectation bound (set before the run)", fontsize=7, color="gray"
+    )
     axes[0].set_ylabel("share of the gap inside the subspace (S_par)")
     axes[1].set_ylabel("gap share / variance share (enrichment)")
     axes[1].set_yscale("log")
@@ -379,7 +408,7 @@ def main() -> None:
     out_dir.mkdir(parents=True, exist_ok=True)
     stats, npzs = _load(eval_dir)
     fig_hero(stats, out_dir)
-    fig_profile(stats, out_dir)
+    fig_profile(stats, eval_dir, out_dir)
     fig_percontext(stats, npzs, out_dir)
     fig_exploratory(stats, npzs, out_dir)
     logger.info("[figures] 4 figures written to %s", out_dir)

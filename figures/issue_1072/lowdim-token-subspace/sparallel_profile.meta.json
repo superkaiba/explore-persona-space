@@ -1,6 +1,6 @@
 {
-  "commit": "74ea8b8e7e",
-  "created": "2026-07-18T14:32:24Z",
+  "commit": "60f0c18004",
+  "created": "2026-07-18T14:41:23Z",
   "figsize": [
     10.0,
     4.0
@@ -216,63 +216,215 @@
     },
     {
       "x": 0.0,
-      "gap share / variance share (enrichment)": null,
+      "gap share / variance share (enrichment)": 27.32076432942296,
+      "error": 33.882812739089715,
       "series": "layer 14",
-      "_kind": "line",
+      "_kind": "errorbar",
       "_group": 8
     },
     {
       "x": 1.0,
       "gap share / variance share (enrichment)": 13.875151080609474,
+      "error": 16.674164460170637,
       "series": "layer 14",
-      "_kind": "line",
+      "_kind": "errorbar",
       "_group": 8
     },
     {
       "x": 2.0,
       "gap share / variance share (enrichment)": 12.672468648624106,
+      "error": 15.090670001178854,
       "series": "layer 14",
-      "_kind": "line",
+      "_kind": "errorbar",
       "_group": 8
     },
     {
       "x": 3.0,
       "gap share / variance share (enrichment)": 7.500841513611838,
+      "error": 8.540979810390079,
       "series": "layer 14",
-      "_kind": "line",
+      "_kind": "errorbar",
       "_group": 8
     },
     {
-      "x": 0.0,
-      "gap share / variance share (enrichment)": null,
+      "x": 0.05,
+      "gap share / variance share (enrichment)": 3.8750893092709404,
+      "error": 0.8318376875432676,
       "series": "layer 26",
-      "_kind": "line",
+      "_kind": "errorbar",
       "_group": 9
+    },
+    {
+      "x": 1.05,
+      "gap share / variance share (enrichment)": 2.4518955606637265,
+      "error": 0.48515403018030523,
+      "series": "layer 26",
+      "_kind": "errorbar",
+      "_group": 9
+    },
+    {
+      "x": 2.05,
+      "gap share / variance share (enrichment)": 2.632894801038637,
+      "error": 0.5603045920509819,
+      "series": "layer 26",
+      "_kind": "errorbar",
+      "_group": 9
+    },
+    {
+      "x": 3.05,
+      "gap share / variance share (enrichment)": 2.0394806048068426,
+      "error": 0.3666116564464005,
+      "series": "layer 26",
+      "_kind": "errorbar",
+      "_group": 9
+    },
+    {
+      "x": 0.0,
+      "gap share / variance share (enrichment)": 27.32076432942296,
+      "_kind": "line",
+      "_group": 10
     },
     {
       "x": 1.0,
-      "gap share / variance share (enrichment)": 2.4518955606637265,
-      "series": "layer 26",
+      "gap share / variance share (enrichment)": 13.875151080609474,
       "_kind": "line",
-      "_group": 9
+      "_group": 10
     },
     {
       "x": 2.0,
-      "gap share / variance share (enrichment)": 2.632894801038637,
-      "series": "layer 26",
+      "gap share / variance share (enrichment)": 12.672468648624106,
       "_kind": "line",
-      "_group": 9
+      "_group": 10
     },
     {
       "x": 3.0,
-      "gap share / variance share (enrichment)": 2.0394806048068426,
-      "series": "layer 26",
+      "gap share / variance share (enrichment)": 7.500841513611838,
       "_kind": "line",
-      "_group": 9
+      "_group": 10
+    },
+    {
+      "x": 0.0,
+      "gap share / variance share (enrichment)": 16.083715348960546,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 1.0,
+      "gap share / variance share (enrichment)": 8.276157435835074,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 2.0,
+      "gap share / variance share (enrichment)": 7.652944431258268,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 3.0,
+      "gap share / variance share (enrichment)": 4.606463136925236,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 0.0,
+      "gap share / variance share (enrichment)": 83.84934082713997,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 1.0,
+      "gap share / variance share (enrichment)": 41.62448635617635,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 2.0,
+      "gap share / variance share (enrichment)": 37.83428443361598,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 3.0,
+      "gap share / variance share (enrichment)": 21.688422757705393,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 0.05,
+      "gap share / variance share (enrichment)": 3.8750893092709404,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 1.05,
+      "gap share / variance share (enrichment)": 2.4518955606637265,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 2.05,
+      "gap share / variance share (enrichment)": 2.632894801038637,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 3.05,
+      "gap share / variance share (enrichment)": 2.0394806048068426,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 0.05,
+      "gap share / variance share (enrichment)": 3.186003601491634,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 1.05,
+      "gap share / variance share (enrichment)": 2.0392249694793847,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 2.05,
+      "gap share / variance share (enrichment)": 2.1593931075311388,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 3.05,
+      "gap share / variance share (enrichment)": 1.7215118453143028,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 0.05,
+      "gap share / variance share (enrichment)": 4.849678976578169,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 1.05,
+      "gap share / variance share (enrichment)": 3.009533029839995,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 2.05,
+      "gap share / variance share (enrichment)": 3.2800022916331026,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 3.05,
+      "gap share / variance share (enrichment)": 2.4547351582071038,
+      "_kind": "line",
+      "_group": 15
     }
   ],
-  "n_series": 10,
-  "total_points": 40,
+  "n_series": 16,
+  "total_points": 64,
   "text": {
     "suptitle": "Dimensionality-of-commitment profile across basis bundles",
     "fig_texts": [],
@@ -284,7 +436,7 @@
           "layer 26"
         ],
         "annotations": [
-          "registered 15% expectation bound"
+          "15% expectation bound (set before the run)"
         ],
         "xticklabels": [
           "realized next word\n(1 direction)",
@@ -321,7 +473,8 @@
           "$\\mathdefault{10^{0}}$",
           "$\\mathdefault{10^{1}}$",
           "$\\mathdefault{10^{2}}$",
-          "$\\mathdefault{10^{3}}$"
+          "$\\mathdefault{10^{3}}$",
+          "$\\mathdefault{10^{4}}$"
         ]
       }
     ],
