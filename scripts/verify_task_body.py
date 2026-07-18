@@ -348,7 +348,10 @@ New v3-only checks (PASS vacuously on v2/legacy):
   owned by check 3's `check_v3_structure` (one authoritative count).
   (v4 twin `check_v4_word_caps`: same caps over Takeaways + Goal +
   Results, `## Methodology` excluded, plus a v4-only per-Takeaways-bullet
-  ≥100-word hard-FAIL tier (#825); its round count reads
+  ≥100-word hard-FAIL tier (#825), plus a WARN-acknowledgment coverage
+  sub-check — a body whose acknowledgment paragraph omits a fired
+  WARN-tier class gains one more WARN naming the gap (#1523); its round
+  count reads
   `epm:same-issue-followup-run` markers and/or the footer round clauses,
   max-reconciled — the Rounds-table read binds v3 only. It needs the
   `issue` number for the events leg, so it is dispatched separately in
@@ -1199,6 +1202,27 @@ V3_FIGURE_CAPTION_MAX_WORDS = 60
 # the plan: the per-finding FAIL is the hard gate; this total is a nudge).
 V3_TOTAL_PROSE_BASE_WORDS = 800
 V3_TOTAL_PROSE_PER_EXTRA_ROUND_WORDS = 250
+
+# Check 20 (v4) WARN-acknowledgment coverage (#1523; incident #1417): a body
+# that ships check-20 WARNs under an acknowledgment sentence must name EACH
+# fired WARN-tier class. Naming = any keyword below appears (case-insensitive
+# substring) in the DASH-NORMALIZED acknowledgment text (hyphen/en-dash/
+# em-dash -> space, so "total-prose" matches "total prose" and a "120-180"
+# range mention matches "120"). Keywords are space-form after normalization.
+V4_WARN_ACK_CLASS_KEYWORDS: dict[str, tuple[str, ...]] = {
+    "Takeaways bullet-length": ("bullet", "takeaway"),
+    "per-result prose band": ("per result", "result prose", "section", "120", "180"),
+    "figure-caption length": ("caption",),
+    "total-prose budget": ("total prose", "total content", "budget", "800", "overage"),
+}
+
+# Detection: a paragraph is a verifier-WARN acknowledgment iff it contains
+# "acknowledg" AND a WARN-family token — "warn" OR a conciseness-family word.
+# Grounded in the fact-checked in-wild survey: >=6 v4 bodies acknowledge
+# check-20 WARNs with no "warn" token (#1315/#1335/#1434/#920/#922/#1112).
+_V4_WARN_ACK_FAMILY_RE = re.compile(
+    r"warn|concise|\bcaps?\b|\bbudget\b|\boverage\b|\bprose\b|advisor"
+)
 
 # ─── Result type ───────────────────────────────────────────────────────────
 
@@ -13133,6 +13157,38 @@ def _count_overlong_captions(findings: str) -> int:
     return over
 
 
+def _warn_acknowledgment_text(body: str) -> str | None:
+    """Union of non-fenced paragraphs that read as verifier-WARN
+    acknowledgments — "acknowledg" plus a WARN-family token ("warn" or a
+    conciseness-family word per ``_V4_WARN_ACK_FAMILY_RE``) appear in the
+    paragraph (case-insensitive; covers the #1417 ``Verifier WARNs
+    acknowledged: ...`` sentence AND the no-"warn" in-wild forms, e.g.
+    "acknowledging the verifier's conciseness caps" (#1335), "the overage
+    is acknowledged" (#922)). Returned text is DASH-NORMALIZED (hyphen /
+    en-dash / em-dash -> space) + lowercased for keyword matching. Returns
+    None when the body carries none. Helper for check 20 (v4) (#1523)."""
+    paras: list[str] = []
+    cur: list[str] = []
+    in_fence = False
+    for line in body.splitlines() + [""]:
+        s = line.strip()
+        if s.startswith("```") or s.startswith("~~~"):
+            in_fence = not in_fence
+            continue
+        if in_fence:
+            continue
+        if s:
+            cur.append(s)
+            continue
+        if cur:
+            para = " ".join(cur)
+            low = re.sub(r"[-‐-―]", " ", para.lower())
+            if "acknowledg" in low and _V4_WARN_ACK_FAMILY_RE.search(low):
+                paras.append(low)
+            cur = []
+    return " ".join(paras) if paras else None
+
+
 def check_v3_word_caps(body: str) -> CheckResult:
     """Check 20 (v3 only): the §4 conciseness caps.
 
@@ -13302,6 +13358,13 @@ def check_v4_word_caps(body: str, *, issue: int | None = None) -> CheckResult:
     - Total content prose (Takeaways + Goal + Results; `## Methodology`
       EXCLUDED — it carries the absorbed methodology-doc content) ≤800 +
       250 per live follow-up round beyond the first (WARN-only).
+    - WARN-acknowledgment coverage (#1523; incident #1417): when the body
+      carries a verifier-WARN acknowledgment paragraph ("acknowledg" plus
+      "warn" or a conciseness-family word) AND WARN-tier cap classes
+      fired, each fired class must be named in it (per-class keyword
+      match over the dash-normalized acknowledgment text,
+      `V4_WARN_ACK_CLASS_KEYWORDS`) — a fired-but-unnamed class appends
+      one more WARN. FAIL tiers excluded; never flips the verdict.
 
     The per-extra-round scaling counts folded rounds from the task's
     non-retroactive `epm:same-issue-followup-run` markers (via ``issue``,
@@ -13367,6 +13430,37 @@ def check_v4_word_caps(body: str, *, issue: int | None = None) -> CheckResult:
             f"{V3_TOTAL_PROSE_PER_EXTRA_ROUND_WORDS} per extra round "
             f"[{rounds_src}]; Methodology excluded)"
         )
+
+    # WARN-acknowledgment coverage (#1523, WARN-tier only; incident #1417):
+    # when the body carries an acknowledgment AND WARN-tier cap classes
+    # fired, each fired class must be named. FAIL tiers are excluded (a
+    # FAIL blocks regardless of acknowledgment). Never flips the verdict:
+    # a fired class implies `warns` is already non-empty.
+    fired: list[str] = []
+    if over_warn_b:
+        fired.append("Takeaways bullet-length")
+    if r_warns:
+        fired.append("per-result prose band")
+    if over_captions:
+        fired.append("figure-caption length")
+    if total_prose > total_budget:
+        fired.append("total-prose budget")
+    if fired:
+        ack = _warn_acknowledgment_text(body)  # already lowercased + dash-normalized
+        if ack is not None:
+            unnamed = [
+                cls for cls in fired if not any(kw in ack for kw in V4_WARN_ACK_CLASS_KEYWORDS[cls])
+            ]
+            if unnamed:
+                hints = "; ".join(
+                    f"{cls} (mention e.g. {V4_WARN_ACK_CLASS_KEYWORDS[cls][0]!r})"
+                    for cls in unnamed
+                )
+                warns.append(
+                    "WARN-acknowledgment sentence does not name fired WARN "
+                    f"class(es): {hints} — name each fired class in the "
+                    "acknowledgment or fix the underlying WARN"
+                )
 
     if fails:
         return CheckResult(
