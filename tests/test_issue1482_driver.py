@@ -804,3 +804,79 @@ def test_seed_partial_reconcile_mismatch_drops_all_seeded(monkeypatch, tmp_path)
     _write_unit(pdir, "refit_full__ridge__seed0", {"test": 3, "val": 2})
     D._seed_partial_reconcile(args)
     assert (pdir / "refit_full__ridge__seed0.json").exists()
+
+
+# ── r5: seeded-path SAE pre-stage (pilot skipped => parent stages before fan-out) ─
+
+
+def _p2_args(tmp_path):
+    """Everything phase_p2 main + _child_flags dereference (smoke-sized, CPU)."""
+    return SimpleNamespace(
+        smoke=True,
+        tiny_model=False,
+        device="cpu",
+        n_gpus=0,
+        scratch=tmp_path / "scratch",
+        out_eval=tmp_path / "out_eval",
+        store=tmp_path / "store" / "sae_pooled",
+        sae_dir=tmp_path / "sae_dl",
+        seed=0,
+        krr_nystrom_centers=16384,
+        fit_n=2000,
+        max_chunks=1,
+        gen_batch=2,
+        sae_k="auto",
+        headline_floor=2,
+        hf_prefix="x",
+        max_features_in=256,
+        max_features_out=512,
+    )
+
+
+def test_phase_p2_prestages_sae_on_seeded_pilot_skip(monkeypatch, tmp_path):
+    """--seed-partial path: sae_fitness.json seeded => the pilot is SKIPPED. Pre-r5
+    the pilot was the ONLY code path staging the SAE into args.sae_dir, so P2
+    workers raced concurrent hf_hub_download()s into ONE empty shared local_dir
+    (#1315 class) and died at torch.load(ae.pt) (pod-1482 p2_w0). FAILS pre-fix:
+    phase_p2 main must stage config.json+ae.pt for BOTH trainers BEFORE
+    _run_children spawns workers, and the staging must be download-idempotent."""
+    args = _p2_args(tmp_path)
+    args.out_eval.mkdir(parents=True)
+    # seeded fitness fires the pilot-skip predicate (sae_fitness.json exists)
+    (args.out_eval / "sae_fitness.json").write_text(
+        json.dumps({"gate_b": "PASS", "g2_pass": True, "chosen_k": 64})
+    )
+    calls = {"n": 0}
+
+    def fake_dl(repo_id, filename=None, repo_type=None, revision=None, local_dir=None):
+        calls["n"] += 1
+        assert repo_id == S.SAE_REPO and repo_type == "model" and revision == S.SAE_REVISION
+        out = Path(local_dir) / filename
+        out.parent.mkdir(parents=True, exist_ok=True)
+        out.write_bytes(b"payload")
+        return str(out)
+
+    _patched_dl(monkeypatch, fake_dl)
+    seen = {"specs": None}
+
+    def fake_run_children(specs, args_, phase, on_done=None):  # mirrors _run_children
+        # the crash contract: EVERY worker-loadable SAE file is COMPLETE before
+        # any worker spawns (BOTH trainers — --sae-k may name either k)
+        for sub in S.TRAINER_SUBDIR.values():
+            for fname in ("config.json", "ae.pt"):
+                t = args_.sae_dir / sub / fname
+                assert t.exists() and t.stat().st_size > 0, f"unstaged at fan-out: {t}"
+        seen["specs"] = specs
+
+    monkeypatch.setattr(D, "_run_children", fake_run_children)
+
+    def fake_write_sentinel(kind, note, task_id=779, extra=None):  # mirrors C.write_sentinel
+        return tmp_path / "sentinel.json"
+
+    monkeypatch.setattr(D.C, "write_sentinel", fake_write_sentinel)
+    D.phase_p2(args)
+    assert seen["specs"], "workers must still be dispatched on the seeded path"
+    assert calls["n"] == 4, "both trainers x (config.json + ae.pt), staged exactly once"
+    # idempotent re-entry (resume / p2 re-run): files present => ZERO network calls
+    D.phase_p2(args)
+    assert calls["n"] == 4

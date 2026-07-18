@@ -1228,6 +1228,17 @@ def phase_p2(args) -> None:
     _headroom(args.store, 2 if args.smoke else 25, "p2")
     import issue1482_sae as S
 
+    # SAE pre-stage (r5) — runs REGARDLESS of pilot skip: the pilot used to be the
+    # only code path staging the SAE weights into args.sae_dir, so the
+    # --seed-partial path (sae_fitness.json seeded => pilot skipped) sent N
+    # p2-workers into concurrent hf_hub_download()s against ONE empty shared
+    # local_dir — the #1315 fanout shared-staging race (pod-1482 p2_w0:
+    # torch.load(ae.pt) FileNotFoundError). Stage ONCE in the parent,
+    # idempotently, for BOTH trainers (--sae-k may name either k); the pilot's,
+    # workers', and P3-aux's own load() downloads then become no-ops.
+    for kval in sorted(S.TRAINER_SUBDIR):
+        S.BatchTopKSAE.ensure_downloaded(kval, args.sae_dir)
+
     # pilot FIRST (Gate B input): one process, first pilot-n needed rows
     if not (args.out_eval / "sae_fitness.json").exists():
         idx = np.load(args.scratch / "split_indices.npz")
