@@ -3990,8 +3990,8 @@
     "1511": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1511",
-      "status": "running",
+      "path": "tasks/reviewing/1511",
+      "status": "reviewing",
       "title": "workflow-fix: recompute caption count claims against figure sidecar points"
     },
     "1512": {
