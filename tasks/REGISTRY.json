@@ -4082,8 +4082,8 @@
     "1523": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1523",
-      "status": "planning",
+      "path": "tasks/approved/1523",
+      "status": "approved",
       "title": "workflow-fix: check-20 WARN-acknowledgment must name each fired class"
     },
     "1524": {
