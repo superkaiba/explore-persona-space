@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1511,
+  "highest_id": 1512,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -3993,6 +3993,13 @@
       "path": "tasks/planning/1511",
       "status": "planning",
       "title": "workflow-fix: recompute caption count claims against figure sidecar points"
+    },
+    "1512": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1512",
+      "status": "proposed",
+      "title": "workflow-fix: gotcha \u2014 smoke-gate floors from realized slice arithmetic"
     },
     "152": {
       "has_clean_result": false,
