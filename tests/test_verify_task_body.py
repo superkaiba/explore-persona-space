@@ -194,12 +194,15 @@ def test_good_body_passes_all():
     # 41 is the fake-sha NO-OP PASS above). The
     # Lens 14 / check-16 results are PASS-skips when no concerns.jsonl /
     # plans/plan.md sibling is available; check 17 and the v3/v4 checks
-    # are PASS-skips on this legacy (pre-v2-sentinel) fixture.
-    assert len(results) == 59
+    # are PASS-skips on this legacy (pre-v2-sentinel) fixture. Check 46
+    # `check_context_followup_scope_consistency` (#1521) is dispatched in
+    # verify_text (needs the issue number) and PASS-skips here (legacy body).
+    assert len(results) == 60
     # By-name membership so the NEXT check addition can key by name instead
     # of re-deriving the arithmetic (#1016 methodology-reconciler Must-Fix).
     assert _HF_32_NAME in {r.name for r in results}
     assert _HF_40_NAME in {r.name for r in results}
+    assert "Context follow-up provenance vs followup-scope markers" in {r.name for r in results}
     assert "footer HF artifact paths carry an adjacent pinned link" in {r.name for r in results}
     assert "Sample-slot disclosure count (v4)" in {r.name for r in results}
     assert "cross-issue reuse pins declared (footer Reused bullets)" in {r.name for r in results}
@@ -15117,3 +15120,404 @@ def test_check45_subset_claim_larger_pool_rescue():
     claims3 = verify_task_body._caption_count_claims("all 3 contexts lie below zero")
     warns3, n3, _s3 = verify_task_body._count_claim_failures(claims3, pools_incident, "f.png")
     assert n3 == 1 and len(warns3) == 1 and "pos_ctx" in warns3[0]
+
+
+# ─── Check 46 (#1521; incident #1426): Context follow-up provenance vs
+#     followup-scope markers ──────────────────────────────────────────────
+
+
+def _scope_event_46(label, *, source=None, est=None, ts="2026-07-18T14:19:00Z", version=1):
+    """One `epm:followup-scope` event with line-initial fields (the canonical
+    workflow.yaml note shape check 46's marker-side parse consumes)."""
+    lines = [f"followup_label: {label}"]
+    if source is not None:
+        lines.append(f"source: {source}")
+    if est is not None:
+        lines.append(f"est_gpu_hours: {est}")
+    return {"kind": "epm:followup-scope", "ts": ts, "version": version, "note": "\n".join(lines)}
+
+
+# The real #1426 scope-marker note's field lines (spec truncated — the parse
+# reads line-initial fields only), and the incident's pre-fix / corrected
+# Context clauses (body.md fold r1 vs the corrected row, read 2026-07-18).
+_I1426_SCOPE_NOTE = (
+    "followup_label: sampled-rollout-robustness\n"
+    "source: proposer-9b-cheap\n"
+    "est_gpu_hours: 14\n"
+    "spec: Sampled-rollout robustness rung — does the mediation signature "
+    "survive off the greedy path? [truncated]"
+)
+_I1426_SCOPE_EVENT = {
+    "kind": "epm:followup-scope",
+    "ts": "2026-07-18T14:19:00Z",
+    "version": 1,
+    "note": _I1426_SCOPE_NOTE,
+}
+_I1426_PREFIX_CLAUSE = (
+    "Follow-up: `sampled-rollout-robustness` round (proposer cost_class free-analysis)."
+)
+_I1426_CORRECTED_CLAUSE = (
+    "Follow-up: `sampled-rollout-robustness` round (same-issue follow-up, greedy-decode "
+    "n=1 caveat dissolves; source proposer-9b-cheap (GPU cheap band), est 14 GPU-h, "
+    "actual ~1.8)."
+)
+
+
+def test_context_followup_scope_contradiction_fails_v4(monkeypatch):
+    """(a) The #1426 pre-fix regression fixture: a free-analysis Context
+    clause against the real GPU-band scope-marker fields FAILs via C2,
+    naming the label + both sides."""
+    import explore_persona_space.task_workflow as tw
+
+    monkeypatch.setattr(tw, "list_events", lambda n: [_I1426_SCOPE_EVENT])
+    body = _v4_body_with_footer_line(_I1426_PREFIX_CLAUSE)
+    r = verify_task_body.check_context_followup_scope_consistency(body, issue=1426)
+    assert not r.passed, r.detail
+    assert "sampled-rollout-robustness" in r.detail
+    assert "proposer-9b-cheap" in r.detail
+    assert "14" in r.detail
+
+
+def test_context_followup_scope_matching_row_passes(monkeypatch):
+    """(b) The corrected #1426 clause (verbatim) PASSes — no FAIL, no WARN
+    (the intra-clause `; ` delimiter bounds the window; kill criterion 2)."""
+    import explore_persona_space.task_workflow as tw
+
+    monkeypatch.setattr(tw, "list_events", lambda n: [_I1426_SCOPE_EVENT])
+    body = _v4_body_with_footer_line(_I1426_CORRECTED_CLAUSE)
+    r = verify_task_body.check_context_followup_scope_consistency(body, issue=1426)
+    assert r.passed and not r.is_warn, r.detail
+
+
+def test_context_followup_scope_missing_tokens_skip(monkeypatch):
+    """(c) Per-label missing tokens skip, never FAIL: (i) label named with
+    no tokens (S6); (ii) out-of-enum source token is prose, not a claim
+    (S1); (iii) marker source unparseable (S2)."""
+    import explore_persona_space.task_workflow as tw
+
+    # (i) mention, no claim tokens.
+    monkeypatch.setattr(
+        tw, "list_events", lambda n: [_scope_event_46("r-x", source="user-chat", est="0")]
+    )
+    body = _v4_body_with_footer_line("Follow-up round `r-x` folded 2026-07-18")
+    r = verify_task_body.check_context_followup_scope_consistency(body, issue=123)
+    assert r.passed and not r.is_warn, r.detail
+    # (ii) "source data" — captured token outside the enum, discarded.
+    monkeypatch.setattr(
+        tw, "list_events", lambda n: [_scope_event_46("r-x", source="proposer-9b-cheap", est="8")]
+    )
+    body = _v4_body_with_footer_line("round `r-x` (source data from HF, folded)")
+    r = verify_task_body.check_context_followup_scope_consistency(body, issue=123)
+    assert r.passed and not r.is_warn, r.detail
+    # (iii) marker source unparseable -> body source claim has nothing to
+    # contradict (C1 needs both sides).
+    ev = {
+        "kind": "epm:followup-scope",
+        "ts": "2026-07-18T14:19:00Z",
+        "version": 1,
+        "note": "followup_label: r-x\nest_gpu_hours: 14",
+    }
+    monkeypatch.setattr(tw, "list_events", lambda n: [ev])
+    body = _v4_body_with_footer_line("round `r-x` (source user-chat, folded)")
+    r = verify_task_body.check_context_followup_scope_consistency(body, issue=123)
+    assert r.passed and not r.is_warn, r.detail
+
+
+def test_context_followup_scope_no_events_or_bare_file_skips(monkeypatch):
+    """(d) issue=None skips; unknown issue (plain FileNotFoundError) skips;
+    `StaleTaskPathError` (registry corruption) PROPAGATES."""
+    import explore_persona_space.task_workflow as tw
+
+    body = _v4_body_with_footer_line("round `r-x` (source user-chat)")
+    r = verify_task_body.check_context_followup_scope_consistency(body, issue=None)
+    assert r.passed and "no issue id" in r.detail
+
+    def _boom(n):
+        raise FileNotFoundError(n)
+
+    monkeypatch.setattr(tw, "list_events", _boom)
+    r = verify_task_body.check_context_followup_scope_consistency(body, issue=999999)
+    assert r.passed and "unknown issue" in r.detail
+
+    def _stale(n):
+        raise tw.StaleTaskPathError("registry entry stale for task")
+
+    monkeypatch.setattr(tw, "list_events", _stale)
+    with pytest.raises(tw.StaleTaskPathError):
+        verify_task_body.check_context_followup_scope_consistency(body, issue=999999)
+
+
+def test_context_followup_scope_v3_contradiction_warns_not_fails(monkeypatch):
+    """(e) A grandfathered v3 body with the same C2 contradiction WARNs
+    (`passed=True, is_warn=True`) — never a new hard FAIL below the v4
+    sentinel (the #1418 fail-denied precedent)."""
+    import explore_persona_space.task_workflow as tw
+
+    monkeypatch.setattr(tw, "list_events", lambda n: [_I1426_SCOPE_EVENT])
+    body = _V3_GOOD_BODY.replace(
+        "- Originating prompt: origin prompt not recorded",
+        "- Originating prompt: origin prompt not recorded\n- " + _I1426_PREFIX_CLAUSE,
+    )
+    r = verify_task_body.check_context_followup_scope_consistency(body, issue=1426)
+    assert r.passed and r.is_warn, (r.passed, r.is_warn, r.detail)
+    assert "grandfathered v3/v2" in r.detail
+    assert "sampled-rollout-robustness" in r.detail
+
+
+def test_context_followup_scope_free_analysis_round_passes(monkeypatch):
+    """(f) A truthful free-analysis clause whose round posted only an
+    `epm:free-analysis-followup-run` marker (no scope) skips — the check
+    keys entirely on scope-armed labels (decision-table S4)."""
+    import explore_persona_space.task_workflow as tw
+
+    free = {
+        "kind": "epm:free-analysis-followup-run",
+        "ts": "2026-07-14T10:00:00Z",
+        "version": 1,
+        "note": "followup_ref: r-free\noutcome: folded",
+    }
+    monkeypatch.setattr(tw, "list_events", lambda n: [free])
+    body = _v4_body_with_footer_line(
+        "a user-chat inline free-analysis round (`r-free`, run 2026-07-14)."
+    )
+    r = verify_task_body.check_context_followup_scope_consistency(body, issue=123)
+    assert r.passed and not r.is_warn, r.detail
+    assert "no epm:followup-scope markers" in r.detail
+
+
+def test_context_followup_scope_source_mismatch_fails(monkeypatch):
+    """(g) C1: body `source user-chat` vs marker `source: proposer-9b-cheap`
+    is a hard v4 FAIL naming both sides."""
+    import explore_persona_space.task_workflow as tw
+
+    monkeypatch.setattr(
+        tw, "list_events", lambda n: [_scope_event_46("r-x", source="proposer-9b-cheap", est="14")]
+    )
+    body = _v4_body_with_footer_line("round `r-x` (source user-chat, est 14 GPU-h)")
+    r = verify_task_body.check_context_followup_scope_consistency(body, issue=123)
+    assert not r.passed, r.detail
+    assert "user-chat" in r.detail and "proposer-9b-cheap" in r.detail
+
+
+def test_context_followup_scope_correction_latest_wins(monkeypatch):
+    """(h) Two scope entries for one label: the latest (correction) entry's
+    `est_gpu_hours` binds; a correction omitting `source` falls back to the
+    group's first-parseable source (library semantics)."""
+    import explore_persona_space.task_workflow as tw
+
+    events = [
+        _scope_event_46(
+            "r-x", source="proposer-9b-cheap", est="14", ts="2026-07-18T10:00:00Z", version=1
+        ),
+        # Correction: revises est, omits source.
+        _scope_event_46("r-x", est="2", ts="2026-07-18T11:00:00Z", version=2),
+    ]
+    monkeypatch.setattr(tw, "list_events", lambda n: list(events))
+    # Body states the STALE est 14 -> W1 WARN against the corrected est 2.
+    body = _v4_body_with_footer_line("round `r-x` (source proposer-9b-cheap, est 14 GPU-h)")
+    r = verify_task_body.check_context_followup_scope_consistency(body, issue=123)
+    assert r.passed and r.is_warn, (r.passed, r.is_warn, r.detail)
+    assert "est_gpu_hours: 2" in r.detail
+    # Body matching the corrected est -> clean PASS (source fallback held).
+    body2 = _v4_body_with_footer_line("round `r-x` (source proposer-9b-cheap, est 2 GPU-h)")
+    r2 = verify_task_body.check_context_followup_scope_consistency(body2, issue=123)
+    assert r2.passed and not r2.is_warn, r2.detail
+
+
+def test_context_followup_scope_unlabeled_pseudo_labels_skipped(monkeypatch):
+    """(i) An unlabeled scope founds an `unlabeled-<ts>` pseudo-label group,
+    which the marker-side facts EXCLUDE — no facts, skip."""
+    import explore_persona_space.task_workflow as tw
+
+    ev = {
+        "kind": "epm:followup-scope",
+        "ts": "2026-07-18T14:19:00Z",
+        "version": 1,
+        "note": "source: user-chat\nspec: something unlabeled",
+    }
+    monkeypatch.setattr(tw, "list_events", lambda n: [ev])
+    body = _v4_body_with_footer_line("round folded, source user-chat, cost free-analysis")
+    r = verify_task_body.check_context_followup_scope_consistency(body, issue=123)
+    assert r.passed and not r.is_warn, r.detail
+    assert "no epm:followup-scope markers" in r.detail
+
+
+def test_context_followup_scope_blockquoted_note_not_scanned(monkeypatch):
+    """(j) A blockquoted verbatim scope note (which contains the marker's own
+    `source:` line + free-analysis vocabulary) contributes NO body claims —
+    `_context_scan_region` strips blockquote lines (#959 precedent)."""
+    import explore_persona_space.task_workflow as tw
+
+    monkeypatch.setattr(
+        tw, "list_events", lambda n: [_scope_event_46("r-x", source="proposer-9b-cheap", est="14")]
+    )
+    body = _V4_GOOD_BODY.replace(
+        "- Originating prompt: origin prompt not recorded",
+        "- Originating prompt: origin prompt not recorded\n"
+        "- Follow-up round `r-x` folded 2026-07-18\n"
+        "> followup_label: r-x source: user-chat cost_class free-analysis",
+    )
+    r = verify_task_body.check_context_followup_scope_consistency(body, issue=123)
+    assert r.passed and not r.is_warn, r.detail
+
+
+def test_context_followup_scope_est_mismatch_warns(monkeypatch):
+    """(k) W1: body `est 14 GPU-h` vs marker `est_gpu_hours: 5` WARNs (never
+    FAILs) and the message states the 0.5 GPU-h tolerance explicitly."""
+    import explore_persona_space.task_workflow as tw
+
+    monkeypatch.setattr(
+        tw, "list_events", lambda n: [_scope_event_46("r-x", source="proposer-9b-cheap", est="5")]
+    )
+    body = _v4_body_with_footer_line("round `r-x` (source proposer-9b-cheap, est 14 GPU-h)")
+    r = verify_task_body.check_context_followup_scope_consistency(body, issue=123)
+    assert r.passed and r.is_warn, (r.passed, r.is_warn, r.detail)
+    assert "0.5 GPU-h" in r.detail
+
+
+def test_context_followup_scope_multi_round_window_attribution(monkeypatch):
+    """(l) Two labels on one footer line: tokens attribute to the nearest
+    preceding label (window bounded at the next any-label mention), and the
+    full-token mention guards block sibling-label substring collisions."""
+    import explore_persona_space.task_workflow as tw
+
+    events = [
+        _scope_event_46("r-a", source="proposer-9b-cheap", est="8", ts="2026-07-18T10:00:00Z"),
+        _scope_event_46("r-b", source="proposer-9b-cheap", est="8", ts="2026-07-18T11:00:00Z"),
+    ]
+    monkeypatch.setattr(tw, "list_events", lambda n: list(events))
+    body = _v4_body_with_footer_line(
+        "round `r-a` (source user-chat) and round `r-b` (source proposer-9b-cheap)"
+    )
+    r = verify_task_body.check_context_followup_scope_consistency(body, issue=123)
+    assert not r.passed, r.detail
+    assert "`r-a`" in r.detail and "`r-b`" not in r.detail
+    # Substring guard: `r-a-b` mention never counts as an `r-a` mention.
+    events2 = [
+        _scope_event_46("r-a", source="proposer-9b-cheap", est="8", ts="2026-07-18T10:00:00Z"),
+        _scope_event_46("r-a-b", source="user-chat", est="0", ts="2026-07-18T11:00:00Z"),
+    ]
+    monkeypatch.setattr(tw, "list_events", lambda n: list(events2))
+    body2 = _v4_body_with_footer_line("round `r-a-b` (source user-chat)")
+    r2 = verify_task_body.check_context_followup_scope_consistency(body2, issue=123)
+    assert r2.passed and not r2.is_warn, r2.detail
+
+
+def test_context_followup_scope_i1092_truthful_row_passes(monkeypatch):
+    """Pinned #1092 Context-row shape (critic refinement (ii)): truthful
+    free-analysis narration about OTHER rounds interleaved after a
+    scope-armed GPU-band clause on the same line, `; `-separated — the
+    clause-delimiter window bound keeps C2 from false-firing."""
+    import explore_persona_space.task_workflow as tw
+
+    events = [
+        _scope_event_46(
+            "cross-corpus-probe-transfer",
+            source="proposer-9b-cheap",
+            est="8",
+            ts="2026-07-10T20:56:59Z",
+            version=1,
+        ),
+        _scope_event_46(
+            "caveat-repairs-plus-operator-arm-comparison",
+            source="user-chat",
+            est="0",
+            ts="2026-07-14T21:18:35Z",
+            version=2,
+        ),
+        _scope_event_46(
+            "offvm-battery-refit-and-operator-comparison",
+            source="user-chat",
+            est="0",
+            ts="2026-07-14T23:24:52Z",
+            version=3,
+        ),
+    ]
+    monkeypatch.setattr(tw, "list_events", lambda n: list(events))
+    # The #1426-adjacent real row (tasks/awaiting_promotion/1092/body.md:324,
+    # abridged to the follow-up clauses; single physical line as in corpus).
+    row = (
+        "created 2026-07-07; GPU phases run 2026-07-08-09. Lineage: building on "
+        "[#923](https://eps.superkaiba.com/tasks/923); one same-issue free-analysis "
+        "follow-up round (trait-per-factor repair, proposer-initiated, folded "
+        "2026-07-10); a second same-issue follow-up round (cross-corpus "
+        "supervised-probe transfer, `followup_label: cross-corpus-probe-transfer`, "
+        "proposer-initiated cheap band, run + folded 2026-07-10); a user-chat inline "
+        "free-analysis round (`caveat-repairs-plus-operator-arm-comparison`, run "
+        "2026-07-14: transport floors, battery-invariance verification, leak root "
+        "cause); a third same-issue follow-up round "
+        "(`followup_label: offvm-battery-refit-and-operator-comparison`, "
+        'user-initiated — originating prompt, verbatim: "dispatch" — run '
+        "2026-07-15-16, folded 2026-07-16). Originating prompt, verbatim:"
+    )
+    body = _v4_body_with_footer_line(row)
+    r = verify_task_body.check_context_followup_scope_consistency(body, issue=1092)
+    assert r.passed and not r.is_warn, r.detail
+    assert "3 follow-up label clause(s) consistent" in r.detail
+
+
+def test_context_followup_scope_free_analysis_user_chat_zero_est_skips(monkeypatch):
+    """(S3, critic refinement) A free-analysis claim against a user-chat
+    scope with est absent or 0 cannot prove a contradiction — skip
+    (user-chat rounds carry no cost_class)."""
+    import explore_persona_space.task_workflow as tw
+
+    for est in ("0", None):
+        monkeypatch.setattr(
+            tw, "list_events", lambda n, e=est: [_scope_event_46("r-x", source="user-chat", est=e)]
+        )
+        body = _v4_body_with_footer_line("round `r-x` (free-analysis, folded 2026-07-18)")
+        r = verify_task_body.check_context_followup_scope_consistency(body, issue=123)
+        assert r.passed and not r.is_warn, (est, r.detail)
+
+
+def test_context_followup_scope_matching_source_suppresses_c2(monkeypatch):
+    """(Critic refinement (i)) An explicit in-enum body source claim that
+    MATCHES the marker source suppresses C2 — the stronger evidence wins,
+    even when the marker's est_gpu_hours > 0."""
+    import explore_persona_space.task_workflow as tw
+
+    monkeypatch.setattr(
+        tw, "list_events", lambda n: [_scope_event_46("r-x", source="user-chat", est="3")]
+    )
+    body = _v4_body_with_footer_line(
+        "round `r-x` (cost_class free-analysis at filing, source user-chat)"
+    )
+    r = verify_task_body.check_context_followup_scope_consistency(body, issue=123)
+    assert r.passed and not r.is_warn, r.detail
+
+
+def test_context_followup_scope_i922_paren_clause_passes(monkeypatch):
+    """Pinned #922 Context-row shape (corpus-sweep tighten, kill criterion
+    §6.1): the scope-armed label sits INSIDE a parenthetical clause and the
+    NEXT round's truthful free-analysis narration follows `, and` (no `; `
+    delimiter) — the unmatched-close-paren window bound keeps C2 from
+    false-firing. The #922 marker also uses a `gpu_hours_estimate:` field
+    (not `est_gpu_hours:`), so est parses absent."""
+    import explore_persona_space.task_workflow as tw
+
+    ev = {
+        "kind": "epm:followup-scope",
+        "ts": "2026-07-04T03:35:12Z",
+        "version": 1,
+        "note": (
+            "followup_label: paired-provenance-transfer\n"
+            "source: proposer-9b-cheap\n"
+            "question_relation: same\n"
+            "gpu_hours_estimate: 2"
+        ),
+    }
+    monkeypatch.setattr(tw, "list_events", lambda n: [ev])
+    # Abridged from tasks/awaiting_promotion/922/body.md:209 (read 2026-07-18).
+    row = (
+        "Created 2026-07-03; run 2026-07-03, plus one zero-GPU spectral-read "
+        "follow-up round (analysis-only) and one proposer-initiated cheap-band "
+        "auto-run repair round (followup_label `paired-provenance-transfer`, "
+        "2026-07-04, ~0.3 GPU-h realized), and one user-requested inline "
+        "free-analysis round (fixed-point + slow-shell characterization, "
+        "2026-07-15, 0 GPU-h)."
+    )
+    body = _v4_body_with_footer_line(row)
+    r = verify_task_body.check_context_followup_scope_consistency(body, issue=922)
+    assert r.passed and not r.is_warn, r.detail
+    assert "1 follow-up label clause(s) consistent" in r.detail

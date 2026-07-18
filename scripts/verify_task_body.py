@@ -925,6 +925,26 @@ Generation-agnostic checks (run on v2 AND v3 — the inline-figure +
   "all 50 contexts lie below zero" beside a sidecar carrying a +0.004
   point; caught only at Lens 3 (#1511).
 
+- **check 46** (`check_context_followup_scope_consistency`, FAIL on v4 /
+  WARN grandfathered — forward-only; #1521): the `**Context:**` row's
+  follow-up provenance tokens cross-checked against each scope-armed
+  `followup_label`'s latest `epm:followup-scope` note fields (via
+  `followup_label_groups` / `parse_followup_note_field`). Per label
+  mentioned in the Context scan region (`_context_scan_region` — fence +
+  blockquote stripped): a body `source <slug>` claim (vocabulary-gated on
+  the 4-slug workflow.yaml enum) contradicting the marker's `source` (C1),
+  or a free-analysis / zero-GPU claim against a marker GPU-band round (C2,
+  the #1426 shape), FAILs on v4 / WARNs on v3-v2; an explicit `est N GPU-h`
+  mismatch > 0.5 GPU-h WARNs only (W1). Claim windows are per-line,
+  bounded at the next any-label mention and at `; ` / `. ` clause
+  delimiters (the #1092 truthful-row shape); multi-word inline-code spans
+  are stripped as quotations. Missing tokens on either side skip per label;
+  needs the issue number, so it is dispatched separately in `verify_text`
+  (the check-20/#921 precedent). Incident: task #1426's fold r1 Context
+  clause claimed "proposer cost_class free-analysis" while the round's
+  scope marker recorded `source: proposer-9b-cheap`, `est_gpu_hours: 14`
+  — caught only at clean-result-critique (Lens 5b).
+
 Harmful-content carve-out: checks 18/19 accept the sanitized excerpt
 form (`[truncated — harmful-content row; verify at <path>, row <i>]`)
 exactly as checks 10/11 do today.
@@ -955,7 +975,7 @@ import time
 import urllib.error
 import urllib.request
 from collections import Counter
-from collections.abc import Iterator
+from collections.abc import Iterable, Iterator
 from dataclasses import dataclass
 from pathlib import Path
 from typing import NamedTuple
@@ -12208,6 +12228,290 @@ def _followup_events_rounds(issue: int) -> int:
     return len(labels) + unlabeled + free + inflight
 
 
+# ── Check 46 (#1521; incident #1426): Context-row follow-up provenance ─────
+# Canonical `epm:followup-scope` source enum — MUST stay in sync with
+# `.claude/workflow.yaml § markers` (the `epm:followup-scope` /
+# `epm:same-issue-followup-run` field specs both pin
+# `source: proposer-9b-cheap | proposer-9b | user-chat | step-10b-pick`).
+# Check 46 vocabulary-gates body-side source claims on this set: a captured
+# token outside the enum is prose ("source data"), not a claim.
+_FOLLOWUP_SOURCE_SLUGS = frozenset(
+    {"proposer-9b-cheap", "proposer-9b", "user-chat", "step-10b-pick"}
+)
+
+# Body-side source claim: `source proposer-9b-cheap`, `source: user-chat`,
+# `source=` + a backticked slug. Vocabulary-gated at use site (see
+# _FOLLOWUP_SOURCE_SLUGS above): an out-of-enum captured token is discarded.
+_CTX_SOURCE_CLAIM_RE = re.compile(r"\bsource\s*[:=]?\s*`?([a-z0-9][a-z0-9-]*)`?", re.I)
+
+# Body-side free-analysis claim vocabulary (closed set, deliberately tight):
+_CTX_FREE_ANALYSIS_RE = re.compile(
+    r"\bfree[- ]analysis\b"
+    r"|\bcost_class\s*[:=]?\s*`?free-analysis`?"
+    r"|\bzero[- ]GPU\b"
+    r"|\best\.?\s*[~≈]?\s*0(?:\.0)?\s*GPU-h\b",
+    re.I,
+)
+
+# Body-side explicit estimate: `est 14 GPU-h`, `est. ~1.5 GPU-h`. A `<`/`>`
+# bound claim (`est <20 GPU-h`) is NOT a point claim and never matches.
+_CTX_EST_GPUH_RE = re.compile(r"\best\.?\s*[~≈]?\s*(?<![<>])(\d+(?:\.\d+)?)\s*GPU-h", re.I)
+
+# Claim-window clause delimiter (#1521 critic refinement): a window is
+# additionally bounded at the first `;`-followed-by-whitespace or sentence
+# period (`.` + whitespace) after the label mention. The #1092 Context row
+# interleaves truthful free-analysis narration about ANOTHER round after a
+# scope-armed clause on the same line, separated by `; ` — without this
+# bound, C2 false-fires on that truthful body. Cost: tokens after an
+# intra-clause delimiter (the corrected #1426 row's `; source ...` tail, an
+# `est. ~N` self-cut at the `. `) fall out of the window — under-fire toward
+# per-label skip, the safe direction.
+_CTX_CLAUSE_DELIM_RE = re.compile(r";(?=\s)|\.(?=\s)")
+
+# Multi-word inline-code spans (`...` containing whitespace) inside a claim
+# window are QUOTATIONS (a scope-note fragment), not body claims — stripped
+# before claim parsing. Single-token spans survive: a formatted value like
+# `proposer-9b-cheap` IS a claim (_CTX_SOURCE_CLAIM_RE tolerates backticks).
+_CTX_MULTIWORD_CODE_SPAN_RE = re.compile(r"`[^`\n]*\s[^`\n]*`")
+
+
+def _first_unmatched_close_paren(window: str) -> int | None:
+    """Index of the first `)` in `window` with no matching `(` inside the
+    window, else None. A label mentioned INSIDE a parenthetical clause
+    (`... round (followup_label \\`X\\`, ~0.3 GPU-h realized), and one
+    free-analysis round ...` — the #922 corpus shape) has its claim window
+    end at that clause's close paren: tokens after it narrate ANOTHER round
+    joined by `, and`, which the `; `/`. ` delimiter bound alone misses
+    (corpus-sweep tighten, #1521 kill criterion §6.1)."""
+    depth = 0
+    for i, ch in enumerate(window):
+        if ch == "(":
+            depth += 1
+        elif ch == ")":
+            if depth == 0:
+                return i
+            depth -= 1
+    return None
+
+
+def _followup_scope_facts(events: list[dict]) -> dict[str, dict]:
+    """Marker-side facts for check 46: per scope-armed `followup_label`,
+    `{source: str|None, est_gpu_hours: float|None, ts: str}` read off the
+    label's AUTHORITATIVE `epm:followup-scope` entry (last in `(ts, version)`
+    scan order — corrections land append-only, `followup_label_groups`).
+    `source` falls back to the group's first-parseable source when the
+    authoritative (correction) note omits it and the group source is not
+    "unknown" (library semantics: a correction must not demote the round's
+    provenance). `est_gpu_hours` comes from the authoritative note only;
+    unparseable → None. Groups founded as `unlabeled-<ts>` pseudo-labels are
+    EXCLUDED — a body cannot sensibly name them."""
+    from explore_persona_space.task_workflow import (  # local import — matches _same_issue_run_rounds
+        followup_label_groups,
+        parse_followup_note_field,
+    )
+
+    facts: dict[str, dict] = {}
+    for group in followup_label_groups(events):
+        label = group["followup_label"]
+        if label.startswith("unlabeled-"):
+            continue
+        auth = group.get("authoritative") or {}
+        note = auth.get("note") or ""
+        source = parse_followup_note_field(note, "source")
+        if source is None and group.get("source") not in (None, "unknown"):
+            source = group["source"]
+        est: float | None = None
+        est_raw = parse_followup_note_field(note, "est_gpu_hours")
+        if est_raw is not None:
+            try:
+                est = float(est_raw)
+            except ValueError:
+                est = None
+        facts[label] = {"source": source, "est_gpu_hours": est, "ts": auth.get("ts", "")}
+    return facts
+
+
+def _context_label_claims(ctx_scan: str, labels: Iterable[str]) -> dict[str, dict]:
+    """Body-side claims for check 46: per scope-armed label MENTIONED in the
+    Context scan region, `{source_claim: str|None, free_analysis: bool,
+    est_claim: float|None}`.
+
+    A mention is a full-token match of the label on a scan-region line
+    (`(?<![\\w-])`/`(?![\\w-])` guards block substring collisions between
+    sibling labels — `rollout` vs `rollout-v2`; optional backticks
+    tolerated). Per mention, the claim WINDOW runs from the match end to the
+    EARLIEST of: end of the physical line; the start of the next mention of
+    ANY label on that line (multi-round one-line footers attribute tokens to
+    the nearest preceding label). Multi-word inline-code spans are then
+    stripped (quotations, not claims — _CTX_MULTIWORD_CODE_SPAN_RE), and the
+    window is additionally bounded at the EARLIEST of the first clause
+    delimiter (_CTX_CLAUSE_DELIM_RE — the #1092 false-positive tighten) and
+    the first unmatched close paren (_first_unmatched_close_paren — the #922
+    corpus shape: a `, and`-joined next-round clause after the mention's own
+    parenthetical). Claims from
+    multiple windows for one label are unioned (first source/est claim wins;
+    free_analysis is OR'd); a source token outside _FOLLOWUP_SOURCE_SLUGS is
+    discarded (not a claim). Text BEFORE a label's mention is never
+    attributed to it (fails toward skip)."""
+    label_res = {
+        label: re.compile(rf"(?<![\w-])`?{re.escape(label)}`?(?![\w-])") for label in labels
+    }
+    claims: dict[str, dict] = {}
+    for line in ctx_scan.splitlines():
+        mentions: list[tuple[int, int, str]] = []
+        for label, rx in label_res.items():
+            mentions.extend((m.start(), m.end(), label) for m in rx.finditer(line))
+        if not mentions:
+            continue
+        mentions.sort()
+        for i, (_start, end, label) in enumerate(mentions):
+            following = [s for s, _e, _l in mentions[i + 1 :] if s >= end]
+            window = line[end : following[0] if following else len(line)]
+            window = _CTX_MULTIWORD_CODE_SPAN_RE.sub(" ", window)
+            cuts = [len(window)]
+            delim = _CTX_CLAUSE_DELIM_RE.search(window)
+            if delim:
+                cuts.append(delim.start())
+            unmatched = _first_unmatched_close_paren(window)
+            if unmatched is not None:
+                cuts.append(unmatched)
+            window = window[: min(cuts)]
+            claim = claims.setdefault(
+                label, {"source_claim": None, "free_analysis": False, "est_claim": None}
+            )
+            if claim["source_claim"] is None:
+                for sm in _CTX_SOURCE_CLAIM_RE.finditer(window):
+                    token = sm.group(1).lower()
+                    if token in _FOLLOWUP_SOURCE_SLUGS:
+                        claim["source_claim"] = token
+                        break
+            if _CTX_FREE_ANALYSIS_RE.search(window):
+                claim["free_analysis"] = True
+            if claim["est_claim"] is None:
+                em = _CTX_EST_GPUH_RE.search(window)
+                if em:
+                    claim["est_claim"] = float(em.group(1))
+    return claims
+
+
+def _label_scope_verdict(label: str, claim: dict, fact: dict) -> tuple[str | None, str | None]:
+    """Per-label C1/C2/W1 verdict for check 46: returns
+    `(contradiction_msg | None, est_warn_msg | None)` per the decision table
+    in `check_context_followup_scope_consistency`'s docstring. C2 is
+    suppressed when an explicit in-enum body source claim MATCHES the marker
+    source (the stronger evidence wins — #1521 critic refinement (i))."""
+    s_b, s_m = claim["source_claim"], fact["source"]
+    est_m = fact["est_gpu_hours"]
+    contradiction: str | None = None
+    if s_b and s_m and s_b != s_m:
+        contradiction = (
+            f"label `{label}`: the Context clause claims `source {s_b}` but the "
+            f"authoritative `epm:followup-scope` note (ts {fact['ts']}) records "
+            f"`source: {s_m}`"
+        )
+    elif (
+        claim["free_analysis"]
+        and not (s_b and s_m and s_b == s_m)
+        and (s_m in ("proposer-9b-cheap", "proposer-9b") or (est_m or 0) > 0)
+    ):
+        est_txt = "absent" if est_m is None else f"{est_m:g}"
+        contradiction = (
+            f"label `{label}`: the Context clause claims a free-analysis / zero-GPU "
+            f"round but the authoritative `epm:followup-scope` note (ts {fact['ts']}) "
+            f"records a GPU-band round (source: {s_m or 'unparseable'}, "
+            f"est_gpu_hours: {est_txt}) — the #1426 contradiction shape"
+        )
+    est_warn: str | None = None
+    if (
+        claim["est_claim"] is not None
+        and est_m is not None
+        and abs(claim["est_claim"] - est_m) > 0.5
+    ):
+        est_warn = (
+            f"label `{label}`: the Context clause claims `est {claim['est_claim']:g} GPU-h` "
+            f"vs the authoritative `epm:followup-scope` note's `est_gpu_hours: {est_m:g}` "
+            f"(ts {fact['ts']}; mismatch exceeds the 0.5 GPU-h tolerance)"
+        )
+    return contradiction, est_warn
+
+
+def check_context_followup_scope_consistency(body: str, *, issue: int | None = None) -> CheckResult:
+    """Check 46 (#1521; incident #1426): the `**Context:**` row's follow-up
+    provenance tokens cross-checked against each scope-armed label's latest
+    `epm:followup-scope` note fields.
+
+    Decision table (everything not listed = per-label skip):
+
+    - C1: body source slug (in-enum) != marker source → FAIL (v4) /
+      WARN (grandfathered v3/v2).
+    - C2: body free-analysis / zero-GPU claim vs a marker GPU-band round
+      (`source ∈ {proposer-9b-cheap, proposer-9b}` OR `est_gpu_hours > 0`)
+      → FAIL (v4) / WARN (v3/v2) — the #1426 shape. Suppressed when an
+      explicit in-enum body source claim MATCHES the marker source.
+    - W1: explicit body `est N GPU-h` vs marker `est_gpu_hours`,
+      `|N − est| > 0.5` → WARN only (a body may state a legitimately
+      revised estimate; never FAIL).
+
+    Skips (never FAIL): legacy pre-v2 body; no `**Context:**` row; no issue
+    id (bare --file/--body-stdin); unknown issue (plain FileNotFoundError);
+    no scope markers; no scope-armed label mentioned; per-label missing /
+    out-of-enum tokens. `StaleTaskPathError` propagates (registry corruption
+    must surface — the `_followup_events_rounds` failure shape). Grandfathered
+    v3/v2 bodies degrade a contradiction to WARN (`passed=True, is_warn=True`
+    — the #1418 fail-denied precedent); never a new hard FAIL below the v4
+    sentinel."""
+    name = "Context follow-up provenance vs followup-scope markers"
+    if not is_nested_design(body):
+        return CheckResult(name, True, "skipped — legacy (pre-v2) body")
+    repro = _repro_section_text(body)
+    if repro is None or not _CONTEXT_LABEL_RE.search(repro):
+        return CheckResult(name, True, "skipped — no **Context:** row")
+    if issue is None:
+        return CheckResult(name, True, "skipped — no issue id (bare --file/--body-stdin)")
+    from explore_persona_space.task_workflow import (  # local import — matches _followup_events_rounds
+        StaleTaskPathError,
+        list_events,
+    )
+
+    try:
+        events = list_events(issue)
+    except StaleTaskPathError:
+        raise
+    except FileNotFoundError:
+        return CheckResult(name, True, "skipped — unknown issue (no events.jsonl)")
+    facts = _followup_scope_facts(events)
+    if not facts:
+        return CheckResult(name, True, "skipped — no epm:followup-scope markers")
+    claims = _context_label_claims(_context_scan_region(repro), facts.keys())
+    if not claims:
+        return CheckResult(name, True, "no scope-armed followup_label mentioned in the Context row")
+    contradictions: list[str] = []
+    est_warns: list[str] = []
+    for label, claim in claims.items():
+        contradiction, est_warn = _label_scope_verdict(label, claim, facts[label])
+        if contradiction:
+            contradictions.append(contradiction)
+        if est_warn:
+            est_warns.append(est_warn)
+    if contradictions:
+        detail = (
+            "; ".join(contradictions)
+            + " — update the Context clause to match the round's `epm:followup-scope` "
+            "note, or post a correcting followup-scope marker "
+            "(SPEC.md § `**Context:**` row)."
+        )
+        if is_v4(body):
+            return CheckResult(name, False, detail)
+        return CheckResult(name, True, "grandfathered v3/v2 — " + detail, is_warn=True)
+    if est_warns:
+        return CheckResult(name, True, "; ".join(est_warns), is_warn=True)
+    return CheckResult(
+        name,
+        True,
+        f"{len(claims)} follow-up label clause(s) consistent with followup-scope markers",
+    )
+
+
 def _count_extra_followup_rounds_v4(body: str, issue: int | None = None) -> tuple[int, str]:
     """v4 twin of `_count_extra_followup_rounds` (whose `## What I ran`
     Rounds-table read only binds v3 — v4 bodies always scored rounds=0,
@@ -13412,6 +13716,10 @@ CHECKS = [
     # here either — it needs the issue number (for own-figures-dir scoping),
     # so it is dispatched separately in `verify_text` (#1371; the
     # check-31/#1011 precedent).
+    # Check 46 (`check_context_followup_scope_consistency`, FAIL on v4 /
+    # WARN grandfathered) is NOT here either — it needs the issue number
+    # (events.jsonl followup-scope markers), so it is dispatched separately
+    # in `verify_text` (#1521; the check-20/#921 precedent).
 ]
 
 
@@ -13596,6 +13904,12 @@ def verify_text(
     # embeds — needs the issue number for own-figures-dir scoping, so it
     # lives outside the body-only CHECKS list (check-31/#1011 precedent).
     results.append(check_linked_not_embedded_figures(body, issue=issue))
+    # Check 46 (FAIL on v4 / WARN grandfathered, #1521; incident #1426):
+    # Context-row follow-up provenance tokens vs the label's latest
+    # epm:followup-scope note fields — needs the issue number for the
+    # events.jsonl read, so it lives outside the body-only CHECKS list
+    # (the check-20/#921 precedent).
+    results.append(check_context_followup_scope_consistency(body, issue=issue))
     overall = all(r.passed for r in results)
     return overall, results
 
