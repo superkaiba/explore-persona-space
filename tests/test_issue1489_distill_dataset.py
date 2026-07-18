@@ -30,12 +30,14 @@ Two tests:
 from __future__ import annotations
 
 import argparse
+import ast
 import dataclasses
 import json
 import logging
 import math
 import sys
 from pathlib import Path
+from unittest import mock
 
 import pytest
 import torch
@@ -377,3 +379,123 @@ def test_distill_smoke_geometry_two_checkpoints_tiny_real(
     assert len(ckpts) >= 2, [p.name for p in ckpts]  # the dispatch gate's exact floor
     for ck in ckpts[:2]:
         assert (ck / "adapter_config.json").is_file(), sorted(p.name for p in ck.iterdir())
+
+
+# ---------------------------------------------------------------------------
+# Crash-fix round 6 (att-20260718-093558): premature incremental cache reap
+# removed data/issue_1489/hf_dl between upload-a1 and P3 distill; P3 crashed
+# on the missing corpus prefix_store.jsonl. Leg 1: the dispatcher must not
+# reap hf_dl before its LAST consumer. Leg 2: gpu_phase re-stages on demand.
+# ---------------------------------------------------------------------------
+
+DISPATCH_SH = REPO / "scripts" / "issue1489_dispatch.sh"
+
+
+def test_dispatch_has_no_cache_reap_before_last_corpus_consumer():
+    """Pin leg 1: no incremental hf_dl reap at-or-before the last $CORPUS_DIR consumer.
+
+    Fails on the pre-fix script (the reap sat at old line 247, before the P3
+    distill / P4 dose-probe / phase_b consumers); passes post-fix (no reap in
+    the dispatch script at all — Step-8 terminal cleanup owns it).
+    """
+    lines = DISPATCH_SH.read_text().split("\n")
+    reap_idx = [
+        i
+        for i, line in enumerate(lines)
+        if "clean_experiment_downloads" in line
+        and "--incremental" in line
+        and not line.lstrip().startswith("#")
+    ]
+    consumer_idx = [
+        i
+        for i, line in enumerate(lines)
+        if '"$CORPUS_DIR"' in line and not line.lstrip().startswith("#")
+    ]
+    assert consumer_idx, "dispatch script no longer references $CORPUS_DIR — update this test"
+    last_consumer = max(consumer_idx)
+    early = [i + 1 for i in reap_idx if i <= last_consumer]
+    assert not early, (
+        f"incremental cache reap at dispatch line(s) {early} precedes the last "
+        f'"$CORPUS_DIR" consumer (line {last_consumer + 1}) — the att-20260718-093558 '
+        "crash class (the reap removes the corpus P3/P4/phase_b still read)"
+    )
+
+
+def _write_corpus_files(dirpath: Path, names=gpu.CORPUS_REQUIRED_FILES) -> None:
+    dirpath.mkdir(parents=True, exist_ok=True)
+    for name in names:
+        (dirpath / name).write_text('{"id": "r0"}\n')
+
+
+def test_ensure_corpus_staged_noop_when_present(tmp_path, monkeypatch):
+    """All required files present -> False, and the HF stager is never called."""
+    corpus = tmp_path / "corpus"
+    _write_corpus_files(corpus)
+    stager = mock.create_autospec(
+        gpu.stage_corpus, side_effect=AssertionError("must not re-stage a complete corpus")
+    )
+    monkeypatch.setattr(gpu, "stage_corpus", stager)
+    assert gpu.ensure_corpus_staged(corpus) is False
+    stager.assert_not_called()
+
+
+def test_ensure_corpus_staged_restages_on_missing_file(tmp_path, monkeypatch, caplog):
+    """The att-20260718-093558 shape: prefix_store.jsonl missing -> one re-stage.
+
+    Executes the REAL ensure_corpus_staged body; the fake sits ONLY at the HF
+    network boundary and is signature-conformant by construction
+    (create_autospec of the real issue1489_build_conditions.stage_corpus).
+    """
+    corpus = tmp_path / "corpus"
+    _write_corpus_files(corpus, names=("manifest.jsonl", "query_store.jsonl"))
+    assert not (corpus / "prefix_store.jsonl").exists()
+
+    def _fake_stage(corpus_dir):
+        _write_corpus_files(Path(corpus_dir))
+        return sorted(gpu.CORPUS_REQUIRED_FILES)
+
+    stager = mock.create_autospec(gpu.stage_corpus, side_effect=_fake_stage)
+    monkeypatch.setattr(gpu, "stage_corpus", stager)
+    with caplog.at_level(logging.INFO, logger="issue1489_gpu_phase"):
+        assert gpu.ensure_corpus_staged(corpus) is True
+    stager.assert_called_once_with(corpus)
+    assert any("[corpus-guard]" in rec.getMessage() for rec in caplog.records)
+    # Second call: everything present now -> no second re-stage (idempotent).
+    assert gpu.ensure_corpus_staged(corpus) is False
+    stager.assert_called_once()
+
+
+def test_ensure_corpus_staged_fails_loud_when_restage_incomplete(tmp_path, monkeypatch):
+    """A stager that leaves the required set incomplete must raise, never proceed."""
+    corpus = tmp_path / "corpus"
+
+    def _partial_stage(corpus_dir):
+        _write_corpus_files(Path(corpus_dir), names=("manifest.jsonl",))
+        return ["manifest.jsonl"]
+
+    stager = mock.create_autospec(gpu.stage_corpus, side_effect=_partial_stage)
+    monkeypatch.setattr(gpu, "stage_corpus", stager)
+    with pytest.raises(FileNotFoundError, match="re-stage left"):
+        gpu.ensure_corpus_staged(corpus)
+
+
+def test_main_wires_corpus_guard_for_all_corpus_phases():
+    """The guard must run at phase entry in main() and cover every corpus consumer.
+
+    Corpus consumers in this module (all via parent.load_store on
+    args.corpus_dir): _gen_worker (gen), _capture_worker (capture),
+    phase_margin (margin), build_distill_jsonl (distill — the crash site),
+    _dose_probe_worker (dose_probes), _ft_worker (ft). ``upload`` reads no
+    corpus and stays outside the guard.
+    """
+    assert {"gen", "capture", "margin", "distill", "dose_probes", "ft"} == gpu.CORPUS_PHASES
+    tree = ast.parse(Path(gpu.__file__).read_text())
+    main_fn = next(n for n in tree.body if isinstance(n, ast.FunctionDef) and n.name == "main")
+    calls = [
+        n
+        for n in ast.walk(main_fn)
+        if isinstance(n, ast.Call)
+        and isinstance(n.func, ast.Name)
+        and n.func.id == "ensure_corpus_staged"
+    ]
+    assert calls, "main() no longer calls ensure_corpus_staged — the round-6 guard is unwired"

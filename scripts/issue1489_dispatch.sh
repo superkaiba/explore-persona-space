@@ -244,7 +244,14 @@ phase_a() {
   uv run python scripts/issue1489_gpu_phase.py --phase upload \
     --conditions-dir "$COND" --corpus-dir "$CORPUS_DIR" --out "$OUT"
   sentinel upload_a1_done "raw completions + summaries uploaded + verified"
-  uv run python scripts/clean_experiment_downloads.py 1489 --incremental --apply || true
+  # NO between-phase cache reap here (crash-fix round 6, att-20260718-093558):
+  # the only hf_dl content is the 0.05 GB pinned corpus at $CORPUS_DIR — a
+  # read-only parent input consumed through the END of the run (P3 distill,
+  # P4 dose probes, phase_b ft/margin) — so the incremental-reap contract's
+  # precondition ("after a phase has CONSUMED its hf_dl inputs") never holds
+  # mid-run. Step-8 terminal cleanup owns the reap; per-phase _headroom
+  # canaries (floor 30-70 GB) already bound disk. gpu_phase's
+  # ensure_corpus_staged re-stages on demand as defense in depth.
   echo "[phase=p3] distillation"
   uv run python scripts/issue1489_gpu_phase.py --phase distill \
     --conditions-dir "$COND" --corpus-dir "$CORPUS_DIR" --out "$OUT"

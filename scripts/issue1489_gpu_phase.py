@@ -56,6 +56,7 @@ sys.path.insert(0, str(REPO_ROOT / "scripts"))
 import numpy as np  # noqa: E402
 
 import issue1092_gpu_phase as parent  # noqa: E402
+from issue1489_build_conditions import stage_corpus  # noqa: E402
 from issue1489_common import (  # noqa: E402
     DISTILL_BATCH_SIZE,
     DISTILL_EPOCHS,
@@ -99,6 +100,50 @@ RECAP_B_ROWS = 100  # cell_plain re-captures on provision B (cross-provision dri
 # Parent contract asserts: the reused capture-position helper reads these
 # module constants — a drift there silently changes the row budget here.
 assert parent.MAX_MODEL_LEN == MAX_MODEL_LEN, (parent.MAX_MODEL_LEN, MAX_MODEL_LEN)
+
+# Read-only parent-corpus inputs the GPU phases consume via
+# ``parent.load_store(args.corpus_dir, ...)`` (gen/capture workers,
+# phase_margin, build_distill_jsonl, dose-probe + ft workers). Completeness
+# keys on the FULL consumer-required file set, never one proxy file (#1315).
+CORPUS_REQUIRED_FILES = ("manifest.jsonl", "prefix_store.jsonl", "query_store.jsonl")
+# Phases whose parent process (or spawned workers) read the corpus stores;
+# ``upload`` never touches the corpus and stays outside the guard.
+CORPUS_PHASES = frozenset({"gen", "capture", "margin", "distill", "dose_probes", "ft"})
+
+
+def ensure_corpus_staged(corpus_dir: Path) -> bool:
+    """Re-stage the pinned #1092 corpus when any required file is missing.
+
+    Crash-fix round 6 (att-20260718-093558): a between-phase
+    ``clean_experiment_downloads.py 1489 --incremental --apply`` reap removed
+    ``data/issue_1489/hf_dl`` after upload-a1 and P3 distill crashed on the
+    missing ``prefix_store.jsonl``. The corpus is a READ-ONLY PARENT INPUT at
+    a non-rebinding path consumed through the END of the run (P3, P4, phase_b
+    ft/margin), so the dispatcher's mid-run reap is removed (leg 1); this
+    guard is the defense-in-depth fallback (leg 2): on a missing required
+    file it re-stages via the EXISTING deterministic P0 staging path
+    (``issue1489_build_conditions.stage_corpus`` — scoped
+    ``hub.stage_hub_prefix`` at the pinned ``CORPUS_REV``, per-file
+    exists-skip, fail-loud required-set check). Runs ONCE in the parent
+    process at phase entry, BEFORE any worker fan-out (no concurrent-staging
+    race, #1315). Returns True when a re-stage was performed.
+    """
+    missing = [name for name in CORPUS_REQUIRED_FILES if not (corpus_dir / name).exists()]
+    if not missing:
+        logger.info("[corpus-guard] %s: required corpus files present", corpus_dir)
+        return False
+    logger.warning(
+        "[corpus-guard] %s missing %s; re-staging pinned corpus via "
+        "issue1489_build_conditions.stage_corpus (crash-fix round 6)",
+        corpus_dir,
+        missing,
+    )
+    stage_corpus(corpus_dir)
+    still_missing = [name for name in CORPUS_REQUIRED_FILES if not (corpus_dir / name).exists()]
+    if still_missing:
+        raise FileNotFoundError(f"corpus re-stage left {still_missing} missing under {corpus_dir}")
+    logger.info("[corpus-guard] %s: re-stage complete", corpus_dir)
+    return True
 
 
 # ---------------------------------------------------------------------------
@@ -1719,6 +1764,11 @@ def main() -> int:
     if args.phase == "verify_capture":
         verify_capture_equivalence(args)
         return 0
+    if args.phase in CORPUS_PHASES:
+        # Crash-fix round 6: the corpus is a read-only parent input every GPU
+        # phase reads; re-stage it here (parent process, before worker fan-out)
+        # if a cache reap / fresh instance removed it.
+        ensure_corpus_staged(Path(args.corpus_dir))
     manifest = load_conditions_manifest(Path(args.conditions_dir))
     logger.info(
         "[phase=%s] manifest rows=%d cells=%d smoke=%s",
