@@ -3962,8 +3962,8 @@
     "1508": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1508",
-      "status": "running",
+      "path": "tasks/reviewing/1508",
+      "status": "reviewing",
       "title": "workflow-fix: gotchas.md entry \u2014 TRL mixed prompt/completion schema is nondeterministic UB"
     },
     "1509": {
