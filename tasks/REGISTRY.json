@@ -3969,8 +3969,8 @@
     "1509": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1509",
-      "status": "running",
+      "path": "tasks/reviewing/1509",
+      "status": "reviewing",
       "title": "workflow-fix: verify_task_body FAILs unpinned footer HF artifact paths"
     },
     "151": {
