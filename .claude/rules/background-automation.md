@@ -1531,7 +1531,7 @@ sweeps at the Bash tool layer (override: `EPM_ALLOW_TMP_SWEEP=1`).
 
 **Recovery runbook (socket vanished, server alive).**
 1. Find the server: `ss -xlp | grep tmux` (shows bound path + pid; works
-   even when the socket FILE is deleted) or `pgrep -f 'tmux: server'`
+   even when the socket FILE is deleted) or `pgrep -f 'tmux: serve[r]'`
    (`pgrep -x tmux` misses it — the server's comm is `tmux: server`).
 2. If `/tmp/tmux-<uid>` is gone: `mkdir -m 700 /tmp/tmux-$(id -u)`.
 3. `kill -USR1 <server-pid>` — the server recreates its socket at its

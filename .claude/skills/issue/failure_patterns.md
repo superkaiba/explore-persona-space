@@ -70,7 +70,7 @@ This routes as `infra` — but on a RELAUNCH it usually means **orphaned
 the GPUs**, NOT a capacity problem. The workers' cmdline is just
 `VLLM::EngineCore` (no script name), so `pgrep -f <script-name>` reads
 clean while ~50 GB/GPU is held. Recovery is IN-PLACE: probe
-`pgrep -af EngineCore` + `nvidia-smi
+`pgrep -af 'EngineCor[e]'` + `nvidia-smi
 --query-compute-apps=pid,used_memory --format=csv`, kill the orphans
 (`kill`, then `kill -9` survivors), confirm GPU memory is ~0, and
 relaunch on the SAME pod — do this BEFORE any fresh-pod / capacity
