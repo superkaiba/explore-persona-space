@@ -3920,8 +3920,8 @@
     "1502": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/1502",
-      "status": "approved",
+      "path": "tasks/running/1502",
+      "status": "running",
       "title": "daily-fix: open wf-fix sibling advisory at filing time"
     },
     "1503": {
