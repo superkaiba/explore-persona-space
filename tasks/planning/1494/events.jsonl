@@ -4,3 +4,4 @@
 {"ts": "2026-07-18T07:36:24Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "proposed", "to": "planning", "note": "Clarifier All-clear."}
 {"ts": "2026-07-18T07:42:58Z", "kind": "epm:plan-verify", "version": 1, "by": "unknown", "note": "verify_plan.py: PASS, n_fail=0, n_warn=0. Plan version v1."}
 {"ts": "2026-07-18T07:46:39Z", "kind": "epm:plan-verify", "version": 2, "by": "unknown", "note": "verify_plan.py: PASS, n_fail=0, n_warn=0. Plan version v2 (fact-check correction folded: home_hf_repo_escalate_bytes had zero prior test coverage — assumption 7 corrected; crash repro confirmed live). Fact-checker: 8 CONFIRMED, 1 PARTLY WRONG (corrected)."}
+{"ts": "2026-07-18T07:47:10Z", "kind": "epm:progress", "version": 2, "by": "unknown", "note": "codex composers skipped — quota sentinel live until 2026-08-06T13:26:00+00:00 (#1204 pre-spawn check); single-Claude per no-show fallback for all 3 Phase-2 lens critics."}
