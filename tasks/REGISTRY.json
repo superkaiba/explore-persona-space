@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1497,
+  "highest_id": 1498,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -3874,6 +3874,13 @@
       "path": "tasks/proposed/1497",
       "status": "proposed",
       "title": "daily-fix: route-3 needs-human tag dropped at filing"
+    },
+    "1498": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1498",
+      "status": "proposed",
+      "title": "daily-fix: 9c selector misses literal-path pinning tests"
     },
     "15": {
       "has_clean_result": false,
