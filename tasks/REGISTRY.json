@@ -3948,8 +3948,8 @@
     "1506": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1506",
-      "status": "reviewing",
+      "path": "tasks/completed/1506",
+      "status": "completed",
       "title": "workflow-fix: check-28 opaque-code classes for bare H<d> + f16/l16 tokens"
     },
     "1507": {
