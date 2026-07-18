@@ -992,6 +992,24 @@ _WEDGE_STOP_NOTE_SENTINEL = "[autonomous_session_watch:runpod-noport-wedge-stop]
 # from "real progress" like the other wedge markers.
 _WEDGE_FAILOVER_NOTE_SENTINEL = "[autonomous_session_watch:runpod-noport-wedge-failover]"
 
+# Substring stamped into the #1490 orphan-gcp-handle alert marker: a RUNNING
+# bare `pod-<N>` whose run-handle sidecar still points at backend=gcp past the
+# grace window — the residue class the poller-side D1 reclaim can miss (poller
+# crash between provision and reclaim, or a failed terminate). ALERT-ONLY:
+# this arm never stops/terminates anything. Deduped once per pod incarnation
+# via the `orphan_gcp_noted` pod-safety state field.
+_ORPHAN_GCP_HANDLE_NOTE_SENTINEL = "[autonomous_session_watch:orphan-gcp-handle-alert]"
+
+#: Grace (seconds) before the #1490 orphan-gcp-handle arm flags a RUNNING bare
+#: ``pod-<N>`` with a stale ``backend=gcp`` sidecar. Sized ~2x the healthy
+#: failover create→bootstrap→execute→sidecar-re-point window (bootstrap
+#: ~5-15 min; wait-for-capacity runs pre-create so it never counts against pod
+#: age) — the ``RUNPOD_WEDGE_K_SEC = 900`` sizing convention doubled, because
+#: bootstrap is longer than port bring-up. Env-overridable at CALL time via
+#: ``EPM_ORPHAN_GCP_HANDLE_GRACE_SEC`` (:func:`_orphan_gcp_handle_grace_sec`,
+#: mirroring ``backend_poll._gcp_queue_wait_seconds``).
+ORPHAN_GCP_HANDLE_GRACE_SEC = 1800
+
 # Substring stamped into every session-stalled-alert marker note. Same role as
 # _ALERT_NOTE_SENTINEL for the pod-safety pass: a session-stalled alert is
 # posted as epm:progress and MUST be filtered out of the "real progress" set,
@@ -1385,6 +1403,7 @@ _WATCHER_NOTE_SENTINELS: frozenset[str] = frozenset(
         _WEDGE_ALERT_NOTE_SENTINEL,
         _WEDGE_STOP_NOTE_SENTINEL,
         _WEDGE_FAILOVER_NOTE_SENTINEL,
+        _ORPHAN_GCP_HANDLE_NOTE_SENTINEL,
         _STALLED_ALERT_NOTE_SENTINEL,
         _STALLED_RESPAWN_NOTE_SENTINEL,
         _STALLED_EXHAUSTED_NOTE_SENTINEL,
@@ -7378,6 +7397,7 @@ def _save_pod_safety_state(
     keep_running_noted: bool | None = None,
     followup_noted: bool | None = None,
     stop_failed_noted: bool | None = None,
+    orphan_gcp_noted: bool | None = None,
     wedge_first_seen: float | None = _CARRY,
     wedge_missed: int | None = _CARRY,
     wedge_alerted: bool | None = _CARRY,
@@ -7399,7 +7419,11 @@ def _save_pod_safety_state(
     None carries forward identically. ``stop_failed_noted`` is the same
     dedup/carry-forward flag owned by the stop arm's FAILED branch (one
     durable ``stop-failed`` marker per state-file lifetime, #1155); None
-    carries forward identically.  ``prev`` is the existing on-disk
+    carries forward identically. ``orphan_gcp_noted`` is the same
+    dedup/carry-forward flag owned by the #1490 orphan-gcp-handle alert arm
+    (once per pod incarnation; the arm itself treats a stored flag under a
+    DIFFERENT ``pod_id`` as not-noted — the wedge-clock reset convention);
+    None carries forward identically.  ``prev`` is the existing on-disk
     payload (if any), passed so callers that already loaded it don't re-read;
     ``first_seen`` carries forward when present so the age backstop measures
     the original episode start, not the latest save.
@@ -7433,6 +7457,19 @@ def _save_pod_safety_state(
         followup_noted = bool((prev or {}).get("followup_noted", False))
     if stop_failed_noted is None:
         stop_failed_noted = bool((prev or {}).get("stop_failed_noted", False))
+    if orphan_gcp_noted is None:
+        # #1490 orphan-gcp-handle alert dedup (once per pod incarnation) —
+        # None carries the prior on-disk value forward like
+        # ``keep_running_noted`` / ``followup_noted``, EXCEPT that the carry
+        # is pod_id-keyed: a save under a NEW pod_id resets the flag to False
+        # (the wedge-clock reset convention), so a fresh pod incarnation
+        # re-alerts. This reset must live HERE (not only in the arm's own
+        # predicate) because the #692 wedge arm's ``_clear_wedge_state`` save
+        # rewrites ``pod_id`` earlier in the same tick, which would otherwise
+        # launder the stale flag onto the new incarnation before the orphan
+        # arm ever observes the change.
+        same_pod = (prev or {}).get("pod_id") == pod_id
+        orphan_gcp_noted = bool((prev or {}).get("orphan_gcp_noted", False)) and same_pod
     if wedge_first_seen is _CARRY:
         prev_wedge_first_seen = (prev or {}).get("wedge_first_seen")
         wedge_first_seen = (
@@ -7451,6 +7488,7 @@ def _save_pod_safety_state(
         "keep_running_noted": bool(keep_running_noted),
         "followup_noted": bool(followup_noted),
         "stop_failed_noted": bool(stop_failed_noted),
+        "orphan_gcp_noted": bool(orphan_gcp_noted),
         "first_seen": prev_first_seen,
         "wedge_first_seen": wedge_first_seen,
         "wedge_missed": int(wedge_missed),
@@ -9273,6 +9311,167 @@ def _process_wedged_pod(
         )
 
 
+def _orphan_gcp_handle_grace_sec() -> int:
+    """Read the #1490 orphan-gcp-handle grace, defaulting to 1800s.
+
+    Read at CALL time (not import time) from ``EPM_ORPHAN_GCP_HANDLE_GRACE_SEC``
+    so ops can retune without restarting the watcher cron — mirroring
+    ``backend_poll._gcp_queue_wait_seconds`` (#783). A missing / non-integer /
+    non-positive value falls back to :data:`ORPHAN_GCP_HANDLE_GRACE_SEC`.
+    """
+    raw = os.environ.get("EPM_ORPHAN_GCP_HANDLE_GRACE_SEC")
+    if raw is None:
+        return ORPHAN_GCP_HANDLE_GRACE_SEC
+    try:
+        val = int(raw)
+    except (TypeError, ValueError):
+        return ORPHAN_GCP_HANDLE_GRACE_SEC
+    return val if val > 0 else ORPHAN_GCP_HANDLE_GRACE_SEC
+
+
+def _orphan_gcp_sidecar_is_gcp(issue: int) -> bool:
+    """True iff issue ``issue``'s run-handle sidecar resolves AND reads backend=gcp.
+
+    The #1490 orphan-arm predicate leg: a RUNNING bare ``pod-<N>`` coexisting
+    with a gcp-pointing handle is anomalous (the failover either re-points the
+    sidecar at runpod or tears the pod down). Uses the SAME sidecar resolver
+    the wedge arm uses (``resolve_handle_sidecar_path``). ANY read / parse /
+    import failure returns False — bias QUIET (alert-only arm, a miss is
+    cheap) — with ONE stderr diagnostic line so the quiet miss is diagnosable
+    (plan v2 fold-in).
+    """
+    try:
+        from explore_persona_space.backends.issue_dispatch import (
+            read_handle_sidecar,
+            resolve_handle_sidecar_path,
+        )
+
+        path, _probed = resolve_handle_sidecar_path(issue)
+        if not path.exists():
+            return False
+        return read_handle_sidecar(path).backend == "gcp"
+    except Exception as exc:
+        print(
+            f"  orphan-gcp-handle: sidecar unreadable for #{issue} "
+            f"({type(exc).__name__}: {exc}); no alert (bias quiet)",
+            file=sys.stderr,
+        )
+        return False
+
+
+def _maybe_flag_orphan_gcp_handle_pod(
+    issue: int,
+    info: PodInfo,
+    now: float,
+    keep_running: bool,
+    followup_active: bool,
+    prev_state: dict,
+    dry_run: bool,
+) -> bool:
+    """ALERT-ONLY #1490 orphan arm: flag a RUNNING bare ``pod-<N>`` whose run
+    handle still points at ``backend=gcp`` past the grace window.
+
+    The residue class the poller-side D1 reclaim
+    (``backend_poll._reclaim_failed_runpod_provision``) can miss — a poller
+    crash between provision and reclaim, or a failed/unattributable terminate.
+    PURELY ADDITIVE: never stops, never terminates, never returns-early on
+    behalf of the caller — ``_process_pod`` falls through to the status-class
+    decision unconditionally. Returns whether it alerted (for tests).
+
+    Predicate, ALL must hold (cheap legs first; the ``task.py``-subprocess
+    shield re-checks run LAST so they are paid at most once per pod
+    incarnation): (1) bare canonical name ``pod-<issue>`` (suffixed follow-up
+    pods excluded — the failover only ever provisions the bare name); (2) not
+    already noted for THIS pod incarnation (``orphan_gcp_noted`` under the
+    same ``pod_id``; a pod_id change resets, the wedge-clock convention);
+    (3) pod age ``now - first_seen`` >= the grace (the existing
+    per-pod-incarnation clock in the pod-safety state — a fresh state file has
+    no clock yet, so the arm stays quiet until the age accumulates);
+    (4) the handle sidecar resolves and reads ``backend == "gcp"``;
+    (5) no keep-running / live-follow-up shield (the passed flags — computed
+    lazily by the caller only on the auto-stop-done branch — OR'd with a
+    direct lazy re-check, so a deliberate parallel pod on a RUNNING-status
+    task is shielded too).
+
+    On a hit: one alert marker via the pass's existing mechanics
+    (:func:`_post_progress_marker`, sentinel
+    :data:`_ORPHAN_GCP_HANDLE_NOTE_SENTINEL` — anti-liveness, in
+    ``_WATCHER_NOTE_SENTINELS``) + a stderr line, then ``orphan_gcp_noted``
+    is persisted (and mirrored into the caller's in-memory ``prev_state`` so
+    the status-class arm's later save carries it forward instead of
+    clobbering it with the stale pre-alert snapshot).
+    """
+    if info.name != f"pod-{issue}":
+        return False
+    prev_noted = bool(prev_state.get("orphan_gcp_noted", False)) and prev_state.get(
+        "pod_id"
+    ) == getattr(info, "pod_id", None)
+    if prev_noted:
+        return False
+    first_seen = prev_state.get("first_seen")
+    if not isinstance(first_seen, int | float):
+        return False  # no incarnation clock yet — age accumulates from the first save
+    age = now - float(first_seen)
+    if age < _orphan_gcp_handle_grace_sec():
+        return False
+    if not _orphan_gcp_sidecar_is_gcp(issue):
+        return False
+    if keep_running or followup_active:
+        return False
+    # Lazy shield re-check: the caller computes the passed flags only on the
+    # auto-stop-done branch, so for an ACTIVE-status task they are False even
+    # when the tag/signal is present. Paid at most once per pod incarnation
+    # (the noted flag below short-circuits every later tick).
+    if _task_keep_running(issue) or _task_followup_active(issue):
+        return False
+    age_h = age / 3600.0
+    _post_progress_marker(
+        issue,
+        f"{_ORPHAN_GCP_HANDLE_NOTE_SENTINEL} ORPHAN GCP-handle pod (#1490): RUNNING pod "
+        f"{info.name} (pod_id={info.pod_id}) has been up {age_h:.1f}h while the run-handle "
+        f"sidecar still points at backend=gcp — the GCP→RunPod failover either re-points "
+        f"the sidecar at runpod or tears the pod down, so this pod is likely provision "
+        f"residue from a failed failover launch (poller crash mid-window, or a failed "
+        f"terminate; the #1417 shape). NOT auto-stopped (alert-only arm). Recovery: "
+        f"inspect, then `uv run python scripts/pod.py terminate --issue {issue} --yes` "
+        f"(add --skip-upload-verify for a never-ran pod). Posted once per pod "
+        f"incarnation; `task.py add-tag {issue} keep-running` shields a deliberate keep.",
+        dry_run,
+        label="orphan-gcp-handle",
+    )
+    print(
+        f"  ORPHAN-GCP-HANDLE issue #{issue}: RUNNING {info.name} with a stale "
+        f"backend=gcp sidecar for {age_h:.1f}h (grace {_orphan_gcp_handle_grace_sec()}s); "
+        f"alert-only, NOT stopping.",
+        file=sys.stderr,
+    )
+    if not dry_run:
+        _save_pod_safety_state(
+            issue,
+            info.pod_id,
+            missed=prev_state.get("missed", 0) if isinstance(prev_state.get("missed"), int) else 0,
+            alerted=bool(prev_state.get("alerted", False)),
+            last_progress_ts=(
+                prev_state.get("last_progress_ts")
+                if isinstance(prev_state.get("last_progress_ts"), int | float)
+                else None
+            ),
+            orphan_gcp_noted=True,
+            prev=prev_state,
+        )
+    # Mirror into the caller's in-memory snapshot so the status-class arm's
+    # later save (which passes prev=prev_state) carries the flag forward.
+    # The pod_id mirrors TOO (r2 Minor fix): _save_pod_safety_state's None-carry
+    # is pod_id-keyed (same_pod), so on a NEW pod incarnation a stale OLD
+    # pod_id in prev_state would make the status-class save recompute
+    # same_pod=False and clobber the just-persisted flag back to False — one
+    # duplicate alert on the next tick. The arm just persisted this pod_id to
+    # disk (above), so the in-memory mirror only restores consistency.
+    prev_state["orphan_gcp_noted"] = True
+    prev_state["pod_id"] = info.pod_id
+    return True
+
+
 def _escaped_pod_exemptions(issue: int, status_class: str, events: list) -> tuple[bool, bool]:
     """Lazy escaped-pod auto-stop exemptions for :func:`_process_pod`.
 
@@ -9354,6 +9553,16 @@ def _process_pod(
     prev_progress = prev_state.get("last_progress_ts")
     if not isinstance(prev_progress, int | float):
         prev_progress = None
+
+    # ── #1490 orphan-gcp-handle arm (ALERT-ONLY, purely additive) ────────────
+    # A RUNNING bare pod-<N> whose run-handle sidecar still reads backend=gcp
+    # past the grace is likely provision residue from a failed GCP→RunPod
+    # failover launch the poller-side reclaim missed (poller crash mid-window,
+    # failed terminate — the #1417 shape). Falls through UNCONDITIONALLY to
+    # the status-class decision below; never stops/terminates/returns-early.
+    _maybe_flag_orphan_gcp_handle_pod(
+        issue, info, now, keep_running, followup_active, prev_state, dry_run
+    )
 
     # Clear the alerted flag so a new staleness episode can re-alert when
     # EITHER (a) real progress advanced since last tick, OR (b) the task is
