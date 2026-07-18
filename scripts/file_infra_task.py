@@ -96,6 +96,7 @@ from spawn_session import (  # noqa: E402
 # daily_drive_filings.py; the `uv run` env has the editable install.
 from explore_persona_space.task_workflow import (  # noqa: E402
     WF_FIX_TITLE_PREFIXES,
+    open_workflow_fix_siblings,
     recent_closed_workflow_fix_tasks,
     wf_fix_extract_target,
 )
@@ -332,6 +333,60 @@ def _advise_recent_closed_wf_fix_siblings(args: argparse.Namespace) -> None:
         )
 
 
+def _advise_open_wf_fix_siblings(args: argparse.Namespace) -> None:
+    """#1502 warn-only advisory: before filing a wf-fix-shaped task, list OPEN
+    (non-terminal) infra siblings overlapping the candidate by target path
+    token or informative title tokens. The blocking open-task dedup
+    (task_workflow.is_open_workflow_fix_task) is exact-(target_file,
+    fingerprint) BY DESIGN, so a same-bug-different-wording sibling already
+    mid-pipeline is invisible to it (#1479 was filed+spawned while #1476's
+    session was landing the same fix; #1479's ~2.3h pipeline was discarded).
+    ADVISORY ONLY (the #1399/#1446 contract, verbatim): never blocks, never
+    changes exit codes, never skips the filing — a DISTINCT bug on the same
+    hot file legitimately files its own task (the #678 A1 grain is
+    unchanged); the whole leg is fail-soft (any exception prints a one-line
+    diagnostic and filing proceeds)."""
+    try:
+        body_text = args.body
+        if body_text is None and args.body_file is not None:
+            try:
+                body_text = Path(args.body_file).read_text(encoding="utf-8")
+            except OSError:
+                body_text = None
+        target = wf_fix_extract_target(body_text or "")
+        if "wf-fix" not in (args.tag or []) and target is None:
+            return  # not wf-fix-shaped: zero scan cost (AC6; the #1173/#1283/#1399 gate)
+        hits = open_workflow_fix_siblings(target, args.title)
+        if not hits:
+            return
+        print(
+            f"file_infra_task: ADVISORY — {len(hits)} OPEN sibling task(s) overlap this "
+            "filing (the open-task dedup is exact-(target_file, fingerprint) only; "
+            ".claude/rules/workflow-fix-on-bug.md § Dedup, #1502). If a listed sibling "
+            "is already fixing THIS bug, archive the just-filed task "
+            "(task.py set-status <id> archived) and stop its spawned session "
+            "(spawn_session.py stop --session-id <sid>) instead of running a "
+            "duplicate pipeline; a DISTINCT bug on the same file files by design:",
+            file=sys.stderr,
+        )
+        for h in hits[:_ADVISORY_MAX_ROWS]:
+            print(
+                f"  #{h['id']}  {h['status']}  [{'; '.join(h['matched'])}]  {h['title']}",
+                file=sys.stderr,
+            )
+        if len(hits) > _ADVISORY_MAX_ROWS:
+            print(
+                f"  ... and {len(hits) - _ADVISORY_MAX_ROWS} more open siblings",
+                file=sys.stderr,
+            )
+    except Exception as e:  # deliberate fail-soft: advisory must never break filing (#1502)
+        print(
+            f"file_infra_task: open-sibling advisory leg failed ({e!r}); filing "
+            "proceeds (#1502 fail-soft)",
+            file=sys.stderr,
+        )
+
+
 def cmd_file_infra(args: argparse.Namespace) -> int:
     """File a ripe `kind: infra`/`batch` task, then best-effort dispatch it.
 
@@ -341,10 +396,15 @@ def cmd_file_infra(args: argparse.Namespace) -> int:
     here would make callers think filing failed)."""
     # 0. Warn-only pre-filing backstops (stderr only; exit codes and filing
     # behavior unchanged): #1173 durable-recursion-guard line, #1283 dedup
-    # title-prefix surface, #1399 recently-closed-sibling advisory.
+    # title-prefix surface, #1399 recently-closed-sibling advisory, #1502
+    # open-sibling advisory (closed-then-open ordering keeps the
+    # higher-severity live-collision rows nearest the `filed #N` output).
+    # Both advisory legs run BEFORE the `task.py new` subprocess below, so
+    # the being-filed task cannot self-match (self-exclusion by ordering).
     _warn_missing_wf_fix_provenance(args)
     _warn_missing_wf_fix_title_prefix(args)
     _advise_recent_closed_wf_fix_siblings(args)
+    _advise_open_wf_fix_siblings(args)
 
     # 1. File first (the durable, must-succeed half).
     new_argv = _build_new_argv(args)
