@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1512,
+  "highest_id": 1513,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -4000,6 +4000,13 @@
       "path": "tasks/proposed/1512",
       "status": "proposed",
       "title": "workflow-fix: gotcha \u2014 smoke-gate floors from realized slice arithmetic"
+    },
+    "1513": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1513",
+      "status": "proposed",
+      "title": "workflow-fix: gotcha \u2014 incremental cache reap only after the LAST hf_dl consumer"
     },
     "152": {
       "has_clean_result": false,
