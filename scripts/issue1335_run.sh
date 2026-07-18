@@ -28,9 +28,11 @@
 # sets these; unset = the byte-identical parent ladder run):
 #   I1335_GEN_RUNGS / I1335_TF_RUNGS / I1335_ALL_RUNGS  space-separated rung
 #       subsets (set-but-empty = an EMPTY set, e.g. I1335_TF_RUNGS="")
+#   I1335_MODELS  space-separated model subset (base|instruct; unset = both —
+#       existing callers byte-unchanged; seed44-base-rungs sets "base")
 #   I1335_SUMMARY_MODE  ladder (default: --summary + gates + figures) |
-#       seed-compare (--seed-compare vs $I1335_REFERENCE_SUMMARY; no gates,
-#       no figures)
+#       seed-compare (--seed-compare vs $I1335_REFERENCE_SUMMARY; optional
+#       second reference via $I1335_REFERENCE_SUMMARY_2; no gates, no figures)
 #   I1335_SMOKE_ROOT    scratch root for the smoke pipeline
 #   EPM_I1335_GEN_SEED / EPM_I1335_HF_PREFIX  consumed inside the python
 #       scripts (issue1335_render_rungs.py module constants)
@@ -86,7 +88,25 @@ if [ "${I1335_ALL_RUNGS+set}" = "set" ]; then
 else
   ALL_RUNGS=(r0_qa_full r1_qa_oneline r2_tf r2_op r3_persona r4_fictionframe r6_nofoil r7_endpoint s1_assistant_label s2a_familiar s2b_novel)
 fi
-MODELS=(base instruct)
+# models-knob-begin (model-subset override; unset = both — default byte-identical)
+if [ "${I1335_MODELS+set}" = "set" ]; then
+  read -r -a MODELS <<< "$I1335_MODELS"
+else
+  MODELS=(base instruct)
+fi
+if [ "${#MODELS[@]}" -eq 0 ]; then
+  echo "[i1335-run] FATAL: I1335_MODELS is set but empty — need >=1 of base|instruct" >&2
+  exit 5
+fi
+for m in "${MODELS[@]}"; do
+  case "$m" in base|instruct) ;; *)
+    echo "[i1335-run] FATAL: unknown model in I1335_MODELS: '$m' (base|instruct)" >&2
+    exit 5
+    ;;
+  esac
+done
+MODELS_CSV=$(IFS=,; echo "${MODELS[*]}")
+# models-knob-end
 SUMMARY_MODE="${I1335_SUMMARY_MODE:-ladder}"
 case "$SUMMARY_MODE" in ladder|seed-compare) ;; *)
   echo "[i1335-run] FATAL: I1335_SUMMARY_MODE must be ladder|seed-compare, got: $SUMMARY_MODE" >&2
@@ -333,7 +353,10 @@ run_pipeline() {  # run_pipeline <mode: smoke|full>
   fi
 
   echo "[phase=p1_p3_lanes_${mode}]"
-  if [ "$NGPUS" -ge 2 ]; then
+  # The 2-lane shard is hard-wired base||instruct, so it fires only on the
+  # exact default model set; any I1335_MODELS subset runs the serial loop
+  # (same lane body, same width in smoke AND full — no smoke narrowing).
+  if [ "$NGPUS" -ge 2 ] && [ "${MODELS[*]}" = "base instruct" ]; then
     local lb="$LOG_DIR/issue-${ISSUE}-${mode}-base.log" li="$LOG_DIR/issue-${ISSUE}-${mode}-instruct.log"
     ( export CUDA_VISIBLE_DEVICES=0; run_model_lane base "$data_dir" "$out_dir" "$mode" ) >"$lb" 2>&1 &
     local pid_b=$!
@@ -352,7 +375,7 @@ run_pipeline() {  # run_pipeline <mode: smoke|full>
   if [ "$SKIP_UPLOAD" != "1" ] && [ "$mode" != "smoke" ]; then stage_args=(--stage-from-hub); fi
   local smoke_args=()
   if [ "$mode" = "smoke" ]; then smoke_args=(--smoke); fi
-  if [ "$NGPUS" -ge 2 ]; then
+  if [ "$NGPUS" -ge 2 ] && [ "${MODELS[*]}" = "base instruct" ]; then
     local mb="$LOG_DIR/issue-${ISSUE}-${mode}-matched-base.log"
     local mi="$LOG_DIR/issue-${ISSUE}-${mode}-matched-instruct.log"
     ( export CUDA_VISIBLE_DEVICES=0; uv run python scripts/issue1335_fit.py --matched-n \
@@ -363,7 +386,7 @@ run_pipeline() {  # run_pipeline <mode: smoke|full>
     local pid_i=$!
     wait_lanes "$pid_b" "$pid_i" "$mb" "$mi"
   else
-    uv run python scripts/issue1335_fit.py --matched-n --models base,instruct \
+    uv run python scripts/issue1335_fit.py --matched-n --models "$MODELS_CSV" \
       "${fit_common[@]}" "${stage_args[@]}" "${smoke_args[@]}"
   fi
   # NOTE: matched-n --models base and --models instruct each compute n_min from
@@ -372,12 +395,16 @@ run_pipeline() {  # run_pipeline <mode: smoke|full>
 
   echo "[phase=p3_summary_${mode}]"
   if [ "$SUMMARY_MODE" = "seed-compare" ]; then
-    uv run python scripts/issue1335_fit.py --seed-compare --models base,instruct \
+    local ref2_args=()
+    if [ -n "${I1335_REFERENCE_SUMMARY_2:-}" ]; then
+      ref2_args=(--reference-summary-2 "$I1335_REFERENCE_SUMMARY_2")
+    fi
+    uv run python scripts/issue1335_fit.py --seed-compare --models "$MODELS_CSV" \
       --data-dir "$data_dir" --out-dir "$out_dir" \
       --reference-summary "${I1335_REFERENCE_SUMMARY:-eval_results/issue_1335/ladder_summary.json}" \
-      "${smoke_args[@]}"
+      "${ref2_args[@]}" "${smoke_args[@]}"
   else
-    uv run python scripts/issue1335_fit.py --summary --models base,instruct \
+    uv run python scripts/issue1335_fit.py --summary --models "$MODELS_CSV" \
       --data-dir "$data_dir" --out-dir "$out_dir" "${smoke_args[@]}"
   fi
 
@@ -432,8 +459,11 @@ main() {
   # batched null path, inner-group-cv x custom-grid cross product fail-loud)
   # -> 8cf88202ef (#1310 focused-maps: main gained the shared batched lineage
   # this branch already carries + the new GCV_DOF_CAP dof-cap fix — folded
-  # into both scan paths here, default None byte-preserving; r9 port 2).
-  local port_pin=8cf88202ef
+  # into both scan paths here, default None byte-preserving; r9 port 2)
+  # -> fbdda9b0fc (#1335's OWN seed43-round merge to main, PR #1227: main's
+  # copy is now blob-identical to this branch's — af5d0a111c on both sides;
+  # seed44 round pin advance, no port needed).
+  local port_pin=fbdda9b0fc
   git fetch origin main --quiet || log "WARN: git fetch origin main failed (offline?)"
   if git rev-parse --verify --quiet origin/main >/dev/null; then
     local touched

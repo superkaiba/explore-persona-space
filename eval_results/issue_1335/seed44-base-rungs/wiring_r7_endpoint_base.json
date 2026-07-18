@@ -1,0 +1,8 @@
+{
+  "rung_slug": "r7_endpoint",
+  "render_config_hash": "3b22e5ea0d13c63d",
+  "code_sha": "46ca73b3b0be33a65594315b77a8583305100199",
+  "wiring_check": "skipped-seeded",
+  "fresh_rows": 0,
+  "seeded_rows": 6173
+}
