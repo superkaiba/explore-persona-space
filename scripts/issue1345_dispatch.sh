@@ -363,6 +363,7 @@ if should_run gen_stories_paired; then
     # Instruct only (base N/A by scope, plan v8 §5). rc=21 == the 2160/2700
     # yield floor failed -> the r4 leg halts (reported N/A); other rc fatal.
     RC_PAIRED=0
+    # RC_CAPTURE_EXEMPT: run_cmd is a thin print-and-exec wrapper (payload = last command), so the captured rc IS the payload's — typed rc-21 routing below
     run_cmd env CUDA_VISIBLE_DEVICES=0 ${ENV_INLINE} uv run python scripts/issue1345_gen_stories_paired.py \
       --model instruct --out-dir "$STORIES_DIR" --dl-dir "$DL_DIR" --matched-dir "$MATCHED_DIR" $SMOKE_FLAG || RC_PAIRED=$?
     if [[ -z "$DRY_RUN" ]]; then
@@ -442,6 +443,7 @@ if should_run extract_r4_op_companion; then
     # (plan v8 §4.5 — a control, never a kill); no_r4op_flag threads the halt
     # into the fits phase.
     RC_OP=0
+    # RC_CAPTURE_EXEMPT: run_cmd is a thin print-and-exec wrapper (payload = last command), so the captured rc IS the payload's — typed rc-23 routing below
     run_cmd env CUDA_VISIBLE_DEVICES=0 ${ENV_INLINE} uv run python scripts/issue1345_gen_stories_paired.py \
       --model instruct --op-companion --out-dir "$STORIES_DIR" --dl-dir "$DL_DIR" \
       --matched-dir "$MATCHED_DIR" $SMOKE_FLAG || RC_OP=$?

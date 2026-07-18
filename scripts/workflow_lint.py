@@ -134,6 +134,21 @@ Behaviours:
   ``PUSH_SWALLOW_LEGACY_ALLOWLIST``. Contract:
   ``.claude/rules/pod-side-reporting.md`` § Result-push verification
   contract (#1205).
+* ``--check-sh-function-rc-capture`` (also bundled into the no-flags
+  default run): walk every ``*.sh`` under ``scripts/`` and FAIL on any
+  SAME-FILE bash function invoked via ``func || rc=$?`` / ``|| true`` /
+  ``|| :`` while the script runs under ``set -e`` — bash disables errexit
+  throughout the function BODY when the call sits in an ``||`` context,
+  so mid-function failures collapse to the last command's rc (#1426: a
+  Gate-1 terminal failure + a manifest SystemExit read as rc=0 and the
+  ``[phase=done]`` success sentinel fired). Single external-command
+  captures (``uv run python ... || rc=$?``) never match (the invocation
+  regex requires a collected same-file function name at command
+  position); ``set +e`` regions are unflagged (line-order state
+  tracking); quoted strings, definition lines, heredoc bodies, trailing
+  comments, and later ``;``-segments never match. Waive with
+  ``# RC_CAPTURE_EXEMPT: <reason>``. ShellCheck SC2310 is the broader
+  external analogue (#1516).
 * ``--check-grep-qv`` (also bundled into the no-flags default run): scan
   fenced code blocks in ``.claude/skills/**/SKILL.md`` +
   ``.claude/agents/*.md`` and logical lines of ``scripts/**/*.sh``, and
@@ -3515,6 +3530,238 @@ def check_push_failure_swallow(*, scripts_dir: Path | None = None) -> list[str]:
     return errors
 
 
+# `--check-sh-function-rc-capture` (#1516; incident #1426): bash disables
+# errexit throughout a function BODY when the call sits in an `||` context,
+# so `func || rc=$?` / `func || true` collapses mid-function failures to the
+# last command's rc (usually 0) — #1426's `run_seed "$s" || rc=$?` let a
+# Gate-1 terminal failure + a manifest SystemExit proceed to `[phase=done]`.
+# ShellCheck SC2310 is the broader external analogue (also `if func`,
+# `while func`, `! func`, `func && x`); v1 deliberately matches the filed
+# incident class only (`|| rc=$?` / `|| true` on a same-file function).
+# Parse limitations degrade toward false NEGATIVES (same direction as
+# check_upload_or_true), with TWO named FP-side exceptions, both measured
+# harmless on the live tree (0 instances; the repo-tree-is-clean test + the
+# waiver contain them):
+# (a) pass-1 over-collection — the brace-optional def regex can collect bare
+#     zero-arg call lines inside heredoc python bodies (errs toward flagging);
+# (b) a case-arm PATTERN that equals a collected function name
+#     (`fname) cmd || true ;;`) matches the invocation regex at ^ and would
+#     flag.
+# The naive double-quote masking (no \" escape handling) can also mis-mask
+# exotic lines in either direction — see _rc_capture_mask_quotes.
+RC_CAPTURE_FUNC_DEF_RE = re.compile(
+    r"^\s*(?:function\s+)?([A-Za-z_][A-Za-z0-9_]*)\s*\(\s*\)\s*\{?"  # name() {  /  name ()
+    r"|^\s*function\s+([A-Za-z_][A-Za-z0-9_]*)\s*\{"  # function name {   (paren-less)
+)
+RC_CAPTURE_SUPPRESS_RE = re.compile(r"\|\|\s*(?:[A-Za-z_][A-Za-z0-9_]*=\$\?|true\b|:(?=[\s;]|$))")
+# Three suppressor shapes (capture-SPELLING variants covered, not just the
+# filed `rc=$?`):
+#   (1) `|| <var>=$?` — ANY simple variable name (rc / status / ret / code /
+#       ...), not the literal `rc` only; the danger is the
+#       capture-and-continue shape, not the name.
+#   (2) `|| true\b` — the \b sits INSIDE the true branch only: `?` is a
+#       non-word char, so a trailing \b after the alternation would NEVER
+#       match `=$?` (a dead branch in the draft regex, corrected at plan
+#       fact-check; the corrected form matches all shapes and still returns
+#       0 live findings).
+#   (3) `|| :` — the colon builtin, an exact synonym of `|| true` (the
+#       lookahead bounds it to whitespace / `;` / EOL so `:=`-style text
+#       cannot match).
+# Deliberately NOT matched (documented residuals; see the check docstring):
+# `|| { rc=$?; ... }` brace-group capture (brace-group handlers are a
+# pervasive live fail-loud idiom — 20+ sites incl. a same-file-function call
+# at run_program_orchestrator.sh:86 — and covering them would threaten the
+# 0-findings bundling precondition), and quoted `|| rc="$?"` (quote masking
+# blanks the `"$?"` span BEFORE the suppressor scan, a masking-induced FN;
+# 0 live hits).
+RC_CAPTURE_WAIVER_RE = re.compile(r"#\s*RC_CAPTURE_EXEMPT\s*:\s*(.+?)\s*$")
+RC_CAPTURE_WAIVER_MIN_REASON_CHARS = 10
+# Initial errexit state per file: ON iff the shebang carries a short-option
+# cluster containing `e` (`#!/bin/bash -e` / `-eu`); otherwise OFF.
+RC_CAPTURE_SHEBANG_E_RE = re.compile(r"^#!\S+.*\s-[a-zA-Z]*e[a-zA-Z]*\b")
+
+
+def _rc_capture_set_e_transition(stripped: str) -> bool | None:
+    """Token-scan a logical shell line for a ``set -e`` / ``set +e``
+    errexit transition. Returns True (errexit ON), False (OFF), or None
+    (no transition — the line is not a ``set`` command, or carries no
+    e-bearing token). A short-option cluster containing ``e`` (``-e``,
+    ``-euo``, ``-eux``) turns errexit ON; the ``+`` cluster form turns it
+    OFF; the long forms ``-o errexit`` / ``+o errexit`` are covered for
+    completeness (0 live uses). The LAST matching token on the line wins.
+    This is LINE-ORDER state tracking (the ``check_piped_git_push``
+    ``pipefail_seen`` precedent), not file-level presence — 7 live scripts
+    toggle ``set +e`` mid-file, and under ``set +e`` the ``|| rc=$?``
+    pattern is not the footgun. Known coarseness: ``set -e`` inside a
+    function body or subshell is treated as a file-scope transition (no
+    scope tracking); it errs toward the state the author most recently
+    declared."""
+    tokens = [tok.rstrip(";") for tok in stripped.split()]
+    if not tokens or tokens[0] != "set":
+        return None
+    transition: bool | None = None
+    for i, tok in enumerate(tokens[1:], start=1):
+        nxt = tokens[i + 1] if i + 1 < len(tokens) else ""
+        if tok == "-o" and nxt == "errexit":
+            transition = True
+        elif tok == "+o" and nxt == "errexit":
+            transition = False
+        elif re.fullmatch(r"-[a-zA-Z]*e[a-zA-Z]*", tok):
+            transition = True
+        elif re.fullmatch(r"\+[a-zA-Z]*e[a-zA-Z]*", tok):
+            transition = False
+    return transition
+
+
+def _rc_capture_mask_quotes(s: str) -> str:
+    """Replace each single-quoted then double-quoted span with same-length
+    spaces, so quoted text (a remote command carrying ``|| true``, e.g. the
+    ``bootstrap_pod.sh`` ``ssh_cmd 'cd ... || true'`` shape) can never
+    satisfy the invocation or suppressor regexes, while character positions
+    stay aligned for the ``;``-segment guard. Single-quoted spans are
+    masked first (bash forbids escapes inside them, so that pass is exact);
+    the double-quote pass is naive about ``\\"`` escapes — a known
+    imperfection that can only mis-mask exotic lines, and any mis-mask
+    lands on the fail-toward-false-negative side in practice because the
+    flag additionally requires a collected same-file function name at
+    command position."""
+    s = re.sub(r"'[^']*'", lambda m: " " * len(m.group(0)), s)
+    return re.sub(r'"[^"]*"', lambda m: " " * len(m.group(0)), s)
+
+
+def check_sh_function_rc_capture(*, scripts_dir: Path | None = None) -> list[str]:
+    """Walk every ``*.sh`` under ``scripts/`` and FAIL on any SAME-FILE
+    bash function invoked via ``func || rc=$?`` / ``|| true`` / ``|| :``
+    while the script runs under ``set -e``.
+
+    Rationale (#1516; incident #1426): bash disables errexit throughout a
+    function's BODY whenever the call appears in an ``||`` context, so a
+    dispatcher written in the house ``set -euo pipefail`` style loses
+    every implicit guard inside the function — a mid-function
+    ``SystemExit``, gate failure, or fit crash falls through and ``rc``
+    captures only the LAST command's exit code (usually 0). On #1426 this
+    let partial uploads and the ``[phase=done]`` success sentinel proceed
+    past a Gate-1 terminal failure. ShellCheck SC2310 is the broader
+    external analogue (optional/off-by-default even there); v1
+    deliberately matches the filed incident class only.
+
+    Detection, per logical line (backslash continuations merged, heredoc
+    bodies consumed via :func:`_iter_sh_logicals_with_heredocs`, trailing
+    comments stripped quote-aware via :func:`_strip_sh_trailing_comment`,
+    quotes masked via :func:`_rc_capture_mask_quotes`):
+
+    1. Pass 1 collects the file's own function names
+       (:data:`RC_CAPTURE_FUNC_DEF_RE`); no functions -> file skipped.
+    2. A collected name must sit at COMMAND POSITION (line start, or
+       after ``;`` ``&`` ``|`` ``(`` ``{`` or a ``then``/``do``/``else``
+       keyword) — this keeps single external-command captures
+       (``uv run python ... || rc=$?``, all current live captures)
+       unflagged: their first word is never a same-file function.
+    3. The suppressor (:data:`RC_CAPTURE_SUPPRESS_RE`) must follow the
+       invocation with no ``;`` between them (segment guard — a
+       suppressor on a LATER ``;``-segment belongs to that segment's own
+       command; ``&&`` chains deliberately stay in scope, since
+       ``cd x && func || rc=$?`` puts ``func`` in the ``||`` context).
+    4. Errexit state is tracked line-order
+       (:func:`_rc_capture_set_e_transition`; initial state from the
+       shebang, :data:`RC_CAPTURE_SHEBANG_E_RE`) — a hit inside a
+       ``set +e`` region does not flag (the function body never had
+       errexit protection there, so the author owns explicit error
+       handling; failing toward false-negative, the safe direction).
+    5. Definition lines are skipped (a definition is not an invocation —
+       kills the one-liner-def ``... || true; }`` shape; accepted FN: a
+       one-liner def whose BODY invokes another collected function with
+       ``|| true`` is skipped with it); ``#``-comment lines are skipped;
+       one error per logical line, first hit wins.
+    6. ``# RC_CAPTURE_EXEMPT: <reason>`` (reason >= 10 chars, same
+       logical line or immediately preceding non-blank line) waives.
+
+    Out-of-scope contexts (documented residuals — all the same bash
+    footgun; ShellCheck SC2310's broader scope is the named future
+    extension if the class recurs through one of them): ``if func`` /
+    ``while func`` / ``until func`` / ``! func`` / ``func && x``
+    suppressing contexts, ``var=$(func) || rc=$?`` assignment-hidden
+    substitutions, ``env VAR=1 func || true`` and bare assignment-prefix
+    forms (fname not at command position), cross-file sourced functions
+    (the collector is same-file by design, per the #1516 Goal),
+    ``func || { rc=$?; ... }`` brace-group capture, quoted
+    ``func || rc="$?"``, fail-loud handlers ``func || exit 1``, and
+    case-arm invocations ``pattern) func || true ;;``. ``.claude/hooks/``
+    is out of scope (0 of its 6 files use ``set -e`` — guards are
+    deliberately fail-open, so the class cannot fire there today).
+
+    ``scripts_dir`` is an override hook for unit tests; production
+    callers pass None and the function walks the canonical
+    ``<repo_root>/scripts`` tree. Bundled into the no-flags default run
+    (same policy as ``check_push_failure_swallow``).
+    """
+    root = scripts_dir if scripts_dir is not None else _REPO_ROOT / "scripts"
+    if not root.exists():
+        return []
+    errors: list[str] = []
+    for sh in sorted(root.rglob("*.sh")):
+        if not sh.is_file():
+            continue
+        lines = sh.read_text(encoding="utf-8").splitlines()
+        funcs: set[str] = set()
+        for line in lines:
+            def_match = RC_CAPTURE_FUNC_DEF_RE.match(line)
+            if def_match:
+                funcs.add(def_match.group(1) or def_match.group(2))
+        if not funcs:
+            continue
+        inv_re = re.compile(
+            r"(?:^|[;&|({]|\b(?:then|do|else)\s)\s*("
+            + "|".join(re.escape(f) for f in sorted(funcs))
+            + r")\b"
+        )
+        errexit_on = bool(lines) and bool(RC_CAPTURE_SHEBANG_E_RE.match(lines[0]))
+        for first, last, logical, _bodies in _iter_sh_logicals_with_heredocs(lines):
+            stripped = logical.strip()
+            if stripped.startswith("#"):
+                continue
+            transition = _rc_capture_set_e_transition(stripped)
+            if transition is not None:
+                errexit_on = transition
+                continue
+            if not errexit_on:
+                continue
+            if RC_CAPTURE_FUNC_DEF_RE.match(logical):
+                continue
+            masked = _rc_capture_mask_quotes(_strip_sh_trailing_comment(logical))
+            for inv in inv_re.finditer(masked):
+                suppress = RC_CAPTURE_SUPPRESS_RE.search(masked, inv.end())
+                if suppress is None or ";" in masked[inv.end() : suppress.start()]:
+                    continue
+                if not _sh_waiver_present(
+                    lines,
+                    first,
+                    last,
+                    waiver_re=RC_CAPTURE_WAIVER_RE,
+                    min_reason_chars=RC_CAPTURE_WAIVER_MIN_REASON_CHARS,
+                ):
+                    fname = inv.group(1)
+                    errors.append(
+                        f"{sh}:{first + 1}: same-file bash function `{fname}` invoked "
+                        f"via `|| <var>=$?`/`|| true`/`|| :` under set -e — bash "
+                        f"disables errexit inside the function BODY in an `||` "
+                        f"context, so mid-function failures collapse to the last "
+                        f"command's rc (#1426: a Gate-1 terminal failure + a manifest "
+                        f"SystemExit read as rc=0 and `[phase=done]` fired). PRIMARY "
+                        f"remedies: harden the body's failure-prone steps with "
+                        f"explicit `|| exit`/`|| return $?`, or extract the body to a "
+                        f"child script (`bash x.sh || rc=$?` — a child process keeps "
+                        f"its own set -e; this is why single-external-command "
+                        f"captures are safe). NOTE: `set +e; {fname}; rc=$?; set -e` "
+                        f"bracketing alone does NOT restore body errexit — it has the "
+                        f"identical collapse semantics and must be paired with body "
+                        f"hardening. A genuinely-safe shape may be waived with "
+                        f"`# RC_CAPTURE_EXEMPT: <reason>` (#1516)."
+                    )
+                break  # one error per logical line, first hit wins
+    return errors
+
+
 # `--check-grep-qv` (#928 -> #1125): an rc-consumed quiet+invert grep trigger
 # is implementation-divergent — GNU grep exits 0 iff a line is SELECTED (with
 # -v, selected = non-matching), while ugrep 7.5.0 returns rc=1 in the same
@@ -3848,8 +4095,11 @@ def check_upload_or_true(
     Files whose repo-root-relative path is in
     :data:`UPLOAD_OR_TRUE_LEGACY_ALLOWLIST` are skipped whole-file
     (grandfathered deliberate uses; locked by ``test_live_trees_pass``).
-    Named residual evasion shapes (``|| echo WARN``, ``|| rc=$?``,
-    ``set +e``, function-wrapped uploads, subshell-closing-paren swallows)
+    Named residual evasion shapes (``|| echo WARN``, ``|| rc=$?`` — whose
+    same-file-FUNCTION-invocation subclass is now covered by
+    :func:`check_sh_function_rc_capture` (#1516), the single-command
+    ``|| rc=$?`` shape remaining that check's residual — ``set +e``,
+    function-wrapped uploads, subshell-closing-paren swallows)
     are documented in the regex block above — every parse limitation
     degrades to a false NEGATIVE, never a false positive.
 
@@ -10743,6 +10993,21 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         "Bundled into the no-flags default run (#1205).",
     )
     parser.add_argument(
+        "--check-sh-function-rc-capture",
+        action="store_true",
+        help="Verify no shell script under scripts/ invokes a SAME-FILE "
+        "bash function via `func || rc=$?` / `|| true` / `|| :` under "
+        "set -e — bash disables errexit inside the function BODY when "
+        "the call sits in an `||` context, so mid-function failures "
+        "collapse to the last command's rc (#1426: partial uploads + the "
+        "`[phase=done]` success sentinel proceeded past a Gate-1 "
+        "terminal failure). Single external-command captures never "
+        "match; `set +e` regions are unflagged; waive a genuinely-safe "
+        "shape with `# RC_CAPTURE_EXEMPT: <reason>`. ShellCheck SC2310 "
+        "is the broader external analogue. Bundled into the no-flags "
+        "default run (#1516).",
+    )
+    parser.add_argument(
         "--check-grep-qv",
         action="store_true",
         help="Verify no executable workflow snippet (fenced code blocks in "
@@ -11288,6 +11553,7 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         or args.check_pipe_python
         or args.check_piped_git_push
         or args.check_push_failure_swallow
+        or args.check_sh_function_rc_capture
         or args.check_grep_qv
         or args.check_marker_registry
         or args.check_agent_model_pins
@@ -11385,6 +11651,8 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         errors.extend(check_piped_git_push())
     if args.check_push_failure_swallow or no_flags:
         errors.extend(check_push_failure_swallow())
+    if args.check_sh_function_rc_capture or no_flags:
+        errors.extend(check_sh_function_rc_capture())
     if args.check_grep_qv or no_flags:
         errors.extend(check_grep_qv())
     if (args.check_marker_registry or no_flags) and not args.check_references:
