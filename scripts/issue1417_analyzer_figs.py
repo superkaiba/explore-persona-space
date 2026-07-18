@@ -194,8 +194,9 @@ def fig_ceiling_vs_numerator() -> None:
         ax.set_xlim(-1.6, 1.0)
     axes[0].legend(loc="lower left", fontsize=9)
     fig.suptitle(
-        "REL verdict components per battery pair: denominators (ceilings) broke negative;"
-        " numerators stayed positive (dashed/dash-dot: full-n chat / plain-text anchors)",
+        "REL verdict components per battery pair: most denominators (ceilings) broke negative;"
+        " numerators stayed positive wherever the cell's own map is healthy"
+        " (dashed/dash-dot: full-n chat / plain-text anchors)",
         fontsize=12,
         y=1.005,
     )

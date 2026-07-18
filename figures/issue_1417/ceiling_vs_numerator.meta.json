@@ -1,6 +1,6 @@
 {
-  "commit": "0fed7857ec",
-  "created": "2026-07-18T19:56:16Z",
+  "commit": "1221e4574c",
+  "created": "2026-07-18T20:22:36Z",
   "figsize": [
     13.5,
     6.0
@@ -263,7 +263,7 @@
   "n_series": 36,
   "total_points": 36,
   "text": {
-    "suptitle": "REL verdict components per battery pair: denominators (ceilings) broke negative; numerators stayed positive (dashed/dash-dot: full-n chat / plain-text anchors)",
+    "suptitle": "REL verdict components per battery pair: most denominators (ceilings) broke negative; numerators stayed positive wherever the cell's own map is healthy (dashed/dash-dot: full-n chat / plain-text anchors)",
     "fig_texts": [],
     "axes": [
       {
