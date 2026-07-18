@@ -5,7 +5,7 @@ title: The own-answer advantage and its unclosed layer-26 residual live almost e
 kind: experiment
 tags: []
 created_at: '2026-07-06T02:18:05Z'
-has_clean_result: false
+has_clean_result: true
 parent_id: 952
 workflow: v1
 goal: Determine whether the depth-increasing own-answer advantage in the context-to-answer-activation
