@@ -698,6 +698,10 @@ def marker_lora_config_1481(spec: CellSpec, *, tokenizer, cell_root: Path):
         warmup_steps=C.LORA_WARMUP_STEPS,  # 5 — the m1 warmup-swamp fix
         marker_band_log_only=True,  # NEVER stops — full ladders are the deliverable
         marker_band_trajectory_path=str(cell_root / "band_trajectory.json"),
+        # This flow owns its uploads: the per-run folder upload in _train_cell
+        # covers the final adapter + every rung — suppress train_lora's inline
+        # adapter upload (upload-policy.md double-upload fence, config form).
+        hf_upload=False,
     )
 
 
