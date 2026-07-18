@@ -1,5 +1,7 @@
 # Result: The prefix→answer map is the query-average of the context→answer map — the query part dominates per-context prediction, and the prefix part is what survives averaging
 
+> Terminology: `docs/glossary_context_answer_map.md`. Note: "prefix map" in the #1092 sections below is the pre-query **prefix-end** map; the later fair comparison (Result 7 of the 2026-07-15 summary; 2026-07-17 deep-dive) found the prefix-end map is NOT the query-average of the context map — the title's identity holds for the query-averaged object $v_P$, not the prefix-end state.
+
 ## Motivation
 
 * We had shown two separate maps over the residual stream:

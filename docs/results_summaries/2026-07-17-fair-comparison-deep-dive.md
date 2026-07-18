@@ -1,5 +1,7 @@
 # #1092 fair-comparison deep-dive: prefix-end map vs query-averaged context-vector map
 
+> Terminology: `docs/glossary_context_answer_map.md`.
+
 Analysis-only deep-dive (0 GPU-h, no new model forwards) into the banked
 fair-comparison result (Result 7 of `docs/results_summaries/2026-07-15-link-prefix-context-answer-maps.md`).
 The banked read compared the **pre-query prefix-end** map against the
