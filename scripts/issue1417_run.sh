@@ -574,9 +574,17 @@ main() {
       # serial CPU-randn floor is n-independent); halving both null-draw counts
       # brings the lane to ~4.9k s (ratio 1.37 <= 1.5) while preserving every
       # planned pair/cell/arm. Restore 200-draw nulls via these env overrides.
+      # pilot-budget re-ground (epm:compute-deviation v4, #1417): production pilot
+      # measured 601 s/pair WITH the 100-draw descope applied (n_draws=100 verified
+      # in the crash-persisted battery JSON) — the residual is production-n fit
+      # cost, not draws. Projected 7813 s/lane vs the old 7200 s abort (rc 7,
+      # 2026-07-18T15:14Z crash). Budget 1.5 h => abort at 3 h/lane: clears the
+      # measured 2.17 h worst-case uniform projection with ~38% margin while
+      # still bounding a genuine runaway (~10x the naive basis still aborts).
       run_phase_c_lanes full \
         --cosine-null-draws "${I1417_COSINE_NULL_DRAWS:-100}" \
-        --collapse-null-draws "${I1417_COLLAPSE_NULL_DRAWS:-100}"
+        --collapse-null-draws "${I1417_COLLAPSE_NULL_DRAWS:-100}" \
+        --pilot-budget-h "${I1417_PILOT_BUDGET_H:-1.5}"
       echo "[phase=pc_summary]"
       uv run python scripts/issue1417_battery.py --summary --data-dir "$DATA_DIR" --out-dir "$OUT_DIR"
       echo "[phase=pc_figures]"
