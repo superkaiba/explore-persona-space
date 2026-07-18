@@ -36,8 +36,12 @@ os.environ.setdefault("MKL_NUM_THREADS", "8")
 os.environ.setdefault("OPENBLAS_NUM_THREADS", "8")
 os.environ.setdefault("NUMEXPR_NUM_THREADS", "8")
 
-import numpy as np
-import torch
+from explore_persona_space.orchestrate.env import load_dotenv
+
+load_dotenv()
+
+import numpy as np  # noqa: E402
+import torch  # noqa: E402
 
 torch.set_num_threads(int(os.environ.get("OMP_NUM_THREADS", "8")))
 

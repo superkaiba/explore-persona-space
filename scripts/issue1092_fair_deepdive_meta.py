@@ -28,8 +28,12 @@ from pathlib import Path
 os.environ.setdefault("OMP_NUM_THREADS", "8")
 os.environ.setdefault("OPENBLAS_NUM_THREADS", "8")
 
-import numpy as np
-from scipy import stats
+from explore_persona_space.orchestrate.env import load_dotenv
+
+load_dotenv()
+
+import numpy as np  # noqa: E402
+from scipy import stats  # noqa: E402
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 STAGE = Path(
