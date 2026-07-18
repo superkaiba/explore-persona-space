@@ -427,6 +427,9 @@ if [ "$WIDTH" -ge 2 ]; then
   launch_seed 42 "$([ "$SMOKE" = "1" ] && echo "" || echo 0)"
   launch_seed 137 "$([ "$SMOKE" = "1" ] && echo "" || echo 1)"
   mon_rc=0
+  # RC_CAPTURE_EXEMPT: monitor_differentiation body = one child `uv run python` heredoc as
+  # its last meaningful command, so the captured rc IS the child's own exit status (a child
+  # process keeps its own errexit) — code-review r1 ruled this shape a non-instance (#1516).
   monitor_differentiation "$(seed_out_dir 42)" "$(seed_out_dir 137)" \
     "${SEED_PID[42]}" "${SEED_PID[137]}" || mon_rc=$?
   [ "$mon_rc" -eq 0 ] || fail_differentiation "$mon_rc"
@@ -440,6 +443,9 @@ else
   # The check fires as soon as seed 137's gate slice lands (seed 42's is on
   # disk): a duplicated corpus costs seed-42-full + seed-137-gate, never 2x.
   mon_rc=0
+  # RC_CAPTURE_EXEMPT: monitor_differentiation body = one child `uv run python` heredoc as
+  # its last meaningful command, so the captured rc IS the child's own exit status (a child
+  # process keeps its own errexit) — code-review r1 ruled this shape a non-instance (#1516).
   monitor_differentiation "$(seed_out_dir 42)" "$(seed_out_dir 137)" \
     0 "${SEED_PID[137]}" || mon_rc=$?
   [ "$mon_rc" -eq 0 ] || fail_differentiation "$mon_rc"
