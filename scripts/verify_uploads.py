@@ -45,7 +45,11 @@ sentinel whose cells all ``resumed_skip`` carries an empty card
 (``adapter_paths: {}``) that must not shadow the first marker's full
 declaration, so the card is MERGED across all epm:results markers —
 newest-wins per field, where an empty dict/list/string does not count as
-a declaration (see ``merged_results_card``).
+a declaration (see ``merged_results_card``). Nor — for the structured-
+contract fields ``adapter_paths`` / ``wandb_run_names`` — does a
+non-dict/non-list prose pointer when a structural declaration exists in
+any marker; the prose value is kept only as a last resort so the #612
+prose diagnostic still fires (#1489).
 
 GCP-lane driver sentinels (#599) carry no reproducibility card at all —
 per-seed provenance lives under ``production_provenance`` (e.g.
@@ -560,6 +564,19 @@ def _is_declared(value) -> bool:
     return value is not None and value != "" and value != {} and value != []
 
 
+# Card fields the epm:results sentinel contract requires as per-cell
+# dicts/lists (SKILL.md Step 7; the #612 ``_prose_declaration_row`` pair).
+# A prose-pointer string here ("unchanged from epm:results v1 ...") is
+# truthy, so it would win the newest-wins fold and shadow an older
+# marker's real declaration (#1489).
+_STRUCTURED_CARD_FIELDS = ("adapter_paths", "wandb_run_names")
+
+
+def _is_structural(key: str, value) -> bool:
+    """False when a structured-contract field carries a non-dict/non-list."""
+    return key not in _STRUCTURED_CARD_FIELDS or isinstance(value, (dict, list))
+
+
 def merged_results_card(events: list[dict]) -> dict | None:
     """Merge reproducibility cards across ALL ``epm:results`` events.
 
@@ -569,8 +586,13 @@ def merged_results_card(events: list[dict]) -> dict | None:
     (#601: a resume pass with every cell ``resumed_skip`` posted
     ``adapter_paths: {}``, masking 16 verified adapter paths). Each FIELD
     therefore resolves newest-wins: the value comes from the newest card
-    that declares it non-empty (``_is_declared``). When any field falls
-    back past the newest card, the merged card carries a
+    that declares it non-empty (``_is_declared``). For the structured-
+    contract fields (``_STRUCTURED_CARD_FIELDS``) a non-dict/non-list
+    declaration additionally does not count as a declaration when a
+    structural one exists in ANY card — it is kept only as a last resort
+    so the #612 prose diagnostic still fires downstream (#1489: a re-post
+    prose pointer shadowed an older marker's real 64-path list). When any
+    field falls back past the newest card, the merged card carries a
     ``_card_provenance`` note that the row checks append to their detail.
     Returns ``None`` when no event declares a card (or every card is
     entirely empty) — the caller falls through to the strict MISSING row.
@@ -589,6 +611,11 @@ def merged_results_card(events: list[dict]) -> dict | None:
         return None
     merged: dict = {}
     fallback_fields: dict[str, str] = {}
+    # Newest non-structural value per structured field, kept as a LAST
+    # resort (#1489): used only when no marker declares a dict/list, so a
+    # prose-only history still reaches the #612 _prose_declaration_row
+    # diagnostic downstream instead of degrading to a generic MISSING.
+    deferred_nonstructural: dict[str, tuple[object, str, int]] = {}
     for pos, (card, ts) in enumerate(cards):
         for key, value in card.items():
             if key in merged or not _is_declared(value):
@@ -599,13 +626,33 @@ def merged_results_card(events: list[dict]) -> dict | None:
                 # card; an older card's note would misattribute the merged
                 # fields.
                 continue
+            if not _is_structural(key, value):
+                deferred_nonstructural.setdefault(key, (value, ts, pos))
+                continue
             merged[key] = value
             if pos > 0:
                 fallback_fields[key] = ts
+    bypassed_prose: list[str] = []
+    for key, (value, ts, pos) in deferred_nonstructural.items():
+        if key in merged:
+            bypassed_prose.append(f"{key} @ {ts}")
+            continue
+        merged[key] = value
+        if pos > 0:
+            fallback_fields[key] = ts
+    notes: list[str] = []
     if fallback_fields:
-        note = "field(s) declared by an earlier epm:results marker, not the latest: " + ", ".join(
-            f"{k} @ {ts}" for k, ts in sorted(fallback_fields.items())
+        notes.append(
+            "field(s) declared by an earlier epm:results marker, not the latest: "
+            + ", ".join(f"{k} @ {ts}" for k, ts in sorted(fallback_fields.items()))
         )
+    if bypassed_prose:
+        notes.append(
+            "non-structural (prose) declaration(s) bypassed in favor of a "
+            "structural value from another marker (#1489): " + ", ".join(sorted(bypassed_prose))
+        )
+    if notes:
+        note = "; ".join(notes)
         existing = merged.get("_card_provenance")
         merged["_card_provenance"] = f"{existing}; {note}" if existing else note
     return merged or None
