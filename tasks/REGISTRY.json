@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1486,
+  "highest_id": 1488,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -314,8 +314,8 @@
     "1039": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1039",
-      "status": "reviewing",
+      "path": "tasks/completed/1039",
+      "status": "completed",
       "title": "daily-held: extend watcher zombie sweep to non-EPS wrappers?"
     },
     "104": {
@@ -524,8 +524,8 @@
     "1066": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1066",
-      "status": "proposed",
+      "path": "tasks/running/1066",
+      "status": "running",
       "title": "daily-held: settle #779-line mapping terminology + writeup b"
     },
     "1067": {
@@ -1104,8 +1104,8 @@
     "1141": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1141",
-      "status": "proposed",
+      "path": "tasks/running/1141",
+      "status": "running",
       "title": "daily-held: canonical HF model repo at 100k-file limit"
     },
     "1142": {
@@ -1678,8 +1678,8 @@
     "1215": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1215",
-      "status": "proposed",
+      "path": "tasks/planning/1215",
+      "status": "planning",
       "title": "daily-held: daemon-independent orphan-wrapper sweep"
     },
     "1216": {
@@ -1692,8 +1692,8 @@
     "1217": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1217",
-      "status": "proposed",
+      "path": "tasks/plan_pending/1217",
+      "status": "plan_pending",
       "title": "daily-held: Digest-only guard arm for real-world-corpus raw_"
     },
     "1218": {
@@ -2693,8 +2693,8 @@
       "goal": "Determine whether the assistant context\u2192answer map is the SAME linear operator across three framings holding the assistant persona constant \u2014 chat-template, plain User:/Assistant:, and an assistant/AI character in generic narrative-prose stories \u2014 via cross-regime operator transfer, aligned operator cosine, and general-linear reparameterization (the #825 Result-2.5 method), in Qwen2.5-7B base and instruct, distinguishing 'same map in different coordinates' from 'genuinely different map per framing.'",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/followups_running/1345",
-      "status": "followups_running",
+      "path": "tasks/awaiting_promotion/1345",
+      "status": "awaiting_promotion",
       "title": "Narrative-story framing collapses the assistant context\u2192answer map on identical conversations at every probed read position, while chat and plain-text framings share one operator up to linear coordinates (MODERATE confidence)"
     },
     "1346": {
@@ -3748,8 +3748,8 @@
       "goal": "At a matched training recipe, establish the contrastive-negatives vs positive-only contrast for casual style, impolite, sycophancy, and marker (each on the 4 factory contexts): produce both a contrastive and a positive-only adapter per cell at the same recipe, and measure install strength plus cross-context leakage/containment at matched install (marker measured as both log-prob-at-slot and free-emission).",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/approved/1481",
-      "status": "approved",
+      "path": "tasks/running/1481",
+      "status": "running",
       "title": "Matched-recipe contrastive vs positive-only across casual style, impolite, sycophancy, and marker on the 4 factory contexts"
     },
     "1482": {
@@ -3777,8 +3777,8 @@
     "1485": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1485",
-      "status": "running",
+      "path": "tasks/reviewing/1485",
+      "status": "reviewing",
       "title": "workflow-fix: enforce keep-running tag in issue-wide terminate + finalize teardown"
     },
     "1486": {
@@ -3787,6 +3787,21 @@
       "path": "tasks/on_hold/1486",
       "status": "on_hold",
       "title": "ruff residual burn-down: ~33 errors + 17 format-dirty files (post-#1023 scoping)"
+    },
+    "1487": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1487",
+      "status": "proposed",
+      "title": "workflow-fix: verify_task_body Check 40 misses subpath (N files) counts under unlinked backtick prefixes"
+    },
+    "1488": {
+      "goal": "Determine whether an implanted conditional behavior ('do Y only under trigger condition T') is detectable \u2014 and its trigger identity and dose decodable \u2014 from the model's pre-query prompt states under NON-trigger conditions, using band-stopped persona-gated marker organisms (known ground-truth conditionality, graded install dose) with matched-install unconditional organisms as the critical control. H1 (interaction-hiding): non-trigger prompt states are clean, detection fails at matched install. H2 (policy-leaves-a-trace): detection survives even where measured behavioral leakage ~ 0. Either answer bounds what prompt-time monitoring can catch.",
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/1488",
+      "status": "proposed",
+      "title": "Pre-trigger detectability of conditional implants from prompt states (band-stopped marker organisms, prefix-end + context arms)"
     },
     "149": {
       "has_clean_result": false,

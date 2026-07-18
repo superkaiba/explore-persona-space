@@ -110,7 +110,13 @@ adding a pass means adding a numbered item here AND bumping the digit:
    is posted per staleness episode across both alert producers (decide's
    own alert path and the #759 downgrade lane), and a deliberately-parked
    ``blocked`` task (epm:failure + status-changed halt-contract trail) is
-   never alerted (#1137).
+   never alerted (#1137).  A MANUAL registration on an ACTIVE task whose
+   one-time alert stays unactioned — >= 3 consecutive stalled-confirmed
+   ticks spanning >= 24h from the first confirmation with zero non-watcher
+   task progress — escalates to an UNREGISTER-ONLY action (#1480): the
+   manual registration file is deleted (the session is NEVER stopped) so
+   the registration-independent orphan sweep re-drives the task; kill
+   switch ``EPM_DISABLE_STALLED_MANUAL_ESCALATION``.
 5. **Orphan sweep (registration-INDEPENDENT safety net).** Every other
    session pass starts from the registry files (``issue-<N>.json`` /
    ``manual-issue-<N>.json``), so an ACTIVE-status task with NO registration
@@ -189,22 +195,36 @@ adding a pass means adding a numbered item here AND bumping the digit:
 7. **Zombie-wrapper pass (AUTO-STOP by default).** Stop a daemon-tracked
    Happy session whose process tree has carried NO inner Claude process
    (cmdline match on :data:`_CLAUDE_CMDLINE_MARKERS`) for >= ``threshold``
-   consecutive checks AND >= the :func:`_zombie_wrapper_grace_s` window
-   (default 2h) — REGARDLESS of issue mapping. Every other session pass is
-   keyed on a registry entry or an ``issue-<N>`` worktree cwd, so a
-   finished session that lost its mapping (registry GC'd at the terminal
-   transition, cwd = repo root) is invisible to all of them even though
-   its inner Claude exited: 25 such zombies had accumulated by 2026-06-11,
-   showing as "running" in ``spawn_session.py list`` indefinitely until a
-   manual sweep. The grace window is load-bearing, not cosmetic: a live
-   wrapper revives its inner Claude IN PLACE on the next phone message
-   (the remote-mode launcher blocks on ``nextMessage()`` BEFORE spawning
-   the Claude SDK subprocess), so a no-Claude snapshot alone can be a
-   healthy idle session. NEVER touches: the PM session (excluded via the
-   explicit ``pm-session.json`` registration written by ``spawn-pm`` /
-   ``register-pm`` / the `/pm` skill bootstrap), non-EPS-cwd sessions, and
-   issue-mapped sessions at :data:`ZOMBIE_STATUS_EXCLUDE` statuses.
-   ``EPM_ZOMBIE_WRAPPER_REAP=0`` falls back to alert-only. Stops are
+   consecutive checks AND >= the lane's grace window — REGARDLESS of issue
+   mapping. Every other session pass is keyed on a registry entry or an
+   ``issue-<N>`` worktree cwd, so a finished session that lost its mapping
+   (registry GC'd at the terminal transition, cwd = repo root) is invisible
+   to all of them even though its inner Claude exited: 25 such zombies had
+   accumulated by 2026-06-11, showing as "running" in
+   ``spawn_session.py list`` indefinitely until a manual sweep. TWO
+   stop-eligible lanes (#1039): EPS cwds at the
+   :func:`_zombie_wrapper_grace_s` window (default 2h, unchanged), and
+   NON-EPS cwds (other projects — the 2026-07-03 class of 2-5-week-old
+   dead personal sessions) under STRICTER gates: the
+   :func:`_zombie_noneps_grace_s` window (default 7d), no live user TTY
+   (:func:`_is_live_user_tty`), wrapper process age >= the same 7d
+   (:func:`proc_start_epoch` belt; ``None`` -> keep), and not
+   registry-mapped. A session whose cwd CANNOT be resolved (no
+   sessions.json metadata) lands in the UNRESOLVABLE bucket: age-reported
+   (stdout every tick + one deduped durable fallback row per episode once
+   the wrapper is >= 7d old), NEVER auto-stopped. The grace windows are
+   load-bearing, not cosmetic: a live wrapper revives its inner Claude IN
+   PLACE on the next phone message (the remote-mode launcher blocks on
+   ``nextMessage()`` BEFORE spawning the Claude SDK subprocess), so a
+   no-Claude snapshot alone can be a healthy idle session. NEVER touches:
+   the PM session (excluded via the explicit ``pm-session.json``
+   registration written by ``spawn-pm`` / ``register-pm`` / the `/pm`
+   skill bootstrap, checked FIRST), issue-mapped EPS sessions at
+   :data:`ZOMBIE_STATUS_EXCLUDE` statuses, registry-mapped sids with a
+   non-EPS cwd (contradictory metadata -> keep), unresolvable-cwd
+   sessions, and any wrapper holding a live user TTY (non-EPS lane).
+   ``EPM_ZOMBIE_WRAPPER_REAP=0`` falls back to alert-only for BOTH lanes;
+   ``EPM_ZOMBIE_NONEPS_REAP=0`` for the non-EPS lane only. Stops are
    verified on the next tick (daemon ACK != kill), mirroring the
    session-reconcile contract. Daemon-gated.
 8. **GC pass.** Reap per-issue state files (``manual-issue-<N>.json``,
@@ -634,7 +654,7 @@ from spawn_session import (  # noqa: E402
     stagger_delay_s,
     takeover_sentinel_fresh,
 )
-from tick_triage import plan_pending_over_cap  # noqa: E402
+from tick_triage import plan_pending_over_cap, proc_start_epoch  # noqa: E402
 from worktree_audit import ORPHAN_HOLDER_PATTERNS  # noqa: E402  (codex-companion cmdline patterns)
 
 # Active-drive statuses: a dead session here SHOULD be resurrected.
@@ -987,6 +1007,16 @@ _STALLED_DEAD_SILENCE_STOP_NOTE_SENTINEL = "[autonomous_session_watch:session-de
 # ownership re-check protects a later wake). Same staleness-filter contract.
 _STALE_REGISTRATION_NOTE_SENTINEL = "[autonomous_session_watch:stale-registration-unregister]"
 
+# Substring stamped into the one-time marker posted by the #1480 stalled-MANUAL
+# escalation rung when an unactioned stalled alert on a manual registration
+# (``manual-issue-<N>.json``) holding an ACTIVE task escalates to an
+# UNREGISTER-ONLY action (the session itself is NEVER stopped — #505; the
+# registration-independent orphan sweep then re-drives the task). MUST stay a
+# member of :data:`_WATCHER_NOTE_SENTINELS`: the fire marker would otherwise
+# reset ``_latest_nonwatcher_event_ts`` and push the orphan sweep's staleness
+# clock back ~90 min, delaying the very re-drive the rung exists to enable.
+_STALLED_MANUAL_ESCALATION_NOTE_SENTINEL = "[autonomous_session_watch:stalled-manual-escalation]"
+
 # Substring stamped into the one-time VM-disk-low marker posted by the vm-disk
 # pass (once per low-disk episode, on each ACTIVE registered autonomous issue —
 # the sessions that will die first when / fills up). Same staleness-filter
@@ -1325,6 +1355,7 @@ _WATCHER_NOTE_SENTINELS: frozenset[str] = frozenset(
         _STALLED_EXHAUSTED_NOTE_SENTINEL,
         _STALLED_STOP_FAILED_NOTE_SENTINEL,
         _STALLED_DEAD_SILENCE_STOP_NOTE_SENTINEL,
+        _STALLED_MANUAL_ESCALATION_NOTE_SENTINEL,
         _STALE_REGISTRATION_NOTE_SENTINEL,
         _VM_DISK_NOTE_SENTINEL,
         _ORPHAN_RESPAWN_NOTE_SENTINEL,
@@ -1837,6 +1868,61 @@ STALLED_STATE_MAX_AGE_S = POD_SAFETY_STATE_MAX_AGE_S
 # advance (mirrors the existing alerted-flag clear logic). After exhaustion
 # the pass falls back to a one-time loud marker + leaves it for the user.
 STALLED_MAX_RESPAWNS = 3
+
+# #1480 stalled-manual escalation rung — see _apply_stalled_manual_escalation.
+# Defaults: an unactioned stalled alert on a MANUAL registration escalates to
+# the unregister-only action after >= 3 consecutive stalled-confirmed ticks
+# spanning >= 24h with zero non-watcher task progress. The 24h window doubles
+# the #845 stale-registration precedent (that pass requires 12h TRANSCRIPT
+# idle; this rung deliberately drops the transcript gate, so it earns a
+# longer fuse) and beats the #928 6-day freeze by ~5.7x; K=3 follows the
+# watcher's 3-consecutive convention (#1104/#1127/#1241 lineage).
+STALLED_MANUAL_ESCALATE_WINDOW_S_DEFAULT = 24 * 3600
+STALLED_MANUAL_ESCALATE_CONFIRMS_DEFAULT = 3
+
+
+def _stalled_manual_escalation_enabled() -> bool:
+    """Kill switch: False when ``EPM_DISABLE_STALLED_MANUAL_ESCALATION`` is
+    set truthy ("1"/"true"/"yes", case-insensitive). Default enabled (armed).
+    Mirrors :func:`_boot_death_pass_enabled`."""
+    raw = os.environ.get("EPM_DISABLE_STALLED_MANUAL_ESCALATION", "").strip().lower()
+    return raw not in {"1", "true", "yes"}
+
+
+def _stalled_manual_escalate_window_s() -> float:
+    """Escalation window in seconds (env ``EPM_STALLED_MANUAL_ESCALATE_H``,
+    HOURS; default :data:`STALLED_MANUAL_ESCALATE_WINDOW_S_DEFAULT`).
+    Malformed / non-positive env falls back — a typo'd var must not turn the
+    rung into an instant unregisterer (the :func:`_stale_registration_idle_s`
+    contract)."""
+    raw = os.environ.get("EPM_STALLED_MANUAL_ESCALATE_H")
+    if not raw:
+        return float(STALLED_MANUAL_ESCALATE_WINDOW_S_DEFAULT)
+    try:
+        parsed = float(raw) * 3600.0
+    except ValueError:
+        return float(STALLED_MANUAL_ESCALATE_WINDOW_S_DEFAULT)
+    if parsed <= 0:
+        return float(STALLED_MANUAL_ESCALATE_WINDOW_S_DEFAULT)
+    return parsed
+
+
+def _stalled_manual_escalate_confirms() -> int:
+    """Minimum consecutive stalled confirmations before the rung may fire
+    (env ``EPM_STALLED_MANUAL_ESCALATE_CONFIRMS``; default
+    :data:`STALLED_MANUAL_ESCALATE_CONFIRMS_DEFAULT`). Malformed / < 1 falls
+    back to the default (never a stealth kill switch — the disable var is the
+    only off switch)."""
+    raw = os.environ.get("EPM_STALLED_MANUAL_ESCALATE_CONFIRMS")
+    if not raw:
+        return STALLED_MANUAL_ESCALATE_CONFIRMS_DEFAULT
+    try:
+        parsed = int(raw)
+    except ValueError:
+        return STALLED_MANUAL_ESCALATE_CONFIRMS_DEFAULT
+    if parsed < 1:
+        return STALLED_MANUAL_ESCALATE_CONFIRMS_DEFAULT
+    return parsed
 
 
 def decide_session_stalled(
@@ -2670,6 +2756,71 @@ def decide_stale_registration(
     if self_report_age_s is not None and self_report_age_s < idle_threshold_s:
         return "keep"
     return "unregister"
+
+
+def decide_stalled_manual_escalation(
+    *,
+    in_active: bool,
+    alerted: bool,
+    stale_confirmed: bool,
+    confirm_count: int,
+    first_confirm_ts: float | None,
+    now: float,
+    min_confirms: int,
+    min_window_s: float,
+) -> tuple[str, int, float | None]:
+    """Pure per-tick decision for the #1480 stalled-manual escalation rung.
+
+    Returns ``(verdict, new_count, new_first_ts)``; verdict in
+    ``{"escalate", "count", "reset"}``.
+
+    Window semantics (S1): the escalation window is anchored at STALL ONSET —
+    ``first_confirm_ts`` is the pass-clock timestamp of the FIRST stalled
+    confirmation in the current consecutive run, NOT the alert time (the
+    #1137 dedup makes posted alerts uncountable, and alert time is not
+    persisted). With the alert firing ~2 ticks after onset, the realized
+    wait-after-alert is ~``min_window_s`` minus ~20 min — conservative in
+    the safe direction (never shorter than intended relative to onset).
+
+    - NOT ``stale_confirmed`` (self-report fresh, or any non-watcher marker
+      within the 2h marker window) OR NOT ``in_active`` ->
+      ``("reset", 0, None)``: the consecutive chain broke / the task left
+      the trap shape. A fresh non-watcher marker therefore resets the whole
+      accumulation — the "zero non-watcher task progress" condition is
+      enforced by consecutiveness x the 2h marker window at 10-min tick
+      granularity.
+    - ``stale_confirmed`` AND ``in_active`` -> ``count' = confirm_count + 1``;
+      ``first'`` = ``first_confirm_ts`` iff it is a positive, non-future
+      float, else ``now`` (a malformed / missing / FUTURE-dated anchor —
+      clock skew or a corrupt state file — restarts the window at ``now``:
+      fail toward keep, never an instant fire).
+
+      - ``alerted`` AND ``count' >= min_confirms`` AND
+        ``(now - first') >= min_window_s`` -> ``("escalate", count', first')``.
+      - else -> ``("count", count', first')``. Pre-alert confirmations
+        accumulate but can never fire (``alerted`` is required at fire time:
+        the trigger is an UNACTIONED alert).
+
+    Every input the caller could not resolve is mapped by the CALLER to the
+    conservative value (``in_active=False`` on a ``None`` status read;
+    ``stale_confirmed=False`` when ``self_report_age`` is ``None``), so this
+    function stays total and clock-free (``now`` is injected — the #1127
+    deterministic-anchor posture).
+    """
+    if not stale_confirmed or not in_active:
+        return ("reset", 0, None)
+    new_count = confirm_count + 1
+    if (
+        isinstance(first_confirm_ts, int | float)
+        and float(first_confirm_ts) > 0
+        and float(first_confirm_ts) <= now
+    ):
+        new_first: float = float(first_confirm_ts)
+    else:
+        new_first = now
+    if alerted and new_count >= min_confirms and (now - new_first) >= min_window_s:
+        return ("escalate", new_count, new_first)
+    return ("count", new_count, new_first)
 
 
 def decide_boot_death(
@@ -7349,6 +7500,8 @@ def _save_stalled_state(
     daemon_blocked_ticks: int = 0,
     daemon_blocked_pushed: bool = False,
     wedge_hits: int = 0,
+    manual_escalate_count: int = 0,
+    manual_escalate_first_ts: float | None = None,
     dead_silence_respawn_day: str | None = None,
     dead_silence_respawns_today: int = 0,
     wedge_respawn_day: str | None = None,
@@ -7357,6 +7510,16 @@ def _save_stalled_state(
 ) -> None:
     """Persist the per-session stalled-detector state atomically (temp +
     rename), mirroring :func:`_save_pod_safety_state`.
+
+    #1480 stalled-manual escalation fields: ``manual_escalate_count`` is the
+    number of CONSECUTIVE stalled-confirmed ticks observed for a MANUAL
+    registration this episode; ``manual_escalate_first_ts`` is the pass-clock
+    epoch of the FIRST confirmation in the current consecutive run (the
+    escalation-window anchor — stall onset, not alert time). Both ride the
+    #845 hardening-field contract (advancement-cleared via
+    :func:`_stalled_hardening_fields`: session resumed => trap over => a
+    re-registered manual session starts a fresh accumulation); absent in
+    older on-disk files -> ``(0, None)`` (backward compatible).
 
     #1209 day-cap fields: ``dead_silence_respawn_day`` (UTC ``%Y-%m-%d``
     key) + ``dead_silence_respawns_today`` count the fence episodes the
@@ -7445,6 +7608,8 @@ def _save_stalled_state(
         "daemon_blocked_ticks": daemon_blocked_ticks,
         "daemon_blocked_pushed": daemon_blocked_pushed,
         "wedge_hits": wedge_hits,
+        "manual_escalate_count": manual_escalate_count,
+        "manual_escalate_first_ts": manual_escalate_first_ts,
         "dead_silence_respawn_day": dead_silence_respawn_day,
         "dead_silence_respawns_today": dead_silence_respawns_today,
         "wedge_respawn_day": wedge_respawn_day,
@@ -7466,6 +7631,10 @@ _STALLED_HARDENING_DEFAULTS: dict[str, object] = {
     "daemon_blocked_ticks": 0,
     "daemon_blocked_pushed": False,
     "wedge_hits": 0,
+    # #1480 stalled-manual escalation rung — episode-scoped exactly like the
+    # #845 fields (advancement-clear: session resumed => trap over).
+    "manual_escalate_count": 0,
+    "manual_escalate_first_ts": None,
 }
 
 
@@ -7484,6 +7653,7 @@ def _stalled_hardening_fields(prev_state: dict, advanced: bool) -> dict:
 
     sid = prev_state.get("stop_pending_sid")
     ts = prev_state.get("stop_pending_ts")
+    first_ts = prev_state.get("manual_escalate_first_ts")
     return {
         "stop_pending_sid": sid if isinstance(sid, str) and sid else None,
         "stop_pending_ts": float(ts) if isinstance(ts, int | float) else None,
@@ -7493,6 +7663,10 @@ def _stalled_hardening_fields(prev_state: dict, advanced: bool) -> dict:
         "daemon_blocked_ticks": _int("daemon_blocked_ticks"),
         "daemon_blocked_pushed": bool(prev_state.get("daemon_blocked_pushed", False)),
         "wedge_hits": _int("wedge_hits"),
+        "manual_escalate_count": _int("manual_escalate_count"),
+        "manual_escalate_first_ts": (
+            float(first_ts) if isinstance(first_ts, int | float) else None
+        ),
     }
 
 
@@ -10712,6 +10886,8 @@ class _StalledActionCtx:
         daemon_blocked_ticks: int = 0,
         daemon_blocked_pushed: bool = False,
         wedge_hits: int = 0,
+        manual_escalate_count: int = 0,
+        manual_escalate_first_ts: float | None = None,
         wedge_note: str | None = None,
         daemon_reachable: bool = True,
         downgrade_note: str | None = None,
@@ -10789,6 +10965,13 @@ class _StalledActionCtx:
         self.daemon_blocked_ticks = daemon_blocked_ticks
         self.daemon_blocked_pushed = daemon_blocked_pushed
         self.wedge_hits = wedge_hits
+        # #1480 stalled-manual escalation counters (episode-scoped, threaded
+        # from the hardening fields like the #845 set above; MUTATED by
+        # _apply_stalled_manual_escalation to the values THIS tick must
+        # persist — every persist site forwards them via _persist_stalled_ctx
+        # so keep-path saves never wipe the accumulation).
+        self.manual_escalate_count = manual_escalate_count
+        self.manual_escalate_first_ts = manual_escalate_first_ts
         self.wedge_note = wedge_note
         # #1071 evidence-based alert reasons: ``daemon_reachable`` is the
         # pass-level flag (computed once per tick) and ``downgrade_note`` is
@@ -10847,6 +11030,8 @@ def _persist_stalled_ctx(ctx: _StalledActionCtx, sid: str | None, missed: int, *
         daemon_blocked_ticks=ctx.daemon_blocked_ticks,
         daemon_blocked_pushed=ctx.daemon_blocked_pushed,
         wedge_hits=ctx.wedge_hits,
+        manual_escalate_count=ctx.manual_escalate_count,
+        manual_escalate_first_ts=ctx.manual_escalate_first_ts,
         dead_silence_respawn_day=ctx.dead_silence_respawn_day,
         dead_silence_respawns_today=ctx.dead_silence_respawns_today,
         wedge_respawn_day=ctx.wedge_respawn_day,
@@ -11288,10 +11473,15 @@ def _handle_stalled_alert(ctx: _StalledActionCtx) -> None:
     # that instruction is true). The else-branch self-identifies as a
     # watcher bug instead of inventing a daemon outage.
     if ctx.manual:
-        reason = "manual user-driven session; alert-only by design"
+        reason = "manual user-driven session; alert-first by design (#505)"
         next_step = (
             f"open the session (phone / `spawn_session.py list`) and "
-            f"re-drive `/issue {ctx.issue}` manually if confirmed dead"
+            f"re-drive `/issue {ctx.issue}` manually if confirmed dead; if "
+            f"this alert stays unactioned with zero task progress, the "
+            f"watcher unregisters the manual registration after "
+            f"~EPM_STALLED_MANUAL_ESCALATE_H (default 24h) and the orphan "
+            f"sweep re-drives the task (#1480; the session itself is never "
+            f"stopped)"
         )
     elif not ctx.in_active:
         reason = f"task status not ACTIVE ({ctx.task_status})"
@@ -12003,6 +12193,189 @@ def _apply_wedge_override_with_exemption_probe(
     return action, new_missed, followups_child_alerted, live_consecutive, wedge_hits, wedge_note
 
 
+def _append_stalled_manual_escalation_event(
+    note: str,
+    dry_run: bool,
+    *,
+    issue: int,
+    sid: object,
+    count: int,
+    span_h: float,
+    window_h: float,
+    status: str | None,
+) -> None:
+    """Durable trace for #1480 stalled-manual escalations — one JSON line per
+    fire in ``~/.eps-autonomous/stalled-manual-escalation-events.jsonl``
+    (byte-parallel role to :func:`_append_stale_registration_event`, plus
+    structured fields so a future /daily sweep can parse it without regexing
+    the note). The per-task marker is the primary record; this file survives
+    a task folder move. Fail-soft."""
+    dest = AUTONOMOUS_REGISTRY_DIR / "stalled-manual-escalation-events.jsonl"
+    line = json.dumps(
+        {
+            "ts": datetime.now().astimezone().isoformat(),
+            "kind": "stalled-manual-escalation",
+            "issue": issue,
+            "sid": sid if isinstance(sid, str) else None,
+            "count": count,
+            "span_h": round(span_h, 2),
+            "window_h": round(window_h, 2),
+            "status": status,
+            "note": note,
+        }
+    )
+    if dry_run:
+        print(f"  [dry-run] would append stalled-manual-escalation event to {dest}")
+        return
+    try:
+        AUTONOMOUS_REGISTRY_DIR.mkdir(parents=True, exist_ok=True)
+        with open(dest, "a") as fh:
+            fh.write(line + "\n")
+    except OSError as e:
+        print(
+            f"  WARNING: appending stalled-manual-escalation event failed: {e}",
+            file=sys.stderr,
+        )
+
+
+def _escalate_stalled_manual(ctx: _StalledActionCtx, entry_path: Path, events: list[dict]) -> None:
+    """#1480 fire action: UNREGISTER the manual registration (never stop or
+    spawn the session — #505), post the loud marker + sidecar row + Telegram
+    push, and reset the escalation counters (once-per-episode: the entry is
+    gone next tick, and a re-registered manual session meets reset counters
+    => a fresh full accumulation). Mirrors :func:`_process_stale_registration`'s
+    action block."""
+    first_ts = ctx.manual_escalate_first_ts
+    span_h = ((ctx.now - first_ts) / 3600.0) if isinstance(first_ts, int | float) else 0.0
+    window_h = _stalled_manual_escalate_window_s() / 3600.0
+    count = ctx.manual_escalate_count
+    # Informational note enrichment ONLY — never a gate: a raise here must
+    # not block the fire (plan #1480 §8; narrow guard + logged warning).
+    try:
+        from explore_persona_space.task_workflow import unrun_followup_labels
+
+        groups = unrun_followup_labels(events)
+        labels = ", ".join(str(g.get("followup_label")) for g in groups) or "none on record"
+    except Exception as e:
+        print(
+            f"  WARNING: unrun-followup-labels enrichment failed for #{ctx.issue}: {e}",
+            file=sys.stderr,
+        )
+        labels = "unavailable (enrichment failed)"
+    note = (
+        f"{_STALLED_MANUAL_ESCALATION_NOTE_SENTINEL} ESCALATED stalled MANUAL "
+        f"issue session (#1480; the #928 6-day-freeze class): unregistered "
+        f"manual registration {entry_path.name} — the session itself "
+        f"(sid={ctx.happy_session_id}) was NOT stopped (#505). Trigger: "
+        f"{count} consecutive stalled confirmations spanning {span_h:.1f}h >= "
+        f"{window_h:.1f}h since the FIRST confirmation (stall onset), with "
+        f"zero non-watcher task progress (self-report frozen {ctx.self_gap}, "
+        f"newest non-watcher marker {ctx.marker_gap} old, "
+        f"status={ctx.task_status}); the one-time stalled alert went "
+        f"unactioned. Unrun follow-up scope labels: {labels}. The "
+        f"registration-independent orphan sweep re-drives this ACTIVE task on "
+        f"its next stale tick (~20-30 min). To reclaim ownership: re-drive "
+        f"/issue {ctx.issue} from your session (Step 0 re-registers), or park "
+        f"the task (`task.py set-status {ctx.issue} on_hold`)."
+    )
+    print(f"  issue #{ctx.issue}: stalled-manual escalation — {note}")
+    if not ctx.dry_run:
+        # The ONLY registry mutation: delete exactly the manual entry being
+        # processed (never issue-<N>.json — the dual-registration case is
+        # structurally excluded: stalled_session_pass skips manual entries
+        # when an autonomous entry exists for the same issue).
+        entry_path.unlink(missing_ok=True)
+    _post_progress_marker(ctx.issue, note, ctx.dry_run, label="stalled-manual-escalation")
+    _append_stalled_manual_escalation_event(
+        note,
+        ctx.dry_run,
+        issue=ctx.issue,
+        sid=ctx.happy_session_id,
+        count=count,
+        span_h=span_h,
+        window_h=window_h,
+        status=ctx.task_status,
+    )
+    _telegram_push(
+        f"[EPS watcher] stalled-manual escalation on #{ctx.issue}: manual "
+        f"registration unregistered after {span_h:.1f}h unactioned stall; "
+        f"orphan sweep will re-drive (~30 min). Session NOT stopped.",
+        ctx.dry_run,
+    )
+    ctx.manual_escalate_count, ctx.manual_escalate_first_ts = 0, None
+    _persist_stalled_ctx(ctx, ctx.happy_session_id_str, 0)
+
+
+def _apply_stalled_manual_escalation(
+    ctx: _StalledActionCtx, entry_path: Path, events: list[dict], stale_confirmed: bool
+) -> bool:
+    """#1480: evaluate + (maybe) fire the stalled-manual escalation rung.
+
+    Mutates ``ctx.manual_escalate_count`` / ``ctx.manual_escalate_first_ts``
+    to the values THIS tick must persist (every downstream persist site
+    forwards them via :func:`_persist_stalled_ctx`). Returns True iff this
+    rung fully HANDLED the tick — it FIRED (unregister + marker + sidecar +
+    push + reset-persist), or a fire-time exemption VETOED it with its own
+    reset-persist — so the caller returns early (skipping only the ordinary
+    keep-persist, which the handled paths perform themselves). NEVER stops
+    or spawns a session; the only registry mutation is the manual
+    registration file's unlink. Every unresolvable input fails toward keep
+    (returns False with today's behavior unchanged)."""
+    if not ctx.manual or not _stalled_manual_escalation_enabled():
+        return False
+    verdict, ctx.manual_escalate_count, ctx.manual_escalate_first_ts = (
+        decide_stalled_manual_escalation(
+            in_active=ctx.in_active,  # _task_status read THIS tick by the caller
+            alerted=ctx.alerted,
+            stale_confirmed=stale_confirmed,
+            confirm_count=ctx.manual_escalate_count,
+            first_confirm_ts=ctx.manual_escalate_first_ts,
+            now=ctx.now,
+            min_confirms=_stalled_manual_escalate_confirms(),
+            min_window_s=_stalled_manual_escalate_window_s(),
+        )
+    )
+    if verdict != "escalate":
+        return False
+    # Fire-time veto 1 — fresh worktree activity (someone is mid-edit):
+    # DEFER, keep the counters (re-evaluated next tick; the normal keep-persist
+    # writes them). Same helper the stale-registration pass uses; 2s-bounded
+    # walk, probed only on fire-candidate ticks.
+    if _worktree_recent_activity(ctx.issue, ctx.now, _wt_activity_fresh_s()):
+        print(
+            f"  issue #{ctx.issue}: stalled-manual escalation DEFERRED — "
+            f"fresh worktree activity (counters kept)"
+        )
+        return False
+    # Fire-time veto 2 — exemption re-probe (the wedge lane's #845-r2 design):
+    # the post-alert keep(0) ticks never probed the lazy exemptions, so
+    # re-probe ONCE against the escalation. Any rewrite (user-pause /
+    # spend-approval / provision-in-flight / long-phase heartbeat /
+    # round-complete re-park / awaiting-child) VETOES the fire and RESETS the
+    # counters (the task is legitimately parked; when the park lifts, either
+    # the session resumes -> advancement clear, or a fresh accumulation
+    # begins).
+    probed_action, _probed_missed, ctx.followups_child_alerted, _ex = (
+        _apply_stalled_park_exemptions(
+            issue=ctx.issue,
+            status=ctx.task_status,
+            has_pod=ctx.has_pod,
+            events=events,
+            action="alert",
+            new_missed=ctx.threshold,
+            followups_child_alerted=ctx.followups_child_alerted,
+            now=ctx.now,
+            dry_run=ctx.dry_run,
+        )
+    )
+    if probed_action != "alert":
+        ctx.manual_escalate_count, ctx.manual_escalate_first_ts = 0, None
+        _persist_stalled_ctx(ctx, ctx.happy_session_id_str, 0)
+        return True  # exemption handled/annotated the tick; nothing to dispatch
+    _escalate_stalled_manual(ctx, entry_path, events)
+    return True
+
+
 def _process_stalled_session(
     entry_path: Path,
     pod_active_issues: set[int],
@@ -12305,12 +12678,17 @@ def _process_stalled_session(
     # at 2 ticks (~20 min). `alerted or action == "alert"` counts the very
     # tick the alert fires (the handler persists alerted=True after us).
     stale_now = self_report_age is not None and self_report_age >= STALLED_WINDOW_S
+    # Corroborated staleness: self-report frozen AND no non-watcher marker
+    # within the 2h marker window — the identical expression the
+    # daemon-blocked escalation below consumes; ALSO the per-tick
+    # confirmation signal for the #1480 stalled-manual escalation rung.
+    stale_confirmed = stale_now and (marker_age is None or marker_age >= marker_window_s)
     hard["daemon_blocked_ticks"], hard["daemon_blocked_pushed"] = _apply_daemon_blocked_escalation(
         issue=issue,
         in_active=in_active,
         manual=manual,
         alerted=alerted or action == "alert",
-        stale=stale_now and (marker_age is None or marker_age >= marker_window_s),
+        stale=stale_confirmed,
         daemon_reachable=daemon_reachable,
         blocked_ticks=hard["daemon_blocked_ticks"],
         already_pushed=hard["daemon_blocked_pushed"],
@@ -12361,6 +12739,8 @@ def _process_stalled_session(
         daemon_blocked_ticks=hard["daemon_blocked_ticks"],
         daemon_blocked_pushed=hard["daemon_blocked_pushed"],
         wedge_hits=hard["wedge_hits"],
+        manual_escalate_count=hard["manual_escalate_count"],
+        manual_escalate_first_ts=hard["manual_escalate_first_ts"],
         wedge_note=wedge_note,
         daemon_reachable=daemon_reachable,
         downgrade_note=downgrade_note,
@@ -12369,6 +12749,15 @@ def _process_stalled_session(
         wedge_respawn_day=dead_silence_day_key,
         wedge_respawns_today=wedge_respawns_today,
     )
+
+    # #1480 stalled-manual escalation rung (no-op for autonomous entries,
+    # when disabled, and on every fail-toward-keep input; on the fire tick
+    # action == "keep" by construction — fire requires alerted=True, and an
+    # alerted manual entry's decide verdict is the keep-dedup branch — so the
+    # early return skips only the keep-persist, which the rung performs
+    # itself).
+    if _apply_stalled_manual_escalation(ctx, entry_path, events, stale_confirmed):
+        return
 
     if action == "respawn":
         _handle_stalled_respawn(ctx)
@@ -12407,7 +12796,13 @@ def stalled_session_pass(
     user-driven session at an ACTIVE status raises the one-time alert
     instead of orphaning silently, but is NEVER auto-respawned —
     restarting a session the user drives by hand is the user's call
-    (#505 round-2 orphaning, 2026-06-10). When an issue carries BOTH
+    (#505 round-2 orphaning, 2026-06-10). A manual entry whose alert then
+    goes UNACTIONED for >= EPM_STALLED_MANUAL_ESCALATE_H (default 24h,
+    >= 3 consecutive stalled-confirmed ticks, zero non-watcher progress)
+    on an ACTIVE task escalates to the #1480 UNREGISTER-ONLY rung
+    (:func:`_apply_stalled_manual_escalation`): the registration file is
+    deleted — never the session — so the orphan sweep re-drives the task
+    on its next stale tick. When an issue carries BOTH
     registrations, the autonomous entry wins and the manual one is
     skipped: both would share the same ``stalled-<N>.json`` state file,
     and double-processing in one tick would defeat the 2-miss guard.
@@ -17281,8 +17676,9 @@ def session_reconcile_pass(
 # BEFORE spawning the Claude SDK subprocess — so a wrapper with no Claude
 # descendant can be a HEALTHY idle session (e.g. right after a /clear or an
 # abort) that the next phone message revives IN PLACE. A no-Claude snapshot
-# is therefore necessary but not sufficient. The stop fires only when ALL
-# hold:
+# is therefore necessary but not sufficient. Classification is FOUR-WAY
+# (#1039): PM (skip, checked first) / EPS cwd / non-EPS cwd / unresolvable
+# cwd. The EPS-lane stop fires only when ALL hold:
 #
 #   * NO Claude process anywhere in the wrapper's /proc descendant tree
 #     (cmdline match on :data:`_CLAUDE_CMDLINE_MARKERS` — both the native
@@ -17296,21 +17692,35 @@ def session_reconcile_pass(
 #   * the session is NOT the PM session (excluded via the explicit
 #     ``pm-session.json`` registration — ``spawn-pm`` / ``register-pm`` /
 #     the `/pm` skill bootstrap write it);
-#   * the session's cwd IS under the EPS project root (other projects'
-#     sessions are never touched);
 #   * when the session IS issue-mapped (registry entry or ``issue-<N>``
 #     worktree cwd), the task's status is NOT in
 #     :data:`ZOMBIE_STATUS_EXCLUDE` (an active/blocked/plan-pending task's
 #     session is left to the passes that own those states).
 #
-# ``EPM_ZOMBIE_WRAPPER_REAP=0`` falls back to ALERT-ONLY (the
-# EPM_SESSION_RECONCILE_AUTOSTOP pattern). Stops are verified next tick
-# (daemon ACK != kill): one retry, then one loud marker, mirroring
-# :func:`_check_stop_verification`. Daemon-gated (needs /list pids + the
-# stop RPC). Stopping a live wrapper forfeits daemon-side `happy resume`
-# tracking, but the recovery story for reaped sessions is a fresh
-# `spawn_session.py spawn-issue` — same contract as the session-reconcile
-# stop.
+# The NON-EPS lane (#1039 — the 2026-07-03 class: 16-38-day-old dead
+# personal/other-project sessions the old blanket skip left invisible)
+# stop-fires only under STRICTER gates: same no-Claude + threshold ladder,
+# but at the 7d :func:`_zombie_noneps_grace_s` window, PLUS no live user
+# TTY (:func:`_is_live_user_tty` — "Thomas could be looking at this RIGHT
+# NOW" fails toward keep), PLUS wrapper process age >= the same 7d
+# (:func:`proc_start_epoch`; unreadable -> keep), PLUS not registry-mapped
+# (a registry-mapped sid with a non-EPS cwd is contradictory metadata ->
+# kept). The UNRESOLVABLE bucket (no sessions.json metadata — EPS-ness
+# genuinely unknowable) is escalate-only: a per-tick stdout age line plus
+# one deduped durable fallback row per episode once the wrapper is >= 7d
+# old; NEVER auto-stopped.
+#
+# ``EPM_ZOMBIE_WRAPPER_REAP=0`` falls back to ALERT-ONLY for BOTH lanes
+# (the EPM_SESSION_RECONCILE_AUTOSTOP pattern); ``EPM_ZOMBIE_NONEPS_REAP=0``
+# is the non-EPS-lane-only kill switch (the #818 dedicated-widening-knob
+# shape). Stops are verified next tick (daemon ACK != kill): one retry,
+# then one loud marker, mirroring :func:`_check_stop_verification`.
+# Daemon-gated (needs /list pids + the stop RPC). Stopping a live wrapper
+# forfeits daemon-side `happy resume` tracking, but the recovery story for
+# reaped sessions is a fresh `spawn_session.py spawn-issue` (EPS) or a
+# fresh `happy claude` in the session's own project cwd (non-EPS; the old
+# conversation stays resumable via `claude --resume`) — same contract as
+# the session-reconcile stop.
 
 # Filename prefix for the per-SESSION state file at
 # ``~/.eps-autonomous/zombie-wrapper-<sid>.json``. Keyed by session id (NOT
@@ -17325,6 +17735,14 @@ ZOMBIE_WRAPPER_STATE_PREFIX = "zombie-wrapper-"
 # revived or remain wanted, short enough that zombie accumulation is bounded
 # to a workday. Override via EPM_ZOMBIE_WRAPPER_GRACE_S (seconds).
 ZOMBIE_WRAPPER_GRACE_S = 2 * 3600
+
+# Non-EPS lane grace (#1039): 7 days between the FIRST no-Claude observation
+# and any stop (vs the EPS lane's 2h) — a personal / other-project session
+# gets a full week of provable deadness before any action. Doubles as the
+# deploy bake window: first_miss_ts cannot predate the merge, so the earliest
+# possible non-EPS stop is 7 days post-deploy. Override via
+# EPM_ZOMBIE_NONEPS_GRACE_S (seconds).
+NONEPS_ZOMBIE_WRAPPER_GRACE_S = 7 * 86400
 
 # Issue-mapped sessions whose task sits in any of these statuses are NEVER
 # touched by the zombie pass — active pipeline statuses are owned by the
@@ -17361,6 +17779,45 @@ def _zombie_wrapper_grace_s() -> float:
     except ValueError:
         return ZOMBIE_WRAPPER_GRACE_S
     return val if val > 0 else ZOMBIE_WRAPPER_GRACE_S
+
+
+def _zombie_noneps_reap_enabled() -> bool:
+    """True unless ``EPM_ZOMBIE_NONEPS_REAP`` is explicitly set to a falsy
+    value (``0`` / ``false`` / ``no``) — the alert-only kill switch for the
+    NON-EPS lane widening ONLY (#1039; the #818 dedicated-widening-knob
+    shape). The global ``EPM_ZOMBIE_WRAPPER_REAP`` is ANDed on top by the
+    caller, so global-off still covers both lanes."""
+    raw = os.environ.get("EPM_ZOMBIE_NONEPS_REAP", "")
+    return raw.strip().lower() not in {"0", "false", "no"}
+
+
+def _zombie_noneps_grace_s() -> float:
+    """Non-EPS lane grace window in seconds: ``EPM_ZOMBIE_NONEPS_GRACE_S``
+    when set to a positive number, else
+    :data:`NONEPS_ZOMBIE_WRAPPER_GRACE_S` (7d). Garbled / non-positive values
+    fall back to the default (mirrors :func:`_zombie_wrapper_grace_s`)."""
+    raw = os.environ.get("EPM_ZOMBIE_NONEPS_GRACE_S", "")
+    try:
+        val = float(raw)
+    except ValueError:
+        return NONEPS_ZOMBIE_WRAPPER_GRACE_S
+    return val if val > 0 else NONEPS_ZOMBIE_WRAPPER_GRACE_S
+
+
+def _classify_session_cwd(path: object, project_prefix: str) -> str:
+    """``'eps'`` | ``'non-eps'`` | ``'unresolvable'`` (#1039). The eps branch
+    is EXACTLY the EPS-cwd predicate the zombie pass used before #1039; a
+    non-str / empty path is the dir-resolution-failure case (live probe: the
+    sid is absent from sessions.json, so ``metadata.path`` reads ``None``).
+    Physical-vs-logical caveat: a cwd recorded under the PHYSICAL
+    ``/mnt/eps-data`` bind target (rather than the logical
+    ``.claude/worktrees`` path) would classify ``non-eps`` — the never-stop
+    guards (inner Claude / live TTY / 7d grace + age belt) still bind there."""
+    if not isinstance(path, str) or not path:
+        return "unresolvable"
+    if path == project_prefix or path.startswith(project_prefix + "/"):
+        return "eps"
+    return "non-eps"
 
 
 def _proc_children_map() -> dict[int, list[int]]:
@@ -17467,6 +17924,49 @@ def decide_zombie_wrapper(
     if not alerted:
         return ("alert", new_missed)
     return ("keep", new_missed)
+
+
+def decide_zombie_wrapper_noneps(
+    has_claude: bool,
+    live_user_tty: bool,
+    wrapper_age_s: float | None,
+    missed: int,
+    first_miss_age_s: float,
+    alerted: bool,
+    threshold: int = 2,
+    *,
+    reap_enabled: bool = True,
+    grace_s: float = NONEPS_ZOMBIE_WRAPPER_GRACE_S,
+) -> tuple[str, int]:
+    """Pure decision for one live, non-PM, NON-EPS-cwd, non-registry-mapped
+    session (#1039). Same action alphabet as :func:`decide_zombie_wrapper`.
+
+    - Claude present OR a live user tty -> ``("clear", 0)``: out of scope,
+      the episode ends (a later loss of tty/Claude starts a FRESH 7d
+      episode).
+    - ``wrapper_age_s`` None (unreadable /proc) or < ``grace_s`` ->
+      ``("keep", missed+1)``: the wrapper-process-age belt; guards the
+      state-carryover race (a ``first_miss_ts`` written by a prior
+      lane/generation can never shortcut a young wrapper).
+    - Otherwise delegate the threshold/grace/kill-switch ladder VERBATIM to
+      :func:`decide_zombie_wrapper` (``mapped=False``, ``status=None``) at
+      the 7d grace — ONE ladder implementation, no cross-lane drift.
+    """
+    if has_claude or live_user_tty:
+        return ("clear", 0)
+    if wrapper_age_s is None or wrapper_age_s < grace_s:
+        return ("keep", missed + 1)
+    return decide_zombie_wrapper(
+        None,
+        False,
+        False,
+        missed,
+        first_miss_age_s,
+        alerted,
+        threshold,
+        reap_enabled=reap_enabled,
+        grace_s=grace_s,
+    )
 
 
 def _zombie_state_path(sid: str) -> Path:
@@ -17801,6 +18301,208 @@ def _process_zombie_wrapper(
         )
 
 
+def _process_zombie_wrapper_noneps(
+    sid: str,
+    pid: int,
+    path: str,
+    now: float,
+    dry_run: bool,
+    threshold: int,
+    *,
+    reap_enabled: bool,
+    children_map: dict[int, list[int]],
+    detached_tmux_ttys: set[str],
+    check_orphaned: bool,
+) -> None:
+    """Apply the NON-EPS zombie-wrapper decision (#1039) to one live, non-PM,
+    non-registry-mapped session whose cwd resolves OUTSIDE the EPS project
+    root — the :func:`_process_zombie_wrapper` shape under the stricter
+    :func:`decide_zombie_wrapper_noneps` gates (7d grace, live-user-TTY
+    guard, wrapper-process-age belt). Records route with ``issue=None``
+    (a non-EPS session has no task to carry markers -> the fallback events
+    file). Every state write is gated ``if not dry_run:`` — the live
+    ``--dry-run`` smoke is read-only by construction."""
+    has_claude = _has_claude_descendant(pid, children_map)
+    live_tty = _is_live_user_tty(pid, detached_tmux_ttys, check_orphaned=check_orphaned)
+    start = proc_start_epoch(pid)
+    wrapper_age_s = now - start if start is not None else None
+
+    prev = _load_zombie_state(sid)
+    prev_missed = prev.get("missed", 0)
+    if not isinstance(prev_missed, int):
+        prev_missed = 0
+    prev_alerted = bool(prev.get("alerted", False))
+    first_miss_ts = prev.get("first_miss_ts")
+    if not isinstance(first_miss_ts, int | float):
+        first_miss_ts = now
+
+    in_scope = not has_claude and not live_tty
+    if _check_zombie_stop_verification(sid, pid, None, in_scope, prev, dry_run, now):
+        return
+
+    grace_s = _zombie_noneps_grace_s()
+    action, new_missed = decide_zombie_wrapper_noneps(
+        has_claude,
+        live_tty,
+        wrapper_age_s,
+        prev_missed,
+        now - first_miss_ts,
+        prev_alerted,
+        threshold,
+        reap_enabled=reap_enabled,
+        grace_s=grace_s,
+    )
+    wrapper_age_label = f"{wrapper_age_s / 86400:.1f}d" if wrapper_age_s is not None else "?"
+    zombie_age_h = (now - first_miss_ts) / 3600 if not has_claude else 0.0
+    print(
+        f"  session {sid} (pid={pid}, lane=non-eps, cwd={path}): "
+        f"has_claude={has_claude} live_tty={live_tty} wrapper_age={wrapper_age_label} "
+        f"missed={prev_missed}->{new_missed} zombie_age={zombie_age_h:.1f}h action={action}"
+    )
+
+    if action == "clear":
+        if prev and not dry_run:
+            _clear_zombie_state(sid)
+        return
+
+    if action == "stop":
+        acked = _stop_session(sid, dry_run)
+        if acked:
+            _zombie_record(
+                None,
+                f"{_ZOMBIE_WRAPPER_STOP_NOTE_SENTINEL} auto-stopped zombie NON-EPS "
+                f"Happy session {sid} (wrapper pid {pid}, lane=non-eps, cwd={path}): "
+                f"its process tree carried NO inner Claude process for "
+                f"{zombie_age_h / 24:.1f}d (>= {threshold} consecutive checks, grace "
+                f"{grace_s / 86400:.1f}d), no live user TTY, wrapper age "
+                f"{wrapper_age_label} (#1039 non-EPS lane). Restart from its own "
+                f"project: `happy claude` in {path}; the old conversation remains "
+                f"resumable via `claude --resume` — transcripts persist on disk. "
+                f"Set EPM_ZOMBIE_NONEPS_REAP=0 (non-EPS lane only) or "
+                f"EPM_ZOMBIE_WRAPPER_REAP=0 (both lanes) on the watcher cron to "
+                f"fall back to alert-only.",
+                dry_run,
+                label="zombie-wrapper-noneps-stop",
+            )
+        if not dry_run:
+            _save_zombie_state(
+                sid,
+                missed=0 if acked else prev_missed,
+                alerted=prev_alerted,
+                pid=pid,
+                issue=None,
+                first_miss_ts=first_miss_ts,
+                stopped_at=now if acked else None,
+                stop_retried=bool(prev.get("stop_retried", False)),
+                stop_failed_alerted=bool(prev.get("stop_failed_alerted", False)),
+            )
+        return
+
+    if action == "alert":
+        print(
+            f"  ZOMBIE ALERT session {sid} (lane=non-eps): no inner Claude process "
+            f"for {zombie_age_h:.1f}h; NOT stopping (kill switch — alert-only).",
+            file=sys.stderr,
+        )
+        _zombie_record(
+            None,
+            f"{_ZOMBIE_WRAPPER_ALERT_NOTE_SENTINEL} ZOMBIE non-EPS Happy session: "
+            f"{sid} (wrapper pid {pid}, cwd={path}) has carried NO inner Claude "
+            f"process for {zombie_age_h / 24:.1f}d with no live user TTY (wrapper "
+            f"age {wrapper_age_label}). NOT auto-stopped (EPM_ZOMBIE_NONEPS_REAP / "
+            f"EPM_ZOMBIE_WRAPPER_REAP alert-only fallback); stop manually with "
+            f"`spawn_session.py stop --session-id {sid}`, or restore the default "
+            f"reap on the watcher cron. Posted once per episode.",
+            dry_run,
+            label="zombie-wrapper-noneps-alert",
+        )
+        if not dry_run:
+            _save_zombie_state(
+                sid,
+                missed=new_missed,
+                alerted=True,
+                pid=pid,
+                issue=None,
+                first_miss_ts=first_miss_ts,
+            )
+        return
+
+    # action == "keep": persist the incremented miss count + episode anchor.
+    if not dry_run:
+        _save_zombie_state(
+            sid,
+            missed=new_missed,
+            alerted=prev_alerted,
+            pid=pid,
+            issue=None,
+            first_miss_ts=first_miss_ts,
+        )
+
+
+def _save_unresolvable_state(sid: str, pid: int, now: float) -> None:
+    """Minimal per-sid dedup payload for the unresolvable-cwd age report
+    (#1039), written atomically (tmp + rename) to the SAME
+    ``zombie-wrapper-<sid>.json`` path. Deliberately NOT
+    :func:`_save_zombie_state`: writing no ``first_miss_ts`` / ``missed``
+    means a later lane transition (metadata appears) starts a FRESH episode
+    via the loaders' defaults — an unresolvable-era timestamp can never
+    shortcut a 7d grace. The existing live-sid-keyed GC reaps the file when
+    the sid leaves the live set."""
+    AUTONOMOUS_REGISTRY_DIR.mkdir(parents=True, exist_ok=True)
+    dest = _zombie_state_path(sid)
+    tmp = dest.with_suffix(".json.tmp")
+    tmp.write_text(json.dumps({"unresolvable_alerted_ts": now, "pid": pid}, indent=2))
+    tmp.replace(dest)
+
+
+def _report_unresolvable_wrapper(
+    sid: str,
+    pid: int,
+    now: float,
+    dry_run: bool,
+    *,
+    grace_s: float,
+    children_map: dict[int, list[int]],
+) -> None:
+    """Escalate-only age report (#1039) for a live session whose cwd cannot
+    be resolved (sid absent from sessions.json / no ``metadata.path``):
+    EPS-ness is genuinely unknowable, so the watcher's fail-toward-keep
+    posture forbids any destructive action — one stdout line every tick,
+    plus ONE deduped durable fallback row per episode once the wrapper
+    process age crosses ``grace_s``. NEVER auto-stopped. Lane-flap dedup
+    residual (accepted, fail-toward-keep): a sessions.json flap
+    (unresolvable -> resolvable -> unresolvable) re-starts the episode and
+    may re-emit one durable row. Age-unreadable -> stdout only (nothing
+    durable to age-report). Every state write is gated ``if not dry_run:``
+    — a dry-run tick never pre-consumes the dedup."""
+    start = proc_start_epoch(pid)
+    age_s = now - start if start is not None else None
+    has_claude = _has_claude_descendant(pid, children_map)
+    tty = _wrapper_has_controlling_tty(pid)  # informational only — never gates anything here
+    age_label = f"{age_s / 86400:.1f}d" if age_s is not None else "?"
+    print(
+        f"  session {sid} (pid={pid}): cwd UNRESOLVABLE (no sessions.json metadata) — "
+        f"wrapper_age={age_label} has_claude={has_claude} tty={tty}; "
+        f"escalate-only, never auto-stopped"
+    )
+    if age_s is None or age_s < grace_s:
+        return
+    prev = _load_zombie_state(sid)
+    if prev.get("unresolvable_alerted_ts"):
+        return
+    _append_zombie_fallback_event(
+        f"unresolvable-cwd Happy session {sid} (wrapper pid {pid}) has NO "
+        f"sessions.json cwd metadata and its wrapper process is {age_label} old "
+        f"(has_claude={has_claude} tty={tty}). EPS-ness cannot be established, so "
+        f"the zombie-wrapper pass will NEVER auto-stop it (#1039 unresolvable "
+        f"bucket) — sweep manually with `spawn_session.py stop --session-id {sid}` "
+        f"if it is abandoned. Posted once per episode.",
+        dry_run,
+    )
+    if not dry_run:
+        _save_unresolvable_state(sid, pid, now)
+
+
 def zombie_wrapper_pass(
     dry_run: bool,
     threshold: int,
@@ -17810,10 +18512,17 @@ def zombie_wrapper_pass(
     now: float | None = None,
 ) -> None:
     """Auto-stop daemon-tracked Happy sessions whose process tree has carried
-    no inner Claude process for >= ``threshold`` checks AND >= the grace
-    window — REGARDLESS of issue mapping (the gap every registry-/cwd-keyed
-    pass shares). Exclusions: PM-registered sids, non-EPS cwds, and
-    issue-mapped sessions at :data:`ZOMBIE_STATUS_EXCLUDE` statuses.
+    no inner Claude process for >= ``threshold`` checks AND >= the lane's
+    grace window — REGARDLESS of issue mapping (the gap every registry-/
+    cwd-keyed pass shares). Four-way classification (#1039): PM (skipped,
+    checked first) / EPS cwd (the original lane, 2h grace, byte-identical) /
+    non-EPS cwd (stop-eligible under STRICTER gates — 7d grace + live-TTY
+    guard + wrapper-age belt + not-registry-mapped; alert-only under either
+    ``EPM_ZOMBIE_WRAPPER_REAP=0`` or ``EPM_ZOMBIE_NONEPS_REAP=0``) /
+    unresolvable cwd (no sessions.json metadata — escalate-only age report,
+    NEVER stopped). Issue-mapped EPS sessions at
+    :data:`ZOMBIE_STATUS_EXCLUDE` statuses stay excluded; a registry-mapped
+    sid with a non-EPS cwd is contradictory metadata and is kept.
 
     Daemon-gated like the respawn pass: the wrapper pids come from the
     daemon's ``/list`` and the stop action POSTs to it. ``children`` may be
@@ -17842,36 +18551,46 @@ def zombie_wrapper_pass(
     pm_sids = _load_pm_session_ids()
     project_prefix = str(PROJECT_ROOT)
     candidates: list[tuple[str, int, int | None]] = []
+    noneps_candidates: list[tuple[str, int, str]] = []
+    unresolvable: list[tuple[str, int]] = []
     skipped_pm = 0
-    skipped_non_eps = 0
+    skipped_contradictory = 0
     for child in children:
         sid = child.get("happySessionId")
         pid = child.get("pid")
         if not isinstance(sid, str) or not sid or not isinstance(pid, int):
             continue
-        if sid in pm_sids:
+        if sid in pm_sids:  # PM first, upstream of any cwd classification
             skipped_pm += 1
             continue
         path = (meta.get(sid) or {}).get("path")
-        if not isinstance(path, str) or not (
-            path == project_prefix or path.startswith(project_prefix + "/")
-        ):
-            # Non-EPS cwd (other projects) or no cwd metadata at all: never
-            # touched — EPS-ness cannot be established, so err toward keep.
-            skipped_non_eps += 1
-            continue
-        issue = registry_map.get(sid)
-        if issue is None:
-            issue = _infer_issue_from_path(path)
-        candidates.append((sid, pid, issue))
+        cls = _classify_session_cwd(path, project_prefix)
+        if cls == "eps":
+            issue = registry_map.get(sid)
+            if issue is None:
+                issue = _infer_issue_from_path(path)
+            candidates.append((sid, pid, issue))
+        elif cls == "non-eps":
+            if registry_map.get(sid) is not None:
+                # Registry-mapped but a non-EPS cwd: contradictory metadata —
+                # fail toward keep, never process under either lane.
+                skipped_contradictory += 1
+                continue
+            noneps_candidates.append((sid, pid, path))
+        else:
+            unresolvable.append((sid, pid))
 
     reap = _zombie_wrapper_reap_enabled()
+    noneps_reap = reap and _zombie_noneps_reap_enabled()
     print(
-        f"zombie-wrapper: {len(candidates)} EPS session(s) scanned "
-        f"({skipped_pm} PM-registered + {skipped_non_eps} non-EPS skipped; "
-        f"reap={'ON' if reap else 'OFF — alert-only (EPM_ZOMBIE_WRAPPER_REAP=0)'})"
+        f"zombie-wrapper: {len(candidates)} EPS + {len(noneps_candidates)} non-EPS "
+        f"session(s) scanned ({skipped_pm} PM-registered skipped; "
+        f"{len(unresolvable)} unresolvable-cwd age-reported; "
+        f"{skipped_contradictory} contradictory-metadata kept; "
+        f"reap={'ON' if reap else 'OFF — alert-only (EPM_ZOMBIE_WRAPPER_REAP=0)'}; "
+        f"noneps_reap={'ON' if noneps_reap else 'OFF — alert-only'})"
     )
-    if not candidates:
+    if not (candidates or noneps_candidates or unresolvable):
         return
     children_map = _proc_children_map()
     for sid, pid, issue in sorted(candidates):
@@ -17883,6 +18602,33 @@ def zombie_wrapper_pass(
             dry_run,
             threshold,
             reap_enabled=reap,
+            children_map=children_map,
+        )
+    if noneps_candidates:
+        # Lazy: one tmux subprocess + one knob read, only when the lane is
+        # non-empty (idle-unmapped already pays this every tick).
+        detached_tmux_ttys, _ = _detached_tmux_panes_with_activity()
+        check_orphaned = _orphaned_tmux_reap_enabled()
+        for sid, pid, path in sorted(noneps_candidates):
+            _process_zombie_wrapper_noneps(
+                sid,
+                pid,
+                path,
+                now,
+                dry_run,
+                threshold,
+                reap_enabled=noneps_reap,
+                children_map=children_map,
+                detached_tmux_ttys=detached_tmux_ttys,
+                check_orphaned=check_orphaned,
+            )
+    for sid, pid in sorted(unresolvable):
+        _report_unresolvable_wrapper(
+            sid,
+            pid,
+            now,
+            dry_run,
+            grace_s=_zombie_noneps_grace_s(),
             children_map=children_map,
         )
 
@@ -21973,12 +22719,16 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 — flat --*-only 
     # and consumes the shared reaper snapshot IN PLACE.
     stale_registration_pass(args.dry_run, children=reaper_children)
 
-    # Zombie-wrapper: stop daemon-tracked EPS sessions whose process tree has
-    # carried NO inner Claude process for >= threshold checks AND >= the 2h
-    # grace window — regardless of issue mapping (the class every registry-/
-    # cwd-keyed pass above structurally misses: 25 unmapped "running" zombies
-    # accumulated by 2026-06-11). PM-registered sids, non-EPS cwds, and
-    # mapped-at-active-status sessions are never touched. Daemon-gated.
+    # Zombie-wrapper: stop daemon-tracked sessions whose process tree has
+    # carried NO inner Claude process for >= threshold checks AND >= the
+    # lane's grace window — regardless of issue mapping (the class every
+    # registry-/cwd-keyed pass above structurally misses: 25 unmapped
+    # "running" zombies accumulated by 2026-06-11). EPS cwds reap at the 2h
+    # grace (unchanged); non-EPS cwds (#1039) reap at 7d + no live user TTY
+    # + wrapper-age belt; unresolvable cwds are age-reported, NEVER stopped.
+    # PM-registered sids, mapped-at-active-status EPS sessions, and
+    # registry-mapped-but-non-EPS-cwd (contradictory) sessions are never
+    # touched. Daemon-gated.
     zombie_wrapper_pass(
         args.dry_run,
         args.threshold,

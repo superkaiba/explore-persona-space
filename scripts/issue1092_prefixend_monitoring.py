@@ -53,6 +53,7 @@ cached held-out predictions (no re-fit). CPU-only, thread-capped.
 from __future__ import annotations
 
 import argparse
+import gc
 import json
 import os
 import subprocess
@@ -96,6 +97,11 @@ N_BOOT = 2000
 SEED = 0
 NGRID = [1, 2, 3, 4, 6, 8, 12, 16, 24, 32, 48]
 N_AVG_SEEDS = 25  # seeds averaged per point of the N-averaging curve
+
+# Round-2 readout constructions (r_B projection + map-mediated).
+RB_REV = "037fcbb"  # r_B direction revision the #1092 B1 panel used (b1a rb.rev)
+RB_PREFIX = "issue779_monitoring/r_b"
+ANSWER_TARGETS = ("t1", "t2", "t3")  # map target = stacked answer states, ambient (fit-arm A)
 
 
 def _git_sha() -> str:
@@ -620,16 +626,395 @@ def write_per_prefix_points(results: dict, layer: int, out_dir: Path) -> str:
     return str(path)
 
 
+# ---------------------------------------------------------------------------
+# Round-2 readout constructions: raw r_B projection + map-mediated projection.
+# All three constructions (these two + round-1 supervised ridge) are compared at
+# the identical 149-prefix persona-averaged grain with the same folds/bootstrap.
+# ---------------------------------------------------------------------------
+
+
+def stage_constructions() -> None:
+    """Fetch r_B directions (sycophancy, hallucination) + the answer states
+    (t1/t2/t3, L14) that the map-mediated construction transports onto."""
+    for t in TRAITS:
+        hub.stage_hub_file(
+            REPO,
+            f"{RB_PREFIX}/{t}.pt",
+            PROJECT_ROOT / "data/issue_1092/hf_dl" / RB_PREFIX / f"{t}.pt",
+            revision=RB_REV,
+        )
+    for cell in CELLS:
+        for tgt in ANSWER_TARGETS:
+            rel = f"analysis_tensors/summaries/{cell}/{tgt}_L14.npy"
+            hub.stage_hub_file(REPO, f"{BASE}/{rel}", DST / rel, revision=REV)
+
+
+def load_rb_l14() -> dict[str, np.ndarray]:
+    """Per-trait r_B unit direction at layer 14 (banked convention: state @ rb /
+    ||rb||; NO state centering; sign fixed by the extraction)."""
+    out: dict[str, np.ndarray] = {}
+    for t in TRAITS:
+        p = PROJECT_ROOT / "data/issue_1092/hf_dl" / RB_PREFIX / f"{t}.pt"
+        payload = torch.load(p, map_location="cpu", weights_only=False)
+        arr = payload["r_b"] if isinstance(payload, dict) and "r_b" in payload else payload
+        if hasattr(arr, "detach"):
+            arr = arr.detach().cpu().numpy()
+        arr = np.asarray(arr, dtype=np.float64)
+        assert arr.shape == (28, HIDDEN), (t, arr.shape)
+        out[t] = arr[14]
+    return out
+
+
+def assemble_substrate(
+    cell: str, trait: str, layer: int, manifest: list[dict], man_by_id: dict, scores: list[dict]
+) -> dict | None:
+    """The identical 149-prefix substrate round 1 builds, returned as a dict so the
+    construction reads reuse the exact positions / folds / grouping."""
+    score_by_rowid = {
+        r["row_id"]: float(r["score"])
+        for r in scores
+        if r["cell_id"] == cell
+        and r["trait"] == trait
+        and not r.get("dropped")
+        and r.get("score") is not None
+        and r.get("stratum") in STRATA
+    }
+    if not score_by_rowid:
+        return None
+    positions, y, prefixes = [], [], []
+    for i, d in enumerate(manifest):
+        if d["stratum"] in STRATA and d["row_id"] in score_by_rowid:
+            positions.append(i)
+            y.append(score_by_rowid[d["row_id"]])
+            prefixes.append(d["prefix_id"])
+    positions = np.asarray(positions, dtype=np.int64)
+    y = np.asarray(y, dtype=np.float64)
+    uniq_pref = np.array(sorted(set(prefixes)))
+    pref_to_idx = {p: j for j, p in enumerate(uniq_pref)}
+    pref_idx = np.asarray([pref_to_idx[p] for p in prefixes], dtype=np.int64)
+    n_pref = len(uniq_pref)
+    g_score = np.array([y[pref_idx == j].mean() for j in range(n_pref)])
+    g_nq = np.array([int((pref_idx == j).sum()) for j in range(n_pref)])
+    folds = grouped_kfold(list(prefixes), N_FOLDS, SEED)
+    rows_by_pref = [np.where(pref_idx == j)[0] for j in range(n_pref)]
+    return {
+        "positions": positions,
+        "y": y,
+        "uniq_pref": uniq_pref,
+        "pref_idx": pref_idx,
+        "n_pref": n_pref,
+        "g_score": g_score,
+        "g_nq": g_nq,
+        "folds": folds,
+        "rows_by_pref": rows_by_pref,
+    }
+
+
+def cv_group_map_projection(
+    g_state: np.ndarray,
+    g_answer: np.ndarray,
+    row_state: np.ndarray | None,
+    pref_idx: np.ndarray,
+    folds: list[np.ndarray],
+    rb_unit: np.ndarray,
+) -> tuple[np.ndarray, np.ndarray | None]:
+    """Fit the state->stacked-answer transport map per fold (group-level, ambient,
+    grouped-OOF over prefixes), then project the predicted t1-block answer onto the
+    unit r_B. Returns (per-prefix projection, per-row projection or None). One ridge
+    fit per fold; predictions dotted with r_B inside the loop so the 10752-wide
+    answer array never accumulates. Pass ``row_state=None`` for the query-invariant
+    prefix-end arm, which needs no per-row prediction."""
+    n_pref = g_state.shape[0]
+    proj_g = np.full(n_pref, np.nan, dtype=np.float64)
+    proj_row = None if row_state is None else np.full(row_state.shape[0], np.nan, dtype=np.float64)
+    all_pref = np.arange(n_pref)
+    for test in folds:
+        train = np.setdiff1d(all_pref, test)
+        if len(train) < 3 or len(test) == 0:
+            continue
+        row_mask = np.isin(pref_idx, test) if row_state is not None else None
+        eval_g = g_state[test]
+        if row_state is not None and row_mask.any():
+            eval_X = np.vstack([eval_g, row_state[row_mask]])
+        else:
+            eval_X = eval_g
+        pred = F.ridge_fit_predict(g_state[train], g_answer[train], eval_X)
+        proj = pred[:, :HIDDEN] @ rb_unit  # rb_out is nonzero only in the t1 block
+        proj_g[test] = proj[: len(test)]
+        if row_state is not None and row_mask.any():
+            proj_row[row_mask] = proj[len(test) :]
+    return proj_g, proj_row
+
+
+def _boot_reads(
+    row_ctx: np.ndarray,
+    pre_read: np.ndarray,
+    y: np.ndarray,
+    g_score: np.ndarray,
+    pref_idx: np.ndarray,
+    rows_by_pref: list[np.ndarray],
+    n_pref: int,
+) -> dict:
+    """Three reads from a construction's per-row CONTEXT values + per-prefix
+    PREFIX-END values, with prefix-level bootstrap CIs + the paired
+    averaged-context - prefix-end difference. Signed r throughout."""
+    g_ctx = np.array([np.nanmean(row_ctx[pref_idx == j]) for j in range(n_pref)])
+    r_perrow = pearson(row_ctx, y)
+    r_avgctx = pearson(g_ctx, g_score)
+    r_prefixend = pearson(pre_read, g_score)
+    rng = np.random.default_rng(SEED)
+    b_perrow, b_avgctx, b_pre, b_diff = [], [], [], []
+    for _ in range(N_BOOT):
+        samp = rng.integers(0, n_pref, n_pref)
+        b_avgctx.append(pearson(g_ctx[samp], g_score[samp]))
+        b_pre.append(pearson(pre_read[samp], g_score[samp]))
+        b_diff.append(b_avgctx[-1] - b_pre[-1])
+        rr = [row_ctx[rows_by_pref[j]] for j in samp]
+        ry = [y[rows_by_pref[j]] for j in samp]
+        b_perrow.append(pearson(np.concatenate(rr), np.concatenate(ry)))
+
+    def ci(v):
+        v = np.array(v, dtype=np.float64)
+        v = v[np.isfinite(v)]
+        return [float(np.percentile(v, 2.5)), float(np.percentile(v, 97.5))]
+
+    diff = np.array(b_diff, dtype=np.float64)
+    diff = diff[np.isfinite(diff)]
+    return {
+        "per_row_context": {"r": r_perrow, "ci95": ci(b_perrow), "grain": "row"},
+        "averaged_context": {"r": r_avgctx, "ci95": ci(b_avgctx), "grain": "prefix"},
+        "prefix_end": {"r": r_prefixend, "ci95": ci(b_pre), "grain": "prefix"},
+        "paired_diff_avgctx_minus_prefixend": {
+            "point": r_avgctx - r_prefixend,
+            "ci95": [float(np.percentile(diff, 2.5)), float(np.percentile(diff, 97.5))],
+            "frac_boot_positive": float(np.mean(diff > 0)),
+        },
+    }
+
+
+def run_constructions(
+    manifest: list[dict], man_by_id: dict, scores: list[dict], out_dir: Path
+) -> tuple[dict, str]:
+    """Compute the raw-r_B and map-mediated constructions at the 149-prefix grain,
+    L14, and package them beside the round-1 supervised anchor from results.json."""
+    layer = 14
+    rb = load_rb_l14()
+    supervised = json.load(open(out_dir / "results.json"))
+
+    result: dict = {
+        "read": "#1092 monitoring readout CONSTRUCTIONS (raw r_B + map-mediated vs supervised anchor)",
+        "generated_utc": datetime.now(UTC).isoformat(),
+        "git_commit": _git_sha(),
+        "layer": layer,
+        "provenance": {
+            "rb_source": f"{REPO}:{RB_PREFIX}/<trait>.pt @ {RB_REV} (b1a rb.rev); layer 14",
+            "rb_projection": "raw: state @ rb / ||rb|| (no centering, sign-fixed by extraction)",
+            "map_mediated": (
+                "state->stacked(t1,t2,t3) ambient transport map (fit_h.ridge_fit_predict, "
+                "group-level per-prefix, grouped 5-fold OOF, same folds as round 1), then the "
+                "predicted t1-block projected onto rb/||rb|| (rb_out t1-block convention)"
+            ),
+            "answer_states": "analysis_tensors/summaries/<cell>/{t1,t2,t3}_L14.npy",
+            "supervised_anchor": "eval_results/issue_1092/inline_prefixend_monitoring/results.json",
+            "grain": "149 dense_core+battery prefixes x 48 shared core queries; group=prefix_id",
+        },
+        "constructions": {"raw_rb_projection": {}, "map_mediated": {}},
+        "supervised_anchor": {},
+        "per_prefix": {},
+    }
+
+    for cell in CELLS:
+        sub_by_trait = {
+            d["trait"]: d for d in supervised["cells"].get(cell, {}).get(str(layer), [])
+        }
+        result["constructions"]["raw_rb_projection"][cell] = {}
+        result["constructions"]["map_mediated"][cell] = {}
+        result["supervised_anchor"][cell] = {}
+        result["per_prefix"][cell] = {}
+        # answer states for this cell (map target), stacked t1/t2/t3
+        ans = {
+            tgt: np.load(DST / f"analysis_tensors/summaries/{cell}/{tgt}_L14.npy", mmap_mode="r")
+            for tgt in ANSWER_TARGETS
+        }
+        ctx_np = np.load(
+            DST / f"analysis_tensors/summaries/{cell}/context_end_L14.npy", mmap_mode="r"
+        )
+        pre_np = np.load(
+            DST / f"analysis_tensors/summaries/{cell}/prefix_end_L14.npy", mmap_mode="r"
+        )
+        for trait in TRAITS:
+            sub = assemble_substrate(cell, trait, layer, manifest, man_by_id, scores)
+            if sub is None:
+                continue
+            pos = sub["positions"]
+            pref_idx = sub["pref_idx"]
+            n_pref = sub["n_pref"]
+            g_score = sub["g_score"]
+            folds = sub["folds"]
+            rows_by_pref = sub["rows_by_pref"]
+            y = sub["y"]
+            rb_unit = rb[trait] / np.linalg.norm(rb[trait])
+
+            X_ctx = np.asarray(ctx_np[pos], dtype=np.float64)
+            X_pre = np.asarray(pre_np[pos], dtype=np.float64)
+            g_pre = np.stack([X_pre[pref_idx == j][0] for j in range(n_pref)])
+
+            # --- construction 1: raw r_B projection (unsupervised, no fit) ---
+            row_ctx_raw = X_ctx @ rb_unit
+            pre_raw = g_pre @ rb_unit
+            raw = _boot_reads(row_ctx_raw, pre_raw, y, g_score, pref_idx, rows_by_pref, n_pref)
+            result["constructions"]["raw_rb_projection"][cell][trait] = raw
+
+            # --- construction 2: map-mediated projection (OOF transport map) ---
+            g_ctx = np.stack([X_ctx[pref_idx == j].mean(0) for j in range(n_pref)])
+            Y_stacked = np.concatenate(
+                [np.asarray(ans[t][pos], dtype=np.float64) for t in ANSWER_TARGETS], axis=1
+            )
+            g_answer = np.stack([Y_stacked[pref_idx == j].mean(0) for j in range(n_pref)])
+            _, mp_row_ctx = cv_group_map_projection(
+                g_ctx, g_answer, X_ctx, pref_idx, folds, rb_unit
+            )
+            mp_g_pre, _ = cv_group_map_projection(g_pre, g_answer, None, pref_idx, folds, rb_unit)
+            mapmed = _boot_reads(mp_row_ctx, mp_g_pre, y, g_score, pref_idx, rows_by_pref, n_pref)
+            result["constructions"]["map_mediated"][cell][trait] = mapmed
+            del Y_stacked, g_answer
+            gc.collect()
+
+            # --- supervised anchor (round 1) + per-prefix construction reads ---
+            sup = sub_by_trait.get(trait, {}).get("reads", {})
+            result["supervised_anchor"][cell][trait] = {
+                "averaged_context": sup.get("averaged_context", {}).get("r"),
+                "averaged_context_ci95": sup.get("averaged_context", {}).get("ci95"),
+                "prefix_end": sup.get("prefix_end", {}).get("r"),
+                "prefix_end_ci95": sup.get("prefix_end", {}).get("ci95"),
+                "per_row_context": sup.get("per_row_context", {}).get("r"),
+            }
+            result["per_prefix"][cell][trait] = {
+                "prefix_id": sub["uniq_pref"].tolist(),
+                "raw_rb_read_prefix_end": [float(x) for x in pre_raw],
+                "raw_rb_read_averaged_context": [
+                    float(np.nanmean(row_ctx_raw[pref_idx == j])) for j in range(n_pref)
+                ],
+                "map_mediated_read_prefix_end": [float(x) for x in mp_g_pre],
+                "map_mediated_read_averaged_context": [
+                    float(np.nanmean(mp_row_ctx[pref_idx == j])) for j in range(n_pref)
+                ],
+                "judge_mean": [float(x) for x in g_score],
+            }
+            print(
+                f"[{cell} {trait}] raw_rb: avgctx={raw['averaged_context']['r']:.3f} "
+                f"prefixend={raw['prefix_end']['r']:.3f} | "
+                f"map_med: avgctx={mapmed['averaged_context']['r']:.3f} "
+                f"prefixend={mapmed['prefix_end']['r']:.3f} | "
+                f"supervised: avgctx={result['supervised_anchor'][cell][trait]['averaged_context']} "
+                f"prefixend={result['supervised_anchor'][cell][trait]['prefix_end']}",
+                flush=True,
+            )
+        del ctx_np, pre_np, ans
+        gc.collect()
+
+    path = out_dir / "readout_constructions.json"
+    with open(path, "w") as f:
+        json.dump(result, f, indent=1)
+    return result, str(path)
+
+
+def make_constructions_figure(result: dict) -> dict:
+    import matplotlib.pyplot as plt
+
+    from explore_persona_space.analysis import paper_plots as pp
+
+    pp.set_paper_style("blog")
+    cell = "cell_inst_own"
+    traits = [t for t in TRAITS if t in result["constructions"]["raw_rb_projection"].get(cell, {})]
+    if not traits:
+        return {}
+    # three constructions x two arms; supervised is the anchor.
+    constr = [
+        ("supervised ridge", "supervised", pp.paper_palette_role("neutral")),
+        ("raw r_B projection", "raw_rb_projection", pp.paper_palette_role("primary")),
+        ("map-mediated", "map_mediated", pp.paper_palette_role("accent")),
+    ]
+    fig, axes = plt.subplots(1, len(traits), figsize=(6.6 * len(traits), 5.2), layout="constrained")
+    axes = np.atleast_1d(axes)
+    for ax, trait in zip(axes, traits, strict=True):
+        x = np.arange(2)  # [prefix-end, averaged-context]
+        w = 0.26
+        for k, (lab, key, col) in enumerate(constr):
+            if key == "supervised":
+                a = result["supervised_anchor"][cell][trait]
+                vals = [a["prefix_end"], a["averaged_context"]]
+                pci = a.get("prefix_end_ci95") or [a["prefix_end"], a["prefix_end"]]
+                aci = a.get("averaged_context_ci95") or [
+                    a["averaged_context"],
+                    a["averaged_context"],
+                ]
+                los = [max(0.0, a["prefix_end"] - pci[0]), max(0.0, a["averaged_context"] - aci[0])]
+                his = [max(0.0, pci[1] - a["prefix_end"]), max(0.0, aci[1] - a["averaged_context"])]
+            else:
+                d = result["constructions"][key][cell][trait]
+                vals = [d["prefix_end"]["r"], d["averaged_context"]["r"]]
+                los = [
+                    max(0.0, d["prefix_end"]["r"] - d["prefix_end"]["ci95"][0]),
+                    max(0.0, d["averaged_context"]["r"] - d["averaged_context"]["ci95"][0]),
+                ]
+                his = [
+                    max(0.0, d["prefix_end"]["ci95"][1] - d["prefix_end"]["r"]),
+                    max(0.0, d["averaged_context"]["ci95"][1] - d["averaged_context"]["r"]),
+                ]
+            ax.bar(x + (k - 1) * w, vals, w, label=lab, color=col)
+            ax.errorbar(
+                x + (k - 1) * w, vals, yerr=[los, his], fmt="none", ecolor="#333", capsize=3, lw=1.1
+            )
+        ax.set_xticks(x)
+        ax.set_xticklabels(["prefix-end\n(pre-query)", "averaged-context\n(48 q)"])
+        ax.set_ylabel("Monitoring correlation r (with judge score)")
+        ax.set_title(f"{trait.capitalize()} — three readout constructions")
+        ax.axhline(0, color="#bbb", lw=0.8)
+        ax.legend(loc="upper left", fontsize=9)
+    FIG_DIR.mkdir(parents=True, exist_ok=True)
+    paths = pp.savefig_paper(fig, "prefixend_monitoring_constructions", dir=FIG_DIR)
+    plt.close(fig)
+    return {k: str(v) for k, v in paths.items()}
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--layers", type=int, nargs="+", default=[14])
     ap.add_argument("--headline-layer", type=int, default=14)
     ap.add_argument("--no-fetch", action="store_true")
     ap.add_argument("--out-dir", type=str, default=str(OUT))
+    ap.add_argument(
+        "--constructions",
+        action="store_true",
+        help="round-2: compute raw-r_B + map-mediated constructions beside the "
+        "round-1 supervised anchor (requires results.json already present)",
+    )
     args = ap.parse_args()
 
     out_dir = Path(args.out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
+
+    if args.constructions:
+        if not args.no_fetch:
+            stage_constructions()
+        manifest = load_manifest()
+        man_by_id = {d["row_id"]: d for d in manifest}
+        scores = load_scores()
+        result, cpath = run_constructions(manifest, man_by_id, scores, out_dir)
+        figs = make_constructions_figure(result)
+        result["figures"] = figs
+        with open(cpath, "w") as f:
+            json.dump(result, f, indent=1)
+        # append the construction per-prefix reads beside the supervised points file
+        pts_path = out_dir / "per_prefix_points.json"
+        if pts_path.exists():
+            pts = json.load(open(pts_path))
+            pts["construction_reads"] = result["per_prefix"]
+            with open(pts_path, "w") as f:
+                json.dump(pts, f, indent=1)
+        print("WROTE", cpath)
+        return 0
 
     if not args.no_fetch:
         stage(args.layers)
