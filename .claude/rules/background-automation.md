@@ -1351,13 +1351,30 @@ probe, BEFORE every spawn arm.
   `EPM_DISABLE_AUTH_OUTAGE_GUARD=1`; `rm ~/.eps-autonomous/auth-outage.json`
   clears a live episode instantly; `--auth-outage-only` runs just this pass
   (pair with `--dry-run` for a live smoke — zero writes, zero pushes).
+- **Dispatch-chokepoint leg (#1218):** `spawn_session.py spawn-issue --auto`
+  (the choke point every non-watcher automated dispatcher funnels through —
+  `file_infra_task.py`, PM dispatch, the #660 program daemon's phase spawns)
+  holds spawns during an ACTIVE in-TTL episode with a rc-0 `AUTH-OUTAGE HELD`
+  line (recognized by `spawn_output_suppressed`, so all callers book
+  nothing); the watcher's canary passes via the pre-spawn `canary_pending`
+  claim; manual spawns + `spawn-campaign` warn-and-proceed; `spawn-pm`
+  untouched. Read-only mirror of the watcher gate (same kill switch, same
+  fail-open TTL); the gate reads the INVOKING process's env (a caller shell
+  carrying a different `EPM_AUTH_OUTAGE_MAX_EPISODE_H` than the watcher cron
+  computes a different TTL — bounded [1,48] h, divergence-toward-allow
+  reproduces the status quo); program-daemon phase spawns defer to the
+  daemon's own 48 h stall surface, not to an automated re-drive; duplicated
+  env parses + constant VALUES + state path pinned by
+  `tests/test_spawn_session_auth_outage_gate.py`.
 - **Accepted residuals (named, deliberate — do NOT "fix"):** (a) hang-style
   outages (sessions never die → no respawn events → no trigger; also no
   churn, so the cost is only the missing alert); (b) new-spawn-only outages
   (`prev_spawned_at=None` arms never count; bounded by the infra/capacity
   per-day caps); (c) the program-orchestrator recovery pass can relaunch the
   #660 program daemon (an indirect spawner) during an episode — v1 residual
-  per the must-ask fence on gating non-spawning passes; (d) two independent
+  per the must-ask fence on gating non-spawning passes — NARROWED by #1218:
+  the relaunched daemon's child `spawn-issue --auto` phase spawns are now
+  held at the dispatch chokepoint; (d) two independent
   issue-specific crash loops can false-trigger — bounded by canary self-heal
   (~50 min) + the 6 h TTL + one push; (e) a wedged-but-registered canary can
   false-resolve — bounded: a still-broken fleet re-accumulates ≥3 new events
