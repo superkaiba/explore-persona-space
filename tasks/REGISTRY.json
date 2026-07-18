@@ -3821,8 +3821,8 @@
     "1490": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1490",
-      "status": "planning",
+      "path": "tasks/approved/1490",
+      "status": "approved",
       "title": "workflow-fix: GCP queue-vanish failover must launch workload + re-point handle or tear down pod"
     },
     "1491": {
